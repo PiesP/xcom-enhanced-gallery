@@ -1,4 +1,7 @@
-import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/language-types';
+import type {
+  BaseLanguageCode,
+  LanguageStrings,
+} from "@shared/constants/i18n/language-types";
 
 /**
  * Produces a dot-notation union of every leaf string inside `LanguageStrings`.
@@ -6,11 +9,11 @@ import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/l
  */
 type DotNestedKeys<
   TValue,
-  TPrefix extends string = '',
+  TPrefix extends string = "",
   TDepth extends ReadonlyArray<unknown> = [],
 > = TValue extends string
   ? never
-  : TDepth['length'] extends 8
+  : TDepth["length"] extends 8
     ? never
     : {
         [TKey in keyof TValue & string]: TValue[TKey] extends string

@@ -6,7 +6,7 @@
  */
 
 const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === 'string' && value.trim().length > 0;
+  typeof value === "string" && value.trim().length > 0;
 
 /**
  * Extract and optimize original video URL
@@ -35,17 +35,17 @@ const isNonEmptyString = (value: unknown): value is string =>
  */
 export function extractOriginalVideoUrl(url: string): string {
   if (!isNonEmptyString(url)) {
-    return url || '';
+    return url || "";
   }
 
   try {
     const parsed = new URL(url);
 
-    if (parsed.searchParams.get('tag') === '12') {
+    if (parsed.searchParams.get("tag") === "12") {
       return url;
     }
 
-    parsed.searchParams.set('tag', '12');
+    parsed.searchParams.set("tag", "12");
     return parsed.toString();
   } catch {
     return url;
@@ -81,7 +81,10 @@ export function canExtractOriginalVideo(url: string): boolean {
 
   try {
     const parsed = new URL(url);
-    return parsed.hostname === 'video.twimg.com' && parsed.pathname.startsWith('/vi/');
+    return (
+      parsed.hostname === "video.twimg.com" &&
+      parsed.pathname.startsWith("/vi/")
+    );
   } catch {
     return false;
   }
@@ -103,14 +106,14 @@ export function extractVideoIdFromThumbnail(url: string): string | null {
     const urlObj = new URL(url);
 
     // If not pbs.twimg.com, it's not a thumbnail
-    if (urlObj.hostname !== 'pbs.twimg.com') {
+    if (urlObj.hostname !== "pbs.twimg.com") {
       return null;
     }
 
     // Check video thumbnail pattern
     const isVideoThumb =
       /\/(amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|ad_img\/amplify_video)\//i.test(
-        urlObj.pathname
+        urlObj.pathname,
       );
 
     if (!isVideoThumb) {
@@ -119,11 +122,11 @@ export function extractVideoIdFromThumbnail(url: string): string | null {
 
     // Path example: /amplify_video_thumb/1931629000243453952/img/wzXQeHFbVbPENOya
     // Video ID is the second path segment
-    const pathSegments = urlObj.pathname.split('/').filter(Boolean);
+    const pathSegments = urlObj.pathname.split("/").filter(Boolean);
 
     // Find amplify_video_thumb or ext_tw_video_thumb index
-    const thumbIndex = pathSegments.findIndex(seg =>
-      /^(amplify_video_thumb|ext_tw_video_thumb)$/i.test(seg)
+    const thumbIndex = pathSegments.findIndex((seg) =>
+      /^(amplify_video_thumb|ext_tw_video_thumb)$/i.test(seg),
     );
 
     if (thumbIndex === -1 || thumbIndex + 1 >= pathSegments.length) {
@@ -149,7 +152,9 @@ export function extractVideoIdFromThumbnail(url: string): string | null {
  * @param thumbnailUrl - Video thumbnail URL
  * @returns Video URL (video.twimg.com format) or null
  */
-export function convertThumbnailToVideoUrl(thumbnailUrl: string): string | null {
+export function convertThumbnailToVideoUrl(
+  thumbnailUrl: string,
+): string | null {
   const videoId = extractVideoIdFromThumbnail(thumbnailUrl);
   if (!videoId) {
     return null;

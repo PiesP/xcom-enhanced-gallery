@@ -1,6 +1,9 @@
-import { isTestFeatureEnabled, isTestModeEnabled } from './test-environment-config';
+import {
+  isTestFeatureEnabled,
+  isTestModeEnabled,
+} from "./test-environment-config";
 
-type ImplementationType = 'mock' | 'real';
+type ImplementationType = "mock" | "real";
 
 export interface ServiceStatus {
   name: string;
@@ -15,29 +18,31 @@ export interface ServiceFactoryOptions {
   selector?: () => ImplementationType;
 }
 
-function pickImplementation(options?: ServiceFactoryOptions): ImplementationType {
+function pickImplementation(
+  options?: ServiceFactoryOptions,
+): ImplementationType {
   if (options?.selector) {
     return options.selector();
   }
 
   if (options?.forceMock) {
-    return 'mock';
+    return "mock";
   }
 
   if (options?.forceReal) {
-    return 'real';
+    return "real";
   }
 
-  if (isTestModeEnabled() && isTestFeatureEnabled('mockServices')) {
-    return 'mock';
+  if (isTestModeEnabled() && isTestFeatureEnabled("mockServices")) {
+    return "mock";
   }
 
-  return 'real';
+  return "real";
 }
 
 export function getServiceImplementation(
   _serviceName: string,
-  options?: ServiceFactoryOptions
+  options?: ServiceFactoryOptions,
 ): ImplementationType {
   return pickImplementation(options);
 }
@@ -46,10 +51,10 @@ export function createConditionalService<T>(
   serviceName: string,
   realImpl: () => T,
   mockImpl: () => T,
-  options?: ServiceFactoryOptions
+  options?: ServiceFactoryOptions,
 ): T {
   const implementation = pickImplementation(options);
-  const factory = implementation === 'mock' ? mockImpl : realImpl;
+  const factory = implementation === "mock" ? mockImpl : realImpl;
 
   try {
     return factory();
@@ -65,7 +70,7 @@ export function createConditionalService<T>(
 
 export function getServiceStatus(
   serviceName: string,
-  options?: ServiceFactoryOptions
+  options?: ServiceFactoryOptions,
 ): ServiceStatus {
   const implementation = pickImplementation(options);
   const testModeEnabled = isTestModeEnabled();
@@ -75,30 +80,36 @@ export function getServiceStatus(
     available: true,
     implementation,
     reason:
-      implementation === 'mock'
+      implementation === "mock"
         ? `Test mode mock (enabled: ${testModeEnabled})`
         : `Real implementation (test mode: ${testModeEnabled})`,
   };
 }
 
 export function getAllServiceStatuses(serviceNames: string[]): ServiceStatus[] {
-  return serviceNames.map(name => getServiceStatus(name));
+  return serviceNames.map((name) => getServiceStatus(name));
 }
 
-export function assertServiceIsMock(serviceName: string, options?: ServiceFactoryOptions): void {
+export function assertServiceIsMock(
+  serviceName: string,
+  options?: ServiceFactoryOptions,
+): void {
   const implementation = pickImplementation(options);
-  if (implementation !== 'mock') {
+  if (implementation !== "mock") {
     throw new Error(
-      `Expected ${serviceName} to use mock implementation, but got ${implementation}`
+      `Expected ${serviceName} to use mock implementation, but got ${implementation}`,
     );
   }
 }
 
-export function assertServiceIsReal(serviceName: string, options?: ServiceFactoryOptions): void {
+export function assertServiceIsReal(
+  serviceName: string,
+  options?: ServiceFactoryOptions,
+): void {
   const implementation = pickImplementation(options);
-  if (implementation !== 'real') {
+  if (implementation !== "real") {
     throw new Error(
-      `Expected ${serviceName} to use real implementation, but got ${implementation}`
+      `Expected ${serviceName} to use real implementation, but got ${implementation}`,
     );
   }
 }

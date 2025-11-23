@@ -4,7 +4,7 @@
  * @module bootstrap/events
  */
 
-import { logger } from '@shared/logging';
+import { logger } from "@shared/logging";
 
 /**
  * Event handler unregister function type
@@ -21,12 +21,15 @@ export type Unregister = () => void;
  * @returns Event handler unregister function
  */
 export function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
-  const hasWindow = typeof window !== 'undefined' && Boolean(window.addEventListener);
+  const hasWindow =
+    typeof window !== "undefined" && Boolean(window.addEventListener);
   const debugEnabled = import.meta.env.DEV;
 
   if (!hasWindow) {
     if (debugEnabled) {
-      logger.debug('[events] 🧩 Global events wiring skipped (no window context)');
+      logger.debug(
+        "[events] 🧩 Global events wiring skipped (no window context)",
+      );
     }
     return () => {
       /* noop */
@@ -48,10 +51,10 @@ export function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
     invokeOnce();
   };
 
-  window.addEventListener('pagehide', handler, { once: true, passive: true });
+  window.addEventListener("pagehide", handler, { once: true, passive: true });
 
   if (debugEnabled) {
-    logger.debug('[events] 🧩 Global events wired (pagehide only)');
+    logger.debug("[events] 🧩 Global events wired (pagehide only)");
   }
 
   return () => {
@@ -60,10 +63,10 @@ export function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
     }
 
     disposed = true;
-    window.removeEventListener('pagehide', handler);
+    window.removeEventListener("pagehide", handler);
 
     if (debugEnabled) {
-      logger.debug('[events] 🧩 Global events unwired');
+      logger.debug("[events] 🧩 Global events unwired");
     }
   };
 }

@@ -38,18 +38,22 @@
  * @see VerticalImageItem.types for type definitions
  */
 
-import type { ComponentType } from '@shared/types/app.types';
-import type { ImageFitMode } from '@shared/types';
-import type { JSX } from 'solid-js';
+import type { ComponentType } from "@shared/types/app.types";
+import type { ImageFitMode } from "@shared/types";
+import type { JSX } from "solid-js";
 
-import { withGallery } from '@shared/components/hoc';
-import { createClassName, createAriaProps, createTestProps } from '@shared/utils/component-utils'; // Phase 284: 개별 함수 직접 import
-import { getSolid } from '@shared/external/vendors';
-import { languageService } from '@shared/services/language-service';
-import { logger } from '@shared/logging';
-import styles from './VerticalImageItem.module.css';
-import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
-import type { VerticalImageItemProps } from './VerticalImageItem.types';
+import { withGallery } from "@shared/components/hoc";
+import {
+  createClassName,
+  createAriaProps,
+  createTestProps,
+} from "@shared/utils/component-utils"; // Phase 284: 개별 함수 직접 import
+import { getSolid } from "@shared/external/vendors";
+import { languageService } from "@shared/services/language-service";
+import { logger } from "@shared/logging";
+import styles from "./VerticalImageItem.module.css";
+import { cleanFilename, isVideoMedia } from "./VerticalImageItem.helpers";
+import type { VerticalImageItemProps } from "./VerticalImageItem.types";
 
 const solid = getSolid();
 const { createSignal, createEffect, onCleanup, createMemo } = solid;
@@ -75,10 +79,15 @@ const extractDimensionsFromUrl = (url?: string): DimensionPair | null => {
     return null;
   }
 
-  const width = Number.parseInt(match[1] ?? '', 10);
-  const height = Number.parseInt(match[2] ?? '', 10);
+  const width = Number.parseInt(match[1] ?? "", 10);
+  const height = Number.parseInt(match[2] ?? "", 10);
 
-  if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
+  if (
+    !Number.isFinite(width) ||
+    width <= 0 ||
+    !Number.isFinite(height) ||
+    height <= 0
+  ) {
     return null;
   }
 
@@ -91,15 +100,18 @@ const scaleAspectRatio = (w: number, h: number): DimensionPair => ({
 });
 
 const parsePositiveNumber = (value: unknown): number | null => {
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
-  if (typeof value === 'string') {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0)
+    return value;
+  if (typeof value === "string") {
     const n = Number.parseFloat(value);
     if (Number.isFinite(n) && n > 0) return n;
   }
   return null;
 };
 
-function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element | null {
+function BaseVerticalImageItemCore(
+  props: VerticalImageItemProps,
+): JSX.Element | null {
   const {
     media,
     index,
@@ -108,11 +120,11 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     forceVisible = false,
     onClick,
     onImageContextMenu,
-    className = '',
+    className = "",
     onMediaLoad,
-    'data-testid': testId,
-    'aria-label': ariaLabel,
-    'aria-describedby': ariaDescribedBy,
+    "data-testid": testId,
+    "aria-label": ariaLabel,
+    "aria-describedby": ariaDescribedBy,
     registerContainer,
     role,
     tabIndex,
@@ -125,9 +137,12 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
   const [isError, setIsError] = createSignal(false);
   const [isVisible, setIsVisible] = createSignal(forceVisible);
 
-  const [containerRef, setContainerRef] = createSignal<HTMLDivElement | null>(null);
+  const [containerRef, setContainerRef] = createSignal<HTMLDivElement | null>(
+    null,
+  );
   const [imageRef, setImageRef] = createSignal<HTMLImageElement | null>(null);
-  const [videoRefSignal, setVideoRefSignal] = createSignal<HTMLVideoElement | null>(null);
+  const [videoRefSignal, setVideoRefSignal] =
+    createSignal<HTMLVideoElement | null>(null);
 
   let wasPlayingBeforeHidden = false;
   let wasMutedBeforeHidden: boolean | null = null;
@@ -153,16 +168,16 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     }
     const a = m.apiData as Record<string, unknown> | undefined;
     if (!a) return null;
-    const x = parsePositiveNumber(a['original_width'] ?? a['originalWidth']);
-    const y = parsePositiveNumber(a['original_height'] ?? a['originalHeight']);
+    const x = parsePositiveNumber(a["original_width"] ?? a["originalWidth"]);
+    const y = parsePositiveNumber(a["original_height"] ?? a["originalHeight"]);
     if (x && y) return { width: x, height: y };
     const dim =
-      extractDimensionsFromUrl(a['download_url'] as string | undefined) ||
-      extractDimensionsFromUrl(a['preview_url'] as string | undefined);
+      extractDimensionsFromUrl(a["download_url"] as string | undefined) ||
+      extractDimensionsFromUrl(a["preview_url"] as string | undefined);
     if (dim) return dim;
-    if (Array.isArray(a['aspect_ratio']) && a['aspect_ratio'].length >= 2) {
-      const r1 = parsePositiveNumber(a['aspect_ratio'][0]);
-      const r2 = parsePositiveNumber(a['aspect_ratio'][1]);
+    if (Array.isArray(a["aspect_ratio"]) && a["aspect_ratio"].length >= 2) {
+      const r1 = parsePositiveNumber(a["aspect_ratio"][0]);
+      const r2 = parsePositiveNumber(a["aspect_ratio"][1]);
       if (r1 && r2) return scaleAspectRatio(r1, r2);
     }
     return null;
@@ -194,10 +209,10 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     if (!dim) return undefined;
     const ratio = dim.width / dim.height;
     return {
-      '--xeg-aspect-default': `${dim.width} / ${dim.height}`,
-      '--xeg-gallery-item-intrinsic-width': toRem(dim.width),
-      '--xeg-gallery-item-intrinsic-height': toRem(dim.height),
-      '--xeg-gallery-item-intrinsic-ratio': ratio.toFixed(6),
+      "--xeg-aspect-default": `${dim.width} / ${dim.height}`,
+      "--xeg-gallery-item-intrinsic-width": toRem(dim.width),
+      "--xeg-gallery-item-intrinsic-height": toRem(dim.height),
+      "--xeg-gallery-item-intrinsic-ratio": ratio.toFixed(6),
     } as unknown as JSX.CSSProperties;
   });
   const hasIntrinsicSizing = createMemo(() => !!resolvedDimensions());
@@ -220,8 +235,11 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     onImageContextMenu?.(event, media);
   };
 
-  const setupVideoAutoPlayPause = (container: HTMLDivElement, video: HTMLVideoElement) => {
-    const observer = new IntersectionObserver(entries => {
+  const setupVideoAutoPlayPause = (
+    container: HTMLDivElement,
+    video: HTMLVideoElement,
+  ) => {
+    const observer = new IntersectionObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
 
@@ -232,14 +250,14 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
           video.muted = true;
           if (!video.paused) video.pause();
         } catch (err) {
-          logger.warn('Failed to pause video', { error: err });
+          logger.warn("Failed to pause video", { error: err });
         }
       } else {
         try {
           if (wasMutedBeforeHidden !== null) video.muted = wasMutedBeforeHidden;
           if (wasPlayingBeforeHidden) void video.play?.();
         } catch (err) {
-          logger.warn('Failed to resume video', { error: err });
+          logger.warn("Failed to resume video", { error: err });
         } finally {
           wasPlayingBeforeHidden = false;
           wasMutedBeforeHidden = null;
@@ -261,7 +279,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     }
 
     const observer = new IntersectionObserver(
-      entries => {
+      (entries) => {
         const entry = entries[0];
         if (entry?.isIntersecting) {
           setIsVisible(true);
@@ -270,8 +288,8 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
       },
       {
         threshold: 0.1,
-        rootMargin: '100px',
-      }
+        rootMargin: "100px",
+      },
     );
 
     observer.observe(container);
@@ -300,31 +318,32 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     if (!isVideo) return;
     const container = containerRef();
     const video = videoRefSignal();
-    if (!container || !video || typeof IntersectionObserver === 'undefined') return;
+    if (!container || !video || typeof IntersectionObserver === "undefined")
+      return;
     onCleanup(setupVideoAutoPlayPause(container, video));
   });
   createEffect(() => {
     if (!isVideo) return;
     const video = videoRefSignal();
-    if (video && typeof video.muted === 'boolean') {
+    if (video && typeof video.muted === "boolean") {
       try {
         video.muted = true;
       } catch (err) {
-        logger.warn('Failed to mute video', { error: err });
+        logger.warn("Failed to mute video", { error: err });
       }
     }
   });
 
   const resolvedFitMode = createMemo<ImageFitMode>(() => {
     const value = props.fitMode;
-    if (typeof value === 'function') {
+    if (typeof value === "function") {
       const result = value();
-      return (result ?? 'fitWidth') as ImageFitMode;
+      return (result ?? "fitWidth") as ImageFitMode;
     }
 
-    return (value ?? 'fitWidth') as ImageFitMode;
+    return (value ?? "fitWidth") as ImageFitMode;
   });
-  const fitModeClass = createMemo(() => fitModeMap[resolvedFitMode()] ?? '');
+  const fitModeClass = createMemo(() => fitModeMap[resolvedFitMode()] ?? "");
 
   const containerClasses = createMemo(() =>
     createClassName(
@@ -333,16 +352,19 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
       isActive ? styles.active : undefined,
       isFocused ? styles.focused : undefined,
       fitModeClass(),
-      className
-    )
+      className,
+    ),
   );
 
-  const imageClasses = createMemo(() => createClassName(styles.image, fitModeClass()));
+  const imageClasses = createMemo(() =>
+    createClassName(styles.image, fitModeClass()),
+  );
 
   const ariaProps = createAriaProps({
-    'aria-label': ariaLabel || `미디어 ${index + 1}: ${cleanFilename(media.filename)}`,
-    'aria-describedby': ariaDescribedBy,
-    role: role || 'button',
+    "aria-label":
+      ariaLabel || `미디어 ${index + 1}: ${cleanFilename(media.filename)}`,
+    "aria-describedby": ariaDescribedBy,
+    role: role || "button",
     tabIndex: tabIndex ?? 0,
   } as Record<string, string | number | boolean | undefined>);
 
@@ -364,16 +386,17 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
 
     // Calculate CSS variable computed values to check for fallback availability
     const computedStyle = window.getComputedStyle(container);
-    const imageWrapperMinHeight = computedStyle.getPropertyValue('--xeg-spacing-3xl');
-    const aspectRatio = computedStyle.getPropertyValue('--xeg-aspect-default');
+    const imageWrapperMinHeight =
+      computedStyle.getPropertyValue("--xeg-spacing-3xl");
+    const aspectRatio = computedStyle.getPropertyValue("--xeg-aspect-default");
 
     // Explicitly set fallback values if CSS variables are missing or empty
-    if (!imageWrapperMinHeight || imageWrapperMinHeight.trim() === '') {
-      container.style.setProperty('--xeg-spacing-3xl-fallback', '3rem');
+    if (!imageWrapperMinHeight || imageWrapperMinHeight.trim() === "") {
+      container.style.setProperty("--xeg-spacing-3xl-fallback", "3rem");
     }
 
-    if (!aspectRatio || aspectRatio.trim() === '') {
-      container.style.setProperty('--xeg-aspect-default-fallback', '4 / 3');
+    if (!aspectRatio || aspectRatio.trim() === "") {
+      container.style.setProperty("--xeg-aspect-default-fallback", "4 / 3");
     }
   });
 
@@ -381,13 +404,13 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     <div
       ref={assignContainerRef}
       class={containerClasses()}
-      data-xeg-role='gallery-item'
+      data-xeg-role="gallery-item"
       data-index={index}
       data-item-index={index}
       data-fit-mode={resolvedFitMode()}
-      data-media-loaded={isLoaded() ? 'true' : 'false'}
+      data-media-loaded={isLoaded() ? "true" : "false"}
       style={intrinsicSizingStyle()}
-      data-has-intrinsic-size={hasIntrinsicSizing() ? 'true' : 'false'}
+      data-has-intrinsic-size={hasIntrinsicSizing() ? "true" : "false"}
       onClick={handleClick}
       onFocus={onFocus as (event: FocusEvent) => void}
       onBlur={onBlur as (event: FocusEvent) => void}
@@ -399,7 +422,9 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
         <>
           {!isLoaded() && !isError() && !isVideo && (
             <div class={styles.placeholder}>
-              <div class={createClassName('xeg-spinner', styles.loadingSpinner)} />
+              <div
+                class={createClassName("xeg-spinner", styles.loadingSpinner)}
+              />
             </div>
           )}
 
@@ -412,7 +437,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
               class={createClassName(
                 styles.video,
                 fitModeClass(),
-                isLoaded() ? styles.loaded : styles.loading
+                isLoaded() ? styles.loaded : styles.loading,
               )}
               data-fit-mode={resolvedFitMode()}
               onLoadedMetadata={handleMediaLoad}
@@ -428,13 +453,19 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
               src={media.url}
               alt={
                 cleanFilename(media.filename) ||
-                languageService.translate('messages.gallery.failedToLoadImage', {
-                  type: 'image',
-                })
+                languageService.translate(
+                  "messages.gallery.failedToLoadImage",
+                  {
+                    type: "image",
+                  },
+                )
               }
-              loading='lazy'
-              decoding='async'
-              class={createClassName(imageClasses(), isLoaded() ? styles.loaded : styles.loading)}
+              loading="lazy"
+              decoding="async"
+              class={createClassName(
+                imageClasses(),
+                isLoaded() ? styles.loaded : styles.loading,
+              )}
               data-fit-mode={resolvedFitMode()}
               onLoad={handleMediaLoad}
               onError={handleMediaError}
@@ -447,9 +478,12 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
             <div class={styles.error}>
               <span class={styles.errorIcon}>⚠️</span>
               <span class={styles.errorText}>
-                {languageService.translate('messages.gallery.failedToLoadImage', {
-                  type: isVideo ? 'video' : 'image',
-                })}
+                {languageService.translate(
+                  "messages.gallery.failedToLoadImage",
+                  {
+                    type: isVideo ? "video" : "image",
+                  },
+                )}
               </span>
             </div>
           )}
@@ -461,15 +495,23 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
   );
 }
 
-const BaseComponent = BaseVerticalImageItemCore as unknown as ComponentType<VerticalImageItemProps>;
+const BaseComponent =
+  BaseVerticalImageItemCore as unknown as ComponentType<VerticalImageItemProps>;
 
 const WithGalleryVerticalImageItem = withGallery(BaseComponent, {
-  type: 'item',
-  className: 'vertical-item',
-  events: { preventClick: false, preventKeyboard: false, blockTwitterNative: true },
-  customData: { component: 'vertical-image-item', role: 'gallery-item' },
+  type: "item",
+  className: "vertical-item",
+  events: {
+    preventClick: false,
+    preventKeyboard: false,
+    blockTwitterNative: true,
+  },
+  customData: { component: "vertical-image-item", role: "gallery-item" },
 });
 
 // Phase 308: Removed solid.memo (React compat) - Solid components are fine as is
-export type { VerticalImageItemProps, FitModeProp } from './VerticalImageItem.types';
+export type {
+  VerticalImageItemProps,
+  FitModeProp,
+} from "./VerticalImageItem.types";
 export const VerticalImageItem = WithGalleryVerticalImageItem;

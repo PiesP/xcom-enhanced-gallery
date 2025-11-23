@@ -8,8 +8,8 @@
  * Used for: zoom in buttons, search enhancement, magnification UI
  */
 
-import type { JSXElement } from '@shared/external/vendors';
-import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
+import type { JSXElement } from "@shared/external/vendors";
+import { Icon, type IconProps } from "@shared/components/ui/Icon/Icon";
 
 /**
  * Zoom In Icon Component
@@ -27,7 +27,7 @@ import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
 export function HeroZoomIn(props: IconProps): JSXElement {
   return (
     <Icon {...props}>
-      <path d='m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607ZM10.5 7.5v6m3-3h-6' />
+      <path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607ZM10.5 7.5v6m3-3h-6" />
     </Icon>
   );
 }

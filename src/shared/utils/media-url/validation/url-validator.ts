@@ -5,11 +5,11 @@
  * Media URL validation utilities.
  */
 
-const SUPPORTED_MEDIA_HOSTS = new Set(['pbs.twimg.com', 'video.twimg.com']);
+const SUPPORTED_MEDIA_HOSTS = new Set(["pbs.twimg.com", "video.twimg.com"]);
 const MAX_URL_LENGTH = 2048;
 
 const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === 'string' && value.trim().length > 0;
+  typeof value === "string" && value.trim().length > 0;
 
 /**
  * Validate Twitter media URL
@@ -47,11 +47,11 @@ export function isValidMediaUrl(url: string): boolean {
     return false;
   }
 
-  if (parsed.hostname === 'pbs.twimg.com') {
+  if (parsed.hostname === "pbs.twimg.com") {
     return checkPbsMediaPath(parsed.pathname);
   }
 
-  if (parsed.hostname === 'video.twimg.com') {
+  if (parsed.hostname === "video.twimg.com") {
     return true;
   }
 
@@ -86,7 +86,7 @@ export function isTwitterMediaUrl(url: string): boolean {
  * @returns Whether protocol is https or http
  */
 function verifyUrlProtocol(protocol: string): boolean {
-  return protocol === 'https:' || protocol === 'http:';
+  return protocol === "https:" || protocol === "http:";
 }
 
 /**
@@ -103,9 +103,9 @@ function checkPbsMediaPath(pathname: string): boolean {
 
   // Use strict prefix matching instead of substring search
   return (
-    pathname.startsWith('/media/') ||
-    pathname.startsWith('/ext_tw_video_thumb/') ||
-    pathname.startsWith('/tweet_video_thumb/') ||
-    pathname.startsWith('/video_thumb/')
+    pathname.startsWith("/media/") ||
+    pathname.startsWith("/ext_tw_video_thumb/") ||
+    pathname.startsWith("/tweet_video_thumb/") ||
+    pathname.startsWith("/video_thumb/")
   );
 }

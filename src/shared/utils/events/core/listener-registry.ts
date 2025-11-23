@@ -4,8 +4,8 @@
  *              listeners Map and state management separated to a dedicated module
  */
 
-import { logger } from '@shared/logging';
-import type { EventContext } from './event-context';
+import { logger } from "@shared/logging";
+import type { EventContext } from "./event-context";
 
 /**
  * Track all registered event listeners
@@ -84,16 +84,19 @@ class ListenerRegistry {
     const typeGroups = new Map<string, number>();
 
     for (const eventContext of this.listeners.values()) {
-      const ctx = eventContext.context || 'default';
+      const ctx = eventContext.context || "default";
       contextGroups.set(ctx, (contextGroups.get(ctx) || 0) + 1);
-      typeGroups.set(eventContext.type, (typeGroups.get(eventContext.type) || 0) + 1);
+      typeGroups.set(
+        eventContext.type,
+        (typeGroups.get(eventContext.type) || 0) + 1,
+      );
     }
 
     return {
       total: this.listeners.size,
       byContext: Object.fromEntries(contextGroups),
       byType: Object.fromEntries(typeGroups),
-      listeners: Array.from(this.listeners.values()).map(ctx => ({
+      listeners: Array.from(this.listeners.values()).map((ctx) => ({
         id: ctx.id,
         type: ctx.type,
         context: ctx.context,

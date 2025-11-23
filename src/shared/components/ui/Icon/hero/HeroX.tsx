@@ -8,8 +8,8 @@
  * Used for: close buttons, dismiss actions, exit UI elements
  */
 
-import type { JSXElement } from '@shared/external/vendors';
-import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
+import type { JSXElement } from "@shared/external/vendors";
+import { Icon, type IconProps } from "@shared/components/ui/Icon/Icon";
 
 /**
  * X (Close) Icon Component
@@ -27,7 +27,7 @@ import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
 export function HeroX(props: IconProps): JSXElement {
   return (
     <Icon {...props}>
-      <path d='M6 18 18 6M6 6l12 12' />
+      <path d="M6 18 18 6M6 6l12 12" />
     </Icon>
   );
 }

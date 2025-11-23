@@ -5,14 +5,16 @@
  * Quality selector utilities for media URLs.
  */
 
-const DEFAULT_FORMAT = 'jpg';
-const SUPPORTED_QUALITIES = new Set(['large', 'medium', 'small']);
+const DEFAULT_FORMAT = "jpg";
+const SUPPORTED_QUALITIES = new Set(["large", "medium", "small"]);
 
 const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === 'string' && value.trim().length > 0;
+  typeof value === "string" && value.trim().length > 0;
 
-function normaliseQuality(quality: 'large' | 'medium' | 'small'): 'large' | 'medium' | 'small' {
-  return SUPPORTED_QUALITIES.has(quality) ? quality : 'large';
+function normaliseQuality(
+  quality: "large" | "medium" | "small",
+): "large" | "medium" | "small" {
+  return SUPPORTED_QUALITIES.has(quality) ? quality : "large";
 }
 
 /**
@@ -23,19 +25,19 @@ function normaliseQuality(quality: 'large' | 'medium' | 'small'): 'large' | 'med
  */
 export function getHighQualityMediaUrl(
   url: string,
-  desiredQuality: 'large' | 'medium' | 'small' = 'large'
+  desiredQuality: "large" | "medium" | "small" = "large",
 ): string {
   if (!isNonEmptyString(url)) {
-    return url || '';
+    return url || "";
   }
 
   const quality = normaliseQuality(desiredQuality);
 
   try {
     const parsed = new URL(url);
-    parsed.searchParams.set('name', quality);
-    if (!parsed.searchParams.has('format')) {
-      parsed.searchParams.set('format', DEFAULT_FORMAT);
+    parsed.searchParams.set("name", quality);
+    if (!parsed.searchParams.has("format")) {
+      parsed.searchParams.set("format", DEFAULT_FORMAT);
     }
     return parsed.toString();
   } catch {

@@ -15,9 +15,9 @@ export interface GallerySettings {
   /** Number of images to preload */
   preloadCount: number;
   /** Image fitting mode */
-  imageFitMode: 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
+  imageFitMode: "original" | "fitWidth" | "fitHeight" | "fitContainer";
   /** Gallery theme */
-  theme: 'auto' | 'light' | 'dark';
+  theme: "auto" | "light" | "dark";
   /** Enable animations */
   animations: boolean;
   /** Enable keyboard navigation */
@@ -37,17 +37,17 @@ export interface ToolbarSettings {
  */
 export interface DownloadSettings {
   /** Filename pattern */
-  filenamePattern: 'original' | 'tweet-id' | 'timestamp' | 'custom';
+  filenamePattern: "original" | "tweet-id" | "timestamp" | "custom";
   /** Custom filename template */
   customTemplate?: string;
   /** Image quality */
-  imageQuality: 'original' | 'large' | 'medium' | 'small';
+  imageQuality: "original" | "large" | "medium" | "small";
   /** Maximum concurrent downloads */
   maxConcurrentDownloads: number;
   /** Auto-compress to ZIP */
   autoZip: boolean;
   /** Download folder structure */
-  folderStructure: 'flat' | 'by-date' | 'by-user';
+  folderStructure: "flat" | "by-date" | "by-user";
 }
 
 /**
@@ -135,7 +135,7 @@ export interface SettingChangeEvent<T = unknown> {
   newValue: T;
   timestamp: number;
   /** Result pattern alignment: event status (currently success only) */
-  status?: 'success' | 'error';
+  status?: "success" | "error";
 }
 
 /**

@@ -4,6 +4,6 @@ export {
   findMediaAtCoordinates,
   isProcessableMedia,
   shouldBlockMediaTrigger,
-} from '@/shared/utils/media/media-click-detector';
+} from "@/shared/utils/media/media-click-detector";
 
-export { pauseActiveTwitterVideos } from '@/shared/utils/media/twitter-video-pauser';
+export { pauseActiveTwitterVideos } from "@/shared/utils/media/twitter-video-pauser";

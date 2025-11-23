@@ -16,10 +16,10 @@
  * @version 2.0.0 - Service Manager Delegation Pattern (Complete Separation)
  */
 
-import type { BaseService } from '@shared/types/core/base-service.types';
-import { ServiceRegistry } from './service-registry';
-import { ServiceFactoryManager } from './service-factory';
-import { ServiceLifecycleManager } from './service-lifecycle';
+import type { BaseService } from "@shared/types/core/base-service.types";
+import { ServiceRegistry } from "./service-registry";
+import { ServiceFactoryManager } from "./service-factory";
+import { ServiceLifecycleManager } from "./service-lifecycle";
 
 /**
  * Central service manager (Orchestrator Pattern)
@@ -373,7 +373,7 @@ export class CoreService {
 
     return {
       registeredServices: services.length,
-      activeInstances: services.filter(key => instances[key]).length,
+      activeInstances: services.filter((key) => instances[key]).length,
       services,
       instances,
     };

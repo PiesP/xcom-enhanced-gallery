@@ -12,8 +12,11 @@
  * @param radix - Radix (default: 10)
  * @returns Parsed integer or 0 (on parse failure)
  */
-export function safeParseInt(value: string | undefined | null, radix: number = 10): number {
-  if (value === undefined || value === null || value === '') {
+export function safeParseInt(
+  value: string | undefined | null,
+  radix: number = 10,
+): number {
+  if (value === undefined || value === null || value === "") {
     return 0;
   }
   const result = parseInt(value, radix);
@@ -24,7 +27,7 @@ export function safeParseInt(value: string | undefined | null, radix: number = 1
  * Safe parseFloat function
  */
 export function safeParseFloat(value: string | undefined | null): number {
-  if (value === undefined || value === null || value === '') {
+  if (value === undefined || value === null || value === "") {
     return 0;
   }
   const result = parseFloat(value);
@@ -43,7 +46,10 @@ export function undefinedToNull<T>(value: T | undefined): T | null {
 /**
  * Apply string default value
  */
-export function stringWithDefault(value: string | undefined, defaultValue: string = ''): string {
+export function stringWithDefault(
+  value: string | undefined,
+  defaultValue: string = "",
+): string {
   return value ?? defaultValue;
 }
 
@@ -52,7 +58,9 @@ export function stringWithDefault(value: string | undefined, defaultValue: strin
 /**
  * Safe HTMLElement validation
  */
-export function safeElementCheck<T extends Element>(element: T | undefined | null): element is T {
+export function safeElementCheck<T extends Element>(
+  element: T | undefined | null,
+): element is T {
   return element != null;
 }
 
@@ -62,10 +70,10 @@ export function safeElementCheck<T extends Element>(element: T | undefined | nul
  * Safe tweet ID generation - prioritize crypto.randomUUID()
  */
 export function safeTweetId(value: string | undefined): string {
-  if (!value || value.trim() === '') {
+  if (!value || value.trim() === "") {
     try {
       // Use crypto.randomUUID() (Node.js 16+, modern browsers)
-      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      if (typeof crypto !== "undefined" && crypto.randomUUID) {
         return `generated_${crypto.randomUUID()}`;
       }
     } catch {
@@ -86,7 +94,7 @@ export function safeTweetId(value: string | undefined): string {
  * EventListener-compatible function wrapper (for TypeScript strict mode)
  */
 export function createEventListener<T extends Event = Event>(
-  handler: (this: EventTarget, event: T) => void
+  handler: (this: EventTarget, event: T) => void,
 ): EventListener {
   return handler as unknown as EventListener;
 }
@@ -95,25 +103,27 @@ export function createEventListener<T extends Event = Event>(
  * Validate that global object has required properties
  */
 export function isGlobalLike(obj: unknown): obj is typeof globalThis {
-  if (obj === null || typeof obj !== 'object') {
+  if (obj === null || typeof obj !== "object") {
     return false;
   }
 
   const objRecord = obj as Record<string, unknown>;
   return (
-    typeof objRecord.requestIdleCallback === 'function' ||
-    typeof objRecord.setTimeout === 'function'
+    typeof objRecord.requestIdleCallback === "function" ||
+    typeof objRecord.setTimeout === "function"
   );
 }
 
 /**
  * Check if GM_info object has valid script info
  */
-export function isGMUserScriptInfo(obj: unknown): obj is { scriptHandler?: string } {
-  if (obj === null || typeof obj !== 'object') {
+export function isGMUserScriptInfo(
+  obj: unknown,
+): obj is { scriptHandler?: string } {
+  if (obj === null || typeof obj !== "object") {
     return false;
   }
 
   const objRecord = obj as Record<string, unknown>;
-  return 'scriptHandler' in objRecord || Object.keys(objRecord).length > 0;
+  return "scriptHandler" in objRecord || Object.keys(objRecord).length > 0;
 }

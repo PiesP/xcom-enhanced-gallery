@@ -1,6 +1,10 @@
-import { LANGUAGE_CODES, type BaseLanguageCode, type LanguageStrings } from './language-types';
-import { DEFAULT_LANGUAGE, TRANSLATION_REGISTRY } from './translation-registry';
-import { collectTranslationKeys } from '@shared/i18n/translation-utils';
+import {
+  LANGUAGE_CODES,
+  type BaseLanguageCode,
+  type LanguageStrings,
+} from "./language-types";
+import { DEFAULT_LANGUAGE, TRANSLATION_REGISTRY } from "./translation-registry";
+import { collectTranslationKeys } from "@shared/i18n/translation-utils";
 
 export type LanguageIntegrityReport = {
   missing: Record<BaseLanguageCode, string[]>;

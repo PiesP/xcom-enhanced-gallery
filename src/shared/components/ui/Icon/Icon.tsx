@@ -3,7 +3,7 @@
  * Applies the design-token defaults while keeping semantics explicit.
  */
 
-import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
+import type { ComponentChildren, JSXElement } from "@shared/external/vendors";
 
 export interface IconProps {
   /**
@@ -49,7 +49,7 @@ export interface IconProps {
    * @default undefined
    * @example 'aria-label'="Close button"
    */
-  'aria-label'?: string;
+  "aria-label"?: string;
 
   /**
    * Additional SVG attributes (stroke-width, fill, etc.)
@@ -66,33 +66,33 @@ export interface IconProps {
 }
 
 export function Icon({
-  size = 'var(--xeg-icon-size)',
-  className = '',
+  size = "var(--xeg-icon-size)",
+  className = "",
   children,
-  'aria-label': ariaLabel,
+  "aria-label": ariaLabel,
   ...otherProps
 }: IconProps): JSXElement {
   const accessibilityProps: Record<string, string> = {};
   if (ariaLabel) {
-    accessibilityProps.role = 'img';
-    accessibilityProps['aria-label'] = ariaLabel;
+    accessibilityProps.role = "img";
+    accessibilityProps["aria-label"] = ariaLabel;
   } else {
-    accessibilityProps['aria-hidden'] = 'true';
+    accessibilityProps["aria-hidden"] = "true";
   }
 
-  const sizeValue = typeof size === 'number' ? `${size}px` : size;
+  const sizeValue = typeof size === "number" ? `${size}px` : size;
 
   return (
     <svg
-      xmlns='http://www.w3.org/2000/svg'
+      xmlns="http://www.w3.org/2000/svg"
       width={sizeValue}
       height={sizeValue}
-      viewBox='0 0 24 24'
-      fill='none'
-      stroke='var(--xeg-icon-color, currentColor)'
-      stroke-width='var(--xeg-icon-stroke-width)'
-      stroke-linecap='round'
-      stroke-linejoin='round'
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="var(--xeg-icon-color, currentColor)"
+      stroke-width="var(--xeg-icon-stroke-width)"
+      stroke-linecap="round"
+      stroke-linejoin="round"
       class={className}
       {...accessibilityProps}
       {...otherProps}

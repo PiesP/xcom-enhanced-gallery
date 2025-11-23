@@ -25,13 +25,13 @@
     "fetch-timeout": 60000
   },
   "scripts": {
-    "build": "npm run clean && vite build",
+    "build": "npm run clean && vite build --mode development && vite build",
     "build:dev": "vite build --mode development",
     "clean": "rimraf dist",
-    "check": "run-s tokens:types typecheck lint imports:guard styles:guard test:unit",
+    "check": "run-s deps:check tokens:types typecheck lint:fix imports:guard styles:guard test:unit",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint src --fix",
+    "lint:fix": "eslint src --report-unused-disable-directives --max-warnings 0 --fix",
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -42,6 +42,7 @@
     "tokens:types": "tsx ./scripts/generate-design-token-types.ts",
     "imports:guard": "tsx ./scripts/validate-relative-imports.ts",
     "styles:guard": "tsx ./scripts/validate-style-imports.ts",
+    "prebuild": "npm run check",
     "prepare": "husky"
   },
   "dependencies": {

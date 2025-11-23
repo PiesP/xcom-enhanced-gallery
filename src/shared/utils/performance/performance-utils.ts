@@ -27,7 +27,7 @@ export class Debouncer<T extends unknown[] = unknown[]> {
    */
   constructor(
     private readonly fn: (...args: T) => void,
-    private readonly delay: number
+    private readonly delay: number,
   ) {}
 
   /**
@@ -43,7 +43,7 @@ export class Debouncer<T extends unknown[] = unknown[]> {
           this.fn(...this.lastArgs);
           this.lastArgs = null;
         }
-      }, this.delay)
+      }, this.delay),
     );
   }
 
@@ -96,7 +96,7 @@ export class Debouncer<T extends unknown[] = unknown[]> {
  */
 export function createDebouncer<T extends unknown[]>(
   fn: (...args: T) => void,
-  delay: number
+  delay: number,
 ): Debouncer<T> {
   return new Debouncer(fn, delay);
 }

@@ -3,13 +3,14 @@
  * @description Minimal runtime token discovery used by shared services layer
  */
 
-import { logger } from '@shared/logging';
+import { logger } from "@shared/logging";
 
 // Known static bearer token for X.com (Twitter) web client
 // This token has been stable for years and is used by the official web client
-const WEB_CLIENT_BEARER_TOKEN = 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
+const WEB_CLIENT_BEARER_TOKEN =
+  "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
 
-export type TokenSource = 'constant' | 'script' | 'unknown';
+export type TokenSource = "constant" | "script" | "unknown";
 
 export interface TokenExtractionResult {
   success: boolean;
@@ -30,7 +31,7 @@ export class TwitterTokenExtractor {
 
   async initialize(): Promise<void> {
     this.initialized = true;
-    logger.debug('TwitterTokenExtractor initialized (using static token)');
+    logger.debug("TwitterTokenExtractor initialized (using static token)");
   }
 
   isInitialized(): boolean {
@@ -49,8 +50,8 @@ export class TwitterTokenExtractor {
     return {
       success: true,
       token: WEB_CLIENT_BEARER_TOKEN,
-      source: 'constant',
-      timestamp: Date.now()
+      source: "constant",
+      timestamp: Date.now(),
     };
   }
 

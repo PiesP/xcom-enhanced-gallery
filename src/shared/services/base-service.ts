@@ -103,8 +103,8 @@
  * @see {@link ARCHITECTURE.md} for Phase 309 Service Layer details
  */
 
-import { logger } from '@shared/logging';
-import type { BaseService } from '@shared/types/app.types';
+import { logger } from "@shared/logging";
+import type { BaseService } from "@shared/types/app.types";
 
 /**
  * Base Service Implementation - Abstract service lifecycle base class

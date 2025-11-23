@@ -21,8 +21,8 @@ export interface TestEnvironmentConfig {
 }
 
 const DETECTED_VITEST =
-  typeof globalThis !== 'undefined' &&
-  typeof (globalThis as Record<string, unknown>).__VITEST__ !== 'undefined';
+  typeof globalThis !== "undefined" &&
+  typeof (globalThis as Record<string, unknown>).__VITEST__ !== "undefined";
 
 const DEFAULT_TEST_OPTIONS: TestModeOptions = {
   mockServices: true,
@@ -51,7 +51,9 @@ export function getTestConfig(): TestEnvironmentConfig {
   return testConfig;
 }
 
-export function setTestConfig(config: Partial<TestEnvironmentConfig>): TestEnvironmentConfig {
+export function setTestConfig(
+  config: Partial<TestEnvironmentConfig>,
+): TestEnvironmentConfig {
   testConfig = {
     ...testConfig,
     ...config,
@@ -73,7 +75,9 @@ export function resetTestConfig(): TestEnvironmentConfig {
   return testConfig;
 }
 
-export function enableTestMode(options?: Partial<TestModeOptions>): TestEnvironmentConfig {
+export function enableTestMode(
+  options?: Partial<TestModeOptions>,
+): TestEnvironmentConfig {
   return setTestConfig({
     enabled: true,
     options: {

@@ -7,32 +7,32 @@
  * Removed Motion One library dependency and optimized bundle size
  */
 
-import { logger } from '@shared/logging';
-import { getStyleRegistry } from '@shared/services/style-registry';
-import { CSS } from '@/constants';
-import { globalTimerManager } from './timer-management';
+import { logger } from "@shared/logging";
+import { getStyleRegistry } from "@shared/services/style-registry";
+import { CSS } from "@/constants";
+import { globalTimerManager } from "./timer-management";
 
 // CSS animation variables and constants
 export const ANIMATION_CONSTANTS = {
   DURATION_FAST: 150,
   DURATION_NORMAL: 300,
   DURATION_SLOW: 500,
-  EASING_EASE_OUT: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  EASING_EASE_IN: 'cubic-bezier(0.4, 0, 1, 1)',
-  EASING_EASE_IN_OUT: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  EASING_EASE_OUT: "cubic-bezier(0.4, 0, 0.2, 1)",
+  EASING_EASE_IN: "cubic-bezier(0.4, 0, 1, 1)",
+  EASING_EASE_IN_OUT: "cubic-bezier(0.4, 0, 0.2, 1)",
   STAGGER_DELAY: 50,
 } as const;
 
 // CSS class constants
 export const ANIMATION_CLASSES = {
-  FADE_IN: 'animate-fade-in',
-  FADE_OUT: 'animate-fade-out',
-  SLIDE_IN_BOTTOM: 'animate-slide-in-bottom',
-  SLIDE_OUT_TOP: 'animate-slide-out-top',
-  SCALE_IN: 'animate-scale-in',
-  SCALE_OUT: 'animate-scale-out',
-  IMAGE_LOAD: 'animate-image-load',
-  REDUCED_MOTION: 'reduced-motion',
+  FADE_IN: "animate-fade-in",
+  FADE_OUT: "animate-fade-out",
+  SLIDE_IN_BOTTOM: "animate-slide-in-bottom",
+  SLIDE_OUT_TOP: "animate-slide-out-top",
+  SCALE_IN: "animate-scale-in",
+  SCALE_OUT: "animate-scale-out",
+  IMAGE_LOAD: "animate-image-load",
+  REDUCED_MOTION: "reduced-motion",
 } as const;
 
 /**
@@ -48,20 +48,20 @@ export interface CSSAnimationOptions {
 /**
  * Inject CSS keyframes into DOM
  */
-const ANIMATION_STYLE_ID = 'xeg-animation-styles';
-const ANIMATION_LAYER = 'xeg.utilities';
+const ANIMATION_STYLE_ID = "xeg-animation-styles";
+const ANIMATION_LAYER = "xeg.utilities";
 const GALLERY_SCOPE_HOSTS = CSS.SCOPES.HOSTS;
 
 const styleRegistry = getStyleRegistry();
 
 const KEYFRAMES = {
-  FADE_IN: 'xeg-fade-in',
-  FADE_OUT: 'xeg-fade-out',
-  SLIDE_IN_BOTTOM: 'xeg-slide-in-bottom',
-  SLIDE_OUT_TOP: 'xeg-slide-out-top',
-  SCALE_IN: 'xeg-scale-in',
-  SCALE_OUT: 'xeg-scale-out',
-  IMAGE_LOAD: 'xeg-image-load',
+  FADE_IN: "xeg-fade-in",
+  FADE_OUT: "xeg-fade-out",
+  SLIDE_IN_BOTTOM: "xeg-slide-in-bottom",
+  SLIDE_OUT_TOP: "xeg-slide-out-top",
+  SCALE_IN: "xeg-scale-in",
+  SCALE_OUT: "xeg-scale-out",
+  IMAGE_LOAD: "xeg-image-load",
 } as const;
 
 export function injectAnimationStyles(): void {
@@ -71,12 +71,12 @@ export function injectAnimationStyles(): void {
 
   const cssText = buildScopedAnimationCss();
   styleRegistry.registerStyle({ id: ANIMATION_STYLE_ID, cssText });
-  logger.debug('CSS animation styles registered via StyleRegistry.');
+  logger.debug("CSS animation styles registered via StyleRegistry.");
 }
 
 function buildScopedAnimationCss(): string {
   const scopedClass = (className: string): string =>
-    GALLERY_SCOPE_HOSTS.map(scope => `${scope} .${className}`).join(', ');
+    GALLERY_SCOPE_HOSTS.map((scope) => `${scope} .${className}`).join(", ");
   const reducedMotionSelectors = [
     ANIMATION_CLASSES.FADE_IN,
     ANIMATION_CLASSES.FADE_OUT,
@@ -87,7 +87,7 @@ function buildScopedAnimationCss(): string {
     ANIMATION_CLASSES.IMAGE_LOAD,
   ]
     .map(scopedClass)
-    .join(',\n      ');
+    .join(",\n      ");
 
   return `
 @layer ${ANIMATION_LAYER} {
@@ -150,21 +150,21 @@ function buildScopedAnimationCss(): string {
  */
 export async function animateGalleryEnter(
   element: Element,
-  options: CSSAnimationOptions = {}
+  options: CSSAnimationOptions = {},
 ): Promise<void> {
-  return new Promise<void>(resolve => {
+  return new Promise<void>((resolve) => {
     try {
       const handleAnimationEnd = () => {
-        element.removeEventListener('animationend', handleAnimationEnd);
+        element.removeEventListener("animationend", handleAnimationEnd);
         element.classList.remove(ANIMATION_CLASSES.FADE_IN);
         options.onComplete?.();
         resolve();
       };
 
-      element.addEventListener('animationend', handleAnimationEnd);
+      element.addEventListener("animationend", handleAnimationEnd);
       element.classList.add(ANIMATION_CLASSES.FADE_IN);
     } catch (error) {
-      logger.warn('Gallery entry animation failed:', error);
+      logger.warn("Gallery entry animation failed:", error);
       resolve();
     }
   });
@@ -175,21 +175,21 @@ export async function animateGalleryEnter(
  */
 export async function animateGalleryExit(
   element: Element,
-  options: CSSAnimationOptions = {}
+  options: CSSAnimationOptions = {},
 ): Promise<void> {
-  return new Promise<void>(resolve => {
+  return new Promise<void>((resolve) => {
     try {
       const handleAnimationEnd = () => {
-        element.removeEventListener('animationend', handleAnimationEnd);
+        element.removeEventListener("animationend", handleAnimationEnd);
         element.classList.remove(ANIMATION_CLASSES.FADE_OUT);
         options.onComplete?.();
         resolve();
       };
 
-      element.addEventListener('animationend', handleAnimationEnd);
+      element.addEventListener("animationend", handleAnimationEnd);
       element.classList.add(ANIMATION_CLASSES.FADE_OUT);
     } catch (error) {
-      logger.warn('Gallery exit animation failed:', error);
+      logger.warn("Gallery exit animation failed:", error);
       resolve();
     }
   });
@@ -198,8 +198,10 @@ export async function animateGalleryExit(
 /**
  * Image items entry animation (stagger effect, CSS-based)
  */
-export async function animateImageItemsEnter(elements: Element[]): Promise<void> {
-  return new Promise<void>(resolve => {
+export async function animateImageItemsEnter(
+  elements: Element[],
+): Promise<void> {
+  return new Promise<void>((resolve) => {
     try {
       let completedCount = 0;
       const totalElements = elements.length;
@@ -215,7 +217,7 @@ export async function animateImageItemsEnter(elements: Element[]): Promise<void>
         // Use global timer manager for unified test/cleanup path
         globalTimerManager.setTimeout(() => {
           const handleAnimationEnd = () => {
-            element.removeEventListener('animationend', handleAnimationEnd);
+            element.removeEventListener("animationend", handleAnimationEnd);
             element.classList.remove(ANIMATION_CLASSES.SLIDE_IN_BOTTOM);
             completedCount++;
 
@@ -224,12 +226,12 @@ export async function animateImageItemsEnter(elements: Element[]): Promise<void>
             }
           };
 
-          element.addEventListener('animationend', handleAnimationEnd);
+          element.addEventListener("animationend", handleAnimationEnd);
           element.classList.add(ANIMATION_CLASSES.SLIDE_IN_BOTTOM);
         }, delay);
       });
     } catch (error) {
-      logger.warn('Image items entry animation failed:', error);
+      logger.warn("Image items entry animation failed:", error);
       resolve();
     }
   });
@@ -239,15 +241,15 @@ export async function animateImageItemsEnter(elements: Element[]): Promise<void>
  * Animation cleanup utility
  */
 export function cleanupAnimations(element: Element): void {
-  Object.values(ANIMATION_CLASSES).forEach(className => {
+  Object.values(ANIMATION_CLASSES).forEach((className) => {
     element.classList.remove(className);
   });
 
   const htmlElement = element as HTMLElement;
-  htmlElement.style.animation = '';
+  htmlElement.style.animation = "";
 
   try {
-    htmlElement.style.removeProperty('--animation-duration');
+    htmlElement.style.removeProperty("--animation-duration");
   } catch {
     // Ignore in mock environments without removeProperty
   }

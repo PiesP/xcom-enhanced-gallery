@@ -5,10 +5,10 @@
  * @updated Phase 2025-10-27: Storage adapter moved to shared/services/storage
  */
 
-export { SettingsService } from './settings-service';
+export { SettingsService } from "./settings-service";
 
 // TwitterTokenExtractor is now imported from shared/services/token-extraction
 export type {
   TokenExtractionResult,
   TokenValidationResult,
-} from '@shared/services/token-extraction/twitter-token-extractor';
+} from "@shared/services/token-extraction/twitter-token-extractor";

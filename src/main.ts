@@ -1,19 +1,19 @@
-import { logger } from '@/shared/logging';
-import { initializeEnvironment } from '@/bootstrap/environment';
-import { wireGlobalEvents } from '@/bootstrap/events';
-import type { Unregister } from '@/bootstrap/events';
-import type { IGalleryApp } from '@shared/container/app-container';
-import { initializeCriticalSystems } from '@/bootstrap/critical-systems';
-import { initializeDevTools } from '@/bootstrap/dev-tools';
-import { registerFeatureServicesLazy } from '@/bootstrap/features';
-import { initializeGalleryApp } from '@/bootstrap/gallery-init';
-import { warmupNonCriticalServices } from '@shared/container/service-accessors';
-import { CoreService } from '@shared/services/core';
-import { cleanupVendors } from './shared/external/vendors';
-import { globalTimerManager } from '@shared/utils/timer-management';
-import { runAfterWindowLoad } from '@shared/utils/window-load';
-import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
-import { createAppConfig } from '@/constants/app-config';
+import { logger } from "@/shared/logging";
+import { initializeEnvironment } from "@/bootstrap/environment";
+import { wireGlobalEvents } from "@/bootstrap/events";
+import type { Unregister } from "@/bootstrap/events";
+import type { IGalleryApp } from "@shared/container/app-container";
+import { initializeCriticalSystems } from "@/bootstrap/critical-systems";
+import { initializeDevTools } from "@/bootstrap/dev-tools";
+import { registerFeatureServicesLazy } from "@/bootstrap/features";
+import { initializeGalleryApp } from "@/bootstrap/gallery-init";
+import { warmupNonCriticalServices } from "@shared/container/service-accessors";
+import { CoreService } from "@shared/services/core";
+import { cleanupVendors } from "./shared/external/vendors";
+import { globalTimerManager } from "@shared/utils/timer-management";
+import { runAfterWindowLoad } from "@shared/utils/window-load";
+import { mutateDevNamespace } from "@shared/devtools/dev-namespace";
+import { createAppConfig } from "@/constants/app-config";
 
 // Global styles
 // Global styles are loaded at runtime to avoid import-time side effects.
@@ -22,7 +22,7 @@ import { createAppConfig } from '@/constants/app-config';
 // Vendor initialization moved to startApplication
 
 const isDevEnvironment = import.meta.env.DEV;
-const isTestMode = import.meta.env.MODE === 'test';
+const isTestMode = import.meta.env.MODE === "test";
 
 type CleanupTask = () => Promise<void> | void;
 type CleanupLogger = (message: string, error: unknown) => void;
@@ -60,7 +60,7 @@ function tearDownGlobalEventHandlers(): void {
     teardown();
   } catch (error) {
     if (isDevEnvironment) {
-      logger.debug('[events] Error while tearing down global handlers', error);
+      logger.debug("[events] Error while tearing down global handlers", error);
     }
   }
 }
@@ -68,7 +68,7 @@ function tearDownGlobalEventHandlers(): void {
 async function runOptionalCleanup(
   label: string,
   task: CleanupTask,
-  log: CleanupLogger = warnCleanupLog
+  log: CleanupLogger = warnCleanupLog,
 ): Promise<void> {
   try {
     await task();
@@ -89,7 +89,7 @@ type DevMainNamespace = {
  * Phase 1.1: Helper function to eliminate duplicate code
  */
 function setupDevNamespace(galleryAppInstance?: IGalleryApp | null): void {
-  mutateDevNamespace(namespace => {
+  mutateDevNamespace((namespace) => {
     const mainNamespace =
       (namespace.main as DevMainNamespace | undefined) ??
       (namespace.main = {
@@ -136,29 +136,36 @@ async function executeBootstrapStage(stage: BootstrapStage): Promise<void> {
 async function initializeInfrastructure(): Promise<void> {
   try {
     await initializeEnvironment();
-    logger.debug('✅ Vendor library initialization complete');
+    logger.debug("✅ Vendor library initialization complete");
   } catch (error) {
-    logger.error('❌ Infrastructure initialization failed:', error);
+    logger.error("❌ Infrastructure initialization failed:", error);
     throw error;
   }
 }
 
 async function initializeBaseServicesStage(): Promise<void> {
   try {
-    const { initializeCoreBaseServices } = await import('@/bootstrap/base-services');
+    const { initializeCoreBaseServices } = await import(
+      "@/bootstrap/base-services"
+    );
     await initializeCoreBaseServices();
-    logger.debug('✅ Base services initialization complete');
+    logger.debug("✅ Base services initialization complete");
   } catch (error) {
-    logger.warn('⚠️ Base services initialization failed:', error);
+    logger.warn("⚠️ Base services initialization failed:", error);
   }
 }
 
 async function applyInitialThemeSetting(): Promise<void> {
   try {
-    const { getThemeService } = await import('@shared/container/service-accessors');
+    const { getThemeService } = await import(
+      "@shared/container/service-accessors"
+    );
     const themeService = getThemeService();
 
-    if (typeof themeService.isInitialized === 'function' && !themeService.isInitialized()) {
+    if (
+      typeof themeService.isInitialized === "function" &&
+      !themeService.isInitialized()
+    ) {
       await themeService.initialize();
     }
 
@@ -169,7 +176,7 @@ async function applyInitialThemeSetting(): Promise<void> {
       logger.debug(`[theme-sync] Applied saved theme: ${savedSetting}`);
     }
   } catch (error) {
-    logger.warn('[theme-sync] Initial theme application skipped:', error);
+    logger.warn("[theme-sync] Initial theme application skipped:", error);
   }
 }
 
@@ -180,11 +187,11 @@ async function applyInitialThemeSetting(): Promise<void> {
 function initializeNonCriticalSystems(): void {
   // Lean mode: execute immediately without idle scheduling or test mode branching
   try {
-    logger.info('Starting non-critical system initialization');
+    logger.info("Starting non-critical system initialization");
     warmupNonCriticalServices();
-    logger.info('✅ Non-critical system initialization complete');
+    logger.info("✅ Non-critical system initialization complete");
   } catch (error) {
-    logger.warn('Error during non-critical system initialization:', error);
+    logger.warn("Error during non-critical system initialization:", error);
   }
 }
 
@@ -195,12 +202,14 @@ function setupGlobalEventHandlers(): void {
   tearDownGlobalEventHandlers();
 
   globalEventTeardown = wireGlobalEvents(() => {
-    cleanup().catch(error => logger.error('Error during page unload cleanup:', error));
+    cleanup().catch((error) =>
+      logger.error("Error during page unload cleanup:", error),
+    );
   });
 }
 
 async function loadGlobalStyles(): Promise<void> {
-  await import('./styles/globals');
+  await import("./styles/globals");
 }
 
 async function initializeDevToolsIfNeeded(): Promise<void> {
@@ -213,7 +222,7 @@ async function initializeDevToolsIfNeeded(): Promise<void> {
 
 async function initializeGalleryIfPermitted(): Promise<void> {
   if (isTestMode) {
-    logger.debug('Gallery initialization skipped (test mode)');
+    logger.debug("Gallery initialization skipped (test mode)");
     return;
   }
 
@@ -221,16 +230,16 @@ async function initializeGalleryIfPermitted(): Promise<void> {
 }
 
 const bootstrapStages: BootstrapStage[] = [
-  { label: 'Global styles', run: loadGlobalStyles },
-  { label: 'Developer tooling', run: initializeDevToolsIfNeeded },
-  { label: 'Infrastructure', run: initializeInfrastructure },
-  { label: 'Critical systems', run: initializeCriticalSystems },
-  { label: 'Base services', run: initializeBaseServicesStage },
-  { label: 'Theme synchronization', run: applyInitialThemeSetting },
-  { label: 'Feature service registration', run: registerFeatureServicesLazy },
-  { label: 'Global event wiring', run: () => setupGlobalEventHandlers() },
-  { label: 'Gallery initialization', run: initializeGalleryIfPermitted },
-  { label: 'Non-critical systems', run: () => initializeNonCriticalSystems() },
+  { label: "Global styles", run: loadGlobalStyles },
+  { label: "Developer tooling", run: initializeDevToolsIfNeeded },
+  { label: "Infrastructure", run: initializeInfrastructure },
+  { label: "Critical systems", run: initializeCriticalSystems },
+  { label: "Base services", run: initializeBaseServicesStage },
+  { label: "Theme synchronization", run: applyInitialThemeSetting },
+  { label: "Feature service registration", run: registerFeatureServicesLazy },
+  { label: "Global event wiring", run: () => setupGlobalEventHandlers() },
+  { label: "Gallery initialization", run: initializeGalleryIfPermitted },
+  { label: "Non-critical systems", run: () => initializeNonCriticalSystems() },
 ];
 
 function triggerPreloadStrategy(): void {
@@ -240,10 +249,10 @@ function triggerPreloadStrategy(): void {
 
   void runAfterWindowLoad(async () => {
     try {
-      const { executePreloadStrategy } = await import('@/bootstrap/preload');
+      const { executePreloadStrategy } = await import("@/bootstrap/preload");
       await executePreloadStrategy();
     } catch (error) {
-      logger.warn('[Phase 326] Error executing preload strategy:', error);
+      logger.warn("[Phase 326] Error executing preload strategy:", error);
     }
   });
 }
@@ -253,10 +262,10 @@ function triggerPreloadStrategy(): void {
  */
 async function cleanup(): Promise<void> {
   try {
-    logger.info('🧹 Starting application cleanup');
+    logger.info("🧹 Starting application cleanup");
 
     tearDownGlobalEventHandlers();
-    await runOptionalCleanup('Gallery cleanup', async () => {
+    await runOptionalCleanup("Gallery cleanup", async () => {
       if (!lifecycleState.galleryApp) {
         return;
       }
@@ -266,60 +275,67 @@ async function cleanup(): Promise<void> {
       setupDevNamespace(null);
     });
 
-    await runOptionalCleanup('CoreService cleanup', () => {
+    await runOptionalCleanup("CoreService cleanup", () => {
       CoreService.getInstance().cleanup();
     });
 
-    await runOptionalCleanup('Vendor cleanup', () => {
+    await runOptionalCleanup("Vendor cleanup", () => {
       cleanupVendors();
     });
 
     await runOptionalCleanup(
-      'DOMCache cleanup',
+      "DOMCache cleanup",
       async () => {
-        const { globalDOMCache } = await import('@shared/dom/dom-cache');
+        const { globalDOMCache } = await import("@shared/dom/dom-cache");
         globalDOMCache?.dispose();
       },
-      debugCleanupLog
+      debugCleanupLog,
     );
 
-    await runOptionalCleanup('Global timer cleanup', () => {
+    await runOptionalCleanup("Global timer cleanup", () => {
       globalTimerManager.cleanup();
     });
 
     await runOptionalCleanup(
-      'Global error handler cleanup',
+      "Global error handler cleanup",
       async () => {
-        const { GlobalErrorHandler } = await import('@shared/error');
+        const { GlobalErrorHandler } = await import("@shared/error");
         GlobalErrorHandler.getInstance().destroy();
       },
-      debugCleanupLog
+      debugCleanupLog,
     );
 
     if (isDevEnvironment) {
       await runOptionalCleanup(
-        '[cleanup] Event listener status check',
+        "[cleanup] Event listener status check",
         async () => {
-          const { getEventListenerStatus } = await import('@shared/utils/events');
+          const { getEventListenerStatus } = await import(
+            "@shared/utils/events"
+          );
           const status = getEventListenerStatus();
           if (status.total > 0) {
-            logger.warn('[cleanup] ⚠️ Warning: uncleared event listeners remain:', {
-              total: status.total,
-              byType: status.byType,
-              byContext: status.byContext,
-            });
+            logger.warn(
+              "[cleanup] ⚠️ Warning: uncleared event listeners remain:",
+              {
+                total: status.total,
+                byType: status.byType,
+                byContext: status.byContext,
+              },
+            );
           } else {
-            logger.debug('[cleanup] ✅ All event listeners cleared successfully');
+            logger.debug(
+              "[cleanup] ✅ All event listeners cleared successfully",
+            );
           }
         },
-        debugCleanupLog
+        debugCleanupLog,
       );
     }
 
     lifecycleState.started = false;
-    logger.info('✅ Application cleanup complete');
+    logger.info("✅ Application cleanup complete");
   } catch (error) {
-    logger.error('❌ Error during application cleanup:', error);
+    logger.error("❌ Error during application cleanup:", error);
     throw error;
   }
 }
@@ -344,17 +360,17 @@ async function cleanup(): Promise<void> {
  */
 async function startApplication(): Promise<void> {
   if (lifecycleState.started) {
-    logger.debug('Application: Already started');
+    logger.debug("Application: Already started");
     return;
   }
 
   if (lifecycleState.startPromise) {
-    logger.debug('Application: Start in progress - reusing promise');
+    logger.debug("Application: Start in progress - reusing promise");
     return lifecycleState.startPromise;
   }
 
   lifecycleState.startPromise = (async () => {
-    logger.info('🚀 Starting X.com Enhanced Gallery...');
+    logger.info("🚀 Starting X.com Enhanced Gallery...");
 
     await runBootstrapStages();
 
@@ -362,13 +378,16 @@ async function startApplication(): Promise<void> {
 
     lifecycleState.started = true;
 
-    logger.info('✅ Application initialization complete');
+    logger.info("✅ Application initialization complete");
 
     // Phase 290: Namespace isolation - provide single namespace for global access in dev environment
     setupDevNamespace(lifecycleState.galleryApp);
   })()
-    .catch(error => {
-      logger.error('❌ Application initialization failed (lean mode, no retry):', error);
+    .catch((error) => {
+      logger.error(
+        "❌ Application initialization failed (lean mode, no retry):",
+        error,
+      );
     })
     .finally(() => {
       lifecycleState.startPromise = null;
@@ -382,14 +401,14 @@ async function startApplication(): Promise<void> {
  */
 async function initializeGallery(): Promise<void> {
   try {
-    logger.debug('🎯 Starting gallery immediate initialization');
+    logger.debug("🎯 Starting gallery immediate initialization");
 
     // Phase 2.1: Initialization via bootstrap module
     lifecycleState.galleryApp = await initializeGalleryApp();
 
-    logger.debug('✅ Gallery immediate initialization complete');
+    logger.debug("✅ Gallery immediate initialization complete");
   } catch (error) {
-    logger.error('❌ Gallery immediate initialization failed:', error);
+    logger.error("❌ Gallery immediate initialization failed:", error);
     throw error;
   }
 }

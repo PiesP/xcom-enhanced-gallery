@@ -16,8 +16,13 @@
  * @internal Phase 410 feature, used by BulkDownloadService
  */
 
-import { logger } from '@shared/logging';
-import { calculateCRC32, encodeUtf8, writeUint16LE, writeUint32LE } from './zip-utils';
+import { logger } from "@shared/logging";
+import {
+  calculateCRC32,
+  encodeUtf8,
+  writeUint16LE,
+  writeUint32LE,
+} from "./zip-utils";
 
 /**
  * Internal file entry metadata
@@ -117,7 +122,11 @@ export class StreamingZipWriter {
     // 오프셋 업데이트
     this.currentOffset += localHeader.length + data.length;
 
-    logger.debug('[StreamingZipWriter] File added:', filename, `(${data.length} bytes)`);
+    logger.debug(
+      "[StreamingZipWriter] File added:",
+      filename,
+      `(${data.length} bytes)`,
+    );
   }
 
   /**
@@ -173,10 +182,14 @@ export class StreamingZipWriter {
     ]);
 
     // 최종 ZIP 조립
-    const zipBytes = concatenateUint8Arrays([...this.chunks, centralDir, endOfCentralDir]);
+    const zipBytes = concatenateUint8Arrays([
+      ...this.chunks,
+      centralDir,
+      endOfCentralDir,
+    ]);
 
     logger.info(
-      `[StreamingZipWriter] ZIP finalized: ${zipBytes.length} bytes, ${this.entries.length} files`
+      `[StreamingZipWriter] ZIP finalized: ${zipBytes.length} bytes, ${this.entries.length} files`,
     );
 
     return zipBytes;

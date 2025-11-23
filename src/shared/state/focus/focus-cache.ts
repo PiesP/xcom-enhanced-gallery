@@ -90,13 +90,14 @@ export function createItemCache(): ItemCache {
 
 export function isItemVisibleEnough(
   entry: IntersectionObserverEntry | null,
-  minimumRatio: number = 0.05
+  minimumRatio: number = 0.05,
 ): boolean {
   if (!entry?.isIntersecting) return false;
   return entry.intersectionRatio >= minimumRatio;
 }
 
 export function calculateTopDistance(entry: IntersectionObserverEntry): number {
-  const visibleTop = entry.intersectionRect?.top ?? entry.boundingClientRect.top;
+  const visibleTop =
+    entry.intersectionRect?.top ?? entry.boundingClientRect.top;
   return Math.abs(visibleTop);
 }

@@ -1,4 +1,4 @@
-import type { ViewMode, FitMode } from '@shared/types';
+import type { ViewMode, FitMode } from "@shared/types";
 
 type Accessor<T> = () => T;
 
@@ -30,13 +30,13 @@ export interface ToolbarProps {
   isDownloading?: MaybeAccessor<boolean | undefined>;
   disabled?: MaybeAccessor<boolean | undefined>;
   className?: string | undefined;
-  position?: 'top' | 'bottom' | 'left' | 'right' | undefined;
+  position?: "top" | "bottom" | "left" | "right" | undefined;
 
-  'aria-label'?: string | undefined;
-  'aria-describedby'?: string | undefined;
-  role?: 'toolbar' | undefined;
+  "aria-label"?: string | undefined;
+  "aria-describedby"?: string | undefined;
+  role?: "toolbar" | undefined;
   tabIndex?: number | undefined;
-  'data-testid'?: string | undefined;
+  "data-testid"?: string | undefined;
 
   onFocus?: ((event: FocusEvent) => void) | undefined;
   onBlur?: ((event: FocusEvent) => void) | undefined;

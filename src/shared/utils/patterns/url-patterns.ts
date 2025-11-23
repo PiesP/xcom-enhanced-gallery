@@ -5,7 +5,7 @@
  * Phase 129 optimized: removed unused methods to reduce bundle size.
  */
 
-import { logger } from '@shared/logging';
+import { logger } from "@shared/logging";
 
 /**
  * Utility object for URL pattern matching and extraction
@@ -27,7 +27,7 @@ export const URLPatterns = {
    */
   extractTweetId(url: string): string | null {
     try {
-      if (!url || typeof url !== 'string') {
+      if (!url || typeof url !== "string") {
         return null;
       }
 
@@ -39,7 +39,7 @@ export const URLPatterns = {
       const [, , tweetId] = match;
       return tweetId || null;
     } catch (error) {
-      logger.error('Failed to extract tweet ID:', error);
+      logger.error("Failed to extract tweet ID:", error);
       return null;
     }
   },

@@ -79,8 +79,8 @@
  *
  * @see useToolbarState - Full hook documentation
  */
-export { useToolbarState } from './use-toolbar-state';
-export type { ToolbarState, ToolbarActions } from '@shared/types/toolbar.types';
+export { useToolbarState } from "./use-toolbar-state";
+export type { ToolbarState, ToolbarActions } from "@shared/types/toolbar.types";
 
 /**
  * **useFocusTrap**: Focus trap for accessible modals and dialogs
@@ -90,13 +90,17 @@ export type { ToolbarState, ToolbarActions } from '@shared/types/toolbar.types';
  *
  * @see useFocusTrap - Full hook documentation
  */
-export { useFocusTrap, type FocusTrapOptions, type FocusTrapResult } from './use-focus-trap';
+export {
+  useFocusTrap,
+  type FocusTrapOptions,
+  type FocusTrapResult,
+} from "./use-focus-trap";
 
 export {
   useToolbarSettingsController,
   type UseToolbarSettingsControllerOptions,
   type ToolbarSettingsControllerResult,
-} from './toolbar/use-toolbar-settings-controller';
+} from "./toolbar/use-toolbar-settings-controller";
 
 // Phase 376: Removed hooks (archived history)
 /**

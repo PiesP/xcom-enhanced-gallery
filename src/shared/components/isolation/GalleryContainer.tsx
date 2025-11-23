@@ -1,6 +1,10 @@
-import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
-import { createClassName } from '@shared/utils/component-utils';
-import { EventManager } from '@shared/services/event-manager';
+import {
+  getSolid,
+  type ComponentChildren,
+  type JSXElement,
+} from "@shared/external/vendors";
+import { createClassName } from "@shared/utils/component-utils";
+import { EventManager } from "@shared/services/event-manager";
 
 // ============================================================================
 // Constants
@@ -10,7 +14,7 @@ import { EventManager } from '@shared/services/event-manager';
  * Symbol for storing dispose callback on container element
  * @description Prevents accidental overwrites and name collisions
  */
-const DISPOSE_SYMBOL = Symbol('xeg-gallery-container-dispose');
+const DISPOSE_SYMBOL = Symbol("xeg-gallery-container-dispose");
 
 // ============================================================================
 // Type Definitions
@@ -33,7 +37,11 @@ type HostElement = HTMLElement & {
   [DISPOSE_SYMBOL]?: () => void;
 };
 
-type GalleryRenderable = JSXElement | null | undefined | (() => JSXElement | null | undefined);
+type GalleryRenderable =
+  | JSXElement
+  | null
+  | undefined
+  | (() => JSXElement | null | undefined);
 
 // ============================================================================
 // Gallery Mounting and Unmounting
@@ -58,14 +66,17 @@ type GalleryRenderable = JSXElement | null | undefined | (() => JSXElement | nul
  * mountGallery(container, element);
  * ```
  */
-export function mountGallery(container: Element, element: GalleryRenderable): Element {
+export function mountGallery(
+  container: Element,
+  element: GalleryRenderable,
+): Element {
   const solid = getSolid();
   const host = container as HostElement;
 
   host[DISPOSE_SYMBOL]?.();
 
   const factory =
-    typeof element === 'function'
+    typeof element === "function"
       ? (element as () => JSXElement | null | undefined)
       : () => element ?? null;
 
@@ -135,7 +146,11 @@ export function GalleryContainer({
   className,
 }: GalleryContainerProps): JSXElement {
   const { createEffect, onCleanup } = getSolid();
-  const classes = createClassName('xeg-gallery-overlay', 'xeg-gallery-container', className);
+  const classes = createClassName(
+    "xeg-gallery-overlay",
+    "xeg-gallery-container",
+    className,
+  );
 
   // Setup keyboard event handling
   createEffect(() => {
@@ -145,14 +160,18 @@ export function GalleryContainer({
 
     // Register Escape key handler
     const eventManager = EventManager.getInstance();
-    const listenerId = eventManager.addListener(document, 'keydown', event => {
-      const keyboardEvent = event as KeyboardEvent;
-      if (keyboardEvent.key === 'Escape') {
-        keyboardEvent.preventDefault();
-        keyboardEvent.stopPropagation();
-        onClose();
-      }
-    });
+    const listenerId = eventManager.addListener(
+      document,
+      "keydown",
+      (event) => {
+        const keyboardEvent = event as KeyboardEvent;
+        if (keyboardEvent.key === "Escape") {
+          keyboardEvent.preventDefault();
+          keyboardEvent.stopPropagation();
+          onClose();
+        }
+      },
+    );
 
     // Cleanup listener on component unmount
     onCleanup(() => {
@@ -161,7 +180,7 @@ export function GalleryContainer({
   });
 
   return (
-    <div class={classes} data-xeg-gallery-container=''>
+    <div class={classes} data-xeg-gallery-container="">
       {children}
     </div>
   );

@@ -54,7 +54,9 @@ export const INITIAL_ITEM_SCROLL_STATE: ItemScrollState = {
  * @example
  * const state = createItemScrollState({ lastScrolledIndex: 5 });
  */
-export function createItemScrollState(overrides?: Partial<ItemScrollState>): ItemScrollState {
+export function createItemScrollState(
+  overrides?: Partial<ItemScrollState>,
+): ItemScrollState {
   return {
     ...INITIAL_ITEM_SCROLL_STATE,
     ...overrides,
@@ -79,7 +81,7 @@ export function createItemScrollState(overrides?: Partial<ItemScrollState>): Ite
  */
 export function updateItemScrollState(
   state: ItemScrollState,
-  updates: Partial<ItemScrollState>
+  updates: Partial<ItemScrollState>,
 ): ItemScrollState {
   return {
     ...state,
@@ -96,7 +98,9 @@ export function updateItemScrollState(
  * @param state - Current state
  * @returns ItemScrollState object with timer IDs cleaned up
  */
-export function clearItemScrollTimeouts(state: ItemScrollState): ItemScrollState {
+export function clearItemScrollTimeouts(
+  state: ItemScrollState,
+): ItemScrollState {
   return {
     ...state,
     scrollTimeoutId: null,

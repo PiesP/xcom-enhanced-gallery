@@ -27,39 +27,40 @@
  * ✅ Use barrel export: `import { getSolid } from '@shared/external/vendors'`
  */
 
-import { logger } from '@shared/logging';
-import { globalTimerManager } from '@shared/utils/timer-management';
+import { logger } from "@shared/logging";
+import { globalTimerManager } from "@shared/utils/timer-management";
 
 // 정적 import로 Solid.js 라이브러리를 안전하게 로드
 import {
-  createSignal,
+  batch,
+  createComponent,
+  createContext,
   createEffect,
   createMemo,
   createResource,
-  createContext,
-  useContext,
-  batch,
-  untrack,
-  on,
-  onMount,
-  onCleanup,
-  Show,
-  For,
-  Switch,
-  Match,
-  Index,
-  ErrorBoundary,
-  Suspense,
-  lazy,
-  children as resolveChildren,
-  mergeProps,
-  splitProps,
   createRoot,
-  createComponent,
-} from 'solid-js';
+  createSignal,
+  ErrorBoundary,
+  For,
+  Index,
+  lazy,
+  Match,
+  mergeProps,
+  on,
+  onCleanup,
+  onMount,
+  children as resolveChildren,
+  Show,
+  splitProps,
+  Suspense,
+  Switch,
+  untrack,
+  useContext,
+  type JSX,
+} from "solid-js";
 
-import { render } from 'solid-js/web';
-import { createStore, produce } from 'solid-js/store';
+import { createStore, produce } from "solid-js/store";
+import { render } from "solid-js/web";
 
 const URL_CLEANUP_TIMEOUT = 60000;
 
@@ -99,9 +100,9 @@ export interface SolidStoreAPI {
   produce: typeof produce;
 }
 
-export type JSXElement = import('solid-js').JSX.Element;
-export type VNode = import('solid-js').JSX.Element;
-export type ComponentChildren = import('solid-js').JSX.Element;
+export type JSXElement = JSX.Element;
+export type VNode = JSX.Element;
+export type ComponentChildren = JSX.Element;
 
 export interface NativeDownloadAPI {
   downloadBlob: (blob: Blob, filename: string) => void;
@@ -191,7 +192,7 @@ export class StaticVendorManager {
    * @internal Use getInstance() instead
    */
   private constructor() {
-    logger.debug('StaticVendorManager: Creating singleton instance (Solid.js)');
+    logger.debug("StaticVendorManager: Creating singleton instance (Solid.js)");
   }
 
   /**
@@ -247,7 +248,7 @@ export class StaticVendorManager {
    */
   private async performInitialization(): Promise<void> {
     try {
-      logger.debug('StaticVendorManager: Initialization started (Solid.js)');
+      logger.debug("StaticVendorManager: Initialization started (Solid.js)");
 
       // Validate static imports before caching
       this.validateStaticImports();
@@ -256,9 +257,11 @@ export class StaticVendorManager {
       this.cacheAPIs();
 
       this.isInitialized = true;
-      logger.info('StaticVendorManager: Solid.js vendors initialized and cached');
+      logger.info(
+        "StaticVendorManager: Solid.js vendors initialized and cached",
+      );
     } catch (error) {
-      logger.error('StaticVendorManager: Initialization failed:', error);
+      logger.error("StaticVendorManager: Initialization failed:", error);
       throw error;
     }
   }
@@ -268,8 +271,8 @@ export class StaticVendorManager {
       return;
     }
 
-    const log = import.meta.env.MODE === 'test' ? logger.debug : logger.warn;
-    log('StaticVendorManager not initialized. Performing synchronous warm-up.');
+    const log = import.meta.env.MODE === "test" ? logger.debug : logger.warn;
+    log("StaticVendorManager not initialized. Performing synchronous warm-up.");
 
     this.validateStaticImports();
     this.cacheAPIs();
@@ -288,16 +291,26 @@ export class StaticVendorManager {
    */
   private validateStaticImports(): void {
     // Validate Solid.js core functions
-    if (!this.vendors.solid.createSignal || typeof this.vendors.solid.createSignal !== 'function') {
-      throw new Error('Solid.js validation failed: createSignal not found or not callable');
+    if (
+      !this.vendors.solid.createSignal ||
+      typeof this.vendors.solid.createSignal !== "function"
+    ) {
+      throw new Error(
+        "Solid.js validation failed: createSignal not found or not callable",
+      );
     }
 
     // Validate Solid.js Store functions
-    if (!this.vendors.store.createStore || typeof this.vendors.store.createStore !== 'function') {
-      throw new Error('Solid.js Store validation failed: createStore not found or not callable');
+    if (
+      !this.vendors.store.createStore ||
+      typeof this.vendors.store.createStore !== "function"
+    ) {
+      throw new Error(
+        "Solid.js Store validation failed: createStore not found or not callable",
+      );
     }
 
-    logger.debug('StaticVendorManager: static import validation succeeded');
+    logger.debug("StaticVendorManager: static import validation succeeded");
   }
 
   /**
@@ -347,10 +360,10 @@ export class StaticVendorManager {
     };
 
     // Store in cache for synchronous access
-    this.apiCache.set('solid', solidAPI);
-    this.apiCache.set('solid-store', solidStoreAPI);
+    this.apiCache.set("solid", solidAPI);
+    this.apiCache.set("solid-store", solidStoreAPI);
 
-    logger.debug('StaticVendorManager: vendor APIs cached');
+    logger.debug("StaticVendorManager: vendor APIs cached");
   }
 
   /**
@@ -368,10 +381,10 @@ export class StaticVendorManager {
   public getSolid(): SolidAPI {
     this.ensureInitializedSync();
 
-    const api = this.apiCache.get('solid') as SolidAPI;
+    const api = this.apiCache.get("solid") as SolidAPI;
     if (!api) {
       throw new Error(
-        'Solid.js API not found in cache. StaticVendorManager may not be initialized.'
+        "Solid.js API not found in cache. StaticVendorManager may not be initialized.",
       );
     }
     return api;
@@ -392,10 +405,10 @@ export class StaticVendorManager {
   public getSolidStore(): SolidStoreAPI {
     this.ensureInitializedSync();
 
-    const api = this.apiCache.get('solid-store') as SolidStoreAPI;
+    const api = this.apiCache.get("solid-store") as SolidStoreAPI;
     if (!api) {
       throw new Error(
-        'Solid.js Store API not found in cache. StaticVendorManager may not be initialized.'
+        "Solid.js Store API not found in cache. StaticVendorManager may not be initialized.",
       );
     }
     return api;
@@ -423,7 +436,7 @@ export class StaticVendorManager {
   public getNativeDownload(): NativeDownloadAPI {
     return {
       downloadBlob: (_blob: Blob, _filename: string): void => {
-        logger.warn('Native download fallback removed. Use DownloadService.');
+        logger.warn("Native download fallback removed. Use DownloadService.");
       },
 
       createDownloadUrl: (blob: Blob): string => {
@@ -437,7 +450,7 @@ export class StaticVendorManager {
               URL.revokeObjectURL(url);
               this.createdUrls.delete(url);
             } catch (error) {
-              logger.warn('Automatic URL cleanup failed:', error);
+              logger.warn("Automatic URL cleanup failed:", error);
             }
           }
         }, URL_CLEANUP_TIMEOUT);
@@ -459,7 +472,7 @@ export class StaticVendorManager {
           URL.revokeObjectURL(url);
           this.createdUrls.delete(url);
         } catch (error) {
-          logger.warn('URL revocation failed:', error);
+          logger.warn("URL revocation failed:", error);
         }
       },
     };
@@ -486,24 +499,30 @@ export class StaticVendorManager {
 
     try {
       this.getSolid();
-      loadedLibraries.push('Solid.js');
+      loadedLibraries.push("Solid.js");
     } catch (error) {
-      errors.push(`Solid.js: ${error instanceof Error ? error.message : String(error)}`);
+      errors.push(
+        `Solid.js: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
 
     try {
       this.getSolidStore();
-      loadedLibraries.push('SolidStore');
+      loadedLibraries.push("SolidStore");
     } catch (error) {
-      errors.push(`SolidStore: ${error instanceof Error ? error.message : String(error)}`);
+      errors.push(
+        `SolidStore: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
 
     const success = errors.length === 0;
 
     if (success) {
-      logger.info('All vendor libraries validated successfully', { loadedLibraries });
+      logger.info("All vendor libraries validated successfully", {
+        loadedLibraries,
+      });
     } else {
-      logger.error('Vendor library validation errors detected', { errors });
+      logger.error("Vendor library validation errors detected", { errors });
     }
 
     return { success, loadedLibraries, errors };
@@ -520,9 +539,9 @@ export class StaticVendorManager {
    */
   public getVersionInfo() {
     return Object.freeze({
-      solid: '1.9.9',
-      signals: '2.3.1',
-      motion: 'removed', // Motion One completely removed (Phase 372+)
+      solid: "1.9.9",
+      signals: "2.3.1",
+      motion: "removed", // Motion One completely removed (Phase 372+)
     });
   }
 
@@ -562,17 +581,17 @@ export class StaticVendorManager {
    */
   public cleanup(): void {
     // Clear all timers
-    this.urlTimers.forEach(timerId => {
+    this.urlTimers.forEach((timerId) => {
       globalTimerManager.clearTimeout(timerId);
     });
     this.urlTimers.clear();
 
     // Revoke all download URLs
-    this.createdUrls.forEach(url => {
+    this.createdUrls.forEach((url) => {
       try {
         URL.revokeObjectURL(url);
       } catch (error) {
-        logger.warn('URL revocation during cleanup failed:', error);
+        logger.warn("URL revocation during cleanup failed:", error);
       }
     });
     this.createdUrls.clear();
@@ -584,7 +603,9 @@ export class StaticVendorManager {
     this.isInitialized = false;
     this.initializationPromise = null;
 
-    logger.debug('StaticVendorManager: Cleanup completed (all resources released)');
+    logger.debug(
+      "StaticVendorManager: Cleanup completed (all resources released)",
+    );
   }
 
   /**

@@ -1,4 +1,4 @@
-const EMPTY_LIST_SELECTOR = '*';
+const EMPTY_LIST_SELECTOR = "*";
 
 interface DOMCacheEntry {
   element: Element | null;
@@ -19,7 +19,7 @@ export class DOMCache {
   querySelector(
     selector: string,
     container: Document | Element = document,
-    ttl?: number
+    ttl?: number,
   ): Element | null {
     const cacheKey = this.getCacheKey(selector, container);
     const now = Date.now();
@@ -44,9 +44,12 @@ export class DOMCache {
   querySelectorAll(
     selector: string,
     container: Document | Element = document,
-    ttl?: number
+    ttl?: number,
   ): NodeListOf<Element> {
-    if (!container || typeof (container as ParentNode).querySelectorAll !== 'function') {
+    if (
+      !container ||
+      typeof (container as ParentNode).querySelectorAll !== "function"
+    ) {
       return this.createEmptyNodeList();
     }
 
@@ -84,7 +87,9 @@ export class DOMCache {
   }
 
   private createEmptyNodeList(): NodeListOf<Element> {
-    return document.createDocumentFragment().querySelectorAll(EMPTY_LIST_SELECTOR);
+    return document
+      .createDocumentFragment()
+      .querySelectorAll(EMPTY_LIST_SELECTOR);
   }
 
   private getCacheKey(selector: string, container: Document | Element): string {
@@ -93,7 +98,8 @@ export class DOMCache {
     }
 
     const element = container as Element;
-    const identifier = element.id || element.className || element.tagName || 'anonymous';
+    const identifier =
+      element.id || element.className || element.tagName || "anonymous";
     return `${identifier}::${selector}`;
   }
 
@@ -107,7 +113,7 @@ export class DOMCache {
     }
 
     const entries = Array.from(this.cache.entries()).sort(
-      ([, a], [, b]) => a.timestamp - b.timestamp
+      ([, a], [, b]) => a.timestamp - b.timestamp,
     );
 
     const excess = this.cache.size - this.maxCacheSize;
@@ -128,7 +134,7 @@ export const globalDOMCache = new DOMCache();
 export function cachedQuerySelector(
   selector: string,
   container?: Document | Element,
-  ttl?: number
+  ttl?: number,
 ): Element | null {
   return globalDOMCache.querySelector(selector, container, ttl);
 }
@@ -136,7 +142,7 @@ export function cachedQuerySelector(
 export function cachedQuerySelectorAll(
   selector: string,
   container?: Document | Element,
-  ttl?: number
+  ttl?: number,
 ): NodeListOf<Element> {
   return globalDOMCache.querySelectorAll(selector, container, ttl);
 }
@@ -144,7 +150,7 @@ export function cachedQuerySelectorAll(
 export function cachedStableQuery(
   selectors: readonly string[],
   container?: Document | Element,
-  ttl?: number
+  ttl?: number,
 ): Element | null {
   for (const selector of selectors) {
     const element = cachedQuerySelector(selector, container, ttl);

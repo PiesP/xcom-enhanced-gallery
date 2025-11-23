@@ -1,9 +1,9 @@
-import type { FilenameService } from '@shared/services/file-naming';
-import type { ThemeServiceContract } from '@shared/services/theme-service.contract';
-import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
+import type { FilenameService } from "@shared/services/file-naming";
+import type { ThemeServiceContract } from "@shared/services/theme-service.contract";
+import type { GalleryRenderer } from "@shared/interfaces/gallery.interfaces";
 
-import { CoreServiceRegistry } from '@shared/container/core-service-registry';
-import { SERVICE_KEYS } from '@/constants';
+import { CoreServiceRegistry } from "@shared/container/core-service-registry";
+import { SERVICE_KEYS } from "@/constants";
 
 // ============================================================================
 // Service Key Accessors (Phase 414): Centralized SERVICE_KEYS exposure
@@ -19,7 +19,8 @@ export const CORE_BASE_SERVICE_IDENTIFIERS = [
   THEME_SERVICE_IDENTIFIER,
   LANGUAGE_SERVICE_IDENTIFIER,
 ] as const;
-export type CoreBaseServiceIdentifier = (typeof CORE_BASE_SERVICE_IDENTIFIERS)[number];
+export type CoreBaseServiceIdentifier =
+  (typeof CORE_BASE_SERVICE_IDENTIFIERS)[number];
 
 // ============================================================================
 // Required Service Getters
@@ -46,7 +47,7 @@ export function getMediaFilenameService(): FilenameService {
   return CoreServiceRegistry.get<FilenameService>(SERVICE_KEYS.MEDIA_FILENAME);
 }
 
-import type { MediaService } from '@shared/services/media-service';
+import type { MediaService } from "@shared/services/media-service";
 
 /**
  * Get media service.
@@ -76,7 +77,9 @@ export function getMediaServiceFromContainer(): unknown {
  * @throws CoreService throws if gallery renderer not registered
  */
 export function getGalleryRenderer(): GalleryRenderer {
-  return CoreServiceRegistry.get<GalleryRenderer>(SERVICE_KEYS.GALLERY_RENDERER);
+  return CoreServiceRegistry.get<GalleryRenderer>(
+    SERVICE_KEYS.GALLERY_RENDERER,
+  );
 }
 
 // ============================================================================

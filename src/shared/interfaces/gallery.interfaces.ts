@@ -34,7 +34,10 @@
  * @internal Module for cross-layer abstraction (Shared layer)
  */
 
-import type { MediaInfo, GalleryRenderOptions } from '@shared/types/media.types';
+import type {
+  MediaInfo,
+  GalleryRenderOptions,
+} from "@shared/types/media.types";
 
 /**
  * Gallery Renderer Interface
@@ -105,7 +108,10 @@ export interface GalleryRenderer {
    * @throws May throw if mediaItems is empty or invalid
    * @internal Renderer implementation contract
    */
-  render(mediaItems: readonly MediaInfo[], options?: GalleryRenderOptions): Promise<void>;
+  render(
+    mediaItems: readonly MediaInfo[],
+    options?: GalleryRenderOptions,
+  ): Promise<void>;
 
   /**
    * Close the gallery (hide without destroying)

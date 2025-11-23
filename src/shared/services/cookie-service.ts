@@ -1,17 +1,17 @@
-import { getUserscript } from '@shared/external/userscript';
-import { logger } from '@shared/logging';
+import { getUserscript } from "@shared/external/userscript";
+import { logger } from "@shared/logging";
 import type {
   CookieAPI,
   CookieDeleteOptions,
   CookieListOptions,
   CookieRecord,
   CookieSetOptions,
-} from '@shared/types/core/cookie.types';
+} from "@shared/types/core/cookie.types";
 
 type CookieSetOptionsWithName = CookieSetOptions & { name: string };
 
 function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 interface GlobalWithCookie {
@@ -40,24 +40,26 @@ function buildDocumentCookieString(details: CookieSetOptionsWithName): string {
   const name = encode(details.name);
   const value = encode(details.value);
   segments.push(`${name}=${value}`);
-  segments.push(`path=${details.path ?? '/'}`);
+  segments.push(`path=${details.path ?? "/"}`);
   if (details.domain) {
     segments.push(`domain=${details.domain}`);
   }
   if (details.expirationDate) {
-    segments.push(`expires=${new Date(details.expirationDate * 1000).toUTCString()}`);
+    segments.push(
+      `expires=${new Date(details.expirationDate * 1000).toUTCString()}`,
+    );
   }
   if (details.secure) {
-    segments.push('secure');
+    segments.push("secure");
   }
   if (details.httpOnly) {
-    segments.push('HttpOnly');
+    segments.push("HttpOnly");
   }
-  return segments.join('; ');
+  return segments.join("; ");
 }
 
 function expireDocumentCookie(name: string): void {
-  if (typeof document === 'undefined') return;
+  if (typeof document === "undefined") return;
   document.cookie = `${encode(name)}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
 }
 
@@ -89,16 +91,19 @@ export class CookieService {
       return this.listFromDocument(options);
     }
 
-    return await new Promise<CookieRecord[]>(resolve => {
+    return await new Promise<CookieRecord[]>((resolve) => {
       try {
         this.gmCookie?.list(options, (cookies, error) => {
           if (error) {
-            logger.warn('GM_cookie.list failed; falling back to document.cookie', error);
+            logger.warn(
+              "GM_cookie.list failed; falling back to document.cookie",
+              error,
+            );
             resolve(this.listFromDocument(options));
             return;
           }
 
-          const results = (cookies ?? []).map(cookie => ({ ...cookie }));
+          const results = (cookies ?? []).map((cookie) => ({ ...cookie }));
           for (const record of results) {
             if (record.name && record.value) {
               this.cache.set(record.name, record.value);
@@ -107,13 +112,19 @@ export class CookieService {
           resolve(results);
         });
       } catch (error) {
-        logger.warn('GM_cookie.list threw error; falling back to document.cookie', error);
+        logger.warn(
+          "GM_cookie.list threw error; falling back to document.cookie",
+          error,
+        );
         resolve(this.listFromDocument(options));
       }
     });
   }
 
-  async getValue(name: string, options?: CookieListOptions): Promise<string | undefined> {
+  async getValue(
+    name: string,
+    options?: CookieListOptions,
+  ): Promise<string | undefined> {
     if (!name) return undefined;
 
     if (this.cache.has(name)) {
@@ -137,7 +148,10 @@ export class CookieService {
     if (this.cache.has(name)) {
       return this.cache.get(name);
     }
-    if (typeof document === 'undefined' || typeof document.cookie !== 'string') {
+    if (
+      typeof document === "undefined" ||
+      typeof document.cookie !== "string"
+    ) {
       return undefined;
     }
 
@@ -155,7 +169,7 @@ export class CookieService {
   async set(details: CookieSetOptions): Promise<void> {
     const name = details?.name;
     if (!name) {
-      throw new Error('Cookie name is required');
+      throw new Error("Cookie name is required");
     }
 
     const normalizedDetails: CookieSetOptionsWithName = {
@@ -164,8 +178,8 @@ export class CookieService {
     };
 
     if (!this.gmCookie?.set) {
-      if (typeof document === 'undefined') {
-        throw new Error('Cannot set cookie: document is not available');
+      if (typeof document === "undefined") {
+        throw new Error("Cannot set cookie: document is not available");
       }
       document.cookie = buildDocumentCookieString(normalizedDetails);
       this.cache.set(name, normalizedDetails.value);
@@ -174,7 +188,7 @@ export class CookieService {
 
     await new Promise<void>((resolve, reject) => {
       try {
-        this.gmCookie?.set?.(normalizedDetails, error => {
+        this.gmCookie?.set?.(normalizedDetails, (error) => {
           if (error) {
             reject(new Error(error));
             return;
@@ -190,7 +204,7 @@ export class CookieService {
 
   async delete(details: CookieDeleteOptions): Promise<void> {
     if (!details?.name) {
-      throw new Error('Cookie name is required');
+      throw new Error("Cookie name is required");
     }
 
     if (!this.gmCookie?.delete) {
@@ -201,7 +215,7 @@ export class CookieService {
 
     await new Promise<void>((resolve, reject) => {
       try {
-        this.gmCookie?.delete?.(details, error => {
+        this.gmCookie?.delete?.(details, (error) => {
           if (error) {
             reject(new Error(error));
             return;
@@ -226,7 +240,7 @@ export class CookieService {
     }
 
     const global = globalThis as GlobalWithCookie;
-    if (global.GM_cookie && typeof global.GM_cookie.list === 'function') {
+    if (global.GM_cookie && typeof global.GM_cookie.list === "function") {
       return global.GM_cookie;
     }
 
@@ -234,28 +248,33 @@ export class CookieService {
   }
 
   private listFromDocument(options?: CookieListOptions): CookieRecord[] {
-    if (typeof document === 'undefined' || typeof document.cookie !== 'string') {
+    if (
+      typeof document === "undefined" ||
+      typeof document.cookie !== "string"
+    ) {
       return [];
     }
 
     const domain =
-      typeof document.location?.hostname === 'string' ? document.location.hostname : undefined;
+      typeof document.location?.hostname === "string"
+        ? document.location.hostname
+        : undefined;
 
     const records = document.cookie
-      .split(';')
-      .map(entry => entry.trim())
+      .split(";")
+      .map((entry) => entry.trim())
       .filter(Boolean)
-      .map(entry => {
-        const [rawName, ...rest] = entry.split('=');
+      .map((entry) => {
+        const [rawName, ...rest] = entry.split("=");
         const nameDecoded = decode(rawName);
         if (!nameDecoded) {
           return null;
         }
-        const value = decode(rest.join('=')) ?? '';
+        const value = decode(rest.join("=")) ?? "";
         const record: CookieRecord = {
           name: nameDecoded,
           value,
-          path: '/',
+          path: "/",
           session: true,
           ...(domain ? { domain } : {}),
         };
@@ -264,7 +283,7 @@ export class CookieService {
       .filter((record): record is CookieRecord => Boolean(record));
 
     const filtered = options?.name
-      ? records.filter(record => record.name === options.name)
+      ? records.filter((record) => record.name === options.name)
       : records;
     for (const record of filtered) {
       if (record.value) {

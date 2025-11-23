@@ -17,18 +17,18 @@ export interface FocusTrap {
 }
 
 const FOCUSABLE_SELECTORS = [
-  'a[href]',
-  'button:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
   '[tabindex]:not([tabindex="-1"])',
   '[contenteditable="true"]',
-].join(', ');
+].join(", ");
 
 export function createFocusTrap(
   container: HTMLElement | null,
-  options: FocusTrapOptions = {}
+  options: FocusTrapOptions = {},
 ): FocusTrap {
   const { onEscape, initialFocus, restoreFocus = true } = options;
 
@@ -42,15 +42,15 @@ export function createFocusTrap(
     const elements = container.querySelectorAll(FOCUSABLE_SELECTORS);
     return Array.from(elements).filter((el): el is HTMLElement => {
       const isTestEnvironment =
-        typeof window !== 'undefined' &&
-        (window.navigator.userAgent.includes('jsdom') ||
-          window.navigator.userAgent.includes('Vitest') ||
-          window.navigator.userAgent.includes('happy-dom') ||
-          window.navigator.userAgent.includes('Test Environment'));
+        typeof window !== "undefined" &&
+        (window.navigator.userAgent.includes("jsdom") ||
+          window.navigator.userAgent.includes("Vitest") ||
+          window.navigator.userAgent.includes("happy-dom") ||
+          window.navigator.userAgent.includes("Test Environment"));
 
       return (
         el instanceof HTMLElement &&
-        !el.hasAttribute('hidden') &&
+        !el.hasAttribute("hidden") &&
         (isTestEnvironment || (el.offsetWidth > 0 && el.offsetHeight > 0))
       );
     });
@@ -74,25 +74,25 @@ export function createFocusTrap(
       return;
     }
 
-    const hadTabIndex = elementToFocus.hasAttribute('tabindex');
-    const previousTabIndex = elementToFocus.getAttribute('tabindex');
+    const hadTabIndex = elementToFocus.hasAttribute("tabindex");
+    const previousTabIndex = elementToFocus.getAttribute("tabindex");
 
     if (!hadTabIndex) {
-      elementToFocus.setAttribute('tabindex', '0');
+      elementToFocus.setAttribute("tabindex", "0");
     }
 
     elementToFocus.focus({ preventScroll: true });
 
     if (document.activeElement !== elementToFocus) {
-      elementToFocus.setAttribute('tabindex', '-1');
+      elementToFocus.setAttribute("tabindex", "-1");
       elementToFocus.focus({ preventScroll: true });
     }
 
     if (!hadTabIndex) {
       if (previousTabIndex === null) {
-        elementToFocus.removeAttribute('tabindex');
+        elementToFocus.removeAttribute("tabindex");
       } else {
-        elementToFocus.setAttribute('tabindex', previousTabIndex);
+        elementToFocus.setAttribute("tabindex", previousTabIndex);
       }
     }
   }
@@ -119,12 +119,12 @@ export function createFocusTrap(
   function handleKeyDown(event: KeyboardEvent): void {
     if (!isActive || !container) return;
 
-    if (event.key === 'Tab') {
+    if (event.key === "Tab") {
       handleTabKey(event);
       return;
     }
 
-    if (event.key === 'Escape' && onEscape) {
+    if (event.key === "Escape" && onEscape) {
       event.preventDefault();
       onEscape();
     }
@@ -134,7 +134,7 @@ export function createFocusTrap(
     if (!container || isActive) return;
 
     previousActiveElement = document.activeElement;
-    document.addEventListener('keydown', handleKeyDown, true);
+    document.addEventListener("keydown", handleKeyDown, true);
     keydownAttached = true;
 
     focusFirstElement();
@@ -146,7 +146,7 @@ export function createFocusTrap(
 
     if (keydownAttached) {
       try {
-        document.removeEventListener('keydown', handleKeyDown, true);
+        document.removeEventListener("keydown", handleKeyDown, true);
       } catch {
         /* no-op */
       }

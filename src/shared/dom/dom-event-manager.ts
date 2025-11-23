@@ -36,7 +36,7 @@
  */
 
 // NOTE: Vitest Windows alias resolution workaround — internal dependencies use relative paths
-import { logger } from '@shared/logging';
+import { logger } from "@shared/logging";
 
 // ============================================================================
 // Types & Interfaces
@@ -108,7 +108,7 @@ export class DomEventManager {
     element: HTMLElement | Document | Window | null,
     eventType: K,
     handler: (event: HTMLElementEventMap[K]) => void,
-    options?: EventOptions
+    options?: EventOptions,
   ): DomEventManager {
     if (!element || this.isDestroyed) {
       return this;
@@ -118,15 +118,25 @@ export class DomEventManager {
       element.addEventListener(eventType, handler as EventListener, options);
       this.cleanups.push(() => {
         try {
-          element.removeEventListener(eventType, handler as EventListener, options);
+          element.removeEventListener(
+            eventType,
+            handler as EventListener,
+            options,
+          );
         } catch (error) {
-          logger.warn('DOM EM: Failed to remove event listener', { eventType, error });
+          logger.warn("DOM EM: Failed to remove event listener", {
+            eventType,
+            error,
+          });
         }
       });
 
-      logger.debug('DOM EM: Event listener registered', { eventType, options });
+      logger.debug("DOM EM: Event listener registered", { eventType, options });
     } catch (error) {
-      logger.error('DOM EM: Failed to register event listener', { eventType, error });
+      logger.error("DOM EM: Failed to register event listener", {
+        eventType,
+        error,
+      });
     }
 
     return this;
@@ -156,7 +166,7 @@ export class DomEventManager {
     element: HTMLElement | Document | Window | null,
     eventType: string,
     handler: (event: Event) => void,
-    options?: EventOptions
+    options?: EventOptions,
   ): DomEventManager {
     if (!element || this.isDestroyed) {
       return this;
@@ -168,13 +178,22 @@ export class DomEventManager {
         try {
           element.removeEventListener(eventType, handler, options);
         } catch (error) {
-          logger.warn('DOM EM: Failed to remove custom event listener', { eventType, error });
+          logger.warn("DOM EM: Failed to remove custom event listener", {
+            eventType,
+            error,
+          });
         }
       });
 
-      logger.debug('DOM EM: Custom event listener registered', { eventType, options });
+      logger.debug("DOM EM: Custom event listener registered", {
+        eventType,
+        options,
+      });
     } catch (error) {
-      logger.error('DOM EM: Failed to register custom event listener', { eventType, error });
+      logger.error("DOM EM: Failed to register custom event listener", {
+        eventType,
+        error,
+      });
     }
 
     return this;
@@ -202,19 +221,21 @@ export class DomEventManager {
     }
 
     let cleanupCount = 0;
-    this.cleanups.forEach(cleanup => {
+    this.cleanups.forEach((cleanup) => {
       try {
         cleanup();
         cleanupCount++;
       } catch (error) {
-        logger.warn('DOM EM: Failed to cleanup individual listener', error);
+        logger.warn("DOM EM: Failed to cleanup individual listener", error);
       }
     });
 
     this.cleanups = [];
     this.isDestroyed = true;
 
-    logger.debug('DOM EM: All event listeners cleanup completed', { cleanupCount });
+    logger.debug("DOM EM: All event listeners cleanup completed", {
+      cleanupCount,
+    });
   }
 
   /**

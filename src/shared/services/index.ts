@@ -1,23 +1,30 @@
-export { BaseServiceImpl } from './base-service';
+export { BaseServiceImpl } from "./base-service";
 
-export { EventManager } from './event-manager';
-export { MediaService } from './media-service';
-export { ThemeService, themeService } from './theme-service';
-export { LanguageService, languageService } from './language-service';
+export { EventManager } from "./event-manager";
+export { MediaService } from "./media-service";
+export { ThemeService, themeService } from "./theme-service";
+export { LanguageService, languageService } from "./language-service";
 
-export { NotificationService, getNotificationService } from './notification-service';
-export { PersistentStorage, getPersistentStorage } from './persistent-storage';
-export { CookieService, getCookieService } from './cookie-service';
-export { StyleRegistry, getStyleRegistry } from './style-registry';
+export {
+  NotificationService,
+  getNotificationService,
+} from "./notification-service";
+export { PersistentStorage, getPersistentStorage } from "./persistent-storage";
+export { CookieService, getCookieService } from "./cookie-service";
+export { StyleRegistry, getStyleRegistry } from "./style-registry";
 
-export { DownloadService, downloadService } from './download-service';
-export { ensureDownloadServiceRegistered } from './lazy-service-registration';
+export { DownloadService, downloadService } from "./download-service";
+export { ensureDownloadServiceRegistered } from "./lazy-service-registration";
 
-export { HttpRequestService, getHttpRequestService, HttpError } from './http-request-service';
+export {
+  HttpRequestService,
+  getHttpRequestService,
+  HttpError,
+} from "./http-request-service";
 
 export {
   CoreService,
   serviceManager,
   getService,
   registerServiceFactory,
-} from './core/core-service-manager';
+} from "./core/core-service-manager";

@@ -15,9 +15,13 @@
  * @module shared/components/ui/ErrorBoundary
  */
 
-import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
-import { NotificationService } from '@shared/services/notification-service';
-import { languageService } from '@shared/services/language-service';
+import {
+  getSolid,
+  type ComponentChildren,
+  type JSXElement,
+} from "@shared/external/vendors";
+import { NotificationService } from "@shared/services/notification-service";
+import { languageService } from "@shared/services/language-service";
 
 /**
  * @description Props for ErrorBoundary component
@@ -47,7 +51,9 @@ export function ErrorBoundary({ children }: Props): JSXElement {
   const { children: resolveChildren, createMemo, createSignal } = getSolid();
   let lastReportedError: unknown = null;
   const [currentError, setCurrentError] = createSignal<unknown>(undefined);
-  const fallbackElement = <span data-xeg-error-boundary-reset hidden aria-hidden='true' />;
+  const fallbackElement = (
+    <span data-xeg-error-boundary-reset hidden aria-hidden="true" />
+  );
 
   /**
    * Report error to user via NotificationService
@@ -71,8 +77,8 @@ export function ErrorBoundary({ children }: Props): JSXElement {
 
     try {
       // Fetch localized error title and body
-      const title = languageService.translate('messages.errorBoundary.title');
-      const body = languageService.translate('messages.errorBoundary.body', {
+      const title = languageService.translate("messages.errorBoundary.title");
+      const body = languageService.translate("messages.errorBoundary.body", {
         error: err instanceof Error ? err.message : String(err),
       });
       // Notify user with Tampermonkey notification

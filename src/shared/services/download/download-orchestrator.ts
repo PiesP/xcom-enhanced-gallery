@@ -5,15 +5,18 @@
  * @version 3.0.0 - Phase 310-B: fetch → HttpRequestService migration
  */
 
-import { BaseServiceImpl } from '@shared/services/base-service';
-import { HttpRequestService } from '@shared/services/http-request-service';
-import { getErrorMessage } from '@shared/utils/error-handling';
-import { globalTimerManager } from '@shared/utils/timer-management';
-import { generateMediaFilename, generateZipFilename } from '@shared/services/file-naming';
-import { getGMDownload } from './gm-download';
-import type { MediaInfo } from '@shared/types/media.types';
-import { logger } from '@shared/logging';
-import { ErrorCode } from '@shared/types/result.types';
+import { logger } from "@shared/logging";
+import { BaseServiceImpl } from "@shared/services/base-service";
+import {
+  generateMediaFilename,
+  generateZipFilename,
+} from "@shared/services/file-naming";
+import { HttpRequestService } from "@shared/services/http-request-service";
+import type { MediaInfo } from "@shared/types/media.types";
+import { ErrorCode } from "@shared/types/result.types";
+import { getErrorMessage } from "@shared/utils/error-handling";
+import { globalTimerManager } from "@shared/utils/timer-management";
+import { getGMDownload } from "./gm-download";
 
 export interface OrchestratorItem {
   url: string;
@@ -26,13 +29,15 @@ export interface OrchestratorOptions {
   concurrency?: number | undefined; // 1..8
   retries?: number | undefined; // >= 0
   signal?: AbortSignal | undefined;
-  onProgress?: ((progress: {
-    phase: 'preparing' | 'downloading' | 'complete';
-    current: number;
-    total: number;
-    percentage: number;
-    filename?: string;
-  }) => void) | undefined;
+  onProgress?:
+    | ((progress: {
+        phase: "preparing" | "downloading" | "complete";
+        current: number;
+        total: number;
+        percentage: number;
+        filename?: string;
+      }) => void)
+    | undefined;
 }
 
 export interface DownloadOptions extends OrchestratorOptions {
@@ -51,7 +56,7 @@ interface BlobDownloadOptions {
   blob: Blob | File;
   name: string;
   saveAs?: boolean;
-  conflictAction?: 'uniquify' | 'overwrite' | 'prompt';
+  conflictAction?: "uniquify" | "overwrite" | "prompt";
   suppressNotifications?: boolean;
 }
 
@@ -69,7 +74,7 @@ export interface ZipResult {
   usedFilenames: string[]; // in order of completion
 }
 
-export type DownloadDataSource = 'dom' | 'cache' | 'network';
+export type DownloadDataSource = "dom" | "cache" | "network";
 
 export interface SingleItemDownloadResult {
   data: Uint8Array;
@@ -78,7 +83,7 @@ export interface SingleItemDownloadResult {
 
 export interface BulkDownloadResult {
   success: boolean;
-  status: 'success' | 'partial' | 'error';
+  status: "success" | "partial" | "error";
   filesProcessed: number;
   filesSuccessful: number;
   filename?: string | undefined;
@@ -94,7 +99,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
   private currentAbortController: AbortController | undefined;
 
   private constructor() {
-    super('DownloadOrchestrator');
+    super("DownloadOrchestrator");
   }
 
   public static getInstance(): DownloadOrchestrator {
@@ -110,7 +115,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
 
   protected onDestroy(): void {
     // Clean up any lingering timers
-    this.activeTimers.forEach(timer => {
+    this.activeTimers.forEach((timer) => {
       globalTimerManager.clearTimeout(timer);
     });
     this.activeTimers = [];
@@ -127,14 +132,14 @@ export class DownloadOrchestrator extends BaseServiceImpl {
 
       const onAbort = () => {
         cleanup();
-        reject(new Error('Download cancelled by user'));
+        reject(new Error("Download cancelled by user"));
       };
       const cleanup = () => {
         globalTimerManager.clearTimeout(timer);
-        this.activeTimers = this.activeTimers.filter(t => t !== timer);
-        signal?.removeEventListener('abort', onAbort);
+        this.activeTimers = this.activeTimers.filter((t) => t !== timer);
+        signal?.removeEventListener("abort", onAbort);
       };
-      if (signal) signal.addEventListener('abort', onAbort);
+      if (signal) signal.addEventListener("abort", onAbort);
     });
   }
 
@@ -143,7 +148,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
     retries: number,
     signal?: AbortSignal,
     backoffBaseMs: number = DownloadOrchestrator.DEFAULT_BACKOFF_BASE_MS,
-    onSourceDetected?: (source: DownloadDataSource) => void
+    onSourceDetected?: (source: DownloadDataSource) => void,
   ): Promise<Uint8Array> {
     // **Phase 310-B** (Step 3): HTTP download with caching and retry logic
     // Use HttpRequestService for cross-origin fetch with proper CORS handling
@@ -152,14 +157,14 @@ export class DownloadOrchestrator extends BaseServiceImpl {
 
     // Total attempts = retries + 1 (retries=2 means 3 total attempts: 0, 1, 2)
     while (true) {
-      if (signal?.aborted) throw new Error('Download cancelled by user');
+      if (signal?.aborted) throw new Error("Download cancelled by user");
       try {
         // **Phase 430 CORS Optimization**: Avoid custom headers that trigger preflight
         // - Cache-Control and If-Modified-Since trigger CORS preflight
         // - Preflight errors can result in net::ERR_FAILED without proper handling
         // - Minimize headers to streamline cross-origin request success rate
         const options = {
-          responseType: 'arraybuffer' as const,
+          responseType: "arraybuffer" as const,
           timeout: 30000, // 30 second timeout for download
           ...(signal ? { signal } : {}),
         };
@@ -169,13 +174,16 @@ export class DownloadOrchestrator extends BaseServiceImpl {
         }
         const downloadedData = new Uint8Array(response.data);
 
-        onSourceDetected?.('network');
+        onSourceDetected?.("network");
         return downloadedData;
       } catch (err) {
         if (attempt >= retries) throw err;
         attempt += 1;
         // Exponential backoff: 200ms, 400ms, 800ms, ... for retry delays
-        const delay = Math.max(0, Math.floor(backoffBaseMs * 2 ** (attempt - 1)));
+        const delay = Math.max(
+          0,
+          Math.floor(backoffBaseMs * 2 ** (attempt - 1)),
+        );
         await this.sleep(delay, signal);
       }
     }
@@ -213,9 +221,9 @@ export class DownloadOrchestrator extends BaseServiceImpl {
         baseCounts.set(desired, 0);
         return desired;
       }
-      const lastDot = desired.lastIndexOf('.');
+      const lastDot = desired.lastIndexOf(".");
       const name = lastDot > 0 ? desired.slice(0, lastDot) : desired;
-      const ext = lastDot > 0 ? desired.slice(lastDot) : '';
+      const ext = lastDot > 0 ? desired.slice(lastDot) : "";
       const baseKey = desired;
       let count = baseCounts.get(baseKey) ?? 0;
       // start suffixing at 1
@@ -309,9 +317,11 @@ export class DownloadOrchestrator extends BaseServiceImpl {
    */
   public async zipMediaItems(
     items: OrchestratorItem[],
-    options: OrchestratorOptions = {}
+    options: OrchestratorOptions = {},
   ): Promise<ZipResult> {
-    const { StreamingZipWriter } = await import('@shared/external/zip/streaming-zip-writer');
+    const { StreamingZipWriter } = await import(
+      "@shared/external/zip/streaming-zip-writer"
+    );
     const writer = new StreamingZipWriter();
     const failures: Array<{ url: string; error: string }> = [];
 
@@ -325,7 +335,12 @@ export class DownloadOrchestrator extends BaseServiceImpl {
     const abortSignal = options.signal;
     const isAborted = () => !!abortSignal?.aborted;
 
-    options.onProgress?.({ phase: 'preparing', current: 0, total, percentage: 0 });
+    options.onProgress?.({
+      phase: "preparing",
+      current: 0,
+      total,
+      percentage: 0,
+    });
 
     let processed = 0;
     let successful = 0;
@@ -334,7 +349,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
 
     const runNext = async (): Promise<void> => {
       while (true) {
-        if (isAborted()) throw new Error('Download cancelled by user');
+        if (isAborted()) throw new Error("Download cancelled by user");
         const i = index++;
         if (i >= total) return;
         const item = items[i];
@@ -344,10 +359,13 @@ export class DownloadOrchestrator extends BaseServiceImpl {
         }
 
         options.onProgress?.({
-          phase: 'downloading',
+          phase: "downloading",
           current: Math.min(processed + 1, total),
           total,
-          percentage: Math.min(100, Math.max(0, Math.round(((processed + 1) / total) * 100))),
+          percentage: Math.min(
+            100,
+            Math.max(0, Math.round(((processed + 1) / total) * 100)),
+          ),
           filename: item.desiredName,
         });
 
@@ -357,7 +375,11 @@ export class DownloadOrchestrator extends BaseServiceImpl {
             data = new Uint8Array(await item.blob.arrayBuffer());
             // onSourceDetected?.('cache');
           } else {
-            data = await this.fetchArrayBufferWithRetry(item.url, retries, abortSignal);
+            data = await this.fetchArrayBufferWithRetry(
+              item.url,
+              retries,
+              abortSignal,
+            );
           }
           const filename = ensureUniqueFilename(item.desiredName);
 
@@ -369,7 +391,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
           usedFilenames.push(filename);
           successful++;
         } catch (error) {
-          if (isAborted()) throw new Error('Download cancelled by user');
+          if (isAborted()) throw new Error("Download cancelled by user");
           failures.push({ url: item.url, error: getErrorMessage(error) });
         } finally {
           processed++;
@@ -394,37 +416,37 @@ export class DownloadOrchestrator extends BaseServiceImpl {
 
   public async downloadSingleItem(
     item: OrchestratorItem,
-    options: OrchestratorOptions = {}
+    options: OrchestratorOptions = {},
   ): Promise<SingleItemDownloadResult> {
     const retries = Math.max(0, options.retries ?? 0);
     const abortSignal = options.signal;
     const total = 1;
 
     options.onProgress?.({
-      phase: 'preparing',
+      phase: "preparing",
       current: 0,
       total,
       percentage: 0,
       filename: item.desiredName,
     });
 
-    let detectedSource: DownloadDataSource = 'network';
+    let detectedSource: DownloadDataSource = "network";
     const data = await this.fetchArrayBufferWithRetry(
       item.url,
       retries,
       abortSignal,
       DownloadOrchestrator.DEFAULT_BACKOFF_BASE_MS,
-      source => {
+      (source) => {
         detectedSource = source;
-      }
+      },
     );
 
     if (abortSignal?.aborted) {
-      throw new Error('Download cancelled by user');
+      throw new Error("Download cancelled by user");
     }
 
     options.onProgress?.({
-      phase: 'downloading',
+      phase: "downloading",
       current: total,
       total,
       percentage: 100,
@@ -442,22 +464,27 @@ export class DownloadOrchestrator extends BaseServiceImpl {
    */
   async downloadSingle(
     media: MediaInfo,
-    options: DownloadOptions = {}
+    options: DownloadOptions = {},
   ): Promise<SingleDownloadResult> {
     if (options.signal?.aborted) {
-      return { success: false, error: 'User cancelled download' };
+      return { success: false, error: "User cancelled download" };
     }
 
     const gmDownload = getGMDownload();
     if (!gmDownload) {
-      return { success: false, error: 'Must be run in Tampermonkey environment' };
+      return {
+        success: false,
+        error: "Must be run in Tampermonkey environment",
+      };
     }
 
     const filename = generateMediaFilename(media);
 
     // Phase 368: Use prefetched blob if available
     if (options.blob) {
-      logger.debug(`[DownloadOrchestrator] Using prefetched blob for ${filename}`);
+      logger.debug(
+        `[DownloadOrchestrator] Using prefetched blob for ${filename}`,
+      );
       const result = await this.downloadBlob({
         blob: options.blob,
         name: filename,
@@ -465,7 +492,12 @@ export class DownloadOrchestrator extends BaseServiceImpl {
       });
 
       if (result.success) {
-        options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 100 });
+        options.onProgress?.({
+          phase: "complete",
+          current: 1,
+          total: 1,
+          percentage: 100,
+        });
         return { success: true, filename };
       }
       return { success: false, error: result.error, filename };
@@ -473,10 +505,15 @@ export class DownloadOrchestrator extends BaseServiceImpl {
 
     const url = media.url;
 
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const timer = globalTimerManager.setTimeout(() => {
-        options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 0 });
-        resolve({ success: false, error: 'Download timeout' });
+        options.onProgress?.({
+          phase: "complete",
+          current: 1,
+          total: 1,
+          percentage: 0,
+        });
+        resolve({ success: false, error: "Download timeout" });
       }, 30000);
 
       try {
@@ -485,21 +522,41 @@ export class DownloadOrchestrator extends BaseServiceImpl {
           name: filename,
           onload: () => {
             globalTimerManager.clearTimeout(timer);
-            logger.debug(`[DownloadOrchestrator] Single file download complete: ${filename}`);
-            options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 100 });
+            logger.debug(
+              `[DownloadOrchestrator] Single file download complete: ${filename}`,
+            );
+            options.onProgress?.({
+              phase: "complete",
+              current: 1,
+              total: 1,
+              percentage: 100,
+            });
             resolve({ success: true, filename });
           },
           onerror: (error: unknown) => {
             globalTimerManager.clearTimeout(timer);
             const errorMsg = getErrorMessage(error);
-            logger.error(`[DownloadOrchestrator] Single file download failed:`, error);
-            options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 0 });
+            logger.error(
+              `[DownloadOrchestrator] Single file download failed:`,
+              error,
+            );
+            options.onProgress?.({
+              phase: "complete",
+              current: 1,
+              total: 1,
+              percentage: 0,
+            });
             resolve({ success: false, error: errorMsg });
           },
           ontimeout: () => {
             globalTimerManager.clearTimeout(timer);
-            options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 0 });
-            resolve({ success: false, error: 'Download timeout' });
+            options.onProgress?.({
+              phase: "complete",
+              current: 1,
+              total: 1,
+              percentage: 0,
+            });
+            resolve({ success: false, error: "Download timeout" });
           },
         });
       } catch (error) {
@@ -511,17 +568,21 @@ export class DownloadOrchestrator extends BaseServiceImpl {
     });
   }
 
-  private async downloadBlob(options: BlobDownloadOptions): Promise<BlobDownloadResult> {
+  private async downloadBlob(
+    options: BlobDownloadOptions,
+  ): Promise<BlobDownloadResult> {
     const gmDownload = getGMDownload();
-    if (!gmDownload) return { success: false, error: 'GM_download unavailable' };
-    if (!options.blob || !(options.blob instanceof Blob)) return { success: false, error: 'Invalid blob' };
+    if (!gmDownload)
+      return { success: false, error: "GM_download unavailable" };
+    if (!options.blob || !(options.blob instanceof Blob))
+      return { success: false, error: "Invalid blob" };
 
     const size = options.blob.size;
     const objectUrl = URL.createObjectURL(options.blob);
 
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const timer = globalTimerManager.setTimeout(() => {
-        resolve({ success: false, error: 'Download timeout', size });
+        resolve({ success: false, error: "Download timeout", size });
       }, 30000);
 
       const cleanup = () => {
@@ -534,21 +595,33 @@ export class DownloadOrchestrator extends BaseServiceImpl {
           url: objectUrl,
           name: options.name,
           saveAs: options.saveAs ?? false,
-          conflictAction: options.conflictAction ?? 'uniquify',
+          conflictAction: options.conflictAction ?? "uniquify",
           onload: () => {
             cleanup();
             resolve({ success: true, filename: options.name, size });
-            logger.debug(`[DownloadOrchestrator] Blob download completed: ${options.name} (${size} bytes)`);
+            logger.debug(
+              `[DownloadOrchestrator] Blob download completed: ${options.name} (${size} bytes)`,
+            );
           },
-          onerror: (error: any) => {
+          onerror: (error: unknown) => {
             cleanup();
             const errorMsg = getErrorMessage(error);
-            resolve({ success: false, error: errorMsg, filename: options.name, size });
+            resolve({
+              success: false,
+              error: errorMsg,
+              filename: options.name,
+              size,
+            });
             logger.error(`[DownloadOrchestrator] Blob download failed:`, error);
           },
           ontimeout: () => {
             cleanup();
-            resolve({ success: false, error: 'Download timeout', filename: options.name, size });
+            resolve({
+              success: false,
+              error: "Download timeout",
+              filename: options.name,
+              size,
+            });
           },
         });
       } catch (error) {
@@ -567,20 +640,20 @@ export class DownloadOrchestrator extends BaseServiceImpl {
   cancelDownload(): void {
     if (!this.currentAbortController) return;
     this.currentAbortController.abort();
-    logger.info('[DownloadOrchestrator] Download cancelled');
+    logger.info("[DownloadOrchestrator] Download cancelled");
   }
 
   async downloadBulk(
     mediaItems: Array<MediaInfo>,
-    options: DownloadOptions = {}
+    options: DownloadOptions = {},
   ): Promise<BulkDownloadResult> {
     if (mediaItems.length === 0) {
       return {
         success: false,
-        status: 'error',
+        status: "error",
         filesProcessed: 0,
         filesSuccessful: 0,
-        error: 'No files to download',
+        error: "No files to download",
         code: ErrorCode.EMPTY_INPUT,
       };
     }
@@ -588,12 +661,20 @@ export class DownloadOrchestrator extends BaseServiceImpl {
     // Single file optimization
     if (mediaItems.length === 1) {
       const media = mediaItems[0];
-      if (!media) return { success: false, status: 'error', filesProcessed: 1, filesSuccessful: 0, error: 'No media', code: ErrorCode.UNKNOWN };
+      if (!media)
+        return {
+          success: false,
+          status: "error",
+          filesProcessed: 1,
+          filesSuccessful: 0,
+          error: "No media",
+          code: ErrorCode.UNKNOWN,
+        };
 
       const result = await this.downloadSingle(media, options);
       return {
         success: result.success,
-        status: result.success ? 'success' : 'error',
+        status: result.success ? "success" : "error",
         filesProcessed: 1,
         filesSuccessful: result.success ? 1 : 0,
         filename: result.filename,
@@ -607,13 +688,15 @@ export class DownloadOrchestrator extends BaseServiceImpl {
 
   private async downloadAsZip(
     mediaItems: Array<MediaInfo>,
-    options: DownloadOptions
+    options: DownloadOptions,
   ): Promise<BulkDownloadResult> {
     try {
       this.currentAbortController = new AbortController();
-      logger.info(`[DownloadOrchestrator] ZIP download started: ${mediaItems.length} files`);
+      logger.info(
+        `[DownloadOrchestrator] ZIP download started: ${mediaItems.length} files`,
+      );
 
-      const itemsForZip = mediaItems.map(m => ({
+      const itemsForZip = mediaItems.map((m) => ({
         url: m.url,
         desiredName: generateMediaFilename(m),
         blob: options.prefetchedBlobs?.get(m.url),
@@ -626,15 +709,19 @@ export class DownloadOrchestrator extends BaseServiceImpl {
           retries: options.retries,
           signal: this.currentAbortController.signal,
           onProgress: options.onProgress,
-        }
+        },
       );
 
       if (filesSuccessful === 0) {
-        throw new Error('All file downloads failed');
+        throw new Error("All file downloads failed");
       }
 
-      const zipFilename = options.zipFilename || generateZipFilename(mediaItems, { fallbackPrefix: 'xcom_gallery' });
-      const blob = new Blob([new Uint8Array(zipData)], { type: 'application/zip' });
+      const zipFilename =
+        options.zipFilename ||
+        generateZipFilename(mediaItems, { fallbackPrefix: "xcom_gallery" });
+      const blob = new Blob([new Uint8Array(zipData)], {
+        type: "application/zip",
+      });
 
       const downloadResult = await this.downloadBlob({
         blob,
@@ -643,21 +730,33 @@ export class DownloadOrchestrator extends BaseServiceImpl {
       });
 
       if (!downloadResult.success) {
-        throw new Error(downloadResult.error ?? 'ZIP download failed');
+        throw new Error(downloadResult.error ?? "ZIP download failed");
       }
 
-      logger.info(`[DownloadOrchestrator] ZIP download complete: ${zipFilename}`);
+      logger.info(
+        `[DownloadOrchestrator] ZIP download complete: ${zipFilename}`,
+      );
 
-      const status = failures.length === 0 ? 'success' : failures.length === mediaItems.length ? 'error' : 'partial';
+      const status =
+        failures.length === 0
+          ? "success"
+          : failures.length === mediaItems.length
+            ? "error"
+            : "partial";
 
       return {
-        success: status !== 'error',
+        success: status !== "error",
         status,
         filesProcessed: mediaItems.length,
         filesSuccessful,
         filename: zipFilename,
         failures: failures.length > 0 ? failures : undefined,
-        code: status === 'success' ? ErrorCode.NONE : status === 'partial' ? ErrorCode.PARTIAL_FAILED : ErrorCode.ALL_FAILED,
+        code:
+          status === "success"
+            ? ErrorCode.NONE
+            : status === "partial"
+              ? ErrorCode.PARTIAL_FAILED
+              : ErrorCode.ALL_FAILED,
       };
     } catch (error) {
       const errorMsg = getErrorMessage(error);
@@ -665,7 +764,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
 
       return {
         success: false,
-        status: 'error',
+        status: "error",
         filesProcessed: mediaItems.length,
         filesSuccessful: 0,
         error: errorMsg,
@@ -675,6 +774,4 @@ export class DownloadOrchestrator extends BaseServiceImpl {
       this.currentAbortController = undefined;
     }
   }
-
-
 }

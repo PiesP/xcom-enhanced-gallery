@@ -8,8 +8,8 @@
  * Used for: previous/back buttons, carousel navigation
  */
 
-import type { JSXElement } from '@shared/external/vendors';
-import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
+import type { JSXElement } from "@shared/external/vendors";
+import { Icon, type IconProps } from "@shared/components/ui/Icon/Icon";
 
 /**
  * Chevron Left Icon Component
@@ -27,7 +27,7 @@ import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
 export function HeroChevronLeft(props: IconProps): JSXElement {
   return (
     <Icon {...props}>
-      <path d='M15.75 19.5 8.25 12l7.5-7.5' />
+      <path d="M15.75 19.5 8.25 12l7.5-7.5" />
     </Icon>
   );
 }

@@ -12,7 +12,7 @@ export type {
   VNode,
   JSXElement,
   ComponentChildren,
-} from './vendor-manager-static';
+} from "./vendor-manager-static";
 
 export {
   initializeVendorsSafe as initializeVendors,
@@ -28,4 +28,4 @@ export {
   cleanupVendorsSafe as cleanupVendors,
   registerVendorCleanupOnUnloadSafe as registerVendorCleanupOnUnload,
   resetVendorManagerInstance,
-} from './vendor-api-safe';
+} from "./vendor-api-safe";

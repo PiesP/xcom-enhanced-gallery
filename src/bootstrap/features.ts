@@ -15,19 +15,21 @@
  * - Remove duplication via declarative loader array (138 lines → 80 lines)
  */
 
-import { logger } from '@shared/logging';
-import { registerTwitterTokenExtractor } from '@shared/container';
+import { logger } from "@shared/logging";
+import { registerTwitterTokenExtractor } from "@shared/container";
 import {
   resolveFeatureStates,
   type FeatureKey,
   type SettingsWithFeatures,
-} from '@shared/utils/conditional-loading';
-import { DEFAULT_SETTINGS } from '@/constants';
-import { APP_SETTINGS_STORAGE_KEY } from '@/constants';
-import { reportBootstrapError } from '@/bootstrap/types';
+} from "@shared/utils/conditional-loading";
+import { DEFAULT_SETTINGS } from "@/constants";
+import { APP_SETTINGS_STORAGE_KEY } from "@/constants";
+import { reportBootstrapError } from "@/bootstrap/types";
 
 const isDevBuild = import.meta.env.DEV;
-const debug = isDevBuild ? (message: string) => logger.debug(message) : () => {};
+const debug = isDevBuild
+  ? (message: string) => logger.debug(message)
+  : () => {};
 
 /**
  * Feature Loader definition
@@ -46,11 +48,11 @@ interface FeatureLoader {
  */
 const FEATURE_LOADERS: readonly FeatureLoader[] = [
   {
-    flag: 'mediaExtraction',
-    name: 'TwitterTokenExtractor',
+    flag: "mediaExtraction",
+    name: "TwitterTokenExtractor",
     load: async () => {
       const { TwitterTokenExtractor } = await import(
-        '@shared/services/token-extraction/twitter-token-extractor'
+        "@shared/services/token-extraction/twitter-token-extractor"
       );
       registerTwitterTokenExtractor(new TwitterTokenExtractor());
     },
@@ -71,15 +73,19 @@ const cloneDefaultFeatureSettings = (): SettingsWithFeatures => ({
  */
 async function loadFeatureSettings(): Promise<SettingsWithFeatures> {
   try {
-    const { getPersistentStorage } = await import('@shared/services/persistent-storage');
+    const { getPersistentStorage } = await import(
+      "@shared/services/persistent-storage"
+    );
     const storage = getPersistentStorage();
-    const stored = await storage.get<Record<string, unknown>>(APP_SETTINGS_STORAGE_KEY);
+    const stored = await storage.get<Record<string, unknown>>(
+      APP_SETTINGS_STORAGE_KEY,
+    );
 
-    if (stored && typeof stored === 'object' && 'features' in stored) {
+    if (stored && typeof stored === "object" && "features" in stored) {
       const candidate = (stored as Partial<SettingsWithFeatures>).features;
 
-      if (candidate && typeof candidate === 'object') {
-        debug('[features] Settings loaded successfully');
+      if (candidate && typeof candidate === "object") {
+        debug("[features] Settings loaded successfully");
         return {
           features: {
             ...DEFAULT_FEATURE_SETTINGS.features,
@@ -89,7 +95,7 @@ async function loadFeatureSettings(): Promise<SettingsWithFeatures> {
       }
     }
   } catch (error) {
-    logger.warn('[features] Settings loading failed - using defaults:', error);
+    logger.warn("[features] Settings loading failed - using defaults:", error);
   }
 
   return cloneDefaultFeatureSettings();
@@ -107,7 +113,7 @@ async function loadFeatureSettings(): Promise<SettingsWithFeatures> {
  */
 export async function registerFeatureServicesLazy(): Promise<void> {
   try {
-    debug('[features] Registering feature services');
+    debug("[features] Registering feature services");
 
     // Load settings
     const settings = await loadFeatureSettings();
@@ -128,13 +134,16 @@ export async function registerFeatureServicesLazy(): Promise<void> {
         await loader.load();
         debug(`[features] ✅ ${loader.name} registered`);
       } catch (error) {
-        logger.warn(`[features] ⚠️ ${loader.name} registration failed (continuing):`, error);
+        logger.warn(
+          `[features] ⚠️ ${loader.name} registration failed (continuing):`,
+          error,
+        );
       }
     }
 
-    debug('[features] ✅ Feature services registered');
+    debug("[features] ✅ Feature services registered");
   } catch (error) {
     // Phase 343: Standardized error handling (Non-Critical - warn only)
-    reportBootstrapError(error, { context: 'features', logger });
+    reportBootstrapError(error, { context: "features", logger });
   }
 }

@@ -3,10 +3,10 @@
  * @description DOM manipulation and inspection utilities specific to the gallery
  */
 
-import { logger } from '@shared/logging';
-import { gallerySignals } from '@shared/state/signals/gallery.signals';
-import { CSS as CSS_CONST, VIDEO_CONTROL_SELECTORS } from '@/constants';
-import { isHTMLElement } from '@shared/utils/type-guards';
+import { logger } from "@shared/logging";
+import { gallerySignals } from "@shared/state/signals/gallery.signals";
+import { CSS as CSS_CONST, VIDEO_CONTROL_SELECTORS } from "@/constants";
+import { isHTMLElement } from "@shared/utils/type-guards";
 
 // Gallery element selectors (constants)
 const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;
@@ -15,24 +15,26 @@ const GALLERY_CONTAINER_QUERY = [
   CSS_CONST.SELECTORS.DATA_CONTAINER,
   CSS_CONST.SELECTORS.ROOT,
   CSS_CONST.SELECTORS.DATA_GALLERY,
-].join(', ');
+].join(", ");
 
 /**
  * Ensure gallery scroll is available by enforcing scrollable containers to allow overflow.
  */
-export function ensureGalleryScrollAvailable(element: HTMLElement | null): void {
+export function ensureGalleryScrollAvailable(
+  element: HTMLElement | null,
+): void {
   if (!element) {
     return;
   }
 
   // Find scrollable elements and enable default scroll
   const scrollableElements = element.querySelectorAll(
-    '[data-xeg-role="items-list"], .itemsList, .content'
+    '[data-xeg-role="items-list"], .itemsList, .content',
   ) as NodeListOf<HTMLElement>;
 
-  scrollableElements.forEach(el => {
-    if (el.style.overflowY !== 'auto' && el.style.overflowY !== 'scroll') {
-      el.style.overflowY = 'auto';
+  scrollableElements.forEach((el) => {
+    if (el.style.overflowY !== "auto" && el.style.overflowY !== "scroll") {
+      el.style.overflowY = "auto";
     }
   });
 }
@@ -45,10 +47,10 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
 
   // Check basic elements
   const tagName = element.tagName.toLowerCase();
-  if (tagName === 'video') return true;
+  if (tagName === "video") return true;
 
   // Check selector matching
-  return VIDEO_CONTROL_SELECTORS.some(selector => {
+  return VIDEO_CONTROL_SELECTORS.some((selector) => {
     try {
       return element.matches(selector) || element.closest(selector) !== null;
     } catch {
@@ -70,16 +72,16 @@ export function isGalleryInternalElement(element: HTMLElement | null): boolean {
   }
 
   // Phase 237: Check existence of matches method (strengthen type guard)
-  if (typeof element.matches !== 'function') {
-    logger.warn('Invalid element: matches is not a function', element);
+  if (typeof element.matches !== "function") {
+    logger.warn("Invalid element: matches is not a function", element);
     return false;
   }
 
-  return GALLERY_SELECTORS.some(selector => {
+  return GALLERY_SELECTORS.some((selector) => {
     try {
       return element.matches(selector) || element.closest(selector) !== null;
     } catch (error) {
-      logger.warn('Invalid selector:', selector, error);
+      logger.warn("Invalid selector:", selector, error);
       return false;
     }
   });

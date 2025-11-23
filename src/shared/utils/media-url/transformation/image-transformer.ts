@@ -5,10 +5,10 @@
  * Image URL transformation utilities.
  */
 
-import { URL_PATTERNS } from '@shared/utils/patterns/url-patterns';
+import { URL_PATTERNS } from "@shared/utils/patterns/url-patterns";
 
 const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === 'string' && value.trim().length > 0;
+  typeof value === "string" && value.trim().length > 0;
 
 /**
  * Extract original high-quality image URL from Twitter image
@@ -30,17 +30,17 @@ const isNonEmptyString = (value: unknown): value is string =>
  */
 export function extractOriginalImageUrl(url: string): string {
   if (!isNonEmptyString(url)) {
-    return url || '';
+    return url || "";
   }
 
   try {
     const parsed = new URL(url);
 
-    if (parsed.searchParams.get('name') === 'orig') {
+    if (parsed.searchParams.get("name") === "orig") {
       return url;
     }
 
-    parsed.searchParams.set('name', 'orig');
+    parsed.searchParams.set("name", "orig");
     return parsed.toString();
   } catch {
     return url;
@@ -74,10 +74,13 @@ export function canExtractOriginalImage(url: string): boolean {
   try {
     const parsed = new URL(url);
 
-    if (parsed.searchParams.get('name') === 'orig') {
+    if (parsed.searchParams.get("name") === "orig") {
       return false;
     }
-    return parsed.hostname === 'pbs.twimg.com' && parsed.pathname.startsWith('/media/');
+    return (
+      parsed.hostname === "pbs.twimg.com" &&
+      parsed.pathname.startsWith("/media/")
+    );
   } catch {
     return false;
   }
@@ -119,12 +122,12 @@ export function generateOriginalUrl(url: string): string | null {
   const mediaId = extractMediaId(url);
   if (!mediaId) return null;
 
-  let format = 'jpg';
+  let format = "jpg";
 
   if (isNonEmptyString(url)) {
     try {
       const parsed = new URL(url);
-      format = parsed.searchParams.get('format') ?? format;
+      format = parsed.searchParams.get("format") ?? format;
     } catch {
       const formatMatch = url.match(/[?&]format=([^&]+)/);
       if (formatMatch?.[1]) {

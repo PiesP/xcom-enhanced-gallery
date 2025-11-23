@@ -12,7 +12,7 @@ import {
   resetTestConfig,
   getTestMetadata,
   type TestModeOptions,
-} from '@shared/external/test/test-environment-config';
+} from "@shared/external/test/test-environment-config";
 
 /**
  * Test setup context - Phase 314-7
@@ -46,7 +46,7 @@ const testContextStack: TestSetupContext[] = [];
  */
 export function setupTestEnvironment(
   testName: string,
-  options?: Partial<TestModeOptions>
+  options?: Partial<TestModeOptions>,
 ): TestSetupContext {
   const context: TestSetupContext = {
     testName,
@@ -60,7 +60,9 @@ export function setupTestEnvironment(
   return context;
 }
 
-function detachContext(context?: TestSetupContext): TestSetupContext | undefined {
+function detachContext(
+  context?: TestSetupContext,
+): TestSetupContext | undefined {
   if (!context) {
     return testContextStack.pop();
   }
@@ -100,7 +102,7 @@ export function cleanupTestEnvironment(context?: TestSetupContext): {
   disableTestMode();
 
   return {
-    testName: activeContext?.testName ?? 'unknown',
+    testName: activeContext?.testName ?? "unknown",
     duration: Date.now() - setupTime,
     success: Boolean(activeContext),
   };
@@ -131,7 +133,7 @@ export function cleanupTestEnvironment(context?: TestSetupContext): {
 export async function withTestIsolation<T>(
   testName: string,
   fn: () => T | Promise<T>,
-  options?: Partial<TestModeOptions>
+  options?: Partial<TestModeOptions>,
 ): Promise<T> {
   const context = setupTestEnvironment(testName, options);
 
@@ -155,7 +157,7 @@ export async function withTestIsolation<T>(
 export function withTestIsolationSync<T>(
   testName: string,
   fn: () => T,
-  options?: Partial<TestModeOptions>
+  options?: Partial<TestModeOptions>,
 ): T {
   const context = setupTestEnvironment(testName, options);
 
@@ -203,7 +205,7 @@ export function getTestExecutionSummary() {
  */
 export function assertNoLeakedTestContexts(): void {
   if (testContextStack.length > 0) {
-    const leaked = testContextStack.map(c => c.testName).join(', ');
+    const leaked = testContextStack.map((c) => c.testName).join(", ");
     throw new Error(`Leaked test contexts detected: ${leaked}`);
   }
 }

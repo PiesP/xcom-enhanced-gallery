@@ -6,8 +6,8 @@
  * Works safely in server-side rendering or test environments.
  */
 
-import { logger } from '@shared/logging';
-import { globalTimerManager } from '@shared/utils/timer-management';
+import { logger } from "@shared/logging";
+import { globalTimerManager } from "@shared/utils/timer-management";
 
 type ExtensionRuntimeWindow = Window & {
   chrome?: { runtime?: { id?: string } };
@@ -39,7 +39,7 @@ export function isExtensionEnvironment(): boolean {
  * Check if browser environment is available
  */
 export function isBrowserEnvironment(): boolean {
-  return typeof window !== 'undefined' && typeof document !== 'undefined';
+  return typeof window !== "undefined" && typeof document !== "undefined";
 }
 
 /**
@@ -47,7 +47,9 @@ export function isBrowserEnvironment(): boolean {
  */
 export function safeWindow(): Window | null {
   if (!isBrowserEnvironment()) {
-    logger.debug('Window object not available (likely server-side or test environment)');
+    logger.debug(
+      "Window object not available (likely server-side or test environment)",
+    );
     return null;
   }
   return window;
@@ -67,7 +69,7 @@ export function safeLocation(): Location | null {
     // Also allow partially defined location object
     return win.location;
   } catch (error) {
-    logger.debug('safeLocation: Location access failed:', error);
+    logger.debug("safeLocation: Location access failed:", error);
     return null;
   }
 }
@@ -93,13 +95,13 @@ export function isTwitterSite(): boolean {
 
     // Exact domain matching (including subdomains)
     return (
-      hostname === 'x.com' ||
-      hostname === 'twitter.com' ||
-      hostname.endsWith('.x.com') ||
-      hostname.endsWith('.twitter.com')
+      hostname === "x.com" ||
+      hostname === "twitter.com" ||
+      hostname.endsWith(".x.com") ||
+      hostname.endsWith(".twitter.com")
     );
   } catch (error) {
-    logger.debug('isTwitterSite: Domain check failed:', error);
+    logger.debug("isTwitterSite: Domain check failed:", error);
     return false;
   }
 }
@@ -116,18 +118,18 @@ export function getCurrentUrlInfo(): {
   const location = safeLocation();
   if (!location) {
     return {
-      href: '',
-      pathname: '',
-      hostname: '',
-      search: '',
+      href: "",
+      pathname: "",
+      hostname: "",
+      search: "",
     };
   }
 
   return {
-    href: location.href || '',
-    pathname: location.pathname || '',
-    hostname: location.hostname || '',
-    search: location.search || '',
+    href: location.href || "",
+    pathname: location.pathname || "",
+    hostname: location.hostname || "",
+    search: location.search || "",
   };
 }
 
@@ -136,7 +138,7 @@ export function getCurrentUrlInfo(): {
  */
 export function setScrollPosition(x: number, y: number): void {
   const win = safeWindow();
-  if (win && typeof win.scrollTo === 'function') {
+  if (win && typeof win.scrollTo === "function") {
     win.scrollTo(x, y);
   }
 }
@@ -144,7 +146,10 @@ export function setScrollPosition(x: number, y: number): void {
 /**
  * Safe timer creation (integrated with memory management)
  */
-export function safeSetTimeout(callback: () => void, delay: number): number | null {
+export function safeSetTimeout(
+  callback: () => void,
+  delay: number,
+): number | null {
   // Test/SSR safety guard
   const win = safeWindow();
   if (!win) return null;
@@ -201,14 +206,14 @@ export function matchesMediaQuery(query: string): boolean {
  * Detect dark mode
  */
 export function isDarkMode(): boolean {
-  return matchesMediaQuery('(prefers-color-scheme: dark)');
+  return matchesMediaQuery("(prefers-color-scheme: dark)");
 }
 
 /**
  * Detect reduced motion
  */
 export function prefersReducedMotion(): boolean {
-  return matchesMediaQuery('(prefers-reduced-motion: reduce)');
+  return matchesMediaQuery("(prefers-reduced-motion: reduce)");
 }
 
 /**
@@ -226,8 +231,8 @@ export function getBrowserInfo(): {
 
   if (!navigator) {
     return {
-      name: 'Unknown',
-      version: 'Unknown',
+      name: "Unknown",
+      version: "Unknown",
       isChrome: false,
       isFirefox: false,
       isSafari: false,
@@ -236,14 +241,14 @@ export function getBrowserInfo(): {
   }
 
   const userAgent = navigator.userAgent;
-  const vendor = navigator.vendor || '';
+  const vendor = navigator.vendor || "";
 
   // Chrome detection
-  if (userAgent.includes('Chrome') && vendor.includes('Google')) {
+  if (userAgent.includes("Chrome") && vendor.includes("Google")) {
     const versionMatch = userAgent.match(/Chrome\/(\d+\.\d+\.\d+\.\d+)/);
     return {
-      name: 'Chrome',
-      version: versionMatch?.[1] ?? 'Unknown',
+      name: "Chrome",
+      version: versionMatch?.[1] ?? "Unknown",
       isChrome: true,
       isFirefox: false,
       isSafari: false,
@@ -252,11 +257,11 @@ export function getBrowserInfo(): {
   }
 
   // Firefox detection
-  if (userAgent.includes('Firefox')) {
+  if (userAgent.includes("Firefox")) {
     const versionMatch = userAgent.match(/Firefox\/(\d+\.\d+)/);
     return {
-      name: 'Firefox',
-      version: versionMatch?.[1] ?? 'Unknown',
+      name: "Firefox",
+      version: versionMatch?.[1] ?? "Unknown",
       isChrome: false,
       isFirefox: true,
       isSafari: false,
@@ -265,11 +270,15 @@ export function getBrowserInfo(): {
   }
 
   // Safari detection
-  if (userAgent.includes('Safari') && vendor.includes('Apple') && !userAgent.includes('Chrome')) {
+  if (
+    userAgent.includes("Safari") &&
+    vendor.includes("Apple") &&
+    !userAgent.includes("Chrome")
+  ) {
     const versionMatch = userAgent.match(/Version\/(\d+\.\d+)/);
     return {
-      name: 'Safari',
-      version: versionMatch?.[1] ?? 'Unknown',
+      name: "Safari",
+      version: versionMatch?.[1] ?? "Unknown",
       isChrome: false,
       isFirefox: false,
       isSafari: true,
@@ -278,11 +287,11 @@ export function getBrowserInfo(): {
   }
 
   // Edge detection
-  if (userAgent.includes('Edg')) {
+  if (userAgent.includes("Edg")) {
     const versionMatch = userAgent.match(/Edg\/(\d+\.\d+\.\d+\.\d+)/);
     return {
-      name: 'Edge',
-      version: versionMatch?.[1] ?? 'Unknown',
+      name: "Edge",
+      version: versionMatch?.[1] ?? "Unknown",
       isChrome: false,
       isFirefox: false,
       isSafari: false,
@@ -291,8 +300,8 @@ export function getBrowserInfo(): {
   }
 
   return {
-    name: 'Unknown',
-    version: 'Unknown',
+    name: "Unknown",
+    version: "Unknown",
     isChrome: false,
     isFirefox: false,
     isSafari: false,
@@ -307,7 +316,7 @@ export function isExtensionContext(): boolean {
   try {
     return detectExtensionRuntime();
   } catch (error) {
-    logger.debug('isExtensionContext: Extension detection failed:', error);
+    logger.debug("isExtensionContext: Extension detection failed:", error);
     return false;
   }
 }

@@ -232,7 +232,7 @@
  * </Button>
  * ```
  */
-export { Button } from './ui/Button/Button';
+export { Button } from "./ui/Button/Button";
 
 /**
  * ErrorBoundary Component - Error handling wrapper
@@ -251,7 +251,7 @@ export { Button } from './ui/Button/Button';
  * // Wraps components to catch errors
  * ```
  */
-export { ErrorBoundary } from './ui/ErrorBoundary/ErrorBoundary';
+export { ErrorBoundary } from "./ui/ErrorBoundary/ErrorBoundary";
 
 /**
  * Toolbar Component - Gallery media control toolbar
@@ -272,7 +272,7 @@ export { ErrorBoundary } from './ui/ErrorBoundary/ErrorBoundary';
  * // Toolbar manages media navigation and download controls
  * ```
  */
-export { Toolbar } from './ui/Toolbar/Toolbar.tsx';
+export { Toolbar } from "./ui/Toolbar/Toolbar.tsx";
 
 // =============================================================================
 // Icon Components (Phase 224+, Phase 388+)
@@ -298,7 +298,12 @@ export { Toolbar } from './ui/Toolbar/Toolbar.tsx';
  * <Icon name="settings" size="lg" className="text-primary" />
  * ```
  */
-export { Icon, LazyIcon, useIconPreload, useCommonIconPreload } from './ui/Icon';
+export {
+  Icon,
+  LazyIcon,
+  useIconPreload,
+  useCommonIconPreload,
+} from "./ui/Icon";
 
 // =============================================================================
 // Container Components (Phase 389+)
@@ -325,7 +330,7 @@ export { Icon, LazyIcon, useIconPreload, useCommonIconPreload } from './ui/Icon'
  * // GalleryContainer provides isolated gallery app context
  * ```
  */
-export { GalleryContainer } from './isolation/GalleryContainer';
+export { GalleryContainer } from "./isolation/GalleryContainer";
 
 // =============================================================================
 // Type Exports (Phase 45+)
@@ -336,25 +341,25 @@ export { GalleryContainer } from './isolation/GalleryContainer';
  * @typedef {Object} ButtonProps
  * @see {@link ./ui/Button/Button}
  */
-export type { ButtonProps } from './ui/Button/Button';
+export type { ButtonProps } from "./ui/Button/Button";
 
 /**
  * Toolbar Props Type - Configuration for Toolbar component
  * @typedef {Object} ToolbarProps
  * @see {@link ./ui/Toolbar/Toolbar.types}
  */
-export type { ToolbarProps } from './ui/Toolbar/Toolbar.types';
+export type { ToolbarProps } from "./ui/Toolbar/Toolbar.types";
 
 /**
  * Icon Props Type - Configuration for Icon component
  * @typedef {Object} IconProps
  * @see {@link ./ui/Icon}
  */
-export type { IconProps, LazyIconProps } from './ui/Icon';
+export type { IconProps, LazyIconProps } from "./ui/Icon";
 
 /**
  * Gallery Container Props Type - Configuration for GalleryContainer component
  * @typedef {Object} GalleryContainerProps
  * @see {@link ./isolation/GalleryContainer}
  */
-export type { GalleryContainerProps } from './isolation/GalleryContainer';
+export type { GalleryContainerProps } from "./isolation/GalleryContainer";

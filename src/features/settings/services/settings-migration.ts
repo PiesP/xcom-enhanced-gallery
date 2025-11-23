@@ -4,9 +4,9 @@
  * applies rename/transform steps between versions. Pure function for easy testing.
  */
 
-import { isRecord } from '@shared/utils/type-guards';
-import type { AppSettings } from '@features/settings/types/settings.types';
-import { DEFAULT_SETTINGS as defaultSettings } from '@/constants';
+import { isRecord } from "@shared/utils/type-guards";
+import type { AppSettings } from "@features/settings/types/settings.types";
+import { DEFAULT_SETTINGS as defaultSettings } from "@/constants";
 
 type Migration = (input: AppSettings) => AppSettings;
 
@@ -22,7 +22,7 @@ const migrations: Partial<Record<string, Migration>> = {
  */
 function pruneWithTemplate<T extends Record<string, unknown>>(
   input: unknown,
-  template: T
+  template: T,
 ): Partial<T> {
   if (!isRecord(input)) return {} as Partial<T>;
 
@@ -47,7 +47,10 @@ function pruneWithTemplate<T extends Record<string, unknown>>(
  * Unknown top-level and nested fields are pruned based on DEFAULT_SETTINGS shape.
  */
 function fillWithDefaults(settings: AppSettings): AppSettings {
-  const pruned = pruneWithTemplate(settings, defaultSettings) as Partial<AppSettings>;
+  const pruned = pruneWithTemplate(
+    settings,
+    defaultSettings,
+  ) as Partial<AppSettings>;
 
   // Merge category defaults
   const categories = {
@@ -61,7 +64,10 @@ function fillWithDefaults(settings: AppSettings): AppSettings {
 
   const merged: Record<string, unknown> = { ...defaultSettings, ...pruned };
   for (const [key, defaults] of Object.entries(categories)) {
-    merged[key] = { ...defaults, ...(pruned[key as keyof typeof categories] ?? {}) };
+    merged[key] = {
+      ...defaults,
+      ...(pruned[key as keyof typeof categories] ?? {}),
+    };
   }
 
   return {
@@ -80,7 +86,7 @@ export function migrateSettings(input: AppSettings): AppSettings {
   // Apply explicit migration if defined for detected version
   const currentVersion = input.version;
   const mig = migrations[currentVersion as keyof typeof migrations];
-  if (typeof mig === 'function') {
+  if (typeof mig === "function") {
     try {
       working = mig(working);
     } catch {

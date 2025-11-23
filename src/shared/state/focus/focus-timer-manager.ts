@@ -1,7 +1,7 @@
-import { globalTimerManager } from '@shared/utils/timer-management';
-import { logger } from '@shared/logging';
+import { globalTimerManager } from "@shared/utils/timer-management";
+import { logger } from "@shared/logging";
 
-export type FocusTimerRole = 'auto-focus';
+export type FocusTimerRole = "auto-focus";
 
 interface TimerRecord {
   timerId: number;
@@ -18,12 +18,15 @@ export class FocusTimerManager {
         try {
           callback();
         } catch (error) {
-          logger.warn('FocusTimerManager: timer callback failed', { role, error });
+          logger.warn("FocusTimerManager: timer callback failed", {
+            role,
+            error,
+          });
         } finally {
           this.timers.delete(role);
         }
       },
-      Math.max(0, delay)
+      Math.max(0, delay),
     );
 
     this.timers.set(role, { timerId });
@@ -41,7 +44,7 @@ export class FocusTimerManager {
   }
 
   clearAll(): void {
-    this.timers.forEach(record => {
+    this.timers.forEach((record) => {
       globalTimerManager.clearTimeout(record.timerId);
     });
     this.timers.clear();

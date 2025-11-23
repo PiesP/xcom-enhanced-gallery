@@ -13,9 +13,9 @@
 // ================================
 
 // MediaType and MediaQuality are single sources in constants.ts
-export type { MediaType, MediaQuality } from '@/constants';
+export type { MediaType, MediaQuality } from "@/constants";
 // Import ErrorCode for integration (provide ExtractionErrorCode alias)
-import type { ErrorCode } from './result.types';
+import type { ErrorCode } from "./result.types";
 
 /**
  * Brand type base structure
@@ -25,7 +25,7 @@ type Brand<T, B> = T & { readonly __brand: B };
 /**
  * Media ID brand type
  */
-export type MediaId = Brand<string, 'MediaId'>;
+export type MediaId = Brand<string, "MediaId">;
 
 /**
  * Basic media information
@@ -34,7 +34,7 @@ export interface MediaInfo {
   id: string;
   url: string;
   originalUrl?: string | undefined;
-  type: 'image' | 'video' | 'gif';
+  type: "image" | "video" | "gif";
   filename?: string;
   fileSize?: number;
   width?: number;
@@ -49,7 +49,7 @@ export interface MediaInfo {
   metadata?: Record<string, unknown>;
   // Phase 342: Quote tweet fields
   /** Media source location (quote tweet case) */
-  sourceLocation?: 'original' | 'quoted' | undefined;
+  sourceLocation?: "original" | "quoted" | undefined;
   /** Quoted tweet ID (quote tweet case) */
   quotedTweetId?: string | undefined;
   /** Quoted tweet author (quote tweet case) */
@@ -120,13 +120,13 @@ export interface QuoteTweetInfo {
   /** Whether it is a quote tweet */
   isQuoteTweet: boolean;
   /** Location where clicked */
-  clickedLocation: 'quoted' | 'original' | 'unknown';
+  clickedLocation: "quoted" | "original" | "unknown";
   /** Original tweet ID (quote tweet only) */
   quotedTweetId?: string | undefined;
   /** Original tweet author (quote tweet only) */
   quotedUsername?: string | undefined;
   /** Media source indicator */
-  sourceLocation?: 'original' | 'quoted' | undefined;
+  sourceLocation?: "original" | "quoted" | undefined;
 }
 
 /**
@@ -149,22 +149,22 @@ export interface MediaExtractionOptions {
  * Page type definition (merged from Core)
  */
 export enum PageType {
-  TIMELINE = 'timeline',
-  SINGLE_TWEET = 'single_tweet',
-  MEDIA_TAB = 'media_tab',
-  SINGLE_MEDIA = 'single_media',
-  PROFILE = 'profile',
-  UNKNOWN = 'unknown',
+  TIMELINE = "timeline",
+  SINGLE_TWEET = "single_tweet",
+  MEDIA_TAB = "media_tab",
+  SINGLE_MEDIA = "single_media",
+  PROFILE = "profile",
+  UNKNOWN = "unknown",
 }
 
 /**
  * Extraction source type (merged from Core)
  */
 export enum ExtractionSource {
-  CURRENT_PAGE = 'current_page',
-  BACKGROUND_LOAD = 'background_load',
-  CACHE = 'cache',
-  API = 'api',
+  CURRENT_PAGE = "current_page",
+  BACKGROUND_LOAD = "background_load",
+  CACHE = "cache",
+  API = "api",
 }
 
 /**
@@ -272,10 +272,10 @@ export class ExtractionError extends Error {
   constructor(
     public readonly code: ErrorCode,
     message: string,
-    public readonly originalError?: Error
+    public readonly originalError?: Error,
   ) {
     super(message);
-    this.name = 'ExtractionError';
+    this.name = "ExtractionError";
   }
 }
 
@@ -305,7 +305,7 @@ export interface APIExtractor {
     tweetInfo: TweetInfo,
     clickedElement: HTMLElement,
     options: MediaExtractionOptions,
-    extractionId: string
+    extractionId: string,
   ): Promise<MediaExtractionResult>;
 }
 
@@ -319,7 +319,7 @@ export interface FallbackExtractionStrategy {
   extract(
     tweetContainer: HTMLElement,
     clickedElement: HTMLElement,
-    tweetInfo?: TweetInfo
+    tweetInfo?: TweetInfo,
   ): Promise<MediaExtractionResult>;
 }
 
@@ -332,7 +332,7 @@ export interface MediaExtractor {
    */
   extractFromClickedElement(
     element: HTMLElement,
-    options?: MediaExtractionOptions
+    options?: MediaExtractionOptions,
   ): Promise<MediaExtractionResult>;
 
   /**
@@ -340,7 +340,7 @@ export interface MediaExtractor {
    */
   extractAllFromContainer(
     container: HTMLElement,
-    options?: MediaExtractionOptions
+    options?: MediaExtractionOptions,
   ): Promise<MediaExtractionResult>;
 }
 
@@ -353,7 +353,12 @@ export interface MediaExtractor {
  */
 export interface DownloadMediaItem extends MediaInfo {
   downloadProgress?: number | undefined;
-  downloadStatus?: 'pending' | 'downloading' | 'completed' | 'failed' | undefined;
+  downloadStatus?:
+    | "pending"
+    | "downloading"
+    | "completed"
+    | "failed"
+    | undefined;
 }
 
 /**
@@ -393,7 +398,7 @@ export interface GalleryRenderOptions {
   /** Start index */
   startIndex?: number | undefined;
   /** View mode */
-  viewMode?: 'horizontal' | 'vertical' | undefined;
+  viewMode?: "horizontal" | "vertical" | undefined;
   /** Class name */
   className?: string | undefined;
   /** Tweet ID */
@@ -420,14 +425,14 @@ export interface GalleryOpenEventDetail {
  * Gallery open custom event (merged from Core)
  */
 export interface GalleryOpenEvent extends CustomEvent<GalleryOpenEventDetail> {
-  type: 'xeg:gallery:open' | 'xeg:openGallery';
+  type: "xeg:gallery:open" | "xeg:openGallery";
 }
 
 /**
  * Gallery close custom event (merged from Core)
  */
 export interface GalleryCloseEvent extends CustomEvent<void> {
-  type: 'xeg:gallery:close';
+  type: "xeg:gallery:close";
 }
 
 /**
@@ -447,26 +452,26 @@ export interface MediaCollection {
  * → Integrated: union type allows all
  */
 export type MediaPageType =
-  | 'photo'
-  | 'video'
-  | 'gif'
-  | 'mixed'
-  | 'photoDetail'
-  | 'videoDetail'
-  | 'mediaGrid'
-  | 'mediaTimeline'
-  | 'timeline'
-  | 'unknown';
+  | "photo"
+  | "video"
+  | "gif"
+  | "mixed"
+  | "photoDetail"
+  | "videoDetail"
+  | "mediaGrid"
+  | "mediaTimeline"
+  | "timeline"
+  | "unknown";
 
 /**
  * Media extraction strategy
  */
 export type ExtractionStrategy =
-  | 'api-first'
-  | 'dom-only'
-  | 'hybrid'
-  | 'multi-strategy'
-  | 'conservative';
+  | "api-first"
+  | "dom-only"
+  | "hybrid"
+  | "multi-strategy"
+  | "conservative";
 
 // ================================
 // Validation-related types
@@ -477,9 +482,9 @@ export type ExtractionStrategy =
  */
 export interface ValidationIssue {
   /** Issue type */
-  type: 'url' | 'metadata' | 'content' | 'structure';
+  type: "url" | "metadata" | "content" | "structure";
   /** Severity */
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   /** Issue description */
   message: string;
   /** Affected field */

@@ -4,9 +4,10 @@
  */
 
 // NOTE: Vitest (vite-node) Windows alias resolution workaround — use relative paths for internal dependencies
-import { logger } from '@shared/logging';
-import { BaseServiceImpl } from './base-service';
-import { DomEventManager, createDomEventManager } from '@shared/dom/dom-event-manager';
+import { logger } from "@shared/logging";
+import { BaseServiceImpl } from "./base-service";
+import type { DomEventManager } from "@shared/dom/dom-event-manager";
+import { createDomEventManager } from "@shared/dom/dom-event-manager";
 import {
   addListener as registerManagedListener,
   removeEventListenerManaged,
@@ -14,8 +15,8 @@ import {
   initializeGalleryEvents,
   cleanupGalleryEvents,
   getGalleryEventSnapshot,
-} from '@shared/utils/events';
-import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events';
+} from "@shared/utils/events";
+import type { EventHandlers, GalleryEventOptions } from "@shared/utils/events";
 
 /**
  * Event Manager
@@ -27,7 +28,7 @@ export class EventManager extends BaseServiceImpl {
   private isDestroyed = false;
 
   constructor() {
-    super('EventManager');
+    super("EventManager");
     this.domManager = createDomEventManager();
   }
 
@@ -46,7 +47,7 @@ export class EventManager extends BaseServiceImpl {
    */
   protected async onInitialize(): Promise<void> {
     // DOM manager already initialized in constructor
-    logger.debug('EventManager initialization completed');
+    logger.debug("EventManager initialization completed");
   }
 
   /**
@@ -54,7 +55,7 @@ export class EventManager extends BaseServiceImpl {
    */
   protected onDestroy(): void {
     this.cleanup();
-    logger.debug('EventManager destroyed');
+    logger.debug("EventManager destroyed");
   }
 
   // ================================
@@ -68,10 +69,10 @@ export class EventManager extends BaseServiceImpl {
     element: HTMLElement | Document | Window | null,
     eventType: K,
     handler: (event: HTMLElementEventMap[K]) => void,
-    options?: AddEventListenerOptions
+    options?: AddEventListenerOptions,
   ): EventManager {
     if (this.isDestroyed) {
-      logger.warn('addEventListener called on destroyed EventManager');
+      logger.warn("addEventListener called on destroyed EventManager");
       return this;
     }
 
@@ -86,14 +87,19 @@ export class EventManager extends BaseServiceImpl {
     element: HTMLElement | Document | Window | null,
     eventType: string,
     handler: (event: Event) => void,
-    options?: AddEventListenerOptions
+    options?: AddEventListenerOptions,
   ): EventManager {
     if (this.isDestroyed) {
-      logger.warn('addCustomEventListener called on destroyed EventManager');
+      logger.warn("addCustomEventListener called on destroyed EventManager");
       return this;
     }
 
-    this.domManager.addCustomEventListener(element, eventType, handler, options);
+    this.domManager.addCustomEventListener(
+      element,
+      eventType,
+      handler,
+      options,
+    );
     return this;
   }
 
@@ -117,7 +123,7 @@ export class EventManager extends BaseServiceImpl {
   public cleanup(): void {
     this.isDestroyed = true;
     this.domManager.cleanup();
-    logger.debug('EventManager DOM events cleanup completed');
+    logger.debug("EventManager DOM events cleanup completed");
   }
 
   // ================================
@@ -132,11 +138,11 @@ export class EventManager extends BaseServiceImpl {
     type: string,
     listener: EventListener,
     options?: AddEventListenerOptions,
-    context?: string
+    context?: string,
   ): string {
     if (this.isDestroyed) {
-      logger.warn('EventManager: addListener called on destroyed instance');
-      return '';
+      logger.warn("EventManager: addListener called on destroyed instance");
+      return "";
     }
 
     return registerManagedListener(element, type, listener, options, context);
@@ -162,7 +168,7 @@ export class EventManager extends BaseServiceImpl {
    */
   public async initializeGallery(
     handlers: EventHandlers,
-    options?: Partial<GalleryEventOptions>
+    options?: Partial<GalleryEventOptions>,
   ): Promise<() => void> {
     return initializeGalleryEvents(handlers, options);
   }
@@ -192,14 +198,20 @@ export class EventManager extends BaseServiceImpl {
     element: EventTarget,
     eventType: string,
     handler: EventListener,
-    context?: string
+    context?: string,
   ): string {
     if (this.isDestroyed) {
-      logger.warn('handleTwitterEvent called on destroyed EventManager');
-      return '';
+      logger.warn("handleTwitterEvent called on destroyed EventManager");
+      return "";
     }
 
-    return registerManagedListener(element, eventType, handler, undefined, context);
+    return registerManagedListener(
+      element,
+      eventType,
+      handler,
+      undefined,
+      context,
+    );
   }
 
   /**
@@ -225,7 +237,7 @@ export class EventManager extends BaseServiceImpl {
     if (!this.isDestroyed) {
       this.cleanup();
     }
-    logger.debug('EventManager complete cleanup');
+    logger.debug("EventManager complete cleanup");
   }
 }
 

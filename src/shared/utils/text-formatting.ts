@@ -7,12 +7,12 @@
  * Text token types for structured rendering
  */
 export type TextToken =
-  | { type: 'text'; content: string }
-  | { type: 'link'; content: string; href: string }
-  | { type: 'mention'; content: string; href: string }
-  | { type: 'hashtag'; content: string; href: string }
-  | { type: 'cashtag'; content: string; href: string }
-  | { type: 'break' };
+  | { type: "text"; content: string }
+  | { type: "link"; content: string; href: string }
+  | { type: "mention"; content: string; href: string }
+  | { type: "hashtag"; content: string; href: string }
+  | { type: "cashtag"; content: string; href: string }
+  | { type: "break" };
 
 /**
  * Combined pattern matching URLs, mentions, hashtags, and cashtags
@@ -45,7 +45,7 @@ export function formatTweetText(text: string | undefined): TextToken[] {
   if (!text) return [];
 
   const tokens: TextToken[] = [];
-  const lines = text.split('\n');
+  const lines = text.split("\n");
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -53,7 +53,7 @@ export function formatTweetText(text: string | undefined): TextToken[] {
     if (!line) {
       // Empty line
       if (i < lines.length - 1) {
-        tokens.push({ type: 'break' });
+        tokens.push({ type: "break" });
       }
       continue;
     }
@@ -72,7 +72,7 @@ export function formatTweetText(text: string | undefined): TextToken[] {
       if (matchIndex > lastIndex) {
         const textContent = line.slice(lastIndex, matchIndex);
         if (textContent) {
-          tokens.push({ type: 'text', content: textContent });
+          tokens.push({ type: "text", content: textContent });
         }
       }
 
@@ -86,13 +86,13 @@ export function formatTweetText(text: string | undefined): TextToken[] {
     if (lastIndex < line.length) {
       const textContent = line.slice(lastIndex);
       if (textContent) {
-        tokens.push({ type: 'text', content: textContent });
+        tokens.push({ type: "text", content: textContent });
       }
     }
 
     // Add line break (except for last line)
     if (i < lines.length - 1) {
-      tokens.push({ type: 'break' });
+      tokens.push({ type: "break" });
     }
   }
 
@@ -103,37 +103,37 @@ export function formatTweetText(text: string | undefined): TextToken[] {
  * Creates an interactive token (link/mention/hashtag/cashtag) with resolved href
  */
 function createEntityToken(entity: string): TextToken {
-  if (entity.startsWith('http')) {
+  if (entity.startsWith("http")) {
     return {
-      type: 'link',
+      type: "link",
       content: entity,
       href: entity,
     };
   }
 
-  if (entity.startsWith('@')) {
+  if (entity.startsWith("@")) {
     const username = entity.slice(1);
     return {
-      type: 'mention',
+      type: "mention",
       content: entity,
       href: `https://x.com/${username}`,
     };
   }
 
-  if (entity.startsWith('#')) {
+  if (entity.startsWith("#")) {
     const tag = entity.slice(1);
     return {
-      type: 'hashtag',
+      type: "hashtag",
       content: entity,
       href: `https://x.com/hashtag/${encodeURIComponent(tag)}`,
     };
   }
 
-  if (entity.startsWith('$')) {
+  if (entity.startsWith("$")) {
     const symbol = entity.slice(1);
     const encoded = encodeURIComponent(`$${symbol}`);
     return {
-      type: 'cashtag',
+      type: "cashtag",
       content: entity,
       href: `https://x.com/search?q=${encoded}`,
     };
@@ -141,7 +141,7 @@ function createEntityToken(entity: string): TextToken {
 
   // Fallback: treat as plain text token
   return {
-    type: 'text',
+    type: "text",
     content: entity,
   };
 }
@@ -172,7 +172,7 @@ export function shortenUrl(url: string, maxLength = 50): string {
       return `${urlObj.protocol}//${domain}${path}`;
     }
 
-    const segments = path.split('/').filter(Boolean);
+    const segments = path.split("/").filter(Boolean);
     if (segments.length <= 2) {
       return `${urlObj.protocol}//${domain}${path}`;
     }

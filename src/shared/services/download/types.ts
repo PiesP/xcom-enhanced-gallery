@@ -110,7 +110,7 @@ export interface DownloadProgress {
    *
    * **Type**: Union of 3 string literals (not arbitrary string)
    */
-  phase: 'preparing' | 'downloading' | 'complete';
+  phase: "preparing" | "downloading" | "complete";
 
   /**
    * Number of completed/actively downloading items

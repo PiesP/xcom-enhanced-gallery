@@ -26,10 +26,16 @@
  * @author X.com Enhanced Gallery | Phase 379
  */
 
-import type { MediaDescriptor } from './types';
-import type { Result } from '@shared/types/result.types';
-import { failure, ErrorCode, isSuccess } from '@shared/types/result.types';
-import { collectNodes, extractRawData, normalize, dedupe, validate } from './pipeline';
+import type { MediaDescriptor } from "./types";
+import type { Result } from "@shared/types/result.types";
+import { failure, ErrorCode, isSuccess } from "@shared/types/result.types";
+import {
+  collectNodes,
+  extractRawData,
+  normalize,
+  dedupe,
+  validate,
+} from "./pipeline";
 
 /**
  * @interface MediaProcessStageEvent
@@ -56,7 +62,13 @@ import { collectNodes, extractRawData, normalize, dedupe, validate } from './pip
  * });
  */
 export interface MediaProcessStageEvent {
-  readonly stage: 'collect' | 'extract' | 'normalize' | 'dedupe' | 'validate' | 'complete';
+  readonly stage:
+    | "collect"
+    | "extract"
+    | "normalize"
+    | "dedupe"
+    | "validate"
+    | "complete";
   readonly count?: number;
 }
 
@@ -120,7 +132,10 @@ export class MediaProcessor {
    *   onStage: event => console.log(`${event.stage}: ${event.count ?? 0}`),
    * });
    */
-  process(root: HTMLElement, options?: MediaProcessOptions): Result<MediaDescriptor[]> {
+  process(
+    root: HTMLElement,
+    options?: MediaProcessOptions,
+  ): Result<MediaDescriptor[]> {
     const onStage = options?.onStage;
 
     /**
@@ -128,34 +143,40 @@ export class MediaProcessor {
      * @param {string} stage - Stage identifier
      * @param {number} count - Item count at this stage
      */
-    const record = (stage: MediaProcessStageEvent['stage'], count: number): void => {
+    const record = (
+      stage: MediaProcessStageEvent["stage"],
+      count: number,
+    ): void => {
       onStage?.({ stage, count });
     };
 
     try {
       // Stage 1: Collection - Discover media candidate elements
       const elements = collectNodes(root);
-      record('collect', elements.length);
+      record("collect", elements.length);
 
       // Stage 2: Extraction - Extract raw data from elements
       const rawCandidates = elements
         .map(extractRawData)
-        .filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== null);
-      record('extract', rawCandidates.length);
+        .filter(
+          (candidate): candidate is NonNullable<typeof candidate> =>
+            candidate !== null,
+        );
+      record("extract", rawCandidates.length);
 
       // Stage 3: Normalization - Standardize and clean extracted data
       const normalized = normalize(rawCandidates);
-      record('normalize', normalized.length);
+      record("normalize", normalized.length);
 
       // Stage 4: Deduplication - Remove duplicate entries
       const unique = dedupe(normalized);
-      record('dedupe', unique.length);
+      record("dedupe", unique.length);
 
       // Stage 5: Validation - Verify data contracts and integrity
       const result = validate(unique);
-      record('validate', isSuccess(result) ? result.data.length : 0);
+      record("validate", isSuccess(result) ? result.data.length : 0);
 
-      record('complete', isSuccess(result) ? result.data.length : 0);
+      record("complete", isSuccess(result) ? result.data.length : 0);
 
       return result;
     } catch (error) {
@@ -164,9 +185,9 @@ export class MediaProcessor {
         ErrorCode.UNKNOWN,
         {
           cause: error instanceof Error ? error : undefined,
-        }
+        },
       );
-      record('complete', 0);
+      record("complete", 0);
       return err;
     }
   }
@@ -207,9 +228,13 @@ export class MediaProcessor {
 export function processMedia(root: HTMLElement): Result<MediaDescriptor[]> {
   // Null check for root element
   if (!root) {
-    return failure('processMedia: Root element is null', ErrorCode.INVALID_ELEMENT, {
-      meta: { rootElementType: typeof root },
-    });
+    return failure(
+      "processMedia: Root element is null",
+      ErrorCode.INVALID_ELEMENT,
+      {
+        meta: { rootElementType: typeof root },
+      },
+    );
   }
 
   const processor = new MediaProcessor();

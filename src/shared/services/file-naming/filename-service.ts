@@ -33,9 +33,9 @@
  * @see Phase 432.3 for TweetId utilization improvements
  */
 
-import { safeParseInt } from '@shared/utils/type-safety-helpers';
-import { isHostMatching, tryParseUrl } from '@shared/utils/url/host-utils';
-import type { MediaInfo } from '@shared/types/media.types';
+import { safeParseInt } from "@shared/utils/type-safety-helpers";
+import { isHostMatching, tryParseUrl } from "@shared/utils/url";
+import type { MediaInfo } from "@shared/types/media.types";
 
 /**
  * Filename generation options
@@ -95,39 +95,39 @@ export interface ZipFilenameOptions {
  */
 const SUPPORTED_EXTENSIONS = /^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i;
 
-const TWIMG_ROOT_DOMAIN = 'twimg.com';
+const TWIMG_ROOT_DOMAIN = "twimg.com";
 const TWITTER_PROFILE_HOSTS = new Set([
-  'x.com',
-  'www.x.com',
-  'twitter.com',
-  'www.twitter.com',
-  'mobile.twitter.com',
-  'm.twitter.com',
+  "x.com",
+  "www.x.com",
+  "twitter.com",
+  "www.twitter.com",
+  "mobile.twitter.com",
+  "m.twitter.com",
 ]);
 
 const RESERVED_TWITTER_ROUTES = new Set([
-  'i',
-  'home',
-  'explore',
-  'notifications',
-  'messages',
-  'bookmarks',
-  'lists',
-  'profile',
-  'more',
-  'compose',
-  'search',
-  'settings',
-  'help',
-  'display',
-  'moments',
-  'topics',
-  'login',
-  'logout',
-  'signup',
-  'account',
-  'privacy',
-  'tos',
+  "i",
+  "home",
+  "explore",
+  "notifications",
+  "messages",
+  "bookmarks",
+  "lists",
+  "profile",
+  "more",
+  "compose",
+  "search",
+  "settings",
+  "help",
+  "display",
+  "moments",
+  "topics",
+  "login",
+  "logout",
+  "signup",
+  "account",
+  "privacy",
+  "tos",
 ]);
 
 /**
@@ -178,32 +178,47 @@ export class FilenameService {
    * Format: `{username}_{tweetId}_{index}.{extension}`
    * Fallback: `tweet_{tweetId}_{index}.{extension}` or `media_{timestamp}_{index}.{extension}`
    */
-  generateMediaFilename(media: MediaInfo, options: FilenameOptions = {}): string {
+  generateMediaFilename(
+    media: MediaInfo,
+    options: FilenameOptions = {},
+  ): string {
     try {
       // Use existing valid filename if available
       if (media.filename && media.filename.length > 0) {
         return this.sanitizeForWindows(media.filename);
       }
 
-      const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
-      const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
-      const { username, tweetId } = this.resolveTweetMetadata(media, options.fallbackUsername);
+      const extension =
+        options.extension ?? this.extractExtensionFromUrl(media.url);
+      const index =
+        this.extractIndexFromMediaId(media.id) ??
+        this.normalizeIndex(options.index);
+      const { username, tweetId } = this.resolveTweetMetadata(
+        media,
+        options.fallbackUsername,
+      );
 
       // Standard format: username_tweetId_index.ext
       if (username && tweetId) {
-        return this.sanitizeForWindows(`${username}_${tweetId}_${index}.${extension}`);
+        return this.sanitizeForWindows(
+          `${username}_${tweetId}_${index}.${extension}`,
+        );
       }
 
       // Fallback 1: tweet_tweetId_index.ext
       if (tweetId && /^\d+$/.test(tweetId)) {
-        return this.sanitizeForWindows(`tweet_${tweetId}_${index}.${extension}`);
+        return this.sanitizeForWindows(
+          `tweet_${tweetId}_${index}.${extension}`,
+        );
       }
 
       // Fallback 2: media_timestamp_index.ext
-      const prefix = options.fallbackPrefix ?? 'media';
-      return this.sanitizeForWindows(`${prefix}_${Date.now()}_${index}.${extension}`);
+      const prefix = options.fallbackPrefix ?? "media";
+      return this.sanitizeForWindows(
+        `${prefix}_${Date.now()}_${index}.${extension}`,
+      );
     } catch {
-      return `media_${Date.now()}.${options.extension || 'jpg'}`;
+      return `media_${Date.now()}.${options.extension || "jpg"}`;
     }
   }
 
@@ -211,7 +226,10 @@ export class FilenameService {
    * Generate ZIP archive filename
    * Format: `{username}_{tweetId}.zip` or `xcom_gallery_{timestamp}.zip`
    */
-  generateZipFilename(mediaItems: readonly MediaInfo[], options: ZipFilenameOptions = {}): string {
+  generateZipFilename(
+    mediaItems: readonly MediaInfo[],
+    options: ZipFilenameOptions = {},
+  ): string {
     try {
       const firstItem = mediaItems[0];
       if (firstItem) {
@@ -221,7 +239,7 @@ export class FilenameService {
         }
       }
 
-      const prefix = options.fallbackPrefix ?? 'xcom_gallery';
+      const prefix = options.fallbackPrefix ?? "xcom_gallery";
       return this.sanitizeForWindows(`${prefix}_${Date.now()}.zip`);
     } catch {
       return `download_${Date.now()}.zip`;
@@ -275,29 +293,34 @@ export class FilenameService {
    * @see {@link ZIP_FILENAME_PATTERN} for pattern details
    */
   isValidZipFilename(filename: string): boolean {
-    return filename.endsWith('.zip') && !/[<>:"/\\|?*]/.test(filename);
+    return filename.endsWith(".zip") && !/[<>:"/\\|?*]/.test(filename);
   }
 
   // ===== Private Helper Methods =====
 
   private resolveTweetMetadata(
     media: MediaInfo,
-    fallbackUsername?: string | null
+    fallbackUsername?: string | null,
   ): { username: string | null; tweetId: string | null } {
     let username: string | null = null;
     let tweetId: string | null = null;
 
-    if (media.sourceLocation === 'quoted' && media.quotedUsername && media.quotedTweetId) {
+    if (
+      media.sourceLocation === "quoted" &&
+      media.quotedUsername &&
+      media.quotedTweetId
+    ) {
       username = media.quotedUsername;
       tweetId = media.quotedTweetId;
     } else {
       tweetId = media.tweetId ?? null;
 
-      if (media.tweetUsername && media.tweetUsername !== 'unknown') {
+      if (media.tweetUsername && media.tweetUsername !== "unknown") {
         username = media.tweetUsername;
       } else {
-        const urlToCheck = ('originalUrl' in media ? media.originalUrl : null) || media.url;
-        if (typeof urlToCheck === 'string') {
+        const urlToCheck =
+          ("originalUrl" in media ? media.originalUrl : null) || media.url;
+        if (typeof urlToCheck === "string") {
           username = this.extractUsernameFromUrl(urlToCheck);
         }
       }
@@ -376,28 +399,35 @@ export class FilenameService {
     try {
       let URLConstructor: typeof URL | undefined;
 
-      if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
+      if (
+        typeof globalThis !== "undefined" &&
+        typeof globalThis.URL === "function"
+      ) {
         URLConstructor = globalThis.URL;
-      } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
+      } else if (
+        typeof window !== "undefined" &&
+        typeof window.URL === "function"
+      ) {
         URLConstructor = window.URL;
       }
 
       if (!URLConstructor) {
-        const lastSlashIndex = url.lastIndexOf('/');
-        const pathname = lastSlashIndex >= 0 ? url.substring(lastSlashIndex) : url;
-        const lastDot = pathname.lastIndexOf('.');
+        const lastSlashIndex = url.lastIndexOf("/");
+        const pathname =
+          lastSlashIndex >= 0 ? url.substring(lastSlashIndex) : url;
+        const lastDot = pathname.lastIndexOf(".");
         if (lastDot > 0) {
           const extension = pathname.substring(lastDot + 1);
           if (SUPPORTED_EXTENSIONS.test(extension)) {
             return extension.toLowerCase();
           }
         }
-        return 'jpg';
+        return "jpg";
       }
 
       const urlObj = new URLConstructor(url);
       const pathname = urlObj.pathname;
-      const lastDot = pathname.lastIndexOf('.');
+      const lastDot = pathname.lastIndexOf(".");
       if (lastDot > 0) {
         const extension = pathname.substring(lastDot + 1);
         if (SUPPORTED_EXTENSIONS.test(extension)) {
@@ -407,7 +437,7 @@ export class FilenameService {
     } catch {
       // ignore parse error and fall through to default
     }
-    return 'jpg';
+    return "jpg";
   }
 
   /**
@@ -436,17 +466,16 @@ export class FilenameService {
    * @internal Used during filename generation
    */
   private normalizeIndex(index?: string | number): string {
-    if (index === undefined || index === null) return '1';
+    if (index === undefined || index === null) return "1";
 
-    const numIndex = typeof index === 'string' ? safeParseInt(index, 10) : index;
+    const numIndex =
+      typeof index === "string" ? safeParseInt(index, 10) : index;
 
-    if (isNaN(numIndex)) return '1';
+    if (isNaN(numIndex)) return "1";
     if (numIndex >= 1) return numIndex.toString();
 
     return Math.max(numIndex + 1, 1).toString();
   }
-
-
 
   /**
    * Sanitize filename for Windows filesystem compatibility
@@ -490,13 +519,13 @@ export class FilenameService {
    */
   private sanitizeForWindows(name: string): string {
     try {
-      if (!name) return 'media';
+      if (!name) return "media";
       let base = String(name);
 
       // 유니코드 정규화
-      if (typeof base.normalize === 'function') {
+      if (typeof base.normalize === "function") {
         try {
-          base = base.normalize('NFKC');
+          base = base.normalize("NFKC");
         } catch {
           // ignore
         }
@@ -504,7 +533,7 @@ export class FilenameService {
 
       // 제어 문자 및 BiDi 마커 제거
       base = Array.from(base)
-        .filter(ch => {
+        .filter((ch) => {
           const cp = ch.codePointAt(0) ?? 0;
           if (cp <= 0x001f) return false;
           if (cp >= 0x007f && cp <= 0x009f) return false;
@@ -514,57 +543,57 @@ export class FilenameService {
           if (cp >= 0x2066 && cp <= 0x2069) return false;
           return true;
         })
-        .join('');
+        .join("");
 
       // 파일명과 확장자 분리
-      const lastDot = base.lastIndexOf('.');
+      const lastDot = base.lastIndexOf(".");
       const hasExt = lastDot > 0 && lastDot < base.length - 1;
       const pure = hasExt ? base.slice(0, lastDot) : base;
-      const ext = hasExt ? base.slice(lastDot) : '';
+      const ext = hasExt ? base.slice(lastDot) : "";
 
       // 금지 문자 치환
-      let safe = pure.replace(/[<>:"/\\|?*]/g, '_');
+      let safe = pure.replace(/[<>:"/\\|?*]/g, "_");
 
       // 선행/후행 공백/마침표 제거
-      safe = safe.replace(/[\s.]+$/g, '');
-      safe = safe.replace(/^[\s.]+/g, '');
+      safe = safe.replace(/[\s.]+$/g, "");
+      safe = safe.replace(/^[\s.]+/g, "");
 
       // 예약어 방지
       const reserved = new Set([
-        'con',
-        'prn',
-        'aux',
-        'nul',
-        'com1',
-        'com2',
-        'com3',
-        'com4',
-        'com5',
-        'com6',
-        'com7',
-        'com8',
-        'com9',
-        'lpt1',
-        'lpt2',
-        'lpt3',
-        'lpt4',
-        'lpt5',
-        'lpt6',
-        'lpt7',
-        'lpt8',
-        'lpt9',
+        "con",
+        "prn",
+        "aux",
+        "nul",
+        "com1",
+        "com2",
+        "com3",
+        "com4",
+        "com5",
+        "com6",
+        "com7",
+        "com8",
+        "com9",
+        "lpt1",
+        "lpt2",
+        "lpt3",
+        "lpt4",
+        "lpt5",
+        "lpt6",
+        "lpt7",
+        "lpt8",
+        "lpt9",
       ]);
       if (reserved.has(safe.toLowerCase())) {
         safe = `_${safe}`;
       }
 
-      if (!safe) safe = 'media';
+      if (!safe) safe = "media";
 
       // 길이 제한 (255자)
       const result = (safe + ext).slice(0, 255);
       return result;
     } catch {
-      return name || 'media';
+      return name || "media";
     }
   }
 
@@ -607,7 +636,9 @@ export class FilenameService {
       return null;
     }
 
-    if (isHostMatching(parsed, [TWIMG_ROOT_DOMAIN], { allowSubdomains: true })) {
+    if (
+      isHostMatching(parsed, [TWIMG_ROOT_DOMAIN], { allowSubdomains: true })
+    ) {
       return null;
     }
 
@@ -615,7 +646,7 @@ export class FilenameService {
       return null;
     }
 
-    const [rawCandidate] = parsed.pathname.split('/').filter(Boolean);
+    const [rawCandidate] = parsed.pathname.split("/").filter(Boolean);
     if (!rawCandidate) {
       return null;
     }
@@ -670,7 +701,10 @@ const sharedFilenameService = new FilenameService();
  * @see {@link FilenameService.generateMediaFilename} for detailed implementation
  * @see {@link FilenameOptions} for available options
  */
-export function generateMediaFilename(media: MediaInfo, options?: FilenameOptions): string {
+export function generateMediaFilename(
+  media: MediaInfo,
+  options?: FilenameOptions,
+): string {
   return sharedFilenameService.generateMediaFilename(media, options);
 }
 
@@ -706,7 +740,7 @@ export function generateMediaFilename(media: MediaInfo, options?: FilenameOption
  */
 export function generateZipFilename(
   mediaItems: readonly MediaInfo[],
-  options?: ZipFilenameOptions
+  options?: ZipFilenameOptions,
 ): string {
   return sharedFilenameService.generateZipFilename(mediaItems, options);
 }

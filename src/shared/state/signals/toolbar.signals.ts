@@ -2,8 +2,11 @@
  * Toolbar state management
  */
 
-import { logger } from '@shared/logging';
-import { createSignalSafe, type SafeSignal } from '@shared/state/signals/signal-factory';
+import { logger } from "@shared/logging";
+import {
+  createSignalSafe,
+  type SafeSignal,
+} from "@shared/state/signals/signal-factory";
 
 // ============================================================================
 // Types
@@ -19,7 +22,7 @@ import { createSignalSafe, type SafeSignal } from '@shared/state/signals/signal-
  * - 'settings': Settings mode
  * - 'download': Download mode
  */
-export type ToolbarModeState = 'gallery' | 'settings' | 'download';
+export type ToolbarModeState = "gallery" | "settings" | "download";
 
 /**
  * Toolbar state (mode management)
@@ -36,8 +39,8 @@ export interface ToolbarExpandableState {
 }
 
 export type ToolbarEvents = {
-  'toolbar:mode-change': { mode: ToolbarModeState };
-  'toolbar:settings-expanded': { expanded: boolean };
+  "toolbar:mode-change": { mode: ToolbarModeState };
+  "toolbar:settings-expanded": { expanded: boolean };
 };
 
 // ============================================================================
@@ -45,7 +48,7 @@ export type ToolbarEvents = {
 // ============================================================================
 
 const INITIAL_TOOLBAR_STATE: ToolbarModeStateData = {
-  currentMode: 'gallery',
+  currentMode: "gallery",
 };
 
 const INITIAL_EXPANDABLE_STATE: ToolbarExpandableState = {
@@ -56,8 +59,9 @@ const INITIAL_EXPANDABLE_STATE: ToolbarExpandableState = {
 // Signals
 // ============================================================================
 
-const toolbarStateSignal: SafeSignal<ToolbarModeStateData> =
-  createSignalSafe(INITIAL_TOOLBAR_STATE);
+const toolbarStateSignal: SafeSignal<ToolbarModeStateData> = createSignalSafe(
+  INITIAL_TOOLBAR_STATE,
+);
 const expandableStateSignal: SafeSignal<ToolbarExpandableState> =
   createSignalSafe(INITIAL_EXPANDABLE_STATE);
 
@@ -78,11 +82,11 @@ export const toolbarState = {
   },
 
   subscribe(callback: (state: ToolbarModeStateData) => void): () => void {
-    return toolbarStateSignal.subscribe(state => {
+    return toolbarStateSignal.subscribe((state) => {
       try {
         callback(state);
       } catch (error) {
-        logger.warn('toolbar state callback error', { error });
+        logger.warn("toolbar state callback error", { error });
       }
     });
   },
@@ -92,17 +96,20 @@ export const toolbarState = {
 // Event Dispatcher
 // ============================================================================
 
-function dispatchEvent<K extends keyof ToolbarEvents>(event: K, data: ToolbarEvents[K]): void {
+function dispatchEvent<K extends keyof ToolbarEvents>(
+  event: K,
+  data: ToolbarEvents[K],
+): void {
   const detail = { ...data };
   const doc = globalThis.document;
 
-  if (!doc || typeof doc.dispatchEvent !== 'function') {
+  if (!doc || typeof doc.dispatchEvent !== "function") {
     logger.debug(`Event dispatch skipped: ${event} (no document)`, detail);
     return;
   }
 
   const CustomEventCtor = globalThis.CustomEvent;
-  if (typeof CustomEventCtor !== 'function') {
+  if (typeof CustomEventCtor !== "function") {
     logger.debug(`Event dispatch skipped: ${event} (no CustomEvent)`, detail);
     return;
   }
@@ -128,7 +135,7 @@ export function updateToolbarMode(mode: ToolbarModeState): void {
 
   if (currentState.currentMode !== mode) {
     toolbarStateSignal.value = { ...currentState, currentMode: mode };
-    dispatchEvent('toolbar:mode-change', { mode });
+    dispatchEvent("toolbar:mode-change", { mode });
     logger.debug(`Toolbar mode changed to: ${mode}`);
   }
 }
@@ -161,10 +168,10 @@ export function getToolbarInfo(): ToolbarModeStateData {
  */
 export function addEventListener<K extends keyof ToolbarEvents>(
   event: K,
-  handler: (data: ToolbarEvents[K]) => void
+  handler: (data: ToolbarEvents[K]) => void,
 ): () => void {
   const doc = globalThis.document;
-  if (!doc || typeof doc.addEventListener !== 'function') {
+  if (!doc || typeof doc.addEventListener !== "function") {
     logger.debug(`Listener skipped: ${event} (no document)`);
     return () => {};
   }
@@ -213,8 +220,8 @@ export function toggleSettingsExpanded(): void {
 
   expandableStateSignal.value = { isSettingsExpanded: newExpanded };
 
-  dispatchEvent('toolbar:settings-expanded', { expanded: newExpanded });
-  logger.debug(`Settings panel ${newExpanded ? 'expanded' : 'collapsed'}`);
+  dispatchEvent("toolbar:settings-expanded", { expanded: newExpanded });
+  logger.debug(`Settings panel ${newExpanded ? "expanded" : "collapsed"}`);
 }
 
 /**
@@ -225,7 +232,9 @@ export function setSettingsExpanded(expanded: boolean): void {
 
   if (currentExpanded !== expanded) {
     expandableStateSignal.value = { isSettingsExpanded: expanded };
-    dispatchEvent('toolbar:settings-expanded', { expanded });
-    logger.debug(`Settings panel set to ${expanded ? 'expanded' : 'collapsed'}`);
+    dispatchEvent("toolbar:settings-expanded", { expanded });
+    logger.debug(
+      `Settings panel set to ${expanded ? "expanded" : "collapsed"}`,
+    );
   }
 }

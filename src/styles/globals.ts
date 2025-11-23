@@ -7,21 +7,21 @@
 
 // Design tokens (3-tier hierarchy) - Bundler optimization via direct import instead of CSS @import
 // Phase 352: Removed design-tokens.css intermediate layer → Direct import
-import '@shared/styles/design-tokens.primitive.css'; // Tier 1: Base values (colors, sizes)
-import '@shared/styles/design-tokens.semantic.css'; // Tier 2: Role-based tokens
-import '@shared/styles/design-tokens.component.css'; // Tier 3: Component-specific tokens
+import "@shared/styles/design-tokens.primitive.css"; // Tier 1: Base values (colors, sizes)
+import "@shared/styles/design-tokens.semantic.css"; // Tier 2: Role-based tokens
+import "@shared/styles/design-tokens.component.css"; // Tier 3: Component-specific tokens
 
 // Design tokens - Animation system (Duration/Easing/Delay CSS variables)
-import '@shared/styles/tokens/animation.css';
+import "@shared/styles/tokens/animation.css";
 
 // Browser style reset (applied only inside gallery container)
-import '@shared/styles/base/reset.css';
+import "@shared/styles/base/reset.css";
 
 // Utility classes: Layout/spacing/sizing (lightweight, em/token-based)
-import '@shared/styles/utilities/layout.css';
+import "@shared/styles/utilities/layout.css";
 
 // Utility classes: @keyframes definition + animation utility classes
-import '@shared/styles/utilities/animations.css';
+import "@shared/styles/utilities/animations.css";
 
 // Isolated gallery styles (no impact on Twitter page)
-import '@shared/styles/isolated-gallery.css';
+import "@shared/styles/isolated-gallery.css";

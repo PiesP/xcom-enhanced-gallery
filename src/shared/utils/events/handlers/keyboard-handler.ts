@@ -4,19 +4,22 @@
  * Supported keys: Space (play/pause), arrow keys (navigation), M (mute)
  */
 
-import { logger } from '@shared/logging';
+import { logger } from "@shared/logging";
 import {
   navigateToItem,
   navigatePrevious,
   navigateNext,
   gallerySignals,
-} from '@shared/state/signals/gallery.signals';
+} from "@shared/state/signals/gallery.signals";
 import {
   shouldExecuteVideoControlKey,
   shouldExecutePlayPauseKey,
-} from '@shared/utils/keyboard-debounce';
-import { executeVideoControl } from './video-control-helper';
-import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events/core/event-context';
+} from "@shared/utils/keyboard-debounce";
+import { executeVideoControl } from "./video-control-helper";
+import type {
+  EventHandlers,
+  GalleryEventOptions,
+} from "@shared/utils/events/core/event-context";
 
 /**
  * Check if gallery is open
@@ -32,7 +35,7 @@ function checkGalleryOpen(): boolean {
 export function handleKeyboardEvent(
   event: KeyboardEvent,
   handlers: EventHandlers,
-  options: GalleryEventOptions
+  options: GalleryEventOptions,
 ): void {
   if (!options.enableKeyboard) return;
 
@@ -41,23 +44,23 @@ export function handleKeyboardEvent(
     if (checkGalleryOpen()) {
       const key = event.key;
       const isNavKey =
-        key === 'Home' ||
-        key === 'End' ||
-        key === 'PageDown' ||
-        key === 'PageUp' ||
-        key === 'ArrowLeft' ||
-        key === 'ArrowRight' ||
-        key === ' ' ||
-        key === 'Space';
+        key === "Home" ||
+        key === "End" ||
+        key === "PageDown" ||
+        key === "PageUp" ||
+        key === "ArrowLeft" ||
+        key === "ArrowRight" ||
+        key === " " ||
+        key === "Space";
 
       // Video control keys: Space(play/pause), ArrowUp/Down(volume), M/m(mute)
       const isVideoKey =
-        key === ' ' ||
-        key === 'Space' ||
-        key === 'ArrowUp' ||
-        key === 'ArrowDown' ||
-        key === 'm' ||
-        key === 'M';
+        key === " " ||
+        key === "Space" ||
+        key === "ArrowUp" ||
+        key === "ArrowDown" ||
+        key === "m" ||
+        key === "M";
 
       if (isNavKey || isVideoKey) {
         // Prevent default scroll/page transitions
@@ -65,60 +68,66 @@ export function handleKeyboardEvent(
         event.stopPropagation();
 
         switch (key) {
-          case ' ':
-          case 'Space':
+          case " ":
+          case "Space":
             // Keyboard debounce: Prevent duplicate play/pause calls on repeated Space input (150ms interval)
             if (shouldExecutePlayPauseKey(event.key)) {
-              executeVideoControl('togglePlayPause');
+              executeVideoControl("togglePlayPause");
             }
             break;
-          case 'ArrowLeft':
-            navigatePrevious('keyboard');
+          case "ArrowLeft":
+            navigatePrevious("keyboard");
             break;
-          case 'ArrowRight':
-            navigateNext('keyboard');
+          case "ArrowRight":
+            navigateNext("keyboard");
             break;
-          case 'Home':
-            navigateToItem(0, 'keyboard');
+          case "Home":
+            navigateToItem(0, "keyboard");
             break;
-          case 'End': {
-            const lastIndex = Math.max(0, gallerySignals.mediaItems.value.length - 1);
-            navigateToItem(lastIndex, 'keyboard');
+          case "End": {
+            const lastIndex = Math.max(
+              0,
+              gallerySignals.mediaItems.value.length - 1,
+            );
+            navigateToItem(lastIndex, "keyboard");
             break;
           }
-          case 'PageDown': {
+          case "PageDown": {
             // Page Down: +5 items
             navigateToItem(
               Math.min(
                 gallerySignals.mediaItems.value.length - 1,
-                gallerySignals.currentIndex.value + 5
+                gallerySignals.currentIndex.value + 5,
               ),
-              'keyboard'
+              "keyboard",
             );
             break;
           }
-          case 'PageUp': {
+          case "PageUp": {
             // Page Up: -5 items
-            navigateToItem(Math.max(0, gallerySignals.currentIndex.value - 5), 'keyboard');
+            navigateToItem(
+              Math.max(0, gallerySignals.currentIndex.value - 5),
+              "keyboard",
+            );
             break;
           }
-          case 'ArrowUp':
+          case "ArrowUp":
             // Keyboard debounce: Prevent excessive volume control on repeated ArrowUp input (100ms interval)
             if (shouldExecuteVideoControlKey(event.key)) {
-              executeVideoControl('volumeUp');
+              executeVideoControl("volumeUp");
             }
             break;
-          case 'ArrowDown':
+          case "ArrowDown":
             // Keyboard debounce: Prevent excessive volume control on repeated ArrowDown input (100ms interval)
             if (shouldExecuteVideoControlKey(event.key)) {
-              executeVideoControl('volumeDown');
+              executeVideoControl("volumeDown");
             }
             break;
-          case 'm':
-          case 'M':
+          case "m":
+          case "M":
             // Keyboard debounce: Prevent duplicate mute toggle calls on repeated M key input (100ms interval)
             if (shouldExecuteVideoControlKey(event.key)) {
-              executeVideoControl('toggleMute');
+              executeVideoControl("toggleMute");
             }
             break;
         }
@@ -132,7 +141,7 @@ export function handleKeyboardEvent(
     }
 
     // Close gallery on ESC key
-    if (event.key === 'Escape' && checkGalleryOpen()) {
+    if (event.key === "Escape" && checkGalleryOpen()) {
       handlers.onGalleryClose();
       event.preventDefault();
       event.stopPropagation();
@@ -144,6 +153,6 @@ export function handleKeyboardEvent(
       handlers.onKeyboardEvent(event);
     }
   } catch (error) {
-    logger.error('Error handling keyboard event:', error);
+    logger.error("Error handling keyboard event:", error);
   }
 }

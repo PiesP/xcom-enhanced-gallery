@@ -6,7 +6,7 @@
 export type GMDownloadFunction = (options: Record<string, unknown>) => void;
 
 type GlobalWithGMDownload = typeof globalThis & {
-  ['GM_download']?: GMDownloadFunction;
+  ["GM_download"]?: GMDownloadFunction;
 };
 
 /**
@@ -15,10 +15,10 @@ type GlobalWithGMDownload = typeof globalThis & {
 export function getGMDownload(): GMDownloadFunction | undefined {
   const gm = globalThis as GlobalWithGMDownload;
   const download =
-    typeof GM_download !== 'undefined'
+    typeof GM_download !== "undefined"
       ? (GM_download as unknown as GMDownloadFunction)
-      : gm['GM_download'];
-  return typeof download === 'function' ? download : undefined;
+      : gm["GM_download"];
+  return typeof download === "function" ? download : undefined;
 }
 
 /**
@@ -27,7 +27,7 @@ export function getGMDownload(): GMDownloadFunction | undefined {
 export function assertGMDownload(): GMDownloadFunction {
   const gmDownload = getGMDownload();
   if (!gmDownload) {
-    throw new Error('GM_download not available in this environment');
+    throw new Error("GM_download not available in this environment");
   }
   return gmDownload;
 }

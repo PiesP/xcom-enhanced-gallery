@@ -5,16 +5,18 @@
  * Phase 345: Enhanced type safety
  */
 
-import { logger } from '@shared/logging';
-import { registerGalleryRenderer } from '@shared/container';
-import type { IGalleryApp } from '@shared/container/app-container';
+import { logger } from "@shared/logging";
+import { registerGalleryRenderer } from "@shared/container";
+import type { IGalleryApp } from "@shared/container/app-container";
 
 let rendererRegistrationTask: Promise<void> | null = null;
 
 async function registerRenderer(): Promise<void> {
   if (!rendererRegistrationTask) {
     rendererRegistrationTask = (async () => {
-      const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
+      const { GalleryRenderer } = await import(
+        "@features/gallery/GalleryRenderer"
+      );
       registerGalleryRenderer(new GalleryRenderer());
     })().finally(() => {
       rendererRegistrationTask = null;
@@ -38,18 +40,18 @@ async function registerRenderer(): Promise<void> {
  */
 export async function initializeGalleryApp(): Promise<IGalleryApp> {
   try {
-    logger.info('🎨 Gallery app lazy initialization starting');
+    logger.info("🎨 Gallery app lazy initialization starting");
 
     await registerRenderer();
 
-    const { GalleryApp } = await import('@features/gallery/GalleryApp');
+    const { GalleryApp } = await import("@features/gallery/GalleryApp");
     const galleryApp = new GalleryApp();
     await galleryApp.initialize();
 
-    logger.info('✅ Gallery app initialization complete');
+    logger.info("✅ Gallery app initialization complete");
     return galleryApp;
   } catch (error) {
-    logger.error('❌ Gallery app initialization failed:', error);
+    logger.error("❌ Gallery app initialization failed:", error);
     throw error;
   }
 }

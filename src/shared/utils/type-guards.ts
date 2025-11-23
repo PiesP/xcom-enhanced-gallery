@@ -19,7 +19,7 @@
  * ```
  */
 export function createEventListener<T extends Event = Event>(
-  handler: (event: T) => void
+  handler: (event: T) => void,
 ): EventListener {
   return (event: Event) => {
     handler(event as T);
@@ -47,7 +47,9 @@ export function isHTMLElement(element: unknown): element is HTMLElement {
  * @param element - Value to check
  * @returns true if element is HTMLImageElement
  */
-export function isHTMLImageElement(element: unknown): element is HTMLImageElement {
+export function isHTMLImageElement(
+  element: unknown,
+): element is HTMLImageElement {
   return element instanceof HTMLImageElement;
 }
 
@@ -56,7 +58,9 @@ export function isHTMLImageElement(element: unknown): element is HTMLImageElemen
  * @param element - 검사할 값
  * @returns element가 HTMLVideoElement이면 true
  */
-export function isHTMLVideoElement(element: unknown): element is HTMLVideoElement {
+export function isHTMLVideoElement(
+  element: unknown,
+): element is HTMLVideoElement {
   return element instanceof HTMLVideoElement;
 }
 
@@ -65,7 +69,9 @@ export function isHTMLVideoElement(element: unknown): element is HTMLVideoElemen
  * @param element - 검사할 값
  * @returns element가 HTMLAnchorElement이면 true
  */
-export function isHTMLAnchorElement(element: unknown): element is HTMLAnchorElement {
+export function isHTMLAnchorElement(
+  element: unknown,
+): element is HTMLAnchorElement {
   return element instanceof HTMLAnchorElement;
 }
 
@@ -110,7 +116,9 @@ export function isMouseEvent(event: Event): event is MouseEvent {
  * @param element - 검사할 값
  * @returns element가 Element 인스턴스이면 true
  */
-export function hasElement<T extends Element = Element>(element: unknown): element is T {
+export function hasElement<T extends Element = Element>(
+  element: unknown,
+): element is T {
   return element instanceof Element;
 }
 
@@ -143,7 +151,7 @@ export function isArray<T>(value: unknown): value is T[] {
  * ```
  */
 export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /**
@@ -183,7 +191,7 @@ export function createAddEventListenerOptions(options?: {
  */
 export function toRecord(value: unknown): Record<string, unknown> {
   if (!isRecord(value)) {
-    throw new Error('Value is not a valid Record<string, unknown>');
+    throw new Error("Value is not a valid Record<string, unknown>");
   }
   return value;
 }

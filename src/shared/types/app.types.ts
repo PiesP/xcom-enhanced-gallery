@@ -33,18 +33,18 @@ export interface AppConfig {
   readonly autoStart: boolean;
 }
 
-export type { Cleanupable } from './lifecycle.types';
+export type { Cleanupable } from "./lifecycle.types";
 
 // ================================
 // Core types and patterns (re-export)
 // ================================
 
 // Result pattern - re-exported from result.types (Phase 353: AsyncResult added, unified SSOT)
-export type { Result, AsyncResult } from './result.types';
+export type { Result, AsyncResult } from "./result.types";
 
 // BaseService and service types
-export type { BaseService } from './core/core-types';
-export type { ServiceLifecycle } from './core/core-types';
+export type { BaseService } from "./core/core-types";
+export type { ServiceLifecycle } from "./core/core-types";
 
 // ================================
 // Utility types
@@ -82,23 +82,23 @@ export type DeepPartial<T> = {
 type Brand<T, B> = T & { readonly __brand: B };
 
 /** User ID */
-export type UserId = Brand<string, 'UserId'>;
+export type UserId = Brand<string, "UserId">;
 /** Tweet ID */
-export type TweetId = Brand<string, 'TweetId'>;
+export type TweetId = Brand<string, "TweetId">;
 /** Service key */
-export type ServiceKey = Brand<string, 'ServiceKey'>;
+export type ServiceKey = Brand<string, "ServiceKey">;
 /** Element ID */
-export type ElementId = Brand<string, 'ElementId'>;
+export type ElementId = Brand<string, "ElementId">;
 /** Media URL */
-export type MediaUrl = Brand<string, 'MediaUrl'>;
+export type MediaUrl = Brand<string, "MediaUrl">;
 /** Thumbnail URL */
-export type ThumbnailUrl = Brand<string, 'ThumbnailUrl'>;
+export type ThumbnailUrl = Brand<string, "ThumbnailUrl">;
 /** Original URL */
-export type OriginalUrl = Brand<string, 'OriginalUrl'>;
+export type OriginalUrl = Brand<string, "OriginalUrl">;
 /** Filename */
-export type FileName = Brand<string, 'FileName'>;
+export type FileName = Brand<string, "FileName">;
 /** File extension */
-export type FileExtension = Brand<string, 'FileExtension'>;
+export type FileExtension = Brand<string, "FileExtension">;
 
 // ================================
 // Subordinate type file re-exports
@@ -120,7 +120,7 @@ export type {
   FilenameStrategy,
   MediaFileExtension,
   GlobalConfig,
-} from './ui.types';
+} from "./ui.types";
 
 // 컴포넌트 타입
 export type {
@@ -150,7 +150,7 @@ export type {
   RequestOptions,
   PaginationInfo,
   FileInfo,
-} from './component.types';
+} from "./component.types";
 
 // 미디어 타입
 export type {
@@ -167,22 +167,32 @@ export type {
   MediaExtractor,
   PageType,
   ExtractionSource,
-} from './media.types';
+} from "./media.types";
 
-export { ExtractionError } from './media.types';
+export { ExtractionError } from "./media.types";
 
 // 네비게이션 타입
-export type { NavigationSource } from './navigation.types';
+export type { NavigationSource } from "./navigation.types";
 
 // 툴바 UI 상태 타입
-export type { ToolbarDataState, FitMode, ToolbarState, ToolbarActions } from './toolbar.types';
+export type {
+  ToolbarDataState,
+  FitMode,
+  ToolbarState,
+  ToolbarActions,
+} from "./toolbar.types";
 
 // Result 및 에러 코드
-export type { BaseResultStatus, BaseResult, ResultSuccess, ResultError } from './result.types';
-export { ErrorCode } from './result.types';
+export type {
+  BaseResultStatus,
+  BaseResult,
+  ResultSuccess,
+  ResultError,
+} from "./result.types";
+export { ErrorCode } from "./result.types";
 
 // 갤러리 타입 (core-types에서 재-export)
-export type { GalleryViewMode } from './core/core-types';
-export type { ViewMode } from './core/core-types';
+export type { GalleryViewMode } from "./core/core-types";
+export type { ViewMode } from "./core/core-types";
 
 // Phase 421: ViewMode helper utilities removed; use VIEW_MODES from '@/constants'.

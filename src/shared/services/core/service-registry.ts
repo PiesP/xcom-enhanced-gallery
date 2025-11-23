@@ -60,16 +60,16 @@ export class ServiceRegistry {
   public register<T>(key: string, instance: T): void {
     if (this.services.has(key)) {
       const prev = this.services.get(key);
-      if (prev && typeof prev === 'object') {
+      if (prev && typeof prev === "object") {
         const candidate = prev as CleanupCapable;
-        if (typeof candidate.destroy === 'function') {
+        if (typeof candidate.destroy === "function") {
           try {
             candidate.destroy();
           } catch {
             // Ignore cleanup failures on overwrite to avoid cascading issues.
           }
         }
-        if (typeof candidate.cleanup === 'function') {
+        if (typeof candidate.cleanup === "function") {
           try {
             candidate.cleanup();
           } catch {
@@ -170,10 +170,10 @@ export class ServiceRegistry {
    */
   public cleanup(): void {
     for (const instance of this.services.values()) {
-      if (instance && typeof instance === 'object') {
+      if (instance && typeof instance === "object") {
         const inst = instance as CleanupCapable;
         // Call destroy() first (highest priority)
-        if (typeof inst.destroy === 'function') {
+        if (typeof inst.destroy === "function") {
           try {
             inst.destroy();
           } catch {
@@ -182,7 +182,7 @@ export class ServiceRegistry {
         }
 
         // Call cleanup() as additional cleanup step
-        if (typeof inst.cleanup === 'function') {
+        if (typeof inst.cleanup === "function") {
           try {
             inst.cleanup();
           } catch {

@@ -6,17 +6,20 @@
  * @description 마우스 움직임에 의존하지 않는 안정적인 스크롤 처리를 제공
  */
 
-import { getSolid } from '@shared/external/vendors';
-import { logger } from '@shared/logging';
-import { EventManager } from '@shared/services/event-manager';
-import { galleryState } from '@shared/state/signals/gallery.signals';
-import type { GalleryState } from '@shared/state/signals/gallery.signals';
-import type { ScrollState, ScrollDirection } from '@shared/state/signals/scroll.signals';
-import { INITIAL_SCROLL_STATE } from '@shared/state/signals/scroll.signals';
-import { useSelector } from '@shared/utils/signal-selector';
-import { toAccessor } from '@shared/utils/solid-helpers';
-import { isGalleryInternalEvent } from '@shared/utils/utils';
-import { globalTimerManager } from '@shared/utils/timer-management';
+import { getSolid } from "@shared/external/vendors";
+import { logger } from "@shared/logging";
+import { EventManager } from "@shared/services/event-manager";
+import { galleryState } from "@shared/state/signals/gallery.signals";
+import type { GalleryState } from "@shared/state/signals/gallery.signals";
+import type {
+  ScrollState,
+  ScrollDirection,
+} from "@shared/state/signals/scroll.signals";
+import { INITIAL_SCROLL_STATE } from "@shared/state/signals/scroll.signals";
+import { useSelector } from "@shared/utils/signal-selector";
+import { toAccessor } from "@shared/utils/solid-helpers";
+import { isGalleryInternalEvent } from "@shared/utils/dom";
+import { globalTimerManager } from "@shared/utils/timer-management";
 
 const { createSignal, createEffect, batch, onCleanup } = getSolid();
 
@@ -57,11 +60,11 @@ export const SCROLL_IDLE_TIMEOUT = 250;
 
 const extractWheelDelta = (event: Event): number => {
   if (event instanceof WheelEvent) {
-    return typeof event.deltaY === 'number' ? event.deltaY : 0;
+    return typeof event.deltaY === "number" ? event.deltaY : 0;
   }
 
   const maybeDelta = (event as { deltaY?: number }).deltaY;
-  return typeof maybeDelta === 'number' ? maybeDelta : 0;
+  return typeof maybeDelta === "number" ? maybeDelta : 0;
 };
 
 export function useGalleryScroll({
@@ -80,11 +83,12 @@ export function useGalleryScroll({
   const isGalleryOpen = useSelector<GalleryState, boolean>(
     galleryState,
     (state: GalleryState) => state.isOpen,
-    { dependencies: state => [state.isOpen] }
+    { dependencies: (state) => [state.isOpen] },
   );
 
   // Phase 153: 통합 스크롤 상태 Signal
-  const [scrollState, setScrollState] = createSignal<ScrollState>(INITIAL_SCROLL_STATE);
+  const [scrollState, setScrollState] =
+    createSignal<ScrollState>(INITIAL_SCROLL_STATE);
 
   let scrollTimeoutId: number | null = null;
   let directionTimeoutId: number | null = null;
@@ -104,9 +108,9 @@ export function useGalleryScroll({
   };
 
   const updateScrollState = (scrolling: boolean, delta?: number) => {
-    const hasDelta = typeof delta === 'number';
+    const hasDelta = typeof delta === "number";
     batch(() => {
-      setScrollState(prev => ({
+      setScrollState((prev) => ({
         ...prev,
         isScrolling: scrolling,
         lastScrollTime: scrolling ? Date.now() : prev.lastScrollTime,
@@ -120,16 +124,16 @@ export function useGalleryScroll({
       return;
     }
 
-    const newDirection: ScrollDirection = delta > 0 ? 'down' : 'up';
+    const newDirection: ScrollDirection = delta > 0 ? "down" : "up";
 
     if (scrollState().direction !== newDirection) {
-      setScrollState(prev => ({
+      setScrollState((prev) => ({
         ...prev,
         direction: newDirection,
       }));
       onScrollDirectionChange?.(newDirection);
 
-      logger.debug('useGalleryScroll: Scroll direction changed', {
+      logger.debug("useGalleryScroll: Scroll direction changed", {
         direction: newDirection,
         delta,
       });
@@ -137,12 +141,12 @@ export function useGalleryScroll({
 
     clearDirectionTimeout();
     directionTimeoutId = globalTimerManager.setTimeout(() => {
-      if (scrollState().direction !== 'idle') {
-        setScrollState(prev => ({
+      if (scrollState().direction !== "idle") {
+        setScrollState((prev) => ({
           ...prev,
-          direction: 'idle',
+          direction: "idle",
         }));
-        onScrollDirectionChange?.('idle');
+        onScrollDirectionChange?.("idle");
       }
     }, SCROLL_IDLE_TIMEOUT);
   };
@@ -151,7 +155,7 @@ export function useGalleryScroll({
     clearScrollTimeout();
     scrollTimeoutId = globalTimerManager.setTimeout(() => {
       updateScrollState(false);
-      logger.debug('useGalleryScroll: Scroll ended');
+      logger.debug("useGalleryScroll: Scroll ended");
     }, SCROLL_IDLE_TIMEOUT);
   };
 
@@ -184,20 +188,20 @@ export function useGalleryScroll({
       updateScrollState(false);
       clearScrollTimeout();
       clearDirectionTimeout();
-      setScrollState(prev => ({
+      setScrollState((prev) => ({
         ...prev,
-        direction: 'idle',
+        direction: "idle",
       }));
       return;
     }
 
     const eventManager = new EventManager();
 
-    eventManager.addEventListener(eventTarget, 'wheel', handleGalleryWheel, {
+    eventManager.addEventListener(eventTarget, "wheel", handleGalleryWheel, {
       passive: true,
     });
 
-    logger.debug('useGalleryScroll: Event listeners registered', {
+    logger.debug("useGalleryScroll: Event listeners registered", {
       hasContainer: !!containerElement,
       hasScrollTarget: !!scrollElement,
     });

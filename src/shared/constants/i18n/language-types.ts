@@ -1,6 +1,6 @@
-export const LANGUAGE_CODES = ['en', 'ko', 'ja'] as const;
+export const LANGUAGE_CODES = ["en", "ko", "ja"] as const;
 export type BaseLanguageCode = (typeof LANGUAGE_CODES)[number];
-export type SupportedLanguage = 'auto' | BaseLanguageCode;
+export type SupportedLanguage = "auto" | BaseLanguageCode;
 /**
  * Translation schema contract shared across all languages.
  */
@@ -83,6 +83,8 @@ const LANGUAGE_CODE_LOOKUP = new Set<string>(LANGUAGE_CODES);
 /**
  * Returns whether the provided value matches a supported language code.
  */
-export function isBaseLanguageCode(value: string | null | undefined): value is BaseLanguageCode {
+export function isBaseLanguageCode(
+  value: string | null | undefined,
+): value is BaseLanguageCode {
   return value != null && LANGUAGE_CODE_LOOKUP.has(value);
 }

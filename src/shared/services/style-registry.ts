@@ -4,8 +4,8 @@
  *              for inserting, updating, and removing <style> tags.
  */
 
-import { getUserscript } from '@shared/external/userscript/adapter';
-import { logger } from '@shared/logging';
+import { getUserscript } from "@shared/external/userscript/adapter";
+import { logger } from "@shared/logging";
 
 export interface StyleRegistrationOptions {
   readonly id: string;
@@ -21,7 +21,10 @@ interface RegistrationResult {
 }
 
 function isBrowserEnvironment(): boolean {
-  return typeof document !== 'undefined' && typeof document.createElement === 'function';
+  return (
+    typeof document !== "undefined" &&
+    typeof document.createElement === "function"
+  );
 }
 
 export class StyleRegistry {
@@ -39,18 +42,23 @@ export class StyleRegistry {
     return StyleRegistry.instance;
   }
 
-  public registerStyle(options: StyleRegistrationOptions): RegistrationResult | null {
+  public registerStyle(
+    options: StyleRegistrationOptions,
+  ): RegistrationResult | null {
     if (!isBrowserEnvironment()) {
       logger.warn(
-        '[StyleRegistry] Unable to register style outside browser environment',
-        options.id
+        "[StyleRegistry] Unable to register style outside browser environment",
+        options.id,
       );
       return null;
     }
 
     const trimmedCss = options.cssText.trim();
     if (!trimmedCss) {
-      logger.warn('[StyleRegistry] Ignoring empty style registration', options.id);
+      logger.warn(
+        "[StyleRegistry] Ignoring empty style registration",
+        options.id,
+      );
       return null;
     }
 
@@ -71,7 +79,7 @@ export class StyleRegistry {
       styleElement = getUserscript().addStyle(trimmedCss);
     } catch {
       // Fallback for non-GM environments
-      styleElement = document.createElement('style');
+      styleElement = document.createElement("style");
       styleElement.textContent = trimmedCss;
       (document.head || document.documentElement).appendChild(styleElement);
     }
@@ -87,7 +95,7 @@ export class StyleRegistry {
 
     this.styleMap.set(options.id, styleElement);
 
-    logger.debug('[StyleRegistry] Registered style', options.id);
+    logger.debug("[StyleRegistry] Registered style", options.id);
     return { id: options.id, element: styleElement, replaced: false };
   }
 
@@ -99,7 +107,7 @@ export class StyleRegistry {
 
     element.remove();
     this.styleMap.delete(id);
-    logger.debug('[StyleRegistry] Removed style', id);
+    logger.debug("[StyleRegistry] Removed style", id);
   }
 
   public hasStyle(id: string): boolean {

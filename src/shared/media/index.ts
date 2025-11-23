@@ -107,8 +107,20 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Processing Orchestrator
 // ─────────────────────────────────────────────────────────────────────────────
-export { MediaProcessor, processMedia } from './media-processor';
-export { collectNodes, extractRawData, normalize, dedupe, validate } from './pipeline';
+export { MediaProcessor, processMedia } from "./media-processor";
+export {
+  collectNodes,
+  extractRawData,
+  normalize,
+  dedupe,
+  validate,
+} from "./pipeline";
 
 // 타입 정의
-export type { MediaDescriptor, MediaType, MediaVariant, RawMediaCandidate, Result } from './types';
+export type {
+  MediaDescriptor,
+  MediaType,
+  MediaVariant,
+  RawMediaCandidate,
+  Result,
+} from "./types";

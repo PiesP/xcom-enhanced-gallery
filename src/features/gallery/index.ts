@@ -8,4 +8,4 @@ export type {
   FitMode,
   ToolbarState,
   ToolbarActions,
-} from '@shared/types/toolbar.types';
+} from "@shared/types/toolbar.types";

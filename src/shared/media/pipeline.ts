@@ -28,15 +28,15 @@
  * @author X.com Enhanced Gallery | Phase 379
  */
 
-import type { MediaDescriptor, MediaVariant, RawMediaCandidate } from './types';
-import type { Result } from '@shared/types/result.types';
-import { success, failure, ErrorCode } from '@shared/types/result.types';
+import type { MediaDescriptor, MediaVariant, RawMediaCandidate } from "./types";
+import type { Result } from "@shared/types/result.types";
+import { success, failure, ErrorCode } from "@shared/types/result.types";
 import {
   extractOriginalImageUrl,
   getHighQualityMediaUrl,
   isValidMediaUrl as isTwitterMediaUrl,
-} from '@shared/utils/media-url';
-import { isUrlAllowed, MEDIA_URL_POLICY } from '@shared/utils/url-safety';
+} from "@shared/utils/media-url";
+import { isUrlAllowed, MEDIA_URL_POLICY } from "@shared/utils/url-safety";
 
 /**
  * Stage 1: Collection - Discover media candidate elements
@@ -52,12 +52,12 @@ import { isUrlAllowed, MEDIA_URL_POLICY } from '@shared/utils/url-safety';
  */
 export function collectNodes(root: HTMLElement): Element[] {
   const mediaSelectors = [
-    'img[src]',
-    'video[src]',
-    'source[src]',
-    'picture img',
+    "img[src]",
+    "video[src]",
+    "source[src]",
+    "picture img",
     '[data-testid*="media"]',
-    '[data-src]',
+    "[data-src]",
   ];
 
   const elements: Element[] = [];
@@ -88,28 +88,28 @@ export function collectNodes(root: HTMLElement): Element[] {
 export function extractRawData(element: Element): RawMediaCandidate | null {
   try {
     const tagName = element.tagName.toLowerCase();
-    let url = '';
-    let type = 'unknown';
+    let url = "";
+    let type = "unknown";
 
     // URL extraction from standard attributes
-    if (element.hasAttribute('src')) {
-      url = element.getAttribute('src') || '';
-    } else if (element.hasAttribute('data-src')) {
-      url = element.getAttribute('data-src') || '';
+    if (element.hasAttribute("src")) {
+      url = element.getAttribute("src") || "";
+    } else if (element.hasAttribute("data-src")) {
+      url = element.getAttribute("data-src") || "";
     }
 
     // Media type classification
-    if (tagName === 'img') {
-      type = 'image';
-    } else if (tagName === 'video') {
-      type = 'video';
-    } else if (tagName === 'source') {
+    if (tagName === "img") {
+      type = "image";
+    } else if (tagName === "video") {
+      type = "video";
+    } else if (tagName === "source") {
       const parent = element.parentElement;
-      type = parent?.tagName.toLowerCase() === 'video' ? 'video' : 'image';
+      type = parent?.tagName.toLowerCase() === "video" ? "video" : "image";
     }
 
     // URL validation: skip elements without URL
-    if (!url || url.trim() === '') {
+    if (!url || url.trim() === "") {
       return null;
     }
 
@@ -144,7 +144,9 @@ export function extractRawData(element: Element): RawMediaCandidate | null {
  * @returns {MediaDescriptor[]} Normalized media descriptors
  * @internal Stage 3 of media extraction pipeline
  */
-export function normalize(rawCandidates: RawMediaCandidate[]): MediaDescriptor[] {
+export function normalize(
+  rawCandidates: RawMediaCandidate[],
+): MediaDescriptor[] {
   const descriptors: MediaDescriptor[] = [];
 
   for (const candidate of rawCandidates) {
@@ -161,7 +163,7 @@ export function normalize(rawCandidates: RawMediaCandidate[]): MediaDescriptor[]
 
       // Type Classification: Normalize media type, prioritize GIF detection
       const mediaType = gifLike
-        ? ('gif' as MediaDescriptor['type'])
+        ? ("gif" as MediaDescriptor["type"])
         : normalizeMediaType(candidate.type);
 
       if (!mediaType) {
@@ -174,9 +176,11 @@ export function normalize(rawCandidates: RawMediaCandidate[]): MediaDescriptor[]
       const alt = candidate.attributes.alt;
 
       // Image Processing: Generate quality variants for Twitter CDN images
-      if (mediaType === 'image') {
+      if (mediaType === "image") {
         const isTwitter = isTwitterMediaUrl(originalUrl);
-        const canonicalUrl = isTwitter ? extractOriginalImageUrl(originalUrl) : originalUrl;
+        const canonicalUrl = isTwitter
+          ? extractOriginalImageUrl(originalUrl)
+          : originalUrl;
         const id = generateMediaId(canonicalUrl);
 
         const descriptor: MediaDescriptor = {
@@ -189,19 +193,19 @@ export function normalize(rawCandidates: RawMediaCandidate[]): MediaDescriptor[]
           ...(isTwitter && {
             variants: [
               {
-                quality: 'small',
-                url: getHighQualityMediaUrl(canonicalUrl, 'small'),
+                quality: "small",
+                url: getHighQualityMediaUrl(canonicalUrl, "small"),
                 ...(width !== undefined && { width }),
                 ...(height !== undefined && { height }),
               },
               {
-                quality: 'large',
-                url: getHighQualityMediaUrl(canonicalUrl, 'large'),
+                quality: "large",
+                url: getHighQualityMediaUrl(canonicalUrl, "large"),
                 ...(width !== undefined && { width }),
                 ...(height !== undefined && { height }),
               },
               {
-                quality: 'orig',
+                quality: "orig",
                 url: extractOriginalImageUrl(canonicalUrl),
                 ...(width !== undefined && { width }),
                 ...(height !== undefined && { height }),
@@ -268,7 +272,9 @@ export function dedupe(descriptors: MediaDescriptor[]): MediaDescriptor[] {
  * @returns {Result<MediaDescriptor[]>} Validation result
  * @internal Stage 5 of media extraction pipeline
  */
-export function validate(descriptors: MediaDescriptor[]): Result<MediaDescriptor[]> {
+export function validate(
+  descriptors: MediaDescriptor[],
+): Result<MediaDescriptor[]> {
   try {
     // URL Validation: Check that all URLs are valid format
     const invalidUrls: string[] = [];
@@ -283,10 +289,14 @@ export function validate(descriptors: MediaDescriptor[]): Result<MediaDescriptor
       invalidUrlCount: invalidUrls.length,
     });
   } catch (error) {
-    return failure(error instanceof Error ? error.message : String(error), ErrorCode.UNKNOWN, {
-      cause: error instanceof Error ? error : undefined,
-      meta: { descriptorCount: descriptors.length },
-    });
+    return failure(
+      error instanceof Error ? error.message : String(error),
+      ErrorCode.UNKNOWN,
+      {
+        cause: error instanceof Error ? error : undefined,
+        meta: { descriptorCount: descriptors.length },
+      },
+    );
   }
 }
 
@@ -313,11 +323,11 @@ function generateMediaId(url: string): string {
  * @internal Normalize media type classification
  * Standardizes various type strings to canonical types
  */
-function normalizeMediaType(type: string): MediaDescriptor['type'] | null {
+function normalizeMediaType(type: string): MediaDescriptor["type"] | null {
   const lower = type.toLowerCase();
-  if (lower === 'image' || lower === 'img') return 'image';
-  if (lower === 'video') return 'video';
-  if (lower.includes('gif')) return 'gif';
+  if (lower === "image" || lower === "img") return "image";
+  if (lower === "video") return "video";
+  if (lower.includes("gif")) return "gif";
   return null;
 }
 
@@ -338,7 +348,7 @@ function parseNumber(value: string | undefined): number | undefined {
 function isValidUrl(url: string): boolean {
   try {
     // Allow relative URLs
-    if (url.startsWith('/') || url.startsWith('data:')) {
+    if (url.startsWith("/") || url.startsWith("data:")) {
       return true;
     }
     new URL(url);
@@ -357,16 +367,16 @@ function isGifLikeUrl(url: string): boolean {
     const u = new URL(url);
     const path = u.pathname;
     return (
-      path.includes('/tweet_video_thumb/') ||
-      path.includes('/ext_tw_video_thumb/') ||
-      path.includes('/video_thumb/')
+      path.includes("/tweet_video_thumb/") ||
+      path.includes("/ext_tw_video_thumb/") ||
+      path.includes("/video_thumb/")
     );
   } catch {
     // Fallback string matching
     return (
-      url.includes('/tweet_video_thumb/') ||
-      url.includes('/ext_tw_video_thumb/') ||
-      url.includes('/video_thumb/')
+      url.includes("/tweet_video_thumb/") ||
+      url.includes("/ext_tw_video_thumb/") ||
+      url.includes("/video_thumb/")
     );
   }
 }

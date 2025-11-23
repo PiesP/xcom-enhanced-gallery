@@ -5,8 +5,8 @@
  * Prevent unnecessary re-renders to optimize performance.
  */
 
-import { getSolid } from '@shared/external/vendors';
-import { globalTimerManager } from './timer-management';
+import { getSolid } from "@shared/external/vendors";
+import { globalTimerManager } from "./timer-management";
 
 // Type definitions
 type Signal<T> = {
@@ -44,7 +44,7 @@ export interface SelectorOptions<T> {
  */
 export function createSelector<T, R>(
   selector: SelectorFn<T, R>,
-  options: SelectorOptions<T> = {}
+  options: SelectorOptions<T> = {},
 ): SelectorFn<T, R> {
   const { dependencies } = options;
 
@@ -62,7 +62,11 @@ export function createSelector<T, R>(
     if (dependencies) {
       const currentDependencies = dependencies(state);
 
-      if (hasResult && lastDependencies && shallowEqual(lastDependencies, currentDependencies)) {
+      if (
+        hasResult &&
+        lastDependencies &&
+        shallowEqual(lastDependencies, currentDependencies)
+      ) {
         return lastResult;
       }
 
@@ -94,7 +98,7 @@ export function createSelector<T, R>(
 export function useSelector<T, R>(
   signalInstance: Signal<T>,
   selector: SelectorFn<T, R>,
-  options: SelectorOptions<T> = {}
+  options: SelectorOptions<T> = {},
 ): () => R {
   const { createMemo } = getSolid();
 
@@ -115,10 +119,12 @@ export function useSelector<T, R>(
  */
 export function useCombinedSelector<T extends readonly Signal<unknown>[], R>(
   signals: T,
-  combiner: (...values: { [K in keyof T]: T[K] extends Signal<infer U> ? U : never }) => R,
+  combiner: (
+    ...values: { [K in keyof T]: T[K] extends Signal<infer U> ? U : never }
+  ) => R,
   dependencies?: (
     ...values: { [K in keyof T]: T[K] extends Signal<infer U> ? U : never }
-  ) => readonly unknown[]
+  ) => readonly unknown[],
 ): () => R {
   const { createMemo } = getSolid();
 
@@ -127,14 +133,18 @@ export function useCombinedSelector<T extends readonly Signal<unknown>[], R>(
   let hasResult = false;
 
   const memo = createMemo(() => {
-    const values = signals.map(signal => signal.value) as {
+    const values = signals.map((signal) => signal.value) as {
       [K in keyof T]: T[K] extends Signal<infer U> ? U : never;
     };
 
     if (dependencies) {
       const currentDependencies = dependencies(...values);
 
-      if (hasResult && lastDependencies && shallowEqual(lastDependencies, currentDependencies)) {
+      if (
+        hasResult &&
+        lastDependencies &&
+        shallowEqual(lastDependencies, currentDependencies)
+      ) {
         return lastResult;
       }
 
@@ -163,11 +173,15 @@ export function useAsyncSelector<T, R>(
   signalInstance: Signal<T>,
   asyncSelector: (state: T) => Promise<R>,
   defaultValue: R,
-  debounceMs = 300
+  debounceMs = 300,
 ): () => { value: R; loading: boolean; error: Error | null } {
   const { createSignal, createEffect, onCleanup } = getSolid();
 
-  const [result, setResult] = createSignal<{ value: R; loading: boolean; error: Error | null }>({
+  const [result, setResult] = createSignal<{
+    value: R;
+    loading: boolean;
+    error: Error | null;
+  }>({
     value: defaultValue,
     loading: false,
     error: null,
@@ -186,7 +200,7 @@ export function useAsyncSelector<T, R>(
   const runSelector = async (state: T) => {
     const currentGeneration = ++generation;
 
-    setResult(prev => ({
+    setResult((prev) => ({
       value: prev.value,
       loading: true,
       error: null,
@@ -200,7 +214,7 @@ export function useAsyncSelector<T, R>(
       }
     } catch (error) {
       if (currentGeneration === generation) {
-        setResult(prev => ({
+        setResult((prev) => ({
           value: prev.value,
           loading: false,
           error: error instanceof Error ? error : new Error(String(error)),

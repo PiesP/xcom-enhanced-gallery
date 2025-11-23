@@ -25,4 +25,4 @@
 // Primary exports - Gallery HOC components
 // Barrel surface minimized: exposing only actual used symbols
 // ============================================================================
-export { withGallery, type GalleryComponentProps } from './GalleryHOC';
+export { withGallery, type GalleryComponentProps } from "./GalleryHOC";

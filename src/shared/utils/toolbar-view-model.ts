@@ -2,8 +2,8 @@
  * Toolbar ViewModel helpers
  */
 
-import { getSolid } from '@shared/external/vendors';
-import type { ToolbarViewModel } from '@shared/types';
+import { getSolid } from "@shared/external/vendors";
+import type { ToolbarViewModel } from "@shared/types";
 
 export interface ToolbarViewModelParams {
   readonly totalCount: number;
@@ -36,17 +36,24 @@ const roundProgress = (value: number): number => {
   return Math.round(value * 1000) / 1000;
 };
 
-export function resolveToolbarViewModel(params: ToolbarViewModelParams): ToolbarViewModel {
+export function resolveToolbarViewModel(
+  params: ToolbarViewModelParams,
+): ToolbarViewModel {
   const totalCount = Math.max(0, params.totalCount);
   const hasItems = totalCount > 0;
-  const normalizedCurrentIndex = clampToolbarIndex(params.currentIndex, totalCount);
+  const normalizedCurrentIndex = clampToolbarIndex(
+    params.currentIndex,
+    totalCount,
+  );
   const normalizedFocusedIndex =
-    typeof params.focusedIndex === 'number'
+    typeof params.focusedIndex === "number"
       ? clampToolbarIndex(params.focusedIndex, totalCount)
       : normalizedCurrentIndex;
   const displayedIndex = hasItems ? normalizedFocusedIndex : 0;
 
-  const progressPercent = hasItems ? roundProgress(((displayedIndex + 1) / totalCount) * 100) : 0;
+  const progressPercent = hasItems
+    ? roundProgress(((displayedIndex + 1) / totalCount) * 100)
+    : 0;
 
   const tweetText = params.tweetText ?? null;
   const tweetTextHTML = params.tweetTextHTML ?? null;
@@ -67,7 +74,9 @@ export function resolveToolbarViewModel(params: ToolbarViewModelParams): Toolbar
   };
 }
 
-export function createToolbarViewModel(signals: ToolbarViewModelSignals): () => ToolbarViewModel {
+export function createToolbarViewModel(
+  signals: ToolbarViewModelSignals,
+): () => ToolbarViewModel {
   const { createMemo } = getSolid();
 
   return createMemo(() =>
@@ -77,7 +86,7 @@ export function createToolbarViewModel(signals: ToolbarViewModelSignals): () => 
       focusedIndex: signals.focusedIndex?.() ?? null,
       tweetText: signals.tweetText?.() ?? null,
       tweetTextHTML: signals.tweetTextHTML?.() ?? null,
-    })
+    }),
   );
 }
 

@@ -6,11 +6,14 @@
  * @description Solid.js 기반으로 갤러리 아이템 간 스크롤을 안정적으로 관리하는 훅
  */
 
-import { getSolid } from '@shared/external/vendors';
-import { logger } from '@shared/logging';
-import { toAccessor } from '@shared/utils/solid-helpers';
-import { globalTimerManager } from '@shared/utils/timer-management';
-import { createItemScrollStateSignal, updateStateSignal } from '@shared/state/item-scroll';
+import { getSolid } from "@shared/external/vendors";
+import { logger } from "@shared/logging";
+import { toAccessor } from "@shared/utils/solid-helpers";
+import { globalTimerManager } from "@shared/utils/timer-management";
+import {
+  createItemScrollStateSignal,
+  updateStateSignal,
+} from "@shared/state/item-scroll";
 
 const { onCleanup, createEffect } = getSolid();
 
@@ -45,17 +48,19 @@ export function useGalleryItemScroll(
   containerRef: { current: HTMLElement | null } | Accessor<HTMLElement | null>,
   currentIndex: MaybeAccessor<number>,
   totalItems: MaybeAccessor<number>,
-  options: UseGalleryItemScrollOptions = {}
+  options: UseGalleryItemScrollOptions = {},
 ): UseGalleryItemScrollReturn {
   // Convert containerRef to accessor for consistent handling
   const containerAccessor: Accessor<HTMLElement | null> =
-    typeof containerRef === 'function' ? containerRef : () => containerRef.current;
+    typeof containerRef === "function"
+      ? containerRef
+      : () => containerRef.current;
 
   const enabled = toAccessor(options.enabled ?? true);
   // Phase 264: Default scroll behavior is 'auto' (no motion)
   // Manual scroll can still choose 'smooth' via options
-  const behavior = toAccessor(options.behavior ?? 'auto');
-  const block = toAccessor(options.block ?? 'start');
+  const behavior = toAccessor(options.behavior ?? "auto");
+  const block = toAccessor(options.block ?? "start");
   // Phase 266: Debounce removed (always immediate 0ms execution)
   const offset = toAccessor(options.offset ?? 0);
   const alignToCenter = toAccessor(options.alignToCenter ?? false);
@@ -107,7 +112,7 @@ export function useGalleryItemScroll(
     }
 
     updateStateSignal(setState, { userScrollDetected: true });
-    logger.debug('useGalleryItemScroll: User scroll detected', {
+    logger.debug("useGalleryItemScroll: User scroll detected", {
       timestamp: Date.now(),
     });
 
@@ -118,9 +123,12 @@ export function useGalleryItemScroll(
     // Clear user scroll flag after 150ms (reduced from 500ms to fix scroll skip bug)
     const timeoutId = globalTimerManager.setTimeout(() => {
       updateStateSignal(setState, { userScrollDetected: false });
-      logger.debug('useGalleryItemScroll: User scroll ended, auto-scroll resumed', {
-        timestamp: Date.now(),
-      });
+      logger.debug(
+        "useGalleryItemScroll: User scroll ended, auto-scroll resumed",
+        {
+          timestamp: Date.now(),
+        },
+      );
     }, 150);
 
     updateStateSignal(setState, { userScrollTimeoutId: timeoutId });
@@ -132,10 +140,12 @@ export function useGalleryItemScroll(
     }
 
     try {
-      if (typeof window !== 'undefined') {
-        const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      if (typeof window !== "undefined") {
+        const mediaQuery = window.matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        );
         if (mediaQuery.matches) {
-          return 'auto';
+          return "auto";
         }
       }
     } catch {
@@ -151,7 +161,7 @@ export function useGalleryItemScroll(
     const total = totalItemsAccessor();
 
     if (!isEnabled || !container || index < 0 || index >= total) {
-      logger.debug('useGalleryItemScroll: Scroll conditions not met', {
+      logger.debug("useGalleryItemScroll: Scroll conditions not met", {
         enabled: isEnabled,
         hasContainer: !!container,
         index,
@@ -164,8 +174,8 @@ export function useGalleryItemScroll(
     const performScroll = (element: HTMLElement, behavior: ScrollBehavior) => {
       element.scrollIntoView({
         behavior,
-        block: alignToCenter() ? 'center' : block(),
-        inline: 'nearest',
+        block: alignToCenter() ? "center" : block(),
+        inline: "nearest",
       });
 
       const offsetValue = offset();
@@ -182,10 +192,10 @@ export function useGalleryItemScroll(
       });
       retryCount = 0;
 
-      logger.debug('useGalleryItemScroll: Scroll completed', {
+      logger.debug("useGalleryItemScroll: Scroll completed", {
         index,
         behavior,
-        block: alignToCenter() ? 'center' : block(),
+        block: alignToCenter() ? "center" : block(),
         offset: offsetValue,
         timestamp: Date.now(),
       });
@@ -200,32 +210,44 @@ export function useGalleryItemScroll(
       updateStateSignal(setState, { isAutoScrolling: true });
 
       const itemsRoot = container.querySelector(
-        '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
+        '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
       ) as HTMLElement | null;
 
       if (!itemsRoot) {
-        logger.warn('useGalleryItemScroll: Items container not found', {
-          selectors: '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
+        logger.warn("useGalleryItemScroll: Items container not found", {
+          selectors:
+            '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
         });
-        updateStateSignal(setState, { pendingIndex: null, isAutoScrolling: false });
+        updateStateSignal(setState, {
+          pendingIndex: null,
+          isAutoScrolling: false,
+        });
         return;
       }
 
       // Phase 328: Use querySelectorAll to exclude spacer element (data-xeg-role='scroll-spacer')
-      const galleryItems = itemsRoot.querySelectorAll('[data-xeg-role="gallery-item"]');
+      const galleryItems = itemsRoot.querySelectorAll(
+        '[data-xeg-role="gallery-item"]',
+      );
       const targetElement = galleryItems[index] as HTMLElement | undefined;
       if (!targetElement) {
-        logger.warn('useGalleryItemScroll: Target element not found', {
+        logger.warn("useGalleryItemScroll: Target element not found", {
           index,
           totalItems: total,
           galleryItemsCount: galleryItems.length,
         });
-        updateStateSignal(setState, { pendingIndex: null, isAutoScrolling: false });
+        updateStateSignal(setState, {
+          pendingIndex: null,
+          isAutoScrolling: false,
+        });
         return;
       }
 
-      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-        await new Promise<void>(resolve => {
+      if (
+        typeof window !== "undefined" &&
+        typeof window.requestAnimationFrame === "function"
+      ) {
+        await new Promise<void>((resolve) => {
           window.requestAnimationFrame(() => resolve());
         });
       }
@@ -237,21 +259,24 @@ export function useGalleryItemScroll(
 
       performScroll(targetElement, actualBehavior);
 
-      if (actualBehavior === 'smooth') {
-        await new Promise<void>(resolve => {
+      if (actualBehavior === "smooth") {
+        await new Promise<void>((resolve) => {
           globalTimerManager.setTimeout(resolve, 300);
         });
       }
     } catch (error) {
-      logger.error('useGalleryItemScroll: Scroll failed', { index, error });
-      updateStateSignal(setState, { pendingIndex: null, isAutoScrolling: false });
+      logger.error("useGalleryItemScroll: Scroll failed", { index, error });
+      updateStateSignal(setState, {
+        pendingIndex: null,
+        isAutoScrolling: false,
+      });
 
       // Exponential backoff retry: 50ms, 100ms, 150ms
       if (retryCount < 3) {
         retryCount += 1;
         const delayMs = 50 * retryCount;
 
-        logger.debug('useGalleryItemScroll: Retry scheduled', {
+        logger.debug("useGalleryItemScroll: Retry scheduled", {
           index,
           retryCount,
           delayMs,
@@ -265,7 +290,7 @@ export function useGalleryItemScroll(
       }
 
       // Polling fallback: wait for element to render (slow network, etc.)
-      logger.warn('useGalleryItemScroll: Starting polling fallback', {
+      logger.warn("useGalleryItemScroll: Starting polling fallback", {
         index,
         timestamp: Date.now(),
       });
@@ -275,7 +300,7 @@ export function useGalleryItemScroll(
 
       const pollForElement = () => {
         if (pollingAttempts >= maxPollingAttempts) {
-          logger.warn('useGalleryItemScroll: Polling timeout exceeded', {
+          logger.warn("useGalleryItemScroll: Polling timeout exceeded", {
             index,
             pollingAttempts,
             timestamp: Date.now(),
@@ -291,7 +316,7 @@ export function useGalleryItemScroll(
         }
 
         const itemsRoot = container.querySelector(
-          '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
+          '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
         ) as HTMLElement | null;
 
         if (!itemsRoot) {
@@ -301,15 +326,20 @@ export function useGalleryItemScroll(
         }
 
         // Phase 328: Use querySelectorAll to exclude spacer
-        const galleryItems = itemsRoot.querySelectorAll('[data-xeg-role="gallery-item"]');
+        const galleryItems = itemsRoot.querySelectorAll(
+          '[data-xeg-role="gallery-item"]',
+        );
         const targetElement = galleryItems[index] as HTMLElement | undefined;
         if (targetElement) {
           // Element found, proceed with scroll
-          logger.debug('useGalleryItemScroll: Element found, proceeding with scroll', {
-            index,
-            pollingAttempts,
-            timestamp: Date.now(),
-          });
+          logger.debug(
+            "useGalleryItemScroll: Element found, proceeding with scroll",
+            {
+              index,
+              pollingAttempts,
+              timestamp: Date.now(),
+            },
+          );
 
           const executeAutoScroll = () => {
             try {
@@ -317,15 +347,21 @@ export function useGalleryItemScroll(
               const actualBehavior = resolveBehavior();
               performScroll(targetElement, actualBehavior);
             } catch (err) {
-              logger.error('useGalleryItemScroll: Scroll failed after polling', {
-                index,
-                error: err,
-              });
+              logger.error(
+                "useGalleryItemScroll: Scroll failed after polling",
+                {
+                  index,
+                  error: err,
+                },
+              );
               updateStateSignal(setState, { isAutoScrolling: false });
             }
           };
 
-          if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+          if (
+            typeof window !== "undefined" &&
+            typeof window.requestAnimationFrame === "function"
+          ) {
             window.requestAnimationFrame(() => executeAutoScroll());
           } else {
             executeAutoScroll();
@@ -354,33 +390,42 @@ export function useGalleryItemScroll(
     if (!container) return;
 
     const itemsRoot = container.querySelector(
-      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
+      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
     ) as HTMLElement | null;
 
     if (!itemsRoot) return;
 
     // Phase 328: Use querySelectorAll to exclude spacer
-    const galleryItems = itemsRoot.querySelectorAll('[data-xeg-role="gallery-item"]');
+    const galleryItems = itemsRoot.querySelectorAll(
+      '[data-xeg-role="gallery-item"]',
+    );
     const targetElement = galleryItems[targetIndex] as HTMLElement | undefined;
     if (targetElement) {
       logger.debug(
-        'useGalleryItemScroll: Target element already rendered, skipping MutationObserver',
+        "useGalleryItemScroll: Target element already rendered, skipping MutationObserver",
         {
           targetIndex,
-        }
+        },
       );
       return;
     }
 
     // Phase 263: Solution 1 - Watch for DOM mutations (additions) to detect rendering
     renderMutationObserver = new MutationObserver(() => {
-      const updatedGalleryItems = itemsRoot.querySelectorAll('[data-xeg-role="gallery-item"]');
-      const currentTargetElement = updatedGalleryItems[targetIndex] as HTMLElement | undefined;
+      const updatedGalleryItems = itemsRoot.querySelectorAll(
+        '[data-xeg-role="gallery-item"]',
+      );
+      const currentTargetElement = updatedGalleryItems[targetIndex] as
+        | HTMLElement
+        | undefined;
       if (currentTargetElement) {
-        logger.debug('useGalleryItemScroll: Target element detected by MutationObserver', {
-          targetIndex,
-          delay: 'immediate (~0ms)',
-        });
+        logger.debug(
+          "useGalleryItemScroll: Target element detected by MutationObserver",
+          {
+            targetIndex,
+            delay: "immediate (~0ms)",
+          },
+        );
 
         // Disconnect observer before scrolling
         if (renderMutationObserver) {
@@ -401,13 +446,19 @@ export function useGalleryItemScroll(
         subtree: false, // Only direct children
       });
 
-      logger.debug('useGalleryItemScroll: MutationObserver activated for initial render', {
-        targetIndex,
-      });
+      logger.debug(
+        "useGalleryItemScroll: MutationObserver activated for initial render",
+        {
+          targetIndex,
+        },
+      );
     } catch (err) {
-      logger.debug('useGalleryItemScroll: MutationObserver setup failed, falling back to polling', {
-        error: err,
-      });
+      logger.debug(
+        "useGalleryItemScroll: MutationObserver setup failed, falling back to polling",
+        {
+          error: err,
+        },
+      );
       renderMutationObserver = null;
     }
   };
@@ -420,10 +471,13 @@ export function useGalleryItemScroll(
     // via pendingIndex check and userScrollDetected suppression
     const delay = 0;
 
-    logger.debug('useGalleryItemScroll: Auto-scroll scheduled (Phase 266: Immediate execution)', {
-      currentIndex: index,
-      delay,
-    });
+    logger.debug(
+      "useGalleryItemScroll: Auto-scroll scheduled (Phase 266: Immediate execution)",
+      {
+        currentIndex: index,
+        delay,
+      },
+    );
 
     // Phase 263: Solution 1 - Setup MutationObserver to detect initial render
     setupInitialRenderMonitor(index);
@@ -432,7 +486,7 @@ export function useGalleryItemScroll(
 
     const timeoutId = globalTimerManager.setTimeout(() => {
       const currentState = getState();
-      logger.debug('useGalleryItemScroll: Auto-scroll executing', {
+      logger.debug("useGalleryItemScroll: Auto-scroll executing", {
         currentIndex: index,
         lastScrolledIndex: currentState.lastScrolledIndex,
       });
@@ -471,10 +525,13 @@ export function useGalleryItemScroll(
 
     // Suppress auto-scroll if user is actively scrolling
     if (state.userScrollDetected) {
-      logger.debug('useGalleryItemScroll: User scroll detected - suppressing auto-scroll', {
-        currentIndex: index,
-        userScrollDetected: state.userScrollDetected,
-      });
+      logger.debug(
+        "useGalleryItemScroll: User scroll detected - suppressing auto-scroll",
+        {
+          currentIndex: index,
+          userScrollDetected: state.userScrollDetected,
+        },
+      );
       return;
     }
 
@@ -482,7 +539,10 @@ export function useGalleryItemScroll(
   };
 
   // Start polling index changes and store watcher ID
-  const indexWatcherId = globalTimerManager.setInterval(checkIndexChanges, INDEX_WATCH_INTERVAL);
+  const indexWatcherId = globalTimerManager.setInterval(
+    checkIndexChanges,
+    INDEX_WATCH_INTERVAL,
+  );
   updateStateSignal(setState, { indexWatcherId });
 
   // Listen for container scroll events
@@ -492,10 +552,10 @@ export function useGalleryItemScroll(
       return;
     }
 
-    container.addEventListener('scroll', handleUserScroll, { passive: true });
+    container.addEventListener("scroll", handleUserScroll, { passive: true });
 
     onCleanup(() => {
-      container.removeEventListener('scroll', handleUserScroll);
+      container.removeEventListener("scroll", handleUserScroll);
     });
   });
 

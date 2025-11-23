@@ -1,4 +1,4 @@
-import { logger } from '@shared/logging';
+import { logger } from "@shared/logging";
 
 type ChunkLoader = () => Promise<unknown>;
 
@@ -13,12 +13,14 @@ export type PreloadDependencies = Readonly<{
 
 const PRELOAD_TASKS: readonly PreloadTask[] = Object.freeze([
   {
-    label: 'gallery core',
-    loader: () => import('@features/gallery'),
+    label: "gallery core",
+    loader: () => import("@features/gallery"),
   },
 ]);
 
-const debug = import.meta.env.DEV ? (message: string) => logger.debug(message) : () => {};
+const debug = import.meta.env.DEV
+  ? (message: string) => logger.debug(message)
+  : () => {};
 
 const DEFAULT_PRELOAD_DEPENDENCIES: PreloadDependencies = Object.freeze({
   logWarn: (message: string, error: unknown) => {
@@ -26,7 +28,10 @@ const DEFAULT_PRELOAD_DEPENDENCIES: PreloadDependencies = Object.freeze({
   },
 });
 
-async function runPreloadTask(task: PreloadTask, deps: PreloadDependencies): Promise<void> {
+async function runPreloadTask(
+  task: PreloadTask,
+  deps: PreloadDependencies,
+): Promise<void> {
   debug(`[preload] loading ${task.label}`);
 
   try {
@@ -43,7 +48,7 @@ async function runPreloadTask(task: PreloadTask, deps: PreloadDependencies): Pro
  */
 export async function executePreloadStrategy(
   tasks: readonly PreloadTask[] = PRELOAD_TASKS,
-  deps: PreloadDependencies = DEFAULT_PRELOAD_DEPENDENCIES
+  deps: PreloadDependencies = DEFAULT_PRELOAD_DEPENDENCIES,
 ): Promise<void> {
   for (const task of tasks) {
     await runPreloadTask(task, deps);

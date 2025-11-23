@@ -4,42 +4,45 @@
  * @version 4.0.0 - Phase 354: PersistentStorage direct usage for simplification
  */
 
-import { logger } from '@shared/logging';
-import { getPersistentStorage } from '@shared/services/persistent-storage';
-import { APP_SETTINGS_STORAGE_KEY } from '@/constants';
+import { logger } from "@shared/logging";
+import { getPersistentStorage } from "@shared/services/persistent-storage";
+import { APP_SETTINGS_STORAGE_KEY } from "@/constants";
 import type {
   AppSettings,
   NestedSettingKey,
   SettingChangeEvent,
   SettingValidationResult,
-} from '@features/settings/types/settings.types';
-import { DEFAULT_SETTINGS as defaultSettings, createDefaultSettings } from '@/constants';
-import { migrateSettings as runMigration } from './settings-migration';
-import { computeCurrentSettingsSchemaHash } from './settings-schema';
+} from "@features/settings/types/settings.types";
+import {
+  DEFAULT_SETTINGS as defaultSettings,
+  createDefaultSettings,
+} from "@/constants";
+import { migrateSettings as runMigration } from "./settings-migration";
+import { computeCurrentSettingsSchemaHash } from "./settings-schema";
 
 /**
  * Settings storage key
  */
 
 type SettingsCategoryKey =
-  | 'gallery'
-  | 'toolbar'
-  | 'download'
-  | 'tokens'
-  | 'accessibility'
-  | 'features';
+  | "gallery"
+  | "toolbar"
+  | "download"
+  | "tokens"
+  | "accessibility"
+  | "features";
 
 const SETTINGS_CATEGORY_KEYS: readonly SettingsCategoryKey[] = [
-  'gallery',
-  'toolbar',
-  'download',
-  'tokens',
-  'accessibility',
-  'features',
+  "gallery",
+  "toolbar",
+  "download",
+  "tokens",
+  "accessibility",
+  "features",
 ];
 
 function cloneDeep<T>(value: T): T {
-  if (typeof globalThis.structuredClone === 'function') {
+  if (typeof globalThis.structuredClone === "function") {
     return globalThis.structuredClone(value);
   }
   return JSON.parse(JSON.stringify(value)) as T;
@@ -51,7 +54,11 @@ function resolveNestedValue(source: unknown, keys: string[]): unknown {
   for (const key of keys) {
     if (!key) continue;
 
-    if (!value || typeof value !== 'object' || !(key in (value as Record<string, unknown>))) {
+    if (
+      !value ||
+      typeof value !== "object" ||
+      !(key in (value as Record<string, unknown>))
+    ) {
       return undefined;
     }
 
@@ -61,7 +68,11 @@ function resolveNestedValue(source: unknown, keys: string[]): unknown {
   return value;
 }
 
-function assignNestedValue(target: Record<string, unknown>, keys: string[], value: unknown): void {
+function assignNestedValue(
+  target: Record<string, unknown>,
+  keys: string[],
+  value: unknown,
+): void {
   let current = target;
   const lastIndex = keys.length - 1;
 
@@ -75,7 +86,7 @@ function assignNestedValue(target: Record<string, unknown>, keys: string[], valu
     }
 
     const next = current[key];
-    if (!next || typeof next !== 'object') {
+    if (!next || typeof next !== "object") {
       current[key] = {};
     }
 
@@ -125,9 +136,9 @@ export class SettingsService {
     try {
       await this.loadSettings();
       this.initialized = true;
-      logger.debug('SettingsService initialized');
+      logger.debug("SettingsService initialized");
     } catch (error) {
-      logger.error('SettingsService initialization failed:', error);
+      logger.error("SettingsService initialization failed:", error);
       throw error;
     }
   }
@@ -146,7 +157,7 @@ export class SettingsService {
     await this.saveSettings();
     this.listeners.clear();
     this.initialized = false;
-    logger.debug('SettingsService cleanup complete');
+    logger.debug("SettingsService cleanup complete");
   }
 
   /**
@@ -171,7 +182,7 @@ export class SettingsService {
    * ```
    */
   get<T = unknown>(key: NestedSettingKey | string): T {
-    const keys = key.split('.');
+    const keys = key.split(".");
     const value = resolveNestedValue(this.settings, keys);
 
     if (value === undefined) {
@@ -201,10 +212,14 @@ export class SettingsService {
     }
 
     const oldValue = this.get(key);
-    const keys = key.split('.');
+    const keys = key.split(".");
     const timestamp = Date.now();
 
-    assignNestedValue(this.settings as unknown as Record<string, unknown>, keys, value);
+    assignNestedValue(
+      this.settings as unknown as Record<string, unknown>,
+      keys,
+      value,
+    );
     this.settings.lastModified = timestamp;
 
     this.notifyListeners({
@@ -212,12 +227,12 @@ export class SettingsService {
       oldValue,
       newValue: value,
       timestamp,
-      status: 'success',
+      status: "success",
     });
 
     await this.saveSettings();
 
-    logger.debug('Setting changed:', { key, value });
+    logger.debug("Setting changed:", { key, value });
   }
 
   /**
@@ -233,8 +248,12 @@ export class SettingsService {
    * });
    * ```
    */
-  async updateBatch(updates: Partial<Record<NestedSettingKey, unknown>>): Promise<void> {
-    const entries = Object.entries(updates) as Array<[NestedSettingKey, unknown]>;
+  async updateBatch(
+    updates: Partial<Record<NestedSettingKey, unknown>>,
+  ): Promise<void> {
+    const entries = Object.entries(updates) as Array<
+      [NestedSettingKey, unknown]
+    >;
     if (entries.length === 0) {
       return;
     }
@@ -251,20 +270,24 @@ export class SettingsService {
 
     for (const [key, value] of entries) {
       const oldValue = this.get(key);
-      assignNestedValue(this.settings as unknown as Record<string, unknown>, key.split('.'), value);
+      assignNestedValue(
+        this.settings as unknown as Record<string, unknown>,
+        key.split("."),
+        value,
+      );
 
       changes.push({
         key,
         oldValue,
         newValue: value,
         timestamp,
-        status: 'success',
+        status: "success",
       });
     }
 
     this.settings.lastModified = timestamp;
 
-    changes.forEach(change => this.notifyListeners(change));
+    changes.forEach((change) => this.notifyListeners(change));
 
     await this.saveSettings();
 
@@ -282,18 +305,25 @@ export class SettingsService {
 
     if (!category) {
       this.settings = createDefaultSettings();
-    } else if (SETTINGS_CATEGORY_KEYS.includes(category as SettingsCategoryKey)) {
+    } else if (
+      SETTINGS_CATEGORY_KEYS.includes(category as SettingsCategoryKey)
+    ) {
       const defaults = cloneDeep(
-        defaultSettings[category as SettingsCategoryKey]
+        defaultSettings[category as SettingsCategoryKey],
       ) as AppSettings[typeof category];
-      const settingsRecord = this.settings as unknown as Record<string, unknown>;
+      const settingsRecord = this.settings as unknown as Record<
+        string,
+        unknown
+      >;
       settingsRecord[category as string] = defaults as unknown;
-    } else if (category === 'version') {
+    } else if (category === "version") {
       this.settings.version = defaultSettings.version;
-    } else if (category === 'lastModified') {
+    } else if (category === "lastModified") {
       // lastModified handled below via timestamp assignment
     } else {
-      logger.warn(`resetToDefaults: unknown category "${String(category)}" ignored`);
+      logger.warn(
+        `resetToDefaults: unknown category "${String(category)}" ignored`,
+      );
     }
 
     this.settings.lastModified = timestamp;
@@ -301,16 +331,16 @@ export class SettingsService {
     const updated = this.getAllSettings();
 
     this.notifyListeners({
-      key: (category ?? 'all') as NestedSettingKey,
+      key: (category ?? "all") as NestedSettingKey,
       oldValue: previous,
       newValue: updated,
       timestamp,
-      status: 'success',
+      status: "success",
     });
 
     await this.saveSettings();
 
-    logger.info(`Settings reset complete: ${category ?? 'all'}`);
+    logger.info(`Settings reset complete: ${category ?? "all"}`);
   }
 
   /**
@@ -345,7 +375,7 @@ export class SettingsService {
 
       // Validate settings
       if (!this.validateSettingsStructure(importedSettings)) {
-        throw new Error('Invalid settings structure');
+        throw new Error("Invalid settings structure");
       }
 
       // Perform migration if needed
@@ -359,19 +389,21 @@ export class SettingsService {
       const updated = this.getAllSettings();
 
       this.notifyListeners({
-        key: 'all' as NestedSettingKey,
+        key: "all" as NestedSettingKey,
         oldValue: previous,
         newValue: updated,
         timestamp,
-        status: 'success',
+        status: "success",
       });
 
       await this.saveSettings();
 
-      logger.info('Settings import complete');
+      logger.info("Settings import complete");
     } catch (error) {
-      logger.error('Settings import failed:', error);
-      throw new Error('Unable to import settings. Please verify the format is correct.');
+      logger.error("Settings import failed:", error);
+      throw new Error(
+        "Unable to import settings. Please verify the format is correct.",
+      );
     }
   }
 
@@ -385,9 +417,11 @@ export class SettingsService {
       // Phase 431: PersistentStorage.get<T>() already performs JSON.parse(),
       // use returned object directly (prevent double parsing)
       type WithSchemaHash = AppSettings & { __schemaHash?: string };
-      const stored = await this.storage.get<WithSchemaHash>(APP_SETTINGS_STORAGE_KEY);
+      const stored = await this.storage.get<WithSchemaHash>(
+        APP_SETTINGS_STORAGE_KEY,
+      );
       if (!stored) {
-        logger.debug('No saved settings, using defaults');
+        logger.debug("No saved settings, using defaults");
         // Include current schema hash on first save for consistency
         await this.saveSettings();
         return;
@@ -397,7 +431,7 @@ export class SettingsService {
 
       // Validate settings structure
       if (!this.validateSettingsStructure(parsedSettings)) {
-        logger.warn('Invalid settings structure, restoring defaults');
+        logger.warn("Invalid settings structure, restoring defaults");
         // Restore defaults and save (include hash)
         this.settings = createDefaultSettings();
         await this.saveSettings();
@@ -409,7 +443,9 @@ export class SettingsService {
       const currentHash = this.schemaHash;
 
       if (!storedHash || storedHash !== currentHash) {
-        logger.warn('Settings schema hash mismatch detected — performing migration');
+        logger.warn(
+          "Settings schema hash mismatch detected — performing migration",
+        );
         this.settings = runMigration(parsedSettings);
         await this.saveSettings();
       } else {
@@ -417,9 +453,9 @@ export class SettingsService {
         this.settings = runMigration(parsedSettings);
       }
 
-      logger.debug('Settings loaded');
+      logger.debug("Settings loaded");
     } catch (error) {
-      logger.error('Settings load failed, using defaults:', error);
+      logger.error("Settings load failed, using defaults:", error);
     }
   }
 
@@ -434,64 +470,72 @@ export class SettingsService {
         __schemaHash: this.schemaHash,
       };
       await this.storage.set(APP_SETTINGS_STORAGE_KEY, withHash);
-      logger.debug('Settings saved');
+      logger.debug("Settings saved");
     } catch (error) {
-      logger.error('Settings save failed:', error);
+      logger.error("Settings save failed:", error);
     }
   }
 
   /**
    * Validate setting value
    */
-  private validateSetting(key: NestedSettingKey, value: unknown): SettingValidationResult {
+  private validateSetting(
+    key: NestedSettingKey,
+    value: unknown,
+  ): SettingValidationResult {
     const defaultValue = this.getDefaultValue(key);
 
     if (defaultValue !== undefined) {
-      const expectedType = Array.isArray(defaultValue) ? 'array' : typeof defaultValue;
+      const expectedType = Array.isArray(defaultValue)
+        ? "array"
+        : typeof defaultValue;
 
       switch (expectedType) {
-        case 'boolean':
-          if (typeof value !== 'boolean') {
+        case "boolean":
+          if (typeof value !== "boolean") {
             return {
               valid: false,
-              error: 'This setting must be a true or false value',
-              suggestion: 'Enter true or false',
+              error: "This setting must be a true or false value",
+              suggestion: "Enter true or false",
             };
           }
           break;
-        case 'number':
-          if (typeof value !== 'number' || Number.isNaN(value)) {
+        case "number":
+          if (typeof value !== "number" || Number.isNaN(value)) {
             return {
               valid: false,
-              error: 'This setting must be a numeric value',
-              suggestion: 'Enter a valid number',
+              error: "This setting must be a numeric value",
+              suggestion: "Enter a valid number",
             };
           }
           break;
-        case 'string':
-          if (typeof value !== 'string') {
+        case "string":
+          if (typeof value !== "string") {
             return {
               valid: false,
-              error: 'This setting must be a text value',
-              suggestion: 'Enter a string value',
+              error: "This setting must be a text value",
+              suggestion: "Enter a string value",
             };
           }
           break;
-        case 'object':
-          if (defaultValue !== null && (typeof value !== 'object' || value === null)) {
+        case "object":
+          if (
+            defaultValue !== null &&
+            (typeof value !== "object" || value === null)
+          ) {
             return {
               valid: false,
-              error: 'This setting expects an object value',
-              suggestion: 'Provide an object with the appropriate shape',
+              error: "This setting expects an object value",
+              suggestion: "Provide an object with the appropriate shape",
             };
           }
           break;
-        case 'array':
+        case "array":
           if (!Array.isArray(value)) {
             return {
               valid: false,
-              error: 'This setting expects a list value',
-              suggestion: 'Provide an array value',
+              error: "This setting expects a list value",
+              suggestion: "Provide an array value",
             };
           }
           break;
@@ -501,23 +545,23 @@ export class SettingsService {
     }
 
     // Speed-related settings validation
-    if (key.includes('Speed') && typeof value === 'number') {
+    if (key.includes("Speed") && typeof value === "number") {
       if (value < 1 || value > 10) {
         return {
           valid: false,
-          error: 'Speed must be between 1-10',
-          suggestion: 'Enter a value between 1 and 10',
+          error: "Speed must be between 1-10",
+          suggestion: "Enter a value between 1 and 10",
         };
       }
     }
 
     // Count-related settings validation
-    if (key.includes('Count') && typeof value === 'number') {
+    if (key.includes("Count") && typeof value === "number") {
       if (value < 0 || value > 20) {
         return {
           valid: false,
-          error: 'Count must be between 0-20',
-          suggestion: 'Enter a value between 0 and 20',
+          error: "Count must be between 0-20",
+          suggestion: "Enter a value between 0 and 20",
         };
       }
     }
@@ -529,22 +573,22 @@ export class SettingsService {
    * Validate settings structure
    */
   private validateSettingsStructure(settings: unknown): boolean {
-    if (!settings || typeof settings !== 'object' || settings === null) {
+    if (!settings || typeof settings !== "object" || settings === null) {
       return false;
     }
 
     const settingsObj = settings as Record<string, unknown>;
 
     return (
-      'gallery' in settingsObj &&
-      'toolbar' in settingsObj &&
-      'download' in settingsObj &&
-      'tokens' in settingsObj &&
-      'accessibility' in settingsObj &&
-      'features' in settingsObj &&
-      'version' in settingsObj &&
-      'lastModified' in settingsObj &&
-      typeof settingsObj.lastModified === 'number'
+      "gallery" in settingsObj &&
+      "toolbar" in settingsObj &&
+      "download" in settingsObj &&
+      "tokens" in settingsObj &&
+      "accessibility" in settingsObj &&
+      "features" in settingsObj &&
+      "version" in settingsObj &&
+      "lastModified" in settingsObj &&
+      typeof settingsObj.lastModified === "number"
     );
   }
 
@@ -559,18 +603,18 @@ export class SettingsService {
    * Get default value for key
    */
   private getDefaultValue(key: NestedSettingKey): unknown {
-    return resolveNestedValue(defaultSettings, key.split('.'));
+    return resolveNestedValue(defaultSettings, key.split("."));
   }
 
   /**
    * Notify listeners of setting change events
    */
   private notifyListeners(event: SettingChangeEvent): void {
-    this.listeners.forEach(listener => {
+    this.listeners.forEach((listener) => {
       try {
         listener(event);
       } catch (error) {
-        logger.error('Settings change listener error:', error);
+        logger.error("Settings change listener error:", error);
       }
     });
   }

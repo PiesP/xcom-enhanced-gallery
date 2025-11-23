@@ -2,12 +2,12 @@
 
 function createEmptyNodeList<T extends Element>(): NodeListOf<T> {
   const fragment = document.createDocumentFragment();
-  return fragment.querySelectorAll('*') as NodeListOf<T>;
+  return fragment.querySelectorAll("*") as NodeListOf<T>;
 }
 
 export function querySelector<T extends Element = Element>(
   selector: string,
-  container: ParentNode = document
+  container: ParentNode = document,
 ): T | null {
   try {
     return container.querySelector<T>(selector);
@@ -18,7 +18,7 @@ export function querySelector<T extends Element = Element>(
 
 export function querySelectorAll<T extends Element = Element>(
   selector: string,
-  container: ParentNode = document
+  container: ParentNode = document,
 ): NodeListOf<T> {
   try {
     return container.querySelectorAll<T>(selector);
@@ -27,7 +27,10 @@ export function querySelectorAll<T extends Element = Element>(
   }
 }
 
-export function elementExists(selector: string, container: ParentNode = document): boolean {
+export function elementExists(
+  selector: string,
+  container: ParentNode = document,
+): boolean {
   return querySelector(selector, container) !== null;
 }
 
@@ -40,7 +43,7 @@ export interface DOMElementCreationOptions {
 
 export function createElement<K extends keyof HTMLElementTagNameMap>(
   tagName: K,
-  options: DOMElementCreationOptions = {}
+  options: DOMElementCreationOptions = {},
 ): HTMLElementTagNameMap[K] | null {
   try {
     const element = document.createElement(tagName);
@@ -97,27 +100,39 @@ export function isElementVisible(element: Element | null | undefined): boolean {
   }
 
   const style = getComputedElementStyle(element);
-  if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+  if (
+    style.display === "none" ||
+    style.visibility === "hidden" ||
+    style.opacity === "0"
+  ) {
     return false;
   }
 
   const rect = element.getBoundingClientRect();
-  const width = Number.parseFloat(style.width ?? '');
-  const height = Number.parseFloat(style.height ?? '');
+  const width = Number.parseFloat(style.width ?? "");
+  const height = Number.parseFloat(style.height ?? "");
   const hasExplicitSize =
-    (Number.isFinite(width) && width > 0) || (Number.isFinite(height) && height > 0);
+    (Number.isFinite(width) && width > 0) ||
+    (Number.isFinite(height) && height > 0);
   const hasBox = rect.width > 0 || rect.height > 0 || hasExplicitSize;
   return hasBox;
 }
 
-export function isElementInViewport(element: Element | null | undefined): boolean {
+export function isElementInViewport(
+  element: Element | null | undefined,
+): boolean {
   if (!element || !isElement(element)) {
     return false;
   }
 
   const rect = element.getBoundingClientRect();
   const { innerWidth, innerHeight } = window;
-  return rect.top >= 0 && rect.left >= 0 && rect.bottom <= innerHeight && rect.right <= innerWidth;
+  return (
+    rect.top >= 0 &&
+    rect.left >= 0 &&
+    rect.bottom <= innerHeight &&
+    rect.right <= innerWidth
+  );
 }
 
 interface DebugViewportInfo {

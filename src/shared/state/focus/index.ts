@@ -1,4 +1,4 @@
-export type { FocusState, FocusTracking, FocusSource } from './focus-types';
+export type { FocusState, FocusTracking, FocusSource } from "./focus-types";
 export {
   INITIAL_FOCUS_STATE,
   INITIAL_FOCUS_TRACKING,
@@ -9,15 +9,18 @@ export {
   isValidFocusState,
   resetFocusTracking,
   updateFocusTracking,
-} from './focus-types';
+} from "./focus-types";
 
-export type { ItemEntry } from './focus-cache';
+export type { ItemEntry } from "./focus-cache";
 export {
   ItemCache,
   createItemCache,
   isItemVisibleEnough,
   calculateTopDistance,
-} from './focus-cache';
+} from "./focus-cache";
 
-export type { FocusTimerRole } from './focus-timer-manager';
-export { FocusTimerManager, createFocusTimerManager } from './focus-timer-manager';
+export type { FocusTimerRole } from "./focus-timer-manager";
+export {
+  FocusTimerManager,
+  createFocusTimerManager,
+} from "./focus-timer-manager";

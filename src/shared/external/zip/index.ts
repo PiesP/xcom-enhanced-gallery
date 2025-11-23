@@ -39,4 +39,4 @@
  * @internal Implementation details exposed in individual files, not here
  */
 
-export { StreamingZipWriter } from './streaming-zip-writer';
+export { StreamingZipWriter } from "./streaming-zip-writer";

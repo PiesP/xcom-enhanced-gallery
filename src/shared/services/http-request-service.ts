@@ -27,8 +27,8 @@
  * // @connect pbs.twimg.com
  */
 
-import { getUserscript } from '@shared/external/userscript/adapter';
-import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
+import { getUserscript } from "@shared/external/userscript/adapter";
+import type { GMXMLHttpRequestDetails } from "@shared/types/core/userscript";
 
 /**
  * HTTP request options
@@ -36,7 +36,7 @@ import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 export interface HttpRequestOptions {
   headers?: Record<string, string>;
   timeout?: number; // milliseconds, default: 10000
-  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
+  responseType?: "json" | "text" | "blob" | "arraybuffer";
   data?: unknown;
   signal?: AbortSignal; // for cancellation
 }
@@ -48,7 +48,7 @@ export interface HttpRequestOptions {
 export interface BinaryRequestOptions {
   headers?: Record<string, string>;
   timeout?: number; // milliseconds, default: 10000
-  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer'; // expected response type
+  responseType?: "json" | "text" | "blob" | "arraybuffer"; // expected response type
   contentType?: string; // MIME type for binary data, default: 'application/octet-stream'
   signal?: AbortSignal; // for cancellation
 }
@@ -71,10 +71,10 @@ export class HttpError extends Error {
   constructor(
     message: string,
     readonly status: number,
-    readonly statusText: string
+    readonly statusText: string,
   ) {
     super(message);
-    this.name = 'HttpError';
+    this.name = "HttpError";
   }
 }
 
@@ -106,25 +106,31 @@ export class HttpRequestService {
   private async gmRequest<T>(
     method: string,
     url: string,
-    options?: HttpRequestOptions | BinaryRequestOptions
+    options?: HttpRequestOptions | BinaryRequestOptions,
   ): Promise<HttpResponse<T>> {
     return new Promise((resolve, reject) => {
       try {
         const userscript = getUserscript();
 
         const details: GMXMLHttpRequestDetails = {
-          method: method as any,
+          method: method as Exclude<
+            GMXMLHttpRequestDetails["method"],
+            undefined
+          >,
           url,
           headers: options?.headers || {},
           timeout: options?.timeout ?? this.defaultTimeout,
-          responseType: options?.responseType as any,
+          responseType: options?.responseType as Exclude<
+            GMXMLHttpRequestDetails["responseType"],
+            undefined
+          >,
           onload: (response) => {
             const headers: Record<string, string> = {};
             if (response.responseHeaders) {
-              response.responseHeaders.split('\r\n').forEach((line) => {
-                const parts = line.split(': ');
+              response.responseHeaders.split("\r\n").forEach((line) => {
+                const parts = line.split(": ");
                 if (parts.length >= 2 && parts[0]) {
-                  headers[parts[0].toLowerCase()] = parts.slice(1).join(': ');
+                  headers[parts[0].toLowerCase()] = parts.slice(1).join(": ");
                 }
               });
             }
@@ -140,24 +146,24 @@ export class HttpRequestService {
           onerror: (response) => {
             reject(
               new HttpError(
-                response.statusText || 'Network Error',
+                response.statusText || "Network Error",
                 response.status,
-                response.statusText
-              )
+                response.statusText,
+              ),
             );
           },
           ontimeout: () => {
-            reject(new HttpError('Request timeout', 0, 'Timeout'));
+            reject(new HttpError("Request timeout", 0, "Timeout"));
           },
           onabort: () => {
-            reject(new Error('Request was aborted'));
+            reject(new Error("Request was aborted"));
           },
         };
 
-        if ((options as any).data) {
-          const data = (options as any).data;
+        if (options && "data" in options && options.data) {
+          const data = options.data;
           if (
-            typeof data === 'object' &&
+            typeof data === "object" &&
             !(data instanceof Blob) &&
             !(data instanceof ArrayBuffer) &&
             !(data instanceof Uint8Array) &&
@@ -166,26 +172,31 @@ export class HttpRequestService {
           ) {
             details.data = JSON.stringify(data);
             if (!details.headers) details.headers = {};
-            if (!details.headers['content-type']) {
-              details.headers['content-type'] = 'application/json';
+            if (!details.headers["content-type"]) {
+              details.headers["content-type"] = "application/json";
             }
           } else {
-            details.data = data;
+            details.data = data as Exclude<
+              GMXMLHttpRequestDetails["data"],
+              undefined
+            >;
           }
         }
 
         if (
           (options as BinaryRequestOptions).contentType &&
-          !details.headers?.['content-type']
+          !details.headers?.["content-type"]
         ) {
           if (!details.headers) details.headers = {};
-          details.headers['content-type'] = (options as BinaryRequestOptions).contentType!;
+          details.headers["content-type"] = (
+            options as BinaryRequestOptions
+          ).contentType!;
         }
 
         const control = userscript.xmlHttpRequest(details);
 
         if (options?.signal) {
-          options.signal.addEventListener('abort', () => {
+          options.signal.addEventListener("abort", () => {
             control.abort();
           });
         }
@@ -216,7 +227,7 @@ export class HttpRequestService {
   private async request<T = unknown>(
     method: string,
     url: string,
-    options?: HttpRequestOptions
+    options?: HttpRequestOptions,
   ): Promise<HttpResponse<T>> {
     return await this.gmRequest<T>(method, url, options);
   }
@@ -224,8 +235,11 @@ export class HttpRequestService {
   /**
    * Perform a GET request
    */
-  async get<T = unknown>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
-    return this.request<T>('GET', url, options);
+  async get<T = unknown>(
+    url: string,
+    options?: HttpRequestOptions,
+  ): Promise<HttpResponse<T>> {
+    return this.request<T>("GET", url, options);
   }
 
   /**
@@ -234,9 +248,9 @@ export class HttpRequestService {
   async post<T = unknown>(
     url: string,
     data?: unknown,
-    options?: HttpRequestOptions
+    options?: HttpRequestOptions,
   ): Promise<HttpResponse<T>> {
-    return this.request<T>('POST', url, { ...options, data });
+    return this.request<T>("POST", url, { ...options, data });
   }
 
   /**
@@ -245,16 +259,19 @@ export class HttpRequestService {
   async put<T = unknown>(
     url: string,
     data?: unknown,
-    options?: HttpRequestOptions
+    options?: HttpRequestOptions,
   ): Promise<HttpResponse<T>> {
-    return this.request<T>('PUT', url, { ...options, data });
+    return this.request<T>("PUT", url, { ...options, data });
   }
 
   /**
    * Perform a DELETE request
    */
-  async delete<T = unknown>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
-    return this.request<T>('DELETE', url, options);
+  async delete<T = unknown>(
+    url: string,
+    options?: HttpRequestOptions,
+  ): Promise<HttpResponse<T>> {
+    return this.request<T>("DELETE", url, options);
   }
 
   /**
@@ -263,9 +280,9 @@ export class HttpRequestService {
   async patch<T = unknown>(
     url: string,
     data?: unknown,
-    options?: HttpRequestOptions
+    options?: HttpRequestOptions,
   ): Promise<HttpResponse<T>> {
-    return this.request<T>('PATCH', url, { ...options, data });
+    return this.request<T>("PATCH", url, { ...options, data });
   }
 
   /**
@@ -302,10 +319,14 @@ export class HttpRequestService {
   async postBinary<T = unknown>(
     url: string,
     data: ArrayBuffer | Uint8Array,
-    options?: BinaryRequestOptions
+    options?: BinaryRequestOptions,
   ): Promise<HttpResponse<T>> {
-    const contentType = options?.contentType ?? 'application/octet-stream';
-    return await this.gmRequest<T>('POST', url, { ...options, data, contentType } as any);
+    const contentType = options?.contentType ?? "application/octet-stream";
+    return await this.gmRequest<T>("POST", url, {
+      ...options,
+      data,
+      contentType,
+    } as unknown as HttpRequestOptions);
   }
 }
 

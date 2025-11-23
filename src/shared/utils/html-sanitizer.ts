@@ -4,7 +4,10 @@
  * @version 1.0.0 - Phase 2: DOM HTML preservation
  */
 
-import { HTML_ATTRIBUTE_URL_POLICY, isUrlAllowed } from '@shared/utils/url-safety';
+import {
+  HTML_ATTRIBUTE_URL_POLICY,
+  isUrlAllowed,
+} from "@shared/utils/url-safety";
 
 /**
  * Configuration for HTML sanitization
@@ -21,11 +24,11 @@ interface SanitizerConfig {
  * Allows safe HTML elements commonly used in tweets
  */
 const DEFAULT_CONFIG: SanitizerConfig = {
-  allowedTags: ['a', 'span', 'br', 'strong', 'em', 'img'],
+  allowedTags: ["a", "span", "br", "strong", "em", "img"],
   allowedAttributes: {
-    a: ['href', 'title', 'rel', 'target', 'dir'],
-    span: ['class', 'dir'],
-    img: ['alt', 'src', 'draggable'],
+    a: ["href", "title", "rel", "target", "dir"],
+    span: ["class", "dir"],
+    img: ["alt", "src", "draggable"],
   },
 };
 
@@ -44,11 +47,14 @@ const DEFAULT_CONFIG: SanitizerConfig = {
  * // '<a>Click</a>' (script removed, javascript: href removed)
  * ```
  */
-export function sanitizeHTML(html: string, config: SanitizerConfig = DEFAULT_CONFIG): string {
-  if (!html || typeof html !== 'string') return '';
+export function sanitizeHTML(
+  html: string,
+  config: SanitizerConfig = DEFAULT_CONFIG,
+): string {
+  if (!html || typeof html !== "string") return "";
 
   // Create a temporary DOM element to parse HTML
-  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const doc = new DOMParser().parseFromString(html, "text/html");
 
   // Recursive function to sanitize a node and its children
   function sanitizeNode(node: Node): Node | null {
@@ -68,7 +74,7 @@ export function sanitizeHTML(html: string, config: SanitizerConfig = DEFAULT_CON
     // Check if tag is allowed
     if (!config.allowedTags.includes(tagName)) {
       // For disallowed tags, keep their text content
-      const textContent = element.textContent || '';
+      const textContent = element.textContent || "";
       return document.createTextNode(textContent);
     }
 
@@ -81,7 +87,7 @@ export function sanitizeHTML(html: string, config: SanitizerConfig = DEFAULT_CON
       const attrName = attr.name.toLowerCase();
 
       // Skip event handlers (onclick, onerror, etc.)
-      if (attrName.startsWith('on')) {
+      if (attrName.startsWith("on")) {
         continue;
       }
 
@@ -91,7 +97,10 @@ export function sanitizeHTML(html: string, config: SanitizerConfig = DEFAULT_CON
       }
 
       // Special handling for href attributes
-      if ((attrName === 'href' || attrName === 'src') && !isSafeAttributeUrl(attr.value)) {
+      if (
+        (attrName === "href" || attrName === "src") &&
+        !isSafeAttributeUrl(attr.value)
+      ) {
         continue;
       }
 
@@ -99,8 +108,8 @@ export function sanitizeHTML(html: string, config: SanitizerConfig = DEFAULT_CON
     }
 
     // Enforce rel="noopener noreferrer" for target="_blank" on links to prevent tabnabbing
-    if (tagName === 'a' && sanitized.getAttribute('target') === '_blank') {
-      sanitized.setAttribute('rel', 'noopener noreferrer');
+    if (tagName === "a" && sanitized.getAttribute("target") === "_blank") {
+      sanitized.setAttribute("rel", "noopener noreferrer");
     }
 
     // Recursively sanitize children
@@ -116,7 +125,7 @@ export function sanitizeHTML(html: string, config: SanitizerConfig = DEFAULT_CON
 
   // Sanitize body content
   const bodyContent = doc.body;
-  const sanitizedBody = document.createElement('div');
+  const sanitizedBody = document.createElement("div");
 
   for (const child of Array.from(bodyContent.childNodes)) {
     const sanitized = sanitizeNode(child);
@@ -143,8 +152,8 @@ function isSafeAttributeUrl(url: string): boolean {
  * @returns Plain text content
  */
 export function extractPlainText(html: string): string {
-  if (!html || typeof html !== 'string') return '';
+  if (!html || typeof html !== "string") return "";
 
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  return doc.body.textContent || '';
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return doc.body.textContent || "";
 }

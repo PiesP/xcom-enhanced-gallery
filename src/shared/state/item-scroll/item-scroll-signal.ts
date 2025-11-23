@@ -6,14 +6,14 @@
  * @description Solid.js Signal-based ItemScrollState management module
  */
 
-import { getSolid } from '@shared/external/vendors';
-import type { ItemScrollState } from './item-scroll-state.ts';
+import { getSolid } from "@shared/external/vendors";
+import type { ItemScrollState } from "./item-scroll-state.ts";
 import {
   INITIAL_ITEM_SCROLL_STATE,
   createItemScrollState,
   updateItemScrollState,
   clearItemScrollTimeouts,
-} from './item-scroll-state.ts';
+} from "./item-scroll-state.ts";
 
 const { createSignal } = getSolid();
 
@@ -44,9 +44,11 @@ export interface ItemScrollStateSignal {
  * stateSignal.setState(prev => ({ ...prev, lastScrolledIndex: 5 })); // Update state
  */
 export function createItemScrollStateSignal(
-  initialState?: Partial<ItemScrollState>
+  initialState?: Partial<ItemScrollState>,
 ): ItemScrollStateSignal {
-  const [getState, setState] = createSignal<ItemScrollState>(createItemScrollState(initialState));
+  const [getState, setState] = createSignal<ItemScrollState>(
+    createItemScrollState(initialState),
+  );
 
   return {
     getState,
@@ -55,7 +57,7 @@ export function createItemScrollStateSignal(
       setState(INITIAL_ITEM_SCROLL_STATE);
     },
     clearTimeouts: () => {
-      setState(prev => clearItemScrollTimeouts(prev));
+      setState((prev) => clearItemScrollTimeouts(prev));
     },
   };
 }
@@ -71,7 +73,7 @@ export function createItemScrollStateSignal(
  */
 export function updateStateSignal(
   setterFn: Setter<ItemScrollState>,
-  updates: Partial<ItemScrollState>
+  updates: Partial<ItemScrollState>,
 ): void {
-  setterFn(prev => updateItemScrollState(prev, updates));
+  setterFn((prev) => updateItemScrollState(prev, updates));
 }

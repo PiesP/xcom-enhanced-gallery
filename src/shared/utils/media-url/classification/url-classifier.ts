@@ -5,19 +5,20 @@
  * URL classifier utilities.
  */
 
-import type { MediaTypeResult } from '@shared/utils/media-url/types';
+import type { MediaTypeResult } from "@shared/utils/media-url/types";
 
 const TWITTER_EMOJI_HOST_PATTERN = /^abs(?:-\d+)?\.twimg\.com$/i;
 const TWITTER_EMOJI_PATH_PATTERN = /\/emoji\/v\d+\/(?:svg|\d+x\d+)\//i;
 const TWITTER_VIDEO_THUMB_PATH_PATTERN =
   /\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|ad_img\/amplify_video)\//i;
-const TWITTER_VIDEO_CONTENT_PATH_PATTERN = /\/(?:ext_tw_video|tweet_video|amplify_video)\//i;
+const TWITTER_VIDEO_CONTENT_PATH_PATTERN =
+  /\/(?:ext_tw_video|tweet_video|amplify_video)\//i;
 
-const EMOJI_SEGMENT = '/emoji/';
-const MEDIA_SEGMENT = '/media/';
+const EMOJI_SEGMENT = "/emoji/";
+const MEDIA_SEGMENT = "/media/";
 
 function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 function safeParseUrl(rawUrl: string): URL | null {
@@ -37,24 +38,26 @@ function matchesEmoji(parsed: URL): boolean {
 }
 
 function matchesVideoThumbnail(parsed: URL): boolean {
-  const isTwitterCdnHost = parsed.hostname === 'pbs.twimg.com';
-  const matchesThumbnailPath = TWITTER_VIDEO_THUMB_PATH_PATTERN.test(parsed.pathname);
+  const isTwitterCdnHost = parsed.hostname === "pbs.twimg.com";
+  const matchesThumbnailPath = TWITTER_VIDEO_THUMB_PATH_PATTERN.test(
+    parsed.pathname,
+  );
   return isTwitterCdnHost && matchesThumbnailPath;
 }
 
 function classifyVideoHost(parsed: URL): MediaTypeResult {
   if (TWITTER_VIDEO_CONTENT_PATH_PATTERN.test(parsed.pathname)) {
     return {
-      type: 'video',
+      type: "video",
       shouldInclude: true,
       hostname: parsed.hostname,
     };
   }
 
   return {
-    type: 'unknown',
+    type: "unknown",
     shouldInclude: false,
-    reason: 'Unsupported video path pattern',
+    reason: "Unsupported video path pattern",
     hostname: parsed.hostname,
   };
 }
@@ -62,16 +65,16 @@ function classifyVideoHost(parsed: URL): MediaTypeResult {
 function classifyImageHost(parsed: URL): MediaTypeResult {
   if (parsed.pathname.includes(MEDIA_SEGMENT)) {
     return {
-      type: 'image',
+      type: "image",
       shouldInclude: true,
       hostname: parsed.hostname,
     };
   }
 
   return {
-    type: 'unknown',
+    type: "unknown",
     shouldInclude: false,
-    reason: 'Unsupported image path pattern',
+    reason: "Unsupported image path pattern",
     hostname: parsed.hostname,
   };
 }
@@ -157,9 +160,9 @@ export function isVideoThumbnailUrl(url: string): boolean {
 export function classifyMediaUrl(url: string): MediaTypeResult {
   if (!isNonEmptyString(url)) {
     return {
-      type: 'unknown',
+      type: "unknown",
       shouldInclude: false,
-      reason: 'Invalid URL: empty or non-string',
+      reason: "Invalid URL: empty or non-string",
     };
   }
 
@@ -168,9 +171,9 @@ export function classifyMediaUrl(url: string): MediaTypeResult {
 
   if (!parsed) {
     return {
-      type: 'unknown',
+      type: "unknown",
       shouldInclude: false,
-      reason: 'URL parsing failed',
+      reason: "URL parsing failed",
     };
   }
 
@@ -178,34 +181,34 @@ export function classifyMediaUrl(url: string): MediaTypeResult {
 
   if (matchesEmoji(parsed)) {
     return {
-      type: 'emoji',
+      type: "emoji",
       shouldInclude: false,
-      reason: 'Emoji URLs are filtered',
+      reason: "Emoji URLs are filtered",
       hostname,
     };
   }
 
   if (matchesVideoThumbnail(parsed)) {
     return {
-      type: 'video-thumbnail',
+      type: "video-thumbnail",
       shouldInclude: false,
-      reason: 'Video thumbnails are skipped',
+      reason: "Video thumbnails are skipped",
       hostname,
     };
   }
 
-  if (hostname === 'video.twimg.com') {
+  if (hostname === "video.twimg.com") {
     return classifyVideoHost(parsed);
   }
 
-  if (hostname === 'pbs.twimg.com') {
+  if (hostname === "pbs.twimg.com") {
     return classifyImageHost(parsed);
   }
 
   return {
-    type: 'unknown',
+    type: "unknown",
     shouldInclude: false,
-    reason: 'Unsupported hostname or path pattern',
+    reason: "Unsupported hostname or path pattern",
     hostname,
   };
 }

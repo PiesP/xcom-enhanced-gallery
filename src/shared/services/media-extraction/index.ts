@@ -126,4 +126,4 @@
  * ✅ Performance: Sub-1s extraction typical
  */
 
-export { MediaExtractionService } from './media-extraction-service';
+export { MediaExtractionService } from "./media-extraction-service";

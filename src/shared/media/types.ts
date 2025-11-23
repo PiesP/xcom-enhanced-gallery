@@ -61,7 +61,7 @@
 
 // MediaType is @/constants source of truth for all media classifications
 // Re-exported here for convenience and to maintain single import point
-import type { MediaType } from '@/constants';
+import type { MediaType } from "@/constants";
 export type { MediaType };
 
 /**
@@ -69,7 +69,7 @@ export type { MediaType };
  * All media operations return Result<T, E> for safe error handling
  * @see {@link @shared/types/result.types} - Full Result implementation details
  */
-export type { Result } from '@shared/types/result.types';
+export type { Result } from "@shared/types/result.types";
 
 /**
  * @interface MediaVariant
@@ -103,7 +103,7 @@ export type { Result } from '@shared/types/result.types';
  * @immutable All properties readonly to prevent accidental mutations
  */
 export interface MediaVariant {
-  readonly quality: 'orig' | 'large' | 'small';
+  readonly quality: "orig" | "large" | "small";
   readonly url: string;
   readonly width?: number;
   readonly height?: number;

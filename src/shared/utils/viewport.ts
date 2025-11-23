@@ -2,9 +2,9 @@
  * Viewport/Container constraint helpers (PC-only)
  * - Pure calculator + DOM hook to expose values via CSS variables
  */
-import { globalTimerManager } from './timer-management';
-import { addListener, removeEventListenerManaged } from './events';
-import { createEventListener } from './type-guards';
+import { globalTimerManager } from "./timer-management";
+import { addListener, removeEventListenerManaged } from "./events";
+import { createEventListener } from "./type-guards";
 
 export interface ChromeOffsets {
   readonly toolbarHeight?: number; // px
@@ -20,7 +20,7 @@ export interface ViewportConstraints {
 
 export function computeViewportConstraints(
   rect: { width: number; height: number },
-  chrome: ChromeOffsets = {}
+  chrome: ChromeOffsets = {},
 ): ViewportConstraints {
   const vw = Math.max(0, Math.floor(rect.width));
   const vh = Math.max(0, Math.floor(rect.height));
@@ -35,10 +35,16 @@ export function computeViewportConstraints(
 /**
  * Apply CSS variables to an element (root of gallery container)
  */
-export function applyViewportCssVars(el: HTMLElement, v: ViewportConstraints): void {
-  el.style.setProperty('--xeg-viewport-w', `${v.viewportW}px`);
-  el.style.setProperty('--xeg-viewport-h', `${v.viewportH}px`);
-  el.style.setProperty('--xeg-viewport-height-constrained', `${v.constrainedH}px`);
+export function applyViewportCssVars(
+  el: HTMLElement,
+  v: ViewportConstraints,
+): void {
+  el.style.setProperty("--xeg-viewport-w", `${v.viewportW}px`);
+  el.style.setProperty("--xeg-viewport-h", `${v.viewportH}px`);
+  el.style.setProperty(
+    "--xeg-viewport-height-constrained",
+    `${v.constrainedH}px`,
+  );
 }
 
 /**
@@ -46,7 +52,7 @@ export function applyViewportCssVars(el: HTMLElement, v: ViewportConstraints): v
  */
 export function observeViewportCssVars(
   el: HTMLElement,
-  getChrome: () => ChromeOffsets
+  getChrome: () => ChromeOffsets,
 ): () => void {
   // Use global timer manager (policy: direct timers forbidden)
   let disposed = false;
@@ -54,7 +60,10 @@ export function observeViewportCssVars(
   const calcAndApply = (): void => {
     if (disposed) return;
     const rect = el.getBoundingClientRect();
-    const v = computeViewportConstraints({ width: rect.width, height: rect.height }, getChrome());
+    const v = computeViewportConstraints(
+      { width: rect.width, height: rect.height },
+      getChrome(),
+    );
     applyViewportCssVars(el, v);
   };
 
@@ -63,7 +72,7 @@ export function observeViewportCssVars(
   const schedule = (): void => {
     if (pending) return;
     pending = true;
-    if (typeof requestAnimationFrame === 'function') {
+    if (typeof requestAnimationFrame === "function") {
       requestAnimationFrame(() => {
         pending = false;
         calcAndApply();
@@ -81,7 +90,7 @@ export function observeViewportCssVars(
 
   // ResizeObserver if available
   let ro: ResizeObserver | null = null;
-  if (typeof ResizeObserver !== 'undefined') {
+  if (typeof ResizeObserver !== "undefined") {
     ro = new ResizeObserver(() => schedule());
     try {
       ro.observe(el);
@@ -93,15 +102,15 @@ export function observeViewportCssVars(
   // window resize fallback
   const onResize = (): void => schedule();
   let resizeListenerId: string | null = null;
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     // Register with integrated event util for easier tracking/cleanup
     // Type Guard wrapper to remove type assertions (Phase 135)
     resizeListenerId = addListener(
       window,
-      'resize',
+      "resize",
       createEventListener(onResize),
       { passive: true },
-      'viewport:resize'
+      "viewport:resize",
     );
   }
 

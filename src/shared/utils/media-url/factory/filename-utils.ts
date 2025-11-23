@@ -5,37 +5,37 @@
  * Filename utilities for media downloads.
  */
 
-const DEFAULT_FILENAME = 'media';
+const DEFAULT_FILENAME = "media";
 const MAX_FILENAME_LENGTH = 200;
 const INVALID_CHARACTER_PATTERN = /[<>:"/\\|?*]/g;
 const SEGMENT_SPLITTER = /[\\/]+/;
 
 const KNOWN_EXTENSIONS = [
-  '.jpg',
-  '.jpeg',
-  '.png',
-  '.gif',
-  '.webp',
-  '.bmp',
-  '.mp4',
-  '.webm',
-  '.mov',
-  '.avi',
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".gif",
+  ".webp",
+  ".bmp",
+  ".mp4",
+  ".webm",
+  ".mov",
+  ".avi",
 ] as const;
 
-const KNOWN_EXTENSIONS_LOWER = KNOWN_EXTENSIONS.map(ext => ext.toLowerCase());
+const KNOWN_EXTENSIONS_LOWER = KNOWN_EXTENSIONS.map((ext) => ext.toLowerCase());
 
 function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 function stripQueryAndFragment(segment: string): string {
-  const queryIndex = segment.indexOf('?');
-  const hashIndex = segment.indexOf('#');
+  const queryIndex = segment.indexOf("?");
+  const hashIndex = segment.indexOf("#");
 
   const cutIndex = Math.min(
     queryIndex === -1 ? segment.length : queryIndex,
-    hashIndex === -1 ? segment.length : hashIndex
+    hashIndex === -1 ? segment.length : hashIndex,
   );
 
   return segment.slice(0, cutIndex);
@@ -54,7 +54,7 @@ function stripKnownExtension(segment: string): string {
 function normaliseSegment(raw: string): string {
   const withoutQuery = stripQueryAndFragment(raw);
   const withoutExtension = stripKnownExtension(withoutQuery);
-  const sanitised = withoutExtension.replace(INVALID_CHARACTER_PATTERN, '_');
+  const sanitised = withoutExtension.replace(INVALID_CHARACTER_PATTERN, "_");
   if (!sanitised) {
     return DEFAULT_FILENAME;
   }

@@ -8,8 +8,8 @@
  * Used for: close or exit actions.
  */
 
-import type { JSXElement } from '@shared/external/vendors';
-import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
+import type { JSXElement } from "@shared/external/vendors";
+import { Icon, type IconProps } from "@shared/components/ui/Icon/Icon";
 
 /**
  * ArrowLeftOnRectangle Icon Component
@@ -20,7 +20,7 @@ import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
 export function HeroArrowLeftOnRectangle(props: IconProps): JSXElement {
   return (
     <Icon {...props}>
-      <path d='M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3.75-6-3 3m0 0 3 3m-3-3H21.75' />
+      <path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3.75-6-3 3m0 0 3 3m-3-3H21.75" />
     </Icon>
   );
 }

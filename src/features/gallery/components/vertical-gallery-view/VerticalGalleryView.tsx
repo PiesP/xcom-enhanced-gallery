@@ -36,38 +36,41 @@
  * @version 6.0 - Integrated toolbar state management system
  */
 
-import type { JSX } from 'solid-js';
-import { logger } from '@shared/logging';
-import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
-import type { ImageFitMode } from '@shared/types';
+import type { JSX } from "solid-js";
+import { logger } from "@shared/logging";
+import { Toolbar } from "@shared/components/ui/Toolbar/Toolbar";
+import type { ImageFitMode } from "@shared/types";
 import {
   galleryState,
   galleryIndexEvents,
   navigateToItem,
-} from '@shared/state/signals/gallery.signals';
-import type { GalleryState } from '@shared/state/signals/gallery.signals';
-import { downloadState } from '@shared/state/signals/download.signals';
-import type { DownloadState } from '@shared/state/signals/download.signals';
-import { getSolid } from '@shared/external/vendors';
-import { languageService } from '@shared/services/language-service';
-import { stringWithDefault } from '@shared/utils/type-safety-helpers';
-import { animateGalleryEnter, animateGalleryExit } from '@shared/utils/animations';
-import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
-import { useGalleryScroll } from '@features/gallery/hooks/useGalleryScroll';
-import { useGalleryItemScroll } from '@features/gallery/hooks/useGalleryItemScroll';
-import { useGalleryFocusTracker } from '@features/gallery/hooks/useGalleryFocusTracker';
-import { ensureGalleryScrollAvailable } from '@shared/utils/utils';
-import styles from './VerticalGalleryView.module.css';
-import { VerticalImageItem } from './VerticalImageItem';
-import { computePreloadIndices } from '@shared/utils/performance';
-import { getSetting, setSetting } from '@shared/container/settings-access';
-import { useSelector } from '@shared/utils/signal-selector';
-import { isDownloadUiBusy } from '@shared/utils/download-ui-state';
-import type { MediaInfo } from '@shared/types';
-import { observeViewportCssVars } from '@shared/utils/viewport';
-import { globalTimerManager } from '@shared/utils/timer-management';
-import { safeEventPrevent } from '@shared/utils/event-utils';
-import { createToolbarViewModel } from '@shared/utils/toolbar-view-model';
+} from "@shared/state/signals/gallery.signals";
+import type { GalleryState } from "@shared/state/signals/gallery.signals";
+import { downloadState } from "@shared/state/signals/download.signals";
+import type { DownloadState } from "@shared/state/signals/download.signals";
+import { getSolid } from "@shared/external/vendors";
+import { languageService } from "@shared/services/language-service";
+import { stringWithDefault } from "@shared/utils/type-safety-helpers";
+import {
+  animateGalleryEnter,
+  animateGalleryExit,
+} from "@shared/utils/animations";
+import { useGalleryKeyboard } from "./hooks/useGalleryKeyboard";
+import { useGalleryScroll } from "@features/gallery/hooks/useGalleryScroll";
+import { useGalleryItemScroll } from "@features/gallery/hooks/useGalleryItemScroll";
+import { useGalleryFocusTracker } from "@features/gallery/hooks/useGalleryFocusTracker";
+import { ensureGalleryScrollAvailable } from "@shared/utils/dom";
+import styles from "./VerticalGalleryView.module.css";
+import { VerticalImageItem } from "./VerticalImageItem";
+import { computePreloadIndices } from "@shared/utils/performance";
+import { getSetting, setSetting } from "@shared/container/settings-access";
+import { useSelector } from "@shared/utils/signal-selector";
+import { isDownloadUiBusy } from "@shared/utils/download-ui-state";
+import type { MediaInfo } from "@shared/types";
+import { observeViewportCssVars } from "@shared/utils/viewport";
+import { globalTimerManager } from "@shared/utils/timer-management";
+import { safeEventPrevent } from "@shared/utils/event-utils";
+import { createToolbarViewModel } from "@shared/utils/toolbar-view-model";
 
 const solidAPI = getSolid();
 const { For } = solidAPI;
@@ -83,7 +86,7 @@ export interface VerticalGalleryViewProps {
 
 function VerticalGalleryViewCore({
   onClose,
-  className = '',
+  className = "",
   onPrevious,
   onNext,
   onDownloadCurrent,
@@ -93,14 +96,14 @@ function VerticalGalleryViewCore({
 
   const mediaItems = useSelector<GalleryState, readonly MediaInfo[]>(
     galleryState,
-    state => state.mediaItems,
-    { dependencies: state => [state.mediaItems] }
+    (state) => state.mediaItems,
+    { dependencies: (state) => [state.mediaItems] },
   );
 
   const currentIndex = useSelector<GalleryState, number>(
     galleryState,
-    state => state.currentIndex,
-    { dependencies: state => [state.currentIndex] }
+    (state) => state.currentIndex,
+    { dependencies: (state) => [state.currentIndex] },
   );
 
   const isDownloading = useSelector(
@@ -109,18 +112,23 @@ function VerticalGalleryViewCore({
       isDownloadUiBusy({
         downloadProcessing: download.isProcessing,
       }),
-    { dependencies: (download: DownloadState) => [download.isProcessing] }
+    { dependencies: (download: DownloadState) => [download.isProcessing] },
   );
 
-  const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);
-  const [toolbarWrapperEl, setToolbarWrapperEl] = createSignal<HTMLDivElement | null>(null);
-  const [itemsContainerEl, setItemsContainerEl] = createSignal<HTMLDivElement | null>(null);
+  const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(
+    null,
+  );
+  const [toolbarWrapperEl, setToolbarWrapperEl] =
+    createSignal<HTMLDivElement | null>(null);
+  const [itemsContainerEl, setItemsContainerEl] =
+    createSignal<HTMLDivElement | null>(null);
 
   // Phase 21.4 → Phase 376: memoized visibility accessor for toolbar sync
   const isVisible = createMemo(() => mediaItems().length > 0);
 
   // Phase 146: 툴바 초기 표시 및 자동 숨김
-  const [isInitialToolbarVisible, setIsInitialToolbarVisible] = createSignal(false);
+  const [isInitialToolbarVisible, setIsInitialToolbarVisible] =
+    createSignal(false);
 
   // 툴바 자동 숨김 타이머 effect
   createEffect(() => {
@@ -134,7 +142,7 @@ function VerticalGalleryViewCore({
     setIsInitialToolbarVisible(true);
 
     // 자동 숨김 시간 가져오기 (기본 3초)
-    const autoHideDelay = getSetting<number>('toolbar.autoHideDelay', 3000);
+    const autoHideDelay = getSetting<number>("toolbar.autoHideDelay", 3000);
 
     // autoHideDelay가 0이면 즉시 숨김
     if (autoHideDelay === 0) {
@@ -154,11 +162,12 @@ function VerticalGalleryViewCore({
   });
 
   const getInitialFitMode = (): ImageFitMode => {
-    const saved = getSetting<ImageFitMode>('gallery.imageFitMode', 'fitWidth');
-    return saved ?? 'fitWidth';
+    const saved = getSetting<ImageFitMode>("gallery.imageFitMode", "fitWidth");
+    return saved ?? "fitWidth";
   };
 
-  const [imageFitMode, setImageFitMode] = createSignal<ImageFitMode>(getInitialFitMode());
+  const [imageFitMode, setImageFitMode] =
+    createSignal<ImageFitMode>(getInitialFitMode());
 
   const activeMedia = createMemo(() => {
     const items = mediaItems();
@@ -167,16 +176,16 @@ function VerticalGalleryViewCore({
   });
 
   const preloadIndices = createMemo(() => {
-    const count = getSetting<number>('gallery.preloadCount', 0);
+    const count = getSetting<number>("gallery.preloadCount", 0);
     return computePreloadIndices(currentIndex(), mediaItems().length, count);
   });
 
   createEffect(
-    on(containerEl, element => {
+    on(containerEl, (element) => {
       if (element) {
         ensureGalleryScrollAvailable(element);
       }
-    })
+    }),
   );
 
   // Phase 20.2: 애니메이션 effect에 명시적 의존성 추가
@@ -192,8 +201,8 @@ function VerticalGalleryViewCore({
           animateGalleryExit(container);
         }
       },
-      { defer: true }
-    )
+      { defer: true },
+    ),
   );
 
   createEffect(
@@ -202,16 +211,16 @@ function VerticalGalleryViewCore({
         return;
       }
 
-      const videos = container.querySelectorAll('video');
-      videos.forEach(video => {
+      const videos = container.querySelectorAll("video");
+      videos.forEach((video) => {
         try {
           video.pause();
           video.currentTime = 0;
         } catch (error) {
-          logger.warn('video cleanup failed', { error });
+          logger.warn("video cleanup failed", { error });
         }
       });
-    })
+    }),
   );
 
   // Phase 430: 미디어 프리로드 자동화 (currentIndex 변경 시 자동 프리페치)
@@ -234,25 +243,28 @@ function VerticalGalleryViewCore({
     }
 
     // Link prefetch 힌트 추가 (브라우저 HTTP/2 활용)
-    urlsToPreload.forEach(url => {
+    urlsToPreload.forEach((url) => {
       try {
         // 중복 방지: 이미 존재하는 경우 추가 안 함
-        const existingLink = document.querySelector(`link[rel="prefetch"][href="${url}"]`);
+        const existingLink = document.querySelector(
+          `link[rel="prefetch"][href="${url}"]`,
+        );
         if (existingLink) return;
 
-        const link = document.createElement('link');
-        link.rel = 'prefetch';
+        const link = document.createElement("link");
+        link.rel = "prefetch";
         link.href = url;
-        link.as = 'image';
+        link.as = "image";
 
         // 우선순위 설정 (Chrome 95+)
-        if ('fetchPriority' in link) {
-          (link as HTMLLinkElement & { fetchPriority: string }).fetchPriority = 'low';
+        if ("fetchPriority" in link) {
+          (link as HTMLLinkElement & { fetchPriority: string }).fetchPriority =
+            "low";
         }
 
         document.head.appendChild(link);
       } catch (error) {
-        logger.warn('Media prefetch failed', { error, url });
+        logger.warn("Media prefetch failed", { error, url });
       }
     });
   });
@@ -263,7 +275,9 @@ function VerticalGalleryViewCore({
     if (!container || !wrapper) return;
 
     const cleanup = observeViewportCssVars(container, () => {
-      const toolbarHeight = wrapper ? Math.floor(wrapper.getBoundingClientRect().height) : 0;
+      const toolbarHeight = wrapper
+        ? Math.floor(wrapper.getBoundingClientRect().height)
+        : 0;
       return { toolbarHeight, paddingTop: 0, paddingBottom: 0 } as const;
     });
 
@@ -313,8 +327,8 @@ function VerticalGalleryViewCore({
       enabled: true,
       // Phase 264: behavior 옵션 제거 (기본값 'auto' 사용 - 모션 없음)
       // Phase 266: debounceDelay 제거 (항상 0ms 즉시 실행)
-      block: 'start',
-    }
+      block: "start",
+    },
   );
 
   // Phase 279/280/293: 갤러리 최초 열기 시 초기 스크롤 보장
@@ -340,10 +354,12 @@ function VerticalGalleryViewCore({
 
     // 아이템 컨테이너 렌더링 확인
     const itemsContainer = container.querySelector(
-      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
+      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
     );
     // Phase 328: Check only gallery items (exclude spacer)
-    const galleryItems = itemsContainer?.querySelectorAll('[data-xeg-role="gallery-item"]');
+    const galleryItems = itemsContainer?.querySelectorAll(
+      '[data-xeg-role="gallery-item"]',
+    );
     if (!itemsContainer || !galleryItems || galleryItems.length === 0) return;
 
     // First render only, run once
@@ -354,7 +370,10 @@ function VerticalGalleryViewCore({
     // - 2nd rAF: 다음 프레임 시작 (레이아웃 계산 완료 보장)
     // - waitForMediaLoad: 현재 아이템 이미지 로드 완료 대기 (높이 확정)
     // - scrollToCurrentItem: 정확한 위치로 스크롤
-    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    if (
+      typeof window !== "undefined" &&
+      typeof window.requestAnimationFrame === "function"
+    ) {
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(async () => {
           // Phase 319: 현재 아이템의 이미지 로드 대기 추가
@@ -370,7 +389,7 @@ function VerticalGalleryViewCore({
             }
 
             await scrollToItem(currentIdx);
-            applyFocusAfterNavigation(currentIdx, 'init', { force: true });
+            applyFocusAfterNavigation(currentIdx, "init", { force: true });
           }
         });
       });
@@ -385,13 +404,13 @@ function VerticalGalleryViewCore({
         if (itemElement) {
           void waitForMediaLoad(itemElement, 1000).then(async () => {
             await scrollToItem(currentIdx);
-            applyFocusAfterNavigation(currentIdx, 'init', { force: true });
+            applyFocusAfterNavigation(currentIdx, "init", { force: true });
           });
           return;
         }
 
         void scrollToItem(currentIdx).then(() => {
-          applyFocusAfterNavigation(currentIdx, 'init', { force: true });
+          applyFocusAfterNavigation(currentIdx, "init", { force: true });
         });
         return;
       }
@@ -399,16 +418,19 @@ function VerticalGalleryViewCore({
   });
 
   // Phase 270: 이미지 로드 완료 후 자동 스크롤 (타이밍 최적화)
-  const waitForMediaLoad = (element: Element, timeoutMs: number = 1000): Promise<void> => {
-    return new Promise(resolve => {
+  const waitForMediaLoad = (
+    element: Element,
+    timeoutMs: number = 1000,
+  ): Promise<void> => {
+    return new Promise((resolve) => {
       // 이미 로드된 경우 즉시 반환
-      if (element.getAttribute('data-media-loaded') === 'true') {
+      if (element.getAttribute("data-media-loaded") === "true") {
         resolve();
         return;
       }
 
       const checkInterval = globalTimerManager.setInterval(() => {
-        if (element.getAttribute('data-media-loaded') === 'true') {
+        if (element.getAttribute("data-media-loaded") === "true") {
           globalTimerManager.clearInterval(checkInterval);
           globalTimerManager.clearTimeout(timeoutId);
           resolve();
@@ -443,7 +465,7 @@ function VerticalGalleryViewCore({
 
     // 로드 완료 후 스크롤 실행 및 포커스 연계
     await scrollToItem(currentIdx);
-    applyFocusAfterNavigation(currentIdx, 'init', { force: true });
+    applyFocusAfterNavigation(currentIdx, "init", { force: true });
   };
 
   createEffect(() => {
@@ -451,11 +473,14 @@ function VerticalGalleryViewCore({
       return;
     }
 
-    const unsubscribe = galleryIndexEvents.on('navigate:complete', ({ index, trigger }) => {
-      void scrollToItem(index).then(() => {
-        applyFocusAfterNavigation(index, trigger);
-      });
-    });
+    const unsubscribe = galleryIndexEvents.on(
+      "navigate:complete",
+      ({ index, trigger }) => {
+        void scrollToItem(index).then(() => {
+          applyFocusAfterNavigation(index, trigger);
+        });
+      },
+    );
 
     onCleanup(() => {
       unsubscribe();
@@ -475,8 +500,8 @@ function VerticalGalleryViewCore({
   };
 
   const persistFitMode = (mode: ImageFitMode) =>
-    setSetting('gallery.imageFitMode', mode).catch(error => {
-      logger.warn('Failed to save fit mode', { error, mode });
+    setSetting("gallery.imageFitMode", mode).catch((error) => {
+      logger.warn("Failed to save fit mode", { error, mode });
     });
 
   const applyFitMode = (mode: ImageFitMode, event?: Event) => {
@@ -487,26 +512,26 @@ function VerticalGalleryViewCore({
   };
 
   const handleFitOriginal = (event?: Event) => {
-    applyFitMode('original', event);
+    applyFitMode("original", event);
   };
 
   const handleFitWidth = (event?: Event) => {
-    applyFitMode('fitWidth', event);
+    applyFitMode("fitWidth", event);
   };
 
   const handleFitHeight = (event?: Event) => {
-    applyFitMode('fitHeight', event);
+    applyFitMode("fitHeight", event);
   };
 
   const handleFitContainer = (event?: Event) => {
-    applyFitMode('fitContainer', event);
+    applyFitMode("fitContainer", event);
   };
 
   const handleBackgroundClick = (event: MouseEvent) => {
     const target = event.target as HTMLElement;
     if (
-      target.closest('.toolbarWrapper') ||
-      target.closest('.toolbarHoverZone') ||
+      target.closest(".toolbarWrapper") ||
+      target.closest(".toolbarHoverZone") ||
       target.closest('[data-role="toolbar"]') ||
       target.closest('[class*="toolbar"]')
     ) {
@@ -523,16 +548,20 @@ function VerticalGalleryViewCore({
     const current = currentIndex();
 
     if (index >= 0 && index < items.length && index !== current) {
-      navigateToItem(index, 'click');
+      navigateToItem(index, "click");
     }
   };
 
   if (!isVisible() || mediaItems().length === 0) {
-    const emptyTitle = languageService.translate('messages.gallery.emptyTitle');
-    const emptyDesc = languageService.translate('messages.gallery.emptyDescription');
+    const emptyTitle = languageService.translate("messages.gallery.emptyTitle");
+    const emptyDesc = languageService.translate(
+      "messages.gallery.emptyDescription",
+    );
 
     return (
-      <div class={`${styles.container} ${styles.empty} ${stringWithDefault(className, '')}`}>
+      <div
+        class={`${styles.container} ${styles.empty} ${stringWithDefault(className, "")}`}
+      >
         <div class={styles.emptyMessage}>
           <h3>{emptyTitle}</h3>
           <p>{emptyDesc}</p>
@@ -543,15 +572,18 @@ function VerticalGalleryViewCore({
 
   return (
     <div
-      ref={el => setContainerEl(el ?? null)}
-      class={`${styles.container} ${isInitialToolbarVisible() ? styles.initialToolbarVisible : ''} ${stringWithDefault(className, '')}`}
+      ref={(el) => setContainerEl(el ?? null)}
+      class={`${styles.container} ${isInitialToolbarVisible() ? styles.initialToolbarVisible : ""} ${stringWithDefault(className, "")}`}
       onClick={handleBackgroundClick}
-      data-xeg-gallery='true'
-      data-xeg-role='gallery'
+      data-xeg-gallery="true"
+      data-xeg-role="gallery"
     >
-      <div class={styles.toolbarHoverZone} data-role='toolbar-hover-zone' />
+      <div class={styles.toolbarHoverZone} data-role="toolbar-hover-zone" />
 
-      <div class={styles.toolbarWrapper} ref={el => setToolbarWrapperEl(el ?? null)}>
+      <div
+        class={styles.toolbarWrapper}
+        ref={(el) => setToolbarWrapperEl(el ?? null)}
+      >
         <Toolbar
           onClose={onClose || (() => {})}
           onPrevious={onPrevious || (() => {})}
@@ -563,11 +595,10 @@ function VerticalGalleryViewCore({
           // isDownloading: Internal state tracking for download button visual feedback
           // disabled: External control to disable all toolbar buttons during operations
           isDownloading={isDownloading}
-
           onDownloadCurrent={handleDownloadCurrent}
           onDownloadAll={handleDownloadAll}
           onOpenSettings={() => {
-            logger.debug('[VerticalGalleryView] Settings opened');
+            logger.debug("[VerticalGalleryView] Settings opened");
           }}
           onFitOriginal={handleFitOriginal}
           onFitWidth={handleFitWidth}
@@ -576,15 +607,15 @@ function VerticalGalleryViewCore({
           currentFitMode={imageFitMode()}
           tweetText={() => toolbarViewModel().tweetText ?? undefined}
           tweetTextHTML={() => toolbarViewModel().tweetTextHTML ?? undefined}
-          className={styles.toolbar || ''}
+          className={styles.toolbar || ""}
         />
       </div>
 
       <div
         class={styles.itemsContainer}
-        data-xeg-role='items-container'
-        data-xeg-role-compat='items-list'
-        ref={el => setItemsContainerEl(el ?? null)}
+        data-xeg-role="items-container"
+        data-xeg-role-compat="items-list"
+        ref={(el) => setItemsContainerEl(el ?? null)}
       >
         {/* Phase 328: Fixed - Simplified For loop without transformation */}
         <For each={mediaItems()}>
@@ -602,11 +633,13 @@ function VerticalGalleryViewCore({
                 fitMode={imageFitMode}
                 onClick={() => handleMediaItemClick(actualIndex)}
                 className={`${styles.galleryItem} ${
-                  actualIndex === currentIndex() ? styles.itemActive : ''
+                  actualIndex === currentIndex() ? styles.itemActive : ""
                 }`}
                 data-index={actualIndex}
-                data-xeg-role='gallery-item'
-                registerContainer={(element: HTMLElement | null) => registerFocusItem(actualIndex, element)}
+                data-xeg-role="gallery-item"
+                registerContainer={(element: HTMLElement | null) =>
+                  registerFocusItem(actualIndex, element)
+                }
                 {...(onDownloadCurrent
                   ? {
                       onDownload: handleDownloadCurrent,
@@ -619,7 +652,11 @@ function VerticalGalleryViewCore({
           }}
         </For>
         {/* Phase 328: Transparent spacer for last item top-align scrolling */}
-        <div class={styles.scrollSpacer} aria-hidden='true' data-xeg-role='scroll-spacer' />
+        <div
+          class={styles.scrollSpacer}
+          aria-hidden="true"
+          data-xeg-role="scroll-spacer"
+        />
       </div>
     </div>
   );

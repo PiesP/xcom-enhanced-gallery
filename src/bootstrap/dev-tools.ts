@@ -5,16 +5,17 @@
  * Phase 343: Standardized error handling
  */
 
-import { logger } from '@shared/logging';
-import { reportBootstrapError } from '@/bootstrap/types';
+import { logger } from "@shared/logging";
+import { reportBootstrapError } from "@/bootstrap/types";
 
 let devToolsRegistered = false;
 
-const isTestMode = import.meta.env.MODE === 'test';
+const isTestMode = import.meta.env.MODE === "test";
 const isVitestRuntime = Boolean(globalThis.process?.env?.VITEST);
 const allowDevToolsInTests = isTestMode && isVitestRuntime;
 
-const shouldInitializeDevTools = import.meta.env.DEV && (allowDevToolsInTests || !isTestMode);
+const shouldInitializeDevTools =
+  import.meta.env.DEV && (allowDevToolsInTests || !isTestMode);
 const isDevTestRuntime = import.meta.env.DEV && isTestMode;
 
 /**
@@ -33,7 +34,7 @@ const isDevTestRuntime = import.meta.env.DEV && isTestMode;
 export async function initializeDevTools(): Promise<void> {
   if (!shouldInitializeDevTools) {
     if (isDevTestRuntime) {
-      logger.debug('[dev-tools] Initialization skipped (test mode)');
+      logger.debug("[dev-tools] Initialization skipped (test mode)");
     }
     return;
   }
@@ -45,13 +46,17 @@ export async function initializeDevTools(): Promise<void> {
   try {
     // Service diagnostic tools
     // Phase 350: Import ServiceDiagnostics directly (prevent circular reference)
-    const { registerDiagnosticsGlobal } = await import('@shared/services/diagnostics');
+    const { registerDiagnosticsGlobal } = await import(
+      "@shared/services/diagnostics"
+    );
     registerDiagnosticsGlobal();
     devToolsRegistered = true;
 
-    logger.info('🛠️ Development diagnostics ready (run window.__XEG__.diagnostics.run())');
+    logger.info(
+      "🛠️ Development diagnostics ready (run window.__XEG__.diagnostics.run())",
+    );
   } catch (error) {
     // Phase 343: Standardized error handling (Non-Critical - warn only)
-    reportBootstrapError(error, { context: 'dev-tools', logger });
+    reportBootstrapError(error, { context: "dev-tools", logger });
   }
 }

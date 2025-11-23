@@ -20,13 +20,13 @@
  * ✅ Use barrel export: `import { getSolid } from '@shared/external/vendors'`
  */
 
-import { logger } from '@shared/logging';
+import { logger } from "@shared/logging";
 import {
   StaticVendorManager,
   type SolidAPI,
   type SolidStoreAPI,
   type NativeDownloadAPI,
-} from './vendor-manager-static';
+} from "./vendor-manager-static";
 
 // ================================
 // Safe public API (Phase 373)
@@ -57,26 +57,28 @@ let initializationPromise: Promise<void> | null = null;
  */
 export async function initializeVendorsSafe(): Promise<void> {
   if (staticVendorManager.getInitializationStatus().isInitialized) {
-    logger.debug('Vendor initialization skipped; cache already ready.');
+    logger.debug("Vendor initialization skipped; cache already ready.");
     return;
   }
 
   if (isInitializing && initializationPromise) {
-    logger.debug('Vendor initialization already in progress; awaiting completion.');
+    logger.debug(
+      "Vendor initialization already in progress; awaiting completion.",
+    );
     return initializationPromise;
   }
 
   isInitializing = true;
 
   try {
-    logger.info('Vendor initialization started (Solid.js).');
+    logger.info("Vendor initialization started (Solid.js).");
 
     initializationPromise = staticVendorManager.initialize();
     await initializationPromise;
 
-    logger.info('Vendor initialization completed (Solid.js).');
+    logger.info("Vendor initialization completed (Solid.js).");
   } catch (error) {
-    logger.error('Vendor initialization failed:', error);
+    logger.error("Vendor initialization failed:", error);
     throw error;
   } finally {
     isInitializing = false;
@@ -107,8 +109,10 @@ export function getSolidSafe(): SolidAPI {
   try {
     return staticVendorManager.getSolid();
   } catch (error) {
-    logger.error('Solid.js access failed:', error);
-    throw new Error('Cannot use Solid.js library. Call initializeVendors() first.');
+    logger.error("Solid.js access failed:", error);
+    throw new Error(
+      "Cannot use Solid.js library. Call initializeVendors() first.",
+    );
   }
 }
 
@@ -136,8 +140,10 @@ export function getSolidStoreSafe(): SolidStoreAPI {
   try {
     return staticVendorManager.getSolidStore();
   } catch (error) {
-    logger.error('Solid.js Store access failed:', error);
-    throw new Error('Cannot use Solid.js Store library. Call initializeVendors() first.');
+    logger.error("Solid.js Store access failed:", error);
+    throw new Error(
+      "Cannot use Solid.js Store library. Call initializeVendors() first.",
+    );
   }
 }
 
@@ -173,9 +179,9 @@ export const getNativeDownloadSafe = (): NativeDownloadAPI => {
   try {
     return staticVendorManager.getNativeDownload();
   } catch (error) {
-    logger.error('Native download API access failed:', error);
+    logger.error("Native download API access failed:", error);
     throw new Error(
-      'Cannot access native download functionality. StaticVendorManager may not be initialized.'
+      "Cannot access native download functionality. StaticVendorManager may not be initialized.",
     );
   }
 };
@@ -219,7 +225,7 @@ export const cleanupVendorsSafe = (): void => {
   staticVendorManager.cleanup();
   isInitializing = false;
   initializationPromise = null;
-  logger.info('Vendor cleanup completed (all resources released)');
+  logger.info("Vendor cleanup completed (all resources released)");
 };
 
 /**
@@ -248,9 +254,9 @@ export function getVendorInitializationReportSafe() {
   const status = staticVendorManager.getInitializationStatus();
   const versions = getVendorVersionsSafe();
 
-  const expectedVendors = ['solid', 'solid-store'] as const;
-  const initializedCount = expectedVendors.filter(vendor =>
-    status.availableAPIs.includes(vendor)
+  const expectedVendors = ["solid", "solid-store"] as const;
+  const initializedCount = expectedVendors.filter((vendor) =>
+    status.availableAPIs.includes(vendor),
   ).length;
   const initializationRate = expectedVendors.length
     ? Math.round((initializedCount / expectedVendors.length) * 100)
@@ -288,8 +294,8 @@ export function getVendorStatusesSafe() {
   }
 
   return {
-    solid: status.availableAPIs.includes('solid'),
-    solidStore: status.availableAPIs.includes('solid-store'),
+    solid: status.availableAPIs.includes("solid"),
+    solidStore: status.availableAPIs.includes("solid-store"),
   };
 }
 
@@ -312,9 +318,9 @@ export function isVendorInitializedSafe(vendorName: string): boolean {
   const statuses = getVendorStatusesSafe();
 
   switch (vendorName) {
-    case 'solid':
+    case "solid":
       return statuses.solid;
-    case 'solidStore':
+    case "solidStore":
       return statuses.solidStore;
     default:
       return false;
@@ -347,7 +353,9 @@ export function isVendorInitializedSafe(vendorName: string): boolean {
  * @internal Lifecycle management - use during bootstrap phase
  */
 export function registerVendorCleanupOnUnloadSafe(
-  target: Window | undefined = typeof window !== 'undefined' ? window : undefined
+  target: Window | undefined = typeof window !== "undefined"
+    ? window
+    : undefined,
 ): void {
   try {
     if (!target) return;
@@ -360,7 +368,7 @@ export function registerVendorCleanupOnUnloadSafe(
       }
     };
     // BFCache compatibility: Do NOT attach beforeunload (breaks back-forward cache)
-    target.addEventListener('pagehide', handler);
+    target.addEventListener("pagehide", handler);
   } catch {
     // Event listener registration failures are silently caught
     // (vendor cleanup will still work via StaticVendorManager.cleanup())

@@ -3,13 +3,16 @@
  * @description Provides type-safe DOM querying using cached stable selectors.
  */
 
-import { STABLE_SELECTORS } from '@/constants';
-import { cachedStableQuery, cachedQuerySelectorAll } from './dom-cache';
+import { STABLE_SELECTORS } from "@/constants";
+import { cachedStableQuery, cachedQuerySelectorAll } from "./dom-cache";
 
 export type QueryContainer = Document | Element;
 
 export interface ISelectorRegistry {
-  findFirst(selectors: readonly string[], container?: QueryContainer): Element | null;
+  findFirst(
+    selectors: readonly string[],
+    container?: QueryContainer,
+  ): Element | null;
   findAll(selectors: readonly string[], container?: QueryContainer): Element[];
   findClosest(selectors: readonly string[], start?: Element): Element | null;
 
@@ -20,7 +23,7 @@ export interface ISelectorRegistry {
   findMediaLink(container?: QueryContainer): Element | null;
   queryActionButton(
     action: keyof typeof STABLE_SELECTORS.ACTION_BUTTONS,
-    container?: QueryContainer
+    container?: QueryContainer,
   ): Element | null;
 }
 
@@ -35,7 +38,10 @@ class SelectorRegistryImpl implements ISelectorRegistry {
     this.selectors = options.selectors ?? STABLE_SELECTORS;
   }
 
-  findFirst(selectors: readonly string[], container?: QueryContainer): Element | null {
+  findFirst(
+    selectors: readonly string[],
+    container?: QueryContainer,
+  ): Element | null {
     return cachedStableQuery(selectors, container);
   }
 
@@ -43,7 +49,7 @@ class SelectorRegistryImpl implements ISelectorRegistry {
     const results = new Set<Element>();
     for (const selector of selectors) {
       const elements = cachedQuerySelectorAll(selector, container);
-      elements.forEach(el => results.add(el));
+      elements.forEach((el) => results.add(el));
     }
     return Array.from(results);
   }
@@ -75,7 +81,7 @@ class SelectorRegistryImpl implements ISelectorRegistry {
 
   queryActionButton(
     action: keyof typeof STABLE_SELECTORS.ACTION_BUTTONS,
-    container?: QueryContainer
+    container?: QueryContainer,
   ): Element | null {
     const selector = this.selectors.ACTION_BUTTONS[action];
     return selector ? this.findFirst([selector], container) : null;
@@ -84,6 +90,8 @@ class SelectorRegistryImpl implements ISelectorRegistry {
 
 export const SelectorRegistry = SelectorRegistryImpl;
 
-export function createSelectorRegistry(options: SelectorRegistryOptions = {}): ISelectorRegistry {
+export function createSelectorRegistry(
+  options: SelectorRegistryOptions = {},
+): ISelectorRegistry {
   return new SelectorRegistryImpl(options);
 }

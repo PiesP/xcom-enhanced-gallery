@@ -156,17 +156,24 @@
  * ```
  */
 
-import { logger } from '@shared/logging';
-import { globalTimerManager } from '@shared/utils/timer-management';
-import { TwitterAPI } from '@shared/services/media/twitter-api-client';
-import type { TweetMediaEntry } from '@shared/services/media/types';
-import type { MediaInfo, MediaExtractionResult } from '@shared/types/media.types';
-import type { TweetInfo, MediaExtractionOptions, APIExtractor } from '@shared/types/media.types';
+import { logger } from "@shared/logging";
+import { globalTimerManager } from "@shared/utils/timer-management";
+import { TwitterAPI } from "@shared/services/media/twitter-api-client";
+import type { TweetMediaEntry } from "@shared/services/media/types";
+import type {
+  MediaInfo,
+  MediaExtractionResult,
+} from "@shared/types/media.types";
+import type {
+  TweetInfo,
+  MediaExtractionOptions,
+  APIExtractor,
+} from "@shared/types/media.types";
 import {
   DirectMediaMatchingStrategy,
   type MediaClickIndexStrategy,
-} from '@shared/services/media-extraction/strategies';
-import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/tweet-text-html-extractor';
+} from "@shared/services/media-extraction/strategies";
+import { extractTweetTextHTMLFromClickedElement } from "@shared/utils/tweet-text-html-extractor";
 
 /**
  * Twitter API-Based Extractor - Primary Strategy
@@ -222,7 +229,7 @@ export class TwitterAPIExtractor implements APIExtractor {
     tweetInfo: TweetInfo,
     clickedElement: HTMLElement,
     options: MediaExtractionOptions,
-    extractionId: string
+    extractionId: string,
   ): Promise<MediaExtractionResult> {
     try {
       logger.debug(`[APIExtractor] ${extractionId}: Starting API extraction`, {
@@ -235,21 +242,30 @@ export class TwitterAPIExtractor implements APIExtractor {
       // Phase 2a Step 1: Fetch media from API (single attempt with timeout)
       const apiMedias = await this.fetchWithTimeout(
         () => TwitterAPI.getTweetMedias(tweetInfo.tweetId),
-        timeoutMs
+        timeoutMs,
       );
 
       if (apiMedias?.length === 0) {
-        return this.createFailureResult('No media found in API response');
+        return this.createFailureResult("No media found in API response");
       }
 
       // Phase 2a Step 2: Extract tweet text HTML (used for MediaInfo enrichment)
-      const tweetTextHTML = extractTweetTextHTMLFromClickedElement(clickedElement);
+      const tweetTextHTML =
+        extractTweetTextHTMLFromClickedElement(clickedElement);
 
       // Phase 2a Step 3: Transform API response to MediaInfo[]
-      const mediaItems = await this.convertAPIMediaToMediaInfo(apiMedias, tweetInfo, tweetTextHTML);
+      const mediaItems = await this.convertAPIMediaToMediaInfo(
+        apiMedias,
+        tweetInfo,
+        tweetTextHTML,
+      );
 
       // Phase 2a Step 4: Calculate which media user clicked (Strategy pattern)
-      const clickedIndex = await this.calculateClickedIndex(clickedElement, apiMedias, mediaItems);
+      const clickedIndex = await this.calculateClickedIndex(
+        clickedElement,
+        apiMedias,
+        mediaItems,
+      );
 
       // Phase 2a Step 5: Assemble success result
       return {
@@ -258,17 +274,20 @@ export class TwitterAPIExtractor implements APIExtractor {
         clickedIndex,
         metadata: {
           extractedAt: Date.now(),
-          sourceType: 'twitter-api',
-          strategy: 'api-extraction',
+          sourceType: "twitter-api",
+          strategy: "api-extraction",
           totalProcessingTime: 0,
           apiMediaCount: apiMedias.length,
         },
         tweetInfo,
       };
     } catch (error) {
-      logger.warn(`[APIExtractor] ${extractionId}: API extraction failed:`, error);
+      logger.warn(
+        `[APIExtractor] ${extractionId}: API extraction failed:`,
+        error,
+      );
       return this.createFailureResult(
-        error instanceof Error ? error.message : 'API extraction failed'
+        error instanceof Error ? error.message : "API extraction failed",
       );
     }
   }
@@ -280,21 +299,24 @@ export class TwitterAPIExtractor implements APIExtractor {
    * resolve within the timeout window, the promise rejects with a timeout error.
    * No retries are performed in lean mode.
    */
-  private async fetchWithTimeout<T>(fn: () => Promise<T>, timeoutMs: number): Promise<T> {
+  private async fetchWithTimeout<T>(
+    fn: () => Promise<T>,
+    timeoutMs: number,
+  ): Promise<T> {
     const withTimeout = <U>(p: Promise<U>): Promise<U> => {
       return new Promise<U>((resolve, reject) => {
         const timer = globalTimerManager.setTimeout(() => {
-          reject(new Error('timeout'));
+          reject(new Error("timeout"));
         }, timeoutMs);
         p.then(
-          value => {
+          (value) => {
             globalTimerManager.clearTimeout(timer);
             resolve(value);
           },
-          error => {
+          (error) => {
             globalTimerManager.clearTimeout(timer);
             reject(error);
-          }
+          },
         );
       });
     };
@@ -344,7 +366,7 @@ export class TwitterAPIExtractor implements APIExtractor {
   private async convertAPIMediaToMediaInfo(
     apiMedias: TweetMediaEntry[],
     tweetInfo: TweetInfo,
-    tweetTextHTML?: string | undefined
+    tweetTextHTML?: string | undefined,
   ): Promise<MediaInfo[]> {
     const mediaItems: MediaInfo[] = [];
 
@@ -352,7 +374,12 @@ export class TwitterAPIExtractor implements APIExtractor {
       const apiMedia = apiMedias[i];
       if (!apiMedia) continue;
 
-      const mediaInfo = this.createMediaInfoFromAPI(apiMedia, tweetInfo, i, tweetTextHTML);
+      const mediaInfo = this.createMediaInfoFromAPI(
+        apiMedia,
+        tweetInfo,
+        i,
+        tweetTextHTML,
+      );
       if (mediaInfo) {
         mediaItems.push(mediaInfo);
       }
@@ -371,7 +398,7 @@ export class TwitterAPIExtractor implements APIExtractor {
    * @returns { width, height } object or null if no dimensions found
    */
   private resolveDimensionsFromApiMedia(
-    apiMedia: TweetMediaEntry
+    apiMedia: TweetMediaEntry,
   ): { width: number; height: number } | null {
     // Priority 1: Direct API original dimensions (most reliable)
     const widthFromOriginal = this.toPositiveNumber(apiMedia.original_width);
@@ -412,11 +439,11 @@ export class TwitterAPIExtractor implements APIExtractor {
    * @returns Positive number or null
    */
   private toPositiveNumber(value: unknown): number | null {
-    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    if (typeof value === "number" && Number.isFinite(value) && value > 0) {
       return value;
     }
 
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       const parsed = Number.parseFloat(value);
       if (Number.isFinite(parsed) && parsed > 0) {
         return parsed;
@@ -486,11 +513,11 @@ export class TwitterAPIExtractor implements APIExtractor {
     apiMedia: TweetMediaEntry,
     tweetInfo: TweetInfo,
     index: number,
-    tweetTextHTML?: string | undefined
+    tweetTextHTML?: string | undefined,
   ): MediaInfo | null {
     try {
       // Type conversion: photo → image, video → video
-      const mediaType = apiMedia.type === 'photo' ? 'image' : 'video';
+      const mediaType = apiMedia.type === "photo" ? "image" : "video";
       const dimensions = this.resolveDimensionsFromApiMedia(apiMedia);
       const metadata: Record<string, unknown> = {
         apiIndex: index,
@@ -508,7 +535,7 @@ export class TwitterAPIExtractor implements APIExtractor {
         id: `${tweetInfo.tweetId}_api_${index}`,
         url: apiMedia.download_url,
         type: mediaType,
-        filename: '',
+        filename: "",
         tweetUsername: username,
         tweetId: tweetInfo.tweetId,
         tweetUrl: tweetInfo.tweetUrl,
@@ -524,7 +551,7 @@ export class TwitterAPIExtractor implements APIExtractor {
         metadata,
       };
     } catch (error) {
-      logger.error('Failed to create API MediaInfo:', error);
+      logger.error("Failed to create API MediaInfo:", error);
       return null;
     }
   }
@@ -616,14 +643,14 @@ export class TwitterAPIExtractor implements APIExtractor {
   private async calculateClickedIndex(
     clickedElement: HTMLElement,
     apiMedias: TweetMediaEntry[],
-    mediaItems: MediaInfo[]
+    mediaItems: MediaInfo[],
   ): Promise<number> {
     // Create strategy instances (Strategy pattern - Phase 351)
     const strategies: MediaClickIndexStrategy[] = [
       new DirectMediaMatchingStrategy(
         this.findMediaElement.bind(this),
-        el => this.extractMediaUrl(el) ?? '',
-        this.normalizeMediaUrl.bind(this)
+        (el) => this.extractMediaUrl(el) ?? "",
+        this.normalizeMediaUrl.bind(this),
       ),
     ];
 
@@ -632,14 +659,16 @@ export class TwitterAPIExtractor implements APIExtractor {
       const index = strategy.calculate(clickedElement, apiMedias, mediaItems);
       if (index !== -1) {
         logger.debug(
-          `[APIExtractor] Strategy succeeded: ${strategy.name} (confidence ${strategy.confidence}%), index ${index}`
+          `[APIExtractor] Strategy succeeded: ${strategy.name} (confidence ${strategy.confidence}%), index ${index}`,
         );
         return index;
       }
     }
 
     // All strategies failed: fallback to first media
-    logger.warn('[APIExtractor] All strategies failed, returning default index 0');
+    logger.warn(
+      "[APIExtractor] All strategies failed, returning default index 0",
+    );
     return 0;
   }
 
@@ -712,26 +741,29 @@ export class TwitterAPIExtractor implements APIExtractor {
    */
   private findMediaElement(element: HTMLElement): HTMLElement | null {
     // Level 1: Clicked element is already media?
-    if (element.tagName === 'IMG' || element.tagName === 'VIDEO') {
+    if (element.tagName === "IMG" || element.tagName === "VIDEO") {
       return element;
     }
 
     // Level 2: Direct child is media?
-    const mediaChild = element.querySelector(':scope > img, :scope > video');
+    const mediaChild = element.querySelector(":scope > img, :scope > video");
     if (mediaChild) {
       return mediaChild as HTMLElement;
     }
 
     // Level 3: Deeper children within depth limit?
-    const deepChild = element.querySelector('img, video');
-    if (deepChild && this.isDirectMediaChild(element, deepChild as HTMLElement)) {
+    const deepChild = element.querySelector("img, video");
+    if (
+      deepChild &&
+      this.isDirectMediaChild(element, deepChild as HTMLElement)
+    ) {
       return deepChild as HTMLElement;
     }
 
     // Level 4: Search parent elements (up to 5 levels)
     let current = element.parentElement;
     for (let i = 0; i < 5 && current; i++) {
-      const parentMedia = current.querySelector(':scope > img, :scope > video');
+      const parentMedia = current.querySelector(":scope > img, :scope > video");
       if (parentMedia) {
         return parentMedia as HTMLElement;
       }
@@ -841,11 +873,11 @@ export class TwitterAPIExtractor implements APIExtractor {
    * @returns URL string or null
    */
   private extractMediaUrl(element: HTMLElement): string | null {
-    if (element.tagName === 'IMG') {
-      return element.getAttribute('src');
+    if (element.tagName === "IMG") {
+      return element.getAttribute("src");
     }
-    if (element.tagName === 'VIDEO') {
-      return element.getAttribute('poster') || element.getAttribute('src');
+    if (element.tagName === "VIDEO") {
+      return element.getAttribute("poster") || element.getAttribute("src");
     }
     return null;
   }
@@ -912,24 +944,24 @@ export class TwitterAPIExtractor implements APIExtractor {
       const pathname = urlObj.pathname;
 
       // Extract filename after last '/'
-      const filename = pathname.split('/').pop();
+      const filename = pathname.split("/").pop();
       return filename && filename.length > 0 ? filename : null;
     } catch {
       // Fallback: simple string parsing (for URL object unsupported environments)
       try {
-        const lastSlash = url.lastIndexOf('/');
+        const lastSlash = url.lastIndexOf("/");
         if (lastSlash === -1) return null;
 
         let filenamePart = url.substring(lastSlash + 1);
 
         // Remove query string
-        const queryIndex = filenamePart.indexOf('?');
+        const queryIndex = filenamePart.indexOf("?");
         if (queryIndex !== -1) {
           filenamePart = filenamePart.substring(0, queryIndex);
         }
 
         // 프래그먼트 제거
-        const hashIndex = filenamePart.indexOf('#');
+        const hashIndex = filenamePart.indexOf("#");
         if (hashIndex !== -1) {
           filenamePart = filenamePart.substring(0, hashIndex);
         }
@@ -988,8 +1020,8 @@ export class TwitterAPIExtractor implements APIExtractor {
       clickedIndex: 0,
       metadata: {
         extractedAt: Date.now(),
-        sourceType: 'twitter-api',
-        strategy: 'api-extraction-failed',
+        sourceType: "twitter-api",
+        strategy: "api-extraction-failed",
         error,
       },
       tweetInfo: null,

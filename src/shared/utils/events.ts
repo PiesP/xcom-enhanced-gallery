@@ -1,20 +1,24 @@
-import { logger } from '@shared/logging';
-import { isGalleryInternalElement } from './utils';
+import { logger } from "@shared/logging";
+import { isGalleryInternalElement } from "./dom";
 // Import from new modular layers
 import {
   initializeGalleryEvents as _initializeGalleryEvents,
   cleanupGalleryEvents as _cleanupGalleryEvents,
   updateGalleryEventOptions as _updateGalleryEventOptions,
   getGalleryEventSnapshot as _getGalleryEventSnapshot,
-} from './events/lifecycle/gallery-lifecycle';
+} from "./events/lifecycle/gallery-lifecycle";
 import {
   addListener,
   removeEventListenerManaged,
   removeEventListenersByContext,
   removeAllEventListeners,
   getEventListenerStatus,
-} from './events/core/listener-manager';
-import type { EventContext, EventHandlers, GalleryEventOptions } from './events/core/event-context';
+} from "./events/core/listener-manager";
+import type {
+  EventContext,
+  EventHandlers,
+  GalleryEventOptions,
+} from "./events/core/event-context";
 // Phase 420.3: Import listener profiler for diagnostics
 
 // Re-export core functions and types for backward compatibility
@@ -56,7 +60,8 @@ const FORM_CONTROL_SELECTORS =
  */
 function isFormControlElement(element: HTMLElement): boolean {
   return Boolean(
-    element.matches?.(FORM_CONTROL_SELECTORS) || element.closest?.(FORM_CONTROL_SELECTORS)
+    element.matches?.(FORM_CONTROL_SELECTORS) ||
+      element.closest?.(FORM_CONTROL_SELECTORS),
   );
 }
 
@@ -68,20 +73,20 @@ function isFormControlElement(element: HTMLElement): boolean {
  */
 function getPointerEventPolicy(
   target: HTMLElement,
-  pointerType: string
-): 'allow' | 'block' | 'log' {
+  pointerType: string,
+): "allow" | "block" | "log" {
   // 1. Mouse + form control → Allow (Phase 242)
-  if (pointerType === 'mouse' && isFormControlElement(target)) {
-    return 'allow';
+  if (pointerType === "mouse" && isFormControlElement(target)) {
+    return "allow";
   }
 
   // 2. Inside gallery → Block
   if (isGalleryInternalElement(target)) {
-    return 'block';
+    return "block";
   }
 
   // 3. Other → Log only
-  return 'log';
+  return "log";
 }
 
 export function applyGalleryPointerPolicy(root: HTMLElement): () => void {
@@ -89,23 +94,23 @@ export function applyGalleryPointerPolicy(root: HTMLElement): () => void {
   const { signal } = controller;
 
   const touchEvents: Array<keyof HTMLElementEventMap> = [
-    'touchstart',
-    'touchmove',
-    'touchend',
-    'touchcancel',
+    "touchstart",
+    "touchmove",
+    "touchend",
+    "touchcancel",
   ];
 
   const pointerEvents: Array<keyof HTMLElementEventMap> = [
-    'pointerdown',
-    'pointermove',
-    'pointerup',
-    'pointercancel',
-    'pointerenter',
-    'pointerleave',
+    "pointerdown",
+    "pointermove",
+    "pointerup",
+    "pointercancel",
+    "pointerenter",
+    "pointerleave",
   ];
 
   const touchHandler = (evt: Event) => {
-    logger.debug('[PC-only policy] Blocked touch event', {
+    logger.debug("[PC-only policy] Blocked touch event", {
       type: evt.type,
       target: (evt.target as Element | null)?.tagName,
     });
@@ -114,7 +119,7 @@ export function applyGalleryPointerPolicy(root: HTMLElement): () => void {
     evt.stopImmediatePropagation?.();
   };
 
-  touchEvents.forEach(eventType => {
+  touchEvents.forEach((eventType) => {
     root.addEventListener(eventType, touchHandler, {
       capture: true,
       passive: false,
@@ -126,9 +131,10 @@ export function applyGalleryPointerPolicy(root: HTMLElement): () => void {
     const pointerEvent = evt as PointerEvent;
     const rawTarget = evt.target;
     const pointerType =
-      typeof pointerEvent.pointerType === 'string' && pointerEvent.pointerType.length > 0
+      typeof pointerEvent.pointerType === "string" &&
+      pointerEvent.pointerType.length > 0
         ? pointerEvent.pointerType
-        : 'mouse';
+        : "mouse";
 
     if (!(rawTarget instanceof HTMLElement)) {
       return;
@@ -136,15 +142,15 @@ export function applyGalleryPointerPolicy(root: HTMLElement): () => void {
 
     const policy = getPointerEventPolicy(rawTarget, pointerType);
 
-    if (policy === 'allow') {
+    if (policy === "allow") {
       return;
     }
 
-    if (policy === 'block') {
+    if (policy === "block") {
       evt.preventDefault?.();
       evt.stopPropagation?.();
       evt.stopImmediatePropagation?.();
-      logger.debug('[PC-only policy] Blocked pointer event in gallery', {
+      logger.debug("[PC-only policy] Blocked pointer event in gallery", {
         type: evt.type,
         pointerType,
         target: rawTarget.tagName,
@@ -153,14 +159,14 @@ export function applyGalleryPointerPolicy(root: HTMLElement): () => void {
     }
 
     // log only
-    logger.trace?.('[PC-only policy] Pointer event allowed (logged)', {
+    logger.trace?.("[PC-only policy] Pointer event allowed (logged)", {
       type: evt.type,
       pointerType,
       target: rawTarget.tagName,
     });
   };
 
-  pointerEvents.forEach(eventType => {
+  pointerEvents.forEach((eventType) => {
     root.addEventListener(eventType, pointerHandler, {
       capture: true,
       passive: false,

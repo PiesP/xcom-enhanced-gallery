@@ -5,7 +5,7 @@
  * @phase Phase 355: Download Service Consolidation (BulkDownloadService removed)
  */
 
-import { logger } from '@shared/logging';
+import { logger } from "@shared/logging";
 
 // Singleton pattern: track if service has been registered
 let downloadServiceRegistered = false;
@@ -37,9 +37,9 @@ export async function ensureDownloadServiceRegistered(): Promise<void> {
 
   try {
     // Dynamically import at first use
-    const { downloadService } = await import('./download-service');
-    const { CoreService } = await import('./core/core-service-manager');
-    const { SERVICE_KEYS } = await import('@/constants');
+    const { downloadService } = await import("./download-service");
+    const { CoreService } = await import("./core/core-service-manager");
+    const { SERVICE_KEYS } = await import("@/constants");
 
     const serviceManager = CoreService.getInstance();
 
@@ -49,10 +49,10 @@ export async function ensureDownloadServiceRegistered(): Promise<void> {
     serviceManager.register(SERVICE_KEYS.BULK_DOWNLOAD, downloadService);
 
     downloadServiceRegistered = true;
-    logger.info('✅ DownloadService lazily registered (first download)');
+    logger.info("✅ DownloadService lazily registered (first download)");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    logger.error('❌ Failed to lazily register DownloadService:', message);
+    logger.error("❌ Failed to lazily register DownloadService:", message);
     throw error;
   }
 }

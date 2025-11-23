@@ -89,18 +89,18 @@
  * @see {@link ARCHITECTURE.md} for Phase 309 Service Layer details
  */
 
-import { logger } from '@shared/logging';
+import { logger } from "@shared/logging";
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
   MediaExtractor,
   TweetInfo,
-} from '@shared/types/media.types';
-import { ExtractionError } from '@shared/types/media.types';
-import { ErrorCode } from '@shared/types/result.types';
-import { TweetInfoExtractor } from './extractors/tweet-info-extractor';
-import { TwitterAPIExtractor } from './extractors/twitter-api-extractor';
-import { removeDuplicateMediaItems } from '@shared/utils/deduplication/deduplication-utils';
+} from "@shared/types/media.types";
+import { ExtractionError } from "@shared/types/media.types";
+import { ErrorCode } from "@shared/types/result.types";
+import { TweetInfoExtractor } from "./extractors/tweet-info-extractor";
+import { TwitterAPIExtractor } from "./extractors/twitter-api-extractor";
+import { removeDuplicateMediaItems } from "@shared/utils/deduplication";
 
 export class MediaExtractionService implements MediaExtractor {
   private readonly tweetInfoExtractor: TweetInfoExtractor;
@@ -202,19 +202,19 @@ export class MediaExtractionService implements MediaExtractor {
    */
   async extractFromClickedElement(
     element: HTMLElement,
-    options: MediaExtractionOptions = {}
+    options: MediaExtractionOptions = {},
   ): Promise<MediaExtractionResult> {
     const extractionId = this.generateExtractionId();
     logger.info(`[MediaExtractor] ${extractionId}: Extraction started`);
     let tweetInfo: TweetInfo | null = null;
 
     try {
-            // Phase 1: Extract tweet metadata (ID, user, quote tweet detection)
+      // Phase 1: Extract tweet metadata (ID, user, quote tweet detection)
       tweetInfo = await this.tweetInfoExtractor.extract(element);
 
       if (!tweetInfo?.tweetId) {
         logger.warn(
-          `[MediaExtractor] ${extractionId}: Tweet info not available - extraction failed`
+          `[MediaExtractor] ${extractionId}: Tweet info not available - extraction failed`,
         );
 
         return {
@@ -223,9 +223,9 @@ export class MediaExtractionService implements MediaExtractor {
           clickedIndex: 0,
           metadata: {
             extractedAt: Date.now(),
-            sourceType: 'extraction-failed',
-            strategy: 'media-extraction',
-            error: 'No tweet information found',
+            sourceType: "extraction-failed",
+            strategy: "media-extraction",
+            error: "No tweet information found",
             debug: {
               element: element.tagName,
               elementClass: element.className,
@@ -233,20 +233,30 @@ export class MediaExtractionService implements MediaExtractor {
             },
           },
           tweetInfo: null,
-          errors: [new ExtractionError(ErrorCode.NO_MEDIA_FOUND, 'No tweet info found.')],
+          errors: [
+            new ExtractionError(
+              ErrorCode.NO_MEDIA_FOUND,
+              "No tweet info found.",
+            ),
+          ],
         };
       }
 
       logger.debug(
-        `[MediaExtractor] ${extractionId}: Tweet information acquired - ${tweetInfo.tweetId}`
+        `[MediaExtractor] ${extractionId}: Tweet information acquired - ${tweetInfo.tweetId}`,
       );
 
       // Phase 2: Attempt API extraction (primary strategy)
-      const apiResult = await this.apiExtractor.extract(tweetInfo, element, options, extractionId);
+      const apiResult = await this.apiExtractor.extract(
+        tweetInfo,
+        element,
+        options,
+        extractionId,
+      );
 
       if (apiResult.success && apiResult.mediaItems.length > 0) {
         logger.info(
-          `[MediaExtractor] ${extractionId}: ✅ API extraction successful - ${apiResult.mediaItems.length} media items`
+          `[MediaExtractor] ${extractionId}: ✅ API extraction successful - ${apiResult.mediaItems.length} media items`,
         );
         // Phase 2 succeeded: Convert to core interface format
         return this.finalizeResult({
@@ -255,17 +265,18 @@ export class MediaExtractionService implements MediaExtractor {
           clickedIndex: apiResult.clickedIndex,
           metadata: {
             extractedAt: Date.now(),
-            sourceType: 'api-first',
-            strategy: 'media-extraction',
+            sourceType: "api-first",
+            strategy: "media-extraction",
           },
-          tweetInfo: this.mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo),
+          tweetInfo: this.mergeTweetInfoMetadata(
+            tweetInfo,
+            apiResult.tweetInfo,
+          ),
         });
       }
 
       // Phase 2 failed or returned empty
-      logger.error(
-        `[MediaExtractor] ${extractionId}: API extraction failed`
-      );
+      logger.error(`[MediaExtractor] ${extractionId}: API extraction failed`);
 
       return {
         success: false,
@@ -273,9 +284,9 @@ export class MediaExtractionService implements MediaExtractor {
         clickedIndex: 0,
         metadata: {
           extractedAt: Date.now(),
-          sourceType: 'extraction-failed',
-          strategy: 'media-extraction',
-          error: 'API extraction failed',
+          sourceType: "extraction-failed",
+          strategy: "media-extraction",
+          error: "API extraction failed",
           debug: {
             tweetId: tweetInfo.tweetId,
             apiResult: {
@@ -285,12 +296,18 @@ export class MediaExtractionService implements MediaExtractor {
           },
         },
         tweetInfo: this.mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo),
-        errors: [new ExtractionError(ErrorCode.NO_MEDIA_FOUND, 'API extraction failed.')],
+        errors: [
+          new ExtractionError(
+            ErrorCode.NO_MEDIA_FOUND,
+            "API extraction failed.",
+          ),
+        ],
       };
-
-
     } catch (error) {
-      logger.error(`[MediaExtractor] ${extractionId}: Extraction threw error`, error);
+      logger.error(
+        `[MediaExtractor] ${extractionId}: Extraction threw error`,
+        error,
+      );
       return this.createErrorResult(error);
     }
   }
@@ -337,26 +354,33 @@ export class MediaExtractionService implements MediaExtractor {
    */
   async extractAllFromContainer(
     container: HTMLElement,
-    options: MediaExtractionOptions = {}
+    options: MediaExtractionOptions = {},
   ): Promise<MediaExtractionResult> {
     const extractionId = this.generateExtractionId();
-    logger.debug(`[MediaExtractor] ${extractionId}: Container extraction started`);
+    logger.debug(
+      `[MediaExtractor] ${extractionId}: Container extraction started`,
+    );
 
     try {
       // Search container for first media element (img or video with Twitter domain)
       const firstMedia = container.querySelector(
-        'img[src*="pbs.twimg.com"], video[src*="video.twimg.com"]'
+        'img[src*="pbs.twimg.com"], video[src*="video.twimg.com"]',
       ) as HTMLElement;
 
       if (!firstMedia) {
-        logger.warn(`[MediaExtractor] ${extractionId}: No media found in container`);
-        return this.createErrorResult('No media found in container');
+        logger.warn(
+          `[MediaExtractor] ${extractionId}: No media found in container`,
+        );
+        return this.createErrorResult("No media found in container");
       }
 
       // Delegate to main extraction method for full extraction
       return this.extractFromClickedElement(firstMedia, options);
     } catch (error) {
-      logger.error(`[MediaExtractor] ${extractionId}: Container extraction failed:`, error);
+      logger.error(
+        `[MediaExtractor] ${extractionId}: Container extraction failed:`,
+        error,
+      );
       return this.createErrorResult(error);
     }
   }
@@ -401,7 +425,7 @@ export class MediaExtractionService implements MediaExtractor {
   private generateExtractionId(): string {
     try {
       // Primary: Use crypto.randomUUID() (available in Node.js 16+, modern browsers)
-      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      if (typeof crypto !== "undefined" && crypto.randomUUID) {
         return `simp_${crypto.randomUUID()}`;
       }
     } catch {
@@ -464,10 +488,11 @@ export class MediaExtractionService implements MediaExtractor {
    * - Original error object preserved in debug.originalError
    */
   private createErrorResult(error: unknown): MediaExtractionResult {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     const errorStack = error instanceof Error ? error.stack : undefined;
 
-    logger.error('MediaExtractionService: Error occurred during extraction', {
+    logger.error("MediaExtractionService: Error occurred during extraction", {
       message: errorMessage,
       stack: errorStack,
       timestamp: new Date().toISOString(),
@@ -479,8 +504,8 @@ export class MediaExtractionService implements MediaExtractor {
       clickedIndex: 0,
       metadata: {
         extractedAt: Date.now(),
-        sourceType: 'error',
-        strategy: 'media-extraction',
+        sourceType: "error",
+        strategy: "media-extraction",
         error: errorMessage,
         debug: {
           originalError: error,
@@ -492,7 +517,7 @@ export class MediaExtractionService implements MediaExtractor {
         new ExtractionError(
           ErrorCode.UNKNOWN,
           `Error occurred during media extraction: ${errorMessage}`,
-          error instanceof Error ? error : undefined
+          error instanceof Error ? error : undefined,
         ),
       ],
     };
@@ -578,9 +603,15 @@ export class MediaExtractionService implements MediaExtractor {
     }
 
     // Normalize clicked index for original (pre-dedup) list
-    const originalIndex = this.normalizeClickedIndex(result.clickedIndex, result.mediaItems.length);
+    const originalIndex = this.normalizeClickedIndex(
+      result.clickedIndex,
+      result.mediaItems.length,
+    );
     // Normalize for new (post-dedup) list
-    let adjustedIndex = this.normalizeClickedIndex(result.clickedIndex, uniqueItems.length);
+    let adjustedIndex = this.normalizeClickedIndex(
+      result.clickedIndex,
+      uniqueItems.length,
+    );
 
     if (hasDuplicates) {
       // Get the originally clicked item before deduplication
@@ -589,7 +620,7 @@ export class MediaExtractionService implements MediaExtractor {
         // Extract URL key for matching (prefer originalUrl for stability)
         const clickedKey = clickedItem.originalUrl ?? clickedItem.url;
         // Find new index by URL matching in deduplicated list
-        const newIndex = uniqueItems.findIndex(item => {
+        const newIndex = uniqueItems.findIndex((item) => {
           const itemKey = item.originalUrl ?? item.url;
           return itemKey === clickedKey;
         });
@@ -600,7 +631,7 @@ export class MediaExtractionService implements MediaExtractor {
       }
 
       // Log deduplication for diagnostics
-      logger.debug('[MediaExtractor] Duplicate media removed', {
+      logger.debug("[MediaExtractor] Duplicate media removed", {
         originalCount: result.mediaItems.length,
         uniqueCount: uniqueItems.length,
         originalClickedIndex: result.clickedIndex,
@@ -617,7 +648,7 @@ export class MediaExtractionService implements MediaExtractor {
 
   private mergeTweetInfoMetadata(
     base: TweetInfo | null | undefined,
-    override: TweetInfo | null | undefined
+    override: TweetInfo | null | undefined,
   ): TweetInfo | null {
     if (!base && !override) {
       return null;
@@ -644,8 +675,6 @@ export class MediaExtractionService implements MediaExtractor {
       ...(metadataKeys.length > 0 ? { metadata: mergedMetadata } : {}),
     };
   }
-
-
 
   /**
    * Normalize clicked index to safe bounds
@@ -697,12 +726,15 @@ export class MediaExtractionService implements MediaExtractor {
    * normalizeClickedIndex(2, 0)          // → 0
    * ```
    */
-  private normalizeClickedIndex(index: number | undefined, length: number): number {
+  private normalizeClickedIndex(
+    index: number | undefined,
+    length: number,
+  ): number {
     if (length === 0) {
       return 0;
     }
 
-    if (typeof index !== 'number' || !Number.isFinite(index)) {
+    if (typeof index !== "number" || !Number.isFinite(index)) {
       return 0;
     }
 

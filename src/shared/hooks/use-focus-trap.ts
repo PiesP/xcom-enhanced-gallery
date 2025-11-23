@@ -36,12 +36,12 @@
  * @internal Hook for modal/dialog component integration
  */
 
-import { getSolid } from '@shared/external/vendors';
+import { getSolid } from "@shared/external/vendors";
 import {
   createFocusTrap,
   type FocusTrap as FocusTrapUtil,
   type FocusTrapOptions as UtilOptions,
-} from '@shared/utils/focus-trap';
+} from "@shared/utils/focus-trap";
 
 export interface FocusTrapOptions extends UtilOptions {
   /**
@@ -85,15 +85,20 @@ type MaybeAccessor<T> = T | Accessor<T>;
  * @internal Helper for Solid.js ref resolution
  */
 function isRefLike(value: unknown): value is { current: HTMLElement | null } {
-  if (typeof value !== 'object' || value === null) return false;
-  return Object.prototype.hasOwnProperty.call(value as Record<string, unknown>, 'current');
+  if (typeof value !== "object" || value === null) return false;
+  return Object.prototype.hasOwnProperty.call(
+    value as Record<string, unknown>,
+    "current",
+  );
 }
 
 /**
  * Resolve container element from Ref or direct HTMLElement
  * @internal Helper for container resolution
  */
-function resolveElement(candidate: RefLike | HTMLElement | null): HTMLElement | null {
+function resolveElement(
+  candidate: RefLike | HTMLElement | null,
+): HTMLElement | null {
   if (!candidate) return null;
   if (isRefLike(candidate)) {
     return candidate.current;
@@ -104,7 +109,7 @@ function resolveElement(candidate: RefLike | HTMLElement | null): HTMLElement | 
 export function useFocusTrap(
   containerOrRef: MaybeAccessor<RefLike | HTMLElement | null>,
   isActiveInput: MaybeAccessor<boolean>,
-  options: FocusTrapOptions = {}
+  options: FocusTrapOptions = {},
 ): FocusTrapResult {
   /**
    * useFocusTrap: Reactive focus trap for modal/dialog accessibility
@@ -138,11 +143,11 @@ export function useFocusTrap(
   const { createEffect, onCleanup } = getSolid();
 
   const resolveContainer: Accessor<RefLike | HTMLElement | null> =
-    typeof containerOrRef === 'function'
+    typeof containerOrRef === "function"
       ? (containerOrRef as Accessor<RefLike | HTMLElement | null>)
       : () => containerOrRef;
   const resolveIsActive: Accessor<boolean> =
-    typeof isActiveInput === 'function'
+    typeof isActiveInput === "function"
       ? (isActiveInput as Accessor<boolean>)
       : () => isActiveInput;
   let trap: FocusTrapUtil | null = null;

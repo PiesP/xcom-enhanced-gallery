@@ -13,13 +13,13 @@
  * @version 1.1.0 - Enhanced documentation and security (Phase 354+)
  */
 
-import type { MediaInfo } from '@shared/types/media.types';
+import type { MediaInfo } from "@shared/types/media.types";
 
 /**
  * Video file extensions recognized by this application
  * @internal
  */
-const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi'] as const;
+const VIDEO_EXTENSIONS = [".mp4", ".webm", ".mov", ".avi"] as const;
 
 /**
  * Clean and normalize a filename for display and saving
@@ -53,18 +53,18 @@ const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi'] as const;
  */
 export function cleanFilename(filename?: string): string {
   if (!filename) {
-    return 'Untitled';
+    return "Untitled";
   }
 
   let cleaned = filename
-    .replace(/^twitter_media_\d{8}T\d{6}_\d+\./, '')
-    .replace(/^\/media\//, '')
-    .replace(/^\.\//g, '')
-    .replace(/[\\/]/g, '_');
+    .replace(/^twitter_media_\d{8}T\d{6}_\d+\./, "")
+    .replace(/^\/media\//, "")
+    .replace(/^\.\//g, "")
+    .replace(/[\\/]/g, "_");
 
   if (cleaned.length > 40 || !cleaned) {
     const match = filename.match(/([a-zA-Z0-9_-]+)$/);
-    cleaned = match?.[1] ?? 'Image';
+    cleaned = match?.[1] ?? "Image";
   }
 
   return cleaned;
@@ -101,14 +101,14 @@ export function isVideoMedia(media: MediaInfo): boolean {
   const urlLowerCase = media.url.toLowerCase();
 
   // Check URL for video extensions
-  if (VIDEO_EXTENSIONS.some(ext => urlLowerCase.includes(ext))) {
+  if (VIDEO_EXTENSIONS.some((ext) => urlLowerCase.includes(ext))) {
     return true;
   }
 
   // Check filename for video extensions
   if (media.filename) {
     const filenameLowerCase = media.filename.toLowerCase();
-    if (VIDEO_EXTENSIONS.some(ext => filenameLowerCase.endsWith(ext))) {
+    if (VIDEO_EXTENSIONS.some((ext) => filenameLowerCase.endsWith(ext))) {
       return true;
     }
   }
@@ -117,7 +117,7 @@ export function isVideoMedia(media: MediaInfo): boolean {
   // URL parsing can fail for relative paths, data: URLs, etc.
   try {
     const url = new URL(media.url);
-    return url.hostname === 'video.twimg.com';
+    return url.hostname === "video.twimg.com";
   } catch {
     // URL parsing failed (relative path, data: URL, malformed URL, etc.)
     // Already checked extensions above, so false is correct here

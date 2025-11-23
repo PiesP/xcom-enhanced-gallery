@@ -7,16 +7,19 @@
  * - Generate toolbar class names
  */
 
-import type { ToolbarState, ToolbarDataState } from '@shared/types/toolbar.types';
+import type {
+  ToolbarState,
+  ToolbarDataState,
+} from "@shared/types/toolbar.types";
 
 // Phase 2: Re-export types for backward compatibility
-export type { ToolbarDataState } from '@shared/types/toolbar.types';
+export type { ToolbarDataState } from "@shared/types/toolbar.types";
 
 export function getToolbarDataState(state: ToolbarState): ToolbarDataState {
-  if (state.hasError) return 'error';
-  if (state.isDownloading) return 'downloading';
-  if (state.isLoading) return 'loading';
-  return 'idle';
+  if (state.hasError) return "error";
+  if (state.isDownloading) return "downloading";
+  if (state.isLoading) return "loading";
+  return "idle";
 }
 
 /**
@@ -38,5 +41,5 @@ export function getToolbarClassName(
 
   classNames.push(...additionalClassNames.filter(Boolean));
 
-  return classNames.join(' ');
+  return classNames.join(" ");
 }

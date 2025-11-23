@@ -35,7 +35,7 @@
  * - 'downloading': Download in progress
  * - 'error': Error occurred
  */
-export type ToolbarDataState = 'idle' | 'loading' | 'downloading' | 'error';
+export type ToolbarDataState = "idle" | "loading" | "downloading" | "error";
 
 /**
  * Image fit mode (Fit Mode)
@@ -51,7 +51,7 @@ export type ToolbarDataState = 'idle' | 'loading' | 'downloading' | 'error';
  * @note Maintain consistency with ImageFitMode in ui.types.ts
  * @see ui.types.ts ImageFitMode
  */
-export type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
+export type FitMode = "original" | "fitWidth" | "fitHeight" | "fitContainer";
 
 /**
  * Toolbar UI state object

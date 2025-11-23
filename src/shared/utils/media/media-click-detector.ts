@@ -3,18 +3,18 @@
  * @description Stable media click detection and handling logic with DOM caching optimization
  */
 
-import { STABLE_SELECTORS, CSS } from '@/constants';
-import { isVideoControlElement } from '@shared/utils/utils';
-import { logger } from '@shared/logging';
-import { cachedQuerySelector } from '@shared/dom';
-import { gallerySignals } from '@shared/state/signals/gallery.signals';
+import { STABLE_SELECTORS, CSS } from "@/constants";
+import { isVideoControlElement } from "@shared/utils/dom";
+import { logger } from "@shared/logging";
+import { cachedQuerySelector } from "@shared/dom";
+import { gallerySignals } from "@shared/state/signals/gallery.signals";
 
 /**
  * Media detection result
  */
 export interface MediaDetectionResult {
   /** Detected media type */
-  type: 'video' | 'image' | 'none';
+  type: "video" | "image" | "none";
   /** Detected element */
   element: HTMLElement | null;
   /** Media URL (if available) */
@@ -38,7 +38,10 @@ const UI_BUTTON_SELECTORS = [
 ];
 
 const MEDIA_IN_LINK_SELECTORS = Array.from(
-  new Set([...STABLE_SELECTORS.IMAGE_CONTAINERS, ...STABLE_SELECTORS.MEDIA_PLAYERS])
+  new Set([
+    ...STABLE_SELECTORS.IMAGE_CONTAINERS,
+    ...STABLE_SELECTORS.MEDIA_PLAYERS,
+  ]),
 );
 
 const TWEET_MEDIA_SELECTORS = MEDIA_IN_LINK_SELECTORS;
@@ -49,7 +52,7 @@ const TWEET_MEDIA_SELECTORS = MEDIA_IN_LINK_SELECTORS;
 export function isProcessableMedia(target: HTMLElement | null): boolean {
   if (!target) return false;
 
-  logger.debug('MediaClickDetector: Checking processable media for:', {
+  logger.debug("MediaClickDetector: Checking processable media for:", {
     tagName: target.tagName,
     className: target.className,
     id: target.id,
@@ -57,18 +60,20 @@ export function isProcessableMedia(target: HTMLElement | null): boolean {
   });
 
   if (gallerySignals.isOpen.value) {
-    logger.debug('MediaClickDetector: Gallery already open - blocking');
+    logger.debug("MediaClickDetector: Gallery already open - blocking");
     return false;
   }
 
   if (shouldBlockMediaTrigger(target)) {
-    logger.debug('MediaClickDetector: Blocked by shouldBlockMediaTrigger');
+    logger.debug("MediaClickDetector: Blocked by shouldBlockMediaTrigger");
     return false;
   }
 
   for (const selector of STABLE_SELECTORS.IMAGE_CONTAINERS) {
     if (target.closest(selector)) {
-      logger.info(`✅ MediaClickDetector: Image container detected - ${selector}`);
+      logger.info(
+        `✅ MediaClickDetector: Image container detected - ${selector}`,
+      );
       return true;
     }
   }
@@ -80,9 +85,9 @@ export function isProcessableMedia(target: HTMLElement | null): boolean {
     }
   }
 
-  if (target.tagName === 'IMG' || target.tagName === 'VIDEO') {
+  if (target.tagName === "IMG" || target.tagName === "VIDEO") {
     if (isTwitterMediaElement(target)) {
-      logger.info('✅ MediaClickDetector: Direct Twitter media element click');
+      logger.info("✅ MediaClickDetector: Direct Twitter media element click");
       return true;
     }
   }
@@ -104,7 +109,9 @@ export function isProcessableMedia(target: HTMLElement | null): boolean {
   }
 
   if (tweetContainer) {
-    const hasMediaInTweet = tweetContainer.querySelector(TWEET_MEDIA_SELECTORS.join(', '));
+    const hasMediaInTweet = tweetContainer.querySelector(
+      TWEET_MEDIA_SELECTORS.join(", "),
+    );
     if (hasMediaInTweet) {
       const mediaRect = hasMediaInTweet.getBoundingClientRect();
       const targetRect = target.getBoundingClientRect();
@@ -115,13 +122,13 @@ export function isProcessableMedia(target: HTMLElement | null): boolean {
         targetRect.bottom > mediaRect.top;
 
       if (isNearMedia) {
-        logger.info('✅ MediaClickDetector: Tweet area with media click');
+        logger.info("✅ MediaClickDetector: Tweet area with media click");
         return true;
       }
     }
   }
 
-  logger.debug('MediaClickDetector: No media detected');
+  logger.debug("MediaClickDetector: No media detected");
   return false;
 }
 
@@ -129,13 +136,17 @@ export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   if (!target) return false;
 
   if (isVideoControlElement(target)) {
-    logger.debug('MediaClickDetector: Video control element click - allow default action');
+    logger.debug(
+      "MediaClickDetector: Video control element click - allow default action",
+    );
     return true;
   }
 
   for (const selector of GALLERY_INTERNAL_SELECTORS) {
     if (target.closest(selector)) {
-      logger.debug('MediaClickDetector: Gallery internal element click - block');
+      logger.debug(
+        "MediaClickDetector: Gallery internal element click - block",
+      );
       return true;
     }
   }
@@ -147,18 +158,18 @@ export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
     }
   }
 
-  const mcSel = STABLE_SELECTORS.MEDIA_CONTAINERS.join(', ');
+  const mcSel = STABLE_SELECTORS.MEDIA_CONTAINERS.join(", ");
 
   // Image in external link: exclude media container
-  if (target.tagName === 'IMG') {
-    const parentLink = target.closest('a');
+  if (target.tagName === "IMG") {
+    const parentLink = target.closest("a");
     if (parentLink) {
       // Check if it is a status link on X/Twitter
       const isStatusLink = (href: string) => {
         try {
           const url = new URL(href, window.location.href);
           const isTwitter = /(?:^|\.)(?:twitter|x)\.com$/.test(url.hostname);
-          return isTwitter && url.pathname.includes('/status/');
+          return isTwitter && url.pathname.includes("/status/");
         } catch {
           return false;
         }
@@ -174,43 +185,47 @@ export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   if (!statusLink) return false;
 
   if (target.closest(mcSel)) {
-    logger.debug('MediaClickDetector: Link in media container - allow gallery');
+    logger.debug("MediaClickDetector: Link in media container - allow gallery");
     return false;
   }
 
-  if (cachedQuerySelector(MEDIA_IN_LINK_SELECTORS.join(', '), statusLink, 2000)) {
-    logger.debug('MediaClickDetector: Link with media - allow gallery');
+  if (
+    cachedQuerySelector(MEDIA_IN_LINK_SELECTORS.join(", "), statusLink, 2000)
+  ) {
+    logger.debug("MediaClickDetector: Link with media - allow gallery");
     return false;
   }
 
-  logger.debug('MediaClickDetector: Pure text link click blocked');
+  logger.debug("MediaClickDetector: Pure text link click blocked");
   return true;
 }
 
 /**
  * Extract media information from clicked element
  */
-export function detectMediaFromClick(target: HTMLElement): MediaDetectionResult {
+export function detectMediaFromClick(
+  target: HTMLElement,
+): MediaDetectionResult {
   try {
-    if (target.tagName === 'IMG' && isTwitterMediaElement(target)) {
+    if (target.tagName === "IMG" && isTwitterMediaElement(target)) {
       const img = target as HTMLImageElement;
       return {
-        type: 'image',
+        type: "image",
         element: target,
         mediaUrl: img.src,
         confidence: 1.0,
-        method: 'direct_element',
+        method: "direct_element",
       };
     }
 
-    if (target.tagName === 'VIDEO' && isTwitterMediaElement(target)) {
+    if (target.tagName === "VIDEO" && isTwitterMediaElement(target)) {
       const video = target as HTMLVideoElement;
       return {
-        type: 'video',
+        type: "video",
         element: target,
         mediaUrl: video.src || video.currentSrc,
         confidence: 1.0,
-        method: 'direct_element',
+        method: "direct_element",
       };
     }
 
@@ -218,10 +233,10 @@ export function detectMediaFromClick(target: HTMLElement): MediaDetectionResult 
       const container = target.closest(selector) as HTMLElement | null;
       if (!container) continue;
 
-      if (container.tagName === 'IMG' && isTwitterMediaElement(container)) {
+      if (container.tagName === "IMG" && isTwitterMediaElement(container)) {
         const img = container as HTMLImageElement;
         return {
-          type: 'image',
+          type: "image",
           element: img,
           mediaUrl: img.src,
           confidence: 0.9,
@@ -229,10 +244,12 @@ export function detectMediaFromClick(target: HTMLElement): MediaDetectionResult 
         };
       }
 
-      const candidateImg = container.querySelector('img') as HTMLImageElement | null;
+      const candidateImg = container.querySelector(
+        "img",
+      ) as HTMLImageElement | null;
       if (candidateImg && isTwitterMediaElement(candidateImg)) {
         return {
-          type: 'image',
+          type: "image",
           element: candidateImg,
           mediaUrl: candidateImg.src,
           confidence: 0.9,
@@ -245,10 +262,10 @@ export function detectMediaFromClick(target: HTMLElement): MediaDetectionResult 
       const container = target.closest(selector) as HTMLElement | null;
       if (!container) continue;
 
-      if (container.tagName === 'VIDEO') {
+      if (container.tagName === "VIDEO") {
         const video = container as HTMLVideoElement;
         return {
-          type: 'video',
+          type: "video",
           element: video,
           mediaUrl: video.src || video.currentSrc,
           confidence: 0.9,
@@ -256,10 +273,10 @@ export function detectMediaFromClick(target: HTMLElement): MediaDetectionResult 
         };
       }
 
-      const video = container.querySelector('video') as HTMLVideoElement | null;
+      const video = container.querySelector("video") as HTMLVideoElement | null;
       if (video) {
         return {
-          type: 'video',
+          type: "video",
           element: video,
           mediaUrl: video.src || video.currentSrc,
           confidence: 0.9,
@@ -269,18 +286,18 @@ export function detectMediaFromClick(target: HTMLElement): MediaDetectionResult 
     }
 
     return {
-      type: 'none',
+      type: "none",
       element: null,
       confidence: 0,
-      method: 'not_found',
+      method: "not_found",
     };
   } catch (error) {
-    logger.error('[MediaClickDetector] Media detection failed:', error);
+    logger.error("[MediaClickDetector] Media detection failed:", error);
     return {
-      type: 'none',
+      type: "none",
       element: null,
       confidence: 0,
-      method: 'error',
+      method: "error",
     };
   }
 }
@@ -288,30 +305,49 @@ export function detectMediaFromClick(target: HTMLElement): MediaDetectionResult 
 /**
  * Find exact media element at click coordinates
  */
-export function findMediaAtCoordinates(x: number, y: number): MediaDetectionResult {
+export function findMediaAtCoordinates(
+  x: number,
+  y: number,
+): MediaDetectionResult {
   try {
-    const elementAtPoint = document.elementFromPoint(x, y) as HTMLElement | null;
+    const elementAtPoint = document.elementFromPoint(
+      x,
+      y,
+    ) as HTMLElement | null;
     if (!elementAtPoint) {
-      return { type: 'none', element: null, confidence: 0, method: 'no_element_at_point' };
+      return {
+        type: "none",
+        element: null,
+        confidence: 0,
+        method: "no_element_at_point",
+      };
     }
 
     return detectMediaFromClick(elementAtPoint);
   } catch (error) {
-    logger.error('[MediaClickDetector] Coordinate-based detection failed:', error);
-    return { type: 'none', element: null, confidence: 0, method: 'coordinate_error' };
+    logger.error(
+      "[MediaClickDetector] Coordinate-based detection failed:",
+      error,
+    );
+    return {
+      type: "none",
+      element: null,
+      confidence: 0,
+      method: "coordinate_error",
+    };
   }
 }
 
 function isTwitterMediaElement(element: HTMLElement): boolean {
-  if (element.tagName === 'IMG') {
+  if (element.tagName === "IMG") {
     // Phase 153: Support link preview images
     // IMG elements are all considered processable. Further validation happens
     // in the STABLE_SELECTORS filter and DOM backup strategy layers (filters real media only)
     return true;
   }
 
-  if (element.tagName === 'VIDEO') {
-    return !!element.closest(STABLE_SELECTORS.MEDIA_PLAYERS.join(', '));
+  if (element.tagName === "VIDEO") {
+    return !!element.closest(STABLE_SELECTORS.MEDIA_PLAYERS.join(", "));
   }
 
   return false;

@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 /**
  * @fileoverview Centralized Logging Infrastructure
  * @version 2.0.0 - Phase 404: Enhanced documentation + correlation tracking
@@ -67,7 +65,7 @@
  *
  * @public
  */
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = "debug" | "info" | "warn" | "error";
 
 /**
  * Loggable Data Type - Any value that can be logged
@@ -175,7 +173,7 @@ interface LoggerConfig {
   readonly correlationId?: string;
 }
 
-const BASE_PREFIX = '[XEG]';
+const BASE_PREFIX = "[XEG]";
 const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
   debug: 0,
   info: 1,
@@ -187,15 +185,16 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
 const isTest: boolean = (() => {
   try {
     // Vitest exposes import.meta.vitest
-    const meta = (import.meta as any) || {};
-    if (typeof meta?.vitest !== 'undefined') return true;
+    const meta = (import.meta as { vitest?: unknown }) || {};
+    if (typeof meta?.vitest !== "undefined") return true;
   } catch {
     // ignore
   }
 
   try {
-    if (typeof process !== 'undefined' && process.env) {
-      if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') return true;
+    if (typeof process !== "undefined" && process.env) {
+      if (process.env.VITEST === "true" || process.env.NODE_ENV === "test")
+        return true;
     }
   } catch {
     // ignore
@@ -209,14 +208,14 @@ const isTest: boolean = (() => {
 // Fallback order: globalThis.__DEV__ → import.meta.env.DEV → NODE_ENV !== 'production' → true
 // Optimized for tree-shaking: Use __DEV__ directly when available, or fallback
 const isDev: boolean =
-  typeof __DEV__ !== 'undefined'
+  typeof __DEV__ !== "undefined"
     ? __DEV__
     : (() => {
         if (import.meta?.env !== undefined) {
           return import.meta.env.DEV === true;
         }
-        if (typeof process !== 'undefined' && process.env !== undefined) {
-          return process.env.NODE_ENV !== 'production';
+        if (typeof process !== "undefined" && process.env !== undefined) {
+          return process.env.NODE_ENV !== "production";
         }
         return true; // Default to development mode if detection fails
       })();
@@ -226,7 +225,7 @@ type ScopedFactory = (scope: string, config?: Partial<LoggerConfig>) => Logger;
 type ScopedCorrelationFactory = (
   scope: string,
   correlationId: string,
-  config?: Partial<LoggerConfig>
+  config?: Partial<LoggerConfig>,
 ) => Logger;
 
 // Phase 414.3: No-op logger factory for production builds
@@ -249,17 +248,17 @@ let createScopedLoggerWithCorrelationImpl: ScopedCorrelationFactory;
 if (isDev) {
   const getEnvironmentLogLevel = (): LogLevel => {
     // In test runs, keep logs minimal from import-time to avoid worker IPC pressure.
-    if (isTest) return 'error';
+    if (isTest) return "error";
     // Phase 137: Type Guard-based Userscript Environment Detection
     // Detects if code is running in Tampermonkey/Greasemonkey context
     // for appropriate log level configuration (info vs debug)
     try {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         const windowRecord = window as unknown as Record<string, unknown>;
-        const gmInfo = windowRecord['GM_info'];
+        const gmInfo = windowRecord["GM_info"];
         const unsafeWin = windowRecord.unsafeWindow;
         if (gmInfo !== undefined || unsafeWin !== undefined) {
-          return 'info';
+          return "info";
         }
       }
     } catch {
@@ -268,7 +267,7 @@ if (isDev) {
 
     // Phase 378: Maximize dead-code elimination using bundle-level flags only
     // Ensures all debug code is removed in production via tree-shaking
-    return isDev ? 'debug' : 'info';
+    return isDev ? "debug" : "info";
   };
 
   const DEFAULT_CONFIG: LoggerConfig = {
@@ -283,11 +282,17 @@ if (isDev) {
     config: LoggerConfig,
     ...args: LoggableData[]
   ): LoggableData[] => {
-    const timestamp = config.includeTimestamp ? `[${new Date().toISOString()}]` : '';
+    const timestamp = config.includeTimestamp
+      ? `[${new Date().toISOString()}]`
+      : "";
     const levelTag = `[${level.toUpperCase()}]`;
-    const cid = config.correlationId ? `[cid:${String(config.correlationId)}]` : '';
-    const prefixParts = [config.prefix, timestamp, levelTag, cid].filter(Boolean);
-    return [prefixParts.join(' '), ...args];
+    const cid = config.correlationId
+      ? `[cid:${String(config.correlationId)}]`
+      : "";
+    const prefixParts = [config.prefix, timestamp, levelTag, cid].filter(
+      Boolean,
+    );
+    return [prefixParts.join(" "), ...args];
   };
 
   const shouldLog = (level: LogLevel, config: LoggerConfig): boolean => {
@@ -299,41 +304,44 @@ if (isDev) {
 
     return {
       info: (...args: LoggableData[]): void => {
-        if (shouldLog('info', finalConfig)) {
-          console.info(...formatMessage('info', finalConfig, ...args));
+        if (shouldLog("info", finalConfig)) {
+          console.info(...formatMessage("info", finalConfig, ...args));
         }
       },
       warn: (...args: LoggableData[]): void => {
-        if (shouldLog('warn', finalConfig)) {
-          console.warn(...formatMessage('warn', finalConfig, ...args));
+        if (shouldLog("warn", finalConfig)) {
+          console.warn(...formatMessage("warn", finalConfig, ...args));
         }
       },
       error: (...args: LoggableData[]): void => {
-        if (shouldLog('error', finalConfig)) {
-          console.error(...formatMessage('error', finalConfig, ...args));
+        if (shouldLog("error", finalConfig)) {
+          console.error(...formatMessage("error", finalConfig, ...args));
 
           if (finalConfig.includeStackTrace && args.length > 0) {
             const firstArg = args[0];
             if (firstArg instanceof Error && firstArg.stack) {
-              console.error('Stack trace:', firstArg.stack);
+              console.error("Stack trace:", firstArg.stack);
             }
           }
         }
       },
       debug: (...args: LoggableData[]): void => {
-        if (shouldLog('debug', finalConfig)) {
-          console.info(...formatMessage('debug', finalConfig, ...args));
+        if (shouldLog("debug", finalConfig)) {
+          console.info(...formatMessage("debug", finalConfig, ...args));
         }
       },
       trace: (...args: LoggableData[]): void => {
-        if (shouldLog('debug', finalConfig)) {
-          console.debug(...formatMessage('debug', finalConfig, ...args));
+        if (shouldLog("debug", finalConfig)) {
+          console.debug(...formatMessage("debug", finalConfig, ...args));
         }
       },
     };
   };
 
-  createScopedLoggerImpl = (scope: string, config: Partial<LoggerConfig> = {}): Logger =>
+  createScopedLoggerImpl = (
+    scope: string,
+    config: Partial<LoggerConfig> = {},
+  ): Logger =>
     createLoggerImpl({
       ...config,
       prefix: `${config.prefix ?? BASE_PREFIX} [${scope}]`,
@@ -342,7 +350,7 @@ if (isDev) {
   createScopedLoggerWithCorrelationImpl = (
     scope: string,
     correlationId: string,
-    config: Partial<LoggerConfig> = {}
+    config: Partial<LoggerConfig> = {},
   ): Logger =>
     createLoggerImpl({
       ...config,
@@ -386,7 +394,7 @@ export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
  * @public
  */
 export const logger: Logger = createLogger({
-  level: isTest ? 'error' : isDev ? 'debug' : 'warn',
+  level: isTest ? "error" : isDev ? "debug" : "warn",
   includeTimestamp: isDev && !isTest,
   includeStackTrace: isDev && !isTest,
 });
@@ -420,7 +428,10 @@ export const logger: Logger = createLogger({
  *
  * @public
  */
-export function createScopedLogger(scope: string, config: Partial<LoggerConfig> = {}): Logger {
+export function createScopedLogger(
+  scope: string,
+  config: Partial<LoggerConfig> = {},
+): Logger {
   return createScopedLoggerImpl(scope, config);
 }
 
@@ -461,7 +472,7 @@ export function createScopedLogger(scope: string, config: Partial<LoggerConfig> 
 export function createScopedLoggerWithCorrelation(
   scope: string,
   correlationId: string,
-  config: Partial<LoggerConfig> = {}
+  config: Partial<LoggerConfig> = {},
 ): Logger {
   return createScopedLoggerWithCorrelationImpl(scope, correlationId, config);
 }
@@ -498,7 +509,7 @@ export function createScopedLoggerWithCorrelation(
  */
 export function createCorrelationId(): string {
   try {
-    if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) {
+    if (typeof crypto !== "undefined" && "getRandomValues" in crypto) {
       const bytes = new Uint8Array(8);
       crypto.getRandomValues(bytes);
       const num = Array.from(bytes).reduce((acc, b) => (acc << 8) | b, 0) >>> 0;
@@ -545,7 +556,7 @@ export function createCorrelationId(): string {
 export function logError(
   error: Error | string,
   context: Record<string, string | number | boolean> = {},
-  source?: string
+  source?: string,
 ): void {
   const errorMessage = error instanceof Error ? error.message : error;
   const errorContext = {
@@ -554,9 +565,12 @@ export function logError(
     timestamp: new Date().toISOString(),
   };
 
-  logger.error(`Error${source ? ` in ${source}` : ''}: ${errorMessage}`, errorContext);
+  logger.error(
+    `Error${source ? ` in ${source}` : ""}: ${errorMessage}`,
+    errorContext,
+  );
 
   if (isDev && error instanceof Error && error.stack) {
-    logger.debug('Error stack:', error.stack);
+    logger.debug("Error stack:", error.stack);
   }
 }

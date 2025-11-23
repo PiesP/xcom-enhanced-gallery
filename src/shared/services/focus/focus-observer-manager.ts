@@ -1,8 +1,8 @@
 /**
  * Manages the IntersectionObserver used for gallery focus tracking.
  */
-import type { ItemCache } from '@shared/state/focus';
-import { isItemVisibleEnough, calculateTopDistance } from '@shared/state/focus';
+import type { ItemCache } from "@shared/state/focus";
+import { isItemVisibleEnough, calculateTopDistance } from "@shared/state/focus";
 
 /**
  * Focus candidate scoring information
@@ -51,7 +51,7 @@ function calculateCandidateScore(
   entry: IntersectionObserverEntry,
   minimumVisibleRatio: number,
   index: number,
-  time: number
+  time: number,
 ): CandidateScore | null {
   if (!isItemVisibleEnough(entry, minimumVisibleRatio)) {
     return null;
@@ -141,23 +141,23 @@ class FocusObserverManagerImpl {
     itemCache: ItemCache,
     onEntries: (candidates: CandidateScore[]) => void,
     threshold: number | number[] = [0.25, 0.5, 0.75],
-    rootMargin: string = '0px'
+    rootMargin: string = "0px",
   ): void {
     this.cleanupObserver();
 
     this.observer = new IntersectionObserver(
-      entries => {
+      (entries) => {
         this.handleEntries(entries, itemCache, onEntries);
       },
       {
         root: null,
         rootMargin,
         threshold,
-      }
+      },
     );
 
-    const items = container.querySelectorAll('[data-index]');
-    items.forEach(item => {
+    const items = container.querySelectorAll("[data-index]");
+    items.forEach((item) => {
       if (item instanceof HTMLElement) {
         this.observer?.observe(item);
       }
@@ -189,14 +189,14 @@ class FocusObserverManagerImpl {
   private handleEntries(
     entries: IntersectionObserverEntry[],
     itemCache: ItemCache,
-    onEntries: (candidates: CandidateScore[]) => void
+    onEntries: (candidates: CandidateScore[]) => void,
   ): void {
     const candidates: CandidateScore[] = [];
     this.lastUpdateTime = Date.now();
 
-    entries.forEach(entry => {
+    entries.forEach((entry) => {
       const element = entry.target as HTMLElement;
-      const indexStr = element.getAttribute('data-index');
+      const indexStr = element.getAttribute("data-index");
       const index = indexStr ? parseInt(indexStr, 10) : -1;
 
       if (index < 0) {

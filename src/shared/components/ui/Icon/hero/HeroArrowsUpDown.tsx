@@ -8,8 +8,8 @@
  * Used for: fit to height, vertical adjust actions.
  */
 
-import type { JSXElement } from '@shared/external/vendors';
-import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
+import type { JSXElement } from "@shared/external/vendors";
+import { Icon, type IconProps } from "@shared/components/ui/Icon/Icon";
 
 /**
  * ArrowsUpDown Icon Component
@@ -20,7 +20,7 @@ import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
 export function HeroArrowsUpDown(props: IconProps): JSXElement {
   return (
     <Icon {...props}>
-      <path d='M3 7.5 7.5 3M7.5 3 12 7.5M7.5 3v13.5M21 16.5 16.5 21M16.5 21 12 16.5M16.5 21V7.5' />
+      <path d="M3 7.5 7.5 3M7.5 3 12 7.5M7.5 3v13.5M21 16.5 16.5 21M16.5 21 12 16.5M16.5 21V7.5" />
     </Icon>
   );
 }

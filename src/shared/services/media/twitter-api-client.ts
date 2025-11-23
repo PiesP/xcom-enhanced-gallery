@@ -66,17 +66,17 @@
  * ```
  */
 
-import { logger } from '@shared/logging';
-import { TWITTER_API_CONFIG } from '@/constants';
-import { HttpRequestService } from '@shared/services/http-request-service';
+import { logger } from "@shared/logging";
+import { TWITTER_API_CONFIG } from "@/constants";
+import { HttpRequestService } from "@shared/services/http-request-service";
 import type {
   TwitterAPIResponse,
   TwitterTweet,
   TwitterUser,
   TwitterMedia,
   TweetMediaEntry,
-} from './types';
-import { getCookieService } from '@shared/services/cookie-service';
+} from "./types";
+import { getCookieService } from "@shared/services/cookie-service";
 
 /**
  * Extract visual index from expanded_url
@@ -113,7 +113,9 @@ function extractVisualIndexFromUrl(url: string): number {
   if (visualNumberStr) {
     const visualNumber = Number.parseInt(visualNumberStr, 10);
     // Convert to 0-based index (photo/1 -> index 0)
-    return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
+    return Number.isFinite(visualNumber) && visualNumber > 0
+      ? visualNumber - 1
+      : 0;
   }
 
   return 0;
@@ -133,13 +135,15 @@ function extractVisualIndexFromUrl(url: string): number {
  * @param mediaItems - Array of media entries from Twitter API
  * @returns Sorted array with corrected visual order
  */
-function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMediaEntry[] {
+function sortMediaByVisualOrder(
+  mediaItems: TweetMediaEntry[],
+): TweetMediaEntry[] {
   if (mediaItems.length <= 1) {
     return mediaItems;
   }
 
   // Extract visual order index from expanded_url
-  const withVisualIndex = mediaItems.map(media => {
+  const withVisualIndex = mediaItems.map((media) => {
     const visualIndex = extractVisualIndexFromUrl(media.expanded_url);
     return { media, visualIndex };
   });
@@ -155,7 +159,6 @@ function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMediaEntry[
 
   return sorted;
 }
-
 
 /**
  * TwitterAPI - GraphQL Media Extraction Service
@@ -300,29 +303,29 @@ export class TwitterAPI {
     }
 
     const cookieService = this.cookieService;
-    this._guestToken = cookieService.getValueSync('gt');
-    this._csrfToken = cookieService.getValueSync('ct0');
+    this._guestToken = cookieService.getValueSync("gt");
+    this._csrfToken = cookieService.getValueSync("ct0");
 
     void cookieService
-      .getValue('gt')
-      .then(value => {
+      .getValue("gt")
+      .then((value) => {
         if (value) {
           this._guestToken = value;
         }
       })
-      .catch(error => {
-        logger.debug('Failed to hydrate guest token from GM_cookie', error);
+      .catch((error) => {
+        logger.debug("Failed to hydrate guest token from GM_cookie", error);
       });
 
     void cookieService
-      .getValue('ct0')
-      .then(value => {
+      .getValue("ct0")
+      .then((value) => {
         if (value) {
           this._csrfToken = value;
         }
       })
-      .catch(error => {
-        logger.debug('Failed to hydrate CSRF token from GM_cookie', error);
+      .catch((error) => {
+        logger.debug("Failed to hydrate CSRF token from GM_cookie", error);
       });
 
     this._tokensInitialized = true;
@@ -431,15 +434,15 @@ export class TwitterAPI {
     try {
       const httpService = HttpRequestService.getInstance();
       const response = await httpService.post<{ guest_token?: string }>(
-        'https://api.twitter.com/1.1/guest/activate.json',
+        "https://api.twitter.com/1.1/guest/activate.json",
         undefined,
         {
           headers: {
             authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
-            'content-type': 'application/json',
+            "content-type": "application/json",
           },
-          responseType: 'json',
-        }
+          responseType: "json",
+        },
       );
 
       // Fail-soft: Only use response if OK
@@ -525,47 +528,49 @@ export class TwitterAPI {
     // Build headers with all required authentication
     const headers = new Headers({
       authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
-      'x-csrf-token': this.csrfToken ?? '',
-      'x-twitter-client-language': 'en',
-      'x-twitter-active-user': 'yes',
-      'content-type': 'application/json',
+      "x-csrf-token": this.csrfToken ?? "",
+      "x-twitter-client-language": "en",
+      "x-twitter-active-user": "yes",
+      "content-type": "application/json",
     });
 
     // Phase 373: GM_xmlhttpRequest requires explicit Origin/Referer for some endpoints
     // when running in userscript context to match browser behavior
-    if (typeof window !== 'undefined') {
-      headers.append('referer', window.location.href);
-      headers.append('origin', window.location.origin);
+    if (typeof window !== "undefined") {
+      headers.append("referer", window.location.href);
+      headers.append("origin", window.location.origin);
     }
 
     // Add guest token if available
     if (this.guestToken) {
-      headers.append('x-guest-token', this.guestToken);
+      headers.append("x-guest-token", this.guestToken);
     } else {
-      headers.append('x-twitter-auth-type', 'OAuth2Session');
+      headers.append("x-twitter-auth-type", "OAuth2Session");
     }
 
     try {
       const httpService = HttpRequestService.getInstance();
       const response = await httpService.get<TwitterAPIResponse>(_url, {
         headers: Object.fromEntries(headers.entries()),
-        responseType: 'json',
+        responseType: "json",
       });
 
       // Phase 373: Log API errors for debugging
       if (!response.ok) {
         logger.warn(
           `Twitter API request failed: ${response.status} ${response.statusText}`,
-          response.data
+          response.data,
         );
-        throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Twitter API request failed: ${response.status} ${response.statusText}`,
+        );
       }
 
       const json = response.data;
 
       // Check for application-level errors (HTTP 200 but contains errors)
       if (json.errors && json.errors.length > 0) {
-        logger.warn('Twitter API returned errors:', json.errors);
+        logger.warn("Twitter API returned errors:", json.errors);
         // We don't throw here because partial data might still be available in json.data
       }
 
@@ -580,7 +585,7 @@ export class TwitterAPI {
 
       return json;
     } catch (error) {
-      logger.error('Twitter API request failed:', error);
+      logger.error("Twitter API request failed:", error);
       throw error;
     }
   }
@@ -651,7 +656,7 @@ export class TwitterAPI {
    * - None (pure function)
    */
   private static createTweetJsonEndpointUrlByRestId(tweetId: string): string {
-    const sitename = window.location.hostname.replace('.com', '');
+    const sitename = window.location.hostname.replace(".com", "");
     const variables = {
       tweetId,
       withCommunity: false,
@@ -698,9 +703,9 @@ export class TwitterAPI {
     };
     const urlBase = `https://${sitename}.com/i/api/graphql/${TWITTER_API_CONFIG.TWEET_RESULT_BY_REST_ID_QUERY_ID}/TweetResultByRestId`;
     const urlObj = new URL(urlBase);
-    urlObj.searchParams.set('variables', JSON.stringify(variables));
-    urlObj.searchParams.set('features', JSON.stringify(features));
-    urlObj.searchParams.set('fieldToggles', JSON.stringify(fieldToggles));
+    urlObj.searchParams.set("variables", JSON.stringify(variables));
+    urlObj.searchParams.set("features", JSON.stringify(features));
+    urlObj.searchParams.set("fieldToggles", JSON.stringify(fieldToggles));
     return urlObj.toString();
   }
 
@@ -809,52 +814,69 @@ export class TwitterAPI {
   private static extractMediaFromTweet(
     tweetResult: TwitterTweet,
     tweetUser: TwitterUser,
-    sourceLocation: 'original' | 'quoted' = 'original'
+    sourceLocation: "original" | "quoted" = "original",
   ): TweetMediaEntry[] {
     if (!tweetResult.extended_entities?.media) return [];
     const mediaItems: TweetMediaEntry[] = [];
     const typeIndex: Record<string, number> = {};
-    const screenName = tweetUser.screen_name ?? '';
-    const tweetId = tweetResult.rest_id ?? tweetResult.id_str ?? '';
-    for (let index = 0; index < tweetResult.extended_entities.media.length; index++) {
-      const media: TwitterMedia | undefined = tweetResult.extended_entities.media[index];
+    const screenName = tweetUser.screen_name ?? "";
+    const tweetId = tweetResult.rest_id ?? tweetResult.id_str ?? "";
+    for (
+      let index = 0;
+      index < tweetResult.extended_entities.media.length;
+      index++
+    ) {
+      const media: TwitterMedia | undefined =
+        tweetResult.extended_entities.media[index];
       if (!media?.type || !media.id_str || !media.media_url_https) continue;
       try {
         const mediaUrl = this.getHighQualityMediaUrl(media);
         if (!mediaUrl) continue;
-        const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
+        const mediaType = media.type === "animated_gif" ? "video" : media.type;
         typeIndex[mediaType] = (typeIndex[mediaType] ?? -1) + 1;
-        const tweetText = (tweetResult.full_text ?? '').replace(` ${media.url}`, '').trim();
+        const tweetText = (tweetResult.full_text ?? "")
+          .replace(` ${media.url}`, "")
+          .trim();
 
         const dimensionsFromUrl = this.extractDimensionsFromUrl(mediaUrl);
-        const widthFromOriginal = this.normalizeDimension(media.original_info?.width);
-        const heightFromOriginal = this.normalizeDimension(media.original_info?.height);
+        const widthFromOriginal = this.normalizeDimension(
+          media.original_info?.width,
+        );
+        const heightFromOriginal = this.normalizeDimension(
+          media.original_info?.height,
+        );
         const widthFromUrl = this.normalizeDimension(dimensionsFromUrl?.width);
-        const heightFromUrl = this.normalizeDimension(dimensionsFromUrl?.height);
+        const heightFromUrl = this.normalizeDimension(
+          dimensionsFromUrl?.height,
+        );
         const resolvedWidth = widthFromOriginal ?? widthFromUrl;
         const resolvedHeight = heightFromOriginal ?? heightFromUrl;
 
         const aspectRatioValues = Array.isArray(media.video_info?.aspect_ratio)
           ? media.video_info?.aspect_ratio
           : undefined;
-        const aspectRatioWidth = this.normalizeDimension(aspectRatioValues?.[0]);
-        const aspectRatioHeight = this.normalizeDimension(aspectRatioValues?.[1]);
+        const aspectRatioWidth = this.normalizeDimension(
+          aspectRatioValues?.[0],
+        );
+        const aspectRatioHeight = this.normalizeDimension(
+          aspectRatioValues?.[1],
+        );
 
         const entry: TweetMediaEntry = {
           screen_name: screenName,
           tweet_id: tweetId,
           download_url: mediaUrl,
-          type: mediaType as 'photo' | 'video',
-          typeOriginal: media.type as 'photo' | 'video' | 'animated_gif',
+          type: mediaType as "photo" | "video",
+          typeOriginal: media.type as "photo" | "video" | "animated_gif",
           index,
           typeIndex: typeIndex[mediaType] ?? 0,
           typeIndexOriginal: typeIndex[media.type] ?? 0,
           preview_url: media.media_url_https,
           media_id: media.id_str,
-          media_key: media.media_key ?? '',
-          expanded_url: media.expanded_url ?? '',
-          short_expanded_url: media.display_url ?? '',
-          short_tweet_url: media.url ?? '',
+          media_key: media.media_key ?? "",
+          expanded_url: media.expanded_url ?? "",
+          short_expanded_url: media.display_url ?? "",
+          short_tweet_url: media.url ?? "",
           tweet_text: tweetText,
           sourceLocation,
         };
@@ -946,14 +968,16 @@ export class TwitterAPI {
    * ```
    */
   private static getHighQualityMediaUrl(media: TwitterMedia): string | null {
-    if (media.type === 'photo') {
-      return media.media_url_https.includes('?format=')
+    if (media.type === "photo") {
+      return media.media_url_https.includes("?format=")
         ? media.media_url_https
-        : media.media_url_https.replace(/\.(jpg|png)$/, '?format=$1&name=orig');
+        : media.media_url_https.replace(/\.(jpg|png)$/, "?format=$1&name=orig");
     }
-    if (media.type === 'video' || media.type === 'animated_gif') {
+    if (media.type === "video" || media.type === "animated_gif") {
       const variants = media.video_info?.variants ?? [];
-      const mp4Variants = variants.filter(v => v.content_type === 'video/mp4');
+      const mp4Variants = variants.filter(
+        (v) => v.content_type === "video/mp4",
+      );
       if (mp4Variants.length === 0) return null;
       const bestVariant = mp4Variants.reduce((best, current) => {
         const bestBitrate = best.bitrate ?? 0;
@@ -1026,7 +1050,9 @@ export class TwitterAPI {
    * // Returns: null
    * ```
    */
-  public static extractDimensionsFromUrl(url: string): { width: number; height: number } | null {
+  public static extractDimensionsFromUrl(
+    url: string,
+  ): { width: number; height: number } | null {
     if (!url) {
       return null;
     }
@@ -1036,10 +1062,15 @@ export class TwitterAPI {
       return null;
     }
 
-    const width = Number.parseInt(match[1] ?? '', 10);
-    const height = Number.parseInt(match[2] ?? '', 10);
+    const width = Number.parseInt(match[1] ?? "", 10);
+    const height = Number.parseInt(match[2] ?? "", 10);
 
-    if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
+    if (
+      !Number.isFinite(width) ||
+      width <= 0 ||
+      !Number.isFinite(height) ||
+      height <= 0
+    ) {
       return null;
     }
 
@@ -1104,11 +1135,11 @@ export class TwitterAPI {
    * ```
    */
   private static normalizeDimension(value: unknown): number | undefined {
-    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    if (typeof value === "number" && Number.isFinite(value) && value > 0) {
       return Math.round(value);
     }
 
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       const parsed = Number.parseFloat(value);
       if (Number.isFinite(parsed) && parsed > 0) {
         return Math.round(parsed);
@@ -1265,7 +1296,9 @@ export class TwitterAPI {
    * // ]
    * ```
    */
-  public static async getTweetMedias(tweetId: string): Promise<TweetMediaEntry[]> {
+  public static async getTweetMedias(
+    tweetId: string,
+  ): Promise<TweetMediaEntry[]> {
     const url = this.createTweetJsonEndpointUrlByRestId(tweetId);
     const json = await this.apiRequest(url);
     if (!json.data?.tweetResult?.result) return [];
@@ -1278,7 +1311,7 @@ export class TwitterAPI {
     if (!tweetUser) return [];
     this.normalizeLegacyUser(tweetUser);
 
-    let result = this.extractMediaFromTweet(tweetResult, tweetUser, 'original');
+    let result = this.extractMediaFromTweet(tweetResult, tweetUser, "original");
 
     // Phase 290.1: Fix media order - Sort by visual order (expanded_url photo/video number)
     result = sortMediaByVisualOrder(result);
@@ -1295,14 +1328,18 @@ export class TwitterAPI {
         this.normalizeLegacyUser(quotedUser);
 
         // Phase 342: 인용 트윗의 미디어를 sourceLocation='quoted'로 마킹하여 추출
-        const quotedMedia = this.extractMediaFromTweet(quotedTweet, quotedUser, 'quoted');
+        const quotedMedia = this.extractMediaFromTweet(
+          quotedTweet,
+          quotedUser,
+          "quoted",
+        );
         // Phase 290.1: Sort quoted tweet media by visual order
         const sortedQuotedMedia = sortMediaByVisualOrder(quotedMedia);
 
         // Phase 290.2: Adjust original tweet indices to prevent overlap with quoted tweet
         // Quoted tweet: index 0, 1, 2, ...
         // Original tweet: index (quotedLength), (quotedLength + 1), ...
-        const adjustedResult = result.map(media => ({
+        const adjustedResult = result.map((media) => ({
           ...media,
           index: media.index + sortedQuotedMedia.length,
         }));

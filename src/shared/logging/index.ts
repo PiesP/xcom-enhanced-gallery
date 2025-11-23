@@ -67,6 +67,6 @@ export {
   createScopedLoggerWithCorrelation,
   createCorrelationId,
   logError,
-} from './logger';
+} from "./logger";
 
-export type { LogLevel, LoggableData, Logger } from './logger';
+export type { LogLevel, LoggableData, Logger } from "./logger";

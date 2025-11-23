@@ -3,8 +3,8 @@
  * @description Provides requestAnimationFrame and microtask scheduling helpers.
  */
 
-import { globalTimerManager } from '@shared/utils/timer-management';
-import { isGlobalLike } from '@shared/utils/type-safety-helpers';
+import { globalTimerManager } from "@shared/utils/timer-management";
+import { isGlobalLike } from "@shared/utils/type-safety-helpers";
 
 export type SchedulerHandle = { cancel: () => void };
 
@@ -22,12 +22,13 @@ export function scheduleRaf(task: () => void): SchedulerHandle {
   try {
     const g: GlobalLike | undefined = isGlobalLike(globalThis)
       ? (globalThis as GlobalLike)
-      : typeof window !== 'undefined' && isGlobalLike(window)
+      : typeof window !== "undefined" && isGlobalLike(window)
         ? (window as GlobalLike)
         : undefined;
-    const raf: ((cb: FrameRequestCallback) => number) | undefined = g?.requestAnimationFrame;
+    const raf: ((cb: FrameRequestCallback) => number) | undefined =
+      g?.requestAnimationFrame;
     const caf: ((h: number) => void) | undefined = g?.cancelAnimationFrame;
-    if (typeof raf === 'function') {
+    if (typeof raf === "function") {
       let done = false;
       let fallbackTid: number | null = null;
       const id = raf(() => {
@@ -92,7 +93,7 @@ export function scheduleMicrotask(task: () => void): SchedulerHandle {
       ? (globalThis as GlobalLike)
       : undefined;
     const qm: ((cb: () => void) => void) | undefined = g?.queueMicrotask;
-    if (typeof qm === 'function') {
+    if (typeof qm === "function") {
       qm(() => {
         try {
           task();

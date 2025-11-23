@@ -23,21 +23,22 @@
  * @internal Solid.js hook, PC-only, used by toolbar container
  */
 
-import { logger } from '@shared/logging';
-import { getSolid } from '@shared/external/vendors';
-import type { ThemeServiceContract } from '@shared/services/theme-service';
-import { themeService } from '@shared/services/theme-service';
+import { logger } from "@shared/logging";
+import { getSolid } from "@shared/external/vendors";
+import type { ThemeServiceContract } from "@shared/services/theme-service";
+import { themeService } from "@shared/services/theme-service";
+import type { LanguageService } from "@shared/services/language-service";
+import { languageService as sharedLanguageService } from "@shared/services/language-service";
+import { globalTimerManager } from "@shared/utils/timer-management";
 import {
-  LanguageService,
-  languageService as sharedLanguageService,
-} from '@shared/services/language-service';
-import { globalTimerManager } from '@shared/utils/timer-management';
-import { getThemeService, tryGetSettingsManager } from '@shared/container/service-accessors';
+  getThemeService,
+  tryGetSettingsManager,
+} from "@shared/container/service-accessors";
 
 const DEFAULT_FOCUS_DELAY_MS = 50;
 const DEFAULT_SELECT_GUARD_MS = 300;
-type ThemeOption = 'auto' | 'light' | 'dark';
-type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
+type ThemeOption = "auto" | "light" | "dark";
+type LanguageOption = "auto" | "ko" | "en" | "ja";
 
 export interface UseToolbarSettingsControllerOptions {
   readonly isSettingsExpanded: () => boolean;
@@ -51,9 +52,15 @@ export interface UseToolbarSettingsControllerOptions {
 }
 
 export interface ToolbarSettingsControllerResult {
-  readonly assignToolbarRef: (element: HTMLDivElement | null | undefined) => void;
-  readonly assignSettingsPanelRef: (element: HTMLDivElement | null | undefined) => void;
-  readonly assignSettingsButtonRef: (element: HTMLButtonElement | null | undefined) => void;
+  readonly assignToolbarRef: (
+    element: HTMLDivElement | null | undefined,
+  ) => void;
+  readonly assignSettingsPanelRef: (
+    element: HTMLDivElement | null | undefined,
+  ) => void;
+  readonly assignSettingsButtonRef: (
+    element: HTMLButtonElement | null | undefined,
+  ) => void;
   readonly isSettingsExpanded: () => boolean;
   readonly currentTheme: () => ThemeOption;
   readonly currentLanguage: () => LanguageOption;
@@ -66,20 +73,25 @@ export interface ToolbarSettingsControllerResult {
   readonly handleLanguageChange: (event: Event) => void;
 }
 
-function resolveThemeService(override?: ThemeServiceContract): ThemeServiceContract {
+function resolveThemeService(
+  override?: ThemeServiceContract,
+): ThemeServiceContract {
   if (override) {
     return override;
   }
   try {
     return getThemeService();
   } catch (error) {
-    logger.warn('[ToolbarSettingsController] Falling back to shared ThemeService instance', error);
+    logger.warn(
+      "[ToolbarSettingsController] Falling back to shared ThemeService instance",
+      error,
+    );
     return themeService;
   }
 }
 
 export function useToolbarSettingsController(
-  options: UseToolbarSettingsControllerOptions
+  options: UseToolbarSettingsControllerOptions,
 ): ToolbarSettingsControllerResult {
   /**
    * Toolbar Settings Controller Implementation
@@ -142,7 +154,7 @@ export function useToolbarSettingsController(
     isSettingsExpanded,
     setSettingsExpanded,
     toggleSettingsExpanded,
-    documentRef = typeof document !== 'undefined' ? document : undefined,
+    documentRef = typeof document !== "undefined" ? document : undefined,
     themeService: providedThemeService,
     languageService = sharedLanguageService,
     focusDelayMs = DEFAULT_FOCUS_DELAY_MS,
@@ -162,16 +174,20 @@ export function useToolbarSettingsController(
     globalTimerManager.clearTimeout(handle);
   };
 
-  const [toolbarRef, setToolbarRef] = createSignal<HTMLDivElement | undefined>(undefined);
-  const [settingsPanelRef, setSettingsPanelRef] = createSignal<HTMLDivElement | undefined>(
-    undefined
+  const [toolbarRef, setToolbarRef] = createSignal<HTMLDivElement | undefined>(
+    undefined,
   );
-  const [settingsButtonRef, setSettingsButtonRef] = createSignal<HTMLButtonElement | undefined>(
-    undefined
-  );
+  const [settingsPanelRef, setSettingsPanelRef] = createSignal<
+    HTMLDivElement | undefined
+  >(undefined);
+  const [settingsButtonRef, setSettingsButtonRef] = createSignal<
+    HTMLButtonElement | undefined
+  >(undefined);
 
   const toThemeOption = (value: unknown): ThemeOption => {
-    return value === 'light' || value === 'dark' || value === 'auto' ? value : 'auto';
+    return value === "light" || value === "dark" || value === "auto"
+      ? value
+      : "auto";
   };
 
   // Phase 430: Read initial theme from ThemeService reliably
@@ -186,15 +202,19 @@ export function useToolbarSettingsController(
       return toThemeOption(currentSetting);
     } catch (error) {
       if (import.meta.env.DEV) {
-        logger.debug('[ToolbarSettingsController] Failed to read initial theme', error);
+        logger.debug(
+          "[ToolbarSettingsController] Failed to read initial theme",
+          error,
+        );
       }
     }
-    return 'auto';
+    return "auto";
   };
 
-  const [currentTheme, setCurrentTheme] = createSignal<ThemeOption>(getInitialTheme());
+  const [currentTheme, setCurrentTheme] =
+    createSignal<ThemeOption>(getInitialTheme());
   const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>(
-    languageService.getCurrentLanguage() as LanguageOption
+    languageService.getCurrentLanguage() as LanguageOption,
   );
 
   const syncThemeFromService = () => {
@@ -202,18 +222,27 @@ export function useToolbarSettingsController(
       const setting = themeManager.getCurrentTheme();
       setCurrentTheme(toThemeOption(setting));
     } catch (error) {
-      logger.warn('[ToolbarSettingsController] Failed to read theme from service', error);
+      logger.warn(
+        "[ToolbarSettingsController] Failed to read theme from service",
+        error,
+      );
     }
   };
 
   syncThemeFromService();
 
-  if (typeof themeManager.isInitialized === 'function' && !themeManager.isInitialized()) {
+  if (
+    typeof themeManager.isInitialized === "function" &&
+    !themeManager.isInitialized()
+  ) {
     void themeManager
       .initialize()
       .then(syncThemeFromService)
-      .catch(error => {
-        logger.warn('[ToolbarSettingsController] ThemeService initialization failed', error);
+      .catch((error) => {
+        logger.warn(
+          "[ToolbarSettingsController] ThemeService initialization failed",
+          error,
+        );
       });
   }
 
@@ -228,7 +257,7 @@ export function useToolbarSettingsController(
   });
 
   createEffect(() => {
-    const unsubscribe = languageService.onLanguageChange(next => {
+    const unsubscribe = languageService.onLanguageChange((next) => {
       setCurrentLanguage(next);
     });
 
@@ -271,11 +300,11 @@ export function useToolbarSettingsController(
       }, selectChangeGuardMs);
     };
 
-    const selects = Array.from(panel.querySelectorAll('select'));
-    selects.forEach(select => {
-      select.addEventListener('focus', handleSelectFocus);
-      select.addEventListener('blur', handleSelectBlur);
-      select.addEventListener('change', handleSelectChange);
+    const selects = Array.from(panel.querySelectorAll("select"));
+    selects.forEach((select) => {
+      select.addEventListener("focus", handleSelectFocus);
+      select.addEventListener("blur", handleSelectBlur);
+      select.addEventListener("change", handleSelectChange);
     });
 
     const handleOutsideClick = (event: MouseEvent) => {
@@ -299,7 +328,8 @@ export function useToolbarSettingsController(
 
       if (
         settingsButton &&
-        (settingsButton === targetElement || settingsButton.contains(targetElement))
+        (settingsButton === targetElement ||
+          settingsButton.contains(targetElement))
       ) {
         return;
       }
@@ -310,7 +340,10 @@ export function useToolbarSettingsController(
 
       let currentNode: HTMLElement | null = targetElement;
       while (currentNode) {
-        if (currentNode.tagName === 'SELECT' || currentNode.tagName === 'OPTION') {
+        if (
+          currentNode.tagName === "SELECT" ||
+          currentNode.tagName === "OPTION"
+        ) {
           return;
         }
         currentNode = currentNode.parentElement;
@@ -319,15 +352,15 @@ export function useToolbarSettingsController(
       setSettingsExpanded(false);
     };
 
-    documentRef.addEventListener('mousedown', handleOutsideClick, false);
+    documentRef.addEventListener("mousedown", handleOutsideClick, false);
 
     onCleanup(() => {
       clearScheduledTimeout(selectGuardTimeout);
-      documentRef.removeEventListener('mousedown', handleOutsideClick, false);
-      selects.forEach(select => {
-        select.removeEventListener('focus', handleSelectFocus);
-        select.removeEventListener('blur', handleSelectBlur);
-        select.removeEventListener('change', handleSelectChange);
+      documentRef.removeEventListener("mousedown", handleOutsideClick, false);
+      selects.forEach((select) => {
+        select.removeEventListener("focus", handleSelectFocus);
+        select.removeEventListener("blur", handleSelectBlur);
+        select.removeEventListener("change", handleSelectChange);
       });
     });
   });
@@ -341,7 +374,9 @@ export function useToolbarSettingsController(
     if (!wasExpanded) {
       scheduleTimeout(() => {
         const panel = settingsPanelRef();
-        const firstControl = panel?.querySelector('select') as HTMLSelectElement | null;
+        const firstControl = panel?.querySelector(
+          "select",
+        ) as HTMLSelectElement | null;
         if (firstControl) {
           firstControl.focus({ preventScroll: true });
         }
@@ -354,7 +389,7 @@ export function useToolbarSettingsController(
   };
 
   const handleToolbarKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape' && isSettingsExpanded()) {
+    if (event.key === "Escape" && isSettingsExpanded()) {
       event.preventDefault();
       event.stopPropagation();
       setSettingsExpanded(false);
@@ -391,17 +426,19 @@ export function useToolbarSettingsController(
         set: (key: string, value: unknown) => Promise<void>;
       }>();
       if (settingsService) {
-        void settingsService.set('gallery.theme', theme).catch((error: unknown) => {
-          logger.warn(
-            '[ToolbarSettingsController] Failed to sync theme to SettingsService:',
-            error
-          );
-        });
+        void settingsService
+          .set("gallery.theme", theme)
+          .catch((error: unknown) => {
+            logger.warn(
+              "[ToolbarSettingsController] Failed to sync theme to SettingsService:",
+              error,
+            );
+          });
       }
     } catch (error) {
       logger.debug(
-        '[ToolbarSettingsController] SettingsService not available for theme sync:',
-        error
+        "[ToolbarSettingsController] SettingsService not available for theme sync:",
+        error,
       );
     }
   };
@@ -411,19 +448,19 @@ export function useToolbarSettingsController(
     if (!select) {
       return;
     }
-    const language = (select.value as LanguageOption) || 'auto';
+    const language = (select.value as LanguageOption) || "auto";
     setCurrentLanguage(language);
     languageService.setLanguage(language);
   };
 
   return {
-    assignToolbarRef: element => {
+    assignToolbarRef: (element) => {
       setToolbarRef(element ?? undefined);
     },
-    assignSettingsPanelRef: element => {
+    assignSettingsPanelRef: (element) => {
       setSettingsPanelRef(element ?? undefined);
     },
-    assignSettingsButtonRef: element => {
+    assignSettingsButtonRef: (element) => {
       setSettingsButtonRef(element ?? undefined);
     },
     isSettingsExpanded,

@@ -2,14 +2,15 @@ export type WindowLoadCallback = () => void | Promise<void>;
 
 let windowLoadPromise: Promise<void> | null = null;
 
-const hasBrowserContext = typeof window !== 'undefined' && typeof document !== 'undefined';
+const hasBrowserContext =
+  typeof window !== "undefined" && typeof document !== "undefined";
 
 function isWindowLoaded(): boolean {
   if (!hasBrowserContext) {
     return true;
   }
 
-  return document.readyState === 'complete';
+  return document.readyState === "complete";
 }
 
 function createWindowLoadPromise(): Promise<void> {
@@ -21,14 +22,14 @@ function createWindowLoadPromise(): Promise<void> {
     return windowLoadPromise;
   }
 
-  windowLoadPromise = new Promise(resolve => {
+  windowLoadPromise = new Promise((resolve) => {
     const handleLoad = (): void => {
-      window.removeEventListener('load', handleLoad);
+      window.removeEventListener("load", handleLoad);
       resolve();
       windowLoadPromise = Promise.resolve();
     };
 
-    window.addEventListener('load', handleLoad, { once: true, passive: true });
+    window.addEventListener("load", handleLoad, { once: true, passive: true });
   });
 
   return windowLoadPromise;
@@ -42,7 +43,9 @@ export function waitForWindowLoad(): Promise<void> {
   return createWindowLoadPromise();
 }
 
-export function runAfterWindowLoad(callback: WindowLoadCallback): Promise<void> {
+export function runAfterWindowLoad(
+  callback: WindowLoadCallback,
+): Promise<void> {
   return waitForWindowLoad()
     .then(() => Promise.resolve(callback()))
     .then(() => undefined);

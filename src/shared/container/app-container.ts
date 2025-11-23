@@ -26,7 +26,7 @@
  * @related [Service Accessors](./service-accessors.ts)
  */
 
-import type { AppConfig } from '@shared/types';
+import type { AppConfig } from "@shared/types";
 
 /**
  * Logging service interface - diagnostic output routing
@@ -55,8 +55,8 @@ export interface IMediaService {
  * 테마 서비스 인터페이스
  */
 export interface IThemeService {
-  getCurrentTheme(): 'light' | 'dark' | 'auto';
-  setTheme(theme: 'light' | 'dark' | 'auto'): void;
+  getCurrentTheme(): "light" | "dark" | "auto";
+  setTheme(theme: "light" | "dark" | "auto"): void;
   cleanup(): void;
 }
 
@@ -137,4 +137,6 @@ export interface CreateContainerOptions {
  * Creates container with optional custom configuration
  * Async to support initialization of services
  */
-export type CreateAppContainer = (options?: CreateContainerOptions) => Promise<AppContainer>;
+export type CreateAppContainer = (
+  options?: CreateContainerOptions,
+) => Promise<AppContainer>;

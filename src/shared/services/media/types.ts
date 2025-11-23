@@ -222,7 +222,7 @@ export interface TwitterUser {
  * ```
  */
 export interface TwitterMedia {
-  type: 'photo' | 'video' | 'animated_gif';
+  type: "photo" | "video" | "animated_gif";
   id_str: string;
   media_key?: string;
   media_url_https: string;
@@ -295,8 +295,8 @@ export interface TweetMediaEntry {
   screen_name: string;
   tweet_id: string;
   download_url: string;
-  type: 'photo' | 'video';
-  typeOriginal: 'photo' | 'video' | 'animated_gif';
+  type: "photo" | "video";
+  typeOriginal: "photo" | "video" | "animated_gif";
   index: number;
   typeIndex: number;
   typeIndexOriginal: number;
@@ -324,7 +324,7 @@ export interface TweetMediaEntry {
    * When user quotes a tweet with media, both tweets may contain media.
    * sourceLocation disambiguates which tweet owns the media.
    */
-  sourceLocation?: 'original' | 'quoted' | undefined;
+  sourceLocation?: "original" | "quoted" | undefined;
 
   /**
    * Quoted tweet ID (Phase 342: Quote Tweet Support)

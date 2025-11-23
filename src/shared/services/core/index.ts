@@ -22,4 +22,4 @@ export {
   serviceManager,
   getService,
   registerServiceFactory,
-} from './core-service-manager';
+} from "./core-service-manager";

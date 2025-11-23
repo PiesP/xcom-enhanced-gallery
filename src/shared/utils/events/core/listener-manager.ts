@@ -5,9 +5,9 @@
  *              Phase 420.3: Integrated listener lifecycle profiling
  */
 
-import { logger } from '@shared/logging';
-import { listenerRegistry } from './listener-registry';
-import type { EventContext } from './event-context';
+import { logger } from "@shared/logging";
+import { listenerRegistry } from "./listener-registry";
+import type { EventContext } from "./event-context";
 
 /**
  * Generate listener ID
@@ -32,12 +32,12 @@ export function addListener(
   type: string,
   listener: EventListener,
   options?: AddEventListenerOptions,
-  context?: string
+  context?: string,
 ): string {
   const id = generateListenerId(context);
 
   try {
-    if (!element || typeof element.addEventListener !== 'function') {
+    if (!element || typeof element.addEventListener !== "function") {
       logger.warn(`Invalid element passed to addListener: ${element}`, {
         type,
         context,
@@ -47,11 +47,16 @@ export function addListener(
       return id;
     }
 
-    const signal: AbortSignal | undefined = options?.signal as AbortSignal | undefined;
+    const signal: AbortSignal | undefined = options?.signal as
+      | AbortSignal
+      | undefined;
     if (signal?.aborted) {
-      logger.debug(`Skip adding listener due to pre-aborted signal: ${type} (${id})`, {
-        context,
-      });
+      logger.debug(
+        `Skip adding listener due to pre-aborted signal: ${type} (${id})`,
+        {
+          context,
+        },
+      );
       return id;
     }
 
@@ -71,24 +76,31 @@ export function addListener(
     listenerRegistry.register(id, eventContext);
 
     // Handle AbortSignal
-    if (signal && typeof signal.addEventListener === 'function') {
+    if (signal && typeof signal.addEventListener === "function") {
       const onAbort = () => {
         try {
           removeEventListenerManaged(id);
         } finally {
           try {
-            signal.removeEventListener('abort', onAbort);
+            signal.removeEventListener("abort", onAbort);
           } catch {
-            logger.debug('AbortSignal removeEventListener safeguard failed (ignored)', {
-              context,
-            });
+            logger.debug(
+              "AbortSignal removeEventListener safeguard failed (ignored)",
+              {
+                context,
+              },
+            );
           }
         }
       };
       try {
-        signal.addEventListener('abort', onAbort, { once: true } as AddEventListenerOptions);
+        signal.addEventListener("abort", onAbort, {
+          once: true,
+        } as AddEventListenerOptions);
       } catch {
-        logger.debug('AbortSignal addEventListener not available (ignored)', { context });
+        logger.debug("AbortSignal addEventListener not available (ignored)", {
+          context,
+        });
       }
     }
 
@@ -118,7 +130,7 @@ export function removeEventListenerManaged(id: string): boolean {
     eventContext.element.removeEventListener(
       eventContext.type,
       eventContext.listener,
-      eventContext.options
+      eventContext.options,
     );
     listenerRegistry.unregister(id);
 
@@ -161,7 +173,7 @@ export function removeEventListenersByContext(context: string): number {
 
   if (removedCount > 0) {
     logger.debug(
-      `[removeEventListenersByContext] Removed ${removedCount} listeners for context: ${context}`
+      `[removeEventListenersByContext] Removed ${removedCount} listeners for context: ${context}`,
     );
   }
 
@@ -180,13 +192,20 @@ export function removeAllEventListeners(): void {
   let detachedCount = 0;
   for (const context of listeners) {
     try {
-      context.element.removeEventListener(context.type, context.listener, context.options);
+      context.element.removeEventListener(
+        context.type,
+        context.listener,
+        context.options,
+      );
       detachedCount++;
     } catch (error) {
-      logger.warn(`Failed to remove event listener during drain: ${context.type}`, {
-        error,
-        context: context.context,
-      });
+      logger.warn(
+        `Failed to remove event listener during drain: ${context.type}`,
+        {
+          error,
+          context: context.context,
+        },
+      );
     }
   }
 

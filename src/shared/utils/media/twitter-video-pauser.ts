@@ -4,9 +4,9 @@
  *              before the gallery overlay takes focus.
  */
 
-import { logger } from '@shared/logging';
-import { STABLE_SELECTORS } from '@/constants';
-import { isGalleryInternalElement } from '@shared/utils/utils';
+import { logger } from "@shared/logging";
+import { STABLE_SELECTORS } from "@/constants";
+import { isGalleryInternalElement } from "@shared/utils/dom";
 
 type QueryableRoot = Document | DocumentFragment | HTMLElement;
 
@@ -21,9 +21,11 @@ const TWITTER_VIDEO_SCOPE_SELECTORS = Array.from(
     [
       ...STABLE_SELECTORS.TWEET_CONTAINERS,
       ...STABLE_SELECTORS.MEDIA_CONTAINERS,
-      ...STABLE_SELECTORS.MEDIA_PLAYERS.filter(selector => selector !== 'video'),
-    ].filter(Boolean)
-  )
+      ...STABLE_SELECTORS.MEDIA_PLAYERS.filter(
+        (selector) => selector !== "video",
+      ),
+    ].filter(Boolean),
+  ),
 );
 
 export interface PauseAmbientVideosOptions {
@@ -37,12 +39,16 @@ export interface PauseAmbientVideosResult {
 }
 
 function resolveRoot(root?: QueryableRoot | null): QueryableRoot | null {
-  if (root && typeof root.querySelectorAll === 'function') {
+  if (root && typeof root.querySelectorAll === "function") {
     return root;
   }
 
   try {
-    if (typeof document !== 'undefined' && document && typeof document.querySelectorAll === 'function') {
+    if (
+      typeof document !== "undefined" &&
+      document &&
+      typeof document.querySelectorAll === "function"
+    ) {
       return document;
     }
   } catch {
@@ -53,7 +59,7 @@ function resolveRoot(root?: QueryableRoot | null): QueryableRoot | null {
 }
 
 function isTwitterTimelineVideo(video: HTMLVideoElement): boolean {
-  if (!video || typeof video.closest !== 'function') {
+  if (!video || typeof video.closest !== "function") {
     return false;
   }
 
@@ -61,11 +67,14 @@ function isTwitterTimelineVideo(video: HTMLVideoElement): boolean {
     return false;
   }
 
-  if (typeof video.isConnected === 'boolean') {
+  if (typeof video.isConnected === "boolean") {
     if (!video.isConnected) {
       return false;
     }
-  } else if (typeof document !== 'undefined' && typeof document.contains === 'function') {
+  } else if (
+    typeof document !== "undefined" &&
+    typeof document.contains === "function"
+  ) {
     try {
       if (!document.contains(video)) {
         return false;
@@ -75,7 +84,7 @@ function isTwitterTimelineVideo(video: HTMLVideoElement): boolean {
     }
   }
 
-  return TWITTER_VIDEO_SCOPE_SELECTORS.some(selector => {
+  return TWITTER_VIDEO_SCOPE_SELECTORS.some((selector) => {
     try {
       return video.closest(selector) !== null;
     } catch {
@@ -86,8 +95,8 @@ function isTwitterTimelineVideo(video: HTMLVideoElement): boolean {
 
 function isVideoPlaying(video: HTMLVideoElement): boolean {
   try {
-    const pausedState = typeof video.paused === 'boolean' ? video.paused : true;
-    const endedState = typeof video.ended === 'boolean' ? video.ended : false;
+    const pausedState = typeof video.paused === "boolean" ? video.paused : true;
+    const endedState = typeof video.ended === "boolean" ? video.ended : false;
     return pausedState === false && endedState === false;
   } catch {
     return false;
@@ -95,7 +104,7 @@ function isVideoPlaying(video: HTMLVideoElement): boolean {
 }
 
 export function pauseActiveTwitterVideos(
-  options: PauseAmbientVideosOptions = {}
+  options: PauseAmbientVideosOptions = {},
 ): PauseAmbientVideosResult {
   const root = resolveRoot(options.root ?? null);
   if (!root) {
@@ -106,7 +115,7 @@ export function pauseActiveTwitterVideos(
   let totalCandidates = 0;
   let skippedCount = 0;
 
-  const videos = Array.from(root.querySelectorAll('video'));
+  const videos = Array.from(root.querySelectorAll("video"));
   if (videos.length === 0) {
     return { ...ZERO_RESULT };
   }
@@ -133,12 +142,12 @@ export function pauseActiveTwitterVideos(
       pausedCount += 1;
     } catch (error) {
       skippedCount += 1;
-      logger.debug('[AmbientVideo] Failed to pause Twitter video', { error });
+      logger.debug("[AmbientVideo] Failed to pause Twitter video", { error });
     }
   }
 
   if (pausedCount > 0 || totalCandidates > 0) {
-    logger.debug('[AmbientVideo] Ambient Twitter videos paused', {
+    logger.debug("[AmbientVideo] Ambient Twitter videos paused", {
       pausedCount,
       totalCandidates,
       skippedCount,

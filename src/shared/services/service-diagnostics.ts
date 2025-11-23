@@ -1,5 +1,5 @@
-import { logger } from '@shared/logging';
-import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
+import { logger } from "@shared/logging";
+import { mutateDevNamespace } from "@shared/devtools/dev-namespace";
 
 type DiagnosticsNamespace = {
   run: typeof diagnoseServiceManager;
@@ -7,35 +7,36 @@ type DiagnosticsNamespace = {
 
 export async function diagnoseServiceManager(): Promise<void> {
   try {
-    logger.info('🔍 ServiceManager diagnostic started');
+    logger.info("🔍 ServiceManager diagnostic started");
 
-    const [{ registerCoreServices }, { CoreService }, { SERVICE_KEYS }] = await Promise.all([
-      import('./service-initialization'),
-      import('./core/core-service-manager'),
-      import('@/constants'),
-    ]);
+    const [{ registerCoreServices }, { CoreService }, { SERVICE_KEYS }] =
+      await Promise.all([
+        import("./service-initialization"),
+        import("./core/core-service-manager"),
+        import("@/constants"),
+      ]);
 
     const serviceManager = CoreService.getInstance();
-    logger.info('📋 Registering services...');
+    logger.info("📋 Registering services...");
     await registerCoreServices();
 
     const diagnostics = serviceManager.getDiagnostics();
-    logger.info('📊 Diagnostic results:', {
+    logger.info("📊 Diagnostic results:", {
       registeredCount: diagnostics.registeredServices,
       initializedCount: diagnostics.activeInstances,
       services: diagnostics.services,
       instances: diagnostics.instances,
     });
 
-    logger.info('🧪 Testing essential service initialization...');
+    logger.info("🧪 Testing essential service initialization...");
     const themeService = await serviceManager.tryGet(SERVICE_KEYS.THEME);
-    logger.info('✅ Service initialization results:', {
-      themeService: themeService ? 'success' : 'failed',
+    logger.info("✅ Service initialization results:", {
+      themeService: themeService ? "success" : "failed",
     });
 
-    logger.info('✅ ServiceManager diagnostic complete');
+    logger.info("✅ ServiceManager diagnostic complete");
   } catch (error) {
-    logger.error('❌ ServiceManager diagnostic failed:', error);
+    logger.error("❌ ServiceManager diagnostic failed:", error);
     throw error;
   }
 }
@@ -45,7 +46,7 @@ export function registerDiagnosticsGlobal(): void {
     return;
   }
 
-  mutateDevNamespace(namespace => {
+  mutateDevNamespace((namespace) => {
     namespace.diagnostics = {
       run: diagnoseServiceManager,
     } as DiagnosticsNamespace;

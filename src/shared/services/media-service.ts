@@ -6,33 +6,37 @@
  * @phase 368: Language policy enforcement (English-only code comments)
  */
 
-import type { MediaExtractionResult } from '@shared/types/media.types';
-import type { MediaExtractionOptions } from '@shared/types/media.types';
-import type { MediaInfo } from '@shared/types/media.types';
-import { logger } from '@shared/logging';
+import type { MediaExtractionResult } from "@shared/types/media.types";
+import type { MediaExtractionOptions } from "@shared/types/media.types";
+import type { MediaInfo } from "@shared/types/media.types";
+import { logger } from "@shared/logging";
 import type {
   BulkDownloadResult,
   SingleDownloadResult,
   DownloadOptions,
-} from './download-service';
-import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
-import { globalTimerManager } from '@shared/utils/timer-management';
-import { BaseServiceImpl } from './base-service';
-import { HttpRequestService } from './http-request-service';
+} from "./download-service";
+import {
+  scheduleIdle,
+  scheduleMicrotask,
+  scheduleRaf,
+} from "@shared/utils/performance";
+import { globalTimerManager } from "@shared/utils/timer-management";
+import { BaseServiceImpl } from "./base-service";
+import { HttpRequestService } from "./http-request-service";
 
 export interface PrefetchOptions {
   maxConcurrent?: number;
   prefetchRange?: number;
-  schedule?: 'immediate' | 'idle' | 'raf' | 'microtask';
+  schedule?: "immediate" | "idle" | "raf" | "microtask";
 }
 
-export type { DownloadProgress } from './download/types';
+export type { DownloadProgress } from "./download/types";
 
 export type BulkDownloadOptions = DownloadOptions;
 
 // Phase 326.5: Conditional import for tree-shaking
 // MediaExtractionService는 Feature Flag에 따라 동적으로 로드
-import type { MediaExtractionService } from './media-extraction/media-extraction-service';
+import type { MediaExtractionService } from "./media-extraction/media-extraction-service";
 
 /**
  * MediaService configuration options
@@ -61,17 +65,18 @@ export class MediaService extends BaseServiceImpl {
   private readonly currentAbortController?: AbortController;
 
   constructor(options: MediaServiceOptions = {}) {
-    super('MediaService');
+    super("MediaService");
 
     // Phase 326.5: Feature Flag - Media Extraction is dynamically loaded during initialization
     const enableMediaExtraction = options.enableMediaExtraction ?? true;
     this.mediaExtraction = null; // Initialize as null, load in onInitialize
 
     // Save enableMediaExtraction flag internally
-    (this as { _enableMediaExtraction?: boolean })._enableMediaExtraction = enableMediaExtraction;
+    (this as { _enableMediaExtraction?: boolean })._enableMediaExtraction =
+      enableMediaExtraction;
 
     if (!enableMediaExtraction) {
-      logger.info('[MediaService] Media Extraction disabled');
+      logger.info("[MediaService] Media Extraction disabled");
     }
   }
 
@@ -80,12 +85,13 @@ export class MediaService extends BaseServiceImpl {
    */
   protected async onInitialize(): Promise<void> {
     // Phase 326.5: Dynamic loading for tree-shaking support
-    const enableMediaExtraction = (this as unknown as { _enableMediaExtraction?: boolean })
-      ._enableMediaExtraction;
+    const enableMediaExtraction = (
+      this as unknown as { _enableMediaExtraction?: boolean }
+    )._enableMediaExtraction;
 
     if (enableMediaExtraction) {
       const { MediaExtractionService } = await import(
-        './media-extraction/media-extraction-service'
+        "./media-extraction/media-extraction-service"
       );
       // @ts-expect-error - Dynamic initialization for tree-shaking
       this.mediaExtraction = new MediaExtractionService();
@@ -99,14 +105,15 @@ export class MediaService extends BaseServiceImpl {
    */
   protected onDestroy(): void {
     this.prefetchCache.clear();
-    this.activePrefetchRequests.forEach(controller => controller.abort());
+    this.activePrefetchRequests.forEach((controller) => controller.abort());
     this.activePrefetchRequests.clear();
   }
 
   public static getInstance(options?: MediaServiceOptions): MediaService {
     if (!MediaService.instance) {
       // Phase 326.5: Feature Flag 적용
-      const enableMediaExtraction = options?.enableMediaExtraction ?? __FEATURE_MEDIA_EXTRACTION__;
+      const enableMediaExtraction =
+        options?.enableMediaExtraction ?? __FEATURE_MEDIA_EXTRACTION__;
       MediaService.instance = new MediaService({ enableMediaExtraction });
     }
     return MediaService.instance;
@@ -114,22 +121,22 @@ export class MediaService extends BaseServiceImpl {
 
   async extractFromClickedElement(
     element: HTMLElement,
-    options: MediaExtractionOptions = {}
+    options: MediaExtractionOptions = {},
   ): Promise<MediaExtractionResult> {
     // Phase 326.5: Media Extraction 필수
     if (!this.mediaExtraction) {
-      throw new Error('[MediaService] Media Extraction not initialized');
+      throw new Error("[MediaService] Media Extraction not initialized");
     }
     return this.mediaExtraction.extractFromClickedElement(element, options);
   }
 
   async extractAllFromContainer(
     container: HTMLElement,
-    options: MediaExtractionOptions = {}
+    options: MediaExtractionOptions = {},
   ): Promise<MediaExtractionResult> {
     // Phase 326.5: Media Extraction 필수
     if (!this.mediaExtraction) {
-      throw new Error('[MediaService] Media Extraction not initialized');
+      throw new Error("[MediaService] Media Extraction not initialized");
     }
     return this.mediaExtraction.extractAllFromContainer(container, options);
   }
@@ -140,34 +147,36 @@ export class MediaService extends BaseServiceImpl {
 
   private async detectWebPSupport(): Promise<void> {
     try {
-      if (typeof document === 'undefined' || typeof window === 'undefined') {
+      if (typeof document === "undefined" || typeof window === "undefined") {
         this.webpSupported = false;
         return;
       }
 
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = 1;
       canvas.height = 1;
 
-      if (typeof canvas.toDataURL !== 'function') {
+      if (typeof canvas.toDataURL !== "function") {
         this.webpSupported = false;
-        logger.debug('[MediaService] WebP detection skipped (canvas.toDataURL not available)');
+        logger.debug(
+          "[MediaService] WebP detection skipped (canvas.toDataURL not available)",
+        );
         return;
       }
 
-      const dataURL = canvas.toDataURL('image/webp');
+      const dataURL = canvas.toDataURL("image/webp");
 
-      if (!dataURL || typeof dataURL !== 'string') {
+      if (!dataURL || typeof dataURL !== "string") {
         this.webpSupported = false;
-        logger.debug('[MediaService] WebP detection failed (invalid dataURL)');
+        logger.debug("[MediaService] WebP detection failed (invalid dataURL)");
         return;
       }
 
-      this.webpSupported = dataURL.indexOf('data:image/webp') === 0;
-      logger.debug('[MediaService] WebP support detected:', this.webpSupported);
+      this.webpSupported = dataURL.indexOf("data:image/webp") === 0;
+      logger.debug("[MediaService] WebP support detected:", this.webpSupported);
     } catch (error) {
       this.webpSupported = false;
-      logger.warn('[MediaService] WebP detection failed:', error);
+      logger.warn("[MediaService] WebP detection failed:", error);
     }
   }
 
@@ -185,14 +194,14 @@ export class MediaService extends BaseServiceImpl {
       const url = new URL(originalUrl);
 
       // pbs.twimg.com 호스트만 최적화 (정확한 호스트명 매칭)
-      if (url.hostname === 'pbs.twimg.com') {
+      if (url.hostname === "pbs.twimg.com") {
         // 이미 webp 형식이면 그대로 반환
-        if (url.searchParams.get('format') === 'webp') {
+        if (url.searchParams.get("format") === "webp") {
           return originalUrl;
         }
 
         // format 파라미터를 webp로 설정
-        url.searchParams.set('format', 'webp');
+        url.searchParams.set("format", "webp");
         return url.toString();
       }
     } catch {
@@ -211,11 +220,14 @@ export class MediaService extends BaseServiceImpl {
    * Prefetch a single media item
    * Used for instant download of the currently viewed item
    */
-  async prefetchMedia(media: MediaInfo, options: PrefetchOptions = {}): Promise<void> {
-    const scheduleMode = options.schedule ?? 'immediate';
+  async prefetchMedia(
+    media: MediaInfo,
+    options: PrefetchOptions = {},
+  ): Promise<void> {
+    const scheduleMode = options.schedule ?? "immediate";
     const url = media.url;
 
-    if (scheduleMode === 'immediate') {
+    if (scheduleMode === "immediate") {
       await this.prefetchSingle(url);
       return;
     }
@@ -225,13 +237,13 @@ export class MediaService extends BaseServiceImpl {
     };
 
     switch (scheduleMode) {
-      case 'idle':
+      case "idle":
         scheduleIdle(task);
         break;
-      case 'raf':
+      case "raf":
         scheduleRaf(task);
         break;
-      case 'microtask':
+      case "microtask":
         scheduleMicrotask(task);
         break;
       default:
@@ -242,18 +254,25 @@ export class MediaService extends BaseServiceImpl {
   async prefetchNextMedia(
     mediaItems: readonly string[],
     currentIndex: number,
-    options: PrefetchOptions = {}
+    options: PrefetchOptions = {},
   ): Promise<void> {
     const maxConcurrent = options.maxConcurrent || 2;
     const prefetchRange = options.prefetchRange || 2;
-    const scheduleMode = options.schedule ?? 'immediate';
+    const scheduleMode = options.schedule ?? "immediate";
 
-    const prefetchUrls = this.calculatePrefetchUrls(mediaItems, currentIndex, prefetchRange);
+    const prefetchUrls = this.calculatePrefetchUrls(
+      mediaItems,
+      currentIndex,
+      prefetchRange,
+    );
 
-    logger.debug('[MediaService] Starting media prefetch:', { currentIndex, prefetchUrls });
+    logger.debug("[MediaService] Starting media prefetch:", {
+      currentIndex,
+      prefetchUrls,
+    });
 
-    if (scheduleMode === 'immediate') {
-      await new Promise<void>(resolve => {
+    if (scheduleMode === "immediate") {
+      await new Promise<void>((resolve) => {
         let i = 0;
         let running = 0;
 
@@ -265,7 +284,7 @@ export class MediaService extends BaseServiceImpl {
 
           while (running < maxConcurrent && i < prefetchUrls.length) {
             const url = prefetchUrls[i++];
-            if (typeof url !== 'string') continue;
+            if (typeof url !== "string") continue;
             running++;
             this.prefetchSingle(url)
               .catch(() => {})
@@ -287,7 +306,7 @@ export class MediaService extends BaseServiceImpl {
 
     const scheduleTask = (url: string) => {
       switch (scheduleMode) {
-        case 'idle':
+        case "idle":
           scheduleIdle(() => {
             void this.prefetchSingle(url)
               .catch(() => {})
@@ -297,7 +316,7 @@ export class MediaService extends BaseServiceImpl {
               });
           });
           break;
-        case 'raf':
+        case "raf":
           scheduleRaf(() => {
             void this.prefetchSingle(url)
               .catch(() => {})
@@ -307,7 +326,7 @@ export class MediaService extends BaseServiceImpl {
               });
           });
           break;
-        case 'microtask':
+        case "microtask":
           scheduleMicrotask(() => {
             void this.prefetchSingle(url)
               .catch(() => {})
@@ -333,7 +352,7 @@ export class MediaService extends BaseServiceImpl {
     const startNext = () => {
       while (inFlight < maxConcurrent && queue.length > 0) {
         const nextUrl = queue.shift();
-        if (typeof nextUrl !== 'string') continue;
+        if (typeof nextUrl !== "string") continue;
         inFlight++;
         scheduleTask(nextUrl);
       }
@@ -355,7 +374,7 @@ export class MediaService extends BaseServiceImpl {
       const httpService = HttpRequestService.getInstance();
       const response = await httpService.get<Blob>(url, {
         signal: abortController.signal,
-        responseType: 'blob',
+        responseType: "blob",
       });
 
       if (!response.ok) {
@@ -369,10 +388,13 @@ export class MediaService extends BaseServiceImpl {
       }
 
       this.prefetchCache.set(url, blob);
-      logger.debug('[MediaService] Prefetch successful:', { url, size: blob.size });
+      logger.debug("[MediaService] Prefetch successful:", {
+        url,
+        size: blob.size,
+      });
     } catch (error) {
-      if (error instanceof Error && error.name !== 'AbortError') {
-        logger.warn('[MediaService] Prefetch failed:', error, { url });
+      if (error instanceof Error && error.name !== "AbortError") {
+        logger.warn("[MediaService] Prefetch failed:", error, { url });
       }
     } finally {
       this.activePrefetchRequests.delete(url);
@@ -382,11 +404,15 @@ export class MediaService extends BaseServiceImpl {
   private calculatePrefetchUrls(
     mediaItems: readonly string[],
     currentIndex: number,
-    prefetchRange: number
+    prefetchRange: number,
   ): string[] {
     const total = mediaItems.length;
-    const safeTotal = Number.isFinite(total) && total > 0 ? Math.floor(total) : 0;
-    const safeIndex = Math.min(Math.max(0, Math.floor(currentIndex)), Math.max(0, safeTotal - 1));
+    const safeTotal =
+      Number.isFinite(total) && total > 0 ? Math.floor(total) : 0;
+    const safeIndex = Math.min(
+      Math.max(0, Math.floor(currentIndex)),
+      Math.max(0, safeTotal - 1),
+    );
     const safeCount = Math.max(0, Math.min(20, Math.floor(prefetchRange)));
 
     if (safeTotal === 0 || safeCount === 0) return [];
@@ -413,22 +439,22 @@ export class MediaService extends BaseServiceImpl {
     });
 
     return indices
-      .map(i => mediaItems[i])
-      .filter((u): u is string => typeof u === 'string' && u.length > 0);
+      .map((i) => mediaItems[i])
+      .filter((u): u is string => typeof u === "string" && u.length > 0);
   }
 
   private evictOldestPrefetchEntry(): void {
     const firstKey = this.prefetchCache.keys().next().value;
     if (firstKey) {
       this.prefetchCache.delete(firstKey);
-      logger.debug('[MediaService] Prefetch cache entry removed:', firstKey);
+      logger.debug("[MediaService] Prefetch cache entry removed:", firstKey);
     }
   }
 
   getCachedMedia(url: string): Blob | null {
     const blob = this.prefetchCache.get(url);
     if (blob) {
-      logger.debug('[MediaService] Prefetch cache hit:', { url });
+      logger.debug("[MediaService] Prefetch cache hit:", { url });
       return blob;
     }
 
@@ -440,25 +466,28 @@ export class MediaService extends BaseServiceImpl {
       controller.abort();
     }
     this.activePrefetchRequests.clear();
-    logger.debug('[MediaService] All prefetch requests cancelled.');
+    logger.debug("[MediaService] All prefetch requests cancelled.");
   }
 
   clearPrefetchCache(): void {
     this.prefetchCache.clear();
-    logger.debug('[MediaService] Prefetch cache cleared.');
+    logger.debug("[MediaService] Prefetch cache cleared.");
   }
 
   async downloadSingle(
     media: MediaInfo,
-    options: DownloadOptions = {}
+    options: DownloadOptions = {},
   ): Promise<SingleDownloadResult> {
-    const { downloadService } = await import('./download-service');
+    const { downloadService } = await import("./download-service");
 
     // Phase 368: Check prefetch cache
     const cachedBlob = this.prefetchCache.get(media.url);
     if (cachedBlob) {
-      logger.debug('[MediaService] Using cached blob for download');
-      return downloadService.downloadSingle(media, { ...options, blob: cachedBlob });
+      logger.debug("[MediaService] Using cached blob for download");
+      return downloadService.downloadSingle(media, {
+        ...options,
+        blob: cachedBlob,
+      });
     }
 
     return downloadService.downloadSingle(media, options);
@@ -466,9 +495,9 @@ export class MediaService extends BaseServiceImpl {
 
   async downloadMultiple(
     mediaItems: Array<MediaInfo>,
-    options: BulkDownloadOptions = {}
+    options: BulkDownloadOptions = {},
   ): Promise<BulkDownloadResult> {
-    const { downloadService } = await import('./download-service');
+    const { downloadService } = await import("./download-service");
     return downloadService.downloadBulk(mediaItems, {
       ...options,
       prefetchedBlobs: this.prefetchCache,
@@ -477,14 +506,14 @@ export class MediaService extends BaseServiceImpl {
 
   async downloadBulk(
     mediaItems: readonly MediaInfo[],
-    options: BulkDownloadOptions = {}
+    options: BulkDownloadOptions = {},
   ): Promise<BulkDownloadResult> {
     return this.downloadMultiple(Array.from(mediaItems), options);
   }
 
   public cancelDownload(): void {
     this.currentAbortController?.abort();
-    logger.debug('[MediaService] Current download cancelled');
+    logger.debug("[MediaService] Current download cancelled");
   }
 
   public isDownloading(): boolean {
@@ -495,7 +524,7 @@ export class MediaService extends BaseServiceImpl {
     this.cancelAllPrefetch();
     this.clearPrefetchCache();
     this.onDestroy();
-    logger.debug('[MediaService] Service cleanup completed.');
+    logger.debug("[MediaService] Service cleanup completed.");
   }
 }
 
@@ -510,8 +539,12 @@ function __getMediaService(): MediaService {
 export const mediaService: MediaService = new Proxy({} as MediaService, {
   get(_target, prop: keyof MediaService, receiver) {
     const inst = __getMediaService();
-    const value = Reflect.get(inst as object, prop as string | symbol, receiver) as unknown;
-    if (typeof value === 'function') {
+    const value = Reflect.get(
+      inst as object,
+      prop as string | symbol,
+      receiver,
+    ) as unknown;
+    if (typeof value === "function") {
       type AnyFunc = (...args: unknown[]) => unknown;
       return (value as AnyFunc).bind(inst);
     }
@@ -523,7 +556,10 @@ export const mediaService: MediaService = new Proxy({} as MediaService, {
   },
   getOwnPropertyDescriptor(_target, prop: keyof MediaService) {
     const inst = __getMediaService();
-    return Object.getOwnPropertyDescriptor(inst as object, prop as string | symbol);
+    return Object.getOwnPropertyDescriptor(
+      inst as object,
+      prop as string | symbol,
+    );
   },
   ownKeys() {
     const inst = __getMediaService();
@@ -533,9 +569,17 @@ export const mediaService: MediaService = new Proxy({} as MediaService, {
     const inst = __getMediaService();
     return Reflect.set(inst as object, prop as string | symbol, value);
   },
-  defineProperty(_target, prop: keyof MediaService, attributes: PropertyDescriptor) {
+  defineProperty(
+    _target,
+    prop: keyof MediaService,
+    attributes: PropertyDescriptor,
+  ) {
     const inst = __getMediaService();
-    return Reflect.defineProperty(inst as object, prop as string | symbol, attributes);
+    return Reflect.defineProperty(
+      inst as object,
+      prop as string | symbol,
+      attributes,
+    );
   },
   getPrototypeOf() {
     // Expose prototype so spy utilities can walk the chain

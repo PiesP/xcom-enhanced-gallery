@@ -8,8 +8,8 @@
  * Used for: previous navigation, backward actions.
  */
 
-import type { JSXElement } from '@shared/external/vendors';
-import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
+import type { JSXElement } from "@shared/external/vendors";
+import { Icon, type IconProps } from "@shared/components/ui/Icon/Icon";
 
 /**
  * ArrowSmallLeft Icon Component
@@ -21,7 +21,7 @@ import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
 export function HeroArrowSmallLeft(props: IconProps): JSXElement {
   return (
     <Icon {...props}>
-      <path d='M19.5 12H4.5m0 0L11.25 18.75M4.5 12 11.25 5.25' />
+      <path d="M19.5 12H4.5m0 0L11.25 18.75M4.5 12 11.25 5.25" />
     </Icon>
   );
 }

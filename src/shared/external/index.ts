@@ -69,7 +69,7 @@ export {
   registerVendorCleanupOnUnload,
   // Internal only (@internal - testing/debugging only)
   resetVendorManagerInstance,
-} from './vendors';
+} from "./vendors";
 
 // ============================================================================
 // 2. USERSCRIPT API (Tampermonkey + environment detection)
@@ -88,7 +88,7 @@ export {
   getUserscript,
   type UserscriptAPI,
   type UserscriptManager,
-} from './userscript';
+} from "./userscript";
 
 // ============================================================================
 // 3. ZIP UTILITIES (file compression)
@@ -97,7 +97,7 @@ export {
 // 📌 Integration: Used by BulkDownloadService during batch downloads
 // ============================================================================
 
-export { StreamingZipWriter } from './zip';
+export { StreamingZipWriter } from "./zip";
 
 // ============================================================================
 // 4. TEST INFRASTRUCTURE (test helpers & configuration, @internal)

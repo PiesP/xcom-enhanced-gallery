@@ -4,9 +4,9 @@
  * and any XEG-specific theme scopes (e.g., the isolated gallery root)
  */
 
-import { THEME_DOM_ATTRIBUTE } from '@shared/constants';
+import { THEME_DOM_ATTRIBUTE } from "@shared/constants";
 
-export type ThemeName = 'light' | 'dark';
+export type ThemeName = "light" | "dark";
 
 export interface SyncThemeAttributesOptions {
   /**
@@ -27,9 +27,9 @@ export interface SyncThemeAttributesOptions {
  */
 export function syncThemeAttributes(
   theme: ThemeName,
-  options: SyncThemeAttributesOptions = {}
+  options: SyncThemeAttributesOptions = {},
 ): void {
-  if (typeof document === 'undefined') {
+  if (typeof document === "undefined") {
     return;
   }
 
@@ -40,7 +40,7 @@ export function syncThemeAttributes(
   }
 
   const targets: Iterable<Element> | ArrayLike<Element> =
-    scopes ?? document.querySelectorAll('.xeg-theme-scope');
+    scopes ?? document.querySelectorAll(".xeg-theme-scope");
 
   for (const target of Array.from(targets)) {
     if (target instanceof HTMLElement) {

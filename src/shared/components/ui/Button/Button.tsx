@@ -30,14 +30,18 @@
  * ```
  */
 
-import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
-import { logger } from '@shared/logging';
-import { createClassName } from '@shared/utils/component-utils';
-import styles from './Button.module.css';
+import {
+  getSolid,
+  type ComponentChildren,
+  type JSXElement,
+} from "@shared/external/vendors";
+import { logger } from "@shared/logging";
+import { createClassName } from "@shared/utils/component-utils";
+import styles from "./Button.module.css";
 
 const solid = getSolid();
 const { mergeProps, splitProps, createEffect, onCleanup, createMemo } = solid;
-import { toAccessor } from '@shared/utils/solid-helpers';
+import { toAccessor } from "@shared/utils/solid-helpers";
 
 // ============================================================================
 // Type Definitions
@@ -48,25 +52,25 @@ import { toAccessor } from '@shared/utils/solid-helpers';
  * @description Determines button appearance and behavior
  */
 type ButtonVariant =
-  | 'primary'
-  | 'secondary'
-  | 'icon'
-  | 'danger'
-  | 'ghost'
-  | 'toolbar'
-  | 'navigation'
-  | 'action';
+  | "primary"
+  | "secondary"
+  | "icon"
+  | "danger"
+  | "ghost"
+  | "toolbar"
+  | "navigation"
+  | "action";
 
 /**
  * Button size
  */
-export type ButtonSize = 'sm' | 'md' | 'lg' | 'toolbar';
+export type ButtonSize = "sm" | "md" | "lg" | "toolbar";
 
 /**
  * Button intent
 
 /** Button semantic intent color */
-type ButtonIntent = 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
+type ButtonIntent = "primary" | "secondary" | "success" | "warning" | "danger";
 
 /**
  * Standard HTML button attributes
@@ -78,7 +82,7 @@ interface ButtonHTMLAttributes {
   readonly class?: string;
   readonly disabled?: boolean;
   readonly form?: string;
-  readonly type?: 'button' | 'submit' | 'reset';
+  readonly type?: "button" | "submit" | "reset";
   readonly autoFocus?: boolean;
   readonly tabIndex?: number;
   readonly title?: string;
@@ -91,19 +95,19 @@ interface ButtonHTMLAttributes {
   readonly onKeyDown?: (event: KeyboardEvent) => void;
   readonly onMouseEnter?: (event: MouseEvent) => void;
   readonly onMouseLeave?: (event: MouseEvent) => void;
-  readonly 'aria-label'?: string;
-  readonly 'aria-labelledby'?: string;
-  readonly 'aria-describedby'?: string;
-  readonly 'aria-pressed'?: boolean | 'true' | 'false';
-  readonly 'aria-expanded'?: boolean | 'true' | 'false';
-  readonly 'aria-controls'?: string;
-  readonly 'aria-haspopup'?: boolean | 'true' | 'false';
-  readonly 'aria-busy'?: boolean | 'true' | 'false';
-  readonly 'data-testid'?: string;
-  readonly 'data-gallery-element'?: string;
-  readonly 'data-disabled'?: boolean | string;
-  readonly 'data-selected'?: boolean | string;
-  readonly 'data-loading'?: boolean | string;
+  readonly "aria-label"?: string;
+  readonly "aria-labelledby"?: string;
+  readonly "aria-describedby"?: string;
+  readonly "aria-pressed"?: boolean | "true" | "false";
+  readonly "aria-expanded"?: boolean | "true" | "false";
+  readonly "aria-controls"?: string;
+  readonly "aria-haspopup"?: boolean | "true" | "false";
+  readonly "aria-busy"?: boolean | "true" | "false";
+  readonly "data-testid"?: string;
+  readonly "data-gallery-element"?: string;
+  readonly "data-disabled"?: boolean | string;
+  readonly "data-selected"?: boolean | string;
+  readonly "data-loading"?: boolean | string;
 }
 
 /**
@@ -131,16 +135,22 @@ export interface ButtonProps extends ButtonHTMLAttributes {
 // Default Props
 // ============================================================================
 
-type DefaultKeys = 'variant' | 'size' | 'type' | 'iconOnly' | 'disabled' | 'loading';
+type DefaultKeys =
+  | "variant"
+  | "size"
+  | "type"
+  | "iconOnly"
+  | "disabled"
+  | "loading";
 
 /**
  * Default property values
  * @description Fallback values when props not provided
  */
 const defaultProps: Required<Pick<ButtonProps, DefaultKeys>> = {
-  variant: 'primary',
-  size: 'md',
-  type: 'button',
+  variant: "primary",
+  size: "md",
+  type: "button",
   iconOnly: false,
   disabled: false,
   loading: false,
@@ -170,43 +180,43 @@ const defaultProps: Required<Pick<ButtonProps, DefaultKeys>> = {
 export function Button(rawProps: ButtonProps): JSXElement {
   const props = mergeProps(defaultProps, rawProps);
   const [local, rest] = splitProps(props, [
-    'children',
-    'variant',
-    'size',
-    'intent',
-    'iconOnly',
-    'loading',
-    'ref',
-    'className',
-    'class',
-    'id',
-    'type',
-    'form',
-    'autoFocus',
-    'disabled',
-    'tabIndex',
-    'title',
-    'onClick',
-    'onMouseDown',
-    'onMouseUp',
-    'onFocus',
-    'onBlur',
-    'onKeyDown',
-    'onMouseEnter',
-    'onMouseLeave',
-    'aria-label',
-    'aria-labelledby',
-    'aria-describedby',
-    'aria-pressed',
-    'aria-expanded',
-    'aria-controls',
-    'aria-haspopup',
-    'aria-busy',
-    'data-testid',
-    'data-gallery-element',
-    'data-disabled',
-    'data-selected',
-    'data-loading',
+    "children",
+    "variant",
+    "size",
+    "intent",
+    "iconOnly",
+    "loading",
+    "ref",
+    "className",
+    "class",
+    "id",
+    "type",
+    "form",
+    "autoFocus",
+    "disabled",
+    "tabIndex",
+    "title",
+    "onClick",
+    "onMouseDown",
+    "onMouseUp",
+    "onFocus",
+    "onBlur",
+    "onKeyDown",
+    "onMouseEnter",
+    "onMouseLeave",
+    "aria-label",
+    "aria-labelledby",
+    "aria-describedby",
+    "aria-pressed",
+    "aria-expanded",
+    "aria-controls",
+    "aria-haspopup",
+    "aria-busy",
+    "data-testid",
+    "data-gallery-element",
+    "data-disabled",
+    "data-selected",
+    "data-loading",
   ]);
 
   // Validate icon-only buttons have accessibility labels
@@ -215,44 +225,51 @@ export function Button(rawProps: ButtonProps): JSXElement {
   // Prefer rawProps accessors when available to preserve reactivity
   // (mergeProps may snapshot/resolve functions into primitive values)
   type ReactivePropKey =
-    | 'loading'
-    | 'disabled'
-    | 'aria-busy'
-    | 'aria-pressed'
-    | 'aria-describedby'
-    | 'title'
-    | 'aria-label'
-    | 'aria-labelledby'
-    | 'iconOnly';
+    | "loading"
+    | "disabled"
+    | "aria-busy"
+    | "aria-pressed"
+    | "aria-describedby"
+    | "title"
+    | "aria-label"
+    | "aria-labelledby"
+    | "iconOnly";
 
   const fallbackProps = local as ButtonProps;
-  const resolvePropAccessor = <K extends ReactivePropKey>(key: K) => () =>
-    (rawProps[key] ?? fallbackProps[key]) as ButtonProps[K];
+  const resolvePropAccessor =
+    <K extends ReactivePropKey>(key: K) =>
+    () =>
+      (rawProps[key] ?? fallbackProps[key]) as ButtonProps[K];
 
-  const iconOnlyAccessor = toAccessor(resolvePropAccessor('iconOnly'));
-  const loadingAccessor = toAccessor(resolvePropAccessor('loading'));
-  const disabledAccessor = toAccessor(resolvePropAccessor('disabled'));
-  const ariaBusyAccessor = toAccessor(resolvePropAccessor('aria-busy'));
-  const ariaPressedAccessor = toAccessor(resolvePropAccessor('aria-pressed'));
-  const ariaDescribedbyAccessor = toAccessor(resolvePropAccessor('aria-describedby'));
-  const titleAccessor = toAccessor(resolvePropAccessor('title'));
-  const ariaLabelAccessor = toAccessor(resolvePropAccessor('aria-label'));
-  const ariaLabelledByAccessor = toAccessor(resolvePropAccessor('aria-labelledby'));
+  const iconOnlyAccessor = toAccessor(resolvePropAccessor("iconOnly"));
+  const loadingAccessor = toAccessor(resolvePropAccessor("loading"));
+  const disabledAccessor = toAccessor(resolvePropAccessor("disabled"));
+  const ariaBusyAccessor = toAccessor(resolvePropAccessor("aria-busy"));
+  const ariaPressedAccessor = toAccessor(resolvePropAccessor("aria-pressed"));
+  const ariaDescribedbyAccessor = toAccessor(
+    resolvePropAccessor("aria-describedby"),
+  );
+  const titleAccessor = toAccessor(resolvePropAccessor("title"));
+  const ariaLabelAccessor = toAccessor(resolvePropAccessor("aria-label"));
+  const ariaLabelledByAccessor = toAccessor(
+    resolvePropAccessor("aria-labelledby"),
+  );
 
   const isLoading = createMemo(() => !!loadingAccessor());
   const isDisabled = createMemo(() => !!disabledAccessor() || isLoading());
 
   createEffect(() => {
     if (!iconOnlyAccessor()) return;
-    const derived = ariaLabelAccessor() ?? ariaLabelledByAccessor() ?? titleAccessor();
+    const derived =
+      ariaLabelAccessor() ?? ariaLabelledByAccessor() ?? titleAccessor();
     if (!derived) {
       logger.warn(
-        'Icon-only buttons must have accessible labels (aria-label or aria-labelledby).',
+        "Icon-only buttons must have accessible labels (aria-label or aria-labelledby).",
         {
-          component: 'UnifiedButton',
+          component: "UnifiedButton",
           variant: local.variant,
           iconOnly: true,
-        }
+        },
       );
     }
   });
@@ -312,10 +329,14 @@ export function Button(rawProps: ButtonProps): JSXElement {
       iconOnlyAccessor() ? styles.iconOnly : undefined,
       isLoading() ? styles.loading : undefined,
       isDisabled() ? styles.disabled : undefined,
-      'xeg-inline-center',
-      'xeg-gap-sm',
-      typeof local.className === 'function' ? (local.className as () => string)() : local.className,
-      typeof local.class === 'function' ? (local.class as () => string)() : local.class
+      "xeg-inline-center",
+      "xeg-gap-sm",
+      typeof local.className === "function"
+        ? (local.className as () => string)()
+        : local.className,
+      typeof local.class === "function"
+        ? (local.class as () => string)()
+        : local.class,
     );
 
   // Keep the DOM disabled property in sync with the isDisabled() accessor to aid testing and DOM consumers
@@ -330,10 +351,12 @@ export function Button(rawProps: ButtonProps): JSXElement {
       // debug: ensure dataset reflects computed disabled state for tests
       try {
         el.dataset.debugIsdisabled = String(disabledNow);
-        el.dataset.debugPropertyDisabled = String(Boolean((el as HTMLButtonElement).disabled));
-        el.dataset.debugAttrDisabled = String(el.hasAttribute('disabled'));
+        el.dataset.debugPropertyDisabled = String(
+          Boolean((el as HTMLButtonElement).disabled),
+        );
+        el.dataset.debugAttrDisabled = String(el.hasAttribute("disabled"));
         // Also set aria-disabled attribute to reflect a11y state
-        el.setAttribute('aria-disabled', String(disabledNow));
+        el.setAttribute("aria-disabled", String(disabledNow));
         if (loadingClassName) {
           try {
             if (loadingNow) {
@@ -354,9 +377,9 @@ export function Button(rawProps: ButtonProps): JSXElement {
   return (
     <button
       {...rest}
-      ref={element => {
+      ref={(element) => {
         setElementRef(element ?? null);
-        if (typeof local.ref === 'function') {
+        if (typeof local.ref === "function") {
           local.ref(element ?? null);
         }
       }}
@@ -364,26 +387,26 @@ export function Button(rawProps: ButtonProps): JSXElement {
       type={local.type}
       class={buttonClasses()}
       id={local.id}
-      aria-expanded={local['aria-expanded']}
+      aria-expanded={local["aria-expanded"]}
       aria-pressed={ariaPressedAccessor() ?? undefined}
       aria-describedby={ariaDescribedbyAccessor() ?? undefined}
       aria-label={ariaLabelAccessor() ?? undefined}
-      aria-controls={local['aria-controls']}
-      aria-haspopup={local['aria-haspopup']}
+      aria-controls={local["aria-controls"]}
+      aria-haspopup={local["aria-haspopup"]}
       aria-busy={ariaBusyAccessor() ?? isLoading()}
       aria-disabled={isDisabled()}
       tabIndex={
         isDisabled()
           ? -1
-          : typeof local.tabIndex === 'function'
+          : typeof local.tabIndex === "function"
             ? (local.tabIndex as () => number)()
             : local.tabIndex
       }
-      data-testid={local['data-testid']}
-      data-gallery-element={local['data-gallery-element']}
-      data-disabled={local['data-disabled']}
-      data-selected={local['data-selected']}
-      data-loading={local['data-loading']}
+      data-testid={local["data-testid"]}
+      data-gallery-element={local["data-gallery-element"]}
+      data-disabled={local["data-disabled"]}
+      data-selected={local["data-selected"]}
+      data-loading={local["data-loading"]}
       title={local.title}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
@@ -395,7 +418,10 @@ export function Button(rawProps: ButtonProps): JSXElement {
       onMouseLeave={local.onMouseLeave}
     >
       {isLoading() && (
-        <span class={createClassName('xeg-spinner', styles.spinner)} aria-hidden='true' />
+        <span
+          class={createClassName("xeg-spinner", styles.spinner)}
+          aria-hidden="true"
+        />
       )}
       {local.children}
     </button>

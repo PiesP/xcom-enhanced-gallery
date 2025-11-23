@@ -1,6 +1,6 @@
-import { safePerformanceNow } from '@shared/utils/timer-management';
+import { safePerformanceNow } from "@shared/utils/timer-management";
 
-export type FocusSource = 'auto' | 'manual' | 'external';
+export type FocusSource = "auto" | "manual" | "external";
 
 export interface FocusState {
   index: number | null;
@@ -16,7 +16,7 @@ export interface FocusTracking {
 }
 export const INITIAL_FOCUS_STATE: FocusState = {
   index: null,
-  source: 'auto',
+  source: "auto",
   timestamp: 0,
 };
 
@@ -28,22 +28,33 @@ export const INITIAL_FOCUS_TRACKING: FocusTracking = {
 };
 export function isValidFocusState(state: FocusState): boolean {
   if (state.index !== null) {
-    if (typeof state.index !== 'number' || Number.isNaN(state.index) || state.index < 0) {
+    if (
+      typeof state.index !== "number" ||
+      Number.isNaN(state.index) ||
+      state.index < 0
+    ) {
       return false;
     }
   }
 
-  if (!(['auto', 'manual', 'external'] as const).includes(state.source as FocusSource)) {
+  if (
+    !(["auto", "manual", "external"] as const).includes(
+      state.source as FocusSource,
+    )
+  ) {
     return false;
   }
 
-  if (typeof state.timestamp !== 'number' || state.timestamp < 0) {
+  if (typeof state.timestamp !== "number" || state.timestamp < 0) {
     return false;
   }
 
   return true;
 }
-export function createFocusState(index: number | null, source: FocusSource = 'auto'): FocusState {
+export function createFocusState(
+  index: number | null,
+  source: FocusSource = "auto",
+): FocusState {
   return {
     index,
     source,
@@ -52,7 +63,7 @@ export function createFocusState(index: number | null, source: FocusSource = 'au
 }
 
 export function createFocusTracking(
-  overrides?: Partial<Omit<FocusTracking, 'lastUpdateTime'>>
+  overrides?: Partial<Omit<FocusTracking, "lastUpdateTime">>,
 ): FocusTracking {
   return {
     ...INITIAL_FOCUS_TRACKING,
@@ -60,11 +71,17 @@ export function createFocusTracking(
     ...overrides,
   };
 }
-export function isSameFocusState(state1: FocusState, state2: FocusState): boolean {
+export function isSameFocusState(
+  state1: FocusState,
+  state2: FocusState,
+): boolean {
   return state1.index === state2.index && state1.source === state2.source;
 }
 
-export function isSameFocusTracking(tracking1: FocusTracking, tracking2: FocusTracking): boolean {
+export function isSameFocusTracking(
+  tracking1: FocusTracking,
+  tracking2: FocusTracking,
+): boolean {
   return (
     tracking1.lastAutoFocusedIndex === tracking2.lastAutoFocusedIndex &&
     tracking1.lastAppliedIndex === tracking2.lastAppliedIndex &&
@@ -73,7 +90,7 @@ export function isSameFocusTracking(tracking1: FocusTracking, tracking2: FocusTr
 }
 export function updateFocusTracking(
   tracking: FocusTracking,
-  updates: Partial<Omit<FocusTracking, 'lastUpdateTime'>>
+  updates: Partial<Omit<FocusTracking, "lastUpdateTime">>,
 ): FocusTracking {
   return {
     ...tracking,

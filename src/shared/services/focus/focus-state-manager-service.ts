@@ -1,9 +1,9 @@
 /**
  * Coordinates debounced focus state updates for the gallery.
  */
-import type { FocusState, FocusTracking } from '@shared/state/focus';
-import { updateFocusTracking } from '@shared/state/focus';
-import { createDebouncer } from '@shared/utils/performance';
+import type { FocusState, FocusTracking } from "@shared/state/focus";
+import { updateFocusTracking } from "@shared/state/focus";
+import { createDebouncer } from "@shared/utils/performance";
 
 /**
  * Focus State Manager Service - Debounced state synchronization
@@ -118,22 +118,21 @@ export class FocusStateManagerService {
    * @see Phase 340 for debouncing strategy details
    */
   setupAutoFocusSync(
-    onUpdate: (index: number | null, source: FocusState['source']) => void,
-    delay: number = 50
+    onUpdate: (index: number | null, source: FocusState["source"]) => void,
+    delay: number = 50,
   ): void {
-    this.debouncedSetAutoFocus = createDebouncer<[number | null, { forceClear?: boolean }?]>(
-      (index, options) => {
-        const shouldForceClear = options?.forceClear ?? false;
+    this.debouncedSetAutoFocus = createDebouncer<
+      [number | null, { forceClear?: boolean }?]
+    >((index, options) => {
+      const shouldForceClear = options?.forceClear ?? false;
 
-        if (index === null && !shouldForceClear) {
-          onUpdate(null, 'auto');
-          return;
-        }
+      if (index === null && !shouldForceClear) {
+        onUpdate(null, "auto");
+        return;
+      }
 
-        onUpdate(index, 'auto');
-      },
-      delay
-    );
+      onUpdate(index, "auto");
+    }, delay);
   }
 
   /**
@@ -178,7 +177,10 @@ export class FocusStateManagerService {
    * @see {@link setupAutoFocusSync} for setup
    * @see Phase 340 for debouncing strategy
    */
-  syncAutoFocus(index: number | null, options?: { forceClear?: boolean }): void {
+  syncAutoFocus(
+    index: number | null,
+    options?: { forceClear?: boolean },
+  ): void {
     this.debouncedSetAutoFocus?.execute(index, options);
   }
 
@@ -222,15 +224,17 @@ export class FocusStateManagerService {
    * @see Phase 340 for debouncing strategy details
    */
   setupContainerSync(
-    onUpdate: (value: number | null, options?: { forceClear?: boolean }) => void,
-    delay: number = 50
+    onUpdate: (
+      value: number | null,
+      options?: { forceClear?: boolean },
+    ) => void,
+    delay: number = 50,
   ): void {
-    this.debouncedUpdateContainer = createDebouncer<[number | null, { forceClear?: boolean }?]>(
-      (value, options) => {
-        onUpdate(value, options);
-      },
-      delay
-    );
+    this.debouncedUpdateContainer = createDebouncer<
+      [number | null, { forceClear?: boolean }?]
+    >((value, options) => {
+      onUpdate(value, options);
+    }, delay);
   }
 
   /**
@@ -272,7 +276,10 @@ export class FocusStateManagerService {
    * @see {@link setupContainerSync} for setup
    * @see Phase 340 for debouncing strategy
    */
-  syncContainer(value: number | null, options?: { forceClear?: boolean }): void {
+  syncContainer(
+    value: number | null,
+    options?: { forceClear?: boolean },
+  ): void {
     this.debouncedUpdateContainer?.execute(value, options);
   }
 
@@ -326,7 +333,7 @@ export class FocusStateManagerService {
   handleScrollState(
     isScrolling: boolean,
     focusTracking: FocusTracking,
-    onRecompute: () => void
+    onRecompute: () => void,
   ): FocusTracking {
     if (!isScrolling && focusTracking.hasPendingRecompute) {
       onRecompute();

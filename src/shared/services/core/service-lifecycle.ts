@@ -15,7 +15,7 @@
  * @version 1.0.0 - Service Manager Delegation Pattern (Lifecycle Specialization)
  */
 
-import type { BaseService } from '@shared/types/core/base-service.types';
+import type { BaseService } from "@shared/types/core/base-service.types";
 
 /**
  * Specialized lifecycle manager for BaseService instances
@@ -169,15 +169,16 @@ export class ServiceLifecycleManager {
       try {
         await this.initializeBaseService(key);
       } catch (error) {
-        const normalized = error instanceof Error ? error : new Error(String(error));
+        const normalized =
+          error instanceof Error ? error : new Error(String(error));
         failures.push({ key, error: normalized });
       }
     }
 
     if (failures.length > 0) {
       throw new AggregateError(
-        failures.map(entry => entry.error),
-        `BaseService initialization failed for: ${failures.map(entry => entry.key).join(', ')}`
+        failures.map((entry) => entry.error),
+        `BaseService initialization failed for: ${failures.map((entry) => entry.key).join(", ")}`,
       );
     }
   }
@@ -238,7 +239,8 @@ export class ServiceLifecycleManager {
             service.destroy();
           }
         } catch (error) {
-          const normalized = error instanceof Error ? error : new Error(String(error));
+          const normalized =
+            error instanceof Error ? error : new Error(String(error));
           failures.push({ key, error: normalized });
         }
       }
@@ -246,8 +248,8 @@ export class ServiceLifecycleManager {
 
     if (failures.length > 0) {
       throw new AggregateError(
-        failures.map(entry => entry.error),
-        `BaseService cleanup failed for: ${failures.map(entry => entry.key).join(', ')}`
+        failures.map((entry) => entry.error),
+        `BaseService cleanup failed for: ${failures.map((entry) => entry.key).join(", ")}`,
       );
     }
   }

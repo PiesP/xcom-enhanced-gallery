@@ -4,7 +4,7 @@
  * Particularly effective for video control keys like ArrowUp/Down (volume), M (mute)
  */
 
-import { logger } from '@shared/logging';
+import { logger } from "@shared/logging";
 
 interface DebounceState {
   lastExecutionTime: number;
@@ -13,7 +13,7 @@ interface DebounceState {
 
 const debounceState: DebounceState = {
   lastExecutionTime: 0,
-  lastKey: '',
+  lastKey: "",
 };
 
 /**
@@ -29,14 +29,17 @@ const debounceState: DebounceState = {
  * @param minInterval Minimum execution interval (ms) - default 100ms
  * @returns true allows execution, false blocks (debounced)
  */
-export function shouldExecuteKeyboardAction(key: string, minInterval: number = 100): boolean {
+export function shouldExecuteKeyboardAction(
+  key: string,
+  minInterval: number = 100,
+): boolean {
   const now = Date.now();
   const timeSinceLastExecution = now - debounceState.lastExecutionTime;
 
   // Block if same key and interval is below minimum
   if (key === debounceState.lastKey && timeSinceLastExecution < minInterval) {
     logger.debug(
-      `[Keyboard Debounce] Blocked ${key} (${timeSinceLastExecution}ms < ${minInterval}ms)`
+      `[Keyboard Debounce] Blocked ${key} (${timeSinceLastExecution}ms < ${minInterval}ms)`,
     );
     return false;
   }
@@ -51,7 +54,7 @@ export function shouldExecuteKeyboardAction(key: string, minInterval: number = 1
  * Recommended for ArrowUp/Down, M keys
  */
 export function shouldExecuteVideoControlKey(key: string): boolean {
-  const videoControlKeys = ['ArrowUp', 'ArrowDown', 'm', 'M'];
+  const videoControlKeys = ["ArrowUp", "ArrowDown", "m", "M"];
   if (!videoControlKeys.includes(key)) return true;
   return shouldExecuteKeyboardAction(key, 100);
 }
@@ -61,7 +64,7 @@ export function shouldExecuteVideoControlKey(key: string): boolean {
  * Recommended for Space key
  */
 export function shouldExecutePlayPauseKey(key: string): boolean {
-  if (key !== ' ' && key !== 'Space') return true;
+  if (key !== " " && key !== "Space") return true;
   return shouldExecuteKeyboardAction(key, 150);
 }
 
@@ -70,6 +73,6 @@ export function shouldExecutePlayPauseKey(key: string): boolean {
  */
 export function resetKeyboardDebounceState(): void {
   debounceState.lastExecutionTime = 0;
-  debounceState.lastKey = '';
-  logger.debug('[Keyboard Debounce] State reset');
+  debounceState.lastKey = "";
+  logger.debug("[Keyboard Debounce] State reset");
 }

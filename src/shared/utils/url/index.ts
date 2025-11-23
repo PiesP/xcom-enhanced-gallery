@@ -6,7 +6,7 @@
  */
 
 const ABSOLUTE_PROTOCOL_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
-const FALLBACK_BASE_URL = 'https://x.com';
+const FALLBACK_BASE_URL = "https://x.com";
 
 export interface HostMatchOptions {
   /**
@@ -25,13 +25,13 @@ export interface HostMatchOptions {
  */
 export function tryParseUrl(
   value: string | URL | null | undefined,
-  base: string = FALLBACK_BASE_URL
+  base: string = FALLBACK_BASE_URL,
 ): URL | null {
   if (value instanceof URL) {
     return value;
   }
 
-  if (typeof value !== 'string') {
+  if (typeof value !== "string") {
     return null;
   }
 
@@ -41,7 +41,7 @@ export function tryParseUrl(
   }
 
   try {
-    if (trimmed.startsWith('//')) {
+    if (trimmed.startsWith("//")) {
       return new URL(`https:${trimmed}`);
     }
 
@@ -58,7 +58,9 @@ export function tryParseUrl(
 /**
  * Convenience helper to extract the hostname from a URL-like value.
  */
-export function getHostname(value: string | URL | null | undefined): string | null {
+export function getHostname(
+  value: string | URL | null | undefined,
+): string | null {
   const parsed = tryParseUrl(value);
   return parsed?.hostname ?? null;
 }
@@ -69,7 +71,7 @@ export function getHostname(value: string | URL | null | undefined): string | nu
 export function isHostMatching(
   value: string | URL | null | undefined,
   allowedHosts: readonly string[],
-  options: HostMatchOptions = {}
+  options: HostMatchOptions = {},
 ): boolean {
   if (!Array.isArray(allowedHosts) || allowedHosts.length === 0) {
     return false;
@@ -83,7 +85,7 @@ export function isHostMatching(
   const hostname = parsed.hostname.toLowerCase();
   const allowSubdomains = options.allowSubdomains === true;
 
-  return allowedHosts.some(host => {
+  return allowedHosts.some((host) => {
     const normalized = host.toLowerCase();
     if (hostname === normalized) {
       return true;

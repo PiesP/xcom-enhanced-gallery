@@ -4,13 +4,13 @@ export {
   cachedQuerySelector,
   cachedQuerySelectorAll,
   cachedStableQuery,
-} from './dom-cache';
+} from "./dom-cache";
 
 export {
   SelectorRegistry,
   createSelectorRegistry,
   type ISelectorRegistry,
   type QueryContainer,
-} from './selector-registry';
+} from "./selector-registry";
 
-export { querySelector, querySelectorAll } from './utils/dom-utils';
+export { querySelector, querySelectorAll } from "./utils/dom-utils";

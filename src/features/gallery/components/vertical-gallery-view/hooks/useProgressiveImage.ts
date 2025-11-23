@@ -27,7 +27,7 @@
  * @version 2.0.0 - Lightweight implementation for test stability (Phase 354+)
  */
 
-import { getSolid } from '@shared/external/vendors';
+import { getSolid } from "@shared/external/vendors";
 
 /**
  * Configuration options for progressive image loading
@@ -126,7 +126,9 @@ export interface ProgressiveImageResult {
  *
  * return <img {...image.imageProps} alt="Gallery item" />;
  */
-export function useProgressiveImage(options: ProgressiveImageOptions): ProgressiveImageResult {
+export function useProgressiveImage(
+  options: ProgressiveImageOptions,
+): ProgressiveImageResult {
   const { createSignal, createMemo } = getSolid();
 
   // State signals
@@ -171,9 +173,9 @@ export function useProgressiveImage(options: ProgressiveImageOptions): Progressi
     get style(): Record<string, string | number> {
       return {
         opacity: isLoaded() ? 1 : 0.7,
-        transition: 'opacity 200ms ease-in-out',
-        transform: 'translateZ(0)',
-        willChange: 'opacity',
+        transition: "opacity 200ms ease-in-out",
+        transform: "translateZ(0)",
+        willChange: "opacity",
       } as const;
     },
   } as const;
@@ -189,6 +191,6 @@ export function useProgressiveImage(options: ProgressiveImageOptions): Progressi
     }),
     retry,
     reset,
-    imageProps: imageProps as unknown as ProgressiveImageResult['imageProps'],
+    imageProps: imageProps as unknown as ProgressiveImageResult["imageProps"],
   };
 }

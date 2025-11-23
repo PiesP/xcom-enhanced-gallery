@@ -1,1 +1,1 @@
-export * from './click-index';
+export * from "./click-index";

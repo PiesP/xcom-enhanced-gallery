@@ -3,7 +3,7 @@
  * @description Compute stable hash of AppSettings shape to detect schema drift.
  */
 
-import { DEFAULT_SETTINGS as defaultSettings } from '@/constants';
+import { DEFAULT_SETTINGS as defaultSettings } from "@/constants";
 
 /**
  * Simple hash function (JSON string based)
@@ -24,9 +24,9 @@ function computeHash(input: unknown): string {
  */
 export function computeSettingsSchemaHashFrom(obj: unknown): string {
   // Exclude __schemaHash from hash computation
-  const filtered = obj && typeof obj === 'object' ? obj : {};
+  const filtered = obj && typeof obj === "object" ? obj : {};
   const str = JSON.stringify(filtered, (key, value) =>
-    key === '__schemaHash' ? undefined : value
+    key === "__schemaHash" ? undefined : value,
   );
   return computeHash(str);
 }

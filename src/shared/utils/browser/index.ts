@@ -22,4 +22,4 @@ export {
   prefersReducedMotion,
   getBrowserInfo,
   isExtensionContext,
-} from './safe-browser';
+} from "./safe-browser";

@@ -14,7 +14,7 @@ type IdleDeadline = { didTimeout: boolean; timeRemaining: () => number };
 
 type RequestIdleCallback = (
   callback: (deadline: IdleDeadline) => void,
-  opts?: { timeout?: number }
+  opts?: { timeout?: number },
 ) => number;
 
 type CancelIdleCallback = (handle: number) => void;
@@ -24,19 +24,19 @@ function getIdleAPIs(): {
   cic: CancelIdleCallback | null;
 } {
   const g: unknown =
-    typeof globalThis !== 'undefined'
+    typeof globalThis !== "undefined"
       ? globalThis
-      : typeof window !== 'undefined'
+      : typeof window !== "undefined"
         ? window
         : undefined;
   const ric =
-    g && typeof g === 'object' && 'requestIdleCallback' in g
+    g && typeof g === "object" && "requestIdleCallback" in g
       ? ((g as { requestIdleCallback?: unknown }).requestIdleCallback as
           | RequestIdleCallback
           | undefined) || null
       : null;
   const cic =
-    g && typeof g === 'object' && 'cancelIdleCallback' in g
+    g && typeof g === "object" && "cancelIdleCallback" in g
       ? ((g as { cancelIdleCallback?: unknown }).cancelIdleCallback as
           | CancelIdleCallback
           | undefined) || null
@@ -47,9 +47,12 @@ function getIdleAPIs(): {
 /**
  * Schedule a task during idle time. Falls back to setTimeout(0) if requestIdleCallback is not supported.
  */
-import { globalTimerManager } from '@shared/utils/timer-management';
+import { globalTimerManager } from "@shared/utils/timer-management";
 
-export function scheduleIdle(task: () => void, opts: IdleScheduleOptions = {}): IdleHandle {
+export function scheduleIdle(
+  task: () => void,
+  opts: IdleScheduleOptions = {},
+): IdleHandle {
   const { ric, cic } = getIdleAPIs();
   const timeout = opts.timeoutMs ?? 200;
 
@@ -62,7 +65,7 @@ export function scheduleIdle(task: () => void, opts: IdleScheduleOptions = {}): 
           // noop — error handling at consumer level
         }
       },
-      { timeout }
+      { timeout },
     );
     return {
       cancel: () => {

@@ -4,8 +4,8 @@
  * @version 1.0.0
  */
 
-import { logger } from '@shared/logging';
-import type { MediaInfo } from '@shared/types/media.types';
+import { logger } from "@shared/logging";
+import type { MediaInfo } from "@shared/types/media.types";
 
 /**
  * Generic deduplication function
@@ -24,7 +24,10 @@ import type { MediaInfo } from '@shared/types/media.types';
  * // [{ id: 1, ... }, { id: 2, ... }]
  * ```
  */
-function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => string): T[] {
+function removeDuplicates<T>(
+  items: readonly T[],
+  keyExtractor: (item: T) => string,
+): T[] {
   if (!items?.length) {
     return [];
   }
@@ -39,7 +42,7 @@ function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => str
 
     const key = keyExtractor(item);
     if (!key) {
-      logger.warn('Skipping item without key');
+      logger.warn("Skipping item without key");
       continue;
     }
 
@@ -65,13 +68,18 @@ function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => str
  * ]);
  * ```
  */
-export function removeDuplicateMediaItems(mediaItems: readonly MediaInfo[]): MediaInfo[] {
-  const result = removeDuplicates(mediaItems, item => item.originalUrl ?? item.url);
+export function removeDuplicateMediaItems(
+  mediaItems: readonly MediaInfo[],
+): MediaInfo[] {
+  const result = removeDuplicates(
+    mediaItems,
+    (item) => item.originalUrl ?? item.url,
+  );
 
   // Log deduplication results for performance analysis
   const removedCount = mediaItems.length - result.length;
   if (removedCount > 0) {
-    logger.debug('Removed duplicate media items:', {
+    logger.debug("Removed duplicate media items:", {
       original: mediaItems.length,
       unique: result.length,
       removed: removedCount,

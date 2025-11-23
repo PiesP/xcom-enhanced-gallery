@@ -14,7 +14,7 @@
  * @version 1.0.0 - Service Manager Delegation Pattern (Factory Specialization)
  */
 
-import { logger } from '@shared/logging';
+import { logger } from "@shared/logging";
 
 /**
  * Specialized factory manager for service instantiation
@@ -99,7 +99,10 @@ export class ServiceFactoryManager {
       this.factoryCache.set(key, created);
       return created as T;
     } catch (error) {
-      logger.error(`[ServiceFactoryManager] Factory execution failed (${key}):`, error);
+      logger.error(
+        `[ServiceFactoryManager] Factory execution failed (${key}):`,
+        error,
+      );
       throw error;
     }
   }

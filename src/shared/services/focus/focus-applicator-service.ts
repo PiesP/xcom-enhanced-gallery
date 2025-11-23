@@ -1,9 +1,9 @@
 /**
  * Handles the DOM-side piece of gallery auto focus.
  */
-import type { ItemCache, FocusTimerManager } from '@shared/state/focus';
-import type { FocusTracking } from '@shared/state/focus';
-import { updateFocusTracking } from '@shared/state/focus';
+import type { ItemCache, FocusTimerManager } from "@shared/state/focus";
+import type { FocusTracking } from "@shared/state/focus";
+import { updateFocusTracking } from "@shared/state/focus";
 
 /**
  * Focus Applicator Service - Element focus application and timer management
@@ -76,7 +76,7 @@ class FocusApplicatorServiceImpl {
    * @see {@link FocusTimerManager} for timer interface
    */
   clearAutoFocusTimer(focusTimerManager: FocusTimerManager): void {
-    focusTimerManager.clearTimer('auto-focus');
+    focusTimerManager.clearTimer("auto-focus");
   }
 
   /**
@@ -145,7 +145,7 @@ class FocusApplicatorServiceImpl {
     index: number,
     itemCache: ItemCache,
     focusTracking: FocusTracking,
-    _reason: string
+    _reason: string,
   ): FocusTracking | null {
     // 중복 적용 방지
     if (focusTracking.lastAppliedIndex === index) {
@@ -277,7 +277,7 @@ class FocusApplicatorServiceImpl {
     shouldAutoFocus: boolean,
     autoFocusDelay: number,
     onApply: (index: number, reason: string) => void,
-    reason: string
+    reason: string,
   ): FocusTracking {
     // 기존 타이머 정리
     this.clearAutoFocusTimer(focusTimerManager);
@@ -315,7 +315,10 @@ class FocusApplicatorServiceImpl {
 
     // lastAppliedIndex 초기화 (인덱스 변경됨)
     let updatedTracking = focusTracking;
-    if (focusTracking.lastAppliedIndex !== null && focusTracking.lastAppliedIndex !== targetIndex) {
+    if (
+      focusTracking.lastAppliedIndex !== null &&
+      focusTracking.lastAppliedIndex !== targetIndex
+    ) {
       updatedTracking = updateFocusTracking(focusTracking, {
         lastAppliedIndex: null,
       });
@@ -324,11 +327,11 @@ class FocusApplicatorServiceImpl {
     // 타이머 설정
     const delay = Math.max(0, autoFocusDelay);
     focusTimerManager.setTimer(
-      'auto-focus',
+      "auto-focus",
       () => {
         onApply(targetIndex, reason);
       },
-      delay
+      delay,
     );
 
     return updatedTracking;

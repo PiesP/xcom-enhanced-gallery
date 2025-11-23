@@ -42,8 +42,8 @@
  * - Phase 405B-2: This documentation
  */
 
-import type { TweetMediaEntry } from '@shared/services/media/types';
-import type { MediaInfo } from '@shared/types/media.types';
+import type { TweetMediaEntry } from "@shared/services/media/types";
+import type { MediaInfo } from "@shared/types/media.types";
 
 /**
  * Media click index calculation strategy interface (Phase 351).
@@ -73,7 +73,7 @@ export interface MediaClickIndexStrategy {
   calculate(
     clickedElement: HTMLElement,
     apiMedias: TweetMediaEntry[],
-    mediaItems: MediaInfo[]
+    mediaItems: MediaInfo[],
   ): number | Promise<number>;
 
   /**
@@ -113,19 +113,19 @@ export interface MediaClickIndexStrategy {
  * - URL comparison dependent on consistency
  */
 export class DirectMediaMatchingStrategy implements MediaClickIndexStrategy {
-  readonly name = 'DirectMediaMatching';
+  readonly name = "DirectMediaMatching";
   readonly confidence = 99;
 
   constructor(
     private readonly findMediaElement: (el: HTMLElement) => HTMLElement | null,
     private readonly extractMediaUrl: (el: HTMLElement) => string,
-    private readonly normalizeMediaUrl: (url: string) => string | null
+    private readonly normalizeMediaUrl: (url: string) => string | null,
   ) {}
 
   calculate(
     clickedElement: HTMLElement,
     apiMedias: TweetMediaEntry[],
-    _mediaItems: MediaInfo[]
+    _mediaItems: MediaInfo[],
   ): number {
     // Step 1: Find media element
     const mediaElement = this.findMediaElement(clickedElement);
@@ -144,7 +144,10 @@ export class DirectMediaMatchingStrategy implements MediaClickIndexStrategy {
       const media = apiMedias[i];
       if (!media) continue;
 
-      if (media.download_url === clickedUrl || media.preview_url === clickedUrl) {
+      if (
+        media.download_url === clickedUrl ||
+        media.preview_url === clickedUrl
+      ) {
         return i;
       }
     }

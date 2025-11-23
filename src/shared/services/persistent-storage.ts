@@ -1,9 +1,15 @@
 /** PersistentStorage wraps the userscript storage API (getValue/setValue) with a typed singleton interface. */
 
-import { getUserscript } from '@shared/external/userscript';
-import { logger } from '@shared/logging';
+import { getUserscript } from "@shared/external/userscript";
+import { logger } from "@shared/logging";
 
-type StorageOperation = 'set' | 'get' | 'has' | 'getSync' | 'setSync' | 'remove';
+type StorageOperation =
+  | "set"
+  | "get"
+  | "has"
+  | "getSync"
+  | "setSync"
+  | "remove";
 
 const gmWarningRegistry = new Set<StorageOperation>();
 
@@ -11,16 +17,20 @@ function isGMUnavailableError(error: unknown): error is Error {
   return error instanceof Error && /GM_\w+ not available/i.test(error.message);
 }
 
-function handleMissingGMError(operation: StorageOperation, key: string, error: unknown): boolean {
+function handleMissingGMError(
+  operation: StorageOperation,
+  key: string,
+  error: unknown,
+): boolean {
   if (!isGMUnavailableError(error)) {
     return false;
   }
 
   if (!gmWarningRegistry.has(operation)) {
     gmWarningRegistry.add(operation);
-    const keySuffix = key ? ` (key: ${key})` : '';
+    const keySuffix = key ? ` (key: ${key})` : "";
     logger.warn(
-      `PersistentStorage.${operation}${keySuffix}: Userscript APIs unavailable. Mock GM_* APIs in tests or run inside Tampermonkey.`
+      `PersistentStorage.${operation}${keySuffix}: Userscript APIs unavailable. Mock GM_* APIs in tests or run inside Tampermonkey.`,
     );
   }
 
@@ -155,12 +165,15 @@ export class PersistentStorage {
    */
   async set<T>(key: string, value: T): Promise<void> {
     try {
-      const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+      const serialized =
+        typeof value === "string" ? value : JSON.stringify(value);
       await this.userscript.setValue(key, serialized);
-      logger.debug(`PersistentStorage.set: ${key} (${serialized.length} bytes)`);
+      logger.debug(
+        `PersistentStorage.set: ${key} (${serialized.length} bytes)`,
+      );
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Unknown error';
-      if (!handleMissingGMError('set', key, error)) {
+      const msg = error instanceof Error ? error.message : "Unknown error";
+      if (!handleMissingGMError("set", key, error)) {
         logger.error(`PersistentStorage.set failed for key "${key}":`, error);
       }
       throw new Error(`Failed to store "${key}": ${msg}`);
@@ -230,7 +243,7 @@ export class PersistentStorage {
         return value as unknown as T;
       }
     } catch (error) {
-      if (!handleMissingGMError('get', key, error)) {
+      if (!handleMissingGMError("get", key, error)) {
         logger.error(`PersistentStorage.get failed for key "${key}":`, error);
       }
       return defaultValue;
@@ -277,7 +290,7 @@ export class PersistentStorage {
       const value = await this.userscript.getValue<unknown>(key);
       return value !== undefined && value !== null;
     } catch (error) {
-      if (!handleMissingGMError('has', key, error)) {
+      if (!handleMissingGMError("has", key, error)) {
         logger.error(`PersistentStorage.has failed for key "${key}":`, error);
       }
       return false;
@@ -316,14 +329,19 @@ export class PersistentStorage {
     try {
       // GM_getValue can be sync or async - we handle both
       const gmGetValue = (
-        typeof GM_getValue !== 'undefined'
+        typeof GM_getValue !== "undefined"
           ? GM_getValue
-          : (globalThis as never as { GM_getValue?: <U>(k: string, d?: U) => U | Promise<U> })
-              .GM_getValue
+          : (
+              globalThis as never as {
+                GM_getValue?: <U>(k: string, d?: U) => U | Promise<U>;
+              }
+            ).GM_getValue
       ) as <U>(k: string, d?: U) => U | Promise<U>;
 
       if (!gmGetValue) {
-        logger.debug(`PersistentStorage.getSync: GM_getValue unavailable, returning default`);
+        logger.debug(
+          `PersistentStorage.getSync: GM_getValue unavailable, returning default`,
+        );
         return defaultValue;
       }
 
@@ -332,7 +350,7 @@ export class PersistentStorage {
       // If it's a Promise, we can't help - this is synchronous
       if (value instanceof Promise) {
         logger.warn(
-          `PersistentStorage.getSync: GM_getValue returned Promise for key "${key}", returning default`
+          `PersistentStorage.getSync: GM_getValue returned Promise for key "${key}", returning default`,
         );
         return defaultValue;
       }
@@ -348,8 +366,11 @@ export class PersistentStorage {
         return value as unknown as T;
       }
     } catch (error) {
-      if (!handleMissingGMError('getSync', key, error)) {
-        logger.error(`PersistentStorage.getSync failed for key "${key}":`, error);
+      if (!handleMissingGMError("getSync", key, error)) {
+        logger.error(
+          `PersistentStorage.getSync failed for key "${key}":`,
+          error,
+        );
       }
       return defaultValue;
     }
@@ -381,28 +402,36 @@ export class PersistentStorage {
   setSync<T>(key: string, value: T): void {
     try {
       const gmSetValue = (
-        globalThis as never as { GM_setValue?: (k: string, v: unknown) => void | Promise<void> }
+        globalThis as never as {
+          GM_setValue?: (k: string, v: unknown) => void | Promise<void>;
+        }
       ).GM_setValue;
       if (!gmSetValue) {
         logger.debug(`PersistentStorage.setSync: GM_setValue unavailable`);
         return;
       }
 
-      const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+      const serialized =
+        typeof value === "string" ? value : JSON.stringify(value);
       const result = gmSetValue(key, serialized);
 
       // If it's a Promise, we can't wait - this is synchronous
       if (result instanceof Promise) {
         logger.warn(
-          `PersistentStorage.setSync: GM_setValue returned Promise for key "${key}" (async operation initiated)`
+          `PersistentStorage.setSync: GM_setValue returned Promise for key "${key}" (async operation initiated)`,
         );
       }
 
-      logger.debug(`PersistentStorage.setSync: ${key} (${serialized.length} bytes)`);
+      logger.debug(
+        `PersistentStorage.setSync: ${key} (${serialized.length} bytes)`,
+      );
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Unknown error';
-      if (!handleMissingGMError('setSync', key, error)) {
-        logger.error(`PersistentStorage.setSync failed for key "${key}":`, error);
+      const msg = error instanceof Error ? error.message : "Unknown error";
+      if (!handleMissingGMError("setSync", key, error)) {
+        logger.error(
+          `PersistentStorage.setSync failed for key "${key}":`,
+          error,
+        );
       }
       throw new Error(`Failed to store "${key}": ${msg}`);
     }
@@ -460,9 +489,12 @@ export class PersistentStorage {
       await this.userscript.deleteValue(key);
       logger.debug(`PersistentStorage.remove: ${key}`);
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Unknown error';
-      if (!handleMissingGMError('remove', key, error)) {
-        logger.error(`PersistentStorage.remove failed for key "${key}":`, error);
+      const msg = error instanceof Error ? error.message : "Unknown error";
+      if (!handleMissingGMError("remove", key, error)) {
+        logger.error(
+          `PersistentStorage.remove failed for key "${key}":`,
+          error,
+        );
       }
       throw new Error(`Failed to remove "${key}": ${msg}`);
     }

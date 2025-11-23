@@ -17,4 +17,4 @@ export {
   ANIMATION_CLASSES,
   ANIMATION_CONSTANTS,
   type CSSAnimationOptions,
-} from './css-animations';
+} from "./css-animations";
