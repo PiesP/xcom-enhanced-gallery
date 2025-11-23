@@ -77,16 +77,6 @@ manager_
 | **Single**    | 📥 Download     | Save current image/video in original quality |
 | **Bulk**      | 📦 Download All | Download all media from tweet as ZIP file    |
 
-### Keyboard Shortcuts
-
-| Key          | Function            | Description                       |
-| ------------ | ------------------- | --------------------------------- |
-| `←` `→`      | Previous/Next Image | Navigate between media in gallery |
-| `Home` `End` | First/Last Image    | Jump to beginning/end of gallery  |
-| `Space`      | Play/Pause Video    | Toggle video playback state       |
-| `Escape`     | Close Gallery       | Close gallery and return to page  |
-| `F`          | Toggle Fullscreen   | Switch browser fullscreen mode    |
-
 ### Advanced Features
 
 - **Image Zoom**: Use mouse wheel to inspect image details
