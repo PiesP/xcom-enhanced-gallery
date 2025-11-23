@@ -10,12 +10,12 @@ import { syncThemeAttributes } from "@shared/utils/theme-dom";
 import { BaseServiceImpl } from "./base-service";
 import { getPersistentStorage } from "./persistent-storage";
 import type {
-    SettingsServiceLike,
-    Theme,
-    ThemeChangeListener,
-    ThemeServiceContract,
-    ThemeSetOptions,
-    ThemeSetting,
+  SettingsServiceLike,
+  Theme,
+  ThemeChangeListener,
+  ThemeServiceContract,
+  ThemeSetOptions,
+  ThemeSetting,
 } from "./theme-service.contract";
 
 export class ThemeService
@@ -229,10 +229,10 @@ export class ThemeService
 
 export const themeService = new ThemeService();
 export type {
-    SettingsServiceLike,
-    Theme,
-    ThemeChangeListener,
-    ThemeServiceContract,
-    ThemeSetOptions,
-    ThemeSetting
+  SettingsServiceLike,
+  Theme,
+  ThemeChangeListener,
+  ThemeServiceContract,
+  ThemeSetOptions,
+  ThemeSetting,
 } from "./theme-service.contract";
