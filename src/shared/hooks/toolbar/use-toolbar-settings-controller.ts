@@ -26,12 +26,11 @@
 import { logger } from "@shared/logging";
 import { getSolid } from "@shared/external/vendors";
 import type { ThemeServiceContract } from "@shared/services/theme-service";
-import { themeService } from "@shared/services/theme-service";
 import type { LanguageService } from "@shared/services/language-service";
-import { languageService as sharedLanguageService } from "@shared/services/language-service";
 import { globalTimerManager } from "@shared/utils/timer-management";
 import {
   getThemeService,
+  getLanguageService,
   tryGetSettingsManager,
 } from "@shared/container/service-accessors";
 
@@ -71,23 +70,6 @@ export interface ToolbarSettingsControllerResult {
   readonly handlePanelClick: (event: MouseEvent) => void;
   readonly handleThemeChange: (event: Event) => void;
   readonly handleLanguageChange: (event: Event) => void;
-}
-
-function resolveThemeService(
-  override?: ThemeServiceContract,
-): ThemeServiceContract {
-  if (override) {
-    return override;
-  }
-  try {
-    return getThemeService();
-  } catch (error) {
-    logger.warn(
-      "[ToolbarSettingsController] Falling back to shared ThemeService instance",
-      error,
-    );
-    return themeService;
-  }
 }
 
 export function useToolbarSettingsController(
@@ -156,12 +138,13 @@ export function useToolbarSettingsController(
     toggleSettingsExpanded,
     documentRef = typeof document !== "undefined" ? document : undefined,
     themeService: providedThemeService,
-    languageService = sharedLanguageService,
+    languageService: providedLanguageService,
     focusDelayMs = DEFAULT_FOCUS_DELAY_MS,
     selectChangeGuardMs = DEFAULT_SELECT_GUARD_MS,
   } = options;
 
-  const themeManager = resolveThemeService(providedThemeService);
+  const themeManager = providedThemeService ?? getThemeService();
+  const languageService = providedLanguageService ?? getLanguageService();
 
   const scheduleTimeout = (callback: () => void, delay: number): number => {
     return globalTimerManager.setTimeout(callback, delay);
@@ -194,11 +177,9 @@ export function useToolbarSettingsController(
   // Service may not be fully initialized during first render, so we ensure proper fallback
   const getInitialTheme = (): ThemeOption => {
     try {
-      const service = resolveThemeService(providedThemeService);
-
       // ThemeService.getCurrentTheme() returns themeSetting which is set in constructor
       // This should be available even before full initialization
-      const currentSetting = service.getCurrentTheme();
+      const currentSetting = themeManager.getCurrentTheme();
       return toThemeOption(currentSetting);
     } catch (error) {
       if (import.meta.env.DEV) {

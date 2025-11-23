@@ -1,5 +1,6 @@
 import type { FilenameService } from "@shared/services/file-naming";
 import type { ThemeServiceContract } from "@shared/services/theme-service.contract";
+import type { LanguageService } from "@shared/services/language-service";
 import type { GalleryRenderer } from "@shared/interfaces/gallery.interfaces";
 
 import { CoreServiceRegistry } from "@shared/container/core-service-registry";
@@ -35,6 +36,16 @@ export type CoreBaseServiceIdentifier =
  */
 export function getThemeService(): ThemeServiceContract {
   return CoreServiceRegistry.get<ThemeServiceContract>(SERVICE_KEYS.THEME);
+}
+
+/**
+ * Get language service for i18n.
+ *
+ * @returns LanguageService for language management
+ * @throws CoreService throws if language service not registered
+ */
+export function getLanguageService(): LanguageService {
+  return CoreServiceRegistry.get<LanguageService>(SERVICE_KEYS.LANGUAGE);
 }
 
 /**
