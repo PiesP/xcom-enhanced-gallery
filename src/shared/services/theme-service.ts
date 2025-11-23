@@ -225,5 +225,10 @@ export class ThemeService
 
 export const themeService = new ThemeService();
 export type {
-  SettingsServiceLike, Theme, ThemeChangeListener, ThemeServiceContract, ThemeSetOptions, ThemeSetting
+  SettingsServiceLike,
+  Theme,
+  ThemeChangeListener,
+  ThemeServiceContract,
+  ThemeSetOptions,
+  ThemeSetting,
 } from "./theme-service.contract";
