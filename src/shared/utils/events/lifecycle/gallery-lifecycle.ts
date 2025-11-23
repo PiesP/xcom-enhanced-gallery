@@ -5,12 +5,12 @@
 
 import { logger } from "@shared/logging";
 import type {
-    EventHandlers,
-    GalleryEventOptions,
+  EventHandlers,
+  GalleryEventOptions,
 } from "@shared/utils/events/core/event-context";
 import {
-    addListener,
-    removeEventListenersByContext,
+  addListener,
+  removeEventListenersByContext,
 } from "@shared/utils/events/core/listener-manager";
 import { handleKeyboardEvent } from "@shared/utils/events/handlers/keyboard-handler";
 import { handleMediaClick } from "@shared/utils/events/handlers/media-click-handler";

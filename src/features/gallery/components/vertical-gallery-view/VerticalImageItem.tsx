@@ -43,11 +43,7 @@ import type { ImageFitMode } from "@shared/types";
 import type { JSX } from "solid-js";
 
 import { withGallery } from "@shared/components/hoc";
-import {
-  createClassName,
-  createAriaProps,
-  createTestProps,
-} from "@shared/utils/component-utils"; // Phase 284: 개별 함수 직접 import
+import { createClassName } from "@shared/utils/component-utils"; // Phase 284: 개별 함수 직접 import
 import { getSolid } from "@shared/external/vendors";
 import { languageService } from "@shared/services/language-service";
 import { logger } from "@shared/logging";
@@ -360,15 +356,15 @@ function BaseVerticalImageItemCore(
     createClassName(styles.image, fitModeClass()),
   );
 
-  const ariaProps = createAriaProps({
+  const ariaProps = {
     "aria-label":
       ariaLabel || `미디어 ${index + 1}: ${cleanFilename(media.filename)}`,
     "aria-describedby": ariaDescribedBy,
-    role: role || "button",
+    role: (role || "button") as JSX.HTMLAttributes<HTMLDivElement>["role"],
     tabIndex: tabIndex ?? 0,
-  } as Record<string, string | number | boolean | undefined>);
+  };
 
-  const testProps = createTestProps(testId);
+  const testProps = testId ? { "data-testid": testId } : {};
 
   const assignContainerRef = (element: HTMLDivElement | null) => {
     setContainerRef(element);
