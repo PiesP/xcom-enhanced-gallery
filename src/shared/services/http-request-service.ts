@@ -1,12 +1,10 @@
 /**
  * HTTP Request Service - Phase 373
  *
- * Provides a type-safe, Promise-based HTTP client using GM_xmlhttpRequest (primary)
- * and native fetch API (fallback).
+ * Provides a type-safe, Promise-based HTTP client using GM_xmlhttpRequest.
  *
  * Features:
  * - GM_xmlhttpRequest as primary HTTP method (Cross-Origin support)
- * - Native fetch API as fallback
  * - Support for GET, POST, PUT, DELETE, PATCH methods
  * - Timeout handling and abort signal support
  * - Multiple response types: json, text, blob, arraybuffer
@@ -86,7 +84,6 @@ export class HttpError extends Error {
  *
  * Features:
  * - Phase 373: GM_xmlhttpRequest as primary HTTP method
- * - Native fetch as fallback
  * - Detects Tampermonkey, test, extension, and console environments
  * - Requires @connect directives for cross-origin requests
  */
@@ -103,7 +100,7 @@ export class HttpRequestService {
    * Perform HTTP request using GM_xmlhttpRequest
    * Phase 373: Re-introduced for cross-origin support
    */
-  private async gmRequest<T>(
+  private async request<T>(
     method: string,
     url: string,
     options?: HttpRequestOptions | BinaryRequestOptions,
@@ -217,22 +214,6 @@ export class HttpRequestService {
   }
 
   /**
-   * Perform a generic HTTP request using native fetch API
-   *
-   * Phase 318: Fetch-only implementation for Tampermonkey 5.4.0+ MV3
-   * - Uses native fetch API (GM_xmlHttpRequest removed in MV3)
-   * - Requires @connect directives for cross-origin requests
-   * - Supports timeout, abort signal, and multiple response types
-   */
-  private async request<T = unknown>(
-    method: string,
-    url: string,
-    options?: HttpRequestOptions,
-  ): Promise<HttpResponse<T>> {
-    return await this.gmRequest<T>(method, url, options);
-  }
-
-  /**
    * Perform a GET request
    */
   async get<T = unknown>(
@@ -289,7 +270,6 @@ export class HttpRequestService {
    * Send binary data (ArrayBuffer or UInt8Array) via POST request - Phase 320
    * Optimized for large binary payloads with proper Content-Type handling
    *
-   * MV3 Compatible: Uses native fetch with standard ArrayBuffer/UInt8Array APIs
    * Requires @connect directive for target domain
    *
    * @param url Target endpoint
@@ -322,7 +302,7 @@ export class HttpRequestService {
     options?: BinaryRequestOptions,
   ): Promise<HttpResponse<T>> {
     const contentType = options?.contentType ?? "application/octet-stream";
-    return await this.gmRequest<T>("POST", url, {
+    return await this.request<T>("POST", url, {
       ...options,
       data,
       contentType,
