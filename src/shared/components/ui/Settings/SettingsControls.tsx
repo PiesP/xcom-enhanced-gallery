@@ -24,8 +24,7 @@ export interface SettingsControlsProps {
   "data-testid"?: string;
 }
 export function SettingsControls(props: SettingsControlsProps): JSXElement {
-  const { createEffect, createMemo, createSignal, onCleanup, onMount } =
-    getSolid();
+  const { createMemo, createSignal, onCleanup, onMount } = getSolid();
 
   const [revision, setRevision] = createSignal(0);
 
@@ -70,39 +69,10 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
     ? `${styles.label} ${styles.compactLabel}`
     : styles.label;
 
-  const withCurrentFirst = <T extends string>(
-    options: readonly T[],
-    current: T,
-  ): T[] => [current, ...options.filter((option) => option !== current)];
-
   const themeValue = createMemo(() => resolveAccessorValue(props.currentTheme));
   const languageValue = createMemo(() =>
     resolveAccessorValue(props.currentLanguage),
   );
-
-  const themeOptions = createMemo(() =>
-    withCurrentFirst(THEME_OPTIONS, themeValue()),
-  );
-  const languageOptions = createMemo(() =>
-    withCurrentFirst(LANGUAGE_OPTIONS, languageValue()),
-  );
-
-  let themeSelectRef: HTMLSelectElement | undefined;
-  let languageSelectRef: HTMLSelectElement | undefined;
-
-  createEffect(() => {
-    const value = themeValue();
-    if (themeSelectRef && themeSelectRef.value !== value) {
-      themeSelectRef.value = value;
-    }
-  });
-
-  createEffect(() => {
-    const value = languageValue();
-    if (languageSelectRef && languageSelectRef.value !== value) {
-      languageSelectRef.value = value;
-    }
-  });
 
   const themeSelectId = props["data-testid"]
     ? `${props["data-testid"]}-theme-select`
@@ -125,16 +95,13 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           class={selectClass}
           onChange={props.onThemeChange}
           value={themeValue()}
-          ref={(element) => {
-            themeSelectRef = element;
-          }}
           aria-label={themeStrings().title}
           title={themeStrings().title}
           data-testid={
             props["data-testid"] ? `${props["data-testid"]}-theme` : undefined
           }
         >
-          {themeOptions().map((option) => (
+          {THEME_OPTIONS.map((option) => (
             <option value={option}>{themeStrings().labels[option]}</option>
           ))}
         </select>
@@ -149,9 +116,6 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           class={selectClass}
           onChange={props.onLanguageChange}
           value={languageValue()}
-          ref={(element) => {
-            languageSelectRef = element;
-          }}
           aria-label={languageStrings().title}
           title={languageStrings().title}
           data-testid={
@@ -160,7 +124,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
               : undefined
           }
         >
-          {languageOptions().map((option) => (
+          {LANGUAGE_OPTIONS.map((option) => (
             <option value={option}>{languageStrings().labels[option]}</option>
           ))}
         </select>

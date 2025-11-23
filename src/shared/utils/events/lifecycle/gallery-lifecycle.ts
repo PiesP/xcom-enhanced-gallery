@@ -4,17 +4,17 @@
  */
 
 import { logger } from "@shared/logging";
-import { resetKeyboardDebounceState } from "@shared/utils/keyboard-debounce";
+import type {
+    EventHandlers,
+    GalleryEventOptions,
+} from "@shared/utils/events/core/event-context";
+import {
+    addListener,
+    removeEventListenersByContext,
+} from "@shared/utils/events/core/listener-manager";
 import { handleKeyboardEvent } from "@shared/utils/events/handlers/keyboard-handler";
 import { handleMediaClick } from "@shared/utils/events/handlers/media-click-handler";
-import {
-  addListener,
-  removeEventListenersByContext,
-} from "@shared/utils/events/core/listener-manager";
-import type {
-  EventHandlers,
-  GalleryEventOptions,
-} from "@shared/utils/events/core/event-context";
+import { resetKeyboardDebounceState } from "@shared/utils/keyboard-debounce";
 
 interface LifecycleState {
   initialized: boolean;
@@ -128,8 +128,27 @@ export async function initializeGalleryEvents(
     passive: false,
   };
 
-  addListener(target, "keydown", keyHandler, listenerOptions, listenerContext);
-  addListener(target, "click", clickHandler, listenerOptions, listenerContext);
+  if (finalOptions.enableKeyboard) {
+    addListener(
+      target,
+      "keydown",
+      keyHandler,
+      listenerOptions,
+      listenerContext,
+    );
+  }
+
+  if (finalOptions.enableMediaDetection) {
+    addListener(
+      target,
+      "click",
+      clickHandler,
+      listenerOptions,
+      listenerContext,
+    );
+  }
+
+  resetKeyboardDebounceState();
 
   lifecycleState = {
     initialized: true,

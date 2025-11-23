@@ -7,6 +7,7 @@ import { CSS } from "@/constants";
 import { logger } from "@shared/logging";
 import { gallerySignals } from "@shared/state/signals/gallery.signals";
 import { isVideoControlElement } from "@shared/utils/dom";
+import { isValidMediaUrl } from "@shared/utils/media-url/validation/url-validator";
 
 /**
  * Media detection result
@@ -195,13 +196,14 @@ function createResult(
 function isTwitterMediaElement(element: HTMLElement): boolean {
   if (element.tagName === "IMG") {
     const src = (element as HTMLImageElement).src;
-    return src.includes("pbs.twimg.com") || src.includes("/media/");
+    return isValidMediaUrl(src);
   }
   if (element.tagName === "VIDEO") {
     const src =
       (element as HTMLVideoElement).src ||
       (element as HTMLVideoElement).currentSrc;
-    return src.includes("video.twimg.com") || src.includes("blob:");
+    if (src.startsWith("blob:")) return true;
+    return isValidMediaUrl(src);
   }
   return false;
 }
