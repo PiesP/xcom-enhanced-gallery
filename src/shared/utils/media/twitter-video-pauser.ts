@@ -26,22 +26,11 @@ export interface PauseAmbientVideosResult {
 }
 
 function resolveRoot(root?: QueryableRoot | null): QueryableRoot | null {
-  if (root && typeof root.querySelectorAll === "function") {
-    return root;
-  }
-
-  try {
-    if (
-      typeof document !== "undefined" &&
-      document &&
-      typeof document.querySelectorAll === "function"
-    ) {
-      return document;
-    }
-  } catch {
-    // Ignore
-  }
-  return null;
+  if (root && typeof root.querySelectorAll === "function") return root;
+  return typeof document !== "undefined" &&
+    typeof document.querySelectorAll === "function"
+    ? document
+    : null;
 }
 
 function isVideoPlaying(video: HTMLVideoElement): boolean {

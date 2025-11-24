@@ -81,19 +81,7 @@ function resolveInitializationInput(
 }
 
 function resolveEventTarget(explicitRoot: HTMLElement | null): EventTarget {
-  if (explicitRoot) {
-    return explicitRoot;
-  }
-
-  if (document.body) {
-    return document.body;
-  }
-
-  if (document.documentElement) {
-    return document.documentElement;
-  }
-
-  return document;
+  return explicitRoot || document.body || document.documentElement || document;
 }
 
 export async function initializeGalleryEvents(
