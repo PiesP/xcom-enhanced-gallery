@@ -5,8 +5,8 @@
  * Phase 343: Standardized error handling
  */
 
-import { logger } from "@shared/logging";
 import { reportBootstrapError } from "@/bootstrap/types";
+import { logger } from "@shared/logging";
 
 let devToolsRegistered = false;
 
@@ -46,10 +46,10 @@ export async function initializeDevTools(): Promise<void> {
   try {
     // Service diagnostic tools
     // Phase 350: Import ServiceDiagnostics directly (prevent circular reference)
-    const { registerDiagnosticsGlobal } = await import(
-      "@shared/services/diagnostics"
-    );
-    registerDiagnosticsGlobal();
+    // const { registerDiagnosticsGlobal } = await import(
+    //   "@shared/services/diagnostics"
+    // );
+    // registerDiagnosticsGlobal();
     devToolsRegistered = true;
 
     logger.info(

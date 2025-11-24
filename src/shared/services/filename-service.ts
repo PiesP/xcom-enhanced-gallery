@@ -194,6 +194,7 @@ export class FilenameService {
 }
 
 const shared = new FilenameService();
+export const filenameService = shared;
 
 export function generateMediaFilename(
   media: MediaInfo,

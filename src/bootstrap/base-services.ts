@@ -9,12 +9,14 @@ import { reportBootstrapError } from "@/bootstrap/types";
 import {
   CORE_BASE_SERVICE_IDENTIFIERS,
   LANGUAGE_SERVICE_IDENTIFIER,
+  MEDIA_SERVICE_IDENTIFIER,
   THEME_SERVICE_IDENTIFIER,
   type CoreBaseServiceIdentifier,
 } from "@shared/container/service-accessors";
 import { logger } from "@shared/logging";
 import { CoreService } from "@shared/services/core-service-manager";
 import { languageService } from "@shared/services/language-service";
+import { mediaService } from "@shared/services/media-service";
 import { themeService } from "@shared/services/theme-service";
 import type { BaseService } from "@shared/types/core/base-service.types";
 
@@ -26,6 +28,7 @@ type BaseServiceRegistration = readonly [
 const BASE_SERVICE_REGISTRATIONS: ReadonlyArray<BaseServiceRegistration> = [
   [THEME_SERVICE_IDENTIFIER, themeService],
   [LANGUAGE_SERVICE_IDENTIFIER, languageService],
+  [MEDIA_SERVICE_IDENTIFIER, mediaService],
 ];
 
 function registerMissingBaseServices(coreService: CoreService): number {

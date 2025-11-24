@@ -16,9 +16,12 @@ import { CoreServiceRegistry } from "@shared/container/core-service-registry";
 
 export const THEME_SERVICE_IDENTIFIER = SERVICE_KEYS.THEME;
 export const LANGUAGE_SERVICE_IDENTIFIER = SERVICE_KEYS.LANGUAGE;
+export const MEDIA_SERVICE_IDENTIFIER = SERVICE_KEYS.MEDIA_SERVICE;
+
 export const CORE_BASE_SERVICE_IDENTIFIERS = [
   THEME_SERVICE_IDENTIFIER,
   LANGUAGE_SERVICE_IDENTIFIER,
+  MEDIA_SERVICE_IDENTIFIER,
 ] as const;
 export type CoreBaseServiceIdentifier =
   (typeof CORE_BASE_SERVICE_IDENTIFIERS)[number];
