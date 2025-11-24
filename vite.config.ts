@@ -1,14 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import type {
-  NormalizedOutputOptions,
-  OutputAsset,
-  OutputBundle,
-  OutputChunk,
+    NormalizedOutputOptions,
+    OutputAsset,
+    OutputBundle,
+    OutputChunk,
 } from "rollup";
 import { visualizer } from "rollup-plugin-visualizer";
 import type { Plugin, PluginOption, UserConfig } from "vite";
 import { defineConfig, mergeConfig } from "vite";
+import monkey from "vite-plugin-monkey";
 import solidPlugin from "vite-plugin-solid";
 import tsconfigPaths from "vite-tsconfig-paths";
 
@@ -138,7 +139,7 @@ const userscriptPlugin = (isDev: boolean, isProd: boolean): Plugin => ({
   },
 });
 
-export default defineConfig(async ({ mode }) => {
+export default defineConfig(async ({ mode, command }) => {
   const isDev = mode === "development";
   const isProd = !isDev;
   const analyze = isProd && process.env.XEG_ENABLE_BUNDLE_ANALYSIS === "true";
@@ -147,7 +148,24 @@ export default defineConfig(async ({ mode }) => {
     plugins: [
       solidPlugin({ dev: isDev, ssr: false }),
       tsconfigPaths(),
-      userscriptPlugin(isDev, isProd),
+      command === "serve"
+        ? monkey({
+            entry: "src/main.ts",
+            userscript: {
+              name: "X.com Enhanced Gallery" + (isDev ? " (Dev)" : ""),
+              namespace: "https://github.com/piesp/xcom-enhanced-gallery",
+              match: ["https://*.x.com/*"],
+              grant: [
+                "GM_setValue",
+                "GM_getValue",
+                "GM_download",
+                "GM_notification",
+                "GM_xmlhttpRequest",
+              ],
+              connect: ["pbs.twimg.com", "video.twimg.com", "api.twitter.com"],
+            },
+          })
+        : userscriptPlugin(isDev, isProd),
       analyze &&
         visualizer({
           filename: "docs/bundle-analysis.html",

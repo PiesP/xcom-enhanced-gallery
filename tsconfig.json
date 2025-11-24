@@ -8,7 +8,8 @@
     "scripts/**/*.ts",
     "scripts/**/*.d.ts",
     "vite.config.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "playwright-ct.config.ts"
   ],
   "exclude": ["node_modules", "dist", "build", "coverage", "test/archive"]
 }
