@@ -283,15 +283,6 @@ async function cleanup(): Promise<void> {
       cleanupVendors();
     });
 
-    await runOptionalCleanup(
-      "DOMCache cleanup",
-      async () => {
-        const { globalDOMCache } = await import("@shared/dom/dom-cache");
-        globalDOMCache?.dispose();
-      },
-      debugCleanupLog,
-    );
-
     await runOptionalCleanup("Global timer cleanup", () => {
       globalTimerManager.cleanup();
     });
