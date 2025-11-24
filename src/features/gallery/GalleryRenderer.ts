@@ -11,6 +11,7 @@
 import { GalleryContainer } from "@shared/components/isolation";
 import { ErrorBoundary } from "@shared/components/ui/ErrorBoundary/ErrorBoundary";
 import {
+  getLanguageService,
   getMediaService,
   getThemeService,
 } from "@shared/container/service-accessors";
@@ -19,7 +20,6 @@ import { getSolid } from "@shared/external/vendors";
 import type { GalleryRenderer as GalleryRendererInterface } from "@shared/interfaces";
 import { logger } from "@shared/logging";
 import { DownloadOrchestrator } from "@shared/services/download/download-orchestrator";
-import { languageService } from "@shared/services/language-service";
 import { NotificationService } from "@shared/services/notification-service";
 import {
   acquireDownloadLock,
@@ -138,6 +138,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
     const { render, createComponent, createSignal, onCleanup } = getSolid();
     const themeService = getThemeService();
+    const languageService = getLanguageService();
 
     const handleDownload = (type: "current" | "all") =>
       this.handleDownload(type);

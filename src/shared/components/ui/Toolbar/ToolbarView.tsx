@@ -14,13 +14,13 @@ import type {
   MaybeAccessor,
   ToolbarProps,
 } from "@shared/components/ui/Toolbar/Toolbar.types";
+import { getLanguageService } from "@shared/container/service-accessors";
 import type { JSXElement } from "@shared/external/vendors";
 import { getSolid } from "@shared/external/vendors";
 import type {
   ToolbarSettingsControllerResult,
   ToolbarState,
 } from "@shared/hooks";
-import { languageService } from "@shared/services/language-service";
 import { createClassName } from "@shared/utils/component-utils";
 import { safeEventPreventAll } from "@shared/utils/events/utils";
 import styles from "./Toolbar.module.css";
@@ -382,13 +382,14 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               class={toolbarButtonClass()}
               size="toolbar"
               aria-label={
-                languageService.translate("toolbar.tweetText") ||
+                getLanguageService().translate("toolbar.tweetText") ||
                 "View tweet text"
               }
               aria-expanded={props.isTweetPanelExpanded() ? "true" : "false"}
               aria-controls="toolbar-tweet-panel"
               title={
-                languageService.translate("toolbar.tweetText") || "Tweet text"
+                getLanguageService().translate("toolbar.tweetText") ||
+                "Tweet text"
               }
               disabled={isToolbarDisabled()}
               onClick={props.toggleTweetPanelExpanded}
@@ -449,7 +450,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         data-expanded={props.isTweetPanelExpanded()}
         role="region"
         aria-label={
-          languageService.translate("toolbar.tweetTextPanel") ||
+          getLanguageService().translate("toolbar.tweetTextPanel") ||
           "Tweet text panel"
         }
         aria-labelledby="tweet-text-button"

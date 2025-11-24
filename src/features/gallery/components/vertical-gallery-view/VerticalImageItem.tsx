@@ -43,9 +43,9 @@ import type { ComponentType } from "@shared/types/app.types";
 import type { JSX } from "solid-js";
 
 import { withGallery } from "@shared/components/hoc";
+import { getLanguageService } from "@shared/container/service-accessors";
 import { getSolid } from "@shared/external/vendors";
 import { logger } from "@shared/logging";
-import { languageService } from "@shared/services/language-service";
 import { createClassName } from "@shared/utils/component-utils"; // Phase 284: 개별 함수 직접 import
 import { cleanFilename, isVideoMedia } from "./VerticalImageItem.helpers";
 import styles from "./VerticalImageItem.module.css";
@@ -449,7 +449,7 @@ function BaseVerticalImageItemCore(
               src={media.url}
               alt={
                 cleanFilename(media.filename) ||
-                languageService.translate(
+                getLanguageService().translate(
                   "messages.gallery.failedToLoadImage",
                   {
                     type: "image",
@@ -474,7 +474,7 @@ function BaseVerticalImageItemCore(
             <div class={styles.error}>
               <span class={styles.errorIcon}>⚠️</span>
               <span class={styles.errorText}>
-                {languageService.translate(
+                {getLanguageService().translate(
                   "messages.gallery.failedToLoadImage",
                   {
                     type: isVideo ? "video" : "image",

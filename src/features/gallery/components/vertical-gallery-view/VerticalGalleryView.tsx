@@ -40,11 +40,11 @@ import { useGalleryFocusTracker } from "@features/gallery/hooks/useGalleryFocusT
 import { useGalleryItemScroll } from "@features/gallery/hooks/useGalleryItemScroll";
 import { useGalleryScroll } from "@features/gallery/hooks/useGalleryScroll";
 import { Toolbar } from "@shared/components/ui/Toolbar/Toolbar";
+import { getLanguageService } from "@shared/container/service-accessors";
 import { getSetting, setSetting } from "@shared/container/settings-access";
 import { ensureGalleryScrollAvailable } from "@shared/dom/utils";
 import { getSolid } from "@shared/external/vendors";
 import { logger } from "@shared/logging";
-import { languageService } from "@shared/services/language-service";
 import type { DownloadState } from "@shared/state/signals/download.signals";
 import { downloadState } from "@shared/state/signals/download.signals";
 import type { GalleryState } from "@shared/state/signals/gallery.signals";
@@ -550,6 +550,7 @@ function VerticalGalleryViewCore({
   };
 
   if (!isVisible() || mediaItems().length === 0) {
+    const languageService = getLanguageService();
     const emptyTitle = languageService.translate("messages.gallery.emptyTitle");
     const emptyDesc = languageService.translate(
       "messages.gallery.emptyDescription",

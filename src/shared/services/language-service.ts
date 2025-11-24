@@ -4,9 +4,6 @@
  * @version 2.2.0 - Phase 355: Simplified with direct PersistentStorage usage
  */
 
-import { logger } from "@shared/logging";
-import { getPersistentStorage } from "./persistent-storage";
-import { BaseServiceImpl } from "./base-service";
 import {
   isBaseLanguageCode,
   type BaseLanguageCode,
@@ -17,16 +14,19 @@ import {
   TRANSLATION_REGISTRY,
 } from "@shared/constants/i18n/translation-registry";
 import {
-  Translator,
   TranslationCatalog,
+  Translator,
   type TranslationKey,
   type TranslationParams,
 } from "@shared/i18n";
+import { logger } from "@shared/logging";
+import { BaseServiceImpl } from "./base-service";
+import { getPersistentStorage } from "./persistent-storage";
 
 export type {
-  SupportedLanguage,
-  LanguageStrings,
   BaseLanguageCode,
+  LanguageStrings,
+  SupportedLanguage,
 } from "@shared/constants/i18n/language-types";
 export type { TranslationKey, TranslationParams } from "@shared/i18n";
 
@@ -52,6 +52,15 @@ export class LanguageService extends BaseServiceImpl {
   private readonly listeners: Set<(language: SupportedLanguage) => void> =
     new Set();
   private readonly storage = getPersistentStorage();
+
+  private static instance: LanguageService;
+
+  public static getInstance(): LanguageService {
+    if (!LanguageService.instance) {
+      LanguageService.instance = new LanguageService();
+    }
+    return LanguageService.instance;
+  }
 
   constructor() {
     super("LanguageService");
@@ -176,6 +185,3 @@ export class LanguageService extends BaseServiceImpl {
       : this.currentLanguage;
   }
 }
-
-// Global singleton (for simplified consumption)
-export const languageService = new LanguageService();

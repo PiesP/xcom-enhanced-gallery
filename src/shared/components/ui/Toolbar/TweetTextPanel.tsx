@@ -1,6 +1,6 @@
+import { getLanguageService } from "@shared/container/service-accessors";
 import type { JSXElement } from "@shared/external/vendors";
 import { getSolid } from "@shared/external/vendors";
-import { languageService } from "@shared/services/language-service";
 import { formatTweetText, shortenUrl } from "@shared/utils/text/formatting";
 import { sanitizeHTML } from "@shared/utils/text/html-sanitizer";
 import styles from "./Toolbar.module.css";
@@ -40,9 +40,9 @@ function renderTweetAnchor(
 export default function TweetTextPanel(props: TweetTextPanelProps) {
   return (
     <div class={styles.tweetPanelBody}>
-      <div class={styles.tweetHeader}>
-        <span class={styles.tweetLabel}>
-          {languageService.translate("toolbar.tweetText") || "Tweet text"}
+      <div class={styles.tweetTextHeader}>
+        <span class={styles.tweetTextLabel}>
+          {getLanguageService().translate("toolbar.tweetText") || "Tweet text"}
         </span>
       </div>
       <div

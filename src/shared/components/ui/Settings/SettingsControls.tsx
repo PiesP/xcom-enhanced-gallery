@@ -1,5 +1,5 @@
+import { getLanguageService } from "@shared/container/service-accessors";
 import { getSolid, type JSXElement } from "@shared/external/vendors";
-import { languageService } from "@shared/services";
 import { createClassName } from "@shared/utils/component-utils";
 import styles from "./SettingsControls.module.css";
 
@@ -25,6 +25,7 @@ export interface SettingsControlsProps {
 }
 export function SettingsControls(props: SettingsControlsProps): JSXElement {
   const { createMemo, createSignal, onCleanup, onMount } = getSolid();
+  const languageService = getLanguageService();
 
   const [revision, setRevision] = createSignal(0);
 

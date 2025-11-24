@@ -15,9 +15,9 @@ import {
 } from "@shared/container/service-accessors";
 import { logger } from "@shared/logging";
 import { CoreService } from "@shared/services/core-service-manager";
-import { languageService } from "@shared/services/language-service";
-import { mediaService } from "@shared/services/media-service";
-import { themeService } from "@shared/services/theme-service";
+import { LanguageService } from "@shared/services/language-service";
+import { MediaService } from "@shared/services/media-service";
+import { ThemeService } from "@shared/services/theme-service";
 import type { BaseService } from "@shared/types/core/base-service.types";
 
 type BaseServiceRegistration = readonly [
@@ -26,9 +26,9 @@ type BaseServiceRegistration = readonly [
 ];
 
 const BASE_SERVICE_REGISTRATIONS: ReadonlyArray<BaseServiceRegistration> = [
-  [THEME_SERVICE_IDENTIFIER, themeService],
-  [LANGUAGE_SERVICE_IDENTIFIER, languageService],
-  [MEDIA_SERVICE_IDENTIFIER, mediaService],
+  [THEME_SERVICE_IDENTIFIER, ThemeService.getInstance()],
+  [LANGUAGE_SERVICE_IDENTIFIER, LanguageService.getInstance()],
+  [MEDIA_SERVICE_IDENTIFIER, MediaService.getInstance()],
 ];
 
 function registerMissingBaseServices(coreService: CoreService): number {

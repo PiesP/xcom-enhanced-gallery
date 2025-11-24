@@ -22,6 +22,15 @@ export interface ZipFilenameOptions {
 }
 
 export class FilenameService {
+  private static instance: FilenameService;
+
+  public static getInstance(): FilenameService {
+    if (!FilenameService.instance) {
+      FilenameService.instance = new FilenameService();
+    }
+    return FilenameService.instance;
+  }
+
   generateMediaFilename(
     media: MediaInfo,
     options: FilenameOptions = {},
@@ -193,8 +202,7 @@ export class FilenameService {
   }
 }
 
-const shared = new FilenameService();
-export const filenameService = shared;
+const shared = FilenameService.getInstance();
 
 export function generateMediaFilename(
   media: MediaInfo,

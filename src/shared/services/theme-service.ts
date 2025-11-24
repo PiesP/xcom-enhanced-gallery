@@ -31,6 +31,15 @@ export class ThemeService
   private settingsUnsubscribe: (() => void) | null = null;
   private observer: MutationObserver | null = null;
 
+  private static instance: ThemeService;
+
+  public static getInstance(): ThemeService {
+    if (!ThemeService.instance) {
+      ThemeService.instance = new ThemeService();
+    }
+    return ThemeService.instance;
+  }
+
   constructor() {
     super("ThemeService");
     if (typeof window !== "undefined") {
@@ -234,7 +243,6 @@ export class ThemeService
   }
 }
 
-export const themeService = new ThemeService();
 export type {
   SettingsServiceLike,
   Theme,

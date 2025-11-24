@@ -258,5 +258,3 @@ export class MediaService extends BaseServiceImpl {
     this.onDestroy();
   }
 }
-
-export const mediaService = MediaService.getInstance();

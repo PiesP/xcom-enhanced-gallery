@@ -3,9 +3,9 @@ import { DownloadOrchestrator } from "./download/download-orchestrator";
 export { BaseServiceImpl } from "./base-service";
 
 export { EventManager } from "./event-manager";
-export { LanguageService, languageService } from "./language-service";
+export { LanguageService } from "./language-service";
 export { MediaService } from "./media-service";
-export { ThemeService, themeService } from "./theme-service";
+export { ThemeService } from "./theme-service";
 
 export { CookieService, getCookieService } from "./cookie-service";
 export {
@@ -16,7 +16,6 @@ export { getPersistentStorage, PersistentStorage } from "./persistent-storage";
 export { getStyleRegistry, StyleRegistry } from "./style-registry";
 export { DownloadOrchestrator as DownloadService };
 
-export const downloadService = DownloadOrchestrator.getInstance();
 export { ensureDownloadServiceRegistered } from "./lazy-service-registration";
 
 export {
