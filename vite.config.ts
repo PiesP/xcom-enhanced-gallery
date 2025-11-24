@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import type {
-    NormalizedOutputOptions,
-    OutputAsset,
-    OutputBundle,
-    OutputChunk,
+  NormalizedOutputOptions,
+  OutputAsset,
+  OutputBundle,
+  OutputChunk,
 } from "rollup";
 import { visualizer } from "rollup-plugin-visualizer";
 import type { Plugin, PluginOption, UserConfig } from "vite";

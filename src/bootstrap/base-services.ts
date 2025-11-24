@@ -7,11 +7,11 @@
 
 import { reportBootstrapError } from "@/bootstrap/types";
 import {
-  CORE_BASE_SERVICE_IDENTIFIERS,
-  LANGUAGE_SERVICE_IDENTIFIER,
-  MEDIA_SERVICE_IDENTIFIER,
-  THEME_SERVICE_IDENTIFIER,
-  type CoreBaseServiceIdentifier,
+    CORE_BASE_SERVICE_IDENTIFIERS,
+    LANGUAGE_SERVICE_IDENTIFIER,
+    MEDIA_SERVICE_IDENTIFIER,
+    THEME_SERVICE_IDENTIFIER,
+    type CoreBaseServiceIdentifier,
 } from "@shared/container/service-accessors";
 import { logger } from "@shared/logging";
 import { CoreService } from "@shared/services/core-service-manager";
@@ -35,8 +35,8 @@ function registerMissingBaseServices(coreService: CoreService): number {
   let registeredCount = 0;
 
   for (const [key, service] of BASE_SERVICE_REGISTRATIONS) {
-    if (!coreService.tryGetBaseService(key)) {
-      coreService.registerBaseService(key, service);
+    if (!coreService.has(key)) {
+      coreService.register(key, service);
       registeredCount += 1;
     }
   }
@@ -68,9 +68,14 @@ export async function initializeCoreBaseServices(): Promise<void> {
       );
     }
 
-    await coreService.initializeAllBaseServices([
-      ...CORE_BASE_SERVICE_IDENTIFIERS,
-    ]);
+    // Initialize services manually
+    for (const identifier of CORE_BASE_SERVICE_IDENTIFIERS) {
+      const service = coreService.get<BaseService>(identifier);
+      if (service && typeof service.initialize === "function") {
+        await service.initialize();
+      }
+    }
+
     if (import.meta.env.DEV) {
       logger.debug("[base-services] Base services ready");
     }

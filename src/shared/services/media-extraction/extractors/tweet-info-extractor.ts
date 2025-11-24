@@ -72,25 +72,6 @@ const extractFromDOM: ExtractionStrategy = (element) => {
   };
 };
 
-/** Strategy 3: URL Fallback (Last Resort) */
-const extractFromURL: ExtractionStrategy = () => {
-  const url = window.location.href;
-  const match = url.match(/\/status\/(\d+)/);
-
-  if (match && match[1]) {
-    const tweetId = match[1];
-    const username = extractUsernameFromUrl(url) ?? "unknown";
-    return {
-      tweetId,
-      username,
-      tweetUrl: url,
-      extractionMethod: "url-fallback",
-      confidence: 0.6,
-    };
-  }
-  return null;
-};
-
 // ============================================================================
 // Helpers
 // ============================================================================
@@ -118,7 +99,6 @@ export class TweetInfoExtractor {
   private readonly strategies: ExtractionStrategy[] = [
     extractFromElement,
     extractFromDOM,
-    extractFromURL,
   ];
 
   async extract(element: HTMLElement): Promise<TweetInfo | null> {
@@ -145,15 +125,5 @@ export class TweetInfoExtractor {
     return (
       !!info.tweetId && /^\d+$/.test(info.tweetId) && info.tweetId !== "unknown"
     );
-  }
-
-  // Compatibility methods for tests/legacy
-  async extractWithAllStrategies(element: HTMLElement): Promise<TweetInfo[]> {
-    const results: TweetInfo[] = [];
-    for (const strategy of this.strategies) {
-      const result = strategy(element);
-      if (result && this.isValid(result)) results.push(result);
-    }
-    return results;
   }
 }
