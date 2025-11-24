@@ -37,9 +37,24 @@ export async function downloadSingleFile(
   }
 
   const filename = generateMediaFilename(media);
-  const url = media.url;
+
+  // Use blob URL if available, otherwise media URL
+  let url = media.url;
+  let isBlobUrl = false;
+
+  if (options.blob) {
+    url = URL.createObjectURL(options.blob);
+    isBlobUrl = true;
+  }
 
   return new Promise((resolve) => {
+    const cleanup = () => {
+      if (isBlobUrl) {
+        URL.revokeObjectURL(url);
+      }
+      globalTimerManager.clearTimeout(timer);
+    };
+
     const timer = globalTimerManager.setTimeout(() => {
       options.onProgress?.({
         phase: "complete",
@@ -47,6 +62,7 @@ export async function downloadSingleFile(
         total: 1,
         percentage: 0,
       });
+      cleanup();
       resolve({ success: false, error: "Download timeout" });
     }, 30000);
 
@@ -55,7 +71,6 @@ export async function downloadSingleFile(
         url,
         name: filename,
         onload: () => {
-          globalTimerManager.clearTimeout(timer);
           logger.debug(`[SingleDownload] Download complete: ${filename}`);
           options.onProgress?.({
             phase: "complete",
@@ -63,10 +78,10 @@ export async function downloadSingleFile(
             total: 1,
             percentage: 100,
           });
+          cleanup();
           resolve({ success: true, filename });
         },
         onerror: (error: unknown) => {
-          globalTimerManager.clearTimeout(timer);
           const errorMsg = getErrorMessage(error);
           logger.error(`[SingleDownload] Download failed:`, error);
           options.onProgress?.({
@@ -75,16 +90,17 @@ export async function downloadSingleFile(
             total: 1,
             percentage: 0,
           });
+          cleanup();
           resolve({ success: false, error: errorMsg });
         },
         ontimeout: () => {
-          globalTimerManager.clearTimeout(timer);
           options.onProgress?.({
             phase: "complete",
             current: 1,
             total: 1,
             percentage: 0,
           });
+          cleanup();
           resolve({ success: false, error: "Download timeout" });
         },
         onprogress: (progress: { loaded: number; total: number }) => {
@@ -99,8 +115,8 @@ export async function downloadSingleFile(
         },
       });
     } catch (error) {
-      globalTimerManager.clearTimeout(timer);
       const errorMsg = getErrorMessage(error);
+      cleanup();
       resolve({ success: false, error: errorMsg });
     }
   });
