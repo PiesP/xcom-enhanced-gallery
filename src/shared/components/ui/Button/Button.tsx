@@ -339,38 +339,28 @@ export function Button(rawProps: ButtonProps): JSXElement {
         : local.class,
     );
 
-  // Keep the DOM disabled property in sync with the isDisabled() accessor to aid testing and DOM consumers
+  // Keep the DOM disabled property in sync with the isDisabled() accessor
   const { createEffect: _createEffect } = solid;
   const loadingClassName = styles.loading;
   _createEffect(() => {
     const el = elementRef();
     const disabledNow = isDisabled();
     const loadingNow = isLoading();
-    if (el) {
-      el.disabled = disabledNow;
-      // debug: ensure dataset reflects computed disabled state for tests
-      try {
-        el.dataset.debugIsdisabled = String(disabledNow);
-        el.dataset.debugPropertyDisabled = String(
-          Boolean((el as HTMLButtonElement).disabled),
-        );
-        el.dataset.debugAttrDisabled = String(el.hasAttribute("disabled"));
-        // Also set aria-disabled attribute to reflect a11y state
-        el.setAttribute("aria-disabled", String(disabledNow));
-        if (loadingClassName) {
-          try {
-            if (loadingNow) {
-              el.classList.add(loadingClassName);
-            } else {
-              el.classList.remove(loadingClassName);
-            }
-          } catch {
-            // ignore DOM variations
-          }
-        }
-      } catch {
-        // ignore immutability in some DOM setups
-      }
+    if (!el) return;
+
+    el.disabled = disabledNow;
+    el.setAttribute("aria-disabled", String(disabledNow));
+
+    // Debug data attributes (dev only)
+    if (__DEV__) {
+      el.dataset.debugIsdisabled = String(disabledNow);
+      el.dataset.debugPropertyDisabled = String(el.disabled);
+      el.dataset.debugAttrDisabled = String(el.hasAttribute("disabled"));
+    }
+
+    // Sync loading class
+    if (loadingClassName) {
+      el.classList.toggle(loadingClassName, loadingNow);
     }
   });
 
