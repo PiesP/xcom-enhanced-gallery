@@ -11,8 +11,8 @@
 import { GalleryContainer } from "@shared/components/isolation";
 import { ErrorBoundary } from "@shared/components/ui/ErrorBoundary/ErrorBoundary";
 import {
-    getMediaService,
-    getThemeService,
+  getMediaService,
+  getThemeService,
 } from "@shared/container/service-accessors";
 import { isGMAPIAvailable } from "@shared/external/userscript";
 import { getSolid } from "@shared/external/vendors";
@@ -22,21 +22,21 @@ import { DownloadOrchestrator } from "@shared/services/download/download-orchest
 import { languageService } from "@shared/services/language-service";
 import { NotificationService } from "@shared/services/notification-service";
 import {
-    acquireDownloadLock,
-    isDownloadLocked,
+  acquireDownloadLock,
+  isDownloadLocked,
 } from "@shared/state/signals/download.signals";
 import {
-    closeGallery,
-    gallerySignals,
-    navigateNext,
-    navigatePrevious,
-    openGallery,
-    setError,
-    setViewMode,
+  closeGallery,
+  gallerySignals,
+  navigateNext,
+  navigatePrevious,
+  openGallery,
+  setError,
+  setViewMode,
 } from "@shared/state/signals/gallery.signals";
 import type {
-    GalleryRenderOptions,
-    MediaInfo,
+  GalleryRenderOptions,
+  MediaInfo,
 } from "@shared/types/media.types";
 import { VerticalGalleryView } from "./components/vertical-gallery-view/VerticalGalleryView";
 import "./styles/gallery-global.css";

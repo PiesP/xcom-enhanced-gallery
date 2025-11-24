@@ -3,8 +3,8 @@
  * - Pure calculator + DOM hook to expose values via CSS variables
  */
 import {
-    addListener,
-    removeEventListenerManaged,
+  addListener,
+  removeEventListenerManaged,
 } from "./events/core/listener-manager";
 import { globalTimerManager } from "./timer-management";
 import { createEventListener } from "./type-guards";

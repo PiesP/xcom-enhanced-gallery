@@ -20,9 +20,9 @@ import { APP_SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS } from "@/constants";
 import { registerTwitterTokenExtractor } from "@shared/container";
 import { logger } from "@shared/logging";
 import {
-    resolveFeatureStates,
-    type FeatureKey,
-    type SettingsWithFeatures,
+  resolveFeatureStates,
+  type FeatureKey,
+  type SettingsWithFeatures,
 } from "@shared/utils/conditional-loading";
 
 const isDevBuild = import.meta.env.DEV;

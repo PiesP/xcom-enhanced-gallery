@@ -63,13 +63,15 @@ function ensureRegistry(): IconRegistry {
   if (registry) return registry;
 
   registry = {
-    async loadIcon(name) {
+    loadIcon(name) {
       const active = loadingMap.get(name);
       if (active) return active;
 
       const loader = iconLoaders[name];
       if (!loader) {
-        throw new Error(`Unsupported icon: ${name}`);
+        // Return a rejected promise instead of throwing synchronously
+        // to match the async behavior expected by callers
+        return Promise.reject(new Error(`Unsupported icon: ${name}`));
       }
 
       const promise = loader().finally(() => loadingMap.delete(name));
