@@ -50,7 +50,9 @@ export async function downloadAsZip(
       try {
         let data: Uint8Array;
         if (item.blob) {
-          data = new Uint8Array(await item.blob.arrayBuffer());
+          const blob =
+            item.blob instanceof Promise ? await item.blob : item.blob;
+          data = new Uint8Array(await blob.arrayBuffer());
         } else {
           data = await fetchArrayBufferWithRetry(
             item.url,

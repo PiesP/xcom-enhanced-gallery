@@ -9,23 +9,23 @@ export { ThemeService } from "./theme-service";
 
 export { CookieService, getCookieService } from "./cookie-service";
 export {
-    getNotificationService,
-    NotificationService
+  getNotificationService,
+  NotificationService,
 } from "./notification-service";
 export { getPersistentStorage, PersistentStorage } from "./persistent-storage";
 export { getStyleRegistry, StyleRegistry } from "./style-registry";
 export { DownloadOrchestrator as DownloadService };
 
-    export { ensureDownloadServiceRegistered } from "./lazy-service-registration";
+export { ensureDownloadServiceRegistered } from "./lazy-service-registration";
 
 export {
-    getHttpRequestService,
-    HttpError,
-    HttpRequestService
+  getHttpRequestService,
+  HttpError,
+  HttpRequestService,
 } from "./http-request-service";
 
 export {
-    CoreService,
-    getService,
-    serviceManager
+  CoreService,
+  getService,
+  serviceManager,
 } from "./core-service-manager";

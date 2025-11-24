@@ -7,11 +7,11 @@
 
 import { reportBootstrapError } from "@/bootstrap/types";
 import {
-    CORE_BASE_SERVICE_IDENTIFIERS,
-    LANGUAGE_SERVICE_IDENTIFIER,
-    MEDIA_SERVICE_IDENTIFIER,
-    THEME_SERVICE_IDENTIFIER,
-    type CoreBaseServiceIdentifier,
+  CORE_BASE_SERVICE_IDENTIFIERS,
+  LANGUAGE_SERVICE_IDENTIFIER,
+  MEDIA_SERVICE_IDENTIFIER,
+  THEME_SERVICE_IDENTIFIER,
+  type CoreBaseServiceIdentifier,
 } from "@shared/container/service-accessors";
 import { logger } from "@shared/logging";
 import { CoreService } from "@shared/services/core-service-manager";

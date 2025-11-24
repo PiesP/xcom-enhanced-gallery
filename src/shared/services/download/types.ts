@@ -204,9 +204,9 @@ export interface OrchestratorItem {
    *
    * Can be used to provide already available data for the item, bypassing the need to download.
    *
-   * **Type**: Blob or undefined
+   * **Type**: Blob or Promise<Blob> or undefined
    */
-  blob?: Blob | undefined;
+  blob?: Blob | Promise<Blob> | undefined;
 }
 
 /**
@@ -298,9 +298,9 @@ export interface DownloadOptions extends OrchestratorOptions {
    *
    * A map of URLs to Blobs that have been pre-fetched, allowing for immediate use.
    *
-   * **Type**: Map<string, Blob> or undefined
+   * **Type**: Map<string, Blob | Promise<Blob>> or undefined
    */
-  prefetchedBlobs?: Map<string, Blob>;
+  prefetchedBlobs?: Map<string, Blob | Promise<Blob>>;
 }
 
 /**

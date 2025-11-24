@@ -34,7 +34,7 @@ export class MediaService extends BaseServiceImpl {
   private static instance: MediaService | null = null;
   private mediaExtraction: MediaExtractionService | null = null;
   private webpSupported: boolean | null = null;
-  private readonly prefetchCache = new Map<string, Blob>();
+  private readonly prefetchCache = new Map<string, Promise<Blob>>();
   private readonly activePrefetchRequests = new Map<string, AbortController>();
   private readonly maxCacheEntries = 20;
   private currentAbortController?: AbortController;
@@ -75,7 +75,25 @@ export class MediaService extends BaseServiceImpl {
   ): Promise<MediaExtractionResult> {
     if (!this.mediaExtraction)
       throw new Error("Media Extraction not initialized");
-    return this.mediaExtraction.extractFromClickedElement(element, options);
+    const result = await this.mediaExtraction.extractFromClickedElement(
+      element,
+      options,
+    );
+
+    if (result.success && result.mediaItems.length > 0) {
+      // Immediate prefetch for the first item (current view)
+      const firstItem = result.mediaItems[0];
+      if (firstItem) {
+        this.prefetchMedia(firstItem, { schedule: "immediate" });
+      }
+
+      // Idle prefetch for others
+      result.mediaItems.slice(1).forEach((item) => {
+        this.prefetchMedia(item, { schedule: "idle" });
+      });
+    }
+
+    return result;
   }
 
   async extractAllFromContainer(
@@ -156,25 +174,37 @@ export class MediaService extends BaseServiceImpl {
   }
 
   private async prefetchSingle(url: string): Promise<void> {
-    if (this.prefetchCache.has(url) || this.activePrefetchRequests.has(url))
-      return;
+    if (this.prefetchCache.has(url)) return;
+
     const controller = new AbortController();
     this.activePrefetchRequests.set(url, controller);
-    try {
-      const response = await HttpRequestService.getInstance().get<Blob>(url, {
+
+    const fetchPromise = HttpRequestService.getInstance()
+      .get<Blob>(url, {
         signal: controller.signal,
         responseType: "blob",
+      })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.data;
+      })
+      .finally(() => {
+        this.activePrefetchRequests.delete(url);
       });
-      if (response.ok) {
-        if (this.prefetchCache.size >= this.maxCacheEntries)
-          this.evictOldestPrefetchEntry();
-        this.prefetchCache.set(url, response.data);
-      }
-    } catch {
-      /* ignore */
-    } finally {
-      this.activePrefetchRequests.delete(url);
+
+    if (this.prefetchCache.size >= this.maxCacheEntries) {
+      this.evictOldestPrefetchEntry();
     }
+    this.prefetchCache.set(url, fetchPromise);
+
+    // Remove from cache on error
+    fetchPromise.catch(() => {
+      if (this.prefetchCache.get(url) === fetchPromise) {
+        this.prefetchCache.delete(url);
+      }
+    });
+
+    await fetchPromise.catch(() => {});
   }
 
   private calculatePrefetchUrls(
@@ -197,7 +227,7 @@ export class MediaService extends BaseServiceImpl {
     if (first) this.prefetchCache.delete(first);
   }
 
-  getCachedMedia(url: string): Blob | null {
+  getCachedMedia(url: string): Promise<Blob> | null {
     return this.prefetchCache.get(url) || null;
   }
 
@@ -218,7 +248,19 @@ export class MediaService extends BaseServiceImpl {
       "./download/download-orchestrator"
     );
     const downloadService = DownloadOrchestrator.getInstance();
-    const blob = this.prefetchCache.get(media.url);
+
+    // Check for pending or completed download
+    const pendingPromise = this.prefetchCache.get(media.url);
+    let blob: Blob | undefined;
+
+    if (pendingPromise) {
+      try {
+        blob = await pendingPromise;
+      } catch {
+        // Ignore prefetch error, downloadService will retry
+      }
+    }
+
     return downloadService.downloadSingle(media, {
       ...options,
       ...(blob ? { blob } : {}),

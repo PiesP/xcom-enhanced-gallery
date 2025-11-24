@@ -12,7 +12,6 @@ import { GalleryContainer } from "@shared/components/isolation";
 import { ErrorBoundary } from "@shared/components/ui/ErrorBoundary/ErrorBoundary";
 import {
   getLanguageService,
-  getMediaService,
   getThemeService,
 } from "@shared/container/service-accessors";
 import { isGMAPIAvailable } from "@shared/external/userscript";
@@ -93,13 +92,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
     const mediaItems = gallerySignals.mediaItems.value;
     if (!isOpen || mediaItems.length === 0) {
       return;
-    }
-
-    // Phase 368: Prefetch current media for instant download
-    const currentIndex = gallerySignals.currentIndex.value;
-    const currentMedia = mediaItems[currentIndex];
-    if (currentMedia) {
-      getMediaService().prefetchMedia(currentMedia, { schedule: "idle" });
     }
 
     this.isRenderingFlag = true;
