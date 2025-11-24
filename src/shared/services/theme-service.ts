@@ -49,10 +49,17 @@ export class ThemeService
           });
         }
       });
-      this.observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-      });
+
+      if (document.documentElement) {
+        this.observer.observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+        });
+      } else {
+        logger.warn(
+          "[ThemeService] document.documentElement not available for observation",
+        );
+      }
     }
     // Initial load (sync if possible)
     this.themeSetting = this.loadThemeSync();
@@ -234,5 +241,5 @@ export type {
   ThemeChangeListener,
   ThemeServiceContract,
   ThemeSetOptions,
-  ThemeSetting,
+  ThemeSetting
 } from "./theme-service.contract";
