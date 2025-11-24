@@ -17,50 +17,42 @@ export function determineClickedIndex(
   mediaItems: MediaInfo[],
 ): number {
   try {
-    // 1. Find the actual media element from the click
     const mediaElement = findMediaElement(clickedElement);
-    if (!mediaElement) {
-      return 0;
-    }
+    if (!mediaElement) return 0;
 
-    // 2. Extract URL from the element
     const elementUrl = extractMediaUrl(mediaElement);
-    if (!elementUrl) {
-      return 0;
-    }
+    if (!elementUrl) return 0;
 
-    // 3. Normalize the URL for comparison
     const normalizedElementUrl = normalizeMediaUrl(elementUrl);
-    if (!normalizedElementUrl) {
-      return 0;
-    }
+    if (!normalizedElementUrl) return 0;
 
-    // 4. Compare with media items
-    for (let i = 0; i < mediaItems.length; i++) {
-      const item = mediaItems[i];
-      if (!item) continue;
+    const index = mediaItems.findIndex((item, i) => {
+      if (!item) return false;
+
+      // Check main URL
       const itemUrl = item.url || item.originalUrl;
-      if (!itemUrl) continue;
-
-      const normalizedItemUrl = normalizeMediaUrl(itemUrl);
-      if (normalizedItemUrl === normalizedElementUrl) {
+      if (itemUrl && normalizeMediaUrl(itemUrl) === normalizedElementUrl) {
         logger.debug(
           `[determineClickedIndex] Matched clicked media at index ${i}: ${normalizedElementUrl}`,
         );
-        return i;
+        return true;
       }
 
-      // Also check thumbnail URL (important for videos where clicked element is poster)
-      if (item.thumbnailUrl) {
-        const normalizedThumbnailUrl = normalizeMediaUrl(item.thumbnailUrl);
-        if (normalizedThumbnailUrl === normalizedElementUrl) {
-          logger.debug(
-            `[determineClickedIndex] Matched clicked media (thumbnail) at index ${i}: ${normalizedElementUrl}`,
-          );
-          return i;
-        }
+      // Check thumbnail URL
+      if (
+        item.thumbnailUrl &&
+        normalizeMediaUrl(item.thumbnailUrl) === normalizedElementUrl
+      ) {
+        logger.debug(
+          `[determineClickedIndex] Matched clicked media (thumbnail) at index ${i}: ${normalizedElementUrl}`,
+        );
+        return true;
       }
-    }
+
+      return false;
+    });
+
+    if (index !== -1) return index;
 
     logger.warn(
       `[determineClickedIndex] No matching media found for URL: ${normalizedElementUrl}, defaulting to 0`,
@@ -76,48 +68,29 @@ export function determineClickedIndex(
 }
 
 function findMediaElement(element: HTMLElement): HTMLElement | null {
-  // Level 1: Clicked element is already media?
+  // 1. Self check
   if (element.tagName === "IMG" || element.tagName === "VIDEO") {
     return element;
   }
 
-  // Level 2: Direct child is media?
-  const mediaChild = element.querySelector(":scope > img, :scope > video");
+  // 2. Check for media within the element (e.g. wrapper)
+  const mediaChild = element.querySelector("img, video");
   if (mediaChild) {
     return mediaChild as HTMLElement;
   }
 
-  // Level 3: Deeper children within depth limit?
-  const deepChild = element.querySelector("img, video");
-  if (deepChild && isDirectMediaChild(element, deepChild as HTMLElement)) {
-    return deepChild as HTMLElement;
-  }
-
-  // Level 4: Search parent elements (up to 5 levels)
+  // 3. Check ancestors and their immediate media children (siblings/cousins)
   let current = element.parentElement;
-  for (let i = 0; i < 5 && current; i++) {
-    const parentMedia = current.querySelector(":scope > img, :scope > video");
-    if (parentMedia) {
-      return parentMedia as HTMLElement;
+  // Limit traversal to avoid performance issues and false positives
+  for (let i = 0; i < 3 && current; i++) {
+    const siblingMedia = current.querySelector(":scope > img, :scope > video");
+    if (siblingMedia) {
+      return siblingMedia as HTMLElement;
     }
     current = current.parentElement;
   }
 
   return null;
-}
-
-function isDirectMediaChild(parent: HTMLElement, child: HTMLElement): boolean {
-  const maxDepth = 3;
-  let current: HTMLElement | null = child;
-
-  for (let i = 0; i < maxDepth; i++) {
-    if (current === parent) {
-      return true;
-    }
-    current = current.parentElement;
-    if (!current) break;
-  }
-  return false;
 }
 
 function extractMediaUrl(element: HTMLElement): string | null {
