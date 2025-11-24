@@ -1,14 +1,17 @@
 import { FocusCoordinator } from "@features/gallery/logic/focus-coordinator";
 import { getSolid } from "@shared/external/vendors";
 import { setFocusedIndex } from "@shared/state/signals/gallery.signals";
+import { toAccessor } from "@shared/utils/solid-helpers";
 import type { Accessor } from "solid-js";
 
 type MaybeAccessor<T> = T | Accessor<T>;
 
-const toAccessor = <T>(value: MaybeAccessor<T>): Accessor<T> =>
-  typeof value === "function" ? (value as Accessor<T>) : () => value;
-
-type FocusNavigationTrigger = "button" | "click" | "keyboard" | "init";
+type FocusNavigationTrigger =
+  | "button"
+  | "click"
+  | "keyboard"
+  | "init"
+  | "scroll";
 
 export interface UseGalleryFocusTrackerOptions {
   container: MaybeAccessor<HTMLElement | null>;
@@ -51,12 +54,10 @@ export function useGalleryFocusTracker(
 
   const isEnabled = toAccessor(options.isEnabled);
   const container = toAccessor(options.container);
-  const isScrolling = toAccessor(options.isScrolling ?? false);
   const autoFocusDebounce = toAccessor(options.autoFocusDebounce ?? 50);
 
   const coordinator = new FocusCoordinator({
-    isEnabled: () =>
-      isEnabled() && !isScrolling() && manualFocusIndex() === null,
+    isEnabled: () => isEnabled() && manualFocusIndex() === null,
     container,
     threshold: options.threshold ?? 0,
     rootMargin: options.rootMargin ?? "0px",

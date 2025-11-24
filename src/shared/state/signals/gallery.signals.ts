@@ -108,11 +108,11 @@ export const galleryIndexEvents = createEventEmitter<{
   "navigate:start": {
     from: number;
     to: number;
-    trigger: "button" | "click" | "keyboard";
+    trigger: "button" | "click" | "keyboard" | "scroll";
   };
   "navigate:complete": {
     index: number;
-    trigger: "button" | "click" | "keyboard";
+    trigger: "button" | "click" | "keyboard" | "scroll";
   };
 }>();
 
@@ -231,7 +231,7 @@ export function closeGallery(): void {
  */
 export function navigateToItem(
   index: number,
-  trigger: "button" | "click" | "keyboard" = "button",
+  trigger: "button" | "click" | "keyboard" | "scroll" = "button",
   source: NavigationSource = "button",
 ): void {
   const state = galleryState.value;
@@ -280,7 +280,7 @@ export function navigateToItem(
 }
 
 export function navigatePrevious(
-  trigger: "button" | "click" | "keyboard" = "button",
+  trigger: "button" | "click" | "keyboard" | "scroll" = "button",
 ): void {
   const state = galleryState.value;
   const baseIndex = gallerySignals.focusedIndex.value ?? state.currentIndex;
@@ -290,7 +290,7 @@ export function navigatePrevious(
 }
 
 export function navigateNext(
-  trigger: "button" | "click" | "keyboard" = "button",
+  trigger: "button" | "click" | "keyboard" | "scroll" = "button",
 ): void {
   const state = galleryState.value;
   const baseIndex = gallerySignals.focusedIndex.value ?? state.currentIndex;

@@ -221,6 +221,14 @@
   cursor: none;
 }
 
+/* Scrolling state: hide toolbar while scrolling manually */
+/* High specificity to override hover states without !important */
+.container.isScrolling[data-xeg-gallery="true"][data-xeg-role="gallery"] .toolbarWrapper {
+  --toolbar-opacity: 0;
+  --toolbar-visibility: hidden;
+  --toolbar-pointer-events: none;
+}
+
 /* Ensure nested elements inherit the restored pointer behavior */
 .container * {
   pointer-events: auto;

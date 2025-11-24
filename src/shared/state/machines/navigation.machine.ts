@@ -17,7 +17,7 @@ export interface NavigationState {
   readonly lastTimestamp: number;
 }
 
-export type NavigationTrigger = "button" | "click" | "keyboard";
+export type NavigationTrigger = "button" | "click" | "keyboard" | "scroll";
 
 export type NavigationAction =
   | {

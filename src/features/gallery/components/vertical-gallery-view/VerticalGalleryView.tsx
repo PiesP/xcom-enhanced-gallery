@@ -127,7 +127,22 @@ function VerticalGalleryViewCore({
 
   // Phase 146: 툴바 초기 표시 및 자동 숨김
   const [isInitialToolbarVisible, setIsInitialToolbarVisible] =
-    createSignal(false);
+    createSignal(true);
+
+  // Phase 430: Track last navigation trigger to prevent snap-back after manual scroll
+  const [lastNavigationTrigger, setLastNavigationTrigger] = createSignal<
+    string | null
+  >(null);
+
+  createEffect(() => {
+    const unsubscribe = galleryIndexEvents.on(
+      "navigate:complete",
+      ({ trigger }) => {
+        setLastNavigationTrigger(trigger);
+      },
+    );
+    onCleanup(() => unsubscribe());
+  });
 
   // 툴바 자동 숨김 타이머 effect
   createEffect(() => {
@@ -297,6 +312,7 @@ function VerticalGalleryViewCore({
     handleItemFocus,
     handleItemBlur,
     applyFocusAfterNavigation,
+    setManualFocus,
   } = useGalleryFocusTracker({
     container: () => containerEl(),
     isEnabled: isVisible,
@@ -323,12 +339,32 @@ function VerticalGalleryViewCore({
     currentIndex,
     () => mediaItems().length,
     {
-      enabled: true,
+      enabled: () => !isScrolling() && lastNavigationTrigger() !== "scroll",
       // Phase 264: behavior 옵션 제거 (기본값 'auto' 사용 - 모션 없음)
       // Phase 266: debounceDelay 제거 (항상 0ms 즉시 실행)
       block: "start",
     },
   );
+
+  // Sync focusedIndex to currentIndex during scroll
+  createEffect(() => {
+    const focused = focusedIndex();
+    const current = currentIndex();
+    const scrolling = isScrolling();
+
+    if (scrolling && focused !== null && focused !== current) {
+      navigateToItem(focused, "scroll", "scroll");
+    }
+  });
+
+  // Clear manual focus when scrolling starts to enable auto-focus tracking
+  // and hide toolbar
+  createEffect(() => {
+    if (isScrolling()) {
+      setManualFocus(null);
+      setIsInitialToolbarVisible(false);
+    }
+  });
 
   // Phase 279/280/293: 갤러리 최초 열기 시 초기 스크롤 보장
   let hasPerformedInitialScroll = false;
@@ -571,7 +607,7 @@ function VerticalGalleryViewCore({
   return (
     <div
       ref={(el) => setContainerEl(el ?? null)}
-      class={`${styles.container} ${isInitialToolbarVisible() ? styles.initialToolbarVisible : ""} ${stringWithDefault(className, "")}`}
+      class={`${styles.container} ${isInitialToolbarVisible() ? styles.initialToolbarVisible : ""} ${isScrolling() ? styles.isScrolling : ""} ${stringWithDefault(className, "")}`}
       onClick={handleBackgroundClick}
       data-xeg-gallery="true"
       data-xeg-role="gallery"
