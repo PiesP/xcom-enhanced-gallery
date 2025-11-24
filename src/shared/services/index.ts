@@ -1,32 +1,28 @@
 export { BaseServiceImpl } from "./base-service";
 
 export { EventManager } from "./event-manager";
+export { LanguageService, languageService } from "./language-service";
 export { MediaService } from "./media-service";
 export { ThemeService, themeService } from "./theme-service";
-export { LanguageService, languageService } from "./language-service";
 
-export {
-  NotificationService,
-  getNotificationService,
-} from "./notification-service";
-export { PersistentStorage, getPersistentStorage } from "./persistent-storage";
 export { CookieService, getCookieService } from "./cookie-service";
-export { StyleRegistry, getStyleRegistry } from "./style-registry";
+export {
+    getNotificationService, NotificationService
+} from "./notification-service";
+export { getPersistentStorage, PersistentStorage } from "./persistent-storage";
+export { getStyleRegistry, StyleRegistry } from "./style-registry";
+export { DownloadOrchestrator as DownloadService };
 
 import { DownloadOrchestrator } from "./download/download-orchestrator";
-export { DownloadOrchestrator as DownloadService };
 export const downloadService = DownloadOrchestrator.getInstance();
 export { ensureDownloadServiceRegistered } from "./lazy-service-registration";
 
 export {
-  HttpRequestService,
-  getHttpRequestService,
-  HttpError,
+    getHttpRequestService,
+    HttpError, HttpRequestService
 } from "./http-request-service";
 
 export {
-  CoreService,
-  serviceManager,
-  getService,
-  registerServiceFactory,
+    CoreService, getService,
+    registerServiceFactory, serviceManager
 } from "./core-service-manager";

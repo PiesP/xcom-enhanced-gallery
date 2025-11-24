@@ -1,19 +1,19 @@
-import { logger } from "@/shared/logging";
-import { initializeEnvironment } from "@/bootstrap/environment";
-import { wireGlobalEvents } from "@/bootstrap/events";
-import type { Unregister } from "@/bootstrap/events";
-import type { IGalleryApp } from "@shared/container/app-container";
 import { initializeCriticalSystems } from "@/bootstrap/critical-systems";
 import { initializeDevTools } from "@/bootstrap/dev-tools";
+import { initializeEnvironment } from "@/bootstrap/environment";
+import type { Unregister } from "@/bootstrap/events";
+import { wireGlobalEvents } from "@/bootstrap/events";
 import { registerFeatureServicesLazy } from "@/bootstrap/features";
 import { initializeGalleryApp } from "@/bootstrap/gallery-init";
+import { createAppConfig } from "@/constants/app-config";
+import { logger } from "@/shared/logging";
+import type { IGalleryApp } from "@shared/container/app-container";
 import { warmupNonCriticalServices } from "@shared/container/service-accessors";
+import { mutateDevNamespace } from "@shared/devtools/dev-namespace";
 import { CoreService } from "@shared/services/core-service-manager";
-import { cleanupVendors } from "./shared/external/vendors";
 import { globalTimerManager } from "@shared/utils/timer-management";
 import { runAfterWindowLoad } from "@shared/utils/window-load";
-import { mutateDevNamespace } from "@shared/devtools/dev-namespace";
-import { createAppConfig } from "@/constants/app-config";
+import { cleanupVendors } from "./shared/external/vendors";
 
 // Global styles
 // Global styles are loaded at runtime to avoid import-time side effects.

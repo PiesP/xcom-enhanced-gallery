@@ -4,24 +4,24 @@
  */
 
 // NOTE: Vitest (vite-node) Windows alias resolution workaround — use relative paths for internal dependencies
-import { logger } from "@shared/logging";
-import { BaseServiceImpl } from "./base-service";
 import type { DomEventManager } from "@shared/dom/dom-event-manager";
 import { createDomEventManager } from "@shared/dom/dom-event-manager";
+import { logger } from "@shared/logging";
+import type {
+    EventHandlers,
+    GalleryEventOptions,
+} from "@shared/utils/events/core/event-context";
 import {
-  addListener as registerManagedListener,
-  removeEventListenerManaged,
-  removeEventListenersByContext,
+    addListener as registerManagedListener,
+    removeEventListenerManaged,
+    removeEventListenersByContext,
 } from "@shared/utils/events/core/listener-manager";
 import {
-  cleanupGalleryEvents,
-  getGalleryEventSnapshot,
-  initializeGalleryEvents,
+    cleanupGalleryEvents,
+    getGalleryEventSnapshot,
+    initializeGalleryEvents,
 } from "@shared/utils/events/lifecycle/gallery-lifecycle";
-import type {
-  EventHandlers,
-  GalleryEventOptions,
-} from "@shared/utils/events/core/event-context";
+import { BaseServiceImpl } from "./base-service";
 
 /**
  * Event Manager

@@ -1,19 +1,19 @@
 import type {
-  MediaExtractionOptions,
-  MediaExtractionResult,
-  MediaInfo,
+    MediaExtractionOptions,
+    MediaExtractionResult,
+    MediaInfo,
 } from "@shared/types/media.types";
 import {
-  scheduleIdle,
-  scheduleMicrotask,
-  scheduleRaf,
+    scheduleIdle,
+    scheduleMicrotask,
+    scheduleRaf,
 } from "@shared/utils/performance";
 import { globalTimerManager } from "@shared/utils/timer-management";
 import { BaseServiceImpl } from "./base-service";
 import type {
-  BulkDownloadResult,
-  DownloadOptions,
-  SingleDownloadResult,
+    BulkDownloadResult,
+    DownloadOptions,
+    SingleDownloadResult,
 } from "./download/types";
 import { HttpRequestService } from "./http-request-service";
 import type { MediaExtractionService } from "./media-extraction/media-extraction-service";

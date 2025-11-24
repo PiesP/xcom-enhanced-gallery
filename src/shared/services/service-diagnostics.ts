@@ -1,5 +1,5 @@
-import { logger } from "@shared/logging";
 import { mutateDevNamespace } from "@shared/devtools/dev-namespace";
+import { logger } from "@shared/logging";
 
 type DiagnosticsNamespace = {
   run: typeof diagnoseServiceManager;

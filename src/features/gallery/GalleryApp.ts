@@ -11,18 +11,18 @@
  */
 
 import {
-  getGalleryRenderer,
-  getMediaServiceFromContainer,
-  tryGetSettingsManager,
+    getGalleryRenderer,
+    getMediaServiceFromContainer,
+    tryGetSettingsManager,
 } from "@shared/container/service-accessors";
 import type { GalleryRenderer } from "@shared/interfaces/gallery.interfaces";
 import { logger } from "@shared/logging";
 import { MediaService } from "@shared/services/media-service";
 import { NotificationService } from "@shared/services/notification-service";
 import {
-  closeGallery,
-  gallerySignals,
-  openGallery,
+    closeGallery,
+    gallerySignals,
+    openGallery,
 } from "@shared/state/signals/gallery.signals";
 import type { MediaInfo } from "@shared/types/media.types";
 import { pauseActiveTwitterVideos } from "@shared/utils/media/twitter-video-pauser";

@@ -1,16 +1,16 @@
 import { BaseServiceImpl } from "@shared/services/base-service";
 import {
-  generateMediaFilename,
-  generateZipFilename,
+    generateMediaFilename,
+    generateZipFilename,
 } from "@shared/services/filename-service";
 import type { MediaInfo } from "@shared/types/media.types";
 import { ErrorCode } from "@shared/types/result.types";
 import { downloadSingleFile, getGMDownload } from "./single-download";
 import type {
-  BulkDownloadResult,
-  DownloadOptions,
-  OrchestratorItem,
-  SingleDownloadResult,
+    BulkDownloadResult,
+    DownloadOptions,
+    OrchestratorItem,
+    SingleDownloadResult,
 } from "./types";
 import { downloadAsZip } from "./zip-download";
 

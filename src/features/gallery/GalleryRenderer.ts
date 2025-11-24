@@ -8,40 +8,40 @@
  * - State changes handled via signal subscription
  */
 
-import type { GalleryRenderer as GalleryRendererInterface } from "@shared/interfaces";
-import {
-  closeGallery,
-  gallerySignals,
-  setError,
-  openGallery,
-  setViewMode,
-  navigatePrevious,
-  navigateNext,
-} from "@shared/state/signals/gallery.signals";
-import {
-  acquireDownloadLock,
-  isDownloadLocked,
-} from "@shared/state/signals/download.signals";
-import type {
-  GalleryRenderOptions,
-  MediaInfo,
-} from "@shared/types/media.types";
-import { VerticalGalleryView } from "./components/vertical-gallery-view/VerticalGalleryView";
 import { GalleryContainer } from "@shared/components/isolation";
 import { ErrorBoundary } from "@shared/components/ui/ErrorBoundary/ErrorBoundary";
-import "./styles/gallery-global.css";
-import { logger } from "@shared/logging";
-import { getSolid } from "@shared/external/vendors";
-import { DownloadOrchestrator } from "@shared/services/download/download-orchestrator";
-import { isGMAPIAvailable } from "@shared/external/userscript";
-
-const downloadService = DownloadOrchestrator.getInstance();
 import {
-  getThemeService,
-  getMediaService,
+    getMediaService,
+    getThemeService,
 } from "@shared/container/service-accessors";
+import { isGMAPIAvailable } from "@shared/external/userscript";
+import { getSolid } from "@shared/external/vendors";
+import type { GalleryRenderer as GalleryRendererInterface } from "@shared/interfaces";
+import { logger } from "@shared/logging";
+import { DownloadOrchestrator } from "@shared/services/download/download-orchestrator";
 import { languageService } from "@shared/services/language-service";
 import { NotificationService } from "@shared/services/notification-service";
+import {
+    acquireDownloadLock,
+    isDownloadLocked,
+} from "@shared/state/signals/download.signals";
+import {
+    closeGallery,
+    gallerySignals,
+    navigateNext,
+    navigatePrevious,
+    openGallery,
+    setError,
+    setViewMode,
+} from "@shared/state/signals/gallery.signals";
+import type {
+    GalleryRenderOptions,
+    MediaInfo,
+} from "@shared/types/media.types";
+import { VerticalGalleryView } from "./components/vertical-gallery-view/VerticalGalleryView";
+import "./styles/gallery-global.css";
+
+const downloadService = DownloadOrchestrator.getInstance();
 
 let galleryMountCount = 0;
 
