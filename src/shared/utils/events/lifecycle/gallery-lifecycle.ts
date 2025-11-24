@@ -12,8 +12,8 @@ import {
   addListener,
   removeEventListenersByContext,
 } from "@shared/utils/events/core/listener-manager";
-import { handleKeyboardEvent } from "@shared/utils/events/handlers/keyboard-handler";
-import { handleMediaClick } from "@shared/utils/events/handlers/media-click-handler";
+import { handleKeyboardEvent } from "@shared/utils/events/handlers/keyboard";
+import { handleMediaClick } from "@shared/utils/events/handlers/media-click";
 import { resetKeyboardDebounceState } from "@shared/utils/keyboard-debounce";
 
 interface LifecycleState {

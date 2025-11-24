@@ -95,39 +95,8 @@ export class GalleryApp {
 
       await initializeGalleryEvents(
         {
-          onMediaClick: async (_mediaInfo, element) => {
-            try {
-              const mediaService = getMediaServiceFromContainer();
-              if (!(mediaService instanceof MediaService)) {
-                throw new Error("MediaService not available from container");
-              }
-
-              const result =
-                await mediaService.extractFromClickedElement(element);
-
-              if (result.success && result.mediaItems.length > 0) {
-                await this.openGallery(result.mediaItems, result.clickedIndex);
-              } else {
-                logger.warn("[GalleryApp] Media extraction failed:", {
-                  success: result.success,
-                  mediaCount: result.mediaItems.length,
-                });
-                void this.notificationService.error(
-                  "Failed to load media",
-                  "Could not find images or videos.",
-                );
-              }
-            } catch (error) {
-              logger.error(
-                "[GalleryApp] Error during media extraction:",
-                error,
-              );
-              void this.notificationService.error(
-                "Error occurred",
-                error instanceof Error ? error.message : "Unknown error",
-              );
-            }
-          },
+          onMediaClick: (mediaInfo, element) =>
+            this.handleMediaClick(mediaInfo, element),
           onGalleryClose: () => {
             this.closeGallery();
           },
@@ -150,6 +119,43 @@ export class GalleryApp {
     } catch (error) {
       logger.error("[GalleryApp] ❌ Event handlers setup failed:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Handle media click event
+   */
+  private async handleMediaClick(
+    _mediaInfo: unknown,
+    element: HTMLElement,
+  ): Promise<void> {
+    try {
+      const mediaService = getMediaServiceFromContainer();
+
+      if (!(mediaService instanceof MediaService)) {
+        throw new Error("MediaService not available from container");
+      }
+
+      const result = await mediaService.extractFromClickedElement(element);
+
+      if (result.success && result.mediaItems.length > 0) {
+        await this.openGallery(result.mediaItems, result.clickedIndex);
+      } else {
+        logger.warn("[GalleryApp] Media extraction failed:", {
+          success: result.success,
+          mediaCount: result.mediaItems.length,
+        });
+        void this.notificationService.error(
+          "Failed to load media",
+          "Could not find images or videos.",
+        );
+      }
+    } catch (error) {
+      logger.error("[GalleryApp] Error during media extraction:", error);
+      void this.notificationService.error(
+        "Error occurred",
+        error instanceof Error ? error.message : "Unknown error",
+      );
     }
   }
 

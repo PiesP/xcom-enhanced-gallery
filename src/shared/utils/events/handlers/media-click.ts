@@ -93,12 +93,12 @@ export async function handleMediaClick(
       return { handled: false, reason: "Non-processable media target" };
     }
 
-    // Block Twitter native gallery and handle it ourselves
-    event.stopImmediatePropagation();
-    event.preventDefault();
-
     const mediaInfo = await resolveMediaInfo(event);
     if (mediaInfo) {
+      // Block Twitter native gallery and handle it ourselves
+      event.stopImmediatePropagation();
+      event.preventDefault();
+
       await handlers.onMediaClick(mediaInfo, target, event);
       return {
         handled: true,

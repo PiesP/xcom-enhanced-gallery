@@ -75,12 +75,3 @@ export class TimerManager {
  * Global timer manager instance
  */
 export const globalTimerManager = new TimerManager();
-
-/**
- * Consistent high-resolution timestamp helper
- *
- * @returns Current timestamp using performance.now()
- */
-export function safePerformanceNow(): number {
-  return performance.now();
-}
