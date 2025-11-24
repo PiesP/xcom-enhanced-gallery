@@ -19,6 +19,8 @@ export interface UseGalleryItemScrollOptions {
   behavior?: MaybeAccessor<ScrollBehavior>;
   block?: MaybeAccessor<ScrollLogicalPosition>;
   alignToCenter?: MaybeAccessor<boolean>;
+  isScrolling?: MaybeAccessor<boolean>;
+  onScrollStart?: () => void;
 }
 
 export interface UseGalleryItemScrollReturn {
@@ -40,6 +42,7 @@ export function useGalleryItemScroll(
   const behavior = toAccessor(options.behavior ?? "auto");
   const block = toAccessor(options.block ?? "start");
   const alignToCenter = toAccessor(options.alignToCenter ?? false);
+  const isScrolling = toAccessor(options.isScrolling ?? false);
   const currentIndexAccessor = toAccessor(currentIndex);
   const totalItemsAccessor = toAccessor(totalItems);
 
@@ -57,6 +60,7 @@ export function useGalleryItemScroll(
     const target = items[index] as HTMLElement;
 
     if (target) {
+      options.onScrollStart?.();
       target.scrollIntoView({
         behavior: behavior(),
         block: alignToCenter() ? "center" : block(),
@@ -70,6 +74,7 @@ export function useGalleryItemScroll(
         );
         const retryTarget = retryItems[index] as HTMLElement;
         if (retryTarget) {
+          options.onScrollStart?.();
           retryTarget.scrollIntoView({
             behavior: behavior(),
             block: alignToCenter() ? "center" : block(),
@@ -83,7 +88,7 @@ export function useGalleryItemScroll(
   // Auto-scroll when index changes
   createEffect(
     on(currentIndexAccessor, (index) => {
-      if (untrack(enabled)) {
+      if (untrack(enabled) && !untrack(isScrolling)) {
         scrollToItem(index);
       }
     }),

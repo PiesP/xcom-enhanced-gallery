@@ -134,6 +134,10 @@ function VerticalGalleryViewCore({
     string | null
   >(null);
 
+  // Phase 430: 프로그램적 스크롤 타임스탬프 (스크롤바 드래그와 구분)
+  const [programmaticScrollTimestamp, setProgrammaticScrollTimestamp] =
+    createSignal(0);
+
   createEffect(() => {
     const unsubscribe = galleryIndexEvents.on(
       "navigate:complete",
@@ -304,6 +308,7 @@ function VerticalGalleryViewCore({
     container: () => containerEl(),
     scrollTarget: () => itemsContainerEl(),
     enabled: isVisible,
+    programmaticScrollTimestamp,
   });
 
   const {
@@ -343,6 +348,8 @@ function VerticalGalleryViewCore({
       // Phase 264: behavior 옵션 제거 (기본값 'auto' 사용 - 모션 없음)
       // Phase 266: debounceDelay 제거 (항상 0ms 즉시 실행)
       block: "start",
+      isScrolling,
+      onScrollStart: () => setProgrammaticScrollTimestamp(Date.now()),
     },
   );
 
@@ -350,9 +357,11 @@ function VerticalGalleryViewCore({
   createEffect(() => {
     const focused = focusedIndex();
     const current = currentIndex();
-    const scrolling = isScrolling();
+    // 스크롤 중이 아니더라도 포커스가 변경되면 동기화 (스크롤바 드래그 등)
+    // 단, 프로그램적 스크롤 직후에는 동기화하지 않음 (스냅 방지)
+    const isProgrammatic = Date.now() - programmaticScrollTimestamp() < 100;
 
-    if (scrolling && focused !== null && focused !== current) {
+    if (!isProgrammatic && focused !== null && focused !== current) {
       navigateToItem(focused, "scroll", "scroll");
     }
   });

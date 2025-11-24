@@ -1,6 +1,9 @@
 import { FocusCoordinator } from "@features/gallery/logic/focus-coordinator";
 import { getSolid } from "@shared/external/vendors";
-import { setFocusedIndex } from "@shared/state/signals/gallery.signals";
+import {
+  navigateToItem,
+  setFocusedIndex,
+} from "@shared/state/signals/gallery.signals";
 import { toAccessor } from "@shared/utils/solid-helpers";
 import type { Accessor } from "solid-js";
 
@@ -69,7 +72,9 @@ export function useGalleryFocusTracker(
       if (source === "auto" && manualFocusIndex() === null) {
         batch(() => {
           setLocalFocusedIndex(index);
-          if (index !== null) setFocusedIndex(index);
+          if (index !== null) {
+            navigateToItem(index, "scroll", "auto-focus");
+          }
         });
       }
     },

@@ -39,6 +39,8 @@ interface UseGalleryScrollOptions {
   enableScrollDirection?: MaybeAccessor<boolean>;
   /** 스크롤 방향 변경 콜백 */
   onScrollDirectionChange?: (direction: ScrollDirection) => void;
+  /** 프로그램적 스크롤 타임스탬프 (이 시점 직후의 스크롤 이벤트는 무시됨) */
+  programmaticScrollTimestamp?: Accessor<number>;
 }
 
 export interface UseGalleryScrollReturn {
@@ -74,11 +76,15 @@ export function useGalleryScroll({
   enabled = true,
   enableScrollDirection = false,
   onScrollDirectionChange,
+  programmaticScrollTimestamp,
 }: UseGalleryScrollOptions): UseGalleryScrollReturn {
   const containerAccessor = toAccessor(container);
   const scrollTargetAccessor = toAccessor(scrollTarget ?? containerAccessor);
   const enabledAccessor = toAccessor(enabled);
   const enableScrollDirectionAccessor = toAccessor(enableScrollDirection);
+  const programmaticScrollTimestampAccessor = toAccessor(
+    programmaticScrollTimestamp ?? 0,
+  );
 
   const isGalleryOpen = useSelector<GalleryState, boolean>(
     galleryState,
@@ -178,6 +184,20 @@ export function useGalleryScroll({
     handleScrollEnd();
   };
 
+  const handleScroll = (_event: Event) => {
+    if (!isGalleryOpen()) return;
+
+    // 프로그램적 스크롤 무시 (100ms 윈도우)
+    const lastProgrammatic = programmaticScrollTimestampAccessor();
+    if (Date.now() - lastProgrammatic < 100) {
+      return;
+    }
+
+    // 휠 이벤트가 아닌 경우(스크롤바 드래그 등) 처리
+    updateScrollState(true);
+    handleScrollEnd();
+  };
+
   createEffect(() => {
     const isEnabled = enabledAccessor();
     const containerElement = containerAccessor();
@@ -198,6 +218,11 @@ export function useGalleryScroll({
     const eventManager = new EventManager();
 
     eventManager.addEventListener(eventTarget, "wheel", handleGalleryWheel, {
+      passive: true,
+    });
+
+    // 스크롤바 드래그 감지를 위한 scroll 이벤트 리스너 추가
+    eventManager.addEventListener(eventTarget, "scroll", handleScroll, {
       passive: true,
     });
 
