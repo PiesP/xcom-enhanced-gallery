@@ -1,5 +1,5 @@
 import { initializeCriticalSystems } from "@/bootstrap/critical-systems";
-import { initializeDevTools } from "@/bootstrap/dev-tools";
+// initializeDevTools dynamic import moved to initializeDevToolsIfNeeded
 import { initializeEnvironment } from "@/bootstrap/environment";
 import type { Unregister } from "@/bootstrap/events";
 import { wireGlobalEvents } from "@/bootstrap/events";
@@ -217,6 +217,7 @@ async function initializeDevToolsIfNeeded(): Promise<void> {
     return;
   }
 
+  const { initializeDevTools } = await import("@/bootstrap/dev-tools");
   await initializeDevTools();
 }
 

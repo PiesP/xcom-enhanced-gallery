@@ -52,7 +52,7 @@ export default function TweetTextPanel(props: TweetTextPanelProps) {
       >
         {props.tweetTextHTML ? (
           /*
-            Security Note: tweetTextHTML is sanitized via @shared/utils/html-sanitizer
+            Security Note: tweetTextHTML is sanitized via @shared/utils/text/html-sanitizer
             before being passed here. It only allows safe tags (a, span, etc.) and attributes.
             Links are checked for safe protocols (http/https) and target="_blank" is secured.
             Double-sanitization here ensures safety even if the prop source changes.

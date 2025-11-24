@@ -25,7 +25,8 @@
     "fetch-timeout": 60000
   },
   "scripts": {
-    "build": "run-s clean build:dev build:prod",
+    "build": "tsx scripts/verify-pipeline.ts",
+    "build:fast": "tsx scripts/verify-pipeline.ts --fast",
     "build:dev": "vite build --mode development",
     "build:prod": "vite build",
     "clean": "rimraf dist",
@@ -48,8 +49,6 @@
     "deps:check": "dependency-cruiser src --validate --config .dependency-cruiser.cjs",
     "security:check": "tsx scripts/security-surface-check.ts",
     "styles:guard": "tsx scripts/validate-style-imports.ts",
-    "postbuild": "run-p test:batched test:e2e test:mutation",
-    "prebuild": "npm run check",
     "prepare": "husky"
   },
   "dependencies": {
