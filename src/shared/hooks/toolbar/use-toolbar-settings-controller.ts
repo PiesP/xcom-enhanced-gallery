@@ -23,16 +23,16 @@
  * @internal Solid.js hook, PC-only, used by toolbar container
  */
 
-import { logger } from "@shared/logging";
-import { getSolid } from "@shared/external/vendors";
-import type { ThemeServiceContract } from "@shared/services/theme-service";
-import type { LanguageService } from "@shared/services/language-service";
-import { globalTimerManager } from "@shared/utils/timer-management";
 import {
-  getThemeService,
   getLanguageService,
+  getThemeService,
   tryGetSettingsManager,
 } from "@shared/container/service-accessors";
+import { getSolid } from "@shared/external/vendors";
+import { logger } from "@shared/logging";
+import type { LanguageService } from "@shared/services/language-service";
+import type { ThemeServiceContract } from "@shared/services/theme-service";
+import { globalTimerManager } from "@shared/utils/time/timer-management";
 
 const DEFAULT_FOCUS_DELAY_MS = 50;
 const DEFAULT_SELECT_GUARD_MS = 300;

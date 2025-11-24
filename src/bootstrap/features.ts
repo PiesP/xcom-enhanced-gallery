@@ -19,11 +19,63 @@ import { reportBootstrapError } from "@/bootstrap/types";
 import { APP_SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS } from "@/constants";
 import { registerTwitterTokenExtractor } from "@shared/container";
 import { logger } from "@shared/logging";
-import {
-  resolveFeatureStates,
-  type FeatureKey,
-  type SettingsWithFeatures,
-} from "@shared/utils/conditional-loading";
+// ─────────────────────────────────────────
+// Feature Flag Logic
+// ─────────────────────────────────────────
+
+export type FeatureKey =
+  | "gallery"
+  | "settings"
+  | "download"
+  | "mediaExtraction"
+  | "accessibility";
+
+const FEATURE_KEYS: readonly FeatureKey[] = [
+  "gallery",
+  "settings",
+  "download",
+  "mediaExtraction",
+  "accessibility",
+] as const;
+
+export interface SettingsWithFeatures {
+  features: Record<string, boolean | undefined>;
+}
+
+const DEFAULT_FEATURE_STATE: Record<FeatureKey, boolean> = {
+  gallery: true,
+  settings: true,
+  download: true,
+  mediaExtraction: true,
+  accessibility: true,
+};
+
+function coerceBoolean(value: unknown, fallback: boolean): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  return fallback;
+}
+
+function readFlag(
+  settings: SettingsWithFeatures | null | undefined,
+  feature: FeatureKey,
+): boolean {
+  const source = settings?.features ?? {};
+  return coerceBoolean(source[feature], DEFAULT_FEATURE_STATE[feature]);
+}
+
+function resolveFeatureStates(
+  settings?: SettingsWithFeatures | null,
+): Record<FeatureKey, boolean> {
+  return FEATURE_KEYS.reduce<Record<FeatureKey, boolean>>(
+    (state, key) => {
+      state[key] = readFlag(settings ?? undefined, key);
+      return state;
+    },
+    {} as Record<FeatureKey, boolean>,
+  );
+}
 
 const isDevBuild = import.meta.env.DEV;
 const debug = isDevBuild

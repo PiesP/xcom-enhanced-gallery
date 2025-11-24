@@ -47,7 +47,7 @@ function getIdleAPIs(): {
 /**
  * Schedule a task during idle time. Falls back to setTimeout(0) if requestIdleCallback is not supported.
  */
-import { globalTimerManager } from "@shared/utils/timer-management";
+import { globalTimerManager } from "@shared/utils/time/timer-management";
 
 export function scheduleIdle(
   task: () => void,

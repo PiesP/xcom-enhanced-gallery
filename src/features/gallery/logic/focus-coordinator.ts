@@ -1,4 +1,4 @@
-import { SharedObserver } from "@shared/utils/observer-pool";
+import { SharedObserver } from "@shared/utils/performance/observer-pool";
 import type { Accessor } from "solid-js";
 
 export interface FocusCoordinatorOptions {
@@ -51,7 +51,7 @@ export class FocusCoordinator {
     this.debounceTimer = setTimeout(() => this.recompute(), delay);
   }
 
-  private recompute() {
+  public recompute() {
     if (!this.options.isEnabled()) return;
 
     const container = this.options.container();
@@ -70,7 +70,9 @@ export class FocusCoordinator {
     for (const [index, item] of this.items) {
       if (!item.entry || item.entry.intersectionRatio < minRatio) continue;
 
-      const rect = item.entry.boundingClientRect;
+      // Phase 430: Use fresh rect for accurate position during scroll
+      // entry.boundingClientRect is stale (snapshot at intersection time)
+      const rect = item.element.getBoundingClientRect();
       const center = rect.top + rect.height / 2;
       const distance = Math.abs(center - containerCenter);
       const ratio = item.entry.intersectionRatio;

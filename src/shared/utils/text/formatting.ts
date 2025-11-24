@@ -185,3 +185,16 @@ export function shortenUrl(url: string, maxLength = 50): string {
     return url.length > maxLength ? `${url.slice(0, maxLength)}...` : url;
   }
 }
+
+/**
+ * Create standard class names
+ * Joins non-null/undefined values with a space
+ *
+ * @param classes - List of class names (strings, null, or undefined)
+ * @returns Joined class name string
+ */
+export function createClassName(
+  ...classes: (string | undefined | null)[]
+): string {
+  return classes.filter(Boolean).join(" ");
+}

@@ -10,9 +10,9 @@ import { logger } from "@/shared/logging";
 import type { IGalleryApp } from "@shared/container/app-container";
 import { warmupNonCriticalServices } from "@shared/container/service-accessors";
 import { mutateDevNamespace } from "@shared/devtools/dev-namespace";
+import { runAfterWindowLoad } from "@shared/dom/window-load";
 import { CoreService } from "@shared/services/core-service-manager";
-import { globalTimerManager } from "@shared/utils/timer-management";
-import { runAfterWindowLoad } from "@shared/utils/window-load";
+import { globalTimerManager } from "@shared/utils/time/timer-management";
 import { cleanupVendors } from "./shared/external/vendors";
 
 // Global styles

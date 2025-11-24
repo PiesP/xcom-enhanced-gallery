@@ -43,6 +43,7 @@ import { Toolbar } from "@shared/components/ui/Toolbar/Toolbar";
 import { getLanguageService } from "@shared/container/service-accessors";
 import { getSetting, setSetting } from "@shared/container/settings-access";
 import { ensureGalleryScrollAvailable } from "@shared/dom/utils";
+import { observeViewportCssVars } from "@shared/dom/viewport";
 import { getSolid } from "@shared/external/vendors";
 import { logger } from "@shared/logging";
 import type { DownloadState } from "@shared/state/signals/download.signals";
@@ -53,20 +54,19 @@ import {
   galleryState,
   navigateToItem,
 } from "@shared/state/signals/gallery.signals";
+import { useSelector } from "@shared/state/signals/signal-selector";
+import { isDownloadUiBusy } from "@shared/state/ui/download-ui-state";
 import type { ImageFitMode, MediaInfo } from "@shared/types";
 import {
   animateGalleryEnter,
   animateGalleryExit,
-} from "@shared/utils/animations";
-import { isDownloadUiBusy } from "@shared/utils/download-ui-state";
+} from "@shared/utils/css/css-animations";
 import { safeEventPrevent } from "@shared/utils/events/utils";
 import { computePreloadIndices } from "@shared/utils/performance";
-import { useSelector } from "@shared/utils/signal-selector";
-import { globalTimerManager } from "@shared/utils/timer-management";
-import { createToolbarViewModel } from "@shared/utils/toolbar-view-model";
+import { globalTimerManager } from "@shared/utils/time/timer-management";
 import { stringWithDefault } from "@shared/utils/types/safety";
-import { observeViewportCssVars } from "@shared/utils/viewport";
 import type { JSX } from "solid-js";
+import { useGalleryInitialScroll } from "./hooks/useGalleryInitialScroll";
 import { useGalleryKeyboard } from "./hooks/useGalleryKeyboard";
 import styles from "./VerticalGalleryView.module.css";
 import { VerticalImageItem } from "./VerticalImageItem";
@@ -304,11 +304,15 @@ function VerticalGalleryViewCore({
     });
   });
 
+  // Phase 430: Ref to break circular dependency between scroll and focus tracker
+  let forceSyncRef: (() => void) | undefined;
+
   const { isScrolling } = useGalleryScroll({
     container: () => containerEl(),
     scrollTarget: () => itemsContainerEl(),
     enabled: isVisible,
     programmaticScrollTimestamp,
+    onScroll: () => forceSyncRef?.(),
   });
 
   const {
@@ -318,6 +322,7 @@ function VerticalGalleryViewCore({
     handleItemBlur,
     applyFocusAfterNavigation,
     setManualFocus,
+    forceSync,
   } = useGalleryFocusTracker({
     container: () => containerEl(),
     isEnabled: isVisible,
@@ -331,13 +336,7 @@ function VerticalGalleryViewCore({
     isScrolling, // ✅ Phase 83.3: settling 기반 포커스 갱신 최적화
   });
 
-  const toolbarViewModel = createToolbarViewModel({
-    totalCount: () => mediaItems().length,
-    currentIndex,
-    focusedIndex,
-    tweetText: () => activeMedia()?.tweetText ?? null,
-    tweetTextHTML: () => activeMedia()?.tweetTextHTML ?? null,
-  });
+  forceSyncRef = forceSync;
 
   const { scrollToItem } = useGalleryItemScroll(
     () => containerEl(),
@@ -376,140 +375,14 @@ function VerticalGalleryViewCore({
   });
 
   // Phase 279/280/293: 갤러리 최초 열기 시 초기 스크롤 보장
-  let hasPerformedInitialScroll = false;
-
-  // Phase 293: 초기 렌더링 완료 후 자동 스크롤 실행 (rAF 체인으로 DOM 준비 보장)
-  createEffect(() => {
-    const visible = isVisible();
-
-    // 갤러리가 닫히면 플래그 리셋
-    if (!visible) {
-      hasPerformedInitialScroll = false;
-      return;
-    }
-
-    // 이미 스크롤 완료했으면 종료
-    if (hasPerformedInitialScroll) return;
-
-    // 기본 조건 체크
-    const container = containerEl();
-    const items = mediaItems();
-    if (!container || items.length === 0) return;
-
-    // 아이템 컨테이너 렌더링 확인
-    const itemsContainer = container.querySelector(
-      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
-    );
-    // Phase 328: Check only gallery items (exclude spacer)
-    const galleryItems = itemsContainer?.querySelectorAll(
-      '[data-xeg-role="gallery-item"]',
-    );
-    if (!itemsContainer || !galleryItems || galleryItems.length === 0) return;
-
-    // First render only, run once
-    hasPerformedInitialScroll = true;
-
-    // Phase 293+: rAF 체인 + 이미지 로드 대기로 초기 스크롤 안정성 개선
-    // - 1st rAF: 현재 프레임 paint 완료
-    // - 2nd rAF: 다음 프레임 시작 (레이아웃 계산 완료 보장)
-    // - waitForMediaLoad: 현재 아이템 이미지 로드 완료 대기 (높이 확정)
-    // - scrollToCurrentItem: 정확한 위치로 스크롤
-    if (
-      typeof window !== "undefined" &&
-      typeof window.requestAnimationFrame === "function"
-    ) {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(async () => {
-          // Phase 319: 현재 아이템의 이미지 로드 대기 추가
-          // 이미지가 로드되어야 정확한 높이로 스크롤 가능
-          const currentIdx = currentIndex();
-          if (currentIdx >= 0 && currentIdx < items.length) {
-            const itemElement =
-              container.querySelector(`[data-item-index="${currentIdx}"]`) ||
-              container.querySelector(`[data-index="${currentIdx}"]`);
-
-            if (itemElement) {
-              await waitForMediaLoad(itemElement, 1000);
-            }
-
-            await scrollToItem(currentIdx);
-            applyFocusAfterNavigation(currentIdx, "init", { force: true });
-          }
-        });
-      });
-    } else {
-      // requestAnimationFrame이 없는 환경에서는 이미지 로드만 대기
-      const currentIdx = currentIndex();
-      if (currentIdx >= 0 && currentIdx < items.length) {
-        const itemElement =
-          container.querySelector(`[data-item-index="${currentIdx}"]`) ||
-          container.querySelector(`[data-index="${currentIdx}"]`);
-
-        if (itemElement) {
-          void waitForMediaLoad(itemElement, 1000).then(async () => {
-            scrollToItem(currentIdx);
-            applyFocusAfterNavigation(currentIdx, "init", { force: true });
-          });
-          return;
-        }
-
-        scrollToItem(currentIdx);
-        applyFocusAfterNavigation(currentIdx, "init", { force: true });
-        return;
-      }
-    }
+  const { autoScrollToCurrentItem } = useGalleryInitialScroll({
+    isVisible,
+    containerEl: () => containerEl(),
+    mediaItems,
+    currentIndex,
+    scrollToItem,
+    applyFocusAfterNavigation,
   });
-
-  // Phase 270: 이미지 로드 완료 후 자동 스크롤 (타이밍 최적화)
-  const waitForMediaLoad = (
-    element: Element,
-    timeoutMs: number = 1000,
-  ): Promise<void> => {
-    return new Promise((resolve) => {
-      // 이미 로드된 경우 즉시 반환
-      if (element.getAttribute("data-media-loaded") === "true") {
-        resolve();
-        return;
-      }
-
-      const checkInterval = globalTimerManager.setInterval(() => {
-        if (element.getAttribute("data-media-loaded") === "true") {
-          globalTimerManager.clearInterval(checkInterval);
-          globalTimerManager.clearTimeout(timeoutId);
-          resolve();
-        }
-      }, 50);
-
-      // 타임아웃 처리 (네트워크 지연 시에도 스크롤 진행)
-      const timeoutId = globalTimerManager.setTimeout(() => {
-        globalTimerManager.clearInterval(checkInterval);
-        resolve();
-      }, timeoutMs);
-    });
-  };
-
-  const autoScrollToCurrentItem = async () => {
-    const currentIdx = currentIndex();
-    const container = containerEl();
-
-    if (!container || currentIdx < 0 || currentIdx >= mediaItems().length) {
-      return;
-    }
-
-    // Phase 270: 현재 아이템의 이미지 로드 완료 대기
-    // Support both new data-item-index and legacy data-index for robustness
-    const itemElement =
-      container.querySelector(`[data-item-index="${currentIdx}"]`) ||
-      container.querySelector(`[data-index="${currentIdx}"]`);
-
-    if (itemElement) {
-      await waitForMediaLoad(itemElement);
-    }
-
-    // 로드 완료 후 스크롤 실행 및 포커스 연계
-    scrollToItem(currentIdx);
-    applyFocusAfterNavigation(currentIdx, "init", { force: true });
-  };
 
   createEffect(() => {
     if (!isVisible()) {
@@ -631,9 +504,9 @@ function VerticalGalleryViewCore({
           onClose={onClose || (() => {})}
           onPrevious={onPrevious || (() => {})}
           onNext={onNext || (() => {})}
-          currentIndex={() => toolbarViewModel().currentIndex}
-          focusedIndex={() => toolbarViewModel().focusedIndex}
-          totalCount={() => toolbarViewModel().totalCount}
+          currentIndex={currentIndex}
+          focusedIndex={focusedIndex}
+          totalCount={() => mediaItems().length}
           // Phase 415: Two separate props for different purposes
           // isDownloading: Internal state tracking for download button visual feedback
           // disabled: External control to disable all toolbar buttons during operations
@@ -648,8 +521,8 @@ function VerticalGalleryViewCore({
           onFitHeight={handleFitHeight}
           onFitContainer={handleFitContainer}
           currentFitMode={imageFitMode()}
-          tweetText={() => toolbarViewModel().tweetText ?? undefined}
-          tweetTextHTML={() => toolbarViewModel().tweetTextHTML ?? undefined}
+          tweetText={() => activeMedia()?.tweetText}
+          tweetTextHTML={() => activeMedia()?.tweetTextHTML}
           className={styles.toolbar || ""}
         />
       </div>

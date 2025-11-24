@@ -13,7 +13,7 @@ import type {
   MediaExtractionResult,
   TweetInfo,
 } from "@shared/types/media.types";
-import { extractTweetTextHTMLFromClickedElement } from "@shared/utils/tweet-extractor";
+import { extractTweetTextHTMLFromClickedElement } from "@shared/utils/media/tweet-extractor";
 
 export class TwitterAPIExtractor implements APIExtractor {
   async extract(

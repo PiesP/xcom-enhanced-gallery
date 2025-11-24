@@ -6,7 +6,7 @@
  */
 
 import { getSolid } from "@shared/external/vendors";
-import { globalTimerManager } from "./timer-management";
+import { globalTimerManager } from "@shared/utils/time/timer-management";
 
 // Type definitions
 type Signal<T> = {

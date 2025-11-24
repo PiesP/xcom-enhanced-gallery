@@ -5,8 +5,8 @@
  */
 
 import { APP_SETTINGS_STORAGE_KEY } from "@/constants";
+import { syncThemeAttributes } from "@shared/dom/theme";
 import { logger } from "@shared/logging";
-import { syncThemeAttributes } from "@shared/utils/theme-dom";
 import { BaseServiceImpl } from "./base-service";
 import { getPersistentStorage } from "./persistent-storage";
 import type {

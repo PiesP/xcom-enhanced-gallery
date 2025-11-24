@@ -46,7 +46,7 @@ import { withGallery } from "@shared/components/hoc";
 import { getLanguageService } from "@shared/container/service-accessors";
 import { getSolid } from "@shared/external/vendors";
 import { logger } from "@shared/logging";
-import { createClassName } from "@shared/utils/component-utils"; // Phase 284: 개별 함수 직접 import
+import { createClassName } from "@shared/utils/text/formatting"; // Phase 284: 개별 함수 직접 import
 import { cleanFilename, isVideoMedia } from "./VerticalImageItem.helpers";
 import styles from "./VerticalImageItem.module.css";
 import type { VerticalImageItemProps } from "./VerticalImageItem.types";

@@ -8,7 +8,7 @@ import {
   scheduleMicrotask,
   scheduleRaf,
 } from "@shared/utils/performance";
-import { globalTimerManager } from "@shared/utils/timer-management";
+import { globalTimerManager } from "@shared/utils/time/timer-management";
 import { BaseServiceImpl } from "./base-service";
 import type {
   BulkDownloadResult,

@@ -16,15 +16,15 @@ import {
   useToolbarState,
   type ToolbarSettingsControllerResult,
 } from "@shared/hooks";
-import { createClassName } from "@shared/utils/component-utils";
+import type {
+  ToolbarDataState,
+  ToolbarState,
+} from "@shared/types/toolbar.types";
 import {
   safeEventPrevent,
   safeEventPreventAll,
 } from "@shared/utils/events/utils";
-import {
-  getToolbarClassName,
-  getToolbarDataState,
-} from "@shared/utils/toolbar-utils";
+import { createClassName } from "@shared/utils/text/formatting";
 import styles from "./Toolbar.module.css";
 import { toOptionalAccessor, toRequiredAccessor } from "./accessor-utils";
 
@@ -135,6 +135,13 @@ const createGuardedHandler = (
   };
 };
 
+function getToolbarDataState(state: ToolbarState): ToolbarDataState {
+  if (state.hasError) return "error";
+  if (state.isDownloading) return "downloading";
+  if (state.isLoading) return "loading";
+  return "idle";
+}
+
 function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const props = mergeProps(DEFAULT_PROPS, rawProps);
 
@@ -200,11 +207,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   };
 
   const toolbarClass = createMemo(() =>
-    createClassName(
-      styles.toolbar,
-      getToolbarClassName(styles.galleryToolbar ?? ""),
-      props.className ?? "",
-    ),
+    createClassName(styles.toolbar, styles.galleryToolbar, props.className),
   );
   const totalItems = createMemo(() => Math.max(0, totalCount()));
 

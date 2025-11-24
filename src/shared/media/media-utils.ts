@@ -2,8 +2,73 @@
  * @fileoverview Shared media utility functions for dimension extraction, URL normalization, and sorting.
  */
 
+import { logger } from "@shared/logging";
 import type { TweetMediaEntry } from "@shared/services/media/types";
 import type { MediaInfo } from "@shared/types/media.types";
+
+/**
+ * Generic deduplication function
+ * @template T - Array element type
+ * @param items - Array to deduplicate (readonly, null/undefined safe)
+ * @param keyExtractor - Function to extract unique key from each item
+ * @returns Deduplicated array (original order preserved)
+ */
+function removeDuplicates<T>(
+  items: readonly T[],
+  keyExtractor: (item: T) => string,
+): T[] {
+  if (!items?.length) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const uniqueItems: T[] = [];
+
+  for (const item of items) {
+    if (!item) {
+      continue;
+    }
+
+    const key = keyExtractor(item);
+    if (!key) {
+      logger.warn("Skipping item without key");
+      continue;
+    }
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueItems.push(item);
+    }
+  }
+
+  return uniqueItems;
+}
+
+/**
+ * Deduplicate media items based on URL
+ * @param mediaItems - Array of media items to deduplicate
+ * @returns Deduplicated array of media items
+ */
+export function removeDuplicateMediaItems(
+  mediaItems: readonly MediaInfo[],
+): MediaInfo[] {
+  const result = removeDuplicates(
+    mediaItems,
+    (item) => item.originalUrl ?? item.url,
+  );
+
+  // Log deduplication results for performance analysis
+  const removedCount = mediaItems.length - result.length;
+  if (removedCount > 0) {
+    logger.debug("Removed duplicate media items:", {
+      original: mediaItems.length,
+      unique: result.length,
+      removed: removedCount,
+    });
+  }
+
+  return result;
+}
 
 /**
  * Extract visual index from expanded_url

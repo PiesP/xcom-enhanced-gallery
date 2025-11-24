@@ -3,8 +3,8 @@ import {
   type ComponentChildren,
   type JSXElement,
 } from "@shared/external/vendors";
-import { createClassName } from "@shared/utils/component-utils";
 import { EventManager } from "@shared/services/event-manager";
+import { createClassName } from "@shared/utils/text/formatting";
 
 // ============================================================================
 // Constants

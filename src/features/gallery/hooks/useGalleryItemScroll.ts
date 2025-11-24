@@ -7,7 +7,7 @@
  */
 
 import { getSolid } from "@shared/external/vendors";
-import { toAccessor } from "@shared/utils/solid-helpers";
+import { toAccessor } from "@shared/utils/solid/solid-helpers";
 
 const { createEffect, untrack, on } = getSolid();
 

@@ -2,7 +2,7 @@ import { getErrorMessage } from "@shared/error/utils";
 import { logger } from "@shared/logging";
 import { generateMediaFilename } from "@shared/services/filename-service";
 import type { MediaInfo } from "@shared/types/media.types";
-import { globalTimerManager } from "@shared/utils/timer-management";
+import { globalTimerManager } from "@shared/utils/time/timer-management";
 import type { DownloadOptions, SingleDownloadResult } from "./types";
 
 export type GMDownloadFunction = (options: Record<string, unknown>) => void;

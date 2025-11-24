@@ -4,12 +4,12 @@
  * avoiding legacy validation/utilities that were never consumed.
  */
 
+import { getSolid } from "@shared/external/vendors";
 import type {
   ComponentType,
   GalleryComponentProps as SharedGalleryComponentProps,
 } from "@shared/types";
-import { getSolid } from "@shared/external/vendors";
-import { createClassName } from "@shared/utils/component-utils";
+import { createClassName } from "@shared/utils/text/formatting";
 
 const { mergeProps } = getSolid();
 

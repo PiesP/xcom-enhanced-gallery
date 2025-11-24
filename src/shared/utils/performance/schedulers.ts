@@ -3,7 +3,7 @@
  * @description Provides requestAnimationFrame and microtask scheduling helpers.
  */
 
-import { globalTimerManager } from "@shared/utils/timer-management";
+import { globalTimerManager } from "@shared/utils/time/timer-management";
 import { isGlobalLike } from "@shared/utils/types/safety";
 
 export type SchedulerHandle = { cancel: () => void };

@@ -1,5 +1,5 @@
 import { HttpRequestService } from "@shared/services/http-request-service";
-import { globalTimerManager } from "@shared/utils/timer-management";
+import { globalTimerManager } from "@shared/utils/time/timer-management";
 
 export const DEFAULT_BACKOFF_BASE_MS = 200;
 

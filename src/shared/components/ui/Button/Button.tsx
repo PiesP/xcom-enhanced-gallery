@@ -36,12 +36,12 @@ import {
   type JSXElement,
 } from "@shared/external/vendors";
 import { logger } from "@shared/logging";
-import { createClassName } from "@shared/utils/component-utils";
+import { toAccessor } from "@shared/utils/solid/solid-helpers";
+import { createClassName } from "@shared/utils/text/formatting";
 import styles from "./Button.module.css";
 
 const solid = getSolid();
 const { mergeProps, splitProps, createEffect, onCleanup, createMemo } = solid;
-import { toAccessor } from "@shared/utils/solid-helpers";
 
 // ============================================================================
 // Type Definitions

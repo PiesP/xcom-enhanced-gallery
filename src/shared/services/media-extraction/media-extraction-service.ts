@@ -1,5 +1,8 @@
 import { logger } from "@shared/logging";
-import { adjustClickedIndexAfterDeduplication } from "@shared/media/media-utils";
+import {
+  adjustClickedIndexAfterDeduplication,
+  removeDuplicateMediaItems,
+} from "@shared/media/media-utils";
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
@@ -8,7 +11,6 @@ import type {
 } from "@shared/types/media.types";
 import { ExtractionError } from "@shared/types/media.types";
 import { ErrorCode } from "@shared/types/result.types";
-import { removeDuplicateMediaItems } from "@shared/utils/deduplication";
 import { TweetInfoExtractor } from "./extractors/tweet-info-extractor";
 import { TwitterAPIExtractor } from "./extractors/twitter-api-extractor";
 

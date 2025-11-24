@@ -21,8 +21,8 @@ import type {
   ToolbarSettingsControllerResult,
   ToolbarState,
 } from "@shared/hooks";
-import { createClassName } from "@shared/utils/component-utils";
 import { safeEventPreventAll } from "@shared/utils/events/utils";
+import { createClassName } from "@shared/utils/text/formatting";
 import styles from "./Toolbar.module.css";
 
 const solid = getSolid();

@@ -4,7 +4,7 @@ import {
   navigateToItem,
   setFocusedIndex,
 } from "@shared/state/signals/gallery.signals";
-import { toAccessor } from "@shared/utils/solid-helpers";
+import { toAccessor } from "@shared/utils/solid/solid-helpers";
 import type { Accessor } from "solid-js";
 
 type MaybeAccessor<T> = T | Accessor<T>;
@@ -115,7 +115,7 @@ export function useGalleryFocusTracker(
   };
 
   const forceSync = () => {
-    // coordinator.recompute() is private
+    coordinator.recompute();
   };
 
   return {

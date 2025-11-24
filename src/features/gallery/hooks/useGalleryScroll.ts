@@ -17,9 +17,9 @@ import type {
   ScrollState,
 } from "@shared/state/signals/scroll.signals";
 import { INITIAL_SCROLL_STATE } from "@shared/state/signals/scroll.signals";
-import { useSelector } from "@shared/utils/signal-selector";
-import { toAccessor } from "@shared/utils/solid-helpers";
-import { globalTimerManager } from "@shared/utils/timer-management";
+import { useSelector } from "@shared/state/signals/signal-selector";
+import { toAccessor } from "@shared/utils/solid/solid-helpers";
+import { globalTimerManager } from "@shared/utils/time/timer-management";
 
 const { createSignal, createEffect, batch, onCleanup } = getSolid();
 

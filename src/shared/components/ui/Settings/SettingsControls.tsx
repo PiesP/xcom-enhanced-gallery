@@ -1,6 +1,6 @@
 import { getLanguageService } from "@shared/container/service-accessors";
 import { getSolid, type JSXElement } from "@shared/external/vendors";
-import { createClassName } from "@shared/utils/component-utils";
+import { createClassName } from "@shared/utils/text/formatting";
 import styles from "./SettingsControls.module.css";
 
 type Accessor<T> = () => T;
