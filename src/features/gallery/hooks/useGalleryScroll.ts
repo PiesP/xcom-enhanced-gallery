@@ -6,17 +6,17 @@
  * @description 마우스 움직임에 의존하지 않는 안정적인 스크롤 처리를 제공
  */
 
+import { isGalleryInternalEvent } from "@shared/dom/utils";
 import { getSolid } from "@shared/external/vendors";
 import { logger } from "@shared/logging";
 import { EventManager } from "@shared/services/event-manager";
 import type { GalleryState } from "@shared/state/signals/gallery.signals";
 import { galleryState } from "@shared/state/signals/gallery.signals";
 import type {
-  ScrollDirection,
-  ScrollState,
+    ScrollDirection,
+    ScrollState,
 } from "@shared/state/signals/scroll.signals";
 import { INITIAL_SCROLL_STATE } from "@shared/state/signals/scroll.signals";
-import { isGalleryInternalEvent } from "@shared/utils/dom";
 import { useSelector } from "@shared/utils/signal-selector";
 import { toAccessor } from "@shared/utils/solid-helpers";
 import { globalTimerManager } from "@shared/utils/timer-management";

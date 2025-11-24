@@ -4,7 +4,7 @@
  */
 
 import { globalTimerManager } from "@shared/utils/timer-management";
-import { isGlobalLike } from "@shared/utils/type-safety-helpers";
+import { isGlobalLike } from "@shared/utils/type-safety";
 
 export type SchedulerHandle = { cancel: () => void };
 

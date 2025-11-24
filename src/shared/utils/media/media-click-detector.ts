@@ -4,9 +4,9 @@
  */
 
 import { CSS } from "@/constants";
+import { isVideoControlElement } from "@shared/dom/utils";
 import { logger } from "@shared/logging";
 import { gallerySignals } from "@shared/state/signals/gallery.signals";
-import { isVideoControlElement } from "@shared/utils/dom";
 import { isValidMediaUrl } from "./url-validator";
 
 /**

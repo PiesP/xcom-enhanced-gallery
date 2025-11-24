@@ -41,6 +41,7 @@ import { useGalleryItemScroll } from "@features/gallery/hooks/useGalleryItemScro
 import { useGalleryScroll } from "@features/gallery/hooks/useGalleryScroll";
 import { Toolbar } from "@shared/components/ui/Toolbar/Toolbar";
 import { getSetting, setSetting } from "@shared/container/settings-access";
+import { ensureGalleryScrollAvailable } from "@shared/dom/utils";
 import { getSolid } from "@shared/external/vendors";
 import { logger } from "@shared/logging";
 import { languageService } from "@shared/services/language-service";
@@ -48,23 +49,22 @@ import type { DownloadState } from "@shared/state/signals/download.signals";
 import { downloadState } from "@shared/state/signals/download.signals";
 import type { GalleryState } from "@shared/state/signals/gallery.signals";
 import {
-  galleryIndexEvents,
-  galleryState,
-  navigateToItem,
+    galleryIndexEvents,
+    galleryState,
+    navigateToItem,
 } from "@shared/state/signals/gallery.signals";
 import type { ImageFitMode, MediaInfo } from "@shared/types";
 import {
-  animateGalleryEnter,
-  animateGalleryExit,
+    animateGalleryEnter,
+    animateGalleryExit,
 } from "@shared/utils/animations";
-import { ensureGalleryScrollAvailable } from "@shared/utils/dom";
 import { isDownloadUiBusy } from "@shared/utils/download-ui-state";
 import { safeEventPrevent } from "@shared/utils/event-utils";
 import { computePreloadIndices } from "@shared/utils/performance";
 import { useSelector } from "@shared/utils/signal-selector";
 import { globalTimerManager } from "@shared/utils/timer-management";
 import { createToolbarViewModel } from "@shared/utils/toolbar-view-model";
-import { stringWithDefault } from "@shared/utils/type-safety-helpers";
+import { stringWithDefault } from "@shared/utils/type-safety";
 import { observeViewportCssVars } from "@shared/utils/viewport";
 import type { JSX } from "solid-js";
 import { useGalleryKeyboard } from "./hooks/useGalleryKeyboard";

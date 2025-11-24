@@ -8,12 +8,12 @@ import { convertAPIMediaToMediaInfo } from "@shared/media/media-factory";
 import { determineClickedIndex } from "@shared/services/media-extraction/determine-clicked-index";
 import { TwitterAPI } from "@shared/services/media/twitter-api-client";
 import type {
-  APIExtractor,
-  MediaExtractionOptions,
-  MediaExtractionResult,
-  TweetInfo,
+    APIExtractor,
+    MediaExtractionOptions,
+    MediaExtractionResult,
+    TweetInfo,
 } from "@shared/types/media.types";
-import { extractTweetTextHTMLFromClickedElement } from "@shared/utils/tweet-text-html-extractor";
+import { extractTweetTextHTMLFromClickedElement } from "@shared/utils/tweet-extractor";
 
 export class TwitterAPIExtractor implements APIExtractor {
   async extract(

@@ -3,21 +3,21 @@
  * Single delegated handler for detecting external media clicks.
  */
 
+import {
+    isGalleryInternalElement,
+    isVideoControlElement,
+} from "@shared/dom/utils";
 import { logger } from "@shared/logging";
 import { gallerySignals } from "@shared/state/signals/gallery.signals";
 import type { MediaInfo } from "@shared/types/media.types";
-import {
-  isGalleryInternalElement,
-  isVideoControlElement,
-} from "@shared/utils/dom";
 import type {
-  EventHandlers,
-  EventHandlingResult,
-  GalleryEventOptions,
+    EventHandlers,
+    EventHandlingResult,
+    GalleryEventOptions,
 } from "@shared/utils/events/core/event-context";
 import {
-  detectMediaFromClick,
-  isProcessableMedia,
+    detectMediaFromClick,
+    isProcessableMedia,
 } from "@shared/utils/media/media-click-detector";
 import { isHTMLElement } from "@shared/utils/type-guards";
 

@@ -27,11 +27,11 @@
  */
 import type { CookieAPI } from "@shared/types/core/cookie.types";
 import type {
-  BrowserEnvironment,
-  GMXMLHttpRequestControl,
-  GMXMLHttpRequestDetails,
+    BrowserEnvironment,
+    GMXMLHttpRequestControl,
+    GMXMLHttpRequestDetails,
 } from "@shared/types/core/userscript";
-import { isGMUserScriptInfo } from "@shared/utils/type-safety-helpers";
+import { isGMUserScriptInfo } from "@shared/utils/type-safety";
 
 type GMUserScriptInfo = Record<string, unknown>;
 

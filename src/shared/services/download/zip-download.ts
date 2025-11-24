@@ -1,8 +1,8 @@
+import { getErrorMessage } from "@shared/error/utils";
 import {
   DEFAULT_BACKOFF_BASE_MS,
   fetchArrayBufferWithRetry,
 } from "@shared/network/retry-fetch";
-import { getErrorMessage } from "@shared/utils/error-handling";
 import { ensureUniqueFilenameFactory } from "./download-utils";
 import type { OrchestratorItem, OrchestratorOptions, ZipResult } from "./types";
 
