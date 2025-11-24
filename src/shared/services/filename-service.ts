@@ -7,8 +7,8 @@
  */
 
 import type { MediaInfo } from "@shared/types/media.types";
-import { safeParseInt } from "@shared/utils/type-safety";
-import { isHostMatching } from "@shared/utils/url-host-utils";
+import { safeParseInt } from "@shared/utils/types/safety";
+import { isHostMatching } from "@shared/utils/url/host";
 
 export interface FilenameOptions {
   index?: string | number;

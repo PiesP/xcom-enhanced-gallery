@@ -4,22 +4,22 @@
  */
 
 import {
-    isGalleryInternalElement,
-    isVideoControlElement,
+  isGalleryInternalElement,
+  isVideoControlElement,
 } from "@shared/dom/utils";
 import { logger } from "@shared/logging";
 import { gallerySignals } from "@shared/state/signals/gallery.signals";
 import type { MediaInfo } from "@shared/types/media.types";
 import type {
-    EventHandlers,
-    EventHandlingResult,
-    GalleryEventOptions,
+  EventHandlers,
+  EventHandlingResult,
+  GalleryEventOptions,
 } from "@shared/utils/events/core/event-context";
 import {
-    detectMediaFromClick,
-    isProcessableMedia,
+  detectMediaFromClick,
+  isProcessableMedia,
 } from "@shared/utils/media/media-click-detector";
-import { isHTMLElement } from "@shared/utils/type-guards";
+import { isHTMLElement } from "@shared/utils/types/guards";
 
 function isGalleryOpen(): boolean {
   return gallerySignals.isOpen.value;

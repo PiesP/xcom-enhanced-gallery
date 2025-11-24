@@ -4,9 +4,9 @@
  * applies rename/transform steps between versions. Pure function for easy testing.
  */
 
-import { isRecord } from "@shared/utils/type-guards";
-import type { AppSettings } from "@features/settings/types/settings.types";
 import { DEFAULT_SETTINGS as defaultSettings } from "@/constants";
+import type { AppSettings } from "@features/settings/types/settings.types";
+import { isRecord } from "@shared/utils/types/guards";
 
 type Migration = (input: AppSettings) => AppSettings;
 

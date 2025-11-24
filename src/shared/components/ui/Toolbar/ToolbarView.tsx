@@ -1,5 +1,3 @@
-import type { JSXElement } from "@shared/external/vendors";
-import { getSolid } from "@shared/external/vendors";
 import { IconButton } from "@shared/components/ui/Button/IconButton";
 import {
   ArrowDownOnSquareStack,
@@ -11,19 +9,21 @@ import {
   Cog6Tooth,
 } from "@shared/components/ui/Icon";
 import { SettingsControlsLazy } from "@shared/components/ui/Settings/SettingsControlsLazy";
-import { createClassName } from "@shared/utils/component-utils";
-import { safeEventPreventAll } from "@shared/utils/event-utils";
-import { languageService } from "@shared/services/language-service";
-import styles from "./Toolbar.module.css";
 import type {
-  ToolbarProps,
   FitMode,
   MaybeAccessor,
+  ToolbarProps,
 } from "@shared/components/ui/Toolbar/Toolbar.types";
+import type { JSXElement } from "@shared/external/vendors";
+import { getSolid } from "@shared/external/vendors";
 import type {
-  ToolbarState,
   ToolbarSettingsControllerResult,
+  ToolbarState,
 } from "@shared/hooks";
+import { languageService } from "@shared/services/language-service";
+import { createClassName } from "@shared/utils/component-utils";
+import { safeEventPreventAll } from "@shared/utils/events/utils";
+import styles from "./Toolbar.module.css";
 
 const solid = getSolid();
 const { Show, createMemo, createSignal, createEffect, lazy, Suspense } = solid;

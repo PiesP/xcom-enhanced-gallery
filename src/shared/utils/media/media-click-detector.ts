@@ -3,11 +3,12 @@
  * @description Stable media click detection and handling logic with DOM caching optimization
  */
 
-import { CSS } from "@/constants";
+import { CSS } from "@/constants/css";
+import { SELECTORS } from "@/constants/selectors";
 import { isVideoControlElement } from "@shared/dom/utils";
 import { logger } from "@shared/logging";
 import { gallerySignals } from "@shared/state/signals/gallery.signals";
-import { isValidMediaUrl } from "./url-validator";
+import { isValidMediaUrl } from "@shared/utils/url/validator";
 
 /**
  * Media detection result
@@ -27,9 +28,9 @@ export interface MediaDetectionResult {
 
 // Essential selectors for X.com
 const ESSENTIAL_SELECTORS = {
-  TWEET: 'article[data-testid="tweet"]',
-  TWEET_PHOTO: '[data-testid="tweetPhoto"]',
-  VIDEO_PLAYER: '[data-testid="videoPlayer"]',
+  TWEET: SELECTORS.TWEET,
+  TWEET_PHOTO: SELECTORS.TWEET_PHOTO,
+  VIDEO_PLAYER: SELECTORS.VIDEO_PLAYER,
   MEDIA_LINK: 'a[href*="/status/"]',
 } as const;
 

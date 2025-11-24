@@ -5,7 +5,7 @@
  * Media URL validation utilities.
  */
 
-import { isNonEmptyString } from "@shared/utils/type-guards";
+import { isNonEmptyString } from "@shared/utils/types/guards";
 
 const SUPPORTED_MEDIA_HOSTS = new Set(["pbs.twimg.com", "video.twimg.com"]);
 const MAX_URL_LENGTH = 2048;

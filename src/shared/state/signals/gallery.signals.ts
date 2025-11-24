@@ -9,18 +9,18 @@
  */
 
 import type { MediaInfo } from "@shared/types/media.types";
-import { effectSafe, createSignalSafe } from "./signal-factory";
+import { createSignalSafe, effectSafe } from "./signal-factory";
 // Break runtime dependency on services: use logging barrel directly
-import { logger as rootLogger, type Logger as ILogger } from "@shared/logging";
 import { getSolid } from "@shared/external/vendors";
-import { createEventEmitter } from "@shared/utils/event-emitter";
+import { logger as rootLogger, type Logger as ILogger } from "@shared/logging";
+import { createEventEmitter } from "@shared/utils/events/emitter";
 // Navigation state types
-import type { NavigationSource } from "@shared/types/navigation.types";
 import {
   NavigationStateMachine,
-  type NavigationState,
   type NavigationAction,
+  type NavigationState,
 } from "@shared/state/machines/navigation.machine";
+import type { NavigationSource } from "@shared/types/navigation.types";
 
 // Logger instance (services-free)
 const logger: ILogger = rootLogger;

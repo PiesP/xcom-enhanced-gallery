@@ -6,20 +6,20 @@
 
 import { logger } from "@shared/logging";
 import {
-  navigateToItem,
-  navigatePrevious,
-  navigateNext,
   gallerySignals,
+  navigateNext,
+  navigatePrevious,
+  navigateToItem,
 } from "@shared/state/signals/gallery.signals";
-import {
-  shouldExecuteVideoControlKey,
-  shouldExecutePlayPauseKey,
-} from "@shared/utils/keyboard-debounce";
-import { executeVideoControl } from "./video-control-helper";
 import type {
   EventHandlers,
   GalleryEventOptions,
 } from "@shared/utils/events/core/event-context";
+import {
+  shouldExecutePlayPauseKey,
+  shouldExecuteVideoControlKey,
+} from "@shared/utils/events/keyboard-debounce";
+import { executeVideoControl } from "./video-control-helper";
 
 /**
  * Check if gallery is open

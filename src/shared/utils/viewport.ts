@@ -2,12 +2,12 @@
  * Viewport/Container constraint helpers (PC-only)
  * - Pure calculator + DOM hook to expose values via CSS variables
  */
+import { createEventListener } from "@shared/utils/types/guards";
 import {
   addListener,
   removeEventListenerManaged,
 } from "./events/core/listener-manager";
 import { globalTimerManager } from "./timer-management";
-import { createEventListener } from "./type-guards";
 
 export interface ChromeOffsets {
   readonly toolbarHeight?: number; // px

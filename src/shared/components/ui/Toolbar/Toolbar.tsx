@@ -1,30 +1,30 @@
-import type { JSXElement } from "@shared/external/vendors";
-import { getSolid } from "@shared/external/vendors";
-import {
-  useToolbarState,
-  useToolbarSettingsController,
-  type ToolbarSettingsControllerResult,
-} from "@shared/hooks";
-import {
-  getToolbarDataState,
-  getToolbarClassName,
-} from "@shared/utils/toolbar-utils";
-import { createClassName } from "@shared/utils/component-utils";
-import {
-  safeEventPreventAll,
-  safeEventPrevent,
-} from "@shared/utils/event-utils";
 import {
   ArrowsPointingIn,
   ArrowsPointingOut,
   ArrowsRightLeft,
   ArrowsUpDown,
 } from "@shared/components/ui/Icon";
-import { ToolbarView } from "@shared/components/ui/Toolbar/ToolbarView";
 import type {
-  ToolbarProps,
   FitMode,
+  ToolbarProps,
 } from "@shared/components/ui/Toolbar/Toolbar.types";
+import { ToolbarView } from "@shared/components/ui/Toolbar/ToolbarView";
+import type { JSXElement } from "@shared/external/vendors";
+import { getSolid } from "@shared/external/vendors";
+import {
+  useToolbarSettingsController,
+  useToolbarState,
+  type ToolbarSettingsControllerResult,
+} from "@shared/hooks";
+import { createClassName } from "@shared/utils/component-utils";
+import {
+  safeEventPrevent,
+  safeEventPreventAll,
+} from "@shared/utils/events/utils";
+import {
+  getToolbarClassName,
+  getToolbarDataState,
+} from "@shared/utils/toolbar-utils";
 import styles from "./Toolbar.module.css";
 import { toOptionalAccessor, toRequiredAccessor } from "./accessor-utils";
 
@@ -334,7 +334,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
 }
 
 export type {
-  ToolbarProps,
   FitMode,
+  ToolbarProps,
 } from "@shared/components/ui/Toolbar/Toolbar.types";
 export const Toolbar = ToolbarContainer;

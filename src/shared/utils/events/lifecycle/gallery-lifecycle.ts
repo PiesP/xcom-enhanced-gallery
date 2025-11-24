@@ -14,7 +14,7 @@ import {
 } from "@shared/utils/events/core/listener-manager";
 import { handleKeyboardEvent } from "@shared/utils/events/handlers/keyboard";
 import { handleMediaClick } from "@shared/utils/events/handlers/media-click";
-import { resetKeyboardDebounceState } from "@shared/utils/keyboard-debounce";
+import { resetKeyboardDebounceState } from "@shared/utils/events/keyboard-debounce";
 
 interface LifecycleState {
   initialized: boolean;

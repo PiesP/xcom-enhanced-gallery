@@ -3,10 +3,10 @@
  * @description DOM manipulation and inspection utilities specific to the gallery
  */
 
+import { CSS as CSS_CONST, VIDEO_CONTROL_SELECTORS } from "@/constants";
 import { logger } from "@shared/logging";
 import { gallerySignals } from "@shared/state/signals/gallery.signals";
-import { CSS as CSS_CONST, VIDEO_CONTROL_SELECTORS } from "@/constants";
-import { isHTMLElement } from "@shared/utils/type-guards";
+import { isHTMLElement } from "@shared/utils/types/guards";
 
 // Gallery element selectors (constants)
 const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;

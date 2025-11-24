@@ -4,9 +4,9 @@
  * @version 1.0.0 - Phase 2: DOM HTML preservation
  */
 
-import { sanitizeHTML } from "./html-sanitizer";
-import { logger } from "@shared/logging";
 import { SELECTORS } from "@/constants";
+import { logger } from "@shared/logging";
+import { sanitizeHTML } from "@shared/utils/text/html-sanitizer";
 
 /**
  * Extracts tweet text HTML from tweet article element

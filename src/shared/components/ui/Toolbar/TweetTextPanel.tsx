@@ -1,8 +1,8 @@
 import type { JSXElement } from "@shared/external/vendors";
 import { getSolid } from "@shared/external/vendors";
 import { languageService } from "@shared/services/language-service";
-import { sanitizeHTML } from "@shared/utils/html-sanitizer";
-import { formatTweetText, shortenUrl } from "@shared/utils/text-formatting";
+import { formatTweetText, shortenUrl } from "@shared/utils/text/formatting";
+import { sanitizeHTML } from "@shared/utils/text/html-sanitizer";
 import styles from "./Toolbar.module.css";
 
 const solid = getSolid();
