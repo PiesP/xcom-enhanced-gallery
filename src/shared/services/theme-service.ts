@@ -241,5 +241,5 @@ export type {
   ThemeChangeListener,
   ThemeServiceContract,
   ThemeSetOptions,
-  ThemeSetting
+  ThemeSetting,
 } from "./theme-service.contract";
