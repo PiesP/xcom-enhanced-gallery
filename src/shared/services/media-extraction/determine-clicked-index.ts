@@ -49,6 +49,17 @@ export function determineClickedIndex(
         );
         return i;
       }
+
+      // Also check thumbnail URL (important for videos where clicked element is poster)
+      if (item.thumbnailUrl) {
+        const normalizedThumbnailUrl = normalizeMediaUrl(item.thumbnailUrl);
+        if (normalizedThumbnailUrl === normalizedElementUrl) {
+          logger.debug(
+            `[determineClickedIndex] Matched clicked media (thumbnail) at index ${i}: ${normalizedElementUrl}`,
+          );
+          return i;
+        }
+      }
     }
 
     logger.warn(

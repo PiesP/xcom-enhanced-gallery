@@ -101,7 +101,15 @@ export function normalizeMediaUrl(url: string): string | null {
   try {
     const urlObj = new URL(url);
     const pathname = urlObj.pathname;
-    const filename = pathname.split("/").pop();
+    let filename = pathname.split("/").pop();
+
+    if (filename) {
+      const dotIndex = filename.lastIndexOf(".");
+      if (dotIndex !== -1) {
+        filename = filename.substring(0, dotIndex);
+      }
+    }
+
     return filename && filename.length > 0 ? filename : null;
   } catch {
     try {
@@ -113,6 +121,12 @@ export function normalizeMediaUrl(url: string): string | null {
         filenamePart = filenamePart.substring(0, queryIndex);
       const hashIndex = filenamePart.indexOf("#");
       if (hashIndex !== -1) filenamePart = filenamePart.substring(0, hashIndex);
+
+      const dotIndex = filenamePart.lastIndexOf(".");
+      if (dotIndex !== -1) {
+        filenamePart = filenamePart.substring(0, dotIndex);
+      }
+
       return filenamePart.length > 0 ? filenamePart : null;
     } catch {
       return null;
