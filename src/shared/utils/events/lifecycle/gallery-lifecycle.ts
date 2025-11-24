@@ -101,7 +101,13 @@ export async function initializeGalleryEvents(
   optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement,
 ): Promise<() => void> {
   if (lifecycleState.initialized) {
+    logger.warn("[GalleryLifecycle] Already initialized, re-initializing");
     cleanupGalleryEvents();
+  }
+
+  if (!handlers) {
+    logger.error("[GalleryLifecycle] Missing handlers");
+    return () => {};
   }
 
   const { options: finalOptions, root: explicitGalleryRoot } =
