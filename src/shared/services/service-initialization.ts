@@ -15,7 +15,7 @@ export async function registerCoreServices(): Promise<void> {
   // Phase 370: Dynamic imports to break circular dependencies
   const [{ CoreService }, { getMediaService }, { SERVICE_KEYS }] =
     await Promise.all([
-      import("./core/core-service-manager"),
+      import("./core-service-manager"),
       import("./service-factories"),
       import("@/constants"),
     ]);
@@ -48,7 +48,7 @@ export async function registerCoreServices(): Promise<void> {
   // Phase 308: BulkDownloadService moved to lazy registration
   // Not registered during app startup, dynamically loaded at first download
   // Filename service (imported as concrete module)
-  const { FilenameService } = await import("./file-naming/filename-service");
+  const { FilenameService } = await import("./filename-service");
   serviceManager.register(SERVICE_KEYS.MEDIA_FILENAME, new FilenameService());
 
   logger.info("Core services registered successfully");

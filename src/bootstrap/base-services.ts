@@ -12,7 +12,7 @@ import {
   THEME_SERVICE_IDENTIFIER,
   type CoreBaseServiceIdentifier,
 } from "@shared/container/service-accessors";
-import { CoreService } from "@shared/services/core";
+import { CoreService } from "@shared/services/core-service-manager";
 import { languageService } from "@shared/services/language-service";
 import { themeService } from "@shared/services/theme-service";
 import { reportBootstrapError } from "@/bootstrap/types";

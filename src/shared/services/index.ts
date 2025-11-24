@@ -13,7 +13,9 @@ export { PersistentStorage, getPersistentStorage } from "./persistent-storage";
 export { CookieService, getCookieService } from "./cookie-service";
 export { StyleRegistry, getStyleRegistry } from "./style-registry";
 
-export { DownloadService, downloadService } from "./download-service";
+import { DownloadOrchestrator } from "./download/download-orchestrator";
+export { DownloadOrchestrator as DownloadService };
+export const downloadService = DownloadOrchestrator.getInstance();
 export { ensureDownloadServiceRegistered } from "./lazy-service-registration";
 
 export {
@@ -27,4 +29,4 @@ export {
   serviceManager,
   getService,
   registerServiceFactory,
-} from "./core/core-service-manager";
+} from "./core-service-manager";

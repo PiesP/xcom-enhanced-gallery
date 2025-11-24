@@ -2,7 +2,7 @@ import { BaseServiceImpl } from "@shared/services/base-service";
 import {
   generateMediaFilename,
   generateZipFilename,
-} from "@shared/services/file-naming";
+} from "@shared/services/filename-service";
 import type { MediaInfo } from "@shared/types/media.types";
 import { ErrorCode } from "@shared/types/result.types";
 import { downloadSingleFile, getGMDownload } from "./single-download";

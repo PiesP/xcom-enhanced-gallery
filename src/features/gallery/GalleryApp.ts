@@ -83,7 +83,9 @@ export class GalleryApp {
    */
   private async setupEventHandlers(): Promise<void> {
     try {
-      const { initializeGalleryEvents } = await import("@shared/utils/events");
+      const { initializeGalleryEvents } = await import(
+        "@shared/utils/events/lifecycle/gallery-lifecycle"
+      );
 
       // Get settings if available
       const settingsService = tryGetSettingsManager<{
@@ -270,7 +272,9 @@ export class GalleryApp {
       }
 
       try {
-        const { cleanupGalleryEvents } = await import("@shared/utils/events");
+        const { cleanupGalleryEvents } = await import(
+          "@shared/utils/events/lifecycle/gallery-lifecycle"
+        );
         cleanupGalleryEvents();
       } catch (error) {
         logger.warn("[GalleryApp] Event cleanup failed:", error);

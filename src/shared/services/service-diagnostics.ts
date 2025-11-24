@@ -12,7 +12,7 @@ export async function diagnoseServiceManager(): Promise<void> {
     const [{ registerCoreServices }, { CoreService }, { SERVICE_KEYS }] =
       await Promise.all([
         import("./service-initialization"),
-        import("./core/core-service-manager"),
+        import("./core-service-manager"),
         import("@/constants"),
       ]);
 

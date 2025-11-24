@@ -12,11 +12,16 @@ import {
   addListener as registerManagedListener,
   removeEventListenerManaged,
   removeEventListenersByContext,
-  initializeGalleryEvents,
+} from "@shared/utils/events/core/listener-manager";
+import {
   cleanupGalleryEvents,
   getGalleryEventSnapshot,
-} from "@shared/utils/events";
-import type { EventHandlers, GalleryEventOptions } from "@shared/utils/events";
+  initializeGalleryEvents,
+} from "@shared/utils/events/lifecycle/gallery-lifecycle";
+import type {
+  EventHandlers,
+  GalleryEventOptions,
+} from "@shared/utils/events/core/event-context";
 
 /**
  * Event Manager

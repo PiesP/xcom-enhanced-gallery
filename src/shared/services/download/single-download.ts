@@ -1,5 +1,5 @@
 import { logger } from "@shared/logging";
-import { generateMediaFilename } from "@shared/services/file-naming";
+import { generateMediaFilename } from "@shared/services/filename-service";
 import type { MediaInfo } from "@shared/types/media.types";
 import { getErrorMessage } from "@shared/utils/error-handling";
 import { globalTimerManager } from "@shared/utils/timer-management";

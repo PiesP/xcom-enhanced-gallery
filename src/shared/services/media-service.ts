@@ -14,7 +14,7 @@ import type {
   BulkDownloadResult,
   DownloadOptions,
   SingleDownloadResult,
-} from "./download-service";
+} from "./download/types";
 import { HttpRequestService } from "./http-request-service";
 import type { MediaExtractionService } from "./media-extraction/media-extraction-service";
 
@@ -214,7 +214,10 @@ export class MediaService extends BaseServiceImpl {
     media: MediaInfo,
     options: DownloadOptions = {},
   ): Promise<SingleDownloadResult> {
-    const { downloadService } = await import("./download-service");
+    const { DownloadOrchestrator } = await import(
+      "./download/download-orchestrator"
+    );
+    const downloadService = DownloadOrchestrator.getInstance();
     const blob = this.prefetchCache.get(media.url);
     return downloadService.downloadSingle(media, {
       ...options,
@@ -226,7 +229,10 @@ export class MediaService extends BaseServiceImpl {
     items: Array<MediaInfo>,
     options: BulkDownloadOptions = {},
   ): Promise<BulkDownloadResult> {
-    const { downloadService } = await import("./download-service");
+    const { DownloadOrchestrator } = await import(
+      "./download/download-orchestrator"
+    );
+    const downloadService = DownloadOrchestrator.getInstance();
     return downloadService.downloadBulk(items, {
       ...options,
       prefetchedBlobs: this.prefetchCache,

@@ -38,7 +38,7 @@
  * - Typed get/tryGet methods validate at compile time
  */
 import { CoreServiceRegistry } from "./core-service-registry";
-import { CoreService } from "@shared/services/core";
+import { CoreService } from "@shared/services/core-service-manager";
 
 /**
  * @class TestHarness

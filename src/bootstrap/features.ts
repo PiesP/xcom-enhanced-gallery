@@ -52,7 +52,7 @@ const FEATURE_LOADERS: readonly FeatureLoader[] = [
     name: "TwitterTokenExtractor",
     load: async () => {
       const { TwitterTokenExtractor } = await import(
-        "@shared/services/token-extraction/twitter-token-extractor"
+        "@shared/services/media/twitter-token-extractor"
       );
       registerTwitterTokenExtractor(new TwitterTokenExtractor());
     },

@@ -32,8 +32,10 @@ import { ErrorBoundary } from "@shared/components/ui/ErrorBoundary/ErrorBoundary
 import "./styles/gallery-global.css";
 import { logger } from "@shared/logging";
 import { getSolid } from "@shared/external/vendors";
-import { downloadService } from "@shared/services/download-service";
+import { DownloadOrchestrator } from "@shared/services/download/download-orchestrator";
 import { isGMAPIAvailable } from "@shared/external/userscript";
+
+const downloadService = DownloadOrchestrator.getInstance();
 import {
   getThemeService,
   getMediaService,

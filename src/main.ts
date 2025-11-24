@@ -8,7 +8,7 @@ import { initializeDevTools } from "@/bootstrap/dev-tools";
 import { registerFeatureServicesLazy } from "@/bootstrap/features";
 import { initializeGalleryApp } from "@/bootstrap/gallery-init";
 import { warmupNonCriticalServices } from "@shared/container/service-accessors";
-import { CoreService } from "@shared/services/core";
+import { CoreService } from "@shared/services/core-service-manager";
 import { cleanupVendors } from "./shared/external/vendors";
 import { globalTimerManager } from "@shared/utils/timer-management";
 import { runAfterWindowLoad } from "@shared/utils/window-load";
@@ -310,7 +310,7 @@ async function cleanup(): Promise<void> {
         "[cleanup] Event listener status check",
         async () => {
           const { getEventListenerStatus } = await import(
-            "@shared/utils/events"
+            "@shared/utils/events/core/listener-manager"
           );
           const status = getEventListenerStatus();
           if (status.total > 0) {

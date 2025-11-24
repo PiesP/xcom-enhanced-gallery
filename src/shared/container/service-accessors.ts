@@ -1,4 +1,4 @@
-import type { FilenameService } from "@shared/services/file-naming";
+import type { FilenameService } from "@shared/services/filename-service";
 import type { ThemeServiceContract } from "@shared/services/theme-service.contract";
 import type { LanguageService } from "@shared/services/language-service";
 import type { GalleryRenderer } from "@shared/interfaces/gallery.interfaces";

@@ -3,7 +3,10 @@
  * - Pure calculator + DOM hook to expose values via CSS variables
  */
 import { globalTimerManager } from "./timer-management";
-import { addListener, removeEventListenerManaged } from "./events";
+import {
+  addListener,
+  removeEventListenerManaged,
+} from "./events/core/listener-manager";
 import { createEventListener } from "./type-guards";
 
 export interface ChromeOffsets {
