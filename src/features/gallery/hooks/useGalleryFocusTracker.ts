@@ -1,13 +1,12 @@
 /**
  * @fileoverview Gallery Focus Tracker Hook
  * @description Tracks which gallery item should be focused based on scroll position.
- * Uses FocusCoordinator with IntersectionObserver for efficient visibility detection.
+ * Uses FocusCoordinator with IntersectionObserver for visibility detection.
  *
  * Key behaviors:
- * - Registers/unregisters items with FocusCoordinator
- * - Handles manual focus from user interactions (click, keyboard)
- * - Processes auto-focus from scroll position changes
- * - Updates toolbar progress via global state
+ * - Tracks items via IntersectionObserver
+ * - Supports manual focus (click, keyboard) vs auto-focus (scroll)
+ * - Updates global gallery state for toolbar sync
  *
  * Note: Does NOT trigger auto-scroll. Tracking only.
  */
@@ -19,9 +18,6 @@ import { toAccessor } from '@shared/utils/solid/solid-helpers';
 import type { Accessor } from 'solid-js';
 
 type MaybeAccessor<T> = T | Accessor<T>;
-
-/** Navigation trigger source */
-type FocusNavigationTrigger = 'button' | 'click' | 'keyboard' | 'init' | 'scroll';
 
 /** Hook configuration */
 export interface UseGalleryFocusTrackerOptions {
@@ -51,17 +47,13 @@ export interface UseGalleryFocusTrackerReturn {
   handleItemBlur: (index: number) => void;
   /** Force recomputation */
   forceSync: () => void;
-  /** Set manual focus programmatically */
+  /** Set or clear manual focus */
   setManualFocus: (index: number | null) => void;
   /** Apply focus after navigation */
-  applyFocusAfterNavigation: (
-    index: number,
-    trigger: FocusNavigationTrigger,
-    options?: { force?: boolean },
-  ) => void;
+  applyFocusAfterNavigation: (index: number) => void;
 }
 
-const { createSignal, onCleanup, batch } = getSolid();
+const { createSignal, onCleanup } = getSolid();
 
 /**
  * Track gallery item focus based on scroll position.
@@ -87,63 +79,36 @@ export function useGalleryFocusTracker(
     }),
     debounceTime: autoFocusDebounce(),
     onFocusChange: (index, source) => {
-      if (source === 'auto' && manualFocusIndex() === null) {
-        batch(() => {
-          setLocalFocusedIndex(index);
-          if (index !== null) {
-            // 'auto-focus' source prevents auto-scroll in navigation handler
-            navigateToItem(index, 'scroll', 'auto-focus');
-          }
-        });
+      if (source === 'auto' && manualFocusIndex() === null && index !== null) {
+        setLocalFocusedIndex(index);
+        // 'auto-focus' source prevents auto-scroll in navigation handler
+        navigateToItem(index, 'scroll', 'auto-focus');
       }
     },
   });
 
   onCleanup(() => coordinator.cleanup());
 
-  const registerItem = (index: number, element: HTMLElement | null): void => {
-    coordinator.registerItem(index, element);
-  };
-
-  const handleItemFocus = (index: number): void => {
+  const setFocus = (index: number): void => {
     setManualFocusIndex(index);
     setLocalFocusedIndex(index);
     setFocusedIndex(index);
   };
 
-  const handleItemBlur = (index: number): void => {
-    if (manualFocusIndex() === index) {
-      setManualFocusIndex(null);
-    }
-  };
-
   const setManualFocus = (index: number | null): void => {
     setManualFocusIndex(index);
-    if (index !== null) {
-      setLocalFocusedIndex(index);
-      setFocusedIndex(index);
-    }
-  };
-
-  const applyFocusAfterNavigation = (
-    index: number,
-    _trigger: FocusNavigationTrigger,
-    _opts?: { force?: boolean },
-  ): void => {
-    setManualFocus(index);
-  };
-
-  const forceSync = (): void => {
-    coordinator.recompute();
+    if (index !== null) setFocus(index);
   };
 
   return {
     focusedIndex,
-    registerItem,
-    handleItemFocus,
-    handleItemBlur,
-    forceSync,
+    registerItem: (index, element) => coordinator.registerItem(index, element),
+    handleItemFocus: setFocus,
+    handleItemBlur: (index: number) => {
+      if (manualFocusIndex() === index) setManualFocusIndex(null);
+    },
+    forceSync: () => coordinator.recompute(),
     setManualFocus,
-    applyFocusAfterNavigation,
+    applyFocusAfterNavigation: setFocus,
   };
 }

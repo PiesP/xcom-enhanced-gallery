@@ -1,13 +1,13 @@
 /**
- * @fileoverview Focus Coordinator - Scroll-Based Focus Tracking
- * @description Determines which gallery item should be focused based on viewport position.
- * Uses IntersectionObserver for efficient visibility detection.
+ * @fileoverview Focus Coordinator - Natural Scroll-Based Focus Selection
+ * @description Selects the most naturally visible gallery item after scroll stops.
  *
- * Key behaviors:
- * - Observes gallery items for visibility changes
- * - Selects item closest to viewport top when scroll stops
- * - Updates toolbar progress bar via callback
- * - Does NOT trigger auto-scroll (tracking only)
+ * Selection algorithm:
+ * 1. Primary: Item with highest visibility ratio (most visible wins)
+ * 2. Tiebreaker: Item whose center is closest to viewport center
+ *
+ * This approach feels most natural because users perceive the item
+ * that occupies the most screen space as the "current" item.
  */
 
 import { SharedObserver } from '@shared/utils/performance/observer-pool';
@@ -32,24 +32,23 @@ export interface FocusCoordinatorOptions {
   debounceTime?: number;
 }
 
-/** Tracked item with optional intersection data */
+/** Tracked item state */
 interface TrackedItem {
   element: HTMLElement;
   entry?: IntersectionObserverEntry;
 }
 
-/** Configuration defaults */
+/** Default configuration values */
 const DEFAULTS = {
   THRESHOLD: 0,
   ROOT_MARGIN: '0px',
   MIN_VISIBLE_RATIO: 0.05,
-  PRIORITY_VISIBLE_RATIO: 0.3, // Items with ≥30% visibility get priority
   DEBOUNCE_TIME: 50,
 } as const;
 
 /**
- * Coordinates focus tracking for gallery items based on scroll position.
- * Selects the most visible item closest to viewport top.
+ * Coordinates focus tracking for gallery items.
+ * Selects the most naturally visible item when scroll stops.
  */
 export class FocusCoordinator {
   private readonly items = new Map<number, TrackedItem>();
@@ -70,9 +69,7 @@ export class FocusCoordinator {
   /** Register or unregister a gallery item for tracking */
   registerItem(index: number, element: HTMLElement | null): void {
     const prev = this.items.get(index);
-    if (prev) {
-      SharedObserver.unobserve(prev.element);
-    }
+    if (prev) SharedObserver.unobserve(prev.element);
 
     if (!element) {
       this.items.delete(index);
@@ -85,9 +82,7 @@ export class FocusCoordinator {
       element,
       entry => {
         const item = this.items.get(index);
-        if (item) {
-          item.entry = entry;
-        }
+        if (item) item.entry = entry;
         this.scheduleRecompute();
       },
       this.observerOptions,
@@ -101,8 +96,9 @@ export class FocusCoordinator {
     const container = this.options.container();
     if (!container) return;
 
-    const viewportTop = container.getBoundingClientRect().top;
-    const bestCandidate = this.findBestCandidate(viewportTop);
+    const rect = container.getBoundingClientRect();
+    const viewportCenter = rect.top + rect.height / 2;
+    const bestCandidate = this.findBestCandidate(viewportCenter);
 
     if (bestCandidate !== null) {
       this.options.onFocusChange(bestCandidate, 'auto');
@@ -134,37 +130,39 @@ export class FocusCoordinator {
   }
 
   /**
-   * Find best item to focus.
-   * Priority 1: Items with ≥30% visibility - closest to viewport top
-   * Priority 2: Any visible item - closest to viewport top
+   * Find best item to focus using natural selection.
+   * Primary: Highest visibility ratio (most visible item)
+   * Tiebreaker: Center closest to viewport center
    */
-  private findBestCandidate(viewportTop: number): number | null {
-    const candidates: Array<{ index: number; topDistance: number; ratio: number }> = [];
+  private findBestCandidate(viewportCenter: number): number | null {
+    type Candidate = { index: number; ratio: number; centerDistance: number };
+    const candidates: Candidate[] = [];
 
     for (const [index, item] of this.items) {
-      if (!item.entry || item.entry.intersectionRatio < this.minVisibleRatio) {
-        continue;
-      }
+      if (!item.entry || item.entry.intersectionRatio < this.minVisibleRatio) continue;
 
       const rect = item.element.getBoundingClientRect();
+      const itemCenter = rect.top + rect.height / 2;
+
       candidates.push({
         index,
-        topDistance: Math.abs(rect.top - viewportTop),
         ratio: item.entry.intersectionRatio,
+        centerDistance: Math.abs(itemCenter - viewportCenter),
       });
     }
 
     if (candidates.length === 0) return null;
 
-    // Priority 1: High visibility items (≥30%)
-    const highVisibility = candidates.filter(c => c.ratio >= DEFAULTS.PRIORITY_VISIBLE_RATIO);
-    if (highVisibility.length > 0) {
-      highVisibility.sort((a, b) => a.topDistance - b.topDistance);
-      return highVisibility[0]!.index;
-    }
+    // Sort: highest visibility first, then closest to center
+    candidates.sort((a, b) => {
+      const ratioDiff = b.ratio - a.ratio;
+      // Use center distance as tiebreaker when visibility is similar (within 5%)
+      if (Math.abs(ratioDiff) < 0.05) {
+        return a.centerDistance - b.centerDistance;
+      }
+      return ratioDiff;
+    });
 
-    // Priority 2: Any visible item
-    candidates.sort((a, b) => a.topDistance - b.topDistance);
     return candidates[0]!.index;
   }
 }

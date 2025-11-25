@@ -319,9 +319,9 @@ function VerticalGalleryViewCore({
   createEffect(() => {
     if (!isVisible()) return;
 
-    const unsubscribe = galleryIndexEvents.on('navigate:complete', ({ index, trigger }) => {
+    const unsubscribe = galleryIndexEvents.on('navigate:complete', ({ index }) => {
       scrollToItem(index);
-      applyFocusAfterNavigation(index, trigger);
+      applyFocusAfterNavigation(index);
     });
 
     onCleanup(() => unsubscribe());

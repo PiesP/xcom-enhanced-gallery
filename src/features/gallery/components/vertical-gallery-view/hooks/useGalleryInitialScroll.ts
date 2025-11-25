@@ -9,11 +9,7 @@ interface UseGalleryInitialScrollProps {
   mediaItems: Accessor<readonly MediaInfo[]>;
   currentIndex: Accessor<number>;
   scrollToItem: (index: number) => Promise<void> | void;
-  applyFocusAfterNavigation: (
-    index: number,
-    trigger: 'init',
-    options?: { force?: boolean },
-  ) => void;
+  applyFocusAfterNavigation: (index: number) => void;
 }
 
 export function useGalleryInitialScroll({
@@ -66,7 +62,7 @@ export function useGalleryInitialScroll({
     }
 
     scrollToItem(currentIdx);
-    applyFocusAfterNavigation(currentIdx, 'init', { force: true });
+    applyFocusAfterNavigation(currentIdx);
   };
 
   createEffect(() => {
@@ -105,7 +101,7 @@ export function useGalleryInitialScroll({
             }
 
             await scrollToItem(currentIdx);
-            applyFocusAfterNavigation(currentIdx, 'init', { force: true });
+            applyFocusAfterNavigation(currentIdx);
           }
         });
       });
@@ -119,13 +115,13 @@ export function useGalleryInitialScroll({
         if (itemElement) {
           void waitForMediaLoad(itemElement, 1000).then(async () => {
             scrollToItem(currentIdx);
-            applyFocusAfterNavigation(currentIdx, 'init', { force: true });
+            applyFocusAfterNavigation(currentIdx);
           });
           return;
         }
 
         scrollToItem(currentIdx);
-        applyFocusAfterNavigation(currentIdx, 'init', { force: true });
+        applyFocusAfterNavigation(currentIdx);
         return;
       }
     }
