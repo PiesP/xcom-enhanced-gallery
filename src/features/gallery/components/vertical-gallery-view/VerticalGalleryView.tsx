@@ -267,13 +267,8 @@ function VerticalGalleryViewCore({
     container: () => containerEl(),
     isEnabled: isVisible,
     getCurrentIndex: currentIndex,
-    // 사용자/자동 스크롤 중에는 자동 포커스를 억제
-    shouldAutoFocus: () => !isScrolling(),
-    // Phase 293: autoFocusDebounce 50ms → 0ms (즉시 실행)
-    // isScrolling() 조건만으로 충분한 보호 제공
-    // 키보드 내비게이션 반응성 개선
+    // Immediate focus update for responsive keyboard navigation
     autoFocusDebounce: 0,
-    isScrolling, // ✅ Phase 83.3: settling 기반 포커스 갱신 최적화
   });
 
   forceSyncRef = forceSync;

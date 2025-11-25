@@ -1,9 +1,13 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery
- * Licensed under the MIT License
+ * @fileoverview Gallery Scroll Management Hook
+ * @description Manages scroll state and events for the gallery.
+ * Detects user scroll activity (wheel, scrollbar drag) and tracks scroll direction.
  *
- * @fileoverview 개선된 갤러리 스크롤 관리 훅
- * @description 마우스 움직임에 의존하지 않는 안정적인 스크롤 처리를 제공
+ * Key responsibilities:
+ * - Track scroll state (isScrolling, direction, lastScrollTime)
+ * - Handle wheel and scroll events on gallery container
+ * - Filter out programmatic scroll events (auto-scroll)
+ * - Provide scroll callbacks for focus tracking integration
  */
 
 import { isGalleryInternalEvent } from '@shared/dom/utils';
@@ -23,49 +27,52 @@ const { createSignal, createEffect, batch, onCleanup } = getSolid();
 type Accessor<T> = () => T;
 type MaybeAccessor<T> = T | Accessor<T>;
 
+/** Configuration options for useGalleryScroll */
 interface UseGalleryScrollOptions {
-  /** 갤러리 컨테이너 참조 */
+  /** Gallery container element reference */
   container: HTMLElement | null | Accessor<HTMLElement | null>;
-  /** 실제 스크롤 타깃 (기본: container) */
+  /** Actual scroll target (defaults to container) */
   scrollTarget?: HTMLElement | null | Accessor<HTMLElement | null>;
-  /** 스크롤 콜백 함수 */
+  /** Callback fired on scroll with delta and target element */
   onScroll?: (delta: number, target: HTMLElement | null) => void;
-  /** 스크롤 처리 활성화 여부 */
+  /** Whether scroll handling is enabled */
   enabled?: MaybeAccessor<boolean>;
-  /** 스크롤 방향 감지 활성화 여부 */
+  /** Whether to track scroll direction */
   enableScrollDirection?: MaybeAccessor<boolean>;
-  /** 스크롤 방향 변경 콜백 */
+  /** Callback when scroll direction changes */
   onScrollDirectionChange?: (direction: ScrollDirection) => void;
-  /** 프로그램적 스크롤 타임스탬프 (이 시점 직후의 스크롤 이벤트는 무시됨) */
+  /** Timestamp of last programmatic scroll (events within 100ms are ignored) */
   programmaticScrollTimestamp?: Accessor<number>;
 }
 
+/** Return type for useGalleryScroll */
 export interface UseGalleryScrollReturn {
-  /** 마지막 스크롤 시간 */
+  /** Timestamp of last scroll activity */
   lastScrollTime: Accessor<number>;
-  /** 현재 스크롤 중인지 여부 */
+  /** Whether currently scrolling */
   isScrolling: Accessor<boolean>;
-  /** 현재 스크롤 방향 (옵션) */
+  /** Current scroll direction */
   scrollDirection: Accessor<ScrollDirection>;
-  /** 전체 스크롤 상태 스냅샷 */
+  /** Full scroll state snapshot */
   state: Accessor<ScrollState>;
 }
 
 /**
- * 유휴 상태로 판정하기까지의 대기 시간 (ms)
- * Phase 153: 250ms로 설정하여 스크롤 중 포커스 흔들림 완화
+ * Time to wait after last scroll event before marking scroll as ended (ms).
+ * 250ms provides good balance between responsiveness and stability.
  */
 export const SCROLL_IDLE_TIMEOUT = 250;
 
-const extractWheelDelta = (event: Event): number => {
-  if (event instanceof WheelEvent) {
-    return typeof event.deltaY === 'number' ? event.deltaY : 0;
-  }
+/** Window to ignore scroll events after programmatic scroll (ms) */
+const PROGRAMMATIC_SCROLL_WINDOW = 100;
 
-  const maybeDelta = (event as { deltaY?: number }).deltaY;
-  return typeof maybeDelta === 'number' ? maybeDelta : 0;
-};
+/** Extract deltaY from wheel event */
+const extractWheelDelta = (event: WheelEvent): number => event.deltaY ?? 0;
 
+/**
+ * Hook for managing gallery scroll state and events.
+ * Provides scroll tracking without triggering auto-scroll.
+ */
 export function useGalleryScroll({
   container,
   scrollTarget,
@@ -79,119 +86,111 @@ export function useGalleryScroll({
   const scrollTargetAccessor = toAccessor(scrollTarget ?? containerAccessor);
   const enabledAccessor = toAccessor(enabled);
   const enableScrollDirectionAccessor = toAccessor(enableScrollDirection);
-  const programmaticScrollTimestampAccessor = toAccessor(programmaticScrollTimestamp ?? 0);
+  const programmaticTimestampAccessor = toAccessor(programmaticScrollTimestamp ?? 0);
 
-  const isGalleryOpen = useSelector<GalleryState, boolean>(
-    galleryState,
-    (state: GalleryState) => state.isOpen,
-    { dependencies: state => [state.isOpen] },
-  );
+  const isGalleryOpen = useSelector<GalleryState, boolean>(galleryState, state => state.isOpen, {
+    dependencies: state => [state.isOpen],
+  });
 
-  // Phase 153: 통합 스크롤 상태 Signal
   const [scrollState, setScrollState] = createSignal<ScrollState>(INITIAL_SCROLL_STATE);
 
-  let scrollTimeoutId: number | null = null;
-  let directionTimeoutId: number | null = null;
+  let scrollIdleTimerId: number | null = null;
+  let directionIdleTimerId: number | null = null;
 
-  const clearScrollTimeout = () => {
-    if (scrollTimeoutId !== null) {
-      globalTimerManager.clearTimeout(scrollTimeoutId);
-      scrollTimeoutId = null;
+  /** Clear scroll idle timeout */
+  const clearScrollIdleTimer = (): void => {
+    if (scrollIdleTimerId !== null) {
+      globalTimerManager.clearTimeout(scrollIdleTimerId);
+      scrollIdleTimerId = null;
     }
   };
 
-  const clearDirectionTimeout = () => {
-    if (directionTimeoutId !== null) {
-      globalTimerManager.clearTimeout(directionTimeoutId);
-      directionTimeoutId = null;
+  /** Clear direction idle timeout */
+  const clearDirectionIdleTimer = (): void => {
+    if (directionIdleTimerId !== null) {
+      globalTimerManager.clearTimeout(directionIdleTimerId);
+      directionIdleTimerId = null;
     }
   };
 
-  const updateScrollState = (scrolling: boolean, delta?: number) => {
-    const hasDelta = typeof delta === 'number';
+  /** Update scroll state with new values */
+  const updateScrollState = (isScrolling: boolean, delta?: number): void => {
     batch(() => {
       setScrollState(prev => ({
         ...prev,
-        isScrolling: scrolling,
-        lastScrollTime: scrolling ? Date.now() : prev.lastScrollTime,
-        lastDelta: hasDelta ? (delta as number) : prev.lastDelta,
+        isScrolling,
+        lastScrollTime: isScrolling ? Date.now() : prev.lastScrollTime,
+        lastDelta: delta ?? prev.lastDelta,
       }));
     });
   };
 
-  const updateScrollDirection = (delta: number) => {
+  /** Update scroll direction based on delta */
+  const updateScrollDirection = (delta: number): void => {
     if (!enableScrollDirectionAccessor()) {
       return;
     }
 
     const newDirection: ScrollDirection = delta > 0 ? 'down' : 'up';
+    const currentDirection = scrollState().direction;
 
-    if (scrollState().direction !== newDirection) {
-      setScrollState(prev => ({
-        ...prev,
-        direction: newDirection,
-      }));
+    if (currentDirection !== newDirection) {
+      setScrollState(prev => ({ ...prev, direction: newDirection }));
       onScrollDirectionChange?.(newDirection);
-
-      logger.debug('useGalleryScroll: Scroll direction changed', {
-        direction: newDirection,
-        delta,
-      });
+      logger.debug('useGalleryScroll: Direction changed', { direction: newDirection });
     }
 
-    clearDirectionTimeout();
-    directionTimeoutId = globalTimerManager.setTimeout(() => {
+    // Reset direction to idle after timeout
+    clearDirectionIdleTimer();
+    directionIdleTimerId = globalTimerManager.setTimeout(() => {
       if (scrollState().direction !== 'idle') {
-        setScrollState(prev => ({
-          ...prev,
-          direction: 'idle',
-        }));
+        setScrollState(prev => ({ ...prev, direction: 'idle' }));
         onScrollDirectionChange?.('idle');
       }
     }, SCROLL_IDLE_TIMEOUT);
   };
 
-  const handleScrollEnd = () => {
-    clearScrollTimeout();
-    scrollTimeoutId = globalTimerManager.setTimeout(() => {
+  /** Schedule scroll end detection */
+  const scheduleScrollEnd = (): void => {
+    clearScrollIdleTimer();
+    scrollIdleTimerId = globalTimerManager.setTimeout(() => {
       updateScrollState(false);
       logger.debug('useGalleryScroll: Scroll ended');
     }, SCROLL_IDLE_TIMEOUT);
   };
 
-  const handleGalleryWheel = (event: WheelEvent) => {
-    if (!isGalleryOpen()) {
-      return;
-    }
+  /** Check if scroll event should be ignored (programmatic scroll) */
+  const shouldIgnoreScroll = (): boolean => {
+    const lastProgrammatic = programmaticTimestampAccessor();
+    return Date.now() - lastProgrammatic < PROGRAMMATIC_SCROLL_WINDOW;
+  };
 
-    if (!isGalleryInternalEvent(event)) {
+  /** Handle wheel events on gallery */
+  const handleWheel = (event: WheelEvent): void => {
+    if (!isGalleryOpen() || !isGalleryInternalEvent(event)) {
       return;
     }
 
     const delta = extractWheelDelta(event);
     const targetElement = scrollTargetAccessor();
+
     updateScrollState(true, delta);
     updateScrollDirection(delta);
-
     onScroll?.(delta, targetElement);
-
-    handleScrollEnd();
+    scheduleScrollEnd();
   };
 
-  const handleScroll = (_event: Event) => {
-    if (!isGalleryOpen()) return;
-
-    // 프로그램적 스크롤 무시 (100ms 윈도우)
-    const lastProgrammatic = programmaticScrollTimestampAccessor();
-    if (Date.now() - lastProgrammatic < 100) {
+  /** Handle scroll events (scrollbar drag, etc.) */
+  const handleScroll = (): void => {
+    if (!isGalleryOpen() || shouldIgnoreScroll()) {
       return;
     }
 
-    // 휠 이벤트가 아닌 경우(스크롤바 드래그 등) 처리
     updateScrollState(true);
-    handleScrollEnd();
+    scheduleScrollEnd();
   };
 
+  // Setup event listeners
   createEffect(() => {
     const isEnabled = enabledAccessor();
     const containerElement = containerAccessor();
@@ -199,48 +198,37 @@ export function useGalleryScroll({
     const eventTarget = scrollElement ?? containerElement;
 
     if (!isEnabled || !eventTarget) {
+      // Reset state when disabled
       updateScrollState(false);
-      clearScrollTimeout();
-      clearDirectionTimeout();
-      setScrollState(prev => ({
-        ...prev,
-        direction: 'idle',
-      }));
+      clearScrollIdleTimer();
+      clearDirectionIdleTimer();
+      setScrollState(prev => ({ ...prev, direction: 'idle' }));
       return;
     }
 
     const eventManager = new EventManager();
 
-    eventManager.addEventListener(eventTarget, 'wheel', handleGalleryWheel, {
-      passive: true,
-    });
+    eventManager.addEventListener(eventTarget, 'wheel', handleWheel, { passive: true });
+    eventManager.addEventListener(eventTarget, 'scroll', handleScroll, { passive: true });
 
-    // 스크롤바 드래그 감지를 위한 scroll 이벤트 리스너 추가
-    eventManager.addEventListener(eventTarget, 'scroll', handleScroll, {
-      passive: true,
-    });
-
-    logger.debug('useGalleryScroll: Event listeners registered', {
+    logger.debug('useGalleryScroll: Listeners registered', {
       hasContainer: !!containerElement,
       hasScrollTarget: !!scrollElement,
     });
 
     onCleanup(() => {
       eventManager.cleanup();
-      clearScrollTimeout();
-      clearDirectionTimeout();
-      setScrollState(() => ({
-        ...INITIAL_SCROLL_STATE,
-      }));
+      clearScrollIdleTimer();
+      clearDirectionIdleTimer();
+      setScrollState(() => INITIAL_SCROLL_STATE);
     });
   });
 
   onCleanup(() => {
-    clearScrollTimeout();
-    clearDirectionTimeout();
+    clearScrollIdleTimer();
+    clearDirectionIdleTimer();
   });
 
-  // Phase 153: 통합 State로부터 개별 Accessors 생성
   return {
     lastScrollTime: () => scrollState().lastScrollTime,
     isScrolling: () => scrollState().isScrolling,
