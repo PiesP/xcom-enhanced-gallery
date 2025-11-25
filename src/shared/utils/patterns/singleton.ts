@@ -8,7 +8,7 @@
  * Singleton holder for lazy initialization
  */
 interface SingletonHolder<T> {
-  instance: T | null;
+    instance: T | null;
 }
 
 /**
@@ -26,14 +26,14 @@ interface SingletonHolder<T> {
  * @returns A function that returns the singleton instance
  */
 export function createSingleton<T>(factory: () => T): () => T {
-  const holder: SingletonHolder<T> = { instance: null };
+    const holder: SingletonHolder<T> = { instance: null };
 
-  return (): T => {
-    if (holder.instance === null) {
-      holder.instance = factory();
-    }
-    return holder.instance;
-  };
+    return (): T => {
+        if (holder.instance === null) {
+            holder.instance = factory();
+        }
+        return holder.instance;
+    };
 }
 
 /**
@@ -48,22 +48,22 @@ export function createSingleton<T>(factory: () => T): () => T {
  * @returns Tuple of [getInstance, resetInstance] functions
  */
 export function createResettableSingleton<T>(
-  factory: () => T,
+    factory: () => T,
 ): [() => T, () => void] {
-  const holder: SingletonHolder<T> = { instance: null };
+    const holder: SingletonHolder<T> = { instance: null };
 
-  const getInstance = (): T => {
-    if (holder.instance === null) {
-      holder.instance = factory();
-    }
-    return holder.instance;
-  };
+    const getInstance = (): T => {
+        if (holder.instance === null) {
+            holder.instance = factory();
+        }
+        return holder.instance;
+    };
 
-  const resetInstance = (): void => {
-    holder.instance = null;
-  };
+    const resetInstance = (): void => {
+        holder.instance = null;
+    };
 
-  return [getInstance, resetInstance];
+    return [getInstance, resetInstance];
 }
 
 /**

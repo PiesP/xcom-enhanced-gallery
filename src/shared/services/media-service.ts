@@ -9,11 +9,11 @@ import type {
   DownloadOptions,
   SingleDownloadResult,
 } from "./download/types";
+import type { MediaExtractionService } from "./media-extraction/media-extraction-service";
 import {
   PrefetchManager,
   type PrefetchOptions,
 } from "./media/prefetch-manager";
-import type { MediaExtractionService } from "./media-extraction/media-extraction-service";
 
 export type { PrefetchOptions } from "./media/prefetch-manager";
 
