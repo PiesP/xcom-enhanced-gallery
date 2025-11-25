@@ -16,10 +16,12 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Extracted `clamp01` utility to shared module, eliminating duplication across `focus-coordinator` and `focus-score`.
   - Simplified calculation chains (viewport bounds, center proximity, hysteresis logic).
   - Reduced variable verbosity while preserving readability.
+- **Prefetching**: Collapsed media prefetch scheduling down to `immediate` vs `idle`, inlining the idle helper and removing RAF/microtask pathways to shrink the bundle and surface-level API.
 
 ### Removed
 
 - Eliminated the legacy `GalleryHOC` compatibility shim and the `useGalleryInitialScroll` placeholder so no unused modules remain under `src/`. Dependency-cruiser no longer requires exceptions for these files, keeping the orphan check authoritative.
+- Removed the standalone performance schedulers module (RAF/microtask helpers) and the associated tests now that idle scheduling is the only supported strategy.
 
 ## [0.4.16] - 2025-11-23
 

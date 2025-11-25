@@ -4,9 +4,4 @@
 
 // Gallery preload helper
 export { computePreloadIndices } from './preload';
-
-// Idle scheduling
-export { scheduleIdle } from './idle-scheduler';
-
-// Animation/microtask scheduling
-export { scheduleMicrotask, scheduleRaf } from './schedulers';
+export type { DeprecatedSchedulers } from './schedulers';

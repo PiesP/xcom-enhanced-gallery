@@ -5,14 +5,9 @@
 
 import { HttpRequestService } from '@shared/services/http-request-service';
 import type { MediaInfo } from '@shared/types/media.types';
-import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
+import { scheduleIdle } from '@shared/utils/performance/idle-scheduler';
 
-export interface PrefetchOptions {
-  maxConcurrent?: number;
-  prefetchRange?: number;
-  schedule?: 'immediate' | 'idle' | 'raf' | 'microtask';
-}
+type PrefetchSchedule = 'immediate' | 'idle';
 
 /**
  * Manages media prefetching and caching.
@@ -30,49 +25,17 @@ export class PrefetchManager {
   /**
    * Prefetch media with specified scheduling strategy
    */
-  async prefetch(media: MediaInfo, options: PrefetchOptions = {}): Promise<void> {
-    const task = () => void this.prefetchSingle(media.url).catch(() => {});
-
-    switch (options.schedule) {
-      case 'idle':
-        scheduleIdle(task);
-        break;
-      case 'raf':
-        scheduleRaf(task);
-        break;
-      case 'microtask':
-        scheduleMicrotask(task);
-        break;
-      case 'immediate':
-        await this.prefetchSingle(media.url);
-        break;
-      default:
-        globalTimerManager.setTimeout(task, 0);
+  async prefetch(media: MediaInfo, schedule: PrefetchSchedule = 'idle'): Promise<void> {
+    if (schedule === 'immediate') {
+      await this.prefetchSingle(media.url);
+      return;
     }
-  }
 
-  /**
-   * Prefetch media items around the current index
-   */
-  async prefetchAround(
-    urls: readonly string[],
-    currentIndex: number,
-    options: PrefetchOptions = {},
-  ): Promise<void> {
-    const prefetchRange = options.prefetchRange ?? 2;
-    const schedule = options.schedule ?? 'idle';
-
-    for (let i = 1; i <= prefetchRange; i++) {
-      const nextUrl = urls[currentIndex + i];
-      if (nextUrl) {
-        this.prefetch({ url: nextUrl } as MediaInfo, { ...options, schedule });
-      }
-
-      const prevUrl = urls[currentIndex - i];
-      if (prevUrl) {
-        this.prefetch({ url: prevUrl } as MediaInfo, { ...options, schedule });
-      }
-    }
+    scheduleIdle(() => {
+      void this.prefetchSingle(media.url).catch(() => {
+        // Ignore individual failures — cache cleanup is handled in prefetchSingle.
+      });
+    });
   }
 
   /**

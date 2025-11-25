@@ -1,69 +1,41 @@
-/**
- * @fileoverview Idle Scheduler Utility
- * @description Schedules work during idle time when requestIdleCallback is available.
- * Provides fallback (setTimeout) for safe operation in Node/jsdom environments.
- */
-
-export interface IdleScheduleOptions {
-  readonly timeoutMs?: number; // Ensure execution within specified time
-}
+import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 export type IdleHandle = { cancel: () => void };
 
-type IdleDeadline = { didTimeout: boolean; timeRemaining: () => number };
-
-type RequestIdleCallback = (
-  callback: (deadline: IdleDeadline) => void,
-  opts?: { timeout?: number },
-) => number;
-
+type RequestIdleCallback = (callback: () => void, opts?: { timeout?: number }) => number;
 type CancelIdleCallback = (handle: number) => void;
 
-function getIdleAPIs(): {
+const getIdleAPIs = (): {
   ric: RequestIdleCallback | null;
   cic: CancelIdleCallback | null;
-} {
-  const g: unknown =
-    typeof globalThis !== 'undefined'
-      ? globalThis
-      : typeof window !== 'undefined'
-        ? window
-        : undefined;
+} => {
+  const source = typeof globalThis !== 'undefined' ? globalThis : undefined;
   const ric =
-    g && typeof g === 'object' && 'requestIdleCallback' in g
-      ? ((g as { requestIdleCallback?: unknown }).requestIdleCallback as
+    source && typeof source === 'object' && 'requestIdleCallback' in source
+      ? ((source as { requestIdleCallback?: unknown }).requestIdleCallback as
           | RequestIdleCallback
           | undefined) || null
       : null;
   const cic =
-    g && typeof g === 'object' && 'cancelIdleCallback' in g
-      ? ((g as { cancelIdleCallback?: unknown }).cancelIdleCallback as
+    source && typeof source === 'object' && 'cancelIdleCallback' in source
+      ? ((source as { cancelIdleCallback?: unknown }).cancelIdleCallback as
           | CancelIdleCallback
           | undefined) || null
       : null;
   return { ric, cic };
-}
+};
 
-/**
- * Schedule a task during idle time. Falls back to setTimeout(0) if requestIdleCallback is not supported.
- */
-import { globalTimerManager } from '@shared/utils/time/timer-management';
-
-export function scheduleIdle(task: () => void, opts: IdleScheduleOptions = {}): IdleHandle {
+export function scheduleIdle(task: () => void): IdleHandle {
   const { ric, cic } = getIdleAPIs();
-  const timeout = opts.timeoutMs ?? 200;
 
   if (ric) {
-    const id = ric(
-      () => {
-        try {
-          task();
-        } catch {
-          // noop — error handling at consumer level
-        }
-      },
-      { timeout },
-    );
+    const id = ric(() => {
+      try {
+        task();
+      } catch {
+        // noop — the caller decides how to handle failures
+      }
+    });
     return {
       cancel: () => {
         cic?.(id);
@@ -71,9 +43,7 @@ export function scheduleIdle(task: () => void, opts: IdleScheduleOptions = {}): 
     };
   }
 
-  // Fallback: schedule immediately to queue
-  // Use globalTimerManager to ensure timers are tracked and cleaned up in tests
-  const t = globalTimerManager.setTimeout(() => {
+  const timerId = globalTimerManager.setTimeout(() => {
     try {
       task();
     } catch {
@@ -82,6 +52,8 @@ export function scheduleIdle(task: () => void, opts: IdleScheduleOptions = {}): 
   }, 0);
 
   return {
-    cancel: () => globalTimerManager.clearTimeout(t),
+    cancel: () => {
+      globalTimerManager.clearTimeout(timerId);
+    },
   };
 }

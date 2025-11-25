@@ -3,12 +3,10 @@ import type {
   MediaExtractionResult,
   MediaInfo,
 } from '@shared/types/media.types';
+import { PrefetchManager } from '@shared/services/media/prefetch-manager';
 import { BaseServiceImpl } from './base-service';
 import type { BulkDownloadResult, DownloadOptions, SingleDownloadResult } from './download/types';
 import type { MediaExtractionService } from './media-extraction/media-extraction-service';
-import { PrefetchManager, type PrefetchOptions } from './media/prefetch-manager';
-
-export type { PrefetchOptions } from './media/prefetch-manager';
 
 export type BulkDownloadOptions = DownloadOptions;
 
@@ -59,12 +57,12 @@ export class MediaService extends BaseServiceImpl {
       // Immediate prefetch for the first item (current view)
       const firstItem = result.mediaItems[0];
       if (firstItem) {
-        this.prefetchMedia(firstItem, { schedule: 'immediate' });
+        this.prefetchMedia(firstItem, 'immediate');
       }
 
       // Idle prefetch for others
       result.mediaItems.slice(1).forEach(item => {
-        this.prefetchMedia(item, { schedule: 'idle' });
+        this.prefetchMedia(item, 'idle');
       });
     }
 
@@ -115,16 +113,8 @@ export class MediaService extends BaseServiceImpl {
     return this.getOptimizedImageUrl(url);
   }
 
-  async prefetchMedia(media: MediaInfo, options: PrefetchOptions = {}): Promise<void> {
-    return this.prefetchManager.prefetch(media, options);
-  }
-
-  async prefetchNextMedia(
-    mediaItems: readonly string[],
-    currentIndex: number,
-    options: PrefetchOptions = {},
-  ): Promise<void> {
-    return this.prefetchManager.prefetchAround(mediaItems, currentIndex, options);
+  async prefetchMedia(media: MediaInfo, schedule: 'immediate' | 'idle' = 'idle'): Promise<void> {
+    return this.prefetchManager.prefetch(media, schedule);
   }
 
   getCachedMedia(url: string): Promise<Blob> | null {
