@@ -33,10 +33,6 @@ export interface UseGalleryFocusTrackerOptions {
   threshold?: number | number[];
   /** IntersectionObserver root margin (default: '0px') */
   rootMargin?: string;
-  /** Minimum visible ratio (default: 0.05) */
-  minimumVisibleRatio?: number;
-  /** Auto-focus debounce time in ms (default: 50) */
-  autoFocusDebounce?: MaybeAccessor<number>;
 }
 
 /** Hook return type */
@@ -70,17 +66,12 @@ export function useGalleryFocusTracker(
 
   const isEnabled = toAccessor(options.isEnabled);
   const container = toAccessor(options.container);
-  const autoFocusDebounce = toAccessor(options.autoFocusDebounce ?? 50);
 
   const coordinator = new FocusCoordinator({
     isEnabled: () => isEnabled() && manualFocusIndex() === null,
     container,
     ...(options.threshold !== undefined && { threshold: options.threshold }),
     rootMargin: options.rootMargin ?? '0px',
-    ...(options.minimumVisibleRatio !== undefined && {
-      minimumVisibleRatio: options.minimumVisibleRatio,
-    }),
-    debounceTime: autoFocusDebounce(),
     onFocusChange: (index, source) => {
       if (source === 'auto' && manualFocusIndex() === null && index !== null) {
         // 'auto-focus' source prevents auto-scroll in navigation handler
@@ -108,7 +99,7 @@ export function useGalleryFocusTracker(
     handleItemBlur: (index: number) => {
       if (manualFocusIndex() === index) setManualFocusIndex(null);
     },
-    forceSync: () => coordinator.forceRecompute(),
+    forceSync: () => coordinator.updateFocus(),
     setManualFocus,
     applyFocusAfterNavigation: setFocus,
   };
