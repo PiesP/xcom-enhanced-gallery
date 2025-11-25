@@ -5,7 +5,6 @@
 
 import { SharedObserver } from '@shared/utils/performance/observer-pool';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
-import { clamp01 } from '@shared/utils/types/safety';
 import type { Accessor } from 'solid-js';
 
 export interface FocusCoordinatorOptions {
@@ -34,7 +33,7 @@ const DEFAULTS = {
   ROOT_MARGIN: '0px',
   MIN_VISIBLE_RATIO: 0.05,
   DEBOUNCE_TIME: 50,
-  STICKY_SCORE_DELTA: 0.08,
+  STICKY_SCORE_DELTA: 0.1,
 } as const;
 
 export class FocusCoordinator {
@@ -142,55 +141,58 @@ export class FocusCoordinator {
   ): FocusCandidate | null {
     const viewportHeight = Math.max(containerRect.height, 1);
     const viewportCenter = containerRect.top + viewportHeight / 2;
+
     const candidates: FocusCandidate[] = [];
+    const rawCandidates: FocusCandidate[] = [];
 
     for (const [index, item] of this.items) {
-      if (!item.isVisible) continue;
+      if (!item.isVisible || !item.element.isConnected) continue;
 
       const rect = item.element.getBoundingClientRect();
       const intersectionTop = Math.max(rect.top, containerRect.top);
       const intersectionBottom = Math.min(rect.bottom, containerRect.bottom);
       const intersectionHeight = Math.max(0, intersectionBottom - intersectionTop);
 
-      if (intersectionHeight === 0) continue;
+      if (intersectionHeight <= 0) continue;
 
+      // Metrics
       const viewportCoverage = intersectionHeight / viewportHeight;
-      if (viewportCoverage < this.minVisibleRatio) continue;
+      const elementVisibility = intersectionHeight / rect.height;
 
-      // Calculate score
-      // 1. Center Proximity (0-1): How close is the item center to viewport center?
+      // Center proximity (0 to 1, 1 is center)
       const itemCenter = rect.top + rect.height / 2;
       const distToCenter = Math.abs(itemCenter - viewportCenter);
-      // Normalize distance: 0 at center, 1 at (viewportHeight/2 + itemHeight/2)
-      const maxDist = viewportHeight / 2 + rect.height / 2;
-      const centerProximity = clamp01(1 - distToCenter / maxDist);
-
-      // 2. Element Visibility (0-1): How much of the element is visible?
-      const elementVisibility = clamp01(intersectionHeight / rect.height);
-
-      // 3. Viewport Dominance (0-1): How much of the viewport does it occupy?
-      const viewportDominance = clamp01(intersectionHeight / viewportHeight);
+      const maxDist = (viewportHeight + rect.height) / 2;
+      const centerProximity = Math.max(0, 1 - distToCenter / maxDist);
 
       // Weighted Score
-      // Prioritize center proximity heavily for gallery feel
-      const score = centerProximity * 0.5 + elementVisibility * 0.3 + viewportDominance * 0.2;
+      // 1. Center Proximity (60%): Most important for "focus" feel
+      // 2. Viewport Coverage (20%): Large items dominating viewport
+      // 3. Element Visibility (20%): Small items fully visible
+      const score = centerProximity * 0.6 + viewportCoverage * 0.2 + elementVisibility * 0.2;
 
-      candidates.push({ index, score });
+      const candidate = { index, score };
+      rawCandidates.push(candidate);
+
+      // Filter: Must be significantly visible OR mostly visible (for small items)
+      if (viewportCoverage >= this.minVisibleRatio || elementVisibility > 0.5) {
+        candidates.push(candidate);
+      }
     }
 
-    if (candidates.length === 0) return null;
+    // Fallback to raw candidates if strict filtering yields nothing
+    const finalCandidates = candidates.length > 0 ? candidates : rawCandidates;
 
-    candidates.sort((a, b) => b.score - a.score);
-    const best = candidates[0]!;
+    if (finalCandidates.length === 0) return null;
+
+    finalCandidates.sort((a, b) => b.score - a.score);
+    const best = finalCandidates[0]!;
 
     // Hysteresis: stick to current focus if score difference is small
     if (!ignoreHysteresis && this.lastAutoFocus && this.lastAutoFocus.index !== best.index) {
-      const prev = this.items.get(this.lastAutoFocus.index);
-      if (prev?.isVisible) {
-        const prevCandidate = candidates.find(c => c.index === this.lastAutoFocus!.index);
-        if (prevCandidate && best.score - prevCandidate.score < DEFAULTS.STICKY_SCORE_DELTA) {
-          return prevCandidate;
-        }
+      const prevCandidate = finalCandidates.find(c => c.index === this.lastAutoFocus!.index);
+      if (prevCandidate && best.score - prevCandidate.score < DEFAULTS.STICKY_SCORE_DELTA) {
+        return prevCandidate;
       }
     }
 

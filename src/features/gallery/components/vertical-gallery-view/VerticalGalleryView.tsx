@@ -280,17 +280,6 @@ function VerticalGalleryViewCore({
     },
   );
 
-  // Sync focusedIndex -> currentIndex when user scrolls (not programmatic)
-  createEffect(() => {
-    const focused = focusedIndex();
-    const current = currentIndex();
-    const isProgrammatic = Date.now() - programmaticScrollTimestamp() < 100;
-
-    if (!isProgrammatic && focused !== null && focused !== current) {
-      navigateToItem(focused, 'scroll', 'scroll');
-    }
-  });
-
   // Clear manual focus when user starts scrolling to enable auto-focus
   createEffect(() => {
     if (isScrolling()) {

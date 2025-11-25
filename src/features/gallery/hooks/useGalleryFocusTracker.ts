@@ -13,7 +13,11 @@
 
 import { FocusCoordinator } from '@features/gallery/logic/focus-coordinator';
 import { getSolid } from '@shared/external/vendors';
-import { navigateToItem, setFocusedIndex } from '@shared/state/signals/gallery.signals';
+import {
+  gallerySignals,
+  navigateToItem,
+  setFocusedIndex,
+} from '@shared/state/signals/gallery.signals';
 import { toAccessor } from '@shared/utils/solid/solid-helpers';
 import type { Accessor } from 'solid-js';
 
@@ -62,7 +66,6 @@ const { createSignal, onCleanup } = getSolid();
 export function useGalleryFocusTracker(
   options: UseGalleryFocusTrackerOptions,
 ): UseGalleryFocusTrackerReturn {
-  const [focusedIndex, setLocalFocusedIndex] = createSignal<number | null>(null);
   const [manualFocusIndex, setManualFocusIndex] = createSignal<number | null>(null);
 
   const isEnabled = toAccessor(options.isEnabled);
@@ -80,7 +83,6 @@ export function useGalleryFocusTracker(
     debounceTime: autoFocusDebounce(),
     onFocusChange: (index, source) => {
       if (source === 'auto' && manualFocusIndex() === null && index !== null) {
-        setLocalFocusedIndex(index);
         // 'auto-focus' source prevents auto-scroll in navigation handler
         navigateToItem(index, 'scroll', 'auto-focus');
       }
@@ -91,7 +93,6 @@ export function useGalleryFocusTracker(
 
   const setFocus = (index: number): void => {
     setManualFocusIndex(index);
-    setLocalFocusedIndex(index);
     setFocusedIndex(index);
   };
 
@@ -101,7 +102,7 @@ export function useGalleryFocusTracker(
   };
 
   return {
-    focusedIndex,
+    focusedIndex: () => gallerySignals.focusedIndex.value,
     registerItem: (index, element) => coordinator.registerItem(index, element),
     handleItemFocus: setFocus,
     handleItemBlur: (index: number) => {
