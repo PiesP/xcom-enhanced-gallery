@@ -273,8 +273,9 @@ export function Button(rawProps: ButtonProps): JSXElement {
   // isDisabled is defined above (resolves accessors safely)
 
   const handleClick = (event: MouseEvent) => {
-    if (isDisabled()) {
+    if (isDisabled() || isLoading()) {
       event.preventDefault();
+      event.stopPropagation();
       return;
     }
     local.onClick?.(event);

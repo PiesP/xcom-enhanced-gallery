@@ -127,4 +127,10 @@ export default [
       'prettier/prettier': PRETTIER_RULE,
     },
   },
+  {
+    files: ['playwright/**/*.ts', 'test/**/*.ts'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
 ];

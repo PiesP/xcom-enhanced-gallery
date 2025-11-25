@@ -86,6 +86,8 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private renderComponent(): void {
     if (!this.container) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
     const { render, createComponent, createSignal, onCleanup } = getSolid();
     const themeService = getThemeService();
     const languageService = getLanguageService();
@@ -118,8 +120,8 @@ export class GalleryRenderer implements GalleryRendererInterface {
                   onClose: handleClose,
                   onPrevious: () => navigatePrevious('button'),
                   onNext: () => navigateNext('button'),
-                  onDownloadCurrent: () => this.handleDownload('current'),
-                  onDownloadAll: () => this.handleDownload('all'),
+                  onDownloadCurrent: () => self.handleDownload('current'),
+                  onDownloadAll: () => self.handleDownload('all'),
                   className: 'xeg-vertical-gallery',
                 });
               },
@@ -134,6 +136,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   async handleDownload(type: 'current' | 'all'): Promise<void> {
+    logger.info(`[GalleryRenderer] handleDownload called with type: ${type}`);
     if (!isGMAPIAvailable('download')) {
       logger.warn('[GalleryRenderer] GM_download not available');
       setError('Tampermonkey required for downloads.');
