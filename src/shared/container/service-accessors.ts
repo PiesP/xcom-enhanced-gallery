@@ -120,15 +120,6 @@ export function registerSettingsManager(settings: unknown): void {
   CoreServiceRegistry.register(SERVICE_KEYS.SETTINGS, settings);
 }
 
-/**
- * Register Twitter token extractor in service registry.
- *
- * @param instance - Token extractor instance to register
- */
-export function registerTwitterTokenExtractor(instance: unknown): void {
-  CoreServiceRegistry.register(SERVICE_KEYS.TWITTER_TOKEN_EXTRACTOR, instance);
-}
-
 // ============================================================================
 // Optional Service Getters (Return null if missing)
 // ============================================================================

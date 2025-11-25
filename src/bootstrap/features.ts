@@ -17,7 +17,6 @@
 
 import { reportBootstrapError } from '@/bootstrap/types';
 import { APP_SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS } from '@/constants';
-import { registerTwitterTokenExtractor } from '@shared/container';
 import { logger } from '@shared/logging';
 // ─────────────────────────────────────────
 // Feature Flag Logic
@@ -85,18 +84,7 @@ interface FeatureLoader {
  * Feature Loaders array
  * Phase 346: Declarative definition to eliminate duplicate code
  */
-const FEATURE_LOADERS: readonly FeatureLoader[] = [
-  {
-    flag: 'mediaExtraction',
-    name: 'TwitterTokenExtractor',
-    load: async () => {
-      const { TwitterTokenExtractor } = await import(
-        '@shared/services/media/twitter-token-extractor'
-      );
-      registerTwitterTokenExtractor(new TwitterTokenExtractor());
-    },
-  },
-];
+const FEATURE_LOADERS: readonly FeatureLoader[] = [];
 
 const DEFAULT_FEATURE_SETTINGS: Readonly<SettingsWithFeatures> = Object.freeze({
   features: { ...DEFAULT_SETTINGS.features },

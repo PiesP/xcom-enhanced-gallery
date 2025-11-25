@@ -1,11 +1,6 @@
 /**
  * @fileoverview Gallery Renderer
- * @version 3.0.0 - Simplified architecture
- *
- * Gallery renderer - Handles rendering and lifecycle only
- * - Renders Solid.js components
- * - Manages DOM lifecycle
- * - State changes handled via signal subscription
+ * @description Handles rendering and lifecycle of the gallery component
  */
 
 import { GalleryContainer } from '@shared/components/isolation';
@@ -33,11 +28,6 @@ import './styles/gallery-global.css';
 
 const downloadService = DownloadOrchestrator.getInstance();
 
-let galleryMountCount = 0;
-
-/**
- * Gallery renderer - DOM rendering and lifecycle management
- */
 export class GalleryRenderer implements GalleryRendererInterface {
   private container: HTMLDivElement | null = null;
   private isRenderingFlag = false;
@@ -50,18 +40,11 @@ export class GalleryRenderer implements GalleryRendererInterface {
     this.setupStateSubscription();
   }
 
-  /**
-   * Set gallery close callback
-   */
   setOnCloseCallback(onClose: () => void): void {
     this.onCloseCallback = onClose;
   }
 
-  /**
-   * Setup state subscription - Signal change detection
-   */
   private setupStateSubscription(): void {
-    // Detect gallerySignals.isOpen changes and auto-render/cleanup
     this.stateUnsubscribe = gallerySignals.isOpen.subscribe(isOpen => {
       if (isOpen && !this.container) {
         this.renderGallery();
@@ -71,19 +54,11 @@ export class GalleryRenderer implements GalleryRendererInterface {
     });
   }
 
-  /**
-   * Render gallery - Execute once initially
-   */
   private renderGallery(): void {
-    if (this.isRenderingFlag || this.container) {
-      return;
-    }
+    if (this.isRenderingFlag || this.container) return;
 
-    const isOpen = gallerySignals.isOpen.value;
-    const mediaItems = gallerySignals.mediaItems.value;
-    if (!isOpen || mediaItems.length === 0) {
-      return;
-    }
+    const { isOpen, mediaItems } = gallerySignals;
+    if (!isOpen.value || mediaItems.value.length === 0) return;
 
     this.isRenderingFlag = true;
     logger.info('[GalleryRenderer] Rendering started');
@@ -100,9 +75,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
     }
   }
 
-  /**
-   * Create container element
-   */
   private createContainer(): void {
     this.cleanupContainer();
     this.container = document.createElement('div');
@@ -111,30 +83,22 @@ export class GalleryRenderer implements GalleryRendererInterface {
     document.body.appendChild(this.container);
   }
 
-  /**
-   * Render component - Solid.js component creation
-   */
   private renderComponent(): void {
-    if (!this.container) {
-      return;
-    }
+    if (!this.container) return;
 
     const { render, createComponent, createSignal, onCleanup } = getSolid();
     const themeService = getThemeService();
     const languageService = getLanguageService();
 
-    const handleDownload = (type: 'current' | 'all') => this.handleDownload(type);
     const handleClose = () => {
       closeGallery();
       this.onCloseCallback?.();
     };
 
     const Root = () => {
-      // Reactive state for settings
       const [, setCurrentTheme] = createSignal(themeService.getCurrentTheme());
       const [, setCurrentLanguage] = createSignal(languageService.getCurrentLanguage());
 
-      // Sync with services
       const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));
       const unbindLang = languageService.onLanguageChange(lang => setCurrentLanguage(lang));
 
@@ -154,8 +118,8 @@ export class GalleryRenderer implements GalleryRendererInterface {
                   onClose: handleClose,
                   onPrevious: () => navigatePrevious('button'),
                   onNext: () => navigateNext('button'),
-                  onDownloadCurrent: () => handleDownload('current'),
-                  onDownloadAll: () => handleDownload('all'),
+                  onDownloadCurrent: () => this.handleDownload('current'),
+                  onDownloadAll: () => this.handleDownload('all'),
                   className: 'xeg-vertical-gallery',
                 });
               },
@@ -166,44 +130,25 @@ export class GalleryRenderer implements GalleryRendererInterface {
     };
 
     this.disposeApp = render(Root, this.container);
-    galleryMountCount += 1;
-    logger.info('[GalleryRenderer] Gallery mounted', {
-      mountCount: galleryMountCount,
-    });
+    logger.info('[GalleryRenderer] Gallery mounted');
   }
 
-  /**
-   * Handle download action
-   *
-   * Phase 317: Environment guard - Check GM API availability
-   * Phase 312-4: Lazy registration of BulkDownloadService
-   * - First bulk download: 100-150ms delay (service loads from disk)
-   * - Subsequent downloads: instant (service cached)
-   */
-  private async handleDownload(type: 'current' | 'all'): Promise<void> {
-    // Phase 317: GM API check - if not available, only show notification
+  async handleDownload(type: 'current' | 'all'): Promise<void> {
     if (!isGMAPIAvailable('download')) {
       logger.warn('[GalleryRenderer] GM_download not available');
-      setError(
-        'Tampermonkey or similar userscript manager is required. Download functionality is not available.',
-      );
+      setError('Tampermonkey required for downloads.');
       return;
     }
 
-    if (isDownloadLocked()) {
-      logger.debug('[GalleryRenderer] Download request ignored: operation already in progress');
-      return;
-    }
+    if (isDownloadLocked()) return;
 
-    const releaseDownloadLock = acquireDownloadLock();
+    const releaseLock = acquireDownloadLock();
 
     try {
-      // Phase 312: DownloadService usage (Singleton)
       const mediaItems = gallerySignals.mediaItems.value;
-      const currentIndex = gallerySignals.currentIndex.value;
 
       if (type === 'current') {
-        const currentMedia = mediaItems[currentIndex];
+        const currentMedia = mediaItems[gallerySignals.currentIndex.value];
         if (currentMedia) {
           const result = await downloadService.downloadSingle(currentMedia);
           if (result.success) {
@@ -213,22 +158,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
           }
         }
       } else {
-        // Phase 312-4: Ensure DownloadService is registered (lazy loading)
-        // This delays first bulk download by 100-150ms, but removes 15-20 KB from initial bundle
-        try {
-          const { ensureDownloadServiceRegistered } = await import(
-            '@shared/services/lazy-service-registration'
-          );
-          await ensureDownloadServiceRegistered();
-          logger.debug('[GalleryRenderer] DownloadService lazy registration completed');
-        } catch (error) {
-          logger.warn('[GalleryRenderer] DownloadService lazy registration failed:', error);
-          // Continue with download anyway - service might already be registered
-        }
+        await this.ensureDownloadService();
 
-        // Convert readonly array to mutable
-        const mutableMediaItems = Array.from(mediaItems);
-        const result = await downloadService.downloadBulk(mutableMediaItems);
+        const result = await downloadService.downloadBulk([...mediaItems]);
         if (result.success) {
           this.notificationService.success(
             `Bulk download complete: ${result.filesSuccessful} files`,
@@ -241,30 +173,32 @@ export class GalleryRenderer implements GalleryRendererInterface {
       logger.error(`[GalleryRenderer] ${type} download failed:`, error);
       setError('Download failed.');
     } finally {
-      releaseDownloadLock();
+      releaseLock();
     }
   }
 
-  /**
-   * Cleanup gallery - Reset state and remove DOM
-   */
+  private async ensureDownloadService(): Promise<void> {
+    try {
+      const { ensureDownloadServiceRegistered } = await import(
+        '@shared/services/lazy-service-registration'
+      );
+      await ensureDownloadServiceRegistered();
+    } catch (error) {
+      logger.warn('[GalleryRenderer] DownloadService lazy registration failed:', error);
+    }
+  }
+
   private cleanupGallery(): void {
     logger.debug('[GalleryRenderer] Cleanup started');
     this.isRenderingFlag = false;
     this.cleanupContainer();
   }
 
-  /**
-   * Cleanup container - Dispose components and remove DOM
-   */
   private cleanupContainer(): void {
     if (this.container) {
       try {
-        // Cleanup gallery app
         this.disposeApp?.();
         this.disposeApp = null;
-
-        // Remove from DOM
         if (document.contains(this.container)) {
           this.container.remove();
         }
@@ -275,45 +209,27 @@ export class GalleryRenderer implements GalleryRendererInterface {
     }
   }
 
-  // =============================================================================
-  // GalleryRendererInterface Implementation
-  // =============================================================================
-
-  /**
-   * Render gallery with media items
-   */
   async render(
     mediaItems: readonly MediaInfo[],
     renderOptions?: GalleryRenderOptions,
   ): Promise<void> {
     openGallery(mediaItems, renderOptions?.startIndex ?? 0);
     if (renderOptions?.viewMode) {
-      const mode = renderOptions.viewMode === 'horizontal' ? 'horizontal' : 'vertical';
-      setViewMode(mode);
+      setViewMode(renderOptions.viewMode === 'horizontal' ? 'horizontal' : 'vertical');
     }
   }
 
-  /**
-   * Close gallery
-   */
   close(): void {
     closeGallery();
   }
 
-  /**
-   * Check if gallery is rendering
-   */
   isRendering(): boolean {
     return this.isRenderingFlag;
   }
 
-  /**
-   * Complete cleanup - Dispose state subscription and remove DOM
-   */
   destroy(): void {
     logger.info('[GalleryRenderer] Full cleanup started');
     this.stateUnsubscribe?.();
     this.cleanupGallery();
-    logger.debug('[GalleryRenderer] Full cleanup complete');
   }
 }

@@ -34,6 +34,8 @@ interface UseGalleryScrollOptions {
   scrollTarget?: MaybeAccessor<HTMLElement | null>;
   /** Callback on scroll events */
   onScroll?: () => void;
+  /** Callback when scrolling ends (after idle timeout) */
+  onScrollEnd?: () => void;
   /** Whether scroll handling is enabled */
   enabled?: MaybeAccessor<boolean>;
   /** Timestamp of last programmatic scroll (events within 100ms ignored) */
@@ -60,6 +62,7 @@ export function useGalleryScroll({
   container,
   scrollTarget,
   onScroll,
+  onScrollEnd,
   enabled = true,
   programmaticScrollTimestamp,
 }: UseGalleryScrollOptions): UseGalleryScrollReturn {
@@ -93,6 +96,7 @@ export function useGalleryScroll({
     scrollIdleTimerId = globalTimerManager.setTimeout(() => {
       setIsScrolling(false);
       logger.debug('useGalleryScroll: Scroll ended');
+      onScrollEnd?.();
     }, SCROLL_IDLE_TIMEOUT);
   };
 

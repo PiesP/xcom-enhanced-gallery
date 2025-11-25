@@ -11,7 +11,6 @@ export {
   // Service Registrations
   registerGalleryRenderer,
   registerSettingsManager,
-  registerTwitterTokenExtractor,
   tryGetSettingsManager,
   // Warmup
   warmupCriticalServices,

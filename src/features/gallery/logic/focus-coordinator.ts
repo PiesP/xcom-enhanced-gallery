@@ -2,6 +2,11 @@
  * @fileoverview Focus Coordinator - Natural Scroll-Based Focus Selection
  * @description Selects the most naturally visible gallery item after scroll stops.
  *
+ * Key features:
+ * - Debounced recomputation during scroll (50ms default)
+ * - Immediate recomputation on scroll end via forceRecompute()
+ * - Hysteresis to prevent focus thrashing
+ *
  * Selection algorithm (weighted heuristics):
  * 1. Viewport coverage: How much of the visible viewport the item currently occupies
  * 2. Element visibility: How much of the media itself is visible (guards tall crops)
@@ -104,8 +109,22 @@ export class FocusCoordinator {
     );
   }
 
-  /** Force immediate recomputation */
+  /** Force immediate recomputation (bypasses debounce) */
   recompute(): void {
+    this.performRecomputation();
+  }
+
+  /** Force immediate recomputation and cancel any pending debounced recomputation */
+  forceRecompute(): void {
+    if (this.debounceTimerId !== null) {
+      globalTimerManager.clearTimeout(this.debounceTimerId);
+      this.debounceTimerId = null;
+    }
+    this.performRecomputation();
+  }
+
+  /** Internal: perform actual recomputation logic */
+  private performRecomputation(): void {
     if (!this.options.isEnabled()) return;
 
     const container = this.options.container();
@@ -147,7 +166,7 @@ export class FocusCoordinator {
     }
     this.debounceTimerId = globalTimerManager.setTimeout(() => {
       this.debounceTimerId = null;
-      this.recompute();
+      this.performRecomputation();
     }, this.debounceTime);
   }
 

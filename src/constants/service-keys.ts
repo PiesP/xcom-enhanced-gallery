@@ -34,7 +34,6 @@ export const SERVICE_KEYS = {
   // Settings Services
   // ========================================
   SETTINGS: 'settings.manager',
-  TWITTER_TOKEN_EXTRACTOR: 'settings.tokenExtractor',
 
   // ========================================
   // UI Services

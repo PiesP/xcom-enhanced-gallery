@@ -45,7 +45,7 @@ export interface UseGalleryFocusTrackerReturn {
   handleItemFocus: (index: number) => void;
   /** Handle blur from item */
   handleItemBlur: (index: number) => void;
-  /** Force recomputation */
+  /** Force immediate recomputation (bypasses debounce) */
   forceSync: () => void;
   /** Set or clear manual focus */
   setManualFocus: (index: number | null) => void;
@@ -107,7 +107,7 @@ export function useGalleryFocusTracker(
     handleItemBlur: (index: number) => {
       if (manualFocusIndex() === index) setManualFocusIndex(null);
     },
-    forceSync: () => coordinator.recompute(),
+    forceSync: () => coordinator.forceRecompute(),
     setManualFocus,
     applyFocusAfterNavigation: setFocus,
   };

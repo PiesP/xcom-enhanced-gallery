@@ -245,13 +245,6 @@ function VerticalGalleryViewCore({
   });
 
   // Track scroll state
-  const { isScrolling } = useGalleryScroll({
-    container: () => containerEl(),
-    scrollTarget: () => itemsContainerEl(),
-    enabled: isVisible,
-    programmaticScrollTimestamp,
-  });
-
   // Track focused item based on scroll position (IntersectionObserver)
   const {
     focusedIndex,
@@ -260,9 +253,18 @@ function VerticalGalleryViewCore({
     handleItemBlur,
     applyFocusAfterNavigation,
     setManualFocus,
+    forceSync: focusTrackerForceSync,
   } = useGalleryFocusTracker({
     container: () => containerEl(),
     isEnabled: isVisible,
+  });
+
+  const { isScrolling } = useGalleryScroll({
+    container: () => containerEl(),
+    scrollTarget: () => itemsContainerEl(),
+    enabled: isVisible,
+    programmaticScrollTimestamp,
+    onScrollEnd: () => focusTrackerForceSync(),
   });
 
   // Handle auto-scroll to item on navigation (disabled during user scroll)
