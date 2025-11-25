@@ -32,7 +32,7 @@ export class StyleRegistry {
 
   private readonly styleMap = new Map<string, HTMLStyleElement>();
 
-  private constructor() { }
+  private constructor() {}
 
   public static getInstance(): StyleRegistry {
     if (!StyleRegistry.instance) {
