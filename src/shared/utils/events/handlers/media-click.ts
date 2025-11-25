@@ -102,7 +102,3 @@ export async function handleMediaClick(
     return { handled: false, reason: `Error: ${error}` };
   }
 }
-
-export function resetMediaClickHandlerCache(): void {
-  // No-op: Cache removed
-}

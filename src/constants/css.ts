@@ -93,6 +93,3 @@ export const CSS = {
   INTERNAL_SELECTORS,
   SCOPES,
 } as const;
-
-export type GalleryClassName = (typeof CLASSES)[keyof typeof CLASSES];
-export type GallerySelector = (typeof SELECTORS)[keyof typeof SELECTORS];

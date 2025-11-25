@@ -155,8 +155,3 @@ function createResult(state: NavigationState, isDuplicate = false): NavigationTr
     isDuplicate,
   };
 }
-
-export {
-  createInitialState as createNavigationInitialState,
-  transition as transitionNavigationState,
-};
