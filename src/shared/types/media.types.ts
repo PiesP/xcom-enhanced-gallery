@@ -168,27 +168,6 @@ export enum ExtractionSource {
 }
 
 /**
- * Tweet URL information (merged from Core)
- */
-export interface TweetUrl {
-  readonly url: string;
-  readonly tweetId: string;
-  readonly userId: string;
-  readonly mediaIndex?: number | undefined;
-  readonly isValid: boolean;
-}
-
-/**
- * Extraction options detailed (merged from Core)
- */
-export interface ExtractionOptions {
-  readonly enableBackgroundLoading: boolean;
-  readonly enableCache: boolean;
-  readonly timeout: number;
-  readonly debugMode: boolean;
-}
-
-/**
  * Extraction metadata (merged from Core)
  */
 export interface ExtractionMetadata {
@@ -207,33 +186,6 @@ export interface ExtractionMetadata {
     readonly parseTime: number;
   };
   readonly [key: string]: unknown;
-}
-
-/**
- * Extraction context (merged from Core)
- */
-export interface ExtractionContext {
-  readonly clickedElement?: HTMLElement;
-  readonly currentUrl: string;
-  readonly pageType: PageType;
-  readonly options: ExtractionOptions;
-  readonly timestamp: number;
-}
-
-/**
- * Extraction confidence score (merged from Core)
- */
-export interface ExtractionConfidence {
-  /** Overall confidence (0-1) */
-  overall: number;
-  /** URL matching confidence */
-  urlMatching: number;
-  /** DOM structure confidence */
-  domStructure: number;
-  /** Metadata confidence */
-  metadata: number;
-  /** API data confidence */
-  apiData?: number;
 }
 
 /**
@@ -280,21 +232,6 @@ export class ExtractionError extends Error {
 }
 
 /**
- * Tweet information extraction strategy interface
- */
-export interface TweetInfoExtractionStrategy {
-  /** Strategy name */
-  readonly name: string;
-  /** Strategy priority (lower has higher priority) */
-  readonly priority: number;
-
-  /**
-   * Extract tweet information
-   */
-  extract(element: HTMLElement): Promise<TweetInfo | null>;
-}
-
-/**
  * API extractor interface
  */
 export interface APIExtractor {
@@ -306,20 +243,6 @@ export interface APIExtractor {
     clickedElement: HTMLElement,
     options: MediaExtractionOptions,
     extractionId: string,
-  ): Promise<MediaExtractionResult>;
-}
-
-/**
- * Fallback extraction strategy interface
- */
-export interface FallbackExtractionStrategy {
-  /**
-   * Execute fallback extraction
-   */
-  extract(
-    tweetContainer: HTMLElement,
-    clickedElement: HTMLElement,
-    tweetInfo?: TweetInfo,
   ): Promise<MediaExtractionResult>;
 }
 
@@ -342,47 +265,6 @@ export interface MediaExtractor {
     container: HTMLElement,
     options?: MediaExtractionOptions,
   ): Promise<MediaExtractionResult>;
-}
-
-// ================================
-// Download-related types
-// ================================
-
-/**
- * Download media item
- */
-export interface DownloadMediaItem extends MediaInfo {
-  downloadProgress?: number | undefined;
-  downloadStatus?:
-    | "pending"
-    | "downloading"
-    | "completed"
-    | "failed"
-    | undefined;
-}
-
-/**
- * Interface representing URL and filename pairs
- */
-export interface UrlWithFilename {
-  /** URL of file to download */
-  url: string;
-  /** Filename */
-  filename: string;
-}
-
-/**
- * Bulk download options
- */
-export interface BulkDownloadOptions {
-  /** Limit for parallel downloads */
-  concurrency?: number;
-  /** Download delay (ms) */
-  delay?: number;
-  /** Whether to compress into ZIP file */
-  createZip?: boolean;
-  /** ZIP filename (when createZip is true) */
-  zipFilename?: string;
 }
 
 // ================================
@@ -412,58 +294,6 @@ export interface GalleryRenderOptions {
 }
 
 /**
- * Gallery open event details (merged from Core)
- */
-export interface GalleryOpenEventDetail {
-  /** Media items list */
-  media: MediaInfo[];
-  /** Start index */
-  startIndex: number;
-}
-
-/**
- * Gallery open custom event (merged from Core)
- */
-export interface GalleryOpenEvent extends CustomEvent<GalleryOpenEventDetail> {
-  type: "xeg:gallery:open" | "xeg:openGallery";
-}
-
-/**
- * Gallery close custom event (merged from Core)
- */
-export interface GalleryCloseEvent extends CustomEvent<void> {
-  type: "xeg:gallery:close";
-}
-
-/**
- * Media collection interface (merged from Core)
- */
-export interface MediaCollection {
-  items: MediaInfo[];
-  totalCount: number;
-  currentIndex: number;
-}
-
-/**
- * Media page type (Core version - more detailed)
- *
- * Root version: 'photo' | 'video' | 'gif' | 'mixed' | 'photoDetail' | 'videoDetail'
- * Core version: 'mediaGrid' | 'photoDetail' | 'videoDetail' | 'mediaTimeline' | 'unknown'
- * → Integrated: union type allows all
- */
-export type MediaPageType =
-  | "photo"
-  | "video"
-  | "gif"
-  | "mixed"
-  | "photoDetail"
-  | "videoDetail"
-  | "mediaGrid"
-  | "mediaTimeline"
-  | "timeline"
-  | "unknown";
-
-/**
  * Media extraction strategy
  */
 export type ExtractionStrategy =
@@ -472,69 +302,3 @@ export type ExtractionStrategy =
   | "hybrid"
   | "multi-strategy"
   | "conservative";
-
-// ================================
-// Validation-related types
-// ================================
-
-/**
- * Validation issue (merged from Core)
- */
-export interface ValidationIssue {
-  /** Issue type */
-  type: "url" | "metadata" | "content" | "structure";
-  /** Severity */
-  severity: "low" | "medium" | "high" | "critical";
-  /** Issue description */
-  message: string;
-  /** Affected field */
-  field?: string;
-}
-
-/**
- * Validation result (merged from Core)
- */
-export interface ValidationResult {
-  /** Validity */
-  isValid: boolean;
-  /** Overall score (0-1) */
-  score: number;
-  /** Found issues */
-  issues: ValidationIssue[];
-  /** Improvement suggestions */
-  suggestions: string[];
-}
-
-/**
- * Media validation result (legacy version - simpler)
- */
-export interface MediaValidationResult {
-  isValid: boolean;
-  errors: string[];
-  warnings?: string[];
-}
-
-// ================================
-// Metadata types
-// ================================
-
-/**
- * Media metadata
- */
-export interface MediaMetadata {
-  /** File size (bytes) */
-  fileSize?: number;
-  /** Image/video dimensions */
-  dimensions?: {
-    width: number;
-    height: number;
-  };
-  /** Video length (seconds) */
-  duration?: number;
-  /** MIME type */
-  mimeType?: string;
-  /** Creation date */
-  createdAt?: Date;
-  /** Additional attributes */
-  [key: string]: unknown;
-}

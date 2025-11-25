@@ -163,7 +163,6 @@ export type {
   TweetInfo,
   MediaExtractionOptions,
   MediaExtractionResult,
-  TweetInfoExtractionStrategy,
   MediaExtractor,
   PageType,
   ExtractionSource,

@@ -412,10 +412,6 @@ export function getDownloadTask(taskId: string): DownloadTask | null {
  * Get download status summary
  */
 export function getDownloadInfo(): {
-  isAnyDownloading: boolean;
-  currentCount: number;
-  totalCount: number;
-  totalTasks: number;
   activeTasks: number;
   pendingTasks: number;
   completedTasks: number;
@@ -427,10 +423,6 @@ export function getDownloadInfo(): {
   const tasks = Array.from(state.activeTasks.values());
 
   return {
-    isAnyDownloading: tasks.some((t) => t.status === "downloading"),
-    currentCount: tasks.filter((t) => t.status === "downloading").length,
-    totalCount: tasks.length,
-    totalTasks: tasks.length,
     activeTasks: tasks.filter((t) => t.status === "downloading").length,
     pendingTasks: tasks.filter((t) => t.status === "pending").length,
     completedTasks: tasks.filter((t) => t.status === "completed").length,
