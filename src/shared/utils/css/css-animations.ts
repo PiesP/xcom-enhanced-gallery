@@ -150,7 +150,7 @@ function buildScopedAnimationCss(): string {
  */
 export async function animateGalleryEnter(
   element: Element,
-  options: CSSAnimationOptions = {}
+  options: CSSAnimationOptions = {},
 ): Promise<void> {
   return new Promise<void>(resolve => {
     try {
@@ -175,7 +175,7 @@ export async function animateGalleryEnter(
  */
 export async function animateGalleryExit(
   element: Element,
-  options: CSSAnimationOptions = {}
+  options: CSSAnimationOptions = {},
 ): Promise<void> {
   return new Promise<void>(resolve => {
     try {

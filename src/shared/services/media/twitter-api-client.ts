@@ -62,7 +62,7 @@ export class TwitterAPI {
         const quotedMedia = TwitterResponseParser.extractMediaFromTweet(
           quotedTweet,
           quotedUser,
-          'quoted'
+          'quoted',
         );
 
         const sortedQuotedMedia = sortMediaByVisualOrder(quotedMedia);
@@ -114,7 +114,7 @@ export class TwitterAPI {
       if (!response.ok) {
         logger.warn(
           `Twitter API request failed: ${response.status} ${response.statusText}`,
-          response.data
+          response.data,
         );
         throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
       }

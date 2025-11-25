@@ -83,7 +83,7 @@ export class FilenameService {
 
   private resolveMetadata(
     media: MediaInfo,
-    fallbackUsername?: string | null
+    fallbackUsername?: string | null,
   ): { username: string | null; tweetId: string | null } {
     let username: string | null = null;
     let tweetId: string | null = null;
@@ -168,7 +168,7 @@ export class FilenameService {
       if (
         !path ||
         ['home', 'explore', 'notifications', 'messages', 'search', 'settings'].includes(
-          path.toLowerCase()
+          path.toLowerCase(),
         )
       ) {
         return null;
@@ -188,7 +188,7 @@ export function generateMediaFilename(media: MediaInfo, options?: FilenameOption
 
 export function generateZipFilename(
   mediaItems: readonly MediaInfo[],
-  options?: ZipFilenameOptions
+  options?: ZipFilenameOptions,
 ): string {
   return shared.generateZipFilename(mediaItems, options);
 }

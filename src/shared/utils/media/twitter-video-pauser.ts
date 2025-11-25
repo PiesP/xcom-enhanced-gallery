@@ -41,7 +41,7 @@ function isVideoPlaying(video: HTMLVideoElement): boolean {
 }
 
 export function pauseActiveTwitterVideos(
-  options: PauseAmbientVideosOptions = {}
+  options: PauseAmbientVideosOptions = {},
 ): PauseAmbientVideosResult {
   const root = resolveRoot(options.root ?? null);
   if (!root) {

@@ -27,7 +27,7 @@ export interface SyncThemeAttributesOptions {
  */
 export function syncThemeAttributes(
   theme: ThemeName,
-  options: SyncThemeAttributesOptions = {}
+  options: SyncThemeAttributesOptions = {},
 ): void {
   if (typeof document === 'undefined') {
     return;

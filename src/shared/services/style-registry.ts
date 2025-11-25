@@ -43,7 +43,7 @@ export class StyleRegistry {
     if (!isBrowserEnvironment()) {
       logger.warn(
         '[StyleRegistry] Unable to register style outside browser environment',
-        options.id
+        options.id,
       );
       return null;
     }

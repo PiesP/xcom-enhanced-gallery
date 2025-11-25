@@ -32,7 +32,7 @@ function checkGalleryOpen(): boolean {
 export function handleKeyboardEvent(
   event: KeyboardEvent,
   handlers: EventHandlers,
-  options: GalleryEventOptions
+  options: GalleryEventOptions,
 ): void {
   if (!options.enableKeyboard) return;
 
@@ -91,9 +91,9 @@ export function handleKeyboardEvent(
             navigateToItem(
               Math.min(
                 gallerySignals.mediaItems.value.length - 1,
-                gallerySignals.currentIndex.value + 5
+                gallerySignals.currentIndex.value + 5,
               ),
-              'keyboard'
+              'keyboard',
             );
             break;
           }

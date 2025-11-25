@@ -127,7 +127,7 @@ const ERROR_MESSAGES = {
 
 function assertFunction<T extends (...args: never[]) => unknown>(
   fn: T | undefined,
-  errorMessage: string
+  errorMessage: string,
 ): T {
   if (typeof fn !== 'function') {
     throw new Error(errorMessage);

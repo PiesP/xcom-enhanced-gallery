@@ -130,7 +130,7 @@ export function failure<T = never>(
     cause?: unknown;
     meta?: Record<string, unknown>;
     failures?: Array<{ url: string; error: string }>;
-  }
+  },
 ): Result<T> {
   return {
     status: 'error',
@@ -159,7 +159,7 @@ export function partial<T>(
   data: T,
   error: string,
   failures: Array<{ url: string; error: string }>,
-  meta?: Record<string, unknown>
+  meta?: Record<string, unknown>,
 ): ResultPartial<T> {
   return {
     status: 'partial',
@@ -186,7 +186,7 @@ export function partial<T>(
  */
 export function cancelled<T = never>(
   error = 'Operation cancelled',
-  meta?: Record<string, unknown>
+  meta?: Record<string, unknown>,
 ): Result<T> {
   return {
     status: 'cancelled',
@@ -262,7 +262,7 @@ export async function safeAsync<T>(
   options?: {
     code?: ErrorCode;
     meta?: Record<string, unknown>;
-  }
+  },
 ): Promise<Result<T>> {
   try {
     const data = await fn();
@@ -274,7 +274,7 @@ export async function safeAsync<T>(
       {
         cause: error,
         ...(options?.meta && { meta: options.meta }),
-      }
+      },
     );
   }
 }
@@ -299,7 +299,7 @@ export function safe<T>(
   options?: {
     code?: ErrorCode;
     meta?: Record<string, unknown>;
-  }
+  },
 ): Result<T> {
   try {
     const data = fn();
@@ -311,7 +311,7 @@ export function safe<T>(
       {
         cause: error,
         ...(options?.meta && { meta: options.meta }),
-      }
+      },
     );
   }
 }

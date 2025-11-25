@@ -22,7 +22,7 @@ const migrations: Partial<Record<string, Migration>> = {
  */
 function pruneWithTemplate<T extends Record<string, unknown>>(
   input: unknown,
-  template: T
+  template: T,
 ): Partial<T> {
   if (!isRecord(input)) return {} as Partial<T>;
 

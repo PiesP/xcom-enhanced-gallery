@@ -32,7 +32,7 @@ export function addListener(
   type: string,
   listener: EventListener,
   options?: AddEventListenerOptions,
-  context?: string
+  context?: string,
 ): string {
   const id = generateListenerId(context);
 
@@ -122,7 +122,7 @@ export function removeEventListenerManaged(id: string): boolean {
     eventContext.element.removeEventListener(
       eventContext.type,
       eventContext.listener,
-      eventContext.options
+      eventContext.options,
     );
     listenerRegistry.unregister(id);
 
@@ -165,7 +165,7 @@ export function removeEventListenersByContext(context: string): number {
 
   if (removedCount > 0) {
     logger.debug(
-      `[removeEventListenersByContext] Removed ${removedCount} listeners for context: ${context}`
+      `[removeEventListenersByContext] Removed ${removedCount} listeners for context: ${context}`,
     );
   }
 

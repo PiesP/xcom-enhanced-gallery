@@ -32,7 +32,7 @@ export function useGalleryItemScroll(
   containerRef: { current: HTMLElement | null } | Accessor<HTMLElement | null>,
   currentIndex: MaybeAccessor<number>,
   totalItems: MaybeAccessor<number>,
-  options: UseGalleryItemScrollOptions = {}
+  options: UseGalleryItemScrollOptions = {},
 ): UseGalleryItemScrollReturn {
   const containerAccessor =
     typeof containerRef === 'function' ? containerRef : () => containerRef.current;
@@ -49,7 +49,7 @@ export function useGalleryItemScroll(
     if (!enabled() || !container || index < 0 || index >= totalItemsAccessor()) return;
 
     const itemsRoot = container.querySelector(
-      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
+      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
     );
     if (!itemsRoot) return;
 
@@ -86,7 +86,7 @@ export function useGalleryItemScroll(
       if (untrack(enabled) && !untrack(isScrolling)) {
         scrollToItem(index);
       }
-    })
+    }),
   );
 
   return {

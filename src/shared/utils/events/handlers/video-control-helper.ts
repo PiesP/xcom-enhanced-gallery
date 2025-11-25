@@ -115,7 +115,7 @@ function getCurrentGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoEleme
  */
 export function executeVideoControl(
   action: VideoControlAction,
-  options: VideoControlOptions = {}
+  options: VideoControlOptions = {},
 ): void {
   const { video, context } = options;
 

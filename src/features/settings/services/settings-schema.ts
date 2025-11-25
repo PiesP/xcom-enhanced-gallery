@@ -26,7 +26,7 @@ export function computeSettingsSchemaHashFrom(obj: unknown): string {
   // Exclude __schemaHash from hash computation
   const filtered = obj && typeof obj === 'object' ? obj : {};
   const str = JSON.stringify(filtered, (key, value) =>
-    key === '__schemaHash' ? undefined : value
+    key === '__schemaHash' ? undefined : value,
   );
   return computeHash(str);
 }

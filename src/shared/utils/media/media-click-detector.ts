@@ -88,7 +88,7 @@ export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   // 3. Block interactive elements (Buttons, Links)
   // We check for interactive elements up the tree
   const interactive = target.closest(
-    'button, a, [role="button"], [data-testid="like"], [data-testid="retweet"], [data-testid="reply"], [data-testid="share"], [data-testid="bookmark"]'
+    'button, a, [role="button"], [data-testid="like"], [data-testid="retweet"], [data-testid="reply"], [data-testid="share"], [data-testid="bookmark"]',
   );
 
   if (interactive) {
@@ -162,7 +162,7 @@ function createResult(
   element: HTMLElement | null,
   url: string,
   confidence: number,
-  method: string
+  method: string,
 ): MediaDetectionResult {
   return { type, element, mediaUrl: url, confidence, method };
 }

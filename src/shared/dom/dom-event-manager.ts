@@ -112,7 +112,7 @@ export class DomEventManager {
     element: HTMLElement | Document | Window | null,
     eventType: K,
     handler: (event: HTMLElementEventMap[K]) => void,
-    options?: EventOptions
+    options?: EventOptions,
   ): DomEventManager {
     if (!element || this.isDestroyed) {
       return this;
@@ -124,7 +124,7 @@ export class DomEventManager {
         eventType,
         handler as EventListener,
         options,
-        'DomEventManager'
+        'DomEventManager',
       );
 
       this.cleanups.push(() => {
@@ -170,7 +170,7 @@ export class DomEventManager {
     element: HTMLElement | Document | Window | null,
     eventType: string,
     handler: (event: Event) => void,
-    options?: EventOptions
+    options?: EventOptions,
   ): DomEventManager {
     if (!element || this.isDestroyed) {
       return this;

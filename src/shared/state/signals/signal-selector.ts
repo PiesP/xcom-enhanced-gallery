@@ -39,7 +39,7 @@ export interface SelectorOptions<T> {
  */
 function createSelector<T, R>(
   selector: SelectorFn<T, R>,
-  options: SelectorOptions<T> = {}
+  options: SelectorOptions<T> = {},
 ): SelectorFn<T, R> {
   const { dependencies } = options;
 
@@ -89,7 +89,7 @@ function createSelector<T, R>(
 export function useSelector<T, R>(
   signalInstance: Signal<T>,
   selector: SelectorFn<T, R>,
-  options: SelectorOptions<T> = {}
+  options: SelectorOptions<T> = {},
 ): () => R {
   const { createMemo } = getSolid();
 

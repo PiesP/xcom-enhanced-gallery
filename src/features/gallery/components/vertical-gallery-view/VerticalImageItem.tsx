@@ -10,32 +10,15 @@
  * - Manage fit mode (original, fitWidth, fitHeight, fitContainer)
  * - Handle loading, error, and visibility states
  * - Auto-pause videos when item becomes invisible
- * - Preserve video playback state through visibility changes
- * - Support context menu for additional actions
  * - Provide focus/blur event handling for accessibility
- * - Sync fit mode with DOM attributes and CSS classes
  *
- * **Features**:
- * - Video detection via extension and URL patterns
- * - Automatic filename cleanup for display
- * - Memoization for performance optimization
- * - HOC wrapper for gallery-specific functionality
- * - Multiple state signals for reactive updates
- * - Frame-accurate media loading
- *
- * **Properties**:
- * - Props: {@link VerticalImageItemProps}
- * - Uses memo wrapper to prevent unnecessary re-renders
- * - Supports forceVisible for preloading optimization
- *
- * **Event Handling**:
- * - PC-only events: click, focus, blur, context menu, keyboard
- * - Callback-based event propagation (onClick, onMediaLoad, etc.)
- * - No touch or pointer events (PC-only policy)
+ * **Architecture (Phase 434)**:
+ * - Uses SharedObserver for memory-efficient visibility detection
+ * - Dimension calculation extracted to @shared/utils/media/dimensions
+ * - Video visibility control extracted to useVideoVisibility hook
  *
  * @module features/gallery/components/vertical-gallery-view
- * @see VerticalImageItem.helpers for utility functions
- * @see VerticalImageItem.types for type definitions
+ * @version 7.0.0 - Phase 434: SharedObserver integration and hook extraction
  */
 
 import type { ImageFitMode } from '@shared/types';
@@ -45,60 +28,28 @@ import type { JSX } from 'solid-js';
 import { withGallery } from '@shared/components/hoc';
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getSolid } from '@shared/external/vendors';
-import { logger } from '@shared/logging';
-import { createClassName } from '@shared/utils/text/formatting'; // Phase 284: 개별 함수 직접 import
+import { createIntrinsicSizingStyle, resolveMediaDimensions } from '@shared/utils/media/dimensions';
+import { SharedObserver } from '@shared/utils/performance/observer-pool';
+import { createClassName } from '@shared/utils/text/formatting';
 import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
 import styles from './VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from './VerticalImageItem.types';
+import { useVideoVisibility } from './hooks/useVideoVisibility';
 
 const solid = getSolid();
 const { createSignal, createEffect, onCleanup, createMemo } = solid;
 
-const fitModeMap: Record<string, string | undefined> = {
+/** Fit mode CSS class mapping */
+const FIT_MODE_CLASSES: Record<string, string | undefined> = {
   original: styles.fitOriginal,
   fitHeight: styles.fitHeight,
   fitWidth: styles.fitWidth,
   fitContainer: styles.fitContainer,
 };
 
-type DimensionPair = { width: number; height: number };
-
-const VIDEO_DIMENSION_PATTERN = /\/(\d{2,6})x(\d{2,6})\//;
-
-const extractDimensionsFromUrl = (url?: string): DimensionPair | null => {
-  if (!url) {
-    return null;
-  }
-
-  const match = url.match(VIDEO_DIMENSION_PATTERN);
-  if (!match) {
-    return null;
-  }
-
-  const width = Number.parseInt(match[1] ?? '', 10);
-  const height = Number.parseInt(match[2] ?? '', 10);
-
-  if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
-    return null;
-  }
-
-  return { width, height };
-};
-
-const scaleAspectRatio = (w: number, h: number): DimensionPair => ({
-  height: 720,
-  width: Math.max(1, Math.round((w / h) * 720)),
-});
-
-const parsePositiveNumber = (value: unknown): number | null => {
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
-  if (typeof value === 'string') {
-    const n = Number.parseFloat(value);
-    if (Number.isFinite(n) && n > 0) return n;
-  }
-  return null;
-};
-
+/**
+ * Core vertical image item component
+ */
 function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element | null {
   const {
     media,
@@ -120,6 +71,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     onBlur,
     onKeyDown,
   } = props;
+
   const isVideo = isVideoMedia(media);
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
@@ -127,84 +79,28 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
 
   const [containerRef, setContainerRef] = createSignal<HTMLDivElement | null>(null);
   const [imageRef, setImageRef] = createSignal<HTMLImageElement | null>(null);
-  const [videoRefSignal, setVideoRefSignal] = createSignal<HTMLVideoElement | null>(null);
+  const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
 
-  let wasPlayingBeforeHidden = false;
-  let wasMutedBeforeHidden: boolean | null = null;
-  const toRem = (v: number) => `${(v / 16).toFixed(4)}rem`;
+  // Phase 434: Use extracted dimension utility
+  const dimensions = createMemo(() => resolveMediaDimensions(media));
 
-  /**
-   * Phase 267: Enhanced metadata fallback
-   * Default intrinsic height (720px = 45rem) when media metadata is unavailable
-   * Reason: Minimize reflowing, improve stability
-   * Basis: Standard gallery height (actual media dimensions updated after load)
-   */
-  const DEFAULT_INTRINSIC_HEIGHT = 720;
-  const DEFAULT_INTRINSIC_WIDTH = 540; // 16:9 aspect ratio
-
-  const deriveDimensionsFromMetadata = (): DimensionPair | null => {
-    const m = media?.metadata as Record<string, unknown> | undefined;
-    if (!m) return null;
-    const d = m.dimensions as Record<string, unknown> | undefined;
-    if (d) {
-      const w = parsePositiveNumber(d.width);
-      const h = parsePositiveNumber(d.height);
-      if (w && h) return { width: w, height: h };
-    }
-    const a = m.apiData as Record<string, unknown> | undefined;
-    if (!a) return null;
-    const x = parsePositiveNumber(a['original_width'] ?? a['originalWidth']);
-    const y = parsePositiveNumber(a['original_height'] ?? a['originalHeight']);
-    if (x && y) return { width: x, height: y };
-    const dim =
-      extractDimensionsFromUrl(a['download_url'] as string | undefined) ||
-      extractDimensionsFromUrl(a['preview_url'] as string | undefined);
-    if (dim) return dim;
-    if (Array.isArray(a['aspect_ratio']) && a['aspect_ratio'].length >= 2) {
-      const r1 = parsePositiveNumber(a['aspect_ratio'][0]);
-      const r2 = parsePositiveNumber(a['aspect_ratio'][1]);
-      if (r1 && r2) return scaleAspectRatio(r1, r2);
-    }
-    return null;
-  };
-
-  const resolvedDimensions = createMemo<DimensionPair | null>(() => {
-    const directWidth = parsePositiveNumber(media?.width);
-    const directHeight = parsePositiveNumber(media?.height);
-
-    if (directWidth && directHeight) {
-      return { width: directWidth, height: directHeight };
-    }
-
-    const fromMetadata = deriveDimensionsFromMetadata();
-    if (fromMetadata) {
-      return fromMetadata;
-    }
-
-    // Phase 267: Metadata fallback when all dimension sources are unavailable
-    // Only used when media metadata is completely absent
-    // Actual media dimensions are updated after load, so reflowing is minimal
-    return { width: DEFAULT_INTRINSIC_WIDTH, height: DEFAULT_INTRINSIC_HEIGHT };
+  const intrinsicSizingStyle = createMemo<JSX.CSSProperties>(() => {
+    return createIntrinsicSizingStyle(dimensions()) as unknown as JSX.CSSProperties;
   });
 
-  const intrinsicSizingStyle = createMemo<JSX.CSSProperties | undefined>(() => {
-    const dim = resolvedDimensions();
-    // Phase 267: 폴백이 적용된 경우도 CSS 변수 설정
-    // (폴백은 기본값이므로 undefined를 반환하지 않음)
-    if (!dim) return undefined;
-    const ratio = dim.width / dim.height;
-    return {
-      '--xeg-aspect-default': `${dim.width} / ${dim.height}`,
-      '--xeg-gallery-item-intrinsic-width': toRem(dim.width),
-      '--xeg-gallery-item-intrinsic-height': toRem(dim.height),
-      '--xeg-gallery-item-intrinsic-ratio': ratio.toFixed(6),
-    } as unknown as JSX.CSSProperties;
+  // Phase 434: Use extracted video visibility hook
+  useVideoVisibility({
+    container: containerRef,
+    video: videoRef,
+    isVideo,
   });
-  const hasIntrinsicSizing = createMemo(() => !!resolvedDimensions());
+
+  // Event handlers
   const handleClick = () => {
     containerRef()?.focus?.({ preventScroll: true });
     onClick?.();
   };
+
   const handleMediaLoad = () => {
     if (!isLoaded()) {
       setIsLoaded(true);
@@ -212,79 +108,55 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
       onMediaLoad?.(media.url, index);
     }
   };
+
   const handleMediaError = () => {
     setIsError(true);
     setIsLoaded(false);
   };
-  const handleImageContextMenuInternal = (event: MouseEvent) => {
+
+  const handleContextMenu = (event: MouseEvent) => {
     onImageContextMenu?.(event, media);
   };
 
-  const setupVideoAutoPlayPause = (container: HTMLDivElement, video: HTMLVideoElement) => {
-    const observer = new IntersectionObserver(entries => {
-      const entry = entries[0];
-      if (!entry) return;
-
-      if (!entry.isIntersecting) {
-        try {
-          wasPlayingBeforeHidden = !video.paused;
-          wasMutedBeforeHidden = video.muted;
-          video.muted = true;
-          if (!video.paused) video.pause();
-        } catch (err) {
-          logger.warn('Failed to pause video', { error: err });
-        }
-      } else {
-        try {
-          if (wasMutedBeforeHidden !== null) video.muted = wasMutedBeforeHidden;
-          if (wasPlayingBeforeHidden) void video.play?.();
-        } catch (err) {
-          logger.warn('Failed to resume video', { error: err });
-        } finally {
-          wasPlayingBeforeHidden = false;
-          wasMutedBeforeHidden = null;
-        }
-      }
-    });
-    observer.observe(container);
-    return () => observer.disconnect();
-  };
-
+  // Sync forceVisible to isVisible
   createEffect(() => {
-    if (forceVisible && !isVisible()) setIsVisible(true);
+    if (forceVisible && !isVisible()) {
+      setIsVisible(true);
+    }
   });
 
+  // Phase 434: Lazy visibility detection using SharedObserver
   createEffect(() => {
     const container = containerRef();
     if (!container || isVisible() || forceVisible) {
       return;
     }
 
-    const observer = new IntersectionObserver(
-      entries => {
-        const entry = entries[0];
-        if (entry?.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '100px',
+    const handleEntry = (entry: IntersectionObserverEntry) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
+        SharedObserver.unobserve(container);
       }
-    );
+    };
 
-    observer.observe(container);
-    onCleanup(() => observer.disconnect());
+    SharedObserver.observe(container, handleEntry, {
+      threshold: 0.1,
+      rootMargin: '100px',
+    });
+
+    onCleanup(() => {
+      SharedObserver.unobserve(container);
+    });
   });
 
+  // Check if media is already loaded
   createEffect(() => {
     if (!isVisible() || isLoaded()) {
       return;
     }
 
     if (isVideo) {
-      const video = videoRefSignal();
+      const video = videoRef();
       if (video && video.readyState >= 1) {
         handleMediaLoad();
       }
@@ -296,35 +168,16 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     }
   });
 
-  createEffect(() => {
-    if (!isVideo) return;
-    const container = containerRef();
-    const video = videoRefSignal();
-    if (!container || !video || typeof IntersectionObserver === 'undefined') return;
-    onCleanup(setupVideoAutoPlayPause(container, video));
-  });
-  createEffect(() => {
-    if (!isVideo) return;
-    const video = videoRefSignal();
-    if (video && typeof video.muted === 'boolean') {
-      try {
-        video.muted = true;
-      } catch (err) {
-        logger.warn('Failed to mute video', { error: err });
-      }
-    }
-  });
-
+  // Fit mode handling
   const resolvedFitMode = createMemo<ImageFitMode>(() => {
     const value = props.fitMode;
     if (typeof value === 'function') {
-      const result = value();
-      return (result ?? 'fitWidth') as ImageFitMode;
+      return (value() ?? 'fitWidth') as ImageFitMode;
     }
-
     return (value ?? 'fitWidth') as ImageFitMode;
   });
-  const fitModeClass = createMemo(() => fitModeMap[resolvedFitMode()] ?? '');
+
+  const fitModeClass = createMemo(() => FIT_MODE_CLASSES[resolvedFitMode()] ?? '');
 
   const containerClasses = createMemo(() =>
     createClassName(
@@ -333,14 +186,15 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
       isActive ? styles.active : undefined,
       isFocused ? styles.focused : undefined,
       fitModeClass(),
-      className
-    )
+      className,
+    ),
   );
 
   const imageClasses = createMemo(() => createClassName(styles.image, fitModeClass()));
 
+  // Accessibility props
   const ariaProps = {
-    'aria-label': ariaLabel || `미디어 ${index + 1}: ${cleanFilename(media.filename)}`,
+    'aria-label': ariaLabel || `Media ${index + 1}: ${cleanFilename(media.filename)}`,
     'aria-describedby': ariaDescribedBy,
     role: (role || 'button') as JSX.HTMLAttributes<HTMLDivElement>['role'],
     tabIndex: tabIndex ?? 0,
@@ -353,30 +207,6 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     registerContainer?.(element);
   };
 
-  // Phase 269-3: Inline style 런타임 검증
-  // CSS 변수 폴백이 적용되지 않는 경우를 대비한 인라인 스타일 설정
-  // (CSS 로드 지연이나 브라우저 호환성 문제 방지)
-  createEffect(() => {
-    const container = containerRef();
-    if (!container || isLoaded() || !hasIntrinsicSizing()) {
-      return;
-    }
-
-    // Calculate CSS variable computed values to check for fallback availability
-    const computedStyle = window.getComputedStyle(container);
-    const imageWrapperMinHeight = computedStyle.getPropertyValue('--xeg-spacing-3xl');
-    const aspectRatio = computedStyle.getPropertyValue('--xeg-aspect-default');
-
-    // Explicitly set fallback values if CSS variables are missing or empty
-    if (!imageWrapperMinHeight || imageWrapperMinHeight.trim() === '') {
-      container.style.setProperty('--xeg-spacing-3xl-fallback', '3rem');
-    }
-
-    if (!aspectRatio || aspectRatio.trim() === '') {
-      container.style.setProperty('--xeg-aspect-default-fallback', '4 / 3');
-    }
-  });
-
   return (
     <div
       ref={assignContainerRef}
@@ -387,7 +217,6 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
       data-fit-mode={resolvedFitMode()}
       data-media-loaded={isLoaded() ? 'true' : 'false'}
       style={intrinsicSizingStyle()}
-      data-has-intrinsic-size={hasIntrinsicSizing() ? 'true' : 'false'}
       onClick={handleClick}
       onFocus={onFocus as (event: FocusEvent) => void}
       onBlur={onBlur as (event: FocusEvent) => void}
@@ -408,18 +237,18 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
               src={media.url}
               autoplay={false}
               controls
-              ref={setVideoRefSignal}
+              ref={setVideoRef}
               class={createClassName(
                 styles.video,
                 fitModeClass(),
-                isLoaded() ? styles.loaded : styles.loading
+                isLoaded() ? styles.loaded : styles.loading,
               )}
               data-fit-mode={resolvedFitMode()}
               onLoadedMetadata={handleMediaLoad}
               onLoadedData={handleMediaLoad}
               onCanPlay={handleMediaLoad}
               onError={handleMediaError}
-              onContextMenu={handleImageContextMenuInternal}
+              onContextMenu={handleContextMenu}
               onDragStart={(e: DragEvent) => e.preventDefault()}
             />
           ) : (
@@ -438,7 +267,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
               data-fit-mode={resolvedFitMode()}
               onLoad={handleMediaLoad}
               onError={handleMediaError}
-              onContextMenu={handleImageContextMenuInternal}
+              onContextMenu={handleContextMenu}
               onDragStart={(e: DragEvent) => e.preventDefault()}
             />
           )}
@@ -455,8 +284,6 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
           )}
         </>
       )}
-
-      {/* Phase 58: 이미지 오른쪽 상단의 다운로드용 버튼 제거 */}
     </div>
   );
 }
@@ -474,6 +301,5 @@ const WithGalleryVerticalImageItem = withGallery(BaseComponent, {
   customData: { component: 'vertical-image-item', role: 'gallery-item' },
 });
 
-// Phase 308: Removed solid.memo (React compat) - Solid components are fine as is
 export type { FitModeProp, VerticalImageItemProps } from './VerticalImageItem.types';
 export const VerticalImageItem = WithGalleryVerticalImageItem;

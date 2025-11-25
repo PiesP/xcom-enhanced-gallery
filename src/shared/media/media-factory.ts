@@ -11,7 +11,7 @@ import { toPositiveNumber } from './media-utils';
  * Resolve Dimensions from API Media
  */
 export function resolveDimensionsFromApiMedia(
-  apiMedia: TweetMediaEntry
+  apiMedia: TweetMediaEntry,
 ): { width: number; height: number } | null {
   const widthFromOriginal = toPositiveNumber(apiMedia.original_width);
   const heightFromOriginal = toPositiveNumber(apiMedia.original_height);
@@ -32,7 +32,7 @@ export function createMediaInfoFromAPI(
   apiMedia: TweetMediaEntry,
   tweetInfo: TweetInfo,
   index: number,
-  tweetTextHTML?: string | undefined
+  tweetTextHTML?: string | undefined,
 ): MediaInfo | null {
   try {
     const mediaType = apiMedia.type === 'photo' ? 'image' : 'video';
@@ -79,7 +79,7 @@ export function createMediaInfoFromAPI(
 export async function convertAPIMediaToMediaInfo(
   apiMedias: TweetMediaEntry[],
   tweetInfo: TweetInfo,
-  tweetTextHTML?: string | undefined
+  tweetTextHTML?: string | undefined,
 ): Promise<MediaInfo[]> {
   const mediaItems: MediaInfo[] = [];
 

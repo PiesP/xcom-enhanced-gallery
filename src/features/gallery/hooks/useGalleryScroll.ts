@@ -84,7 +84,7 @@ export function useGalleryScroll({
   const isGalleryOpen = useSelector<GalleryState, boolean>(
     galleryState,
     (state: GalleryState) => state.isOpen,
-    { dependencies: state => [state.isOpen] }
+    { dependencies: state => [state.isOpen] },
   );
 
   // Phase 153: 통합 스크롤 상태 Signal

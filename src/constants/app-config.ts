@@ -39,7 +39,7 @@ const isProd = !isDev && !isTest;
 
 const autoStartFlag = parseBooleanFlag(importMetaEnv.VITE_AUTO_START ?? nodeEnv.VITE_AUTO_START);
 const debugToolsFlag = parseBooleanFlag(
-  importMetaEnv.VITE_ENABLE_DEBUG_TOOLS ?? nodeEnv.VITE_ENABLE_DEBUG_TOOLS
+  importMetaEnv.VITE_ENABLE_DEBUG_TOOLS ?? nodeEnv.VITE_ENABLE_DEBUG_TOOLS,
 );
 
 const resolvedAppConfig = Object.freeze({

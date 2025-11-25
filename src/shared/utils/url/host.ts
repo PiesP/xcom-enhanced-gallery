@@ -25,7 +25,7 @@ export interface HostMatchOptions {
  */
 export function tryParseUrl(
   value: string | URL | null | undefined,
-  base: string = FALLBACK_BASE_URL
+  base: string = FALLBACK_BASE_URL,
 ): URL | null {
   if (value instanceof URL) {
     return value;
@@ -69,7 +69,7 @@ export function getHostname(value: string | URL | null | undefined): string | nu
 export function isHostMatching(
   value: string | URL | null | undefined,
   allowedHosts: readonly string[],
-  options: HostMatchOptions = {}
+  options: HostMatchOptions = {},
 ): boolean {
   if (!Array.isArray(allowedHosts) || allowedHosts.length === 0) {
     return false;

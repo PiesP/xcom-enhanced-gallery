@@ -176,7 +176,7 @@ export class StreamingZipWriter {
     const zipBytes = concatenateUint8Arrays([...this.chunks, centralDir, endOfCentralDir]);
 
     logger.info(
-      `[StreamingZipWriter] ZIP finalized: ${zipBytes.length} bytes, ${this.entries.length} files`
+      `[StreamingZipWriter] ZIP finalized: ${zipBytes.length} bytes, ${this.entries.length} files`,
     );
 
     return zipBytes;

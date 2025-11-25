@@ -6,7 +6,7 @@ export const SharedObserver = {
   observe(
     element: Element,
     callback: (entry: IntersectionObserverEntry) => void,
-    options: IntersectionObserverInit = {}
+    options: IntersectionObserverInit = {},
   ) {
     const key = `${options.rootMargin}|${options.threshold}`;
     let observer = observerPool.get(key);

@@ -27,7 +27,7 @@ export async function fetchArrayBufferWithRetry(
   url: string,
   retries: number,
   signal?: AbortSignal,
-  backoffBaseMs: number = DEFAULT_BACKOFF_BASE_MS
+  backoffBaseMs: number = DEFAULT_BACKOFF_BASE_MS,
 ): Promise<Uint8Array> {
   const httpService = HttpRequestService.getInstance();
   let attempt = 0;

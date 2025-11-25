@@ -192,7 +192,7 @@ export function normalizeMediaUrl(url: string): string | null {
 export function adjustClickedIndexAfterDeduplication(
   originalItems: MediaInfo[],
   uniqueItems: MediaInfo[],
-  originalClickedIndex: number
+  originalClickedIndex: number,
 ): number {
   if (uniqueItems.length === 0) return 0;
 

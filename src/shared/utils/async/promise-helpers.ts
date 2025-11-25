@@ -8,7 +8,7 @@
  */
 export type ResultCallback<TResult, TError = string | null | undefined> = (
   result?: TResult,
-  error?: TError
+  error?: TError,
 ) => void;
 
 /**
@@ -45,7 +45,7 @@ export interface PromisifyOptions<TFallback> {
  */
 export function promisifyCallback<TResult>(
   executor: (callback: ResultCallback<TResult>) => void,
-  options?: PromisifyOptions<TResult>
+  options?: PromisifyOptions<TResult>,
 ): Promise<TResult> {
   return new Promise((resolve, reject) => {
     try {
@@ -119,7 +119,7 @@ export function tryWithFallback<T>(fn: () => T, fallback: T | (() => T)): T {
  */
 export async function tryWithFallbackAsync<T>(
   fn: () => T | Promise<T>,
-  fallback: T | (() => T | Promise<T>)
+  fallback: T | (() => T | Promise<T>),
 ): Promise<T> {
   try {
     return await fn();

@@ -97,7 +97,7 @@ export class CookieService {
           }
           callback(error ? undefined : (cookies ?? []).map(c => ({ ...c })), error);
         }),
-      { fallback: () => this.listFromDocument(options) }
+      { fallback: () => this.listFromDocument(options) },
     );
   }
 

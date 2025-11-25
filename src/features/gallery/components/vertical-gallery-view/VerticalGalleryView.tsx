@@ -93,13 +93,13 @@ function VerticalGalleryViewCore({
   const mediaItems = useSelector<GalleryState, readonly MediaInfo[]>(
     galleryState,
     state => state.mediaItems,
-    { dependencies: state => [state.mediaItems] }
+    { dependencies: state => [state.mediaItems] },
   );
 
   const currentIndex = useSelector<GalleryState, number>(
     galleryState,
     state => state.currentIndex,
-    { dependencies: state => [state.currentIndex] }
+    { dependencies: state => [state.currentIndex] },
   );
 
   const isDownloading = useSelector(
@@ -108,7 +108,7 @@ function VerticalGalleryViewCore({
       isDownloadUiBusy({
         downloadProcessing: download.isProcessing,
       }),
-    { dependencies: (download: DownloadState) => [download.isProcessing] }
+    { dependencies: (download: DownloadState) => [download.isProcessing] },
   );
 
   const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);
@@ -188,7 +188,7 @@ function VerticalGalleryViewCore({
       if (element) {
         ensureGalleryScrollAvailable(element);
       }
-    })
+    }),
   );
 
   // Phase 20.2: 애니메이션 effect에 명시적 의존성 추가
@@ -204,8 +204,8 @@ function VerticalGalleryViewCore({
           animateGalleryExit(container);
         }
       },
-      { defer: true }
-    )
+      { defer: true },
+    ),
   );
 
   createEffect(
@@ -223,7 +223,7 @@ function VerticalGalleryViewCore({
           logger.warn('video cleanup failed', { error });
         }
       });
-    })
+    }),
   );
 
   // Note: Media prefetching is handled by MediaService.prefetchNextMedia()
@@ -289,7 +289,7 @@ function VerticalGalleryViewCore({
       block: 'start',
       isScrolling,
       onScrollStart: () => setProgrammaticScrollTimestamp(Date.now()),
-    }
+    },
   );
 
   // Sync focusedIndex to currentIndex during scroll

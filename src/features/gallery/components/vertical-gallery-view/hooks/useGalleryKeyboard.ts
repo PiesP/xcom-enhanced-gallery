@@ -98,7 +98,7 @@ export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void
       'keydown',
       handleKeyDown,
       { capture: true },
-      'gallery-keyboard-navigation'
+      'gallery-keyboard-navigation',
     );
 
     onCleanup(() => {

@@ -254,7 +254,7 @@ export function Button(rawProps: ButtonProps): JSXElement {
           component: 'UnifiedButton',
           variant: local.variant,
           iconOnly: true,
-        }
+        },
       );
     }
   });
@@ -317,7 +317,7 @@ export function Button(rawProps: ButtonProps): JSXElement {
       'xeg-inline-center',
       'xeg-gap-sm',
       typeof local.className === 'function' ? (local.className as () => string)() : local.className,
-      typeof local.class === 'function' ? (local.class as () => string)() : local.class
+      typeof local.class === 'function' ? (local.class as () => string)() : local.class,
     );
 
   // Keep the DOM disabled property in sync with the isDisabled() accessor

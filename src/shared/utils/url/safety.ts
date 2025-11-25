@@ -143,7 +143,7 @@ function buildProbeVariants(value: string): string[] {
 
 function isAllowedDataUrl(
   lowerCaseValue: string,
-  allowedPrefixes: readonly string[] | undefined
+  allowedPrefixes: readonly string[] | undefined,
 ): boolean {
   if (!allowedPrefixes || allowedPrefixes.length === 0) {
     return false;

@@ -22,7 +22,7 @@ export function getGMDownload(): GMDownloadFunction | undefined {
 
 export async function downloadSingleFile(
   media: MediaInfo,
-  options: DownloadOptions = {}
+  options: DownloadOptions = {},
 ): Promise<SingleDownloadResult> {
   if (options.signal?.aborted) {
     return { success: false, error: 'User cancelled download' };

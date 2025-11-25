@@ -57,7 +57,7 @@ export class PrefetchManager {
   async prefetchAround(
     urls: readonly string[],
     currentIndex: number,
-    options: PrefetchOptions = {}
+    options: PrefetchOptions = {},
   ): Promise<void> {
     const prefetchRange = options.prefetchRange ?? 2;
     const schedule = options.schedule ?? 'idle';

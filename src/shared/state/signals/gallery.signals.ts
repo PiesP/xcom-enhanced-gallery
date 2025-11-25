@@ -223,7 +223,7 @@ export function closeGallery(): void {
 export function navigateToItem(
   index: number,
   trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button',
-  source: NavigationSource = 'button'
+  source: NavigationSource = 'button',
 ): void {
   const state = galleryState.value;
   const validIndex = Math.max(0, Math.min(index, state.mediaItems.length - 1));
@@ -264,7 +264,7 @@ export function navigateToItem(
 }
 
 export function navigatePrevious(
-  trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button'
+  trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button',
 ): void {
   const state = galleryState.value;
   const baseIndex = gallerySignals.focusedIndex.value ?? state.currentIndex;
@@ -293,7 +293,7 @@ export function setLoading(isLoading: boolean): void {
  */
 export function setFocusedIndex(
   index: number | null,
-  source: NavigationSource = 'auto-focus'
+  source: NavigationSource = 'auto-focus',
 ): void {
   const state = galleryState.value;
 

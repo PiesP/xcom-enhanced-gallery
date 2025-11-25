@@ -185,7 +185,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
     if (!isGMAPIAvailable('download')) {
       logger.warn('[GalleryRenderer] GM_download not available');
       setError(
-        'Tampermonkey or similar userscript manager is required. Download functionality is not available.'
+        'Tampermonkey or similar userscript manager is required. Download functionality is not available.',
       );
       return;
     }
@@ -231,7 +231,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
         const result = await downloadService.downloadBulk(mutableMediaItems);
         if (result.success) {
           this.notificationService.success(
-            `Bulk download complete: ${result.filesSuccessful} files`
+            `Bulk download complete: ${result.filesSuccessful} files`,
           );
         } else {
           setError(result.error || 'Download failed.');
@@ -284,7 +284,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
    */
   async render(
     mediaItems: readonly MediaInfo[],
-    renderOptions?: GalleryRenderOptions
+    renderOptions?: GalleryRenderOptions,
   ): Promise<void> {
     openGallery(mediaItems, renderOptions?.startIndex ?? 0);
     if (renderOptions?.viewMode) {

@@ -79,7 +79,7 @@ function resolveEventTarget(explicitRoot: HTMLElement | null): EventTarget {
 
 export async function initializeGalleryEvents(
   handlers: EventHandlers,
-  optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement
+  optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement,
 ): Promise<() => void> {
   if (lifecycleState.initialized) {
     logger.warn('[GalleryLifecycle] Already initialized, re-initializing');

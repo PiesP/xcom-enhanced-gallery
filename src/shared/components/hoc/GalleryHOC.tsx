@@ -83,7 +83,7 @@ const BLOCKED_KEYS = new Set(['Space', 'Enter', 'ArrowLeft', 'ArrowRight']);
 
 export function withGallery<P extends GalleryComponentProps>(
   Component: ComponentType<P>,
-  options: GalleryOptions
+  options: GalleryOptions,
 ): ComponentType<P> {
   const normalized = normalizeOptions(options);
   const markerAttributes = createMarkerAttributes(normalized);
@@ -91,7 +91,7 @@ export function withGallery<P extends GalleryComponentProps>(
   const baseClassName = createClassName(
     'xeg-gallery',
     `xeg-gallery-${normalized.type}`,
-    normalized.className
+    normalized.className,
   );
 
   const GalleryComponent: ComponentType<P> = props => {
@@ -103,7 +103,7 @@ export function withGallery<P extends GalleryComponentProps>(
       markerAttributes,
       accessibilityAttributes,
       eventHandlers,
-      className ? { className } : {}
+      className ? { className } : {},
     ) as P;
 
     return Component(finalProps);
@@ -189,7 +189,7 @@ function createMarkerAttributes(options: NormalizedOptions): Record<string, stri
 }
 
 function createAccessibilityAttributes(
-  accessibility: NormalizedOptions['accessibility']
+  accessibility: NormalizedOptions['accessibility'],
 ): Record<string, string | number> {
   const attributes: Record<string, string | number> = {};
 
@@ -210,7 +210,7 @@ function createAccessibilityAttributes(
 
 function createEventHandlers<P extends GalleryComponentProps>(
   props: P,
-  events: NormalizedOptions['events']
+  events: NormalizedOptions['events'],
 ): Partial<Pick<GalleryComponentProps, 'onClick' | 'onKeyDown'>> {
   const handlers: Partial<Pick<GalleryComponentProps, 'onClick' | 'onKeyDown'>> = {};
 

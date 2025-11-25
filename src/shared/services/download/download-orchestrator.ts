@@ -35,14 +35,14 @@ export class DownloadOrchestrator extends BaseServiceImpl {
 
   public async downloadSingle(
     media: MediaInfo,
-    options: DownloadOptions = {}
+    options: DownloadOptions = {},
   ): Promise<SingleDownloadResult> {
     return downloadSingleFile(media, options);
   }
 
   public async downloadBulk(
     mediaItems: MediaInfo[],
-    options: DownloadOptions = {}
+    options: DownloadOptions = {},
   ): Promise<BulkDownloadResult> {
     const items: OrchestratorItem[] = mediaItems.map(media => ({
       url: media.url,

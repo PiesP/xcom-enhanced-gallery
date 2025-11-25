@@ -69,7 +69,7 @@ export class HttpError extends Error {
   constructor(
     message: string,
     readonly status: number,
-    readonly statusText: string
+    readonly statusText: string,
   ) {
     super(message);
     this.name = 'HttpError';
@@ -103,7 +103,7 @@ export class HttpRequestService {
   private async request<T>(
     method: string,
     url: string,
-    options?: HttpRequestOptions | BinaryRequestOptions
+    options?: HttpRequestOptions | BinaryRequestOptions,
   ): Promise<HttpResponse<T>> {
     return new Promise((resolve, reject) => {
       try {
@@ -142,8 +142,8 @@ export class HttpRequestService {
               new HttpError(
                 response.statusText || 'Network Error',
                 response.status,
-                response.statusText
-              )
+                response.statusText,
+              ),
             );
           },
           ontimeout: () => {
@@ -219,7 +219,7 @@ export class HttpRequestService {
   async post<T = unknown>(
     url: string,
     data?: unknown,
-    options?: HttpRequestOptions
+    options?: HttpRequestOptions,
   ): Promise<HttpResponse<T>> {
     return this.request<T>('POST', url, { ...options, data });
   }
@@ -230,7 +230,7 @@ export class HttpRequestService {
   async put<T = unknown>(
     url: string,
     data?: unknown,
-    options?: HttpRequestOptions
+    options?: HttpRequestOptions,
   ): Promise<HttpResponse<T>> {
     return this.request<T>('PUT', url, { ...options, data });
   }
@@ -248,7 +248,7 @@ export class HttpRequestService {
   async patch<T = unknown>(
     url: string,
     data?: unknown,
-    options?: HttpRequestOptions
+    options?: HttpRequestOptions,
   ): Promise<HttpResponse<T>> {
     return this.request<T>('PATCH', url, { ...options, data });
   }
@@ -286,7 +286,7 @@ export class HttpRequestService {
   async postBinary<T = unknown>(
     url: string,
     data: ArrayBuffer | Uint8Array,
-    options?: BinaryRequestOptions
+    options?: BinaryRequestOptions,
   ): Promise<HttpResponse<T>> {
     const contentType = options?.contentType ?? 'application/octet-stream';
     return await this.request<T>('POST', url, {

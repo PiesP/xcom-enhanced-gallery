@@ -50,7 +50,7 @@ export class MediaService extends BaseServiceImpl {
 
   async extractFromClickedElement(
     element: HTMLElement,
-    options: MediaExtractionOptions = {}
+    options: MediaExtractionOptions = {},
   ): Promise<MediaExtractionResult> {
     if (!this.mediaExtraction) throw new Error('Media Extraction not initialized');
     const result = await this.mediaExtraction.extractFromClickedElement(element, options);
@@ -73,7 +73,7 @@ export class MediaService extends BaseServiceImpl {
 
   async extractAllFromContainer(
     container: HTMLElement,
-    options: MediaExtractionOptions = {}
+    options: MediaExtractionOptions = {},
   ): Promise<MediaExtractionResult> {
     if (!this.mediaExtraction) throw new Error('Media Extraction not initialized');
     return this.mediaExtraction.extractAllFromContainer(container, options);
@@ -122,7 +122,7 @@ export class MediaService extends BaseServiceImpl {
   async prefetchNextMedia(
     mediaItems: readonly string[],
     currentIndex: number,
-    options: PrefetchOptions = {}
+    options: PrefetchOptions = {},
   ): Promise<void> {
     return this.prefetchManager.prefetchAround(mediaItems, currentIndex, options);
   }
@@ -141,7 +141,7 @@ export class MediaService extends BaseServiceImpl {
 
   async downloadSingle(
     media: MediaInfo,
-    options: DownloadOptions = {}
+    options: DownloadOptions = {},
   ): Promise<SingleDownloadResult> {
     const { DownloadOrchestrator } = await import('./download/download-orchestrator');
     const downloadService = DownloadOrchestrator.getInstance();
@@ -166,7 +166,7 @@ export class MediaService extends BaseServiceImpl {
 
   async downloadMultiple(
     items: Array<MediaInfo>,
-    options: BulkDownloadOptions = {}
+    options: BulkDownloadOptions = {},
   ): Promise<BulkDownloadResult> {
     const { DownloadOrchestrator } = await import('./download/download-orchestrator');
     const downloadService = DownloadOrchestrator.getInstance();
@@ -178,7 +178,7 @@ export class MediaService extends BaseServiceImpl {
 
   async downloadBulk(
     items: readonly MediaInfo[],
-    options: BulkDownloadOptions = {}
+    options: BulkDownloadOptions = {},
   ): Promise<BulkDownloadResult> {
     return this.downloadMultiple(Array.from(items), options);
   }

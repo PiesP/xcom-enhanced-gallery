@@ -143,7 +143,7 @@ export class LanguageService extends BaseServiceImpl {
   }
 
   private normalizeLanguage(
-    language: SupportedLanguage | string | null | undefined
+    language: SupportedLanguage | string | null | undefined,
   ): SupportedLanguage {
     if (!language) {
       return 'auto';

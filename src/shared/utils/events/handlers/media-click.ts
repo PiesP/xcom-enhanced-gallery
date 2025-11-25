@@ -58,7 +58,7 @@ async function resolveMediaInfo(event: MouseEvent): Promise<MediaInfo | null> {
 export async function handleMediaClick(
   event: MouseEvent,
   handlers: EventHandlers,
-  options: GalleryEventOptions
+  options: GalleryEventOptions,
 ): Promise<EventHandlingResult> {
   try {
     if (!options.enableMediaDetection) {

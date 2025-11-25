@@ -108,7 +108,7 @@ const computeNavigationState = ({
 
 const createGuardedHandler = (
   guard: () => boolean,
-  action?: () => void
+  action?: () => void,
 ): ((event: MouseEvent) => void) => {
   return event => {
     safeEventPrevent(event);
@@ -166,7 +166,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   createEffect(
     on(isDownloadingProp, value => {
       toolbarActions.setDownloading(Boolean(value));
-    })
+    }),
   );
 
   const baseSettingsController = useToolbarSettingsController({
@@ -187,7 +187,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   };
 
   const toolbarClass = createMemo(() =>
-    createClassName(styles.toolbar, styles.galleryToolbar, props.className)
+    createClassName(styles.toolbar, styles.galleryToolbar, props.className),
   );
   const totalItems = createMemo(() => Math.max(0, totalCount()));
 
@@ -198,7 +198,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       total: totalItems(),
       currentIndex: currentIndexForNav(),
       focusedIndex: focusedIndex(),
-    })
+    }),
   );
 
   const progressWidth = createMemo(() => calculateProgressWidth(displayedIndex(), totalItems()));
@@ -210,7 +210,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       total: totalItems(),
       toolbarDisabled: Boolean(isDisabled()),
       downloadBusy: Boolean(isDownloadingProp() || toolbarState.isDownloading),
-    })
+    }),
   );
 
   const fitModeHandlers = createMemo<FitModeHandlers>(() => ({
@@ -221,7 +221,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   }));
 
   const activeFitMode = createMemo<FitMode>(
-    () => currentFitMode() ?? FIT_MODE_ORDER[0]?.mode ?? 'original'
+    () => currentFitMode() ?? FIT_MODE_ORDER[0]?.mode ?? 'original',
   );
 
   const isToolbarDisabled = () => Boolean(isDisabled());
@@ -252,11 +252,11 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const handleNext = createGuardedHandler(() => navState().nextDisabled, props.onNext);
   const handleDownloadCurrent = createGuardedHandler(
     () => navState().downloadDisabled,
-    props.onDownloadCurrent
+    props.onDownloadCurrent,
   );
   const handleDownloadAll = createGuardedHandler(
     () => navState().downloadDisabled,
-    props.onDownloadAll
+    props.onDownloadAll,
   );
 
   const handleClose = (event: MouseEvent) => {

@@ -83,7 +83,7 @@ function handleNavigate(
     targetIndex: number;
     source: NavigationSource;
     trigger: NavigationTrigger;
-  }
+  },
 ): NavigationTransitionResult {
   const { targetIndex, source } = payload;
   const timestamp = Date.now();
@@ -100,7 +100,7 @@ function handleNavigate(
         focusedIndex: targetIndex,
         lastTimestamp: timestamp,
       },
-      true
+      true,
     );
   }
 
@@ -114,7 +114,7 @@ function handleNavigate(
 
 function handleSetFocus(
   state: NavigationState,
-  payload: { focusIndex: number | null; source: NavigationSource }
+  payload: { focusIndex: number | null; source: NavigationSource },
 ): NavigationTransitionResult {
   const { focusIndex, source } = payload;
   const timestamp = Date.now();
@@ -137,7 +137,7 @@ function handleSetFocus(
       lastSource: source,
       lastTimestamp: timestamp,
     },
-    isDuplicate
+    isDuplicate,
   );
 }
 

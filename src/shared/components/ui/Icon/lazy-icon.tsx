@@ -21,7 +21,7 @@ export function LazyIcon(props: LazyIconProps): JSXElement | unknown {
 
   const [iconResource] = createResource(
     () => props.name,
-    name => registry.loadIcon(name)
+    name => registry.loadIcon(name),
   );
 
   const className = () => ['lazy-icon-loading', props.className].filter(Boolean).join(' ');

@@ -11,7 +11,7 @@
 export function computePreloadIndices(
   currentIndex: number,
   total: number,
-  count: number
+  count: number,
 ): number[] {
   const safeTotal = Number.isFinite(total) && total > 0 ? Math.floor(total) : 0;
   const safeIndex = Math.min(Math.max(0, Math.floor(currentIndex)), Math.max(0, safeTotal - 1));

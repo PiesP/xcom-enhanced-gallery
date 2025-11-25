@@ -5,7 +5,7 @@ const { lazy, Suspense } = getSolid();
 const LazySettingsControls = lazy(() =>
   import('@shared/components/ui/Settings/SettingsControls').then(module => ({
     default: module.SettingsControls,
-  }))
+  })),
 );
 const SettingsControlsFallback = (): JSXElement => {
   return <div style={{ height: '7.5rem' }} />;

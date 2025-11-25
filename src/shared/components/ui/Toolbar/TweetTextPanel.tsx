@@ -19,7 +19,7 @@ type TweetTokenAccessor = () => { content: string; href: string };
 function renderTweetAnchor(
   accessor: TweetTokenAccessor,
   kind: TweetAnchorKind,
-  displayText?: string
+  displayText?: string,
 ): JSXElement {
   const token = accessor();
 

@@ -86,7 +86,7 @@ export function safeTweetId(value: string | undefined): string {
  * EventListener-compatible function wrapper (for TypeScript strict mode)
  */
 export function createEventListener<T extends Event = Event>(
-  handler: (this: EventTarget, event: T) => void
+  handler: (this: EventTarget, event: T) => void,
 ): EventListener {
   return handler as unknown as EventListener;
 }

@@ -20,7 +20,7 @@ export class TwitterAPIExtractor implements APIExtractor {
     tweetInfo: TweetInfo,
     clickedElement: HTMLElement,
     _options: MediaExtractionOptions,
-    extractionId: string
+    extractionId: string,
   ): Promise<MediaExtractionResult> {
     try {
       logger.debug(`[APIExtractor] ${extractionId}: Starting API extraction`, {
@@ -59,7 +59,7 @@ export class TwitterAPIExtractor implements APIExtractor {
     } catch (error) {
       logger.warn(`[APIExtractor] ${extractionId}: API extraction failed:`, error);
       return this.createFailureResult(
-        error instanceof Error ? error.message : 'API extraction failed'
+        error instanceof Error ? error.message : 'API extraction failed',
       );
     }
   }

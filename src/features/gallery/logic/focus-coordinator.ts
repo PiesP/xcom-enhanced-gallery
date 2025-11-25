@@ -38,7 +38,7 @@ export class FocusCoordinator {
       {
         threshold: this.options.threshold ?? 0,
         rootMargin: this.options.rootMargin || '0px',
-      }
+      },
     );
   }
 

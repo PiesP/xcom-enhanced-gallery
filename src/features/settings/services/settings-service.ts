@@ -118,7 +118,7 @@ export class SettingsService {
     } else if (category in DEFAULT_SETTINGS) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (this.settings as any)[category] = cloneDeep(
-        DEFAULT_SETTINGS[category as keyof typeof DEFAULT_SETTINGS]
+        DEFAULT_SETTINGS[category as keyof typeof DEFAULT_SETTINGS],
       );
     }
     this.settings.lastModified = Date.now();
@@ -169,7 +169,7 @@ export class SettingsService {
   private async loadSettings(): Promise<void> {
     try {
       const stored = await this.storage.get<AppSettings & { __schemaHash?: string }>(
-        APP_SETTINGS_STORAGE_KEY
+        APP_SETTINGS_STORAGE_KEY,
       );
       if (!stored) {
         await this.saveSettings();

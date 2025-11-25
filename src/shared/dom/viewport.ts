@@ -23,7 +23,7 @@ export interface ViewportConstraints {
 
 export function computeViewportConstraints(
   rect: { width: number; height: number },
-  chrome: ChromeOffsets = {}
+  chrome: ChromeOffsets = {},
 ): ViewportConstraints {
   const vw = Math.max(0, Math.floor(rect.width));
   const vh = Math.max(0, Math.floor(rect.height));
@@ -49,7 +49,7 @@ export function applyViewportCssVars(el: HTMLElement, v: ViewportConstraints): v
  */
 export function observeViewportCssVars(
   el: HTMLElement,
-  getChrome: () => ChromeOffsets
+  getChrome: () => ChromeOffsets,
 ): () => void {
   // Use global timer manager (policy: direct timers forbidden)
   let disposed = false;
@@ -104,7 +104,7 @@ export function observeViewportCssVars(
       'resize',
       createEventListener(onResize),
       { passive: true },
-      'viewport:resize'
+      'viewport:resize',
     );
   }
 

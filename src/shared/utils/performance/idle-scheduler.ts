@@ -14,7 +14,7 @@ type IdleDeadline = { didTimeout: boolean; timeRemaining: () => number };
 
 type RequestIdleCallback = (
   callback: (deadline: IdleDeadline) => void,
-  opts?: { timeout?: number }
+  opts?: { timeout?: number },
 ) => number;
 
 type CancelIdleCallback = (handle: number) => void;
@@ -62,7 +62,7 @@ export function scheduleIdle(task: () => void, opts: IdleScheduleOptions = {}): 
           // noop — error handling at consumer level
         }
       },
-      { timeout }
+      { timeout },
     );
     return {
       cancel: () => {

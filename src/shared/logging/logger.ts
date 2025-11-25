@@ -110,7 +110,7 @@ export function createScopedLogger(scope: string, config: Partial<LoggerConfig> 
 export function createScopedLoggerWithCorrelation(
   scope: string,
   _correlationId: string,
-  config: Partial<LoggerConfig> = {}
+  config: Partial<LoggerConfig> = {},
 ): Logger {
   return createScopedLogger(scope, config);
 }
@@ -123,7 +123,7 @@ export function createCorrelationId(): string {
 export function logError(
   error: Error | string,
   context: Record<string, unknown> = {},
-  source?: string
+  source?: string,
 ): void {
   const errorMessage = error instanceof Error ? error.message : error;
   logger.error(`Error${source ? ` in ${source}` : ''}: ${errorMessage}`, context);

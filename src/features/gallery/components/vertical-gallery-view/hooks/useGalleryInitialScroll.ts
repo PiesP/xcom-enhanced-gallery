@@ -12,7 +12,7 @@ interface UseGalleryInitialScrollProps {
   applyFocusAfterNavigation: (
     index: number,
     trigger: 'init',
-    options?: { force?: boolean }
+    options?: { force?: boolean },
   ) => void;
 }
 
@@ -84,7 +84,7 @@ export function useGalleryInitialScroll({
     if (!container || items.length === 0) return;
 
     const itemsContainer = container.querySelector(
-      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
+      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
     );
     const galleryItems = itemsContainer?.querySelectorAll('[data-xeg-role="gallery-item"]');
     if (!itemsContainer || !galleryItems || galleryItems.length === 0) return;

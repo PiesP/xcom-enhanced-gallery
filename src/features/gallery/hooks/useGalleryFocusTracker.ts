@@ -30,7 +30,7 @@ export interface UseGalleryFocusTrackerReturn {
   applyFocusAfterNavigation: (
     index: number,
     trigger: FocusNavigationTrigger,
-    options?: { force?: boolean }
+    options?: { force?: boolean },
   ) => void;
 }
 
@@ -38,7 +38,7 @@ const solid = getSolid();
 const { createSignal, onCleanup, batch } = solid;
 
 export function useGalleryFocusTracker(
-  options: UseGalleryFocusTrackerOptions
+  options: UseGalleryFocusTrackerOptions,
 ): UseGalleryFocusTrackerReturn {
   const [focusedIndex, setLocalFocusedIndex] = createSignal<number | null>(null);
   const [manualFocusIndex, setManualFocusIndex] = createSignal<number | null>(null);
@@ -97,7 +97,7 @@ export function useGalleryFocusTracker(
   const applyFocusAfterNavigation = (
     index: number,
     _trigger: FocusNavigationTrigger,
-    _opts?: { force?: boolean }
+    _opts?: { force?: boolean },
   ) => {
     setManualFocus(index);
   };

@@ -109,7 +109,7 @@ export class GalleryApp {
           debugMode: false,
           preventBubbling: true,
           context: 'gallery',
-        }
+        },
       );
 
       logger.info('[GalleryApp] ✅ Event handlers setup complete');
@@ -141,14 +141,14 @@ export class GalleryApp {
         });
         void this.notificationService.error(
           'Failed to load media',
-          'Could not find images or videos.'
+          'Could not find images or videos.',
         );
       }
     } catch (error) {
       logger.error('[GalleryApp] Error during media extraction:', error);
       void this.notificationService.error(
         'Error occurred',
-        error instanceof Error ? error.message : 'Unknown error'
+        error instanceof Error ? error.message : 'Unknown error',
       );
     }
   }
@@ -161,7 +161,7 @@ export class GalleryApp {
       logger.warn('[GalleryApp] Gallery not initialized. Tampermonkey may not be installed.');
       void this.notificationService.error(
         'Gallery unavailable',
-        'Tampermonkey or similar userscript manager is required.'
+        'Tampermonkey or similar userscript manager is required.',
       );
       return;
     }
@@ -190,7 +190,7 @@ export class GalleryApp {
       logger.error('[GalleryApp] Failed to open gallery:', error);
       void this.notificationService.error(
         'Failed to load gallery',
-        error instanceof Error ? error.message : 'Unknown error'
+        error instanceof Error ? error.message : 'Unknown error',
       );
       throw error;
     }

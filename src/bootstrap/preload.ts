@@ -43,7 +43,7 @@ async function runPreloadTask(task: PreloadTask, deps: PreloadDependencies): Pro
  */
 export async function executePreloadStrategy(
   tasks: readonly PreloadTask[] = PRELOAD_TASKS,
-  deps: PreloadDependencies = DEFAULT_PRELOAD_DEPENDENCIES
+  deps: PreloadDependencies = DEFAULT_PRELOAD_DEPENDENCIES,
 ): Promise<void> {
   for (const task of tasks) {
     await runPreloadTask(task, deps);

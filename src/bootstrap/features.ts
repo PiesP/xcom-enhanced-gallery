@@ -63,7 +63,7 @@ function resolveFeatureStates(settings?: SettingsWithFeatures | null): Record<Fe
       state[key] = readFlag(settings ?? undefined, key);
       return state;
     },
-    {} as Record<FeatureKey, boolean>
+    {} as Record<FeatureKey, boolean>,
   );
 }
 

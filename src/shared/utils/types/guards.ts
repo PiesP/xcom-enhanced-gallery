@@ -19,7 +19,7 @@
  * ```
  */
 export function createEventListener<T extends Event = Event>(
-  handler: (event: T) => void
+  handler: (event: T) => void,
 ): EventListener {
   return (event: Event) => {
     handler(event as T);

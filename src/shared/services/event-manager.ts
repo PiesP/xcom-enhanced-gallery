@@ -71,7 +71,7 @@ export class EventManager extends BaseServiceImpl {
     element: HTMLElement | Document | Window | null,
     eventType: K,
     handler: (event: HTMLElementEventMap[K]) => void,
-    options?: AddEventListenerOptions
+    options?: AddEventListenerOptions,
   ): EventManager {
     if (this.isDestroyed) {
       logger.warn('addEventListener called on destroyed EventManager');
@@ -89,7 +89,7 @@ export class EventManager extends BaseServiceImpl {
     element: HTMLElement | Document | Window | null,
     eventType: string,
     handler: (event: Event) => void,
-    options?: AddEventListenerOptions
+    options?: AddEventListenerOptions,
   ): EventManager {
     if (this.isDestroyed) {
       logger.warn('addCustomEventListener called on destroyed EventManager');
@@ -135,7 +135,7 @@ export class EventManager extends BaseServiceImpl {
     type: string,
     listener: EventListener,
     options?: AddEventListenerOptions,
-    context?: string
+    context?: string,
   ): string {
     if (this.isDestroyed) {
       logger.warn('EventManager: addListener called on destroyed instance');
@@ -165,7 +165,7 @@ export class EventManager extends BaseServiceImpl {
    */
   public async initializeGallery(
     handlers: EventHandlers,
-    options?: Partial<GalleryEventOptions>
+    options?: Partial<GalleryEventOptions>,
   ): Promise<() => void> {
     return initializeGalleryEvents(handlers, options);
   }
@@ -195,7 +195,7 @@ export class EventManager extends BaseServiceImpl {
     element: EventTarget,
     eventType: string,
     handler: EventListener,
-    context?: string
+    context?: string,
   ): string {
     if (this.isDestroyed) {
       logger.warn('handleTwitterEvent called on destroyed EventManager');

@@ -46,7 +46,7 @@ export class Translator {
 
 export function createTranslationFunction(
   translator: Translator,
-  resolveLanguage: () => BaseLanguageCode
+  resolveLanguage: () => BaseLanguageCode,
 ): TranslationFunction {
   return (key, params) => translator.translate(resolveLanguage(), key, params);
 }
