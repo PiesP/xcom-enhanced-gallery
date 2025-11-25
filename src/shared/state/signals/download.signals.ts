@@ -2,11 +2,11 @@
  * Download state management with signals
  */
 
-import type { MediaInfo, MediaId } from "@shared/types/media.types";
-import type { Result } from "@shared/types/result.types";
-import { success, failure, ErrorCode } from "@shared/types/result.types";
-import { createSignalSafe, type SafeSignal } from "./signal-factory";
 import { logger as rootLogger, type Logger as ILogger } from "@shared/logging";
+import type { MediaId, MediaInfo } from "@shared/types/media.types";
+import type { Result } from "@shared/types/result.types";
+import { ErrorCode, failure, success } from "@shared/types/result.types";
+import { createSignalSafe, type SafeSignal } from "./signal-factory";
 
 // Download status
 export type DownloadStatus = "pending" | "downloading" | "completed" | "failed";
@@ -27,7 +27,6 @@ export interface DownloadState {
   readonly activeTasks: ReadonlyMap<string, DownloadTask>;
   readonly queue: readonly string[];
   readonly isProcessing: boolean;
-  readonly globalProgress: number;
 }
 
 // Initial state
@@ -35,16 +34,6 @@ const INITIAL_STATE: DownloadState = {
   activeTasks: new Map(),
   queue: [],
   isProcessing: false,
-  globalProgress: 0,
-};
-
-// Event types
-export type DownloadEvents = {
-  "download:started": { taskId: string; mediaId: MediaId };
-  "download:progress": { taskId: string; progress: number };
-  "download:completed": { taskId: string; mediaId: MediaId };
-  "download:failed": { taskId: string; error: string };
-  "download:queue-updated": { queueLength: number };
 };
 
 // Lazy-initialized signal
@@ -135,40 +124,6 @@ export const downloadState = {
 };
 
 // ============================================================================
-// Event Dispatcher
-// ============================================================================
-
-function dispatchEvent<K extends keyof DownloadEvents>(
-  event: K,
-  data: DownloadEvents[K],
-): void {
-  const detail = { ...data, timestamp: Date.now() };
-  const doc = globalThis.document;
-
-  if (!doc || typeof doc.dispatchEvent !== "function") {
-    logger.debug(`[Download] ${event} dispatch skipped (no document)`, detail);
-    return;
-  }
-
-  const CustomEventCtor = globalThis.CustomEvent;
-  if (typeof CustomEventCtor !== "function") {
-    logger.debug(
-      `[Download] ${event} dispatch skipped (no CustomEvent)`,
-      detail,
-    );
-    return;
-  }
-
-  try {
-    const customEvent = new CustomEventCtor(`xeg:${event}`, { detail });
-    doc.dispatchEvent(customEvent);
-    logger.debug(`[Download] ${event} emitted`, data);
-  } catch (error) {
-    logger.warn(`[Download] ${event} dispatch failed`, { error, detail });
-  }
-}
-
-// ============================================================================
 // Actions
 // ============================================================================
 
@@ -207,9 +162,6 @@ export function createDownloadTask(
     };
 
     logger.info(`[Download] Task created: ${taskId} - ${mediaInfo.url}`);
-    dispatchEvent("download:queue-updated", {
-      queueLength: downloadState.value.queue.length,
-    });
 
     return success(taskId, { mediaId, filename: task.filename });
   } catch (error) {
@@ -263,7 +215,6 @@ export function startDownload(taskId: string): Result<void> {
   };
 
   logger.info(`[Download] Download started: ${taskId}`);
-  dispatchEvent("download:started", { taskId, mediaId: task.mediaId });
 
   return success(undefined);
 }
@@ -293,23 +244,14 @@ export function updateDownloadProgress(
   const newTasks = new Map(currentState.activeTasks);
   newTasks.set(taskId, updatedTask);
 
-  // 전체 진행률 계산
-  const allTasks = Array.from(newTasks.values());
-  const totalProgress =
-    allTasks.reduce((sum, t) => sum + t.progress, 0) / allTasks.length;
-
   downloadState.value = {
     ...currentState,
     activeTasks: newTasks,
-    globalProgress: totalProgress,
   };
-
-  dispatchEvent("download:progress", { taskId, progress: clampedProgress });
 
   return success(undefined, {
     taskId,
     progress: clampedProgress,
-    globalProgress: totalProgress,
   });
 }
 
@@ -347,7 +289,6 @@ export function completeDownload(taskId: string): Result<void> {
   };
 
   logger.info(`[Download] Download completed: ${taskId}`);
-  dispatchEvent("download:completed", { taskId, mediaId: task.mediaId });
 
   return success(undefined, {
     taskId,
@@ -391,7 +332,6 @@ export function failDownload(taskId: string, error: string): Result<void> {
   };
 
   logger.error(`[Download] download failed: ${taskId} - ${error}`);
-  dispatchEvent("download:failed", { taskId, error });
 
   return success(undefined, {
     taskId,
@@ -482,7 +422,6 @@ export function getDownloadInfo(): {
   failedTasks: number;
   queueLength: number;
   isProcessing: boolean;
-  globalProgress: number;
 } {
   const state = downloadState.value;
   const tasks = Array.from(state.activeTasks.values());
@@ -498,36 +437,5 @@ export function getDownloadInfo(): {
     failedTasks: tasks.filter((t) => t.status === "failed").length,
     queueLength: state.queue.length,
     isProcessing: state.isProcessing,
-    globalProgress: state.globalProgress,
-  };
-}
-
-/**
- * Register event listener
- */
-export function addEventListener<K extends keyof DownloadEvents>(
-  event: K,
-  handler: (data: DownloadEvents[K]) => void,
-): () => void {
-  const doc = globalThis.document;
-  if (!doc || typeof doc.addEventListener !== "function") {
-    logger.debug(`[Download] listener skipped for ${event} (no document)`);
-    return () => {};
-  }
-
-  const eventHandler = (e: Event): void => {
-    const customEvent = e as CustomEvent<DownloadEvents[K]>;
-    try {
-      handler(customEvent.detail);
-    } catch (error) {
-      logger.warn("[Download] listener callback failed", { error, event });
-    }
-  };
-
-  const eventName = `xeg:${event}`;
-  doc.addEventListener(eventName, eventHandler as EventListener);
-
-  return () => {
-    doc.removeEventListener(eventName, eventHandler as EventListener);
   };
 }

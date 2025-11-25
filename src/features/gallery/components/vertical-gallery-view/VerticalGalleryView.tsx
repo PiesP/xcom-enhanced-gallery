@@ -241,51 +241,8 @@ function VerticalGalleryViewCore({
     }),
   );
 
-  // Phase 430: 미디어 프리로드 자동화 (currentIndex 변경 시 자동 프리페치)
-  createEffect(() => {
-    if (!isVisible() || mediaItems().length === 0) return;
-
-    const currentIdx = currentIndex();
-    const items = mediaItems();
-
-    // 프리로드할 URL 추출 (현재±2 범위)
-    const range = 2;
-    const startIdx = Math.max(0, currentIdx - range);
-    const endIdx = Math.min(items.length - 1, currentIdx + range);
-
-    const urlsToPreload: string[] = [];
-    for (let i = startIdx; i <= endIdx; i++) {
-      if (i !== currentIdx && items[i]) {
-        urlsToPreload.push(items[i]!.url);
-      }
-    }
-
-    // Link prefetch 힌트 추가 (브라우저 HTTP/2 활용)
-    urlsToPreload.forEach((url) => {
-      try {
-        // 중복 방지: 이미 존재하는 경우 추가 안 함
-        const existingLink = document.querySelector(
-          `link[rel="prefetch"][href="${url}"]`,
-        );
-        if (existingLink) return;
-
-        const link = document.createElement("link");
-        link.rel = "prefetch";
-        link.href = url;
-        link.as = "image";
-
-        // 우선순위 설정 (Chrome 95+)
-        if ("fetchPriority" in link) {
-          (link as HTMLLinkElement & { fetchPriority: string }).fetchPriority =
-            "low";
-        }
-
-        document.head.appendChild(link);
-      } catch (error) {
-        logger.warn("Media prefetch failed", { error, url });
-      }
-    });
-  });
+  // Note: Media prefetching is handled by MediaService.prefetchNextMedia()
+  // which provides more sophisticated caching with blob storage
 
   createEffect(() => {
     const container = containerEl();
