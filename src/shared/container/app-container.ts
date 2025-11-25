@@ -46,13 +46,13 @@ export interface ILogger {
  * Handles DOM-based media discovery and URL extraction
  */
 export interface IMediaService {
-  // 필수 메서드들 (기존 MediaService에서 추출)
+  // Required methods (extracted from MediaService)
   extractMediaUrls(element: HTMLElement): Promise<string[]>;
   cleanup(): Promise<void>;
 }
 
 /**
- * 테마 서비스 인터페이스
+ * Theme service interface
  */
 export interface IThemeService {
   getCurrentTheme(): "light" | "dark" | "auto";
@@ -61,7 +61,7 @@ export interface IThemeService {
 }
 
 /**
- * 비디오 제어 서비스 인터페이스
+ * Video control service interface
  */
 export interface IVideoService {
   pauseAll(): void;
@@ -82,7 +82,7 @@ export interface ISettingsService {
 }
 
 /**
- * 갤러리 앱 인터페이스
+ * Gallery app interface
  */
 export interface IGalleryApp {
   initialize(): Promise<void>;
@@ -101,26 +101,26 @@ export interface IGalleryApp {
  * - dispose(): Resource cleanup method
  */
 export interface AppContainer {
-  /** 애플리케이션 설정 */
+  /** Application configuration */
   config: AppConfig;
 
-  /** 로거 인스턴스 */
+  /** Logger instance */
   logger: ILogger;
 
-  /** 핵심 서비스들 */
+  /** Core services */
   services: {
     media: IMediaService;
     theme: IThemeService;
     video: IVideoService;
-    settings?: ISettingsService; // lazy 로딩
+    settings?: ISettingsService; // lazy loading
   };
 
-  /** Feature 팩토리들 */
+  /** Feature factories */
   features: {
     loadGallery(): Promise<IGalleryApp>;
   };
 
-  /** 리소스 정리 */
+  /** Resource cleanup */
   dispose(): Promise<void>;
 }
 

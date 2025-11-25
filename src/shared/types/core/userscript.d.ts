@@ -85,18 +85,18 @@ export interface UserScriptInfo {
 }
 
 /**
- * 브라우저 환경 감지 유틸리티 타입
+ * Browser environment detection utility type
  */
 export interface BrowserEnvironment {
-  /** 사용 중인 UserScript 매니저 */
+  /** Active UserScript manager */
   userscriptManager:
-    | "tampermonkey"
-    | "greasemonkey"
-    | "violentmonkey"
-    | "unknown";
-  /** 브라우저 타입 */
+  | "tampermonkey"
+  | "greasemonkey"
+  | "violentmonkey"
+  | "unknown";
+  /** Browser type */
   browser: "chrome" | "firefox" | "safari" | "edge" | "unknown";
-  /** 개발 모드 여부 */
+  /** Development mode flag */
   isDevelopment: boolean;
 }
 
@@ -113,12 +113,12 @@ export interface GMXMLHttpRequestDetails {
   url: string;
   headers?: Record<string, string>;
   data?:
-    | string
-    | FormData
-    | Blob
-    | ArrayBuffer
-    | URLSearchParams
-    | ReadableStream;
+  | string
+  | FormData
+  | Blob
+  | ArrayBuffer
+  | URLSearchParams
+  | ReadableStream;
   cookie?: string;
   binary?: boolean;
   nocache?: boolean;
@@ -165,8 +165,8 @@ export interface GMXMLHttpRequestControl {
 }
 
 /**
- * UserScript 권한 타입
- * Phase 318.1: GM_xmlhttpRequest 제거 (MV3 불가) -> Phase 373: GM_xmlhttpRequest 복원
+ * UserScript grant type
+ * Phase 318.1: GM_xmlhttpRequest removed (MV3 incompatible) -> Phase 373: GM_xmlhttpRequest restored
  */
 export type UserScriptGrant =
   | "GM_registerMenuCommand"
@@ -181,7 +181,7 @@ export type UserScriptGrant =
   | "GM_xmlhttpRequest";
 
 /**
- * UserScript 연결 권한 타입
+ * UserScript connect permission type
  */
 export type UserScriptConnect =
   | "pbs.twimg.com"
@@ -190,7 +190,7 @@ export type UserScriptConnect =
   | "x.com";
 
 /**
- * UserScript 실행 시점 타입
+ * UserScript run-at timing type
  */
 export type UserScriptRunAt =
   | "document-start"
@@ -199,7 +199,7 @@ export type UserScriptRunAt =
   | "document-idle";
 
 /**
- * UserScript 메타데이터 인터페이스
+ * UserScript metadata interface
  */
 export interface UserScriptMetadata {
   name: string;

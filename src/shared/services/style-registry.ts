@@ -32,7 +32,7 @@ export class StyleRegistry {
 
   private readonly styleMap = new Map<string, HTMLStyleElement>();
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): StyleRegistry {
     if (!StyleRegistry.instance) {
@@ -75,7 +75,7 @@ export class StyleRegistry {
     let styleElement: HTMLStyleElement;
 
     try {
-      // Phase 373: GM_addStyle 도입
+      // Phase 373: Introduce GM_addStyle
       styleElement = getUserscript().addStyle(trimmedCss);
     } catch {
       // Fallback for non-GM environments

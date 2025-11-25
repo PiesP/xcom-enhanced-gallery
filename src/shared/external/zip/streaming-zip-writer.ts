@@ -72,8 +72,8 @@ function concatenateUint8Arrays(arrays: Uint8Array[]): Uint8Array {
 /**
  * Streaming ZIP Writer
  *
- * 파일을 추가할 때마다 즉시 Local File Header를 작성하고,
- * finalize() 호출 시 Central Directory를 추가하여 ZIP 완성
+ * Writes Local File Header immediately when adding each file,
+ * finalize() adds Central Directory to complete the ZIP
  */
 export class StreamingZipWriter {
   private readonly chunks: Uint8Array[] = [];
@@ -81,12 +81,12 @@ export class StreamingZipWriter {
   private currentOffset = 0;
 
   /**
-   * 파일 추가 (스트리밍 방식)
+   * Add file (streaming mode)
    *
-   * Local File Header + File Data를 즉시 작성
+   * Writes Local File Header + File Data immediately
    *
-   * @param filename 파일명
-   * @param data 파일 데이터
+   * @param filename Filename
+   * @param data File data
    */
   addFile(filename: string, data: Uint8Array): void {
     const filenameBytes = encodeUtf8(filename);
@@ -108,10 +108,10 @@ export class StreamingZipWriter {
       filenameBytes, // Filename
     ]);
 
-    // 청크에 추가
+    // Add to chunks
     this.chunks.push(localHeader, data);
 
-    // 엔트리 기록
+    // Record entry
     this.entries.push({
       filename,
       data,
@@ -119,7 +119,7 @@ export class StreamingZipWriter {
       crc32,
     });
 
-    // 오프셋 업데이트
+    // Update offset
     this.currentOffset += localHeader.length + data.length;
 
     logger.debug(
@@ -130,9 +130,9 @@ export class StreamingZipWriter {
   }
 
   /**
-   * ZIP 파일 완성 (Central Directory 추가)
+   * Finalize ZIP file (add Central Directory)
    *
-   * @returns 완성된 ZIP 파일 (Uint8Array)
+   * @returns Completed ZIP file (Uint8Array)
    */
   finalize(): Uint8Array {
     const centralDirStart = this.currentOffset;
@@ -181,7 +181,7 @@ export class StreamingZipWriter {
       writeUint16LE(0), // ZIP file comment length
     ]);
 
-    // 최종 ZIP 조립
+    // Final ZIP assembly
     const zipBytes = concatenateUint8Arrays([
       ...this.chunks,
       centralDir,
@@ -196,14 +196,14 @@ export class StreamingZipWriter {
   }
 
   /**
-   * 현재 엔트리 수 반환
+   * Get current entry count
    */
   getEntryCount(): number {
     return this.entries.length;
   }
 
   /**
-   * 현재 ZIP 크기 (Central Directory 제외)
+   * Get current ZIP size (excluding Central Directory)
    */
   getCurrentSize(): number {
     return this.currentOffset;

@@ -11,9 +11,9 @@ import type { IGalleryApp } from "@shared/container/app-container";
 import { warmupNonCriticalServices } from "@shared/container/service-accessors";
 import { mutateDevNamespace } from "@shared/devtools/dev-namespace";
 import { runAfterWindowLoad } from "@shared/dom/window-load";
+import { cleanupVendors } from "@shared/external/vendors";
 import { CoreService } from "@shared/services/core-service-manager";
 import { globalTimerManager } from "@shared/utils/time/timer-management";
-import { cleanupVendors } from "./shared/external/vendors";
 
 // Global styles
 // Global styles are loaded at runtime to avoid import-time side effects.

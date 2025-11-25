@@ -28,7 +28,7 @@ interface GlobalWithGMNotification {
 
 export class NotificationService {
   private static instance: NotificationService | null = null;
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): NotificationService {
     if (!this.instance) this.instance = new NotificationService();
@@ -42,15 +42,15 @@ export class NotificationService {
     const summary = `theme:${env.colorScheme}/lang:${env.language}`;
     return gm
       ? {
-          provider: "gm",
-          available: true,
-          description: `GM_notification ready (${summary})`,
-        }
+        provider: "gm",
+        available: true,
+        description: `GM_notification ready (${summary})`,
+      }
       : {
-          provider: "none",
-          available: false,
-          description: `GM_notification unavailable (${summary})`,
-        };
+        provider: "none",
+        available: false,
+        description: `GM_notification unavailable (${summary})`,
+      };
   }
 
   private gmNotify(options: NotificationOptions): void {
@@ -97,16 +97,20 @@ export class NotificationService {
   }
 
   async success(title: string, text?: string, timeout = 3000): Promise<void> {
-    await this.show({ title, text: text ?? "완료되었습니다.", timeout });
+    await this.show({
+      title,
+      text: text ?? "Completed successfully.",
+      timeout,
+    });
   }
   async error(title: string, text?: string, timeout = 5000): Promise<void> {
-    await this.show({ title, text: text ?? "오류가 발생했습니다.", timeout });
+    await this.show({ title, text: text ?? "An error occurred.", timeout });
   }
   async warning(title: string, text?: string, timeout = 4000): Promise<void> {
-    await this.show({ title, text: text ?? "주의하세요.", timeout });
+    await this.show({ title, text: text ?? "Warning.", timeout });
   }
   async info(title: string, text?: string, timeout = 3000): Promise<void> {
-    await this.show({ title, text: text ?? "정보입니다.", timeout });
+    await this.show({ title, text: text ?? "Information.", timeout });
   }
 }
 

@@ -83,12 +83,12 @@ function createSelector<T, R>(
 }
 
 /**
- * Signal용 최적화된 Hook
+ * Optimized hook for Signal
  *
  * @param signal - Preact Signal
- * @param selector - 선택 함수
- * @param options - 셀렉터 옵션
- * @returns 선택된 값
+ * @param selector - Selection function
+ * @param options - Selector options
+ * @returns Selected value
  */
 export function useSelector<T, R>(
   signalInstance: Signal<T>,
