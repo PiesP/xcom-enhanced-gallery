@@ -133,6 +133,12 @@ npm install
 # Build userscript bundle
 npm run build
 
+# Run all tests
+npm test
+
+# Quick build (skip mutation tests)
+npm run build:fast
+
 # Optional: typecheck and lint
 npm run typecheck
 npm run lint
