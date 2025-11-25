@@ -127,6 +127,12 @@
       "prettier --write"
     ]
   },
+  "overrides": {
+    "tmp": "^0.2.5",
+    "esbuild": "^0.27.0",
+    "playwright": "^1.57.0",
+    "express": "^5.0.0"
+  },
   "volta": {
     "node": "24.11.1"
   }
