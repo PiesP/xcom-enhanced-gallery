@@ -2,12 +2,13 @@
  * @fileoverview Focus Coordinator - Natural Scroll-Based Focus Selection
  * @description Selects the most naturally visible gallery item after scroll stops.
  *
- * Selection algorithm:
- * 1. Primary: Item with highest screen coverage (most screen space occupied)
- * 2. Tiebreaker: Item whose center is closest to viewport center
+ * Selection algorithm (weighted scoring):
+ * 1. Screen coverage score (60%): How much of the viewport the item occupies
+ * 2. Center proximity score (40%): How close the item center is to viewport center
  *
- * This approach feels most natural because users perceive the item
- * that occupies the most screen space as the "current" item.
+ * This weighted approach naturally selects items that are both:
+ * - Large enough to be the "main" content on screen
+ * - Positioned near where the user is looking (center)
  */
 
 import { SharedObserver } from '@shared/utils/performance/observer-pool';
@@ -46,6 +47,9 @@ const DEFAULTS = {
   ROOT_MARGIN: '0px',
   MIN_VISIBLE_RATIO: 0.05,
   DEBOUNCE_TIME: 50,
+  // Weights for scoring
+  COVERAGE_WEIGHT: 0.6,
+  CENTER_WEIGHT: 0.4,
 } as const;
 
 /**
@@ -101,11 +105,8 @@ export class FocusCoordinator {
     const container = this.options.container();
     if (!container) return;
 
-    const rect = container.getBoundingClientRect();
-    const viewportCenter = rect.top + rect.height / 2;
-    const viewportHeight = rect.height;
-
-    const bestCandidate = this.findBestCandidate(viewportCenter, viewportHeight, rect);
+    const containerRect = container.getBoundingClientRect();
+    const bestCandidate = this.findBestCandidate(containerRect);
 
     if (bestCandidate !== null) {
       this.options.onFocusChange(bestCandidate, 'auto');
@@ -137,16 +138,22 @@ export class FocusCoordinator {
   }
 
   /**
-   * Find best item to focus using natural selection.
-   * Primary: Highest screen coverage (most screen space occupied)
-   * Tiebreaker: Center closest to viewport center
+   * Find best item to focus using weighted scoring.
+   *
+   * Algorithm:
+   * 1. Calculate screen coverage (0-1): intersection height / viewport height
+   * 2. Calculate center proximity (0-1): 1 - (distance from center / max distance)
+   * 3. Combined score = coverage * 0.6 + proximity * 0.4
+   *
+   * This naturally prefers items that occupy more screen space
+   * while also considering viewport center positioning.
    */
-  private findBestCandidate(
-    viewportCenter: number,
-    viewportHeight: number,
-    containerRect: DOMRect,
-  ): number | null {
-    type Candidate = { index: number; coverage: number; centerDistance: number };
+  private findBestCandidate(containerRect: DOMRect): number | null {
+    const viewportHeight = containerRect.height;
+    const viewportCenter = containerRect.top + viewportHeight / 2;
+    const maxCenterDistance = viewportHeight / 2;
+
+    type Candidate = { index: number; score: number; coverage: number };
     const candidates: Candidate[] = [];
 
     for (const [index, item] of this.items) {
@@ -154,39 +161,33 @@ export class FocusCoordinator {
 
       const rect = item.element.getBoundingClientRect();
 
-      // Calculate vertical intersection
+      // Calculate vertical intersection with container
       const intersectionTop = Math.max(rect.top, containerRect.top);
       const intersectionBottom = Math.min(rect.bottom, containerRect.bottom);
       const intersectionHeight = Math.max(0, intersectionBottom - intersectionTop);
 
       if (intersectionHeight === 0) continue;
 
-      // Screen coverage = intersection height / viewport height
-      const coverage = intersectionHeight / viewportHeight;
-
+      // Screen coverage score (0-1)
+      const coverage = Math.min(intersectionHeight / viewportHeight, 1);
       if (coverage < this.minVisibleRatio) continue;
 
-      const itemCenter = rect.top + rect.height / 2;
-      const centerDistance = Math.abs(itemCenter - viewportCenter);
+      // Center proximity score (0-1)
+      // Calculate distance from item's visible center to viewport center
+      const visibleCenter = intersectionTop + intersectionHeight / 2;
+      const centerDistance = Math.abs(visibleCenter - viewportCenter);
+      const centerProximity = 1 - Math.min(centerDistance / maxCenterDistance, 1);
 
-      candidates.push({
-        index,
-        coverage,
-        centerDistance,
-      });
+      // Combined weighted score
+      const score = coverage * DEFAULTS.COVERAGE_WEIGHT + centerProximity * DEFAULTS.CENTER_WEIGHT;
+
+      candidates.push({ index, score, coverage });
     }
 
     if (candidates.length === 0) return null;
 
-    // Sort: highest coverage first, then closest to center
-    candidates.sort((a, b) => {
-      const coverageDiff = b.coverage - a.coverage;
-      // Use center distance as tiebreaker when coverage is similar (within 10%)
-      if (Math.abs(coverageDiff) < 0.1) {
-        return a.centerDistance - b.centerDistance;
-      }
-      return coverageDiff;
-    });
+    // Sort by score (highest first)
+    candidates.sort((a, b) => b.score - a.score);
 
     return candidates[0]!.index;
   }
