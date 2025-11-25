@@ -11,6 +11,7 @@
 
 import { SharedObserver } from '@shared/utils/performance/observer-pool';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
+import { clamp01 } from '@shared/utils/types/safety';
 import type { Accessor } from 'solid-js';
 
 import { scoreFocusCandidate } from './focus-score';
@@ -150,23 +151,15 @@ export class FocusCoordinator {
     }, this.debounceTime);
   }
 
-  /**
-   * Find best item to focus using weighted scoring.
-   *
-   * Algorithm:
-   * 1. Calculate screen coverage (0-1): intersection height / viewport height
-   * 2. Calculate center proximity (0-1): 1 - (distance from center / max distance)
-   * 3. Combined score = coverage * 0.6 + proximity * 0.4
-   *
-   * This naturally prefers items that occupy more screen space
-   * while also considering viewport center positioning.
-   */
+  /** Select best candidate using weighted scoring with hysteresis */
   private selectBestCandidate(containerRect: DOMRect): FocusScoreResult | null {
     const viewportHeight = Math.max(containerRect.height, 1);
-    const viewportCenter = containerRect.top + viewportHeight / 2;
-    const focusBandTop = containerRect.top + viewportHeight * DEFAULTS.FOCUS_ZONE_TOP_RATIO;
-    const focusBandBottom = containerRect.top + viewportHeight * DEFAULTS.FOCUS_ZONE_BOTTOM_RATIO;
-    const focusBandHeight = Math.max(focusBandBottom - focusBandTop, 1);
+    const viewportTop = containerRect.top;
+    const viewportCenter = viewportTop + viewportHeight / 2;
+
+    const focusBandTop = viewportTop + viewportHeight * DEFAULTS.FOCUS_ZONE_TOP_RATIO;
+    const focusBandBottom = viewportTop + viewportHeight * DEFAULTS.FOCUS_ZONE_BOTTOM_RATIO;
+    const focusBandHeight = focusBandBottom - focusBandTop;
     const maxCenterDistance = viewportHeight / 2;
 
     const candidates: FocusScoreResult[] = [];
@@ -175,29 +168,23 @@ export class FocusCoordinator {
       if (!item.isVisible) continue;
 
       const rect = item.element.getBoundingClientRect();
-      const intersectionTop = Math.max(rect.top, containerRect.top);
+      const intersectionTop = Math.max(rect.top, viewportTop);
       const intersectionBottom = Math.min(rect.bottom, containerRect.bottom);
       const intersectionHeight = Math.max(0, intersectionBottom - intersectionTop);
 
       if (intersectionHeight === 0) continue;
 
-      const viewportCoverage = Math.min(intersectionHeight / viewportHeight, 1);
+      const viewportCoverage = intersectionHeight / viewportHeight;
       if (viewportCoverage < this.minVisibleRatio) continue;
 
       const sourceHeight =
-        rect.height ||
-        item.entry?.boundingClientRect?.height ||
-        item.entry?.rootBounds?.height ||
-        intersectionHeight ||
-        1;
-
+        rect.height || item.entry?.boundingClientRect?.height || intersectionHeight || 1;
       const elementVisibility = clamp01(
-        item.entry?.intersectionRatio ?? intersectionHeight / Math.max(sourceHeight, 1),
+        item.entry?.intersectionRatio ?? intersectionHeight / sourceHeight,
       );
 
       const visibleCenter = intersectionTop + intersectionHeight / 2;
-      const centerDistance = Math.abs(visibleCenter - viewportCenter);
-      const centerProximity = 1 - Math.min(centerDistance / maxCenterDistance, 1);
+      const centerProximity = 1 - Math.abs(visibleCenter - viewportCenter) / maxCenterDistance;
 
       const focusBandOverlap = Math.max(
         0,
@@ -224,21 +211,16 @@ export class FocusCoordinator {
     }
 
     candidates.sort((a, b) => b.score - a.score);
-    const bestCandidate = candidates[0]!;
+    const best = candidates[0]!;
 
-    const previous = this.lastAutoFocus;
-    if (previous && previous.index !== bestCandidate.index) {
-      const previousItem = this.items.get(previous.index);
-      if (
-        previousItem?.isVisible &&
-        bestCandidate.score - previous.score < DEFAULTS.STICKY_SCORE_DELTA
-      ) {
-        return previous;
+    // Apply hysteresis: keep previous focus if score delta is small
+    if (this.lastAutoFocus && this.lastAutoFocus.index !== best.index) {
+      const prev = this.items.get(this.lastAutoFocus.index);
+      if (prev?.isVisible && best.score - this.lastAutoFocus.score < DEFAULTS.STICKY_SCORE_DELTA) {
+        return this.lastAutoFocus;
       }
     }
 
-    return bestCandidate;
+    return best;
   }
 }
-
-const clamp01 = (value: number): number => Math.min(Math.max(value, 0), 1);

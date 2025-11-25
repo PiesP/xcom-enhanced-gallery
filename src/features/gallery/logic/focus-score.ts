@@ -9,6 +9,8 @@
  * and MDN's recommended practices around intersection ratios.
  */
 
+import { clamp01 } from '@shared/utils/types/safety';
+
 export interface FocusScoreInput {
   /** Candidate index */
   index: number;
@@ -51,8 +53,6 @@ export const DEFAULT_FOCUS_SCORE_WEIGHTS: FocusScoreWeights = {
   focusBand: 0.15,
   centerAnchorBonus: 0.05,
 };
-
-const clamp01 = (value: number): number => Math.min(Math.max(value, 0), 1);
 
 /**
  * Score a candidate using weighted heuristics.

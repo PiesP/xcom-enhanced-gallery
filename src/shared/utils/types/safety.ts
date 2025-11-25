@@ -47,6 +47,15 @@ export function stringWithDefault(value: string | undefined, defaultValue: strin
   return value ?? defaultValue;
 }
 
+// ========== Number utilities ==========
+
+/**
+ * Clamp a number between 0 and 1
+ */
+export function clamp01(value: number): number {
+  return Math.min(Math.max(value, 0), 1);
+}
+
 // ========== Element validation utilities ==========
 
 /**
