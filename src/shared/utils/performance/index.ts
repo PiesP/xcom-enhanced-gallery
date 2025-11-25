@@ -3,10 +3,10 @@
  */
 
 // Gallery preload helper
-export { computePreloadIndices } from "./preload";
+export { computePreloadIndices } from './preload';
 
 // Idle scheduling
-export { scheduleIdle } from "./idle-scheduler";
+export { scheduleIdle } from './idle-scheduler';
 
 // Animation/microtask scheduling
-export { scheduleMicrotask, scheduleRaf } from "./schedulers";
+export { scheduleMicrotask, scheduleRaf } from './schedulers';

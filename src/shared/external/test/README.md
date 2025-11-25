@@ -52,10 +52,7 @@ isTestFeatureEnabled(feature: keyof TestModeOptions): boolean;
 **Usage Example**:
 
 ```typescript
-import {
-  enableTestMode,
-  getTestConfig,
-} from "@shared/external/test/test-environment-config";
+import { enableTestMode, getTestConfig } from '@shared/external/test/test-environment-config';
 
 // Enable test mode
 enableTestMode({
@@ -118,26 +115,26 @@ assertServiceIsReal(serviceName: string, options?: ServiceFactoryOptions): void;
 **Usage Example**:
 
 ```typescript
-import { createConditionalService } from "@shared/external/test/test-service-factory";
-import { enableTestMode } from "@shared/external/test/test-environment-config";
+import { createConditionalService } from '@shared/external/test/test-service-factory';
+import { enableTestMode } from '@shared/external/test/test-environment-config';
 
 // Enable test mode
 enableTestMode({ mockServices: true });
 
 // Conditionally create service
 const httpService = createConditionalService(
-  "HttpRequestService",
+  'HttpRequestService',
   () => new HttpRequestService(), // Real implementation
-  () => new MockHttpRequestService(), // Mock implementation
+  () => new MockHttpRequestService() // Mock implementation
   // options omitted: auto-detects test mode
 );
 
 // Or with explicit override
 const forceRealService = createConditionalService(
-  "StorageService",
+  'StorageService',
   () => new PersistentStorage(),
   () => new MockPersistentStorage(),
-  { forceReal: true }, // Use real even in test mode
+  { forceReal: true } // Use real even in test mode
 );
 ```
 
@@ -190,7 +187,7 @@ import {
   enableTestMode,
   setCurrentTest,
   clearCurrentTest,
-} from "@shared/external/test/test-environment-config";
+} from '@shared/external/test/test-environment-config';
 
 export function beforeEach(testName: string) {
   enableTestMode({ mockServices: true });
@@ -206,12 +203,12 @@ export function afterEach() {
 
 ```typescript
 // Test code
-import { createConditionalService } from "@shared/external/test/test-service-factory";
+import { createConditionalService } from '@shared/external/test/test-service-factory';
 
 const storage = createConditionalService(
-  "PersistentStorage",
+  'PersistentStorage',
   () => PersistentStorage.getInstance(), // Real
-  () => MockPersistentStorage.getInstance(), // Mock
+  () => MockPersistentStorage.getInstance() // Mock
   // Test mode: mock | Production mode: real
 );
 ```
@@ -222,19 +219,19 @@ const storage = createConditionalService(
 import {
   createConditionalService,
   assertServiceIsMock,
-} from "@shared/external/test/test-service-factory";
+} from '@shared/external/test/test-service-factory';
 
-describe("Mock service test", () => {
-  it("should use mock implementation", () => {
+describe('Mock service test', () => {
+  it('should use mock implementation', () => {
     const service = createConditionalService(
-      "HttpService",
+      'HttpService',
       () => new HttpRequestService(),
       () => new MockHttpRequestService(),
-      { forceMock: true },
+      { forceMock: true }
     );
 
     // Verify: Is mock?
-    assertServiceIsMock("HttpService", { forceMock: true });
+    assertServiceIsMock('HttpService', { forceMock: true });
   });
 });
 ```
@@ -261,14 +258,14 @@ describe("Mock service test", () => {
 
 ```typescript
 // ❌ WRONG: Using in production code
-import { createConditionalService } from "@shared/external/test";
+import { createConditionalService } from '@shared/external/test';
 
 // ❌ WRONG: Barrel import (no barrel export)
-import { enableTestMode } from "@shared/external/test";
+import { enableTestMode } from '@shared/external/test';
 
 // ✅ CORRECT: Direct path imports
-import { enableTestMode } from "@shared/external/test/test-environment-config";
-import { createConditionalService } from "@shared/external/test/test-service-factory";
+import { enableTestMode } from '@shared/external/test/test-environment-config';
+import { createConditionalService } from '@shared/external/test/test-service-factory';
 ```
 
 ---

@@ -50,7 +50,7 @@ only as auxiliary.
 ```typescript
 // ✅ Auxiliary: JS tokens (IDE autocomplete, type safety)
 export const SPACING_TOKENS = {
-  md: "1rem", // Must sync with CSS variable value
+  md: '1rem', // Must sync with CSS variable value
 } as const;
 ```
 
@@ -110,9 +110,9 @@ background: rgba(0, 0, 0, 0.1); /* rgba forbidden */
 
 ```typescript
 // src/styles/globals.ts
-import "@shared/styles/design-tokens.primitive.css"; // 1단계
-import "@shared/styles/design-tokens.semantic.css"; // 2단계
-import "@shared/styles/design-tokens.component.css"; // 3단계
+import '@shared/styles/design-tokens.primitive.css'; // 1단계
+import '@shared/styles/design-tokens.semantic.css'; // 2단계
+import '@shared/styles/design-tokens.component.css'; // 3단계
 ```
 
 ### `design-tokens.primitive.css`
@@ -251,7 +251,7 @@ import "@shared/styles/design-tokens.component.css"; // 3단계
 ```typescript
 // Define inside the component/module that needs autocomplete
 const SPACING = {
-  xl: "var(--xeg-spacing-xl)",
+  xl: 'var(--xeg-spacing-xl)',
 } as const;
 
 type SpacingKey = keyof typeof SPACING;
@@ -299,8 +299,8 @@ npm run build:dev
 
 ```typescript
 // ✅ CSS 변수 조합 (정적)
-const padding = "var(--xeg-spacing-md)";
-const radius = "var(--xeg-radius-lg)";
+const padding = 'var(--xeg-spacing-md)';
+const radius = 'var(--xeg-radius-lg)';
 
 // ⚠️ 런타임 접근은 컴포넌트 범위에 한정하세요
 function readToken(element: HTMLElement, token: string): string {
@@ -311,10 +311,10 @@ function readToken(element: HTMLElement, token: string): string {
 ### 예제 3: 테마 설정
 
 ```typescript
-const root = document.querySelector("[data-xeg-gallery-container]");
+const root = document.querySelector('[data-xeg-gallery-container]');
 
 if (root instanceof HTMLElement) {
-  root.setAttribute("data-theme", "dark");
+  root.setAttribute('data-theme', 'dark');
 }
 ```
 
@@ -340,13 +340,11 @@ color: rgb(255, 0, 0);
 
 ```typescript
 // ❌ CSS 변수 값을 숫자로 파싱하지 말 것
-const element = document.querySelector("[data-xeg-gallery-container]");
+const element = document.querySelector('[data-xeg-gallery-container]');
 
 if (element instanceof HTMLElement) {
   // ❌ Avoid converting CSS variables to numbers
-  const padding =
-    parseFloat(getComputedStyle(element).getPropertyValue("--xeg-spacing-md")) *
-    2;
+  const padding = parseFloat(getComputedStyle(element).getPropertyValue('--xeg-spacing-md')) * 2;
 }
 
 // ✅ 토큰 조합 사용
@@ -394,9 +392,9 @@ const doublePadding = `calc(2 * var(--xeg-spacing-md))`;
 
 ```typescript
 const SPACING = {
-  xs: "var(--xeg-spacing-xs)",
-  md: "var(--xeg-spacing-md)",
-  lg: "var(--xeg-spacing-lg)",
+  xs: 'var(--xeg-spacing-xs)',
+  md: 'var(--xeg-spacing-md)',
+  lg: 'var(--xeg-spacing-lg)',
 } as const;
 
 type SpacingKey = keyof typeof SPACING;

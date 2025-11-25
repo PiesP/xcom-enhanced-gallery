@@ -1,5 +1,5 @@
-import { HttpRequestService } from "@shared/services/http-request-service";
-import { globalTimerManager } from "@shared/utils/time/timer-management";
+import { HttpRequestService } from '@shared/services/http-request-service';
+import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 export const DEFAULT_BACKOFF_BASE_MS = 200;
 
@@ -13,13 +13,13 @@ export async function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 
     const onAbort = () => {
       cleanup();
-      reject(new Error("Download cancelled by user"));
+      reject(new Error('Download cancelled by user'));
     };
     const cleanup = () => {
       globalTimerManager.clearTimeout(timer);
-      signal?.removeEventListener("abort", onAbort);
+      signal?.removeEventListener('abort', onAbort);
     };
-    if (signal) signal.addEventListener("abort", onAbort);
+    if (signal) signal.addEventListener('abort', onAbort);
   });
 }
 
@@ -27,16 +27,16 @@ export async function fetchArrayBufferWithRetry(
   url: string,
   retries: number,
   signal?: AbortSignal,
-  backoffBaseMs: number = DEFAULT_BACKOFF_BASE_MS,
+  backoffBaseMs: number = DEFAULT_BACKOFF_BASE_MS
 ): Promise<Uint8Array> {
   const httpService = HttpRequestService.getInstance();
   let attempt = 0;
 
   while (true) {
-    if (signal?.aborted) throw new Error("Download cancelled by user");
+    if (signal?.aborted) throw new Error('Download cancelled by user');
     try {
       const options = {
-        responseType: "arraybuffer" as const,
+        responseType: 'arraybuffer' as const,
         timeout: 30000,
         ...(signal ? { signal } : {}),
       };

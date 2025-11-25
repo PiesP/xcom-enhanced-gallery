@@ -1,6 +1,6 @@
-import { logger } from "@shared/logging";
-import { normalizeMediaUrl } from "@shared/media/media-utils";
-import type { MediaInfo } from "@shared/types/media.types";
+import { logger } from '@shared/logging';
+import { normalizeMediaUrl } from '@shared/media/media-utils';
+import type { MediaInfo } from '@shared/types/media.types';
 
 /**
  * Determine Clicked Media Index
@@ -14,7 +14,7 @@ import type { MediaInfo } from "@shared/types/media.types";
  */
 export function determineClickedIndex(
   clickedElement: HTMLElement,
-  mediaItems: MediaInfo[],
+  mediaItems: MediaInfo[]
 ): number {
   try {
     const mediaElement = findMediaElement(clickedElement);
@@ -33,18 +33,15 @@ export function determineClickedIndex(
       const itemUrl = item.url || item.originalUrl;
       if (itemUrl && normalizeMediaUrl(itemUrl) === normalizedElementUrl) {
         logger.debug(
-          `[determineClickedIndex] Matched clicked media at index ${i}: ${normalizedElementUrl}`,
+          `[determineClickedIndex] Matched clicked media at index ${i}: ${normalizedElementUrl}`
         );
         return true;
       }
 
       // Check thumbnail URL
-      if (
-        item.thumbnailUrl &&
-        normalizeMediaUrl(item.thumbnailUrl) === normalizedElementUrl
-      ) {
+      if (item.thumbnailUrl && normalizeMediaUrl(item.thumbnailUrl) === normalizedElementUrl) {
         logger.debug(
-          `[determineClickedIndex] Matched clicked media (thumbnail) at index ${i}: ${normalizedElementUrl}`,
+          `[determineClickedIndex] Matched clicked media (thumbnail) at index ${i}: ${normalizedElementUrl}`
         );
         return true;
       }
@@ -55,26 +52,23 @@ export function determineClickedIndex(
     if (index !== -1) return index;
 
     logger.warn(
-      `[determineClickedIndex] No matching media found for URL: ${normalizedElementUrl}, defaulting to 0`,
+      `[determineClickedIndex] No matching media found for URL: ${normalizedElementUrl}, defaulting to 0`
     );
     return 0;
   } catch (error) {
-    logger.warn(
-      "[determineClickedIndex] Error calculating clicked index:",
-      error,
-    );
+    logger.warn('[determineClickedIndex] Error calculating clicked index:', error);
     return 0;
   }
 }
 
 function findMediaElement(element: HTMLElement): HTMLElement | null {
   // 1. Self check
-  if (element.tagName === "IMG" || element.tagName === "VIDEO") {
+  if (element.tagName === 'IMG' || element.tagName === 'VIDEO') {
     return element;
   }
 
   // 2. Check for media within the element (e.g. wrapper)
-  const mediaChild = element.querySelector("img, video");
+  const mediaChild = element.querySelector('img, video');
   if (mediaChild) {
     return mediaChild as HTMLElement;
   }
@@ -83,7 +77,7 @@ function findMediaElement(element: HTMLElement): HTMLElement | null {
   let current = element.parentElement;
   // Limit traversal to avoid performance issues and false positives
   for (let i = 0; i < 3 && current; i++) {
-    const siblingMedia = current.querySelector(":scope > img, :scope > video");
+    const siblingMedia = current.querySelector(':scope > img, :scope > video');
     if (siblingMedia) {
       return siblingMedia as HTMLElement;
     }
@@ -94,11 +88,11 @@ function findMediaElement(element: HTMLElement): HTMLElement | null {
 }
 
 function extractMediaUrl(element: HTMLElement): string | null {
-  if (element.tagName === "IMG") {
-    return element.getAttribute("src");
+  if (element.tagName === 'IMG') {
+    return element.getAttribute('src');
   }
-  if (element.tagName === "VIDEO") {
-    return element.getAttribute("poster") || element.getAttribute("src");
+  if (element.tagName === 'VIDEO') {
+    return element.getAttribute('poster') || element.getAttribute('src');
   }
   return null;
 }

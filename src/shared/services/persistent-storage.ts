@@ -1,5 +1,5 @@
-import { getUserscript } from "@shared/external/userscript";
-import { logger } from "@shared/logging";
+import { getUserscript } from '@shared/external/userscript';
+import { logger } from '@shared/logging';
 
 export class PersistentStorage {
   private static instance: PersistentStorage | null = null;
@@ -16,8 +16,7 @@ export class PersistentStorage {
 
   async set<T>(key: string, value: T): Promise<void> {
     try {
-      const serialized =
-        typeof value === "string" ? value : JSON.stringify(value);
+      const serialized = typeof value === 'string' ? value : JSON.stringify(value);
       await this.userscript.setValue(key, serialized);
     } catch (error) {
       logger.error(`PersistentStorage.set failed for "${key}":`, error);
@@ -35,10 +34,7 @@ export class PersistentStorage {
         return value as unknown as T;
       }
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message.includes("GM_getValue not available")
-      ) {
+      if (error instanceof Error && error.message.includes('GM_getValue not available')) {
         return defaultValue;
       }
       logger.error(`PersistentStorage.get failed for "${key}":`, error);
@@ -59,7 +55,7 @@ export class PersistentStorage {
     try {
       // Direct GM access for sync
       const gmGetValue =
-        typeof GM_getValue !== "undefined"
+        typeof GM_getValue !== 'undefined'
           ? GM_getValue
           : // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (window as any).GM_getValue;

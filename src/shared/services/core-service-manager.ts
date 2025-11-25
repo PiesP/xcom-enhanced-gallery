@@ -9,7 +9,7 @@
  * @version 3.0.0 - Simplified Service Registry
  */
 
-import { logger } from "@shared/logging";
+import { logger } from '@shared/logging';
 
 interface Disposable {
   destroy(): void;
@@ -18,9 +18,9 @@ interface Disposable {
 function isDisposable(value: unknown): value is Disposable {
   return (
     value !== null &&
-    typeof value === "object" &&
-    "destroy" in value &&
-    typeof (value as Disposable).destroy === "function"
+    typeof value === 'object' &&
+    'destroy' in value &&
+    typeof (value as Disposable).destroy === 'function'
   );
 }
 
@@ -64,13 +64,13 @@ export class CoreService {
   }
 
   public cleanup(): void {
-    this.services.forEach((service) => {
+    this.services.forEach(service => {
       try {
         if (isDisposable(service)) {
           service.destroy();
         }
       } catch (e) {
-        logger.error("Service cleanup failed", e);
+        logger.error('Service cleanup failed', e);
       }
     });
     this.services.clear();

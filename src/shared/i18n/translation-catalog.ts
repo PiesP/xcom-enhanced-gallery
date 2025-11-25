@@ -1,12 +1,9 @@
 import {
   DEFAULT_LANGUAGE,
   TRANSLATION_REGISTRY,
-} from "@shared/constants/i18n/translation-registry";
-import type {
-  BaseLanguageCode,
-  LanguageStrings,
-} from "@shared/constants/i18n/language-types";
-import type { TranslationBundleInput } from "./types";
+} from '@shared/constants/i18n/translation-registry';
+import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/language-types';
+import type { TranslationBundleInput } from './types';
 
 export interface TranslationCatalogOptions {
   readonly bundles?: TranslationBundleInput;
@@ -18,17 +15,12 @@ export class TranslationCatalog {
   private readonly fallbackLanguage: BaseLanguageCode;
 
   constructor(options: TranslationCatalogOptions = {}) {
-    const {
-      bundles = TRANSLATION_REGISTRY,
-      fallbackLanguage = DEFAULT_LANGUAGE,
-    } = options;
+    const { bundles = TRANSLATION_REGISTRY, fallbackLanguage = DEFAULT_LANGUAGE } = options;
     this.fallbackLanguage = fallbackLanguage;
     this.registerBundles(bundles);
 
     if (!this.bundles.has(this.fallbackLanguage)) {
-      throw new Error(
-        `Missing fallback language bundle: ${this.fallbackLanguage}`,
-      );
+      throw new Error(`Missing fallback language bundle: ${this.fallbackLanguage}`);
     }
   }
 

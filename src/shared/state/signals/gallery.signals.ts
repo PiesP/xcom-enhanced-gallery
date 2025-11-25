@@ -8,19 +8,19 @@
  * - Backward compatibility layer
  */
 
-import type { MediaInfo } from "@shared/types/media.types";
-import { createSignalSafe, effectSafe } from "./signal-factory";
+import type { MediaInfo } from '@shared/types/media.types';
+import { createSignalSafe, effectSafe } from './signal-factory';
 // Break runtime dependency on services: use logging barrel directly
-import { getSolid } from "@shared/external/vendors";
-import { logger as rootLogger, type Logger as ILogger } from "@shared/logging";
-import { createEventEmitter } from "@shared/utils/events/emitter";
+import { getSolid } from '@shared/external/vendors';
+import { logger as rootLogger, type Logger as ILogger } from '@shared/logging';
+import { createEventEmitter } from '@shared/utils/events/emitter';
 // Navigation state types
 import {
   NavigationStateMachine,
   type NavigationAction,
   type NavigationState,
-} from "@shared/state/machines/navigation.machine";
-import type { NavigationSource } from "@shared/types/navigation.types";
+} from '@shared/state/machines/navigation.machine';
+import type { NavigationSource } from '@shared/types/navigation.types';
 
 // Logger instance (services-free)
 const logger: ILogger = rootLogger;
@@ -34,7 +34,7 @@ function resolveBatchExecutor(): BatchExecutor {
       return solid.batch;
     }
   } catch (error) {
-    logger.debug("[Gallery] Solid batch unavailable, using fallback executor", {
+    logger.debug('[Gallery] Solid batch unavailable, using fallback executor', {
       error,
     });
   }
@@ -42,7 +42,7 @@ function resolveBatchExecutor(): BatchExecutor {
     try {
       fn();
     } catch (error) {
-      logger.warn("[Gallery] Fallback batch executor failed", { error });
+      logger.warn('[Gallery] Fallback batch executor failed', { error });
     }
   };
 }
@@ -58,7 +58,7 @@ export interface GalleryState {
   readonly currentIndex: number;
   readonly isLoading: boolean;
   readonly error: string | null;
-  readonly viewMode: "horizontal" | "vertical";
+  readonly viewMode: 'horizontal' | 'vertical';
 }
 
 /**
@@ -70,17 +70,17 @@ const INITIAL_STATE: GalleryState = {
   currentIndex: 0,
   isLoading: false,
   error: null,
-  viewMode: "vertical",
+  viewMode: 'vertical',
 };
 
 /**
  * Gallery event types
  */
 export type GalleryEvents = {
-  "gallery:open": { items: readonly MediaInfo[]; startIndex: number };
-  "gallery:close": Record<string, never>;
-  "gallery:navigate": { index: number };
-  "gallery:error": { error: string };
+  'gallery:open': { items: readonly MediaInfo[]; startIndex: number };
+  'gallery:close': Record<string, never>;
+  'gallery:navigate': { index: number };
+  'gallery:error': { error: string };
 };
 
 // Re-export NavigationSource type for backward compatibility
@@ -90,8 +90,7 @@ export type { NavigationSource };
 // Navigation State Management
 // ============================================================================
 
-let navigationState: NavigationState =
-  NavigationStateMachine.createInitialState();
+let navigationState: NavigationState = NavigationStateMachine.createInitialState();
 
 export function getNavigationState(): NavigationState {
   return navigationState;
@@ -105,14 +104,14 @@ export function getLastNavigationSource(): NavigationSource {
  * Gallery index navigation events for tracking navigation state transitions
  */
 export const galleryIndexEvents = createEventEmitter<{
-  "navigate:start": {
+  'navigate:start': {
     from: number;
     to: number;
-    trigger: "button" | "click" | "keyboard" | "scroll";
+    trigger: 'button' | 'click' | 'keyboard' | 'scroll';
   };
-  "navigate:complete": {
+  'navigate:complete': {
     index: number;
-    trigger: "button" | "click" | "keyboard" | "scroll";
+    trigger: 'button' | 'click' | 'keyboard' | 'scroll';
   };
 }>();
 
@@ -126,7 +125,7 @@ export const gallerySignals = {
   currentIndex: createSignalSafe<number>(INITIAL_STATE.currentIndex),
   isLoading: createSignalSafe<boolean>(INITIAL_STATE.isLoading),
   error: createSignalSafe<string | null>(INITIAL_STATE.error),
-  viewMode: createSignalSafe<"horizontal" | "vertical">(INITIAL_STATE.viewMode),
+  viewMode: createSignalSafe<'horizontal' | 'vertical'>(INITIAL_STATE.viewMode),
   focusedIndex: createSignalSafe<number | null>(null),
   /**
    * Phase 329: DOM query caching
@@ -192,16 +191,11 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
 
   gallerySignals.focusedIndex.value = validIndex;
 
-  const resetAction: NavigationAction = { type: "RESET" };
-  const result = NavigationStateMachine.transition(
-    navigationState,
-    resetAction,
-  );
+  const resetAction: NavigationAction = { type: 'RESET' };
+  const result = NavigationStateMachine.transition(navigationState, resetAction);
   navigationState = result.newState;
 
-  logger.debug(
-    `[Gallery] Opened with ${items.length} items, starting at index ${validIndex}`,
-  );
+  logger.debug(`[Gallery] Opened with ${items.length} items, starting at index ${validIndex}`);
 }
 
 export function closeGallery(): void {
@@ -216,14 +210,11 @@ export function closeGallery(): void {
   gallerySignals.focusedIndex.value = null;
   gallerySignals.currentVideoElement.value = null;
 
-  const resetAction: NavigationAction = { type: "RESET" };
-  const result = NavigationStateMachine.transition(
-    navigationState,
-    resetAction,
-  );
+  const resetAction: NavigationAction = { type: 'RESET' };
+  const result = NavigationStateMachine.transition(navigationState, resetAction);
   navigationState = result.newState;
 
-  logger.debug("[Gallery] Closed");
+  logger.debug('[Gallery] Closed');
 }
 
 /**
@@ -231,35 +222,30 @@ export function closeGallery(): void {
  */
 export function navigateToItem(
   index: number,
-  trigger: "button" | "click" | "keyboard" | "scroll" = "button",
-  source: NavigationSource = "button",
+  trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button',
+  source: NavigationSource = 'button'
 ): void {
   const state = galleryState.value;
   const validIndex = Math.max(0, Math.min(index, state.mediaItems.length - 1));
 
   const navigateAction: NavigationAction = {
-    type: "NAVIGATE",
+    type: 'NAVIGATE',
     payload: {
       targetIndex: validIndex,
       source,
       trigger,
     },
   };
-  const result = NavigationStateMachine.transition(
-    navigationState,
-    navigateAction,
-  );
+  const result = NavigationStateMachine.transition(navigationState, navigateAction);
   navigationState = result.newState;
 
   if (result.isDuplicate) {
-    logger.debug(
-      `[Gallery] Already at index ${index} (source: ${source}), syncing focusedIndex`,
-    );
+    logger.debug(`[Gallery] Already at index ${index} (source: ${source}), syncing focusedIndex`);
     gallerySignals.focusedIndex.value = validIndex;
     return;
   }
 
-  galleryIndexEvents.emit("navigate:start", {
+  galleryIndexEvents.emit('navigate:start', {
     from: state.currentIndex,
     to: validIndex,
     trigger,
@@ -272,30 +258,26 @@ export function navigateToItem(
 
   gallerySignals.focusedIndex.value = validIndex;
 
-  galleryIndexEvents.emit("navigate:complete", { index: validIndex, trigger });
+  galleryIndexEvents.emit('navigate:complete', { index: validIndex, trigger });
 
-  logger.debug(
-    `[Gallery] Navigated to item: ${index} (trigger: ${trigger}, source: ${source})`,
-  );
+  logger.debug(`[Gallery] Navigated to item: ${index} (trigger: ${trigger}, source: ${source})`);
 }
 
 export function navigatePrevious(
-  trigger: "button" | "click" | "keyboard" | "scroll" = "button",
+  trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button'
 ): void {
   const state = galleryState.value;
   const baseIndex = gallerySignals.focusedIndex.value ?? state.currentIndex;
   const newIndex = baseIndex > 0 ? baseIndex - 1 : state.mediaItems.length - 1;
-  const source: NavigationSource = trigger === "button" ? "button" : "keyboard";
+  const source: NavigationSource = trigger === 'button' ? 'button' : 'keyboard';
   navigateToItem(newIndex, trigger, source);
 }
 
-export function navigateNext(
-  trigger: "button" | "click" | "keyboard" | "scroll" = "button",
-): void {
+export function navigateNext(trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button'): void {
   const state = galleryState.value;
   const baseIndex = gallerySignals.focusedIndex.value ?? state.currentIndex;
   const newIndex = baseIndex < state.mediaItems.length - 1 ? baseIndex + 1 : 0;
-  const source: NavigationSource = trigger === "button" ? "button" : "keyboard";
+  const source: NavigationSource = trigger === 'button' ? 'button' : 'keyboard';
   navigateToItem(newIndex, trigger, source);
 }
 
@@ -311,35 +293,30 @@ export function setLoading(isLoading: boolean): void {
  */
 export function setFocusedIndex(
   index: number | null,
-  source: NavigationSource = "auto-focus",
+  source: NavigationSource = 'auto-focus'
 ): void {
   const state = galleryState.value;
 
   const setFocusAction: NavigationAction = {
-    type: "SET_FOCUS",
+    type: 'SET_FOCUS',
     payload: {
       focusIndex: index,
       source,
     },
   };
-  const result = NavigationStateMachine.transition(
-    navigationState,
-    setFocusAction,
-  );
+  const result = NavigationStateMachine.transition(navigationState, setFocusAction);
   navigationState = result.newState;
 
   if (index === null) {
     gallerySignals.focusedIndex.value = null;
-    logger.debug("[Gallery] focusedIndex cleared");
+    logger.debug('[Gallery] focusedIndex cleared');
     return;
   }
 
   const validIndex = Math.max(0, Math.min(index, state.mediaItems.length - 1));
   gallerySignals.focusedIndex.value = validIndex;
 
-  logger.debug(
-    `[Gallery] focusedIndex set to ${validIndex} (source: ${source})`,
-  );
+  logger.debug(`[Gallery] focusedIndex set to ${validIndex} (source: ${source})`);
 }
 
 export function setError(error: string | null): void {
@@ -354,7 +331,7 @@ export function setError(error: string | null): void {
   }
 }
 
-export function setViewMode(viewMode: "horizontal" | "vertical"): void {
+export function setViewMode(viewMode: 'horizontal' | 'vertical'): void {
   galleryState.value = {
     ...galleryState.value,
     viewMode,
@@ -390,9 +367,7 @@ export function hasNextMedia(): boolean {
 
 export const isGalleryOpen = (): boolean => galleryState.value.isOpen;
 export const getCurrentIndex = (): number => galleryState.value.currentIndex;
-export const getMediaItems = (): readonly MediaInfo[] =>
-  galleryState.value.mediaItems;
+export const getMediaItems = (): readonly MediaInfo[] => galleryState.value.mediaItems;
 export const isLoading = (): boolean => galleryState.value.isLoading;
 export const getError = (): string | null => galleryState.value.error;
-export const getViewMode = (): "horizontal" | "vertical" =>
-  galleryState.value.viewMode;
+export const getViewMode = (): 'horizontal' | 'vertical' => galleryState.value.viewMode;

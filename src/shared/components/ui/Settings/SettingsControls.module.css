@@ -290,10 +290,7 @@
   padding: var(--xeg-settings-select-padding);
   font-size: var(--xeg-settings-select-font-size);
   color: var(--xeg-color-text-primary);
-  background-color: var(
-    --xeg-toolbar-panel-surface,
-    var(--xeg-toolbar-surface)
-  );
+  background-color: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
   border: var(--border-width-thin) solid var(--xeg-toolbar-border);
   border-radius: var(--xeg-radius-md);
   cursor: pointer;
@@ -338,10 +335,7 @@
  */
 .select:hover {
   border-color: var(--xeg-color-border-hover);
-  background-color: var(
-    --xeg-toolbar-panel-surface,
-    var(--xeg-toolbar-surface)
-  );
+  background-color: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
 }
 
 /**

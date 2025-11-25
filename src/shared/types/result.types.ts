@@ -2,7 +2,7 @@
  * Common Result pattern (Phase: Result Unification)
  * @version 2.1.0 - Phase 353: ExtractionErrorCode alias removed
  */
-export type BaseResultStatus = "success" | "partial" | "error" | "cancelled";
+export type BaseResultStatus = 'success' | 'partial' | 'error' | 'cancelled';
 
 /**
  * Integrated error codes (generic + media extraction)
@@ -28,21 +28,21 @@ export type BaseResultStatus = "success" | "partial" | "error" | "cancelled";
  */
 export enum ErrorCode {
   // Generic error codes
-  NONE = "NONE",
-  CANCELLED = "CANCELLED",
-  NETWORK = "NETWORK",
-  TIMEOUT = "TIMEOUT",
-  EMPTY_INPUT = "EMPTY_INPUT",
-  ALL_FAILED = "ALL_FAILED",
-  PARTIAL_FAILED = "PARTIAL_FAILED",
-  UNKNOWN = "UNKNOWN",
+  NONE = 'NONE',
+  CANCELLED = 'CANCELLED',
+  NETWORK = 'NETWORK',
+  TIMEOUT = 'TIMEOUT',
+  EMPTY_INPUT = 'EMPTY_INPUT',
+  ALL_FAILED = 'ALL_FAILED',
+  PARTIAL_FAILED = 'PARTIAL_FAILED',
+  UNKNOWN = 'UNKNOWN',
 
   // Media extraction specific error codes (previous ExtractionErrorCode integrated)
-  ELEMENT_NOT_FOUND = "ELEMENT_NOT_FOUND",
-  INVALID_ELEMENT = "INVALID_ELEMENT",
-  NO_MEDIA_FOUND = "NO_MEDIA_FOUND",
-  INVALID_URL = "INVALID_URL",
-  PERMISSION_DENIED = "PERMISSION_DENIED",
+  ELEMENT_NOT_FOUND = 'ELEMENT_NOT_FOUND',
+  INVALID_ELEMENT = 'INVALID_ELEMENT',
+  NO_MEDIA_FOUND = 'NO_MEDIA_FOUND',
+  INVALID_URL = 'INVALID_URL',
+  PERMISSION_DENIED = 'PERMISSION_DENIED',
 }
 
 export interface BaseResult {
@@ -58,18 +58,18 @@ export interface BaseResult {
 }
 
 export type ResultSuccess<T> = BaseResult & {
-  status: "success";
+  status: 'success';
   data: T;
   code?: ErrorCode.NONE;
 };
 export type ResultPartial<T> = BaseResult & {
-  status: "partial";
+  status: 'partial';
   data: T;
   error: string;
   code: ErrorCode.PARTIAL_FAILED;
   failures: Array<{ url: string; error: string }>;
 };
-export type ResultError = BaseResult & { status: "error" | "cancelled" };
+export type ResultError = BaseResult & { status: 'error' | 'cancelled' };
 export type Result<T> = ResultSuccess<T> | ResultPartial<T> | ResultError;
 
 /**
@@ -102,7 +102,7 @@ export type AsyncResult<T> = Promise<Result<T>>;
  */
 export function success<T>(data: T, meta?: Record<string, unknown>): Result<T> {
   return {
-    status: "success",
+    status: 'success',
     data,
     code: ErrorCode.NONE,
     ...(meta && { meta }),
@@ -130,10 +130,10 @@ export function failure<T = never>(
     cause?: unknown;
     meta?: Record<string, unknown>;
     failures?: Array<{ url: string; error: string }>;
-  },
+  }
 ): Result<T> {
   return {
-    status: "error",
+    status: 'error',
     error,
     code,
     ...options,
@@ -159,10 +159,10 @@ export function partial<T>(
   data: T,
   error: string,
   failures: Array<{ url: string; error: string }>,
-  meta?: Record<string, unknown>,
+  meta?: Record<string, unknown>
 ): ResultPartial<T> {
   return {
-    status: "partial",
+    status: 'partial',
     data,
     error,
     code: ErrorCode.PARTIAL_FAILED,
@@ -185,11 +185,11 @@ export function partial<T>(
  * ```
  */
 export function cancelled<T = never>(
-  error = "Operation cancelled",
-  meta?: Record<string, unknown>,
+  error = 'Operation cancelled',
+  meta?: Record<string, unknown>
 ): Result<T> {
   return {
-    status: "cancelled",
+    status: 'cancelled',
     error,
     code: ErrorCode.CANCELLED,
     ...(meta && { meta }),
@@ -203,7 +203,7 @@ export function cancelled<T = never>(
  * @returns Whether result is ResultSuccess
  */
 export function isSuccess<T>(result: Result<T>): result is ResultSuccess<T> {
-  return result.status === "success";
+  return result.status === 'success';
 }
 
 /**
@@ -213,7 +213,7 @@ export function isSuccess<T>(result: Result<T>): result is ResultSuccess<T> {
  * @returns Whether result is error or cancelled
  */
 export function isFailure<T>(result: Result<T>): result is ResultError {
-  return result.status === "error" || result.status === "cancelled";
+  return result.status === 'error' || result.status === 'cancelled';
 }
 
 /**
@@ -223,7 +223,7 @@ export function isFailure<T>(result: Result<T>): result is ResultError {
  * @returns Whether result is partial
  */
 export function isPartial<T>(result: Result<T>): result is ResultPartial<T> {
-  return result.status === "partial";
+  return result.status === 'partial';
 }
 
 /**
@@ -262,7 +262,7 @@ export async function safeAsync<T>(
   options?: {
     code?: ErrorCode;
     meta?: Record<string, unknown>;
-  },
+  }
 ): Promise<Result<T>> {
   try {
     const data = await fn();
@@ -274,7 +274,7 @@ export async function safeAsync<T>(
       {
         cause: error,
         ...(options?.meta && { meta: options.meta }),
-      },
+      }
     );
   }
 }
@@ -299,7 +299,7 @@ export function safe<T>(
   options?: {
     code?: ErrorCode;
     meta?: Record<string, unknown>;
-  },
+  }
 ): Result<T> {
   try {
     const data = fn();
@@ -311,7 +311,7 @@ export function safe<T>(
       {
         cause: error,
         ...(options?.meta && { meta: options.meta }),
-      },
+      }
     );
   }
 }
@@ -328,10 +328,7 @@ export function safe<T>(
  * const result2 = chain(result1, (data) => processData(data));
  * ```
  */
-export function chain<T, U>(
-  result: Result<T>,
-  fn: (value: T) => Result<U>,
-): Result<U> {
+export function chain<T, U>(result: Result<T>, fn: (value: T) => Result<U>): Result<U> {
   if (!isSuccess(result)) {
     return result as unknown as Result<U>;
   }

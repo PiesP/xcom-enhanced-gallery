@@ -3,7 +3,7 @@
  * @description Consolidates runtime metadata, feature flags, and bootstrap helpers.
  */
 
-import type { AppConfig as BootstrapAppConfig } from "@shared/types/app.types";
+import type { AppConfig as BootstrapAppConfig } from '@shared/types/app.types';
 
 type BooleanFlagValue = string | boolean | undefined;
 
@@ -17,10 +17,10 @@ type EnvSource = Partial<{
 
 type NodeEnvSource = Partial<Record<string, string | undefined>>;
 
-const FALLBACK_VERSION = "0.4.15";
-const APP_NAME = "X.com Enhanced Gallery";
+const FALLBACK_VERSION = '0.4.15';
+const APP_NAME = 'X.com Enhanced Gallery';
 const MAX_GALLERY_ITEMS = 100;
-const DEFAULT_ANIMATION_DURATION = "var(--xeg-duration-normal)";
+const DEFAULT_ANIMATION_DURATION = 'var(--xeg-duration-normal)';
 
 const importMetaEnv = resolveImportMetaEnv();
 const nodeEnv = resolveNodeEnv();
@@ -31,28 +31,22 @@ const rawVersion =
   nodeEnv.npm_package_version ??
   FALLBACK_VERSION;
 
-const mode = importMetaEnv.MODE ?? nodeEnv.NODE_ENV ?? "production";
-const isTest = mode === "test";
+const mode = importMetaEnv.MODE ?? nodeEnv.NODE_ENV ?? 'production';
+const isTest = mode === 'test';
 const isDev =
-  typeof importMetaEnv.DEV === "boolean"
-    ? importMetaEnv.DEV
-    : !isTest && mode !== "production";
+  typeof importMetaEnv.DEV === 'boolean' ? importMetaEnv.DEV : !isTest && mode !== 'production';
 const isProd = !isDev && !isTest;
 
-const autoStartFlag = parseBooleanFlag(
-  importMetaEnv.VITE_AUTO_START ?? nodeEnv.VITE_AUTO_START,
-);
+const autoStartFlag = parseBooleanFlag(importMetaEnv.VITE_AUTO_START ?? nodeEnv.VITE_AUTO_START);
 const debugToolsFlag = parseBooleanFlag(
-  importMetaEnv.VITE_ENABLE_DEBUG_TOOLS ?? nodeEnv.VITE_ENABLE_DEBUG_TOOLS,
+  importMetaEnv.VITE_ENABLE_DEBUG_TOOLS ?? nodeEnv.VITE_ENABLE_DEBUG_TOOLS
 );
 
 const resolvedAppConfig = Object.freeze({
   meta: {
     name: APP_NAME,
     version:
-      typeof rawVersion === "string" && rawVersion.length > 0
-        ? rawVersion
-        : FALLBACK_VERSION,
+      typeof rawVersion === 'string' && rawVersion.length > 0 ? rawVersion : FALLBACK_VERSION,
   },
   environment: {
     mode,
@@ -116,7 +110,7 @@ function resolveImportMetaEnv(): EnvSource {
 }
 
 function resolveNodeEnv(): NodeEnvSource {
-  if (typeof process !== "undefined" && process?.env) {
+  if (typeof process !== 'undefined' && process?.env) {
     return process.env;
   }
 
@@ -124,22 +118,22 @@ function resolveNodeEnv(): NodeEnvSource {
 }
 
 function parseBooleanFlag(value: BooleanFlagValue): boolean | undefined {
-  if (typeof value === "boolean") {
+  if (typeof value === 'boolean') {
     return value;
   }
 
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     const normalized = value.trim().toLowerCase();
 
     if (!normalized) {
       return undefined;
     }
 
-    if (["1", "true", "yes", "on"].includes(normalized)) {
+    if (['1', 'true', 'yes', 'on'].includes(normalized)) {
       return true;
     }
 
-    if (["0", "false", "no", "off"].includes(normalized)) {
+    if (['0', 'false', 'no', 'off'].includes(normalized)) {
       return false;
     }
   }

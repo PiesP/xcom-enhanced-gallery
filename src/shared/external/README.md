@@ -69,7 +69,7 @@ src/shared/external/
 
 ```typescript
 // ✅ 배럴 export 사용 (권장)
-import { getSolid, initializeVendors } from "@shared/external/vendors";
+import { getSolid, initializeVendors } from '@shared/external/vendors';
 
 // 초기화
 await initializeVendors();
@@ -79,23 +79,23 @@ const { createSignal, createMemo } = getSolid();
 const [count, setCount] = createSignal(0);
 
 // ❌ 금지: 내부 파일 직접 import
-import { getSolidSafe } from "@shared/external/vendors/vendor-api-safe"; // 금지!
+import { getSolidSafe } from '@shared/external/vendors/vendor-api-safe'; // 금지!
 ```
 
 #### 패턴 2: Userscript API (우선순위 순서)
 
 ```typescript
 // 1️⃣ 우선: Service Layer 사용 (권장)
-import { PersistentStorage, NotificationService } from "@shared/services";
+import { PersistentStorage, NotificationService } from '@shared/services';
 
 const storage = PersistentStorage.getInstance();
-await storage.set("user-theme", "dark");
+await storage.set('user-theme', 'dark');
 
 const notif = NotificationService.getInstance();
-notif.success("설정 저장됨");
+notif.success('설정 저장됨');
 
 // 2️⃣ 고급/테스트: Getter 사용
-import { getUserscript, detectEnvironment } from "@shared/external/userscript";
+import { getUserscript, detectEnvironment } from '@shared/external/userscript';
 
 const env = detectEnvironment();
 if (env.isGMAvailable) {
@@ -104,31 +104,31 @@ if (env.isGMAvailable) {
 }
 
 // 3️⃣ 절대 금지: 직접 GM 호출
-GM_setValue("key", value); // ❌ 금지!
+GM_setValue('key', value); // ❌ 금지!
 ```
 
 #### 패턴 3: ZIP 유틸리티
 
 ```typescript
 // ✅ 배럴 export 사용
-import { createZipBytesFromFileMap } from "@shared/external/zip";
-import { DownloadService } from "@shared/services";
+import { createZipBytesFromFileMap } from '@shared/external/zip';
+import { DownloadService } from '@shared/services';
 
 // ZIP 생성
 const zipBytes = await createZipBytesFromFileMap(
   {
-    "photo1.jpg": buffer1,
-    "photo2.jpg": buffer2,
-    "video.mp4": buffer3,
+    'photo1.jpg': buffer1,
+    'photo2.jpg': buffer2,
+    'video.mp4': buffer3,
   },
-  { compressionLevel: 0 }, // STORE 방식 (추가 압축 없음)
+  { compressionLevel: 0 } // STORE 방식 (추가 압축 없음)
 );
 
 // 다운로드
 const downloadService = DownloadService.getInstance();
 await downloadService.downloadBlob({
-  blob: new Blob([zipBytes], { type: "application/zip" }),
-  name: "media.zip",
+  blob: new Blob([zipBytes], { type: 'application/zip' }),
+  name: 'media.zip',
 });
 ```
 
@@ -142,13 +142,13 @@ await downloadService.downloadBlob({
 
 ```typescript
 // ✅ 배럴 export 경로
-import { getSolid } from "@shared/external/vendors";
+import { getSolid } from '@shared/external/vendors';
 
 // ✅ getter로 동기 접근
 const { createSignal, createMemo } = getSolid();
 
 // ✅ 초기화 필요 시
-import { initializeVendors } from "@shared/external/vendors";
+import { initializeVendors } from '@shared/external/vendors';
 await initializeVendors();
 ```
 
@@ -156,10 +156,10 @@ await initializeVendors();
 
 ```typescript
 // ❌ 내부 파일 직접 import
-import { StaticVendorManager } from "@shared/external/vendors/vendor-manager-static";
+import { StaticVendorManager } from '@shared/external/vendors/vendor-manager-static';
 
 // ❌ Solid 직접 import (금지)
-import { createSignal } from "solid-js";
+import { createSignal } from 'solid-js';
 ```
 
 **관련 파일**:
@@ -179,30 +179,27 @@ import { createSignal } from "solid-js";
 
 ```typescript
 // ✅ Service Layer를 통한 간접 접근
-import { PersistentStorage } from "@shared/services";
+import { PersistentStorage } from '@shared/services';
 const storage = PersistentStorage.getInstance();
-await storage.set("key", value);
+await storage.set('key', value);
 
-import { NotificationService } from "@shared/services";
+import { NotificationService } from '@shared/services';
 const notif = NotificationService.getInstance();
-notif.success("작업 완료");
+notif.success('작업 완료');
 ```
 
 **🔧 getter로 직접 접근 (고급/테스트용)**:
 
 ```typescript
 // 🔧 테스트/디버깅 시에만 사용
-import { getUserscript } from "@shared/external/userscript";
+import { getUserscript } from '@shared/external/userscript';
 const userscript = getUserscript();
-const value = await userscript.getValue("key");
+const value = await userscript.getValue('key');
 
 // 환경 감지 (선택)
-import {
-  detectEnvironment,
-  isGMAPIAvailable,
-} from "@shared/external/userscript";
+import { detectEnvironment, isGMAPIAvailable } from '@shared/external/userscript';
 if (isGMAPIAvailable()) {
-  console.log("Tampermonkey API 사용 가능");
+  console.log('Tampermonkey API 사용 가능');
 }
 ```
 
@@ -248,15 +245,12 @@ Layer 상세 설명
 
 ```typescript
 // ✅ 배럴 export 경로
-import {
-  createZipBytesFromFileMap,
-  type MediaItemForZip,
-} from "@shared/external/zip";
+import { createZipBytesFromFileMap, type MediaItemForZip } from '@shared/external/zip';
 
 // 미디어 아이템 준비
 const mediaItems: MediaItemForZip[] = [
-  { url: "https://...", filename: "photo1.jpg" },
-  { url: "https://...", filename: "photo2.jpg" },
+  { url: 'https://...', filename: 'photo1.jpg' },
+  { url: 'https://...', filename: 'photo2.jpg' },
 ];
 
 // ZIP 생성
@@ -267,8 +261,8 @@ const zipBytes = await createZipBytesFromFileMap(mediaItems, {
 
 // 다운로드
 await downloadService.downloadBlob({
-  blob: new Blob([zipBytes], { type: "application/zip" }),
-  name: "media.zip",
+  blob: new Blob([zipBytes], { type: 'application/zip' }),
+  name: 'media.zip',
 });
 ```
 
@@ -286,27 +280,27 @@ await downloadService.downloadBlob({
 
 ```typescript
 // 최상위 배럴
-import { getSolid, initializeVendors } from "@shared/external";
-import { getSolid } from "@shared/external/vendors";
+import { getSolid, initializeVendors } from '@shared/external';
+import { getSolid } from '@shared/external/vendors';
 
 // 서브 배럴
-import { getUserscript, detectEnvironment } from "@shared/external/userscript";
-import { createZipBytesFromFileMap } from "@shared/external/zip";
+import { getUserscript, detectEnvironment } from '@shared/external/userscript';
+import { createZipBytesFromFileMap } from '@shared/external/zip';
 
 // 타입 import
-import type { SolidAPI, EnvironmentInfo } from "@shared/external";
+import type { SolidAPI, EnvironmentInfo } from '@shared/external';
 ```
 
 **금지된 경로** ❌:
 
 ```typescript
 // 내부 구현 파일 직접 import (ESLint 자동 감지)
-import { getSolidSafe } from "@shared/external/vendors/vendor-api-safe";
-import { StaticVendorManager } from "@shared/external/vendors/vendor-manager-static";
-import { UserscriptAdapterImpl } from "@shared/external/userscript/adapter";
+import { getSolidSafe } from '@shared/external/vendors/vendor-api-safe';
+import { StaticVendorManager } from '@shared/external/vendors/vendor-manager-static';
+import { UserscriptAdapterImpl } from '@shared/external/userscript/adapter';
 
 // Vendor 직접 import
-import { createSignal } from "solid-js"; // getSolid() 사용
+import { createSignal } from 'solid-js'; // getSolid() 사용
 ```
 
 ### API 계층화 원칙
@@ -333,14 +327,14 @@ import { createSignal } from "solid-js"; // getSolid() 사용
 
 ```typescript
 // ✅ 배럴에서 타입 export
-export type { SolidAPI, EnvironmentInfo } from "./vendors";
+export type { SolidAPI, EnvironmentInfo } from './vendors';
 
 // ✅ 사용처에서 type import
-import type { SolidAPI } from "@shared/external/vendors";
+import type { SolidAPI } from '@shared/external/vendors';
 const api: SolidAPI = getSolid();
 
 // ❌ 타입 정의 파일 직접 import
-import type { SolidAPIImpl } from "@shared/external/vendors/vendor-types";
+import type { SolidAPIImpl } from '@shared/external/vendors/vendor-types';
 ```
 
 ### 내부 구현 마킹 (@internal)
@@ -352,7 +346,7 @@ import type { SolidAPIImpl } from "@shared/external/vendors/vendor-types";
  * @internal 테스트/디버깅만
  * 일반 사용자는 getSolid() 함수를 사용하세요.
  */
-export { StaticVendorManager } from "./vendor-manager-static";
+export { StaticVendorManager } from './vendor-manager-static';
 ```
 
 **ESLint Rule** (설정됨):
@@ -443,7 +437,7 @@ export interface EnvironmentInfo {
   isBrowserExtension: boolean;
   isBrowserConsole: boolean;
   availableGMAPIs: string[];
-  environment: "userscript" | "test" | "extension" | "console";
+  environment: 'userscript' | 'test' | 'extension' | 'console';
 }
 ```
 
@@ -453,7 +447,7 @@ export interface EnvironmentInfo {
 // ZIP 생성
 export async function createZipBytesFromFileMap(
   files: Record<string, Uint8Array>,
-  config: ZipCreationConfig,
+  config: ZipCreationConfig
 ): Promise<Uint8Array>;
 
 // 타입

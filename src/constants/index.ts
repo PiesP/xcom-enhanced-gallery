@@ -11,53 +11,43 @@
 // ================================
 // Core Constants
 // ================================
-export { SELECTORS, STABLE_SELECTORS } from "./selectors";
+export { SELECTORS, STABLE_SELECTORS } from './selectors';
 
 // ================================
 // Media & CSS
 // ================================
-export { MEDIA } from "./media";
-export { CSS } from "./css";
+export { MEDIA } from './media';
+export { CSS } from './css';
 
 // ================================
 // Services
 // ================================
-export { SERVICE_KEYS } from "./service-keys";
+export { SERVICE_KEYS } from './service-keys';
 
 // ================================
 // Storage
 // ================================
-export { APP_SETTINGS_STORAGE_KEY } from "./storage";
+export { APP_SETTINGS_STORAGE_KEY } from './storage';
 
 // ================================
 // Twitter API
 // ================================
-export { TWITTER_API_CONFIG } from "./twitter-api";
+export { TWITTER_API_CONFIG } from './twitter-api';
 
 // ================================
 // Video & System
 // ================================
-export {
-  VIDEO_CONTROL_SELECTORS,
-  SYSTEM_PAGES,
-  VIEW_MODES,
-} from "./video-controls";
+export { VIDEO_CONTROL_SELECTORS, SYSTEM_PAGES, VIEW_MODES } from './video-controls';
 
 // ================================
 // Settings
 // ================================
-export { DEFAULT_SETTINGS, createDefaultSettings } from "./default-settings";
+export { DEFAULT_SETTINGS, createDefaultSettings } from './default-settings';
 
 // ================================
 // Types
 // ================================
-export type {
-  MediaType,
-  MediaQuality,
-  FileExtension,
-  AppServiceKey,
-  ViewMode,
-} from "./types";
+export type { MediaType, MediaQuality, FileExtension, AppServiceKey, ViewMode } from './types';
 
 // ================================
 // URL Patterns (Phase 22.2 compatibility)

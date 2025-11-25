@@ -1,18 +1,18 @@
-import { logger } from "@shared/logging";
+import { logger } from '@shared/logging';
 import {
   adjustClickedIndexAfterDeduplication,
   removeDuplicateMediaItems,
-} from "@shared/media/media-utils";
+} from '@shared/media/media-utils';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
   MediaExtractor,
   TweetInfo,
-} from "@shared/types/media.types";
-import { ExtractionError } from "@shared/types/media.types";
-import { ErrorCode } from "@shared/types/result.types";
-import { TweetInfoExtractor } from "./extractors/tweet-info-extractor";
-import { TwitterAPIExtractor } from "./extractors/twitter-api-extractor";
+} from '@shared/types/media.types';
+import { ExtractionError } from '@shared/types/media.types';
+import { ErrorCode } from '@shared/types/result.types';
+import { TweetInfoExtractor } from './extractors/tweet-info-extractor';
+import { TwitterAPIExtractor } from './extractors/twitter-api-extractor';
 
 /**
  * Media Extraction Service
@@ -29,7 +29,7 @@ export class MediaExtractionService implements MediaExtractor {
 
   async extractFromClickedElement(
     element: HTMLElement,
-    options: MediaExtractionOptions = {},
+    options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     const extractionId = this.generateExtractionId();
     logger.info(`[MediaExtractor] ${extractionId}: Extraction started`);
@@ -39,28 +39,20 @@ export class MediaExtractionService implements MediaExtractor {
 
       if (!tweetInfo?.tweetId) {
         logger.warn(`[MediaExtractor] ${extractionId}: No tweet info found`);
-        return this.createErrorResult("No tweet information found");
+        return this.createErrorResult('No tweet information found');
       }
 
-      const apiResult = await this.apiExtractor.extract(
-        tweetInfo,
-        element,
-        options,
-        extractionId,
-      );
+      const apiResult = await this.apiExtractor.extract(tweetInfo, element, options, extractionId);
 
       if (apiResult.success && apiResult.mediaItems.length > 0) {
         return this.finalizeResult({
           ...apiResult,
-          tweetInfo: this.mergeTweetInfoMetadata(
-            tweetInfo,
-            apiResult.tweetInfo,
-          ),
+          tweetInfo: this.mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo),
         });
       }
 
       logger.error(`[MediaExtractor] ${extractionId}: API extraction failed`);
-      return this.createErrorResult("API extraction failed");
+      return this.createErrorResult('API extraction failed');
     } catch (error) {
       logger.error(`[MediaExtractor] ${extractionId}: Extraction error`, error);
       return this.createErrorResult(error);
@@ -69,15 +61,15 @@ export class MediaExtractionService implements MediaExtractor {
 
   async extractAllFromContainer(
     container: HTMLElement,
-    options: MediaExtractionOptions = {},
+    options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     try {
       const firstMedia = container.querySelector(
-        'img[src*="pbs.twimg.com"], video[src*="video.twimg.com"]',
+        'img[src*="pbs.twimg.com"], video[src*="video.twimg.com"]'
       ) as HTMLElement;
 
       if (!firstMedia) {
-        return this.createErrorResult("No media found in container");
+        return this.createErrorResult('No media found in container');
       }
 
       return this.extractFromClickedElement(firstMedia, options);
@@ -87,7 +79,7 @@ export class MediaExtractionService implements MediaExtractor {
   }
 
   private generateExtractionId(): string {
-    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       return `simp_${crypto.randomUUID()}`;
     }
     return `simp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -95,11 +87,7 @@ export class MediaExtractionService implements MediaExtractor {
 
   private createErrorResult(error: unknown): MediaExtractionResult {
     const errorMessage =
-      error instanceof Error
-        ? error.message
-        : typeof error === "string"
-          ? error
-          : "Unknown error";
+      error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error';
 
     return {
       success: false,
@@ -107,8 +95,8 @@ export class MediaExtractionService implements MediaExtractor {
       clickedIndex: 0,
       metadata: {
         extractedAt: Date.now(),
-        sourceType: "extraction-failed",
-        strategy: "media-extraction",
+        sourceType: 'extraction-failed',
+        strategy: 'media-extraction',
         error: errorMessage,
       },
       tweetInfo: null,
@@ -128,7 +116,7 @@ export class MediaExtractionService implements MediaExtractor {
     const adjustedIndex = adjustClickedIndexAfterDeduplication(
       result.mediaItems,
       uniqueItems,
-      result.clickedIndex ?? 0,
+      result.clickedIndex ?? 0
     );
 
     return {
@@ -140,7 +128,7 @@ export class MediaExtractionService implements MediaExtractor {
 
   private mergeTweetInfoMetadata(
     base: TweetInfo | null | undefined,
-    override: TweetInfo | null | undefined,
+    override: TweetInfo | null | undefined
   ): TweetInfo | null {
     if (!base) return override ?? null;
     if (!override) return base;

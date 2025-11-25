@@ -3,18 +3,15 @@
  * Simplified initialization and teardown of core gallery event handlers.
  */
 
-import { logger } from "@shared/logging";
-import type {
-  EventHandlers,
-  GalleryEventOptions,
-} from "@shared/utils/events/core/event-context";
+import { logger } from '@shared/logging';
+import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events/core/event-context';
 import {
   addListener,
   removeEventListenersByContext,
-} from "@shared/utils/events/core/listener-manager";
-import { handleKeyboardEvent } from "@shared/utils/events/handlers/keyboard";
-import { handleMediaClick } from "@shared/utils/events/handlers/media-click";
-import { resetKeyboardDebounceState } from "@shared/utils/events/keyboard-debounce";
+} from '@shared/utils/events/core/listener-manager';
+import { handleKeyboardEvent } from '@shared/utils/events/handlers/keyboard';
+import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
+import { resetKeyboardDebounceState } from '@shared/utils/events/keyboard-debounce';
 
 interface LifecycleState {
   initialized: boolean;
@@ -31,7 +28,7 @@ const DEFAULT_GALLERY_EVENT_OPTIONS: GalleryEventOptions = {
   enableMediaDetection: true,
   debugMode: false,
   preventBubbling: true,
-  context: "gallery",
+  context: 'gallery',
 };
 
 const initialLifecycleState: LifecycleState = {
@@ -48,14 +45,10 @@ let lifecycleState: LifecycleState = { ...initialLifecycleState };
 
 function sanitizeContext(context: string | undefined): string {
   const trimmed = context?.trim();
-  return trimmed && trimmed.length > 0
-    ? trimmed
-    : DEFAULT_GALLERY_EVENT_OPTIONS.context;
+  return trimmed && trimmed.length > 0 ? trimmed : DEFAULT_GALLERY_EVENT_OPTIONS.context;
 }
 
-function resolveInitializationInput(
-  optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement,
-): {
+function resolveInitializationInput(optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement): {
   options: GalleryEventOptions;
   root: HTMLElement | null;
 } {
@@ -86,15 +79,15 @@ function resolveEventTarget(explicitRoot: HTMLElement | null): EventTarget {
 
 export async function initializeGalleryEvents(
   handlers: EventHandlers,
-  optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement,
+  optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement
 ): Promise<() => void> {
   if (lifecycleState.initialized) {
-    logger.warn("[GalleryLifecycle] Already initialized, re-initializing");
+    logger.warn('[GalleryLifecycle] Already initialized, re-initializing');
     cleanupGalleryEvents();
   }
 
   if (!handlers) {
-    logger.error("[GalleryLifecycle] Missing handlers");
+    logger.error('[GalleryLifecycle] Missing handlers');
     return () => {};
   }
 
@@ -123,23 +116,11 @@ export async function initializeGalleryEvents(
   };
 
   if (finalOptions.enableKeyboard) {
-    addListener(
-      target,
-      "keydown",
-      keyHandler,
-      listenerOptions,
-      listenerContext,
-    );
+    addListener(target, 'keydown', keyHandler, listenerOptions, listenerContext);
   }
 
   if (finalOptions.enableMediaDetection) {
-    addListener(
-      target,
-      "click",
-      clickHandler,
-      listenerOptions,
-      listenerContext,
-    );
+    addListener(target, 'click', clickHandler, listenerOptions, listenerContext);
   }
 
   resetKeyboardDebounceState();
@@ -155,7 +136,7 @@ export async function initializeGalleryEvents(
   };
 
   if (finalOptions.debugMode) {
-    logger.debug("[GalleryEvents] Event listeners registered", {
+    logger.debug('[GalleryEvents] Event listeners registered', {
       context: listenerContext,
     });
   }
@@ -179,9 +160,7 @@ export function cleanupGalleryEvents(): void {
   lifecycleState = { ...initialLifecycleState };
 }
 
-export function updateGalleryEventOptions(
-  newOptions: Partial<GalleryEventOptions>,
-): void {
+export function updateGalleryEventOptions(newOptions: Partial<GalleryEventOptions>): void {
   if (lifecycleState.options) {
     lifecycleState.options = { ...lifecycleState.options, ...newOptions };
   }

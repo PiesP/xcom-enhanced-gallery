@@ -26,9 +26,9 @@
  * @see {@link ../result.types.ts} - Result pattern & ErrorCode
  */
 
-import type { MediaInfo } from "@shared/types/media.types";
-import type { Cleanupable } from "@shared/types/lifecycle.types";
-import type { BaseService } from "./base-service.types";
+import type { MediaInfo } from '@shared/types/media.types';
+import type { Cleanupable } from '@shared/types/lifecycle.types';
+import type { BaseService } from './base-service.types';
 
 // ========================================
 // SERVICE TYPES (from services.types.ts)
@@ -40,11 +40,7 @@ export type { BaseService };
 /**
  * Service lifecycle state
  */
-export type ServiceLifecycle =
-  | "uninitialized"
-  | "initializing"
-  | "initialized"
-  | "destroyed";
+export type ServiceLifecycle = 'uninitialized' | 'initializing' | 'initialized' | 'destroyed';
 
 // All unused service type definitions removed in Phase 326.6
 // Services use concrete implementations instead of interface abstractions
@@ -56,7 +52,7 @@ export type ServiceLifecycle =
 /**
  * Gallery view mode type
  */
-export type GalleryViewMode = "grid" | "carousel" | "slideshow";
+export type GalleryViewMode = 'grid' | 'carousel' | 'slideshow';
 
 /**
  * Gallery state interface (immutability guaranteed)
@@ -75,12 +71,12 @@ export interface GalleryState {
  * Gallery event type
  */
 export type GalleryEvents = {
-  "gallery:open": { items: MediaInfo[]; startIndex: number };
-  "gallery:close": Record<string, never>;
-  "gallery:navigate": { index: number; item: MediaInfo };
-  "gallery:viewModeChange": { mode: GalleryViewMode };
-  "gallery:fullscreenToggle": { isFullscreen: boolean };
-  "gallery:error": { error: string };
+  'gallery:open': { items: MediaInfo[]; startIndex: number };
+  'gallery:close': Record<string, never>;
+  'gallery:navigate': { index: number; item: MediaInfo };
+  'gallery:viewModeChange': { mode: GalleryViewMode };
+  'gallery:fullscreenToggle': { isFullscreen: boolean };
+  'gallery:error': { error: string };
 };
 
 // ========================================
@@ -89,7 +85,7 @@ export type GalleryEvents = {
 
 // Phase 380: Type-only export to break circular dependency
 // Import removed, re-export ViewMode type only
-export type { ViewMode } from "@/constants";
+export type { ViewMode } from '@/constants';
 
 /**
  * ViewMode helper functions were removed in Phase 421 cleanup.
@@ -123,7 +119,7 @@ export interface GalleryConfig {
  */
 export interface DownloadOptions {
   /** 다운로드 품질 */
-  quality?: "original" | "high" | "medium";
+  quality?: 'original' | 'high' | 'medium';
   /** 파일명 형식 */
   filenameFormat?: string;
   /** 압축 활성화 여부 */
@@ -158,7 +154,7 @@ export interface Lifecycle extends Cleanupable {
  *
  * Phase 353: AsyncResult 타입 통합 (result.types.ts로 이동)
  */
-export type { Result, AsyncResult } from "@shared/types/result.types";
+export type { Result, AsyncResult } from '@shared/types/result.types';
 
 // Result 유틸리티 함수들은 result.types.ts로 이동됨 (Phase 355.2)
 // - success, failure, partial, cancelled

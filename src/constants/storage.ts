@@ -8,4 +8,4 @@
  * All modules reading application settings from PersistentStorage must reuse this key
  * to avoid orphaned modules that store their own snapshots.
  */
-export const APP_SETTINGS_STORAGE_KEY = "xeg-app-settings";
+export const APP_SETTINGS_STORAGE_KEY = 'xeg-app-settings';

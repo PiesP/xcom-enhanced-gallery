@@ -1,16 +1,16 @@
-import { logger } from "@shared/logging";
+import { logger } from '@shared/logging';
 
 export class GlobalErrorHandler {
   private static instance: GlobalErrorHandler | null = null;
   private isInitialized = false;
   private readonly errorListener = (event: ErrorEvent) => {
-    const message = event.message ?? "Unknown error occurred";
+    const message = event.message ?? 'Unknown error occurred';
     const location = event.filename
       ? `${event.filename}:${event.lineno ?? 0}:${event.colno ?? 0}`
       : undefined;
 
     logger.error(`[UncaughtError] ${message}`, {
-      type: "uncaught-error",
+      type: 'uncaught-error',
       location,
     });
 
@@ -24,12 +24,12 @@ export class GlobalErrorHandler {
     const message =
       reason instanceof Error
         ? reason.message
-        : typeof reason === "string"
+        : typeof reason === 'string'
           ? reason
           : `Unhandled rejection: ${String(reason)}`;
 
     logger.error(`[UnhandledRejection] ${message}`, {
-      type: "unhandled-rejection",
+      type: 'unhandled-rejection',
       reason,
     });
 
@@ -48,23 +48,23 @@ export class GlobalErrorHandler {
   private constructor() {}
 
   public initialize(): void {
-    if (this.isInitialized || typeof window === "undefined") {
+    if (this.isInitialized || typeof window === 'undefined') {
       return;
     }
 
-    window.addEventListener("error", this.errorListener);
-    window.addEventListener("unhandledrejection", this.rejectionListener);
+    window.addEventListener('error', this.errorListener);
+    window.addEventListener('unhandledrejection', this.rejectionListener);
 
     this.isInitialized = true;
   }
 
   public destroy(): void {
-    if (!this.isInitialized || typeof window === "undefined") {
+    if (!this.isInitialized || typeof window === 'undefined') {
       return;
     }
 
-    window.removeEventListener("error", this.errorListener);
-    window.removeEventListener("unhandledrejection", this.rejectionListener);
+    window.removeEventListener('error', this.errorListener);
+    window.removeEventListener('unhandledrejection', this.rejectionListener);
     this.isInitialized = false;
   }
 }

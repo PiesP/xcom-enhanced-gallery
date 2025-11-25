@@ -1,4 +1,4 @@
-import { IconButton } from "@shared/components/ui/Button/IconButton";
+import { IconButton } from '@shared/components/ui/Button/IconButton';
 import {
   ArrowDownOnSquareStack,
   ArrowDownTray,
@@ -7,35 +7,30 @@ import {
   ArrowSmallRight,
   ChatBubbleLeftRight,
   Cog6Tooth,
-} from "@shared/components/ui/Icon";
-import { SettingsControlsLazy } from "@shared/components/ui/Settings/SettingsControlsLazy";
+} from '@shared/components/ui/Icon';
+import { SettingsControlsLazy } from '@shared/components/ui/Settings/SettingsControlsLazy';
 import type {
   FitMode,
   MaybeAccessor,
   ToolbarProps,
-} from "@shared/components/ui/Toolbar/Toolbar.types";
-import { getLanguageService } from "@shared/container/service-accessors";
-import type { JSXElement } from "@shared/external/vendors";
-import { getSolid } from "@shared/external/vendors";
-import type {
-  ToolbarSettingsControllerResult,
-  ToolbarState,
-} from "@shared/hooks";
-import { safeEventPreventAll } from "@shared/utils/events/utils";
-import { createClassName } from "@shared/utils/text/formatting";
-import styles from "./Toolbar.module.css";
+} from '@shared/components/ui/Toolbar/Toolbar.types';
+import { getLanguageService } from '@shared/container/service-accessors';
+import type { JSXElement } from '@shared/external/vendors';
+import { getSolid } from '@shared/external/vendors';
+import type { ToolbarSettingsControllerResult, ToolbarState } from '@shared/hooks';
+import { safeEventPreventAll } from '@shared/utils/events/utils';
+import { createClassName } from '@shared/utils/text/formatting';
+import styles from './Toolbar.module.css';
 
 const solid = getSolid();
 const { Show, createMemo, createSignal, createEffect, lazy, Suspense } = solid;
 
-const TweetTextPanelLazy = lazy(() => import("./TweetTextPanel"));
+const TweetTextPanelLazy = lazy(() => import('./TweetTextPanel'));
 
 const resolveAccessorValue = <T,>(value: MaybeAccessor<T>): T =>
-  typeof value === "function" ? (value as () => T)() : value;
+  typeof value === 'function' ? (value as () => T)() : value;
 
-const resolveOptionalAccessorValue = <T,>(
-  value?: MaybeAccessor<T>,
-): T | undefined => {
+const resolveOptionalAccessorValue = <T,>(value?: MaybeAccessor<T>): T | undefined => {
   if (value === undefined) {
     return undefined;
   }
@@ -57,16 +52,16 @@ type FitModeDefinition = {
 
 type ToolbarViewBaseProps = Omit<
   ToolbarProps,
-  | "onPrevious"
-  | "onNext"
-  | "onDownloadCurrent"
-  | "onDownloadAll"
-  | "onClose"
-  | "onOpenSettings"
-  | "onFitOriginal"
-  | "onFitWidth"
-  | "onFitHeight"
-  | "onFitContainer"
+  | 'onPrevious'
+  | 'onNext'
+  | 'onDownloadCurrent'
+  | 'onDownloadAll'
+  | 'onClose'
+  | 'onOpenSettings'
+  | 'onFitOriginal'
+  | 'onFitWidth'
+  | 'onFitHeight'
+  | 'onFitContainer'
 >;
 
 export interface ToolbarViewProps extends ToolbarViewBaseProps {
@@ -95,9 +90,7 @@ export interface ToolbarViewProps extends ToolbarViewBaseProps {
 const SCROLLABLE_SELECTOR = '[data-gallery-scrollable="true"]';
 const SCROLL_LOCK_TOLERANCE = 1;
 
-const findScrollableAncestor = (
-  target: EventTarget | null,
-): HTMLElement | null => {
+const findScrollableAncestor = (target: EventTarget | null): HTMLElement | null => {
   if (!(target instanceof HTMLElement)) {
     return null;
   }
@@ -105,10 +98,7 @@ const findScrollableAncestor = (
   return target.closest<HTMLElement>(SCROLLABLE_SELECTOR);
 };
 
-const canConsumeWheelEvent = (
-  element: HTMLElement,
-  deltaY: number,
-): boolean => {
+const canConsumeWheelEvent = (element: HTMLElement, deltaY: number): boolean => {
   const overflow = element.scrollHeight - element.clientHeight;
 
   if (overflow <= SCROLL_LOCK_TOLERANCE) {
@@ -138,24 +128,14 @@ const shouldAllowWheelDefault = (event: WheelEvent): boolean => {
 
 export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const totalCount = createMemo(() => resolveAccessorValue(props.totalCount));
-  const currentIndex = createMemo(() =>
-    resolveAccessorValue(props.currentIndex),
-  );
+  const currentIndex = createMemo(() => resolveAccessorValue(props.currentIndex));
   const displayedIndex = createMemo(() => props.displayedIndex());
-  const isToolbarDisabled = createMemo(() =>
-    Boolean(resolveOptionalAccessorValue(props.disabled)),
-  );
+  const isToolbarDisabled = createMemo(() => Boolean(resolveOptionalAccessorValue(props.disabled)));
   const activeFitMode = createMemo(() => props.activeFitMode());
-  const tweetText = createMemo(
-    () => resolveOptionalAccessorValue(props.tweetText) ?? null,
-  );
-  const tweetTextHTML = createMemo(
-    () => resolveOptionalAccessorValue(props.tweetTextHTML) ?? null,
-  );
-  const [toolbarElement, setToolbarElement] =
-    createSignal<HTMLDivElement | null>(null);
-  const [counterElement, setCounterElement] =
-    createSignal<HTMLSpanElement | null>(null);
+  const tweetText = createMemo(() => resolveOptionalAccessorValue(props.tweetText) ?? null);
+  const tweetTextHTML = createMemo(() => resolveOptionalAccessorValue(props.tweetTextHTML) ?? null);
+  const [toolbarElement, setToolbarElement] = createSignal<HTMLDivElement | null>(null);
+  const [counterElement, setCounterElement] = createSignal<HTMLSpanElement | null>(null);
 
   // Phase 430: Wrap navState properties in createMemo for reactivity
   // This ensures button states update when props.navState() changes
@@ -163,9 +143,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const nextDisabled = createMemo(() => props.navState().nextDisabled);
   const downloadDisabled = createMemo(() => props.navState().downloadDisabled);
   const canDownloadAll = createMemo(() => props.navState().canDownloadAll);
-  const anyActionDisabled = createMemo(
-    () => props.navState().anyActionDisabled,
-  );
+  const anyActionDisabled = createMemo(() => props.navState().anyActionDisabled);
 
   const assignToolbarRef = (element: HTMLDivElement | null) => {
     setToolbarElement(element);
@@ -191,7 +169,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   });
   const hasTweetContent = () => Boolean(tweetTextHTML() ?? tweetText());
   const toolbarButtonClass = (...extra: Array<string | undefined>) =>
-    createClassName(styles.toolbarButton, "xeg-inline-center", ...extra);
+    createClassName(styles.toolbarButton, 'xeg-inline-center', ...extra);
 
   const preventScrollChaining = (event: WheelEvent) => {
     if (shouldAllowWheelDefault(event)) {
@@ -205,11 +183,11 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     <div
       ref={assignToolbarRef}
       class={props.toolbarClass()}
-      role={props.role ?? "toolbar"}
-      aria-label={props["aria-label"] ?? "갤러리 도구모음"}
-      aria-describedby={props["aria-describedby"]}
+      role={props.role ?? 'toolbar'}
+      aria-label={props['aria-label'] ?? '갤러리 도구모음'}
+      aria-describedby={props['aria-describedby']}
       aria-disabled={isToolbarDisabled()}
-      data-testid={props["data-testid"]}
+      data-testid={props['data-testid']}
       data-gallery-element="toolbar"
       data-state={props.toolbarDataState()}
       data-disabled={isToolbarDisabled()}
@@ -227,14 +205,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       }
       onWheel={preventScrollChaining as unknown as (event: WheelEvent) => void}
     >
-      <div
-        class={`${styles.toolbarContent} xeg-row-center`}
-        data-gallery-element="toolbar-content"
-      >
-        <div
-          class={styles.toolbarControls}
-          data-gallery-element="toolbar-controls"
-        >
+      <div class={`${styles.toolbarContent} xeg-row-center`} data-gallery-element="toolbar-content">
+        <div class={styles.toolbarControls} data-gallery-element="toolbar-controls">
           <IconButton
             class={toolbarButtonClass()}
             size="toolbar"
@@ -263,24 +235,13 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             <ArrowSmallRight size={18} />
           </IconButton>
 
-          <div
-            class={styles.counterBlock}
-            data-gallery-element="counter-section"
-          >
-            <div
-              class={createClassName(
-                styles.mediaCounterWrapper,
-                "xeg-inline-center",
-              )}
-            >
+          <div class={styles.counterBlock} data-gallery-element="counter-section">
+            <div class={createClassName(styles.mediaCounterWrapper, 'xeg-inline-center')}>
               <span
-                ref={(element) => {
+                ref={element => {
                   setCounterElement(element);
                 }}
-                class={createClassName(
-                  styles.mediaCounter,
-                  "xeg-inline-center",
-                )}
+                class={createClassName(styles.mediaCounter, 'xeg-inline-center')}
                 aria-live="polite"
                 data-gallery-element="counter"
                 data-focused-index={displayedIndex()}
@@ -291,10 +252,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 <span class={styles.totalCount}>{totalCount()}</span>
               </span>
               <div class={styles.progressBar}>
-                <div
-                  class={styles.progressFill}
-                  style={{ width: props.progressWidth() }}
-                />
+                <div class={styles.progressFill} style={{ width: props.progressWidth() }} />
               </div>
             </div>
           </div>
@@ -319,10 +277,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           })}
 
           <IconButton
-            class={toolbarButtonClass(
-              styles.downloadButton,
-              styles.downloadCurrent,
-            )}
+            class={toolbarButtonClass(styles.downloadButton, styles.downloadCurrent)}
             size="toolbar"
             onClick={props.onDownloadCurrent}
             disabled={downloadDisabled()}
@@ -337,10 +292,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
 
           {canDownloadAll() && (
             <IconButton
-              class={toolbarButtonClass(
-                styles.downloadButton,
-                styles.downloadAll,
-              )}
+              class={toolbarButtonClass(styles.downloadButton, styles.downloadAll)}
               size="toolbar"
               onClick={props.onDownloadAll}
               disabled={downloadDisabled()}
@@ -361,9 +313,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               class={toolbarButtonClass()}
               size="toolbar"
               aria-label="설정 열기"
-              aria-expanded={
-                props.settingsController.isSettingsExpanded() ? "true" : "false"
-              }
+              aria-expanded={props.settingsController.isSettingsExpanded() ? 'true' : 'false'}
               aria-controls="toolbar-settings-panel"
               title="설정"
               disabled={isToolbarDisabled()}
@@ -381,16 +331,10 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               id="tweet-text-button"
               class={toolbarButtonClass()}
               size="toolbar"
-              aria-label={
-                getLanguageService().translate("toolbar.tweetText") ||
-                "View tweet text"
-              }
-              aria-expanded={props.isTweetPanelExpanded() ? "true" : "false"}
+              aria-label={getLanguageService().translate('toolbar.tweetText') || 'View tweet text'}
+              aria-expanded={props.isTweetPanelExpanded() ? 'true' : 'false'}
               aria-controls="toolbar-tweet-panel"
-              title={
-                getLanguageService().translate("toolbar.tweetText") ||
-                "Tweet text"
-              }
+              title={getLanguageService().translate('toolbar.tweetText') || 'Tweet text'}
               disabled={isToolbarDisabled()}
               onClick={props.toggleTweetPanelExpanded}
               data-gallery-element="tweet-text"
@@ -428,9 +372,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         aria-labelledby="settings-button"
         data-gallery-element="settings-panel"
         onClick={props.settingsController.handlePanelClick}
-        onWheel={
-          preventScrollChaining as unknown as (event: WheelEvent) => void
-        }
+        onWheel={preventScrollChaining as unknown as (event: WheelEvent) => void}
       >
         <Show when={props.settingsController.isSettingsExpanded()}>
           <SettingsControlsLazy
@@ -449,20 +391,13 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         class={styles.tweetPanel}
         data-expanded={props.isTweetPanelExpanded()}
         role="region"
-        aria-label={
-          getLanguageService().translate("toolbar.tweetTextPanel") ||
-          "Tweet text panel"
-        }
+        aria-label={getLanguageService().translate('toolbar.tweetTextPanel') || 'Tweet text panel'}
         aria-labelledby="tweet-text-button"
         data-gallery-element="tweet-panel"
-        onWheel={
-          preventScrollChaining as unknown as (event: WheelEvent) => void
-        }
+        onWheel={preventScrollChaining as unknown as (event: WheelEvent) => void}
       >
         <Show when={props.isTweetPanelExpanded() && hasTweetContent()}>
-          <Suspense
-            fallback={<div class={styles.tweetPanelLoading}>Loading...</div>}
-          >
+          <Suspense fallback={<div class={styles.tweetPanelLoading}>Loading...</div>}>
             <TweetTextPanelLazy
               tweetText={tweetText() ?? undefined}
               tweetTextHTML={tweetTextHTML() ?? undefined}

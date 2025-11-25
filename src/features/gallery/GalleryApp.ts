@@ -14,18 +14,14 @@ import {
   getGalleryRenderer,
   getMediaServiceFromContainer,
   tryGetSettingsManager,
-} from "@shared/container/service-accessors";
-import type { GalleryRenderer } from "@shared/interfaces/gallery.interfaces";
-import { logger } from "@shared/logging";
-import { MediaService } from "@shared/services/media-service";
-import { NotificationService } from "@shared/services/notification-service";
-import {
-  closeGallery,
-  gallerySignals,
-  openGallery,
-} from "@shared/state/signals/gallery.signals";
-import type { MediaInfo } from "@shared/types/media.types";
-import { pauseActiveTwitterVideos } from "@shared/utils/media/twitter-video-pauser";
+} from '@shared/container/service-accessors';
+import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
+import { logger } from '@shared/logging';
+import { MediaService } from '@shared/services/media-service';
+import { NotificationService } from '@shared/services/notification-service';
+import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@shared/types/media.types';
+import { pauseActiveTwitterVideos } from '@shared/utils/media/twitter-video-pauser';
 
 /**
  * Gallery app configuration interface
@@ -52,7 +48,7 @@ export class GalleryApp {
   };
 
   constructor() {
-    logger.info("[GalleryApp] Constructor called");
+    logger.info('[GalleryApp] Constructor called');
   }
 
   /**
@@ -60,7 +56,7 @@ export class GalleryApp {
    */
   public async initialize(): Promise<void> {
     try {
-      logger.info("[GalleryApp] Initialization started");
+      logger.info('[GalleryApp] Initialization started');
 
       // Renderer is already registered in bootstrap
       this.galleryRenderer = getGalleryRenderer();
@@ -71,9 +67,9 @@ export class GalleryApp {
       await this.setupEventHandlers();
 
       this.isInitialized = true;
-      logger.info("[GalleryApp] ✅ Initialization complete");
+      logger.info('[GalleryApp] ✅ Initialization complete');
     } catch (error) {
-      logger.error("[GalleryApp] ❌ Initialization failed:", error);
+      logger.error('[GalleryApp] ❌ Initialization failed:', error);
       throw error;
     }
   }
@@ -84,7 +80,7 @@ export class GalleryApp {
   private async setupEventHandlers(): Promise<void> {
     try {
       const { initializeGalleryEvents } = await import(
-        "@shared/utils/events/lifecycle/gallery-lifecycle"
+        '@shared/utils/events/lifecycle/gallery-lifecycle'
       );
 
       // Get settings if available
@@ -92,18 +88,17 @@ export class GalleryApp {
         get: (key: string) => boolean;
       }>();
       const enableKeyboard = settingsService
-        ? (settingsService.get("gallery.enableKeyboardNav") ?? true)
+        ? (settingsService.get('gallery.enableKeyboardNav') ?? true)
         : true;
 
       await initializeGalleryEvents(
         {
-          onMediaClick: (mediaInfo, element) =>
-            this.handleMediaClick(mediaInfo, element),
+          onMediaClick: (mediaInfo, element) => this.handleMediaClick(mediaInfo, element),
           onGalleryClose: () => {
             this.closeGallery();
           },
-          onKeyboardEvent: (event) => {
-            if (event.key === "Escape" && gallerySignals.isOpen.value) {
+          onKeyboardEvent: event => {
+            if (event.key === 'Escape' && gallerySignals.isOpen.value) {
               this.closeGallery();
             }
           },
@@ -113,13 +108,13 @@ export class GalleryApp {
           enableMediaDetection: true,
           debugMode: false,
           preventBubbling: true,
-          context: "gallery",
-        },
+          context: 'gallery',
+        }
       );
 
-      logger.info("[GalleryApp] ✅ Event handlers setup complete");
+      logger.info('[GalleryApp] ✅ Event handlers setup complete');
     } catch (error) {
-      logger.error("[GalleryApp] ❌ Event handlers setup failed:", error);
+      logger.error('[GalleryApp] ❌ Event handlers setup failed:', error);
       throw error;
     }
   }
@@ -127,15 +122,12 @@ export class GalleryApp {
   /**
    * Handle media click event
    */
-  private async handleMediaClick(
-    _mediaInfo: unknown,
-    element: HTMLElement,
-  ): Promise<void> {
+  private async handleMediaClick(_mediaInfo: unknown, element: HTMLElement): Promise<void> {
     try {
       const mediaService = getMediaServiceFromContainer();
 
       if (!(mediaService instanceof MediaService)) {
-        throw new Error("MediaService not available from container");
+        throw new Error('MediaService not available from container');
       }
 
       const result = await mediaService.extractFromClickedElement(element);
@@ -143,20 +135,20 @@ export class GalleryApp {
       if (result.success && result.mediaItems.length > 0) {
         await this.openGallery(result.mediaItems, result.clickedIndex);
       } else {
-        logger.warn("[GalleryApp] Media extraction failed:", {
+        logger.warn('[GalleryApp] Media extraction failed:', {
           success: result.success,
           mediaCount: result.mediaItems.length,
         });
         void this.notificationService.error(
-          "Failed to load media",
-          "Could not find images or videos.",
+          'Failed to load media',
+          'Could not find images or videos.'
         );
       }
     } catch (error) {
-      logger.error("[GalleryApp] Error during media extraction:", error);
+      logger.error('[GalleryApp] Error during media extraction:', error);
       void this.notificationService.error(
-        "Error occurred",
-        error instanceof Error ? error.message : "Unknown error",
+        'Error occurred',
+        error instanceof Error ? error.message : 'Unknown error'
       );
     }
   }
@@ -164,32 +156,24 @@ export class GalleryApp {
   /**
    * Open gallery
    */
-  public async openGallery(
-    mediaItems: MediaInfo[],
-    startIndex: number = 0,
-  ): Promise<void> {
+  public async openGallery(mediaItems: MediaInfo[], startIndex: number = 0): Promise<void> {
     if (!this.isInitialized) {
-      logger.warn(
-        "[GalleryApp] Gallery not initialized. Tampermonkey may not be installed.",
-      );
+      logger.warn('[GalleryApp] Gallery not initialized. Tampermonkey may not be installed.');
       void this.notificationService.error(
-        "Gallery unavailable",
-        "Tampermonkey or similar userscript manager is required.",
+        'Gallery unavailable',
+        'Tampermonkey or similar userscript manager is required.'
       );
       return;
     }
 
     if (!mediaItems?.length) {
-      logger.warn("Failed to open gallery: no media items");
+      logger.warn('Failed to open gallery: no media items');
       return;
     }
 
     try {
-      const validIndex = Math.max(
-        0,
-        Math.min(startIndex, mediaItems.length - 1),
-      );
-      logger.info("[GalleryApp] Opening gallery:", {
+      const validIndex = Math.max(0, Math.min(startIndex, mediaItems.length - 1));
+      logger.info('[GalleryApp] Opening gallery:', {
         mediaCount: mediaItems.length,
         startIndex: validIndex,
       });
@@ -197,19 +181,16 @@ export class GalleryApp {
       try {
         pauseActiveTwitterVideos();
       } catch (error) {
-        logger.warn(
-          "[GalleryApp] Ambient video pause failed (non-blocking)",
-          error,
-        );
+        logger.warn('[GalleryApp] Ambient video pause failed (non-blocking)', error);
       }
 
       // Update state (renderer auto-renders via signal subscription)
       openGallery(mediaItems, validIndex);
     } catch (error) {
-      logger.error("[GalleryApp] Failed to open gallery:", error);
+      logger.error('[GalleryApp] Failed to open gallery:', error);
       void this.notificationService.error(
-        "Failed to load gallery",
-        error instanceof Error ? error.message : "Unknown error",
+        'Failed to load gallery',
+        error instanceof Error ? error.message : 'Unknown error'
       );
       throw error;
     }
@@ -223,9 +204,9 @@ export class GalleryApp {
       if (gallerySignals.isOpen.value) {
         closeGallery();
       }
-      logger.debug("[GalleryApp] Gallery closed");
+      logger.debug('[GalleryApp] Gallery closed');
     } catch (error) {
-      logger.error("[GalleryApp] Failed to close gallery:", error);
+      logger.error('[GalleryApp] Failed to close gallery:', error);
     }
   }
 
@@ -265,7 +246,7 @@ export class GalleryApp {
    */
   public async cleanup(): Promise<void> {
     try {
-      logger.info("[GalleryApp] Cleanup started");
+      logger.info('[GalleryApp] Cleanup started');
 
       if (gallerySignals.isOpen.value) {
         this.closeGallery();
@@ -273,20 +254,20 @@ export class GalleryApp {
 
       try {
         const { cleanupGalleryEvents } = await import(
-          "@shared/utils/events/lifecycle/gallery-lifecycle"
+          '@shared/utils/events/lifecycle/gallery-lifecycle'
         );
         cleanupGalleryEvents();
       } catch (error) {
-        logger.warn("[GalleryApp] Event cleanup failed:", error);
+        logger.warn('[GalleryApp] Event cleanup failed:', error);
       }
 
       this.galleryRenderer = null;
       this.isInitialized = false;
 
       delete (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug;
-      logger.info("[GalleryApp] ✅ Cleanup complete");
+      logger.info('[GalleryApp] ✅ Cleanup complete');
     } catch (error) {
-      logger.error("[GalleryApp] ❌ Error during cleanup:", error);
+      logger.error('[GalleryApp] ❌ Error during cleanup:', error);
     }
   }
 }

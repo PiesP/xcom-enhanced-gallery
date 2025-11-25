@@ -8,15 +8,13 @@
  */
 export type ResultCallback<TResult, TError = string | null | undefined> = (
   result?: TResult,
-  error?: TError,
+  error?: TError
 ) => void;
 
 /**
  * Void callback with only error parameter
  */
-export type VoidCallback<TError = string | null | undefined> = (
-  error?: TError,
-) => void;
+export type VoidCallback<TError = string | null | undefined> = (error?: TError) => void;
 
 /**
  * Options for promisifying callback-based APIs
@@ -47,7 +45,7 @@ export interface PromisifyOptions<TFallback> {
  */
 export function promisifyCallback<TResult>(
   executor: (callback: ResultCallback<TResult>) => void,
-  options?: PromisifyOptions<TResult>,
+  options?: PromisifyOptions<TResult>
 ): Promise<TResult> {
   return new Promise((resolve, reject) => {
     try {
@@ -85,12 +83,10 @@ export function promisifyCallback<TResult>(
  * @param executor - Function that receives the callback
  * @returns Promise that resolves when callback is called without error
  */
-export function promisifyVoidCallback(
-  executor: (callback: VoidCallback) => void,
-): Promise<void> {
+export function promisifyVoidCallback(executor: (callback: VoidCallback) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
-      executor((error) => {
+      executor(error => {
         if (error) {
           reject(new Error(String(error)));
           return;
@@ -114,7 +110,7 @@ export function tryWithFallback<T>(fn: () => T, fallback: T | (() => T)): T {
   try {
     return fn();
   } catch {
-    return typeof fallback === "function" ? (fallback as () => T)() : fallback;
+    return typeof fallback === 'function' ? (fallback as () => T)() : fallback;
   }
 }
 
@@ -123,13 +119,11 @@ export function tryWithFallback<T>(fn: () => T, fallback: T | (() => T)): T {
  */
 export async function tryWithFallbackAsync<T>(
   fn: () => T | Promise<T>,
-  fallback: T | (() => T | Promise<T>),
+  fallback: T | (() => T | Promise<T>)
 ): Promise<T> {
   try {
     return await fn();
   } catch {
-    return typeof fallback === "function"
-      ? await (fallback as () => T | Promise<T>)()
-      : fallback;
+    return typeof fallback === 'function' ? await (fallback as () => T | Promise<T>)() : fallback;
   }
 }

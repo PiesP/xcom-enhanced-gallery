@@ -1,14 +1,6 @@
-import { logger } from "@shared/logging";
-import {
-  extractDimensionsFromUrl,
-  normalizeDimension,
-} from "@shared/media/media-utils";
-import type {
-  TweetMediaEntry,
-  TwitterMedia,
-  TwitterTweet,
-  TwitterUser,
-} from "./types";
+import { logger } from '@shared/logging';
+import { extractDimensionsFromUrl, normalizeDimension } from '@shared/media/media-utils';
+import type { TweetMediaEntry, TwitterMedia, TwitterTweet, TwitterUser } from './types';
 
 /**
  * Twitter Response Parser
@@ -21,42 +13,31 @@ export class TwitterResponseParser {
   public static extractMediaFromTweet(
     tweetResult: TwitterTweet,
     tweetUser: TwitterUser,
-    sourceLocation: "original" | "quoted" = "original",
+    sourceLocation: 'original' | 'quoted' = 'original'
   ): TweetMediaEntry[] {
     if (!tweetResult.extended_entities?.media) return [];
 
     const mediaItems: TweetMediaEntry[] = [];
     const typeIndex: Record<string, number> = {};
-    const screenName = tweetUser.screen_name ?? "";
-    const tweetId = tweetResult.rest_id ?? tweetResult.id_str ?? "";
+    const screenName = tweetUser.screen_name ?? '';
+    const tweetId = tweetResult.rest_id ?? tweetResult.id_str ?? '';
 
-    for (
-      let index = 0;
-      index < tweetResult.extended_entities.media.length;
-      index++
-    ) {
-      const media: TwitterMedia | undefined =
-        tweetResult.extended_entities.media[index];
+    for (let index = 0; index < tweetResult.extended_entities.media.length; index++) {
+      const media: TwitterMedia | undefined = tweetResult.extended_entities.media[index];
       if (!media?.type || !media.id_str || !media.media_url_https) continue;
 
       try {
         const mediaUrl = this.getHighQualityMediaUrl(media);
         if (!mediaUrl) continue;
 
-        const mediaType = media.type === "animated_gif" ? "video" : media.type;
+        const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
         typeIndex[mediaType] = (typeIndex[mediaType] ?? -1) + 1;
 
-        const tweetText = (tweetResult.full_text ?? "")
-          .replace(` ${media.url}`, "")
-          .trim();
+        const tweetText = (tweetResult.full_text ?? '').replace(` ${media.url}`, '').trim();
 
         const dimensionsFromUrl = extractDimensionsFromUrl(mediaUrl);
-        const widthFromOriginal = normalizeDimension(
-          media.original_info?.width,
-        );
-        const heightFromOriginal = normalizeDimension(
-          media.original_info?.height,
-        );
+        const widthFromOriginal = normalizeDimension(media.original_info?.width);
+        const heightFromOriginal = normalizeDimension(media.original_info?.height);
         const widthFromUrl = normalizeDimension(dimensionsFromUrl?.width);
         const heightFromUrl = normalizeDimension(dimensionsFromUrl?.height);
         const resolvedWidth = widthFromOriginal ?? widthFromUrl;
@@ -72,17 +53,17 @@ export class TwitterResponseParser {
           screen_name: screenName,
           tweet_id: tweetId,
           download_url: mediaUrl,
-          type: mediaType as "photo" | "video",
-          typeOriginal: media.type as "photo" | "video" | "animated_gif",
+          type: mediaType as 'photo' | 'video',
+          typeOriginal: media.type as 'photo' | 'video' | 'animated_gif',
           index,
           typeIndex: typeIndex[mediaType] ?? 0,
           typeIndexOriginal: typeIndex[media.type] ?? 0,
           preview_url: media.media_url_https,
           media_id: media.id_str,
-          media_key: media.media_key ?? "",
-          expanded_url: media.expanded_url ?? "",
-          short_expanded_url: media.display_url ?? "",
-          short_tweet_url: media.url ?? "",
+          media_key: media.media_key ?? '',
+          expanded_url: media.expanded_url ?? '',
+          short_expanded_url: media.display_url ?? '',
+          short_tweet_url: media.url ?? '',
           tweet_text: tweetText,
           sourceLocation,
         };
@@ -113,16 +94,14 @@ export class TwitterResponseParser {
    * Get the highest quality URL for a media item.
    */
   private static getHighQualityMediaUrl(media: TwitterMedia): string | null {
-    if (media.type === "photo") {
-      return media.media_url_https.includes("?format=")
+    if (media.type === 'photo') {
+      return media.media_url_https.includes('?format=')
         ? media.media_url_https
-        : media.media_url_https.replace(/\.(jpg|png)$/, "?format=$1&name=orig");
+        : media.media_url_https.replace(/\.(jpg|png)$/, '?format=$1&name=orig');
     }
-    if (media.type === "video" || media.type === "animated_gif") {
+    if (media.type === 'video' || media.type === 'animated_gif') {
       const variants = media.video_info?.variants ?? [];
-      const mp4Variants = variants.filter(
-        (v) => v.content_type === "video/mp4",
-      );
+      const mp4Variants = variants.filter(v => v.content_type === 'video/mp4');
       if (mp4Variants.length === 0) return null;
 
       const bestVariant = mp4Variants.reduce((best, current) => {

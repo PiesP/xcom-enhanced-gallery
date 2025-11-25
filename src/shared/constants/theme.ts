@@ -4,7 +4,7 @@
  */
 
 /** Persistent storage key for theme preference */
-export const THEME_STORAGE_KEY = "xeg-theme";
+export const THEME_STORAGE_KEY = 'xeg-theme';
 
 /** DOM attribute used to apply the resolved theme */
-export const THEME_DOM_ATTRIBUTE = "data-theme";
+export const THEME_DOM_ATTRIBUTE = 'data-theme';

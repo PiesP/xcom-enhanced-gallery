@@ -4,9 +4,9 @@
  * applies rename/transform steps between versions. Pure function for easy testing.
  */
 
-import { DEFAULT_SETTINGS as defaultSettings } from "@/constants";
-import type { AppSettings } from "@features/settings/types/settings.types";
-import { isRecord } from "@shared/utils/types/guards";
+import { DEFAULT_SETTINGS as defaultSettings } from '@/constants';
+import type { AppSettings } from '@features/settings/types/settings.types';
+import { isRecord } from '@shared/utils/types/guards';
 
 type Migration = (input: AppSettings) => AppSettings;
 
@@ -22,7 +22,7 @@ const migrations: Partial<Record<string, Migration>> = {
  */
 function pruneWithTemplate<T extends Record<string, unknown>>(
   input: unknown,
-  template: T,
+  template: T
 ): Partial<T> {
   if (!isRecord(input)) return {} as Partial<T>;
 
@@ -47,10 +47,7 @@ function pruneWithTemplate<T extends Record<string, unknown>>(
  * Unknown top-level and nested fields are pruned based on DEFAULT_SETTINGS shape.
  */
 function fillWithDefaults(settings: AppSettings): AppSettings {
-  const pruned = pruneWithTemplate(
-    settings,
-    defaultSettings,
-  ) as Partial<AppSettings>;
+  const pruned = pruneWithTemplate(settings, defaultSettings) as Partial<AppSettings>;
 
   // Merge category defaults
   const categories = {
@@ -86,7 +83,7 @@ export function migrateSettings(input: AppSettings): AppSettings {
   // Apply explicit migration if defined for detected version
   const currentVersion = input.version;
   const mig = migrations[currentVersion as keyof typeof migrations];
-  if (typeof mig === "function") {
+  if (typeof mig === 'function') {
     try {
       working = mig(working);
     } catch {

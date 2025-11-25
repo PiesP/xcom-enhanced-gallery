@@ -4,9 +4,9 @@
  * @version 1.0.0 - Phase 2: DOM HTML preservation
  */
 
-import { SELECTORS } from "@/constants";
-import { logger } from "@shared/logging";
-import { sanitizeHTML } from "@shared/utils/text/html-sanitizer";
+import { SELECTORS } from '@/constants';
+import { logger } from '@shared/logging';
+import { sanitizeHTML } from '@shared/utils/text/html-sanitizer';
 
 /**
  * Extracts tweet text HTML from tweet article element
@@ -22,23 +22,21 @@ import { sanitizeHTML } from "@shared/utils/text/html-sanitizer";
  * // '<span>Tweet with <a href="...">link</a> and #hashtag</span>'
  * ```
  */
-export function extractTweetTextHTML(
-  tweetArticle: Element | null,
-): string | undefined {
+export function extractTweetTextHTML(tweetArticle: Element | null): string | undefined {
   if (!tweetArticle) return undefined;
 
   try {
     // Find tweet text element
     const tweetTextElement = tweetArticle.querySelector(SELECTORS.TWEET_TEXT);
     if (!tweetTextElement) {
-      logger.debug("[extractTweetTextHTML] tweetText element not found");
+      logger.debug('[extractTweetTextHTML] tweetText element not found');
       return undefined;
     }
 
     // Get innerHTML
     const rawHTML = tweetTextElement.innerHTML;
     if (!rawHTML?.trim()) {
-      logger.debug("[extractTweetTextHTML] Empty HTML content");
+      logger.debug('[extractTweetTextHTML] Empty HTML content');
       return undefined;
     }
 
@@ -46,26 +44,18 @@ export function extractTweetTextHTML(
     const sanitized = sanitizeHTML(rawHTML);
 
     if (!sanitized?.trim()) {
-      logger.debug(
-        "[extractTweetTextHTML] HTML sanitization resulted in empty content",
-      );
+      logger.debug('[extractTweetTextHTML] HTML sanitization resulted in empty content');
       return undefined;
     }
 
-    logger.debug(
-      "[extractTweetTextHTML] Successfully extracted and sanitized HTML",
-      {
-        originalLength: rawHTML.length,
-        sanitizedLength: sanitized.length,
-      },
-    );
+    logger.debug('[extractTweetTextHTML] Successfully extracted and sanitized HTML', {
+      originalLength: rawHTML.length,
+      sanitizedLength: sanitized.length,
+    });
 
     return sanitized;
   } catch (error) {
-    logger.error(
-      "[extractTweetTextHTML] Error extracting tweet text HTML:",
-      error,
-    );
+    logger.error('[extractTweetTextHTML] Error extracting tweet text HTML:', error);
     return undefined;
   }
 }
@@ -79,7 +69,7 @@ export function extractTweetTextHTML(
  */
 export function extractTweetTextHTMLFromClickedElement(
   element: HTMLElement,
-  maxDepth = 10,
+  maxDepth = 10
 ): string | undefined {
   let current: HTMLElement | null = element;
   let depth = 0;
@@ -88,9 +78,8 @@ export function extractTweetTextHTMLFromClickedElement(
   while (current && depth < maxDepth) {
     // Check if current element is a tweet article
     if (
-      current.tagName === "ARTICLE" &&
-      (current.hasAttribute("data-testid") ||
-        current.querySelector(SELECTORS.TWEET))
+      current.tagName === 'ARTICLE' &&
+      (current.hasAttribute('data-testid') || current.querySelector(SELECTORS.TWEET))
     ) {
       return extractTweetTextHTML(current);
     }
@@ -99,11 +88,8 @@ export function extractTweetTextHTMLFromClickedElement(
     depth++;
   }
 
-  logger.debug(
-    "[extractTweetTextHTMLFromClickedElement] Tweet article not found within depth",
-    {
-      maxDepth,
-    },
-  );
+  logger.debug('[extractTweetTextHTMLFromClickedElement] Tweet article not found within depth', {
+    maxDepth,
+  });
   return undefined;
 }

@@ -2,14 +2,14 @@
  * Download state management with signals
  */
 
-import { logger as rootLogger, type Logger as ILogger } from "@shared/logging";
-import type { MediaId, MediaInfo } from "@shared/types/media.types";
-import type { Result } from "@shared/types/result.types";
-import { ErrorCode, failure, success } from "@shared/types/result.types";
-import { createSignalSafe, type SafeSignal } from "./signal-factory";
+import { logger as rootLogger, type Logger as ILogger } from '@shared/logging';
+import type { MediaId, MediaInfo } from '@shared/types/media.types';
+import type { Result } from '@shared/types/result.types';
+import { ErrorCode, failure, success } from '@shared/types/result.types';
+import { createSignalSafe, type SafeSignal } from './signal-factory';
 
 // Download status
-export type DownloadStatus = "pending" | "downloading" | "completed" | "failed";
+export type DownloadStatus = 'pending' | 'downloading' | 'completed' | 'failed';
 
 export interface DownloadTask {
   readonly id: string;
@@ -113,11 +113,11 @@ export const downloadState = {
   },
 
   subscribe(callback: (state: DownloadState) => void): () => void {
-    return getDownloadState().subscribe((state) => {
+    return getDownloadState().subscribe(state => {
       try {
         callback(state);
       } catch (error) {
-        logger.warn("[Download] subscriber callback failed", { error });
+        logger.warn('[Download] subscriber callback failed', { error });
       }
     });
   },
@@ -130,15 +130,10 @@ export const downloadState = {
 /**
  * Create a download task
  */
-export function createDownloadTask(
-  mediaInfo: MediaInfo,
-  filename?: string,
-): Result<string> {
+export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Result<string> {
   try {
     // Generate temp ID if mediaInfo.id is missing
-    const mediaId =
-      mediaInfo.id ??
-      `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const mediaId = mediaInfo.id ?? `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const taskId = `dl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const task: DownloadTask = {
@@ -146,7 +141,7 @@ export function createDownloadTask(
       mediaId: mediaId as MediaId,
       mediaUrl: mediaInfo.url,
       filename: filename ?? mediaInfo.filename ?? `media_${mediaId}`,
-      status: "pending",
+      status: 'pending',
       progress: 0,
       startedAt: Date.now(),
     };
@@ -166,7 +161,7 @@ export function createDownloadTask(
     return success(taskId, { mediaId, filename: task.filename });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    logger.error("[Download] Failed to create task:", errorMsg);
+    logger.error('[Download] Failed to create task:', errorMsg);
     return failure(errorMsg, ErrorCode.UNKNOWN, {
       cause: error,
       meta: { mediaUrl: mediaInfo.url },
@@ -182,26 +177,22 @@ export function startDownload(taskId: string): Result<void> {
   const task = currentState.activeTasks.get(taskId);
 
   if (!task) {
-    logger.error("[Download] Task not found:", taskId);
+    logger.error('[Download] Task not found:', taskId);
     return failure(`Task not found: ${taskId}`, ErrorCode.ELEMENT_NOT_FOUND, {
       meta: { taskId },
     });
   }
 
-  if (task.status !== "pending") {
-    logger.warn("[Download] Task is not in pending state:", task.status);
-    return failure(
-      `Task is not pending: ${taskId}`,
-      ErrorCode.INVALID_ELEMENT,
-      {
-        meta: { taskId, currentStatus: task.status },
-      },
-    );
+  if (task.status !== 'pending') {
+    logger.warn('[Download] Task is not in pending state:', task.status);
+    return failure(`Task is not pending: ${taskId}`, ErrorCode.INVALID_ELEMENT, {
+      meta: { taskId, currentStatus: task.status },
+    });
   }
 
   const updatedTask: DownloadTask = {
     ...task,
-    status: "downloading",
+    status: 'downloading',
     startedAt: Date.now(),
   };
 
@@ -222,10 +213,7 @@ export function startDownload(taskId: string): Result<void> {
 /**
  * Update download progress
  */
-export function updateDownloadProgress(
-  taskId: string,
-  progress: number,
-): Result<void> {
+export function updateDownloadProgress(taskId: string, progress: number): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
@@ -271,7 +259,7 @@ export function completeDownload(taskId: string): Result<void> {
   const completedAt = Date.now();
   const updatedTask: DownloadTask = {
     ...task,
-    status: "completed",
+    status: 'completed',
     progress: 100,
     completedAt,
   };
@@ -279,7 +267,7 @@ export function completeDownload(taskId: string): Result<void> {
   const newTasks = new Map(currentState.activeTasks);
   newTasks.set(taskId, updatedTask);
 
-  const newQueue = currentState.queue.filter((id) => id !== taskId);
+  const newQueue = currentState.queue.filter(id => id !== taskId);
 
   downloadState.value = {
     ...currentState,
@@ -314,7 +302,7 @@ export function failDownload(taskId: string, error: string): Result<void> {
   const completedAt = Date.now();
   const updatedTask: DownloadTask = {
     ...task,
-    status: "failed",
+    status: 'failed',
     error,
     completedAt,
   };
@@ -322,7 +310,7 @@ export function failDownload(taskId: string, error: string): Result<void> {
   const newTasks = new Map(currentState.activeTasks);
   newTasks.set(taskId, updatedTask);
 
-  const newQueue = currentState.queue.filter((id) => id !== taskId);
+  const newQueue = currentState.queue.filter(id => id !== taskId);
 
   downloadState.value = {
     ...currentState,
@@ -353,14 +341,10 @@ export function removeTask(taskId: string): Result<void> {
     });
   }
 
-  if (task.status === "downloading") {
-    return failure(
-      `Cannot remove active download: ${taskId}`,
-      ErrorCode.PERMISSION_DENIED,
-      {
-        meta: { taskId, currentStatus: "downloading" },
-      },
-    );
+  if (task.status === 'downloading') {
+    return failure(`Cannot remove active download: ${taskId}`, ErrorCode.PERMISSION_DENIED, {
+      meta: { taskId, currentStatus: 'downloading' },
+    });
   }
 
   const newTasks = new Map(currentState.activeTasks);
@@ -384,7 +368,7 @@ export function clearCompletedTasks(): void {
   const newTasks = new Map<string, DownloadTask>();
 
   for (const [id, task] of currentState.activeTasks) {
-    if (task.status === "downloading" || task.status === "pending") {
+    if (task.status === 'downloading' || task.status === 'pending') {
       newTasks.set(id, task);
     }
   }
@@ -394,7 +378,7 @@ export function clearCompletedTasks(): void {
     activeTasks: newTasks,
   };
 
-  logger.info("[Download] Completed tasks cleared");
+  logger.info('[Download] Completed tasks cleared');
 }
 
 // ============================================================================
@@ -423,10 +407,10 @@ export function getDownloadInfo(): {
   const tasks = Array.from(state.activeTasks.values());
 
   return {
-    activeTasks: tasks.filter((t) => t.status === "downloading").length,
-    pendingTasks: tasks.filter((t) => t.status === "pending").length,
-    completedTasks: tasks.filter((t) => t.status === "completed").length,
-    failedTasks: tasks.filter((t) => t.status === "failed").length,
+    activeTasks: tasks.filter(t => t.status === 'downloading').length,
+    pendingTasks: tasks.filter(t => t.status === 'pending').length,
+    completedTasks: tasks.filter(t => t.status === 'completed').length,
+    failedTasks: tasks.filter(t => t.status === 'failed').length,
     queueLength: state.queue.length,
     isProcessing: state.isProcessing,
   };

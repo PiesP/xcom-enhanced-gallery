@@ -3,12 +3,12 @@
  * @module @shared/services/download/types
  */
 
-import type { ErrorCode } from "@shared/types/result.types";
+import type { ErrorCode } from '@shared/types/result.types';
 
 /** Download progress phases */
 export interface DownloadProgress {
   /** Current phase: preparing | downloading | complete */
-  phase: "preparing" | "downloading" | "complete";
+  phase: 'preparing' | 'downloading' | 'complete';
   /** Number of completed items (0 to total) */
   current: number;
   /** Total items to download */
@@ -71,7 +71,7 @@ export interface ZipResult {
 }
 
 /** Download data source type */
-export type DownloadDataSource = "dom" | "cache" | "network";
+export type DownloadDataSource = 'dom' | 'cache' | 'network';
 
 /** Single item download result with source */
 export interface SingleItemDownloadResult {
@@ -83,7 +83,7 @@ export interface SingleItemDownloadResult {
 export interface BulkDownloadResult {
   success: boolean;
   /** success | partial | error */
-  status: "success" | "partial" | "error";
+  status: 'success' | 'partial' | 'error';
   filesProcessed: number;
   filesSuccessful: number;
   filename?: string;

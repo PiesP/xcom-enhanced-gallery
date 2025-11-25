@@ -9,7 +9,7 @@
  * helpers. If the service is unavailable an error is thrown so the fault is
  * visible during development.
  */
-import { tryGetSettingsManager } from "./service-accessors";
+import { tryGetSettingsManager } from './service-accessors';
 
 interface SettingsServiceLike {
   get<T = unknown>(key: string): T | undefined;
@@ -20,7 +20,7 @@ function requireSettingsService(): SettingsServiceLike {
   const service = tryGetSettingsManager<SettingsServiceLike>();
   if (!service) {
     throw new Error(
-      "SettingsService is not registered. Ensure bootstrap registers it before usage.",
+      'SettingsService is not registered. Ensure bootstrap registers it before usage.'
     );
   }
   return service;

@@ -6,8 +6,8 @@
  * @description Uses Solid.js reactivity and native scrollIntoView
  */
 
-import { getSolid } from "@shared/external/vendors";
-import { toAccessor } from "@shared/utils/solid/solid-helpers";
+import { getSolid } from '@shared/external/vendors';
+import { toAccessor } from '@shared/utils/solid/solid-helpers';
 
 const { createEffect, untrack, on } = getSolid();
 
@@ -32,15 +32,13 @@ export function useGalleryItemScroll(
   containerRef: { current: HTMLElement | null } | Accessor<HTMLElement | null>,
   currentIndex: MaybeAccessor<number>,
   totalItems: MaybeAccessor<number>,
-  options: UseGalleryItemScrollOptions = {},
+  options: UseGalleryItemScrollOptions = {}
 ): UseGalleryItemScrollReturn {
   const containerAccessor =
-    typeof containerRef === "function"
-      ? containerRef
-      : () => containerRef.current;
+    typeof containerRef === 'function' ? containerRef : () => containerRef.current;
   const enabled = toAccessor(options.enabled ?? true);
-  const behavior = toAccessor(options.behavior ?? "auto");
-  const block = toAccessor(options.block ?? "start");
+  const behavior = toAccessor(options.behavior ?? 'auto');
+  const block = toAccessor(options.block ?? 'start');
   const alignToCenter = toAccessor(options.alignToCenter ?? false);
   const isScrolling = toAccessor(options.isScrolling ?? false);
   const currentIndexAccessor = toAccessor(currentIndex);
@@ -48,11 +46,10 @@ export function useGalleryItemScroll(
 
   const scrollToItem = (index: number) => {
     const container = containerAccessor();
-    if (!enabled() || !container || index < 0 || index >= totalItemsAccessor())
-      return;
+    if (!enabled() || !container || index < 0 || index >= totalItemsAccessor()) return;
 
     const itemsRoot = container.querySelector(
-      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
+      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
     );
     if (!itemsRoot) return;
 
@@ -63,22 +60,20 @@ export function useGalleryItemScroll(
       options.onScrollStart?.();
       target.scrollIntoView({
         behavior: behavior(),
-        block: alignToCenter() ? "center" : block(),
-        inline: "nearest",
+        block: alignToCenter() ? 'center' : block(),
+        inline: 'nearest',
       });
     } else {
       // Retry once if not found (e.g. virtual scrolling or render delay)
       requestAnimationFrame(() => {
-        const retryItems = itemsRoot.querySelectorAll(
-          '[data-xeg-role="gallery-item"]',
-        );
+        const retryItems = itemsRoot.querySelectorAll('[data-xeg-role="gallery-item"]');
         const retryTarget = retryItems[index] as HTMLElement;
         if (retryTarget) {
           options.onScrollStart?.();
           retryTarget.scrollIntoView({
             behavior: behavior(),
-            block: alignToCenter() ? "center" : block(),
-            inline: "nearest",
+            block: alignToCenter() ? 'center' : block(),
+            inline: 'nearest',
           });
         }
       });
@@ -87,11 +82,11 @@ export function useGalleryItemScroll(
 
   // Auto-scroll when index changes
   createEffect(
-    on(currentIndexAccessor, (index) => {
+    on(currentIndexAccessor, index => {
       if (untrack(enabled) && !untrack(isScrolling)) {
         scrollToItem(index);
       }
-    }),
+    })
   );
 
   return {

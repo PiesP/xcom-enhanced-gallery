@@ -1,7 +1,7 @@
-import { getSolid } from "@shared/external/vendors";
-import type { MediaInfo } from "@shared/types";
-import { globalTimerManager } from "@shared/utils/time/timer-management";
-import type { Accessor } from "solid-js";
+import { getSolid } from '@shared/external/vendors';
+import type { MediaInfo } from '@shared/types';
+import { globalTimerManager } from '@shared/utils/time/timer-management';
+import type { Accessor } from 'solid-js';
 
 interface UseGalleryInitialScrollProps {
   isVisible: Accessor<boolean>;
@@ -11,8 +11,8 @@ interface UseGalleryInitialScrollProps {
   scrollToItem: (index: number) => Promise<void> | void;
   applyFocusAfterNavigation: (
     index: number,
-    trigger: "init",
-    options?: { force?: boolean },
+    trigger: 'init',
+    options?: { force?: boolean }
   ) => void;
 }
 
@@ -27,18 +27,15 @@ export function useGalleryInitialScroll({
   const { createEffect } = getSolid();
   let hasPerformedInitialScroll = false;
 
-  const waitForMediaLoad = (
-    element: Element,
-    timeoutMs: number = 1000,
-  ): Promise<void> => {
-    return new Promise((resolve) => {
-      if (element.getAttribute("data-media-loaded") === "true") {
+  const waitForMediaLoad = (element: Element, timeoutMs: number = 1000): Promise<void> => {
+    return new Promise(resolve => {
+      if (element.getAttribute('data-media-loaded') === 'true') {
         resolve();
         return;
       }
 
       const checkInterval = globalTimerManager.setInterval(() => {
-        if (element.getAttribute("data-media-loaded") === "true") {
+        if (element.getAttribute('data-media-loaded') === 'true') {
           globalTimerManager.clearInterval(checkInterval);
           globalTimerManager.clearTimeout(timeoutId);
           resolve();
@@ -69,7 +66,7 @@ export function useGalleryInitialScroll({
     }
 
     scrollToItem(currentIdx);
-    applyFocusAfterNavigation(currentIdx, "init", { force: true });
+    applyFocusAfterNavigation(currentIdx, 'init', { force: true });
   };
 
   createEffect(() => {
@@ -87,19 +84,14 @@ export function useGalleryInitialScroll({
     if (!container || items.length === 0) return;
 
     const itemsContainer = container.querySelector(
-      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
+      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
     );
-    const galleryItems = itemsContainer?.querySelectorAll(
-      '[data-xeg-role="gallery-item"]',
-    );
+    const galleryItems = itemsContainer?.querySelectorAll('[data-xeg-role="gallery-item"]');
     if (!itemsContainer || !galleryItems || galleryItems.length === 0) return;
 
     hasPerformedInitialScroll = true;
 
-    if (
-      typeof window !== "undefined" &&
-      typeof window.requestAnimationFrame === "function"
-    ) {
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(async () => {
           const currentIdx = currentIndex();
@@ -113,7 +105,7 @@ export function useGalleryInitialScroll({
             }
 
             await scrollToItem(currentIdx);
-            applyFocusAfterNavigation(currentIdx, "init", { force: true });
+            applyFocusAfterNavigation(currentIdx, 'init', { force: true });
           }
         });
       });
@@ -127,13 +119,13 @@ export function useGalleryInitialScroll({
         if (itemElement) {
           void waitForMediaLoad(itemElement, 1000).then(async () => {
             scrollToItem(currentIdx);
-            applyFocusAfterNavigation(currentIdx, "init", { force: true });
+            applyFocusAfterNavigation(currentIdx, 'init', { force: true });
           });
           return;
         }
 
         scrollToItem(currentIdx);
-        applyFocusAfterNavigation(currentIdx, "init", { force: true });
+        applyFocusAfterNavigation(currentIdx, 'init', { force: true });
         return;
       }
     }

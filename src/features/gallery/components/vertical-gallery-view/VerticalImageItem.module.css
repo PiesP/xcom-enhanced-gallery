@@ -74,10 +74,7 @@
 
 /* 포커스 상태는 보더 색상만 변경 */
 .container:focus-visible {
-  border-color: var(
-    --xeg-focus-indicator-color,
-    var(--xeg-color-border-primary)
-  );
+  border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-primary));
 }
 
 /* 활성 상태 - 더 강한 강조 */
@@ -89,18 +86,12 @@
 
 /* 활성+포커스 상태 - 중복 제거 */
 .container.active:focus-visible {
-  border-color: var(
-    --xeg-focus-indicator-color,
-    var(--xeg-color-border-strong)
-  );
+  border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-strong));
 }
 
 /* 포커스된 상태 (스크롤 대상) */
 .container.focused {
-  border-color: var(
-    --xeg-focus-indicator-color,
-    var(--xeg-color-border-primary)
-  );
+  border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-primary));
   transition: var(--xeg-transition-interaction-fast);
 }
 
@@ -443,17 +434,11 @@
   max-block-size: var(--xeg-gallery-fit-height-target);
   inline-size: min(
     100%,
-    calc(
-      var(--xeg-gallery-fit-height-target) *
-        var(--xeg-gallery-item-intrinsic-ratio, 1)
-    )
+    calc(var(--xeg-gallery-fit-height-target) * var(--xeg-gallery-item-intrinsic-ratio, 1))
   );
   max-inline-size: min(
     100%,
-    calc(
-      var(--xeg-gallery-fit-height-target) *
-        var(--xeg-gallery-item-intrinsic-ratio, 1)
-    )
+    calc(var(--xeg-gallery-fit-height-target) * var(--xeg-gallery-item-intrinsic-ratio, 1))
   );
 }
 
@@ -468,10 +453,7 @@
   max-block-size: var(--xeg-gallery-fit-height-target);
   max-inline-size: min(
     100%,
-    calc(
-      var(--xeg-gallery-fit-height-target) *
-        var(--xeg-gallery-item-intrinsic-ratio, 1)
-    )
+    calc(var(--xeg-gallery-fit-height-target) * var(--xeg-gallery-item-intrinsic-ratio, 1))
   );
 }
 

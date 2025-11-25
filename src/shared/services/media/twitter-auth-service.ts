@@ -1,5 +1,5 @@
-import { logger } from "@shared/logging";
-import { getCookieService } from "@shared/services/cookie-service";
+import { logger } from '@shared/logging';
+import { getCookieService } from '@shared/services/cookie-service';
 
 /**
  * Twitter Authentication Service
@@ -20,18 +20,18 @@ export class TwitterAuthService {
     }
 
     // Try synchronous access first
-    this._csrfToken = this.cookieService.getValueSync("ct0");
+    this._csrfToken = this.cookieService.getValueSync('ct0');
 
     // Fallback to async access if needed (though usually sync is enough for cookies)
     void this.cookieService
-      .getValue("ct0")
-      .then((value) => {
+      .getValue('ct0')
+      .then(value => {
         if (value) {
           this._csrfToken = value;
         }
       })
-      .catch((error) => {
-        logger.debug("Failed to hydrate CSRF token from GM_cookie", error);
+      .catch(error => {
+        logger.debug('Failed to hydrate CSRF token from GM_cookie', error);
       });
 
     this._tokensInitialized = true;

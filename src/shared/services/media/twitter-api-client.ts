@@ -4,13 +4,13 @@
  * @version 3.0.0 - Refactored for modularity
  */
 
-import { TWITTER_API_CONFIG } from "@/constants";
-import { logger } from "@shared/logging";
-import { sortMediaByVisualOrder } from "@shared/media/media-utils";
-import { HttpRequestService } from "@shared/services/http-request-service";
-import { TwitterAuthService } from "./twitter-auth-service";
-import { TwitterResponseParser } from "./twitter-response-parser";
-import type { TweetMediaEntry, TwitterAPIResponse } from "./types";
+import { TWITTER_API_CONFIG } from '@/constants';
+import { logger } from '@shared/logging';
+import { sortMediaByVisualOrder } from '@shared/media/media-utils';
+import { HttpRequestService } from '@shared/services/http-request-service';
+import { TwitterAuthService } from './twitter-auth-service';
+import { TwitterResponseParser } from './twitter-response-parser';
+import type { TweetMediaEntry, TwitterAPIResponse } from './types';
 
 /**
  * TwitterAPI - Facade for Twitter Media Extraction
@@ -27,9 +27,7 @@ export class TwitterAPI {
   /**
    * Get Tweet Medias - Main API Entry Point
    */
-  public static async getTweetMedias(
-    tweetId: string,
-  ): Promise<TweetMediaEntry[]> {
+  public static async getTweetMedias(tweetId: string): Promise<TweetMediaEntry[]> {
     const url = this.createTweetEndpointUrl(tweetId);
     const json = await this.apiRequest(url);
 
@@ -45,11 +43,7 @@ export class TwitterAPI {
     if (!tweetUser) return [];
     TwitterResponseParser.normalizeLegacyUser(tweetUser);
 
-    let result = TwitterResponseParser.extractMediaFromTweet(
-      tweetResult,
-      tweetUser,
-      "original",
-    );
+    let result = TwitterResponseParser.extractMediaFromTweet(tweetResult, tweetUser, 'original');
 
     // Sort by visual order
     result = sortMediaByVisualOrder(result);
@@ -68,12 +62,12 @@ export class TwitterAPI {
         const quotedMedia = TwitterResponseParser.extractMediaFromTweet(
           quotedTweet,
           quotedUser,
-          "quoted",
+          'quoted'
         );
 
         const sortedQuotedMedia = sortMediaByVisualOrder(quotedMedia);
 
-        const adjustedResult = result.map((media) => ({
+        const adjustedResult = result.map(media => ({
           ...media,
           index: media.index + sortedQuotedMedia.length,
         }));
@@ -98,39 +92,37 @@ export class TwitterAPI {
     // Build headers
     const headers = new Headers({
       authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
-      "x-csrf-token": TwitterAuthService.csrfToken ?? "",
-      "x-twitter-client-language": "en",
-      "x-twitter-active-user": "yes",
-      "content-type": "application/json",
-      "x-twitter-auth-type": "OAuth2Session",
+      'x-csrf-token': TwitterAuthService.csrfToken ?? '',
+      'x-twitter-client-language': 'en',
+      'x-twitter-active-user': 'yes',
+      'content-type': 'application/json',
+      'x-twitter-auth-type': 'OAuth2Session',
     });
 
-    if (typeof window !== "undefined") {
-      headers.append("referer", window.location.href);
-      headers.append("origin", window.location.origin);
+    if (typeof window !== 'undefined') {
+      headers.append('referer', window.location.href);
+      headers.append('origin', window.location.origin);
     }
 
     try {
       const httpService = HttpRequestService.getInstance();
       const response = await httpService.get<TwitterAPIResponse>(_url, {
         headers: Object.fromEntries(headers.entries()),
-        responseType: "json",
+        responseType: 'json',
       });
 
       if (!response.ok) {
         logger.warn(
           `Twitter API request failed: ${response.status} ${response.statusText}`,
-          response.data,
+          response.data
         );
-        throw new Error(
-          `Twitter API request failed: ${response.status} ${response.statusText}`,
-        );
+        throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
       }
 
       const json = response.data;
 
       if (json.errors && json.errors.length > 0) {
-        logger.warn("Twitter API returned errors:", json.errors);
+        logger.warn('Twitter API returned errors:', json.errors);
       }
 
       // Cache on success
@@ -144,7 +136,7 @@ export class TwitterAPI {
 
       return json;
     } catch (error) {
-      logger.error("Twitter API request failed:", error);
+      logger.error('Twitter API request failed:', error);
       throw error;
     }
   }
@@ -153,7 +145,7 @@ export class TwitterAPI {
    * Construct the GraphQL endpoint URL for fetching tweet details.
    */
   private static createTweetEndpointUrl(tweetId: string): string {
-    const sitename = window.location.hostname.replace(".com", "");
+    const sitename = window.location.hostname.replace('.com', '');
 
     const variables = {
       tweetId,
@@ -204,9 +196,9 @@ export class TwitterAPI {
 
     const urlBase = `https://${sitename}.com/i/api/graphql/${TWITTER_API_CONFIG.TWEET_RESULT_BY_REST_ID_QUERY_ID}/TweetResultByRestId`;
     const urlObj = new URL(urlBase);
-    urlObj.searchParams.set("variables", JSON.stringify(variables));
-    urlObj.searchParams.set("features", JSON.stringify(features));
-    urlObj.searchParams.set("fieldToggles", JSON.stringify(fieldToggles));
+    urlObj.searchParams.set('variables', JSON.stringify(variables));
+    urlObj.searchParams.set('features', JSON.stringify(features));
+    urlObj.searchParams.set('fieldToggles', JSON.stringify(fieldToggles));
     return urlObj.toString();
   }
 }

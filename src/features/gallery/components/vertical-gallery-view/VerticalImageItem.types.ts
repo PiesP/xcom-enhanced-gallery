@@ -13,9 +13,9 @@
  * @version 1.1.0 - Enhanced documentation and type clarity (Phase 354+)
  */
 
-import type { GalleryComponentProps } from "@shared/components/hoc";
-import type { ImageFitMode } from "@shared/types";
-import type { MediaInfo } from "@shared/types/media.types";
+import type { GalleryComponentProps } from '@shared/components/hoc';
+import type { ImageFitMode } from '@shared/types';
+import type { MediaInfo } from '@shared/types/media.types';
 
 /**
  * Fit mode prop that can be either a direct value or a function that returns it
@@ -151,19 +151,19 @@ export interface VerticalImageItemProps extends GalleryComponentProps {
    * Test identifier for automated testing
    * @optional
    */
-  readonly "data-testid"?: string;
+  readonly 'data-testid'?: string;
 
   /**
    * Accessible name for screen readers
    * @optional
    */
-  readonly "aria-label"?: string;
+  readonly 'aria-label'?: string;
 
   /**
    * ID of description element for accessibility
    * @optional
    */
-  readonly "aria-describedby"?: string;
+  readonly 'aria-describedby'?: string;
 
   /**
    * ARIA role attribute

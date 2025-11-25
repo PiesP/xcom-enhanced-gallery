@@ -74,18 +74,14 @@
     --toolbar-surface-base,
     var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface))
   );
-  --toolbar-button-accent: var(
-    --toolbar-surface-border,
-    var(--xeg-toolbar-border)
-  );
+  --toolbar-button-accent: var(--toolbar-surface-border, var(--xeg-toolbar-border));
   --toolbar-button-accent-hover: var(--xeg-color-border-hover);
   --toolbar-button-focus-border: var(
     --xeg-focus-indicator-color,
     var(--toolbar-button-accent-hover)
   );
 
-  border: var(--border-width-thin) solid
-    var(--toolbar-button-accent, var(--xeg-toolbar-border));
+  border: var(--border-width-thin) solid var(--toolbar-button-accent, var(--xeg-toolbar-border));
   transition:
     var(--xeg-transition-surface-fast),
     transform var(--xeg-duration-fast) var(--xeg-ease-standard);
@@ -103,10 +99,7 @@
 
 .galleryToolbar {
   /* 레이아웃 속성만 정의 - semantic 토큰 사용 (alias 제거) */
-  --toolbar-surface-base: var(
-    --xeg-toolbar-panel-surface,
-    var(--xeg-toolbar-surface)
-  );
+  --toolbar-surface-base: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
   --toolbar-surface-border: var(--xeg-toolbar-border);
   --xeg-button-disabled-opacity: 1;
 
@@ -205,10 +198,7 @@
 }
 
 /* 데이터 속성 기반 상태 관리 */
-:where(
-  .toolbarButton[data-active="true"],
-  .toolbarButton[data-selected="true"]
-) {
+:where(.toolbarButton[data-active="true"], .toolbarButton[data-selected="true"]) {
   border-color: var(--toolbar-button-accent-hover);
 }
 
@@ -342,10 +332,7 @@ button.fitButton {
 
 .fitButton:focus,
 .fitButton:focus-visible {
-  border-color: var(
-    --toolbar-button-focus-border,
-    var(--xeg-color-border-hover)
-  );
+  border-color: var(--toolbar-button-focus-border, var(--xeg-color-border-hover));
 }
 
 /* 다운로드 버튼 - 기본 스타일 상속 */
@@ -484,8 +471,7 @@ button.fitButton {
     --toolbar-surface-base,
     var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface))
   );
-  border: var(--border-width-thin) solid
-    var(--toolbar-surface-border, var(--xeg-toolbar-border));
+  border: var(--border-width-thin) solid var(--toolbar-surface-border, var(--xeg-toolbar-border));
   border-radius: var(--xeg-radius-md);
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -514,10 +500,7 @@ button.fitButton {
 }
 
 .tweetContent::-webkit-scrollbar-thumb:hover {
-  background: var(
-    --xeg-toolbar-element-bg-strong,
-    var(--xeg-color-neutral-500)
-  );
+  background: var(--xeg-toolbar-element-bg-strong, var(--xeg-color-neutral-500));
 }
 
 /* Tweet Link Styles - Phase 1: Safe text formatting */
@@ -536,8 +519,7 @@ button.fitButton {
 
 :where(.tweetLink, .tweetContent a):focus,
 :where(.tweetLink, .tweetContent a):focus-visible {
-  outline: 0.125rem solid
-    var(--xeg-focus-indicator-color, var(--xeg-color-primary));
+  outline: 0.125rem solid var(--xeg-focus-indicator-color, var(--xeg-color-primary));
   outline-offset: 0.125rem;
   border-radius: var(--xeg-radius-xs);
 }

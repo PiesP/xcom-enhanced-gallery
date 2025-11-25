@@ -58,10 +58,7 @@
   color: inherit;
   /* Focus state */
   &:focus-visible {
-    border-color: var(
-      --xeg-focus-indicator-color,
-      var(--xeg-color-border-primary)
-    );
+    border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-primary));
     z-index: 1;
   }
 

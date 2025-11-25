@@ -1,9 +1,9 @@
-import { getLanguageService } from "@shared/container/service-accessors";
-import type { JSXElement } from "@shared/external/vendors";
-import { getSolid } from "@shared/external/vendors";
-import { formatTweetText, shortenUrl } from "@shared/utils/text/formatting";
-import { sanitizeHTML } from "@shared/utils/text/html-sanitizer";
-import styles from "./Toolbar.module.css";
+import { getLanguageService } from '@shared/container/service-accessors';
+import type { JSXElement } from '@shared/external/vendors';
+import { getSolid } from '@shared/external/vendors';
+import { formatTweetText, shortenUrl } from '@shared/utils/text/formatting';
+import { sanitizeHTML } from '@shared/utils/text/html-sanitizer';
+import styles from './Toolbar.module.css';
 
 const solid = getSolid();
 const { For, Switch, Match } = solid;
@@ -13,13 +13,13 @@ interface TweetTextPanelProps {
   tweetTextHTML: string | undefined;
 }
 
-type TweetAnchorKind = "url" | "mention" | "hashtag" | "cashtag";
+type TweetAnchorKind = 'url' | 'mention' | 'hashtag' | 'cashtag';
 type TweetTokenAccessor = () => { content: string; href: string };
 
 function renderTweetAnchor(
   accessor: TweetTokenAccessor,
   kind: TweetAnchorKind,
-  displayText?: string,
+  displayText?: string
 ): JSXElement {
   const token = accessor();
 
@@ -30,7 +30,7 @@ function renderTweetAnchor(
       rel="noopener noreferrer"
       class={styles.tweetLink}
       data-kind={kind}
-      onClick={(e) => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
     >
       {displayText ?? token.content}
     </a>
@@ -42,7 +42,7 @@ export default function TweetTextPanel(props: TweetTextPanelProps) {
     <div class={styles.tweetPanelBody}>
       <div class={styles.tweetTextHeader}>
         <span class={styles.tweetTextLabel}>
-          {getLanguageService().translate("toolbar.tweetText") || "Tweet text"}
+          {getLanguageService().translate('toolbar.tweetText') || 'Tweet text'}
         </span>
       </div>
       <div
@@ -59,32 +59,28 @@ export default function TweetTextPanel(props: TweetTextPanelProps) {
           */
           <div innerHTML={sanitizeHTML(props.tweetTextHTML)} />
         ) : (
-          <For each={formatTweetText(props.tweetText ?? "")}>
-            {(token) => (
+          <For each={formatTweetText(props.tweetText ?? '')}>
+            {token => (
               <Switch>
-                <Match when={token.type === "link" && token}>
-                  {(linkToken) =>
-                    renderTweetAnchor(
-                      linkToken,
-                      "url",
-                      shortenUrl(linkToken().content, 40),
-                    )
+                <Match when={token.type === 'link' && token}>
+                  {linkToken =>
+                    renderTweetAnchor(linkToken, 'url', shortenUrl(linkToken().content, 40))
                   }
                 </Match>
-                <Match when={token.type === "mention" && token}>
-                  {(mentionToken) => renderTweetAnchor(mentionToken, "mention")}
+                <Match when={token.type === 'mention' && token}>
+                  {mentionToken => renderTweetAnchor(mentionToken, 'mention')}
                 </Match>
-                <Match when={token.type === "hashtag" && token}>
-                  {(hashtagToken) => renderTweetAnchor(hashtagToken, "hashtag")}
+                <Match when={token.type === 'hashtag' && token}>
+                  {hashtagToken => renderTweetAnchor(hashtagToken, 'hashtag')}
                 </Match>
-                <Match when={token.type === "cashtag" && token}>
-                  {(cashtagToken) => renderTweetAnchor(cashtagToken, "cashtag")}
+                <Match when={token.type === 'cashtag' && token}>
+                  {cashtagToken => renderTweetAnchor(cashtagToken, 'cashtag')}
                 </Match>
-                <Match when={token.type === "break"}>
+                <Match when={token.type === 'break'}>
                   <br />
                 </Match>
-                <Match when={token.type === "text" && token}>
-                  {(textToken) => <span>{textToken().content}</span>}
+                <Match when={token.type === 'text' && token}>
+                  {textToken => <span>{textToken().content}</span>}
                 </Match>
               </Switch>
             )}

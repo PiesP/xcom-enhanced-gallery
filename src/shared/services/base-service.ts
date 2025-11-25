@@ -3,8 +3,8 @@
  * @module @shared/services/base-service
  */
 
-import { logger } from "@shared/logging";
-import type { BaseService } from "@shared/types/app.types";
+import { logger } from '@shared/logging';
+import type { BaseService } from '@shared/types/app.types';
 
 /**
  * Abstract base class for service lifecycle management.

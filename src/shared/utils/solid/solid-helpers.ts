@@ -3,7 +3,7 @@
  * @description Phase 141.3: Accessor type conversion helper, remove type assertions
  */
 
-import type { Accessor } from "solid-js";
+import type { Accessor } from 'solid-js';
 
 /**
  * Convert value to Accessor
@@ -19,5 +19,5 @@ import type { Accessor } from "solid-js";
  * ```
  */
 export function toAccessor<T>(value: T | Accessor<T>): Accessor<T> {
-  return typeof value === "function" ? (value as Accessor<T>) : () => value;
+  return typeof value === 'function' ? (value as Accessor<T>) : () => value;
 }

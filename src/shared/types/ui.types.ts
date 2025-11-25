@@ -11,40 +11,34 @@
  * - 'dark': Force dark mode
  * - 'auto': Auto-apply system settings
  */
-export type Theme = "light" | "dark" | "auto";
+export type Theme = 'light' | 'dark' | 'auto';
 
 /**
  * Gallery-specific theme selection (extends Theme)
  *
  * @see {@link Theme} - Base theme type
  */
-export type GalleryTheme = "light" | "dark" | "auto" | "system";
+export type GalleryTheme = 'light' | 'dark' | 'auto' | 'system';
 
 /**
  * Button variant
  */
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 /**
  * Button size
  */
-export type ButtonSize = "sm" | "md" | "lg";
+export type ButtonSize = 'sm' | 'md' | 'lg';
 
 /**
  * Color variant
  */
-export type ColorVariant =
-  | "primary"
-  | "secondary"
-  | "success"
-  | "warning"
-  | "error"
-  | "info";
+export type ColorVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
 
 /**
  * Loading state (async operation progress)
  */
-export type LoadingState = "idle" | "loading" | "success" | "error";
+export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 
 /**
  * Async state object
@@ -93,11 +87,7 @@ export interface AnimationConfig {
  * - 'fitHeight': Fit to height
  * - 'fitContainer': Fill container
  */
-export type ImageFitMode =
-  | "original"
-  | "fitWidth"
-  | "fitHeight"
-  | "fitContainer";
+export type ImageFitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
 
 /**
  * Image fit options
@@ -135,19 +125,12 @@ export interface ImageFitCallbacks {
  * - 'timestamp': Include timestamp (e.g., 20250101_120000_media)
  * - 'custom': Custom format
  */
-export type FilenameStrategy = "simple" | "detailed" | "timestamp" | "custom";
+export type FilenameStrategy = 'simple' | 'detailed' | 'timestamp' | 'custom';
 
 /**
  * Media file extension
  */
-export type MediaFileExtension =
-  | "jpg"
-  | "jpeg"
-  | "png"
-  | "gif"
-  | "webp"
-  | "mp4"
-  | "mov";
+export type MediaFileExtension = 'jpg' | 'jpeg' | 'png' | 'gif' | 'webp' | 'mp4' | 'mov';
 
 /**
  * Global configuration

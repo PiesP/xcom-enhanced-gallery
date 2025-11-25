@@ -5,7 +5,7 @@
  * Prevent unnecessary re-renders to optimize performance.
  */
 
-import { getSolid } from "@shared/external/vendors";
+import { getSolid } from '@shared/external/vendors';
 
 // Type definitions
 type Signal<T> = {
@@ -39,7 +39,7 @@ export interface SelectorOptions<T> {
  */
 function createSelector<T, R>(
   selector: SelectorFn<T, R>,
-  options: SelectorOptions<T> = {},
+  options: SelectorOptions<T> = {}
 ): SelectorFn<T, R> {
   const { dependencies } = options;
 
@@ -57,11 +57,7 @@ function createSelector<T, R>(
     if (dependencies) {
       const currentDependencies = dependencies(state);
 
-      if (
-        hasResult &&
-        lastDependencies &&
-        shallowEqual(lastDependencies, currentDependencies)
-      ) {
+      if (hasResult && lastDependencies && shallowEqual(lastDependencies, currentDependencies)) {
         return lastResult;
       }
 
@@ -93,7 +89,7 @@ function createSelector<T, R>(
 export function useSelector<T, R>(
   signalInstance: Signal<T>,
   selector: SelectorFn<T, R>,
-  options: SelectorOptions<T> = {},
+  options: SelectorOptions<T> = {}
 ): () => R {
   const { createMemo } = getSolid();
 

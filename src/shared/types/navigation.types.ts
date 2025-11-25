@@ -10,4 +10,4 @@
  *
  * Tracks navigation source to distinguish auto-focus from manual navigation
  */
-export type NavigationSource = "button" | "keyboard" | "scroll" | "auto-focus";
+export type NavigationSource = 'button' | 'keyboard' | 'scroll' | 'auto-focus';

@@ -1,24 +1,21 @@
-import { BaseServiceImpl } from "@shared/services/base-service";
-import {
-  generateMediaFilename,
-  generateZipFilename,
-} from "@shared/services/filename-service";
-import type { MediaInfo } from "@shared/types/media.types";
-import { ErrorCode } from "@shared/types/result.types";
-import { downloadSingleFile, getGMDownload } from "./single-download";
+import { BaseServiceImpl } from '@shared/services/base-service';
+import { generateMediaFilename, generateZipFilename } from '@shared/services/filename-service';
+import type { MediaInfo } from '@shared/types/media.types';
+import { ErrorCode } from '@shared/types/result.types';
+import { downloadSingleFile, getGMDownload } from './single-download';
 import type {
   BulkDownloadResult,
   DownloadOptions,
   OrchestratorItem,
   SingleDownloadResult,
-} from "./types";
-import { downloadAsZip } from "./zip-download";
+} from './types';
+import { downloadAsZip } from './zip-download';
 
 export class DownloadOrchestrator extends BaseServiceImpl {
   private static instance: DownloadOrchestrator | null = null;
 
   private constructor() {
-    super("DownloadOrchestrator");
+    super('DownloadOrchestrator');
   }
 
   public static getInstance(): DownloadOrchestrator {
@@ -38,16 +35,16 @@ export class DownloadOrchestrator extends BaseServiceImpl {
 
   public async downloadSingle(
     media: MediaInfo,
-    options: DownloadOptions = {},
+    options: DownloadOptions = {}
   ): Promise<SingleDownloadResult> {
     return downloadSingleFile(media, options);
   }
 
   public async downloadBulk(
     mediaItems: MediaInfo[],
-    options: DownloadOptions = {},
+    options: DownloadOptions = {}
   ): Promise<BulkDownloadResult> {
-    const items: OrchestratorItem[] = mediaItems.map((media) => ({
+    const items: OrchestratorItem[] = mediaItems.map(media => ({
       url: media.url,
       desiredName: generateMediaFilename(media),
       blob: options.prefetchedBlobs?.get(media.url),
@@ -59,17 +56,17 @@ export class DownloadOrchestrator extends BaseServiceImpl {
       if (result.filesSuccessful === 0) {
         return {
           success: false,
-          status: "error",
+          status: 'error',
           filesProcessed: items.length,
           filesSuccessful: 0,
-          error: "No files downloaded",
+          error: 'No files downloaded',
           failures: result.failures,
           code: ErrorCode.ALL_FAILED,
         };
       }
 
       const zipBlob = new Blob([result.zipData as unknown as BlobPart], {
-        type: "application/zip",
+        type: 'application/zip',
       });
       const filename = options.zipFilename || generateZipFilename(mediaItems);
       const url = URL.createObjectURL(zipBlob);
@@ -83,11 +80,11 @@ export class DownloadOrchestrator extends BaseServiceImpl {
             name: filename,
             onload: () => resolve(),
             onerror: (err: unknown) => reject(err),
-            ontimeout: () => reject(new Error("Timeout")),
+            ontimeout: () => reject(new Error('Timeout')),
           });
         });
       } else {
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.href = url;
         a.download = filename;
         a.click();
@@ -97,7 +94,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
 
       return {
         success: true,
-        status: result.filesSuccessful === items.length ? "success" : "partial",
+        status: result.filesSuccessful === items.length ? 'success' : 'partial',
         filesProcessed: items.length,
         filesSuccessful: result.filesSuccessful,
         filename,
@@ -107,10 +104,10 @@ export class DownloadOrchestrator extends BaseServiceImpl {
     } catch (error) {
       return {
         success: false,
-        status: "error",
+        status: 'error',
         filesProcessed: items.length,
         filesSuccessful: 0,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
         code: ErrorCode.ALL_FAILED,
       };
     }

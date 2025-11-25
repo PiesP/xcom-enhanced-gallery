@@ -8,7 +8,7 @@
  * - Minimal bundle size (+~200 bytes)
  */
 
-import { logger } from "@shared/logging";
+import { logger } from '@shared/logging';
 
 /**
  * Create type-safe event emitter
@@ -36,10 +36,7 @@ export function createEventEmitter<T extends Record<string, unknown>>() {
      * Register event listener
      * @returns Unsubscribe function
      */
-    on<K extends keyof T>(
-      event: K,
-      callback: (data: T[K]) => void,
-    ): () => void {
+    on<K extends keyof T>(event: K, callback: (data: T[K]) => void): () => void {
       if (!listeners.has(event)) {
         listeners.set(event, new Set());
       }
@@ -60,15 +57,12 @@ export function createEventEmitter<T extends Record<string, unknown>>() {
         return;
       }
 
-      eventListeners.forEach((callback) => {
+      eventListeners.forEach(callback => {
         try {
           callback(data);
         } catch (error) {
           // Error isolation: one listener failure doesn't prevent other listeners
-          logger.error(
-            `[EventEmitter] Listener error for event "${String(event)}":`,
-            error,
-          );
+          logger.error(`[EventEmitter] Listener error for event "${String(event)}":`, error);
         }
       });
     },

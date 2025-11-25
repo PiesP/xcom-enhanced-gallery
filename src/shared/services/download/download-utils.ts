@@ -7,9 +7,9 @@ export function ensureUniqueFilenameFactory() {
       baseCounts.set(desired, 0);
       return desired;
     }
-    const lastDot = desired.lastIndexOf(".");
+    const lastDot = desired.lastIndexOf('.');
     const name = lastDot > 0 ? desired.slice(0, lastDot) : desired;
-    const ext = lastDot > 0 ? desired.slice(lastDot) : "";
+    const ext = lastDot > 0 ? desired.slice(lastDot) : '';
     const baseKey = desired;
     let count = baseCounts.get(baseKey) ?? 0;
     while (true) {

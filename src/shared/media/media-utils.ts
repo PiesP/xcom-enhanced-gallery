@@ -2,9 +2,9 @@
  * @fileoverview Shared media utility functions for dimension extraction, URL normalization, and sorting.
  */
 
-import { logger } from "@shared/logging";
-import type { TweetMediaEntry } from "@shared/services/media/types";
-import type { MediaInfo } from "@shared/types/media.types";
+import { logger } from '@shared/logging';
+import type { TweetMediaEntry } from '@shared/services/media/types';
+import type { MediaInfo } from '@shared/types/media.types';
 
 /**
  * Generic deduplication function
@@ -13,10 +13,7 @@ import type { MediaInfo } from "@shared/types/media.types";
  * @param keyExtractor - Function to extract unique key from each item
  * @returns Deduplicated array (original order preserved)
  */
-function removeDuplicates<T>(
-  items: readonly T[],
-  keyExtractor: (item: T) => string,
-): T[] {
+function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => string): T[] {
   if (!items?.length) {
     return [];
   }
@@ -31,7 +28,7 @@ function removeDuplicates<T>(
 
     const key = keyExtractor(item);
     if (!key) {
-      logger.warn("Skipping item without key");
+      logger.warn('Skipping item without key');
       continue;
     }
 
@@ -49,18 +46,13 @@ function removeDuplicates<T>(
  * @param mediaItems - Array of media items to deduplicate
  * @returns Deduplicated array of media items
  */
-export function removeDuplicateMediaItems(
-  mediaItems: readonly MediaInfo[],
-): MediaInfo[] {
-  const result = removeDuplicates(
-    mediaItems,
-    (item) => item.originalUrl ?? item.url,
-  );
+export function removeDuplicateMediaItems(mediaItems: readonly MediaInfo[]): MediaInfo[] {
+  const result = removeDuplicates(mediaItems, item => item.originalUrl ?? item.url);
 
   // Log deduplication results for performance analysis
   const removedCount = mediaItems.length - result.length;
   if (removedCount > 0) {
-    logger.debug("Removed duplicate media items:", {
+    logger.debug('Removed duplicate media items:', {
       original: mediaItems.length,
       unique: result.length,
       removed: removedCount,
@@ -80,9 +72,7 @@ export function extractVisualIndexFromUrl(url: string): number {
   const visualNumberStr = match?.[2];
   if (visualNumberStr) {
     const visualNumber = Number.parseInt(visualNumberStr, 10);
-    return Number.isFinite(visualNumber) && visualNumber > 0
-      ? visualNumber - 1
-      : 0;
+    return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
   }
   return 0;
 }
@@ -90,12 +80,10 @@ export function extractVisualIndexFromUrl(url: string): number {
 /**
  * Sort media by visual display order
  */
-export function sortMediaByVisualOrder(
-  mediaItems: TweetMediaEntry[],
-): TweetMediaEntry[] {
+export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMediaEntry[] {
   if (mediaItems.length <= 1) return mediaItems;
 
-  const withVisualIndex = mediaItems.map((media) => {
+  const withVisualIndex = mediaItems.map(media => {
     const visualIndex = extractVisualIndexFromUrl(media.expanded_url);
     return { media, visualIndex };
   });
@@ -111,22 +99,15 @@ export function sortMediaByVisualOrder(
 /**
  * Extract Dimensions from URL - Parse WxH Pattern
  */
-export function extractDimensionsFromUrl(
-  url: string,
-): { width: number; height: number } | null {
+export function extractDimensionsFromUrl(url: string): { width: number; height: number } | null {
   if (!url) return null;
   const match = url.match(/\/(\d{2,6})x(\d{2,6})\//);
   if (!match) return null;
 
-  const width = Number.parseInt(match[1] ?? "", 10);
-  const height = Number.parseInt(match[2] ?? "", 10);
+  const width = Number.parseInt(match[1] ?? '', 10);
+  const height = Number.parseInt(match[2] ?? '', 10);
 
-  if (
-    !Number.isFinite(width) ||
-    width <= 0 ||
-    !Number.isFinite(height) ||
-    height <= 0
-  ) {
+  if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
     return null;
   }
 
@@ -137,10 +118,10 @@ export function extractDimensionsFromUrl(
  * Normalize Dimension - Type-Safe Number Parsing
  */
 export function normalizeDimension(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
     return Math.round(value);
   }
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     const parsed = Number.parseFloat(value);
     if (Number.isFinite(parsed) && parsed > 0) {
       return Math.round(parsed);
@@ -166,10 +147,10 @@ export function normalizeMediaUrl(url: string): string | null {
   try {
     const urlObj = new URL(url);
     const pathname = urlObj.pathname;
-    let filename = pathname.split("/").pop();
+    let filename = pathname.split('/').pop();
 
     if (filename) {
-      const dotIndex = filename.lastIndexOf(".");
+      const dotIndex = filename.lastIndexOf('.');
       if (dotIndex !== -1) {
         filename = filename.substring(0, dotIndex);
       }
@@ -178,16 +159,15 @@ export function normalizeMediaUrl(url: string): string | null {
     return filename && filename.length > 0 ? filename : null;
   } catch {
     try {
-      const lastSlash = url.lastIndexOf("/");
+      const lastSlash = url.lastIndexOf('/');
       if (lastSlash === -1) return null;
       let filenamePart = url.substring(lastSlash + 1);
-      const queryIndex = filenamePart.indexOf("?");
-      if (queryIndex !== -1)
-        filenamePart = filenamePart.substring(0, queryIndex);
-      const hashIndex = filenamePart.indexOf("#");
+      const queryIndex = filenamePart.indexOf('?');
+      if (queryIndex !== -1) filenamePart = filenamePart.substring(0, queryIndex);
+      const hashIndex = filenamePart.indexOf('#');
       if (hashIndex !== -1) filenamePart = filenamePart.substring(0, hashIndex);
 
-      const dotIndex = filenamePart.lastIndexOf(".");
+      const dotIndex = filenamePart.lastIndexOf('.');
       if (dotIndex !== -1) {
         filenamePart = filenamePart.substring(0, dotIndex);
       }
@@ -212,21 +192,18 @@ export function normalizeMediaUrl(url: string): string | null {
 export function adjustClickedIndexAfterDeduplication(
   originalItems: MediaInfo[],
   uniqueItems: MediaInfo[],
-  originalClickedIndex: number,
+  originalClickedIndex: number
 ): number {
   if (uniqueItems.length === 0) return 0;
 
   // Normalize original index
-  const safeOriginalIndex = Math.max(
-    0,
-    Math.min(originalClickedIndex, originalItems.length - 1),
-  );
+  const safeOriginalIndex = Math.max(0, Math.min(originalClickedIndex, originalItems.length - 1));
   const clickedItem = originalItems[safeOriginalIndex];
 
   if (!clickedItem) return 0;
 
   const clickedKey = clickedItem.originalUrl ?? clickedItem.url;
-  const newIndex = uniqueItems.findIndex((item) => {
+  const newIndex = uniqueItems.findIndex(item => {
     const itemKey = item.originalUrl ?? item.url;
     return itemKey === clickedKey;
   });

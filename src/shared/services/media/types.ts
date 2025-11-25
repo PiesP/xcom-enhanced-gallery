@@ -67,7 +67,7 @@ export interface TwitterUser {
 
 /** Twitter media object (API format) */
 export interface TwitterMedia {
-  type: "photo" | "video" | "animated_gif";
+  type: 'photo' | 'video' | 'animated_gif';
   id_str: string;
   media_key?: string;
   media_url_https: string;
@@ -93,8 +93,8 @@ export interface TweetMediaEntry {
   screen_name: string;
   tweet_id: string;
   download_url: string;
-  type: "photo" | "video";
-  typeOriginal: "photo" | "video" | "animated_gif";
+  type: 'photo' | 'video';
+  typeOriginal: 'photo' | 'video' | 'animated_gif';
   index: number;
   typeIndex: number;
   typeIndexOriginal: number;
@@ -109,7 +109,7 @@ export interface TweetMediaEntry {
   original_height?: number;
   aspect_ratio?: [number, number];
   /** Media source: 'original' | 'quoted' */
-  sourceLocation?: "original" | "quoted";
+  sourceLocation?: 'original' | 'quoted';
   /** Quoted tweet ID (if from quote) */
   quotedTweetId?: string;
   /** Quoted tweet author */

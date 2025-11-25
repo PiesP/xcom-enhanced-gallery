@@ -4,8 +4,8 @@
  *              before the gallery overlay takes focus.
  */
 
-import { isGalleryInternalElement } from "@shared/dom/utils";
-import { logger } from "@shared/logging";
+import { isGalleryInternalElement } from '@shared/dom/utils';
+import { logger } from '@shared/logging';
 
 type QueryableRoot = Document | DocumentFragment | HTMLElement;
 
@@ -26,9 +26,8 @@ export interface PauseAmbientVideosResult {
 }
 
 function resolveRoot(root?: QueryableRoot | null): QueryableRoot | null {
-  if (root && typeof root.querySelectorAll === "function") return root;
-  return typeof document !== "undefined" &&
-    typeof document.querySelectorAll === "function"
+  if (root && typeof root.querySelectorAll === 'function') return root;
+  return typeof document !== 'undefined' && typeof document.querySelectorAll === 'function'
     ? document
     : null;
 }
@@ -42,7 +41,7 @@ function isVideoPlaying(video: HTMLVideoElement): boolean {
 }
 
 export function pauseActiveTwitterVideos(
-  options: PauseAmbientVideosOptions = {},
+  options: PauseAmbientVideosOptions = {}
 ): PauseAmbientVideosResult {
   const root = resolveRoot(options.root ?? null);
   if (!root) {
@@ -53,7 +52,7 @@ export function pauseActiveTwitterVideos(
   let totalCandidates = 0;
   let skippedCount = 0;
 
-  const videos = Array.from(root.querySelectorAll("video"));
+  const videos = Array.from(root.querySelectorAll('video'));
   if (videos.length === 0) {
     return { ...ZERO_RESULT };
   }
@@ -87,12 +86,12 @@ export function pauseActiveTwitterVideos(
       pausedCount += 1;
     } catch (error) {
       skippedCount += 1;
-      logger.debug("[AmbientVideo] Failed to pause Twitter video", { error });
+      logger.debug('[AmbientVideo] Failed to pause Twitter video', { error });
     }
   }
 
   if (pausedCount > 0) {
-    logger.debug("[AmbientVideo] Ambient Twitter videos paused", {
+    logger.debug('[AmbientVideo] Ambient Twitter videos paused', {
       pausedCount,
       totalCandidates,
       skippedCount,

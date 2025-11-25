@@ -1,5 +1,5 @@
-import { SharedObserver } from "@shared/utils/performance/observer-pool";
-import type { Accessor } from "solid-js";
+import { SharedObserver } from '@shared/utils/performance/observer-pool';
+import type { Accessor } from 'solid-js';
 
 export interface FocusCoordinatorOptions {
   isEnabled: Accessor<boolean>;
@@ -8,14 +8,11 @@ export interface FocusCoordinatorOptions {
   minimumVisibleRatio?: number;
   container: Accessor<HTMLElement | null>;
   debounceTime?: number;
-  onFocusChange: (index: number | null, source: "auto" | "manual") => void;
+  onFocusChange: (index: number | null, source: 'auto' | 'manual') => void;
 }
 
 export class FocusCoordinator {
-  private items = new Map<
-    number,
-    { element: HTMLElement; entry?: IntersectionObserverEntry }
-  >();
+  private items = new Map<number, { element: HTMLElement; entry?: IntersectionObserverEntry }>();
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private options: FocusCoordinatorOptions) {}
@@ -33,15 +30,15 @@ export class FocusCoordinator {
     this.items.set(index, { element });
     SharedObserver.observe(
       element,
-      (entry) => {
+      entry => {
         const item = this.items.get(index);
         if (item) item.entry = entry;
         this.scheduleRecompute();
       },
       {
         threshold: this.options.threshold ?? 0,
-        rootMargin: this.options.rootMargin || "0px",
-      },
+        rootMargin: this.options.rootMargin || '0px',
+      }
     );
   }
 
@@ -87,12 +84,12 @@ export class FocusCoordinator {
     }
 
     if (bestCandidate) {
-      this.options.onFocusChange(bestCandidate.index, "auto");
+      this.options.onFocusChange(bestCandidate.index, 'auto');
     }
   }
 
   cleanup() {
-    this.items.forEach((i) => SharedObserver.unobserve(i.element));
+    this.items.forEach(i => SharedObserver.unobserve(i.element));
     this.items.clear();
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
   }

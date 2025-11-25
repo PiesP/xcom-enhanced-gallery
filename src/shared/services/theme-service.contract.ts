@@ -1,12 +1,12 @@
 /**
  * Theme mode values supported by the application.
  */
-export type Theme = "light" | "dark";
+export type Theme = 'light' | 'dark';
 
 /**
  * Theme setting values stored in settings (auto + explicit themes).
  */
-export type ThemeSetting = "auto" | Theme;
+export type ThemeSetting = 'auto' | Theme;
 
 /**
  * Options for manually setting the theme via ThemeService.
@@ -30,11 +30,7 @@ export interface SettingsServiceLike {
   get?: (key: string) => unknown;
   set?: (key: string, value: unknown) => Promise<void> | void;
   subscribe?: (
-    listener: (event: {
-      key: string;
-      oldValue: unknown;
-      newValue: unknown;
-    }) => void,
+    listener: (event: { key: string; oldValue: unknown; newValue: unknown }) => void
   ) => () => void;
 }
 

@@ -1,40 +1,28 @@
-import type { BaseLanguageCode } from "@shared/constants/i18n/language-types";
-import type { TranslationKey, TranslationParams } from "./types";
-import {
-  TranslationCatalog,
-  type TranslationCatalogOptions,
-} from "./translation-catalog";
-import { resolveTranslationValue } from "./translation-utils";
+import type { BaseLanguageCode } from '@shared/constants/i18n/language-types';
+import type { TranslationKey, TranslationParams } from './types';
+import { TranslationCatalog, type TranslationCatalogOptions } from './translation-catalog';
+import { resolveTranslationValue } from './translation-utils';
 
 export interface TranslateOptions {
   readonly params?: TranslationParams;
   readonly language?: BaseLanguageCode;
 }
 
-export type TranslationFunction = (
-  key: TranslationKey,
-  params?: TranslationParams,
-) => string;
+export type TranslationFunction = (key: TranslationKey, params?: TranslationParams) => string;
 
 export class Translator {
   private readonly catalog: TranslationCatalog;
 
   constructor(options: TranslationCatalog | TranslationCatalogOptions = {}) {
     this.catalog =
-      options instanceof TranslationCatalog
-        ? options
-        : new TranslationCatalog(options);
+      options instanceof TranslationCatalog ? options : new TranslationCatalog(options);
   }
 
   get languages(): BaseLanguageCode[] {
     return this.catalog.keys();
   }
 
-  translate(
-    language: BaseLanguageCode,
-    key: TranslationKey,
-    params?: TranslationParams,
-  ): string {
+  translate(language: BaseLanguageCode, key: TranslationKey, params?: TranslationParams): string {
     const dictionary = this.catalog.get(language);
     const template = resolveTranslationValue(dictionary, key);
 
@@ -58,7 +46,7 @@ export class Translator {
 
 export function createTranslationFunction(
   translator: Translator,
-  resolveLanguage: () => BaseLanguageCode,
+  resolveLanguage: () => BaseLanguageCode
 ): TranslationFunction {
   return (key, params) => translator.translate(resolveLanguage(), key, params);
 }

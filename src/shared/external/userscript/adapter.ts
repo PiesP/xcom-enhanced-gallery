@@ -25,17 +25,17 @@
  * @see DownloadService - Recommended service for downloads
  * @see HttpRequestService - Recommended service for HTTP requests (Phase 318+)
  */
-import type { CookieAPI } from "@shared/types/core/cookie.types";
+import type { CookieAPI } from '@shared/types/core/cookie.types';
 import type {
   BrowserEnvironment,
   GMXMLHttpRequestControl,
   GMXMLHttpRequestDetails,
-} from "@shared/types/core/userscript";
-import { isGMUserScriptInfo } from "@shared/utils/types/safety";
+} from '@shared/types/core/userscript';
+import { isGMUserScriptInfo } from '@shared/utils/types/safety';
 
 type GMUserScriptInfo = Record<string, unknown>;
 
-export type UserscriptManager = BrowserEnvironment["userscriptManager"];
+export type UserscriptManager = BrowserEnvironment['userscriptManager'];
 
 export interface UserscriptAPI {
   readonly hasGM: boolean;
@@ -72,9 +72,7 @@ interface GlobalWithGM {
   GM_deleteValue?: (key: string) => Promise<void> | void;
   GM_listValues?: () => Promise<string[]> | string[];
   GM_addStyle?: (css: string) => HTMLStyleElement;
-  GM_xmlhttpRequest?: (
-    details: GMXMLHttpRequestDetails,
-  ) => GMXMLHttpRequestControl;
+  GM_xmlhttpRequest?: (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl;
   GM_cookie?: CookieAPI;
 }
 
@@ -87,17 +85,17 @@ interface GlobalWithGM {
  */
 function detectManager(global: GlobalWithGM): UserscriptManager {
   try {
-    const info = typeof GM_info !== "undefined" ? GM_info : global.GM_info;
+    const info = typeof GM_info !== 'undefined' ? GM_info : global.GM_info;
     const handler = isGMUserScriptInfo(info)
       ? (info as { scriptHandler?: string })?.scriptHandler?.toLowerCase?.()
       : undefined;
-    if (!handler) return "unknown";
-    if (handler.includes("tamper")) return "tampermonkey";
-    if (handler.includes("grease")) return "greasemonkey";
-    if (handler.includes("violent")) return "violentmonkey";
-    return "unknown";
+    if (!handler) return 'unknown';
+    if (handler.includes('tamper')) return 'tampermonkey';
+    if (handler.includes('grease')) return 'greasemonkey';
+    if (handler.includes('violent')) return 'violentmonkey';
+    return 'unknown';
   } catch {
-    return "unknown";
+    return 'unknown';
   }
 }
 
@@ -109,37 +107,29 @@ function detectManager(global: GlobalWithGM): UserscriptManager {
  */
 function safeInfo(global: GlobalWithGM): GMUserScriptInfo | null {
   try {
-    const info = typeof GM_info !== "undefined" ? GM_info : global.GM_info;
-    return isGMUserScriptInfo(info)
-      ? (info as unknown as GMUserScriptInfo)
-      : null;
+    const info = typeof GM_info !== 'undefined' ? GM_info : global.GM_info;
+    return isGMUserScriptInfo(info) ? (info as unknown as GMUserScriptInfo) : null;
   } catch {
     return null;
   }
 }
 
 const ERROR_MESSAGES = {
-  download:
-    "GM_download not available - Tampermonkey/Greasemonkey environment required",
-  setValue:
-    "GM_setValue not available - Tampermonkey/Greasemonkey environment required",
-  getValue:
-    "GM_getValue not available - Tampermonkey/Greasemonkey environment required",
-  deleteValue:
-    "GM_deleteValue not available - Tampermonkey/Greasemonkey environment required",
-  listValues:
-    "GM_listValues not available - Tampermonkey/Greasemonkey environment required",
-  addStyle:
-    "GM_addStyle not available - Tampermonkey/Greasemonkey environment required",
+  download: 'GM_download not available - Tampermonkey/Greasemonkey environment required',
+  setValue: 'GM_setValue not available - Tampermonkey/Greasemonkey environment required',
+  getValue: 'GM_getValue not available - Tampermonkey/Greasemonkey environment required',
+  deleteValue: 'GM_deleteValue not available - Tampermonkey/Greasemonkey environment required',
+  listValues: 'GM_listValues not available - Tampermonkey/Greasemonkey environment required',
+  addStyle: 'GM_addStyle not available - Tampermonkey/Greasemonkey environment required',
   xmlHttpRequest:
-    "GM_xmlhttpRequest not available - Tampermonkey/Greasemonkey environment required",
+    'GM_xmlhttpRequest not available - Tampermonkey/Greasemonkey environment required',
 } as const;
 
 function assertFunction<T extends (...args: never[]) => unknown>(
   fn: T | undefined,
-  errorMessage: string,
+  errorMessage: string
 ): T {
-  if (typeof fn !== "function") {
+  if (typeof fn !== 'function') {
     throw new Error(errorMessage);
   }
   return fn;
@@ -161,57 +151,55 @@ export function getUserscript(): UserscriptAPI {
 
   // Check for injected GM_* APIs (Tampermonkey injects these into scope, not necessarily globalThis)
   const gmDownload =
-    typeof GM_download !== "undefined"
+    typeof GM_download !== 'undefined'
       ? GM_download
-      : typeof global.GM_download === "function"
+      : typeof global.GM_download === 'function'
         ? global.GM_download
         : undefined;
   const gmSetValue =
-    typeof GM_setValue !== "undefined"
+    typeof GM_setValue !== 'undefined'
       ? GM_setValue
-      : typeof global.GM_setValue === "function"
+      : typeof global.GM_setValue === 'function'
         ? global.GM_setValue
         : undefined;
   const gmGetValue =
-    typeof GM_getValue !== "undefined"
+    typeof GM_getValue !== 'undefined'
       ? GM_getValue
-      : typeof global.GM_getValue === "function"
+      : typeof global.GM_getValue === 'function'
         ? global.GM_getValue
         : undefined;
   const gmDeleteValue =
-    typeof GM_deleteValue !== "undefined"
+    typeof GM_deleteValue !== 'undefined'
       ? GM_deleteValue
-      : typeof global.GM_deleteValue === "function"
+      : typeof global.GM_deleteValue === 'function'
         ? global.GM_deleteValue
         : undefined;
   const gmListValues =
-    typeof GM_listValues !== "undefined"
+    typeof GM_listValues !== 'undefined'
       ? GM_listValues
-      : typeof global.GM_listValues === "function"
+      : typeof global.GM_listValues === 'function'
         ? global.GM_listValues
         : undefined;
   const gmAddStyle =
-    typeof GM_addStyle !== "undefined"
+    typeof GM_addStyle !== 'undefined'
       ? GM_addStyle
-      : typeof global.GM_addStyle === "function"
+      : typeof global.GM_addStyle === 'function'
         ? global.GM_addStyle
         : undefined;
   const gmXmlHttpRequest =
-    typeof GM_xmlhttpRequest !== "undefined"
+    typeof GM_xmlhttpRequest !== 'undefined'
       ? GM_xmlhttpRequest
-      : typeof global.GM_xmlhttpRequest === "function"
+      : typeof global.GM_xmlhttpRequest === 'function'
         ? global.GM_xmlhttpRequest
         : undefined;
   const gmCookie =
-    typeof GM_cookie !== "undefined"
+    typeof GM_cookie !== 'undefined'
       ? GM_cookie
-      : global.GM_cookie && typeof global.GM_cookie.list === "function"
+      : global.GM_cookie && typeof global.GM_cookie.list === 'function'
         ? global.GM_cookie
         : undefined;
 
-  const hasGM = Boolean(
-    gmDownload || (gmSetValue && gmGetValue) || gmXmlHttpRequest,
-  );
+  const hasGM = Boolean(gmDownload || (gmSetValue && gmGetValue) || gmXmlHttpRequest);
 
   return Object.freeze({
     hasGM,
@@ -251,10 +239,7 @@ export function getUserscript(): UserscriptAPI {
     },
 
     xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
-      const fn = assertFunction(
-        gmXmlHttpRequest,
-        ERROR_MESSAGES.xmlHttpRequest,
-      );
+      const fn = assertFunction(gmXmlHttpRequest, ERROR_MESSAGES.xmlHttpRequest);
       return fn(details);
     },
 

@@ -4,7 +4,7 @@
  * Pure function collection that exposes deterministic navigation transitions.
  */
 
-import type { NavigationSource } from "@shared/types/navigation.types";
+import type { NavigationSource } from '@shared/types/navigation.types';
 
 // ============================================================================
 // State Types
@@ -17,11 +17,11 @@ export interface NavigationState {
   readonly lastTimestamp: number;
 }
 
-export type NavigationTrigger = "button" | "click" | "keyboard" | "scroll";
+export type NavigationTrigger = 'button' | 'click' | 'keyboard' | 'scroll';
 
 export type NavigationAction =
   | {
-      type: "NAVIGATE";
+      type: 'NAVIGATE';
       payload: {
         targetIndex: number;
         source: NavigationSource;
@@ -29,13 +29,13 @@ export type NavigationAction =
       };
     }
   | {
-      type: "SET_FOCUS";
+      type: 'SET_FOCUS';
       payload: {
         focusIndex: number | null;
         source: NavigationSource;
       };
     }
-  | { type: "RESET" };
+  | { type: 'RESET' };
 
 export interface NavigationTransitionResult {
   readonly newState: NavigationState;
@@ -59,21 +59,18 @@ function createInitialState(): NavigationState {
   return {
     currentIndex: 0,
     focusedIndex: null,
-    lastSource: "auto-focus",
+    lastSource: 'auto-focus',
     lastTimestamp: Date.now(),
   };
 }
 
-function transition(
-  state: NavigationState,
-  action: NavigationAction,
-): NavigationTransitionResult {
+function transition(state: NavigationState, action: NavigationAction): NavigationTransitionResult {
   switch (action.type) {
-    case "NAVIGATE":
+    case 'NAVIGATE':
       return handleNavigate(state, action.payload);
-    case "SET_FOCUS":
+    case 'SET_FOCUS':
       return handleSetFocus(state, action.payload);
-    case "RESET":
+    case 'RESET':
       return handleReset();
     default:
       return createResult(state);
@@ -86,7 +83,7 @@ function handleNavigate(
     targetIndex: number;
     source: NavigationSource;
     trigger: NavigationTrigger;
-  },
+  }
 ): NavigationTransitionResult {
   const { targetIndex, source } = payload;
   const timestamp = Date.now();
@@ -103,7 +100,7 @@ function handleNavigate(
         focusedIndex: targetIndex,
         lastTimestamp: timestamp,
       },
-      true,
+      true
     );
   }
 
@@ -117,7 +114,7 @@ function handleNavigate(
 
 function handleSetFocus(
   state: NavigationState,
-  payload: { focusIndex: number | null; source: NavigationSource },
+  payload: { focusIndex: number | null; source: NavigationSource }
 ): NavigationTransitionResult {
   const { focusIndex, source } = payload;
   const timestamp = Date.now();
@@ -140,7 +137,7 @@ function handleSetFocus(
       lastSource: source,
       lastTimestamp: timestamp,
     },
-    isDuplicate,
+    isDuplicate
   );
 }
 
@@ -149,13 +146,10 @@ function handleReset(): NavigationTransitionResult {
 }
 
 function isManualSource(source: NavigationSource): boolean {
-  return source === "button" || source === "keyboard";
+  return source === 'button' || source === 'keyboard';
 }
 
-function createResult(
-  state: NavigationState,
-  isDuplicate = false,
-): NavigationTransitionResult {
+function createResult(state: NavigationState, isDuplicate = false): NavigationTransitionResult {
   return {
     newState: state,
     isDuplicate,

@@ -3,19 +3,15 @@
  * @description Handles prefetching and caching of media files
  */
 
-import { HttpRequestService } from "@shared/services/http-request-service";
-import type { MediaInfo } from "@shared/types/media.types";
-import {
-  scheduleIdle,
-  scheduleMicrotask,
-  scheduleRaf,
-} from "@shared/utils/performance";
-import { globalTimerManager } from "@shared/utils/time/timer-management";
+import { HttpRequestService } from '@shared/services/http-request-service';
+import type { MediaInfo } from '@shared/types/media.types';
+import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
+import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 export interface PrefetchOptions {
   maxConcurrent?: number;
   prefetchRange?: number;
-  schedule?: "immediate" | "idle" | "raf" | "microtask";
+  schedule?: 'immediate' | 'idle' | 'raf' | 'microtask';
 }
 
 /**
@@ -34,23 +30,20 @@ export class PrefetchManager {
   /**
    * Prefetch media with specified scheduling strategy
    */
-  async prefetch(
-    media: MediaInfo,
-    options: PrefetchOptions = {},
-  ): Promise<void> {
+  async prefetch(media: MediaInfo, options: PrefetchOptions = {}): Promise<void> {
     const task = () => void this.prefetchSingle(media.url).catch(() => {});
 
     switch (options.schedule) {
-      case "idle":
+      case 'idle':
         scheduleIdle(task);
         break;
-      case "raf":
+      case 'raf':
         scheduleRaf(task);
         break;
-      case "microtask":
+      case 'microtask':
         scheduleMicrotask(task);
         break;
-      case "immediate":
+      case 'immediate':
         await this.prefetchSingle(media.url);
         break;
       default:
@@ -64,10 +57,10 @@ export class PrefetchManager {
   async prefetchAround(
     urls: readonly string[],
     currentIndex: number,
-    options: PrefetchOptions = {},
+    options: PrefetchOptions = {}
   ): Promise<void> {
     const prefetchRange = options.prefetchRange ?? 2;
-    const schedule = options.schedule ?? "idle";
+    const schedule = options.schedule ?? 'idle';
 
     for (let i = 1; i <= prefetchRange; i++) {
       const nextUrl = urls[currentIndex + i];
@@ -137,9 +130,9 @@ export class PrefetchManager {
     const fetchPromise = HttpRequestService.getInstance()
       .get<Blob>(url, {
         signal: controller.signal,
-        responseType: "blob",
+        responseType: 'blob',
       })
-      .then((response) => {
+      .then(response => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return response.data;
       })

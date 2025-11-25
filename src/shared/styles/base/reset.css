@@ -22,10 +22,7 @@
       sans-serif
     );
     line-height: var(--xeg-line-height-normal, 1.5);
-    color: var(
-      --xeg-color-text-primary,
-      var(--color-text-primary, currentColor)
-    );
+    color: var(--xeg-color-text-primary, var(--color-text-primary, currentColor));
     background: var(--xeg-color-background, transparent);
     -webkit-text-size-adjust: 100%;
     -moz-text-size-adjust: 100%;

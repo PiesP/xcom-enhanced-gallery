@@ -3,23 +3,20 @@
  * @description Modernized error strategy utilities with minimal surface area.
  */
 
-import type { Logger } from "@shared/logging";
+import type { Logger } from '@shared/logging';
 
-export type BootstrapErrorSeverity = "critical" | "recoverable";
+export type BootstrapErrorSeverity = 'critical' | 'recoverable';
 
-type BootstrapErrorLogger = Pick<Logger, "error" | "warn">;
+type BootstrapErrorLogger = Pick<Logger, 'error' | 'warn'>;
 
 type BootstrapErrorBehavior = Readonly<{
-  logLevel: "error" | "warn";
+  logLevel: 'error' | 'warn';
   throwOnError: boolean;
 }>;
 
-const ERROR_BEHAVIOR_MAP: Record<
-  BootstrapErrorSeverity,
-  BootstrapErrorBehavior
-> = {
-  critical: { logLevel: "error", throwOnError: true },
-  recoverable: { logLevel: "warn", throwOnError: false },
+const ERROR_BEHAVIOR_MAP: Record<BootstrapErrorSeverity, BootstrapErrorBehavior> = {
+  critical: { logLevel: 'error', throwOnError: true },
+  recoverable: { logLevel: 'warn', throwOnError: false },
 } as const;
 
 export type BootstrapErrorOptions = Readonly<{
@@ -33,21 +30,18 @@ const normalizeErrorMessage = (error: unknown): string => {
     return error.message;
   }
 
-  if (typeof error === "string" && error.length > 0) {
+  if (typeof error === 'string' && error.length > 0) {
     return error;
   }
 
-  return "Unknown bootstrap error";
+  return 'Unknown bootstrap error';
 };
 
 /**
  * Log bootstrap errors using a severity-aware strategy and optionally rethrow.
  */
-export function reportBootstrapError(
-  error: unknown,
-  options: BootstrapErrorOptions,
-): never | void {
-  const severity = options.severity ?? "recoverable";
+export function reportBootstrapError(error: unknown, options: BootstrapErrorOptions): never | void {
+  const severity = options.severity ?? 'recoverable';
   const behavior = ERROR_BEHAVIOR_MAP[severity];
   const message = `[${options.context}] initialization failed: ${normalizeErrorMessage(error)}`;
 

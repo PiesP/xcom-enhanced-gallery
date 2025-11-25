@@ -3,12 +3,12 @@
  * @version 3.0.0 - Direct imports wrapper
  */
 
-import * as Solid from "solid-js";
-import * as SolidStore from "solid-js/store";
-import * as SolidWeb from "solid-js/web";
+import * as Solid from 'solid-js';
+import * as SolidStore from 'solid-js/store';
+import * as SolidWeb from 'solid-js/web';
 
 // Re-export types
-export type { JSX } from "solid-js";
+export type { JSX } from 'solid-js';
 export type JSXElement = Solid.JSX.Element;
 export type VNode = Solid.JSX.Element;
 export type ComponentChildren = Solid.JSX.Element;

@@ -8,7 +8,7 @@
  * - SpecificComponentProps: Role-specific props extending BaseComponentProps
  */
 
-import type { JSXElement } from "@shared/external/vendors";
+import type { JSXElement } from '@shared/external/vendors';
 
 // ================================
 // Basic type definitions
@@ -24,9 +24,7 @@ export type VNode = JSXElement;
  *
  * @template P Component props type
  */
-export type ComponentType<P = Record<string, unknown>> = (
-  props: P,
-) => JSXElement | null;
+export type ComponentType<P = Record<string, unknown>> = (props: P) => JSXElement | null;
 
 /**
  * Component child element type
@@ -89,31 +87,23 @@ export interface BaseComponentProps {
   /** Inline style */
   style?: CSSProperties;
   /** Test identifier */
-  "data-testid"?: string;
+  'data-testid'?: string;
   /** Accessibility: element description */
-  "aria-label"?: string;
+  'aria-label'?: string;
   /** Accessibility: detailed description element ID */
-  "aria-describedby"?: string;
+  'aria-describedby'?: string;
   /** Accessibility: expanded/collapsed state */
-  "aria-expanded"?: boolean;
+  'aria-expanded'?: boolean;
   /** Accessibility: hidden state */
-  "aria-hidden"?: boolean;
+  'aria-hidden'?: boolean;
   /** Accessibility: disabled state */
-  "aria-disabled"?: boolean | "true" | "false";
+  'aria-disabled'?: boolean | 'true' | 'false';
   /** Accessibility: busy state */
-  "aria-busy"?: boolean | "true" | "false";
+  'aria-busy'?: boolean | 'true' | 'false';
   /** Accessibility: toggle state */
-  "aria-pressed"?: boolean | "true" | "false";
+  'aria-pressed'?: boolean | 'true' | 'false';
   /** Accessibility: popup type */
-  "aria-haspopup"?:
-    | boolean
-    | "true"
-    | "false"
-    | "menu"
-    | "listbox"
-    | "tree"
-    | "grid"
-    | "dialog";
+  'aria-haspopup'?: boolean | 'true' | 'false' | 'menu' | 'listbox' | 'tree' | 'grid' | 'dialog';
   /** HTML role */
   role?: string;
   /** Tab order */
@@ -173,7 +163,7 @@ export interface LoadingComponentProps extends BaseComponentProps {
  */
 export interface SizedComponentProps extends BaseComponentProps {
   /** Size */
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 /**
@@ -185,14 +175,7 @@ export interface SizedComponentProps extends BaseComponentProps {
  */
 export interface VariantComponentProps extends BaseComponentProps {
   /** Variant style */
-  variant?:
-    | "primary"
-    | "secondary"
-    | "ghost"
-    | "danger"
-    | "success"
-    | "warning"
-    | "icon";
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'warning' | 'icon';
 }
 
 /**
@@ -202,7 +185,7 @@ export interface VariantComponentProps extends BaseComponentProps {
  */
 export interface FormComponentProps extends InteractiveComponentProps {
   /** Button type */
-  type?: "button" | "submit" | "reset";
+  type?: 'button' | 'submit' | 'reset';
   /** form element ID connection */
   form?: string;
   /** Auto focus */
@@ -218,12 +201,7 @@ export interface ContainerComponentProps extends BaseComponentProps {
   /** Close callback */
   onClose?: () => void;
   /** Position */
-  position?:
-    | "top-left"
-    | "top-right"
-    | "bottom-left"
-    | "bottom-right"
-    | "center";
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
   /** Maximum items */
   maxItems?: number;
 }
@@ -235,13 +213,13 @@ export interface ContainerComponentProps extends BaseComponentProps {
  */
 export interface GalleryComponentProps extends InteractiveComponentProps {
   /** Gallery component type */
-  galleryType?: "container" | "item" | "control" | "overlay" | "viewer";
+  galleryType?: 'container' | 'item' | 'control' | 'overlay' | 'viewer';
   /** Gallery mark (data attribute) */
-  "data-xeg-gallery"?: string;
+  'data-xeg-gallery'?: string;
   /** Gallery type (data attribute) */
-  "data-xeg-gallery-type"?: string;
+  'data-xeg-gallery-type'?: string;
   /** Gallery version (data attribute) */
-  "data-xeg-gallery-version"?: string;
+  'data-xeg-gallery-version'?: string;
 }
 
 // ================================

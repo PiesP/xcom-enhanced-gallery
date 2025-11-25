@@ -29,9 +29,7 @@ function ensureDevNamespace(): DevNamespace | undefined {
 /**
  * Mutate the global development namespace when running in dev mode.
  */
-export function mutateDevNamespace(
-  mutator: (namespace: DevNamespace) => void,
-): void {
+export function mutateDevNamespace(mutator: (namespace: DevNamespace) => void): void {
   const namespace = ensureDevNamespace();
   if (!namespace) {
     return;

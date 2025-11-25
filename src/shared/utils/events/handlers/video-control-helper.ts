@@ -8,21 +8,21 @@
  * - After: Single helper function integration
  */
 
-import { CSS } from "@/constants";
-import { logger } from "@shared/logging";
-import { gallerySignals } from "@shared/state/signals/gallery.signals";
+import { CSS } from '@/constants';
+import { logger } from '@shared/logging';
+import { gallerySignals } from '@shared/state/signals/gallery.signals';
 
 /**
  * Video control action type
  */
 export type VideoControlAction =
-  | "play"
-  | "pause"
-  | "togglePlayPause"
-  | "volumeUp"
-  | "volumeDown"
-  | "mute"
-  | "toggleMute";
+  | 'play'
+  | 'pause'
+  | 'togglePlayPause'
+  | 'volumeUp'
+  | 'volumeDown'
+  | 'mute'
+  | 'toggleMute';
 
 /**
  * Video control options
@@ -36,10 +36,7 @@ export interface VideoControlOptions {
  * Video playback state tracking (WeakMap)
  * When Service is unavailable, track video element's playback state locally
  */
-const videoPlaybackStateMap = new WeakMap<
-  HTMLVideoElement,
-  { playing: boolean }
->();
+const videoPlaybackStateMap = new WeakMap<HTMLVideoElement, { playing: boolean }>();
 
 /**
  * Get current gallery video element
@@ -51,9 +48,7 @@ const videoPlaybackStateMap = new WeakMap<
  * @param video - Optional video element (use if provided)
  * @returns Video element or null
  */
-function getCurrentGalleryVideo(
-  video?: HTMLVideoElement | null,
-): HTMLVideoElement | null {
+function getCurrentGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoElement | null {
   if (video) {
     return video;
   }
@@ -65,9 +60,7 @@ function getCurrentGalleryVideo(
 
   try {
     const doc =
-      typeof document !== "undefined"
-        ? document
-        : (globalThis as { document?: Document }).document;
+      typeof document !== 'undefined' ? document : (globalThis as { document?: Document }).document;
     if (!(doc instanceof Document)) return null;
 
     const hostSelectors = [
@@ -90,15 +83,13 @@ function getCurrentGalleryVideo(
     if (!items) return null;
 
     const index = gallerySignals.currentIndex.value;
-    const target = (items as HTMLElement).children?.[index] as
-      | HTMLElement
-      | undefined;
+    const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
     if (!target) return null;
 
-    const fallbackVideo = target.querySelector("video");
+    const fallbackVideo = target.querySelector('video');
     return fallbackVideo instanceof HTMLVideoElement ? fallbackVideo : null;
   } catch (error) {
-    logger.debug("Failed to get current gallery video:", error);
+    logger.debug('Failed to get current gallery video:', error);
     return null;
   }
 }
@@ -124,14 +115,14 @@ function getCurrentGalleryVideo(
  */
 export function executeVideoControl(
   action: VideoControlAction,
-  options: VideoControlOptions = {},
+  options: VideoControlOptions = {}
 ): void {
   const { video, context } = options;
 
   try {
     const videoElement = getCurrentGalleryVideo(video);
     if (!videoElement) {
-      logger.debug("[VideoControl] No video element found", {
+      logger.debug('[VideoControl] No video element found', {
         action,
         context,
       });
@@ -139,27 +130,25 @@ export function executeVideoControl(
     }
 
     switch (action) {
-      case "play":
+      case 'play':
         videoElement.play?.().catch(() => {
-          logger.debug("[VideoControl] Play failed", { context });
+          logger.debug('[VideoControl] Play failed', { context });
         });
         videoPlaybackStateMap.set(videoElement, { playing: true });
         break;
 
-      case "pause":
+      case 'pause':
         videoElement.pause?.();
         videoPlaybackStateMap.set(videoElement, { playing: false });
         break;
 
-      case "togglePlayPause": {
-        const current =
-          videoPlaybackStateMap.get(videoElement)?.playing ??
-          !videoElement.paused;
+      case 'togglePlayPause': {
+        const current = videoPlaybackStateMap.get(videoElement)?.playing ?? !videoElement.paused;
         const next = !current;
 
         if (next) {
           videoElement.play?.().catch(() => {
-            logger.debug("[VideoControl] Play failed during toggle", {
+            logger.debug('[VideoControl] Play failed during toggle', {
               context,
             });
           });
@@ -171,11 +160,8 @@ export function executeVideoControl(
         break;
       }
 
-      case "volumeUp": {
-        const newVolume = Math.min(
-          1,
-          Math.round((videoElement.volume + 0.1) * 100) / 100,
-        );
+      case 'volumeUp': {
+        const newVolume = Math.min(1, Math.round((videoElement.volume + 0.1) * 100) / 100);
         videoElement.volume = newVolume;
         if (newVolume > 0 && videoElement.muted) {
           videoElement.muted = false;
@@ -183,11 +169,8 @@ export function executeVideoControl(
         break;
       }
 
-      case "volumeDown": {
-        const newVolume = Math.max(
-          0,
-          Math.round((videoElement.volume - 0.1) * 100) / 100,
-        );
+      case 'volumeDown': {
+        const newVolume = Math.max(0, Math.round((videoElement.volume - 0.1) * 100) / 100);
         videoElement.volume = newVolume;
         if (newVolume === 0 && !videoElement.muted) {
           videoElement.muted = true;
@@ -195,22 +178,22 @@ export function executeVideoControl(
         break;
       }
 
-      case "mute":
+      case 'mute':
         videoElement.muted = true;
         break;
 
-      case "toggleMute":
+      case 'toggleMute':
         videoElement.muted = !videoElement.muted;
         break;
     }
 
-    logger.debug("[VideoControl] Action executed", {
+    logger.debug('[VideoControl] Action executed', {
       action,
       context,
-      method: "video-element",
+      method: 'video-element',
     });
   } catch (error) {
-    logger.error("[VideoControl] Unexpected error", { error, action, context });
+    logger.error('[VideoControl] Unexpected error', { error, action, context });
   }
 }
 
@@ -221,9 +204,7 @@ export function executeVideoControl(
  * @param video - Video element
  * @returns Playback state or null
  */
-export function getVideoPlaybackState(
-  video: HTMLVideoElement,
-): { playing: boolean } | null {
+export function getVideoPlaybackState(video: HTMLVideoElement): { playing: boolean } | null {
   return videoPlaybackStateMap.get(video) || null;
 }
 

@@ -54,23 +54,15 @@
     --xeg-hover-zone-transition: var(--transition-fast);
 
     /* Animation Presets */
-    --xeg-animation-fade-in: fade-in var(--duration-normal)
-      var(--transition-normal);
-    --xeg-animation-fade-out: fade-out var(--duration-fast)
-      cubic-bezier(0.4, 0, 1, 1);
-    --xeg-animation-slide-in: slide-in-bottom var(--duration-normal)
-      var(--transition-normal);
-    --xeg-animation-slide-out: slide-out-top var(--duration-fast)
-      cubic-bezier(0.4, 0, 1, 1);
+    --xeg-animation-fade-in: fade-in var(--duration-normal) var(--transition-normal);
+    --xeg-animation-fade-out: fade-out var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
+    --xeg-animation-slide-in: slide-in-bottom var(--duration-normal) var(--transition-normal);
+    --xeg-animation-slide-out: slide-out-top var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
 
     /* Spinner Component */
     --xeg-spinner-size-default: 1rem;
     --xeg-spinner-border-width: 0.125rem;
-    --xeg-spinner-track-color: color-mix(
-      in oklch,
-      var(--xeg-color-neutral-400) 60%,
-      transparent
-    );
+    --xeg-spinner-track-color: color-mix(in oklch, var(--xeg-color-neutral-400) 60%, transparent);
     --xeg-spinner-indicator-color: var(--xeg-color-primary, currentColor);
     --xeg-spinner-duration: var(--xeg-duration-normal);
     --xeg-spinner-easing: var(--xeg-easing-linear);
@@ -95,8 +87,7 @@
       border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
       color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
       transform var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-    --xeg-transition-width-normal: width var(--xeg-duration-normal)
-      var(--xeg-ease-standard);
+    --xeg-transition-width-normal: width var(--xeg-duration-normal) var(--xeg-ease-standard);
 
     /* Icon Component */
     --xeg-icon-stroke-width: 0.125rem;
@@ -177,8 +168,7 @@
     border-radius: var(--xeg-radius-full);
     border: var(--xeg-spinner-border-width) solid var(--xeg-spinner-track-color);
     border-top-color: var(--xeg-spinner-indicator-color);
-    animation: xeg-spin var(--xeg-spinner-duration) var(--xeg-spinner-easing)
-      infinite;
+    animation: xeg-spin var(--xeg-spinner-duration) var(--xeg-spinner-easing) infinite;
     box-sizing: border-box;
   }
 

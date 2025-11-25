@@ -3,4 +3,4 @@ export {
   mountGallery,
   unmountGallery,
   type GalleryContainerProps,
-} from "./GalleryContainer";
+} from './GalleryContainer';

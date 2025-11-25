@@ -3,7 +3,7 @@
  * @version 2.1.0 - Simplified for production
  */
 
-export type LogLevel = "debug" | "info" | "warn" | "error";
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 export type LoggableData = unknown;
 
 export interface Logger {
@@ -19,7 +19,7 @@ interface LoggerConfig {
   readonly prefix: string;
 }
 
-const BASE_PREFIX = "[XEG]";
+const BASE_PREFIX = '[XEG]';
 const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
   debug: 0,
   info: 1,
@@ -28,7 +28,7 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
 };
 
 // Optimized for tree-shaking: Use __DEV__ directly when available
-const isDev: boolean = typeof __DEV__ !== "undefined" ? __DEV__ : true;
+const isDev: boolean = typeof __DEV__ !== 'undefined' ? __DEV__ : true;
 
 const createNoOpLogger = (): Logger => {
   const noop = (): void => {};
@@ -36,14 +36,11 @@ const createNoOpLogger = (): Logger => {
 };
 
 let createLoggerImpl: (config?: Partial<LoggerConfig>) => Logger;
-let createScopedLoggerImpl: (
-  scope: string,
-  config?: Partial<LoggerConfig>,
-) => Logger;
+let createScopedLoggerImpl: (scope: string, config?: Partial<LoggerConfig>) => Logger;
 
 if (isDev) {
   const DEFAULT_CONFIG: LoggerConfig = {
-    level: "debug",
+    level: 'debug',
     prefix: BASE_PREFIX,
   };
 
@@ -51,10 +48,7 @@ if (isDev) {
     return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[config.level];
   };
 
-  const formatMessage = (
-    config: LoggerConfig,
-    ...args: LoggableData[]
-  ): LoggableData[] => {
+  const formatMessage = (config: LoggerConfig, ...args: LoggableData[]): LoggableData[] => {
     return [config.prefix, ...args];
   };
 
@@ -63,37 +57,34 @@ if (isDev) {
 
     return {
       info: (...args: LoggableData[]): void => {
-        if (shouldLog("info", finalConfig)) {
+        if (shouldLog('info', finalConfig)) {
           console.info(...formatMessage(finalConfig, ...args));
         }
       },
       warn: (...args: LoggableData[]): void => {
-        if (shouldLog("warn", finalConfig)) {
+        if (shouldLog('warn', finalConfig)) {
           console.warn(...formatMessage(finalConfig, ...args));
         }
       },
       error: (...args: LoggableData[]): void => {
-        if (shouldLog("error", finalConfig)) {
+        if (shouldLog('error', finalConfig)) {
           console.error(...formatMessage(finalConfig, ...args));
         }
       },
       debug: (...args: LoggableData[]): void => {
-        if (shouldLog("debug", finalConfig)) {
+        if (shouldLog('debug', finalConfig)) {
           console.info(...formatMessage(finalConfig, ...args));
         }
       },
       trace: (...args: LoggableData[]): void => {
-        if (shouldLog("debug", finalConfig)) {
+        if (shouldLog('debug', finalConfig)) {
           console.debug(...formatMessage(finalConfig, ...args));
         }
       },
     };
   };
 
-  createScopedLoggerImpl = (
-    scope: string,
-    config: Partial<LoggerConfig> = {},
-  ): Logger =>
+  createScopedLoggerImpl = (scope: string, config: Partial<LoggerConfig> = {}): Logger =>
     createLoggerImpl({
       ...config,
       prefix: `${config.prefix ?? BASE_PREFIX} [${scope}]`,
@@ -108,13 +99,10 @@ export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
 }
 
 export const logger: Logger = createLogger({
-  level: isDev ? "debug" : "warn",
+  level: isDev ? 'debug' : 'warn',
 });
 
-export function createScopedLogger(
-  scope: string,
-  config: Partial<LoggerConfig> = {},
-): Logger {
+export function createScopedLogger(scope: string, config: Partial<LoggerConfig> = {}): Logger {
   return createScopedLoggerImpl(scope, config);
 }
 
@@ -122,7 +110,7 @@ export function createScopedLogger(
 export function createScopedLoggerWithCorrelation(
   scope: string,
   _correlationId: string,
-  config: Partial<LoggerConfig> = {},
+  config: Partial<LoggerConfig> = {}
 ): Logger {
   return createScopedLogger(scope, config);
 }
@@ -135,11 +123,8 @@ export function createCorrelationId(): string {
 export function logError(
   error: Error | string,
   context: Record<string, unknown> = {},
-  source?: string,
+  source?: string
 ): void {
   const errorMessage = error instanceof Error ? error.message : error;
-  logger.error(
-    `Error${source ? ` in ${source}` : ""}: ${errorMessage}`,
-    context,
-  );
+  logger.error(`Error${source ? ` in ${source}` : ''}: ${errorMessage}`, context);
 }

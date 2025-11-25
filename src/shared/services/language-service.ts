@@ -8,27 +8,27 @@ import {
   isBaseLanguageCode,
   type BaseLanguageCode,
   type SupportedLanguage,
-} from "@shared/constants/i18n/language-types";
+} from '@shared/constants/i18n/language-types';
 import {
   DEFAULT_LANGUAGE,
   TRANSLATION_REGISTRY,
-} from "@shared/constants/i18n/translation-registry";
+} from '@shared/constants/i18n/translation-registry';
 import {
   TranslationCatalog,
   Translator,
   type TranslationKey,
   type TranslationParams,
-} from "@shared/i18n";
-import { logger } from "@shared/logging";
-import { BaseServiceImpl } from "./base-service";
-import { getPersistentStorage } from "./persistent-storage";
+} from '@shared/i18n';
+import { logger } from '@shared/logging';
+import { BaseServiceImpl } from './base-service';
+import { getPersistentStorage } from './persistent-storage';
 
 export type {
   BaseLanguageCode,
   LanguageStrings,
   SupportedLanguage,
-} from "@shared/constants/i18n/language-types";
-export type { TranslationKey, TranslationParams } from "@shared/i18n";
+} from '@shared/constants/i18n/language-types';
+export type { TranslationKey, TranslationParams } from '@shared/i18n';
 
 const translationCatalog = new TranslationCatalog({
   bundles: TRANSLATION_REGISTRY,
@@ -44,13 +44,14 @@ const translator = new Translator(translationCatalog);
  * Note: Global singleton export requires initialize() call from main.ts
  */
 export class LanguageService extends BaseServiceImpl {
-  private static readonly STORAGE_KEY = "xeg-language";
-  private static readonly SUPPORTED_LANGUAGES: ReadonlySet<SupportedLanguage> =
-    new Set(["auto", ...translator.languages]);
+  private static readonly STORAGE_KEY = 'xeg-language';
+  private static readonly SUPPORTED_LANGUAGES: ReadonlySet<SupportedLanguage> = new Set([
+    'auto',
+    ...translator.languages,
+  ]);
 
-  private currentLanguage: SupportedLanguage = "auto";
-  private readonly listeners: Set<(language: SupportedLanguage) => void> =
-    new Set();
+  private currentLanguage: SupportedLanguage = 'auto';
+  private readonly listeners: Set<(language: SupportedLanguage) => void> = new Set();
   private readonly storage = getPersistentStorage();
 
   private static instance: LanguageService;
@@ -63,7 +64,7 @@ export class LanguageService extends BaseServiceImpl {
   }
 
   constructor() {
-    super("LanguageService");
+    super('LanguageService');
   }
 
   /**
@@ -80,7 +81,7 @@ export class LanguageService extends BaseServiceImpl {
         this.notifyListeners(normalized);
       }
     } catch (error) {
-      logger.warn("Failed to restore language setting from storage:", error);
+      logger.warn('Failed to restore language setting from storage:', error);
     }
   }
 
@@ -94,7 +95,7 @@ export class LanguageService extends BaseServiceImpl {
   detectLanguage(): BaseLanguageCode {
     // Safe navigator.language access
     const browserLang =
-      typeof navigator !== "undefined" && navigator.language
+      typeof navigator !== 'undefined' && navigator.language
         ? navigator.language.slice(0, 2)
         : DEFAULT_LANGUAGE;
 
@@ -116,10 +117,8 @@ export class LanguageService extends BaseServiceImpl {
   setLanguage(language: SupportedLanguage): void {
     const normalized = this.normalizeLanguage(language);
 
-    if (language !== normalized && language !== "auto") {
-      logger.warn(
-        `Unsupported language: ${language}, falling back to '${normalized}'`,
-      );
+    if (language !== normalized && language !== 'auto') {
+      logger.warn(`Unsupported language: ${language}, falling back to '${normalized}'`);
     }
 
     // Phase 117.1: Prevent duplicate saves when value hasn't changed
@@ -138,23 +137,19 @@ export class LanguageService extends BaseServiceImpl {
     return translator.translate(this.getEffectiveLanguage(), key, params);
   }
 
-  onLanguageChange(
-    callback: (language: SupportedLanguage) => void,
-  ): () => void {
+  onLanguageChange(callback: (language: SupportedLanguage) => void): () => void {
     this.listeners.add(callback);
     return () => this.listeners.delete(callback);
   }
 
   private normalizeLanguage(
-    language: SupportedLanguage | string | null | undefined,
+    language: SupportedLanguage | string | null | undefined
   ): SupportedLanguage {
     if (!language) {
-      return "auto";
+      return 'auto';
     }
 
-    if (
-      LanguageService.SUPPORTED_LANGUAGES.has(language as SupportedLanguage)
-    ) {
+    if (LanguageService.SUPPORTED_LANGUAGES.has(language as SupportedLanguage)) {
       return language as SupportedLanguage;
     }
 
@@ -162,11 +157,11 @@ export class LanguageService extends BaseServiceImpl {
   }
 
   private notifyListeners(language: SupportedLanguage): void {
-    this.listeners.forEach((listener) => {
+    this.listeners.forEach(listener => {
       try {
         listener(language);
       } catch (error) {
-        logger.warn("Language change listener error:", error);
+        logger.warn('Language change listener error:', error);
       }
     });
   }
@@ -175,13 +170,11 @@ export class LanguageService extends BaseServiceImpl {
     try {
       await this.storage.set(LanguageService.STORAGE_KEY, language);
     } catch (error) {
-      logger.warn("Failed to persist language setting:", error);
+      logger.warn('Failed to persist language setting:', error);
     }
   }
 
   private getEffectiveLanguage(): BaseLanguageCode {
-    return this.currentLanguage === "auto"
-      ? this.detectLanguage()
-      : this.currentLanguage;
+    return this.currentLanguage === 'auto' ? this.detectLanguage() : this.currentLanguage;
   }
 }

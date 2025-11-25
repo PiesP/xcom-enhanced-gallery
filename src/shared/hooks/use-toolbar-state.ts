@@ -30,9 +30,9 @@
  * @internal Solid.js hook, PC-only, used by toolbar container
  */
 
-import { getSolid } from "@shared/external/vendors";
-import type { ToolbarActions, ToolbarState } from "@shared/types/toolbar.types";
-import { globalTimerManager } from "@shared/utils/time/timer-management";
+import { getSolid } from '@shared/external/vendors';
+import type { ToolbarActions, ToolbarState } from '@shared/types/toolbar.types';
+import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 /**
  * Initial toolbar state constant

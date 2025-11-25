@@ -18,8 +18,8 @@
  * @version 1.1.0 - Path optimization (Phase 354+)
  */
 
-import { getSolid } from "@shared/external/vendors";
-import { EventManager } from "@shared/services";
+import { getSolid } from '@shared/external/vendors';
+import { EventManager } from '@shared/services';
 
 /**
  * Gallery keyboard event options
@@ -50,26 +50,22 @@ export interface UseGalleryKeyboardOptions {
  *
  * @param options - Configuration options
  */
-export function useGalleryKeyboard({
-  onClose,
-}: UseGalleryKeyboardOptions): void {
+export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void {
   const { createEffect, onCleanup } = getSolid();
 
   createEffect(() => {
-    if (typeof document === "undefined") {
+    if (typeof document === 'undefined') {
       return;
     }
 
-    const isEditableTarget = (
-      target: EventTarget | null | undefined,
-    ): boolean => {
+    const isEditableTarget = (target: EventTarget | null | undefined): boolean => {
       const element = target as HTMLElement | null;
       if (!element) {
         return false;
       }
 
       const tag = element.tagName?.toUpperCase();
-      if (tag === "INPUT" || tag === "TEXTAREA") {
+      if (tag === 'INPUT' || tag === 'TEXTAREA') {
         return true;
       }
 
@@ -85,7 +81,7 @@ export function useGalleryKeyboard({
 
       let handled = false;
 
-      if (keyboardEvent.key === "Escape") {
+      if (keyboardEvent.key === 'Escape') {
         onClose();
         handled = true;
       }
@@ -99,10 +95,10 @@ export function useGalleryKeyboard({
     const eventManager = EventManager.getInstance();
     const listenerId = eventManager.addListener(
       document,
-      "keydown",
+      'keydown',
       handleKeyDown,
       { capture: true },
-      "gallery-keyboard-navigation",
+      'gallery-keyboard-navigation'
     );
 
     onCleanup(() => {

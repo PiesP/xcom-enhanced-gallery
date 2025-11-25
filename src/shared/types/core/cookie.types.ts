@@ -43,18 +43,12 @@ export interface CookieDeleteOptions {
   partitionKey?: CookiePartitionKey;
 }
 
-export type CookieListCallback = (
-  cookies: CookieRecord[],
-  error: string | null,
-) => void;
+export type CookieListCallback = (cookies: CookieRecord[], error: string | null) => void;
 
 export type CookieOperationCallback = (error?: string) => void;
 
 export interface CookieAPI {
   list(details?: CookieListOptions, callback?: CookieListCallback): void;
   set?(details: CookieSetOptions, callback?: CookieOperationCallback): void;
-  delete?(
-    details: CookieDeleteOptions,
-    callback?: CookieOperationCallback,
-  ): void;
+  delete?(details: CookieDeleteOptions, callback?: CookieOperationCallback): void;
 }

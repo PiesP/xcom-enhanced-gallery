@@ -11,4 +11,4 @@ export {
   type PromisifyOptions,
   type ResultCallback,
   type VoidCallback,
-} from "./promise-helpers";
+} from './promise-helpers';

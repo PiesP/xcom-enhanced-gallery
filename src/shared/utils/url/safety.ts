@@ -12,44 +12,37 @@ const MAX_DECODE_ITERATIONS = 3;
 const MAX_SCHEME_PROBE_LENGTH = 64;
 
 const DEFAULT_BLOCKED_PROTOCOL_HINTS = Object.freeze([
-  "javascript:",
-  "vbscript:",
-  "file:",
-  "filesystem:",
-  "ms-appx:",
-  "ms-appx-web:",
-  "about:",
-  "intent:",
-  "mailto:",
-  "tel:",
-  "sms:",
-  "wtai:",
-  "chrome:",
-  "chrome-extension:",
-  "opera:",
-  "resource:",
-  "data:text",
-  "data:application",
-  "data:video",
-  "data:audio",
+  'javascript:',
+  'vbscript:',
+  'file:',
+  'filesystem:',
+  'ms-appx:',
+  'ms-appx-web:',
+  'about:',
+  'intent:',
+  'mailto:',
+  'tel:',
+  'sms:',
+  'wtai:',
+  'chrome:',
+  'chrome-extension:',
+  'opera:',
+  'resource:',
+  'data:text',
+  'data:application',
+  'data:video',
+  'data:audio',
 ]);
 
-const MEDIA_SAFE_PROTOCOLS = new Set([
-  "http:",
-  "https:",
-  "blob:",
-]) as ReadonlySet<string>;
-const HTML_ATTR_SAFE_PROTOCOLS = new Set([
-  "http:",
-  "https:",
-]) as ReadonlySet<string>;
+const MEDIA_SAFE_PROTOCOLS = new Set(['http:', 'https:', 'blob:']) as ReadonlySet<string>;
+const HTML_ATTR_SAFE_PROTOCOLS = new Set(['http:', 'https:']) as ReadonlySet<string>;
 const DATA_IMAGE_MIME_PREFIXES = Object.freeze([
-  "image/png",
-  "image/jpeg",
-  "image/jpg",
-  "image/gif",
-  "image/webp",
-  "image/avif",
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+  'image/gif',
+  'image/webp',
+  'image/avif',
 ]);
 
 export interface UrlSafetyPolicy {
@@ -79,39 +72,32 @@ export const HTML_ATTRIBUTE_URL_POLICY: UrlSafetyPolicy = {
   allowDataUrls: false,
 } as const;
 
-export function isUrlAllowed(
-  rawUrl: string | null | undefined,
-  policy: UrlSafetyPolicy,
-): boolean {
-  if (!rawUrl || typeof rawUrl !== "string") {
+export function isUrlAllowed(rawUrl: string | null | undefined, policy: UrlSafetyPolicy): boolean {
+  if (!rawUrl || typeof rawUrl !== 'string') {
     return false;
   }
 
-  const normalized = rawUrl.replace(CONTROL_CHARS_REGEX, "").trim();
+  const normalized = rawUrl.replace(CONTROL_CHARS_REGEX, '').trim();
   if (!normalized) {
     return false;
   }
 
-  const blockedHints =
-    policy.blockedProtocolHints ?? DEFAULT_BLOCKED_PROTOCOL_HINTS;
+  const blockedHints = policy.blockedProtocolHints ?? DEFAULT_BLOCKED_PROTOCOL_HINTS;
   if (startsWithBlockedProtocolHint(normalized, blockedHints)) {
     return false;
   }
 
   const lower = normalized.toLowerCase();
 
-  if (lower.startsWith("data:")) {
-    return (
-      policy.allowDataUrls === true &&
-      isAllowedDataUrl(lower, policy.allowedDataMimePrefixes)
-    );
+  if (lower.startsWith('data:')) {
+    return policy.allowDataUrls === true && isAllowedDataUrl(lower, policy.allowedDataMimePrefixes);
   }
 
-  if (lower.startsWith("//")) {
+  if (lower.startsWith('//')) {
     return handleProtocolRelative(normalized, policy);
   }
 
-  if (policy.allowFragments && lower.startsWith("#")) {
+  if (policy.allowFragments && lower.startsWith('#')) {
     return true;
   }
 
@@ -128,30 +114,25 @@ export function isUrlAllowed(
   }
 }
 
-function startsWithBlockedProtocolHint(
-  value: string,
-  hints: readonly string[],
-): boolean {
+function startsWithBlockedProtocolHint(value: string, hints: readonly string[]): boolean {
   const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
   const variants = buildProbeVariants(probe);
 
-  return variants.some((candidate) =>
-    hints.some((hint) => candidate.startsWith(hint)),
-  );
+  return variants.some(candidate => hints.some(hint => candidate.startsWith(hint)));
 }
 
 function buildProbeVariants(value: string): string[] {
   const variants = new Set<string>();
   const base = value.toLowerCase();
   variants.add(base);
-  variants.add(base.replace(SCHEME_WHITESPACE_REGEX, ""));
+  variants.add(base.replace(SCHEME_WHITESPACE_REGEX, ''));
 
   let decoded = base;
   for (let i = 0; i < MAX_DECODE_ITERATIONS; i += 1) {
     try {
       decoded = decodeURIComponent(decoded);
       variants.add(decoded);
-      variants.add(decoded.replace(SCHEME_WHITESPACE_REGEX, ""));
+      variants.add(decoded.replace(SCHEME_WHITESPACE_REGEX, ''));
     } catch {
       break;
     }
@@ -162,20 +143,20 @@ function buildProbeVariants(value: string): string[] {
 
 function isAllowedDataUrl(
   lowerCaseValue: string,
-  allowedPrefixes: readonly string[] | undefined,
+  allowedPrefixes: readonly string[] | undefined
 ): boolean {
   if (!allowedPrefixes || allowedPrefixes.length === 0) {
     return false;
   }
 
-  const metaSection = lowerCaseValue.slice("data:".length);
-  const [mime] = metaSection.split(";", 1);
+  const metaSection = lowerCaseValue.slice('data:'.length);
+  const [mime] = metaSection.split(';', 1);
 
   if (!mime) {
     return false;
   }
 
-  return allowedPrefixes.some((prefix) => mime.startsWith(prefix));
+  return allowedPrefixes.some(prefix => mime.startsWith(prefix));
 }
 
 function handleProtocolRelative(url: string, policy: UrlSafetyPolicy): boolean {
@@ -183,11 +164,11 @@ function handleProtocolRelative(url: string, policy: UrlSafetyPolicy): boolean {
     return false;
   }
 
-  const fallbackProtocol = policy.allowedProtocols.has("https:")
-    ? "https:"
-    : policy.allowedProtocols.has("http:")
-      ? "http:"
-      : "https:";
+  const fallbackProtocol = policy.allowedProtocols.has('https:')
+    ? 'https:'
+    : policy.allowedProtocols.has('http:')
+      ? 'http:'
+      : 'https:';
 
   try {
     const resolved = new URL(`${fallbackProtocol}${url}`);

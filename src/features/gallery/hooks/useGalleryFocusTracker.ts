@@ -1,20 +1,12 @@
-import { FocusCoordinator } from "@features/gallery/logic/focus-coordinator";
-import { getSolid } from "@shared/external/vendors";
-import {
-  navigateToItem,
-  setFocusedIndex,
-} from "@shared/state/signals/gallery.signals";
-import { toAccessor } from "@shared/utils/solid/solid-helpers";
-import type { Accessor } from "solid-js";
+import { FocusCoordinator } from '@features/gallery/logic/focus-coordinator';
+import { getSolid } from '@shared/external/vendors';
+import { navigateToItem, setFocusedIndex } from '@shared/state/signals/gallery.signals';
+import { toAccessor } from '@shared/utils/solid/solid-helpers';
+import type { Accessor } from 'solid-js';
 
 type MaybeAccessor<T> = T | Accessor<T>;
 
-type FocusNavigationTrigger =
-  | "button"
-  | "click"
-  | "keyboard"
-  | "init"
-  | "scroll";
+type FocusNavigationTrigger = 'button' | 'click' | 'keyboard' | 'init' | 'scroll';
 
 export interface UseGalleryFocusTrackerOptions {
   container: MaybeAccessor<HTMLElement | null>;
@@ -38,7 +30,7 @@ export interface UseGalleryFocusTrackerReturn {
   applyFocusAfterNavigation: (
     index: number,
     trigger: FocusNavigationTrigger,
-    options?: { force?: boolean },
+    options?: { force?: boolean }
   ) => void;
 }
 
@@ -46,14 +38,10 @@ const solid = getSolid();
 const { createSignal, onCleanup, batch } = solid;
 
 export function useGalleryFocusTracker(
-  options: UseGalleryFocusTrackerOptions,
+  options: UseGalleryFocusTrackerOptions
 ): UseGalleryFocusTrackerReturn {
-  const [focusedIndex, setLocalFocusedIndex] = createSignal<number | null>(
-    null,
-  );
-  const [manualFocusIndex, setManualFocusIndex] = createSignal<number | null>(
-    null,
-  );
+  const [focusedIndex, setLocalFocusedIndex] = createSignal<number | null>(null);
+  const [manualFocusIndex, setManualFocusIndex] = createSignal<number | null>(null);
 
   const isEnabled = toAccessor(options.isEnabled);
   const container = toAccessor(options.container);
@@ -63,17 +51,17 @@ export function useGalleryFocusTracker(
     isEnabled: () => isEnabled() && manualFocusIndex() === null,
     container,
     threshold: options.threshold ?? 0,
-    rootMargin: options.rootMargin ?? "0px",
+    rootMargin: options.rootMargin ?? '0px',
     ...(options.minimumVisibleRatio !== undefined
       ? { minimumVisibleRatio: options.minimumVisibleRatio }
       : {}),
     debounceTime: autoFocusDebounce(),
     onFocusChange: (index, source) => {
-      if (source === "auto" && manualFocusIndex() === null) {
+      if (source === 'auto' && manualFocusIndex() === null) {
         batch(() => {
           setLocalFocusedIndex(index);
           if (index !== null) {
-            navigateToItem(index, "scroll", "auto-focus");
+            navigateToItem(index, 'scroll', 'auto-focus');
           }
         });
       }
@@ -109,7 +97,7 @@ export function useGalleryFocusTracker(
   const applyFocusAfterNavigation = (
     index: number,
     _trigger: FocusNavigationTrigger,
-    _opts?: { force?: boolean },
+    _opts?: { force?: boolean }
   ) => {
     setManualFocus(index);
   };

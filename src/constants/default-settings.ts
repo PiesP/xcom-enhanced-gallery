@@ -2,15 +2,15 @@
  * @fileoverview Default settings configuration
  */
 
-import type { AppSettings } from "@features/settings/types/settings.types";
+import type { AppSettings } from '@features/settings/types/settings.types';
 
 const STATIC_DEFAULT_SETTINGS = {
   gallery: {
     autoScrollSpeed: 5,
     infiniteScroll: true,
     preloadCount: 3,
-    imageFitMode: "fitWidth" as const,
-    theme: "auto" as const,
+    imageFitMode: 'fitWidth' as const,
+    theme: 'auto' as const,
     animations: true,
     enableKeyboardNav: false,
   },
@@ -19,11 +19,11 @@ const STATIC_DEFAULT_SETTINGS = {
     autoHideDelay: 3000, // ms, toolbar auto-hide delay (default 3s)
   },
   download: {
-    filenamePattern: "original" as const,
-    imageQuality: "original" as const,
+    filenamePattern: 'original' as const,
+    imageQuality: 'original' as const,
     maxConcurrentDownloads: 3,
     autoZip: false,
-    folderStructure: "flat" as const,
+    folderStructure: 'flat' as const,
   },
   tokens: {
     autoRefresh: true,
@@ -42,16 +42,14 @@ const STATIC_DEFAULT_SETTINGS = {
     mediaExtraction: true, // Media extraction enabled
     accessibility: true, // Accessibility features enabled
   },
-  version: "1.0.0",
+  version: '1.0.0',
   // Static default retains deterministic timestamp for hashing comparisons
   lastModified: 0,
 } as const satisfies AppSettings;
 
 export const DEFAULT_SETTINGS = STATIC_DEFAULT_SETTINGS;
 
-export function createDefaultSettings(
-  timestamp: number = Date.now(),
-): AppSettings {
+export function createDefaultSettings(timestamp: number = Date.now()): AppSettings {
   return {
     gallery: cloneValue(DEFAULT_SETTINGS.gallery),
     toolbar: cloneValue(DEFAULT_SETTINGS.toolbar),
@@ -65,7 +63,7 @@ export function createDefaultSettings(
 }
 
 function cloneValue<T>(value: T): T {
-  if (typeof globalThis.structuredClone === "function") {
+  if (typeof globalThis.structuredClone === 'function') {
     return globalThis.structuredClone(value);
   }
   return JSON.parse(JSON.stringify(value)) as T;

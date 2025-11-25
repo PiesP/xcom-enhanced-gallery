@@ -39,4 +39,4 @@
  * @internal Module for architectural abstraction (Shared layer)
  */
 
-export type { GalleryRenderer } from "./gallery.interfaces";
+export type { GalleryRenderer } from './gallery.interfaces';

@@ -12,9 +12,7 @@
     /* Blue Scale - Enhanced Contrast */
     --color-blue-50: oklch(0.97 0.013 228);
     --color-blue-100: oklch(0.943 0.031 228);
-    --color-blue-500: oklch(
-      0.567 0.243 253.4
-    ); /* 더 어두운 파란색 (AA 대비율 확보) */
+    --color-blue-500: oklch(0.567 0.243 253.4); /* 더 어두운 파란색 (AA 대비율 확보) */
     --color-blue-600: oklch(0.523 0.21 252.8); /* 기존 600보다 더 어둡게 */
     --color-blue-700: oklch(0.467 0.188 253.4); /* 기존 700보다 더 어둡게 */
 
@@ -23,17 +21,11 @@
     --color-gray-100: oklch(0.943 0.006 206.2);
     --color-gray-200: oklch(0.896 0.006 206.2);
     --color-gray-300: oklch(0.796 0.006 206.2);
-    --color-gray-400: oklch(
-      0.696 0.006 286.3
-    ); /* Added: secondary text for dark mode */
+    --color-gray-400: oklch(0.696 0.006 286.3); /* Added: secondary text for dark mode */
     --color-gray-500: oklch(0.598 0.006 286.3);
-    --color-gray-600: oklch(
-      0.488 0.006 286.3
-    ); /* Added: secondary text for light mode, borders */
+    --color-gray-600: oklch(0.488 0.006 286.3); /* Added: secondary text for light mode, borders */
     --color-gray-700: oklch(0.378 0.005 286.3);
-    --color-gray-800: oklch(
-      0.306 0.005 282
-    ); /* gray-700과 900 사이, 모달/툴바 배경 */
+    --color-gray-800: oklch(0.306 0.005 282); /* gray-700과 900 사이, 모달/툴바 배경 */
     --color-gray-900: oklch(0.234 0.006 277.8);
 
     /* Red Scale */
@@ -82,8 +74,7 @@
 
     /* Typography Scale - rem base (absolute, Twitter Style) */
     --font-family-primary:
-      "TwitterChirp", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      sans-serif;
+      "TwitterChirp", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-size-2xs: 0.6875rem; /* 11px */
     --font-size-xs: 0.75rem; /* 12px */
     --font-size-sm: 0.875rem; /* 14px */

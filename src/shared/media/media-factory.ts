@@ -2,16 +2,16 @@
  * @fileoverview Factory functions for creating MediaInfo objects from API data.
  */
 
-import { logger } from "@shared/logging";
-import type { TweetMediaEntry } from "@shared/services/media/types";
-import type { MediaInfo, TweetInfo } from "@shared/types/media.types";
-import { toPositiveNumber } from "./media-utils";
+import { logger } from '@shared/logging';
+import type { TweetMediaEntry } from '@shared/services/media/types';
+import type { MediaInfo, TweetInfo } from '@shared/types/media.types';
+import { toPositiveNumber } from './media-utils';
 
 /**
  * Resolve Dimensions from API Media
  */
 export function resolveDimensionsFromApiMedia(
-  apiMedia: TweetMediaEntry,
+  apiMedia: TweetMediaEntry
 ): { width: number; height: number } | null {
   const widthFromOriginal = toPositiveNumber(apiMedia.original_width);
   const heightFromOriginal = toPositiveNumber(apiMedia.original_height);
@@ -32,10 +32,10 @@ export function createMediaInfoFromAPI(
   apiMedia: TweetMediaEntry,
   tweetInfo: TweetInfo,
   index: number,
-  tweetTextHTML?: string | undefined,
+  tweetTextHTML?: string | undefined
 ): MediaInfo | null {
   try {
-    const mediaType = apiMedia.type === "photo" ? "image" : "video";
+    const mediaType = apiMedia.type === 'photo' ? 'image' : 'video';
     const dimensions = resolveDimensionsFromApiMedia(apiMedia);
     const metadata: Record<string, unknown> = {
       apiIndex: index,
@@ -52,7 +52,7 @@ export function createMediaInfoFromAPI(
       id: `${tweetInfo.tweetId}_api_${index}`,
       url: apiMedia.download_url,
       type: mediaType,
-      filename: "",
+      filename: '',
       tweetUsername: username,
       tweetId: tweetInfo.tweetId,
       tweetUrl: tweetInfo.tweetUrl,
@@ -68,7 +68,7 @@ export function createMediaInfoFromAPI(
       metadata,
     };
   } catch (error) {
-    logger.error("Failed to create API MediaInfo:", error);
+    logger.error('Failed to create API MediaInfo:', error);
     return null;
   }
 }
@@ -79,7 +79,7 @@ export function createMediaInfoFromAPI(
 export async function convertAPIMediaToMediaInfo(
   apiMedias: TweetMediaEntry[],
   tweetInfo: TweetInfo,
-  tweetTextHTML?: string | undefined,
+  tweetTextHTML?: string | undefined
 ): Promise<MediaInfo[]> {
   const mediaItems: MediaInfo[] = [];
 
@@ -87,12 +87,7 @@ export async function convertAPIMediaToMediaInfo(
     const apiMedia = apiMedias[i];
     if (!apiMedia) continue;
 
-    const mediaInfo = createMediaInfoFromAPI(
-      apiMedia,
-      tweetInfo,
-      i,
-      tweetTextHTML,
-    );
+    const mediaInfo = createMediaInfoFromAPI(apiMedia, tweetInfo, i, tweetTextHTML);
     if (mediaInfo) {
       mediaItems.push(mediaInfo);
     }

@@ -47,9 +47,7 @@ export function createSingleton<T>(factory: () => T): () => T {
  * @param factory - Factory function to create the instance
  * @returns Tuple of [getInstance, resetInstance] functions
  */
-export function createResettableSingleton<T>(
-  factory: () => T,
-): [() => T, () => void] {
+export function createResettableSingleton<T>(factory: () => T): [() => T, () => void] {
   const holder: SingletonHolder<T> = { instance: null };
 
   const getInstance = (): T => {

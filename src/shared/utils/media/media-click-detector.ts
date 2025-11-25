@@ -3,19 +3,19 @@
  * @description Stable media click detection and handling logic with DOM caching optimization
  */
 
-import { CSS } from "@/constants/css";
-import { SELECTORS } from "@/constants/selectors";
-import { isVideoControlElement } from "@shared/dom/utils";
-import { logger } from "@shared/logging";
-import { gallerySignals } from "@shared/state/signals/gallery.signals";
-import { isValidMediaUrl } from "@shared/utils/url/validator";
+import { CSS } from '@/constants/css';
+import { SELECTORS } from '@/constants/selectors';
+import { isVideoControlElement } from '@shared/dom/utils';
+import { logger } from '@shared/logging';
+import { gallerySignals } from '@shared/state/signals/gallery.signals';
+import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 /**
  * Media detection result
  */
 export interface MediaDetectionResult {
   /** Detected media type */
-  type: "video" | "image" | "none";
+  type: 'video' | 'image' | 'none';
   /** Detected element */
   element: HTMLElement | null;
   /** Media URL (if available) */
@@ -45,7 +45,7 @@ export function isProcessableMedia(target: HTMLElement | null): boolean {
   if (shouldBlockMediaTrigger(target)) return false;
 
   // 2. Direct media check (Fastest)
-  if (target.tagName === "IMG" || target.tagName === "VIDEO") {
+  if (target.tagName === 'IMG' || target.tagName === 'VIDEO') {
     if (isTwitterMediaElement(target)) return true;
   }
 
@@ -83,16 +83,12 @@ export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   if (isVideoControlElement(target)) return true; // Block gallery, allow control
 
   // 2. Block internal gallery elements
-  if (
-    target.closest(CSS.SELECTORS.ROOT) ||
-    target.closest(CSS.SELECTORS.OVERLAY)
-  )
-    return true;
+  if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
 
   // 3. Block interactive elements (Buttons, Links)
   // We check for interactive elements up the tree
   const interactive = target.closest(
-    'button, a, [role="button"], [data-testid="like"], [data-testid="retweet"], [data-testid="reply"], [data-testid="share"], [data-testid="bookmark"]',
+    'button, a, [role="button"], [data-testid="like"], [data-testid="retweet"], [data-testid="reply"], [data-testid="share"], [data-testid="bookmark"]'
   );
 
   if (interactive) {
@@ -126,67 +122,47 @@ export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
 /**
  * Extract media information from clicked element
  */
-export function detectMediaFromClick(
-  target: HTMLElement,
-): MediaDetectionResult {
+export function detectMediaFromClick(target: HTMLElement): MediaDetectionResult {
   try {
     // 1. Direct Element
-    if (target.tagName === "IMG" && isTwitterMediaElement(target)) {
-      return createResult(
-        "image",
-        target,
-        (target as HTMLImageElement).src,
-        1.0,
-        "direct",
-      );
+    if (target.tagName === 'IMG' && isTwitterMediaElement(target)) {
+      return createResult('image', target, (target as HTMLImageElement).src, 1.0, 'direct');
     }
-    if (target.tagName === "VIDEO" && isTwitterMediaElement(target)) {
+    if (target.tagName === 'VIDEO' && isTwitterMediaElement(target)) {
       const v = target as HTMLVideoElement;
-      return createResult(
-        "video",
-        target,
-        v.src || v.currentSrc,
-        1.0,
-        "direct",
-      );
+      return createResult('video', target, v.src || v.currentSrc, 1.0, 'direct');
     }
 
     // 2. Container Search (Upwards)
     const photoContainer = target.closest(ESSENTIAL_SELECTORS.TWEET_PHOTO);
     if (photoContainer) {
-      const img = photoContainer.querySelector("img");
+      const img = photoContainer.querySelector('img');
       if (img && isTwitterMediaElement(img)) {
-        return createResult("image", img, img.src, 0.9, "container");
+        return createResult('image', img, img.src, 0.9, 'container');
       }
     }
 
     const videoContainer = target.closest(ESSENTIAL_SELECTORS.VIDEO_PLAYER);
     if (videoContainer) {
-      const video = videoContainer.querySelector("video");
+      const video = videoContainer.querySelector('video');
       if (video) {
-        return createResult(
-          "video",
-          video,
-          video.src || video.currentSrc,
-          0.9,
-          "container",
-        );
+        return createResult('video', video, video.src || video.currentSrc, 0.9, 'container');
       }
     }
 
-    return createResult("none", null, "", 0, "not_found");
+    return createResult('none', null, '', 0, 'not_found');
   } catch (error) {
-    logger.error("[MediaClickDetector] Media detection failed:", error);
-    return createResult("none", null, "", 0, "error");
+    logger.error('[MediaClickDetector] Media detection failed:', error);
+    return createResult('none', null, '', 0, 'error');
   }
 }
 
 function createResult(
-  type: "video" | "image" | "none",
+  type: 'video' | 'image' | 'none',
   element: HTMLElement | null,
   url: string,
   confidence: number,
-  method: string,
+  method: string
 ): MediaDetectionResult {
   return { type, element, mediaUrl: url, confidence, method };
 }
@@ -195,15 +171,13 @@ function createResult(
  * Check if element is a valid Twitter media element
  */
 function isTwitterMediaElement(element: HTMLElement): boolean {
-  if (element.tagName === "IMG") {
+  if (element.tagName === 'IMG') {
     const src = (element as HTMLImageElement).src;
     return isValidMediaUrl(src);
   }
-  if (element.tagName === "VIDEO") {
-    const src =
-      (element as HTMLVideoElement).src ||
-      (element as HTMLVideoElement).currentSrc;
-    if (src.startsWith("blob:")) return true;
+  if (element.tagName === 'VIDEO') {
+    const src = (element as HTMLVideoElement).src || (element as HTMLVideoElement).currentSrc;
+    if (src.startsWith('blob:')) return true;
     return isValidMediaUrl(src);
   }
   return false;

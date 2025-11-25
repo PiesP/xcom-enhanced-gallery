@@ -1,9 +1,9 @@
-import { SERVICE_KEYS } from "@/constants";
-import { CoreService } from "@shared/services/core-service-manager";
-import { FilenameService } from "@shared/services/filename-service";
-import { LanguageService } from "@shared/services/language-service";
-import { MediaService } from "@shared/services/media-service";
-import { ThemeService } from "@shared/services/theme-service";
+import { SERVICE_KEYS } from '@/constants';
+import { CoreService } from '@shared/services/core-service-manager';
+import { FilenameService } from '@shared/services/filename-service';
+import { LanguageService } from '@shared/services/language-service';
+import { MediaService } from '@shared/services/media-service';
+import { ThemeService } from '@shared/services/theme-service';
 
 /**
  * Register core services to the CoreService container.
