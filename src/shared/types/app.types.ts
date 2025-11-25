@@ -40,11 +40,10 @@ export type { Cleanupable } from "./lifecycle.types";
 // ================================
 
 // Result pattern - re-exported from result.types (Phase 353: AsyncResult added, unified SSOT)
-export type { Result, AsyncResult } from "./result.types";
+export type { AsyncResult, Result } from "./result.types";
 
 // BaseService and service types
-export type { BaseService } from "./core/core-types";
-export type { ServiceLifecycle } from "./core/core-types";
+export type { BaseService, ServiceLifecycle } from "./core/core-types";
 
 // ================================
 // Utility types
@@ -106,66 +105,21 @@ export type FileExtension = Brand<string, "FileExtension">;
 
 // UI/테마 타입
 export type {
-  Theme,
-  GalleryTheme,
-  ButtonVariant,
-  ButtonSize,
-  ColorVariant,
-  LoadingState,
-  AsyncState,
-  AnimationConfig,
-  ImageFitMode,
-  ImageFitOptions,
-  ImageFitCallbacks,
-  FilenameStrategy,
-  MediaFileExtension,
-  GlobalConfig,
+    AnimationConfig, AsyncState, ButtonSize, ButtonVariant, ColorVariant, FilenameStrategy, GalleryTheme, GlobalConfig, ImageFitCallbacks, ImageFitMode,
+    ImageFitOptions, LoadingState, MediaFileExtension, Theme
 } from "./ui.types";
 
 // 컴포넌트 타입
 export type {
-  VNode,
-  ComponentType,
-  ComponentChildren,
-  CSSProperties,
-  BaseComponentProps,
-  InteractiveComponentProps,
-  LoadingComponentProps,
-  SizedComponentProps,
-  VariantComponentProps,
-  FormComponentProps,
-  ContainerComponentProps,
-  GalleryComponentProps,
-  EventHandler,
-  MouseEventHandler,
-  KeyboardEventHandler,
-  AsyncFunction,
-  AsyncCallback,
-  OptionalCallback,
-  ErrorHandler,
-  AsyncErrorHandler,
-  ProgressCallback,
-  ApiResponse,
-  ApiError,
-  RequestOptions,
-  PaginationInfo,
-  FileInfo,
+    ApiError, ApiResponse, AsyncCallback, AsyncErrorHandler, AsyncFunction, BaseComponentProps, CSSProperties, ComponentChildren, ComponentType, ContainerComponentProps, ErrorHandler, EventHandler, FileInfo, FormComponentProps, GalleryComponentProps, InteractiveComponentProps, KeyboardEventHandler, LoadingComponentProps, MouseEventHandler, OptionalCallback, PaginationInfo, ProgressCallback, RequestOptions, SizedComponentProps, VNode, VariantComponentProps
 } from "./component.types";
 
 // 미디어 타입
 export type {
-  MediaType,
-  MediaQuality,
-  MediaId,
-  MediaInfo,
-  MediaEntity,
-  MediaInfoWithFilename,
-  TweetInfo,
-  MediaExtractionOptions,
-  MediaExtractionResult,
-  MediaExtractor,
-  PageType,
-  ExtractionSource,
+    ExtractionSource, MediaEntity, MediaExtractionOptions,
+    MediaExtractionResult,
+    MediaExtractor, MediaId,
+    MediaInfo, MediaInfoWithFilename, MediaQuality, MediaType, PageType, TweetInfo
 } from "./media.types";
 
 export { ExtractionError } from "./media.types";
@@ -175,23 +129,16 @@ export type { NavigationSource } from "./navigation.types";
 
 // 툴바 UI 상태 타입
 export type {
-  ToolbarDataState,
-  FitMode,
-  ToolbarState,
-  ToolbarActions,
+    FitMode, ToolbarActions, ToolbarDataState, ToolbarState
 } from "./toolbar.types";
 
 // Result 및 에러 코드
-export type {
-  BaseResultStatus,
-  BaseResult,
-  ResultSuccess,
-  ResultError,
-} from "./result.types";
 export { ErrorCode } from "./result.types";
+export type {
+    BaseResult, BaseResultStatus, ResultError, ResultSuccess
+} from "./result.types";
 
 // 갤러리 타입 (core-types에서 재-export)
-export type { GalleryViewMode } from "./core/core-types";
-export type { ViewMode } from "./core/core-types";
+export type { GalleryViewMode, ViewMode } from "./core/core-types";
 
 // Phase 421: ViewMode helper utilities removed; use VIEW_MODES from '@/constants'.

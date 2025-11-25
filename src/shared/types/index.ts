@@ -32,96 +32,40 @@
 // ==========================================
 
 // Media-related types (only most frequently used ones specified)
-export type { MediaType, MediaQuality } from "@/constants";
+export type { MediaQuality, MediaType } from "@/constants";
 export type {
-  MediaInfo,
-  MediaEntity,
-  MediaId,
-  TweetInfo,
-  QuoteTweetInfo,
-  MediaExtractionOptions,
-  MediaExtractionResult,
-  ExtractionSource,
-  PageType,
-  ExtractionMetadata,
-  MediaExtractor,
-  APIExtractor,
-  GalleryRenderOptions,
-  ExtractionStrategy,
-  MediaInfoWithFilename,
+    APIExtractor, ExtractionMetadata, ExtractionSource, ExtractionStrategy, GalleryRenderOptions, MediaEntity, MediaExtractionOptions,
+    MediaExtractionResult, MediaExtractor, MediaId, MediaInfo, MediaInfoWithFilename, PageType, QuoteTweetInfo, TweetInfo
 } from "./media.types";
 
 export {
-  PageType as MediaPageTypeEnum,
-  ExtractionSource as ExtractionSourceEnum,
+    ExtractionSource as ExtractionSourceEnum, PageType as MediaPageTypeEnum
 } from "./media.types";
 
 // App global types (Phase 355.2: Result types removed, moved to result.types)
 export type {
-  AppConfig,
-  Cleanupable,
-  AsyncResult,
-  BaseService,
-  ServiceLifecycle,
-  Option,
-  Optional,
-  DeepPartial,
-  UserId,
-  TweetId,
-  ServiceKey,
-  ElementId,
-  MediaUrl,
+    AppConfig, AsyncResult,
+    BaseService, Cleanupable, DeepPartial, ElementId,
+    MediaUrl, Option,
+    Optional, ServiceKey, ServiceLifecycle, TweetId, UserId
 } from "./app.types";
 
 // Core types from app.types re-exports
 export type {
-  ViewMode,
-  GalleryViewMode,
-  GalleryState,
-  GalleryEvents,
-  GalleryConfig,
-  DownloadOptions,
-  Size,
-  Lifecycle,
+    DownloadOptions, GalleryConfig, GalleryEvents, GalleryState, GalleryViewMode, Lifecycle, Size, ViewMode
 } from "./core/core-types";
 
 // Phase 421: ViewMode helpers removed; use VIEW_MODES from '@/constants'
 
 // UI/theme types
 export type {
-  Theme,
-  GalleryTheme,
-  ButtonVariant,
-  ButtonSize,
-  ColorVariant,
-  LoadingState,
-  AsyncState,
-  AnimationConfig,
-  ImageFitMode,
-  ImageFitOptions,
-  ImageFitCallbacks,
-  FilenameStrategy,
-  MediaFileExtension,
-  GlobalConfig,
+    AnimationConfig, AsyncState, ButtonSize, ButtonVariant, ColorVariant, FilenameStrategy, GalleryTheme, GlobalConfig, ImageFitCallbacks, ImageFitMode,
+    ImageFitOptions, LoadingState, MediaFileExtension, Theme
 } from "./ui.types";
 
 // Component Props types
 export type {
-  VNode,
-  ComponentType,
-  ComponentChildren,
-  CSSProperties,
-  BaseComponentProps,
-  InteractiveComponentProps,
-  LoadingComponentProps,
-  SizedComponentProps,
-  VariantComponentProps,
-  FormComponentProps,
-  ContainerComponentProps,
-  GalleryComponentProps,
-  EventHandler,
-  MouseEventHandler,
-  KeyboardEventHandler,
+    BaseComponentProps, CSSProperties, ComponentChildren, ComponentType, ContainerComponentProps, EventHandler, FormComponentProps, GalleryComponentProps, InteractiveComponentProps, KeyboardEventHandler, LoadingComponentProps, MouseEventHandler, SizedComponentProps, VNode, VariantComponentProps
 } from "./component.types";
 
 // Navigation state types
@@ -129,46 +73,23 @@ export type { NavigationSource } from "./navigation.types";
 
 // Toolbar UI state types
 export type {
-  ToolbarDataState,
-  FitMode,
-  ToolbarState,
-  ToolbarActions,
-  ToolbarViewModel,
+    FitMode, ToolbarActions, ToolbarDataState, ToolbarState, ToolbarViewModel
 } from "./toolbar.types";
 
 // Result pattern types (ErrorCode and Result related)
 export type {
-  BaseResultStatus,
-  ErrorCode,
-  BaseResult,
-  ResultSuccess,
-  ResultPartial,
-  ResultError,
-  Result,
+    BaseResult, BaseResultStatus,
+    ErrorCode, Result, ResultError, ResultPartial, ResultSuccess
 } from "./result.types";
 
 // Result utility functions (Phase 355.2)
 export {
-  success,
-  failure,
-  partial,
-  cancelled,
-  isSuccess,
-  isFailure,
-  isPartial,
-  unwrapOr,
-  safe,
-  safeAsync,
-  chain,
-  map,
+    cancelled, chain, failure, isFailure,
+    isPartial, isSuccess, map, partial, safe,
+    safeAsync, success, unwrapOr
 } from "./result.types";
 
 // UserScript API types (re-exported directly from userscript definition)
 export type {
-  UserScriptInfo,
-  BrowserEnvironment,
-  UserScriptGrant,
-  UserScriptConnect,
-  UserScriptRunAt,
-  UserScriptMetadata,
+    BrowserEnvironment, UserScriptConnect, UserScriptGrant, UserScriptInfo, UserScriptMetadata, UserScriptRunAt
 } from "./core/userscript.d";

@@ -13,7 +13,7 @@
 // ================================
 
 // MediaType and MediaQuality are single sources in constants.ts
-export type { MediaType, MediaQuality } from "@/constants";
+export type { MediaQuality, MediaType } from "@/constants";
 // Import ErrorCode for integration (provide ExtractionErrorCode alias)
 import type { ErrorCode } from "./result.types";
 
