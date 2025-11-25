@@ -244,16 +244,12 @@ function VerticalGalleryViewCore({
     });
   });
 
-  // Ref to break circular dependency between scroll and focus tracker
-  let forceSyncRef: (() => void) | undefined;
-
-  // Track scroll state - fires forceSync on each scroll for focus updates
+  // Track scroll state
   const { isScrolling } = useGalleryScroll({
     container: () => containerEl(),
     scrollTarget: () => itemsContainerEl(),
     enabled: isVisible,
     programmaticScrollTimestamp,
-    onScroll: () => forceSyncRef?.(),
   });
 
   // Track focused item based on scroll position (IntersectionObserver)
@@ -264,14 +260,10 @@ function VerticalGalleryViewCore({
     handleItemBlur,
     applyFocusAfterNavigation,
     setManualFocus,
-    forceSync,
   } = useGalleryFocusTracker({
     container: () => containerEl(),
     isEnabled: isVisible,
-    autoFocusDebounce: 0,
   });
-
-  forceSyncRef = forceSync;
 
   // Handle auto-scroll to item on navigation (disabled during user scroll)
   const { scrollToItem } = useGalleryItemScroll(
