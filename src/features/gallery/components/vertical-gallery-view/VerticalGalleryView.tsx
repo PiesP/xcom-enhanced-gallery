@@ -244,9 +244,10 @@ function VerticalGalleryViewCore({
     });
   });
 
-  // Phase 430: Ref to break circular dependency between scroll and focus tracker
+  // Ref to break circular dependency between scroll and focus tracker
   let forceSyncRef: (() => void) | undefined;
 
+  // Track scroll state - fires forceSync on each scroll for focus updates
   const { isScrolling } = useGalleryScroll({
     container: () => containerEl(),
     scrollTarget: () => itemsContainerEl(),
@@ -255,6 +256,7 @@ function VerticalGalleryViewCore({
     onScroll: () => forceSyncRef?.(),
   });
 
+  // Track focused item based on scroll position (IntersectionObserver)
   const {
     focusedIndex,
     registerItem: registerFocusItem,
@@ -266,33 +268,28 @@ function VerticalGalleryViewCore({
   } = useGalleryFocusTracker({
     container: () => containerEl(),
     isEnabled: isVisible,
-    getCurrentIndex: currentIndex,
-    // Immediate focus update for responsive keyboard navigation
     autoFocusDebounce: 0,
   });
 
   forceSyncRef = forceSync;
 
+  // Handle auto-scroll to item on navigation (disabled during user scroll)
   const { scrollToItem } = useGalleryItemScroll(
     () => containerEl(),
     currentIndex,
     () => mediaItems().length,
     {
       enabled: () => !isScrolling() && lastNavigationTrigger() !== 'scroll',
-      // Phase 264: behavior 옵션 제거 (기본값 'auto' 사용 - 모션 없음)
-      // Phase 266: debounceDelay 제거 (항상 0ms 즉시 실행)
       block: 'start',
       isScrolling,
       onScrollStart: () => setProgrammaticScrollTimestamp(Date.now()),
     },
   );
 
-  // Sync focusedIndex to currentIndex during scroll
+  // Sync focusedIndex -> currentIndex when user scrolls (not programmatic)
   createEffect(() => {
     const focused = focusedIndex();
     const current = currentIndex();
-    // 스크롤 중이 아니더라도 포커스가 변경되면 동기화 (스크롤바 드래그 등)
-    // 단, 프로그램적 스크롤 직후에는 동기화하지 않음 (스냅 방지)
     const isProgrammatic = Date.now() - programmaticScrollTimestamp() < 100;
 
     if (!isProgrammatic && focused !== null && focused !== current) {
@@ -300,8 +297,7 @@ function VerticalGalleryViewCore({
     }
   });
 
-  // Clear manual focus when scrolling starts to enable auto-focus tracking
-  // and hide toolbar
+  // Clear manual focus when user starts scrolling to enable auto-focus
   createEffect(() => {
     if (isScrolling()) {
       setManualFocus(null);
@@ -309,7 +305,7 @@ function VerticalGalleryViewCore({
     }
   });
 
-  // Phase 279/280/293: 갤러리 최초 열기 시 초기 스크롤 보장
+  // Initial scroll on gallery open
   const { autoScrollToCurrentItem } = useGalleryInitialScroll({
     isVisible,
     containerEl: () => containerEl(),
@@ -319,19 +315,16 @@ function VerticalGalleryViewCore({
     applyFocusAfterNavigation,
   });
 
+  // Handle navigation events (keyboard, button clicks)
   createEffect(() => {
-    if (!isVisible()) {
-      return;
-    }
+    if (!isVisible()) return;
 
     const unsubscribe = galleryIndexEvents.on('navigate:complete', ({ index, trigger }) => {
       scrollToItem(index);
       applyFocusAfterNavigation(index, trigger);
     });
 
-    onCleanup(() => {
-      unsubscribe();
-    });
+    onCleanup(() => unsubscribe());
   });
 
   useGalleryKeyboard({

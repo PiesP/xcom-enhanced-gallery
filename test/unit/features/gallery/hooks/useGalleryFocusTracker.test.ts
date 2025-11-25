@@ -55,7 +55,6 @@ describe('useGalleryFocusTracker', () => {
       useGalleryFocusTracker({
         container: () => container,
         isEnabled,
-        getCurrentIndex: () => 0,
       });
 
       expect(MockFocusCoordinator).toHaveBeenCalledTimes(1);
@@ -78,7 +77,6 @@ describe('useGalleryFocusTracker', () => {
       const { handleItemFocus, setManualFocus } = useGalleryFocusTracker({
         container: () => document.createElement('div'),
         isEnabled: () => true,
-        getCurrentIndex: () => 0,
       });
 
       const options = getCoordinatorOptions();
@@ -103,7 +101,6 @@ describe('useGalleryFocusTracker', () => {
       const { registerItem } = useGalleryFocusTracker({
         container: () => document.createElement('div'),
         isEnabled: () => true,
-        getCurrentIndex: () => 0,
       });
 
       const element = document.createElement('div');
@@ -124,7 +121,6 @@ describe('useGalleryFocusTracker', () => {
       const { handleItemFocus } = useGalleryFocusTracker({
         container: () => document.createElement('div'),
         isEnabled: () => true,
-        getCurrentIndex: () => 0,
       });
 
       handleItemFocus(2);
@@ -143,7 +139,6 @@ describe('useGalleryFocusTracker', () => {
       const { handleItemFocus, handleItemBlur } = useGalleryFocusTracker({
         container: () => document.createElement('div'),
         isEnabled: () => true,
-        getCurrentIndex: () => 0,
       });
 
       // Set manual focus
@@ -169,7 +164,6 @@ describe('useGalleryFocusTracker', () => {
       const { applyFocusAfterNavigation } = useGalleryFocusTracker({
         container: () => document.createElement('div'),
         isEnabled: () => true,
-        getCurrentIndex: () => 0,
       });
 
       applyFocusAfterNavigation(4, 'keyboard');
@@ -188,7 +182,6 @@ describe('useGalleryFocusTracker', () => {
       useGalleryFocusTracker({
         container: () => document.createElement('div'),
         isEnabled: () => true,
-        getCurrentIndex: () => 0,
       });
 
       const options = getCoordinatorOptions();
@@ -207,7 +200,6 @@ describe('useGalleryFocusTracker', () => {
       const { handleItemFocus } = useGalleryFocusTracker({
         container: () => document.createElement('div'),
         isEnabled: () => true,
-        getCurrentIndex: () => 0,
       });
 
       // Set manual focus
@@ -230,7 +222,6 @@ describe('useGalleryFocusTracker', () => {
       useGalleryFocusTracker({
         container: () => document.createElement('div'),
         isEnabled: () => true,
-        getCurrentIndex: () => 0,
       });
 
       const options = getCoordinatorOptions();
@@ -249,7 +240,6 @@ describe('useGalleryFocusTracker', () => {
       const { forceSync } = useGalleryFocusTracker({
         container: () => document.createElement('div'),
         isEnabled: () => true,
-        getCurrentIndex: () => 0,
       });
 
       const mock = MockFocusCoordinator as unknown as {

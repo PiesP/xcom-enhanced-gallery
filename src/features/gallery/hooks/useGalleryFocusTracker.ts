@@ -1,15 +1,15 @@
 /**
  * @fileoverview Gallery Focus Tracker Hook
  * @description Tracks which gallery item should be focused based on scroll position.
- * Coordinates with FocusCoordinator for IntersectionObserver-based tracking.
+ * Uses FocusCoordinator with IntersectionObserver for efficient visibility detection.
  *
- * Key responsibilities:
- * - Register/unregister gallery items with FocusCoordinator
- * - Handle manual focus from user interactions (click, keyboard)
- * - Process auto-focus changes from scroll position
- * - Update global gallery state (focusedIndex, currentIndex)
+ * Key behaviors:
+ * - Registers/unregisters items with FocusCoordinator
+ * - Handles manual focus from user interactions (click, keyboard)
+ * - Processes auto-focus from scroll position changes
+ * - Updates toolbar progress via global state
  *
- * Note: This hook does NOT trigger auto-scroll. It only tracks focus.
+ * Note: Does NOT trigger auto-scroll. Tracking only.
  */
 
 import { FocusCoordinator } from '@features/gallery/logic/focus-coordinator';
@@ -20,42 +20,40 @@ import type { Accessor } from 'solid-js';
 
 type MaybeAccessor<T> = T | Accessor<T>;
 
-/** Navigation trigger source types */
+/** Navigation trigger source */
 type FocusNavigationTrigger = 'button' | 'click' | 'keyboard' | 'init' | 'scroll';
 
-/** Configuration options for useGalleryFocusTracker */
+/** Hook configuration */
 export interface UseGalleryFocusTrackerOptions {
-  /** Container element for focus tracking */
+  /** Container element for tracking */
   container: MaybeAccessor<HTMLElement | null>;
-  /** Whether focus tracking is enabled */
+  /** Whether tracking is enabled */
   isEnabled: MaybeAccessor<boolean>;
-  /** Current gallery index accessor */
-  getCurrentIndex: Accessor<number>;
-  /** IntersectionObserver threshold(s) */
+  /** IntersectionObserver threshold (default: 0) */
   threshold?: number | number[];
-  /** IntersectionObserver root margin */
+  /** IntersectionObserver root margin (default: '0px') */
   rootMargin?: string;
-  /** Minimum visible ratio to consider an item */
+  /** Minimum visible ratio (default: 0.05) */
   minimumVisibleRatio?: number;
-  /** Debounce time for auto-focus updates (ms) */
+  /** Auto-focus debounce time in ms (default: 50) */
   autoFocusDebounce?: MaybeAccessor<number>;
 }
 
-/** Return type for useGalleryFocusTracker */
+/** Hook return type */
 export interface UseGalleryFocusTrackerReturn {
-  /** Currently focused item index (null if none) */
+  /** Current focused index (null if none) */
   focusedIndex: Accessor<number | null>;
-  /** Register an item element for focus tracking */
+  /** Register item for tracking */
   registerItem: (index: number, element: HTMLElement | null) => void;
-  /** Handle manual focus on an item (from user click/interaction) */
+  /** Handle manual focus (user click/interaction) */
   handleItemFocus: (index: number) => void;
-  /** Handle blur from an item */
+  /** Handle blur from item */
   handleItemBlur: (index: number) => void;
-  /** Force recomputation of focused item */
+  /** Force recomputation */
   forceSync: () => void;
-  /** Set manual focus (bypasses auto-focus) */
+  /** Set manual focus programmatically */
   setManualFocus: (index: number | null) => void;
-  /** Apply focus after navigation completes */
+  /** Apply focus after navigation */
   applyFocusAfterNavigation: (
     index: number,
     trigger: FocusNavigationTrigger,
@@ -66,8 +64,8 @@ export interface UseGalleryFocusTrackerReturn {
 const { createSignal, onCleanup, batch } = getSolid();
 
 /**
- * Hook for tracking gallery item focus based on scroll position.
- * Uses IntersectionObserver to efficiently detect which item is most visible.
+ * Track gallery item focus based on scroll position.
+ * Uses IntersectionObserver for efficient visibility detection.
  */
 export function useGalleryFocusTracker(
   options: UseGalleryFocusTrackerOptions,
@@ -79,9 +77,7 @@ export function useGalleryFocusTracker(
   const container = toAccessor(options.container);
   const autoFocusDebounce = toAccessor(options.autoFocusDebounce ?? 50);
 
-  // FocusCoordinator handles IntersectionObserver and focus computation
   const coordinator = new FocusCoordinator({
-    // Disable auto-focus when manual focus is active
     isEnabled: () => isEnabled() && manualFocusIndex() === null,
     container,
     threshold: options.threshold ?? 0,
@@ -91,13 +87,11 @@ export function useGalleryFocusTracker(
     }),
     debounceTime: autoFocusDebounce(),
     onFocusChange: (index, source) => {
-      // Only process auto-focus when no manual focus is active
       if (source === 'auto' && manualFocusIndex() === null) {
         batch(() => {
           setLocalFocusedIndex(index);
           if (index !== null) {
-            // Update global state - triggers toolbar progress update
-            // Note: 'auto-focus' source prevents auto-scroll in navigation handler
+            // 'auto-focus' source prevents auto-scroll in navigation handler
             navigateToItem(index, 'scroll', 'auto-focus');
           }
         });
@@ -107,26 +101,22 @@ export function useGalleryFocusTracker(
 
   onCleanup(() => coordinator.cleanup());
 
-  /** Register an item element for focus tracking */
   const registerItem = (index: number, element: HTMLElement | null): void => {
     coordinator.registerItem(index, element);
   };
 
-  /** Handle manual focus from user interaction */
   const handleItemFocus = (index: number): void => {
     setManualFocusIndex(index);
     setLocalFocusedIndex(index);
     setFocusedIndex(index);
   };
 
-  /** Handle blur - clears manual focus if it was the focused item */
   const handleItemBlur = (index: number): void => {
     if (manualFocusIndex() === index) {
       setManualFocusIndex(null);
     }
   };
 
-  /** Set manual focus directly (for programmatic control) */
   const setManualFocus = (index: number | null): void => {
     setManualFocusIndex(index);
     if (index !== null) {
@@ -135,7 +125,6 @@ export function useGalleryFocusTracker(
     }
   };
 
-  /** Apply focus after navigation completes */
   const applyFocusAfterNavigation = (
     index: number,
     _trigger: FocusNavigationTrigger,
@@ -144,7 +133,6 @@ export function useGalleryFocusTracker(
     setManualFocus(index);
   };
 
-  /** Force recomputation of focused item */
   const forceSync = (): void => {
     coordinator.recompute();
   };

@@ -1,13 +1,13 @@
 /**
  * @fileoverview Gallery Scroll Management Hook
- * @description Manages scroll state and events for the gallery.
- * Detects user scroll activity (wheel, scrollbar drag) and tracks scroll direction.
+ * @description Tracks scroll state and events for focus tracking integration.
+ * Detects user scroll activity (wheel, scrollbar drag) and filters programmatic scrolls.
  *
- * Key responsibilities:
- * - Track scroll state (isScrolling, direction, lastScrollTime)
- * - Handle wheel and scroll events on gallery container
- * - Filter out programmatic scroll events (auto-scroll)
- * - Provide scroll callbacks for focus tracking integration
+ * Key behaviors:
+ * - Tracks isScrolling, direction, lastScrollTime
+ * - Handles wheel and scroll events on gallery container
+ * - Ignores programmatic scroll events (within 100ms window)
+ * - Does NOT trigger auto-scroll
  */
 
 import { isGalleryInternalEvent } from '@shared/dom/utils';
@@ -27,51 +27,41 @@ const { createSignal, createEffect, batch, onCleanup } = getSolid();
 type Accessor<T> = () => T;
 type MaybeAccessor<T> = T | Accessor<T>;
 
-/** Configuration options for useGalleryScroll */
+/** Hook configuration */
 interface UseGalleryScrollOptions {
-  /** Gallery container element reference */
+  /** Gallery container element */
   container: HTMLElement | null | Accessor<HTMLElement | null>;
-  /** Actual scroll target (defaults to container) */
+  /** Scroll target (defaults to container) */
   scrollTarget?: HTMLElement | null | Accessor<HTMLElement | null>;
-  /** Callback fired on scroll with delta and target element */
+  /** Callback on scroll with delta and target */
   onScroll?: (delta: number, target: HTMLElement | null) => void;
   /** Whether scroll handling is enabled */
   enabled?: MaybeAccessor<boolean>;
   /** Whether to track scroll direction */
   enableScrollDirection?: MaybeAccessor<boolean>;
-  /** Callback when scroll direction changes */
+  /** Callback on direction change */
   onScrollDirectionChange?: (direction: ScrollDirection) => void;
-  /** Timestamp of last programmatic scroll (events within 100ms are ignored) */
+  /** Timestamp of last programmatic scroll (events within 100ms ignored) */
   programmaticScrollTimestamp?: Accessor<number>;
 }
 
-/** Return type for useGalleryScroll */
+/** Hook return type */
 export interface UseGalleryScrollReturn {
-  /** Timestamp of last scroll activity */
   lastScrollTime: Accessor<number>;
-  /** Whether currently scrolling */
   isScrolling: Accessor<boolean>;
-  /** Current scroll direction */
   scrollDirection: Accessor<ScrollDirection>;
-  /** Full scroll state snapshot */
   state: Accessor<ScrollState>;
 }
 
-/**
- * Time to wait after last scroll event before marking scroll as ended (ms).
- * 250ms provides good balance between responsiveness and stability.
- */
+/** Idle timeout after scroll ends (ms) */
 export const SCROLL_IDLE_TIMEOUT = 250;
 
-/** Window to ignore scroll events after programmatic scroll (ms) */
+/** Window to ignore programmatic scroll events (ms) */
 const PROGRAMMATIC_SCROLL_WINDOW = 100;
 
-/** Extract deltaY from wheel event */
-const extractWheelDelta = (event: WheelEvent): number => event.deltaY ?? 0;
-
 /**
- * Hook for managing gallery scroll state and events.
- * Provides scroll tracking without triggering auto-scroll.
+ * Track scroll state and events for focus tracking integration.
+ * Does NOT trigger auto-scroll - tracking only.
  */
 export function useGalleryScroll({
   container,
@@ -97,7 +87,6 @@ export function useGalleryScroll({
   let scrollIdleTimerId: number | null = null;
   let directionIdleTimerId: number | null = null;
 
-  /** Clear scroll idle timeout */
   const clearScrollIdleTimer = (): void => {
     if (scrollIdleTimerId !== null) {
       globalTimerManager.clearTimeout(scrollIdleTimerId);
@@ -105,7 +94,6 @@ export function useGalleryScroll({
     }
   };
 
-  /** Clear direction idle timeout */
   const clearDirectionIdleTimer = (): void => {
     if (directionIdleTimerId !== null) {
       globalTimerManager.clearTimeout(directionIdleTimerId);
@@ -113,7 +101,6 @@ export function useGalleryScroll({
     }
   };
 
-  /** Update scroll state with new values */
   const updateScrollState = (isScrolling: boolean, delta?: number): void => {
     batch(() => {
       setScrollState(prev => ({
@@ -125,22 +112,16 @@ export function useGalleryScroll({
     });
   };
 
-  /** Update scroll direction based on delta */
   const updateScrollDirection = (delta: number): void => {
-    if (!enableScrollDirectionAccessor()) {
-      return;
-    }
+    if (!enableScrollDirectionAccessor()) return;
 
     const newDirection: ScrollDirection = delta > 0 ? 'down' : 'up';
-    const currentDirection = scrollState().direction;
-
-    if (currentDirection !== newDirection) {
+    if (scrollState().direction !== newDirection) {
       setScrollState(prev => ({ ...prev, direction: newDirection }));
       onScrollDirectionChange?.(newDirection);
       logger.debug('useGalleryScroll: Direction changed', { direction: newDirection });
     }
 
-    // Reset direction to idle after timeout
     clearDirectionIdleTimer();
     directionIdleTimerId = globalTimerManager.setTimeout(() => {
       if (scrollState().direction !== 'idle') {
@@ -150,7 +131,6 @@ export function useGalleryScroll({
     }, SCROLL_IDLE_TIMEOUT);
   };
 
-  /** Schedule scroll end detection */
   const scheduleScrollEnd = (): void => {
     clearScrollIdleTimer();
     scrollIdleTimerId = globalTimerManager.setTimeout(() => {
@@ -159,38 +139,25 @@ export function useGalleryScroll({
     }, SCROLL_IDLE_TIMEOUT);
   };
 
-  /** Check if scroll event should be ignored (programmatic scroll) */
-  const shouldIgnoreScroll = (): boolean => {
-    const lastProgrammatic = programmaticTimestampAccessor();
-    return Date.now() - lastProgrammatic < PROGRAMMATIC_SCROLL_WINDOW;
-  };
+  const shouldIgnoreScroll = (): boolean =>
+    Date.now() - programmaticTimestampAccessor() < PROGRAMMATIC_SCROLL_WINDOW;
 
-  /** Handle wheel events on gallery */
   const handleWheel = (event: WheelEvent): void => {
-    if (!isGalleryOpen() || !isGalleryInternalEvent(event)) {
-      return;
-    }
+    if (!isGalleryOpen() || !isGalleryInternalEvent(event)) return;
 
-    const delta = extractWheelDelta(event);
-    const targetElement = scrollTargetAccessor();
-
+    const delta = event.deltaY ?? 0;
     updateScrollState(true, delta);
     updateScrollDirection(delta);
-    onScroll?.(delta, targetElement);
+    onScroll?.(delta, scrollTargetAccessor());
     scheduleScrollEnd();
   };
 
-  /** Handle scroll events (scrollbar drag, etc.) */
   const handleScroll = (): void => {
-    if (!isGalleryOpen() || shouldIgnoreScroll()) {
-      return;
-    }
-
+    if (!isGalleryOpen() || shouldIgnoreScroll()) return;
     updateScrollState(true);
     scheduleScrollEnd();
   };
 
-  // Setup event listeners
   createEffect(() => {
     const isEnabled = enabledAccessor();
     const containerElement = containerAccessor();
@@ -198,7 +165,6 @@ export function useGalleryScroll({
     const eventTarget = scrollElement ?? containerElement;
 
     if (!isEnabled || !eventTarget) {
-      // Reset state when disabled
       updateScrollState(false);
       clearScrollIdleTimer();
       clearDirectionIdleTimer();
@@ -207,7 +173,6 @@ export function useGalleryScroll({
     }
 
     const eventManager = new EventManager();
-
     eventManager.addEventListener(eventTarget, 'wheel', handleWheel, { passive: true });
     eventManager.addEventListener(eventTarget, 'scroll', handleScroll, { passive: true });
 
