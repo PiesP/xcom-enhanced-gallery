@@ -20,7 +20,6 @@ import {
   navigatePrevious,
   openGallery,
   setError,
-  setViewMode,
 } from '@shared/state/signals/gallery.signals';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view/VerticalGalleryView';
@@ -217,9 +216,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
     renderOptions?: GalleryRenderOptions,
   ): Promise<void> {
     openGallery(mediaItems, renderOptions?.startIndex ?? 0);
-    if (renderOptions?.viewMode) {
-      setViewMode(renderOptions.viewMode === 'horizontal' ? 'horizontal' : 'vertical');
-    }
   }
 
   close(): void {

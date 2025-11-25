@@ -83,6 +83,11 @@
     --xeg-spacing-mobile: clamp(var(--xeg-spacing-xs), 2vw, var(--xeg-spacing-md));
     --xeg-spacing-compact: clamp(0.25rem, 1.5vw, var(--xeg-spacing-sm));
 
+    /* Toolbar visibility tokens */
+    --xeg-toolbar-hidden-opacity: 0;
+    --xeg-toolbar-hidden-visibility: hidden;
+    --xeg-toolbar-hidden-pointer-events: none;
+
     /* Removed --xeg-toolbar-height: unused */
     /* Removed --xeg-backdrop-blur: unused */
   }
@@ -211,11 +216,11 @@
 }
 
 /* Scrolling state: hide toolbar while scrolling manually */
-/* High specificity to override hover states without !important */
+/* High specificity to override hover states without forced overrides */
 .container.isScrolling[data-xeg-gallery="true"][data-xeg-role="gallery"] .toolbarWrapper {
-  --toolbar-opacity: 0;
-  --toolbar-visibility: hidden;
-  --toolbar-pointer-events: none;
+  --toolbar-opacity: var(--xeg-toolbar-hidden-opacity, 0);
+  --toolbar-visibility: var(--xeg-toolbar-hidden-visibility, hidden);
+  --toolbar-pointer-events: var(--xeg-toolbar-hidden-pointer-events, none);
 }
 
 /* Ensure nested elements inherit the restored pointer behavior */

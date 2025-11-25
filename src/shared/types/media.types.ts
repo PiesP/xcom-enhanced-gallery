@@ -279,8 +279,6 @@ export interface MediaExtractor {
 export interface GalleryRenderOptions {
   /** Start index */
   startIndex?: number | undefined;
-  /** View mode */
-  viewMode?: 'horizontal' | 'vertical' | undefined;
   /** Class name */
   className?: string | undefined;
   /** Tweet ID */

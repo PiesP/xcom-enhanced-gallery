@@ -17,6 +17,10 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Simplified calculation chains (viewport bounds, center proximity, hysteresis logic).
   - Reduced variable verbosity while preserving readability.
 
+### Removed
+
+- Eliminated the legacy `GalleryHOC` compatibility shim and the `useGalleryInitialScroll` placeholder so no unused modules remain under `src/`. Dependency-cruiser no longer requires exceptions for these files, keeping the orphan check authoritative.
+
 ## [0.4.16] - 2025-11-23
 
 ### Added
