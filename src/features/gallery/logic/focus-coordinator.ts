@@ -111,7 +111,7 @@ export class FocusCoordinator {
 
   /** Force immediate recomputation (bypasses debounce) */
   recompute(): void {
-    this.performRecomputation();
+    this.performRecomputation(false);
   }
 
   /** Force immediate recomputation and cancel any pending debounced recomputation */
@@ -120,18 +120,19 @@ export class FocusCoordinator {
       globalTimerManager.clearTimeout(this.debounceTimerId);
       this.debounceTimerId = null;
     }
-    this.performRecomputation();
+    // Ignore hysteresis on forced recompute (e.g., scroll end) to snap to best candidate
+    this.performRecomputation(true);
   }
 
   /** Internal: perform actual recomputation logic */
-  private performRecomputation(): void {
+  private performRecomputation(ignoreHysteresis: boolean): void {
     if (!this.options.isEnabled()) return;
 
     const container = this.options.container();
     if (!container) return;
 
     const containerRect = container.getBoundingClientRect();
-    const selection = this.selectBestCandidate(containerRect);
+    const selection = this.selectBestCandidate(containerRect, ignoreHysteresis);
 
     if (!selection) {
       return;
@@ -166,12 +167,15 @@ export class FocusCoordinator {
     }
     this.debounceTimerId = globalTimerManager.setTimeout(() => {
       this.debounceTimerId = null;
-      this.performRecomputation();
+      this.performRecomputation(false);
     }, this.debounceTime);
   }
 
   /** Select best candidate using weighted scoring with hysteresis */
-  private selectBestCandidate(containerRect: DOMRect): FocusScoreResult | null {
+  private selectBestCandidate(
+    containerRect: DOMRect,
+    ignoreHysteresis = false,
+  ): FocusScoreResult | null {
     const viewportHeight = Math.max(containerRect.height, 1);
     const viewportTop = containerRect.top;
     const viewportCenter = viewportTop + viewportHeight / 2;
@@ -233,7 +237,8 @@ export class FocusCoordinator {
     const best = candidates[0]!;
 
     // Apply hysteresis: keep previous focus if score delta is small
-    if (this.lastAutoFocus && this.lastAutoFocus.index !== best.index) {
+    // Skipped if ignoreHysteresis is true (e.g. scroll end)
+    if (!ignoreHysteresis && this.lastAutoFocus && this.lastAutoFocus.index !== best.index) {
       const prev = this.items.get(this.lastAutoFocus.index);
       if (prev?.isVisible && best.score - this.lastAutoFocus.score < DEFAULTS.STICKY_SCORE_DELTA) {
         return this.lastAutoFocus;
