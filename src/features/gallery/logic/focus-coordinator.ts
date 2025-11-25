@@ -2,18 +2,19 @@
  * @fileoverview Focus Coordinator - Natural Scroll-Based Focus Selection
  * @description Selects the most naturally visible gallery item after scroll stops.
  *
- * Selection algorithm (weighted scoring):
- * 1. Screen coverage score (60%): How much of the viewport the item occupies
- * 2. Center proximity score (40%): How close the item center is to viewport center
- *
- * This weighted approach naturally selects items that are both:
- * - Large enough to be the "main" content on screen
- * - Positioned near where the user is looking (center)
+ * Selection algorithm (weighted heuristics):
+ * 1. Viewport coverage: How much of the visible viewport the item currently occupies
+ * 2. Element visibility: How much of the media itself is visible (guards tall crops)
+ * 3. Center proximity + focus band overlap: Prefers media intersecting the central viewing lane
+ * 4. Center-line anchor bonus: Keeps items straddling the exact center sticky when scores are close
  */
 
 import { SharedObserver } from '@shared/utils/performance/observer-pool';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import type { Accessor } from 'solid-js';
+
+import { scoreFocusCandidate } from './focus-score';
+import type { FocusScoreResult } from './focus-score';
 
 /** Configuration for FocusCoordinator */
 export interface FocusCoordinatorOptions {
@@ -47,9 +48,9 @@ const DEFAULTS = {
   ROOT_MARGIN: '0px',
   MIN_VISIBLE_RATIO: 0.05,
   DEBOUNCE_TIME: 50,
-  // Weights for scoring
-  COVERAGE_WEIGHT: 0.6,
-  CENTER_WEIGHT: 0.4,
+  FOCUS_ZONE_TOP_RATIO: 0.35,
+  FOCUS_ZONE_BOTTOM_RATIO: 0.65,
+  STICKY_SCORE_DELTA: 0.08,
 } as const;
 
 /**
@@ -62,6 +63,7 @@ export class FocusCoordinator {
   private readonly minVisibleRatio: number;
   private readonly debounceTime: number;
   private readonly observerOptions: { threshold: number | number[]; rootMargin: string };
+  private lastAutoFocus: FocusScoreResult | null = null;
 
   constructor(private readonly options: FocusCoordinatorOptions) {
     this.minVisibleRatio = options.minimumVisibleRatio ?? DEFAULTS.MIN_VISIBLE_RATIO;
@@ -79,6 +81,9 @@ export class FocusCoordinator {
 
     if (!element) {
       this.items.delete(index);
+      if (this.lastAutoFocus?.index === index) {
+        this.lastAutoFocus = null;
+      }
       this.scheduleRecompute();
       return;
     }
@@ -106,10 +111,17 @@ export class FocusCoordinator {
     if (!container) return;
 
     const containerRect = container.getBoundingClientRect();
-    const bestCandidate = this.findBestCandidate(containerRect);
+    const selection = this.selectBestCandidate(containerRect);
 
-    if (bestCandidate !== null) {
-      this.options.onFocusChange(bestCandidate, 'auto');
+    if (!selection) {
+      return;
+    }
+
+    const hasChanged = this.lastAutoFocus?.index !== selection.index;
+    this.lastAutoFocus = selection;
+
+    if (hasChanged) {
+      this.options.onFocusChange(selection.index, 'auto');
     }
   }
 
@@ -119,6 +131,7 @@ export class FocusCoordinator {
       SharedObserver.unobserve(item.element);
     }
     this.items.clear();
+    this.lastAutoFocus = null;
 
     if (this.debounceTimerId !== null) {
       globalTimerManager.clearTimeout(this.debounceTimerId);
@@ -148,47 +161,84 @@ export class FocusCoordinator {
    * This naturally prefers items that occupy more screen space
    * while also considering viewport center positioning.
    */
-  private findBestCandidate(containerRect: DOMRect): number | null {
-    const viewportHeight = containerRect.height;
+  private selectBestCandidate(containerRect: DOMRect): FocusScoreResult | null {
+    const viewportHeight = Math.max(containerRect.height, 1);
     const viewportCenter = containerRect.top + viewportHeight / 2;
+    const focusBandTop = containerRect.top + viewportHeight * DEFAULTS.FOCUS_ZONE_TOP_RATIO;
+    const focusBandBottom = containerRect.top + viewportHeight * DEFAULTS.FOCUS_ZONE_BOTTOM_RATIO;
+    const focusBandHeight = Math.max(focusBandBottom - focusBandTop, 1);
     const maxCenterDistance = viewportHeight / 2;
 
-    type Candidate = { index: number; score: number; coverage: number };
-    const candidates: Candidate[] = [];
+    const candidates: FocusScoreResult[] = [];
 
     for (const [index, item] of this.items) {
       if (!item.isVisible) continue;
 
       const rect = item.element.getBoundingClientRect();
-
-      // Calculate vertical intersection with container
       const intersectionTop = Math.max(rect.top, containerRect.top);
       const intersectionBottom = Math.min(rect.bottom, containerRect.bottom);
       const intersectionHeight = Math.max(0, intersectionBottom - intersectionTop);
 
       if (intersectionHeight === 0) continue;
 
-      // Screen coverage score (0-1)
-      const coverage = Math.min(intersectionHeight / viewportHeight, 1);
-      if (coverage < this.minVisibleRatio) continue;
+      const viewportCoverage = Math.min(intersectionHeight / viewportHeight, 1);
+      if (viewportCoverage < this.minVisibleRatio) continue;
 
-      // Center proximity score (0-1)
-      // Calculate distance from item's visible center to viewport center
+      const sourceHeight =
+        rect.height ||
+        item.entry?.boundingClientRect?.height ||
+        item.entry?.rootBounds?.height ||
+        intersectionHeight ||
+        1;
+
+      const elementVisibility = clamp01(
+        item.entry?.intersectionRatio ?? intersectionHeight / Math.max(sourceHeight, 1),
+      );
+
       const visibleCenter = intersectionTop + intersectionHeight / 2;
       const centerDistance = Math.abs(visibleCenter - viewportCenter);
       const centerProximity = 1 - Math.min(centerDistance / maxCenterDistance, 1);
 
-      // Combined weighted score
-      const score = coverage * DEFAULTS.COVERAGE_WEIGHT + centerProximity * DEFAULTS.CENTER_WEIGHT;
+      const focusBandOverlap = Math.max(
+        0,
+        Math.min(intersectionBottom, focusBandBottom) - Math.max(intersectionTop, focusBandTop),
+      );
+      const focusBandCoverage = focusBandOverlap / focusBandHeight;
 
-      candidates.push({ index, score, coverage });
+      const intersectsCenterLine = rect.top <= viewportCenter && rect.bottom >= viewportCenter;
+
+      const candidate = scoreFocusCandidate({
+        index,
+        viewportCoverage,
+        elementVisibility,
+        centerProximity,
+        focusBandCoverage,
+        intersectsCenterLine,
+      });
+
+      candidates.push(candidate);
     }
 
-    if (candidates.length === 0) return null;
+    if (candidates.length === 0) {
+      return null;
+    }
 
-    // Sort by score (highest first)
     candidates.sort((a, b) => b.score - a.score);
+    const bestCandidate = candidates[0]!;
 
-    return candidates[0]!.index;
+    const previous = this.lastAutoFocus;
+    if (previous && previous.index !== bestCandidate.index) {
+      const previousItem = this.items.get(previous.index);
+      if (
+        previousItem?.isVisible &&
+        bestCandidate.score - previous.score < DEFAULTS.STICKY_SCORE_DELTA
+      ) {
+        return previous;
+      }
+    }
+
+    return bestCandidate;
   }
 }
+
+const clamp01 = (value: number): number => Math.min(Math.max(value, 0), 1);

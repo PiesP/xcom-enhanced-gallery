@@ -8,7 +8,10 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-- No user-facing changes have been recorded yet.
+### Changed
+
+- **Gallery auto-focus**: Adopted a multi-signal scoring model (viewport coverage, element visibility, focus-band overlap, and center-line hysteresis) so the gallery now consistently highlights the media a user is actually looking at after scroll stops. The new heuristics were informed by community Scrollspy implementations and MDN guidance on `IntersectionObserver` usage.
+- **Tests**: Expanded `FocusCoordinator` coverage with focus-band and sticky-score scenarios while sharing helper utilities to keep the suite concise.
 
 ## [0.4.16] - 2025-11-23
 
