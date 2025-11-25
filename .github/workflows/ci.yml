@@ -1,9 +1,11 @@
 name: 🏗️ CI Pipeline
 
 # Responsibility: Continuous Integration
-# - Linting (ESLint)
+# - Linting (ESLint with SARIF reporting)
+# - Type checking (TypeScript)
 # - Build verification (Production mode)
-# - Ensures code quality and buildability on every Push/PR
+#
+# Triggered on: Push/PR to master (excluding docs/assets)
 
 on:
   push:
@@ -15,6 +17,8 @@ on:
       - "**/*.txt"
       - "**/*.svg"
       - ".vscode/**"
+      - ".github/*.md"
+      - "LICENSES/**"
   pull_request:
     branches: [master]
     paths-ignore:
@@ -24,6 +28,8 @@ on:
       - "**/*.txt"
       - "**/*.svg"
       - ".vscode/**"
+      - ".github/*.md"
+      - "LICENSES/**"
   workflow_dispatch:
 
 env:
@@ -35,12 +41,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   lint:
-    name: 🧹 Lint (ESLint)
+    name: 🧹 Lint
     runs-on: ubuntu-slim
     permissions:
       contents: read
@@ -50,14 +56,10 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
 
-      - name: 🔧 Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v6
+      - name: 🔧 Setup environment
+        uses: ./.github/actions/setup-node
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - name: 📦 Install dependencies
-        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
       - name: 🔍 Run ESLint (SARIF)
         env:
@@ -76,7 +78,7 @@ jobs:
       - name: 🔍 Run ESLint (Full Check)
         run: npm run lint
 
-      - name: 📊 Upload analysis results
+      - name: 📊 Upload SARIF results
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: eslint-results.sarif
@@ -89,37 +91,27 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
 
-      - name: 🔧 Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v6
+      - name: 🔧 Setup environment
+        uses: ./.github/actions/setup-node
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
 
-      - name: 📦 Install dependencies
-        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
-
-      - name: 📐 Run Typecheck
-        # Bypass 'npm run typecheck' to skip 'pretypecheck' script (which relies on local-only scripts)
+      - name: 📐 Run TypeScript check
         run: npm run typecheck
 
   build:
-    name: 🚀 Build Check
+    name: 🚀 Build
     runs-on: ubuntu-slim
+    needs: [lint, typecheck]
     timeout-minutes: 15
-    permissions:
-      contents: read
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
 
-      - name: 🔧 Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v6
+      - name: 🔧 Setup environment
+        uses: ./.github/actions/setup-node
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - name: 📦 Install dependencies
-        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
       - name: 🧹 Clean workspace
         run: rm -rf dist
@@ -131,6 +123,6 @@ jobs:
         uses: actions/upload-artifact@v5
         if: success()
         with:
-          name: build-artifacts-${{ github.sha }}
+          name: build-${{ github.sha }}
           path: dist/
           retention-days: 7

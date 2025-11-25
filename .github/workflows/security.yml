@@ -1,16 +1,26 @@
 name: 🛡️ Security Suite
 
 # Responsibility: Comprehensive Security Monitoring
-# - CodeQL Analysis (Static Analysis)
-# - OSV Scanner (Vulnerability Scanning)
-# - NPM Audit (Dependency Vulnerabilities)
-# - License Compliance
+# - CodeQL Analysis (Static code analysis)
+# - OSV Scanner (Dependency vulnerability scanning)
+# - NPM Audit (Node.js dependency vulnerabilities)
+# - License Compliance (Dependency license verification)
+#
+# Triggered on: Push/PR to master, Weekly schedule (Monday 9 AM UTC)
 
 on:
   push:
     branches: [master]
+    paths:
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
   pull_request:
     branches: [master]
+    paths:
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
   schedule:
     # Every Monday 9 AM (UTC)
     - cron: "0 9 * * 1"
@@ -20,39 +30,34 @@ env:
   NODE_VERSION: "24"
   XEG_DISABLE_LOCAL_CONFIG: "true"
   OSV_SCANNER_VERSION: v2.3.0
-  OSV_RESULTS_FILE: osv-results.sarif
 
 permissions:
   contents: read
   security-events: write
   actions: read
 
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
+
 jobs:
   codeql:
     name: 🧠 CodeQL Analysis
     runs-on: ubuntu-slim
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ["javascript-typescript"]
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
 
-      - name: 🔧 Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v6
+      - name: 🔧 Setup environment
+        uses: ./.github/actions/setup-node
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - name: 📦 Install dependencies
-        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
       - name: 🛠️ Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
-          languages: ${{ matrix.language }}
+          languages: javascript-typescript
           config: |
             paths-ignore:
               - dist/
@@ -60,7 +65,6 @@ jobs:
               - docs/
               - test/
               - scripts/
-              - config/
               - coverage/
               - "**/*.d.ts"
               - "**/*.min.js"
@@ -75,7 +79,7 @@ jobs:
   osv-scanner:
     name: 🔍 OSV Scanner
     runs-on: ubuntu-slim
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
@@ -83,7 +87,8 @@ jobs:
       - name: 📥 Download OSV-Scanner
         run: |
           mkdir -p "${HOME}/.local/bin"
-          curl -sSLo "${HOME}/.local/bin/osv-scanner" "https://github.com/google/osv-scanner/releases/download/${{ env.OSV_SCANNER_VERSION }}/osv-scanner_linux_amd64"
+          curl -sSLo "${HOME}/.local/bin/osv-scanner" \
+            "https://github.com/google/osv-scanner/releases/download/${{ env.OSV_SCANNER_VERSION }}/osv-scanner_linux_amd64"
           chmod +x "${HOME}/.local/bin/osv-scanner"
           echo "${HOME}/.local/bin" >> "$GITHUB_PATH"
 
@@ -93,14 +98,14 @@ jobs:
           osv-scanner scan source \
             --recursive \
             --format sarif \
-            --output "${{ env.OSV_RESULTS_FILE }}" \
+            --output osv-results.sarif \
             ./
 
-      - name: 📊 Upload SARIF
+      - name: 📊 Upload SARIF results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
-          sarif_file: ${{ env.OSV_RESULTS_FILE }}
+          sarif_file: osv-results.sarif
 
   audit:
     name: 📦 NPM Audit
@@ -110,24 +115,17 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
 
-      - name: 🚀 Setup Node.js
-        uses: actions/setup-node@v6
+      - name: 🔧 Setup environment
+        uses: ./.github/actions/setup-node
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: 📦 Install dependencies
-        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
       - name: 🔍 NPM Security Audit
         run: npm audit --audit-level=moderate
 
-      - name: 🔒 Dependency Security Check
+      - name: 🔒 High-risk vulnerability check
         run: |
-          # High-risk vulnerability check
           npm audit --audit-level=high --json > audit-report.json || true
-
-          # Generate vulnerability report
           if [ -s audit-report.json ]; then
             echo "🚨 Security vulnerabilities found!"
             cat audit-report.json
@@ -135,11 +133,11 @@ jobs:
             echo "✅ No high-risk vulnerabilities found"
           fi
 
-      - name: 📊 Upload security report
+      - name: 📊 Upload audit report
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: security-audit-report-${{ github.sha }}
+          name: npm-audit-${{ github.sha }}
           path: audit-report.json
           retention-days: 30
 
@@ -151,14 +149,10 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
 
-      - name: 🚀 Setup Node.js
-        uses: actions/setup-node@v6
+      - name: 🔧 Setup environment
+        uses: ./.github/actions/setup-node
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: 📦 Install dependencies
-        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
       - name: 📜 Check licenses
         run: |

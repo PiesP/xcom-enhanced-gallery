@@ -1,13 +1,11 @@
 name: 🚀 Release
 
 # Responsibility: Release artifact creation only
-# - Version detection: package.json changes or manual trigger
+# - Version detection: package.json version change or manual trigger
 # - Production build: userscript + checksums + metadata
-# - GitHub Release: automated creation with assets
-# - No CI validation beyond direct Vite builds
+# - GitHub Release: automated creation with downloadable assets
 #
-# NOTE: All validation (tests, lint, deps, coverage) happens locally before push.
-# CI uses first-party commands only: npm ci + npx vite build.
+# Note: All validation (tests, lint, deps) happens locally before push.
 
 on:
   push:
@@ -36,77 +34,67 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  check-changes:
-    name: 🔍 Check Version Changes
+  check-version:
+    name: 🔍 Check Version
     runs-on: ubuntu-slim
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
       current_version: ${{ steps.check.outputs.current_version }}
-    permissions:
-      contents: read
-
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: 🚀 Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - name: 🔍 Check version changes
+      - name: 🔍 Detect version change
         id: check
         run: |
           set -euo pipefail
-
           CURRENT_VERSION=$(node -p "require('./package.json').version")
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "should_release=true" >> "$GITHUB_OUTPUT"
-            echo "Manual release triggered"
+            echo "📦 Manual release triggered"
           else
             PREV_VERSION=""
-
-            # If there's a parent commit, attempt to read package.json from it.
             if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
               if git ls-tree -r HEAD~1 --name-only | grep -q '^package.json$'; then
-                PREV_VERSION=$(git show HEAD~1:package.json 2>/dev/null || true | node -e "try{ const s = require('fs').readFileSync(0,'utf8'); const p = JSON.parse(s); if (p && p.version) console.log(p.version); } catch(e){}")
+                PREV_VERSION=$(git show HEAD~1:package.json 2>/dev/null | node -e "
+                  try {
+                    const s = require('fs').readFileSync(0,'utf8');
+                    const p = JSON.parse(s);
+                    if (p?.version) console.log(p.version);
+                  } catch(e) {}
+                " || true)
               fi
             fi
 
             if [ -z "$PREV_VERSION" ]; then
-              # No previous package.json or version available -> treat as changed.
               echo "should_release=true" >> "$GITHUB_OUTPUT"
-              echo "🚦 Pre-release: No previous version found; will release"
+              echo "🚦 No previous version found; will release"
+            elif [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
+              echo "should_release=true" >> "$GITHUB_OUTPUT"
+              echo "✅ Version changed: $PREV_VERSION → $CURRENT_VERSION"
             else
-              if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
-                echo "should_release=true" >> "$GITHUB_OUTPUT"
-                echo "✅ Version changed: $PREV_VERSION → $CURRENT_VERSION"
-              else
-                echo "should_release=false" >> "$GITHUB_OUTPUT"
-                echo "⏭️ No version change detected"
-              fi
+              echo "should_release=false" >> "$GITHUB_OUTPUT"
+              echo "⏭️ No version change detected"
             fi
           fi
 
           echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
 
-  build-and-release:
-    name: 🏗️ Build and Release
+  build-release:
+    name: 🏗️ Build & Release
     runs-on: ubuntu-slim
-    needs: check-changes
-    if: needs.check-changes.outputs.should_release == 'true'
-    timeout-minutes: 8
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    timeout-minutes: 10
     permissions:
       contents: write
-
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
@@ -114,16 +102,12 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: 🚀 Setup Node.js
-        uses: actions/setup-node@v6
+      - name: 🔧 Setup environment
+        uses: ./.github/actions/setup-node
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
 
-      - name: 📦 Install dependencies
-        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
-
-      - name: 📈 Bump version (if manual)
+      - name: 📈 Bump version (manual only)
         if: github.event_name == 'workflow_dispatch'
         run: |
           git config --local user.email "action@github.com"
@@ -139,7 +123,7 @@ jobs:
           git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
           git push
 
-      - name: 📝 Get final version
+      - name: 📝 Get release version
         id: version
         run: |
           VERSION=$(node -p "require('./package.json').version")
@@ -150,7 +134,6 @@ jobs:
         run: |
           set -euo pipefail
           TAG=v${{ steps.version.outputs.version }}
-          echo "Creating tag ${TAG} if it doesn't exist"
           if git rev-parse "${TAG}" >/dev/null 2>&1; then
             echo "Tag ${TAG} already exists; skipping"
           else
@@ -158,24 +141,21 @@ jobs:
             git config --local user.name "GitHub Action"
             git tag -a "${TAG}" -m "Release ${TAG}"
             git push origin "${TAG}"
-            echo "Tag created and pushed: ${TAG}"
+            echo "✅ Tag created: ${TAG}"
           fi
 
-      - name: 🏗️ Build (development + production)
-        run: npx vite build --mode development && npx vite build --mode production
-
-      - name: 📦 Create release package
+      - name: 🏗️ Build userscript
         run: |
-          echo "📦 Preparing release files..."
-          mkdir -p release
+          npx vite build --mode development
+          npx vite build --mode production
 
-          # Copy userscript from production build
+      - name: 📦 Prepare release package
+        run: |
+          mkdir -p release
           cp dist/xcom-enhanced-gallery.user.js release/
 
           # Generate checksums
-          cd release
-          sha256sum xcom-enhanced-gallery.user.js > checksums.txt
-          cd ..
+          cd release && sha256sum xcom-enhanced-gallery.user.js > checksums.txt && cd ..
 
           # Create metadata
           cat > release/metadata.json << EOF
@@ -183,33 +163,26 @@ jobs:
             "version": "${{ steps.version.outputs.version }}",
             "build_date": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
             "commit": "${{ github.sha }}",
-            "node_version": "${{ env.NODE_VERSION }}",
-            "build_type": "production"
+            "node_version": "${{ env.NODE_VERSION }}"
           }
           EOF
 
           # Create release notes
-          cat > release/RELEASE_NOTES.md << EOF
+          cat > release/RELEASE_NOTES.md << 'EOF'
           # 🚀 Release v${{ steps.version.outputs.version }}
 
           ## 📥 Installation
 
-          **[📥 Click here to install userscript](https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v${{ steps.version.outputs.version }}/xcom-enhanced-gallery.user.js)**
+          **[📥 Click here to install](https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v${{ steps.version.outputs.version }}/xcom-enhanced-gallery.user.js)**
 
-          ## 📋 What's Changed
+          ## 📋 Details
 
-          - Built from commit: \`${{ github.sha }}\`
-          - Release date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-
-          ## 🔧 Technical Details
-
-          - Version: \`${{ steps.version.outputs.version }}\`
-          - Node.js: \`${{ env.NODE_VERSION }}\`
-          - Build: Production optimized
-
+          - Commit: `${{ github.sha }}`
+          - Built: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          - Node.js: `${{ env.NODE_VERSION }}`
           EOF
 
-      - name: 🏷️ Create Release
+      - name: 🏷️ Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
@@ -224,7 +197,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📊 Upload artifacts
+      - name: 📊 Upload release artifacts
         uses: actions/upload-artifact@v5
         with:
           name: release-v${{ steps.version.outputs.version }}
