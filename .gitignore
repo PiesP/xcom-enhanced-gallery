@@ -27,15 +27,13 @@
 !/tsconfig.json
 !/vite.config.ts
 
-# --- Quality tooling (CI required) ---
-!/eslint.config.cjs
-
 # --- Package management ---
 !/package.json
 !/package-lock.json
 !/.npmrc
 
 # --- Quality tooling (CI required) ---
+!/.prettierrc.json
 !/eslint.config.js
 
 # --- Core documentation ---
