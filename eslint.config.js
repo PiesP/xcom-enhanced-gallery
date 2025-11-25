@@ -67,7 +67,7 @@ export default [
       // Disable no-undef for TS files as TS compiler handles it
       'no-undef': 'off',
 
-      'prettier/prettier': 'error',
+      'prettier/prettier': ['error', { singleQuote: true }],
 
       // Path Alias Enforcement
       'no-restricted-imports': [
@@ -128,7 +128,7 @@ export default [
       ...prettierConfig.rules,
       'no-undef': 'error',
       '@typescript-eslint/no-var-requires': 'off',
-      'prettier/prettier': 'error',
+      'prettier/prettier': ['error', { singleQuote: true }],
     },
   },
 ];

@@ -64,8 +64,8 @@ jobs:
           SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
         run: |
           npx eslint src \
-            --config eslint.config.js
-            --fix
+            --config eslint.config.js \
+            --fix \
             --report-unused-disable-directives \
             --rule 'prettier/prettier: off' \
             --format @microsoft/eslint-formatter-sarif \
