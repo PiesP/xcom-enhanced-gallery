@@ -15,6 +15,15 @@ interface Disposable {
   destroy(): void;
 }
 
+function isDisposable(value: unknown): value is Disposable {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "destroy" in value &&
+    typeof (value as Disposable).destroy === "function"
+  );
+}
+
 export class CoreService {
   private static instance: CoreService | null = null;
   private readonly services = new Map<string, unknown>();
@@ -57,13 +66,8 @@ export class CoreService {
   public cleanup(): void {
     this.services.forEach((service) => {
       try {
-        if (
-          service &&
-          typeof service === "object" &&
-          "destroy" in service &&
-          typeof (service as unknown as Disposable).destroy === "function"
-        ) {
-          (service as unknown as Disposable).destroy();
+        if (isDisposable(service)) {
+          service.destroy();
         }
       } catch (e) {
         logger.error("Service cleanup failed", e);

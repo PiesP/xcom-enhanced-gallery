@@ -101,7 +101,7 @@ export function scheduleMicrotask(task: () => void): SchedulerHandle {
           // noop
         }
       });
-      return { cancel: () => void 0 };
+      return { cancel: () => {} };
     }
   } catch {
     // ignore

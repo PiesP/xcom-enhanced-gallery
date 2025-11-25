@@ -89,8 +89,10 @@ export function cleanupVendors(): void {
 }
 
 export function registerVendorCleanupOnUnload(): void {
-  void 0;
-} // Other exports for compatibility
+  // No-op: cleanup registration placeholder
+}
+
+// Other exports for compatibility
 export function validateVendors() {
   return { success: true, loadedLibraries: [], errors: [] };
 }

@@ -4,12 +4,14 @@
  */
 
 export {
-    createResettableSingleton, createSingleton, type SingletonInstance
+  createResettableSingleton,
+  createSingleton,
+  type SingletonInstance,
 } from "./singleton";
 
 export {
-    Observable,
-    ValueObservable,
-    type Listener,
-    type Unsubscribe
+  Observable,
+  ValueObservable,
+  type Listener,
+  type Unsubscribe,
 } from "./observable";
