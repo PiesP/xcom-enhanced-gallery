@@ -3,26 +3,19 @@ import type {
   MediaExtractionResult,
   MediaInfo,
 } from "@shared/types/media.types";
-import {
-  scheduleIdle,
-  scheduleMicrotask,
-  scheduleRaf,
-} from "@shared/utils/performance";
-import { globalTimerManager } from "@shared/utils/time/timer-management";
 import { BaseServiceImpl } from "./base-service";
 import type {
   BulkDownloadResult,
   DownloadOptions,
   SingleDownloadResult,
 } from "./download/types";
-import { HttpRequestService } from "./http-request-service";
+import {
+  PrefetchManager,
+  type PrefetchOptions,
+} from "./media/prefetch-manager";
 import type { MediaExtractionService } from "./media-extraction/media-extraction-service";
 
-export interface PrefetchOptions {
-  maxConcurrent?: number;
-  prefetchRange?: number;
-  schedule?: "immediate" | "idle" | "raf" | "microtask";
-}
+export type { PrefetchOptions } from "./media/prefetch-manager";
 
 export type BulkDownloadOptions = DownloadOptions;
 
@@ -34,9 +27,7 @@ export class MediaService extends BaseServiceImpl {
   private static instance: MediaService | null = null;
   private mediaExtraction: MediaExtractionService | null = null;
   private webpSupported: boolean | null = null;
-  private readonly prefetchCache = new Map<string, Promise<Blob>>();
-  private readonly activePrefetchRequests = new Map<string, AbortController>();
-  private readonly maxCacheEntries = 20;
+  private readonly prefetchManager = new PrefetchManager(20);
   private currentAbortController?: AbortController;
 
   constructor(_options: MediaServiceOptions = {}) {
@@ -57,9 +48,7 @@ export class MediaService extends BaseServiceImpl {
   }
 
   protected onDestroy(): void {
-    this.prefetchCache.clear();
-    this.activePrefetchRequests.forEach((c) => c.abort());
-    this.activePrefetchRequests.clear();
+    this.prefetchManager.destroy();
   }
 
   public static getInstance(options?: MediaServiceOptions): MediaService {
@@ -146,13 +135,7 @@ export class MediaService extends BaseServiceImpl {
     media: MediaInfo,
     options: PrefetchOptions = {},
   ): Promise<void> {
-    const task = () => void this.prefetchSingle(media.url).catch(() => {});
-    if (options.schedule === "idle") scheduleIdle(task);
-    else if (options.schedule === "raf") scheduleRaf(task);
-    else if (options.schedule === "microtask") scheduleMicrotask(task);
-    else if (options.schedule === "immediate")
-      await this.prefetchSingle(media.url);
-    else globalTimerManager.setTimeout(task, 0);
+    return this.prefetchManager.prefetch(media, options);
   }
 
   async prefetchNextMedia(
@@ -160,84 +143,23 @@ export class MediaService extends BaseServiceImpl {
     currentIndex: number,
     options: PrefetchOptions = {},
   ): Promise<void> {
-    const urls = this.calculatePrefetchUrls(
+    return this.prefetchManager.prefetchAround(
       mediaItems,
       currentIndex,
-      options.prefetchRange || 2,
+      options,
     );
-    urls.forEach((url) =>
-      this.prefetchMedia({ url } as MediaInfo, {
-        ...options,
-        schedule: options.schedule || "idle",
-      }),
-    );
-  }
-
-  private async prefetchSingle(url: string): Promise<void> {
-    if (this.prefetchCache.has(url)) return;
-
-    const controller = new AbortController();
-    this.activePrefetchRequests.set(url, controller);
-
-    const fetchPromise = HttpRequestService.getInstance()
-      .get<Blob>(url, {
-        signal: controller.signal,
-        responseType: "blob",
-      })
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.data;
-      })
-      .finally(() => {
-        this.activePrefetchRequests.delete(url);
-      });
-
-    if (this.prefetchCache.size >= this.maxCacheEntries) {
-      this.evictOldestPrefetchEntry();
-    }
-    this.prefetchCache.set(url, fetchPromise);
-
-    // Remove from cache on error
-    fetchPromise.catch(() => {
-      if (this.prefetchCache.get(url) === fetchPromise) {
-        this.prefetchCache.delete(url);
-      }
-    });
-
-    await fetchPromise.catch(() => {});
-  }
-
-  private calculatePrefetchUrls(
-    items: readonly string[],
-    index: number,
-    range: number,
-  ): string[] {
-    const result: string[] = [];
-    for (let i = 1; i <= range; i++) {
-      const next = items[index + i];
-      if (next) result.push(next);
-      const prev = items[index - i];
-      if (prev) result.push(prev);
-    }
-    return result;
-  }
-
-  private evictOldestPrefetchEntry(): void {
-    const first = this.prefetchCache.keys().next().value;
-    if (first) this.prefetchCache.delete(first);
   }
 
   getCachedMedia(url: string): Promise<Blob> | null {
-    return this.prefetchCache.get(url) || null;
+    return this.prefetchManager.get(url);
   }
 
   cancelAllPrefetch(): void {
-    this.activePrefetchRequests.forEach((c) => c.abort());
-    this.activePrefetchRequests.clear();
+    this.prefetchManager.cancelAll();
   }
 
   clearPrefetchCache(): void {
-    this.prefetchCache.clear();
+    this.prefetchManager.clear();
   }
 
   async downloadSingle(
@@ -250,7 +172,7 @@ export class MediaService extends BaseServiceImpl {
     const downloadService = DownloadOrchestrator.getInstance();
 
     // Check for pending or completed download
-    const pendingPromise = this.prefetchCache.get(media.url);
+    const pendingPromise = this.prefetchManager.get(media.url);
     let blob: Blob | undefined;
 
     if (pendingPromise) {
@@ -277,7 +199,7 @@ export class MediaService extends BaseServiceImpl {
     const downloadService = DownloadOrchestrator.getInstance();
     return downloadService.downloadBulk(items, {
       ...options,
-      prefetchedBlobs: this.prefetchCache,
+      prefetchedBlobs: this.prefetchManager.getCache(),
     });
   }
 

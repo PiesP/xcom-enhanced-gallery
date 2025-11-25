@@ -7,6 +7,10 @@ import type {
   CookieRecord,
   CookieSetOptions,
 } from "@shared/types/core/cookie.types";
+import {
+  promisifyCallback,
+  promisifyVoidCallback,
+} from "@shared/utils/async/promise-helpers";
 
 type CookieSetOptionsWithName = CookieSetOptions & { name: string };
 
@@ -90,29 +94,22 @@ export class CookieService {
       return this.listFromDocument(options);
     }
 
-    return await new Promise<CookieRecord[]>((resolve) => {
-      try {
+    return promisifyCallback<CookieRecord[]>(
+      (callback) =>
         this.gmCookie?.list(options, (cookies, error) => {
           if (error) {
             logger.warn(
               "GM_cookie.list failed; falling back to document.cookie",
               error,
             );
-            resolve(this.listFromDocument(options));
-            return;
           }
-
-          const results = (cookies ?? []).map((cookie) => ({ ...cookie }));
-          resolve(results);
-        });
-      } catch (error) {
-        logger.warn(
-          "GM_cookie.list threw error; falling back to document.cookie",
-          error,
-        );
-        resolve(this.listFromDocument(options));
-      }
-    });
+          callback(
+            error ? undefined : (cookies ?? []).map((c) => ({ ...c })),
+            error,
+          );
+        }),
+      { fallback: () => this.listFromDocument(options) },
+    );
   }
 
   async getValue(
@@ -166,19 +163,9 @@ export class CookieService {
       return;
     }
 
-    await new Promise<void>((resolve, reject) => {
-      try {
-        this.gmCookie?.set?.(normalizedDetails, (error) => {
-          if (error) {
-            reject(new Error(error));
-            return;
-          }
-          resolve();
-        });
-      } catch (error) {
-        reject(error instanceof Error ? error : new Error(String(error)));
-      }
-    });
+    return promisifyVoidCallback((callback) =>
+      this.gmCookie?.set?.(normalizedDetails, callback),
+    );
   }
 
   async delete(details: CookieDeleteOptions): Promise<void> {
@@ -191,19 +178,9 @@ export class CookieService {
       return;
     }
 
-    await new Promise<void>((resolve, reject) => {
-      try {
-        this.gmCookie?.delete?.(details, (error) => {
-          if (error) {
-            reject(new Error(error));
-            return;
-          }
-          resolve();
-        });
-      } catch (error) {
-        reject(error instanceof Error ? error : new Error(String(error)));
-      }
-    });
+    return promisifyVoidCallback((callback) =>
+      this.gmCookie?.delete?.(details, callback),
+    );
   }
 
   private resolveCookieAPI(): CookieAPI | null {
