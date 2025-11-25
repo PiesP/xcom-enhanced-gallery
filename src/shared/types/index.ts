@@ -114,7 +114,6 @@ export type {
   ContainerComponentProps,
   EventHandler,
   FormComponentProps,
-  GalleryComponentProps,
   InteractiveComponentProps,
   KeyboardEventHandler,
   LoadingComponentProps,

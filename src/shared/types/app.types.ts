@@ -137,7 +137,6 @@ export type {
   EventHandler,
   FileInfo,
   FormComponentProps,
-  GalleryComponentProps,
   InteractiveComponentProps,
   KeyboardEventHandler,
   LoadingComponentProps,

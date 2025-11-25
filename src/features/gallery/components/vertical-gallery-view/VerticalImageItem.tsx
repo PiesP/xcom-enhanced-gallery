@@ -22,10 +22,8 @@
  */
 
 import type { ImageFitMode } from '@shared/types';
-import type { ComponentType } from '@shared/types/app.types';
 import type { JSX } from 'solid-js';
 
-import { withGallery } from '@shared/components/hoc';
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getSolid } from '@shared/external/vendors';
 import { createIntrinsicSizingStyle, resolveMediaDimensions } from '@shared/utils/media/dimensions';
@@ -50,7 +48,7 @@ const FIT_MODE_CLASSES: Record<string, string | undefined> = {
 /**
  * Core vertical image item component
  */
-function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element | null {
+export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | null {
   const {
     media,
     index,
@@ -99,6 +97,12 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
   const handleClick = () => {
     containerRef()?.focus?.({ preventScroll: true });
     onClick?.();
+  };
+
+  const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = event => {
+    const mouseEvent = event as MouseEvent;
+    mouseEvent?.stopImmediatePropagation?.();
+    handleClick();
   };
 
   const handleMediaLoad = () => {
@@ -181,6 +185,9 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
 
   const containerClasses = createMemo(() =>
     createClassName(
+      'xeg-gallery',
+      'xeg-gallery-item',
+      'vertical-item',
       styles.container,
       styles.imageWrapper,
       isActive ? styles.active : undefined,
@@ -216,8 +223,13 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
       data-item-index={index}
       data-fit-mode={resolvedFitMode()}
       data-media-loaded={isLoaded() ? 'true' : 'false'}
+      data-xeg-gallery="true"
+      data-xeg-gallery-type="item"
+      data-xeg-gallery-version="2.0"
+      data-xeg-component="vertical-image-item"
+      data-xeg-block-twitter="true"
       style={intrinsicSizingStyle()}
-      onClick={handleClick}
+      onClick={handleContainerClick}
       onFocus={onFocus as (event: FocusEvent) => void}
       onBlur={onBlur as (event: FocusEvent) => void}
       onKeyDown={onKeyDown as (event: KeyboardEvent) => void}
@@ -288,18 +300,4 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
   );
 }
 
-const BaseComponent = BaseVerticalImageItemCore as unknown as ComponentType<VerticalImageItemProps>;
-
-const WithGalleryVerticalImageItem = withGallery(BaseComponent, {
-  type: 'item',
-  className: 'vertical-item',
-  events: {
-    preventClick: false,
-    preventKeyboard: false,
-    blockTwitterNative: true,
-  },
-  customData: { component: 'vertical-image-item', role: 'gallery-item' },
-});
-
 export type { FitModeProp, VerticalImageItemProps } from './VerticalImageItem.types';
-export const VerticalImageItem = WithGalleryVerticalImageItem;

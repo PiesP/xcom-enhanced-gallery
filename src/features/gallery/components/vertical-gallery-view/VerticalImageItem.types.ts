@@ -13,7 +13,7 @@
  * @version 1.1.0 - Enhanced documentation and type clarity (Phase 354+)
  */
 
-import type { GalleryComponentProps } from '@shared/components/hoc';
+import type { BaseComponentProps } from '@shared/types';
 import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/media.types';
 
@@ -31,7 +31,7 @@ export type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
  * Props for VerticalImageItem component
  * @interface VerticalImageItemProps
  *
- * **Extends**: {@link GalleryComponentProps}
+ * **Extends**: {@link BaseComponentProps}
  *
  * **Media Data**:
  * - {@link VerticalImageItemProps.media} - MediaInfo object
@@ -66,7 +66,7 @@ export type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
  * **Testing**:
  * - {@link VerticalImageItemProps.data-testid} - Test identifier
  */
-export interface VerticalImageItemProps extends GalleryComponentProps {
+export interface VerticalImageItemProps extends BaseComponentProps {
   /**
    * Media item data to render
    */

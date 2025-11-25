@@ -44,7 +44,6 @@ import { safeEventPrevent } from '@shared/utils/events/utils';
 import { computePreloadIndices } from '@shared/utils/performance';
 import { stringWithDefault } from '@shared/utils/types/safety';
 import type { JSX } from 'solid-js';
-import { useGalleryInitialScroll } from './hooks/useGalleryInitialScroll';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryLifecycle } from './hooks/useGalleryLifecycle';
 import { useGalleryNavigation } from './hooks/useGalleryNavigation';
@@ -142,7 +141,7 @@ function VerticalGalleryViewCore({
   });
 
   // Item scroll handling - defined before navigation hook
-  const { scrollToItem } = useGalleryItemScroll(
+  const { scrollToItem, scrollToCurrentItem } = useGalleryItemScroll(
     () => containerEl(),
     currentIndex,
     () => mediaItems().length,
@@ -176,19 +175,18 @@ function VerticalGalleryViewCore({
     }
   });
 
-  // Initial scroll on gallery open
-  const { autoScrollToCurrentItem } = useGalleryInitialScroll({
-    isVisible,
-    containerEl: () => containerEl(),
-    mediaItems,
-    currentIndex,
-    scrollToItem,
-    applyFocusAfterNavigation,
-  });
-
   // Keyboard handling
   useGalleryKeyboard({
     onClose: onClose || (() => {}),
+  });
+
+  // Ensure initial focus is applied before any navigation events fire
+  createEffect(() => {
+    if (!isVisible() || navigationState.lastNavigationTrigger()) {
+      return;
+    }
+
+    applyFocusAfterNavigation(currentIndex());
   });
 
   // Fit mode state
@@ -208,7 +206,8 @@ function VerticalGalleryViewCore({
     safeEventPrevent(event);
     setImageFitMode(mode);
     void persistFitMode(mode);
-    void autoScrollToCurrentItem();
+    scrollToCurrentItem();
+    applyFocusAfterNavigation(currentIndex());
   };
 
   // Event handlers

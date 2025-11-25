@@ -9,7 +9,7 @@
 import { getSolid } from '@shared/external/vendors';
 import { toAccessor } from '@shared/utils/solid/solid-helpers';
 
-const { createEffect, untrack, on } = getSolid();
+const { createEffect, untrack } = getSolid();
 
 type Accessor<T> = () => T;
 type MaybeAccessor<T> = T | Accessor<T>;
@@ -81,13 +81,19 @@ export function useGalleryItemScroll(
   };
 
   // Auto-scroll when index changes
-  createEffect(
-    on(currentIndexAccessor, index => {
-      if (untrack(enabled) && !untrack(isScrolling)) {
-        scrollToItem(index);
-      }
-    }),
-  );
+  createEffect(() => {
+    const index = currentIndexAccessor();
+    const container = containerAccessor();
+    const total = totalItemsAccessor();
+
+    if (!container || total <= 0) {
+      return;
+    }
+
+    if (untrack(enabled) && !untrack(isScrolling)) {
+      scrollToItem(index);
+    }
+  });
 
   return {
     scrollToItem,

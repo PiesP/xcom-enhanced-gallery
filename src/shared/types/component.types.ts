@@ -206,22 +206,6 @@ export interface ContainerComponentProps extends BaseComponentProps {
   maxItems?: number;
 }
 
-/**
- * Gallery-specific component Props
- *
- * @description For all gallery-related components with data attributes
- */
-export interface GalleryComponentProps extends InteractiveComponentProps {
-  /** Gallery component type */
-  galleryType?: 'container' | 'item' | 'control' | 'overlay' | 'viewer';
-  /** Gallery mark (data attribute) */
-  'data-xeg-gallery'?: string;
-  /** Gallery type (data attribute) */
-  'data-xeg-gallery-type'?: string;
-  /** Gallery version (data attribute) */
-  'data-xeg-gallery-version'?: string;
-}
-
 // ================================
 // Event handler types
 // ================================
