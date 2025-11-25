@@ -6,8 +6,6 @@
 export {
   promisifyCallback,
   promisifyVoidCallback,
-  tryWithFallback,
-  tryWithFallbackAsync,
   type PromisifyOptions,
   type ResultCallback,
   type VoidCallback,

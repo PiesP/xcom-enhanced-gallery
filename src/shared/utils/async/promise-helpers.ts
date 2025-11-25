@@ -98,32 +98,3 @@ export function promisifyVoidCallback(executor: (callback: VoidCallback) => void
     }
   });
 }
-
-/**
- * Wraps a function that may throw with optional fallback.
- *
- * @param fn - Function to execute
- * @param fallback - Fallback value or function if fn throws
- * @returns Result of fn or fallback
- */
-export function tryWithFallback<T>(fn: () => T, fallback: T | (() => T)): T {
-  try {
-    return fn();
-  } catch {
-    return typeof fallback === 'function' ? (fallback as () => T)() : fallback;
-  }
-}
-
-/**
- * Async version of tryWithFallback
- */
-export async function tryWithFallbackAsync<T>(
-  fn: () => T | Promise<T>,
-  fallback: T | (() => T | Promise<T>),
-): Promise<T> {
-  try {
-    return await fn();
-  } catch {
-    return typeof fallback === 'function' ? await (fallback as () => T | Promise<T>)() : fallback;
-  }
-}
