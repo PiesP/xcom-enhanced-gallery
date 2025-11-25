@@ -72,7 +72,7 @@ export function useGalleryFocusTracker(
   const coordinator = new FocusCoordinator({
     isEnabled: () => isEnabled() && manualFocusIndex() === null,
     container,
-    threshold: options.threshold ?? 0,
+    ...(options.threshold !== undefined && { threshold: options.threshold }),
     rootMargin: options.rootMargin ?? '0px',
     ...(options.minimumVisibleRatio !== undefined && {
       minimumVisibleRatio: options.minimumVisibleRatio,
