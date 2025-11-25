@@ -155,6 +155,7 @@ export function useGalleryScroll({
   const handleScroll = (): void => {
     if (!isGalleryOpen() || shouldIgnoreScroll()) return;
     updateScrollState(true);
+    onScroll?.(0, scrollTargetAccessor());
     scheduleScrollEnd();
   };
 
