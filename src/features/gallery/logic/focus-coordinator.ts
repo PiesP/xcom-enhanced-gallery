@@ -43,6 +43,8 @@ const DEFAULTS = {
   THRESHOLD: 0,
   ROOT_MARGIN: '0px',
   MIN_VISIBLE_RATIO: 0.05,
+  /** Threshold for considering an item as "sufficiently visible" for priority 1 */
+  PRIORITY_VISIBLE_RATIO: 0.3,
   DEBOUNCE_TIME: 50,
 } as const;
 
@@ -111,7 +113,8 @@ export class FocusCoordinator {
 
   /**
    * Recompute which item should be focused based on current visibility.
-   * Finds the item closest to the viewport center.
+   * Priority 1: Item with ≥30% visibility whose top is closest to viewport top
+   * Priority 2: If no item has ≥30% visibility, item whose top is closest to viewport top
    */
   recompute(): void {
     if (!this.options.isEnabled()) {
@@ -124,9 +127,9 @@ export class FocusCoordinator {
     }
 
     const containerRect = container.getBoundingClientRect();
-    const containerCenter = containerRect.top + containerRect.height / 2;
+    const viewportTop = containerRect.top;
 
-    const bestCandidate = this.findBestCandidate(containerCenter);
+    const bestCandidate = this.findBestCandidate(viewportTop);
 
     if (bestCandidate !== null) {
       this.options.onFocusChange(bestCandidate, 'auto');
@@ -134,38 +137,57 @@ export class FocusCoordinator {
   }
 
   /**
-   * Find the item closest to the viewport center.
-   * @param containerCenter - Y coordinate of the viewport center
+   * Find the best item to focus based on visibility and position.
+   *
+   * Selection criteria:
+   * 1. Priority 1: Items with ≥30% visibility - select the one whose top edge
+   *    is closest to the viewport top
+   * 2. Priority 2: If no items meet the 30% threshold, select the item whose
+   *    top edge is closest to the viewport top (regardless of visibility ratio)
+   *
+   * @param viewportTop - Y coordinate of the viewport top edge
    * @returns Index of the best candidate, or null if none found
    */
-  private findBestCandidate(containerCenter: number): number | null {
-    let bestIndex: number | null = null;
-    let bestDistance = Infinity;
-    let bestRatio = 0;
+  private findBestCandidate(viewportTop: number): number | null {
+    // Collect candidates with their metrics
+    const candidates: Array<{
+      index: number;
+      topDistance: number;
+      ratio: number;
+    }> = [];
 
     for (const [index, item] of this.items) {
-      // Skip items with insufficient visibility
+      // Skip items with no intersection data or below minimum visibility
       if (!item.entry || item.entry.intersectionRatio < this.minVisibleRatio) {
         continue;
       }
 
       // Use fresh rect for accurate position (entry.boundingClientRect is stale)
       const rect = item.element.getBoundingClientRect();
-      const itemCenter = rect.top + rect.height / 2;
-      const distance = Math.abs(itemCenter - containerCenter);
+      const topDistance = Math.abs(rect.top - viewportTop);
       const ratio = item.entry.intersectionRatio;
 
-      // Prefer closer items, or higher ratio if equidistant
-      const isBetter = distance < bestDistance || (distance === bestDistance && ratio > bestRatio);
-
-      if (isBetter) {
-        bestIndex = index;
-        bestDistance = distance;
-        bestRatio = ratio;
-      }
+      candidates.push({ index, topDistance, ratio });
     }
 
-    return bestIndex;
+    if (candidates.length === 0) {
+      return null;
+    }
+
+    // Priority 1: Find items with ≥30% visibility
+    const highVisibilityCandidates = candidates.filter(
+      c => c.ratio >= DEFAULTS.PRIORITY_VISIBLE_RATIO,
+    );
+
+    if (highVisibilityCandidates.length > 0) {
+      // Select the one with top closest to viewport top
+      highVisibilityCandidates.sort((a, b) => a.topDistance - b.topDistance);
+      return highVisibilityCandidates[0]!.index;
+    }
+
+    // Priority 2: No item has ≥30% visibility, select by top distance only
+    candidates.sort((a, b) => a.topDistance - b.topDistance);
+    return candidates[0]!.index;
   }
 
   /** Cleanup all observers and timers */
