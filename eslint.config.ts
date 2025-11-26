@@ -1,7 +1,5 @@
 import js from '@eslint/js';
-import prettierConfig from 'eslint-config-prettier';
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
-import prettierPlugin from 'eslint-plugin-prettier';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -54,15 +52,9 @@ export default tseslint.config(
       },
     },
     plugins: {
-      prettier: prettierPlugin,
       'jsx-a11y': jsxA11yPlugin,
     },
     rules: {
-      ...prettierConfig.rules,
-
-      // Prettier
-      'prettier/prettier': ['error', { singleQuote: true }],
-
       // TypeScript
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
