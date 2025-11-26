@@ -23,6 +23,7 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Media pipeline**: Dropped the unused `metadata.performance` payload and wrapped deduplication logging in a `__DEV__` guard so production builds exclude instrumentation-only code.
 - **Styles**: Replaced outline-based focus rings in toolbar tweet links and shared utilities with flat background/border treatments, preventing stray outlines while preserving accessible focus cues.
 - **Bootstrap**: Omitted the developer-tooling stage and dev-namespace wiring when building for production so diagnostics never execute or attach outside development.
+- **Toolbar**: Removed the close button hover-specific styling that hid the icon so the exit affordance always remains visible.
 
 ### Removed
 

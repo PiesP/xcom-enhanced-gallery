@@ -243,10 +243,6 @@
   --toolbar-button-focus-border: var(--xeg-color-error-hover);
 }
 
-:where(.toolbarButton.danger, .closeButton):hover:not([data-disabled="true"]) {
-  color: var(--xeg-color-error);
-}
-
 /* 네비게이션 섹션 */
 .toolbarNavigation {
   gap: 0.5em; /* 8px → 0.5em */
