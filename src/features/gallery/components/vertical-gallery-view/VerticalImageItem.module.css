@@ -98,7 +98,7 @@
 .imageWrapper {
   position: relative;
   background: var(--xeg-color-bg-secondary);
-  /* 이미지 크기에 맞는 컨테이너 */
+  /* Container fitting image size */
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
@@ -107,17 +107,17 @@
   align-items: center;
 }
 
-/* fitOriginal 모드: 이미지 원본 크기에 맞춰 컨테이너 확장 */
+/* fitOriginal mode: Expand container to fit original image size */
 .imageWrapper:has(.image.fitOriginal),
 .imageWrapper:has(.video.fitOriginal) {
   width: auto;
   max-width: none;
-  /* 컨테이너가 이미지 크기에 맞춰 확장 */
+  /* Container expands to fit image size */
 }
 
 .container[data-media-loaded="false"] .imageWrapper {
   min-height: var(--xeg-spacing-3xl, 3rem);
-  /* CLS: 초기 레이아웃 안정성을 위한 기본 종횡비 예약 */
+  /* CLS: Reserve default aspect ratio for initial layout stability */
   aspect-ratio: var(--xeg-aspect-default, 4 / 3);
 }
 

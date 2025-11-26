@@ -1,6 +1,6 @@
 /**
  * @fileoverview Component Design Tokens
- * @description 컴포넌트별 전용 토큰들 - semantic 값들을 참조
+ * @description Component-specific tokens - referencing semantic values
  */
 
 @layer xeg.tokens {
@@ -131,7 +131,7 @@
   /* Accessibility Media Queries */
   /* ======================================= */
 
-  /* 투명도 감소 선호 지원 */
+  /* Support for reduced transparency preference */
   @media (prefers-reduced-transparency: reduce) {
     :where(:root, .xeg-theme-scope) {
       --color-glass-bg: var(--color-bg-primary);
@@ -183,9 +183,9 @@
 /* Accessibility Media Queries */
 /* ======================================= */
 
-/* 투명도 감소 선호 지원 - Moved to main @layer xeg.tokens block */
+/* Support for reduced transparency preference - Moved to main @layer xeg.tokens block */
 
-/* NOTE: prefers-reduced-motion 토큰은 design-tokens.semantic.css로 통합됨 */
+/* NOTE: prefers-reduced-motion tokens integrated into design-tokens.semantic.css */
 
 @layer xeg.components {
   @keyframes xeg-fade-in {
@@ -227,4 +227,4 @@
   }
 }
 
-/* toolbar-slide-* 키프레임 제거됨 (애니메이션은 JS 유틸을 사용) */
+/* toolbar-slide-* keyframes removed (Animation uses JS utils) */

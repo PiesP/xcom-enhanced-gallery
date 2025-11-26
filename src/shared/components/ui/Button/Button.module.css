@@ -62,7 +62,7 @@
     z-index: 1;
   }
 
-  /* 비활성화 상태 */
+  /* Disabled state */
   &:disabled {
     opacity: var(--xeg-button-disabled-opacity, var(--xeg-opacity-disabled));
     cursor: not-allowed;
@@ -70,7 +70,7 @@
   }
 }
 
-/* ===== 크기 변형 ===== */
+/* ===== Size Variants ===== */
 .size-sm {
   padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
   font-size: var(--xeg-font-size-sm);
@@ -91,7 +91,7 @@
   border-radius: var(--xeg-radius-lg);
 }
 
-/* ===== 색상 변형 ===== */
+/* ===== Color Variants ===== */
 .variant-primary {
   background: var(--color-primary);
   color: var(--color-text-inverse);
@@ -195,7 +195,7 @@
   background: var(--xeg-color-neutral-200);
 }
 
-/* ===== 툴바 전용 변형 ===== */
+/* ===== Toolbar Specific Variants ===== */
 :where(.variant-toolbar, .variant-navigation, .variant-action, .size-toolbar) {
   width: var(--xeg-button-square-size, var(--xeg-size-button-md));
   height: var(--xeg-button-square-size, var(--xeg-size-button-md));
@@ -254,7 +254,7 @@
   transform: translateY(0);
 }
 
-/* ===== 툴바 전용 크기 ===== */
+/* ===== Toolbar Specific Sizes ===== */
 .size-toolbar {
   --xeg-button-square-size: var(--xeg-size-button-md);
   --xeg-button-square-padding: 0.5em;
@@ -262,7 +262,7 @@
   font-size: 0.875em;
 }
 
-/* ===== 아이콘 전용 모드 ===== */
+/* ===== Icon Only Mode ===== */
 .iconOnly {
   --xeg-icon-only-size: var(--xeg-size-button-md);
 
@@ -290,7 +290,7 @@
   padding: var(--xeg-spacing-md);
 }
 
-/* ===== Intent 변형 (iconVariant 대체) ===== */
+/* ===== Intent Variants (replaces iconVariant) ===== */
 .intent-primary {
   border-color: var(--color-primary);
   color: var(--color-primary);

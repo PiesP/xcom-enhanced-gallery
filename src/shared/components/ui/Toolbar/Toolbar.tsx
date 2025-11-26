@@ -29,10 +29,10 @@ const DEFAULT_PROPS = {
 } as const;
 
 const FIT_MODE_LABELS: Record<FitMode, { label: string; title: string }> = {
-  original: { label: '원본 크기', title: '원본 크기 (1:1)' },
-  fitWidth: { label: '가로에 맞춤', title: '가로에 맞추기' },
-  fitHeight: { label: '세로에 맞춤', title: '세로에 맞추기' },
-  fitContainer: { label: '창에 맞춤', title: '창에 맞추기' },
+  original: { label: 'Original', title: 'Original Size (1:1)' },
+  fitWidth: { label: 'Fit Width', title: 'Fit to Width' },
+  fitHeight: { label: 'Fit Height', title: 'Fit to Height' },
+  fitContainer: { label: 'Fit Window', title: 'Fit to Window' },
 };
 
 const FIT_MODE_ORDER = [
