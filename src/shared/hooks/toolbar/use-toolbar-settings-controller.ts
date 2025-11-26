@@ -160,7 +160,7 @@ export function useToolbarSettingsController(
   );
 
   const toThemeOption = (value: unknown): ThemeOption => {
-    return value === 'light' || value === 'dark' || value === 'auto' ? value : 'auto';
+    return value === 'light' || value === 'dark' ? value : 'auto';
   };
 
   // Phase 430: Read initial theme from ThemeService reliably
@@ -284,10 +284,7 @@ export function useToolbarSettingsController(
         return;
       }
 
-      if (
-        settingsButton &&
-        (settingsButton === targetElement || settingsButton.contains(targetElement))
-      ) {
+      if (settingsButton && settingsButton.contains(targetElement)) {
         return;
       }
 
