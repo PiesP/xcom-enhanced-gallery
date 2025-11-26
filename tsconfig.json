@@ -9,7 +9,10 @@
     "scripts/**/*.d.ts",
     "vite.config.ts",
     "vitest.config.ts",
-    "playwright-ct.config.ts"
+    "vitest.stryker.config.ts",
+    "playwright.config.ts",
+    "playwright-ct.config.ts",
+    "eslint.config.ts"
   ],
   "exclude": ["node_modules", "dist", "build", "coverage", "test/archive", ".stryker-tmp"]
 }

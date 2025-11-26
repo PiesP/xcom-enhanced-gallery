@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import type { NormalizedOutputOptions, OutputAsset, OutputBundle, OutputChunk } from 'rollup';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -190,7 +191,7 @@ export default defineConfig(async ({ mode, command }) => {
       assetsInlineLimit: 0,
       sourcemap: isDev,
       minify: isProd ? 'terser' : false,
-      reportCompressedSize: false,
+      reportCompressedSize: true,
       chunkSizeWarningLimit: 1000,
       rollupOptions: {
         input: 'src/main.ts',
@@ -218,7 +219,7 @@ export default defineConfig(async ({ mode, command }) => {
               },
               format: { comments: false },
               mangle: { toplevel: true },
-              maxWorkers: 8,
+              maxWorkers: os.cpus().length,
             },
           }
         : {}),
