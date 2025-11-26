@@ -68,7 +68,7 @@
   .xeg-transition-focus {
     transition:
       box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard),
-      outline var(--xeg-duration-fast) var(--xeg-ease-standard);
+      border-color var(--xeg-duration-fast) var(--xeg-ease-standard);
     will-change: box-shadow;
   }
 

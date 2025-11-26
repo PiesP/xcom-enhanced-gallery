@@ -89,6 +89,10 @@ type DevMainNamespace = {
  * Phase 1.1: Helper function to eliminate duplicate code
  */
 function setupDevNamespace(galleryAppInstance?: IGalleryApp | null): void {
+  if (!isDevEnvironment) {
+    return;
+  }
+
   mutateDevNamespace(namespace => {
     const mainNamespace =
       (namespace.main as DevMainNamespace | undefined) ??
@@ -223,7 +227,7 @@ async function initializeGalleryIfPermitted(): Promise<void> {
 
 const bootstrapStages: BootstrapStage[] = [
   { label: 'Global styles', run: loadGlobalStyles },
-  { label: 'Developer tooling', run: initializeDevToolsIfNeeded },
+  ...(isDevEnvironment ? [{ label: 'Developer tooling', run: initializeDevToolsIfNeeded }] : []),
   { label: 'Infrastructure', run: initializeInfrastructure },
   { label: 'Critical systems', run: initializeCriticalSystems },
   { label: 'Base services', run: initializeBaseServicesStage },

@@ -508,7 +508,9 @@ button.fitButton {
   color: var(--xeg-color-primary);
   text-decoration: none;
   overflow-wrap: break-word;
-  transition: color var(--xeg-duration-fast) var(--xeg-ease-standard);
+  transition:
+    color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard);
   cursor: pointer;
 }
 
@@ -519,8 +521,8 @@ button.fitButton {
 
 :where(.tweetLink, .tweetContent a):focus,
 :where(.tweetLink, .tweetContent a):focus-visible {
-  outline: 0.125rem solid var(--xeg-focus-indicator-color, var(--xeg-color-primary));
-  outline-offset: 0.125rem;
+  background: var(--xeg-toolbar-element-bg-strong, var(--xeg-color-neutral-200));
+  color: var(--xeg-color-primary-hover);
   border-radius: var(--xeg-radius-xs);
 }
 
