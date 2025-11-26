@@ -33,7 +33,6 @@
 !/.npmrc
 
 # --- Quality tooling (CI required) ---
-!/.prettierrc.json
 !/eslint.config.ts
 
 # --- Core documentation ---

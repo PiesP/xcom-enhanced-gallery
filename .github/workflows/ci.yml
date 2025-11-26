@@ -65,7 +65,6 @@ jobs:
         env:
           SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
         run: |
-          npx prettier --write .
           npx eslint src \
             --report-unused-disable-directives \
             --rule 'prettier/prettier: off' \
