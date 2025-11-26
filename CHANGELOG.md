@@ -17,6 +17,10 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Simplified calculation chains (viewport bounds, center proximity, hysteresis logic).
   - Reduced variable verbosity while preserving readability.
 - **Prefetching**: Collapsed media prefetch scheduling down to `immediate` vs `idle`, inlining the idle helper and removing RAF/microtask pathways to shrink the bundle and surface-level API.
+- **Performance utils**: Promoted the `schedulers` module from a stub into the canonical export surface for idle helpers so consumers import from `@shared/utils/performance` without orphan keep-alive files.
+- **Services**: Removed the deprecated `getMediaServiceFromContainer` accessor and updated warmup helpers plus `GalleryApp` to rely on the strictly typed `getMediaService`, eliminating duplicate exposure of the same singleton.
+- **Container**: Tightened the `registerGalleryRenderer` contract and co-located the `MediaService` accessor imports so dependency-cruiser only sees one exposure path for SERVICE_KEYS.
+- **Media pipeline**: Dropped the unused `metadata.performance` payload and wrapped deduplication logging in a `__DEV__` guard so production builds exclude instrumentation-only code.
 
 ### Removed
 

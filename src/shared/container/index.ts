@@ -6,7 +6,7 @@ export {
   // Service Getters
   getThemeService,
   getMediaFilenameService,
-  getMediaServiceFromContainer,
+  getMediaService,
   getGalleryRenderer,
   // Service Registrations
   registerGalleryRenderer,

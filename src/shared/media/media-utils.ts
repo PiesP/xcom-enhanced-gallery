@@ -49,14 +49,15 @@ function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => str
 export function removeDuplicateMediaItems(mediaItems: readonly MediaInfo[]): MediaInfo[] {
   const result = removeDuplicates(mediaItems, item => item.originalUrl ?? item.url);
 
-  // Log deduplication results for performance analysis
-  const removedCount = mediaItems.length - result.length;
-  if (removedCount > 0) {
-    logger.debug('Removed duplicate media items:', {
-      original: mediaItems.length,
-      unique: result.length,
-      removed: removedCount,
-    });
+  if (__DEV__) {
+    const removedCount = mediaItems.length - result.length;
+    if (removedCount > 0) {
+      logger.debug('Removed duplicate media items:', {
+        original: mediaItems.length,
+        unique: result.length,
+        removed: removedCount,
+      });
+    }
   }
 
   return result;

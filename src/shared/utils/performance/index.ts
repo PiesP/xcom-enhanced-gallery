@@ -4,4 +4,7 @@
 
 // Gallery preload helper
 export { computePreloadIndices } from './preload';
-export type { DeprecatedSchedulers } from './schedulers';
+
+// Scheduling helpers
+export { scheduleIdle } from './schedulers';
+export type { IdleHandle } from './schedulers';

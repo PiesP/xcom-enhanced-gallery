@@ -5,12 +5,11 @@
 
 import {
   getGalleryRenderer,
-  getMediaServiceFromContainer,
+  getMediaService,
   tryGetSettingsManager,
 } from '@shared/container/service-accessors';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import { logger } from '@shared/logging';
-import { MediaService } from '@shared/services/media-service';
 import { NotificationService } from '@shared/services/notification-service';
 import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
@@ -86,12 +85,7 @@ export class GalleryApp {
 
   private async handleMediaClick(_mediaInfo: unknown, element: HTMLElement): Promise<void> {
     try {
-      const mediaService = getMediaServiceFromContainer();
-
-      if (!(mediaService instanceof MediaService)) {
-        throw new Error('MediaService not available');
-      }
-
+      const mediaService = getMediaService();
       const result = await mediaService.extractFromClickedElement(element);
 
       if (result.success && result.mediaItems.length > 0) {

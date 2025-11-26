@@ -180,11 +180,6 @@ export interface ExtractionMetadata {
   readonly sourceType?: string;
   readonly strategy?: string;
   readonly error?: string;
-  readonly performance?: {
-    readonly totalTime: number;
-    readonly backgroundLoadTime?: number;
-    readonly parseTime: number;
-  };
   readonly [key: string]: unknown;
 }
 

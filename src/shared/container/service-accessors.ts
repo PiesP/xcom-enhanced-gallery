@@ -1,6 +1,7 @@
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import type { FilenameService } from '@shared/services/filename-service';
 import type { LanguageService } from '@shared/services/language-service';
+import type { MediaService } from '@shared/services/media-service';
 import type { ThemeServiceContract } from '@shared/services/theme-service.contract';
 
 import { SERVICE_KEYS } from '@/constants';
@@ -60,8 +61,6 @@ export function getMediaFilenameService(): FilenameService {
   return CoreServiceRegistry.get<FilenameService>(SERVICE_KEYS.MEDIA_FILENAME);
 }
 
-import type { MediaService } from '@shared/services/media-service';
-
 /**
  * Get media service.
  *
@@ -70,17 +69,6 @@ import type { MediaService } from '@shared/services/media-service';
  */
 export function getMediaService(): MediaService {
   return CoreServiceRegistry.get<MediaService>(SERVICE_KEYS.MEDIA_SERVICE);
-}
-
-/**
- * Get media service (untyped to avoid circular dependency).
- * @deprecated Use getMediaService() instead
- *
- * @returns Media service instance (unknown type due to cyclic import)
- * @throws CoreService throws if media service not registered
- */
-export function getMediaServiceFromContainer(): unknown {
-  return CoreServiceRegistry.get<unknown>(SERVICE_KEYS.MEDIA_SERVICE);
 }
 
 /**
@@ -107,7 +95,7 @@ export function getGalleryRenderer(): GalleryRenderer {
  * const renderer = new GalleryRenderer(config);
  * registerGalleryRenderer(renderer);
  */
-export function registerGalleryRenderer(renderer: unknown): void {
+export function registerGalleryRenderer(renderer: GalleryRenderer): void {
   CoreServiceRegistry.register(SERVICE_KEYS.GALLERY_RENDERER, renderer);
 }
 
@@ -153,7 +141,7 @@ export function tryGetSettingsManager<T = unknown>(): T | null {
  */
 export function warmupCriticalServices(): void {
   try {
-    void getMediaServiceFromContainer();
+    void getMediaService();
   } catch {
     // noop: Only needed in browser environment
   }

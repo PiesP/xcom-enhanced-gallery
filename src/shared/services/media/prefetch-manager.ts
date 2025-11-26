@@ -5,7 +5,7 @@
 
 import { HttpRequestService } from '@shared/services/http-request-service';
 import type { MediaInfo } from '@shared/types/media.types';
-import { scheduleIdle } from '@shared/utils/performance/idle-scheduler';
+import { scheduleIdle } from '@shared/utils/performance';
 
 type PrefetchSchedule = 'immediate' | 'idle';
 
