@@ -172,7 +172,7 @@ export function useToolbarSettingsController(
       const currentSetting = themeManager.getCurrentTheme();
       return toThemeOption(currentSetting);
     } catch (error) {
-      if (import.meta.env.DEV) {
+      if (__DEV__) {
         logger.debug('[ToolbarSettingsController] Failed to read initial theme', error);
       }
     }

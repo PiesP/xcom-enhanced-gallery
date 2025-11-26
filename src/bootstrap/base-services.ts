@@ -59,7 +59,7 @@ export async function initializeCoreBaseServices(): Promise<void> {
 
   try {
     const newlyRegistered = registerMissingBaseServices(coreService);
-    if (newlyRegistered > 0 && import.meta.env.DEV) {
+    if (newlyRegistered > 0 && __DEV__) {
       logger.debug(`[base-services] Registered ${newlyRegistered} base services`);
     }
 
@@ -71,7 +71,7 @@ export async function initializeCoreBaseServices(): Promise<void> {
       }
     }
 
-    if (import.meta.env.DEV) {
+    if (__DEV__) {
       logger.debug('[base-services] Base services ready');
     }
   } catch (error) {

@@ -66,7 +66,7 @@ function resolveFeatureStates(settings?: SettingsWithFeatures | null): Record<Fe
   );
 }
 
-const isDevBuild = import.meta.env.DEV;
+const isDevBuild = __DEV__;
 const debug = isDevBuild ? (message: string) => logger.debug(message) : () => {};
 
 /**

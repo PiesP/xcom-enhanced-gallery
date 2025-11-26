@@ -22,7 +22,7 @@ export type Unregister = () => void;
  */
 export function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
   const hasWindow = typeof window !== 'undefined' && Boolean(window.addEventListener);
-  const debugEnabled = import.meta.env.DEV;
+  const debugEnabled = __DEV__;
 
   if (!hasWindow) {
     if (debugEnabled) {

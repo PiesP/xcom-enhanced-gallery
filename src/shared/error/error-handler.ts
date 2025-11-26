@@ -14,7 +14,7 @@ export class GlobalErrorHandler {
       location,
     });
 
-    if (import.meta.env.DEV) {
+    if (__DEV__) {
       event.preventDefault();
     }
   };
@@ -33,7 +33,7 @@ export class GlobalErrorHandler {
       reason,
     });
 
-    if (import.meta.env.DEV) {
+    if (__DEV__) {
       event.preventDefault();
     }
   };

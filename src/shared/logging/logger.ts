@@ -106,20 +106,6 @@ export function createScopedLogger(scope: string, config: Partial<LoggerConfig> 
   return createScopedLoggerImpl(scope, config);
 }
 
-// Deprecated: Use createScopedLogger instead
-export function createScopedLoggerWithCorrelation(
-  scope: string,
-  _correlationId: string,
-  config: Partial<LoggerConfig> = {},
-): Logger {
-  return createScopedLogger(scope, config);
-}
-
-// Deprecated: Use simple random string if needed
-export function createCorrelationId(): string {
-  return Math.random().toString(36).slice(2, 10);
-}
-
 export function logError(
   error: Error | string,
   context: Record<string, unknown> = {},

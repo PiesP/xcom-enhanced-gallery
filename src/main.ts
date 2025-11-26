@@ -21,7 +21,7 @@ import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 // Vendor initialization moved to startApplication
 
-const isDevEnvironment = import.meta.env.DEV;
+const isDevEnvironment = __DEV__;
 const isTestMode = import.meta.env.MODE === 'test';
 
 type CleanupTask = () => Promise<void> | void;
@@ -165,7 +165,7 @@ async function applyInitialThemeSetting(): Promise<void> {
     const savedSetting = themeService.getCurrentTheme();
     themeService.setTheme(savedSetting, { force: true, persist: false });
 
-    if (import.meta.env.DEV) {
+    if (__DEV__) {
       logger.debug(`[theme-sync] Applied saved theme: ${savedSetting}`);
     }
   } catch (error) {

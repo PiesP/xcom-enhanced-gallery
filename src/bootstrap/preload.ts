@@ -18,7 +18,7 @@ const PRELOAD_TASKS: readonly PreloadTask[] = Object.freeze([
   },
 ]);
 
-const debug = import.meta.env.DEV ? (message: string) => logger.debug(message) : () => {};
+const debug = __DEV__ ? (message: string) => logger.debug(message) : () => {};
 
 const DEFAULT_PRELOAD_DEPENDENCIES: PreloadDependencies = Object.freeze({
   logWarn: (message: string, error: unknown) => {
