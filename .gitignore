@@ -23,7 +23,6 @@
 !/types/**
 
 # --- Critical build config (deployment required) ---
-!/tsconfig.base.json
 !/tsconfig.json
 !/vite.config.ts
 
