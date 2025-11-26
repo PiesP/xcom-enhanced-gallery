@@ -184,7 +184,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       ref={assignToolbarRef}
       class={props.toolbarClass()}
       role={props.role ?? 'toolbar'}
-      aria-label={props['aria-label'] ?? '갤러리 도구모음'}
+      aria-label={props['aria-label'] ?? 'Gallery Toolbar'}
       aria-describedby={props['aria-describedby']}
       aria-disabled={isToolbarDisabled()}
       data-testid={props['data-testid']}
@@ -210,8 +210,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           <IconButton
             class={toolbarButtonClass()}
             size="toolbar"
-            aria-label="이전 미디어"
-            title="이전 미디어 (←)"
+            aria-label="Previous Media"
+            title="Previous Media (Left Arrow)"
             disabled={prevDisabled()}
             onClick={props.onPreviousClick}
             data-gallery-element="nav-previous"
@@ -224,8 +224,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           <IconButton
             class={toolbarButtonClass()}
             size="toolbar"
-            aria-label="다음 미디어"
-            title="다음 미디어 (→)"
+            aria-label="Next Media"
+            title="Next Media (Right Arrow)"
             disabled={nextDisabled()}
             onClick={props.onNextClick}
             data-gallery-element="nav-next"
@@ -281,8 +281,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             size="toolbar"
             onClick={props.onDownloadCurrent}
             disabled={downloadDisabled()}
-            aria-label="현재 파일 다운로드"
-            title="현재 파일 다운로드 (Ctrl+D)"
+            aria-label="Download Current File"
+            title="Download Current File (Ctrl+D)"
             data-gallery-element="download-current"
             data-disabled={downloadDisabled()}
             data-action-disabled={anyActionDisabled()}
@@ -296,8 +296,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               size="toolbar"
               onClick={props.onDownloadAll}
               disabled={downloadDisabled()}
-              aria-label={`전체 ${totalCount()}개 파일 ZIP 다운로드`}
-              title={`전체 ${totalCount()}개 파일 ZIP 다운로드`}
+              aria-label={`Download all ${totalCount()} files as ZIP`}
+              title={`Download all ${totalCount()} files as ZIP`}
               data-gallery-element="download-all"
               data-disabled={downloadDisabled()}
               data-action-disabled={anyActionDisabled()}
@@ -312,10 +312,10 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               id="settings-button"
               class={toolbarButtonClass()}
               size="toolbar"
-              aria-label="설정 열기"
+              aria-label="Open Settings"
               aria-expanded={props.settingsController.isSettingsExpanded() ? 'true' : 'false'}
               aria-controls="toolbar-settings-panel"
-              title="설정"
+              title="Settings"
               disabled={isToolbarDisabled()}
               onMouseDown={props.settingsController.handleSettingsMouseDown}
               onClick={props.settingsController.handleSettingsClick}
@@ -348,8 +348,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             class={toolbarButtonClass(styles.closeButton)}
             size="toolbar"
             intent="danger"
-            aria-label="갤러리 닫기"
-            title="갤러리 닫기 (Esc)"
+            aria-label="Close Gallery"
+            title="Close Gallery (Esc)"
             disabled={isToolbarDisabled()}
             onClick={props.onCloseClick}
             data-gallery-element="close"
@@ -368,7 +368,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         data-gallery-scrollable="true"
         onMouseDown={props.settingsController.handlePanelMouseDown}
         role="region"
-        aria-label="설정 패널"
+        aria-label="Settings Panel"
         aria-labelledby="settings-button"
         data-gallery-element="settings-panel"
         onClick={props.settingsController.handlePanelClick}

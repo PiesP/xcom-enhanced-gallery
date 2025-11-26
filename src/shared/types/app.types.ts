@@ -103,7 +103,7 @@ export type FileExtension = Brand<string, 'FileExtension'>;
 // Subordinate type file re-exports
 // ================================
 
-// UI/테마 타입
+// UI/Theme Types
 export type {
   AnimationConfig,
   AsyncState,
@@ -121,7 +121,7 @@ export type {
   Theme,
 } from './ui.types';
 
-// 컴포넌트 타입
+// Component Types
 export type {
   ApiError,
   ApiResponse,
@@ -150,7 +150,7 @@ export type {
   VariantComponentProps,
 } from './component.types';
 
-// 미디어 타입
+// Media Types
 export type {
   ExtractionSource,
   MediaEntity,
@@ -168,17 +168,17 @@ export type {
 
 export { ExtractionError } from './media.types';
 
-// 네비게이션 타입
+// Navigation Types
 export type { NavigationSource } from './navigation.types';
 
-// 툴바 UI 상태 타입
+// Toolbar UI State Types
 export type { FitMode, ToolbarActions, ToolbarDataState, ToolbarState } from './toolbar.types';
 
-// Result 및 에러 코드
+// Result and Error Codes
 export { ErrorCode } from './result.types';
 export type { BaseResult, BaseResultStatus, ResultError, ResultSuccess } from './result.types';
 
-// 갤러리 타입 (core-types에서 재-export)
+// Gallery Types (re-exported from core-types)
 export type { GalleryViewMode, ViewMode } from './core/core-types';
 
 // Phase 421: ViewMode helper utilities removed; use VIEW_MODES from '@/constants'.

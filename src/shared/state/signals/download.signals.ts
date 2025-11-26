@@ -42,9 +42,6 @@ let downloadStateSignal: SafeSignal<DownloadState> | null = null;
 // Logger instance
 const logger: ILogger = rootLogger;
 
-// Manual processing depth to gate UI interactions during ad-hoc downloads
-let manualProcessingDepth = 0;
-
 function getDownloadState(): SafeSignal<DownloadState> {
   if (!downloadStateSignal) {
     downloadStateSignal = createSignalSafe<DownloadState>(INITIAL_STATE);
@@ -63,37 +60,19 @@ function setProcessingFlag(isProcessing: boolean): void {
   };
 }
 
-function releaseManualProcessing(): void {
-  if (manualProcessingDepth > 0) {
-    manualProcessingDepth -= 1;
-  }
-
-  if (manualProcessingDepth > 0) {
-    return;
-  }
-
-  const { queue } = downloadState.value;
-  setProcessingFlag(queue.length > 0);
-}
-
 export function acquireDownloadLock(): () => void {
-  manualProcessingDepth += 1;
-  if (manualProcessingDepth === 1) {
-    setProcessingFlag(true);
-  }
+  setProcessingFlag(true);
 
-  let released = false;
   return () => {
-    if (released) {
-      return;
+    const { queue, activeTasks } = downloadState.value;
+    if (queue.length === 0 && activeTasks.size === 0) {
+      setProcessingFlag(false);
     }
-    released = true;
-    releaseManualProcessing();
   };
 }
 
 export function isDownloadLocked(): boolean {
-  return manualProcessingDepth > 0 || downloadState.value.isProcessing;
+  return downloadState.value.isProcessing;
 }
 
 // ============================================================================

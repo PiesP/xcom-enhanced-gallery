@@ -129,7 +129,7 @@ export class StreamingZipWriter {
     const centralDirStart = this.currentOffset;
     const centralDirChunks: Uint8Array[] = [];
 
-    // Central Directory Headers 생성
+    // Generate Central Directory Headers
     for (const entry of this.entries) {
       const filenameBytes = encodeUtf8(entry.filename);
 

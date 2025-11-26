@@ -97,37 +97,37 @@ export type { ViewMode } from '@/constants';
 // ========================================
 
 /**
- * 기본 갤러리 설정
+ * Default Gallery Settings
  */
 export interface GalleryConfig {
-  /** 자동 재생 여부 */
+  /** Whether to autoplay */
   autoPlay: boolean;
-  /** 썸네일 표시 여부 */
+  /** Whether to show thumbnails */
   showThumbnails: boolean;
-  /** 다운로드 기능 활성화 여부 */
+  /** Whether download feature is enabled */
   downloadEnabled: boolean;
-  /** 키보드 네비게이션 활성화 여부 */
+  /** Whether keyboard navigation is enabled */
   keyboardNavigation?: boolean;
-  /** 풀스크린 모드 지원 여부 */
+  /** Whether fullscreen mode is supported */
   fullscreenEnabled?: boolean;
-  /** 이미지 확대/축소 기능 */
+  /** Image zoom capability */
   zoomEnabled?: boolean;
 }
 
 /**
- * 다운로드 옵션
+ * Download Options
  */
 export interface DownloadOptions {
-  /** 다운로드 품질 */
+  /** Download quality */
   quality?: 'original' | 'high' | 'medium';
-  /** 파일명 형식 */
+  /** Filename format */
   filenameFormat?: string;
-  /** 압축 활성화 여부 */
+  /** Whether compression is enabled */
   compressionEnabled?: boolean;
 }
 
 /**
- * 크기 정보
+ * Size Information
  */
 export interface Size {
   width: number;
@@ -135,11 +135,11 @@ export interface Size {
 }
 
 /**
- * 통합 생명주기 인터페이스
+ * Integrated Lifecycle Interface
  */
 export interface Lifecycle extends Cleanupable {
   /**
-   * 리소스 상태 확인
+   * Check resource status
    */
   isActive(): boolean;
 }
@@ -149,14 +149,14 @@ export interface Lifecycle extends Cleanupable {
 // ========================================
 
 /**
- * Result 타입 - Enhanced Result 패턴 사용
- * @see {@link ../result.types.ts} - Enhanced Result 정의 및 유틸리티 (AsyncResult 포함)
+ * Result Type - Uses Enhanced Result Pattern
+ * @see {@link ../result.types.ts} - Enhanced Result definition and utilities (including AsyncResult)
  *
- * Phase 353: AsyncResult 타입 통합 (result.types.ts로 이동)
+ * Phase 353: AsyncResult type integration (moved to result.types.ts)
  */
 export type { Result, AsyncResult } from '@shared/types/result.types';
 
-// Result 유틸리티 함수들은 result.types.ts로 이동됨 (Phase 355.2)
+// Result utility functions moved to result.types.ts (Phase 355.2)
 // - success, failure, partial, cancelled
 // - isSuccess, isFailure, isPartial
 // - unwrapOr, safe, safeAsync, chain, map

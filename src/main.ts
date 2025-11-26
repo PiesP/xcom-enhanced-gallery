@@ -9,7 +9,6 @@ import { createAppConfig } from '@/constants/app-config';
 import { logger } from '@/shared/logging';
 import type { IGalleryApp } from '@shared/container/app-container';
 import { warmupNonCriticalServices } from '@shared/container/service-accessors';
-import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
 import { runAfterWindowLoad } from '@shared/dom/window-load';
 import { cleanupVendors } from '@shared/external/vendors';
 import { CoreService } from '@shared/services/service-manager';
@@ -75,45 +74,6 @@ async function runOptionalCleanup(
   } catch (error) {
     log(label, error);
   }
-}
-
-type DevMainNamespace = {
-  start: typeof startApplication;
-  createConfig: typeof createAppConfig;
-  cleanup: typeof cleanup;
-  galleryApp?: IGalleryApp | null;
-};
-
-/**
- * DEV namespace setup utility
- * Phase 1.1: Helper function to eliminate duplicate code
- */
-function setupDevNamespace(galleryAppInstance?: IGalleryApp | null): void {
-  if (!isDevEnvironment) {
-    return;
-  }
-
-  mutateDevNamespace(namespace => {
-    const mainNamespace =
-      (namespace.main as DevMainNamespace | undefined) ??
-      (namespace.main = {
-        start: startApplication,
-        createConfig: createAppConfig,
-        cleanup,
-      } as DevMainNamespace);
-
-    mainNamespace.start = startApplication;
-    mainNamespace.createConfig = createAppConfig;
-    mainNamespace.cleanup = cleanup;
-
-    if (galleryAppInstance !== undefined) {
-      if (galleryAppInstance) {
-        mainNamespace.galleryApp = galleryAppInstance;
-      } else {
-        delete mainNamespace.galleryApp;
-      }
-    }
-  });
 }
 
 async function runBootstrapStages(): Promise<void> {
@@ -268,7 +228,14 @@ async function cleanup(): Promise<void> {
 
       await lifecycleState.galleryApp.cleanup();
       lifecycleState.galleryApp = null;
-      setupDevNamespace(null);
+      if (__DEV__) {
+        const { setupDevNamespace } = await import('@/bootstrap/dev-namespace');
+        setupDevNamespace(null, {
+          start: startApplication,
+          createConfig: createAppConfig,
+          cleanup,
+        });
+      }
     });
 
     await runOptionalCleanup('CoreService cleanup', () => {
@@ -363,7 +330,14 @@ async function startApplication(): Promise<void> {
     logger.info('✅ Application initialization complete');
 
     // Phase 290: Namespace isolation - provide single namespace for global access in dev environment
-    setupDevNamespace(lifecycleState.galleryApp);
+    if (__DEV__) {
+      const { setupDevNamespace } = await import('@/bootstrap/dev-namespace');
+      setupDevNamespace(lifecycleState.galleryApp, {
+        start: startApplication,
+        createConfig: createAppConfig,
+        cleanup,
+      });
+    }
   })()
     .catch(error => {
       logger.error('❌ Application initialization failed (lean mode, no retry):', error);
@@ -411,4 +385,12 @@ export default {
 };
 
 // Phase 290: Namespace isolation - allow global access only in development environment
-setupDevNamespace();
+if (__DEV__) {
+  void import('@/bootstrap/dev-namespace').then(({ setupDevNamespace }) => {
+    setupDevNamespace(undefined, {
+      start: startApplication,
+      createConfig: createAppConfig,
+      cleanup,
+    });
+  });
+}

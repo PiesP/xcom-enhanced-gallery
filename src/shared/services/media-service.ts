@@ -4,9 +4,13 @@ import type {
   MediaInfo,
 } from '@shared/types/media.types';
 import { PrefetchManager } from '@shared/services/media/prefetch-manager';
-import { BaseServiceImpl } from './base-service';
-import type { BulkDownloadResult, DownloadOptions, SingleDownloadResult } from './download/types';
-import type { MediaExtractionService } from './media-extraction/media-extraction-service';
+import { BaseServiceImpl } from '@shared/services/base-service';
+import type {
+  BulkDownloadResult,
+  DownloadOptions,
+  SingleDownloadResult,
+} from '@shared/services/download/types';
+import type { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 
 export type BulkDownloadOptions = DownloadOptions;
 
@@ -28,7 +32,7 @@ export class MediaService extends BaseServiceImpl {
   protected async onInitialize(): Promise<void> {
     if (typeof __FEATURE_MEDIA_EXTRACTION__ === 'undefined' || __FEATURE_MEDIA_EXTRACTION__) {
       const { MediaExtractionService } = await import(
-        './media-extraction/media-extraction-service'
+        '@shared/services/media-extraction/media-extraction-service'
       );
       this.mediaExtraction = new MediaExtractionService();
     }

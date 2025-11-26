@@ -72,6 +72,31 @@ const extractFromDOM: ExtractionStrategy = element => {
   };
 };
 
+/** Strategy 3: Media Grid Item (For Media Tab) */
+const extractFromMediaGridItem: ExtractionStrategy = element => {
+  // On media tabs, images are wrapped in links like /User/status/ID/photo/1
+  const link = element.closest('a');
+  if (!link) return null;
+
+  const href = link.getAttribute('href');
+  if (!href) return null;
+
+  // Match /status/ID
+  const match = href.match(/\/status\/(\d+)/);
+  if (!match || !match[1]) return null;
+
+  const tweetId = match[1];
+  const username = extractUsernameFromUrl(href) ?? 'unknown';
+
+  return {
+    tweetId,
+    username,
+    tweetUrl: href.startsWith('http') ? href : `https://twitter.com${href}`,
+    extractionMethod: 'media-grid-item',
+    confidence: 0.8,
+  };
+};
+
 // ============================================================================
 // Helpers
 // ============================================================================
@@ -96,7 +121,11 @@ function extractUsernameFromUrl(url: string): string | null {
 // ============================================================================
 
 export class TweetInfoExtractor {
-  private readonly strategies: ExtractionStrategy[] = [extractFromElement, extractFromDOM];
+  private readonly strategies: ExtractionStrategy[] = [
+    extractFromElement,
+    extractFromDOM,
+    extractFromMediaGridItem,
+  ];
 
   async extract(element: HTMLElement): Promise<TweetInfo | null> {
     for (const strategy of this.strategies) {

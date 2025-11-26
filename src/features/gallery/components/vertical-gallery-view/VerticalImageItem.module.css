@@ -60,7 +60,7 @@
   align-items: center;
   pointer-events: auto;
 
-  /* 성능 최적화 */
+  /* Performance Optimization */
   transform: translateZ(0);
   will-change: transform;
   contain: layout style;
@@ -72,24 +72,24 @@
   border-color: var(--xeg-glass-border-medium);
 }
 
-/* 포커스 상태는 보더 색상만 변경 */
+/* Focus state changes border color only */
 .container:focus-visible {
   border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-primary));
 }
 
-/* 활성 상태 - 더 강한 강조 */
+/* Active state - Stronger emphasis */
 .container.active {
   border-color: var(--xeg-glass-border-strong, var(--xeg-color-border-strong));
   transition: var(--xeg-transition-interaction-fast);
   transform: translateZ(0);
 }
 
-/* 활성+포커스 상태 - 중복 제거 */
+/* Active + Focus state - Remove duplication */
 .container.active:focus-visible {
   border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-strong));
 }
 
-/* 포커스된 상태 (스크롤 대상) */
+/* Focused state (Scroll target) */
 .container.focused {
   border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-primary));
   transition: var(--xeg-transition-interaction-fast);
