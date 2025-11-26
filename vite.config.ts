@@ -119,7 +119,7 @@ const userscriptPlugin = (isDev: boolean, isProd: boolean): Plugin => ({
       fs.appendFileSync(path.join(outDir, fileName), `\n//# sourceMappingURL=${mapName}`);
     }
 
-    console.log(`[userscript] Generated ${fileName}`);
+    console.info(`[userscript] Generated ${fileName}`);
 
     const assetsDir = path.join(outDir, 'assets');
     if (fs.existsSync(assetsDir)) fs.rmSync(assetsDir, { recursive: true, force: true });
