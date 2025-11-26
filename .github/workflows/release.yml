@@ -146,8 +146,8 @@ jobs:
 
       - name: 🏗️ Build userscript
         run: |
-          npx vite build --mode development
-          npx vite build --mode production
+          npx --yes vite build --mode development
+          npx --yes vite build --mode production
 
       - name: 📦 Prepare release package
         run: |
@@ -167,26 +167,51 @@ jobs:
           }
           EOF
 
-          # Create release notes
-          cat > release/RELEASE_NOTES.md << 'EOF'
+          # Extract changelog for current version
+          CHANGELOG_CONTENT=""
+          if [ -f "CHANGELOG.md" ]; then
+            # Extract content between [version] and next [version] or end
+            CHANGELOG_CONTENT=$(awk -v ver="${{ steps.version.outputs.version }}" '
+              /^## \[/ {
+                if (found) exit;
+                if ($0 ~ "\\[" ver "\\]") {
+                  found=1;
+                  next;
+                }
+              }
+              found { print }
+            ' CHANGELOG.md)
+          fi
+
+          # Create release notes with changelog content
+          cat > release/RELEASE_NOTES.md << EOF
           # 🚀 Release v${{ steps.version.outputs.version }}
 
           ## 📥 Installation
 
           **[📥 Click here to install](https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v${{ steps.version.outputs.version }}/xcom-enhanced-gallery.user.js)**
 
-          ## 📋 Details
+          ---
 
-          - Commit: `${{ github.sha }}`
-          - Built: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          - Node.js: `${{ env.NODE_VERSION }}`
+          ## 📝 What's Changed
+
+          ${CHANGELOG_CONTENT:-No changelog entry found for this version.}
+
+          **[📋 Full Changelog](https://github.com/${{ github.repository }}/compare/v${{ steps.version.outputs.version }}...HEAD)**
+
+          ---
+
+          ## 📋 Build Details
+
+          - **Commit**: \`${{ github.sha }}\`
+          - **Built**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          - **Node.js**: \`${{ env.NODE_VERSION }}\`
           EOF
 
       - name: 🏷️ Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
-          name: 🚀 Release v${{ steps.version.outputs.version }}
           body_path: release/RELEASE_NOTES.md
           files: |
             release/xcom-enhanced-gallery.user.js

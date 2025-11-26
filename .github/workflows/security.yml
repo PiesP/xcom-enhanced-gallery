@@ -71,7 +71,7 @@ jobs:
               - "**/*.map"
 
       - name: 🏗️ Build for analysis
-        run: npx vite build --mode production
+        run: npx --yes vite build --mode production
 
       - name: 📊 Analyze
         uses: github/codeql-action/analyze@v4

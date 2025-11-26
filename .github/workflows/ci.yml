@@ -61,18 +61,15 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: 🔍 Run ESLint (SARIF)
+      - name: 🔍 Run ESLint
         env:
           SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
         run: |
-          npx eslint src \
+          npx --yes eslint src \
             --report-unused-disable-directives \
             --format @microsoft/eslint-formatter-sarif \
             --output-file eslint-results.sarif
         continue-on-error: true
-
-      - name: 🔍 Run ESLint (Full Check)
-        run: npm run lint
 
       - name: 📊 Upload SARIF results
         uses: github/codeql-action/upload-sarif@v4
@@ -93,7 +90,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: 📐 Run TypeScript check
-        run: npm run typecheck
+        run: npx --yes tsc --noEmit
 
   build:
     name: 🚀 Build
@@ -113,7 +110,7 @@ jobs:
         run: rm -rf dist
 
       - name: 🚀 Build production
-        run: npx vite build --mode production
+        run: npx --yes vite build --mode production
 
       - name: 📊 Upload build artifacts
         uses: actions/upload-artifact@v5

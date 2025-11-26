@@ -29,12 +29,12 @@
     "build:fast": "tsx scripts/verify-pipeline.ts --fast",
     "build:dev": "vite build --mode development",
     "build:prod": "vite build",
-    "clean": "rimraf dist",
+    "clean": "rm -rf dist",
     "check": "run-p deps:check typecheck lint:fix styles:guard security:check",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "npm run lint -- --fix",
-    "format": "prettier --write .",
+    "format": "npx --yes prettier --write .",
     "test": "npm run test:batched",
     "test:fast": "vitest run",
     "posttest:fast": "tsx scripts/cleanup-test-workers.ts",
@@ -43,13 +43,15 @@
     "posttest:batched": "tsx scripts/cleanup-test-workers.ts",
     "test:ct": "playwright test -c playwright-ct.config.ts",
     "test:e2e": "playwright test",
+    "test:a11y": "playwright test playwright/accessibility",
     "test:mutation": "stryker run",
     "test:visual": "playwright test -c playwright-ct.config.ts --grep @visual",
     "test:coverage": "vitest run --coverage",
-    "deps:check": "dependency-cruiser src --validate --config .dependency-cruiser.cjs",
+    "test:all": "run-s test:batched test:ct test:visual test:a11y test:e2e",
+    "deps:check": "npx --yes dependency-cruiser src --validate --config .dependency-cruiser.cjs",
     "security:check": "tsx scripts/security-surface-check.ts",
     "styles:guard": "tsx scripts/validate-style-imports.ts",
-    "prepare": "husky"
+    "bundle:check": "tsx scripts/check-bundle-size.ts"
   },
   "dependencies": {
     "solid-js": "1.9.10"
@@ -74,26 +76,23 @@
     "@vitest/coverage-v8": "^4.0.14",
     "@vitest/ui": "^4.0.14",
     "autoprefixer": "^10.4.22",
+    "axe-playwright": "^2.2.2",
     "babel-preset-solid": "^1.9.10",
     "cssnano": "^7.1.2",
-    "dependency-cruiser": "^17.3.1",
     "esbuild": "^0.27.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-prettier": "^5.5.4",
     "fast-glob": "^3.3.3",
-    "husky": "^9.1.7",
     "jiti": "^2.6.1",
     "jsdom": "^27.2.0",
     "lint-staged": "^16.2.7",
+    "msw": "^2.12.3",
     "npm-run-all": "^4.1.5",
     "playwright": "^1.57.0",
     "postcss": "^8.5.6",
-    "prettier": "^3.6.2",
-    "rimraf": "^6.1.2",
     "rolldown-vite": "^7.2.7",
-    "rollup-plugin-visualizer": "^6.0.5",
     "terser": "^5.44.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
@@ -106,20 +105,20 @@
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --fix",
-      "prettier --write"
+      "npx --yes prettier --write"
     ],
     "*.{js,jsx}": [
       "eslint --fix",
-      "prettier --write"
+      "npx --yes prettier --write"
     ],
     "*.md": [
-      "prettier --write"
+      "npx --yes prettier --write"
     ],
     "*.{json,yml,yaml}": [
-      "prettier --write"
+      "npx --yes prettier --write"
     ],
     "*.{css,scss}": [
-      "prettier --write"
+      "npx --yes prettier --write"
     ]
   },
   "overrides": {

@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { NormalizedOutputOptions, OutputAsset, OutputBundle, OutputChunk } from 'rollup';
-import { visualizer } from 'rollup-plugin-visualizer';
 import type { Plugin, PluginOption, UserConfig } from 'vite';
 import { defineConfig, mergeConfig } from 'vite';
 import monkey from 'vite-plugin-monkey';
@@ -156,13 +155,7 @@ export default defineConfig(async ({ mode, command }) => {
             },
           })
         : userscriptPlugin(isDev, isProd),
-      analyze &&
-        visualizer({
-          filename: 'docs/bundle-analysis.html',
-          gzipSize: true,
-          brotliSize: true,
-          template: 'treemap',
-        }),
+      analyze,
     ].filter(Boolean) as PluginOption[],
     define: {
       __DEV__: isDev,
