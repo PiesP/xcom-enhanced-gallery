@@ -16,7 +16,7 @@ export const SELECTORS = {
 } as const;
 
 /**
- * Stable DOM selectors (optimized - Phase 335)
+ * Stable DOM selectors
  */
 export const STABLE_SELECTORS = {
   TWEET_CONTAINERS: ['article[data-testid="tweet"]'],
@@ -33,6 +33,5 @@ export const STABLE_SELECTORS = {
     share: '[data-testid="share"]',
     bookmark: '[data-testid="bookmark"]',
   },
-  /** Phase 342: Quote tweet selectors */
   QUOTED_TWEET_ARTICLE: 'article[data-testid="tweet"] article[data-testid="tweet"]',
 } as const;
