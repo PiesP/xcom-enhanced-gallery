@@ -26,7 +26,7 @@ const isTestMode = import.meta.env.MODE === 'test';
 type CleanupTask = () => Promise<void> | void;
 type CleanupLogger = (message: string, error: unknown) => void;
 
-const lifecycleState = {
+export const lifecycleState = {
   started: false,
   startPromise: null as Promise<void> | null,
   galleryApp: null as IGalleryApp | null,
@@ -64,10 +64,10 @@ function tearDownGlobalEventHandlers(): void {
   }
 }
 
-async function runOptionalCleanup(
+export async function runOptionalCleanup(
   label: string,
   task: CleanupTask,
-  log: CleanupLogger = warnCleanupLog,
+  log: CleanupLogger = warnCleanupLog
 ): Promise<void> {
   try {
     await task();
@@ -76,13 +76,15 @@ async function runOptionalCleanup(
   }
 }
 
-async function runBootstrapStages(): Promise<void> {
+// exported runBootstrapStages below
+export async function runBootstrapStages(): Promise<void> {
   for (const stage of bootstrapStages) {
     await executeBootstrapStage(stage);
   }
 }
 
-async function executeBootstrapStage(stage: BootstrapStage): Promise<void> {
+// exported executeBootstrapStage below
+export async function executeBootstrapStage(stage: BootstrapStage): Promise<void> {
   try {
     logger.debug(`[bootstrap] ➡️ ${stage.label}`);
     await Promise.resolve(stage.run());
@@ -97,7 +99,8 @@ async function executeBootstrapStage(stage: BootstrapStage): Promise<void> {
 /**
  * Initialize base infrastructure
  */
-async function initializeInfrastructure(): Promise<void> {
+// exported initializeInfrastructure below
+export async function initializeInfrastructure(): Promise<void> {
   try {
     await initializeEnvironment();
     logger.debug('✅ Vendor library initialization complete');
@@ -107,7 +110,8 @@ async function initializeInfrastructure(): Promise<void> {
   }
 }
 
-async function initializeBaseServicesStage(): Promise<void> {
+// exported initializeBaseServicesStage below
+export async function initializeBaseServicesStage(): Promise<void> {
   try {
     const { initializeCoreBaseServices } = await import('@/bootstrap/base-services');
     await initializeCoreBaseServices();
@@ -117,7 +121,8 @@ async function initializeBaseServicesStage(): Promise<void> {
   }
 }
 
-async function applyInitialThemeSetting(): Promise<void> {
+// exported applyInitialThemeSetting below
+export async function applyInitialThemeSetting(): Promise<void> {
   try {
     const { getThemeService } = await import('@shared/container/service-accessors');
     const themeService = getThemeService();
@@ -141,7 +146,8 @@ async function applyInitialThemeSetting(): Promise<void> {
  * Non-Critical system background initialization
  * Phase 3.1: Utilize requestIdleCallback
  */
-function initializeNonCriticalSystems(): void {
+// exported initializeNonCriticalSystems below
+export function initializeNonCriticalSystems(): void {
   // Lean mode: execute immediately without idle scheduling or test mode branching
   try {
     logger.info('Starting non-critical system initialization');
@@ -155,19 +161,22 @@ function initializeNonCriticalSystems(): void {
 /**
  * Set up global event handlers
  */
-function setupGlobalEventHandlers(): void {
+// exported setupGlobalEventHandlers below
+export function setupGlobalEventHandlers(): void {
   tearDownGlobalEventHandlers();
 
   globalEventTeardown = wireGlobalEvents(() => {
-    cleanup().catch((error) => logger.error('Error during page unload cleanup:', error));
+    cleanup().catch(error => logger.error('Error during page unload cleanup:', error));
   });
 }
 
-async function loadGlobalStyles(): Promise<void> {
+// exported loadGlobalStyles below
+export async function loadGlobalStyles(): Promise<void> {
   await import('./styles/globals');
 }
 
-async function initializeDevToolsIfNeeded(): Promise<void> {
+// exported initializeDevToolsIfNeeded below
+export async function initializeDevToolsIfNeeded(): Promise<void> {
   if (!isDevEnvironment) {
     return;
   }
@@ -176,7 +185,8 @@ async function initializeDevToolsIfNeeded(): Promise<void> {
   await initializeDevTools();
 }
 
-async function initializeGalleryIfPermitted(): Promise<void> {
+// exported initializeGalleryIfPermitted below
+export async function initializeGalleryIfPermitted(): Promise<void> {
   if (isTestMode) {
     logger.debug('Gallery initialization skipped (test mode)');
     return;
@@ -198,7 +208,8 @@ const bootstrapStages: BootstrapStage[] = [
   { label: 'Non-critical systems', run: () => initializeNonCriticalSystems() },
 ];
 
-function triggerPreloadStrategy(): void {
+// exported triggerPreloadStrategy below
+export function triggerPreloadStrategy(): void {
   if (isTestMode) {
     return;
   }
@@ -216,7 +227,8 @@ function triggerPreloadStrategy(): void {
 /**
  * Application cleanup
  */
-async function cleanup(): Promise<void> {
+// exported cleanup below
+export async function cleanup(): Promise<void> {
   try {
     logger.info('🧹 Starting application cleanup');
 
@@ -256,7 +268,7 @@ async function cleanup(): Promise<void> {
         const { GlobalErrorHandler } = await import('@shared/error');
         GlobalErrorHandler.getInstance().destroy();
       },
-      debugCleanupLog,
+      debugCleanupLog
     );
 
     if (isDevEnvironment) {
@@ -277,7 +289,7 @@ async function cleanup(): Promise<void> {
             logger.debug('[cleanup] ✅ All event listeners cleared successfully');
           }
         },
-        debugCleanupLog,
+        debugCleanupLog
       );
     }
 
@@ -307,7 +319,8 @@ async function cleanup(): Promise<void> {
  * - Critical: Needed immediately after page load (infrastructure, core, gallery)
  * - Non-Critical: Can wait until after user interaction (background timers)
  */
-async function startApplication(): Promise<void> {
+// exported startApplication below
+export async function startApplication(): Promise<void> {
   if (lifecycleState.started) {
     logger.debug('Application: Already started');
     return;
@@ -339,7 +352,7 @@ async function startApplication(): Promise<void> {
       });
     }
   })()
-    .catch((error) => {
+    .catch(error => {
       logger.error('❌ Application initialization failed (lean mode, no retry):', error);
     })
     .finally(() => {
@@ -352,7 +365,8 @@ async function startApplication(): Promise<void> {
 /**
  * Gallery immediate initialization (no delay)
  */
-async function initializeGallery(): Promise<void> {
+// exported initializeGallery below
+export async function initializeGallery(): Promise<void> {
   try {
     logger.debug('🎯 Starting gallery immediate initialization');
 
