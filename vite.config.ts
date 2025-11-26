@@ -49,6 +49,12 @@ const getLicenseNotices = () => {
 const getUserscriptHeader = (isDev: boolean) => {
   const timestamp = new Date().toISOString().replace(/[-:T]/g, '.').slice(0, 15);
   const version = isDev ? `${pkg.version}-dev.${timestamp}` : pkg.version;
+  const prodOnlyMetadata = isDev
+    ? ''
+    : `// @supportURL   https://github.com/piesp/xcom-enhanced-gallery/issues
+// @downloadURL  https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js
+// @updateURL    https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js
+`;
   return `// ==UserScript==
 // @name         X.com Enhanced Gallery${isDev ? ' (Dev)' : ''}
 // @namespace    https://github.com/piesp/xcom-enhanced-gallery
@@ -66,10 +72,7 @@ const getUserscriptHeader = (isDev: boolean) => {
 // @connect      video.twimg.com
 // @connect      api.twitter.com
 // @run-at       document-idle
-// @supportURL   https://github.com/piesp/xcom-enhanced-gallery/issues
-// @downloadURL  https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js
-// @updateURL    https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js
-// @noframes
+${prodOnlyMetadata}// @noframes
 // ==/UserScript==
 `;
 };
