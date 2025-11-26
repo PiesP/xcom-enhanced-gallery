@@ -1,16 +1,16 @@
-import type {
-  MediaExtractionOptions,
-  MediaExtractionResult,
-  MediaInfo,
-} from '@shared/types/media.types';
-import { PrefetchManager } from '@shared/services/media/prefetch-manager';
 import { BaseServiceImpl } from '@shared/services/base-service';
 import type {
   BulkDownloadResult,
   DownloadOptions,
   SingleDownloadResult,
 } from '@shared/services/download/types';
+import { PrefetchManager } from '@shared/services/media/prefetch-manager';
 import type { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
+import type {
+  MediaExtractionOptions,
+  MediaExtractionResult,
+  MediaInfo,
+} from '@shared/types/media.types';
 
 export type BulkDownloadOptions = DownloadOptions;
 
@@ -65,7 +65,7 @@ export class MediaService extends BaseServiceImpl {
       }
 
       // Idle prefetch for others
-      result.mediaItems.slice(1).forEach(item => {
+      result.mediaItems.slice(1).forEach((item) => {
         this.prefetchMedia(item, 'idle');
       });
     }

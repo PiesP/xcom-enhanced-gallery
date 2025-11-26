@@ -1,4 +1,4 @@
-import type { ViewMode, FitMode } from '@shared/types';
+import type { FitMode, ViewMode } from '@shared/types';
 
 type Accessor<T> = () => T;
 

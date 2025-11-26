@@ -199,7 +199,7 @@ export function useToolbarSettingsController(
     void themeManager
       .initialize()
       .then(syncThemeFromService)
-      .catch(error => {
+      .catch((error) => {
         logger.warn('[ToolbarSettingsController] ThemeService initialization failed', error);
       });
   }
@@ -215,7 +215,7 @@ export function useToolbarSettingsController(
   });
 
   createEffect(() => {
-    const unsubscribe = languageService.onLanguageChange(next => {
+    const unsubscribe = languageService.onLanguageChange((next) => {
       setCurrentLanguage(next);
     });
 
@@ -259,7 +259,7 @@ export function useToolbarSettingsController(
     };
 
     const selects = Array.from(panel.querySelectorAll('select'));
-    selects.forEach(select => {
+    selects.forEach((select) => {
       select.addEventListener('focus', handleSelectFocus);
       select.addEventListener('blur', handleSelectBlur);
       select.addEventListener('change', handleSelectChange);
@@ -311,7 +311,7 @@ export function useToolbarSettingsController(
     onCleanup(() => {
       clearScheduledTimeout(selectGuardTimeout);
       documentRef.removeEventListener('mousedown', handleOutsideClick, false);
-      selects.forEach(select => {
+      selects.forEach((select) => {
         select.removeEventListener('focus', handleSelectFocus);
         select.removeEventListener('blur', handleSelectBlur);
         select.removeEventListener('change', handleSelectChange);
@@ -404,13 +404,13 @@ export function useToolbarSettingsController(
   };
 
   return {
-    assignToolbarRef: element => {
+    assignToolbarRef: (element) => {
       setToolbarRef(element ?? undefined);
     },
-    assignSettingsPanelRef: element => {
+    assignSettingsPanelRef: (element) => {
       setSettingsPanelRef(element ?? undefined);
     },
-    assignSettingsButtonRef: element => {
+    assignSettingsButtonRef: (element) => {
       setSettingsButtonRef(element ?? undefined);
     },
     isSettingsExpanded,

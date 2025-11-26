@@ -9,15 +9,15 @@ import { ToolbarView } from '@shared/components/ui/Toolbar/ToolbarView';
 import type { JSXElement } from '@shared/external/vendors';
 import { getSolid } from '@shared/external/vendors';
 import {
+  type ToolbarSettingsControllerResult,
   useToolbarSettingsController,
   useToolbarState,
-  type ToolbarSettingsControllerResult,
 } from '@shared/hooks';
 import type { ToolbarDataState, ToolbarState } from '@shared/types/toolbar.types';
 import { safeEventPrevent, safeEventPreventAll } from '@shared/utils/events/utils';
 import { createClassName } from '@shared/utils/text/formatting';
-import styles from './Toolbar.module.css';
 import { toOptionalAccessor, toRequiredAccessor } from './accessor-utils';
+import styles from './Toolbar.module.css';
 
 const solid = getSolid();
 const { mergeProps, createMemo, createEffect, on, createSignal } = solid;
@@ -110,7 +110,7 @@ const createGuardedHandler = (
   guard: () => boolean,
   action?: () => void,
 ): ((event: MouseEvent) => void) => {
-  return event => {
+  return (event) => {
     safeEventPrevent(event);
     if (guard()) {
       return;
@@ -154,7 +154,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   };
 
   const toggleTweet = (): void => {
-    setTweetExpanded(prev => {
+    setTweetExpanded((prev) => {
       const next = !prev;
       if (next) {
         setSettingsExpanded(false);
@@ -164,7 +164,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   };
 
   createEffect(
-    on(isDownloadingProp, value => {
+    on(isDownloadingProp, (value) => {
       toolbarActions.setDownloading(Boolean(value));
     }),
   );
@@ -177,7 +177,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
 
   const settingsController: ToolbarSettingsControllerResult = {
     ...baseSettingsController,
-    handleSettingsClick: event => {
+    handleSettingsClick: (event) => {
       const wasOpen = settingsExpandedSignal();
       baseSettingsController.handleSettingsClick(event);
       if (!wasOpen && settingsExpandedSignal()) {

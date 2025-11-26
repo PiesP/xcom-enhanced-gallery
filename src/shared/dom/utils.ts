@@ -3,10 +3,10 @@
  * @description DOM manipulation and inspection utilities specific to the gallery
  */
 
-import { CSS as CSS_CONST, VIDEO_CONTROL_SELECTORS } from '@/constants';
 import { logger } from '@shared/logging';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { isHTMLElement } from '@shared/utils/types/guards';
+import { CSS as CSS_CONST, VIDEO_CONTROL_SELECTORS } from '@/constants';
 
 // Gallery element selectors (constants)
 const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;
@@ -30,7 +30,7 @@ export function ensureGalleryScrollAvailable(element: HTMLElement | null): void 
     '[data-xeg-role="items-list"], .itemsList, .content',
   ) as NodeListOf<HTMLElement>;
 
-  scrollableElements.forEach(el => {
+  scrollableElements.forEach((el) => {
     if (el.style.overflowY !== 'auto' && el.style.overflowY !== 'scroll') {
       el.style.overflowY = 'auto';
     }
@@ -48,7 +48,7 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
   if (tagName === 'video') return true;
 
   // Check selector matching
-  return VIDEO_CONTROL_SELECTORS.some(selector => {
+  return VIDEO_CONTROL_SELECTORS.some((selector) => {
     try {
       return element.matches(selector) || element.closest(selector) !== null;
     } catch {
@@ -75,7 +75,7 @@ export function isGalleryInternalElement(element: HTMLElement | null): boolean {
     return false;
   }
 
-  return GALLERY_SELECTORS.some(selector => {
+  return GALLERY_SELECTORS.some((selector) => {
     try {
       return element.matches(selector) || element.closest(selector) !== null;
     } catch (error) {

@@ -39,7 +39,7 @@
  *   - Result: Compatible with all browsers, options render correctly
  * - Custom styling via variables instead:
  *   - --xeg-settings-select-padding: Input padding
-*   - --xeg-toolbar-panel-surface: Background color (shared toolbar surface)
+ *   - --xeg-toolbar-panel-surface: Background color (shared toolbar surface)
  *   - --xeg-toolbar-border: Border color (shared toolbar surface)
  *   - --xeg-settings-select-font-size: Font size
  *
@@ -251,7 +251,7 @@
  * - color: --xeg-color-text-primary (text color, theme-aware)
  *
  * **Visual Design**:
-* - background-color: --xeg-toolbar-panel-surface (input background, shared surface)
+ * - background-color: --xeg-toolbar-panel-surface (input background, shared surface)
  * - border: var(--border-width-thin) solid --xeg-toolbar-border (1px border)
  * - border-radius: --xeg-radius-md (rounded corners)
  *
@@ -274,7 +274,7 @@
  * **Design Token Dependencies**:
  * - --xeg-settings-select-padding: Input padding
  * - --xeg-settings-select-font-size: Input font size
-* - --xeg-toolbar-panel-surface: Background color
+ * - --xeg-toolbar-panel-surface: Background color
  * - --xeg-toolbar-border: Border color
  * - --border-width-thin: Border width (typically 1px)
  * - --xeg-radius-md: Border radius

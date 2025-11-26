@@ -83,7 +83,7 @@ export function isHostMatching(
   const hostname = parsed.hostname.toLowerCase();
   const allowSubdomains = options.allowSubdomains === true;
 
-  return allowedHosts.some(host => {
+  return allowedHosts.some((host) => {
     const normalized = host.toLowerCase();
     if (hostname === normalized) {
       return true;

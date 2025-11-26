@@ -95,7 +95,7 @@ export class PrefetchManager {
         signal: controller.signal,
         responseType: 'blob',
       })
-      .then(response => {
+      .then((response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return response.data;
       })

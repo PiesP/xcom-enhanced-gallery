@@ -8,8 +8,8 @@
  * Used for: archive icons, compressed file indicators, bulk download UI
  */
 
-import type { JSXElement } from '@shared/external/vendors';
 import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
+import type { JSXElement } from '@shared/external/vendors';
 
 /**
  * File ZIP Icon Component

@@ -76,14 +76,14 @@ function VerticalGalleryViewCore({
   // State selectors
   const mediaItems = useSelector<GalleryState, readonly MediaInfo[]>(
     galleryState,
-    state => state.mediaItems,
-    { dependencies: state => [state.mediaItems] },
+    (state) => state.mediaItems,
+    { dependencies: (state) => [state.mediaItems] },
   );
 
   const currentIndex = useSelector<GalleryState, number>(
     galleryState,
-    state => state.currentIndex,
-    { dependencies: state => [state.currentIndex] },
+    (state) => state.currentIndex,
+    { dependencies: (state) => [state.currentIndex] },
   );
 
   const isDownloading = useSelector(
@@ -198,7 +198,7 @@ function VerticalGalleryViewCore({
   const [imageFitMode, setImageFitMode] = createSignal<ImageFitMode>(getInitialFitMode());
 
   const persistFitMode = (mode: ImageFitMode) =>
-    setSetting('gallery.imageFitMode', mode).catch(error => {
+    setSetting('gallery.imageFitMode', mode).catch((error) => {
       logger.warn('Failed to save fit mode', { error, mode });
     });
 
@@ -261,7 +261,7 @@ function VerticalGalleryViewCore({
 
   return (
     <div
-      ref={el => setContainerEl(el ?? null)}
+      ref={(el) => setContainerEl(el ?? null)}
       class={`${styles.container} ${isInitialToolbarVisible() ? styles.initialToolbarVisible : ''} ${isScrolling() ? styles.isScrolling : ''} ${stringWithDefault(className, '')}`}
       onClick={handleBackgroundClick}
       data-xeg-gallery="true"
@@ -269,7 +269,7 @@ function VerticalGalleryViewCore({
     >
       <div class={styles.toolbarHoverZone} data-role="toolbar-hover-zone" />
 
-      <div class={styles.toolbarWrapper} ref={el => setToolbarWrapperEl(el ?? null)}>
+      <div class={styles.toolbarWrapper} ref={(el) => setToolbarWrapperEl(el ?? null)}>
         <Toolbar
           onClose={onClose || (() => {})}
           onPrevious={onPrevious || (() => {})}
@@ -296,7 +296,7 @@ function VerticalGalleryViewCore({
         class={styles.itemsContainer}
         data-xeg-role="items-container"
         data-xeg-role-compat="items-list"
-        ref={el => setItemsContainerEl(el ?? null)}
+        ref={(el) => setItemsContainerEl(el ?? null)}
       >
         <For each={mediaItems()}>
           {(item, index) => {

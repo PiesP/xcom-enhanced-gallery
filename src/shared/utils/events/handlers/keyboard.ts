@@ -12,11 +12,11 @@ import {
   navigateToItem,
 } from '@shared/state/signals/gallery.signals';
 import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events/core/event-context';
+import { executeVideoControl } from '@shared/utils/events/handlers/video-control-helper';
 import {
   shouldExecutePlayPauseKey,
   shouldExecuteVideoControlKey,
 } from '@shared/utils/events/keyboard-debounce';
-import { executeVideoControl } from '@shared/utils/events/handlers/video-control-helper';
 
 /**
  * Check if gallery is open

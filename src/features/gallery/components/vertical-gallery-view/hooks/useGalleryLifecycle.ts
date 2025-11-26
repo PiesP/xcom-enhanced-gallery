@@ -41,7 +41,7 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
 
   // Container scroll setup
   createEffect(
-    on(containerEl, element => {
+    on(containerEl, (element) => {
       if (element) {
         ensureGalleryScrollAvailable(element);
       }
@@ -63,7 +63,7 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
 
           // Video cleanup
           const videos = container.querySelectorAll('video');
-          videos.forEach(video => {
+          videos.forEach((video) => {
             try {
               video.pause();
               video.currentTime = 0;

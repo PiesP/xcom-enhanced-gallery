@@ -7,10 +7,10 @@
  * Removed Motion One library dependency and optimized bundle size
  */
 
-import { CSS } from '@/constants';
 import { logger } from '@shared/logging';
 import { getStyleRegistry } from '@shared/services/style-registry';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
+import { CSS } from '@/constants';
 
 // CSS animation variables and constants
 export const ANIMATION_CONSTANTS = {
@@ -76,7 +76,7 @@ export function injectAnimationStyles(): void {
 
 function buildScopedAnimationCss(): string {
   const scopedClass = (className: string): string =>
-    GALLERY_SCOPE_HOSTS.map(scope => `${scope} .${className}`).join(', ');
+    GALLERY_SCOPE_HOSTS.map((scope) => `${scope} .${className}`).join(', ');
   const reducedMotionSelectors = [
     ANIMATION_CLASSES.FADE_IN,
     ANIMATION_CLASSES.FADE_OUT,
@@ -152,7 +152,7 @@ export async function animateGalleryEnter(
   element: Element,
   options: CSSAnimationOptions = {},
 ): Promise<void> {
-  return new Promise<void>(resolve => {
+  return new Promise<void>((resolve) => {
     try {
       const handleAnimationEnd = () => {
         element.removeEventListener('animationend', handleAnimationEnd);
@@ -177,7 +177,7 @@ export async function animateGalleryExit(
   element: Element,
   options: CSSAnimationOptions = {},
 ): Promise<void> {
-  return new Promise<void>(resolve => {
+  return new Promise<void>((resolve) => {
     try {
       const handleAnimationEnd = () => {
         element.removeEventListener('animationend', handleAnimationEnd);
@@ -199,7 +199,7 @@ export async function animateGalleryExit(
  * Image items entry animation (stagger effect, CSS-based)
  */
 export async function animateImageItemsEnter(elements: Element[]): Promise<void> {
-  return new Promise<void>(resolve => {
+  return new Promise<void>((resolve) => {
     try {
       let completedCount = 0;
       const totalElements = elements.length;
@@ -239,7 +239,7 @@ export async function animateImageItemsEnter(elements: Element[]): Promise<void>
  * Animation cleanup utility
  */
 export function cleanupAnimations(element: Element): void {
-  Object.values(ANIMATION_CLASSES).forEach(className => {
+  Object.values(ANIMATION_CLASSES).forEach((className) => {
     element.classList.remove(className);
   });
 

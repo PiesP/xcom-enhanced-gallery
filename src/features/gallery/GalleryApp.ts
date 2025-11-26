@@ -61,7 +61,7 @@ export class GalleryApp {
         {
           onMediaClick: (mediaInfo, element) => this.handleMediaClick(mediaInfo, element),
           onGalleryClose: () => this.closeGallery(),
-          onKeyboardEvent: event => {
+          onKeyboardEvent: (event) => {
             if (event.key === 'Escape' && gallerySignals.isOpen.value) {
               this.closeGallery();
             }

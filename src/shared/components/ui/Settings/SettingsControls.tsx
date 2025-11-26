@@ -30,7 +30,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
   const [revision, setRevision] = createSignal(0);
 
   onMount(() => {
-    const unsubscribe = languageService.onLanguageChange(() => setRevision(v => v + 1));
+    const unsubscribe = languageService.onLanguageChange(() => setRevision((v) => v + 1));
     onCleanup(unsubscribe);
   });
 
@@ -92,7 +92,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           title={themeStrings().title}
           data-testid={props['data-testid'] ? `${props['data-testid']}-theme` : undefined}
         >
-          {THEME_OPTIONS.map(option => (
+          {THEME_OPTIONS.map((option) => (
             <option value={option}>{themeStrings().labels[option]}</option>
           ))}
         </select>
@@ -111,7 +111,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           title={languageStrings().title}
           data-testid={props['data-testid'] ? `${props['data-testid']}-language` : undefined}
         >
-          {LANGUAGE_OPTIONS.map(option => (
+          {LANGUAGE_OPTIONS.map((option) => (
             <option value={option}>{languageStrings().labels[option]}</option>
           ))}
         </select>

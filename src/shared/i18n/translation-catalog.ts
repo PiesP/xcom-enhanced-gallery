@@ -1,8 +1,8 @@
+import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/language-types';
 import {
   DEFAULT_LANGUAGE,
   TRANSLATION_REGISTRY,
 } from '@shared/constants/i18n/translation-registry';
-import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/language-types';
 import type { TranslationBundleInput } from './types';
 
 export interface TranslationCatalogOptions {

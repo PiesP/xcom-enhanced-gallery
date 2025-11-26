@@ -1,3 +1,9 @@
+import type { IGalleryApp } from '@shared/container/app-container';
+import { warmupNonCriticalServices } from '@shared/container/service-accessors';
+import { runAfterWindowLoad } from '@shared/dom/window-load';
+import { cleanupVendors } from '@shared/external/vendors';
+import { CoreService } from '@shared/services/service-manager';
+import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { initializeCriticalSystems } from '@/bootstrap/critical-systems';
 // initializeDevTools dynamic import moved to initializeDevToolsIfNeeded
 import { initializeEnvironment } from '@/bootstrap/environment';
@@ -7,12 +13,6 @@ import { registerFeatureServicesLazy } from '@/bootstrap/features';
 import { initializeGalleryApp } from '@/bootstrap/gallery-init';
 import { createAppConfig } from '@/constants/app-config';
 import { logger } from '@/shared/logging';
-import type { IGalleryApp } from '@shared/container/app-container';
-import { warmupNonCriticalServices } from '@shared/container/service-accessors';
-import { runAfterWindowLoad } from '@shared/dom/window-load';
-import { cleanupVendors } from '@shared/external/vendors';
-import { CoreService } from '@shared/services/service-manager';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 // Global styles
 // Global styles are loaded at runtime to avoid import-time side effects.
@@ -159,7 +159,7 @@ function setupGlobalEventHandlers(): void {
   tearDownGlobalEventHandlers();
 
   globalEventTeardown = wireGlobalEvents(() => {
-    cleanup().catch(error => logger.error('Error during page unload cleanup:', error));
+    cleanup().catch((error) => logger.error('Error during page unload cleanup:', error));
   });
 }
 
@@ -339,7 +339,7 @@ async function startApplication(): Promise<void> {
       });
     }
   })()
-    .catch(error => {
+    .catch((error) => {
       logger.error('❌ Application initialization failed (lean mode, no retry):', error);
     })
     .finally(() => {

@@ -11,8 +11,8 @@ export const SharedObserver = {
     const key = `${options.rootMargin}|${options.threshold}`;
     let observer = observerPool.get(key);
     if (!observer) {
-      observer = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
+      observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
           const cb = elementCallbackMap.get(entry.target);
           if (cb) cb(entry);
         });

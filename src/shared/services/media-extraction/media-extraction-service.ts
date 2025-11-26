@@ -3,6 +3,8 @@ import {
   adjustClickedIndexAfterDeduplication,
   removeDuplicateMediaItems,
 } from '@shared/media/media-utils';
+import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
+import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
@@ -11,8 +13,6 @@ import type {
 } from '@shared/types/media.types';
 import { ExtractionError } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/result.types';
-import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
-import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
 
 /**
  * Media Extraction Service

@@ -118,7 +118,7 @@ function startsWithBlockedProtocolHint(value: string, hints: readonly string[]):
   const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
   const variants = buildProbeVariants(probe);
 
-  return variants.some(candidate => hints.some(hint => candidate.startsWith(hint)));
+  return variants.some((candidate) => hints.some((hint) => candidate.startsWith(hint)));
 }
 
 function buildProbeVariants(value: string): string[] {
@@ -156,7 +156,7 @@ function isAllowedDataUrl(
     return false;
   }
 
-  return allowedPrefixes.some(prefix => mime.startsWith(prefix));
+  return allowedPrefixes.some((prefix) => mime.startsWith(prefix));
 }
 
 function handleProtocolRelative(url: string, policy: UrlSafetyPolicy): boolean {

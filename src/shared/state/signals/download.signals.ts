@@ -2,7 +2,7 @@
  * Download state management with signals
  */
 
-import { logger as rootLogger, type Logger as ILogger } from '@shared/logging';
+import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
 import type { MediaId, MediaInfo } from '@shared/types/media.types';
 import type { Result } from '@shared/types/result.types';
 import { ErrorCode, failure, success } from '@shared/types/result.types';
@@ -92,7 +92,7 @@ export const downloadState = {
   },
 
   subscribe(callback: (state: DownloadState) => void): () => void {
-    return getDownloadState().subscribe(state => {
+    return getDownloadState().subscribe((state) => {
       try {
         callback(state);
       } catch (error) {
@@ -246,7 +246,7 @@ export function completeDownload(taskId: string): Result<void> {
   const newTasks = new Map(currentState.activeTasks);
   newTasks.set(taskId, updatedTask);
 
-  const newQueue = currentState.queue.filter(id => id !== taskId);
+  const newQueue = currentState.queue.filter((id) => id !== taskId);
 
   downloadState.value = {
     ...currentState,
@@ -289,7 +289,7 @@ export function failDownload(taskId: string, error: string): Result<void> {
   const newTasks = new Map(currentState.activeTasks);
   newTasks.set(taskId, updatedTask);
 
-  const newQueue = currentState.queue.filter(id => id !== taskId);
+  const newQueue = currentState.queue.filter((id) => id !== taskId);
 
   downloadState.value = {
     ...currentState,
@@ -386,10 +386,10 @@ export function getDownloadInfo(): {
   const tasks = Array.from(state.activeTasks.values());
 
   return {
-    activeTasks: tasks.filter(t => t.status === 'downloading').length,
-    pendingTasks: tasks.filter(t => t.status === 'pending').length,
-    completedTasks: tasks.filter(t => t.status === 'completed').length,
-    failedTasks: tasks.filter(t => t.status === 'failed').length,
+    activeTasks: tasks.filter((t) => t.status === 'downloading').length,
+    pendingTasks: tasks.filter((t) => t.status === 'pending').length,
+    completedTasks: tasks.filter((t) => t.status === 'completed').length,
+    failedTasks: tasks.filter((t) => t.status === 'failed').length,
     queueLength: state.queue.length,
     isProcessing: state.isProcessing,
   };

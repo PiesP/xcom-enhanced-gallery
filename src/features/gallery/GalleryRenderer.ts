@@ -44,7 +44,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   private setupStateSubscription(): void {
-    this.stateUnsubscribe = gallerySignals.isOpen.subscribe(isOpen => {
+    this.stateUnsubscribe = gallerySignals.isOpen.subscribe((isOpen) => {
       if (isOpen && !this.container) {
         this.renderGallery();
       } else if (!isOpen && this.container) {
@@ -101,7 +101,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
       const [, setCurrentLanguage] = createSignal(languageService.getCurrentLanguage());
 
       const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));
-      const unbindLang = languageService.onLanguageChange(lang => setCurrentLanguage(lang));
+      const unbindLang = languageService.onLanguageChange((lang) => setCurrentLanguage(lang));
 
       onCleanup(() => {
         unbindTheme();

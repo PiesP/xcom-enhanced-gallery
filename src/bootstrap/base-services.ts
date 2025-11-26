@@ -5,20 +5,20 @@
  * Phase 343: Standardized error handling
  */
 
-import { reportBootstrapError } from '@/bootstrap/types';
 import {
   CORE_BASE_SERVICE_IDENTIFIERS,
+  type CoreBaseServiceIdentifier,
   LANGUAGE_SERVICE_IDENTIFIER,
   MEDIA_SERVICE_IDENTIFIER,
   THEME_SERVICE_IDENTIFIER,
-  type CoreBaseServiceIdentifier,
 } from '@shared/container/service-accessors';
 import { logger } from '@shared/logging';
-import { CoreService } from '@shared/services/service-manager';
 import { LanguageService } from '@shared/services/language-service';
 import { MediaService } from '@shared/services/media-service';
+import { CoreService } from '@shared/services/service-manager';
 import { ThemeService } from '@shared/services/theme-service';
 import type { BaseService } from '@shared/types/core/base-service.types';
+import { reportBootstrapError } from '@/bootstrap/types';
 
 type BaseServiceRegistration = readonly [CoreBaseServiceIdentifier, BaseService];
 

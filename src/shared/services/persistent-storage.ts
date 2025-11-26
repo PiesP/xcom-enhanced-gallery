@@ -8,10 +8,10 @@ export class PersistentStorage {
   private constructor() {}
 
   static getInstance(): PersistentStorage {
-    if (!this.instance) {
-      this.instance = new PersistentStorage();
+    if (!PersistentStorage.instance) {
+      PersistentStorage.instance = new PersistentStorage();
     }
-    return this.instance;
+    return PersistentStorage.instance;
   }
 
   async set<T>(key: string, value: T): Promise<void> {

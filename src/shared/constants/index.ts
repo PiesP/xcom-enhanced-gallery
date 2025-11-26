@@ -1,11 +1,10 @@
+export type { BaseLanguageCode, LanguageStrings, SupportedLanguage } from './i18n';
 export {
-  LANGUAGE_CODES,
-  isBaseLanguageCode,
-  TRANSLATION_REGISTRY,
   DEFAULT_LANGUAGE,
   getLanguageStrings,
+  isBaseLanguageCode,
+  LANGUAGE_CODES,
+  TRANSLATION_REGISTRY,
 } from './i18n';
 
-export type { BaseLanguageCode, SupportedLanguage, LanguageStrings } from './i18n';
-
-export { THEME_STORAGE_KEY, THEME_DOM_ATTRIBUTE } from './theme';
+export { THEME_DOM_ATTRIBUTE, THEME_STORAGE_KEY } from './theme';

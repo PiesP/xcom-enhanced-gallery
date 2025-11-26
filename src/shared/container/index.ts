@@ -2,12 +2,14 @@
  * Service container public surface. Re-export the small set of helpers that
  * runtime code and tests rely on.
  */
+
+export { createTestHarness, TestHarness } from './harness';
 export {
-  // Service Getters
-  getThemeService,
+  getGalleryRenderer,
   getMediaFilenameService,
   getMediaService,
-  getGalleryRenderer,
+  // Service Getters
+  getThemeService,
   // Service Registrations
   registerGalleryRenderer,
   registerSettingsManager,
@@ -16,4 +18,3 @@ export {
   warmupCriticalServices,
   warmupNonCriticalServices,
 } from './service-accessors';
-export { createTestHarness, TestHarness } from './harness';

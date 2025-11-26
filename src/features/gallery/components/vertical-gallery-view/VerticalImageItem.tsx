@@ -21,18 +21,17 @@
  * @version 7.0.0 - Phase 434: SharedObserver integration and hook extraction
  */
 
-import type { ImageFitMode } from '@shared/types';
-import type { JSX } from 'solid-js';
-
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getSolid } from '@shared/external/vendors';
+import type { ImageFitMode } from '@shared/types';
 import { createIntrinsicSizingStyle, resolveMediaDimensions } from '@shared/utils/media/dimensions';
 import { SharedObserver } from '@shared/utils/performance';
 import { createClassName } from '@shared/utils/text/formatting';
+import type { JSX } from 'solid-js';
+import { useVideoVisibility } from './hooks/useVideoVisibility';
 import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
 import styles from './VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from './VerticalImageItem.types';
-import { useVideoVisibility } from './hooks/useVideoVisibility';
 
 const solid = getSolid();
 const { createSignal, createEffect, onCleanup, createMemo } = solid;
@@ -99,7 +98,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
     onClick?.();
   };
 
-  const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = event => {
+  const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
     const mouseEvent = event as MouseEvent;
     mouseEvent?.stopImmediatePropagation?.();
     handleClick();

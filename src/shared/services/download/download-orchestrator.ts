@@ -1,7 +1,4 @@
 import { BaseServiceImpl } from '@shared/services/base-service';
-import { generateMediaFilename, generateZipFilename } from '@shared/services/filename-service';
-import type { MediaInfo } from '@shared/types/media.types';
-import { ErrorCode } from '@shared/types/result.types';
 import { downloadSingleFile, getGMDownload } from '@shared/services/download/single-download';
 import type {
   BulkDownloadResult,
@@ -10,6 +7,9 @@ import type {
   SingleDownloadResult,
 } from '@shared/services/download/types';
 import { downloadAsZip } from '@shared/services/download/zip-download';
+import { generateMediaFilename, generateZipFilename } from '@shared/services/filename-service';
+import type { MediaInfo } from '@shared/types/media.types';
+import { ErrorCode } from '@shared/types/result.types';
 
 export class DownloadOrchestrator extends BaseServiceImpl {
   private static instance: DownloadOrchestrator | null = null;
@@ -44,7 +44,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
     mediaItems: MediaInfo[],
     options: DownloadOptions = {},
   ): Promise<BulkDownloadResult> {
-    const items: OrchestratorItem[] = mediaItems.map(media => ({
+    const items: OrchestratorItem[] = mediaItems.map((media) => ({
       url: media.url,
       desiredName: generateMediaFilename(media),
       blob: options.prefetchedBlobs?.get(media.url),

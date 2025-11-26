@@ -15,9 +15,9 @@
  * - Remove duplication via declarative loader array (138 lines → 80 lines)
  */
 
+import { logger } from '@shared/logging';
 import { reportBootstrapError } from '@/bootstrap/types';
 import { APP_SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS } from '@/constants';
-import { logger } from '@shared/logging';
 // ─────────────────────────────────────────
 // Feature Flag Logic
 // ─────────────────────────────────────────

@@ -75,8 +75,8 @@
   :root {
     /* Transitions - toolbar visibility helper only */
     --xeg-transition-toolbar:
-      opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out),
-      transform var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), visibility 0ms;
+      opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), transform
+      var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), visibility 0ms;
 
     /* Spacing - CSS Logical Properties */
     --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));

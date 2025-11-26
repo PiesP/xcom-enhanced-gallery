@@ -1,21 +1,20 @@
 export type {
-  TranslationKey,
-  TranslationParams,
-  TranslationBundles,
-  TranslationBundleInput,
-} from './types';
-export { TranslationCatalog, type TranslationCatalogOptions } from './translation-catalog';
-export { Translator, createTranslationFunction, type TranslationFunction } from './translator';
-export { collectTranslationKeys, resolveTranslationValue } from './translation-utils';
-
-export { LANGUAGE_CODES, isBaseLanguageCode } from '@shared/constants/i18n/language-types';
-export type {
   BaseLanguageCode,
-  SupportedLanguage,
   LanguageStrings,
+  SupportedLanguage,
 } from '@shared/constants/i18n/language-types';
+export { isBaseLanguageCode, LANGUAGE_CODES } from '@shared/constants/i18n/language-types';
 export {
   DEFAULT_LANGUAGE,
-  TRANSLATION_REGISTRY,
   getLanguageStrings,
+  TRANSLATION_REGISTRY,
 } from '@shared/constants/i18n/translation-registry';
+export { TranslationCatalog, type TranslationCatalogOptions } from './translation-catalog';
+export { collectTranslationKeys, resolveTranslationValue } from './translation-utils';
+export { createTranslationFunction, type TranslationFunction, Translator } from './translator';
+export type {
+  TranslationBundleInput,
+  TranslationBundles,
+  TranslationKey,
+  TranslationParams,
+} from './types';

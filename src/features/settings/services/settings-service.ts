@@ -1,4 +1,3 @@
-import { APP_SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS, createDefaultSettings } from '@/constants';
 import type {
   AppSettings,
   NestedSettingKey,
@@ -6,6 +5,7 @@ import type {
 } from '@features/settings/types/settings.types';
 import { logger } from '@shared/logging';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
+import { APP_SETTINGS_STORAGE_KEY, createDefaultSettings, DEFAULT_SETTINGS } from '@/constants';
 import { migrateSettings as runMigration } from './settings-migration';
 import { computeCurrentSettingsSchemaHash } from './settings-schema';
 
@@ -213,7 +213,7 @@ export class SettingsService {
   }
 
   private notifyListeners(event: SettingChangeEvent): void {
-    this.listeners.forEach(l => {
+    this.listeners.forEach((l) => {
       try {
         l(event);
       } catch (e) {

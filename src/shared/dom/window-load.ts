@@ -21,7 +21,7 @@ function createWindowLoadPromise(): Promise<void> {
     return windowLoadPromise;
   }
 
-  windowLoadPromise = new Promise(resolve => {
+  windowLoadPromise = new Promise((resolve) => {
     const handleLoad = (): void => {
       window.removeEventListener('load', handleLoad);
       resolve();

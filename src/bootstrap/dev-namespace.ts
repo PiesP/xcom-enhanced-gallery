@@ -1,6 +1,6 @@
-import type { createAppConfig } from '@/constants/app-config';
 import type { IGalleryApp } from '@shared/container/app-container';
 import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
+import type { createAppConfig } from '@/constants/app-config';
 
 type DevActions = {
   start: () => Promise<void>;
@@ -16,7 +16,7 @@ export function setupDevNamespace(
   galleryAppInstance: IGalleryApp | null | undefined,
   actions: DevActions,
 ): void {
-  mutateDevNamespace(namespace => {
+  mutateDevNamespace((namespace) => {
     const mainNamespace =
       (namespace.main as DevMainNamespace | undefined) ??
       (namespace.main = {

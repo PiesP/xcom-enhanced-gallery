@@ -39,11 +39,10 @@ export type { Cleanupable } from './lifecycle.types';
 // Core types and patterns (re-export)
 // ================================
 
-// Result pattern - re-exported from result.types (Phase 353: AsyncResult added, unified SSOT)
-export type { AsyncResult, Result } from './result.types';
-
 // BaseService and service types
 export type { BaseService, ServiceLifecycle } from './core/core-types';
+// Result pattern - re-exported from result.types (Phase 353: AsyncResult added, unified SSOT)
+export type { AsyncResult, Result } from './result.types';
 
 // ================================
 // Utility types
@@ -103,24 +102,6 @@ export type FileExtension = Brand<string, 'FileExtension'>;
 // Subordinate type file re-exports
 // ================================
 
-// UI/Theme Types
-export type {
-  AnimationConfig,
-  AsyncState,
-  ButtonSize,
-  ButtonVariant,
-  ColorVariant,
-  FilenameStrategy,
-  GalleryTheme,
-  GlobalConfig,
-  ImageFitCallbacks,
-  ImageFitMode,
-  ImageFitOptions,
-  LoadingState,
-  MediaFileExtension,
-  Theme,
-} from './ui.types';
-
 // Component Types
 export type {
   ApiError,
@@ -129,10 +110,10 @@ export type {
   AsyncErrorHandler,
   AsyncFunction,
   BaseComponentProps,
-  CSSProperties,
   ComponentChildren,
   ComponentType,
   ContainerComponentProps,
+  CSSProperties,
   ErrorHandler,
   EventHandler,
   FileInfo,
@@ -146,9 +127,11 @@ export type {
   ProgressCallback,
   RequestOptions,
   SizedComponentProps,
-  VNode,
   VariantComponentProps,
+  VNode,
 } from './component.types';
+// Gallery Types (re-exported from core-types)
+export type { GalleryViewMode, ViewMode } from './core/core-types';
 
 // Media Types
 export type {
@@ -170,15 +153,28 @@ export { ExtractionError } from './media.types';
 
 // Navigation Types
 export type { NavigationSource } from './navigation.types';
-
-// Toolbar UI State Types
-export type { FitMode, ToolbarActions, ToolbarDataState, ToolbarState } from './toolbar.types';
+export type { BaseResult, BaseResultStatus, ResultError, ResultSuccess } from './result.types';
 
 // Result and Error Codes
 export { ErrorCode } from './result.types';
-export type { BaseResult, BaseResultStatus, ResultError, ResultSuccess } from './result.types';
-
-// Gallery Types (re-exported from core-types)
-export type { GalleryViewMode, ViewMode } from './core/core-types';
+// Toolbar UI State Types
+export type { FitMode, ToolbarActions, ToolbarDataState, ToolbarState } from './toolbar.types';
+// UI/Theme Types
+export type {
+  AnimationConfig,
+  AsyncState,
+  ButtonSize,
+  ButtonVariant,
+  ColorVariant,
+  FilenameStrategy,
+  GalleryTheme,
+  GlobalConfig,
+  ImageFitCallbacks,
+  ImageFitMode,
+  ImageFitOptions,
+  LoadingState,
+  MediaFileExtension,
+  Theme,
+} from './ui.types';
 
 // Phase 421: ViewMode helper utilities removed; use VIEW_MODES from '@/constants'.

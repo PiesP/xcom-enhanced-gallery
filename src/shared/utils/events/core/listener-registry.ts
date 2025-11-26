@@ -93,7 +93,7 @@ class ListenerRegistry {
       total: this.listeners.size,
       byContext: Object.fromEntries(contextGroups),
       byType: Object.fromEntries(typeGroups),
-      listeners: Array.from(this.listeners.values()).map(ctx => ({
+      listeners: Array.from(this.listeners.values()).map((ctx) => ({
         id: ctx.id,
         type: ctx.type,
         context: ctx.context,

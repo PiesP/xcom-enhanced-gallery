@@ -13,7 +13,7 @@ type ExtractionStrategy = (element: HTMLElement) => TweetInfo | null;
 // ============================================================================
 
 /** Strategy 1: Direct Element Attributes (Fastest) */
-const extractFromElement: ExtractionStrategy = element => {
+const extractFromElement: ExtractionStrategy = (element) => {
   // 1. data-tweet-id
   const dataId = element.dataset.tweetId;
   if (dataId && /^\d+$/.test(dataId)) {
@@ -45,7 +45,7 @@ const extractFromElement: ExtractionStrategy = element => {
 };
 
 /** Strategy 2: DOM Structure (Most Reliable) */
-const extractFromDOM: ExtractionStrategy = element => {
+const extractFromDOM: ExtractionStrategy = (element) => {
   const container = element.closest('[data-testid="tweet"], article');
   if (!container) return null;
 
@@ -73,7 +73,7 @@ const extractFromDOM: ExtractionStrategy = element => {
 };
 
 /** Strategy 3: Media Grid Item (For Media Tab) */
-const extractFromMediaGridItem: ExtractionStrategy = element => {
+const extractFromMediaGridItem: ExtractionStrategy = (element) => {
   // On media tabs, images are wrapped in links like /User/status/ID/photo/1
   const link = element.closest('a');
   if (!link) return null;

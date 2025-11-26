@@ -16,7 +16,7 @@
  */
 
 import { getLanguageService } from '@shared/container/service-accessors';
-import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
+import { type ComponentChildren, getSolid, type JSXElement } from '@shared/external/vendors';
 import { NotificationService } from '@shared/services/notification-service';
 
 /**

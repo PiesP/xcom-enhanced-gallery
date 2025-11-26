@@ -39,10 +39,10 @@ export class GlobalErrorHandler {
   };
 
   public static getInstance(): GlobalErrorHandler {
-    if (!this.instance) {
-      this.instance = new GlobalErrorHandler();
+    if (!GlobalErrorHandler.instance) {
+      GlobalErrorHandler.instance = new GlobalErrorHandler();
     }
-    return this.instance;
+    return GlobalErrorHandler.instance;
   }
 
   private constructor() {}

@@ -5,8 +5,8 @@
  */
 
 import {
-  isBaseLanguageCode,
   type BaseLanguageCode,
+  isBaseLanguageCode,
   type SupportedLanguage,
 } from '@shared/constants/i18n/language-types';
 import {
@@ -15,9 +15,9 @@ import {
 } from '@shared/constants/i18n/translation-registry';
 import {
   TranslationCatalog,
-  Translator,
   type TranslationKey,
   type TranslationParams,
+  Translator,
 } from '@shared/i18n';
 import { logger } from '@shared/logging';
 import { BaseServiceImpl } from '@shared/services/base-service';
@@ -157,7 +157,7 @@ export class LanguageService extends BaseServiceImpl {
   }
 
   private notifyListeners(language: SupportedLanguage): void {
-    this.listeners.forEach(listener => {
+    this.listeners.forEach((listener) => {
       try {
         listener(language);
       } catch (error) {

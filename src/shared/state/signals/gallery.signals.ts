@@ -8,19 +8,19 @@
  * - Backward compatibility layer
  */
 
-import type { MediaInfo } from '@shared/types/media.types';
-import { createSignalSafe, effectSafe } from './signal-factory';
 // Break runtime dependency on services: use logging barrel directly
 import { getSolid } from '@shared/external/vendors';
-import { logger as rootLogger, type Logger as ILogger } from '@shared/logging';
-import { createEventEmitter } from '@shared/utils/events/emitter';
+import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
 // Navigation state types
 import {
-  NavigationStateMachine,
   type NavigationAction,
   type NavigationState,
+  NavigationStateMachine,
 } from '@shared/state/machines/navigation.machine';
+import type { MediaInfo } from '@shared/types/media.types';
 import type { NavigationSource } from '@shared/types/navigation.types';
+import { createEventEmitter } from '@shared/utils/events/emitter';
+import { createSignalSafe, effectSafe } from './signal-factory';
 
 // Logger instance (services-free)
 const logger: ILogger = rootLogger;

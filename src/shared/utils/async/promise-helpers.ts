@@ -86,7 +86,7 @@ export function promisifyCallback<TResult>(
 export function promisifyVoidCallback(executor: (callback: VoidCallback) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
-      executor(error => {
+      executor((error) => {
         if (error) {
           reject(new Error(String(error)));
           return;

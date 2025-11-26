@@ -238,7 +238,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           <div class={styles.counterBlock} data-gallery-element="counter-section">
             <div class={createClassName(styles.mediaCounterWrapper, 'xeg-inline-center')}>
               <span
-                ref={element => {
+                ref={(element) => {
                   setCounterElement(element);
                 }}
                 class={createClassName(styles.mediaCounter, 'xeg-inline-center')}

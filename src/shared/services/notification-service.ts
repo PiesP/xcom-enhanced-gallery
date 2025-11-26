@@ -28,8 +28,8 @@ export class NotificationService {
   private constructor() {}
 
   static getInstance(): NotificationService {
-    if (!this.instance) this.instance = new NotificationService();
-    return this.instance;
+    if (!NotificationService.instance) NotificationService.instance = new NotificationService();
+    return NotificationService.instance;
   }
 
   async getNotificationProvider(): Promise<NotificationProviderInfo> {

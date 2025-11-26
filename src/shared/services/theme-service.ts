@@ -4,7 +4,6 @@
  * @version 4.0.0 - Simplified
  */
 
-import { APP_SETTINGS_STORAGE_KEY } from '@/constants';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging';
 import { BaseServiceImpl } from '@shared/services/base-service';
@@ -17,6 +16,7 @@ import type {
   ThemeSetOptions,
   ThemeSetting,
 } from '@shared/services/theme-service.contract';
+import { APP_SETTINGS_STORAGE_KEY } from '@/constants';
 
 export class ThemeService extends BaseServiceImpl implements ThemeServiceContract {
   private readonly storage = getPersistentStorage();
@@ -41,14 +41,14 @@ export class ThemeService extends BaseServiceImpl implements ThemeServiceContrac
     super('ThemeService');
     if (typeof window !== 'undefined') {
       this.mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
-      this.observer = new MutationObserver(mutations => {
+      this.observer = new MutationObserver((mutations) => {
         for (const m of mutations) {
-          m.addedNodes.forEach(node => {
+          m.addedNodes.forEach((node) => {
             if (node instanceof Element) {
               if (node.classList.contains('xeg-theme-scope')) {
                 syncThemeAttributes(this.currentTheme, { scopes: [node] });
               }
-              node.querySelectorAll('.xeg-theme-scope').forEach(scope => {
+              node.querySelectorAll('.xeg-theme-scope').forEach((scope) => {
                 syncThemeAttributes(this.currentTheme, { scopes: [scope] });
               });
             }
@@ -120,7 +120,7 @@ export class ThemeService extends BaseServiceImpl implements ThemeServiceContrac
     }
 
     if (typeof settingsService.subscribe === 'function') {
-      this.settingsUnsubscribe = settingsService.subscribe(event => {
+      this.settingsUnsubscribe = settingsService.subscribe((event) => {
         if (event?.key === 'gallery.theme') {
           const newVal = event.newValue as ThemeSetting;
           if (['light', 'dark', 'auto'].includes(newVal) && newVal !== this.themeSetting) {
@@ -200,7 +200,7 @@ export class ThemeService extends BaseServiceImpl implements ThemeServiceContrac
   }
 
   private notifyListeners(): void {
-    this.listeners.forEach(l => l(this.currentTheme, this.themeSetting));
+    this.listeners.forEach((l) => l(this.currentTheme, this.themeSetting));
   }
 
   private loadThemeSync(): ThemeSetting {

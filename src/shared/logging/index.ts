@@ -53,7 +53,6 @@
  * @related [Services](../services/), [Utils](../utils/)
  */
 
+export type { LoggableData, Logger, LogLevel } from './logger';
 // Logger
-export { createLogger, logger, createScopedLogger, logError } from './logger';
-
-export type { LogLevel, LoggableData, Logger } from './logger';
+export { createLogger, createScopedLogger, logError, logger } from './logger';

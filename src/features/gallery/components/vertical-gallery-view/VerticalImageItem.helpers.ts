@@ -101,14 +101,14 @@ export function isVideoMedia(media: MediaInfo): boolean {
   const urlLowerCase = media.url.toLowerCase();
 
   // Check URL for video extensions
-  if (VIDEO_EXTENSIONS.some(ext => urlLowerCase.includes(ext))) {
+  if (VIDEO_EXTENSIONS.some((ext) => urlLowerCase.includes(ext))) {
     return true;
   }
 
   // Check filename for video extensions
   if (media.filename) {
     const filenameLowerCase = media.filename.toLowerCase();
-    if (VIDEO_EXTENSIONS.some(ext => filenameLowerCase.endsWith(ext))) {
+    if (VIDEO_EXTENSIONS.some((ext) => filenameLowerCase.endsWith(ext))) {
       return true;
     }
   }

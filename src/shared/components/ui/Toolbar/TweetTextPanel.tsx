@@ -30,7 +30,7 @@ function renderTweetAnchor(
       rel="noopener noreferrer"
       class={styles.tweetLink}
       data-kind={kind}
-      onClick={e => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
     >
       {displayText ?? token.content}
     </a>
@@ -60,27 +60,27 @@ export default function TweetTextPanel(props: TweetTextPanelProps) {
           <div innerHTML={sanitizeHTML(props.tweetTextHTML)} />
         ) : (
           <For each={formatTweetText(props.tweetText ?? '')}>
-            {token => (
+            {(token) => (
               <Switch>
                 <Match when={token.type === 'link' && token}>
-                  {linkToken =>
+                  {(linkToken) =>
                     renderTweetAnchor(linkToken, 'url', shortenUrl(linkToken().content, 40))
                   }
                 </Match>
                 <Match when={token.type === 'mention' && token}>
-                  {mentionToken => renderTweetAnchor(mentionToken, 'mention')}
+                  {(mentionToken) => renderTweetAnchor(mentionToken, 'mention')}
                 </Match>
                 <Match when={token.type === 'hashtag' && token}>
-                  {hashtagToken => renderTweetAnchor(hashtagToken, 'hashtag')}
+                  {(hashtagToken) => renderTweetAnchor(hashtagToken, 'hashtag')}
                 </Match>
                 <Match when={token.type === 'cashtag' && token}>
-                  {cashtagToken => renderTweetAnchor(cashtagToken, 'cashtag')}
+                  {(cashtagToken) => renderTweetAnchor(cashtagToken, 'cashtag')}
                 </Match>
                 <Match when={token.type === 'break'}>
                   <br />
                 </Match>
                 <Match when={token.type === 'text' && token}>
-                  {textToken => <span>{textToken().content}</span>}
+                  {(textToken) => <span>{textToken().content}</span>}
                 </Match>
               </Switch>
             )}

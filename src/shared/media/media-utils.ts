@@ -47,7 +47,7 @@ function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => str
  * @returns Deduplicated array of media items
  */
 export function removeDuplicateMediaItems(mediaItems: readonly MediaInfo[]): MediaInfo[] {
-  const result = removeDuplicates(mediaItems, item => item.originalUrl ?? item.url);
+  const result = removeDuplicates(mediaItems, (item) => item.originalUrl ?? item.url);
 
   if (__DEV__) {
     const removedCount = mediaItems.length - result.length;
@@ -84,7 +84,7 @@ export function extractVisualIndexFromUrl(url: string): number {
 export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMediaEntry[] {
   if (mediaItems.length <= 1) return mediaItems;
 
-  const withVisualIndex = mediaItems.map(media => {
+  const withVisualIndex = mediaItems.map((media) => {
     const visualIndex = extractVisualIndexFromUrl(media.expanded_url);
     return { media, visualIndex };
   });
@@ -204,7 +204,7 @@ export function adjustClickedIndexAfterDeduplication(
   if (!clickedItem) return 0;
 
   const clickedKey = clickedItem.originalUrl ?? clickedItem.url;
-  const newIndex = uniqueItems.findIndex(item => {
+  const newIndex = uniqueItems.findIndex((item) => {
     const itemKey = item.originalUrl ?? item.url;
     return itemKey === clickedKey;
   });

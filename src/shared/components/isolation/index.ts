@@ -1,6 +1,6 @@
 export {
   GalleryContainer,
+  type GalleryContainerProps,
   mountGallery,
   unmountGallery,
-  type GalleryContainerProps,
 } from './GalleryContainer';

@@ -2,8 +2,8 @@
  * Safe signal factory with Solid.js fallback support for tests/Node environments
  */
 
-import { logger } from '@shared/logging';
 import { getSolid } from '@shared/external/vendors';
+import { logger } from '@shared/logging';
 
 export type SafeSignal<T> = {
   value: T;
@@ -32,7 +32,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
     const signalObject = {
       subscribe(callback: (value: T) => void): () => void {
         try {
-          return createRoot(dispose => {
+          return createRoot((dispose) => {
             createEffect(() => callback(read()));
             return dispose;
           });
@@ -69,7 +69,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
     set value(v: T) {
       _value = v;
       try {
-        listeners.forEach(l => l(_value));
+        listeners.forEach((l) => l(_value));
       } catch (error) {
         logger.warn('Notify failed', { error });
       }
@@ -94,7 +94,7 @@ export function effectSafe(fn: () => void): () => void {
   if (solid) {
     try {
       const { createRoot, createEffect } = solid;
-      return createRoot(dispose => {
+      return createRoot((dispose) => {
         createEffect(() => fn());
         return dispose;
       });
@@ -120,7 +120,7 @@ export function computedSafe<T>(compute: () => T): { readonly value: T } {
       const { createRoot, createMemo } = solid;
       let memoAccessor: (() => T) | null = null;
 
-      createRoot(dispose => {
+      createRoot((dispose) => {
         memoAccessor = createMemo(compute);
         return () => {
           memoAccessor = null;

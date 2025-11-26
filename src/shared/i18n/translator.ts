@@ -1,7 +1,7 @@
 import type { BaseLanguageCode } from '@shared/constants/i18n/language-types';
-import type { TranslationKey, TranslationParams } from './types';
 import { TranslationCatalog, type TranslationCatalogOptions } from './translation-catalog';
 import { resolveTranslationValue } from './translation-utils';
+import type { TranslationKey, TranslationParams } from './types';
 
 export interface TranslateOptions {
   readonly params?: TranslationParams;
@@ -35,7 +35,7 @@ export class Translator {
     }
 
     return template.replace(/\{(\w+)\}/g, (_, placeholder: string) => {
-      if (Object.prototype.hasOwnProperty.call(params, placeholder)) {
+      if (Object.hasOwn(params, placeholder)) {
         return String(params[placeholder]);
       }
 

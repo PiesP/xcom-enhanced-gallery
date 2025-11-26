@@ -4,8 +4,8 @@
  */
 
 export type {
-  ToolbarDataState,
   FitMode,
-  ToolbarState,
   ToolbarActions,
+  ToolbarDataState,
+  ToolbarState,
 } from '@shared/types/toolbar.types';

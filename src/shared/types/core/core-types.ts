@@ -26,8 +26,8 @@
  * @see {@link ../result.types.ts} - Result pattern & ErrorCode
  */
 
-import type { MediaInfo } from '@shared/types/media.types';
 import type { Cleanupable } from '@shared/types/lifecycle.types';
+import type { MediaInfo } from '@shared/types/media.types';
 import type { BaseService } from './base-service.types';
 
 // ========================================
@@ -154,7 +154,7 @@ export interface Lifecycle extends Cleanupable {
  *
  * Phase 353: AsyncResult type integration (moved to result.types.ts)
  */
-export type { Result, AsyncResult } from '@shared/types/result.types';
+export type { AsyncResult, Result } from '@shared/types/result.types';
 
 // Result utility functions moved to result.types.ts (Phase 355.2)
 // - success, failure, partial, cancelled

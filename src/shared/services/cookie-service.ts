@@ -71,10 +71,10 @@ export class CookieService {
   }
 
   static getInstance(): CookieService {
-    if (!this.instance) {
-      this.instance = new CookieService();
+    if (!CookieService.instance) {
+      CookieService.instance = new CookieService();
     }
-    return this.instance;
+    return CookieService.instance;
   }
 
   /**
@@ -90,12 +90,12 @@ export class CookieService {
     }
 
     return promisifyCallback<CookieRecord[]>(
-      callback =>
+      (callback) =>
         this.gmCookie?.list(options, (cookies, error) => {
           if (error) {
             logger.warn('GM_cookie.list failed; falling back to document.cookie', error);
           }
-          callback(error ? undefined : (cookies ?? []).map(c => ({ ...c })), error);
+          callback(error ? undefined : (cookies ?? []).map((c) => ({ ...c })), error);
         }),
       { fallback: () => this.listFromDocument(options) },
     );
@@ -146,7 +146,7 @@ export class CookieService {
       return;
     }
 
-    return promisifyVoidCallback(callback => this.gmCookie?.set?.(normalizedDetails, callback));
+    return promisifyVoidCallback((callback) => this.gmCookie?.set?.(normalizedDetails, callback));
   }
 
   async delete(details: CookieDeleteOptions): Promise<void> {
@@ -159,7 +159,7 @@ export class CookieService {
       return;
     }
 
-    return promisifyVoidCallback(callback => this.gmCookie?.delete?.(details, callback));
+    return promisifyVoidCallback((callback) => this.gmCookie?.delete?.(details, callback));
   }
 
   private resolveCookieAPI(): CookieAPI | null {
@@ -190,9 +190,9 @@ export class CookieService {
 
     const records = document.cookie
       .split(';')
-      .map(entry => entry.trim())
+      .map((entry) => entry.trim())
       .filter(Boolean)
-      .map(entry => {
+      .map((entry) => {
         const [rawName, ...rest] = entry.split('=');
         const nameDecoded = decode(rawName);
         if (!nameDecoded) {
@@ -211,7 +211,7 @@ export class CookieService {
       .filter((record): record is CookieRecord => Boolean(record));
 
     const filtered = options?.name
-      ? records.filter(record => record.name === options.name)
+      ? records.filter((record) => record.name === options.name)
       : records;
 
     return filtered;

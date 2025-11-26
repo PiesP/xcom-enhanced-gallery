@@ -1,4 +1,4 @@
-export { LANGUAGE_CODES, isBaseLanguageCode } from './language-types';
-export type { BaseLanguageCode, SupportedLanguage, LanguageStrings } from './language-types';
+export type { BaseLanguageCode, LanguageStrings, SupportedLanguage } from './language-types';
+export { isBaseLanguageCode, LANGUAGE_CODES } from './language-types';
 
-export { TRANSLATION_REGISTRY, DEFAULT_LANGUAGE, getLanguageStrings } from './translation-registry';
+export { DEFAULT_LANGUAGE, getLanguageStrings, TRANSLATION_REGISTRY } from './translation-registry';

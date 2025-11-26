@@ -30,7 +30,7 @@
  * ```
  */
 
-import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
+import { type ComponentChildren, getSolid, type JSXElement } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
 import { toAccessor } from '@shared/utils/solid/solid-helpers';
 import { createClassName } from '@shared/utils/text/formatting';
@@ -349,7 +349,7 @@ export function Button(rawProps: ButtonProps): JSXElement {
   return (
     <button
       {...rest}
-      ref={element => {
+      ref={(element) => {
         setElementRef(element ?? null);
         if (typeof local.ref === 'function') {
           local.ref(element ?? null);

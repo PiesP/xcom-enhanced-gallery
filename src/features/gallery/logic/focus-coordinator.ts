@@ -57,7 +57,7 @@ export class FocusCoordinator {
     this.items.set(index, { element, isVisible: false });
     SharedObserver.observe(
       element,
-      entry => {
+      (entry) => {
         const item = this.items.get(index);
         if (item) {
           item.entry = entry;

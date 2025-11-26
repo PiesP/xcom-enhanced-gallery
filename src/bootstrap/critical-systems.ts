@@ -1,5 +1,5 @@
-import { logger } from '@shared/logging';
 import { warmupCriticalServices } from '@shared/container';
+import { logger } from '@shared/logging';
 import { reportBootstrapError } from '@/bootstrap/types';
 
 const devLogger = import.meta.env.PROD ? null : logger;

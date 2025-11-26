@@ -3,12 +3,12 @@
  * @description Stable media click detection and handling logic with DOM caching optimization
  */
 
-import { CSS } from '@/constants/css';
-import { SELECTORS } from '@/constants/selectors';
 import { isVideoControlElement } from '@shared/dom/utils';
 import { logger } from '@shared/logging';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
+import { CSS } from '@/constants/css';
+import { SELECTORS } from '@/constants/selectors';
 
 /**
  * Media detection result

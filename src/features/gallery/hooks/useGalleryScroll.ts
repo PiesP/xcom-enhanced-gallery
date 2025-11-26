@@ -71,8 +71,8 @@ export function useGalleryScroll({
   const enabledAccessor = toAccessor(enabled);
   const programmaticTimestampAccessor = toAccessor(programmaticScrollTimestamp ?? 0);
 
-  const isGalleryOpen = useSelector<GalleryState, boolean>(galleryState, state => state.isOpen, {
-    dependencies: state => [state.isOpen],
+  const isGalleryOpen = useSelector<GalleryState, boolean>(galleryState, (state) => state.isOpen, {
+    dependencies: (state) => [state.isOpen],
   });
 
   const [isScrolling, setIsScrolling] = createSignal(false);

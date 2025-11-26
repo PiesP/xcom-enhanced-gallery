@@ -4,9 +4,9 @@
  */
 
 export {
+  type PromisifyOptions,
   promisifyCallback,
   promisifyVoidCallback,
-  type PromisifyOptions,
   type ResultCallback,
   type VoidCallback,
 } from './promise-helpers';

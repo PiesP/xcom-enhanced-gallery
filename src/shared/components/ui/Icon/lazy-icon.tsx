@@ -1,6 +1,6 @@
 import { getSolid, type JSXElement } from '@shared/external/vendors';
-import { getIconRegistry, preloadCommonIcons, type IconName } from './icon-registry';
 import type { IconProps } from './Icon';
+import { getIconRegistry, type IconName, preloadCommonIcons } from './icon-registry';
 
 export interface LazyIconProps {
   readonly name: IconName;
@@ -21,7 +21,7 @@ export function LazyIcon(props: LazyIconProps): JSXElement | unknown {
 
   const [iconResource] = createResource(
     () => props.name,
-    name => registry.loadIcon(name),
+    (name) => registry.loadIcon(name),
   );
 
   const className = () => ['lazy-icon-loading', props.className].filter(Boolean).join(' ');
@@ -63,7 +63,7 @@ export function LazyIcon(props: LazyIconProps): JSXElement | unknown {
 
   return (
     <Show when={iconResource()} fallback={placeholder()}>
-      {component => {
+      {(component) => {
         const resolved = component();
         return resolved ? resolved(buildIconProps()) : null;
       }}
@@ -80,7 +80,7 @@ export function useIconPreload(names: readonly IconName[]): void {
       return;
     }
 
-    void Promise.all(names.map(name => registry.loadIcon(name).catch(() => undefined)));
+    void Promise.all(names.map((name) => registry.loadIcon(name).catch(() => undefined)));
   });
 }
 

@@ -57,7 +57,7 @@ export function createEventEmitter<T extends Record<string, unknown>>() {
         return;
       }
 
-      eventListeners.forEach(callback => {
+      eventListeners.forEach((callback) => {
         try {
           callback(data);
         } catch (error) {

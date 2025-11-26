@@ -6,8 +6,8 @@
  */
 
 import { logger } from '@shared/logging';
-import { listenerRegistry } from './listener-registry';
 import type { EventContext } from './event-context';
+import { listenerRegistry } from './listener-registry';
 
 /**
  * Generate listener ID

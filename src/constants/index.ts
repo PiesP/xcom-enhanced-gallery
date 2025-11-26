@@ -8,46 +8,39 @@
  * - import { createAppConfig } from '@/constants/app-config';
  */
 
+export { CSS } from './css';
 // ================================
-// Core Constants
+// Settings
 // ================================
-export { SELECTORS, STABLE_SELECTORS } from './selectors';
-
+export { createDefaultSettings, DEFAULT_SETTINGS } from './default-settings';
 // ================================
 // Media & CSS
 // ================================
 export { MEDIA } from './media';
-export { CSS } from './css';
-
+// ================================
+// Core Constants
+// ================================
+export { SELECTORS, STABLE_SELECTORS } from './selectors';
 // ================================
 // Services
 // ================================
 export { SERVICE_KEYS } from './service-keys';
-
 // ================================
 // Storage
 // ================================
 export { APP_SETTINGS_STORAGE_KEY } from './storage';
-
 // ================================
 // Twitter API
 // ================================
 export { TWITTER_API_CONFIG } from './twitter-api';
-
-// ================================
-// Video & System
-// ================================
-export { VIDEO_CONTROL_SELECTORS, SYSTEM_PAGES, VIEW_MODES } from './video-controls';
-
-// ================================
-// Settings
-// ================================
-export { DEFAULT_SETTINGS, createDefaultSettings } from './default-settings';
-
 // ================================
 // Types
 // ================================
-export type { MediaType, MediaQuality, FileExtension, AppServiceKey, ViewMode } from './types';
+export type { AppServiceKey, FileExtension, MediaQuality, MediaType, ViewMode } from './types';
+// ================================
+// Video & System
+// ================================
+export { SYSTEM_PAGES, VIDEO_CONTROL_SELECTORS, VIEW_MODES } from './video-controls';
 
 // ================================
 // URL Patterns (Phase 22.2 compatibility)

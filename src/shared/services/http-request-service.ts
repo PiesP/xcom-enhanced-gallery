@@ -118,10 +118,10 @@ export class HttpRequestService {
             GMXMLHttpRequestDetails['responseType'],
             undefined
           >,
-          onload: response => {
+          onload: (response) => {
             const headers: Record<string, string> = {};
             if (response.responseHeaders) {
-              response.responseHeaders.split('\r\n').forEach(line => {
+              response.responseHeaders.split('\r\n').forEach((line) => {
                 const parts = line.split(': ');
                 if (parts.length >= 2 && parts[0]) {
                   headers[parts[0].toLowerCase()] = parts.slice(1).join(': ');
@@ -137,7 +137,7 @@ export class HttpRequestService {
               headers,
             });
           },
-          onerror: response => {
+          onerror: (response) => {
             reject(
               new HttpError(
                 response.statusText || 'Network Error',

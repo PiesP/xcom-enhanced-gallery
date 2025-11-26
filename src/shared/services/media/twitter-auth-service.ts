@@ -15,26 +15,26 @@ export class TwitterAuthService {
    * Idempotent: only runs once per session unless reset.
    */
   private static initializeTokens(): void {
-    if (this._tokensInitialized) {
+    if (TwitterAuthService._tokensInitialized) {
       return;
     }
 
     // Try synchronous access first
-    this._csrfToken = this.cookieService.getValueSync('ct0');
+    TwitterAuthService._csrfToken = TwitterAuthService.cookieService.getValueSync('ct0');
 
     // Fallback to async access if needed (though usually sync is enough for cookies)
-    void this.cookieService
+    void TwitterAuthService.cookieService
       .getValue('ct0')
-      .then(value => {
+      .then((value) => {
         if (value) {
-          this._csrfToken = value;
+          TwitterAuthService._csrfToken = value;
         }
       })
-      .catch(error => {
+      .catch((error) => {
         logger.debug('Failed to hydrate CSRF token from GM_cookie', error);
       });
 
-    this._tokensInitialized = true;
+    TwitterAuthService._tokensInitialized = true;
   }
 
   /**
@@ -42,7 +42,7 @@ export class TwitterAuthService {
    * Initializes tokens if not yet done.
    */
   public static get csrfToken(): string | undefined {
-    this.initializeTokens();
-    return this._csrfToken;
+    TwitterAuthService.initializeTokens();
+    return TwitterAuthService._csrfToken;
   }
 }

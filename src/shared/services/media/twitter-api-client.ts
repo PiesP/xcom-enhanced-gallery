@@ -4,13 +4,13 @@
  * @version 3.0.0 - Refactored for modularity
  */
 
-import { TWITTER_API_CONFIG } from '@/constants';
 import { logger } from '@shared/logging';
 import { sortMediaByVisualOrder } from '@shared/media/media-utils';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import { TwitterAuthService } from '@shared/services/media/twitter-auth-service';
 import { TwitterResponseParser } from '@shared/services/media/twitter-response-parser';
 import type { TweetMediaEntry, TwitterAPIResponse } from '@shared/services/media/types';
+import { TWITTER_API_CONFIG } from '@/constants';
 
 /**
  * TwitterAPI - Facade for Twitter Media Extraction
@@ -28,8 +28,8 @@ export class TwitterAPI {
    * Get Tweet Medias - Main API Entry Point
    */
   public static async getTweetMedias(tweetId: string): Promise<TweetMediaEntry[]> {
-    const url = this.createTweetEndpointUrl(tweetId);
-    const json = await this.apiRequest(url);
+    const url = TwitterAPI.createTweetEndpointUrl(tweetId);
+    const json = await TwitterAPI.apiRequest(url);
 
     if (!json.data?.tweetResult?.result) return [];
 
@@ -67,7 +67,7 @@ export class TwitterAPI {
 
         const sortedQuotedMedia = sortMediaByVisualOrder(quotedMedia);
 
-        const adjustedResult = result.map(media => ({
+        const adjustedResult = result.map((media) => ({
           ...media,
           index: media.index + sortedQuotedMedia.length,
         }));
@@ -85,8 +85,8 @@ export class TwitterAPI {
     const _url = url.toString();
 
     // Check cache first
-    if (this.requestCache.has(_url)) {
-      return this.requestCache.get(_url)!;
+    if (TwitterAPI.requestCache.has(_url)) {
+      return TwitterAPI.requestCache.get(_url)!;
     }
 
     // Build headers
@@ -127,11 +127,11 @@ export class TwitterAPI {
 
       // Cache on success
       if (response.ok) {
-        if (this.requestCache.size >= this.CACHE_LIMIT) {
-          const firstKey = this.requestCache.keys().next().value;
-          if (firstKey) this.requestCache.delete(firstKey);
+        if (TwitterAPI.requestCache.size >= TwitterAPI.CACHE_LIMIT) {
+          const firstKey = TwitterAPI.requestCache.keys().next().value;
+          if (firstKey) TwitterAPI.requestCache.delete(firstKey);
         }
-        this.requestCache.set(_url, json);
+        TwitterAPI.requestCache.set(_url, json);
       }
 
       return json;

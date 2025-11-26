@@ -1,7 +1,7 @@
-import { type BaseLanguageCode, type LanguageStrings } from './language-types';
+import type { BaseLanguageCode, LanguageStrings } from './language-types';
 import { en } from './languages/en';
-import { ko } from './languages/ko';
 import { ja } from './languages/ja';
+import { ko } from './languages/ko';
 
 export const TRANSLATION_REGISTRY: Record<BaseLanguageCode, LanguageStrings> = Object.freeze({
   en,

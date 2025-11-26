@@ -1,4 +1,4 @@
-import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
+import { type ComponentChildren, getSolid, type JSXElement } from '@shared/external/vendors';
 import { EventManager } from '@shared/services/event-manager';
 import { createClassName } from '@shared/utils/text/formatting';
 
@@ -145,7 +145,7 @@ export function GalleryContainer({
 
     // Register Escape key handler
     const eventManager = EventManager.getInstance();
-    const listenerId = eventManager.addListener(document, 'keydown', event => {
+    const listenerId = eventManager.addListener(document, 'keydown', (event) => {
       const keyboardEvent = event as KeyboardEvent;
       if (keyboardEvent.key === 'Escape') {
         keyboardEvent.preventDefault();

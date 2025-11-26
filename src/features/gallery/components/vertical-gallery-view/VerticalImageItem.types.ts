@@ -13,8 +13,7 @@
  * @version 1.1.0 - Enhanced documentation and type clarity (Phase 354+)
  */
 
-import type { BaseComponentProps } from '@shared/types';
-import type { ImageFitMode } from '@shared/types';
+import type { BaseComponentProps, ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/media.types';
 
 /**

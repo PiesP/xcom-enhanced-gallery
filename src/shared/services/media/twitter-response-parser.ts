@@ -27,7 +27,7 @@ export class TwitterResponseParser {
       if (!media?.type || !media.id_str || !media.media_url_https) continue;
 
       try {
-        const mediaUrl = this.getHighQualityMediaUrl(media);
+        const mediaUrl = TwitterResponseParser.getHighQualityMediaUrl(media);
         if (!mediaUrl) continue;
 
         const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
@@ -101,7 +101,7 @@ export class TwitterResponseParser {
     }
     if (media.type === 'video' || media.type === 'animated_gif') {
       const variants = media.video_info?.variants ?? [];
-      const mp4Variants = variants.filter(v => v.content_type === 'video/mp4');
+      const mp4Variants = variants.filter((v) => v.content_type === 'video/mp4');
       if (mp4Variants.length === 0) return null;
 
       const bestVariant = mp4Variants.reduce((best, current) => {

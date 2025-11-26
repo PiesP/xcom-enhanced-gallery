@@ -47,7 +47,7 @@ export async function downloadSingleFile(
     isBlobUrl = true;
   }
 
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const cleanup = () => {
       if (isBlobUrl) {
         URL.revokeObjectURL(url);

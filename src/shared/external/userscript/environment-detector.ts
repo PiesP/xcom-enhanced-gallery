@@ -1,5 +1,5 @@
+import { type BaseLanguageCode, isBaseLanguageCode } from '@shared/constants/i18n/language-types';
 import { DEFAULT_LANGUAGE } from '@shared/constants/i18n/translation-registry';
-import { isBaseLanguageCode, type BaseLanguageCode } from '@shared/constants/i18n/language-types';
 
 /**
  * Browser environment snapshot surfaced to the userscript layer.
@@ -13,15 +13,15 @@ export interface EnvironmentInfo {
 }
 
 const GM_API_CHECKS: Record<string, (gm: Record<string, unknown>) => boolean> = {
-  getValue: gm => typeof gm.GM_getValue === 'function',
-  setValue: gm => typeof gm.GM_setValue === 'function',
-  download: gm => typeof gm.GM_download === 'function',
-  notification: gm => typeof gm.GM_notification === 'function',
-  setClipboard: gm => typeof gm.GM_setClipboard === 'function',
-  registerMenuCommand: gm => typeof gm.GM_registerMenuCommand === 'function',
-  deleteValue: gm => typeof gm.GM_deleteValue === 'function',
-  listValues: gm => typeof gm.GM_listValues === 'function',
-  cookie: gm => typeof (gm.GM_cookie as { list?: unknown } | undefined)?.list === 'function',
+  getValue: (gm) => typeof gm.GM_getValue === 'function',
+  setValue: (gm) => typeof gm.GM_setValue === 'function',
+  download: (gm) => typeof gm.GM_download === 'function',
+  notification: (gm) => typeof gm.GM_notification === 'function',
+  setClipboard: (gm) => typeof gm.GM_setClipboard === 'function',
+  registerMenuCommand: (gm) => typeof gm.GM_registerMenuCommand === 'function',
+  deleteValue: (gm) => typeof gm.GM_deleteValue === 'function',
+  listValues: (gm) => typeof gm.GM_listValues === 'function',
+  cookie: (gm) => typeof (gm.GM_cookie as { list?: unknown } | undefined)?.list === 'function',
 };
 
 function detectColorScheme(): 'light' | 'dark' {

@@ -220,7 +220,7 @@ export class DomEventManager {
     }
 
     let cleanupCount = 0;
-    this.cleanups.forEach(cleanup => {
+    this.cleanups.forEach((cleanup) => {
       try {
         cleanup();
         cleanupCount++;

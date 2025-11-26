@@ -34,7 +34,7 @@
  * @internal Module for cross-layer abstraction (Shared layer)
  */
 
-import type { MediaInfo, GalleryRenderOptions } from '@shared/types/media.types';
+import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 
 /**
  * Gallery Renderer Interface

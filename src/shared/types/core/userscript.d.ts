@@ -19,7 +19,7 @@ declare global {
   function GM_xmlhttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl;
   function GM_openInTab(
     url: string,
-    options?: { active?: boolean; insert?: boolean; setParent?: boolean }
+    options?: { active?: boolean; insert?: boolean; setParent?: boolean },
   ): void;
   function GM_registerMenuCommand(name: string, fn: () => void, accessKey?: string): number;
   function GM_unregisterMenuCommand(menuCmdId: number): void;
@@ -28,7 +28,7 @@ declare global {
     text: string,
     title?: string,
     image?: string,
-    onclick?: () => void
+    onclick?: () => void,
   ): void;
   const GM_cookie: CookieAPI;
 
