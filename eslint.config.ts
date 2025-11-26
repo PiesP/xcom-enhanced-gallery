@@ -109,17 +109,6 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.js', '**/*.cjs', '**/*.mjs'],
-    languageOptions: { globals: globals.node },
-    plugins: { prettier: prettierPlugin },
-    rules: {
-      ...prettierConfig.rules,
-      'no-undef': 'error',
-      '@typescript-eslint/no-var-requires': 'off',
-      'prettier/prettier': ['error', { singleQuote: true }],
-    },
-  },
-  {
     files: ['playwright/**/*.ts', 'test/**/*.ts'],
     rules: {
       'no-restricted-imports': 'off',
