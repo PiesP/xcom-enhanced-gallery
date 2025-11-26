@@ -29,7 +29,6 @@
 # --- Package management ---
 !/package.json
 !/package-lock.json
-!/.npmrc
 
 # --- Quality tooling (CI required) ---
 !/eslint.config.ts
