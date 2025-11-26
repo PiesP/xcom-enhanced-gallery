@@ -1,4 +1,4 @@
-import { CoreService } from '@shared/services/core-service-manager';
+import { CoreService } from '@shared/services/service-manager';
 
 // Lightweight cache for frequently accessed services; avoids repeated lookups.
 const cache = new Map<string, unknown>();

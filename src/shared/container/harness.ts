@@ -37,7 +37,7 @@
  * - SERVICE_KEYS constants prevent string-based runtime errors
  * - Typed get/tryGet methods validate at compile time
  */
-import { CoreService } from '@shared/services/core-service-manager';
+import { CoreService } from '@shared/services/service-manager';
 import { CoreServiceRegistry } from './core-service-registry';
 
 /**

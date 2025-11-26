@@ -19,7 +19,7 @@
  */
 
 import { getSolid } from '@shared/external/vendors';
-import { EventManager } from '@shared/services';
+import { EventManager } from '@shared/services/event-manager';
 
 /**
  * Gallery keyboard event options

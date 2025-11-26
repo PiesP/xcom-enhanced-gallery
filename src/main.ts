@@ -12,7 +12,7 @@ import { warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
 import { runAfterWindowLoad } from '@shared/dom/window-load';
 import { cleanupVendors } from '@shared/external/vendors';
-import { CoreService } from '@shared/services/core-service-manager';
+import { CoreService } from '@shared/services/service-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 // Global styles

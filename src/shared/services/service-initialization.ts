@@ -1,5 +1,5 @@
 import { SERVICE_KEYS } from '@/constants';
-import { CoreService } from '@shared/services/core-service-manager';
+import { CoreService } from '@shared/services/service-manager';
 import { FilenameService } from '@shared/services/filename-service';
 import { LanguageService } from '@shared/services/language-service';
 import { MediaService } from '@shared/services/media-service';

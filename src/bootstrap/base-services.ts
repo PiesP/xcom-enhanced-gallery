@@ -14,7 +14,7 @@ import {
   type CoreBaseServiceIdentifier,
 } from '@shared/container/service-accessors';
 import { logger } from '@shared/logging';
-import { CoreService } from '@shared/services/core-service-manager';
+import { CoreService } from '@shared/services/service-manager';
 import { LanguageService } from '@shared/services/language-service';
 import { MediaService } from '@shared/services/media-service';
 import { ThemeService } from '@shared/services/theme-service';

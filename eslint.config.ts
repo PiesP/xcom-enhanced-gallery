@@ -1,13 +1,10 @@
 import js from '@eslint/js';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
 import prettierConfig from 'eslint-config-prettier';
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
 import prettierPlugin from 'eslint-plugin-prettier';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
-// Shared constants
-const PRETTIER_RULE = ['error', { singleQuote: true }];
 const IGNORES = [
   'dist/**',
   'node_modules/**',
@@ -19,101 +16,96 @@ const IGNORES = [
   'scripts/lib/**',
 ];
 
-// Tampermonkey/Greasemonkey globals
-const GM_GLOBALS = Object.fromEntries(
-  [
-    'GM_getValue',
-    'GM_setValue',
-    'GM_deleteValue',
-    'GM_listValues',
-    'GM_getResourceText',
-    'GM_getResourceURL',
-    'GM_addStyle',
-    'GM_registerMenuCommand',
-    'GM_unregisterMenuCommand',
-    'GM_xmlhttpRequest',
-    'GM_download',
-    'GM_openInTab',
-    'GM_setClipboard',
-    'GM_notification',
-    'GM_info',
-    'unsafeWindow',
-  ].map(name => [name, 'readonly']),
-);
+const GM_GLOBALS = {
+  GM_getValue: 'readonly',
+  GM_setValue: 'readonly',
+  GM_deleteValue: 'readonly',
+  GM_listValues: 'readonly',
+  GM_getResourceText: 'readonly',
+  GM_getResourceURL: 'readonly',
+  GM_addStyle: 'readonly',
+  GM_registerMenuCommand: 'readonly',
+  GM_unregisterMenuCommand: 'readonly',
+  GM_xmlhttpRequest: 'readonly',
+  GM_download: 'readonly',
+  GM_openInTab: 'readonly',
+  GM_setClipboard: 'readonly',
+  GM_notification: 'readonly',
+  GM_info: 'readonly',
+  unsafeWindow: 'readonly',
+} as const;
 
-// JSX A11y rules (all warn level)
-const JSX_A11Y_RULES = Object.fromEntries(
-  [
-    'alt-text',
-    'aria-role',
-    'aria-props',
-    'aria-proptypes',
-    'aria-unsupported-elements',
-    'role-has-required-aria-props',
-    'role-supports-aria-props',
-  ].map(rule => [`jsx-a11y/${rule}`, 'warn']),
-);
-
-// Path alias enforcement rules
-const PATH_ALIAS_RULES = {
-  'no-restricted-imports': [
-    'error',
-    {
-      patterns: [
-        {
-          group: ['../*'],
-          message:
-            'Relative parent imports are not allowed. Please use path aliases (e.g., @shared/, @features/).',
-        },
-      ],
-    },
-  ],
-  'no-restricted-syntax': [
-    'error',
-    {
-      selector: 'ImportExpression[source.value=/^\\.\\./]',
-      message:
-        'Relative parent imports are not allowed in dynamic imports. Please use path aliases.',
-    },
-    {
-      selector: 'CallExpression[callee.name="require"] > Literal[value=/^\\.\\./]',
-      message: 'Relative parent imports are not allowed in require(). Please use path aliases.',
-    },
-  ],
-};
-
-export default [
+export default tseslint.config(
   { ignores: IGNORES },
   js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
-      parser: tsParser,
       parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        ecmaFeatures: { jsx: true },
         project: './tsconfig.json',
+        tsconfigRootDir: import.meta.dirname,
       },
-      globals: { ...globals.browser, ...globals.node, ...globals.es2021, ...GM_GLOBALS },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2021,
+        ...GM_GLOBALS,
+      },
     },
     plugins: {
-      '@typescript-eslint': tsPlugin,
       prettier: prettierPlugin,
       'jsx-a11y': jsxA11yPlugin,
     },
     rules: {
-      ...tsPlugin.configs.recommended.rules,
       ...prettierConfig.rules,
-      ...PATH_ALIAS_RULES,
-      ...JSX_A11Y_RULES,
-      'no-undef': 'off',
-      'prettier/prettier': PRETTIER_RULE,
+
+      // Prettier
+      'prettier/prettier': ['error', { singleQuote: true }],
+
+      // TypeScript
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
+
+      // General
       'no-console': ['warn', { allow: ['warn', 'error', 'info', 'debug'] }],
       'no-debugger': 'warn',
+      'no-undef': 'off',
+
+      // Path Aliases
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../*'],
+              message:
+                'Use path aliases (e.g., @shared/, @features/) instead of relative parent imports.',
+            },
+          ],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ImportExpression[source.value=/^\\.\\./]',
+          message: 'Use path aliases in dynamic imports.',
+        },
+        {
+          selector: 'CallExpression[callee.name="require"] > Literal[value=/^\\.\\./]',
+          message: 'Use path aliases in require().',
+        },
+      ],
+
+      // JSX A11y
+      'jsx-a11y/alt-text': 'warn',
+      'jsx-a11y/aria-role': 'warn',
+      'jsx-a11y/aria-props': 'warn',
+      'jsx-a11y/aria-proptypes': 'warn',
+      'jsx-a11y/aria-unsupported-elements': 'warn',
+      'jsx-a11y/role-has-required-aria-props': 'warn',
+      'jsx-a11y/role-supports-aria-props': 'warn',
     },
   },
   {
@@ -124,7 +116,7 @@ export default [
       ...prettierConfig.rules,
       'no-undef': 'error',
       '@typescript-eslint/no-var-requires': 'off',
-      'prettier/prettier': PRETTIER_RULE,
+      'prettier/prettier': ['error', { singleQuote: true }],
     },
   },
   {
@@ -133,4 +125,4 @@ export default [
       'no-restricted-imports': 'off',
     },
   },
-];
+);

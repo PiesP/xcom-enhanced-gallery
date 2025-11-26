@@ -181,9 +181,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
   private async ensureDownloadService(): Promise<void> {
     try {
-      const { ensureDownloadServiceRegistered } = await import(
-        '@shared/services/lazy-service-registration'
-      );
+      const { ensureDownloadServiceRegistered } = await import('@shared/services/lazy-services');
       await ensureDownloadServiceRegistered();
     } catch (error) {
       logger.warn('[GalleryRenderer] DownloadService lazy registration failed:', error);

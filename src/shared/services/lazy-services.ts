@@ -39,7 +39,7 @@ export async function ensureDownloadServiceRegistered(): Promise<void> {
     // Dynamically import at first use
     const { DownloadOrchestrator } = await import('./download/download-orchestrator');
     const downloadService = DownloadOrchestrator.getInstance();
-    const { CoreService } = await import('./core-service-manager');
+    const { CoreService } = await import('./service-manager');
     const { SERVICE_KEYS } = await import('@/constants');
 
     const serviceManager = CoreService.getInstance();
