@@ -33,7 +33,7 @@ export class FilenameService {
 
   generateMediaFilename(media: MediaInfo, options: FilenameOptions = {}): string {
     try {
-      if (media.filename && media.filename.length > 0) {
+      if (media.filename) {
         return this.sanitize(media.filename);
       }
 
@@ -83,7 +83,7 @@ export class FilenameService {
 
   private resolveMetadata(
     media: MediaInfo,
-    fallbackUsername?: string | null,
+    fallbackUsername?: string | null
   ): { username: string | null; tweetId: string | null } {
     let username: string | null = null;
     let tweetId: string | null = null;
@@ -115,9 +115,7 @@ export class FilenameService {
     const match = mediaId.match(/_media_(\d+)$/) || mediaId.match(/_(\d+)$/);
     if (match) {
       const idx = safeParseInt(match[1], 10);
-      if (!Number.isNaN(idx)) {
-        return mediaId.includes('_media_') ? (idx + 1).toString() : (match[1] ?? null);
-      }
+      return mediaId.includes('_media_') ? (idx + 1).toString() : match[1] ?? null;
     }
     return null;
   }
@@ -143,11 +141,11 @@ export class FilenameService {
   }
 
   private sanitize(name: string): string {
-    if (!name) return 'media';
-    return name
+    const sanitized = name
       .replace(/[<>:"/\\|?*]/g, '_')
       .replace(/^[\s.]+|[\s.]+$/g, '')
       .slice(0, 255);
+    return sanitized || 'media';
   }
 
   private extractUsernameFromUrl(url: string): string | null {
@@ -168,7 +166,7 @@ export class FilenameService {
       if (
         !path ||
         ['home', 'explore', 'notifications', 'messages', 'search', 'settings'].includes(
-          path.toLowerCase(),
+          path.toLowerCase()
         )
       ) {
         return null;
@@ -188,7 +186,7 @@ export function generateMediaFilename(media: MediaInfo, options?: FilenameOption
 
 export function generateZipFilename(
   mediaItems: readonly MediaInfo[],
-  options?: ZipFilenameOptions,
+  options?: ZipFilenameOptions
 ): string {
   return shared.generateZipFilename(mediaItems, options);
 }
