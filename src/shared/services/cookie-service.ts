@@ -7,7 +7,7 @@ import type {
   CookieRecord,
   CookieSetOptions,
 } from '@shared/types/core/cookie.types';
-import { promisifyCallback, promisifyVoidCallback } from '@shared/utils/async/promise-helpers';
+import { promisifyCallback, promisifyVoidCallback } from '@shared/utils/async';
 
 type CookieSetOptionsWithName = CookieSetOptions & { name: string };
 

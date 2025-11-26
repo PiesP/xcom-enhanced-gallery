@@ -16,7 +16,7 @@ import {
   shouldExecutePlayPauseKey,
   shouldExecuteVideoControlKey,
 } from '@shared/utils/events/keyboard-debounce';
-import { executeVideoControl } from './video-control-helper';
+import { executeVideoControl } from '@shared/utils/events/handlers/video-control-helper';
 
 /**
  * Check if gallery is open

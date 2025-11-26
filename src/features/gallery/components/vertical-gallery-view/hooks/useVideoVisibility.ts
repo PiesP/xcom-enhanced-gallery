@@ -7,7 +7,7 @@
 
 import { getSolid } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
-import { SharedObserver } from '@shared/utils/performance/observer-pool';
+import { SharedObserver } from '@shared/utils/performance';
 
 const { createEffect, onCleanup } = getSolid();
 

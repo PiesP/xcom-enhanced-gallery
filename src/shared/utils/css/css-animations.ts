@@ -138,7 +138,7 @@ function buildScopedAnimationCss(): string {
 
   @media (prefers-reduced-motion: reduce) {
       ${reducedMotionSelectors} {
-        animation: none !important;
+        animation: none;
       }
   }
 }

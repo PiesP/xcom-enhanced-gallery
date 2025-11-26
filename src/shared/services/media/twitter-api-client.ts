@@ -8,9 +8,9 @@ import { TWITTER_API_CONFIG } from '@/constants';
 import { logger } from '@shared/logging';
 import { sortMediaByVisualOrder } from '@shared/media/media-utils';
 import { HttpRequestService } from '@shared/services/http-request-service';
-import { TwitterAuthService } from './twitter-auth-service';
-import { TwitterResponseParser } from './twitter-response-parser';
-import type { TweetMediaEntry, TwitterAPIResponse } from './types';
+import { TwitterAuthService } from '@shared/services/media/twitter-auth-service';
+import { TwitterResponseParser } from '@shared/services/media/twitter-response-parser';
+import type { TweetMediaEntry, TwitterAPIResponse } from '@shared/services/media/types';
 
 /**
  * TwitterAPI - Facade for Twitter Media Extraction

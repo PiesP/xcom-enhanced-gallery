@@ -15,14 +15,6 @@ import type {
 import { detectMediaFromClick, isProcessableMedia } from '@shared/utils/media/media-click-detector';
 import { isHTMLElement } from '@shared/utils/types/guards';
 
-function isGalleryOpen(): boolean {
-  return gallerySignals.isOpen.value;
-}
-
-function isInsideOurGallery(element: HTMLElement): boolean {
-  return isGalleryInternalElement(element);
-}
-
 function extractFilenameFromUrl(url: string): string | null {
   try {
     const filename = new URL(url).pathname.split('/').pop();
@@ -70,7 +62,7 @@ export async function handleMediaClick(
       return { handled: false, reason: 'Invalid target (not HTMLElement)' };
     }
 
-    if (isGalleryOpen() && isInsideOurGallery(target)) {
+    if (gallerySignals.isOpen.value && isGalleryInternalElement(target)) {
       return { handled: false, reason: 'Gallery internal event' };
     }
 

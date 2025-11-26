@@ -20,8 +20,8 @@ import {
   type TranslationParams,
 } from '@shared/i18n';
 import { logger } from '@shared/logging';
-import { BaseServiceImpl } from './base-service';
-import { getPersistentStorage } from './persistent-storage';
+import { BaseServiceImpl } from '@shared/services/base-service';
+import { getPersistentStorage } from '@shared/services/persistent-storage';
 
 export type {
   BaseLanguageCode,

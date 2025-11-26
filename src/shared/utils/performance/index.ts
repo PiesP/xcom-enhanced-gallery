@@ -6,5 +6,7 @@
 export { computePreloadIndices } from './preload';
 
 // Scheduling helpers
-export { scheduleIdle } from './schedulers';
-export type { IdleHandle } from './schedulers';
+export { scheduleIdle, type IdleHandle } from './idle-scheduler';
+
+// Observer pool
+export { SharedObserver } from './observer-pool';

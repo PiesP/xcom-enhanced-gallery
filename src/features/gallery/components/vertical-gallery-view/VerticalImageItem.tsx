@@ -27,7 +27,7 @@ import type { JSX } from 'solid-js';
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getSolid } from '@shared/external/vendors';
 import { createIntrinsicSizingStyle, resolveMediaDimensions } from '@shared/utils/media/dimensions';
-import { SharedObserver } from '@shared/utils/performance/observer-pool';
+import { SharedObserver } from '@shared/utils/performance';
 import { createClassName } from '@shared/utils/text/formatting';
 import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
 import styles from './VerticalImageItem.module.css';
