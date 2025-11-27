@@ -13,6 +13,15 @@ type Migration = (input: AppSettings) => AppSettings;
 // Registry for future explicit migrations (from older schemas to current)
 // NOTE: Currently no breaking migrations defined; default fill/merge is sufficient.
 const migrations: Partial<Record<string, Migration>> = {
+  // Phase 447: Force-enable keyboard navigation after accidental default disablement
+  '1.0.0': input => {
+    const next = { ...input } as AppSettings;
+    next.gallery = {
+      ...next.gallery,
+      enableKeyboardNav: true,
+    };
+    return next;
+  },
   // '0.9.0': (input) => { /* example: rename keys, adjust ranges */ return input; },
 };
 

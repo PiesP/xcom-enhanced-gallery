@@ -162,11 +162,11 @@
   /* Pointer handling */
   pointer-events: var(--toolbar-pointer-events, none);
 
-  /* Flat surface background */
-  background: var(--xeg-toolbar-wrapper-surface, var(--xeg-bg-toolbar));
-  border: var(--xeg-toolbar-wrapper-border, none);
-  border-radius: var(--xeg-toolbar-wrapper-radius, 0);
-  margin: var(--xeg-toolbar-wrapper-margin, 0);
+  /* Transparent wrapper - actual toolbar has its own surface */
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  margin: 0;
   padding-block-end: var(--xeg-spacing-gallery);
 }
 

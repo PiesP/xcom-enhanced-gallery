@@ -12,7 +12,7 @@ const STATIC_DEFAULT_SETTINGS = {
     imageFitMode: 'fitWidth' as const,
     theme: 'auto' as const,
     animations: true,
-    enableKeyboardNav: false,
+    enableKeyboardNav: true,
   },
   toolbar: {
     /** Phase 268: Remove runtime warnings - toolbar settings schema */
@@ -42,7 +42,7 @@ const STATIC_DEFAULT_SETTINGS = {
     mediaExtraction: true, // Media extraction enabled
     accessibility: true, // Accessibility features enabled
   },
-  version: '1.0.0',
+  version: '1.0.1',
   // Static default retains deterministic timestamp for hashing comparisons
   lastModified: 0,
 } as const satisfies AppSettings;

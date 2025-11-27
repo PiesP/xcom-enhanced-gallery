@@ -76,20 +76,20 @@ function VerticalGalleryViewCore({
   // State selectors
   const mediaItems = useSelector<GalleryState, readonly MediaInfo[]>(
     galleryState,
-    (state) => state.mediaItems,
-    { dependencies: (state) => [state.mediaItems] },
+    state => state.mediaItems,
+    { dependencies: state => [state.mediaItems] }
   );
 
   const currentIndex = useSelector<GalleryState, number>(
     galleryState,
-    (state) => state.currentIndex,
-    { dependencies: (state) => [state.currentIndex] },
+    state => state.currentIndex,
+    { dependencies: state => [state.currentIndex] }
   );
 
   const isDownloading = useSelector(
     downloadState,
     (download: DownloadState) => isDownloadUiBusy({ downloadProcessing: download.isProcessing }),
-    { dependencies: (download: DownloadState) => [download.isProcessing] },
+    { dependencies: (download: DownloadState) => [download.isProcessing] }
   );
 
   // Element refs
@@ -150,7 +150,7 @@ function VerticalGalleryViewCore({
       block: 'start',
       isScrolling,
       onScrollStart: () => navigationState.setProgrammaticScrollTimestamp(Date.now()),
-    },
+    }
   );
 
   // Navigation handling - uses scrollToItem
@@ -198,7 +198,7 @@ function VerticalGalleryViewCore({
   const [imageFitMode, setImageFitMode] = createSignal<ImageFitMode>(getInitialFitMode());
 
   const persistFitMode = (mode: ImageFitMode) =>
-    setSetting('gallery.imageFitMode', mode).catch((error) => {
+    setSetting('gallery.imageFitMode', mode).catch(error => {
       logger.warn('Failed to save fit mode', { error, mode });
     });
 
@@ -258,6 +258,28 @@ function VerticalGalleryViewCore({
     }
   };
 
+  /**
+   * Handle wheel events on the gallery container.
+   * Redirects scroll to the items container when wheel event occurs outside of it,
+   * preventing the underlying Twitter page from scrolling.
+   */
+  const handleContainerWheel = (event: WheelEvent) => {
+    const itemsContainer = itemsContainerEl();
+    if (!itemsContainer) return;
+
+    // Check if the wheel event target is inside the items container
+    const target = event.target as HTMLElement;
+    if (itemsContainer.contains(target)) {
+      // Let the items container handle its own scroll naturally
+      return;
+    }
+
+    // For events outside the items container, redirect scroll to items container
+    event.preventDefault();
+    event.stopPropagation();
+    itemsContainer.scrollTop += event.deltaY;
+  };
+
   // Empty state
   if (!isVisible() || mediaItems().length === 0) {
     const languageService = getLanguageService();
@@ -281,6 +303,7 @@ function VerticalGalleryViewCore({
         isInitialToolbarVisible() ? styles.initialToolbarVisible : ''
       } ${isScrolling() ? styles.isScrolling : ''} ${stringWithDefault(className, '')}`}
       onClick={handleBackgroundClick}
+      onWheel={handleContainerWheel}
       data-xeg-gallery="true"
       data-xeg-role="gallery"
     >
