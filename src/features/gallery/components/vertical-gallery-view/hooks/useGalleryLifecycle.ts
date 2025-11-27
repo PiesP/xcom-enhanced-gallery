@@ -62,13 +62,24 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
           animateGalleryExit(container);
 
           // Video cleanup
+          const logCleanupFailure = (error: unknown) => {
+            logger.warn('video cleanup failed', { error });
+          };
+
           const videos = container.querySelectorAll('video');
-          videos.forEach((video) => {
+          videos.forEach(video => {
             try {
               video.pause();
-              video.currentTime = 0;
             } catch (error) {
-              logger.warn('video cleanup failed', { error });
+              logCleanupFailure(error);
+            }
+
+            try {
+              if (video.currentTime !== 0) {
+                video.currentTime = 0;
+              }
+            } catch (error) {
+              logCleanupFailure(error);
             }
           });
         }
