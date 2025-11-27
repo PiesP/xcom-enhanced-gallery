@@ -233,6 +233,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: center; /* Center items horizontally - allow shrink to image width */
   overflow: auto; /* Only the gallery list scrolls; the document stays fixed */
   position: relative;
 
