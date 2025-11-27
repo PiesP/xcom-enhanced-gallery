@@ -235,18 +235,34 @@ function VerticalGalleryViewCore({
 
   const handleBackgroundClick = (event: MouseEvent) => {
     const target = event.target as HTMLElement;
+
+    // Ignore clicks on toolbar and toolbar hover zone
     if (
       target.closest('.toolbarWrapper') ||
       target.closest('.toolbarHoverZone') ||
       target.closest('[data-role="toolbar"]') ||
+      target.closest('[data-role="toolbar-hover-zone"]') ||
       target.closest('[class*="toolbar"]')
     ) {
       return;
     }
 
-    if (event.target === event.currentTarget) {
-      onClose?.();
+    // Ignore clicks on gallery items (images/videos)
+    if (
+      target.closest('[data-xeg-role="gallery-item"]') ||
+      target.closest('.xeg-gallery-item') ||
+      target.closest('.vertical-item')
+    ) {
+      return;
     }
+
+    // Ignore clicks on scroll spacer
+    if (target.closest('[data-xeg-role="scroll-spacer"]')) {
+      return;
+    }
+
+    // Close gallery when clicking on background area (outside items and toolbar)
+    onClose?.();
   };
 
   const handleMediaItemClick = (index: number) => {
