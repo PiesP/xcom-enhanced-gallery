@@ -13,15 +13,11 @@ function isWindowLoaded(): boolean {
 }
 
 function createWindowLoadPromise(): Promise<void> {
-  if (!hasBrowserContext) {
-    return Promise.resolve();
-  }
-
   if (windowLoadPromise) {
     return windowLoadPromise;
   }
 
-  windowLoadPromise = new Promise((resolve) => {
+  windowLoadPromise = new Promise(resolve => {
     const handleLoad = (): void => {
       window.removeEventListener('load', handleLoad);
       resolve();

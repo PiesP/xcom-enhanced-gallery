@@ -5,8 +5,6 @@
  * Media URL validation utilities.
  */
 
-import { isNonEmptyString } from '@shared/utils/types/guards';
-
 const SUPPORTED_MEDIA_HOSTS = new Set(['pbs.twimg.com', 'video.twimg.com']);
 const MAX_URL_LENGTH = 2048;
 
@@ -30,7 +28,7 @@ const MAX_URL_LENGTH = 2048;
  * ```
  */
 export function isValidMediaUrl(url: string): boolean {
-  if (!isNonEmptyString(url) || url.length > MAX_URL_LENGTH) {
+  if (typeof url !== 'string' || url.length > MAX_URL_LENGTH) {
     return false;
   }
 
@@ -65,10 +63,6 @@ export function isValidMediaUrl(url: string): boolean {
  * @returns Whether URL is from Twitter media domain
  */
 export function isTwitterMediaUrl(url: string): boolean {
-  if (!isNonEmptyString(url)) {
-    return false;
-  }
-
   try {
     const parsed = new URL(url);
     return SUPPORTED_MEDIA_HOSTS.has(parsed.hostname);
@@ -96,10 +90,6 @@ function verifyUrlProtocol(protocol: string): boolean {
  * @returns Whether path is valid media path
  */
 function checkPbsMediaPath(pathname: string): boolean {
-  if (!pathname) {
-    return false;
-  }
-
   // Use strict prefix matching instead of substring search
   return (
     pathname.startsWith('/media/') ||

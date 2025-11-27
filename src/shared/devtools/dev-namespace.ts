@@ -16,8 +16,15 @@ type DevNamespaceHost = typeof globalThis & {
   __XEG__?: DevNamespace;
 };
 
+// Internal helper to allow mocking in tests
+export const _env = {
+  get DEV() {
+    return import.meta.env.DEV;
+  },
+};
+
 function ensureDevNamespace(): DevNamespace | undefined {
-  if (!import.meta.env.DEV) {
+  if (!_env.DEV) {
     return undefined;
   }
 
@@ -42,7 +49,7 @@ export function mutateDevNamespace(mutator: (namespace: DevNamespace) => void): 
  * Retrieve the current development namespace (dev mode only).
  */
 export function getDevNamespace(): DevNamespace | undefined {
-  if (!import.meta.env.DEV) {
+  if (!_env.DEV) {
     return undefined;
   }
 

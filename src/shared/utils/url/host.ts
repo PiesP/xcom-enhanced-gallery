@@ -5,7 +5,6 @@
  * relative support) and matching against allow-listed hostnames.
  */
 
-const ABSOLUTE_PROTOCOL_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
 const FALLBACK_BASE_URL = 'https://x.com';
 
 export interface HostMatchOptions {
@@ -25,7 +24,7 @@ export interface HostMatchOptions {
  */
 export function tryParseUrl(
   value: string | URL | null | undefined,
-  base: string = FALLBACK_BASE_URL,
+  base: string = FALLBACK_BASE_URL
 ): URL | null {
   if (value instanceof URL) {
     return value;
@@ -43,10 +42,6 @@ export function tryParseUrl(
   try {
     if (trimmed.startsWith('//')) {
       return new URL(`https:${trimmed}`);
-    }
-
-    if (ABSOLUTE_PROTOCOL_REGEX.test(trimmed)) {
-      return new URL(trimmed);
     }
 
     return new URL(trimmed, base);
@@ -69,9 +64,9 @@ export function getHostname(value: string | URL | null | undefined): string | nu
 export function isHostMatching(
   value: string | URL | null | undefined,
   allowedHosts: readonly string[],
-  options: HostMatchOptions = {},
+  options: HostMatchOptions = {}
 ): boolean {
-  if (!Array.isArray(allowedHosts) || allowedHosts.length === 0) {
+  if (!Array.isArray(allowedHosts)) {
     return false;
   }
 
@@ -83,7 +78,7 @@ export function isHostMatching(
   const hostname = parsed.hostname.toLowerCase();
   const allowSubdomains = options.allowSubdomains === true;
 
-  return allowedHosts.some((host) => {
+  return allowedHosts.some(host => {
     const normalized = host.toLowerCase();
     if (hostname === normalized) {
       return true;

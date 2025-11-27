@@ -13,10 +13,7 @@
  * @returns Parsed integer or 0 (on parse failure)
  */
 export function safeParseInt(value: string | undefined | null, radix: number = 10): number {
-  if (value === undefined || value === null || value === '') {
-    return 0;
-  }
-  const result = parseInt(value, radix);
+  const result = parseInt(value as string, radix);
   return isNaN(result) ? 0 : result;
 }
 
@@ -24,10 +21,7 @@ export function safeParseInt(value: string | undefined | null, radix: number = 1
  * Safe parseFloat function
  */
 export function safeParseFloat(value: string | undefined | null): number {
-  if (value === undefined || value === null || value === '') {
-    return 0;
-  }
-  const result = parseFloat(value);
+  const result = parseFloat(value as string);
   return isNaN(result) ? 0 : result;
 }
 
@@ -95,7 +89,7 @@ export function safeTweetId(value: string | undefined): string {
  * EventListener-compatible function wrapper (for TypeScript strict mode)
  */
 export function createEventListener<T extends Event = Event>(
-  handler: (this: EventTarget, event: T) => void,
+  handler: (this: EventTarget, event: T) => void
 ): EventListener {
   return handler as unknown as EventListener;
 }

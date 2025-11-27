@@ -62,12 +62,12 @@ export class TwitterAPI {
         const quotedMedia = TwitterResponseParser.extractMediaFromTweet(
           quotedTweet,
           quotedUser,
-          'quoted',
+          'quoted'
         );
 
         const sortedQuotedMedia = sortMediaByVisualOrder(quotedMedia);
 
-        const adjustedResult = result.map((media) => ({
+        const adjustedResult = result.map(media => ({
           ...media,
           index: media.index + sortedQuotedMedia.length,
         }));
@@ -114,7 +114,7 @@ export class TwitterAPI {
       if (!response.ok) {
         logger.warn(
           `Twitter API request failed: ${response.status} ${response.statusText}`,
-          response.data,
+          response.data
         );
         throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
       }
@@ -126,13 +126,11 @@ export class TwitterAPI {
       }
 
       // Cache on success
-      if (response.ok) {
-        if (TwitterAPI.requestCache.size >= TwitterAPI.CACHE_LIMIT) {
-          const firstKey = TwitterAPI.requestCache.keys().next().value;
-          if (firstKey) TwitterAPI.requestCache.delete(firstKey);
-        }
-        TwitterAPI.requestCache.set(_url, json);
+      if (TwitterAPI.requestCache.size >= TwitterAPI.CACHE_LIMIT) {
+        const firstKey = TwitterAPI.requestCache.keys().next().value;
+        TwitterAPI.requestCache.delete(firstKey);
       }
+      TwitterAPI.requestCache.set(_url, json);
 
       return json;
     } catch (error) {

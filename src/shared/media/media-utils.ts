@@ -14,10 +14,6 @@ import type { MediaInfo } from '@shared/types/media.types';
  * @returns Deduplicated array (original order preserved)
  */
 function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => string): T[] {
-  if (!items?.length) {
-    return [];
-  }
-
   const seen = new Set<string>();
   const uniqueItems: T[] = [];
 
@@ -47,7 +43,11 @@ function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => str
  * @returns Deduplicated array of media items
  */
 export function removeDuplicateMediaItems(mediaItems: readonly MediaInfo[]): MediaInfo[] {
-  const result = removeDuplicates(mediaItems, (item) => item.originalUrl ?? item.url);
+  if (!mediaItems?.length) {
+    return [];
+  }
+
+  const result = removeDuplicates(mediaItems, item => item.originalUrl ?? item.url);
 
   if (__DEV__) {
     const removedCount = mediaItems.length - result.length;
@@ -70,12 +70,8 @@ export function removeDuplicateMediaItems(mediaItems: readonly MediaInfo[]): Med
 export function extractVisualIndexFromUrl(url: string): number {
   if (!url) return 0;
   const match = url.match(/\/(photo|video)\/(\d+)$/);
-  const visualNumberStr = match?.[2];
-  if (visualNumberStr) {
-    const visualNumber = Number.parseInt(visualNumberStr, 10);
-    return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
-  }
-  return 0;
+  const visualNumber = match ? Number.parseInt(match[2], 10) : NaN;
+  return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
 }
 
 /**
@@ -84,7 +80,7 @@ export function extractVisualIndexFromUrl(url: string): number {
 export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMediaEntry[] {
   if (mediaItems.length <= 1) return mediaItems;
 
-  const withVisualIndex = mediaItems.map((media) => {
+  const withVisualIndex = mediaItems.map(media => {
     const visualIndex = extractVisualIndexFromUrl(media.expanded_url);
     return { media, visualIndex };
   });
@@ -193,7 +189,7 @@ export function normalizeMediaUrl(url: string): string | null {
 export function adjustClickedIndexAfterDeduplication(
   originalItems: MediaInfo[],
   uniqueItems: MediaInfo[],
-  originalClickedIndex: number,
+  originalClickedIndex: number
 ): number {
   if (uniqueItems.length === 0) return 0;
 
@@ -204,7 +200,7 @@ export function adjustClickedIndexAfterDeduplication(
   if (!clickedItem) return 0;
 
   const clickedKey = clickedItem.originalUrl ?? clickedItem.url;
-  const newIndex = uniqueItems.findIndex((item) => {
+  const newIndex = uniqueItems.findIndex(item => {
     const itemKey = item.originalUrl ?? item.url;
     return itemKey === clickedKey;
   });

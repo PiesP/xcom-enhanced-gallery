@@ -9,7 +9,7 @@ import type {
 
 export async function downloadAsZip(
   items: OrchestratorItem[],
-  options: OrchestratorOptions = {},
+  options: OrchestratorOptions = {}
 ): Promise<ZipResult> {
   const { StreamingZipWriter } = await import('@shared/external/zip');
   const writer = new StreamingZipWriter();
@@ -35,7 +35,6 @@ export async function downloadAsZip(
 
       const index = currentIndex++;
       const item = items[index];
-      if (!item) break;
 
       options.onProgress?.({
         phase: 'downloading',
@@ -55,7 +54,7 @@ export async function downloadAsZip(
             item.url,
             retries,
             abortSignal,
-            DEFAULT_BACKOFF_BASE_MS,
+            DEFAULT_BACKOFF_BASE_MS
           );
         }
 
