@@ -11,6 +11,11 @@ import { createClassName } from '@shared/utils/text/formatting';
  * @description Prevents accidental overwrites and name collisions
  */
 const DISPOSE_SYMBOL = Symbol('xeg-gallery-container-dispose');
+const ESCAPE_LISTENER_STORAGE_KEY = '__xegCapturedEscapeListener';
+
+type EscapeCaptureWindow = typeof window & {
+  [ESCAPE_LISTENER_STORAGE_KEY]?: (event: KeyboardEvent) => void;
+};
 
 // ============================================================================
 // Type Definitions
@@ -27,6 +32,8 @@ export interface GalleryContainerProps {
   onClose?: () => void;
   /** Additional CSS class names */
   className?: string;
+  /** Optional hook to observe the Escape key listener (testing utilities) */
+  registerEscapeListener?: (listener: (event: KeyboardEvent) => void) => void;
 }
 
 type HostElement = HTMLElement & {
@@ -133,26 +140,41 @@ export function GalleryContainer({
   children,
   onClose,
   className,
+  registerEscapeListener,
 }: GalleryContainerProps): JSXElement {
   const { createEffect, onCleanup } = getSolid();
   const classes = createClassName('xeg-gallery-overlay', 'xeg-gallery-container', className);
+  const hasCloseHandler = typeof onClose === 'function';
+
+  const escapeListener = (event: Event) => {
+    if (!hasCloseHandler) {
+      return;
+    }
+
+    const keyboardEvent = event as KeyboardEvent;
+    if (keyboardEvent.key === 'Escape') {
+      keyboardEvent.preventDefault();
+      keyboardEvent.stopPropagation();
+      onClose?.();
+    }
+  };
+
+  if (hasCloseHandler && registerEscapeListener && typeof window !== 'undefined') {
+    const captureWindow = window as EscapeCaptureWindow;
+    captureWindow[ESCAPE_LISTENER_STORAGE_KEY] = escapeListener as (event: KeyboardEvent) => void;
+    registerEscapeListener(escapeListener as (event: KeyboardEvent) => void);
+  }
 
   // Setup keyboard event handling
   createEffect(() => {
-    if (!onClose) {
+    if (!hasCloseHandler) {
       return;
     }
 
     // Register Escape key handler
     const eventManager = EventManager.getInstance();
-    const listenerId = eventManager.addListener(document, 'keydown', (event) => {
-      const keyboardEvent = event as KeyboardEvent;
-      if (keyboardEvent.key === 'Escape') {
-        keyboardEvent.preventDefault();
-        keyboardEvent.stopPropagation();
-        onClose();
-      }
-    });
+
+    const listenerId = eventManager.addListener(document, 'keydown', escapeListener);
 
     // Cleanup listener on component unmount
     onCleanup(() => {
