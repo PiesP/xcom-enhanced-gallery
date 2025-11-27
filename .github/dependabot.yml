@@ -10,8 +10,6 @@ updates:
     # Check the npm registry for updates every day (weekdays)
     schedule:
       interval: "daily"
-    cooldown:
-    default-days: 7
     # Group updates to reduce noise
     groups:
       dependencies:
@@ -26,8 +24,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    cooldown:
-    default-days: 7
     groups:
       actions:
         patterns:

@@ -66,14 +66,33 @@ function resolveFeatureStates(settings?: SettingsWithFeatures | null): Record<Fe
   );
 }
 
-const isDevBuild = __DEV__;
-const debug = isDevBuild ? (message: string) => logger.debug(message) : () => {};
+const getDevOverride = (): boolean | undefined => {
+  const scopedGlobal = globalThis as { __XEG_DEV__?: boolean } | undefined;
+  if (scopedGlobal && typeof scopedGlobal.__XEG_DEV__ === 'boolean') {
+    return scopedGlobal.__XEG_DEV__;
+  }
+  return undefined;
+};
+
+const isDevelopmentBuild = (): boolean => {
+  const override = getDevOverride();
+  if (typeof override === 'boolean') {
+    return override;
+  }
+  return __DEV__;
+};
+
+const debug = (message: string) => {
+  if (isDevelopmentBuild()) {
+    logger.debug(message);
+  }
+};
 
 /**
  * Feature Loader definition
  * Phase 346: Declarative loader pattern
  */
-interface FeatureLoader {
+export interface FeatureLoader {
   flag: FeatureKey;
   name: string;
   load: () => Promise<void>;
@@ -84,7 +103,18 @@ interface FeatureLoader {
  * Feature Loaders array
  * Phase 346: Declarative definition to eliminate duplicate code
  */
-const FEATURE_LOADERS: readonly FeatureLoader[] = [];
+const featureLoaders: FeatureLoader[] = [];
+
+export function registerFeatureLoader(loader: FeatureLoader): void {
+  featureLoaders.push(loader);
+}
+
+/**
+ * @internal Used exclusively by tests to ensure isolation
+ */
+export function resetFeatureLoaders(): void {
+  featureLoaders.splice(0, featureLoaders.length);
+}
 
 const DEFAULT_FEATURE_SETTINGS: Readonly<SettingsWithFeatures> = Object.freeze({
   features: { ...DEFAULT_SETTINGS.features },
@@ -143,8 +173,8 @@ export async function registerFeatureServicesLazy(): Promise<void> {
     const featureStates = resolveFeatureStates(settings);
 
     // Phase 346: Declarative loader pattern
-    for (const loader of FEATURE_LOADERS) {
-      if (loader.devOnly && !isDevBuild) {
+    for (const loader of featureLoaders) {
+      if (loader.devOnly && !isDevelopmentBuild()) {
         continue;
       }
 
