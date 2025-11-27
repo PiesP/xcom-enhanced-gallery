@@ -218,6 +218,21 @@ function VerticalGalleryViewCore({
   const handleFitHeight = (event?: Event) => applyFitMode('fitHeight', event);
   const handleFitContainer = (event?: Event) => applyFitMode('fitContainer', event);
 
+  const handlePrevious = () => {
+    const current = currentIndex();
+    if (current > 0) {
+      navigateToItem(current - 1, 'click');
+    }
+  };
+
+  const handleNext = () => {
+    const current = currentIndex();
+    const items = mediaItems();
+    if (current < items.length - 1) {
+      navigateToItem(current + 1, 'click');
+    }
+  };
+
   const handleBackgroundClick = (event: MouseEvent) => {
     const target = event.target as HTMLElement;
     if (
@@ -261,19 +276,21 @@ function VerticalGalleryViewCore({
 
   return (
     <div
-      ref={(el) => setContainerEl(el ?? null)}
-      class={`${styles.container} ${isInitialToolbarVisible() ? styles.initialToolbarVisible : ''} ${isScrolling() ? styles.isScrolling : ''} ${stringWithDefault(className, '')}`}
+      ref={el => setContainerEl(el ?? null)}
+      class={`${styles.container} ${
+        isInitialToolbarVisible() ? styles.initialToolbarVisible : ''
+      } ${isScrolling() ? styles.isScrolling : ''} ${stringWithDefault(className, '')}`}
       onClick={handleBackgroundClick}
       data-xeg-gallery="true"
       data-xeg-role="gallery"
     >
       <div class={styles.toolbarHoverZone} data-role="toolbar-hover-zone" />
 
-      <div class={styles.toolbarWrapper} ref={(el) => setToolbarWrapperEl(el ?? null)}>
+      <div class={styles.toolbarWrapper} ref={el => setToolbarWrapperEl(el ?? null)}>
         <Toolbar
           onClose={onClose || (() => {})}
-          onPrevious={onPrevious || (() => {})}
-          onNext={onNext || (() => {})}
+          onPrevious={onPrevious || handlePrevious}
+          onNext={onNext || handleNext}
           currentIndex={currentIndex}
           focusedIndex={focusedIndex}
           totalCount={() => mediaItems().length}
@@ -296,7 +313,7 @@ function VerticalGalleryViewCore({
         class={styles.itemsContainer}
         data-xeg-role="items-container"
         data-xeg-role-compat="items-list"
-        ref={(el) => setItemsContainerEl(el ?? null)}
+        ref={el => setItemsContainerEl(el ?? null)}
       >
         <For each={mediaItems()}>
           {(item, index) => {

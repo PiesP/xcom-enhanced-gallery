@@ -128,7 +128,9 @@ export class TwitterAPI {
       // Cache on success
       if (TwitterAPI.requestCache.size >= TwitterAPI.CACHE_LIMIT) {
         const firstKey = TwitterAPI.requestCache.keys().next().value;
-        TwitterAPI.requestCache.delete(firstKey);
+        if (firstKey) {
+          TwitterAPI.requestCache.delete(firstKey);
+        }
       }
       TwitterAPI.requestCache.set(_url, json);
 

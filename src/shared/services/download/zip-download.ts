@@ -35,6 +35,7 @@ export async function downloadAsZip(
 
       const index = currentIndex++;
       const item = items[index];
+      if (!item) continue;
 
       options.onProgress?.({
         phase: 'downloading',

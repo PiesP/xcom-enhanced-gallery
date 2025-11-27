@@ -70,7 +70,7 @@ export function removeDuplicateMediaItems(mediaItems: readonly MediaInfo[]): Med
 export function extractVisualIndexFromUrl(url: string): number {
   if (!url) return 0;
   const match = url.match(/\/(photo|video)\/(\d+)$/);
-  const visualNumber = match ? Number.parseInt(match[2], 10) : NaN;
+  const visualNumber = match && match[2] ? Number.parseInt(match[2], 10) : NaN;
   return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
 }
 
@@ -81,7 +81,7 @@ export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMedi
   if (mediaItems.length <= 1) return mediaItems;
 
   const withVisualIndex = mediaItems.map(media => {
-    const visualIndex = extractVisualIndexFromUrl(media.expanded_url);
+    const visualIndex = extractVisualIndexFromUrl(media.expanded_url || '');
     return { media, visualIndex };
   });
 
