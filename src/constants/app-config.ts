@@ -8,7 +8,7 @@ import type { AppConfig as BootstrapAppConfig } from '@shared/types/app.types';
 type BooleanFlagValue = string | boolean | undefined;
 
 type EnvSource = Partial<{
-  DEV: boolean;
+  DEV: BooleanFlagValue;
   MODE: string;
   VITE_VERSION: string;
   VITE_AUTO_START: string;
@@ -22,19 +22,26 @@ const APP_NAME = 'X.com Enhanced Gallery';
 const MAX_GALLERY_ITEMS = 100;
 const DEFAULT_ANIMATION_DURATION = 'var(--xeg-duration-normal)';
 
+declare global {
+  var __XEG_IMPORT_META_ENV__: EnvSource | undefined;
+}
+
 const importMetaEnv = resolveImportMetaEnv();
 const nodeEnv = resolveNodeEnv();
 
 const rawVersion =
-  importMetaEnv.VITE_VERSION ??
-  nodeEnv.VITE_VERSION ??
-  nodeEnv.npm_package_version ??
-  FALLBACK_VERSION;
+  resolveStringValue(
+    importMetaEnv.VITE_VERSION,
+    nodeEnv.VITE_VERSION,
+    nodeEnv.npm_package_version
+  ) ?? FALLBACK_VERSION;
+
+const devFlag = parseBooleanFlag(importMetaEnv.DEV);
+const nodeDevFlag = parseBooleanFlag(nodeEnv.DEV);
 
 const mode = importMetaEnv.MODE ?? nodeEnv.NODE_ENV ?? 'production';
 const isTest = mode === 'test';
-const isDev =
-  typeof importMetaEnv.DEV === 'boolean' ? importMetaEnv.DEV : !isTest && mode !== 'production';
+const isDev = devFlag ?? nodeDevFlag ?? (!isTest && mode !== 'production');
 const isProd = !isDev && !isTest;
 
 const autoStartFlag = parseBooleanFlag(importMetaEnv.VITE_AUTO_START ?? nodeEnv.VITE_AUTO_START);
@@ -45,8 +52,7 @@ const debugToolsFlag = parseBooleanFlag(
 const resolvedAppConfig = Object.freeze({
   meta: {
     name: APP_NAME,
-    version:
-      typeof rawVersion === 'string' && rawVersion.length > 0 ? rawVersion : FALLBACK_VERSION,
+    version: rawVersion,
   },
   environment: {
     mode,
@@ -102,6 +108,10 @@ export function createAppConfig(): BootstrapAppConfig {
 }
 
 function resolveImportMetaEnv(): EnvSource {
+  if (typeof globalThis !== 'undefined' && globalThis.__XEG_IMPORT_META_ENV__) {
+    return globalThis.__XEG_IMPORT_META_ENV__;
+  }
+
   try {
     return (import.meta as ImportMeta).env ?? {};
   } catch {
@@ -135,6 +145,20 @@ function parseBooleanFlag(value: BooleanFlagValue): boolean | undefined {
 
     if (['0', 'false', 'no', 'off'].includes(normalized)) {
       return false;
+    }
+  }
+
+  return undefined;
+}
+
+function resolveStringValue(...values: Array<string | undefined>): string | undefined {
+  for (const value of values) {
+    if (typeof value === 'string') {
+      const normalized = value.trim();
+
+      if (normalized.length > 0) {
+        return normalized;
+      }
     }
   }
 
