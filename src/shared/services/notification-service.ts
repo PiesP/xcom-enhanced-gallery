@@ -13,12 +13,6 @@ export interface NotificationOptions {
   onclick?: () => void;
 }
 
-export interface NotificationProviderInfo {
-  provider: 'gm' | 'none';
-  available: boolean;
-  description: string;
-}
-
 interface GlobalWithGMNotification {
   GM_notification?: (details: GMNotificationDetails, ondone?: () => void) => void;
 }
@@ -30,24 +24,6 @@ export class NotificationService {
   static getInstance(): NotificationService {
     if (!NotificationService.instance) NotificationService.instance = new NotificationService();
     return NotificationService.instance;
-  }
-
-  async getNotificationProvider(): Promise<NotificationProviderInfo> {
-    const { detectEnvironment } = await import('@shared/external/userscript');
-    const env = detectEnvironment();
-    const gm = (globalThis as GlobalWithGMNotification).GM_notification;
-    const summary = `theme:${env.colorScheme}/lang:${env.language}`;
-    return gm
-      ? {
-          provider: 'gm',
-          available: true,
-          description: `GM_notification ready (${summary})`,
-        }
-      : {
-          provider: 'none',
-          available: false,
-          description: `GM_notification unavailable (${summary})`,
-        };
   }
 
   private gmNotify(options: NotificationOptions): void {
@@ -78,8 +54,8 @@ export class NotificationService {
   }
 
   async show(options: NotificationOptions): Promise<void> {
-    const provider = await this.getNotificationProvider();
-    if (provider.provider === 'gm') {
+    const gm = (globalThis as GlobalWithGMNotification).GM_notification;
+    if (gm) {
       this.gmNotify(options);
       logger.debug(`Notification (gm): ${options.title}`);
     } else {
@@ -88,21 +64,8 @@ export class NotificationService {
     }
   }
 
-  async success(title: string, text?: string, timeout = 3000): Promise<void> {
-    await this.show({
-      title,
-      text: text ?? 'Completed successfully.',
-      timeout,
-    });
-  }
   async error(title: string, text?: string, timeout = 5000): Promise<void> {
     await this.show({ title, text: text ?? 'An error occurred.', timeout });
-  }
-  async warning(title: string, text?: string, timeout = 4000): Promise<void> {
-    await this.show({ title, text: text ?? 'Warning.', timeout });
-  }
-  async info(title: string, text?: string, timeout = 3000): Promise<void> {
-    await this.show({ title, text: text ?? 'Information.', timeout });
   }
 }
 

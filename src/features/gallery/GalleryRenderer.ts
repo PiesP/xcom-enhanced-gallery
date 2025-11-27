@@ -11,7 +11,6 @@ import { getSolid } from '@shared/external/vendors';
 import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces';
 import { logger } from '@shared/logging';
 import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
-import { NotificationService } from '@shared/services/notification-service';
 import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
 import {
   closeGallery,
@@ -33,7 +32,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private stateUnsubscribe: (() => void) | null = null;
   private onCloseCallback?: () => void;
   private disposeApp: (() => void) | null = null;
-  private readonly notificationService = NotificationService.getInstance();
 
   constructor() {
     this.setupStateSubscription();
@@ -44,7 +42,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   private setupStateSubscription(): void {
-    this.stateUnsubscribe = gallerySignals.isOpen.subscribe((isOpen) => {
+    this.stateUnsubscribe = gallerySignals.isOpen.subscribe(isOpen => {
       if (isOpen && !this.container) {
         this.renderGallery();
       } else if (!isOpen && this.container) {
@@ -101,7 +99,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
       const [, setCurrentLanguage] = createSignal(languageService.getCurrentLanguage());
 
       const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));
-      const unbindLang = languageService.onLanguageChange((lang) => setCurrentLanguage(lang));
+      const unbindLang = languageService.onLanguageChange(lang => setCurrentLanguage(lang));
 
       onCleanup(() => {
         unbindTheme();
@@ -153,9 +151,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
         const currentMedia = mediaItems[gallerySignals.currentIndex.value];
         if (currentMedia) {
           const result = await downloadService.downloadSingle(currentMedia);
-          if (result.success) {
-            this.notificationService.success(`Download complete: ${result.filename}`);
-          } else {
+          if (!result.success) {
             setError(result.error || 'Download failed.');
           }
         }
@@ -163,11 +159,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
         await this.ensureDownloadService();
 
         const result = await downloadService.downloadBulk([...mediaItems]);
-        if (result.success) {
-          this.notificationService.success(
-            `Bulk download complete: ${result.filesSuccessful} files`,
-          );
-        } else {
+        if (!result.success) {
           setError(result.error || 'Download failed.');
         }
       }
@@ -211,7 +203,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
   async render(
     mediaItems: readonly MediaInfo[],
-    renderOptions?: GalleryRenderOptions,
+    renderOptions?: GalleryRenderOptions
   ): Promise<void> {
     openGallery(mediaItems, renderOptions?.startIndex ?? 0);
   }
