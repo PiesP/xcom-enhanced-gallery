@@ -2,6 +2,10 @@
  * Navigation State Machine for Gallery
  *
  * Pure function collection that exposes deterministic navigation transitions.
+ *
+ * Note: This machine tracks navigation metadata (source, timing) but does NOT
+ * manage currentIndex/focusedIndex values directly. Those are managed by
+ * gallery.signals.ts to avoid duplication and maintain single source of truth.
  */
 
 import type { NavigationSource } from '@shared/types/navigation.types';
@@ -11,10 +15,9 @@ import type { NavigationSource } from '@shared/types/navigation.types';
 // ============================================================================
 
 export interface NavigationState {
-  readonly currentIndex: number;
-  readonly focusedIndex: number | null;
   readonly lastSource: NavigationSource;
   readonly lastTimestamp: number;
+  readonly lastNavigatedIndex: number | null;
 }
 
 export type NavigationTrigger = 'button' | 'click' | 'keyboard' | 'scroll';
@@ -57,10 +60,9 @@ export const NavigationStateMachine = {
 
 function createInitialState(): NavigationState {
   return {
-    currentIndex: 0,
-    focusedIndex: null,
     lastSource: 'auto-focus',
     lastTimestamp: Date.now(),
+    lastNavigatedIndex: null,
   };
 }
 
@@ -83,13 +85,14 @@ function handleNavigate(
     targetIndex: number;
     source: NavigationSource;
     trigger: NavigationTrigger;
-  },
+  }
 ): NavigationTransitionResult {
   const { targetIndex, source } = payload;
   const timestamp = Date.now();
 
+  // Detect duplicate navigation: same index, both manual sources
   const isDuplicateManual =
-    targetIndex === state.currentIndex &&
+    targetIndex === state.lastNavigatedIndex &&
     isManualSource(source) &&
     isManualSource(state.lastSource);
 
@@ -97,18 +100,16 @@ function handleNavigate(
     return createResult(
       {
         ...state,
-        focusedIndex: targetIndex,
         lastTimestamp: timestamp,
       },
-      true,
+      true
     );
   }
 
   return createResult({
-    currentIndex: targetIndex,
-    focusedIndex: targetIndex,
     lastSource: source,
     lastTimestamp: timestamp,
+    lastNavigatedIndex: targetIndex,
   });
 }
 
@@ -116,29 +117,15 @@ function handleSetFocus(
   state: NavigationState,
   payload: { focusIndex: number | null; source: NavigationSource },
 ): NavigationTransitionResult {
-  const { focusIndex, source } = payload;
+  const { source } = payload;
   const timestamp = Date.now();
 
-  if (focusIndex === null) {
-    return createResult({
-      ...state,
-      focusedIndex: null,
-      lastSource: source,
-      lastTimestamp: timestamp,
-    });
-  }
-
-  const isDuplicate = focusIndex === state.focusedIndex;
-
-  return createResult(
-    {
-      ...state,
-      focusedIndex: focusIndex,
-      lastSource: source,
-      lastTimestamp: timestamp,
-    },
-    isDuplicate,
-  );
+  // Focus changes don't affect navigation history, just update metadata
+  return createResult({
+    ...state,
+    lastSource: source,
+    lastTimestamp: timestamp,
+  });
 }
 
 function handleReset(): NavigationTransitionResult {

@@ -135,20 +135,24 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
       return;
     }
 
+    let unsubscribe: (() => void) | null = null;
+
     const handleEntry = (entry: IntersectionObserverEntry) => {
       if (entry.isIntersecting) {
         setIsVisible(true);
-        SharedObserver.unobserve(container);
+        unsubscribe?.();
+        unsubscribe = null;
       }
     };
 
-    SharedObserver.observe(container, handleEntry, {
+    unsubscribe = SharedObserver.observe(container, handleEntry, {
       threshold: 0.1,
       rootMargin: '100px',
     });
 
     onCleanup(() => {
-      SharedObserver.unobserve(container);
+      unsubscribe?.();
+      unsubscribe = null;
     });
   });
 

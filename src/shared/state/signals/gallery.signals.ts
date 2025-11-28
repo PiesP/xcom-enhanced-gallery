@@ -219,6 +219,10 @@ export function closeGallery(): void {
 
 /**
  * Navigate to media item
+ *
+ * Synchronizes both currentIndex and focusedIndex to maintain consistency.
+ * The focusedIndex represents the visual focus state and should always
+ * match currentIndex after navigation.
  */
 export function navigateToItem(
   index: number,
@@ -240,7 +244,8 @@ export function navigateToItem(
   navigationState = result.newState;
 
   if (result.isDuplicate) {
-    logger.debug(`[Gallery] Already at index ${index} (source: ${source}), syncing focusedIndex`);
+    logger.debug(`[Gallery] Already at index ${index} (source: ${source}), ensuring sync`);
+    // Ensure focusedIndex is synced even on duplicate navigation
     gallerySignals.focusedIndex.value = validIndex;
     return;
   }
@@ -251,31 +256,45 @@ export function navigateToItem(
     trigger,
   });
 
-  galleryState.value = {
-    ...state,
-    currentIndex: validIndex,
-  };
-
-  gallerySignals.focusedIndex.value = validIndex;
+  // Update both indices in sync
+  batch(() => {
+    galleryState.value = {
+      ...state,
+      currentIndex: validIndex,
+    };
+    gallerySignals.focusedIndex.value = validIndex;
+  });
 
   galleryIndexEvents.emit('navigate:complete', { index: validIndex, trigger });
 
   logger.debug(`[Gallery] Navigated to item: ${index} (trigger: ${trigger}, source: ${source})`);
 }
 
+/**
+ * Navigate to previous item (with wrap-around)
+ *
+ * Uses focusedIndex as base if available (for scroll-based navigation),
+ * otherwise falls back to currentIndex.
+ */
 export function navigatePrevious(
   trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button',
 ): void {
   const state = galleryState.value;
-  const baseIndex = gallerySignals.focusedIndex.value ?? state.currentIndex;
+  const baseIndex = getCurrentActiveIndex();
   const newIndex = baseIndex > 0 ? baseIndex - 1 : state.mediaItems.length - 1;
   const source: NavigationSource = trigger === 'button' ? 'button' : 'keyboard';
   navigateToItem(newIndex, trigger, source);
 }
 
+/**
+ * Navigate to next item (with wrap-around)
+ *
+ * Uses focusedIndex as base if available (for scroll-based navigation),
+ * otherwise falls back to currentIndex.
+ */
 export function navigateNext(trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button'): void {
   const state = galleryState.value;
-  const baseIndex = gallerySignals.focusedIndex.value ?? state.currentIndex;
+  const baseIndex = getCurrentActiveIndex();
   const newIndex = baseIndex < state.mediaItems.length - 1 ? baseIndex + 1 : 0;
   const source: NavigationSource = trigger === 'button' ? 'button' : 'keyboard';
   navigateToItem(newIndex, trigger, source);
@@ -343,6 +362,17 @@ export function setViewMode(viewMode: 'horizontal' | 'vertical'): void {
 // ============================================================================
 // Selectors
 // ============================================================================
+
+/**
+ * Get the current active index (focused or current)
+ *
+ * Returns focusedIndex if available (user is scrolling/viewing a specific item),
+ * otherwise returns currentIndex (the officially navigated-to item).
+ * This provides a single source of truth for "which item is the user looking at".
+ */
+export function getCurrentActiveIndex(): number {
+  return gallerySignals.focusedIndex.value ?? galleryState.value.currentIndex;
+}
 
 export function getCurrentMediaItem(): MediaInfo | null {
   const state = galleryState.value;

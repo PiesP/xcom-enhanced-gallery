@@ -9,6 +9,7 @@ import type { Accessor } from 'solid-js';
 export interface FocusCoordinatorOptions {
   isEnabled: Accessor<boolean>;
   container: Accessor<HTMLElement | null>;
+  activeIndex: Accessor<number>;
   onFocusChange: (index: number | null, source: 'auto' | 'manual') => void;
   threshold?: number | number[];
   rootMargin?: string;
@@ -18,6 +19,7 @@ interface TrackedItem {
   element: HTMLElement;
   isVisible: boolean;
   entry?: IntersectionObserverEntry;
+  unsubscribe?: () => void;
 }
 
 interface FocusCandidate {
@@ -33,7 +35,6 @@ const DEFAULTS = {
 export class FocusCoordinator {
   private readonly items = new Map<number, TrackedItem>();
   private readonly observerOptions: { threshold: number | number[]; rootMargin: string };
-  private lastAutoFocusIndex: number | null = null;
 
   constructor(private readonly options: FocusCoordinatorOptions) {
     this.observerOptions = {
@@ -44,32 +45,31 @@ export class FocusCoordinator {
 
   registerItem(index: number, element: HTMLElement | null): void {
     const prev = this.items.get(index);
-    if (prev) SharedObserver.unobserve(prev.element);
+    prev?.unsubscribe?.();
 
     if (!element) {
       this.items.delete(index);
-      if (this.lastAutoFocusIndex === index) {
-        this.lastAutoFocusIndex = null;
-      }
       return;
     }
 
-    this.items.set(index, { element, isVisible: false });
-    SharedObserver.observe(
+    const trackedItem: TrackedItem = { element, isVisible: false };
+    trackedItem.unsubscribe = SharedObserver.observe(
       element,
-      (entry) => {
+      entry => {
         const item = this.items.get(index);
         if (item) {
           item.entry = entry;
           item.isVisible = entry.isIntersecting;
         }
       },
-      this.observerOptions,
+      this.observerOptions
     );
+
+    this.items.set(index, trackedItem);
   }
 
-  updateFocus(): void {
-    if (!this.options.isEnabled()) return;
+  updateFocus(force: boolean = false): void {
+    if (!force && !this.options.isEnabled()) return;
 
     const container = this.options.container();
     if (!container) return;
@@ -79,8 +79,8 @@ export class FocusCoordinator {
 
     if (!selection) return;
 
-    const hasChanged = this.lastAutoFocusIndex !== selection.index;
-    this.lastAutoFocusIndex = selection.index;
+    const currentIndex = this.options.activeIndex();
+    const hasChanged = currentIndex !== selection.index;
 
     if (hasChanged) {
       this.options.onFocusChange(selection.index, 'auto');
@@ -89,30 +89,79 @@ export class FocusCoordinator {
 
   cleanup(): void {
     for (const item of this.items.values()) {
-      SharedObserver.unobserve(item.element);
+      item.unsubscribe?.();
     }
     this.items.clear();
-    this.lastAutoFocusIndex = null;
   }
 
   private selectBestCandidate(containerRect: DOMRect): FocusCandidate | null {
     const viewportHeight = Math.max(containerRect.height, 1);
-    const viewportCenter = containerRect.top + viewportHeight / 2;
+    const viewportTop = containerRect.top;
+    const viewportBottom = viewportTop + viewportHeight;
+    const viewportCenter = viewportTop + viewportHeight / 2;
+
+    // Threshold for considering an image top as "very close" to viewport top (in pixels)
+    const topProximityThreshold = 50;
 
     let bestCandidate: FocusCandidate | null = null;
+    let topAlignedCandidate: FocusCandidate | null = null;
+    let highestVisibilityCandidate: {
+      index: number;
+      ratio: number;
+      centerDistance: number;
+    } | null = null;
 
     for (const [index, item] of this.items) {
       if (!item.isVisible || !item.element.isConnected) continue;
 
       const rect = item.element.getBoundingClientRect();
-      const itemCenter = rect.top + rect.height / 2;
-      const distance = Math.abs(itemCenter - viewportCenter);
+      const itemTop = rect.top;
+      const itemHeight = rect.height;
+      const itemBottom = itemTop + itemHeight;
+      const itemCenter = itemTop + itemHeight / 2;
 
-      if (!bestCandidate || distance < bestCandidate.distance) {
-        bestCandidate = { index, distance };
+      // Calculate actual visible portion within viewport
+      const visibleTop = Math.max(itemTop, viewportTop);
+      const visibleBottom = Math.min(itemBottom, viewportBottom);
+      const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+      const visibilityRatio = itemHeight > 0 ? visibleHeight / itemHeight : 0;
+      const centerDistance = Math.abs(itemCenter - viewportCenter);
+
+      // Check if image top is very close to viewport top
+      const topDistance = Math.abs(itemTop - viewportTop);
+      if (topDistance <= topProximityThreshold && visibilityRatio > 0.1) {
+        if (!topAlignedCandidate || topDistance < topAlignedCandidate.distance) {
+          topAlignedCandidate = { index, distance: topDistance };
+        }
+      }
+
+      // Track highest visibility candidate (most visible item in viewport)
+      // On equal visibility ratio, prefer the one closer to center
+      if (visibilityRatio > 0.1) {
+        const isBetterVisibility =
+          !highestVisibilityCandidate ||
+          visibilityRatio > highestVisibilityCandidate.ratio ||
+          (visibilityRatio === highestVisibilityCandidate.ratio &&
+            centerDistance < highestVisibilityCandidate.centerDistance);
+
+        if (isBetterVisibility) {
+          highestVisibilityCandidate = { index, ratio: visibilityRatio, centerDistance };
+        }
+      }
+
+      // Center-based candidate as final fallback
+      if (!bestCandidate || centerDistance < bestCandidate.distance) {
+        bestCandidate = { index, distance: centerDistance };
       }
     }
 
+    // Priority: top-aligned > highest visibility > center-based
+    if (topAlignedCandidate) {
+      return topAlignedCandidate;
+    }
+    if (highestVisibilityCandidate) {
+      return { index: highestVisibilityCandidate.index, distance: 0 };
+    }
     return bestCandidate;
   }
 }

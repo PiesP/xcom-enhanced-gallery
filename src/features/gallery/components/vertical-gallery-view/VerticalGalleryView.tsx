@@ -117,19 +117,8 @@ function VerticalGalleryViewCore({
     hasItems: () => mediaItems().length > 0,
   });
 
-  // Focus tracking
-  const {
-    focusedIndex,
-    registerItem: registerFocusItem,
-    handleItemFocus,
-    handleItemBlur,
-    applyFocusAfterNavigation,
-    setManualFocus,
-    forceSync: focusTrackerForceSync,
-  } = useGalleryFocusTracker({
-    container: () => containerEl(),
-    isEnabled: isVisible,
-  });
+  // Forward declaration for focus sync (to break circular dependency)
+  const [focusSyncCallback, setFocusSyncCallback] = createSignal<(() => void) | null>(null);
 
   // Scroll tracking
   const { isScrolling } = useGalleryScroll({
@@ -137,7 +126,7 @@ function VerticalGalleryViewCore({
     scrollTarget: () => itemsContainerEl(),
     enabled: isVisible,
     programmaticScrollTimestamp: () => navigationState.programmaticScrollTimestamp(),
-    onScrollEnd: () => focusTrackerForceSync(),
+    onScrollEnd: () => focusSyncCallback()?.(),
   });
 
   // Item scroll handling - defined before navigation hook
@@ -157,8 +146,23 @@ function VerticalGalleryViewCore({
   const navigationState = useGalleryNavigation({
     isVisible,
     scrollToItem,
-    applyFocusAfterNavigation,
   });
+
+  // Focus tracking
+  const {
+    focusedIndex,
+    registerItem: registerFocusItem,
+    handleItemFocus,
+    forceSync: focusTrackerForceSync,
+  } = useGalleryFocusTracker({
+    container: () => containerEl(),
+    isEnabled: isVisible,
+    isScrolling,
+    lastNavigationTrigger: navigationState.lastNavigationTrigger,
+  });
+
+  // Register focus sync callback
+  createEffect(() => setFocusSyncCallback(() => focusTrackerForceSync));
 
   // Gallery lifecycle (animations, video cleanup, viewport CSS vars)
   useGalleryLifecycle({
@@ -167,10 +171,9 @@ function VerticalGalleryViewCore({
     isVisible,
   });
 
-  // Clear manual focus and hide toolbar when user scrolls
+  // Hide toolbar when user scrolls
   createEffect(() => {
     if (isScrolling()) {
-      setManualFocus(null);
       setIsInitialToolbarVisible(false);
     }
   });
@@ -186,7 +189,8 @@ function VerticalGalleryViewCore({
       return;
     }
 
-    applyFocusAfterNavigation(currentIndex());
+    // Initial focus is treated as keyboard/manual navigation
+    navigateToItem(currentIndex(), 'click');
   });
 
   // Fit mode state
@@ -207,7 +211,7 @@ function VerticalGalleryViewCore({
     setImageFitMode(mode);
     void persistFitMode(mode);
     scrollToCurrentItem();
-    applyFocusAfterNavigation(currentIndex());
+    navigateToItem(currentIndex(), 'click');
   };
 
   // Event handlers
@@ -378,7 +382,6 @@ function VerticalGalleryViewCore({
                 }
                 {...(onDownloadCurrent ? { onDownload: handleDownloadCurrent } : {})}
                 onFocus={() => handleItemFocus(actualIndex)}
-                onBlur={() => handleItemBlur(actualIndex)}
               />
             );
           }}

@@ -101,13 +101,13 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
       }
     };
 
-    SharedObserver.observe(containerEl, handleVisibilityChange, {
+    const unsubscribe = SharedObserver.observe(containerEl, handleVisibilityChange, {
       threshold: 0,
       rootMargin: '0px',
     });
 
     onCleanup(() => {
-      SharedObserver.unobserve(containerEl);
+      unsubscribe?.();
     });
   });
 }

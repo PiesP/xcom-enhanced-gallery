@@ -15,8 +15,8 @@ import { FocusCoordinator } from '@features/gallery/logic/focus-coordinator';
 import { getSolid } from '@shared/external/vendors';
 import {
   gallerySignals,
+  galleryState,
   navigateToItem,
-  setFocusedIndex,
 } from '@shared/state/signals/gallery.signals';
 import { toAccessor } from '@shared/utils/solid/solid-helpers';
 import type { Accessor } from 'solid-js';
@@ -29,6 +29,10 @@ export interface UseGalleryFocusTrackerOptions {
   container: MaybeAccessor<HTMLElement | null>;
   /** Whether tracking is enabled */
   isEnabled: MaybeAccessor<boolean>;
+  /** Whether user is currently scrolling */
+  isScrolling: Accessor<boolean>;
+  /** Last navigation trigger */
+  lastNavigationTrigger: Accessor<string | null>;
   /** IntersectionObserver threshold (default: 0) */
   threshold?: number | number[];
   /** IntersectionObserver root margin (default: '0px') */
@@ -43,37 +47,36 @@ export interface UseGalleryFocusTrackerReturn {
   registerItem: (index: number, element: HTMLElement | null) => void;
   /** Handle manual focus (user click/interaction) */
   handleItemFocus: (index: number) => void;
-  /** Handle blur from item */
-  handleItemBlur: (index: number) => void;
   /** Force immediate recomputation (bypasses debounce) */
   forceSync: () => void;
-  /** Set or clear manual focus */
-  setManualFocus: (index: number | null) => void;
-  /** Apply focus after navigation */
-  applyFocusAfterNavigation: (index: number) => void;
 }
 
-const { createSignal, onCleanup } = getSolid();
+const { onCleanup } = getSolid();
 
 /**
  * Track gallery item focus based on scroll position.
  * Uses IntersectionObserver for efficient visibility detection.
  */
 export function useGalleryFocusTracker(
-  options: UseGalleryFocusTrackerOptions,
+  options: UseGalleryFocusTrackerOptions
 ): UseGalleryFocusTrackerReturn {
-  const [manualFocusIndex, setManualFocusIndex] = createSignal<number | null>(null);
-
   const isEnabled = toAccessor(options.isEnabled);
   const container = toAccessor(options.container);
+  const isScrolling = options.isScrolling;
+  const lastNavigationTrigger = options.lastNavigationTrigger;
+
+  const shouldTrack = () => {
+    return isEnabled() && (isScrolling() || lastNavigationTrigger() === 'scroll');
+  };
 
   const coordinator = new FocusCoordinator({
-    isEnabled: () => isEnabled() && manualFocusIndex() === null,
+    isEnabled: shouldTrack,
     container,
+    activeIndex: () => galleryState.value.currentIndex,
     ...(options.threshold !== undefined && { threshold: options.threshold }),
     rootMargin: options.rootMargin ?? '0px',
     onFocusChange: (index, source) => {
-      if (source === 'auto' && manualFocusIndex() === null && index !== null) {
+      if (source === 'auto' && index !== null) {
         // 'auto-focus' source prevents auto-scroll in navigation handler
         navigateToItem(index, 'scroll', 'auto-focus');
       }
@@ -82,25 +85,15 @@ export function useGalleryFocusTracker(
 
   onCleanup(() => coordinator.cleanup());
 
-  const setFocus = (index: number): void => {
-    setManualFocusIndex(index);
-    setFocusedIndex(index);
-  };
-
-  const setManualFocus = (index: number | null): void => {
-    setManualFocusIndex(index);
-    if (index !== null) setFocus(index);
+  const handleItemFocus = (index: number): void => {
+    // Treat focus event (e.g. Tab) as keyboard navigation
+    navigateToItem(index, 'keyboard');
   };
 
   return {
     focusedIndex: () => gallerySignals.focusedIndex.value,
     registerItem: (index, element) => coordinator.registerItem(index, element),
-    handleItemFocus: setFocus,
-    handleItemBlur: (index: number) => {
-      if (manualFocusIndex() === index) setManualFocusIndex(null);
-    },
-    forceSync: () => coordinator.updateFocus(),
-    setManualFocus,
-    applyFocusAfterNavigation: setFocus,
+    handleItemFocus,
+    forceSync: () => coordinator.updateFocus(true),
   };
 }

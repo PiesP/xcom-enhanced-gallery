@@ -18,8 +18,6 @@ export interface UseGalleryNavigationOptions {
   readonly isVisible: () => boolean;
   /** Callback to scroll to specific item */
   readonly scrollToItem: (index: number) => void;
-  /** Callback to apply focus after navigation */
-  readonly applyFocusAfterNavigation: (index: number) => void;
 }
 
 /**
@@ -48,9 +46,9 @@ export interface UseGalleryNavigationResult {
  * @returns Navigation state accessors
  */
 export function useGalleryNavigation(
-  options: UseGalleryNavigationOptions,
+  options: UseGalleryNavigationOptions
 ): UseGalleryNavigationResult {
-  const { isVisible, scrollToItem, applyFocusAfterNavigation } = options;
+  const { isVisible, scrollToItem } = options;
 
   const [lastNavigationTrigger, setLastNavigationTrigger] = createSignal<string | null>(null);
   const [programmaticScrollTimestamp, setProgrammaticScrollTimestamp] = createSignal(0);
@@ -63,9 +61,8 @@ export function useGalleryNavigation(
       // Update trigger state
       setLastNavigationTrigger(trigger);
 
-      // Perform scroll and focus
+      // Perform scroll
       scrollToItem(index);
-      applyFocusAfterNavigation(index);
     });
 
     onCleanup(() => unsubscribe());
