@@ -371,13 +371,6 @@
   pointer-events: none;
 }
 
-/* Fallback for browsers without :has() support */
-@supports not (selector(:has(*))) {
-  .toolbarWrapper:hover ~ .toolbarHoverZone {
-    pointer-events: none;
-  }
-}
-
 /* Hover trigger next to the toolbar for browsers that lack :has */
 .toolbarHoverTrigger:hover + .toolbarWrapper {
   opacity: 1;
@@ -397,15 +390,18 @@
   --toolbar-transform-y: 0;
 }
 
-/* Additional fallbacks for browsers without :has() support */
+/**
+ * Consolidated fallbacks for browsers without :has() support
+ * Browsers: Safari < 15.4, Firefox < 121
+ */
 @supports not (selector(:has(*))) {
-  .toolbarHoverZone:hover + .toolbarWrapper {
-    --toolbar-opacity: 1;
-    --toolbar-visibility: visible;
-    --toolbar-pointer-events: auto;
-    --toolbar-transform-y: 0;
+  /* Disable hover zone when toolbar is hovered */
+  .toolbarWrapper:hover ~ .toolbarHoverZone {
+    pointer-events: none;
   }
 
+  /* Show toolbar when hover zone is active */
+  .toolbarHoverZone:hover + .toolbarWrapper,
   .toolbarHoverZone:hover ~ .toolbarWrapper {
     --toolbar-opacity: 1;
     --toolbar-visibility: visible;
@@ -413,6 +409,7 @@
     --toolbar-transform-y: 0;
   }
 
+  /* Show toolbar on container hover as ultimate fallback */
   .container:hover .toolbarWrapper {
     --toolbar-opacity: 1;
     --toolbar-visibility: visible;
@@ -579,12 +576,4 @@
 .container [class*="galleryToolbar"]:hover {
   --toolbar-opacity: 1;
   --toolbar-pointer-events: auto;
-}
-
-/* Fallback for browsers that cannot select siblings via :hover + */
-@supports not (selector(:hover + *)) {
-  .container:hover [class*="galleryToolbar"] {
-    --toolbar-opacity: 1;
-    --toolbar-pointer-events: auto;
-  }
 }

@@ -20,7 +20,13 @@ export { MEDIA } from './media';
 // ================================
 // Core Constants
 // ================================
-export { SELECTORS, STABLE_SELECTORS } from './selectors';
+export {
+  FALLBACK_SELECTORS,
+  queryAllWithFallback,
+  queryWithFallback,
+  SELECTORS,
+  STABLE_SELECTORS,
+} from './selectors';
 // ================================
 // Services
 // ================================

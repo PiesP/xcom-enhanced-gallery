@@ -1,4 +1,9 @@
+import { logger } from '@shared/logging';
 import { BaseServiceImpl } from '@shared/services/base-service';
+import {
+  detectDownloadCapability,
+  downloadBlobWithAnchor,
+} from '@shared/services/download/fallback-download';
 import { downloadSingleFile, getGMDownload } from '@shared/services/download/single-download';
 import type {
   BulkDownloadResult,
@@ -35,16 +40,16 @@ export class DownloadOrchestrator extends BaseServiceImpl {
 
   public async downloadSingle(
     media: MediaInfo,
-    options: DownloadOptions = {},
+    options: DownloadOptions = {}
   ): Promise<SingleDownloadResult> {
     return downloadSingleFile(media, options);
   }
 
   public async downloadBulk(
     mediaItems: MediaInfo[],
-    options: DownloadOptions = {},
+    options: DownloadOptions = {}
   ): Promise<BulkDownloadResult> {
-    const items: OrchestratorItem[] = mediaItems.map((media) => ({
+    const items: OrchestratorItem[] = mediaItems.map(media => ({
       url: media.url,
       desiredName: generateMediaFilename(media),
       blob: options.prefetchedBlobs?.get(media.url),
@@ -69,28 +74,58 @@ export class DownloadOrchestrator extends BaseServiceImpl {
         type: 'application/zip',
       });
       const filename = options.zipFilename || generateZipFilename(mediaItems);
-      const url = URL.createObjectURL(zipBlob);
 
-      // Save using GM_download or fallback
-      const gmDownload = getGMDownload();
-      if (gmDownload) {
-        await new Promise<void>((resolve, reject) => {
-          gmDownload({
-            url,
-            name: filename,
-            onload: () => resolve(),
-            onerror: (err: unknown) => reject(err),
-            ontimeout: () => reject(new Error('Timeout')),
-          });
+      // Save using appropriate download method
+      const capability = detectDownloadCapability();
+
+      if (capability.method === 'gm_download') {
+        // Use GM_download for Tampermonkey
+        const gmDownload = getGMDownload();
+        if (gmDownload) {
+          const url = URL.createObjectURL(zipBlob);
+          try {
+            await new Promise<void>((resolve, reject) => {
+              gmDownload({
+                url,
+                name: filename,
+                onload: () => resolve(),
+                onerror: (err: unknown) => reject(err),
+                ontimeout: () => reject(new Error('Timeout')),
+              });
+            });
+          } finally {
+            URL.revokeObjectURL(url);
+          }
+        }
+      } else if (capability.method === 'fetch_blob') {
+        // Use fallback anchor download for Violentmonkey and others
+        logger.debug('[DownloadOrchestrator] Using anchor fallback for ZIP download');
+        const fallbackResult = await downloadBlobWithAnchor(zipBlob, filename, {
+          signal: options.signal,
+          onProgress: options.onProgress,
         });
-      } else {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-      }
 
-      URL.revokeObjectURL(url);
+        if (!fallbackResult.success) {
+          return {
+            success: false,
+            status: 'error',
+            filesProcessed: items.length,
+            filesSuccessful: result.filesSuccessful,
+            error: fallbackResult.error || 'Failed to save ZIP file',
+            failures: result.failures,
+            code: ErrorCode.ALL_FAILED,
+          };
+        }
+      } else {
+        return {
+          success: false,
+          status: 'error',
+          filesProcessed: items.length,
+          filesSuccessful: 0,
+          error: 'No download method available',
+          code: ErrorCode.ALL_FAILED,
+        };
+      }
 
       return {
         success: true,

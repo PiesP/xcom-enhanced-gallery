@@ -3,6 +3,11 @@ import { logger } from '@shared/logging';
 import { generateMediaFilename } from '@shared/services/filename-service';
 import type { MediaInfo } from '@shared/types/media.types';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
+import {
+  detectDownloadCapability,
+  downloadBlobWithAnchor,
+  downloadWithFetchBlob,
+} from './fallback-download';
 import type { DownloadOptions, SingleDownloadResult } from './types';
 
 export type GMDownloadFunction = (options: Record<string, unknown>) => void;
@@ -22,21 +27,51 @@ export function getGMDownload(): GMDownloadFunction | undefined {
 
 export async function downloadSingleFile(
   media: MediaInfo,
-  options: DownloadOptions = {},
+  options: DownloadOptions = {}
 ): Promise<SingleDownloadResult> {
   if (options.signal?.aborted) {
     return { success: false, error: 'User cancelled download' };
   }
 
-  const gmDownload = getGMDownload();
-  if (!gmDownload) {
+  const filename = generateMediaFilename(media);
+  const capability = detectDownloadCapability();
+
+  // Use fallback method if GM_download is not available
+  if (capability.method === 'fetch_blob') {
+    logger.debug('[SingleDownload] Using fetch+blob fallback (GM_download not available)');
+
+    // If blob is pre-provided, use direct blob download
+    if (options.blob) {
+      return downloadBlobWithAnchor(options.blob, filename, {
+        signal: options.signal,
+        onProgress: options.onProgress,
+      });
+    }
+
+    // Otherwise fetch and download
+    return downloadWithFetchBlob(media.url, filename, {
+      signal: options.signal,
+      onProgress: options.onProgress,
+      timeout: 30000,
+    });
+  }
+
+  if (capability.method === 'none') {
     return {
       success: false,
-      error: 'Must be run in Tampermonkey environment',
+      error: 'No download method available in this environment',
     };
   }
 
-  const filename = generateMediaFilename(media);
+  // Use GM_download (Tampermonkey/Greasemonkey with GM_download support)
+  const gmDownload = getGMDownload();
+  if (!gmDownload) {
+    // This shouldn't happen given the capability check, but handle defensively
+    return {
+      success: false,
+      error: 'GM_download not available',
+    };
+  }
 
   // Use blob URL if available, otherwise media URL
   let url = media.url;
@@ -47,7 +82,7 @@ export async function downloadSingleFile(
     isBlobUrl = true;
   }
 
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const cleanup = () => {
       if (isBlobUrl) {
         URL.revokeObjectURL(url);
