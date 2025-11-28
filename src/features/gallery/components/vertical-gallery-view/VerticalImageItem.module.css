@@ -76,6 +76,8 @@
   /* Prevent flex item shrinking and force full content width */
   flex-shrink: 0;
   width: max-content;
+  /* Opt out of flex stretch so Original fit can exceed viewport width */
+  align-self: center;
 }
 
 .container:hover {

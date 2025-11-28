@@ -17,6 +17,10 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Code Quality**: Confirmed all `__DEV__` guards are properly configured for tree-shaking in production builds.
 - **Testing Strategy**: Documented the need for integration and E2E tests to improve mutation score (currently low due to NoCoverage in UI components).
 
+### Fixed
+
+- **Gallery Original mode**: Disabled flexbox stretch on original-fit items so extra-wide images can overflow the viewport horizontally instead of being force-fit into the window.
+
 ### Analysis
 
 - **Build Status**: All tests passing (221 total: 201 unit + 20 component tests) ✅
