@@ -245,7 +245,6 @@
 
   /* Pointer + scroll handling */
   scrollbar-gutter: stable;
-  scroll-snap-type: y proximity;
   pointer-events: auto;
 
   /* Container query hook for responsive spacing */
@@ -309,10 +308,6 @@
   /* Performance optimizations */
   contain: layout style;
   transform: translateZ(0);
-
-  /* Scroll snapping */
-  scroll-snap-align: start;
-  scroll-margin-top: var(--xeg-spacing-sm);
 }
 
 /* Active gallery item highlight (animation removed in Phase 328 to avoid double emphasis) */
