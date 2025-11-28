@@ -73,6 +73,9 @@
 /* Original fit mode: Remove max-width constraint to allow full size */
 .container[data-fit-mode="original"] {
   max-width: none;
+  /* Prevent flex item shrinking and force full content width */
+  flex-shrink: 0;
+  width: max-content;
 }
 
 .container:hover {
