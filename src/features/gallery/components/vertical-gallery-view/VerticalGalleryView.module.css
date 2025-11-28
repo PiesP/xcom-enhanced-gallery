@@ -233,8 +233,9 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Center items horizontally - allow shrink to image width */
-  overflow: auto; /* Only the gallery list scrolls; the document stays fixed */
+  /* align-items: center; Removed to allow safe centering via margin: auto on children */
+  /* Allow both horizontal and vertical scroll for Original fit mode */
+  overflow: auto;
   position: relative;
 
   /* Performance optimizations */

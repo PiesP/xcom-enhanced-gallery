@@ -46,7 +46,9 @@
 .container {
   position: relative;
   margin-bottom: var(--xeg-spacing-md);
+  margin-inline: auto; /* Safe centering within flex column */
   border-radius: var(--xeg-radius-lg);
+  /* Allow content to overflow for Original fit mode - scrolling handled by parent */
   overflow: visible;
   transition: var(--xeg-transition-interaction-fast);
   cursor: pointer;
@@ -66,6 +68,11 @@
   transform: translateZ(0);
   will-change: transform;
   contain: layout style;
+}
+
+/* Original fit mode: Remove max-width constraint to allow full size */
+.container[data-fit-mode="original"] {
+  max-width: none;
 }
 
 .container:hover {
@@ -109,12 +116,12 @@
   align-items: center;
 }
 
-/* fitOriginal mode: Expand container to fit original image size */
+/* fitOriginal mode: Expand container to fit original image size without constraints */
 .imageWrapper:has(.image.fitOriginal),
 .imageWrapper:has(.video.fitOriginal) {
   width: auto;
+  /* No max-width constraint - allow full original size with horizontal scroll */
   max-width: none;
-  /* Container expands to fit image size */
 }
 
 .container[data-media-loaded="false"] .imageWrapper {
@@ -183,7 +190,8 @@
 
 /* 이미지 크기 조정 모드별 스타일 */
 .image.fitOriginal {
-  /* 원본 크기: 이미지를 원본 크기 그대로 표시 (축소/확대 없음) */
+  /* Original size: Display image at its native resolution
+     No size constraints - horizontal scroll enabled in parent container */
   inline-size: auto;
   block-size: auto;
   max-inline-size: none;
@@ -201,10 +209,11 @@
 }
 
 .image.fitHeight {
-  /* 높이에 맞추기: 뷰포트보다 작으면 원본 크기, 크면 높이에 맞춤 */
+  /* 높이에 맞추기: 뷰포트보다 작으면 원본 크기, 크면 높이에 맞춤
+     가로 방향으로도 뷰포트를 넘지 않도록 제한 */
   inline-size: auto;
   block-size: auto;
-  max-inline-size: none;
+  max-inline-size: calc(100vw - var(--xeg-spacing-lg, 1.5rem) * 2);
   max-block-size: var(--xeg-viewport-height-constrained, 90vh);
   object-fit: scale-down;
 }
@@ -227,7 +236,8 @@
 }
 
 .video.fitOriginal {
-  /* 원본 크기: 비디오를 원본 크기 그대로 표시 (축소/확대 없음) */
+  /* Original size: Display video at its native resolution
+     No size constraints - horizontal scroll enabled in parent container */
   inline-size: auto;
   block-size: auto;
   max-inline-size: none;
@@ -245,10 +255,11 @@
 }
 
 .video.fitHeight {
-  /* 높이에 맞추기: 뷰포트보다 작으면 원본 크기, 크면 높이에 맞춤 */
+  /* 높이에 맞추기: 뷰포트보다 작으면 원본 크기, 크면 높이에 맞춤
+     가로 방향으로도 뷰포트를 넘지 않도록 제한 */
   inline-size: auto;
   block-size: auto;
-  max-inline-size: none;
+  max-inline-size: calc(100vw - var(--xeg-spacing-lg, 1.5rem) * 2);
   max-block-size: var(--xeg-viewport-height-constrained, 90vh);
   object-fit: scale-down;
 }
