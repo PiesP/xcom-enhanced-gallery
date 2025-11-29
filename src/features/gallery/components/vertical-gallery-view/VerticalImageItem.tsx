@@ -97,17 +97,33 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
   const [videoVolume, setVideoVolume] = createSignal(getSetting('gallery.videoVolume', 1.0));
   const [videoMuted, setVideoMuted] = createSignal(getSetting('gallery.videoMuted', false));
 
+  // Guard to prevent handling synthetic volumechange events triggered by us when
+  // programmatically applying persisted settings. This avoids races where the event
+  // handler reads stale values during the initial apply and overwrites the signal.
+  let isApplyingVideoSettings = false;
+
   // Apply saved volume/muted state when video element is ready
   createEffect(() => {
     const video = videoRef();
     if (video && isVideo) {
-      video.volume = videoVolume();
-      video.muted = videoMuted();
+      // Apply persisted state while preventing the volumechange handler from
+      // reacting to our programmatic assignment. We set both properties under
+      // a guard so any intermediate events are ignored.
+      isApplyingVideoSettings = true;
+      try {
+        video.muted = videoMuted();
+        video.volume = videoVolume();
+      } finally {
+        isApplyingVideoSettings = false;
+      }
     }
   });
 
   // Handle volume change events from video controls
   const handleVolumeChange = (event: Event) => {
+    if (isApplyingVideoSettings) {
+      return;
+    }
     const video = event.currentTarget as HTMLVideoElement;
     const newVolume = video.volume;
     const newMuted = video.muted;

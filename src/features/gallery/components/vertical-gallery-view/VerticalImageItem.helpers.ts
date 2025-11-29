@@ -57,13 +57,19 @@ export function cleanFilename(filename?: string): string {
   }
 
   let cleaned = filename
-    .replace(/^twitter_media_\d{8}T\d{6}_\d+\./, '')
+    .replace(/^twitter_media_\d{8}T\d{6}_/, '')
     .replace(/^\/media\//, '')
-    .replace(/^\.\//g, '')
-    .replace(/[\\/]/g, '_');
+    .replace(/^\.\//g, '');
+
+  // If there are path separators, prefer the last path segment (e.g., path/to/file.png -> file.png)
+  const lastSegment = cleaned.split(/[\\/]/).pop();
+  if (lastSegment) {
+    cleaned = lastSegment;
+  }
 
   if (cleaned.length > 40 || !cleaned) {
-    const match = filename.match(/([a-zA-Z0-9_-]+)$/);
+    // Prefer last path segment (including extension if any) when truncating
+    const match = filename.match(/([^/\\]+)$/);
     cleaned = match?.[1] ?? 'Image';
   }
 
