@@ -5,6 +5,7 @@
  * @version 1.0.0 - Phase 434
  */
 
+import { extractDimensionsFromUrl as extractDimensionsFromUrlCore } from '@shared/media/media-utils';
 import type { MediaInfo } from '@shared/types/media.types';
 
 /**
@@ -25,12 +26,6 @@ const DEFAULT_DIMENSIONS: DimensionPair = {
 } as const;
 
 /**
- * Pattern to extract video dimensions from URL path
- * Matches patterns like /1280x720/ in video URLs
- */
-const VIDEO_DIMENSION_PATTERN = /\/(\d{2,6})x(\d{2,6})\//;
-
-/**
  * Parse a value as a positive number
  * @param value - Value to parse
  * @returns Positive number or null
@@ -49,7 +44,7 @@ function parsePositiveNumber(value: unknown): number | null {
 }
 
 /**
- * Extract dimensions from URL path pattern
+ * Extract dimensions from URL path pattern (wrapper for core utility)
  * @param url - URL to parse
  * @returns Dimension pair or null
  */
@@ -57,20 +52,7 @@ function extractDimensionsFromUrl(url?: string): DimensionPair | null {
   if (!url) {
     return null;
   }
-
-  const match = url.match(VIDEO_DIMENSION_PATTERN);
-  if (!match) {
-    return null;
-  }
-
-  const width = Number.parseInt(match[1] ?? '', 10);
-  const height = Number.parseInt(match[2] ?? '', 10);
-
-  if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
-    return null;
-  }
-
-  return { width, height };
+  return extractDimensionsFromUrlCore(url);
 }
 
 /**

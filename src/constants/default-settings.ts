@@ -3,6 +3,7 @@
  */
 
 import type { AppSettings } from '@features/settings/types/settings.types';
+import { cloneDeep } from '@shared/utils/types/safety';
 
 const STATIC_DEFAULT_SETTINGS = {
   gallery: {
@@ -53,20 +54,13 @@ export const DEFAULT_SETTINGS = STATIC_DEFAULT_SETTINGS;
 
 export function createDefaultSettings(timestamp: number = Date.now()): AppSettings {
   return {
-    gallery: cloneValue(DEFAULT_SETTINGS.gallery),
-    toolbar: cloneValue(DEFAULT_SETTINGS.toolbar),
-    download: cloneValue(DEFAULT_SETTINGS.download),
-    tokens: cloneValue(DEFAULT_SETTINGS.tokens),
-    accessibility: cloneValue(DEFAULT_SETTINGS.accessibility),
-    features: cloneValue(DEFAULT_SETTINGS.features),
+    gallery: cloneDeep(DEFAULT_SETTINGS.gallery),
+    toolbar: cloneDeep(DEFAULT_SETTINGS.toolbar),
+    download: cloneDeep(DEFAULT_SETTINGS.download),
+    tokens: cloneDeep(DEFAULT_SETTINGS.tokens),
+    accessibility: cloneDeep(DEFAULT_SETTINGS.accessibility),
+    features: cloneDeep(DEFAULT_SETTINGS.features),
     version: DEFAULT_SETTINGS.version,
     lastModified: timestamp,
   };
-}
-
-function cloneValue<T>(value: T): T {
-  if (typeof globalThis.structuredClone === 'function') {
-    return globalThis.structuredClone(value);
-  }
-  return JSON.parse(JSON.stringify(value)) as T;
 }

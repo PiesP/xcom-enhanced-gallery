@@ -87,3 +87,104 @@ export function isHostMatching(
     return allowSubdomains && hostname.endsWith(`.${normalized}`);
   });
 }
+
+/** Reserved Twitter/X.com paths that are not usernames */
+const RESERVED_TWITTER_PATHS = new Set([
+  'home',
+  'explore',
+  'notifications',
+  'messages',
+  'search',
+  'settings',
+  'i',
+  'intent',
+  'compose',
+  'hashtag',
+]);
+
+/** Valid Twitter username pattern: 1-15 alphanumeric or underscore characters */
+const TWITTER_USERNAME_PATTERN = /^[a-zA-Z0-9_]{1,15}$/;
+
+/** Trusted Twitter/X.com hosts */
+const TWITTER_HOSTS = ['twitter.com', 'x.com'] as const;
+
+export interface ExtractUsernameOptions {
+  /**
+   * Require strict host validation (only twitter.com/x.com)
+   * @default false
+   */
+  readonly strictHost?: boolean;
+}
+
+/**
+ * Extract Twitter username from a URL path.
+ *
+ * Supports both absolute URLs (https://twitter.com/user/status/123)
+ * and relative paths (/user/status/123).
+ *
+ * Only extracts username when path follows the pattern /username/status/id
+ * where 'status' is the second segment.
+ *
+ * @param url - URL or path to extract username from
+ * @param options - Extraction options
+ * @returns Username or null if not found/invalid
+ */
+export function extractUsernameFromUrl(
+  url: string | null | undefined,
+  options: ExtractUsernameOptions = {}
+): string | null {
+  if (!url || typeof url !== 'string') {
+    return null;
+  }
+
+  try {
+    // Determine path based on URL type
+    let path: string;
+
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')) {
+      // Absolute or protocol-relative URL
+      const parsed = tryParseUrl(url);
+      if (!parsed) {
+        return null;
+      }
+
+      // Strict host validation if requested
+      if (options.strictHost) {
+        if (!isHostMatching(parsed, TWITTER_HOSTS, { allowSubdomains: true })) {
+          return null;
+        }
+      }
+
+      path = parsed.pathname;
+    } else {
+      // Relative path
+      path = url;
+    }
+
+    // Extract username from path segments
+    const segments = path.split('/').filter(Boolean);
+
+    // Pattern: /username/status/id (strict pattern matching)
+    // Only extract username when 'status' is the second segment
+    if (segments.length >= 3 && segments[1] === 'status') {
+      const username = segments[0];
+      if (!username) {
+        return null;
+      }
+
+      // Check for reserved paths
+      if (RESERVED_TWITTER_PATHS.has(username.toLowerCase())) {
+        return null;
+      }
+
+      // Validate username format
+      if (TWITTER_USERNAME_PATTERN.test(username)) {
+        return username;
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}

@@ -5,15 +5,10 @@ import type {
 } from '@features/settings/types/settings.types';
 import { logger } from '@shared/logging';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
+import { cloneDeep } from '@shared/utils/types/safety';
 import { APP_SETTINGS_STORAGE_KEY, createDefaultSettings, DEFAULT_SETTINGS } from '@/constants';
 import { migrateSettings as runMigration } from './settings-migration';
 import { computeCurrentSettingsSchemaHash } from './settings-schema';
-
-function cloneDeep<T>(value: T): T {
-  return typeof structuredClone === 'function'
-    ? structuredClone(value)
-    : JSON.parse(JSON.stringify(value));
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function resolveNestedValue(source: any, keys: string[]): any {

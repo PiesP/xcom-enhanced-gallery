@@ -136,3 +136,17 @@ export function isGMUserScriptInfo(obj: unknown): obj is { scriptHandler?: strin
   const objRecord = obj as Record<string, unknown>;
   return 'scriptHandler' in objRecord || Object.keys(objRecord).length > 0;
 }
+
+// ========== Deep clone utilities ==========
+
+/**
+ * Deep clone a value using structuredClone or JSON fallback
+ * @param value - Value to clone
+ * @returns Deep cloned value
+ */
+export function cloneDeep<T>(value: T): T {
+  if (typeof globalThis.structuredClone === 'function') {
+    return globalThis.structuredClone(value);
+  }
+  return JSON.parse(JSON.stringify(value)) as T;
+}

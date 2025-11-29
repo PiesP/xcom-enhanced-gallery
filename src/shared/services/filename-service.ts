@@ -8,7 +8,7 @@
 
 import type { MediaInfo } from '@shared/types/media.types';
 import { safeParseInt } from '@shared/utils/types/safety';
-import { isHostMatching } from '@shared/utils/url/host';
+import { extractUsernameFromUrl } from '@shared/utils/url/host';
 
 export interface FilenameOptions {
   index?: string | number;
@@ -98,7 +98,8 @@ export class FilenameService {
       } else {
         const url = ('originalUrl' in media ? media.originalUrl : null) || media.url;
         if (typeof url === 'string') {
-          username = this.extractUsernameFromUrl(url);
+          // Use strict host validation for security
+          username = extractUsernameFromUrl(url, { strictHost: true });
         }
       }
     }
@@ -146,35 +147,6 @@ export class FilenameService {
       .replace(/^[\s.]+|[\s.]+$/g, '')
       .slice(0, 255);
     return sanitized || 'media';
-  }
-
-  private extractUsernameFromUrl(url: string): string | null {
-    try {
-      const urlObj = new URL(url);
-
-      // Security Fix: Use strict host matching to prevent subdomain spoofing
-      // Replaces insecure .includes() checks that allowed arbitrary hosts (e.g. evil-x.com)
-      if (
-        !isHostMatching(urlObj, ['twitter.com', 'x.com'], {
-          allowSubdomains: true,
-        })
-      ) {
-        return null;
-      }
-
-      const path = urlObj.pathname.split('/')[1];
-      if (
-        !path ||
-        ['home', 'explore', 'notifications', 'messages', 'search', 'settings'].includes(
-          path.toLowerCase()
-        )
-      ) {
-        return null;
-      }
-      return /^[a-zA-Z0-9_]{1,15}$/.test(path) ? path : null;
-    } catch {
-      return null;
-    }
   }
 }
 
