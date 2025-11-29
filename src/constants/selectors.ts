@@ -13,10 +13,29 @@ const GALLERY_SELECTORS = CSS.SELECTORS;
  * These are stable across X.com updates
  */
 export const SELECTORS = {
+  // Tweet containers
   TWEET: 'article[data-testid="tweet"]',
+  /** Tweet article with fallback to generic article */
+  TWEET_ARTICLE: '[data-testid="tweet"], article',
+
+  // Media elements
   TWEET_PHOTO: '[data-testid="tweetPhoto"]',
   TWEET_TEXT: '[data-testid="tweetText"]',
   VIDEO_PLAYER: '[data-testid="videoPlayer"]',
+
+  // Links and URLs
+  /** Status link for tweet ID extraction */
+  STATUS_LINK: 'a[href*="/status/"]',
+
+  // Media source detection
+  /** Twitter image source pattern */
+  TWITTER_IMAGE: 'img[src*="pbs.twimg.com"]',
+  /** Twitter video source pattern */
+  TWITTER_VIDEO: 'video[src*="video.twimg.com"]',
+  /** Combined media source selector for extraction */
+  TWITTER_MEDIA: 'img[src*="pbs.twimg.com"], video[src*="video.twimg.com"]',
+
+  // Gallery elements
   GALLERY_OVERLAY: GALLERY_SELECTORS.OVERLAY,
   GALLERY_CONTAINER: GALLERY_SELECTORS.CONTAINER,
 } as const;

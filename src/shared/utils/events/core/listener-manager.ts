@@ -1,13 +1,78 @@
 /**
- * @fileoverview Event listener manager (Phase 420.3: Listener profiling)
+ * @fileoverview Event listener manager with integrated registry
  * @description Phase 329: File separation (SRP compliance)
- *              Listener manipulation features such as addListener, removeListener
- *              Phase 420.3: Integrated listener lifecycle profiling
+ *              Phase 500: Consolidated ListenerRegistry into ListenerManager
+ *              All listener registration, tracking, and removal in one module
  */
 
 import { logger } from '@shared/logging';
 import type { EventContext } from './event-context';
-import { listenerRegistry } from './listener-registry';
+
+// ============================================================================
+// Internal Listener Registry
+// ============================================================================
+
+/**
+ * Internal listener storage - tracks all registered event listeners
+ * Moved from listener-registry.ts for reduced abstraction layers
+ */
+const listeners = new Map<string, EventContext>();
+
+/**
+ * Register listener in internal registry
+ */
+function registryRegister(id: string, context: EventContext): void {
+  listeners.set(id, context);
+  logger.debug(`[ListenerManager] Listener registered: ${id}`, {
+    type: context.type,
+    context: context.context,
+  });
+}
+
+/**
+ * Get listener from internal registry
+ */
+function registryGet(id: string): EventContext | undefined {
+  return listeners.get(id);
+}
+
+/**
+ * Unregister listener from internal registry
+ */
+function registryUnregister(id: string): boolean {
+  const context = listeners.get(id);
+  if (!context) {
+    return false;
+  }
+  listeners.delete(id);
+  return true;
+}
+
+/**
+ * Drain all listeners from registry
+ */
+function registryDrain(): EventContext[] {
+  if (listeners.size === 0) {
+    return [];
+  }
+  const contexts = Array.from(listeners.values());
+  listeners.clear();
+  logger.debug(`[ListenerManager] Cleared all ${contexts.length} listeners`);
+  return contexts;
+}
+
+/**
+ * Iterate all listeners in registry
+ */
+function registryForEach(callback: (context: EventContext, id: string) => void): void {
+  for (const [id, context] of listeners.entries()) {
+    callback(context, id);
+  }
+}
+
+// ============================================================================
+// Public API
+// ============================================================================
 
 /**
  * Generate listener ID
@@ -68,7 +133,7 @@ export function addListener(
       created: Date.now(),
     };
 
-    listenerRegistry.register(id, eventContext);
+    registryRegister(id, eventContext);
 
     // Handle AbortSignal
     if (signal && typeof signal.addEventListener === 'function') {
@@ -111,7 +176,7 @@ export function addListener(
  * @returns Removal success
  */
 export function removeEventListenerManaged(id: string): boolean {
-  const eventContext = listenerRegistry.get(id);
+  const eventContext = registryGet(id);
   if (!eventContext) {
     logger.warn(`Event listener not found for removal: ${id}`);
     return false;
@@ -122,9 +187,9 @@ export function removeEventListenerManaged(id: string): boolean {
     eventContext.element.removeEventListener(
       eventContext.type,
       eventContext.listener,
-      eventContext.options,
+      eventContext.options
     );
-    listenerRegistry.unregister(id);
+    registryUnregister(id);
 
     logger.debug(`Event listener removed: ${eventContext.type} (${id})`);
     return true;
@@ -148,7 +213,7 @@ export function removeEventListenersByContext(context: string): number {
   const listenersToRemove: string[] = [];
 
   // Collect listener IDs to remove
-  listenerRegistry.forEach((eventContext, id) => {
+  registryForEach((eventContext, id) => {
     if (eventContext.context === context) {
       listenersToRemove.push(id);
     }
@@ -165,7 +230,7 @@ export function removeEventListenersByContext(context: string): number {
 
   if (removedCount > 0) {
     logger.debug(
-      `[removeEventListenersByContext] Removed ${removedCount} listeners for context: ${context}`,
+      `[removeEventListenersByContext] Removed ${removedCount} listeners for context: ${context}`
     );
   }
 
@@ -176,13 +241,13 @@ export function removeEventListenersByContext(context: string): number {
  * Remove all listeners
  */
 export function removeAllEventListeners(): void {
-  const listeners = listenerRegistry.drain();
-  if (listeners.length === 0) {
+  const allListeners = registryDrain();
+  if (allListeners.length === 0) {
     return;
   }
 
   let detachedCount = 0;
-  for (const context of listeners) {
+  for (const context of allListeners) {
     try {
       context.element.removeEventListener(context.type, context.listener, context.options);
       detachedCount++;
@@ -201,5 +266,38 @@ export function removeAllEventListeners(): void {
  * Get listener status
  */
 export function getEventListenerStatus() {
-  return listenerRegistry.getStatus();
+  const contextGroups = new Map<string, number>();
+  const typeGroups = new Map<string, number>();
+
+  registryForEach(eventContext => {
+    const ctx = eventContext.context || 'default';
+    contextGroups.set(ctx, (contextGroups.get(ctx) || 0) + 1);
+    typeGroups.set(eventContext.type, (typeGroups.get(eventContext.type) || 0) + 1);
+  });
+
+  return {
+    total: listeners.size,
+    byContext: Object.fromEntries(contextGroups),
+    byType: Object.fromEntries(typeGroups),
+  };
+}
+
+// ============================================================================
+// Test Utilities (exported for testing only)
+// ============================================================================
+
+/**
+ * Check if a listener exists in the registry (test utility)
+ * @internal
+ */
+export function __testHasListener(id: string): boolean {
+  return listeners.has(id);
+}
+
+/**
+ * Get listener from registry (test utility)
+ * @internal
+ */
+export function __testGetListener(id: string): EventContext | undefined {
+  return registryGet(id);
 }

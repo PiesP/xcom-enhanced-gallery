@@ -174,7 +174,6 @@ export class TestHarness {
    */
   reset(): void {
     CoreService.resetInstance();
-    CoreServiceRegistry.clearCache();
   }
 }
 

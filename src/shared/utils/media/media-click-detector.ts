@@ -43,7 +43,7 @@ export interface MediaDetectionResult {
 const MEDIA_SELECTORS = {
   TWEET_PHOTO: SELECTORS.TWEET_PHOTO,
   VIDEO_PLAYER: SELECTORS.VIDEO_PLAYER,
-  MEDIA_LINK: 'a[href*="/status/"]',
+  MEDIA_LINK: SELECTORS.STATUS_LINK,
 } as const;
 
 /** Interactive elements that should block gallery trigger */
