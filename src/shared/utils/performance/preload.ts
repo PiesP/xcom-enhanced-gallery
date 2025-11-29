@@ -3,6 +3,8 @@
  * @description Compute indices to preload around current item with bounds safety.
  */
 
+import { clamp, clampIndex } from '@shared/utils/types/safety';
+
 /**
  * Compute indices to preload around current index.
  * - Includes up to `count` items before and after the current index within [0, total).
@@ -11,11 +13,11 @@
 export function computePreloadIndices(
   currentIndex: number,
   total: number,
-  count: number,
+  count: number
 ): number[] {
   const safeTotal = Number.isFinite(total) && total > 0 ? Math.floor(total) : 0;
-  const safeIndex = Math.min(Math.max(0, Math.floor(currentIndex)), Math.max(0, safeTotal - 1));
-  const safeCount = Math.max(0, Math.min(20, Math.floor(count)));
+  const safeIndex = clampIndex(Math.floor(currentIndex), safeTotal);
+  const safeCount = clamp(Math.floor(count), 0, 20);
 
   if (safeTotal === 0 || safeCount === 0) return [];
 

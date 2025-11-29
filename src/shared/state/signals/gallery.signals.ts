@@ -20,6 +20,7 @@ import {
 import type { MediaInfo } from '@shared/types/media.types';
 import type { NavigationSource } from '@shared/types/navigation.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
+import { clampIndex } from '@shared/utils/types/safety';
 import { createSignalSafe, effectSafe } from './signal-factory';
 
 // Logger instance (services-free)
@@ -179,7 +180,7 @@ export const galleryState = {
 // ============================================================================
 
 export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
-  const validIndex = Math.max(0, Math.min(startIndex, items.length - 1));
+  const validIndex = clampIndex(startIndex, items.length);
 
   galleryState.value = {
     ...galleryState.value,
@@ -227,10 +228,10 @@ export function closeGallery(): void {
 export function navigateToItem(
   index: number,
   trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button',
-  source: NavigationSource = 'button',
+  source: NavigationSource = 'button'
 ): void {
   const state = galleryState.value;
-  const validIndex = Math.max(0, Math.min(index, state.mediaItems.length - 1));
+  const validIndex = clampIndex(index, state.mediaItems.length);
 
   const navigateAction: NavigationAction = {
     type: 'NAVIGATE',
@@ -277,7 +278,7 @@ export function navigateToItem(
  * otherwise falls back to currentIndex.
  */
 export function navigatePrevious(
-  trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button',
+  trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button'
 ): void {
   const state = galleryState.value;
   const baseIndex = getCurrentActiveIndex();
@@ -312,7 +313,7 @@ export function setLoading(isLoading: boolean): void {
  */
 export function setFocusedIndex(
   index: number | null,
-  source: NavigationSource = 'auto-focus',
+  source: NavigationSource = 'auto-focus'
 ): void {
   const state = galleryState.value;
 
@@ -332,7 +333,7 @@ export function setFocusedIndex(
     return;
   }
 
-  const validIndex = Math.max(0, Math.min(index, state.mediaItems.length - 1));
+  const validIndex = clampIndex(index, state.mediaItems.length);
   gallerySignals.focusedIndex.value = validIndex;
 
   logger.debug(`[Gallery] focusedIndex set to ${validIndex} (source: ${source})`);

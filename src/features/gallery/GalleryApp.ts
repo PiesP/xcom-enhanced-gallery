@@ -14,6 +14,7 @@ import { NotificationService } from '@shared/services/notification-service';
 import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { pauseActiveTwitterVideos } from '@shared/utils/media/twitter-video-pauser';
+import { clampIndex } from '@shared/utils/types/safety';
 
 export interface GalleryConfig {
   autoTheme?: boolean;
@@ -61,7 +62,7 @@ export class GalleryApp {
         {
           onMediaClick: (mediaInfo, element) => this.handleMediaClick(mediaInfo, element),
           onGalleryClose: () => this.closeGallery(),
-          onKeyboardEvent: (event) => {
+          onKeyboardEvent: event => {
             if (event.key === 'Escape' && gallerySignals.isOpen.value) {
               this.closeGallery();
             }
@@ -73,7 +74,7 @@ export class GalleryApp {
           debugMode: false,
           preventBubbling: true,
           context: 'gallery',
-        },
+        }
       );
 
       logger.info('[GalleryApp] ✅ Event handlers setup complete');
@@ -98,7 +99,7 @@ export class GalleryApp {
       logger.error('[GalleryApp] Error during media extraction:', error);
       this.notificationService.error(
         'Error occurred',
-        error instanceof Error ? error.message : 'Unknown error',
+        error instanceof Error ? error.message : 'Unknown error'
       );
     }
   }
@@ -108,7 +109,7 @@ export class GalleryApp {
       logger.warn('[GalleryApp] Gallery not initialized.');
       this.notificationService.error(
         'Gallery unavailable',
-        'Tampermonkey or similar userscript manager is required.',
+        'Tampermonkey or similar userscript manager is required.'
       );
       return;
     }
@@ -116,7 +117,7 @@ export class GalleryApp {
     if (!mediaItems?.length) return;
 
     try {
-      const validIndex = Math.max(0, Math.min(startIndex, mediaItems.length - 1));
+      const validIndex = clampIndex(startIndex, mediaItems.length);
 
       try {
         pauseActiveTwitterVideos();
@@ -129,7 +130,7 @@ export class GalleryApp {
       logger.error('[GalleryApp] Failed to open gallery:', error);
       this.notificationService.error(
         'Failed to load gallery',
-        error instanceof Error ? error.message : 'Unknown error',
+        error instanceof Error ? error.message : 'Unknown error'
       );
       throw error;
     }

@@ -44,10 +44,35 @@ export function stringWithDefault(value: string | undefined, defaultValue: strin
 // ========== Number utilities ==========
 
 /**
+ * Clamp a number within a range
+ * @param value - Number to clamp
+ * @param min - Minimum value (default: 0)
+ * @param max - Maximum value (default: 1)
+ * @returns Clamped value
+ */
+export function clamp(value: number, min: number = 0, max: number = 1): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+/**
  * Clamp a number between 0 and 1
+ * @deprecated Use clamp(value, 0, 1) instead
  */
 export function clamp01(value: number): number {
-  return Math.min(Math.max(value, 0), 1);
+  return clamp(value, 0, 1);
+}
+
+/**
+ * Clamp an index within array bounds (0 to length-1)
+ * @param index - Index to clamp
+ * @param length - Array length (must be > 0)
+ * @returns Valid index, or 0 if length <= 0
+ */
+export function clampIndex(index: number, length: number): number {
+  if (!Number.isFinite(index) || length <= 0) {
+    return 0;
+  }
+  return clamp(Math.floor(index), 0, length - 1);
 }
 
 // ========== Element validation utilities ==========
@@ -83,16 +108,7 @@ export function safeTweetId(value: string | undefined): string {
   return value;
 }
 
-// ========== DOM/Event type guards ==========
-
-/**
- * EventListener-compatible function wrapper (for TypeScript strict mode)
- */
-export function createEventListener<T extends Event = Event>(
-  handler: (this: EventTarget, event: T) => void
-): EventListener {
-  return handler as unknown as EventListener;
-}
+// ========== Userscript type guards ==========
 
 /**
  * Validate that global object has required properties

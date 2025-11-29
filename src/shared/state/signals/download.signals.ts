@@ -6,6 +6,7 @@ import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
 import type { MediaId, MediaInfo } from '@shared/types/media.types';
 import type { Result } from '@shared/types/result.types';
 import { ErrorCode, failure, success } from '@shared/types/result.types';
+import { clamp } from '@shared/utils/types/safety';
 import { createSignalSafe, type SafeSignal } from './signal-factory';
 
 // Download status
@@ -92,7 +93,7 @@ export const downloadState = {
   },
 
   subscribe(callback: (state: DownloadState) => void): () => void {
-    return getDownloadState().subscribe((state) => {
+    return getDownloadState().subscribe(state => {
       try {
         callback(state);
       } catch (error) {
@@ -202,7 +203,7 @@ export function updateDownloadProgress(taskId: string, progress: number): Result
     });
   }
 
-  const clampedProgress = Math.max(0, Math.min(100, progress));
+  const clampedProgress = clamp(progress, 0, 100);
   const updatedTask: DownloadTask = {
     ...task,
     progress: clampedProgress,

@@ -5,6 +5,7 @@
 import { logger } from '@shared/logging';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
+import { clampIndex } from '@shared/utils/types/safety';
 
 /**
  * Generic deduplication function
@@ -193,8 +194,8 @@ export function adjustClickedIndexAfterDeduplication(
 ): number {
   if (uniqueItems.length === 0) return 0;
 
-  // Normalize original index
-  const safeOriginalIndex = Math.max(0, Math.min(originalClickedIndex, originalItems.length - 1));
+  // Normalize original index using shared clamp utility
+  const safeOriginalIndex = clampIndex(originalClickedIndex, originalItems.length);
   const clickedItem = originalItems[safeOriginalIndex];
 
   if (!clickedItem) return 0;

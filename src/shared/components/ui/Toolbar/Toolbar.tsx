@@ -16,6 +16,7 @@ import {
 import type { ToolbarDataState, ToolbarState } from '@shared/types/toolbar.types';
 import { safeEventPrevent, safeEventPreventAll } from '@shared/utils/events/utils';
 import { createClassName } from '@shared/utils/text/formatting';
+import { clampIndex } from '@shared/utils/types/safety';
 import { toOptionalAccessor, toRequiredAccessor } from './accessor-utils';
 import styles from './Toolbar.module.css';
 
@@ -41,14 +42,6 @@ const FIT_MODE_ORDER = [
   { mode: 'fitHeight' as const, Icon: ArrowsUpDown },
   { mode: 'fitContainer' as const, Icon: ArrowsPointingIn },
 ] as const;
-
-function clampIndex(index: number, total: number): number {
-  if (!Number.isFinite(index) || total <= 0) {
-    return 0;
-  }
-
-  return Math.min(Math.max(index, 0), total - 1);
-}
 
 type FitModeHandlers = Record<FitMode, ToolbarProps['onFitOriginal'] | undefined>;
 
