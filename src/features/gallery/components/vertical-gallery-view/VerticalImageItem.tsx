@@ -22,6 +22,7 @@
  */
 
 import { getLanguageService } from '@shared/container/service-accessors';
+import { getSetting, setSetting } from '@shared/container/settings-access';
 import { getSolid } from '@shared/external/vendors';
 import type { ImageFitMode } from '@shared/types';
 import { createIntrinsicSizingStyle, resolveMediaDimensions } from '@shared/utils/media/dimensions';
@@ -92,13 +93,40 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
     isVideo,
   });
 
+  // Video volume settings (persisted across sessions)
+  const [videoVolume, setVideoVolume] = createSignal(getSetting('gallery.videoVolume', 1.0));
+  const [videoMuted, setVideoMuted] = createSignal(getSetting('gallery.videoMuted', false));
+
+  // Apply saved volume/muted state when video element is ready
+  createEffect(() => {
+    const video = videoRef();
+    if (video && isVideo) {
+      video.volume = videoVolume();
+      video.muted = videoMuted();
+    }
+  });
+
+  // Handle volume change events from video controls
+  const handleVolumeChange = (event: Event) => {
+    const video = event.currentTarget as HTMLVideoElement;
+    const newVolume = video.volume;
+    const newMuted = video.muted;
+
+    setVideoVolume(newVolume);
+    setVideoMuted(newMuted);
+
+    // Persist to settings (async, fire-and-forget)
+    void setSetting('gallery.videoVolume', newVolume);
+    void setSetting('gallery.videoMuted', newMuted);
+  };
+
   // Event handlers
   const handleClick = () => {
     containerRef()?.focus?.({ preventScroll: true });
     onClick?.();
   };
 
-  const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
+  const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = event => {
     const mouseEvent = event as MouseEvent;
     mouseEvent?.stopImmediatePropagation?.();
     handleClick();
@@ -196,8 +224,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
       isActive ? styles.active : undefined,
       isFocused ? styles.focused : undefined,
       fitModeClass(),
-      className,
-    ),
+      className
+    )
   );
 
   const imageClasses = createMemo(() => createClassName(styles.image, fitModeClass()));
@@ -256,7 +284,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
               class={createClassName(
                 styles.video,
                 fitModeClass(),
-                isLoaded() ? styles.loaded : styles.loading,
+                isLoaded() ? styles.loaded : styles.loading
               )}
               data-fit-mode={resolvedFitMode()}
               onLoadedMetadata={handleMediaLoad}
@@ -265,6 +293,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
               onError={handleMediaError}
               onContextMenu={handleContextMenu}
               onDragStart={(e: DragEvent) => e.preventDefault()}
+              onVolumeChange={handleVolumeChange}
             />
           ) : (
             <img

@@ -22,6 +22,10 @@ export interface GallerySettings {
   animations: boolean;
   /** Enable keyboard navigation */
   enableKeyboardNav: boolean;
+  /** Video volume level (0.0 ~ 1.0) */
+  videoVolume: number;
+  /** Video muted state (separate from volume for UX convenience) */
+  videoMuted: boolean;
 }
 
 /**

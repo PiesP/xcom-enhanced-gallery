@@ -13,6 +13,8 @@ const STATIC_DEFAULT_SETTINGS = {
     theme: 'auto' as const,
     animations: true,
     enableKeyboardNav: true,
+    videoVolume: 1.0,
+    videoMuted: false,
   },
   toolbar: {
     /** Phase 268: Remove runtime warnings - toolbar settings schema */

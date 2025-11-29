@@ -11,9 +11,9 @@ export interface LazyIconProps {
   readonly fallback?: JSXElement | unknown;
 }
 
-export function LazyIcon(props: LazyIconProps): JSXElement | unknown {
+export function LazyIcon(props: LazyIconProps): JSXElement {
   if (props.fallback) {
-    return props.fallback;
+    return props.fallback as JSXElement;
   }
 
   const { Show, createResource } = getSolid();
@@ -21,7 +21,7 @@ export function LazyIcon(props: LazyIconProps): JSXElement | unknown {
 
   const [iconResource] = createResource(
     () => props.name,
-    (name) => registry.loadIcon(name),
+    name => registry.loadIcon(name)
   );
 
   const className = () => ['lazy-icon-loading', props.className].filter(Boolean).join(' ');
@@ -63,7 +63,7 @@ export function LazyIcon(props: LazyIconProps): JSXElement | unknown {
 
   return (
     <Show when={iconResource()} fallback={placeholder()}>
-      {(component) => {
+      {component => {
         const resolved = component();
         return resolved ? resolved(buildIconProps()) : null;
       }}
