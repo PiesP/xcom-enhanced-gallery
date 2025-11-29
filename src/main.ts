@@ -1,7 +1,9 @@
 import type { IGalleryApp } from '@shared/container/app-container';
 import { warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { runAfterWindowLoad } from '@shared/dom/window-load';
+import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error';
 import { cleanupVendors } from '@shared/external/vendors';
+import type { BootstrapStage } from '@shared/interfaces';
 import { CoreService } from '@shared/services/service-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { initializeCriticalSystems } from '@/bootstrap/critical-systems';
@@ -11,6 +13,7 @@ import type { Unregister } from '@/bootstrap/events';
 import { wireGlobalEvents } from '@/bootstrap/events';
 import { registerFeatureServicesLazy } from '@/bootstrap/features';
 import { initializeGalleryApp } from '@/bootstrap/gallery-init';
+import { executeStages } from '@/bootstrap/utils';
 import { createAppConfig } from '@/constants/app-config';
 import { logger } from '@/shared/logging';
 
@@ -30,11 +33,6 @@ export const lifecycleState = {
   started: false,
   startPromise: null as Promise<void> | null,
   galleryApp: null as IGalleryApp | null,
-};
-
-type BootstrapStage = {
-  label: string;
-  run: () => Promise<void> | void;
 };
 
 const warnCleanupLog: CleanupLogger = (message, error) => {
@@ -78,19 +76,10 @@ export async function runOptionalCleanup(
 
 // exported runBootstrapStages below
 export async function runBootstrapStages(): Promise<void> {
-  for (const stage of bootstrapStages) {
-    await executeBootstrapStage(stage);
-  }
-}
-
-// exported executeBootstrapStage below
-export async function executeBootstrapStage(stage: BootstrapStage): Promise<void> {
-  try {
-    logger.debug(`[bootstrap] ➡️ ${stage.label}`);
-    await Promise.resolve(stage.run());
-  } catch (error) {
-    logger.error(`[bootstrap] ❌ ${stage.label} failed`, error);
-    throw error;
+  const results = await executeStages(bootstrapStages, { stopOnFailure: true });
+  const failedStage = results.find(r => !r.success);
+  if (failedStage) {
+    throw failedStage.error ?? new Error(`Bootstrap stage failed: ${failedStage.label}`);
   }
 }
 
@@ -105,8 +94,9 @@ export async function initializeInfrastructure(): Promise<void> {
     await initializeEnvironment();
     logger.debug('✅ Vendor library initialization complete');
   } catch (error) {
-    logger.error('❌ Infrastructure initialization failed:', error);
-    throw error;
+    bootstrapErrorReporter.critical(error, {
+      code: 'INFRASTRUCTURE_INIT_FAILED',
+    });
   }
 }
 
@@ -117,7 +107,9 @@ export async function initializeBaseServicesStage(): Promise<void> {
     await initializeCoreBaseServices();
     logger.debug('✅ Base services initialization complete');
   } catch (error) {
-    logger.warn('⚠️ Base services initialization failed:', error);
+    bootstrapErrorReporter.warn(error, {
+      code: 'BASE_SERVICES_INIT_FAILED',
+    });
   }
 }
 
@@ -296,7 +288,9 @@ export async function cleanup(): Promise<void> {
     lifecycleState.started = false;
     logger.info('✅ Application cleanup complete');
   } catch (error) {
-    logger.error('❌ Error during application cleanup:', error);
+    bootstrapErrorReporter.error(error, {
+      code: 'CLEANUP_FAILED',
+    });
     throw error;
   }
 }
@@ -353,7 +347,10 @@ export async function startApplication(): Promise<void> {
     }
   })()
     .catch(error => {
-      logger.error('❌ Application initialization failed (lean mode, no retry):', error);
+      bootstrapErrorReporter.error(error, {
+        code: 'APP_INIT_FAILED',
+        metadata: { leanMode: true },
+      });
     })
     .finally(() => {
       lifecycleState.startPromise = null;
@@ -375,8 +372,9 @@ export async function initializeGallery(): Promise<void> {
 
     logger.debug('✅ Gallery immediate initialization complete');
   } catch (error) {
-    logger.error('❌ Gallery immediate initialization failed:', error);
-    throw error;
+    galleryErrorReporter.critical(error, {
+      code: 'GALLERY_INIT_FAILED',
+    });
   }
 }
 

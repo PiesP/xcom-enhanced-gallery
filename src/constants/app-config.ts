@@ -22,6 +22,11 @@ const APP_NAME = 'X.com Enhanced Gallery';
 const MAX_GALLERY_ITEMS = 100;
 const DEFAULT_ANIMATION_DURATION = 'var(--xeg-duration-normal)';
 
+// Bootstrap configuration constants
+const DEFAULT_SERVICE_TIMEOUT_MS = 10000;
+const DEFAULT_BOOTSTRAP_RETRY_ATTEMPTS = 3;
+const DEFAULT_BOOTSTRAP_RETRY_DELAY_MS = 100;
+
 declare global {
   var __XEG_IMPORT_META_ENV__: EnvSource | undefined;
 }
@@ -79,6 +84,11 @@ const resolvedAppConfig = Object.freeze({
   diagnostics: {
     enableLogger: true,
     enableVerboseLogs: isDev,
+  },
+  bootstrap: {
+    serviceTimeoutMs: DEFAULT_SERVICE_TIMEOUT_MS,
+    retryAttempts: DEFAULT_BOOTSTRAP_RETRY_ATTEMPTS,
+    retryDelayMs: DEFAULT_BOOTSTRAP_RETRY_DELAY_MS,
   },
 } as const);
 

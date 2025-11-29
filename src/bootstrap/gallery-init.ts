@@ -7,6 +7,7 @@
 
 import { registerGalleryRenderer, registerSettingsManager } from '@shared/container';
 import type { IGalleryApp } from '@shared/container/app-container';
+import { bootstrapErrorReporter, galleryErrorReporter, settingsErrorReporter } from '@shared/error';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
 import type { SettingsServiceLike } from '@shared/services/theme-service';
@@ -33,7 +34,9 @@ async function initializeServices(): Promise<void> {
   // 1. Environment Check
   const hasRequiredGMAPIs = isGMAPIAvailable('download') || isGMAPIAvailable('setValue');
   if (!hasRequiredGMAPIs) {
-    logger.warn('[Bootstrap] Tampermonkey APIs limited - some features may be unavailable');
+    bootstrapErrorReporter.warn(new Error('Tampermonkey APIs limited'), {
+      code: 'GM_API_LIMITED',
+    });
   }
 
   // 2. Settings Service
@@ -46,7 +49,9 @@ async function initializeServices(): Promise<void> {
     settingsService = service as unknown as SettingsServiceLike;
     logger.debug('[Bootstrap] ✅ SettingsService initialized');
   } catch (error) {
-    logger.warn('[Bootstrap] SettingsService initialization failed:', error);
+    settingsErrorReporter.warn(error, {
+      code: 'SETTINGS_SERVICE_INIT_FAILED',
+    });
   }
 
   // 3. Theme Service
@@ -67,7 +72,9 @@ async function initializeServices(): Promise<void> {
 
     logger.debug(`[Bootstrap] Theme confirmed: ${themeService.getCurrentTheme()}`);
   } catch (error) {
-    logger.warn('[Bootstrap] Theme check/sync failed:', error);
+    bootstrapErrorReporter.warn(error, {
+      code: 'THEME_SYNC_FAILED',
+    });
   }
 }
 
@@ -97,7 +104,10 @@ export async function initializeGalleryApp(): Promise<IGalleryApp> {
     logger.info('✅ Gallery app initialization complete');
     return galleryApp;
   } catch (error) {
-    logger.error('❌ Gallery app initialization failed:', error);
+    galleryErrorReporter.critical(error, {
+      code: 'GALLERY_APP_INIT_FAILED',
+    });
+    // Note: critical throws, so this line won't be reached
     throw error;
   }
 }

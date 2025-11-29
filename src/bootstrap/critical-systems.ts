@@ -1,6 +1,6 @@
 import { warmupCriticalServices } from '@shared/container';
+import { bootstrapErrorReporter } from '@shared/error';
 import { logger } from '@shared/logging';
-import { reportBootstrapError } from '@/bootstrap/types';
 
 const devLogger = import.meta.env.PROD ? null : logger;
 
@@ -13,10 +13,8 @@ export async function initializeCriticalSystems(): Promise<void> {
     warmupCriticalServices();
     devLogger?.debug('[critical] initialization complete');
   } catch (error) {
-    reportBootstrapError(error, {
-      context: 'critical-systems',
-      severity: 'critical',
-      logger,
+    bootstrapErrorReporter.critical(error, {
+      code: 'CRITICAL_SYSTEMS_INIT_FAILED',
     });
   }
 }

@@ -33,6 +33,7 @@
  * **Related**:
  * - @see @shared/types/media.types.ts (type hierarchy, single source of truth)
  * - @see @shared/interfaces/gallery.interfaces.ts (GalleryRenderer definition)
+ * - @see @shared/interfaces/handler.interfaces.ts (Handler lifecycle definitions)
  * - @see docs/ARCHITECTURE.md (type layer integration)
  *
  * @version 2.0.0 - Type hierarchy unified (Phase 200)
@@ -40,3 +41,19 @@
  */
 
 export type { GalleryRenderer } from './gallery.interfaces';
+export type {
+  BootstrapStage,
+  BootstrapStageResult,
+  EventHandlerConfig,
+  GalleryController,
+  HandlerLifecycle,
+  HandlerLifecyclePhase,
+  InitializationResult,
+  ServiceHandler,
+  ServiceRegistrationOptions,
+} from './handler.interfaces';
+export {
+  createFailureResult,
+  createSuccessResult,
+  DEFAULT_EVENT_HANDLER_CONFIG,
+} from './handler.interfaces';

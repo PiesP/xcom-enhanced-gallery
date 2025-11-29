@@ -8,6 +8,7 @@ import {
   getMediaService,
   tryGetSettingsManager,
 } from '@shared/container/service-accessors';
+import { galleryErrorReporter, mediaErrorReporter } from '@shared/error';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import { logger } from '@shared/logging';
 import { NotificationService } from '@shared/services/notification-service';
@@ -44,8 +45,9 @@ export class GalleryApp {
       this.isInitialized = true;
       logger.info('[GalleryApp] ✅ Initialization complete');
     } catch (error) {
-      logger.error('[GalleryApp] ❌ Initialization failed:', error);
-      throw error;
+      galleryErrorReporter.critical(error, {
+        code: 'GALLERY_APP_INIT_FAILED',
+      });
     }
   }
 
@@ -79,8 +81,9 @@ export class GalleryApp {
 
       logger.info('[GalleryApp] ✅ Event handlers setup complete');
     } catch (error) {
-      logger.error('[GalleryApp] ❌ Event handlers setup failed:', error);
-      throw error;
+      galleryErrorReporter.critical(error, {
+        code: 'EVENT_HANDLERS_SETUP_FAILED',
+      });
     }
   }
 
@@ -92,11 +95,17 @@ export class GalleryApp {
       if (result.success && result.mediaItems.length > 0) {
         await this.openGallery(result.mediaItems, result.clickedIndex);
       } else {
-        logger.warn('[GalleryApp] Media extraction failed:', { success: result.success });
+        mediaErrorReporter.warn(new Error('Media extraction returned no items'), {
+          code: 'MEDIA_EXTRACTION_EMPTY',
+          metadata: { success: result.success },
+        });
         this.notificationService.error('Failed to load media', 'Could not find images or videos.');
       }
     } catch (error) {
-      logger.error('[GalleryApp] Error during media extraction:', error);
+      mediaErrorReporter.error(error, {
+        code: 'MEDIA_EXTRACTION_ERROR',
+        notify: true,
+      });
       this.notificationService.error(
         'Error occurred',
         error instanceof Error ? error.message : 'Unknown error'
@@ -127,7 +136,11 @@ export class GalleryApp {
 
       openGallery(mediaItems, validIndex);
     } catch (error) {
-      logger.error('[GalleryApp] Failed to open gallery:', error);
+      galleryErrorReporter.error(error, {
+        code: 'GALLERY_OPEN_FAILED',
+        metadata: { itemCount: mediaItems.length, startIndex },
+        notify: true,
+      });
       this.notificationService.error(
         'Failed to load gallery',
         error instanceof Error ? error.message : 'Unknown error'
@@ -142,7 +155,9 @@ export class GalleryApp {
         closeGallery();
       }
     } catch (error) {
-      logger.error('[GalleryApp] Failed to close gallery:', error);
+      galleryErrorReporter.error(error, {
+        code: 'GALLERY_CLOSE_FAILED',
+      });
     }
   }
 
@@ -169,7 +184,9 @@ export class GalleryApp {
       delete (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug;
       logger.info('[GalleryApp] ✅ Cleanup complete');
     } catch (error) {
-      logger.error('[GalleryApp] ❌ Error during cleanup:', error);
+      galleryErrorReporter.error(error, {
+        code: 'GALLERY_CLEANUP_FAILED',
+      });
     }
   }
 }
