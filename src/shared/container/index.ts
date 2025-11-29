@@ -5,6 +5,8 @@
 
 export { createTestHarness, TestHarness } from './harness';
 export {
+  // Lazy-Loaded Service Getters
+  getDownloadOrchestrator,
   getGalleryRenderer,
   getMediaFilenameService,
   getMediaService,

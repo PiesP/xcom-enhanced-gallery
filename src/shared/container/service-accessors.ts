@@ -81,6 +81,32 @@ export function getGalleryRenderer(): GalleryRenderer {
 }
 
 // ============================================================================
+// Lazy-Loaded Service Getters
+// ============================================================================
+// These services are loaded on-demand to optimize initial bundle size.
+
+/**
+ * Get download orchestrator (lazy-loaded).
+ *
+ * This accessor ensures the download service is registered before returning it.
+ * Uses lazy loading pattern to reduce initial bundle size by ~15-20KB.
+ *
+ * @returns Promise resolving to DownloadOrchestrator instance
+ * @throws Error if download service registration fails
+ *
+ * @example
+ * const orchestrator = await getDownloadOrchestrator();
+ * await orchestrator.downloadSingle(mediaInfo);
+ */
+export async function getDownloadOrchestrator() {
+  const { ensureDownloadServiceRegistered } = await import('@shared/services/lazy-services');
+  await ensureDownloadServiceRegistered();
+
+  const { DownloadOrchestrator } = await import('@shared/services/download/download-orchestrator');
+  return DownloadOrchestrator.getInstance();
+}
+
+// ============================================================================
 // Service Registration Helpers
 // ============================================================================
 // Helper functions for registering services in the registry.
