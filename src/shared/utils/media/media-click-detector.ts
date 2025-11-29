@@ -1,6 +1,6 @@
 /**
- * @fileoverview MediaClickDetector - Robust media click detector
- * @description Stable media click detection and handling logic with DOM caching optimization
+ * @fileoverview Media Click Detector - Modern, concise media click detection
+ * @description Handles image, video thumbnail, and video element click detection
  */
 
 import { isVideoControlElement } from '@shared/dom/utils';
@@ -10,161 +10,115 @@ import { isValidMediaUrl } from '@shared/utils/url/validator';
 import { CSS } from '@/constants/css';
 import { SELECTORS } from '@/constants/selectors';
 
-/**
- * Media detection result
- */
+// ============================================================================
+// Types
+// ============================================================================
+
+/** Detected media types */
+export type MediaType = 'image' | 'video' | 'none';
+
+/** Media load state */
+export type MediaLoadState = 'loaded' | 'loading' | 'error' | 'unknown';
+
+/** Media detection result */
 export interface MediaDetectionResult {
   /** Detected media type */
-  type: 'video' | 'image' | 'none';
-  /** Detected element */
+  type: MediaType;
+  /** The actual media element (img/video) or null */
   element: HTMLElement | null;
-  /** Media URL (if available) */
-  mediaUrl?: string;
+  /** Media URL (empty string if not found) */
+  mediaUrl: string;
   /** Detection confidence (0-1) */
   confidence: number;
-  /** Detection method */
-  method: string;
+  /** How the media was detected */
+  method: 'direct' | 'container' | 'thumbnail' | 'not_found' | 'error';
+  /** Media load state */
+  loadState: MediaLoadState;
 }
 
-// Essential selectors for X.com
-const ESSENTIAL_SELECTORS = {
-  TWEET: SELECTORS.TWEET,
+// ============================================================================
+// Constants
+// ============================================================================
+
+const MEDIA_SELECTORS = {
   TWEET_PHOTO: SELECTORS.TWEET_PHOTO,
   VIDEO_PLAYER: SELECTORS.VIDEO_PLAYER,
   MEDIA_LINK: 'a[href*="/status/"]',
 } as const;
 
+/** Interactive elements that should block gallery trigger */
+const INTERACTIVE_SELECTOR = [
+  'button',
+  'a',
+  '[role="button"]',
+  '[data-testid="like"]',
+  '[data-testid="retweet"]',
+  '[data-testid="reply"]',
+  '[data-testid="share"]',
+  '[data-testid="bookmark"]',
+].join(', ');
+
+// ============================================================================
+// Media Load State Detection
+// ============================================================================
+
 /**
- * Check if element is processable media
+ * Detect the load state of an image element
  */
-export function isProcessableMedia(target: HTMLElement | null): boolean {
-  if (!target) return false;
-
-  // 1. Global blocks
-  if (gallerySignals.isOpen.value) return false;
-  if (shouldBlockMediaTrigger(target)) return false;
-
-  // 2. Direct media check (Fastest)
-  if (target.tagName === 'IMG' || target.tagName === 'VIDEO') {
-    if (isTwitterMediaElement(target)) return true;
+export function getImageLoadState(img: HTMLImageElement): MediaLoadState {
+  if (img.complete) {
+    return img.naturalWidth > 0 ? 'loaded' : 'error';
   }
-
-  // 3. Container check (Event Delegation style)
-  // Check if we are inside a known media container
-  if (
-    target.closest(ESSENTIAL_SELECTORS.TWEET_PHOTO) ||
-    target.closest(ESSENTIAL_SELECTORS.VIDEO_PLAYER)
-  ) {
-    return true;
-  }
-
-  // 4. Tweet context check
-  // If inside a tweet, check if we clicked near media (legacy behavior support, but simplified)
-  const tweet = target.closest(ESSENTIAL_SELECTORS.TWEET);
-  if (tweet) {
-    // If we are in a tweet, and we haven't been blocked by shouldBlockMediaTrigger,
-    // and we are clicking on something that looks like a media container wrapper
-    // This is a heuristic. For now, let's rely on the explicit media container check above.
-    // If the user clicks on the "background" of a media grid, it might be handled here.
-
-    // Simplified: Only allow if we hit a media container explicitly.
-    // The previous logic had "isNearMedia" which is expensive (getBoundingClientRect).
-    // We will remove it for performance unless strictly necessary.
-    return false;
-  }
-
-  return false;
-}
-
-export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
-  if (!target) return false;
-
-  // 1. Allow video controls
-  if (isVideoControlElement(target)) return true; // Block gallery, allow control
-
-  // 2. Block internal gallery elements
-  if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
-
-  // 3. Block interactive elements (Buttons, Links)
-  // We check for interactive elements up the tree
-  const interactive = target.closest(
-    'button, a, [role="button"], [data-testid="like"], [data-testid="retweet"], [data-testid="reply"], [data-testid="share"], [data-testid="bookmark"]',
-  );
-
-  if (interactive) {
-    // Exception: Media Links (links that wrap media or point to media)
-    // If the link IS the media container or contains it, we might want to allow it.
-    // But usually, clicking a link navigates. We want to intercept navigation ONLY if it's a media click.
-
-    // If it's a link to a status (tweet), and it contains media, we might want to open gallery.
-    // But X.com usually puts the media in a separate div/a.
-
-    const isMediaLink =
-      interactive.matches(ESSENTIAL_SELECTORS.MEDIA_LINK) ||
-      interactive.querySelector(ESSENTIAL_SELECTORS.TWEET_PHOTO) ||
-      interactive.querySelector(ESSENTIAL_SELECTORS.VIDEO_PLAYER);
-
-    if (isMediaLink) {
-      // If it's a media link, we DON'T block (return false) so isProcessableMedia can return true.
-      // But wait, isProcessableMedia checks this function first.
-      // If this returns true, isProcessableMedia returns false (blocked).
-
-      // So if it IS a media link, we should return FALSE (don't block).
-      return false;
-    }
-
-    return true; // Block other interactive elements
-  }
-
-  return false;
+  return 'loading';
 }
 
 /**
- * Extract media information from clicked element
+ * Detect the load state of a video element
  */
-export function detectMediaFromClick(target: HTMLElement): MediaDetectionResult {
-  try {
-    // 1. Direct Element
-    if (target.tagName === 'IMG' && isTwitterMediaElement(target)) {
-      return createResult('image', target, (target as HTMLImageElement).src, 1.0, 'direct');
-    }
-    if (target.tagName === 'VIDEO' && isTwitterMediaElement(target)) {
-      const v = target as HTMLVideoElement;
-      return createResult('video', target, v.src || v.currentSrc, 1.0, 'direct');
-    }
-
-    // 2. Container Search (Upwards)
-    const photoContainer = target.closest(ESSENTIAL_SELECTORS.TWEET_PHOTO);
-    if (photoContainer) {
-      const img = photoContainer.querySelector('img');
-      if (img && isTwitterMediaElement(img)) {
-        return createResult('image', img, img.src, 0.9, 'container');
-      }
-    }
-
-    const videoContainer = target.closest(ESSENTIAL_SELECTORS.VIDEO_PLAYER);
-    if (videoContainer) {
-      const video = videoContainer.querySelector('video');
-      if (video) {
-        return createResult('video', video, video.src || video.currentSrc, 0.9, 'container');
-      }
-    }
-
-    return createResult('none', null, '', 0, 'not_found');
-  } catch (error) {
-    logger.error('[MediaClickDetector] Media detection failed:', error);
-    return createResult('none', null, '', 0, 'error');
-  }
+export function getVideoLoadState(video: HTMLVideoElement): MediaLoadState {
+  // readyState: 0=HAVE_NOTHING, 1=HAVE_METADATA, 2=HAVE_CURRENT_DATA, 3=HAVE_FUTURE_DATA, 4=HAVE_ENOUGH_DATA
+  if (video.error) return 'error';
+  if (video.readyState >= 2) return 'loaded'; // HAVE_CURRENT_DATA or better
+  return 'loading';
 }
 
-function createResult(
-  type: 'video' | 'image' | 'none',
-  element: HTMLElement | null,
-  url: string,
-  confidence: number,
-  method: string,
-): MediaDetectionResult {
-  return { type, element, mediaUrl: url, confidence, method };
+// ============================================================================
+// URL Extraction
+// ============================================================================
+
+/**
+ * Extract URL from an image element
+ */
+export function extractImageUrl(img: HTMLImageElement): string {
+  return img.src || img.currentSrc || '';
+}
+
+/**
+ * Extract URL from a video element (handles blob URLs)
+ */
+export function extractVideoUrl(video: HTMLVideoElement): string {
+  const src = video.src || video.currentSrc || '';
+  return src;
+}
+
+/**
+ * Extract video thumbnail (poster) URL
+ */
+export function extractVideoThumbnailUrl(video: HTMLVideoElement): string {
+  return video.poster || '';
+}
+
+// ============================================================================
+// Media Validation
+// ============================================================================
+
+/**
+ * Check if URL is a valid media source (Twitter URL or blob)
+ */
+export function isValidMediaSource(url: string): boolean {
+  if (!url) return false;
+  if (url.startsWith('blob:')) return true;
+  return isValidMediaUrl(url);
 }
 
 /**
@@ -172,13 +126,182 @@ function createResult(
  */
 function isTwitterMediaElement(element: HTMLElement): boolean {
   if (element.tagName === 'IMG') {
-    const src = (element as HTMLImageElement).src;
-    return isValidMediaUrl(src);
+    return isValidMediaSource(extractImageUrl(element as HTMLImageElement));
   }
   if (element.tagName === 'VIDEO') {
-    const src = (element as HTMLVideoElement).src || (element as HTMLVideoElement).currentSrc;
-    if (src.startsWith('blob:')) return true;
-    return isValidMediaUrl(src);
+    const video = element as HTMLVideoElement;
+    return isValidMediaSource(extractVideoUrl(video)) || isValidMediaSource(video.poster);
   }
   return false;
+}
+
+// ============================================================================
+// Block Detection
+// ============================================================================
+
+/**
+ * Check if the click target should block gallery trigger
+ */
+export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
+  if (!target) return false;
+
+  // Video controls should be blocked
+  if (isVideoControlElement(target)) return true;
+
+  // Gallery internal elements
+  if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
+
+  // Interactive elements (buttons, links, etc.)
+  const interactive = target.closest(INTERACTIVE_SELECTOR);
+  if (interactive) {
+    // Exception: Media links (links containing media)
+    const isMediaLink =
+      interactive.matches(MEDIA_SELECTORS.MEDIA_LINK) ||
+      interactive.querySelector(MEDIA_SELECTORS.TWEET_PHOTO) !== null ||
+      interactive.querySelector(MEDIA_SELECTORS.VIDEO_PLAYER) !== null;
+    return !isMediaLink;
+  }
+
+  return false;
+}
+
+/**
+ * Check if element is processable media
+ */
+export function isProcessableMedia(target: HTMLElement | null): boolean {
+  if (!target) return false;
+  if (gallerySignals.isOpen.value) return false;
+  if (shouldBlockMediaTrigger(target)) return false;
+
+  // Direct media elements
+  if ((target.tagName === 'IMG' || target.tagName === 'VIDEO') && isTwitterMediaElement(target)) {
+    return true;
+  }
+
+  // Inside media containers
+  return !!(
+    target.closest(MEDIA_SELECTORS.TWEET_PHOTO) || target.closest(MEDIA_SELECTORS.VIDEO_PLAYER)
+  );
+}
+
+// ============================================================================
+// Result Factory
+// ============================================================================
+
+function createResult(
+  type: MediaType,
+  element: HTMLElement | null,
+  url: string,
+  confidence: number,
+  method: MediaDetectionResult['method'],
+  loadState: MediaLoadState = 'unknown'
+): MediaDetectionResult {
+  return { type, element, mediaUrl: url, confidence, method, loadState };
+}
+
+// ============================================================================
+// Detection Functions
+// ============================================================================
+
+function detectDirectImage(img: HTMLImageElement): MediaDetectionResult | null {
+  if (!isTwitterMediaElement(img)) return null;
+  return createResult('image', img, extractImageUrl(img), 1.0, 'direct', getImageLoadState(img));
+}
+
+function detectDirectVideo(video: HTMLVideoElement): MediaDetectionResult | null {
+  const videoUrl = extractVideoUrl(video);
+  const posterUrl = extractVideoThumbnailUrl(video);
+
+  if (!isValidMediaSource(videoUrl) && !isValidMediaSource(posterUrl)) return null;
+
+  return createResult(
+    'video',
+    video,
+    videoUrl || posterUrl,
+    1.0,
+    'direct',
+    getVideoLoadState(video)
+  );
+}
+
+function detectFromPhotoContainer(container: Element): MediaDetectionResult | null {
+  const img = container.querySelector('img');
+  if (!img || !isTwitterMediaElement(img)) return null;
+  return createResult('image', img, extractImageUrl(img), 0.9, 'container', getImageLoadState(img));
+}
+
+function detectFromVideoContainer(container: Element): MediaDetectionResult | null {
+  const video = container.querySelector('video');
+
+  if (video) {
+    const videoUrl = extractVideoUrl(video);
+    const posterUrl = extractVideoThumbnailUrl(video);
+
+    if (isValidMediaSource(videoUrl) || isValidMediaSource(posterUrl)) {
+      return createResult(
+        'video',
+        video,
+        videoUrl || posterUrl,
+        0.9,
+        'container',
+        getVideoLoadState(video)
+      );
+    }
+  }
+
+  // Fallback: video thumbnail image (poster/preview before video loads)
+  const thumbnailImg = container.querySelector('img');
+  if (thumbnailImg && isValidMediaSource(extractImageUrl(thumbnailImg))) {
+    return createResult(
+      'video',
+      thumbnailImg,
+      extractImageUrl(thumbnailImg),
+      0.8,
+      'thumbnail',
+      getImageLoadState(thumbnailImg)
+    );
+  }
+
+  return null;
+}
+
+/**
+ * Extract media information from clicked element
+ *
+ * Detection order:
+ * 1. Direct IMG/VIDEO element
+ * 2. Photo container (tweetPhoto)
+ * 3. Video player container (videoPlayer) - includes thumbnail fallback
+ */
+export function detectMediaFromClick(target: HTMLElement): MediaDetectionResult {
+  try {
+    // 1. Direct element detection
+    if (target.tagName === 'IMG') {
+      const result = detectDirectImage(target as HTMLImageElement);
+      if (result) return result;
+    }
+
+    if (target.tagName === 'VIDEO') {
+      const result = detectDirectVideo(target as HTMLVideoElement);
+      if (result) return result;
+    }
+
+    // 2. Container search (upwards traversal)
+    const photoContainer = target.closest(MEDIA_SELECTORS.TWEET_PHOTO);
+    if (photoContainer) {
+      const result = detectFromPhotoContainer(photoContainer);
+      if (result) return result;
+    }
+
+    const videoContainer = target.closest(MEDIA_SELECTORS.VIDEO_PLAYER);
+    if (videoContainer) {
+      const result = detectFromVideoContainer(videoContainer);
+      if (result) return result;
+    }
+
+    return createResult('none', null, '', 0, 'not_found');
+  } catch (error) {
+    logger.error('[MediaClickDetector] Detection failed:', error);
+    return createResult('none', null, '', 0, 'error');
+  }
 }
