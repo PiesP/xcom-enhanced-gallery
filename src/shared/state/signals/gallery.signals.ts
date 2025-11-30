@@ -15,6 +15,7 @@ import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
 import {
   type NavigationAction,
   type NavigationState,
+  type NavigationTrigger,
   NavigationStateMachine,
 } from '@shared/state/machines/navigation.machine';
 import type { MediaInfo } from '@shared/types/media.types';
@@ -84,6 +85,19 @@ export type GalleryEvents = {
   'gallery:error': { error: string };
 };
 
+export type GalleryNavigationTrigger = NavigationTrigger;
+
+export interface GalleryNavigateStartPayload {
+  from: number;
+  to: number;
+  trigger: GalleryNavigationTrigger;
+}
+
+export interface GalleryNavigateCompletePayload {
+  index: number;
+  trigger: GalleryNavigationTrigger;
+}
+
 // Re-export NavigationSource type for backward compatibility
 export type { NavigationSource };
 
@@ -105,15 +119,8 @@ export function getLastNavigationSource(): NavigationSource {
  * Gallery index navigation events for tracking navigation state transitions
  */
 export const galleryIndexEvents = createEventEmitter<{
-  'navigate:start': {
-    from: number;
-    to: number;
-    trigger: 'button' | 'click' | 'keyboard' | 'scroll';
-  };
-  'navigate:complete': {
-    index: number;
-    trigger: 'button' | 'click' | 'keyboard' | 'scroll';
-  };
+  'navigate:start': GalleryNavigateStartPayload;
+  'navigate:complete': GalleryNavigateCompletePayload;
 }>();
 
 // ============================================================================

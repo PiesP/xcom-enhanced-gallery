@@ -7,9 +7,16 @@
 
 import { getSolid } from '@shared/external/vendors';
 import type { NavigationTrigger } from '@shared/state/machines/navigation.machine';
-import { galleryIndexEvents } from '@shared/state/signals/gallery.signals';
+import {
+  galleryIndexEvents,
+  type GalleryNavigateCompletePayload,
+  type GalleryNavigateStartPayload,
+} from '@shared/state/signals/gallery.signals';
 
-const { createSignal, createEffect, onCleanup } = getSolid();
+type Accessor<T> = () => T;
+type Cleanup = () => void;
+
+const { createSignal, createEffect, onCleanup, on } = getSolid();
 
 /**
  * Options for gallery navigation hook
@@ -26,11 +33,11 @@ export interface UseGalleryNavigationOptions {
  */
 export interface UseGalleryNavigationResult {
   /** Last navigation trigger type */
-  readonly lastNavigationTrigger: () => string | null;
+  readonly lastNavigationTrigger: Accessor<NavigationTrigger | null>;
   /** Setter for last navigation trigger */
-  readonly setLastNavigationTrigger: (trigger: string | null) => void;
+  readonly setLastNavigationTrigger: (trigger: NavigationTrigger | null) => void;
   /** Programmatic scroll timestamp */
-  readonly programmaticScrollTimestamp: () => number;
+  readonly programmaticScrollTimestamp: Accessor<number>;
   /** Setter for programmatic scroll timestamp */
   readonly setProgrammaticScrollTimestamp: (timestamp: number) => void;
 }
@@ -51,52 +58,64 @@ export function useGalleryNavigation(
 ): UseGalleryNavigationResult {
   const { isVisible, scrollToItem } = options;
 
-  const [lastNavigationTrigger, setLastNavigationTrigger] = createSignal<string | null>(null);
+  const [lastNavigationTrigger, setLastNavigationTrigger] = createSignal<NavigationTrigger | null>(
+    null
+  );
   const [programmaticScrollTimestamp, setProgrammaticScrollTimestamp] = createSignal(0);
 
-  // Single unified effect for navigation events
-  createEffect(() => {
-    if (!isVisible()) return;
-
-    const unsubscribes: Array<() => void> = [];
-
-    const handleNavigateStart = ({ trigger }: { trigger: NavigationTrigger }) => {
-      setLastNavigationTrigger(trigger);
-    };
-
-    const handleNavigateComplete = ({
-      index,
-      trigger,
-    }: {
-      index: number;
-      trigger: NavigationTrigger;
-    }) => {
-      setLastNavigationTrigger(trigger);
-
-      // Skip auto-scroll for scroll-based navigation
-      // When user manually scrolls, focus updates but we shouldn't trigger additional scroll
-      if (trigger === 'scroll') {
+  // Listen for navigation events only while gallery is visible
+  createEffect(
+    on(isVisible, visible => {
+      if (!visible) {
         return;
       }
 
-      // Perform scroll only for button/keyboard/click navigation
-      scrollToItem(index);
-    };
+      const dispose = registerNavigationEvents({
+        onTriggerChange: setLastNavigationTrigger,
+        onNavigateComplete: ({ index, trigger }) => {
+          if (trigger === 'scroll') {
+            return;
+          }
 
-    unsubscribes.push(
-      galleryIndexEvents.on('navigate:start', handleNavigateStart),
-      galleryIndexEvents.on('navigate:complete', handleNavigateComplete)
-    );
+          scrollToItem(index);
+        },
+      });
 
-    onCleanup(() => {
-      unsubscribes.forEach(unsubscribe => unsubscribe());
-    });
-  });
+      onCleanup(dispose);
+    })
+  );
 
   return {
     lastNavigationTrigger,
     setLastNavigationTrigger,
     programmaticScrollTimestamp,
     setProgrammaticScrollTimestamp,
+  };
+}
+
+interface RegisterNavigationEventsOptions {
+  readonly onTriggerChange: (trigger: NavigationTrigger) => void;
+  readonly onNavigateComplete: (payload: GalleryNavigateCompletePayload) => void;
+}
+
+function registerNavigationEvents({
+  onTriggerChange,
+  onNavigateComplete,
+}: RegisterNavigationEventsOptions): Cleanup {
+  const stopStart = galleryIndexEvents.on('navigate:start', (payload: GalleryNavigateStartPayload) =>
+    onTriggerChange(payload.trigger)
+  );
+
+  const stopComplete = galleryIndexEvents.on(
+    'navigate:complete',
+    (payload: GalleryNavigateCompletePayload) => {
+      onTriggerChange(payload.trigger);
+      onNavigateComplete(payload);
+    }
+  );
+
+  return () => {
+    stopStart();
+    stopComplete();
   };
 }
