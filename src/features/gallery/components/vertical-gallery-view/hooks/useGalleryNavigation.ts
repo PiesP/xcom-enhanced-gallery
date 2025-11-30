@@ -6,6 +6,7 @@
  */
 
 import { getSolid } from '@shared/external/vendors';
+import type { NavigationTrigger } from '@shared/state/machines/navigation.machine';
 import { galleryIndexEvents } from '@shared/state/signals/gallery.signals';
 
 const { createSignal, createEffect, onCleanup } = getSolid();
@@ -57,15 +58,39 @@ export function useGalleryNavigation(
   createEffect(() => {
     if (!isVisible()) return;
 
-    const unsubscribe = galleryIndexEvents.on('navigate:complete', ({ index, trigger }) => {
-      // Update trigger state
+    const unsubscribes: Array<() => void> = [];
+
+    const handleNavigateStart = ({ trigger }: { trigger: NavigationTrigger }) => {
+      setLastNavigationTrigger(trigger);
+    };
+
+    const handleNavigateComplete = ({
+      index,
+      trigger,
+    }: {
+      index: number;
+      trigger: NavigationTrigger;
+    }) => {
       setLastNavigationTrigger(trigger);
 
-      // Perform scroll
-      scrollToItem(index);
-    });
+      // Skip auto-scroll for scroll-based navigation
+      // When user manually scrolls, focus updates but we shouldn't trigger additional scroll
+      if (trigger === 'scroll') {
+        return;
+      }
 
-    onCleanup(() => unsubscribe());
+      // Perform scroll only for button/keyboard/click navigation
+      scrollToItem(index);
+    };
+
+    unsubscribes.push(
+      galleryIndexEvents.on('navigate:start', handleNavigateStart),
+      galleryIndexEvents.on('navigate:complete', handleNavigateComplete)
+    );
+
+    onCleanup(() => {
+      unsubscribes.forEach(unsubscribe => unsubscribe());
+    });
   });
 
   return {
