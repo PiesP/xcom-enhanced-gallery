@@ -57,6 +57,7 @@
 
 # Development guide docs (local reference)
 .github/copilot-instructions.md
+.github/prompts/xeg-dev.md.prompt.md
 /AGENTS.md
 /CLAUDE.md
 /docs/
