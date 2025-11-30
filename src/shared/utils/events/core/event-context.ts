@@ -4,8 +4,6 @@
  *              Type definitions separated from events.ts
  */
 
-import type { MediaInfo } from '@shared/types/media.types';
-
 /**
  * Event listener context
  * Metadata tracking of registered listeners
@@ -26,14 +24,13 @@ export interface EventContext {
 export interface EventHandlingResult {
   handled: boolean;
   reason?: string;
-  mediaInfo?: MediaInfo;
 }
 
 /**
  * Gallery event handler interface
  */
 export interface EventHandlers {
-  onMediaClick: (mediaInfo: MediaInfo, element: HTMLElement, event: MouseEvent) => Promise<void>;
+  onMediaClick: (element: HTMLElement, event: MouseEvent) => Promise<void>;
   onGalleryClose: () => void;
   onKeyboardEvent?: (event: KeyboardEvent) => void;
 }

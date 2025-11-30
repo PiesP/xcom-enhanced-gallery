@@ -4,37 +4,10 @@
  */
 
 import { isVideoControlElement } from '@shared/dom/utils';
-import { logger } from '@shared/logging';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 import { CSS } from '@/constants/css';
 import { SELECTORS } from '@/constants/selectors';
-
-// ============================================================================
-// Types
-// ============================================================================
-
-/** Detected media types */
-export type MediaType = 'image' | 'video' | 'none';
-
-/** Media load state */
-export type MediaLoadState = 'loaded' | 'loading' | 'error' | 'unknown';
-
-/** Media detection result */
-export interface MediaDetectionResult {
-  /** Detected media type */
-  type: MediaType;
-  /** The actual media element (img/video) or null */
-  element: HTMLElement | null;
-  /** Media URL (empty string if not found) */
-  mediaUrl: string;
-  /** Detection confidence (0-1) */
-  confidence: number;
-  /** How the media was detected */
-  method: 'direct' | 'container' | 'thumbnail' | 'not_found' | 'error';
-  /** Media load state */
-  loadState: MediaLoadState;
-}
 
 // ============================================================================
 // Constants
@@ -59,30 +32,6 @@ const INTERACTIVE_SELECTOR = [
 ].join(', ');
 
 // ============================================================================
-// Media Load State Detection
-// ============================================================================
-
-/**
- * Detect the load state of an image element
- */
-export function getImageLoadState(img: HTMLImageElement): MediaLoadState {
-  if (img.complete) {
-    return img.naturalWidth > 0 ? 'loaded' : 'error';
-  }
-  return 'loading';
-}
-
-/**
- * Detect the load state of a video element
- */
-export function getVideoLoadState(video: HTMLVideoElement): MediaLoadState {
-  // readyState: 0=HAVE_NOTHING, 1=HAVE_METADATA, 2=HAVE_CURRENT_DATA, 3=HAVE_FUTURE_DATA, 4=HAVE_ENOUGH_DATA
-  if (video.error) return 'error';
-  if (video.readyState >= 2) return 'loaded'; // HAVE_CURRENT_DATA or better
-  return 'loading';
-}
-
-// ============================================================================
 // URL Extraction
 // ============================================================================
 
@@ -99,13 +48,6 @@ export function extractImageUrl(img: HTMLImageElement): string {
 export function extractVideoUrl(video: HTMLVideoElement): string {
   const src = video.src || video.currentSrc || '';
   return src;
-}
-
-/**
- * Extract video thumbnail (poster) URL
- */
-export function extractVideoThumbnailUrl(video: HTMLVideoElement): string {
-  return video.poster || '';
 }
 
 // ============================================================================
@@ -182,126 +124,4 @@ export function isProcessableMedia(target: HTMLElement | null): boolean {
   return !!(
     target.closest(MEDIA_SELECTORS.TWEET_PHOTO) || target.closest(MEDIA_SELECTORS.VIDEO_PLAYER)
   );
-}
-
-// ============================================================================
-// Result Factory
-// ============================================================================
-
-function createResult(
-  type: MediaType,
-  element: HTMLElement | null,
-  url: string,
-  confidence: number,
-  method: MediaDetectionResult['method'],
-  loadState: MediaLoadState = 'unknown'
-): MediaDetectionResult {
-  return { type, element, mediaUrl: url, confidence, method, loadState };
-}
-
-// ============================================================================
-// Detection Functions
-// ============================================================================
-
-function detectDirectImage(img: HTMLImageElement): MediaDetectionResult | null {
-  if (!isTwitterMediaElement(img)) return null;
-  return createResult('image', img, extractImageUrl(img), 1.0, 'direct', getImageLoadState(img));
-}
-
-function detectDirectVideo(video: HTMLVideoElement): MediaDetectionResult | null {
-  const videoUrl = extractVideoUrl(video);
-  const posterUrl = extractVideoThumbnailUrl(video);
-
-  if (!isValidMediaSource(videoUrl) && !isValidMediaSource(posterUrl)) return null;
-
-  return createResult(
-    'video',
-    video,
-    videoUrl || posterUrl,
-    1.0,
-    'direct',
-    getVideoLoadState(video)
-  );
-}
-
-function detectFromPhotoContainer(container: Element): MediaDetectionResult | null {
-  const img = container.querySelector('img');
-  if (!img || !isTwitterMediaElement(img)) return null;
-  return createResult('image', img, extractImageUrl(img), 0.9, 'container', getImageLoadState(img));
-}
-
-function detectFromVideoContainer(container: Element): MediaDetectionResult | null {
-  const video = container.querySelector('video');
-
-  if (video) {
-    const videoUrl = extractVideoUrl(video);
-    const posterUrl = extractVideoThumbnailUrl(video);
-
-    if (isValidMediaSource(videoUrl) || isValidMediaSource(posterUrl)) {
-      return createResult(
-        'video',
-        video,
-        videoUrl || posterUrl,
-        0.9,
-        'container',
-        getVideoLoadState(video)
-      );
-    }
-  }
-
-  // Fallback: video thumbnail image (poster/preview before video loads)
-  const thumbnailImg = container.querySelector('img');
-  if (thumbnailImg && isValidMediaSource(extractImageUrl(thumbnailImg))) {
-    return createResult(
-      'video',
-      thumbnailImg,
-      extractImageUrl(thumbnailImg),
-      0.8,
-      'thumbnail',
-      getImageLoadState(thumbnailImg)
-    );
-  }
-
-  return null;
-}
-
-/**
- * Extract media information from clicked element
- *
- * Detection order:
- * 1. Direct IMG/VIDEO element
- * 2. Photo container (tweetPhoto)
- * 3. Video player container (videoPlayer) - includes thumbnail fallback
- */
-export function detectMediaFromClick(target: HTMLElement): MediaDetectionResult {
-  try {
-    // 1. Direct element detection
-    if (target.tagName === 'IMG') {
-      const result = detectDirectImage(target as HTMLImageElement);
-      if (result) return result;
-    }
-
-    if (target.tagName === 'VIDEO') {
-      const result = detectDirectVideo(target as HTMLVideoElement);
-      if (result) return result;
-    }
-
-    // 2. Container search (upwards traversal)
-    const photoContainer = target.closest(MEDIA_SELECTORS.TWEET_PHOTO);
-    if (photoContainer) {
-      const result = detectFromPhotoContainer(photoContainer);
-      if (result) return result;
-    }
-
-    const videoContainer = target.closest(MEDIA_SELECTORS.VIDEO_PLAYER);
-    if (videoContainer) {
-      const result = detectFromVideoContainer(videoContainer);
-      if (result) return result;
-    }
-
-    return createResult('none', null, '', 0, 'not_found');
-  } catch (error) {
-    logger.error('[MediaClickDetector] Detection failed:', error);
-    return createResult('none', null, '', 0, 'error');
-  }
 }

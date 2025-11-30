@@ -62,7 +62,7 @@ export class GalleryApp {
 
       await initializeGalleryEvents(
         {
-          onMediaClick: (mediaInfo, element) => this.handleMediaClick(mediaInfo, element),
+          onMediaClick: (element, event) => this.handleMediaClick(element, event),
           onGalleryClose: () => this.closeGallery(),
           onKeyboardEvent: event => {
             if (event.key === 'Escape' && gallerySignals.isOpen.value) {
@@ -87,7 +87,7 @@ export class GalleryApp {
     }
   }
 
-  private async handleMediaClick(_mediaInfo: unknown, element: HTMLElement): Promise<void> {
+  private async handleMediaClick(element: HTMLElement, _event?: MouseEvent): Promise<void> {
     try {
       const mediaService = getMediaService();
       const result = await mediaService.extractFromClickedElement(element);

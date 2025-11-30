@@ -61,27 +61,58 @@ export function determineClickedIndex(
   }
 }
 
+const MAX_ASCENT_DEPTH = 4;
+
 function findMediaElement(element: HTMLElement): HTMLElement | null {
   // 1. Self check
   if (element.tagName === 'IMG' || element.tagName === 'VIDEO') {
     return element;
   }
 
-  // 2. Check for media within the element (e.g. wrapper)
+  // 2. Check for media within the element (any depth)
   const mediaChild = element.querySelector('img, video');
   if (mediaChild) {
     return mediaChild as HTMLElement;
   }
 
-  // 3. Check ancestors and their immediate media children (siblings/cousins)
-  let current = element.parentElement;
-  // Limit traversal to avoid performance issues and false positives
-  for (let i = 0; i < 3 && current; i++) {
-    const siblingMedia = current.querySelector(':scope > img, :scope > video');
-    if (siblingMedia) {
-      return siblingMedia as HTMLElement;
+  // 3. Walk up ancestors and inspect sibling branches
+  let branch: HTMLElement | null = element;
+  for (let depth = 0; depth < MAX_ASCENT_DEPTH && branch; depth++) {
+    const ancestor: HTMLElement | null = branch.parentElement;
+    if (!ancestor) {
+      break;
     }
-    current = current.parentElement;
+
+    const siblingMedia = findMediaInSiblingBranches(ancestor, branch);
+    if (siblingMedia) {
+      return siblingMedia;
+    }
+
+    branch = ancestor;
+  }
+
+  return null;
+}
+
+function findMediaInSiblingBranches(
+  ancestor: HTMLElement,
+  exclude: HTMLElement
+): HTMLElement | null {
+  for (const sibling of Array.from(ancestor.children)) {
+    if (sibling === exclude) {
+      continue;
+    }
+
+    if (sibling instanceof HTMLElement) {
+      if (sibling.tagName === 'IMG' || sibling.tagName === 'VIDEO') {
+        return sibling;
+      }
+
+      const descendantMedia = sibling.querySelector('img, video');
+      if (descendantMedia) {
+        return descendantMedia as HTMLElement;
+      }
+    }
   }
 
   return null;
