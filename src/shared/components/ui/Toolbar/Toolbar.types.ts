@@ -1,10 +1,7 @@
 import type { FitMode, ViewMode } from '@shared/types';
+import type { MaybeAccessor } from '@shared/utils/solid/solid-helpers';
 
-type Accessor<T> = () => T;
-
-export type MaybeAccessor<T> = T | Accessor<T>;
-
-export type { FitMode };
+export type { FitMode, MaybeAccessor };
 
 export interface ToolbarProps {
   currentIndex: MaybeAccessor<number>;
