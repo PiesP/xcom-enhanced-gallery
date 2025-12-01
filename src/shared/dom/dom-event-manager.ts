@@ -24,11 +24,9 @@
  * ```
  */
 
-import { logger } from '@shared/logging';
-import {
-  addListener,
-  removeEventListenerManaged,
-} from '@shared/utils/events/core/listener-manager';
+import { logger } from '@/shared/logging';
+import { EventManager } from '@/shared/services/event-manager';
+import { removeEventListenerManaged } from '@/shared/utils/events/core/listener-manager';
 
 // ============================================================================
 // Types & Interfaces
@@ -76,7 +74,7 @@ export class DomEventManager {
     }
 
     try {
-      const id = addListener(
+      const id = EventManager.getInstance().addListener(
         element,
         eventType,
         handler as EventListener,
@@ -119,10 +117,24 @@ export class DomEventManager {
     }
 
     try {
-      const id = addListener(element, eventType, handler, options, 'DomEventManager:Custom');
+      const id = EventManager.getInstance().addListener(
+        element,
+        eventType,
+        handler,
+        options,
+        'DomEventManager:Custom',
+      );
 
       this.cleanups.push(() => {
-        removeEventListenerManaged(id);
+        // Use EventManager removal API to ensure consistent cleanup behavior, but
+        // fall back to calling removeEventListenerManaged directly if needed.
+        try {
+          EventManager.getInstance().removeListener(id);
+        } catch (error) {
+          logger.warn('DOM EM: EventManager.removeListener failed - falling back to low-level removal', error);
+          // Ensure we still attempt cleanup via the low-level API if EventManager removal fails
+          removeEventListenerManaged(id);
+        }
       });
 
       logger.debug('DOM EM: Custom event listener registered', {
