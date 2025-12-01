@@ -52,6 +52,9 @@ export const SCROLL_IDLE_TIMEOUT = 250;
 /** Window to ignore programmatic scroll events (ms) */
 const PROGRAMMATIC_SCROLL_WINDOW = 100;
 
+/** Listener context prefix used for managed EventManager entries */
+const LISTENER_CONTEXT_PREFIX = 'useGalleryScroll';
+
 /**
  * Track scroll state for focus tracking integration.
  * Does NOT trigger auto-scroll - tracking only.
@@ -128,12 +131,28 @@ export function useGalleryScroll({
     }
 
     const eventManager = EventManager.getInstance();
-    const listenerContext = `useGalleryScroll:${Date.now().toString(36)}:${Math.random()
+    const listenerContext = `${LISTENER_CONTEXT_PREFIX}:${Date.now().toString(36)}:${Math.random()
       .toString(36)
       .slice(2)}`;
+    const listenerIds: string[] = [];
 
-    const registerListener = (type: string, handler: EventListener): string =>
-      eventManager.addListener(eventTarget, type, handler, { passive: true }, listenerContext);
+    const registerListener = (type: string, handler: EventListener): void => {
+      const id = eventManager.addListener(
+        eventTarget,
+        type,
+        handler,
+        { passive: true },
+        listenerContext
+      );
+      if (id) {
+        listenerIds.push(id);
+        logger.debug('useGalleryScroll: listener registered', {
+          type,
+          id,
+          context: listenerContext,
+        });
+      }
+    };
 
     registerListener('wheel', handleWheel as EventListener);
     registerListener('scroll', handleScroll as EventListener);
@@ -141,7 +160,10 @@ export function useGalleryScroll({
     logger.debug('useGalleryScroll: Listeners registered');
 
     onCleanup(() => {
-      eventManager.removeByContext(listenerContext);
+      for (const id of listenerIds) {
+        eventManager.removeListener(id);
+        logger.debug('useGalleryScroll: listener removed', { id, context: listenerContext });
+      }
       clearScrollIdleTimer();
       setIsScrolling(false);
     });
