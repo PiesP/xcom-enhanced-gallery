@@ -16,7 +16,8 @@
  */
 
 import { getLanguageService } from '@shared/container/service-accessors';
-import { type ComponentChildren, getSolid, type JSXElement } from '@shared/external/vendors';
+import { type ComponentChildren, type JSXElement } from '@shared/external/vendors';
+import { children as resolveChildren, createMemo, createSignal } from '@shared/external/vendors/solid-hooks';
 import { NotificationService } from '@shared/services/notification-service';
 
 /**
@@ -36,7 +37,7 @@ type Props = {
  * - Silent UI recovery (no error display)
  * - Deduplicate duplicate errors
  *
- * **PC-Only Policy**: Uses getSolid() vendor getter (Phase 309+)
+ * **PC-Only Policy**: Uses shared solid-hooks module (Phase 601)
  *
  * @param {Props} props - Component props
  * @returns {JSXElement} Solid.js JSX element with error boundary wrapper
@@ -44,7 +45,6 @@ type Props = {
  * @throws Never throws - all errors are caught and silently handled
  */
 export function ErrorBoundary({ children }: Props): JSXElement {
-  const { children: resolveChildren, createMemo, createSignal } = getSolid();
   let lastReportedError: unknown = null;
   const [currentError, setCurrentError] = createSignal<unknown>(undefined);
   const fallbackElement = <span data-xeg-error-boundary-reset hidden aria-hidden="true" />;

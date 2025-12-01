@@ -30,14 +30,19 @@
  * ```
  */
 
-import { type ComponentChildren, getSolid, type JSXElement } from '@shared/external/vendors';
+import { type ComponentChildren, type JSXElement } from '@shared/external/vendors';
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  mergeProps,
+  onCleanup,
+  splitProps,
+} from '@shared/external/vendors/solid-hooks';
 import { logger } from '@shared/logging';
 import { toAccessor } from '@shared/utils/solid/solid-helpers';
 import { createClassName } from '@shared/utils/text/formatting';
 import styles from './Button.module.css';
-
-const solid = getSolid();
-const { mergeProps, splitProps, createEffect, onCleanup, createMemo } = solid;
 
 // ============================================================================
 // Type Definitions
@@ -264,10 +269,7 @@ export function Button(rawProps: ButtonProps): JSXElement {
     local.ref?.(null);
   });
   // Store element ref to ensure direct DOM property updates for attributes like disabled
-  const [elementRef, setElementRef] = (() => {
-    const { createSignal } = solid;
-    return createSignal<HTMLButtonElement | null>(null);
-  })();
+  const [elementRef, setElementRef] = createSignal<HTMLButtonElement | null>(null);
   // Compute button state accessors
   // Use resolved accessors to support signal/function props
   // isDisabled is defined above (resolves accessors safely)
@@ -322,9 +324,8 @@ export function Button(rawProps: ButtonProps): JSXElement {
     );
 
   // Keep the DOM disabled property in sync with the isDisabled() accessor
-  const { createEffect: _createEffect } = solid;
   const loadingClassName = styles.loading;
-  _createEffect(() => {
+  createEffect(() => {
     const el = elementRef();
     const disabledNow = isDisabled();
     const loadingNow = isLoading();

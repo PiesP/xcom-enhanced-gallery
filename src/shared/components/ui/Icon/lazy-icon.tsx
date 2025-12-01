@@ -1,4 +1,5 @@
-import { getSolid, type JSXElement } from '@shared/external/vendors';
+import { type JSXElement } from '@shared/external/vendors';
+import { createEffect, createResource, Show } from '@shared/external/vendors/solid-hooks';
 import type { IconProps } from './Icon';
 import { getIconRegistry, type IconName, preloadCommonIcons } from './icon-registry';
 
@@ -16,7 +17,6 @@ export function LazyIcon(props: LazyIconProps): JSXElement {
     return props.fallback as JSXElement;
   }
 
-  const { Show, createResource } = getSolid();
   const registry = getIconRegistry();
 
   const [iconResource] = createResource(
@@ -72,7 +72,6 @@ export function LazyIcon(props: LazyIconProps): JSXElement {
 }
 
 export function useIconPreload(names: readonly IconName[]): void {
-  const { createEffect } = getSolid();
   const registry = getIconRegistry();
 
   createEffect(() => {
@@ -85,8 +84,6 @@ export function useIconPreload(names: readonly IconName[]): void {
 }
 
 export function useCommonIconPreload(): void {
-  const { createEffect } = getSolid();
-
   createEffect(() => {
     void preloadCommonIcons();
   });

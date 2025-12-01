@@ -23,7 +23,12 @@
 
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getSetting, setSetting } from '@shared/container/settings-access';
-import { getSolid } from '@shared/external/vendors';
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  onCleanup,
+} from '@shared/external/vendors/solid-hooks';
 import type { ImageFitMode } from '@shared/types';
 import { createIntrinsicSizingStyle, resolveMediaDimensions } from '@shared/utils/media/dimensions';
 import { SharedObserver } from '@shared/utils/performance';
@@ -33,9 +38,6 @@ import { useVideoVisibility } from './hooks/useVideoVisibility';
 import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
 import styles from './VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from './VerticalImageItem.types';
-
-const solid = getSolid();
-const { createSignal, createEffect, onCleanup, createMemo } = solid;
 
 /** Fit mode CSS class mapping */
 const FIT_MODE_CLASSES: Record<string, string | undefined> = {

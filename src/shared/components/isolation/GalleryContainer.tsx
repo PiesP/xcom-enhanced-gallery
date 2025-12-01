@@ -1,4 +1,5 @@
-import { type ComponentChildren, getSolid, type JSXElement } from '@shared/external/vendors';
+import { type ComponentChildren, type JSXElement } from '@shared/external/vendors';
+import { createEffect, onCleanup, render } from '@shared/external/vendors/solid-hooks';
 import { EventManager } from '@shared/services/event-manager';
 import { createClassName } from '@shared/utils/text/formatting';
 
@@ -66,7 +67,6 @@ type GalleryRenderable = JSXElement | null | undefined | (() => JSXElement | nul
  * ```
  */
 export function mountGallery(container: Element, element: GalleryRenderable): Element {
-  const solid = getSolid();
   const host = container as HostElement;
 
   host[DISPOSE_SYMBOL]?.();
@@ -76,7 +76,7 @@ export function mountGallery(container: Element, element: GalleryRenderable): El
       ? (element as () => JSXElement | null | undefined)
       : () => element ?? null;
 
-  host[DISPOSE_SYMBOL] = solid.render(factory, host);
+  host[DISPOSE_SYMBOL] = render(factory, host);
 
   return container;
 }
@@ -142,7 +142,6 @@ export function GalleryContainer({
   className,
   registerEscapeListener,
 }: GalleryContainerProps): JSXElement {
-  const { createEffect, onCleanup } = getSolid();
   const classes = createClassName('xeg-gallery-overlay', 'xeg-gallery-container', className);
   const hasCloseHandler = typeof onClose === 'function';
 

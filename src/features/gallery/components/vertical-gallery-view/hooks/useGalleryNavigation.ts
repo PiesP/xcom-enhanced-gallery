@@ -5,7 +5,7 @@
  * @version 1.0.0
  */
 
-import { getSolid } from '@shared/external/vendors';
+import { createEffect, createSignal, on, onCleanup } from '@shared/external/vendors/solid-hooks';
 import type { NavigationTrigger } from '@shared/state/machines/navigation.machine';
 import {
   galleryIndexEvents,
@@ -15,8 +15,6 @@ import {
 
 type Accessor<T> = () => T;
 type Cleanup = () => void;
-
-const { createSignal, createEffect, onCleanup, on } = getSolid();
 
 /**
  * Options for gallery navigation hook

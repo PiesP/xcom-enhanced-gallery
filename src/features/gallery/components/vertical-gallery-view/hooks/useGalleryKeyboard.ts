@@ -18,7 +18,7 @@
  * @version 1.1.0 - Path optimization (Phase 354+)
  */
 
-import { getSolid } from '@shared/external/vendors';
+import { createEffect, onCleanup } from '@shared/external/vendors/solid-hooks';
 import { EventManager } from '@shared/services/event-manager';
 
 /**
@@ -51,8 +51,6 @@ export interface UseGalleryKeyboardOptions {
  * @param options - Configuration options
  */
 export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void {
-  const { createEffect, onCleanup } = getSolid();
-
   createEffect(() => {
     if (typeof document === 'undefined') {
       return;

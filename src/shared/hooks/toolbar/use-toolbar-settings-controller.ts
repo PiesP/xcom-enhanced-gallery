@@ -28,7 +28,7 @@ import {
   getThemeService,
   tryGetSettingsManager,
 } from '@shared/container/service-accessors';
-import { getSolid } from '@shared/external/vendors';
+import { createEffect, createSignal, onCleanup } from '@shared/external/vendors/solid-hooks';
 import { logger } from '@shared/logging';
 import type { LanguageService } from '@shared/services/language-service';
 import type { ThemeServiceContract } from '@shared/services/theme-service';
@@ -123,9 +123,6 @@ export function useToolbarSettingsController(
    * @returns Controller with ref assigners and event handlers
    * @internal Phase 375: Solid.js hook, PC-only
    */
-  const solid = getSolid();
-  const { createSignal, createEffect, onCleanup } = solid;
-
   const {
     isSettingsExpanded,
     setSettingsExpanded,

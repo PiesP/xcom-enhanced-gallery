@@ -31,7 +31,12 @@ import { useGalleryScroll } from '@features/gallery/hooks/useGalleryScroll';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getSetting, setSetting } from '@shared/container/settings-access';
-import { getSolid } from '@shared/external/vendors';
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+} from '@shared/external/vendors/solid-hooks';
 import { logger } from '@shared/logging';
 import type { DownloadState } from '@shared/state/signals/download.signals';
 import { downloadState } from '@shared/state/signals/download.signals';
@@ -51,9 +56,6 @@ import { useToolbarAutoHide } from './hooks/useToolbarAutoHide';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 
-const solidAPI = getSolid();
-const { For } = solidAPI;
-
 export interface VerticalGalleryViewProps {
   onClose?: () => void;
   className?: string;
@@ -71,7 +73,6 @@ function VerticalGalleryViewCore({
   onDownloadCurrent,
   onDownloadAll,
 }: VerticalGalleryViewProps): JSX.Element {
-  const { createSignal, createMemo, createEffect } = solidAPI;
 
   // State selectors
   const mediaItems = useSelector<GalleryState, readonly MediaInfo[]>(

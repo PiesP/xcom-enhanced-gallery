@@ -5,11 +5,9 @@
  * @version 1.0.0 - Phase 434
  */
 
-import { getSolid } from '@shared/external/vendors';
+import { createEffect, onCleanup } from '@shared/external/vendors/solid-hooks';
 import { logger } from '@shared/logging';
 import { SharedObserver } from '@shared/utils/performance';
-
-const { createEffect, onCleanup } = getSolid();
 
 /**
  * Options for video visibility hook

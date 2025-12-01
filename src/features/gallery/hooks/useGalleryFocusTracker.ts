@@ -12,7 +12,7 @@
  */
 
 import { FocusCoordinator } from '@features/gallery/logic/focus-coordinator';
-import { getSolid } from '@shared/external/vendors';
+import { onCleanup } from '@shared/external/vendors/solid-hooks';
 import {
   gallerySignals,
   galleryState,
@@ -50,8 +50,6 @@ export interface UseGalleryFocusTrackerReturn {
   /** Force immediate recomputation (bypasses debounce) */
   forceSync: () => void;
 }
-
-const { onCleanup } = getSolid();
 
 /**
  * Track gallery item focus based on scroll position.

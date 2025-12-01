@@ -30,7 +30,7 @@
  * @internal Solid.js hook, PC-only, used by toolbar container
  */
 
-import { getSolid } from '@shared/external/vendors';
+import { createStore, onCleanup } from '@shared/external/vendors/solid-hooks';
 import type { ToolbarActions, ToolbarState } from '@shared/types/toolbar.types';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
@@ -99,8 +99,6 @@ const INITIAL_STATE: ToolbarState = {
  * @internal Solid.js hook, used by toolbar container
  */
 export function useToolbarState(): [ToolbarState, ToolbarActions] {
-  const { onCleanup, createStore } = getSolid();
-
   const [state, setState] = createStore<ToolbarState>({ ...INITIAL_STATE });
 
   let lastDownloadToggle = 0;

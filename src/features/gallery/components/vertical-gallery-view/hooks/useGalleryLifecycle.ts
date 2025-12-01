@@ -7,11 +7,9 @@
 
 import { ensureGalleryScrollAvailable } from '@shared/dom/utils';
 import { observeViewportCssVars } from '@shared/dom/viewport';
-import { getSolid } from '@shared/external/vendors';
+import { createEffect, on, onCleanup } from '@shared/external/vendors/solid-hooks';
 import { logger } from '@shared/logging';
 import { animateGalleryEnter, animateGalleryExit } from '@shared/utils/css/css-animations';
-
-const { createEffect, onCleanup, on } = getSolid();
 
 /**
  * Options for gallery lifecycle hook

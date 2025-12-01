@@ -7,7 +7,12 @@ import { GalleryContainer } from '@shared/components/isolation';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import { getLanguageService, getThemeService } from '@shared/container/service-accessors';
 import { isGMAPIAvailable } from '@shared/external/userscript';
-import { getSolid } from '@shared/external/vendors';
+import {
+  createComponent,
+  createSignal,
+  onCleanup,
+  render,
+} from '@shared/external/vendors/solid-hooks';
 import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces';
 import { logger } from '@shared/logging';
 import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
@@ -85,7 +90,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
-    const { render, createComponent, createSignal, onCleanup } = getSolid();
     const themeService = getThemeService();
     const languageService = getLanguageService();
 

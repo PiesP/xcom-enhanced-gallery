@@ -1,12 +1,9 @@
 import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
-import { getSolid } from '@shared/external/vendors';
+import { For, Match, Switch } from '@shared/external/vendors/solid-hooks';
 import { formatTweetText, shortenUrl } from '@shared/utils/text/formatting';
 import { sanitizeHTML } from '@shared/utils/text/html-sanitizer';
 import styles from './Toolbar.module.css';
-
-const solid = getSolid();
-const { For, Switch, Match } = solid;
 
 interface TweetTextPanelProps {
   tweetText: string | undefined;

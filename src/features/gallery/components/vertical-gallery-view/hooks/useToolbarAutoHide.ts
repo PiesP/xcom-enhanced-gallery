@@ -6,10 +6,8 @@
  */
 
 import { getSetting } from '@shared/container/settings-access';
-import { getSolid } from '@shared/external/vendors';
+import { createEffect, createSignal, onCleanup } from '@shared/external/vendors/solid-hooks';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
-
-const { createSignal, createEffect, onCleanup } = getSolid();
 
 /**
  * Options for toolbar auto-hide hook
