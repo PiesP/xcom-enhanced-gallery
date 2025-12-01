@@ -61,31 +61,37 @@ export function determineClickedIndex(
   }
 }
 
-const MAX_ASCENT_DEPTH = 4;
+const MAX_ANCESTOR_HOPS = 3;
+const MAX_DESCENDANT_DEPTH = 6;
 
 function findMediaElement(element: HTMLElement): HTMLElement | null {
-  // 1. Self check
-  if (element.tagName === 'IMG' || element.tagName === 'VIDEO') {
+  if (isMediaElement(element)) {
     return element;
   }
 
-  // 2. Check for media within the element (any depth)
-  const mediaChild = element.querySelector('img, video');
-  if (mediaChild) {
-    return mediaChild as HTMLElement;
+  const descendant = findMediaDescendant(element, {
+    includeRoot: false,
+    maxDepth: MAX_DESCENDANT_DEPTH,
+  });
+
+  if (descendant) {
+    return descendant;
   }
 
-  // 3. Walk up ancestors and inspect sibling branches
   let branch: HTMLElement | null = element;
-  for (let depth = 0; depth < MAX_ASCENT_DEPTH && branch; depth++) {
+  for (let depth = 0; depth < MAX_ANCESTOR_HOPS && branch; depth++) {
     const ancestor: HTMLElement | null = branch.parentElement;
     if (!ancestor) {
       break;
     }
 
-    const siblingMedia = findMediaInSiblingBranches(ancestor, branch);
-    if (siblingMedia) {
-      return siblingMedia;
+    const ancestorMedia = findMediaDescendant(ancestor, {
+      includeRoot: true,
+      maxDepth: MAX_DESCENDANT_DEPTH,
+    });
+
+    if (ancestorMedia) {
+      return ancestorMedia;
     }
 
     branch = ancestor;
@@ -94,28 +100,47 @@ function findMediaElement(element: HTMLElement): HTMLElement | null {
   return null;
 }
 
-function findMediaInSiblingBranches(
-  ancestor: HTMLElement,
-  exclude: HTMLElement
+type DescendantSearchOptions = {
+  includeRoot?: boolean;
+  maxDepth: number;
+};
+
+function findMediaDescendant(
+  root: HTMLElement,
+  { includeRoot = false, maxDepth }: DescendantSearchOptions
 ): HTMLElement | null {
-  for (const sibling of Array.from(ancestor.children)) {
-    if (sibling === exclude) {
+  const queue: Array<{ node: HTMLElement; depth: number }> = [{ node: root, depth: 0 }];
+
+  while (queue.length) {
+    const current = queue.shift();
+    if (!current) {
+      break;
+    }
+
+    const { node, depth } = current;
+
+    if ((includeRoot || node !== root) && isMediaElement(node)) {
+      return node;
+    }
+
+    if (depth >= maxDepth) {
       continue;
     }
 
-    if (sibling instanceof HTMLElement) {
-      if (sibling.tagName === 'IMG' || sibling.tagName === 'VIDEO') {
-        return sibling;
+    for (const child of Array.from(node.children)) {
+      if (!(child instanceof HTMLElement)) {
+        continue;
       }
 
-      const descendantMedia = sibling.querySelector('img, video');
-      if (descendantMedia) {
-        return descendantMedia as HTMLElement;
-      }
+      queue.push({ node: child, depth: depth + 1 });
     }
   }
 
   return null;
+}
+
+function isMediaElement(element: HTMLElement): boolean {
+  return element.tagName === 'IMG' || element.tagName === 'VIDEO';
 }
 
 function extractMediaUrl(element: HTMLElement): string | null {
