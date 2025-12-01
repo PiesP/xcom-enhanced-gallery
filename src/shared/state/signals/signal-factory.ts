@@ -2,7 +2,12 @@
  * Safe signal factory
  */
 
-import { getSolid } from '@shared/external/vendors';
+import {
+  createEffect,
+  createMemo,
+  createRoot,
+  createSignal,
+} from '@shared/external/vendors/solid-hooks';
 import { logger } from '@shared/logging';
 
 export type SafeSignal<T> = {
@@ -14,9 +19,6 @@ export type SafeSignal<T> = {
  * Create a reactive signal with Solid.js
  */
 export function createSignalSafe<T>(initial: T): SafeSignal<T> {
-  const solid = getSolid();
-
-  const { createSignal, createRoot, createEffect } = solid;
   const [read, write] = createSignal(initial, { equals: false });
 
   const signalObject = {
@@ -52,9 +54,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
  * Create a reactive effect with Solid.js
  */
 export function effectSafe(fn: () => void): () => void {
-  const solid = getSolid();
   try {
-    const { createRoot, createEffect } = solid;
     return createRoot(dispose => {
       createEffect(() => fn());
       return dispose;
@@ -69,9 +69,7 @@ export function effectSafe(fn: () => void): () => void {
  * Create a memoized computed value with Solid.js
  */
 export function computedSafe<T>(compute: () => T): { readonly value: T } {
-  const solid = getSolid();
   try {
-    const { createRoot, createMemo } = solid;
     let memoAccessor: (() => T) | null = null;
 
     createRoot(dispose => {

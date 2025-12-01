@@ -9,7 +9,7 @@
  */
 
 // Break runtime dependency on services: use logging barrel directly
-import { getSolid } from '@shared/external/vendors';
+import { batch as solidBatch } from '@shared/external/vendors/solid-hooks';
 import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
 // Navigation state types
 import {
@@ -29,27 +29,7 @@ const logger: ILogger = rootLogger;
 
 type BatchExecutor = (fn: () => void) => void;
 
-function resolveBatchExecutor(): BatchExecutor {
-  try {
-    const solid = getSolid();
-    if (solid?.batch) {
-      return solid.batch;
-    }
-  } catch (error) {
-    logger.debug('[Gallery] Solid batch unavailable, using fallback executor', {
-      error,
-    });
-  }
-  return (fn: () => void) => {
-    try {
-      fn();
-    } catch (error) {
-      logger.warn('[Gallery] Fallback batch executor failed', { error });
-    }
-  };
-}
-
-const batch: BatchExecutor = resolveBatchExecutor();
+const batch: BatchExecutor = solidBatch;
 
 /**
  * Gallery state interface

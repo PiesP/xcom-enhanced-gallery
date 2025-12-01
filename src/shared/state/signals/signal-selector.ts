@@ -5,7 +5,7 @@
  * Prevent unnecessary re-renders to optimize performance.
  */
 
-import { getSolid } from '@shared/external/vendors';
+import { createMemo } from '@shared/external/vendors/solid-hooks';
 
 // Type definitions
 type Signal<T> = {
@@ -91,8 +91,6 @@ export function useSelector<T, R>(
   selector: SelectorFn<T, R>,
   options: SelectorOptions<T> = {},
 ): () => R {
-  const { createMemo } = getSolid();
-
   const memoizedSelector = createSelector(selector, options);
 
   const memo = createMemo(() => memoizedSelector(signalInstance.value));
