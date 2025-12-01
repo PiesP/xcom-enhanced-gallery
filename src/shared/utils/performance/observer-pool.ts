@@ -1,5 +1,5 @@
 const observerPool = new Map<string, IntersectionObserver>();
-const elementCallbackMap = new WeakMap<
+let elementCallbackMap = new WeakMap<
   Element,
   Map<string, Map<number, (entry: IntersectionObserverEntry) => void>>
 >();
@@ -110,3 +110,10 @@ export const SharedObserver = {
     elementCallbackMap.delete(element);
   },
 };
+
+// Test helper: Reset internal state for test isolation. Not intended for production use.
+export function _resetSharedObserverForTests(): void {
+  observerPool.clear();
+  elementCallbackMap = new WeakMap();
+  callbackIdCounter = 0;
+}

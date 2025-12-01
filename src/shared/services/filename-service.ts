@@ -37,7 +37,7 @@ export class FilenameService {
         return this.sanitize(media.filename);
       }
 
-      const extension = options.extension ?? this.getExtension(media.url);
+      const extension = options.extension ?? this.getExtension((media as any).originalUrl ?? media.url);
       const index = this.getIndex(media.id) ?? this.normalizeIndex(options.index);
       const { username, tweetId } = this.resolveMetadata(media, options.fallbackUsername);
 
