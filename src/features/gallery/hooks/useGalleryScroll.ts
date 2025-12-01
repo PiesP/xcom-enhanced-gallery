@@ -11,15 +11,15 @@
  * Note: Does NOT trigger auto-scroll - tracking only.
  */
 
-import { isGalleryInternalEvent } from '@shared/dom/utils';
-import { getSolid } from '@shared/external/vendors';
-import { logger } from '@shared/logging';
-import { EventManager } from '@shared/services/event-manager';
-import type { GalleryState } from '@shared/state/signals/gallery.signals';
-import { galleryState } from '@shared/state/signals/gallery.signals';
-import { useSelector } from '@shared/state/signals/signal-selector';
-import { toAccessor } from '@shared/utils/solid/solid-helpers';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
+import { isGalleryInternalEvent } from '@/shared/dom/utils';
+import { getSolid } from '@/shared/external/vendors';
+import { logger } from '@/shared/logging';
+import { EventManager } from '@/shared/services/event-manager';
+import type { GalleryState } from '@/shared/state/signals/gallery.signals';
+import { galleryState } from '@/shared/state/signals/gallery.signals';
+import { useSelector } from '@/shared/state/signals/signal-selector';
+import { toAccessor } from '@/shared/utils/solid/solid-helpers';
+import { globalTimerManager } from '@/shared/utils/time/timer-management';
 
 const { createSignal, createEffect, onCleanup } = getSolid();
 
@@ -71,8 +71,8 @@ export function useGalleryScroll({
   const enabledAccessor = toAccessor(enabled);
   const programmaticTimestampAccessor = toAccessor(programmaticScrollTimestamp ?? 0);
 
-  const isGalleryOpen = useSelector<GalleryState, boolean>(galleryState, (state) => state.isOpen, {
-    dependencies: (state) => [state.isOpen],
+  const isGalleryOpen = useSelector<GalleryState, boolean>(galleryState, state => state.isOpen, {
+    dependencies: state => [state.isOpen],
   });
 
   const [isScrolling, setIsScrolling] = createSignal(false);
@@ -129,14 +129,21 @@ export function useGalleryScroll({
       return;
     }
 
-    const eventManager = new EventManager();
-    eventManager.addEventListener(eventTarget, 'wheel', handleWheel, { passive: true });
-    eventManager.addEventListener(eventTarget, 'scroll', handleScroll, { passive: true });
+    const eventManager = EventManager.getInstance();
+    const listenerContext = `useGalleryScroll:${Date.now().toString(36)}:${Math.random()
+      .toString(36)
+      .slice(2)}`;
+
+    const registerListener = (type: string, handler: EventListener): string =>
+      eventManager.addListener(eventTarget, type, handler, { passive: true }, listenerContext);
+
+    registerListener('wheel', handleWheel as EventListener);
+    registerListener('scroll', handleScroll as EventListener);
 
     logger.debug('useGalleryScroll: Listeners registered');
 
     onCleanup(() => {
-      eventManager.cleanup();
+      eventManager.removeByContext(listenerContext);
       clearScrollIdleTimer();
       setIsScrolling(false);
     });

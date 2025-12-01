@@ -4,20 +4,20 @@
  */
 
 // NOTE: Vitest (vite-node) Windows alias resolution workaround — use relative paths for internal dependencies
-import type { DomEventManager } from '@shared/dom/dom-event-manager';
-import { createDomEventManager } from '@shared/dom/dom-event-manager';
-import { logger } from '@shared/logging';
-import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events/core/event-context';
+import type { DomEventManager } from '@/shared/dom/dom-event-manager';
+import { createDomEventManager } from '@/shared/dom/dom-event-manager';
+import { logger } from '@/shared/logging';
+import type { EventHandlers, GalleryEventOptions } from '@/shared/utils/events/core/event-context';
 import {
   addListener as registerManagedListener,
   removeEventListenerManaged,
   removeEventListenersByContext,
-} from '@shared/utils/events/core/listener-manager';
+} from '@/shared/utils/events/core/listener-manager';
 import {
   cleanupGalleryEvents,
   getGalleryEventSnapshot,
   initializeGalleryEvents,
-} from '@shared/utils/events/lifecycle/gallery-lifecycle';
+} from '@/shared/utils/events/lifecycle/gallery-lifecycle';
 import { BaseServiceImpl } from './base-service';
 
 /**
@@ -29,7 +29,7 @@ export class EventManager extends BaseServiceImpl {
   private readonly domManager: DomEventManager;
   private isDestroyed = false;
 
-  constructor() {
+  private constructor() {
     super('EventManager');
     this.domManager = createDomEventManager();
   }
@@ -71,7 +71,7 @@ export class EventManager extends BaseServiceImpl {
     element: HTMLElement | Document | Window | null,
     eventType: K,
     handler: (event: HTMLElementEventMap[K]) => void,
-    options?: AddEventListenerOptions,
+    options?: AddEventListenerOptions
   ): EventManager {
     if (this.isDestroyed) {
       logger.warn('addEventListener called on destroyed EventManager');
@@ -89,7 +89,7 @@ export class EventManager extends BaseServiceImpl {
     element: HTMLElement | Document | Window | null,
     eventType: string,
     handler: (event: Event) => void,
-    options?: AddEventListenerOptions,
+    options?: AddEventListenerOptions
   ): EventManager {
     if (this.isDestroyed) {
       logger.warn('addCustomEventListener called on destroyed EventManager');
@@ -135,7 +135,7 @@ export class EventManager extends BaseServiceImpl {
     type: string,
     listener: EventListener,
     options?: AddEventListenerOptions,
-    context?: string,
+    context?: string
   ): string {
     if (this.isDestroyed) {
       logger.warn('EventManager: addListener called on destroyed instance');
@@ -165,7 +165,7 @@ export class EventManager extends BaseServiceImpl {
    */
   public async initializeGallery(
     handlers: EventHandlers,
-    options?: Partial<GalleryEventOptions>,
+    options?: Partial<GalleryEventOptions>
   ): Promise<() => void> {
     return initializeGalleryEvents(handlers, options);
   }
@@ -195,7 +195,7 @@ export class EventManager extends BaseServiceImpl {
     element: EventTarget,
     eventType: string,
     handler: EventListener,
-    context?: string,
+    context?: string
   ): string {
     if (this.isDestroyed) {
       logger.warn('handleTwitterEvent called on destroyed EventManager');
