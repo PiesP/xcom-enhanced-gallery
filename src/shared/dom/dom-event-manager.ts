@@ -83,7 +83,16 @@ export class DomEventManager {
       );
 
       this.cleanups.push(() => {
-        removeEventListenerManaged(id);
+        // Prefer EventManager removal API for consistency; fall back to low-level removal
+        try {
+          EventManager.getInstance().removeListener(id);
+        } catch (error) {
+          logger.warn(
+            'DOM EM: EventManager.removeListener failed - falling back to low-level removal',
+            error
+          );
+          removeEventListenerManaged(id);
+        }
       });
 
       logger.debug('DOM EM: Event listener registered', {
