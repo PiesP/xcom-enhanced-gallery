@@ -1,11 +1,10 @@
 /**
  * @fileoverview Unified Event Manager (BaseServiceImpl pattern applied)
- * @description Single interface integrating DOM Event Manager and events utility
+ * @description Single interface integrating DOM events and events utility.
+ *              Phase 600: DomEventManager functionality integrated directly.
+ * @version 3.0.0 - Unified event management with reduced abstraction layers
  */
 
-// NOTE: Vitest (vite-node) Windows alias resolution workaround — use relative paths for internal dependencies
-import type { DomEventManager } from '@/shared/dom/dom-event-manager';
-import { createDomEventManager } from '@/shared/dom/dom-event-manager';
 import { logger } from '@/shared/logging';
 import type { EventHandlers, GalleryEventOptions } from '@/shared/utils/events/core/event-context';
 import {
@@ -20,18 +19,39 @@ import {
 } from '@/shared/utils/events/lifecycle/gallery-lifecycle';
 import { BaseServiceImpl } from './base-service';
 
+/** Cleanup function type (removes a specific event listener) */
+type EventCleanup = () => void;
+
 /**
- * Event Manager
- * Integrated functionality of DOM Event Manager and GalleryEventManager
+ * Standard DOM event listener options.
+ */
+interface EventOptions {
+  passive?: boolean;
+  capture?: boolean;
+  once?: boolean;
+  signal?: AbortSignal;
+}
+
+/**
+ * Unified Event Manager
+ * Combines DOM event management and Gallery event lifecycle.
+ * Phase 600: DomEventManager functionality integrated directly.
+ *
+ * **Design Pattern**: Singleton + Builder (chainable API)
+ * **Key Features**:
+ * - ✅ Automatic cleanup tracking
+ * - ✅ Type-safe event registration
+ * - ✅ Chainable API
+ * - ✅ Context-based listener grouping
+ * - ✅ Gallery lifecycle management
  */
 export class EventManager extends BaseServiceImpl {
   private static instance: EventManager | null = null;
-  private readonly domManager: DomEventManager;
+  private readonly cleanups: EventCleanup[] = [];
   private isDestroyed = false;
 
   private constructor() {
     super('EventManager');
-    this.domManager = createDomEventManager();
   }
 
   /**
@@ -48,7 +68,6 @@ export class EventManager extends BaseServiceImpl {
    * Lifecycle: Initialization
    */
   protected async onInitialize(): Promise<void> {
-    // DOM manager already initialized in constructor
     logger.debug('EventManager initialization completed');
   }
 
@@ -61,74 +80,164 @@ export class EventManager extends BaseServiceImpl {
   }
 
   // ================================
-  // DOM Event Manager delegation methods
+  // DOM Event Management (integrated from DomEventManager)
   // ================================
 
   /**
-   * Register DOM event listener
+   * Register HTML element event listener (type-safe).
+   * Chainable API for ergonomic multiple event registration.
+   *
+   * @template K - HTML event type (e.g., 'click', 'scroll')
+   * @param element - Target element (null tolerance)
+   * @param eventType - Event type from HTMLElementEventMap
+   * @param handler - Event handler function (strongly typed)
+   * @param options - addEventListener options
+   * @returns this (for chaining)
    */
   public addEventListener<K extends keyof HTMLElementEventMap>(
     element: HTMLElement | Document | Window | null,
     eventType: K,
     handler: (event: HTMLElementEventMap[K]) => void,
-    options?: AddEventListenerOptions
+    options?: EventOptions
   ): EventManager {
-    if (this.isDestroyed) {
-      logger.warn('addEventListener called on destroyed EventManager');
+    if (!element || this.isDestroyed) {
+      if (this.isDestroyed) {
+        logger.warn('addEventListener called on destroyed EventManager');
+      }
       return this;
     }
 
-    this.domManager.addEventListener(element, eventType, handler, options);
+    try {
+      const id = registerManagedListener(
+        element,
+        eventType,
+        handler as EventListener,
+        options,
+        'EventManager:DOM'
+      );
+
+      this.cleanups.push(() => {
+        removeEventListenerManaged(id);
+      });
+
+      logger.debug('EventManager: DOM event listener registered', {
+        eventType,
+        options,
+        id,
+      });
+    } catch (error) {
+      logger.error('EventManager: Failed to register DOM event listener', {
+        eventType,
+        error,
+      });
+    }
+
     return this;
   }
 
   /**
-   * Register custom event listener
+   * Register custom event listener (any event type).
+   * Use for custom events or non-standard event types.
+   *
+   * @param element - Target element (null tolerance)
+   * @param eventType - Custom event type (any string)
+   * @param handler - Generic event handler
+   * @param options - addEventListener options
+   * @returns this (for chaining)
    */
   public addCustomEventListener(
     element: HTMLElement | Document | Window | null,
     eventType: string,
     handler: (event: Event) => void,
-    options?: AddEventListenerOptions
+    options?: EventOptions
   ): EventManager {
-    if (this.isDestroyed) {
-      logger.warn('addCustomEventListener called on destroyed EventManager');
+    if (!element || this.isDestroyed) {
+      if (this.isDestroyed) {
+        logger.warn('addCustomEventListener called on destroyed EventManager');
+      }
       return this;
     }
 
-    this.domManager.addCustomEventListener(element, eventType, handler, options);
+    try {
+      const id = registerManagedListener(
+        element,
+        eventType,
+        handler,
+        options,
+        'EventManager:Custom'
+      );
+
+      this.cleanups.push(() => {
+        removeEventListenerManaged(id);
+      });
+
+      logger.debug('EventManager: Custom event listener registered', {
+        eventType,
+        options,
+        id,
+      });
+    } catch (error) {
+      logger.error('EventManager: Failed to register custom event listener', {
+        eventType,
+        error,
+      });
+    }
+
     return this;
   }
 
   /**
-   * Get DOM event listener count
+   * Get DOM event listener count (from cleanup tracking)
    */
   public getListenerCount(): number {
-    return this.domManager.getListenerCount();
+    return this.cleanups.length;
   }
 
   /**
    * Check if destroyed
    */
   public getIsDestroyed(): boolean {
-    return this.isDestroyed || this.domManager.getIsDestroyed();
+    return this.isDestroyed;
   }
 
   /**
-   * Clean up DOM events
+   * Clean up all DOM events tracked by this manager
    */
   public cleanup(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    let cleanupCount = 0;
+    for (const cleanupFn of this.cleanups) {
+      try {
+        cleanupFn();
+        cleanupCount++;
+      } catch (error) {
+        logger.warn('EventManager: Failed to cleanup individual listener', error);
+      }
+    }
+
+    this.cleanups.length = 0;
     this.isDestroyed = true;
-    this.domManager.cleanup();
-    logger.debug('EventManager DOM events cleanup completed');
+
+    logger.debug('EventManager: DOM events cleanup completed', { cleanupCount });
   }
 
   // ================================
-  // GalleryEventManager delegation methods
+  // Managed Listener Pattern (with context grouping)
   // ================================
 
   /**
-   * Add event listener (GalleryEventManager pattern)
+   * Add event listener with ID tracking (managed pattern).
+   * Supports context-based grouping for batch removal.
+   *
+   * @param element - Target element
+   * @param type - Event type
+   * @param listener - Event handler
+   * @param options - Listener options
+   * @param context - Context for grouping (e.g., 'gallery-keyboard')
+   * @returns Listener ID for individual removal
    */
   public addListener(
     element: EventTarget,
@@ -146,22 +255,26 @@ export class EventManager extends BaseServiceImpl {
   }
 
   /**
-   * Remove event listener
+   * Remove event listener by ID
    */
   public removeListener(id: string): boolean {
     return removeEventListenerManaged(id);
   }
 
   /**
-   * Remove event listeners by context
+   * Remove all event listeners by context
    */
   public removeByContext(context: string): number {
     return removeEventListenersByContext(context);
   }
 
+  // ================================
+  // Gallery Event Lifecycle
+  // ================================
+
   /**
    * Initialize gallery events
-   * Phase 305: Returns cleanup function
+   * Returns cleanup function for lifecycle management
    */
   public async initializeGallery(
     handlers: EventHandlers,
@@ -178,18 +291,18 @@ export class EventManager extends BaseServiceImpl {
   }
 
   /**
-   * Get gallery status
+   * Get gallery event status
    */
   public getGalleryStatus() {
     return getGalleryEventSnapshot();
   }
 
   // ================================
-  // Integrated functionality
+  // Twitter-specific Events
   // ================================
 
   /**
-   * Handle Twitter events (alias for handleTwitterEvent)
+   * Handle Twitter events (convenience method with context)
    */
   public handleTwitterEvent(
     element: EventTarget,
@@ -205,14 +318,18 @@ export class EventManager extends BaseServiceImpl {
     return registerManagedListener(element, eventType, handler, undefined, context);
   }
 
+  // ================================
+  // Unified Status & Cleanup
+  // ================================
+
   /**
-   * Get unified status
+   * Get unified status of all event systems
    */
   public getUnifiedStatus() {
     return {
       domEvents: {
         listenerCount: this.getListenerCount(),
-        isDestroyed: this.domManager.getIsDestroyed(),
+        isDestroyed: this.isDestroyed,
       },
       galleryEvents: getGalleryEventSnapshot(),
       totalListeners: this.getListenerCount(),
@@ -221,7 +338,7 @@ export class EventManager extends BaseServiceImpl {
   }
 
   /**
-   * Clean up all events
+   * Clean up all events (DOM + Gallery)
    */
   public cleanupAll(): void {
     this.cleanupGallery();
@@ -231,5 +348,3 @@ export class EventManager extends BaseServiceImpl {
     logger.debug('EventManager complete cleanup');
   }
 }
-
-// Aliases removed: external surface maintains only EventManager single interface
