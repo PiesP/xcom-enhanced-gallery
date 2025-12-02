@@ -168,18 +168,33 @@ export function shortenUrl(url: string, maxLength = 50): string {
     const domain = urlObj.hostname;
     const path = urlObj.pathname;
 
-    if (path.length <= 20) {
-      return `${urlObj.protocol}//${domain}${path}`;
-    }
-
     const segments = path.split('/').filter(Boolean);
-    if (segments.length <= 2) {
-      return `${urlObj.protocol}//${domain}${path}`;
+    const base = `${urlObj.protocol}//${domain}`;
+
+    // If the domain itself exceeds the max length, shortening the path
+    // won't help make the whole URL fit, so just return the full path.
+    const allowedPathLen = maxLength - base.length;
+    if (base.length >= maxLength) {
+      return `${base}${path}`;
     }
 
-    const first = segments[0];
-    const last = segments[segments.length - 1];
-    return `${urlObj.protocol}//${domain}/${first}/.../${last}`;
+    // If we only have 1-2 segments or the path is short relative to the
+    // configured thresholds, return as-is.
+    if (segments.length <= 2 || path.length <= Math.min(20, Math.max(0, allowedPathLen))) {
+      return `${base}${path}`;
+    }
+
+    // If URL length is greater than maxLength and we have multiple path segments,
+    // shorten to protocol//domain/first/.../last for readability (only when this
+    // actually helps keep the URL length under the limit).
+    if (url.length > maxLength && segments.length > 2) {
+      const first = segments[0];
+      const last = segments[segments.length - 1];
+      return `${base}/${first}/.../${last}`;
+    }
+
+    // Fallback: return full path
+    return `${urlObj.protocol}//${domain}${path}`;
   } catch {
     // Invalid URL, return truncated
     return url.length > maxLength ? `${url.slice(0, maxLength)}...` : url;
