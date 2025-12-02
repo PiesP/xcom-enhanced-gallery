@@ -7,7 +7,7 @@ const LazySettingsControls = lazy(() =>
     default: module.SettingsControls,
   })),
 );
-const SettingsControlsFallback = (): JSXElement => {
+export const SettingsControlsFallback = (): JSXElement => {
   return <div style={{ height: '7.5rem' }} />;
 };
 export const SettingsControlsLazy = (props: SettingsControlsProps): JSXElement => (
