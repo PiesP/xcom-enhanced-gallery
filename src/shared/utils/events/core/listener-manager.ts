@@ -100,6 +100,12 @@ export function addListener(
   context?: string
 ): string {
   const id = generateListenerId(context);
+  // Visible across the entire function to allow cleanup in the outer catch
+  // when the DOM addEventListener might throw after we attached an abort
+  // handler to the passed AbortSignal.
+  let signal: AbortSignal | undefined = undefined;
+  let onAbort: EventListener | undefined = undefined;
+  let abortAttached = false;
 
   try {
     if (!element || typeof element.addEventListener !== 'function') {
@@ -112,7 +118,7 @@ export function addListener(
       return id;
     }
 
-    const signal: AbortSignal | undefined = options?.signal as AbortSignal | undefined;
+    signal = options?.signal as AbortSignal | undefined;
     if (signal?.aborted) {
       logger.debug(`Skip adding listener due to pre-aborted signal: ${type} (${id})`, {
         context,
@@ -125,21 +131,25 @@ export function addListener(
     // sanitize the options we pass to the DOM by excluding the signal
     // property. We attach the abort handler manually to keep safe control
     // and to be able to log/debug when signal.addEventListener is unavailable.
-    const domOptions = options ? { ...options } : undefined;
-    if (domOptions && (domOptions as any).signal) {
-      (domOptions as any).signal = undefined;
-    }
+    // Build sanitized options for native addEventListener without the AbortSignal
+    // to prevent DOM implementations from invoking the signal implementation.
+    const domOptions: AddEventListenerOptions | undefined = options
+      ? ({
+          capture: (options as AddEventListenerOptions).capture,
+          passive: (options as AddEventListenerOptions).passive,
+          once: (options as AddEventListenerOptions).once,
+        } as AddEventListenerOptions)
+      : undefined;
 
     // Prepare abort handler if signal is provided
-    let onAbort: (() => void) | undefined;
-    let abortAttached = false;
+    // onAbort and abortAttached are declared above
     if (signal && typeof signal.addEventListener === 'function') {
-      onAbort = () => {
+      onAbort = (_ev?: Event) => {
         try {
           removeEventListenerManaged(id);
         } finally {
           try {
-            signal.removeEventListener('abort', onAbort as EventListener);
+            signal?.removeEventListener('abort', onAbort as EventListener);
           } catch {
             logger.debug('AbortSignal removeEventListener safeguard failed (ignored)', {
               context,
@@ -164,7 +174,7 @@ export function addListener(
     }
 
     // **Phase 420.3: Record listener creation in profiler**
-    element.addEventListener(type, listener, domOptions as any);
+    element.addEventListener(type, listener, domOptions);
 
     const eventContext: EventContext = {
       id,
@@ -188,9 +198,8 @@ export function addListener(
     // previously attached abort handler to avoid leaking onAbort callbacks.
     try {
       if (
-        typeof signal !== 'undefined' &&
         abortAttached &&
-        typeof signal.removeEventListener === 'function' &&
+        typeof signal?.removeEventListener === 'function' &&
         typeof onAbort === 'function'
       ) {
         try {

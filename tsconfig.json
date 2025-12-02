@@ -49,7 +49,7 @@
       "scripts/*": ["./scripts/*"],
       "vite.config": ["./vite.config.ts"]
     },
-    "types": ["vite/client", "vitest/globals"],
+    "types": ["vite/client", "vitest", "vitest/globals"],
     "incremental": true,
     "tsBuildInfoFile": ".tsbuildinfo"
   }
