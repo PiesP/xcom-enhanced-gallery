@@ -67,6 +67,13 @@ export function cleanFilename(filename?: string): string {
     cleaned = lastSegment;
   }
 
+  // Treat a cleaned string consisting only of path separators as empty
+  // (e.g., "////"). This ensures we fall back to 'Image' when the
+  // resulting filename is effectively empty after stripping.
+  if (/^[\\/]+$/.test(cleaned)) {
+    cleaned = '';
+  }
+
   if (cleaned.length > 40 || !cleaned) {
     // Prefer last path segment (including extension if any) when truncating
     const match = filename.match(/([^/\\]+)$/);
