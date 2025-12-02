@@ -45,6 +45,7 @@
     "test:e2e": "playwright test",
     "test:a11y": "playwright test playwright/accessibility",
     "test:mutation": "stryker run",
+    "mutation:generate": "tsx scripts/mutation-improvements/generate-tests.ts",
     "test:visual": "playwright test -c playwright-ct.config.ts --grep @visual",
     "test:coverage": "vitest run --coverage",
     "test:all": "run-s test:batched test:ct test:visual test:a11y test:e2e",
