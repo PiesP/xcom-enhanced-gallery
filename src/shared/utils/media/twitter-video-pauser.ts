@@ -1,7 +1,6 @@
 /**
  * @fileoverview Twitter ambient video auto-pause helper.
- * @description Scans the host timeline for actively playing videos and pauses them
- *              before the gallery overlay takes focus.
+ * @description Pauses actively playing videos in the host timeline before gallery opens.
  */
 
 import { isGalleryInternalElement } from '@shared/dom/utils';
@@ -9,7 +8,7 @@ import { logger } from '@shared/logging';
 
 type QueryableRoot = Document | DocumentFragment | HTMLElement;
 
-const ZERO_RESULT = Object.freeze({
+const ZERO_RESULT: PauseAmbientVideosResult = Object.freeze({
   pausedCount: 0,
   totalCandidates: 0,
   skippedCount: 0,
@@ -25,6 +24,7 @@ export interface PauseAmbientVideosResult {
   skippedCount: number;
 }
 
+/** Resolves the queryable root element, falling back to document. */
 function resolveRoot(root?: QueryableRoot | null): QueryableRoot | null {
   if (root && typeof root.querySelectorAll === 'function') return root;
   return typeof document !== 'undefined' && typeof document.querySelectorAll === 'function'
@@ -32,6 +32,7 @@ function resolveRoot(root?: QueryableRoot | null): QueryableRoot | null {
     : null;
 }
 
+/** Checks if video is actively playing (not paused and not ended). */
 function isVideoPlaying(video: HTMLVideoElement): boolean {
   try {
     return !video.paused && !video.ended;
@@ -40,68 +41,55 @@ function isVideoPlaying(video: HTMLVideoElement): boolean {
   }
 }
 
+/** Determines if a video should be paused (external, connected, and playing). */
+function shouldPauseVideo(video: Element): video is HTMLVideoElement {
+  return (
+    video instanceof HTMLVideoElement &&
+    !isGalleryInternalElement(video) &&
+    video.isConnected &&
+    isVideoPlaying(video)
+  );
+}
+
+/** Attempts to pause a video and returns success status. */
+function tryPauseVideo(video: HTMLVideoElement): boolean {
+  try {
+    video.pause?.();
+    return true;
+  } catch (error) {
+    logger.debug('[AmbientVideo] Failed to pause Twitter video', { error });
+    return false;
+  }
+}
+
+/**
+ * Pauses all actively playing videos in the Twitter timeline.
+ * Skips gallery-owned videos to prevent interference with gallery playback.
+ */
 export function pauseActiveTwitterVideos(
   options: PauseAmbientVideosOptions = {},
 ): PauseAmbientVideosResult {
   const root = resolveRoot(options.root ?? null);
-  if (!root) {
-    return { ...ZERO_RESULT };
-  }
-
-  let pausedCount = 0;
-  let totalCandidates = 0;
-  let skippedCount = 0;
+  if (!root) return { ...ZERO_RESULT };
 
   const videos = Array.from(root.querySelectorAll('video'));
-  if (videos.length === 0) {
-    return { ...ZERO_RESULT };
-  }
+  if (videos.length === 0) return { ...ZERO_RESULT };
 
-  for (const element of videos) {
-    if (!(element instanceof HTMLVideoElement)) {
-      skippedCount += 1;
-      continue;
-    }
+  const candidates = videos.filter(shouldPauseVideo);
+  const pausedVideos = candidates.filter(tryPauseVideo);
 
-    // Skip our own gallery videos
-    if (isGalleryInternalElement(element)) {
-      skippedCount += 1;
-      continue;
-    }
+  const result: PauseAmbientVideosResult = {
+    pausedCount: pausedVideos.length,
+    totalCandidates: candidates.length,
+    skippedCount: videos.length - candidates.length + (candidates.length - pausedVideos.length),
+  };
 
-    // Skip disconnected videos
-    if (!element.isConnected) {
-      skippedCount += 1;
-      continue;
-    }
-
-    if (!isVideoPlaying(element)) {
-      skippedCount += 1;
-      continue;
-    }
-
-    totalCandidates += 1;
-    try {
-      element.pause?.();
-      pausedCount += 1;
-    } catch (error) {
-      skippedCount += 1;
-      logger.debug('[AmbientVideo] Failed to pause Twitter video', { error });
-    }
-  }
-
-  if (pausedCount > 0) {
+  if (result.pausedCount > 0) {
     logger.debug('[AmbientVideo] Ambient Twitter videos paused', {
-      pausedCount,
-      totalCandidates,
-      skippedCount,
+      ...result,
       inspected: videos.length,
     });
   }
 
-  return {
-    pausedCount,
-    totalCandidates,
-    skippedCount,
-  };
+  return result;
 }
