@@ -142,11 +142,6 @@ npm run build:fast
 # Optional: typecheck and lint
 npm run typecheck
 npm run lint
-
-# Development quality checks
-npm run deps:unused    # Find unused dependencies
-npm run size           # Check bundle size
-npm run biome:check    # Fast linting (alternative to ESLint)
 ```
 
 GitHub Actions runs a subset of these commands for continuous integration and security. See `.github/workflows/` for details.
