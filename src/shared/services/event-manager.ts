@@ -341,7 +341,11 @@ export class EventManager extends BaseServiceImpl {
    * Clean up all events (DOM + Gallery)
    */
   public cleanupAll(): void {
-    this.cleanupGallery();
+    try {
+      this.cleanupGallery();
+    } catch (error) {
+      logger.warn('EventManager: Failed to cleanup gallery events', error);
+    }
     if (!this.isDestroyed) {
       this.cleanup();
     }

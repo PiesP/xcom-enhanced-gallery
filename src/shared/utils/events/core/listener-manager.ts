@@ -97,7 +97,7 @@ export function addListener(
   type: string,
   listener: EventListener,
   options?: AddEventListenerOptions,
-  context?: string,
+  context?: string
 ): string {
   const id = generateListenerId(context);
 
@@ -120,8 +120,51 @@ export function addListener(
       return id;
     }
 
+    // To prevent the native element.addEventListener from reading the signal
+    // and potentially invoking it (which can throw in some cases), we
+    // sanitize the options we pass to the DOM by excluding the signal
+    // property. We attach the abort handler manually to keep safe control
+    // and to be able to log/debug when signal.addEventListener is unavailable.
+    const domOptions = options ? { ...options } : undefined;
+    if (domOptions && (domOptions as any).signal) {
+      (domOptions as any).signal = undefined;
+    }
+
+    // Prepare abort handler if signal is provided
+    let onAbort: (() => void) | undefined;
+    let abortAttached = false;
+    if (signal && typeof signal.addEventListener === 'function') {
+      onAbort = () => {
+        try {
+          removeEventListenerManaged(id);
+        } finally {
+          try {
+            signal.removeEventListener('abort', onAbort as EventListener);
+          } catch {
+            logger.debug('AbortSignal removeEventListener safeguard failed (ignored)', {
+              context,
+            });
+          }
+        }
+      };
+      try {
+        signal.addEventListener(
+          'abort',
+          onAbort as EventListener,
+          { once: true } as AddEventListenerOptions
+        );
+        abortAttached = true;
+      } catch {
+        // If attach fails, log and avoid registering the listener to DOM.
+        logger.debug('AbortSignal addEventListener not available (ignored)', {
+          context,
+        });
+        return id;
+      }
+    }
+
     // **Phase 420.3: Record listener creation in profiler**
-    element.addEventListener(type, listener, options);
+    element.addEventListener(type, listener, domOptions as any);
 
     const eventContext: EventContext = {
       id,
@@ -136,34 +179,31 @@ export function addListener(
     registryRegister(id, eventContext);
 
     // Handle AbortSignal
-    if (signal && typeof signal.addEventListener === 'function') {
-      const onAbort = () => {
-        try {
-          removeEventListenerManaged(id);
-        } finally {
-          try {
-            signal.removeEventListener('abort', onAbort);
-          } catch {
-            logger.debug('AbortSignal removeEventListener safeguard failed (ignored)', {
-              context,
-            });
-          }
-        }
-      };
-      try {
-        signal.addEventListener('abort', onAbort, {
-          once: true,
-        } as AddEventListenerOptions);
-      } catch {
-        logger.debug('AbortSignal addEventListener not available (ignored)', {
-          context,
-        });
-      }
-    }
+    // If we attached the abort handler earlier, nothing else to do here.
 
     logger.debug(`Event listener added: ${type} (${id})`, { context });
     return id;
   } catch (error) {
+    // If abort handler was attached but DOM addEventListener failed, detach
+    // previously attached abort handler to avoid leaking onAbort callbacks.
+    try {
+      if (
+        typeof signal !== 'undefined' &&
+        abortAttached &&
+        typeof signal.removeEventListener === 'function' &&
+        typeof onAbort === 'function'
+      ) {
+        try {
+          signal.removeEventListener('abort', onAbort as EventListener);
+        } catch {
+          logger.debug('AbortSignal removeEventListener safeguard failed (ignored)', {
+            context,
+          });
+        }
+      }
+    } catch {
+      /* noop */
+    }
     logger.error(`Failed to add event listener: ${type}`, { error, context });
     return id;
   }
@@ -300,4 +340,12 @@ export function __testHasListener(id: string): boolean {
  */
 export function __testGetListener(id: string): EventContext | undefined {
   return registryGet(id);
+}
+
+/**
+ * Unregister a listener from the registry for testing purposes only
+ * @internal
+ */
+export function __testRegistryUnregister(id: string): boolean {
+  return registryUnregister(id);
 }
