@@ -9,6 +9,7 @@ import { logger } from '@/shared/logging';
 import type { EventHandlers, GalleryEventOptions } from '@/shared/utils/events/core/event-context';
 import {
   addListener as registerManagedListener,
+  getEventListenerStatus,
   removeEventListenerManaged,
   removeEventListenersByContext,
 } from '@/shared/utils/events/core/listener-manager';
@@ -18,9 +19,6 @@ import {
   initializeGalleryEvents,
 } from '@/shared/utils/events/lifecycle/gallery-lifecycle';
 import { BaseServiceImpl } from './base-service';
-
-/** Cleanup function type (removes a specific event listener) */
-type EventCleanup = () => void;
 
 /**
  * Standard DOM event listener options.
@@ -47,8 +45,10 @@ interface EventOptions {
  */
 export class EventManager extends BaseServiceImpl {
   private static instance: EventManager | null = null;
-  private readonly cleanups: EventCleanup[] = [];
   private isDestroyed = false;
+
+  private static readonly DOM_EVENT_CONTEXT = 'EventManager:DOM';
+  private static readonly CUSTOM_EVENT_CONTEXT = 'EventManager:Custom';
 
   private constructor() {
     super('EventManager');
@@ -113,12 +113,8 @@ export class EventManager extends BaseServiceImpl {
         eventType,
         handler as EventListener,
         options,
-        'EventManager:DOM'
+        EventManager.DOM_EVENT_CONTEXT
       );
-
-      this.cleanups.push(() => {
-        removeEventListenerManaged(id);
-      });
 
       logger.debug('EventManager: DOM event listener registered', {
         eventType,
@@ -164,12 +160,8 @@ export class EventManager extends BaseServiceImpl {
         eventType,
         handler,
         options,
-        'EventManager:Custom'
+        EventManager.CUSTOM_EVENT_CONTEXT
       );
-
-      this.cleanups.push(() => {
-        removeEventListenerManaged(id);
-      });
 
       logger.debug('EventManager: Custom event listener registered', {
         eventType,
@@ -190,7 +182,12 @@ export class EventManager extends BaseServiceImpl {
    * Get DOM event listener count (from cleanup tracking)
    */
   public getListenerCount(): number {
-    return this.cleanups.length;
+    const status = getEventListenerStatus();
+    const byContext = status.byContext || {};
+    return (
+      (byContext[EventManager.DOM_EVENT_CONTEXT] || 0) +
+      (byContext[EventManager.CUSTOM_EVENT_CONTEXT] || 0)
+    );
   }
 
   /**
@@ -208,20 +205,16 @@ export class EventManager extends BaseServiceImpl {
       return;
     }
 
-    let cleanupCount = 0;
-    for (const cleanupFn of this.cleanups) {
-      try {
-        cleanupFn();
-        cleanupCount++;
-      } catch (error) {
-        logger.warn('EventManager: Failed to cleanup individual listener', error);
-      }
-    }
+    const domCount = removeEventListenersByContext(EventManager.DOM_EVENT_CONTEXT);
+    const customCount = removeEventListenersByContext(EventManager.CUSTOM_EVENT_CONTEXT);
 
-    this.cleanups.length = 0;
     this.isDestroyed = true;
 
-    logger.debug('EventManager: DOM events cleanup completed', { cleanupCount });
+    logger.debug('EventManager: DOM events cleanup completed', {
+      cleanupCount: domCount + customCount,
+      domCount,
+      customCount,
+    });
   }
 
   // ================================
