@@ -14,7 +14,7 @@ import { logger } from '@shared/logging';
 import { NotificationService } from '@shared/services/notification-service';
 import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
-import { startAmbientVideoGuard } from '@shared/utils/media/ambient-video-guard';
+import { withAmbientVideoGuard } from '@shared/utils/media/ambient-video-guard';
 import { pauseActiveTwitterVideos } from '@shared/utils/media/twitter-video-pauser';
 import { clampIndex } from '@shared/utils/types/safety';
 
@@ -29,7 +29,7 @@ export class GalleryApp {
   private galleryRenderer: GalleryRenderer | null = null;
   private isInitialized = false;
   private readonly notificationService = NotificationService.getInstance();
-  private stopAmbientVideoGuard: (() => void) | null = null;
+  private ambientVideoGuardHandle: { dispose: () => void } | null = null;
 
   constructor() {
     logger.info('[GalleryApp] Constructor called');
@@ -43,7 +43,7 @@ export class GalleryApp {
       this.galleryRenderer?.setOnCloseCallback(() => this.closeGallery());
 
       await this.setupEventHandlers();
-      this.stopAmbientVideoGuard = this.stopAmbientVideoGuard ?? startAmbientVideoGuard();
+      this.ambientVideoGuardHandle = this.ambientVideoGuardHandle ?? withAmbientVideoGuard();
 
       this.isInitialized = true;
       logger.info('[GalleryApp] ✅ Initialization complete');
@@ -172,8 +172,8 @@ export class GalleryApp {
         this.closeGallery();
       }
 
-      this.stopAmbientVideoGuard?.();
-      this.stopAmbientVideoGuard = null;
+      this.ambientVideoGuardHandle?.dispose();
+      this.ambientVideoGuardHandle = null;
 
       try {
         const { cleanupGalleryEvents } = await import(

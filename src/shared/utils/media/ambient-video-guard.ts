@@ -43,3 +43,10 @@ export function stopAmbientVideoGuard(): void {
   guardDispose?.();
   guardDispose = null;
 }
+
+export function withAmbientVideoGuard(): { dispose: () => void } {
+  const dispose = startAmbientVideoGuard();
+  return {
+    dispose,
+  };
+}

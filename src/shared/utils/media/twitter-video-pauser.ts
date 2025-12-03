@@ -8,7 +8,7 @@ import { logger } from '@shared/logging';
 
 type QueryableRoot = Document | DocumentFragment | HTMLElement;
 
-const ZERO_RESULT: PauseAmbientVideosResult = Object.freeze({
+export const ZERO_RESULT: PauseAmbientVideosResult = Object.freeze({
   pausedCount: 0,
   totalCandidates: 0,
   skippedCount: 0,
@@ -74,24 +74,37 @@ export function pauseActiveTwitterVideos(
   options: PauseAmbientVideosOptions = {},
 ): PauseAmbientVideosResult {
   const root = resolveRoot(options.root ?? null);
-  if (!root) return { ...ZERO_RESULT };
+  if (!root) return ZERO_RESULT;
 
   const videos = Array.from(root.querySelectorAll('video'));
-  if (videos.length === 0) return { ...ZERO_RESULT };
+  const inspectedCount = videos.length;
+  if (inspectedCount === 0) return ZERO_RESULT;
 
-  const candidates = videos.filter(video => shouldPauseVideo(video, options.force));
-  const pausedVideos = candidates.filter(tryPauseVideo);
+  let pausedCount = 0;
+  let totalCandidates = 0;
+
+  for (const video of videos) {
+    if (!shouldPauseVideo(video, options.force)) {
+      continue;
+    }
+
+    totalCandidates += 1;
+
+    if (tryPauseVideo(video)) {
+      pausedCount += 1;
+    }
+  }
 
   const result: PauseAmbientVideosResult = {
-    pausedCount: pausedVideos.length,
-    totalCandidates: candidates.length,
-    skippedCount: videos.length - candidates.length + (candidates.length - pausedVideos.length),
+    pausedCount,
+    totalCandidates,
+    skippedCount: inspectedCount - pausedCount,
   };
 
   if (result.pausedCount > 0) {
     logger.debug('[AmbientVideo] Ambient Twitter videos paused', {
       ...result,
-      inspected: videos.length,
+      inspected: inspectedCount,
     });
   }
 

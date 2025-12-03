@@ -57,26 +57,6 @@ const VIDEO_PLAYER_CONTEXT_SELECTORS = [
 ];
 const VIDEO_CONTROL_ROLE_SET = new Set(VIDEO_CONTROL_ROLES.map(role => role.toLowerCase()));
 
-function hasDatasetControlToken(element: HTMLElement): boolean {
-  const dataTestId = element.getAttribute('data-testid');
-  if (!dataTestId) {
-    return false;
-  }
-
-  const normalized = dataTestId.toLowerCase();
-  return VIDEO_CONTROL_DATASET_PREFIXES.some(token => normalized.includes(token));
-}
-
-function hasAriaControlToken(element: HTMLElement): boolean {
-  const ariaLabel = element.getAttribute('aria-label');
-  if (!ariaLabel) {
-    return false;
-  }
-
-  const normalized = ariaLabel.toLowerCase();
-  return VIDEO_CONTROL_ARIA_TOKENS.some(token => normalized.includes(token));
-}
-
 function isWithinVideoPlayer(element: HTMLElement): boolean {
   return VIDEO_PLAYER_CONTEXT_SELECTORS.some(selector => {
     try {
@@ -101,7 +81,88 @@ function hasInputRangeSignature(element: HTMLElement): boolean {
   if (typeof element.matches !== 'function') {
     return false;
   }
-  return element.matches('input[type="range"]');
+  try {
+    return element.matches('input[type="range"]');
+  } catch {
+    return false;
+  }
+}
+
+type ControlAttributeSnapshot = {
+  role: string | null;
+  dataTestId: string | null;
+  ariaLabel: string | null;
+};
+
+interface VideoControlEvidence {
+  selectorMatch: boolean;
+  datasetToken: boolean;
+  ariaToken: boolean;
+  playerScoped: boolean;
+  roleMatch: boolean;
+  rangeSignature: boolean;
+}
+
+function getNearestAttributeValue(
+  element: HTMLElement,
+  attribute: 'data-testid' | 'aria-label'
+): string | null {
+  if (element.hasAttribute(attribute)) {
+    return element.getAttribute(attribute);
+  }
+
+  try {
+    const host = element.closest(`[${attribute}]`) as HTMLElement | null;
+    return host?.getAttribute(attribute) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function containsControlToken(value: string | null, tokens: readonly string[]): boolean {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.toLowerCase();
+  return tokens.some(token => normalized.includes(token));
+}
+
+function collectControlAttributeSnapshot(element: HTMLElement): ControlAttributeSnapshot {
+  return {
+    role: element.getAttribute('role'),
+    dataTestId: getNearestAttributeValue(element, 'data-testid'),
+    ariaLabel: getNearestAttributeValue(element, 'aria-label'),
+  };
+}
+
+function gatherVideoControlEvidence(element: HTMLElement): VideoControlEvidence {
+  if (matchesVideoControlSelectors(element)) {
+    return {
+      selectorMatch: true,
+      datasetToken: false,
+      ariaToken: false,
+      playerScoped: true,
+      roleMatch: false,
+      rangeSignature: hasInputRangeSignature(element),
+    };
+  }
+
+  const attributes = collectControlAttributeSnapshot(element);
+  const datasetToken = containsControlToken(attributes.dataTestId, VIDEO_CONTROL_DATASET_PREFIXES);
+  const ariaToken = containsControlToken(attributes.ariaLabel, VIDEO_CONTROL_ARIA_TOKENS);
+  const roleMatch = attributes.role
+    ? VIDEO_CONTROL_ROLE_SET.has(attributes.role.toLowerCase())
+    : false;
+
+  return {
+    selectorMatch: false,
+    datasetToken,
+    ariaToken,
+    playerScoped: isWithinVideoPlayer(element),
+    roleMatch,
+    rangeSignature: hasInputRangeSignature(element),
+  };
 }
 
 export function isVideoControlElement(element: HTMLElement | null): boolean {
@@ -110,34 +171,25 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
   const tagName = element.tagName.toLowerCase();
   if (tagName === 'video') return true;
 
-  if (matchesVideoControlSelectors(element)) {
+  const evidence = gatherVideoControlEvidence(element);
+
+  if (evidence.selectorMatch) {
     return true;
   }
 
-  if (!isWithinVideoPlayer(element)) {
+  if (evidence.datasetToken || evidence.ariaToken) {
+    return true;
+  }
+
+  if (!evidence.playerScoped) {
     return false;
   }
 
-  const role = element.getAttribute('role');
-  if (role && VIDEO_CONTROL_ROLE_SET.has(role.toLowerCase())) {
+  if (evidence.roleMatch || evidence.rangeSignature) {
     return true;
   }
 
-  const datasetHost = element.closest('[data-testid]') as HTMLElement | null;
-  if (datasetHost && hasDatasetControlToken(datasetHost)) {
-    return true;
-  }
-
-  const labeledHost = element.closest('[aria-label]') as HTMLElement | null;
-  if (labeledHost && hasAriaControlToken(labeledHost)) {
-    return true;
-  }
-
-  if (hasDatasetControlToken(element) || hasAriaControlToken(element)) {
-    return true;
-  }
-
-  return hasInputRangeSignature(element);
+  return false;
 }
 
 /**
