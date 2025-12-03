@@ -69,6 +69,13 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
+          paths: [
+            {
+              name: '@shared/container/core-service-registry',
+              message:
+                'CoreServiceRegistry is deprecated. Use CoreService.getInstance() from @shared/services/service-manager instead.',
+            },
+          ],
           patterns: [
             {
               group: ['../*'],
@@ -105,5 +112,5 @@ export default tseslint.config(
     rules: {
       'no-restricted-imports': 'off',
     },
-  },
+  }
 );
