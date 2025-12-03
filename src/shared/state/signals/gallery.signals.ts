@@ -103,6 +103,120 @@ export const galleryIndexEvents = createEventEmitter<{
   'navigate:complete': GalleryNavigateCompletePayload;
 }>();
 
+const VALID_NAVIGATION_SOURCES: readonly NavigationSource[] = [
+  'button',
+  'keyboard',
+  'scroll',
+  'auto-focus',
+];
+const VALID_NAVIGATION_TRIGGERS: readonly GalleryNavigationTrigger[] = [
+  'button',
+  'click',
+  'keyboard',
+  'scroll',
+] as const;
+
+function createNavigationActionError(context: string, reason: string): Error {
+  return new Error(`[Gallery] Invalid navigation action (${context}): ${reason}`);
+}
+
+function isValidNavigationSource(value: unknown): value is NavigationSource {
+  return typeof value === 'string' && VALID_NAVIGATION_SOURCES.includes(value as NavigationSource);
+}
+
+function isValidNavigationTrigger(value: unknown): value is GalleryNavigationTrigger {
+  return (
+    typeof value === 'string' &&
+    VALID_NAVIGATION_TRIGGERS.includes(value as GalleryNavigationTrigger)
+  );
+}
+
+function validateNavigationAction(action: NavigationAction, context: string): void {
+  if (!action || typeof action !== 'object') {
+    throw createNavigationActionError(context, 'Action missing');
+  }
+
+  if (typeof action.type !== 'string') {
+    throw createNavigationActionError(context, 'Action type missing');
+  }
+
+  if (!('type' in action)) {
+    throw createNavigationActionError(context, 'Unknown action shape');
+  }
+
+  switch (action.type) {
+    case 'NAVIGATE': {
+      const payload = action.payload;
+      if (!payload) {
+        throw createNavigationActionError(context, 'Navigate payload missing');
+      }
+
+      if (typeof payload.targetIndex !== 'number' || Number.isNaN(payload.targetIndex)) {
+        throw createNavigationActionError(context, 'Navigate payload targetIndex invalid');
+      }
+
+      if (!isValidNavigationSource(payload.source)) {
+        throw createNavigationActionError(
+          context,
+          `Navigate payload source invalid: ${String(payload.source)}`
+        );
+      }
+
+      if (!isValidNavigationTrigger(payload.trigger)) {
+        throw createNavigationActionError(
+          context,
+          `Navigate payload trigger invalid: ${String(payload.trigger)}`
+        );
+      }
+      break;
+    }
+    case 'SET_FOCUS': {
+      const payload = action.payload;
+      if (!payload) {
+        throw createNavigationActionError(context, 'Set focus payload missing');
+      }
+
+      if (!(payload.focusIndex === null || typeof payload.focusIndex === 'number')) {
+        throw createNavigationActionError(context, 'Set focus payload focusIndex invalid');
+      }
+
+      if (!isValidNavigationSource(payload.source)) {
+        throw createNavigationActionError(
+          context,
+          `Set focus payload source invalid: ${String(payload.source)}`
+        );
+      }
+      break;
+    }
+    case 'RESET':
+      break;
+    default:
+      throw createNavigationActionError(
+        context,
+        `Unsupported action type: ${String((action as { type: string }).type)}`
+      );
+  }
+}
+
+function applyNavigationAction(action: NavigationAction, context: string) {
+  validateNavigationAction(action, context);
+  const result = NavigationStateMachine.transition(navigationState, action);
+  navigationState = result.newState;
+  return result;
+}
+
+function resolveNavigationSource(trigger: GalleryNavigationTrigger): NavigationSource {
+  if (trigger === 'scroll') {
+    return 'scroll';
+  }
+  if (trigger === 'keyboard') {
+    return 'keyboard';
+  }
+
+  // Treat both button and click triggers as button sourced interactions.
+  return 'button';
+}
+
 // ============================================================================
 // Fine-grained Signals
 // ============================================================================
@@ -179,9 +293,7 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
 
   gallerySignals.focusedIndex.value = validIndex;
 
-  const resetAction: NavigationAction = { type: 'RESET' };
-  const result = NavigationStateMachine.transition(navigationState, resetAction);
-  navigationState = result.newState;
+  applyNavigationAction({ type: 'RESET' }, 'openGallery');
 
   logger.debug(`[Gallery] Opened with ${items.length} items, starting at index ${validIndex}`);
 }
@@ -198,9 +310,7 @@ export function closeGallery(): void {
   gallerySignals.focusedIndex.value = null;
   gallerySignals.currentVideoElement.value = null;
 
-  const resetAction: NavigationAction = { type: 'RESET' };
-  const result = NavigationStateMachine.transition(navigationState, resetAction);
-  navigationState = result.newState;
+  applyNavigationAction({ type: 'RESET' }, 'closeGallery');
 
   logger.debug('[Gallery] Closed');
 }
@@ -215,21 +325,21 @@ export function closeGallery(): void {
 export function navigateToItem(
   index: number,
   trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button',
-  source: NavigationSource = 'button'
+  source?: NavigationSource
 ): void {
   const state = galleryState.value;
   const validIndex = clampIndex(index, state.mediaItems.length);
+  const navigationSource = source ?? resolveNavigationSource(trigger);
 
   const navigateAction: NavigationAction = {
     type: 'NAVIGATE',
     payload: {
       targetIndex: validIndex,
-      source,
+      source: navigationSource,
       trigger,
     },
   };
-  const result = NavigationStateMachine.transition(navigationState, navigateAction);
-  navigationState = result.newState;
+  const result = applyNavigationAction(navigateAction, 'navigateToItem');
 
   if (result.isDuplicate) {
     logger.debug(`[Gallery] Already at index ${index} (source: ${source}), ensuring sync`);
@@ -270,7 +380,7 @@ export function navigatePrevious(
   const state = galleryState.value;
   const baseIndex = getCurrentActiveIndex();
   const newIndex = baseIndex > 0 ? baseIndex - 1 : state.mediaItems.length - 1;
-  const source: NavigationSource = trigger === 'button' ? 'button' : 'keyboard';
+  const source = resolveNavigationSource(trigger);
   navigateToItem(newIndex, trigger, source);
 }
 
@@ -284,7 +394,7 @@ export function navigateNext(trigger: 'button' | 'click' | 'keyboard' | 'scroll'
   const state = galleryState.value;
   const baseIndex = getCurrentActiveIndex();
   const newIndex = baseIndex < state.mediaItems.length - 1 ? baseIndex + 1 : 0;
-  const source: NavigationSource = trigger === 'button' ? 'button' : 'keyboard';
+  const source = resolveNavigationSource(trigger);
   navigateToItem(newIndex, trigger, source);
 }
 
@@ -311,8 +421,7 @@ export function setFocusedIndex(
       source,
     },
   };
-  const result = NavigationStateMachine.transition(navigationState, setFocusAction);
-  navigationState = result.newState;
+  applyNavigationAction(setFocusAction, 'setFocusedIndex');
 
   if (index === null) {
     gallerySignals.focusedIndex.value = null;

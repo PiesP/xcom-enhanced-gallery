@@ -38,6 +38,19 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
   // Playback state preservation
   let wasPlayingBeforeHidden = false;
   let wasMutedBeforeHidden: boolean | null = null;
+  let unsubscribeObserver: (() => void) | undefined;
+  let hasRunUnsubscribe = false;
+
+  const runUnsubscribe = () => {
+    if (hasRunUnsubscribe) {
+      return;
+    }
+
+    hasRunUnsubscribe = true;
+    if (typeof unsubscribeObserver === 'function') {
+      unsubscribeObserver();
+    }
+  };
 
   // Initial mute effect
   createEffect(() => {
@@ -68,6 +81,18 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
       return;
     }
 
+    const pauseVideo = () => {
+      if (typeof videoEl.pause === 'function') {
+        videoEl.pause();
+      }
+    };
+
+    const playVideo = () => {
+      if (typeof videoEl.play === 'function') {
+        void videoEl.play();
+      }
+    };
+
     const handleVisibilityChange = (entry: IntersectionObserverEntry) => {
       if (!entry.isIntersecting) {
         // Scrolled out of view - pause and save state
@@ -76,7 +101,7 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
           wasMutedBeforeHidden = videoEl.muted;
           videoEl.muted = true;
           if (!videoEl.paused) {
-            videoEl.pause();
+            pauseVideo();
           }
         } catch (err) {
           logger.warn('Failed to pause video', { error: err });
@@ -88,7 +113,7 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
             videoEl.muted = wasMutedBeforeHidden;
           }
           if (wasPlayingBeforeHidden) {
-            void videoEl.play?.();
+            playVideo();
           }
         } catch (err) {
           logger.warn('Failed to resume video', { error: err });
@@ -99,13 +124,12 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
       }
     };
 
-    const unsubscribe = SharedObserver.observe(containerEl, handleVisibilityChange, {
+    hasRunUnsubscribe = false;
+    unsubscribeObserver = SharedObserver.observe(containerEl, handleVisibilityChange, {
       threshold: 0,
       rootMargin: '0px',
     });
 
-    onCleanup(() => {
-      unsubscribe?.();
-    });
+    onCleanup(runUnsubscribe);
   });
 }

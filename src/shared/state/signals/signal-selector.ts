@@ -39,7 +39,7 @@ export interface SelectorOptions<T> {
  */
 function createSelector<T, R>(
   selector: SelectorFn<T, R>,
-  options: SelectorOptions<T> = {},
+  options: SelectorOptions<T> = {}
 ): SelectorFn<T, R> {
   const { dependencies } = options;
 
@@ -49,7 +49,7 @@ function createSelector<T, R>(
   let hasResult = false;
   const optimizedSelector: SelectorFn<T, R> = (state: T): R => {
     // Object.is-based argument reference equality check
-    if (hasResult && lastArgs && Object.is(lastArgs, state)) {
+    if (hasResult && Object.is(lastArgs, state)) {
       return lastResult;
     }
 
@@ -89,7 +89,7 @@ function createSelector<T, R>(
 export function useSelector<T, R>(
   signalInstance: Signal<T>,
   selector: SelectorFn<T, R>,
-  options: SelectorOptions<T> = {},
+  options: SelectorOptions<T> = {}
 ): () => R {
   const memoizedSelector = createSelector(selector, options);
 
@@ -102,11 +102,13 @@ export function useSelector<T, R>(
  * Shallow equality check for arrays
  */
 function shallowEqual(a: readonly unknown[], b: readonly unknown[]): boolean {
-  if (a.length !== b.length) {
+  const { length } = a;
+
+  if (length !== b.length) {
     return false;
   }
 
-  for (let i = 0; i < a.length; i++) {
+  for (let i = 0; i < length; i++) {
     if (!Object.is(a[i], b[i])) {
       return false;
     }
