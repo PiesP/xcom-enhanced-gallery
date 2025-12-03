@@ -5,28 +5,14 @@ import type {
 } from '@features/settings/types/settings.types';
 import { logger } from '@shared/logging';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
+import {
+  assignNestedPath,
+  resolveNestedPath,
+} from '@shared/utils/types/object-path';
 import { cloneDeep } from '@shared/utils/types/safety';
 import { APP_SETTINGS_STORAGE_KEY, createDefaultSettings, DEFAULT_SETTINGS } from '@/constants';
 import { migrateSettings as runMigration } from './settings-migration';
 import { computeCurrentSettingsSchemaHash } from './settings-schema';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function resolveNestedValue(source: any, keys: string[]): any {
-  return keys.reduce((acc, key) => (acc && typeof acc === 'object' ? acc[key] : undefined), source);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function assignNestedValue(target: any, keys: string[], value: any): void {
-  let current = target;
-  for (let i = 0; i < keys.length - 1; i++) {
-    const key = keys[i];
-    if (!key) continue;
-    if (!current[key] || typeof current[key] !== 'object') current[key] = {};
-    current = current[key];
-  }
-  const lastKey = keys[keys.length - 1];
-  if (lastKey) current[lastKey] = value;
-}
 
 export class SettingsService {
   private settings: AppSettings = createDefaultSettings();
@@ -61,17 +47,17 @@ export class SettingsService {
   }
 
   get<T = unknown>(key: NestedSettingKey | string): T {
-    const value = resolveNestedValue(this.settings, key.split('.'));
+    const value = resolveNestedPath<T>(this.settings, key);
     return value === undefined
       ? (this.getDefaultValue(key as NestedSettingKey) as T)
-      : (value as T);
+      : value;
   }
 
   async set<T = unknown>(key: NestedSettingKey, value: T): Promise<void> {
     if (!this.isValid(key, value)) throw new Error(`Invalid setting value for ${key}`);
 
     const oldValue = this.get(key);
-    assignNestedValue(this.settings, key.split('.'), value);
+    assignNestedPath(this.settings, key, value);
     this.settings.lastModified = Date.now();
 
     this.notifyListeners({
@@ -93,7 +79,7 @@ export class SettingsService {
     const timestamp = Date.now();
     entries.forEach(([key, value]) => {
       const oldValue = this.get(key);
-      assignNestedValue(this.settings, key.split('.'), value);
+      assignNestedPath(this.settings, key, value);
       this.notifyListeners({
         key,
         oldValue,
@@ -204,7 +190,7 @@ export class SettingsService {
   }
 
   private getDefaultValue(key: NestedSettingKey): unknown {
-    return resolveNestedValue(DEFAULT_SETTINGS, key.split('.'));
+    return resolveNestedPath(DEFAULT_SETTINGS, key);
   }
 
   private notifyListeners(event: SettingChangeEvent): void {

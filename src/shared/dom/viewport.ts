@@ -2,10 +2,7 @@
  * Viewport/Container constraint helpers (PC-only)
  * - Pure calculator + DOM hook to expose values via CSS variables
  */
-import {
-  addListener,
-  removeEventListenerManaged,
-} from '@shared/utils/events/core/listener-manager';
+import { EventManager } from '@shared/services/event-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { createEventListener } from '@shared/utils/types/guards';
 
@@ -97,9 +94,8 @@ export function observeViewportCssVars(
   const onResize = (): void => schedule();
   let resizeListenerId: string | null = null;
   if (typeof window !== 'undefined') {
-    // Register with integrated event util for easier tracking/cleanup
-    // Type Guard wrapper to remove type assertions (Phase 135)
-    resizeListenerId = addListener(
+    // Register with EventManager for unified event tracking/cleanup
+    resizeListenerId = EventManager.getInstance().addListener(
       window,
       'resize',
       createEventListener(onResize),
@@ -118,7 +114,7 @@ export function observeViewportCssVars(
       }
     }
     if (resizeListenerId) {
-      removeEventListenerManaged(resizeListenerId);
+      EventManager.getInstance().removeListener(resizeListenerId);
       resizeListenerId = null;
     }
     // Global manager handles individual cleanup

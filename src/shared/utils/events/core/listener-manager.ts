@@ -3,6 +3,12 @@
  * @description Phase 329: File separation (SRP compliance)
  *              Phase 500: Consolidated ListenerRegistry into ListenerManager
  *              All listener registration, tracking, and removal in one module
+ *
+ * @internal This module is an internal implementation detail of EventManager.
+ *           External code should use EventManager from @shared/services/event-manager
+ *           for unified event management with proper lifecycle support.
+ *
+ * @see {@link EventManager} for the public API
  */
 
 import { logger } from '@shared/logging';

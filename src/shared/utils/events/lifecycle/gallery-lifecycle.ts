@@ -4,11 +4,8 @@
  */
 
 import { logger } from '@shared/logging';
+import { EventManager } from '@shared/services/event-manager';
 import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events/core/event-context';
-import {
-  addListener,
-  removeEventListenersByContext,
-} from '@shared/utils/events/core/listener-manager';
 import { handleKeyboardEvent } from '@shared/utils/events/handlers/keyboard';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
 import { resetKeyboardDebounceState } from '@shared/utils/events/keyboard-debounce';
@@ -115,12 +112,14 @@ export async function initializeGalleryEvents(
     passive: false,
   };
 
+  const eventManager = EventManager.getInstance();
+
   if (finalOptions.enableKeyboard) {
-    addListener(target, 'keydown', keyHandler, listenerOptions, listenerContext);
+    eventManager.addListener(target, 'keydown', keyHandler, listenerOptions, listenerContext);
   }
 
   if (finalOptions.enableMediaDetection) {
-    addListener(target, 'click', clickHandler, listenerOptions, listenerContext);
+    eventManager.addListener(target, 'click', clickHandler, listenerOptions, listenerContext);
   }
 
   resetKeyboardDebounceState();
@@ -152,7 +151,7 @@ export function cleanupGalleryEvents(): void {
   }
 
   if (lifecycleState.listenerContext) {
-    removeEventListenersByContext(lifecycleState.listenerContext);
+    EventManager.getInstance().removeByContext(lifecycleState.listenerContext);
   }
 
   resetKeyboardDebounceState();
