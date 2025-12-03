@@ -16,6 +16,10 @@ const ZERO_RESULT: PauseAmbientVideosResult = Object.freeze({
 
 export interface PauseAmbientVideosOptions {
   root?: QueryableRoot | null;
+  /**
+   * Force-pause every connected timeline video regardless of the current playback state.
+   */
+  force?: boolean;
 }
 
 export interface PauseAmbientVideosResult {
@@ -42,12 +46,12 @@ function isVideoPlaying(video: HTMLVideoElement): boolean {
 }
 
 /** Determines if a video should be paused (external, connected, and playing). */
-function shouldPauseVideo(video: Element): video is HTMLVideoElement {
+function shouldPauseVideo(video: Element, force = false): video is HTMLVideoElement {
   return (
     video instanceof HTMLVideoElement &&
     !isGalleryInternalElement(video) &&
     video.isConnected &&
-    isVideoPlaying(video)
+    (force || isVideoPlaying(video))
   );
 }
 
@@ -75,7 +79,7 @@ export function pauseActiveTwitterVideos(
   const videos = Array.from(root.querySelectorAll('video'));
   if (videos.length === 0) return { ...ZERO_RESULT };
 
-  const candidates = videos.filter(shouldPauseVideo);
+  const candidates = videos.filter(video => shouldPauseVideo(video, options.force));
   const pausedVideos = candidates.filter(tryPauseVideo);
 
   const result: PauseAmbientVideosResult = {

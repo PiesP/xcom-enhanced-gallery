@@ -46,7 +46,14 @@ export type { AppServiceKey, FileExtension, MediaQuality, MediaType, ViewMode } 
 // ================================
 // Video & System
 // ================================
-export { SYSTEM_PAGES, VIDEO_CONTROL_SELECTORS, VIEW_MODES } from './video-controls';
+export {
+  SYSTEM_PAGES,
+  VIDEO_CONTROL_ARIA_TOKENS,
+  VIDEO_CONTROL_DATASET_PREFIXES,
+  VIDEO_CONTROL_ROLES,
+  VIDEO_CONTROL_SELECTORS,
+  VIEW_MODES,
+} from './video-controls';
 
 // ================================
 // URL Patterns (Phase 22.2 compatibility)
