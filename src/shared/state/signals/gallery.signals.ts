@@ -9,20 +9,20 @@
  */
 
 // Break runtime dependency on services: use logging barrel directly
-import { batch as solidBatch } from '@shared/external/vendors/solid-hooks';
-import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
+import { batch as solidBatch } from '@/shared/external/vendors/solid-hooks';
+import { type Logger as ILogger, logger as rootLogger } from '@/shared/logging';
 // Navigation state types
 import {
   type NavigationAction,
   type NavigationState,
   type NavigationTrigger,
   NavigationStateMachine,
-} from '@shared/state/machines/navigation.machine';
-import type { MediaInfo } from '@shared/types/media.types';
-import type { NavigationSource } from '@shared/types/navigation.types';
-import { createEventEmitter } from '@shared/utils/events/emitter';
-import { clampIndex } from '@shared/utils/types/safety';
-import { createSignalSafe, effectSafe } from './signal-factory';
+} from '@/shared/state/machines/navigation.machine';
+import type { MediaInfo } from '@/shared/types/media.types';
+import type { NavigationSource } from '@/shared/types/navigation.types';
+import { createEventEmitter } from '@/shared/utils/events/emitter';
+import { clampIndex } from '@/shared/utils/types/safety';
+import { createSignalSafe, effectSafe } from '@/shared/state/signals/signal-factory';
 
 // Logger instance (services-free)
 const logger: ILogger = rootLogger;
@@ -342,7 +342,9 @@ export function navigateToItem(
   const result = applyNavigationAction(navigateAction, 'navigateToItem');
 
   if (result.isDuplicate) {
-    logger.debug(`[Gallery] Already at index ${index} (source: ${source}), ensuring sync`);
+    logger.debug(
+      `[Gallery] Already at index ${index} (source: ${navigationSource}), ensuring sync`
+    );
     // Ensure focusedIndex is synced even on duplicate navigation
     gallerySignals.focusedIndex.value = validIndex;
     return;
@@ -365,7 +367,9 @@ export function navigateToItem(
 
   galleryIndexEvents.emit('navigate:complete', { index: validIndex, trigger });
 
-  logger.debug(`[Gallery] Navigated to item: ${index} (trigger: ${trigger}, source: ${source})`);
+  logger.debug(
+    `[Gallery] Navigated to item: ${index} (trigger: ${trigger}, source: ${navigationSource})`
+  );
 }
 
 /**
