@@ -26,6 +26,7 @@ import {
   setError,
 } from '@shared/state/signals/gallery.signals';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
+import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
 import { VerticalGalleryView } from './components/vertical-gallery-view/VerticalGalleryView';
 import './styles/gallery-global.css';
 
@@ -209,6 +210,14 @@ export class GalleryRenderer implements GalleryRendererInterface {
     mediaItems: readonly MediaInfo[],
     renderOptions?: GalleryRenderOptions
   ): Promise<void> {
+    const pauseContext = renderOptions?.pauseContext ?? { reason: 'programmatic' };
+
+    try {
+      pauseAmbientVideosForGallery(pauseContext);
+    } catch (error) {
+      logger.warn('[GalleryRenderer] Ambient video pause failed', { error });
+    }
+
     openGallery(mediaItems, renderOptions?.startIndex ?? 0);
   }
 

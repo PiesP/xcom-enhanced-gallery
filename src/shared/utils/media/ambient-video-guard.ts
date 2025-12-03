@@ -1,7 +1,7 @@
 import { logger } from '@shared/logging';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { effectSafe } from '@shared/state/signals/signal-factory';
-import { pauseActiveTwitterVideos } from './twitter-video-pauser';
+import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
 
 let guardDispose: (() => void) | null = null;
 let guardSubscribers = 0;
@@ -16,8 +16,15 @@ function ensureGuardEffect(): void {
       return;
     }
 
-    const result = pauseActiveTwitterVideos({ force: true });
-    logger.debug('[AmbientVideoGuard] Forced ambient pause triggered by gallery open', result);
+    const result = pauseAmbientVideosForGallery({
+      trigger: 'guard',
+      reason: 'guard',
+      force: true,
+    });
+
+    if (result.pausedCount > 0) {
+      logger.debug('[AmbientVideoGuard] Ambient pause triggered by guard', result);
+    }
   });
 }
 

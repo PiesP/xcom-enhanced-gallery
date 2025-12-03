@@ -14,8 +14,11 @@ import { logger } from '@shared/logging';
 import { NotificationService } from '@shared/services/notification-service';
 import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
+import {
+  pauseAmbientVideosForGallery,
+  type AmbientVideoPauseRequest,
+} from '@shared/utils/media/ambient-video-coordinator';
 import { withAmbientVideoGuard } from '@shared/utils/media/ambient-video-guard';
-import { pauseActiveTwitterVideos } from '@shared/utils/media/twitter-video-pauser';
 import { clampIndex } from '@shared/utils/types/safety';
 
 export interface GalleryConfig {
@@ -23,6 +26,10 @@ export interface GalleryConfig {
   keyboardShortcuts?: boolean;
   extractionTimeout?: number;
   clickDebounceMs?: number;
+}
+
+interface GalleryOpenOptions {
+  readonly pauseContext?: AmbientVideoPauseRequest;
 }
 
 export class GalleryApp {
@@ -96,7 +103,12 @@ export class GalleryApp {
       const result = await mediaService.extractFromClickedElement(element);
 
       if (result.success && result.mediaItems.length > 0) {
-        await this.openGallery(result.mediaItems, result.clickedIndex);
+        await this.openGallery(result.mediaItems, result.clickedIndex, {
+          pauseContext: {
+            sourceElement: element,
+            reason: 'media-click',
+          },
+        });
       } else {
         mediaErrorReporter.warn(new Error('Media extraction returned no items'), {
           code: 'MEDIA_EXTRACTION_EMPTY',
@@ -116,7 +128,11 @@ export class GalleryApp {
     }
   }
 
-  public async openGallery(mediaItems: MediaInfo[], startIndex: number = 0): Promise<void> {
+  public async openGallery(
+    mediaItems: MediaInfo[],
+    startIndex: number = 0,
+    options: GalleryOpenOptions = {}
+  ): Promise<void> {
     if (!this.isInitialized) {
       logger.warn('[GalleryApp] Gallery not initialized.');
       this.notificationService.error(
@@ -131,10 +147,16 @@ export class GalleryApp {
     try {
       const validIndex = clampIndex(startIndex, mediaItems.length);
 
+      const providedContext = options.pauseContext ?? null;
+      const pauseContext: AmbientVideoPauseRequest = {
+        ...providedContext,
+        reason: providedContext?.reason ?? (providedContext ? 'media-click' : 'programmatic'),
+      };
+
       try {
-        pauseActiveTwitterVideos();
+        pauseAmbientVideosForGallery(pauseContext);
       } catch (error) {
-        logger.warn('[GalleryApp] Ambient video pause failed', error);
+        logger.warn('[GalleryApp] Ambient video coordinator failed', error);
       }
 
       openGallery(mediaItems, validIndex);
