@@ -79,10 +79,10 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@types/eslint-plugin-jsx-a11y": "^6.10.1",
     "@types/node": "^24.10.1",
-    "@vitest/browser": "^4.0.14",
-    "@vitest/browser-playwright": "^4.0.14",
-    "@vitest/coverage-v8": "^4.0.14",
-    "@vitest/ui": "^4.0.14",
+    "@vitest/browser": "^4.0.15",
+    "@vitest/browser-playwright": "^4.0.15",
+    "@vitest/coverage-v8": "^4.0.15",
+    "@vitest/ui": "^4.0.15",
     "autoprefixer": "^10.4.22",
     "axe-playwright": "^2.2.2",
     "babel-preset-solid": "^1.9.10",
@@ -111,7 +111,7 @@
     "vite-plugin-monkey": "^7.1.5",
     "vite-plugin-solid": "^2.11.10",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.0.14"
+    "vitest": "^4.0.15"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
