@@ -38,7 +38,6 @@
  * - Typed get/tryGet methods validate at compile time
  */
 import { CoreService } from '@shared/services/service-manager';
-import { CoreServiceRegistry } from './core-service-registry';
 
 /**
  * @class TestHarness
@@ -102,7 +101,7 @@ export class TestHarness {
    * **Precondition**: initCoreServices() must be called first
    */
   register<T>(key: string, instance: T): void {
-    CoreServiceRegistry.register<T>(key, instance);
+    CoreService.getInstance().register<T>(key, instance);
   }
 
   /**
@@ -125,7 +124,7 @@ export class TestHarness {
    * **Precondition**: Service must be registered first
    */
   get<T>(key: string): T {
-    return CoreServiceRegistry.get<T>(key);
+    return CoreService.getInstance().get<T>(key);
   }
 
   /**
@@ -152,7 +151,7 @@ export class TestHarness {
    * **Safety**: Always check return value before use
    */
   tryGet<T>(key: string): T | null {
-    return CoreServiceRegistry.tryGet<T>(key);
+    return CoreService.getInstance().tryGet<T>(key);
   }
 
   /**

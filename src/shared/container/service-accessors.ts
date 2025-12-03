@@ -1,8 +1,8 @@
-import { CoreServiceRegistry } from '@shared/container/core-service-registry';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import type { FilenameService } from '@shared/services/filename-service';
 import type { LanguageService } from '@shared/services/language-service';
 import type { MediaService } from '@shared/services/media-service';
+import { CoreService } from '@shared/services/service-manager';
 import type { ThemeServiceContract } from '@shared/services/theme-service.contract';
 import { SERVICE_KEYS } from '@/constants';
 
@@ -37,7 +37,7 @@ export type CoreBaseServiceIdentifier = (typeof CORE_BASE_SERVICE_IDENTIFIERS)[n
  * @throws CoreService throws if theme service not registered
  */
 export function getThemeService(): ThemeServiceContract {
-  return CoreServiceRegistry.get<ThemeServiceContract>(SERVICE_KEYS.THEME);
+  return CoreService.getInstance().get<ThemeServiceContract>(SERVICE_KEYS.THEME);
 }
 
 /**
@@ -47,7 +47,7 @@ export function getThemeService(): ThemeServiceContract {
  * @throws CoreService throws if language service not registered
  */
 export function getLanguageService(): LanguageService {
-  return CoreServiceRegistry.get<LanguageService>(SERVICE_KEYS.LANGUAGE);
+  return CoreService.getInstance().get<LanguageService>(SERVICE_KEYS.LANGUAGE);
 }
 
 /**
@@ -57,7 +57,7 @@ export function getLanguageService(): LanguageService {
  * @throws CoreService throws if filename service not registered
  */
 export function getMediaFilenameService(): FilenameService {
-  return CoreServiceRegistry.get<FilenameService>(SERVICE_KEYS.MEDIA_FILENAME);
+  return CoreService.getInstance().get<FilenameService>(SERVICE_KEYS.MEDIA_FILENAME);
 }
 
 /**
@@ -67,7 +67,7 @@ export function getMediaFilenameService(): FilenameService {
  * @throws CoreService throws if media service not registered
  */
 export function getMediaService(): MediaService {
-  return CoreServiceRegistry.get<MediaService>(SERVICE_KEYS.MEDIA_SERVICE);
+  return CoreService.getInstance().get<MediaService>(SERVICE_KEYS.MEDIA_SERVICE);
 }
 
 /**
@@ -77,7 +77,7 @@ export function getMediaService(): MediaService {
  * @throws CoreService throws if gallery renderer not registered
  */
 export function getGalleryRenderer(): GalleryRenderer {
-  return CoreServiceRegistry.get<GalleryRenderer>(SERVICE_KEYS.GALLERY_RENDERER);
+  return CoreService.getInstance().get<GalleryRenderer>(SERVICE_KEYS.GALLERY_RENDERER);
 }
 
 // ============================================================================
@@ -121,7 +121,7 @@ export async function getDownloadOrchestrator() {
  * registerGalleryRenderer(renderer);
  */
 export function registerGalleryRenderer(renderer: GalleryRenderer): void {
-  CoreServiceRegistry.register(SERVICE_KEYS.GALLERY_RENDERER, renderer);
+  CoreService.getInstance().register(SERVICE_KEYS.GALLERY_RENDERER, renderer);
 }
 
 /**
@@ -130,7 +130,7 @@ export function registerGalleryRenderer(renderer: GalleryRenderer): void {
  * @param settings - Settings manager instance to register
  */
 export function registerSettingsManager(settings: unknown): void {
-  CoreServiceRegistry.register(SERVICE_KEYS.SETTINGS, settings);
+  CoreService.getInstance().register(SERVICE_KEYS.SETTINGS, settings);
 }
 
 // ============================================================================
@@ -150,7 +150,7 @@ export function registerSettingsManager(settings: unknown): void {
  * }
  */
 export function tryGetSettingsManager<T = unknown>(): T | null {
-  return CoreServiceRegistry.tryGet<T>(SERVICE_KEYS.SETTINGS);
+  return CoreService.getInstance().tryGet<T>(SERVICE_KEYS.SETTINGS);
 }
 
 // ============================================================================
