@@ -1,10 +1,12 @@
 import { SELECTORS, STABLE_SELECTORS } from '@/constants/selectors';
-import { logger } from '@shared/logging';
+import { logger } from '@/shared/logging';
 import {
   type PauseAmbientVideosOptions,
   type PauseAmbientVideosResult,
   pauseActiveTwitterVideos,
-} from '@shared/utils/media/twitter-video-pauser';
+} from '@/shared/utils/media/twitter-video-pauser';
+
+type PauseRoot = Exclude<PauseAmbientVideosOptions['root'], undefined>;
 
 export type AmbientVideoTrigger =
   | 'video-click'
@@ -40,6 +42,33 @@ const PAUSE_RESULT_DEFAULT: PauseAmbientVideosResult = Object.freeze({
   totalCandidates: 0,
   skippedCount: 0,
 });
+
+function findTweetContainer(element?: HTMLElement | null): HTMLElement | null {
+  if (!element) {
+    return null;
+  }
+
+  for (const selector of STABLE_SELECTORS.TWEET_CONTAINERS) {
+    try {
+      const container = element.closest(selector);
+      if (container instanceof HTMLElement) {
+        return container;
+      }
+    } catch {
+      // Ignore selector failures
+    }
+  }
+
+  return null;
+}
+
+function resolvePauseRoot(request: AmbientVideoPauseRequest): PauseRoot {
+  if (request.root !== undefined) {
+    return request.root ?? null;
+  }
+
+  return findTweetContainer(request.sourceElement);
+}
 
 function isVideoTriggerElement(element?: HTMLElement | null): boolean {
   if (!element) return false;
@@ -94,7 +123,7 @@ export function pauseAmbientVideosForGallery(
   const enforcedTrigger = trigger === 'video-click' || trigger === 'guard';
   const force = request.force ?? enforcedTrigger;
   const reason = request.reason ?? trigger;
-  const root = request.root ?? null;
+  const root = resolvePauseRoot(request);
 
   let result: PauseAmbientVideosResult;
 
