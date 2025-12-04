@@ -20,8 +20,9 @@ import {
   detectDownloadCapability,
   downloadBlobWithAnchor,
   type DownloadCapability,
+  type GMDownloadFunction,
 } from '@shared/services/download/fallback-download';
-import { downloadSingleFile, getGMDownload } from '@shared/services/download/single-download';
+import { downloadSingleFile } from '@shared/services/download/single-download';
 import type {
   BulkDownloadResult,
   DownloadOptions,
@@ -105,7 +106,8 @@ export class DownloadOrchestrator extends BaseServiceImpl {
     media: MediaInfo,
     options: DownloadOptions = {}
   ): Promise<SingleDownloadResult> {
-    return downloadSingleFile(media, options);
+    const capability = this.getCapability();
+    return downloadSingleFile(media, options, capability);
   }
 
   /**
@@ -192,8 +194,8 @@ export class DownloadOrchestrator extends BaseServiceImpl {
   ): Promise<{ success: boolean; error?: string }> {
     const capability = this.getCapability();
 
-    if (capability.method === 'gm_download') {
-      return this.saveWithGMDownload(zipBlob, filename);
+    if (capability.method === 'gm_download' && capability.gmDownload) {
+      return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename);
     }
 
     if (capability.method === 'fetch_blob') {
@@ -216,14 +218,10 @@ export class DownloadOrchestrator extends BaseServiceImpl {
    * @internal
    */
   private async saveWithGMDownload(
+    gmDownload: GMDownloadFunction,
     blob: Blob,
     filename: string
   ): Promise<{ success: boolean; error?: string }> {
-    const gmDownload = getGMDownload();
-    if (!gmDownload) {
-      return { success: false, error: 'GM_download not available' };
-    }
-
     const url = URL.createObjectURL(blob);
     try {
       await new Promise<void>((resolve, reject) => {

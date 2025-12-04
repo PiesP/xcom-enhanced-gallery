@@ -8,6 +8,30 @@ import { getErrorMessage } from '@shared/error/utils';
 import { logger } from '@shared/logging';
 import type { DownloadProgress } from './types';
 
+type GlobalWithGMDownload = typeof globalThis & {
+  readonly GM_download?: unknown;
+};
+
+export interface GMDownloadProgressEvent {
+  loaded: number;
+  total: number;
+}
+
+export interface GMDownloadOptions {
+  url: string;
+  name: string;
+  headers?: Record<string, string>;
+  timeout?: number;
+  saveAs?: boolean;
+  onload: () => void;
+  onerror: (error: unknown) => void;
+  ontimeout: () => void;
+  onprogress?: (progress: GMDownloadProgressEvent) => void;
+  [key: string]: unknown;
+}
+
+export type GMDownloadFunction = (options: GMDownloadOptions) => void;
+
 /**
  * Download capability detection result
  */
@@ -20,13 +44,16 @@ export interface DownloadCapability {
   hasBlob: boolean;
   /** Recommended download method */
   method: 'gm_download' | 'fetch_blob' | 'none';
+  /** Reference to GM_download when available */
+  gmDownload?: GMDownloadFunction | undefined;
 }
 
 /**
  * Detect available download capabilities
  */
 export function detectDownloadCapability(): DownloadCapability {
-  const hasGMDownload = typeof GM_download !== 'undefined' && typeof GM_download === 'function';
+  const gmDownload = resolveGMDownload();
+  const hasGMDownload = typeof gmDownload === 'function';
 
   const hasFetch = typeof fetch === 'function';
 
@@ -42,7 +69,21 @@ export function detectDownloadCapability(): DownloadCapability {
     method = 'fetch_blob';
   }
 
-  return { hasGMDownload, hasFetch, hasBlob, method };
+  return { hasGMDownload, hasFetch, hasBlob, method, gmDownload };
+}
+
+function resolveGMDownload(): GMDownloadFunction | undefined {
+  if (typeof GM_download !== 'undefined' && typeof GM_download === 'function') {
+    return GM_download as unknown as GMDownloadFunction;
+  }
+
+  const globalObject = globalThis as GlobalWithGMDownload;
+  const fromGlobal = globalObject.GM_download;
+  if (typeof fromGlobal === 'function') {
+    return fromGlobal as unknown as GMDownloadFunction;
+  }
+
+  return undefined;
 }
 
 /**

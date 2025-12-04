@@ -7,37 +7,24 @@ import {
   detectDownloadCapability,
   downloadBlobWithAnchor,
   downloadWithFetchBlob,
+  type DownloadCapability,
 } from './fallback-download';
 import type { DownloadOptions, SingleDownloadResult } from './types';
 
-export type GMDownloadFunction = (options: Record<string, unknown>) => void;
-
-type GlobalWithGMDownload = typeof globalThis & {
-  ['GM_download']?: GMDownloadFunction;
-};
-
-export function getGMDownload(): GMDownloadFunction | undefined {
-  const gm = globalThis as GlobalWithGMDownload;
-  const download =
-    typeof GM_download !== 'undefined'
-      ? (GM_download as unknown as GMDownloadFunction)
-      : gm['GM_download'];
-  return typeof download === 'function' ? download : undefined;
-}
-
 export async function downloadSingleFile(
   media: MediaInfo,
-  options: DownloadOptions = {}
+  options: DownloadOptions = {},
+  capability?: DownloadCapability
 ): Promise<SingleDownloadResult> {
   if (options.signal?.aborted) {
     return { success: false, error: 'User cancelled download' };
   }
 
   const filename = generateMediaFilename(media);
-  const capability = detectDownloadCapability();
+  const effectiveCapability = capability ?? detectDownloadCapability();
 
   // Use fallback method if GM_download is not available
-  if (capability.method === 'fetch_blob') {
+  if (effectiveCapability.method === 'fetch_blob') {
     logger.debug('[SingleDownload] Using fetch+blob fallback (GM_download not available)');
 
     // If blob is pre-provided, use direct blob download
@@ -56,7 +43,7 @@ export async function downloadSingleFile(
     });
   }
 
-  if (capability.method === 'none') {
+  if (effectiveCapability.method === 'none') {
     return {
       success: false,
       error: 'No download method available in this environment',
@@ -64,7 +51,7 @@ export async function downloadSingleFile(
   }
 
   // Use GM_download (Tampermonkey/Greasemonkey with GM_download support)
-  const gmDownload = getGMDownload();
+  const gmDownload = effectiveCapability.gmDownload;
   if (!gmDownload) {
     // This shouldn't happen given the capability check, but handle defensively
     return {

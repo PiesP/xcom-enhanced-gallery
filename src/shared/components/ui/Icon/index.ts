@@ -27,5 +27,3 @@ export { HeroX as X } from './hero/HeroX';
 export { HeroZoomIn as ZoomIn } from './hero/HeroZoomIn';
 export type { IconProps } from './Icon';
 export { Icon } from './Icon';
-export type { LazyIconProps } from './lazy-icon';
-export { LazyIcon, useCommonIconPreload, useIconPreload } from './lazy-icon';
