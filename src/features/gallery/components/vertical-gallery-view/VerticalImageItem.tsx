@@ -14,25 +14,25 @@
  *
  * **Architecture (Phase 434)**:
  * - Uses SharedObserver for memory-efficient visibility detection
- * - Dimension calculation extracted to @shared/utils/media/dimensions
+ * - Dimension calculation extracted to @/shared/media/media-utils
  * - Video visibility control extracted to useVideoVisibility hook
  *
  * @module features/gallery/components/vertical-gallery-view
  * @version 7.0.0 - Phase 434: SharedObserver integration and hook extraction
  */
 
-import { getLanguageService } from '@shared/container/service-accessors';
-import { getSetting, setSetting } from '@shared/container/settings-access';
+import { getLanguageService } from '@/shared/container/service-accessors';
+import { getSetting, setSetting } from '@/shared/container/settings-access';
 import {
   createEffect,
   createMemo,
   createSignal,
   onCleanup,
-} from '@shared/external/vendors/solid-hooks';
-import type { ImageFitMode } from '@shared/types';
-import { createIntrinsicSizingStyle, resolveMediaDimensions } from '@shared/utils/media/dimensions';
-import { SharedObserver } from '@shared/utils/performance';
-import { createClassName } from '@shared/utils/text/formatting';
+} from '@/shared/external/vendors/solid-hooks';
+import type { ImageFitMode } from '@/shared/types';
+import { createIntrinsicSizingStyle, resolveMediaDimensions } from '@/shared/media/media-utils';
+import { SharedObserver } from '@/shared/utils/performance';
+import { createClassName } from '@/shared/utils/text/formatting';
 import type { JSX } from 'solid-js';
 import { useVideoVisibility } from './hooks/useVideoVisibility';
 import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';

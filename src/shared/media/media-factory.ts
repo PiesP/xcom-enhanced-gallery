@@ -2,19 +2,19 @@
  * @fileoverview Factory functions for creating MediaInfo objects from API data.
  */
 
-import { logger } from '@shared/logging';
-import type { TweetMediaEntry } from '@shared/services/media/types';
-import type { MediaInfo, TweetInfo } from '@shared/types/media.types';
-import { toPositiveNumber } from './media-utils';
+import { logger } from '@/shared/logging';
+import type { TweetMediaEntry } from '@/shared/services/media/types';
+import type { MediaInfo, TweetInfo } from '@/shared/types/media.types';
+import { normalizeDimension } from '@/shared/media/media-utils';
 
 /**
  * Resolve Dimensions from API Media
  */
 export function resolveDimensionsFromApiMedia(
-  apiMedia: TweetMediaEntry,
+  apiMedia: TweetMediaEntry
 ): { width: number; height: number } | null {
-  const widthFromOriginal = toPositiveNumber(apiMedia.original_width);
-  const heightFromOriginal = toPositiveNumber(apiMedia.original_height);
+  const widthFromOriginal = normalizeDimension(apiMedia.original_width);
+  const heightFromOriginal = normalizeDimension(apiMedia.original_height);
 
   if (widthFromOriginal && heightFromOriginal) {
     return {

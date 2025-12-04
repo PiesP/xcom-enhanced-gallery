@@ -2,10 +2,22 @@
  * @fileoverview Shared media utility functions for dimension extraction, URL normalization, and sorting.
  */
 
-import { logger } from '@shared/logging';
-import type { TweetMediaEntry } from '@shared/services/media/types';
-import type { MediaInfo } from '@shared/types/media.types';
-import { clampIndex } from '@shared/utils/types/safety';
+import { logger } from '@/shared/logging';
+import type { TweetMediaEntry } from '@/shared/services/media/types';
+import type { MediaInfo } from '@/shared/types/media.types';
+import { clampIndex } from '@/shared/utils/types/safety';
+
+export interface DimensionPair {
+  readonly width: number;
+  readonly height: number;
+}
+
+const STANDARD_GALLERY_HEIGHT = 720;
+
+const DEFAULT_DIMENSIONS: DimensionPair = {
+  width: 540,
+  height: STANDARD_GALLERY_HEIGHT,
+} as const;
 
 /**
  * Generic deduplication function
@@ -115,7 +127,7 @@ export function extractDimensionsFromUrl(url: string): { width: number; height: 
 /**
  * Normalize Dimension - Type-Safe Number Parsing
  */
-export function normalizeDimension(value: unknown): number | undefined {
+export function normalizeDimension(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
     return Math.round(value);
   }
@@ -125,15 +137,7 @@ export function normalizeDimension(value: unknown): number | undefined {
       return Math.round(parsed);
     }
   }
-  return undefined;
-}
-
-/**
- * Convert Value to Positive Number (Alias for normalizeDimension but returns null instead of undefined)
- */
-export function toPositiveNumber(value: unknown): number | null {
-  const result = normalizeDimension(value);
-  return result === undefined ? null : result;
+  return null;
 }
 
 /**
@@ -175,6 +179,125 @@ export function normalizeMediaUrl(url: string): string | null {
       return null;
     }
   }
+}
+
+type MetadataRecord = Record<string, unknown> | undefined;
+
+function scaleAspectRatio(widthRatio: number, heightRatio: number): DimensionPair {
+  if (heightRatio <= 0 || widthRatio <= 0) {
+    return DEFAULT_DIMENSIONS;
+  }
+
+  const scaledHeight = STANDARD_GALLERY_HEIGHT;
+  const scaledWidth = Math.max(1, Math.round((widthRatio / heightRatio) * scaledHeight));
+
+  return {
+    width: scaledWidth,
+    height: scaledHeight,
+  };
+}
+
+function extractDimensionsFromMetadataObject(
+  dimensions?: Record<string, unknown>
+): DimensionPair | null {
+  if (!dimensions) {
+    return null;
+  }
+
+  const width = normalizeDimension(dimensions.width);
+  const height = normalizeDimension(dimensions.height);
+  if (width && height) {
+    return { width, height };
+  }
+
+  return null;
+}
+
+function extractDimensionsFromUrlCandidate(candidate: unknown): DimensionPair | null {
+  if (typeof candidate !== 'string' || !candidate) {
+    return null;
+  }
+  return extractDimensionsFromUrl(candidate);
+}
+
+function deriveDimensionsFromMetadata(metadata: MetadataRecord): DimensionPair | null {
+  if (!metadata) {
+    return null;
+  }
+
+  const dimensions = extractDimensionsFromMetadataObject(
+    metadata.dimensions as Record<string, unknown> | undefined
+  );
+  if (dimensions) {
+    return dimensions;
+  }
+
+  const apiData = metadata.apiData as Record<string, unknown> | undefined;
+  if (!apiData) {
+    return null;
+  }
+
+  const originalWidth = normalizeDimension(apiData.original_width ?? apiData.originalWidth);
+  const originalHeight = normalizeDimension(apiData.original_height ?? apiData.originalHeight);
+  if (originalWidth && originalHeight) {
+    return { width: originalWidth, height: originalHeight };
+  }
+
+  const fromDownloadUrl = extractDimensionsFromUrlCandidate(apiData.download_url);
+  if (fromDownloadUrl) {
+    return fromDownloadUrl;
+  }
+
+  const fromPreviewUrl = extractDimensionsFromUrlCandidate(apiData.preview_url);
+  if (fromPreviewUrl) {
+    return fromPreviewUrl;
+  }
+
+  const aspectRatio = apiData.aspect_ratio;
+  if (Array.isArray(aspectRatio) && aspectRatio.length >= 2) {
+    const ratioWidth = normalizeDimension(aspectRatio[0]);
+    const ratioHeight = normalizeDimension(aspectRatio[1]);
+    if (ratioWidth && ratioHeight) {
+      return scaleAspectRatio(ratioWidth, ratioHeight);
+    }
+  }
+
+  return null;
+}
+
+export function resolveMediaDimensions(media: MediaInfo | undefined): DimensionPair {
+  if (!media) {
+    return DEFAULT_DIMENSIONS;
+  }
+
+  const directWidth = normalizeDimension(media.width);
+  const directHeight = normalizeDimension(media.height);
+  if (directWidth && directHeight) {
+    return { width: directWidth, height: directHeight };
+  }
+
+  const fromMetadata = deriveDimensionsFromMetadata(
+    media.metadata as Record<string, unknown> | undefined
+  );
+  if (fromMetadata) {
+    return fromMetadata;
+  }
+
+  return DEFAULT_DIMENSIONS;
+}
+
+function toRem(pixels: number): string {
+  return `${(pixels / 16).toFixed(4)}rem`;
+}
+
+export function createIntrinsicSizingStyle(dimensions: DimensionPair): Record<string, string> {
+  const ratio = dimensions.height > 0 ? dimensions.width / dimensions.height : 1;
+  return {
+    '--xeg-aspect-default': `${dimensions.width} / ${dimensions.height}`,
+    '--xeg-gallery-item-intrinsic-width': toRem(dimensions.width),
+    '--xeg-gallery-item-intrinsic-height': toRem(dimensions.height),
+    '--xeg-gallery-item-intrinsic-ratio': ratio.toFixed(6),
+  };
 }
 
 /**
