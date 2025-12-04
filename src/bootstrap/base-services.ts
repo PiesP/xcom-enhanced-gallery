@@ -18,7 +18,7 @@ import { MediaService } from '@shared/services/media-service';
 import { CoreService } from '@shared/services/service-manager';
 import { ThemeService } from '@shared/services/theme-service';
 import type { BaseService } from '@shared/types/core/base-service.types';
-import { reportBootstrapError } from '@/bootstrap/types';
+import { reportBootstrapError } from '@bootstrap/types';
 
 type BaseServiceRegistration = readonly [CoreBaseServiceIdentifier, BaseService];
 

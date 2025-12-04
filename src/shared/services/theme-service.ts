@@ -16,7 +16,7 @@ import type {
   ThemeSetOptions,
   ThemeSetting,
 } from '@shared/services/theme-service.contract';
-import { APP_SETTINGS_STORAGE_KEY } from '@/constants';
+import { APP_SETTINGS_STORAGE_KEY } from '@constants';
 
 export class ThemeService extends BaseServiceImpl implements ThemeServiceContract {
   private readonly storage = getPersistentStorage();

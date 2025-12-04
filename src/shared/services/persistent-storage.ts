@@ -1,6 +1,6 @@
 import { getUserscript } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
-import { createSingleton } from '@/shared/utils/types/singleton';
+import { createSingleton } from '@shared/utils/types/singleton';
 
 export class PersistentStorage {
   private readonly userscript = getUserscript();

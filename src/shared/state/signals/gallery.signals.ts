@@ -9,20 +9,20 @@
  */
 
 // Break runtime dependency on services: use logging barrel directly
-import { batch as solidBatch } from '@/shared/external/vendors/solid-hooks';
-import { type Logger as ILogger, logger as rootLogger } from '@/shared/logging';
+import { batch as solidBatch } from '@shared/external/vendors/solid-hooks';
+import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
 // Navigation state types
 import {
   type NavigationAction,
   type NavigationState,
   type NavigationTrigger,
   NavigationStateMachine,
-} from '@/shared/state/machines/navigation.machine';
-import type { MediaInfo } from '@/shared/types/media.types';
-import type { NavigationSource } from '@/shared/types/navigation.types';
-import { createEventEmitter } from '@/shared/utils/events/emitter';
-import { clampIndex } from '@/shared/utils/types/safety';
-import { createSignalSafe, effectSafe } from '@/shared/state/signals/signal-factory';
+} from '@shared/state/machines/navigation.machine';
+import type { MediaInfo } from '@shared/types/media.types';
+import type { NavigationSource } from '@shared/types/navigation.types';
+import { createEventEmitter } from '@shared/utils/events/emitter';
+import { clampIndex } from '@shared/utils/types/safety';
+import { createSignalSafe, effectSafe } from '@shared/state/signals/signal-factory';
 
 // Logger instance (services-free)
 const logger: ILogger = rootLogger;

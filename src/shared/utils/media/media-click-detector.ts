@@ -10,8 +10,8 @@ import {
   findMediaElementInDOM,
 } from '@shared/utils/media/media-element-utils';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
-import { CSS } from '@/constants/css';
-import { SELECTORS } from '@/constants/selectors';
+import { CSS } from '@constants/css';
+import { SELECTORS } from '@constants/selectors';
 
 // ============================================================================
 // Constants

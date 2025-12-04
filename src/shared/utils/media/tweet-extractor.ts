@@ -6,7 +6,7 @@
 
 import { logger } from '@shared/logging';
 import { sanitizeHTML } from '@shared/utils/text/html-sanitizer';
-import { SELECTORS } from '@/constants';
+import { SELECTORS } from '@constants';
 
 /**
  * Extracts tweet text HTML from tweet article element

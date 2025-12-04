@@ -42,7 +42,7 @@
     "customConditions": ["module"],
     "verbatimModuleSyntax": true,
     "paths": {
-      "@/*": ["./src/*"],
+      "@*": ["./src/*"],
       "@features/*": ["./src/features/*"],
       "@shared/*": ["./src/shared/*"],
       "@test/*": ["./test/*"],

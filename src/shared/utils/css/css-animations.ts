@@ -10,7 +10,7 @@
 import { logger } from '@shared/logging';
 import { getStyleRegistry } from '@shared/services/style-registry';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
-import { CSS } from '@/constants';
+import { CSS } from '@constants';
 
 // CSS animation variables and constants
 export const ANIMATION_CONSTANTS = {

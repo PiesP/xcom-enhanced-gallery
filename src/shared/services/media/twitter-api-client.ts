@@ -10,7 +10,7 @@ import { HttpRequestService } from '@shared/services/http-request-service';
 import { TwitterAuthService } from '@shared/services/media/twitter-auth-service';
 import { TwitterResponseParser } from '@shared/services/media/twitter-response-parser';
 import type { TweetMediaEntry, TwitterAPIResponse } from '@shared/services/media/types';
-import { TWITTER_API_CONFIG } from '@/constants';
+import { TWITTER_API_CONFIG } from '@constants';
 
 /**
  * TwitterAPI - Facade for Twitter Media Extraction

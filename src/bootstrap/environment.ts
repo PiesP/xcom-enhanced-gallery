@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { reportBootstrapError } from '@/bootstrap/types';
+import { reportBootstrapError } from '@bootstrap/types';
 
 /**
  * Runtime environment initialization (Phase 314-5, Phase 343 improvements)

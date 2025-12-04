@@ -11,15 +11,15 @@
  * Note: Does NOT trigger auto-scroll - tracking only.
  */
 
-import { isGalleryInternalEvent } from '@/shared/dom/utils';
-import { createEffect, createSignal, onCleanup } from '@/shared/external/vendors/solid-hooks';
-import { logger } from '@/shared/logging';
-import { EventManager } from '@/shared/services/event-manager';
-import type { GalleryState } from '@/shared/state/signals/gallery.signals';
-import { galleryState } from '@/shared/state/signals/gallery.signals';
-import { useSelector } from '@/shared/state/signals/signal-selector';
-import { toAccessor } from '@/shared/utils/solid/solid-helpers';
-import { globalTimerManager } from '@/shared/utils/time/timer-management';
+import { isGalleryInternalEvent } from '@shared/dom/utils';
+import { createEffect, createSignal, onCleanup } from '@shared/external/vendors/solid-hooks';
+import { logger } from '@shared/logging';
+import { EventManager } from '@shared/services/event-manager';
+import type { GalleryState } from '@shared/state/signals/gallery.signals';
+import { galleryState } from '@shared/state/signals/gallery.signals';
+import { useSelector } from '@shared/state/signals/signal-selector';
+import { toAccessor } from '@shared/utils/solid/solid-helpers';
+import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 type Accessor<T> = () => T;
 type MaybeAccessor<T> = T | Accessor<T>;

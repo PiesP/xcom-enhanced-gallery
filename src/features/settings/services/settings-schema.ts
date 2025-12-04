@@ -3,7 +3,7 @@
  * @description Compute stable hash of AppSettings shape to detect schema drift.
  */
 
-import { DEFAULT_SETTINGS as defaultSettings } from '@/constants';
+import { DEFAULT_SETTINGS as defaultSettings } from '@constants';
 
 /**
  * Simple hash function (JSON string based)

@@ -13,7 +13,7 @@ import {
   VIDEO_CONTROL_DATASET_PREFIXES,
   VIDEO_CONTROL_ROLES,
   VIDEO_CONTROL_SELECTORS,
-} from '@/constants';
+} from '@constants';
 
 // Gallery element selectors (constants)
 const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;

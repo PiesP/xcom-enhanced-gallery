@@ -1,6 +1,6 @@
 import type { IGalleryApp } from '@shared/container/app-container';
 import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
-import type { createAppConfig } from '@/constants/app-config';
+import type { createAppConfig } from '@constants/app-config';
 
 type DevActions = {
   start: () => Promise<void>;

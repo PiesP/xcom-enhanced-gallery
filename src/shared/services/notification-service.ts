@@ -4,7 +4,7 @@
  */
 import { logger } from '@shared/logging';
 import type { GMNotificationDetails } from '@shared/types/core/userscript';
-import { createSingleton } from '@/shared/utils/types/singleton';
+import { createSingleton } from '@shared/utils/types/singleton';
 
 export interface NotificationOptions {
   title: string;

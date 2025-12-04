@@ -6,7 +6,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { reportBootstrapError } from '@/bootstrap/types';
+import { reportBootstrapError } from '@bootstrap/types';
 
 let devToolsRegistered = false;
 

@@ -85,11 +85,11 @@ export type GalleryEvents = {
 
 // Phase 380: Type-only export to break circular dependency
 // Import removed, re-export ViewMode type only
-export type { ViewMode } from '@/constants';
+export type { ViewMode } from '@constants';
 
 /**
  * ViewMode helper functions were removed in Phase 421 cleanup.
- * Use VIEW_MODES from '@/constants' for validation when needed.
+ * Use VIEW_MODES from '@constants' for validation when needed.
  */
 
 // ========================================

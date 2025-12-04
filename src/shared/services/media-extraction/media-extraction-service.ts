@@ -1,4 +1,4 @@
-import { SELECTORS } from '@/constants/selectors';
+import { SELECTORS } from '@constants/selectors';
 import { logger } from '@shared/logging';
 import {
   adjustClickedIndexAfterDeduplication,

@@ -4,7 +4,7 @@ import type { LanguageService } from '@shared/services/language-service';
 import type { MediaService } from '@shared/services/media-service';
 import { CoreService } from '@shared/services/service-manager';
 import type { ThemeServiceContract } from '@shared/services/theme-service.contract';
-import { SERVICE_KEYS } from '@/constants';
+import { SERVICE_KEYS } from '@constants';
 
 // ============================================================================
 // Service Key Accessors (Phase 414): Centralized SERVICE_KEYS exposure

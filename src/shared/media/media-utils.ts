@@ -2,10 +2,10 @@
  * @fileoverview Shared media utility functions for dimension extraction, URL normalization, and sorting.
  */
 
-import { logger } from '@/shared/logging';
-import type { TweetMediaEntry } from '@/shared/services/media/types';
-import type { MediaInfo } from '@/shared/types/media.types';
-import { clampIndex } from '@/shared/utils/types/safety';
+import { logger } from '@shared/logging';
+import type { TweetMediaEntry } from '@shared/services/media/types';
+import type { MediaInfo } from '@shared/types/media.types';
+import { clampIndex } from '@shared/utils/types/safety';
 
 export interface DimensionPair {
   readonly width: number;

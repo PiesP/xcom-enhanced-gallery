@@ -5,19 +5,19 @@
  * @version 3.0.0 - Unified event management with reduced abstraction layers
  */
 
-import { logger } from '@/shared/logging';
-import type { EventHandlers, GalleryEventOptions } from '@/shared/utils/events/core/event-context';
+import { logger } from '@shared/logging';
+import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events/core/event-context';
 import {
   addListener as registerManagedListener,
   getEventListenerStatus,
   removeEventListenerManaged,
   removeEventListenersByContext,
-} from '@/shared/utils/events/core/listener-manager';
+} from '@shared/utils/events/core/listener-manager';
 import {
   cleanupGalleryEvents,
   getGalleryEventSnapshot,
   initializeGalleryEvents,
-} from '@/shared/utils/events/lifecycle/gallery-lifecycle';
+} from '@shared/utils/events/lifecycle/gallery-lifecycle';
 import { BaseServiceImpl } from './base-service';
 
 /**

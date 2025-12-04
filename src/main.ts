@@ -6,16 +6,16 @@ import { cleanupVendors } from '@shared/external/vendors';
 import type { BootstrapStage } from '@shared/interfaces';
 import { CoreService } from '@shared/services/service-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
-import { initializeCriticalSystems } from '@/bootstrap/critical-systems';
+import { initializeCriticalSystems } from '@bootstrap/critical-systems';
 // initializeDevTools dynamic import moved to initializeDevToolsIfNeeded
-import { initializeEnvironment } from '@/bootstrap/environment';
-import type { Unregister } from '@/bootstrap/events';
-import { wireGlobalEvents } from '@/bootstrap/events';
-import { registerFeatureServicesLazy } from '@/bootstrap/features';
-import { initializeGalleryApp } from '@/bootstrap/gallery-init';
-import { executeStages } from '@/bootstrap/utils';
-import { createAppConfig } from '@/constants/app-config';
-import { logger } from '@/shared/logging';
+import { initializeEnvironment } from '@bootstrap/environment';
+import type { Unregister } from '@bootstrap/events';
+import { wireGlobalEvents } from '@bootstrap/events';
+import { registerFeatureServicesLazy } from '@bootstrap/features';
+import { initializeGalleryApp } from '@bootstrap/gallery-init';
+import { executeStages } from '@bootstrap/utils';
+import { createAppConfig } from '@constants/app-config';
+import { logger } from '@shared/logging';
 
 // Global styles
 // Global styles are loaded at runtime to avoid import-time side effects.
@@ -103,7 +103,7 @@ export async function initializeInfrastructure(): Promise<void> {
 // exported initializeBaseServicesStage below
 export async function initializeBaseServicesStage(): Promise<void> {
   try {
-    const { initializeCoreBaseServices } = await import('@/bootstrap/base-services');
+    const { initializeCoreBaseServices } = await import('@bootstrap/base-services');
     await initializeCoreBaseServices();
     logger.debug('✅ Base services initialization complete');
   } catch (error) {
@@ -173,7 +173,7 @@ export async function initializeDevToolsIfNeeded(): Promise<void> {
     return;
   }
 
-  const { initializeDevTools } = await import('@/bootstrap/dev-tools');
+  const { initializeDevTools } = await import('@bootstrap/dev-tools');
   await initializeDevTools();
 }
 
@@ -208,7 +208,7 @@ export function triggerPreloadStrategy(): void {
 
   void runAfterWindowLoad(async () => {
     try {
-      const { executePreloadStrategy } = await import('@/bootstrap/preload');
+      const { executePreloadStrategy } = await import('@bootstrap/preload');
       await executePreloadStrategy();
     } catch (error) {
       logger.warn('[Phase 326] Error executing preload strategy:', error);
@@ -233,7 +233,7 @@ export async function cleanup(): Promise<void> {
       await lifecycleState.galleryApp.cleanup();
       lifecycleState.galleryApp = null;
       if (__DEV__) {
-        const { setupDevNamespace } = await import('@/bootstrap/dev-namespace');
+        const { setupDevNamespace } = await import('@bootstrap/dev-namespace');
         setupDevNamespace(null, {
           start: startApplication,
           createConfig: createAppConfig,
@@ -338,7 +338,7 @@ export async function startApplication(): Promise<void> {
 
     // Phase 290: Namespace isolation - provide single namespace for global access in dev environment
     if (__DEV__) {
-      const { setupDevNamespace } = await import('@/bootstrap/dev-namespace');
+      const { setupDevNamespace } = await import('@bootstrap/dev-namespace');
       setupDevNamespace(lifecycleState.galleryApp, {
         start: startApplication,
         createConfig: createAppConfig,
@@ -398,7 +398,7 @@ export default {
 
 // Phase 290: Namespace isolation - allow global access only in development environment
 if (__DEV__) {
-  void import('@/bootstrap/dev-namespace').then(({ setupDevNamespace }) => {
+  void import('@bootstrap/dev-namespace').then(({ setupDevNamespace }) => {
     setupDevNamespace(undefined, {
       start: startApplication,
       createConfig: createAppConfig,

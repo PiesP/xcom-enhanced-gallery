@@ -4,7 +4,7 @@
  * Primary selectors use data-testid, with aria-* and structural fallbacks.
  */
 
-import { CSS } from '@/constants/css';
+import { CSS } from '@constants/css';
 
 const GALLERY_SELECTORS = CSS.SELECTORS;
 

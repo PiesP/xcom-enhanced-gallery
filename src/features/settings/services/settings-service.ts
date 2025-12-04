@@ -8,7 +8,7 @@ import { BaseServiceImpl } from '@shared/services/base-service';
 import { logger } from '@shared/logging';
 import { assignNestedPath, resolveNestedPath } from '@shared/utils/types/object-path';
 import { cloneDeep } from '@shared/utils/types/safety';
-import { createDefaultSettings, DEFAULT_SETTINGS } from '@/constants';
+import { createDefaultSettings, DEFAULT_SETTINGS } from '@constants';
 import type { FeatureFlagMap, SettingsServiceContract } from './settings-service.contract';
 import { migrateSettings } from './settings-migration';
 import { PersistentSettingsRepository, type SettingsRepository } from './settings-repository';

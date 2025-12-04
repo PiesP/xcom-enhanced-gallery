@@ -32,7 +32,7 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 **Specifications**
 
-1. Remove stale "Phase" callouts from `@/constants/default-settings`, `@/constants/service-keys`, `@/shared/hooks/index`, and `@/shared/hooks/use-toolbar-state` so the comments describe current behavior only.
+1. Remove stale "Phase" callouts from `@constants/default-settings`, `@constants/service-keys`, `@shared/hooks/index`, and `@shared/hooks/use-toolbar-state` so the comments describe current behavior only.
 2. Drop the deprecated "removed hooks" appendix from the shared hooks barrel to keep the file focused on the active public API surface.
 3. Normalize header docs inside the toolbar hook to highlight responsibilities, state shape, and integration points without historical references.
 4. Confirm no new files reintroduce Phase annotations for already-stabilized systems.

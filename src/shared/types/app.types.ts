@@ -177,4 +177,4 @@ export type {
   Theme,
 } from './ui.types';
 
-// Phase 421: ViewMode helper utilities removed; use VIEW_MODES from '@/constants'.
+// Phase 421: ViewMode helper utilities removed; use VIEW_MODES from '@constants'.

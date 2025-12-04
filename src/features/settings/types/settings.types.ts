@@ -152,11 +152,11 @@ export interface SettingValidationResult {
 }
 
 /**
- * @note Import DEFAULT_SETTINGS directly from @/constants.
+ * @note Import DEFAULT_SETTINGS directly from @constants.
  * This type file contains pure type definitions only.
  * @example
  * ```typescript
- * import { DEFAULT_SETTINGS } from '@/constants';
- * import type { AppSettings } from '@/features/settings/types/settings.types';
+ * import { DEFAULT_SETTINGS } from '@constants';
+ * import type { AppSettings } from '@features/settings/types/settings.types';
  * ```
  */

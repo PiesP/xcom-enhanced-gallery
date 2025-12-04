@@ -2,10 +2,10 @@
  * @fileoverview Factory functions for creating MediaInfo objects from API data.
  */
 
-import { logger } from '@/shared/logging';
-import type { TweetMediaEntry } from '@/shared/services/media/types';
-import type { MediaInfo, TweetInfo } from '@/shared/types/media.types';
-import { normalizeDimension } from '@/shared/media/media-utils';
+import { logger } from '@shared/logging';
+import type { TweetMediaEntry } from '@shared/services/media/types';
+import type { MediaInfo, TweetInfo } from '@shared/types/media.types';
+import { normalizeDimension } from '@shared/media/media-utils';
 
 /**
  * Resolve Dimensions from API Media

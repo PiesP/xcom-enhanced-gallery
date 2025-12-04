@@ -10,7 +10,7 @@
 
 import { logger } from '@shared/logging';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
-import { CSS } from '@/constants';
+import { CSS } from '@constants';
 
 /**
  * Video control action type
