@@ -1,5 +1,5 @@
 /**
- * @fileoverview Service key constants (Phase 309+)
+ * @fileoverview Service key constants
  *
  * Grouped by category and sorted alphabetically.
  *
@@ -11,7 +11,7 @@ export const SERVICE_KEYS = {
   // ========================================
   // Core Services
   // ========================================
-  /** Alias for GALLERY_DOWNLOAD (Phase 355 consolidation) */
+  /** Alias for GALLERY_DOWNLOAD */
   BULK_DOWNLOAD: 'core.bulkDownload',
   LANGUAGE: 'language.service',
 

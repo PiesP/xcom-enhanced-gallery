@@ -28,6 +28,33 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Code Cleanliness**: No orphaned modules or duplicate exposures ✅
 - **Mutation Testing**: Low score due to lack of integration tests for Solid.js components and state management (expected, documented for future work)
 
+### Planning – Phase Annotation Cleanup (2025-12-04)
+
+**Specifications**
+
+1. Remove stale "Phase" callouts from `@/constants/default-settings`, `@/constants/service-keys`, `@/shared/hooks/index`, and `@/shared/hooks/use-toolbar-state` so the comments describe current behavior only.
+2. Drop the deprecated "removed hooks" appendix from the shared hooks barrel to keep the file focused on the active public API surface.
+3. Normalize header docs inside the toolbar hook to highlight responsibilities, state shape, and integration points without historical references.
+4. Confirm no new files reintroduce Phase annotations for already-stabilized systems.
+
+**Expected Behavior**
+
+- Constants and hooks read like evergreen documentation with no historical Phase markers.
+- The hooks barrel only lists exports that exist today.
+- Toolbar hook docs emphasize download debouncing responsibilities and cleanup behavior without referencing past milestones.
+
+**Acceptance Criteria**
+
+1. The four targeted files contain zero mentions of "Phase" or obsolete migration breadcrumbs.
+2. The shared hooks barrel no longer publishes the "Deprecated/Removed Hooks" section.
+3. The toolbar hook's file header is updated to a Phase-free description.
+4. Repository builds successfully after the cleanup (implicitly exercising lint, typecheck, tests, bundle checks, and mutation tests via `npm run build`).
+
+**Test Plan**
+
+1. `npm run build` – execute the full verify-pipeline script (deps check, type check, lint, styles, security, clean, dev/prod builds, bundle-size gate, unit, component, visual, accessibility, E2E, and mutation tests).
+2. Manual inspection of the four edited files to ensure the wording no longer references historical Phases.
+
 ## [0.5.0] - 2025-11-26
 
 ### Changed

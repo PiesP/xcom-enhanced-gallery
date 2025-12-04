@@ -1,5 +1,5 @@
 /**
- * @fileoverview Toolbar State Management Hook - Phase 2B Step 2
+ * @fileoverview Toolbar State Management Hook
  * @description Custom Solid.js hook for toolbar UI state management
  *
  * **Responsibilities**:
@@ -26,7 +26,7 @@
  * - {@link ../types/toolbar.types.ts} - State type definitions
  * - {@link ../../features/gallery/hooks/use-gallery-app.ts} - Main app integration
  *
- * @version 11.0.0 - Phase 376: Comprehensive documentation
+ * @version 11.0.0 - Comprehensive documentation
  * @internal Solid.js hook, PC-only, used by toolbar container
  */
 

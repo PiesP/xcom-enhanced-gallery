@@ -18,7 +18,6 @@ const STATIC_DEFAULT_SETTINGS = {
     videoMuted: false,
   },
   toolbar: {
-    /** Phase 268: Remove runtime warnings - toolbar settings schema */
     autoHideDelay: 3000, // ms, toolbar auto-hide delay (default 3s)
   },
   download: {
@@ -37,7 +36,6 @@ const STATIC_DEFAULT_SETTINGS = {
     screenReaderSupport: true,
     focusIndicators: true,
   },
-  /** Phase 326.4: Conditional Feature Loading */
   features: {
     gallery: true, // Gallery feature enabled (required)
     settings: true, // Settings UI enabled

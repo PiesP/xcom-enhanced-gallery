@@ -12,12 +12,12 @@
  *
  * **Hooks Overview**:
  *
- * 1. **useToolbarState** (Phase 2B Step 2)
+* 1. **useToolbarState**
  *    - State: isDownloading, isLoading, hasError
  *    - Actions: setDownloading, setLoading, setError, resetState
  *    - Features: Download debounce (300ms minimum display), state sync
  *
- * 2. **useFocusTrap** (Phase 3.0.0)
+* 2. **useFocusTrap**
  *    - Wraps @shared/utils/focus-trap utility
  *    - Supports Solid.js accessors, refs, or HTMLElement
  *    - Methods: activate(), deactivate(), isActive getter
@@ -37,13 +37,6 @@
  * // ❌ Forbidden: Direct import of implementation
  * import { useToolbarState } from '@shared/hooks/use-toolbar-state';
  * ```
- *
- * **Related Hooks (removed or moved)**:
- * - `useScrollDirection` - Removed (Phase 140.2 cleanup)
- * - `useDOMReady` - Removed (Phase 140.2 cleanup)
- * - `useKeyboardNavigation` - Removed (Phase 140.2 cleanup)
- * - `useFocusScope` - Removed (Phase 140.2 cleanup)
- * - `useGalleryToolbarLogic` - Removed (unused after Phase 140.2)
  *
  * **Service Integration**:
  * - globalTimerManager: Timer management for download debounce
@@ -65,8 +58,8 @@
  * - {@link ../../types/toolbar.types.ts} - Toolbar type definitions
  * - {@link ./toolbar/use-toolbar-settings-controller.ts} - Toolbar-specific settings hook
  *
- * @fileoverview Shared hooks layer - barrel export (Phase 376)
- * @version 11.0.0 - Phase 376: Comprehensive documentation + pattern consolidation
+* @fileoverview Shared hooks layer - barrel export
+* @version 11.0.0 - Comprehensive documentation + pattern consolidation
  * @internal Implementation details in individual files, not here
  */
 
@@ -86,20 +79,3 @@ export {
   useToolbarSettingsController,
 } from './toolbar/use-toolbar-settings-controller';
 export { useToolbarState } from './use-toolbar-state';
-
-// Phase 376: Removed hooks (archived history)
-/**
- * **Deprecated/Removed Hooks** (Phase 140.2 cleanup):
- *
- * These hooks were removed as part of the Phase 140.2 unused code cleanup:
- * - `useDOMReady` - No longer needed
- * - `useKeyboardNavigation` - Functionality moved to event handlers
- * - `useFocusScope` - Replaced by useFocusTrap
- * - `useScrollDirection` - Functionality moved to utils
- * - `useGalleryToolbarLogic` - Unused after Phase 140.2 refactor
- *
- * If you need similar functionality, use:
- * - FocusTrap from @shared/utils/focus-trap (standalone)
- * - EventManager (Phase 329) for keyboard events
- * - Custom effect hooks in your component
- */
