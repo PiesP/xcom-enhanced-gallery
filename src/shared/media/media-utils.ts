@@ -265,6 +265,17 @@ function deriveDimensionsFromMetadata(metadata: MetadataRecord): DimensionPair |
   return null;
 }
 
+function deriveDimensionsFromMediaUrls(media: MediaInfo): DimensionPair | null {
+  const candidates: Array<string | undefined> = [media.url, media.originalUrl, media.thumbnailUrl];
+  for (const candidate of candidates) {
+    const dimensions = extractDimensionsFromUrlCandidate(candidate);
+    if (dimensions) {
+      return dimensions;
+    }
+  }
+  return null;
+}
+
 export function resolveMediaDimensions(media: MediaInfo | undefined): DimensionPair {
   if (!media) {
     return DEFAULT_DIMENSIONS;
@@ -281,6 +292,11 @@ export function resolveMediaDimensions(media: MediaInfo | undefined): DimensionP
   );
   if (fromMetadata) {
     return fromMetadata;
+  }
+
+  const fromUrls = deriveDimensionsFromMediaUrls(media);
+  if (fromUrls) {
+    return fromUrls;
   }
 
   return DEFAULT_DIMENSIONS;
