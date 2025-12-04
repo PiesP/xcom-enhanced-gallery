@@ -1,77 +1,103 @@
 /**
- * @fileoverview Simplified Vendor Layer
- * @version 3.0.0 - Direct imports wrapper
+ * @fileoverview Simplified Vendor Layer with Tree-Shaking Optimized Imports
+ * @version 4.0.0 - Named imports for optimal tree-shaking
  */
 
-import * as Solid from 'solid-js';
-import * as SolidStore from 'solid-js/store';
-import * as SolidWeb from 'solid-js/web';
+import {
+  createSignal,
+  createEffect,
+  createMemo,
+  createResource,
+  createContext,
+  useContext,
+  batch,
+  untrack,
+  on,
+  onMount,
+  onCleanup,
+  Show,
+  For,
+  Switch,
+  Match,
+  Index,
+  ErrorBoundary,
+  Suspense,
+  lazy,
+  children,
+  mergeProps,
+  splitProps,
+  createRoot,
+  createComponent,
+} from 'solid-js';
+import { createStore, produce } from 'solid-js/store';
+import { render } from 'solid-js/web';
 
 // Re-export types
 export type { JSX } from 'solid-js';
-export type JSXElement = Solid.JSX.Element;
-export type VNode = Solid.JSX.Element;
-export type ComponentChildren = Solid.JSX.Element;
+import type { JSX } from 'solid-js';
+export type JSXElement = JSX.Element;
+export type VNode = JSX.Element;
+export type ComponentChildren = JSX.Element;
 
 export interface SolidAPI {
-  render: typeof SolidWeb.render;
-  createSignal: typeof Solid.createSignal;
-  createEffect: typeof Solid.createEffect;
-  createMemo: typeof Solid.createMemo;
-  createStore: typeof SolidStore.createStore;
-  produce: typeof SolidStore.produce;
-  createResource: typeof Solid.createResource;
-  createContext: typeof Solid.createContext;
-  useContext: typeof Solid.useContext;
-  batch: typeof Solid.batch;
-  untrack: typeof Solid.untrack;
-  on: typeof Solid.on;
-  onMount: typeof Solid.onMount;
-  onCleanup: typeof Solid.onCleanup;
-  Show: typeof Solid.Show;
-  For: typeof Solid.For;
-  Switch: typeof Solid.Switch;
-  Match: typeof Solid.Match;
-  Index: typeof Solid.Index;
-  ErrorBoundary: typeof Solid.ErrorBoundary;
-  Suspense: typeof Solid.Suspense;
-  lazy: typeof Solid.lazy;
-  children: typeof Solid.children;
-  mergeProps: typeof Solid.mergeProps;
-  splitProps: typeof Solid.splitProps;
-  createRoot: typeof Solid.createRoot;
-  createComponent: typeof Solid.createComponent;
+  render: typeof render;
+  createSignal: typeof createSignal;
+  createEffect: typeof createEffect;
+  createMemo: typeof createMemo;
+  createStore: typeof createStore;
+  produce: typeof produce;
+  createResource: typeof createResource;
+  createContext: typeof createContext;
+  useContext: typeof useContext;
+  batch: typeof batch;
+  untrack: typeof untrack;
+  on: typeof on;
+  onMount: typeof onMount;
+  onCleanup: typeof onCleanup;
+  Show: typeof Show;
+  For: typeof For;
+  Switch: typeof Switch;
+  Match: typeof Match;
+  Index: typeof Index;
+  ErrorBoundary: typeof ErrorBoundary;
+  Suspense: typeof Suspense;
+  lazy: typeof lazy;
+  children: typeof children;
+  mergeProps: typeof mergeProps;
+  splitProps: typeof splitProps;
+  createRoot: typeof createRoot;
+  createComponent: typeof createComponent;
 }
 
-// Construct the API objects once
+// Construct the API objects once using named imports
 const solidAPI: SolidAPI = {
-  render: SolidWeb.render,
-  createSignal: Solid.createSignal,
-  createEffect: Solid.createEffect,
-  createMemo: Solid.createMemo,
-  createStore: SolidStore.createStore,
-  produce: SolidStore.produce,
-  createResource: Solid.createResource,
-  createContext: Solid.createContext,
-  useContext: Solid.useContext,
-  batch: Solid.batch,
-  untrack: Solid.untrack,
-  on: Solid.on,
-  onMount: Solid.onMount,
-  onCleanup: Solid.onCleanup,
-  Show: Solid.Show,
-  For: Solid.For,
-  Switch: Solid.Switch,
-  Match: Solid.Match,
-  Index: Solid.Index,
-  ErrorBoundary: Solid.ErrorBoundary,
-  Suspense: Solid.Suspense,
-  lazy: Solid.lazy,
-  children: Solid.children,
-  mergeProps: Solid.mergeProps,
-  splitProps: Solid.splitProps,
-  createRoot: Solid.createRoot,
-  createComponent: Solid.createComponent,
+  render,
+  createSignal,
+  createEffect,
+  createMemo,
+  createStore,
+  produce,
+  createResource,
+  createContext,
+  useContext,
+  batch,
+  untrack,
+  on,
+  onMount,
+  onCleanup,
+  Show,
+  For,
+  Switch,
+  Match,
+  Index,
+  ErrorBoundary,
+  Suspense,
+  lazy,
+  children,
+  mergeProps,
+  splitProps,
+  createRoot,
+  createComponent,
 };
 
 // Simple getters

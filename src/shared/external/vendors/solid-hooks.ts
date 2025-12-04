@@ -1,29 +1,52 @@
 /**
  * @fileoverview Shared SolidJS Hooks Module
- * @description Phase 601: Centralized hook exports to prevent bundle duplication
- * @version 1.0.0
+ * @description Centralized hook exports with tree-shaking optimized named imports
+ * @version 2.0.0
  *
- * This module re-exports SolidJS hooks from the cached solidAPI singleton.
+ * This module re-exports SolidJS hooks using direct named imports for optimal tree-shaking.
  * All modules should import hooks from here instead of calling getSolid().
  *
  * Benefits:
+ * - Optimal tree-shaking: Only imported functions are bundled
  * - Single reference for each hook across the bundle
- * - Improved tree-shaking (Vite/Rollup can deduplicate)
  * - Cleaner imports in consumer modules
  *
  * Usage:
  * ```typescript
- * // Before (deprecated pattern)
- * const { createSignal, createEffect, onCleanup } = getSolid();
- *
- * // After (recommended pattern)
+ * // Recommended pattern - direct named imports
  * import { createSignal, createEffect, onCleanup } from '@shared/external/vendors/solid-hooks';
  * ```
  */
 
-import * as Solid from 'solid-js';
-import * as SolidStore from 'solid-js/store';
-import * as SolidWeb from 'solid-js/web';
+// Tree-shaking optimized: Named imports instead of namespace imports
+import {
+  createSignal as _createSignal,
+  createEffect as _createEffect,
+  createMemo as _createMemo,
+  createResource as _createResource,
+  createRoot as _createRoot,
+  createComponent as _createComponent,
+  createContext as _createContext,
+  useContext as _useContext,
+  batch as _batch,
+  untrack as _untrack,
+  on as _on,
+  onMount as _onMount,
+  onCleanup as _onCleanup,
+  Show as _Show,
+  For as _For,
+  Switch as _Switch,
+  Match as _Match,
+  Index as _Index,
+  ErrorBoundary as _ErrorBoundary,
+  Suspense as _Suspense,
+  lazy as _lazy,
+  children as _children,
+  mergeProps as _mergeProps,
+  splitProps as _splitProps,
+} from 'solid-js';
+import { createStore as _createStore, produce as _produce } from 'solid-js/store';
+import { render as _render } from 'solid-js/web';
 
 // ============================================================================
 // Reactive Primitives
@@ -33,36 +56,36 @@ import * as SolidWeb from 'solid-js/web';
  * Creates a reactive signal with getter and setter.
  * @see https://www.solidjs.com/docs/latest/api#createsignal
  */
-export const createSignal = Solid.createSignal;
+export const createSignal = _createSignal;
 
 /**
  * Creates a side effect that runs when dependencies change.
  * @see https://www.solidjs.com/docs/latest/api#createeffect
  */
-export const createEffect = Solid.createEffect;
+export const createEffect = _createEffect;
 
 /**
  * Creates a read-only derived value.
  * @see https://www.solidjs.com/docs/latest/api#creatememo
  */
-export const createMemo = Solid.createMemo;
+export const createMemo = _createMemo;
 
 /**
  * Creates a resource for async data fetching.
  * @see https://www.solidjs.com/docs/latest/api#createresource
  */
-export const createResource = Solid.createResource;
+export const createResource = _createResource;
 
 /**
  * Creates a root reactive context.
  * @see https://www.solidjs.com/docs/latest/api#createroot
  */
-export const createRoot = Solid.createRoot;
+export const createRoot = _createRoot;
 
 /**
  * Creates a component programmatically.
  */
-export const createComponent = Solid.createComponent;
+export const createComponent = _createComponent;
 
 // ============================================================================
 // Store Primitives
@@ -72,13 +95,13 @@ export const createComponent = Solid.createComponent;
  * Creates a reactive store for complex state.
  * @see https://www.solidjs.com/docs/latest/api#createstore
  */
-export const createStore = SolidStore.createStore;
+export const createStore = _createStore;
 
 /**
  * Produces immutable updates to store state.
  * @see https://www.solidjs.com/docs/latest/api#produce
  */
-export const produce = SolidStore.produce;
+export const produce = _produce;
 
 // ============================================================================
 // Lifecycle Hooks
@@ -88,13 +111,13 @@ export const produce = SolidStore.produce;
  * Runs callback when component mounts.
  * @see https://www.solidjs.com/docs/latest/api#onmount
  */
-export const onMount = Solid.onMount;
+export const onMount = _onMount;
 
 /**
  * Runs callback when component unmounts or effect re-runs.
  * @see https://www.solidjs.com/docs/latest/api#oncleanup
  */
-export const onCleanup = Solid.onCleanup;
+export const onCleanup = _onCleanup;
 
 // ============================================================================
 // Context API
@@ -104,13 +127,13 @@ export const onCleanup = Solid.onCleanup;
  * Creates a context for dependency injection.
  * @see https://www.solidjs.com/docs/latest/api#createcontext
  */
-export const createContext = Solid.createContext;
+export const createContext = _createContext;
 
 /**
  * Consumes a context value.
  * @see https://www.solidjs.com/docs/latest/api#usecontext
  */
-export const useContext = Solid.useContext;
+export const useContext = _useContext;
 
 // ============================================================================
 // Control Flow Utilities
@@ -120,19 +143,19 @@ export const useContext = Solid.useContext;
  * Batches multiple updates into a single render.
  * @see https://www.solidjs.com/docs/latest/api#batch
  */
-export const batch = Solid.batch;
+export const batch = _batch;
 
 /**
  * Reads a value without tracking dependencies.
  * @see https://www.solidjs.com/docs/latest/api#untrack
  */
-export const untrack = Solid.untrack;
+export const untrack = _untrack;
 
 /**
  * Creates a conditional dependency tracking function.
  * @see https://www.solidjs.com/docs/latest/api#on
  */
-export const on = Solid.on;
+export const on = _on;
 
 // ============================================================================
 // Component Flow Components
@@ -142,49 +165,49 @@ export const on = Solid.on;
  * Conditional rendering component.
  * @see https://www.solidjs.com/docs/latest/api#show
  */
-export const Show = Solid.Show;
+export const Show = _Show;
 
 /**
  * List rendering component.
  * @see https://www.solidjs.com/docs/latest/api#for
  */
-export const For = Solid.For;
+export const For = _For;
 
 /**
  * Switch-case rendering component.
  * @see https://www.solidjs.com/docs/latest/api#switch-match
  */
-export const Switch = Solid.Switch;
+export const Switch = _Switch;
 
 /**
  * Case for Switch component.
  * @see https://www.solidjs.com/docs/latest/api#switch-match
  */
-export const Match = Solid.Match;
+export const Match = _Match;
 
 /**
  * Index-based list rendering.
  * @see https://www.solidjs.com/docs/latest/api#index
  */
-export const Index = Solid.Index;
+export const Index = _Index;
 
 /**
  * Error boundary component.
  * @see https://www.solidjs.com/docs/latest/api#errorboundary
  */
-export const ErrorBoundary = Solid.ErrorBoundary;
+export const ErrorBoundary = _ErrorBoundary;
 
 /**
  * Suspense component for async loading.
  * @see https://www.solidjs.com/docs/latest/api#suspense
  */
-export const Suspense = Solid.Suspense;
+export const Suspense = _Suspense;
 
 /**
  * Lazy loading for components.
  * @see https://www.solidjs.com/docs/latest/api#lazy
  */
-export const lazy = Solid.lazy;
+export const lazy = _lazy;
 
 // ============================================================================
 // Props Utilities
@@ -194,19 +217,19 @@ export const lazy = Solid.lazy;
  * Resolves children to array.
  * @see https://www.solidjs.com/docs/latest/api#children
  */
-export const children = Solid.children;
+export const children = _children;
 
 /**
  * Merges props objects.
  * @see https://www.solidjs.com/docs/latest/api#mergeprops
  */
-export const mergeProps = Solid.mergeProps;
+export const mergeProps = _mergeProps;
 
 /**
  * Splits props into local and passed-through.
  * @see https://www.solidjs.com/docs/latest/api#splitprops
  */
-export const splitProps = Solid.splitProps;
+export const splitProps = _splitProps;
 
 // ============================================================================
 // Rendering
@@ -216,4 +239,4 @@ export const splitProps = Solid.splitProps;
  * Renders a component to the DOM.
  * @see https://www.solidjs.com/docs/latest/api#render
  */
-export const render = SolidWeb.render;
+export const render = _render;
