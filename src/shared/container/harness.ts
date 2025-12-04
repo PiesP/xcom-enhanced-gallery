@@ -1,10 +1,10 @@
 /**
  * @fileoverview Test Harness - Lightweight service initialization for tests
- * @version 1.0.0 - Test environment container management
+ * @version 2.0.0 - ES Module singleton integration
  * @phase 402: Enhanced documentation for test infrastructure
  *
  * Provides simplified service registration, retrieval, and lifecycle management
- * for test suites using CoreService directly.
+ * for test suites using both CoreService and ES Module singletons.
  *
  * **Test Only**: Not used in runtime code. Consumed by test harness utilities
  * and test suites for service initialization and mocking.
@@ -13,7 +13,7 @@
  * - Initialize core services for test environments
  * - Provide type-safe service registration
  * - Offer both strict and lenient service retrieval (get vs tryGet)
- * - Reset singleton state between test cases
+ * - Reset singleton state between test cases (both CoreService and ES Module singletons)
  *
  * **Usage Pattern**:
  * 1. Create harness: const harness = createTestHarness()
@@ -38,6 +38,7 @@
  * - Typed get/tryGet methods validate at compile time
  */
 import { CoreService } from '@shared/services/service-manager';
+import { resetAllServiceInstances } from '@shared/services/singletons';
 
 /**
  * @class TestHarness
@@ -161,6 +162,7 @@ export class TestHarness {
    * @returns void
    * **Side Effects**:
    * - Clears all registered services from CoreService
+   * - Resets ES Module singleton instances
    * - Resets singleton to initial state
    * - Enables subsequent tests to start fresh
    *
@@ -172,6 +174,9 @@ export class TestHarness {
    * **Pattern**: Setup → Test → Cleanup (reset)
    */
   reset(): void {
+    // Reset ES Module singletons first
+    resetAllServiceInstances();
+    // Then reset CoreService registry
     CoreService.resetInstance();
   }
 }

@@ -3,6 +3,12 @@ import type { FilenameService } from '@shared/services/filename-service';
 import type { LanguageService } from '@shared/services/language-service';
 import type { MediaService } from '@shared/services/media-service';
 import { CoreService } from '@shared/services/service-manager';
+import {
+  getFilenameServiceInstance,
+  getLanguageServiceInstance,
+  getMediaServiceInstance,
+  getThemeServiceInstance,
+} from '@shared/services/singletons';
 import type { ThemeServiceContract } from '@shared/services/theme-service.contract';
 import { SERVICE_KEYS } from '@constants';
 
@@ -26,52 +32,74 @@ export const CORE_BASE_SERVICE_IDENTIFIERS = [
 export type CoreBaseServiceIdentifier = (typeof CORE_BASE_SERVICE_IDENTIFIERS)[number];
 
 // ============================================================================
+// Helper: Try CoreService first for test mock support
+// ============================================================================
+// In test environments, mocks are registered in CoreService.
+// Check CoreService first to allow mock injection, then fallback to ES Module singleton.
+
+function tryGetFromCoreService<T>(key: string): T | null {
+  try {
+    const coreService = CoreService.getInstance();
+    if (coreService.has(key)) {
+      return coreService.get<T>(key);
+    }
+  } catch {
+    // CoreService not available, use ES Module singleton
+  }
+  return null;
+}
+
+// ============================================================================
 // Required Service Getters
 // ============================================================================
-// These throw if service not found. Use for guaranteed services.
+// These check CoreService first (for test mocks), then use ES Module singletons.
+// This hybrid approach enables both test mock injection and production tree-shaking.
 
 /**
  * Get theme service for UI styling.
+ * Checks CoreService first (for test mocks), then uses ES Module singleton.
  *
  * @returns ThemeService for theme management
- * @throws CoreService throws if theme service not registered
  */
 export function getThemeService(): ThemeServiceContract {
-  return CoreService.getInstance().get<ThemeServiceContract>(SERVICE_KEYS.THEME);
+  return tryGetFromCoreService<ThemeServiceContract>(SERVICE_KEYS.THEME) ?? getThemeServiceInstance();
 }
 
 /**
  * Get language service for i18n.
+ * Checks CoreService first (for test mocks), then uses ES Module singleton.
  *
  * @returns LanguageService for language management
- * @throws CoreService throws if language service not registered
  */
 export function getLanguageService(): LanguageService {
-  return CoreService.getInstance().get<LanguageService>(SERVICE_KEYS.LANGUAGE);
+  return tryGetFromCoreService<LanguageService>(SERVICE_KEYS.LANGUAGE) ?? getLanguageServiceInstance();
 }
 
 /**
  * Get media filename service for filename generation.
+ * Checks CoreService first (for test mocks), then uses ES Module singleton.
  *
  * @returns FilenameService for media file naming
- * @throws CoreService throws if filename service not registered
  */
 export function getMediaFilenameService(): FilenameService {
-  return CoreService.getInstance().get<FilenameService>(SERVICE_KEYS.MEDIA_FILENAME);
+  return (
+    tryGetFromCoreService<FilenameService>(SERVICE_KEYS.MEDIA_FILENAME) ?? getFilenameServiceInstance()
+  );
 }
 
 /**
  * Get media service.
+ * Checks CoreService first (for test mocks), then uses ES Module singleton.
  *
  * @returns MediaService instance
- * @throws CoreService throws if media service not registered
  */
 export function getMediaService(): MediaService {
-  return CoreService.getInstance().get<MediaService>(SERVICE_KEYS.MEDIA_SERVICE);
+  return tryGetFromCoreService<MediaService>(SERVICE_KEYS.MEDIA_SERVICE) ?? getMediaServiceInstance();
 }
 
 /**
  * Get gallery renderer for media display.
+ * GalleryRenderer is dynamically registered, so CoreService lookup is required.
  *
  * @returns GalleryRenderer for rendering gallery UI
  * @throws CoreService throws if gallery renderer not registered

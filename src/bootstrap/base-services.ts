@@ -3,6 +3,7 @@
  * @description Phase 2.1: Centralize BaseService lifecycle
  * Base services initialization separated in Phase A5.2
  * Phase 343: Standardized error handling
+ * Refactor: ES Module singleton pattern integration
  */
 
 import {
@@ -13,27 +14,33 @@ import {
   THEME_SERVICE_IDENTIFIER,
 } from '@shared/container/service-accessors';
 import { logger } from '@shared/logging';
-import { LanguageService } from '@shared/services/language-service';
-import { MediaService } from '@shared/services/media-service';
+import {
+  getLanguageServiceInstance,
+  getMediaServiceInstance,
+  getThemeServiceInstance,
+} from '@shared/services/singletons';
 import { CoreService } from '@shared/services/service-manager';
-import { ThemeService } from '@shared/services/theme-service';
 import type { BaseService } from '@shared/types/core/base-service.types';
 import { reportBootstrapError } from '@bootstrap/types';
 
-type BaseServiceRegistration = readonly [CoreBaseServiceIdentifier, BaseService];
+type BaseServiceRegistration = readonly [CoreBaseServiceIdentifier, () => BaseService];
 
+/**
+ * Service registrations using singleton getter functions.
+ * This ensures consistent instances across the application.
+ */
 const BASE_SERVICE_REGISTRATIONS: ReadonlyArray<BaseServiceRegistration> = [
-  [THEME_SERVICE_IDENTIFIER, ThemeService.getInstance()],
-  [LANGUAGE_SERVICE_IDENTIFIER, LanguageService.getInstance()],
-  [MEDIA_SERVICE_IDENTIFIER, MediaService.getInstance()],
+  [THEME_SERVICE_IDENTIFIER, getThemeServiceInstance],
+  [LANGUAGE_SERVICE_IDENTIFIER, getLanguageServiceInstance],
+  [MEDIA_SERVICE_IDENTIFIER, getMediaServiceInstance],
 ];
 
 function registerMissingBaseServices(coreService: CoreService): number {
   let registeredCount = 0;
 
-  for (const [key, service] of BASE_SERVICE_REGISTRATIONS) {
+  for (const [key, getService] of BASE_SERVICE_REGISTRATIONS) {
     if (!coreService.has(key)) {
-      coreService.register(key, service);
+      coreService.register(key, getService());
       registeredCount += 1;
     }
   }
