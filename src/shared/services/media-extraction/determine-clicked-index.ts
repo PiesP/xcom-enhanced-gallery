@@ -1,5 +1,9 @@
 import { logger } from '@shared/logging';
 import { normalizeMediaUrl } from '@shared/media/media-utils';
+import {
+  extractMediaUrlFromElement,
+  findMediaElementInDOM,
+} from '@shared/utils/media/media-element-utils';
 import type { MediaInfo } from '@shared/types/media.types';
 
 /**
@@ -14,13 +18,13 @@ import type { MediaInfo } from '@shared/types/media.types';
  */
 export function determineClickedIndex(
   clickedElement: HTMLElement,
-  mediaItems: MediaInfo[],
+  mediaItems: MediaInfo[]
 ): number {
   try {
-    const mediaElement = findMediaElement(clickedElement);
+    const mediaElement = findMediaElementInDOM(clickedElement);
     if (!mediaElement) return 0;
 
-    const elementUrl = extractMediaUrl(mediaElement);
+    const elementUrl = extractMediaUrlFromElement(mediaElement);
     if (!elementUrl) return 0;
 
     const normalizedElementUrl = normalizeMediaUrl(elementUrl);
@@ -33,7 +37,7 @@ export function determineClickedIndex(
       const itemUrl = item.url || item.originalUrl;
       if (itemUrl && normalizeMediaUrl(itemUrl) === normalizedElementUrl) {
         logger.debug(
-          `[determineClickedIndex] Matched clicked media at index ${i}: ${normalizedElementUrl}`,
+          `[determineClickedIndex] Matched clicked media at index ${i}: ${normalizedElementUrl}`
         );
         return true;
       }
@@ -41,7 +45,7 @@ export function determineClickedIndex(
       // Check thumbnail URL
       if (item.thumbnailUrl && normalizeMediaUrl(item.thumbnailUrl) === normalizedElementUrl) {
         logger.debug(
-          `[determineClickedIndex] Matched clicked media (thumbnail) at index ${i}: ${normalizedElementUrl}`,
+          `[determineClickedIndex] Matched clicked media (thumbnail) at index ${i}: ${normalizedElementUrl}`
         );
         return true;
       }
@@ -52,103 +56,11 @@ export function determineClickedIndex(
     if (index !== -1) return index;
 
     logger.warn(
-      `[determineClickedIndex] No matching media found for URL: ${normalizedElementUrl}, defaulting to 0`,
+      `[determineClickedIndex] No matching media found for URL: ${normalizedElementUrl}, defaulting to 0`
     );
     return 0;
   } catch (error) {
     logger.warn('[determineClickedIndex] Error calculating clicked index:', error);
     return 0;
   }
-}
-
-const MAX_ANCESTOR_HOPS = 3;
-const MAX_DESCENDANT_DEPTH = 6;
-
-function findMediaElement(element: HTMLElement): HTMLElement | null {
-  if (isMediaElement(element)) {
-    return element;
-  }
-
-  const descendant = findMediaDescendant(element, {
-    includeRoot: false,
-    maxDepth: MAX_DESCENDANT_DEPTH,
-  });
-
-  if (descendant) {
-    return descendant;
-  }
-
-  let branch: HTMLElement | null = element;
-  for (let depth = 0; depth < MAX_ANCESTOR_HOPS && branch; depth++) {
-    const ancestor: HTMLElement | null = branch.parentElement;
-    if (!ancestor) {
-      break;
-    }
-
-    const ancestorMedia = findMediaDescendant(ancestor, {
-      includeRoot: true,
-      maxDepth: MAX_DESCENDANT_DEPTH,
-    });
-
-    if (ancestorMedia) {
-      return ancestorMedia;
-    }
-
-    branch = ancestor;
-  }
-
-  return null;
-}
-
-type DescendantSearchOptions = {
-  includeRoot?: boolean;
-  maxDepth: number;
-};
-
-function findMediaDescendant(
-  root: HTMLElement,
-  { includeRoot = false, maxDepth }: DescendantSearchOptions
-): HTMLElement | null {
-  const queue: Array<{ node: HTMLElement; depth: number }> = [{ node: root, depth: 0 }];
-
-  while (queue.length) {
-    const current = queue.shift();
-    if (!current) {
-      break;
-    }
-
-    const { node, depth } = current;
-
-    if ((includeRoot || node !== root) && isMediaElement(node)) {
-      return node;
-    }
-
-    if (depth >= maxDepth) {
-      continue;
-    }
-
-    for (const child of Array.from(node.children)) {
-      if (!(child instanceof HTMLElement)) {
-        continue;
-      }
-
-      queue.push({ node: child, depth: depth + 1 });
-    }
-  }
-
-  return null;
-}
-
-function isMediaElement(element: HTMLElement): boolean {
-  return element.tagName === 'IMG' || element.tagName === 'VIDEO';
-}
-
-function extractMediaUrl(element: HTMLElement): string | null {
-  if (element.tagName === 'IMG') {
-    return element.getAttribute('src');
-  }
-  if (element.tagName === 'VIDEO') {
-    return element.getAttribute('poster') || element.getAttribute('src');
-  }
-  return null;
 }
