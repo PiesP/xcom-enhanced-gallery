@@ -251,12 +251,8 @@ function VerticalGalleryViewCore({
       return;
     }
 
-    // Ignore clicks on gallery items (images/videos)
-    if (
-      target.closest('[data-xeg-role="gallery-item"]') ||
-      target.closest('.xeg-gallery-item') ||
-      target.closest('.vertical-item')
-    ) {
+    // Ignore clicks on gallery items (images/videos) - use data attributes for production safety
+    if (target.closest('[data-xeg-role="gallery-item"]')) {
       return;
     }
 
