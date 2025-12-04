@@ -8,6 +8,8 @@ import {
 
 type PauseRoot = Exclude<PauseAmbientVideosOptions['root'], undefined>;
 
+export type AmbientVideoPauseScope = 'document' | 'tweet' | 'custom';
+
 export type AmbientVideoTrigger =
   | 'video-click'
   | 'image-click'
@@ -25,6 +27,7 @@ export interface AmbientVideoPauseResponse extends PauseAmbientVideosResult {
   readonly trigger: AmbientVideoTrigger;
   readonly forced: boolean;
   readonly reason: string;
+  readonly scope: AmbientVideoPauseScope;
 }
 
 const VIDEO_TRIGGER_SCOPES = new Set<string>([
@@ -42,6 +45,11 @@ const PAUSE_RESULT_DEFAULT: PauseAmbientVideosResult = Object.freeze({
   totalCandidates: 0,
   skippedCount: 0,
 });
+
+interface PauseResolution {
+  readonly root: PauseRoot;
+  readonly scope: AmbientVideoPauseScope;
+}
 
 function findTweetContainer(element?: HTMLElement | null): HTMLElement | null {
   if (!element) {
@@ -62,12 +70,26 @@ function findTweetContainer(element?: HTMLElement | null): HTMLElement | null {
   return null;
 }
 
-function resolvePauseRoot(request: AmbientVideoPauseRequest): PauseRoot {
+function resolvePauseContext(request: AmbientVideoPauseRequest): PauseResolution {
   if (request.root !== undefined) {
-    return request.root ?? null;
+    return {
+      root: request.root ?? null,
+      scope: 'custom',
+    };
   }
 
-  return findTweetContainer(request.sourceElement);
+  const tweetContainer = findTweetContainer(request.sourceElement);
+  if (tweetContainer) {
+    return {
+      root: null,
+      scope: 'tweet',
+    };
+  }
+
+  return {
+    root: null,
+    scope: 'document',
+  };
 }
 
 function isVideoTriggerElement(element?: HTMLElement | null): boolean {
@@ -120,10 +142,9 @@ export function pauseAmbientVideosForGallery(
   request: AmbientVideoPauseRequest = {}
 ): AmbientVideoPauseResponse {
   const trigger = request.trigger ?? inferAmbientVideoTrigger(request.sourceElement);
-  const enforcedTrigger = trigger === 'video-click' || trigger === 'guard';
-  const force = request.force ?? enforcedTrigger;
+  const force = request.force ?? true;
   const reason = request.reason ?? trigger;
-  const root = resolvePauseRoot(request);
+  const { root, scope } = resolvePauseContext(request);
 
   let result: PauseAmbientVideosResult;
 
@@ -139,15 +160,17 @@ export function pauseAmbientVideosForGallery(
       trigger,
       forced: force,
       reason,
+      scope,
     };
   }
 
-  if (force || result.pausedCount > 0) {
+  if (result.totalCandidates > 0 || result.pausedCount > 0) {
     logger.debug('[AmbientVideoCoordinator] Ambient videos paused', {
       ...result,
       reason,
       trigger,
       forced: force,
+      scope,
     });
   }
 
@@ -156,5 +179,6 @@ export function pauseAmbientVideosForGallery(
     trigger,
     forced: force,
     reason,
+    scope,
   };
 }

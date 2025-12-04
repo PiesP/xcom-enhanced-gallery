@@ -19,7 +19,6 @@ function ensureGuardEffect(): void {
     const result = pauseAmbientVideosForGallery({
       trigger: 'guard',
       reason: 'guard',
-      force: true,
     });
 
     if (result.pausedCount > 0) {
