@@ -241,13 +241,12 @@ function VerticalGalleryViewCore({
   const handleBackgroundClick = (event: MouseEvent) => {
     const target = event.target as HTMLElement;
 
-    // Ignore clicks on toolbar and toolbar hover zone
+    // Ignore clicks on toolbar and toolbar hover zone using data attributes (production-safe)
     if (
-      target.closest('.toolbarWrapper') ||
-      target.closest('.toolbarHoverZone') ||
       target.closest('[data-role="toolbar"]') ||
       target.closest('[data-role="toolbar-hover-zone"]') ||
-      target.closest('[class*="toolbar"]')
+      target.closest('[data-gallery-element="toolbar"]') ||
+      target.closest('[data-gallery-element]')
     ) {
       return;
     }
@@ -330,7 +329,7 @@ function VerticalGalleryViewCore({
     >
       <div class={styles.toolbarHoverZone} data-role="toolbar-hover-zone" />
 
-      <div class={styles.toolbarWrapper} ref={el => setToolbarWrapperEl(el ?? null)}>
+      <div class={styles.toolbarWrapper} data-role="toolbar" ref={el => setToolbarWrapperEl(el ?? null)}>
         <Toolbar
           onClose={onClose || (() => {})}
           onPrevious={onPrevious || handlePrevious}
