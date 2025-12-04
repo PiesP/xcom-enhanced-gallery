@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import type {
   NormalizedOutputOptions,
@@ -13,11 +14,69 @@ import type { BuildOptions, Plugin, PluginOption, UserConfig } from 'vite';
 import { defineConfig, mergeConfig } from 'vite';
 import monkey from 'vite-plugin-monkey';
 import solidPlugin from 'vite-plugin-solid';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 const STYLE_ID = 'xeg-styles';
 const ERR_EVENT = 'xeg:style-error';
 const require = createRequire(import.meta.url);
+
+type AliasEntry = {
+  find: string;
+  replacement: string;
+};
+
+type Tsconfig = {
+  compilerOptions?: {
+    paths?: Record<string, string[]>;
+  };
+};
+
+const resolveFromImportMeta = (relativePath: string) => {
+  if (!import.meta.url.startsWith('file:')) {
+    return null;
+  }
+
+  try {
+    const candidate = new URL(relativePath, import.meta.url);
+    if (candidate.protocol !== 'file:') {
+      return null;
+    }
+    return fileURLToPath(candidate);
+  } catch {
+    return null;
+  }
+};
+
+const resolvedProjectRoot = resolveFromImportMeta('.');
+const projectRoot = resolvedProjectRoot ?? process.cwd();
+const resolvedTsconfigPath = resolveFromImportMeta('./tsconfig.json');
+const defaultTsconfigPath = resolvedTsconfigPath ?? path.resolve(projectRoot, 'tsconfig.json');
+
+const stripWildcard = (value: string) => (value.endsWith('/*') ? value.slice(0, -2) : value);
+
+function getTsconfigAliasEntries(tsconfigPath: string = defaultTsconfigPath): AliasEntry[] {
+  const raw = fs.readFileSync(tsconfigPath, 'utf8');
+  const tsconfig = JSON.parse(raw) as Tsconfig;
+  const configuredPaths = tsconfig.compilerOptions?.paths ?? {};
+
+  return Object.keys(configuredPaths)
+    .sort()
+    .map(aliasKey => {
+      const targets = configuredPaths[aliasKey];
+      if (!targets?.length) return null;
+
+      const [firstTarget] = targets;
+      if (!firstTarget) {
+        return null;
+      }
+
+      const replacement = stripWildcard(firstTarget);
+      return {
+        find: stripWildcard(aliasKey),
+        replacement: path.resolve(projectRoot, replacement),
+      };
+    })
+    .filter((entry): entry is AliasEntry => Boolean(entry));
+}
 
 export const createStyleInjector = (css: string, isDev: boolean) => {
   if (!css.trim()) return '';
@@ -232,11 +291,12 @@ export default defineConfig(async ({ mode, command }) => {
     buildConfig.rolldownOptions = rolldownBundlerOptions;
   }
 
+  const aliasEntries = getTsconfigAliasEntries();
+
   const config: FutureUserConfig = {
     ...transformerConfig,
     plugins: [
       solidPlugin({ dev: isDev, ssr: false }),
-      tsconfigPaths(),
       command === 'serve'
         ? monkey({
             entry: 'src/main.ts',
@@ -266,6 +326,10 @@ export default defineConfig(async ({ mode, command }) => {
       global: 'globalThis',
       __FEATURE_MEDIA_EXTRACTION__: process.env.ENABLE_MEDIA_EXTRACTION !== 'false',
     },
+    resolve: {
+      alias: aliasEntries,
+      tsconfigPaths: true,
+    },
     css: {
       modules: {
         generateScopedName: isDev ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:6]',
@@ -287,15 +351,24 @@ export default defineConfig(async ({ mode, command }) => {
     },
     logLevel: isDev ? 'info' : 'warn',
     clearScreen: false,
+    experimental: {
+      enableNativePlugin: 'resolver',
+    },
     future: 'warn',
   };
 
+  const localConfigPath = path.resolve(process.cwd(), 'config.local.js');
+
+  if (!fs.existsSync(localConfigPath)) {
+    return config;
+  }
+
   try {
-    // @ts-expect-error: Optional local config
-    const { loadLocalConfig } = await import('./config.local.js');
-    const local = await loadLocalConfig();
+    const localModule = await import(`${pathToFileURL(localConfigPath).href}?ts=${Date.now()}`);
+    const local = await localModule.loadLocalConfig?.();
     return local ? mergeConfig(config, local) : config;
-  } catch {
+  } catch (error) {
+    console.warn('[vite-config] Failed to load config.local.js', error);
     return config;
   }
 });
