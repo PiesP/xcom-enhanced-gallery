@@ -55,14 +55,6 @@ export function clamp(value: number, min: number = 0, max: number = 1): number {
 }
 
 /**
- * Clamp a number between 0 and 1
- * @deprecated Use clamp(value, 0, 1) instead
- */
-export function clamp01(value: number): number {
-  return clamp(value, 0, 1);
-}
-
-/**
  * Clamp an index within array bounds (0 to length-1)
  * @param index - Index to clamp
  * @param length - Array length (must be > 0)

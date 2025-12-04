@@ -12,13 +12,13 @@
  * - Auto-pause videos when item becomes invisible
  * - Provide focus/blur event handling for accessibility
  *
- * **Architecture (Phase 434)**:
+ * **Architecture**:
  * - Uses SharedObserver for memory-efficient visibility detection
  * - Dimension calculation extracted to @/shared/media/media-utils
  * - Video visibility control extracted to useVideoVisibility hook
  *
  * @module features/gallery/components/vertical-gallery-view
- * @version 7.0.0 - Phase 434: SharedObserver integration and hook extraction
+ * @version 7.0.0 - SharedObserver integration and hook extraction
  */
 
 import { getLanguageService } from '@/shared/container/service-accessors';
@@ -81,14 +81,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
   const [imageRef, setImageRef] = createSignal<HTMLImageElement | null>(null);
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
 
-  // Phase 434: Use extracted dimension utility
   const dimensions = createMemo(() => resolveMediaDimensions(media));
 
   const intrinsicSizingStyle = createMemo<JSX.CSSProperties>(() => {
     return createIntrinsicSizingStyle(dimensions()) as unknown as JSX.CSSProperties;
   });
 
-  // Phase 434: Use extracted video visibility hook
   useVideoVisibility({
     container: containerRef,
     video: videoRef,
@@ -174,7 +172,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
     }
   });
 
-  // Phase 434: Lazy visibility detection using SharedObserver
   createEffect(() => {
     const container = containerRef();
     if (!container || isVisible() || forceVisible) {

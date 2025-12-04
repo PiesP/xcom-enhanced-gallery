@@ -4,6 +4,7 @@
  */
 import { logger } from '@shared/logging';
 import type { GMNotificationDetails } from '@shared/types/core/userscript';
+import { createSingleton } from '@/shared/utils/types/singleton';
 
 export interface NotificationOptions {
   title: string;
@@ -18,12 +19,16 @@ interface GlobalWithGMNotification {
 }
 
 export class NotificationService {
-  private static instance: NotificationService | null = null;
+  private static readonly singleton = createSingleton(() => new NotificationService());
   private constructor() {}
 
   static getInstance(): NotificationService {
-    if (!NotificationService.instance) NotificationService.instance = new NotificationService();
-    return NotificationService.instance;
+    return NotificationService.singleton.get();
+  }
+
+  /** @internal Test helper */
+  static resetForTests(): void {
+    NotificationService.singleton.reset();
   }
 
   private gmNotify(options: NotificationOptions): void {

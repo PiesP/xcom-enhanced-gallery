@@ -1,17 +1,20 @@
 import { getUserscript } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
+import { createSingleton } from '@/shared/utils/types/singleton';
 
 export class PersistentStorage {
-  private static instance: PersistentStorage | null = null;
   private readonly userscript = getUserscript();
+  private static readonly singleton = createSingleton(() => new PersistentStorage());
 
   private constructor() {}
 
   static getInstance(): PersistentStorage {
-    if (!PersistentStorage.instance) {
-      PersistentStorage.instance = new PersistentStorage();
-    }
-    return PersistentStorage.instance;
+    return PersistentStorage.singleton.get();
+  }
+
+  /** @internal Test helper */
+  static resetForTests(): void {
+    PersistentStorage.singleton.reset();
   }
 
   async set<T>(key: string, value: T): Promise<void> {
