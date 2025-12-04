@@ -1,65 +1,81 @@
 import type {
   AppSettings,
+  FeatureFlags,
   NestedSettingKey,
   SettingChangeEvent,
 } from '@features/settings/types/settings.types';
+import { BaseServiceImpl } from '@shared/services/base-service';
 import { logger } from '@shared/logging';
-import { getPersistentStorage } from '@shared/services/persistent-storage';
-import {
-  assignNestedPath,
-  resolveNestedPath,
-} from '@shared/utils/types/object-path';
+import { assignNestedPath, resolveNestedPath } from '@shared/utils/types/object-path';
 import { cloneDeep } from '@shared/utils/types/safety';
-import { APP_SETTINGS_STORAGE_KEY, createDefaultSettings, DEFAULT_SETTINGS } from '@/constants';
-import { migrateSettings as runMigration } from './settings-migration';
-import { computeCurrentSettingsSchemaHash } from './settings-schema';
+import { createDefaultSettings, DEFAULT_SETTINGS } from '@/constants';
+import type { FeatureFlagMap, SettingsServiceContract } from './settings-service.contract';
+import { migrateSettings } from './settings-migration';
+import { PersistentSettingsRepository, type SettingsRepository } from './settings-repository';
 
-export class SettingsService {
-  private settings: AppSettings = createDefaultSettings();
-  private readonly listeners = new Set<(event: SettingChangeEvent) => void>();
-  private initialized = false;
-  private readonly schemaHash = computeCurrentSettingsSchemaHash();
-  private readonly storage = getPersistentStorage();
+const FEATURE_DEFAULTS: Readonly<FeatureFlags> = Object.freeze({ ...DEFAULT_SETTINGS.features });
 
-  async initialize(): Promise<void> {
-    try {
-      await this.loadSettings();
-      this.initialized = true;
-      logger.debug('SettingsService initialized');
-    } catch (error) {
-      logger.error('SettingsService initialization failed:', error);
-      throw error;
+function normalizeFeatureFlags(
+  features?: Partial<Record<keyof FeatureFlags, unknown>>
+): FeatureFlagMap {
+  const featureKeys = Object.keys(FEATURE_DEFAULTS) as Array<keyof FeatureFlags>;
+  return featureKeys.reduce<Record<keyof FeatureFlags, boolean>>((acc, key) => {
+    const candidate = features?.[key];
+    acc[key] = typeof candidate === 'boolean' ? candidate : FEATURE_DEFAULTS[key];
+    return acc;
+  }, {} as Record<keyof FeatureFlags, boolean>);
+}
+
+export class SettingsService extends BaseServiceImpl implements SettingsServiceContract {
+  private static instance: SettingsService | null = null;
+
+  public static getInstance(): SettingsService {
+    if (!SettingsService.instance) {
+      SettingsService.instance = new SettingsService();
     }
+    return SettingsService.instance;
   }
 
-  isInitialized(): boolean {
-    return this.initialized;
+  private settings: AppSettings = createDefaultSettings();
+  private featureMap: FeatureFlagMap = normalizeFeatureFlags(this.settings.features);
+  private readonly listeners = new Set<(event: SettingChangeEvent) => void>();
+
+  constructor(
+    private readonly repository: SettingsRepository = new PersistentSettingsRepository()
+  ) {
+    super('SettingsService');
   }
 
-  async cleanup(): Promise<void> {
-    await this.saveSettings();
+  protected async onInitialize(): Promise<void> {
+    this.settings = await this.repository.load();
+    this.refreshFeatureMap();
+  }
+
+  protected onDestroy(): void {
     this.listeners.clear();
-    this.initialized = false;
+    void this.repository.save(this.settings);
   }
 
-  getAllSettings(): Readonly<AppSettings> {
+  public getAllSettings(): Readonly<AppSettings> {
+    this.assertInitialized();
     return cloneDeep(this.settings);
   }
 
-  get<T = unknown>(key: NestedSettingKey | string): T {
+  public get<T = unknown>(key: NestedSettingKey | string): T {
+    this.assertInitialized();
     const value = resolveNestedPath<T>(this.settings, key);
-    return value === undefined
-      ? (this.getDefaultValue(key as NestedSettingKey) as T)
-      : value;
+    return value === undefined ? (this.getDefaultValue(key as NestedSettingKey) as T) : value;
   }
 
-  async set<T = unknown>(key: NestedSettingKey, value: T): Promise<void> {
+  public async set<T = unknown>(key: NestedSettingKey, value: T): Promise<void> {
+    this.assertInitialized();
     if (!this.isValid(key, value)) throw new Error(`Invalid setting value for ${key}`);
 
     const oldValue = this.get(key);
     assignNestedPath(this.settings, key, value);
     this.settings.lastModified = Date.now();
 
+    this.refreshFeatureMap();
     this.notifyListeners({
       key,
       oldValue,
@@ -67,10 +83,11 @@ export class SettingsService {
       timestamp: Date.now(),
       status: 'success',
     });
-    await this.saveSettings();
+    await this.persist();
   }
 
-  async updateBatch(updates: Partial<Record<NestedSettingKey, unknown>>): Promise<void> {
+  public async updateBatch(updates: Partial<Record<NestedSettingKey, unknown>>): Promise<void> {
+    this.assertInitialized();
     const entries = Object.entries(updates) as [NestedSettingKey, unknown][];
     for (const [key, value] of entries) {
       if (!this.isValid(key, value)) throw new Error(`Invalid setting value for ${key}`);
@@ -89,20 +106,23 @@ export class SettingsService {
       });
     });
     this.settings.lastModified = timestamp;
-    await this.saveSettings();
+    this.refreshFeatureMap();
+    await this.persist();
   }
 
-  async resetToDefaults(category?: keyof AppSettings): Promise<void> {
+  public async resetToDefaults(category?: keyof AppSettings): Promise<void> {
+    this.assertInitialized();
     const previous = this.getAllSettings();
     if (!category) {
       this.settings = createDefaultSettings();
     } else if (category in DEFAULT_SETTINGS) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (this.settings as any)[category] = cloneDeep(
-        DEFAULT_SETTINGS[category as keyof typeof DEFAULT_SETTINGS],
+        DEFAULT_SETTINGS[category as keyof typeof DEFAULT_SETTINGS]
       );
     }
     this.settings.lastModified = Date.now();
+    this.refreshFeatureMap();
     this.notifyListeners({
       key: (category ?? 'all') as NestedSettingKey,
       oldValue: previous,
@@ -110,28 +130,31 @@ export class SettingsService {
       timestamp: Date.now(),
       status: 'success',
     });
-    await this.saveSettings();
+    await this.persist();
   }
 
-  subscribe(listener: (event: SettingChangeEvent) => void): () => void {
+  public subscribe(listener: (event: SettingChangeEvent) => void): () => void {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
     };
   }
 
-  exportSettings(): string {
+  public exportSettings(): string {
+    this.assertInitialized();
     return JSON.stringify(this.settings, null, 2);
   }
 
-  async importSettings(jsonString: string): Promise<void> {
+  public async importSettings(jsonString: string): Promise<void> {
+    this.assertInitialized();
     try {
       const imported = JSON.parse(jsonString);
       if (!imported || typeof imported !== 'object') throw new Error('Invalid settings');
 
       const previous = this.getAllSettings();
-      this.settings = runMigration(imported);
+      this.settings = migrateSettings(imported);
       this.settings.lastModified = Date.now();
+      this.refreshFeatureMap();
 
       this.notifyListeners({
         key: 'all' as NestedSettingKey,
@@ -140,43 +163,24 @@ export class SettingsService {
         timestamp: Date.now(),
         status: 'success',
       });
-      await this.saveSettings();
+      await this.persist();
     } catch (error) {
       logger.error('Settings import failed:', error);
       throw error;
     }
   }
 
-  private async loadSettings(): Promise<void> {
-    try {
-      const stored = await this.storage.get<AppSettings & { __schemaHash?: string }>(
-        APP_SETTINGS_STORAGE_KEY,
-      );
-      if (!stored) {
-        await this.saveSettings();
-        return;
-      }
-
-      if (stored.__schemaHash !== this.schemaHash) {
-        this.settings = runMigration(stored);
-        await this.saveSettings();
-      } else {
-        this.settings = runMigration(stored); // Ensure structure
-      }
-    } catch (error) {
-      logger.error('Settings load failed, using defaults:', error);
-    }
+  public getFeatureMap(): FeatureFlagMap {
+    this.assertInitialized();
+    return Object.freeze({ ...this.featureMap });
   }
 
-  private async saveSettings(): Promise<void> {
-    try {
-      await this.storage.set(APP_SETTINGS_STORAGE_KEY, {
-        ...this.settings,
-        __schemaHash: this.schemaHash,
-      });
-    } catch (error) {
-      logger.error('Settings save failed:', error);
-    }
+  private refreshFeatureMap(): void {
+    this.featureMap = normalizeFeatureFlags(this.settings.features);
+  }
+
+  private async persist(): Promise<void> {
+    await this.repository.save(this.settings);
   }
 
   private isValid(key: NestedSettingKey, value: unknown): boolean {
@@ -194,12 +198,18 @@ export class SettingsService {
   }
 
   private notifyListeners(event: SettingChangeEvent): void {
-    this.listeners.forEach((l) => {
+    this.listeners.forEach(listener => {
       try {
-        l(event);
-      } catch (e) {
-        logger.error('Listener error:', e);
+        listener(event);
+      } catch (error) {
+        logger.error('Settings listener error:', error);
       }
     });
+  }
+
+  private assertInitialized(): void {
+    if (!this.isInitialized()) {
+      throw new Error('SettingsService must be initialized before use');
+    }
   }
 }
