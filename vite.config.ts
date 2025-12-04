@@ -1,8 +1,15 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import type { NormalizedOutputOptions, OutputAsset, OutputBundle, OutputChunk } from 'rollup';
-import type { Plugin, PluginOption, UserConfig } from 'vite';
+import { createRequire } from 'node:module';
+import type {
+  NormalizedOutputOptions,
+  OutputAsset,
+  OutputBundle,
+  OutputChunk,
+  RolldownOptions,
+} from 'rolldown';
+import type { BuildOptions, Plugin, PluginOption, UserConfig } from 'vite';
 import { defineConfig, mergeConfig } from 'vite';
 import monkey from 'vite-plugin-monkey';
 import solidPlugin from 'vite-plugin-solid';
@@ -10,6 +17,7 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 
 const STYLE_ID = 'xeg-styles';
 const ERR_EVENT = 'xeg:style-error';
+const require = createRequire(import.meta.url);
 
 export const createStyleInjector = (css: string, isDev: boolean) => {
   if (!css.trim()) return '';
@@ -23,6 +31,14 @@ export const createStyleInjector = (css: string, isDev: boolean) => {
 };
 
 const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+const viteMeta = JSON.parse(fs.readFileSync(require.resolve('vite/package.json'), 'utf8'));
+const forcedFlavor = process.env.XEG_FORCE_VITE_FLAVOR?.toLowerCase();
+const isRolldownPreview =
+  forcedFlavor === 'preview'
+    ? true
+    : forcedFlavor === 'main'
+    ? false
+    : viteMeta.name === 'rolldown-vite';
 
 const getLicenseNotices = () => {
   const files = [
@@ -128,12 +144,96 @@ const userscriptPlugin = (isDev: boolean, isProd: boolean): Plugin => ({
   },
 });
 
+type FutureUserConfig = UserConfig & { oxc?: Record<string, unknown> };
+type FutureBuildOptions = BuildOptions & { rolldownOptions?: RolldownOptions };
+type TransformerConfig =
+  | { esbuild: NonNullable<UserConfig['esbuild']> }
+  | { oxc: Record<string, unknown> };
+
 export default defineConfig(async ({ mode, command }) => {
   const isDev = mode === 'development';
   const isProd = !isDev;
   const analyze = isProd && process.env.XEG_ENABLE_BUNDLE_ANALYSIS === 'true';
+  const classFieldCompilerOptions = { useDefineForClassFields: false } as const;
 
-  const config: UserConfig = {
+  const transformerConfig: TransformerConfig = isRolldownPreview
+    ? {
+        esbuild: {
+          jsx: 'preserve',
+          jsxImportSource: 'solid-js',
+          tsconfigRaw: { compilerOptions: classFieldCompilerOptions },
+        },
+      }
+    : {
+        oxc: {
+          jsx: 'preserve',
+          typescript: {
+            removeClassFieldsWithoutInitializer: true,
+          },
+          assumptions: {
+            setPublicClassFields: true,
+          },
+        },
+      };
+
+  const baseBundlerOptions = {
+    input: 'src/main.ts',
+    output: {
+      format: 'iife' as const,
+      name: 'XEG',
+      inlineDynamicImports: true as const,
+    },
+    treeshake: isProd,
+  };
+
+  const rollupBundlerOptions = {
+    ...baseBundlerOptions,
+    maxParallelFileOps: 10,
+  };
+
+  const rolldownBundlerOptions: RolldownOptions = {
+    ...baseBundlerOptions,
+  };
+
+  const buildConfig: FutureBuildOptions = {
+    target: 'baseline-widely-available',
+    outDir: 'dist',
+    emptyOutDir: isDev,
+    cssCodeSplit: false,
+    assetsInlineLimit: 0,
+    sourcemap: isDev,
+    minify: isProd ? 'terser' : false,
+    reportCompressedSize: true,
+    chunkSizeWarningLimit: 1000,
+    ...(isProd
+      ? {
+          terserOptions: {
+            compress: {
+              drop_console: true,
+              drop_debugger: true,
+              pure_funcs: ['console.info', 'console.debug', 'logger.debug', 'logger.info'],
+              passes: 5,
+              pure_getters: true,
+              unsafe: true,
+              unsafe_methods: true,
+              toplevel: true,
+            },
+            format: { comments: false },
+            mangle: { toplevel: true },
+            maxWorkers: os.cpus().length,
+          },
+        }
+      : {}),
+  };
+
+  if (isRolldownPreview) {
+    buildConfig.rollupOptions = rollupBundlerOptions;
+  } else {
+    buildConfig.rolldownOptions = rolldownBundlerOptions;
+  }
+
+  const config: FutureUserConfig = {
+    ...transformerConfig,
     plugins: [
       solidPlugin({ dev: isDev, ssr: false }),
       tsconfigPaths(),
@@ -166,11 +266,6 @@ export default defineConfig(async ({ mode, command }) => {
       global: 'globalThis',
       __FEATURE_MEDIA_EXTRACTION__: process.env.ENABLE_MEDIA_EXTRACTION !== 'false',
     },
-    esbuild: {
-      jsx: 'preserve',
-      jsxImportSource: 'solid-js',
-      tsconfigRaw: { compilerOptions: { useDefineForClassFields: false } },
-    },
     css: {
       modules: {
         generateScopedName: isDev ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:6]',
@@ -179,47 +274,7 @@ export default defineConfig(async ({ mode, command }) => {
       },
       postcss: './postcss.config.js',
     },
-    build: {
-      target: 'baseline-widely-available',
-      outDir: 'dist',
-      emptyOutDir: isDev,
-      cssCodeSplit: false,
-      assetsInlineLimit: 0,
-      sourcemap: isDev,
-      minify: isProd ? 'terser' : false,
-      reportCompressedSize: true,
-      chunkSizeWarningLimit: 1000,
-      rollupOptions: {
-        input: 'src/main.ts',
-        output: {
-          format: 'iife',
-          name: 'XEG',
-          inlineDynamicImports: true,
-          sourcemapExcludeSources: false,
-        },
-        treeshake: isProd,
-        maxParallelFileOps: 10,
-      },
-      ...(isProd
-        ? {
-            terserOptions: {
-              compress: {
-                drop_console: true,
-                drop_debugger: true,
-                pure_funcs: ['console.info', 'console.debug', 'logger.debug', 'logger.info'],
-                passes: 5,
-                pure_getters: true,
-                unsafe: true,
-                unsafe_methods: true,
-                toplevel: true,
-              },
-              format: { comments: false },
-              mangle: { toplevel: true },
-              maxWorkers: os.cpus().length,
-            },
-          }
-        : {}),
-    },
+    build: buildConfig,
     optimizeDeps: {
       include: ['solid-js', 'solid-js/web', 'solid-js/store'],
       exclude: ['test'],
