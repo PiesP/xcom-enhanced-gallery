@@ -123,20 +123,14 @@ export type {
   ResultPartial,
   ResultSuccess,
 } from './result.types';
-// Result utility functions (Phase 355.2)
+// Result utility functions (Phase 4: Reduced to commonly used ones)
 export {
   cancelled,
-  chain,
   failure,
   isFailure,
-  isPartial,
   isSuccess,
-  map,
   partial,
-  safe,
-  safeAsync,
   success,
-  unwrapOr,
 } from './result.types';
 // Toolbar UI state types
 export type {

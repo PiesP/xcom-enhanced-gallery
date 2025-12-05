@@ -149,25 +149,33 @@ export interface MediaExtractionOptions {
 
 /**
  * Page type definition (merged from Core)
+ * Using const object for tree-shaking optimization.
  */
-export enum PageType {
-  TIMELINE = 'timeline',
-  SINGLE_TWEET = 'single_tweet',
-  MEDIA_TAB = 'media_tab',
-  SINGLE_MEDIA = 'single_media',
-  PROFILE = 'profile',
-  UNKNOWN = 'unknown',
-}
+export const PageType = {
+  TIMELINE: 'timeline',
+  SINGLE_TWEET: 'single_tweet',
+  MEDIA_TAB: 'media_tab',
+  SINGLE_MEDIA: 'single_media',
+  PROFILE: 'profile',
+  UNKNOWN: 'unknown',
+} as const;
+
+/** Type for PageType values */
+export type PageType = (typeof PageType)[keyof typeof PageType];
 
 /**
  * Extraction source type (merged from Core)
+ * Using const object for tree-shaking optimization.
  */
-export enum ExtractionSource {
-  CURRENT_PAGE = 'current_page',
-  BACKGROUND_LOAD = 'background_load',
-  CACHE = 'cache',
-  API = 'api',
-}
+export const ExtractionSource = {
+  CURRENT_PAGE: 'current_page',
+  BACKGROUND_LOAD: 'background_load',
+  CACHE: 'cache',
+  API: 'api',
+} as const;
+
+/** Type for ExtractionSource values */
+export type ExtractionSource = (typeof ExtractionSource)[keyof typeof ExtractionSource];
 
 /**
  * Extraction metadata (merged from Core)

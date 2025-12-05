@@ -1,11 +1,14 @@
 /**
  * Common Result pattern (Phase: Result Unification)
- * @version 2.1.0 - Phase 353: ExtractionErrorCode alias removed
+ * @version 2.2.0 - Phase 4: Type system optimization (enum → const object)
  */
 export type BaseResultStatus = 'success' | 'partial' | 'error' | 'cancelled';
 
 /**
  * Integrated error codes (generic + media extraction)
+ *
+ * Using const object instead of enum for tree-shaking optimization.
+ * Enum generates runtime code, while const object is purely compile-time.
  *
  * Generic error codes:
  *   - NONE: No error
@@ -26,24 +29,27 @@ export type BaseResultStatus = 'success' | 'partial' | 'error' | 'cancelled';
  *   - INVALID_URL: Invalid URL
  *   - PERMISSION_DENIED: Permission denied
  */
-export enum ErrorCode {
+export const ErrorCode = {
   // Generic error codes
-  NONE = 'NONE',
-  CANCELLED = 'CANCELLED',
-  NETWORK = 'NETWORK',
-  TIMEOUT = 'TIMEOUT',
-  EMPTY_INPUT = 'EMPTY_INPUT',
-  ALL_FAILED = 'ALL_FAILED',
-  PARTIAL_FAILED = 'PARTIAL_FAILED',
-  UNKNOWN = 'UNKNOWN',
+  NONE: 'NONE',
+  CANCELLED: 'CANCELLED',
+  NETWORK: 'NETWORK',
+  TIMEOUT: 'TIMEOUT',
+  EMPTY_INPUT: 'EMPTY_INPUT',
+  ALL_FAILED: 'ALL_FAILED',
+  PARTIAL_FAILED: 'PARTIAL_FAILED',
+  UNKNOWN: 'UNKNOWN',
 
   // Media extraction specific error codes (previous ExtractionErrorCode integrated)
-  ELEMENT_NOT_FOUND = 'ELEMENT_NOT_FOUND',
-  INVALID_ELEMENT = 'INVALID_ELEMENT',
-  NO_MEDIA_FOUND = 'NO_MEDIA_FOUND',
-  INVALID_URL = 'INVALID_URL',
-  PERMISSION_DENIED = 'PERMISSION_DENIED',
-}
+  ELEMENT_NOT_FOUND: 'ELEMENT_NOT_FOUND',
+  INVALID_ELEMENT: 'INVALID_ELEMENT',
+  NO_MEDIA_FOUND: 'NO_MEDIA_FOUND',
+  INVALID_URL: 'INVALID_URL',
+  PERMISSION_DENIED: 'PERMISSION_DENIED',
+} as const;
+
+/** Type for ErrorCode values */
+export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 
 export interface BaseResult {
   status: BaseResultStatus;
@@ -60,13 +66,13 @@ export interface BaseResult {
 export type ResultSuccess<T> = BaseResult & {
   status: 'success';
   data: T;
-  code?: ErrorCode.NONE;
+  code?: typeof ErrorCode.NONE;
 };
 export type ResultPartial<T> = BaseResult & {
   status: 'partial';
   data: T;
   error: string;
-  code: ErrorCode.PARTIAL_FAILED;
+  code: typeof ErrorCode.PARTIAL_FAILED;
   failures: Array<{ url: string; error: string }>;
 };
 export type ResultError = BaseResult & { status: 'error' | 'cancelled' };
@@ -196,11 +202,13 @@ export function cancelled<T = never>(
   };
 }
 
+// ============================================================================
+// Type Guards (inline usage recommended for tree-shaking)
+// ============================================================================
+
 /**
  * Check if Result is success (type guard)
- *
- * @param result - Result to check
- * @returns Whether result is ResultSuccess
+ * For inline usage: `result.status === 'success'`
  */
 export function isSuccess<T>(result: Result<T>): result is ResultSuccess<T> {
   return result.status === 'success';
@@ -208,148 +216,8 @@ export function isSuccess<T>(result: Result<T>): result is ResultSuccess<T> {
 
 /**
  * Check if Result is failure (type guard)
- *
- * @param result - Result to check
- * @returns Whether result is error or cancelled
+ * For inline usage: `result.status === 'error' || result.status === 'cancelled'`
  */
 export function isFailure<T>(result: Result<T>): result is ResultError {
   return result.status === 'error' || result.status === 'cancelled';
-}
-
-/**
- * Check if Result is partial failure (type guard)
- *
- * @param result - Result to check
- * @returns Whether result is partial
- */
-export function isPartial<T>(result: Result<T>): result is ResultPartial<T> {
-  return result.status === 'partial';
-}
-
-/**
- * Extract value from Result (provide default)
- *
- * @param result - Result to extract from
- * @param defaultValue - Default value on failure
- * @returns Data on success, defaultValue on failure
- *
- * @example
- * ```typescript
- * const value = unwrapOr(result, 'fallback');
- * ```
- */
-export function unwrapOr<T>(result: Result<T>, defaultValue: T): T {
-  return isSuccess(result) ? result.data : defaultValue;
-}
-
-/**
- * Safely execute async function and return Result
- *
- * @param fn - Async function to execute
- * @param options - ErrorCode and meta options
- * @returns Promise<Result<T>>
- *
- * @example
- * ```typescript
- * const result = await safeAsync(
- *   async () => fetchData(),
- *   { code: ErrorCode.NETWORK }
- * );
- * ```
- */
-export async function safeAsync<T>(
-  fn: () => Promise<T>,
-  options?: {
-    code?: ErrorCode;
-    meta?: Record<string, unknown>;
-  },
-): Promise<Result<T>> {
-  try {
-    const data = await fn();
-    return success(data, options?.meta);
-  } catch (error) {
-    return failure(
-      error instanceof Error ? error.message : String(error),
-      options?.code ?? ErrorCode.UNKNOWN,
-      {
-        cause: error,
-        ...(options?.meta && { meta: options.meta }),
-      },
-    );
-  }
-}
-
-/**
- * Safely execute sync function and return Result
- *
- * @param fn - Sync function to execute
- * @param options - ErrorCode and meta options
- * @returns Result<T>
- *
- * @example
- * ```typescript
- * const result = safe(
- *   () => JSON.parse(data),
- *   { code: ErrorCode.INVALID_ELEMENT }
- * );
- * ```
- */
-export function safe<T>(
-  fn: () => T,
-  options?: {
-    code?: ErrorCode;
-    meta?: Record<string, unknown>;
-  },
-): Result<T> {
-  try {
-    const data = fn();
-    return success(data, options?.meta);
-  } catch (error) {
-    return failure(
-      error instanceof Error ? error.message : String(error),
-      options?.code ?? ErrorCode.UNKNOWN,
-      {
-        cause: error,
-        ...(options?.meta && { meta: options.meta }),
-      },
-    );
-  }
-}
-
-/**
- * Result chaining (flatMap)
- *
- * @param result - Input Result
- * @param fn - Transform function (returns Result)
- * @returns Chained Result
- *
- * @example
- * ```typescript
- * const result2 = chain(result1, (data) => processData(data));
- * ```
- */
-export function chain<T, U>(result: Result<T>, fn: (value: T) => Result<U>): Result<U> {
-  if (!isSuccess(result)) {
-    return result as unknown as Result<U>;
-  }
-  return fn(result.data);
-}
-
-/**
- * Result mapping (map)
- *
- * @param result - Input Result
- * @param fn - Transform function (returns value)
- * @returns Mapped Result
- *
- * @example
- * ```typescript
- * const result2 = map(result1, (data) => data.id);
- * ```
- */
-export function map<T, U>(result: Result<T>, fn: (value: T) => U): Result<U> {
-  if (!isSuccess(result)) {
-    return result as unknown as Result<U>;
-  }
-  return success(fn(result.data), result.meta);
 }
