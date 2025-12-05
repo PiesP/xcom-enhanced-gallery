@@ -1,7 +1,7 @@
 /**
  * @fileoverview Consolidated Hero Icons using factory pattern
  * @description Reduces ~18 individual icon files to one factory module
- * @version 1.0.0
+ * @version 2.0.0 - Removed unused icons for bundle optimization
  * @module shared/components/ui/Icon/hero
  *
  * Consolidation benefits:
@@ -58,26 +58,17 @@ function createMultiPathIcon(name: MultiPathIconName): (props: IconProps) => JSX
 }
 
 // ============================================================================
-// Single-path Icons
+// Essential Icons (actively used in the application)
 // ============================================================================
 
 /** Download arrow pointing downward with tray */
 export const HeroDownload = createSinglePathIcon('download');
-
-/** X-mark for closing/dismissing */
-export const HeroX = createSinglePathIcon('x');
 
 /** Compact left arrow for navigation */
 export const HeroArrowSmallLeft = createSinglePathIcon('arrowSmallLeft');
 
 /** Compact right arrow for navigation */
 export const HeroArrowSmallRight = createSinglePathIcon('arrowSmallRight');
-
-/** Left-pointing chevron for navigation */
-export const HeroChevronLeft = createSinglePathIcon('chevronLeft');
-
-/** Right-pointing chevron for navigation */
-export const HeroChevronRight = createSinglePathIcon('chevronRight');
 
 /** Arrows pointing inward for shrink/actual-size */
 export const HeroArrowsPointingIn = createSinglePathIcon('arrowsPointingIn');
@@ -100,21 +91,9 @@ export const HeroArrowLeftOnRectangle = createSinglePathIcon('arrowLeftOnRectang
 /** Dual speech bubbles for comments/conversations */
 export const HeroChatBubbleLeftRight = createSinglePathIcon('chatBubbleLeftRight');
 
-/** Document with text content */
-export const HeroDocumentText = createSinglePathIcon('documentText');
-
-/** Archive/ZIP file indicator */
-export const HeroFileZip = createSinglePathIcon('fileZip');
-
-/** Magnifying glass with plus for zoom in */
-export const HeroZoomIn = createSinglePathIcon('zoomIn');
-
 // ============================================================================
 // Multi-path Icons
 // ============================================================================
 
 /** Detailed gear icon for settings/configuration */
 export const HeroCog6Tooth = createMultiPathIcon('cog6Tooth');
-
-/** Settings gear icon (same as cog6Tooth with slight variation) */
-export const HeroSettings = createMultiPathIcon('settings');

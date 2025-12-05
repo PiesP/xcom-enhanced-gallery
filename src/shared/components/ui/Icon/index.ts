@@ -1,8 +1,9 @@
 /**
  * Entry point for gallery icons. Keep exports lean so consumers only grab what they use.
  *
- * Phase: Icon Consolidation
+ * Phase: Icon Consolidation v2.0
  * - Individual icon files deprecated in favor of consolidated hero-icons.tsx
+ * - Unused icons removed: X, ChevronLeft/Right, DocumentText, FileZip, ZoomIn, Settings
  * - ~400 lines saved, ~2KB bundle reduction
  */
 
@@ -20,18 +21,10 @@ export {
   HeroArrowsUpDown as ArrowsUpDown,
   // Communication
   HeroChatBubbleLeftRight as ChatBubbleLeftRight,
-  HeroChevronLeft as ChevronLeft,
-  HeroChevronRight as ChevronRight,
   HeroCog6Tooth as Cog6Tooth,
-  HeroDocumentText as DocumentText,
   // Actions
   HeroDownload as ArrowDownTray,
   HeroDownload as Download,
-  // Files
-  HeroFileZip as FileZip,
-  HeroSettings as Settings,
-  HeroX as X,
-  HeroZoomIn as ZoomIn,
 } from './hero/hero-icons';
 
 // Icon path data exports for advanced use cases
