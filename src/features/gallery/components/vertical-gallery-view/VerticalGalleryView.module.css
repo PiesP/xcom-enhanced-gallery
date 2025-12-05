@@ -115,8 +115,8 @@
   display: flex;
   flex-direction: column;
 
-  /* Performance hints */
-  transform: translateZ(0);
+  /* Performance */
+  transform: var(--xeg-gpu-hack);
   will-change: opacity, transform;
   contain: layout style paint;
 
@@ -129,13 +129,13 @@
   cursor: default;
   pointer-events: auto;
 
-  /* Container query contract */
+  /* Container query */
   container-type: size;
   container-name: gallery-container;
 
   /* Scrolling */
   scroll-behavior: smooth;
-  overscroll-behavior: none; /* Prevent scroll chaining */
+  overscroll-behavior: none;
 }
 
 /* Floating toolbar wrapper with hover/focus auto-show */
@@ -147,7 +147,7 @@
   height: auto;
   z-index: var(--xeg-z-toolbar);
 
-  /* Default state controlled through CSS variables */
+  /* State via CSS variables */
   opacity: var(--toolbar-opacity, 0);
   visibility: var(--toolbar-visibility, hidden);
   display: block;
@@ -155,14 +155,11 @@
   will-change: transform, opacity, visibility;
   contain: layout style;
 
-  /* Performance hints */
-  transform: translateZ(0); /* GPU acceleration */
-  backface-visibility: hidden; /* Prevent flicker */
+  /* Performance */
+  transform: var(--xeg-gpu-hack);
+  backface-visibility: var(--xeg-backface-visibility);
 
-  /* Pointer handling */
   pointer-events: var(--toolbar-pointer-events, none);
-
-  /* Transparent wrapper - actual toolbar has its own surface */
   background: transparent;
   border: none;
   border-radius: 0;
@@ -228,26 +225,21 @@
   pointer-events: auto;
 }
 
-/* Items container: scrollable column that isolates gallery scrolling */
+/* Items container: scrollable column */
 .itemsContainer {
   flex: 1;
   display: flex;
   flex-direction: column;
-  /* align-items: center; Removed to allow safe centering via margin: auto on children */
-  /* Allow both horizontal and vertical scroll for Original fit mode */
   overflow: auto;
   position: relative;
 
-  /* Performance optimizations */
+  /* Performance */
   contain: layout style;
-  transform: translateZ(0);
-  overscroll-behavior: contain; /* Prevent scroll chaining outside the modal */
+  transform: var(--xeg-gpu-hack);
+  overscroll-behavior: contain;
 
-  /* Pointer + scroll handling */
   scrollbar-gutter: stable;
   pointer-events: auto;
-
-  /* Container query hook for responsive spacing */
 
   container-type: size;
   container-name: items-list;
@@ -298,16 +290,16 @@
   align-items: center;
 }
 
-/* Gallery item wrapper optimized for anchor-style scrolling */
+/* Gallery item wrapper */
 .galleryItem {
   position: relative;
-  margin-bottom: var(--xeg-spacing-md, 1rem); /* 16px = 1rem reference */
+  margin-bottom: var(--xeg-spacing-md, 1rem);
   border-radius: var(--xeg-radius-lg, 0.5rem);
-  transition: var(--xeg-transition-elevation-normal); /* Smooth anchor snapping */
+  transition: var(--xeg-transition-elevation-normal);
 
-  /* Performance optimizations */
+  /* Performance */
   contain: layout style;
-  transform: translateZ(0);
+  transform: var(--xeg-gpu-hack);
 }
 
 /* Active gallery item highlight (animation removed in Phase 328 to avoid double emphasis) */
@@ -436,7 +428,7 @@
   z-index: 10;
 }
 
-/* Main content wrapper that hosts the scrolling list and toolbar */
+/* Main content wrapper */
 .content {
   flex: 1;
   display: flex;
@@ -444,14 +436,12 @@
   overflow: clip;
   position: relative;
 
-  /* Performance optimizations */
+  /* Performance */
   contain: layout style;
-  transform: translateZ(0);
+  transform: var(--xeg-gpu-hack);
 
-  /* Maintain pointer events for nested surfaces */
   pointer-events: auto;
 
-  /* Container query hook for responsive padding */
   container-type: size;
   container-name: content-area;
 }

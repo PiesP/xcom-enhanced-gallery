@@ -46,16 +46,14 @@
 .container {
   position: relative;
   margin-bottom: var(--xeg-spacing-md);
-  margin-inline: auto; /* Safe centering within flex column */
+  margin-inline: auto;
   border-radius: var(--xeg-radius-lg);
-  /* Allow content to overflow for Original fit mode - scrolling handled by parent */
   overflow: visible;
   transition: var(--xeg-transition-interaction-fast);
   cursor: pointer;
   border: 0.0625rem solid var(--xeg-color-border-primary);
   background: var(--xeg-color-bg-secondary);
   padding: var(--xeg-spacing-sm);
-  /* Width fits image content, constrained by viewport */
   width: fit-content;
   max-width: 100%;
   text-align: center;
@@ -64,8 +62,8 @@
   align-items: center;
   pointer-events: auto;
 
-  /* Performance Optimization */
-  transform: translateZ(0);
+  /* Performance */
+  transform: var(--xeg-gpu-hack);
   will-change: transform;
   contain: layout style;
 }
@@ -91,11 +89,10 @@
   border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-primary));
 }
 
-/* Active state - Stronger emphasis */
+/* Active state */
 .container.active {
   border-color: var(--xeg-glass-border-strong, var(--xeg-color-border-strong));
   transition: var(--xeg-transition-interaction-fast);
-  transform: translateZ(0);
 }
 
 /* Active + Focus state - Remove duplication */
@@ -156,93 +153,37 @@
   --xeg-spinner-indicator-color: var(--xeg-color-primary);
 }
 
-.image {
-  display: block;
-  border-radius: var(--xeg-radius-md);
-  /* 기본 스타일 - JavaScript에서 동적으로 크기 조정 */
-  object-fit: contain;
-  /* 컨텍스트 메뉴 허용을 위해 pointer-events 활성화 */
-  pointer-events: auto;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  /* 드래그 방지를 위한 추가 속성 */
-  -webkit-user-drag: none;
-  -khtml-user-drag: none;
-  -moz-user-drag: none;
-  -o-user-drag: none;
-  /* GPU 가속을 위한 3D 변환 */
-  transform: translateZ(0);
-  will-change: opacity;
-}
-
-/* Loading/Loaded state transitions (tokenized) */
-.loading.image,
-.loading.video {
-  opacity: 0;
-}
-
-.loaded.image,
-.loaded.video {
-  opacity: 1;
-}
-
+/* Shared media element base styles */
 .image,
 .video {
+  display: block;
+  border-radius: var(--xeg-radius-md);
+  object-fit: contain;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+  transform: var(--xeg-gpu-hack);
+  will-change: opacity;
   transition: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 }
 
-/* 이미지 크기 조정 모드별 스타일 */
-.image.fitOriginal {
-  /* Original size: Display image at its native resolution
-     No size constraints - horizontal scroll enabled in parent container */
-  inline-size: auto;
-  block-size: auto;
-  max-inline-size: none;
-  max-block-size: none;
-  object-fit: none;
+/* Loading/Loaded state transitions */
+:is(.image, .video).loading {
+  opacity: 0;
 }
 
-.image.fitWidth {
-  /* 폭에 맞추기: 컨테이너보다 작으면 원본 크기, 크면 폭에 맞춤 */
-  inline-size: auto;
-  block-size: auto;
-  max-inline-size: 100%;
-  max-block-size: none;
-  object-fit: scale-down;
+:is(.image, .video).loaded {
+  opacity: 1;
 }
 
-.image.fitHeight {
-  /* 높이에 맞추기: 뷰포트보다 작으면 원본 크기, 크면 높이에 맞춤
-     가로 방향으로도 뷰포트를 넘지 않도록 제한 */
-  inline-size: auto;
-  block-size: auto;
-  max-inline-size: calc(100vw - var(--xeg-spacing-lg, 1.5rem) * 2);
-  max-block-size: var(--xeg-viewport-height-constrained, 90vh);
-  object-fit: scale-down;
-}
-
-.image.fitContainer {
-  /* 컨테이너에 맞추기: 폭과 높이 모두 컨테이너에 수용 */
-  inline-size: auto;
-  block-size: auto;
-  max-inline-size: 100%;
-  max-block-size: var(--xeg-viewport-height-constrained, 90vh);
-  object-fit: contain;
-}
-
-/* 비디오 크기 조정 모드 - 이미지 규칙과 동기화 */
+/* Video-specific base */
 .video {
   inline-size: 100%;
-  block-size: auto;
-  border-radius: var(--xeg-radius-md);
   overflow: clip;
 }
 
-.video.fitOriginal {
-  /* Original size: Display video at its native resolution
-     No size constraints - horizontal scroll enabled in parent container */
+/* Fit Mode Styles - unified for image and video */
+:is(.image, .video).fitOriginal {
   inline-size: auto;
   block-size: auto;
   max-inline-size: none;
@@ -250,8 +191,7 @@
   object-fit: none;
 }
 
-.video.fitWidth {
-  /* 폭에 맞추기: 컨테이너보다 작으면 원본 크기, 크면 폭에 맞춤 */
+:is(.image, .video).fitWidth {
   inline-size: auto;
   block-size: auto;
   max-inline-size: 100%;
@@ -259,9 +199,7 @@
   object-fit: scale-down;
 }
 
-.video.fitHeight {
-  /* 높이에 맞추기: 뷰포트보다 작으면 원본 크기, 크면 높이에 맞춤
-     가로 방향으로도 뷰포트를 넘지 않도록 제한 */
+:is(.image, .video).fitHeight {
   inline-size: auto;
   block-size: auto;
   max-inline-size: calc(100vw - var(--xeg-spacing-lg, 1.5rem) * 2);
@@ -269,8 +207,7 @@
   object-fit: scale-down;
 }
 
-.video.fitContainer {
-  /* 컨테이너에 맞추기: 폭과 높이 모두 컨테이너에 수용 */
+:is(.image, .video).fitContainer {
   inline-size: auto;
   block-size: auto;
   max-inline-size: 100%;
@@ -346,41 +283,6 @@
   font-size: var(--xeg-font-size-xs);
   color: var(--xeg-color-text-secondary);
 }
-
-/* Phase 58: 다운로드 버튼 제거로 인한 미사용 스타일 제거 */
-/*
-.downloadButton {
-  position: absolute;
-  top: var(--xeg-spacing-sm);
-  right: var(--xeg-spacing-sm);
-  background: var(--xeg-color-overlay-medium);
-  color: var(--xeg-color-text-inverse);
-  border: none;
-  border-radius: var(--xeg-radius-full);
-  width: var(--xeg-button-height-sm);
-  height: var(--xeg-button-height-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 0;
-  transition: var(--xeg-transition-opacity);
-  font-size: var(--xeg-font-size-md);
-}
-
-.container:hover .downloadButton {
-  opacity: 1;
-}
-
-.downloadButton:hover {
-  background: var(--xeg-color-overlay-strong);
-  transform: var(--xeg-hover-lift);
-}
-
-.downloadIcon {
-  display: block;
-}
-*/
 
 .error {
   position: absolute;
