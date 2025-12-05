@@ -1,4 +1,5 @@
 import type { BaseLanguageCode } from '@shared/constants/i18n/language-types';
+import { LANGUAGE_CODES } from '@shared/constants/i18n/language-types';
 import { TranslationCatalog, type TranslationCatalogOptions } from './translation-catalog';
 import { resolveTranslationValue } from './translation-utils';
 import type { TranslationKey, TranslationParams } from './types';
@@ -18,8 +19,19 @@ export class Translator {
       options instanceof TranslationCatalog ? options : new TranslationCatalog(options);
   }
 
+  /**
+   * Get all available languages (loaded + lazy-loadable).
+   */
   get languages(): BaseLanguageCode[] {
-    return this.catalog.keys();
+    return [...LANGUAGE_CODES];
+  }
+
+  /**
+   * Ensure a language bundle is loaded before translation.
+   * Call this when switching languages to preload the bundle.
+   */
+  async ensureLanguage(language: BaseLanguageCode): Promise<void> {
+    await this.catalog.ensureLanguage(language);
   }
 
   translate(language: BaseLanguageCode, key: TranslationKey, params?: TranslationParams): string {

@@ -1,12 +1,13 @@
 /**
  * @fileoverview Multilingual Support Service
- * @description TDD-based simple i18n system
- * @version 2.2.0 - Phase 355: Simplified with direct PersistentStorage usage
+ * @description TDD-based simple i18n system with lazy language loading
+ * @version 2.3.0 - Phase 356: Lazy language loading optimization
  */
 
 import {
   type BaseLanguageCode,
   isBaseLanguageCode,
+  LANGUAGE_CODES,
   type SupportedLanguage,
 } from '@shared/constants/i18n/language-types';
 import {
@@ -47,7 +48,7 @@ export class LanguageService extends BaseServiceImpl {
   private static readonly STORAGE_KEY = 'xeg-language';
   private static readonly SUPPORTED_LANGUAGES: ReadonlySet<SupportedLanguage> = new Set([
     'auto',
-    ...translator.languages,
+    ...LANGUAGE_CODES,
   ]);
 
   private currentLanguage: SupportedLanguage = 'auto';
@@ -69,7 +70,7 @@ export class LanguageService extends BaseServiceImpl {
 
   /**
    * Service initialization (BaseServiceImpl template method implementation)
-   * Restore language setting from storage
+   * Restore language setting from storage and lazy load language bundle if needed
    */
   protected async onInitialize(): Promise<void> {
     try {
@@ -80,6 +81,10 @@ export class LanguageService extends BaseServiceImpl {
         this.currentLanguage = normalized;
         this.notifyListeners(normalized);
       }
+
+      // Phase 356: Preload the effective language bundle
+      const effectiveLang = this.getEffectiveLanguage();
+      await this.ensureLanguageLoaded(effectiveLang);
     } catch (error) {
       logger.warn('Failed to restore language setting from storage:', error);
     }
@@ -111,7 +116,7 @@ export class LanguageService extends BaseServiceImpl {
   }
 
   getAvailableLanguages(): BaseLanguageCode[] {
-    return translator.languages;
+    return [...LANGUAGE_CODES];
   }
 
   setLanguage(language: SupportedLanguage): void {
@@ -130,7 +135,23 @@ export class LanguageService extends BaseServiceImpl {
     this.notifyListeners(normalized);
     void this.persistLanguage(normalized);
 
+    // Phase 356: Lazy load language bundle if needed
+    const effectiveLang = this.getEffectiveLanguage();
+    void this.ensureLanguageLoaded(effectiveLang);
+
     logger.debug(`Language changed to: ${normalized}`);
+  }
+
+  /**
+   * Ensure the language bundle is loaded (lazy load if necessary).
+   * This is called automatically when language changes.
+   */
+  async ensureLanguageLoaded(language: BaseLanguageCode): Promise<void> {
+    try {
+      await translator.ensureLanguage(language);
+    } catch (error) {
+      logger.warn(`Failed to load language bundle: ${language}`, error);
+    }
   }
 
   translate(key: TranslationKey, params?: TranslationParams): string {

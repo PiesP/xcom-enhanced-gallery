@@ -7,6 +7,7 @@ export { isBaseLanguageCode, LANGUAGE_CODES } from '@shared/constants/i18n/langu
 export {
   DEFAULT_LANGUAGE,
   getLanguageStrings,
+  LAZY_LANGUAGE_LOADERS,
   TRANSLATION_REGISTRY,
 } from '@shared/constants/i18n/translation-registry';
 export { TranslationCatalog, type TranslationCatalogOptions } from './translation-catalog';
