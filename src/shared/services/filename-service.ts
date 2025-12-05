@@ -2,172 +2,23 @@
  * Copyright (c) 2024 X.com Enhanced Gallery Team
  * Licensed under the MIT License
  *
- * @fileoverview File Naming Service - Media filename generation and validation
- * @version 3.0.0 - Simplified
+ * @fileoverview Filename Service - Re-export from new modular location
+ * @deprecated Import from '@shared/services/filename' instead
+ * @version 4.0.0 - Redirects to functional module
  */
 
-import type { MediaInfo } from '@shared/types/media.types';
-import { safeParseInt } from '@shared/utils/types/safety';
-import { extractUsernameFromUrl } from '@shared/utils/url/host';
-
-export interface FilenameOptions {
-  index?: string | number;
-  extension?: string;
-  fallbackPrefix?: string;
-  fallbackUsername?: string;
-}
-
-export interface ZipFilenameOptions {
-  fallbackPrefix?: string;
-}
-
-export class FilenameService {
-  private static instance: FilenameService;
-
-  public static getInstance(): FilenameService {
-    if (!FilenameService.instance) {
-      FilenameService.instance = new FilenameService();
-    }
-    return FilenameService.instance;
-  }
-
-  generateMediaFilename(media: MediaInfo, options: FilenameOptions = {}): string {
-    try {
-      if (media.filename) {
-        return this.sanitize(media.filename);
-      }
-
-      const originalUrl = (media as unknown as { originalUrl?: string }).originalUrl;
-      const extension = options.extension ?? this.getExtension(originalUrl ?? media.url);
-      const index = this.getIndex(media.id) ?? this.normalizeIndex(options.index);
-      const { username, tweetId } = this.resolveMetadata(media, options.fallbackUsername);
-
-      if (username && tweetId) {
-        return this.sanitize(`${username}_${tweetId}_${index}.${extension}`);
-      }
-
-      if (tweetId && /^\d+$/.test(tweetId)) {
-        return this.sanitize(`tweet_${tweetId}_${index}.${extension}`);
-      }
-
-      const prefix = options.fallbackPrefix ?? 'media';
-      return this.sanitize(`${prefix}_${Date.now()}_${index}.${extension}`);
-    } catch {
-      return `media_${Date.now()}.${options.extension || 'jpg'}`;
-    }
-  }
-
-  generateZipFilename(mediaItems: readonly MediaInfo[], options: ZipFilenameOptions = {}): string {
-    try {
-      const firstItem = mediaItems[0];
-      if (firstItem) {
-        const { username, tweetId } = this.resolveMetadata(firstItem);
-        if (username && tweetId) {
-          return this.sanitize(`${username}_${tweetId}.zip`);
-        }
-      }
-
-      const prefix = options.fallbackPrefix ?? 'xcom_gallery';
-      return this.sanitize(`${prefix}_${Date.now()}.zip`);
-    } catch {
-      return `download_${Date.now()}.zip`;
-    }
-  }
-
-  isValidMediaFilename(filename: string): boolean {
-    return filename.length > 0 && !/[<>:"/\\|?*]/.test(filename);
-  }
-
-  isValidZipFilename(filename: string): boolean {
-    return filename.endsWith('.zip') && !/[<>:"/\\|?*]/.test(filename);
-  }
-
-  private resolveMetadata(
-    media: MediaInfo,
-    fallbackUsername?: string | null
-  ): { username: string | null; tweetId: string | null } {
-    let username: string | null = null;
-    let tweetId: string | null = null;
-
-    if (media.sourceLocation === 'quoted' && media.quotedUsername && media.quotedTweetId) {
-      username = media.quotedUsername;
-      tweetId = media.quotedTweetId;
-    } else {
-      tweetId = media.tweetId ?? null;
-      if (media.tweetUsername && media.tweetUsername !== 'unknown') {
-        username = media.tweetUsername;
-      } else {
-        const url = ('originalUrl' in media ? media.originalUrl : null) || media.url;
-        if (typeof url === 'string') {
-          // Use strict host validation for security
-          username = extractUsernameFromUrl(url, { strictHost: true });
-        }
-      }
-    }
-
-    if (!username && fallbackUsername) {
-      username = fallbackUsername;
-    }
-
-    return { username, tweetId };
-  }
-
-  private getIndex(mediaId?: string): string | null {
-    if (!mediaId) return null;
-    const match = mediaId.match(/_media_(\d+)$/) || mediaId.match(/_(\d+)$/);
-    if (match) {
-      const idx = safeParseInt(match[1], 10);
-      return mediaId.includes('_media_') ? (idx + 1).toString() : match[1] ?? null;
-    }
-    return null;
-  }
-
-  private getExtension(url: string): string {
-    try {
-      const path = url.split('?')[0];
-      if (!path) return 'jpg';
-      const ext = path.split('.').pop();
-      if (ext && /^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i.test(ext)) {
-        return ext.toLowerCase();
-      }
-    } catch {
-      // ignore
-    }
-    return 'jpg';
-  }
-
-  private normalizeIndex(index?: string | number): string {
-    if (index === undefined || index === null) return '1';
-    const num = typeof index === 'string' ? safeParseInt(index, 10) : index;
-    return isNaN(num) || num < 1 ? '1' : num.toString();
-  }
-
-  private sanitize(name: string): string {
-    const sanitized = name
-      .replace(/[<>:"/\\|?*]/g, '_')
-      .replace(/^[\s.]+|[\s.]+$/g, '')
-      .slice(0, 255);
-    return sanitized || 'media';
-  }
-}
-
-const shared = FilenameService.getInstance();
-
-export function generateMediaFilename(media: MediaInfo, options?: FilenameOptions): string {
-  return shared.generateMediaFilename(media, options);
-}
-
-export function generateZipFilename(
-  mediaItems: readonly MediaInfo[],
-  options?: ZipFilenameOptions
-): string {
-  return shared.generateZipFilename(mediaItems, options);
-}
-
-export function isValidMediaFilename(filename: string): boolean {
-  return shared.isValidMediaFilename(filename);
-}
-
-export function isValidZipFilename(filename: string): boolean {
-  return shared.isValidZipFilename(filename);
-}
+// Re-export everything from the new modular location
+// This file maintains backward compatibility for existing imports
+export {
+  // Primary functional API
+  generateMediaFilename,
+  generateZipFilename,
+  isValidMediaFilename,
+  isValidZipFilename,
+  // Types
+  type FilenameOptions,
+  type ZipFilenameOptions,
+  // Legacy class (deprecated)
+  FilenameService,
+  getFilenameService,
+} from '@shared/services/filename';

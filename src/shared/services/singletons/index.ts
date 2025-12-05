@@ -1,7 +1,7 @@
 /**
  * @fileoverview ES Module Singleton Service Exports
  * @description Direct singleton exports for tree-shakable service access
- * @version 1.0.0 - Refactor from CoreService DI pattern
+ * @version 2.0.0 - FilenameService now uses functional API
  *
  * This module exports service singletons directly as ES modules,
  * enabling better tree-shaking and simpler access patterns.
@@ -12,9 +12,13 @@
  *
  * **Test Mocking**:
  * Use `setServiceInstance()` to inject mocks in test environments.
+ *
+ * **FilenameService**:
+ * FilenameService has been refactored to pure functions.
+ * Prefer using `generateMediaFilename()` and `generateZipFilename()` directly.
  */
 
-import { FilenameService } from '@shared/services/filename-service';
+import { FilenameService } from '@shared/services/filename';
 import { LanguageService } from '@shared/services/language-service';
 import { MediaService } from '@shared/services/media-service';
 import { ThemeService } from '@shared/services/theme-service';
@@ -67,6 +71,7 @@ export function getMediaServiceInstance(): MediaService {
 
 /**
  * Get FilenameService singleton instance.
+ * @deprecated Use functional API: `generateMediaFilename()`, `generateZipFilename()`
  * Lazily initialized on first access.
  */
 export function getFilenameServiceInstance(): FilenameService {
