@@ -16,7 +16,6 @@ import {
 } from '@shared/external/vendors/solid-hooks';
 import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces';
 import { logger } from '@shared/logging';
-import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
 import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
 import {
   closeGallery,
@@ -29,8 +28,6 @@ import {
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
 import './styles/gallery-global.css';
-
-const downloadService = DownloadOrchestrator.getInstance();
 
 export class GalleryRenderer implements GalleryRendererInterface {
   private container: HTMLDivElement | null = null;
@@ -154,6 +151,8 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
     try {
       const mediaItems = gallerySignals.mediaItems.value;
+      // Lazy load download service on first use
+      const downloadService = await this.getDownloadService();
 
       if (type === 'current') {
         const currentMedia = mediaItems[gallerySignals.currentIndex.value];
@@ -164,8 +163,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
           }
         }
       } else {
-        await this.ensureDownloadService();
-
         const result = await downloadService.downloadBulk([...mediaItems]);
         if (!result.success) {
           setError(result.error || 'Download failed.');
@@ -179,13 +176,15 @@ export class GalleryRenderer implements GalleryRendererInterface {
     }
   }
 
-  private async ensureDownloadService(): Promise<void> {
-    try {
-      const { ensureDownloadServiceRegistered } = await import('@shared/services/lazy-services');
-      await ensureDownloadServiceRegistered();
-    } catch (error) {
-      logger.warn('[GalleryRenderer] DownloadService lazy registration failed:', error);
-    }
+  /**
+   * Lazy load download service on first use.
+   * This enables code splitting - download code is only loaded when user initiates a download.
+   */
+  private async getDownloadService() {
+    const { ensureDownloadServiceRegistered } = await import('@shared/services/lazy-services');
+    await ensureDownloadServiceRegistered();
+    const { DownloadOrchestrator } = await import('@shared/services/download/download-orchestrator');
+    return DownloadOrchestrator.getInstance();
   }
 
   private cleanupGallery(): void {
