@@ -255,7 +255,7 @@ export default defineConfig(async ({ mode, command }) => {
   };
 
   const buildConfig: FutureBuildOptions = {
-    target: 'baseline-widely-available',
+    target: 'esnext',
     outDir: 'dist',
     emptyOutDir: isDev,
     cssCodeSplit: false,
@@ -268,10 +268,12 @@ export default defineConfig(async ({ mode, command }) => {
       ? {
           terserOptions: {
             compress: {
+              ecma: 2020,
+              module: true,
               drop_console: true,
               drop_debugger: true,
               pure_funcs: ['console.info', 'console.debug', 'logger.debug', 'logger.info'],
-              passes: 5,
+              passes: 10,
               pure_getters: true,
               unsafe: true,
               unsafe_methods: true,
@@ -308,7 +310,6 @@ export default defineConfig(async ({ mode, command }) => {
               arguments: true,
               computed_props: true,
               expression: false,
-              module: true,
             },
             format: {
               comments: false,
@@ -326,7 +327,7 @@ export default defineConfig(async ({ mode, command }) => {
               keep_fnames: false,
               safari10: false,
               properties: {
-                regex: /^_private_|^__internal_/,
+                regex: /^_/,
                 reserved: ['GM_setValue', 'GM_getValue', 'GM_download', 'GM_notification', 'GM_xmlhttpRequest'],
               },
             },
