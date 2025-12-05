@@ -3,21 +3,21 @@
  * @description Handles rendering and lifecycle of the gallery component
  */
 
-import { VerticalGalleryView } from '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView';
-import { GalleryContainer } from '@/shared/components/isolation';
-import { ErrorBoundary } from '@/shared/components/ui/ErrorBoundary/ErrorBoundary';
-import { getLanguageService, getThemeService } from '@/shared/container/service-accessors';
-import { isGMAPIAvailable } from '@/shared/external/userscript';
+import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';
+import { GalleryContainer } from '@shared/components/isolation';
+import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
+import { getLanguageService, getThemeService } from '@shared/container/service-accessors';
+import { isGMAPIAvailable } from '@shared/external/userscript';
 import {
   createEffect,
   createSignal,
   onCleanup,
   render,
-} from '@/shared/external/vendors/solid-hooks';
-import type { GalleryRenderer as GalleryRendererInterface } from '@/shared/interfaces';
-import { logger } from '@/shared/logging';
-import { DownloadOrchestrator } from '@/shared/services/download/download-orchestrator';
-import { acquireDownloadLock, isDownloadLocked } from '@/shared/state/signals/download.signals';
+} from '@shared/external/vendors/solid-hooks';
+import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces';
+import { logger } from '@shared/logging';
+import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
+import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
 import {
   closeGallery,
   gallerySignals,
@@ -25,9 +25,9 @@ import {
   navigatePrevious,
   openGallery,
   setError,
-} from '@/shared/state/signals/gallery.signals';
-import type { GalleryRenderOptions, MediaInfo } from '@/shared/types/media.types';
-import { pauseAmbientVideosForGallery } from '@/shared/utils/media/ambient-video-coordinator';
+} from '@shared/state/signals/gallery.signals';
+import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
+import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
 import './styles/gallery-global.css';
 
 const downloadService = DownloadOrchestrator.getInstance();

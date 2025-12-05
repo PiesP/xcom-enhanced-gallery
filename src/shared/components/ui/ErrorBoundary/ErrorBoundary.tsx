@@ -9,14 +9,14 @@
  * - Swallows translation/notification failures to keep UI resilient
  */
 
-import { getLanguageService } from '@/shared/container/service-accessors';
-import { type ComponentChildren, type JSXElement } from '@/shared/external/vendors';
+import { getLanguageService } from '@shared/container/service-accessors';
+import { type ComponentChildren, type JSXElement } from '@shared/external/vendors';
 import {
   ErrorBoundary as SolidErrorBoundary,
   Show,
   createSignal,
-} from '@/shared/external/vendors/solid-hooks';
-import { NotificationService } from '@/shared/services/notification-service';
+} from '@shared/external/vendors/solid-hooks';
+import { NotificationService } from '@shared/services/notification-service';
 
 type Props = {
   children?: ComponentChildren;

@@ -42,7 +42,7 @@
     "customConditions": ["module"],
     "verbatimModuleSyntax": true,
     "paths": {
-      "@/*": ["./src/*"],
+      "@*": ["./src/*"],
       "@bootstrap/*": ["./src/bootstrap/*"],
       "@constants": ["./src/constants"],
       "@constants/*": ["./src/constants/*"],
