@@ -81,7 +81,8 @@ export function isDownloadLocked(): boolean {
 // ============================================================================
 
 /**
- * Download state accessor with subscription support
+ * Download state accessor with subscription support.
+ * Error handling delegated to component-level ErrorBoundary.
  */
 export const downloadState = {
   get value(): DownloadState {
@@ -93,13 +94,7 @@ export const downloadState = {
   },
 
   subscribe(callback: (state: DownloadState) => void): () => void {
-    return getDownloadState().subscribe(state => {
-      try {
-        callback(state);
-      } catch (error) {
-        logger.warn('[Download] subscriber callback failed', { error });
-      }
-    });
+    return getDownloadState().subscribe(callback);
   },
 };
 
