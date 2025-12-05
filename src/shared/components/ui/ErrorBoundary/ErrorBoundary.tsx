@@ -1,103 +1,110 @@
 /**
- * @fileoverview Error Boundary - Error Recovery Component
- * @description Catches render errors from child components and notifies users via Tampermonkey notifications.
- * Failed component silently replaces with empty fallback (no text rendering).
- * Adheres to PC-only events and vendor getter policies (Phase 309+).
- * 5. Language/notification service errors are silently ignored
+ * @fileoverview SolidJS-native Error Boundary
+ * @description Wraps SolidJS `<ErrorBoundary>` to provide localized notifications and a retry-friendly fallback.
  *
- * **Design Decisions**:
- * - Silent UI recovery: Users see no error message on screen (notification-only mode)
- * - One-time reporting: Duplicate errors ignored (reportedError deduplication)
- * - Fault tolerant: Notification/language service failures don't crash error boundary
- * - PC-only: No touch/pointer events, uses getSolid() vendor getter
- *
- * @version 1.0.0
- * @module shared/components/ui/ErrorBoundary
+ * Design choices:
+ * - Uses SolidJS primitives directly (createSignal/createEffect) for idiomatic reactivity
+ * - Deduplicates reported errors to avoid notification spam
+ * - Swallows translation/notification failures to keep UI resilient
  */
 
-import { getLanguageService } from '@shared/container/service-accessors';
-import { type ComponentChildren, type JSXElement } from '@shared/external/vendors';
-import { children as resolveChildren, createMemo, createSignal } from '@shared/external/vendors/solid-hooks';
-import { NotificationService } from '@shared/services/notification-service';
+import { getLanguageService } from '@/shared/container/service-accessors';
+import { type ComponentChildren, type JSXElement } from '@/shared/external/vendors';
+import { ErrorBoundary as SolidErrorBoundary } from '@/shared/external/vendors/solid-hooks';
+import { NotificationService } from '@/shared/services/notification-service';
 
-/**
- * @description Props for ErrorBoundary component
- * @property {ComponentChildren} [children] - Child components to wrap
- */
 type Props = {
   children?: ComponentChildren;
 };
 
-/**
- * Error Boundary - High-order component for catching child render errors
- *
- * **Responsibilities**:
- * - Catch render errors from child components
- * - Notify user via NotificationService
- * - Silent UI recovery (no error display)
- * - Deduplicate duplicate errors
- *
- * **PC-Only Policy**: Uses shared solid-hooks module (Phase 601)
- *
- * @param {Props} props - Component props
- * @returns {JSXElement} Solid.js JSX element with error boundary wrapper
- *
- * @throws Never throws - all errors are caught and silently handled
- */
-export function ErrorBoundary({ children }: Props): JSXElement {
-  let lastReportedError: unknown = null;
-  const [currentError, setCurrentError] = createSignal<unknown>(undefined);
-  const fallbackElement = <span data-xeg-error-boundary-reset hidden aria-hidden="true" />;
+function stringifyError(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  try {
+    return String(error);
+  } catch {
+    return 'Unknown error';
+  }
+}
 
-  /**
-   * Report error to user via NotificationService
-   * Deduplicates identical errors to prevent notification spam
-   *
-   * @param {unknown} err - Error object from child component
-   * @returns {void}
-   *
-   * @description
-   * - Compares by reference to deduplicate (reportedError === err)
-   * - Retrieves localized error messages from language service
-   * - Formats error message with error.message or String fallback
-   * - Silently ignores Notification/language service failures
-   */
-  const reportError = (err: unknown): void => {
-    // Deduplicate: ignore if same error already reported
-    if (lastReportedError === err) {
-      return;
-    }
-    lastReportedError = err;
+function translateError(error: unknown): { title: string; body: string } {
+  try {
+    const languageService = getLanguageService();
+    return {
+      title: languageService.translate('messages.errorBoundary.title'),
+      body: languageService.translate('messages.errorBoundary.body', {
+        error: stringifyError(error),
+      }),
+    };
+  } catch {
+    return {
+      title: 'Unexpected error',
+      body: stringifyError(error),
+    };
+  }
+}
+
+export function ErrorBoundary(props: Props): JSXElement {
+  let lastReportedError: unknown;
+
+  const notifyError = (error: unknown): void => {
+    if (lastReportedError === error) return;
+    lastReportedError = error;
 
     try {
-      // Fetch localized error title and body
-      const languageService = getLanguageService();
-      const title = languageService.translate('messages.errorBoundary.title');
-      const body = languageService.translate('messages.errorBoundary.body', {
-        error: err instanceof Error ? err.message : String(err),
-      });
-      // Notify user with Tampermonkey notification
-      NotificationService.getInstance().error(title, body);
+      const copy = translateError(error);
+      NotificationService.getInstance().error(copy.title, copy.body);
     } catch {
-      // Silently ignore notification/language service failures
-      // Error boundary must never crash due to notification failures
+      // Notification failures must never propagate
     }
   };
 
-  const safeChildren = createMemo<JSXElement>(() => {
-    if (currentError() !== undefined) {
-      return fallbackElement;
-    }
+  const resetError = () => {
+    lastReportedError = undefined;
+  };
+
+  const renderFallback = (error: unknown, reset?: () => void): JSXElement => {
+    let title = 'Unexpected error';
+    let body = stringifyError(error);
 
     try {
-      const childAccessor = resolveChildren(() => children);
-      return childAccessor() ?? <></>;
-    } catch (err) {
-      reportError(err);
-      setCurrentError(err);
-      return fallbackElement;
+      const copy = translateError(error);
+      title = copy.title;
+      body = copy.body;
+            reset?.();
+      // Even translation failures should not break rendering
     }
-  });
 
-  return safeChildren();
+    return (
+      <div role="alert" data-xeg-error-boundary="" aria-live="polite">
+        <p class="xeg-error-boundary__title">{title}</p>
+        <p class="xeg-error-boundary__body">{body}</p>
+        </button>
+      </div>
+    <SolidErrorBoundary
+      fallback={(boundaryError, reset) => {
+        notifyError(boundaryError);
+        return renderFallback(boundaryError, () => {
+          resetError();
+          reset?.();
+        });
+      }}
+    >
+      {props.children}
+    </SolidErrorBoundary>
+            console.debug?.('retry clicked', { hasBoundaryReset: Boolean(boundaryReset) });
+            const reset = boundaryReset;
+            if (reset) {
+              reset();
+            } else {
+              setBoundaryActive(false);
+              setBoundaryActive(true);
+            }
+            resetError();
+          })
+        }
+      </Show>
+    </>
+  );
 }

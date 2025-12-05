@@ -31,6 +31,7 @@ import {
   batch as _batch,
   untrack as _untrack,
   on as _on,
+  onError as _onError,
   onMount as _onMount,
   onCleanup as _onCleanup,
   Show as _Show,
@@ -156,6 +157,12 @@ export const untrack = _untrack;
  * @see https://www.solidjs.com/docs/latest/api#on
  */
 export const on = _on;
+
+/**
+ * Registers an error handler for descendant computations.
+ * @see https://www.solidjs.com/docs/latest/api#onerror
+ */
+export const onError = _onError;
 
 // ============================================================================
 // Component Flow Components
