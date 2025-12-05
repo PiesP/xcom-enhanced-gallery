@@ -30,7 +30,7 @@ import type {
   SingleDownloadResult,
 } from '@shared/services/download/types';
 import { downloadAsZip } from '@shared/services/download/zip-download';
-import { generateMediaFilename, generateZipFilename } from '@shared/services/filename-service';
+import { generateMediaFilename, generateZipFilename } from '@shared/services/filename';
 import type { MediaInfo } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/result.types';
 

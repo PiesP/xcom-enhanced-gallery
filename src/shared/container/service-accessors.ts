@@ -1,5 +1,5 @@
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
-import type { FilenameService } from '@shared/services/filename-service';
+import type { FilenameService } from '@shared/services/filename';
 import type { LanguageService } from '@shared/services/language-service';
 import type { MediaService } from '@shared/services/media-service';
 import { CoreService } from '@shared/services/service-manager';
