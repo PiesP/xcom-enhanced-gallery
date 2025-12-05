@@ -1,7 +1,7 @@
 /**
  * @fileoverview ES Module Singleton Service Exports
  * @description Direct singleton exports for tree-shakable service access
- * @version 2.0.0 - FilenameService now uses functional API
+ * @version 3.0.0 - FilenameService removed (use functional API)
  *
  * This module exports service singletons directly as ES modules,
  * enabling better tree-shaking and simpler access patterns.
@@ -13,12 +13,14 @@
  * **Test Mocking**:
  * Use `setServiceInstance()` to inject mocks in test environments.
  *
- * **FilenameService**:
- * FilenameService has been refactored to pure functions.
- * Prefer using `generateMediaFilename()` and `generateZipFilename()` directly.
+ * **FilenameService (REMOVED)**:
+ * FilenameService singleton has been removed in v3.0.0.
+ * Use functional API instead:
+ * ```typescript
+ * import { generateMediaFilename, generateZipFilename } from '@shared/services/filename';
+ * ```
  */
 
-import { FilenameService } from '@shared/services/filename';
 import { LanguageService } from '@shared/services/language-service';
 import { MediaService } from '@shared/services/media-service';
 import { ThemeService } from '@shared/services/theme-service';
@@ -30,7 +32,6 @@ import { ThemeService } from '@shared/services/theme-service';
 let _themeService: ThemeService | null = null;
 let _languageService: LanguageService | null = null;
 let _mediaService: MediaService | null = null;
-let _filenameService: FilenameService | null = null;
 
 // ============================================================================
 // Lazy Singleton Getters
@@ -69,18 +70,6 @@ export function getMediaServiceInstance(): MediaService {
   return _mediaService;
 }
 
-/**
- * Get FilenameService singleton instance.
- * @deprecated Use functional API: `generateMediaFilename()`, `generateZipFilename()`
- * Lazily initialized on first access.
- */
-export function getFilenameServiceInstance(): FilenameService {
-  if (!_filenameService) {
-    _filenameService = FilenameService.getInstance();
-  }
-  return _filenameService;
-}
-
 // ============================================================================
 // Test Utilities - Mock Injection
 // ============================================================================
@@ -110,14 +99,6 @@ export function setMediaServiceInstance(mock: MediaService | null): void {
 }
 
 /**
- * Set a mock FilenameService instance for testing.
- * @param mock - Mock instance or null to reset
- */
-export function setFilenameServiceInstance(mock: FilenameService | null): void {
-  _filenameService = mock;
-}
-
-/**
  * Reset all service instances to null.
  * Use in test teardown to ensure clean state.
  */
@@ -125,7 +106,6 @@ export function resetAllServiceInstances(): void {
   _themeService = null;
   _languageService = null;
   _mediaService = null;
-  _filenameService = null;
 }
 
 // ============================================================================
@@ -140,5 +120,4 @@ export {
   getThemeServiceInstance as themeService,
   getLanguageServiceInstance as languageService,
   getMediaServiceInstance as mediaService,
-  getFilenameServiceInstance as filenameService,
 };

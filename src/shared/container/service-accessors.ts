@@ -1,10 +1,8 @@
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
-import type { FilenameService } from '@shared/services/filename';
 import type { LanguageService } from '@shared/services/language-service';
 import type { MediaService } from '@shared/services/media-service';
 import { CoreService } from '@shared/services/service-manager';
 import {
-  getFilenameServiceInstance,
   getLanguageServiceInstance,
   getMediaServiceInstance,
   getThemeServiceInstance,
@@ -73,18 +71,6 @@ export function getThemeService(): ThemeServiceContract {
  */
 export function getLanguageService(): LanguageService {
   return tryGetFromCoreService<LanguageService>(SERVICE_KEYS.LANGUAGE) ?? getLanguageServiceInstance();
-}
-
-/**
- * Get media filename service for filename generation.
- * Checks CoreService first (for test mocks), then uses ES Module singleton.
- *
- * @returns FilenameService for media file naming
- */
-export function getMediaFilenameService(): FilenameService {
-  return (
-    tryGetFromCoreService<FilenameService>(SERVICE_KEYS.MEDIA_FILENAME) ?? getFilenameServiceInstance()
-  );
 }
 
 /**
@@ -203,18 +189,13 @@ export function warmupCriticalServices(): void {
 /**
  * Pre-initialize non-critical services (best-effort, no error throwing).
  *
- * **Services**: ThemeService, MediaFilenameService
+ * **Services**: ThemeService
  * **Behavior**: Silently fails if service not available
  * **Use Case**: Eager initialization for performance (optional)
  */
 export function warmupNonCriticalServices(): void {
   try {
     void getThemeService();
-  } catch {
-    // noop
-  }
-  try {
-    void getMediaFilenameService();
   } catch {
     // noop
   }

@@ -1,6 +1,5 @@
 import { CoreService } from '@shared/services/service-manager';
 import {
-  getFilenameServiceInstance,
   getLanguageServiceInstance,
   getMediaServiceInstance,
   getThemeServiceInstance,
@@ -14,6 +13,9 @@ import { SERVICE_KEYS } from '@constants';
  * Note: Services are now accessed via ES Module singletons directly,
  * but we still register them with CoreService for backward compatibility
  * with dynamic lookups (e.g., GalleryRenderer, Settings).
+ *
+ * FilenameService removed in v3.0.0 - use functional API:
+ * import { generateMediaFilename, generateZipFilename } from '@shared/services/filename';
  */
 export async function registerCoreServices(): Promise<void> {
   const core = CoreService.getInstance();
@@ -22,6 +24,5 @@ export async function registerCoreServices(): Promise<void> {
   // This also initializes the singletons if not already created
   core.register(SERVICE_KEYS.THEME, getThemeServiceInstance());
   core.register(SERVICE_KEYS.LANGUAGE, getLanguageServiceInstance());
-  core.register(SERVICE_KEYS.MEDIA_FILENAME, getFilenameServiceInstance());
   core.register(SERVICE_KEYS.MEDIA_SERVICE, getMediaServiceInstance());
 }
