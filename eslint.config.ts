@@ -95,6 +95,11 @@ export default tseslint.config(
           selector: 'CallExpression[callee.name="require"] > Literal[value=/^\\.\\./]',
           message: 'Use path aliases in require().',
         },
+        {
+          selector: 'ExportAllDeclaration',
+          message:
+            'Avoid "export * from" pattern as it hinders tree-shaking. Use explicit named exports instead.',
+        },
       ],
 
       // JSX A11y
