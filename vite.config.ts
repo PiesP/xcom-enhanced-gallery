@@ -383,7 +383,7 @@ export default defineConfig(async ({ mode, command }) => {
     },
     css: {
       modules: {
-        generateScopedName: isDev ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:4]',
+        generateScopedName: isDev ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:3]',
         localsConvention: 'camelCaseOnly',
         hashPrefix: 'xeg',
       },
