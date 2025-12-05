@@ -8,7 +8,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { getStyleRegistry } from '@shared/services/style-registry';
+import { hasStyle, registerStyle } from '@shared/services/styles';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { CSS } from '@constants';
 
@@ -52,8 +52,6 @@ const ANIMATION_STYLE_ID = 'xeg-animation-styles';
 const ANIMATION_LAYER = 'xeg.utilities';
 const GALLERY_SCOPE_HOSTS = CSS.SCOPES.HOSTS;
 
-const styleRegistry = getStyleRegistry();
-
 const KEYFRAMES = {
   FADE_IN: 'xeg-fade-in',
   FADE_OUT: 'xeg-fade-out',
@@ -65,12 +63,12 @@ const KEYFRAMES = {
 } as const;
 
 export function injectAnimationStyles(): void {
-  if (styleRegistry.hasStyle(ANIMATION_STYLE_ID)) {
+  if (hasStyle(ANIMATION_STYLE_ID)) {
     return;
   }
 
   const cssText = buildScopedAnimationCss();
-  styleRegistry.registerStyle({ id: ANIMATION_STYLE_ID, cssText });
+  registerStyle({ id: ANIMATION_STYLE_ID, cssText });
   logger.debug('CSS animation styles registered via StyleRegistry.');
 }
 

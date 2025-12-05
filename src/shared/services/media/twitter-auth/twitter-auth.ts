@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { getCookieService } from '@shared/services/cookie-service';
+import { getCookieValue, getCookieValueSync } from '@shared/services/cookie';
 
 // ============================================================================
 // Module-level State (lazy initialized)
@@ -19,14 +19,6 @@ let _tokensInitialized = false;
 // ============================================================================
 
 /**
- * Lazily get the cookie service
- * @internal
- */
-function getCookieServiceLazy() {
-  return getCookieService();
-}
-
-/**
  * Initialize tokens from cookies.
  * Idempotent: only runs once per session unless reset.
  * @internal
@@ -36,14 +28,11 @@ function initializeTokens(): void {
     return;
   }
 
-  const cookieService = getCookieServiceLazy();
-
   // Try synchronous access first
-  _csrfToken = cookieService.getValueSync('ct0');
+  _csrfToken = getCookieValueSync('ct0');
 
   // Fallback to async access if needed (though usually sync is enough for cookies)
-  void cookieService
-    .getValue('ct0')
+  void getCookieValue('ct0')
     .then((value: string | undefined) => {
       if (value) {
         _csrfToken = value;

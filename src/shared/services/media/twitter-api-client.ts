@@ -7,8 +7,12 @@
 import { logger } from '@shared/logging';
 import { sortMediaByVisualOrder } from '@shared/media/media-utils';
 import { HttpRequestService } from '@shared/services/http-request-service';
-import { TwitterAuthService } from '@shared/services/media/twitter-auth-service';
-import { TwitterResponseParser } from '@shared/services/media/twitter-response-parser';
+import { getCsrfToken } from '@shared/services/media/twitter-auth';
+import {
+  extractMediaFromTweet,
+  normalizeLegacyTweet,
+  normalizeLegacyUser,
+} from '@shared/services/media/twitter-parser';
 import type { TweetMediaEntry, TwitterAPIResponse } from '@shared/services/media/types';
 import { TWITTER_API_CONFIG } from '@constants';
 
@@ -16,8 +20,9 @@ import { TWITTER_API_CONFIG } from '@constants';
  * TwitterAPI - Facade for Twitter Media Extraction
  *
  * Delegates responsibilities to:
- * - TwitterAuthService: Authentication
- * - TwitterResponseParser: Response Parsing
+ * - getCsrfToken: Authentication token retrieval
+ * - normalizeLegacyTweet/User: Response normalization
+ * - extractMediaFromTweet: Media extraction
  */
 export class TwitterAPI {
   /** LRU cache for API responses (max 16 entries) */
@@ -38,12 +43,12 @@ export class TwitterAPI {
 
     const tweetUser = tweetResult.core?.user_results?.result;
 
-    TwitterResponseParser.normalizeLegacyTweet(tweetResult);
+    normalizeLegacyTweet(tweetResult);
 
     if (!tweetUser) return [];
-    TwitterResponseParser.normalizeLegacyUser(tweetUser);
+    normalizeLegacyUser(tweetUser);
 
-    let result = TwitterResponseParser.extractMediaFromTweet(tweetResult, tweetUser, 'original');
+    let result = extractMediaFromTweet(tweetResult, tweetUser, 'original');
 
     // Sort by visual order
     result = sortMediaByVisualOrder(result);
@@ -56,14 +61,10 @@ export class TwitterAPI {
 
       const quotedUser = quotedTweet.core?.user_results?.result;
       if (quotedTweet && quotedUser) {
-        TwitterResponseParser.normalizeLegacyTweet(quotedTweet);
-        TwitterResponseParser.normalizeLegacyUser(quotedUser);
+        normalizeLegacyTweet(quotedTweet);
+        normalizeLegacyUser(quotedUser);
 
-        const quotedMedia = TwitterResponseParser.extractMediaFromTweet(
-          quotedTweet,
-          quotedUser,
-          'quoted'
-        );
+        const quotedMedia = extractMediaFromTweet(quotedTweet, quotedUser, 'quoted');
 
         const sortedQuotedMedia = sortMediaByVisualOrder(quotedMedia);
 
@@ -92,7 +93,7 @@ export class TwitterAPI {
     // Build headers
     const headers = new Headers({
       authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
-      'x-csrf-token': TwitterAuthService.csrfToken ?? '',
+      'x-csrf-token': getCsrfToken() ?? '',
       'x-twitter-client-language': 'en',
       'x-twitter-active-user': 'yes',
       'content-type': 'application/json',
