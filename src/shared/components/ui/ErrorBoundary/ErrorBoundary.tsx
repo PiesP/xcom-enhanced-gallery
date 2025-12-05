@@ -3,14 +3,19 @@
  * @description Wraps SolidJS `<ErrorBoundary>` to provide localized notifications and a retry-friendly fallback.
  *
  * Design choices:
- * - Uses SolidJS primitives directly (createSignal/createEffect) for idiomatic reactivity
+ * - Uses SolidJS primitives directly (createSignal) for idiomatic reactivity
+ * - Uses Show-based remounting for reliable retry behavior
  * - Deduplicates reported errors to avoid notification spam
  * - Swallows translation/notification failures to keep UI resilient
  */
 
 import { getLanguageService } from '@/shared/container/service-accessors';
 import { type ComponentChildren, type JSXElement } from '@/shared/external/vendors';
-import { ErrorBoundary as SolidErrorBoundary } from '@/shared/external/vendors/solid-hooks';
+import {
+  ErrorBoundary as SolidErrorBoundary,
+  Show,
+  createSignal,
+} from '@/shared/external/vendors/solid-hooks';
 import { NotificationService } from '@/shared/services/notification-service';
 
 type Props = {
@@ -47,6 +52,8 @@ function translateError(error: unknown): { title: string; body: string } {
 
 export function ErrorBoundary(props: Props): JSXElement {
   let lastReportedError: unknown;
+  const [caughtError, setCaughtError] = createSignal<unknown>(undefined);
+  const [boundaryMounted, setBoundaryMounted] = createSignal(true);
 
   const notifyError = (error: unknown): void => {
     if (lastReportedError === error) return;
@@ -60,11 +67,15 @@ export function ErrorBoundary(props: Props): JSXElement {
     }
   };
 
-  const resetError = () => {
+  const handleRetry = () => {
     lastReportedError = undefined;
+    setCaughtError(undefined);
+    // Force remount by toggling the boundary off and on
+    setBoundaryMounted(false);
+    queueMicrotask(() => setBoundaryMounted(true));
   };
 
-  const renderFallback = (error: unknown, reset?: () => void): JSXElement => {
+  const renderFallback = (error: unknown): JSXElement => {
     let title = 'Unexpected error';
     let body = stringifyError(error);
 
@@ -72,7 +83,7 @@ export function ErrorBoundary(props: Props): JSXElement {
       const copy = translateError(error);
       title = copy.title;
       body = copy.body;
-            reset?.();
+    } catch {
       // Even translation failures should not break rendering
     }
 
@@ -80,31 +91,27 @@ export function ErrorBoundary(props: Props): JSXElement {
       <div role="alert" data-xeg-error-boundary="" aria-live="polite">
         <p class="xeg-error-boundary__title">{title}</p>
         <p class="xeg-error-boundary__body">{body}</p>
+        <button type="button" class="xeg-error-boundary__action" onClick={handleRetry}>
+          Retry
         </button>
       </div>
-    <SolidErrorBoundary
-      fallback={(boundaryError, reset) => {
-        notifyError(boundaryError);
-        return renderFallback(boundaryError, () => {
-          resetError();
-          reset?.();
-        });
-      }}
-    >
-      {props.children}
-    </SolidErrorBoundary>
-            console.debug?.('retry clicked', { hasBoundaryReset: Boolean(boundaryReset) });
-            const reset = boundaryReset;
-            if (reset) {
-              reset();
-            } else {
-              setBoundaryActive(false);
-              setBoundaryActive(true);
-            }
-            resetError();
-          })
-        }
+    );
+  };
+
+  return (
+    <>
+      <Show when={boundaryMounted()}>
+        <SolidErrorBoundary
+          fallback={boundaryError => {
+            notifyError(boundaryError);
+            setCaughtError(boundaryError);
+            return null;
+          }}
+        >
+          {props.children}
+        </SolidErrorBoundary>
       </Show>
+      <Show when={caughtError()}>{error => renderFallback(error())}</Show>
     </>
   );
 }
