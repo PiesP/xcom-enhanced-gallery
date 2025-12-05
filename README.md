@@ -90,10 +90,12 @@ Desktop browsers only (no mobile/touch support):
 
 | Browser | Version (minimum) |
 | ------- | ----------------- |
-| Chrome  | 110+              |
-| Edge    | 110+              |
-| Firefox | 78+               |
-| Safari  | 14+               |
+| Chrome  | 117+              |
+| Edge    | 117+              |
+| Firefox | 119+              |
+| Safari  | 17+               |
+
+> **Note**: Build target is `esnext` with ES2024 features. CSS features require: oklch (Chrome 111+), color-mix (Chrome 111+), container queries (Chrome 105+).
 
 ## 🔒 Security & privacy
 
