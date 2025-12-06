@@ -48,7 +48,7 @@ jobs:
   # Run lint and typecheck in parallel for faster feedback
   lint:
     name: 🧹 Biome Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 10
     steps:
       - name: 📥 Checkout code
@@ -73,7 +73,7 @@ jobs:
 
   typecheck:
     name: 📐 Type Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 10
     steps:
       - name: 📥 Checkout code
@@ -97,7 +97,7 @@ jobs:
 
   build:
     name: 🚀 Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     needs: [lint, typecheck]
     timeout-minutes: 15
     steps:

@@ -44,7 +44,7 @@ jobs:
   # CodeQL runs separately due to its complexity
   codeql:
     name: 🧠 CodeQL Analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 30
     steps:
       - name: 📥 Checkout code
@@ -96,7 +96,7 @@ jobs:
   # Run lightweight security checks in parallel
   osv-scanner:
     name: 🔍 OSV Scanner
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 10
     steps:
       - name: 📥 Checkout code
@@ -143,7 +143,7 @@ jobs:
   # NPM Audit and License check run in parallel
   audit:
     name: 📦 NPM Audit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 10
     steps:
       - name: 📥 Checkout code
@@ -189,7 +189,7 @@ jobs:
 
   license:
     name: 📜 License Compliance
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
       - name: 📥 Checkout code

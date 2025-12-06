@@ -45,7 +45,7 @@ concurrency:
 jobs:
   check-version:
     name: 🔍 Check Version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
@@ -95,7 +95,7 @@ jobs:
 
   build-release:
     name: 🏗️ Build & Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     needs: check-version
     if: needs.check-version.outputs.should_release == 'true'
     timeout-minutes: 15

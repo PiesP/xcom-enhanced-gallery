@@ -18,7 +18,7 @@ permissions:
 jobs:
   auto-merge:
     name: 🤖 Auto-Merge
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     if: github.actor == 'dependabot[bot]'
     steps:
