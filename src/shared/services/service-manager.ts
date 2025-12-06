@@ -69,7 +69,7 @@ export class CoreService {
   }
 
   public cleanup(): void {
-    this.services.forEach(service => {
+    this.services.forEach((service) => {
       try {
         if (isDisposable(service)) {
           service.destroy();

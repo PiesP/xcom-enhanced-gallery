@@ -2,9 +2,12 @@
  * @fileoverview Simplified Event Manager
  * @description Provides unified event management with context-based cleanup.
  *              Wraps listener-manager for consistent singleton access pattern.
+ * @version 2.0.0 - Composition-based lifecycle
  */
 
 import { logger } from '@shared/logging';
+import type { Lifecycle } from '@shared/services/lifecycle';
+import { createLifecycle } from '@shared/services/lifecycle';
 import {
   getEventListenerStatus,
   addListener as registerManagedListener,
@@ -12,7 +15,6 @@ import {
   removeEventListenersByContext,
 } from '@shared/utils/events/core/listener-manager';
 import { createSingleton } from '@shared/utils/types/singleton';
-import { BaseServiceImpl } from './base-service';
 
 /**
  * Simplified Event Manager
@@ -22,14 +24,18 @@ import { BaseServiceImpl } from './base-service';
  * **Key Features**:
  * - Context-based listener grouping for batch cleanup
  * - ID-based individual listener removal
- * - Lifecycle integration via BaseServiceImpl
+ * - Lifecycle integration via composition
  */
-export class EventManager extends BaseServiceImpl {
+export class EventManager {
+  private readonly lifecycle: Lifecycle;
   private static readonly singleton = createSingleton(() => new EventManager());
   private isDestroyed = false;
 
   private constructor() {
-    super('EventManager');
+    this.lifecycle = createLifecycle('EventManager', {
+      onInitialize: () => this.onInitialize(),
+      onDestroy: () => this.onDestroy(),
+    });
   }
 
   /** Get singleton instance */
@@ -42,13 +48,28 @@ export class EventManager extends BaseServiceImpl {
     EventManager.singleton.reset();
   }
 
+  /** Initialize service (idempotent, fail-fast on error) */
+  public async initialize(): Promise<void> {
+    return this.lifecycle.initialize();
+  }
+
+  /** Destroy service (idempotent, graceful on error) */
+  public destroy(): void {
+    this.lifecycle.destroy();
+  }
+
+  /** Check if service is initialized */
+  public isInitialized(): boolean {
+    return this.lifecycle.isInitialized();
+  }
+
   /** Lifecycle: Initialization */
-  protected async onInitialize(): Promise<void> {
+  private async onInitialize(): Promise<void> {
     logger.debug('EventManager initialized');
   }
 
   /** Lifecycle: Cleanup */
-  protected onDestroy(): void {
+  private onDestroy(): void {
     this.cleanup();
   }
 
@@ -67,7 +88,7 @@ export class EventManager extends BaseServiceImpl {
     type: string,
     listener: EventListener,
     options?: AddEventListenerOptions,
-    context?: string
+    context?: string,
   ): string {
     if (this.isDestroyed) {
       logger.warn('EventManager: addListener called on destroyed instance');

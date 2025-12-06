@@ -1,13 +1,14 @@
 /**
  * Core Layer - Theme Service
  * System theme detection and application service
- * @version 4.0.0 - Simplified
+ * @version 5.0.0 - Composition-based lifecycle
  */
 
 import { APP_SETTINGS_STORAGE_KEY } from '@constants';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging';
-import { BaseServiceImpl } from '@shared/services/base-service';
+import type { Lifecycle } from '@shared/services/lifecycle';
+import { createLifecycle } from '@shared/services/lifecycle';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 import type {
   SettingsServiceLike,
@@ -19,7 +20,8 @@ import type {
 } from '@shared/services/theme-service.contract';
 import { createSingleton } from '@shared/utils/types/singleton';
 
-export class ThemeService extends BaseServiceImpl implements ThemeServiceContract {
+export class ThemeService implements ThemeServiceContract {
+  private readonly lifecycle: Lifecycle;
   private readonly storage = getPersistentStorage();
   private mediaQueryList: MediaQueryList | null = null;
   private currentTheme: Theme = 'light';
@@ -41,17 +43,21 @@ export class ThemeService extends BaseServiceImpl implements ThemeServiceContrac
   }
 
   constructor() {
-    super('ThemeService');
+    this.lifecycle = createLifecycle('ThemeService', {
+      onInitialize: () => this.onInitialize(),
+      onDestroy: () => this.onDestroy(),
+    });
+
     if (typeof window !== 'undefined') {
       this.mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
-      this.observer = new MutationObserver(mutations => {
+      this.observer = new MutationObserver((mutations) => {
         for (const m of mutations) {
-          m.addedNodes.forEach(node => {
+          m.addedNodes.forEach((node) => {
             if (node instanceof Element) {
               if (node.classList.contains('xeg-theme-scope')) {
                 syncThemeAttributes(this.currentTheme, { scopes: [node] });
               }
-              node.querySelectorAll('.xeg-theme-scope').forEach(scope => {
+              node.querySelectorAll('.xeg-theme-scope').forEach((scope) => {
                 syncThemeAttributes(this.currentTheme, { scopes: [scope] });
               });
             }
@@ -83,7 +89,22 @@ export class ThemeService extends BaseServiceImpl implements ThemeServiceContrac
     });
   }
 
-  protected async onInitialize(): Promise<void> {
+  /** Initialize service (idempotent, fail-fast on error) */
+  public async initialize(): Promise<void> {
+    return this.lifecycle.initialize();
+  }
+
+  /** Destroy service (idempotent, graceful on error) */
+  public destroy(): void {
+    this.lifecycle.destroy();
+  }
+
+  /** Check if service is initialized */
+  public isInitialized(): boolean {
+    return this.lifecycle.isInitialized();
+  }
+
+  private async onInitialize(): Promise<void> {
     // Ensure async restore is done if not already
     const saved = await this.loadThemeAsync();
     if (saved && saved !== this.themeSetting) {
@@ -123,7 +144,7 @@ export class ThemeService extends BaseServiceImpl implements ThemeServiceContrac
     }
 
     if (typeof settingsService.subscribe === 'function') {
-      this.settingsUnsubscribe = settingsService.subscribe(event => {
+      this.settingsUnsubscribe = settingsService.subscribe((event) => {
         if (event?.key === 'gallery.theme') {
           const newVal = event.newValue as ThemeSetting;
           if (['light', 'dark', 'auto'].includes(newVal) && newVal !== this.themeSetting) {
@@ -172,7 +193,7 @@ export class ThemeService extends BaseServiceImpl implements ThemeServiceContrac
     return () => this.listeners.delete(listener);
   }
 
-  protected onDestroy(): void {
+  private onDestroy(): void {
     if (this.settingsUnsubscribe) {
       this.settingsUnsubscribe();
     }
@@ -203,7 +224,7 @@ export class ThemeService extends BaseServiceImpl implements ThemeServiceContrac
   }
 
   private notifyListeners(): void {
-    this.listeners.forEach(l => l(this.currentTheme, this.themeSetting));
+    this.listeners.forEach((l) => l(this.currentTheme, this.themeSetting));
   }
 
   private loadThemeSync(): ThemeSetting {

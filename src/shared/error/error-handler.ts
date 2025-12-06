@@ -26,8 +26,8 @@ export class GlobalErrorHandler {
       reason instanceof Error
         ? reason.message
         : typeof reason === 'string'
-        ? reason
-        : `Unhandled rejection: ${String(reason)}`;
+          ? reason
+          : `Unhandled rejection: ${String(reason)}`;
 
     logger.error(`[UnhandledRejection] ${message}`, {
       type: 'unhandled-rejection',

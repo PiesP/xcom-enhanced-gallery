@@ -128,9 +128,12 @@ export function createLifecycle(
 
   let initialized = false;
 
-  const log = silent
-    ? { info: () => {}, error: () => {} }
-    : { info: logger.info.bind(logger), error: logger.error.bind(logger) };
+  // Safe logger access for test environments where logger might not be initialized
+  const noop = () => {};
+  const log =
+    silent || !logger?.info
+      ? { info: noop, error: noop }
+      : { info: logger.info.bind(logger), error: logger.error.bind(logger) };
 
   const initialize = async (): Promise<void> => {
     if (initialized) return;

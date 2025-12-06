@@ -1,9 +1,10 @@
-import { BaseServiceImpl } from '@shared/services/base-service';
 import type {
   BulkDownloadResult,
   DownloadOptions,
   SingleDownloadResult,
 } from '@shared/services/download/types';
+import type { Lifecycle } from '@shared/services/lifecycle';
+import { createLifecycle } from '@shared/services/lifecycle';
 import { PrefetchManager } from '@shared/services/media/prefetch-manager';
 import type { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import type {
@@ -19,7 +20,8 @@ export interface MediaServiceOptions {
   enableMediaExtraction?: boolean;
 }
 
-export class MediaService extends BaseServiceImpl {
+export class MediaService {
+  private readonly lifecycle: Lifecycle;
   private static readonly singleton = createSingleton(() => new MediaService());
   private mediaExtraction: MediaExtractionService | null = null;
   private webpSupported: boolean | null = null;
@@ -27,10 +29,28 @@ export class MediaService extends BaseServiceImpl {
   private currentAbortController?: AbortController;
 
   constructor(_options: MediaServiceOptions = {}) {
-    super('MediaService');
+    this.lifecycle = createLifecycle('MediaService', {
+      onInitialize: () => this.onInitialize(),
+      onDestroy: () => this.onDestroy(),
+    });
   }
 
-  protected async onInitialize(): Promise<void> {
+  /** Initialize service (idempotent, fail-fast on error) */
+  public async initialize(): Promise<void> {
+    return this.lifecycle.initialize();
+  }
+
+  /** Destroy service (idempotent, graceful on error) */
+  public destroy(): void {
+    this.lifecycle.destroy();
+  }
+
+  /** Check if service is initialized */
+  public isInitialized(): boolean {
+    return this.lifecycle.isInitialized();
+  }
+
+  private async onInitialize(): Promise<void> {
     if (typeof __FEATURE_MEDIA_EXTRACTION__ === 'undefined' || __FEATURE_MEDIA_EXTRACTION__) {
       const { MediaExtractionService } = await import(
         '@shared/services/media-extraction/media-extraction-service'
@@ -40,7 +60,7 @@ export class MediaService extends BaseServiceImpl {
     await this.detectWebPSupport();
   }
 
-  protected onDestroy(): void {
+  private onDestroy(): void {
     this.prefetchManager.destroy();
   }
 
@@ -55,7 +75,7 @@ export class MediaService extends BaseServiceImpl {
 
   async extractFromClickedElement(
     element: HTMLElement,
-    options: MediaExtractionOptions = {}
+    options: MediaExtractionOptions = {},
   ): Promise<MediaExtractionResult> {
     if (!this.mediaExtraction) throw new Error('Media Extraction not initialized');
     const result = await this.mediaExtraction.extractFromClickedElement(element, options);
@@ -68,7 +88,7 @@ export class MediaService extends BaseServiceImpl {
       }
 
       // Idle prefetch for others
-      result.mediaItems.slice(1).forEach(item => {
+      result.mediaItems.slice(1).forEach((item) => {
         this.prefetchMedia(item, 'idle');
       });
     }
@@ -78,7 +98,7 @@ export class MediaService extends BaseServiceImpl {
 
   async extractAllFromContainer(
     container: HTMLElement,
-    options: MediaExtractionOptions = {}
+    options: MediaExtractionOptions = {},
   ): Promise<MediaExtractionResult> {
     if (!this.mediaExtraction) throw new Error('Media Extraction not initialized');
     return this.mediaExtraction.extractAllFromContainer(container, options);
@@ -138,7 +158,7 @@ export class MediaService extends BaseServiceImpl {
 
   async downloadSingle(
     media: MediaInfo,
-    options: DownloadOptions = {}
+    options: DownloadOptions = {},
   ): Promise<SingleDownloadResult> {
     const { DownloadOrchestrator } = await import('./download/download-orchestrator');
     const downloadService = DownloadOrchestrator.getInstance();
@@ -163,7 +183,7 @@ export class MediaService extends BaseServiceImpl {
 
   async downloadMultiple(
     items: Array<MediaInfo>,
-    options: BulkDownloadOptions = {}
+    options: BulkDownloadOptions = {},
   ): Promise<BulkDownloadResult> {
     const { DownloadOrchestrator } = await import('./download/download-orchestrator');
     const downloadService = DownloadOrchestrator.getInstance();
@@ -175,7 +195,7 @@ export class MediaService extends BaseServiceImpl {
 
   async downloadBulk(
     items: readonly MediaInfo[],
-    options: BulkDownloadOptions = {}
+    options: BulkDownloadOptions = {},
   ): Promise<BulkDownloadResult> {
     return this.downloadMultiple(Array.from(items), options);
   }

@@ -1,7 +1,7 @@
 /**
  * @fileoverview Multilingual Support Service
  * @description TDD-based simple i18n system with lazy language loading
- * @version 2.3.0 - Phase 356: Lazy language loading optimization
+ * @version 3.0.0 - Composition-based lifecycle
  */
 
 import {
@@ -21,7 +21,8 @@ import {
   Translator,
 } from '@shared/i18n';
 import { logger } from '@shared/logging';
-import { BaseServiceImpl } from '@shared/services/base-service';
+import type { Lifecycle } from '@shared/services/lifecycle';
+import { createLifecycle } from '@shared/services/lifecycle';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 import { createSingleton } from '@shared/utils/types/singleton';
 
@@ -45,7 +46,8 @@ const translator = new Translator(translationCatalog);
  *
  * Note: Global singleton export requires initialize() call from main.ts
  */
-export class LanguageService extends BaseServiceImpl {
+export class LanguageService {
+  private readonly lifecycle: Lifecycle;
   private static readonly STORAGE_KEY = 'xeg-language';
   private static readonly SUPPORTED_LANGUAGES: ReadonlySet<SupportedLanguage> = new Set([
     'auto',
@@ -68,14 +70,32 @@ export class LanguageService extends BaseServiceImpl {
   }
 
   constructor() {
-    super('LanguageService');
+    this.lifecycle = createLifecycle('LanguageService', {
+      onInitialize: () => this.onInitialize(),
+      onDestroy: () => this.onDestroy(),
+    });
+  }
+
+  /** Initialize service (idempotent, fail-fast on error) */
+  public async initialize(): Promise<void> {
+    return this.lifecycle.initialize();
+  }
+
+  /** Destroy service (idempotent, graceful on error) */
+  public destroy(): void {
+    this.lifecycle.destroy();
+  }
+
+  /** Check if service is initialized */
+  public isInitialized(): boolean {
+    return this.lifecycle.isInitialized();
   }
 
   /**
-   * Service initialization (BaseServiceImpl template method implementation)
+   * Service initialization hook
    * Restore language setting from storage and lazy load language bundle if needed
    */
-  protected async onInitialize(): Promise<void> {
+  private async onInitialize(): Promise<void> {
     try {
       const saved = await this.storage.get<string>(LanguageService.STORAGE_KEY);
       const normalized = this.normalizeLanguage(saved);
@@ -94,10 +114,10 @@ export class LanguageService extends BaseServiceImpl {
   }
 
   /**
-   * Service cleanup (BaseServiceImpl template method implementation)
+   * Service cleanup hook
    * Clean up listeners
    */
-  protected onDestroy(): void {
+  private onDestroy(): void {
     this.listeners.clear();
   }
   detectLanguage(): BaseLanguageCode {
@@ -167,7 +187,7 @@ export class LanguageService extends BaseServiceImpl {
   }
 
   private normalizeLanguage(
-    language: SupportedLanguage | string | null | undefined
+    language: SupportedLanguage | string | null | undefined,
   ): SupportedLanguage {
     if (!language) {
       return 'auto';
@@ -181,7 +201,7 @@ export class LanguageService extends BaseServiceImpl {
   }
 
   private notifyListeners(language: SupportedLanguage): void {
-    this.listeners.forEach(listener => {
+    this.listeners.forEach((listener) => {
       try {
         listener(language);
       } catch (error) {

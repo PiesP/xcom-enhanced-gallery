@@ -11,11 +11,10 @@
  * - GM_download: Tampermonkey native (preferred, better UX)
  * - fetch+blob: Violentmonkey/browser fallback (anchor download)
  *
- * @version 2.0.0 - Phase 500: Enhanced documentation
+ * @version 3.0.0 - Composition-based lifecycle
  */
 
 import { logger } from '@shared/logging';
-import { BaseServiceImpl } from '@shared/services/base-service';
 import {
   type DownloadCapability,
   detectDownloadCapability,
@@ -31,6 +30,8 @@ import type {
 } from '@shared/services/download/types';
 import { downloadAsZip } from '@shared/services/download/zip-download';
 import { generateMediaFilename, generateZipFilename } from '@shared/services/filename';
+import type { Lifecycle } from '@shared/services/lifecycle';
+import { createLifecycle } from '@shared/services/lifecycle';
 import type { MediaInfo } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/result.types';
 import { createSingleton } from '@shared/utils/types/singleton';
@@ -52,14 +53,18 @@ import { createSingleton } from '@shared/utils/types/singleton';
  * await orchestrator.downloadBulk(mediaItems, { zipFilename: 'gallery.zip' });
  * ```
  */
-export class DownloadOrchestrator extends BaseServiceImpl {
+export class DownloadOrchestrator {
+  private readonly lifecycle: Lifecycle;
   private static readonly singleton = createSingleton(() => new DownloadOrchestrator());
 
   /** Cached download capability detection (lazy initialized) */
   private capability: DownloadCapability | null = null;
 
   private constructor() {
-    super('DownloadOrchestrator');
+    this.lifecycle = createLifecycle('DownloadOrchestrator', {
+      onInitialize: () => this.onInitialize(),
+      onDestroy: () => this.onDestroy(),
+    });
   }
 
   public static getInstance(): DownloadOrchestrator {
@@ -74,12 +79,27 @@ export class DownloadOrchestrator extends BaseServiceImpl {
     DownloadOrchestrator.singleton.reset();
   }
 
-  protected async onInitialize(): Promise<void> {
+  /** Initialize service (idempotent, fail-fast on error) */
+  public async initialize(): Promise<void> {
+    return this.lifecycle.initialize();
+  }
+
+  /** Destroy service (idempotent, graceful on error) */
+  public destroy(): void {
+    this.lifecycle.destroy();
+  }
+
+  /** Check if service is initialized */
+  public isInitialized(): boolean {
+    return this.lifecycle.isInitialized();
+  }
+
+  private async onInitialize(): Promise<void> {
     // Capability is lazily detected on first use
     logger.debug('[DownloadOrchestrator] Initialized');
   }
 
-  protected onDestroy(): void {
+  private onDestroy(): void {
     this.capability = null;
   }
 
@@ -102,7 +122,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
    */
   public async downloadSingle(
     media: MediaInfo,
-    options: DownloadOptions = {}
+    options: DownloadOptions = {},
   ): Promise<SingleDownloadResult> {
     const capability = this.getCapability();
     return downloadSingleFile(media, options, capability);
@@ -117,9 +137,9 @@ export class DownloadOrchestrator extends BaseServiceImpl {
    */
   public async downloadBulk(
     mediaItems: MediaInfo[],
-    options: DownloadOptions = {}
+    options: DownloadOptions = {},
   ): Promise<BulkDownloadResult> {
-    const items: OrchestratorItem[] = mediaItems.map(media => ({
+    const items: OrchestratorItem[] = mediaItems.map((media) => ({
       url: media.url,
       desiredName: generateMediaFilename(media),
       blob: options.prefetchedBlobs?.get(media.url),
@@ -188,7 +208,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
   private async saveZipBlob(
     zipBlob: Blob,
     filename: string,
-    options: DownloadOptions
+    options: DownloadOptions,
   ): Promise<{ success: boolean; error?: string }> {
     const capability = this.getCapability();
 
@@ -218,7 +238,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
   private async saveWithGMDownload(
     gmDownload: GMDownloadFunction,
     blob: Blob,
-    filename: string
+    filename: string,
   ): Promise<{ success: boolean; error?: string }> {
     const url = URL.createObjectURL(blob);
     try {
