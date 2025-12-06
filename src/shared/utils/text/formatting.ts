@@ -211,3 +211,73 @@ export function shortenUrl(url: string, maxLength = 50): string {
 export function createClassName(...classes: (string | undefined | null)[]): string {
   return classes.filter(Boolean).join(' ');
 }
+
+/**
+ * ClassValue type for cx function - supports strings, objects with boolean values,
+ * arrays, and nested combinations
+ */
+export type ClassValue = string | number | boolean | undefined | null | ClassRecord | ClassArray;
+
+/**
+ * Object mapping class names to boolean conditions
+ */
+export type ClassRecord = Record<string, boolean | undefined | null>;
+
+/**
+ * Array of class values (can be nested)
+ */
+export interface ClassArray extends Array<ClassValue> {}
+
+/**
+ * Combines class names with conditional logic (clsx-style API)
+ *
+ * Supports multiple input formats:
+ * - Strings: `cx('foo', 'bar')` → `'foo bar'`
+ * - Objects: `cx({ foo: true, bar: false })` → `'foo'`
+ * - Arrays: `cx(['foo', 'bar'])` → `'foo bar'`
+ * - Mixed: `cx('base', { active: isActive }, ['extra'])` → varies
+ * - Falsy values are filtered: `cx('foo', null, undefined, false, '', 'bar')` → `'foo bar'`
+ *
+ * @param inputs - Class values to combine
+ * @returns Combined class string
+ *
+ * @example
+ * ```typescript
+ * // Simple strings
+ * cx('foo', 'bar') // 'foo bar'
+ *
+ * // Conditional object
+ * cx({ active: isActive, disabled: isDisabled })
+ *
+ * // Mixed usage
+ * cx(styles.container, { [styles.active]: isActive }, className)
+ *
+ * // Replaces template literal patterns
+ * // Before: `${styles.container} ${isActive ? styles.active : ''}`
+ * // After:  cx(styles.container, { [styles.active]: isActive })
+ * ```
+ */
+export function cx(...inputs: ClassValue[]): string {
+  const classes: string[] = [];
+
+  for (const input of inputs) {
+    if (!input) continue;
+
+    if (typeof input === 'string') {
+      classes.push(input);
+    } else if (typeof input === 'number') {
+      classes.push(String(input));
+    } else if (Array.isArray(input)) {
+      const nested = cx(...input);
+      if (nested) classes.push(nested);
+    } else if (typeof input === 'object') {
+      for (const [key, value] of Object.entries(input)) {
+        if (value) {
+          classes.push(key);
+        }
+      }
+    }
+  }
+
+  return classes.join(' ');
+}

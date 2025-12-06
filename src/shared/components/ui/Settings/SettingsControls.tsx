@@ -1,6 +1,6 @@
 import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
-import { createClassName } from '@shared/utils/text/formatting';
+import { createClassName, cx } from '@shared/utils/text/formatting';
 import { createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 import styles from './SettingsControls.module.css';
 
@@ -58,11 +58,9 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
   });
 
   const selectClass = createClassName('xeg-inline-center', styles.select);
-  const containerClass = props.compact ? `${styles.body} ${styles.bodyCompact}` : styles.body;
-  const settingClass = props.compact
-    ? `${styles.setting} ${styles.settingCompact}`
-    : styles.setting;
-  const labelClass = props.compact ? `${styles.label} ${styles.compactLabel}` : styles.label;
+  const containerClass = cx(styles.body, props.compact && styles.bodyCompact);
+  const settingClass = cx(styles.setting, props.compact && styles.settingCompact);
+  const labelClass = cx(styles.label, props.compact && styles.compactLabel);
 
   const themeValue = createMemo(() => resolveAccessorValue(props.currentTheme));
   const languageValue = createMemo(() => resolveAccessorValue(props.currentLanguage));

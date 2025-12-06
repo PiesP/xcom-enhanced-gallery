@@ -38,7 +38,7 @@ import { isDownloadUiBusy } from '@shared/state/ui/download-ui-state';
 import type { ImageFitMode } from '@shared/types';
 import { safeEventPrevent } from '@shared/utils/events/utils';
 import { computePreloadIndices } from '@shared/utils/performance';
-import { stringWithDefault } from '@shared/utils/types/safety';
+import { cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, For, type JSX } from 'solid-js';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryLifecycle } from './hooks/useGalleryLifecycle';
@@ -286,7 +286,7 @@ function VerticalGalleryViewCore({
     const emptyDesc = languageService.translate('messages.gallery.emptyDescription');
 
     return (
-      <div class={`${styles.container} ${styles.empty} ${stringWithDefault(className, '')}`}>
+      <div class={cx(styles.container, styles.empty, className)}>
         <div class={styles.emptyMessage}>
           <h3>{emptyTitle}</h3>
           <p>{emptyDesc}</p>
@@ -298,9 +298,12 @@ function VerticalGalleryViewCore({
   return (
     <div
       ref={(el) => setContainerEl(el ?? null)}
-      class={`${styles.container} ${
-        isInitialToolbarVisible() ? styles.initialToolbarVisible : ''
-      } ${isScrolling() ? styles.isScrolling : ''} ${stringWithDefault(className, '')}`}
+      class={cx(
+        styles.container,
+        isInitialToolbarVisible() && styles.initialToolbarVisible,
+        isScrolling() && styles.isScrolling,
+        className,
+      )}
       onClick={handleBackgroundClick}
       onWheel={handleContainerWheel}
       data-xeg-gallery="true"
@@ -365,9 +368,10 @@ function VerticalGalleryViewCore({
                 forceVisible={forcePreload}
                 fitMode={imageFitMode}
                 onClick={() => handleMediaItemClick(actualIndex)}
-                className={`${styles.galleryItem} ${
-                  actualIndex === currentIndex() ? styles.itemActive : ''
-                }`}
+                className={cx(
+                  styles.galleryItem,
+                  actualIndex === currentIndex() && styles.itemActive,
+                )}
                 data-index={actualIndex}
                 data-xeg-role="gallery-item"
                 registerContainer={(element: HTMLElement | null) =>

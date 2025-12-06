@@ -14,7 +14,7 @@ import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
 import type { ToolbarSettingsControllerResult, ToolbarState } from '@shared/hooks';
 import { safeEventPreventAll } from '@shared/utils/events/utils';
-import { createClassName } from '@shared/utils/text/formatting';
+import { createClassName, cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, lazy, Show, Suspense } from 'solid-js';
 import styles from './Toolbar.module.css';
 
@@ -234,7 +234,10 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       }
       onWheel={preventScrollChaining as unknown as (event: WheelEvent) => void}
     >
-      <div class={`${styles.toolbarContent} xeg-row-center`} data-gallery-element="toolbar-content">
+      <div
+        class={cx(styles.toolbarContent, 'xeg-row-center')}
+        data-gallery-element="toolbar-content"
+      >
         <div class={styles.toolbarControls} data-gallery-element="toolbar-controls">
           <IconButton
             class={toolbarButtonClass()}
