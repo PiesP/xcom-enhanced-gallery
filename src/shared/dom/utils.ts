@@ -27,10 +27,10 @@ export function ensureGalleryScrollAvailable(element: HTMLElement | null): void 
 
   // Find scrollable elements and enable default scroll
   const scrollableElements = element.querySelectorAll(
-    '[data-xeg-role="items-list"], .itemsList, .content'
+    '[data-xeg-role="items-list"], .itemsList, .content',
   ) as NodeListOf<HTMLElement>;
 
-  scrollableElements.forEach(el => {
+  scrollableElements.forEach((el) => {
     if (el.style.overflowY !== 'auto' && el.style.overflowY !== 'scroll') {
       el.style.overflowY = 'auto';
     }
@@ -48,10 +48,10 @@ const VIDEO_PLAYER_CONTEXT_SELECTORS = [
   '[role="application"]',
   '[aria-label*="Video"]',
 ];
-const VIDEO_CONTROL_ROLE_SET = new Set(VIDEO_CONTROL_ROLES.map(role => role.toLowerCase()));
+const VIDEO_CONTROL_ROLE_SET = new Set(VIDEO_CONTROL_ROLES.map((role) => role.toLowerCase()));
 
 function isWithinVideoPlayer(element: HTMLElement): boolean {
-  return VIDEO_PLAYER_CONTEXT_SELECTORS.some(selector => {
+  return VIDEO_PLAYER_CONTEXT_SELECTORS.some((selector) => {
     try {
       return element.closest(selector) !== null;
     } catch {
@@ -61,7 +61,7 @@ function isWithinVideoPlayer(element: HTMLElement): boolean {
 }
 
 function matchesVideoControlSelectors(element: HTMLElement): boolean {
-  return VIDEO_CONTROL_SELECTORS.some(selector => {
+  return VIDEO_CONTROL_SELECTORS.some((selector) => {
     try {
       return element.matches(selector) || element.closest(selector) !== null;
     } catch {
@@ -98,7 +98,7 @@ interface VideoControlEvidence {
 
 function getNearestAttributeValue(
   element: HTMLElement,
-  attribute: 'data-testid' | 'aria-label'
+  attribute: 'data-testid' | 'aria-label',
 ): string | null {
   if (element.hasAttribute(attribute)) {
     return element.getAttribute(attribute);
@@ -118,7 +118,7 @@ function containsControlToken(value: string | null, tokens: readonly string[]): 
   }
 
   const normalized = value.toLowerCase();
-  return tokens.some(token => normalized.includes(token));
+  return tokens.some((token) => normalized.includes(token));
 }
 
 function collectControlAttributeSnapshot(element: HTMLElement): ControlAttributeSnapshot {
@@ -203,7 +203,7 @@ export function isGalleryInternalElement(element: HTMLElement | null): boolean {
     return false;
   }
 
-  return GALLERY_SELECTORS.some(selector => {
+  return GALLERY_SELECTORS.some((selector) => {
     try {
       return element.matches(selector) || element.closest(selector) !== null;
     } catch (error) {

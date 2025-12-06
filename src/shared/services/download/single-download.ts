@@ -105,7 +105,7 @@ export async function downloadSingleFile(
         },
         onerror: (error: unknown) => {
           const errorMsg = getErrorMessage(error);
-          logger.error(`[SingleDownload] Download failed:`, error);
+          logger.error('[SingleDownload] Download failed:', error);
           options.onProgress?.({
             phase: 'complete',
             current: 1,

@@ -139,7 +139,7 @@ export function useGalleryScroll({
         type,
         handler,
         { passive: true },
-        listenerContext
+        listenerContext,
       );
       if (id) {
         listenerIds.push(id);

@@ -68,7 +68,7 @@ function VerticalGalleryViewCore({
   const mediaItems = createMemo(() => galleryState.value.mediaItems);
   const currentIndex = createMemo(() => galleryState.value.currentIndex);
   const isDownloading = createMemo(() =>
-    isDownloadUiBusy({ downloadProcessing: downloadState.value.isProcessing })
+    isDownloadUiBusy({ downloadProcessing: downloadState.value.isProcessing }),
   );
 
   // Element refs
@@ -118,7 +118,7 @@ function VerticalGalleryViewCore({
       block: 'start',
       isScrolling,
       onScrollStart: () => navigationState.setProgrammaticScrollTimestamp(Date.now()),
-    }
+    },
   );
 
   // Navigation handling - uses scrollToItem
@@ -181,7 +181,7 @@ function VerticalGalleryViewCore({
   const [imageFitMode, setImageFitMode] = createSignal<ImageFitMode>(getInitialFitMode());
 
   const persistFitMode = (mode: ImageFitMode) =>
-    setSetting('gallery.imageFitMode', mode).catch(error => {
+    setSetting('gallery.imageFitMode', mode).catch((error) => {
       logger.warn('Failed to save fit mode', { error, mode });
     });
 
@@ -292,7 +292,7 @@ function VerticalGalleryViewCore({
 
   return (
     <div
-      ref={el => setContainerEl(el ?? null)}
+      ref={(el) => setContainerEl(el ?? null)}
       class={`${styles.container} ${
         isInitialToolbarVisible() ? styles.initialToolbarVisible : ''
       } ${isScrolling() ? styles.isScrolling : ''} ${stringWithDefault(className, '')}`}
@@ -306,7 +306,7 @@ function VerticalGalleryViewCore({
       <div
         class={styles.toolbarWrapper}
         data-role="toolbar"
-        ref={el => setToolbarWrapperEl(el ?? null)}
+        ref={(el) => setToolbarWrapperEl(el ?? null)}
       >
         <Toolbar
           onClose={onClose || (() => {})}
@@ -334,7 +334,7 @@ function VerticalGalleryViewCore({
         class={styles.itemsContainer}
         data-xeg-role="items-container"
         data-xeg-role-compat="items-list"
-        ref={el => setItemsContainerEl(el ?? null)}
+        ref={(el) => setItemsContainerEl(el ?? null)}
       >
         <For each={mediaItems()}>
           {(item, index) => {

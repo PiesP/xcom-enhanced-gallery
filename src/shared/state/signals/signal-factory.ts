@@ -37,7 +37,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
 
   const signalObject = {
     subscribe(callback: (value: T) => void): () => void {
-      return createRoot(dispose => {
+      return createRoot((dispose) => {
         createEffect(() => callback(read()));
         return dispose;
       });
@@ -63,7 +63,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
  * @returns Dispose function
  */
 export function effectSafe(fn: () => void): () => void {
-  return createRoot(dispose => {
+  return createRoot((dispose) => {
     createEffect(() => fn());
     return dispose;
   });

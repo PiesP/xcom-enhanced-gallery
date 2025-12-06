@@ -140,7 +140,7 @@ export async function animateGalleryEnter(
   // Ensure styles are injected on first animation
   injectAnimationStyles();
 
-  return new Promise<void>(resolve => {
+  return new Promise<void>((resolve) => {
     try {
       const handleAnimationEnd = () => {
         element.removeEventListener('animationend', handleAnimationEnd);
@@ -168,7 +168,7 @@ export async function animateGalleryExit(
   // Ensure styles are injected on first animation
   injectAnimationStyles();
 
-  return new Promise<void>(resolve => {
+  return new Promise<void>((resolve) => {
     try {
       const handleAnimationEnd = () => {
         element.removeEventListener('animationend', handleAnimationEnd);
