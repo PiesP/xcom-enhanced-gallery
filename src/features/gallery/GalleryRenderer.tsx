@@ -8,12 +8,8 @@ import { GalleryContainer } from '@shared/components/isolation';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import { getLanguageService, getThemeService } from '@shared/container/service-accessors';
 import { isGMAPIAvailable } from '@shared/external/userscript';
-import {
-  createEffect,
-  createSignal,
-  onCleanup,
-  render,
-} from '@shared/external/vendors/solid-hooks';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
+import { render } from 'solid-js/web';
 import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces';
 import { logger } from '@shared/logging';
 import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';

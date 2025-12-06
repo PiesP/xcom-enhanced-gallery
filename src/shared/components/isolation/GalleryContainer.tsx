@@ -1,5 +1,6 @@
 import { type ComponentChildren, type JSXElement } from '@shared/external/vendors';
-import { createEffect, onCleanup, render } from '@shared/external/vendors/solid-hooks';
+import { createEffect, onCleanup } from 'solid-js';
+import { render } from 'solid-js/web';
 import { EventManager } from '@shared/services/event-manager';
 import { createClassName } from '@shared/utils/text/formatting';
 

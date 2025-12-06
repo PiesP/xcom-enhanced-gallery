@@ -7,7 +7,7 @@
 
 import { ensureGalleryScrollAvailable } from '@shared/dom/utils';
 import { observeViewportCssVars } from '@shared/dom/viewport';
-import { createEffect, on, onCleanup } from '@shared/external/vendors/solid-hooks';
+import { createEffect, on, onCleanup } from 'solid-js';
 import { logger } from '@shared/logging';
 import { animateGalleryEnter, animateGalleryExit } from '@shared/utils/css/css-animations';
 

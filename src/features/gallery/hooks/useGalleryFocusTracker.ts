@@ -12,14 +12,13 @@
  */
 
 import { FocusCoordinator } from '@features/gallery/logic/focus-coordinator';
-import { onCleanup } from '@shared/external/vendors/solid-hooks';
+import { type Accessor, onCleanup } from 'solid-js';
 import {
   gallerySignals,
   galleryState,
   navigateToItem,
 } from '@shared/state/signals/gallery.signals';
 import { toAccessor } from '@shared/utils/solid/solid-helpers';
-import type { Accessor } from 'solid-js';
 
 type MaybeAccessor<T> = T | Accessor<T>;
 

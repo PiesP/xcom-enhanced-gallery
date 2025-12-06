@@ -11,11 +11,7 @@
 
 import { getLanguageService } from '@shared/container/service-accessors';
 import { type ComponentChildren, type JSXElement } from '@shared/external/vendors';
-import {
-  ErrorBoundary as SolidErrorBoundary,
-  Show,
-  createSignal,
-} from '@shared/external/vendors/solid-hooks';
+import { ErrorBoundary as SolidErrorBoundary, Show, createSignal } from 'solid-js';
 import { NotificationService } from '@shared/services/notification-service';
 
 type Props = {

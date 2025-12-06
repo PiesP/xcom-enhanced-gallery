@@ -18,7 +18,7 @@
  * @version 1.1.0 - Path optimization (Phase 354+)
  */
 
-import { createEffect, onCleanup } from '@shared/external/vendors/solid-hooks';
+import { createEffect, onCleanup } from 'solid-js';
 import { EventManager } from '@shared/services/event-manager';
 
 /**

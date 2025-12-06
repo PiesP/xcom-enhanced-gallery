@@ -5,7 +5,7 @@
  * @version 1.0.0
  */
 
-import { createEffect, createSignal, on, onCleanup } from '@shared/external/vendors/solid-hooks';
+import { createEffect, createSignal, on, onCleanup } from 'solid-js';
 import type { NavigationTrigger } from '@shared/state/machines/navigation.machine';
 import {
   galleryIndexEvents,

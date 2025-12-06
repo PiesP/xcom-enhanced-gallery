@@ -1,6 +1,6 @@
 import { getLanguageService } from '@shared/container/service-accessors';
 import { type JSXElement } from '@shared/external/vendors';
-import { createMemo, createSignal, onCleanup, onMount } from '@shared/external/vendors/solid-hooks';
+import { createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 import { createClassName } from '@shared/utils/text/formatting';
 import styles from './SettingsControls.module.css';
 

@@ -6,7 +6,7 @@
  * @description Uses Solid.js reactivity and native scrollIntoView
  */
 
-import { createEffect, untrack } from '@shared/external/vendors/solid-hooks';
+import { createEffect, untrack } from 'solid-js';
 import { toAccessor } from '@shared/utils/solid/solid-helpers';
 
 type Accessor<T> = () => T;

@@ -28,7 +28,7 @@ import {
   getThemeService,
   tryGetSettingsManager,
 } from '@shared/container/service-accessors';
-import { createEffect, createSignal, onCleanup } from '@shared/external/vendors/solid-hooks';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
 import { logger } from '@shared/logging';
 import type { LanguageService } from '@shared/services/language-service';
 import type { ThemeServiceContract } from '@shared/services/theme-service';

@@ -9,7 +9,7 @@
  */
 
 // Break runtime dependency on services: use logging barrel directly
-import { batch as solidBatch } from '@shared/external/vendors/solid-hooks';
+import { batch as solidBatch } from 'solid-js';
 import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
 // Navigation state types
 import {

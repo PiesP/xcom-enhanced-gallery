@@ -12,7 +12,7 @@
  */
 
 import { isGalleryInternalEvent } from '@shared/dom/utils';
-import { createEffect, createSignal, onCleanup } from '@shared/external/vendors/solid-hooks';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
 import { logger } from '@shared/logging';
 import { EventManager } from '@shared/services/event-manager';
 import type { GalleryState } from '@shared/state/signals/gallery.signals';

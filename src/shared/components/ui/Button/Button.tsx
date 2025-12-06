@@ -13,7 +13,7 @@ import {
   mergeProps,
   onCleanup,
   splitProps,
-} from '@shared/external/vendors/solid-hooks';
+} from 'solid-js';
 import { logger } from '@shared/logging';
 import { toAccessor } from '@shared/utils/solid/solid-helpers';
 import { createClassName } from '@shared/utils/text/formatting';

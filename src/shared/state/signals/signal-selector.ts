@@ -5,7 +5,7 @@
  * Prevent unnecessary re-renders to optimize performance.
  */
 
-import { createMemo } from '@shared/external/vendors/solid-hooks';
+import { createMemo } from 'solid-js';
 
 // Type definitions
 type Signal<T> = {

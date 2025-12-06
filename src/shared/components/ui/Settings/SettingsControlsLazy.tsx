@@ -1,6 +1,6 @@
 import type { SettingsControlsProps } from '@shared/components/ui/Settings/SettingsControls';
 import { type JSXElement } from '@shared/external/vendors';
-import { lazy, Suspense } from '@shared/external/vendors/solid-hooks';
+import { lazy, Suspense } from 'solid-js';
 
 const LazySettingsControls = lazy(() =>
   import('@shared/components/ui/Settings/SettingsControls').then((module) => ({

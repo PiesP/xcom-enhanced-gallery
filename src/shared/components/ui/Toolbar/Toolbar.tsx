@@ -7,13 +7,7 @@ import {
 import type { FitMode, ToolbarProps } from '@shared/components/ui/Toolbar/Toolbar.types';
 import { ToolbarView } from '@shared/components/ui/Toolbar/ToolbarView';
 import type { JSXElement } from '@shared/external/vendors';
-import {
-  createEffect,
-  createMemo,
-  createSignal,
-  mergeProps,
-  on,
-} from '@shared/external/vendors/solid-hooks';
+import { createEffect, createMemo, createSignal, mergeProps, on } from 'solid-js';
 import {
   type ToolbarSettingsControllerResult,
   useToolbarSettingsController,

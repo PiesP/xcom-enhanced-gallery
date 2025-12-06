@@ -31,12 +31,6 @@ import { useGalleryScroll } from '@features/gallery/hooks/useGalleryScroll';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getSetting, setSetting } from '@shared/container/settings-access';
-import {
-  createEffect,
-  createMemo,
-  createSignal,
-  For,
-} from '@shared/external/vendors/solid-hooks';
 import { logger } from '@shared/logging';
 import type { DownloadState } from '@shared/state/signals/download.signals';
 import { downloadState } from '@shared/state/signals/download.signals';
@@ -48,7 +42,7 @@ import type { ImageFitMode, MediaInfo } from '@shared/types';
 import { safeEventPrevent } from '@shared/utils/events/utils';
 import { computePreloadIndices } from '@shared/utils/performance';
 import { stringWithDefault } from '@shared/utils/types/safety';
-import type { JSX } from 'solid-js';
+import { type JSX, For, createEffect, createMemo, createSignal } from 'solid-js';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryLifecycle } from './hooks/useGalleryLifecycle';
 import { useGalleryNavigation } from './hooks/useGalleryNavigation';

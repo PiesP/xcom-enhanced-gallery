@@ -23,17 +23,11 @@
 
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getSetting, setSetting } from '@shared/container/settings-access';
-import {
-  createEffect,
-  createMemo,
-  createSignal,
-  onCleanup,
-} from '@shared/external/vendors/solid-hooks';
 import type { ImageFitMode } from '@shared/types';
 import { createIntrinsicSizingStyle, resolveMediaDimensions } from '@shared/media/media-utils';
 import { SharedObserver } from '@shared/utils/performance';
 import { createClassName } from '@shared/utils/text/formatting';
-import type { JSX } from 'solid-js';
+import { type JSX, createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
 import { useVideoVisibility } from './hooks/useVideoVisibility';
 import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
 import styles from './VerticalImageItem.module.css';

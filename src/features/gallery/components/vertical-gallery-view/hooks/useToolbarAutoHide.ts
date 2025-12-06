@@ -6,7 +6,7 @@
  */
 
 import { getSetting } from '@shared/container/settings-access';
-import { createEffect, createSignal, onCleanup } from '@shared/external/vendors/solid-hooks';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 /**

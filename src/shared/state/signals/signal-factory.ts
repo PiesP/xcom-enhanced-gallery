@@ -7,12 +7,7 @@
  * @see https://www.solidjs.com/docs/latest/api#createsignal
  */
 
-import {
-  createEffect,
-  createMemo,
-  createRoot,
-  createSignal,
-} from '@shared/external/vendors/solid-hooks';
+import { createEffect, createMemo, createRoot, createSignal } from 'solid-js';
 
 /**
  * Signal interface providing value access and subscription capability.

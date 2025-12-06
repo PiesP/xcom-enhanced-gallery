@@ -5,7 +5,7 @@
  * @version 1.0.0 - Phase 434
  */
 
-import { createEffect, onCleanup } from '@shared/external/vendors/solid-hooks';
+import { createEffect, onCleanup } from 'solid-js';
 import { logger } from '@shared/logging';
 import { SharedObserver } from '@shared/utils/performance';
 
