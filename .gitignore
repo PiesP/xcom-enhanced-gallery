@@ -105,6 +105,7 @@
 /.vite/
 .tsbuildinfo
 /src/shared/types/generated/design-token-names.ts
+!/postcss.config.js
 
 # Test cache and results
 /coverage/

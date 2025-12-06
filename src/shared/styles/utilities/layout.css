@@ -28,12 +28,98 @@
     justify-content: center;
   }
 
+  /* Flex column layouts */
+  .xeg-flex-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .xeg-flex-col-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
   /* Gap presets */
+  .xeg-gap-xs {
+    gap: var(--xeg-spacing-xs);
+  }
+
   .xeg-gap-sm {
     gap: var(--xeg-spacing-sm);
   }
 
   .xeg-gap-md {
     gap: var(--xeg-spacing-md);
+  }
+
+  .xeg-gap-lg {
+    gap: var(--xeg-spacing-lg);
+  }
+
+  /* Padding presets */
+  .xeg-p-sm {
+    padding: var(--xeg-spacing-sm);
+  }
+
+  .xeg-p-md {
+    padding: var(--xeg-spacing-md);
+  }
+
+  .xeg-px-sm {
+    padding-inline: var(--xeg-spacing-sm);
+  }
+
+  .xeg-px-md {
+    padding-inline: var(--xeg-spacing-md);
+  }
+
+  .xeg-py-sm {
+    padding-block: var(--xeg-spacing-sm);
+  }
+
+  .xeg-py-md {
+    padding-block: var(--xeg-spacing-md);
+  }
+
+  /* Width/Height utilities */
+  .xeg-w-full {
+    width: 100%;
+  }
+
+  .xeg-h-full {
+    height: 100%;
+  }
+
+  /* Position utilities */
+  .xeg-relative {
+    position: relative;
+  }
+
+  .xeg-absolute {
+    position: absolute;
+  }
+
+  .xeg-fixed {
+    position: fixed;
+  }
+
+  /* Overflow utilities */
+  .xeg-overflow-hidden {
+    overflow: hidden;
+  }
+
+  .xeg-overflow-clip {
+    overflow: clip;
+  }
+
+  /* Text utilities */
+  .xeg-text-center {
+    text-align: center;
+  }
+
+  .xeg-select-none {
+    user-select: none;
   }
 }
