@@ -9,20 +9,7 @@
     "npm": ">=10.0.0"
   },
   "npm": {
-    "nodeOptions": "--max-old-space-size=8192",
-    "legacy-peer-deps": true,
-    "strict-peer-dependencies": false,
-    "package-lock": true,
-    "prefer-dedupe": true,
-    "maxsockets": 50,
-    "prefer-offline": true,
-    "progress": false,
-    "audit": false,
-    "loglevel": "error",
-    "fund": false,
-    "update-notifier": false,
-    "optional": true,
-    "fetch-timeout": 60000
+    "nodeOptions": "--max-old-space-size=8192"
   },
   "scripts": {
     "build": "tsx scripts/verify-pipeline.ts",
@@ -30,10 +17,11 @@
     "build:dev": "vite build --mode development",
     "build:prod": "vite build",
     "clean": "rm -rf dist",
-    "check": "run-p deps:check typecheck biome:check styles:guard security:check",
+    "check": "run-p deps:check typecheck lint styles:guard security:check",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src --max-diagnostics=100",
     "lint:fix": "biome check --write src",
+    "lint:ci": "biome ci src",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "test": "npm run test:batched",
@@ -45,20 +33,16 @@
     "test:ct": "playwright test -c playwright-ct.config.ts --grep-invert @visual",
     "test:e2e": "playwright test",
     "test:a11y": "playwright test playwright/accessibility",
-    "test:mutation": "stryker run",
-    "mutation:generate": "tsx scripts/mutation-improvements/generate-tests.ts",
     "test:visual": "playwright test -c playwright-ct.config.ts --grep @visual",
     "test:coverage": "vitest run --coverage",
+    "test:mutation": "stryker run",
+    "test:mutation:generate": "tsx scripts/mutation-improvements/generate-tests.ts",
     "test:all": "run-s test:batched test:ct test:visual test:a11y test:e2e",
-    "deps:check": "npx --yes dependency-cruiser src --validate --config .dependency-cruiser.cjs",
+    "deps:check": "dependency-cruiser src --validate --config .dependency-cruiser.cjs",
     "deps:unused": "depcheck",
     "security:check": "tsx scripts/security-surface-check.ts",
     "styles:guard": "tsx scripts/validate-style-imports.ts",
-    "bundle:check": "tsx scripts/check-bundle-size.ts",
-    "size": "size-limit",
-    "biome:check": "biome check src",
-    "biome:fix": "biome check --write src",
-    "biome:ci": "biome ci src"
+    "bundle:check": "tsx scripts/check-bundle-size.ts"
   },
   "dependencies": {
     "solid-js": "1.9.10"
@@ -103,7 +87,6 @@
     "vite": "8.0.0-beta.0",
     "vite-plugin-monkey": "^7.1.5",
     "vite-plugin-solid": "^2.11.10",
-    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.15"
   },
   "lint-staged": {
