@@ -19,15 +19,12 @@
  * - Follows PC-only event policy (click, keydown/keyup, wheel, mouse*)
  * - Uses design tokens for all colors and sizes (no hardcoding)
  * - Vendor APIs accessed via getSolid() getter pattern
- * - Logic extracted to custom hooks for better maintainability
+ * - Logic extracted to useVerticalGallery composed hook
  *
  * @module features/gallery/components/vertical-gallery-view
- * @version 7.0 - Refactored with extracted hooks for reduced complexity
+ * @version 8.0 - Refactored with useVerticalGallery composed hook
  */
 
-import { useGalleryFocusTracker } from '@features/gallery/hooks/useGalleryFocusTracker';
-import { useGalleryItemScroll } from '@features/gallery/hooks/useGalleryItemScroll';
-import { useGalleryScroll } from '@features/gallery/hooks/useGalleryScroll';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
@@ -40,10 +37,7 @@ import { safeEventPrevent } from '@shared/utils/events/utils';
 import { computePreloadIndices } from '@shared/utils/performance';
 import { cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, For, type JSX } from 'solid-js';
-import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
-import { useGalleryLifecycle } from './hooks/useGalleryLifecycle';
-import { useGalleryNavigation } from './hooks/useGalleryNavigation';
-import { useToolbarAutoHide } from './hooks/useToolbarAutoHide';
+import { useVerticalGallery } from './hooks/useVerticalGallery';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 
@@ -96,81 +90,20 @@ function VerticalGalleryViewCore({
     return computePreloadIndices(currentIndex(), mediaItems().length, count);
   });
 
-  // Toolbar auto-hide
-  const { isInitialToolbarVisible, setIsInitialToolbarVisible } = useToolbarAutoHide({
+  // Composed hook - consolidates all gallery behavior hooks
+  const { scroll, navigation, focus, toolbar } = useVerticalGallery({
     isVisible,
-    hasItems: () => mediaItems().length > 0,
-  });
-
-  // Forward declaration for focus sync (to break circular dependency)
-  const [focusSyncCallback, setFocusSyncCallback] = createSignal<(() => void) | null>(null);
-
-  // Scroll tracking
-  const { isScrolling } = useGalleryScroll({
-    container: () => containerEl(),
-    scrollTarget: () => itemsContainerEl(),
-    enabled: isVisible,
-    programmaticScrollTimestamp: () => navigationState.programmaticScrollTimestamp(),
-    onScrollEnd: () => focusSyncCallback()?.(),
-  });
-
-  // Item scroll handling - defined before navigation hook
-  const { scrollToItem, scrollToCurrentItem } = useGalleryItemScroll(
-    () => containerEl(),
     currentIndex,
-    () => mediaItems().length,
-    {
-      enabled: () => !isScrolling() && navigationState.lastNavigationTrigger() !== 'scroll',
-      block: 'start',
-      isScrolling,
-      onScrollStart: () => navigationState.setProgrammaticScrollTimestamp(Date.now()),
-    },
-  );
-
-  // Navigation handling - uses scrollToItem
-  const navigationState = useGalleryNavigation({
-    isVisible,
-    scrollToItem,
-  });
-
-  // Focus tracking
-  const {
-    focusedIndex,
-    registerItem: registerFocusItem,
-    handleItemFocus,
-    forceSync: focusTrackerForceSync,
-  } = useGalleryFocusTracker({
-    container: () => containerEl(),
-    isEnabled: isVisible,
-    isScrolling,
-    lastNavigationTrigger: navigationState.lastNavigationTrigger,
-  });
-
-  // Register focus sync callback
-  createEffect(() => setFocusSyncCallback(() => focusTrackerForceSync));
-
-  // Gallery lifecycle (animations, video cleanup, viewport CSS vars)
-  useGalleryLifecycle({
-    containerEl: () => containerEl(),
-    toolbarWrapperEl: () => toolbarWrapperEl(),
-    isVisible,
-  });
-
-  // Hide toolbar when user scrolls
-  createEffect(() => {
-    if (isScrolling()) {
-      setIsInitialToolbarVisible(false);
-    }
-  });
-
-  // Keyboard handling
-  useGalleryKeyboard({
-    onClose: onClose || (() => {}),
+    mediaItemsCount: () => mediaItems().length,
+    containerEl,
+    toolbarWrapperEl,
+    itemsContainerEl,
+    onClose,
   });
 
   // Ensure initial focus is applied before any navigation events fire
   createEffect(() => {
-    if (!isVisible() || navigationState.lastNavigationTrigger()) {
+    if (!isVisible() || navigation.lastNavigationTrigger()) {
       return;
     }
 
@@ -194,7 +127,7 @@ function VerticalGalleryViewCore({
     safeEventPrevent(event);
     setImageFitMode(mode);
     void persistFitMode(mode);
-    scrollToCurrentItem();
+    scroll.scrollToCurrentItem();
     navigateToItem(currentIndex(), 'click');
   };
 
@@ -300,8 +233,8 @@ function VerticalGalleryViewCore({
       ref={(el) => setContainerEl(el ?? null)}
       class={cx(
         styles.container,
-        isInitialToolbarVisible() && styles.initialToolbarVisible,
-        isScrolling() && styles.isScrolling,
+        toolbar.isInitialToolbarVisible() && styles.initialToolbarVisible,
+        scroll.isScrolling() && styles.isScrolling,
         className,
       )}
       onClick={handleBackgroundClick}
@@ -318,7 +251,7 @@ function VerticalGalleryViewCore({
       >
         <Toolbar
           currentIndex={currentIndex}
-          focusedIndex={focusedIndex}
+          focusedIndex={focus.focusedIndex}
           totalCount={() => mediaItems().length}
           isDownloading={isDownloading}
           currentFitMode={imageFitMode()}
@@ -364,7 +297,7 @@ function VerticalGalleryViewCore({
                 media={item}
                 index={actualIndex}
                 isActive={actualIndex === currentIndex()}
-                isFocused={actualIndex === focusedIndex()}
+                isFocused={actualIndex === focus.focusedIndex()}
                 forceVisible={forcePreload}
                 fitMode={imageFitMode}
                 onClick={() => handleMediaItemClick(actualIndex)}
@@ -375,10 +308,10 @@ function VerticalGalleryViewCore({
                 data-index={actualIndex}
                 data-xeg-role="gallery-item"
                 registerContainer={(element: HTMLElement | null) =>
-                  registerFocusItem(actualIndex, element)
+                  focus.registerItem(actualIndex, element)
                 }
                 {...(onDownloadCurrent ? { onDownload: handleDownloadCurrent } : {})}
-                onFocus={() => handleItemFocus(actualIndex)}
+                onFocus={() => focus.handleItemFocus(actualIndex)}
               />
             );
           }}
