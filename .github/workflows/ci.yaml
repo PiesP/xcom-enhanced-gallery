@@ -45,16 +45,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Run lint and typecheck in parallel for faster feedback
   lint:
     name: 🧹 Lint
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       security-events: write
       actions: read
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            src
+            package.json
+            package-lock.json
+            tsconfig.json
+            eslint.config.ts
+            .github/actions
+          sparse-checkout-cone-mode: false
 
       - name: 🔧 Setup environment
         uses: ./.github/actions/setup-node
@@ -65,24 +76,35 @@ jobs:
         env:
           SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
         run: |
-          npx --yes eslint src \
+          npx eslint src \
             --report-unused-disable-directives \
             --format @microsoft/eslint-formatter-sarif \
-            --output-file eslint-results.sarif
+            --output-file eslint-results.sarif \
+            --cache \
+            --cache-location .eslintcache
         continue-on-error: true
 
       - name: 📊 Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: eslint-results.sarif
           wait-for-processing: true
 
   typecheck:
     name: 📐 Type Check
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            src
+            package.json
+            package-lock.json
+            tsconfig.json
+            .github/actions
+          sparse-checkout-cone-mode: false
 
       - name: 🔧 Setup environment
         uses: ./.github/actions/setup-node
@@ -90,32 +112,50 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: 📐 Run TypeScript check
-        run: npx --yes tsc --noEmit
+        run: tsc --noEmit --incremental --tsBuildInfoFile .tsbuildinfo
 
   build:
     name: 🚀 Build
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     needs: [lint, typecheck]
     timeout-minutes: 15
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: 🔧 Setup environment
         uses: ./.github/actions/setup-node
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: 🧹 Clean workspace
-        run: rm -rf dist
+      - name: 📦 Cache Vite build
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules/.vite
+            .vite
+          key: vite-${{ runner.os }}-${{ hashFiles('package-lock.json', 'vite.config.ts') }}
+          restore-keys: |
+            vite-${{ runner.os }}-
 
       - name: 🚀 Build production
-        run: npx --yes vite build --mode production
+        run: vite build --mode production
+
+      - name: 📊 Check bundle size
+        run: |
+          SIZE=$(stat -f%z dist/xcom-enhanced-gallery.user.js 2>/dev/null || stat -c%s dist/xcom-enhanced-gallery.user.js)
+          echo "📦 Bundle size: $(numfmt --to=iec-i --suffix=B $SIZE)"
+          # Fail if bundle exceeds 350KB
+          if [ $SIZE -gt 358400 ]; then
+            echo "❌ Bundle size exceeds 350KB limit!"
+            exit 1
+          fi
 
       - name: 📊 Upload build artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         if: success()
         with:
           name: build-${{ github.sha }}
           path: dist/
           retention-days: 7
+          compression-level: 9

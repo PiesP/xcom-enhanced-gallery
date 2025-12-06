@@ -3,11 +3,13 @@ name: 🤖 Dependabot Auto-Merge
 # Responsibility: Automatic merge for safe Dependabot PRs
 # - Minor/patch updates: auto-merge enabled
 # - Major updates: manual review required
+# - Production dependencies: require review
 #
 # Triggered on: Dependabot pull requests only
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
@@ -16,7 +18,8 @@ permissions:
 jobs:
   auto-merge:
     name: 🤖 Auto-Merge
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: github.actor == 'dependabot[bot]'
     steps:
       - name: 📋 Fetch Dependabot metadata
@@ -25,11 +28,55 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: ✅ Enable auto-merge (minor/patch only)
-        if: >
-          steps.metadata.outputs.update-type == 'version-update:semver-minor' ||
-          steps.metadata.outputs.update-type == 'version-update:semver-patch'
-        run: gh pr merge --auto --merge "$PR_URL"
+      - name: 🔍 Check if safe to auto-merge
+        id: check
+        run: |
+          UPDATE_TYPE="${{ steps.metadata.outputs.update-type }}"
+          DEP_TYPE="${{ steps.metadata.outputs.dependency-type }}"
+          DEP_NAME="${{ steps.metadata.outputs.dependency-names }}"
+
+          echo "📦 Dependency: $DEP_NAME"
+          echo "📊 Update type: $UPDATE_TYPE"
+          echo "📁 Dependency type: $DEP_TYPE"
+
+          # Safe to auto-merge conditions:
+          # 1. Minor or patch update
+          # 2. Development dependency OR GitHub Actions
+          # 3. Not a critical package (solid-js)
+
+          SAFE_UPDATE=false
+          if [[ "$UPDATE_TYPE" == "version-update:semver-minor" ]] || [[ "$UPDATE_TYPE" == "version-update:semver-patch" ]]; then
+            if [[ "$DEP_TYPE" == "direct:development" ]] || [[ "$DEP_TYPE" == "indirect" ]]; then
+              SAFE_UPDATE=true
+            fi
+            # GitHub Actions are always safe for minor/patch
+            if [[ "${{ steps.metadata.outputs.package-ecosystem }}" == "github-actions" ]]; then
+              SAFE_UPDATE=true
+            fi
+          fi
+
+          # Block critical packages from auto-merge
+          if [[ "$DEP_NAME" == *"solid-js"* ]]; then
+            echo "⚠️ Critical dependency - requires manual review"
+            SAFE_UPDATE=false
+          fi
+
+          echo "safe=$SAFE_UPDATE" >> "$GITHUB_OUTPUT"
+
+      - name: ✅ Enable auto-merge
+        if: steps.check.outputs.safe == 'true'
+        run: |
+          echo "🤖 Enabling auto-merge for safe dependency update"
+          gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📝 Add review label for production deps
+        if: steps.check.outputs.safe != 'true'
+        run: |
+          echo "⚠️ This dependency update requires manual review"
+          gh pr edit "$PR_URL" --add-label "needs-review"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

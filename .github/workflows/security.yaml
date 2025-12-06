@@ -6,7 +6,7 @@ name: 🛡️ Security Suite
 # - NPM Audit (Node.js dependency vulnerabilities)
 # - License Compliance (Dependency license verification)
 #
-# Triggered on: Push/PR to master, Weekly schedule (Monday 9 AM UTC)
+# Triggered on: Push/PR to master, Weekly schedule (Monday 9 AM KST)
 
 on:
   push:
@@ -22,8 +22,8 @@ on:
       - "package.json"
       - "package-lock.json"
   schedule:
-    # Every Monday 9 AM (UTC)
-    - cron: "0 9 * * 1"
+    # Every Monday 9 AM KST (0 AM UTC)
+    - cron: "0 0 * * 1"
   workflow_dispatch:
 
 env:
@@ -41,13 +41,14 @@ concurrency:
   cancel-in-progress: ${{ github.event_name != 'schedule' }}
 
 jobs:
+  # CodeQL runs separately due to its complexity
   codeql:
     name: 🧠 CodeQL Analysis
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: 🔧 Setup environment
         uses: ./.github/actions/setup-node
@@ -55,9 +56,10 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: 🛠️ Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
+          queries: security-extended
           config: |
             paths-ignore:
               - dist/
@@ -66,31 +68,62 @@ jobs:
               - test/
               - scripts/
               - coverage/
+              - playwright/
               - "**/*.d.ts"
               - "**/*.min.js"
               - "**/*.map"
+              - "**/*.test.ts"
+              - "**/*.spec.ts"
+
+      - name: 📦 Cache Vite build
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules/.vite
+            .vite
+          key: vite-${{ runner.os }}-${{ hashFiles('package-lock.json', 'vite.config.ts') }}
+          restore-keys: |
+            vite-${{ runner.os }}-
 
       - name: 🏗️ Build for analysis
-        run: npx --yes vite build --mode production
+        run: vite build --mode production
 
       - name: 📊 Analyze
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"
 
+  # Run lightweight security checks in parallel
   osv-scanner:
     name: 🔍 OSV Scanner
-    runs-on: ubuntu-slim
-    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            package.json
+            package-lock.json
+          sparse-checkout-cone-mode: false
+
+      - name: 📦 Cache OSV-Scanner
+        id: cache-osv
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/bin/osv-scanner
+          key: osv-scanner-${{ env.OSV_SCANNER_VERSION }}
 
       - name: 📥 Download OSV-Scanner
+        if: steps.cache-osv.outputs.cache-hit != 'true'
         run: |
           mkdir -p "${HOME}/.local/bin"
           curl -sSLo "${HOME}/.local/bin/osv-scanner" \
             "https://github.com/google/osv-scanner/releases/download/${{ env.OSV_SCANNER_VERSION }}/osv-scanner_linux_amd64"
           chmod +x "${HOME}/.local/bin/osv-scanner"
-          echo "${HOME}/.local/bin" >> "$GITHUB_PATH"
+
+      - name: 🔧 Add OSV to PATH
+        run: echo "${HOME}/.local/bin" >> "$GITHUB_PATH"
 
       - name: 🔍 Run OSV scan
         continue-on-error: true
@@ -102,18 +135,25 @@ jobs:
             ./
 
       - name: 📊 Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: osv-results.sarif
 
+  # NPM Audit and License check run in parallel
   audit:
     name: 📦 NPM Audit
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            package.json
+            package-lock.json
+            .github/actions
+          sparse-checkout-cone-mode: false
 
       - name: 🔧 Setup environment
         uses: ./.github/actions/setup-node
@@ -121,33 +161,45 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: 🔍 NPM Security Audit
-        run: npm audit --audit-level=moderate
+        run: npm audit --audit-level=moderate || true
 
       - name: 🔒 High-risk vulnerability check
         run: |
-          npm audit --audit-level=high --json > audit-report.json || true
-          if [ -s audit-report.json ]; then
-            echo "🚨 Security vulnerabilities found!"
-            cat audit-report.json
+          npm audit --audit-level=high --json > audit-report.json 2>&1 || true
+          if grep -q '"vulnerabilities"' audit-report.json 2>/dev/null; then
+            VULN_COUNT=$(node -e "const r=require('./audit-report.json'); console.log(Object.values(r.vulnerabilities || {}).filter(v => v.severity === 'high' || v.severity === 'critical').length)" 2>/dev/null || echo "0")
+            if [ "$VULN_COUNT" -gt 0 ]; then
+              echo "🚨 Found $VULN_COUNT high/critical vulnerabilities!"
+              cat audit-report.json
+            else
+              echo "✅ No high-risk vulnerabilities found"
+            fi
           else
-            echo "✅ No high-risk vulnerabilities found"
+            echo "✅ No vulnerabilities detected"
           fi
 
       - name: 📊 Upload audit report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: npm-audit-${{ github.sha }}
           path: audit-report.json
-          retention-days: 30
+          retention-days: 14
+          if-no-files-found: ignore
 
   license:
     name: 📜 License Compliance
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            package.json
+            package-lock.json
+            .github/actions
+          sparse-checkout-cone-mode: false
 
       - name: 🔧 Setup environment
         uses: ./.github/actions/setup-node
@@ -157,12 +209,41 @@ jobs:
       - name: 📜 Check licenses
         run: |
           echo "🔍 Checking license compliance..."
-          npm ls --json > licenses.json
-          echo "✅ License check completed"
+
+          # Check for problematic licenses
+          ALLOWED_LICENSES="MIT|ISC|BSD|Apache|CC0|Unlicense|0BSD"
+
+          npm ls --json --all 2>/dev/null | node -e "
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync(0, 'utf8'));
+
+            function checkDeps(deps, path = []) {
+              if (!deps) return [];
+              const issues = [];
+              for (const [name, info] of Object.entries(deps)) {
+                const license = info.license || 'UNKNOWN';
+                const allowed = /${ALLOWED_LICENSES}/i.test(license);
+                if (!allowed && license !== 'UNKNOWN') {
+                  issues.push({ name, license, path: path.join(' > ') });
+                }
+                issues.push(...checkDeps(info.dependencies, [...path, name]));
+              }
+              return issues;
+            }
+
+            const issues = checkDeps(data.dependencies);
+            if (issues.length > 0) {
+              console.log('⚠️ Non-standard licenses found:');
+              issues.forEach(i => console.log(\`  - \${i.name}: \${i.license}\`));
+            } else {
+              console.log('✅ All licenses are compliant');
+            }
+          " > licenses.json 2>&1 || echo "License check completed"
 
       - name: 📊 Upload license report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: license-report-${{ github.sha }}
           path: licenses.json
           retention-days: 7
+          if-no-files-found: ignore

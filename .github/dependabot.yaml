@@ -1,29 +1,141 @@
-# Basic `dependabot.yml` file with
-# minimum configuration for three package managers
+# Dependabot configuration for xcom-enhanced-gallery
+# Optimized for Solid.js userscript project with comprehensive testing stack
 
 version: 2
 updates:
-  # Enable version updates for npm
+  # npm package updates
   - package-ecosystem: "npm"
-    # Look for `package.json` and `lock` files in the `root` directory
-    directory: "/"
-    # Check the npm registry for updates every day (weekdays)
-    schedule:
-      interval: "daily"
-    # Group updates to reduce noise
-    groups:
-      dependencies:
-        patterns:
-          - "*"
-    open-pull-requests-limit: 10
-
-  # Enable version updates for GitHub Actions
-  - package-ecosystem: "github-actions"
-    # Workflow files stored in the default location of `.github/workflows`
-    # You don't need to specify `/.github/workflows` for `directory`. You can use `directory: "/"`.
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Seoul"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    labels:
+      - "dependencies"
+      - "automated"
+    reviewers:
+      - "PiesP"
+
+    # Group updates by category to reduce PR noise
+    groups:
+      # Production dependency (only solid-js)
+      solid:
+        patterns:
+          - "solid-js"
+          - "babel-preset-solid"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # Testing framework updates
+      testing:
+        patterns:
+          - "@playwright/*"
+          - "@vitest/*"
+          - "@testing-library/*"
+          - "@solidjs/testing-library"
+          - "@stryker-mutator/*"
+          - "@axe-core/*"
+          - "axe-playwright"
+          - "vitest"
+          - "playwright"
+          - "msw"
+          - "jsdom"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # Build tooling
+      build:
+        patterns:
+          - "vite"
+          - "vite-*"
+          - "terser"
+          - "postcss"
+          - "postcss-*"
+          - "@csstools/*"
+          - "autoprefixer"
+          - "cssnano"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # TypeScript ecosystem
+      typescript:
+        patterns:
+          - "typescript"
+          - "typescript-eslint"
+          - "@types/*"
+          - "tsx"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # Linting and formatting
+      linting:
+        patterns:
+          - "eslint"
+          - "eslint-*"
+          - "@eslint/*"
+          - "@biomejs/*"
+          - "prettier"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # Babel tooling
+      babel:
+        patterns:
+          - "@babel/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # Utility packages
+      utilities:
+        patterns:
+          - "fast-glob"
+          - "jiti"
+          - "npm-run-all"
+          - "lint-staged"
+          - "depcheck"
+          - "knip"
+          - "size-limit"
+          - "@size-limit/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+    # Ignore packages that require manual review for major updates
+    ignore:
+      # Vite 8 is beta - stay on current version
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      # Solid.js major updates need careful review
+      - dependency-name: "solid-js"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Seoul"
+    commit-message:
+      prefix: "ci(deps)"
+    labels:
+      - "ci"
+      - "dependencies"
+      - "automated"
+    reviewers:
+      - "PiesP"
     groups:
       actions:
         patterns:
