@@ -8,7 +8,9 @@
  * - AbortController-based subscription management
  * - Context-based batch operations
  *
- * @example
+ * **Usage Patterns**:
+ *
+ * 1. **Unified EventBus (backward compatibility)**:
  * ```typescript
  * import { getEventBus, type AppEventMap } from '@shared/events';
  *
@@ -31,8 +33,25 @@
  * // Cleanup
  * controller.abort();
  * ```
+ *
+ * 2. **Direct module imports (recommended for new code)**:
+ * ```typescript
+ * import { DOMEventManager, type DOMListenerOptions } from '@shared/events/dom-events';
+ * import { AppEventManager, type AppEventMap } from '@shared/events/app-events';
+ * import { SubscriptionManager } from '@shared/events/event-context';
+ *
+ * const subscriptions = new SubscriptionManager();
+ * const domEvents = new DOMEventManager(subscriptions);
+ * const appEvents = new AppEventManager(subscriptions);
+ *
+ * // Better tree-shaking and explicit dependencies
+ * ```
  */
 
+// Specialized modules for direct imports (new code)
+export { AppEventManager } from './app-events';
+export { DOMEventManager } from './dom-events';
+// Main EventBus facade (backward compatibility)
 export {
   type AppEventMap,
   type AppEventOptions,
@@ -41,3 +60,4 @@ export {
   EventBus,
   getEventBus,
 } from './event-bus';
+export { type Subscription, SubscriptionManager, type SubscriptionStats } from './event-context';
