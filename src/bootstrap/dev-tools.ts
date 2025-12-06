@@ -5,15 +5,13 @@
  * Phase 343: Standardized error handling
  */
 
-import { logger } from '@shared/logging';
 import { reportBootstrapError } from '@bootstrap/types';
+import { logger } from '@shared/logging';
 
 let devToolsRegistered = false;
 
 const isTestMode = import.meta.env.MODE === 'test';
-const isVitestRuntime = Boolean(
-  typeof process !== 'undefined' && process?.env?.VITEST
-);
+const isVitestRuntime = Boolean(typeof process !== 'undefined' && process?.env?.VITEST);
 const allowDevToolsInTests = isTestMode && isVitestRuntime;
 
 const shouldInitializeDevTools = import.meta.env.DEV && (allowDevToolsInTests || !isTestMode);

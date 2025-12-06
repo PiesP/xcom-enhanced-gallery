@@ -59,11 +59,7 @@ export const FALLBACK_SELECTORS = {
     'div[aria-label] img[src*="pbs.twimg.com"]',
   ],
   /** Tweet text fallbacks */
-  TWEET_TEXT: [
-    '[lang][dir="auto"]',
-    'div[data-testid="tweetText"]',
-    'article [lang]',
-  ],
+  TWEET_TEXT: ['[lang][dir="auto"]', 'div[data-testid="tweetText"]', 'article [lang]'],
   /** Video player fallbacks */
   VIDEO_PLAYER: [
     '[aria-label*="Video"]',
@@ -72,11 +68,7 @@ export const FALLBACK_SELECTORS = {
     'video[src*="video.twimg.com"]',
   ],
   /** Modal/overlay fallbacks */
-  MODAL: [
-    '[aria-modal="true"]',
-    '[role="dialog"]',
-    '[aria-label*="Close"]',
-  ],
+  MODAL: ['[aria-modal="true"]', '[role="dialog"]', '[aria-label*="Close"]'],
   /** Media viewer fallbacks */
   MEDIA_VIEWER: [
     '[aria-roledescription="carousel"]',

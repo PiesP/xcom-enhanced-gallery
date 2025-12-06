@@ -18,8 +18,8 @@
  * @version 1.1.0 - Path optimization (Phase 354+)
  */
 
-import { createEffect, onCleanup } from 'solid-js';
 import { EventManager } from '@shared/services/event-manager';
+import { createEffect, onCleanup } from 'solid-js';
 
 /**
  * Gallery keyboard event options

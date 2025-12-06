@@ -10,11 +10,11 @@
 import type { MediaInfo } from '@shared/types/media.types';
 
 import {
+  type FilenameOptions,
   generateMediaFilename,
   generateZipFilename,
   isValidMediaFilename,
   isValidZipFilename,
-  type FilenameOptions,
   type ZipFilenameOptions,
 } from './filename-utils';
 

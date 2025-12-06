@@ -16,10 +16,10 @@ import type {
 } from '@shared/components/ui/Toolbar/Toolbar.types';
 import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
-import { createEffect, createMemo, createSignal, lazy, Show, Suspense } from 'solid-js';
 import type { ToolbarSettingsControllerResult, ToolbarState } from '@shared/hooks';
 import { safeEventPreventAll } from '@shared/utils/events/utils';
 import { createClassName } from '@shared/utils/text/formatting';
+import { createEffect, createMemo, createSignal, lazy, Show, Suspense } from 'solid-js';
 import styles from './Toolbar.module.css';
 
 const TweetTextPanelLazy = lazy(() => import('./TweetTextPanel'));

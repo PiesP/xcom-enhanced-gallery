@@ -24,7 +24,7 @@ export interface HostMatchOptions {
  */
 export function tryParseUrl(
   value: string | URL | null | undefined,
-  base: string = FALLBACK_BASE_URL
+  base: string = FALLBACK_BASE_URL,
 ): URL | null {
   if (value instanceof URL) {
     return value;
@@ -64,7 +64,7 @@ export function getHostname(value: string | URL | null | undefined): string | nu
 export function isHostMatching(
   value: string | URL | null | undefined,
   allowedHosts: readonly string[],
-  options: HostMatchOptions = {}
+  options: HostMatchOptions = {},
 ): boolean {
   if (!Array.isArray(allowedHosts)) {
     return false;
@@ -78,7 +78,7 @@ export function isHostMatching(
   const hostname = parsed.hostname.toLowerCase();
   const allowSubdomains = options.allowSubdomains === true;
 
-  return allowedHosts.some(host => {
+  return allowedHosts.some((host) => {
     const normalized = host.toLowerCase();
     if (hostname === normalized) {
       return true;
@@ -131,7 +131,7 @@ export interface ExtractUsernameOptions {
  */
 export function extractUsernameFromUrl(
   url: string | null | undefined,
-  options: ExtractUsernameOptions = {}
+  options: ExtractUsernameOptions = {},
 ): string | null {
   if (!url || typeof url !== 'string') {
     return null;

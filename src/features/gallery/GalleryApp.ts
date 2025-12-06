@@ -15,8 +15,8 @@ import { NotificationService } from '@shared/services/notification-service';
 import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import {
-  pauseAmbientVideosForGallery,
   type AmbientVideoPauseRequest,
+  pauseAmbientVideosForGallery,
 } from '@shared/utils/media/ambient-video-coordinator';
 import { withAmbientVideoGuard } from '@shared/utils/media/ambient-video-guard';
 import { clampIndex } from '@shared/utils/types/safety';
@@ -74,7 +74,7 @@ export class GalleryApp {
         {
           onMediaClick: (element, event) => this.handleMediaClick(element, event),
           onGalleryClose: () => this.closeGallery(),
-          onKeyboardEvent: event => {
+          onKeyboardEvent: (event) => {
             if (event.key === 'Escape' && gallerySignals.isOpen.value) {
               this.closeGallery();
             }
@@ -86,7 +86,7 @@ export class GalleryApp {
           debugMode: false,
           preventBubbling: true,
           context: 'gallery',
-        }
+        },
       );
 
       logger.info('[GalleryApp] ✅ Event handlers setup complete');
@@ -123,7 +123,7 @@ export class GalleryApp {
       });
       this.notificationService.error(
         'Error occurred',
-        error instanceof Error ? error.message : 'Unknown error'
+        error instanceof Error ? error.message : 'Unknown error',
       );
     }
   }
@@ -131,13 +131,13 @@ export class GalleryApp {
   public async openGallery(
     mediaItems: MediaInfo[],
     startIndex: number = 0,
-    options: GalleryOpenOptions = {}
+    options: GalleryOpenOptions = {},
   ): Promise<void> {
     if (!this.isInitialized) {
       logger.warn('[GalleryApp] Gallery not initialized.');
       this.notificationService.error(
         'Gallery unavailable',
-        'Tampermonkey or similar userscript manager is required.'
+        'Tampermonkey or similar userscript manager is required.',
       );
       return;
     }
@@ -168,7 +168,7 @@ export class GalleryApp {
       });
       this.notificationService.error(
         'Failed to load gallery',
-        error instanceof Error ? error.message : 'Unknown error'
+        error instanceof Error ? error.message : 'Unknown error',
       );
       throw error;
     }

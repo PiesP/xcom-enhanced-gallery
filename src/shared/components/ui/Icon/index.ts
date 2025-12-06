@@ -28,7 +28,7 @@ export {
 } from './hero/hero-icons';
 
 // Icon path data exports for advanced use cases
-export { ICON_PATHS, MULTI_PATH_ICONS, type AllIconNames, type IconName } from './hero/icon-paths';
+export { type AllIconNames, ICON_PATHS, type IconName, MULTI_PATH_ICONS } from './hero/icon-paths';
 
 export type { IconProps } from './Icon';
 export { Icon } from './Icon';

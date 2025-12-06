@@ -4,6 +4,7 @@
  * @version 3.0.0 - Refactored for modularity
  */
 
+import { TWITTER_API_CONFIG } from '@constants';
 import { logger } from '@shared/logging';
 import { sortMediaByVisualOrder } from '@shared/media/media-utils';
 import { HttpRequestService } from '@shared/services/http-request-service';
@@ -14,7 +15,6 @@ import {
   normalizeLegacyUser,
 } from '@shared/services/media/twitter-parser';
 import type { TweetMediaEntry, TwitterAPIResponse } from '@shared/services/media/types';
-import { TWITTER_API_CONFIG } from '@constants';
 
 /**
  * TwitterAPI - Facade for Twitter Media Extraction
@@ -68,7 +68,7 @@ export class TwitterAPI {
 
         const sortedQuotedMedia = sortMediaByVisualOrder(quotedMedia);
 
-        const adjustedResult = result.map(media => ({
+        const adjustedResult = result.map((media) => ({
           ...media,
           index: media.index + sortedQuotedMedia.length,
         }));
@@ -115,7 +115,7 @@ export class TwitterAPI {
       if (!response.ok) {
         logger.warn(
           `Twitter API request failed: ${response.status} ${response.statusText}`,
-          response.data
+          response.data,
         );
         throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
       }

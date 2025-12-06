@@ -139,7 +139,7 @@ export function inferAmbientVideoTrigger(element?: HTMLElement | null): AmbientV
 }
 
 export function pauseAmbientVideosForGallery(
-  request: AmbientVideoPauseRequest = {}
+  request: AmbientVideoPauseRequest = {},
 ): AmbientVideoPauseResponse {
   const trigger = request.trigger ?? inferAmbientVideoTrigger(request.sourceElement);
   const force = request.force ?? true;

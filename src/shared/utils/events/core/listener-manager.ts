@@ -103,14 +103,14 @@ export function addListener(
   type: string,
   listener: EventListener,
   options?: AddEventListenerOptions,
-  context?: string
+  context?: string,
 ): string {
   const id = generateListenerId(context);
   // Visible across the entire function to allow cleanup in the outer catch
   // when the DOM addEventListener might throw after we attached an abort
   // handler to the passed AbortSignal.
-  let signal: AbortSignal | undefined = undefined;
-  let onAbort: EventListener | undefined = undefined;
+  let signal: AbortSignal | undefined;
+  let onAbort: EventListener | undefined;
   let abortAttached = false;
 
   try {
@@ -167,7 +167,7 @@ export function addListener(
         signal.addEventListener(
           'abort',
           onAbort as EventListener,
-          { once: true } as AddEventListenerOptions
+          { once: true } as AddEventListenerOptions,
         );
         abortAttached = true;
       } catch {
@@ -242,7 +242,7 @@ export function removeEventListenerManaged(id: string): boolean {
     eventContext.element.removeEventListener(
       eventContext.type,
       eventContext.listener,
-      eventContext.options
+      eventContext.options,
     );
     registryUnregister(id);
 
@@ -285,7 +285,7 @@ export function removeEventListenersByContext(context: string): number {
 
   if (removedCount > 0) {
     logger.debug(
-      `[removeEventListenersByContext] Removed ${removedCount} listeners for context: ${context}`
+      `[removeEventListenersByContext] Removed ${removedCount} listeners for context: ${context}`,
     );
   }
 
@@ -324,7 +324,7 @@ export function getEventListenerStatus() {
   const contextGroups = new Map<string, number>();
   const typeGroups = new Map<string, number>();
 
-  registryForEach(eventContext => {
+  registryForEach((eventContext) => {
     const ctx = eventContext.context || 'default';
     contextGroups.set(ctx, (contextGroups.get(ctx) || 0) + 1);
     typeGroups.set(eventContext.type, (typeGroups.get(eventContext.type) || 0) + 1);

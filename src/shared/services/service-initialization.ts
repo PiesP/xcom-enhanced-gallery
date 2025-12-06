@@ -1,10 +1,10 @@
+import { SERVICE_KEYS } from '@constants';
 import { CoreService } from '@shared/services/service-manager';
 import {
   getLanguageServiceInstance,
   getMediaServiceInstance,
   getThemeServiceInstance,
 } from '@shared/services/singletons';
-import { SERVICE_KEYS } from '@constants';
 
 /**
  * Register core services to the CoreService container.

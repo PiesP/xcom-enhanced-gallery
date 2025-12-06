@@ -55,14 +55,14 @@ export class FocusCoordinator {
     const trackedItem: TrackedItem = { element, isVisible: false };
     trackedItem.unsubscribe = SharedObserver.observe(
       element,
-      entry => {
+      (entry) => {
         const item = this.items.get(index);
         if (item) {
           item.entry = entry;
           item.isVisible = entry.isIntersecting;
         }
       },
-      this.observerOptions
+      this.observerOptions,
     );
 
     this.items.set(index, trackedItem);

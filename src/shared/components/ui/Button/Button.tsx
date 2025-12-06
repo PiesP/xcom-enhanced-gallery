@@ -6,6 +6,9 @@
  */
 
 import type { JSXElement } from '@shared/external/vendors';
+import { logger } from '@shared/logging';
+import { toAccessor } from '@shared/utils/solid/solid-helpers';
+import { createClassName } from '@shared/utils/text/formatting';
 import {
   createEffect,
   createMemo,
@@ -14,14 +17,11 @@ import {
   onCleanup,
   splitProps,
 } from 'solid-js';
-import { logger } from '@shared/logging';
-import { toAccessor } from '@shared/utils/solid/solid-helpers';
-import { createClassName } from '@shared/utils/text/formatting';
 import styles from './Button.module.css';
 import type { ButtonProps } from './Button.types';
 
 // Re-export types for external consumers
-export type { ButtonProps, ButtonSize, ButtonVariant, ButtonIntent } from './Button.types';
+export type { ButtonIntent, ButtonProps, ButtonSize, ButtonVariant } from './Button.types';
 
 // ============================================================================
 // Default Props

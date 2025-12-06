@@ -4,6 +4,7 @@
  * @version 4.0.0 - Simplified
  */
 
+import { APP_SETTINGS_STORAGE_KEY } from '@constants';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging';
 import { BaseServiceImpl } from '@shared/services/base-service';
@@ -16,7 +17,6 @@ import type {
   ThemeSetOptions,
   ThemeSetting,
 } from '@shared/services/theme-service.contract';
-import { APP_SETTINGS_STORAGE_KEY } from '@constants';
 
 export class ThemeService extends BaseServiceImpl implements ThemeServiceContract {
   private readonly storage = getPersistentStorage();

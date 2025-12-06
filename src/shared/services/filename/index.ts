@@ -7,22 +7,21 @@
  * @version 4.0.0 - Functional refactor
  */
 
-// Primary exports - Pure functions (recommended)
-export {
-  generateMediaFilename,
-  generateZipFilename,
-  isValidMediaFilename,
-  isValidZipFilename,
-  // Types
-  type FilenameOptions,
-  type ZipFilenameOptions,
-  // Utilities
-  sanitizeFilename,
-  getFileExtension,
-  getIndexFromMediaId,
-  normalizeIndex,
-  resolveMediaMetadata,
-} from './filename-utils';
-
 // Legacy class compatibility layer
 export { FilenameService, getFilenameService } from './filename-service.legacy';
+// Primary exports - Pure functions (recommended)
+export {
+  // Types
+  type FilenameOptions,
+  generateMediaFilename,
+  generateZipFilename,
+  getFileExtension,
+  getIndexFromMediaId,
+  isValidMediaFilename,
+  isValidZipFilename,
+  normalizeIndex,
+  resolveMediaMetadata,
+  // Utilities
+  sanitizeFilename,
+  type ZipFilenameOptions,
+} from './filename-utils';

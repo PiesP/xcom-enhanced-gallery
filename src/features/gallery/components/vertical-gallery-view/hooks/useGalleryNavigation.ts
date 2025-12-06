@@ -5,13 +5,13 @@
  * @version 1.0.0
  */
 
-import { createEffect, createSignal, on, onCleanup } from 'solid-js';
 import type { NavigationTrigger } from '@shared/state/machines/navigation.machine';
 import {
-  galleryIndexEvents,
   type GalleryNavigateCompletePayload,
   type GalleryNavigateStartPayload,
+  galleryIndexEvents,
 } from '@shared/state/signals/gallery.signals';
+import { createEffect, createSignal, on, onCleanup } from 'solid-js';
 
 type Accessor<T> = () => T;
 type Cleanup = () => void;
@@ -52,18 +52,18 @@ export interface UseGalleryNavigationResult {
  * @returns Navigation state accessors
  */
 export function useGalleryNavigation(
-  options: UseGalleryNavigationOptions
+  options: UseGalleryNavigationOptions,
 ): UseGalleryNavigationResult {
   const { isVisible, scrollToItem } = options;
 
   const [lastNavigationTrigger, setLastNavigationTrigger] = createSignal<NavigationTrigger | null>(
-    null
+    null,
   );
   const [programmaticScrollTimestamp, setProgrammaticScrollTimestamp] = createSignal(0);
 
   // Listen for navigation events only while gallery is visible
   createEffect(
-    on(isVisible, visible => {
+    on(isVisible, (visible) => {
       if (!visible) {
         return;
       }
@@ -80,7 +80,7 @@ export function useGalleryNavigation(
       });
 
       onCleanup(dispose);
-    })
+    }),
   );
 
   return {
@@ -100,8 +100,9 @@ function registerNavigationEvents({
   onTriggerChange,
   onNavigateComplete,
 }: RegisterNavigationEventsOptions): Cleanup {
-  const stopStart = galleryIndexEvents.on('navigate:start', (payload: GalleryNavigateStartPayload) =>
-    onTriggerChange(payload.trigger)
+  const stopStart = galleryIndexEvents.on(
+    'navigate:start',
+    (payload: GalleryNavigateStartPayload) => onTriggerChange(payload.trigger),
   );
 
   const stopComplete = galleryIndexEvents.on(
@@ -109,7 +110,7 @@ function registerNavigationEvents({
     (payload: GalleryNavigateCompletePayload) => {
       onTriggerChange(payload.trigger);
       onNavigateComplete(payload);
-    }
+    },
   );
 
   return () => {

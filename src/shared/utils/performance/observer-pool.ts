@@ -19,15 +19,15 @@ const getObserver = (key: string, options: IntersectionObserverInit): Intersecti
     return observer;
   }
 
-  observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
+  observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
       const callbacksByKey = elementCallbackMap.get(entry.target as Element);
       const callbacks = callbacksByKey?.get(key);
       if (!callbacks || callbacks.size === 0) {
         return;
       }
 
-      callbacks.forEach(cb => {
+      callbacks.forEach((cb) => {
         try {
           cb(entry);
         } catch {
@@ -45,7 +45,7 @@ export const SharedObserver = {
   observe(
     element: Element,
     callback: (entry: IntersectionObserverEntry) => void,
-    options: IntersectionObserverInit = {}
+    options: IntersectionObserverInit = {},
   ): () => void {
     const key = createObserverKey(options);
     const observer = getObserver(key, options);

@@ -1,8 +1,8 @@
+import { APP_SETTINGS_STORAGE_KEY, createDefaultSettings } from '@constants';
 import type { AppSettings } from '@features/settings/types/settings.types';
 import { logger } from '@shared/logging';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 import { cloneDeep } from '@shared/utils/types/safety';
-import { APP_SETTINGS_STORAGE_KEY, createDefaultSettings } from '@constants';
 import { migrateSettings } from './settings-migration';
 import { computeCurrentSettingsSchemaHash } from './settings-schema';
 

@@ -43,7 +43,7 @@ export function isMediaElement(element: HTMLElement | null): element is MediaEle
  */
 export function findMediaElementInDOM(
   target: HTMLElement,
-  options: MediaTraversalOptions = {}
+  options: MediaTraversalOptions = {},
 ): MediaElement | null {
   const { maxDescendantDepth, maxAncestorHops } = {
     ...DEFAULT_TRAVERSAL_OPTIONS,
@@ -108,7 +108,7 @@ export function extractMediaUrlFromElement(element: MediaElement): string | null
 
 function findMediaDescendant(
   root: HTMLElement,
-  { includeRoot, maxDepth }: DescendantSearchConfig
+  { includeRoot, maxDepth }: DescendantSearchConfig,
 ): MediaElement | null {
   const queue: QueueNode[] = [{ node: root, depth: 0 }];
 

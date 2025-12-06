@@ -229,7 +229,7 @@ export class ExtractionError extends Error {
   constructor(
     public readonly code: ErrorCode,
     message: string,
-    public readonly originalError?: Error
+    public readonly originalError?: Error,
   ) {
     super(message);
     this.name = 'ExtractionError';
@@ -247,7 +247,7 @@ export interface APIExtractor {
     tweetInfo: TweetInfo,
     clickedElement: HTMLElement,
     options: MediaExtractionOptions,
-    extractionId: string
+    extractionId: string,
   ): Promise<MediaExtractionResult>;
 }
 
@@ -260,7 +260,7 @@ export interface MediaExtractor {
    */
   extractFromClickedElement(
     element: HTMLElement,
-    options?: MediaExtractionOptions
+    options?: MediaExtractionOptions,
   ): Promise<MediaExtractionResult>;
 
   /**
@@ -268,7 +268,7 @@ export interface MediaExtractor {
    */
   extractAllFromContainer(
     container: HTMLElement,
-    options?: MediaExtractionOptions
+    options?: MediaExtractionOptions,
   ): Promise<MediaExtractionResult>;
 }
 

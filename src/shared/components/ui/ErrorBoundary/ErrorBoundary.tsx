@@ -10,9 +10,9 @@
  */
 
 import { getLanguageService } from '@shared/container/service-accessors';
-import { type ComponentChildren, type JSXElement } from '@shared/external/vendors';
-import { ErrorBoundary as SolidErrorBoundary, Show, createSignal } from 'solid-js';
+import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
 import { NotificationService } from '@shared/services/notification-service';
+import { createSignal, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
 
 type Props = {
   children?: ComponentChildren;
@@ -98,7 +98,7 @@ export function ErrorBoundary(props: Props): JSXElement {
     <>
       <Show when={boundaryMounted()}>
         <SolidErrorBoundary
-          fallback={boundaryError => {
+          fallback={(boundaryError) => {
             notifyError(boundaryError);
             setCaughtError(boundaryError);
             return null;
@@ -107,7 +107,7 @@ export function ErrorBoundary(props: Props): JSXElement {
           {props.children}
         </SolidErrorBoundary>
       </Show>
-      <Show when={caughtError()}>{error => renderFallback(error())}</Show>
+      <Show when={caughtError()}>{(error) => renderFallback(error())}</Show>
     </>
   );
 }

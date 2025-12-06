@@ -1,4 +1,10 @@
-export { GlobalErrorHandler, globalErrorHandler } from './error-handler';
+export type {
+  ContextBoundReporter,
+  ErrorContext,
+  ErrorReportOptions,
+  ErrorReportResult,
+  ErrorSeverity,
+} from './app-error-reporter';
 export {
   AppErrorReporter,
   bootstrapErrorReporter,
@@ -12,10 +18,4 @@ export {
   storageErrorReporter,
   uiErrorReporter,
 } from './app-error-reporter';
-export type {
-  ContextBoundReporter,
-  ErrorContext,
-  ErrorReportOptions,
-  ErrorReportResult,
-  ErrorSeverity,
-} from './app-error-reporter';
+export { GlobalErrorHandler, globalErrorHandler } from './error-handler';

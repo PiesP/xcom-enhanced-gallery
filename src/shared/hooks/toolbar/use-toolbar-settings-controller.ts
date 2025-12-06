@@ -28,11 +28,11 @@ import {
   getThemeService,
   tryGetSettingsManager,
 } from '@shared/container/service-accessors';
-import { createEffect, createSignal, onCleanup } from 'solid-js';
 import { logger } from '@shared/logging';
 import type { LanguageService } from '@shared/services/language-service';
 import type { ThemeServiceContract } from '@shared/services/theme-service';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
 
 const DEFAULT_FOCUS_DELAY_MS = 50;
 const DEFAULT_SELECT_GUARD_MS = 300;
@@ -67,7 +67,7 @@ export interface ToolbarSettingsControllerResult {
 }
 
 export function useToolbarSettingsController(
-  options: UseToolbarSettingsControllerOptions
+  options: UseToolbarSettingsControllerOptions,
 ): ToolbarSettingsControllerResult {
   /**
    * Toolbar Settings Controller Implementation
@@ -150,10 +150,10 @@ export function useToolbarSettingsController(
 
   const [toolbarRef, setToolbarRef] = createSignal<HTMLDivElement | undefined>(undefined);
   const [settingsPanelRef, setSettingsPanelRef] = createSignal<HTMLDivElement | undefined>(
-    undefined
+    undefined,
   );
   const [settingsButtonRef, setSettingsButtonRef] = createSignal<HTMLButtonElement | undefined>(
-    undefined
+    undefined,
   );
 
   const toThemeOption = (value: unknown): ThemeOption => {
@@ -178,7 +178,7 @@ export function useToolbarSettingsController(
 
   const [currentTheme, setCurrentTheme] = createSignal<ThemeOption>(getInitialTheme());
   const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>(
-    languageService.getCurrentLanguage() as LanguageOption
+    languageService.getCurrentLanguage() as LanguageOption,
   );
 
   const syncThemeFromService = () => {
@@ -196,7 +196,7 @@ export function useToolbarSettingsController(
     void themeManager
       .initialize()
       .then(syncThemeFromService)
-      .catch(error => {
+      .catch((error) => {
         logger.warn('[ToolbarSettingsController] ThemeService initialization failed', error);
       });
   }
@@ -212,7 +212,7 @@ export function useToolbarSettingsController(
   });
 
   createEffect(() => {
-    const unsubscribe = languageService.onLanguageChange(next => {
+    const unsubscribe = languageService.onLanguageChange((next) => {
       setCurrentLanguage(next);
     });
 
@@ -256,7 +256,7 @@ export function useToolbarSettingsController(
     };
 
     const selects = Array.from(panel.querySelectorAll('select'));
-    selects.forEach(select => {
+    selects.forEach((select) => {
       select.addEventListener('focus', handleSelectFocus);
       select.addEventListener('blur', handleSelectBlur);
       select.addEventListener('change', handleSelectChange);
@@ -305,7 +305,7 @@ export function useToolbarSettingsController(
     onCleanup(() => {
       clearScheduledTimeout(selectGuardTimeout);
       documentRef.removeEventListener('mousedown', handleOutsideClick, false);
-      selects.forEach(select => {
+      selects.forEach((select) => {
         select.removeEventListener('focus', handleSelectFocus);
         select.removeEventListener('blur', handleSelectBlur);
         select.removeEventListener('change', handleSelectChange);
@@ -375,14 +375,14 @@ export function useToolbarSettingsController(
         void settingsService.set('gallery.theme', theme).catch((error: unknown) => {
           logger.warn(
             '[ToolbarSettingsController] Failed to sync theme to SettingsService:',
-            error
+            error,
           );
         });
       }
     } catch (error) {
       logger.debug(
         '[ToolbarSettingsController] SettingsService not available for theme sync:',
-        error
+        error,
       );
     }
   };
@@ -398,13 +398,13 @@ export function useToolbarSettingsController(
   };
 
   return {
-    assignToolbarRef: element => {
+    assignToolbarRef: (element) => {
       setToolbarRef(element ?? undefined);
     },
-    assignSettingsPanelRef: element => {
+    assignSettingsPanelRef: (element) => {
       setSettingsPanelRef(element ?? undefined);
     },
-    assignSettingsButtonRef: element => {
+    assignSettingsButtonRef: (element) => {
       setSettingsButtonRef(element ?? undefined);
     },
     isSettingsExpanded,

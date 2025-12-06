@@ -12,13 +12,13 @@
  */
 
 import { FocusCoordinator } from '@features/gallery/logic/focus-coordinator';
-import { type Accessor, onCleanup } from 'solid-js';
 import {
   gallerySignals,
   galleryState,
   navigateToItem,
 } from '@shared/state/signals/gallery.signals';
 import { toAccessor } from '@shared/utils/solid/solid-helpers';
+import { type Accessor, onCleanup } from 'solid-js';
 
 type MaybeAccessor<T> = T | Accessor<T>;
 
@@ -55,7 +55,7 @@ export interface UseGalleryFocusTrackerReturn {
  * Uses IntersectionObserver for efficient visibility detection.
  */
 export function useGalleryFocusTracker(
-  options: UseGalleryFocusTrackerOptions
+  options: UseGalleryFocusTrackerOptions,
 ): UseGalleryFocusTrackerReturn {
   const isEnabled = toAccessor(options.isEnabled);
   const container = toAccessor(options.container);

@@ -7,8 +7,8 @@
  */
 
 import { bootstrapErrorReporter } from '@shared/error';
-import { logger } from '@shared/logging';
 import type { BootstrapStage, BootstrapStageResult } from '@shared/interfaces';
+import { logger } from '@shared/logging';
 
 // ============================================================================
 // Types
@@ -127,7 +127,7 @@ export async function executeStages(
   options?: {
     /** Stop on first non-optional failure */
     stopOnFailure?: boolean;
-  }
+  },
 ): Promise<BootstrapStageResult[]> {
   const results: BootstrapStageResult[] = [];
   const stopOnFailure = options?.stopOnFailure ?? true;
@@ -173,7 +173,7 @@ export async function executeStages(
  */
 export async function loadService<T>(
   loader: ServiceLoader<T>,
-  options: ServiceInitOptions
+  options: ServiceInitOptions,
 ): Promise<ServiceLoadResult<T>> {
   const startTime = performance.now();
   const timeoutMs = options.timeoutMs ?? 10000;
@@ -237,7 +237,7 @@ export async function loadServicesParallel<T extends Record<string, unknown>>(
     timeoutMs?: number;
     /** Whether failures are recoverable by default */
     recoverable?: boolean;
-  }
+  },
 ): Promise<{ [K in keyof T]: ServiceLoadResult<T[K]> }> {
   const entries = Object.entries(loaders) as [keyof T, ServiceLoader<T[keyof T]>][];
 
@@ -254,7 +254,7 @@ export async function loadServicesParallel<T extends Record<string, unknown>>(
       }
       const result = await loadService(loader, serviceOptions);
       return [name, result] as const;
-    })
+    }),
   );
 
   return Object.fromEntries(results) as { [K in keyof T]: ServiceLoadResult<T[K]> };
@@ -277,7 +277,7 @@ export async function withInitContext<T>(
   options?: {
     recoverable?: boolean;
     defaultValue?: T;
-  }
+  },
 ): Promise<T | undefined> {
   try {
     return await fn();
@@ -312,7 +312,7 @@ export function withRetry<T>(
     maxAttempts?: number;
     delayMs?: number;
     backoffMultiplier?: number;
-  } = {}
+  } = {},
 ): () => Promise<T> {
   const maxAttempts = options.maxAttempts ?? 3;
   const initialDelayMs = options.delayMs ?? 100;
@@ -331,10 +331,10 @@ export function withRetry<T>(
         if (attempt < maxAttempts) {
           if (__DEV__) {
             logger.debug(
-              `[retry] Attempt ${attempt}/${maxAttempts} failed, retrying in ${delayMs}ms`
+              `[retry] Attempt ${attempt}/${maxAttempts} failed, retrying in ${delayMs}ms`,
             );
           }
-          await new Promise(resolve => setTimeout(resolve, delayMs));
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
           delayMs *= backoffMultiplier;
         }
       }

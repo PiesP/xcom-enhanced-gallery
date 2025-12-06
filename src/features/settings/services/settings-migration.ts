@@ -4,9 +4,9 @@
  * applies rename/transform steps between versions. Pure function for easy testing.
  */
 
+import { DEFAULT_SETTINGS as defaultSettings } from '@constants';
 import type { AppSettings } from '@features/settings/types/settings.types';
 import { isRecord } from '@shared/utils/types/guards';
-import { DEFAULT_SETTINGS as defaultSettings } from '@constants';
 
 type Migration = (input: AppSettings) => AppSettings;
 
@@ -14,7 +14,7 @@ type Migration = (input: AppSettings) => AppSettings;
 // NOTE: Currently no breaking migrations defined; default fill/merge is sufficient.
 const migrations: Partial<Record<string, Migration>> = {
   // Phase 447: Force-enable keyboard navigation after accidental default disablement
-  '1.0.0': input => {
+  '1.0.0': (input) => {
     const next = { ...input } as AppSettings;
     next.gallery = {
       ...next.gallery,

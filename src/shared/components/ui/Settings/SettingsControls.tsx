@@ -1,7 +1,7 @@
 import { getLanguageService } from '@shared/container/service-accessors';
-import { type JSXElement } from '@shared/external/vendors';
-import { createMemo, createSignal, onCleanup, onMount } from 'solid-js';
+import type { JSXElement } from '@shared/external/vendors';
 import { createClassName } from '@shared/utils/text/formatting';
+import { createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 import styles from './SettingsControls.module.css';
 
 type Accessor<T> = () => T;

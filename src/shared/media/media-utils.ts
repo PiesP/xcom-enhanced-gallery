@@ -60,7 +60,7 @@ export function removeDuplicateMediaItems(mediaItems: readonly MediaInfo[]): Med
     return [];
   }
 
-  const result = removeDuplicates(mediaItems, item => item.originalUrl ?? item.url);
+  const result = removeDuplicates(mediaItems, (item) => item.originalUrl ?? item.url);
 
   if (__DEV__) {
     const removedCount = mediaItems.length - result.length;
@@ -93,7 +93,7 @@ export function extractVisualIndexFromUrl(url: string): number {
 export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMediaEntry[] {
   if (mediaItems.length <= 1) return mediaItems;
 
-  const withVisualIndex = mediaItems.map(media => {
+  const withVisualIndex = mediaItems.map((media) => {
     const visualIndex = extractVisualIndexFromUrl(media.expanded_url || '');
     return { media, visualIndex };
   });
@@ -198,7 +198,7 @@ function scaleAspectRatio(widthRatio: number, heightRatio: number): DimensionPai
 }
 
 function extractDimensionsFromMetadataObject(
-  dimensions?: Record<string, unknown>
+  dimensions?: Record<string, unknown>,
 ): DimensionPair | null {
   if (!dimensions) {
     return null;
@@ -226,7 +226,7 @@ function deriveDimensionsFromMetadata(metadata: MetadataRecord): DimensionPair |
   }
 
   const dimensions = extractDimensionsFromMetadataObject(
-    metadata.dimensions as Record<string, unknown> | undefined
+    metadata.dimensions as Record<string, unknown> | undefined,
   );
   if (dimensions) {
     return dimensions;
@@ -288,7 +288,7 @@ export function resolveMediaDimensions(media: MediaInfo | undefined): DimensionP
   }
 
   const fromMetadata = deriveDimensionsFromMetadata(
-    media.metadata as Record<string, unknown> | undefined
+    media.metadata as Record<string, unknown> | undefined,
   );
   if (fromMetadata) {
     return fromMetadata;
@@ -329,7 +329,7 @@ export function createIntrinsicSizingStyle(dimensions: DimensionPair): Record<st
 export function adjustClickedIndexAfterDeduplication(
   originalItems: MediaInfo[],
   uniqueItems: MediaInfo[],
-  originalClickedIndex: number
+  originalClickedIndex: number,
 ): number {
   if (uniqueItems.length === 0) return 0;
 
@@ -340,7 +340,7 @@ export function adjustClickedIndexAfterDeduplication(
   if (!clickedItem) return 0;
 
   const clickedKey = clickedItem.originalUrl ?? clickedItem.url;
-  const newIndex = uniqueItems.findIndex(item => {
+  const newIndex = uniqueItems.findIndex((item) => {
     const itemKey = item.originalUrl ?? item.url;
     return itemKey === clickedKey;
   });

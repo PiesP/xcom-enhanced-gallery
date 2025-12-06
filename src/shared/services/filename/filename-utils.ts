@@ -77,7 +77,7 @@ function getIndexFromMediaId(mediaId?: string): string | null {
   const match = mediaId.match(/_media_(\d+)$/) || mediaId.match(/_(\d+)$/);
   if (match) {
     const idx = safeParseInt(match[1], 10);
-    return mediaId.includes('_media_') ? (idx + 1).toString() : match[1] ?? null;
+    return mediaId.includes('_media_') ? (idx + 1).toString() : (match[1] ?? null);
   }
   return null;
 }
@@ -193,7 +193,7 @@ export function generateMediaFilename(media: MediaInfo, options: FilenameOptions
  */
 export function generateZipFilename(
   mediaItems: readonly MediaInfo[],
-  options: ZipFilenameOptions = {}
+  options: ZipFilenameOptions = {},
 ): string {
   try {
     const firstItem = mediaItems[0];

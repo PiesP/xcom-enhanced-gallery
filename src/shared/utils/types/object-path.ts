@@ -88,7 +88,7 @@ export function assignNestedPath<T = unknown>(
   target: unknown,
   path: string,
   value: T,
-  options?: AssignOptions
+  options?: AssignOptions,
 ): boolean {
   if (!target || typeof target !== 'object' || !path) {
     return false;

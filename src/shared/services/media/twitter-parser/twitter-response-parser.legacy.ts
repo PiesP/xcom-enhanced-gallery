@@ -35,7 +35,7 @@ export class TwitterResponseParser {
   public static extractMediaFromTweet(
     tweetResult: TwitterTweet,
     tweetUser: TwitterUser,
-    sourceLocation: 'original' | 'quoted' = 'original'
+    sourceLocation: 'original' | 'quoted' = 'original',
   ): TweetMediaEntry[] {
     return extractMediaFromTweet(tweetResult, tweetUser, sourceLocation);
   }

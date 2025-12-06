@@ -12,9 +12,9 @@ import {
   clearStyleMap,
   getStyleElement,
   hasStyle,
+  type RegistrationResult,
   registerStyle,
   removeStyle,
-  type RegistrationResult,
   type StyleRegistrationOptions,
 } from './style-utils';
 

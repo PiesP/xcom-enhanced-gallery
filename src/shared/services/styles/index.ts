@@ -7,18 +7,17 @@
  * @version 4.0.0 - Functional refactor
  */
 
+// Legacy class compatibility layer
+export { getStyleRegistry, StyleRegistry } from './style-registry.legacy';
 // Primary exports - Pure functions (recommended)
 export {
   clearStyleMap,
   getRegisteredStyleCount,
   getStyleElement,
   hasStyle,
-  registerStyle,
-  removeStyle,
   // Types
   type RegistrationResult,
+  registerStyle,
+  removeStyle,
   type StyleRegistrationOptions,
 } from './style-utils';
-
-// Legacy class compatibility layer
-export { getStyleRegistry, StyleRegistry } from './style-registry.legacy';

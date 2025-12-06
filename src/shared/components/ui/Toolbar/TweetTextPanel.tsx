@@ -1,8 +1,8 @@
 import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
-import { For, Match, Switch } from 'solid-js';
 import { formatTweetText, shortenUrl } from '@shared/utils/text/formatting';
 import { sanitizeHTML } from '@shared/utils/text/html-sanitizer';
+import { For, Match, Switch } from 'solid-js';
 import styles from './Toolbar.module.css';
 
 interface TweetTextPanelProps {

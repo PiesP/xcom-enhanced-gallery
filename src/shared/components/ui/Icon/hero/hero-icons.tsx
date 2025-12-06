@@ -15,10 +15,10 @@ import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
 import type { JSXElement } from '@shared/external/vendors';
 
 import {
-  ICON_PATHS,
-  MULTI_PATH_ICONS,
   type AllIconNames,
+  ICON_PATHS,
   type IconName,
+  MULTI_PATH_ICONS,
   type MultiPathIconName,
 } from './icon-paths';
 
@@ -49,7 +49,7 @@ function createMultiPathIcon(name: MultiPathIconName): (props: IconProps) => JSX
   return function IconComponent(props: IconProps): JSXElement {
     return (
       <Icon {...props}>
-        {MULTI_PATH_ICONS[name].map(pathData => (
+        {MULTI_PATH_ICONS[name].map((pathData) => (
           <path d={pathData} />
         ))}
       </Icon>

@@ -11,7 +11,7 @@ import { getCookieValue, getCookieValueSync } from '@shared/services/cookie';
 // Module-level State (lazy initialized)
 // ============================================================================
 
-let _csrfToken: string | undefined = undefined;
+let _csrfToken: string | undefined;
 let _tokensInitialized = false;
 
 // ============================================================================

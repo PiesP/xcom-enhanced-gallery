@@ -1,11 +1,3 @@
-import type { IGalleryApp } from '@shared/container/app-container';
-import { warmupNonCriticalServices } from '@shared/container/service-accessors';
-import { runAfterWindowLoad } from '@shared/dom/window-load';
-import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error';
-import { cleanupVendors } from '@shared/external/vendors';
-import type { BootstrapStage } from '@shared/interfaces';
-import { CoreService } from '@shared/services/service-manager';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { initializeCriticalSystems } from '@bootstrap/critical-systems';
 // initializeDevTools dynamic import moved to initializeDevToolsIfNeeded
 import { initializeEnvironment } from '@bootstrap/environment';
@@ -15,7 +7,15 @@ import { registerFeatureServicesLazy } from '@bootstrap/features';
 import { initializeGalleryApp } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
 import { createAppConfig } from '@constants/app-config';
+import type { IGalleryApp } from '@shared/container/app-container';
+import { warmupNonCriticalServices } from '@shared/container/service-accessors';
+import { runAfterWindowLoad } from '@shared/dom/window-load';
+import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error';
+import { cleanupVendors } from '@shared/external/vendors';
+import type { BootstrapStage } from '@shared/interfaces';
 import { logger } from '@shared/logging';
+import { CoreService } from '@shared/services/service-manager';
+import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 // Global styles
 // Global styles are loaded at runtime to avoid import-time side effects.
@@ -65,7 +65,7 @@ function tearDownGlobalEventHandlers(): void {
 export async function runOptionalCleanup(
   label: string,
   task: CleanupTask,
-  log: CleanupLogger = warnCleanupLog
+  log: CleanupLogger = warnCleanupLog,
 ): Promise<void> {
   try {
     await task();
@@ -77,7 +77,7 @@ export async function runOptionalCleanup(
 // exported runBootstrapStages below
 export async function runBootstrapStages(): Promise<void> {
   const results = await executeStages(bootstrapStages, { stopOnFailure: true });
-  const failedStage = results.find(r => !r.success);
+  const failedStage = results.find((r) => !r.success);
   if (failedStage) {
     throw failedStage.error ?? new Error(`Bootstrap stage failed: ${failedStage.label}`);
   }
@@ -158,7 +158,7 @@ export function setupGlobalEventHandlers(): void {
   tearDownGlobalEventHandlers();
 
   globalEventTeardown = wireGlobalEvents(() => {
-    cleanup().catch(error => logger.error('Error during page unload cleanup:', error));
+    cleanup().catch((error) => logger.error('Error during page unload cleanup:', error));
   });
 }
 
@@ -260,7 +260,7 @@ export async function cleanup(): Promise<void> {
         const { GlobalErrorHandler } = await import('@shared/error');
         GlobalErrorHandler.getInstance().destroy();
       },
-      debugCleanupLog
+      debugCleanupLog,
     );
 
     if (isDevEnvironment) {
@@ -281,7 +281,7 @@ export async function cleanup(): Promise<void> {
             logger.debug('[cleanup] ✅ All event listeners cleared successfully');
           }
         },
-        debugCleanupLog
+        debugCleanupLog,
       );
     }
 
@@ -346,7 +346,7 @@ export async function startApplication(): Promise<void> {
       });
     }
   })()
-    .catch(error => {
+    .catch((error) => {
       bootstrapErrorReporter.error(error, {
         code: 'APP_INIT_FAILED',
         metadata: { leanMode: true },

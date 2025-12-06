@@ -17,9 +17,9 @@
 import { logger } from '@shared/logging';
 import { BaseServiceImpl } from '@shared/services/base-service';
 import {
+  type DownloadCapability,
   detectDownloadCapability,
   downloadBlobWithAnchor,
-  type DownloadCapability,
   type GMDownloadFunction,
 } from '@shared/services/download/fallback-download';
 import { downloadSingleFile } from '@shared/services/download/single-download';
@@ -104,7 +104,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
    */
   public async downloadSingle(
     media: MediaInfo,
-    options: DownloadOptions = {}
+    options: DownloadOptions = {},
   ): Promise<SingleDownloadResult> {
     const capability = this.getCapability();
     return downloadSingleFile(media, options, capability);
@@ -119,9 +119,9 @@ export class DownloadOrchestrator extends BaseServiceImpl {
    */
   public async downloadBulk(
     mediaItems: MediaInfo[],
-    options: DownloadOptions = {}
+    options: DownloadOptions = {},
   ): Promise<BulkDownloadResult> {
-    const items: OrchestratorItem[] = mediaItems.map(media => ({
+    const items: OrchestratorItem[] = mediaItems.map((media) => ({
       url: media.url,
       desiredName: generateMediaFilename(media),
       blob: options.prefetchedBlobs?.get(media.url),
@@ -190,7 +190,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
   private async saveZipBlob(
     zipBlob: Blob,
     filename: string,
-    options: DownloadOptions
+    options: DownloadOptions,
   ): Promise<{ success: boolean; error?: string }> {
     const capability = this.getCapability();
 
@@ -220,7 +220,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
   private async saveWithGMDownload(
     gmDownload: GMDownloadFunction,
     blob: Blob,
-    filename: string
+    filename: string,
   ): Promise<{ success: boolean; error?: string }> {
     const url = URL.createObjectURL(blob);
     try {

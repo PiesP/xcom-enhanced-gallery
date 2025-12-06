@@ -85,7 +85,7 @@ function handleNavigate(
     targetIndex: number;
     source: NavigationSource;
     trigger: NavigationTrigger;
-  }
+  },
 ): NavigationTransitionResult {
   const { targetIndex, source } = payload;
   const timestamp = Date.now();
@@ -102,7 +102,7 @@ function handleNavigate(
         ...state,
         lastTimestamp: timestamp,
       },
-      true
+      true,
     );
   }
 

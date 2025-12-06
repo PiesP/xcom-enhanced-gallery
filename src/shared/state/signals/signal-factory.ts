@@ -37,7 +37,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
 
   const signalObject = {
     subscribe(callback: (value: T) => void): () => void {
-      return createRoot(dispose => {
+      return createRoot((dispose) => {
         createEffect(() => callback(read()));
         return dispose;
       });
@@ -63,7 +63,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
  * @returns Dispose function
  */
 export function effectSafe(fn: () => void): () => void {
-  return createRoot(dispose => {
+  return createRoot((dispose) => {
     createEffect(() => fn());
     return dispose;
   });
@@ -80,7 +80,7 @@ export function effectSafe(fn: () => void): () => void {
 export function computedSafe<T>(compute: () => T): { readonly value: T } {
   let memoAccessor: (() => T) | null = null;
 
-  createRoot(dispose => {
+  createRoot((dispose) => {
     memoAccessor = createMemo(compute);
     return () => {
       memoAccessor = null;

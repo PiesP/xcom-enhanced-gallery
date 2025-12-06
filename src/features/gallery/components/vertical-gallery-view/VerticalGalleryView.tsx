@@ -42,7 +42,7 @@ import type { ImageFitMode, MediaInfo } from '@shared/types';
 import { safeEventPrevent } from '@shared/utils/events/utils';
 import { computePreloadIndices } from '@shared/utils/performance';
 import { stringWithDefault } from '@shared/utils/types/safety';
-import { type JSX, For, createEffect, createMemo, createSignal } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, type JSX } from 'solid-js';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryLifecycle } from './hooks/useGalleryLifecycle';
 import { useGalleryNavigation } from './hooks/useGalleryNavigation';
@@ -67,24 +67,23 @@ function VerticalGalleryViewCore({
   onDownloadCurrent,
   onDownloadAll,
 }: VerticalGalleryViewProps): JSX.Element {
-
   // State selectors
   const mediaItems = useSelector<GalleryState, readonly MediaInfo[]>(
     galleryState,
-    state => state.mediaItems,
-    { dependencies: state => [state.mediaItems] }
+    (state) => state.mediaItems,
+    { dependencies: (state) => [state.mediaItems] },
   );
 
   const currentIndex = useSelector<GalleryState, number>(
     galleryState,
-    state => state.currentIndex,
-    { dependencies: state => [state.currentIndex] }
+    (state) => state.currentIndex,
+    { dependencies: (state) => [state.currentIndex] },
   );
 
   const isDownloading = useSelector(
     downloadState,
     (download: DownloadState) => isDownloadUiBusy({ downloadProcessing: download.isProcessing }),
-    { dependencies: (download: DownloadState) => [download.isProcessing] }
+    { dependencies: (download: DownloadState) => [download.isProcessing] },
   );
 
   // Element refs
@@ -134,7 +133,7 @@ function VerticalGalleryViewCore({
       block: 'start',
       isScrolling,
       onScrollStart: () => navigationState.setProgrammaticScrollTimestamp(Date.now()),
-    }
+    },
   );
 
   // Navigation handling - uses scrollToItem
@@ -197,7 +196,7 @@ function VerticalGalleryViewCore({
   const [imageFitMode, setImageFitMode] = createSignal<ImageFitMode>(getInitialFitMode());
 
   const persistFitMode = (mode: ImageFitMode) =>
-    setSetting('gallery.imageFitMode', mode).catch(error => {
+    setSetting('gallery.imageFitMode', mode).catch((error) => {
       logger.warn('Failed to save fit mode', { error, mode });
     });
 
@@ -308,7 +307,7 @@ function VerticalGalleryViewCore({
 
   return (
     <div
-      ref={el => setContainerEl(el ?? null)}
+      ref={(el) => setContainerEl(el ?? null)}
       class={`${styles.container} ${
         isInitialToolbarVisible() ? styles.initialToolbarVisible : ''
       } ${isScrolling() ? styles.isScrolling : ''} ${stringWithDefault(className, '')}`}
@@ -319,7 +318,11 @@ function VerticalGalleryViewCore({
     >
       <div class={styles.toolbarHoverZone} data-role="toolbar-hover-zone" />
 
-      <div class={styles.toolbarWrapper} data-role="toolbar" ref={el => setToolbarWrapperEl(el ?? null)}>
+      <div
+        class={styles.toolbarWrapper}
+        data-role="toolbar"
+        ref={(el) => setToolbarWrapperEl(el ?? null)}
+      >
         <Toolbar
           onClose={onClose || (() => {})}
           onPrevious={onPrevious || handlePrevious}
@@ -346,7 +349,7 @@ function VerticalGalleryViewCore({
         class={styles.itemsContainer}
         data-xeg-role="items-container"
         data-xeg-role-compat="items-list"
-        ref={el => setItemsContainerEl(el ?? null)}
+        ref={(el) => setItemsContainerEl(el ?? null)}
       >
         <For each={mediaItems()}>
           {(item, index) => {

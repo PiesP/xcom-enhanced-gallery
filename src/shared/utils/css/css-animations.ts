@@ -7,10 +7,10 @@
  * Removed Motion One library dependency and optimized bundle size
  */
 
+import { CSS } from '@constants';
 import { logger } from '@shared/logging';
 import { hasStyle, registerStyle } from '@shared/services/styles';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
-import { CSS } from '@constants';
 
 // CSS animation variables and constants
 export const ANIMATION_CONSTANTS = {

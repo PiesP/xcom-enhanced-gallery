@@ -7,7 +7,6 @@ import {
 import type { FitMode, ToolbarProps } from '@shared/components/ui/Toolbar/Toolbar.types';
 import { ToolbarView } from '@shared/components/ui/Toolbar/ToolbarView';
 import type { JSXElement } from '@shared/external/vendors';
-import { createEffect, createMemo, createSignal, mergeProps, on } from 'solid-js';
 import {
   type ToolbarSettingsControllerResult,
   useToolbarSettingsController,
@@ -18,6 +17,7 @@ import { safeEventPrevent, safeEventPreventAll } from '@shared/utils/events/util
 import { toOptionalAccessor, toRequiredAccessor } from '@shared/utils/solid/solid-helpers';
 import { createClassName } from '@shared/utils/text/formatting';
 import { clampIndex } from '@shared/utils/types/safety';
+import { createEffect, createMemo, createSignal, mergeProps, on } from 'solid-js';
 import styles from './Toolbar.module.css';
 
 const DEFAULT_PROPS = {

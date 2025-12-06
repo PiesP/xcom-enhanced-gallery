@@ -3,6 +3,8 @@
  * @description Handles image, video thumbnail, and video element click detection
  */
 
+import { CSS } from '@constants/css';
+import { SELECTORS } from '@constants/selectors';
 import { isVideoControlElement } from '@shared/dom/utils';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import {
@@ -10,8 +12,6 @@ import {
   findMediaElementInDOM,
 } from '@shared/utils/media/media-element-utils';
 import { isValidMediaUrl } from '@shared/utils/url';
-import { CSS } from '@constants/css';
-import { SELECTORS } from '@constants/selectors';
 
 // ============================================================================
 // Constants
@@ -96,6 +96,6 @@ export function isProcessableMedia(target: HTMLElement | null): boolean {
 
   // Inside media containers (images/videos that have not fully loaded yet)
   return Boolean(
-    target.closest(MEDIA_SELECTORS.TWEET_PHOTO) || target.closest(MEDIA_SELECTORS.VIDEO_PLAYER)
+    target.closest(MEDIA_SELECTORS.TWEET_PHOTO) || target.closest(MEDIA_SELECTORS.VIDEO_PLAYER),
   );
 }

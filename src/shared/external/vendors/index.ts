@@ -4,36 +4,37 @@
  */
 
 import {
-  createSignal,
+  batch,
+  children,
+  createComponent,
+  createContext,
   createEffect,
   createMemo,
   createResource,
-  createContext,
-  useContext,
-  batch,
-  untrack,
-  on,
-  onMount,
-  onCleanup,
-  Show,
-  For,
-  Switch,
-  Match,
-  Index,
-  ErrorBoundary,
-  Suspense,
-  lazy,
-  children,
-  mergeProps,
-  splitProps,
   createRoot,
-  createComponent,
+  createSignal,
+  ErrorBoundary,
+  For,
+  Index,
+  lazy,
+  Match,
+  mergeProps,
+  on,
+  onCleanup,
+  onMount,
+  Show,
+  Suspense,
+  Switch,
+  splitProps,
+  untrack,
+  useContext,
 } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
 import { render } from 'solid-js/web';
 
 // Re-export types
 export type { JSX } from 'solid-js';
+
 import type { JSX } from 'solid-js';
 export type JSXElement = JSX.Element;
 export type VNode = JSX.Element;

@@ -10,21 +10,21 @@
 
 // Host utilities
 export {
-  tryParseUrl,
-  getHostname,
-  isHostMatching,
-  extractUsernameFromUrl,
-  type HostMatchOptions,
   type ExtractUsernameOptions,
+  extractUsernameFromUrl,
+  getHostname,
+  type HostMatchOptions,
+  isHostMatching,
+  tryParseUrl,
 } from './host';
 
 // Safety utilities
 export {
+  HTML_ATTRIBUTE_URL_POLICY,
   isUrlAllowed,
   MEDIA_URL_POLICY,
-  HTML_ATTRIBUTE_URL_POLICY,
   type UrlSafetyPolicy,
 } from './safety';
 
 // Validator utilities
-export { isValidMediaUrl, isTwitterMediaUrl } from './validator';
+export { isTwitterMediaUrl, isValidMediaUrl } from './validator';

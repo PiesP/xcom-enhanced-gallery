@@ -8,8 +8,8 @@
 import { logger } from '@shared/logging';
 import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events/core/event-context';
 import {
-  addListener as registerManagedListener,
   getEventListenerStatus,
+  addListener as registerManagedListener,
   removeEventListenerManaged,
   removeEventListenersByContext,
 } from '@shared/utils/events/core/listener-manager';
@@ -98,7 +98,7 @@ export class EventManager extends BaseServiceImpl {
     element: HTMLElement | Document | Window | null,
     eventType: K,
     handler: (event: HTMLElementEventMap[K]) => void,
-    options?: EventOptions
+    options?: EventOptions,
   ): EventManager {
     if (!element || this.isDestroyed) {
       if (this.isDestroyed) {
@@ -113,7 +113,7 @@ export class EventManager extends BaseServiceImpl {
         eventType,
         handler as EventListener,
         options,
-        EventManager.DOM_EVENT_CONTEXT
+        EventManager.DOM_EVENT_CONTEXT,
       );
 
       logger.debug('EventManager: DOM event listener registered', {
@@ -145,7 +145,7 @@ export class EventManager extends BaseServiceImpl {
     element: HTMLElement | Document | Window | null,
     eventType: string,
     handler: (event: Event) => void,
-    options?: EventOptions
+    options?: EventOptions,
   ): EventManager {
     if (!element || this.isDestroyed) {
       if (this.isDestroyed) {
@@ -160,7 +160,7 @@ export class EventManager extends BaseServiceImpl {
         eventType,
         handler,
         options,
-        EventManager.CUSTOM_EVENT_CONTEXT
+        EventManager.CUSTOM_EVENT_CONTEXT,
       );
 
       logger.debug('EventManager: Custom event listener registered', {
@@ -237,7 +237,7 @@ export class EventManager extends BaseServiceImpl {
     type: string,
     listener: EventListener,
     options?: AddEventListenerOptions,
-    context?: string
+    context?: string,
   ): string {
     if (this.isDestroyed) {
       logger.warn('EventManager: addListener called on destroyed instance');
@@ -271,7 +271,7 @@ export class EventManager extends BaseServiceImpl {
    */
   public async initializeGallery(
     handlers: EventHandlers,
-    options?: Partial<GalleryEventOptions>
+    options?: Partial<GalleryEventOptions>,
   ): Promise<() => void> {
     return initializeGalleryEvents(handlers, options);
   }
@@ -301,7 +301,7 @@ export class EventManager extends BaseServiceImpl {
     element: EventTarget,
     eventType: string,
     handler: EventListener,
-    context?: string
+    context?: string,
   ): string {
     if (this.isDestroyed) {
       logger.warn('handleTwitterEvent called on destroyed EventManager');

@@ -1,8 +1,8 @@
-import { type ComponentChildren, type JSXElement } from '@shared/external/vendors';
-import { createEffect, onCleanup } from 'solid-js';
-import { render } from 'solid-js/web';
+import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
 import { EventManager } from '@shared/services/event-manager';
 import { createClassName } from '@shared/utils/text/formatting';
+import { createEffect, onCleanup } from 'solid-js';
+import { render } from 'solid-js/web';
 
 // ============================================================================
 // Constants

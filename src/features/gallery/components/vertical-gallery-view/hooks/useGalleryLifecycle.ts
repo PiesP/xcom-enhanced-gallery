@@ -7,9 +7,9 @@
 
 import { ensureGalleryScrollAvailable } from '@shared/dom/utils';
 import { observeViewportCssVars } from '@shared/dom/viewport';
-import { createEffect, on, onCleanup } from 'solid-js';
 import { logger } from '@shared/logging';
 import { animateGalleryEnter, animateGalleryExit } from '@shared/utils/css/css-animations';
+import { createEffect, on, onCleanup } from 'solid-js';
 
 /**
  * Options for gallery lifecycle hook
@@ -65,7 +65,7 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
           };
 
           const videos = container.querySelectorAll('video');
-          videos.forEach(video => {
+          videos.forEach((video) => {
             try {
               video.pause();
             } catch (error) {

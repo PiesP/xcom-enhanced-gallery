@@ -119,7 +119,7 @@ export interface FallbackDownloadResult {
 export async function downloadWithFetchBlob(
   url: string,
   filename: string,
-  options: FallbackDownloadOptions = {}
+  options: FallbackDownloadOptions = {},
 ): Promise<FallbackDownloadResult> {
   const { signal, onProgress, timeout = 30000 } = options;
 
@@ -287,7 +287,7 @@ async function triggerAnchorDownload(url: string, filename: string): Promise<voi
 export async function downloadBlobWithAnchor(
   blob: Blob,
   filename: string,
-  options: FallbackDownloadOptions = {}
+  options: FallbackDownloadOptions = {},
 ): Promise<FallbackDownloadResult> {
   const { onProgress } = options;
 

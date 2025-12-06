@@ -7,12 +7,12 @@
 // Primary exports - Pure functions (recommended)
 export {
   extractMediaFromTweet,
-  normalizeLegacyTweet,
-  normalizeLegacyUser,
   // Utilities
   getHighQualityMediaUrl,
-  resolveDimensions,
+  normalizeLegacyTweet,
+  normalizeLegacyUser,
   resolveAspectRatio,
+  resolveDimensions,
 } from './twitter-response-parser';
 
 // Legacy class compatibility layer

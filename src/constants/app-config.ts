@@ -38,7 +38,7 @@ const rawVersion =
   resolveStringValue(
     importMetaEnv.VITE_VERSION,
     nodeEnv.VITE_VERSION,
-    nodeEnv.npm_package_version
+    nodeEnv.npm_package_version,
   ) ?? FALLBACK_VERSION;
 
 const devFlag = parseBooleanFlag(importMetaEnv.DEV);

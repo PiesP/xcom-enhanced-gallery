@@ -30,10 +30,10 @@
  * @internal Solid.js hook, PC-only, used by toolbar container
  */
 
-import { onCleanup } from 'solid-js';
-import { createStore } from 'solid-js/store';
 import type { ToolbarActions, ToolbarState } from '@shared/types/toolbar.types';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
+import { onCleanup } from 'solid-js';
+import { createStore } from 'solid-js/store';
 
 /**
  * Initial toolbar state constant

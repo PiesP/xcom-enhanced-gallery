@@ -40,7 +40,7 @@ export class TimerManager {
    * Clean up all timers
    */
   cleanup(): void {
-    this.timers.forEach(id => window.clearTimeout(id));
+    this.timers.forEach((id) => window.clearTimeout(id));
     this.timers.clear();
   }
 

@@ -7,6 +7,8 @@
  * @version 4.0.0 - Functional refactor
  */
 
+// Legacy class compatibility layer
+export { CookieService, getCookieService } from './cookie-service.legacy';
 // Primary exports - Pure functions (recommended)
 export {
   deleteCookie,
@@ -17,6 +19,3 @@ export {
   resetCookieAPICache,
   setCookie,
 } from './cookie-utils';
-
-// Legacy class compatibility layer
-export { CookieService, getCookieService } from './cookie-service.legacy';

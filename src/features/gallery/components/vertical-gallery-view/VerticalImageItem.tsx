@@ -23,11 +23,11 @@
 
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getSetting, setSetting } from '@shared/container/settings-access';
-import type { ImageFitMode } from '@shared/types';
 import { createIntrinsicSizingStyle, resolveMediaDimensions } from '@shared/media/media-utils';
+import type { ImageFitMode } from '@shared/types';
 import { SharedObserver } from '@shared/utils/performance';
 import { createClassName } from '@shared/utils/text/formatting';
-import { type JSX, createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
+import { createEffect, createMemo, createSignal, type JSX, onCleanup } from 'solid-js';
 import { useVideoVisibility } from './hooks/useVideoVisibility';
 import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
 import styles from './VerticalImageItem.module.css';
@@ -136,7 +136,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
     onClick?.();
   };
 
-  const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = event => {
+  const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
     const mouseEvent = event as MouseEvent;
     mouseEvent?.stopImmediatePropagation?.();
     handleClick();
@@ -233,8 +233,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
       isActive ? styles.active : undefined,
       isFocused ? styles.focused : undefined,
       fitModeClass(),
-      className
-    )
+      className,
+    ),
   );
 
   const imageClasses = createMemo(() => createClassName(styles.image, fitModeClass()));
@@ -293,7 +293,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
               class={createClassName(
                 styles.video,
                 fitModeClass(),
-                isLoaded() ? styles.loaded : styles.loading
+                isLoaded() ? styles.loaded : styles.loading,
               )}
               data-fit-mode={resolvedFitMode()}
               onLoadedMetadata={handleMediaLoad}

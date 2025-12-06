@@ -1,3 +1,4 @@
+import { SERVICE_KEYS } from '@constants';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import type { LanguageService } from '@shared/services/language-service';
 import type { MediaService } from '@shared/services/media-service';
@@ -8,7 +9,6 @@ import {
   getThemeServiceInstance,
 } from '@shared/services/singletons';
 import type { ThemeServiceContract } from '@shared/services/theme-service.contract';
-import { SERVICE_KEYS } from '@constants';
 
 // ============================================================================
 // Service Key Accessors (Phase 414): Centralized SERVICE_KEYS exposure
@@ -60,7 +60,9 @@ function tryGetFromCoreService<T>(key: string): T | null {
  * @returns ThemeService for theme management
  */
 export function getThemeService(): ThemeServiceContract {
-  return tryGetFromCoreService<ThemeServiceContract>(SERVICE_KEYS.THEME) ?? getThemeServiceInstance();
+  return (
+    tryGetFromCoreService<ThemeServiceContract>(SERVICE_KEYS.THEME) ?? getThemeServiceInstance()
+  );
 }
 
 /**
@@ -70,7 +72,9 @@ export function getThemeService(): ThemeServiceContract {
  * @returns LanguageService for language management
  */
 export function getLanguageService(): LanguageService {
-  return tryGetFromCoreService<LanguageService>(SERVICE_KEYS.LANGUAGE) ?? getLanguageServiceInstance();
+  return (
+    tryGetFromCoreService<LanguageService>(SERVICE_KEYS.LANGUAGE) ?? getLanguageServiceInstance()
+  );
 }
 
 /**
@@ -80,7 +84,9 @@ export function getLanguageService(): LanguageService {
  * @returns MediaService instance
  */
 export function getMediaService(): MediaService {
-  return tryGetFromCoreService<MediaService>(SERVICE_KEYS.MEDIA_SERVICE) ?? getMediaServiceInstance();
+  return (
+    tryGetFromCoreService<MediaService>(SERVICE_KEYS.MEDIA_SERVICE) ?? getMediaServiceInstance()
+  );
 }
 
 /**

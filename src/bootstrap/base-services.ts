@@ -6,6 +6,7 @@
  * Refactor: ES Module singleton pattern integration
  */
 
+import { reportBootstrapError } from '@bootstrap/types';
 import {
   CORE_BASE_SERVICE_IDENTIFIERS,
   type CoreBaseServiceIdentifier,
@@ -14,14 +15,13 @@ import {
   THEME_SERVICE_IDENTIFIER,
 } from '@shared/container/service-accessors';
 import { logger } from '@shared/logging';
+import { CoreService } from '@shared/services/service-manager';
 import {
   getLanguageServiceInstance,
   getMediaServiceInstance,
   getThemeServiceInstance,
 } from '@shared/services/singletons';
-import { CoreService } from '@shared/services/service-manager';
 import type { BaseService } from '@shared/types/core/base-service.types';
-import { reportBootstrapError } from '@bootstrap/types';
 
 type BaseServiceRegistration = readonly [CoreBaseServiceIdentifier, () => BaseService];
 

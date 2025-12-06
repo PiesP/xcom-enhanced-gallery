@@ -8,8 +8,6 @@ import { GalleryContainer } from '@shared/components/isolation';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import { getLanguageService, getThemeService } from '@shared/container/service-accessors';
 import { isGMAPIAvailable } from '@shared/external/userscript';
-import { createEffect, createSignal, onCleanup } from 'solid-js';
-import { render } from 'solid-js/web';
 import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces';
 import { logger } from '@shared/logging';
 import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
@@ -23,6 +21,8 @@ import {
 } from '@shared/state/signals/gallery.signals';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
+import { render } from 'solid-js/web';
 import './styles/gallery-global.css';
 
 export class GalleryRenderer implements GalleryRendererInterface {
@@ -41,7 +41,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   private setupStateSubscription(): void {
-    this.stateUnsubscribe = gallerySignals.isOpen.subscribe(isOpen => {
+    this.stateUnsubscribe = gallerySignals.isOpen.subscribe((isOpen) => {
       if (isOpen && !this.container) {
         this.renderGallery();
       } else if (!isOpen && this.container) {
@@ -95,12 +95,12 @@ export class GalleryRenderer implements GalleryRendererInterface {
     const Root = () => {
       const [currentTheme, setCurrentTheme] = createSignal(themeService.getCurrentTheme());
       const [currentLanguage, setCurrentLanguage] = createSignal(
-        languageService.getCurrentLanguage()
+        languageService.getCurrentLanguage(),
       );
 
       createEffect(() => {
         const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));
-        const unbindLanguage = languageService.onLanguageChange(lang => setCurrentLanguage(lang));
+        const unbindLanguage = languageService.onLanguageChange((lang) => setCurrentLanguage(lang));
 
         onCleanup(() => {
           unbindTheme();
@@ -179,7 +179,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private async getDownloadService() {
     const { ensureDownloadServiceRegistered } = await import('@shared/services/lazy-services');
     await ensureDownloadServiceRegistered();
-    const { DownloadOrchestrator } = await import('@shared/services/download/download-orchestrator');
+    const { DownloadOrchestrator } = await import(
+      '@shared/services/download/download-orchestrator'
+    );
     return DownloadOrchestrator.getInstance();
   }
 
@@ -206,7 +208,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
   async render(
     mediaItems: readonly MediaInfo[],
-    renderOptions?: GalleryRenderOptions
+    renderOptions?: GalleryRenderOptions,
   ): Promise<void> {
     const pauseContext = renderOptions?.pauseContext ?? { reason: 'programmatic' };
 

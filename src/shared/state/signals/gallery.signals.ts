@@ -8,21 +8,21 @@
  * - Backward compatibility layer
  */
 
-// Break runtime dependency on services: use logging barrel directly
-import { batch as solidBatch } from 'solid-js';
 import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
 // Navigation state types
 import {
   type NavigationAction,
   type NavigationState,
-  type NavigationTrigger,
   NavigationStateMachine,
+  type NavigationTrigger,
 } from '@shared/state/machines/navigation.machine';
+import { createSignalSafe, effectSafe } from '@shared/state/signals/signal-factory';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { NavigationSource } from '@shared/types/navigation.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
 import { clampIndex } from '@shared/utils/types/safety';
-import { createSignalSafe, effectSafe } from '@shared/state/signals/signal-factory';
+// Break runtime dependency on services: use logging barrel directly
+import { batch as solidBatch } from 'solid-js';
 
 // Logger instance (services-free)
 const logger: ILogger = rootLogger;
@@ -158,14 +158,14 @@ function validateNavigationAction(action: NavigationAction, context: string): vo
       if (!isValidNavigationSource(payload.source)) {
         throw createNavigationActionError(
           context,
-          `Navigate payload source invalid: ${String(payload.source)}`
+          `Navigate payload source invalid: ${String(payload.source)}`,
         );
       }
 
       if (!isValidNavigationTrigger(payload.trigger)) {
         throw createNavigationActionError(
           context,
-          `Navigate payload trigger invalid: ${String(payload.trigger)}`
+          `Navigate payload trigger invalid: ${String(payload.trigger)}`,
         );
       }
       break;
@@ -183,7 +183,7 @@ function validateNavigationAction(action: NavigationAction, context: string): vo
       if (!isValidNavigationSource(payload.source)) {
         throw createNavigationActionError(
           context,
-          `Set focus payload source invalid: ${String(payload.source)}`
+          `Set focus payload source invalid: ${String(payload.source)}`,
         );
       }
       break;
@@ -193,7 +193,7 @@ function validateNavigationAction(action: NavigationAction, context: string): vo
     default:
       throw createNavigationActionError(
         context,
-        `Unsupported action type: ${String((action as { type: string }).type)}`
+        `Unsupported action type: ${String((action as { type: string }).type)}`,
       );
   }
 }
@@ -325,7 +325,7 @@ export function closeGallery(): void {
 export function navigateToItem(
   index: number,
   trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button',
-  source?: NavigationSource
+  source?: NavigationSource,
 ): void {
   const state = galleryState.value;
   const validIndex = clampIndex(index, state.mediaItems.length);
@@ -343,7 +343,7 @@ export function navigateToItem(
 
   if (result.isDuplicate) {
     logger.debug(
-      `[Gallery] Already at index ${index} (source: ${navigationSource}), ensuring sync`
+      `[Gallery] Already at index ${index} (source: ${navigationSource}), ensuring sync`,
     );
     // Ensure focusedIndex is synced even on duplicate navigation
     gallerySignals.focusedIndex.value = validIndex;
@@ -368,7 +368,7 @@ export function navigateToItem(
   galleryIndexEvents.emit('navigate:complete', { index: validIndex, trigger });
 
   logger.debug(
-    `[Gallery] Navigated to item: ${index} (trigger: ${trigger}, source: ${navigationSource})`
+    `[Gallery] Navigated to item: ${index} (trigger: ${trigger}, source: ${navigationSource})`,
   );
 }
 
@@ -379,7 +379,7 @@ export function navigateToItem(
  * otherwise falls back to currentIndex.
  */
 export function navigatePrevious(
-  trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button'
+  trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button',
 ): void {
   const state = galleryState.value;
   const baseIndex = getCurrentActiveIndex();
@@ -414,7 +414,7 @@ export function setLoading(isLoading: boolean): void {
  */
 export function setFocusedIndex(
   index: number | null,
-  source: NavigationSource = 'auto-focus'
+  source: NavigationSource = 'auto-focus',
 ): void {
   const state = galleryState.value;
 

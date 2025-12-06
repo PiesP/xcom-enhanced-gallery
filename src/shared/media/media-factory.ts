@@ -3,15 +3,15 @@
  */
 
 import { logger } from '@shared/logging';
+import { normalizeDimension } from '@shared/media/media-utils';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo, TweetInfo } from '@shared/types/media.types';
-import { normalizeDimension } from '@shared/media/media-utils';
 
 /**
  * Resolve Dimensions from API Media
  */
 export function resolveDimensionsFromApiMedia(
-  apiMedia: TweetMediaEntry
+  apiMedia: TweetMediaEntry,
 ): { width: number; height: number } | null {
   const widthFromOriginal = normalizeDimension(apiMedia.original_width);
   const heightFromOriginal = normalizeDimension(apiMedia.original_height);

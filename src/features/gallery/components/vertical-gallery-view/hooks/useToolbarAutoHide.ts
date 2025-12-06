@@ -6,8 +6,8 @@
  */
 
 import { getSetting } from '@shared/container/settings-access';
-import { createEffect, createSignal, onCleanup } from 'solid-js';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
 
 /**
  * Options for toolbar auto-hide hook
@@ -46,7 +46,7 @@ export function useToolbarAutoHide(options: UseToolbarAutoHideOptions): UseToolb
 
   const computeInitialVisibility = (): boolean => Boolean(isVisible() && hasItems());
   const [isInitialToolbarVisible, setIsInitialToolbarVisible] = createSignal(
-    computeInitialVisibility()
+    computeInitialVisibility(),
   );
   let activeTimer: number | null = null;
 

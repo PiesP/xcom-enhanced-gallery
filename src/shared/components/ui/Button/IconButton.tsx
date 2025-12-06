@@ -21,9 +21,9 @@
  */
 
 import { Button, type ButtonProps, type ButtonSize } from '@shared/components/ui/Button/Button';
-import { type ComponentChildren, type JSXElement } from '@shared/external/vendors';
-import { createMemo, splitProps } from 'solid-js';
+import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
 import { toAccessor } from '@shared/utils/solid/solid-helpers';
+import { createMemo, splitProps } from 'solid-js';
 
 // ============================================================================
 // Constants

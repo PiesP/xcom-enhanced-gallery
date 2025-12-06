@@ -32,7 +32,7 @@ interface GlobalWithCookie {
 // Module State
 // ============================================================================
 
-let cachedCookieAPI: CookieAPI | null | undefined = undefined;
+let cachedCookieAPI: CookieAPI | null | undefined;
 
 // ============================================================================
 // Internal Utilities
@@ -120,9 +120,9 @@ function listFromDocument(options?: CookieListOptions): CookieRecord[] {
 
   const records = document.cookie
     .split(';')
-    .map(entry => entry.trim())
+    .map((entry) => entry.trim())
     .filter(Boolean)
-    .map(entry => {
+    .map((entry) => {
       const [rawName, ...rest] = entry.split('=');
       const nameDecoded = decode(rawName);
       if (!nameDecoded) {
@@ -140,7 +140,9 @@ function listFromDocument(options?: CookieListOptions): CookieRecord[] {
     })
     .filter((record): record is CookieRecord => Boolean(record));
 
-  const filtered = options?.name ? records.filter(record => record.name === options.name) : records;
+  const filtered = options?.name
+    ? records.filter((record) => record.name === options.name)
+    : records;
 
   return filtered;
 }
@@ -168,14 +170,14 @@ export async function listCookies(options?: CookieListOptions): Promise<CookieRe
   }
 
   return promisifyCallback<CookieRecord[]>(
-    callback =>
+    (callback) =>
       gmCookie?.list(options, (cookies, error) => {
         if (error) {
           logger.warn('GM_cookie.list failed; falling back to document.cookie', error);
         }
-        callback(error ? undefined : (cookies ?? []).map(c => ({ ...c })), error);
+        callback(error ? undefined : (cookies ?? []).map((c) => ({ ...c })), error);
       }),
-    { fallback: () => listFromDocument(options) }
+    { fallback: () => listFromDocument(options) },
   );
 }
 
@@ -185,7 +187,7 @@ export async function listCookies(options?: CookieListOptions): Promise<CookieRe
  */
 export async function getCookieValue(
   name: string,
-  options?: CookieListOptions
+  options?: CookieListOptions,
 ): Promise<string | undefined> {
   if (!name) return undefined;
 
@@ -242,7 +244,7 @@ export async function setCookie(details: CookieSetOptions): Promise<void> {
     return;
   }
 
-  return promisifyVoidCallback(callback => gmCookie?.set?.(normalizedDetails, callback));
+  return promisifyVoidCallback((callback) => gmCookie?.set?.(normalizedDetails, callback));
 }
 
 /**
@@ -261,7 +263,7 @@ export async function deleteCookie(details: CookieDeleteOptions): Promise<void> 
     return;
   }
 
-  return promisifyVoidCallback(callback => gmCookie?.delete?.(details, callback));
+  return promisifyVoidCallback((callback) => gmCookie?.delete?.(details, callback));
 }
 
 /**
