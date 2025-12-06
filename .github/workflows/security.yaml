@@ -48,7 +48,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🔧 Setup environment
         uses: ./.github/actions/setup-node
@@ -56,7 +56,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: 🛠️ Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
           queries: security-extended
@@ -89,7 +89,7 @@ jobs:
         run: vite build --mode production
 
       - name: 📊 Analyze
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:javascript-typescript"
 
@@ -100,7 +100,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           sparse-checkout: |
             package.json
@@ -135,7 +135,7 @@ jobs:
             ./
 
       - name: 📊 Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: osv-results.sarif
@@ -147,7 +147,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           sparse-checkout: |
             package.json
@@ -180,7 +180,7 @@ jobs:
 
       - name: 📊 Upload audit report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: npm-audit-${{ github.sha }}
           path: audit-report.json
@@ -193,7 +193,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           sparse-checkout: |
             package.json
@@ -241,7 +241,7 @@ jobs:
           " > licenses.json 2>&1 || echo "License check completed"
 
       - name: 📊 Upload license report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: license-report-${{ github.sha }}
           path: licenses.json
