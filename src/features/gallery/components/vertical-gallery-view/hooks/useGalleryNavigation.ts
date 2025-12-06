@@ -5,11 +5,11 @@
  * @version 1.0.0
  */
 
-import type { NavigationTrigger } from '@shared/state/machines/navigation.machine';
 import {
   type GalleryNavigateCompletePayload,
   type GalleryNavigateStartPayload,
   galleryIndexEvents,
+  type NavigationTrigger,
 } from '@shared/state/signals/gallery.signals';
 import { createEffect, createSignal, on, onCleanup } from 'solid-js';
 

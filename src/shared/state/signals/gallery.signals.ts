@@ -1,27 +1,43 @@
 /**
  * @fileoverview Gallery State Management
- * @version 2.0.0 - Fine-grained Signals
+ * @version 3.0.0 - Phase: State Management Simplification
  *
- * Gallery state management using fine-grained signals
- * - Individual signals for each state property
- * - Reduced unnecessary re-renders (60%+ improvement)
- * - Backward compatibility layer
+ * Gallery state management using fine-grained signals.
+ * Refactored to use modular state management:
+ * - navigation.state.ts for navigation tracking
+ * - ui.state.ts for UI state (loading, error, viewMode)
+ *
+ * This file maintains backward compatibility while delegating to specialized modules.
  */
 
 import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
-// Navigation state types
 import {
-  type NavigationAction,
-  type NavigationState,
-  NavigationStateMachine,
+  getLastNavigationSource as getNavLastSource,
+  getNavigationState as getNavState,
+  type NavigationStateData,
   type NavigationTrigger,
-} from '@shared/state/machines/navigation.machine';
+  recordFocusChange,
+  recordNavigation,
+  resetNavigation,
+  resolveNavigationSource,
+  validateFocusParams,
+  validateNavigationParams,
+} from '@shared/state/signals/navigation.state';
 import { createSignalSafe, effectSafe } from '@shared/state/signals/signal-factory';
+import {
+  getError as getUiError,
+  getViewMode as getUiViewMode,
+  isLoading as isUiLoading,
+  setError as setUiError,
+  setLoading as setUiLoading,
+  setViewMode as setUiViewMode,
+  uiSignals,
+  type ViewMode,
+} from '@shared/state/signals/ui.state';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { NavigationSource } from '@shared/types/navigation.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
 import { clampIndex } from '@shared/utils/types/safety';
-// Break runtime dependency on services: use logging barrel directly
 import { batch as solidBatch } from 'solid-js';
 
 // Logger instance (services-free)
@@ -40,7 +56,7 @@ export interface GalleryState {
   readonly currentIndex: number;
   readonly isLoading: boolean;
   readonly error: string | null;
-  readonly viewMode: 'horizontal' | 'vertical';
+  readonly viewMode: ViewMode;
 }
 
 /**
@@ -81,18 +97,28 @@ export interface GalleryNavigateCompletePayload {
 // Re-export NavigationSource type for backward compatibility
 export type { NavigationSource };
 
+// Re-export navigation types from navigation.state.ts
+export type { NavigationTrigger };
+
 // ============================================================================
-// Navigation State Management
+// Navigation State Management (delegated to navigation.state.ts)
 // ============================================================================
 
-let navigationState: NavigationState = NavigationStateMachine.createInitialState();
+// Re-export NavigationState as NavigationStateData for backward compatibility
+export type { NavigationStateData as NavigationState };
 
-export function getNavigationState(): NavigationState {
-  return navigationState;
+/**
+ * @deprecated Use getNavigationState from navigation.state.ts directly
+ */
+export function getNavigationState(): NavigationStateData {
+  return getNavState();
 }
 
+/**
+ * @deprecated Use getLastNavigationSource from navigation.state.ts directly
+ */
 export function getLastNavigationSource(): NavigationSource {
-  return navigationState.lastSource;
+  return getNavLastSource();
 }
 
 /**
@@ -103,120 +129,6 @@ export const galleryIndexEvents = createEventEmitter<{
   'navigate:complete': GalleryNavigateCompletePayload;
 }>();
 
-const VALID_NAVIGATION_SOURCES: readonly NavigationSource[] = [
-  'button',
-  'keyboard',
-  'scroll',
-  'auto-focus',
-];
-const VALID_NAVIGATION_TRIGGERS: readonly GalleryNavigationTrigger[] = [
-  'button',
-  'click',
-  'keyboard',
-  'scroll',
-] as const;
-
-function createNavigationActionError(context: string, reason: string): Error {
-  return new Error(`[Gallery] Invalid navigation action (${context}): ${reason}`);
-}
-
-function isValidNavigationSource(value: unknown): value is NavigationSource {
-  return typeof value === 'string' && VALID_NAVIGATION_SOURCES.includes(value as NavigationSource);
-}
-
-function isValidNavigationTrigger(value: unknown): value is GalleryNavigationTrigger {
-  return (
-    typeof value === 'string' &&
-    VALID_NAVIGATION_TRIGGERS.includes(value as GalleryNavigationTrigger)
-  );
-}
-
-function validateNavigationAction(action: NavigationAction, context: string): void {
-  if (!action || typeof action !== 'object') {
-    throw createNavigationActionError(context, 'Action missing');
-  }
-
-  if (typeof action.type !== 'string') {
-    throw createNavigationActionError(context, 'Action type missing');
-  }
-
-  if (!('type' in action)) {
-    throw createNavigationActionError(context, 'Unknown action shape');
-  }
-
-  switch (action.type) {
-    case 'NAVIGATE': {
-      const payload = action.payload;
-      if (!payload) {
-        throw createNavigationActionError(context, 'Navigate payload missing');
-      }
-
-      if (typeof payload.targetIndex !== 'number' || Number.isNaN(payload.targetIndex)) {
-        throw createNavigationActionError(context, 'Navigate payload targetIndex invalid');
-      }
-
-      if (!isValidNavigationSource(payload.source)) {
-        throw createNavigationActionError(
-          context,
-          `Navigate payload source invalid: ${String(payload.source)}`,
-        );
-      }
-
-      if (!isValidNavigationTrigger(payload.trigger)) {
-        throw createNavigationActionError(
-          context,
-          `Navigate payload trigger invalid: ${String(payload.trigger)}`,
-        );
-      }
-      break;
-    }
-    case 'SET_FOCUS': {
-      const payload = action.payload;
-      if (!payload) {
-        throw createNavigationActionError(context, 'Set focus payload missing');
-      }
-
-      if (!(payload.focusIndex === null || typeof payload.focusIndex === 'number')) {
-        throw createNavigationActionError(context, 'Set focus payload focusIndex invalid');
-      }
-
-      if (!isValidNavigationSource(payload.source)) {
-        throw createNavigationActionError(
-          context,
-          `Set focus payload source invalid: ${String(payload.source)}`,
-        );
-      }
-      break;
-    }
-    case 'RESET':
-      break;
-    default:
-      throw createNavigationActionError(
-        context,
-        `Unsupported action type: ${String((action as { type: string }).type)}`,
-      );
-  }
-}
-
-function applyNavigationAction(action: NavigationAction, context: string) {
-  validateNavigationAction(action, context);
-  const result = NavigationStateMachine.transition(navigationState, action);
-  navigationState = result.newState;
-  return result;
-}
-
-function resolveNavigationSource(trigger: GalleryNavigationTrigger): NavigationSource {
-  if (trigger === 'scroll') {
-    return 'scroll';
-  }
-  if (trigger === 'keyboard') {
-    return 'keyboard';
-  }
-
-  // Treat both button and click triggers as button sourced interactions.
-  return 'button';
-}
-
 // ============================================================================
 // Fine-grained Signals
 // ============================================================================
@@ -225,9 +137,10 @@ export const gallerySignals = {
   isOpen: createSignalSafe<boolean>(INITIAL_STATE.isOpen),
   mediaItems: createSignalSafe<readonly MediaInfo[]>(INITIAL_STATE.mediaItems),
   currentIndex: createSignalSafe<number>(INITIAL_STATE.currentIndex),
-  isLoading: createSignalSafe<boolean>(INITIAL_STATE.isLoading),
-  error: createSignalSafe<string | null>(INITIAL_STATE.error),
-  viewMode: createSignalSafe<'horizontal' | 'vertical'>(INITIAL_STATE.viewMode),
+  // Delegate to ui.state.ts signals
+  isLoading: uiSignals.isLoading,
+  error: uiSignals.error,
+  viewMode: uiSignals.viewMode,
   focusedIndex: createSignalSafe<number | null>(null),
   /**
    * Phase 329: DOM query caching
@@ -293,7 +206,7 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
 
   gallerySignals.focusedIndex.value = validIndex;
 
-  applyNavigationAction({ type: 'RESET' }, 'openGallery');
+  resetNavigation();
 
   logger.debug(`[Gallery] Opened with ${items.length} items, starting at index ${validIndex}`);
 }
@@ -310,7 +223,7 @@ export function closeGallery(): void {
   gallerySignals.focusedIndex.value = null;
   gallerySignals.currentVideoElement.value = null;
 
-  applyNavigationAction({ type: 'RESET' }, 'closeGallery');
+  resetNavigation();
 
   logger.debug('[Gallery] Closed');
 }
@@ -324,22 +237,17 @@ export function closeGallery(): void {
  */
 export function navigateToItem(
   index: number,
-  trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button',
+  trigger: NavigationTrigger = 'button',
   source?: NavigationSource,
 ): void {
   const state = galleryState.value;
   const validIndex = clampIndex(index, state.mediaItems.length);
   const navigationSource = source ?? resolveNavigationSource(trigger);
 
-  const navigateAction: NavigationAction = {
-    type: 'NAVIGATE',
-    payload: {
-      targetIndex: validIndex,
-      source: navigationSource,
-      trigger,
-    },
-  };
-  const result = applyNavigationAction(navigateAction, 'navigateToItem');
+  // Validate navigation parameters
+  validateNavigationParams(validIndex, navigationSource, trigger, 'navigateToItem');
+
+  const result = recordNavigation(validIndex, navigationSource);
 
   if (result.isDuplicate) {
     logger.debug(
@@ -378,9 +286,7 @@ export function navigateToItem(
  * Uses focusedIndex as base if available (for scroll-based navigation),
  * otherwise falls back to currentIndex.
  */
-export function navigatePrevious(
-  trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button',
-): void {
+export function navigatePrevious(trigger: NavigationTrigger = 'button'): void {
   const state = galleryState.value;
   const baseIndex = getCurrentActiveIndex();
   const newIndex = baseIndex > 0 ? baseIndex - 1 : state.mediaItems.length - 1;
@@ -394,7 +300,7 @@ export function navigatePrevious(
  * Uses focusedIndex as base if available (for scroll-based navigation),
  * otherwise falls back to currentIndex.
  */
-export function navigateNext(trigger: 'button' | 'click' | 'keyboard' | 'scroll' = 'button'): void {
+export function navigateNext(trigger: NavigationTrigger = 'button'): void {
   const state = galleryState.value;
   const baseIndex = getCurrentActiveIndex();
   const newIndex = baseIndex < state.mediaItems.length - 1 ? baseIndex + 1 : 0;
@@ -402,11 +308,11 @@ export function navigateNext(trigger: 'button' | 'click' | 'keyboard' | 'scroll'
   navigateToItem(newIndex, trigger, source);
 }
 
+/**
+ * @deprecated Use setLoading from ui.state.ts directly
+ */
 export function setLoading(isLoading: boolean): void {
-  galleryState.value = {
-    ...galleryState.value,
-    isLoading,
-  };
+  setUiLoading(isLoading);
 }
 
 /**
@@ -418,14 +324,10 @@ export function setFocusedIndex(
 ): void {
   const state = galleryState.value;
 
-  const setFocusAction: NavigationAction = {
-    type: 'SET_FOCUS',
-    payload: {
-      focusIndex: index,
-      source,
-    },
-  };
-  applyNavigationAction(setFocusAction, 'setFocusedIndex');
+  // Validate focus parameters
+  validateFocusParams(index, source, 'setFocusedIndex');
+
+  recordFocusChange(source);
 
   if (index === null) {
     gallerySignals.focusedIndex.value = null;
@@ -439,25 +341,18 @@ export function setFocusedIndex(
   logger.debug(`[Gallery] focusedIndex set to ${validIndex} (source: ${source})`);
 }
 
+/**
+ * @deprecated Use setError from ui.state.ts directly
+ */
 export function setError(error: string | null): void {
-  galleryState.value = {
-    ...galleryState.value,
-    error,
-    isLoading: false,
-  };
-
-  if (error) {
-    logger.error(`[Gallery] Error: ${error}`);
-  }
+  setUiError(error);
 }
 
-export function setViewMode(viewMode: 'horizontal' | 'vertical'): void {
-  galleryState.value = {
-    ...galleryState.value,
-    viewMode,
-  };
-
-  logger.debug(`[Gallery] View mode changed to: ${viewMode}`);
+/**
+ * @deprecated Use setViewMode from ui.state.ts directly
+ */
+export function setViewMode(viewMode: ViewMode): void {
+  setUiViewMode(viewMode);
 }
 
 // ============================================================================
@@ -499,6 +394,18 @@ export function hasNextMedia(): boolean {
 export const isGalleryOpen = (): boolean => galleryState.value.isOpen;
 export const getCurrentIndex = (): number => galleryState.value.currentIndex;
 export const getMediaItems = (): readonly MediaInfo[] => galleryState.value.mediaItems;
-export const isLoading = (): boolean => galleryState.value.isLoading;
-export const getError = (): string | null => galleryState.value.error;
-export const getViewMode = (): 'horizontal' | 'vertical' => galleryState.value.viewMode;
+
+/**
+ * @deprecated Use isLoading from ui.state.ts directly
+ */
+export const isLoading = (): boolean => isUiLoading();
+
+/**
+ * @deprecated Use getError from ui.state.ts directly
+ */
+export const getError = (): string | null => getUiError();
+
+/**
+ * @deprecated Use getViewMode from ui.state.ts directly
+ */
+export const getViewMode = (): ViewMode => getUiViewMode();
