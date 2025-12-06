@@ -17,6 +17,7 @@ import type {
   ThemeSetOptions,
   ThemeSetting,
 } from '@shared/services/theme-service.contract';
+import { createSingleton } from '@shared/utils/types/singleton';
 
 export class ThemeService extends BaseServiceImpl implements ThemeServiceContract {
   private readonly storage = getPersistentStorage();
@@ -28,27 +29,29 @@ export class ThemeService extends BaseServiceImpl implements ThemeServiceContrac
   private settingsUnsubscribe: (() => void) | null = null;
   private observer: MutationObserver | null = null;
 
-  private static instance: ThemeService;
+  private static readonly singleton = createSingleton(() => new ThemeService());
 
   public static getInstance(): ThemeService {
-    if (!ThemeService.instance) {
-      ThemeService.instance = new ThemeService();
-    }
-    return ThemeService.instance;
+    return ThemeService.singleton.get();
+  }
+
+  /** @internal Test helper */
+  public static resetForTests(): void {
+    ThemeService.singleton.reset();
   }
 
   constructor() {
     super('ThemeService');
     if (typeof window !== 'undefined') {
       this.mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
-      this.observer = new MutationObserver((mutations) => {
+      this.observer = new MutationObserver(mutations => {
         for (const m of mutations) {
-          m.addedNodes.forEach((node) => {
+          m.addedNodes.forEach(node => {
             if (node instanceof Element) {
               if (node.classList.contains('xeg-theme-scope')) {
                 syncThemeAttributes(this.currentTheme, { scopes: [node] });
               }
-              node.querySelectorAll('.xeg-theme-scope').forEach((scope) => {
+              node.querySelectorAll('.xeg-theme-scope').forEach(scope => {
                 syncThemeAttributes(this.currentTheme, { scopes: [scope] });
               });
             }
@@ -120,7 +123,7 @@ export class ThemeService extends BaseServiceImpl implements ThemeServiceContrac
     }
 
     if (typeof settingsService.subscribe === 'function') {
-      this.settingsUnsubscribe = settingsService.subscribe((event) => {
+      this.settingsUnsubscribe = settingsService.subscribe(event => {
         if (event?.key === 'gallery.theme') {
           const newVal = event.newValue as ThemeSetting;
           if (['light', 'dark', 'auto'].includes(newVal) && newVal !== this.themeSetting) {
@@ -200,7 +203,7 @@ export class ThemeService extends BaseServiceImpl implements ThemeServiceContrac
   }
 
   private notifyListeners(): void {
-    this.listeners.forEach((l) => l(this.currentTheme, this.themeSetting));
+    this.listeners.forEach(l => l(this.currentTheme, this.themeSetting));
   }
 
   private loadThemeSync(): ThemeSetting {

@@ -33,6 +33,7 @@ import { downloadAsZip } from '@shared/services/download/zip-download';
 import { generateMediaFilename, generateZipFilename } from '@shared/services/filename';
 import type { MediaInfo } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/result.types';
+import { createSingleton } from '@shared/utils/types/singleton';
 
 /**
  * DownloadOrchestrator - Central download service
@@ -52,7 +53,7 @@ import { ErrorCode } from '@shared/types/result.types';
  * ```
  */
 export class DownloadOrchestrator extends BaseServiceImpl {
-  private static instance: DownloadOrchestrator | null = null;
+  private static readonly singleton = createSingleton(() => new DownloadOrchestrator());
 
   /** Cached download capability detection (lazy initialized) */
   private capability: DownloadCapability | null = null;
@@ -62,18 +63,15 @@ export class DownloadOrchestrator extends BaseServiceImpl {
   }
 
   public static getInstance(): DownloadOrchestrator {
-    if (!DownloadOrchestrator.instance) {
-      DownloadOrchestrator.instance = new DownloadOrchestrator();
-    }
-    return DownloadOrchestrator.instance;
+    return DownloadOrchestrator.singleton.get();
   }
 
   /**
    * Reset singleton instance (for testing only)
    * @internal
    */
-  public static resetInstance(): void {
-    DownloadOrchestrator.instance = null;
+  public static resetForTests(): void {
+    DownloadOrchestrator.singleton.reset();
   }
 
   protected async onInitialize(): Promise<void> {
@@ -104,7 +102,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
    */
   public async downloadSingle(
     media: MediaInfo,
-    options: DownloadOptions = {},
+    options: DownloadOptions = {}
   ): Promise<SingleDownloadResult> {
     const capability = this.getCapability();
     return downloadSingleFile(media, options, capability);
@@ -119,9 +117,9 @@ export class DownloadOrchestrator extends BaseServiceImpl {
    */
   public async downloadBulk(
     mediaItems: MediaInfo[],
-    options: DownloadOptions = {},
+    options: DownloadOptions = {}
   ): Promise<BulkDownloadResult> {
-    const items: OrchestratorItem[] = mediaItems.map((media) => ({
+    const items: OrchestratorItem[] = mediaItems.map(media => ({
       url: media.url,
       desiredName: generateMediaFilename(media),
       blob: options.prefetchedBlobs?.get(media.url),
@@ -190,7 +188,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
   private async saveZipBlob(
     zipBlob: Blob,
     filename: string,
-    options: DownloadOptions,
+    options: DownloadOptions
   ): Promise<{ success: boolean; error?: string }> {
     const capability = this.getCapability();
 
@@ -220,7 +218,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
   private async saveWithGMDownload(
     gmDownload: GMDownloadFunction,
     blob: Blob,
-    filename: string,
+    filename: string
   ): Promise<{ success: boolean; error?: string }> {
     const url = URL.createObjectURL(blob);
     try {

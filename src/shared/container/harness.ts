@@ -177,7 +177,7 @@ export class TestHarness {
     // Reset ES Module singletons first
     resetAllServiceInstances();
     // Then reset CoreService registry
-    CoreService.resetInstance();
+    CoreService.resetForTests();
   }
 }
 

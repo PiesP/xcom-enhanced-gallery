@@ -27,6 +27,7 @@
 
 import { getUserscript } from '@shared/external/userscript/adapter';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
+import { createSingleton } from '@shared/utils/types/singleton';
 
 /**
  * HTTP request options
@@ -66,11 +67,7 @@ export interface HttpResponse<T = unknown> {
  * HTTP error with details
  */
 export class HttpError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-    readonly statusText: string,
-  ) {
+  constructor(message: string, readonly status: number, readonly statusText: string) {
     super(message);
     this.name = 'HttpError';
   }
@@ -88,7 +85,7 @@ export class HttpError extends Error {
  * - Requires @connect directives for cross-origin requests
  */
 export class HttpRequestService {
-  private static instance: HttpRequestService;
+  private static readonly singleton = createSingleton(() => new HttpRequestService());
 
   private readonly defaultTimeout = 10000; // 10 seconds
 
@@ -103,7 +100,7 @@ export class HttpRequestService {
   private async request<T>(
     method: string,
     url: string,
-    options?: HttpRequestOptions | BinaryRequestOptions,
+    options?: HttpRequestOptions | BinaryRequestOptions
   ): Promise<HttpResponse<T>> {
     return new Promise((resolve, reject) => {
       try {
@@ -118,10 +115,10 @@ export class HttpRequestService {
             GMXMLHttpRequestDetails['responseType'],
             undefined
           >,
-          onload: (response) => {
+          onload: response => {
             const headers: Record<string, string> = {};
             if (response.responseHeaders) {
-              response.responseHeaders.split('\r\n').forEach((line) => {
+              response.responseHeaders.split('\r\n').forEach(line => {
                 const parts = line.split(': ');
                 if (parts.length >= 2 && parts[0]) {
                   headers[parts[0].toLowerCase()] = parts.slice(1).join(': ');
@@ -137,13 +134,13 @@ export class HttpRequestService {
               headers,
             });
           },
-          onerror: (response) => {
+          onerror: response => {
             reject(
               new HttpError(
                 response.statusText || 'Network Error',
                 response.status,
-                response.statusText,
-              ),
+                response.statusText
+              )
             );
           },
           ontimeout: () => {
@@ -198,10 +195,12 @@ export class HttpRequestService {
    * Get or create the singleton instance
    */
   static getInstance(): HttpRequestService {
-    if (!HttpRequestService.instance) {
-      HttpRequestService.instance = new HttpRequestService();
-    }
-    return HttpRequestService.instance;
+    return HttpRequestService.singleton.get();
+  }
+
+  /** @internal Test helper */
+  static resetForTests(): void {
+    HttpRequestService.singleton.reset();
   }
 
   /**
@@ -217,7 +216,7 @@ export class HttpRequestService {
   async post<T = unknown>(
     url: string,
     data?: unknown,
-    options?: HttpRequestOptions,
+    options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
     return this.request<T>('POST', url, { ...options, data });
   }
@@ -228,7 +227,7 @@ export class HttpRequestService {
   async put<T = unknown>(
     url: string,
     data?: unknown,
-    options?: HttpRequestOptions,
+    options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
     return this.request<T>('PUT', url, { ...options, data });
   }
@@ -246,7 +245,7 @@ export class HttpRequestService {
   async patch<T = unknown>(
     url: string,
     data?: unknown,
-    options?: HttpRequestOptions,
+    options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
     return this.request<T>('PATCH', url, { ...options, data });
   }
@@ -284,7 +283,7 @@ export class HttpRequestService {
   async postBinary<T = unknown>(
     url: string,
     data: ArrayBuffer | Uint8Array,
-    options?: BinaryRequestOptions,
+    options?: BinaryRequestOptions
   ): Promise<HttpResponse<T>> {
     const contentType = options?.contentType ?? 'application/octet-stream';
     return await this.request<T>('POST', url, {

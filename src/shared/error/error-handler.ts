@@ -1,7 +1,8 @@
 import { logger } from '@shared/logging';
+import { createSingleton } from '@shared/utils/types/singleton';
 
 export class GlobalErrorHandler {
-  private static instance: GlobalErrorHandler | null = null;
+  private static readonly singleton = createSingleton(() => new GlobalErrorHandler());
   private isInitialized = false;
   private readonly errorListener = (event: ErrorEvent) => {
     const message = event.message ?? 'Unknown error occurred';
@@ -25,8 +26,8 @@ export class GlobalErrorHandler {
       reason instanceof Error
         ? reason.message
         : typeof reason === 'string'
-          ? reason
-          : `Unhandled rejection: ${String(reason)}`;
+        ? reason
+        : `Unhandled rejection: ${String(reason)}`;
 
     logger.error(`[UnhandledRejection] ${message}`, {
       type: 'unhandled-rejection',
@@ -39,10 +40,12 @@ export class GlobalErrorHandler {
   };
 
   public static getInstance(): GlobalErrorHandler {
-    if (!GlobalErrorHandler.instance) {
-      GlobalErrorHandler.instance = new GlobalErrorHandler();
-    }
-    return GlobalErrorHandler.instance;
+    return GlobalErrorHandler.singleton.get();
+  }
+
+  /** @internal Test helper */
+  public static resetForTests(): void {
+    GlobalErrorHandler.singleton.reset();
   }
 
   private constructor() {}

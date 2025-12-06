@@ -9,6 +9,7 @@ import { logger } from '@shared/logging';
 import { BaseServiceImpl } from '@shared/services/base-service';
 import { assignNestedPath, resolveNestedPath } from '@shared/utils/types/object-path';
 import { cloneDeep } from '@shared/utils/types/safety';
+import { createSingleton } from '@shared/utils/types/singleton';
 import { migrateSettings } from './settings-migration';
 import { PersistentSettingsRepository, type SettingsRepository } from './settings-repository';
 import type { FeatureFlagMap, SettingsServiceContract } from './settings-service.contract';
@@ -16,27 +17,26 @@ import type { FeatureFlagMap, SettingsServiceContract } from './settings-service
 const FEATURE_DEFAULTS: Readonly<FeatureFlags> = Object.freeze({ ...DEFAULT_SETTINGS.features });
 
 function normalizeFeatureFlags(
-  features?: Partial<Record<keyof FeatureFlags, unknown>>,
+  features?: Partial<Record<keyof FeatureFlags, unknown>>
 ): FeatureFlagMap {
   const featureKeys = Object.keys(FEATURE_DEFAULTS) as Array<keyof FeatureFlags>;
-  return featureKeys.reduce<Record<keyof FeatureFlags, boolean>>(
-    (acc, key) => {
-      const candidate = features?.[key];
-      acc[key] = typeof candidate === 'boolean' ? candidate : FEATURE_DEFAULTS[key];
-      return acc;
-    },
-    {} as Record<keyof FeatureFlags, boolean>,
-  );
+  return featureKeys.reduce<Record<keyof FeatureFlags, boolean>>((acc, key) => {
+    const candidate = features?.[key];
+    acc[key] = typeof candidate === 'boolean' ? candidate : FEATURE_DEFAULTS[key];
+    return acc;
+  }, {} as Record<keyof FeatureFlags, boolean>);
 }
 
 export class SettingsService extends BaseServiceImpl implements SettingsServiceContract {
-  private static instance: SettingsService | null = null;
+  private static readonly singleton = createSingleton(() => new SettingsService());
 
   public static getInstance(): SettingsService {
-    if (!SettingsService.instance) {
-      SettingsService.instance = new SettingsService();
-    }
-    return SettingsService.instance;
+    return SettingsService.singleton.get();
+  }
+
+  /** @internal Test helper */
+  public static resetForTests(): void {
+    SettingsService.singleton.reset();
   }
 
   private settings: AppSettings = createDefaultSettings();
@@ -44,7 +44,7 @@ export class SettingsService extends BaseServiceImpl implements SettingsServiceC
   private readonly listeners = new Set<(event: SettingChangeEvent) => void>();
 
   constructor(
-    private readonly repository: SettingsRepository = new PersistentSettingsRepository(),
+    private readonly repository: SettingsRepository = new PersistentSettingsRepository()
   ) {
     super('SettingsService');
   }
@@ -121,7 +121,7 @@ export class SettingsService extends BaseServiceImpl implements SettingsServiceC
     } else if (category in DEFAULT_SETTINGS) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (this.settings as any)[category] = cloneDeep(
-        DEFAULT_SETTINGS[category as keyof typeof DEFAULT_SETTINGS],
+        DEFAULT_SETTINGS[category as keyof typeof DEFAULT_SETTINGS]
       );
     }
     this.settings.lastModified = Date.now();
@@ -201,7 +201,7 @@ export class SettingsService extends BaseServiceImpl implements SettingsServiceC
   }
 
   private notifyListeners(event: SettingChangeEvent): void {
-    this.listeners.forEach((listener) => {
+    this.listeners.forEach(listener => {
       try {
         listener(event);
       } catch (error) {

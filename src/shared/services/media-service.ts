@@ -11,6 +11,7 @@ import type {
   MediaExtractionResult,
   MediaInfo,
 } from '@shared/types/media.types';
+import { createSingleton } from '@shared/utils/types/singleton';
 
 export type BulkDownloadOptions = DownloadOptions;
 
@@ -19,7 +20,7 @@ export interface MediaServiceOptions {
 }
 
 export class MediaService extends BaseServiceImpl {
-  private static instance: MediaService | null = null;
+  private static readonly singleton = createSingleton(() => new MediaService());
   private mediaExtraction: MediaExtractionService | null = null;
   private webpSupported: boolean | null = null;
   private readonly prefetchManager = new PrefetchManager(20);
@@ -43,16 +44,18 @@ export class MediaService extends BaseServiceImpl {
     this.prefetchManager.destroy();
   }
 
-  public static getInstance(options?: MediaServiceOptions): MediaService {
-    if (!MediaService.instance) {
-      MediaService.instance = new MediaService(options);
-    }
-    return MediaService.instance;
+  public static getInstance(_options?: MediaServiceOptions): MediaService {
+    return MediaService.singleton.get();
+  }
+
+  /** @internal Test helper */
+  public static resetForTests(): void {
+    MediaService.singleton.reset();
   }
 
   async extractFromClickedElement(
     element: HTMLElement,
-    options: MediaExtractionOptions = {},
+    options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     if (!this.mediaExtraction) throw new Error('Media Extraction not initialized');
     const result = await this.mediaExtraction.extractFromClickedElement(element, options);
@@ -65,7 +68,7 @@ export class MediaService extends BaseServiceImpl {
       }
 
       // Idle prefetch for others
-      result.mediaItems.slice(1).forEach((item) => {
+      result.mediaItems.slice(1).forEach(item => {
         this.prefetchMedia(item, 'idle');
       });
     }
@@ -75,7 +78,7 @@ export class MediaService extends BaseServiceImpl {
 
   async extractAllFromContainer(
     container: HTMLElement,
-    options: MediaExtractionOptions = {},
+    options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     if (!this.mediaExtraction) throw new Error('Media Extraction not initialized');
     return this.mediaExtraction.extractAllFromContainer(container, options);
@@ -135,7 +138,7 @@ export class MediaService extends BaseServiceImpl {
 
   async downloadSingle(
     media: MediaInfo,
-    options: DownloadOptions = {},
+    options: DownloadOptions = {}
   ): Promise<SingleDownloadResult> {
     const { DownloadOrchestrator } = await import('./download/download-orchestrator');
     const downloadService = DownloadOrchestrator.getInstance();
@@ -160,7 +163,7 @@ export class MediaService extends BaseServiceImpl {
 
   async downloadMultiple(
     items: Array<MediaInfo>,
-    options: BulkDownloadOptions = {},
+    options: BulkDownloadOptions = {}
   ): Promise<BulkDownloadResult> {
     const { DownloadOrchestrator } = await import('./download/download-orchestrator');
     const downloadService = DownloadOrchestrator.getInstance();
@@ -172,7 +175,7 @@ export class MediaService extends BaseServiceImpl {
 
   async downloadBulk(
     items: readonly MediaInfo[],
-    options: BulkDownloadOptions = {},
+    options: BulkDownloadOptions = {}
   ): Promise<BulkDownloadResult> {
     return this.downloadMultiple(Array.from(items), options);
   }

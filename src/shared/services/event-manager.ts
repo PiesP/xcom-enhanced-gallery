@@ -11,6 +11,7 @@ import {
   removeEventListenerManaged,
   removeEventListenersByContext,
 } from '@shared/utils/events/core/listener-manager';
+import { createSingleton } from '@shared/utils/types/singleton';
 import { BaseServiceImpl } from './base-service';
 
 /**
@@ -24,7 +25,7 @@ import { BaseServiceImpl } from './base-service';
  * - Lifecycle integration via BaseServiceImpl
  */
 export class EventManager extends BaseServiceImpl {
-  private static instance: EventManager | null = null;
+  private static readonly singleton = createSingleton(() => new EventManager());
   private isDestroyed = false;
 
   private constructor() {
@@ -33,10 +34,12 @@ export class EventManager extends BaseServiceImpl {
 
   /** Get singleton instance */
   public static getInstance(): EventManager {
-    if (!EventManager.instance) {
-      EventManager.instance = new EventManager();
-    }
-    return EventManager.instance;
+    return EventManager.singleton.get();
+  }
+
+  /** @internal Test helper */
+  public static resetForTests(): void {
+    EventManager.singleton.reset();
   }
 
   /** Lifecycle: Initialization */
@@ -64,7 +67,7 @@ export class EventManager extends BaseServiceImpl {
     type: string,
     listener: EventListener,
     options?: AddEventListenerOptions,
-    context?: string,
+    context?: string
   ): string {
     if (this.isDestroyed) {
       logger.warn('EventManager: addListener called on destroyed instance');

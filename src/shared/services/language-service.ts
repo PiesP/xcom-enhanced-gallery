@@ -23,6 +23,7 @@ import {
 import { logger } from '@shared/logging';
 import { BaseServiceImpl } from '@shared/services/base-service';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
+import { createSingleton } from '@shared/utils/types/singleton';
 
 export type {
   BaseLanguageCode,
@@ -55,13 +56,15 @@ export class LanguageService extends BaseServiceImpl {
   private readonly listeners: Set<(language: SupportedLanguage) => void> = new Set();
   private readonly storage = getPersistentStorage();
 
-  private static instance: LanguageService;
+  private static readonly singleton = createSingleton(() => new LanguageService());
 
   public static getInstance(): LanguageService {
-    if (!LanguageService.instance) {
-      LanguageService.instance = new LanguageService();
-    }
-    return LanguageService.instance;
+    return LanguageService.singleton.get();
+  }
+
+  /** @internal Test helper */
+  public static resetForTests(): void {
+    LanguageService.singleton.reset();
   }
 
   constructor() {
@@ -164,7 +167,7 @@ export class LanguageService extends BaseServiceImpl {
   }
 
   private normalizeLanguage(
-    language: SupportedLanguage | string | null | undefined,
+    language: SupportedLanguage | string | null | undefined
   ): SupportedLanguage {
     if (!language) {
       return 'auto';
@@ -178,7 +181,7 @@ export class LanguageService extends BaseServiceImpl {
   }
 
   private notifyListeners(language: SupportedLanguage): void {
-    this.listeners.forEach((listener) => {
+    this.listeners.forEach(listener => {
       try {
         listener(language);
       } catch (error) {

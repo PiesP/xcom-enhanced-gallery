@@ -10,6 +10,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { createSingleton } from '@shared/utils/types/singleton';
 
 interface Disposable {
   destroy(): void;
@@ -25,16 +26,20 @@ function isDisposable(value: unknown): value is Disposable {
 }
 
 export class CoreService {
-  private static instance: CoreService | null = null;
+  private static readonly singleton = createSingleton(() => new CoreService());
   private readonly services = new Map<string, unknown>();
 
   private constructor() {}
 
   public static getInstance(): CoreService {
-    if (!CoreService.instance) {
-      CoreService.instance = new CoreService();
-    }
-    return CoreService.instance;
+    return CoreService.singleton.get();
+  }
+
+  /** @internal Test helper */
+  public static resetForTests(): void {
+    const instance = CoreService.singleton.get();
+    instance.reset();
+    CoreService.singleton.reset();
   }
 
   public register<T>(key: string, instance: T): void {
@@ -64,7 +69,7 @@ export class CoreService {
   }
 
   public cleanup(): void {
-    this.services.forEach((service) => {
+    this.services.forEach(service => {
       try {
         if (isDisposable(service)) {
           service.destroy();
@@ -78,13 +83,6 @@ export class CoreService {
 
   public reset(): void {
     this.cleanup();
-  }
-
-  public static resetInstance(): void {
-    if (CoreService.instance) {
-      CoreService.instance.reset();
-      CoreService.instance = null;
-    }
   }
 }
 

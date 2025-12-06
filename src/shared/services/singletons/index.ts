@@ -1,17 +1,24 @@
 /**
  * @fileoverview ES Module Singleton Service Exports
  * @description Direct singleton exports for tree-shakable service access
- * @version 3.0.0 - FilenameService removed (use functional API)
+ * @version 4.0.0 - Modernized with createSingleton pattern
  *
  * This module exports service singletons directly as ES modules,
  * enabling better tree-shaking and simpler access patterns.
  *
+ * **Modern Singleton Pattern**:
+ * All services now use `createSingleton` helper for consistent lifecycle management.
+ * Each service class provides:
+ * - `getInstance()`: Get singleton instance
+ * - `resetForTests()`: Reset singleton for test isolation
+ *
  * **Migration from CoreService**:
  * - Before: `CoreService.getInstance().get<ThemeService>(SERVICE_KEYS.THEME)`
- * - After: `import { themeService } from '@shared/services/singletons'`
+ * - After: `import { getThemeServiceInstance } from '@shared/services/singletons'`
  *
  * **Test Mocking**:
- * Use `setServiceInstance()` to inject mocks in test environments.
+ * Use `resetAllServiceInstances()` in test teardown for clean state.
+ * Services now use internal createSingleton pattern - use class static reset methods.
  *
  * **FilenameService (REMOVED)**:
  * FilenameService singleton has been removed in v3.0.0.
@@ -26,86 +33,69 @@ import { MediaService } from '@shared/services/media-service';
 import { ThemeService } from '@shared/services/theme-service';
 
 // ============================================================================
-// Service Instance Holders (Mutable for testing)
-// ============================================================================
-
-let _themeService: ThemeService | null = null;
-let _languageService: LanguageService | null = null;
-let _mediaService: MediaService | null = null;
-
-// ============================================================================
-// Lazy Singleton Getters
+// Lazy Singleton Getters (Delegate to class static methods)
 // ============================================================================
 
 /**
  * Get ThemeService singleton instance.
- * Lazily initialized on first access.
+ * Lazily initialized on first access via createSingleton pattern.
  */
 export function getThemeServiceInstance(): ThemeService {
-  if (!_themeService) {
-    _themeService = ThemeService.getInstance();
-  }
-  return _themeService;
+  return ThemeService.getInstance();
 }
 
 /**
  * Get LanguageService singleton instance.
- * Lazily initialized on first access.
+ * Lazily initialized on first access via createSingleton pattern.
  */
 export function getLanguageServiceInstance(): LanguageService {
-  if (!_languageService) {
-    _languageService = LanguageService.getInstance();
-  }
-  return _languageService;
+  return LanguageService.getInstance();
 }
 
 /**
  * Get MediaService singleton instance.
- * Lazily initialized on first access.
+ * Lazily initialized on first access via createSingleton pattern.
  */
 export function getMediaServiceInstance(): MediaService {
-  if (!_mediaService) {
-    _mediaService = MediaService.getInstance();
-  }
-  return _mediaService;
+  return MediaService.getInstance();
 }
 
 // ============================================================================
-// Test Utilities - Mock Injection
+// Test Utilities - Singleton Reset
 // ============================================================================
 
 /**
- * Set a mock ThemeService instance for testing.
- * @param mock - Mock instance or null to reset
+ * Reset ThemeService singleton for testing.
+ * @internal
  */
-export function setThemeServiceInstance(mock: ThemeService | null): void {
-  _themeService = mock;
+export function setThemeServiceInstance(_mock: ThemeService | null): void {
+  ThemeService.resetForTests();
 }
 
 /**
- * Set a mock LanguageService instance for testing.
- * @param mock - Mock instance or null to reset
+ * Reset LanguageService singleton for testing.
+ * @internal
  */
-export function setLanguageServiceInstance(mock: LanguageService | null): void {
-  _languageService = mock;
+export function setLanguageServiceInstance(_mock: LanguageService | null): void {
+  LanguageService.resetForTests();
 }
 
 /**
- * Set a mock MediaService instance for testing.
- * @param mock - Mock instance or null to reset
+ * Reset MediaService singleton for testing.
+ * @internal
  */
-export function setMediaServiceInstance(mock: MediaService | null): void {
-  _mediaService = mock;
+export function setMediaServiceInstance(_mock: MediaService | null): void {
+  MediaService.resetForTests();
 }
 
 /**
- * Reset all service instances to null.
+ * Reset all service instances for test isolation.
  * Use in test teardown to ensure clean state.
  */
 export function resetAllServiceInstances(): void {
-  _themeService = null;
-  _languageService = null;
-  _mediaService = null;
+  ThemeService.resetForTests();
+  LanguageService.resetForTests();
+  MediaService.resetForTests();
 }
 
 // ============================================================================
