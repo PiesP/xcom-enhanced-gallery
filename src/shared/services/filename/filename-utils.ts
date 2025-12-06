@@ -90,7 +90,7 @@ function getIndexFromMediaId(mediaId?: string): string | null {
 function normalizeIndex(index?: string | number): string {
   if (index === undefined || index === null) return '1';
   const num = typeof index === 'string' ? safeParseInt(index, 10) : index;
-  return isNaN(num) || num < 1 ? '1' : num.toString();
+  return Number.isNaN(num) || num < 1 ? '1' : num.toString();
 }
 
 /**

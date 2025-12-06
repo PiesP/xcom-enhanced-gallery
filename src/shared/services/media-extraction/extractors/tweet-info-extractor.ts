@@ -32,7 +32,7 @@ const extractFromElement: ExtractionStrategy = (element) => {
   const href = element.getAttribute('href');
   if (href) {
     const match = href.match(/\/status\/(\d+)/);
-    if (match && match[1]) {
+    if (match?.[1]) {
       return {
         tweetId: match[1],
         username: extractUsernameFromUrl(href) ?? 'unknown',

@@ -281,7 +281,7 @@ export function useToolbarSettingsController(
         return;
       }
 
-      if (settingsButton && settingsButton.contains(targetElement)) {
+      if (settingsButton?.contains(targetElement)) {
         return;
       }
 

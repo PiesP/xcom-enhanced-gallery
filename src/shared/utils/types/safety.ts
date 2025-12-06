@@ -14,7 +14,7 @@
  */
 export function safeParseInt(value: string | undefined | null, radix: number = 10): number {
   const result = parseInt(value as string, radix);
-  return isNaN(result) ? 0 : result;
+  return Number.isNaN(result) ? 0 : result;
 }
 
 /**
@@ -22,7 +22,7 @@ export function safeParseInt(value: string | undefined | null, radix: number = 1
  */
 export function safeParseFloat(value: string | undefined | null): number {
   const result = parseFloat(value as string);
-  return isNaN(result) ? 0 : result;
+  return Number.isNaN(result) ? 0 : result;
 }
 
 // ========== Type conversion utilities ==========
