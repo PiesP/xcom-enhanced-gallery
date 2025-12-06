@@ -117,14 +117,30 @@ export type { NavigationSource } from './navigation.types';
 export type {
   BaseResult,
   BaseResultStatus,
-  ErrorCode,
+  BoolResult,
   Result,
   ResultError,
   ResultPartial,
   ResultSuccess,
 } from './result.types';
-// Result utility functions (Phase 4: Reduced to commonly used ones)
-export { failure, isFailure, isSuccess, success } from './result.types';
+// Result utility functions and ErrorCode (Phase: Result Unification - expanded API)
+// ErrorCode is re-exported as both value (const object) and type automatically
+export {
+  andThen,
+  ErrorCode,
+  err,
+  failure,
+  fromBoolResult,
+  isFailure,
+  isPartial,
+  isSuccess,
+  map,
+  mapErr,
+  ok,
+  success,
+  toBoolResult,
+  unwrapOr,
+} from './result.types';
 // Toolbar UI state types
 export type {
   FitMode,

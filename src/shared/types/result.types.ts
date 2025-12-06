@@ -165,3 +165,161 @@ export function isSuccess<T>(result: Result<T>): result is ResultSuccess<T> {
 export function isFailure<T>(result: Result<T>): result is ResultError {
   return result.status === 'error' || result.status === 'cancelled';
 }
+
+/**
+ * Check if Result is partial success (type guard)
+ */
+export function isPartial<T>(result: Result<T>): result is ResultPartial<T> {
+  return result.status === 'partial';
+}
+
+// ============================================================================
+// Rust-style Aliases (Phase: Result Unification)
+// ============================================================================
+
+/**
+ * Create success Result (Rust-style alias for `success`)
+ *
+ * @example
+ * ```typescript
+ * const result = ok({ id: 1 });
+ * // { status: 'success', data: { id: 1 }, code: ErrorCode.NONE }
+ * ```
+ */
+export const ok = success;
+
+/**
+ * Create failure Result (Rust-style alias for `failure`)
+ *
+ * @example
+ * ```typescript
+ * const result = err('Not found', ErrorCode.ELEMENT_NOT_FOUND);
+ * // { status: 'error', error: 'Not found', code: ErrorCode.ELEMENT_NOT_FOUND }
+ * ```
+ */
+export const err = failure;
+
+// ============================================================================
+// Result Utility Functions (Rust-style combinators)
+// ============================================================================
+
+/**
+ * Unwrap Result value or return default on failure
+ *
+ * @example
+ * ```typescript
+ * const value = unwrapOr(result, []);
+ * // Returns data if success, [] if failure
+ * ```
+ */
+export function unwrapOr<T>(result: Result<T>, defaultValue: T): T {
+  return result.status === 'success' || result.status === 'partial' ? result.data : defaultValue;
+}
+
+/**
+ * Map success data to a new value
+ *
+ * @example
+ * ```typescript
+ * const mapped = map(result, data => data.length);
+ * ```
+ */
+export function map<T, U>(result: Result<T>, fn: (data: T) => U): Result<U> {
+  if (result.status === 'success') {
+    return success(fn(result.data), result.meta);
+  }
+  if (result.status === 'partial') {
+    return {
+      ...result,
+      data: fn(result.data),
+    } as ResultPartial<U>;
+  }
+  return result as ResultError;
+}
+
+/**
+ * Map error message to a new message
+ *
+ * @example
+ * ```typescript
+ * const mapped = mapErr(result, msg => `Failed: ${msg}`);
+ * ```
+ */
+export function mapErr<T>(result: Result<T>, fn: (error: string) => string): Result<T> {
+  if (result.status === 'error' || result.status === 'cancelled') {
+    return { ...result, error: fn(result.error ?? '') };
+  }
+  return result;
+}
+
+/**
+ * Chain Result operations (flatMap)
+ *
+ * @example
+ * ```typescript
+ * const chained = andThen(result, data => ok(data.items));
+ * ```
+ */
+export function andThen<T, U>(result: Result<T>, fn: (data: T) => Result<U>): Result<U> {
+  if (result.status === 'success') {
+    return fn(result.data);
+  }
+  if (result.status === 'partial') {
+    const mapped = fn(result.data);
+    if (mapped.status === 'success') {
+      return {
+        ...result,
+        data: mapped.data,
+      } as unknown as ResultPartial<U>;
+    }
+    return mapped;
+  }
+  return result as ResultError;
+}
+
+// ============================================================================
+// Legacy Interop (Phase: Result Unification)
+// ============================================================================
+
+/**
+ * Boolean-style result type for legacy interop
+ */
+export interface BoolResult {
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * Convert legacy `{ success: boolean; error?: string }` to Result<void>
+ *
+ * @example
+ * ```typescript
+ * const legacy = { success: false, error: 'Failed' };
+ * const result = fromBoolResult(legacy);
+ * // { status: 'error', error: 'Failed', code: ErrorCode.UNKNOWN }
+ * ```
+ */
+export function fromBoolResult(obj: BoolResult): Result<void> {
+  if (obj.success) {
+    return success(undefined);
+  }
+  return failure(obj.error ?? 'Unknown error');
+}
+
+/**
+ * Convert Result<T> to legacy `{ success: boolean; error?: string }` format
+ *
+ * @example
+ * ```typescript
+ * const result = failure('Not found');
+ * const legacy = toBoolResult(result);
+ * // { success: false, error: 'Not found' }
+ * ```
+ */
+export function toBoolResult<T>(result: Result<T>): BoolResult {
+  if (result.status === 'success' || result.status === 'partial') {
+    return { success: true };
+  }
+  // Conditionally include error only if defined (exactOptionalPropertyTypes)
+  return result.error ? { success: false, error: result.error } : { success: false };
+}
