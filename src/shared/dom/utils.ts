@@ -12,17 +12,10 @@ import {
   VIDEO_CONTROL_SELECTORS,
 } from '@constants';
 import { logger } from '@shared/logging';
-import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { isHTMLElement } from '@shared/utils/types/guards';
 
 // Gallery element selectors (constants)
 const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;
-const GALLERY_CONTAINER_QUERY = [
-  CSS_CONST.SELECTORS.CONTAINER,
-  CSS_CONST.SELECTORS.DATA_CONTAINER,
-  CSS_CONST.SELECTORS.ROOT,
-  CSS_CONST.SELECTORS.DATA_GALLERY,
-].join(', ');
 
 /**
  * Ensure gallery scroll is available by enforcing scrollable containers to allow overflow.
@@ -34,10 +27,10 @@ export function ensureGalleryScrollAvailable(element: HTMLElement | null): void 
 
   // Find scrollable elements and enable default scroll
   const scrollableElements = element.querySelectorAll(
-    '[data-xeg-role="items-list"], .itemsList, .content',
+    '[data-xeg-role="items-list"], .itemsList, .content'
   ) as NodeListOf<HTMLElement>;
 
-  scrollableElements.forEach((el) => {
+  scrollableElements.forEach(el => {
     if (el.style.overflowY !== 'auto' && el.style.overflowY !== 'scroll') {
       el.style.overflowY = 'auto';
     }
@@ -55,10 +48,10 @@ const VIDEO_PLAYER_CONTEXT_SELECTORS = [
   '[role="application"]',
   '[aria-label*="Video"]',
 ];
-const VIDEO_CONTROL_ROLE_SET = new Set(VIDEO_CONTROL_ROLES.map((role) => role.toLowerCase()));
+const VIDEO_CONTROL_ROLE_SET = new Set(VIDEO_CONTROL_ROLES.map(role => role.toLowerCase()));
 
 function isWithinVideoPlayer(element: HTMLElement): boolean {
-  return VIDEO_PLAYER_CONTEXT_SELECTORS.some((selector) => {
+  return VIDEO_PLAYER_CONTEXT_SELECTORS.some(selector => {
     try {
       return element.closest(selector) !== null;
     } catch {
@@ -68,7 +61,7 @@ function isWithinVideoPlayer(element: HTMLElement): boolean {
 }
 
 function matchesVideoControlSelectors(element: HTMLElement): boolean {
-  return VIDEO_CONTROL_SELECTORS.some((selector) => {
+  return VIDEO_CONTROL_SELECTORS.some(selector => {
     try {
       return element.matches(selector) || element.closest(selector) !== null;
     } catch {
@@ -105,7 +98,7 @@ interface VideoControlEvidence {
 
 function getNearestAttributeValue(
   element: HTMLElement,
-  attribute: 'data-testid' | 'aria-label',
+  attribute: 'data-testid' | 'aria-label'
 ): string | null {
   if (element.hasAttribute(attribute)) {
     return element.getAttribute(attribute);
@@ -125,7 +118,7 @@ function containsControlToken(value: string | null, tokens: readonly string[]): 
   }
 
   const normalized = value.toLowerCase();
-  return tokens.some((token) => normalized.includes(token));
+  return tokens.some(token => normalized.includes(token));
 }
 
 function collectControlAttributeSnapshot(element: HTMLElement): ControlAttributeSnapshot {
@@ -210,7 +203,7 @@ export function isGalleryInternalElement(element: HTMLElement | null): boolean {
     return false;
   }
 
-  return GALLERY_SELECTORS.some((selector) => {
+  return GALLERY_SELECTORS.some(selector => {
     try {
       return element.matches(selector) || element.closest(selector) !== null;
     } catch (error) {
@@ -218,44 +211,6 @@ export function isGalleryInternalElement(element: HTMLElement | null): boolean {
       return false;
     }
   });
-}
-
-/**
- * Check if gallery can be triggered
- */
-export function canTriggerGallery(target: HTMLElement | null): boolean {
-  if (!target) return false;
-
-  // Phase 21.6: Migrated to use gallerySignals
-  // Don't trigger if gallery is already open
-  if (gallerySignals.isOpen.value) {
-    return false;
-  }
-
-  // Check if it's a video control element
-  if (isVideoControlElement(target)) {
-    return false;
-  }
-
-  // Check if it's an internal gallery element
-  if (isGalleryInternalElement(target)) {
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * Check if element is gallery container
- */
-export function isGalleryContainer(element: HTMLElement | null): boolean {
-  if (!element) return false;
-
-  try {
-    return element.matches(GALLERY_CONTAINER_QUERY);
-  } catch {
-    return false;
-  }
 }
 
 /**

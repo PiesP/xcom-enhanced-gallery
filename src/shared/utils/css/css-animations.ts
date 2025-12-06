@@ -1,30 +1,16 @@
 /**
- * @fileoverview CSS-based animation system - Motion One replacement
- * @version 2.0.0 - Phase 2: Simplify animation system
+ * @fileoverview CSS-based animation system
  *
  * @description
- * Performance-optimized animation system using CSS transitions and keyframes
- * Removed Motion One library dependency and optimized bundle size
+ * Performance-optimized animation system using CSS transitions and keyframes.
  */
 
 import { CSS } from '@constants';
 import { logger } from '@shared/logging';
 import { hasStyle, registerStyle } from '@shared/services/styles';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
 
-// CSS animation variables and constants
-export const ANIMATION_CONSTANTS = {
-  DURATION_FAST: 150,
-  DURATION_NORMAL: 300,
-  DURATION_SLOW: 500,
-  EASING_EASE_OUT: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  EASING_EASE_IN: 'cubic-bezier(0.4, 0, 1, 1)',
-  EASING_EASE_IN_OUT: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  STAGGER_DELAY: 50,
-} as const;
-
-// CSS class constants
-export const ANIMATION_CLASSES = {
+// CSS class constants (internal)
+const ANIMATION_CLASSES = {
   FADE_IN: 'animate-fade-in',
   FADE_OUT: 'animate-fade-out',
   SLIDE_IN_BOTTOM: 'animate-slide-in-bottom',
@@ -45,9 +31,7 @@ export interface CSSAnimationOptions {
   onComplete?: () => void;
 }
 
-/**
- * Inject CSS keyframes into DOM
- */
+// Internal constants
 const ANIMATION_STYLE_ID = 'xeg-animation-styles';
 const ANIMATION_LAYER = 'xeg.utilities';
 const GALLERY_SCOPE_HOSTS = CSS.SCOPES.HOSTS;
@@ -62,7 +46,10 @@ const KEYFRAMES = {
   IMAGE_LOAD: 'xeg-image-load',
 } as const;
 
-export function injectAnimationStyles(): void {
+/**
+ * Inject CSS keyframes into DOM (internal, called lazily)
+ */
+function injectAnimationStyles(): void {
   if (hasStyle(ANIMATION_STYLE_ID)) {
     return;
   }
@@ -150,7 +137,10 @@ export async function animateGalleryEnter(
   element: Element,
   options: CSSAnimationOptions = {},
 ): Promise<void> {
-  return new Promise<void>((resolve) => {
+  // Ensure styles are injected on first animation
+  injectAnimationStyles();
+
+  return new Promise<void>(resolve => {
     try {
       const handleAnimationEnd = () => {
         element.removeEventListener('animationend', handleAnimationEnd);
@@ -175,7 +165,10 @@ export async function animateGalleryExit(
   element: Element,
   options: CSSAnimationOptions = {},
 ): Promise<void> {
-  return new Promise<void>((resolve) => {
+  // Ensure styles are injected on first animation
+  injectAnimationStyles();
+
+  return new Promise<void>(resolve => {
     try {
       const handleAnimationEnd = () => {
         element.removeEventListener('animationend', handleAnimationEnd);
@@ -191,62 +184,4 @@ export async function animateGalleryExit(
       resolve();
     }
   });
-}
-
-/**
- * Image items entry animation (stagger effect, CSS-based)
- */
-export async function animateImageItemsEnter(elements: Element[]): Promise<void> {
-  return new Promise<void>((resolve) => {
-    try {
-      let completedCount = 0;
-      const totalElements = elements.length;
-
-      if (totalElements === 0) {
-        resolve();
-        return;
-      }
-
-      elements.forEach((element, index) => {
-        const delay = index * ANIMATION_CONSTANTS.STAGGER_DELAY;
-
-        // Use global timer manager for unified test/cleanup path
-        globalTimerManager.setTimeout(() => {
-          const handleAnimationEnd = () => {
-            element.removeEventListener('animationend', handleAnimationEnd);
-            element.classList.remove(ANIMATION_CLASSES.SLIDE_IN_BOTTOM);
-            completedCount++;
-
-            if (completedCount === totalElements) {
-              resolve();
-            }
-          };
-
-          element.addEventListener('animationend', handleAnimationEnd);
-          element.classList.add(ANIMATION_CLASSES.SLIDE_IN_BOTTOM);
-        }, delay);
-      });
-    } catch (error) {
-      logger.warn('Image items entry animation failed:', error);
-      resolve();
-    }
-  });
-}
-
-/**
- * Animation cleanup utility
- */
-export function cleanupAnimations(element: Element): void {
-  Object.values(ANIMATION_CLASSES).forEach((className) => {
-    element.classList.remove(className);
-  });
-
-  const htmlElement = element as HTMLElement;
-  htmlElement.style.animation = '';
-
-  try {
-    htmlElement.style.removeProperty('--animation-duration');
-  } catch {
-    // Ignore in mock environments without removeProperty
-  }
 }
