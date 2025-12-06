@@ -3,16 +3,12 @@
   "vcs": {
     "enabled": true,
     "clientKind": "git",
-    "useIgnoreFile": false
+    "useIgnoreFile": true,
+    "defaultBranch": "master"
   },
   "files": {
-    "includes": [
-      "src/**/*.ts",
-      "src/**/*.tsx",
-      "scripts/**/*.ts",
-      "test/**/*.ts",
-      "playwright/**/*.ts"
-    ]
+    "includes": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "test/**/*.ts", "playwright/**/*.ts"],
+    "ignoreUnknown": false
   },
   "formatter": {
     "enabled": true,
@@ -60,7 +56,8 @@
     "formatter": {
       "quoteStyle": "single",
       "semicolons": "always",
-      "trailingCommas": "all"
+      "trailingCommas": "all",
+      "arrowParentheses": "always"
     }
   },
   "json": {
@@ -84,5 +81,17 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.test.{ts,tsx}", "**/test/**/*.{ts,tsx}", "**/playwright/**/*.{ts,tsx}"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    }
+  ]
 }
