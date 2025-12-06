@@ -52,8 +52,4 @@ export type {
   ServiceHandler,
   ServiceRegistrationOptions,
 } from './handler.interfaces';
-export {
-  createFailureResult,
-  createSuccessResult,
-  DEFAULT_EVENT_HANDLER_CONFIG,
-} from './handler.interfaces';
+export { DEFAULT_EVENT_HANDLER_CONFIG } from './handler.interfaces';

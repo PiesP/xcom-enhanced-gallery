@@ -146,62 +146,6 @@ export function failure<T = never>(
   };
 }
 
-/**
- * Create partial failure Result
- *
- * @param data - Partially successful data
- * @param error - Error message
- * @param failures - List of failed items
- * @param meta - Optional metadata
- * @returns Enhanced Result (partial)
- *
- * @example
- * ```typescript
- * const result = partial([item1, item2], '1 failed', [{ url: 'bad.jpg', error: '404' }]);
- * // { status: 'partial', data: [...], code: ErrorCode.PARTIAL_FAILED, failures: [...] }
- * ```
- */
-export function partial<T>(
-  data: T,
-  error: string,
-  failures: Array<{ url: string; error: string }>,
-  meta?: Record<string, unknown>,
-): ResultPartial<T> {
-  return {
-    status: 'partial',
-    data,
-    error,
-    code: ErrorCode.PARTIAL_FAILED,
-    failures,
-    ...(meta && { meta }),
-  };
-}
-
-/**
- * Create cancelled Result
- *
- * @param error - Error message (default: 'Operation cancelled')
- * @param meta - Optional metadata
- * @returns Enhanced Result (cancelled)
- *
- * @example
- * ```typescript
- * const result = cancelled('User cancelled download');
- * // { status: 'cancelled', error: 'User cancelled download', code: ErrorCode.CANCELLED }
- * ```
- */
-export function cancelled<T = never>(
-  error = 'Operation cancelled',
-  meta?: Record<string, unknown>,
-): Result<T> {
-  return {
-    status: 'cancelled',
-    error,
-    code: ErrorCode.CANCELLED,
-    ...(meta && { meta }),
-  };
-}
-
 // ============================================================================
 // Type Guards (inline usage recommended for tree-shaking)
 // ============================================================================

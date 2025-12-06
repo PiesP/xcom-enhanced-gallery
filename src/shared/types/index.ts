@@ -124,14 +124,7 @@ export type {
   ResultSuccess,
 } from './result.types';
 // Result utility functions (Phase 4: Reduced to commonly used ones)
-export {
-  cancelled,
-  failure,
-  isFailure,
-  isSuccess,
-  partial,
-  success,
-} from './result.types';
+export { failure, isFailure, isSuccess, success } from './result.types';
 // Toolbar UI state types
 export type {
   FitMode,

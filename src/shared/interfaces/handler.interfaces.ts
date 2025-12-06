@@ -95,31 +95,6 @@ export interface InitializationResult {
   readonly durationMs?: number;
 }
 
-/**
- * Create a successful initialization result
- */
-export function createSuccessResult(message?: string, durationMs?: number): InitializationResult {
-  const result: InitializationResult = { success: true };
-  if (message !== undefined) {
-    (result as { message: string }).message = message;
-  }
-  if (durationMs !== undefined) {
-    (result as { durationMs: number }).durationMs = durationMs;
-  }
-  return result;
-}
-
-/**
- * Create a failed initialization result
- */
-export function createFailureResult(error: unknown, message?: string): InitializationResult {
-  const result: InitializationResult = { success: false, error };
-  if (message !== undefined) {
-    (result as { message: string }).message = message;
-  }
-  return result;
-}
-
 // ============================================================================
 // Service Handler Interfaces
 // ============================================================================
