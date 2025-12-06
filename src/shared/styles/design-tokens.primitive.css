@@ -9,13 +9,6 @@
     --color-base-white: oklch(1 0 0);
     --color-base-black: oklch(0 0 0);
 
-    /* Blue Scale - Enhanced Contrast */
-    --color-blue-50: oklch(0.97 0.013 228);
-    --color-blue-100: oklch(0.943 0.031 228);
-    --color-blue-500: oklch(0.567 0.243 253.4); /* Darker blue (Ensures AA contrast ratio) */
-    --color-blue-600: oklch(0.523 0.21 252.8); /* Darker than original 600 */
-    --color-blue-700: oklch(0.467 0.188 253.4); /* Darker than original 700 */
-
     /* Gray Scale */
     --color-gray-50: oklch(0.97 0.002 206.2);
     --color-gray-100: oklch(0.943 0.006 206.2);
@@ -29,32 +22,6 @@
       0.306 0.005 282
     ); /* Between gray-700 and 900, modal/toolbar background */
     --color-gray-900: oklch(0.234 0.006 277.8);
-
-    /* Red Scale */
-    --color-red-50: oklch(0.971 0.013 17.4);
-    --color-red-500: oklch(0.628 0.257 27.3);
-    --color-red-600: oklch(0.568 0.228 25.3);
-
-    /* Green Scale */
-    --color-green-50: oklch(0.95 0.08 142);
-    --color-green-500: oklch(0.725 0.17 142.5);
-    --color-green-600: oklch(0.668 0.157 143.1);
-
-    /* Yellow Scale */
-    --color-yellow-50: oklch(0.988 0.029 86.7);
-    --color-yellow-500: oklch(0.761 0.16 70.7);
-    --color-yellow-600: oklch(0.699 0.148 64.9);
-
-    /* Twitter Brand Colors */
-    --color-twitter-blue: oklch(0.676 0.151 237.8); /* #1d9bf0 */
-    --color-twitter-blue-hover: oklch(0.616 0.144 238.1); /* #1a8cd8 */
-    --color-twitter-blue-active: oklch(0.549 0.138 238.7); /* #1570b8 */
-    --color-twitter-red: oklch(0.628 0.227 17); /* #f4212e */
-    --color-twitter-red-hover: oklch(0.558 0.208 16.5); /* #dc1928 */
-    --color-twitter-green: oklch(0.671 0.146 166.4); /* #00ba7c */
-    --color-twitter-green-hover: oklch(0.61 0.135 165.8); /* #00a46c */
-    --color-twitter-orange: oklch(0.775 0.122 57.5); /* #ffad1f */
-    --color-twitter-orange-hover: oklch(0.729 0.14 50.2); /* #fd9700 */
 
     /* Spacing Scale - rem base (absolute, 16px base) */
     --space-xs: 0.25rem; /* 4px */

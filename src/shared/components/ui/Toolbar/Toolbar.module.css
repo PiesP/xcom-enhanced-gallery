@@ -243,18 +243,10 @@
   --toolbar-button-focus-border: var(--xeg-color-error-hover);
 }
 
-/* 네비게이션 섹션 */
-.toolbarNavigation {
-  gap: 0.5em; /* 8px → 0.5em */
+/* 다운로드 버튼 - 기본 스타일 상속 */
+.downloadButton {
+  position: relative;
 }
-
-/* 네비게이션 버튼 - 기본 스타일 상속 */
-.navButton:active:not(:disabled),
-.navButton.active {
-  border-color: var(--xeg-color-primary);
-}
-
-/* 미디어 카운터 */
 .mediaCounterWrapper {
   /* 베이스라인 동기화를 위한 인라인 플렉스 컨테이너 */
   position: relative; /* 진행 바를 오버레이로 배치 */
@@ -359,9 +351,7 @@ button.fitButton {
 @media (prefers-reduced-motion: reduce) {
   /* 모든 버튼에서 transform 효과 제거 */
   .toolbarButton:hover:not(:disabled),
-  .navButton:hover:not(:disabled),
   .downloadButton:hover:not(:disabled),
-  .settingsButton:hover:not(:disabled),
   .closeButton:hover:not(:disabled),
   .fitButton:hover {
     transform: none;
@@ -435,25 +425,6 @@ button.fitButton {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-}
-
-/* Tweet Header - 설정 패널의 라벨 스타일과 통일 */
-.tweetHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.tweetLabel {
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  color: var(
-    --xeg-toolbar-text-muted,
-    var(--xeg-color-text-secondary)
-  ); /* Phase: design-consistency */
-
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 /* Tweet Content - 설정 패널의 select와 유사한 스타일 */

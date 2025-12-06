@@ -115,6 +115,7 @@
     /* State Color Tokens - xeg prefix aliases */
     --xeg-color-error: var(--color-error);
     --xeg-color-error-hover: var(--color-error-hover);
+    --xeg-color-success-hover: var(--color-success-hover);
 
     /* Interactive Colors - Semantic Roles (monochrome accent) */
     --color-primary: var(--color-gray-900);

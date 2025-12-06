@@ -266,8 +266,7 @@
   background: var(--xeg-color-neutral-400);
 }
 
-.container.uiHidden .toolbarWrapper,
-.container.uiHidden .content > *:not([data-xeg-role="items-list"]) {
+.container.uiHidden .toolbarWrapper {
   /* Hide non-content UI surfaces while the gallery is in immersive mode */
   pointer-events: none;
   opacity: 0;
@@ -278,11 +277,6 @@
 .container.uiHidden .itemsContainer {
   /* Keep the scroll surface interactive even when chrome is hidden */
   pointer-events: auto;
-}
-
-.container.visible {
-  opacity: 1;
-  transform: scale3d(1, 1, 1);
 }
 
 .container.empty {
@@ -363,16 +357,6 @@
   pointer-events: none;
 }
 
-/* Hover trigger next to the toolbar for browsers that lack :has */
-.toolbarHoverTrigger:hover + .toolbarWrapper {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-
-  --toolbar-opacity: 1;
-  --toolbar-pointer-events: auto;
-}
-
 /* Keep toolbar visible when hover strips or layout toggles are engaged */
 .container.initialToolbarVisible .toolbarWrapper,
 .container:has(.toolbarHoverZone:hover) .toolbarWrapper {
@@ -426,40 +410,6 @@
   pointer-events: auto;
   position: relative;
   z-index: 10;
-}
-
-/* Main content wrapper */
-.content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: clip;
-  position: relative;
-
-  /* Performance */
-  contain: layout style;
-  transform: var(--xeg-gpu-hack);
-
-  pointer-events: auto;
-
-  container-type: size;
-  container-name: content-area;
-}
-
-/* Shared fade helpers leverage GPU-backed transforms */
-.fadeInOut {
-  animation: fadeInOut var(--xeg-duration-normal) var(--xeg-easing-ease-out);
-}
-
-@keyframes fadeInOut {
-  0% {
-    opacity: 0;
-    transform: var(--xeg-transform-translate-up) var(--xeg-transform-scale-down);
-  }
-  100% {
-    opacity: 1;
-    transform: var(--xeg-transform-translate-center) var(--xeg-transform-scale-normal);
-  }
 }
 
 /* Empty state message with responsive typography */
@@ -532,34 +482,13 @@
 
 /* Light mode support deferred to design-tokens.semantic.css */
 
-/* Empty state button spacing */
-.emptyButton {
-  margin-top: 1rem;
-}
-
 /* Phase 254: Disable motion helpers when reduced-motion is requested */
 @media (prefers-reduced-motion: reduce) {
-  .fadeInOut {
-    animation: none;
-  }
-
   /* Disable hover transforms for toolbar surfaces */
   .toolbarWrapper:hover,
   .toolbarWrapper:focus-within {
     transform: none;
   }
-}
-
-/* Legacy hover trigger area (used alongside toolbarHoverZone) */
-.toolbarHoverTrigger {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--xeg-hover-zone-height); /* Same token as hover zone */
-  z-index: var(--xeg-z-toolbar-hover-zone);
-  pointer-events: auto;
-  background: transparent;
 }
 
 /* Ensure interacting with toolbar components forces them visible */
