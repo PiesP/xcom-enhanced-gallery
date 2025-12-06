@@ -14,12 +14,10 @@
 import { isGalleryInternalEvent } from '@shared/dom/utils';
 import { logger } from '@shared/logging';
 import { EventManager } from '@shared/services/event-manager';
-import type { GalleryState } from '@shared/state/signals/gallery.signals';
 import { galleryState } from '@shared/state/signals/gallery.signals';
-import { useSelector } from '@shared/state/signals/signal-selector';
 import { toAccessor } from '@shared/utils/solid/solid-helpers';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
-import { createEffect, createSignal, onCleanup } from 'solid-js';
+import { createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
 
 type Accessor<T> = () => T;
 type MaybeAccessor<T> = T | Accessor<T>;
@@ -72,9 +70,8 @@ export function useGalleryScroll({
   const enabledAccessor = toAccessor(enabled);
   const programmaticTimestampAccessor = toAccessor(programmaticScrollTimestamp ?? 0);
 
-  const isGalleryOpen = useSelector<GalleryState, boolean>(galleryState, (state) => state.isOpen, {
-    dependencies: (state) => [state.isOpen],
-  });
+  // Access gallery open state via galleryState
+  const isGalleryOpen = createMemo(() => galleryState.value.isOpen);
 
   const [isScrolling, setIsScrolling] = createSignal(false);
   const [lastScrollTime, setLastScrollTime] = createSignal(0);
@@ -142,7 +139,7 @@ export function useGalleryScroll({
         type,
         handler,
         { passive: true },
-        listenerContext,
+        listenerContext
       );
       if (id) {
         listenerIds.push(id);

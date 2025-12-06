@@ -7,7 +7,7 @@
  * @see https://www.solidjs.com/docs/latest/api#createsignal
  */
 
-import { createEffect, createMemo, createRoot, createSignal } from 'solid-js';
+import { createEffect, createRoot, createSignal } from 'solid-js';
 
 /**
  * Signal interface providing value access and subscription capability.
@@ -37,7 +37,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
 
   const signalObject = {
     subscribe(callback: (value: T) => void): () => void {
-      return createRoot((dispose) => {
+      return createRoot(dispose => {
         createEffect(() => callback(read()));
         return dispose;
       });
@@ -63,34 +63,8 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
  * @returns Dispose function
  */
 export function effectSafe(fn: () => void): () => void {
-  return createRoot((dispose) => {
+  return createRoot(dispose => {
     createEffect(() => fn());
     return dispose;
   });
-}
-
-/**
- * Create a memoized computed value with SolidJS.
- *
- * Uses native createMemo internally.
- *
- * @param compute - Computation function
- * @returns Object with readonly value property
- */
-export function computedSafe<T>(compute: () => T): { readonly value: T } {
-  let memoAccessor: (() => T) | null = null;
-
-  createRoot((dispose) => {
-    memoAccessor = createMemo(compute);
-    return () => {
-      memoAccessor = null;
-      dispose();
-    };
-  });
-
-  return {
-    get value() {
-      return memoAccessor ? memoAccessor() : compute();
-    },
-  } as const;
 }
