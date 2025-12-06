@@ -47,13 +47,9 @@ concurrency:
 jobs:
   # Run lint and typecheck in parallel for faster feedback
   lint:
-    name: 🧹 Lint
+    name: 🧹 Biome Lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
@@ -63,7 +59,7 @@ jobs:
             package.json
             package-lock.json
             tsconfig.json
-            eslint.config.ts
+            biome.json
             .github/actions
           sparse-checkout-cone-mode: false
 
@@ -72,23 +68,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: 🔍 Run ESLint
-        env:
-          SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
-        run: |
-          npx eslint src \
-            --report-unused-disable-directives \
-            --format @microsoft/eslint-formatter-sarif \
-            --output-file eslint-results.sarif \
-            --cache \
-            --cache-location .eslintcache
-        continue-on-error: true
-
-      - name: 📊 Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: eslint-results.sarif
-          wait-for-processing: true
+      - name: 🔍 Run Biome
+        run: npx biome check src --max-diagnostics=100
 
   typecheck:
     name: 📐 Type Check
