@@ -56,7 +56,7 @@ jobs:
       actions: read
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           sparse-checkout: |
             src
@@ -85,7 +85,7 @@ jobs:
         continue-on-error: true
 
       - name: 📊 Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: eslint-results.sarif
           wait-for-processing: true
@@ -96,7 +96,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           sparse-checkout: |
             src
@@ -121,7 +121,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🔧 Setup environment
         uses: ./.github/actions/setup-node
@@ -152,7 +152,7 @@ jobs:
           fi
 
       - name: 📊 Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: success()
         with:
           name: build-${{ github.sha }}
