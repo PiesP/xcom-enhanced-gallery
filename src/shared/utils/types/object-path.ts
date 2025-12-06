@@ -2,8 +2,25 @@
  * @fileoverview Nested object path utilities for deep property access
  * @description Provides type-safe nested property resolution and assignment.
  *              Simplified from original implementation - only exports what's actually used.
- * @version 2.0.0 - Simplified (removed unused hasNestedPath, deleteNestedPath)
+ * @version 2.1.0 - Added prototype pollution protection
  */
+
+/**
+ * Keys that are forbidden to prevent prototype pollution attacks.
+ * These keys can be used to modify Object.prototype and affect all objects.
+ */
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/**
+ * Check if a key is safe to use for property access/assignment.
+ * Prevents prototype pollution by blocking dangerous keys.
+ *
+ * @param key - The key to validate
+ * @returns True if the key is safe to use
+ */
+function isSafeKey(key: string): boolean {
+  return !FORBIDDEN_KEYS.has(key);
+}
 
 /**
  * Options for nested value assignment
@@ -38,6 +55,10 @@ export function resolveNestedPath<T = unknown>(source: unknown, path: string): T
   let current: any = source;
 
   for (const key of keys) {
+    // Guard against prototype pollution
+    if (!isSafeKey(key)) {
+      return undefined;
+    }
     if (current === null || current === undefined || typeof current !== 'object') {
       return undefined;
     }
@@ -76,6 +97,13 @@ export function assignNestedPath<T = unknown>(
   const keys = path.split('.');
   if (keys.length === 0) {
     return false;
+  }
+
+  // Guard against prototype pollution - check all keys upfront
+  for (const key of keys) {
+    if (!isSafeKey(key)) {
+      return false;
+    }
   }
 
   const createIntermediate = options?.createIntermediate !== false;
