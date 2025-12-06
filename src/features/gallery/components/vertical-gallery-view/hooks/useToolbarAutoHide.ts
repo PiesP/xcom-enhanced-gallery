@@ -5,7 +5,7 @@
  * @version 1.0.0
  */
 
-import { getSetting } from '@shared/container/settings-access';
+import { getTypedSettingOr } from '@shared/container/settings-access';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 
@@ -71,7 +71,7 @@ export function useToolbarAutoHide(options: UseToolbarAutoHideOptions): UseToolb
     setIsInitialToolbarVisible(true);
 
     // Get auto-hide delay from settings (default 3s)
-    const autoHideDelay = getSetting<number>('toolbar.autoHideDelay', 3000);
+    const autoHideDelay = getTypedSettingOr('toolbar.autoHideDelay', 3000);
 
     // If delay is 0, hide immediately
     if (autoHideDelay === 0) {

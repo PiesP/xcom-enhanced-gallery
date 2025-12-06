@@ -22,7 +22,7 @@
  */
 
 import { getLanguageService } from '@shared/container/service-accessors';
-import { getSetting, setSetting } from '@shared/container/settings-access';
+import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
 import { createIntrinsicSizingStyle, resolveMediaDimensions } from '@shared/media/media-utils';
 import type { ImageFitMode } from '@shared/types';
 import { SharedObserver } from '@shared/utils/performance';
@@ -88,8 +88,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
   });
 
   // Video volume settings (persisted across sessions)
-  const [videoVolume, setVideoVolume] = createSignal(getSetting('gallery.videoVolume', 1.0));
-  const [videoMuted, setVideoMuted] = createSignal(getSetting('gallery.videoMuted', false));
+  const [videoVolume, setVideoVolume] = createSignal(getTypedSettingOr('gallery.videoVolume', 1.0));
+  const [videoMuted, setVideoMuted] = createSignal(getTypedSettingOr('gallery.videoMuted', false));
 
   // Guard to prevent handling synthetic volumechange events triggered by us when
   // programmatically applying persisted settings. This avoids races where the event
@@ -126,8 +126,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
     setVideoMuted(newMuted);
 
     // Persist to settings (async, fire-and-forget)
-    void setSetting('gallery.videoVolume', newVolume);
-    void setSetting('gallery.videoMuted', newMuted);
+    void setTypedSetting('gallery.videoVolume', newVolume);
+    void setTypedSetting('gallery.videoMuted', newMuted);
   };
 
   // Event handlers

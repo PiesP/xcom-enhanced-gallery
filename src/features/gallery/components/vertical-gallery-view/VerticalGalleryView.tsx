@@ -30,7 +30,7 @@ import { useGalleryItemScroll } from '@features/gallery/hooks/useGalleryItemScro
 import { useGalleryScroll } from '@features/gallery/hooks/useGalleryScroll';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { getLanguageService } from '@shared/container/service-accessors';
-import { getSetting, setSetting } from '@shared/container/settings-access';
+import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
 import { logger } from '@shared/logging';
 import { downloadState } from '@shared/state/signals/download.signals';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
@@ -92,7 +92,7 @@ function VerticalGalleryViewCore({
   });
 
   const preloadIndices = createMemo(() => {
-    const count = getSetting<number>('gallery.preloadCount', 0);
+    const count = getTypedSettingOr('gallery.preloadCount', 0);
     return computePreloadIndices(currentIndex(), mediaItems().length, count);
   });
 
@@ -180,14 +180,13 @@ function VerticalGalleryViewCore({
 
   // Fit mode state
   const getInitialFitMode = (): ImageFitMode => {
-    const saved = getSetting<ImageFitMode>('gallery.imageFitMode', 'fitWidth');
-    return saved ?? 'fitWidth';
+    return getTypedSettingOr('gallery.imageFitMode', 'fitWidth');
   };
 
   const [imageFitMode, setImageFitMode] = createSignal<ImageFitMode>(getInitialFitMode());
 
   const persistFitMode = (mode: ImageFitMode) =>
-    setSetting('gallery.imageFitMode', mode).catch((error) => {
+    setTypedSetting('gallery.imageFitMode', mode).catch((error) => {
       logger.warn('Failed to save fit mode', { error, mode });
     });
 
