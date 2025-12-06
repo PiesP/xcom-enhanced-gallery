@@ -6,7 +6,7 @@
 import { SELECTORS } from '@constants/selectors';
 import { logger } from '@shared/logging';
 import type { TweetInfo } from '@shared/types/media.types';
-import { extractUsernameFromUrl } from '@shared/utils/url/host';
+import { extractUsernameFromUrl } from '@shared/utils/url';
 
 type ExtractionStrategy = (element: HTMLElement) => TweetInfo | null;
 

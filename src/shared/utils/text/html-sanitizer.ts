@@ -4,7 +4,7 @@
  * @version 1.0.0 - Phase 2: DOM HTML preservation
  */
 
-import { HTML_ATTRIBUTE_URL_POLICY, isUrlAllowed } from '@shared/utils/url/safety';
+import { HTML_ATTRIBUTE_URL_POLICY, isUrlAllowed } from '@shared/utils/url';
 
 /**
  * Configuration for HTML sanitization
