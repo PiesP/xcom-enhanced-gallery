@@ -219,6 +219,8 @@ export interface BootstrapStage {
   readonly label: string;
   /** Stage execution function */
   readonly run: () => Promise<void> | void;
+  /** Conditional execution predicate (default: true) */
+  readonly shouldRun?: () => boolean;
   /** Whether this stage is optional (can fail without blocking) */
   readonly optional?: boolean;
   /** Dependencies (other stage labels that must complete first) */

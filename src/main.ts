@@ -1,9 +1,6 @@
-import { initializeCriticalSystems } from '@bootstrap/critical-systems';
 // initializeDevTools dynamic import moved to initializeDevToolsIfNeeded
-import { initializeEnvironment } from '@bootstrap/environment';
 import type { Unregister } from '@bootstrap/events';
 import { wireGlobalEvents } from '@bootstrap/events';
-import { registerFeatureServicesLazy } from '@bootstrap/features';
 import { initializeGalleryApp } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
 import { createAppConfig } from '@constants/app-config';
@@ -12,7 +9,6 @@ import { warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { runAfterWindowLoad } from '@shared/dom/window-load';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error';
 import { cleanupVendors } from '@shared/external/vendors';
-import type { BootstrapStage } from '@shared/interfaces';
 import { logger } from '@shared/logging';
 import { CoreService } from '@shared/services/service-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
@@ -45,6 +41,13 @@ const debugCleanupLog: CleanupLogger = (message, error) => {
 
 let globalEventTeardown: Unregister | null = null;
 
+/**
+ * Set global event teardown function (used by bootstrap stages)
+ */
+export function setGlobalEventTeardown(teardown: Unregister): void {
+  globalEventTeardown = teardown;
+}
+
 function tearDownGlobalEventHandlers(): void {
   if (!globalEventTeardown) {
     return;
@@ -74,6 +77,75 @@ export async function runOptionalCleanup(
   }
 }
 
+/**
+ * Bootstrap stage definitions (data-driven configuration)
+ *
+ * 📋 10-stage bootstrap process:
+ * 1️⃣  Global styles - src/styles/globals
+ * 2️⃣  Developer tooling - src/bootstrap/dev-tools.ts (dev-only)
+ * 3️⃣  Infrastructure initialization (Vendor load) - src/bootstrap/environment.ts
+ * 4️⃣  Core systems (Core services + notification stack) - src/bootstrap/critical-systems.ts
+ * 5️⃣  Base services (Theme/Language) - src/bootstrap/base-services.ts
+ * 6️⃣  Theme synchronization - Apply initial theme setting
+ * 7️⃣  Feature service registration (lazy load) - src/bootstrap/features.ts
+ * 8️⃣  Global event handler setup - src/bootstrap/events.ts
+ * 9️⃣  Gallery app initialization - src/features/gallery/GalleryApp.ts
+ * 🔟  Background system initialization (non-critical services)
+ *
+ * 💡 Conditional Execution:
+ * - Developer tooling runs only in __DEV__ mode and not in tests
+ * - Gallery initialization is skipped in test mode
+ */
+const bootstrapStages = [
+  {
+    label: 'Global styles',
+    run: loadGlobalStyles,
+  },
+  {
+    label: 'Developer tooling',
+    run: initializeDevToolsIfNeeded,
+    shouldRun: () => isDevEnvironment && !isTestMode,
+  },
+  {
+    label: 'Infrastructure',
+    run: initializeInfrastructure,
+  },
+  {
+    label: 'Critical systems',
+    run: async () => {
+      const { initializeCriticalSystems } = await import('@bootstrap/critical-systems');
+      await initializeCriticalSystems();
+    },
+  },
+  {
+    label: 'Base services',
+    run: initializeBaseServicesStage,
+  },
+  {
+    label: 'Theme synchronization',
+    run: applyInitialThemeSetting,
+  },
+  {
+    label: 'Feature service registration',
+    run: async () => {
+      const { registerFeatureServicesLazy } = await import('@bootstrap/features');
+      await registerFeatureServicesLazy();
+    },
+  },
+  {
+    label: 'Global event wiring',
+    run: () => setupGlobalEventHandlers(),
+  },
+  {
+    label: 'Gallery initialization',
+    run: initializeGalleryIfPermitted,
+  },
+  {
+    label: 'Non-critical systems',
+    run: () => initializeNonCriticalSystems(),
+  },
+] as const;
+
 // exported runBootstrapStages below
 export async function runBootstrapStages(): Promise<void> {
   const results = await executeStages(bootstrapStages, { stopOnFailure: true });
@@ -91,6 +163,7 @@ export async function runBootstrapStages(): Promise<void> {
 // exported initializeInfrastructure below
 export async function initializeInfrastructure(): Promise<void> {
   try {
+    const { initializeEnvironment } = await import('@bootstrap/environment');
     await initializeEnvironment();
     logger.debug('✅ Vendor library initialization complete');
   } catch (error) {
@@ -186,19 +259,6 @@ export async function initializeGalleryIfPermitted(): Promise<void> {
 
   await initializeGallery();
 }
-
-const bootstrapStages: BootstrapStage[] = [
-  { label: 'Global styles', run: loadGlobalStyles },
-  ...(isDevEnvironment ? [{ label: 'Developer tooling', run: initializeDevToolsIfNeeded }] : []),
-  { label: 'Infrastructure', run: initializeInfrastructure },
-  { label: 'Critical systems', run: initializeCriticalSystems },
-  { label: 'Base services', run: initializeBaseServicesStage },
-  { label: 'Theme synchronization', run: applyInitialThemeSetting },
-  { label: 'Feature service registration', run: registerFeatureServicesLazy },
-  { label: 'Global event wiring', run: () => setupGlobalEventHandlers() },
-  { label: 'Gallery initialization', run: initializeGalleryIfPermitted },
-  { label: 'Non-critical systems', run: () => initializeNonCriticalSystems() },
-];
 
 // exported triggerPreloadStrategy below
 export function triggerPreloadStrategy(): void {

@@ -31,6 +31,18 @@ import { logger } from '@shared/logging';
 export async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult> {
   const startTime = performance.now();
 
+  // Check shouldRun predicate
+    if (__DEV__) {
+      logger.debug(`[bootstrap] ⏭️ ${stage.label} (skipped)`);
+    }
+
+    return {
+      label: stage.label,
+      success: true,
+      durationMs: 0,
+    };
+  }
+
   try {
     if (__DEV__) {
       logger.debug(`[bootstrap] ➡️ ${stage.label}`);
