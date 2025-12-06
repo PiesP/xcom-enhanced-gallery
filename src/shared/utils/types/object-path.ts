@@ -113,20 +113,40 @@ export function assignNestedPath<T = unknown>(
 
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
-    if (!key) continue;
+    if (!key || !isSafeKey(key)) continue;
 
-    if (!current[key] || typeof current[key] !== 'object') {
+    // Use Object.getOwnPropertyDescriptor to avoid prototype chain traversal
+    const descriptor = Object.getOwnPropertyDescriptor(current, key);
+    const hasOwnKey = descriptor !== undefined;
+    const existingValue = hasOwnKey ? descriptor.value : undefined;
+
+    if (!hasOwnKey || typeof existingValue !== 'object' || existingValue === null) {
       if (!createIntermediate) {
         return false;
       }
-      current[key] = {};
+      // Create a clean object without prototype pollution risk
+      const newObj = Object.create(null);
+      Object.defineProperty(current, key, {
+        value: newObj,
+        writable: true,
+        enumerable: true,
+        configurable: true,
+      });
+      current = newObj;
+    } else {
+      current = existingValue;
     }
-    current = current[key];
   }
 
   const lastKey = keys[keys.length - 1];
-  if (lastKey) {
-    current[lastKey] = value;
+  if (lastKey && isSafeKey(lastKey)) {
+    // Use Object.defineProperty to safely assign without prototype pollution
+    Object.defineProperty(current, lastKey, {
+      value: value,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
     return true;
   }
 
