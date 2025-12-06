@@ -1,0 +1,377 @@
+/**
+ * @fileoverview Higher-Order Functions for Error Handling
+ * @description Provides functional error handling patterns as an alternative to context-bound reporters.
+ *
+ * This module implements:
+ * - `withErrorHandling()` HOF for wrapping async functions
+ * - `withSyncErrorHandling()` HOF for wrapping sync functions
+ * - Automatic error reporting with customizable behavior
+ *
+ * @example
+ * ```typescript
+ * // Wrap an async function with error handling
+ * const safeFetch = withErrorHandling(
+ *   fetchData,
+ *   { context: 'network', fallback: [] }
+ * );
+ *
+ * // Wrap a sync function
+ * const safeParser = withSyncErrorHandling(
+ *   parseJson,
+ *   { context: 'media', fallback: null }
+ * );
+ * ```
+ */
+
+import {
+  AppErrorReporter,
+  type ErrorContext,
+  type ErrorReportOptions,
+  type ErrorSeverity,
+} from './app-error-reporter';
+
+// ============================================================================
+// Types
+// ============================================================================
+
+/**
+ * Options for error handling HOF
+ */
+export interface ErrorHandlingOptions<T = void> {
+  /** Error context for reporting */
+  readonly context: ErrorContext;
+  /** Error severity level (default: 'error') */
+  readonly severity?: ErrorSeverity;
+  /** Optional error code for categorization */
+  readonly code?: string;
+  /** Whether to show UI notification on error */
+  readonly notify?: boolean;
+  /** Fallback value to return on error */
+  readonly fallback?: T;
+  /** Additional metadata generator (receives the error) */
+  readonly metadata?: (error: unknown) => Record<string, unknown>;
+  /** Whether to rethrow the error after reporting (default: false) */
+  readonly rethrow?: boolean;
+  /** Custom error transformer before reporting */
+  readonly transformError?: (error: unknown) => unknown;
+}
+
+/**
+ * Result wrapper for error-handled operations
+ */
+export interface ErrorHandlingResult<T> {
+  /** Whether the operation succeeded */
+  readonly success: boolean;
+  /** The result value (undefined on error unless fallback provided) */
+  readonly value: T | undefined;
+  /** The error if operation failed */
+  readonly error?: unknown;
+}
+
+// ============================================================================
+// Higher-Order Functions
+// ============================================================================
+
+/**
+ * Wraps an async function with automatic error handling and reporting.
+ *
+ * @param fn - The async function to wrap
+ * @param options - Error handling configuration
+ * @returns Wrapped function that catches and reports errors
+ *
+ * @example
+ * ```typescript
+ * const safeLoad = withErrorHandling(
+ *   async (id: string) => await fetchUser(id),
+ *   { context: 'network', fallback: null }
+ * );
+ *
+ * const user = await safeLoad('123'); // Returns null on error
+ * ```
+ */
+export function withErrorHandling<TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => Promise<TReturn>,
+  options: ErrorHandlingOptions<TReturn>,
+): (...args: TArgs) => Promise<TReturn | undefined> {
+  const {
+    fallback,
+    rethrow = false,
+    transformError,
+    metadata: metadataFn,
+    ...reportOptions
+  } = options;
+
+  return async (...args: TArgs): Promise<TReturn | undefined> => {
+    try {
+      return await fn(...args);
+    } catch (rawError) {
+      const error = transformError ? transformError(rawError) : rawError;
+      const dynamicMetadata = metadataFn ? metadataFn(error) : null;
+
+      const fullOptions: ErrorReportOptions = dynamicMetadata
+        ? { ...reportOptions, metadata: dynamicMetadata }
+        : reportOptions;
+
+      if (rethrow) {
+        // Report then rethrow
+        AppErrorReporter.report(error, fullOptions);
+        throw error;
+      }
+
+      // Report and return fallback
+      return AppErrorReporter.reportAndReturn(error, fullOptions, fallback as TReturn);
+    }
+  };
+}
+
+/**
+ * Wraps a sync function with automatic error handling and reporting.
+ *
+ * @param fn - The sync function to wrap
+ * @param options - Error handling configuration
+ * @returns Wrapped function that catches and reports errors
+ *
+ * @example
+ * ```typescript
+ * const safeParse = withSyncErrorHandling(
+ *   (json: string) => JSON.parse(json),
+ *   { context: 'media', fallback: {} }
+ * );
+ *
+ * const data = safeParse(jsonString); // Returns {} on error
+ * ```
+ */
+export function withSyncErrorHandling<TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => TReturn,
+  options: ErrorHandlingOptions<TReturn>,
+): (...args: TArgs) => TReturn | undefined {
+  const {
+    fallback,
+    rethrow = false,
+    transformError,
+    metadata: metadataFn,
+    ...reportOptions
+  } = options;
+
+  return (...args: TArgs): TReturn | undefined => {
+    try {
+      return fn(...args);
+    } catch (rawError) {
+      const error = transformError ? transformError(rawError) : rawError;
+      const dynamicMetadata = metadataFn ? metadataFn(error) : null;
+
+      const fullOptions: ErrorReportOptions = dynamicMetadata
+        ? { ...reportOptions, metadata: dynamicMetadata }
+        : reportOptions;
+
+      if (rethrow) {
+        AppErrorReporter.report(error, fullOptions);
+        throw error;
+      }
+
+      return AppErrorReporter.reportAndReturn(error, fullOptions, fallback as TReturn);
+    }
+  };
+}
+
+/**
+ * Wraps an async function and returns a result object instead of throwing.
+ *
+ * @param fn - The async function to wrap
+ * @param options - Error handling configuration (without fallback)
+ * @returns Wrapped function that returns {success, value, error}
+ *
+ * @example
+ * ```typescript
+ * const tryFetch = withErrorResult(
+ *   async (url: string) => await fetch(url).then(r => r.json()),
+ *   { context: 'network' }
+ * );
+ *
+ * const result = await tryFetch('/api/data');
+ * if (result.success) {
+ *   console.log(result.value);
+ * } else {
+ *   console.error(result.error);
+ * }
+ * ```
+ */
+export function withErrorResult<TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => Promise<TReturn>,
+  options: Omit<ErrorHandlingOptions<TReturn>, 'fallback' | 'rethrow'>,
+): (...args: TArgs) => Promise<ErrorHandlingResult<TReturn>> {
+  const { transformError, metadata: metadataFn, ...reportOptions } = options;
+
+  return async (...args: TArgs): Promise<ErrorHandlingResult<TReturn>> => {
+    try {
+      const value = await fn(...args);
+      return { success: true, value };
+    } catch (rawError) {
+      const error = transformError ? transformError(rawError) : rawError;
+      const dynamicMetadata = metadataFn ? metadataFn(error) : null;
+
+      const fullOptions: ErrorReportOptions = dynamicMetadata
+        ? { ...reportOptions, metadata: dynamicMetadata }
+        : reportOptions;
+
+      AppErrorReporter.report(error, fullOptions);
+      return { success: false, value: undefined, error };
+    }
+  };
+}
+
+/**
+ * Wraps a sync function and returns a result object instead of throwing.
+ *
+ * @param fn - The sync function to wrap
+ * @param options - Error handling configuration (without fallback)
+ * @returns Wrapped function that returns {success, value, error}
+ */
+export function withSyncErrorResult<TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => TReturn,
+  options: Omit<ErrorHandlingOptions<TReturn>, 'fallback' | 'rethrow'>,
+): (...args: TArgs) => ErrorHandlingResult<TReturn> {
+  const { transformError, metadata: metadataFn, ...reportOptions } = options;
+
+  return (...args: TArgs): ErrorHandlingResult<TReturn> => {
+    try {
+      const value = fn(...args);
+      return { success: true, value };
+    } catch (rawError) {
+      const error = transformError ? transformError(rawError) : rawError;
+      const dynamicMetadata = metadataFn ? metadataFn(error) : null;
+
+      const fullOptions: ErrorReportOptions = dynamicMetadata
+        ? { ...reportOptions, metadata: dynamicMetadata }
+        : reportOptions;
+
+      AppErrorReporter.report(error, fullOptions);
+      return { success: false, value: undefined, error };
+    }
+  };
+}
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Execute an async operation with error handling, without permanently wrapping.
+ * Useful for one-off operations.
+ *
+ * @param fn - The async operation to execute
+ * @param options - Error handling configuration
+ * @returns The result or fallback value
+ *
+ * @example
+ * ```typescript
+ * const data = await tryAsync(
+ *   () => fetchData(id),
+ *   { context: 'network', fallback: null }
+ * );
+ * ```
+ */
+export async function tryAsync<T>(
+  fn: () => Promise<T>,
+  options: ErrorHandlingOptions<T>,
+): Promise<T | undefined> {
+  return withErrorHandling(fn, options)();
+}
+
+/**
+ * Execute a sync operation with error handling, without permanently wrapping.
+ *
+ * @param fn - The sync operation to execute
+ * @param options - Error handling configuration
+ * @returns The result or fallback value
+ *
+ * @example
+ * ```typescript
+ * const data = trySync(
+ *   () => JSON.parse(jsonString),
+ *   { context: 'media', fallback: {} }
+ * );
+ * ```
+ */
+export function trySync<T>(fn: () => T, options: ErrorHandlingOptions<T>): T | undefined {
+  return withSyncErrorHandling(fn, options)();
+}
+
+// ============================================================================
+// Factory for Context-Scoped HOFs
+// ============================================================================
+
+/**
+ * Creates a set of error handling HOFs pre-bound to a specific context.
+ * This provides a functional alternative to ContextBoundReporter.
+ *
+ * @param context - The error context to bind
+ * @returns Object with pre-bound HOFs
+ *
+ * @example
+ * ```typescript
+ * const galleryErrors = createErrorHandlers('gallery');
+ *
+ * const safeOpen = galleryErrors.wrap(
+ *   async (items) => await openGallery(items),
+ *   { fallback: false }
+ * );
+ * ```
+ */
+export function createErrorHandlers(context: ErrorContext) {
+  return {
+    /**
+     * Wrap an async function with error handling
+     */
+    wrap: <TArgs extends unknown[], TReturn>(
+      fn: (...args: TArgs) => Promise<TReturn>,
+      options: Omit<ErrorHandlingOptions<TReturn>, 'context'>,
+    ) => withErrorHandling(fn, { ...options, context }),
+
+    /**
+     * Wrap a sync function with error handling
+     */
+    wrapSync: <TArgs extends unknown[], TReturn>(
+      fn: (...args: TArgs) => TReturn,
+      options: Omit<ErrorHandlingOptions<TReturn>, 'context'>,
+    ) => withSyncErrorHandling(fn, { ...options, context }),
+
+    /**
+     * Wrap an async function returning a result object
+     */
+    wrapResult: <TArgs extends unknown[], TReturn>(
+      fn: (...args: TArgs) => Promise<TReturn>,
+      options?: Omit<ErrorHandlingOptions<TReturn>, 'context' | 'fallback' | 'rethrow'>,
+    ) => withErrorResult(fn, { ...options, context }),
+
+    /**
+     * Execute a one-off async operation
+     */
+    tryAsync: <T>(fn: () => Promise<T>, options: Omit<ErrorHandlingOptions<T>, 'context'>) =>
+      tryAsync(fn, { ...options, context }),
+
+    /**
+     * Execute a one-off sync operation
+     */
+    trySync: <T>(fn: () => T, options: Omit<ErrorHandlingOptions<T>, 'context'>) =>
+      trySync(fn, { ...options, context }),
+  };
+}
+
+// ============================================================================
+// Pre-bound Context Handlers (Alternative to pre-bound reporters)
+// ============================================================================
+
+/**
+ * Pre-bound error handlers for common contexts.
+ * These provide a functional alternative to bootstrapErrorReporter, etc.
+ */
+export const bootstrapErrors = createErrorHandlers('bootstrap');
+export const galleryErrors = createErrorHandlers('gallery');
+export const mediaErrors = createErrorHandlers('media');
+export const downloadErrors = createErrorHandlers('download');
+export const settingsErrors = createErrorHandlers('settings');
+export const eventErrors = createErrorHandlers('event');
+export const networkErrors = createErrorHandlers('network');
+export const storageErrors = createErrorHandlers('storage');
+export const uiErrors = createErrorHandlers('ui');
