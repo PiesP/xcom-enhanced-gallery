@@ -1,143 +1,44 @@
 /**
- * @fileoverview Simplified Vendor Layer with Tree-Shaking Optimized Imports
- * @version 4.0.0 - Named imports for optimal tree-shaking
+ * @fileoverview Minimal Vendor Type Layer
+ * @version 5.0.0 - Types-only exports, no runtime API wrapper
+ *
+ * Direct solid-js imports are preferred across the codebase.
+ * This module only re-exports types for backward compatibility.
  */
 
-import {
-  batch,
-  children,
-  createComponent,
-  createContext,
-  createEffect,
-  createMemo,
-  createResource,
-  createRoot,
-  createSignal,
-  ErrorBoundary,
-  For,
-  Index,
-  lazy,
-  Match,
-  mergeProps,
-  on,
-  onCleanup,
-  onMount,
-  Show,
-  Suspense,
-  Switch,
-  splitProps,
-  untrack,
-  useContext,
-} from 'solid-js';
-import { createStore, produce } from 'solid-js/store';
-import { render } from 'solid-js/web';
-
-// Re-export types
-export type { JSX } from 'solid-js';
-
 import type { JSX } from 'solid-js';
+
+// Re-export types only - all runtime imports should use solid-js directly
+export type { JSX };
 export type JSXElement = JSX.Element;
 export type VNode = JSX.Element;
 export type ComponentChildren = JSX.Element;
 
-export interface SolidAPI {
-  render: typeof render;
-  createSignal: typeof createSignal;
-  createEffect: typeof createEffect;
-  createMemo: typeof createMemo;
-  createStore: typeof createStore;
-  produce: typeof produce;
-  createResource: typeof createResource;
-  createContext: typeof createContext;
-  useContext: typeof useContext;
-  batch: typeof batch;
-  untrack: typeof untrack;
-  on: typeof on;
-  onMount: typeof onMount;
-  onCleanup: typeof onCleanup;
-  Show: typeof Show;
-  For: typeof For;
-  Switch: typeof Switch;
-  Match: typeof Match;
-  Index: typeof Index;
-  ErrorBoundary: typeof ErrorBoundary;
-  Suspense: typeof Suspense;
-  lazy: typeof lazy;
-  children: typeof children;
-  mergeProps: typeof mergeProps;
-  splitProps: typeof splitProps;
-  createRoot: typeof createRoot;
-  createComponent: typeof createComponent;
-}
-
-// Construct the API objects once using named imports
-const solidAPI: SolidAPI = {
-  render,
-  createSignal,
-  createEffect,
-  createMemo,
-  createStore,
-  produce,
-  createResource,
-  createContext,
-  useContext,
-  batch,
-  untrack,
-  on,
-  onMount,
-  onCleanup,
-  Show,
-  For,
-  Switch,
-  Match,
-  Index,
-  ErrorBoundary,
-  Suspense,
-  lazy,
-  children,
-  mergeProps,
-  splitProps,
-  createRoot,
-  createComponent,
-};
-
-// Simple getters
-export function getSolid(): SolidAPI {
-  return solidAPI;
-}
-
-// Initialization stubs for compatibility
+/**
+ * @deprecated Use direct solid-js imports instead.
+ * Kept for backward compatibility with existing code.
+ */
 export async function initializeVendors(): Promise<void> {
-  // No-op
+  // No-op: vendors are loaded via direct imports
 }
 
+/**
+ * @deprecated No cleanup needed with direct imports.
+ */
 export function cleanupVendors(): void {
   // No-op
 }
 
+/**
+ * @deprecated No cleanup registration needed.
+ */
 export function registerVendorCleanupOnUnload(): void {
-  // No-op: cleanup registration placeholder
+  // No-op
 }
 
-// Other exports for compatibility
-export function validateVendors() {
-  return { success: true, loadedLibraries: [], errors: [] };
-}
-export function getVendorVersions() {
-  return {};
-}
-export function getVendorInitializationReport() {
-  return {};
-}
-export function getVendorStatuses() {
-  return {};
-}
-export function isVendorInitialized() {
+/**
+ * @deprecated Vendors are always available with bundled imports.
+ */
+export function isVendorsInitialized(): boolean {
   return true;
-}
-export function isVendorsInitialized() {
-  return true;
-}
-export function resetVendorManagerInstance() {
-  cleanupVendors();
 }
