@@ -17,10 +17,9 @@ import {
   galleryState,
   navigateToItem,
 } from '@shared/state/signals/gallery.signals';
-import { toAccessor } from '@shared/utils/solid/solid-helpers';
+import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
+import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import { type Accessor, onCleanup } from 'solid-js';
-
-type MaybeAccessor<T> = T | Accessor<T>;
 
 /** Hook configuration */
 export interface UseGalleryFocusTrackerOptions {
@@ -50,10 +49,6 @@ export interface UseGalleryFocusTrackerReturn {
   forceSync: () => void;
 }
 
-/**
- * Track gallery item focus based on scroll position.
- * Uses IntersectionObserver for efficient visibility detection.
- */
 export function useGalleryFocusTracker(
   options: UseGalleryFocusTrackerOptions,
 ): UseGalleryFocusTrackerReturn {

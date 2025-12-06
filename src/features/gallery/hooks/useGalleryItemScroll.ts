@@ -6,11 +6,10 @@
  * @description Uses Solid.js reactivity and native scrollIntoView
  */
 
-import { toAccessor } from '@shared/utils/solid/solid-helpers';
+import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
+import { toAccessor } from '@shared/utils/solid/accessor-utils';
+import type { Accessor } from 'solid-js';
 import { createEffect, untrack } from 'solid-js';
-
-type Accessor<T> = () => T;
-type MaybeAccessor<T> = T | Accessor<T>;
 
 export interface UseGalleryItemScrollOptions {
   enabled?: MaybeAccessor<boolean>;

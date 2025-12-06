@@ -15,12 +15,11 @@ import { isGalleryInternalEvent } from '@shared/dom/utils';
 import { logger } from '@shared/logging';
 import { EventManager } from '@shared/services/event-manager';
 import { galleryState } from '@shared/state/signals/gallery.signals';
-import { toAccessor } from '@shared/utils/solid/solid-helpers';
+import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
+import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
+import type { Accessor } from 'solid-js';
 import { createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
-
-type Accessor<T> = () => T;
-type MaybeAccessor<T> = T | Accessor<T>;
 
 /** Hook configuration */
 interface UseGalleryScrollOptions {
@@ -53,10 +52,6 @@ const PROGRAMMATIC_SCROLL_WINDOW = 100;
 /** Listener context prefix used for managed EventManager entries */
 const LISTENER_CONTEXT_PREFIX = 'useGalleryScroll';
 
-/**
- * Track scroll state for focus tracking integration.
- * Does NOT trigger auto-scroll - tracking only.
- */
 export function useGalleryScroll({
   container,
   scrollTarget,
