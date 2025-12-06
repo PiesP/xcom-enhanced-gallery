@@ -392,7 +392,7 @@ export default defineConfig(async ({ mode, command }) => {
     },
     build: buildConfig,
     optimizeDeps: {
-      include: ['solid-js', 'solid-js/web', 'solid-js/store'],
+      include: ['solid-js', 'solid-js/web'],
       exclude: ['test'],
       force: isDev,
     },

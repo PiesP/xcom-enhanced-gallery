@@ -12,28 +12,28 @@
  * - Download debounce: Minimum 300ms display even for quick operations
  * - State sync: Error clears loading/downloading; loading clears error
  * - Proper cleanup: Timeout cleared on component unmount
- * - Solid.js store-based: Reactive updates without manual invalidation
+ * - Solid.js signal-based: Reactive updates with fine-grained reactivity
  *
  * **Integration**:
  * - Uses globalTimerManager for timer management
- * - Uses Solid.js createStore for reactive state
+ * - Uses Solid.js createSignal for reactive state (tree-shaking friendly)
  * **Performance**:
  * - Download timeout only scheduled when needed
- * - Store updates batched within Solid.js reactivity system
+ * - Signal updates batched within Solid.js reactivity system
  * - Cleanup prevents timer leaks
+ * - No solid-js/store dependency for smaller bundle size
  *
  * - {@link ../utils/toolbar-utils.ts} - State extraction and styling utilities
  * - {@link ../types/toolbar.types.ts} - State type definitions
  * - {@link ../../features/gallery/hooks/use-gallery-app.ts} - Main app integration
  *
- * @version 11.0.0 - Comprehensive documentation
+ * @version 12.0.0 - Migrated from createStore to createSignal for bundle optimization
  * @internal Solid.js hook, PC-only, used by toolbar container
  */
 
 import type { ToolbarActions, ToolbarState } from '@shared/types/toolbar.types';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
-import { onCleanup } from 'solid-js';
-import { createStore } from 'solid-js/store';
+import { createSignal, onCleanup } from 'solid-js';
 
 /**
  * Initial toolbar state constant
@@ -100,7 +100,10 @@ const INITIAL_STATE: ToolbarState = {
  * @internal Solid.js hook, used by toolbar container
  */
 export function useToolbarState(): [ToolbarState, ToolbarActions] {
-  const [state, setState] = createStore<ToolbarState>({ ...INITIAL_STATE });
+  // Individual signals for each state property (fine-grained reactivity)
+  const [isDownloading, setIsDownloading] = createSignal(INITIAL_STATE.isDownloading);
+  const [isLoading, setIsLoading] = createSignal(INITIAL_STATE.isLoading);
+  const [hasError, setHasError] = createSignal(INITIAL_STATE.hasError);
 
   let lastDownloadToggle = 0;
   let downloadTimeoutRef: number | null = null;
@@ -134,10 +137,8 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     if (downloading) {
       lastDownloadToggle = now;
       clearDownloadTimeout();
-      setState({
-        isDownloading: true,
-        hasError: false,
-      });
+      setIsDownloading(true);
+      setHasError(false);
       return;
     }
 
@@ -147,21 +148,21 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     if (timeSinceStart < minDisplayTime) {
       clearDownloadTimeout();
       downloadTimeoutRef = globalTimerManager.setTimeout(() => {
-        setState({ isDownloading: false });
+        setIsDownloading(false);
         downloadTimeoutRef = null;
       }, minDisplayTime - timeSinceStart);
       return;
     }
 
-    setState({ isDownloading: false });
+    setIsDownloading(false);
   };
 
   const setLoading = (loading: boolean): void => {
-    setState({
-      isLoading: loading,
-      // Clear error when loading starts
-      hasError: loading ? false : state.hasError,
-    });
+    setIsLoading(loading);
+    // Clear error when loading starts
+    if (loading) {
+      setHasError(false);
+    }
   };
 
   /**
@@ -171,16 +172,16 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
    * - When error set to true: Clear loading and downloading states
    * - Prevents invalid state (error + loading/downloading simultaneously)
    *
-   * @param hasError - New error state
+   * @param errorState - New error state
    * @internal State action
    */
-  const setError = (hasError: boolean): void => {
-    setState({
-      hasError,
-      // Clear loading/downloading when error occurs
-      isLoading: hasError ? false : state.isLoading,
-      isDownloading: hasError ? false : state.isDownloading,
-    });
+  const setError = (errorState: boolean): void => {
+    setHasError(errorState);
+    // Clear loading/downloading when error occurs
+    if (errorState) {
+      setIsLoading(false);
+      setIsDownloading(false);
+    }
   };
 
   /**
@@ -196,7 +197,9 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
   const resetState = (): void => {
     clearDownloadTimeout();
     lastDownloadToggle = 0;
-    setState(() => ({ ...INITIAL_STATE }));
+    setIsDownloading(INITIAL_STATE.isDownloading);
+    setIsLoading(INITIAL_STATE.isLoading);
+    setHasError(INITIAL_STATE.hasError);
   };
 
   /**
@@ -213,6 +216,21 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     setLoading,
     setError,
     resetState,
+  };
+
+  // Create reactive state object with getter properties
+  // This maintains API compatibility with the previous createStore implementation
+  // while using signals for tree-shaking benefits
+  const state: ToolbarState = {
+    get isDownloading() {
+      return isDownloading();
+    },
+    get isLoading() {
+      return isLoading();
+    },
+    get hasError() {
+      return hasError();
+    },
   };
 
   return [state, actions];
