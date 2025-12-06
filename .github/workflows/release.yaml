@@ -162,8 +162,8 @@ jobs:
 
       - name: 🏗️ Build userscript
         run: |
-          vite build --mode development
-          vite build --mode production
+          npx vite build --mode development
+          npx vite build --mode production
 
       - name: 📦 Prepare release package
         run: |

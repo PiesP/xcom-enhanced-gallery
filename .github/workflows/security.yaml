@@ -86,7 +86,7 @@ jobs:
             vite-${{ runner.os }}-
 
       - name: 🏗️ Build for analysis
-        run: vite build --mode production
+        run: npx vite build --mode production
 
       - name: 📊 Analyze
         uses: github/codeql-action/analyze@v4

@@ -112,7 +112,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: 📐 Run TypeScript check
-        run: tsc --noEmit --incremental --tsBuildInfoFile .tsbuildinfo
+        run: npx tsc --noEmit --incremental --tsBuildInfoFile .tsbuildinfo
 
   build:
     name: 🚀 Build
@@ -139,7 +139,7 @@ jobs:
             vite-${{ runner.os }}-
 
       - name: 🚀 Build production
-        run: vite build --mode production
+        run: npx vite build --mode production
 
       - name: 📊 Check bundle size
         run: |
