@@ -1,7 +1,15 @@
 /**
  * @fileoverview Centralized Logging Infrastructure
- * @version 2.1.0 - Simplified for production
+ * @version 3.0.0 - Enhanced log level management with runtime configuration
+ *
+ * Features:
+ * - Tree-shakeable: Production builds eliminate all debug code
+ * - Runtime configurable: Log level can be changed at runtime in dev
+ * - Environment variable support: VITE_LOG_LEVEL in development
+ * - Structured logging: Consistent format with context support
  */
+
+import { DEFAULT_LOG_LEVEL, getLogLevel, LOG_LEVEL_PRIORITY } from './log-level';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 export type LoggableData = unknown;
@@ -14,18 +22,12 @@ export interface Logger {
   trace?: (...args: LoggableData[]) => void;
 }
 
-interface LoggerConfig {
+export interface LoggerConfig {
   readonly level: LogLevel;
   readonly prefix: string;
 }
 
 const BASE_PREFIX = '[XEG]';
-const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
-  debug: 0,
-  info: 1,
-  warn: 2,
-  error: 3,
-};
 
 // Optimized for tree-shaking: Use __DEV__ directly when available
 const isDev: boolean = typeof __DEV__ !== 'undefined' ? __DEV__ : true;
@@ -40,12 +42,18 @@ let createScopedLoggerImpl: (scope: string, config?: Partial<LoggerConfig>) => L
 
 if (isDev) {
   const DEFAULT_CONFIG: LoggerConfig = {
-    level: 'debug',
+    level: DEFAULT_LOG_LEVEL,
     prefix: BASE_PREFIX,
   };
 
-  const shouldLog = (level: LogLevel, config: LoggerConfig): boolean => {
-    return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[config.level];
+  /**
+   * Check if a log level should be displayed based on current runtime level
+   * Uses the centralized log level configuration
+   */
+  const shouldLog = (level: LogLevel, _config: LoggerConfig): boolean => {
+    // Use runtime log level for dynamic configuration support
+    const currentLevel = getLogLevel();
+    return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[currentLevel];
   };
 
   const formatMessage = (config: LoggerConfig, ...args: LoggableData[]): LoggableData[] => {
@@ -99,7 +107,7 @@ export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
 }
 
 export const logger: Logger = createLogger({
-  level: isDev ? 'debug' : 'warn',
+  level: DEFAULT_LOG_LEVEL,
 });
 
 export function createScopedLogger(scope: string, config: Partial<LoggerConfig> = {}): Logger {
