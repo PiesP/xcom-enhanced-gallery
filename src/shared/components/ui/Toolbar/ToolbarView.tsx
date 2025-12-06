@@ -9,11 +9,7 @@ import {
   Cog6Tooth,
 } from '@shared/components/ui/Icon';
 import { SettingsControlsLazy } from '@shared/components/ui/Settings/SettingsControlsLazy';
-import type {
-  FitMode,
-  MaybeAccessor,
-  ToolbarProps,
-} from '@shared/components/ui/Toolbar/Toolbar.types';
+import type { FitMode, MaybeAccessor } from '@shared/components/ui/Toolbar/Toolbar.types';
 import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
 import type { ToolbarSettingsControllerResult, ToolbarState } from '@shared/hooks';
@@ -47,41 +43,77 @@ type FitModeDefinition = {
   readonly Icon: (props: { size?: number }) => JSXElement;
 };
 
-type ToolbarViewBaseProps = Omit<
-  ToolbarProps,
-  | 'onPrevious'
-  | 'onNext'
-  | 'onDownloadCurrent'
-  | 'onDownloadAll'
-  | 'onClose'
-  | 'onOpenSettings'
-  | 'onFitOriginal'
-  | 'onFitWidth'
-  | 'onFitHeight'
-  | 'onFitContainer'
->;
-
-export interface ToolbarViewProps extends ToolbarViewBaseProps {
+export interface ToolbarViewProps {
+  /** Current media index */
+  readonly currentIndex: MaybeAccessor<number>;
+  /** Focused media index for keyboard navigation */
+  readonly focusedIndex?: MaybeAccessor<number | null>;
+  /** Total number of media items */
+  readonly totalCount: MaybeAccessor<number>;
+  /** Whether a download is in progress */
+  readonly isDownloading?: MaybeAccessor<boolean | undefined>;
+  /** Whether toolbar is disabled */
+  readonly disabled?: MaybeAccessor<boolean | undefined>;
+  /** Current fit mode */
+  readonly currentFitMode?: MaybeAccessor<FitMode | undefined>;
+  /** Tweet text content */
+  readonly tweetText?: MaybeAccessor<string | null | undefined>;
+  /** Tweet HTML content */
+  readonly tweetTextHTML?: MaybeAccessor<string | null | undefined>;
+  /** ARIA label */
+  readonly 'aria-label'?: string | undefined;
+  /** ARIA describedby */
+  readonly 'aria-describedby'?: string | undefined;
+  /** ARIA role */
+  readonly role?: 'toolbar' | undefined;
+  /** Tab index */
+  readonly tabIndex?: number | undefined;
+  /** Test ID */
+  readonly 'data-testid'?: string | undefined;
+  /** Toolbar class name generator */
   readonly toolbarClass: () => string;
+  /** Toolbar state */
   readonly toolbarState: ToolbarState;
+  /** Toolbar data state generator */
   readonly toolbarDataState: () => string;
+  /** Navigation state generator */
   readonly navState: () => ToolbarViewNavState;
+  /** Displayed index generator */
   readonly displayedIndex: () => number;
+  /** Progress width generator */
   readonly progressWidth: () => string;
+  /** Fit mode order */
   readonly fitModeOrder: ReadonlyArray<FitModeDefinition>;
+  /** Fit mode labels */
   readonly fitModeLabels: Record<FitMode, { label: string; title: string }>;
+  /** Active fit mode generator */
   readonly activeFitMode: () => FitMode;
+  /** Fit mode click handler factory */
   readonly handleFitModeClick: (mode: FitMode) => (event: MouseEvent) => void;
+  /** Fit mode disabled checker */
   readonly isFitDisabled: (mode: FitMode) => boolean;
+  /** Previous click handler */
   readonly onPreviousClick: (event: MouseEvent) => void;
+  /** Next click handler */
   readonly onNextClick: (event: MouseEvent) => void;
+  /** Download current handler */
   readonly onDownloadCurrent: (event: MouseEvent) => void;
+  /** Download all handler */
   readonly onDownloadAll: (event: MouseEvent) => void;
+  /** Close click handler */
   readonly onCloseClick: (event: MouseEvent) => void;
+  /** Settings controller */
   readonly settingsController: ToolbarSettingsControllerResult;
+  /** Whether to show settings button */
   readonly showSettingsButton: boolean;
+  /** Tweet panel expanded state */
   readonly isTweetPanelExpanded: () => boolean;
+  /** Toggle tweet panel */
   readonly toggleTweetPanelExpanded: () => void;
+  /** Focus event handler */
+  readonly onFocus?: ((event: FocusEvent) => void) | undefined;
+  /** Blur event handler */
+  readonly onBlur?: ((event: FocusEvent) => void) | undefined;
 }
 
 const SCROLLABLE_SELECTOR = '[data-gallery-scrollable="true"]';

@@ -48,11 +48,17 @@ import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 
 export interface VerticalGalleryViewProps {
+  /** Handler for closing the gallery */
   onClose?: () => void;
+  /** Additional CSS class name */
   className?: string;
+  /** Handler for navigating to previous item */
   onPrevious?: () => void;
+  /** Handler for navigating to next item */
   onNext?: () => void;
+  /** Handler for downloading current media item */
   onDownloadCurrent?: () => void;
+  /** Handler for downloading all media items */
   onDownloadAll?: () => void;
 }
 
@@ -309,24 +315,34 @@ function VerticalGalleryViewCore({
         ref={(el) => setToolbarWrapperEl(el ?? null)}
       >
         <Toolbar
-          onClose={onClose || (() => {})}
-          onPrevious={onPrevious || handlePrevious}
-          onNext={onNext || handleNext}
           currentIndex={currentIndex}
           focusedIndex={focusedIndex}
           totalCount={() => mediaItems().length}
           isDownloading={isDownloading}
-          onDownloadCurrent={handleDownloadCurrent}
-          onDownloadAll={handleDownloadAll}
-          onOpenSettings={() => logger.debug('[VerticalGalleryView] Settings opened')}
-          onFitOriginal={handleFitOriginal}
-          onFitWidth={handleFitWidth}
-          onFitHeight={handleFitHeight}
-          onFitContainer={handleFitContainer}
           currentFitMode={imageFitMode()}
           tweetText={() => activeMedia()?.tweetText}
           tweetTextHTML={() => activeMedia()?.tweetTextHTML}
           className={styles.toolbar || ''}
+          handlers={{
+            navigation: {
+              onPrevious: onPrevious || handlePrevious,
+              onNext: onNext || handleNext,
+            },
+            download: {
+              onDownloadCurrent: handleDownloadCurrent,
+              onDownloadAll: handleDownloadAll,
+            },
+            fitMode: {
+              onFitOriginal: handleFitOriginal,
+              onFitWidth: handleFitWidth,
+              onFitHeight: handleFitHeight,
+              onFitContainer: handleFitContainer,
+            },
+            lifecycle: {
+              onClose: onClose || (() => {}),
+              onOpenSettings: () => logger.debug('[VerticalGalleryView] Settings opened'),
+            },
+          }}
         />
       </div>
 

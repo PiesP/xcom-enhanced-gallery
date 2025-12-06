@@ -4,7 +4,11 @@ import {
   ArrowsRightLeft,
   ArrowsUpDown,
 } from '@shared/components/ui/Icon';
-import type { FitMode, ToolbarProps } from '@shared/components/ui/Toolbar/Toolbar.types';
+import type {
+  FitMode,
+  FitModeHandlers,
+  ToolbarProps,
+} from '@shared/components/ui/Toolbar/Toolbar.types';
 import { ToolbarView } from '@shared/components/ui/Toolbar/ToolbarView';
 import type { JSXElement } from '@shared/external/vendors';
 import {
@@ -40,7 +44,10 @@ const FIT_MODE_ORDER = [
   { mode: 'fitContainer' as const, Icon: ArrowsPointingIn },
 ] as const;
 
-type FitModeHandlers = Record<FitMode, ToolbarProps['onFitOriginal'] | undefined>;
+/**
+ * Internal fit mode handler mapping type for the toolbar view
+ */
+type InternalFitModeHandlers = Record<FitMode, FitModeHandlers['onFitOriginal'] | undefined>;
 
 interface NavigationStateParams {
   readonly total: number;
@@ -171,7 +178,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       const wasOpen = settingsExpandedSignal();
       baseSettingsController.handleSettingsClick(event);
       if (!wasOpen && settingsExpandedSignal()) {
-        props.onOpenSettings?.();
+        props.handlers.lifecycle.onOpenSettings?.();
       }
     },
   };
@@ -203,11 +210,11 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     }),
   );
 
-  const fitModeHandlers = createMemo<FitModeHandlers>(() => ({
-    original: props.onFitOriginal,
-    fitWidth: props.onFitWidth,
-    fitHeight: props.onFitHeight,
-    fitContainer: props.onFitContainer,
+  const fitModeHandlers = createMemo<InternalFitModeHandlers>(() => ({
+    original: props.handlers.fitMode?.onFitOriginal,
+    fitWidth: props.handlers.fitMode?.onFitWidth,
+    fitHeight: props.handlers.fitMode?.onFitHeight,
+    fitContainer: props.handlers.fitMode?.onFitContainer,
   }));
 
   const activeFitMode = createMemo<FitMode>(
@@ -238,20 +245,26 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     return activeFitMode() === mode;
   };
 
-  const handlePrevious = createGuardedHandler(() => navState().prevDisabled, props.onPrevious);
-  const handleNext = createGuardedHandler(() => navState().nextDisabled, props.onNext);
+  const handlePrevious = createGuardedHandler(
+    () => navState().prevDisabled,
+    props.handlers.navigation.onPrevious,
+  );
+  const handleNext = createGuardedHandler(
+    () => navState().nextDisabled,
+    props.handlers.navigation.onNext,
+  );
   const handleDownloadCurrent = createGuardedHandler(
     () => navState().downloadDisabled,
-    props.onDownloadCurrent,
+    props.handlers.download.onDownloadCurrent,
   );
   const handleDownloadAll = createGuardedHandler(
     () => navState().downloadDisabled,
-    props.onDownloadAll,
+    props.handlers.download.onDownloadAll,
   );
 
   const handleClose = (event: MouseEvent) => {
     safeEventPrevent(event);
-    props.onClose?.();
+    props.handlers.lifecycle.onClose();
   };
 
   return (
@@ -267,8 +280,8 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       role={props.role}
       tabIndex={props.tabIndex}
       data-testid={props['data-testid']}
-      onFocus={props.onFocus}
-      onBlur={props.onBlur}
+      onFocus={props.handlers.focus?.onFocus}
+      onBlur={props.handlers.focus?.onBlur}
       tweetText={tweetText}
       tweetTextHTML={tweetTextHTML}
       // Derived toolbar view props
@@ -289,7 +302,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       onDownloadAll={handleDownloadAll}
       onCloseClick={handleClose}
       settingsController={settingsController}
-      showSettingsButton={typeof props.onOpenSettings === 'function'}
+      showSettingsButton={typeof props.handlers.lifecycle.onOpenSettings === 'function'}
       isTweetPanelExpanded={tweetExpanded}
       toggleTweetPanelExpanded={toggleTweet}
     />
