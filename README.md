@@ -115,7 +115,6 @@ This project is distributed under the [MIT License](LICENSE).
 | Library              | License | Purpose                      |
 | -------------------- | ------- | ---------------------------- |
 | **Solid.js**         | MIT     | UI Framework                 |
-| **fflate**           | MIT     | High-performance Compression |
 | **@heroicons/react** | MIT     | Icon Components              |
 
 Full license texts are available in the [`LICENSES/`](LICENSES/) directory.
