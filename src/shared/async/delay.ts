@@ -1,0 +1,181 @@
+/**
+ * @fileoverview Delay and timeout utilities with AbortSignal support
+ * @description Modern async delay/timeout primitives replacing setTimeout-based patterns
+ *
+ * @version 1.0.0
+ */
+
+import { combineSignals, createTimeoutSignal, isAbortError } from './signal-utils';
+
+/**
+ * Error thrown when an operation times out
+ */
+export class TimeoutError extends Error {
+  override readonly name = 'TimeoutError';
+
+  constructor(message = 'Operation timed out') {
+    super(message);
+    // Maintain proper prototype chain
+    Object.setPrototypeOf(this, TimeoutError.prototype);
+  }
+}
+
+/**
+ * Options for timeout operations
+ */
+export interface TimeoutOptions {
+  /** Timeout duration in milliseconds */
+  readonly ms: number;
+  /** Optional external signal for additional cancellation */
+  readonly signal?: AbortSignal;
+  /** Custom error message for timeout */
+  readonly message?: string;
+}
+
+/**
+ * Create a promise that resolves after a delay
+ *
+ * Supports cancellation via AbortSignal - when signal is aborted,
+ * the promise rejects immediately.
+ *
+ * @param ms - Delay duration in milliseconds
+ * @param signal - Optional AbortSignal for cancellation
+ * @returns Promise that resolves after delay or rejects on abort
+ *
+ * @example
+ * ```typescript
+ * // Simple delay
+ * await delay(1000);
+ *
+ * // Cancellable delay
+ * const controller = new AbortController();
+ * try {
+ *   await delay(5000, controller.signal);
+ * } catch (error) {
+ *   if (isAbortError(error)) {
+ *     console.log('Delay was cancelled');
+ *   }
+ * }
+ *
+ * // Cancel from elsewhere
+ * controller.abort();
+ * ```
+ */
+export async function delay(ms: number, signal?: AbortSignal): Promise<void> {
+  // Fast path for non-positive delays
+  if (ms <= 0) return;
+
+  // If already aborted, reject immediately
+  if (signal?.aborted) {
+    throw signal.reason ?? new DOMException('Delay was aborted', 'AbortError');
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      cleanup();
+      resolve();
+    }, ms);
+
+    const onAbort = (): void => {
+      cleanup();
+      reject(signal?.reason ?? new DOMException('Delay was aborted', 'AbortError'));
+    };
+
+    const cleanup = (): void => {
+      window.clearTimeout(timeoutId);
+      signal?.removeEventListener('abort', onAbort);
+    };
+
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
+/**
+ * Wrap a promise with a timeout
+ *
+ * If the promise doesn't resolve/reject within the timeout,
+ * a TimeoutError is thrown. The original promise continues
+ * running in the background (cannot be truly cancelled).
+ *
+ * For operations that support AbortSignal, prefer passing
+ * a timeout signal directly to the operation instead.
+ *
+ * @param promise - Promise to wrap
+ * @param options - Timeout options (ms, signal, message)
+ * @returns Promise that resolves/rejects within timeout
+ * @throws TimeoutError if operation times out
+ *
+ * @example
+ * ```typescript
+ * // Basic timeout
+ * const result = await timeout(fetchData(), { ms: 5000 });
+ *
+ * // With external cancellation
+ * const controller = new AbortController();
+ * const result = await timeout(fetchData(), {
+ *   ms: 5000,
+ *   signal: controller.signal,
+ *   message: 'Data fetch timed out',
+ * });
+ * ```
+ */
+export async function timeout<T>(promise: Promise<T>, options: TimeoutOptions): Promise<T> {
+  const { ms, signal, message } = options;
+
+  // If already aborted, reject immediately
+  if (signal?.aborted) {
+    throw signal.reason ?? new DOMException('Operation was aborted', 'AbortError');
+  }
+
+  // Create timeout signal
+  const timeoutSignal = createTimeoutSignal(ms);
+
+  // Combine with external signal if provided
+  const combinedSignal = signal ? combineSignals([signal, timeoutSignal]) : timeoutSignal;
+
+  // Race between promise and timeout
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+
+    const onAbort = (): void => {
+      if (settled) return;
+      settled = true;
+
+      const reason = combinedSignal.reason;
+      if (reason instanceof DOMException && reason.name === 'TimeoutError') {
+        reject(new TimeoutError(message ?? 'Operation timed out'));
+      } else {
+        reject(reason ?? new DOMException('Operation was aborted', 'AbortError'));
+      }
+    };
+
+    // Check if already aborted (race condition prevention)
+    if (combinedSignal.aborted) {
+      onAbort();
+      return;
+    }
+
+    combinedSignal.addEventListener('abort', onAbort, { once: true });
+
+    promise
+      .then((value) => {
+        if (!settled) {
+          settled = true;
+          combinedSignal.removeEventListener('abort', onAbort);
+          resolve(value);
+        }
+      })
+      .catch((error) => {
+        if (!settled) {
+          settled = true;
+          combinedSignal.removeEventListener('abort', onAbort);
+          reject(error);
+        }
+      });
+  });
+}
+
+/**
+ * Re-export isAbortError for convenience
+ */
+export { isAbortError };
