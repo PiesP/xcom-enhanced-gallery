@@ -60,6 +60,7 @@ jobs:
             package-lock.json
             tsconfig.json
             biome.json
+            .gitignore
             .github/actions
           sparse-checkout-cone-mode: false
 
