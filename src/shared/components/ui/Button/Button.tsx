@@ -8,7 +8,7 @@
 import type { JSXElement } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
 import { toAccessor } from '@shared/utils/solid/solid-helpers';
-import { createClassName } from '@shared/utils/text/formatting';
+import { cx } from '@shared/utils/text/formatting';
 import {
   createEffect,
   createMemo,
@@ -200,7 +200,7 @@ export function Button(rawProps: ButtonProps): JSXElement {
    * @description Merges variant, size, intent, and state classes from CSS Module
    */
   const buttonClasses = () =>
-    createClassName(
+    cx(
       styles.unifiedButton,
       styles[`variant-${local.variant}`],
       styles[`size-${local.size}`],
@@ -281,9 +281,7 @@ export function Button(rawProps: ButtonProps): JSXElement {
       onMouseEnter={local.onMouseEnter}
       onMouseLeave={local.onMouseLeave}
     >
-      {isLoading() && (
-        <span class={createClassName('xeg-spinner', styles.spinner)} aria-hidden="true" />
-      )}
+      {isLoading() && <span class={cx('xeg-spinner', styles.spinner)} aria-hidden="true" />}
       {local.children}
     </button>
   );

@@ -19,7 +19,7 @@ import {
 import type { ToolbarDataState, ToolbarState } from '@shared/types/toolbar.types';
 import { safeEventPrevent, safeEventPreventAll } from '@shared/utils/events/utils';
 import { toOptionalAccessor, toRequiredAccessor } from '@shared/utils/solid/solid-helpers';
-import { createClassName } from '@shared/utils/text/formatting';
+import { cx } from '@shared/utils/text/formatting';
 import { clampIndex } from '@shared/utils/types/safety';
 import { createEffect, createMemo, createSignal, mergeProps, on } from 'solid-js';
 import styles from './Toolbar.module.css';
@@ -183,9 +183,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     },
   };
 
-  const toolbarClass = createMemo(() =>
-    createClassName(styles.toolbar, styles.galleryToolbar, props.className),
-  );
+  const toolbarClass = createMemo(() => cx(styles.toolbar, styles.galleryToolbar, props.className));
   const totalItems = createMemo(() => Math.max(0, totalCount()));
 
   const currentIndexForNav = createMemo(() => clampIndex(currentIndex(), totalItems()));

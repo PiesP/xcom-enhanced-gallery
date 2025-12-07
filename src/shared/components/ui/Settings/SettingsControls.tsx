@@ -1,7 +1,7 @@
 import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
 import { resolve } from '@shared/utils/solid/accessor-utils';
-import { createClassName, cx } from '@shared/utils/text/formatting';
+import { cx } from '@shared/utils/text/formatting';
 import type { Accessor } from 'solid-js';
 import { createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 import styles from './SettingsControls.module.css';
@@ -55,7 +55,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
     };
   });
 
-  const selectClass = createClassName('xeg-inline-center', styles.select);
+  const selectClass = cx('xeg-inline-center', styles.select);
   const containerClass = cx(styles.body, props.compact && styles.bodyCompact);
   const settingClass = cx(styles.setting, props.compact && styles.settingCompact);
   const labelClass = cx(styles.label, props.compact && styles.compactLabel);

@@ -1,6 +1,6 @@
 import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
 import { EventManager } from '@shared/services/event-manager';
-import { createClassName } from '@shared/utils/text/formatting';
+import { cx } from '@shared/utils/text/formatting';
 import { createEffect, onCleanup } from 'solid-js';
 import { render } from 'solid-js/web';
 
@@ -143,7 +143,7 @@ export function GalleryContainer({
   className,
   registerEscapeListener,
 }: GalleryContainerProps): JSXElement {
-  const classes = createClassName('xeg-gallery-overlay', 'xeg-gallery-container', className);
+  const classes = cx('xeg-gallery-overlay', 'xeg-gallery-container', className);
   const hasCloseHandler = typeof onClose === 'function';
 
   const escapeListener = (event: Event) => {

@@ -15,7 +15,7 @@ import type { JSXElement } from '@shared/external/vendors';
 import type { ToolbarSettingsControllerResult, ToolbarState } from '@shared/hooks';
 import { safeEventPreventAll } from '@shared/utils/events/utils';
 import { resolve, resolveOptional } from '@shared/utils/solid/accessor-utils';
-import { createClassName, cx } from '@shared/utils/text/formatting';
+import { cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, lazy, Show, Suspense } from 'solid-js';
 import styles from './Toolbar.module.css';
 
@@ -189,7 +189,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   });
   const hasTweetContent = () => Boolean(tweetTextHTML() ?? tweetText());
   const toolbarButtonClass = (...extra: Array<string | undefined>) =>
-    createClassName(styles.toolbarButton, 'xeg-inline-center', ...extra);
+    cx(styles.toolbarButton, 'xeg-inline-center', ...extra);
 
   const preventScrollChaining = (event: WheelEvent) => {
     if (shouldAllowWheelDefault(event)) {
@@ -259,12 +259,12 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           </IconButton>
 
           <div class={styles.counterBlock} data-gallery-element="counter-section">
-            <div class={createClassName(styles.mediaCounterWrapper, 'xeg-inline-center')}>
+            <div class={cx(styles.mediaCounterWrapper, 'xeg-inline-center')}>
               <span
                 ref={(element) => {
                   setCounterElement(element);
                 }}
-                class={createClassName(styles.mediaCounter, 'xeg-inline-center')}
+                class={cx(styles.mediaCounter, 'xeg-inline-center')}
                 aria-live="polite"
                 data-gallery-element="counter"
                 data-focused-index={displayedIndex()}

@@ -26,7 +26,7 @@ import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-a
 import { createIntrinsicSizingStyle, resolveMediaDimensions } from '@shared/media/media-utils';
 import type { ImageFitMode } from '@shared/types';
 import { SharedObserver } from '@shared/utils/performance';
-import { createClassName } from '@shared/utils/text/formatting';
+import { cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, type JSX, onCleanup } from 'solid-js';
 import { useVideoVisibility } from './hooks/useVideoVisibility';
 import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
@@ -224,7 +224,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
   const fitModeClass = createMemo(() => FIT_MODE_CLASSES[resolvedFitMode()] ?? '');
 
   const containerClasses = createMemo(() =>
-    createClassName(
+    cx(
       'xeg-gallery',
       'xeg-gallery-item',
       'vertical-item',
@@ -237,7 +237,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
     ),
   );
 
-  const imageClasses = createMemo(() => createClassName(styles.image, fitModeClass()));
+  const imageClasses = createMemo(() => cx(styles.image, fitModeClass()));
 
   // Accessibility props
   const ariaProps = {
@@ -280,7 +280,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
         <>
           {!isLoaded() && !isError() && !isVideo && (
             <div class={styles.placeholder}>
-              <div class={createClassName('xeg-spinner', styles.loadingSpinner)} />
+              <div class={cx('xeg-spinner', styles.loadingSpinner)} />
             </div>
           )}
 
@@ -290,11 +290,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
               autoplay={false}
               controls
               ref={setVideoRef}
-              class={createClassName(
-                styles.video,
-                fitModeClass(),
-                isLoaded() ? styles.loaded : styles.loading,
-              )}
+              class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
               data-fit-mode={resolvedFitMode()}
               onLoadedMetadata={handleMediaLoad}
               onLoadedData={handleMediaLoad}
@@ -316,7 +312,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
               }
               loading="lazy"
               decoding="async"
-              class={createClassName(imageClasses(), isLoaded() ? styles.loaded : styles.loading)}
+              class={cx(imageClasses(), isLoaded() ? styles.loaded : styles.loading)}
               data-fit-mode={resolvedFitMode()}
               onLoad={handleMediaLoad}
               onError={handleMediaError}

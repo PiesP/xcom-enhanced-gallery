@@ -205,6 +205,7 @@ export function shortenUrl(url: string, maxLength = 50): string {
  * Create standard class names
  * Joins non-null/undefined values with a space
  *
+ * @deprecated Use `cx` instead for consistent class name handling across the project
  * @param classes - List of class names (strings, null, or undefined)
  * @returns Joined class name string
  */
