@@ -32,6 +32,7 @@ export async function executeStage(stage: BootstrapStage): Promise<BootstrapStag
   const startTime = performance.now();
 
   // Check shouldRun predicate
+  if (stage.shouldRun && !stage.shouldRun()) {
     if (__DEV__) {
       logger.debug(`[bootstrap] ⏭️ ${stage.label} (skipped)`);
     }
