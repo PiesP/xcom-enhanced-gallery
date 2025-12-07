@@ -61,7 +61,9 @@
 .github/prompts/**
 /AGENTS.md
 /CLAUDE.md
-/docs/
+/docs/*
+# Exception: Critical operational guides tracked in repo
+!/docs/LOCAL_VALIDATION.md
 
 # Test code (not run in CI)
 /test/**
