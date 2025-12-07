@@ -34,36 +34,12 @@ export {
   trySetTypedSetting,
 } from './typed-settings';
 
+// Removed deprecated getSetting() and setSetting() along with their helper types.
+// Use getTypedSettingOr() and setTypedSetting() from typed-settings.ts for type-safe access.
+
 interface SettingsServiceLike {
   get<T = unknown>(key: string): T | undefined;
   set<T = unknown>(key: string, value: T): Promise<void>;
-}
-
-function requireSettingsService(): SettingsServiceLike {
-  const service = tryGetSettingsManager<SettingsServiceLike>();
-  if (!service) {
-    throw new Error(
-      'SettingsService is not registered. Ensure bootstrap registers it before usage.',
-    );
-  }
-  return service;
-}
-
-/**
- * Get a setting value with string-based key.
- * @deprecated Use `getTypedSettingOr` for type-safe access
- */
-export function getSetting<T>(key: string, fallback: T): T {
-  const value = requireSettingsService().get<T>(key);
-  return value === undefined ? fallback : value;
-}
-
-/**
- * Set a setting value with string-based key.
- * @deprecated Use `setTypedSetting` for type-safe access
- */
-export function setSetting<T>(key: string, value: T): Promise<void> {
-  return requireSettingsService().set(key, value);
 }
 
 export function tryGetSettingsService(): SettingsServiceLike | null {
