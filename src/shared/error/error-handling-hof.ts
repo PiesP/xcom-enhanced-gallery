@@ -24,6 +24,13 @@
  */
 
 import {
+  type AsyncResult,
+  ErrorCode,
+  failure,
+  type Result,
+  success,
+} from '@shared/types/result.types';
+import {
   AppErrorReporter,
   type ErrorContext,
   type ErrorReportOptions,
@@ -66,6 +73,26 @@ export interface ErrorHandlingResult<T> {
   readonly value: T | undefined;
   /** The error if operation failed */
   readonly error?: unknown;
+}
+
+/**
+ * Options for Result-based error handling
+ */
+export interface ResultHandlingOptions {
+  /** Error context for reporting */
+  readonly context: ErrorContext;
+  /** Error severity level (default: 'error') */
+  readonly severity?: ErrorSeverity;
+  /** Optional error code override for categorization */
+  readonly code?: ErrorCode;
+  /** Whether to show UI notification on error */
+  readonly notify?: boolean;
+  /** Additional metadata generator (receives the error) */
+  readonly metadata?: (error: unknown) => Record<string, unknown>;
+  /** Custom error transformer before reporting */
+  readonly transformError?: (error: unknown) => unknown;
+  /** Custom error code mapper (default: mapErrorToCode) */
+  readonly errorCodeMapper?: (error: unknown) => ErrorCode;
 }
 
 // ============================================================================
@@ -298,6 +325,183 @@ export function trySync<T>(fn: () => T, options: ErrorHandlingOptions<T>): T | u
 }
 
 // ============================================================================
+// Result-based HOFs (Integration with Result<T> type)
+// ============================================================================
+
+/**
+ * Maps errors to appropriate ErrorCode values
+ *
+ * @param error - The error to map
+ * @returns Appropriate ErrorCode
+ *
+ * @internal
+ */
+function mapErrorToCode(error: unknown): ErrorCode {
+  // AbortError → CANCELLED
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    return ErrorCode.CANCELLED;
+  }
+
+  // Network errors
+  if (error instanceof TypeError) {
+    const message = error.message.toLowerCase();
+    if (message.includes('fetch') || message.includes('network')) {
+      return ErrorCode.NETWORK;
+    }
+  }
+
+  // Timeout errors
+  if (error instanceof Error && error.name === 'TimeoutError') {
+    return ErrorCode.TIMEOUT;
+  }
+
+  // Default to UNKNOWN
+  return ErrorCode.UNKNOWN;
+}
+
+/**
+ * Normalizes error to string message
+ *
+ * @param error - The error to normalize
+ * @returns Error message string
+ *
+ * @internal
+ */
+function normalizeError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return String(error);
+}
+
+/**
+ * Wraps an async function to return Result<T> instead of throwing.
+ * Integrates with AppErrorReporter for centralized error logging.
+ *
+ * @param fn - The async function to wrap
+ * @param options - Result handling configuration
+ * @returns Wrapped function that returns AsyncResult<T>
+ *
+ * @example
+ * ```typescript
+ * const fetchUser = withResultHandling(
+ *   async (id: string) => await api.getUser(id),
+ *   { context: 'network' }
+ * );
+ *
+ * const result = await fetchUser('123');
+ * if (result.status === 'success') {
+ *   console.log(result.data);
+ * } else {
+ *   console.error(result.error, result.code);
+ * }
+ * ```
+ */
+export function withResultHandling<TArgs extends unknown[], TData>(
+  fn: (...args: TArgs) => Promise<TData>,
+  options: ResultHandlingOptions,
+): (...args: TArgs) => AsyncResult<TData> {
+  const {
+    code: overrideCode,
+    errorCodeMapper = mapErrorToCode,
+    transformError,
+    metadata: metadataFn,
+    ...reportOptions
+  } = options;
+
+  return async (...args: TArgs): AsyncResult<TData> => {
+    try {
+      const data = await fn(...args);
+      return success(data);
+    } catch (rawError) {
+      const error = transformError ? transformError(rawError) : rawError;
+      const errorMessage = normalizeError(error);
+      const errorCode = overrideCode ?? errorCodeMapper(error);
+      const dynamicMetadata = metadataFn ? metadataFn(error) : undefined;
+
+      // Report error to AppErrorReporter
+      const fullOptions: ErrorReportOptions = {
+        ...reportOptions,
+        code: String(errorCode),
+        ...(dynamicMetadata && { metadata: dynamicMetadata }),
+      };
+      AppErrorReporter.report(error, fullOptions);
+
+      // Return Result failure
+      return failure(errorMessage, errorCode, {
+        cause: error,
+        ...(dynamicMetadata && { meta: dynamicMetadata }),
+      });
+    }
+  };
+}
+
+/**
+ * Wraps a sync function to return Result<T> instead of throwing.
+ * Integrates with AppErrorReporter for centralized error logging.
+ *
+ * @param fn - The sync function to wrap
+ * @param options - Result handling configuration
+ * @returns Wrapped function that returns Result<T>
+ *
+ * @example
+ * ```typescript
+ * const parseJson = withSyncResultHandling(
+ *   (json: string) => JSON.parse(json),
+ *   { context: 'media' }
+ * );
+ *
+ * const result = parseJson(jsonString);
+ * if (result.status === 'success') {
+ *   console.log(result.data);
+ * } else {
+ *   console.error(result.error, result.code);
+ * }
+ * ```
+ */
+export function withSyncResultHandling<TArgs extends unknown[], TData>(
+  fn: (...args: TArgs) => TData,
+  options: ResultHandlingOptions,
+): (...args: TArgs) => Result<TData> {
+  const {
+    code: overrideCode,
+    errorCodeMapper = mapErrorToCode,
+    transformError,
+    metadata: metadataFn,
+    ...reportOptions
+  } = options;
+
+  return (...args: TArgs): Result<TData> => {
+    try {
+      const data = fn(...args);
+      return success(data);
+    } catch (rawError) {
+      const error = transformError ? transformError(rawError) : rawError;
+      const errorMessage = normalizeError(error);
+      const errorCode = overrideCode ?? errorCodeMapper(error);
+      const dynamicMetadata = metadataFn ? metadataFn(error) : undefined;
+
+      // Report error to AppErrorReporter
+      const fullOptions: ErrorReportOptions = {
+        ...reportOptions,
+        code: String(errorCode),
+        ...(dynamicMetadata && { metadata: dynamicMetadata }),
+      };
+      AppErrorReporter.report(error, fullOptions);
+
+      // Return Result failure
+      return failure(errorMessage, errorCode, {
+        cause: error,
+        ...(dynamicMetadata && { meta: dynamicMetadata }),
+      });
+    }
+  };
+}
+
+// ============================================================================
 // Factory for Context-Scoped HOFs
 // ============================================================================
 
@@ -343,6 +547,22 @@ export function createErrorHandlers(context: ErrorContext) {
       fn: (...args: TArgs) => Promise<TReturn>,
       options?: Omit<ErrorHandlingOptions<TReturn>, 'context' | 'fallback' | 'rethrow'>,
     ) => withErrorResult(fn, { ...options, context }),
+
+    /**
+     * Wrap an async function returning Result<T>
+     */
+    wrapWithResult: <TArgs extends unknown[], TData>(
+      fn: (...args: TArgs) => Promise<TData>,
+      options?: Omit<ResultHandlingOptions, 'context'>,
+    ) => withResultHandling(fn, { ...options, context }),
+
+    /**
+     * Wrap a sync function returning Result<T>
+     */
+    wrapSyncWithResult: <TArgs extends unknown[], TData>(
+      fn: (...args: TArgs) => TData,
+      options?: Omit<ResultHandlingOptions, 'context'>,
+    ) => withSyncResultHandling(fn, { ...options, context }),
 
     /**
      * Execute a one-off async operation

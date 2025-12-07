@@ -21,7 +21,11 @@ export {
 export { GlobalErrorHandler, globalErrorHandler } from './error-handler';
 
 // Higher-Order Function pattern (functional alternative)
-export type { ErrorHandlingOptions, ErrorHandlingResult } from './error-handling-hof';
+export type {
+  ErrorHandlingOptions,
+  ErrorHandlingResult,
+  ResultHandlingOptions,
+} from './error-handling-hof';
 export {
   // Pre-bound context handlers
   bootstrapErrors,
@@ -38,9 +42,12 @@ export {
   tryAsync,
   trySync,
   uiErrors,
-  // HOFs
+  // HOFs (legacy ErrorHandlingResult pattern)
   withErrorHandling,
   withErrorResult,
+  // HOFs (Result<T> pattern)
+  withResultHandling,
   withSyncErrorHandling,
   withSyncErrorResult,
+  withSyncResultHandling,
 } from './error-handling-hof';
