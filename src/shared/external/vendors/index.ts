@@ -1,9 +1,20 @@
 /**
  * @fileoverview Minimal Vendor Type Layer
- * @version 5.0.0 - Types-only exports, no runtime API wrapper
+ * @version 6.0.0 - Deprecated all runtime APIs, types-only module
  *
- * Direct solid-js imports are preferred across the codebase.
+ * Direct solid-js imports are strongly preferred across the codebase.
  * This module only re-exports types for backward compatibility.
+ * All functions are no-ops and will be removed in a future major version.
+ *
+ * Migration:
+ * ```typescript
+ * // Before
+ * import { getSolid } from '@shared/external/vendors';
+ * const { createSignal } = getSolid();
+ *
+ * // After
+ * import { createSignal } from 'solid-js';
+ * ```
  */
 
 import type { JSX } from 'solid-js';
@@ -16,7 +27,9 @@ export type ComponentChildren = JSX.Element;
 
 /**
  * @deprecated Use direct solid-js imports instead.
- * Kept for backward compatibility with existing code.
+ *             This function is a no-op and will be removed in a future major version.
+ *
+ * Migration: Replace `await initializeVendors()` with direct solid-js imports.
  */
 export async function initializeVendors(): Promise<void> {
   // No-op: vendors are loaded via direct imports
@@ -24,6 +37,7 @@ export async function initializeVendors(): Promise<void> {
 
 /**
  * @deprecated No cleanup needed with direct imports.
+ *             This function is a no-op and will be removed in a future major version.
  */
 export function cleanupVendors(): void {
   // No-op
@@ -31,6 +45,7 @@ export function cleanupVendors(): void {
 
 /**
  * @deprecated No cleanup registration needed.
+ *             This function is a no-op and will be removed in a future major version.
  */
 export function registerVendorCleanupOnUnload(): void {
   // No-op
@@ -38,6 +53,8 @@ export function registerVendorCleanupOnUnload(): void {
 
 /**
  * @deprecated Vendors are always available with bundled imports.
+ *             This function is a no-op and will be removed in a future major version.
+ *             Always returns true.
  */
 export function isVendorsInitialized(): boolean {
   return true;

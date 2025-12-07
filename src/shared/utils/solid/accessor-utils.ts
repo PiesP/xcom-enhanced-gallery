@@ -164,8 +164,4 @@ export function toOptionalAccessor<T>(
 // Legacy Aliases (for backward compatibility)
 // ============================================================================
 
-/**
- * @deprecated Use {@link resolveOptional} instead
- * @internal
- */
-export const resolveAccessorValue = resolveOptional;
+// resolveAccessorValue has been removed. Use resolveOptional() instead.
