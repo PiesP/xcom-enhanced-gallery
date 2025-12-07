@@ -17,6 +17,7 @@
     "build:dev": "vite build --mode development",
     "build:prod": "vite build",
     "clean": "rm -rf dist",
+    "generate:icons": "tsx scripts/generate-hero-icons.ts",
     "check": "run-p deps:check typecheck lint styles:guard security:check",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src --max-diagnostics=100",

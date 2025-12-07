@@ -1,10 +1,11 @@
 import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
+import { resolve } from '@shared/utils/solid/accessor-utils';
 import { createClassName, cx } from '@shared/utils/text/formatting';
+import type { Accessor } from 'solid-js';
 import { createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 import styles from './SettingsControls.module.css';
 
-type Accessor<T> = () => T;
 type MaybeAccessor<T> = T | Accessor<T>;
 
 export type ThemeOption = 'auto' | 'light' | 'dark';
@@ -12,9 +13,6 @@ export type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
 
 const THEME_OPTIONS: readonly ThemeOption[] = ['auto', 'light', 'dark'];
 const LANGUAGE_OPTIONS: readonly LanguageOption[] = ['auto', 'ko', 'en', 'ja'];
-
-const resolveAccessorValue = <T,>(value: MaybeAccessor<T>): T =>
-  typeof value === 'function' ? (value as Accessor<T>)() : value;
 
 export interface SettingsControlsProps {
   currentTheme: MaybeAccessor<ThemeOption>;
@@ -62,8 +60,8 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
   const settingClass = cx(styles.setting, props.compact && styles.settingCompact);
   const labelClass = cx(styles.label, props.compact && styles.compactLabel);
 
-  const themeValue = createMemo(() => resolveAccessorValue(props.currentTheme));
-  const languageValue = createMemo(() => resolveAccessorValue(props.currentLanguage));
+  const themeValue = createMemo(() => resolve(props.currentTheme));
+  const languageValue = createMemo(() => resolve(props.currentLanguage));
 
   const themeSelectId = props['data-testid']
     ? `${props['data-testid']}-theme-select`

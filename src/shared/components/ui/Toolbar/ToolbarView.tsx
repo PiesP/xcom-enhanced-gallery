@@ -14,21 +14,12 @@ import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
 import type { ToolbarSettingsControllerResult, ToolbarState } from '@shared/hooks';
 import { safeEventPreventAll } from '@shared/utils/events/utils';
+import { resolve, resolveOptional } from '@shared/utils/solid/accessor-utils';
 import { createClassName, cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, lazy, Show, Suspense } from 'solid-js';
 import styles from './Toolbar.module.css';
 
 const TweetTextPanelLazy = lazy(() => import('./TweetTextPanel'));
-
-const resolveAccessorValue = <T,>(value: MaybeAccessor<T>): T =>
-  typeof value === 'function' ? (value as () => T)() : value;
-
-const resolveOptionalAccessorValue = <T,>(value?: MaybeAccessor<T>): T | undefined => {
-  if (value === undefined) {
-    return undefined;
-  }
-  return resolveAccessorValue(value);
-};
 
 type ToolbarViewNavState = {
   readonly prevDisabled: boolean;
@@ -156,13 +147,13 @@ const shouldAllowWheelDefault = (event: WheelEvent): boolean => {
 };
 
 export function ToolbarView(props: ToolbarViewProps): JSXElement {
-  const totalCount = createMemo(() => resolveAccessorValue(props.totalCount));
-  const currentIndex = createMemo(() => resolveAccessorValue(props.currentIndex));
+  const totalCount = createMemo(() => resolve(props.totalCount));
+  const currentIndex = createMemo(() => resolve(props.currentIndex));
   const displayedIndex = createMemo(() => props.displayedIndex());
-  const isToolbarDisabled = createMemo(() => Boolean(resolveOptionalAccessorValue(props.disabled)));
+  const isToolbarDisabled = createMemo(() => Boolean(resolveOptional(props.disabled)));
   const activeFitMode = createMemo(() => props.activeFitMode());
-  const tweetText = createMemo(() => resolveOptionalAccessorValue(props.tweetText) ?? null);
-  const tweetTextHTML = createMemo(() => resolveOptionalAccessorValue(props.tweetTextHTML) ?? null);
+  const tweetText = createMemo(() => resolveOptional(props.tweetText) ?? null);
+  const tweetTextHTML = createMemo(() => resolveOptional(props.tweetTextHTML) ?? null);
   const [toolbarElement, setToolbarElement] = createSignal<HTMLDivElement | null>(null);
   const [counterElement, setCounterElement] = createSignal<HTMLSpanElement | null>(null);
 
