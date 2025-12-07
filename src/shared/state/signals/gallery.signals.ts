@@ -12,8 +12,6 @@
 
 import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
 import {
-  getLastNavigationSource as getNavLastSource,
-  getNavigationState as getNavState,
   type NavigationStateData,
   type NavigationTrigger,
   recordFocusChange,
@@ -24,16 +22,7 @@ import {
   validateNavigationParams,
 } from '@shared/state/signals/navigation.state';
 import { createSignalSafe, effectSafe } from '@shared/state/signals/signal-factory';
-import {
-  getError as getUiError,
-  getViewMode as getUiViewMode,
-  isLoading as isUiLoading,
-  setError as setUiError,
-  setLoading as setUiLoading,
-  setViewMode as setUiViewMode,
-  uiSignals,
-  type ViewMode,
-} from '@shared/state/signals/ui.state';
+import { uiSignals, type ViewMode } from '@shared/state/signals/ui.state';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { NavigationSource } from '@shared/types/navigation.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
@@ -107,19 +96,9 @@ export type { NavigationTrigger };
 // Re-export NavigationState as NavigationStateData for backward compatibility
 export type { NavigationStateData as NavigationState };
 
-/**
- * @deprecated Use getNavigationState from navigation.state.ts directly
- */
-export function getNavigationState(): NavigationStateData {
-  return getNavState();
-}
-
-/**
- * @deprecated Use getLastNavigationSource from navigation.state.ts directly
- */
-export function getLastNavigationSource(): NavigationSource {
-  return getNavLastSource();
-}
+// Removed deprecated delegation functions. Use direct imports:
+// - getNavigationState() from '@shared/state/signals/navigation.state'
+// - getLastNavigationSource() from '@shared/state/signals/navigation.state'
 
 /**
  * Gallery index navigation events for tracking navigation state transitions
@@ -308,12 +287,7 @@ export function navigateNext(trigger: NavigationTrigger = 'button'): void {
   navigateToItem(newIndex, trigger, source);
 }
 
-/**
- * @deprecated Use setLoading from ui.state.ts directly
- */
-export function setLoading(isLoading: boolean): void {
-  setUiLoading(isLoading);
-}
+// Removed deprecated setLoading(). Use setLoading() from '@shared/state/signals/ui.state' directly.
 
 /**
  * Set focused index for scroll-based focus tracking
@@ -341,19 +315,9 @@ export function setFocusedIndex(
   logger.debug(`[Gallery] focusedIndex set to ${validIndex} (source: ${source})`);
 }
 
-/**
- * @deprecated Use setError from ui.state.ts directly
- */
-export function setError(error: string | null): void {
-  setUiError(error);
-}
-
-/**
- * @deprecated Use setViewMode from ui.state.ts directly
- */
-export function setViewMode(viewMode: ViewMode): void {
-  setUiViewMode(viewMode);
-}
+// Removed deprecated UI state delegations. Use direct imports:
+// - setError() from '@shared/state/signals/ui.state'
+// - setViewMode() from '@shared/state/signals/ui.state'
 
 // ============================================================================
 // Selectors
@@ -395,17 +359,7 @@ export const isGalleryOpen = (): boolean => galleryState.value.isOpen;
 export const getCurrentIndex = (): number => galleryState.value.currentIndex;
 export const getMediaItems = (): readonly MediaInfo[] => galleryState.value.mediaItems;
 
-/**
- * @deprecated Use isLoading from ui.state.ts directly
- */
-export const isLoading = (): boolean => isUiLoading();
-
-/**
- * @deprecated Use getError from ui.state.ts directly
- */
-export const getError = (): string | null => getUiError();
-
-/**
- * @deprecated Use getViewMode from ui.state.ts directly
- */
-export const getViewMode = (): ViewMode => getUiViewMode();
+// Removed deprecated UI state selectors. Use direct imports:
+// - isLoading() from '@shared/state/signals/ui.state'
+// - getError() from '@shared/state/signals/ui.state'
+// - getViewMode() from '@shared/state/signals/ui.state'

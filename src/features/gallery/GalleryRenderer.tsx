@@ -17,8 +17,8 @@ import {
   navigateNext,
   navigatePrevious,
   openGallery,
-  setError,
 } from '@shared/state/signals/gallery.signals';
+import { setError } from '@shared/state/signals/ui.state';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
