@@ -1,16 +1,13 @@
 /**
  * @fileoverview Twitter Auth Module Entry Point
- * @description Re-exports functional API and provides legacy class compatibility
+ * @description Re-exports functional API
  * @version 4.0.0 - Functional refactor
  */
 
-// Primary exports - Pure functions (recommended)
+// Primary exports - Pure functions
 export {
   getCsrfToken,
   isTokensInitialized,
   resetTokens,
   setCsrfToken,
 } from './twitter-auth';
-
-// Legacy class compatibility layer
-export { TwitterAuthService } from './twitter-auth-service.legacy';

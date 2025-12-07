@@ -1,10 +1,10 @@
 /**
  * @fileoverview Twitter Response Parser Module Entry Point
- * @description Re-exports functional API and provides legacy class compatibility
+ * @description Re-exports functional API
  * @version 4.0.0 - Functional refactor
  */
 
-// Primary exports - Pure functions (recommended)
+// Primary exports - Pure functions
 export {
   extractMediaFromTweet,
   // Utilities
@@ -14,6 +14,3 @@ export {
   resolveAspectRatio,
   resolveDimensions,
 } from './twitter-response-parser';
-
-// Legacy class compatibility layer
-export { TwitterResponseParser } from './twitter-response-parser.legacy';
