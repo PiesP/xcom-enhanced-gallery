@@ -8,40 +8,81 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.0] - 2025-12-07
+
+### Breaking Changes
+
+- **Service Architecture**: Removed all legacy class-based service wrappers (`CoreServiceRegistry`, deprecated `getSetting`/`setSetting`, etc.) in favor of functional APIs and ES Module singletons with typed accessors.
+- **Event System**: Unified `DomEventManager` into `EventManager` with centralized management and automatic cleanup.
+- **State Management**: Removed `solid-js/store` dependency and selector abstractions for simpler signal-based state.
+- **Type System**: Consolidated result types and removed unused runtime helpers from type files.
+- **Import Patterns**: Deprecated `export * from` pattern; all exports now explicit for better tree-shaking.
+- **Component APIs**: Removed legacy `GalleryHOC` compatibility shim and `useGalleryInitialScroll` placeholder.
+
 ### Added
 
-- **Documentation**: Created comprehensive mutation testing analysis document (`docs/MUTATION_TESTING_ANALYSIS_2025_11_26.md`) identifying test coverage gaps and improvement recommendations.
+- **Error Handling**: Implemented Higher-Order Functions (HOF) with `Result<T>` pattern for functional error handling.
+- **Utilities**: Added `LazyLoader` utility for dynamic imports and `cx()` for CSS module class composition.
+- **Gallery Features**: Added video volume and muted state settings; ambient video pause functionality with scope resolution.
+- **Download System**: Enhanced download capabilities with fallback methods and CSS feature detection.
+- **Service Pattern**: Implemented `createSingleton` helper for ES Module singleton pattern across services.
+- **Tooling**: Migrated to Biome for linting and formatting (replacing ESLint/Prettier).
 
 ### Changed
 
-- **Code Quality**: Confirmed all `__DEV__` guards are properly configured for tree-shaking in production builds.
-- **Testing Strategy**: Documented the need for integration and E2E tests to improve mutation score (currently low due to NoCoverage in UI components).
+- **Service Access**: Migrated to typed service accessors backed by ES Module singletons (see `docs/SERVICE_PATTERN_GUIDE.md`).
+- **Lifecycle Management**: Implemented composition-based lifecycle management across services.
+- **State Management**: Simplified and modularized navigation and UI states; removed selector abstraction layer.
+- **Async Utilities**: Modernized with `AbortSignal` support.
+- **Toolbar**: Grouped callback props into `handlers` object; removed close button hover-specific styling.
+- **Event Handling**: Unified event system with centralized management and automatic cleanup.
+- **Bootstrap**: Data-driven pipeline with `shouldRun` predicates; omitted developer-tooling stage in production.
+- **Icons**: Consolidated 18 hero icons into single factory module.
+- **CSS**: Optimized design tokens, consolidated duplicate styles, shortened class names, removed `!important` usage.
+- **Build Target**: Optimized for `esnext` (Chrome 117+, Edge 117+, Firefox 119+, Safari 17+).
+- **Dependencies**: Updated Playwright to 1.57.0, Vitest to 4.0.15, TypeScript to 5.9, and other dependencies.
 
 ### Fixed
 
-- **Gallery Original mode**: Disabled flexbox stretch on original-fit items so extra-wide images can overflow the viewport horizontally instead of being force-fit into the window.
+- **Bootstrap**: Restored missing `shouldRun` condition in `executeStage`.
+- **Object Path**: Added prototype pollution protection in `assignNestedPath`.
+- **Gallery**: Improved click detection to use data attributes; fixed viewport focus logic and synchronization.
+- **Media**: Optimized media element detection and ancestor traversal logic.
+- **ErrorBoundary**: Improved error handling and retry mechanism with remounting.
+- **Scroll**: Removed scroll snap behavior and disabled flex item shrinking in original fit mode.
+
+### Removed
+
+- **Legacy Services**: Removed `FilenameService` class, deprecated service wrapper classes, and obsolete type guards.
+- **Unused Modules**: Eliminated legacy `GalleryHOC`, `useGalleryInitialScroll`, standalone performance schedulers.
+- **Dependencies**: Removed `solid-js/store`, unnecessary npm options, and unused dependencies.
+- **Configuration**: Removed Prettier plugin/rules, `tsconfig.base.json`, unused Stryker configs, and outdated GitHub Actions.
+- **Dev Tools**: Removed notification service and related download notifications.
+
+### Documentation
+
+- **Guides**: Added comprehensive local validation guide, mutation testing analysis, and service pattern guide.
+- **Cleanup**: Removed outdated Phase annotations from constants and hooks; cleaned up documentation breadcrumbs.
+
+### Performance
+
+- **Bundle Optimization**: Optimized for tree-shaking with explicit exports and ES Module singletons.
+- **CSS**: Reduced bundle size through variable optimization and duplicate style consolidation.
+- **Icons**: Reduced SVG path precision and removed unused icons.
+- **ZIP**: Optimized `StreamingZipWriter` for runtime performance.
+
+### Testing
+
+- **Coverage**: Added mutation coverage tests for high-survived-mutant files.
+- **Component Tests**: Expanded `FocusCoordinator` coverage with focus-band and sticky-score scenarios.
+- **Visual Tests**: Maintained comprehensive visual regression testing.
 
 ### Analysis
 
 - **Build Status**: All tests passing (221 total: 201 unit + 20 component tests) ✅
 - **CSS Guidelines**: Zero `!important` usage maintained ✅
 - **Code Cleanliness**: No orphaned modules or duplicate exposures ✅
-- **Mutation Testing**: Low score due to lack of integration tests for Solid.js components and state management (expected, documented for future work)
-
-### Planning – Phase Annotation Cleanup (2025-12-04)
-
-**Specifications**
-
-1. Remove stale "Phase" callouts from `@constants/default-settings`, `@constants/service-keys`, `@shared/hooks/index`, and `@shared/hooks/use-toolbar-state` so the comments describe current behavior only.
-2. Drop the deprecated "removed hooks" appendix from the shared hooks barrel to keep the file focused on the active public API surface.
-3. Normalize header docs inside the toolbar hook to highlight responsibilities, state shape, and integration points without historical references.
-4. Confirm no new files reintroduce Phase annotations for already-stabilized systems.
-
-**Expected Behavior**
-
-- Constants and hooks read like evergreen documentation with no historical Phase markers.
-- The hooks barrel only lists exports that exist today.
-- Toolbar hook docs emphasize download debouncing responsibilities and cleanup behavior without referencing past milestones.
+- **Bundle Size**: ~275KB production build ✅
 
 **Acceptance Criteria**
 
