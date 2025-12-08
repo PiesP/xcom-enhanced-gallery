@@ -161,6 +161,243 @@ function removeCssComments(css: string): string {
 }
 
 /**
+ * CSS variable shortening map for production builds
+ * Maps verbose --xeg-* variable names to short 3-4 character names
+ * Organized by category for maintainability
+ */
+const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
+  // Easing/Animation (--xeg-e*)
+  '--xeg-ease-standard': '--xe-s',
+  '--xeg-ease-decelerate': '--xe-d',
+  '--xeg-ease-accelerate': '--xe-a',
+  '--xeg-ease-entrance': '--xe-e',
+  '--xeg-easing-ease-out': '--xeo',
+  '--xeg-easing-ease-in': '--xei',
+  '--xeg-easing-linear': '--xel',
+
+  // Duration (--xeg-d*)
+  '--xeg-duration': '--xd',
+  '--xeg-duration-fast': '--xdf',
+  '--xeg-duration-normal': '--xdn',
+  '--xeg-duration-slow': '--xds',
+  '--xeg-duration-toolbar': '--xdt',
+
+  // Transitions (--xeg-t*)
+  '--xeg-transition-interaction-fast': '--xti',
+  '--xeg-transition-surface-fast': '--xts',
+  '--xeg-transition-surface-normal': '--xtsn',
+  '--xeg-transition-elevation-fast': '--xtef',
+  '--xeg-transition-elevation-normal': '--xten',
+  '--xeg-transition-width-normal': '--xtwn',
+  '--xeg-transition-opacity': '--xto',
+  '--xeg-transition-toolbar': '--xtt',
+
+  // Colors - Text (--xeg-color-text-*)
+  '--xeg-color-text-primary': '--xct-p',
+  '--xeg-color-text-secondary': '--xct-s',
+  '--xeg-color-text-tertiary': '--xct-t',
+  '--xeg-color-text-inverse': '--xct-i',
+
+  // Colors - Border (--xeg-color-border-*)
+  '--xeg-color-border-primary': '--xcb-p',
+  '--xeg-color-border-hover': '--xcb-h',
+  '--xeg-color-border-strong': '--xcb-s',
+
+  // Colors - Background (--xeg-color-bg-*)
+  '--xeg-color-bg-primary': '--xcbg-p',
+  '--xeg-color-bg-secondary': '--xcbg-s',
+
+  // Colors - Semantic (--xeg-color-*)
+  '--xeg-color-primary': '--xc-p',
+  '--xeg-color-primary-hover': '--xc-ph',
+  '--xeg-color-success': '--xc-s',
+  '--xeg-color-success-hover': '--xc-sh',
+  '--xeg-color-error': '--xc-e',
+  '--xeg-color-error-hover': '--xc-eh',
+  '--xeg-color-overlay-medium': '--xc-om',
+  '--xeg-color-surface-elevated': '--xc-se',
+  '--xeg-color-background': '--xc-bg',
+
+  // Colors - Neutral (--xeg-color-neutral-*)
+  '--xeg-color-neutral-100': '--xcn1',
+  '--xeg-color-neutral-200': '--xcn2',
+  '--xeg-color-neutral-300': '--xcn3',
+  '--xeg-color-neutral-400': '--xcn4',
+  '--xeg-color-neutral-500': '--xcn5',
+
+  // Spacing (--xeg-spacing-*)
+  '--xeg-spacing-xs': '--xs-xs',
+  '--xeg-spacing-sm': '--xs-s',
+  '--xeg-spacing-md': '--xs-m',
+  '--xeg-spacing-lg': '--xs-l',
+  '--xeg-spacing-xl': '--xs-xl',
+  '--xeg-spacing-2xl': '--xs-2',
+  '--xeg-spacing-3xl': '--xs-3',
+  '--xeg-spacing-5xl': '--xs-5',
+
+  // Radius (--xeg-radius-*)
+  '--xeg-radius-xs': '--xr-xs',
+  '--xeg-radius-sm': '--xr-s',
+  '--xeg-radius-md': '--xr-m',
+  '--xeg-radius-lg': '--xr-l',
+  '--xeg-radius-xl': '--xr-xl',
+  '--xeg-radius-2xl': '--xr-2',
+  '--xeg-radius-full': '--xr-f',
+
+  // Font (--xeg-font-*)
+  '--xeg-font-size-sm': '--xfs-s',
+  '--xeg-font-size-base': '--xfs-b',
+  '--xeg-font-size-md': '--xfs-m',
+  '--xeg-font-size-lg': '--xfs-l',
+  '--xeg-font-size-2xl': '--xfs-2',
+  '--xeg-font-weight-medium': '--xfw-m',
+  '--xeg-font-weight-semibold': '--xfw-s',
+  '--xeg-font-family-ui': '--xff-u',
+  '--xeg-line-height-normal': '--xlh',
+
+  // Z-index (--xeg-z-*)
+  '--xeg-z-gallery': '--xz-g',
+  '--xeg-z-gallery-overlay': '--xz-go',
+  '--xeg-z-gallery-toolbar': '--xz-gt',
+  '--xeg-z-toolbar': '--xz-t',
+  '--xeg-z-toolbar-hover-zone': '--xz-th',
+  '--xeg-z-toolbar-panel': '--xz-tp',
+  '--xeg-z-toolbar-panel-active': '--xz-ta',
+  '--xeg-z-overlay': '--xz-o',
+  '--xeg-z-modal': '--xz-m',
+  '--xeg-z-modal-backdrop': '--xz-mb',
+  '--xeg-z-modal-foreground': '--xz-mf',
+  '--xeg-z-tooltip': '--xz-tt',
+  '--xeg-z-stack-base': '--xz-sb',
+  '--xeg-layer-root': '--xlr',
+
+  // Toolbar (--xeg-toolbar-*)
+  '--xeg-toolbar-surface': '--xt-s',
+  '--xeg-toolbar-border': '--xt-b',
+  '--xeg-toolbar-bg': '--xt-bg',
+  '--xeg-toolbar-panel-surface': '--xtp-s',
+  '--xeg-toolbar-panel-transition': '--xtp-t',
+  '--xeg-toolbar-panel-height': '--xtp-h',
+  '--xeg-toolbar-panel-max-height': '--xtp-mh',
+  '--xeg-toolbar-panel-shadow': '--xtp-sh',
+  '--xeg-toolbar-text-color': '--xtt-c',
+  '--xeg-toolbar-text-muted': '--xtt-m',
+  '--xeg-toolbar-element-bg': '--xte-b',
+  '--xeg-toolbar-element-bg-strong': '--xte-bs',
+  '--xeg-toolbar-element-border': '--xte-br',
+  '--xeg-toolbar-progress-track': '--xtp-pt',
+  '--xeg-toolbar-scrollbar-track': '--xts-t',
+  '--xeg-toolbar-scrollbar-thumb': '--xts-th',
+  '--xeg-toolbar-shadow': '--xt-sh',
+  '--xeg-toolbar-hover-zone-bg': '--xth-bg',
+  '--xeg-toolbar-hidden-opacity': '--xth-o',
+  '--xeg-toolbar-hidden-visibility': '--xth-v',
+  '--xeg-toolbar-hidden-pointer-events': '--xth-pe',
+
+  // Button (--xeg-button-*)
+  '--xeg-button-lift': '--xb-l',
+  '--xeg-button-bg': '--xb-bg',
+  '--xeg-button-border': '--xb-b',
+  '--xeg-button-text': '--xb-t',
+  '--xeg-button-bg-hover': '--xb-bgh',
+  '--xeg-button-border-hover': '--xb-bh',
+  '--xeg-button-disabled-opacity': '--xb-do',
+  '--xeg-button-square-size': '--xb-ss',
+  '--xeg-button-square-padding': '--xb-sp',
+
+  // Size (--xeg-size-*)
+  '--xeg-size-button-sm': '--xsb-s',
+  '--xeg-size-button-md': '--xsb-m',
+  '--xeg-size-button-lg': '--xsb-l',
+
+  // Surface (--xeg-surface-*)
+  '--xeg-surface-bg': '--xsu-b',
+  '--xeg-surface-border': '--xsu-br',
+  '--xeg-surface-bg-hover': '--xsu-bh',
+
+  // Gallery (--xeg-gallery-*)
+  '--xeg-gallery-bg': '--xg-b',
+  '--xeg-gallery-bg-light': '--xg-bl',
+  '--xeg-gallery-bg-dark': '--xg-bd',
+
+  // Modal (--xeg-modal-*)
+  '--xeg-modal-bg': '--xm-b',
+  '--xeg-modal-border': '--xm-br',
+  '--xeg-modal-bg-light': '--xm-bl',
+  '--xeg-modal-bg-dark': '--xm-bd',
+  '--xeg-modal-border-light': '--xm-brl',
+  '--xeg-modal-border-dark': '--xm-brd',
+
+  // Spinner (--xeg-spinner-*)
+  '--xeg-spinner-size': '--xsp-s',
+  '--xeg-spinner-size-default': '--xsp-sd',
+  '--xeg-spinner-border-width': '--xsp-bw',
+  '--xeg-spinner-track-color': '--xsp-tc',
+  '--xeg-spinner-indicator-color': '--xsp-ic',
+  '--xeg-spinner-duration': '--xsp-d',
+  '--xeg-spinner-easing': '--xsp-e',
+
+  // Misc
+  '--xeg-opacity-disabled': '--xo-d',
+  '--xeg-hover-lift': '--xhl',
+  '--xeg-focus-indicator-color': '--xfic',
+  '--xeg-border-emphasis': '--xbe',
+  '--xeg-border-button': '--xbb',
+  '--xeg-skeleton-bg': '--xsk-b',
+  '--xeg-scrollbar-width': '--xsw',
+  '--xeg-scrollbar-border-radius': '--xsbr',
+  '--xeg-hover-zone-height': '--xhzh',
+  '--xeg-icon-size': '--xis',
+  '--xeg-icon-stroke-width': '--xisw',
+  '--xeg-icon-only-size': '--xios',
+  '--xeg-gpu-hack': '--xgh',
+  '--xeg-backface-visibility': '--xbv',
+  '--xeg-bg-toolbar': '--xbgt',
+  '--xeg-glass-border-strong': '--xgbs',
+  '--xeg-viewport-height-constrained': '--xvhc',
+  '--xeg-aspect-default': '--xad',
+
+  // Settings
+  '--xeg-settings-gap': '--xse-g',
+  '--xeg-settings-padding': '--xse-p',
+  '--xeg-settings-control-gap': '--xse-cg',
+  '--xeg-settings-label-font-size': '--xse-lf',
+  '--xeg-settings-label-font-weight': '--xse-lw',
+  '--xeg-settings-select-font-size': '--xse-sf',
+  '--xeg-settings-select-padding': '--xse-sp',
+
+  // Gallery item intrinsic
+  '--xeg-gallery-item-intrinsic-width': '--xgi-w',
+  '--xeg-gallery-item-intrinsic-height': '--xgi-h',
+  '--xeg-gallery-item-intrinsic-ratio': '--xgi-r',
+  '--xeg-gallery-fit-height-target': '--xgf-ht',
+};
+
+/**
+ * Shorten CSS variable names for production builds
+ * Replaces verbose --xeg-* variable names with short 3-4 character alternatives
+ * @param css - CSS content to process
+ * @returns CSS with shortened variable names
+ */
+function shortenCssVariables(css: string): string {
+  let result = css;
+
+  // Sort by length (longest first) to prevent partial replacements
+  const sortedEntries = Object.entries(CSS_VAR_SHORTENING_MAP)
+    .sort((a, b) => b[0].length - a[0].length);
+
+  for (const [longName, shortName] of sortedEntries) {
+    // Replace both var(--name) references and --name: declarations
+    // Use global replace with word boundaries
+    const escapedLong = longName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escapedLong, 'g');
+    result = result.replace(regex, shortName);
+  }
+
+  return result;
+}
+
+/**
  * Compress CSS values for production builds (non-destructive minification)
  * - 0.0625rem → .0625rem (leading zero removal)
  * - 0px, 0rem, 0em → 0 (unit removal for zero values)
@@ -222,9 +459,11 @@ function extractCssFromBundle(
 
     // Process CSS in production mode
     if (compress && cssContent) {
-    // First remove comments
+      // First remove comments
       cssContent = removeCssComments(cssContent);
-      // Then compress values
+      // Then shorten variable names
+      cssContent = shortenCssVariables(cssContent);
+      // Finally compress values
       cssContent = compressCssValues(cssContent);
     }
 
