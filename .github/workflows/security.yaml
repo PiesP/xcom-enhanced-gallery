@@ -39,21 +39,22 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
+      - name: 🔧 Install OSV-Scanner
+        run: |
+          curl -fsSL https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64 -o osv-scanner
+          chmod +x osv-scanner
+          sudo mv osv-scanner /usr/local/bin/
+
       - name: 🔍 Run OSV-Scanner
-        uses: google/osv-scanner-action@v2.3.0
-        with:
-          scan-args: |-
-            --lockfile=deno.lock
-            --format=json
-            --output=osv-results.json
-            .
+        run: |
+          osv-scanner --lockfile=deno.lock --format=sarif --output=osv-results.sarif . || true
         continue-on-error: true
 
       - name: 📤 Upload OSV results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: osv-results.json
+          sarif_file: osv-results.sarif
         continue-on-error: true
 
   semgrep:
