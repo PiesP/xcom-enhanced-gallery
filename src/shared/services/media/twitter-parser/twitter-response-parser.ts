@@ -60,7 +60,7 @@ function resolveDimensions(media: TwitterMedia, mediaUrl: string): MediaDimensio
  */
 function resolveAspectRatio(
   media: TwitterMedia,
-  dimensions: MediaDimensions,
+  dimensions: MediaDimensions
 ): [number, number] | undefined {
   const aspectRatioValues = Array.isArray(media.video_info?.aspect_ratio)
     ? media.video_info?.aspect_ratio
@@ -133,7 +133,7 @@ function createMediaEntry(
   index: number,
   typeIndex: number,
   typeIndexOriginal: number,
-  sourceLocation: 'original' | 'quoted',
+  sourceLocation: 'original' | 'quoted'
 ): TweetMediaEntry {
   const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
   const dimensions = resolveDimensions(media, mediaUrl);
@@ -196,7 +196,7 @@ function createMediaEntry(
 export function extractMediaFromTweet(
   tweetResult: TwitterTweet,
   tweetUser: TwitterUser,
-  sourceLocation: 'original' | 'quoted' = 'original',
+  sourceLocation: 'original' | 'quoted' = 'original'
 ): TweetMediaEntry[] {
   if (!tweetResult.extended_entities?.media) return [];
 
@@ -228,7 +228,7 @@ export function extractMediaFromTweet(
         index,
         typeIndex[mediaType] ?? 0,
         typeIndex[media.type] ?? 0,
-        sourceLocation,
+        sourceLocation
       );
 
       mediaItems.push(entry);

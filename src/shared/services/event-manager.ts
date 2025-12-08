@@ -9,8 +9,8 @@ import { logger } from '@shared/logging';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
 import {
-  addListener as registerManagedListener,
   getEventListenerStatus,
+  addListener as registerManagedListener,
   removeEventListenerManaged,
   removeEventListenersByContext,
 } from '@shared/utils/events/core/listener-manager';
@@ -88,7 +88,7 @@ export class EventManager {
     type: string,
     listener: EventListener,
     options?: AddEventListenerOptions,
-    context?: string,
+    context?: string
   ): string {
     if (this.isDestroyed) {
       logger.warn('EventManager: addListener called on destroyed instance');

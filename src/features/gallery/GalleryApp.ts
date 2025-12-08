@@ -86,7 +86,7 @@ export class GalleryApp {
           debugMode: false,
           preventBubbling: true,
           context: 'gallery',
-        },
+        }
       );
 
       logger.info('[GalleryApp] ✅ Event handlers setup complete');
@@ -123,7 +123,7 @@ export class GalleryApp {
       });
       this.notificationService.error(
         'Error occurred',
-        error instanceof Error ? error.message : 'Unknown error',
+        error instanceof Error ? error.message : 'Unknown error'
       );
     }
   }
@@ -131,13 +131,13 @@ export class GalleryApp {
   public async openGallery(
     mediaItems: MediaInfo[],
     startIndex: number = 0,
-    options: GalleryOpenOptions = {},
+    options: GalleryOpenOptions = {}
   ): Promise<void> {
     if (!this.isInitialized) {
       logger.warn('[GalleryApp] Gallery not initialized.');
       this.notificationService.error(
         'Gallery unavailable',
-        'Tampermonkey or similar userscript manager is required.',
+        'Tampermonkey or similar userscript manager is required.'
       );
       return;
     }
@@ -168,7 +168,7 @@ export class GalleryApp {
       });
       this.notificationService.error(
         'Failed to load gallery',
-        error instanceof Error ? error.message : 'Unknown error',
+        error instanceof Error ? error.message : 'Unknown error'
       );
       throw error;
     }

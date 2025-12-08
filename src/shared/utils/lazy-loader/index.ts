@@ -113,7 +113,7 @@ export function createLazyLoader<
 >(
   importFn: () => Promise<TModule>,
   exportName: TExport,
-  options: LazyLoaderOptions = {},
+  options: LazyLoaderOptions = {}
 ): LazyLoader<TModule[TExport]> {
   const { retries = 0, retryDelay = 100, debug = false, onError } = options;
 
@@ -181,7 +181,7 @@ export function createLazyLoader<
           logger.error(`[LazyLoader] Failed to load '${String(exportName)}':`, err.message);
         }
         throw err;
-      },
+      }
     );
 
     state = { status: 'loading', promise };
@@ -222,7 +222,7 @@ export function createLazyLoader<
  */
 export function createModuleLazyLoader<TModule>(
   importFn: () => Promise<TModule>,
-  options: LazyLoaderOptions = {},
+  options: LazyLoaderOptions = {}
 ): LazyLoader<TModule> {
   const { retries = 0, retryDelay = 100, debug = false, onError } = options;
 
@@ -279,7 +279,7 @@ export function createModuleLazyLoader<TModule>(
           logger.error('[LazyLoader] Failed to load module:', err.message);
         }
         throw err;
-      },
+      }
     );
 
     state = { status: 'loading', promise };
@@ -336,7 +336,7 @@ export function preloadAll(loaders: ReadonlyArray<LazyLoader<unknown>>): void {
  * ```
  */
 export async function loadAll<T extends readonly LazyLoader<unknown>[]>(
-  loaders: T,
+  loaders: T
 ): Promise<{ [K in keyof T]: Awaited<ReturnType<T[K]['load']>> }> {
   const results = await Promise.all(loaders.map((loader) => loader.load()));
   return results as { [K in keyof T]: Awaited<ReturnType<T[K]['load']>> };

@@ -1,9 +1,9 @@
 import { SELECTORS, STABLE_SELECTORS } from '@constants/selectors';
 import { logger } from '@shared/logging';
 import {
-  pauseActiveTwitterVideos,
   type PauseAmbientVideosOptions,
   type PauseAmbientVideosResult,
+  pauseActiveTwitterVideos,
 } from '@shared/utils/media/twitter-video-pauser';
 
 type PauseRoot = Exclude<PauseAmbientVideosOptions['root'], undefined>;
@@ -139,7 +139,7 @@ export function inferAmbientVideoTrigger(element?: HTMLElement | null): AmbientV
 }
 
 export function pauseAmbientVideosForGallery(
-  request: AmbientVideoPauseRequest = {},
+  request: AmbientVideoPauseRequest = {}
 ): AmbientVideoPauseResponse {
   const trigger = request.trigger ?? inferAmbientVideoTrigger(request.sourceElement);
   const force = request.force ?? true;

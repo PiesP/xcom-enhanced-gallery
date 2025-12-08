@@ -27,7 +27,7 @@ export interface SyncThemeAttributesOptions {
  */
 export function syncThemeAttributes(
   theme: ThemeName,
-  options: SyncThemeAttributesOptions = {},
+  options: SyncThemeAttributesOptions = {}
 ): void {
   if (typeof document === 'undefined') {
     return;
@@ -39,8 +39,8 @@ export function syncThemeAttributes(
     document.documentElement?.setAttribute(THEME_DOM_ATTRIBUTE, theme);
   }
 
-  const targets: Iterable<Element> | ArrayLike<Element> = scopes ??
-    document.querySelectorAll('.xeg-theme-scope');
+  const targets: Iterable<Element> | ArrayLike<Element> =
+    scopes ?? document.querySelectorAll('.xeg-theme-scope');
 
   for (const target of Array.from(targets)) {
     if (target instanceof HTMLElement) {

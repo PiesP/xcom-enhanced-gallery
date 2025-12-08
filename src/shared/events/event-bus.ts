@@ -143,7 +143,7 @@ export class EventBus {
     element: EventTarget,
     type: string,
     listener: EventListener,
-    options: DOMListenerOptions = {},
+    options: DOMListenerOptions = {}
   ): string {
     return this.domEventManager.addListener(element, type, listener, options);
   }
@@ -163,7 +163,7 @@ export class EventBus {
   public on<K extends keyof AppEventMap>(
     event: K,
     callback: (data: AppEventMap[K]) => void,
-    options: AppEventOptions = {},
+    options: AppEventOptions = {}
   ): () => void {
     return this.appEventManager.on(event, callback, options);
   }
@@ -174,7 +174,7 @@ export class EventBus {
   public once<K extends keyof AppEventMap>(
     event: K,
     callback: (data: AppEventMap[K]) => void,
-    options: Omit<AppEventOptions, 'once'> = {},
+    options: Omit<AppEventOptions, 'once'> = {}
   ): () => void {
     return this.appEventManager.once(event, callback, options);
   }
@@ -246,7 +246,7 @@ export class EventBus {
       () => {
         this.removeByContext(context);
       },
-      { once: true },
+      { once: true }
     );
 
     return controller;

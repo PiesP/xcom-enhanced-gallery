@@ -4,8 +4,8 @@
  */
 
 export {
-  promisifyCallback,
   type PromisifyOptions,
+  promisifyCallback,
   promisifyVoidCallback,
   type ResultCallback,
   type VoidCallback,

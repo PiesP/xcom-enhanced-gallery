@@ -105,7 +105,7 @@ function calculateBackoff(attempt: number, baseDelayMs: number, maxDelayMs: numb
  */
 export async function withRetry<T>(
   operation: () => Promise<T>,
-  options: RetryOptions = {},
+  options: RetryOptions = {}
 ): Promise<RetryResult<T>> {
   const {
     maxAttempts = DEFAULT_OPTIONS.maxAttempts,

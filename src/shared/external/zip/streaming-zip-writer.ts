@@ -107,7 +107,7 @@ export class StreamingZipWriter {
           writeUint32LE(0), // External attrs
           writeUint32LE(entry.offset),
           filenameBytes,
-        ]),
+        ])
       );
     }
 

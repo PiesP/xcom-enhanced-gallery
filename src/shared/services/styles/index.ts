@@ -13,9 +13,9 @@ export {
   getRegisteredStyleCount,
   getStyleElement,
   hasStyle,
-  registerStyle,
   // Types
   type RegistrationResult,
+  registerStyle,
   removeStyle,
   type StyleRegistrationOptions,
 } from './style-utils';

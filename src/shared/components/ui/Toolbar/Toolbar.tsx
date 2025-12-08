@@ -105,8 +105,8 @@ const computeNavigationState = ({
 
 const createGuardedHandler = (
   guard: () => boolean,
-  action?: () => void,
-): (event: MouseEvent) => void => {
+  action?: () => void
+): ((event: MouseEvent) => void) => {
   return (event) => {
     safeEventPrevent(event);
     if (guard()) {
@@ -163,7 +163,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   createEffect(
     on(isDownloadingProp, (value) => {
       toolbarActions.setDownloading(Boolean(value));
-    }),
+    })
   );
 
   const baseSettingsController = useToolbarSettingsController({
@@ -216,7 +216,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   }));
 
   const activeFitMode = createMemo<FitMode>(
-    () => currentFitMode() ?? FIT_MODE_ORDER[0]?.mode ?? 'original',
+    () => currentFitMode() ?? FIT_MODE_ORDER[0]?.mode ?? 'original'
   );
 
   const isToolbarDisabled = () => Boolean(isDisabled());
@@ -245,19 +245,19 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
 
   const handlePrevious = createGuardedHandler(
     () => navState().prevDisabled,
-    props.handlers.navigation.onPrevious,
+    props.handlers.navigation.onPrevious
   );
   const handleNext = createGuardedHandler(
     () => navState().nextDisabled,
-    props.handlers.navigation.onNext,
+    props.handlers.navigation.onNext
   );
   const handleDownloadCurrent = createGuardedHandler(
     () => navState().downloadDisabled,
-    props.handlers.download.onDownloadCurrent,
+    props.handlers.download.onDownloadCurrent
   );
   const handleDownloadAll = createGuardedHandler(
     () => navState().downloadDisabled,
-    props.handlers.download.onDownloadAll,
+    props.handlers.download.onDownloadAll
   );
 
   const handleClose = (event: MouseEvent) => {

@@ -19,7 +19,7 @@ import { isHTMLElement } from '@shared/utils/types/guards';
 export async function handleMediaClick(
   event: MouseEvent,
   handlers: EventHandlers,
-  options: GalleryEventOptions,
+  options: GalleryEventOptions
 ): Promise<EventHandlingResult> {
   // Early exits
   if (!options.enableMediaDetection) {

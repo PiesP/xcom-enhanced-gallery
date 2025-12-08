@@ -109,7 +109,7 @@ export function useGalleryScroll({
       target.closest('[data-gallery-element="toolbar"]') ||
         target.closest('[data-gallery-element="settings-panel"]') ||
         target.closest('[data-gallery-element="tweet-panel"]') ||
-        target.closest('[data-role="toolbar"]'),
+        target.closest('[data-role="toolbar"]')
     );
   };
 
@@ -144,11 +144,9 @@ export function useGalleryScroll({
     }
 
     const eventManager = EventManager.getInstance();
-    const listenerContext = `${LISTENER_CONTEXT_PREFIX}:${Date.now().toString(36)}:${
-      Math.random()
-        .toString(36)
-        .slice(2)
-    }`;
+    const listenerContext = `${LISTENER_CONTEXT_PREFIX}:${Date.now().toString(36)}:${Math.random()
+      .toString(36)
+      .slice(2)}`;
     const listenerIds: string[] = [];
 
     const registerListener = (type: string, handler: EventListener): void => {
@@ -157,7 +155,7 @@ export function useGalleryScroll({
         type,
         handler,
         { passive: true },
-        listenerContext,
+        listenerContext
       );
       if (id) {
         listenerIds.push(id);

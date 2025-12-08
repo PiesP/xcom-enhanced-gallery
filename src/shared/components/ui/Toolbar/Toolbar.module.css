@@ -135,8 +135,8 @@
 /* ===== Phase 57: Toolbar-Settings Panel Visual Continuity ===== */
 
 /* 툴바 확장 상태 - 설정 패널 또는 트윗 패널과 시각적으로 연결 */
-.galleryToolbar[data-settings-expanded='true'],
-.galleryToolbar[data-tweet-panel-expanded='true'] {
+.galleryToolbar[data-settings-expanded="true"],
+.galleryToolbar[data-tweet-panel-expanded="true"] {
   /* 하단 border-radius 제거하여 패널과 매끄럽게 연결 */
   border-radius: var(--xeg-radius-lg) var(--xeg-radius-lg) 0 0;
 }
@@ -144,7 +144,7 @@
 /* Phase 254: 감소된 모션은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
 
 /* 상태별 CSS 커스텀 프로퍼티 정의 - 기본값 수정으로 가시성 보장 */
-.galleryToolbar[data-state='idle'],
+.galleryToolbar[data-state="idle"],
 .galleryToolbar:not([data-state]) {
   --toolbar-opacity: 1;
   --toolbar-pointer-events: auto;
@@ -152,9 +152,9 @@
   --toolbar-display: inline-flex;
 }
 
-.galleryToolbar[data-state='loading'],
-.galleryToolbar[data-state='downloading'],
-.galleryToolbar[data-state='error'] {
+.galleryToolbar[data-state="loading"],
+.galleryToolbar[data-state="downloading"],
+.galleryToolbar[data-state="error"] {
   --toolbar-opacity: 1;
   --toolbar-pointer-events: auto;
   --toolbar-visibility: visible;
@@ -198,16 +198,16 @@
 }
 
 /* 데이터 속성 기반 상태 관리 */
-:where(.toolbarButton[data-active='true'], .toolbarButton[data-selected='true']) {
+:where(.toolbarButton[data-active="true"], .toolbarButton[data-selected="true"]) {
   border-color: var(--toolbar-button-accent-hover);
 }
 
-.toolbarButton[data-loading='true'] {
+.toolbarButton[data-loading="true"] {
   --button-opacity: 0.7;
   --button-transform: scale(0.95);
 }
 
-.toolbarButton[data-disabled='true'] {
+.toolbarButton[data-disabled="true"] {
   --button-opacity: 0.5;
 
   color: var(--xeg-toolbar-text-muted, var(--xeg-color-neutral-400));
@@ -216,7 +216,7 @@
 
 /* 호버 상태는 glassmorphism 클래스에서 처리 */
 @media (hover: hover) {
-  .toolbarButton:hover:not([data-disabled='true']) {
+  .toolbarButton:hover:not([data-disabled="true"]) {
     /* glassmorphism 클래스의 호버 효과 사용 */
     /* 복잡한 transform 효과 제거 */
     border-color: var(--toolbar-button-accent-hover);
@@ -313,7 +313,7 @@ button.fitButton {
   pointer-events: auto;
 }
 
-.fitButton[data-selected='true'] {
+.fitButton[data-selected="true"] {
   --toolbar-button-accent-hover: var(--xeg-color-primary);
   --toolbar-button-focus-border: var(--xeg-color-primary-hover);
 }
@@ -338,7 +338,7 @@ button.fitButton {
     background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
   }
 
-  [data-theme='dark'] .galleryToolbar {
+  [data-theme="dark"] .galleryToolbar {
     background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
   }
 }
@@ -405,7 +405,7 @@ button.fitButton {
   min-height: var(--xeg-toolbar-panel-height);
 }
 
-:where(.settingsPanel, .tweetPanel)[data-expanded='true'] {
+:where(.settingsPanel, .tweetPanel)[data-expanded="true"] {
   height: auto;
   opacity: 1;
   transform: translateY(0);

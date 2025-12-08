@@ -50,7 +50,7 @@ export interface UseGalleryFocusTrackerReturn {
 }
 
 export function useGalleryFocusTracker(
-  options: UseGalleryFocusTrackerOptions,
+  options: UseGalleryFocusTrackerOptions
 ): UseGalleryFocusTrackerReturn {
   const isEnabled = toAccessor(options.isEnabled);
   const container = toAccessor(options.container);

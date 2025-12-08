@@ -68,9 +68,9 @@ const INTERNAL_SELECTORS = Object.freeze(
         SELECTORS.DATA_GALLERY_VERSION,
         SELECTORS.ROLE_GALLERY,
         SELECTORS.ROLE_ITEMS_CONTAINER,
-      ].filter(Boolean),
-    ),
-  ),
+      ].filter(Boolean)
+    )
+  )
 );
 
 const SCOPES = {
@@ -81,8 +81,8 @@ const SCOPES = {
         SELECTORS.DATA_GALLERY,
         SELECTORS.CONTAINER,
         SELECTORS.DATA_CONTAINER,
-      ]),
-    ),
+      ])
+    )
   ),
 } as const;
 

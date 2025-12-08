@@ -3,7 +3,7 @@ import type { TranslationKey } from './types';
 
 export function resolveTranslationValue(
   dictionary: LanguageStrings,
-  key: TranslationKey,
+  key: TranslationKey
 ): string | undefined {
   const segments = key.split('.');
   let current: unknown = dictionary;

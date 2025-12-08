@@ -247,17 +247,17 @@ function VerticalGalleryViewCore({
         styles.container,
         toolbar.isInitialToolbarVisible() && styles.initialToolbarVisible,
         scroll.isScrolling() && styles.isScrolling,
-        className,
+        className
       )}
       onClick={handleBackgroundClick}
-      data-xeg-gallery='true'
-      data-xeg-role='gallery'
+      data-xeg-gallery="true"
+      data-xeg-role="gallery"
     >
-      <div class={styles.toolbarHoverZone} data-role='toolbar-hover-zone' />
+      <div class={styles.toolbarHoverZone} data-role="toolbar-hover-zone" />
 
       <div
         class={styles.toolbarWrapper}
-        data-role='toolbar'
+        data-role="toolbar"
         ref={(el) => setToolbarWrapperEl(el ?? null)}
       >
         <Toolbar
@@ -294,8 +294,8 @@ function VerticalGalleryViewCore({
 
       <div
         class={styles.itemsContainer}
-        data-xeg-role='items-container'
-        data-xeg-role-compat='items-list'
+        data-xeg-role="items-container"
+        data-xeg-role-compat="items-list"
         ref={(el) => setItemsContainerEl(el ?? null)}
       >
         <For each={mediaItems()}>
@@ -314,19 +314,20 @@ function VerticalGalleryViewCore({
                 onClick={() => handleMediaItemClick(actualIndex)}
                 className={cx(
                   styles.galleryItem,
-                  actualIndex === currentIndex() && styles.itemActive,
+                  actualIndex === currentIndex() && styles.itemActive
                 )}
                 data-index={actualIndex}
-                data-xeg-role='gallery-item'
+                data-xeg-role="gallery-item"
                 registerContainer={(element: HTMLElement | null) =>
-                  focus.registerItem(actualIndex, element)}
+                  focus.registerItem(actualIndex, element)
+                }
                 {...(onDownloadCurrent ? { onDownload: handleDownloadCurrent } : {})}
                 onFocus={() => focus.handleItemFocus(actualIndex)}
               />
             );
           }}
         </For>
-        <div class={styles.scrollSpacer} aria-hidden='true' data-xeg-role='scroll-spacer' />
+        <div class={styles.scrollSpacer} aria-hidden="true" data-xeg-role="scroll-spacer" />
       </div>
     </div>
   );

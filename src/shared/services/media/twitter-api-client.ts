@@ -115,7 +115,7 @@ export class TwitterAPI {
       if (!response.ok) {
         logger.warn(
           `Twitter API request failed: ${response.status} ${response.statusText}`,
-          response.data,
+          response.data
         );
         throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
       }
@@ -195,8 +195,7 @@ export class TwitterAPI {
       withDisallowedReplyControls: false,
     };
 
-    const urlBase =
-      `https://${sitename}.com/i/api/graphql/${TWITTER_API_CONFIG.TWEET_RESULT_BY_REST_ID_QUERY_ID}/TweetResultByRestId`;
+    const urlBase = `https://${sitename}.com/i/api/graphql/${TWITTER_API_CONFIG.TWEET_RESULT_BY_REST_ID_QUERY_ID}/TweetResultByRestId`;
     const urlObj = new URL(urlBase);
     urlObj.searchParams.set('variables', JSON.stringify(variables));
     urlObj.searchParams.set('features', JSON.stringify(features));

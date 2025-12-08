@@ -122,7 +122,7 @@ export interface CreateLifecycleOptions extends LifecycleHooks {
  */
 export function createLifecycle(
   serviceName: string,
-  options: CreateLifecycleOptions = {},
+  options: CreateLifecycleOptions = {}
 ): Lifecycle {
   const { onInitialize, onDestroy, silent = false } = options;
 
@@ -130,9 +130,10 @@ export function createLifecycle(
 
   // Safe logger access for test environments where logger might not be initialized
   const noop = () => {};
-  const log = silent || !logger?.info
-    ? { info: noop, error: noop }
-    : { info: logger.info.bind(logger), error: logger.error.bind(logger) };
+  const log =
+    silent || !logger?.info
+      ? { info: noop, error: noop }
+      : { info: logger.info.bind(logger), error: logger.error.bind(logger) };
 
   const initialize = async (): Promise<void> => {
     if (initialized) return;
@@ -206,7 +207,7 @@ export function createLifecycle(
  */
 export function composeLifecycles(
   serviceName: string,
-  lifecycles: readonly Lifecycle[],
+  lifecycles: readonly Lifecycle[]
 ): Lifecycle {
   return createLifecycle(serviceName, {
     onInitialize: async () => {
@@ -282,7 +283,7 @@ export function hasLifecycle(obj: unknown): obj is Lifecycle {
 export function withLifecycle<T extends object>(
   target: T,
   serviceName: string,
-  hooks: LifecycleHooks = {},
+  hooks: LifecycleHooks = {}
 ): T & Lifecycle {
   const lifecycle = createLifecycle(serviceName, hooks);
 

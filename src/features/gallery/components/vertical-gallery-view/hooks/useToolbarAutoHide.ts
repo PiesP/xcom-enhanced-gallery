@@ -46,7 +46,7 @@ export function useToolbarAutoHide(options: UseToolbarAutoHideOptions): UseToolb
 
   const computeInitialVisibility = (): boolean => Boolean(isVisible() && hasItems());
   const [isInitialToolbarVisible, setIsInitialToolbarVisible] = createSignal(
-    computeInitialVisibility(),
+    computeInitialVisibility()
   );
   let activeTimer: number | null = null;
 

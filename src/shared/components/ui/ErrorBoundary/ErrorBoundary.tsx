@@ -12,7 +12,7 @@
 import { getLanguageService } from '@shared/container/service-accessors';
 import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
 import { NotificationService } from '@shared/services/notification-service';
-import { createSignal, ErrorBoundary as SolidErrorBoundary, Show } from 'solid-js';
+import { createSignal, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
 
 type Props = {
   children?: ComponentChildren;
@@ -84,10 +84,10 @@ export function ErrorBoundary(props: Props): JSXElement {
     }
 
     return (
-      <div role='alert' data-xeg-error-boundary='' aria-live='polite'>
-        <p class='xeg-error-boundary__title'>{title}</p>
-        <p class='xeg-error-boundary__body'>{body}</p>
-        <button type='button' class='xeg-error-boundary__action' onClick={handleRetry}>
+      <div role="alert" data-xeg-error-boundary="" aria-live="polite">
+        <p class="xeg-error-boundary__title">{title}</p>
+        <p class="xeg-error-boundary__body">{body}</p>
+        <button type="button" class="xeg-error-boundary__action" onClick={handleRetry}>
           Retry
         </button>
       </div>

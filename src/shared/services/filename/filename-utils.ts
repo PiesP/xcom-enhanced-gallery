@@ -193,7 +193,7 @@ export function generateMediaFilename(media: MediaInfo, options: FilenameOptions
  */
 export function generateZipFilename(
   mediaItems: readonly MediaInfo[],
-  options: ZipFilenameOptions = {},
+  options: ZipFilenameOptions = {}
 ): string {
   try {
     const firstItem = mediaItems[0];

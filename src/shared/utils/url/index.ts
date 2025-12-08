@@ -10,8 +10,8 @@
 
 // Host utilities
 export {
-  extractUsernameFromUrl,
   type ExtractUsernameOptions,
+  extractUsernameFromUrl,
   getHostname,
   type HostMatchOptions,
   isHostMatching,

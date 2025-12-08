@@ -71,7 +71,8 @@ export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   const interactive = target.closest(INTERACTIVE_SELECTOR);
   if (interactive) {
     // Exception: Media links (links containing media) or if the interactive element IS a media container
-    const isMediaLink = interactive.matches(MEDIA_SELECTORS.MEDIA_LINK) ||
+    const isMediaLink =
+      interactive.matches(MEDIA_SELECTORS.MEDIA_LINK) ||
       interactive.matches(MEDIA_CONTAINER_SELECTOR) ||
       interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null;
     return !isMediaLink;

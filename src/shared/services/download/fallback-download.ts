@@ -57,7 +57,8 @@ export function detectDownloadCapability(): DownloadCapability {
 
   const hasFetch = typeof fetch === 'function';
 
-  const hasBlob = typeof Blob !== 'undefined' &&
+  const hasBlob =
+    typeof Blob !== 'undefined' &&
     typeof URL !== 'undefined' &&
     typeof URL.createObjectURL === 'function';
 
@@ -118,7 +119,7 @@ export interface FallbackDownloadResult {
 export async function downloadWithFetchBlob(
   url: string,
   filename: string,
-  options: FallbackDownloadOptions = {},
+  options: FallbackDownloadOptions = {}
 ): Promise<FallbackDownloadResult> {
   const { signal, onProgress, timeout = 30000 } = options;
 
@@ -286,7 +287,7 @@ async function triggerAnchorDownload(url: string, filename: string): Promise<voi
 export async function downloadBlobWithAnchor(
   blob: Blob,
   filename: string,
-  options: FallbackDownloadOptions = {},
+  options: FallbackDownloadOptions = {}
 ): Promise<FallbackDownloadResult> {
   const { onProgress } = options;
 

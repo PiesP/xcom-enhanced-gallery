@@ -18,7 +18,7 @@ import type { FeatureFlagMap, SettingsServiceContract } from './settings-service
 const FEATURE_DEFAULTS: Readonly<FeatureFlags> = Object.freeze({ ...DEFAULT_SETTINGS.features });
 
 function normalizeFeatureFlags(
-  features?: Partial<Record<keyof FeatureFlags, unknown>>,
+  features?: Partial<Record<keyof FeatureFlags, unknown>>
 ): FeatureFlagMap {
   const featureKeys = Object.keys(FEATURE_DEFAULTS) as Array<keyof FeatureFlags>;
   return featureKeys.reduce<Record<keyof FeatureFlags, boolean>>(
@@ -27,7 +27,7 @@ function normalizeFeatureFlags(
       acc[key] = typeof candidate === 'boolean' ? candidate : FEATURE_DEFAULTS[key];
       return acc;
     },
-    {} as Record<keyof FeatureFlags, boolean>,
+    {} as Record<keyof FeatureFlags, boolean>
   );
 }
 
@@ -49,7 +49,7 @@ export class SettingsService implements SettingsServiceContract {
   private readonly listeners = new Set<(event: SettingChangeEvent) => void>();
 
   constructor(
-    private readonly repository: SettingsRepository = new PersistentSettingsRepository(),
+    private readonly repository: SettingsRepository = new PersistentSettingsRepository()
   ) {
     this.lifecycle = createLifecycle('SettingsService', {
       onInitialize: () => this.onInitialize(),
@@ -144,7 +144,7 @@ export class SettingsService implements SettingsServiceContract {
     } else if (category in DEFAULT_SETTINGS) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (this.settings as any)[category] = cloneDeep(
-        DEFAULT_SETTINGS[category as keyof typeof DEFAULT_SETTINGS],
+        DEFAULT_SETTINGS[category as keyof typeof DEFAULT_SETTINGS]
       );
     }
     this.settings.lastModified = Date.now();

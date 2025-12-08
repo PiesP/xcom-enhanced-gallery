@@ -126,7 +126,7 @@ const ERROR_MESSAGES = {
 
 function assertFunction<T extends (...args: never[]) => unknown>(
   fn: T | undefined,
-  errorMessage: string,
+  errorMessage: string
 ): T {
   if (typeof fn !== 'function') {
     throw new Error(errorMessage);
@@ -149,46 +149,54 @@ export function getUserscript(): UserscriptAPI {
   const global = globalThis as unknown as GlobalWithGM;
 
   // Check for injected GM_* APIs (Tampermonkey injects these into scope, not necessarily globalThis)
-  const gmDownload = typeof GM_download !== 'undefined'
-    ? GM_download
-    : typeof global.GM_download === 'function'
-    ? global.GM_download
-    : undefined;
-  const gmSetValue = typeof GM_setValue !== 'undefined'
-    ? GM_setValue
-    : typeof global.GM_setValue === 'function'
-    ? global.GM_setValue
-    : undefined;
-  const gmGetValue = typeof GM_getValue !== 'undefined'
-    ? GM_getValue
-    : typeof global.GM_getValue === 'function'
-    ? global.GM_getValue
-    : undefined;
-  const gmDeleteValue = typeof GM_deleteValue !== 'undefined'
-    ? GM_deleteValue
-    : typeof global.GM_deleteValue === 'function'
-    ? global.GM_deleteValue
-    : undefined;
-  const gmListValues = typeof GM_listValues !== 'undefined'
-    ? GM_listValues
-    : typeof global.GM_listValues === 'function'
-    ? global.GM_listValues
-    : undefined;
-  const gmAddStyle = typeof GM_addStyle !== 'undefined'
-    ? GM_addStyle
-    : typeof global.GM_addStyle === 'function'
-    ? global.GM_addStyle
-    : undefined;
-  const gmXmlHttpRequest = typeof GM_xmlhttpRequest !== 'undefined'
-    ? GM_xmlhttpRequest
-    : typeof global.GM_xmlhttpRequest === 'function'
-    ? global.GM_xmlhttpRequest
-    : undefined;
-  const gmCookie = typeof GM_cookie !== 'undefined'
-    ? GM_cookie
-    : global.GM_cookie && typeof global.GM_cookie.list === 'function'
-    ? global.GM_cookie
-    : undefined;
+  const gmDownload =
+    typeof GM_download !== 'undefined'
+      ? GM_download
+      : typeof global.GM_download === 'function'
+        ? global.GM_download
+        : undefined;
+  const gmSetValue =
+    typeof GM_setValue !== 'undefined'
+      ? GM_setValue
+      : typeof global.GM_setValue === 'function'
+        ? global.GM_setValue
+        : undefined;
+  const gmGetValue =
+    typeof GM_getValue !== 'undefined'
+      ? GM_getValue
+      : typeof global.GM_getValue === 'function'
+        ? global.GM_getValue
+        : undefined;
+  const gmDeleteValue =
+    typeof GM_deleteValue !== 'undefined'
+      ? GM_deleteValue
+      : typeof global.GM_deleteValue === 'function'
+        ? global.GM_deleteValue
+        : undefined;
+  const gmListValues =
+    typeof GM_listValues !== 'undefined'
+      ? GM_listValues
+      : typeof global.GM_listValues === 'function'
+        ? global.GM_listValues
+        : undefined;
+  const gmAddStyle =
+    typeof GM_addStyle !== 'undefined'
+      ? GM_addStyle
+      : typeof global.GM_addStyle === 'function'
+        ? global.GM_addStyle
+        : undefined;
+  const gmXmlHttpRequest =
+    typeof GM_xmlhttpRequest !== 'undefined'
+      ? GM_xmlhttpRequest
+      : typeof global.GM_xmlhttpRequest === 'function'
+        ? global.GM_xmlhttpRequest
+        : undefined;
+  const gmCookie =
+    typeof GM_cookie !== 'undefined'
+      ? GM_cookie
+      : global.GM_cookie && typeof global.GM_cookie.list === 'function'
+        ? global.GM_cookie
+        : undefined;
 
   const hasGM = Boolean(gmDownload || (gmSetValue && gmGetValue) || gmXmlHttpRequest);
 

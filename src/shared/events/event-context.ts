@@ -111,7 +111,7 @@ export class SubscriptionManager {
 
     if (toRemove.length > 0) {
       logger.debug(
-        `[SubscriptionManager] Removed ${toRemove.length} subscriptions for context: ${context}`,
+        `[SubscriptionManager] Removed ${toRemove.length} subscriptions for context: ${context}`
       );
     }
 

@@ -84,15 +84,15 @@ export function Icon({
 
   return (
     <svg
-      xmlns='http://www.w3.org/2000/svg'
+      xmlns="http://www.w3.org/2000/svg"
       width={sizeValue}
       height={sizeValue}
-      viewBox='0 0 24 24'
-      fill='none'
-      stroke='var(--xeg-icon-color, currentColor)'
-      stroke-width='var(--xeg-icon-stroke-width)'
-      stroke-linecap='round'
-      stroke-linejoin='round'
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="var(--xeg-icon-color, currentColor)"
+      stroke-width="var(--xeg-icon-stroke-width)"
+      stroke-linecap="round"
+      stroke-linejoin="round"
       class={className}
       {...accessibilityProps}
       {...otherProps}

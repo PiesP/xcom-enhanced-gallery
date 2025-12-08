@@ -136,7 +136,7 @@ export function failure<T = never>(
     cause?: unknown;
     meta?: Record<string, unknown>;
     failures?: Array<{ url: string; error: string }>;
-  },
+  }
 ): Result<T> {
   return {
     status: 'error',

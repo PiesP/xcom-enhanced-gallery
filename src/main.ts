@@ -67,7 +67,7 @@ function tearDownGlobalEventHandlers(): void {
 export async function runOptionalCleanup(
   label: string,
   task: CleanupTask,
-  log: CleanupLogger = warnCleanupLog,
+  log: CleanupLogger = warnCleanupLog
 ): Promise<void> {
   try {
     await task();
@@ -315,7 +315,7 @@ export async function cleanup(): Promise<void> {
         const { GlobalErrorHandler } = await import('@shared/error');
         GlobalErrorHandler.getInstance().destroy();
       },
-      debugCleanupLog,
+      debugCleanupLog
     );
 
     if (isDevEnvironment) {
@@ -336,7 +336,7 @@ export async function cleanup(): Promise<void> {
             logger.debug('[cleanup] ✅ All event listeners cleared successfully');
           }
         },
-        debugCleanupLog,
+        debugCleanupLog
       );
     }
 

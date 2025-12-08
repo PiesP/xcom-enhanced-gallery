@@ -176,7 +176,7 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
       block: 'start',
       isScrolling,
       onScrollStart: () => navigationState.setProgrammaticScrollTimestamp(Date.now()),
-    },
+    }
   );
 
   // Connect the forward reference

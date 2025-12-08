@@ -14,10 +14,11 @@ type DevMainNamespace = DevActions & {
 
 export function setupDevNamespace(
   galleryAppInstance: IGalleryApp | null | undefined,
-  actions: DevActions,
+  actions: DevActions
 ): void {
   mutateDevNamespace((namespace) => {
-    const mainNamespace = (namespace.main as DevMainNamespace | undefined) ??
+    const mainNamespace =
+      (namespace.main as DevMainNamespace | undefined) ??
       (namespace.main = {
         ...actions,
       } as DevMainNamespace);

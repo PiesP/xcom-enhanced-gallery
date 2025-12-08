@@ -67,7 +67,7 @@ export interface ToolbarSettingsControllerResult {
 }
 
 export function useToolbarSettingsController(
-  options: UseToolbarSettingsControllerOptions,
+  options: UseToolbarSettingsControllerOptions
 ): ToolbarSettingsControllerResult {
   /**
    * Toolbar Settings Controller Implementation
@@ -149,10 +149,10 @@ export function useToolbarSettingsController(
 
   const [toolbarRef, setToolbarRef] = createSignal<HTMLDivElement | undefined>(undefined);
   const [settingsPanelRef, setSettingsPanelRef] = createSignal<HTMLDivElement | undefined>(
-    undefined,
+    undefined
   );
   const [settingsButtonRef, setSettingsButtonRef] = createSignal<HTMLButtonElement | undefined>(
-    undefined,
+    undefined
   );
 
   const toThemeOption = (value: unknown): ThemeOption => {
@@ -177,7 +177,7 @@ export function useToolbarSettingsController(
 
   const [currentTheme, setCurrentTheme] = createSignal<ThemeOption>(getInitialTheme());
   const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>(
-    languageService.getCurrentLanguage() as LanguageOption,
+    languageService.getCurrentLanguage() as LanguageOption
   );
 
   const syncThemeFromService = () => {
@@ -374,14 +374,14 @@ export function useToolbarSettingsController(
         void settingsService.set('gallery.theme', theme).catch((error: unknown) => {
           logger.warn(
             '[ToolbarSettingsController] Failed to sync theme to SettingsService:',
-            error,
+            error
           );
         });
       }
     } catch (error) {
       logger.debug(
         '[ToolbarSettingsController] SettingsService not available for theme sync:',
-        error,
+        error
       );
     }
   };

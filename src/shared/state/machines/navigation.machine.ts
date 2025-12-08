@@ -24,20 +24,20 @@ export type NavigationTrigger = 'button' | 'click' | 'keyboard' | 'scroll';
 
 export type NavigationAction =
   | {
-    type: 'NAVIGATE';
-    payload: {
-      targetIndex: number;
-      source: NavigationSource;
-      trigger: NavigationTrigger;
-    };
-  }
+      type: 'NAVIGATE';
+      payload: {
+        targetIndex: number;
+        source: NavigationSource;
+        trigger: NavigationTrigger;
+      };
+    }
   | {
-    type: 'SET_FOCUS';
-    payload: {
-      focusIndex: number | null;
-      source: NavigationSource;
-    };
-  }
+      type: 'SET_FOCUS';
+      payload: {
+        focusIndex: number | null;
+        source: NavigationSource;
+      };
+    }
   | { type: 'RESET' };
 
 export interface NavigationTransitionResult {
@@ -85,13 +85,14 @@ function handleNavigate(
     targetIndex: number;
     source: NavigationSource;
     trigger: NavigationTrigger;
-  },
+  }
 ): NavigationTransitionResult {
   const { targetIndex, source } = payload;
   const timestamp = Date.now();
 
   // Detect duplicate navigation: same index, both manual sources
-  const isDuplicateManual = targetIndex === state.lastNavigatedIndex &&
+  const isDuplicateManual =
+    targetIndex === state.lastNavigatedIndex &&
     isManualSource(source) &&
     isManualSource(state.lastSource);
 
@@ -101,7 +102,7 @@ function handleNavigate(
         ...state,
         lastTimestamp: timestamp,
       },
-      true,
+      true
     );
   }
 
@@ -114,7 +115,7 @@ function handleNavigate(
 
 function handleSetFocus(
   state: NavigationState,
-  payload: { focusIndex: number | null; source: NavigationSource },
+  payload: { focusIndex: number | null; source: NavigationSource }
 ): NavigationTransitionResult {
   const { source } = payload;
   const timestamp = Date.now();

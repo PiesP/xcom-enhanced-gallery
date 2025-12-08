@@ -76,7 +76,7 @@ function resolveEventTarget(explicitRoot: HTMLElement | null): EventTarget {
 
 export async function initializeGalleryEvents(
   handlers: EventHandlers,
-  optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement,
+  optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement
 ): Promise<() => void> {
   if (lifecycleState.initialized) {
     logger.warn('[GalleryLifecycle] Already initialized, re-initializing');
@@ -88,9 +88,8 @@ export async function initializeGalleryEvents(
     return () => {};
   }
 
-  const { options: finalOptions, root: explicitGalleryRoot } = resolveInitializationInput(
-    optionsOrRoot,
-  );
+  const { options: finalOptions, root: explicitGalleryRoot } =
+    resolveInitializationInput(optionsOrRoot);
   const listenerContext = sanitizeContext(finalOptions.context);
 
   const keyHandler: EventListener = (evt: Event) => {

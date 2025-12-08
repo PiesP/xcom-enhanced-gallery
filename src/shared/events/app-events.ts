@@ -90,7 +90,7 @@ export class AppEventManager {
   public on<K extends keyof AppEventMap>(
     event: K,
     callback: (data: AppEventMap[K]) => void,
-    options: AppEventOptions = {},
+    options: AppEventOptions = {}
   ): () => void {
     const { signal, once = false } = options;
     const id = this.subscriptionManager.generateId('app', event as string);
@@ -118,12 +118,12 @@ export class AppEventManager {
     // Wrap callback for once behavior
     const wrappedCallback = once
       ? (data: unknown) => {
-        callback(data as AppEventMap[K]);
-        cleanup();
-      }
+          callback(data as AppEventMap[K]);
+          cleanup();
+        }
       : (data: unknown) => {
-        callback(data as AppEventMap[K]);
-      };
+          callback(data as AppEventMap[K]);
+        };
 
     // Add to listener set
     listeners.add(wrappedCallback);
@@ -156,7 +156,7 @@ export class AppEventManager {
   public once<K extends keyof AppEventMap>(
     event: K,
     callback: (data: AppEventMap[K]) => void,
-    options: Omit<AppEventOptions, 'once'> = {},
+    options: Omit<AppEventOptions, 'once'> = {}
   ): () => void {
     return this.on(event, callback, { ...options, once: true });
   }

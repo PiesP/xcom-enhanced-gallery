@@ -122,7 +122,7 @@ export function createEmptyFocusHandlers(): FocusHandlers {
  * Type guard to check if fit mode handlers are provided
  */
 export function hasFitModeHandlers(
-  handlers: ToolbarHandlers,
+  handlers: ToolbarHandlers
 ): handlers is ToolbarHandlers & { fitMode: FitModeHandlers } {
   return handlers.fitMode !== undefined;
 }
@@ -131,7 +131,7 @@ export function hasFitModeHandlers(
  * Type guard to check if focus handlers are provided
  */
 export function hasFocusHandlers(
-  handlers: ToolbarHandlers,
+  handlers: ToolbarHandlers
 ): handlers is ToolbarHandlers & { focus: FocusHandlers } {
   return handlers.focus !== undefined;
 }

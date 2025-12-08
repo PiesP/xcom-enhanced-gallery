@@ -217,7 +217,7 @@ export function closeGallery(): void {
 export function navigateToItem(
   index: number,
   trigger: NavigationTrigger = 'button',
-  source?: NavigationSource,
+  source?: NavigationSource
 ): void {
   const state = galleryState.value;
   const validIndex = clampIndex(index, state.mediaItems.length);
@@ -230,7 +230,7 @@ export function navigateToItem(
 
   if (result.isDuplicate) {
     logger.debug(
-      `[Gallery] Already at index ${index} (source: ${navigationSource}), ensuring sync`,
+      `[Gallery] Already at index ${index} (source: ${navigationSource}), ensuring sync`
     );
     // Ensure focusedIndex is synced even on duplicate navigation
     gallerySignals.focusedIndex.value = validIndex;
@@ -255,7 +255,7 @@ export function navigateToItem(
   galleryIndexEvents.emit('navigate:complete', { index: validIndex, trigger });
 
   logger.debug(
-    `[Gallery] Navigated to item: ${index} (trigger: ${trigger}, source: ${navigationSource})`,
+    `[Gallery] Navigated to item: ${index} (trigger: ${trigger}, source: ${navigationSource})`
   );
 }
 
@@ -294,7 +294,7 @@ export function navigateNext(trigger: NavigationTrigger = 'button'): void {
  */
 export function setFocusedIndex(
   index: number | null,
-  source: NavigationSource = 'auto-focus',
+  source: NavigationSource = 'auto-focus'
 ): void {
   const state = galleryState.value;
 

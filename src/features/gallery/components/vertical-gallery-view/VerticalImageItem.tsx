@@ -245,7 +245,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
       isActive ? styles.active : undefined,
       isFocused ? styles.focused : undefined,
       fitModeClass(),
-      className,
+      className
     )
   );
 
@@ -270,16 +270,16 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
     <div
       ref={assignContainerRef}
       class={containerClasses()}
-      data-xeg-role='gallery-item'
+      data-xeg-role="gallery-item"
       data-index={index}
       data-item-index={index}
       data-fit-mode={resolvedFitMode()}
       data-media-loaded={isLoaded() ? 'true' : 'false'}
-      data-xeg-gallery='true'
-      data-xeg-gallery-type='item'
-      data-xeg-gallery-version='2.0'
-      data-xeg-component='vertical-image-item'
-      data-xeg-block-twitter='true'
+      data-xeg-gallery="true"
+      data-xeg-gallery-type="item"
+      data-xeg-gallery-version="2.0"
+      data-xeg-component="vertical-image-item"
+      data-xeg-block-twitter="true"
       style={intrinsicSizingStyle()}
       onClick={handleContainerClick}
       onFocus={onFocus as (event: FocusEvent) => void}
@@ -296,46 +296,42 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
             </div>
           )}
 
-          {isVideo
-            ? (
-              <video
-                src={media.url}
-                autoplay={false}
-                controls
-                ref={setVideoRef}
-                class={cx(
-                  styles.video,
-                  fitModeClass(),
-                  isLoaded() ? styles.loaded : styles.loading,
-                )}
-                data-fit-mode={resolvedFitMode()}
-                onLoadedMetadata={handleMediaLoad}
-                onLoadedData={handleMediaLoad}
-                onCanPlay={handleMediaLoad}
-                onError={handleMediaError}
-                onContextMenu={handleContextMenu}
-                onDragStart={(e: DragEvent) => e.preventDefault()}
-                onVolumeChange={handleVolumeChange}
-              />
-            )
-            : (
-              <img
-                ref={setImageRef}
-                src={media.url}
-                alt={cleanFilename(media.filename) ||
-                  getLanguageService().translate('messages.gallery.failedToLoadImage', {
-                    type: 'image',
-                  })}
-                loading='lazy'
-                decoding='async'
-                class={cx(imageClasses(), isLoaded() ? styles.loaded : styles.loading)}
-                data-fit-mode={resolvedFitMode()}
-                onLoad={handleMediaLoad}
-                onError={handleMediaError}
-                onContextMenu={handleContextMenu}
-                onDragStart={(e: DragEvent) => e.preventDefault()}
-              />
-            )}
+          {isVideo ? (
+            <video
+              src={media.url}
+              autoplay={false}
+              controls
+              ref={setVideoRef}
+              class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
+              data-fit-mode={resolvedFitMode()}
+              onLoadedMetadata={handleMediaLoad}
+              onLoadedData={handleMediaLoad}
+              onCanPlay={handleMediaLoad}
+              onError={handleMediaError}
+              onContextMenu={handleContextMenu}
+              onDragStart={(e: DragEvent) => e.preventDefault()}
+              onVolumeChange={handleVolumeChange}
+            />
+          ) : (
+            <img
+              ref={setImageRef}
+              src={media.url}
+              alt={
+                cleanFilename(media.filename) ||
+                getLanguageService().translate('messages.gallery.failedToLoadImage', {
+                  type: 'image',
+                })
+              }
+              loading="lazy"
+              decoding="async"
+              class={cx(imageClasses(), isLoaded() ? styles.loaded : styles.loading)}
+              data-fit-mode={resolvedFitMode()}
+              onLoad={handleMediaLoad}
+              onError={handleMediaError}
+              onContextMenu={handleContextMenu}
+              onDragStart={(e: DragEvent) => e.preventDefault()}
+            />
+          )}
 
           {isError() && (
             <div class={styles.error}>

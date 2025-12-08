@@ -45,7 +45,7 @@ export function addListener(
   type: string,
   listener: EventListener,
   options?: AddEventListenerOptions,
-  context?: string,
+  context?: string
 ): string {
   const id = generateListenerId(context);
 

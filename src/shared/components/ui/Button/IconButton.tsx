@@ -91,7 +91,7 @@ export function IconButton(props: IconButtonProps): JSXElement {
   });
 
   return (
-    <Button {...rest} size={safeSize()} variant='icon' iconOnly>
+    <Button {...rest} size={safeSize()} variant="icon" iconOnly>
       {local.children}
     </Button>
   );

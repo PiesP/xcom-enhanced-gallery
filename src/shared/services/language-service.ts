@@ -122,9 +122,10 @@ export class LanguageService {
   }
   detectLanguage(): BaseLanguageCode {
     // Safe navigator.language access
-    const browserLang = typeof navigator !== 'undefined' && navigator.language
-      ? navigator.language.slice(0, 2)
-      : DEFAULT_LANGUAGE;
+    const browserLang =
+      typeof navigator !== 'undefined' && navigator.language
+        ? navigator.language.slice(0, 2)
+        : DEFAULT_LANGUAGE;
 
     if (isBaseLanguageCode(browserLang)) {
       return browserLang;
@@ -186,7 +187,7 @@ export class LanguageService {
   }
 
   private normalizeLanguage(
-    language: SupportedLanguage | string | null | undefined,
+    language: SupportedLanguage | string | null | undefined
   ): SupportedLanguage {
     if (!language) {
       return 'auto';

@@ -13,7 +13,7 @@ import { clamp, clampIndex } from '@shared/utils/types/safety';
 export function computePreloadIndices(
   currentIndex: number,
   total: number,
-  count: number,
+  count: number
 ): number[] {
   const safeTotal = Number.isFinite(total) && total > 0 ? Math.floor(total) : 0;
   const safeIndex = clampIndex(Math.floor(currentIndex), safeTotal);

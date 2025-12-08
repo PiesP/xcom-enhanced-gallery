@@ -71,7 +71,7 @@ function tryPauseVideo(video: HTMLVideoElement): boolean {
  * Skips gallery-owned videos to prevent interference with gallery playback.
  */
 export function pauseActiveTwitterVideos(
-  options: PauseAmbientVideosOptions = {},
+  options: PauseAmbientVideosOptions = {}
 ): PauseAmbientVideosResult {
   const root = resolveRoot(options.root ?? null);
   if (!root) return ZERO_RESULT;

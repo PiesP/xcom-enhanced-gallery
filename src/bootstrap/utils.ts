@@ -98,7 +98,7 @@ export async function executeStages(
   options?: {
     /** Stop on first non-optional failure */
     stopOnFailure?: boolean;
-  },
+  }
 ): Promise<BootstrapStageResult[]> {
   const results: BootstrapStageResult[] = [];
   const stopOnFailure = options?.stopOnFailure ?? true;

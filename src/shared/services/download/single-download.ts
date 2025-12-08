@@ -4,9 +4,9 @@ import { generateMediaFilename } from '@shared/services/filename';
 import type { MediaInfo } from '@shared/types/media.types';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import {
+  type DownloadCapability,
   detectDownloadCapability,
   downloadBlobWithAnchor,
-  type DownloadCapability,
   downloadWithFetchBlob,
 } from './fallback-download';
 import type { DownloadOptions, SingleDownloadResult } from './types';
@@ -14,7 +14,7 @@ import type { DownloadOptions, SingleDownloadResult } from './types';
 export async function downloadSingleFile(
   media: MediaInfo,
   options: DownloadOptions = {},
-  capability?: DownloadCapability,
+  capability?: DownloadCapability
 ): Promise<SingleDownloadResult> {
   if (options.signal?.aborted) {
     return { success: false, error: 'User cancelled download' };

@@ -35,10 +35,7 @@ export interface DebouncedFunction<T extends AnyFunction> {
  * @param delayMs - Delay in milliseconds (default: 300ms)
  * @returns Debounced function with cancel/flush methods
  */
-export function createDebounced<T extends AnyFunction>(
-  fn: T,
-  delayMs = 300,
-): DebouncedFunction<T> {
+export function createDebounced<T extends AnyFunction>(fn: T, delayMs = 300): DebouncedFunction<T> {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   let pendingArgs: Parameters<T> | null = null;
 

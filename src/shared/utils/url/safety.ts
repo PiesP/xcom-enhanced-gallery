@@ -143,7 +143,7 @@ function buildProbeVariants(value: string): string[] {
 
 function isAllowedDataUrl(
   lowerCaseValue: string,
-  allowedPrefixes: readonly string[] | undefined,
+  allowedPrefixes: readonly string[] | undefined
 ): boolean {
   if (!allowedPrefixes || allowedPrefixes.length === 0) {
     return false;
@@ -167,8 +167,8 @@ function handleProtocolRelative(url: string, policy: UrlSafetyPolicy): boolean {
   const fallbackProtocol = policy.allowedProtocols.has('https:')
     ? 'https:'
     : policy.allowedProtocols.has('http:')
-    ? 'http:'
-    : 'https:';
+      ? 'http:'
+      : 'https:';
 
   try {
     const resolved = new URL(`${fallbackProtocol}${url}`);

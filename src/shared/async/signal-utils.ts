@@ -35,7 +35,7 @@ export function createTimeoutSignal(ms: number): AbortSignal {
     () => {
       window.clearTimeout(timeoutId);
     },
-    { once: true },
+    { once: true }
   );
 
   return controller.signal;

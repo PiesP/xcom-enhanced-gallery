@@ -15,9 +15,8 @@ export class Translator {
   private readonly catalog: TranslationCatalog;
 
   constructor(options: TranslationCatalog | TranslationCatalogOptions = {}) {
-    this.catalog = options instanceof TranslationCatalog
-      ? options
-      : new TranslationCatalog(options);
+    this.catalog =
+      options instanceof TranslationCatalog ? options : new TranslationCatalog(options);
   }
 
   /**
@@ -59,7 +58,7 @@ export class Translator {
 
 export function createTranslationFunction(
   translator: Translator,
-  resolveLanguage: () => BaseLanguageCode,
+  resolveLanguage: () => BaseLanguageCode
 ): TranslationFunction {
   return (key, params) => translator.translate(resolveLanguage(), key, params);
 }

@@ -118,7 +118,7 @@ export interface ResultHandlingOptions {
  */
 export function withErrorHandling<TArgs extends unknown[], TReturn>(
   fn: (...args: TArgs) => Promise<TReturn>,
-  options: ErrorHandlingOptions<TReturn>,
+  options: ErrorHandlingOptions<TReturn>
 ): (...args: TArgs) => Promise<TReturn | undefined> {
   const {
     fallback,
@@ -170,7 +170,7 @@ export function withErrorHandling<TArgs extends unknown[], TReturn>(
  */
 export function withSyncErrorHandling<TArgs extends unknown[], TReturn>(
   fn: (...args: TArgs) => TReturn,
-  options: ErrorHandlingOptions<TReturn>,
+  options: ErrorHandlingOptions<TReturn>
 ): (...args: TArgs) => TReturn | undefined {
   const {
     fallback,
@@ -225,7 +225,7 @@ export function withSyncErrorHandling<TArgs extends unknown[], TReturn>(
  */
 export function withErrorResult<TArgs extends unknown[], TReturn>(
   fn: (...args: TArgs) => Promise<TReturn>,
-  options: Omit<ErrorHandlingOptions<TReturn>, 'fallback' | 'rethrow'>,
+  options: Omit<ErrorHandlingOptions<TReturn>, 'fallback' | 'rethrow'>
 ): (...args: TArgs) => Promise<ErrorHandlingResult<TReturn>> {
   const { transformError, metadata: metadataFn, ...reportOptions } = options;
 
@@ -256,7 +256,7 @@ export function withErrorResult<TArgs extends unknown[], TReturn>(
  */
 export function withSyncErrorResult<TArgs extends unknown[], TReturn>(
   fn: (...args: TArgs) => TReturn,
-  options: Omit<ErrorHandlingOptions<TReturn>, 'fallback' | 'rethrow'>,
+  options: Omit<ErrorHandlingOptions<TReturn>, 'fallback' | 'rethrow'>
 ): (...args: TArgs) => ErrorHandlingResult<TReturn> {
   const { transformError, metadata: metadataFn, ...reportOptions } = options;
 
@@ -300,7 +300,7 @@ export function withSyncErrorResult<TArgs extends unknown[], TReturn>(
  */
 export async function tryAsync<T>(
   fn: () => Promise<T>,
-  options: ErrorHandlingOptions<T>,
+  options: ErrorHandlingOptions<T>
 ): Promise<T | undefined> {
   return withErrorHandling(fn, options)();
 }
@@ -402,7 +402,7 @@ function normalizeError(error: unknown): string {
  */
 export function withResultHandling<TArgs extends unknown[], TData>(
   fn: (...args: TArgs) => Promise<TData>,
-  options: ResultHandlingOptions,
+  options: ResultHandlingOptions
 ): (...args: TArgs) => AsyncResult<TData> {
   const {
     code: overrideCode,
@@ -464,7 +464,7 @@ export function withResultHandling<TArgs extends unknown[], TData>(
  */
 export function withSyncResultHandling<TArgs extends unknown[], TData>(
   fn: (...args: TArgs) => TData,
-  options: ResultHandlingOptions,
+  options: ResultHandlingOptions
 ): (...args: TArgs) => Result<TData> {
   const {
     code: overrideCode,
@@ -529,7 +529,7 @@ export function createErrorHandlers(context: ErrorContext) {
      */
     wrap: <TArgs extends unknown[], TReturn>(
       fn: (...args: TArgs) => Promise<TReturn>,
-      options: Omit<ErrorHandlingOptions<TReturn>, 'context'>,
+      options: Omit<ErrorHandlingOptions<TReturn>, 'context'>
     ) => withErrorHandling(fn, { ...options, context }),
 
     /**
@@ -537,7 +537,7 @@ export function createErrorHandlers(context: ErrorContext) {
      */
     wrapSync: <TArgs extends unknown[], TReturn>(
       fn: (...args: TArgs) => TReturn,
-      options: Omit<ErrorHandlingOptions<TReturn>, 'context'>,
+      options: Omit<ErrorHandlingOptions<TReturn>, 'context'>
     ) => withSyncErrorHandling(fn, { ...options, context }),
 
     /**
@@ -545,7 +545,7 @@ export function createErrorHandlers(context: ErrorContext) {
      */
     wrapResult: <TArgs extends unknown[], TReturn>(
       fn: (...args: TArgs) => Promise<TReturn>,
-      options?: Omit<ErrorHandlingOptions<TReturn>, 'context' | 'fallback' | 'rethrow'>,
+      options?: Omit<ErrorHandlingOptions<TReturn>, 'context' | 'fallback' | 'rethrow'>
     ) => withErrorResult(fn, { ...options, context }),
 
     /**
@@ -553,7 +553,7 @@ export function createErrorHandlers(context: ErrorContext) {
      */
     wrapWithResult: <TArgs extends unknown[], TData>(
       fn: (...args: TArgs) => Promise<TData>,
-      options?: Omit<ResultHandlingOptions, 'context'>,
+      options?: Omit<ResultHandlingOptions, 'context'>
     ) => withResultHandling(fn, { ...options, context }),
 
     /**
@@ -561,7 +561,7 @@ export function createErrorHandlers(context: ErrorContext) {
      */
     wrapSyncWithResult: <TArgs extends unknown[], TData>(
       fn: (...args: TArgs) => TData,
-      options?: Omit<ResultHandlingOptions, 'context'>,
+      options?: Omit<ResultHandlingOptions, 'context'>
     ) => withSyncResultHandling(fn, { ...options, context }),
 
     /**

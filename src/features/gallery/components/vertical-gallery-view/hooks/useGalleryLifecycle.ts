@@ -43,7 +43,7 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
       if (element) {
         ensureGalleryScrollAvailable(element);
       }
-    }),
+    })
   );
 
   // Combined animation and video cleanup effect
@@ -82,8 +82,8 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
           });
         }
       },
-      { defer: true },
-    ),
+      { defer: true }
+    )
   );
 
   // Viewport CSS variables observation

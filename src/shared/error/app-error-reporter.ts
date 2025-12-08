@@ -182,7 +182,7 @@ export class AppErrorReporter {
    * This allows decoupling from NotificationService
    */
   public static setNotificationCallback(
-    callback: ((message: string, context: ErrorContext) => void) | null,
+    callback: ((message: string, context: ErrorContext) => void) | null
   ): void {
     AppErrorReporter.notificationCallback = callback;
   }
@@ -246,7 +246,7 @@ export class AppErrorReporter {
   public static reportAndReturn<T>(
     error: unknown,
     options: ErrorReportOptions,
-    defaultValue: T,
+    defaultValue: T
   ): T {
     // Don't throw for critical in this variant - caller handles recovery
     const effectiveOptions = {
@@ -294,19 +294,19 @@ export class AppErrorReporter {
 export interface ContextBoundReporter {
   critical: (
     error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>,
+    options?: Partial<Omit<ErrorReportOptions, 'context'>>
   ) => ErrorReportResult;
   error: (
     error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>,
+    options?: Partial<Omit<ErrorReportOptions, 'context'>>
   ) => ErrorReportResult;
   warn: (
     error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>,
+    options?: Partial<Omit<ErrorReportOptions, 'context'>>
   ) => ErrorReportResult;
   info: (
     error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>,
+    options?: Partial<Omit<ErrorReportOptions, 'context'>>
   ) => ErrorReportResult;
 }
 

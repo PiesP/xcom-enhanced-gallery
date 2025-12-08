@@ -75,7 +75,7 @@
 export type { ToolbarActions, ToolbarState } from '@shared/types/toolbar.types';
 export {
   type ToolbarSettingsControllerResult,
-  useToolbarSettingsController,
   type UseToolbarSettingsControllerOptions,
+  useToolbarSettingsController,
 } from './toolbar/use-toolbar-settings-controller';
 export { useToolbarState } from './use-toolbar-state';

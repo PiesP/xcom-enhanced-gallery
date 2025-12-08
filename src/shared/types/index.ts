@@ -127,8 +127,8 @@ export type {
 // ErrorCode is re-exported as both value (const object) and type automatically
 export {
   andThen,
-  err,
   ErrorCode,
+  err,
   failure,
   fromBoolResult,
   isFailure,

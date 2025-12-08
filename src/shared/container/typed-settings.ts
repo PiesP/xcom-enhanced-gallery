@@ -35,12 +35,13 @@ import { tryGetSettingsManager } from './service-accessors';
  * type Paths = SettingPaths<{ a: { b: number; c: string } }>;
  * // Result: 'a' | 'a.b' | 'a.c'
  */
-type SettingPaths<T, Prefix extends string = ''> = T extends object ? {
-    [K in keyof T & string]: T[K] extends object
-      // Include both the parent key and nested paths
-      ? `${Prefix}${K}` | SettingPaths<T[K], `${Prefix}${K}.`>
-      : `${Prefix}${K}`;
-  }[keyof T & string]
+type SettingPaths<T, Prefix extends string = ''> = T extends object
+  ? {
+      [K in keyof T & string]: T[K] extends object
+        ? // Include both the parent key and nested paths
+          `${Prefix}${K}` | SettingPaths<T[K], `${Prefix}${K}.`>
+        : `${Prefix}${K}`;
+    }[keyof T & string]
   : never;
 
 /**
@@ -51,10 +52,12 @@ type SettingPaths<T, Prefix extends string = ''> = T extends object ? {
  * type Value = SettingValueAt<AppSettings, 'gallery.preloadCount'>; // number
  */
 type SettingValueAt<T, Path extends string> = Path extends `${infer K}.${infer Rest}`
-  ? K extends keyof T ? SettingValueAt<T[K], Rest>
-  : never
-  : Path extends keyof T ? T[Path]
-  : never;
+  ? K extends keyof T
+    ? SettingValueAt<T[K], Rest>
+    : never
+  : Path extends keyof T
+    ? T[Path]
+    : never;
 
 // =============================================================================
 // Exported Types
@@ -85,7 +88,7 @@ function requireSettingsService(): SettingsServiceLike {
   const service = tryGetSettingsManager<SettingsServiceLike>();
   if (!service) {
     throw new Error(
-      'SettingsService is not registered. Ensure bootstrap registers it before usage.',
+      'SettingsService is not registered. Ensure bootstrap registers it before usage.'
     );
   }
   return service;
@@ -129,7 +132,7 @@ export function getTypedSetting<P extends SettingPath>(path: P): SettingValue<P>
  */
 export function getTypedSettingOr<P extends SettingPath>(
   path: P,
-  fallback: SettingValue<P>,
+  fallback: SettingValue<P>
 ): SettingValue<P> {
   const value = requireSettingsService().get<SettingValue<P>>(path);
   return value === undefined ? fallback : value;
@@ -154,7 +157,7 @@ export function getTypedSettingOr<P extends SettingPath>(
  */
 export function setTypedSetting<P extends SettingPath>(
   path: P,
-  value: SettingValue<P>,
+  value: SettingValue<P>
 ): Promise<void> {
   return requireSettingsService().set(path, value);
 }
@@ -188,7 +191,7 @@ export function tryGetTypedSetting<P extends SettingPath>(path: P): SettingValue
  */
 export async function trySetTypedSetting<P extends SettingPath>(
   path: P,
-  value: SettingValue<P>,
+  value: SettingValue<P>
 ): Promise<boolean> {
   const service = tryGetSettingsManager<SettingsServiceLike>();
   if (!service) {

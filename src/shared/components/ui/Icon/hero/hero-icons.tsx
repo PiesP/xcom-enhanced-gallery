@@ -53,9 +53,7 @@ function createMultiPathIcon(name: MultiPathIconName): (props: IconProps) => JSX
   return function IconComponent(props: IconProps): JSXElement {
     return (
       <Icon {...props}>
-        <For each={MULTI_PATH_ICONS[name]}>
-          {(pathData: string) => <path d={pathData} />}
-        </For>
+        <For each={MULTI_PATH_ICONS[name]}>{(pathData: string) => <path d={pathData} />}</For>
       </Icon>
     );
   };

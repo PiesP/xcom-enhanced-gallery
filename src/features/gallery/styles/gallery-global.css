@@ -22,7 +22,7 @@
   }
 
   /* Gallery renderer wrapper - Ensure block display */
-  .xeg-gallery-renderer[data-renderer='gallery'] {
+  .xeg-gallery-renderer[data-renderer="gallery"] {
     display: block;
     width: 0;
     height: 0;

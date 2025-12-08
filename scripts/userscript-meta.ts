@@ -16,12 +16,11 @@ const KEY_PADDING = 12;
 
 const LICENSE_NAME_MAP: Readonly<Record<string, string>> = {
   'solid-js': 'Solid.js',
-  'heroicons': 'Heroicons',
+  heroicons: 'Heroicons',
   'xcom-enhanced-gallery': 'X.com Enhanced Gallery',
 };
 
-const MIT_LICENSE_BODY =
-  `Permission is hereby granted, free of charge, to any person obtaining a copy
+const MIT_LICENSE_BODY = `Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
@@ -164,7 +163,7 @@ function buildLicenseBlock(licenses: readonly LicenseInfo[]): string {
  */
 export function generateUserscriptMeta(
   config: UserscriptConfig,
-  licenses: readonly LicenseInfo[],
+  licenses: readonly LicenseInfo[]
 ): string {
   const metaBlock = buildMetadataBlock(config);
   const licenseBlock = buildLicenseBlock(licenses);
@@ -176,8 +175,6 @@ export function generateUserscriptMeta(
  * e.g., "solid-js-MIT.txt" -> "Solid.js"
  */
 export function parseLicenseName(filename: string): string {
-  const base = filename
-    .replace(/\.(txt|md)$/i, '')
-    .replace(/-(MIT|LICENSE|APACHE|BSD)$/i, '');
+  const base = filename.replace(/\.(txt|md)$/i, '').replace(/-(MIT|LICENSE|APACHE|BSD)$/i, '');
   return LICENSE_NAME_MAP[base] ?? base;
 }

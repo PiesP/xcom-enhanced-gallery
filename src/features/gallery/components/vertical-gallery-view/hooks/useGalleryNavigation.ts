@@ -6,9 +6,9 @@
  */
 
 import {
-  galleryIndexEvents,
   type GalleryNavigateCompletePayload,
   type GalleryNavigateStartPayload,
+  galleryIndexEvents,
   type NavigationTrigger,
 } from '@shared/state/signals/gallery.signals';
 import { createEffect, createSignal, on, onCleanup } from 'solid-js';
@@ -52,12 +52,12 @@ export interface UseGalleryNavigationResult {
  * @returns Navigation state accessors
  */
 export function useGalleryNavigation(
-  options: UseGalleryNavigationOptions,
+  options: UseGalleryNavigationOptions
 ): UseGalleryNavigationResult {
   const { isVisible, scrollToItem } = options;
 
   const [lastNavigationTrigger, setLastNavigationTrigger] = createSignal<NavigationTrigger | null>(
-    null,
+    null
   );
   const [programmaticScrollTimestamp, setProgrammaticScrollTimestamp] = createSignal(0);
 
@@ -80,7 +80,7 @@ export function useGalleryNavigation(
       });
 
       onCleanup(dispose);
-    }),
+    })
   );
 
   return {
@@ -102,7 +102,7 @@ function registerNavigationEvents({
 }: RegisterNavigationEventsOptions): Cleanup {
   const stopStart = galleryIndexEvents.on(
     'navigate:start',
-    (payload: GalleryNavigateStartPayload) => onTriggerChange(payload.trigger),
+    (payload: GalleryNavigateStartPayload) => onTriggerChange(payload.trigger)
   );
 
   const stopComplete = galleryIndexEvents.on(
@@ -110,7 +110,7 @@ function registerNavigationEvents({
     (payload: GalleryNavigateCompletePayload) => {
       onTriggerChange(payload.trigger);
       onNavigateComplete(payload);
-    },
+    }
   );
 
   return () => {

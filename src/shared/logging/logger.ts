@@ -117,7 +117,7 @@ export function createScopedLogger(scope: string, config: Partial<LoggerConfig> 
 export function logError(
   error: Error | string,
   context: Record<string, unknown> = {},
-  source?: string,
+  source?: string
 ): void {
   const errorMessage = error instanceof Error ? error.message : error;
   logger.error(`Error${source ? ` in ${source}` : ''}: ${errorMessage}`, context);

@@ -115,7 +115,7 @@ export function validateNavigationParams(
   targetIndex: number,
   source: NavigationSource,
   trigger: NavigationTrigger,
-  context: string,
+  context: string
 ): void {
   if (typeof targetIndex !== 'number' || Number.isNaN(targetIndex)) {
     throw createNavigationActionError(context, 'Navigate payload targetIndex invalid');
@@ -124,14 +124,14 @@ export function validateNavigationParams(
   if (!isValidNavigationSource(source)) {
     throw createNavigationActionError(
       context,
-      `Navigate payload source invalid: ${String(source)}`,
+      `Navigate payload source invalid: ${String(source)}`
     );
   }
 
   if (!isValidNavigationTrigger(trigger)) {
     throw createNavigationActionError(
       context,
-      `Navigate payload trigger invalid: ${String(trigger)}`,
+      `Navigate payload trigger invalid: ${String(trigger)}`
     );
   }
 }
@@ -142,7 +142,7 @@ export function validateNavigationParams(
 export function validateFocusParams(
   focusIndex: number | null,
   source: NavigationSource,
-  context: string,
+  context: string
 ): void {
   if (!(focusIndex === null || typeof focusIndex === 'number')) {
     throw createNavigationActionError(context, 'Set focus payload focusIndex invalid');
@@ -151,7 +151,7 @@ export function validateFocusParams(
   if (!isValidNavigationSource(source)) {
     throw createNavigationActionError(
       context,
-      `Set focus payload source invalid: ${String(source)}`,
+      `Set focus payload source invalid: ${String(source)}`
     );
   }
 }
@@ -192,8 +192,8 @@ export function recordNavigation(targetIndex: number, source: NavigationSource):
   const currentSource = navigationSignals.lastSource.value;
 
   // Detect duplicate navigation: same index, both manual sources
-  const isDuplicate = targetIndex === currentIndex && isManualSource(source) &&
-    isManualSource(currentSource);
+  const isDuplicate =
+    targetIndex === currentIndex && isManualSource(source) && isManualSource(currentSource);
 
   if (isDuplicate) {
     // Update timestamp only

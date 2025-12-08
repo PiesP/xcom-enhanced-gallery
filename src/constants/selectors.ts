@@ -156,7 +156,7 @@ export const STABLE_SELECTORS = {
 export function queryWithFallback(
   container: Element | Document,
   primarySelector: string,
-  fallbacks: readonly string[] = [],
+  fallbacks: readonly string[] = []
 ): Element | null {
   // Try primary selector first
   const primary = container.querySelector(primarySelector);
@@ -181,7 +181,7 @@ export function queryWithFallback(
  */
 export function queryAllWithFallback(
   container: Element | Document,
-  selectors: readonly string[],
+  selectors: readonly string[]
 ): Element[] {
   const seen = new WeakSet<Element>();
   const results: Element[] = [];

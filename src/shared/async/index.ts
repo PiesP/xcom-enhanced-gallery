@@ -37,10 +37,7 @@
  * @version 1.0.0
  */
 
-export { delay, timeout, TimeoutError, type TimeoutOptions } from './delay';
-
-export { type RetryOptions, type RetryResult, withRetry } from './retry';
-
-export { combineSignals, createTimeoutSignal, isAbortError } from './signal-utils';
-
 export { createDebounced, type DebouncedFunction } from './debounce';
+export { delay, TimeoutError, type TimeoutOptions, timeout } from './delay';
+export { type RetryOptions, type RetryResult, withRetry } from './retry';
+export { combineSignals, createTimeoutSignal, isAbortError } from './signal-utils';

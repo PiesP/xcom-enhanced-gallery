@@ -30,7 +30,7 @@ export class MediaExtractionService implements MediaExtractor {
 
   async extractFromClickedElement(
     element: HTMLElement,
-    options: MediaExtractionOptions = {},
+    options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     const extractionId = this.generateExtractionId();
     logger.info(`[MediaExtractor] ${extractionId}: Extraction started`);
@@ -62,7 +62,7 @@ export class MediaExtractionService implements MediaExtractor {
 
   async extractAllFromContainer(
     container: HTMLElement,
-    options: MediaExtractionOptions = {},
+    options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     try {
       const firstMedia = container.querySelector(SELECTORS.TWITTER_MEDIA) as HTMLElement;
@@ -85,11 +85,8 @@ export class MediaExtractionService implements MediaExtractor {
   }
 
   private createErrorResult(error: unknown): MediaExtractionResult {
-    const errorMessage = error instanceof Error
-      ? error.message
-      : typeof error === 'string'
-      ? error
-      : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error';
 
     return {
       success: false,
@@ -118,7 +115,7 @@ export class MediaExtractionService implements MediaExtractor {
     const adjustedIndex = adjustClickedIndexAfterDeduplication(
       result.mediaItems,
       uniqueItems,
-      result.clickedIndex ?? 0,
+      result.clickedIndex ?? 0
     );
 
     return {
@@ -130,7 +127,7 @@ export class MediaExtractionService implements MediaExtractor {
 
   private mergeTweetInfoMetadata(
     base: TweetInfo | null | undefined,
-    override: TweetInfo | null | undefined,
+    override: TweetInfo | null | undefined
   ): TweetInfo | null {
     if (!base) return override ?? null;
     if (!override) return base;

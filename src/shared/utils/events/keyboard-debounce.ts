@@ -36,7 +36,7 @@ export function shouldExecuteKeyboardAction(key: string, minInterval: number = 1
   // Block if same key and interval is below minimum
   if (key === debounceState.lastKey && timeSinceLastExecution < minInterval) {
     logger.debug(
-      `[Keyboard Debounce] Blocked ${key} (${timeSinceLastExecution}ms < ${minInterval}ms)`,
+      `[Keyboard Debounce] Blocked ${key} (${timeSinceLastExecution}ms < ${minInterval}ms)`
     );
     return false;
   }

@@ -115,9 +115,8 @@ function listFromDocument(options?: CookieListOptions): CookieRecord[] {
     return [];
   }
 
-  const domain = typeof document.location?.hostname === 'string'
-    ? document.location.hostname
-    : undefined;
+  const domain =
+    typeof document.location?.hostname === 'string' ? document.location.hostname : undefined;
 
   const records = document.cookie
     .split(';')
@@ -178,7 +177,7 @@ export async function listCookies(options?: CookieListOptions): Promise<CookieRe
         }
         callback(error ? undefined : (cookies ?? []).map((c) => ({ ...c })), error);
       }),
-    { fallback: () => listFromDocument(options) },
+    { fallback: () => listFromDocument(options) }
   );
 }
 
@@ -188,7 +187,7 @@ export async function listCookies(options?: CookieListOptions): Promise<CookieRe
  */
 export async function getCookieValue(
   name: string,
-  options?: CookieListOptions,
+  options?: CookieListOptions
 ): Promise<string | undefined> {
   if (!name) return undefined;
 

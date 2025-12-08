@@ -34,11 +34,12 @@ declare global {
 const importMetaEnv = resolveImportMetaEnv();
 const nodeEnv = resolveNodeEnv();
 
-const rawVersion = resolveStringValue(
-  importMetaEnv.VITE_VERSION,
-  nodeEnv.VITE_VERSION,
-  nodeEnv.npm_package_version,
-) ?? FALLBACK_VERSION;
+const rawVersion =
+  resolveStringValue(
+    importMetaEnv.VITE_VERSION,
+    nodeEnv.VITE_VERSION,
+    nodeEnv.npm_package_version
+  ) ?? FALLBACK_VERSION;
 
 const devFlag = parseBooleanFlag(importMetaEnv.DEV);
 const nodeDevFlag = parseBooleanFlag(nodeEnv.DEV);
@@ -50,48 +51,46 @@ const isProd = !isDev && !isTest;
 
 const autoStartFlag = parseBooleanFlag(importMetaEnv.VITE_AUTO_START ?? nodeEnv.VITE_AUTO_START);
 const debugToolsFlag = parseBooleanFlag(
-  importMetaEnv.VITE_ENABLE_DEBUG_TOOLS ?? nodeEnv.VITE_ENABLE_DEBUG_TOOLS,
+  importMetaEnv.VITE_ENABLE_DEBUG_TOOLS ?? nodeEnv.VITE_ENABLE_DEBUG_TOOLS
 );
 
-const resolvedAppConfig = Object.freeze(
-  {
-    meta: {
-      name: APP_NAME,
-      version: rawVersion,
-    },
-    environment: {
-      mode,
-      isDev,
-      isTest,
-      isProduction: isProd,
-    },
-    runtime: {
-      autoStart: autoStartFlag ?? true,
-    },
-    limits: {
-      maxGalleryItems: MAX_GALLERY_ITEMS,
-    },
-    ui: {
-      animationDuration: DEFAULT_ANIMATION_DURATION,
-    },
-    features: {
-      gallery: true,
-      downloads: true,
-      settings: true,
-      accessibility: true,
-      debugTools: debugToolsFlag ?? isDev,
-    },
-    diagnostics: {
-      enableLogger: true,
-      enableVerboseLogs: isDev,
-    },
-    bootstrap: {
-      serviceTimeoutMs: DEFAULT_SERVICE_TIMEOUT_MS,
-      retryAttempts: DEFAULT_BOOTSTRAP_RETRY_ATTEMPTS,
-      retryDelayMs: DEFAULT_BOOTSTRAP_RETRY_DELAY_MS,
-    },
-  } as const,
-);
+const resolvedAppConfig = Object.freeze({
+  meta: {
+    name: APP_NAME,
+    version: rawVersion,
+  },
+  environment: {
+    mode,
+    isDev,
+    isTest,
+    isProduction: isProd,
+  },
+  runtime: {
+    autoStart: autoStartFlag ?? true,
+  },
+  limits: {
+    maxGalleryItems: MAX_GALLERY_ITEMS,
+  },
+  ui: {
+    animationDuration: DEFAULT_ANIMATION_DURATION,
+  },
+  features: {
+    gallery: true,
+    downloads: true,
+    settings: true,
+    accessibility: true,
+    debugTools: debugToolsFlag ?? isDev,
+  },
+  diagnostics: {
+    enableLogger: true,
+    enableVerboseLogs: isDev,
+  },
+  bootstrap: {
+    serviceTimeoutMs: DEFAULT_SERVICE_TIMEOUT_MS,
+    retryAttempts: DEFAULT_BOOTSTRAP_RETRY_ATTEMPTS,
+    retryDelayMs: DEFAULT_BOOTSTRAP_RETRY_DELAY_MS,
+  },
+} as const);
 
 export type ResolvedAppConfig = typeof resolvedAppConfig;
 

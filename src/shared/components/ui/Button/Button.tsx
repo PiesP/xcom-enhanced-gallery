@@ -122,8 +122,10 @@ export function Button(rawProps: ButtonProps): JSXElement {
     | 'iconOnly';
 
   const fallbackProps = local as ButtonProps;
-  const resolvePropAccessor = <K extends ReactivePropKey>(key: K) => () =>
-    (rawProps[key] ?? fallbackProps[key]) as ButtonProps[K];
+  const resolvePropAccessor =
+    <K extends ReactivePropKey>(key: K) =>
+    () =>
+      (rawProps[key] ?? fallbackProps[key]) as ButtonProps[K];
 
   const iconOnlyAccessor = toAccessor(resolvePropAccessor('iconOnly'));
   const loadingAccessor = toAccessor(resolvePropAccessor('loading'));
@@ -148,7 +150,7 @@ export function Button(rawProps: ButtonProps): JSXElement {
           component: 'UnifiedButton',
           variant: local.variant,
           iconOnly: true,
-        },
+        }
       );
     }
   });
@@ -209,7 +211,7 @@ export function Button(rawProps: ButtonProps): JSXElement {
       'xeg-inline-center',
       'xeg-gap-sm',
       typeof local.className === 'function' ? (local.className as () => string)() : local.className,
-      typeof local.class === 'function' ? (local.class as () => string)() : local.class,
+      typeof local.class === 'function' ? (local.class as () => string)() : local.class
     );
 
   // Keep the DOM disabled property in sync with the isDisabled() accessor
@@ -257,11 +259,13 @@ export function Button(rawProps: ButtonProps): JSXElement {
       aria-haspopup={local['aria-haspopup']}
       aria-busy={ariaBusyAccessor() ?? isLoading()}
       aria-disabled={isDisabled()}
-      tabIndex={isDisabled()
-        ? -1
-        : typeof local.tabIndex === 'function'
-        ? (local.tabIndex as () => number)()
-        : local.tabIndex}
+      tabIndex={
+        isDisabled()
+          ? -1
+          : typeof local.tabIndex === 'function'
+            ? (local.tabIndex as () => number)()
+            : local.tabIndex
+      }
       data-testid={local['data-testid']}
       data-gallery-element={local['data-gallery-element']}
       data-disabled={local['data-disabled']}
@@ -277,7 +281,7 @@ export function Button(rawProps: ButtonProps): JSXElement {
       onMouseEnter={local.onMouseEnter}
       onMouseLeave={local.onMouseLeave}
     >
-      {isLoading() && <span class={cx('xeg-spinner', styles.spinner)} aria-hidden='true' />}
+      {isLoading() && <span class={cx('xeg-spinner', styles.spinner)} aria-hidden="true" />}
       {local.children}
     </button>
   );

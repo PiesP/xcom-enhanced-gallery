@@ -69,7 +69,7 @@ export function extractTweetTextHTML(tweetArticle: Element | null): string | und
  */
 export function extractTweetTextHTMLFromClickedElement(
   element: HTMLElement,
-  maxDepth = 10,
+  maxDepth = 10
 ): string | undefined {
   let current: HTMLElement | null = element;
   let depth = 0;

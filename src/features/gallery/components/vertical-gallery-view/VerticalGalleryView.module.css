@@ -75,9 +75,8 @@
   :root {
     /* Transitions - toolbar visibility helper only */
     --xeg-transition-toolbar:
-      opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), transform var(
-      --xeg-duration-toolbar
-    ) var(--xeg-easing-ease-out), visibility 0ms;
+      opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), transform
+      var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), visibility 0ms;
 
     /* Spacing - CSS Logical Properties */
     --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
@@ -196,12 +195,12 @@
    resolves to 'none' (e.g., mouse moves below wrapper area), descendants also become non-interactive,
    which prevents native <select> dropdowns from opening inside the settings panel.
    This rule explicitly restores pointer-events:auto for the expanded panel so its children inherit 'auto'. */
-.toolbarWrapper [data-gallery-element='settings-panel'][data-expanded='true'] {
+.toolbarWrapper [data-gallery-element="settings-panel"][data-expanded="true"] {
   pointer-events: auto;
 }
 
 /* When settings panel is expanded, keep the toolbar wrapper interactive regardless of hover state */
-.toolbarWrapper:has([data-gallery-element='settings-panel'][data-expanded='true']) {
+.toolbarWrapper:has([data-gallery-element="settings-panel"][data-expanded="true"]) {
   --toolbar-opacity: 1;
   --toolbar-visibility: visible;
   --toolbar-pointer-events: auto;
@@ -215,7 +214,7 @@
 
 /* Scrolling state: hide toolbar while scrolling manually */
 /* High specificity to override hover states without forced overrides */
-.container.isScrolling[data-xeg-gallery='true'][data-xeg-role='gallery'] .toolbarWrapper {
+.container.isScrolling[data-xeg-gallery="true"][data-xeg-role="gallery"] .toolbarWrapper {
   --toolbar-opacity: var(--xeg-toolbar-hidden-opacity, 0);
   --toolbar-visibility: var(--xeg-toolbar-hidden-visibility, hidden);
   --toolbar-pointer-events: var(--xeg-toolbar-hidden-pointer-events, none);
@@ -274,7 +273,7 @@
   transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 }
 
-.container.uiHidden [data-xeg-role='items-list'],
+.container.uiHidden [data-xeg-role="items-list"],
 .container.uiHidden .itemsContainer {
   /* Keep the scroll surface interactive even when chrome is hidden */
   pointer-events: auto;
@@ -353,8 +352,8 @@
 }
 
 /* Disable the hover strip when the toolbar is already locked open (settings expanded) */
-.container.initialToolbarVisible:not([data-settings-expanded='true']) .toolbarHoverZone,
-.container:has(.toolbarWrapper:hover):not([data-settings-expanded='true']) .toolbarHoverZone {
+.container.initialToolbarVisible:not([data-settings-expanded="true"]) .toolbarHoverZone,
+.container:has(.toolbarWrapper:hover):not([data-settings-expanded="true"]) .toolbarHoverZone {
   pointer-events: none;
 }
 
@@ -396,8 +395,8 @@
 }
 
 /* Ensure every toolbar component honors the wrapper's visibility variables */
-.toolbarWrapper [class*='galleryToolbar'],
-.toolbarWrapper [data-testid*='toolbar'] {
+.toolbarWrapper [class*="galleryToolbar"],
+.toolbarWrapper [data-testid*="toolbar"] {
   opacity: var(--toolbar-opacity, 0);
   visibility: var(--toolbar-visibility, hidden);
   display: flex;
@@ -406,7 +405,7 @@
 
 /* Toolbar buttons should always be clickable even when wrapper blocks interaction */
 .toolbarWrapper button,
-.toolbarWrapper [role='button'],
+.toolbarWrapper [role="button"],
 .toolbarWrapper .toolbarButton {
   pointer-events: auto;
   position: relative;
@@ -493,7 +492,7 @@
 }
 
 /* Ensure interacting with toolbar components forces them visible */
-.container [class*='galleryToolbar']:hover {
+.container [class*="galleryToolbar"]:hover {
   --toolbar-opacity: 1;
   --toolbar-pointer-events: auto;
 }

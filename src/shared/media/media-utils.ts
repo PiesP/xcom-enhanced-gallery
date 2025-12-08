@@ -198,7 +198,7 @@ function scaleAspectRatio(widthRatio: number, heightRatio: number): DimensionPai
 }
 
 function extractDimensionsFromMetadataObject(
-  dimensions?: Record<string, unknown>,
+  dimensions?: Record<string, unknown>
 ): DimensionPair | null {
   if (!dimensions) {
     return null;
@@ -226,7 +226,7 @@ function deriveDimensionsFromMetadata(metadata: MetadataRecord): DimensionPair |
   }
 
   const dimensions = extractDimensionsFromMetadataObject(
-    metadata.dimensions as Record<string, unknown> | undefined,
+    metadata.dimensions as Record<string, unknown> | undefined
   );
   if (dimensions) {
     return dimensions;
@@ -288,7 +288,7 @@ export function resolveMediaDimensions(media: MediaInfo | undefined): DimensionP
   }
 
   const fromMetadata = deriveDimensionsFromMetadata(
-    media.metadata as Record<string, unknown> | undefined,
+    media.metadata as Record<string, unknown> | undefined
   );
   if (fromMetadata) {
     return fromMetadata;
@@ -329,7 +329,7 @@ export function createIntrinsicSizingStyle(dimensions: DimensionPair): Record<st
 export function adjustClickedIndexAfterDeduplication(
   originalItems: MediaInfo[],
   uniqueItems: MediaInfo[],
-  originalClickedIndex: number,
+  originalClickedIndex: number
 ): number {
   if (uniqueItems.length === 0) return 0;
 

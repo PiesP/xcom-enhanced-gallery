@@ -15,6 +15,7 @@
     "types": ["./src/types/env.d.ts"]
   },
   "imports": {
+    "@biomejs/biome": "npm:@biomejs/biome@^2.3.8",
     "solid-js": "npm:solid-js@^1.9.10",
     "solid-js/": "npm:solid-js@^1.9.10/",
     "vite": "npm:vite@^8.0.0-beta.0",
@@ -34,10 +35,12 @@
     "build:fast": "deno run -A scripts/build.ts --skip-checks",
     "build:dev:fast": "deno run -A scripts/build.ts --dev --skip-checks",
     "check": "deno run -A npm:typescript/tsc --noEmit --project tsconfig.build.json",
-    "lint": "deno lint",
-    "fmt": "deno fmt",
-    "fmt:check": "deno fmt --check",
-    "quality": "deno task check && deno task lint && deno task fmt:check"
+    "lint": "deno run -A npm:@biomejs/biome lint ./src ./scripts",
+    "lint:fix": "deno run -A npm:@biomejs/biome lint --write ./src ./scripts",
+    "fmt": "deno run -A npm:@biomejs/biome format --write ./src ./scripts",
+    "fmt:check": "deno run -A npm:@biomejs/biome format ./src ./scripts",
+    "biome:check": "deno run -A npm:@biomejs/biome check --write ./src ./scripts",
+    "quality": "deno task check && deno run -A npm:@biomejs/biome check ./src ./scripts"
   },
   "lint": {
     "include": ["src/"],

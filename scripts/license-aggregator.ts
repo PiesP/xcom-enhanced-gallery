@@ -53,9 +53,7 @@ export async function aggregateLicenses(licensesDir: string): Promise<LicenseInf
       }
     }
 
-    const results = await Promise.all(
-      entries.map((name) => readLicense(licensesDir, name)),
-    );
+    const results = await Promise.all(entries.map((name) => readLicense(licensesDir, name)));
 
     const licenses = results
       .filter((l): l is LicenseInfo => l !== null)

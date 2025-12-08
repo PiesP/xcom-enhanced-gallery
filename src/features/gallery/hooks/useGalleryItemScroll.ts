@@ -29,11 +29,10 @@ export function useGalleryItemScroll(
   containerRef: { current: HTMLElement | null } | Accessor<HTMLElement | null>,
   currentIndex: MaybeAccessor<number>,
   totalItems: MaybeAccessor<number>,
-  options: UseGalleryItemScrollOptions = {},
+  options: UseGalleryItemScrollOptions = {}
 ): UseGalleryItemScrollReturn {
-  const containerAccessor = typeof containerRef === 'function'
-    ? containerRef
-    : () => containerRef.current;
+  const containerAccessor =
+    typeof containerRef === 'function' ? containerRef : () => containerRef.current;
   const enabled = toAccessor(options.enabled ?? true);
   const behavior = toAccessor(options.behavior ?? 'auto');
   const block = toAccessor(options.block ?? 'start');
@@ -47,7 +46,7 @@ export function useGalleryItemScroll(
     if (!enabled() || !container || index < 0 || index >= totalItemsAccessor()) return;
 
     const itemsRoot = container.querySelector(
-      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
+      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
     );
     if (!itemsRoot) return;
 

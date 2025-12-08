@@ -75,7 +75,7 @@ export class MediaService {
 
   async extractFromClickedElement(
     element: HTMLElement,
-    options: MediaExtractionOptions = {},
+    options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     if (!this.mediaExtraction) throw new Error('Media Extraction not initialized');
     const result = await this.mediaExtraction.extractFromClickedElement(element, options);
@@ -98,7 +98,7 @@ export class MediaService {
 
   async extractAllFromContainer(
     container: HTMLElement,
-    options: MediaExtractionOptions = {},
+    options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     if (!this.mediaExtraction) throw new Error('Media Extraction not initialized');
     return this.mediaExtraction.extractAllFromContainer(container, options);
@@ -158,7 +158,7 @@ export class MediaService {
 
   async downloadSingle(
     media: MediaInfo,
-    options: DownloadOptions = {},
+    options: DownloadOptions = {}
   ): Promise<SingleDownloadResult> {
     const { DownloadOrchestrator } = await import('./download/download-orchestrator');
     const downloadService = DownloadOrchestrator.getInstance();
@@ -183,7 +183,7 @@ export class MediaService {
 
   async downloadMultiple(
     items: Array<MediaInfo>,
-    options: BulkDownloadOptions = {},
+    options: BulkDownloadOptions = {}
   ): Promise<BulkDownloadResult> {
     const { DownloadOrchestrator } = await import('./download/download-orchestrator');
     const downloadService = DownloadOrchestrator.getInstance();
@@ -195,7 +195,7 @@ export class MediaService {
 
   async downloadBulk(
     items: readonly MediaInfo[],
-    options: BulkDownloadOptions = {},
+    options: BulkDownloadOptions = {}
   ): Promise<BulkDownloadResult> {
     return this.downloadMultiple(Array.from(items), options);
   }

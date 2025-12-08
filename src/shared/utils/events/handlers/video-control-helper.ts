@@ -59,9 +59,8 @@ function getCurrentGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoEleme
   }
 
   try {
-    const doc = typeof document !== 'undefined'
-      ? document
-      : (globalThis as { document?: Document }).document;
+    const doc =
+      typeof document !== 'undefined' ? document : (globalThis as { document?: Document }).document;
     if (!(doc instanceof Document)) return null;
 
     const hostSelectors = [
@@ -116,7 +115,7 @@ function getCurrentGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoEleme
  */
 export function executeVideoControl(
   action: VideoControlAction,
-  options: VideoControlOptions = {},
+  options: VideoControlOptions = {}
 ): void {
   const { video, context } = options;
 

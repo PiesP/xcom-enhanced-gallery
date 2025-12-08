@@ -20,7 +20,7 @@ declare global {
     text: string,
     title?: string,
     image?: string,
-    onclick?: () => void,
+    onclick?: () => void
   ): void;
   const GM_cookie: CookieAPI;
 

@@ -19,9 +19,11 @@ interface ImportMeta {
 }
 
 // Node.js process for Vitest compatibility check
-declare const process: {
-  env?: {
-    VITEST?: string;
-    [key: string]: string | undefined;
-  };
-} | undefined;
+declare const process:
+  | {
+      env?: {
+        VITEST?: string;
+        [key: string]: string | undefined;
+      };
+    }
+  | undefined;

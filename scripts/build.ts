@@ -97,8 +97,10 @@ const QUALITY_CHECKS = [
     args: ['run', '-A', 'npm:typescript/tsc', '--noEmit', '--project', 'tsconfig.build.json'],
     description: 'Type checking',
   },
-  { args: ['lint'], description: 'Linting' },
-  { args: ['fmt', '--check'], description: 'Format checking' },
+  {
+    args: ['run', '-A', 'npm:@biomejs/biome', 'check', './src', './scripts'],
+    description: 'Biome lint & format',
+  },
 ] as const;
 
 async function runCommand(args: readonly string[], description: string): Promise<CommandResult> {
@@ -122,8 +124,8 @@ async function runQualityChecks(): Promise<boolean> {
   } else {
     const failed = results.filter((r) => !r.success).map((r) => r.description);
     console.error(`\n❌ Failed: ${failed.join(', ')}`);
-    if (failed.includes('Format checking')) {
-      console.log('💡 Run "deno task fmt" to auto-fix.\n');
+    if (failed.includes('Biome lint & format')) {
+      console.log('💡 Run "deno task biome:check" to auto-fix.\n');
     }
   }
   return allPassed;
@@ -175,7 +177,7 @@ function createUserscriptConfig(version: string): UserscriptConfig {
 async function writeOutput(
   options: BuildOptions,
   bundle: BundleResult,
-  metadata: string,
+  metadata: string
 ): Promise<{ path: string; sizeKB: string }> {
   const outputFile = options.dev ? OUTPUT_FILES.dev : OUTPUT_FILES.prod;
   const outputPath = `${BUILD_CONFIG.distDir}/${outputFile}`;
@@ -206,21 +208,21 @@ function printBuildInfo(isDev: boolean): void {
   const mode = isDev ? 'Development' : 'Production';
   const info = isDev
     ? [
-      '📖 Optimized for: Debugging & Analysis',
-      '├─ CSS class names: Readable (Component__class__hash)',
-      '├─ CSS formatting: Preserved',
-      '├─ CSS variables: Full names (--xeg-*)',
-      '├─ CSS comments: Preserved',
-      '└─ Source maps: Inline',
-    ]
+        '📖 Optimized for: Debugging & Analysis',
+        '├─ CSS class names: Readable (Component__class__hash)',
+        '├─ CSS formatting: Preserved',
+        '├─ CSS variables: Full names (--xeg-*)',
+        '├─ CSS comments: Preserved',
+        '└─ Source maps: Inline',
+      ]
     : [
-      '📦 Optimized for: Distribution Size',
-      '├─ CSS class names: Hashed (xeg_*)',
-      '├─ CSS formatting: Compressed',
-      '├─ CSS variables: Shortened (194 mappings)',
-      '├─ CSS comments: Removed',
-      '└─ Source maps: Disabled',
-    ];
+        '📦 Optimized for: Distribution Size',
+        '├─ CSS class names: Hashed (xeg_*)',
+        '├─ CSS formatting: Compressed',
+        '├─ CSS variables: Shortened (194 mappings)',
+        '├─ CSS comments: Removed',
+        '└─ Source maps: Disabled',
+      ];
 
   console.log(`\n📋 Build Mode: ${mode}`);
   console.log('─'.repeat(45));

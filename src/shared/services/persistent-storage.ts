@@ -57,10 +57,11 @@ export class PersistentStorage {
   getSync<T>(key: string, defaultValue?: T): T | undefined {
     try {
       // Direct GM access for sync
-      const gmGetValue = typeof GM_getValue !== 'undefined'
-        ? GM_getValue
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        : (window as any).GM_getValue;
+      const gmGetValue =
+        typeof GM_getValue !== 'undefined'
+          ? GM_getValue
+          : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (window as any).GM_getValue;
       if (!gmGetValue) return defaultValue;
 
       const value = gmGetValue(key);

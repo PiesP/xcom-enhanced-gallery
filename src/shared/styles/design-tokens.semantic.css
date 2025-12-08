@@ -261,7 +261,7 @@
   }
 
   /* Theme Support - Dark/Light Mode */
-  :where(:root, .xeg-theme-scope)[data-theme='light'] {
+  :where(:root, .xeg-theme-scope)[data-theme="light"] {
     --color-bg-primary: var(--color-base-white);
     --color-text-primary: var(--color-base-black);
     --color-text-secondary: var(--color-gray-600); /* Phase: design-consistency */
@@ -288,7 +288,7 @@
   }
 
   /* Dark mode - explicit attribute */
-  :where(:root, .xeg-theme-scope)[data-theme='dark'] {
+  :where(:root, .xeg-theme-scope)[data-theme="dark"] {
     --color-bg-primary: var(--color-gray-900);
     --color-bg-surface: var(--color-gray-900);
     --color-bg-elevated: var(--color-gray-700);

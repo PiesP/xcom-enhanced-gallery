@@ -67,7 +67,7 @@ export class DOMEventManager {
     element: EventTarget,
     type: string,
     listener: EventListener,
-    options: DOMListenerOptions = {},
+    options: DOMListenerOptions = {}
   ): string {
     const { signal, context, ...listenerOptions } = options;
     const id = this.subscriptionManager.generateId('dom', context);
@@ -145,7 +145,7 @@ export function addDOMListener(
   type: string,
   listener: EventListener,
   options: DOMListenerOptions,
-  subscriptionManager: SubscriptionManager,
+  subscriptionManager: SubscriptionManager
 ): string {
   const manager = new DOMEventManager(subscriptionManager);
   return manager.addListener(element, type, listener, options);

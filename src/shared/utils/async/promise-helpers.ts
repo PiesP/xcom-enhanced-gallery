@@ -8,7 +8,7 @@
  */
 export type ResultCallback<TResult, TError = string | null | undefined> = (
   result?: TResult,
-  error?: TError,
+  error?: TError
 ) => void;
 
 /**
@@ -45,7 +45,7 @@ export interface PromisifyOptions<TFallback> {
  */
 export function promisifyCallback<TResult>(
   executor: (callback: ResultCallback<TResult>) => void,
-  options?: PromisifyOptions<TResult>,
+  options?: PromisifyOptions<TResult>
 ): Promise<TResult> {
   return new Promise((resolve, reject) => {
     try {

@@ -261,7 +261,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       aria-describedby={props['aria-describedby']}
       aria-disabled={isToolbarDisabled()}
       data-testid={props['data-testid']}
-      data-gallery-element='toolbar'
+      data-gallery-element="toolbar"
       data-state={props.toolbarDataState()}
       data-disabled={isToolbarDisabled()}
       data-settings-expanded={props.settingsController.isSettingsExpanded()}
@@ -271,23 +271,25 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       tabIndex={props.tabIndex}
       onFocus={props.onFocus as ((event: FocusEvent) => void) | undefined}
       onBlur={props.onBlur as ((event: FocusEvent) => void) | undefined}
-      onKeyDown={props.settingsController.handleToolbarKeyDown as unknown as
-        | ((event: KeyboardEvent) => void)
-        | undefined}
+      onKeyDown={
+        props.settingsController.handleToolbarKeyDown as unknown as
+          | ((event: KeyboardEvent) => void)
+          | undefined
+      }
     >
       <div
         class={cx(styles.toolbarContent, 'xeg-row-center')}
-        data-gallery-element='toolbar-content'
+        data-gallery-element="toolbar-content"
       >
-        <div class={styles.toolbarControls} data-gallery-element='toolbar-controls'>
+        <div class={styles.toolbarControls} data-gallery-element="toolbar-controls">
           <IconButton
             class={toolbarButtonClass()}
-            size='toolbar'
-            aria-label='Previous Media'
-            title='Previous Media (Left Arrow)'
+            size="toolbar"
+            aria-label="Previous Media"
+            title="Previous Media (Left Arrow)"
             disabled={prevDisabled()}
             onClick={props.onPreviousClick}
-            data-gallery-element='nav-previous'
+            data-gallery-element="nav-previous"
             data-disabled={prevDisabled()}
             data-action-disabled={anyActionDisabled()}
           >
@@ -296,27 +298,27 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
 
           <IconButton
             class={toolbarButtonClass()}
-            size='toolbar'
-            aria-label='Next Media'
-            title='Next Media (Right Arrow)'
+            size="toolbar"
+            aria-label="Next Media"
+            title="Next Media (Right Arrow)"
             disabled={nextDisabled()}
             onClick={props.onNextClick}
-            data-gallery-element='nav-next'
+            data-gallery-element="nav-next"
             data-disabled={nextDisabled()}
             data-action-disabled={anyActionDisabled()}
           >
             <ArrowSmallRight size={18} />
           </IconButton>
 
-          <div class={styles.counterBlock} data-gallery-element='counter-section'>
+          <div class={styles.counterBlock} data-gallery-element="counter-section">
             <div class={cx(styles.mediaCounterWrapper, 'xeg-inline-center')}>
               <span
                 ref={(element) => {
                   setCounterElement(element);
                 }}
                 class={cx(styles.mediaCounter, 'xeg-inline-center')}
-                aria-live='polite'
-                data-gallery-element='counter'
+                aria-live="polite"
+                data-gallery-element="counter"
                 data-focused-index={displayedIndex()}
                 data-current-index={currentIndex()}
               >
@@ -335,7 +337,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             return (
               <IconButton
                 class={toolbarButtonClass(styles.fitButton)}
-                size='toolbar'
+                size="toolbar"
                 onClick={props.handleFitModeClick(mode)}
                 disabled={props.isFitDisabled(mode)}
                 aria-label={label.label}
@@ -351,12 +353,12 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
 
           <IconButton
             class={toolbarButtonClass(styles.downloadButton, styles.downloadCurrent)}
-            size='toolbar'
+            size="toolbar"
             onClick={props.onDownloadCurrent}
             disabled={downloadDisabled()}
-            aria-label='Download Current File'
-            title='Download Current File (Ctrl+D)'
-            data-gallery-element='download-current'
+            aria-label="Download Current File"
+            title="Download Current File (Ctrl+D)"
+            data-gallery-element="download-current"
             data-disabled={downloadDisabled()}
             data-action-disabled={anyActionDisabled()}
           >
@@ -366,12 +368,12 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           {canDownloadAll() && (
             <IconButton
               class={toolbarButtonClass(styles.downloadButton, styles.downloadAll)}
-              size='toolbar'
+              size="toolbar"
               onClick={props.onDownloadAll}
               disabled={downloadDisabled()}
               aria-label={`Download all ${totalCount()} files as ZIP`}
               title={`Download all ${totalCount()} files as ZIP`}
-              data-gallery-element='download-all'
+              data-gallery-element="download-all"
               data-disabled={downloadDisabled()}
               data-action-disabled={anyActionDisabled()}
             >
@@ -382,17 +384,17 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           {props.showSettingsButton && (
             <IconButton
               ref={props.settingsController.assignSettingsButtonRef}
-              id='settings-button'
+              id="settings-button"
               class={toolbarButtonClass()}
-              size='toolbar'
-              aria-label='Open Settings'
+              size="toolbar"
+              aria-label="Open Settings"
               aria-expanded={props.settingsController.isSettingsExpanded() ? 'true' : 'false'}
-              aria-controls='toolbar-settings-panel'
-              title='Settings'
+              aria-controls="toolbar-settings-panel"
+              title="Settings"
               disabled={isToolbarDisabled()}
               onMouseDown={props.settingsController.handleSettingsMouseDown}
               onClick={props.settingsController.handleSettingsClick}
-              data-gallery-element='settings'
+              data-gallery-element="settings"
               data-disabled={isToolbarDisabled()}
             >
               <Cog6Tooth size={18} />
@@ -401,16 +403,16 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
 
           {hasTweetContent() && (
             <IconButton
-              id='tweet-text-button'
+              id="tweet-text-button"
               class={toolbarButtonClass()}
-              size='toolbar'
+              size="toolbar"
               aria-label={getLanguageService().translate('toolbar.tweetText') || 'View tweet text'}
               aria-expanded={props.isTweetPanelExpanded() ? 'true' : 'false'}
-              aria-controls='toolbar-tweet-panel'
+              aria-controls="toolbar-tweet-panel"
               title={getLanguageService().translate('toolbar.tweetText') || 'Tweet text'}
               disabled={isToolbarDisabled()}
               onClick={props.toggleTweetPanelExpanded}
-              data-gallery-element='tweet-text'
+              data-gallery-element="tweet-text"
               data-disabled={isToolbarDisabled()}
             >
               <ChatBubbleLeftRight size={18} />
@@ -419,13 +421,13 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
 
           <IconButton
             class={toolbarButtonClass(styles.closeButton)}
-            size='toolbar'
-            intent='danger'
-            aria-label='Close Gallery'
-            title='Close Gallery (Esc)'
+            size="toolbar"
+            intent="danger"
+            aria-label="Close Gallery"
+            title="Close Gallery (Esc)"
             disabled={isToolbarDisabled()}
             onClick={props.onCloseClick}
-            data-gallery-element='close'
+            data-gallery-element="close"
             data-disabled={isToolbarDisabled()}
           >
             <ArrowLeftOnRectangle size={18} />
@@ -435,15 +437,15 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
 
       <div
         ref={assignSettingsPanelRef}
-        id='toolbar-settings-panel'
+        id="toolbar-settings-panel"
         class={styles.settingsPanel}
         data-expanded={props.settingsController.isSettingsExpanded()}
-        data-gallery-scrollable='true'
+        data-gallery-scrollable="true"
         onMouseDown={props.settingsController.handlePanelMouseDown}
-        role='region'
-        aria-label='Settings Panel'
-        aria-labelledby='settings-button'
-        data-gallery-element='settings-panel'
+        role="region"
+        aria-label="Settings Panel"
+        aria-labelledby="settings-button"
+        data-gallery-element="settings-panel"
         onClick={props.settingsController.handlePanelClick}
       >
         <Show when={props.settingsController.isSettingsExpanded()}>
@@ -453,20 +455,20 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             onThemeChange={props.settingsController.handleThemeChange}
             onLanguageChange={props.settingsController.handleLanguageChange}
             compact
-            data-testid='settings-controls'
+            data-testid="settings-controls"
           />
         </Show>
       </div>
 
       <div
         ref={setTweetPanelEl}
-        id='toolbar-tweet-panel'
+        id="toolbar-tweet-panel"
         class={styles.tweetPanel}
         data-expanded={props.isTweetPanelExpanded()}
-        role='region'
+        role="region"
         aria-label={getLanguageService().translate('toolbar.tweetTextPanel') || 'Tweet text panel'}
-        aria-labelledby='tweet-text-button'
-        data-gallery-element='tweet-panel'
+        aria-labelledby="tweet-text-button"
+        data-gallery-element="tweet-panel"
       >
         <Show when={props.isTweetPanelExpanded() && hasTweetContent()}>
           <Suspense fallback={<div class={styles.tweetPanelLoading}>Loading...</div>}>

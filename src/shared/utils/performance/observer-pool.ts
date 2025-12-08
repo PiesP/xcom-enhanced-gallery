@@ -45,7 +45,7 @@ export const SharedObserver = {
   observe(
     element: Element,
     callback: (entry: IntersectionObserverEntry) => void,
-    options: IntersectionObserverInit = {},
+    options: IntersectionObserverInit = {}
   ): () => void {
     const key = createObserverKey(options);
     const observer = getObserver(key, options);
