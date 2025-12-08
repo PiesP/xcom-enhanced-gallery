@@ -506,6 +506,96 @@ export function cssInlinePlugin(mode: string): Plugin {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Log Call Removal Utility
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Remove log calls with balanced parentheses matching
+ * Handles complex arguments including nested function calls and object literals
+ * Also handles arrow functions where log call is the only body
+ */
+function removeLogCalls(code: string, methods: string[]): string {
+  // Build pattern for logger.method( or logger$N.method( or logger?.method(
+  const methodPattern = methods.join('|');
+  const regex = new RegExp(`logger(?:\\$\\d+)?\\?\\.(?:${methodPattern})\\(|logger(?:\\$\\d+)?\\.(?:${methodPattern})\\(`, 'g');
+
+  let result = '';
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(code)) !== null) {
+    const startIndex = match.index;
+    const openParenIndex = startIndex + match[0].length - 1;
+
+    // Find the matching closing parenthesis
+    let depth = 1;
+    let i = openParenIndex + 1;
+    let inString = false;
+    let stringChar = '';
+    let inTemplate = false;
+    let templateDepth = 0;
+
+    while (i < code.length && depth > 0) {
+      const char = code[i];
+      const prevChar = code[i - 1];
+
+      // Handle string literals
+      if (!inString && !inTemplate && (char === '"' || char === "'" || char === '`')) {
+        inString = true;
+        stringChar = char;
+        if (char === '`') {
+          inTemplate = true;
+          inString = false;
+        }
+      } else if (inString && char === stringChar && prevChar !== '\\') {
+        inString = false;
+      } else if (inTemplate) {
+        if (char === '`' && prevChar !== '\\') {
+          inTemplate = false;
+        } else if (char === '$' && code[i + 1] === '{') {
+          templateDepth++;
+          i++;
+        } else if (char === '}' && templateDepth > 0) {
+          templateDepth--;
+        }
+      } else if (!inString && !inTemplate) {
+        if (char === '(') depth++;
+        else if (char === ')') depth--;
+      }
+
+      i++;
+    }
+
+    if (depth === 0) {
+      // Append code before this log call
+      result += code.slice(lastIndex, startIndex);
+
+      // Check if this is an arrow function body (=> logger.xxx(...))
+      // Look back for "=> " or "=>" pattern
+      const beforeLog = result.slice(-20); // Check last 20 chars
+      const isArrowFnBody = /=>\s*$/.test(beforeLog);
+
+      if (isArrowFnBody) {
+        // Replace with empty block for arrow function
+        result += '{}';
+      }
+
+      // Skip the log call, also consume trailing semicolon and newline if present
+      let endIndex = i;
+      if (code[endIndex] === ';') endIndex++;
+      if (code[endIndex] === '\n') endIndex++;
+
+      lastIndex = endIndex;
+      regex.lastIndex = endIndex;
+    }
+  }
+
+  // Append remaining code
+  result += code.slice(lastIndex);
+  return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Production Cleanup Plugin
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -544,20 +634,11 @@ function productionCleanupPlugin(): Plugin {
           '({})',
         );
 
-        // 4. Remove debug/info log calls (logger$N.debug/info(...) and logger.debug/info(...))
-        // These are development-only logs that add ~10-15KB of strings
-        code = code.replace(
-          /logger(?:\$\d+)?\.(?:debug|info)\([^;]*\);?\n?/g,
-          '',
-        );
+        // 4. Remove debug/info log calls using balanced parentheses matching
+        // These are development-only logs that can add significant string content
+        code = removeLogCalls(code, ['debug', 'info']);
 
-        // 5. Remove logger?.info optional chain calls
-        code = code.replace(
-          /logger(?:\$\d+)?\?\.(?:debug|info)\([^;]*\);?\n?/g,
-          '',
-        );
-
-        // 6. Clean up multiple consecutive empty lines
+        // 5. Clean up multiple consecutive empty lines
         code = code.replace(/\n{3,}/g, '\n\n');
 
         chunk.code = code;
