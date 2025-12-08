@@ -1,5 +1,4 @@
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -254,6 +253,10 @@ export default defineConfig(async ({ mode, command }) => {
     ...baseBundlerOptions,
   };
 
+  // Greasy Fork Code Rules Compliance:
+  // - Code must NOT be obfuscated or minified
+  // - Users must be able to inspect and understand the script before installing
+  // - See: https://greasyfork.org/en/help/code-rules
   const buildConfig: FutureBuildOptions = {
     target: 'esnext',
     outDir: 'dist',
@@ -261,80 +264,10 @@ export default defineConfig(async ({ mode, command }) => {
     cssCodeSplit: false,
     assetsInlineLimit: 0,
     sourcemap: isDev,
-    minify: isProd ? 'terser' : false,
+    // Greasy Fork requires readable, non-minified code
+    minify: false,
     reportCompressedSize: true,
     chunkSizeWarningLimit: 1000,
-    ...(isProd
-      ? {
-          terserOptions: {
-            compress: {
-              ecma: 2020,
-              module: true,
-              drop_console: true,
-              drop_debugger: true,
-              pure_funcs: ['console.info', 'console.debug', 'logger.debug', 'logger.info'],
-              passes: 10,
-              pure_getters: true,
-              unsafe: true,
-              unsafe_methods: true,
-              unsafe_arrows: true,
-              unsafe_comps: true,
-              unsafe_Function: true,
-              unsafe_math: true,
-              unsafe_symbols: true,
-              unsafe_proto: true,
-              unsafe_regexp: true,
-              unsafe_undefined: true,
-              toplevel: true,
-              dead_code: true,
-              unused: true,
-              conditionals: true,
-              evaluate: true,
-              booleans: true,
-              loops: true,
-              if_return: true,
-              join_vars: true,
-              collapse_vars: true,
-              reduce_vars: true,
-              hoist_funs: true,
-              hoist_vars: false,
-              sequences: true,
-              properties: true,
-              comparisons: true,
-              inline: true,
-              keep_infinity: false,
-              negate_iife: true,
-              side_effects: true,
-              switches: true,
-              typeofs: true,
-              arguments: true,
-              computed_props: true,
-              expression: false,
-            },
-            format: {
-              comments: false,
-              ascii_only: false,
-              beautify: false,
-              indent_level: 0,
-              semicolons: true,
-              wrap_iife: false,
-              wrap_func_args: false,
-            },
-            mangle: {
-              toplevel: true,
-              eval: true,
-              keep_classnames: false,
-              keep_fnames: false,
-              safari10: false,
-              properties: {
-                regex: /^_/,
-                reserved: ['GM_setValue', 'GM_getValue', 'GM_download', 'GM_notification', 'GM_xmlhttpRequest'],
-              },
-            },
-            maxWorkers: os.cpus().length,
-          },
-        }
-      : {}),
   };
 
   if (isRolldownPreview) {
@@ -384,7 +317,8 @@ export default defineConfig(async ({ mode, command }) => {
     },
     css: {
       modules: {
-        generateScopedName: isDev ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:3]',
+        // Greasy Fork compliance: Keep readable class names in all builds
+        generateScopedName: '[name]__[local]__[hash:base64:5]',
         localsConvention: 'camelCaseOnly',
         hashPrefix: 'xeg',
       },
