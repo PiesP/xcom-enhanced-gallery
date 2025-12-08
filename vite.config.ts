@@ -263,7 +263,7 @@ export default defineConfig(async ({ mode, command }) => {
   const buildConfig: FutureBuildOptions = {
     target: 'esnext',
     outDir: 'dist',
-    emptyOutDir: isDev,
+    emptyOutDir: false, // Handled by clean script to avoid race conditions in parallel builds
     cssCodeSplit: false,
     assetsInlineLimit: 0,
     sourcemap: isDev,

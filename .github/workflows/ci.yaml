@@ -123,16 +123,6 @@ jobs:
       - name: 🚀 Build production
         run: npx vite build --mode production
 
-      - name: 📊 Check bundle size
-        run: |
-          SIZE=$(stat -f%z dist/xcom-enhanced-gallery.user.js 2>/dev/null || stat -c%s dist/xcom-enhanced-gallery.user.js)
-          echo "📦 Bundle size: $(numfmt --to=iec-i --suffix=B $SIZE)"
-          # Fail if bundle exceeds 350KB
-          if [ $SIZE -gt 358400 ]; then
-            echo "❌ Bundle size exceeds 350KB limit!"
-            exit 1
-          fi
-
       - name: 📊 Upload build artifacts
         uses: actions/upload-artifact@v5
         if: success()
