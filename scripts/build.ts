@@ -90,6 +90,77 @@ interface CommandResult {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CSS Processing Utilities
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Remove CSS comments for production builds
+ * Preserves layer declarations and CSS structure
+ */
+function removeCssComments(css: string): string {
+  // Remove block comments /* ... */ but preserve @layer declarations
+  // Use a state machine approach to handle edge cases
+  let result = '';
+  let i = 0;
+  let inString = false;
+  let stringChar = '';
+
+  while (i < css.length) {
+    // Handle string literals (to avoid removing "/*" inside strings)
+    if (!inString && (css[i] === '"' || css[i] === "'")) {
+      inString = true;
+      stringChar = css[i];
+      result += css[i];
+      i++;
+      continue;
+    }
+
+    if (inString) {
+      if (css[i] === stringChar && css[i - 1] !== '\\') {
+        inString = false;
+      }
+      result += css[i];
+      i++;
+      continue;
+    }
+
+    // Check for block comment start
+    if (css[i] === '/' && css[i + 1] === '*') {
+      // Find comment end
+      const commentEnd = css.indexOf('*/', i + 2);
+      if (commentEnd === -1) {
+        // Malformed CSS, keep rest as is
+        break;
+      }
+      // Skip the entire comment
+      i = commentEnd + 2;
+      // Add a space to prevent selector merging issues
+      if (
+        result.length > 0 && result[result.length - 1] !== ' ' && result[result.length - 1] !== '\n'
+      ) {
+        result += ' ';
+      }
+      continue;
+    }
+
+    result += css[i];
+    i++;
+  }
+
+  // Clean up excessive whitespace while preserving structure
+  return result
+    // Multiple spaces to single space
+    .replace(/  +/g, ' ')
+    // Multiple newlines to single newline
+    .replace(/\n\s*\n/g, '\n')
+    // Remove leading/trailing whitespace on lines
+    .replace(/^\s+/gm, '')
+    .replace(/\s+$/gm, '')
+    // Trim
+    .trim();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // CSS Inline Plugin
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -98,6 +169,7 @@ interface CommandResult {
  */
 function extractCssFromBundle(
   bundle: Record<string, { type: string; source?: string | Uint8Array }>,
+  stripComments = false,
 ): string {
   const cssChunks: string[] = [];
 
@@ -105,11 +177,19 @@ function extractCssFromBundle(
     if (!fileName.endsWith('.css') || asset.type !== 'asset') continue;
 
     const { source } = asset;
+    let cssContent = '';
     if (typeof source === 'string') {
-      cssChunks.push(source);
+      cssContent = source;
     } else if (source instanceof Uint8Array) {
-      cssChunks.push(new TextDecoder().decode(source));
+      cssContent = new TextDecoder().decode(source);
     }
+
+    // Strip comments in production mode
+    if (stripComments && cssContent) {
+      cssContent = removeCssComments(cssContent);
+    }
+
+    cssChunks.push(cssContent);
 
     // Remove CSS file from bundle
     delete bundle[fileName];
@@ -152,6 +232,7 @@ function generateCssInjectionCode(css: string, isDev: boolean): string {
  * - Prevents duplicate style injection
  * - CSP-safe style injection (no inline styles)
  * - Layer order preservation for CSS cascade
+ * - CSS comment stripping for production builds
  */
 function cssInlinePlugin(isDev = false): Plugin {
   return {
@@ -160,8 +241,11 @@ function cssInlinePlugin(isDev = false): Plugin {
     enforce: 'post',
 
     generateBundle(_options, bundle) {
+      // Strip CSS comments in production mode only
+      const stripComments = !isDev;
       const cssContent = extractCssFromBundle(
         bundle as Record<string, { type: string; source?: string | Uint8Array }>,
+        stripComments,
       );
 
       if (!cssContent.trim()) return;

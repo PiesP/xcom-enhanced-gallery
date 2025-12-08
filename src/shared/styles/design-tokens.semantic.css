@@ -287,45 +287,27 @@
     --xeg-color-background: oklch(95% 0 0deg);
   }
 
+  /* Dark mode - explicit attribute */
   :where(:root, .xeg-theme-scope)[data-theme='dark'] {
     --color-bg-primary: var(--color-gray-900);
     --color-bg-surface: var(--color-gray-900);
     --color-bg-elevated: var(--color-gray-700);
     --color-text-primary: var(--color-base-white);
-    --color-text-secondary: var(
-      --color-gray-400
-    ); /* Phase: design-consistency - improved from white */
+    --color-text-secondary: var(--color-gray-400);
     --color-glass-bg: var(--color-gray-900);
     --color-glass-border: var(--color-gray-600);
-
-    /* Unified dark backgrounds - toolbar and modal share gray-800 */
     --xeg-bg-toolbar: var(--color-gray-800);
-    --xeg-color-border-primary: var(
-      --color-gray-600
-    ); /* Phase: design-consistency - improved from gray-500 */
+    --xeg-color-border-primary: var(--color-gray-600);
     --xeg-toolbar-border: var(--color-gray-600);
-
-    /* Gallery Image Item Dark Mode Tokens */
     --xeg-color-bg-secondary: var(--color-gray-800);
-
-    /* Gallery Background - dark mode */
     --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
-
-    /* Button Tokens - Dark Mode */
     --xeg-button-bg: var(--color-gray-800);
     --xeg-button-border: var(--color-gray-600);
     --xeg-button-text: var(--color-text-primary);
     --xeg-button-bg-hover: var(--color-gray-700);
     --xeg-button-border-hover: var(--color-gray-600);
-
-    /* Modal Background/Border Tokens - Dark Mode */
     --xeg-modal-bg: var(--xeg-modal-bg-dark);
     --xeg-modal-border: var(--xeg-modal-border-dark);
-
-    /* Settings controls - Dark Mode (Phase: design-consistency) */
-    --xeg-settings-select-padding: var(--space-sm);
-    --xeg-settings-select-font-size: var(--font-size-sm);
-
     --xeg-toolbar-text-color: var(--color-text-primary);
     --xeg-toolbar-text-muted: var(--color-gray-300);
     --xeg-toolbar-element-bg: color-mix(
@@ -358,49 +340,37 @@
       var(--xeg-toolbar-element-border) 85%,
       var(--color-base-black) 15%
     );
-
-    /* Explicit dark background for gallery root */
     --xeg-color-background: oklch(20% 0 0deg);
-
-    /* Interactive Colors - Dark Theme Overrides (monochrome accent) */
     --color-primary: var(--color-gray-100);
     --color-primary-hover: var(--color-gray-200);
     --color-primary-active: var(--color-gray-300);
+    --xeg-surface-bg: var(--color-gray-900);
+    --xeg-surface-border: var(--color-gray-600);
+    --xeg-surface-bg-hover: var(--color-gray-800);
   }
 
+  /* Dark mode - system preference (only when no explicit theme is set) */
   @media (prefers-color-scheme: dark) {
-    :where(:root, .xeg-theme-scope):not([data-theme='light']) {
+    :where(:root, .xeg-theme-scope):not([data-theme]) {
       --color-bg-primary: var(--color-gray-900);
       --color-bg-surface: var(--color-gray-900);
       --color-bg-elevated: var(--color-gray-700);
       --color-text-primary: var(--color-base-white);
-      --color-text-secondary: var(--color-gray-400); /* Phase: design-consistency */
+      --color-text-secondary: var(--color-gray-400);
       --color-glass-bg: var(--color-gray-900);
       --color-glass-border: var(--color-gray-600);
-
-      /* Unified dark backgrounds - toolbar and modal share gray-800 */
       --xeg-bg-toolbar: var(--color-gray-800);
       --xeg-color-border-primary: var(--color-gray-600);
       --xeg-toolbar-border: var(--color-gray-600);
-      --xeg-surface-glass-bg: var(--color-gray-900);
-
-      /* Gallery Image Item Dark Mode Tokens */
       --xeg-color-bg-secondary: var(--color-gray-800);
-
-      /* Gallery Background */
       --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
-
-      /* Button Tokens - System Dark Mode */
       --xeg-button-bg: var(--color-gray-800);
       --xeg-button-border: var(--color-gray-600);
       --xeg-button-text: var(--color-text-primary);
       --xeg-button-bg-hover: var(--color-gray-700);
       --xeg-button-border-hover: var(--color-gray-600);
-
-      /* Modal Background/Border Tokens - System Dark Mode */
       --xeg-modal-bg: var(--xeg-modal-bg-dark);
       --xeg-modal-border: var(--xeg-modal-border-dark);
-
       --xeg-toolbar-text-color: var(--color-text-primary);
       --xeg-toolbar-text-muted: var(--color-gray-300);
       --xeg-toolbar-element-bg: color-mix(
@@ -433,40 +403,13 @@
         var(--xeg-toolbar-element-border) 85%,
         var(--color-base-black) 15%
       );
-
-      /* Toolbar Component Tokens - System Dark Mode */
-      /* Settings controls - System Dark Mode */
-      --xeg-settings-select-padding: var(--space-sm);
-      --xeg-settings-select-font-size: var(--font-size-sm);
-
       --xeg-color-background: oklch(20% 0 0deg);
-
-      /* Interactive Colors - System Dark Theme Overrides (monochrome accent) */
       --color-primary: var(--color-gray-100);
       --color-primary-hover: var(--color-gray-200);
       --color-primary-active: var(--color-gray-300);
-    }
-  }
-
-  @media (prefers-color-scheme: light) {
-    :where(:root, .xeg-theme-scope):not([data-theme='dark']) {
-      --color-bg-primary: var(--color-base-white);
-      --color-text-primary: var(--color-base-black);
-      --color-text-secondary: var(--color-gray-600);
-      --color-glass-bg: var(--color-bg-surface);
-
-      --xeg-bg-toolbar: var(--color-bg-surface);
-      --xeg-color-border-primary: var(--color-border-default);
-      --xeg-toolbar-border: var(--color-border-default);
-      --xeg-color-bg-secondary: var(--color-bg-secondary);
-      --xeg-gallery-bg: var(--xeg-gallery-bg-light);
-      --xeg-modal-bg: var(--xeg-modal-bg-light);
-      --xeg-modal-border: var(--xeg-modal-border-light);
-
-      --xeg-settings-select-padding: var(--space-sm);
-      --xeg-settings-select-font-size: var(--font-size-sm);
-
-      --xeg-color-background: oklch(95% 0 0deg);
+      --xeg-surface-bg: var(--color-gray-900);
+      --xeg-surface-border: var(--color-gray-600);
+      --xeg-surface-bg-hover: var(--color-gray-800);
     }
   }
 
@@ -563,28 +506,5 @@
     --xeg-modal-border-light: var(--color-border-default);
     --xeg-modal-bg: var(--xeg-modal-bg-light);
     --xeg-modal-border: var(--xeg-modal-border-light);
-  }
-
-  /* Theme Overrides - Surface (라이트 모드) */
-  :where(:root, .xeg-theme-scope)[data-theme='light'] {
-    --xeg-surface-bg: var(--color-bg-surface);
-    --xeg-surface-border: var(--color-border-default);
-    --xeg-surface-bg-hover: var(--color-bg-secondary);
-  }
-
-  /* Theme Overrides - Surface (다크 모드) */
-  :where(:root, .xeg-theme-scope)[data-theme='dark'] {
-    --xeg-surface-bg: var(--color-gray-900);
-    --xeg-surface-border: var(--color-gray-600);
-    --xeg-surface-bg-hover: var(--color-gray-800);
-  }
-
-  /* System Preference Fallback - 다크 모드 시스템 설정 */
-  @media (prefers-color-scheme: dark) {
-    :where(:root, .xeg-theme-scope):not([data-theme='light']) {
-      --xeg-surface-bg: var(--color-gray-900);
-      --xeg-surface-border: var(--color-gray-600);
-      --xeg-surface-bg-hover: var(--color-gray-800);
-    }
   }
 }

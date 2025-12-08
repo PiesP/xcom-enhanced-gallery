@@ -107,9 +107,9 @@ export function useGalleryScroll({
     // Check for toolbar-related data attributes
     return Boolean(
       target.closest('[data-gallery-element="toolbar"]') ||
-      target.closest('[data-gallery-element="settings-panel"]') ||
-      target.closest('[data-gallery-element="tweet-panel"]') ||
-      target.closest('[data-role="toolbar"]'),
+        target.closest('[data-gallery-element="settings-panel"]') ||
+        target.closest('[data-gallery-element="tweet-panel"]') ||
+        target.closest('[data-role="toolbar"]'),
     );
   };
 
