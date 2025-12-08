@@ -514,6 +514,7 @@ export function cssInlinePlugin(mode: string): Plugin {
  * Removes unnecessary code patterns from the final bundle:
  * - Empty module namespace objects (Object.freeze + defineProperty + Symbol.toStringTag)
  * - /*#__PURE__*​/ annotations (not needed without minification)
+ * - Debug/info log calls (significant string savings)
  * - Unused variable declarations
  */
 function productionCleanupPlugin(): Plugin {
@@ -529,13 +530,12 @@ function productionCleanupPlugin(): Plugin {
         let code = chunk.code;
 
         // 1. Remove empty module namespace objects
-        // Pattern: const varName = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({ __proto__: null }, Symbol.toStringTag, { value: 'Module' }));
         code = code.replace(
           /const\s+\w+\s*=\s*(?:\/\*#__PURE__\*\/\s*)?Object\.freeze\(\s*(?:\/\*#__PURE__\*\/\s*)?Object\.defineProperty\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*,\s*Symbol\.toStringTag\s*,\s*\{\s*value\s*:\s*['"]Module['"]\s*\}\s*\)\s*\)\s*;?\n?/g,
           '',
         );
 
-        // 2. Remove /*#__PURE__*/ annotations (tree-shaking hints not needed in final bundle)
+        // 2. Remove /*#__PURE__*/ annotations
         code = code.replace(/\/\*#__PURE__\*\/\s*/g, '');
 
         // 3. Remove standalone Object.freeze({__proto__: null}) patterns
@@ -544,7 +544,20 @@ function productionCleanupPlugin(): Plugin {
           '({})',
         );
 
-        // 4. Clean up multiple consecutive empty lines
+        // 4. Remove debug/info log calls (logger$N.debug/info(...) and logger.debug/info(...))
+        // These are development-only logs that add ~10-15KB of strings
+        code = code.replace(
+          /logger(?:\$\d+)?\.(?:debug|info)\([^;]*\);?\n?/g,
+          '',
+        );
+
+        // 5. Remove logger?.info optional chain calls
+        code = code.replace(
+          /logger(?:\$\d+)?\?\.(?:debug|info)\([^;]*\);?\n?/g,
+          '',
+        );
+
+        // 6. Clean up multiple consecutive empty lines
         code = code.replace(/\n{3,}/g, '\n\n');
 
         chunk.code = code;
