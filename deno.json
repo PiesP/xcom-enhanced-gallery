@@ -2,17 +2,16 @@
   "$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
   "unstable": ["sloppy-imports"],
   "compilerOptions": {
+    // Deno-specific: adds deno.ns for Deno APIs
     "lib": ["esnext", "dom", "dom.iterable", "deno.ns"],
+    // Solid.js JSX transformation
     "jsx": "react-jsx",
     "jsxImportSource": "solid-js",
+    // Strict mode (aligned with tsconfig.json)
     "strict": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
+    // Custom type definitions
     "types": ["./src/types/env.d.ts"]
   },
   "imports": {

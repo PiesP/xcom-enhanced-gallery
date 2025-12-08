@@ -1,10 +1,19 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "./tsconfig.json",
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "build", "coverage", ".stryker-tmp", "test/**/*", "playwright/**/*"],
   "compilerOptions": {
-    "types": ["vite/client"],
+    // Disable incremental for CI builds
     "incremental": false
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".stryker-tmp",
+    "scripts/**/*",
+    "test/**/*",
+    "playwright/**/*"
+  ]
 }

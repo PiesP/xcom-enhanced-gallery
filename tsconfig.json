@@ -1,27 +1,17 @@
 {
-  "include": [
-    "src/**/*",
-    ".github/scripts/**/*.ts",
-    "scripts/**/*.ts",
-    "scripts/**/*.d.ts",
-    "vite.config.ts",
-    "eslint.config.ts"
-  ],
-  "exclude": ["node_modules", "dist", "build", "coverage", "test", "playwright", ".stryker-tmp"],
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
+    // Target & Module
     "target": "ESNext",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "skipLibCheck": true,
-    "useDefineForClassFields": true,
-    "allowImportingTsExtensions": true,
-    "allowArbitraryExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+
+    // JSX for Solid.js
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
+
+    // Strict Type Checking
     "strict": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
@@ -30,26 +20,40 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
-    "allowSyntheticDefaultImports": true,
+
+    // Module Interop
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "customConditions": ["module"],
+    "allowSyntheticDefaultImports": true,
     "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+
+    // Emit
+    "noEmit": true,
+    "skipLibCheck": true,
+
+    // Path Aliases (synchronized with deno.json imports)
+    "baseUrl": ".",
     "paths": {
-      "@*": ["./src/*"],
+      "@/*": ["./src/*"],
       "@bootstrap/*": ["./src/bootstrap/*"],
-      "@constants": ["./src/constants"],
+      "@constants": ["./src/constants/index.ts"],
       "@constants/*": ["./src/constants/*"],
       "@features/*": ["./src/features/*"],
       "@shared/*": ["./src/shared/*"],
       "@styles/*": ["./src/styles/*"],
-      "@types/*": ["./src/types/*"],
-      "@test/*": ["./test/*"],
-      "scripts/*": ["./scripts/*"],
-      "vite.config": ["./vite.config.ts"]
+      "@types/*": ["./src/types/*"]
     },
-    "types": ["vite/client"],
+
+    // Build Performance
     "incremental": true,
-    "tsBuildInfoFile": ".tsbuildinfo"
-  }
+    "tsBuildInfoFile": ".tsbuildinfo",
+
+    // Compatibility
+    "useDefineForClassFields": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src/**/*", "scripts/**/*"],
+  "exclude": ["node_modules", "dist", "build", "coverage", ".stryker-tmp"]
 }
