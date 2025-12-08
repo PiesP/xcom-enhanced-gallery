@@ -4,21 +4,17 @@
     "sloppy-imports"
   ],
   "compilerOptions": {
-    // Deno-specific: adds deno.ns for Deno APIs
     "lib": [
       "esnext",
       "dom",
       "dom.iterable",
       "deno.ns"
     ],
-    // Solid.js JSX transformation
     "jsx": "react-jsx",
     "jsxImportSource": "solid-js",
-    // Strict mode (aligned with tsconfig.json)
     "strict": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
-    // Custom type definitions
     "types": [
       "./src/types/env.d.ts"
     ]
