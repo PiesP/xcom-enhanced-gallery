@@ -8,6 +8,35 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-12-08
+
+### Changed
+
+- **Build System**: Migrated from npm/Node.js to Deno for build tooling and quality checks.
+- **TypeScript Configuration**: Enhanced strictness settings and improved Deno compatibility.
+- **License Aggregation**: Improved license handling with consolidated MIT license block in userscript header.
+- **Documentation**: Updated all MD files to reflect current project state (build commands, output size, API references).
+
+### Added
+
+- **CSS Optimization**: Added CSS comment removal utility for production builds.
+- **Toolbar**: Added scroll detection to properly ignore gallery scroll state.
+- **CI/CD**: Implemented Deno environment setup action for GitHub workflows.
+
+### Removed
+
+- **Unused Tampermonkey APIs**: Removed unused type definitions and detection logic for:
+  - `GM_registerMenuCommand` / `GM_unregisterMenuCommand`
+  - `GM_openInTab`
+  - `GM_setClipboard`
+  - `GM_getResourceText` / `GM_getResourceURL`
+  - `@resource` metadata field
+- **Legacy Configuration**: Removed `package.json`, `vite.config.ts`, and npm-based tooling.
+
+### Fixed
+
+- **Userscript URLs**: Updated download/update URLs to use master branch for stability.
+
 ## [1.0.0] - 2025-12-07
 
 ### Breaking Changes
