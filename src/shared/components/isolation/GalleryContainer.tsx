@@ -72,10 +72,9 @@ export function mountGallery(container: Element, element: GalleryRenderable): El
 
   host[DISPOSE_SYMBOL]?.();
 
-  const factory =
-    typeof element === 'function'
-      ? (element as () => JSXElement | null | undefined)
-      : () => element ?? null;
+  const factory = typeof element === 'function'
+    ? (element as () => JSXElement | null | undefined)
+    : () => element ?? null;
 
   host[DISPOSE_SYMBOL] = render(factory, host);
 
@@ -183,7 +182,7 @@ export function GalleryContainer({
   });
 
   return (
-    <div class={classes} data-xeg-gallery-container="">
+    <div class={classes} data-xeg-gallery-container=''>
       {children}
     </div>
   );

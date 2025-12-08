@@ -108,9 +108,11 @@ export class TranslationCatalog {
   }
 
   private registerBundles(bundles: TranslationBundleInput): void {
-    for (const [language, strings] of Object.entries(bundles) as Array<
-      [BaseLanguageCode, LanguageStrings | undefined]
-    >) {
+    for (
+      const [language, strings] of Object.entries(bundles) as Array<
+        [BaseLanguageCode, LanguageStrings | undefined]
+      >
+    ) {
       if (!strings) {
         continue;
       }

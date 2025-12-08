@@ -118,12 +118,12 @@ export class AppEventManager {
     // Wrap callback for once behavior
     const wrappedCallback = once
       ? (data: unknown) => {
-          callback(data as AppEventMap[K]);
-          cleanup();
-        }
+        callback(data as AppEventMap[K]);
+        cleanup();
+      }
       : (data: unknown) => {
-          callback(data as AppEventMap[K]);
-        };
+        callback(data as AppEventMap[K]);
+      };
 
     // Add to listener set
     listeners.add(wrappedCallback);

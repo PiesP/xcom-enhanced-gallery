@@ -138,8 +138,7 @@ export class FocusCoordinator {
       // Track highest visibility candidate (most visible item in viewport)
       // On equal visibility ratio, prefer the one closer to center
       if (visibilityRatio > 0.1) {
-        const isBetterVisibility =
-          !highestVisibilityCandidate ||
+        const isBetterVisibility = !highestVisibilityCandidate ||
           visibilityRatio > highestVisibilityCandidate.ratio ||
           (visibilityRatio === highestVisibilityCandidate.ratio &&
             centerDistance < highestVisibilityCandidate.centerDistance);

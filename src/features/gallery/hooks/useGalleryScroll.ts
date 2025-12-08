@@ -123,9 +123,11 @@ export function useGalleryScroll({
     }
 
     const eventManager = EventManager.getInstance();
-    const listenerContext = `${LISTENER_CONTEXT_PREFIX}:${Date.now().toString(36)}:${Math.random()
-      .toString(36)
-      .slice(2)}`;
+    const listenerContext = `${LISTENER_CONTEXT_PREFIX}:${Date.now().toString(36)}:${
+      Math.random()
+        .toString(36)
+        .slice(2)
+    }`;
     const listenerIds: string[] = [];
 
     const registerListener = (type: string, handler: EventListener): void => {

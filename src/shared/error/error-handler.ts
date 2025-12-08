@@ -22,12 +22,11 @@ export class GlobalErrorHandler {
 
   private readonly rejectionListener = (event: PromiseRejectionEvent) => {
     const { reason } = event;
-    const message =
-      reason instanceof Error
-        ? reason.message
-        : typeof reason === 'string'
-          ? reason
-          : `Unhandled rejection: ${String(reason)}`;
+    const message = reason instanceof Error
+      ? reason.message
+      : typeof reason === 'string'
+      ? reason
+      : `Unhandled rejection: ${String(reason)}`;
 
     logger.error(`[UnhandledRejection] ${message}`, {
       type: 'unhandled-rejection',

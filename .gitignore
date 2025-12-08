@@ -1,142 +1,61 @@
-# Whitelist-based .gitignore for xcom-enhanced-gallery (Minimal Repository)
-# Remote repository: track only source code, built scripts, and CI/CD configs
-# Local only: ignore caches, test outputs, build artifacts, and developer settings
-
 # ============================================================================
-# Guideline: ignore everything and re-allow only required assets
+# X.com Enhanced Gallery - .gitignore
 # ============================================================================
 
-# Ignore all
-*
-!*/
+# Dependencies
+node_modules/
 
-# ============================================================================
-# TRACKED: Files included in the remote repo (required items only)
-# ============================================================================
+# Build outputs
+dist/
+build/
 
-# --- Source code (required) ---
-!/src
-!/src/**
+# TypeScript
+*.tsbuildinfo
 
-# --- Type definitions (required) ---
-!/types
-!/types/**
+# Test & Coverage
+coverage/
+.stryker-tmp/
+playwright-report/
+test-results/
 
-# --- Critical build config (deployment required) ---
-!/tsconfig.json
-!/vite.config.ts
+# IDE & Editors
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
 
-# --- Package management ---
-!/package.json
-!/package-lock.json
+# OS files
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
 
-# --- Quality tooling (CI required) ---
-!/biome.json
-!/eslint.config.ts
-
-# --- Core documentation ---
-!/README.md
-!/LICENSE
-!/CHANGELOG.md
-!/CONTRIBUTING.md
-!/CODE_OF_CONDUCT.md
-
-# --- GitHub Actions (deploy/security) ---
-!/.github
-!/.github/**
-
-# --- Dependency licenses (legal requirement, referenced by vite.config.ts) ---
-!/LICENSES
-!/LICENSES/**
-
-# --- Git configuration ---
-!/.gitignore
-
-# ============================================================================
-# NOT TRACKED: Local-only assets (developer tooling)
-# ============================================================================
-
-# Development guide docs (local reference)
-.github/copilot-instructions.md
-.github/prompts/**
-/AGENTS.md
-/CLAUDE.md
-/docs/*
-
-# Test code (not run in CI)
-/test/**
-/playwright/
-
-# Developer scripts and tools
-/scripts/**
-# NOTE: The `config/` directory contains developer-specific configuration and is
-# ignored by default. The file `config/utils/load-local-config.js` however is a
-# CI-safe stub required for builds in the action runners. We explicitly un-ignore
-# it so the file can be committed while keeping the rest of the `config/` dir
-# as local-only entries.
-/config/
-!/config/utils/load-local-config.js
-!/config/utils/load-local-config.d.ts
-
-# Local configuration
-/*.local.ts
-/*.local.js
-/*.local.json
-/.env.local
-/.env.*.local
-/config/local/*
-
-# TypeScript test config (CI only)
-/tsconfig.tests.json
-
-# Build config (optional)
-/postcss.config.js
-/playwright.config.ts
-/vitest.config.ts
-
-# ============================================================================
-# BUILD & CACHE (local only)
-# ============================================================================
-
-# Vite & Build
-/dist/
-/dist-ssr/
-/build/
-/.vite/
-.tsbuildinfo
-/src/shared/types/generated/design-token-names.ts
-!/postcss.config.js
-
-# Test cache and results
-/coverage/
-/test-results/
-/playwright-report/
-/.vitest-cache/
-.eslintcache
-.prettiercache
-.stylelintcache
-
-# Dependency caches
-/node_modules/
-/pnpm-lock.yaml
-/yarn.lock
-
-# Development tools
-/.husky/
-/.idea/
-/.vscode/
-/codeql-results/
-/codeql-reports/
-
-# OS
-/.DS_Store
-/Thumbs.db
-
-# Temporary and backup files
-/temp/
-/tmp/
-/backup*/
-/*.backup
-/.stryker-tmp/
+# Logs
 *.log
-*.cpuprofile
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temp files
+temp/
+*.tmp
+*.temp
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Deno
+.deno/
+
+
+.github/prompts/xeg-dev.prompt.md
+.github/copilot-instructions.md
+.vscode/settings.json
+AGENTS.md
+CLAUDE.md

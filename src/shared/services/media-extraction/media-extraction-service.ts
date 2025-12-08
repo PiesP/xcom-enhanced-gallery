@@ -85,8 +85,11 @@ export class MediaExtractionService implements MediaExtractor {
   }
 
   private createErrorResult(error: unknown): MediaExtractionResult {
-    const errorMessage =
-      error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error';
+    const errorMessage = error instanceof Error
+      ? error.message
+      : typeof error === 'string'
+      ? error
+      : 'Unknown error';
 
     return {
       success: false,

@@ -5,8 +5,8 @@ import { en } from './languages/en';
  * Default language bundle included in main bundle.
  * Other languages (ko, ja) are loaded on-demand via lazy loaders.
  */
-export const TRANSLATION_REGISTRY: Partial<Record<BaseLanguageCode, LanguageStrings>> =
-  Object.freeze({
+export const TRANSLATION_REGISTRY: Partial<Record<BaseLanguageCode, LanguageStrings>> = Object
+  .freeze({
     en,
   });
 

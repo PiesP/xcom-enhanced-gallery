@@ -10,18 +10,16 @@ const getIdleAPIs = (): {
   cic: CancelIdleCallback | null;
 } => {
   const source = typeof globalThis !== 'undefined' ? globalThis : undefined;
-  const ric =
-    source && typeof source === 'object' && 'requestIdleCallback' in source
-      ? ((source as { requestIdleCallback?: unknown }).requestIdleCallback as
-          | RequestIdleCallback
-          | undefined) || null
-      : null;
-  const cic =
-    source && typeof source === 'object' && 'cancelIdleCallback' in source
-      ? ((source as { cancelIdleCallback?: unknown }).cancelIdleCallback as
-          | CancelIdleCallback
-          | undefined) || null
-      : null;
+  const ric = source && typeof source === 'object' && 'requestIdleCallback' in source
+    ? ((source as { requestIdleCallback?: unknown }).requestIdleCallback as
+      | RequestIdleCallback
+      | undefined) || null
+    : null;
+  const cic = source && typeof source === 'object' && 'cancelIdleCallback' in source
+    ? ((source as { cancelIdleCallback?: unknown }).cancelIdleCallback as
+      | CancelIdleCallback
+      | undefined) || null
+    : null;
   return { ric, cic };
 };
 

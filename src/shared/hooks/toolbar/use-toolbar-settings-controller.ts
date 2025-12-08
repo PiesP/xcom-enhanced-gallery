@@ -95,7 +95,6 @@ export function useToolbarSettingsController(
    *    - Reactive to service changes
    *    - Affects UI language immediately
    *
-   *
    * **Event Flow**:
    * Settings Click → Toggle Panel
    *   ↓ (if opening)

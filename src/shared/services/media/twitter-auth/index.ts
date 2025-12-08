@@ -5,9 +5,4 @@
  */
 
 // Primary exports - Pure functions
-export {
-  getCsrfToken,
-  isTokensInitialized,
-  resetTokens,
-  setCsrfToken,
-} from './twitter-auth';
+export { getCsrfToken, isTokensInitialized, resetTokens, setCsrfToken } from './twitter-auth';

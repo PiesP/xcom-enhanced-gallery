@@ -16,6 +16,7 @@
 
 import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
 import type { JSXElement } from '@shared/external/vendors';
+import { For } from 'solid-js';
 
 import {
   type AllIconNames,
@@ -26,7 +27,7 @@ import {
 } from './icon-paths';
 
 // Re-export types and paths for advanced use cases
-export { ICON_PATHS, MULTI_PATH_ICONS, type AllIconNames, type IconName, type MultiPathIconName };
+export { type AllIconNames, ICON_PATHS, type IconName, MULTI_PATH_ICONS, type MultiPathIconName };
 
 /**
  * Create a single-path icon component
@@ -52,9 +53,9 @@ function createMultiPathIcon(name: MultiPathIconName): (props: IconProps) => JSX
   return function IconComponent(props: IconProps): JSXElement {
     return (
       <Icon {...props}>
-        {MULTI_PATH_ICONS[name].map((pathData) => (
-          <path d={pathData} />
-        ))}
+        <For each={MULTI_PATH_ICONS[name]}>
+          {(pathData: string) => <path d={pathData} />}
+        </For>
       </Icon>
     );
   };

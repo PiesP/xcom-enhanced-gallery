@@ -106,7 +106,7 @@ const computeNavigationState = ({
 const createGuardedHandler = (
   guard: () => boolean,
   action?: () => void,
-): ((event: MouseEvent) => void) => {
+): (event: MouseEvent) => void => {
   return (event) => {
     safeEventPrevent(event);
     if (guard()) {
@@ -193,7 +193,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       total: totalItems(),
       currentIndex: currentIndexForNav(),
       focusedIndex: focusedIndex(),
-    }),
+    })
   );
 
   const progressWidth = createMemo(() => calculateProgressWidth(displayedIndex(), totalItems()));
@@ -205,7 +205,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       total: totalItems(),
       toolbarDisabled: Boolean(isDisabled()),
       downloadBusy: Boolean(isDownloadingProp() || toolbarState.isDownloading),
-    }),
+    })
   );
 
   const fitModeHandlers = createMemo<InternalFitModeHandlers>(() => ({

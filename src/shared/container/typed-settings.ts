@@ -35,13 +35,12 @@ import { tryGetSettingsManager } from './service-accessors';
  * type Paths = SettingPaths<{ a: { b: number; c: string } }>;
  * // Result: 'a' | 'a.b' | 'a.c'
  */
-type SettingPaths<T, Prefix extends string = ''> = T extends object
-  ? {
-      [K in keyof T & string]: T[K] extends object
-        ? // Include both the parent key and nested paths
-          `${Prefix}${K}` | SettingPaths<T[K], `${Prefix}${K}.`>
-        : `${Prefix}${K}`;
-    }[keyof T & string]
+type SettingPaths<T, Prefix extends string = ''> = T extends object ? {
+    [K in keyof T & string]: T[K] extends object
+      // Include both the parent key and nested paths
+      ? `${Prefix}${K}` | SettingPaths<T[K], `${Prefix}${K}.`>
+      : `${Prefix}${K}`;
+  }[keyof T & string]
   : never;
 
 /**
@@ -52,12 +51,10 @@ type SettingPaths<T, Prefix extends string = ''> = T extends object
  * type Value = SettingValueAt<AppSettings, 'gallery.preloadCount'>; // number
  */
 type SettingValueAt<T, Path extends string> = Path extends `${infer K}.${infer Rest}`
-  ? K extends keyof T
-    ? SettingValueAt<T[K], Rest>
-    : never
-  : Path extends keyof T
-    ? T[Path]
-    : never;
+  ? K extends keyof T ? SettingValueAt<T[K], Rest>
+  : never
+  : Path extends keyof T ? T[Path]
+  : never;
 
 // =============================================================================
 // Exported Types

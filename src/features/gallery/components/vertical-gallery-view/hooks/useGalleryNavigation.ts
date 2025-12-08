@@ -6,9 +6,9 @@
  */
 
 import {
+  galleryIndexEvents,
   type GalleryNavigateCompletePayload,
   type GalleryNavigateStartPayload,
-  galleryIndexEvents,
   type NavigationTrigger,
 } from '@shared/state/signals/gallery.signals';
 import { createEffect, createSignal, on, onCleanup } from 'solid-js';

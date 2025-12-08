@@ -300,4 +300,4 @@ export function normalizeLegacyUser(user: TwitterUser): void {
 // Exported Utilities (for advanced use cases)
 // ============================================================================
 
-export { getHighQualityMediaUrl, resolveDimensions, resolveAspectRatio };
+export { getHighQualityMediaUrl, resolveAspectRatio, resolveDimensions };

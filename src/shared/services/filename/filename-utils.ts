@@ -248,9 +248,9 @@ export function isValidZipFilename(filename: string): boolean {
 // ============================================================================
 
 export {
-  sanitize as sanitizeFilename,
   getExtension as getFileExtension,
   getIndexFromMediaId,
   normalizeIndex,
   resolveMetadata as resolveMediaMetadata,
+  sanitize as sanitizeFilename,
 };

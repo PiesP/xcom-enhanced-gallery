@@ -6,13 +6,19 @@
 
 @layer xeg.features {
   .xeg-gallery-root {
-    all: initial;
+    /*
+     * Reset inherited styles without dropping design tokens.
+     * `all: initial` wipes custom properties, which removes our token values
+     * when CSS is bundled/inlined. Using `unset` keeps inherited custom
+     * properties while still resetting non-inherited defaults.
+     */
+    all: unset;
     box-sizing: border-box;
     font-family: var(
       --font-family-primary,
       -apple-system,
       BlinkMacSystemFont,
-      "Segoe UI",
+      'Segoe UI',
       Roboto,
       Helvetica,
       Arial,

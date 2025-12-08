@@ -15,8 +15,9 @@ export class Translator {
   private readonly catalog: TranslationCatalog;
 
   constructor(options: TranslationCatalog | TranslationCatalogOptions = {}) {
-    this.catalog =
-      options instanceof TranslationCatalog ? options : new TranslationCatalog(options);
+    this.catalog = options instanceof TranslationCatalog
+      ? options
+      : new TranslationCatalog(options);
   }
 
   /**

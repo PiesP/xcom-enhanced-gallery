@@ -15,49 +15,11 @@
     --xeg-toolbar-panel-height: 0;
     --xeg-toolbar-panel-max-height: 17.5rem; /* 280px */
 
-    /* Button Component */
-    --xeg-button-bg-primary-hover: var(--color-primary-hover);
-    --xeg-button-bg-primary-active: var(--color-primary-active);
-    --xeg-button-text-primary: var(--color-text-inverse);
-    --xeg-button-text-secondary: var(--color-text-primary);
-    --xeg-button-border: var(--color-border-default);
-    --xeg-button-transition: var(--transition-fast);
-
-    /* Panel/Surface Component */
-    --xeg-panel-bg: var(--color-bg-elevated);
-    --xeg-panel-border: var(--color-border-default);
-    --xeg-panel-radius: var(--xeg-radius-lg);
-    --xeg-panel-shadow: var(--shadow-sm);
-
-    /* Glass Surface (Legacy support mapping to flat panels) */
-    --xeg-glass-bg: var(--color-glass-bg);
-    --xeg-glass-border: var(--color-glass-border);
-    --xeg-glass-backdrop-filter: none;
-    --xeg-glass-shadow: none;
-
-    /* Media/Image Component */
-    --xeg-media-border-radius: var(--xeg-radius-md);
-    --xeg-media-loading-bg: var(--color-bg-secondary);
-    --xeg-media-placeholder-text: var(--color-text-muted);
-    --xeg-aspect-default: 4 / 3;
-
     /* Scrollbar Component */
     --xeg-scrollbar-width: 0.5rem; /* 8px */
-    --xeg-scrollbar-track-bg: var(--color-bg-secondary);
-    --xeg-scrollbar-thumb-bg: var(--color-border-emphasis);
-    --xeg-scrollbar-thumb-hover-bg: var(--color-text-secondary);
-    --xeg-scrollbar-border-radius: var(--radius-sm);
 
     /* Hover Zone Component */
     --xeg-hover-zone-height: 7.5rem; /* 120px */
-    --xeg-hover-zone-bg: transparent;
-    --xeg-hover-zone-transition: var(--transition-fast);
-
-    /* Animation Presets */
-    --xeg-animation-fade-in: fade-in var(--duration-normal) var(--transition-normal);
-    --xeg-animation-fade-out: fade-out var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
-    --xeg-animation-slide-in: slide-in-bottom var(--duration-normal) var(--transition-normal);
-    --xeg-animation-slide-out: slide-out-top var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
 
     /* Spinner Component */
     --xeg-spinner-size-default: 1rem;
@@ -69,51 +31,30 @@
 
     /* Transition Presets */
     --xeg-transition-surface-normal:
-      background-color var(--xeg-duration-normal) var(--xeg-ease-standard), border-color
-      var(--xeg-duration-normal) var(--xeg-ease-standard), color var(--xeg-duration-normal)
-      var(--xeg-ease-standard);
+      background-color var(--xeg-duration-normal) var(--xeg-ease-standard), border-color var(
+      --xeg-duration-normal
+    ) var(--xeg-ease-standard), color var(--xeg-duration-normal) var(--xeg-ease-standard);
     --xeg-transition-surface-fast:
-      background-color var(--xeg-duration-fast) var(--xeg-ease-standard), border-color
-      var(--xeg-duration-fast) var(--xeg-ease-standard), color var(--xeg-duration-fast)
-      var(--xeg-ease-standard);
+      background-color var(--xeg-duration-fast) var(--xeg-ease-standard), border-color var(
+      --xeg-duration-fast
+    ) var(--xeg-ease-standard), color var(--xeg-duration-fast) var(--xeg-ease-standard);
     --xeg-transition-elevation-normal:
-      transform var(--xeg-duration-normal) var(--xeg-ease-standard), opacity
-      var(--xeg-duration-normal) var(--xeg-ease-standard);
+      transform var(--xeg-duration-normal) var(--xeg-ease-standard), opacity var(
+      --xeg-duration-normal
+    ) var(--xeg-ease-standard);
     --xeg-transition-elevation-fast:
       transform var(--xeg-duration-fast) var(--xeg-ease-standard), opacity var(--xeg-duration-fast)
       var(--xeg-ease-standard);
     --xeg-transition-interaction-fast:
-      background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out), border-color
-      var(--xeg-duration-fast) var(--xeg-easing-ease-out), color var(--xeg-duration-fast)
-      var(--xeg-easing-ease-out), transform var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+      background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out), border-color var(
+      --xeg-duration-fast
+    ) var(--xeg-easing-ease-out), color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+      transform var(--xeg-duration-fast) var(--xeg-easing-ease-out);
     --xeg-transition-width-normal: width var(--xeg-duration-normal) var(--xeg-ease-standard);
 
     /* Icon Component */
     --xeg-icon-stroke-width: 0.125rem;
     --xeg-icon-size: var(--size-icon-md);
-    --xeg-icon-line-height: 1;
-    --xeg-icon-color: currentColor;
-
-    /* Icon Size Variants */
-    --xeg-icon-size-sm: var(--size-icon-sm);
-    --xeg-icon-size-md: var(--size-icon-md);
-    --xeg-icon-size-lg: var(--size-icon-lg);
-
-    /* Button Size Variants */
-    --xeg-button-size-sm: var(--size-button-sm);
-    --xeg-button-size-md: var(--size-button-md);
-    --xeg-button-size-lg: var(--size-button-lg);
-
-    /* Text Size Variants */
-    --xeg-text-2xs: var(--font-size-2xs);
-    --xeg-text-xs: var(--font-size-xs);
-    --xeg-text-sm: var(--font-size-sm);
-    --xeg-text-base: var(--font-size-base);
-    --xeg-text-md: var(--font-size-md);
-    --xeg-text-lg: var(--font-size-lg);
-    --xeg-text-xl: var(--font-size-xl);
-    --xeg-text-2xl: var(--font-size-2xl);
-    --xeg-text-3xl: var(--font-size-3xl);
 
     /* Spacing Variants */
     --xeg-spacing-xs: var(--space-xs);
@@ -133,10 +74,7 @@
   /* Support for reduced transparency preference */
   @media (prefers-reduced-transparency: reduce) {
     :where(:root, .xeg-theme-scope) {
-      --color-glass-bg: var(--color-bg-primary);
-      --xeg-glass-bg: var(--color-bg-primary);
-      --xeg-surface-glass-bg: var(--color-bg-surface);
-      --xeg-glass-backdrop-filter: none;
+      --xeg-surface-bg: var(--color-bg-primary);
     }
   }
 }
@@ -144,10 +82,10 @@
 @layer xeg.components {
   /* Utility Classes */
 
-  /* Glass utility */
-  .xeg-glassmorphism {
-    background: var(--xeg-glass-bg);
-    border: 0.0625rem solid var(--xeg-glass-border);
+  /* Surface utility - flat panel style */
+  .xeg-surface {
+    background: var(--xeg-surface-bg);
+    border: 0.0625rem solid var(--xeg-surface-border);
     border-radius: var(--xeg-radius-lg);
   }
 

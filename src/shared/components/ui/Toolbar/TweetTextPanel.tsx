@@ -23,8 +23,8 @@ function renderTweetAnchor(
   return (
     <a
       href={token.href}
-      target="_blank"
-      rel="noopener noreferrer"
+      target='_blank'
+      rel='noopener noreferrer'
       class={styles.tweetLink}
       data-kind={kind}
       onClick={(e) => e.stopPropagation()}
@@ -44,45 +44,46 @@ export default function TweetTextPanel(props: TweetTextPanelProps) {
       </div>
       <div
         class={styles.tweetContent}
-        data-gallery-element="tweet-content"
-        data-gallery-scrollable="true"
+        data-gallery-element='tweet-content'
+        data-gallery-scrollable='true'
       >
-        {props.tweetTextHTML ? (
-          /*
+        {props.tweetTextHTML
+          ? (
+            /*
             Security Note: tweetTextHTML is sanitized via @shared/utils/text/html-sanitizer
             before being passed here. It only allows safe tags (a, span, etc.) and attributes.
             Links are checked for safe protocols (http/https) and target="_blank" is secured.
             Double-sanitization here ensures safety even if the prop source changes.
           */
-          <div innerHTML={sanitizeHTML(props.tweetTextHTML)} />
-        ) : (
-          <For each={formatTweetText(props.tweetText ?? '')}>
-            {(token) => (
-              <Switch>
-                <Match when={token.type === 'link' && token}>
-                  {(linkToken) =>
-                    renderTweetAnchor(linkToken, 'url', shortenUrl(linkToken().content, 40))
-                  }
-                </Match>
-                <Match when={token.type === 'mention' && token}>
-                  {(mentionToken) => renderTweetAnchor(mentionToken, 'mention')}
-                </Match>
-                <Match when={token.type === 'hashtag' && token}>
-                  {(hashtagToken) => renderTweetAnchor(hashtagToken, 'hashtag')}
-                </Match>
-                <Match when={token.type === 'cashtag' && token}>
-                  {(cashtagToken) => renderTweetAnchor(cashtagToken, 'cashtag')}
-                </Match>
-                <Match when={token.type === 'break'}>
-                  <br />
-                </Match>
-                <Match when={token.type === 'text' && token}>
-                  {(textToken) => <span>{textToken().content}</span>}
-                </Match>
-              </Switch>
-            )}
-          </For>
-        )}
+            <div innerHTML={sanitizeHTML(props.tweetTextHTML)} />
+          )
+          : (
+            <For each={formatTweetText(props.tweetText ?? '')}>
+              {(token) => (
+                <Switch>
+                  <Match when={token.type === 'link' && token}>
+                    {(linkToken) =>
+                      renderTweetAnchor(linkToken, 'url', shortenUrl(linkToken().content, 40))}
+                  </Match>
+                  <Match when={token.type === 'mention' && token}>
+                    {(mentionToken) => renderTweetAnchor(mentionToken, 'mention')}
+                  </Match>
+                  <Match when={token.type === 'hashtag' && token}>
+                    {(hashtagToken) => renderTweetAnchor(hashtagToken, 'hashtag')}
+                  </Match>
+                  <Match when={token.type === 'cashtag' && token}>
+                    {(cashtagToken) => renderTweetAnchor(cashtagToken, 'cashtag')}
+                  </Match>
+                  <Match when={token.type === 'break'}>
+                    <br />
+                  </Match>
+                  <Match when={token.type === 'text' && token}>
+                    {(textToken) => <span>{textToken().content}</span>}
+                  </Match>
+                </Switch>
+              )}
+            </For>
+          )}
       </div>
     </div>
   );

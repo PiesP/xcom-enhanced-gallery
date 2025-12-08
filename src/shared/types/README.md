@@ -132,14 +132,14 @@ src/shared/types/
 
 ```typescript
 // Recommended: Import from barrel export
-import type { Result, MediaInfo, BaseService } from '@shared/types';
+import type { BaseService, MediaInfo, Result } from '@shared/types';
 
 // When detailed types needed
 import type { MediaExtractionOptions } from '@shared/types/media.types';
 import type { ToolbarState } from '@shared/types/toolbar.types';
 
 // Using Result pattern
-import { success, failure, isSuccess } from '@shared/types';
+import { failure, isSuccess, success } from '@shared/types';
 ```
 
 ### Import Principles

@@ -125,7 +125,7 @@ enableTestMode({ mockServices: true });
 const httpService = createConditionalService(
   'HttpRequestService',
   () => new HttpRequestService(), // Real implementation
-  () => new MockHttpRequestService() // Mock implementation
+  () => new MockHttpRequestService(), // Mock implementation
   // options omitted: auto-detects test mode
 );
 
@@ -134,7 +134,7 @@ const forceRealService = createConditionalService(
   'StorageService',
   () => new PersistentStorage(),
   () => new MockPersistentStorage(),
-  { forceReal: true } // Use real even in test mode
+  { forceReal: true }, // Use real even in test mode
 );
 ```
 
@@ -184,9 +184,9 @@ enableTestMode({
 ```typescript
 // src/shared/testing/test-setup-helpers.ts
 import {
+  clearCurrentTest,
   enableTestMode,
   setCurrentTest,
-  clearCurrentTest,
 } from '@shared/external/test/test-environment-config';
 
 export function beforeEach(testName: string) {
@@ -208,7 +208,7 @@ import { createConditionalService } from '@shared/external/test/test-service-fac
 const storage = createConditionalService(
   'PersistentStorage',
   () => PersistentStorage.getInstance(), // Real
-  () => MockPersistentStorage.getInstance() // Mock
+  () => MockPersistentStorage.getInstance(), // Mock
   // Test mode: mock | Production mode: real
 );
 ```
@@ -217,8 +217,8 @@ const storage = createConditionalService(
 
 ```typescript
 import {
-  createConditionalService,
   assertServiceIsMock,
+  createConditionalService,
 } from '@shared/external/test/test-service-factory';
 
 describe('Mock service test', () => {
@@ -227,7 +227,7 @@ describe('Mock service test', () => {
       'HttpService',
       () => new HttpRequestService(),
       () => new MockHttpRequestService(),
-      { forceMock: true }
+      { forceMock: true },
     );
 
     // Verify: Is mock?

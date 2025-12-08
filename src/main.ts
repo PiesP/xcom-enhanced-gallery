@@ -8,7 +8,6 @@ import type { IGalleryApp } from '@shared/container/app-container';
 import { warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { runAfterWindowLoad } from '@shared/dom/window-load';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error';
-import { cleanupVendors } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
 import { CoreService } from '@shared/services/service-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
@@ -304,10 +303,6 @@ export async function cleanup(): Promise<void> {
 
     await runOptionalCleanup('CoreService cleanup', () => {
       CoreService.getInstance().cleanup();
-    });
-
-    await runOptionalCleanup('Vendor cleanup', () => {
-      cleanupVendors();
     });
 
     await runOptionalCleanup('Global timer cleanup', () => {

@@ -1,0 +1,20 @@
+/**
+ * @fileoverview CSS Layer Order Declaration
+ * @description Establishes explicit cascade layer ordering for XEG styles.
+ *
+ * Layer Priority (lowest to highest specificity):
+ * 1. xeg.tokens   - Design tokens (CSS custom properties)
+ * 2. xeg.base     - Reset and normalization styles
+ * 3. xeg.utilities - Utility classes (flex, spacing, etc.)
+ * 4. xeg.components - Reusable component styles
+ * 5. xeg.features - Feature-specific styles (gallery, settings)
+ * 6. xeg.overrides - Theme and state overrides (highest priority)
+ *
+ * @note This file MUST be imported first in globals.ts
+ *       to ensure correct cascade ordering.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/CSS/@layer
+ */
+
+/* Declare layer order explicitly - order determines cascade priority */
+@layer xeg.tokens, xeg.base, xeg.utilities, xeg.components, xeg.features, xeg.overrides;

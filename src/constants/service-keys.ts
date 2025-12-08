@@ -36,7 +36,6 @@ export const SERVICE_KEYS = {
   // UI Services
   // ========================================
   THEME: 'theme.auto',
-
   // ========================================
   // [RESERVED] Future Extension Keys
   // These keys are defined for future features but not currently in use.

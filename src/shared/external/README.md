@@ -65,28 +65,25 @@ src/shared/external/
 
 ### 🎯 빠른 참조 (3가지 사용 패턴)
 
-#### 패턴 1: Vendor Getter (Solid.js)
+#### 패턴 1: Solid.js API (직접 import)
 
 ```typescript
-// ✅ 배럴 export 사용 (권장)
-import { getSolid, initializeVendors } from '@shared/external/vendors';
+// ✅ 권장: solid-js 직접 import
+import { createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
+import { render } from 'solid-js/web';
+import type { Accessor, JSX } from 'solid-js';
 
-// 초기화
-await initializeVendors();
-
-// Solid.js API 사용
-const { createSignal, createMemo } = getSolid();
 const [count, setCount] = createSignal(0);
 
-// ❌ 금지: 내부 파일 직접 import
-import { getSolidSafe } from '@shared/external/vendors/vendor-api-safe'; // 금지!
+// ✅ 타입 별칭 (선택적)
+import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
 ```
 
 #### 패턴 2: Userscript API (우선순위 순서)
 
 ```typescript
 // 1️⃣ 우선: Service Layer 사용 (권장)
-import { PersistentStorage, NotificationService } from '@shared/services';
+import { NotificationService, PersistentStorage } from '@shared/services';
 
 const storage = PersistentStorage.getInstance();
 await storage.set('user-theme', 'dark');
@@ -95,7 +92,7 @@ const notif = NotificationService.getInstance();
 notif.success('설정 저장됨');
 
 // 2️⃣ 고급/테스트: Getter 사용
-import { getUserscript, detectEnvironment } from '@shared/external/userscript';
+import { detectEnvironment, getUserscript } from '@shared/external/userscript';
 
 const env = detectEnvironment();
 if (env.isGMAvailable) {
@@ -121,7 +118,7 @@ const zipBytes = await createZipBytesFromFileMap(
     'photo2.jpg': buffer2,
     'video.mp4': buffer3,
   },
-  { compressionLevel: 0 } // STORE 방식 (추가 압축 없음)
+  { compressionLevel: 0 }, // STORE 방식 (추가 압축 없음)
 );
 
 // 다운로드
@@ -134,32 +131,27 @@ await downloadService.downloadBlob({
 
 ---
 
-### 1️⃣ Vendor Getter (Solid.js 접근)
+### 1️⃣ Solid.js API (직접 import 권장)
 
 **언제 사용**: Solid.js API가 필요한 컴포넌트/훅에서
 
 **✅ 올바른 사용**:
 
 ```typescript
-// ✅ 배럴 export 경로
-import { getSolid } from '@shared/external/vendors';
+// ✅ solid-js 직접 import (권장)
+import { createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
+import { render } from 'solid-js/web';
+import type { Accessor, JSX } from 'solid-js';
 
-// ✅ getter로 동기 접근
-const { createSignal, createMemo } = getSolid();
-
-// ✅ 초기화 필요 시
-import { initializeVendors } from '@shared/external/vendors';
-await initializeVendors();
+// ✅ 타입 별칭 사용 (선택적, 하위 호환용)
+import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
 ```
 
 **❌ 잘못된 사용**:
 
 ```typescript
-// ❌ 내부 파일 직접 import
-import { StaticVendorManager } from '@shared/external/vendors/vendor-manager-static';
-
-// ❌ Solid 직접 import (금지)
-import { createSignal } from 'solid-js';
+// ❌ 더 이상 지원되지 않음 (v7.0에서 제거됨)
+import { getSolid, initializeVendors } from '@shared/external/vendors';
 ```
 
 **관련 파일**:
@@ -216,11 +208,8 @@ GM_setValue('key', value);       // PersistentStorage 사용
 GM_notification({ text: '...' }); // NotificationService 사용
 GM_download({ ... });            // DownloadService 사용
 
-// ❌ 금지 3: Solid.js 직접 import
-import { createSignal } from 'solid-js'; // getSolid() 사용
-
-// ❌ 금지 4: 상대 경로 import
-import { getSolid } from '@shared/external/vendors'; // @shared/external 사용
+// ❌ 금지 3: 상대 경로 import
+import { x } from '../../shared/external'; // 경로 별칭 사용
 ```
 
 **🔒 Service Layer 매핑** (Phase 309+):
@@ -284,23 +273,21 @@ import { getSolid, initializeVendors } from '@shared/external';
 import { getSolid } from '@shared/external/vendors';
 
 // 서브 배럴
-import { getUserscript, detectEnvironment } from '@shared/external/userscript';
+import { detectEnvironment, getUserscript } from '@shared/external/userscript';
 import { createZipBytesFromFileMap } from '@shared/external/zip';
 
 // 타입 import
-import type { SolidAPI, EnvironmentInfo } from '@shared/external';
+import type { EnvironmentInfo, SolidAPI } from '@shared/external';
 ```
 
 **금지된 경로** ❌:
 
 ```typescript
 // 내부 구현 파일 직접 import (ESLint 자동 감지)
-import { getSolidSafe } from '@shared/external/vendors/vendor-api-safe';
-import { StaticVendorManager } from '@shared/external/vendors/vendor-manager-static';
 import { UserscriptAdapterImpl } from '@shared/external/userscript/adapter';
 
-// Vendor 직접 import
-import { createSignal } from 'solid-js'; // getSolid() 사용
+// GM_* 직접 호출 (금지)
+GM_setValue('key', value); // PersistentStorage 사용
 ```
 
 ### API 계층화 원칙
@@ -312,9 +299,9 @@ import { createSignal } from 'solid-js'; // getSolid() 사용
     └─ PersistentStorage, NotificationService, DownloadService
     └─ 이점: 타입 안전, 에러 처리, 테스트 용이
 
-2️⃣  Vendor Getter (고급/테스트) ⭐⭐
-    └─ getSolid(), getUserscript(), detectEnvironment()
-    └─ 사용처: 특수한 상황, 디버깅, 테스트
+2️⃣  Direct Import / Getter (표준) ⭐⭐
+    └─ solid-js 직접 import, getUserscript(), detectEnvironment()
+    └─ 사용처: 컴포넌트, 훅, 특수 상황
 
 3️⃣  직접 GM 호출 (금지) ⭐
     └─ GM_setValue, GM_download 등
@@ -327,7 +314,7 @@ import { createSignal } from 'solid-js'; // getSolid() 사용
 
 ```typescript
 // ✅ 배럴에서 타입 export
-export type { SolidAPI, EnvironmentInfo } from './vendors';
+export type { EnvironmentInfo, SolidAPI } from './vendors';
 
 // ✅ 사용처에서 type import
 import type { SolidAPI } from '@shared/external/vendors';
@@ -371,7 +358,6 @@ rules: {
 ❌ Direct GM\_\* 호출 (금지) └─ GM_setValue(), GM_notification() 등
 
 ````
-
 ---
 
 ## 📖 API 레퍼런스
@@ -379,33 +365,18 @@ rules: {
 ### `@shared/external/vendors`
 
 ```typescript
-// 초기화
-export async function initializeVendors(): Promise<void>;
+// 타입 별칭 (solid-js 타입의 편의 별칭)
+export type { JSX };
+export type JSXElement = JSX.Element;
+export type VNode = JSX.Element;
+export type ComponentChildren = JSX.Element;
+```
 
-// Solid.js getter
-export function getSolid(): SolidAPI;
-export function getSolidStore(): SolidStoreAPI;
-export function getNativeDownload(): NativeDownloadAPI;
+**참고**: Solid.js 런타임 API는 `solid-js`에서 직접 import하세요:
 
-// 타입
-export type SolidAPI = { ... };
-export type SolidStoreAPI = { ... };
-export type NativeDownloadAPI = { ... };
-
-// 검증/상태
-export function validateVendors(): Record<string, boolean>;
-export function getVendorVersions(): Record<string, string>;
-export function isVendorsInitialized(): boolean;
-export function isVendorInitialized(name: string): boolean;
-export function getVendorStatuses(): Record<string, boolean>;
-export function getVendorInitializationReport(): string;
-
-// 정리/테스트
-export function cleanupVendors(): void;
-export function registerVendorCleanupOnUnload(): void;
-
-// 고급 (테스트/디버깅만)
-export { StaticVendorManager } from './vendor-manager-static';
+```typescript
+import { createSignal, createEffect, createMemo, onCleanup } from 'solid-js';
+import { render } from 'solid-js/web';
 ````
 
 ### `@shared/external/userscript`
@@ -447,7 +418,7 @@ export interface EnvironmentInfo {
 // ZIP 생성
 export async function createZipBytesFromFileMap(
   files: Record<string, Uint8Array>,
-  config: ZipCreationConfig
+  config: ZipCreationConfig,
 ): Promise<Uint8Array>;
 
 // 타입
@@ -480,13 +451,14 @@ export interface ZipCreationConfig {
 
 ## 🎯 최적화 이력
 
-| Phase     | 변경 사항                         | 상태 |
-| --------- | --------------------------------- | ---- |
-| 309+      | Service Layer 패턴 도입           | ✅   |
-| 318.1     | GM_xmlHttpRequest 제거 (MV3 호환) | ✅   |
-| Phase 370 | 배럴 export 정책 명확화           | ✅   |
-| Phase 373 | GM_xmlhttpRequest 복원            | ✅   |
+| Phase     | 변경 사항                          | 상태 |
+| --------- | ---------------------------------- | ---- |
+| 309+      | Service Layer 패턴 도입            | ✅   |
+| 318.1     | GM_xmlHttpRequest 제거 (MV3 호환)  | ✅   |
+| Phase 370 | 배럴 export 정책 명확화            | ✅   |
+| Phase 373 | GM_xmlhttpRequest 복원             | ✅   |
+| v7.0.0    | Solid.js 직접 import 권장으로 전환 | ✅   |
 
 ---
 
-**마지막 업데이트**: 2025-11-06 (Phase 370+)
+**마지막 업데이트**: 2025-12-08 (v7.0.0)

@@ -107,7 +107,7 @@ export function resetAllServiceInstances(): void {
  * This ensures lazy initialization and allows for test mocking.
  */
 export {
-  getThemeServiceInstance as themeService,
   getLanguageServiceInstance as languageService,
   getMediaServiceInstance as mediaService,
+  getThemeServiceInstance as themeService,
 };

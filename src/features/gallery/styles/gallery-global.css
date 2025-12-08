@@ -9,36 +9,25 @@
  */
 
 @layer xeg.features {
-  /* ====== Glassmorphism Surfaces ====== */
-  :where(.xeg-glass-surface, .glass-surface) {
-    background: var(--xeg-surface-glass-bg);
-    border: var(--border-width-thin) solid var(--xeg-surface-glass-border);
+  /* ====== Surface Styles ====== */
+  :where(.xeg-surface, .xeg-glass-surface, .glass-surface) {
+    background: var(--xeg-surface-bg);
+    border: var(--border-width-thin) solid var(--xeg-surface-border);
     border-radius: var(--xeg-radius-2xl);
     isolation: isolate;
     transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
   }
 
-  :where(.xeg-glass-surface, .glass-surface):hover {
-    background: var(--xeg-surface-glass-bg-hover, var(--xeg-surface-glass-bg));
+  :where(.xeg-surface, .xeg-glass-surface, .glass-surface):hover {
+    background: var(--xeg-surface-bg-hover, var(--xeg-surface-bg));
   }
 
-  :where(.xeg-glass-surface-light, .glass-surface-light) {
-    background: var(--xeg-surface-glass-bg-light, var(--xeg-surface-glass-bg));
-    color: var(--xeg-surface-glass-text-light, var(--color-text-primary));
-    border: var(--border-width-thin) solid
-      var(--xeg-surface-glass-border-light, var(--xeg-surface-glass-border));
-    border-radius: var(--xeg-radius-2xl);
-    isolation: isolate;
-    transition: var(--xeg-transition-surface-normal);
-  }
-
-  :where(.xeg-glass-surface-dark, .glass-surface-dark) {
-    background: var(--xeg-surface-glass-bg-dark, var(--xeg-surface-glass-bg));
-    color: var(--xeg-surface-glass-text-dark, var(--color-text-inverse));
-    border: var(--border-width-thin) solid
-      var(--xeg-surface-glass-border-dark, var(--xeg-surface-glass-border));
-    border-radius: var(--xeg-radius-2xl);
-    transition: var(--xeg-transition-surface-normal);
+  /* Gallery renderer wrapper - Ensure block display */
+  .xeg-gallery-renderer[data-renderer='gallery'] {
+    display: block;
+    width: 0;
+    height: 0;
+    overflow: visible;
   }
 
   .xeg-gallery-overlay,
@@ -56,7 +45,7 @@
   .xeg-gallery-overlay {
     position: fixed;
     inset: 0;
-    z-index: var(--xeg-z-gallery);
+    z-index: var(--xeg-z-gallery, 10000);
     background: var(--xeg-gallery-bg);
     opacity: 1;
     transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
@@ -91,7 +80,9 @@
     justify-content: space-between;
     padding: 0 var(--space-lg);
     color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
-    transition: var(--xeg-transition-surface-normal), var(--xeg-transition-elevation-normal);
+    transition:
+      var(--xeg-transition-surface-normal),
+      var(--xeg-transition-elevation-normal);
   }
 
   .xeg-toolbar-section-left,
@@ -212,7 +203,7 @@
     color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
     font-size: var(--font-size-xl);
     cursor: pointer;
-    z-index: var(--xeg-z-gallery-overlay);
+    z-index: var(--xeg-z-gallery-overlay, 10008);
     transition:
       var(--xeg-transition-surface-normal),
       transform var(--xeg-duration-normal) var(--xeg-ease-standard);
@@ -251,7 +242,7 @@
     left: 50%;
     transform: translateX(-50%);
     max-width: calc(100vw - 2.5rem);
-    z-index: var(--xeg-z-gallery-overlay);
+    z-index: var(--xeg-z-gallery-overlay, 10008);
   }
 
   .xeg-thumbnails-container {

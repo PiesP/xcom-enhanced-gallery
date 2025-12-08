@@ -115,8 +115,9 @@ function listFromDocument(options?: CookieListOptions): CookieRecord[] {
     return [];
   }
 
-  const domain =
-    typeof document.location?.hostname === 'string' ? document.location.hostname : undefined;
+  const domain = typeof document.location?.hostname === 'string'
+    ? document.location.hostname
+    : undefined;
 
   const records = document.cookie
     .split(';')

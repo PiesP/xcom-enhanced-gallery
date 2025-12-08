@@ -36,7 +36,7 @@ import type { ImageFitMode } from '@shared/types';
 import { safeEventPrevent } from '@shared/utils/events/utils';
 import { computePreloadIndices } from '@shared/utils/performance';
 import { cx } from '@shared/utils/text/formatting';
-import { createEffect, createMemo, createSignal, For, type JSX } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, type JSX, onCleanup } from 'solid-js';
 import { useVerticalGallery } from './hooks/useVerticalGallery';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
@@ -68,7 +68,7 @@ function VerticalGalleryViewCore({
   const mediaItems = createMemo(() => galleryState.value.mediaItems);
   const currentIndex = createMemo(() => galleryState.value.currentIndex);
   const isDownloading = createMemo(() =>
-    isDownloadUiBusy({ downloadProcessing: downloadState.value.isProcessing }),
+    isDownloadUiBusy({ downloadProcessing: downloadState.value.isProcessing })
   );
 
   // Element refs
@@ -194,23 +194,35 @@ function VerticalGalleryViewCore({
    * Handle wheel events on the gallery container.
    * Redirects scroll to the items container when wheel event occurs outside of it,
    * preventing the underlying Twitter page from scrolling.
+   *
+   * Note: We use createEffect with addEventListener instead of onWheel to control
+   * the passive option and avoid Chrome's passive event listener warnings.
    */
-  const handleContainerWheel = (event: WheelEvent) => {
-    const itemsContainer = itemsContainerEl();
-    if (!itemsContainer) return;
+  createEffect(() => {
+    const container = containerEl();
+    if (!container) return;
 
-    // Check if the wheel event target is inside the items container
-    const target = event.target as HTMLElement;
-    if (itemsContainer.contains(target)) {
-      // Let the items container handle its own scroll naturally
-      return;
-    }
+    const handleContainerWheel = (event: WheelEvent): void => {
+      const itemsContainer = itemsContainerEl();
+      if (!itemsContainer) return;
 
-    // For events outside the items container, redirect scroll to items container
-    event.preventDefault();
-    event.stopPropagation();
-    itemsContainer.scrollTop += event.deltaY;
-  };
+      // Check if the wheel event target is inside the items container
+      const target = event.target as HTMLElement;
+      if (itemsContainer.contains(target)) {
+        // Let the items container handle its own scroll naturally
+        return;
+      }
+
+      // For events outside the items container, redirect scroll to items container
+      event.preventDefault();
+      event.stopPropagation();
+      itemsContainer.scrollTop += event.deltaY;
+    };
+
+    // Use passive: false only when we need to call preventDefault()
+    container.addEventListener('wheel', handleContainerWheel, { passive: false });
+    onCleanup(() => container.removeEventListener('wheel', handleContainerWheel));
+  });
 
   // Empty state
   if (!isVisible() || mediaItems().length === 0) {
@@ -238,15 +250,14 @@ function VerticalGalleryViewCore({
         className,
       )}
       onClick={handleBackgroundClick}
-      onWheel={handleContainerWheel}
-      data-xeg-gallery="true"
-      data-xeg-role="gallery"
+      data-xeg-gallery='true'
+      data-xeg-role='gallery'
     >
-      <div class={styles.toolbarHoverZone} data-role="toolbar-hover-zone" />
+      <div class={styles.toolbarHoverZone} data-role='toolbar-hover-zone' />
 
       <div
         class={styles.toolbarWrapper}
-        data-role="toolbar"
+        data-role='toolbar'
         ref={(el) => setToolbarWrapperEl(el ?? null)}
       >
         <Toolbar
@@ -283,8 +294,8 @@ function VerticalGalleryViewCore({
 
       <div
         class={styles.itemsContainer}
-        data-xeg-role="items-container"
-        data-xeg-role-compat="items-list"
+        data-xeg-role='items-container'
+        data-xeg-role-compat='items-list'
         ref={(el) => setItemsContainerEl(el ?? null)}
       >
         <For each={mediaItems()}>
@@ -306,17 +317,16 @@ function VerticalGalleryViewCore({
                   actualIndex === currentIndex() && styles.itemActive,
                 )}
                 data-index={actualIndex}
-                data-xeg-role="gallery-item"
+                data-xeg-role='gallery-item'
                 registerContainer={(element: HTMLElement | null) =>
-                  focus.registerItem(actualIndex, element)
-                }
+                  focus.registerItem(actualIndex, element)}
                 {...(onDownloadCurrent ? { onDownload: handleDownloadCurrent } : {})}
                 onFocus={() => focus.handleItemFocus(actualIndex)}
               />
             );
           }}
         </For>
-        <div class={styles.scrollSpacer} aria-hidden="true" data-xeg-role="scroll-spacer" />
+        <div class={styles.scrollSpacer} aria-hidden='true' data-xeg-role='scroll-spacer' />
       </div>
     </div>
   );

@@ -57,8 +57,7 @@ export function detectDownloadCapability(): DownloadCapability {
 
   const hasFetch = typeof fetch === 'function';
 
-  const hasBlob =
-    typeof Blob !== 'undefined' &&
+  const hasBlob = typeof Blob !== 'undefined' &&
     typeof URL !== 'undefined' &&
     typeof URL.createObjectURL === 'function';
 

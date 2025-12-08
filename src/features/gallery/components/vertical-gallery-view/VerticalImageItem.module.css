@@ -69,7 +69,7 @@
 }
 
 /* Original fit mode: Remove max-width constraint to allow full size */
-.container[data-fit-mode="original"] {
+.container[data-fit-mode='original'] {
   max-width: none;
   /* Prevent flex item shrinking and force full content width */
   flex-shrink: 0;
@@ -81,7 +81,7 @@
 .container:hover {
   transform: var(--xeg-hover-lift);
   background: var(--xeg-color-surface-elevated);
-  border-color: var(--xeg-glass-border-medium);
+  border-color: var(--xeg-border-emphasis);
 }
 
 /* Focus state changes border color only */
@@ -91,7 +91,7 @@
 
 /* Active state */
 .container.active {
-  border-color: var(--xeg-glass-border-strong, var(--xeg-color-border-strong));
+  border-color: var(--xeg-border-emphasis, var(--xeg-color-border-strong));
   transition: var(--xeg-transition-interaction-fast);
 }
 
@@ -126,7 +126,7 @@
   max-width: none;
 }
 
-.container[data-media-loaded="false"] .imageWrapper {
+.container[data-media-loaded='false'] .imageWrapper {
   min-height: var(--xeg-spacing-3xl, 3rem);
   /* CLS: Reserve default aspect ratio for initial layout stability */
   aspect-ratio: var(--xeg-aspect-default, 4 / 3);
@@ -313,19 +313,19 @@
 /* overflow/scrollbar 스타일 제거 (일관성 적용) */
 
 /* Base style - lower specificity */
-.container[data-fit-mode="original"] .image,
-.container[data-fit-mode="original"] .video {
+.container[data-fit-mode='original'] .image,
+.container[data-fit-mode='original'] .video {
   /* Phase 326: grab cursor 제거 (스크롤 불필요) */
   cursor: pointer;
 }
 
-.container[data-fit-mode="original"] .image:active,
-.container[data-fit-mode="original"] .video:active {
+.container[data-fit-mode='original'] .image:active,
+.container[data-fit-mode='original'] .video:active {
   cursor: pointer;
 }
 
 /* Loading state - higher specificity */
-.container[data-media-loaded="false"][data-fit-mode="original"] {
+.container[data-media-loaded='false'][data-fit-mode='original'] {
   inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
   max-inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
   max-block-size: min(
@@ -334,8 +334,8 @@
   );
 }
 
-.container[data-media-loaded="false"][data-fit-mode="original"] .image,
-.container[data-media-loaded="false"][data-fit-mode="original"] .video {
+.container[data-media-loaded='false'][data-fit-mode='original'] .image,
+.container[data-media-loaded='false'][data-fit-mode='original'] .video {
   inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
   max-inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
   max-block-size: min(
@@ -344,8 +344,8 @@
   );
 }
 
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitHeight"],
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitContainer"] {
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitHeight'],
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitContainer'] {
   --xeg-gallery-fit-height-target: min(
     var(--xeg-gallery-item-intrinsic-height, var(--xeg-spacing-5xl)),
     var(--xeg-viewport-height-constrained, 90vh)
@@ -362,13 +362,13 @@
   );
 }
 
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitHeight"]
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitHeight']
   .image,
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitHeight"]
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitHeight']
   .video,
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitContainer"]
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitContainer']
   .image,
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitContainer"]
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitContainer']
   .video {
   max-block-size: var(--xeg-gallery-fit-height-target);
   max-inline-size: min(

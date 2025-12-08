@@ -1,34 +1,21 @@
 /**
  * @fileoverview Runtime Environment Initialization - Phase 314-5
- * @description Vendor library initialization for bootstrap pipeline
+ * @description Environment verification for bootstrap pipeline
  * @module bootstrap/environment
  */
 
-import { reportBootstrapError } from '@bootstrap/types';
 import { logger } from '@shared/logging';
 
 /**
  * Runtime environment initialization (Phase 314-5, Phase 343 improvements)
- * - Initialize vendor libraries (Solid.js, Solid Store, etc.)
+ * - Verify Solid.js availability (bundled via direct imports)
  *
  * Phase 343: Standardized error handling (Critical system)
- *
- * @throws {Error} On vendor initialization failure (Critical error)
+ * Phase 7.0: Removed deprecated initializeVendors() - Solid.js uses direct imports
  */
 export async function initializeEnvironment(): Promise<void> {
-  try {
-    const { initializeVendors } = await import('@shared/external/vendors');
-    await initializeVendors();
-
-    if (!import.meta.env.PROD) {
-      logger.debug('[environment] ✅ Vendors initialized');
-    }
-  } catch (error) {
-    // Phase 343: Standardized error handling (Critical - re-throw error)
-    reportBootstrapError(error, {
-      context: 'environment',
-      severity: 'critical',
-      logger,
-    });
+  // Solid.js is bundled via direct imports, no initialization needed
+  if (!import.meta.env.PROD) {
+    logger.debug('[environment] ✅ Environment ready (Solid.js bundled)');
   }
 }

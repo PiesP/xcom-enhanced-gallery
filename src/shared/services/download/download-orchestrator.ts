@@ -16,9 +16,9 @@
 
 import { logger } from '@shared/logging';
 import {
-  type DownloadCapability,
   detectDownloadCapability,
   downloadBlobWithAnchor,
+  type DownloadCapability,
   type GMDownloadFunction,
 } from '@shared/services/download/fallback-download';
 import { downloadSingleFile } from '@shared/services/download/single-download';

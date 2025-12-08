@@ -1,0 +1,87 @@
+{
+  "$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
+  "unstable": ["sloppy-imports"],
+  "compilerOptions": {
+    "lib": ["esnext", "dom", "dom.iterable", "deno.ns"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "solid-js",
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "types": ["./src/types/env.d.ts"]
+  },
+  "imports": {
+    "solid-js": "npm:solid-js@^1.9.0",
+    "solid-js/": "npm:solid-js@^1.9.0/",
+    "vite": "npm:vite@^6.0.0",
+    "vite-plugin-solid": "npm:vite-plugin-solid@^2.11.0",
+    "@/": "./src/",
+    "@bootstrap/": "./src/bootstrap/",
+    "@constants": "./src/constants/index.ts",
+    "@constants/": "./src/constants/",
+    "@features/": "./src/features/",
+    "@shared/": "./src/shared/",
+    "@styles/": "./src/styles/",
+    "@types/": "./src/types/"
+  },
+  "tasks": {
+    "build": "deno run -A scripts/build.ts",
+    "build:dev": "deno run -A scripts/build.ts --dev",
+    "build:fast": "deno run -A scripts/build.ts --skip-checks",
+    "build:dev:fast": "deno run -A scripts/build.ts --dev --skip-checks",
+    "check": "deno run -A npm:typescript/tsc --noEmit --project tsconfig.build.json",
+    "lint": "deno lint",
+    "fmt": "deno fmt",
+    "fmt:check": "deno fmt --check",
+    "quality": "deno task check && deno task lint && deno task fmt:check"
+  },
+  "lint": {
+    "include": ["src/"],
+    "exclude": ["node_modules", "dist", "build", "coverage", ".stryker-tmp", "scripts/"],
+    "rules": {
+      "tags": ["recommended"],
+      "include": [
+        "ban-untagged-todo",
+        "no-const-assign",
+        "no-eval",
+        "no-external-import",
+        "no-sync-fn-in-async-fn",
+        "no-throw-literal",
+        "prefer-const"
+      ],
+      "exclude": [
+        "no-explicit-any",
+        "require-await",
+        "no-sloppy-imports",
+        "prefer-ascii",
+        "no-process-global",
+        "no-window",
+        "no-window-prefix",
+        "no-await-in-loop",
+        "camelcase",
+        "eqeqeq",
+        "explicit-function-return-type",
+        "default-param-last",
+        "no-control-regex",
+        "valid-typeof"
+      ]
+    }
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": true,
+    "proseWrap": "preserve",
+    "include": ["src/", "scripts/"],
+    "exclude": ["node_modules", "dist", "build", "coverage", ".stryker-tmp"]
+  },
+  "exclude": ["node_modules", "dist", "build", "coverage", ".stryker-tmp"],
+  "nodeModulesDir": "auto"
+}

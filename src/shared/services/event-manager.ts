@@ -9,8 +9,8 @@ import { logger } from '@shared/logging';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
 import {
-  getEventListenerStatus,
   addListener as registerManagedListener,
+  getEventListenerStatus,
   removeEventListenerManaged,
   removeEventListenersByContext,
 } from '@shared/utils/events/core/listener-manager';

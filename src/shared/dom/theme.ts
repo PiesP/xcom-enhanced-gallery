@@ -39,8 +39,8 @@ export function syncThemeAttributes(
     document.documentElement?.setAttribute(THEME_DOM_ATTRIBUTE, theme);
   }
 
-  const targets: Iterable<Element> | ArrayLike<Element> =
-    scopes ?? document.querySelectorAll('.xeg-theme-scope');
+  const targets: Iterable<Element> | ArrayLike<Element> = scopes ??
+    document.querySelectorAll('.xeg-theme-scope');
 
   for (const target of Array.from(targets)) {
     if (target instanceof HTMLElement) {

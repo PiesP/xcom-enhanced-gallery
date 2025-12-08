@@ -49,6 +49,10 @@
     /* Border Color Tokens - xeg prefix for consistency */
     --xeg-color-border-primary: var(--color-border-default);
     --xeg-color-border-hover: var(--color-border-hover);
+    --xeg-color-border-strong: var(--color-border-emphasis);
+
+    /* Glass Border Variants - Semantic Aliases */
+    --xeg-glass-border-strong: var(--color-border-emphasis);
 
     /* Button Tokens - Semantic Roles */
     --xeg-button-bg: var(--color-bg-surface);
@@ -142,42 +146,19 @@
     /* Background color aliases for components */
     --xeg-color-bg-primary: var(--color-bg-primary);
 
-    /* Overlay Colors - Semantic Roles (oklch with opacity tokens) */
-    --color-overlay-light: var(--color-gray-100);
+    /* Overlay Colors - Semantic Roles */
     --color-overlay-medium: var(--color-gray-300);
-    --color-overlay-strong: var(--color-gray-500);
     --color-overlay-backdrop: var(--color-gray-900);
-    --color-overlay-light-bg: var(--color-gray-50);
-    --color-overlay-dark-bg: var(--color-gray-900);
-    --color-overlay-button-light: var(--color-gray-200);
-    --color-overlay-button-light-hover: var(--color-gray-300);
 
-    /* Overlay Color Tokens - xeg prefix aliases (only used values) */
+    /* Overlay Color Tokens - xeg prefix aliases */
     --xeg-color-overlay-medium: var(--color-overlay-medium);
-    --xeg-color-overlay-strong: var(--color-overlay-strong);
-
-    /* Legacy naming: glass tokens now map to flat surfaces */
-    --color-glass-bg: var(--color-bg-surface);
-    --color-glass-border: var(--color-border-default);
-
-    /* Spacing - Semantic Roles */
-    /* Removed: --spacing-component-padding, --spacing-item-gap (use --space-md and --space-sm directly) */
-    --spacing-component-margin: var(--space-sm);
-    --spacing-section-gap: var(--space-lg);
 
     /* Component Sizing - Semantic Roles (em: relative to font-size) */
-    --size-button-height: 2.5em; /* 40px @ 16px */
-    --size-button-sm: 2em; /* 32px @ 16px */
     --size-button-md: 2.5em; /* 40px @ 16px */
-    --size-button-lg: 3em; /* 48px @ 16px */
-    --size-button-touch: 2.75em; /* 44px @ 16px, Touch-friendly button size */
-    --size-input-height: 2.5em; /* 40px @ 16px */
-
-    /* Button Size Tokens - xeg prefix for consistency (only used values) */
-    --xeg-size-button-md: var(--size-button-md);
-    --size-icon-sm: 1em; /* 16px @ 16px */
     --size-icon-md: 1.25em; /* 20px @ 16px */
-    --size-icon-lg: 1.5em; /* 24px @ 16px */
+
+    /* Button Size Tokens - xeg prefix for consistency */
+    --xeg-size-button-md: var(--size-button-md);
 
     /* Animation - Semantic Roles */
     --transition-fast: var(--duration-fast) cubic-bezier(0.4, 0, 0.2, 1);
@@ -186,6 +167,8 @@
 
     /* Shadows - removed for flat design */
     /* NOTE: All shadow tokens set to 'none' for flat design consistency */
+    --shadow-sm: none;
+    --shadow-md: none;
     --shadow-gallery-image: none;
     --shadow-gallery-counter: none;
     --shadow-gallery-nav: none;
@@ -193,8 +176,11 @@
     --shadow-thumbnail: none;
     --shadow-thumbnail-hover: none;
 
-    /* Legacy Shadow Tokens - set to none for flat design */
-    /* NOTE: Maintained for backwards compatibility but all resolve to 'none' */
+    /* Shadow Tokens - xeg prefix aliases (flat design: all none) */
+    --xeg-shadow-xs: none;
+    --xeg-shadow-sm: none;
+    --xeg-shadow-md: none;
+    --xeg-shadow-lg: none;
 
     /* Focus indicator tokens */
     --xeg-focus-indicator-color: var(--xeg-color-border-primary);
@@ -217,38 +203,46 @@
     /* Common transition helpers */
     --xeg-transition-opacity: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 
-    /* Surface Glass - Legacy naming preserved for flat panels */
-    --xeg-surface-glass-bg: var(--color-glass-bg);
-    --xeg-surface-glass-border: var(--color-glass-border);
-    --xeg-surface-glass-shadow: none;
-    --xeg-surface-glass-blur: none;
+    /* Surface Tokens - Flat panel style */
+    --xeg-surface-bg: var(--color-bg-surface);
+    --xeg-surface-border: var(--color-border-default);
+    --xeg-surface-bg-hover: var(--color-bg-secondary);
 
     /* Elevated surfaces & skeletons */
     --xeg-color-surface-elevated: var(--color-bg-elevated);
     --xeg-skeleton-bg: var(--color-bg-secondary);
-    --xeg-glass-border-medium: var(--xeg-media-glass-border);
-    --xeg-glass-shadow-medium: var(--xeg-media-glass-shadow);
+
+    /* Border emphasis aliases */
+    --xeg-border-emphasis: var(--color-border-emphasis);
 
     /* Z-Index Management - anchored above twitter.com UI */
-    --xeg-z-stack-base: 10000;
-    --xeg-z-gallery: 10000;
-    --xeg-z-gallery-overlay: 10008;
-    --xeg-z-gallery-toolbar: 10012;
-    --xeg-z-toolbar-hover-zone: 10018;
-    --xeg-z-toolbar: 10020;
-    --xeg-z-toolbar-panel: 10022;
-    --xeg-z-toolbar-panel-active: 10024;
-    --xeg-z-overlay: 10030;
-    --xeg-z-modal-backdrop: 10040;
-    --xeg-z-modal: 10045;
-    --xeg-z-modal-foreground: 10048;
-    --xeg-z-tooltip: 10060;
+    --xeg-z-stack-base: 2147483600;
+    --xeg-z-gallery: 2147483600;
+    --xeg-z-gallery-overlay: 2147483608;
+    --xeg-z-gallery-toolbar: 2147483612;
+    --xeg-z-toolbar-hover-zone: 2147483618;
+    --xeg-z-toolbar: 2147483620;
+    --xeg-z-toolbar-panel: 2147483622;
+    --xeg-z-toolbar-panel-active: 2147483624;
+    --xeg-z-overlay: 2147483630;
+    --xeg-z-modal-backdrop: 2147483640;
+    --xeg-z-modal: 2147483645;
+    --xeg-z-modal-foreground: 2147483646;
+    --xeg-z-tooltip: 2147483647;
 
     /* Layer Management - Semantic Roles (using z-index directly) */
     --xeg-layer-root: var(--xeg-z-gallery);
 
     /* Animation Easing */
     --xeg-easing-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --xeg-easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --xeg-easing-linear: linear;
+
+    /* Line Height - Semantic Alias */
+    --xeg-line-height-normal: var(--line-height-normal, 1.5);
+
+    /* Duration - Default value for animation utilities */
+    --xeg-duration: var(--duration-normal);
 
     /* Interaction State Tokens */
     --xeg-button-lift: -0.0625rem; /* -1px */
@@ -267,7 +261,7 @@
   }
 
   /* Theme Support - Dark/Light Mode */
-  :where(:root, .xeg-theme-scope)[data-theme="light"] {
+  :where(:root, .xeg-theme-scope)[data-theme='light'] {
     --color-bg-primary: var(--color-base-white);
     --color-text-primary: var(--color-base-black);
     --color-text-secondary: var(--color-gray-600); /* Phase: design-consistency */
@@ -293,7 +287,7 @@
     --xeg-color-background: oklch(95% 0 0deg);
   }
 
-  :where(:root, .xeg-theme-scope)[data-theme="dark"] {
+  :where(:root, .xeg-theme-scope)[data-theme='dark'] {
     --color-bg-primary: var(--color-gray-900);
     --color-bg-surface: var(--color-gray-900);
     --color-bg-elevated: var(--color-gray-700);
@@ -375,7 +369,7 @@
   }
 
   @media (prefers-color-scheme: dark) {
-    :where(:root, .xeg-theme-scope):not([data-theme="light"]) {
+    :where(:root, .xeg-theme-scope):not([data-theme='light']) {
       --color-bg-primary: var(--color-gray-900);
       --color-bg-surface: var(--color-gray-900);
       --color-bg-elevated: var(--color-gray-700);
@@ -455,7 +449,7 @@
   }
 
   @media (prefers-color-scheme: light) {
-    :where(:root, .xeg-theme-scope):not([data-theme="dark"]) {
+    :where(:root, .xeg-theme-scope):not([data-theme='dark']) {
       --color-bg-primary: var(--color-base-white);
       --color-text-primary: var(--color-base-black);
       --color-text-secondary: var(--color-gray-600);
@@ -543,9 +537,6 @@
     --xeg-text-button-navigation: var(--xeg-color-text-primary);
     --xeg-shadow-toolbar: var(--xeg-shadow-md);
     --xeg-toolbar-shadow: var(--xeg-shadow-toolbar);
-    --xeg-media-glass-border: var(--color-glass-border);
-    --xeg-media-glass-shadow: none;
-    --xeg-media-glass-blur: none;
     --xeg-toolbar-wrapper-gradient-start: var(--xeg-bg-toolbar);
     --xeg-toolbar-wrapper-gradient-mid: color-mix(
       in oklab,
@@ -556,7 +547,7 @@
     --xeg-toolbar-wrapper-border: none;
     --xeg-toolbar-wrapper-radius: 0;
     --xeg-toolbar-wrapper-margin: 0;
-    --xeg-toolbar-hover-zone-bg: var(--hover-zone-bg, transparent);
+    --xeg-toolbar-hover-zone-bg: transparent;
     /* Neutral color aliases */
     --xeg-neutral-100: var(--xeg-color-neutral-100);
     --xeg-neutral-200: var(--xeg-color-neutral-200);
@@ -572,31 +563,28 @@
     --xeg-modal-border-light: var(--color-border-default);
     --xeg-modal-bg: var(--xeg-modal-bg-light);
     --xeg-modal-border: var(--xeg-modal-border-light);
-  } /* ===== 유틸리티 클래스 ===== */
-
-  /* Theme Overrides - Glass System 변형 (라이트 모드) */
-  :where(:root, .xeg-theme-scope)[data-theme="light"] {
-    --xeg-surface-glass-bg: var(--color-bg-surface);
-    --xeg-surface-glass-border: var(--color-border-default);
-    --xeg-surface-glass-shadow: none;
-    --xeg-surface-glass-blur: none;
   }
 
-  /* Theme Overrides - Glass System 변형 (다크 모드) */
-  :where(:root, .xeg-theme-scope)[data-theme="dark"] {
-    --xeg-surface-glass-bg: var(--color-gray-900);
-    --xeg-surface-glass-border: var(--color-gray-600);
-    --xeg-surface-glass-shadow: none;
-    --xeg-surface-glass-blur: none;
+  /* Theme Overrides - Surface (라이트 모드) */
+  :where(:root, .xeg-theme-scope)[data-theme='light'] {
+    --xeg-surface-bg: var(--color-bg-surface);
+    --xeg-surface-border: var(--color-border-default);
+    --xeg-surface-bg-hover: var(--color-bg-secondary);
+  }
+
+  /* Theme Overrides - Surface (다크 모드) */
+  :where(:root, .xeg-theme-scope)[data-theme='dark'] {
+    --xeg-surface-bg: var(--color-gray-900);
+    --xeg-surface-border: var(--color-gray-600);
+    --xeg-surface-bg-hover: var(--color-gray-800);
   }
 
   /* System Preference Fallback - 다크 모드 시스템 설정 */
   @media (prefers-color-scheme: dark) {
-    :where(:root, .xeg-theme-scope):not([data-theme="light"]) {
-      --xeg-surface-glass-bg: var(--color-gray-900);
-      --xeg-surface-glass-border: var(--color-gray-600);
-      --xeg-surface-glass-shadow: none;
-      --xeg-surface-glass-blur: none;
+    :where(:root, .xeg-theme-scope):not([data-theme='light']) {
+      --xeg-surface-bg: var(--color-gray-900);
+      --xeg-surface-border: var(--color-gray-600);
+      --xeg-surface-bg-hover: var(--color-gray-800);
     }
   }
 }

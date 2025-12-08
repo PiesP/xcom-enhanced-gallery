@@ -192,8 +192,8 @@ export function recordNavigation(targetIndex: number, source: NavigationSource):
   const currentSource = navigationSignals.lastSource.value;
 
   // Detect duplicate navigation: same index, both manual sources
-  const isDuplicate =
-    targetIndex === currentIndex && isManualSource(source) && isManualSource(currentSource);
+  const isDuplicate = targetIndex === currentIndex && isManualSource(source) &&
+    isManualSource(currentSource);
 
   if (isDuplicate) {
     // Update timestamp only

@@ -208,15 +208,15 @@ export interface MediaExtractionResult {
   metadata?:
     | ExtractionMetadata
     | {
-        extractionMethod?: string;
-        extractionTime?: number;
-        source?: string;
-        extractionId?: string;
-        extractedAt?: number;
-        sourceType?: string;
-        error?: string;
-        [key: string]: unknown;
-      };
+      extractionMethod?: string;
+      extractionTime?: number;
+      source?: string;
+      extractionId?: string;
+      extractedAt?: number;
+      sourceType?: string;
+      error?: string;
+      [key: string]: unknown;
+    };
 }
 
 // ExtractionErrorCode was removed in Phase 353

@@ -40,8 +40,7 @@ export function handleKeyboardEvent(
     // When gallery is open, prevent default scroll on navigation keys to avoid conflicts
     if (checkGalleryOpen()) {
       const key = event.key;
-      const isNavKey =
-        key === 'Home' ||
+      const isNavKey = key === 'Home' ||
         key === 'End' ||
         key === 'PageDown' ||
         key === 'PageUp' ||
@@ -51,8 +50,7 @@ export function handleKeyboardEvent(
         key === 'Space';
 
       // Video control keys: Space(play/pause), ArrowUp/Down(volume), M/m(mute)
-      const isVideoKey =
-        key === ' ' ||
+      const isVideoKey = key === ' ' ||
         key === 'Space' ||
         key === 'ArrowUp' ||
         key === 'ArrowDown' ||

@@ -31,8 +31,9 @@ export function useGalleryItemScroll(
   totalItems: MaybeAccessor<number>,
   options: UseGalleryItemScrollOptions = {},
 ): UseGalleryItemScrollReturn {
-  const containerAccessor =
-    typeof containerRef === 'function' ? containerRef : () => containerRef.current;
+  const containerAccessor = typeof containerRef === 'function'
+    ? containerRef
+    : () => containerRef.current;
   const enabled = toAccessor(options.enabled ?? true);
   const behavior = toAccessor(options.behavior ?? 'auto');
   const block = toAccessor(options.block ?? 'start');

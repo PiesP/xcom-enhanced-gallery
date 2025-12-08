@@ -4,7 +4,7 @@
  */
 
 import { CSS } from '@constants/css';
-import { SELECTORS } from '@constants/selectors';
+import { SELECTORS, STABLE_SELECTORS } from '@constants/selectors';
 import { isVideoControlElement } from '@shared/dom/utils';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import {
@@ -22,6 +22,9 @@ const MEDIA_SELECTORS = {
   VIDEO_PLAYER: SELECTORS.VIDEO_PLAYER,
   MEDIA_LINK: SELECTORS.STATUS_LINK,
 } as const;
+
+/** Combined selector for robust media container detection */
+const MEDIA_CONTAINER_SELECTOR = STABLE_SELECTORS.MEDIA_CONTAINERS.join(', ');
 
 /** Interactive elements that should block gallery trigger */
 const INTERACTIVE_SELECTOR = [
@@ -67,11 +70,10 @@ export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   // Interactive elements (buttons, links, etc.)
   const interactive = target.closest(INTERACTIVE_SELECTOR);
   if (interactive) {
-    // Exception: Media links (links containing media)
-    const isMediaLink =
-      interactive.matches(MEDIA_SELECTORS.MEDIA_LINK) ||
-      interactive.querySelector(MEDIA_SELECTORS.TWEET_PHOTO) !== null ||
-      interactive.querySelector(MEDIA_SELECTORS.VIDEO_PLAYER) !== null;
+    // Exception: Media links (links containing media) or if the interactive element IS a media container
+    const isMediaLink = interactive.matches(MEDIA_SELECTORS.MEDIA_LINK) ||
+      interactive.matches(MEDIA_CONTAINER_SELECTOR) ||
+      interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null;
     return !isMediaLink;
   }
 
@@ -95,7 +97,5 @@ export function isProcessableMedia(target: HTMLElement | null): boolean {
   }
 
   // Inside media containers (images/videos that have not fully loaded yet)
-  return Boolean(
-    target.closest(MEDIA_SELECTORS.TWEET_PHOTO) || target.closest(MEDIA_SELECTORS.VIDEO_PLAYER),
-  );
+  return Boolean(target.closest(MEDIA_CONTAINER_SELECTOR));
 }

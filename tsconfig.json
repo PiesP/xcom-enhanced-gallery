@@ -1,19 +1,13 @@
 {
   "include": [
     "src/**/*",
-    "playwright/**/*",
-    "test/**/*",
     ".github/scripts/**/*.ts",
     "scripts/**/*.ts",
     "scripts/**/*.d.ts",
     "vite.config.ts",
-    "vitest.config.ts",
-    "vitest.stryker.config.ts",
-    "playwright.config.ts",
-    "playwright-ct.config.ts",
     "eslint.config.ts"
   ],
-  "exclude": ["node_modules", "dist", "build", "coverage", "test/archive", ".stryker-tmp"],
+  "exclude": ["node_modules", "dist", "build", "coverage", "test", "playwright", ".stryker-tmp"],
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
@@ -54,7 +48,7 @@
       "scripts/*": ["./scripts/*"],
       "vite.config": ["./vite.config.ts"]
     },
-    "types": ["node", "vite/client", "vitest", "vitest/globals"],
+    "types": ["vite/client"],
     "incremental": true,
     "tsBuildInfoFile": ".tsbuildinfo"
   }

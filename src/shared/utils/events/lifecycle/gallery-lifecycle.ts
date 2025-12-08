@@ -88,8 +88,9 @@ export async function initializeGalleryEvents(
     return () => {};
   }
 
-  const { options: finalOptions, root: explicitGalleryRoot } =
-    resolveInitializationInput(optionsOrRoot);
+  const { options: finalOptions, root: explicitGalleryRoot } = resolveInitializationInput(
+    optionsOrRoot,
+  );
   const listenerContext = sanitizeContext(finalOptions.context);
 
   const keyHandler: EventListener = (evt: Event) => {

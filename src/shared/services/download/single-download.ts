@@ -4,9 +4,9 @@ import { generateMediaFilename } from '@shared/services/filename';
 import type { MediaInfo } from '@shared/types/media.types';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import {
-  type DownloadCapability,
   detectDownloadCapability,
   downloadBlobWithAnchor,
+  type DownloadCapability,
   downloadWithFetchBlob,
 } from './fallback-download';
 import type { DownloadOptions, SingleDownloadResult } from './types';

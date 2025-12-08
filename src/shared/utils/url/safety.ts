@@ -167,8 +167,8 @@ function handleProtocolRelative(url: string, policy: UrlSafetyPolicy): boolean {
   const fallbackProtocol = policy.allowedProtocols.has('https:')
     ? 'https:'
     : policy.allowedProtocols.has('http:')
-      ? 'http:'
-      : 'https:';
+    ? 'http:'
+    : 'https:';
 
   try {
     const resolved = new URL(`${fallbackProtocol}${url}`);

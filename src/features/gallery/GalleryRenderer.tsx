@@ -111,7 +111,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
       return (
         <GalleryContainer
           onClose={handleClose}
-          className="xeg-gallery-renderer xeg-gallery-root xeg-theme-scope"
+          className='xeg-gallery-renderer xeg-gallery-root xeg-theme-scope'
           data-theme={currentTheme()}
           data-language={currentLanguage()}
         >
@@ -122,7 +122,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
               onNext={() => navigateNext('button')}
               onDownloadCurrent={() => handleDownload('current')}
               onDownloadAll={() => handleDownload('all')}
-              className="xeg-vertical-gallery"
+              className='xeg-vertical-gallery'
             />
           </ErrorBoundary>
         </GalleryContainer>
