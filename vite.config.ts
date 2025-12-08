@@ -122,11 +122,14 @@ const getLicenseNotices = () => {
 const getUserscriptHeader = (isDev: boolean) => {
   const timestamp = new Date().toISOString().replace(/[-:T]/g, '.').slice(0, 15);
   const version = isDev ? `${pkg.version}-dev.${timestamp}` : pkg.version;
+  // jsDelivr CDN provides faster updates and better caching than GitHub releases
+  // Format: https://cdn.jsdelivr.net/gh/user/repo@version/file
+  const cdnBase = 'https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery';
   const prodOnlyMetadata = isDev
     ? ''
     : `// @supportURL   https://github.com/PiesP/xcom-enhanced-gallery/issues
-// @downloadURL  https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js
-// @updateURL    https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js
+// @downloadURL  ${cdnBase}@v${pkg.version}/dist/xcom-enhanced-gallery.user.js
+// @updateURL    ${cdnBase}@v${pkg.version}/dist/xcom-enhanced-gallery.user.js
 `;
   return `// ==UserScript==
 // @name         X.com Enhanced Gallery${isDev ? ' (Dev)' : ''}
