@@ -17,14 +17,134 @@
  *   deno task build:dev:fast     # Development build without quality checks
  */
 
-import { build as viteBuild, type InlineConfig, type Plugin } from 'npm:vite@^6.0.0';
-import solidPlugin from 'npm:vite-plugin-solid@^2.11.0';
 import { resolve } from 'node:path';
-import { generateUserscriptMeta, type UserscriptConfig } from './userscript-meta.ts';
+import solidPlugin from 'npm:vite-plugin-solid@^2.11.0';
+import { build as viteBuild, type InlineConfig, type Plugin } from 'npm:vite@^6.0.0';
 import { aggregateLicenses } from './license-aggregator.ts';
+import { generateUserscriptMeta, type UserscriptConfig } from './userscript-meta.ts';
 
-const DIST_DIR = './dist';
-const ENTRY_POINT = './src/main.ts';
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DIST_DIR = './dist' as const;
+const ENTRY_POINT = './src/main.ts' as const;
+const LICENSES_DIR = './LICENSES' as const;
+const STYLE_ID = 'xeg-injected-styles' as const;
+
+const OUTPUT_FILE_NAMES = {
+  dev: 'xcom-enhanced-gallery.dev.user.js',
+  prod: 'xcom-enhanced-gallery.user.js',
+} as const;
+
+// Path aliases configuration (shared between Vite and TypeScript)
+const PATH_ALIASES = {
+  '@': 'src',
+  '@bootstrap': 'src/bootstrap',
+  '@constants': 'src/constants',
+  '@features': 'src/features',
+  '@shared': 'src/shared',
+  '@styles': 'src/styles',
+  '@types': 'src/types',
+} as const;
+
+// Userscript configuration (static parts)
+const USERSCRIPT_BASE_CONFIG = {
+  name: 'X.com Enhanced Gallery',
+  namespace: 'https://github.com/PiesP/xcom-enhanced-gallery',
+  description: 'Media viewer and download functionality for X.com',
+  author: 'PiesP',
+  license: 'MIT',
+  match: ['https://*.x.com/*'],
+  grant: [
+    'GM_setValue',
+    'GM_getValue',
+    'GM_download',
+    'GM_notification',
+    'GM_xmlhttpRequest',
+  ],
+  connect: ['pbs.twimg.com', 'video.twimg.com', 'api.twitter.com'],
+  runAt: 'document-idle',
+  supportURL: 'https://github.com/PiesP/xcom-enhanced-gallery/issues',
+  noframes: true,
+} as const satisfies Partial<UserscriptConfig>;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface BuildOptions {
+  readonly dev: boolean;
+  readonly version?: string;
+  readonly skipChecks: boolean;
+}
+
+interface BundleResult {
+  readonly code: string;
+  readonly sourceMap?: string;
+}
+
+interface CommandResult {
+  readonly success: boolean;
+  readonly description: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CSS Inline Plugin
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Extract CSS content from bundle assets
+ */
+function extractCssFromBundle(
+  bundle: Record<string, { type: string; source?: string | Uint8Array }>,
+): string {
+  const cssChunks: string[] = [];
+
+  for (const [fileName, asset] of Object.entries(bundle)) {
+    if (!fileName.endsWith('.css') || asset.type !== 'asset') continue;
+
+    const { source } = asset;
+    if (typeof source === 'string') {
+      cssChunks.push(source);
+    } else if (source instanceof Uint8Array) {
+      cssChunks.push(new TextDecoder().decode(source));
+    }
+
+    // Remove CSS file from bundle
+    delete bundle[fileName];
+  }
+
+  return cssChunks.join('\n');
+}
+
+/**
+ * Generate CSS injection code for userscript
+ */
+function generateCssInjectionCode(css: string, isDev: boolean): string {
+  return `
+(function() {
+  'use strict';
+  if (typeof document === 'undefined') return;
+
+  // Prevent duplicate injection (userscript may reload)
+  var existingStyle = document.getElementById('${STYLE_ID}');
+  if (existingStyle) {
+    existingStyle.textContent = ${JSON.stringify(css)};
+    return;
+  }
+
+  // Create style element with ID for tracking
+  var style = document.createElement('style');
+  style.id = '${STYLE_ID}';
+  style.setAttribute('data-xeg-version', '${isDev ? 'dev' : 'prod'}');
+  style.textContent = ${JSON.stringify(css)};
+
+  // Insert at the end of head for proper cascade order
+  (document.head || document.documentElement).appendChild(style);
+})();
+`;
+}
 
 /**
  * Vite plugin to inline CSS into JavaScript bundle
@@ -34,193 +154,181 @@ const ENTRY_POINT = './src/main.ts';
  * - Layer order preservation for CSS cascade
  */
 function cssInlinePlugin(isDev = false): Plugin {
-  const STYLE_ID = 'xeg-injected-styles';
-
   return {
     name: 'css-inline',
     apply: 'build',
-    enforce: 'post', // Run after other CSS plugins
+    enforce: 'post',
 
-    // Process generated CSS bundle and inline it
     generateBundle(_options, bundle) {
-      let cssContent = '';
+      const cssContent = extractCssFromBundle(
+        bundle as Record<string, { type: string; source?: string | Uint8Array }>,
+      );
 
-      // Extract CSS from bundle (Vite generates style.css from CSS modules)
-      for (const [fileName, asset] of Object.entries(bundle)) {
-        if (fileName.endsWith('.css') && asset.type === 'asset') {
-          const source = asset.source;
-          if (typeof source === 'string') {
-            cssContent += source + '\n';
-          } else if (source instanceof Uint8Array) {
-            cssContent += new TextDecoder().decode(source) + '\n';
-          }
-          // Remove the CSS file from bundle
-          delete bundle[fileName];
-        }
-      }
+      if (!cssContent.trim()) return;
 
-      // Skip if no CSS collected
-      if (!cssContent.trim()) {
-        return;
-      }
-
-      // Keep CSS readable (no minification for userscript debugging)
-      const processedCss = cssContent;
-
-      // Find JS entry and inject CSS with duplicate prevention
-      for (const [_fileName, chunk] of Object.entries(bundle)) {
+      // Find JS entry and inject CSS
+      for (const chunk of Object.values(bundle)) {
         if (chunk.type === 'chunk' && chunk.isEntry) {
-          const cssInjection = `
-(function() {
-  'use strict';
-  if (typeof document === 'undefined') return;
-
-  // Prevent duplicate injection (userscript may reload)
-  var existingStyle = document.getElementById('${STYLE_ID}');
-  if (existingStyle) {
-    existingStyle.textContent = ${JSON.stringify(processedCss)};
-    return;
-  }
-
-  // Create style element with ID for tracking
-  var style = document.createElement('style');
-  style.id = '${STYLE_ID}';
-  style.setAttribute('data-xeg-version', '${isDev ? 'dev' : 'prod'}');
-  style.textContent = ${JSON.stringify(processedCss)};
-
-  // Insert at the end of head for proper cascade order
-  (document.head || document.documentElement).appendChild(style);
-})();
-`;
-          chunk.code = cssInjection + chunk.code;
+          chunk.code = generateCssInjectionCode(cssContent, isDev) + chunk.code;
+          break;
         }
       }
     },
   };
 }
 
-interface BuildOptions {
-  dev: boolean;
-  version?: string;
-  skipChecks: boolean;
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// CLI Arguments
+// ─────────────────────────────────────────────────────────────────────────────
 
 function parseArgs(): BuildOptions {
-  const args = Deno.args;
+  const args = new Set(Deno.args);
+  const versionArg = Deno.args.find((arg) => arg.startsWith('--version='));
+
   return {
-    dev: args.includes('--dev'),
-    version: args.find((arg) => arg.startsWith('--version='))?.split('=')[1],
-    skipChecks: args.includes('--skip-checks') || args.includes('--fast'),
+    dev: args.has('--dev'),
+    version: versionArg?.split('=')[1],
+    skipChecks: args.has('--skip-checks') || args.has('--fast'),
   };
 }
 
-async function getVersion(options: BuildOptions): Promise<string> {
-  if (options.version) {
-    return options.version;
-  }
+// ─────────────────────────────────────────────────────────────────────────────
+// Version Resolution
+// ─────────────────────────────────────────────────────────────────────────────
 
-  // Try to get version from git tag
+async function getVersionFromGit(): Promise<string | null> {
   try {
     const command = new Deno.Command('git', {
       args: ['describe', '--tags', '--abbrev=0'],
       stdout: 'piped',
-      stderr: 'piped',
+      stderr: 'null',
     });
     const { stdout, success } = await command.output();
-    if (success) {
-      const version = new TextDecoder().decode(stdout).trim();
-      // Remove 'v' prefix if present
-      return version.startsWith('v') ? version.slice(1) : version;
-    }
-  } catch {
-    // Ignore git errors
-  }
 
-  // Default version for development
+    if (!success) return null;
+
+    const version = new TextDecoder().decode(stdout).trim();
+    return version.startsWith('v') ? version.slice(1) : version;
+  } catch {
+    return null;
+  }
+}
+
+async function getVersion(options: BuildOptions): Promise<string> {
+  if (options.version) return options.version;
+
+  const gitVersion = await getVersionFromGit();
+  if (gitVersion) return gitVersion;
+
   return options.dev ? '0.0.0-dev' : '1.0.0';
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// File System Utilities
+// ─────────────────────────────────────────────────────────────────────────────
+
 async function ensureDistDir(): Promise<void> {
+  await Deno.mkdir(DIST_DIR, { recursive: true }).catch((error) => {
+    if (!(error instanceof Deno.errors.AlreadyExists)) throw error;
+  });
+}
+
+async function cleanupCssFiles(): Promise<void> {
   try {
-    await Deno.mkdir(DIST_DIR, { recursive: true });
-  } catch (error) {
-    if (!(error instanceof Deno.errors.AlreadyExists)) {
-      throw error;
+    for await (const entry of Deno.readDir(DIST_DIR)) {
+      if (entry.name.endsWith('.css')) {
+        await Deno.remove(`${DIST_DIR}/${entry.name}`);
+      }
     }
+  } catch {
+    // Ignore cleanup errors
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Quality Checks
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Run a command and return whether it succeeded
+ * Run a command and return the result
  */
 async function runCommand(
   command: string,
-  args: string[],
+  args: readonly string[],
   description: string,
-): Promise<boolean> {
+): Promise<CommandResult> {
   console.log(`🔍 ${description}...`);
 
   const cmd = new Deno.Command(command, {
-    args,
+    args: [...args],
     stdout: 'inherit',
     stderr: 'inherit',
   });
 
   const { success } = await cmd.output();
 
-  if (!success) {
+  if (success) {
+    console.log(`✅ ${description} passed`);
+  } else {
     console.error(`❌ ${description} failed`);
-    return false;
   }
 
-  console.log(`✅ ${description} passed`);
-  return true;
+  return { success, description };
 }
 
+// Quality check definitions for parallel execution
+const QUALITY_CHECKS = [
+  {
+    args: ['run', '-A', 'npm:typescript/tsc', '--noEmit', '--project', 'tsconfig.build.json'],
+    description: 'Type checking',
+  },
+  {
+    args: ['lint'],
+    description: 'Linting',
+  },
+  {
+    args: ['fmt', '--check'],
+    description: 'Format checking',
+  },
+] as const;
+
 /**
- * Run all quality checks (type check, lint, format)
+ * Run all quality checks in parallel
  */
 async function runQualityChecks(): Promise<boolean> {
   console.log('📋 Running quality checks...\n');
 
-  // Type check using TypeScript compiler via Deno (build-specific tsconfig)
-  const typeCheckPassed = await runCommand(
-    'deno',
-    ['run', '-A', 'npm:typescript/tsc', '--noEmit', '--project', 'tsconfig.build.json'],
-    'Type checking',
+  const results = await Promise.all(
+    QUALITY_CHECKS.map(({ args, description }) => runCommand('deno', args, description)),
   );
-  if (!typeCheckPassed) {
-    return false;
+
+  const allPassed = results.every((r) => r.success);
+
+  if (allPassed) {
+    console.log('\n✅ All quality checks passed!\n');
+  } else {
+    const failed = results.filter((r) => !r.success).map((r) => r.description);
+    console.error(`\n❌ Failed checks: ${failed.join(', ')}`);
+
+    if (failed.includes('Format checking')) {
+      console.log('\n💡 Tip: Run "deno task fmt" to auto-fix formatting issues.\n');
+    }
   }
 
-  // Lint check
-  const lintPassed = await runCommand(
-    'deno',
-    ['lint'],
-    'Linting',
-  );
-  if (!lintPassed) {
-    return false;
-  }
-
-  // Format check
-  const formatPassed = await runCommand(
-    'deno',
-    ['fmt', '--check'],
-    'Format checking',
-  );
-  if (!formatPassed) {
-    console.log('\n💡 Tip: Run "deno task fmt" to auto-fix formatting issues.\n');
-    return false;
-  }
-
-  console.log('\n✅ All quality checks passed!\n');
-  return true;
+  return allPassed;
 }
 
-interface BundleResult {
-  code: string;
-  sourceMap?: string;
+// ─────────────────────────────────────────────────────────────────────────────
+// Vite Configuration
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Build path aliases for Vite resolve configuration
+ */
+function buildPathAliases(cwd: string): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(PATH_ALIASES).map(([alias, path]) => [alias, resolve(cwd, path)]),
+  );
 }
 
 /**
@@ -229,9 +337,7 @@ interface BundleResult {
  */
 function createViteConfig(isDev: boolean): InlineConfig {
   const cwd = Deno.cwd();
-  const outputFileName = isDev
-    ? 'xcom-enhanced-gallery.dev.user.js'
-    : 'xcom-enhanced-gallery.user.js';
+  const outputFileName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
 
   return {
     plugins: [solidPlugin(), cssInlinePlugin(isDev)],
@@ -239,27 +345,17 @@ function createViteConfig(isDev: boolean): InlineConfig {
     root: cwd,
 
     resolve: {
-      alias: {
-        '@': resolve(cwd, 'src'),
-        '@bootstrap': resolve(cwd, 'src/bootstrap'),
-        '@constants': resolve(cwd, 'src/constants'),
-        '@features': resolve(cwd, 'src/features'),
-        '@shared': resolve(cwd, 'src/shared'),
-        '@styles': resolve(cwd, 'src/styles'),
-        '@types': resolve(cwd, 'src/types'),
-      },
+      alias: buildPathAliases(cwd),
     },
 
     build: {
       target: 'esnext',
-      minify: false, // Userscript source should be readable
-      sourcemap: isDev ? 'inline' : false, // Inline sourcemap for dev
+      minify: false,
+      sourcemap: isDev ? 'inline' : false,
       outDir: 'dist',
       emptyOutDir: false,
       write: true,
-      // Disable CSS code splitting - inline into JS
       cssCodeSplit: false,
-      // CSS minification handled by our plugin for better control
       cssMinify: false,
 
       lib: {
@@ -267,32 +363,24 @@ function createViteConfig(isDev: boolean): InlineConfig {
         name: 'XcomEnhancedGallery',
         formats: ['iife'],
         fileName: () => outputFileName.replace('.user.js', ''),
-        // Disable CSS file output for library mode
         cssFileName: 'style',
       },
 
       rollupOptions: {
         output: {
           entryFileNames: outputFileName,
-          // Inline dynamic imports for userscript
           inlineDynamicImports: true,
-          // Use named exports to suppress warning
           exports: 'named',
         },
       },
     },
 
     css: {
-      // CSS Modules configuration optimized for userscript
       modules: {
-        // Predictable class names in dev, short hashes in prod
         generateScopedName: isDev ? '[name]__[local]__[hash:base64:5]' : 'xeg_[hash:base64:6]',
-        // Export camelCase class names for JS compatibility
         localsConvention: 'camelCaseOnly',
-        // Scope behavior - local by default
         scopeBehaviour: 'local',
       },
-      // Disable devSourcemap in production for smaller bundles
       devSourcemap: isDev,
     },
 
@@ -307,47 +395,101 @@ function createViteConfig(isDev: boolean): InlineConfig {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Bundling
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
  * Bundle source code using Vite
  */
-async function bundleWithVite(dev: boolean): Promise<BundleResult> {
-  console.log(`📦 Bundling with Vite (${dev ? 'development' : 'production'})...`);
+async function bundleWithVite(isDev: boolean): Promise<BundleResult> {
+  const mode = isDev ? 'development' : 'production';
+  console.log(`📦 Bundling with Vite (${mode})...`);
 
-  const config = createViteConfig(dev);
+  const config = createViteConfig(isDev);
   await viteBuild(config);
 
-  // Read the generated output
-  const outputFileName = dev
-    ? 'xcom-enhanced-gallery.dev.user.js'
-    : 'xcom-enhanced-gallery.user.js';
+  const outputFileName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
   const outputPath = `${DIST_DIR}/${outputFileName}`;
 
-  const code = await Deno.readTextFile(outputPath);
+  // Read generated output and cleanup CSS
+  const [code] = await Promise.all([
+    Deno.readTextFile(outputPath),
+    cleanupCssFiles(),
+  ]);
 
+  // Read sourcemap if in dev mode
   let sourceMap: string | undefined;
-  if (dev) {
-    try {
-      sourceMap = await Deno.readTextFile(`${outputPath}.map`);
-    } catch {
-      // Sourcemap may be inline
-    }
+  if (isDev) {
+    sourceMap = await Deno.readTextFile(`${outputPath}.map`).catch(() => undefined);
   }
 
-  // Clean up any generated CSS files (CSS should be inlined)
-  try {
-    for await (const entry of Deno.readDir(DIST_DIR)) {
-      if (entry.name.endsWith('.css')) {
-        await Deno.remove(`${DIST_DIR}/${entry.name}`);
-      }
-    }
-  } catch {
-    // Ignore cleanup errors
+  // Remove auto-generated sourceMappingURL (we'll manage it ourselves)
+  return {
+    code: code.replace(/\n?\/\/# sourceMappingURL=.*$/m, ''),
+    sourceMap,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Userscript Configuration
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Create userscript configuration with version-specific URLs
+ */
+function createUserscriptConfig(version: string): UserscriptConfig {
+  const baseUrl =
+    `https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@v${version}/dist/xcom-enhanced-gallery.user.js`;
+
+  return {
+    ...USERSCRIPT_BASE_CONFIG,
+    version,
+    downloadURL: baseUrl,
+    updateURL: baseUrl,
+  } as UserscriptConfig;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Build Process
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Write final userscript output
+ */
+async function writeOutput(
+  options: BuildOptions,
+  bundleResult: BundleResult,
+  metadata: string,
+): Promise<{ path: string; sizeKB: string }> {
+  const outputFileName = options.dev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
+  const outputPath = `${DIST_DIR}/${outputFileName}`;
+
+  // Add sourceMappingURL if source map exists
+  let finalCode = bundleResult.code;
+  if (options.dev && bundleResult.sourceMap) {
+    finalCode += `\n//# sourceMappingURL=${outputFileName}.map\n`;
   }
 
-  // Remove the auto-generated sourceMappingURL if present (we'll manage it ourselves)
-  const cleanCode = code.replace(/\n?\/\/# sourceMappingURL=.*$/m, '');
+  // Combine metadata and bundled code
+  const userscript = `${metadata}\n${finalCode}`;
 
-  return { code: cleanCode, sourceMap };
+  // Write files in parallel
+  const writePromises: Promise<void>[] = [Deno.writeTextFile(outputPath, userscript)];
+
+  if (options.dev && bundleResult.sourceMap) {
+    const sourceMapPath = `${outputPath}.map`;
+    writePromises.push(Deno.writeTextFile(sourceMapPath, bundleResult.sourceMap));
+    console.log(`🗺️  Source map: ${sourceMapPath}`);
+  }
+
+  await Promise.all(writePromises);
+
+  const stat = await Deno.stat(outputPath);
+  return {
+    path: outputPath,
+    sizeKB: (stat.size / 1024).toFixed(2),
+  };
 }
 
 async function build(): Promise<void> {
@@ -376,78 +518,25 @@ async function build(): Promise<void> {
     }
   }
 
-  // Ensure dist directory exists
+  // Run parallel tasks: ensure dist dir, bundle, aggregate licenses
   await ensureDistDir();
 
-  // Bundle source code using Vite
-  const bundleResult = await bundleWithVite(options.dev);
+  const [bundleResult, licenses] = await Promise.all([
+    bundleWithVite(options.dev),
+    aggregateLicenses(LICENSES_DIR),
+  ]);
 
-  // Aggregate licenses
-  const licenses = await aggregateLicenses('./LICENSES');
-
-  // Generate userscript config
-  const config: UserscriptConfig = {
-    name: 'X.com Enhanced Gallery',
-    namespace: 'https://github.com/PiesP/xcom-enhanced-gallery',
-    version,
-    description: 'Media viewer and download functionality for X.com',
-    author: 'PiesP',
-    license: 'MIT',
-    match: ['https://*.x.com/*'],
-    grant: [
-      'GM_setValue',
-      'GM_getValue',
-      'GM_download',
-      'GM_notification',
-      'GM_xmlhttpRequest',
-    ],
-    connect: ['pbs.twimg.com', 'video.twimg.com', 'api.twitter.com'],
-    runAt: 'document-idle',
-    supportURL: 'https://github.com/PiesP/xcom-enhanced-gallery/issues',
-    downloadURL:
-      `https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@v${version}/dist/xcom-enhanced-gallery.user.js`,
-    updateURL:
-      `https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@v${version}/dist/xcom-enhanced-gallery.user.js`,
-    noframes: true,
-  };
-
-  // Generate userscript metadata
+  // Generate userscript
+  const config = createUserscriptConfig(version);
   const metadata = generateUserscriptMeta(config, licenses);
 
-  // Write output file
-  const outputFileName = options.dev
-    ? 'xcom-enhanced-gallery.dev.user.js'
-    : 'xcom-enhanced-gallery.user.js';
-  const outputPath = `${DIST_DIR}/${outputFileName}`;
+  // Write output
+  const { path, sizeKB } = await writeOutput(options, bundleResult, metadata);
 
-  // Add sourceMappingURL comment if source map exists
-  let finalCode = bundleResult.code;
-  if (options.dev && bundleResult.sourceMap) {
-    const sourceMapFileName = `${outputFileName}.map`;
-    finalCode += `\n//# sourceMappingURL=${sourceMapFileName}\n`;
-  }
-
-  // Combine metadata and bundled code
-  const userscript = `${metadata}\n${finalCode}`;
-
-  await Deno.writeTextFile(outputPath, userscript);
-
-  // Write source map file if in dev mode
-  if (options.dev && bundleResult.sourceMap) {
-    const sourceMapPath = `${outputPath}.map`;
-    await Deno.writeTextFile(sourceMapPath, bundleResult.sourceMap);
-    console.log(`🗺️  Source map: ${sourceMapPath}`);
-  }
-
-  const endTime = performance.now();
-  const duration = ((endTime - startTime) / 1000).toFixed(2);
-
-  // Get file size
-  const stat = await Deno.stat(outputPath);
-  const sizeKB = (stat.size / 1024).toFixed(2);
+  const duration = ((performance.now() - startTime) / 1000).toFixed(2);
 
   console.log(`\n✅ Build complete!`);
-  console.log(`📄 Output: ${outputPath}`);
+  console.log(`📄 Output: ${path}`);
   console.log(`📊 Size: ${sizeKB} KB`);
   console.log(`⏱️  Duration: ${duration}s\n`);
 }

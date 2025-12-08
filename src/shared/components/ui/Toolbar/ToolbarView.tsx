@@ -199,11 +199,27 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     cx(styles.toolbarButton, 'xeg-inline-center', ...extra);
 
   /**
-   * Prevent scroll chaining to parent elements.
+   * Handle wheel events within toolbar panels.
+   * - If inside a scrollable element (e.g., tweet text): consume scroll internally, stop propagation
+   * - Otherwise: let event propagate to gallery (which may hide toolbar on scroll)
+   */
+  const handlePanelWheel = (event: WheelEvent): void => {
+    if (shouldAllowWheelDefault(event)) {
+      // Internal scrollable element can handle this scroll
+      // Stop propagation so gallery doesn't also react to it
+      event.stopPropagation();
+      return;
+    }
+    // At scroll boundary or no scrollable content - let event propagate to gallery
+  };
+
+  /**
+   * Prevent scroll chaining from toolbar buttons/controls.
    * Uses passive: false to allow preventDefault() when needed.
    */
   const preventScrollChaining = (event: WheelEvent): void => {
     if (shouldAllowWheelDefault(event)) {
+      event.stopPropagation();
       return;
     }
     safeEventPreventAll(event);
@@ -227,11 +243,12 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     }
   });
 
+  // Tweet panel: allow scroll to propagate when at boundary (to hide toolbar)
   createEffect(() => {
     const tweetPanel = tweetPanelEl();
     if (tweetPanel) {
-      tweetPanel.addEventListener('wheel', preventScrollChaining, { passive: false });
-      onCleanup(() => tweetPanel.removeEventListener('wheel', preventScrollChaining));
+      tweetPanel.addEventListener('wheel', handlePanelWheel, { passive: true });
+      onCleanup(() => tweetPanel.removeEventListener('wheel', handlePanelWheel));
     }
   });
 

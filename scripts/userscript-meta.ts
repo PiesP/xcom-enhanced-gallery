@@ -4,89 +4,117 @@
  * Generates the userscript header block with proper metadata format.
  */
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface UserscriptConfig {
-  name: string;
-  namespace: string;
-  version: string;
-  description: string;
-  author: string;
-  license: string;
-  match: string[];
-  grant: string[];
-  connect: string[];
-  runAt: 'document-start' | 'document-end' | 'document-idle';
-  supportURL: string;
-  downloadURL: string;
-  updateURL: string;
-  noframes: boolean;
-  icon?: string;
-  require?: string[];
-  resource?: Record<string, string>;
+  readonly name: string;
+  readonly namespace: string;
+  readonly version: string;
+  readonly description: string;
+  readonly author: string;
+  readonly license: string;
+  readonly match: readonly string[];
+  readonly grant: readonly string[];
+  readonly connect: readonly string[];
+  readonly runAt: 'document-start' | 'document-end' | 'document-idle';
+  readonly supportURL: string;
+  readonly downloadURL: string;
+  readonly updateURL: string;
+  readonly noframes: boolean;
+  readonly icon?: string;
+  readonly require?: readonly string[];
+  readonly resource?: Readonly<Record<string, string>>;
 }
 
 export interface LicenseInfo {
-  name: string;
-  text: string;
+  readonly name: string;
+  readonly text: string;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Padding width for metadata key alignment */
+const KEY_PADDING = 12;
+
+/** License name mappings from filename patterns */
+const LICENSE_NAME_MAP: Readonly<Record<string, string>> = {
+  'solid-js': 'Solid.js',
+  heroicons: 'Heroicons',
+  'xcom-enhanced-gallery': 'X.com Enhanced Gallery',
+};
+
+/** Pattern to strip license type suffix from filename */
+const LICENSE_SUFFIX_PATTERN = /-(MIT|LICENSE|APACHE|BSD)$/i;
+
+/** Pattern to strip file extension */
+const FILE_EXTENSION_PATTERN = /\.(txt|md)$/i;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Metadata Line Formatting
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Format a single metadata line
+ * Format a single metadata line with aligned values
  */
 function formatMetaLine(key: string, value: string): string {
-  // Pad key to align values (max key length is ~12 chars)
-  const paddedKey = key.padEnd(12);
-  return `// @${paddedKey} ${value}`;
+  return `// @${key.padEnd(KEY_PADDING)} ${value}`;
 }
 
 /**
- * Generate userscript metadata block
+ * Format multiple metadata lines for array values
  */
-export function generateUserscriptMeta(
-  config: UserscriptConfig,
-  licenses: LicenseInfo[],
-): string {
-  const lines: string[] = ['// ==UserScript=='];
+function formatMetaLines(key: string, values: readonly string[]): string[] {
+  return values.map((value) => formatMetaLine(key, value));
+}
 
-  // Basic metadata
-  lines.push(formatMetaLine('name', config.name));
-  lines.push(formatMetaLine('namespace', config.namespace));
-  lines.push(formatMetaLine('version', config.version));
-  lines.push(formatMetaLine('description', config.description));
-  lines.push(formatMetaLine('author', config.author));
-  lines.push(formatMetaLine('license', config.license));
+// ─────────────────────────────────────────────────────────────────────────────
+// Metadata Generation
+// ─────────────────────────────────────────────────────────────────────────────
 
-  // Match patterns
-  for (const match of config.match) {
-    lines.push(formatMetaLine('match', match));
-  }
+/**
+ * Generate basic metadata section
+ */
+function generateBasicMeta(config: UserscriptConfig): string[] {
+  return [
+    formatMetaLine('name', config.name),
+    formatMetaLine('namespace', config.namespace),
+    formatMetaLine('version', config.version),
+    formatMetaLine('description', config.description),
+    formatMetaLine('author', config.author),
+    formatMetaLine('license', config.license),
+  ];
+}
 
-  // GM API grants
-  for (const grant of config.grant) {
-    lines.push(formatMetaLine('grant', grant));
-  }
+/**
+ * Generate URL metadata section
+ */
+function generateUrlMeta(config: UserscriptConfig): string[] {
+  const lines = [
+    formatMetaLine('run-at', config.runAt),
+    formatMetaLine('supportURL', config.supportURL),
+    formatMetaLine('downloadURL', config.downloadURL),
+    formatMetaLine('updateURL', config.updateURL),
+  ];
 
-  // Connect domains (for GM_xmlhttpRequest)
-  for (const domain of config.connect) {
-    lines.push(formatMetaLine('connect', domain));
-  }
-
-  // Run timing
-  lines.push(formatMetaLine('run-at', config.runAt));
-
-  // URLs
-  lines.push(formatMetaLine('supportURL', config.supportURL));
-  lines.push(formatMetaLine('downloadURL', config.downloadURL));
-  lines.push(formatMetaLine('updateURL', config.updateURL));
-
-  // Optional fields
   if (config.icon) {
     lines.push(formatMetaLine('icon', config.icon));
   }
 
-  if (config.require) {
-    for (const url of config.require) {
-      lines.push(formatMetaLine('require', url));
-    }
+  return lines;
+}
+
+/**
+ * Generate optional metadata section
+ */
+function generateOptionalMeta(config: UserscriptConfig): string[] {
+  const lines: string[] = [];
+
+  if (config.require?.length) {
+    lines.push(...formatMetaLines('require', config.require));
   }
 
   if (config.resource) {
@@ -95,29 +123,46 @@ export function generateUserscriptMeta(
     }
   }
 
-  // Noframes
   if (config.noframes) {
     lines.push('// @noframes');
   }
 
-  lines.push('// ==/UserScript==');
-
-  // Add license block
-  const licenseBlock = generateLicenseBlock(licenses);
-  if (licenseBlock) {
-    lines.push(licenseBlock);
-  }
-
-  return lines.join('\n');
+  return lines;
 }
+
+/**
+ * Generate userscript metadata block
+ */
+export function generateUserscriptMeta(
+  config: UserscriptConfig,
+  licenses: readonly LicenseInfo[],
+): string {
+  const sections = [
+    ['// ==UserScript=='],
+    generateBasicMeta(config),
+    formatMetaLines('match', config.match),
+    formatMetaLines('grant', config.grant),
+    formatMetaLines('connect', config.connect),
+    generateUrlMeta(config),
+    generateOptionalMeta(config),
+    ['// ==/UserScript=='],
+  ];
+
+  const metaBlock = sections.flat().join('\n');
+  const licenseBlock = generateLicenseBlock(licenses);
+
+  return licenseBlock ? `${metaBlock}\n${licenseBlock}` : metaBlock;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// License Block Generation
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Generate formatted license block comment
  */
-function generateLicenseBlock(licenses: LicenseInfo[]): string {
-  if (licenses.length === 0) {
-    return '';
-  }
+function generateLicenseBlock(licenses: readonly LicenseInfo[]): string {
+  if (licenses.length === 0) return '';
 
   const lines: string[] = [
     '/*',
@@ -134,40 +179,33 @@ function generateLicenseBlock(licenses: LicenseInfo[]): string {
     lines.push(` * ${license.name}:`);
 
     // Add license text with proper formatting
-    const textLines = license.text.trim().split('\n');
-    for (const textLine of textLines) {
+    for (const textLine of license.text.split('\n')) {
       lines.push(` * ${textLine}`);
     }
 
     // Add separator between licenses (except for the last one)
     if (i < licenses.length - 1) {
-      lines.push(' *');
-      lines.push(' *');
+      lines.push(' *', ' *');
     }
   }
 
-  lines.push(' *');
-  lines.push(' */');
+  lines.push(' *', ' */');
 
   return lines.join('\n');
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// License Name Parsing
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Parse license name from filename
  * e.g., "solid-js-MIT.txt" -> "Solid.js"
  */
 export function parseLicenseName(filename: string): string {
-  // Remove extension and -MIT/-LICENSE suffix
   const base = filename
-    .replace(/\.(txt|md)$/i, '')
-    .replace(/-(MIT|LICENSE|APACHE|BSD)$/i, '');
+    .replace(FILE_EXTENSION_PATTERN, '')
+    .replace(LICENSE_SUFFIX_PATTERN, '');
 
-  // Special case mappings
-  const nameMap: Record<string, string> = {
-    'solid-js': 'Solid.js',
-    heroicons: 'Heroicons',
-    'xcom-enhanced-gallery': 'X.com Enhanced Gallery',
-  };
-
-  return nameMap[base] || base;
+  return LICENSE_NAME_MAP[base] ?? base;
 }
