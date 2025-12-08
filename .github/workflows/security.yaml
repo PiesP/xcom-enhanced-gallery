@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🔍 Run OSV-Scanner
-        uses: google/osv-scanner-action@v2.0.0
+        uses: google/osv-scanner-action@v2.3.0
         with:
           scan-args: |-
             --lockfile=deno.lock
