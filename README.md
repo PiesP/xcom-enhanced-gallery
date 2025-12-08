@@ -20,10 +20,10 @@
 
 Built with modern tooling:
 
-- **UI**: Solid.js 1.9.10
-- **Language**: TypeScript 5.9.3 (strict)
-- **Bundler**: Vite 7
-- **Quality**: 2,800+ automated tests (unit, browser, integration, E2E, accessibility)
+- **UI**: Solid.js 1.9
+- **Language**: TypeScript 5.9 (strict)
+- **Runtime**: Deno 2.x
+- **Bundler**: Vite 7 + vite-plugin-solid
 
 ## 📥 Installation
 
@@ -129,21 +129,22 @@ Have ideas for project improvements?
 git clone https://github.com/PiesP/xcom-enhanced-gallery.git
 cd xcom-enhanced-gallery
 
-npm install
+# Build userscript bundle (includes quality checks)
+deno task build
 
-# Build userscript bundle
-npm run build
+# Development build
+deno task build:dev
 
-# Run all tests
-npm test
+# Quick build (skip quality checks)
+deno task build:fast
 
-# Quick build (skip mutation tests)
-npm run build:fast
-
-# Optional: typecheck and lint
-npm run typecheck
-npm run lint
+# Individual quality checks
+deno task check      # TypeScript
+deno task lint       # Deno lint
+deno task fmt:check  # Format check
 ```
+
+> **Prerequisites**: [Deno 2.x](https://deno.land/) is required. No npm install needed.
 
 GitHub Actions runs a subset of these commands for continuous integration and security. See `.github/workflows/` for details.
 

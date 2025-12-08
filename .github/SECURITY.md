@@ -61,7 +61,7 @@ We use several mechanisms to keep the codebase secure:
   - TypeScript strict mode, ESLint/Stylelint
   - Comprehensive automated tests (unit, browser, integration, E2E, accessibility)
 
-These checks run in CI for `master` and scheduled workflows; local development uses the same toolchain via `npm` scripts.
+These checks run in CI for `master` and scheduled workflows; local development uses the same toolchain via `deno task` commands.
 
 ---
 

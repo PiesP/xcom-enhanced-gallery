@@ -28,36 +28,44 @@ Security-sensitive issues should follow the dedicated process described in:
 
 ### Prerequisites
 
-- Node.js **22+**
-- npm **10+**
+- [Deno](https://deno.land/) **2.x** or later
 
 ### Local setup
 
 ```bash
 git clone https://github.com/PiesP/xcom-enhanced-gallery.git
 cd xcom-enhanced-gallery
-
-npm install
 ```
+
+> **Note**: No `npm install` is required. Deno manages dependencies automatically.
 
 ### Common commands
 
 ```bash
-# Production build (userscript bundle)
-npm run build
+# Production build (userscript bundle with quality checks)
+deno task build
 
-# TypeScript typecheck (no emit)
-npm run typecheck
+# Development build
+deno task build:dev
+
+# Quick build (skip quality checks)
+deno task build:fast
+
+# TypeScript typecheck
+deno task check
 
 # Lint source code
-npm run lint
+deno task lint
 
-# Run tests
-npm test
+# Format check
+deno task fmt:check
+
+# Run all quality checks
+deno task quality
 ```
 
-These commands are defined in `package.json` and use the existing project
-configuration (`tsconfig*.json`, `vite.config.ts`, lint configs).
+These tasks are defined in `deno.json` and use the project configuration
+(`tsconfig*.json`, build scripts).
 
 ---
 
@@ -87,7 +95,7 @@ Please keep changes small, focused, and consistent with the existing codebase.
   - Follow the practices described in the [Security Policy](.github/SECURITY.md).
 
 - **Style & formatting**
-  - Follow the linting rules enforced by ESLint and Stylelint.
+  - Follow the linting rules enforced by Deno lint (`deno task lint`).
   - Use the existing design tokens and CSS Modules patterns from `src/`.
 
 ---
@@ -100,9 +108,9 @@ Before you submit a PR, please:
 2. Run at least a build and basic static checks locally:
 
 ```bash
-npm run build
-npm run typecheck
-npm run lint
+deno task build
+# or individual checks:
+deno task quality
 ```
 
 3. Ensure the gallery still behaves correctly on X.com in a desktop browser
