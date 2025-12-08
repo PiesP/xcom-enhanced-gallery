@@ -4,10 +4,10 @@
     "npm:@types/node@*": "24.2.0",
     "npm:esbuild-plugin-solid@0.6.0": "0.6.0_esbuild@0.24.0_solid-js@1.9.10__seroval@1.3.2_@babel+core@7.28.5",
     "npm:esbuild@0.24.0": "0.24.0",
-    "npm:solid-js@^1.9.0": "1.9.10_seroval@1.3.2",
+    "npm:solid-js@^1.9.10": "1.9.10_seroval@1.3.2",
     "npm:typescript@*": "5.9.3",
-    "npm:vite-plugin-solid@^2.11.0": "2.11.10_solid-js@1.9.10__seroval@1.3.2_vite@6.4.1__@types+node@24.2.0__picomatch@4.0.3_@babel+core@7.28.5_@types+node@24.2.0",
-    "npm:vite@6": "6.4.1_@types+node@24.2.0_picomatch@4.0.3"
+    "npm:vite-plugin-solid@^2.11.10": "2.11.10_solid-js@1.9.10__seroval@1.3.2_vite@6.4.1__@types+node@24.2.0__picomatch@4.0.3_@babel+core@7.28.5_@types+node@24.2.0",
+    "npm:vite@^6.4.1": "6.4.1_@types+node@24.2.0_picomatch@4.0.3"
   },
   "npm": {
     "@babel/code-frame@7.27.1": {
@@ -1002,9 +1002,9 @@
   },
   "workspace": {
     "dependencies": [
-      "npm:solid-js@^1.9.0",
-      "npm:vite-plugin-solid@^2.11.0",
-      "npm:vite@6"
+      "npm:solid-js@^1.9.10",
+      "npm:vite-plugin-solid@^2.11.10",
+      "npm:vite@^6.4.1"
     ]
   }
 }
