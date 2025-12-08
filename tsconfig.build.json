@@ -2,8 +2,11 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    // Disable incremental for CI builds
-    "incremental": false
+    // Disable incremental for CI/production builds (cleaner output)
+    "incremental": false,
+    // Skip unused code warnings in build (handled by linter)
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "include": ["src/**/*"],
   "exclude": [
