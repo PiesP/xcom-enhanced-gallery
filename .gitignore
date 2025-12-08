@@ -8,6 +8,7 @@ node_modules/
 # Build outputs
 dist/
 build/
+!dist/xcom-enhanced-gallery.user.js
 
 # TypeScript
 *.tsbuildinfo
@@ -24,6 +25,7 @@ test-results/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+.vscode/settings.json
 .idea/
 *.swp
 *.swo
@@ -53,9 +55,8 @@ temp/
 # Deno
 .deno/
 
-
+# Documentation & AI prompts
 .github/prompts/xeg-dev.prompt.md
 .github/copilot-instructions.md
-.vscode/settings.json
 AGENTS.md
 CLAUDE.md
