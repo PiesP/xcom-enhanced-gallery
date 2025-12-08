@@ -52,9 +52,6 @@
  * - CSS Nesting: Improved code readability (via PostCSS)
  */
 
-/* CSS Cascade Layer definitions */
-@layer base, components, utilities;
-
 /**
  * Vertical Gallery Container: Outer container with size containment
  */
@@ -70,7 +67,7 @@
 
 /* CSS Cascade Layer declarations remain for other rules */
 
-@layer components {
+@layer xeg.components {
   /* Common CSS variables - OKLCH color system */
   :root {
     /* Transitions - toolbar visibility helper only */
@@ -87,14 +84,11 @@
     --xeg-toolbar-hidden-opacity: 0;
     --xeg-toolbar-hidden-visibility: hidden;
     --xeg-toolbar-hidden-pointer-events: none;
-
-    /* Removed --xeg-toolbar-height: unused */
-    /* Removed --xeg-backdrop-blur: unused */
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  @layer components {
+  @layer xeg.components {
     :root {
       --xeg-transition-toolbar: none;
     }

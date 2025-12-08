@@ -257,7 +257,6 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   // Toolbar
   '--xeg-toolbar-surface': '--xt-s',
   '--xeg-toolbar-border': '--xt-b',
-  '--xeg-toolbar-bg': '--xt-bg',
   '--xeg-toolbar-panel-surface': '--xtp-s',
   '--xeg-toolbar-panel-transition': '--xtp-t',
   '--xeg-toolbar-panel-height': '--xtp-h',

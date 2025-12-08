@@ -14,7 +14,6 @@
     /* 갤러리 및 툴바 배경 토큰 */
     --xeg-bg-toolbar: var(--color-bg-surface);
     --xeg-toolbar-border: var(--xeg-color-border-primary);
-    --xeg-toolbar-bg: var(--xeg-bg-toolbar);
     --xeg-toolbar-surface: var(--xeg-bg-toolbar);
     --xeg-toolbar-panel-surface: var(--xeg-toolbar-surface);
 
@@ -165,18 +164,7 @@
     --transition-normal: var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: var(--duration-slow) cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Shadows - removed for flat design */
-    /* NOTE: All shadow tokens set to 'none' for flat design consistency */
-    --shadow-sm: none;
-    --shadow-md: none;
-    --shadow-gallery-image: none;
-    --shadow-gallery-counter: none;
-    --shadow-gallery-nav: none;
-    --shadow-gallery-nav-hover: none;
-    --shadow-thumbnail: none;
-    --shadow-thumbnail-hover: none;
-
-    /* Shadow Tokens - xeg prefix aliases (flat design: all none) */
+    /* Shadow Tokens - flat design: all none */
     --xeg-shadow-xs: none;
     --xeg-shadow-sm: none;
     --xeg-shadow-md: none;
