@@ -142,7 +142,7 @@ export class SettingsService implements SettingsServiceContract {
     if (!category) {
       this.settings = createDefaultSettings();
     } else if (category in DEFAULT_SETTINGS) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // biome-ignore lint/suspicious/noExplicitAny: Dynamic category key requires type assertion
       (this.settings as any)[category] = cloneDeep(
         DEFAULT_SETTINGS[category as keyof typeof DEFAULT_SETTINGS]
       );

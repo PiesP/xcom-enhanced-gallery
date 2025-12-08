@@ -60,7 +60,7 @@ export class PersistentStorage {
       const gmGetValue =
         typeof GM_getValue !== 'undefined'
           ? GM_getValue
-          : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          : // biome-ignore lint/suspicious/noExplicitAny: Accessing global GM_getValue from window
             (window as any).GM_getValue;
       if (!gmGetValue) return defaultValue;
 

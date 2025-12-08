@@ -51,7 +51,7 @@ export function resolveNestedPath<T = unknown>(source: unknown, path: string): T
 
   const keys = path.split('.');
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: Dynamic path traversal requires any type
   let current: any = source;
 
   for (const key of keys) {
@@ -108,7 +108,7 @@ export function assignNestedPath<T = unknown>(
 
   const createIntermediate = options?.createIntermediate !== false;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: Dynamic path traversal requires any type
   let current: any = target;
 
   for (let i = 0; i < keys.length - 1; i++) {

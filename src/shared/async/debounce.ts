@@ -13,7 +13,7 @@
  * ```
  */
 
-// deno-lint-ignore no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: Generic function type requires any for flexibility
 type AnyFunction = (...args: any[]) => void;
 
 /**

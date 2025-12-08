@@ -9,7 +9,9 @@ import type { CookieAPI } from './cookie.types';
 
 declare global {
   function GM_download(url: string, filename: string): void;
+  // biome-ignore lint/suspicious/noExplicitAny: UserScript API accepts any value type
   function GM_getValue(name: string, defaultValue?: any): any;
+  // biome-ignore lint/suspicious/noExplicitAny: UserScript API accepts any value type
   function GM_setValue(name: string, value: any): void;
   function GM_deleteValue(name: string): void;
   function GM_listValues(): string[];
@@ -97,6 +99,7 @@ export interface GMXMLHttpRequestDetails {
   nocache?: boolean;
   revalidate?: boolean;
   timeout?: number;
+  // biome-ignore lint/suspicious/noExplicitAny: UserScript API context can be any type
   context?: any;
   responseType?: 'text' | 'json' | 'blob' | 'arraybuffer' | 'stream';
   overrideMimeType?: string;
@@ -120,9 +123,11 @@ export interface GMXMLHttpRequestResponse {
   status: number;
   statusText: string;
   responseHeaders: string;
+  // biome-ignore lint/suspicious/noExplicitAny: Response type depends on responseType setting
   response: any;
   responseXML?: Document | null;
   responseText: string;
+  // biome-ignore lint/suspicious/noExplicitAny: UserScript API context can be any type
   context: any;
 }
 
