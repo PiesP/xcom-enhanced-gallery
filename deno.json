@@ -17,7 +17,7 @@
   "imports": {
     "solid-js": "npm:solid-js@^1.9.10",
     "solid-js/": "npm:solid-js@^1.9.10/",
-    "vite": "npm:vite@^6.4.1",
+    "vite": "npm:vite@^8.0.0-beta.0",
     "vite-plugin-solid": "npm:vite-plugin-solid@^2.11.10",
     "@/": "./src/",
     "@bootstrap/": "./src/bootstrap/",
