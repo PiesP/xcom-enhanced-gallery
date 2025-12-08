@@ -160,16 +160,52 @@ function removeCssComments(css: string): string {
     .trim();
 }
 
+/**
+ * Compress CSS values for production builds (non-destructive minification)
+ * - 0.0625rem → .0625rem (leading zero removal)
+ * - 0px, 0rem, 0em → 0 (unit removal for zero values)
+ * - Remove redundant semicolons before closing braces
+ * - Collapse whitespace around : and ;
+ */
+function compressCssValues(css: string): string {
+  return css
+    // Remove leading zeros from decimal values (0.5 → .5)
+    .replace(/\b0+\.(\d)/g, '.$1')
+    // Remove units from zero values (0px → 0, 0rem → 0, 0em → 0)
+    // But preserve 0% as it's sometimes needed
+    .replace(/\b0(px|rem|em|vh|vw|vmin|vmax|ch|ex)\b/g, '0')
+    // Remove space around colons (except in selectors)
+    .replace(/\s*:\s*/g, ':')
+    // Remove space around semicolons
+    .replace(/\s*;\s*/g, ';')
+    // Remove semicolon before closing brace
+    .replace(/;}/g, '}')
+    // Remove space before opening brace
+    .replace(/\s*\{/g, '{')
+    // Remove space after opening brace
+    .replace(/\{\s*/g, '{')
+    // Remove space before closing brace
+    .replace(/\s*\}/g, '}')
+    // Collapse multiple spaces to one
+    .replace(/\s+/g, ' ')
+    // Remove newlines entirely for maximum compression
+    .replace(/\n/g, '')
+    // Trim
+    .trim();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CSS Inline Plugin
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Extract CSS content from bundle assets
+ * @param bundle - Vite bundle object
+ * @param compress - Whether to compress CSS (production builds)
  */
 function extractCssFromBundle(
   bundle: Record<string, { type: string; source?: string | Uint8Array }>,
-  stripComments = false,
+  compress = false,
 ): string {
   const cssChunks: string[] = [];
 
@@ -184,9 +220,12 @@ function extractCssFromBundle(
       cssContent = new TextDecoder().decode(source);
     }
 
-    // Strip comments in production mode
-    if (stripComments && cssContent) {
+    // Process CSS in production mode
+    if (compress && cssContent) {
+    // First remove comments
       cssContent = removeCssComments(cssContent);
+      // Then compress values
+      cssContent = compressCssValues(cssContent);
     }
 
     cssChunks.push(cssContent);
@@ -195,11 +234,12 @@ function extractCssFromBundle(
     delete bundle[fileName];
   }
 
-  return cssChunks.join('\n');
+  return cssChunks.join(compress ? '' : '\n');
 }
 
 /**
  * Generate CSS injection code for userscript
+ * Uses single CSS variable to avoid duplication in if/else branches (~70KB savings)
  */
 function generateCssInjectionCode(css: string, isDev: boolean): string {
   return `
@@ -207,10 +247,12 @@ function generateCssInjectionCode(css: string, isDev: boolean): string {
   'use strict';
   if (typeof document === 'undefined') return;
 
+  var css = ${JSON.stringify(css)};
+
   // Prevent duplicate injection (userscript may reload)
   var existingStyle = document.getElementById('${STYLE_ID}');
   if (existingStyle) {
-    existingStyle.textContent = ${JSON.stringify(css)};
+    existingStyle.textContent = css;
     return;
   }
 
@@ -218,7 +260,7 @@ function generateCssInjectionCode(css: string, isDev: boolean): string {
   var style = document.createElement('style');
   style.id = '${STYLE_ID}';
   style.setAttribute('data-xeg-version', '${isDev ? 'dev' : 'prod'}');
-  style.textContent = ${JSON.stringify(css)};
+  style.textContent = css;
 
   // Insert at the end of head for proper cascade order
   (document.head || document.documentElement).appendChild(style);
@@ -232,7 +274,7 @@ function generateCssInjectionCode(css: string, isDev: boolean): string {
  * - Prevents duplicate style injection
  * - CSP-safe style injection (no inline styles)
  * - Layer order preservation for CSS cascade
- * - CSS comment stripping for production builds
+ * - CSS compression for production builds (comment stripping, value minification)
  */
 function cssInlinePlugin(isDev = false): Plugin {
   return {
@@ -241,11 +283,11 @@ function cssInlinePlugin(isDev = false): Plugin {
     enforce: 'post',
 
     generateBundle(_options, bundle) {
-      // Strip CSS comments in production mode only
-      const stripComments = !isDev;
+      // Compress CSS in production mode only
+      const compress = !isDev;
       const cssContent = extractCssFromBundle(
         bundle as Record<string, { type: string; source?: string | Uint8Array }>,
-        stripComments,
+        compress,
       );
 
       if (!cssContent.trim()) return;
