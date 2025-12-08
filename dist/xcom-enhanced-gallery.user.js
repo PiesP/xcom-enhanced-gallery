@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         X.com Enhanced Gallery
 // @namespace    https://github.com/PiesP/xcom-enhanced-gallery
-// @version      1.0.0
+// @version      1.1.0
 // @description  Media viewer and download functionality for X.com
 // @author       PiesP
 // @license      MIT
