@@ -638,7 +638,21 @@ function productionCleanupPlugin(): Plugin {
         // These are development-only logs that can add significant string content
         code = removeLogCalls(code, ['debug', 'info']);
 
-        // 5. Clean up multiple consecutive empty lines
+        // 5. Simplify createSingleton pattern (remove reset() method for production)
+        // Pattern: { get() { ... }, reset() { instance = null; } }
+        // Replace with: { get() { ... } }
+        code = code.replace(
+          /,\s*reset\(\)\s*\{\s*instance\s*=\s*null;\s*\}/g,
+          '',
+        );
+
+        // 6. Remove static resetForTests methods (test-only)
+        code = code.replace(
+          /static\s+resetForTests\(\)\s*\{[^}]*\}/g,
+          '',
+        );
+
+        // 7. Clean up multiple consecutive empty lines
         code = code.replace(/\n{3,}/g, '\n\n');
 
         chunk.code = code;
