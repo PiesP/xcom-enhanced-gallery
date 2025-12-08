@@ -162,7 +162,6 @@ jobs:
 
       - name: 🏗️ Build userscript
         run: |
-          npx vite build --mode development
           npx vite build --mode production
 
       - name: 📤 Commit dist/ to repository
@@ -172,7 +171,6 @@ jobs:
 
           # Force add dist/ even though it's in .gitignore
           git add -f dist/xcom-enhanced-gallery.user.js
-          git add -f dist/xcom-enhanced-gallery.dev.user.js
 
           # Only commit if there are changes
           if git diff --staged --quiet; then
