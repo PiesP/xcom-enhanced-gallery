@@ -219,7 +219,7 @@ import { x } from '../../shared/external'; // 경로 별칭 사용
 | **저장**     | `GM_setValue/getValue` | `PersistentStorage`   | `persistent-storage.ts`   | 타입 안전, 캐싱   |
 | **알림**     | `GM_notification`      | `NotificationService` | `notification-service.ts` | 일관된 UI         |
 | **다운로드** | `GM_download`          | `DownloadService`     | `download-service.ts`     | 진행률, 에러 처리 |
-| **HTTP**     | `fetch` (MV3)          | `HttpRequestService`  | `http-request-service.ts` | CORS, 타임아웃    |
+| **HTTP**     | `GM_xmlhttpRequest`    | `HttpRequestService`  | `http-request-service.ts` | CORS, 타임아웃    |
 
 **참고**: [ARCHITECTURE.md](../../docs/ARCHITECTURE.md) - Phase 309+ Service
 Layer 상세 설명
@@ -387,8 +387,7 @@ export function getUserscript(): UserscriptAPI;
 
 // 환경 감지
 export function detectEnvironment(): EnvironmentInfo;
-export function isGMAPIAvailable(): boolean;
-export function getEnvironmentDescription(): string;
+export function isGMAPIAvailable(apiName: string): boolean;
 
 // 타입
 export interface UserscriptAPI {
@@ -400,16 +399,19 @@ export interface UserscriptAPI {
   getValue<T>(key: string, defaultValue?: T): Promise<T | undefined>;
   deleteValue(key: string): Promise<void>;
   listValues(): Promise<string[]>;
+  addStyle(css: string): HTMLStyleElement;
+  xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl;
+  readonly cookie: CookieAPI | undefined;
 }
 
 export interface EnvironmentInfo {
-  isUserscriptEnvironment: boolean;
-  isTestEnvironment: boolean;
-  isBrowserExtension: boolean;
-  isBrowserConsole: boolean;
-  availableGMAPIs: string[];
-  environment: 'userscript' | 'test' | 'extension' | 'console';
+  colorScheme: 'light' | 'dark';
+  language: BaseLanguageCode;
 }
+
+// Supported API names for isGMAPIAvailable():
+// 'getValue', 'setValue', 'download', 'notification',
+// 'deleteValue', 'listValues', 'cookie'
 ```
 
 ### `@shared/external/zip`
@@ -461,4 +463,4 @@ export interface ZipCreationConfig {
 
 ---
 
-**마지막 업데이트**: 2025-12-08 (v7.0.0)
+**마지막 업데이트**: 2025-12-08 (v7.1.0 - Tampermonkey API 정리)

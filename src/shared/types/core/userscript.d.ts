@@ -13,16 +13,8 @@ declare global {
   function GM_setValue(name: string, value: any): void;
   function GM_deleteValue(name: string): void;
   function GM_listValues(): string[];
-  function GM_getResourceText(name: string): string;
-  function GM_getResourceURL(name: string): string;
   function GM_addStyle(css: string): HTMLStyleElement;
   function GM_xmlhttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl;
-  function GM_openInTab(
-    url: string,
-    options?: { active?: boolean; insert?: boolean; setParent?: boolean },
-  ): void;
-  function GM_registerMenuCommand(name: string, fn: () => void, accessKey?: string): number;
-  function GM_unregisterMenuCommand(menuCmdId: number): void;
   function GM_notification(details: GMNotificationDetails, ondone?: () => void): void;
   function GM_notification(
     text: string,
@@ -149,14 +141,11 @@ export interface GMXMLHttpRequestControl {
  * Phase 318.1: GM_xmlhttpRequest removed (MV3 incompatible) -> Phase 373: GM_xmlhttpRequest restored
  */
 export type UserScriptGrant =
-  | 'GM_registerMenuCommand'
   | 'GM_setValue'
   | 'GM_getValue'
   | 'GM_download'
-  | 'GM_openInTab'
   | 'GM_notification'
   | 'GM_addStyle'
-  | 'GM_setClipboard'
   | 'GM_cookie'
   | 'GM_xmlhttpRequest';
 

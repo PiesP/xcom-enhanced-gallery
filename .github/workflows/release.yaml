@@ -155,9 +155,6 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          # Force add dist/ even though it's in .gitignore
-          git add -f dist/xcom-enhanced-gallery.user.js
-
           # Only commit if there are changes
           if git diff --staged --quiet; then
             echo "📦 No changes to dist/ files"

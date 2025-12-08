@@ -25,7 +25,6 @@ export interface UserscriptConfig {
   readonly noframes: boolean;
   readonly icon?: string;
   readonly require?: readonly string[];
-  readonly resource?: Readonly<Record<string, string>>;
 }
 
 export interface LicenseInfo {
@@ -115,12 +114,6 @@ function generateOptionalMeta(config: UserscriptConfig): string[] {
 
   if (config.require?.length) {
     lines.push(...formatMetaLines('require', config.require));
-  }
-
-  if (config.resource) {
-    for (const [name, url] of Object.entries(config.resource)) {
-      lines.push(formatMetaLine('resource', `${name} ${url}`));
-    }
   }
 
   if (config.noframes) {

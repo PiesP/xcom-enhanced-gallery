@@ -520,11 +520,11 @@ async function bundleWithVite(isDev: boolean): Promise<BundleResult> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Create userscript configuration with version-specific URLs
+ * Create userscript configuration with master branch URLs
  */
 function createUserscriptConfig(version: string): UserscriptConfig {
   const baseUrl =
-    `https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@v${version}/dist/xcom-enhanced-gallery.user.js`;
+    `https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@master/dist/xcom-enhanced-gallery.user.js`;
 
   return {
     ...USERSCRIPT_BASE_CONFIG,

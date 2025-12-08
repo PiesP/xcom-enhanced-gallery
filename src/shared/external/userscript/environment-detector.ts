@@ -17,8 +17,6 @@ const GM_API_CHECKS: Record<string, (gm: Record<string, unknown>) => boolean> = 
   setValue: (gm) => typeof gm.GM_setValue === 'function',
   download: (gm) => typeof gm.GM_download === 'function',
   notification: (gm) => typeof gm.GM_notification === 'function',
-  setClipboard: (gm) => typeof gm.GM_setClipboard === 'function',
-  registerMenuCommand: (gm) => typeof gm.GM_registerMenuCommand === 'function',
   deleteValue: (gm) => typeof gm.GM_deleteValue === 'function',
   listValues: (gm) => typeof gm.GM_listValues === 'function',
   cookie: (gm) => typeof (gm.GM_cookie as { list?: unknown } | undefined)?.list === 'function',
@@ -60,8 +58,8 @@ export function detectEnvironment(): EnvironmentInfo {
  * Maps simplified API names to full GM_* function names and verifies availability.
  *
  * **Supported API Names**:
- * - 'getValue', 'setValue', 'download', 'notification', 'setClipboard'
- * - 'registerMenuCommand', 'deleteValue', 'listValues'
+ * - 'getValue', 'setValue', 'download', 'notification'
+ * - 'deleteValue', 'listValues', 'cookie'
  *
  * @param apiName - Name of the API to check (e.g., 'download', 'notification')
  * @returns True if the API function is available and is a function
