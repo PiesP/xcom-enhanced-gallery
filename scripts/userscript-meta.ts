@@ -158,11 +158,71 @@ export function generateUserscriptMeta(
 // License Block Generation
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Common MIT License body text (without copyright line) */
+const MIT_LICENSE_BODY =
+  `Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.`;
+
+/** Pattern to extract copyright line from MIT license */
+const COPYRIGHT_PATTERN = /Copyright\s*\(c\)\s*(.+)/i;
+
+/**
+ * Extract copyright holder from license text
+ */
+function extractCopyright(licenseText: string): string | null {
+  const match = licenseText.match(COPYRIGHT_PATTERN);
+  return match?.[1]?.trim() ?? null;
+}
+
+/**
+ * Check if license text is MIT license
+ */
+function isMitLicense(licenseText: string): boolean {
+  return licenseText.includes('MIT License') ||
+    licenseText.includes('Permission is hereby granted');
+}
+
 /**
  * Generate formatted license block comment
+ * Consolidates multiple MIT licenses into a single block with merged copyrights
  */
 function generateLicenseBlock(licenses: readonly LicenseInfo[]): string {
   if (licenses.length === 0) return '';
+
+  // Separate MIT and non-MIT licenses
+  const mitCopyrights: Array<{ name: string; copyright: string }> = [];
+  const nonMitLicenses: LicenseInfo[] = [];
+
+  for (const license of licenses) {
+    if (!license) continue;
+
+    if (isMitLicense(license.text)) {
+      const copyright = extractCopyright(license.text);
+      if (copyright) {
+        mitCopyrights.push({ name: license.name, copyright });
+      } else {
+        // MIT but no extractable copyright - include as-is
+        nonMitLicenses.push(license);
+      }
+    } else {
+      nonMitLicenses.push(license);
+    }
+  }
 
   const lines: string[] = [
     '/*',
@@ -171,20 +231,40 @@ function generateLicenseBlock(licenses: readonly LicenseInfo[]): string {
     ' *',
   ];
 
-  for (let i = 0; i < licenses.length; i++) {
-    const license = licenses[i];
+  // Output consolidated MIT license block if any
+  if (mitCopyrights.length > 0) {
+    lines.push(' * MIT License');
+    lines.push(' *');
+
+    // List all copyright holders with their project names
+    for (const { name, copyright } of mitCopyrights) {
+      lines.push(` * Copyright (c) ${copyright} (${name})`);
+    }
+    lines.push(' *');
+
+    // Single MIT license body
+    for (const textLine of MIT_LICENSE_BODY.split('\n')) {
+      lines.push(` * ${textLine}`);
+    }
+
+    // Separator if there are non-MIT licenses
+    if (nonMitLicenses.length > 0) {
+      lines.push(' *', ' *');
+    }
+  }
+
+  // Output non-MIT licenses as before
+  for (let i = 0; i < nonMitLicenses.length; i++) {
+    const license = nonMitLicenses[i];
     if (!license) continue;
 
-    // Add license name as header
     lines.push(` * ${license.name}:`);
 
-    // Add license text with proper formatting
     for (const textLine of license.text.split('\n')) {
       lines.push(` * ${textLine}`);
     }
 
-    // Add separator between licenses (except for the last one)
-    if (i < licenses.length - 1) {
+    if (i < nonMitLicenses.length - 1) {
       lines.push(' *', ' *');
     }
   }

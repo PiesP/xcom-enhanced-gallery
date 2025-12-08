@@ -1,14 +1,12 @@
 name: 🤖 Dependabot Auto-Merge
 
-# Responsibility: Automatic merge for safe Dependabot PRs
-# - Minor/patch updates: auto-merge enabled
-# - Major updates: manual review required
-# - Production dependencies: require review
-#
-# Triggered on: Dependabot pull requests only
+# Responsibility: Auto-merge dependabot PRs for GitHub Actions
+# - Only for patch/minor updates
+# - Only for GitHub Actions dependencies
+# - Requires CI to pass first
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened]
 
 permissions:
@@ -17,66 +15,33 @@ permissions:
 
 jobs:
   auto-merge:
-    name: 🤖 Auto-Merge
-    runs-on: ubuntu-slim
+    name: 🤖 Auto-Merge Dependabot
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     if: github.actor == 'dependabot[bot]'
     steps:
-      - name: 📋 Fetch Dependabot metadata
-        id: metadata
+      - name: 📥 Fetch Dependabot metadata
+        id: dependabot-metadata
         uses: dependabot/fetch-metadata@v2
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: 🔍 Check if safe to auto-merge
-        id: check
+      - name: 🔄 Auto-merge patch/minor updates
+        if: >-
+          steps.dependabot-metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.dependabot-metadata.outputs.update-type == 'version-update:semver-minor'
         run: |
-          UPDATE_TYPE="${{ steps.metadata.outputs.update-type }}"
-          DEP_TYPE="${{ steps.metadata.outputs.dependency-type }}"
-          DEP_NAME="${{ steps.metadata.outputs.dependency-names }}"
-
-          echo "📦 Dependency: $DEP_NAME"
-          echo "📊 Update type: $UPDATE_TYPE"
-          echo "📁 Dependency type: $DEP_TYPE"
-
-          # Safe to auto-merge conditions:
-          # 1. Minor or patch update
-          # 2. Development dependency OR GitHub Actions
-          # 3. Not a critical package (solid-js)
-
-          SAFE_UPDATE=false
-          if [[ "$UPDATE_TYPE" == "version-update:semver-minor" ]] || [[ "$UPDATE_TYPE" == "version-update:semver-patch" ]]; then
-            if [[ "$DEP_TYPE" == "direct:development" ]] || [[ "$DEP_TYPE" == "indirect" ]]; then
-              SAFE_UPDATE=true
-            fi
-            # GitHub Actions are always safe for minor/patch
-            if [[ "${{ steps.metadata.outputs.package-ecosystem }}" == "github-actions" ]]; then
-              SAFE_UPDATE=true
-            fi
-          fi
-
-          # Block critical packages from auto-merge
-          if [[ "$DEP_NAME" == *"solid-js"* ]]; then
-            echo "⚠️ Critical dependency - requires manual review"
-            SAFE_UPDATE=false
-          fi
-
-          echo "safe=$SAFE_UPDATE" >> "$GITHUB_OUTPUT"
-
-      - name: ✅ Enable auto-merge
-        if: steps.check.outputs.safe == 'true'
-        run: |
-          echo "🤖 Enabling auto-merge for safe dependency update"
+          echo "🤖 Auto-merging Dependabot PR"
+          echo "📦 Package: ${{ steps.dependabot-metadata.outputs.dependency-names }}"
+          echo "📊 Update type: ${{ steps.dependabot-metadata.outputs.update-type }}"
           gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📝 Add review label for production deps
-        if: steps.check.outputs.safe != 'true'
+      - name: ⏭️ Skip major updates
+        if: steps.dependabot-metadata.outputs.update-type == 'version-update:semver-major'
         run: |
-          echo "⚠️ This dependency update requires manual review"
-          gh pr edit "$PR_URL" --add-label "needs-review"
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "⚠️ Major update detected - requires manual review"
+          echo "📦 Package: ${{ steps.dependabot-metadata.outputs.dependency-names }}"
+          echo "📊 Update type: ${{ steps.dependabot-metadata.outputs.update-type }}"

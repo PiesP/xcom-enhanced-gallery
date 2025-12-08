@@ -21,6 +21,7 @@
  * @version 7.0.0 - SharedObserver integration and hook extraction
  */
 
+import { createDebounced } from '@shared/async';
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
 import { createIntrinsicSizingStyle, resolveMediaDimensions } from '@shared/media/media-utils';
@@ -113,6 +114,17 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
     }
   });
 
+  // Debounced settings persistence to reduce GM_setValue calls during slider drag
+  const debouncedSaveVolume = createDebounced((volume: number, muted: boolean) => {
+    void setTypedSetting('gallery.videoVolume', volume);
+    void setTypedSetting('gallery.videoMuted', muted);
+  }, 300);
+
+  // Cleanup debounced function on unmount
+  onCleanup(() => {
+    debouncedSaveVolume.flush();
+  });
+
   // Handle volume change events from video controls
   const handleVolumeChange = (event: Event) => {
     if (isApplyingVideoSettings) {
@@ -122,12 +134,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | 
     const newVolume = video.volume;
     const newMuted = video.muted;
 
+    // Update local signals immediately for responsive UI
     setVideoVolume(newVolume);
     setVideoMuted(newMuted);
 
-    // Persist to settings (async, fire-and-forget)
-    void setTypedSetting('gallery.videoVolume', newVolume);
-    void setTypedSetting('gallery.videoMuted', newMuted);
+    // Persist to settings with debounce (reduces GM_setValue calls during drag)
+    debouncedSaveVolume(newVolume, newMuted);
   };
 
   // Event handlers

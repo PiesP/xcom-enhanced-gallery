@@ -1,30 +1,25 @@
 name: 🚀 Release
 
-# Responsibility: Release artifact creation only
-# - Version detection: package.json version change or manual trigger
+# Responsibility: Release artifact creation (Deno-based)
+# - Version detection: deno.json version change or manual trigger
 # - Production build: userscript + checksums + metadata
 # - GitHub Release: automated creation with downloadable assets
 # - dist/ update: commit built scripts to repository for jsDelivr CDN
 #
-# Trigger: Only when package.json changes (version bump) or manual dispatch
-# Note: All validation (tests, lint, deps) happens locally before push.
+# Trigger: Only when deno.json changes (version bump) or manual dispatch
+# Note: All validation (lint, typecheck, fmt) happens locally before push.
 
 on:
   push:
     branches: [master]
     paths:
-      - "package.json"  # Only trigger on package.json changes (version bump)
+      - "deno.json"
   workflow_dispatch:
     inputs:
-      version_type:
-        description: "Version bump type"
+      version:
+        description: "Version to release (e.g., 1.2.3)"
         required: true
-        default: "patch"
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
+        type: string
       skip_ci_check:
         description: "Skip CI status check"
         required: false
@@ -32,8 +27,7 @@ on:
         type: boolean
 
 env:
-  NODE_VERSION: "24"
-  XEG_DISABLE_LOCAL_CONFIG: "true"
+  DENO_VERSION: "2.x"
 
 permissions:
   contents: read
@@ -45,14 +39,14 @@ concurrency:
 jobs:
   check-version:
     name: 🔍 Check Version
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
       current_version: ${{ steps.check.outputs.current_version }}
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
@@ -60,22 +54,30 @@ jobs:
         id: check
         run: |
           set -euo pipefail
-          CURRENT_VERSION=$(node -p "require('./package.json').version")
+
+          # Get version from git tag or deno.json
+          get_version() {
+            # Try to get latest git tag first
+            local tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            if [ -n "$tag" ]; then
+              echo "${tag#v}"
+            else
+              echo "1.0.0"
+            fi
+          }
+
+          CURRENT_VERSION=$(get_version)
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            CURRENT_VERSION="${{ inputs.version }}"
             echo "should_release=true" >> "$GITHUB_OUTPUT"
-            echo "📦 Manual release triggered"
+            echo "📦 Manual release triggered: v$CURRENT_VERSION"
           else
             PREV_VERSION=""
             if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
-              if git ls-tree -r HEAD~1 --name-only | grep -q '^package.json$'; then
-                PREV_VERSION=$(git show HEAD~1:package.json 2>/dev/null | node -e "
-                  try {
-                    const s = require('fs').readFileSync(0,'utf8');
-                    const p = JSON.parse(s);
-                    if (p?.version) console.log(p.version);
-                  } catch(e) {}
-                " || true)
+              PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+              if [ -n "$PREV_TAG" ]; then
+                PREV_VERSION="${PREV_TAG#v}"
               fi
             fi
 
@@ -95,7 +97,7 @@ jobs:
 
   build-release:
     name: 🏗️ Build & Release
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     needs: check-version
     if: needs.check-version.outputs.should_release == 'true'
     timeout-minutes: 15
@@ -103,46 +105,30 @@ jobs:
       contents: write
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: 🔧 Setup environment
-        uses: ./.github/actions/setup-node
+      - name: 🦕 Setup Deno
+        uses: denoland/setup-deno@v2
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          deno-version: ${{ env.DENO_VERSION }}
 
-      - name: 📦 Cache Vite build
+      - name: 📦 Cache dependencies
         uses: actions/cache@v4
         with:
           path: |
-            node_modules/.vite
-            .vite
-          key: vite-${{ runner.os }}-${{ hashFiles('package-lock.json', 'vite.config.ts') }}
+            ~/.cache/deno
+            node_modules
+          key: deno-${{ runner.os }}-${{ hashFiles('deno.lock', 'deno.json') }}
           restore-keys: |
-            vite-${{ runner.os }}-
-
-      - name: 📈 Bump version (manual only)
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-          echo "🔄 Bumping version (${{ inputs.version_type }})..."
-          npm version ${{ inputs.version_type }} --no-git-tag-version
-
-          NEW_VERSION=$(node -p "require('./package.json').version")
-          echo "✅ Version bumped to: $NEW_VERSION"
-
-          git add package.json package-lock.json
-          git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
-          git push
+            deno-${{ runner.os }}-
 
       - name: 📝 Get release version
         id: version
         run: |
-          VERSION=$(node -p "require('./package.json').version")
+          VERSION="${{ needs.check-version.outputs.current_version }}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Release version: $VERSION"
 
@@ -162,7 +148,7 @@ jobs:
 
       - name: 🏗️ Build userscript
         run: |
-          npx vite build --mode production
+          deno task build --version=${{ steps.version.outputs.version }}
 
       - name: 📤 Commit dist/ to repository
         run: |
@@ -195,14 +181,13 @@ jobs:
             "version": "${{ steps.version.outputs.version }}",
             "build_date": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
             "commit": "${{ github.sha }}",
-            "node_version": "${{ env.NODE_VERSION }}"
+            "deno_version": "${{ env.DENO_VERSION }}"
           }
           EOF
 
           # Extract changelog for current version
           CHANGELOG_CONTENT=""
           if [ -f "CHANGELOG.md" ]; then
-            # Extract content between [version] and next [version] or end
             CHANGELOG_CONTENT=$(awk -v ver="${{ steps.version.outputs.version }}" '
               /^## \[/ {
                 if (found) exit;
@@ -237,7 +222,7 @@ jobs:
 
           - **Commit**: \`${{ github.sha }}\`
           - **Built**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          - **Node.js**: \`${{ env.NODE_VERSION }}\`
+          - **Deno**: \`${{ env.DENO_VERSION }}\`
           EOF
 
       - name: 🏷️ Create GitHub Release
@@ -255,7 +240,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📊 Upload release artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: release-v${{ steps.version.outputs.version }}
           path: release/

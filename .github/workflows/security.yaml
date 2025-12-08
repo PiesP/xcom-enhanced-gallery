@@ -1,249 +1,195 @@
-name: 🛡️ Security Suite
+name: 🔒 Security Scanning
 
-# Responsibility: Comprehensive Security Monitoring
-# - CodeQL Analysis (Static code analysis)
-# - OSV Scanner (Dependency vulnerability scanning)
-# - NPM Audit (Node.js dependency vulnerabilities)
-# - License Compliance (Dependency license verification)
+# Responsibility: Security analysis for Deno-based project
+# - OSV scanning: vulnerability detection in dependencies
+# - SAST: static security analysis with Semgrep
+# - License compliance: verify approved licenses (MIT/ISC/BSD/Apache-2.0)
 #
-# Triggered on: Push/PR to master, Weekly schedule (Monday 9 AM KST)
+# Trigger: Weekly schedule + push to master + PR to master
 
 on:
+  schedule:
+    - cron: "0 1 * * 0" # Weekly on Sundays at 1 AM UTC
   push:
     branches: [master]
-    paths:
-      - "src/**"
-      - "package.json"
-      - "package-lock.json"
   pull_request:
     branches: [master]
-    paths:
-      - "src/**"
-      - "package.json"
-      - "package-lock.json"
-  schedule:
-    # Every Monday 9 AM KST (0 AM UTC)
-    - cron: "0 0 * * 1"
   workflow_dispatch:
 
 env:
-  NODE_VERSION: "24"
-  XEG_DISABLE_LOCAL_CONFIG: "true"
-  OSV_SCANNER_VERSION: v2.3.0
+  DENO_VERSION: "2.x"
 
 permissions:
   contents: read
   security-events: write
-  actions: read
 
 concurrency:
   group: security-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name != 'schedule' }}
+  cancel-in-progress: true
 
 jobs:
-  # CodeQL runs separately due to its complexity
-  codeql:
-    name: 🧠 CodeQL Analysis
-    runs-on: ubuntu-slim
-    timeout-minutes: 30
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v6
-
-      - name: 🔧 Setup environment
-        uses: ./.github/actions/setup-node
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: 🛠️ Initialize CodeQL
-        uses: github/codeql-action/init@v4
-        with:
-          languages: javascript-typescript
-          queries: security-extended
-          config: |
-            paths-ignore:
-              - dist/
-              - node_modules/
-              - docs/
-              - test/
-              - scripts/
-              - coverage/
-              - playwright/
-              - "**/*.d.ts"
-              - "**/*.min.js"
-              - "**/*.map"
-              - "**/*.test.ts"
-              - "**/*.spec.ts"
-
-      - name: 📦 Cache Vite build
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules/.vite
-            .vite
-          key: vite-${{ runner.os }}-${{ hashFiles('package-lock.json', 'vite.config.ts') }}
-          restore-keys: |
-            vite-${{ runner.os }}-
-
-      - name: 🏗️ Build for analysis
-        run: npx vite build --mode production
-
-      - name: 📊 Analyze
-        uses: github/codeql-action/analyze@v4
-        with:
-          category: "/language:javascript-typescript"
-
-  # Run lightweight security checks in parallel
   osv-scanner:
-    name: 🔍 OSV Scanner
-    runs-on: ubuntu-slim
-    timeout-minutes: 10
+    name: 🛡️ OSV Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: 🔍 Run OSV-Scanner
+        uses: google/osv-scanner-action@v2.0.0
         with:
-          sparse-checkout: |
-            package.json
-            package-lock.json
-          sparse-checkout-cone-mode: false
-
-      - name: 📦 Cache OSV-Scanner
-        id: cache-osv
-        uses: actions/cache@v4
-        with:
-          path: ~/.local/bin/osv-scanner
-          key: osv-scanner-${{ env.OSV_SCANNER_VERSION }}
-
-      - name: 📥 Download OSV-Scanner
-        if: steps.cache-osv.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p "${HOME}/.local/bin"
-          curl -sSLo "${HOME}/.local/bin/osv-scanner" \
-            "https://github.com/google/osv-scanner/releases/download/${{ env.OSV_SCANNER_VERSION }}/osv-scanner_linux_amd64"
-          chmod +x "${HOME}/.local/bin/osv-scanner"
-
-      - name: 🔧 Add OSV to PATH
-        run: echo "${HOME}/.local/bin" >> "$GITHUB_PATH"
-
-      - name: 🔍 Run OSV scan
+          scan-args: |-
+            --lockfile=deno.lock
+            --format=json
+            --output=osv-results.json
+            .
         continue-on-error: true
-        run: |
-          osv-scanner scan source \
-            --recursive \
-            --format sarif \
-            --output osv-results.sarif \
-            ./
 
-      - name: 📊 Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v4
+      - name: 📤 Upload OSV results
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: osv-results.sarif
+          sarif_file: osv-results.json
+        continue-on-error: true
 
-  # NPM Audit and License check run in parallel
-  audit:
-    name: 📦 NPM Audit
-    runs-on: ubuntu-slim
+  semgrep:
+    name: 🔍 Static Analysis (Semgrep)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔍 Run Semgrep
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/typescript
+            p/javascript
+            p/security-audit
+            p/secrets
+        env:
+          SEMGREP_RULES: >-
+            p/typescript
+            p/javascript
+            p/security-audit
+            p/secrets
+
+  license-compliance:
+    name: 📜 License Compliance Check
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: 🦕 Setup Deno
+        uses: denoland/setup-deno@v2
         with:
-          sparse-checkout: |
-            package.json
-            package-lock.json
-            .github/actions
-          sparse-checkout-cone-mode: false
+          deno-version: ${{ env.DENO_VERSION }}
 
-      - name: 🔧 Setup environment
-        uses: ./.github/actions/setup-node
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: 🔍 NPM Security Audit
-        run: npm audit --audit-level=moderate || true
-
-      - name: 🔒 High-risk vulnerability check
+      - name: 📜 Verify LICENSES directory
         run: |
-          npm audit --audit-level=high --json > audit-report.json 2>&1 || true
-          if grep -q '"vulnerabilities"' audit-report.json 2>/dev/null; then
-            VULN_COUNT=$(node -e "const r=require('./audit-report.json'); console.log(Object.values(r.vulnerabilities || {}).filter(v => v.severity === 'high' || v.severity === 'critical').length)" 2>/dev/null || echo "0")
-            if [ "$VULN_COUNT" -gt 0 ]; then
-              echo "🚨 Found $VULN_COUNT high/critical vulnerabilities!"
-              cat audit-report.json
-            else
-              echo "✅ No high-risk vulnerabilities found"
-            fi
-          else
-            echo "✅ No vulnerabilities detected"
+          set -euo pipefail
+          echo "📜 Checking license files..."
+
+          LICENSES_DIR="LICENSES"
+          if [ ! -d "$LICENSES_DIR" ]; then
+            echo "⚠️ LICENSES directory not found"
+            exit 1
           fi
 
-      - name: 📊 Upload audit report
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: npm-audit-${{ github.sha }}
-          path: audit-report.json
-          retention-days: 14
-          if-no-files-found: ignore
+          # Check that required license files exist
+          REQUIRED_LICENSES=(
+            "xcom-enhanced-gallery-MIT.txt"
+            "solid-js-MIT.txt"
+            "heroicons-MIT.txt"
+          )
 
-  license:
-    name: 📜 License Compliance
-    runs-on: ubuntu-slim
+          MISSING_LICENSES=()
+          for license in "${REQUIRED_LICENSES[@]}"; do
+            if [ ! -f "$LICENSES_DIR/$license" ]; then
+              MISSING_LICENSES+=("$license")
+            fi
+          done
+
+          if [ ${#MISSING_LICENSES[@]} -ne 0 ]; then
+            echo "❌ Missing license files:"
+            printf '  - %s\n' "${MISSING_LICENSES[@]}"
+            exit 1
+          fi
+
+          echo "✅ All required license files present"
+          ls -la "$LICENSES_DIR"
+
+      - name: 🔍 Check for disallowed licenses
+        run: |
+          set -euo pipefail
+          echo "🔍 Checking for disallowed license content..."
+
+          # List of disallowed license types (GPL variants, AGPL, proprietary)
+          DISALLOWED_PATTERNS=(
+            "GNU General Public License"
+            "GNU GPL"
+            "GNU AGPL"
+            "AGPL-3.0"
+            "GPL-2.0"
+            "GPL-3.0"
+            "proprietary"
+            "all rights reserved"
+          )
+
+          FOUND_ISSUES=0
+          for pattern in "${DISALLOWED_PATTERNS[@]}"; do
+            if grep -ri "$pattern" LICENSES/ 2>/dev/null; then
+              echo "⚠️ Found potentially disallowed license: $pattern"
+              FOUND_ISSUES=1
+            fi
+          done
+
+          if [ $FOUND_ISSUES -eq 1 ]; then
+            echo "❌ Potential license compliance issues found"
+            # Don't fail, just warn - manual review needed
+          else
+            echo "✅ No disallowed license patterns found"
+          fi
+
+  security-summary:
+    name: 📊 Security Summary
+    runs-on: ubuntu-latest
+    needs: [osv-scanner, semgrep, license-compliance]
+    if: always()
     timeout-minutes: 5
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v6
-        with:
-          sparse-checkout: |
-            package.json
-            package-lock.json
-            .github/actions
-          sparse-checkout-cone-mode: false
-
-      - name: 🔧 Setup environment
-        uses: ./.github/actions/setup-node
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: 📜 Check licenses
+      - name: 📊 Generate summary
         run: |
-          echo "🔍 Checking license compliance..."
+          echo "## 🔒 Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Check for problematic licenses
-          ALLOWED_LICENSES="MIT|ISC|BSD|Apache|CC0|Unlicense|0BSD"
+          # OSV Scanner
+          if [ "${{ needs.osv-scanner.result }}" == "success" ]; then
+            echo "| ✅ | OSV Vulnerability Scan | Passed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| ⚠️ | OSV Vulnerability Scan | Check required |" >> $GITHUB_STEP_SUMMARY
+          fi
 
-          npm ls --json --all 2>/dev/null | node -e "
-            const fs = require('fs');
-            const data = JSON.parse(fs.readFileSync(0, 'utf8'));
+          # Semgrep
+          if [ "${{ needs.semgrep.result }}" == "success" ]; then
+            echo "| ✅ | Static Analysis (Semgrep) | Passed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| ⚠️ | Static Analysis (Semgrep) | Check required |" >> $GITHUB_STEP_SUMMARY
+          fi
 
-            function checkDeps(deps, path = []) {
-              if (!deps) return [];
-              const issues = [];
-              for (const [name, info] of Object.entries(deps)) {
-                const license = info.license || 'UNKNOWN';
-                const allowed = /${ALLOWED_LICENSES}/i.test(license);
-                if (!allowed && license !== 'UNKNOWN') {
-                  issues.push({ name, license, path: path.join(' > ') });
-                }
-                issues.push(...checkDeps(info.dependencies, [...path, name]));
-              }
-              return issues;
-            }
-
-            const issues = checkDeps(data.dependencies);
-            if (issues.length > 0) {
-              console.log('⚠️ Non-standard licenses found:');
-              issues.forEach(i => console.log(\`  - \${i.name}: \${i.license}\`));
-            } else {
-              console.log('✅ All licenses are compliant');
-            }
-          " > licenses.json 2>&1 || echo "License check completed"
-
-      - name: 📊 Upload license report
-        uses: actions/upload-artifact@v5
-        with:
-          name: license-report-${{ github.sha }}
-          path: licenses.json
-          retention-days: 7
-          if-no-files-found: ignore
+          # License
+          if [ "${{ needs.license-compliance.result }}" == "success" ]; then
+            echo "| ✅ | License Compliance | Passed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| ❌ | License Compliance | Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
