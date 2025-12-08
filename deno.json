@@ -1,9 +1,16 @@
 {
   "$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
-  "unstable": ["sloppy-imports"],
+  "unstable": [
+    "sloppy-imports"
+  ],
   "compilerOptions": {
     // Deno-specific: adds deno.ns for Deno APIs
-    "lib": ["esnext", "dom", "dom.iterable", "deno.ns"],
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "deno.ns"
+    ],
     // Solid.js JSX transformation
     "jsx": "react-jsx",
     "jsxImportSource": "solid-js",
@@ -12,13 +19,15 @@
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
     // Custom type definitions
-    "types": ["./src/types/env.d.ts"]
+    "types": [
+      "./src/types/env.d.ts"
+    ]
   },
   "imports": {
     "@biomejs/biome": "npm:@biomejs/biome@^2.3.8",
     "solid-js": "npm:solid-js@^1.9.10",
     "solid-js/": "npm:solid-js@^1.9.10/",
-    "vite": "npm:vite@^8.0.0-beta.0",
+    "vite": "npm:vite@^8.0.0-beta.1",
     "vite-plugin-solid": "npm:vite-plugin-solid@^2.11.10",
     "@/": "./src/",
     "@bootstrap/": "./src/bootstrap/",
@@ -43,10 +52,21 @@
     "quality": "deno task check && deno run -A npm:@biomejs/biome check ./src ./scripts"
   },
   "lint": {
-    "include": ["src/"],
-    "exclude": ["node_modules", "dist", "build", "coverage", ".stryker-tmp", "scripts/"],
+    "include": [
+      "src/"
+    ],
+    "exclude": [
+      "node_modules",
+      "dist",
+      "build",
+      "coverage",
+      ".stryker-tmp",
+      "scripts/"
+    ],
     "rules": {
-      "tags": ["recommended"],
+      "tags": [
+        "recommended"
+      ],
       "include": [
         "ban-untagged-todo",
         "no-const-assign",
@@ -81,9 +101,24 @@
     "semiColons": true,
     "singleQuote": true,
     "proseWrap": "preserve",
-    "include": ["src/", "scripts/"],
-    "exclude": ["node_modules", "dist", "build", "coverage", ".stryker-tmp"]
+    "include": [
+      "src/",
+      "scripts/"
+    ],
+    "exclude": [
+      "node_modules",
+      "dist",
+      "build",
+      "coverage",
+      ".stryker-tmp"
+    ]
   },
-  "exclude": ["node_modules", "dist", "build", "coverage", ".stryker-tmp"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".stryker-tmp"
+  ],
   "nodeModulesDir": "auto"
 }
