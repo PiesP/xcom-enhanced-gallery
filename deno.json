@@ -45,7 +45,11 @@
     "fmt": "deno run -A npm:@biomejs/biome format --write ./src ./scripts",
     "fmt:check": "deno run -A npm:@biomejs/biome format ./src ./scripts",
     "biome:check": "deno run -A npm:@biomejs/biome check --write ./src ./scripts",
-    "quality": "deno task check && deno run -A npm:@biomejs/biome check ./src ./scripts"
+    "quality": "deno task check && deno run -A npm:@biomejs/biome check ./src ./scripts",
+    "test": "cd test && deno task test",
+    "test:watch": "cd test && deno task test:watch",
+    "test:unit": "cd test && deno task test:unit",
+    "test:coverage": "cd test && deno task test:coverage"
   },
   "lint": {
     "include": [
