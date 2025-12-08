@@ -173,6 +173,8 @@ jobs:
         run: |
           echo "## 🔒 Security Scan Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | Check | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|--------|" >> $GITHUB_STEP_SUMMARY
 
           # OSV Scanner
           if [ "${{ needs.osv-scanner.result }}" == "success" ]; then

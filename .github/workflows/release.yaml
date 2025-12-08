@@ -1,19 +1,17 @@
 name: 🚀 Release
 
 # Responsibility: Release artifact creation (Deno-based)
-# - Version detection: deno.json version change or manual trigger
+# - Version detection: git tag or manual trigger
 # - Production build: userscript + checksums + metadata
 # - GitHub Release: automated creation with downloadable assets
 # - dist/ update: commit built scripts to repository for jsDelivr CDN
 #
-# Trigger: Only when deno.json changes (version bump) or manual dispatch
-# Note: All validation (lint, typecheck, fmt) happens locally before push.
+# Trigger: Tag push (v*) or manual dispatch
 
 on:
   push:
-    branches: [master]
-    paths:
-      - "deno.json"
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       version:
@@ -55,42 +53,18 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Get version from git tag or deno.json
-          get_version() {
-            # Try to get latest git tag first
-            local tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-            if [ -n "$tag" ]; then
-              echo "${tag#v}"
-            else
-              echo "1.0.0"
-            fi
-          }
-
-          CURRENT_VERSION=$(get_version)
-
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             CURRENT_VERSION="${{ inputs.version }}"
             echo "should_release=true" >> "$GITHUB_OUTPUT"
             echo "📦 Manual release triggered: v$CURRENT_VERSION"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            CURRENT_VERSION="${GITHUB_REF#refs/tags/v}"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            echo "📦 Tag push detected: v$CURRENT_VERSION"
           else
-            PREV_VERSION=""
-            if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
-              PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
-              if [ -n "$PREV_TAG" ]; then
-                PREV_VERSION="${PREV_TAG#v}"
-              fi
-            fi
-
-            if [ -z "$PREV_VERSION" ]; then
-              echo "should_release=true" >> "$GITHUB_OUTPUT"
-              echo "🚦 No previous version found; will release"
-            elif [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
-              echo "should_release=true" >> "$GITHUB_OUTPUT"
-              echo "✅ Version changed: $PREV_VERSION → $CURRENT_VERSION"
-            else
-              echo "should_release=false" >> "$GITHUB_OUTPUT"
-              echo "⏭️ No version change detected"
-            fi
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            echo "⏭️ No release trigger detected"
+            CURRENT_VERSION="0.0.0"
           fi
 
           echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
