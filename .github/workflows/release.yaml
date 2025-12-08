@@ -4,16 +4,16 @@ name: 🚀 Release
 # - Version detection: package.json version change or manual trigger
 # - Production build: userscript + checksums + metadata
 # - GitHub Release: automated creation with downloadable assets
+# - dist/ update: commit built scripts to repository for jsDelivr CDN
 #
+# Trigger: Only when package.json changes (version bump) or manual dispatch
 # Note: All validation (tests, lint, deps) happens locally before push.
 
 on:
   push:
     branches: [master]
     paths:
-      - "src/**"
-      - "package.json"
-      - "vite.config.ts"
+      - "package.json"  # Only trigger on package.json changes (version bump)
   workflow_dispatch:
     inputs:
       version_type:
