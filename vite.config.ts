@@ -652,7 +652,13 @@ function productionCleanupPlugin(): Plugin {
           '',
         );
 
-        // 7. Clean up multiple consecutive empty lines
+        // 7. Remove IIFE exports (userscript doesn't need external API)
+        // Pattern: exports.xxx=xxx; or exports.xxx = xxx;
+        code = code.replace(/exports\.[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*[^;]+;/g, '');
+        // Remove __esModule marker
+        code = code.replace(/Object\.defineProperty\(exports,['"]__esModule['"],\{value:true\}\);?/g, '');
+
+        // 8. Clean up multiple consecutive empty lines
         code = code.replace(/\n{3,}/g, '\n\n');
 
         chunk.code = code;
@@ -699,7 +705,7 @@ export default defineConfig(({ mode }): UserConfig => {
 
     build: {
       target: 'esnext',
-      minify: false,
+      minify: false, // Keep readable for Greasy Fork policy
       sourcemap: config.sourceMap,
       outDir: 'dist',
       emptyOutDir: false,
@@ -724,10 +730,13 @@ export default defineConfig(({ mode }): UserConfig => {
           ...(!isDev && {
             // Disable Object.freeze() on module namespace objects
             freeze: false,
-            // Disable Symbol.toStringTag on module namespace objects
+            // Use const bindings for better optimization
             generatedCode: {
               symbols: false,
+              constBindings: true,
             },
+            // Remove unnecessary whitespace (not obfuscation)
+            compact: true,
           }),
         },
         // Tree-shake more aggressively in production
