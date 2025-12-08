@@ -187,10 +187,10 @@ var XcomEnhancedGallery = (function (exports) {
   }
   CoreService.getInstance();
 
-  const serviceManager = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var serviceManager = {
     __proto__: null,
-    CoreService
-  }, Symbol.toStringTag, { value: 'Module' }));
+    CoreService: CoreService
+  };
 
   const LANGUAGE_CODES = ["en", "ko", "ja"];
   const LANGUAGE_CODE_LOOKUP = new Set(LANGUAGE_CODES);
@@ -278,11 +278,11 @@ var XcomEnhancedGallery = (function (exports) {
   const DEFAULT_LANGUAGE = "en";
   const LAZY_LANGUAGE_LOADERS = {
     ko: async () => {
-      const { ko } = await Promise.resolve().then(() => ko$1);
+      const { ko } = await Promise.resolve().then(function () { return ko$1; });
       return ko;
     },
     ja: async () => {
-      const { ja } = await Promise.resolve().then(() => ja$1);
+      const { ja } = await Promise.resolve().then(function () { return ja$1; });
       return ja;
     }
   };
@@ -673,11 +673,11 @@ var XcomEnhancedGallery = (function (exports) {
     return PersistentStorage.getInstance();
   }
 
-  const persistentStorage = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var persistentStorage = {
     __proto__: null,
-    PersistentStorage,
-    getPersistentStorage
-  }, Symbol.toStringTag, { value: 'Module' }));
+    PersistentStorage: PersistentStorage,
+    getPersistentStorage: getPersistentStorage
+  };
 
   const translationCatalog = new TranslationCatalog({
     bundles: TRANSLATION_REGISTRY,
@@ -1282,7 +1282,7 @@ var XcomEnhancedGallery = (function (exports) {
     }
     async onInitialize() {
       if (typeof __FEATURE_MEDIA_EXTRACTION__ === "undefined" || __FEATURE_MEDIA_EXTRACTION__) {
-        const { MediaExtractionService } = await Promise.resolve().then(() => mediaExtractionService);
+        const { MediaExtractionService } = await Promise.resolve().then(function () { return mediaExtractionService; });
         this.mediaExtraction = new MediaExtractionService();
       }
       await this.detectWebPSupport();
@@ -1360,7 +1360,7 @@ var XcomEnhancedGallery = (function (exports) {
       this.prefetchManager.clear();
     }
     async downloadSingle(media, options = {}) {
-      const { DownloadOrchestrator } = await Promise.resolve().then(() => downloadOrchestrator);
+      const { DownloadOrchestrator } = await Promise.resolve().then(function () { return downloadOrchestrator; });
       const downloadService = DownloadOrchestrator.getInstance();
       const pendingPromise = this.prefetchManager.get(media.url);
       let blob;
@@ -1376,7 +1376,7 @@ var XcomEnhancedGallery = (function (exports) {
       });
     }
     async downloadMultiple(items, options = {}) {
-      const { DownloadOrchestrator } = await Promise.resolve().then(() => downloadOrchestrator);
+      const { DownloadOrchestrator } = await Promise.resolve().then(function () { return downloadOrchestrator; });
       const downloadService = DownloadOrchestrator.getInstance();
       return downloadService.downloadBulk(items, {
         ...options,
@@ -1475,8 +1475,6 @@ var XcomEnhancedGallery = (function (exports) {
     )
   };
   const CSS = {
-    CLASSES,
-    DATA_ATTRIBUTES,
     SELECTORS: SELECTORS$1,
     INTERNAL_SELECTORS,
     SCOPES
@@ -1544,7 +1542,6 @@ var XcomEnhancedGallery = (function (exports) {
     };
   }
 
-  const GALLERY_SELECTORS$1 = CSS.SELECTORS;
   const SELECTORS = {
     // Tweet containers
     TWEET: 'article[data-testid="tweet"]',
@@ -1557,17 +1554,8 @@ var XcomEnhancedGallery = (function (exports) {
     // Links and URLs
     /** Status link for tweet ID extraction */
     STATUS_LINK: 'a[href*="/status/"]',
-    // Media source detection
-    /** Twitter image source pattern */
-    TWITTER_IMAGE: 'img[src*="pbs.twimg.com"]',
-    /** Twitter video source pattern */
-    TWITTER_VIDEO: 'video[src*="video.twimg.com"]',
     /** Combined media source selector for extraction */
-    TWITTER_MEDIA: 'img[src*="pbs.twimg.com"], video[src*="video.twimg.com"]',
-    // Gallery elements
-    GALLERY_OVERLAY: GALLERY_SELECTORS$1.OVERLAY,
-    GALLERY_CONTAINER: GALLERY_SELECTORS$1.CONTAINER
-  };
+    TWITTER_MEDIA: 'img[src*="pbs.twimg.com"], video[src*="video.twimg.com"]'};
   const STABLE_SELECTORS = {
     /** Tweet container selectors */
     TWEET_CONTAINERS: [
@@ -1691,21 +1679,21 @@ var XcomEnhancedGallery = (function (exports) {
     "progress"
   ];
 
-  const index$3 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var index$3 = {
     __proto__: null,
-    APP_SETTINGS_STORAGE_KEY,
-    CSS,
-    DEFAULT_SETTINGS,
-    SELECTORS,
-    SERVICE_KEYS,
-    STABLE_SELECTORS,
-    TWITTER_API_CONFIG,
-    VIDEO_CONTROL_ARIA_TOKENS,
-    VIDEO_CONTROL_DATASET_PREFIXES,
-    VIDEO_CONTROL_ROLES,
-    VIDEO_CONTROL_SELECTORS,
-    createDefaultSettings
-  }, Symbol.toStringTag, { value: 'Module' }));
+    APP_SETTINGS_STORAGE_KEY: APP_SETTINGS_STORAGE_KEY,
+    CSS: CSS,
+    DEFAULT_SETTINGS: DEFAULT_SETTINGS,
+    SELECTORS: SELECTORS,
+    SERVICE_KEYS: SERVICE_KEYS,
+    STABLE_SELECTORS: STABLE_SELECTORS,
+    TWITTER_API_CONFIG: TWITTER_API_CONFIG,
+    VIDEO_CONTROL_ARIA_TOKENS: VIDEO_CONTROL_ARIA_TOKENS,
+    VIDEO_CONTROL_DATASET_PREFIXES: VIDEO_CONTROL_DATASET_PREFIXES,
+    VIDEO_CONTROL_ROLES: VIDEO_CONTROL_ROLES,
+    VIDEO_CONTROL_SELECTORS: VIDEO_CONTROL_SELECTORS,
+    createDefaultSettings: createDefaultSettings
+  };
 
   const THEME_DOM_ATTRIBUTE = "data-theme";
 
@@ -1804,7 +1792,7 @@ var XcomEnhancedGallery = (function (exports) {
       }
       this.initializeSystemDetection();
       try {
-        const { tryGetSettingsManager } = await Promise.resolve().then(() => serviceAccessors);
+        const { tryGetSettingsManager } = await Promise.resolve().then(function () { return serviceAccessors; });
         const settingsService = tryGetSettingsManager();
         if (settingsService) {
           this.bindSettingsService(settingsService);
@@ -1975,22 +1963,22 @@ var XcomEnhancedGallery = (function (exports) {
     }
   }
 
-  const serviceAccessors = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var serviceAccessors = {
     __proto__: null,
-    CORE_BASE_SERVICE_IDENTIFIERS,
-    LANGUAGE_SERVICE_IDENTIFIER,
-    MEDIA_SERVICE_IDENTIFIER,
-    THEME_SERVICE_IDENTIFIER,
-    getGalleryRenderer,
-    getLanguageService,
-    getMediaService,
-    getThemeService,
-    registerGalleryRenderer,
-    registerSettingsManager,
-    tryGetSettingsManager,
-    warmupCriticalServices,
-    warmupNonCriticalServices
-  }, Symbol.toStringTag, { value: 'Module' }));
+    CORE_BASE_SERVICE_IDENTIFIERS: CORE_BASE_SERVICE_IDENTIFIERS,
+    LANGUAGE_SERVICE_IDENTIFIER: LANGUAGE_SERVICE_IDENTIFIER,
+    MEDIA_SERVICE_IDENTIFIER: MEDIA_SERVICE_IDENTIFIER,
+    THEME_SERVICE_IDENTIFIER: THEME_SERVICE_IDENTIFIER,
+    getGalleryRenderer: getGalleryRenderer,
+    getLanguageService: getLanguageService,
+    getMediaService: getMediaService,
+    getThemeService: getThemeService,
+    registerGalleryRenderer: registerGalleryRenderer,
+    registerSettingsManager: registerSettingsManager,
+    tryGetSettingsManager: tryGetSettingsManager,
+    warmupCriticalServices: warmupCriticalServices,
+    warmupNonCriticalServices: warmupNonCriticalServices
+  };
 
   const SEVERITY_LOG_MAP = {
     critical: "error",
@@ -2176,37 +2164,25 @@ var XcomEnhancedGallery = (function (exports) {
   const ErrorCode = {
     // Generic error codes
     NONE: "NONE",
-    CANCELLED: "CANCELLED",
-    NETWORK: "NETWORK",
-    TIMEOUT: "TIMEOUT",
-    EMPTY_INPUT: "EMPTY_INPUT",
     ALL_FAILED: "ALL_FAILED",
-    PARTIAL_FAILED: "PARTIAL_FAILED",
-    UNKNOWN: "UNKNOWN",
-    // Media extraction specific error codes (previous ExtractionErrorCode integrated)
-    ELEMENT_NOT_FOUND: "ELEMENT_NOT_FOUND",
-    INVALID_ELEMENT: "INVALID_ELEMENT",
-    NO_MEDIA_FOUND: "NO_MEDIA_FOUND",
-    INVALID_URL: "INVALID_URL",
-    PERMISSION_DENIED: "PERMISSION_DENIED"
-  };
+    NO_MEDIA_FOUND: "NO_MEDIA_FOUND"};
 
-  const index$2 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var index$2 = {
     __proto__: null,
-    AppErrorReporter,
-    GlobalErrorHandler,
-    bootstrapErrorReporter,
-    galleryErrorReporter,
-    mediaErrorReporter,
+    AppErrorReporter: AppErrorReporter,
+    GlobalErrorHandler: GlobalErrorHandler,
+    bootstrapErrorReporter: bootstrapErrorReporter,
+    galleryErrorReporter: galleryErrorReporter,
+    mediaErrorReporter: mediaErrorReporter,
     normalizeErrorMessage: normalizeErrorMessage$1,
-    settingsErrorReporter
-  }, Symbol.toStringTag, { value: 'Module' }));
+    settingsErrorReporter: settingsErrorReporter
+  };
 
   let rendererRegistrationTask = null;
   async function registerRenderer() {
     if (!rendererRegistrationTask) {
       rendererRegistrationTask = (async () => {
-        const { GalleryRenderer: GalleryRenderer$1 } = await Promise.resolve().then(() => GalleryRenderer);
+        const { GalleryRenderer: GalleryRenderer$1 } = await Promise.resolve().then(function () { return GalleryRenderer; });
         registerGalleryRenderer(new GalleryRenderer$1());
       })().finally(() => {
         rendererRegistrationTask = null;
@@ -2223,7 +2199,7 @@ var XcomEnhancedGallery = (function (exports) {
     }
     let settingsService$1 = null;
     try {
-      const { SettingsService } = await Promise.resolve().then(() => settingsService);
+      const { SettingsService } = await Promise.resolve().then(function () { return settingsService; });
       const service = new SettingsService();
       await service.initialize();
       registerSettingsManager(service);
@@ -2235,7 +2211,7 @@ var XcomEnhancedGallery = (function (exports) {
       });
     }
     try {
-      const { getThemeService } = await Promise.resolve().then(() => serviceAccessors);
+      const { getThemeService } = await Promise.resolve().then(function () { return serviceAccessors; });
       const themeService = getThemeService();
       if (!themeService.isInitialized()) {
         await themeService.initialize();
@@ -2256,7 +2232,7 @@ var XcomEnhancedGallery = (function (exports) {
     try {
       logger$2.info("🎨 Gallery app lazy initialization starting");
       await Promise.all([registerRenderer(), initializeServices()]);
-      const { GalleryApp } = await Promise.resolve().then(() => GalleryApp$1);
+      const { GalleryApp } = await Promise.resolve().then(function () { return GalleryApp$1; });
       const galleryApp = new GalleryApp();
       await galleryApp.initialize();
       logger$2.info("✅ Gallery app initialization complete");
@@ -2279,10 +2255,8 @@ var XcomEnhancedGallery = (function (exports) {
       };
     }
     try {
-      if (false) ;
       await Promise.resolve(stage.run());
       const durationMs = performance.now() - startTime;
-      if (false) ;
       return {
         label: stage.label,
         success: true,
@@ -2529,7 +2503,7 @@ var XcomEnhancedGallery = (function (exports) {
     {
       label: "Critical systems",
       run: async () => {
-        const { initializeCriticalSystems } = await Promise.resolve().then(() => criticalSystems);
+        const { initializeCriticalSystems } = await Promise.resolve().then(function () { return criticalSystems; });
         await initializeCriticalSystems();
       }
     },
@@ -2544,7 +2518,7 @@ var XcomEnhancedGallery = (function (exports) {
     {
       label: "Feature service registration",
       run: async () => {
-        const { registerFeatureServicesLazy } = await Promise.resolve().then(() => features);
+        const { registerFeatureServicesLazy } = await Promise.resolve().then(function () { return features; });
         await registerFeatureServicesLazy();
       }
     },
@@ -2570,7 +2544,7 @@ var XcomEnhancedGallery = (function (exports) {
   }
   async function initializeInfrastructure() {
     try {
-      const { initializeEnvironment } = await Promise.resolve().then(() => environment);
+      const { initializeEnvironment } = await Promise.resolve().then(function () { return environment; });
       await initializeEnvironment();
       logger$2.debug("✅ Vendor library initialization complete");
     } catch (error) {
@@ -2581,7 +2555,7 @@ var XcomEnhancedGallery = (function (exports) {
   }
   async function initializeBaseServicesStage() {
     try {
-      const { initializeCoreBaseServices } = await Promise.resolve().then(() => baseServices);
+      const { initializeCoreBaseServices } = await Promise.resolve().then(function () { return baseServices; });
       await initializeCoreBaseServices();
       logger$2.debug("✅ Base services initialization complete");
     } catch (error) {
@@ -2592,14 +2566,13 @@ var XcomEnhancedGallery = (function (exports) {
   }
   async function applyInitialThemeSetting() {
     try {
-      const { getThemeService } = await Promise.resolve().then(() => serviceAccessors);
+      const { getThemeService } = await Promise.resolve().then(function () { return serviceAccessors; });
       const themeService = getThemeService();
       if (typeof themeService.isInitialized === "function" && !themeService.isInitialized()) {
         await themeService.initialize();
       }
       const savedSetting = themeService.getCurrentTheme();
       themeService.setTheme(savedSetting, { force: true, persist: false });
-      if (false) ;
     } catch (error) {
       logger$2.warn("[theme-sync] Initial theme application skipped:", error);
     }
@@ -2620,7 +2593,7 @@ var XcomEnhancedGallery = (function (exports) {
     });
   }
   async function loadGlobalStyles() {
-    await Promise.resolve().then(() => globals);
+    await Promise.resolve().then(function () { return globals; });
   }
   async function initializeDevToolsIfNeeded() {
     {
@@ -2633,7 +2606,7 @@ var XcomEnhancedGallery = (function (exports) {
   function triggerPreloadStrategy() {
     void runAfterWindowLoad(async () => {
       try {
-        const { executePreloadStrategy } = await Promise.resolve().then(() => preload);
+        const { executePreloadStrategy } = await Promise.resolve().then(function () { return preload; });
         await executePreloadStrategy();
       } catch (error) {
         logger$2.warn("[Phase 326] Error executing preload strategy:", error);
@@ -2650,7 +2623,6 @@ var XcomEnhancedGallery = (function (exports) {
         }
         await lifecycleState$1.galleryApp.cleanup();
         lifecycleState$1.galleryApp = null;
-        if (false) ;
       });
       await runOptionalCleanup("CoreService cleanup", () => {
         CoreService.getInstance().cleanup();
@@ -2661,12 +2633,11 @@ var XcomEnhancedGallery = (function (exports) {
       await runOptionalCleanup(
         "Global error handler cleanup",
         async () => {
-          const { GlobalErrorHandler } = await Promise.resolve().then(() => index$2);
+          const { GlobalErrorHandler } = await Promise.resolve().then(function () { return index$2; });
           GlobalErrorHandler.getInstance().destroy();
         },
         debugCleanupLog
       );
-      if (isDevEnvironment) ;
       lifecycleState$1.started = false;
       logger$2.info("✅ Application cleanup complete");
     } catch (error) {
@@ -2713,7 +2684,7 @@ var XcomEnhancedGallery = (function (exports) {
     }
   }
   startApplication();
-  const main = {
+  var main = {
     start: startApplication,
     createConfig: createAppConfig,
     cleanup
@@ -2793,10 +2764,10 @@ var XcomEnhancedGallery = (function (exports) {
     }
   };
 
-  const ko$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var ko$1 = {
     __proto__: null,
-    ko
-  }, Symbol.toStringTag, { value: 'Module' }));
+    ko: ko
+  };
 
   const ja = {
     toolbar: {
@@ -2872,10 +2843,10 @@ var XcomEnhancedGallery = (function (exports) {
     }
   };
 
-  const ja$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var ja$1 = {
     __proto__: null,
-    ja
-  }, Symbol.toStringTag, { value: 'Module' }));
+    ja: ja
+  };
 
   const STANDARD_GALLERY_HEIGHT = 720;
   const DEFAULT_DIMENSIONS = {
@@ -3225,8 +3196,6 @@ var XcomEnhancedGallery = (function (exports) {
   const HTML_ATTRIBUTE_URL_POLICY = {
     allowedProtocols: HTML_ATTR_SAFE_PROTOCOLS,
     allowRelative: true,
-    allowProtocolRelative: true,
-    allowFragments: true,
     allowDataUrls: false
   };
   function isUrlAllowed(rawUrl, policy) {
@@ -3243,7 +3212,7 @@ var XcomEnhancedGallery = (function (exports) {
     }
     const lower = normalized.toLowerCase();
     if (lower.startsWith("data:")) {
-      return policy.allowDataUrls === true && isAllowedDataUrl(lower, policy.allowedDataMimePrefixes);
+      return policy.allowDataUrls === true;
     }
     if (lower.startsWith("//")) {
       return handleProtocolRelative(normalized, policy);
@@ -3283,17 +3252,6 @@ var XcomEnhancedGallery = (function (exports) {
       }
     }
     return Array.from(variants.values());
-  }
-  function isAllowedDataUrl(lowerCaseValue, allowedPrefixes) {
-    if (!allowedPrefixes || allowedPrefixes.length === 0) {
-      return false;
-    }
-    const metaSection = lowerCaseValue.slice("data:".length);
-    const [mime] = metaSection.split(";", 1);
-    if (!mime) {
-      return false;
-    }
-    return allowedPrefixes.some((prefix) => mime.startsWith(prefix));
   }
   function handleProtocolRelative(url, policy) {
     const fallbackProtocol = policy.allowedProtocols.has("https:") ? "https:" : policy.allowedProtocols.has("http:") ? "http:" : "https:";
@@ -4298,10 +4256,10 @@ var XcomEnhancedGallery = (function (exports) {
     }
   }
 
-  const mediaExtractionService = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var mediaExtractionService = {
     __proto__: null,
-    MediaExtractionService
-  }, Symbol.toStringTag, { value: 'Module' }));
+    MediaExtractionService: MediaExtractionService
+  };
 
   function getErrorMessage(error) {
     if (error instanceof Error) {
@@ -4587,7 +4545,6 @@ var XcomEnhancedGallery = (function (exports) {
       logger$2.debug("[SingleDownload] Using fetch+blob fallback (GM_download not available)");
       if (options.blob) {
         return downloadBlobWithAnchor(options.blob, filename, {
-          signal: options.signal,
           onProgress: options.onProgress
         });
       }
@@ -4760,7 +4717,7 @@ var XcomEnhancedGallery = (function (exports) {
   }
 
   async function downloadAsZip(items, options = {}) {
-    const { StreamingZipWriter } = await Promise.resolve().then(() => index$1);
+    const { StreamingZipWriter } = await Promise.resolve().then(function () { return index$1; });
     const writer = new StreamingZipWriter();
     const concurrency = Math.min(8, Math.max(1, options.concurrency ?? 6));
     const retries = Math.max(0, options.retries ?? 0);
@@ -4954,7 +4911,6 @@ var XcomEnhancedGallery = (function (exports) {
       if (capability.method === "fetch_blob") {
         logger$2.debug("[DownloadOrchestrator] Using anchor fallback for ZIP download");
         const fallbackResult = await downloadBlobWithAnchor(zipBlob, filename, {
-          signal: options.signal,
           onProgress: options.onProgress
         });
         return fallbackResult.error ? { success: fallbackResult.success, error: fallbackResult.error } : { success: fallbackResult.success };
@@ -4989,10 +4945,10 @@ var XcomEnhancedGallery = (function (exports) {
     }
   }
 
-  const downloadOrchestrator = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var downloadOrchestrator = {
     __proto__: null,
-    DownloadOrchestrator
-  }, Symbol.toStringTag, { value: 'Module' }));
+    DownloadOrchestrator: DownloadOrchestrator
+  };
 
   async function registerCoreServices() {
     const core = CoreService.getInstance();
@@ -5001,10 +4957,10 @@ var XcomEnhancedGallery = (function (exports) {
     core.register(SERVICE_KEYS.MEDIA_SERVICE, getMediaServiceInstance());
   }
 
-  const serviceInitialization = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var serviceInitialization = {
     __proto__: null,
-    registerCoreServices
-  }, Symbol.toStringTag, { value: 'Module' }));
+    registerCoreServices: registerCoreServices
+  };
 
   let downloadServiceRegistered = false;
   async function ensureDownloadServiceRegistered() {
@@ -5012,10 +4968,10 @@ var XcomEnhancedGallery = (function (exports) {
       return;
     }
     try {
-      const { DownloadOrchestrator } = await Promise.resolve().then(() => downloadOrchestrator);
+      const { DownloadOrchestrator } = await Promise.resolve().then(function () { return downloadOrchestrator; });
       const downloadService = DownloadOrchestrator.getInstance();
-      const { CoreService } = await Promise.resolve().then(() => serviceManager);
-      const { SERVICE_KEYS } = await Promise.resolve().then(() => index$3);
+      const { CoreService } = await Promise.resolve().then(function () { return serviceManager; });
+      const { SERVICE_KEYS } = await Promise.resolve().then(function () { return index$3; });
       const serviceManager$1 = CoreService.getInstance();
       serviceManager$1.register(SERVICE_KEYS.GALLERY_DOWNLOAD, downloadService);
       serviceManager$1.register(SERVICE_KEYS.BULK_DOWNLOAD, downloadService);
@@ -5028,10 +4984,10 @@ var XcomEnhancedGallery = (function (exports) {
     }
   }
 
-  const lazyServices = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var lazyServices = {
     __proto__: null,
-    ensureDownloadServiceRegistered
-  }, Symbol.toStringTag, { value: 'Module' }));
+    ensureDownloadServiceRegistered: ensureDownloadServiceRegistered
+  };
 
   const sharedConfig = {
     context: undefined,
@@ -5053,12 +5009,9 @@ var XcomEnhancedGallery = (function (exports) {
   function setHydrateContext(context) {
     sharedConfig.context = context;
   }
-
-  const IS_DEV = false;
   const equalFn = (a, b) => a === b;
   const $PROXY = Symbol("solid-proxy");
   const SUPPORTS_PROXY = typeof Proxy === "function";
-  const $TRACK = Symbol("solid-track");
   const signalOptions = {
     equals: equalFn
   };
@@ -5074,8 +5027,6 @@ var XcomEnhancedGallery = (function (exports) {
   };
   const NO_INIT = {};
   var Owner = null;
-  let Transition = null;
-  let ExternalSourceConfig = null;
   let Listener = null;
   let Updates = null;
   let Effects = null;
@@ -5201,7 +5152,7 @@ var XcomEnhancedGallery = (function (exports) {
         createComputed(() => {
           track();
           if (pr) {
-            if (c.resolved && Transition) ;else if (!contexts.has(c)) {
+            if (!contexts.has(c)) {
               c.increment();
               contexts.add(c);
             }
@@ -5286,7 +5237,6 @@ var XcomEnhancedGallery = (function (exports) {
     const listener = Listener;
     Listener = null;
     try {
-      if (ExternalSourceConfig) ;
       return fn();
     } finally {
       Listener = listener;
@@ -5350,7 +5300,6 @@ var XcomEnhancedGallery = (function (exports) {
       Listener = prevListener;
     }
   }
-  const [transPending, setTransPending] = /*@__PURE__*/createSignal(false);
   function resumeEffects(e) {
     Effects.push.apply(Effects, e);
     e.length = 0;
@@ -5416,17 +5365,14 @@ var XcomEnhancedGallery = (function (exports) {
         runUpdates(() => {
           for (let i = 0; i < node.observers.length; i += 1) {
             const o = node.observers[i];
-            const TransitionRunning = Transition && Transition.running;
-            if (TransitionRunning && Transition.disposed.has(o)) ;
-            if (TransitionRunning ? !o.tState : !o.state) {
+            if (!o.state) {
               if (o.pure) Updates.push(o);else Effects.push(o);
               if (o.observers) markDownstream(o);
             }
-            if (!TransitionRunning) o.state = STALE;
+            o.state = STALE;
           }
           if (Updates.length > 10e5) {
             Updates = [];
-            if (IS_DEV) ;
             throw new Error();
           }
         }, false);
@@ -5680,7 +5626,6 @@ var XcomEnhancedGallery = (function (exports) {
         newLen = newItems.length,
         i,
         j;
-      newItems[$TRACK];
       return untrack(() => {
         let newIndices, newIndicesNext, temp, tempdisposers, tempIndexes, start, end, newEnd, item;
         if (newLen === 0) {
@@ -5935,7 +5880,6 @@ var XcomEnhancedGallery = (function (exports) {
       }
       let Comp;
       return createMemo(() => (Comp = comp()) ? untrack(() => {
-        if (IS_DEV) ;
         if (!ctx || sharedConfig.done) return Comp(props);
         const c = sharedConfig.context;
         setHydrateContext(ctx);
@@ -6130,7 +6074,7 @@ var XcomEnhancedGallery = (function (exports) {
   "shadowrootdelegatesfocus", "shadowrootserializable",
   "sharedstoragewritable"
   ];
-  const Properties = /*#__PURE__*/new Set([
+  const Properties = new Set([
   "className", "value",
   "readOnly", "noValidate", "formNoValidate", "isMap", "noModule", "playsInline", "adAuctionHeaders",
   "allowFullscreen", "browsingTopics",
@@ -6138,12 +6082,12 @@ var XcomEnhancedGallery = (function (exports) {
   "shadowRootDelegatesFocus", "shadowRootSerializable",
   "sharedStorageWritable",
   ...booleans]);
-  const ChildProperties = /*#__PURE__*/new Set(["innerHTML", "textContent", "innerText", "children"]);
-  const Aliases = /*#__PURE__*/Object.assign(Object.create(null), {
+  const ChildProperties = new Set(["innerHTML", "textContent", "innerText", "children"]);
+  const Aliases = Object.assign(Object.create(null), {
     className: "class",
     htmlFor: "for"
   });
-  const PropAliases = /*#__PURE__*/Object.assign(Object.create(null), {
+  const PropAliases = Object.assign(Object.create(null), {
     class: "className",
     novalidate: {
       $: "noValidate",
@@ -6232,7 +6176,7 @@ var XcomEnhancedGallery = (function (exports) {
     const a = PropAliases[prop];
     return typeof a === "object" ? a[tagName] ? a["$"] : undefined : a;
   }
-  const DelegatedEvents = /*#__PURE__*/new Set(["beforeinput", "click", "dblclick", "contextmenu", "focusin", "focusout", "input", "keydown", "keyup", "mousedown", "mousemove", "mouseout", "mouseover", "mouseup", "pointerdown", "pointermove", "pointerout", "pointerover", "pointerup", "touchend", "touchmove", "touchstart"]);
+  const DelegatedEvents = new Set(["beforeinput", "click", "dblclick", "contextmenu", "focusin", "focusout", "input", "keydown", "keyup", "mousedown", "mousemove", "mouseout", "mouseover", "mouseup", "pointerdown", "pointermove", "pointerout", "pointerover", "pointerup", "touchend", "touchmove", "touchstart"]);
   const SVGNamespace = {
     xlink: "http://www.w3.org/1999/xlink",
     xml: "http://www.w3.org/XML/1998/namespace"
@@ -6924,7 +6868,7 @@ var XcomEnhancedGallery = (function (exports) {
   const loading$1 = "xeg_CfJMD-";
   const disabled = "xeg_PEieDK";
   const spinner = "xeg_243I8p";
-  const styles$4 = {
+  var styles$4 = {
   	unifiedButton: unifiedButton,
   	sizeSm: sizeSm,
   	sizeMd: sizeMd,
@@ -7146,7 +7090,7 @@ var XcomEnhancedGallery = (function (exports) {
   }
 
   var _tmpl$$7 = /* @__PURE__ */ template(`<div style=height:7.5rem>`);
-  const LazySettingsControls = lazy(() => Promise.resolve().then(() => SettingsControls$1).then((module) => ({
+  const LazySettingsControls = lazy(() => Promise.resolve().then(function () { return SettingsControls$1; }).then((module) => ({
     default: module.SettingsControls
   })));
   const SettingsControlsFallback = () => {
@@ -7196,7 +7140,7 @@ var XcomEnhancedGallery = (function (exports) {
   const tweetPanelBody = "xeg_w56Ci4";
   const tweetContent = "xeg_jmjGCs";
   const tweetLink = "xeg_ZzP6Op";
-  const styles$3 = {
+  var styles$3 = {
   	toolbarButton: toolbarButton,
   	galleryToolbar: galleryToolbar,
   	toolbarContent: toolbarContent,
@@ -7222,7 +7166,7 @@ var XcomEnhancedGallery = (function (exports) {
   };
 
   var _tmpl$$6 = /* @__PURE__ */ template(`<div data-gallery-element=toolbar><div data-gallery-element=toolbar-content><div data-gallery-element=toolbar-controls><div data-gallery-element=counter-section><div><span aria-live=polite data-gallery-element=counter><span></span><span>/</span><span></span></span><div><div></div></div></div></div></div></div><div id=toolbar-settings-panel data-gallery-scrollable=true role=region aria-label="Settings Panel"aria-labelledby=settings-button data-gallery-element=settings-panel></div><div id=toolbar-tweet-panel role=region aria-labelledby=tweet-text-button data-gallery-element=tweet-panel>`), _tmpl$2$4 = /* @__PURE__ */ template(`<div>Loading...`);
-  const TweetTextPanelLazy = lazy(() => Promise.resolve().then(() => TweetTextPanel$1));
+  const TweetTextPanelLazy = lazy(() => Promise.resolve().then(function () { return TweetTextPanel$1; }));
   const SCROLLABLE_SELECTOR = '[data-gallery-scrollable="true"]';
   const SCROLL_LOCK_TOLERANCE = 1;
   const findScrollableAncestor = (target) => {
@@ -9048,14 +8992,6 @@ var XcomEnhancedGallery = (function (exports) {
     return { total: listeners.size, byContext, byType };
   }
 
-  const listenerManager = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
-    __proto__: null,
-    addListener,
-    getEventListenerStatus,
-    removeEventListenerManaged,
-    removeEventListenersByContext
-  }, Symbol.toStringTag, { value: 'Module' }));
-
   class EventManager {
     lifecycle;
     static singleton = createSingleton(() => new EventManager());
@@ -9432,9 +9368,7 @@ var XcomEnhancedGallery = (function (exports) {
     SLIDE_OUT_TOP: "animate-slide-out-top",
     SCALE_IN: "animate-scale-in",
     SCALE_OUT: "animate-scale-out",
-    IMAGE_LOAD: "animate-image-load",
-    REDUCED_MOTION: "reduced-motion"
-  };
+    IMAGE_LOAD: "animate-image-load"};
   const ANIMATION_STYLE_ID = "xeg-animation-styles";
   const ANIMATION_LAYER = "xeg.utilities";
   const GALLERY_SCOPE_HOSTS = CSS.SCOPES.HOSTS;
@@ -9802,7 +9736,7 @@ var XcomEnhancedGallery = (function (exports) {
   const toolbarHoverZone = "xeg_gC-mQz";
   const initialToolbarVisible = "xeg_Canm64";
   const emptyMessage = "xeg_fwsrVX";
-  const styles$2 = {
+  var styles$2 = {
   	container: container$1,
   	toolbarWrapper: toolbarWrapper,
   	isScrolling: isScrolling,
@@ -9991,7 +9925,7 @@ var XcomEnhancedGallery = (function (exports) {
   const errorIcon = "xeg_Wno7Ud";
   const errorText = "xeg_8-wisg";
   const error = "xeg_GswePL";
-  const styles$1 = {
+  var styles$1 = {
   	container: container,
   	active: active,
   	focused: focused,
@@ -11020,11 +10954,11 @@ var XcomEnhancedGallery = (function (exports) {
     async getDownloadService() {
       const {
         ensureDownloadServiceRegistered
-      } = await Promise.resolve().then(() => lazyServices);
+      } = await Promise.resolve().then(function () { return lazyServices; });
       await ensureDownloadServiceRegistered();
       const {
         DownloadOrchestrator
-      } = await Promise.resolve().then(() => downloadOrchestrator);
+      } = await Promise.resolve().then(function () { return downloadOrchestrator; });
       return DownloadOrchestrator.getInstance();
     }
     cleanupGallery() {
@@ -11072,10 +11006,10 @@ var XcomEnhancedGallery = (function (exports) {
     }
   };
 
-  const GalleryRenderer = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var GalleryRenderer = {
     __proto__: null,
     GalleryRenderer: GalleryRenderer$1
-  }, Symbol.toStringTag, { value: 'Module' }));
+  };
 
   const FORBIDDEN_KEYS = /* @__PURE__ */ new Set(["__proto__", "constructor", "prototype"]);
   function isSafeKey(key) {
@@ -11454,10 +11388,10 @@ var XcomEnhancedGallery = (function (exports) {
     }
   }
 
-  const settingsService = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var settingsService = {
     __proto__: null,
-    SettingsService
-  }, Symbol.toStringTag, { value: 'Module' }));
+    SettingsService: SettingsService
+  };
 
   let guardDispose = null;
   let guardSubscribers = 0;
@@ -11528,7 +11462,7 @@ var XcomEnhancedGallery = (function (exports) {
     }
     async setupEventHandlers() {
       try {
-        const { initializeGalleryEvents } = await Promise.resolve().then(() => galleryLifecycle);
+        const { initializeGalleryEvents } = await Promise.resolve().then(function () { return galleryLifecycle; });
         const settingsService = tryGetSettingsManager();
         const enableKeyboard = settingsService?.get("gallery.enableKeyboardNav") ?? true;
         await initializeGalleryEvents(
@@ -11641,7 +11575,7 @@ var XcomEnhancedGallery = (function (exports) {
         this.ambientVideoGuardHandle?.dispose();
         this.ambientVideoGuardHandle = null;
         try {
-          const { cleanupGalleryEvents } = await Promise.resolve().then(() => galleryLifecycle);
+          const { cleanupGalleryEvents } = await Promise.resolve().then(function () { return galleryLifecycle; });
           cleanupGalleryEvents();
         } catch (error) {
           logger$2.warn("[GalleryApp] Event cleanup failed:", error);
@@ -11658,18 +11592,16 @@ var XcomEnhancedGallery = (function (exports) {
     }
   }
 
-  const GalleryApp$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var GalleryApp$1 = {
     __proto__: null,
-    GalleryApp
-  }, Symbol.toStringTag, { value: 'Module' }));
+    GalleryApp: GalleryApp
+  };
 
-  const devLogger = null ;
   async function initializeCriticalSystems() {
     try {
-      const { registerCoreServices } = await Promise.resolve().then(() => serviceInitialization);
+      const { registerCoreServices } = await Promise.resolve().then(function () { return serviceInitialization; });
       await registerCoreServices();
       warmupCriticalServices();
-      devLogger?.debug("[critical] initialization complete");
     } catch (error) {
       bootstrapErrorReporter.critical(error, {
         code: "CRITICAL_SYSTEMS_INIT_FAILED"
@@ -11677,10 +11609,10 @@ var XcomEnhancedGallery = (function (exports) {
     }
   }
 
-  const criticalSystems = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var criticalSystems = {
     __proto__: null,
-    initializeCriticalSystems
-  }, Symbol.toStringTag, { value: 'Module' }));
+    initializeCriticalSystems: initializeCriticalSystems
+  };
 
   const ERROR_BEHAVIOR_MAP = {
     critical: { logLevel: "error", throwOnError: true },
@@ -11752,7 +11684,7 @@ var XcomEnhancedGallery = (function (exports) {
     }
     return false;
   };
-  const debug$1 = (message) => {
+  const debug = (message) => {
     if (isDevelopmentBuild()) {
       logger$2.debug(message);
     }
@@ -11766,13 +11698,13 @@ var XcomEnhancedGallery = (function (exports) {
   });
   async function loadFeatureSettings() {
     try {
-      const { getPersistentStorage } = await Promise.resolve().then(() => persistentStorage);
+      const { getPersistentStorage } = await Promise.resolve().then(function () { return persistentStorage; });
       const storage = getPersistentStorage();
       const stored = await storage.get(APP_SETTINGS_STORAGE_KEY);
       if (stored && typeof stored === "object" && "features" in stored) {
         const candidate = stored.features;
         if (candidate && typeof candidate === "object") {
-          debug$1("[features] Settings loaded successfully");
+          debug("[features] Settings loaded successfully");
           return {
             features: {
               ...DEFAULT_FEATURE_SETTINGS.features,
@@ -11788,7 +11720,7 @@ var XcomEnhancedGallery = (function (exports) {
   }
   async function registerFeatureServicesLazy() {
     try {
-      debug$1("[features] Registering feature services");
+      debug("[features] Registering feature services");
       const settings = await loadFeatureSettings();
       const featureStates = resolveFeatureStates(settings);
       for (const loader of featureLoaders) {
@@ -11796,34 +11728,34 @@ var XcomEnhancedGallery = (function (exports) {
           continue;
         }
         if (!featureStates[loader.flag]) {
-          debug$1(`[features] ℹ️ ${loader.name} disabled (${loader.flag}: false)`);
+          debug(`[features] ℹ️ ${loader.name} disabled (${loader.flag}: false)`);
           continue;
         }
         try {
           await loader.load();
-          debug$1(`[features] ✅ ${loader.name} registered`);
+          debug(`[features] ✅ ${loader.name} registered`);
         } catch (error) {
           logger$2.warn(`[features] ⚠️ ${loader.name} registration failed (continuing):`, error);
         }
       }
-      debug$1("[features] ✅ Feature services registered");
+      debug("[features] ✅ Feature services registered");
     } catch (error) {
       reportBootstrapError(error, { context: "features", logger: logger$2 });
     }
   }
 
-  const features = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var features = {
     __proto__: null,
-    registerFeatureServicesLazy
-  }, Symbol.toStringTag, { value: 'Module' }));
+    registerFeatureServicesLazy: registerFeatureServicesLazy
+  };
 
   async function initializeEnvironment() {
   }
 
-  const environment = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var environment = {
     __proto__: null,
-    initializeEnvironment
-  }, Symbol.toStringTag, { value: 'Module' }));
+    initializeEnvironment: initializeEnvironment
+  };
 
   const BASE_SERVICE_REGISTRATIONS = [
     [THEME_SERVICE_IDENTIFIER, getThemeServiceInstance],
@@ -11853,39 +11785,34 @@ var XcomEnhancedGallery = (function (exports) {
           await service.initialize();
         }
       }
-      if (false) ;
     } catch (error) {
       reportBootstrapError(error, { context: "base-services", logger: logger$2 });
     }
   }
 
-  const baseServices = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var baseServices = {
     __proto__: null,
-    initializeCoreBaseServices
-  }, Symbol.toStringTag, { value: 'Module' }));
+    initializeCoreBaseServices: initializeCoreBaseServices
+  };
 
-  const globals = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var globals = {
     __proto__: null
-  }, Symbol.toStringTag, { value: 'Module' }));
+  };
 
   const PRELOAD_TASKS = Object.freeze([
     {
       label: "gallery core",
-      loader: () => Promise.resolve().then(() => index)
+      loader: () => Promise.resolve().then(function () { return index; })
     }
   ]);
-  const debug = () => {
-  };
   const DEFAULT_PRELOAD_DEPENDENCIES = Object.freeze({
     logWarn: (message, error) => {
       logger$2.warn(message, error);
     }
   });
   async function runPreloadTask(task, deps) {
-    debug(`[preload] loading ${task.label}`);
     try {
       await task.loader();
-      debug(`[preload] ${task.label} ready`);
     } catch (error) {
       deps.logWarn(`[preload] ${task.label} preload failed`, error);
     }
@@ -11896,10 +11823,10 @@ var XcomEnhancedGallery = (function (exports) {
     }
   }
 
-  const preload = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var preload = {
     __proto__: null,
-    executePreloadStrategy
-  }, Symbol.toStringTag, { value: 'Module' }));
+    executePreloadStrategy: executePreloadStrategy
+  };
 
   const textEncoder = new TextEncoder();
   let crc32Table = null;
@@ -12066,10 +11993,10 @@ var XcomEnhancedGallery = (function (exports) {
     }
   }
 
-  const index$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var index$1 = {
     __proto__: null,
-    StreamingZipWriter
-  }, Symbol.toStringTag, { value: 'Module' }));
+    StreamingZipWriter: StreamingZipWriter
+  };
 
   const body = "xeg_EeShbY";
   const bodyCompact = "xeg_nm9B3P";
@@ -12078,7 +12005,7 @@ var XcomEnhancedGallery = (function (exports) {
   const label = "xeg_vhT3QS";
   const compactLabel = "xeg_Y62M5l";
   const select = "xeg_jpiS5y";
-  const styles = {
+  var styles = {
   	body: body,
   	bodyCompact: bodyCompact,
   	setting: setting,
@@ -12184,10 +12111,10 @@ var XcomEnhancedGallery = (function (exports) {
     })();
   }
 
-  const SettingsControls$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var SettingsControls$1 = {
     __proto__: null,
-    SettingsControls
-  }, Symbol.toStringTag, { value: 'Module' }));
+    SettingsControls: SettingsControls
+  };
 
   var _tmpl$ = /* @__PURE__ */ template(`<a target=_blank rel="noopener noreferrer">`), _tmpl$2 = /* @__PURE__ */ template(`<div><div><span></span></div><div data-gallery-element=tweet-content data-gallery-scrollable=true>`), _tmpl$3 = /* @__PURE__ */ template(`<div>`), _tmpl$4 = /* @__PURE__ */ template(`<br>`), _tmpl$5 = /* @__PURE__ */ template(`<span>`);
   function renderTweetAnchor(accessor, kind, displayText) {
@@ -12292,10 +12219,10 @@ var XcomEnhancedGallery = (function (exports) {
   }
   delegateEvents(["click"]);
 
-  const TweetTextPanel$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var TweetTextPanel$1 = {
     __proto__: null,
     default: TweetTextPanel
-  }, Symbol.toStringTag, { value: 'Module' }));
+  };
 
   const videoPlaybackStateMap = /* @__PURE__ */ new WeakMap();
   function getCurrentGalleryVideo(video) {
@@ -12703,15 +12630,15 @@ var XcomEnhancedGallery = (function (exports) {
     lifecycleState = { ...initialLifecycleState };
   }
 
-  const galleryLifecycle = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var galleryLifecycle = {
     __proto__: null,
-    cleanupGalleryEvents,
-    initializeGalleryEvents
-  }, Symbol.toStringTag, { value: 'Module' }));
+    cleanupGalleryEvents: cleanupGalleryEvents,
+    initializeGalleryEvents: initializeGalleryEvents
+  };
 
-  const index = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  var index = {
     __proto__: null
-  }, Symbol.toStringTag, { value: 'Module' }));
+  };
 
   exports.applyInitialThemeSetting = applyInitialThemeSetting;
   exports.cleanup = cleanup;
@@ -12731,7 +12658,7 @@ var XcomEnhancedGallery = (function (exports) {
   exports.startApplication = startApplication;
   exports.triggerPreloadStrategy = triggerPreloadStrategy;
 
-  Object.defineProperties(exports, { __esModule: { value: true }, [Symbol.toStringTag]: { value: 'Module' } });
+  Object.defineProperty(exports, '__esModule', { value: true });
 
   return exports;
 

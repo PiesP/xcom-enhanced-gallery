@@ -124,7 +124,9 @@ function removeCssComments(css: string): string {
       const commentEnd = css.indexOf('*/', i + 2);
       if (commentEnd === -1) break;
       i = commentEnd + 2;
-      if (result.length > 0 && result[result.length - 1] !== ' ' && result[result.length - 1] !== '\n') {
+      if (
+        result.length > 0 && result[result.length - 1] !== ' ' && result[result.length - 1] !== '\n'
+      ) {
         result += ' ';
       }
       continue;
@@ -504,6 +506,54 @@ export function cssInlinePlugin(mode: string): Plugin {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Production Cleanup Plugin
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Production optimization plugin
+ * Removes unnecessary code patterns from the final bundle:
+ * - Empty module namespace objects (Object.freeze + defineProperty + Symbol.toStringTag)
+ * - /*#__PURE__*​/ annotations (not needed without minification)
+ * - Unused variable declarations
+ */
+function productionCleanupPlugin(): Plugin {
+  return {
+    name: 'production-cleanup',
+    apply: 'build',
+    enforce: 'post',
+
+    generateBundle(_options, bundle) {
+      for (const chunk of Object.values(bundle)) {
+        if (chunk.type !== 'chunk') continue;
+
+        let code = chunk.code;
+
+        // 1. Remove empty module namespace objects
+        // Pattern: const varName = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({ __proto__: null }, Symbol.toStringTag, { value: 'Module' }));
+        code = code.replace(
+          /const\s+\w+\s*=\s*(?:\/\*#__PURE__\*\/\s*)?Object\.freeze\(\s*(?:\/\*#__PURE__\*\/\s*)?Object\.defineProperty\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*,\s*Symbol\.toStringTag\s*,\s*\{\s*value\s*:\s*['"]Module['"]\s*\}\s*\)\s*\)\s*;?\n?/g,
+          '',
+        );
+
+        // 2. Remove /*#__PURE__*/ annotations (tree-shaking hints not needed in final bundle)
+        code = code.replace(/\/\*#__PURE__\*\/\s*/g, '');
+
+        // 3. Remove standalone Object.freeze({__proto__: null}) patterns
+        code = code.replace(
+          /Object\.freeze\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*\)/g,
+          '({})',
+        );
+
+        // 4. Clean up multiple consecutive empty lines
+        code = code.replace(/\n{3,}/g, '\n\n');
+
+        chunk.code = code;
+      }
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Path Aliases
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -527,7 +577,12 @@ export default defineConfig(({ mode }): UserConfig => {
   const root = process.cwd();
 
   return {
-    plugins: [solidPlugin(), cssInlinePlugin(mode)],
+    plugins: [
+      solidPlugin(),
+      cssInlinePlugin(mode),
+      // Production: Remove empty module namespace objects and cleanup
+      ...(!isDev ? [productionCleanupPlugin()] : []),
+    ],
     root,
 
     resolve: {
@@ -557,6 +612,21 @@ export default defineConfig(({ mode }): UserConfig => {
           entryFileNames: outputFileName,
           inlineDynamicImports: true,
           exports: 'named',
+          // Production optimizations
+          ...(!isDev && {
+            // Disable Object.freeze() on module namespace objects
+            freeze: false,
+            // Disable Symbol.toStringTag on module namespace objects
+            generatedCode: {
+              symbols: false,
+            },
+          }),
+        },
+        // Tree-shake more aggressively in production
+        treeshake: isDev ? false : {
+          moduleSideEffects: false,
+          propertyReadSideEffects: false,
+          tryCatchDeoptimization: false,
         },
       },
     },
