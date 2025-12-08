@@ -96,8 +96,29 @@ export function useGalleryScroll({
   const shouldIgnoreScroll = (): boolean =>
     Date.now() - programmaticTimestampAccessor() < PROGRAMMATIC_SCROLL_WINDOW;
 
+  /**
+   * Check if wheel event originated from toolbar or its panels
+   * Toolbar scroll should not trigger gallery scroll state
+   */
+  const isToolbarScroll = (event: WheelEvent): boolean => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return false;
+
+    // Check for toolbar-related data attributes
+    return Boolean(
+      target.closest('[data-gallery-element="toolbar"]') ||
+      target.closest('[data-gallery-element="settings-panel"]') ||
+      target.closest('[data-gallery-element="tweet-panel"]') ||
+      target.closest('[data-role="toolbar"]'),
+    );
+  };
+
   const handleWheel = (event: WheelEvent): void => {
     if (!isGalleryOpen() || !isGalleryInternalEvent(event)) return;
+
+    // Ignore wheel events from toolbar and its panels
+    if (isToolbarScroll(event)) return;
+
     markScrolling();
     onScroll?.();
     scheduleScrollEnd();
