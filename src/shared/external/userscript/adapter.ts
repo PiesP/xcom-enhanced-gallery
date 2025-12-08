@@ -115,14 +115,13 @@ function safeInfo(global: GlobalWithGM): GMUserScriptInfo | null {
 }
 
 const ERROR_MESSAGES = {
-  download: 'GM_download not available - Tampermonkey/Greasemonkey environment required',
-  setValue: 'GM_setValue not available - Tampermonkey/Greasemonkey environment required',
-  getValue: 'GM_getValue not available - Tampermonkey/Greasemonkey environment required',
-  deleteValue: 'GM_deleteValue not available - Tampermonkey/Greasemonkey environment required',
-  listValues: 'GM_listValues not available - Tampermonkey/Greasemonkey environment required',
-  addStyle: 'GM_addStyle not available - Tampermonkey/Greasemonkey environment required',
-  xmlHttpRequest:
-    'GM_xmlhttpRequest not available - Tampermonkey/Greasemonkey environment required',
+  download: 'GM_download unavailable',
+  setValue: 'GM_setValue unavailable',
+  getValue: 'GM_getValue unavailable',
+  deleteValue: 'GM_deleteValue unavailable',
+  listValues: 'GM_listValues unavailable',
+  addStyle: 'GM_addStyle unavailable',
+  xmlHttpRequest: 'GM_xmlhttpRequest unavailable',
 } as const;
 
 function assertFunction<T extends (...args: never[]) => unknown>(

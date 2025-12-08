@@ -228,7 +228,7 @@ export class DownloadOrchestrator {
         : { success: fallbackResult.success };
     }
 
-    return { success: false, error: 'No download method available' };
+    return { success: false, error: 'No download method' };
   }
 
   /**

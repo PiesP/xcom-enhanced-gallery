@@ -25,7 +25,7 @@ export async function downloadSingleFile(
 
   // Use fallback method if GM_download is not available
   if (effectiveCapability.method === 'fetch_blob') {
-    logger.debug('[SingleDownload] Using fetch+blob fallback (GM_download not available)');
+    logger.debug('[SingleDownload] Using fetch+blob fallback');
 
     // If blob is pre-provided, use direct blob download
     if (options.blob) {
@@ -46,7 +46,7 @@ export async function downloadSingleFile(
   if (effectiveCapability.method === 'none') {
     return {
       success: false,
-      error: 'No download method available in this environment',
+      error: 'No download method',
     };
   }
 
@@ -56,7 +56,7 @@ export async function downloadSingleFile(
     // This shouldn't happen given the capability check, but handle defensively
     return {
       success: false,
-      error: 'GM_download not available',
+      error: 'GM_download unavailable',
     };
   }
 

@@ -136,7 +136,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   async handleDownload(type: 'current' | 'all'): Promise<void> {
     logger.info(`[GalleryRenderer] handleDownload called with type: ${type}`);
     if (!isGMAPIAvailable('download')) {
-      logger.warn('[GalleryRenderer] GM_download not available');
+      logger.warn('[GalleryRenderer] GM_download unavailable');
       setError('Tampermonkey required for downloads.');
       return;
     }

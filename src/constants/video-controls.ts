@@ -23,8 +23,6 @@ export const VIDEO_CONTROL_SELECTORS = [
   '[data-testid="videoPlayer"] [aria-label*="Volume"]',
   '.video-controls button',
   '.video-progress button',
-  'video::-webkit-media-controls-play-button',
-  'video::-webkit-media-controls-mute-button',
 ] as const;
 
 /**
