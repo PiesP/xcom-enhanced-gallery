@@ -1,9 +1,9 @@
 name: 🏗️ CI Pipeline
 
-# Responsibility: Continuous Integration (Deno-based)
-# - Linting (Deno lint)
-# - Type checking (TypeScript via Deno)
-# - Format checking (Deno fmt)
+# Responsibility: Continuous Integration (Deno + Biome)
+# - Linting (Biome)
+# - Type checking (TypeScript via tsc)
+# - Format checking (Biome)
 # - Build verification (Production mode)
 #
 # Triggered on: Push/PR to master (excluding docs/assets)
@@ -69,14 +69,14 @@ jobs:
           restore-keys: |
             deno-${{ runner.os }}-
 
-      - name: 🔍 Run Deno lint
-        run: deno lint
+      - name: 🔍 Run Biome lint
+        run: deno task lint
 
       - name: 📐 Run TypeScript check
-        run: deno run -A npm:typescript/tsc --noEmit --project tsconfig.build.json
+        run: deno task check
 
-      - name: 🎨 Check formatting
-        run: deno fmt --check
+      - name: 🎨 Check formatting (Biome)
+        run: deno task fmt:check
 
   build:
     name: 🚀 Build
