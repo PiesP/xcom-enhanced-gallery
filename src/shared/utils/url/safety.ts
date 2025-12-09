@@ -114,7 +114,7 @@ export function isUrlAllowed(rawUrl: string | null | undefined, policy: UrlSafet
   }
 }
 
-function startsWithBlockedProtocolHint(value: string, hints: readonly string[]): boolean {
+export function startsWithBlockedProtocolHint(value: string, hints: readonly string[]): boolean {
   const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
 
   // If the probe contains an invalid percent-encoding sequence (e.g., '%ZZ'),
@@ -128,7 +128,7 @@ function startsWithBlockedProtocolHint(value: string, hints: readonly string[]):
   return variants.some((candidate) => hints.some((hint) => candidate.startsWith(hint)));
 }
 
-function buildProbeVariants(value: string): string[] {
+export function buildProbeVariants(value: string): string[] {
   const variants = new Set<string>();
   const base = value.toLowerCase();
   variants.add(base);
@@ -148,7 +148,7 @@ function buildProbeVariants(value: string): string[] {
   return Array.from(variants.values());
 }
 
-function isAllowedDataUrl(
+export function isAllowedDataUrl(
   lowerCaseValue: string,
   allowedPrefixes: readonly string[] | undefined
 ): boolean {
@@ -166,7 +166,7 @@ function isAllowedDataUrl(
   return allowedPrefixes.some((prefix) => mime.startsWith(prefix));
 }
 
-function handleProtocolRelative(url: string, policy: UrlSafetyPolicy): boolean {
+export function handleProtocolRelative(url: string, policy: UrlSafetyPolicy): boolean {
   if (!policy.allowProtocolRelative) {
     return false;
   }
