@@ -49,7 +49,12 @@
     "test": "cd test && deno task test",
     "test:watch": "cd test && deno task test:watch",
     "test:unit": "cd test && deno task test:unit",
-    "test:coverage": "cd test && deno task test:coverage"
+    "test:coverage": "cd test && deno task test:coverage",
+    "test:ct": "cd test && deno task test:ct",
+    "test:e2e": "cd test && deno task test:e2e",
+    "test:e2e:ui": "cd test && deno task test:e2e:ui",
+    "test:mutation": "cd test && deno task test:mutation",
+    "playwright:install": "cd test && deno task playwright:install"
   },
   "lint": {
     "include": [
