@@ -55,8 +55,8 @@
     "test:e2e": "cd test && npm run test:e2e",
     "test:e2e:unsafe": "cd test && npm run test:e2e:unsafe",
     "test:e2e:ui": "cd test && npm run test:e2e:ui",
-    "test:mutation": "NODE_HEAP_MB=6144 TIMEOUT=1800 ./test/scripts/safe-run.sh npx stryker run test/stryker.config.mjs",
-    "test:mutation:fast": "NODE_HEAP_MB=4096 TIMEOUT=900 ./test/scripts/safe-run.sh npx stryker run test/stryker.config.fast.mjs",
+    "test:mutation": "FORCE_VITEST_POOL_PROCESS=1 NODE_HEAP_MB=6144 TIMEOUT=1800 ./test/scripts/safe-run.sh npx stryker run test/stryker.config.mjs",
+    "test:mutation:fast": "FORCE_VITEST_POOL_PROCESS=1 NODE_HEAP_MB=4096 TIMEOUT=900 ./test/scripts/safe-run.sh npx stryker run test/stryker.config.fast.mjs",
     "playwright:install": "cd test && npm run playwright:install"
   },
   "lint": {
