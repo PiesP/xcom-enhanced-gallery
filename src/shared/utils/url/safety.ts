@@ -4,10 +4,10 @@
  */
 
 // eslint-disable-next-line no-control-regex
-const CONTROL_CHARS_REGEX = /[\u0000-\u001F\u007F]/g;
+export const CONTROL_CHARS_REGEX = /[\u0000-\u001F\u007F]/g;
 // eslint-disable-next-line no-control-regex
-const SCHEME_WHITESPACE_REGEX = /[\u0000-\u001F\u007F\s]+/g;
-const EXPLICIT_SCHEME_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
+export const SCHEME_WHITESPACE_REGEX = /[\u0000-\u001F\u007F\s]+/g;
+export const EXPLICIT_SCHEME_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
 const MAX_DECODE_ITERATIONS = 3;
 const MAX_SCHEME_PROBE_LENGTH = 64;
 
@@ -116,6 +116,13 @@ export function isUrlAllowed(rawUrl: string | null | undefined, policy: UrlSafet
 
 function startsWithBlockedProtocolHint(value: string, hints: readonly string[]): boolean {
   const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
+
+  // If the probe contains an invalid percent-encoding sequence (e.g., '%ZZ'),
+  // consider it suspicious and treat it as a blocked hint. This prevents
+  // malicious obfuscation with invalid sequences from bypassing detection.
+  if (/%(?![0-9A-Fa-f]{2})/.test(probe)) {
+    return true;
+  }
   const variants = buildProbeVariants(probe);
 
   return variants.some((candidate) => hints.some((hint) => candidate.startsWith(hint)));
