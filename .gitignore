@@ -15,6 +15,7 @@ build/
 # Test & Coverage
 coverage/
 .stryker-tmp/
+.stryker-tmp-debug/
 playwright-report/
 test-results/
 stryker-report/
