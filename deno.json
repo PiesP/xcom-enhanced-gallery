@@ -51,9 +51,12 @@
     "test:unit": "cd test && npm test -- unit/",
     "test:coverage": "cd test && npm run test:coverage",
     "test:ct": "cd test && npm run test:ct",
+    "test:ct:unsafe": "cd test && npm run test:ct:unsafe",
     "test:e2e": "cd test && npm run test:e2e",
+    "test:e2e:unsafe": "cd test && npm run test:e2e:unsafe",
     "test:e2e:ui": "cd test && npm run test:e2e:ui",
     "test:mutation": "cd test && npm run test:mutation",
+    "test:mutation:unsafe": "cd test && npm run test:mutation:unsafe",
     "playwright:install": "cd test && npm run playwright:install"
   },
   "lint": {
