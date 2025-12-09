@@ -7,8 +7,6 @@
     "npm:esbuild-plugin-solid@0.6.0": "0.6.0_esbuild@0.24.0_solid-js@1.9.10__seroval@1.3.2_@babel+core@7.28.5",
     "npm:esbuild@0.24.0": "0.24.0",
     "npm:solid-js@^1.9.10": "1.9.10_seroval@1.3.2",
-    "npm:typescript@*": "5.9.3",
-    "npm:vite-plugin-solid@^2.11.0": "2.11.10_solid-js@1.9.10__seroval@1.3.2_vite@6.4.1__@types+node@24.2.0__picomatch@4.0.3_@babel+core@7.28.5_@types+node@24.2.0",
     "npm:vite-plugin-solid@^2.11.10": "2.11.10_solid-js@1.9.10__seroval@1.3.2_vite@6.4.1__@types+node@24.2.0__picomatch@4.0.3_@babel+core@7.28.5_@types+node@24.2.0",
     "npm:vite@6": "6.4.1_@types+node@24.2.0_picomatch@4.0.3",
     "npm:vite@^8.0.0-beta.1": "8.0.0-beta.1_@types+node@24.2.0_esbuild@0.24.0_picomatch@4.0.3"
@@ -1208,10 +1206,6 @@
     },
     "tslib@2.8.1": {
       "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="
-    },
-    "typescript@5.9.3": {
-      "integrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==",
-      "bin": true
     },
     "undici-types@7.10.0": {
       "integrity": "sha512-t5Fy/nfn+14LuOc2KNYg75vZqClpAiqscVvMygNnlsHBFpSXdJaYtXMcdNLpl/Qvc3P2cB3s6lOV51nqsFq4ag=="
