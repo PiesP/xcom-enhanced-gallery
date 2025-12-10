@@ -25,12 +25,14 @@ const DEFAULT_TRAVERSAL_OPTIONS: Required<MediaTraversalOptions> = {
 /**
  * Determine whether the provided element is a supported media element (IMG or VIDEO)
  */
-export function isMediaElement(element: HTMLElement | null): element is MediaElement {
+export function isMediaElement(
+  element: HTMLElement | null,
+): element is MediaElement {
   if (!element) {
     return false;
   }
 
-  return element.tagName === 'IMG' || element.tagName === 'VIDEO';
+  return element.tagName === "IMG" || element.tagName === "VIDEO";
 }
 
 /**
@@ -43,7 +45,7 @@ export function isMediaElement(element: HTMLElement | null): element is MediaEle
  */
 export function findMediaElementInDOM(
   target: HTMLElement,
-  options: MediaTraversalOptions = {}
+  options: MediaTraversalOptions = {},
 ): MediaElement | null {
   const { maxDescendantDepth, maxAncestorHops } = {
     ...DEFAULT_TRAVERSAL_OPTIONS,
@@ -88,18 +90,30 @@ export function findMediaElementInDOM(
  * - Images prefer `currentSrc` and then `src`
  * - Videos prefer `currentSrc`, then `src`, then `poster`
  */
-export function extractMediaUrlFromElement(element: MediaElement): string | null {
+export function extractMediaUrlFromElement(
+  element: MediaElement,
+): string | null {
   if (element instanceof HTMLImageElement) {
-    return pickFirstTruthy([element.currentSrc, element.src, element.getAttribute('src')]);
+    const attr = element.getAttribute("src");
+    const current = element.currentSrc || null;
+    // Only use element.src if attribute exists, to avoid default baseURI values returned by the engine
+    const resolved = attr ? element.src : null;
+    return pickFirstTruthy([current, resolved, attr]);
   }
 
   if (element instanceof HTMLVideoElement) {
+    const attr = element.getAttribute("src");
+    const posterAttr = element.getAttribute("poster");
+    const current = element.currentSrc || null;
+    const resolved = attr ? element.src : null;
+    const posterResolved = posterAttr ? element.poster : null;
+    // Prefer currentSrc, then src attribute, then poster (poster takes precedence over poster attribute)
     return pickFirstTruthy([
-      element.currentSrc,
-      element.src,
-      element.getAttribute('src'),
-      element.poster,
-      element.getAttribute('poster'),
+      current,
+      resolved,
+      attr,
+      posterResolved,
+      posterAttr,
     ]);
   }
 
@@ -108,7 +122,7 @@ export function extractMediaUrlFromElement(element: MediaElement): string | null
 
 function findMediaDescendant(
   root: HTMLElement,
-  { includeRoot, maxDepth }: DescendantSearchConfig
+  { includeRoot, maxDepth }: DescendantSearchConfig,
 ): MediaElement | null {
   const queue: QueueNode[] = [{ node: root, depth: 0 }];
 
@@ -138,7 +152,9 @@ function findMediaDescendant(
   return null;
 }
 
-function pickFirstTruthy(values: Array<string | null | undefined>): string | null {
+function pickFirstTruthy(
+  values: Array<string | null | undefined>,
+): string | null {
   for (const value of values) {
     if (value) {
       return value;
