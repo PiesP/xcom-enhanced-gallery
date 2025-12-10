@@ -27,3 +27,10 @@ declare const process:
       };
     }
   | undefined;
+
+// Minimal Deno global for environments that support it
+declare const Deno:
+  | {
+      cwd?: () => string;
+    }
+  | undefined;
