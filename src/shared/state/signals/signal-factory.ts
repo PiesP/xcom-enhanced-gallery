@@ -46,7 +46,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
 
   Object.defineProperty(signalObject, 'value', {
     get: () => read(),
-    set: (v: T) => write(() => v),
+    set: (v: T) => write(v as any),
     enumerable: true,
   });
 

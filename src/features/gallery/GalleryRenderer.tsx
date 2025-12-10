@@ -7,6 +7,8 @@ import { VerticalGalleryView } from '@features/gallery/components/vertical-galle
 import { GalleryContainer } from '@shared/components/isolation';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import { getLanguageService, getThemeService } from '@shared/container/service-accessors';
+import { CoreService } from '@shared/services/service-manager';
+import { SERVICE_KEYS } from '@constants';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces';
 import { logger } from '@shared/logging';
@@ -177,6 +179,11 @@ export class GalleryRenderer implements GalleryRendererInterface {
    * This enables code splitting - download code is only loaded when user initiates a download.
    */
   private async getDownloadService() {
+    // Prefer already registered service in CoreService for testability
+    const serviceManager = CoreService.getInstance();
+    const preRegistered = serviceManager.tryGet(SERVICE_KEYS.GALLERY_DOWNLOAD);
+    if (preRegistered) return preRegistered as any;
+
     const { ensureDownloadServiceRegistered } = await import('@shared/services/lazy-services');
     await ensureDownloadServiceRegistered();
     const { DownloadOrchestrator } = await import(
