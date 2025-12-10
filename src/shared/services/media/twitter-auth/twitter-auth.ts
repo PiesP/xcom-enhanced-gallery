@@ -13,6 +13,7 @@ import { getCookieValue, getCookieValueSync } from "@shared/services/cookie";
 
 let _csrfToken: string | undefined;
 let _tokensInitialized = false;
+let _tokensInitializing = false;
 
 // ============================================================================
 // Internal Functions
@@ -24,31 +25,41 @@ let _tokensInitialized = false;
  * @internal
  */
 function initializeTokens(): void {
-  if (_tokensInitialized) {
+  if (_tokensInitialized || _tokensInitializing) {
     return;
   }
 
+  _tokensInitializing = true;
+
   // Try synchronous access first
-  _csrfToken = getCookieValueSync("ct0");
+  const syncToken = getCookieValueSync("ct0");
+  if (syncToken) {
+    _csrfToken = syncToken;
+    _tokensInitialized = true;
+    _tokensInitializing = false;
+    return;
+  }
 
   // Fallback to async access if needed (though usually sync is enough for cookies)
   try {
-    // getCookieValue is an async function and always returns a Promise, so we can
-    // simply call then/catch on it without runtime casts. This avoids unsafe `any`
-    // casts and fixes lint/type complaints.
     getCookieValue("ct0")
       .then((value) => {
-        if (value) _csrfToken = value;
+        if (value) {
+          _csrfToken = value;
+          _tokensInitialized = true;
+        }
       })
       .catch((error: unknown) => {
         logger.debug("Failed to hydrate CSRF token from GM_cookie", error);
+      })
+      .finally(() => {
+        _tokensInitializing = false;
       });
   } catch (error) {
     // Ensure that tests or exotic environments that don't provide a Promise are silent
     logger.debug("Failed to call getCookieValue for CSRF hydration", error);
+    _tokensInitializing = false;
   }
-
-  _tokensInitialized = true;
 }
 
 // ============================================================================
@@ -93,6 +104,7 @@ export function isTokensInitialized(): boolean {
 export function resetTokens(): void {
   _csrfToken = undefined;
   _tokensInitialized = false;
+  _tokensInitializing = false;
 }
 
 /**
