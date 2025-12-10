@@ -1,7 +1,7 @@
 # Contributing to X.com Enhanced Gallery
 
-Thank you for your interest in contributing to **X.com Enhanced Gallery**.
-This document describes a minimal, practical workflow for reporting issues and
+Thank you for your interest in contributing to **X.com Enhanced Gallery**. This
+document describes a minimal, practical workflow for reporting issues and
 submitting pull requests.
 
 > **Language policy**: All source code, comments, commit messages and
@@ -37,7 +37,8 @@ git clone https://github.com/PiesP/xcom-enhanced-gallery.git
 cd xcom-enhanced-gallery
 ```
 
-> **Note**: No `npm install` is required. Deno manages dependencies automatically.
+> **Note**: No `npm install` is required. Deno manages dependencies
+> automatically.
 
 ### Common commands
 
@@ -71,8 +72,9 @@ These tasks are defined in `deno.json` and use the project configuration
 
 ## Editor setup (VSCode)
 
-For the best development experience, configure VSCode to use the same lint/format
-rules as the CLI (`deno task lint`, `deno task fmt`, `deno task biome:check`).
+For the best development experience, configure VSCode to use the same
+lint/format rules as the CLI (`deno task lint`, `deno task fmt`,
+`deno task biome:check`).
 
 ### Recommended extensions
 
@@ -107,7 +109,9 @@ Add these settings to your `.vscode/settings.json`:
 ```
 
 This ensures:
-- **Format on save** uses Biome (same as `deno task fmt` / `deno task biome:check`)
+
+- **Format on save** uses Biome (same as `deno task fmt` /
+  `deno task biome:check`)
 - **Lint rules** match the CLI (`biome.jsonc` configuration)
 - **Auto-fix** applies safe fixes on save
 
@@ -119,8 +123,8 @@ Please keep changes small, focused, and consistent with the existing codebase.
 
 - **TypeScript & Solid.js**
   - Use modern TypeScript and Solid.js patterns already present in `src/`.
-  - Prefer functional components and hooks/utilities consistent with
-    existing files.
+  - Prefer functional components and hooks/utilities consistent with existing
+    files.
 
 - **Path imports**
   - Use configured **path aliases** (e.g. `@shared/...`, `@features/...`) for
@@ -129,14 +133,15 @@ Please keep changes small, focused, and consistent with the existing codebase.
 - **GM / userscript APIs**
   - Do **not** call Greasemonkey/Tampermonkey APIs (e.g. `GM_*`) directly from
     feature code.
-  - Use the existing service singletons (e.g. storage, notification,
-    download, HTTP services) where applicable.
+  - Use the existing service singletons (e.g. storage, notification, download,
+    HTTP services) where applicable.
 
 - **Security & safety**
   - Do not introduce dynamic code execution (`eval`, `new Function`,
     `setTimeout`/`setInterval` with string arguments, etc.).
   - Avoid unsafe DOM patterns such as unsanitized `innerHTML`.
-  - Follow the practices described in the [Security Policy](.github/SECURITY.md).
+  - Follow the practices described in the
+    [Security Policy](.github/SECURITY.md).
 
 - **Style & formatting**
   - Follow the linting rules enforced by Deno lint (`deno task lint`).
