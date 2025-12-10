@@ -90,23 +90,48 @@ function resolveAspectRatio(
  * @internal
  */
 function getPhotoHighQualityUrl(mediaUrlHttps: string): string {
-  if (mediaUrlHttps.includes("?format=")) return mediaUrlHttps;
-  // Use URL to safely append query params if possible
+  if (!mediaUrlHttps) return mediaUrlHttps;
+
+  // A helper to determine whether the input is absolute (contains a scheme)
+  const isAbsolute = /^(https?:)?\/\//i.test(mediaUrlHttps);
+
   try {
-    const u = new URL(mediaUrlHttps);
+    // Try to parse as absolute; if it fails, parse with a fallback base
+    const u = (() => {
+      try {
+        return new URL(mediaUrlHttps);
+      } catch {
+        // Use a neutral host to parse relative URLs without changing their path
+        return new URL(mediaUrlHttps, "https://pbs.twimg.com");
+      }
+    })();
+
+    // Check for existing 'format' param in a case-insensitive way
+    const hasFormat = Array.from(u.searchParams.keys()).some(
+      (k) => k.toLowerCase() === "format",
+    );
+    if (hasFormat) return mediaUrlHttps;
+
     const pathMatch = u.pathname.match(/\.(jpe?g|png)$/i);
     if (!pathMatch) return mediaUrlHttps;
     const ext = pathMatch[1].toLowerCase();
-    if (u.searchParams.has("format")) return mediaUrlHttps;
+
     u.searchParams.set("format", ext);
     u.searchParams.set("name", "orig");
-    return u.toString();
+
+    // Preserve original absolute/relative form: return full string for absolute
+    if (isAbsolute) return u.toString();
+    // For relative inputs, return pathname + search to avoid embedding the host
+    return `${u.pathname}${u.search}`;
   } catch (_err) {
-    // Fallback for non-absolute URLs: simple replace
-    return mediaUrlHttps.replace(
-      /\.(jpe?g|png)(?:\?.*)?$/i,
-      (_match, ext: string) => `?format=${ext.toLowerCase()}&name=orig`,
-    );
+    // Final fallback: do a conservative manual transformation that preserves
+    // the path and existing query params (if any) while appending format/name.
+    const [pathPart, existingQuery] = mediaUrlHttps.split("?");
+    const pathMatch = pathPart.match(/\.(jpe?g|png)$/i);
+    if (!pathMatch) return mediaUrlHttps;
+    const ext = pathMatch[1].toLowerCase();
+    const sep = existingQuery ? "&" : "?";
+    return `${pathPart}${sep}format=${ext}&name=orig`;
   }
 }
 
@@ -227,7 +252,9 @@ export function extractMediaFromTweet(
   const tweetId = tweetResult.rest_id ?? tweetResult.id_str ?? "";
 
   for (
-    let index = 0; index < tweetResult.extended_entities.media.length; index++
+    let index = 0;
+    index < tweetResult.extended_entities.media.length;
+    index++
   ) {
     const media: TwitterMedia | undefined =
       tweetResult.extended_entities.media[index];
