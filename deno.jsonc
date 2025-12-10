@@ -45,22 +45,7 @@
     "fmt": "deno run -A npm:@biomejs/biome format --write ./src ./scripts",
     "fmt:check": "deno run -A npm:@biomejs/biome format ./src ./scripts",
     "biome:check": "deno run -A npm:@biomejs/biome check --write ./src ./scripts",
-    "quality": "deno task check && deno run -A npm:@biomejs/biome check ./src ./scripts",
-    "test": "cd test && npm test",
-    "test:watch": "cd test && npm run test:watch",
-    "test:unit": "cd test && npm test -- unit/",
-    "test:coverage": "cd test && npm run test:coverage",
-    "test:ct": "cd test && npm run test:ct",
-    "test:ct:unsafe": "cd test && npm run test:ct:unsafe",
-    "test:e2e": "cd test && npm run test:e2e",
-    "test:e2e:unsafe": "cd test && npm run test:e2e:unsafe",
-    "test:e2e:ui": "cd test && npm run test:e2e:ui",
-    "test:mutation": "FORCE_VITEST_POOL_PROCESS=1 NODE_HEAP_MB=6144 TIMEOUT=1800 ./test/scripts/safe-run.sh npx stryker run test/stryker.config.mjs",
-    "test:mutation:fast": "FORCE_VITEST_POOL_PROCESS=1 NODE_HEAP_MB=4096 TIMEOUT=900 ./test/scripts/safe-run.sh npx stryker run test/stryker.config.fast.mjs",
-    "test:mutation:priority-high": "FORCE_VITEST_POOL_PROCESS=1 NODE_HEAP_MB=4096 TIMEOUT=900 ./test/scripts/safe-run.sh npx stryker run test/stryker.config.priority-high.mjs",
-    "test:mutation:priority-medium": "FORCE_VITEST_POOL_PROCESS=1 NODE_HEAP_MB=4096 TIMEOUT=900 ./test/scripts/safe-run.sh npx stryker run test/stryker.config.priority-medium.mjs",
-    "test:mutation:priority": "FORCE_VITEST_POOL_PROCESS=1 NODE_HEAP_MB=6144 TIMEOUT=1800 bash ./test/scripts/run-priority-mutation.sh",
-    "playwright:install": "cd test && npm run playwright:install"
+    "quality": "deno task check && deno run -A npm:@biomejs/biome check ./src ./scripts"
   },
   "lint": {
     "include": [
@@ -129,8 +114,7 @@
     "dist",
     "build",
     "coverage",
-    ".stryker-tmp",
-    "test"
+    ".stryker-tmp"
   ],
   "nodeModulesDir": "auto"
 }
