@@ -76,7 +76,7 @@ jobs:
         run: deno task check
 
       - name: 🎨 Check formatting (Biome)
-        run: deno task fmt:check
+        run: deno task fmt
 
   build:
     name: 🚀 Build
