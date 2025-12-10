@@ -36,9 +36,9 @@ export const USERSCRIPT_CONFIG = {
   runAt: 'document-idle' as const,
   supportURL: 'https://github.com/PiesP/xcom-enhanced-gallery/issues',
   noframes: true,
-  /** CDN base URL for updates */
+  /** CDN base URL for updates (served from release branch) */
   cdnBaseUrl:
-    'https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@master/dist/xcom-enhanced-gallery.user.js',
+    'https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@release/dist/xcom-enhanced-gallery.user.js',
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────

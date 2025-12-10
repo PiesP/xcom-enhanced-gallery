@@ -4,7 +4,8 @@ name: 🚀 Release
 # - Version detection: git tag or manual trigger
 # - Production build: userscript + checksums + metadata
 # - GitHub Release: automated creation with downloadable assets
-# - dist/ update: commit built scripts to repository for jsDelivr CDN
+# - dist/ update: commit built scripts to 'release' branch for jsDelivr CDN
+#   (keeps source code on master clean, dist/ only on release branch)
 #
 # Trigger: Tag push (v*) or manual dispatch
 
@@ -124,22 +125,54 @@ jobs:
         run: |
           deno task build --version=${{ steps.version.outputs.version }}
 
-      - name: 📤 Commit dist/ to repository
+      - name: 📤 Deploy dist/ to release branch
         run: |
+          set -euo pipefail
+
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          # Force add dist/ even though it's in .gitignore
-          git add -f dist/xcom-enhanced-gallery.user.js
+          # Save built files
+          mkdir -p /tmp/dist-backup
+          cp -r dist/* /tmp/dist-backup/
 
-          # Only commit if there are changes
+          # Check if release branch exists remotely
+          if git ls-remote --heads origin release | grep -q release; then
+            echo "📦 Fetching existing release branch..."
+            git fetch origin release:release
+            git checkout release
+          else
+            echo "📦 Creating new orphan release branch..."
+            git checkout --orphan release
+            git rm -rf . || true
+            echo "# Release Branch" > README.md
+            echo "" >> README.md
+            echo "This branch contains only the built userscript files for jsDelivr CDN." >> README.md
+            echo "" >> README.md
+            echo "**Do not commit to this branch manually.**" >> README.md
+            echo "" >> README.md
+            echo "Files are automatically updated by GitHub Actions on each release." >> README.md
+            git add README.md
+            git commit -m "chore: initialize release branch"
+          fi
+
+          # Copy built files
+          mkdir -p dist
+          cp /tmp/dist-backup/xcom-enhanced-gallery.user.js dist/
+
+          # Add and commit
+          git add dist/xcom-enhanced-gallery.user.js
+
           if git diff --staged --quiet; then
             echo "📦 No changes to dist/ files"
           else
-            git commit -m "chore: update dist/ for v${{ steps.version.outputs.version }} [skip ci]"
-            git push
-            echo "✅ dist/ files committed and pushed"
+            git commit -m "chore: update dist/ for v${{ steps.version.outputs.version }}"
+            git push origin release
+            echo "✅ dist/ deployed to release branch"
           fi
+
+          # Return to original branch
+          git checkout -
 
       - name: 📦 Prepare release package
         run: |
