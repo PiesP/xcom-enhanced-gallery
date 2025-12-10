@@ -19,8 +19,26 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export function findConfig(relative: string, base = process.cwd()): string {
-  let current = path.resolve(base);
+// Cross-environment resolver for current working directory. Prefer the
+// explicit `base` argument when provided, otherwise fall back to the
+// environment-appropriate CWD: Node `process.cwd()` or Deno `Deno.cwd()`.
+function getDefaultBase(): string {
+  // Node's process environment (when present) exposes cwd()
+  if (typeof process !== 'undefined') {
+    const p = process as unknown as { cwd?: () => string };
+    if (typeof p.cwd === 'function') return p.cwd();
+  }
+  // Deno environment via Deno.cwd()
+  if (typeof Deno !== 'undefined') {
+    const d = Deno as unknown as { cwd?: () => string };
+    if (typeof d.cwd === 'function') return d.cwd();
+  }
+  return '.';
+}
+
+export function findConfig(relative: string, base?: string): string {
+  const effectiveBase = base ?? getDefaultBase();
+  let current = path.resolve(effectiveBase);
   const root = path.parse(current).root;
   while (true) {
     const candidates = [path.resolve(current, relative), path.resolve(current, 'test', relative)];
@@ -34,7 +52,7 @@ export function findConfig(relative: string, base = process.cwd()): string {
     if (current === root) break;
     current = path.resolve(current, '..');
   }
-  return path.resolve(base, relative);
+  return path.resolve(effectiveBase, relative);
 }
 
 export default findConfig;
