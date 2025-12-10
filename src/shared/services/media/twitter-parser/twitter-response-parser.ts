@@ -4,17 +4,14 @@
  * @version 4.0.0 - Functional refactor from TwitterResponseParser class
  */
 
-import { logger } from "@shared/logging";
-import {
-  extractDimensionsFromUrl,
-  normalizeDimension,
-} from "@shared/media/media-utils";
+import { logger } from '@shared/logging';
+import { extractDimensionsFromUrl, normalizeDimension } from '@shared/media/media-utils';
 import type {
   TweetMediaEntry,
   TwitterMedia,
   TwitterTweet,
   TwitterUser,
-} from "@shared/services/media/types";
+} from '@shared/services/media/types';
 
 // ============================================================================
 // Types
@@ -37,10 +34,7 @@ interface MediaDimensions {
  * Resolve dimensions from media object and URL
  * @internal
  */
-function resolveDimensions(
-  media: TwitterMedia,
-  mediaUrl: string,
-): MediaDimensions {
+function resolveDimensions(media: TwitterMedia, mediaUrl: string): MediaDimensions {
   const dimensionsFromUrl = extractDimensionsFromUrl(mediaUrl);
   const widthFromOriginal = normalizeDimension(media.original_info?.width);
   const heightFromOriginal = normalizeDimension(media.original_info?.height);
@@ -66,7 +60,7 @@ function resolveDimensions(
  */
 function resolveAspectRatio(
   media: TwitterMedia,
-  dimensions: MediaDimensions,
+  dimensions: MediaDimensions
 ): [number, number] | undefined {
   const aspectRatioValues = Array.isArray(media.video_info?.aspect_ratio)
     ? media.video_info?.aspect_ratio
@@ -102,22 +96,20 @@ function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
         return new URL(mediaUrlHttps);
       } catch {
         // Use a neutral host to parse relative URLs without changing their path
-        return new URL(mediaUrlHttps, "https://pbs.twimg.com");
+        return new URL(mediaUrlHttps, 'https://pbs.twimg.com');
       }
     })();
 
     // Check for existing 'format' param in a case-insensitive way
-    const hasFormat = Array.from(u.searchParams.keys()).some((k) =>
-      k.toLowerCase() === "format"
-    );
+    const hasFormat = Array.from(u.searchParams.keys()).some((k) => k.toLowerCase() === 'format');
     if (hasFormat) return mediaUrlHttps;
 
     const pathMatch = u.pathname.match(/\.(jpe?g|png)$/i);
     if (!pathMatch) return mediaUrlHttps;
-    const ext = (pathMatch[1] ?? "").toLowerCase();
+    const ext = (pathMatch[1] ?? '').toLowerCase();
 
-    u.searchParams.set("format", ext);
-    u.searchParams.set("name", "orig");
+    u.searchParams.set('format', ext);
+    u.searchParams.set('name', 'orig');
 
     // Preserve original absolute/relative form: return full string for absolute
     if (isAbsolute) return u.toString();
@@ -126,11 +118,11 @@ function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
   } catch (_err) {
     // Final fallback: do a conservative manual transformation that preserves
     // the path and existing query params (if any) while appending format/name.
-    const [pathPart = "", existingQuery] = mediaUrlHttps.split("?");
+    const [pathPart = '', existingQuery] = mediaUrlHttps.split('?');
     const pathMatch = pathPart.match(/\.(jpe?g|png)$/i);
     if (!pathMatch) return mediaUrlHttps;
-    const ext = (pathMatch[1] ?? "").toLowerCase();
-    const sep = existingQuery ? "&" : "?";
+    const ext = (pathMatch[1] ?? '').toLowerCase();
+    const sep = existingQuery ? '&' : '?';
     return `${pathPart}${sep}format=${ext}&name=orig`;
   }
 }
@@ -141,7 +133,7 @@ function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
  */
 function getVideoHighQualityUrl(media: TwitterMedia): string | null {
   const variants = media.video_info?.variants ?? [];
-  const mp4Variants = variants.filter((v) => v.content_type === "video/mp4");
+  const mp4Variants = variants.filter((v) => v.content_type === 'video/mp4');
   if (mp4Variants.length === 0) return null;
 
   const bestVariant = mp4Variants.reduce((best, current) => {
@@ -157,10 +149,10 @@ function getVideoHighQualityUrl(media: TwitterMedia): string | null {
  * @internal
  */
 function getHighQualityMediaUrl(media: TwitterMedia): string | null {
-  if (media.type === "photo") {
+  if (media.type === 'photo') {
     return getPhotoHighQualityUrl(media.media_url_https) ?? null;
   }
-  if (media.type === "video" || media.type === "animated_gif") {
+  if (media.type === 'video' || media.type === 'animated_gif') {
     return getVideoHighQualityUrl(media);
   }
   return null;
@@ -179,9 +171,9 @@ function createMediaEntry(
   index: number,
   typeIndex: number,
   typeIndexOriginal: number,
-  sourceLocation: "original" | "quoted",
+  sourceLocation: 'original' | 'quoted'
 ): TweetMediaEntry {
-  const mediaType = media.type === "animated_gif" ? "video" : media.type;
+  const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
   const dimensions = resolveDimensions(media, mediaUrl);
   const aspectRatio = resolveAspectRatio(media, dimensions);
 
@@ -189,17 +181,17 @@ function createMediaEntry(
     screen_name: screenName,
     tweet_id: tweetId,
     download_url: mediaUrl,
-    type: mediaType as "photo" | "video",
-    typeOriginal: media.type as "photo" | "video" | "animated_gif",
+    type: mediaType as 'photo' | 'video',
+    typeOriginal: media.type as 'photo' | 'video' | 'animated_gif',
     index,
     typeIndex,
     typeIndexOriginal,
     preview_url: media.media_url_https,
     media_id: media.id_str,
-    media_key: media.media_key ?? "",
-    expanded_url: media.expanded_url ?? "",
-    short_expanded_url: media.display_url ?? "",
-    short_tweet_url: media.url ?? "",
+    media_key: media.media_key ?? '',
+    expanded_url: media.expanded_url ?? '',
+    short_expanded_url: media.display_url ?? '',
+    short_tweet_url: media.url ?? '',
     tweet_text: tweetText,
     sourceLocation,
   };
@@ -242,34 +234,28 @@ function createMediaEntry(
 export function extractMediaFromTweet(
   tweetResult: TwitterTweet,
   tweetUser: TwitterUser,
-  sourceLocation: "original" | "quoted" = "original",
+  sourceLocation: 'original' | 'quoted' = 'original'
 ): TweetMediaEntry[] {
   if (!tweetResult.extended_entities?.media) return [];
 
   const mediaItems: TweetMediaEntry[] = [];
   const typeIndex: TypeIndexCounter = {};
-  const screenName = tweetUser.screen_name ?? "";
-  const tweetId = tweetResult.rest_id ?? tweetResult.id_str ?? "";
+  const screenName = tweetUser.screen_name ?? '';
+  const tweetId = tweetResult.rest_id ?? tweetResult.id_str ?? '';
 
-  for (
-    let index = 0; index < tweetResult.extended_entities.media.length; index++
-  ) {
-    const media: TwitterMedia | undefined =
-      tweetResult.extended_entities.media[index];
+  for (let index = 0; index < tweetResult.extended_entities.media.length; index++) {
+    const media: TwitterMedia | undefined = tweetResult.extended_entities.media[index];
     if (!media?.type || !media.id_str || !media.media_url_https) continue;
 
     try {
       const mediaUrl = getHighQualityMediaUrl(media);
       if (!mediaUrl) continue;
 
-      const mediaType = media.type === "animated_gif" ? "video" : media.type;
+      const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
       typeIndex[mediaType] = (typeIndex[mediaType] ?? -1) + 1;
       typeIndex[media.type] = typeIndex[media.type] ?? typeIndex[mediaType];
 
-      const tweetText = (tweetResult.full_text ?? "").replace(
-        ` ${media.url}`,
-        "",
-      ).trim();
+      const tweetText = (tweetResult.full_text ?? '').replace(` ${media.url}`, '').trim();
 
       const entry = createMediaEntry(
         media,
@@ -280,7 +266,7 @@ export function extractMediaFromTweet(
         index,
         typeIndex[mediaType] ?? 0,
         typeIndex[media.type] ?? 0,
-        sourceLocation,
+        sourceLocation
       );
 
       mediaItems.push(entry);

@@ -7,7 +7,7 @@
  * @see https://www.solidjs.com/docs/latest/api#createsignal
  */
 
-import { createEffect, createRoot, createSignal } from "solid-js";
+import { createEffect, createRoot, createSignal } from 'solid-js';
 
 /**
  * Signal interface providing value access and subscription capability.
@@ -44,7 +44,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
     },
   } as SafeSignal<T>;
 
-  Object.defineProperty(signalObject, "value", {
+  Object.defineProperty(signalObject, 'value', {
     get: () => read(),
     // Solid's `write` is overloaded and cannot be directly typed in this wrapper. Cast it to a compatible
     // signature at runtime while preserving a correct parameter type for callers.

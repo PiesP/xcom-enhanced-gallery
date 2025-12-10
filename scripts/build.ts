@@ -98,8 +98,8 @@ const QUALITY_CHECKS = [
     description: 'Type checking',
   },
   {
-    args: ['run', '-A', 'npm:@biomejs/biome', 'check', './src', './scripts'],
-    description: 'Biome lint & format',
+    args: ['run', '-A', 'npm:@biomejs/biome', 'check', '--write', './src', './scripts'],
+    description: 'Biome lint & format (auto-fix)',
   },
 ] as const;
 

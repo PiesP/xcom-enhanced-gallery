@@ -69,6 +69,50 @@ These tasks are defined in `deno.json` and use the project configuration
 
 ---
 
+## Editor setup (VSCode)
+
+For the best development experience, configure VSCode to use the same lint/format
+rules as the CLI (`deno task lint`, `deno task fmt`, `deno task biome:check`).
+
+### Recommended extensions
+
+Install the extensions listed in `.vscode/extensions.json`:
+
+- **biomejs.biome** - Biome linter and formatter
+- **denoland.vscode-deno** - Deno language support
+
+### Recommended settings
+
+Add these settings to your `.vscode/settings.json`:
+
+```json
+{
+  "deno.enable": true,
+  "deno.enablePaths": ["src", "scripts"],
+  "deno.disablePaths": ["test"],
+  "biome.enabled": true,
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "quickfix.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+  "[typescript]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[typescriptreact]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[javascript]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[json]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[jsonc]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[markdown]": { "editor.defaultFormatter": "denoland.vscode-deno" }
+}
+```
+
+This ensures:
+- **Format on save** uses Biome (same as `deno task fmt` / `deno task biome:check`)
+- **Lint rules** match the CLI (`biome.jsonc` configuration)
+- **Auto-fix** applies safe fixes on save
+
+---
+
 ## Coding guidelines
 
 Please keep changes small, focused, and consistent with the existing codebase.
