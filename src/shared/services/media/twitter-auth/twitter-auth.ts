@@ -4,8 +4,8 @@
  * @version 4.0.0 - Functional refactor from TwitterAuthService class
  */
 
-import { logger } from "@shared/logging";
-import { getCookieValue, getCookieValueSync } from "@shared/services/cookie";
+import { logger } from '@shared/logging';
+import { getCookieValue, getCookieValueSync } from '@shared/services/cookie';
 
 // ============================================================================
 // Module-level State (lazy initialized)
@@ -32,7 +32,7 @@ function initializeTokens(): void {
   _tokensInitializing = true;
 
   // Try synchronous access first
-  const syncToken = getCookieValueSync("ct0");
+  const syncToken = getCookieValueSync('ct0');
   if (syncToken) {
     _csrfToken = syncToken;
     _tokensInitialized = true;
@@ -42,7 +42,7 @@ function initializeTokens(): void {
 
   // Fallback to async access if needed (though usually sync is enough for cookies)
   try {
-    getCookieValue("ct0")
+    getCookieValue('ct0')
       .then((value) => {
         if (value) {
           _csrfToken = value;
@@ -50,14 +50,14 @@ function initializeTokens(): void {
         }
       })
       .catch((error: unknown) => {
-        logger.debug("Failed to hydrate CSRF token from GM_cookie", error);
+        logger.debug('Failed to hydrate CSRF token from GM_cookie', error);
       })
       .finally(() => {
         _tokensInitializing = false;
       });
   } catch (error) {
     // Ensure that tests or exotic environments that don't provide a Promise are silent
-    logger.debug("Failed to call getCookieValue for CSRF hydration", error);
+    logger.debug('Failed to call getCookieValue for CSRF hydration', error);
     _tokensInitializing = false;
   }
 }
