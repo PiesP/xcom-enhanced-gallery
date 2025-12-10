@@ -7,7 +7,7 @@
  * @see https://www.solidjs.com/docs/latest/api#createsignal
  */
 
-import { createEffect, createRoot, createSignal } from 'solid-js';
+import { createEffect, createRoot, createSignal } from "solid-js";
 
 /**
  * Signal interface providing value access and subscription capability.
@@ -44,7 +44,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
     },
   } as SafeSignal<T>;
 
-  Object.defineProperty(signalObject, 'value', {
+  Object.defineProperty(signalObject, "value", {
     get: () => read(),
     set: (v: T) => write(v as any),
     enumerable: true,

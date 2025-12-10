@@ -3,29 +3,38 @@
  * @description Handles rendering and lifecycle of the gallery component
  */
 
-import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';
-import { GalleryContainer } from '@shared/components/isolation';
-import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
-import { getLanguageService, getThemeService } from '@shared/container/service-accessors';
-import { CoreService } from '@shared/services/service-manager';
-import { SERVICE_KEYS } from '@constants';
-import { isGMAPIAvailable } from '@shared/external/userscript';
-import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces';
-import { logger } from '@shared/logging';
-import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
+import { VerticalGalleryView } from "@features/gallery/components/vertical-gallery-view/VerticalGalleryView";
+import { GalleryContainer } from "@shared/components/isolation";
+import { ErrorBoundary } from "@shared/components/ui/ErrorBoundary/ErrorBoundary";
+import {
+  getLanguageService,
+  getThemeService,
+} from "@shared/container/service-accessors";
+import { CoreService } from "@shared/services/service-manager";
+import { SERVICE_KEYS } from "@constants";
+import { isGMAPIAvailable } from "@shared/external/userscript";
+import type { GalleryRenderer as GalleryRendererInterface } from "@shared/interfaces";
+import { logger } from "@shared/logging";
+import {
+  acquireDownloadLock,
+  isDownloadLocked,
+} from "@shared/state/signals/download.signals";
 import {
   closeGallery,
   gallerySignals,
   navigateNext,
   navigatePrevious,
   openGallery,
-} from '@shared/state/signals/gallery.signals';
-import { setError } from '@shared/state/signals/ui.state';
-import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
-import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
-import { createEffect, createSignal, onCleanup } from 'solid-js';
-import { render } from 'solid-js/web';
-import './styles/gallery-global.css';
+} from "@shared/state/signals/gallery.signals";
+import { setError } from "@shared/state/signals/ui.state";
+import type {
+  GalleryRenderOptions,
+  MediaInfo,
+} from "@shared/types/media.types";
+import { pauseAmbientVideosForGallery } from "@shared/utils/media/ambient-video-coordinator";
+import { createEffect, createSignal, onCleanup } from "solid-js";
+import { render } from "solid-js/web";
+import "./styles/gallery-global.css";
 
 export class GalleryRenderer implements GalleryRendererInterface {
   private container: HTMLDivElement | null = null;
@@ -59,15 +68,15 @@ export class GalleryRenderer implements GalleryRendererInterface {
     if (!isOpen.value || mediaItems.value.length === 0) return;
 
     this.isRenderingFlag = true;
-    logger.info('[GalleryRenderer] Rendering started');
+    logger.info("[GalleryRenderer] Rendering started");
 
     try {
       this.createContainer();
       this.renderComponent();
-      logger.debug('[GalleryRenderer] Component rendering complete');
+      logger.debug("[GalleryRenderer] Component rendering complete");
     } catch (error) {
-      logger.error('[GalleryRenderer] Rendering failed:', error);
-      setError('Gallery rendering failed');
+      logger.error("[GalleryRenderer] Rendering failed:", error);
+      setError("Gallery rendering failed");
     } finally {
       this.isRenderingFlag = false;
     }
@@ -75,9 +84,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
   private createContainer(): void {
     this.cleanupContainer();
-    this.container = document.createElement('div');
-    this.container.className = 'xeg-gallery-renderer';
-    this.container.setAttribute('data-renderer', 'gallery');
+    this.container = document.createElement("div");
+    this.container.className = "xeg-gallery-renderer";
+    this.container.setAttribute("data-renderer", "gallery");
     document.body.appendChild(this.container);
   }
 
@@ -92,17 +101,24 @@ export class GalleryRenderer implements GalleryRendererInterface {
       this.onCloseCallback?.();
     };
 
-    const handleDownload = (type: 'current' | 'all') => this.handleDownload(type);
+    const handleDownload = (type: "current" | "all") =>
+      this.handleDownload(type);
 
     const Root = () => {
-      const [currentTheme, setCurrentTheme] = createSignal(themeService.getCurrentTheme());
+      const [currentTheme, setCurrentTheme] = createSignal(
+        themeService.getCurrentTheme(),
+      );
       const [currentLanguage, setCurrentLanguage] = createSignal(
-        languageService.getCurrentLanguage()
+        languageService.getCurrentLanguage(),
       );
 
       createEffect(() => {
-        const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));
-        const unbindLanguage = languageService.onLanguageChange((lang) => setCurrentLanguage(lang));
+        const unbindTheme = themeService.onThemeChange((_, setting) =>
+          setCurrentTheme(setting)
+        );
+        const unbindLanguage = languageService.onLanguageChange((lang) =>
+          setCurrentLanguage(lang)
+        );
 
         onCleanup(() => {
           unbindTheme();
@@ -120,10 +136,10 @@ export class GalleryRenderer implements GalleryRendererInterface {
           <ErrorBoundary>
             <VerticalGalleryView
               onClose={handleClose}
-              onPrevious={() => navigatePrevious('button')}
-              onNext={() => navigateNext('button')}
-              onDownloadCurrent={() => handleDownload('current')}
-              onDownloadAll={() => handleDownload('all')}
+              onPrevious={() => navigatePrevious("button")}
+              onNext={() => navigateNext("button")}
+              onDownloadCurrent={() => handleDownload("current")}
+              onDownloadAll={() => handleDownload("all")}
               className="xeg-vertical-gallery"
             />
           </ErrorBoundary>
@@ -132,14 +148,14 @@ export class GalleryRenderer implements GalleryRendererInterface {
     };
 
     this.disposeApp = render(() => <Root />, this.container);
-    logger.info('[GalleryRenderer] Gallery mounted');
+    logger.info("[GalleryRenderer] Gallery mounted");
   }
 
-  async handleDownload(type: 'current' | 'all'): Promise<void> {
+  async handleDownload(type: "current" | "all"): Promise<void> {
     logger.info(`[GalleryRenderer] handleDownload called with type: ${type}`);
-    if (!isGMAPIAvailable('download')) {
-      logger.warn('[GalleryRenderer] GM_download unavailable');
-      setError('Tampermonkey required for downloads.');
+    if (!isGMAPIAvailable("download")) {
+      logger.warn("[GalleryRenderer] GM_download unavailable");
+      setError("Tampermonkey required for downloads.");
       return;
     }
 
@@ -152,23 +168,23 @@ export class GalleryRenderer implements GalleryRendererInterface {
       // Lazy load download service on first use
       const downloadService = await this.getDownloadService();
 
-      if (type === 'current') {
+      if (type === "current") {
         const currentMedia = mediaItems[gallerySignals.currentIndex.value];
         if (currentMedia) {
           const result = await downloadService.downloadSingle(currentMedia);
           if (!result.success) {
-            setError(result.error || 'Download failed.');
+            setError(result.error || "Download failed.");
           }
         }
       } else {
         const result = await downloadService.downloadBulk([...mediaItems]);
         if (!result.success) {
-          setError(result.error || 'Download failed.');
+          setError(result.error || "Download failed.");
         }
       }
     } catch (error) {
       logger.error(`[GalleryRenderer] ${type} download failed:`, error);
-      setError('Download failed.');
+      setError("Download failed.");
     } finally {
       releaseLock();
     }
@@ -184,16 +200,18 @@ export class GalleryRenderer implements GalleryRendererInterface {
     const preRegistered = serviceManager.tryGet(SERVICE_KEYS.GALLERY_DOWNLOAD);
     if (preRegistered) return preRegistered as any;
 
-    const { ensureDownloadServiceRegistered } = await import('@shared/services/lazy-services');
+    const { ensureDownloadServiceRegistered } = await import(
+      "@shared/services/lazy-services"
+    );
     await ensureDownloadServiceRegistered();
     const { DownloadOrchestrator } = await import(
-      '@shared/services/download/download-orchestrator'
+      "@shared/services/download/download-orchestrator"
     );
     return DownloadOrchestrator.getInstance();
   }
 
   private cleanupGallery(): void {
-    logger.debug('[GalleryRenderer] Cleanup started');
+    logger.debug("[GalleryRenderer] Cleanup started");
     this.isRenderingFlag = false;
     this.cleanupContainer();
   }
@@ -207,7 +225,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
           this.container.remove();
         }
       } catch (error) {
-        logger.warn('[GalleryRenderer] Container cleanup failed:', error);
+        logger.warn("[GalleryRenderer] Container cleanup failed:", error);
       }
       this.container = null;
     }
@@ -215,14 +233,15 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
   async render(
     mediaItems: readonly MediaInfo[],
-    renderOptions?: GalleryRenderOptions
+    renderOptions?: GalleryRenderOptions,
   ): Promise<void> {
-    const pauseContext = renderOptions?.pauseContext ?? { reason: 'programmatic' };
+    const pauseContext = renderOptions?.pauseContext ??
+      { reason: "programmatic" };
 
     try {
       pauseAmbientVideosForGallery(pauseContext);
     } catch (error) {
-      logger.warn('[GalleryRenderer] Ambient video pause failed', { error });
+      logger.warn("[GalleryRenderer] Ambient video pause failed", { error });
     }
 
     openGallery(mediaItems, renderOptions?.startIndex ?? 0);
@@ -237,7 +256,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   destroy(): void {
-    logger.info('[GalleryRenderer] Full cleanup started');
+    logger.info("[GalleryRenderer] Full cleanup started");
     this.stateUnsubscribe?.();
     this.cleanupGallery();
   }
