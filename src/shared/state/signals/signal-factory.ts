@@ -46,7 +46,10 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
 
   Object.defineProperty(signalObject, "value", {
     get: () => read(),
-    set: (v: T) => write(v as any),
+    // Solid's `write` is overloaded and cannot be directly typed in this wrapper. Cast it to a compatible
+    // signature at runtime while preserving a correct parameter type for callers.
+    set: (v: Parameters<typeof write>[0]) =>
+      (write as unknown as (arg: Parameters<typeof write>[0]) => void)(v),
     enumerable: true,
   });
 

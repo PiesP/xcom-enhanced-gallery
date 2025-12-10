@@ -89,7 +89,7 @@ function resolveAspectRatio(
  * Get the highest quality URL for a photo media item
  * @internal
  */
-function getPhotoHighQualityUrl(mediaUrlHttps: string): string {
+function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
   if (!mediaUrlHttps) return mediaUrlHttps;
 
   // A helper to determine whether the input is absolute (contains a scheme)
@@ -107,14 +107,14 @@ function getPhotoHighQualityUrl(mediaUrlHttps: string): string {
     })();
 
     // Check for existing 'format' param in a case-insensitive way
-    const hasFormat = Array.from(u.searchParams.keys()).some(
-      (k) => k.toLowerCase() === "format",
+    const hasFormat = Array.from(u.searchParams.keys()).some((k) =>
+      k.toLowerCase() === "format"
     );
     if (hasFormat) return mediaUrlHttps;
 
     const pathMatch = u.pathname.match(/\.(jpe?g|png)$/i);
     if (!pathMatch) return mediaUrlHttps;
-    const ext = pathMatch[1].toLowerCase();
+    const ext = (pathMatch[1] ?? "").toLowerCase();
 
     u.searchParams.set("format", ext);
     u.searchParams.set("name", "orig");
@@ -126,10 +126,10 @@ function getPhotoHighQualityUrl(mediaUrlHttps: string): string {
   } catch (_err) {
     // Final fallback: do a conservative manual transformation that preserves
     // the path and existing query params (if any) while appending format/name.
-    const [pathPart, existingQuery] = mediaUrlHttps.split("?");
+    const [pathPart = "", existingQuery] = mediaUrlHttps.split("?");
     const pathMatch = pathPart.match(/\.(jpe?g|png)$/i);
     if (!pathMatch) return mediaUrlHttps;
-    const ext = pathMatch[1].toLowerCase();
+    const ext = (pathMatch[1] ?? "").toLowerCase();
     const sep = existingQuery ? "&" : "?";
     return `${pathPart}${sep}format=${ext}&name=orig`;
   }
@@ -158,7 +158,7 @@ function getVideoHighQualityUrl(media: TwitterMedia): string | null {
  */
 function getHighQualityMediaUrl(media: TwitterMedia): string | null {
   if (media.type === "photo") {
-    return getPhotoHighQualityUrl(media.media_url_https);
+    return getPhotoHighQualityUrl(media.media_url_https) ?? null;
   }
   if (media.type === "video" || media.type === "animated_gif") {
     return getVideoHighQualityUrl(media);
@@ -252,9 +252,7 @@ export function extractMediaFromTweet(
   const tweetId = tweetResult.rest_id ?? tweetResult.id_str ?? "";
 
   for (
-    let index = 0;
-    index < tweetResult.extended_entities.media.length;
-    index++
+    let index = 0; index < tweetResult.extended_entities.media.length; index++
   ) {
     const media: TwitterMedia | undefined =
       tweetResult.extended_entities.media[index];
