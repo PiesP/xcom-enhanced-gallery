@@ -17,30 +17,30 @@
  * @see scripts/build.ts for the build orchestration
  */
 
-import { resolve } from 'node:path';
-import { defineConfig, type Plugin, type UserConfig } from 'vite';
-import solidPlugin from 'vite-plugin-solid';
+import { resolve } from "node:path";
+import { defineConfig, type Plugin, type UserConfig } from "vite";
+import solidPlugin from "vite-plugin-solid";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-const STYLE_ID = 'xeg-injected-styles' as const;
+const STYLE_ID = "xeg-injected-styles" as const;
 
 const OUTPUT_FILE_NAMES = {
-  dev: 'xcom-enhanced-gallery.dev.user.js',
-  prod: 'xcom-enhanced-gallery.user.js',
+  dev: "xcom-enhanced-gallery.dev.user.js",
+  prod: "xcom-enhanced-gallery.user.js",
 } as const;
 
 // Path aliases (shared between Vite and TypeScript)
 const PATH_ALIASES = {
-  '@': 'src',
-  '@bootstrap': 'src/bootstrap',
-  '@constants': 'src/constants',
-  '@features': 'src/features',
-  '@shared': 'src/shared',
-  '@styles': 'src/styles',
-  '@types': 'src/types',
+  "@": "src",
+  "@bootstrap": "src/bootstrap",
+  "@constants": "src/constants",
+  "@features": "src/features",
+  "@shared": "src/shared",
+  "@styles": "src/styles",
+  "@types": "src/types",
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ export interface BuildModeConfig {
   readonly cssVariableShortening: boolean;
   readonly cssValueMinify: boolean;
   readonly cssClassNamePattern: string;
-  readonly sourceMap: boolean | 'inline';
+  readonly sourceMap: boolean | "inline";
   readonly outputSuffix: string;
 }
 
@@ -69,24 +69,26 @@ export const BUILD_MODE_CONFIGS = {
     cssRemoveComments: false,
     cssVariableShortening: false,
     cssValueMinify: false,
-    cssClassNamePattern: '[name]__[local]__[hash:base64:5]',
-    sourceMap: 'inline' as const,
-    outputSuffix: '.dev',
+    cssClassNamePattern: "[name]__[local]__[hash:base64:5]",
+    sourceMap: "inline" as const,
+    outputSuffix: ".dev",
   },
   production: {
     cssCompress: true,
     cssRemoveComments: true,
     cssVariableShortening: true,
     cssValueMinify: true,
-    cssClassNamePattern: 'xeg_[hash:base64:6]',
+    cssClassNamePattern: "xeg_[hash:base64:6]",
     sourceMap: false as const,
-    outputSuffix: '',
+    outputSuffix: "",
   },
-} satisfies Record<'development' | 'production', BuildModeConfig>;
+} satisfies Record<"development" | "production", BuildModeConfig>;
 
 /** Get build mode config based on mode string */
 export function getBuildModeConfig(mode: string): BuildModeConfig {
-  return BUILD_MODE_CONFIGS[mode === 'development' ? 'development' : 'production'];
+  return BUILD_MODE_CONFIGS[
+    mode === "development" ? "development" : "production"
+  ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -97,10 +99,10 @@ export function getBuildModeConfig(mode: string): BuildModeConfig {
  * Remove CSS comments (preserves structure)
  */
 function removeCssComments(css: string): string {
-  let result = '';
+  let result = "";
   let i = 0;
   let inString = false;
-  let stringChar = '';
+  let stringChar = "";
 
   while (i < css.length) {
     if (!inString && (css[i] === '"' || css[i] === "'")) {
@@ -112,7 +114,7 @@ function removeCssComments(css: string): string {
     }
 
     if (inString) {
-      if (css[i] === stringChar && css[i - 1] !== '\\') {
+      if (css[i] === stringChar && css[i - 1] !== "\\") {
         inString = false;
       }
       result += css[i];
@@ -120,14 +122,15 @@ function removeCssComments(css: string): string {
       continue;
     }
 
-    if (css[i] === '/' && css[i + 1] === '*') {
-      const commentEnd = css.indexOf('*/', i + 2);
+    if (css[i] === "/" && css[i + 1] === "*") {
+      const commentEnd = css.indexOf("*/", i + 2);
       if (commentEnd === -1) break;
       i = commentEnd + 2;
       if (
-        result.length > 0 && result[result.length - 1] !== ' ' && result[result.length - 1] !== '\n'
+        result.length > 0 && result[result.length - 1] !== " " &&
+        result[result.length - 1] !== "\n"
       ) {
-        result += ' ';
+        result += " ";
       }
       continue;
     }
@@ -137,10 +140,10 @@ function removeCssComments(css: string): string {
   }
 
   return result
-    .replace(/  +/g, ' ')
-    .replace(/\n\s*\n/g, '\n')
-    .replace(/^\s+/gm, '')
-    .replace(/\s+$/gm, '')
+    .replace(/  +/g, " ")
+    .replace(/\n\s*\n/g, "\n")
+    .replace(/^\s+/gm, "")
+    .replace(/\s+$/gm, "")
     .trim();
 }
 
@@ -150,209 +153,209 @@ function removeCssComments(css: string): string {
  */
 const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   // Easing/Animation
-  '--xeg-ease-standard': '--xe-s',
-  '--xeg-ease-decelerate': '--xe-d',
-  '--xeg-ease-accelerate': '--xe-a',
-  '--xeg-ease-entrance': '--xe-e',
-  '--xeg-easing-ease-out': '--xeo',
-  '--xeg-easing-ease-in': '--xei',
-  '--xeg-easing-linear': '--xel',
+  "--xeg-ease-standard": "--xe-s",
+  "--xeg-ease-decelerate": "--xe-d",
+  "--xeg-ease-accelerate": "--xe-a",
+  "--xeg-ease-entrance": "--xe-e",
+  "--xeg-easing-ease-out": "--xeo",
+  "--xeg-easing-ease-in": "--xei",
+  "--xeg-easing-linear": "--xel",
 
   // Duration
-  '--xeg-duration': '--xd',
-  '--xeg-duration-fast': '--xdf',
-  '--xeg-duration-normal': '--xdn',
-  '--xeg-duration-slow': '--xds',
-  '--xeg-duration-toolbar': '--xdt',
+  "--xeg-duration": "--xd",
+  "--xeg-duration-fast": "--xdf",
+  "--xeg-duration-normal": "--xdn",
+  "--xeg-duration-slow": "--xds",
+  "--xeg-duration-toolbar": "--xdt",
 
   // Transitions
-  '--xeg-transition-interaction-fast': '--xti',
-  '--xeg-transition-surface-fast': '--xts',
-  '--xeg-transition-surface-normal': '--xtsn',
-  '--xeg-transition-elevation-fast': '--xtef',
-  '--xeg-transition-elevation-normal': '--xten',
-  '--xeg-transition-width-normal': '--xtwn',
-  '--xeg-transition-opacity': '--xto',
-  '--xeg-transition-toolbar': '--xtt',
+  "--xeg-transition-interaction-fast": "--xti",
+  "--xeg-transition-surface-fast": "--xts",
+  "--xeg-transition-surface-normal": "--xtsn",
+  "--xeg-transition-elevation-fast": "--xtef",
+  "--xeg-transition-elevation-normal": "--xten",
+  "--xeg-transition-width-normal": "--xtwn",
+  "--xeg-transition-opacity": "--xto",
+  "--xeg-transition-toolbar": "--xtt",
 
   // Colors - Text
-  '--xeg-color-text-primary': '--xct-p',
-  '--xeg-color-text-secondary': '--xct-s',
-  '--xeg-color-text-tertiary': '--xct-t',
-  '--xeg-color-text-inverse': '--xct-i',
+  "--xeg-color-text-primary": "--xct-p",
+  "--xeg-color-text-secondary": "--xct-s",
+  "--xeg-color-text-tertiary": "--xct-t",
+  "--xeg-color-text-inverse": "--xct-i",
 
   // Colors - Border
-  '--xeg-color-border-primary': '--xcb-p',
-  '--xeg-color-border-hover': '--xcb-h',
-  '--xeg-color-border-strong': '--xcb-s',
+  "--xeg-color-border-primary": "--xcb-p",
+  "--xeg-color-border-hover": "--xcb-h",
+  "--xeg-color-border-strong": "--xcb-s",
 
   // Colors - Background
-  '--xeg-color-bg-primary': '--xcbg-p',
-  '--xeg-color-bg-secondary': '--xcbg-s',
+  "--xeg-color-bg-primary": "--xcbg-p",
+  "--xeg-color-bg-secondary": "--xcbg-s",
 
   // Colors - Semantic
-  '--xeg-color-primary': '--xc-p',
-  '--xeg-color-primary-hover': '--xc-ph',
-  '--xeg-color-success': '--xc-s',
-  '--xeg-color-success-hover': '--xc-sh',
-  '--xeg-color-error': '--xc-e',
-  '--xeg-color-error-hover': '--xc-eh',
-  '--xeg-color-overlay-medium': '--xc-om',
-  '--xeg-color-surface-elevated': '--xc-se',
-  '--xeg-color-background': '--xc-bg',
+  "--xeg-color-primary": "--xc-p",
+  "--xeg-color-primary-hover": "--xc-ph",
+  "--xeg-color-success": "--xc-s",
+  "--xeg-color-success-hover": "--xc-sh",
+  "--xeg-color-error": "--xc-e",
+  "--xeg-color-error-hover": "--xc-eh",
+  "--xeg-color-overlay-medium": "--xc-om",
+  "--xeg-color-surface-elevated": "--xc-se",
+  "--xeg-color-background": "--xc-bg",
 
   // Colors - Neutral
-  '--xeg-color-neutral-100': '--xcn1',
-  '--xeg-color-neutral-200': '--xcn2',
-  '--xeg-color-neutral-300': '--xcn3',
-  '--xeg-color-neutral-400': '--xcn4',
-  '--xeg-color-neutral-500': '--xcn5',
+  "--xeg-color-neutral-100": "--xcn1",
+  "--xeg-color-neutral-200": "--xcn2",
+  "--xeg-color-neutral-300": "--xcn3",
+  "--xeg-color-neutral-400": "--xcn4",
+  "--xeg-color-neutral-500": "--xcn5",
 
   // Spacing
-  '--xeg-spacing-xs': '--xs-xs',
-  '--xeg-spacing-sm': '--xs-s',
-  '--xeg-spacing-md': '--xs-m',
-  '--xeg-spacing-lg': '--xs-l',
-  '--xeg-spacing-xl': '--xs-xl',
-  '--xeg-spacing-2xl': '--xs-2',
-  '--xeg-spacing-3xl': '--xs-3',
-  '--xeg-spacing-5xl': '--xs-5',
+  "--xeg-spacing-xs": "--xs-xs",
+  "--xeg-spacing-sm": "--xs-s",
+  "--xeg-spacing-md": "--xs-m",
+  "--xeg-spacing-lg": "--xs-l",
+  "--xeg-spacing-xl": "--xs-xl",
+  "--xeg-spacing-2xl": "--xs-2",
+  "--xeg-spacing-3xl": "--xs-3",
+  "--xeg-spacing-5xl": "--xs-5",
 
   // Radius
-  '--xeg-radius-xs': '--xr-xs',
-  '--xeg-radius-sm': '--xr-s',
-  '--xeg-radius-md': '--xr-m',
-  '--xeg-radius-lg': '--xr-l',
-  '--xeg-radius-xl': '--xr-xl',
-  '--xeg-radius-2xl': '--xr-2',
-  '--xeg-radius-full': '--xr-f',
+  "--xeg-radius-xs": "--xr-xs",
+  "--xeg-radius-sm": "--xr-s",
+  "--xeg-radius-md": "--xr-m",
+  "--xeg-radius-lg": "--xr-l",
+  "--xeg-radius-xl": "--xr-xl",
+  "--xeg-radius-2xl": "--xr-2",
+  "--xeg-radius-full": "--xr-f",
 
   // Font
-  '--xeg-font-size-sm': '--xfs-s',
-  '--xeg-font-size-base': '--xfs-b',
-  '--xeg-font-size-md': '--xfs-m',
-  '--xeg-font-size-lg': '--xfs-l',
-  '--xeg-font-size-2xl': '--xfs-2',
-  '--xeg-font-weight-medium': '--xfw-m',
-  '--xeg-font-weight-semibold': '--xfw-s',
-  '--xeg-font-family-ui': '--xff-u',
-  '--xeg-line-height-normal': '--xlh',
+  "--xeg-font-size-sm": "--xfs-s",
+  "--xeg-font-size-base": "--xfs-b",
+  "--xeg-font-size-md": "--xfs-m",
+  "--xeg-font-size-lg": "--xfs-l",
+  "--xeg-font-size-2xl": "--xfs-2",
+  "--xeg-font-weight-medium": "--xfw-m",
+  "--xeg-font-weight-semibold": "--xfw-s",
+  "--xeg-font-family-ui": "--xff-u",
+  "--xeg-line-height-normal": "--xlh",
 
   // Z-index
-  '--xeg-z-gallery': '--xz-g',
-  '--xeg-z-gallery-overlay': '--xz-go',
-  '--xeg-z-gallery-toolbar': '--xz-gt',
-  '--xeg-z-toolbar': '--xz-t',
-  '--xeg-z-toolbar-hover-zone': '--xz-th',
-  '--xeg-z-toolbar-panel': '--xz-tp',
-  '--xeg-z-toolbar-panel-active': '--xz-ta',
-  '--xeg-z-overlay': '--xz-o',
-  '--xeg-z-modal': '--xz-m',
-  '--xeg-z-modal-backdrop': '--xz-mb',
-  '--xeg-z-modal-foreground': '--xz-mf',
-  '--xeg-z-tooltip': '--xz-tt',
-  '--xeg-z-stack-base': '--xz-sb',
-  '--xeg-layer-root': '--xlr',
+  "--xeg-z-gallery": "--xz-g",
+  "--xeg-z-gallery-overlay": "--xz-go",
+  "--xeg-z-gallery-toolbar": "--xz-gt",
+  "--xeg-z-toolbar": "--xz-t",
+  "--xeg-z-toolbar-hover-zone": "--xz-th",
+  "--xeg-z-toolbar-panel": "--xz-tp",
+  "--xeg-z-toolbar-panel-active": "--xz-ta",
+  "--xeg-z-overlay": "--xz-o",
+  "--xeg-z-modal": "--xz-m",
+  "--xeg-z-modal-backdrop": "--xz-mb",
+  "--xeg-z-modal-foreground": "--xz-mf",
+  "--xeg-z-tooltip": "--xz-tt",
+  "--xeg-z-stack-base": "--xz-sb",
+  "--xeg-layer-root": "--xlr",
 
   // Toolbar
-  '--xeg-toolbar-surface': '--xt-s',
-  '--xeg-toolbar-border': '--xt-b',
-  '--xeg-toolbar-panel-surface': '--xtp-s',
-  '--xeg-toolbar-panel-transition': '--xtp-t',
-  '--xeg-toolbar-panel-height': '--xtp-h',
-  '--xeg-toolbar-panel-max-height': '--xtp-mh',
-  '--xeg-toolbar-panel-shadow': '--xtp-sh',
-  '--xeg-toolbar-text-color': '--xtt-c',
-  '--xeg-toolbar-text-muted': '--xtt-m',
-  '--xeg-toolbar-element-bg': '--xte-b',
-  '--xeg-toolbar-element-bg-strong': '--xte-bs',
-  '--xeg-toolbar-element-border': '--xte-br',
-  '--xeg-toolbar-progress-track': '--xtp-pt',
-  '--xeg-toolbar-scrollbar-track': '--xts-t',
-  '--xeg-toolbar-scrollbar-thumb': '--xts-th',
-  '--xeg-toolbar-shadow': '--xt-sh',
-  '--xeg-toolbar-hover-zone-bg': '--xth-bg',
-  '--xeg-toolbar-hidden-opacity': '--xth-o',
-  '--xeg-toolbar-hidden-visibility': '--xth-v',
-  '--xeg-toolbar-hidden-pointer-events': '--xth-pe',
+  "--xeg-toolbar-surface": "--xt-s",
+  "--xeg-toolbar-border": "--xt-b",
+  "--xeg-toolbar-panel-surface": "--xtp-s",
+  "--xeg-toolbar-panel-transition": "--xtp-t",
+  "--xeg-toolbar-panel-height": "--xtp-h",
+  "--xeg-toolbar-panel-max-height": "--xtp-mh",
+  "--xeg-toolbar-panel-shadow": "--xtp-sh",
+  "--xeg-toolbar-text-color": "--xtt-c",
+  "--xeg-toolbar-text-muted": "--xtt-m",
+  "--xeg-toolbar-element-bg": "--xte-b",
+  "--xeg-toolbar-element-bg-strong": "--xte-bs",
+  "--xeg-toolbar-element-border": "--xte-br",
+  "--xeg-toolbar-progress-track": "--xtp-pt",
+  "--xeg-toolbar-scrollbar-track": "--xts-t",
+  "--xeg-toolbar-scrollbar-thumb": "--xts-th",
+  "--xeg-toolbar-shadow": "--xt-sh",
+  "--xeg-toolbar-hover-zone-bg": "--xth-bg",
+  "--xeg-toolbar-hidden-opacity": "--xth-o",
+  "--xeg-toolbar-hidden-visibility": "--xth-v",
+  "--xeg-toolbar-hidden-pointer-events": "--xth-pe",
 
   // Button
-  '--xeg-button-lift': '--xb-l',
-  '--xeg-button-bg': '--xb-bg',
-  '--xeg-button-border': '--xb-b',
-  '--xeg-button-text': '--xb-t',
-  '--xeg-button-bg-hover': '--xb-bgh',
-  '--xeg-button-border-hover': '--xb-bh',
-  '--xeg-button-disabled-opacity': '--xb-do',
-  '--xeg-button-square-size': '--xb-ss',
-  '--xeg-button-square-padding': '--xb-sp',
+  "--xeg-button-lift": "--xb-l",
+  "--xeg-button-bg": "--xb-bg",
+  "--xeg-button-border": "--xb-b",
+  "--xeg-button-text": "--xb-t",
+  "--xeg-button-bg-hover": "--xb-bgh",
+  "--xeg-button-border-hover": "--xb-bh",
+  "--xeg-button-disabled-opacity": "--xb-do",
+  "--xeg-button-square-size": "--xb-ss",
+  "--xeg-button-square-padding": "--xb-sp",
 
   // Size
-  '--xeg-size-button-sm': '--xsb-s',
-  '--xeg-size-button-md': '--xsb-m',
-  '--xeg-size-button-lg': '--xsb-l',
+  "--xeg-size-button-sm": "--xsb-s",
+  "--xeg-size-button-md": "--xsb-m",
+  "--xeg-size-button-lg": "--xsb-l",
 
   // Surface
-  '--xeg-surface-bg': '--xsu-b',
-  '--xeg-surface-border': '--xsu-br',
-  '--xeg-surface-bg-hover': '--xsu-bh',
+  "--xeg-surface-bg": "--xsu-b",
+  "--xeg-surface-border": "--xsu-br",
+  "--xeg-surface-bg-hover": "--xsu-bh",
 
   // Gallery
-  '--xeg-gallery-bg': '--xg-b',
-  '--xeg-gallery-bg-light': '--xg-bl',
-  '--xeg-gallery-bg-dark': '--xg-bd',
+  "--xeg-gallery-bg": "--xg-b",
+  "--xeg-gallery-bg-light": "--xg-bl",
+  "--xeg-gallery-bg-dark": "--xg-bd",
 
   // Modal
-  '--xeg-modal-bg': '--xm-b',
-  '--xeg-modal-border': '--xm-br',
-  '--xeg-modal-bg-light': '--xm-bl',
-  '--xeg-modal-bg-dark': '--xm-bd',
-  '--xeg-modal-border-light': '--xm-brl',
-  '--xeg-modal-border-dark': '--xm-brd',
+  "--xeg-modal-bg": "--xm-b",
+  "--xeg-modal-border": "--xm-br",
+  "--xeg-modal-bg-light": "--xm-bl",
+  "--xeg-modal-bg-dark": "--xm-bd",
+  "--xeg-modal-border-light": "--xm-brl",
+  "--xeg-modal-border-dark": "--xm-brd",
 
   // Spinner
-  '--xeg-spinner-size': '--xsp-s',
-  '--xeg-spinner-size-default': '--xsp-sd',
-  '--xeg-spinner-border-width': '--xsp-bw',
-  '--xeg-spinner-track-color': '--xsp-tc',
-  '--xeg-spinner-indicator-color': '--xsp-ic',
-  '--xeg-spinner-duration': '--xsp-d',
-  '--xeg-spinner-easing': '--xsp-e',
+  "--xeg-spinner-size": "--xsp-s",
+  "--xeg-spinner-size-default": "--xsp-sd",
+  "--xeg-spinner-border-width": "--xsp-bw",
+  "--xeg-spinner-track-color": "--xsp-tc",
+  "--xeg-spinner-indicator-color": "--xsp-ic",
+  "--xeg-spinner-duration": "--xsp-d",
+  "--xeg-spinner-easing": "--xsp-e",
 
   // Misc
-  '--xeg-opacity-disabled': '--xo-d',
-  '--xeg-hover-lift': '--xhl',
-  '--xeg-focus-indicator-color': '--xfic',
-  '--xeg-border-emphasis': '--xbe',
-  '--xeg-border-button': '--xbb',
-  '--xeg-skeleton-bg': '--xsk-b',
-  '--xeg-scrollbar-width': '--xsw',
-  '--xeg-scrollbar-border-radius': '--xsbr',
-  '--xeg-hover-zone-height': '--xhzh',
-  '--xeg-icon-size': '--xis',
-  '--xeg-icon-stroke-width': '--xisw',
-  '--xeg-icon-only-size': '--xios',
-  '--xeg-gpu-hack': '--xgh',
-  '--xeg-backface-visibility': '--xbv',
-  '--xeg-bg-toolbar': '--xbgt',
-  '--xeg-glass-border-strong': '--xgbs',
-  '--xeg-viewport-height-constrained': '--xvhc',
-  '--xeg-aspect-default': '--xad',
+  "--xeg-opacity-disabled": "--xo-d",
+  "--xeg-hover-lift": "--xhl",
+  "--xeg-focus-indicator-color": "--xfic",
+  "--xeg-border-emphasis": "--xbe",
+  "--xeg-border-button": "--xbb",
+  "--xeg-skeleton-bg": "--xsk-b",
+  "--xeg-scrollbar-width": "--xsw",
+  "--xeg-scrollbar-border-radius": "--xsbr",
+  "--xeg-hover-zone-height": "--xhzh",
+  "--xeg-icon-size": "--xis",
+  "--xeg-icon-stroke-width": "--xisw",
+  "--xeg-icon-only-size": "--xios",
+  "--xeg-gpu-hack": "--xgh",
+  "--xeg-backface-visibility": "--xbv",
+  "--xeg-bg-toolbar": "--xbgt",
+  "--xeg-glass-border-strong": "--xgbs",
+  "--xeg-viewport-height-constrained": "--xvhc",
+  "--xeg-aspect-default": "--xad",
 
   // Settings
-  '--xeg-settings-gap': '--xse-g',
-  '--xeg-settings-padding': '--xse-p',
-  '--xeg-settings-control-gap': '--xse-cg',
-  '--xeg-settings-label-font-size': '--xse-lf',
-  '--xeg-settings-label-font-weight': '--xse-lw',
-  '--xeg-settings-select-font-size': '--xse-sf',
-  '--xeg-settings-select-padding': '--xse-sp',
+  "--xeg-settings-gap": "--xse-g",
+  "--xeg-settings-padding": "--xse-p",
+  "--xeg-settings-control-gap": "--xse-cg",
+  "--xeg-settings-label-font-size": "--xse-lf",
+  "--xeg-settings-label-font-weight": "--xse-lw",
+  "--xeg-settings-select-font-size": "--xse-sf",
+  "--xeg-settings-select-padding": "--xse-sp",
 
   // Gallery item intrinsic
-  '--xeg-gallery-item-intrinsic-width': '--xgi-w',
-  '--xeg-gallery-item-intrinsic-height': '--xgi-h',
-  '--xeg-gallery-item-intrinsic-ratio': '--xgi-r',
-  '--xeg-gallery-fit-height-target': '--xgf-ht',
+  "--xeg-gallery-item-intrinsic-width": "--xgi-w",
+  "--xeg-gallery-item-intrinsic-height": "--xgi-h",
+  "--xeg-gallery-item-intrinsic-ratio": "--xgi-r",
+  "--xeg-gallery-fit-height-target": "--xgf-ht",
 };
 
 /**
@@ -364,8 +367,8 @@ function shortenCssVariables(css: string): string {
     .sort((a, b) => b[0].length - a[0].length);
 
   for (const [longName, shortName] of sortedEntries) {
-    const escapedLong = longName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(escapedLong, 'g');
+    const escapedLong = longName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escapedLong, "g");
     result = result.replace(regex, shortName);
   }
 
@@ -377,16 +380,16 @@ function shortenCssVariables(css: string): string {
  */
 function compressCssValues(css: string): string {
   return css
-    .replace(/\b0+\.(\d)/g, '.$1')
-    .replace(/\b0(px|rem|em|vh|vw|vmin|vmax|ch|ex)\b/g, '0')
-    .replace(/\s*:\s*/g, ':')
-    .replace(/\s*;\s*/g, ';')
-    .replace(/;}/g, '}')
-    .replace(/\s*\{/g, '{')
-    .replace(/\{\s*/g, '{')
-    .replace(/\s*\}/g, '}')
-    .replace(/\s+/g, ' ')
-    .replace(/\n/g, '')
+    .replace(/\b0+\.(\d)/g, ".$1")
+    .replace(/\b0(px|rem|em|vh|vw|vmin|vmax|ch|ex)\b/g, "0")
+    .replace(/\s*:\s*/g, ":")
+    .replace(/\s*;\s*/g, ";")
+    .replace(/;}/g, "}")
+    .replace(/\s*\{/g, "{")
+    .replace(/\{\s*/g, "{")
+    .replace(/\s*\}/g, "}")
+    .replace(/\s+/g, " ")
+    .replace(/\n/g, "")
     .trim();
 }
 
@@ -421,11 +424,11 @@ function extractCssFromBundle(
   const cssChunks: string[] = [];
 
   for (const [fileName, asset] of Object.entries(bundle)) {
-    if (!fileName.endsWith('.css') || asset.type !== 'asset') continue;
+    if (!fileName.endsWith(".css") || asset.type !== "asset") continue;
 
     const { source } = asset;
-    let cssContent = '';
-    if (typeof source === 'string') {
+    let cssContent = "";
+    if (typeof source === "string") {
       cssContent = source;
     } else if (source instanceof Uint8Array) {
       cssContent = new TextDecoder().decode(source);
@@ -439,7 +442,7 @@ function extractCssFromBundle(
     delete bundle[fileName];
   }
 
-  return cssChunks.join(config.cssCompress ? '' : '\n');
+  return cssChunks.join(config.cssCompress ? "" : "\n");
 }
 
 /**
@@ -461,7 +464,7 @@ function generateCssInjectionCode(css: string, isDev: boolean): string {
 
   var style = document.createElement('style');
   style.id = '${STYLE_ID}';
-  style.setAttribute('data-xeg-version', '${isDev ? 'dev' : 'prod'}');
+  style.setAttribute('data-xeg-version', '${isDev ? "dev" : "prod"}');
   style.textContent = css;
 
   (document.head || document.documentElement).appendChild(style);
@@ -478,24 +481,27 @@ function generateCssInjectionCode(css: string, isDev: boolean): string {
  * Optimized for Tampermonkey/userscript environments
  */
 export function cssInlinePlugin(mode: string): Plugin {
-  const isDev = mode === 'development';
+  const isDev = mode === "development";
   const config = getBuildModeConfig(mode);
 
   return {
-    name: 'css-inline',
-    apply: 'build',
-    enforce: 'post',
+    name: "css-inline",
+    apply: "build",
+    enforce: "post",
 
     generateBundle(_options, bundle) {
       const cssContent = extractCssFromBundle(
-        bundle as Record<string, { type: string; source?: string | Uint8Array }>,
+        bundle as Record<
+          string,
+          { type: string; source?: string | Uint8Array }
+        >,
         config,
       );
 
       if (!cssContent.trim()) return;
 
       for (const chunk of Object.values(bundle)) {
-        if (chunk.type === 'chunk' && chunk.isEntry) {
+        if (chunk.type === "chunk" && chunk.isEntry) {
           chunk.code = generateCssInjectionCode(cssContent, isDev) + chunk.code;
           break;
         }
@@ -515,10 +521,13 @@ export function cssInlinePlugin(mode: string): Plugin {
  */
 function removeLogCalls(code: string, methods: string[]): string {
   // Build pattern for logger.method( or logger$N.method( or logger?.method(
-  const methodPattern = methods.join('|');
-  const regex = new RegExp(`logger(?:\\$\\d+)?\\?\\.(?:${methodPattern})\\(|logger(?:\\$\\d+)?\\.(?:${methodPattern})\\(`, 'g');
+  const methodPattern = methods.join("|");
+  const regex = new RegExp(
+    `logger(?:\\$\\d+)?\\?\\.(?:${methodPattern})\\(|logger(?:\\$\\d+)?\\.(?:${methodPattern})\\(`,
+    "g",
+  );
 
-  let result = '';
+  let result = "";
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -530,7 +539,7 @@ function removeLogCalls(code: string, methods: string[]): string {
     let depth = 1;
     let i = openParenIndex + 1;
     let inString = false;
-    let stringChar = '';
+    let stringChar = "";
     let inTemplate = false;
     let templateDepth = 0;
 
@@ -539,27 +548,30 @@ function removeLogCalls(code: string, methods: string[]): string {
       const prevChar = code[i - 1];
 
       // Handle string literals
-      if (!inString && !inTemplate && (char === '"' || char === "'" || char === '`')) {
+      if (
+        !inString && !inTemplate &&
+        (char === '"' || char === "'" || char === "`")
+      ) {
         inString = true;
         stringChar = char;
-        if (char === '`') {
+        if (char === "`") {
           inTemplate = true;
           inString = false;
         }
-      } else if (inString && char === stringChar && prevChar !== '\\') {
+      } else if (inString && char === stringChar && prevChar !== "\\") {
         inString = false;
       } else if (inTemplate) {
-        if (char === '`' && prevChar !== '\\') {
+        if (char === "`" && prevChar !== "\\") {
           inTemplate = false;
-        } else if (char === '$' && code[i + 1] === '{') {
+        } else if (char === "$" && code[i + 1] === "{") {
           templateDepth++;
           i++;
-        } else if (char === '}' && templateDepth > 0) {
+        } else if (char === "}" && templateDepth > 0) {
           templateDepth--;
         }
       } else if (!inString && !inTemplate) {
-        if (char === '(') depth++;
-        else if (char === ')') depth--;
+        if (char === "(") depth++;
+        else if (char === ")") depth--;
       }
 
       i++;
@@ -576,13 +588,13 @@ function removeLogCalls(code: string, methods: string[]): string {
 
       if (isArrowFnBody) {
         // Replace with empty block for arrow function
-        result += '{}';
+        result += "{}";
       }
 
       // Skip the log call, also consume trailing semicolon and newline if present
       let endIndex = i;
-      if (code[endIndex] === ';') endIndex++;
-      if (code[endIndex] === '\n') endIndex++;
+      if (code[endIndex] === ";") endIndex++;
+      if (code[endIndex] === "\n") endIndex++;
 
       lastIndex = endIndex;
       regex.lastIndex = endIndex;
@@ -608,57 +620,80 @@ function removeLogCalls(code: string, methods: string[]): string {
  */
 function productionCleanupPlugin(): Plugin {
   return {
-    name: 'production-cleanup',
-    apply: 'build',
-    enforce: 'post',
+    name: "production-cleanup",
+    apply: "build",
+    enforce: "post",
 
     generateBundle(_options, bundle) {
       for (const chunk of Object.values(bundle)) {
-        if (chunk.type !== 'chunk') continue;
+        if (chunk.type !== "chunk") continue;
 
         let code = chunk.code;
 
         // 1. Remove empty module namespace objects
         code = code.replace(
           /const\s+\w+\s*=\s*(?:\/\*#__PURE__\*\/\s*)?Object\.freeze\(\s*(?:\/\*#__PURE__\*\/\s*)?Object\.defineProperty\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*,\s*Symbol\.toStringTag\s*,\s*\{\s*value\s*:\s*['"]Module['"]\s*\}\s*\)\s*\)\s*;?\n?/g,
-          '',
+          "",
         );
 
         // 2. Remove /*#__PURE__*/ annotations
-        code = code.replace(/\/\*#__PURE__\*\/\s*/g, '');
+        code = code.replace(/\/\*#__PURE__\*\/\s*/g, "");
 
         // 3. Remove standalone Object.freeze({__proto__: null}) patterns
         code = code.replace(
           /Object\.freeze\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*\)/g,
-          '({})',
+          "({})",
         );
 
         // 4. Remove debug/info log calls using balanced parentheses matching
         // These are development-only logs that can add significant string content
-        code = removeLogCalls(code, ['debug', 'info']);
+        code = removeLogCalls(code, ["debug", "info"]);
 
         // 5. Simplify createSingleton pattern (remove reset() method for production)
         // Pattern: { get() { ... }, reset() { instance = null; } }
         // Replace with: { get() { ... } }
         code = code.replace(
           /,\s*reset\(\)\s*\{\s*instance\s*=\s*null;\s*\}/g,
-          '',
+          "",
         );
 
         // 6. Remove static resetForTests methods (test-only)
         code = code.replace(
           /static\s+resetForTests\(\)\s*\{[^}]*\}/g,
-          '',
+          "",
         );
 
         // 7. Remove IIFE exports (userscript doesn't need external API)
         // Pattern: exports.xxx=xxx; or exports.xxx = xxx;
-        code = code.replace(/exports\.[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*[^;]+;/g, '');
+        code = code.replace(
+          /exports\.[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*[^;]+;/g,
+          "",
+        );
         // Remove __esModule marker
-        code = code.replace(/Object\.defineProperty\(exports,['"]__esModule['"],\{value:true\}\);?/g, '');
+        code = code.replace(
+          /Object\.defineProperty\(exports,['"]__esModule['"],\{value:true\}\);?/g,
+          "",
+        );
 
-        // 8. Clean up multiple consecutive empty lines
-        code = code.replace(/\n{3,}/g, '\n\n');
+        // 8. Remove @internal JSDoc comments (test-only markers)
+        // Single-line: /** @internal */ or /** @internal Test helper */
+        code = code.replace(/\s*\/\*\*\s*@internal[^*]*\*\/\s*/g, "\n");
+        // Multi-line JSDoc blocks that ONLY contain @internal (no other meaningful content)
+        // This matches blocks like:
+        // /**
+        //  * Reset singleton instance (for testing only)
+        //  * @internal
+        //  */
+        code = code.replace(
+          /\s*\/\*\*\s*\n\s*\*[^@]*@internal\s*\n\s*\*\/\s*/g,
+          "\n",
+        );
+
+        // 9. Remove lines that only contain whitespace (indented empty lines)
+        code = code.replace(/^[ \t]+$/gm, "");
+
+        // 10. Clean up multiple consecutive empty lines
+        code = code.replace(/\n{3,}/g, "\n\n");
 
         chunk.code = code;
       }
@@ -675,7 +710,9 @@ function productionCleanupPlugin(): Plugin {
  */
 function buildPathAliases(root: string): Record<string, string> {
   return Object.fromEntries(
-    Object.entries(PATH_ALIASES).map(([alias, path]) => [alias, resolve(root, path)]),
+    Object.entries(PATH_ALIASES).map((
+      [alias, path],
+    ) => [alias, resolve(root, path)]),
   );
 }
 
@@ -684,7 +721,7 @@ function buildPathAliases(root: string): Record<string, string> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default defineConfig(({ mode }): UserConfig => {
-  const isDev = mode === 'development';
+  const isDev = mode === "development";
   const config = getBuildModeConfig(mode);
   const outputFileName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
   const root = process.cwd();
@@ -703,28 +740,28 @@ export default defineConfig(({ mode }): UserConfig => {
     },
 
     build: {
-      target: 'esnext',
+      target: "esnext",
       minify: false, // Keep readable for Greasy Fork policy
       sourcemap: config.sourceMap,
-      outDir: 'dist',
+      outDir: "dist",
       emptyOutDir: false,
       write: true,
       cssCodeSplit: false,
       cssMinify: false,
 
       lib: {
-        entry: resolve(root, './src/main.ts'),
-        name: 'XcomEnhancedGallery',
-        formats: ['iife'],
-        fileName: () => outputFileName.replace('.user.js', ''),
-        cssFileName: 'style',
+        entry: resolve(root, "./src/main.ts"),
+        name: "XcomEnhancedGallery",
+        formats: ["iife"],
+        fileName: () => outputFileName.replace(".user.js", ""),
+        cssFileName: "style",
       },
 
       rollupOptions: {
         output: {
           entryFileNames: outputFileName,
           inlineDynamicImports: true,
-          exports: 'named',
+          exports: "named",
           // Production optimizations
           ...(!isDev && {
             // Disable Object.freeze() on module namespace objects
@@ -743,6 +780,7 @@ export default defineConfig(({ mode }): UserConfig => {
           moduleSideEffects: false,
           propertyReadSideEffects: false,
           tryCatchDeoptimization: false,
+          unknownGlobalSideEffects: false,
         },
       },
     },
@@ -750,19 +788,19 @@ export default defineConfig(({ mode }): UserConfig => {
     css: {
       modules: {
         generateScopedName: config.cssClassNamePattern,
-        localsConvention: 'camelCaseOnly',
-        scopeBehaviour: 'local',
+        localsConvention: "camelCaseOnly",
+        scopeBehaviour: "local",
       },
       devSourcemap: isDev,
     },
 
     define: {
       __DEV__: JSON.stringify(isDev),
-      'import.meta.env.MODE': JSON.stringify(mode),
-      'import.meta.env.DEV': JSON.stringify(isDev),
-      'import.meta.env.PROD': JSON.stringify(!isDev),
+      "import.meta.env.MODE": JSON.stringify(mode),
+      "import.meta.env.DEV": JSON.stringify(isDev),
+      "import.meta.env.PROD": JSON.stringify(!isDev),
     },
 
-    logLevel: 'warn',
+    logLevel: "warn",
   };
 });
