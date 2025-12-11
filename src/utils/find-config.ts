@@ -62,7 +62,11 @@ export function findConfigAny(candidates: string[], base?: string): string {
   }
   // If none of the candidate paths exist, return resolved path for the
   // first candidate (behave like the previous findConfig fallback).
-  return findConfig(candidates[0], base);
+  const first = candidates[0];
+  if (!first) {
+    throw new Error('findConfigAny requires at least one candidate');
+  }
+  return findConfig(first, base);
 }
 
 export default findConfig;
