@@ -130,12 +130,23 @@ export function executeVideoControl(
     }
 
     switch (action) {
-      case 'play':
-        videoElement.play?.().catch(() => {
-          logger.debug('[VideoControl] Play failed', { context });
-        });
-        videoPlaybackStateMap.set(videoElement, { playing: true });
+      case 'play': {
+        // Prefer to set playback state only after play() resolves successfully
+        const maybePromise = videoElement.play?.();
+        if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
+          (maybePromise as Promise<unknown>)
+            .then(() => videoPlaybackStateMap.set(videoElement, { playing: true }))
+            .catch(() => {
+              // Ensure we don't incorrectly mark the video as playing when play() fails
+              videoPlaybackStateMap.set(videoElement, { playing: false });
+              logger.debug('[VideoControl] Play failed', { context });
+            });
+        } else {
+          // For environments where play() is synchronous or not a Promise
+          videoPlaybackStateMap.set(videoElement, { playing: true });
+        }
         break;
+      }
 
       case 'pause':
         videoElement.pause?.();
@@ -147,16 +158,23 @@ export function executeVideoControl(
         const next = !current;
 
         if (next) {
-          videoElement.play?.().catch(() => {
-            logger.debug('[VideoControl] Play failed during toggle', {
-              context,
-            });
-          });
+          const maybePromise = videoElement.play?.();
+          if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
+            (maybePromise as Promise<unknown>)
+              .then(() => videoPlaybackStateMap.set(videoElement, { playing: true }))
+              .catch(() => {
+                videoPlaybackStateMap.set(videoElement, { playing: false });
+                logger.debug('[VideoControl] Play failed during toggle', {
+                  context,
+                });
+              });
+          } else {
+            videoPlaybackStateMap.set(videoElement, { playing: true });
+          }
         } else {
           videoElement.pause?.();
+          videoPlaybackStateMap.set(videoElement, { playing: false });
         }
-
-        videoPlaybackStateMap.set(videoElement, { playing: next });
         break;
       }
 
