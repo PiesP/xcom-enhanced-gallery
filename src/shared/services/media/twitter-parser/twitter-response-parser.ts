@@ -236,15 +236,23 @@ export function extractMediaFromTweet(
   tweetUser: TwitterUser,
   sourceLocation: 'original' | 'quoted' = 'original'
 ): TweetMediaEntry[] {
-  if (!tweetResult.extended_entities?.media) return [];
+  // Allow parsing quoted tweet content by using quoted_status_result.result
+  // when sourceLocation is 'quoted' and a quoted result is present.
+  const quotedResult = (
+    tweetResult as unknown as { quoted_status_result?: { result?: TwitterTweet } }
+  ).quoted_status_result?.result;
+  const parseTarget: TwitterTweet =
+    sourceLocation === 'quoted' && quotedResult ? (quotedResult as TwitterTweet) : tweetResult;
+
+  if (!parseTarget.extended_entities?.media) return [];
 
   const mediaItems: TweetMediaEntry[] = [];
   const typeIndex: TypeIndexCounter = {};
   const screenName = tweetUser.screen_name ?? '';
-  const tweetId = tweetResult.rest_id ?? tweetResult.id_str ?? '';
+  const tweetId = parseTarget.rest_id ?? parseTarget.id_str ?? '';
 
-  for (let index = 0; index < tweetResult.extended_entities.media.length; index++) {
-    const media: TwitterMedia | undefined = tweetResult.extended_entities.media[index];
+  for (let index = 0; index < parseTarget.extended_entities.media.length; index++) {
+    const media: TwitterMedia | undefined = parseTarget.extended_entities.media[index];
     if (!media?.type || !media.id_str || !media.media_url_https) continue;
 
     try {
