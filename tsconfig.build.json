@@ -12,11 +12,5 @@
   "exclude": [
     "node_modules",
     "dist",
-    "build",
-    "coverage",
-    ".stryker-tmp",
-    "scripts/**/*",
-    "test/**/*",
-    "playwright/**/*"
   ]
 }

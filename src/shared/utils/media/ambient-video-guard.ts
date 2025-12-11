@@ -1,6 +1,84 @@
 import { logger } from '@shared/logging';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
-import { effectSafe } from '@shared/state/signals/signal-factory';
 import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
 
 let guardDispose: (() => void) | null = null;
@@ -11,16 +89,14 @@ function ensureGuardEffect(): void {
     return;
   }
 
-  guardDispose = effectSafe(() => {
-    if (!gallerySignals.isOpen.value) {
-      return;
-    }
+  // Subscribe directly to the signal to avoid cross-runtime createEffect
+  // issues in test environments where multiple Solid runtimes may be loaded.
+  // createSignalSafe.subscribe returns a dispose function that is compatible
+  // with the root lifecycle semantics we already use here.
+  guardDispose = gallerySignals.isOpen.subscribe((isOpen) => {
+    if (!isOpen) return;
 
-    const result = pauseAmbientVideosForGallery({
-      trigger: 'guard',
-      reason: 'guard',
-    });
-
+    const result = pauseAmbientVideosForGallery({ trigger: 'guard', reason: 'guard' });
     if (result.pausedCount > 0) {
       logger.debug('[AmbientVideoGuard] Ambient pause triggered by guard', result);
     }
