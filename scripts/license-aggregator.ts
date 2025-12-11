@@ -6,6 +6,7 @@
  */
 
 import type { LicenseInfo } from './shared/constants.ts';
+import * as logger from './shared/logging.ts';
 import { parseLicenseName } from './userscript-meta.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -28,10 +29,10 @@ async function readLicense(dir: string, filename: string): Promise<LicenseInfo |
   try {
     const content = await Deno.readTextFile(`${dir}/${filename}`);
     const name = parseLicenseName(filename);
-    console.log(`📜 Loaded license: ${name}`);
+    logger.info(`📜 Loaded license: ${name}`);
     return { name, text: content.trim() };
   } catch (error) {
-    console.warn(`⚠️ Failed to read: ${filename}`, error);
+    logger.warn(`⚠️ Failed to read: ${filename}`, error);
     return null;
   }
 }
@@ -59,11 +60,11 @@ export async function aggregateLicenses(licensesDir: string): Promise<LicenseInf
       .filter((l): l is LicenseInfo => l !== null)
       .sort((a, b) => a.name.localeCompare(b.name));
 
-    console.log(`📚 Aggregated ${licenses.length} third-party licenses\n`);
+    logger.info(`📚 Aggregated ${licenses.length} third-party licenses\n`);
     return licenses;
   } catch (error) {
     if (error instanceof Deno.errors.NotFound) {
-      console.warn(`⚠️ Licenses directory not found: ${licensesDir}`);
+      logger.warn(`⚠️ Licenses directory not found: ${licensesDir}`);
       return [];
     }
     throw error;

@@ -22,6 +22,7 @@ import {
   USERSCRIPT_CONFIG,
   type UserscriptConfig,
 } from './shared/constants.ts';
+import * as logger from './shared/logging.ts';
 import { generateUserscriptMeta } from './userscript-meta.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,28 +105,29 @@ const QUALITY_CHECKS = [
 ] as const;
 
 async function runCommand(args: readonly string[], description: string): Promise<CommandResult> {
-  console.log(`🔍 ${description}...`);
+  logger.info(`🔍 ${description}...`);
   const { success } = await new Deno.Command('deno', {
     args: [...args],
     stdout: 'inherit',
     stderr: 'inherit',
   }).output();
-  console.log(success ? `✅ ${description} passed` : `❌ ${description} failed`);
+  if (success) logger.info(`✅ ${description} passed`);
+  else logger.error(`❌ ${description} failed`);
   return { success, description };
 }
 
 async function runQualityChecks(): Promise<boolean> {
-  console.log('📋 Running quality checks...\n');
+  logger.info('📋 Running quality checks...\n');
   const results = await Promise.all(QUALITY_CHECKS.map((c) => runCommand(c.args, c.description)));
   const allPassed = results.every((r) => r.success);
 
   if (allPassed) {
-    console.log('\n✅ All quality checks passed!\n');
+    logger.info('\n✅ All quality checks passed!\n');
   } else {
     const failed = results.filter((r) => !r.success).map((r) => r.description);
-    console.error(`\n❌ Failed: ${failed.join(', ')}`);
+    logger.error(`\n❌ Failed: ${failed.join(', ')}`);
     if (failed.includes('Biome lint & format')) {
-      console.log('💡 Run "deno task biome:check" to auto-fix.\n');
+      logger.info('💡 Run "deno task biome:check" to auto-fix.\n');
     }
   }
   return allPassed;
@@ -137,7 +139,7 @@ async function runQualityChecks(): Promise<boolean> {
 
 async function bundleWithVite(isDev: boolean): Promise<BundleResult> {
   const mode = isDev ? 'development' : 'production';
-  console.log(`📦 Bundling with Vite (${mode})...`);
+  logger.info(`📦 Bundling with Vite (${mode})...`);
 
   await viteBuild({ configFile: BUILD_CONFIG.viteConfig, mode });
 
@@ -192,7 +194,7 @@ async function writeOutput(
 
   if (options.dev && bundle.sourceMap) {
     writes.push(Deno.writeTextFile(`${outputPath}.map`, bundle.sourceMap));
-    console.log(`🗺️  Source map: ${outputPath}.map`);
+    logger.info(`🗺️  Source map: ${outputPath}.map`);
   }
 
   await Promise.all(writes);
@@ -224,10 +226,10 @@ function printBuildInfo(isDev: boolean): void {
         '└─ Source maps: Disabled',
       ];
 
-  console.log(`\n📋 Build Mode: ${mode}`);
-  console.log('─'.repeat(45));
-  info.forEach((line) => console.log(`   ${line}`));
-  console.log('─'.repeat(45));
+  logger.info(`\n📋 Build Mode: ${mode}`);
+  logger.info('─'.repeat(45));
+  info.forEach((line) => logger.info(`   ${line}`));
+  logger.info('─'.repeat(45));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -238,21 +240,21 @@ async function build(): Promise<void> {
   const startTime = performance.now();
   const options = parseArgs();
 
-  console.log('🚀 Starting X.com Enhanced Gallery build...\n');
+  logger.info('🚀 Starting X.com Enhanced Gallery build...\n');
 
   const version = await resolveVersion(options);
-  console.log(`📌 Version: ${version}`);
-  console.log(`🔒 Quality checks: ${options.skipChecks ? 'Skipped' : 'Enabled'}`);
+  logger.info(`📌 Version: ${version}`);
+  logger.info(`🔒 Quality checks: ${options.skipChecks ? 'Skipped' : 'Enabled'}`);
 
   printBuildInfo(options.dev);
 
   if (!options.skipChecks && !(await runQualityChecks())) {
-    console.error('❌ Build aborted due to quality check failures.');
-    console.log('\n💡 Tips:');
-    console.log('   • Run "deno task check" to see type errors');
-    console.log('   • Run "deno task lint" to see lint errors');
-    console.log('   • Run "deno task fmt" to auto-fix formatting');
-    console.log('   • Use "--skip-checks" or "--fast" to bypass\n');
+    logger.error('❌ Build aborted due to quality check failures.');
+    logger.info('\n💡 Tips:');
+    logger.info('   • Run "deno task check" to see type errors');
+    logger.info('   • Run "deno task lint" to see lint errors');
+    logger.info('   • Run "deno task fmt" to auto-fix formatting');
+    logger.info('   • Use "--skip-checks" or "--fast" to bypass\n');
     Deno.exit(1);
   }
 
@@ -269,22 +271,22 @@ async function build(): Promise<void> {
 
   const duration = ((performance.now() - startTime) / 1000).toFixed(2);
 
-  console.log('\n✅ Build complete!');
-  console.log(`📄 Output: ${path}`);
-  console.log(`📊 Size: ${sizeKB} KB`);
-  console.log(`⏱️  Duration: ${duration}s`);
+  logger.info('\n✅ Build complete!');
+  logger.info(`📄 Output: ${path}`);
+  logger.info(`📊 Size: ${sizeKB} KB`);
+  logger.info(`⏱️  Duration: ${duration}s`);
 
   if (options.dev) {
-    console.log('\n💡 Run "deno task build:fast" for production build.');
+    logger.info('\n💡 Run "deno task build:fast" for production build.');
   }
-  console.log();
+  logger.info();
 }
 
 if (import.meta.main) {
   try {
     await build();
   } catch (error) {
-    console.error('❌ Build failed:', error);
+    logger.error('❌ Build failed:', error);
     Deno.exit(1);
   }
 }
