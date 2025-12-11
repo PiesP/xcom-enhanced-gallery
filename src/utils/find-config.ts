@@ -55,4 +55,14 @@ export function findConfig(relative: string, base?: string): string {
   return path.resolve(effectiveBase, relative);
 }
 
+export function findConfigAny(candidates: string[], base?: string): string {
+  for (const name of candidates) {
+    const p = findConfig(name, base);
+    if (fs.existsSync(p)) return p;
+  }
+  // If none of the candidate paths exist, return resolved path for the
+  // first candidate (behave like the previous findConfig fallback).
+  return findConfig(candidates[0], base);
+}
+
 export default findConfig;
