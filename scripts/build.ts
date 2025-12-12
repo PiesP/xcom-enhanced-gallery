@@ -11,7 +11,10 @@
  *   deno task build:dev:fast     # Development build without quality checks
  */
 
-import { build as viteBuild } from 'npm:vite@^6.0.0';
+import { build as viteBuild } from 'vite';
+// Ensure `esbuild` is a direct dependency so Vite's peer dependency can resolve
+// to a compatible version (Vite 8 requires esbuild ^0.25.0).
+import 'esbuild';
 import { aggregateLicenses } from './license-aggregator.ts';
 import {
   BUILD_CONFIG,

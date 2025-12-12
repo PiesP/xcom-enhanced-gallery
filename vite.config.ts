@@ -764,15 +764,6 @@ export default defineConfig(({ mode }): UserConfig => {
           exports: "named",
           // Production optimizations
           ...(!isDev && {
-            // Disable Object.freeze() on module namespace objects
-            freeze: false,
-            // Use const bindings for better optimization
-            generatedCode: {
-              symbols: false,
-              constBindings: true,
-            },
-            // Remove unnecessary whitespace (not obfuscation)
-            compact: true,
           }),
         },
         // Tree-shake more aggressively in production
