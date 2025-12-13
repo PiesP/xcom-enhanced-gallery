@@ -45,9 +45,7 @@ export interface AssignOptions {
  * ```
  */
 export function resolveNestedPath<T = unknown>(source: unknown, path: string): T | undefined {
-  if (!source || typeof source !== 'object' || !path) {
-    return undefined;
-  }
+  if (!path) return undefined;
 
   const keys = path.split('.');
 
@@ -59,7 +57,7 @@ export function resolveNestedPath<T = unknown>(source: unknown, path: string): T
     if (!isSafeKey(key)) {
       return undefined;
     }
-    if (current === null || current === undefined || typeof current !== 'object') {
+    if (current === null || typeof current !== 'object') {
       return undefined;
     }
     current = current[key];
@@ -95,9 +93,6 @@ export function assignNestedPath<T = unknown>(
   }
 
   const keys = path.split('.');
-  if (keys.length === 0) {
-    return false;
-  }
 
   // Guard against prototype pollution - check all keys upfront
   for (const key of keys) {
