@@ -44,25 +44,25 @@ cd xcom-enhanced-gallery
 
 ```bash
 # Production build (userscript bundle with quality checks)
-deno task build
+pnpm build
 
 # Development build
-deno task build:dev
+pnpm build:dev
 
 # Quick build (skip quality checks)
-deno task build:fast
+pnpm build:fast
 
 # TypeScript typecheck
-deno task check
+pnpm check
 
 # Lint source code
-deno task lint
+pnpm lint
 
 # Format check
-deno task fmt:check
+pnpm fmt:check
 
 # Run all quality checks
-deno task quality
+pnpm quality
 ```
 
 These tasks are defined in `deno.json` and use the project configuration
@@ -73,8 +73,8 @@ These tasks are defined in `deno.json` and use the project configuration
 ## Editor setup (VSCode)
 
 For the best development experience, configure VSCode to use the same
-lint/format rules as the CLI (`deno task lint`, `deno task fmt`,
-`deno task biome:check`).
+lint/format rules as the CLI (`pnpm lint`, `pnpm fmt`,
+`pnpm biome:check`).
 
 ### Recommended extensions
 
@@ -110,8 +110,8 @@ Add these settings to your `.vscode/settings.json`:
 
 This ensures:
 
-- **Format on save** uses Biome (same as `deno task fmt` /
-  `deno task biome:check`)
+- **Format on save** uses Biome (same as `pnpm fmt` /
+  `pnpm biome:check`)
 - **Lint rules** match the CLI (`biome.jsonc` configuration)
 - **Auto-fix** applies safe fixes on save
 
@@ -122,21 +122,25 @@ This ensures:
 Please keep changes small, focused, and consistent with the existing codebase.
 
 - **TypeScript & Solid.js**
+
   - Use modern TypeScript and Solid.js patterns already present in `src/`.
   - Prefer functional components and hooks/utilities consistent with existing
     files.
 
 - **Path imports**
+
   - Use configured **path aliases** (e.g. `@shared/...`, `@features/...`) for
     internal imports instead of long relative paths.
 
 - **GM / userscript APIs**
+
   - Do **not** call Greasemonkey/Tampermonkey APIs (e.g. `GM_*`) directly from
     feature code.
   - Use the existing service singletons (e.g. storage, notification, download,
     HTTP services) where applicable.
 
 - **Security & safety**
+
   - Do not introduce dynamic code execution (`eval`, `new Function`,
     `setTimeout`/`setInterval` with string arguments, etc.).
   - Avoid unsafe DOM patterns such as unsanitized `innerHTML`.
@@ -144,7 +148,7 @@ Please keep changes small, focused, and consistent with the existing codebase.
     [Security Policy](.github/SECURITY.md).
 
 - **Style & formatting**
-  - Follow the linting rules enforced by Deno lint (`deno task lint`).
+  - Follow the linting rules enforced by Deno lint (`pnpm lint`).
   - Use the existing design tokens and CSS Modules patterns from `src/`.
 
 ---
@@ -157,9 +161,9 @@ Before you submit a PR, please:
 2. Run at least a build and basic static checks locally:
 
 ```bash
-deno task build
+pnpm build
 # or individual checks:
-deno task quality
+pnpm quality
 ```
 
 3. Ensure the gallery still behaves correctly on X.com in a desktop browser

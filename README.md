@@ -112,10 +112,10 @@ This project is distributed under the [MIT License](LICENSE).
 
 ### Used Open Source Libraries
 
-| Library              | License | Purpose                      |
-| -------------------- | ------- | ---------------------------- |
-| **Solid.js**         | MIT     | UI Framework                 |
-| **@heroicons/react** | MIT     | Icon Components              |
+| Library              | License | Purpose         |
+| -------------------- | ------- | --------------- |
+| **Solid.js**         | MIT     | UI Framework    |
+| **@heroicons/react** | MIT     | Icon Components |
 
 Full license texts are available in the [`LICENSES/`](LICENSES/) directory.
 
@@ -130,18 +130,18 @@ git clone https://github.com/PiesP/xcom-enhanced-gallery.git
 cd xcom-enhanced-gallery
 
 # Build userscript bundle (includes quality checks)
-deno task build
+pnpm build
 
 # Development build
-deno task build:dev
+pnpm build:dev
 
 # Quick build (skip quality checks)
-deno task build:fast
+pnpm build:fast
 
 # Individual quality checks
-deno task check      # TypeScript
-deno task lint       # Deno lint
-deno task fmt:check  # Format check
+pnpm check      # TypeScript
+pnpm lint       # Deno lint
+pnpm fmt:check  # Format check
 ```
 
 > **Prerequisites**: [Deno 2.x](https://deno.land/) is required. No npm install needed.
