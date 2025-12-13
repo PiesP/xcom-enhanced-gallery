@@ -8,6 +8,54 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-12-14
+
+### Added
+
+- **Deploy Channel System**: Implemented multi-channel deployment architecture supporting Release, Beta, and Development builds.
+  - Release channel: Stable production builds (`xcom-enhanced-gallery.user.js`)
+  - Beta channel: Pre-release testing builds (`xcom-enhanced-gallery.beta.user.js`)
+  - Development channel: Debug builds with full source maps (`xcom-enhanced-gallery.dev.user.js`)
+- **Meta-Only File Generation**: Added `xcom-enhanced-gallery.meta.js` for optimized update checking.
+- **Build Scripts**: Added new npm scripts for channel-specific builds:
+  - `build:beta` / `build:beta:fast` for beta channel
+  - `build:release` for explicit release channel
+- **Userscript Metadata Enhancements**:
+  - Added `@homepageURL` for project homepage link
+  - Added `@icon` with Twitter favicon
+  - Added `@compatible` tags for browser compatibility (Chrome 117+, Firefox 119+, Edge 117+, Safari 17+)
+- **Version Naming**: Implemented semantic versioning with channel suffixes:
+  - Release: `1.2.0`
+  - Beta: `1.2.0-beta.{commit}`
+  - Development: `1.2.0-dev.{commit}`
+- **Quoted Tweet Parsing**: Added support for extracting media from quoted tweets.
+- **Config Discovery**: Added `findConfigAny` function for flexible configuration file discovery.
+- **Coverage Utilities**: Added `coverageSmoke` function for v8 coverage mapping verification.
+
+### Changed
+
+- **Build System**: Migrated back to pnpm/Vite from Deno for improved ecosystem compatibility.
+- **Dependencies**: Updated to latest versions:
+  - `@types/node` to 25.0.1
+  - `vite` to 8.0.0-beta.2
+  - `esbuild` to 0.27.1
+  - Added `cross-env` for cross-platform environment variables
+- **Video Playback**: Improved video playback state update logic with better error handling.
+- **Logging**: Replaced console.log calls with structured logger for consistent logging.
+- **Object Path Utilities**: Simplified validation in `resolveNestedPath` and `assignNestedPath`.
+- **Text Formatting**: Improved URL trailing punctuation handling in `formatTweetText`.
+- **API Error Handling**: Enhanced error handling for API extraction failures with metadata integration.
+- **Build Output**: Updated `@updateURL` to point to meta-only file for faster version checks.
+
+### Fixed
+
+- **Configuration Discovery**: Fixed default base path handling in `findConfig` function.
+- **gitignore**: Cleaned up and improved comments in `.gitignore` file.
+
+### Documentation
+
+- **Deploy Structure Guide**: Added comprehensive `docs/DEPLOY_STRUCTURE.md` documenting the deployment architecture.
+
 ## [1.1.0] - 2025-12-08
 
 ### Changed
