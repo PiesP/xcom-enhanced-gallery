@@ -2,13 +2,10 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     // Target & Libraries
-    // Required for tsc direct usage; Deno provides these automatically
     "target": "ESNext",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
 
-    // Module System (Deno supported values)
-    // Note: Deno supports "nodenext", "esnext", "preserve" for module
-    // and "nodenext", "bundler" for moduleResolution
+    // Module System (bundler mode for Vite compatibility)
     "module": "ESNext",
     "moduleResolution": "bundler",
 
@@ -17,7 +14,6 @@
     "jsxImportSource": "solid-js",
 
     // Strict Type Checking
-    // Deno defaults strict=true, but tsc needs explicit declaration
     "strict": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
@@ -35,8 +31,7 @@
     "noEmit": true,
     "skipLibCheck": true,
 
-    // Path Aliases (synchronized with deno.json imports)
-    // Required for IDE/editor support since deno.json paths take precedence at runtime
+    // Path Aliases (synchronized with package.json imports)
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],

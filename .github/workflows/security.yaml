@@ -1,6 +1,6 @@
 name: 🔒 Security Scanning
 
-# Responsibility: Security analysis for Deno-based project
+# Responsibility: Security analysis for Node.js + pnpm project
 # - OSV scanning: vulnerability detection in dependencies
 # - SAST: static security analysis with Semgrep
 # - License compliance: verify approved licenses (MIT/ISC/BSD/Apache-2.0)
@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
 
 env:
-  DENO_VERSION: "2.x"
+  NODE_VERSION: "24"
 
 permissions:
   contents: read
@@ -47,7 +47,7 @@ jobs:
 
       - name: 🔍 Run OSV-Scanner
         run: |
-          osv-scanner --lockfile=deno.lock --format=sarif --output=osv-results.sarif . || true
+          osv-scanner --lockfile=pnpm-lock.yaml --format=sarif --output=osv-results.sarif . || true
         continue-on-error: true
 
       - name: 📤 Upload OSV results
@@ -90,11 +90,6 @@ jobs:
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
-
-      - name: 🦕 Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: ${{ env.DENO_VERSION }}
 
       - name: 📜 Verify LICENSES directory
         run: |

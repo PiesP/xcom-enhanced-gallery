@@ -1,6 +1,6 @@
 name: 🚀 Release
 
-# Responsibility: Release artifact creation (Deno-based)
+# Responsibility: Release artifact creation (Node.js + pnpm)
 # - Version detection: git tag or manual trigger
 # - Production build: userscript + checksums + metadata
 # - GitHub Release: automated creation with downloadable assets
@@ -26,7 +26,7 @@ on:
         type: boolean
 
 env:
-  DENO_VERSION: "2.x"
+  NODE_VERSION: "24"
 
 permissions:
   contents: read
@@ -85,20 +85,17 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: 🦕 Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: ${{ env.DENO_VERSION }}
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
 
-      - name: 📦 Cache dependencies
-        uses: actions/cache@v4
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: |
-            ~/.cache/deno
-            node_modules
-          key: deno-${{ runner.os }}-${{ hashFiles('deno.lock', 'deno.json') }}
-          restore-keys: |
-            deno-${{ runner.os }}-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: 📝 Get release version
         id: version
@@ -123,7 +120,7 @@ jobs:
 
       - name: 🏗️ Build userscript
         run: |
-          deno task build --version=${{ steps.version.outputs.version }}
+          BUILD_VERSION=${{ steps.version.outputs.version }} pnpm build
 
       - name: 📤 Deploy dist/ to release branch
         run: |
@@ -188,7 +185,7 @@ jobs:
             "version": "${{ steps.version.outputs.version }}",
             "build_date": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
             "commit": "${{ github.sha }}",
-            "deno_version": "${{ env.DENO_VERSION }}"
+            "node_version": "${{ env.NODE_VERSION }}"
           }
           EOF
 
@@ -229,7 +226,7 @@ jobs:
 
           - **Commit**: \`${{ github.sha }}\`
           - **Built**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          - **Deno**: \`${{ env.DENO_VERSION }}\`
+          - **Node.js**: \`${{ env.NODE_VERSION }}\`
           EOF
 
       - name: 🏷️ Create GitHub Release

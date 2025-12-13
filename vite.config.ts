@@ -1,22 +1,23 @@
 /**
  * Vite Configuration for X.com Enhanced Gallery Userscript
  *
- * This configuration supports both development and production builds with
- * different optimization strategies:
+ * This configuration handles the complete build pipeline:
+ * - Vite bundling with Solid.js
+ * - CSS processing and inlining
+ * - Userscript metadata generation
+ * - Third-party license aggregation
+ * - Quality checks (type checking, linting)
  *
- * Development: Optimized for debugging and analysis
- * - Readable CSS class names (Component__className__hash)
- * - CSS formatting preserved
- * - Source maps enabled
- *
- * Production: Optimized for distribution size
- * - Hashed CSS class names (xeg_hash)
- * - CSS fully compressed
- * - No source maps
- *
- * @see scripts/build.ts for the build orchestration
+ * Build modes:
+ *   pnpm build          - Production build with quality checks
+ *   pnpm build:dev      - Development build with quality checks
+ *   pnpm build:fast     - Production build without quality checks
+ *   pnpm build:dev:fast - Development build without quality checks
  */
 
+import { execSync } from "node:child_process";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { resolve } from "node:path";
 import { defineConfig, type Plugin, type UserConfig } from "vite";
 import solidPlugin from "vite-plugin-solid";
@@ -26,13 +27,13 @@ import solidPlugin from "vite-plugin-solid";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const STYLE_ID = "xeg-injected-styles" as const;
+const LICENSES_DIR = "./LICENSES";
 
 const OUTPUT_FILE_NAMES = {
   dev: "xcom-enhanced-gallery.dev.user.js",
   prod: "xcom-enhanced-gallery.user.js",
 } as const;
 
-// Path aliases (shared between Vite and TypeScript)
 const PATH_ALIASES = {
   "@": "src",
   "@bootstrap": "src/bootstrap",
@@ -43,61 +44,289 @@ const PATH_ALIASES = {
   "@types": "src/types",
 } as const;
 
+const USERSCRIPT_CONFIG = {
+  name: "X.com Enhanced Gallery",
+  namespace: "https://github.com/PiesP/xcom-enhanced-gallery",
+  description: "Media viewer and download functionality for X.com",
+  author: "PiesP",
+  license: "MIT",
+  match: ["https://*.x.com/*"],
+  grant: [
+    "GM_setValue",
+    "GM_getValue",
+    "GM_download",
+    "GM_notification",
+    "GM_xmlhttpRequest",
+  ],
+  connect: ["pbs.twimg.com", "video.twimg.com", "api.twitter.com"],
+  runAt: "document-idle" as const,
+  supportURL: "https://github.com/PiesP/xcom-enhanced-gallery/issues",
+  noframes: true,
+  cdnBaseUrl:
+    "https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@release/dist/xcom-enhanced-gallery.user.js",
+} as const;
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Build Mode Configuration
+// Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Build mode configuration interface
- */
-export interface BuildModeConfig {
+interface BuildModeConfig {
   readonly cssCompress: boolean;
   readonly cssRemoveComments: boolean;
   readonly cssVariableShortening: boolean;
   readonly cssValueMinify: boolean;
   readonly cssClassNamePattern: string;
   readonly sourceMap: boolean | "inline";
-  readonly outputSuffix: string;
 }
 
-/**
- * Build mode configurations for development and production
- */
-export const BUILD_MODE_CONFIGS = {
-  development: {
-    cssCompress: false,
-    cssRemoveComments: false,
-    cssVariableShortening: false,
-    cssValueMinify: false,
-    cssClassNamePattern: "[name]__[local]__[hash:base64:5]",
-    sourceMap: "inline" as const,
-    outputSuffix: ".dev",
-  },
-  production: {
-    cssCompress: true,
-    cssRemoveComments: true,
-    cssVariableShortening: true,
-    cssValueMinify: true,
-    cssClassNamePattern: "xeg_[hash:base64:6]",
-    sourceMap: false as const,
-    outputSuffix: "",
-  },
-} satisfies Record<"development" | "production", BuildModeConfig>;
+interface LicenseInfo {
+  readonly name: string;
+  readonly text: string;
+}
 
-/** Get build mode config based on mode string */
-export function getBuildModeConfig(mode: string): BuildModeConfig {
+interface UserscriptMeta {
+  readonly name: string;
+  readonly namespace: string;
+  readonly version: string;
+  readonly description: string;
+  readonly author: string;
+  readonly license: string;
+  readonly match: readonly string[];
+  readonly grant: readonly string[];
+  readonly connect: readonly string[];
+  readonly runAt: "document-start" | "document-end" | "document-idle";
+  readonly supportURL: string;
+  readonly downloadURL: string;
+  readonly updateURL: string;
+  readonly noframes: boolean;
+  readonly icon?: string;
+  readonly require?: readonly string[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Build Mode Configuration
+// ─────────────────────────────────────────────────────────────────────────────
+
+const BUILD_MODE_CONFIGS: Record<"development" | "production", BuildModeConfig> =
+  {
+    development: {
+      cssCompress: false,
+      cssRemoveComments: false,
+      cssVariableShortening: false,
+      cssValueMinify: false,
+      cssClassNamePattern: "[name]__[local]__[hash:base64:5]",
+      sourceMap: "inline" as const,
+    },
+    production: {
+      cssCompress: true,
+      cssRemoveComments: true,
+      cssVariableShortening: true,
+      cssValueMinify: true,
+      cssClassNamePattern: "xeg_[hash:base64:6]",
+      sourceMap: false as const,
+    },
+  };
+
+function getBuildModeConfig(mode: string): BuildModeConfig {
   return BUILD_MODE_CONFIGS[
     mode === "development" ? "development" : "production"
   ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Version Resolution
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getVersionFromGit(): string | null {
+  try {
+    const stdout = execSync("git describe --tags --abbrev=0", {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "ignore"],
+    }).trim();
+    return stdout.startsWith("v") ? stdout.slice(1) : stdout;
+  } catch {
+    return null;
+  }
+}
+
+function resolveVersion(isDev: boolean): string {
+  const envVersion = process.env.BUILD_VERSION;
+  if (envVersion) return envVersion;
+
+  const gitVersion = getVersionFromGit();
+  if (gitVersion) return gitVersion;
+
+  return isDev ? "0.0.0-dev" : "1.0.0";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// License Aggregation
+// ─────────────────────────────────────────────────────────────────────────────
+
+const LICENSE_NAME_MAP: Record<string, string> = {
+  "solid-js": "Solid.js",
+  heroicons: "Heroicons",
+  "xcom-enhanced-gallery": "X.com Enhanced Gallery",
+};
+
+const MIT_LICENSE_BODY = `Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.`;
+
+function parseLicenseName(filename: string): string {
+  const base = filename
+    .replace(/\.(txt|md)$/i, "")
+    .replace(/-(MIT|LICENSE|APACHE|BSD)$/i, "");
+  return LICENSE_NAME_MAP[base] ?? base;
+}
+
+function aggregateLicenses(licensesDir: string): LicenseInfo[] {
+  try {
+    const entries = fs.readdirSync(licensesDir);
+    const validExtensions = new Set([".txt", ".md"]);
+    const excludePattern = /xcom-enhanced-gallery/i;
+
+    return entries
+      .filter((entry) => {
+        const ext = path.extname(entry).toLowerCase();
+        return (
+          validExtensions.has(ext) &&
+          !excludePattern.test(entry) &&
+          fs.statSync(path.join(licensesDir, entry)).isFile()
+        );
+      })
+      .map((filename) => {
+        const content = fs.readFileSync(
+          path.join(licensesDir, filename),
+          "utf8"
+        );
+        return { name: parseLicenseName(filename), text: content.trim() };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch {
+    return [];
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Userscript Metadata Generation
+// ─────────────────────────────────────────────────────────────────────────────
+
+function formatMetaLine(key: string, value: string): string {
+  return `// @${key.padEnd(12)} ${value}`;
+}
+
+function formatMetaLines(key: string, values: readonly string[]): string[] {
+  return values.map((v) => formatMetaLine(key, v));
+}
+
+function buildMetadataBlock(config: UserscriptMeta): string {
+  const lines = [
+    "// ==UserScript==",
+    formatMetaLine("name", config.name),
+    formatMetaLine("namespace", config.namespace),
+    formatMetaLine("version", config.version),
+    formatMetaLine("description", config.description),
+    formatMetaLine("author", config.author),
+    formatMetaLine("license", config.license),
+    ...formatMetaLines("match", config.match),
+    ...formatMetaLines("grant", config.grant),
+    ...formatMetaLines("connect", config.connect),
+    formatMetaLine("run-at", config.runAt),
+    formatMetaLine("supportURL", config.supportURL),
+    formatMetaLine("downloadURL", config.downloadURL),
+    formatMetaLine("updateURL", config.updateURL),
+    ...(config.icon ? [formatMetaLine("icon", config.icon)] : []),
+    ...(config.require?.length
+      ? formatMetaLines("require", config.require)
+      : []),
+    ...(config.noframes ? ["// @noframes"] : []),
+    "// ==/UserScript==",
+  ];
+  return lines.join("\n");
+}
+
+function buildLicenseBlock(licenses: readonly LicenseInfo[]): string {
+  if (licenses.length === 0) return "";
+
+  const mitCopyrights: Array<{ name: string; copyright: string }> = [];
+  const otherLicenses: LicenseInfo[] = [];
+
+  for (const license of licenses) {
+    const isMit =
+      license.text.includes("MIT License") ||
+      license.text.includes("Permission is hereby granted");
+    if (isMit) {
+      const match = license.text.match(/Copyright\s*\(c\)\s*(.+)/i);
+      if (match?.[1]) {
+        mitCopyrights.push({ name: license.name, copyright: match[1].trim() });
+        continue;
+      }
+    }
+    otherLicenses.push(license);
+  }
+
+  const lines = [" * Third-Party Licenses", " * ====================", " *"];
+
+  if (mitCopyrights.length > 0) {
+    lines.push(" * MIT License", " *");
+    for (const { name, copyright } of mitCopyrights) {
+      lines.push(` * Copyright (c) ${copyright} (${name})`);
+    }
+    lines.push(" *");
+    for (const textLine of MIT_LICENSE_BODY.split("\n")) {
+      lines.push(` * ${textLine}`);
+    }
+    if (otherLicenses.length > 0) lines.push(" *", " *");
+  }
+
+  for (let i = 0; i < otherLicenses.length; i++) {
+    const license = otherLicenses[i];
+    if (!license) continue;
+    lines.push(` * ${license.name}:`);
+    for (const textLine of license.text.split("\n")) {
+      lines.push(` * ${textLine}`);
+    }
+    if (i < otherLicenses.length - 1) lines.push(" *", " *");
+  }
+
+  lines.push(" *");
+  return ["/*", ...lines, " */"].join("\n");
+}
+
+function generateUserscriptHeader(version: string): string {
+  const config: UserscriptMeta = {
+    ...USERSCRIPT_CONFIG,
+    version,
+    downloadURL: USERSCRIPT_CONFIG.cdnBaseUrl,
+    updateURL: USERSCRIPT_CONFIG.cdnBaseUrl,
+  };
+
+  const licenses = aggregateLicenses(LICENSES_DIR);
+  const metaBlock = buildMetadataBlock(config);
+  const licenseBlock = buildLicenseBlock(licenses);
+
+  return licenseBlock ? `${metaBlock}\n${licenseBlock}` : metaBlock;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // CSS Processing Utilities
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Remove CSS comments (preserves structure)
- */
 function removeCssComments(css: string): string {
   let result = "";
   let i = 0;
@@ -107,16 +336,20 @@ function removeCssComments(css: string): string {
   while (i < css.length) {
     if (!inString && (css[i] === '"' || css[i] === "'")) {
       inString = true;
-      stringChar = css[i];
+      stringChar = css[i] as string;
+      result += css[i];
+      i++;
+      continue;
+    }
+
+    if (inString && css[i] === stringChar && css[i - 1] !== "\\") {
+      inString = false;
       result += css[i];
       i++;
       continue;
     }
 
     if (inString) {
-      if (css[i] === stringChar && css[i - 1] !== "\\") {
-        inString = false;
-      }
       result += css[i];
       i++;
       continue;
@@ -127,7 +360,8 @@ function removeCssComments(css: string): string {
       if (commentEnd === -1) break;
       i = commentEnd + 2;
       if (
-        result.length > 0 && result[result.length - 1] !== " " &&
+        result.length > 0 &&
+        result[result.length - 1] !== " " &&
         result[result.length - 1] !== "\n"
       ) {
         result += " ";
@@ -147,12 +381,7 @@ function removeCssComments(css: string): string {
     .trim();
 }
 
-/**
- * CSS variable shortening map for production builds
- * Maps verbose --xeg-* variable names to short alternatives
- */
 const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
-  // Easing/Animation
   "--xeg-ease-standard": "--xe-s",
   "--xeg-ease-decelerate": "--xe-d",
   "--xeg-ease-accelerate": "--xe-a",
@@ -160,15 +389,11 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   "--xeg-easing-ease-out": "--xeo",
   "--xeg-easing-ease-in": "--xei",
   "--xeg-easing-linear": "--xel",
-
-  // Duration
   "--xeg-duration": "--xd",
   "--xeg-duration-fast": "--xdf",
   "--xeg-duration-normal": "--xdn",
   "--xeg-duration-slow": "--xds",
   "--xeg-duration-toolbar": "--xdt",
-
-  // Transitions
   "--xeg-transition-interaction-fast": "--xti",
   "--xeg-transition-surface-fast": "--xts",
   "--xeg-transition-surface-normal": "--xtsn",
@@ -177,23 +402,15 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   "--xeg-transition-width-normal": "--xtwn",
   "--xeg-transition-opacity": "--xto",
   "--xeg-transition-toolbar": "--xtt",
-
-  // Colors - Text
   "--xeg-color-text-primary": "--xct-p",
   "--xeg-color-text-secondary": "--xct-s",
   "--xeg-color-text-tertiary": "--xct-t",
   "--xeg-color-text-inverse": "--xct-i",
-
-  // Colors - Border
   "--xeg-color-border-primary": "--xcb-p",
   "--xeg-color-border-hover": "--xcb-h",
   "--xeg-color-border-strong": "--xcb-s",
-
-  // Colors - Background
   "--xeg-color-bg-primary": "--xcbg-p",
   "--xeg-color-bg-secondary": "--xcbg-s",
-
-  // Colors - Semantic
   "--xeg-color-primary": "--xc-p",
   "--xeg-color-primary-hover": "--xc-ph",
   "--xeg-color-success": "--xc-s",
@@ -203,15 +420,11 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   "--xeg-color-overlay-medium": "--xc-om",
   "--xeg-color-surface-elevated": "--xc-se",
   "--xeg-color-background": "--xc-bg",
-
-  // Colors - Neutral
   "--xeg-color-neutral-100": "--xcn1",
   "--xeg-color-neutral-200": "--xcn2",
   "--xeg-color-neutral-300": "--xcn3",
   "--xeg-color-neutral-400": "--xcn4",
   "--xeg-color-neutral-500": "--xcn5",
-
-  // Spacing
   "--xeg-spacing-xs": "--xs-xs",
   "--xeg-spacing-sm": "--xs-s",
   "--xeg-spacing-md": "--xs-m",
@@ -220,8 +433,6 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   "--xeg-spacing-2xl": "--xs-2",
   "--xeg-spacing-3xl": "--xs-3",
   "--xeg-spacing-5xl": "--xs-5",
-
-  // Radius
   "--xeg-radius-xs": "--xr-xs",
   "--xeg-radius-sm": "--xr-s",
   "--xeg-radius-md": "--xr-m",
@@ -229,8 +440,6 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   "--xeg-radius-xl": "--xr-xl",
   "--xeg-radius-2xl": "--xr-2",
   "--xeg-radius-full": "--xr-f",
-
-  // Font
   "--xeg-font-size-sm": "--xfs-s",
   "--xeg-font-size-base": "--xfs-b",
   "--xeg-font-size-md": "--xfs-m",
@@ -240,8 +449,6 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   "--xeg-font-weight-semibold": "--xfw-s",
   "--xeg-font-family-ui": "--xff-u",
   "--xeg-line-height-normal": "--xlh",
-
-  // Z-index
   "--xeg-z-gallery": "--xz-g",
   "--xeg-z-gallery-overlay": "--xz-go",
   "--xeg-z-gallery-toolbar": "--xz-gt",
@@ -256,8 +463,6 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   "--xeg-z-tooltip": "--xz-tt",
   "--xeg-z-stack-base": "--xz-sb",
   "--xeg-layer-root": "--xlr",
-
-  // Toolbar
   "--xeg-toolbar-surface": "--xt-s",
   "--xeg-toolbar-border": "--xt-b",
   "--xeg-toolbar-panel-surface": "--xtp-s",
@@ -278,8 +483,6 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   "--xeg-toolbar-hidden-opacity": "--xth-o",
   "--xeg-toolbar-hidden-visibility": "--xth-v",
   "--xeg-toolbar-hidden-pointer-events": "--xth-pe",
-
-  // Button
   "--xeg-button-lift": "--xb-l",
   "--xeg-button-bg": "--xb-bg",
   "--xeg-button-border": "--xb-b",
@@ -289,31 +492,21 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   "--xeg-button-disabled-opacity": "--xb-do",
   "--xeg-button-square-size": "--xb-ss",
   "--xeg-button-square-padding": "--xb-sp",
-
-  // Size
   "--xeg-size-button-sm": "--xsb-s",
   "--xeg-size-button-md": "--xsb-m",
   "--xeg-size-button-lg": "--xsb-l",
-
-  // Surface
   "--xeg-surface-bg": "--xsu-b",
   "--xeg-surface-border": "--xsu-br",
   "--xeg-surface-bg-hover": "--xsu-bh",
-
-  // Gallery
   "--xeg-gallery-bg": "--xg-b",
   "--xeg-gallery-bg-light": "--xg-bl",
   "--xeg-gallery-bg-dark": "--xg-bd",
-
-  // Modal
   "--xeg-modal-bg": "--xm-b",
   "--xeg-modal-border": "--xm-br",
   "--xeg-modal-bg-light": "--xm-bl",
   "--xeg-modal-bg-dark": "--xm-bd",
   "--xeg-modal-border-light": "--xm-brl",
   "--xeg-modal-border-dark": "--xm-brd",
-
-  // Spinner
   "--xeg-spinner-size": "--xsp-s",
   "--xeg-spinner-size-default": "--xsp-sd",
   "--xeg-spinner-border-width": "--xsp-bw",
@@ -321,8 +514,6 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   "--xeg-spinner-indicator-color": "--xsp-ic",
   "--xeg-spinner-duration": "--xsp-d",
   "--xeg-spinner-easing": "--xsp-e",
-
-  // Misc
   "--xeg-opacity-disabled": "--xo-d",
   "--xeg-hover-lift": "--xhl",
   "--xeg-focus-indicator-color": "--xfic",
@@ -341,8 +532,6 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   "--xeg-glass-border-strong": "--xgbs",
   "--xeg-viewport-height-constrained": "--xvhc",
   "--xeg-aspect-default": "--xad",
-
-  // Settings
   "--xeg-settings-gap": "--xse-g",
   "--xeg-settings-padding": "--xse-p",
   "--xeg-settings-control-gap": "--xse-cg",
@@ -350,34 +539,26 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   "--xeg-settings-label-font-weight": "--xse-lw",
   "--xeg-settings-select-font-size": "--xse-sf",
   "--xeg-settings-select-padding": "--xse-sp",
-
-  // Gallery item intrinsic
   "--xeg-gallery-item-intrinsic-width": "--xgi-w",
   "--xeg-gallery-item-intrinsic-height": "--xgi-h",
   "--xeg-gallery-item-intrinsic-ratio": "--xgi-r",
   "--xeg-gallery-fit-height-target": "--xgf-ht",
 };
 
-/**
- * Shorten CSS variable names
- */
 function shortenCssVariables(css: string): string {
   let result = css;
-  const sortedEntries = Object.entries(CSS_VAR_SHORTENING_MAP)
-    .sort((a, b) => b[0].length - a[0].length);
+  const sortedEntries = Object.entries(CSS_VAR_SHORTENING_MAP).sort(
+    (a, b) => b[0].length - a[0].length
+  );
 
   for (const [longName, shortName] of sortedEntries) {
     const escapedLong = longName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(escapedLong, "g");
-    result = result.replace(regex, shortName);
+    result = result.replace(new RegExp(escapedLong, "g"), shortName);
   }
 
   return result;
 }
 
-/**
- * Compress CSS values (non-destructive minification)
- */
 function compressCssValues(css: string): string {
   return css
     .replace(/\b0+\.(\d)/g, ".$1")
@@ -393,63 +574,53 @@ function compressCssValues(css: string): string {
     .trim();
 }
 
-/**
- * Process CSS based on build mode configuration
- */
 function processCss(css: string, config: BuildModeConfig): string {
   let result = css;
-
-  if (config.cssRemoveComments) {
-    result = removeCssComments(result);
-  }
-
-  if (config.cssVariableShortening) {
-    result = shortenCssVariables(result);
-  }
-
-  if (config.cssValueMinify) {
-    result = compressCssValues(result);
-  }
-
+  if (config.cssRemoveComments) result = removeCssComments(result);
+  if (config.cssVariableShortening) result = shortenCssVariables(result);
+  if (config.cssValueMinify) result = compressCssValues(result);
   return result;
 }
 
-/**
- * Extract CSS content from bundle assets
- */
-function extractCssFromBundle(
-  bundle: Record<string, { type: string; source?: string | Uint8Array }>,
-  config: BuildModeConfig,
-): string {
-  const cssChunks: string[] = [];
+// ─────────────────────────────────────────────────────────────────────────────
+// CSS Inline Plugin
+// ─────────────────────────────────────────────────────────────────────────────
 
-  for (const [fileName, asset] of Object.entries(bundle)) {
-    if (!fileName.endsWith(".css") || asset.type !== "asset") continue;
+function cssInlinePlugin(mode: string): Plugin {
+  const isDev = mode === "development";
+  const config = getBuildModeConfig(mode);
 
-    const { source } = asset;
-    let cssContent = "";
-    if (typeof source === "string") {
-      cssContent = source;
-    } else if (source instanceof Uint8Array) {
-      cssContent = new TextDecoder().decode(source);
-    }
+  return {
+    name: "css-inline",
+    apply: "build",
+    enforce: "post",
 
-    if (cssContent) {
-      cssContent = processCss(cssContent, config);
-    }
+    generateBundle(_options, bundle) {
+      const cssChunks: string[] = [];
 
-    cssChunks.push(cssContent);
-    delete bundle[fileName];
-  }
+      for (const [fileName, asset] of Object.entries(bundle)) {
+        if (!fileName.endsWith(".css") || asset.type !== "asset") continue;
 
-  return cssChunks.join(config.cssCompress ? "" : "\n");
-}
+        const { source } = asset as { source?: string | Uint8Array };
+        let cssContent = "";
+        if (typeof source === "string") {
+          cssContent = source;
+        } else if (source instanceof Uint8Array) {
+          cssContent = new TextDecoder().decode(source);
+        }
 
-/**
- * Generate CSS injection code for userscript
- */
-function generateCssInjectionCode(css: string, isDev: boolean): string {
-  return `
+        if (cssContent) {
+          cssContent = processCss(cssContent, config);
+        }
+
+        cssChunks.push(cssContent);
+        delete bundle[fileName];
+      }
+
+      const css = cssChunks.join(config.cssCompress ? "" : "\n");
+      if (!css.trim()) return;
+
+      const injectionCode = `
 (function() {
   'use strict';
   if (typeof document === 'undefined') return;
@@ -470,39 +641,10 @@ function generateCssInjectionCode(css: string, isDev: boolean): string {
   (document.head || document.documentElement).appendChild(style);
 })();
 `;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CSS Inline Plugin
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Vite plugin to inline CSS into JavaScript bundle
- * Optimized for Tampermonkey/userscript environments
- */
-export function cssInlinePlugin(mode: string): Plugin {
-  const isDev = mode === "development";
-  const config = getBuildModeConfig(mode);
-
-  return {
-    name: "css-inline",
-    apply: "build",
-    enforce: "post",
-
-    generateBundle(_options, bundle) {
-      const cssContent = extractCssFromBundle(
-        bundle as Record<
-          string,
-          { type: string; source?: string | Uint8Array }
-        >,
-        config,
-      );
-
-      if (!cssContent.trim()) return;
 
       for (const chunk of Object.values(bundle)) {
         if (chunk.type === "chunk" && chunk.isEntry) {
-          chunk.code = generateCssInjectionCode(cssContent, isDev) + chunk.code;
+          chunk.code = injectionCode + chunk.code;
           break;
         }
       }
@@ -514,17 +656,11 @@ export function cssInlinePlugin(mode: string): Plugin {
 // Log Call Removal Utility
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Remove log calls with balanced parentheses matching
- * Handles complex arguments including nested function calls and object literals
- * Also handles arrow functions where log call is the only body
- */
 function removeLogCalls(code: string, methods: string[]): string {
-  // Build pattern for logger.method( or logger$N.method( or logger?.method(
   const methodPattern = methods.join("|");
   const regex = new RegExp(
     `logger(?:\\$\\d+)?\\?\\.(?:${methodPattern})\\(|logger(?:\\$\\d+)?\\.(?:${methodPattern})\\(`,
-    "g",
+    "g"
   );
 
   let result = "";
@@ -535,7 +671,6 @@ function removeLogCalls(code: string, methods: string[]): string {
     const startIndex = match.index;
     const openParenIndex = startIndex + match[0].length - 1;
 
-    // Find the matching closing parenthesis
     let depth = 1;
     let i = openParenIndex + 1;
     let inString = false;
@@ -547,9 +682,9 @@ function removeLogCalls(code: string, methods: string[]): string {
       const char = code[i];
       const prevChar = code[i - 1];
 
-      // Handle string literals
       if (
-        !inString && !inTemplate &&
+        !inString &&
+        !inTemplate &&
         (char === '"' || char === "'" || char === "`")
       ) {
         inString = true;
@@ -578,20 +713,11 @@ function removeLogCalls(code: string, methods: string[]): string {
     }
 
     if (depth === 0) {
-      // Append code before this log call
       result += code.slice(lastIndex, startIndex);
-
-      // Check if this is an arrow function body (=> logger.xxx(...))
-      // Look back for "=> " or "=>" pattern
-      const beforeLog = result.slice(-20); // Check last 20 chars
+      const beforeLog = result.slice(-20);
       const isArrowFnBody = /=>\s*$/.test(beforeLog);
+      if (isArrowFnBody) result += "{}";
 
-      if (isArrowFnBody) {
-        // Replace with empty block for arrow function
-        result += "{}";
-      }
-
-      // Skip the log call, also consume trailing semicolon and newline if present
       let endIndex = i;
       if (code[endIndex] === ";") endIndex++;
       if (code[endIndex] === "\n") endIndex++;
@@ -601,7 +727,6 @@ function removeLogCalls(code: string, methods: string[]): string {
     }
   }
 
-  // Append remaining code
   result += code.slice(lastIndex);
   return result;
 }
@@ -610,14 +735,6 @@ function removeLogCalls(code: string, methods: string[]): string {
 // Production Cleanup Plugin
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Production optimization plugin
- * Removes unnecessary code patterns from the final bundle:
- * - Empty module namespace objects (Object.freeze + defineProperty + Symbol.toStringTag)
- * - /*#__PURE__*​/ annotations (not needed without minification)
- * - Debug/info log calls (significant string savings)
- * - Unused variable declarations
- */
 function productionCleanupPlugin(): Plugin {
   return {
     name: "production-cleanup",
@@ -630,69 +747,35 @@ function productionCleanupPlugin(): Plugin {
 
         let code = chunk.code;
 
-        // 1. Remove empty module namespace objects
         code = code.replace(
           /const\s+\w+\s*=\s*(?:\/\*#__PURE__\*\/\s*)?Object\.freeze\(\s*(?:\/\*#__PURE__\*\/\s*)?Object\.defineProperty\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*,\s*Symbol\.toStringTag\s*,\s*\{\s*value\s*:\s*['"]Module['"]\s*\}\s*\)\s*\)\s*;?\n?/g,
-          "",
+          ""
         );
-
-        // 2. Remove /*#__PURE__*/ annotations
         code = code.replace(/\/\*#__PURE__\*\/\s*/g, "");
-
-        // 3. Remove standalone Object.freeze({__proto__: null}) patterns
         code = code.replace(
           /Object\.freeze\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*\)/g,
-          "({})",
+          "({})"
         );
-
-        // 4. Remove debug/info log calls using balanced parentheses matching
-        // These are development-only logs that can add significant string content
         code = removeLogCalls(code, ["debug", "info"]);
-
-        // 5. Simplify createSingleton pattern (remove reset() method for production)
-        // Pattern: { get() { ... }, reset() { instance = null; } }
-        // Replace with: { get() { ... } }
         code = code.replace(
           /,\s*reset\(\)\s*\{\s*instance\s*=\s*null;\s*\}/g,
-          "",
+          ""
         );
-
-        // 6. Remove static resetForTests methods (test-only)
-        code = code.replace(
-          /static\s+resetForTests\(\)\s*\{[^}]*\}/g,
-          "",
-        );
-
-        // 7. Remove IIFE exports (userscript doesn't need external API)
-        // Pattern: exports.xxx=xxx; or exports.xxx = xxx;
+        code = code.replace(/static\s+resetForTests\(\)\s*\{[^}]*\}/g, "");
         code = code.replace(
           /exports\.[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*[^;]+;/g,
-          "",
+          ""
         );
-        // Remove __esModule marker
         code = code.replace(
           /Object\.defineProperty\(exports,['"]__esModule['"],\{value:true\}\);?/g,
-          "",
+          ""
         );
-
-        // 8. Remove @internal JSDoc comments (test-only markers)
-        // Single-line: /** @internal */ or /** @internal Test helper */
         code = code.replace(/\s*\/\*\*\s*@internal[^*]*\*\/\s*/g, "\n");
-        // Multi-line JSDoc blocks that ONLY contain @internal (no other meaningful content)
-        // This matches blocks like:
-        // /**
-        //  * Reset singleton instance (for testing only)
-        //  * @internal
-        //  */
         code = code.replace(
           /\s*\/\*\*\s*\n\s*\*[^@]*@internal\s*\n\s*\*\/\s*/g,
-          "\n",
+          "\n"
         );
-
-        // 9. Remove lines that only contain whitespace (indented empty lines)
         code = code.replace(/^[ \t]+$/gm, "");
-
-        // 10. Clean up multiple consecutive empty lines
         code = code.replace(/\n{3,}/g, "\n\n");
 
         chunk.code = code;
@@ -702,17 +785,68 @@ function productionCleanupPlugin(): Plugin {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Userscript Header Plugin
+// ─────────────────────────────────────────────────────────────────────────────
+
+function userscriptHeaderPlugin(mode: string): Plugin {
+  const isDev = mode === "development";
+  const version = resolveVersion(isDev);
+
+  return {
+    name: "userscript-header",
+    apply: "build",
+    enforce: "post",
+
+    generateBundle(_options, bundle) {
+      const header = generateUserscriptHeader(version);
+
+      for (const chunk of Object.values(bundle)) {
+        if (chunk.type === "chunk" && chunk.isEntry) {
+          chunk.code = `${header}\n${chunk.code}`;
+          break;
+        }
+      }
+    },
+
+    closeBundle() {
+      const modeLabel = isDev ? "Development" : "Production";
+      const info = isDev
+        ? [
+            "📖 Optimized for: Debugging & Analysis",
+            "├─ CSS class names: Readable (Component__class__hash)",
+            "├─ CSS formatting: Preserved",
+            "├─ CSS variables: Full names (--xeg-*)",
+            "├─ CSS comments: Preserved",
+            "└─ Source maps: Inline",
+          ]
+        : [
+            "📦 Optimized for: Distribution Size",
+            "├─ CSS class names: Hashed (xeg_*)",
+            "├─ CSS formatting: Compressed",
+            "├─ CSS variables: Shortened",
+            "├─ CSS comments: Removed",
+            "└─ Source maps: Disabled",
+          ];
+
+      console.log(`\n📋 Build Mode: ${modeLabel}`);
+      console.log("─".repeat(45));
+      info.forEach((line) => console.log(`   ${line}`));
+      console.log("─".repeat(45));
+      console.log(`📌 Version: ${version}`);
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Path Aliases
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Build path aliases for Vite resolve configuration
- */
 function buildPathAliases(root: string): Record<string, string> {
   return Object.fromEntries(
-    Object.entries(PATH_ALIASES).map((
-      [alias, path],
-    ) => [alias, resolve(root, path)]),
+    Object.entries(PATH_ALIASES).map(([alias, aliasPath]) => [
+      alias,
+      resolve(root, aliasPath),
+    ])
   );
 }
 
@@ -730,7 +864,7 @@ export default defineConfig(({ mode }): UserConfig => {
     plugins: [
       solidPlugin(),
       cssInlinePlugin(mode),
-      // Production: Remove empty module namespace objects and cleanup
+      userscriptHeaderPlugin(mode),
       ...(!isDev ? [productionCleanupPlugin()] : []),
     ],
     root,
@@ -741,7 +875,7 @@ export default defineConfig(({ mode }): UserConfig => {
 
     build: {
       target: "esnext",
-      minify: false, // Keep readable for Greasy Fork policy
+      minify: false,
       sourcemap: config.sourceMap,
       outDir: "dist",
       emptyOutDir: false,
@@ -762,17 +896,14 @@ export default defineConfig(({ mode }): UserConfig => {
           entryFileNames: outputFileName,
           inlineDynamicImports: true,
           exports: "named",
-          // Production optimizations
-          ...(!isDev && {
-          }),
         },
-        // Tree-shake more aggressively in production
-        treeshake: isDev ? false : {
-          moduleSideEffects: false,
-          propertyReadSideEffects: false,
-          tryCatchDeoptimization: false,
-          unknownGlobalSideEffects: false,
-        },
+        treeshake: isDev
+          ? false
+          : {
+              moduleSideEffects: false,
+              propertyReadSideEffects: false,
+              unknownGlobalSideEffects: false,
+            },
       },
     },
 

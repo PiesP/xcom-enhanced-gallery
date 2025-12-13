@@ -1,6 +1,6 @@
 name: 🏗️ CI Pipeline
 
-# Responsibility: Continuous Integration (Deno + Biome)
+# Responsibility: Continuous Integration (Node.js + pnpm + Biome)
 # - Linting (Biome)
 # - Type checking (TypeScript via tsc)
 # - Format checking (Biome)
@@ -34,7 +34,7 @@ on:
   workflow_dispatch:
 
 env:
-  DENO_VERSION: "2.x"
+  NODE_VERSION: "24"
   CI: "true"
 
 permissions:
@@ -54,29 +54,26 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🦕 Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: ${{ env.DENO_VERSION }}
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
 
-      - name: 📦 Cache dependencies
-        uses: actions/cache@v4
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: |
-            ~/.cache/deno
-            node_modules
-          key: deno-${{ runner.os }}-${{ hashFiles('deno.lock', 'deno.json') }}
-          restore-keys: |
-            deno-${{ runner.os }}-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: 🔍 Run Biome lint
-        run: deno task lint
+        run: pnpm lint
 
       - name: 📐 Run TypeScript check
-        run: deno task check
+        run: pnpm check
 
       - name: 🎨 Check formatting (Biome)
-        run: deno task fmt
+        run: pnpm fmt:check
 
   build:
     name: 🚀 Build
@@ -87,23 +84,20 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🦕 Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: ${{ env.DENO_VERSION }}
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
 
-      - name: 📦 Cache dependencies
-        uses: actions/cache@v4
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: |
-            ~/.cache/deno
-            node_modules
-          key: deno-${{ runner.os }}-${{ hashFiles('deno.lock', 'deno.json') }}
-          restore-keys: |
-            deno-${{ runner.os }}-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: 🚀 Build production
-        run: deno task build:fast
+        run: pnpm build:fast
 
       - name: 📊 Upload build artifacts
         uses: actions/upload-artifact@v4
