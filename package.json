@@ -9,6 +9,9 @@
     "build:dev": "pnpm quality && vite build --mode development",
     "build:fast": "vite build",
     "build:dev:fast": "vite build --mode development",
+    "build:beta": "cross-env DEPLOY_CHANNEL=beta pnpm build",
+    "build:beta:fast": "cross-env DEPLOY_CHANNEL=beta vite build",
+    "build:release": "cross-env DEPLOY_CHANNEL=release pnpm build",
     "check": "tsc --noEmit --project tsconfig.build.json",
     "lint": "biome lint ./src",
     "lint:fix": "biome lint --write ./src",
@@ -49,6 +52,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.3.8",
     "@types/node": "^25.0.1",
+    "cross-env": "^7.0.3",
     "typescript": "^5.9.3",
     "vite": "8.0.0-beta.2",
     "vite-plugin-solid": "^2.11.10"

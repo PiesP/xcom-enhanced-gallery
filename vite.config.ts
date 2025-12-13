@@ -31,7 +31,22 @@ const LICENSES_DIR = "./LICENSES";
 
 const OUTPUT_FILE_NAMES = {
   dev: "xcom-enhanced-gallery.dev.user.js",
+  beta: "xcom-enhanced-gallery.beta.user.js",
   prod: "xcom-enhanced-gallery.user.js",
+  meta: "xcom-enhanced-gallery.meta.js",
+} as const;
+
+const CDN_BASE_URLS = {
+  release: "https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@release/dist",
+  beta: "https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@beta/dist",
+  develop: "https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@develop/dist",
+} as const;
+
+const BROWSER_COMPATIBILITY = {
+  chrome: "117",
+  firefox: "119",
+  edge: "117",
+  safari: "17",
 } as const;
 
 const PATH_ALIASES = {
@@ -61,9 +76,10 @@ const USERSCRIPT_CONFIG = {
   connect: ["pbs.twimg.com", "video.twimg.com", "api.twitter.com"],
   runAt: "document-idle" as const,
   supportURL: "https://github.com/PiesP/xcom-enhanced-gallery/issues",
+  homepageURL: "https://github.com/PiesP/xcom-enhanced-gallery",
+  icon: "https://abs.twimg.com/favicons/twitter.3.ico",
   noframes: true,
-  cdnBaseUrl:
-    "https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@release/dist/xcom-enhanced-gallery.user.js",
+  compatible: BROWSER_COMPATIBILITY,
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,6 +100,8 @@ interface LicenseInfo {
   readonly text: string;
 }
 
+type DeployChannel = "release" | "beta" | "develop";
+
 interface UserscriptMeta {
   readonly name: string;
   readonly namespace: string;
@@ -96,11 +114,13 @@ interface UserscriptMeta {
   readonly connect: readonly string[];
   readonly runAt: "document-start" | "document-end" | "document-idle";
   readonly supportURL: string;
+  readonly homepageURL?: string;
   readonly downloadURL: string;
   readonly updateURL: string;
   readonly noframes: boolean;
   readonly icon?: string;
   readonly require?: readonly string[];
+  readonly compatible?: Record<string, string>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -149,14 +169,42 @@ function getVersionFromGit(): string | null {
   }
 }
 
-function resolveVersion(isDev: boolean): string {
+function getGitCommitShort(): string | null {
+  try {
+    return execSync("git rev-parse --short HEAD", {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function resolveVersion(isDev: boolean, channel: DeployChannel = "release"): string {
   const envVersion = process.env.BUILD_VERSION;
   if (envVersion) return envVersion;
 
   const gitVersion = getVersionFromGit();
-  if (gitVersion) return gitVersion;
+  const baseVersion = gitVersion ?? (isDev ? "0.0.0" : "1.0.0");
 
-  return isDev ? "0.0.0-dev" : "1.0.0";
+  if (channel === "develop") {
+    const commit = getGitCommitShort() ?? "unknown";
+    return `${baseVersion}-dev.${commit}`;
+  }
+
+  if (channel === "beta") {
+    const commit = getGitCommitShort() ?? "1";
+    return `${baseVersion}-beta.${commit}`;
+  }
+
+  return baseVersion;
+}
+
+function getDeployChannel(): DeployChannel {
+  const channel = process.env.DEPLOY_CHANNEL?.toLowerCase();
+  if (channel === "beta") return "beta";
+  if (channel === "develop" || channel === "dev") return "develop";
+  return "release";
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -243,6 +291,7 @@ function buildMetadataBlock(config: UserscriptMeta): string {
     formatMetaLine("description", config.description),
     formatMetaLine("author", config.author),
     formatMetaLine("license", config.license),
+    ...(config.homepageURL ? [formatMetaLine("homepageURL", config.homepageURL)] : []),
     ...formatMetaLines("match", config.match),
     ...formatMetaLines("grant", config.grant),
     ...formatMetaLines("connect", config.connect),
@@ -251,6 +300,9 @@ function buildMetadataBlock(config: UserscriptMeta): string {
     formatMetaLine("downloadURL", config.downloadURL),
     formatMetaLine("updateURL", config.updateURL),
     ...(config.icon ? [formatMetaLine("icon", config.icon)] : []),
+    ...(config.compatible ? Object.entries(config.compatible).map(
+      ([browser, version]) => formatMetaLine("compatible", `${browser} ${version}+`)
+    ) : []),
     ...(config.require?.length
       ? formatMetaLines("require", config.require)
       : []),
@@ -308,12 +360,25 @@ function buildLicenseBlock(licenses: readonly LicenseInfo[]): string {
   return ["/*", ...lines, " */"].join("\n");
 }
 
-function generateUserscriptHeader(version: string): string {
+function generateUserscriptHeader(version: string, channel: DeployChannel = "release"): string {
+  const cdnBase = CDN_BASE_URLS[channel];
+  const fileName = channel === "develop"
+    ? OUTPUT_FILE_NAMES.dev
+    : channel === "beta"
+      ? OUTPUT_FILE_NAMES.beta
+      : OUTPUT_FILE_NAMES.prod;
+  const metaFileName = OUTPUT_FILE_NAMES.meta;
+
+  const nameSuffix = channel === "develop" ? " (Dev)" : channel === "beta" ? " (Beta)" : "";
+
   const config: UserscriptMeta = {
     ...USERSCRIPT_CONFIG,
+    name: `${USERSCRIPT_CONFIG.name}${nameSuffix}`,
     version,
-    downloadURL: USERSCRIPT_CONFIG.cdnBaseUrl,
-    updateURL: USERSCRIPT_CONFIG.cdnBaseUrl,
+    homepageURL: USERSCRIPT_CONFIG.homepageURL,
+    downloadURL: `${cdnBase}/${fileName}`,
+    updateURL: `${cdnBase}/${metaFileName}`,
+    compatible: USERSCRIPT_CONFIG.compatible,
   };
 
   const licenses = aggregateLicenses(LICENSES_DIR);
@@ -321,6 +386,30 @@ function generateUserscriptHeader(version: string): string {
   const licenseBlock = buildLicenseBlock(licenses);
 
   return licenseBlock ? `${metaBlock}\n${licenseBlock}` : metaBlock;
+}
+
+function generateMetaOnlyHeader(version: string, channel: DeployChannel = "release"): string {
+  const cdnBase = CDN_BASE_URLS[channel];
+  const fileName = channel === "develop"
+    ? OUTPUT_FILE_NAMES.dev
+    : channel === "beta"
+      ? OUTPUT_FILE_NAMES.beta
+      : OUTPUT_FILE_NAMES.prod;
+  const metaFileName = OUTPUT_FILE_NAMES.meta;
+
+  const nameSuffix = channel === "develop" ? " (Dev)" : channel === "beta" ? " (Beta)" : "";
+
+  const lines = [
+    "// ==UserScript==",
+    formatMetaLine("name", `${USERSCRIPT_CONFIG.name}${nameSuffix}`),
+    formatMetaLine("namespace", USERSCRIPT_CONFIG.namespace),
+    formatMetaLine("version", version),
+    formatMetaLine("downloadURL", `${cdnBase}/${fileName}`),
+    formatMetaLine("updateURL", `${cdnBase}/${metaFileName}`),
+    "// ==/UserScript==",
+  ];
+
+  return lines.join("\n");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -788,9 +877,9 @@ function productionCleanupPlugin(): Plugin {
 // Userscript Header Plugin
 // ─────────────────────────────────────────────────────────────────────────────
 
-function userscriptHeaderPlugin(mode: string): Plugin {
+function userscriptHeaderPlugin(mode: string, channel: DeployChannel): Plugin {
   const isDev = mode === "development";
-  const version = resolveVersion(isDev);
+  const version = resolveVersion(isDev, channel);
 
   return {
     name: "userscript-header",
@@ -798,7 +887,7 @@ function userscriptHeaderPlugin(mode: string): Plugin {
     enforce: "post",
 
     generateBundle(_options, bundle) {
-      const header = generateUserscriptHeader(version);
+      const header = generateUserscriptHeader(version, channel);
 
       for (const chunk of Object.values(bundle)) {
         if (chunk.type === "chunk" && chunk.isEntry) {
@@ -810,6 +899,7 @@ function userscriptHeaderPlugin(mode: string): Plugin {
 
     closeBundle() {
       const modeLabel = isDev ? "Development" : "Production";
+      const channelLabel = channel === "release" ? "Release" : channel === "beta" ? "Beta" : "Development";
       const info = isDev
         ? [
             "📖 Optimized for: Debugging & Analysis",
@@ -828,11 +918,36 @@ function userscriptHeaderPlugin(mode: string): Plugin {
             "└─ Source maps: Disabled",
           ];
 
-      console.log(`\n📋 Build Mode: ${modeLabel}`);
-      console.log("─".repeat(45));
+      console.log(`\n📋 Build Mode: ${modeLabel} (${channelLabel} channel)`);
+      console.log("─".repeat(50));
       info.forEach((line) => console.log(`   ${line}`));
-      console.log("─".repeat(45));
+      console.log("─".repeat(50));
       console.log(`📌 Version: ${version}`);
+      console.log(`📡 Channel: ${channel}`);
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Meta-Only File Plugin
+// ─────────────────────────────────────────────────────────────────────────────
+
+function metaOnlyPlugin(mode: string, channel: DeployChannel): Plugin {
+  const isDev = mode === "development";
+  const version = resolveVersion(isDev, channel);
+
+  return {
+    name: "meta-only-file",
+    apply: "build",
+    enforce: "post",
+
+    writeBundle(options) {
+      const outDir = options.dir ?? "dist";
+      const metaContent = generateMetaOnlyHeader(version, channel);
+      const metaPath = path.join(outDir, OUTPUT_FILE_NAMES.meta);
+
+      fs.writeFileSync(metaPath, metaContent, "utf8");
+      console.log(`📄 Meta-only file generated: ${OUTPUT_FILE_NAMES.meta}`);
     },
   };
 }
@@ -856,15 +971,21 @@ function buildPathAliases(root: string): Record<string, string> {
 
 export default defineConfig(({ mode }): UserConfig => {
   const isDev = mode === "development";
+  const channel = getDeployChannel();
   const config = getBuildModeConfig(mode);
-  const outputFileName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
+  const outputFileName = isDev
+    ? OUTPUT_FILE_NAMES.dev
+    : channel === "beta"
+      ? OUTPUT_FILE_NAMES.beta
+      : OUTPUT_FILE_NAMES.prod;
   const root = process.cwd();
 
   return {
     plugins: [
       solidPlugin(),
       cssInlinePlugin(mode),
-      userscriptHeaderPlugin(mode),
+      userscriptHeaderPlugin(mode, channel),
+      metaOnlyPlugin(mode, channel),
       ...(!isDev ? [productionCleanupPlugin()] : []),
     ],
     root,
