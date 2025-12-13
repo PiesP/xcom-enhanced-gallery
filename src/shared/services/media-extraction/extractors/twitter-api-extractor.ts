@@ -37,7 +37,15 @@ export class TwitterAPIExtractor implements APIExtractor {
       const apiMedias = await TwitterAPI.getTweetMedias(tweetInfo.tweetId);
 
       if (!apiMedias || apiMedias.length === 0) {
-        return this.createFailureResult('No media found in API response');
+        const totalProcessingTime = Math.max(0, now() - startedAt);
+        const failure = this.createFailureResult('No media found in API response');
+        return {
+          ...failure,
+          metadata: {
+            ...(failure.metadata ?? {}),
+            totalProcessingTime,
+          },
+        };
       }
 
       // Step 2: Extract tweet text HTML
