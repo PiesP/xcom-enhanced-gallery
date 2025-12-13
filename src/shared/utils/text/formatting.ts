@@ -77,7 +77,7 @@ export function formatTweetText(text: string | undefined): TextToken[] {
       }
 
       // Add entity as appropriate interactive token
-      tokens.push(createEntityToken(entity));
+      tokens.push(...createEntityTokens(entity));
 
       lastIndex = matchIndex + entity.length;
     }
@@ -102,48 +102,111 @@ export function formatTweetText(text: string | undefined): TextToken[] {
 /**
  * Creates an interactive token (link/mention/hashtag/cashtag) with resolved href
  */
-function createEntityToken(entity: string): TextToken {
+const TRAILING_URL_PUNCTUATION = new Set(['.', ',', '!', '?', ';', ':']);
+const TRAILING_URL_BRACKET_PAIRS: ReadonlyArray<readonly [close: string, open: string]> = [
+  [')', '('],
+  [']', '['],
+  ['}', '{'],
+];
+
+function splitUrlTrailingPunctuation(url: string): { url: string; trailing: string } {
+  let trimmed = url;
+  let trailing = '';
+
+  // The URL pattern is intentionally permissive (\S+). In real tweet text,
+  // URLs are often followed by punctuation like ',', '.', ')' etc.
+  // Keeping these characters inside the href results in broken links.
+  while (trimmed.length > 0) {
+    const last = trimmed.at(-1);
+    if (!last) break;
+
+    if (TRAILING_URL_PUNCTUATION.has(last)) {
+      trailing = last + trailing;
+      trimmed = trimmed.slice(0, -1);
+      continue;
+    }
+
+    let strippedBracket = false;
+    for (const [close, open] of TRAILING_URL_BRACKET_PAIRS) {
+      if (last === close && !trimmed.includes(open)) {
+        trailing = close + trailing;
+        trimmed = trimmed.slice(0, -1);
+        strippedBracket = true;
+        break;
+      }
+    }
+    if (strippedBracket) continue;
+
+    break;
+  }
+
+  if (!trimmed) {
+    // Defensive: never return an empty URL.
+    return { url, trailing: '' };
+  }
+
+  return { url: trimmed, trailing };
+}
+
+function createEntityTokens(entity: string): TextToken[] {
   if (entity.startsWith('http')) {
-    return {
-      type: 'link',
-      content: entity,
-      href: entity,
-    };
+    const { url, trailing } = splitUrlTrailingPunctuation(entity);
+    const out: TextToken[] = [
+      {
+        type: 'link',
+        content: url,
+        href: url,
+      },
+    ];
+
+    if (trailing) {
+      out.push({ type: 'text', content: trailing });
+    }
+
+    return out;
   }
 
   if (entity.startsWith('@')) {
     const username = entity.slice(1);
-    return {
-      type: 'mention',
-      content: entity,
-      href: `https://x.com/${username}`,
-    };
+    return [
+      {
+        type: 'mention',
+        content: entity,
+        href: `https://x.com/${username}`,
+      },
+    ];
   }
 
   if (entity.startsWith('#')) {
     const tag = entity.slice(1);
-    return {
-      type: 'hashtag',
-      content: entity,
-      href: `https://x.com/hashtag/${encodeURIComponent(tag)}`,
-    };
+    return [
+      {
+        type: 'hashtag',
+        content: entity,
+        href: `https://x.com/hashtag/${encodeURIComponent(tag)}`,
+      },
+    ];
   }
 
   if (entity.startsWith('$')) {
     const symbol = entity.slice(1);
     const encoded = encodeURIComponent(`$${symbol}`);
-    return {
-      type: 'cashtag',
-      content: entity,
-      href: `https://x.com/search?q=${encoded}`,
-    };
+    return [
+      {
+        type: 'cashtag',
+        content: entity,
+        href: `https://x.com/search?q=${encoded}`,
+      },
+    ];
   }
 
   // Fallback: treat as plain text token
-  return {
-    type: 'text',
-    content: entity,
-  };
+  return [
+    {
+      type: 'text',
+      content: entity,
+    },
+  ];
 }
 
 /**
