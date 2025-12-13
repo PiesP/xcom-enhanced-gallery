@@ -53,7 +53,7 @@ export class MediaExtractionService implements MediaExtractor {
       }
 
       logger.error(`[MediaExtractor] ${extractionId}: API extraction failed`);
-      return this.createErrorResult('API extraction failed');
+      return this.createApiErrorResult(apiResult, tweetInfo);
     } catch (error) {
       logger.error(`[MediaExtractor] ${extractionId}: Extraction error`, error);
       return this.createErrorResult(error);
@@ -100,6 +100,29 @@ export class MediaExtractionService implements MediaExtractor {
       },
       tweetInfo: null,
       errors: [new ExtractionError(ErrorCode.NO_MEDIA_FOUND, errorMessage)],
+    };
+  }
+
+  private createApiErrorResult(
+    apiResult: MediaExtractionResult,
+    tweetInfo: TweetInfo
+  ): MediaExtractionResult {
+    const apiErrorMessage =
+      apiResult.metadata?.error ?? apiResult.errors?.[0]?.message ?? 'API extraction failed';
+
+    const mergedTweetInfo = this.mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo);
+
+    return {
+      success: false,
+      mediaItems: [],
+      clickedIndex: apiResult.clickedIndex ?? 0,
+      metadata: {
+        ...(apiResult.metadata ?? {}),
+        strategy: 'api-extraction',
+        sourceType: 'extraction-failed',
+      },
+      tweetInfo: mergedTweetInfo,
+      errors: [new ExtractionError(ErrorCode.NO_MEDIA_FOUND, apiErrorMessage)],
     };
   }
 
