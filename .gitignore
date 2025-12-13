@@ -1,53 +1,42 @@
 # ============================================================================
 # X.com Enhanced Gallery - .gitignore
+# Stack: Solid.js | TypeScript | Vite | Biome | Vitest | Playwright | Stryker
 # ============================================================================
 
 # Dependencies
 node_modules/
 
-# Build outputs
+# Build
 dist/
 build/
 
 # TypeScript
 *.tsbuildinfo
 
-# Test & Coverage
+# Testing (test/ is a separate repository)
+test/
 coverage/
 .stryker-tmp/
 .stryker-tmp-debug/
+stryker-report/
+stryker.log
 playwright-report/
 test-results/
-stryker-report/
 
-# Test directory artifacts (keep config and source)
-/test/
-/test/node_modules/
-/test/coverage/
-/test/playwright-report/
-/test/stryker-report/
-/test/.stryker-tmp/
-
-# IDE & Editors
-.vscode/*
-.vscode/settings.json
+# IDE
+.vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 *:Zone.Identifier
 
-# Logs
+# Logs & Temp
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Temp files
 tmp/
 temp/
 *.tmp
@@ -58,11 +47,8 @@ temp/
 .env.local
 .env.*.local
 
-# Deno
-.deno/
-
-# Documentation & AI prompts
-.github/prompts/xeg-dev.prompt.md
+# AI Instructions (separate repository)
 .github/copilot-instructions.md
+.github/prompts/
 AGENTS.md
 CLAUDE.md
