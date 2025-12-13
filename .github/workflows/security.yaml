@@ -1,7 +1,7 @@
 name: 🔒 Security Scanning
 
 # Responsibility: Security analysis for Node.js + pnpm project
-# - OSV scanning: vulnerability detection in dependencies
+# - OSV scanning: vulnerability detection in dependencies (via Google OSV-Scanner Action)
 # - SAST: static security analysis with Semgrep
 # - License compliance: verify approved licenses (MIT/ISC/BSD/Apache-2.0)
 #
@@ -14,12 +14,13 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
 
-env:
-  NODE_VERSION: "24"
-
 permissions:
+  # Required to upload SARIF file to CodeQL
+  actions: read
   contents: read
   security-events: write
 
@@ -28,34 +29,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  osv-scanner:
-    name: 🛡️ OSV Vulnerability Scan
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+  # OSV-Scanner: Scheduled/Push scans - reports all known vulnerabilities
+  osv-scan-scheduled:
+    name: 🛡️ OSV Vulnerability Scan (Full)
+    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.1"
     permissions:
+      actions: read
       contents: read
       security-events: write
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
+    with:
+      scan-args: |-
+        -r
+        --lockfile=pnpm-lock.yaml
+        ./
 
-      - name: 🔧 Install OSV-Scanner
-        run: |
-          curl -fsSL https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64 -o osv-scanner
-          chmod +x osv-scanner
-          sudo mv osv-scanner /usr/local/bin/
-
-      - name: 🔍 Run OSV-Scanner
-        run: |
-          osv-scanner --lockfile=pnpm-lock.yaml --format=sarif --output=osv-results.sarif . || true
-        continue-on-error: true
-
-      - name: 📤 Upload OSV results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: osv-results.sarif
-        continue-on-error: true
+  # OSV-Scanner: PR scans - only reports NEW vulnerabilities introduced in PR
+  osv-scan-pr:
+    name: 🛡️ OSV Vulnerability Scan (PR Diff)
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.3.1"
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    with:
+      scan-args: |-
+        -r
+        --lockfile=pnpm-lock.yaml
+        ./
 
   semgrep:
     name: 🔍 Static Analysis (Semgrep)
@@ -66,22 +68,12 @@ jobs:
       security-events: write
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🔍 Run Semgrep
         uses: semgrep/semgrep-action@v1
         with:
-          config: >-
-            p/typescript
-            p/javascript
-            p/security-audit
-            p/secrets
-        env:
-          SEMGREP_RULES: >-
-            p/typescript
-            p/javascript
-            p/security-audit
-            p/secrets
+          config: p/typescript p/javascript p/security-audit p/secrets
 
   license-compliance:
     name: 📜 License Compliance Check
@@ -89,7 +81,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 📜 Verify LICENSES directory
         run: |
@@ -160,7 +152,7 @@ jobs:
   security-summary:
     name: 📊 Security Summary
     runs-on: ubuntu-latest
-    needs: [osv-scanner, semgrep, license-compliance]
+    needs: [osv-scan-scheduled, osv-scan-pr, semgrep, license-compliance]
     if: always()
     timeout-minutes: 5
     steps:
@@ -171,9 +163,15 @@ jobs:
           echo "| Status | Check | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|-------|--------|" >> $GITHUB_STEP_SUMMARY
 
-          # OSV Scanner
-          if [ "${{ needs.osv-scanner.result }}" == "success" ]; then
+          # OSV Scanner (check both scheduled and PR jobs)
+          OSV_SCHEDULED="${{ needs.osv-scan-scheduled.result }}"
+          OSV_PR="${{ needs.osv-scan-pr.result }}"
+          if [ "$OSV_SCHEDULED" == "success" ] || [ "$OSV_PR" == "success" ]; then
             echo "| ✅ | OSV Vulnerability Scan | Passed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "$OSV_SCHEDULED" == "failure" ] || [ "$OSV_PR" == "failure" ]; then
+            echo "| ❌ | OSV Vulnerability Scan | Failed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "$OSV_SCHEDULED" == "skipped" ] && [ "$OSV_PR" == "skipped" ]; then
+            echo "| ⏭️ | OSV Vulnerability Scan | Skipped |" >> $GITHUB_STEP_SUMMARY
           else
             echo "| ⚠️ | OSV Vulnerability Scan | Check required |" >> $GITHUB_STEP_SUMMARY
           fi

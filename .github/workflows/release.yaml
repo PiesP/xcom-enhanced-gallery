@@ -5,7 +5,6 @@ name: 🚀 Release
 # - Production build: userscript + checksums + metadata
 # - GitHub Release: automated creation with downloadable assets
 # - dist/ update: commit built scripts to 'release' branch for jsDelivr CDN
-#   (keeps source code on master clean, dist/ only on release branch)
 #
 # Trigger: Tag push (v*) or manual dispatch
 
@@ -19,77 +18,33 @@ on:
         description: "Version to release (e.g., 1.2.3)"
         required: true
         type: string
-      skip_ci_check:
-        description: "Skip CI status check"
-        required: false
-        default: false
-        type: boolean
 
 env:
   NODE_VERSION: "24"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  check-version:
-    name: 🔍 Check Version
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      should_release: ${{ steps.check.outputs.should_release }}
-      current_version: ${{ steps.check.outputs.current_version }}
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: 🔍 Detect version change
-        id: check
-        run: |
-          set -euo pipefail
-
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            CURRENT_VERSION="${{ inputs.version }}"
-            echo "should_release=true" >> "$GITHUB_OUTPUT"
-            echo "📦 Manual release triggered: v$CURRENT_VERSION"
-          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            CURRENT_VERSION="${GITHUB_REF#refs/tags/v}"
-            echo "should_release=true" >> "$GITHUB_OUTPUT"
-            echo "📦 Tag push detected: v$CURRENT_VERSION"
-          else
-            echo "should_release=false" >> "$GITHUB_OUTPUT"
-            echo "⏭️ No release trigger detected"
-            CURRENT_VERSION="0.0.0"
-          fi
-
-          echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
-
-  build-release:
+  release:
     name: 🏗️ Build & Release
     runs-on: ubuntu-latest
-    needs: check-version
-    if: needs.check-version.outputs.should_release == 'true'
     timeout-minutes: 15
-    permissions:
-      contents: write
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
       - name: 📦 Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -97,10 +52,14 @@ jobs:
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: 📝 Get release version
+      - name: 📝 Determine version
         id: version
         run: |
-          VERSION="${{ needs.check-version.outputs.current_version }}"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Release version: $VERSION"
 
@@ -244,7 +203,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📊 Upload release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-v${{ steps.version.outputs.version }}
           path: release/
