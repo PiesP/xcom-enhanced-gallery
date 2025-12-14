@@ -235,6 +235,8 @@ export interface BootstrapStageResult {
   readonly label: string;
   /** Whether stage completed successfully */
   readonly success: boolean;
+  /** Whether stage is optional (failure does not block bootstrap) */
+  readonly optional: boolean;
   /** Error if stage failed */
   readonly error?: unknown;
   /** Duration in milliseconds */

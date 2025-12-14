@@ -18,7 +18,9 @@
     "fmt": "biome format --write ./src",
     "fmt:check": "biome format ./src",
     "biome:check": "biome check --write ./src",
-    "quality": "pnpm check && biome check --write ./src"
+    "quality": "pnpm quality:check",
+    "quality:check": "pnpm check && biome check ./src",
+    "quality:fix": "pnpm check && biome check --write ./src"
   },
   "keywords": [
     "userscript",

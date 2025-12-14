@@ -6,7 +6,6 @@
  * Refactor: ES Module singleton pattern integration
  */
 
-import { reportBootstrapError } from '@bootstrap/types';
 import {
   CORE_BASE_SERVICE_IDENTIFIERS,
   type CoreBaseServiceIdentifier,
@@ -59,7 +58,8 @@ function registerMissingBaseServices(coreService: CoreService): number {
  *
  * Phase 343: Non-Critical system - on failure, warn only and continue app
  *
- * @note On failure, only warning is printed and app continues (non-critical)
+ * @note Errors are intentionally propagated so the bootstrap runner can record failures.
+ *       Whether the app continues depends on the stage optionality.
  */
 export async function initializeCoreBaseServices(): Promise<void> {
   const coreService = CoreService.getInstance();
@@ -82,6 +82,8 @@ export async function initializeCoreBaseServices(): Promise<void> {
       logger.debug('[base-services] Base services ready');
     }
   } catch (error) {
-    reportBootstrapError(error, { context: 'base-services', logger });
+    throw new Error('[base-services] initialization failed', {
+      cause: error instanceof Error ? error : new Error(String(error)),
+    });
   }
 }

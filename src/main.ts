@@ -9,6 +9,7 @@ import { warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { runAfterWindowLoad } from '@shared/dom/window-load';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error';
 import { logger } from '@shared/logging';
+import { EventManager } from '@shared/services/event-manager';
 import { CoreService } from '@shared/services/service-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
@@ -104,6 +105,7 @@ const bootstrapStages = [
     label: 'Developer tooling',
     run: initializeDevToolsIfNeeded,
     shouldRun: () => isDevEnvironment && !isTestMode,
+    optional: true,
   },
   {
     label: 'Infrastructure',
@@ -119,10 +121,12 @@ const bootstrapStages = [
   {
     label: 'Base services',
     run: initializeBaseServicesStage,
+    optional: true,
   },
   {
     label: 'Theme synchronization',
     run: applyInitialThemeSetting,
+    optional: true,
   },
   {
     label: 'Feature service registration',
@@ -130,6 +134,7 @@ const bootstrapStages = [
       const { registerFeatureServicesLazy } = await import('@bootstrap/features');
       await registerFeatureServicesLazy();
     },
+    optional: true,
   },
   {
     label: 'Global event wiring',
@@ -142,13 +147,14 @@ const bootstrapStages = [
   {
     label: 'Non-critical systems',
     run: () => initializeNonCriticalSystems(),
+    optional: true,
   },
 ] as const;
 
 // exported runBootstrapStages below
 export async function runBootstrapStages(): Promise<void> {
   const results = await executeStages(bootstrapStages, { stopOnFailure: true });
-  const failedStage = results.find((r) => !r.success);
+  const failedStage = results.find((r) => !r.success && !r.optional);
   if (failedStage) {
     throw failedStage.error ?? new Error(`Bootstrap stage failed: ${failedStage.label}`);
   }
@@ -322,10 +328,7 @@ export async function cleanup(): Promise<void> {
       await runOptionalCleanup(
         '[cleanup] Event listener status check',
         async () => {
-          const { getEventListenerStatus } = await import(
-            '@shared/utils/events/core/listener-manager'
-          );
-          const status = getEventListenerStatus();
+          const status = EventManager.getInstance().getListenerStatus();
           if (status.total > 0) {
             logger.warn('[cleanup] ⚠️ Warning: uncleared event listeners remain:', {
               total: status.total,

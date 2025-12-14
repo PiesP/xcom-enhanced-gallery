@@ -11,6 +11,7 @@ import { createLifecycle } from '@shared/services/lifecycle';
 import {
   getEventListenerStatus,
   addListener as registerManagedListener,
+  removeAllEventListeners,
   removeEventListenerManaged,
   removeEventListenersByContext,
 } from '@shared/utils/events/core/listener-manager';
@@ -127,6 +128,10 @@ export class EventManager {
     if (this.isDestroyed) {
       return;
     }
+
+    // This service owns the internal listener registry usage. Ensure a full cleanup.
+    removeAllEventListeners();
+
     this.isDestroyed = true;
     logger.debug('EventManager cleanup completed');
   }

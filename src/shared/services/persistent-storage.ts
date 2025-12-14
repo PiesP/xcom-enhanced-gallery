@@ -37,7 +37,12 @@ export class PersistentStorage {
         return value as unknown as T;
       }
     } catch (error) {
-      if (error instanceof Error && error.message.includes('GM_getValue not available')) {
+      const message =
+        error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+
+      // Expected in environments where GM_* APIs are missing/limited.
+      // Keep this branch resilient to wording differences ("unavailable" vs "not available").
+      if (/GM_getValue/i.test(message) && /(unavailable|not available)/i.test(message)) {
         return defaultValue;
       }
       logger.error(`PersistentStorage.get failed for "${key}":`, error);

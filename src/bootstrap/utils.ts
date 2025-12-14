@@ -40,6 +40,7 @@ export async function executeStage(stage: BootstrapStage): Promise<BootstrapStag
     return {
       label: stage.label,
       success: true,
+      optional: Boolean(stage.optional),
       durationMs: 0,
     };
   }
@@ -60,6 +61,7 @@ export async function executeStage(stage: BootstrapStage): Promise<BootstrapStag
     return {
       label: stage.label,
       success: true,
+      optional: Boolean(stage.optional),
       durationMs,
     };
   } catch (error) {
@@ -80,6 +82,7 @@ export async function executeStage(stage: BootstrapStage): Promise<BootstrapStag
     return {
       label: stage.label,
       success: false,
+      optional: Boolean(stage.optional),
       error,
       durationMs,
     };
@@ -107,7 +110,7 @@ export async function executeStages(
     const result = await executeStage(stage);
     results.push(result);
 
-    if (!result.success && !stage.optional && stopOnFailure) {
+    if (!result.success && !result.optional && stopOnFailure) {
       logger.error(`[bootstrap] ❌ Critical stage failed: ${stage.label}`);
       break;
     }
