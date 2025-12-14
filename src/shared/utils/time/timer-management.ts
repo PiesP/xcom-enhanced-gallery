@@ -2,8 +2,15 @@
  * @fileoverview Timer management utility
  * @description Phase C: Consistent timer and resource management
  *              Simplified: setInterval/clearInterval removed (unused in production)
- * @version 2.0.0
+ * @version 2.1.0
  */
+
+/**
+ * Timer ID type
+ * In browser environment, window.setTimeout returns number.
+ * We explicitly use number for browser-only code.
+ */
+type TimerId = number;
 
 /**
  * Timer manager
@@ -11,13 +18,13 @@
  * Note: setInterval support was removed as it was unused in production code.
  */
 export class TimerManager {
-  private readonly timers = new Set<number>();
+  private readonly timers = new Set<TimerId>();
 
   /**
    * Register and track setTimeout
    */
-  setTimeout(callback: () => void, delay: number): number {
-    const id = window.setTimeout(() => {
+  setTimeout(callback: () => void, delay: number): TimerId {
+    const id: TimerId = window.setTimeout(() => {
       this.timers.delete(id);
       callback();
     }, delay);
@@ -29,7 +36,7 @@ export class TimerManager {
   /**
    * Remove registered setTimeout
    */
-  clearTimeout(id: number): void {
+  clearTimeout(id: TimerId): void {
     if (this.timers.has(id)) {
       window.clearTimeout(id);
       this.timers.delete(id);

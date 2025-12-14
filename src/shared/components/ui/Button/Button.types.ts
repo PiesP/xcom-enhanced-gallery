@@ -2,10 +2,14 @@
  * @fileoverview Button Component Type Definitions
  * @description Type definitions for unified Button component
  * @module @shared/components/ui/Button/Button.types
- * @version 4.1.0 - Phase 385: Universal button component
+ * @version 4.2.0 - Phase 385: Universal button component
  */
 
 import type { ComponentChildren } from '@shared/external/vendors';
+import type {
+  ButtonSize as BaseButtonSize,
+  ButtonVariant as BaseButtonVariant,
+} from '@shared/types/ui.types';
 
 // ============================================================================
 // Type Definitions
@@ -14,21 +18,15 @@ import type { ComponentChildren } from '@shared/external/vendors';
 /**
  * Button visual variant
  * @description Determines button appearance and behavior
+ *              Extends base ButtonVariant with component-specific variants
  */
-export type ButtonVariant =
-  | 'primary'
-  | 'secondary'
-  | 'icon'
-  | 'danger'
-  | 'ghost'
-  | 'toolbar'
-  | 'navigation'
-  | 'action';
+export type ButtonVariant = BaseButtonVariant | 'icon' | 'toolbar' | 'navigation' | 'action';
 
 /**
  * Button size
+ * @description Extends base ButtonSize with component-specific sizes
  */
-export type ButtonSize = 'sm' | 'md' | 'lg' | 'toolbar';
+export type ButtonSize = BaseButtonSize | 'toolbar';
 
 /**
  * Button semantic intent color

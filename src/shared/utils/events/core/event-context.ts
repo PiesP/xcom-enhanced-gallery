@@ -5,10 +5,15 @@
  */
 
 /**
- * Event listener context
- * Metadata tracking of registered listeners
+ * DOM listener context
+ * Metadata tracking of registered DOM event listeners
+ *
+ * @remarks
+ * This interface is used internally by listener-manager.ts.
+ * Not to be confused with Subscription in @shared/events/event-context.ts
+ * which manages application-level event subscriptions.
  */
-export interface EventContext {
+export interface DOMListenerContext {
   id: string;
   element: EventTarget;
   type: string;

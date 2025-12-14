@@ -11,14 +11,14 @@
  */
 
 import { logger } from '@shared/logging';
-import type { EventContext } from './event-context';
+import type { DOMListenerContext } from './event-context';
 
 // ============================================================================
 // Internal Listener Registry
 // ============================================================================
 
 /** Internal listener storage - tracks all registered event listeners */
-const listeners = new Map<string, EventContext>();
+const listeners = new Map<string, DOMListenerContext>();
 
 /** Generate unique listener ID */
 function generateListenerId(ctx?: string): string {
@@ -57,7 +57,7 @@ export function addListener(
   try {
     element.addEventListener(type, listener, options);
 
-    const eventContext: EventContext = {
+    const listenerContext: DOMListenerContext = {
       id,
       element,
       type,
@@ -67,7 +67,7 @@ export function addListener(
       created: Date.now(),
     };
 
-    listeners.set(id, eventContext);
+    listeners.set(id, listenerContext);
     logger.debug(`Listener registered: ${type} (${id})`, { context });
     return id;
   } catch (error) {
@@ -179,7 +179,7 @@ export function __testHasListener(id: string): boolean {
 }
 
 /** @internal Get listener context */
-export function __testGetListener(id: string): EventContext | undefined {
+export function __testGetListener(id: string): DOMListenerContext | undefined {
   return listeners.get(id);
 }
 

@@ -2,7 +2,25 @@
  * @fileoverview Simplified Event Manager
  * @description Provides unified event management with context-based cleanup.
  *              Wraps listener-manager for consistent singleton access pattern.
- * @version 2.0.0 - Composition-based lifecycle
+ * @version 2.1.0 - Composition-based lifecycle
+ *
+ * @remarks
+ * ## Event System Architecture
+ *
+ * This project has three event management layers:
+ *
+ * | Layer | Module | Use Case |
+ * |-------|--------|----------|
+ * | Low-level | `@shared/utils/events/core/listener-manager` | Internal DOM listener tracking (@internal) |
+ * | Mid-level | `@shared/services/event-manager` (this file) | Service-level DOM events with lifecycle |
+ * | High-level | `@shared/events/event-bus` | Unified facade for both DOM and app events |
+ *
+ * **Recommended Usage:**
+ * - For new code, prefer `EventBus` from `@shared/events` for unified event handling
+ * - Use `EventManager` when you need service-level lifecycle integration
+ * - Never use `listener-manager` directly (it's @internal)
+ *
+ * @see {@link EventBus} for unified event management
  */
 
 import { logger } from '@shared/logging';

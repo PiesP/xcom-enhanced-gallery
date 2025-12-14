@@ -2,6 +2,7 @@
  * @fileoverview Service key constants
  *
  * Grouped by category and sorted alphabetically.
+ * All values use consistent dot-notation format: `<category>.<name>`
  *
  * Note: Some keys are reserved for future use and not currently registered.
  * These are marked with [RESERVED] in comments.
@@ -12,8 +13,8 @@ export const SERVICE_KEYS = {
   // Core Services
   // ========================================
   /** Alias for GALLERY_DOWNLOAD */
-  BULK_DOWNLOAD: 'core.bulkDownload',
-  LANGUAGE: 'language.service',
+  BULK_DOWNLOAD: 'core.bulk-download',
+  LANGUAGE: 'core.language',
 
   // ========================================
   // Gallery Services
@@ -35,16 +36,16 @@ export const SERVICE_KEYS = {
   // ========================================
   // UI Services
   // ========================================
-  THEME: 'theme.auto',
+  THEME: 'ui.theme',
   // ========================================
   // [RESERVED] Future Extension Keys
   // These keys are defined for future features but not currently in use.
   // Do not remove - they ensure consistent naming when features are added.
   // ========================================
   /** [RESERVED] Animation service for future motion control */
-  // ANIMATION: 'animation.service',
+  // ANIMATION: 'ui.animation',
   /** [RESERVED] Gallery root service for future component orchestration */
-  // GALLERY: 'gallery',
+  // GALLERY: 'gallery.root',
   /** [RESERVED] Media extraction service (currently handled by MediaExtractionService directly) */
   // MEDIA_EXTRACTION: 'media.extraction',
   /** [RESERVED] Video playback control service */

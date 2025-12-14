@@ -43,6 +43,12 @@ export class ThemeService implements ThemeServiceContract {
     ThemeService.singleton.reset();
   }
 
+  /**
+   * Flag to track if early async restore has completed.
+   * Used to prevent duplicate work in onInitialize().
+   */
+  private earlyRestoreComplete = false;
+
   constructor() {
     this.lifecycle = createLifecycle('ThemeService', {
       onInitialize: () => this.onInitialize(),
@@ -75,11 +81,21 @@ export class ThemeService implements ThemeServiceContract {
         logger.warn('[ThemeService] document.documentElement not available for observation');
       }
     }
-    // Initial load (sync if possible)
+    // Initial load (sync if possible) - immediate, non-blocking
     this.themeSetting = this.loadThemeSync();
     this.applyCurrentTheme(true);
 
-    // Schedule async restore to match legacy behavior
+    // Schedule early async restore (before initialize() is called)
+    // This ensures theme is applied ASAP even before full initialization
+    this.scheduleEarlyAsyncRestore();
+  }
+
+  /**
+   * Schedule early async theme restore.
+   * Separated from constructor for better testability and clarity.
+   * @internal
+   */
+  private scheduleEarlyAsyncRestore(): void {
     void (async () => {
       try {
         const saved = await this.loadThemeAsync();
@@ -88,8 +104,10 @@ export class ThemeService implements ThemeServiceContract {
           this.applyCurrentTheme(true);
         }
         this.initializeSystemDetection();
+        this.earlyRestoreComplete = true;
       } catch (error) {
-        logger.warn('[ThemeService] Async theme restore failed', error);
+        logger.warn('[ThemeService] Early async theme restore failed', error);
+        this.earlyRestoreComplete = true;
       }
     })();
   }
@@ -110,14 +128,16 @@ export class ThemeService implements ThemeServiceContract {
   }
 
   private async onInitialize(): Promise<void> {
-    // Ensure async restore is done if not already
-    const saved = await this.loadThemeAsync();
-    if (saved && saved !== this.themeSetting) {
-      this.themeSetting = saved;
-      this.applyCurrentTheme(true);
+    // Skip if early restore already completed successfully
+    if (!this.earlyRestoreComplete) {
+      // Ensure async restore is done if not already
+      const saved = await this.loadThemeAsync();
+      if (saved && saved !== this.themeSetting) {
+        this.themeSetting = saved;
+        this.applyCurrentTheme(true);
+      }
+      this.initializeSystemDetection();
     }
-
-    this.initializeSystemDetection();
 
     try {
       const { tryGetSettingsManager } = await import('@shared/container/service-accessors');

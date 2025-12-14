@@ -1,6 +1,6 @@
 /**
  * @fileoverview UI/theme related type definitions
- * @version 1.0.0 - Phase 196: Split from app.types.ts
+ * @version 1.1.0 - Phase 196: Split from app.types.ts
  * @description Integration of theme, button style, animation and other UI-related types
  */
 
@@ -21,12 +21,22 @@ export type Theme = 'light' | 'dark' | 'auto';
 export type GalleryTheme = 'light' | 'dark' | 'auto' | 'system';
 
 /**
- * Button variant
+ * Base button variant (common across UI)
+ *
+ * @remarks
+ * For component-specific extended variants, see ButtonVariant in
+ * @shared/components/ui/Button/Button.types.ts which extends this
+ * with 'icon', 'toolbar', 'navigation', 'action' variants.
  */
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 /**
- * Button size
+ * Base button size (common across UI)
+ *
+ * @remarks
+ * For component-specific extended sizes, see ButtonSize in
+ * @shared/components/ui/Button/Button.types.ts which extends this
+ * with 'toolbar' size.
  */
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
