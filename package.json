@@ -6,20 +6,16 @@
   "private": true,
   "scripts": {
     "build": "pnpm quality && vite build",
-    "build:dev": "pnpm quality && vite build --mode development",
+    "build:dev": "vite build --mode development",
     "build:fast": "vite build",
-    "build:dev:fast": "vite build --mode development",
     "build:beta": "cross-env DEPLOY_CHANNEL=beta pnpm build",
-    "build:beta:fast": "cross-env DEPLOY_CHANNEL=beta vite build",
     "build:release": "cross-env DEPLOY_CHANNEL=release pnpm build",
-    "check": "tsc --noEmit --project tsconfig.build.json",
+    "check": "tsgo --noEmit --project tsconfig.build.json",
     "lint": "biome lint ./src",
     "lint:fix": "biome lint --write ./src",
     "fmt": "biome format --write ./src",
     "fmt:check": "biome format ./src",
-    "biome:check": "biome check --write ./src",
-    "quality": "pnpm quality:check",
-    "quality:check": "pnpm check && biome check ./src",
+    "quality": "pnpm check && biome check ./src",
     "quality:fix": "pnpm check && biome check --write ./src"
   },
   "keywords": [
@@ -53,6 +49,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.8",
+    "@typescript/native-preview": "7.0.0-dev.20251214.1",
     "@types/node": "^25.0.1",
     "cross-env": "^10.1.0",
     "typescript": "^5.9.3",

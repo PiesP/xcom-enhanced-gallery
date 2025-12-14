@@ -32,8 +32,8 @@
     "skipLibCheck": true,
 
     // Path Aliases (synchronized with package.json imports)
-    "baseUrl": ".",
     "paths": {
+      "*": ["./*"],
       "@/*": ["./src/*"],
       "@bootstrap/*": ["./src/bootstrap/*"],
       "@constants": ["./src/constants/index.ts"],
