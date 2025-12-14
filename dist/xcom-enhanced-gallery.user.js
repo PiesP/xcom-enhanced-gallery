@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         X.com Enhanced Gallery
 // @namespace    https://github.com/PiesP/xcom-enhanced-gallery
-// @version      1.2.1
+// @version      1.2.2
 // @description  Media viewer and download functionality for X.com
 // @author       PiesP
 // @license      MIT
@@ -75,10 +75,7 @@
   (document.head || document.documentElement).appendChild(style);
 })();
 var XcomEnhancedGallery = (function(exports) {
-	Object.defineProperties(exports, {
-		__esModule: { value: true },
-		[Symbol.toStringTag]: { value: "Module" }
-	});
+	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 	var __defProp = Object.defineProperty;
 	var __esmMin = (fn, res) => () => (fn && (res = fn(fn = 0)), res);
 	var __export = (all, symbols) => {
@@ -178,7 +175,9 @@ var XcomEnhancedGallery = (function(exports) {
 				return CoreService.singleton.get();
 			}
 
-			register(key, instance) {
+			register(key, instance, options) {
+				const allowOverride = options?.allowOverride ?? false;
+				if (this.services.has(key) && !allowOverride) logger.warn(`[CoreService] Service key "${key}" already registered. Use { allowOverride: true } to replace existing service.`);
 				this.services.set(key, instance);
 			}
 			get(key) {
@@ -776,7 +775,8 @@ var XcomEnhancedGallery = (function(exports) {
 						return value;
 					}
 				} catch (error$1) {
-					if (error$1 instanceof Error && error$1.message.includes("GM_getValue not available")) return defaultValue;
+					const message = error$1 instanceof Error ? error$1.message : typeof error$1 === "string" ? error$1 : "";
+					if (/GM_getValue/i.test(message) && /(unavailable|not available)/i.test(message)) return defaultValue;
 					logger.error(`PersistentStorage.get failed for "${key}":`, error$1);
 					return defaultValue;
 				}
@@ -889,10 +889,15 @@ var XcomEnhancedGallery = (function(exports) {
 				if (this.currentLanguage === normalized) return;
 				this.currentLanguage = normalized;
 				this.notifyListeners(normalized);
-				this.persistLanguage(normalized);
+				this.persistLanguage(normalized).catch((error$1) => {
+					logger.warn("Failed to persist language setting on change:", error$1);
+				});
 				const effectiveLang = this.getEffectiveLanguage();
-				this.ensureLanguageLoaded(effectiveLang);
-							}
+				this.ensureLanguageLoaded(effectiveLang).catch((error$1) => {
+					logger.warn("Failed to load language bundle on change:", error$1);
+				});
+				void 0;
+			}
 			async ensureLanguageLoaded(language) {
 				try {
 					await translator.ensureLanguage(language);
@@ -974,13 +979,15 @@ var XcomEnhancedGallery = (function(exports) {
 								});
 							},
 							onerror: (response) => {
-								reject(new HttpError(response.statusText || "Network Error", response.status, response.statusText));
+								const status = response.status ?? 0;
+								const statusText = response.statusText || "Network Error";
+								reject(new HttpError(status === 0 ? `Network error: Unable to connect to ${url} (CORS, network failure, or blocked request)` : `HTTP ${status}: ${statusText}`, status, statusText));
 							},
 							ontimeout: () => {
-								reject(new HttpError("Request timeout", 0, "Timeout"));
+								reject(new HttpError(`Request timed out after ${options?.timeout ?? this.defaultTimeout}ms for ${url}`, 0, "Timeout"));
 							},
 							onabort: () => {
-								reject(/* @__PURE__ */ new Error("Request was aborted"));
+								reject(/* @__PURE__ */ new Error(`Request was aborted for ${url}`));
 							}
 						};
 						if (options && "data" in options && options.data) {
@@ -1042,11 +1049,11 @@ var XcomEnhancedGallery = (function(exports) {
 	var init_timer_management = __esmMin((() => {
 		TimerManager = class {
 			timers = /* @__PURE__ */ new Set();
-			setTimeout(callback, delay) {
+			setTimeout(callback, delay$1) {
 				const id = window.setTimeout(() => {
 					this.timers.delete(id);
 					callback();
-				}, delay);
+				}, delay$1);
 				this.timers.add(id);
 				return id;
 			}
@@ -1269,8 +1276,7 @@ var XcomEnhancedGallery = (function(exports) {
 			ROOT: `${CLASS_PREFIX}-gallery-root`,
 			RENDERER: `${CLASS_PREFIX}-gallery-renderer`,
 			VERTICAL_VIEW: `${CLASS_PREFIX}-vertical-gallery`,
-			ITEM: `${CLASS_PREFIX}-gallery-item`,
-			LEGACY_SCOPE: `${CLASS_PREFIX}-gallery`
+			ITEM: `${CLASS_PREFIX}-gallery-item`
 		};
 		DATA_ATTRIBUTES = {
 			GALLERY: "data-xeg-gallery",
@@ -1288,7 +1294,6 @@ var XcomEnhancedGallery = (function(exports) {
 			RENDERER: toSelector(CLASSES.RENDERER),
 			VERTICAL_VIEW: toSelector(CLASSES.VERTICAL_VIEW),
 			ITEM: toSelector(CLASSES.ITEM),
-			LEGACY_SCOPE: toSelector(CLASSES.LEGACY_SCOPE),
 			DATA_GALLERY: toAttributeSelector(DATA_ATTRIBUTES.GALLERY),
 			DATA_CONTAINER: toAttributeSelector(DATA_ATTRIBUTES.CONTAINER),
 			DATA_ELEMENT: toAttributeSelector(DATA_ATTRIBUTES.ELEMENT),
@@ -1306,7 +1311,6 @@ var XcomEnhancedGallery = (function(exports) {
 			SELECTORS$1.RENDERER,
 			SELECTORS$1.VERTICAL_VIEW,
 			SELECTORS$1.ITEM,
-			SELECTORS$1.LEGACY_SCOPE,
 			SELECTORS$1.DATA_GALLERY,
 			SELECTORS$1.DATA_CONTAINER,
 			SELECTORS$1.DATA_ELEMENT,
@@ -1455,197 +1459,6 @@ var XcomEnhancedGallery = (function(exports) {
 			},
 			QUOTED_TWEET_ARTICLE: "article[data-testid=\"tweet\"] article[data-testid=\"tweet\"]",
 			QUOTED_TWEET_FALLBACK: ["article[role=\"article\"] article[role=\"article\"]", "[data-testid=\"quoteTweet\"]"]
-		};
-	}));
-	function removeDuplicates(items, keyExtractor) {
-		const seen = /* @__PURE__ */ new Set();
-		const uniqueItems = [];
-		for (const item of items) {
-			if (!item) continue;
-			const key = keyExtractor(item);
-			if (!key) {
-				logger.warn("Skipping item without key");
-				continue;
-			}
-			if (!seen.has(key)) {
-				seen.add(key);
-				uniqueItems.push(item);
-			}
-		}
-		return uniqueItems;
-	}
-	function removeDuplicateMediaItems(mediaItems) {
-		if (!mediaItems?.length) return [];
-		return removeDuplicates(mediaItems, (item) => item.originalUrl ?? item.url);
-	}
-	function extractVisualIndexFromUrl(url) {
-		if (!url) return 0;
-		const match = url.match(/\/(photo|video)\/(\d+)$/);
-		const visualNumber = match?.[2] ? Number.parseInt(match[2], 10) : NaN;
-		return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
-	}
-	function sortMediaByVisualOrder(mediaItems) {
-		if (mediaItems.length <= 1) return mediaItems;
-		const withVisualIndex = mediaItems.map((media) => {
-			return {
-				media,
-				visualIndex: extractVisualIndexFromUrl(media.expanded_url || "")
-			};
-		});
-		withVisualIndex.sort((a, b) => a.visualIndex - b.visualIndex);
-		return withVisualIndex.map(({ media }, newIndex) => ({
-			...media,
-			index: newIndex
-		}));
-	}
-	function extractDimensionsFromUrl(url) {
-		if (!url) return null;
-		const match = url.match(/\/(\d{2,6})x(\d{2,6})(?:\/|\.|$)/);
-		if (!match) return null;
-		const width = Number.parseInt(match[1] ?? "", 10);
-		const height = Number.parseInt(match[2] ?? "", 10);
-		if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) return null;
-		return {
-			width,
-			height
-		};
-	}
-	function normalizeDimension(value) {
-		if (typeof value === "number" && Number.isFinite(value) && value > 0) return Math.round(value);
-		if (typeof value === "string") {
-			const parsed = Number.parseFloat(value);
-			if (Number.isFinite(parsed) && parsed > 0) return Math.round(parsed);
-		}
-		return null;
-	}
-	function normalizeMediaUrl(url) {
-		if (!url) return null;
-		try {
-			let filename$1 = new URL(url).pathname.split("/").pop();
-			if (filename$1) {
-				const dotIndex = filename$1.lastIndexOf(".");
-				if (dotIndex !== -1) filename$1 = filename$1.substring(0, dotIndex);
-			}
-			return filename$1 && filename$1.length > 0 ? filename$1 : null;
-		} catch {
-			try {
-				const lastSlash = url.lastIndexOf("/");
-				if (lastSlash === -1) return null;
-				let filenamePart = url.substring(lastSlash + 1);
-				const queryIndex = filenamePart.indexOf("?");
-				if (queryIndex !== -1) filenamePart = filenamePart.substring(0, queryIndex);
-				const hashIndex = filenamePart.indexOf("#");
-				if (hashIndex !== -1) filenamePart = filenamePart.substring(0, hashIndex);
-				const dotIndex = filenamePart.lastIndexOf(".");
-				if (dotIndex !== -1) filenamePart = filenamePart.substring(0, dotIndex);
-				return filenamePart.length > 0 ? filenamePart : null;
-			} catch {
-				return null;
-			}
-		}
-	}
-	function scaleAspectRatio(widthRatio, heightRatio) {
-		if (heightRatio <= 0 || widthRatio <= 0) return DEFAULT_DIMENSIONS;
-		const scaledHeight = STANDARD_GALLERY_HEIGHT;
-		return {
-			width: Math.max(1, Math.round(widthRatio / heightRatio * scaledHeight)),
-			height: scaledHeight
-		};
-	}
-	function extractDimensionsFromMetadataObject(dimensions) {
-		if (!dimensions) return null;
-		const width = normalizeDimension(dimensions.width);
-		const height = normalizeDimension(dimensions.height);
-		if (width && height) return {
-			width,
-			height
-		};
-		return null;
-	}
-	function extractDimensionsFromUrlCandidate(candidate) {
-		if (typeof candidate !== "string" || !candidate) return null;
-		return extractDimensionsFromUrl(candidate);
-	}
-	function deriveDimensionsFromMetadata(metadata$1) {
-		if (!metadata$1) return null;
-		const dimensions = extractDimensionsFromMetadataObject(metadata$1.dimensions);
-		if (dimensions) return dimensions;
-		const apiData = metadata$1.apiData;
-		if (!apiData) return null;
-		const originalWidth = normalizeDimension(apiData.original_width ?? apiData.originalWidth);
-		const originalHeight = normalizeDimension(apiData.original_height ?? apiData.originalHeight);
-		if (originalWidth && originalHeight) return {
-			width: originalWidth,
-			height: originalHeight
-		};
-		const fromDownloadUrl = extractDimensionsFromUrlCandidate(apiData.download_url);
-		if (fromDownloadUrl) return fromDownloadUrl;
-		const fromPreviewUrl = extractDimensionsFromUrlCandidate(apiData.preview_url);
-		if (fromPreviewUrl) return fromPreviewUrl;
-		const aspectRatio = apiData.aspect_ratio;
-		if (Array.isArray(aspectRatio) && aspectRatio.length >= 2) {
-			const ratioWidth = normalizeDimension(aspectRatio[0]);
-			const ratioHeight = normalizeDimension(aspectRatio[1]);
-			if (ratioWidth && ratioHeight) return scaleAspectRatio(ratioWidth, ratioHeight);
-		}
-		return null;
-	}
-	function deriveDimensionsFromMediaUrls(media) {
-		const candidates = [
-			media.url,
-			media.originalUrl,
-			media.thumbnailUrl
-		];
-		for (const candidate of candidates) {
-			const dimensions = extractDimensionsFromUrlCandidate(candidate);
-			if (dimensions) return dimensions;
-		}
-		return null;
-	}
-	function resolveMediaDimensions(media) {
-		if (!media) return DEFAULT_DIMENSIONS;
-		const directWidth = normalizeDimension(media.width);
-		const directHeight = normalizeDimension(media.height);
-		if (directWidth && directHeight) return {
-			width: directWidth,
-			height: directHeight
-		};
-		const fromMetadata = deriveDimensionsFromMetadata(media.metadata);
-		if (fromMetadata) return fromMetadata;
-		const fromUrls = deriveDimensionsFromMediaUrls(media);
-		if (fromUrls) return fromUrls;
-		return DEFAULT_DIMENSIONS;
-	}
-	function toRem(pixels) {
-		return `${(pixels / 16).toFixed(4)}rem`;
-	}
-	function createIntrinsicSizingStyle(dimensions) {
-		const ratio = dimensions.height > 0 ? dimensions.width / dimensions.height : 1;
-		return {
-			"--xeg-aspect-default": `${dimensions.width} / ${dimensions.height}`,
-			"--xeg-gallery-item-intrinsic-width": toRem(dimensions.width),
-			"--xeg-gallery-item-intrinsic-height": toRem(dimensions.height),
-			"--xeg-gallery-item-intrinsic-ratio": ratio.toFixed(6)
-		};
-	}
-	function adjustClickedIndexAfterDeduplication(originalItems, uniqueItems, originalClickedIndex) {
-		if (uniqueItems.length === 0) return 0;
-		const clickedItem = originalItems[clampIndex(originalClickedIndex, originalItems.length)];
-		if (!clickedItem) return 0;
-		const clickedKey = clickedItem.originalUrl ?? clickedItem.url;
-		const newIndex = uniqueItems.findIndex((item) => {
-			return (item.originalUrl ?? item.url) === clickedKey;
-		});
-		return newIndex >= 0 ? newIndex : 0;
-	}
-	var STANDARD_GALLERY_HEIGHT, DEFAULT_DIMENSIONS;
-	var init_media_utils = __esmMin((() => {
-		init_logging();
-		init_safety$1();
-		STANDARD_GALLERY_HEIGHT = 720;
-		DEFAULT_DIMENSIONS = {
-			width: 540,
-			height: STANDARD_GALLERY_HEIGHT
 		};
 	}));
 	function tryParseUrl(value, base = FALLBACK_BASE_URL) {
@@ -1911,7 +1724,8 @@ var XcomEnhancedGallery = (function(exports) {
 				for (const strategy of this.strategies) try {
 					const result = strategy(element);
 					if (result && this.isValid(result)) {
-												return result;
+						void 0;
+						return result;
 					}
 				} catch {}
 				return null;
@@ -1919,6 +1733,197 @@ var XcomEnhancedGallery = (function(exports) {
 			isValid(info) {
 				return !!info.tweetId && /^\d+$/.test(info.tweetId) && info.tweetId !== "unknown";
 			}
+		};
+	}));
+	function removeDuplicates(items, keyExtractor) {
+		const seen = /* @__PURE__ */ new Set();
+		const uniqueItems = [];
+		for (const item of items) {
+			if (!item) continue;
+			const key = keyExtractor(item);
+			if (!key) {
+				logger.warn("Skipping item without key");
+				continue;
+			}
+			if (!seen.has(key)) {
+				seen.add(key);
+				uniqueItems.push(item);
+			}
+		}
+		return uniqueItems;
+	}
+	function removeDuplicateMediaItems(mediaItems) {
+		if (!mediaItems?.length) return [];
+		return removeDuplicates(mediaItems, (item) => item.originalUrl ?? item.url);
+	}
+	function extractVisualIndexFromUrl(url) {
+		if (!url) return 0;
+		const match = url.match(/\/(photo|video)\/(\d+)$/);
+		const visualNumber = match?.[2] ? Number.parseInt(match[2], 10) : NaN;
+		return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
+	}
+	function sortMediaByVisualOrder(mediaItems) {
+		if (mediaItems.length <= 1) return mediaItems;
+		const withVisualIndex = mediaItems.map((media) => {
+			return {
+				media,
+				visualIndex: extractVisualIndexFromUrl(media.expanded_url || "")
+			};
+		});
+		withVisualIndex.sort((a, b) => a.visualIndex - b.visualIndex);
+		return withVisualIndex.map(({ media }, newIndex) => ({
+			...media,
+			index: newIndex
+		}));
+	}
+	function extractDimensionsFromUrl(url) {
+		if (!url) return null;
+		const match = url.match(/\/(\d{2,6})x(\d{2,6})(?:\/|\.|$)/);
+		if (!match) return null;
+		const width = Number.parseInt(match[1] ?? "", 10);
+		const height = Number.parseInt(match[2] ?? "", 10);
+		if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) return null;
+		return {
+			width,
+			height
+		};
+	}
+	function normalizeDimension(value) {
+		if (typeof value === "number" && Number.isFinite(value) && value > 0) return Math.round(value);
+		if (typeof value === "string") {
+			const parsed = Number.parseFloat(value);
+			if (Number.isFinite(parsed) && parsed > 0) return Math.round(parsed);
+		}
+		return null;
+	}
+	function normalizeMediaUrl(url) {
+		if (!url) return null;
+		try {
+			let filename$1 = new URL(url).pathname.split("/").pop();
+			if (filename$1) {
+				const dotIndex = filename$1.lastIndexOf(".");
+				if (dotIndex !== -1) filename$1 = filename$1.substring(0, dotIndex);
+			}
+			return filename$1 && filename$1.length > 0 ? filename$1 : null;
+		} catch {
+			try {
+				const lastSlash = url.lastIndexOf("/");
+				if (lastSlash === -1) return null;
+				let filenamePart = url.substring(lastSlash + 1);
+				const queryIndex = filenamePart.indexOf("?");
+				if (queryIndex !== -1) filenamePart = filenamePart.substring(0, queryIndex);
+				const hashIndex = filenamePart.indexOf("#");
+				if (hashIndex !== -1) filenamePart = filenamePart.substring(0, hashIndex);
+				const dotIndex = filenamePart.lastIndexOf(".");
+				if (dotIndex !== -1) filenamePart = filenamePart.substring(0, dotIndex);
+				return filenamePart.length > 0 ? filenamePart : null;
+			} catch {
+				return null;
+			}
+		}
+	}
+	function scaleAspectRatio(widthRatio, heightRatio) {
+		if (heightRatio <= 0 || widthRatio <= 0) return DEFAULT_DIMENSIONS;
+		const scaledHeight = STANDARD_GALLERY_HEIGHT;
+		return {
+			width: Math.max(1, Math.round(widthRatio / heightRatio * scaledHeight)),
+			height: scaledHeight
+		};
+	}
+	function extractDimensionsFromMetadataObject(dimensions) {
+		if (!dimensions) return null;
+		const width = normalizeDimension(dimensions.width);
+		const height = normalizeDimension(dimensions.height);
+		if (width && height) return {
+			width,
+			height
+		};
+		return null;
+	}
+	function extractDimensionsFromUrlCandidate(candidate) {
+		if (typeof candidate !== "string" || !candidate) return null;
+		return extractDimensionsFromUrl(candidate);
+	}
+	function deriveDimensionsFromMetadata(metadata$1) {
+		if (!metadata$1) return null;
+		const dimensions = extractDimensionsFromMetadataObject(metadata$1.dimensions);
+		if (dimensions) return dimensions;
+		const apiData = metadata$1.apiData;
+		if (!apiData) return null;
+		const originalWidth = normalizeDimension(apiData.original_width ?? apiData.originalWidth);
+		const originalHeight = normalizeDimension(apiData.original_height ?? apiData.originalHeight);
+		if (originalWidth && originalHeight) return {
+			width: originalWidth,
+			height: originalHeight
+		};
+		const fromDownloadUrl = extractDimensionsFromUrlCandidate(apiData.download_url);
+		if (fromDownloadUrl) return fromDownloadUrl;
+		const fromPreviewUrl = extractDimensionsFromUrlCandidate(apiData.preview_url);
+		if (fromPreviewUrl) return fromPreviewUrl;
+		const aspectRatio = apiData.aspect_ratio;
+		if (Array.isArray(aspectRatio) && aspectRatio.length >= 2) {
+			const ratioWidth = normalizeDimension(aspectRatio[0]);
+			const ratioHeight = normalizeDimension(aspectRatio[1]);
+			if (ratioWidth && ratioHeight) return scaleAspectRatio(ratioWidth, ratioHeight);
+		}
+		return null;
+	}
+	function deriveDimensionsFromMediaUrls(media) {
+		const candidates = [
+			media.url,
+			media.originalUrl,
+			media.thumbnailUrl
+		];
+		for (const candidate of candidates) {
+			const dimensions = extractDimensionsFromUrlCandidate(candidate);
+			if (dimensions) return dimensions;
+		}
+		return null;
+	}
+	function resolveMediaDimensions(media) {
+		if (!media) return DEFAULT_DIMENSIONS;
+		const directWidth = normalizeDimension(media.width);
+		const directHeight = normalizeDimension(media.height);
+		if (directWidth && directHeight) return {
+			width: directWidth,
+			height: directHeight
+		};
+		const fromMetadata = deriveDimensionsFromMetadata(media.metadata);
+		if (fromMetadata) return fromMetadata;
+		const fromUrls = deriveDimensionsFromMediaUrls(media);
+		if (fromUrls) return fromUrls;
+		return DEFAULT_DIMENSIONS;
+	}
+	function toRem(pixels) {
+		return `${(pixels / 16).toFixed(4)}rem`;
+	}
+	function createIntrinsicSizingStyle(dimensions) {
+		const ratio = dimensions.height > 0 ? dimensions.width / dimensions.height : 1;
+		return {
+			"--xeg-aspect-default": `${dimensions.width} / ${dimensions.height}`,
+			"--xeg-gallery-item-intrinsic-width": toRem(dimensions.width),
+			"--xeg-gallery-item-intrinsic-height": toRem(dimensions.height),
+			"--xeg-gallery-item-intrinsic-ratio": ratio.toFixed(6)
+		};
+	}
+	function adjustClickedIndexAfterDeduplication(originalItems, uniqueItems, originalClickedIndex) {
+		if (uniqueItems.length === 0) return 0;
+		const clickedItem = originalItems[clampIndex(originalClickedIndex, originalItems.length)];
+		if (!clickedItem) return 0;
+		const clickedKey = clickedItem.originalUrl ?? clickedItem.url;
+		const newIndex = uniqueItems.findIndex((item) => {
+			return (item.originalUrl ?? item.url) === clickedKey;
+		});
+		return newIndex >= 0 ? newIndex : 0;
+	}
+	var STANDARD_GALLERY_HEIGHT, DEFAULT_DIMENSIONS;
+	var init_media_dimensions = __esmMin((() => {
+		init_logging();
+		init_safety$1();
+		STANDARD_GALLERY_HEIGHT = 720;
+		DEFAULT_DIMENSIONS = {
+			width: 540,
+			height: STANDARD_GALLERY_HEIGHT
 		};
 	}));
 	function resolveDimensionsFromApiMedia(apiMedia) {
@@ -1976,7 +1981,7 @@ var XcomEnhancedGallery = (function(exports) {
 	}
 	var init_media_factory = __esmMin((() => {
 		init_logging();
-		init_media_utils();
+		init_media_dimensions();
 	}));
 	function createDefaultSettings(timestamp = Date.now()) {
 		return {
@@ -2029,7 +2034,7 @@ var XcomEnhancedGallery = (function(exports) {
 				mediaExtraction: true,
 				accessibility: true
 			},
-			version: "1.0.1",
+			version: "1.2.1",
 			lastModified: 0
 		};
 		DEFAULT_SETTINGS = STATIC_DEFAULT_SETTINGS;
@@ -2066,14 +2071,14 @@ var XcomEnhancedGallery = (function(exports) {
 	var SERVICE_KEYS;
 	var init_service_keys = __esmMin((() => {
 		SERVICE_KEYS = {
-			BULK_DOWNLOAD: "core.bulkDownload",
-			LANGUAGE: "language.service",
+			BULK_DOWNLOAD: "core.bulk-download",
+			LANGUAGE: "core.language",
 			GALLERY_DOWNLOAD: "gallery.download",
 			GALLERY_RENDERER: "gallery.renderer",
 			MEDIA_FILENAME: "media.filename",
 			MEDIA_SERVICE: "media.service",
 			SETTINGS: "settings.manager",
-			THEME: "theme.auto"
+			THEME: "ui.theme"
 		};
 	}));
 	var APP_SETTINGS_STORAGE_KEY;
@@ -2085,7 +2090,10 @@ var XcomEnhancedGallery = (function(exports) {
 		TWITTER_API_CONFIG = {
 			GUEST_AUTHORIZATION: "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
 			TWEET_RESULT_BY_REST_ID_QUERY_ID: "zAz9764BcLZOJ0JU2wrd1A",
-			USER_BY_SCREEN_NAME_QUERY_ID: "1VOOyvKkiI3FMmkeDNxM9A"
+			USER_BY_SCREEN_NAME_QUERY_ID: "1VOOyvKkiI3FMmkeDNxM9A",
+			SUPPORTED_HOSTS: ["x.com", "twitter.com"],
+			DEFAULT_HOST: "x.com",
+			CACHE_TTL_MS: 12e4
 		};
 	}));
 	var VIDEO_CONTROL_SELECTORS, VIDEO_CONTROL_DATASET_PREFIXES, VIDEO_CONTROL_ROLES, VIDEO_CONTROL_ARIA_TOKENS, SYSTEM_PAGES, VIEW_MODES;
@@ -2272,40 +2280,75 @@ var XcomEnhancedGallery = (function(exports) {
 	var init_cookie = __esmMin((() => {
 		init_cookie_utils();
 	}));
-	function initializeTokens() {
-		if (_tokensInitialized || _tokensInitializing) return;
-		_tokensInitializing = true;
+	function getBackoffDelay(attempt) {
+		return BASE_RETRY_DELAY_MS * 2 ** attempt;
+	}
+	function sleep(ms) {
+		return new Promise((resolve$1) => setTimeout(resolve$1, ms));
+	}
+	async function fetchTokenWithRetry() {
+		const syncToken = getCookieValueSync("ct0");
+		if (syncToken) {
+			void 0;
+			return syncToken;
+		}
+		for (let attempt = 0; attempt < MAX_RETRY_ATTEMPTS; attempt++) try {
+			const value = await getCookieValue("ct0");
+			if (value) {
+				void 0;
+				return value;
+			}
+			if (attempt < MAX_RETRY_ATTEMPTS - 1) {
+				const delay$1 = getBackoffDelay(attempt);
+				void 0;
+				await sleep(delay$1);
+			}
+		} catch (error$1) {
+			if (attempt < MAX_RETRY_ATTEMPTS - 1) {
+				const delay$1 = getBackoffDelay(attempt);
+				void 0;
+				await sleep(delay$1);
+			} else void 0;
+		}
+		void 0;
+	}
+	function initializeTokensSync() {
+		if (_tokensInitialized) return;
 		const syncToken = getCookieValueSync("ct0");
 		if (syncToken) {
 			_csrfToken = syncToken;
 			_tokensInitialized = true;
-			_tokensInitializing = false;
-			return;
+			void 0;
 		}
-		try {
-			getCookieValue("ct0").then((value) => {
-				if (value) {
-					_csrfToken = value;
-					_tokensInitialized = true;
-				}
-			}).catch((error$1) => {
-							}).finally(() => {
-				_tokensInitializing = false;
-			});
-		} catch (error$1) {
-						_tokensInitializing = false;
-		}
+	}
+	async function initTokens() {
+		if (_tokensInitialized && _csrfToken) return _csrfToken;
+		if (_initPromise) return _initPromise;
+		_initPromise = fetchTokenWithRetry().then((token) => {
+			_csrfToken = token;
+			_tokensInitialized = true;
+			return token;
+		}).finally(() => {
+			_initPromise = null;
+		});
+		return _initPromise;
 	}
 	function getCsrfToken() {
-		initializeTokens();
+		initializeTokensSync();
 		return _csrfToken;
 	}
-	var _csrfToken, _tokensInitialized, _tokensInitializing;
+	async function getCsrfTokenAsync() {
+		if (_tokensInitialized && _csrfToken) return _csrfToken;
+		return initTokens();
+	}
+	var MAX_RETRY_ATTEMPTS, BASE_RETRY_DELAY_MS, _csrfToken, _tokensInitialized, _initPromise;
 	var init_twitter_auth$1 = __esmMin((() => {
 		init_logging();
 		init_cookie();
+		MAX_RETRY_ATTEMPTS = 3;
+		BASE_RETRY_DELAY_MS = 100;
 		_tokensInitialized = false;
-		_tokensInitializing = false;
+		_initPromise = null;
 	}));
 	var init_twitter_auth = __esmMin((() => {
 		init_twitter_auth$1();
@@ -2403,13 +2446,41 @@ var XcomEnhancedGallery = (function(exports) {
 		const mediaItems = [];
 		const typeIndex = {};
 		const screenName = tweetUser.screen_name ?? "";
+		if (!screenName) logger.warn("Missing screen_name for tweet extraction, using empty string as fallback", {
+			userId: tweetUser.rest_id,
+			sourceLocation
+		});
 		const tweetId = parseTarget.rest_id ?? parseTarget.id_str ?? "";
+		if (!tweetId) logger.warn("Missing tweet_id for tweet extraction, using empty string as fallback", {
+			screenName,
+			sourceLocation
+		});
+		const inlineMediaIds = /* @__PURE__ */ new Set();
+		const inlineMedia = parseTarget.note_tweet?.note_tweet_results?.result?.media?.inline_media;
+		if (inlineMedia && Array.isArray(inlineMedia)) {
+			for (const item of inlineMedia) if (item.media_id) inlineMediaIds.add(item.media_id);
+			if (inlineMediaIds.size > 0) void 0;
+		}
 		for (let index = 0; index < parseTarget.extended_entities.media.length; index++) {
 			const media = parseTarget.extended_entities.media[index];
-			if (!media?.type || !media.id_str || !media.media_url_https) continue;
+			if (!media?.type) {
+				void 0;
+				continue;
+			}
+			if (!media.id_str) {
+				void 0;
+				continue;
+			}
+			if (!media.media_url_https) {
+				void 0;
+				continue;
+			}
 			try {
 				const mediaUrl = getHighQualityMediaUrl(media);
-				if (!mediaUrl) continue;
+				if (!mediaUrl) {
+					void 0;
+					continue;
+				}
 				const mediaType = media.type === "animated_gif" ? "video" : media.type;
 				typeIndex[mediaType] = (typeIndex[mediaType] ?? -1) + 1;
 				typeIndex[media.type] = typeIndex[media.type] ?? typeIndex[mediaType];
@@ -2435,22 +2506,57 @@ var XcomEnhancedGallery = (function(exports) {
 			if (!user.screen_name && user.legacy.screen_name) user.screen_name = user.legacy.screen_name;
 			if (!user.name && user.legacy.name) user.name = user.legacy.name;
 		}
+		if (!user.screen_name) logger.error("User screen_name missing after normalization - API response may be incomplete", {
+			userId: user.rest_id,
+			hasLegacy: !!user.legacy,
+			legacyScreenName: user.legacy?.screen_name
+		});
 	}
 	var init_twitter_response_parser = __esmMin((() => {
 		init_logging();
-		init_media_utils();
+		init_media_dimensions();
 	}));
 	var init_twitter_parser = __esmMin((() => {
 		init_twitter_response_parser();
 	}));
+	function simpleHash(str) {
+		let hash = 0;
+		for (let i = 0; i < str.length; i++) {
+			const char = str.charCodeAt(i);
+			hash = (hash << 5) - hash + char;
+			hash |= 0;
+		}
+		return hash.toString(36);
+	}
+	function getSafeHost() {
+		try {
+			if (typeof globalThis !== "undefined" && "location" in globalThis) {
+				const hostname = globalThis.location?.hostname;
+				if (hostname) {
+					const host = hostname.includes("twitter.com") ? "twitter.com" : "x.com";
+					if (TWITTER_API_CONFIG.SUPPORTED_HOSTS.includes(host)) return host;
+				}
+			}
+		} catch {}
+		return TWITTER_API_CONFIG.DEFAULT_HOST;
+	}
+	function getSafeLocationHeaders() {
+		try {
+			if (typeof window !== "undefined" && window.location) return {
+				referer: window.location.href,
+				origin: window.location.origin
+			};
+		} catch {}
+		return {};
+	}
 	var TwitterAPI;
 	var init_twitter_api_client = __esmMin((() => {
 		init_constants$1();
 		init_logging();
-		init_media_utils();
 		init_http_request_service();
 		init_twitter_auth();
 		init_twitter_parser();
+		init_media_dimensions();
 		TwitterAPI = class TwitterAPI {
 			static requestCache = /* @__PURE__ */ new Map();
 			static CACHE_LIMIT = 16;
@@ -2483,45 +2589,69 @@ var XcomEnhancedGallery = (function(exports) {
 				}
 				return result;
 			}
+			static clearCache() {
+				TwitterAPI.requestCache.clear();
+			}
+			static getCacheSize() {
+				return TwitterAPI.requestCache.size;
+			}
 			static async apiRequest(url) {
-				const _url = url.toString();
-				if (TwitterAPI.requestCache.has(_url)) return TwitterAPI.requestCache.get(_url);
+				const csrfToken = await getCsrfTokenAsync() ?? getCsrfToken() ?? "";
+				const csrfHash = simpleHash(csrfToken);
+				const cached = TwitterAPI.requestCache.get(url);
+				if (cached) {
+					const now = Date.now();
+					const isExpired = now - cached.timestamp > TWITTER_API_CONFIG.CACHE_TTL_MS;
+					if (!isExpired && !(cached.csrfHash !== csrfHash)) {
+						void 0;
+						return cached.response;
+					}
+					TwitterAPI.requestCache.delete(url);
+					void 0;
+				}
 				const headers = new Headers({
 					authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
-					"x-csrf-token": getCsrfToken() ?? "",
+					"x-csrf-token": csrfToken,
 					"x-twitter-client-language": "en",
 					"x-twitter-active-user": "yes",
 					"content-type": "application/json",
 					"x-twitter-auth-type": "OAuth2Session"
 				});
-				if (typeof window !== "undefined") {
-					headers.append("referer", window.location.href);
-					headers.append("origin", window.location.origin);
-				}
+				const locationHeaders = getSafeLocationHeaders();
+				if (locationHeaders.referer) headers.append("referer", locationHeaders.referer);
+				if (locationHeaders.origin) headers.append("origin", locationHeaders.origin);
 				try {
-					const response = await HttpRequestService.getInstance().get(_url, {
+					const response = await HttpRequestService.getInstance().get(url, {
 						headers: Object.fromEntries(headers.entries()),
 						responseType: "json"
 					});
 					if (!response.ok) {
+						TwitterAPI.requestCache.delete(url);
 						logger.warn(`Twitter API request failed: ${response.status} ${response.statusText}`, response.data);
 						throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
 					}
 					const json = response.data;
 					if (json.errors && json.errors.length > 0) logger.warn("Twitter API returned errors:", json.errors);
-					if (TwitterAPI.requestCache.size >= TwitterAPI.CACHE_LIMIT) {
-						const firstKey = TwitterAPI.requestCache.keys().next().value;
-						if (firstKey) TwitterAPI.requestCache.delete(firstKey);
+					else {
+						if (TwitterAPI.requestCache.size >= TwitterAPI.CACHE_LIMIT) {
+							const firstKey = TwitterAPI.requestCache.keys().next().value;
+							if (firstKey) TwitterAPI.requestCache.delete(firstKey);
+						}
+						TwitterAPI.requestCache.set(url, {
+							response: json,
+							timestamp: Date.now(),
+							csrfHash
+						});
 					}
-					TwitterAPI.requestCache.set(_url, json);
 					return json;
 				} catch (error$1) {
+					TwitterAPI.requestCache.delete(url);
 					logger.error("Twitter API request failed:", error$1);
 					throw error$1;
 				}
 			}
 			static createTweetEndpointUrl(tweetId) {
-				const sitename = window.location.hostname.replace(".com", "");
+				const sitename = getSafeHost().replace(".com", "");
 				const variables = {
 					tweetId,
 					withCommunity: false,
@@ -2667,10 +2797,12 @@ var XcomEnhancedGallery = (function(exports) {
 				if (!item) return false;
 				const itemUrl = item.url || item.originalUrl;
 				if (itemUrl && normalizeMediaUrl(itemUrl) === normalizedElementUrl) {
-										return true;
+					void 0;
+					return true;
 				}
 				if (item.thumbnailUrl && normalizeMediaUrl(item.thumbnailUrl) === normalizedElementUrl) {
-										return true;
+					void 0;
+					return true;
 				}
 				return false;
 			});
@@ -2684,7 +2816,7 @@ var XcomEnhancedGallery = (function(exports) {
 	}
 	var init_determine_clicked_index = __esmMin((() => {
 		init_logging();
-		init_media_utils();
+		init_media_dimensions();
 		init_media_element_utils();
 	}));
 	function sanitizeHTML(html, config = DEFAULT_CONFIG) {
@@ -2757,17 +2889,21 @@ var XcomEnhancedGallery = (function(exports) {
 		try {
 			const tweetTextElement = tweetArticle.querySelector(SELECTORS.TWEET_TEXT);
 			if (!tweetTextElement) {
-								return;
+				void 0;
+				return;
 			}
 			const rawHTML = tweetTextElement.innerHTML;
 			if (!rawHTML?.trim()) {
-								return;
+				void 0;
+				return;
 			}
 			const sanitized = sanitizeHTML(rawHTML);
 			if (!sanitized?.trim()) {
-								return;
+				void 0;
+				return;
 			}
-						return sanitized;
+			void 0;
+			return sanitized;
 		} catch (error$1) {
 			logger.error("[extractTweetTextHTML] Error extracting tweet text HTML:", error$1);
 			return;
@@ -2781,7 +2917,8 @@ var XcomEnhancedGallery = (function(exports) {
 			current = current.parentElement;
 			depth++;
 		}
-			}
+		void 0;
+	}
 	var init_tweet_extractor = __esmMin((() => {
 		init_constants$1();
 		init_logging();
@@ -2799,7 +2936,8 @@ var XcomEnhancedGallery = (function(exports) {
 				const now = typeof performance !== "undefined" && typeof performance.now === "function" ? () => performance.now() : () => Date.now();
 				const startedAt = now();
 				try {
-										const apiMedias = await TwitterAPI.getTweetMedias(tweetInfo.tweetId);
+					void 0;
+					const apiMedias = await TwitterAPI.getTweetMedias(tweetInfo.tweetId);
 					if (!apiMedias || apiMedias.length === 0) {
 						const totalProcessingTime$1 = Math.max(0, now() - startedAt);
 						const failure$1 = this.createFailureResult("No media found in API response");
@@ -2907,11 +3045,11 @@ var XcomEnhancedGallery = (function(exports) {
 	var init_media_extraction_service = __esmMin((() => {
 		init_selectors();
 		init_logging();
-		init_media_utils();
 		init_tweet_info_extractor();
 		init_twitter_api_extractor();
 		init_media_types();
 		init_result_types();
+		init_media_dimensions();
 		MediaExtractionService = class {
 			tweetInfoExtractor;
 			apiExtractor;
@@ -2921,7 +3059,8 @@ var XcomEnhancedGallery = (function(exports) {
 			}
 			async extractFromClickedElement(element, options = {}) {
 				const extractionId = this.generateExtractionId();
-								try {
+				void 0;
+				try {
 					const tweetInfo = await this.tweetInfoExtractor.extract(element);
 					if (!tweetInfo?.tweetId) {
 						logger.warn(`[MediaExtractor] ${extractionId}: No tweet info found`);
@@ -3106,7 +3245,8 @@ var XcomEnhancedGallery = (function(exports) {
 					percentage: 100,
 					filename: filename$1
 				});
-								return {
+				void 0;
+				return {
 					success: true,
 					filename: filename$1
 				};
@@ -3170,7 +3310,8 @@ var XcomEnhancedGallery = (function(exports) {
 				percentage: 100,
 				filename: filename$1
 			});
-						return {
+			void 0;
+			return {
 				success: true,
 				filename: filename$1
 			};
@@ -3245,8 +3386,7 @@ var XcomEnhancedGallery = (function(exports) {
 	function generateMediaFilename(media, options = {}) {
 		try {
 			if (media.filename) return sanitize(media.filename);
-			const originalUrl = media.originalUrl;
-			const extension = options.extension ?? getExtension(originalUrl ?? media.url);
+			const extension = options.extension ?? getExtension(media.originalUrl ?? media.url);
 			const index = getIndexFromMediaId(media.id) ?? normalizeIndex(options.index);
 			const { username, tweetId } = resolveMetadata(media, options.fallbackUsername);
 			if (username && tweetId) return sanitize(`${username}_${tweetId}_${index}.${extension}`);
@@ -3283,7 +3423,8 @@ var XcomEnhancedGallery = (function(exports) {
 		const filename$1 = generateMediaFilename(media);
 		const effectiveCapability = capability ?? detectDownloadCapability();
 		if (effectiveCapability.method === "fetch_blob") {
-						if (options.blob) return downloadBlobWithAnchor(options.blob, filename$1, {
+			void 0;
+			if (options.blob) return downloadBlobWithAnchor(options.blob, filename$1, {
 				signal: options.signal,
 				onProgress: options.onProgress
 			});
@@ -3331,7 +3472,8 @@ var XcomEnhancedGallery = (function(exports) {
 					url,
 					name: filename$1,
 					onload: () => {
-												options.onProgress?.({
+						void 0;
+						options.onProgress?.({
 							phase: "complete",
 							current: 1,
 							total: 1,
@@ -3397,24 +3539,35 @@ var XcomEnhancedGallery = (function(exports) {
 		init_timer_management();
 		init_fallback_download();
 	}));
-	async function sleep(ms, signal) {
+	function isAbortError(error$1) {
+		if (error$1 instanceof DOMException) return error$1.name === "AbortError" || error$1.name === "TimeoutError";
+		if (error$1 instanceof Error) return error$1.name === "AbortError" || error$1.message.includes("aborted");
+		return false;
+	}
+	var init_signal_utils = __esmMin((() => {}));
+	async function delay(ms, signal) {
 		if (ms <= 0) return;
+		if (signal?.aborted) throw signal.reason ?? new DOMException("Delay was aborted", "AbortError");
 		return new Promise((resolve$1, reject) => {
-			const timer = globalTimerManager.setTimeout(() => {
+			const timerId = globalTimerManager.setTimeout(() => {
 				cleanup$1();
 				resolve$1();
 			}, ms);
 			const onAbort = () => {
 				cleanup$1();
-				reject(/* @__PURE__ */ new Error("Download cancelled by user"));
+				reject(signal?.reason ?? new DOMException("Delay was aborted", "AbortError"));
 			};
 			const cleanup$1 = () => {
-				globalTimerManager.clearTimeout(timer);
+				globalTimerManager.clearTimeout(timerId);
 				signal?.removeEventListener("abort", onAbort);
 			};
-			if (signal) signal.addEventListener("abort", onAbort);
+			signal?.addEventListener("abort", onAbort, { once: true });
 		});
 	}
+	var init_delay = __esmMin((() => {
+		init_timer_management();
+		init_signal_utils();
+	}));
 	async function fetchArrayBufferWithRetry(url, retries, signal, backoffBaseMs = 200) {
 		const httpService = HttpRequestService.getInstance();
 		let attempt = 0;
@@ -3430,15 +3583,22 @@ var XcomEnhancedGallery = (function(exports) {
 				if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
 				return new Uint8Array(response.data);
 			} catch (err) {
+				if (isAbortError(err)) throw new Error("Download cancelled by user");
 				if (attempt >= retries) throw err;
 				attempt += 1;
-				await sleep(Math.max(0, Math.floor(backoffBaseMs * 2 ** (attempt - 1))), signal);
+				const backoffMs = Math.max(0, Math.floor(backoffBaseMs * 2 ** (attempt - 1)));
+				try {
+					await delay(backoffMs, signal);
+				} catch (delayErr) {
+					if (isAbortError(delayErr)) throw new Error("Download cancelled by user");
+					throw delayErr;
+				}
 			}
 		}
 	}
 	var init_retry_fetch = __esmMin((() => {
+		init_delay();
 		init_http_request_service();
-		init_timer_management();
 	}));
 	function ensureUniqueFilenameFactory() {
 		const usedNames = /* @__PURE__ */ new Set();
@@ -3722,7 +3882,8 @@ var XcomEnhancedGallery = (function(exports) {
 				return this.lifecycle.isInitialized();
 			}
 			async onInitialize() {
-							}
+				void 0;
+			}
 			onDestroy() {
 				this.capability = null;
 			}
@@ -3786,7 +3947,8 @@ var XcomEnhancedGallery = (function(exports) {
 				const capability = this.getCapability();
 				if (capability.method === "gm_download" && capability.gmDownload) return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename$1);
 				if (capability.method === "fetch_blob") {
-										const fallbackResult = await downloadBlobWithAnchor(zipBlob, filename$1, {
+					void 0;
+					const fallbackResult = await downloadBlobWithAnchor(zipBlob, filename$1, {
 						signal: options.signal,
 						onProgress: options.onProgress
 					});
@@ -3993,7 +4155,8 @@ var XcomEnhancedGallery = (function(exports) {
 			serviceManager$1.register(SERVICE_KEYS$1.GALLERY_DOWNLOAD, downloadService);
 			serviceManager$1.register(SERVICE_KEYS$1.BULK_DOWNLOAD, downloadService);
 			downloadServiceRegistered = true;
-					} catch (error$1) {
+			void 0;
+		} catch (error$1) {
 			const message = error$1 instanceof Error ? error$1.message : String(error$1);
 			logger.error("❌ Failed to lazily register DownloadService:", message);
 			throw error$1;
@@ -4043,6 +4206,8 @@ var XcomEnhancedGallery = (function(exports) {
 		return CoreService.getInstance().get(SERVICE_KEYS.GALLERY_RENDERER);
 	}
 	async function getDownloadOrchestrator() {
+		const coreService = CoreService.getInstance();
+		if (coreService.has(SERVICE_KEYS.GALLERY_DOWNLOAD)) return coreService.get(SERVICE_KEYS.GALLERY_DOWNLOAD);
 		const { ensureDownloadServiceRegistered: ensureDownloadServiceRegistered$1 } = await Promise.resolve().then(() => (init_lazy_services(), lazy_services_exports));
 		await ensureDownloadServiceRegistered$1();
 		const { DownloadOrchestrator: DownloadOrchestrator$1 } = await Promise.resolve().then(() => (init_download_orchestrator(), download_orchestrator_exports));
@@ -4093,6 +4258,7 @@ var XcomEnhancedGallery = (function(exports) {
 			lifecycle;
 			storage = getPersistentStorage();
 			mediaQueryList = null;
+			mediaQueryListener = null;
 			currentTheme = "light";
 			themeSetting = "auto";
 			listeners = /* @__PURE__ */ new Set();
@@ -4104,6 +4270,7 @@ var XcomEnhancedGallery = (function(exports) {
 				return ThemeService.singleton.get();
 			}
 
+			earlyRestoreComplete = false;
 			constructor() {
 				this.lifecycle = createLifecycle("ThemeService", {
 					onInitialize: () => this.onInitialize(),
@@ -4129,14 +4296,23 @@ var XcomEnhancedGallery = (function(exports) {
 				}
 				this.themeSetting = this.loadThemeSync();
 				this.applyCurrentTheme(true);
-				Promise.resolve().then(async () => {
-					const saved = await this.loadThemeAsync();
-					if (saved && saved !== this.themeSetting) {
-						this.themeSetting = saved;
-						this.applyCurrentTheme(true);
+				this.scheduleEarlyAsyncRestore();
+			}
+			scheduleEarlyAsyncRestore() {
+				(async () => {
+					try {
+						const saved = await this.loadThemeAsync();
+						if (saved && saved !== this.themeSetting) {
+							this.themeSetting = saved;
+							this.applyCurrentTheme(true);
+						}
+						this.initializeSystemDetection();
+						this.earlyRestoreComplete = true;
+					} catch (error$1) {
+						logger.warn("[ThemeService] Early async theme restore failed", error$1);
+						this.earlyRestoreComplete = true;
 					}
-					this.initializeSystemDetection();
-				});
+				})();
 			}
 			async initialize() {
 				return this.lifecycle.initialize();
@@ -4148,18 +4324,21 @@ var XcomEnhancedGallery = (function(exports) {
 				return this.lifecycle.isInitialized();
 			}
 			async onInitialize() {
-				const saved = await this.loadThemeAsync();
-				if (saved && saved !== this.themeSetting) {
-					this.themeSetting = saved;
-					this.applyCurrentTheme(true);
+				if (!this.earlyRestoreComplete) {
+					const saved = await this.loadThemeAsync();
+					if (saved && saved !== this.themeSetting) {
+						this.themeSetting = saved;
+						this.applyCurrentTheme(true);
+					}
+					this.initializeSystemDetection();
 				}
-				this.initializeSystemDetection();
 				try {
 					const { tryGetSettingsManager: tryGetSettingsManager$1 } = await Promise.resolve().then(() => (init_service_accessors(), service_accessors_exports));
 					const settingsService = tryGetSettingsManager$1();
 					if (settingsService) this.bindSettingsService(settingsService);
 				} catch (err) {
-									}
+					void 0;
+				}
 			}
 			bindSettingsService(settingsService) {
 				if (!settingsService || this.boundSettingsService === settingsService) return;
@@ -4196,7 +4375,12 @@ var XcomEnhancedGallery = (function(exports) {
 					"dark",
 					"auto"
 				].includes(setting$1) ? setting$1 : "light";
-				if (options?.persist !== false && this.boundSettingsService?.set) this.boundSettingsService.set("gallery.theme", this.themeSetting);
+				if (options?.persist !== false && this.boundSettingsService?.set) {
+					const result = this.boundSettingsService.set("gallery.theme", this.themeSetting);
+					if (result instanceof Promise) result.catch((error$1) => {
+						logger.warn("[ThemeService] Failed to persist theme setting", error$1);
+					});
+				}
 				if (!this.applyCurrentTheme(options?.force)) this.notifyListeners();
 			}
 			getEffectiveTheme() {
@@ -4214,14 +4398,28 @@ var XcomEnhancedGallery = (function(exports) {
 				return () => this.listeners.delete(listener);
 			}
 			onDestroy() {
-				if (this.settingsUnsubscribe) this.settingsUnsubscribe();
+				if (this.settingsUnsubscribe) {
+					this.settingsUnsubscribe();
+					this.settingsUnsubscribe = null;
+				}
 				this.listeners.clear();
-				this.observer?.disconnect();
+				if (this.observer) {
+					this.observer.disconnect();
+					this.observer = null;
+				}
+				if (this.mediaQueryList && this.mediaQueryListener) {
+					this.mediaQueryList.removeEventListener("change", this.mediaQueryListener);
+					this.mediaQueryListener = null;
+				}
+				this.mediaQueryList = null;
 			}
 			initializeSystemDetection() {
-				if (this.mediaQueryList) this.mediaQueryList.addEventListener("change", () => {
-					if (this.themeSetting === "auto") this.applyCurrentTheme();
-				});
+				if (this.mediaQueryList && !this.mediaQueryListener) {
+					this.mediaQueryListener = () => {
+						if (this.themeSetting === "auto") this.applyCurrentTheme();
+					};
+					this.mediaQueryList.addEventListener("change", this.mediaQueryListener);
+				}
 			}
 			applyCurrentTheme(force = false) {
 				const effective = this.getEffectiveTheme();
@@ -4665,6 +4863,25 @@ var XcomEnhancedGallery = (function(exports) {
 		init_error_handler();
 		init_error_handling_hof();
 	}));
+	function createEventListener(handler) {
+		return (event) => {
+			handler(event);
+		};
+	}
+	function isHTMLElement(element) {
+		return element instanceof HTMLElement;
+	}
+	function isRecord(value) {
+		return typeof value === "object" && value !== null && !Array.isArray(value);
+	}
+	function isSettingsServiceLike(value) {
+		if (!isRecord(value)) return false;
+		const hasGet = !("get" in value) || typeof value.get === "function";
+		const hasSet = !("set" in value) || typeof value.set === "function";
+		const hasSubscribe = !("subscribe" in value) || typeof value.subscribe === "function";
+		return hasGet && hasSet && hasSubscribe;
+	}
+	var init_guards = __esmMin((() => {}));
 	function getContextId(count) {
 		const num = String(count), len = num.length - 1;
 		return sharedConfig.context.id + (len ? String.fromCharCode(96 + len) : "") + num;
@@ -6538,9 +6755,6 @@ var XcomEnhancedGallery = (function(exports) {
 		return () => resolveOptional(resolver());
 	}
 	var init_accessor_utils = __esmMin((() => {}));
-	var init_solid_helpers = __esmMin((() => {
-		init_accessor_utils();
-	}));
 	function formatTweetText(text) {
 		if (!text) return [];
 		const tokens = [];
@@ -6939,7 +7153,7 @@ var XcomEnhancedGallery = (function(exports) {
 	var init_Button = __esmMin((() => {
 		init_web();
 		init_logging();
-		init_solid_helpers();
+		init_accessor_utils();
 		init_formatting();
 		init_solid();
 		init_Button_module();
@@ -6976,7 +7190,7 @@ var XcomEnhancedGallery = (function(exports) {
 	var init_IconButton = __esmMin((() => {
 		init_web();
 		init_Button();
-		init_solid_helpers();
+		init_accessor_utils();
 		init_solid();
 		ALLOWED_ICON_SIZES = new Set([
 			"sm",
@@ -7785,8 +7999,8 @@ var XcomEnhancedGallery = (function(exports) {
 		const { isSettingsExpanded, setSettingsExpanded, toggleSettingsExpanded, documentRef = typeof document !== "undefined" ? document : void 0, themeService: providedThemeService, languageService: providedLanguageService, focusDelayMs = DEFAULT_FOCUS_DELAY_MS, selectChangeGuardMs = DEFAULT_SELECT_GUARD_MS } = options;
 		const themeManager = providedThemeService ?? getThemeService();
 		const languageService = providedLanguageService ?? getLanguageService();
-		const scheduleTimeout = (callback, delay) => {
-			return globalTimerManager.setTimeout(callback, delay);
+		const scheduleTimeout = (callback, delay$1) => {
+			return globalTimerManager.setTimeout(callback, delay$1);
 		};
 		const clearScheduledTimeout = (handle) => {
 			if (handle == null) return;
@@ -7931,7 +8145,8 @@ var XcomEnhancedGallery = (function(exports) {
 					logger.warn("[ToolbarSettingsController] Failed to sync theme to SettingsService:", error$1);
 				});
 			} catch (error$1) {
-							}
+				void 0;
+			}
 		};
 		const handleLanguageChange = (event) => {
 			const select$1 = event.target;
@@ -8206,7 +8421,7 @@ var XcomEnhancedGallery = (function(exports) {
 		init_ToolbarView();
 		init_hooks();
 		init_utils$1();
-		init_solid_helpers();
+		init_accessor_utils();
 		init_formatting();
 		init_safety$1();
 		init_solid();
@@ -8354,13 +8569,13 @@ var XcomEnhancedGallery = (function(exports) {
 			return dispose$1;
 		});
 	}
-	var logger$3, debug$2;
+	var logger$1, debug$2;
 	var init_signal_factory = __esmMin((() => {
 		init_logging();
 		init_solid();
-		logger$3 = createScopedLogger?.("SignalFactory") ?? createLogger({ prefix: "[SignalFactory]" });
+		logger$1 = createScopedLogger?.("SignalFactory") ?? createLogger({ prefix: "[SignalFactory]" });
 		debug$2 = (...args) => {
-			logger$3?.debug?.(...args);
+			logger$1?.debug?.(...args);
 		};
 		debug$2("Module loaded");
 	}));
@@ -8477,14 +8692,13 @@ var XcomEnhancedGallery = (function(exports) {
 		uiSignals.error.value = error$1;
 		if (error$1) {
 			uiSignals.isLoading.value = false;
-			logger$2.error(`[Gallery UI] Error: ${error$1}`);
+			logger.error(`[Gallery UI] Error: ${error$1}`);
 		}
 	}
-	var logger$2, INITIAL_UI_STATE, uiSignals;
+	var INITIAL_UI_STATE, uiSignals;
 	var init_ui_state = __esmMin((() => {
 		init_logging();
 		init_signal_factory();
-		logger$2 = logger;
 		INITIAL_UI_STATE = {
 			viewMode: "vertical",
 			isLoading: false,
@@ -8546,7 +8760,8 @@ var XcomEnhancedGallery = (function(exports) {
 		};
 		gallerySignals.focusedIndex.value = validIndex;
 		resetNavigation();
-			}
+		void 0;
+	}
 	function closeGallery() {
 		galleryState.value = {
 			...galleryState.value,
@@ -8558,14 +8773,16 @@ var XcomEnhancedGallery = (function(exports) {
 		gallerySignals.focusedIndex.value = null;
 		gallerySignals.currentVideoElement.value = null;
 		resetNavigation();
-			}
+		void 0;
+	}
 	function navigateToItem(index, trigger = "button", source) {
 		const state = galleryState.value;
 		const validIndex = clampIndex(index, state.mediaItems.length);
 		const navigationSource = source ?? resolveNavigationSource(trigger);
 		validateNavigationParams(validIndex, navigationSource, trigger, "navigateToItem");
 		if (recordNavigation(validIndex, navigationSource).isDuplicate) {
-						gallerySignals.focusedIndex.value = validIndex;
+			void 0;
+			gallerySignals.focusedIndex.value = validIndex;
 			return;
 		}
 		galleryIndexEvents.emit("navigate:start", {
@@ -8584,7 +8801,8 @@ var XcomEnhancedGallery = (function(exports) {
 			index: validIndex,
 			trigger
 		});
-			}
+		void 0;
+	}
 	function navigatePrevious(trigger = "button") {
 		const state = galleryState.value;
 		const baseIndex = getCurrentActiveIndex();
@@ -8598,7 +8816,7 @@ var XcomEnhancedGallery = (function(exports) {
 	function getCurrentActiveIndex() {
 		return gallerySignals.focusedIndex.value ?? galleryState.value.currentIndex;
 	}
-	var logger$1, batch$1, INITIAL_STATE, galleryIndexEvents, gallerySignals, galleryState;
+	var batch$1, INITIAL_STATE, galleryIndexEvents, gallerySignals, galleryState;
 	var init_gallery_signals = __esmMin((() => {
 		init_logging();
 		init_navigation_state();
@@ -8607,7 +8825,6 @@ var XcomEnhancedGallery = (function(exports) {
 		init_emitter();
 		init_safety$1();
 		init_solid();
-		logger$1 = logger;
 		batch$1 = batch;
 		INITIAL_STATE = {
 			isOpen: false,
@@ -8846,18 +9063,6 @@ var XcomEnhancedGallery = (function(exports) {
 		init_accessor_utils();
 		init_solid();
 	}));
-	function createEventListener(handler) {
-		return (event) => {
-			handler(event);
-		};
-	}
-	function isHTMLElement(element) {
-		return element instanceof HTMLElement;
-	}
-	function isRecord(value) {
-		return typeof value === "object" && value !== null && !Array.isArray(value);
-	}
-	var init_guards = __esmMin((() => {}));
 	function ensureGalleryScrollAvailable(element) {
 		if (!element) return;
 		element.querySelectorAll("[data-xeg-role=\"items-list\"], .itemsList, .content").forEach((el) => {
@@ -9003,7 +9208,8 @@ var XcomEnhancedGallery = (function(exports) {
 				context,
 				created: Date.now()
 			});
-						return id;
+			void 0;
+			return id;
 		} catch (error$1) {
 			logger.error(`Failed to add listener: ${type}`, {
 				error: error$1,
@@ -9021,7 +9227,8 @@ var XcomEnhancedGallery = (function(exports) {
 		try {
 			ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
 			listeners.delete(id);
-						return true;
+			void 0;
+			return true;
 		} catch (error$1) {
 			logger.error(`Failed to remove listener: ${id}`, error$1);
 			return false;
@@ -9032,7 +9239,24 @@ var XcomEnhancedGallery = (function(exports) {
 		for (const [id, ctx] of listeners) if (ctx.context === context) toRemove.push(id);
 		let count = 0;
 		for (const id of toRemove) if (removeEventListenerManaged(id)) count++;
-		if (count > 0) 		return count;
+		if (count > 0) void 0;
+		return count;
+	}
+	function removeAllEventListeners() {
+		if (listeners.size === 0) return;
+		const all = Array.from(listeners.values());
+		listeners.clear();
+		let count = 0;
+		for (const ctx of all) try {
+			ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
+			count++;
+		} catch (error$1) {
+			logger.warn(`Failed to remove listener: ${ctx.type}`, {
+				error: error$1,
+				context: ctx.context
+			});
+		}
+		void 0;
 	}
 	function getEventListenerStatus() {
 		const byContext = {};
@@ -9083,16 +9307,17 @@ var XcomEnhancedGallery = (function(exports) {
 				return this.lifecycle.isInitialized();
 			}
 			async onInitialize() {
-							}
+				void 0;
+			}
 			onDestroy() {
 				this.cleanup();
 			}
 			addListener(element, type, listener, options, context) {
 				if (this.isDestroyed) {
 					logger.warn("EventManager: addListener called on destroyed instance");
-					return "";
+					return null;
 				}
-				return addListener(element, type, listener, options, context);
+				return addListener(element, type, listener, options, context) || null;
 			}
 			removeListener(id) {
 				return removeEventListenerManaged(id);
@@ -9108,8 +9333,10 @@ var XcomEnhancedGallery = (function(exports) {
 			}
 			cleanup() {
 				if (this.isDestroyed) return;
+				removeAllEventListeners();
 				this.isDestroyed = true;
-							}
+				void 0;
+			}
 		};
 	}));
 	function useGalleryScroll({ container: container$2, scrollTarget, onScroll, onScrollEnd, enabled = true, programmaticScrollTimestamp }) {
@@ -9135,7 +9362,8 @@ var XcomEnhancedGallery = (function(exports) {
 			clearScrollIdleTimer();
 			scrollIdleTimerId = globalTimerManager.setTimeout(() => {
 				setIsScrolling(false);
-								onScrollEnd?.();
+				void 0;
+				onScrollEnd?.();
 			}, 250);
 		};
 		const shouldIgnoreScroll = () => Date.now() - programmaticTimestampAccessor() < PROGRAMMATIC_SCROLL_WINDOW;
@@ -9173,14 +9401,17 @@ var XcomEnhancedGallery = (function(exports) {
 				const id = eventManager.addListener(eventTarget, type, handler, { passive: true }, listenerContext);
 				if (id) {
 					listenerIds.push(id);
-									}
+					void 0;
+				}
 			};
 			registerListener("wheel", handleWheel);
 			registerListener("scroll", handleScroll);
-						onCleanup(() => {
+			void 0;
+			onCleanup(() => {
 				for (const id of listenerIds) {
 					eventManager.removeListener(id);
-									}
+					void 0;
+				}
 				clearScrollIdleTimer();
 				setIsScrolling(false);
 			});
@@ -9356,7 +9587,8 @@ var XcomEnhancedGallery = (function(exports) {
 			styleElement.setAttribute(key, String(value));
 		});
 		styleMap.set(options.id, styleElement);
-				return {
+		void 0;
+		return {
 			id: options.id,
 			element: styleElement,
 			replaced: false
@@ -9380,7 +9612,8 @@ var XcomEnhancedGallery = (function(exports) {
 			id: ANIMATION_STYLE_ID,
 			cssText: buildScopedAnimationCss()
 		});
-			}
+		void 0;
+	}
 	function buildScopedAnimationCss() {
 		const scopedClass = (className$1) => GALLERY_SCOPE_HOSTS.map((scope) => `${scope} .${className$1}`).join(", ");
 		const reducedMotionSelectors = [
@@ -10158,7 +10391,7 @@ var XcomEnhancedGallery = (function(exports) {
 		init_async();
 		init_service_accessors();
 		init_settings_access();
-		init_media_utils();
+		init_media_dimensions();
 		init_performance();
 		init_formatting();
 		init_solid();
@@ -10320,7 +10553,8 @@ var XcomEnhancedGallery = (function(exports) {
 					},
 					lifecycle: {
 						onClose: onClose || (() => {}),
-						onOpenSettings: () => {}					}
+						onOpenSettings: () => void 0
+					}
 				}
 			}));
 			use((el) => setItemsContainerEl(el ?? null), _el$8);
@@ -10412,7 +10646,7 @@ var XcomEnhancedGallery = (function(exports) {
 			const eventManager = EventManager.getInstance();
 			const listenerId = eventManager.addListener(document, "keydown", escapeListener);
 			onCleanup(() => {
-				eventManager.removeListener(listenerId);
+				if (listenerId) eventManager.removeListener(listenerId);
 			});
 		});
 		return (() => {
@@ -10461,10 +10695,12 @@ var XcomEnhancedGallery = (function(exports) {
 			}
 			async show(options) {
 				if (!globalThis.GM_notification) {
-										return;
+					void 0;
+					return;
 				}
 				this.gmNotify(options);
-							}
+				void 0;
+			}
 			async error(title, text, timeout = 5e3) {
 				await this.show({
 					title,
@@ -10581,7 +10817,8 @@ var XcomEnhancedGallery = (function(exports) {
 			video$1.pause?.();
 			return true;
 		} catch (error$1) {
-						return false;
+			void 0;
+			return false;
 		}
 	}
 	function pauseActiveTwitterVideos(options = {}) {
@@ -10602,7 +10839,8 @@ var XcomEnhancedGallery = (function(exports) {
 			totalCandidates,
 			skippedCount: inspectedCount - pausedCount
 		};
-		if (result.pausedCount > 0) 		return result;
+		if (result.pausedCount > 0) void 0;
+		return result;
 	}
 	var ZERO_RESULT;
 	var init_twitter_video_pauser = __esmMin((() => {
@@ -10681,7 +10919,8 @@ var XcomEnhancedGallery = (function(exports) {
 				scope
 			};
 		}
-		if (result.totalCandidates > 0 || result.pausedCount > 0) 		return {
+		if (result.totalCandidates > 0 || result.pausedCount > 0) void 0;
+		return {
 			...result,
 			trigger,
 			forced: force,
@@ -10703,17 +10942,16 @@ var XcomEnhancedGallery = (function(exports) {
 		});
 	}));
 	var init_gallery_global = __esmMin((() => {}));
+	var GalleryRenderer_exports = /* @__PURE__ */ __export({ GalleryRenderer: () => GalleryRenderer }, 1);
 	var GalleryRenderer;
-	var init_GalleryRenderer$1 = __esmMin((() => {
+	var init_GalleryRenderer = __esmMin((() => {
 		init_web();
-		init_constants$1();
 		init_VerticalGalleryView();
 		init_isolation();
 		init_ErrorBoundary();
 		init_service_accessors();
 		init_userscript();
 		init_logging();
-		init_service_manager();
 		init_download_signals();
 		init_gallery_signals();
 		init_ui_state();
@@ -10743,10 +10981,12 @@ var XcomEnhancedGallery = (function(exports) {
 				const { isOpen, mediaItems } = gallerySignals;
 				if (!isOpen.value || mediaItems.value.length === 0) return;
 				this.isRenderingFlag = true;
-								try {
+				void 0;
+				try {
 					this.createContainer();
 					this.renderComponent();
-									} catch (error$1) {
+					void 0;
+				} catch (error$1) {
 					logger.error("[GalleryRenderer] Rendering failed:", error$1);
 					setError("Gallery rendering failed");
 				} finally {
@@ -10804,9 +11044,11 @@ var XcomEnhancedGallery = (function(exports) {
 					});
 				};
 				this.disposeApp = render(() => createComponent(Root, {}), this.container);
-							}
+				void 0;
+			}
 			async handleDownload(type) {
-								if (!isGMAPIAvailable("download")) {
+				void 0;
+				if (!isGMAPIAvailable("download")) {
 					logger.warn("[GalleryRenderer] GM_download unavailable");
 					setError("Tampermonkey required for downloads.");
 					return;
@@ -10834,15 +11076,11 @@ var XcomEnhancedGallery = (function(exports) {
 				}
 			}
 			async getDownloadService() {
-				const preRegistered = CoreService.getInstance().tryGet(SERVICE_KEYS.GALLERY_DOWNLOAD);
-				if (preRegistered) return preRegistered;
-				const { ensureDownloadServiceRegistered: ensureDownloadServiceRegistered$1 } = await Promise.resolve().then(() => (init_lazy_services(), lazy_services_exports));
-				await ensureDownloadServiceRegistered$1();
-				const { DownloadOrchestrator: DownloadOrchestrator$1 } = await Promise.resolve().then(() => (init_download_orchestrator(), download_orchestrator_exports));
-				return DownloadOrchestrator$1.getInstance();
+				return getDownloadOrchestrator();
 			}
 			cleanupGallery() {
-								this.isRenderingFlag = false;
+				void 0;
+				this.isRenderingFlag = false;
 				this.cleanupContainer();
 			}
 			cleanupContainer() {
@@ -10873,14 +11111,11 @@ var XcomEnhancedGallery = (function(exports) {
 				return this.isRenderingFlag;
 			}
 			destroy() {
-								this.stateUnsubscribe?.();
+				void 0;
+				this.stateUnsubscribe?.();
 				this.cleanupGallery();
 			}
 		};
-	}));
-	var GalleryRenderer_exports = /* @__PURE__ */ __export({ GalleryRenderer: () => GalleryRenderer }, 1);
-	var init_GalleryRenderer = __esmMin((() => {
-		init_GalleryRenderer$1();
 	}));
 	function isSafeKey(key) {
 		return !FORBIDDEN_KEYS.has(key);
@@ -11112,7 +11347,9 @@ var XcomEnhancedGallery = (function(exports) {
 			}
 			onDestroy() {
 				this.listeners.clear();
-				this.repository.save(this.settings);
+				this.repository.save(this.settings).catch((error$1) => {
+					logger.warn("Failed to save settings on destroy:", error$1);
+				});
 			}
 			getAllSettings() {
 				this.assertInitialized();
@@ -11163,7 +11400,10 @@ var XcomEnhancedGallery = (function(exports) {
 				this.assertInitialized();
 				const previous = this.getAllSettings();
 				if (!category) this.settings = createDefaultSettings();
-				else if (category in DEFAULT_SETTINGS) this.settings[category] = cloneDeep(DEFAULT_SETTINGS[category]);
+				else if (category in DEFAULT_SETTINGS) {
+					const defaultValue = DEFAULT_SETTINGS[category];
+					if (defaultValue !== void 0) Object.assign(this.settings, { [category]: cloneDeep(defaultValue) });
+				}
 				this.settings.lastModified = Date.now();
 				this.refreshFeatureMap();
 				this.notifyListeners({
@@ -11251,7 +11491,8 @@ var XcomEnhancedGallery = (function(exports) {
 				reason: "guard"
 			});
 			if (result.pausedCount <= 0) return;
-					});
+			void 0;
+		});
 	}
 	function startAmbientVideoGuard() {
 		guardSubscribers += 1;
@@ -11307,7 +11548,8 @@ var XcomEnhancedGallery = (function(exports) {
 			const fallbackVideo = target.querySelector("video");
 			return fallbackVideo instanceof HTMLVideoElement ? fallbackVideo : null;
 		} catch (error$1) {
-						return null;
+			void 0;
+			return null;
 		}
 	}
 	function executeVideoControl(action, options = {}) {
@@ -11315,14 +11557,16 @@ var XcomEnhancedGallery = (function(exports) {
 		try {
 			const videoElement = getCurrentGalleryVideo(video$1);
 			if (!videoElement) {
-								return;
+				void 0;
+				return;
 			}
 			switch (action) {
 				case "play": {
 					const maybePromise = videoElement.play?.();
 					if (maybePromise && typeof maybePromise.then === "function") maybePromise.then(() => videoPlaybackStateMap.set(videoElement, { playing: true })).catch(() => {
 						videoPlaybackStateMap.set(videoElement, { playing: false });
-											});
+						void 0;
+					});
 					else videoPlaybackStateMap.set(videoElement, { playing: true });
 					break;
 				}
@@ -11335,7 +11579,8 @@ var XcomEnhancedGallery = (function(exports) {
 						const maybePromise = videoElement.play?.();
 						if (maybePromise && typeof maybePromise.then === "function") maybePromise.then(() => videoPlaybackStateMap.set(videoElement, { playing: true })).catch(() => {
 							videoPlaybackStateMap.set(videoElement, { playing: false });
-													});
+							void 0;
+						});
 						else videoPlaybackStateMap.set(videoElement, { playing: true });
 					} else {
 						videoElement.pause?.();
@@ -11361,7 +11606,8 @@ var XcomEnhancedGallery = (function(exports) {
 					videoElement.muted = !videoElement.muted;
 					break;
 			}
-					} catch (error$1) {
+			void 0;
+		} catch (error$1) {
 			logger.error("[VideoControl] Unexpected error", {
 				error: error$1,
 				action,
@@ -11380,7 +11626,8 @@ var XcomEnhancedGallery = (function(exports) {
 		const now = Date.now();
 		const timeSinceLastExecution = now - debounceState.lastExecutionTime;
 		if (key === debounceState.lastKey && timeSinceLastExecution < minInterval) {
-						return false;
+			void 0;
+			return false;
 		}
 		debounceState.lastExecutionTime = now;
 		debounceState.lastKey = key;
@@ -11402,7 +11649,8 @@ var XcomEnhancedGallery = (function(exports) {
 	function resetKeyboardDebounceState() {
 		debounceState.lastExecutionTime = 0;
 		debounceState.lastKey = "";
-			}
+		void 0;
+	}
 	var debounceState;
 	var init_keyboard_debounce = __esmMin((() => {
 		init_logging();
@@ -11629,7 +11877,8 @@ var XcomEnhancedGallery = (function(exports) {
 			listenerContext,
 			eventTarget: target
 		};
-		if (finalOptions.debugMode) 		return () => {
+		if (finalOptions.debugMode) void 0;
+		return () => {
 			cleanupGalleryEvents();
 		};
 	}
@@ -11694,15 +11943,18 @@ var XcomEnhancedGallery = (function(exports) {
 			notificationService = NotificationService.getInstance();
 			ambientVideoGuardHandle = null;
 			constructor() {
-							}
+				void 0;
+			}
 			async initialize() {
 				try {
-										this.galleryRenderer = getGalleryRenderer();
+					void 0;
+					this.galleryRenderer = getGalleryRenderer();
 					this.galleryRenderer?.setOnCloseCallback(() => this.closeGallery());
 					await this.setupEventHandlers();
 					this.ambientVideoGuardHandle = this.ambientVideoGuardHandle ?? withAmbientVideoGuard();
 					this.isInitialized = true;
-									} catch (error$1) {
+					void 0;
+				} catch (error$1) {
 					galleryErrorReporter.critical(error$1, { code: "GALLERY_APP_INIT_FAILED" });
 				}
 			}
@@ -11722,7 +11974,8 @@ var XcomEnhancedGallery = (function(exports) {
 						preventBubbling: true,
 						context: "gallery"
 					});
-									} catch (error$1) {
+					void 0;
+				} catch (error$1) {
 					galleryErrorReporter.critical(error$1, { code: "EVENT_HANDLERS_SETUP_FAILED" });
 				}
 			}
@@ -11790,7 +12043,8 @@ var XcomEnhancedGallery = (function(exports) {
 			}
 			async cleanup() {
 				try {
-										if (gallerySignals.isOpen.value) this.closeGallery();
+					void 0;
+					if (gallerySignals.isOpen.value) this.closeGallery();
 					this.ambientVideoGuardHandle?.dispose();
 					this.ambientVideoGuardHandle = null;
 					try {
@@ -11802,7 +12056,8 @@ var XcomEnhancedGallery = (function(exports) {
 					this.galleryRenderer = null;
 					this.isInitialized = false;
 					delete globalThis.xegGalleryDebug;
-									} catch (error$1) {
+					void 0;
+				} catch (error$1) {
 					galleryErrorReporter.error(error$1, { code: "GALLERY_CLEANUP_FAILED" });
 				}
 			}
@@ -11812,6 +12067,7 @@ var XcomEnhancedGallery = (function(exports) {
 	init_error();
 	init_userscript();
 	init_logging();
+	init_guards();
 	var rendererRegistrationTask = null;
 	async function registerRenderer() {
 		if (!rendererRegistrationTask) rendererRegistrationTask = (async () => {
@@ -11830,8 +12086,9 @@ var XcomEnhancedGallery = (function(exports) {
 			const service = new SettingsService$1();
 			await service.initialize();
 			registerSettingsManager(service);
-			settingsService = service;
-					} catch (error$1) {
+			if (isSettingsServiceLike(service)) settingsService = service;
+			void 0;
+		} catch (error$1) {
 			settingsErrorReporter.warn(error$1, { code: "SETTINGS_SERVICE_INIT_FAILED" });
 		}
 		try {
@@ -11846,17 +12103,20 @@ var XcomEnhancedGallery = (function(exports) {
 					persist: false
 				});
 			}
-					} catch (error$1) {
+			void 0;
+		} catch (error$1) {
 			bootstrapErrorReporter.warn(error$1, { code: "THEME_SYNC_FAILED" });
 		}
 	}
 	async function initializeGalleryApp() {
 		try {
-						await Promise.all([registerRenderer(), initializeServices()]);
+			void 0;
+			await Promise.all([registerRenderer(), initializeServices()]);
 			const { GalleryApp: GalleryApp$1 } = await Promise.resolve().then(() => (init_GalleryApp(), GalleryApp_exports));
 			const galleryApp = new GalleryApp$1();
 			await galleryApp.initialize();
-						return galleryApp;
+			void 0;
+			return galleryApp;
 		} catch (error$1) {
 			galleryErrorReporter.critical(error$1, { code: "GALLERY_APP_INIT_FAILED" });
 			throw error$1;
@@ -11869,6 +12129,7 @@ var XcomEnhancedGallery = (function(exports) {
 		if (stage.shouldRun && !stage.shouldRun()) return {
 			label: stage.label,
 			success: true,
+			optional: Boolean(stage.optional),
 			durationMs: 0
 		};
 		try {
@@ -11877,6 +12138,7 @@ var XcomEnhancedGallery = (function(exports) {
 			return {
 				label: stage.label,
 				success: true,
+				optional: Boolean(stage.optional),
 				durationMs
 			};
 		} catch (error$1) {
@@ -11898,6 +12160,7 @@ var XcomEnhancedGallery = (function(exports) {
 			return {
 				label: stage.label,
 				success: false,
+				optional: Boolean(stage.optional),
 				error: error$1,
 				durationMs
 			};
@@ -11909,14 +12172,14 @@ var XcomEnhancedGallery = (function(exports) {
 		for (const stage of stages) {
 			const result = await executeStage(stage);
 			results.push(result);
-			if (!result.success && !stage.optional && stopOnFailure) {
+			if (!result.success && !result.optional && stopOnFailure) {
 				logger.error(`[bootstrap] ❌ Critical stage failed: ${stage.label}`);
 				break;
 			}
 		}
 		return results;
 	}
-	var FALLBACK_VERSION = "0.4.15";
+	var FALLBACK_VERSION = "1.2.2";
 	var APP_NAME = "X.com Enhanced Gallery";
 	var MAX_GALLERY_ITEMS = 100;
 	var DEFAULT_ANIMATION_DURATION = "var(--xeg-duration-normal)";
@@ -12045,25 +12308,21 @@ var XcomEnhancedGallery = (function(exports) {
 		if (isWindowLoaded()) return Promise.resolve();
 		return createWindowLoadPromise();
 	}
-	function runAfterWindowLoad(callback) {
-		return waitForWindowLoad().then(() => Promise.resolve(callback())).then(() => void 0);
+	async function runAfterWindowLoad(callback) {
+		await waitForWindowLoad();
+		await callback();
 	}
 	var critical_systems_exports = /* @__PURE__ */ __export({ initializeCriticalSystems: () => initializeCriticalSystems }, 1);
 	async function initializeCriticalSystems() {
 		devLogger?.debug("[critical] initialization started");
-		try {
-			const { registerCoreServices: registerCoreServices$1 } = await Promise.resolve().then(() => (init_service_initialization(), service_initialization_exports));
-			await registerCoreServices$1();
-			warmupCriticalServices();
-			devLogger?.debug("[critical] initialization complete");
-		} catch (error$1) {
-			bootstrapErrorReporter.critical(error$1, { code: "CRITICAL_SYSTEMS_INIT_FAILED" });
-		}
+		const { registerCoreServices: registerCoreServices$1 } = await Promise.resolve().then(() => (init_service_initialization(), service_initialization_exports));
+		await registerCoreServices$1();
+		warmupCriticalServices();
+		devLogger?.debug("[critical] initialization complete");
 	}
 	var devLogger;
 	var init_critical_systems = __esmMin((() => {
 		init_container();
-		init_error();
 		devLogger = null;
 	}));
 	function reportBootstrapError(error$1, options) {
@@ -12188,7 +12447,8 @@ var XcomEnhancedGallery = (function(exports) {
 		};
 		debug$1 = (message) => {
 			if (!isDevelopmentBuild()) return;
-					};
+			void 0;
+		};
 		featureLoaders = [];
 		DEFAULT_FEATURE_SETTINGS = Object.freeze({ features: { ...DEFAULT_SETTINGS.features } });
 		cloneDefaultFeatureSettings = () => ({ features: { ...DEFAULT_FEATURE_SETTINGS.features } });
@@ -12214,17 +12474,12 @@ var XcomEnhancedGallery = (function(exports) {
 				if (service && typeof service.initialize === "function") await service.initialize();
 			}
 		} catch (error$1) {
-			reportBootstrapError(error$1, {
-				context: "base-services",
-				logger
-			});
+			throw new Error("[base-services] initialization failed", { cause: error$1 instanceof Error ? error$1 : new Error(String(error$1)) });
 		}
 	}
 	var BASE_SERVICE_REGISTRATIONS;
 	var init_base_services = __esmMin((() => {
-		init_types();
 		init_service_accessors();
-		init_logging();
 		init_service_manager();
 		init_singletons();
 		BASE_SERVICE_REGISTRATIONS = [
@@ -12296,7 +12551,8 @@ var XcomEnhancedGallery = (function(exports) {
 		logger.warn(message, error$1);
 	};
 	var debugCleanupLog = (message, error$1) => {
-			};
+		void 0;
+	};
 	var globalEventTeardown = null;
 	function setGlobalEventTeardown(teardown) {
 		globalEventTeardown = teardown;
@@ -12324,7 +12580,8 @@ var XcomEnhancedGallery = (function(exports) {
 		{
 			label: "Developer tooling",
 			run: initializeDevToolsIfNeeded,
-			shouldRun: () => isDevEnvironment
+			shouldRun: () => isDevEnvironment,
+			optional: true
 		},
 		{
 			label: "Infrastructure",
@@ -12339,18 +12596,21 @@ var XcomEnhancedGallery = (function(exports) {
 		},
 		{
 			label: "Base services",
-			run: initializeBaseServicesStage
+			run: initializeBaseServicesStage,
+			optional: true
 		},
 		{
 			label: "Theme synchronization",
-			run: applyInitialThemeSetting
+			run: applyInitialThemeSetting,
+			optional: true
 		},
 		{
 			label: "Feature service registration",
 			run: async () => {
 				const { registerFeatureServicesLazy: registerFeatureServicesLazy$1 } = await Promise.resolve().then(() => (init_features(), features_exports));
 				await registerFeatureServicesLazy$1();
-			}
+			},
+			optional: true
 		},
 		{
 			label: "Global event wiring",
@@ -12362,27 +12622,32 @@ var XcomEnhancedGallery = (function(exports) {
 		},
 		{
 			label: "Non-critical systems",
-			run: () => initializeNonCriticalSystems()
+			run: () => initializeNonCriticalSystems(),
+			optional: true
 		}
 	];
 	async function runBootstrapStages() {
-		const failedStage = (await executeStages(bootstrapStages, { stopOnFailure: true })).find((r) => !r.success);
+		const failedStage = (await executeStages(bootstrapStages, { stopOnFailure: true })).find((r) => !r.success && !r.optional);
 		if (failedStage) throw failedStage.error ?? /* @__PURE__ */ new Error(`Bootstrap stage failed: ${failedStage.label}`);
 	}
 	async function initializeInfrastructure() {
 		try {
 			const { initializeEnvironment: initializeEnvironment$1 } = await Promise.resolve().then(() => (init_environment(), environment_exports));
 			await initializeEnvironment$1();
-					} catch (error$1) {
+			void 0;
+		} catch (error$1) {
 			bootstrapErrorReporter.critical(error$1, { code: "INFRASTRUCTURE_INIT_FAILED" });
+			throw error$1;
 		}
 	}
 	async function initializeBaseServicesStage() {
 		try {
 			const { initializeCoreBaseServices: initializeCoreBaseServices$1 } = await Promise.resolve().then(() => (init_base_services(), base_services_exports));
 			await initializeCoreBaseServices$1();
-					} catch (error$1) {
+			void 0;
+		} catch (error$1) {
 			bootstrapErrorReporter.warn(error$1, { code: "BASE_SERVICES_INIT_FAILED" });
+			throw error$1;
 		}
 	}
 	async function applyInitialThemeSetting() {
@@ -12401,8 +12666,10 @@ var XcomEnhancedGallery = (function(exports) {
 	}
 	function initializeNonCriticalSystems() {
 		try {
-						warmupNonCriticalServices();
-					} catch (error$1) {
+			void 0;
+			warmupNonCriticalServices();
+			void 0;
+		} catch (error$1) {
 			logger.warn("Error during non-critical system initialization:", error$1);
 		}
 	}
@@ -12431,7 +12698,8 @@ var XcomEnhancedGallery = (function(exports) {
 	}
 	async function cleanup() {
 		try {
-						tearDownGlobalEventHandlers();
+			void 0;
+			tearDownGlobalEventHandlers();
 			await runOptionalCleanup("Gallery cleanup", async () => {
 				if (!lifecycleState.galleryApp) return;
 				await lifecycleState.galleryApp.cleanup();
@@ -12448,23 +12716,28 @@ var XcomEnhancedGallery = (function(exports) {
 				GlobalErrorHandler$1.getInstance().destroy();
 			}, debugCleanupLog);
 			lifecycleState.started = false;
-					} catch (error$1) {
+			void 0;
+		} catch (error$1) {
 			bootstrapErrorReporter.error(error$1, { code: "CLEANUP_FAILED" });
 			throw error$1;
 		}
 	}
 	async function startApplication() {
 		if (lifecycleState.started) {
-						return;
+			void 0;
+			return;
 		}
 		if (lifecycleState.startPromise) {
-						return lifecycleState.startPromise;
+			void 0;
+			return lifecycleState.startPromise;
 		}
 		lifecycleState.startPromise = (async () => {
-						await runBootstrapStages();
+			void 0;
+			await runBootstrapStages();
 			triggerPreloadStrategy();
 			lifecycleState.started = true;
-					})().catch((error$1) => {
+			void 0;
+		})().catch((error$1) => {
 			bootstrapErrorReporter.error(error$1, {
 				code: "APP_INIT_FAILED",
 				metadata: { leanMode: true }
@@ -12476,17 +12749,14 @@ var XcomEnhancedGallery = (function(exports) {
 	}
 	async function initializeGallery() {
 		try {
-						lifecycleState.galleryApp = await initializeGalleryApp();
-					} catch (error$1) {
+			void 0;
+			lifecycleState.galleryApp = await initializeGalleryApp();
+			void 0;
+		} catch (error$1) {
 			galleryErrorReporter.critical(error$1, { code: "GALLERY_INIT_FAILED" });
 		}
 	}
 	startApplication();
-	var main_default = {
-		start: startApplication,
-		createConfig: createAppConfig,
-		cleanup
-	};
 
 	return exports;
 })({});
