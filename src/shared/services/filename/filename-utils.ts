@@ -158,8 +158,7 @@ export function generateMediaFilename(media: MediaInfo, options: FilenameOptions
       return sanitize(media.filename);
     }
 
-    const originalUrl = (media as unknown as { originalUrl?: string }).originalUrl;
-    const extension = options.extension ?? getExtension(originalUrl ?? media.url);
+    const extension = options.extension ?? getExtension(media.originalUrl ?? media.url);
     const index = getIndexFromMediaId(media.id) ?? normalizeIndex(options.index);
     const { username, tweetId } = resolveMetadata(media, options.fallbackUsername);
 

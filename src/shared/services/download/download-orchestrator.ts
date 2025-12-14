@@ -160,7 +160,8 @@ export class DownloadOrchestrator {
         };
       }
 
-      const zipBlob = new Blob([result.zipData as unknown as BlobPart], {
+      // Uint8Array is a valid BlobPart; explicit cast required for TypeScript strict mode
+      const zipBlob = new Blob([result.zipData as BlobPart], {
         type: 'application/zip',
       });
       const filename = options.zipFilename || generateZipFilename(mediaItems);

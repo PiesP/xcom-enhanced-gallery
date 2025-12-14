@@ -80,18 +80,18 @@ export class ThemeService implements ThemeServiceContract {
     this.applyCurrentTheme(true);
 
     // Schedule async restore to match legacy behavior
-    Promise.resolve()
-      .then(async () => {
+    void (async () => {
+      try {
         const saved = await this.loadThemeAsync();
         if (saved && saved !== this.themeSetting) {
           this.themeSetting = saved;
           this.applyCurrentTheme(true);
         }
         this.initializeSystemDetection();
-      })
-      .catch((error) => {
+      } catch (error) {
         logger.warn('[ThemeService] Async theme restore failed', error);
-      });
+      }
+    })();
   }
 
   /** Initialize service (idempotent, fail-fast on error) */

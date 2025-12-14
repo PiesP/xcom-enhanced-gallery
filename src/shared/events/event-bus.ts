@@ -45,12 +45,7 @@ import { createLifecycle } from '@shared/services/lifecycle';
 import { createSingleton } from '@shared/utils/types/singleton';
 
 // Import specialized modules
-import {
-  AppEventManager,
-  type AppEventMap,
-  type AppEventOptions,
-  createTypedEventEmitter,
-} from './app-events';
+import { AppEventManager, type AppEventMap, type AppEventOptions } from './app-events';
 import { DOMEventManager, type DOMListenerOptions } from './dom-events';
 import { SubscriptionManager, type SubscriptionStats } from './event-context';
 
@@ -59,7 +54,6 @@ import { SubscriptionManager, type SubscriptionStats } from './event-context';
 // ============================================================================
 
 export type { AppEventMap, AppEventOptions, DOMListenerOptions, SubscriptionStats };
-export { createTypedEventEmitter };
 
 // ============================================================================
 // Unified Event Bus Implementation

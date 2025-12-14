@@ -55,7 +55,6 @@ export { DOMEventManager } from './dom-events';
 export {
   type AppEventMap,
   type AppEventOptions,
-  createTypedEventEmitter,
   type DOMListenerOptions,
   EventBus,
   getEventBus,

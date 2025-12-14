@@ -22,7 +22,7 @@
 
 import { Button, type ButtonProps, type ButtonSize } from '@shared/components/ui/Button/Button';
 import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
-import { toAccessor } from '@shared/utils/solid/solid-helpers';
+import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import { createMemo, splitProps } from 'solid-js';
 
 // ============================================================================

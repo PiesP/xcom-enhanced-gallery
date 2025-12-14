@@ -18,7 +18,7 @@ import {
 } from '@shared/hooks';
 import type { ToolbarDataState, ToolbarState } from '@shared/types/toolbar.types';
 import { safeEventPrevent, safeEventPreventAll } from '@shared/utils/events/utils';
-import { toOptionalAccessor, toRequiredAccessor } from '@shared/utils/solid/solid-helpers';
+import { toOptionalAccessor, toRequiredAccessor } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import { clampIndex } from '@shared/utils/types/safety';
 import { createEffect, createMemo, createSignal, mergeProps, on } from 'solid-js';

@@ -97,17 +97,3 @@ export function resetAllServiceInstances(): void {
   LanguageService.resetForTests();
   MediaService.resetForTests();
 }
-
-// ============================================================================
-// Convenience Exports (Getter-based for lazy initialization)
-// ============================================================================
-
-/**
- * Direct service accessors - these are getter functions, not instances.
- * This ensures lazy initialization and allows for test mocking.
- */
-export {
-  getLanguageServiceInstance as languageService,
-  getMediaServiceInstance as mediaService,
-  getThemeServiceInstance as themeService,
-};

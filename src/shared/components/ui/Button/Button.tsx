@@ -7,7 +7,7 @@
 
 import type { JSXElement } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
-import { toAccessor } from '@shared/utils/solid/solid-helpers';
+import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import {
   createEffect,
