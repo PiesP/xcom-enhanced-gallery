@@ -8,6 +8,16 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.1] - 2025-12-14
+
+### Fixed
+
+- **Gallery Open Race Condition**: Fixed a critical bug where clicking an image would not open the gallery on the first attempt. The issue was caused by signal update ordering within `batch()` operations - `isOpen` was being set before `mediaItems`, causing `GalleryRenderer` subscribers to see an empty media array and skip rendering.
+
+### Changed
+
+- **Signal Update Order Documentation**: Added explicit documentation and helper function (`applyGalleryStateUpdate`) to enforce correct signal update order. The `GALLERY_SIGNAL_UPDATE_ORDER` constant now clearly defines that `isOpen` must always be updated last to prevent race conditions with subscribers.
+
 ## [1.2.0] - 2025-12-14
 
 ### Added

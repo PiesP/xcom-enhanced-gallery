@@ -1,6 +1,6 @@
 /**
  * @fileoverview Gallery State Management
- * @version 3.0.0 - Phase: State Management Simplification
+ * @version 3.1.0 - Phase: Signal Update Order Fix
  *
  * Gallery state management using fine-grained signals.
  * Refactored to use modular state management:
@@ -8,6 +8,9 @@
  * - ui.state.ts for UI state (loading, error, viewMode)
  *
  * This file maintains backward compatibility while delegating to specialized modules.
+ *
+ * IMPORTANT: Signal update order within batch() operations is critical.
+ * See GALLERY_SIGNAL_UPDATE_ORDER and applyGalleryStateUpdate for details.
  */
 
 import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
