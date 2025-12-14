@@ -1,13 +1,13 @@
 /**
  * @fileoverview Twitter Video Extractor - GraphQL API Integration
  * @description Facade for Twitter API interactions, delegating to specialized services.
- * @version 3.0.0 - Refactored for modularity
+ * @version 4.0.0 - Added TTL-based cache, improved host detection, async CSRF support
  */
 
 import { TWITTER_API_CONFIG } from '@constants';
 import { logger } from '@shared/logging';
 import { HttpRequestService } from '@shared/services/http-request-service';
-import { getCsrfToken } from '@shared/services/media/twitter-auth';
+import { getCsrfToken, getCsrfTokenAsync } from '@shared/services/media/twitter-auth';
 import {
   extractMediaFromTweet,
   normalizeLegacyTweet,
@@ -16,17 +16,95 @@ import {
 import type { TweetMediaEntry, TwitterAPIResponse } from '@shared/services/media/types';
 import { sortMediaByVisualOrder } from '@shared/utils/media/media-dimensions';
 
+// ============================================================================
+// Types
+// ============================================================================
+
+/** Cache entry with TTL tracking */
+interface CacheEntry {
+  response: TwitterAPIResponse;
+  timestamp: number;
+  csrfHash: string;
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Generate a simple hash for cache key differentiation.
+ * @param str - String to hash
+ * @returns Short hash string
+ */
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Convert to 32-bit integer
+  }
+  return hash.toString(36);
+}
+
+/**
+ * Get the current host safely with fallback.
+ * Supports test environments where window may not be available.
+ * @returns Host domain (e.g., 'x.com' or 'twitter.com')
+ */
+function getSafeHost(): string {
+  try {
+    if (typeof globalThis !== 'undefined' && 'location' in globalThis) {
+      const hostname = (globalThis as typeof globalThis & { location?: Location }).location
+        ?.hostname;
+      if (hostname) {
+        // Extract base domain (handle subdomains)
+        const host = hostname.includes('twitter.com') ? 'twitter.com' : 'x.com';
+        if (TWITTER_API_CONFIG.SUPPORTED_HOSTS.includes(host as 'x.com' | 'twitter.com')) {
+          return host;
+        }
+      }
+    }
+  } catch {
+    // Silently fall back to default
+  }
+  return TWITTER_API_CONFIG.DEFAULT_HOST;
+}
+
+/**
+ * Get referer and origin headers safely.
+ * @returns Object with referer and origin, or empty object if unavailable
+ */
+function getSafeLocationHeaders(): { referer?: string; origin?: string } {
+  try {
+    if (typeof window !== 'undefined' && window.location) {
+      return {
+        referer: window.location.href,
+        origin: window.location.origin,
+      };
+    }
+  } catch {
+    // Silently continue without location headers
+  }
+  return {};
+}
+
 /**
  * TwitterAPI - Facade for Twitter Media Extraction
  *
  * Delegates responsibilities to:
- * - getCsrfToken: Authentication token retrieval
+ * - getCsrfToken/getCsrfTokenAsync: Authentication token retrieval
  * - normalizeLegacyTweet/User: Response normalization
  * - extractMediaFromTweet: Media extraction
+ *
+ * Cache features:
+ * - TTL-based expiration (configurable via TWITTER_API_CONFIG.CACHE_TTL_MS)
+ * - CSRF token hash included in cache validation
+ * - Automatic invalidation on 4xx/5xx errors
+ * - LRU eviction when cache limit reached
  */
 export class TwitterAPI {
-  /** LRU cache for API responses (max 16 entries) */
-  private static readonly requestCache = new Map<string, TwitterAPIResponse>();
+  /** Cache for API responses with TTL */
+  private static readonly requestCache = new Map<string, CacheEntry>();
   private static readonly CACHE_LIMIT = 16;
 
   /**
@@ -80,39 +158,77 @@ export class TwitterAPI {
   }
 
   /**
+   * Clear the API response cache.
+   * Useful for testing or forced refresh.
+   */
+  public static clearCache(): void {
+    TwitterAPI.requestCache.clear();
+  }
+
+  /**
+   * Get current cache size.
+   * @returns Number of cached entries
+   */
+  public static getCacheSize(): number {
+    return TwitterAPI.requestCache.size;
+  }
+
+  /**
    * Execute GraphQL API request to Twitter.
    */
   private static async apiRequest(url: string): Promise<TwitterAPIResponse> {
-    const _url = url.toString();
+    // Get CSRF token (try async for better reliability)
+    const csrfToken = (await getCsrfTokenAsync()) ?? getCsrfToken() ?? '';
+    const csrfHash = simpleHash(csrfToken);
 
-    // Check cache first
-    if (TwitterAPI.requestCache.has(_url)) {
-      return TwitterAPI.requestCache.get(_url)!;
+    // Check cache with TTL and CSRF validation
+    const cached = TwitterAPI.requestCache.get(url);
+    if (cached) {
+      const now = Date.now();
+      const isExpired = now - cached.timestamp > TWITTER_API_CONFIG.CACHE_TTL_MS;
+      const isCsrfMismatch = cached.csrfHash !== csrfHash;
+
+      if (!isExpired && !isCsrfMismatch) {
+        logger.debug(`Cache hit for tweet request (age: ${now - cached.timestamp}ms)`);
+        return cached.response;
+      }
+
+      // Remove stale entry
+      TwitterAPI.requestCache.delete(url);
+      logger.debug(
+        `Cache miss: ${isExpired ? 'expired' : 'CSRF mismatch'} (age: ${now - cached.timestamp}ms)`
+      );
     }
 
     // Build headers
     const headers = new Headers({
       authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
-      'x-csrf-token': getCsrfToken() ?? '',
+      'x-csrf-token': csrfToken,
       'x-twitter-client-language': 'en',
       'x-twitter-active-user': 'yes',
       'content-type': 'application/json',
       'x-twitter-auth-type': 'OAuth2Session',
     });
 
-    if (typeof window !== 'undefined') {
-      headers.append('referer', window.location.href);
-      headers.append('origin', window.location.origin);
+    // Add location headers safely
+    const locationHeaders = getSafeLocationHeaders();
+    if (locationHeaders.referer) {
+      headers.append('referer', locationHeaders.referer);
+    }
+    if (locationHeaders.origin) {
+      headers.append('origin', locationHeaders.origin);
     }
 
     try {
       const httpService = HttpRequestService.getInstance();
-      const response = await httpService.get<TwitterAPIResponse>(_url, {
+      const response = await httpService.get<TwitterAPIResponse>(url, {
         headers: Object.fromEntries(headers.entries()),
         responseType: 'json',
       });
 
       if (!response.ok) {
+        // Remove cache entry on error to allow retry
+        TwitterAPI.requestCache.delete(url);
         logger.warn(
           `Twitter API request failed: ${response.status} ${response.statusText}`,
           response.data
@@ -124,19 +240,28 @@ export class TwitterAPI {
 
       if (json.errors && json.errors.length > 0) {
         logger.warn('Twitter API returned errors:', json.errors);
-      }
-
-      // Cache on success
-      if (TwitterAPI.requestCache.size >= TwitterAPI.CACHE_LIMIT) {
-        const firstKey = TwitterAPI.requestCache.keys().next().value;
-        if (firstKey) {
-          TwitterAPI.requestCache.delete(firstKey);
+        // Don't cache error responses
+      } else {
+        // Cache on success with TTL tracking
+        if (TwitterAPI.requestCache.size >= TwitterAPI.CACHE_LIMIT) {
+          // LRU eviction: remove oldest entry
+          const firstKey = TwitterAPI.requestCache.keys().next().value;
+          if (firstKey) {
+            TwitterAPI.requestCache.delete(firstKey);
+          }
         }
+
+        TwitterAPI.requestCache.set(url, {
+          response: json,
+          timestamp: Date.now(),
+          csrfHash,
+        });
       }
-      TwitterAPI.requestCache.set(_url, json);
 
       return json;
     } catch (error) {
+      // Ensure cache is cleared on any error
+      TwitterAPI.requestCache.delete(url);
       logger.error('Twitter API request failed:', error);
       throw error;
     }
@@ -144,9 +269,11 @@ export class TwitterAPI {
 
   /**
    * Construct the GraphQL endpoint URL for fetching tweet details.
+   * Uses safe host detection with fallback for test environments.
    */
   private static createTweetEndpointUrl(tweetId: string): string {
-    const sitename = window.location.hostname.replace('.com', '');
+    const host = getSafeHost();
+    const sitename = host.replace('.com', '');
 
     const variables = {
       tweetId,

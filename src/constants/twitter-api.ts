@@ -10,4 +10,10 @@ export const TWITTER_API_CONFIG = {
   TWEET_RESULT_BY_REST_ID_QUERY_ID: 'zAz9764BcLZOJ0JU2wrd1A',
   /** User information lookup query ID */
   USER_BY_SCREEN_NAME_QUERY_ID: '1VOOyvKkiI3FMmkeDNxM9A',
+  /** Supported host domains for API requests */
+  SUPPORTED_HOSTS: ['x.com', 'twitter.com'] as const,
+  /** Default host for API requests (fallback) */
+  DEFAULT_HOST: 'x.com',
+  /** Cache TTL in milliseconds (2 minutes) */
+  CACHE_TTL_MS: 120_000,
 } as const;

@@ -140,19 +140,23 @@ export class HttpRequestService {
             });
           },
           onerror: (response) => {
-            reject(
-              new HttpError(
-                response.statusText || 'Network Error',
-                response.status,
-                response.statusText
-              )
-            );
+            const status = response.status ?? 0;
+            const statusText = response.statusText || 'Network Error';
+            const errorMessage =
+              status === 0
+                ? `Network error: Unable to connect to ${url} (CORS, network failure, or blocked request)`
+                : `HTTP ${status}: ${statusText}`;
+
+            reject(new HttpError(errorMessage, status, statusText));
           },
           ontimeout: () => {
-            reject(new HttpError('Request timeout', 0, 'Timeout'));
+            const timeoutMs = options?.timeout ?? this.defaultTimeout;
+            reject(
+              new HttpError(`Request timed out after ${timeoutMs}ms for ${url}`, 0, 'Timeout')
+            );
           },
           onabort: () => {
-            reject(new Error('Request was aborted'));
+            reject(new Error(`Request was aborted for ${url}`));
           },
         };
 

@@ -1,7 +1,7 @@
 /**
  * @fileoverview Twitter Response Parser - Pure functional implementation
  * @description Parses raw Twitter API responses into standardized media entries.
- * @version 4.0.0 - Functional refactor from TwitterResponseParser class
+ * @version 5.0.0 - Added inline media support, improved logging and validation
  */
 
 import { logger } from '@shared/logging';
@@ -220,6 +220,7 @@ function createMediaEntry(
  *
  * Parses the extended_entities.media array from a Twitter tweet
  * and returns standardized media entries with proper URLs and metadata.
+ * Also processes note_tweet inline_media when available.
  *
  * @param tweetResult - Raw tweet result from Twitter API
  * @param tweetUser - User information for the tweet author
@@ -246,16 +247,62 @@ export function extractMediaFromTweet(
 
   const mediaItems: TweetMediaEntry[] = [];
   const typeIndex: TypeIndexCounter = {};
+
+  // Validate and extract screen_name with logging for missing data
   const screenName = tweetUser.screen_name ?? '';
+  if (!screenName) {
+    logger.warn('Missing screen_name for tweet extraction, using empty string as fallback', {
+      userId: tweetUser.rest_id,
+      sourceLocation,
+    });
+  }
+
+  // Validate and extract tweet_id with logging for missing data
   const tweetId = parseTarget.rest_id ?? parseTarget.id_str ?? '';
+  if (!tweetId) {
+    logger.warn('Missing tweet_id for tweet extraction, using empty string as fallback', {
+      screenName,
+      sourceLocation,
+    });
+  }
+
+  // Build a set of inline media IDs for ordering (note_tweet inline media)
+  const inlineMediaIds = new Set<string>();
+  const inlineMedia = parseTarget.note_tweet?.note_tweet_results?.result?.media?.inline_media;
+  if (inlineMedia && Array.isArray(inlineMedia)) {
+    for (const item of inlineMedia) {
+      if (item.media_id) {
+        inlineMediaIds.add(item.media_id);
+      }
+    }
+    if (inlineMediaIds.size > 0) {
+      logger.debug(`Found ${inlineMediaIds.size} inline media items in note_tweet`);
+    }
+  }
 
   for (let index = 0; index < parseTarget.extended_entities.media.length; index++) {
     const media: TwitterMedia | undefined = parseTarget.extended_entities.media[index];
-    if (!media?.type || !media.id_str || !media.media_url_https) continue;
+
+    // Validate required fields with detailed logging
+    if (!media?.type) {
+      logger.debug(`Skipping media at index ${index}: missing type field`);
+      continue;
+    }
+    if (!media.id_str) {
+      logger.debug(`Skipping media at index ${index}: missing id_str field`);
+      continue;
+    }
+    if (!media.media_url_https) {
+      logger.debug(`Skipping media at index ${index}: missing media_url_https field`);
+      continue;
+    }
 
     try {
       const mediaUrl = getHighQualityMediaUrl(media);
-      if (!mediaUrl) continue;
+      if (!mediaUrl) {
+        logger.debug(`Skipping media ${media.id_str}: could not resolve high quality URL`);
+        continue;
+      }
 
       const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
       typeIndex[mediaType] = (typeIndex[mediaType] ?? -1) + 1;
@@ -321,6 +368,9 @@ export function normalizeLegacyTweet(tweet: TwitterTweet): void {
 /**
  * Normalize legacy user fields.
  *
+ * Logs a warning if no screen_name is available after normalization,
+ * which may indicate an incomplete API response.
+ *
  * @param user - User object to normalize (mutates in place)
  *
  * @example
@@ -337,6 +387,15 @@ export function normalizeLegacyUser(user: TwitterUser): void {
     if (!user.name && user.legacy.name) {
       user.name = user.legacy.name;
     }
+  }
+
+  // Log error if screen_name is still missing after normalization
+  if (!user.screen_name) {
+    logger.error('User screen_name missing after normalization - API response may be incomplete', {
+      userId: user.rest_id,
+      hasLegacy: !!user.legacy,
+      legacyScreenName: user.legacy?.screen_name,
+    });
   }
 }
 

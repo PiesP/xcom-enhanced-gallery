@@ -1,6 +1,7 @@
 /**
  * Twitter Media Types and API Response Structures
  * @module @shared/services/media/types
+ * @version 2.0.0 - Added inline media types for note_tweet support
  */
 
 /** Twitter API response envelope */
@@ -11,6 +12,12 @@ export interface TwitterAPIResponse {
     };
   };
   errors?: Array<{ message: string; code: number; [key: string]: unknown }>;
+}
+
+/** Inline media reference in note_tweet */
+export interface TwitterInlineMedia {
+  media_id: string;
+  index: number;
 }
 
 /** Tweet data structure */
@@ -42,7 +49,9 @@ export interface TwitterTweet {
           user_mentions?: Array<{ screen_name: string }>;
         };
         richtext?: { richtext_tags?: Array<unknown> };
-        media?: { inline_media?: Array<unknown> };
+        media?: {
+          inline_media?: TwitterInlineMedia[];
+        };
       };
     };
   };
