@@ -49,8 +49,7 @@ export function resolveNestedPath<T = unknown>(source: unknown, path: string): T
 
   const keys = path.split('.');
 
-  // biome-ignore lint/suspicious/noExplicitAny: Dynamic path traversal requires any type
-  let current: any = source;
+  let current: unknown = source;
 
   for (const key of keys) {
     // Guard against prototype pollution
@@ -60,7 +59,7 @@ export function resolveNestedPath<T = unknown>(source: unknown, path: string): T
     if (current === null || typeof current !== 'object') {
       return undefined;
     }
-    current = current[key];
+    current = (current as Record<string, unknown>)[key];
   }
 
   return current as T | undefined;
@@ -103,8 +102,7 @@ export function assignNestedPath<T = unknown>(
 
   const createIntermediate = options?.createIntermediate !== false;
 
-  // biome-ignore lint/suspicious/noExplicitAny: Dynamic path traversal requires any type
-  let current: any = target;
+  let current: Record<string, unknown> = target as Record<string, unknown>;
 
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
@@ -129,7 +127,7 @@ export function assignNestedPath<T = unknown>(
       });
       current = newObj;
     } else {
-      current = existingValue;
+      current = existingValue as Record<string, unknown>;
     }
   }
 

@@ -17,7 +17,7 @@ let rendererRegistrationTask: Promise<void> | null = null;
 async function registerRenderer(): Promise<void> {
   if (!rendererRegistrationTask) {
     rendererRegistrationTask = (async () => {
-      const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
+      const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer.tsx');
       registerGalleryRenderer(new GalleryRenderer());
     })().finally(() => {
       rendererRegistrationTask = null;
