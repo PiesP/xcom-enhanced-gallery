@@ -44,11 +44,17 @@ export class CoreService {
 
   public register<T>(key: string, instance: T, options?: { allowOverride?: boolean }): void {
     const allowOverride = options?.allowOverride ?? false;
-    if (this.services.has(key) && !allowOverride) {
-      logger.warn(
-        `[CoreService] Service key "${key}" already registered. ` +
-          `Use { allowOverride: true } to replace existing service.`
-      );
+    if (this.services.has(key)) {
+      if (!allowOverride) {
+        // Silently skip duplicate registration to preserve existing instance
+        if (__DEV__) {
+          logger.debug(
+            `[CoreService] Service key "${key}" already registered, skipping. ` +
+              `Use { allowOverride: true } to replace existing service.`
+          );
+        }
+        return;
+      }
     }
     this.services.set(key, instance);
   }

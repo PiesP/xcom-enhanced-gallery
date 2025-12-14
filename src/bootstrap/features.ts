@@ -90,34 +90,6 @@ const debug = (message: string) => {
   logger.debug(message);
 };
 
-/**
- * Feature Loader definition
- * Phase 346: Declarative loader pattern
- */
-export interface FeatureLoader {
-  flag: FeatureKey;
-  name: string;
-  load: () => Promise<void>;
-  devOnly?: boolean;
-}
-
-/**
- * Feature Loaders array
- * Phase 346: Declarative definition to eliminate duplicate code
- */
-const featureLoaders: FeatureLoader[] = [];
-
-export function registerFeatureLoader(loader: FeatureLoader): void {
-  featureLoaders.push(loader);
-}
-
-/**
- * @internal Used exclusively by tests to ensure isolation
- */
-export function resetFeatureLoaders(): void {
-  featureLoaders.splice(0, featureLoaders.length);
-}
-
 const DEFAULT_FEATURE_SETTINGS: Readonly<SettingsWithFeatures> = Object.freeze({
   features: { ...DEFAULT_SETTINGS.features },
 });
@@ -168,32 +140,19 @@ async function loadFeatureSettings(): Promise<SettingsWithFeatures> {
  */
 export async function registerFeatureServicesLazy(): Promise<void> {
   try {
-    debug('[features] Registering feature services');
+    debug('[features] Loading feature settings');
 
-    // Load settings
+    // Load and resolve feature states for future use
     const settings = await loadFeatureSettings();
     const featureStates = resolveFeatureStates(settings);
 
-    // Phase 346: Declarative loader pattern
-    for (const loader of featureLoaders) {
-      if (loader.devOnly && !isDevelopmentBuild()) {
-        continue;
-      }
-
-      if (!featureStates[loader.flag]) {
-        debug(`[features] ℹ️ ${loader.name} disabled (${loader.flag}: false)`);
-        continue;
-      }
-
-      try {
-        await loader.load();
-        debug(`[features] ✅ ${loader.name} registered`);
-      } catch (error) {
-        logger.warn(`[features] ⚠️ ${loader.name} registration failed (continuing):`, error);
-      }
+    // Feature states are now available for runtime feature checks
+    // Individual features are loaded on-demand via lazy imports in their respective modules
+    if (__DEV__) {
+      logger.debug('[features] Feature states resolved:', featureStates);
     }
 
-    debug('[features] ✅ Feature services registered');
+    debug('[features] ✅ Feature settings loaded');
   } catch (error) {
     // Phase 343: Standardized error handling (Non-Critical - warn only)
     reportBootstrapError(error, { context: 'features', logger });

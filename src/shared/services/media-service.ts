@@ -26,7 +26,6 @@ export class MediaService {
   private mediaExtraction: MediaExtractionService | null = null;
   private webpSupported: boolean | null = null;
   private readonly prefetchManager = new PrefetchManager(20);
-  private currentAbortController?: AbortController;
 
   constructor(_options: MediaServiceOptions = {}) {
     this.lifecycle = createLifecycle('MediaService', {
@@ -200,12 +199,6 @@ export class MediaService {
     return this.downloadMultiple(Array.from(items), options);
   }
 
-  cancelDownload(): void {
-    this.currentAbortController?.abort();
-  }
-  isDownloading(): boolean {
-    return !!this.currentAbortController;
-  }
   async cleanup(): Promise<void> {
     this.cancelAllPrefetch();
     this.clearPrefetchCache();
