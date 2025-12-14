@@ -13,15 +13,14 @@
  * ```
  */
 
-// biome-ignore lint/suspicious/noExplicitAny: Generic function type requires any for flexibility
-type AnyFunction = (...args: any[]) => void;
-
 /**
- * Debounced function interface
+ * Debounced function interface with cancel and flush capabilities
+ *
+ * @template Args - Tuple type representing function arguments
  */
-export interface DebouncedFunction<T extends AnyFunction> {
+export interface DebouncedFunction<Args extends unknown[]> {
   /** Call the debounced function */
-  (...args: Parameters<T>): void;
+  (...args: Args): void;
   /** Cancel pending execution */
   cancel(): void;
   /** Flush pending execution immediately */
@@ -31,13 +30,17 @@ export interface DebouncedFunction<T extends AnyFunction> {
 /**
  * Create a debounced version of a function
  *
+ * @template Args - Tuple type representing function arguments
  * @param fn - Function to debounce
  * @param delayMs - Delay in milliseconds (default: 300ms)
  * @returns Debounced function with cancel/flush methods
  */
-export function createDebounced<T extends AnyFunction>(fn: T, delayMs = 300): DebouncedFunction<T> {
+export function createDebounced<Args extends unknown[]>(
+  fn: (...args: Args) => void,
+  delayMs = 300
+): DebouncedFunction<Args> {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  let pendingArgs: Parameters<T> | null = null;
+  let pendingArgs: Args | null = null;
 
   const cancel = (): void => {
     if (timeoutId !== null) {
@@ -57,7 +60,7 @@ export function createDebounced<T extends AnyFunction>(fn: T, delayMs = 300): De
     }
   };
 
-  const debounced = ((...args: Parameters<T>): void => {
+  const debounced = ((...args: Args): void => {
     cancel();
     pendingArgs = args;
     timeoutId = setTimeout(() => {
@@ -68,7 +71,7 @@ export function createDebounced<T extends AnyFunction>(fn: T, delayMs = 300): De
         fn(...savedArgs);
       }
     }, delayMs);
-  }) as DebouncedFunction<T>;
+  }) as DebouncedFunction<Args>;
 
   debounced.cancel = cancel;
   debounced.flush = flush;

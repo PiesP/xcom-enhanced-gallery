@@ -38,8 +38,7 @@ export function waitForWindowLoad(): Promise<void> {
   return createWindowLoadPromise();
 }
 
-export function runAfterWindowLoad(callback: WindowLoadCallback): Promise<void> {
-  return waitForWindowLoad()
-    .then(() => Promise.resolve(callback()))
-    .then(() => undefined);
+export async function runAfterWindowLoad(callback: WindowLoadCallback): Promise<void> {
+  await waitForWindowLoad();
+  await callback();
 }

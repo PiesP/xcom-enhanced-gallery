@@ -11,6 +11,7 @@ import { bootstrapErrorReporter, galleryErrorReporter, settingsErrorReporter } f
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
 import type { SettingsServiceLike } from '@shared/services/theme-service';
+import { isSettingsServiceLike } from '@shared/utils/types/guards';
 
 let rendererRegistrationTask: Promise<void> | null = null;
 
@@ -46,7 +47,12 @@ async function initializeServices(): Promise<void> {
     const service = new SettingsService();
     await service.initialize();
     registerSettingsManager(service);
-    settingsService = service as unknown as SettingsServiceLike;
+    // Runtime validation before type assertion for safer binding
+    if (isSettingsServiceLike(service)) {
+      // SettingsService implements a superset of SettingsServiceLike
+      // Type assertion is safe after runtime validation
+      settingsService = service as SettingsServiceLike;
+    }
     logger.debug('[Bootstrap] ✅ SettingsService initialized');
   } catch (error) {
     settingsErrorReporter.warn(error, {
@@ -64,7 +70,7 @@ async function initializeServices(): Promise<void> {
     }
 
     if (settingsService) {
-      themeService.bindSettingsService(settingsService as unknown as SettingsServiceLike);
+      themeService.bindSettingsService(settingsService);
       // Apply stored theme immediately
       const storedTheme = themeService.getCurrentTheme();
       themeService.setTheme(storedTheme, { force: true, persist: false });

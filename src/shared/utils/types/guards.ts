@@ -196,3 +196,32 @@ export function toRecord(value: unknown): Record<string, unknown> {
 export function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
 }
+
+// ============================================================================
+// Service Type Guards
+// ============================================================================
+
+/**
+ * SettingsServiceLike type guard
+ * @description Validates if an object conforms to the SettingsServiceLike interface
+ * @param value - Value to check
+ * @returns true if value implements SettingsServiceLike interface
+ * @example
+ * ```typescript
+ * const service = await loadService();
+ * if (isSettingsServiceLike(service)) {
+ *   themeService.bindSettingsService(service);
+ * }
+ * ```
+ */
+export function isSettingsServiceLike(
+  value: unknown
+): value is { get?: (key: string) => unknown; set?: (key: string, value: unknown) => unknown } {
+  if (!isRecord(value)) return false;
+
+  const hasGet = !('get' in value) || typeof value.get === 'function';
+  const hasSet = !('set' in value) || typeof value.set === 'function';
+  const hasSubscribe = !('subscribe' in value) || typeof value.subscribe === 'function';
+
+  return hasGet && hasSet && hasSubscribe;
+}

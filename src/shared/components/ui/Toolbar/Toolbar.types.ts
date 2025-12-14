@@ -1,6 +1,6 @@
 import type { ToolbarHandlers } from '@shared/components/ui/Toolbar/handler-types';
 import type { FitMode, ViewMode } from '@shared/types';
-import type { MaybeAccessor } from '@shared/utils/solid/solid-helpers';
+import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 
 export type { FitMode, MaybeAccessor };
 export type {

@@ -38,6 +38,7 @@ export interface HttpRequestOptions {
   responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
   data?: unknown;
   signal?: AbortSignal; // for cancellation
+  contentType?: string; // MIME type for request body
 }
 
 /**
@@ -294,7 +295,7 @@ export class HttpRequestService {
       ...options,
       data,
       contentType,
-    } as unknown as HttpRequestOptions);
+    });
   }
 }
 

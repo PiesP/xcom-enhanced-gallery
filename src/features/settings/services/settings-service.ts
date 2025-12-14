@@ -144,10 +144,12 @@ export class SettingsService implements SettingsServiceContract {
     if (!category) {
       this.settings = createDefaultSettings();
     } else if (category in DEFAULT_SETTINGS) {
-      // biome-ignore lint/suspicious/noExplicitAny: Dynamic category key requires type assertion
-      (this.settings as any)[category] = cloneDeep(
-        DEFAULT_SETTINGS[category as keyof typeof DEFAULT_SETTINGS]
-      );
+      // Type-safe category reset with explicit assignment
+      // Using intermediate object to avoid direct index signature issues
+      const defaultValue = DEFAULT_SETTINGS[category as keyof typeof DEFAULT_SETTINGS];
+      if (defaultValue !== undefined) {
+        Object.assign(this.settings, { [category]: cloneDeep(defaultValue) });
+      }
     }
     this.settings.lastModified = Date.now();
     this.refreshFeatureMap();

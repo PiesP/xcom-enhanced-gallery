@@ -3,9 +3,9 @@
  * @description Provides canonical sanitization + policy enforcement for user-controlled URLs
  */
 
-// eslint-disable-next-line no-control-regex
+// Control character regex patterns for URL sanitization
+// These patterns intentionally match control characters (U+0000-U+001F, U+007F)
 export const CONTROL_CHARS_REGEX = /[\u0000-\u001F\u007F]/g;
-// eslint-disable-next-line no-control-regex
 export const SCHEME_WHITESPACE_REGEX = /[\u0000-\u001F\u007F\s]+/g;
 export const EXPLICIT_SCHEME_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
 const MAX_DECODE_ITERATIONS = 3;

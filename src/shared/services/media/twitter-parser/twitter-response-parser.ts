@@ -238,11 +238,9 @@ export function extractMediaFromTweet(
 ): TweetMediaEntry[] {
   // Allow parsing quoted tweet content by using quoted_status_result.result
   // when sourceLocation is 'quoted' and a quoted result is present.
-  const quotedResult = (
-    tweetResult as unknown as { quoted_status_result?: { result?: TwitterTweet } }
-  ).quoted_status_result?.result;
+  const quotedResult = tweetResult.quoted_status_result?.result;
   const parseTarget: TwitterTweet =
-    sourceLocation === 'quoted' && quotedResult ? (quotedResult as TwitterTweet) : tweetResult;
+    sourceLocation === 'quoted' && quotedResult ? quotedResult : tweetResult;
 
   if (!parseTarget.extended_entities?.media) return [];
 
