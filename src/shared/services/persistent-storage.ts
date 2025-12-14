@@ -59,18 +59,20 @@ export class PersistentStorage {
     }
   }
 
+  /**
+   * Synchronous storage access via UserscriptAPI adapter.
+   *
+   * [WARNING] Only reliable in Tampermonkey and Violentmonkey.
+   * Greasemonkey 4+ uses async-only storage - returns defaultValue.
+   * Use ONLY for critical initialization paths (e.g., theme to prevent FOUC).
+   */
   getSync<T>(key: string, defaultValue?: T): T | undefined {
     try {
-      // Direct GM access for sync - prefer global, fallback to window
-      const gmGetValue = typeof GM_getValue !== 'undefined' ? GM_getValue : window.GM_getValue;
-      if (!gmGetValue) return defaultValue;
-
-      const value = gmGetValue(key);
-      if (value instanceof Promise) return defaultValue;
+      const value = this.userscript.getValueSync<string>(key);
       if (value === undefined || value === null) return defaultValue;
 
       try {
-        return JSON.parse(value as string) as T;
+        return JSON.parse(value) as T;
       } catch {
         return value as unknown as T;
       }

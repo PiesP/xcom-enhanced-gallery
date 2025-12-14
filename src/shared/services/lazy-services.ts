@@ -47,10 +47,6 @@ export async function ensureDownloadServiceRegistered(): Promise<void> {
     // Register primary key
     serviceManager.register(SERVICE_KEYS.GALLERY_DOWNLOAD, downloadService);
 
-    // Register deprecated alias for backward compatibility
-    // TODO: Remove BULK_DOWNLOAD registration in v2.0.0
-    serviceManager.register(SERVICE_KEYS.BULK_DOWNLOAD, downloadService);
-
     downloadServiceRegistered = true;
     logger.info('✅ DownloadService lazily registered (first download)');
   } catch (error) {

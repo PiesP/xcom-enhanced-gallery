@@ -28,6 +28,7 @@
 import type { CookieAPI } from '@shared/types/core/cookie.types';
 import type {
   BrowserEnvironment,
+  GMNotificationDetails,
   GMXMLHttpRequestControl,
   GMXMLHttpRequestDetails,
 } from '@shared/types/core/userscript';
@@ -44,10 +45,30 @@ export interface UserscriptAPI {
   download(url: string, filename: string): Promise<void>;
   setValue(key: string, value: unknown): Promise<void>;
   getValue<T>(key: string, defaultValue?: T): Promise<T | undefined>;
+  /**
+   * Synchronous value retrieval for critical path initialization.
+   *
+   * [WARNING] This method only works reliably in Tampermonkey and Violentmonkey.
+   * Greasemonkey 4+ uses async-only storage - this method will return defaultValue.
+   * Use this ONLY when sync access is absolutely required (e.g., theme initialization
+   * to prevent flash of unstyled content).
+   *
+   * @param key - Storage key
+   * @param defaultValue - Fallback value if key doesn't exist or sync unavailable
+   * @returns Stored value or defaultValue
+   */
+  getValueSync<T>(key: string, defaultValue?: T): T | undefined;
   deleteValue(key: string): Promise<void>;
   listValues(): Promise<string[]>;
   addStyle(css: string): HTMLStyleElement;
   xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl;
+  /**
+   * Display a notification via the userscript manager's native notification system.
+   * Silently ignores the call if GM_notification is not available.
+   *
+   * @param details - Notification configuration
+   */
+  notification(details: GMNotificationDetails): void;
   readonly cookie: CookieAPI | undefined;
 }
 
@@ -73,6 +94,7 @@ interface GlobalWithGM {
   GM_listValues?: () => Promise<string[]> | string[];
   GM_addStyle?: (css: string) => HTMLStyleElement;
   GM_xmlhttpRequest?: (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl;
+  GM_notification?: (details: GMNotificationDetails, ondone?: () => void) => void;
   GM_cookie?: CookieAPI;
 }
 
@@ -197,6 +219,12 @@ export function getUserscript(): UserscriptAPI {
       : global.GM_cookie && typeof global.GM_cookie.list === 'function'
         ? global.GM_cookie
         : undefined;
+  const gmNotification =
+    typeof GM_notification !== 'undefined'
+      ? GM_notification
+      : typeof global.GM_notification === 'function'
+        ? global.GM_notification
+        : undefined;
 
   const hasGM = Boolean(gmDownload || (gmSetValue && gmGetValue) || gmXmlHttpRequest);
 
@@ -221,6 +249,22 @@ export function getUserscript(): UserscriptAPI {
       return value as T | undefined;
     },
 
+    /**
+     * Synchronous value retrieval - only reliable in Tampermonkey/Violentmonkey.
+     * Returns defaultValue if: async-only environment, value is Promise, or unavailable.
+     */
+    getValueSync<T>(key: string, defaultValue?: T): T | undefined {
+      if (!gmGetValue) return defaultValue;
+      try {
+        const value = gmGetValue(key, defaultValue);
+        // If the result is a Promise, sync access is not supported (e.g., Greasemonkey 4+)
+        if (value instanceof Promise) return defaultValue;
+        return value as T | undefined;
+      } catch {
+        return defaultValue;
+      }
+    },
+
     async deleteValue(key: string): Promise<void> {
       const fn = assertFunction(gmDeleteValue, ERROR_MESSAGES.deleteValue);
       await Promise.resolve(fn(key));
@@ -240,6 +284,15 @@ export function getUserscript(): UserscriptAPI {
     xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
       const fn = assertFunction(gmXmlHttpRequest, ERROR_MESSAGES.xmlHttpRequest);
       return fn(details);
+    },
+
+    notification(details: GMNotificationDetails): void {
+      if (!gmNotification) return; // Silent no-op when unavailable
+      try {
+        gmNotification(details, undefined);
+      } catch {
+        // Silently ignore notification failures
+      }
     },
 
     cookie: gmCookie,

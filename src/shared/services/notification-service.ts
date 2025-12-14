@@ -1,9 +1,10 @@
 /**
  * @fileoverview Lean NotificationService
- * Simplified: Only uses Tampermonkey GM_notification when available. No console or UI fallbacks.
+ * Simplified: Only uses Tampermonkey GM_notification when available via UserscriptAPI adapter.
+ * No console or UI fallbacks.
  */
+import { getUserscript } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
-import type { GMNotificationDetails } from '@shared/types/core/userscript';
 import { createSingleton } from '@shared/utils/types/singleton';
 
 export interface NotificationOptions {
@@ -14,12 +15,10 @@ export interface NotificationOptions {
   onclick?: () => void;
 }
 
-interface GlobalWithGMNotification {
-  GM_notification?: (details: GMNotificationDetails, ondone?: () => void) => void;
-}
-
 export class NotificationService {
   private static readonly singleton = createSingleton(() => new NotificationService());
+  private readonly userscript = getUserscript();
+
   private constructor() {}
 
   static getInstance(): NotificationService {
@@ -31,43 +30,17 @@ export class NotificationService {
     NotificationService.singleton.reset();
   }
 
-  private gmNotify(options: NotificationOptions): void {
-    const gm = (globalThis as GlobalWithGMNotification).GM_notification;
-    if (!gm) return; // silent in lean mode
-    try {
-      const details: GMNotificationDetails = {
-        title: options.title,
-      };
-
-      if (typeof options.text !== 'undefined') {
-        details.text = options.text;
-      }
-      if (typeof options.image !== 'undefined') {
-        details.image = options.image;
-      }
-      if (typeof options.timeout !== 'undefined') {
-        details.timeout = options.timeout;
-      }
-      if (typeof options.onclick === 'function') {
-        details.onclick = options.onclick;
-      }
-
-      gm(details, undefined);
-    } catch (e) {
-      logger.warn('[NotificationService] GM_notification failed (silent lean mode)', e);
-    }
-  }
-
   async show(options: NotificationOptions): Promise<void> {
-    const gm = (globalThis as GlobalWithGMNotification).GM_notification;
-    if (!gm) {
-      // Lean: silently ignore when GM_notification is not available
-      logger.debug(`Notification skipped (no GM_notification): ${options.title}`);
-      return;
-    }
-
-    this.gmNotify(options);
-    logger.debug(`Notification (gm): ${options.title}`);
+    // Use UserscriptAPI adapter for GM_notification access
+    // The adapter silently handles unavailability
+    this.userscript.notification({
+      title: options.title,
+      text: options.text,
+      image: options.image,
+      timeout: options.timeout,
+      onclick: options.onclick,
+    });
+    logger.debug(`Notification: ${options.title}`);
   }
 
   async error(title: string, text?: string, timeout = 5000): Promise<void> {
