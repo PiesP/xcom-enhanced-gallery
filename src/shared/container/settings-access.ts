@@ -11,9 +11,6 @@
  *
  * @example
  * ```typescript
- * // Legacy string-based access (still supported)
- * const count = getSetting<number>('gallery.preloadCount', 0);
- *
  * // NEW: Type-safe access with autocomplete
  * import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
  * const count = getTypedSettingOr('gallery.preloadCount', 0); // Infers number

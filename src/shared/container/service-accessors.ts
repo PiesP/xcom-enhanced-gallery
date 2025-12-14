@@ -1,5 +1,6 @@
 import { SERVICE_KEYS } from '@constants';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
+import type { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
 import type { LanguageService } from '@shared/services/language-service';
 import type { MediaService } from '@shared/services/media-service';
 import { CoreService } from '@shared/services/service-manager';
@@ -125,6 +126,12 @@ export function getGalleryRenderer(): GalleryRenderer {
  * await orchestrator.downloadSingle(mediaInfo);
  */
 export async function getDownloadOrchestrator() {
+  // Check CoreService first for test mocks
+  const coreService = CoreService.getInstance();
+  if (coreService.has(SERVICE_KEYS.GALLERY_DOWNLOAD)) {
+    return coreService.get<DownloadOrchestrator>(SERVICE_KEYS.GALLERY_DOWNLOAD);
+  }
+
   const { ensureDownloadServiceRegistered } = await import('@shared/services/lazy-services');
   await ensureDownloadServiceRegistered();
 

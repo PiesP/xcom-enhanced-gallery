@@ -3,16 +3,18 @@
  * @description Handles rendering and lifecycle of the gallery component
  */
 
-import { SERVICE_KEYS } from '@constants';
 import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';
 import { GalleryContainer } from '@shared/components/isolation';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
-import { getLanguageService, getThemeService } from '@shared/container/service-accessors';
+import {
+  getDownloadOrchestrator,
+  getLanguageService,
+  getThemeService,
+} from '@shared/container/service-accessors';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces';
 import { logger } from '@shared/logging';
 import type { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
-import { CoreService } from '@shared/services/service-manager';
 import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
 import {
   closeGallery,
@@ -180,19 +182,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
    * This enables code splitting - download code is only loaded when user initiates a download.
    */
   private async getDownloadService(): Promise<DownloadOrchestrator> {
-    // Prefer already registered service in CoreService for testability
-    const serviceManager = CoreService.getInstance();
-    const preRegistered = serviceManager.tryGet<DownloadOrchestrator>(
-      SERVICE_KEYS.GALLERY_DOWNLOAD
-    );
-    if (preRegistered) return preRegistered;
-
-    const { ensureDownloadServiceRegistered } = await import('@shared/services/lazy-services');
-    await ensureDownloadServiceRegistered();
-    const { DownloadOrchestrator } = await import(
-      '@shared/services/download/download-orchestrator'
-    );
-    return DownloadOrchestrator.getInstance();
+    return getDownloadOrchestrator();
   }
 
   private cleanupGallery(): void {
