@@ -32,8 +32,12 @@ export type CoreBaseServiceIdentifier = (typeof CORE_BASE_SERVICE_IDENTIFIERS)[n
 // ============================================================================
 // Helper: Try CoreService first for test mock support
 // ============================================================================
+// [CRITICAL] This priority logic is STRICTLY for testing purposes.
 // In test environments, mocks are registered in CoreService.
-// Check CoreService first to allow mock injection, then fallback to ES Module singleton.
+// We check CoreService first to allow mock injection, then fallback to ES Module singleton.
+//
+// DO NOT use CoreService directly in business logic for static services.
+// ALWAYS use the accessor functions exported below.
 
 function tryGetFromCoreService<T>(key: string): T | null {
   try {
@@ -52,6 +56,8 @@ function tryGetFromCoreService<T>(key: string): T | null {
 // ============================================================================
 // These check CoreService first (for test mocks), then use ES Module singletons.
 // This hybrid approach enables both test mock injection and production tree-shaking.
+//
+// [RULE] Always use these getters instead of CoreService.getInstance().get() for static services.
 
 /**
  * Get theme service for UI styling.

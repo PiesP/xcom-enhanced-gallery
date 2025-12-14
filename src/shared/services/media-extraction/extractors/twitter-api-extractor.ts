@@ -4,7 +4,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { convertAPIMediaToMediaInfo } from '@shared/media/media-factory';
+import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
 import { TwitterAPI } from '@shared/services/media/twitter-api-client';
 import { determineClickedIndex } from '@shared/services/media-extraction/determine-clicked-index';
 import type {

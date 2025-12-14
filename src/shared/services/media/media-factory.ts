@@ -3,9 +3,9 @@
  */
 
 import { logger } from '@shared/logging';
-import { normalizeDimension } from '@shared/media/media-utils';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo, TweetInfo } from '@shared/types/media.types';
+import { normalizeDimension } from '@shared/utils/media/media-dimensions';
 
 /**
  * Resolve Dimensions from API Media

@@ -5,13 +5,13 @@
  */
 
 import { logger } from '@shared/logging';
-import { extractDimensionsFromUrl, normalizeDimension } from '@shared/media/media-utils';
 import type {
   TweetMediaEntry,
   TwitterMedia,
   TwitterTweet,
   TwitterUser,
 } from '@shared/services/media/types';
+import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/media/media-dimensions';
 
 // ============================================================================
 // Types

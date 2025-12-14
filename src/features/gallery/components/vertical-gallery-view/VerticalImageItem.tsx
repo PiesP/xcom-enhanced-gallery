@@ -14,7 +14,7 @@
  *
  * **Architecture**:
  * - Uses SharedObserver for memory-efficient visibility detection
- * - Dimension calculation extracted to @shared/media/media-utils
+ * - Dimension calculation extracted to @shared/utils/media/media-dimensions
  * - Video visibility control extracted to useVideoVisibility hook
  *
  * @module features/gallery/components/vertical-gallery-view
@@ -24,8 +24,11 @@
 import { createDebounced } from '@shared/async';
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
-import { createIntrinsicSizingStyle, resolveMediaDimensions } from '@shared/media/media-utils';
 import type { ImageFitMode } from '@shared/types';
+import {
+  createIntrinsicSizingStyle,
+  resolveMediaDimensions,
+} from '@shared/utils/media/media-dimensions';
 import { SharedObserver } from '@shared/utils/performance';
 import { cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, type JSX, onCleanup } from 'solid-js';

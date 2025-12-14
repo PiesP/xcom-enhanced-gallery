@@ -6,7 +6,6 @@
 
 import { TWITTER_API_CONFIG } from '@constants';
 import { logger } from '@shared/logging';
-import { sortMediaByVisualOrder } from '@shared/media/media-utils';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import { getCsrfToken } from '@shared/services/media/twitter-auth';
 import {
@@ -15,6 +14,7 @@ import {
   normalizeLegacyUser,
 } from '@shared/services/media/twitter-parser';
 import type { TweetMediaEntry, TwitterAPIResponse } from '@shared/services/media/types';
+import { sortMediaByVisualOrder } from '@shared/utils/media/media-dimensions';
 
 /**
  * TwitterAPI - Facade for Twitter Media Extraction

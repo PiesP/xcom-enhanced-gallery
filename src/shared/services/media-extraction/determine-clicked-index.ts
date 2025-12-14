@@ -1,6 +1,6 @@
 import { logger } from '@shared/logging';
-import { normalizeMediaUrl } from '@shared/media/media-utils';
 import type { MediaInfo } from '@shared/types/media.types';
+import { normalizeMediaUrl } from '@shared/utils/media/media-dimensions';
 import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,
