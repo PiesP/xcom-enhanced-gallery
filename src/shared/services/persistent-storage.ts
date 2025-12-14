@@ -56,12 +56,8 @@ export class PersistentStorage {
 
   getSync<T>(key: string, defaultValue?: T): T | undefined {
     try {
-      // Direct GM access for sync
-      const gmGetValue =
-        typeof GM_getValue !== 'undefined'
-          ? GM_getValue
-          : // biome-ignore lint/suspicious/noExplicitAny: Accessing global GM_getValue from window
-            (window as any).GM_getValue;
+      // Direct GM access for sync - prefer global, fallback to window
+      const gmGetValue = typeof GM_getValue !== 'undefined' ? GM_getValue : window.GM_getValue;
       if (!gmGetValue) return defaultValue;
 
       const value = gmGetValue(key);

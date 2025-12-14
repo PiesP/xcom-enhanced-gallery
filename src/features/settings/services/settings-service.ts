@@ -79,7 +79,9 @@ export class SettingsService implements SettingsServiceContract {
 
   private onDestroy(): void {
     this.listeners.clear();
-    void this.repository.save(this.settings);
+    this.repository.save(this.settings).catch((error) => {
+      logger.warn('Failed to save settings on destroy:', error);
+    });
   }
 
   public getAllSettings(): Readonly<AppSettings> {

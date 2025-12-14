@@ -63,5 +63,3 @@ export function findConfigAny(candidates: string[], base?: string): string {
   }
   return findConfig(first, base);
 }
-
-export default findConfig;

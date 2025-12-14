@@ -134,7 +134,7 @@ export class HttpRequestService {
               ok: response.status >= 200 && response.status < 300,
               status: response.status,
               statusText: response.statusText,
-              data: response.response,
+              data: response.response as T,
               headers,
             });
           },

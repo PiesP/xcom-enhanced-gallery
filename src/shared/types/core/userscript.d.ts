@@ -7,12 +7,33 @@
 
 import type { CookieAPI } from './cookie.types';
 
+/**
+ * GM storage value type - JSON-serializable values supported by UserScript storage
+ * Note: Using unknown for compatibility with various storage patterns.
+ * Values are typically JSON-serialized before storage.
+ */
+export type GMStorageValue = unknown;
+
 declare global {
   function GM_download(url: string, filename: string): void;
-  // biome-ignore lint/suspicious/noExplicitAny: UserScript API accepts any value type
-  function GM_getValue(name: string, defaultValue?: any): any;
-  // biome-ignore lint/suspicious/noExplicitAny: UserScript API accepts any value type
-  function GM_setValue(name: string, value: any): void;
+
+  /**
+   * Get a value from userscript storage
+   * @template T - Expected return type
+   * @param name - Storage key name
+   * @param defaultValue - Default value if key doesn't exist
+   * @returns The stored value or default
+   */
+  function GM_getValue<T = unknown>(name: string, defaultValue?: T): T;
+
+  /**
+   * Set a value in userscript storage
+   * Values are JSON-serialized. Supported types: string, number, boolean, object, array, null
+   * @param name - Storage key name
+   * @param value - Value to store (must be JSON-serializable)
+   */
+  function GM_setValue(name: string, value: GMStorageValue): void;
+
   function GM_deleteValue(name: string): void;
   function GM_listValues(): string[];
   function GM_addStyle(css: string): HTMLStyleElement;
@@ -27,6 +48,18 @@ declare global {
   const GM_cookie: CookieAPI;
 
   const GM_info: UserScriptInfo;
+
+  /**
+   * Window interface extension for accessing GM functions from window object
+   * Used when direct global access is not available
+   */
+  interface Window {
+    GM_getValue?: typeof GM_getValue;
+    GM_setValue?: typeof GM_setValue;
+    GM_deleteValue?: typeof GM_deleteValue;
+    GM_download?: typeof GM_download;
+    GM_notification?: typeof GM_notification;
+  }
 }
 
 /**
@@ -99,8 +132,8 @@ export interface GMXMLHttpRequestDetails {
   nocache?: boolean;
   revalidate?: boolean;
   timeout?: number;
-  // biome-ignore lint/suspicious/noExplicitAny: UserScript API context can be any type
-  context?: any;
+  /** Custom context passed to response callbacks */
+  context?: unknown;
   responseType?: 'text' | 'json' | 'blob' | 'arraybuffer' | 'stream';
   overrideMimeType?: string;
   anonymous?: boolean;
@@ -117,18 +150,23 @@ export interface GMXMLHttpRequestDetails {
   ontimeout?: (response: GMXMLHttpRequestResponse) => void;
 }
 
-export interface GMXMLHttpRequestResponse {
+/**
+ * GM_xmlhttpRequest response type
+ * @template TResponse - Response body type (depends on responseType)
+ * @template TContext - Context type passed from request
+ */
+export interface GMXMLHttpRequestResponse<TResponse = unknown, TContext = unknown> {
   finalUrl: string;
   readyState: number;
   status: number;
   statusText: string;
   responseHeaders: string;
-  // biome-ignore lint/suspicious/noExplicitAny: Response type depends on responseType setting
-  response: any;
+  /** Response body - type depends on responseType setting */
+  response: TResponse;
   responseXML?: Document | null;
   responseText: string;
-  // biome-ignore lint/suspicious/noExplicitAny: UserScript API context can be any type
-  context: any;
+  /** Custom context passed from request */
+  context: TContext;
 }
 
 export interface GMXMLHttpRequestProgressResponse extends GMXMLHttpRequestResponse {

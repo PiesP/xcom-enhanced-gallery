@@ -24,6 +24,7 @@ export class ThemeService implements ThemeServiceContract {
   private readonly lifecycle: Lifecycle;
   private readonly storage = getPersistentStorage();
   private mediaQueryList: MediaQueryList | null = null;
+  private mediaQueryListener: ((event: MediaQueryListEvent) => void) | null = null;
   private currentTheme: Theme = 'light';
   private themeSetting: ThemeSetting = 'auto';
   private readonly listeners: Set<ThemeChangeListener> = new Set();
@@ -79,14 +80,18 @@ export class ThemeService implements ThemeServiceContract {
     this.applyCurrentTheme(true);
 
     // Schedule async restore to match legacy behavior
-    void Promise.resolve().then(async () => {
-      const saved = await this.loadThemeAsync();
-      if (saved && saved !== this.themeSetting) {
-        this.themeSetting = saved;
-        this.applyCurrentTheme(true);
-      }
-      this.initializeSystemDetection();
-    });
+    Promise.resolve()
+      .then(async () => {
+        const saved = await this.loadThemeAsync();
+        if (saved && saved !== this.themeSetting) {
+          this.themeSetting = saved;
+          this.applyCurrentTheme(true);
+        }
+        this.initializeSystemDetection();
+      })
+      .catch((error) => {
+        logger.warn('[ThemeService] Async theme restore failed', error);
+      });
   }
 
   /** Initialize service (idempotent, fail-fast on error) */
@@ -164,7 +169,12 @@ export class ThemeService implements ThemeServiceContract {
     this.themeSetting = normalized;
 
     if (options?.persist !== false && this.boundSettingsService?.set) {
-      void this.boundSettingsService.set('gallery.theme', this.themeSetting);
+      const result = this.boundSettingsService.set('gallery.theme', this.themeSetting);
+      if (result instanceof Promise) {
+        result.catch((error: unknown) => {
+          logger.warn('[ThemeService] Failed to persist theme setting', error);
+        });
+      }
     }
 
     const notified = this.applyCurrentTheme(options?.force);
@@ -196,19 +206,32 @@ export class ThemeService implements ThemeServiceContract {
   private onDestroy(): void {
     if (this.settingsUnsubscribe) {
       this.settingsUnsubscribe();
+      this.settingsUnsubscribe = null;
     }
     this.listeners.clear();
-    this.observer?.disconnect();
-    // MediaQueryList listener cleanup if needed, but usually fine to leave as service is singleton
+
+    // MutationObserver cleanup
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = null;
+    }
+
+    // MediaQueryList listener cleanup
+    if (this.mediaQueryList && this.mediaQueryListener) {
+      this.mediaQueryList.removeEventListener('change', this.mediaQueryListener);
+      this.mediaQueryListener = null;
+    }
+    this.mediaQueryList = null;
   }
 
   private initializeSystemDetection(): void {
-    if (this.mediaQueryList) {
-      this.mediaQueryList.addEventListener('change', () => {
+    if (this.mediaQueryList && !this.mediaQueryListener) {
+      this.mediaQueryListener = () => {
         if (this.themeSetting === 'auto') {
           this.applyCurrentTheme();
         }
-      });
+      };
+      this.mediaQueryList.addEventListener('change', this.mediaQueryListener);
     }
   }
 

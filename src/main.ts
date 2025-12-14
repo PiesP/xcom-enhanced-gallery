@@ -444,8 +444,8 @@ export async function initializeGallery(): Promise<void> {
  */
 startApplication();
 
-// Module default export (allows manual startup from external context)
-export default {
+// Named exports for manual startup from external context
+export const appModule = {
   start: startApplication,
   createConfig: createAppConfig,
   cleanup,

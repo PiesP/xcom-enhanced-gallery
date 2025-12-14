@@ -156,11 +156,15 @@ export class LanguageService {
 
     this.currentLanguage = normalized;
     this.notifyListeners(normalized);
-    void this.persistLanguage(normalized);
+    this.persistLanguage(normalized).catch((error) => {
+      logger.warn('Failed to persist language setting on change:', error);
+    });
 
     // Phase 356: Lazy load language bundle if needed
     const effectiveLang = this.getEffectiveLanguage();
-    void this.ensureLanguageLoaded(effectiveLang);
+    this.ensureLanguageLoaded(effectiveLang).catch((error) => {
+      logger.warn('Failed to load language bundle on change:', error);
+    });
 
     logger.debug(`Language changed to: ${normalized}`);
   }
