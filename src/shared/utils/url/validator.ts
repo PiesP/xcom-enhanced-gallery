@@ -95,6 +95,7 @@ function checkPbsMediaPath(pathname: string): boolean {
     pathname.startsWith('/media/') ||
     pathname.startsWith('/ext_tw_video_thumb/') ||
     pathname.startsWith('/tweet_video_thumb/') ||
-    pathname.startsWith('/video_thumb/')
+    pathname.startsWith('/video_thumb/') ||
+    pathname.startsWith('/amplify_video_thumb/')
   );
 }

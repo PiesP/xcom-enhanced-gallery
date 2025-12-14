@@ -17,11 +17,18 @@ import { isValidMediaUrl } from '@shared/utils/url';
 // Constants
 // ============================================================================
 
-const MEDIA_SELECTORS = {
-  TWEET_PHOTO: SELECTORS.TWEET_PHOTO,
-  VIDEO_PLAYER: SELECTORS.VIDEO_PLAYER,
-  MEDIA_LINK: SELECTORS.STATUS_LINK,
-} as const;
+/**
+ * Media link selectors for profile grid and timeline media
+ * Includes /photo/ and /video/ links that should trigger gallery
+ */
+const MEDIA_LINK_SELECTORS = [
+  SELECTORS.STATUS_LINK, // a[href*="/status/"]
+  'a[href*="/photo/"]', // Photo links (profile grid)
+  'a[href*="/video/"]', // Video links (profile grid)
+] as const;
+
+/** Combined selector for media link detection */
+const MEDIA_LINK_SELECTOR = MEDIA_LINK_SELECTORS.join(', ');
 
 /** Combined selector for robust media container detection */
 const MEDIA_CONTAINER_SELECTOR = STABLE_SELECTORS.MEDIA_CONTAINERS.join(', ');
@@ -71,8 +78,9 @@ export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   const interactive = target.closest(INTERACTIVE_SELECTOR);
   if (interactive) {
     // Exception: Media links (links containing media) or if the interactive element IS a media container
+    // Also handles profile grid media links (/photo/, /video/)
     const isMediaLink =
-      interactive.matches(MEDIA_SELECTORS.MEDIA_LINK) ||
+      interactive.matches(MEDIA_LINK_SELECTOR) ||
       interactive.matches(MEDIA_CONTAINER_SELECTOR) ||
       interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null;
     return !isMediaLink;
