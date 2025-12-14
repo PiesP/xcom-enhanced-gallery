@@ -135,8 +135,58 @@ export const gallerySignals = {
 // ============================================================================
 
 /**
+ * Signal update order for batch operations.
+ *
+ * CRITICAL: `isOpen` must be updated LAST within batch() operations.
+ *
+ * **Reason**: createSignalSafe's notify() is called immediately when a value
+ * is set, even inside batch(). GalleryRenderer subscribes to isOpen and
+ * checks mediaItems.value.length in renderGallery(). If isOpen is set first,
+ * the subscriber callback fires before mediaItems is updated, causing
+ * renderGallery() to see an empty array and skip rendering.
+ *
+ * **Correct order**: data signals → trigger signal (isOpen)
+ *
+ * @see GalleryRenderer.setupStateSubscription for the subscriber that depends on this order
+ */
+const GALLERY_SIGNAL_UPDATE_ORDER = [
+  'mediaItems',
+  'currentIndex',
+  'isLoading',
+  'error',
+  'viewMode',
+  'isOpen', // Must be last - triggers rendering
+] as const;
+
+/**
+ * Apply gallery state updates in the correct order within a batch.
+ *
+ * This helper ensures isOpen is always set last to prevent race conditions
+ * with subscribers that depend on other state values being ready.
+ *
+ * @param state - The new gallery state to apply
+ * @internal
+ */
+function applyGalleryStateUpdate(state: GalleryState): void {
+  batch(() => {
+    // Update data signals first (order among these doesn't matter)
+    gallerySignals.mediaItems.value = state.mediaItems;
+    gallerySignals.currentIndex.value = state.currentIndex;
+    gallerySignals.isLoading.value = state.isLoading;
+    gallerySignals.error.value = state.error;
+    gallerySignals.viewMode.value = state.viewMode;
+    // Trigger signal MUST be last - subscribers may read other signals
+    gallerySignals.isOpen.value = state.isOpen;
+  });
+}
+
+/**
  * Composed state accessor (internally uses fine-grained signals)
  * Prefer gallerySignals.* for fine-grained reactivity
+ *
+ * @remarks
+ * The setter uses {@link applyGalleryStateUpdate} to ensure correct
+ * signal update order. See {@link GALLERY_SIGNAL_UPDATE_ORDER} for details.
  */
 export const galleryState = {
   get value(): GalleryState {
@@ -151,17 +201,7 @@ export const galleryState = {
   },
 
   set value(state: GalleryState) {
-    batch(() => {
-      // IMPORTANT: Set isOpen LAST to ensure mediaItems/currentIndex are ready
-      // when isOpen subscribers (e.g., GalleryRenderer) are notified.
-      // This prevents race conditions where renderGallery() sees empty mediaItems.
-      gallerySignals.mediaItems.value = state.mediaItems;
-      gallerySignals.currentIndex.value = state.currentIndex;
-      gallerySignals.isLoading.value = state.isLoading;
-      gallerySignals.error.value = state.error;
-      gallerySignals.viewMode.value = state.viewMode;
-      gallerySignals.isOpen.value = state.isOpen;
-    });
+    applyGalleryStateUpdate(state);
   },
 
   subscribe(callback: (state: GalleryState) => void): () => void {
@@ -170,6 +210,9 @@ export const galleryState = {
     });
   },
 };
+
+// Export for testing purposes
+export { GALLERY_SIGNAL_UPDATE_ORDER, applyGalleryStateUpdate };
 
 // ============================================================================
 // Actions
