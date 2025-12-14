@@ -83,6 +83,9 @@ jobs:
           # Backup dist for later steps (survives git checkout)
           mkdir -p /tmp/dist-backup
           cp -r dist/* /tmp/dist-backup/
+          # List backed up files for verification
+          echo "📦 Built files:"
+          ls -la /tmp/dist-backup/
 
       - name: 📦 Prepare release package
         run: |
@@ -169,12 +172,13 @@ jobs:
             git commit -m "chore: initialize release branch"
           fi
 
-          # Copy built files from backup
+          # Copy built files from backup (user.js + meta.js for jsDelivr CDN)
           mkdir -p dist
           cp /tmp/dist-backup/xcom-enhanced-gallery.user.js dist/
+          cp /tmp/dist-backup/xcom-enhanced-gallery.meta.js dist/
 
           # Add and commit
-          git add dist/xcom-enhanced-gallery.user.js
+          git add dist/xcom-enhanced-gallery.user.js dist/xcom-enhanced-gallery.meta.js
 
           if git diff --staged --quiet; then
             echo "📦 No changes to dist/ files"

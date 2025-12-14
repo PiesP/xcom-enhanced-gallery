@@ -935,6 +935,7 @@ const ALLOWED_OUTPUT_FILES = new Set([
   OUTPUT_FILE_NAMES.dev,
   `${OUTPUT_FILE_NAMES.dev}.map`,
   OUTPUT_FILE_NAMES.prod,
+  OUTPUT_FILE_NAMES.meta,
 ]);
 
 function distCleanupPlugin(): Plugin {
