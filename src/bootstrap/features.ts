@@ -83,9 +83,11 @@ const isDevelopmentBuild = (): boolean => {
 };
 
 const debug = (message: string) => {
-  if (isDevelopmentBuild()) {
-    logger.debug(message);
+  if (!isDevelopmentBuild()) {
+    return;
   }
+
+  logger.debug(message);
 };
 
 /**

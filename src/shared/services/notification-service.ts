@@ -60,13 +60,14 @@ export class NotificationService {
 
   async show(options: NotificationOptions): Promise<void> {
     const gm = (globalThis as GlobalWithGMNotification).GM_notification;
-    if (gm) {
-      this.gmNotify(options);
-      logger.debug(`Notification (gm): ${options.title}`);
-    } else {
+    if (!gm) {
       // Lean: silently ignore when GM_notification is not available
       logger.debug(`Notification skipped (no GM_notification): ${options.title}`);
+      return;
     }
+
+    this.gmNotify(options);
+    logger.debug(`Notification (gm): ${options.title}`);
   }
 
   async error(title: string, text?: string, timeout = 5000): Promise<void> {

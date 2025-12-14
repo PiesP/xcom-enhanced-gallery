@@ -144,8 +144,6 @@ pnpm lint       # Deno lint
 pnpm fmt:check  # Format check
 ```
 
-> **Prerequisites**: [Deno 2.x](https://deno.land/) is required. No npm install needed.
-
 GitHub Actions runs a subset of these commands for continuous integration and security. See `.github/workflows/` for details.
 
 ## 📞 Support and Feedback

@@ -19,9 +19,11 @@ function ensureGuardEffect(): void {
     if (!isOpen) return;
 
     const result = pauseAmbientVideosForGallery({ trigger: 'guard', reason: 'guard' });
-    if (result.pausedCount > 0) {
-      logger.debug('[AmbientVideoGuard] Ambient pause triggered by guard', result);
+    if (result.pausedCount <= 0) {
+      return;
     }
+
+    logger.debug('[AmbientVideoGuard] Ambient pause triggered by guard', result);
   });
 }
 
