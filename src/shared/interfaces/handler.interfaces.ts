@@ -223,8 +223,6 @@ export interface BootstrapStage {
   readonly shouldRun?: () => boolean;
   /** Whether this stage is optional (can fail without blocking) */
   readonly optional?: boolean;
-  /** Dependencies (other stage labels that must complete first) */
-  readonly dependencies?: readonly string[];
 }
 
 /**

@@ -14,7 +14,7 @@ export type Unregister = () => void;
 /**
  * Wire global event handlers
  *
- * Subscribe to beforeunload and pagehide events to perform cleanup on page unload.
+ * Subscribe to pagehide event to perform cleanup on page unload.
  * Registered only on call, can be unregistered anytime via returned function.
  *
  * @param onBeforeUnload - Callback to execute on page unload

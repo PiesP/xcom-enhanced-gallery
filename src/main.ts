@@ -175,6 +175,7 @@ export async function initializeInfrastructure(): Promise<void> {
     bootstrapErrorReporter.critical(error, {
       code: 'INFRASTRUCTURE_INIT_FAILED',
     });
+    throw error;
   }
 }
 
@@ -188,6 +189,7 @@ export async function initializeBaseServicesStage(): Promise<void> {
     bootstrapErrorReporter.warn(error, {
       code: 'BASE_SERVICES_INIT_FAILED',
     });
+    throw error;
   }
 }
 

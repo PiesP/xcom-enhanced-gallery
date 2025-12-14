@@ -42,7 +42,14 @@ export class CoreService {
     CoreService.singleton.reset();
   }
 
-  public register<T>(key: string, instance: T): void {
+  public register<T>(key: string, instance: T, options?: { allowOverride?: boolean }): void {
+    const allowOverride = options?.allowOverride ?? false;
+    if (this.services.has(key) && !allowOverride) {
+      logger.warn(
+        `[CoreService] Service key "${key}" already registered. ` +
+          `Use { allowOverride: true } to replace existing service.`
+      );
+    }
     this.services.set(key, instance);
   }
 
