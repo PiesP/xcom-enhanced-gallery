@@ -31,16 +31,11 @@ const LICENSES_DIR = "./LICENSES";
 
 const OUTPUT_FILE_NAMES = {
   dev: "xcom-enhanced-gallery.dev.user.js",
-  beta: "xcom-enhanced-gallery.beta.user.js",
   prod: "xcom-enhanced-gallery.user.js",
   meta: "xcom-enhanced-gallery.meta.js",
 } as const;
 
-const CDN_BASE_URLS = {
-  release: "https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@release/dist",
-  beta: "https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@beta/dist",
-  develop: "https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@develop/dist",
-} as const;
+const CDN_BASE_URL = "https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@release/dist" as const;
 
 const BROWSER_COMPATIBILITY = {
   chrome: "117",
@@ -99,8 +94,6 @@ interface LicenseInfo {
   readonly name: string;
   readonly text: string;
 }
-
-type DeployChannel = "release" | "beta" | "develop";
 
 interface UserscriptMeta {
   readonly name: string;
@@ -180,31 +173,19 @@ function getGitCommitShort(): string | null {
   }
 }
 
-function resolveVersion(isDev: boolean, channel: DeployChannel = "release"): string {
+function resolveVersion(isDev: boolean): string {
   const envVersion = process.env.BUILD_VERSION;
   if (envVersion) return envVersion;
 
   const gitVersion = getVersionFromGit();
   const baseVersion = gitVersion ?? (isDev ? "0.0.0" : "1.0.0");
 
-  if (channel === "develop") {
+  if (isDev) {
     const commit = getGitCommitShort() ?? "unknown";
     return `${baseVersion}-dev.${commit}`;
   }
 
-  if (channel === "beta") {
-    const commit = getGitCommitShort() ?? "1";
-    return `${baseVersion}-beta.${commit}`;
-  }
-
   return baseVersion;
-}
-
-function getDeployChannel(): DeployChannel {
-  const channel = process.env.DEPLOY_CHANNEL?.toLowerCase();
-  if (channel === "beta") return "beta";
-  if (channel === "develop" || channel === "dev") return "develop";
-  return "release";
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -360,24 +341,19 @@ function buildLicenseBlock(licenses: readonly LicenseInfo[]): string {
   return ["/*", ...lines, " */"].join("\n");
 }
 
-function generateUserscriptHeader(version: string, channel: DeployChannel = "release"): string {
-  const cdnBase = CDN_BASE_URLS[channel];
-  const fileName = channel === "develop"
-    ? OUTPUT_FILE_NAMES.dev
-    : channel === "beta"
-      ? OUTPUT_FILE_NAMES.beta
-      : OUTPUT_FILE_NAMES.prod;
+function generateUserscriptHeader(version: string, isDev: boolean): string {
+  const fileName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
   const metaFileName = OUTPUT_FILE_NAMES.meta;
 
-  const nameSuffix = channel === "develop" ? " (Dev)" : channel === "beta" ? " (Beta)" : "";
+  const nameSuffix = isDev ? " (Dev)" : "";
 
   const config: UserscriptMeta = {
     ...USERSCRIPT_CONFIG,
     name: `${USERSCRIPT_CONFIG.name}${nameSuffix}`,
     version,
     homepageURL: USERSCRIPT_CONFIG.homepageURL,
-    downloadURL: `${cdnBase}/${fileName}`,
-    updateURL: `${cdnBase}/${metaFileName}`,
+    downloadURL: `${CDN_BASE_URL}/${fileName}`,
+    updateURL: `${CDN_BASE_URL}/${metaFileName}`,
     compatible: USERSCRIPT_CONFIG.compatible,
   };
 
@@ -388,24 +364,17 @@ function generateUserscriptHeader(version: string, channel: DeployChannel = "rel
   return licenseBlock ? `${metaBlock}\n${licenseBlock}` : metaBlock;
 }
 
-function generateMetaOnlyHeader(version: string, channel: DeployChannel = "release"): string {
-  const cdnBase = CDN_BASE_URLS[channel];
-  const fileName = channel === "develop"
-    ? OUTPUT_FILE_NAMES.dev
-    : channel === "beta"
-      ? OUTPUT_FILE_NAMES.beta
-      : OUTPUT_FILE_NAMES.prod;
+function generateMetaOnlyHeader(version: string): string {
+  const fileName = OUTPUT_FILE_NAMES.prod;
   const metaFileName = OUTPUT_FILE_NAMES.meta;
-
-  const nameSuffix = channel === "develop" ? " (Dev)" : channel === "beta" ? " (Beta)" : "";
 
   const lines = [
     "// ==UserScript==",
-    formatMetaLine("name", `${USERSCRIPT_CONFIG.name}${nameSuffix}`),
+    formatMetaLine("name", USERSCRIPT_CONFIG.name),
     formatMetaLine("namespace", USERSCRIPT_CONFIG.namespace),
     formatMetaLine("version", version),
-    formatMetaLine("downloadURL", `${cdnBase}/${fileName}`),
-    formatMetaLine("updateURL", `${cdnBase}/${metaFileName}`),
+    formatMetaLine("downloadURL", `${CDN_BASE_URL}/${fileName}`),
+    formatMetaLine("updateURL", `${CDN_BASE_URL}/${metaFileName}`),
     "// ==/UserScript==",
   ];
 
@@ -877,9 +846,9 @@ function productionCleanupPlugin(): Plugin {
 // Userscript Header Plugin
 // ─────────────────────────────────────────────────────────────────────────────
 
-function userscriptHeaderPlugin(mode: string, channel: DeployChannel): Plugin {
+function userscriptHeaderPlugin(mode: string): Plugin {
   const isDev = mode === "development";
-  const version = resolveVersion(isDev, channel);
+  const version = resolveVersion(isDev);
 
   return {
     name: "userscript-header",
@@ -887,7 +856,7 @@ function userscriptHeaderPlugin(mode: string, channel: DeployChannel): Plugin {
     enforce: "post",
 
     generateBundle(_options, bundle) {
-      const header = generateUserscriptHeader(version, channel);
+      const header = generateUserscriptHeader(version, isDev);
 
       for (const chunk of Object.values(bundle)) {
         if (chunk.type === "chunk" && chunk.isEntry) {
@@ -899,7 +868,6 @@ function userscriptHeaderPlugin(mode: string, channel: DeployChannel): Plugin {
 
     closeBundle() {
       const modeLabel = isDev ? "Development" : "Production";
-      const channelLabel = channel === "release" ? "Release" : channel === "beta" ? "Beta" : "Development";
       const info = isDev
         ? [
             "📖 Optimized for: Debugging & Analysis",
@@ -918,12 +886,11 @@ function userscriptHeaderPlugin(mode: string, channel: DeployChannel): Plugin {
             "└─ Source maps: Disabled",
           ];
 
-      console.log(`\n📋 Build Mode: ${modeLabel} (${channelLabel} channel)`);
+      console.log(`\n📋 Build Mode: ${modeLabel}`);
       console.log("─".repeat(50));
       info.forEach((line) => console.log(`   ${line}`));
       console.log("─".repeat(50));
       console.log(`📌 Version: ${version}`);
-      console.log(`📡 Channel: ${channel}`);
     },
   };
 }
@@ -932,13 +899,11 @@ function userscriptHeaderPlugin(mode: string, channel: DeployChannel): Plugin {
 // Meta-Only File Plugin
 // ─────────────────────────────────────────────────────────────────────────────
 
-function metaOnlyPlugin(mode: string, channel: DeployChannel): Plugin {
+function metaOnlyPlugin(mode: string): Plugin {
   const isDev = mode === "development";
-  const version = resolveVersion(isDev, channel);
-  // Only generate meta.js for CI builds (DEPLOY_CHANNEL must be explicitly set)
-  // Local builds (pnpm build, pnpm build:fast) won't generate meta.js
-  const shouldGenerateMeta = process.env.DEPLOY_CHANNEL !== undefined &&
-    !isDev && (channel === "release" || channel === "beta");
+  const version = resolveVersion(isDev);
+  // Only generate meta.js for production builds
+  const shouldGenerateMeta = !isDev;
 
   return {
     name: "meta-only-file",
@@ -949,7 +914,7 @@ function metaOnlyPlugin(mode: string, channel: DeployChannel): Plugin {
       if (!shouldGenerateMeta) return;
 
       const outDir = options.dir ?? "dist";
-      const metaContent = generateMetaOnlyHeader(version, channel);
+      const metaContent = generateMetaOnlyHeader(version);
       const metaPath = path.join(outDir, OUTPUT_FILE_NAMES.meta);
 
       fs.writeFileSync(metaPath, metaContent, "utf8");
@@ -1017,13 +982,10 @@ function buildPathAliases(root: string): Record<string, string> {
 
 export default defineConfig(({ mode }): UserConfig => {
   const isDev = mode === "development";
-  const channel = getDeployChannel();
   const config = getBuildModeConfig(mode);
   const outputFileName = isDev
     ? OUTPUT_FILE_NAMES.dev
-    : channel === "beta"
-      ? OUTPUT_FILE_NAMES.beta
-      : OUTPUT_FILE_NAMES.prod;
+    : OUTPUT_FILE_NAMES.prod;
   const root = process.cwd();
 
   return {
@@ -1031,8 +993,8 @@ export default defineConfig(({ mode }): UserConfig => {
       distCleanupPlugin(),
       solidPlugin(),
       cssInlinePlugin(mode),
-      userscriptHeaderPlugin(mode, channel),
-      metaOnlyPlugin(mode, channel),
+      userscriptHeaderPlugin(mode),
+      metaOnlyPlugin(mode),
       ...(!isDev ? [productionCleanupPlugin()] : []),
     ],
     root,
