@@ -13,6 +13,7 @@
     "lint:fix": "biome lint --write ./src",
     "fmt": "biome format --write ./src",
     "fmt:check": "biome format ./src",
+    "preinstall": "npx only-allow pnpm",
     "quality": "pnpm check && biome check ./src",
     "quality:fix": "pnpm check && biome check --write ./src"
   },

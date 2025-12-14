@@ -59,8 +59,8 @@ export function createTimeoutSignal(ms: number): AbortSignal {
  * ```
  */
 export function combineSignals(signals: AbortSignal[]): AbortSignal {
-  // Filter out undefined/null signals
-  const validSignals = signals.filter(Boolean);
+  // Accept runtime-invalid values defensively (tests may pass null/undefined)
+  const validSignals = signals.filter((s): s is AbortSignal => Boolean(s));
 
   if (validSignals.length === 0) {
     return new AbortController().signal; // Never-aborting signal
@@ -70,7 +70,54 @@ export function combineSignals(signals: AbortSignal[]): AbortSignal {
     return validSignals[0]!;
   }
 
-  return AbortSignal.any(validSignals);
+  // Prefer native AbortSignal.any when available.
+  // Note: Some test environments deliberately patch AbortSignal.any to undefined.
+  if (typeof AbortSignal.any === 'function') {
+    return AbortSignal.any(validSignals);
+  }
+
+  // Manual fallback: create a signal that aborts when any input aborts.
+  const controller = new AbortController();
+  let settled = false;
+
+  function cleanup(): void {
+    for (const s of validSignals) {
+      try {
+        s.removeEventListener('abort', onAbort);
+      } catch {
+        // Ignore listener cleanup failures (defensive)
+      }
+    }
+  }
+
+  function onAbort(): void {
+    if (settled) return;
+    settled = true;
+
+    // Preserve abort reason if an input signal is actually aborted.
+    // In some defensive test scenarios, the abort handler can be invoked
+    // without a corresponding aborted signal.
+    const abortedSignal = validSignals.find((s) => s.aborted);
+    const reason = abortedSignal?.reason;
+
+    // When reason is undefined, platforms typically supply a default AbortError.
+    controller.abort(reason);
+    cleanup();
+  }
+
+  // If any signal is already aborted, abort immediately without registering listeners.
+  for (const s of validSignals) {
+    if (s.aborted) {
+      controller.abort(s.reason);
+      return controller.signal;
+    }
+  }
+
+  for (const s of validSignals) {
+    s.addEventListener('abort', onAbort, { once: true });
+  }
+
+  return controller.signal;
 }
 
 /**

@@ -97,7 +97,7 @@ export class LanguageService {
    */
   private async onInitialize(): Promise<void> {
     try {
-      const saved = await this.storage.get<string>(LanguageService.STORAGE_KEY);
+      const saved = await this.storage.getString(LanguageService.STORAGE_KEY);
       const normalized = this.normalizeLanguage(saved);
 
       if (normalized !== this.currentLanguage) {
