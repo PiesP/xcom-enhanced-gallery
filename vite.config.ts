@@ -771,14 +771,24 @@ function removeLogCalls(code: string, methods: string[]): string {
     }
 
     if (depth === 0) {
+      // Preserve code before the logger call
       result += code.slice(lastIndex, startIndex);
-      const beforeLog = result.slice(-20);
-      const isArrowFnBody = /=>\s*$/.test(beforeLog);
-      if (isArrowFnBody) result += "{}";
 
+      // Replace the logger call with a harmless no-op to keep control-flow intact
+      // This avoids generating invalid constructs like `else }` when the call was
+      // the sole statement in an if/else branch.
+      result += "void 0";
+
+      // Preserve trailing semicolons and whitespace
       let endIndex = i;
-      if (code[endIndex] === ";") endIndex++;
-      if (code[endIndex] === "\n") endIndex++;
+      if (code[endIndex] === ";") {
+        result += ";";
+        endIndex++;
+      }
+      while (code[endIndex] === "\n" || code[endIndex] === "\r" || code[endIndex] === "\t" || code[endIndex] === " ") {
+        result += code[endIndex];
+        endIndex++;
+      }
 
       lastIndex = endIndex;
       regex.lastIndex = endIndex;
