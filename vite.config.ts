@@ -994,6 +994,8 @@ function buildPathAliases(root: string): Record<string, string> {
 export default defineConfig(({ mode }): UserConfig => {
   const isDev = mode === "development";
   const config = getBuildModeConfig(mode);
+  const version = resolveVersion(isDev);
+  const buildTime = new Date().toISOString();
   const outputFileName = isDev
     ? OUTPUT_FILE_NAMES.dev
     : OUTPUT_FILE_NAMES.prod;
@@ -1059,6 +1061,8 @@ export default defineConfig(({ mode }): UserConfig => {
 
     define: {
       __DEV__: JSON.stringify(isDev),
+      __VERSION__: JSON.stringify(version),
+      __BUILD_TIME__: JSON.stringify(buildTime),
       "import.meta.env.MODE": JSON.stringify(mode),
       "import.meta.env.DEV": JSON.stringify(isDev),
       "import.meta.env.PROD": JSON.stringify(!isDev),

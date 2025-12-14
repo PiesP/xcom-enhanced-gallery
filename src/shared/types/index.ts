@@ -117,7 +117,6 @@ export type { NavigationSource } from './navigation.types';
 export type {
   BaseResult,
   BaseResultStatus,
-  BoolResult,
   Result,
   ResultError,
   ResultPartial,
@@ -130,7 +129,6 @@ export {
   ErrorCode,
   err,
   failure,
-  fromBoolResult,
   isFailure,
   isPartial,
   isSuccess,
@@ -138,7 +136,6 @@ export {
   mapErr,
   ok,
   success,
-  toBoolResult,
   unwrapOr,
 } from './result.types';
 // Toolbar UI state types

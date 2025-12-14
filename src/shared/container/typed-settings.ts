@@ -20,6 +20,7 @@
  * @version 1.0.0
  */
 
+import { DEFAULT_SETTINGS } from '@constants';
 import type { AppSettings } from '@features/settings/types/settings.types';
 import { tryGetSettingsManager } from './service-accessors';
 
@@ -216,29 +217,42 @@ export async function trySetTypedSetting<P extends SettingPath>(
  * @returns True if key matches setting path pattern
  */
 export function isValidSettingPath(key: string): key is SettingPath {
-  // Basic validation: check for valid prefix
-  const validPrefixes = [
-    'gallery.',
-    'toolbar.',
-    'download.',
-    'tokens.',
-    'accessibility.',
-    'features.',
-    'version',
-    'lastModified',
-  ];
-
-  // Top-level keys
-  if (key === 'version' || key === 'lastModified') {
-    return true;
-  }
-
-  // Section keys (without nested path)
-  const sections = ['gallery', 'toolbar', 'download', 'tokens', 'accessibility', 'features'];
-  if (sections.includes(key)) {
-    return true;
-  }
-
-  // Nested keys
-  return validPrefixes.some((prefix) => key.startsWith(prefix) && key.length > prefix.length);
+  return VALID_SETTING_PATHS.has(key);
 }
+
+type UnknownRecord = Record<string, unknown>;
+
+function isPlainObject(value: unknown): value is UnknownRecord {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function collectDotPaths(obj: UnknownRecord, prefix = ''): string[] {
+  const paths: string[] = [];
+
+  for (const [key, value] of Object.entries(obj)) {
+    const current = prefix ? `${prefix}.${key}` : key;
+    paths.push(current);
+
+    if (isPlainObject(value)) {
+      paths.push(...collectDotPaths(value, current));
+    }
+  }
+
+  return paths;
+}
+
+const SETTINGS_PATH_SCHEMA: UnknownRecord = {
+  ...(DEFAULT_SETTINGS as unknown as UnknownRecord),
+  download: {
+    ...(DEFAULT_SETTINGS.download as unknown as UnknownRecord),
+    // Optional settings are intentionally included for runtime validation.
+    customTemplate: undefined,
+  },
+  tokens: {
+    ...(DEFAULT_SETTINGS.tokens as unknown as UnknownRecord),
+    bearerToken: undefined,
+    lastRefresh: undefined,
+  },
+};
+
+const VALID_SETTING_PATHS = new Set<string>(collectDotPaths(SETTINGS_PATH_SCHEMA));

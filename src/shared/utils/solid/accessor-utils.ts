@@ -159,9 +159,3 @@ export function toOptionalAccessor<T>(
 ): Accessor<T | undefined> {
   return () => resolveOptional(resolver());
 }
-
-// ============================================================================
-// Legacy Aliases (for backward compatibility)
-// ============================================================================
-
-// resolveAccessorValue has been removed. Use resolveOptional() instead.

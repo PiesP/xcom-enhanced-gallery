@@ -107,19 +107,16 @@ export class AppEventManager {
 
     const listeners = this.appListeners.get(event)!;
 
-    // Create cleanup function that removes from both listener set and subscription manager
-    const cleanup = () => {
-      if (wrappedCallback) {
-        listeners.delete(wrappedCallback);
-      }
-      this.subscriptionManager.remove(id);
-    };
+    // AbortSignal cleanup is wired via an event listener.
+    // To avoid retaining closures for long-lived signals, we ensure that abort listeners
+    // are removed as part of subscription cleanup (manual unsubscribe, removeAll, etc.).
+    let abortHandler: (() => void) | null = null;
 
     // Wrap callback for once behavior
     const wrappedCallback = once
       ? (data: unknown) => {
           callback(data as AppEventMap[K]);
-          cleanup();
+          this.subscriptionManager.remove(id);
         }
       : (data: unknown) => {
           callback(data as AppEventMap[K]);
@@ -135,6 +132,16 @@ export class AppEventManager {
       context: event as string,
       cleanup: () => {
         listeners.delete(wrappedCallback);
+
+        if (signal && abortHandler) {
+          try {
+            signal.removeEventListener('abort', abortHandler);
+          } catch {
+            // Ignore - some environments may not support removeEventListener on AbortSignal
+          }
+        }
+
+        abortHandler = null;
       },
     };
 
@@ -143,11 +150,19 @@ export class AppEventManager {
 
     // Wire up AbortSignal
     if (signal) {
-      signal.addEventListener('abort', cleanup, { once: true });
+      abortHandler = () => {
+        this.subscriptionManager.remove(id);
+      };
+
+      signal.addEventListener('abort', abortHandler, { once: true });
     }
 
     logger.debug(`[AppEventManager] App listener added: ${String(event)} (${id})`);
-    return cleanup;
+
+    // Manual unsubscribe
+    return () => {
+      this.subscriptionManager.remove(id);
+    };
   }
 
   /**

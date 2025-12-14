@@ -8,7 +8,7 @@
  */
 
 import { createLogger, createScopedLogger } from '@shared/logging';
-import { createEffect, createRoot, createSignal } from 'solid-js';
+import { createComputed, createRoot, createSignal } from 'solid-js';
 
 // Debug: Log module load for diagnosing duplicate runtime instances during tests
 const logger = createScopedLogger?.('SignalFactory') ?? createLogger({ prefix: '[SignalFactory]' });
@@ -108,21 +108,15 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
  */
 export function effectSafe(fn: () => void): () => void {
   return createRoot((dispose) => {
-    // Attempt to run reactively; also ensure immediate initial run if the
-    // reactive runtime defers initial execution in the current environment.
-    let ran = false;
     debug('[effectSafe] createRoot invoked');
-    createEffect(() => {
-      ran = true;
-      debug('[effectSafe] effect body invoked');
-      return fn();
-    });
 
-    if (!ran) {
-      ran = true;
-      debug('[effectSafe] immediate fallback effect body invoked');
+    // Use createComputed so this helper works reliably outside of a component
+    // render cycle (including unit tests running under JSDOM). It still tracks
+    // dependencies and re-runs when they change.
+    createComputed(() => {
+      debug('[effectSafe] effect body invoked');
       fn();
-    }
+    });
 
     return dispose;
   });

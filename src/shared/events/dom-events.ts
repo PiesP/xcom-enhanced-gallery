@@ -88,16 +88,10 @@ export class DOMEventManager {
       // Add the actual DOM listener
       element.addEventListener(type, listener, listenerOptions);
 
-      // Create cleanup function that removes from subscription manager
-      const cleanup = () => {
-        try {
-          element.removeEventListener(type, listener, listenerOptions);
-        } catch (error) {
-          logger.warn(`[DOMEventManager] Failed to remove listener: ${type}`, error);
-        }
-        // Remove from subscription manager
-        this.subscriptionManager.remove(id);
-      };
+      // AbortSignal cleanup is wired via an event listener.
+      // Ensure abort listeners are removed when the subscription is cleaned up
+      // to avoid retaining closures for long-lived signals.
+      let abortHandler: (() => void) | null = null;
 
       // Create subscription entry
       const subscription: Subscription = {
@@ -110,6 +104,16 @@ export class DOMEventManager {
           } catch (error) {
             logger.warn(`[DOMEventManager] Failed to remove listener: ${type}`, error);
           }
+
+          if (signal && abortHandler) {
+            try {
+              signal.removeEventListener('abort', abortHandler);
+            } catch {
+              // Ignore - some environments may not support removeEventListener on AbortSignal
+            }
+          }
+
+          abortHandler = null;
         },
       };
 
@@ -118,7 +122,11 @@ export class DOMEventManager {
 
       // Wire up AbortSignal for automatic cleanup
       if (signal) {
-        signal.addEventListener('abort', cleanup, { once: true });
+        abortHandler = () => {
+          this.subscriptionManager.remove(id);
+        };
+
+        signal.addEventListener('abort', abortHandler, { once: true });
       }
 
       logger.debug(`[DOMEventManager] DOM listener added: ${type} (${id})`, { context });
