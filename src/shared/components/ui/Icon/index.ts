@@ -1,10 +1,8 @@
 /**
- * Entry point for gallery icons. Keep exports lean so consumers only grab what they use.
+ * Entry point for gallery icons.
  *
- * Phase: Icon Consolidation v2.0
- * - Individual icon files deprecated in favor of consolidated hero-icons.tsx
- * - Unused icons removed: X, ChevronLeft/Right, DocumentText, FileZip, ZoomIn, Settings
- * - ~400 lines saved, ~2KB bundle reduction
+ * Exports consolidated hero-icons.tsx components and icon path data.
+ * Keep exports lean so consumers only grab what they use.
  */
 
 // Consolidated icon exports (new factory-based approach)

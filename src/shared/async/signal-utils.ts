@@ -44,8 +44,8 @@ export function createTimeoutSignal(ms: number): AbortSignal {
 /**
  * Combine multiple AbortSignals into a single signal that aborts when any input aborts
  *
- * Uses native `AbortSignal.any()` when available (Chrome 116+, Firefox 124+),
- * falls back to manual implementation for older environments.
+ * Uses native `AbortSignal.any()` (Chrome 116+, Firefox 124+, Safari 17.4+).
+ * All target browsers support this API natively.
  *
  * @param signals - Array of AbortSignals to combine
  * @returns Combined AbortSignal
@@ -70,39 +70,7 @@ export function combineSignals(signals: AbortSignal[]): AbortSignal {
     return validSignals[0]!;
   }
 
-  // Use native AbortSignal.any() if available (Chrome 116+, Firefox 124+)
-  if (typeof AbortSignal.any === 'function') {
-    return AbortSignal.any(validSignals);
-  }
-
-  // Fallback for older browsers
-  const controller = new AbortController();
-
-  const onAbort = (): void => {
-    const abortedSignal = validSignals.find((s) => s.aborted);
-    controller.abort(abortedSignal?.reason);
-    cleanup();
-  };
-
-  const cleanup = (): void => {
-    for (const signal of validSignals) {
-      signal.removeEventListener('abort', onAbort);
-    }
-  };
-
-  // Check if any signal is already aborted
-  const alreadyAborted = validSignals.find((s) => s.aborted);
-  if (alreadyAborted) {
-    controller.abort(alreadyAborted.reason);
-    return controller.signal;
-  }
-
-  // Listen for abort on all signals
-  for (const signal of validSignals) {
-    signal.addEventListener('abort', onAbort, { once: true });
-  }
-
-  return controller.signal;
+  return AbortSignal.any(validSignals);
 }
 
 /**

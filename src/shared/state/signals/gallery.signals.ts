@@ -1,6 +1,6 @@
 /**
  * @fileoverview Gallery State Management
- * @version 3.1.0 - Phase: Signal Update Order Fix
+ * @version 3.2.0 - Phase: Code Quality Cleanup
  *
  * Gallery state management using fine-grained signals.
  * Refactored to use modular state management:
@@ -10,7 +10,7 @@
  * This file maintains backward compatibility while delegating to specialized modules.
  *
  * IMPORTANT: Signal update order within batch() operations is critical.
- * See GALLERY_SIGNAL_UPDATE_ORDER and applyGalleryStateUpdate for details.
+ * See applyGalleryStateUpdate for implementation details.
  */
 
 import { logger } from '@shared/logging';
@@ -96,10 +96,6 @@ export type { NavigationTrigger };
 // Re-export NavigationState as NavigationStateData for backward compatibility
 export type { NavigationStateData as NavigationState };
 
-// Removed deprecated delegation functions. Use direct imports:
-// - getNavigationState() from '@shared/state/signals/navigation.state'
-// - getLastNavigationSource() from '@shared/state/signals/navigation.state'
-
 /**
  * Gallery index navigation events for tracking navigation state transitions
  */
@@ -131,11 +127,11 @@ export const gallerySignals = {
 };
 
 // ============================================================================
-// Backward Compatibility Layer
+// State Update Helpers
 // ============================================================================
 
 /**
- * Signal update order for batch operations.
+ * Signal update order documentation.
  *
  * CRITICAL: `isOpen` must be updated LAST within batch() operations.
  *
@@ -146,17 +142,11 @@ export const gallerySignals = {
  * renderGallery() to see an empty array and skip rendering.
  *
  * **Correct order**: data signals → trigger signal (isOpen)
+ * Order: mediaItems → currentIndex → isLoading → error → viewMode → isOpen
  *
  * @see GalleryRenderer.setupStateSubscription for the subscriber that depends on this order
+ * @see applyGalleryStateUpdate for the implementation that enforces this order
  */
-const GALLERY_SIGNAL_UPDATE_ORDER = [
-  'mediaItems',
-  'currentIndex',
-  'isLoading',
-  'error',
-  'viewMode',
-  'isOpen', // Must be last - triggers rendering
-] as const;
 
 /**
  * Apply gallery state updates in the correct order within a batch.
@@ -186,7 +176,7 @@ function applyGalleryStateUpdate(state: GalleryState): void {
  *
  * @remarks
  * The setter uses {@link applyGalleryStateUpdate} to ensure correct
- * signal update order. See {@link GALLERY_SIGNAL_UPDATE_ORDER} for details.
+ * signal update order (isOpen must be updated last).
  */
 export const galleryState = {
   get value(): GalleryState {
@@ -212,7 +202,7 @@ export const galleryState = {
 };
 
 // Export for testing purposes
-export { GALLERY_SIGNAL_UPDATE_ORDER, applyGalleryStateUpdate };
+export { applyGalleryStateUpdate };
 
 // ============================================================================
 // Actions
@@ -333,8 +323,6 @@ export function navigateNext(trigger: NavigationTrigger = 'button'): void {
   navigateToItem(newIndex, trigger, source);
 }
 
-// Removed deprecated setLoading(). Use setLoading() from '@shared/state/signals/ui.state' directly.
-
 /**
  * Set focused index for scroll-based focus tracking
  */
@@ -360,10 +348,6 @@ export function setFocusedIndex(
 
   logger.debug(`[Gallery] focusedIndex set to ${validIndex} (source: ${source})`);
 }
-
-// Removed deprecated UI state delegations. Use direct imports:
-// - setError() from '@shared/state/signals/ui.state'
-// - setViewMode() from '@shared/state/signals/ui.state'
 
 // ============================================================================
 // Selectors
@@ -404,8 +388,3 @@ export function hasNextMedia(): boolean {
 export const isGalleryOpen = (): boolean => galleryState.value.isOpen;
 export const getCurrentIndex = (): number => galleryState.value.currentIndex;
 export const getMediaItems = (): readonly MediaInfo[] => galleryState.value.mediaItems;
-
-// Removed deprecated UI state selectors. Use direct imports:
-// - isLoading() from '@shared/state/signals/ui.state'
-// - getError() from '@shared/state/signals/ui.state'
-// - getViewMode() from '@shared/state/signals/ui.state'

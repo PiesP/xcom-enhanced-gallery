@@ -12,7 +12,10 @@ export const SERVICE_KEYS = {
   // ========================================
   // Core Services
   // ========================================
-  /** Alias for GALLERY_DOWNLOAD */
+  /**
+   * @deprecated Use GALLERY_DOWNLOAD instead. Will be removed in v2.0.0.
+   * Alias for GALLERY_DOWNLOAD (Phase 355 consolidation)
+   */
   BULK_DOWNLOAD: 'core.bulk-download',
   LANGUAGE: 'core.language',
 

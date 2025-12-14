@@ -44,9 +44,11 @@ export async function ensureDownloadServiceRegistered(): Promise<void> {
 
     const serviceManager = CoreService.getInstance();
 
-    // Register under both keys for compatibility
+    // Register primary key
     serviceManager.register(SERVICE_KEYS.GALLERY_DOWNLOAD, downloadService);
-    // BULK_DOWNLOAD is now an alias for GALLERY_DOWNLOAD (Phase 355)
+
+    // Register deprecated alias for backward compatibility
+    // TODO: Remove BULK_DOWNLOAD registration in v2.0.0
     serviceManager.register(SERVICE_KEYS.BULK_DOWNLOAD, downloadService);
 
     downloadServiceRegistered = true;
