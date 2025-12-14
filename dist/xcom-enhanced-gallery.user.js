@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         X.com Enhanced Gallery
 // @namespace    https://github.com/PiesP/xcom-enhanced-gallery
-// @version      1.2.0
+// @version      1.2.1
 // @description  Media viewer and download functionality for X.com
 // @author       PiesP
 // @license      MIT
@@ -1830,7 +1830,7 @@ var XcomEnhancedGallery = (function(exports) {
 		return protocol === "https:" || protocol === "http:";
 	}
 	function checkPbsMediaPath(pathname) {
-		return pathname.startsWith("/media/") || pathname.startsWith("/ext_tw_video_thumb/") || pathname.startsWith("/tweet_video_thumb/") || pathname.startsWith("/video_thumb/");
+		return pathname.startsWith("/media/") || pathname.startsWith("/ext_tw_video_thumb/") || pathname.startsWith("/tweet_video_thumb/") || pathname.startsWith("/video_thumb/") || pathname.startsWith("/amplify_video_thumb/");
 	}
 	var MAX_URL_LENGTH;
 	var init_validator = __esmMin((() => {
@@ -8328,8 +8328,10 @@ var XcomEnhancedGallery = (function(exports) {
 			},
 			set: (v) => ((val) => {
 				debug$2("[createSignalSafe]", instanceId, "value setter fired", val);
+				const prevValue = read();
+				const resolvedValue = typeof val === "function" ? val(prevValue) : val;
 				write(val);
-				notify(read());
+				notify(resolvedValue);
 			})(v),
 			enumerable: true
 		});
@@ -8523,6 +8525,16 @@ var XcomEnhancedGallery = (function(exports) {
 	var init_emitter = __esmMin((() => {
 		init_logging();
 	}));
+	function applyGalleryStateUpdate(state) {
+		batch$1(() => {
+			gallerySignals.mediaItems.value = state.mediaItems;
+			gallerySignals.currentIndex.value = state.currentIndex;
+			gallerySignals.isLoading.value = state.isLoading;
+			gallerySignals.error.value = state.error;
+			gallerySignals.viewMode.value = state.viewMode;
+			gallerySignals.isOpen.value = state.isOpen;
+		});
+	}
 	function openGallery(items, startIndex = 0) {
 		const validIndex = clampIndex(startIndex, items.length);
 		galleryState.value = {
@@ -8628,14 +8640,7 @@ var XcomEnhancedGallery = (function(exports) {
 				};
 			},
 			set value(state) {
-				batch$1(() => {
-					gallerySignals.isOpen.value = state.isOpen;
-					gallerySignals.mediaItems.value = state.mediaItems;
-					gallerySignals.currentIndex.value = state.currentIndex;
-					gallerySignals.isLoading.value = state.isLoading;
-					gallerySignals.error.value = state.error;
-					gallerySignals.viewMode.value = state.viewMode;
-				});
+				applyGalleryStateUpdate(state);
 			},
 			subscribe(callback) {
 				return effectSafe(() => {
@@ -10455,9 +10460,11 @@ var XcomEnhancedGallery = (function(exports) {
 				}
 			}
 			async show(options) {
-				if (globalThis.GM_notification) {
-					this.gmNotify(options);
-									} else 			}
+				if (!globalThis.GM_notification) {
+										return;
+				}
+				this.gmNotify(options);
+							}
 			async error(title, text, timeout = 5e3) {
 				await this.show({
 					title,
@@ -11243,7 +11250,8 @@ var XcomEnhancedGallery = (function(exports) {
 				trigger: "guard",
 				reason: "guard"
 			});
-			if (result.pausedCount > 0) 		});
+			if (result.pausedCount <= 0) return;
+					});
 	}
 	function startAmbientVideoGuard() {
 		guardSubscribers += 1;
@@ -11479,7 +11487,7 @@ var XcomEnhancedGallery = (function(exports) {
 		if (isVideoControlElement(target)) return true;
 		if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
 		const interactive = target.closest(INTERACTIVE_SELECTOR);
-		if (interactive) return !(interactive.matches(MEDIA_SELECTORS.MEDIA_LINK) || interactive.matches(MEDIA_CONTAINER_SELECTOR) || interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null);
+		if (interactive) return !(interactive.matches(MEDIA_LINK_SELECTOR) || interactive.matches(MEDIA_CONTAINER_SELECTOR) || interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null);
 		return false;
 	}
 	function isProcessableMedia(target) {
@@ -11492,7 +11500,7 @@ var XcomEnhancedGallery = (function(exports) {
 		}
 		return Boolean(target.closest(MEDIA_CONTAINER_SELECTOR));
 	}
-	var MEDIA_SELECTORS, MEDIA_CONTAINER_SELECTOR, INTERACTIVE_SELECTOR;
+	var MEDIA_LINK_SELECTOR, MEDIA_CONTAINER_SELECTOR, INTERACTIVE_SELECTOR;
 	var init_media_click_detector = __esmMin((() => {
 		init_css();
 		init_selectors();
@@ -11500,11 +11508,11 @@ var XcomEnhancedGallery = (function(exports) {
 		init_gallery_signals();
 		init_media_element_utils();
 		init_url();
-		MEDIA_SELECTORS = {
-			TWEET_PHOTO: SELECTORS.TWEET_PHOTO,
-			VIDEO_PLAYER: SELECTORS.VIDEO_PLAYER,
-			MEDIA_LINK: SELECTORS.STATUS_LINK
-		};
+		MEDIA_LINK_SELECTOR = [
+			SELECTORS.STATUS_LINK,
+			"a[href*=\"/photo/\"]",
+			"a[href*=\"/video/\"]"
+		].join(", ");
 		MEDIA_CONTAINER_SELECTOR = STABLE_SELECTORS.MEDIA_CONTAINERS.join(", ");
 		INTERACTIVE_SELECTOR = [
 			"button",
@@ -12179,7 +12187,8 @@ var XcomEnhancedGallery = (function(exports) {
 			return false;
 		};
 		debug$1 = (message) => {
-			if (isDevelopmentBuild()) 		};
+			if (!isDevelopmentBuild()) return;
+					};
 		featureLoaders = [];
 		DEFAULT_FEATURE_SETTINGS = Object.freeze({ features: { ...DEFAULT_SETTINGS.features } });
 		cloneDefaultFeatureSettings = () => ({ features: { ...DEFAULT_FEATURE_SETTINGS.features } });
