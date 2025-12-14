@@ -22,8 +22,9 @@ Built with modern tooling:
 
 - **UI**: Solid.js 1.9
 - **Language**: TypeScript 5.9 (strict)
-- **Runtime**: Deno 2.x
-- **Bundler**: Vite 7 + vite-plugin-solid
+- **Runtime**: Node.js 24 (via Volta)
+- **Bundler**: Vite 8 + vite-plugin-solid
+- **Linter/Formatter**: Biome 2.3
 
 ## 📥 Installation
 
@@ -140,8 +141,8 @@ pnpm build:fast
 
 # Individual quality checks
 pnpm check      # TypeScript
-pnpm lint       # Deno lint
-pnpm fmt:check  # Format check
+pnpm lint       # Biome lint
+pnpm fmt:check  # Biome format check
 ```
 
 GitHub Actions runs a subset of these commands for continuous integration and security. See `.github/workflows/` for details.

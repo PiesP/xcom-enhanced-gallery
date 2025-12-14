@@ -28,17 +28,16 @@ Security-sensitive issues should follow the dedicated process described in:
 
 ### Prerequisites
 
-- [Deno](https://deno.land/) **2.x** or later
+- [Node.js](https://nodejs.org/) **24.x** or later (recommended via [Volta](https://volta.sh/))
+- [pnpm](https://pnpm.io/) **10.x** or later
 
 ### Local setup
 
 ```bash
 git clone https://github.com/PiesP/xcom-enhanced-gallery.git
 cd xcom-enhanced-gallery
+pnpm install
 ```
-
-> **Note**: No `npm install` is required. Deno manages dependencies
-> automatically.
 
 ### Common commands
 
@@ -65,8 +64,8 @@ pnpm fmt:check
 pnpm quality
 ```
 
-These tasks are defined in `deno.json` and use the project configuration
-(`tsconfig*.json`, build scripts).
+These tasks are defined in `package.json` and use the project configuration
+(`tsconfig*.json`, `biome.jsonc`, build scripts).
 
 ---
 
@@ -78,10 +77,8 @@ lint/format rules as the CLI (`pnpm lint`, `pnpm fmt`,
 
 ### Recommended extensions
 
-Install the extensions listed in `.vscode/extensions.json`:
-
 - **biomejs.biome** - Biome linter and formatter
-- **denoland.vscode-deno** - Deno language support
+- **esbenp.prettier-vscode** - Prettier for Markdown/YAML
 
 ### Recommended settings
 
@@ -89,22 +86,19 @@ Add these settings to your `.vscode/settings.json`:
 
 ```json
 {
-  "deno.enable": true,
-  "deno.enablePaths": ["src", "scripts"],
-  "deno.disablePaths": ["test"],
   "biome.enabled": true,
   "editor.defaultFormatter": "biomejs.biome",
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "quickfix.biome": "explicit",
-    "source.organizeImports.biome": "explicit"
+    "quickfix.biome": "always",
+    "source.organizeImports.biome": "always"
   },
   "[typescript]": { "editor.defaultFormatter": "biomejs.biome" },
   "[typescriptreact]": { "editor.defaultFormatter": "biomejs.biome" },
   "[javascript]": { "editor.defaultFormatter": "biomejs.biome" },
   "[json]": { "editor.defaultFormatter": "biomejs.biome" },
   "[jsonc]": { "editor.defaultFormatter": "biomejs.biome" },
-  "[markdown]": { "editor.defaultFormatter": "denoland.vscode-deno" }
+  "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" }
 }
 ```
 
@@ -148,7 +142,7 @@ Please keep changes small, focused, and consistent with the existing codebase.
     [Security Policy](.github/SECURITY.md).
 
 - **Style & formatting**
-  - Follow the linting rules enforced by Deno lint (`pnpm lint`).
+  - Follow the linting rules enforced by Biome (`pnpm lint`).
   - Use the existing design tokens and CSS Modules patterns from `src/`.
 
 ---
