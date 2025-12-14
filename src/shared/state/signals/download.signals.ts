@@ -2,7 +2,7 @@
  * Download state management with signals
  */
 
-import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
+import { logger } from '@shared/logging';
 import type { MediaId, MediaInfo } from '@shared/types/media.types';
 import type { Result } from '@shared/types/result.types';
 import { ErrorCode, failure, success } from '@shared/types/result.types';
@@ -39,9 +39,6 @@ const INITIAL_STATE: DownloadState = {
 
 // Lazy-initialized signal
 let downloadStateSignal: SafeSignal<DownloadState> | null = null;
-
-// Logger instance
-const logger: ILogger = rootLogger;
 
 function getDownloadState(): SafeSignal<DownloadState> {
   if (!downloadStateSignal) {

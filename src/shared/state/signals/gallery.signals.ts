@@ -13,7 +13,7 @@
  * See GALLERY_SIGNAL_UPDATE_ORDER and applyGalleryStateUpdate for details.
  */
 
-import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
+import { logger } from '@shared/logging';
 import {
   type NavigationStateData,
   type NavigationTrigger,
@@ -31,9 +31,6 @@ import type { NavigationSource } from '@shared/types/navigation.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
 import { clampIndex } from '@shared/utils/types/safety';
 import { batch as solidBatch } from 'solid-js';
-
-// Logger instance (services-free)
-const logger: ILogger = rootLogger;
 
 type BatchExecutor = (fn: () => void) => void;
 

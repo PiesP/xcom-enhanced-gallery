@@ -265,6 +265,31 @@ export function shortenUrl(url: string, maxLength = 50): string {
 }
 
 /**
+ * Create standard class names
+ * Joins non-null/undefined values with a space
+ *
+ * @deprecated Use `cx` from '@shared/utils/text/formatting' instead for consistent class name handling.
+ *             This function will be removed in a future major version.
+ *
+ * Migration:
+ * ```typescript
+ * // Before
+ * import { createClassName } from '@shared/utils/text/formatting';
+ * const className = createClassName(styles.a, styles.b, condition ? styles.c : undefined);
+ *
+ * // After
+ * import { cx } from '@shared/utils/text/formatting';
+ * const className = cx(styles.a, styles.b, condition && styles.c);
+ * ```
+ *
+ * @param classes - List of class names (strings, null, or undefined)
+ * @returns Joined class name string
+ */
+export function createClassName(...classes: (string | undefined | null)[]): string {
+  return classes.filter(Boolean).join(' ');
+}
+
+/**
  * ClassValue type for cx function - supports strings, objects with boolean values,
  * arrays, and nested combinations
  */

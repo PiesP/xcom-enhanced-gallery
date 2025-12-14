@@ -455,14 +455,3 @@ export const appModule = {
   createConfig: createAppConfig,
   cleanup,
 };
-
-// Phase 290: Namespace isolation - allow global access only in development environment
-if (__DEV__) {
-  void import('@bootstrap/dev-namespace').then(({ setupDevNamespace }) => {
-    setupDevNamespace(undefined, {
-      start: startApplication,
-      createConfig: createAppConfig,
-      cleanup,
-    });
-  });
-}

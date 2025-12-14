@@ -1,6 +1,34 @@
 /**
  * Base Service Implementation - Unified Service Lifecycle
  * @module @shared/services/base-service
+ *
+ * @deprecated Use `createLifecycle` from '@shared/services/lifecycle' instead.
+ *             This class is kept for backward compatibility but is no longer used.
+ *             All services have migrated to the composition-based lifecycle pattern.
+ *
+ * Migration example:
+ * ```typescript
+ * // Before (inheritance)
+ * class MyService extends BaseServiceImpl {
+ *   constructor() { super('MyService'); }
+ *   protected async onInitialize() { ... }
+ *   protected onDestroy() { ... }
+ * }
+ *
+ * // After (composition)
+ * import { createLifecycle } from '@shared/services/lifecycle';
+ *
+ * class MyService {
+ *   private readonly lifecycle = createLifecycle('MyService', {
+ *     onInitialize: () => this.onInitialize(),
+ *     onDestroy: () => this.onDestroy(),
+ *   });
+ *
+ *   public initialize = () => this.lifecycle.initialize();
+ *   public destroy = () => this.lifecycle.destroy();
+ *   public isInitialized = () => this.lifecycle.isInitialized();
+ * }
+ * ```
  */
 
 import { logger } from '@shared/logging';
@@ -9,6 +37,8 @@ import type { BaseService } from '@shared/types/app.types';
 /**
  * Abstract base class for service lifecycle management.
  * Implements Template Method pattern for initialize/destroy.
+ *
+ * @deprecated Prefer composition with `createLifecycle` from '@shared/services/lifecycle'.
  */
 export abstract class BaseServiceImpl implements BaseService {
   protected _isInitialized = false;

@@ -178,7 +178,9 @@ export function GalleryContainer({
 
     // Cleanup listener on component unmount
     onCleanup(() => {
-      eventManager.removeListener(listenerId);
+      if (listenerId) {
+        eventManager.removeListener(listenerId);
+      }
     });
   });
 

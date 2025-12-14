@@ -11,11 +11,8 @@
  * - Simpler dependency graph
  */
 
-import { type Logger as ILogger, logger as rootLogger } from '@shared/logging';
+import { logger } from '@shared/logging';
 import { createSignalSafe } from '@shared/state/signals/signal-factory';
-
-// Logger instance
-const logger: ILogger = rootLogger;
 
 // ============================================================================
 // Types

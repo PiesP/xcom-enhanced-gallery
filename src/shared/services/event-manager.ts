@@ -100,7 +100,7 @@ export class EventManager {
    * @param listener - Event handler
    * @param options - Listener options
    * @param context - Context for grouping (e.g., 'gallery-keyboard')
-   * @returns Listener ID for removal
+   * @returns Listener ID for removal, or null if registration failed
    */
   public addListener(
     element: EventTarget,
@@ -108,13 +108,14 @@ export class EventManager {
     listener: EventListener,
     options?: AddEventListenerOptions,
     context?: string
-  ): string {
+  ): string | null {
     if (this.isDestroyed) {
       logger.warn('EventManager: addListener called on destroyed instance');
-      return '';
+      return null;
     }
 
-    return registerManagedListener(element, type, listener, options, context);
+    const id = registerManagedListener(element, type, listener, options, context);
+    return id || null;
   }
 
   /**
