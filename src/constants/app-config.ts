@@ -17,7 +17,7 @@ type EnvSource = Partial<{
 
 type NodeEnvSource = Partial<Record<string, string | undefined>>;
 
-const FALLBACK_VERSION = '1.2.1';
+const FALLBACK_VERSION = '1.2.2';
 const APP_NAME = 'X.com Enhanced Gallery';
 const MAX_GALLERY_ITEMS = 100;
 const DEFAULT_ANIMATION_DURATION = 'var(--xeg-duration-normal)';

@@ -8,6 +8,31 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.2] - 2025-12-15
+
+### Changed
+
+- **Build System**: Simplified version resolution and removed beta channel support for cleaner release process.
+- **Service Architecture**: Consolidated accessor utilities and improved service registration patterns.
+- **Type Safety**: Enhanced type safety and validation across gallery, settings, and service components.
+- **Code Quality**: Replaced logger calls with no-op functions to maintain control flow without side effects.
+- **Event Handling**: Improved event handling consistency and error propagation in bootstrap stages.
+- **Media Utilities**: Reorganized media utilities with improved import structure.
+
+### Removed
+
+- **Legacy Code**: Removed deprecated scope references, legacy patterns, and unused code across components and services.
+- **Beta Channel**: Removed beta channel support from build configuration.
+
+### CI/CD
+
+- **CDN Cache**: Added jsDelivr CDN cache purge step in release workflow for faster update propagation.
+- **Release Process**: Added verification for backed up files and included meta.js in release artifacts.
+
+### Dependencies
+
+- Updated `cross-env` to version 10.1.0.
+
 ## [1.2.1] - 2025-12-14
 
 ### Fixed
