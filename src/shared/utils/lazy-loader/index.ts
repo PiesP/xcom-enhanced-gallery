@@ -25,6 +25,7 @@
  * @module shared/utils/lazy-loader
  */
 
+import { delay as asyncDelay } from '@shared/async/delay';
 import { logger } from '@shared/logging';
 
 /**
@@ -85,11 +86,6 @@ export interface LazyLoader<T> {
 }
 
 /**
- * Internal delay helper
- */
-const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
-
-/**
  * Creates a lazy loader for a dynamic import
  *
  * @param importFn - Function that returns the dynamic import promise
@@ -136,7 +132,7 @@ export function createLazyLoader<
         if (debug) {
           logger.debug(`[LazyLoader] Retry ${attempt + 1}/${retries} for '${String(exportName)}'`);
         }
-        await delay(retryDelay);
+        await asyncDelay(retryDelay);
         return loadWithRetry(attempt + 1);
       }
 
@@ -238,7 +234,7 @@ export function createModuleLazyLoader<TModule>(
         if (debug) {
           logger.debug(`[LazyLoader] Retry ${attempt + 1}/${retries} for module`);
         }
-        await delay(retryDelay);
+        await asyncDelay(retryDelay);
         return loadWithRetry(attempt + 1);
       }
 

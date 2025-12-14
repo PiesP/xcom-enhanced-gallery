@@ -2,8 +2,10 @@
  * @fileoverview Delay and timeout utilities with AbortSignal support
  * @description Modern async delay/timeout primitives replacing setTimeout-based patterns
  *
- * @version 1.0.0
+ * @version 1.1.0
  */
+
+import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 import { combineSignals, createTimeoutSignal, isAbortError } from './signal-utils';
 
@@ -71,7 +73,7 @@ export async function delay(ms: number, signal?: AbortSignal): Promise<void> {
   }
 
   return new Promise<void>((resolve, reject) => {
-    const timeoutId = window.setTimeout(() => {
+    const timerId = globalTimerManager.setTimeout(() => {
       cleanup();
       resolve();
     }, ms);
@@ -82,7 +84,7 @@ export async function delay(ms: number, signal?: AbortSignal): Promise<void> {
     };
 
     const cleanup = (): void => {
-      window.clearTimeout(timeoutId);
+      globalTimerManager.clearTimeout(timerId);
       signal?.removeEventListener('abort', onAbort);
     };
 

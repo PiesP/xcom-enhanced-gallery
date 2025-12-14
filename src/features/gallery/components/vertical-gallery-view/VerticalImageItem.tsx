@@ -24,6 +24,7 @@
 import { createDebounced } from '@shared/async';
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
+import type { JSX, JSXElement } from '@shared/external/vendors';
 import type { ImageFitMode } from '@shared/types';
 import {
   createIntrinsicSizingStyle,
@@ -31,7 +32,7 @@ import {
 } from '@shared/utils/media/media-dimensions';
 import { SharedObserver } from '@shared/utils/performance';
 import { cx } from '@shared/utils/text/formatting';
-import { createEffect, createMemo, createSignal, type JSX, onCleanup } from 'solid-js';
+import { createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
 import { useVideoVisibility } from './hooks/useVideoVisibility';
 import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
 import styles from './VerticalImageItem.module.css';
@@ -48,7 +49,7 @@ const FIT_MODE_CLASSES: Record<string, string | undefined> = {
 /**
  * Core vertical image item component
  */
-export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element | null {
+export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | null {
   const {
     media,
     index,

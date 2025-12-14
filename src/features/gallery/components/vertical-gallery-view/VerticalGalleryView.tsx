@@ -28,6 +28,7 @@
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
+import type { JSXElement } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
 import { downloadState } from '@shared/state/signals/download.signals';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
@@ -36,7 +37,7 @@ import type { ImageFitMode } from '@shared/types';
 import { safeEventPrevent } from '@shared/utils/events/utils';
 import { computePreloadIndices } from '@shared/utils/performance';
 import { cx } from '@shared/utils/text/formatting';
-import { createEffect, createMemo, createSignal, For, type JSX, onCleanup } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, onCleanup } from 'solid-js';
 import { useVerticalGallery } from './hooks/useVerticalGallery';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
@@ -63,7 +64,7 @@ function VerticalGalleryViewCore({
   onNext,
   onDownloadCurrent,
   onDownloadAll,
-}: VerticalGalleryViewProps): JSX.Element {
+}: VerticalGalleryViewProps): JSXElement {
   // State accessors - using galleryState with createMemo for fine-grained reactivity
   const mediaItems = createMemo(() => galleryState.value.mediaItems);
   const currentIndex = createMemo(() => galleryState.value.currentIndex);
