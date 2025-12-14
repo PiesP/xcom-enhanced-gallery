@@ -135,7 +135,7 @@ const BUILD_MODE_CONFIGS: Record<"development" | "production", BuildModeConfig> 
       cssVariableShortening: false,
       cssValueMinify: false,
       cssClassNamePattern: "[name]__[local]__[hash:base64:5]",
-      sourceMap: "inline" as const,
+      sourceMap: true as const,
     },
     production: {
       cssCompress: true,
@@ -935,6 +935,10 @@ function userscriptHeaderPlugin(mode: string, channel: DeployChannel): Plugin {
 function metaOnlyPlugin(mode: string, channel: DeployChannel): Plugin {
   const isDev = mode === "development";
   const version = resolveVersion(isDev, channel);
+  // Only generate meta.js for CI builds (DEPLOY_CHANNEL must be explicitly set)
+  // Local builds (pnpm build, pnpm build:fast) won't generate meta.js
+  const shouldGenerateMeta = process.env.DEPLOY_CHANNEL !== undefined &&
+    !isDev && (channel === "release" || channel === "beta");
 
   return {
     name: "meta-only-file",
@@ -942,12 +946,54 @@ function metaOnlyPlugin(mode: string, channel: DeployChannel): Plugin {
     enforce: "post",
 
     writeBundle(options) {
+      if (!shouldGenerateMeta) return;
+
       const outDir = options.dir ?? "dist";
       const metaContent = generateMetaOnlyHeader(version, channel);
       const metaPath = path.join(outDir, OUTPUT_FILE_NAMES.meta);
 
       fs.writeFileSync(metaPath, metaContent, "utf8");
       console.log(`📄 Meta-only file generated: ${OUTPUT_FILE_NAMES.meta}`);
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dist Cleanup Plugin
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Allowed output files in the dist directory.
+ * Files not in this list will be removed during build.
+ */
+const ALLOWED_OUTPUT_FILES = new Set([
+  OUTPUT_FILE_NAMES.dev,
+  `${OUTPUT_FILE_NAMES.dev}.map`,
+  OUTPUT_FILE_NAMES.prod,
+]);
+
+function distCleanupPlugin(): Plugin {
+  return {
+    name: "dist-cleanup",
+    apply: "build",
+    enforce: "pre",
+
+    buildStart() {
+      const distDir = resolve(process.cwd(), "dist");
+
+      if (!fs.existsSync(distDir)) {
+        fs.mkdirSync(distDir, { recursive: true });
+        return;
+      }
+
+      const files = fs.readdirSync(distDir);
+      for (const file of files) {
+        if (!ALLOWED_OUTPUT_FILES.has(file)) {
+          const filePath = path.join(distDir, file);
+          fs.rmSync(filePath, { recursive: true, force: true });
+          console.log(`🗑️  Removed: ${file}`);
+        }
+      }
     },
   };
 }
@@ -982,6 +1028,7 @@ export default defineConfig(({ mode }): UserConfig => {
 
   return {
     plugins: [
+      distCleanupPlugin(),
       solidPlugin(),
       cssInlinePlugin(mode),
       userscriptHeaderPlugin(mode, channel),

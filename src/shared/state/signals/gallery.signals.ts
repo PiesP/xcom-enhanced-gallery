@@ -152,12 +152,15 @@ export const galleryState = {
 
   set value(state: GalleryState) {
     batch(() => {
-      gallerySignals.isOpen.value = state.isOpen;
+      // IMPORTANT: Set isOpen LAST to ensure mediaItems/currentIndex are ready
+      // when isOpen subscribers (e.g., GalleryRenderer) are notified.
+      // This prevents race conditions where renderGallery() sees empty mediaItems.
       gallerySignals.mediaItems.value = state.mediaItems;
       gallerySignals.currentIndex.value = state.currentIndex;
       gallerySignals.isLoading.value = state.isLoading;
       gallerySignals.error.value = state.error;
       gallerySignals.viewMode.value = state.viewMode;
+      gallerySignals.isOpen.value = state.isOpen;
     });
   },
 

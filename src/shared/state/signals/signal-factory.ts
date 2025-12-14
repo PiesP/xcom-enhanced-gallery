@@ -83,8 +83,13 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
     set: (v: Parameters<typeof write>[0]) =>
       ((val) => {
         debug('[createSignalSafe]', instanceId, 'value setter fired', val);
+        // Resolve the new value BEFORE calling write to avoid stale values
+        // when inside SolidJS batch(). After write() inside batch, read()
+        // may return stale value until batch completes.
+        const prevValue = read();
+        const resolvedValue = typeof val === 'function' ? (val as (prev: T) => T)(prevValue) : val;
         (write as unknown as (arg: Parameters<typeof write>[0]) => void)(val);
-        notify(read());
+        notify(resolvedValue as T);
       })(v),
     enumerable: true,
   });
