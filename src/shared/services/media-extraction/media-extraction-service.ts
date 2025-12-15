@@ -10,6 +10,7 @@ import type {
 } from '@shared/types/media.types';
 import { ExtractionError } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/result.types';
+import { createPrefixedId } from '@shared/utils/id/create-id';
 import {
   adjustClickedIndexAfterDeduplication,
   removeDuplicateMediaItems,
@@ -78,10 +79,7 @@ export class MediaExtractionService implements MediaExtractor {
   }
 
   private generateExtractionId(): string {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return `simp_${crypto.randomUUID()}`;
-    }
-    return `simp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    return createPrefixedId('simp');
   }
 
   private createErrorResult(error: unknown): MediaExtractionResult {

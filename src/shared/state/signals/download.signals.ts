@@ -6,6 +6,7 @@ import { logger } from '@shared/logging';
 import type { MediaId, MediaInfo } from '@shared/types/media.types';
 import type { Result } from '@shared/types/result.types';
 import { ErrorCode, failure, success } from '@shared/types/result.types';
+import { createPrefixedId } from '@shared/utils/id/create-id';
 import { clamp } from '@shared/utils/types/safety';
 import { createSignalSafe, type SafeSignal } from './signal-factory';
 
@@ -104,10 +105,10 @@ export const downloadState = {
  */
 export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Result<string> {
   try {
-    // Generate temp ID if mediaInfo.id is missing
-    const mediaId = mediaInfo.id ?? `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Generate a temp ID if mediaInfo.id is missing
+    const mediaId = mediaInfo.id ?? createPrefixedId('temp');
 
-    const taskId = `dl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const taskId = createPrefixedId('dl');
     const task: DownloadTask = {
       id: taskId,
       mediaId: mediaId as MediaId,

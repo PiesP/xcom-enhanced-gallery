@@ -11,6 +11,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { createContextId, createId } from '@shared/utils/id/create-id';
 import type { DOMListenerContext } from './event-context';
 
 // ============================================================================
@@ -22,8 +23,7 @@ const listeners = new Map<string, DOMListenerContext>();
 
 /** Generate unique listener ID */
 function generateListenerId(ctx?: string): string {
-  const r = Math.random().toString(36).slice(2, 11);
-  return ctx ? `${ctx}:${r}` : r;
+  return ctx ? createContextId(ctx) : createId();
 }
 
 // ============================================================================
