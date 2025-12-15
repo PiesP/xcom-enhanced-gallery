@@ -15,7 +15,6 @@
 
 import { logger } from '@shared/logging';
 import {
-  type NavigationStateData,
   type NavigationTrigger,
   recordFocusChange,
   recordNavigation,
@@ -83,18 +82,9 @@ export interface GalleryNavigateCompletePayload {
   trigger: GalleryNavigationTrigger;
 }
 
-// Re-export NavigationSource type for backward compatibility
-export type { NavigationSource };
-
-// Re-export navigation types from navigation.state.ts
-export type { NavigationTrigger };
-
 // ============================================================================
 // Navigation State Management (delegated to navigation.state.ts)
 // ============================================================================
-
-// Re-export NavigationState as NavigationStateData for backward compatibility
-export type { NavigationStateData as NavigationState };
 
 /**
  * Gallery index navigation events for tracking navigation state transitions

@@ -19,7 +19,7 @@
 import { useGalleryFocusTracker } from '@features/gallery/hooks/useGalleryFocusTracker';
 import { useGalleryItemScroll } from '@features/gallery/hooks/useGalleryItemScroll';
 import { useGalleryScroll } from '@features/gallery/hooks/useGalleryScroll';
-import type { NavigationTrigger } from '@shared/state/signals/gallery.signals';
+import type { NavigationTrigger } from '@shared/state/signals/navigation.state';
 import { type Accessor, createEffect, createSignal } from 'solid-js';
 import { useGalleryKeyboard } from './useGalleryKeyboard';
 import { useGalleryLifecycle } from './useGalleryLifecycle';

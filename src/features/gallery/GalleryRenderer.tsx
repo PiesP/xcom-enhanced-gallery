@@ -3,8 +3,9 @@
  * @description Handles rendering and lifecycle of the gallery component
  */
 
+import { CSS } from '@constants';
 import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';
-import { GalleryContainer } from '@shared/components/isolation';
+import { GalleryContainer, mountGallery, unmountGallery } from '@shared/components/isolation';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import {
   getDownloadOrchestrator,
@@ -26,16 +27,14 @@ import {
 import { setError } from '@shared/state/signals/ui.state';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
-import { createEffect, createSignal, onCleanup } from 'solid-js';
-import { render } from 'solid-js/web';
+import { createSignal, onCleanup } from 'solid-js';
 import './styles/gallery-global.css';
 
 export class GalleryRenderer implements GalleryRendererInterface {
   private container: HTMLDivElement | null = null;
-  private isRenderingFlag = false;
+  private isMounting = false;
   private stateUnsubscribe: (() => void) | null = null;
   private onCloseCallback?: () => void;
-  private disposeApp: (() => void) | null = null;
 
   constructor() {
     this.setupStateSubscription();
@@ -56,12 +55,12 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   private renderGallery(): void {
-    if (this.isRenderingFlag || this.container) return;
+    if (this.isMounting || this.container) return;
 
     const { isOpen, mediaItems } = gallerySignals;
     if (!isOpen.value || mediaItems.value.length === 0) return;
 
-    this.isRenderingFlag = true;
+    this.isMounting = true;
     logger.info('[GalleryRenderer] Rendering started');
 
     try {
@@ -72,14 +71,14 @@ export class GalleryRenderer implements GalleryRendererInterface {
       logger.error('[GalleryRenderer] Rendering failed:', error);
       setError('Gallery rendering failed');
     } finally {
-      this.isRenderingFlag = false;
+      this.isMounting = false;
     }
   }
 
   private createContainer(): void {
     this.cleanupContainer();
     this.container = document.createElement('div');
-    this.container.className = 'xeg-gallery-renderer';
+    this.container.className = CSS.CLASSES.RENDERER;
     this.container.setAttribute('data-renderer', 'gallery');
     document.body.appendChild(this.container);
   }
@@ -103,20 +102,18 @@ export class GalleryRenderer implements GalleryRendererInterface {
         languageService.getCurrentLanguage()
       );
 
-      createEffect(() => {
-        const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));
-        const unbindLanguage = languageService.onLanguageChange((lang) => setCurrentLanguage(lang));
+      const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));
+      const unbindLanguage = languageService.onLanguageChange((lang) => setCurrentLanguage(lang));
 
-        onCleanup(() => {
-          unbindTheme();
-          unbindLanguage();
-        });
+      onCleanup(() => {
+        unbindTheme();
+        unbindLanguage();
       });
 
       return (
         <GalleryContainer
           onClose={handleClose}
-          className="xeg-gallery-renderer xeg-gallery-root xeg-theme-scope"
+          className={`${CSS.CLASSES.RENDERER} ${CSS.CLASSES.ROOT} xeg-theme-scope`}
           data-theme={currentTheme()}
           data-language={currentLanguage()}
         >
@@ -127,14 +124,14 @@ export class GalleryRenderer implements GalleryRendererInterface {
               onNext={() => navigateNext('button')}
               onDownloadCurrent={() => handleDownload('current')}
               onDownloadAll={() => handleDownload('all')}
-              className="xeg-vertical-gallery"
+              className={CSS.CLASSES.VERTICAL_VIEW}
             />
           </ErrorBoundary>
         </GalleryContainer>
       );
     };
 
-    this.disposeApp = render(() => <Root />, this.container);
+    mountGallery(this.container, () => <Root />);
     logger.info('[GalleryRenderer] Gallery mounted');
   }
 
@@ -187,15 +184,14 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
   private cleanupGallery(): void {
     logger.debug('[GalleryRenderer] Cleanup started');
-    this.isRenderingFlag = false;
+    this.isMounting = false;
     this.cleanupContainer();
   }
 
   private cleanupContainer(): void {
     if (this.container) {
       try {
-        this.disposeApp?.();
-        this.disposeApp = null;
+        unmountGallery(this.container);
         if (document.contains(this.container)) {
           this.container.remove();
         }
@@ -222,11 +218,16 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   close(): void {
+    if (!gallerySignals.isOpen.value) {
+      return;
+    }
+
     closeGallery();
+    this.onCloseCallback?.();
   }
 
   isRendering(): boolean {
-    return this.isRenderingFlag;
+    return Boolean(this.container && gallerySignals.isOpen.value);
   }
 
   destroy(): void {

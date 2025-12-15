@@ -9,8 +9,8 @@ import {
   type GalleryNavigateCompletePayload,
   type GalleryNavigateStartPayload,
   galleryIndexEvents,
-  type NavigationTrigger,
 } from '@shared/state/signals/gallery.signals';
+import type { NavigationTrigger } from '@shared/state/signals/navigation.state';
 import { createEffect, createSignal, on, onCleanup } from 'solid-js';
 
 type Accessor<T> = () => T;

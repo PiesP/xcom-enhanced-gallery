@@ -12,6 +12,7 @@ import type {
   TwitterUser,
 } from '@shared/services/media/types';
 import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/media/media-dimensions';
+import { tryParseUrl } from '@shared/utils/url';
 
 // ============================================================================
 // Types
@@ -89,35 +90,10 @@ function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
   // A helper to determine whether the input is absolute (contains a scheme)
   const isAbsolute = /^(https?:)?\/\//i.test(mediaUrlHttps);
 
-  try {
-    // Try to parse as absolute; if it fails, parse with a fallback base
-    const u = (() => {
-      try {
-        return new URL(mediaUrlHttps);
-      } catch {
-        // Use a neutral host to parse relative URLs without changing their path
-        return new URL(mediaUrlHttps, 'https://pbs.twimg.com');
-      }
-    })();
-
-    // Check for existing 'format' param in a case-insensitive way
-    const hasFormat = Array.from(u.searchParams.keys()).some((k) => k.toLowerCase() === 'format');
-    if (hasFormat) return mediaUrlHttps;
-
-    const pathMatch = u.pathname.match(/\.(jpe?g|png)$/i);
-    if (!pathMatch) return mediaUrlHttps;
-    const ext = (pathMatch[1] ?? '').toLowerCase();
-
-    u.searchParams.set('format', ext);
-    u.searchParams.set('name', 'orig');
-
-    // Preserve original absolute/relative form: return full string for absolute
-    if (isAbsolute) return u.toString();
-    // For relative inputs, return pathname + search to avoid embedding the host
-    return `${u.pathname}${u.search}`;
-  } catch (_err) {
-    // Final fallback: do a conservative manual transformation that preserves
-    // the path and existing query params (if any) while appending format/name.
+  const parsed = tryParseUrl(mediaUrlHttps, 'https://pbs.twimg.com');
+  if (!parsed) {
+    // Conservative fallback that preserves the path and existing query params (if any)
+    // while appending format/name.
     const [pathPart = '', existingQuery] = mediaUrlHttps.split('?');
     const pathMatch = pathPart.match(/\.(jpe?g|png)$/i);
     if (!pathMatch) return mediaUrlHttps;
@@ -125,6 +101,24 @@ function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
     const sep = existingQuery ? '&' : '?';
     return `${pathPart}${sep}format=${ext}&name=orig`;
   }
+
+  // Check for existing 'format' param in a case-insensitive way
+  const hasFormat = Array.from(parsed.searchParams.keys()).some(
+    (k) => k.toLowerCase() === 'format'
+  );
+  if (hasFormat) return mediaUrlHttps;
+
+  const pathMatch = parsed.pathname.match(/\.(jpe?g|png)$/i);
+  if (!pathMatch) return mediaUrlHttps;
+  const ext = (pathMatch[1] ?? '').toLowerCase();
+
+  parsed.searchParams.set('format', ext);
+  parsed.searchParams.set('name', 'orig');
+
+  // Preserve original absolute/relative form: return full string for absolute
+  if (isAbsolute) return parsed.toString();
+  // For relative inputs, return pathname + search to avoid embedding the host
+  return `${parsed.pathname}${parsed.search}`;
 }
 
 /**
