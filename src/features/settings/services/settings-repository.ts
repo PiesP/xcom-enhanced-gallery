@@ -28,7 +28,8 @@ export class PersistentSettingsRepository implements SettingsRepository {
         return cloneDeep(defaults);
       }
 
-      const migrated = migrateSettings(stored);
+      const nowMs = Date.now();
+      const migrated = migrateSettings(stored, nowMs);
       if (stored.__schemaHash !== this.schemaHash) {
         await this.persist(migrated);
       }

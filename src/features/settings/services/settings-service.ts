@@ -182,15 +182,16 @@ export class SettingsService implements SettingsServiceContract {
       if (!imported || typeof imported !== 'object') throw new Error('Invalid settings');
 
       const previous = this.getAllSettings();
-      this.settings = migrateSettings(imported);
-      this.settings.lastModified = Date.now();
+      const nowMs = Date.now();
+      this.settings = migrateSettings(imported, nowMs);
+      this.settings.lastModified = nowMs;
       this.refreshFeatureMap();
 
       this.notifyListeners({
         key: 'all' as NestedSettingKey,
         oldValue: previous,
         newValue: this.getAllSettings(),
-        timestamp: Date.now(),
+        timestamp: nowMs,
         status: 'success',
       });
       await this.persist();

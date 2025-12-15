@@ -1,7 +1,10 @@
 /**
  * @fileoverview Settings migration helper - Versioned migration pipeline
  * @description Handles schema evolution: fills missing fields from defaults,
- * applies rename/transform steps between versions. Pure function for easy testing.
+ * applies rename/transform steps between versions.
+ *
+ * This module is designed to be deterministic: callers must provide `nowMs`
+ * (current epoch milliseconds) so that migrations stay pure and test-friendly.
  */
 
 import { DEFAULT_SETTINGS as defaultSettings } from '@constants';
@@ -55,7 +58,7 @@ function pruneWithTemplate<T extends Record<string, unknown>>(
  * Fill missing fields by merging with defaults while preserving user values.
  * Unknown top-level and nested fields are pruned based on DEFAULT_SETTINGS shape.
  */
-function fillWithDefaults(settings: AppSettings): AppSettings {
+function fillWithDefaults(settings: AppSettings, nowMs: number): AppSettings {
   const pruned = pruneWithTemplate(settings, defaultSettings) as Partial<AppSettings>;
 
   // Merge category defaults
@@ -79,14 +82,14 @@ function fillWithDefaults(settings: AppSettings): AppSettings {
   return {
     ...merged,
     version: defaultSettings.version,
-    lastModified: Date.now(),
+    lastModified: nowMs,
   } as AppSettings;
 }
 
 /**
  * Apply version-specific transforms then fill with defaults.
  */
-export function migrateSettings(input: AppSettings): AppSettings {
+export function migrateSettings(input: AppSettings, nowMs: number): AppSettings {
   let working = { ...input } as AppSettings;
 
   // Apply explicit migration if defined for detected version
@@ -101,7 +104,7 @@ export function migrateSettings(input: AppSettings): AppSettings {
   }
 
   // Always perform default fill/merge to ensure exactOptionalPropertyTypes safety
-  return fillWithDefaults(working);
+  return fillWithDefaults(working, nowMs);
 }
 
 export const __private = { fillWithDefaults, pruneWithTemplate };

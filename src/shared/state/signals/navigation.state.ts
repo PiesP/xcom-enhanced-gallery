@@ -8,7 +8,7 @@
  * Key features:
  * - Tracks navigation source and timing
  * - Detects duplicate navigation
- * - Pure signal-based state management
+ * - Signal-based state management (time can be injected for deterministic tests)
  */
 
 import { createSignalSafe } from '@shared/state/signals/signal-factory';
@@ -45,7 +45,9 @@ export interface NavigationResult {
 
 const INITIAL_NAVIGATION_STATE: NavigationStateData = {
   lastSource: 'auto-focus',
-  lastTimestamp: Date.now(),
+  // Avoid non-deterministic timestamps at module evaluation time.
+  // Callers can provide `nowMs` to reset/record functions when needed.
+  lastTimestamp: 0,
   lastNavigatedIndex: null,
 };
 
@@ -72,6 +74,10 @@ export const navigationSignals = {
   lastTimestamp: createSignalSafe<number>(INITIAL_NAVIGATION_STATE.lastTimestamp),
   lastNavigatedIndex: createSignalSafe<number | null>(INITIAL_NAVIGATION_STATE.lastNavigatedIndex),
 };
+
+function resolveNowMs(nowMs?: number): number {
+  return nowMs ?? Date.now();
+}
 
 // ============================================================================
 // Validation
@@ -186,8 +192,12 @@ export function getLastNavigationSource(): NavigationSource {
  * Record a navigation action
  * @returns Navigation result indicating if this was a duplicate
  */
-export function recordNavigation(targetIndex: number, source: NavigationSource): NavigationResult {
-  const timestamp = Date.now();
+export function recordNavigation(
+  targetIndex: number,
+  source: NavigationSource,
+  nowMs?: number
+): NavigationResult {
+  const timestamp = resolveNowMs(nowMs);
   const currentIndex = navigationSignals.lastNavigatedIndex.value;
   const currentSource = navigationSignals.lastSource.value;
 
@@ -212,8 +222,8 @@ export function recordNavigation(targetIndex: number, source: NavigationSource):
 /**
  * Record a focus change (doesn't affect navigation history)
  */
-export function recordFocusChange(source: NavigationSource): void {
-  const timestamp = Date.now();
+export function recordFocusChange(source: NavigationSource, nowMs?: number): void {
+  const timestamp = resolveNowMs(nowMs);
   navigationSignals.lastSource.value = source;
   navigationSignals.lastTimestamp.value = timestamp;
 }
@@ -221,9 +231,9 @@ export function recordFocusChange(source: NavigationSource): void {
 /**
  * Reset navigation state to initial values
  */
-export function resetNavigation(): void {
+export function resetNavigation(nowMs?: number): void {
   navigationSignals.lastSource.value = INITIAL_NAVIGATION_STATE.lastSource;
-  navigationSignals.lastTimestamp.value = Date.now();
+  navigationSignals.lastTimestamp.value = resolveNowMs(nowMs);
   navigationSignals.lastNavigatedIndex.value = INITIAL_NAVIGATION_STATE.lastNavigatedIndex;
 }
 

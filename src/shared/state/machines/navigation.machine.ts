@@ -3,6 +3,9 @@
  *
  * Pure function collection that exposes deterministic navigation transitions.
  *
+ * This module is time-agnostic: callers must provide `nowMs` (epoch milliseconds)
+ * so transitions remain pure and deterministic in tests.
+ *
  * Note: This machine tracks navigation metadata (source, timing) but does NOT
  * manage currentIndex/focusedIndex values directly. Those are managed by
  * gallery.signals.ts to avoid duplication and maintain single source of truth.
@@ -58,22 +61,26 @@ export const NavigationStateMachine = {
 // Implementation
 // ============================================================================
 
-function createInitialState(): NavigationState {
+function createInitialState(nowMs: number): NavigationState {
   return {
     lastSource: 'auto-focus',
-    lastTimestamp: Date.now(),
+    lastTimestamp: nowMs,
     lastNavigatedIndex: null,
   };
 }
 
-function transition(state: NavigationState, action: NavigationAction): NavigationTransitionResult {
+function transition(
+  state: NavigationState,
+  action: NavigationAction,
+  nowMs: number
+): NavigationTransitionResult {
   switch (action.type) {
     case 'NAVIGATE':
-      return handleNavigate(state, action.payload);
+      return handleNavigate(state, action.payload, nowMs);
     case 'SET_FOCUS':
-      return handleSetFocus(state, action.payload);
+      return handleSetFocus(state, action.payload, nowMs);
     case 'RESET':
-      return handleReset();
+      return handleReset(nowMs);
     default:
       return createResult(state);
   }
@@ -85,10 +92,11 @@ function handleNavigate(
     targetIndex: number;
     source: NavigationSource;
     trigger: NavigationTrigger;
-  }
+  },
+  nowMs: number
 ): NavigationTransitionResult {
   const { targetIndex, source } = payload;
-  const timestamp = Date.now();
+  const timestamp = nowMs;
 
   // Detect duplicate navigation: same index, both manual sources
   const isDuplicateManual =
@@ -115,10 +123,11 @@ function handleNavigate(
 
 function handleSetFocus(
   state: NavigationState,
-  payload: { focusIndex: number | null; source: NavigationSource }
+  payload: { focusIndex: number | null; source: NavigationSource },
+  nowMs: number
 ): NavigationTransitionResult {
   const { source } = payload;
-  const timestamp = Date.now();
+  const timestamp = nowMs;
 
   // Focus changes don't affect navigation history, just update metadata
   return createResult({
@@ -128,8 +137,8 @@ function handleSetFocus(
   });
 }
 
-function handleReset(): NavigationTransitionResult {
-  return createResult(createInitialState());
+function handleReset(nowMs: number): NavigationTransitionResult {
+  return createResult(createInitialState(nowMs));
 }
 
 function isManualSource(source: NavigationSource): boolean {
