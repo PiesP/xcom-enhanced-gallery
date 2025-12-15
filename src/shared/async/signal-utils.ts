@@ -5,6 +5,8 @@
  * @version 1.0.0
  */
 
+import { globalTimerManager } from '@shared/utils/time/timer-management';
+
 /**
  * Create an AbortSignal that times out after specified milliseconds
  *
@@ -25,7 +27,7 @@ export function createTimeoutSignal(ms: number): AbortSignal {
   // Always use manual implementation for testability with fake timers
   // Native AbortSignal.timeout() uses internal browser timers that bypass vi.useFakeTimers()
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => {
+  const timeoutId = globalTimerManager.setTimeout(() => {
     controller.abort(new DOMException('The operation timed out.', 'TimeoutError'));
   }, ms);
 
@@ -33,7 +35,7 @@ export function createTimeoutSignal(ms: number): AbortSignal {
   controller.signal.addEventListener(
     'abort',
     () => {
-      window.clearTimeout(timeoutId);
+      globalTimerManager.clearTimeout(timeoutId);
     },
     { once: true }
   );

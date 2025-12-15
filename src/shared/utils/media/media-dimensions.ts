@@ -19,6 +19,55 @@ const DEFAULT_DIMENSIONS: DimensionPair = {
   height: STANDARD_GALLERY_HEIGHT,
 } as const;
 
+function extractFilenameFromUrl(url: string): string | null {
+  if (!url) return null;
+
+  try {
+    // Use a base URL to support relative/protocol-relative inputs.
+    const urlObj = new URL(url, 'https://example.invalid');
+    const pathname = urlObj.pathname;
+    const filename = pathname.split('/').pop();
+    return filename && filename.length > 0 ? filename : null;
+  } catch {
+    const lastSlash = url.lastIndexOf('/');
+    if (lastSlash === -1) return null;
+
+    let filename = url.substring(lastSlash + 1);
+    const queryIndex = filename.indexOf('?');
+    if (queryIndex !== -1) {
+      filename = filename.substring(0, queryIndex);
+    }
+
+    const hashIndex = filename.indexOf('#');
+    if (hashIndex !== -1) {
+      filename = filename.substring(0, hashIndex);
+    }
+
+    return filename.length > 0 ? filename : null;
+  }
+}
+
+function getMediaDedupKey(media: MediaInfo): string | null {
+  const urlCandidate =
+    typeof media.originalUrl === 'string' && media.originalUrl.length > 0
+      ? media.originalUrl
+      : typeof media.url === 'string' && media.url.length > 0
+        ? media.url
+        : null;
+
+  if (!urlCandidate) {
+    return null;
+  }
+
+  const typePrefix =
+    media.type === 'image' || media.type === 'video' || media.type === 'gif'
+      ? `${media.type}:`
+      : '';
+
+  const filename = extractFilenameFromUrl(urlCandidate);
+  return filename ? `${typePrefix}${filename}` : `${typePrefix}${urlCandidate}`;
+}
+
 /**
  * Generic deduplication function
  * @template T - Array element type
@@ -26,12 +75,15 @@ const DEFAULT_DIMENSIONS: DimensionPair = {
  * @param keyExtractor - Function to extract unique key from each item
  * @returns Deduplicated array (original order preserved)
  */
-function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => string): T[] {
+function removeDuplicates<T>(
+  items: ReadonlyArray<T | null | undefined>,
+  keyExtractor: (item: T) => string | null | undefined
+): T[] {
   const seen = new Set<string>();
   const uniqueItems: T[] = [];
 
   for (const item of items) {
-    if (!item) {
+    if (item == null) {
       continue;
     }
 
@@ -55,18 +107,21 @@ function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => str
  * @param mediaItems - Array of media items to deduplicate
  * @returns Deduplicated array of media items
  */
-export function removeDuplicateMediaItems(mediaItems: readonly MediaInfo[]): MediaInfo[] {
+export function removeDuplicateMediaItems(
+  mediaItems: ReadonlyArray<MediaInfo | undefined>
+): MediaInfo[] {
   if (!mediaItems?.length) {
     return [];
   }
 
-  const result = removeDuplicates(mediaItems, (item) => item.originalUrl ?? item.url);
+  const result = removeDuplicates<MediaInfo>(mediaItems, getMediaDedupKey);
 
   if (__DEV__) {
-    const removedCount = mediaItems.length - result.length;
+    const inputCount = mediaItems.filter(Boolean).length;
+    const removedCount = inputCount - result.length;
     if (removedCount > 0) {
       logger.debug('Removed duplicate media items:', {
-        original: mediaItems.length,
+        original: inputCount,
         unique: result.length,
         removed: removedCount,
       });
@@ -342,10 +397,10 @@ export function adjustClickedIndexAfterDeduplication(
 
   if (!clickedItem) return 0;
 
-  const clickedKey = clickedItem.originalUrl ?? clickedItem.url;
+  const clickedKey = getMediaDedupKey(clickedItem);
+  if (!clickedKey) return 0;
   const newIndex = uniqueItems.findIndex((item) => {
-    const itemKey = item.originalUrl ?? item.url;
-    return itemKey === clickedKey;
+    return getMediaDedupKey(item) === clickedKey;
   });
 
   return newIndex >= 0 ? newIndex : 0;

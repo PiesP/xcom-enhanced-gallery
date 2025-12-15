@@ -24,9 +24,13 @@ export class TimerManager {
    * Register and track setTimeout
    */
   setTimeout(callback: () => void, delay: number): TimerId {
-    const id: TimerId = window.setTimeout(() => {
-      this.timers.delete(id);
-      callback();
+    let id: TimerId;
+    id = window.setTimeout(() => {
+      try {
+        callback();
+      } finally {
+        this.timers.delete(id);
+      }
     }, delay);
 
     this.timers.add(id);
