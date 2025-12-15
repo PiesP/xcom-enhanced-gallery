@@ -118,6 +118,25 @@ export function update(model: RuntimeModel, event: RuntimeEvent): UpdateResult {
       return { model: nextModel, cmds };
     }
 
+    case 'DomFactsFailed': {
+      const nextModel: RuntimeModel = clearInFlight(model, event.requestId);
+      return {
+        model: nextModel,
+        cmds: [
+          {
+            type: 'LOG',
+            level: 'warn',
+            message: '[command-runtime] TAKE_DOM_FACTS failed',
+            context: {
+              requestId: event.requestId,
+              kind: event.kind,
+              error: event.error,
+            },
+          },
+        ],
+      };
+    }
+
     case 'StorageLoaded': {
       const nextModel: RuntimeModel = {
         ...clearInFlight(model, event.requestId),

@@ -1,4 +1,4 @@
-import type { DomFacts } from '@core/dom-facts';
+import type { DomFacts, DomFactsKind } from '@core/dom-facts';
 
 export type RuntimeEvent =
   | { readonly type: 'Booted'; readonly url: string; readonly now: number }
@@ -7,6 +7,13 @@ export type RuntimeEvent =
       readonly type: 'DomFactsReady';
       readonly requestId: string;
       readonly facts: DomFacts;
+      readonly now: number;
+    }
+  | {
+      readonly type: 'DomFactsFailed';
+      readonly requestId: string;
+      readonly kind: DomFactsKind;
+      readonly error: string;
       readonly now: number;
     }
   | {
