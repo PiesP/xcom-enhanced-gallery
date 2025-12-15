@@ -358,20 +358,9 @@ export async function cleanup(): Promise<void> {
 /**
  * Main application entry point
  *
- * 📋 9-stage bootstrap process:
- * 1️⃣  Global styles - src/styles/globals
- * 2️⃣  Developer tooling - src/bootstrap/dev-tools.ts
- * 3️⃣  Infrastructure initialization (Vendor load) - src/bootstrap/environment.ts
- * 4️⃣  Core systems (Core services + notification stack) - src/bootstrap/critical-systems.ts (Phase 2.1)
- * 5️⃣  Base services (Theme/Language) - src/bootstrap/base-services.ts (Phase 2.1)
- * 6️⃣  Feature service registration (lazy load) - src/bootstrap/features.ts
- * 7️⃣  Global event handler setup - src/bootstrap/events.ts
- * 8️⃣  Gallery app initialization - src/features/gallery/GalleryApp.ts
- * 9️⃣  Background system initialization (non-critical services)
- *
- * 💡 Critical vs Non-Critical:
- * - Critical: Needed immediately after page load (infrastructure, core, gallery)
- * - Non-Critical: Can wait until after user interaction (background timers)
+ * Executes the configured bootstrap stages and starts background preload work.
+ * Keep the stage list and its documentation centralized in the stage
+ * configuration (bootstrapStages) to avoid drift.
  */
 // exported startApplication below
 export async function startApplication(): Promise<void> {

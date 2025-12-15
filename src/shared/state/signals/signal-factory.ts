@@ -12,8 +12,9 @@ import { createComputed, createRoot, createSignal } from 'solid-js';
 
 // Debug: Log module load for diagnosing duplicate runtime instances during tests
 const logger = createScopedLogger?.('SignalFactory') ?? createLogger({ prefix: '[SignalFactory]' });
+const debugLogger = __DEV__ ? logger?.debug?.bind(logger) : undefined;
 const debug = (...args: unknown[]): void => {
-  logger?.debug?.(...args);
+  debugLogger?.(...args);
 };
 
 debug('Module loaded');

@@ -84,6 +84,10 @@ export class EventManager {
 
   /** Lifecycle: Initialization */
   private async onInitialize(): Promise<void> {
+    // Allow re-initialization after destroy().
+    // The lifecycle helper supports initialize() after destroy(); ensure the
+    // instance becomes usable again.
+    this.isDestroyed = false;
     logger.debug('EventManager initialized');
   }
 

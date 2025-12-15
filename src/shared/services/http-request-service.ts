@@ -140,10 +140,12 @@ export class HttpRequestService {
           reject(error);
         };
 
+        const headers: Record<string, string> = { ...(options?.headers ?? {}) };
+
         const details: GMXMLHttpRequestDetails = {
           method: method as Exclude<GMXMLHttpRequestDetails['method'], undefined>,
           url,
-          headers: options?.headers || {},
+          headers,
           timeout: options?.timeout ?? this.defaultTimeout,
           responseType: options?.responseType as Exclude<
             GMXMLHttpRequestDetails['responseType'],
@@ -200,20 +202,16 @@ export class HttpRequestService {
             !(data instanceof URLSearchParams)
           ) {
             details.data = JSON.stringify(data);
-            if (!details.headers!['content-type']) {
-              details.headers!['content-type'] = 'application/json';
+            if (!headers['content-type']) {
+              headers['content-type'] = 'application/json';
             }
           } else {
             details.data = data as Exclude<GMXMLHttpRequestDetails['data'], undefined>;
           }
         }
 
-        if (
-          options &&
-          (options as BinaryRequestOptions).contentType &&
-          !details.headers!['content-type']
-        ) {
-          details.headers!['content-type'] = (options as BinaryRequestOptions).contentType!;
+        if (options?.contentType && !headers['content-type']) {
+          headers['content-type'] = options.contentType;
         }
 
         const control = userscript.xmlHttpRequest(details);

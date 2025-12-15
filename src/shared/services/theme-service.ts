@@ -103,10 +103,17 @@ export class ThemeService implements ThemeServiceContract {
           this.themeSetting = saved;
           this.applyCurrentTheme(true);
         }
-        this.initializeSystemDetection();
-        this.earlyRestoreComplete = true;
       } catch (error) {
         logger.warn('[ThemeService] Early async theme restore failed', error);
+      } finally {
+        // Always enable system theme detection, even if the early async restore
+        // fails midway. Initialization will be skipped once this flag is set.
+        try {
+          this.initializeSystemDetection();
+        } catch (error) {
+          logger.debug('[ThemeService] System theme detection initialization failed', error);
+        }
+
         this.earlyRestoreComplete = true;
       }
     })();

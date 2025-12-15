@@ -14,6 +14,7 @@ import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
 import type { ToolbarSettingsControllerResult, ToolbarState } from '@shared/hooks';
 import { safeEventPreventAll } from '@shared/utils/events/utils';
+import { shouldAllowWheelDefault as shouldAllowWheelDefaultBase } from '@shared/utils/events/wheel-scroll-guard';
 import { resolve, resolveOptional } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, lazy, onCleanup, Show, Suspense } from 'solid-js';
@@ -110,40 +111,11 @@ export interface ToolbarViewProps {
 const SCROLLABLE_SELECTOR = '[data-gallery-scrollable="true"]';
 const SCROLL_LOCK_TOLERANCE = 1;
 
-const findScrollableAncestor = (target: EventTarget | null): HTMLElement | null => {
-  if (!(target instanceof HTMLElement)) {
-    return null;
-  }
-
-  return target.closest<HTMLElement>(SCROLLABLE_SELECTOR);
-};
-
-const canConsumeWheelEvent = (element: HTMLElement, deltaY: number): boolean => {
-  const overflow = element.scrollHeight - element.clientHeight;
-
-  if (overflow <= SCROLL_LOCK_TOLERANCE) {
-    return false;
-  }
-
-  if (deltaY < 0) {
-    return element.scrollTop > SCROLL_LOCK_TOLERANCE;
-  }
-
-  if (deltaY > 0) {
-    const maxScrollTop = overflow;
-    return element.scrollTop < maxScrollTop - SCROLL_LOCK_TOLERANCE;
-  }
-
-  return true;
-};
-
 const shouldAllowWheelDefault = (event: WheelEvent): boolean => {
-  const scrollable = findScrollableAncestor(event.target);
-  if (!scrollable) {
-    return false;
-  }
-
-  return canConsumeWheelEvent(scrollable, event.deltaY);
+  return shouldAllowWheelDefaultBase(event, {
+    scrollableSelector: SCROLLABLE_SELECTOR,
+    tolerance: SCROLL_LOCK_TOLERANCE,
+  });
 };
 
 export function ToolbarView(props: ToolbarViewProps): JSXElement {

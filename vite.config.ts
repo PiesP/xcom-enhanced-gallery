@@ -21,6 +21,7 @@ import * as path from "node:path";
 import { resolve } from "node:path";
 import { defineConfig, type Plugin, type UserConfig } from "vite";
 import solidPlugin from "vite-plugin-solid";
+import { resolveViteAliasesFromTsconfig } from "./scripts/tsconfig-aliases";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -42,16 +43,6 @@ const BROWSER_COMPATIBILITY = {
   firefox: "119",
   edge: "117",
   safari: "17",
-} as const;
-
-const PATH_ALIASES = {
-  "@": "src",
-  "@bootstrap": "src/bootstrap",
-  "@constants": "src/constants",
-  "@features": "src/features",
-  "@shared": "src/shared",
-  "@styles": "src/styles",
-  "@types": "src/types",
 } as const;
 
 const USERSCRIPT_CONFIG = {
@@ -978,13 +969,11 @@ function distCleanupPlugin(): Plugin {
 // Path Aliases
 // ─────────────────────────────────────────────────────────────────────────────
 
-function buildPathAliases(root: string): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(PATH_ALIASES).map(([alias, aliasPath]) => [
-      alias,
-      resolve(root, aliasPath),
-    ])
-  );
+function buildPathAliases(root: string) {
+  return resolveViteAliasesFromTsconfig({
+    rootDir: root,
+    tsconfigPath: resolve(root, "tsconfig.json"),
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
