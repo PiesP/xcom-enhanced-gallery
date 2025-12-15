@@ -35,6 +35,8 @@
     "paths": {
       "*": ["./*"],
       "@/*": ["./src/*"],
+      "@core/*": ["./src/core/*"],
+      "@edge/*": ["./src/edge/*"],
       "@bootstrap/*": ["./src/bootstrap/*"],
       "@constants": ["./src/constants/index.ts"],
       "@constants/*": ["./src/constants/*"],

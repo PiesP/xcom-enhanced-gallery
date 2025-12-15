@@ -40,6 +40,7 @@ const debugCleanupLog: CleanupLogger = (message, error) => {
 };
 
 let globalEventTeardown: Unregister | null = null;
+let commandRuntimeTeardown: (() => void) | null = null;
 
 /**
  * Set global event teardown function (used by bootstrap stages)
@@ -61,6 +62,23 @@ function tearDownGlobalEventHandlers(): void {
   } catch (error) {
     if (isDevEnvironment) {
       logger.debug('[events] Error while tearing down global handlers', error);
+    }
+  }
+}
+
+function tearDownCommandRuntime(): void {
+  if (!commandRuntimeTeardown) {
+    return;
+  }
+
+  const teardown = commandRuntimeTeardown;
+  commandRuntimeTeardown = null;
+
+  try {
+    teardown();
+  } catch (error) {
+    if (isDevEnvironment) {
+      logger.debug('[command-runtime] Error while tearing down runtime', error);
     }
   }
 }
@@ -139,6 +157,12 @@ const bootstrapStages = [
   {
     label: 'Global event wiring',
     run: () => setupGlobalEventHandlers(),
+  },
+  {
+    label: 'Command runtime (dev)',
+    run: initializeCommandRuntimeIfNeeded,
+    shouldRun: () => isDevEnvironment && !isTestMode,
+    optional: true,
   },
   {
     label: 'Gallery initialization',
@@ -257,6 +281,13 @@ export async function initializeDevToolsIfNeeded(): Promise<void> {
   await initializeDevTools();
 }
 
+export async function initializeCommandRuntimeIfNeeded(): Promise<void> {
+  tearDownCommandRuntime();
+
+  const { startDevCommandRuntime } = await import('@edge/bootstrap');
+  commandRuntimeTeardown = startDevCommandRuntime();
+}
+
 // exported initializeGalleryIfPermitted below
 export async function initializeGalleryIfPermitted(): Promise<void> {
   if (isTestMode) {
@@ -292,6 +323,7 @@ export async function cleanup(): Promise<void> {
     logger.info('🧹 Starting application cleanup');
 
     tearDownGlobalEventHandlers();
+    tearDownCommandRuntime();
     await runOptionalCleanup('Gallery cleanup', async () => {
       if (!lifecycleState.galleryApp) {
         return;
