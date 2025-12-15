@@ -91,8 +91,11 @@ function resolveCookieAPI(): CookieAPI | null {
     if (userscript.cookie) {
       return userscript.cookie;
     }
-  } catch {
+  } catch (error) {
     // Ignore: fall back to global probing below
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      logger.debug('[cookie-utils] Userscript cookie API resolution failed (ignored)', error);
+    }
   }
 
   const global = globalThis as GlobalWithCookie;

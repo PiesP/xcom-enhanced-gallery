@@ -40,14 +40,19 @@ export class ThemeService implements ThemeServiceContract {
 
   /** @internal Test helper */
   public static resetForTests(): void {
+    const existing = ThemeService.singleton.peek();
+    existing?.destroy();
     ThemeService.singleton.reset();
   }
 
-  /**
-   * Flag to track if early async restore has completed.
-   * Used to prevent duplicate work in onInitialize().
-   */
-  private earlyRestoreComplete = false;
+  /** Track whether the early restore encountered an error. */
+  private earlyRestoreFailed = false;
+
+  /** Hold the early restore promise to avoid untracked async work. */
+  private earlyRestorePromise: Promise<void> | null = null;
+
+  /** Ensure cleanup runs at most once per instance. */
+  private didCleanup = false;
 
   constructor() {
     this.lifecycle = createLifecycle('ThemeService', {
@@ -96,7 +101,11 @@ export class ThemeService implements ThemeServiceContract {
    * @internal
    */
   private scheduleEarlyAsyncRestore(): void {
-    void (async () => {
+    if (this.earlyRestorePromise) {
+      return;
+    }
+
+    this.earlyRestorePromise = (async () => {
       try {
         const saved = await this.loadThemeAsync();
         if (saved && saved !== this.themeSetting) {
@@ -104,6 +113,7 @@ export class ThemeService implements ThemeServiceContract {
           this.applyCurrentTheme(true);
         }
       } catch (error) {
+        this.earlyRestoreFailed = true;
         logger.warn('[ThemeService] Early async theme restore failed', error);
       } finally {
         // Always enable system theme detection, even if the early async restore
@@ -113,8 +123,6 @@ export class ThemeService implements ThemeServiceContract {
         } catch (error) {
           logger.debug('[ThemeService] System theme detection initialization failed', error);
         }
-
-        this.earlyRestoreComplete = true;
       }
     })();
   }
@@ -126,6 +134,8 @@ export class ThemeService implements ThemeServiceContract {
 
   /** Destroy service (idempotent, graceful on error) */
   public destroy(): void {
+    // Ensure we clean up constructor-time side effects even if initialize() was never called.
+    this.cleanupOnce();
     this.lifecycle.destroy();
   }
 
@@ -135,15 +145,16 @@ export class ThemeService implements ThemeServiceContract {
   }
 
   private async onInitialize(): Promise<void> {
-    // Skip if early restore already completed successfully
-    if (!this.earlyRestoreComplete) {
-      // Ensure async restore is done if not already
+    // Ensure the constructor-scheduled early restore has completed.
+    await (this.earlyRestorePromise ?? Promise.resolve());
+
+    // If early restore failed, attempt a best-effort restore again during initialization.
+    if (this.earlyRestoreFailed) {
       const saved = await this.loadThemeAsync();
       if (saved && saved !== this.themeSetting) {
         this.themeSetting = saved;
         this.applyCurrentTheme(true);
       }
-      this.initializeSystemDetection();
     }
 
     try {
@@ -231,6 +242,15 @@ export class ThemeService implements ThemeServiceContract {
   }
 
   private onDestroy(): void {
+    this.cleanupOnce();
+  }
+
+  private cleanupOnce(): void {
+    if (this.didCleanup) {
+      return;
+    }
+    this.didCleanup = true;
+
     if (this.settingsUnsubscribe) {
       this.settingsUnsubscribe();
       this.settingsUnsubscribe = null;

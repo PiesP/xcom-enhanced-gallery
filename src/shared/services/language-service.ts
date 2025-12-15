@@ -66,6 +66,8 @@ export class LanguageService {
 
   /** @internal Test helper */
   public static resetForTests(): void {
+    const existing = LanguageService.singleton.peek();
+    existing?.destroy();
     LanguageService.singleton.reset();
   }
 

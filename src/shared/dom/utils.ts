@@ -54,7 +54,10 @@ function isWithinVideoPlayer(element: HTMLElement): boolean {
   return VIDEO_PLAYER_CONTEXT_SELECTORS.some((selector) => {
     try {
       return element.closest(selector) !== null;
-    } catch {
+    } catch (error) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        logger.debug('[dom/utils] element.closest failed (ignored)', { selector, error });
+      }
       return false;
     }
   });
@@ -64,7 +67,10 @@ function matchesVideoControlSelectors(element: HTMLElement): boolean {
   return VIDEO_CONTROL_SELECTORS.some((selector) => {
     try {
       return element.matches(selector) || element.closest(selector) !== null;
-    } catch {
+    } catch (error) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        logger.debug('[dom/utils] element.matches/closest failed (ignored)', { selector, error });
+      }
       return false;
     }
   });
@@ -76,7 +82,10 @@ function hasInputRangeSignature(element: HTMLElement): boolean {
   }
   try {
     return element.matches('input[type="range"]');
-  } catch {
+  } catch (error) {
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      logger.debug('[dom/utils] input range signature check failed (ignored)', error);
+    }
     return false;
   }
 }
@@ -107,7 +116,10 @@ function getNearestAttributeValue(
   try {
     const host = element.closest(`[${attribute}]`) as HTMLElement | null;
     return host?.getAttribute(attribute) ?? null;
-  } catch {
+  } catch (error) {
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      logger.debug('[dom/utils] nearest attribute lookup failed (ignored)', { attribute, error });
+    }
     return null;
   }
 }

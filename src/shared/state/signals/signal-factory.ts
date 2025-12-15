@@ -48,6 +48,9 @@ export type SafeSignal<T> = {
  */
 export function createSignalSafe<T>(initial: T): SafeSignal<T> {
   const [read, write] = createSignal(initial, { equals: false });
+  // Solid's Setter<T> overloads intentionally reject direct function values.
+  // We handle function-typed values explicitly and use a simplified signature internally.
+  const setSignal = write as (value: T | ((prev: T) => T)) => void;
   const instanceId = Math.random().toString(36).slice(2, 10);
   const subscribers = new Set<(value: T) => void>();
 
@@ -69,9 +72,9 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
       // Solid treats function inputs as updaters. When the *value* itself is a
       // function, wrap it to avoid accidental invocation.
       if (typeof value === 'function') {
-        (write as unknown as (updater: (prev: T) => T) => void)(() => value);
+        setSignal(() => value);
       } else {
-        (write as unknown as (arg: T) => void)(value);
+        setSignal(value);
       }
 
       notify(value);
@@ -83,7 +86,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
       // SolidJS batch().
       const prevValue = read();
       const nextValue = updater(prevValue);
-      (write as unknown as (updater: (prev: T) => T) => void)(updater);
+      setSignal(updater);
       notify(nextValue);
     },
     subscribe(callback: (value: T) => void): () => void {

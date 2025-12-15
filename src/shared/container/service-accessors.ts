@@ -1,5 +1,6 @@
 import { SERVICE_KEYS } from '@constants';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
+import { logger } from '@shared/logging';
 import type { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
 import type { LanguageService } from '@shared/services/language-service';
 import type { MediaService } from '@shared/services/media-service';
@@ -46,8 +47,14 @@ function tryGetFromCoreService<T>(key: string): T | null {
     if (coreService.has(key)) {
       return coreService.get<T>(key);
     }
-  } catch {
+  } catch (error) {
     // CoreService not available, use ES Module singleton
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      logger.debug('[service-accessors] CoreService unavailable, using singleton fallback', {
+        key,
+        error,
+      });
+    }
   }
   return null;
 }
@@ -206,8 +213,11 @@ export function tryGetSettingsManager<T = unknown>(): T | null {
 export function warmupCriticalServices(): void {
   try {
     void getMediaService();
-  } catch {
+  } catch (error) {
     // noop: Only needed in browser environment
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      logger.debug('[service-accessors] warmupCriticalServices failed (ignored)', error);
+    }
   }
 }
 
@@ -221,7 +231,10 @@ export function warmupCriticalServices(): void {
 export function warmupNonCriticalServices(): void {
   try {
     void getThemeService();
-  } catch {
+  } catch (error) {
     // noop
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      logger.debug('[service-accessors] warmupNonCriticalServices failed (ignored)', error);
+    }
   }
 }

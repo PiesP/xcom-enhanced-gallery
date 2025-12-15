@@ -222,6 +222,10 @@ export function isValidSettingPath(key: string): key is SettingPath {
 
 type UnknownRecord = Record<string, unknown>;
 
+function asUnknownRecord(value: unknown): UnknownRecord {
+  return value as UnknownRecord;
+}
+
 function isPlainObject(value: unknown): value is UnknownRecord {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
@@ -242,14 +246,14 @@ function collectDotPaths(obj: UnknownRecord, prefix = ''): string[] {
 }
 
 const SETTINGS_PATH_SCHEMA: UnknownRecord = {
-  ...(DEFAULT_SETTINGS as unknown as UnknownRecord),
+  ...asUnknownRecord(DEFAULT_SETTINGS),
   download: {
-    ...(DEFAULT_SETTINGS.download as unknown as UnknownRecord),
+    ...asUnknownRecord(asUnknownRecord(DEFAULT_SETTINGS).download),
     // Optional settings are intentionally included for runtime validation.
     customTemplate: undefined,
   },
   tokens: {
-    ...(DEFAULT_SETTINGS.tokens as unknown as UnknownRecord),
+    ...asUnknownRecord(asUnknownRecord(DEFAULT_SETTINGS).tokens),
     bearerToken: undefined,
     lastRefresh: undefined,
   },

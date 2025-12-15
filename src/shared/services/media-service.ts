@@ -26,6 +26,7 @@ export class MediaService {
   private mediaExtraction: MediaExtractionService | null = null;
   private webpSupported: boolean | null = null;
   private readonly prefetchManager = new PrefetchManager(20);
+  private didCleanup = false;
 
   constructor(_options: MediaServiceOptions = {}) {
     this.lifecycle = createLifecycle('MediaService', {
@@ -41,6 +42,8 @@ export class MediaService {
 
   /** Destroy service (idempotent, graceful on error) */
   public destroy(): void {
+    // Ensure we clean up constructor-time allocations even if initialize() was never called.
+    this.cleanupOnce();
     this.lifecycle.destroy();
   }
 
@@ -60,7 +63,7 @@ export class MediaService {
   }
 
   private onDestroy(): void {
-    this.prefetchManager.destroy();
+    this.cleanupOnce();
   }
 
   public static getInstance(_options?: MediaServiceOptions): MediaService {
@@ -69,7 +72,18 @@ export class MediaService {
 
   /** @internal Test helper */
   public static resetForTests(): void {
+    const existing = MediaService.singleton.peek();
+    existing?.destroy();
     MediaService.singleton.reset();
+  }
+
+  private cleanupOnce(): void {
+    if (this.didCleanup) {
+      return;
+    }
+    this.didCleanup = true;
+
+    this.prefetchManager.destroy();
   }
 
   async extractFromClickedElement(
