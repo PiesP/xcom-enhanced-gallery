@@ -1,7 +1,6 @@
 /**
- * @fileoverview Filename utilities (compatibility shim)
- * @description Re-export pure filename helpers from shared/core.
- * @deprecated Import from `@shared/core/filename` for new code.
+ * @fileoverview Filename core exports
+ * @description Pure filename utilities that must remain IO-free.
  */
 
 export {
@@ -16,4 +15,4 @@ export {
   resolveMediaMetadata,
   sanitizeFilename,
   type ZipFilenameOptions,
-} from '@shared/core/filename/filename-utils';
+} from './filename-utils';

@@ -19,4 +19,4 @@ export {
   resolveMediaMetadata,
   sanitizeFilename,
   type ZipFilenameOptions,
-} from './filename-utils';
+} from '@shared/core/filename/filename-utils';

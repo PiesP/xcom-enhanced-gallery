@@ -42,6 +42,18 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
   let drainScheduled = false;
   let stopped = false;
 
+  const safeRuntimeLog = (
+    level: Parameters<typeof runtimeLog>[0],
+    message: string,
+    context?: Readonly<Record<string, unknown>>
+  ): void => {
+    try {
+      runtimeLog(level, message, context);
+    } catch {
+      // Intentionally ignore: logging must never crash the runtime.
+    }
+  };
+
   const scheduleMicrotask = (fn: () => void): void => {
     if (typeof queueMicrotask === 'function') {
       queueMicrotask(fn);
@@ -72,7 +84,7 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
   const interpret = async (cmd: RuntimeCommand): Promise<void> => {
     switch (cmd.type) {
       case 'LOG':
-        runtimeLog(cmd.level, cmd.message, cmd.context);
+        safeRuntimeLog(cmd.level, cmd.message, cmd.context);
         return;
 
       case 'TAKE_DOM_FACTS': {
@@ -135,14 +147,29 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
       }
 
       case 'SCHEDULE_TICK': {
-        scheduler.schedule(cmd.id, cmd.intervalMs, () => {
-          dispatch({ type: 'Tick', tickId: cmd.id, now: now() });
-        });
+        try {
+          scheduler.schedule(cmd.id, cmd.intervalMs, () => {
+            dispatch({ type: 'Tick', tickId: cmd.id, now: now() });
+          });
+        } catch (error) {
+          safeRuntimeLog('error', '[command-runtime] SCHEDULE_TICK failed', {
+            id: cmd.id,
+            intervalMs: cmd.intervalMs,
+            error: formatErrorMessage(error),
+          });
+        }
         return;
       }
 
       case 'CANCEL_TICK': {
-        scheduler.cancel(cmd.id);
+        try {
+          scheduler.cancel(cmd.id);
+        } catch (error) {
+          safeRuntimeLog('error', '[command-runtime] CANCEL_TICK failed', {
+            id: cmd.id,
+            error: formatErrorMessage(error),
+          });
+        }
         return;
       }
 
@@ -160,13 +187,31 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
         const event = queue.shift();
         if (!event) continue;
 
-        const result = update(model, event);
-        model = result.model;
+        let result: ReturnType<typeof update>;
+        try {
+          result = update(model, event);
+          model = result.model;
+        } catch (error) {
+          safeRuntimeLog('error', '[command-runtime] update() threw', {
+            eventType: (event as { type?: unknown }).type,
+            error: formatErrorMessage(error),
+          });
+          // Drop the event and continue; do not crash the runtime.
+          continue;
+        }
 
         for (const cmd of result.cmds) {
           // Keep command execution sequential to preserve deterministic behavior.
           // If we later need concurrency, it should be expressed explicitly in Cmd/Event.
-          await interpret(cmd);
+          try {
+            await interpret(cmd);
+          } catch (error) {
+            safeRuntimeLog('error', '[command-runtime] interpret() threw', {
+              cmdType: (cmd as { type?: unknown }).type,
+              error: formatErrorMessage(error),
+            });
+            // Continue to next command/event.
+          }
         }
       }
     } finally {

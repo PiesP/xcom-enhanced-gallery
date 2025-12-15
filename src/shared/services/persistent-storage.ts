@@ -19,7 +19,25 @@ export class PersistentStorage {
 
   async set<T>(key: string, value: T): Promise<void> {
     try {
-      const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+      // Guard: JSON.stringify(undefined) returns undefined, which can break storage adapters.
+      // Treat undefined (and other non-serializable payloads) as an explicit delete.
+      if (value === undefined) {
+        logger.warn(`PersistentStorage.set received undefined for "${key}", deleting key`);
+        await this.userscript.deleteValue(key);
+        return;
+      }
+
+      const serialized =
+        typeof value === 'string' ? value : (JSON.stringify(value) as string | undefined);
+
+      if (serialized === undefined) {
+        logger.warn(
+          `PersistentStorage.set received a non-serializable value for "${key}", deleting key`
+        );
+        await this.userscript.deleteValue(key);
+        return;
+      }
+
       await this.userscript.setValue(key, serialized);
     } catch (error) {
       logger.error(`PersistentStorage.set failed for "${key}":`, error);
