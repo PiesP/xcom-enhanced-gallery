@@ -1,19 +1,16 @@
 /**
  * @fileoverview Modern Async Utilities Module
- * @description AbortSignal-based async primitives replacing globalTimerManager
+ * @description AbortSignal-based async primitives
  *
  * **Key Features**:
- * - `AbortSignal.timeout()` for native timeout support
  * - `delay()` with AbortSignal cancellation
  * - `timeout()` wrapper for promise timeout
  * - `withRetry()` with exponential backoff
  * - `race()` utility for first-settled semantics
  *
- * **Migration from globalTimerManager**:
- * - No manual timer ID tracking required
- * - Automatic cleanup via AbortController
- * - Native browser API integration
- * - Better TypeScript type inference
+ * **Timeout signals in tests**:
+ * - `createTimeoutSignal()` intentionally uses `globalTimerManager` so vitest fake timers can
+ *   reliably control timeouts (native `AbortSignal.timeout()` uses internal timers).
  *
  * @example
  * ```typescript

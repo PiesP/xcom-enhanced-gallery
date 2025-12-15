@@ -29,6 +29,26 @@ import { getUserscript } from '@shared/external/userscript/adapter';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { createSingleton } from '@shared/utils/types/singleton';
 
+function parseResponseHeaders(raw: string | undefined): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!raw) return out;
+
+  for (const line of raw.split(/\r?\n/)) {
+    if (!line) continue;
+
+    const idx = line.indexOf(':');
+    if (idx <= 0) continue;
+
+    const name = line.slice(0, idx).trim().toLowerCase();
+    if (!name) continue;
+
+    const value = line.slice(idx + 1).trim();
+    out[name] = value;
+  }
+
+  return out;
+}
+
 /**
  * HTTP request options
  */
@@ -152,22 +172,14 @@ export class HttpRequestService {
             undefined
           >,
           onload: (response) => {
-            const headers: Record<string, string> = {};
-            if (response.responseHeaders) {
-              response.responseHeaders.split('\r\n').forEach((line) => {
-                const parts = line.split(': ');
-                if (parts.length >= 2 && parts[0]) {
-                  headers[parts[0].toLowerCase()] = parts.slice(1).join(': ');
-                }
-              });
-            }
+            const responseHeaders = parseResponseHeaders(response.responseHeaders);
 
             safeResolve({
               ok: response.status >= 200 && response.status < 300,
               status: response.status,
               statusText: response.statusText,
               data: response.response as T,
-              headers,
+              headers: responseHeaders,
             });
           },
           onerror: (response) => {
@@ -191,7 +203,7 @@ export class HttpRequestService {
           },
         };
 
-        if (options && 'data' in options && options.data) {
+        if (options && 'data' in options && options.data !== undefined) {
           const data = options.data;
           if (
             typeof data === 'object' &&
