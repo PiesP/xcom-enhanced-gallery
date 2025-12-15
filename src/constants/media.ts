@@ -4,6 +4,17 @@
 
 export const MEDIA = {
   DOMAINS: ['pbs.twimg.com', 'video.twimg.com', 'abs.twimg.com'],
+  /**
+   * Host allow-lists used by URL validators.
+   * Keep this as the single source of truth to avoid policy drift.
+   */
+  HOSTS: {
+    /**
+     * Media CDN hosts that can serve images/videos.
+     * Note: abs.twimg.com is intentionally excluded (static assets, not media URLs).
+     */
+    MEDIA_CDN: ['pbs.twimg.com', 'video.twimg.com'],
+  },
   TYPES: {
     IMAGE: 'image',
     VIDEO: 'video',

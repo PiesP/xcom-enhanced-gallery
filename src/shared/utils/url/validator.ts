@@ -5,7 +5,9 @@
  * Media URL validation utilities.
  */
 
-const SUPPORTED_MEDIA_HOSTS = new Set(['pbs.twimg.com', 'video.twimg.com']);
+import { MEDIA } from '@constants';
+
+const SUPPORTED_MEDIA_HOSTS: ReadonlySet<string> = new Set(MEDIA.HOSTS.MEDIA_CDN);
 const MAX_URL_LENGTH = 2048;
 
 /**

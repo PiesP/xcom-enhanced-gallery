@@ -2,10 +2,12 @@ export type WindowLoadCallback = () => void | Promise<void>;
 
 let windowLoadPromise: Promise<void> | null = null;
 
-const hasBrowserContext = typeof window !== 'undefined' && typeof document !== 'undefined';
+function hasBrowserContext(): boolean {
+  return typeof window !== 'undefined' && typeof document !== 'undefined';
+}
 
 function isWindowLoaded(): boolean {
-  if (!hasBrowserContext) {
+  if (!hasBrowserContext()) {
     return true;
   }
 
@@ -14,6 +16,11 @@ function isWindowLoaded(): boolean {
 
 function createWindowLoadPromise(): Promise<void> {
   if (windowLoadPromise) {
+    return windowLoadPromise;
+  }
+
+  if (!hasBrowserContext()) {
+    windowLoadPromise = Promise.resolve();
     return windowLoadPromise;
   }
 
