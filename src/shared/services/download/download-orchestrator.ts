@@ -14,6 +14,7 @@
  * @version 3.0.0 - Composition-based lifecycle
  */
 
+import { planBulkDownload, planZipSave } from '@shared/core/download/download-plan';
 import { logger } from '@shared/logging';
 import {
   type DownloadCapability,
@@ -29,7 +30,6 @@ import type {
   SingleDownloadResult,
 } from '@shared/services/download/types';
 import { downloadAsZip } from '@shared/services/download/zip-download';
-import { generateMediaFilename, generateZipFilename } from '@shared/services/filename';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
 import type { MediaInfo } from '@shared/types/media.types';
@@ -139,11 +139,13 @@ export class DownloadOrchestrator {
     mediaItems: MediaInfo[],
     options: DownloadOptions = {}
   ): Promise<BulkDownloadResult> {
-    const items: OrchestratorItem[] = mediaItems.map((media) => ({
-      url: media.url,
-      desiredName: generateMediaFilename(media),
-      blob: options.prefetchedBlobs?.get(media.url),
-    }));
+    const plan = planBulkDownload({
+      mediaItems,
+      prefetchedBlobs: options.prefetchedBlobs,
+      zipFilename: options.zipFilename,
+    });
+
+    const items: OrchestratorItem[] = plan.items;
 
     try {
       const result = await downloadAsZip(items, options);
@@ -164,10 +166,12 @@ export class DownloadOrchestrator {
       const zipBlob = new Blob([result.zipData as BlobPart], {
         type: 'application/zip',
       });
-      const filename = options.zipFilename || generateZipFilename(mediaItems);
+      const filename = plan.zipFilename;
+
+      const capability = this.getCapability();
 
       // Save ZIP using appropriate download method
-      const saveResult = await this.saveZipBlob(zipBlob, filename, options);
+      const saveResult = await this.saveZipBlob(zipBlob, filename, options, capability);
 
       if (!saveResult.success) {
         return {
@@ -209,15 +213,16 @@ export class DownloadOrchestrator {
   private async saveZipBlob(
     zipBlob: Blob,
     filename: string,
-    options: DownloadOptions
+    options: DownloadOptions,
+    capability: DownloadCapability
   ): Promise<{ success: boolean; error?: string }> {
-    const capability = this.getCapability();
+    const saveStrategy = planZipSave(capability.method);
 
-    if (capability.method === 'gm_download' && capability.gmDownload) {
+    if (saveStrategy === 'gm_download' && capability.gmDownload) {
       return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename);
     }
 
-    if (capability.method === 'fetch_blob') {
+    if (saveStrategy === 'anchor') {
       logger.debug('[DownloadOrchestrator] Using anchor fallback for ZIP download');
       const fallbackResult = await downloadBlobWithAnchor(zipBlob, filename, {
         signal: options.signal,

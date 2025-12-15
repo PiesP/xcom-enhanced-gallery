@@ -1,3 +1,4 @@
+import { planSingleDownload } from '@shared/core/download/download-plan';
 import { getErrorMessage } from '@shared/error/utils';
 import { logger } from '@shared/logging';
 import { generateMediaFilename } from '@shared/services/filename';
@@ -23,12 +24,22 @@ export async function downloadSingleFile(
   const filename = generateMediaFilename(media);
   const effectiveCapability = capability ?? detectDownloadCapability();
 
+  const plan = planSingleDownload({
+    method: effectiveCapability.method,
+    mediaUrl: media.url,
+    filename,
+    hasProvidedBlob: Boolean(options.blob),
+  });
+
   // Use fallback method if GM_download is not available
-  if (effectiveCapability.method === 'fetch_blob') {
+  if (plan.strategy === 'anchor_blob' || plan.strategy === 'fetch_blob') {
     logger.debug('[SingleDownload] Using fetch+blob fallback');
 
     // If blob is pre-provided, use direct blob download
-    if (options.blob) {
+    if (plan.strategy === 'anchor_blob') {
+      if (!options.blob) {
+        return { success: false, error: 'Blob unavailable' };
+      }
       return downloadBlobWithAnchor(options.blob, filename, {
         signal: options.signal,
         onProgress: options.onProgress,
@@ -36,17 +47,17 @@ export async function downloadSingleFile(
     }
 
     // Otherwise fetch and download
-    return downloadWithFetchBlob(media.url, filename, {
+    return downloadWithFetchBlob(plan.url, filename, {
       signal: options.signal,
       onProgress: options.onProgress,
       timeout: 30000,
     });
   }
 
-  if (effectiveCapability.method === 'none') {
+  if (plan.strategy === 'none') {
     return {
       success: false,
-      error: 'No download method',
+      error: plan.error,
     };
   }
 
@@ -61,10 +72,13 @@ export async function downloadSingleFile(
   }
 
   // Use blob URL if available, otherwise media URL
-  let url = media.url;
+  let url = plan.url;
   let isBlobUrl = false;
 
-  if (options.blob) {
+  if (plan.strategy === 'gm_download' && plan.useBlobUrl) {
+    if (!options.blob) {
+      return { success: false, error: 'Blob unavailable' };
+    }
     url = URL.createObjectURL(options.blob);
     isBlobUrl = true;
   }

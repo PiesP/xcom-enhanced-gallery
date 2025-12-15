@@ -1,3 +1,4 @@
+import { optimizePbsImageUrlToWebP } from '@shared/core/media/url-optimization';
 import type {
   BulkDownloadResult,
   DownloadOptions,
@@ -136,17 +137,7 @@ export class MediaService {
 
   getOptimizedImageUrl(originalUrl: string): string {
     if (!this.isWebPSupported()) return originalUrl;
-    try {
-      const url = new URL(originalUrl);
-      if (url.hostname === 'pbs.twimg.com') {
-        if (url.searchParams.get('format') === 'webp') return originalUrl;
-        url.searchParams.set('format', 'webp');
-        return url.toString();
-      }
-    } catch {
-      return originalUrl;
-    }
-    return originalUrl;
+    return optimizePbsImageUrlToWebP(originalUrl);
   }
 
   optimizeWebP(url: string): string {
