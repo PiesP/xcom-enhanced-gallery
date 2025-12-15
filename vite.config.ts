@@ -156,6 +156,18 @@ function getVersionFromGit(): string | null {
   }
 }
 
+function getVersionFromPackageJson(): string | null {
+  try {
+    const pkgPath = resolve(process.cwd(), "package.json");
+    const raw = fs.readFileSync(pkgPath, "utf8");
+    const parsed = JSON.parse(raw) as { version?: unknown };
+    const version = parsed.version;
+    return typeof version === "string" && version.trim() ? version.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 function getGitCommitShort(): string | null {
   try {
     return execSync("git rev-parse --short HEAD", {
@@ -172,7 +184,8 @@ function resolveVersion(isDev: boolean): string {
   if (envVersion) return envVersion;
 
   const gitVersion = getVersionFromGit();
-  const baseVersion = gitVersion ?? (isDev ? "0.0.0" : "1.0.0");
+  const pkgVersion = getVersionFromPackageJson();
+  const baseVersion = gitVersion ?? pkgVersion ?? (isDev ? "0.0.0" : "1.0.0");
 
   if (isDev) {
     const commit = getGitCommitShort() ?? "unknown";
