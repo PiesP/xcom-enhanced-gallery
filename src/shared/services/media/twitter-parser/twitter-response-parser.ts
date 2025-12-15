@@ -266,22 +266,52 @@ export function extractMediaFromTweet(
     });
   }
 
-  // Build a set of inline media IDs for ordering (note_tweet inline media)
-  const inlineMediaIds = new Set<string>();
+  // Determine media ordering based on note_tweet inline_media when available.
+  // When note_tweet is present, inline_media provides the intended presentation order
+  // (by text position index). We keep a stable ordering for items not referenced.
   const inlineMedia = parseTarget.note_tweet?.note_tweet_results?.result?.media?.inline_media;
-  if (inlineMedia && Array.isArray(inlineMedia)) {
+  const inlineMediaOrder = new Map<string, number>();
+  if (Array.isArray(inlineMedia)) {
     for (const item of inlineMedia) {
-      if (item.media_id) {
-        inlineMediaIds.add(item.media_id);
+      if (item.media_id && typeof item.index === 'number') {
+        inlineMediaOrder.set(item.media_id, item.index);
       }
     }
-    if (inlineMediaIds.size > 0) {
-      logger.debug(`Found ${inlineMediaIds.size} inline media items in note_tweet`);
+    if (inlineMediaOrder.size > 0) {
+      logger.debug(`Found ${inlineMediaOrder.size} inline media items in note_tweet`);
     }
   }
 
-  for (let index = 0; index < parseTarget.extended_entities.media.length; index++) {
-    const media: TwitterMedia | undefined = parseTarget.extended_entities.media[index];
+  const orderedMedia = (() => {
+    const mediaList = parseTarget.extended_entities?.media ?? [];
+    if (inlineMediaOrder.size === 0) return mediaList;
+
+    // Stable sort: referenced inline media first (ascending inline index), then the rest.
+    return mediaList
+      .map((m, originalIndex) => ({ m, originalIndex }))
+      .sort((a, b) => {
+        const aInline = inlineMediaOrder.get(a.m.id_str);
+        const bInline = inlineMediaOrder.get(b.m.id_str);
+
+        if (aInline !== undefined && bInline !== undefined) return aInline - bInline;
+        if (aInline !== undefined) return -1;
+        if (bInline !== undefined) return 1;
+        return a.originalIndex - b.originalIndex;
+      })
+      .map((x) => x.m);
+  })();
+
+  // Normalize tweet text once per tweet: use the parse target (quoted vs original)
+  // and remove any short media URLs present in the text.
+  const baseTweetText = (parseTarget.full_text ?? '').trim();
+  const normalizedTweetText = orderedMedia
+    .map((m) => m.url)
+    .filter((u): u is string => typeof u === 'string' && u.length > 0)
+    .reduce((text, u) => text.replace(` ${u}`, ''), baseTweetText)
+    .trim();
+
+  for (let index = 0; index < orderedMedia.length; index++) {
+    const media: TwitterMedia | undefined = orderedMedia[index];
 
     // Validate required fields with detailed logging
     if (!media?.type) {
@@ -308,7 +338,7 @@ export function extractMediaFromTweet(
       typeIndex[mediaType] = (typeIndex[mediaType] ?? -1) + 1;
       typeIndex[media.type] = typeIndex[media.type] ?? typeIndex[mediaType];
 
-      const tweetText = (tweetResult.full_text ?? '').replace(` ${media.url}`, '').trim();
+      const tweetText = normalizedTweetText;
 
       const entry = createMediaEntry(
         media,

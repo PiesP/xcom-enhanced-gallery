@@ -111,6 +111,35 @@ export class HttpRequestService {
       try {
         const userscript = getUserscript();
 
+        if (options?.signal?.aborted) {
+          reject(new Error(`Request was aborted for ${url}`));
+          return;
+        }
+
+        let settled = false;
+        let abortListener: (() => void) | null = null;
+
+        const cleanupAbortListener = (): void => {
+          if (abortListener && options?.signal) {
+            options.signal.removeEventListener('abort', abortListener);
+            abortListener = null;
+          }
+        };
+
+        const safeResolve = (value: HttpResponse<T>): void => {
+          if (settled) return;
+          settled = true;
+          cleanupAbortListener();
+          resolve(value);
+        };
+
+        const safeReject = (error: unknown): void => {
+          if (settled) return;
+          settled = true;
+          cleanupAbortListener();
+          reject(error);
+        };
+
         const details: GMXMLHttpRequestDetails = {
           method: method as Exclude<GMXMLHttpRequestDetails['method'], undefined>,
           url,
@@ -131,7 +160,7 @@ export class HttpRequestService {
               });
             }
 
-            resolve({
+            safeResolve({
               ok: response.status >= 200 && response.status < 300,
               status: response.status,
               statusText: response.statusText,
@@ -147,16 +176,16 @@ export class HttpRequestService {
                 ? `Network error: Unable to connect to ${url} (CORS, network failure, or blocked request)`
                 : `HTTP ${status}: ${statusText}`;
 
-            reject(new HttpError(errorMessage, status, statusText));
+            safeReject(new HttpError(errorMessage, status, statusText));
           },
           ontimeout: () => {
             const timeoutMs = options?.timeout ?? this.defaultTimeout;
-            reject(
+            safeReject(
               new HttpError(`Request timed out after ${timeoutMs}ms for ${url}`, 0, 'Timeout')
             );
           },
           onabort: () => {
-            reject(new Error(`Request was aborted for ${url}`));
+            safeReject(new Error(`Request was aborted for ${url}`));
           },
         };
 
@@ -190,9 +219,16 @@ export class HttpRequestService {
         const control = userscript.xmlHttpRequest(details);
 
         if (options?.signal) {
-          options.signal.addEventListener('abort', () => {
+          abortListener = () => {
             control.abort();
-          });
+          };
+
+          options.signal.addEventListener('abort', abortListener, { once: true });
+
+          // Handle races where the signal is aborted right after the request starts.
+          if (options.signal.aborted) {
+            abortListener();
+          }
         }
       } catch (error) {
         reject(error);

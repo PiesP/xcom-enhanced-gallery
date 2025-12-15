@@ -100,7 +100,7 @@ export function getMediaService(): MediaService {
  * Get gallery renderer for media display.
  *
  * [ARCHITECTURE NOTE] GalleryRenderer uses CoreService.getInstance().get() pattern
- * (legacy) instead of ES Module Singleton. This is intentional because:
+ * (runtime-registered service) instead of ES Module Singleton. This is intentional because:
  * 1. GalleryRenderer is dynamically registered at runtime during gallery initialization
  * 2. Its lifecycle is tied to gallery feature enablement, not app startup
  * 3. ES Module Singleton pattern requires static initialization which conflicts with

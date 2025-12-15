@@ -25,6 +25,10 @@ debug('Module loaded');
 export type SafeSignal<T> = {
   /** Current value of the signal */
   value: T;
+  /** Set a new value explicitly (safe for function-typed values). */
+  set: (value: T) => void;
+  /** Update value using previous value (explicit updater API). */
+  update: (updater: (prev: T) => T) => void;
   /** Subscribe to value changes. Returns unsubscribe function. */
   subscribe: (callback: (value: T) => void) => () => void;
 };
@@ -58,6 +62,29 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
   };
 
   const signalObject = {
+    set(value: T): void {
+      debug('[createSignalSafe]', instanceId, 'set invoked', value);
+
+      // Solid treats function inputs as updaters. When the *value* itself is a
+      // function, wrap it to avoid accidental invocation.
+      if (typeof value === 'function') {
+        (write as unknown as (updater: (prev: T) => T) => void)(() => value);
+      } else {
+        (write as unknown as (arg: T) => void)(value);
+      }
+
+      notify(value);
+    },
+    update(updater: (prev: T) => T): void {
+      debug('[createSignalSafe]', instanceId, 'update invoked');
+
+      // Resolve next value before calling write() to avoid stale reads inside
+      // SolidJS batch().
+      const prevValue = read();
+      const nextValue = updater(prevValue);
+      (write as unknown as (updater: (prev: T) => T) => void)(updater);
+      notify(nextValue);
+    },
     subscribe(callback: (value: T) => void): () => void {
       // Debug: track subscriptions in tests; remove after stabilization
       debug('[createSignalSafe]', instanceId, 'subscribe invoked for signal', initial);
@@ -78,19 +105,10 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
       debug('[createSignalSafe]', instanceId, 'value getter read', value);
       return value;
     },
-    // Solid's `write` is overloaded and cannot be directly typed in this wrapper. Cast it to a compatible
-    // signature at runtime while preserving a correct parameter type for callers.
-    set: (v: Parameters<typeof write>[0]) =>
-      ((val) => {
-        debug('[createSignalSafe]', instanceId, 'value setter fired', val);
-        // Resolve the new value BEFORE calling write to avoid stale values
-        // when inside SolidJS batch(). After write() inside batch, read()
-        // may return stale value until batch completes.
-        const prevValue = read();
-        const resolvedValue = typeof val === 'function' ? (val as (prev: T) => T)(prevValue) : val;
-        (write as unknown as (arg: Parameters<typeof write>[0]) => void)(val);
-        notify(resolvedValue as T);
-      })(v),
+    set: (v: T) => {
+      debug('[createSignalSafe]', instanceId, 'value setter fired', v);
+      signalObject.set(v);
+    },
     enumerable: true,
   });
 
