@@ -95,12 +95,14 @@ export async function fetchArrayBufferWithRetry(
     return result.data as Uint8Array;
   }
 
-  if (isAbortError(result.error)) {
-    throw result.error;
-  }
-
+  // If the caller's signal is aborted (including during retry backoff),
+  // always normalize to our user-facing AbortError message.
   if (signal?.aborted) {
     throw getAbortErrorFromSignal(signal);
+  }
+
+  if (isAbortError(result.error)) {
+    throw result.error;
   }
 
   throw result.error;
