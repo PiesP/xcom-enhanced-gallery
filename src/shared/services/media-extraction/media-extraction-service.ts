@@ -66,9 +66,9 @@ export class MediaExtractionService implements MediaExtractor {
     options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     try {
-      const firstMedia = container.querySelector(SELECTORS.TWITTER_MEDIA) as HTMLElement;
+      const firstMedia = container.querySelector(SELECTORS.TWITTER_MEDIA);
 
-      if (!firstMedia) {
+      if (!firstMedia || !(firstMedia instanceof HTMLElement)) {
         return this.createErrorResult('No media found in container');
       }
 
