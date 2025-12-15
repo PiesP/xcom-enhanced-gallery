@@ -50,44 +50,44 @@ const VIDEO_PLAYER_CONTEXT_SELECTORS = [
 ];
 const VIDEO_CONTROL_ROLE_SET = new Set(VIDEO_CONTROL_ROLES.map((role) => role.toLowerCase()));
 
-function isWithinVideoPlayer(element: HTMLElement): boolean {
-  return VIDEO_PLAYER_CONTEXT_SELECTORS.some((selector) => {
-    try {
-      return element.closest(selector) !== null;
-    } catch (error) {
-      if (typeof __DEV__ !== 'undefined' && __DEV__) {
-        logger.debug('[dom/utils] element.closest failed (ignored)', { selector, error });
-      }
-      return false;
+function safeClosest(element: Element, selector: string): Element | null {
+  try {
+    return element.closest(selector);
+  } catch (error) {
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      logger.debug('[dom/utils] element.closest failed (ignored)', { selector, error });
     }
-  });
+    return null;
+  }
+}
+
+function safeMatches(element: Element, selector: string): boolean {
+  try {
+    return element.matches(selector);
+  } catch (error) {
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      logger.debug('[dom/utils] element.matches failed (ignored)', { selector, error });
+    }
+    return false;
+  }
+}
+
+function isWithinVideoPlayer(element: HTMLElement): boolean {
+  return VIDEO_PLAYER_CONTEXT_SELECTORS.some((selector) => safeClosest(element, selector) !== null);
 }
 
 function matchesVideoControlSelectors(element: HTMLElement): boolean {
-  return VIDEO_CONTROL_SELECTORS.some((selector) => {
-    try {
-      return element.matches(selector) || element.closest(selector) !== null;
-    } catch (error) {
-      if (typeof __DEV__ !== 'undefined' && __DEV__) {
-        logger.debug('[dom/utils] element.matches/closest failed (ignored)', { selector, error });
-      }
-      return false;
-    }
-  });
+  return VIDEO_CONTROL_SELECTORS.some(
+    (selector) => safeMatches(element, selector) || safeClosest(element, selector) !== null
+  );
 }
 
 function hasInputRangeSignature(element: HTMLElement): boolean {
   if (typeof element.matches !== 'function') {
     return false;
   }
-  try {
-    return element.matches('input[type="range"]');
-  } catch (error) {
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
-      logger.debug('[dom/utils] input range signature check failed (ignored)', error);
-    }
-    return false;
-  }
+
+  return safeMatches(element, 'input[type="range"]');
 }
 
 type ControlAttributeSnapshot = {
@@ -113,15 +113,8 @@ function getNearestAttributeValue(
     return element.getAttribute(attribute);
   }
 
-  try {
-    const host = element.closest(`[${attribute}]`) as HTMLElement | null;
-    return host?.getAttribute(attribute) ?? null;
-  } catch (error) {
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
-      logger.debug('[dom/utils] nearest attribute lookup failed (ignored)', { attribute, error });
-    }
-    return null;
-  }
+  const host = safeClosest(element, `[${attribute}]`) as HTMLElement | null;
+  return host?.getAttribute(attribute) ?? null;
 }
 
 function containsControlToken(value: string | null, tokens: readonly string[]): boolean {
@@ -175,6 +168,12 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
 
   const tagName = element.tagName.toLowerCase();
   if (tagName === 'video') return true;
+
+  // Keep legacy safety behavior: if the element's selector engine is not
+  // available (e.g., a mocked/invalid element), treat it as non-control.
+  if (typeof element.matches !== 'function') {
+    return false;
+  }
 
   const evidence = gatherVideoControlEvidence(element);
 

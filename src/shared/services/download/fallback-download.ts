@@ -5,6 +5,7 @@
  */
 
 import { getErrorMessage } from '@shared/error/utils';
+import { isGMAPIAvailable } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
 import type { DownloadProgress } from './types';
 
@@ -53,7 +54,10 @@ export interface DownloadCapability {
  */
 export function detectDownloadCapability(): DownloadCapability {
   const gmDownload = resolveGMDownload();
-  const hasGMDownload = typeof gmDownload === 'function';
+  // Delegate detection to the userscript environment helper.
+  // We still resolve the raw function locally because GM_download supports an
+  // options-object signature in some managers, which is not exposed via UserscriptAPI.download.
+  const hasGMDownload = isGMAPIAvailable('download') && typeof gmDownload === 'function';
 
   const hasFetch = typeof fetch === 'function';
 
@@ -136,14 +140,18 @@ export async function downloadWithFetchBlob(
     filename,
   });
 
+  // Create abort controller for timeout
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let onAbort: (() => void) | null = null;
+
   try {
-    // Create abort controller for timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    timeoutId = setTimeout(() => controller.abort(), timeout);
 
     // Combine with external signal if provided
     if (signal) {
-      signal.addEventListener('abort', () => controller.abort());
+      onAbort = () => controller.abort(signal.reason);
+      signal.addEventListener('abort', onAbort, { once: true });
     }
 
     // Fetch the resource
@@ -152,8 +160,6 @@ export async function downloadWithFetchBlob(
       mode: 'cors',
       credentials: 'omit',
     });
-
-    clearTimeout(timeoutId);
 
     if (!response.ok) {
       return {
@@ -226,7 +232,8 @@ export async function downloadWithFetchBlob(
   } catch (error) {
     const errorMsg = getErrorMessage(error);
 
-    if (errorMsg.includes('abort') || errorMsg.includes('cancel')) {
+    const normalizedError = errorMsg.toLowerCase();
+    if (normalizedError.includes('abort') || normalizedError.includes('cancel')) {
       return { success: false, error: 'Download cancelled' };
     }
 
@@ -241,6 +248,18 @@ export async function downloadWithFetchBlob(
     });
 
     return { success: false, error: errorMsg };
+  } finally {
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+    }
+
+    if (signal && onAbort) {
+      try {
+        signal.removeEventListener('abort', onAbort);
+      } catch {
+        // Ignore: defensive cleanup
+      }
+    }
   }
 }
 

@@ -11,6 +11,7 @@
  * - Optional UI notification integration
  */
 
+import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging';
 
 // ============================================================================
@@ -89,39 +90,7 @@ const DEFAULT_SEVERITY: ErrorSeverity = 'error';
 // Helper Functions
 // ============================================================================
 
-/**
- * Normalize any error value to a string message
- */
-export function normalizeErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message || error.name || 'Error';
-  }
-
-  if (typeof error === 'string' && error.length > 0) {
-    return error;
-  }
-
-  if (error && typeof error === 'object') {
-    if ('message' in error && typeof (error as { message: unknown }).message === 'string') {
-      return (error as { message: string }).message;
-    }
-    try {
-      return JSON.stringify(error);
-    } catch {
-      return String(error);
-    }
-  }
-
-  if (error === null) {
-    return 'null';
-  }
-
-  if (error === undefined) {
-    return 'undefined';
-  }
-
-  return String(error);
-}
+// Re-exported at bottom to preserve the existing public API surface.
 
 /**
  * Extract stack trace from error if available
@@ -287,6 +256,9 @@ export class AppErrorReporter {
     };
   }
 }
+
+// Preserve the existing named export for downstream imports.
+export { normalizeErrorMessage };
 
 /**
  * Context-bound reporter interface

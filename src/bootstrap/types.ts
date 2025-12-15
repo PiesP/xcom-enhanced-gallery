@@ -3,6 +3,7 @@
  * @description Modernized error strategy utilities with minimal surface area.
  */
 
+import { normalizeErrorMessage } from '@shared/error/normalize';
 import type { Logger } from '@shared/logging';
 
 export type BootstrapErrorSeverity = 'critical' | 'recoverable';
@@ -25,17 +26,10 @@ export type BootstrapErrorOptions = Readonly<{
   severity?: BootstrapErrorSeverity;
 }>;
 
-const normalizeErrorMessage = (error: unknown): string => {
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
-  if (typeof error === 'string' && error.length > 0) {
-    return error;
-  }
-
-  return 'Unknown bootstrap error';
-};
+function normalizeBootstrapErrorMessage(error: unknown): string {
+  const message = normalizeErrorMessage(error);
+  return message.length > 0 ? message : 'Unknown bootstrap error';
+}
 
 /**
  * Log bootstrap errors using a severity-aware strategy and optionally rethrow.
@@ -43,7 +37,7 @@ const normalizeErrorMessage = (error: unknown): string => {
 export function reportBootstrapError(error: unknown, options: BootstrapErrorOptions): never | void {
   const severity = options.severity ?? 'recoverable';
   const behavior = ERROR_BEHAVIOR_MAP[severity];
-  const message = `[${options.context}] initialization failed: ${normalizeErrorMessage(error)}`;
+  const message = `[${options.context}] initialization failed: ${normalizeBootstrapErrorMessage(error)}`;
 
   options.logger[behavior.logLevel](message, error);
 

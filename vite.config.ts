@@ -9,10 +9,13 @@
  * - Quality checks (type checking, linting)
  *
  * Build modes:
- *   pnpm build          - Production build with quality checks
- *   pnpm build:dev      - Development build with quality checks
- *   pnpm build:fast     - Production build without quality checks
- *   pnpm build:dev:fast - Development build without quality checks
+ *   pnpm build      - Production build (runs `pnpm quality` via prebuild)
+ *   pnpm build:dev  - Development build (no implicit quality checks)
+ *   pnpm build:fast - Production build (no implicit quality checks)
+ *
+ * Quality checks:
+ *   pnpm quality     - Typecheck + Biome check
+ *   pnpm quality:fix - Typecheck + Biome check (write)
  */
 
 import { execSync } from "node:child_process";

@@ -1,56 +1,9 @@
 import { isAbortError } from '@shared/async/delay';
 import { withRetry } from '@shared/async/retry';
+import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
 import { HttpRequestService } from '@shared/services/http-request-service';
 
 export const DEFAULT_BACKOFF_BASE_MS = 200;
-
-function createAbortError(message: string, cause?: unknown): Error {
-  const error = new Error(message);
-  error.name = 'AbortError';
-
-  // Preserve the original abort reason for debugging without changing the user-facing message.
-  if (cause !== undefined) {
-    try {
-      (error as Error & { cause?: unknown }).cause = cause;
-    } catch {
-      // ignore
-    }
-  }
-
-  return error;
-}
-
-function getAbortErrorFromSignal(signal?: AbortSignal): DOMException | Error {
-  const reason = signal?.reason;
-
-  // Preserve timeout semantics when a timeout signal is used.
-  if (reason instanceof DOMException && reason.name === 'TimeoutError') {
-    return reason;
-  }
-
-  if (reason instanceof Error && reason.name === 'TimeoutError') {
-    return reason;
-  }
-
-  // Preserve an already-standardized AbortError message.
-  if (
-    reason instanceof DOMException &&
-    reason.name === 'AbortError' &&
-    reason.message === 'Download cancelled by user'
-  ) {
-    return reason;
-  }
-
-  if (
-    reason instanceof Error &&
-    reason.name === 'AbortError' &&
-    reason.message === 'Download cancelled by user'
-  ) {
-    return reason;
-  }
-
-  return createAbortError('Download cancelled by user', reason);
-}
 
 export async function fetchArrayBufferWithRetry(
   url: string,
@@ -59,7 +12,7 @@ export async function fetchArrayBufferWithRetry(
   backoffBaseMs: number = DEFAULT_BACKOFF_BASE_MS
 ): Promise<Uint8Array> {
   if (signal?.aborted) {
-    throw getAbortErrorFromSignal(signal);
+    throw getUserCancelledAbortErrorFromSignal(signal);
   }
 
   const httpService = HttpRequestService.getInstance();
@@ -70,7 +23,7 @@ export async function fetchArrayBufferWithRetry(
   const result = await withRetry(
     async () => {
       if (signal?.aborted) {
-        throw getAbortErrorFromSignal(signal);
+        throw getUserCancelledAbortErrorFromSignal(signal);
       }
 
       const options = {
@@ -98,7 +51,7 @@ export async function fetchArrayBufferWithRetry(
   // If the caller's signal is aborted (including during retry backoff),
   // always normalize to our user-facing AbortError message.
   if (signal?.aborted) {
-    throw getAbortErrorFromSignal(signal);
+    throw getUserCancelledAbortErrorFromSignal(signal);
   }
 
   if (isAbortError(result.error)) {

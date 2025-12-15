@@ -1,3 +1,4 @@
+import { createUserCancelledAbortError } from '@shared/error/cancellation';
 import { getErrorMessage } from '@shared/error/utils';
 import { DEFAULT_BACKOFF_BASE_MS, fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
 import { ensureUniqueFilenameFactory } from '@shared/services/download/download-utils';
@@ -65,7 +66,7 @@ export async function downloadAsZip(
         usedFilenames.push(filename);
         successful++;
       } catch (error) {
-        if (abortSignal?.aborted) throw new Error('Download cancelled by user');
+        if (abortSignal?.aborted) throw createUserCancelledAbortError(abortSignal.reason);
         failures.push({ url: item.url, error: getErrorMessage(error) });
       } finally {
         processed++;
