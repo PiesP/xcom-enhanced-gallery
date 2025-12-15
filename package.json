@@ -16,7 +16,17 @@
     "prebuild": "pnpm quality",
     "preinstall": "npx only-allow pnpm",
     "quality": "pnpm check && biome check ./src",
-    "quality:fix": "pnpm check && biome check --write ./src"
+    "quality:fix": "pnpm check && biome check --write ./src",
+    "test:deps:check": "pnpm -C test run deps:check",
+    "test:deps:sync": "pnpm -C test run deps:sync",
+    "test:install": "pnpm -C test install",
+    "test:unit": "pnpm -C test run test",
+    "test:ct": "pnpm -C test run ct",
+    "test:e2e": "pnpm -C test run e2e",
+    "test:mut:priority": "pnpm -C test run mut:priority",
+    "test:all": "pnpm -C test run test:all",
+    "verify": "pnpm build && pnpm run test:all",
+    "verify:fast": "pnpm build:fast && pnpm run test:all"
   },
   "keywords": [
     "userscript",
