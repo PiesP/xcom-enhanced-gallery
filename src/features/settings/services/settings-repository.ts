@@ -28,20 +28,35 @@ export class PersistentSettingsRepository implements SettingsRepository {
       const stored = await this.storage.getJson<StoredSettings>(APP_SETTINGS_STORAGE_KEY);
       if (!stored) {
         const defaults = createDefaultSettings();
-        await this.persist(defaults);
+        try {
+          await this.persist(defaults);
+        } catch (persistError) {
+          logger.warn('[SettingsRepository] persist defaults failed (ignored)', persistError);
+        }
         return cloneDeep(defaults);
       }
 
       const nowMs = Date.now();
       const migrated = migrateSettings(stored, nowMs);
       if (stored.__schemaHash !== this.schemaHash) {
-        await this.persist(migrated);
+        try {
+          await this.persist(migrated);
+        } catch (persistError) {
+          logger.warn(
+            '[SettingsRepository] persist migrated settings failed (ignored)',
+            persistError
+          );
+        }
       }
       return cloneDeep(migrated);
     } catch (error) {
       logger.warn('[SettingsRepository] load failed, falling back to defaults', error);
       const defaults = createDefaultSettings();
-      await this.persist(defaults);
+      try {
+        await this.persist(defaults);
+      } catch (persistError) {
+        logger.warn('[SettingsRepository] persist defaults failed (ignored)', persistError);
+      }
       return cloneDeep(defaults);
     }
   }
@@ -72,7 +87,6 @@ export class PersistentSettingsRepository implements SettingsRepository {
           break;
         case 'LOG':
           // Keep logging as a deliberate side effect.
-          // eslint-disable-next-line default-case
           switch (cmd.level) {
             case 'debug':
               logger.debug(cmd.message, cmd.context);
@@ -85,6 +99,10 @@ export class PersistentSettingsRepository implements SettingsRepository {
               break;
             case 'error':
               logger.error(cmd.message, cmd.context);
+              break;
+            default:
+              // Defensive fallback for forward-compatible command variants.
+              logger.info(cmd.message, cmd.context);
               break;
           }
           break;

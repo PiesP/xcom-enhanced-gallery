@@ -84,7 +84,7 @@ export class TranslationCatalog {
    * Check if a language can be lazy-loaded.
    */
   canLazyLoad(language: BaseLanguageCode): boolean {
-    return language in LAZY_LANGUAGE_LOADERS;
+    return Object.hasOwn(LAZY_LANGUAGE_LOADERS, language);
   }
 
   keys(): BaseLanguageCode[] {

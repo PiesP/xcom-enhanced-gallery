@@ -6,6 +6,11 @@
  * - Propagate gallerySignals navigation events
  * - Maintain loose coupling (between useGalleryFocusTracker and gallery.signals)
  * - Minimal bundle size (+~200 bytes)
+ *
+ * Guidance:
+ * - Use AppEventManager (@shared/events/app-events) for application-wide events.
+ * - Use this emitter only for feature-local, short-lived coordination where
+ *   AbortSignal / subscription tracking is not required.
  */
 
 import { logger } from '@shared/logging';

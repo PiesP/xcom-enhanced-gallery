@@ -3,6 +3,8 @@
  * @description Handles prefetching and caching of media files
  */
 
+import { normalizeErrorMessage } from '@shared/error/normalize';
+import { logger } from '@shared/logging';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import type { MediaInfo } from '@shared/types/media.types';
 import { scheduleIdle } from '@shared/utils/performance';
@@ -73,7 +75,8 @@ export class PrefetchManager {
    * Get the cache for bulk downloads
    */
   getCache(): Map<string, Promise<Blob>> {
-    return this.cache;
+    // Return a snapshot to avoid exposing internal mutable state.
+    return new Map(this.cache);
   }
 
   /**
@@ -110,20 +113,27 @@ export class PrefetchManager {
 
     this.cache.set(url, fetchPromise);
 
-    // Remove from cache on error
-    fetchPromise.catch(() => {
+    try {
+      await fetchPromise;
+    } catch (error) {
+      // Remove from cache on error
       if (this.cache.get(url) === fetchPromise) {
         this.cache.delete(url);
       }
-    });
 
-    await fetchPromise.catch(() => {});
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        logger.debug('[PrefetchManager] Prefetch failed (ignored)', {
+          url,
+          error: normalizeErrorMessage(error),
+        });
+      }
+    }
   }
 
   private evictOldest(): void {
-    const first = this.cache.keys().next().value;
-    if (first) {
-      this.cache.delete(first);
+    const first = this.cache.keys().next();
+    if (!first.done) {
+      this.cache.delete(first.value);
     }
   }
 }

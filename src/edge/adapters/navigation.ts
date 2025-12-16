@@ -23,7 +23,6 @@ export async function navigate(input: NavigateInput): Promise<void> {
     }
 
     // Fallback for non-standard environments.
-    // eslint-disable-next-line no-restricted-globals
     window.location.href = input.url;
     return;
   }

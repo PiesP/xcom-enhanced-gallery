@@ -140,10 +140,10 @@ export function createLazyLoader<
     }
   };
 
-  const load = async (): Promise<TModule[TExport]> => {
+  const startLoading = (cacheError: boolean): Promise<TModule[TExport]> => {
     // Return cached value
     if (state.status === 'loaded') {
-      return state.value;
+      return Promise.resolve(state.value);
     }
 
     // Return in-flight promise
@@ -153,7 +153,7 @@ export function createLazyLoader<
 
     // Re-throw cached error
     if (state.status === 'error') {
-      throw state.error;
+      return Promise.reject(state.error);
     }
 
     // Start loading
@@ -171,11 +171,19 @@ export function createLazyLoader<
       },
       (error) => {
         const err = error instanceof Error ? error : new Error(String(error));
-        state = { status: 'error', error: err };
-        onError?.(err);
+
+        if (cacheError) {
+          state = { status: 'error', error: err };
+          onError?.(err);
+        } else {
+          // Preload should not poison the loader state.
+          state = { status: 'idle' };
+        }
+
         if (debug) {
           logger.error(`[LazyLoader] Failed to load '${String(exportName)}':`, err.message);
         }
+
         throw err;
       }
     );
@@ -184,12 +192,16 @@ export function createLazyLoader<
     return promise;
   };
 
+  const load = async (): Promise<TModule[TExport]> => {
+    return startLoading(true);
+  };
+
   const isLoaded = (): boolean => state.status === 'loaded';
 
   const preload = (): void => {
     if (state.status === 'idle') {
-      // Silently ignore errors in preload - they'll surface when load() is called
-      void load().catch(() => {});
+      // Preload should not poison the loader state on transient failures.
+      void startLoading(false).catch(() => {});
     }
   };
 
@@ -242,9 +254,9 @@ export function createModuleLazyLoader<TModule>(
     }
   };
 
-  const load = async (): Promise<TModule> => {
+  const startLoading = (cacheError: boolean): Promise<TModule> => {
     if (state.status === 'loaded') {
-      return state.value;
+      return Promise.resolve(state.value);
     }
 
     if (state.status === 'loading') {
@@ -252,7 +264,7 @@ export function createModuleLazyLoader<TModule>(
     }
 
     if (state.status === 'error') {
-      throw state.error;
+      return Promise.reject(state.error);
     }
 
     if (debug) {
@@ -269,11 +281,19 @@ export function createModuleLazyLoader<TModule>(
       },
       (error) => {
         const err = error instanceof Error ? error : new Error(String(error));
-        state = { status: 'error', error: err };
-        onError?.(err);
+
+        if (cacheError) {
+          state = { status: 'error', error: err };
+          onError?.(err);
+        } else {
+          // Preload should not poison the loader state.
+          state = { status: 'idle' };
+        }
+
         if (debug) {
           logger.error('[LazyLoader] Failed to load module:', err.message);
         }
+
         throw err;
       }
     );
@@ -282,12 +302,16 @@ export function createModuleLazyLoader<TModule>(
     return promise;
   };
 
+  const load = async (): Promise<TModule> => {
+    return startLoading(true);
+  };
+
   const isLoaded = (): boolean => state.status === 'loaded';
 
   const preload = (): void => {
     if (state.status === 'idle') {
-      // Silently ignore errors in preload - they'll surface when load() is called
-      void load().catch(() => {});
+      // Preload should not poison the loader state on transient failures.
+      void startLoading(false).catch(() => {});
     }
   };
 
