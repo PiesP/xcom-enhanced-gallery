@@ -83,6 +83,10 @@ export function isHTMLAnchorElement(element: unknown): element is HTMLAnchorElem
  * ```
  */
 export function isWheelEvent(event: Event): event is WheelEvent {
+  // WheelEvent may be undefined in non-browser runtimes.
+  if (typeof WheelEvent === 'undefined') {
+    return false;
+  }
   return event instanceof WheelEvent;
 }
 
@@ -92,6 +96,10 @@ export function isWheelEvent(event: Event): event is WheelEvent {
  * @returns true if event is KeyboardEvent
  */
 export function isKeyboardEvent(event: Event): event is KeyboardEvent {
+  // KeyboardEvent may be undefined in non-browser runtimes.
+  if (typeof KeyboardEvent === 'undefined') {
+    return false;
+  }
   return event instanceof KeyboardEvent;
 }
 
@@ -101,6 +109,10 @@ export function isKeyboardEvent(event: Event): event is KeyboardEvent {
  * @returns true if event is MouseEvent
  */
 export function isMouseEvent(event: Event): event is MouseEvent {
+  // MouseEvent may be undefined in non-browser runtimes.
+  if (typeof MouseEvent === 'undefined') {
+    return false;
+  }
   return event instanceof MouseEvent;
 }
 
@@ -152,7 +164,22 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
  * @returns true if value is AbortSignal
  */
 export function isAbortSignal(value: unknown): value is AbortSignal {
-  return value instanceof AbortSignal;
+  // AbortSignal may be undefined in some runtimes/test environments.
+  // Avoid ReferenceError from `instanceof AbortSignal` when the global constructor is missing.
+  if (typeof AbortSignal !== 'undefined') {
+    return value instanceof AbortSignal;
+  }
+
+  // Structural fallback for environments that provide AbortSignal-like objects.
+  if (!isRecord(value)) {
+    return false;
+  }
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.aborted === 'boolean' &&
+    typeof candidate.addEventListener === 'function' &&
+    typeof candidate.removeEventListener === 'function'
+  );
 }
 
 /**

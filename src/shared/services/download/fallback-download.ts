@@ -6,6 +6,7 @@
 
 import { isAbortError } from '@shared/async/delay';
 import { combineSignals, createTimeoutController } from '@shared/async/signal-utils';
+import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 import { getErrorMessage } from '@shared/error/utils';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
@@ -131,7 +132,7 @@ export async function downloadWithFetchBlob(
   const { signal, onProgress, timeout = 30000 } = options;
 
   if (signal?.aborted) {
-    return { success: false, error: 'Download cancelled' };
+    return { success: false, error: USER_CANCELLED_MESSAGE };
   }
 
   // Report preparing phase
@@ -161,7 +162,7 @@ export async function downloadWithFetchBlob(
       if (reason instanceof Error && reason.name === 'TimeoutError') {
         return { success: false, error: 'Download timeout' };
       }
-      return { success: false, error: 'Download cancelled' };
+      return { success: false, error: USER_CANCELLED_MESSAGE };
     }
 
     // Fetch the resource
@@ -251,12 +252,12 @@ export async function downloadWithFetchBlob(
         return { success: false, error: 'Download timeout' };
       }
 
-      return { success: false, error: 'Download cancelled' };
+      return { success: false, error: USER_CANCELLED_MESSAGE };
     }
 
     // Defensive: some environments may surface abort errors without an aborted signal.
     if (isAbortError(error)) {
-      return { success: false, error: 'Download cancelled' };
+      return { success: false, error: USER_CANCELLED_MESSAGE };
     }
 
     const errorMsg = getErrorMessage(error);

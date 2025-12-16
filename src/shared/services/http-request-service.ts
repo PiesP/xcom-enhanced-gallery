@@ -144,8 +144,21 @@ export class HttpRequestService {
       try {
         const userscript = getUserscript();
 
+        const createAbortError = (cause?: unknown): Error => {
+          const err = new Error('Request was aborted');
+          err.name = 'AbortError';
+          if (cause !== undefined) {
+            try {
+              (err as Error & { cause?: unknown }).cause = cause;
+            } catch {
+              // Ignore: best-effort cause assignment
+            }
+          }
+          return err;
+        };
+
         if (options?.signal?.aborted) {
-          reject(new Error(`Request was aborted for ${url}`));
+          reject(createAbortError(options.signal.reason));
           return;
         }
 
@@ -180,10 +193,6 @@ export class HttpRequestService {
           url,
           headers,
           timeout: options?.timeout ?? this.defaultTimeout,
-          responseType: options?.responseType as Exclude<
-            GMXMLHttpRequestDetails['responseType'],
-            undefined
-          >,
           onload: (response) => {
             const responseHeaders = parseResponseHeaders(response.responseHeaders);
 
@@ -212,9 +221,17 @@ export class HttpRequestService {
             );
           },
           onabort: () => {
-            safeReject(new Error(`Request was aborted for ${url}`));
+            safeReject(createAbortError(options?.signal?.reason));
           },
         };
+
+        // Avoid passing `responseType: undefined` to GM implementations.
+        if (options?.responseType) {
+          details.responseType = options.responseType as Exclude<
+            GMXMLHttpRequestDetails['responseType'],
+            undefined
+          >;
+        }
 
         if (options && 'data' in options && options.data !== undefined) {
           const data = options.data;
