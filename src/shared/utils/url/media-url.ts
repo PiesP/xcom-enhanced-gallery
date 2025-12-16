@@ -16,16 +16,20 @@ export function isSafeAndValidMediaUrl(url: string | null | undefined): boolean 
     return false;
   }
 
-  if (!isUrlAllowed(url, MEDIA_URL_POLICY)) {
+  const trimmed = url.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  if (!isUrlAllowed(trimmed, MEDIA_URL_POLICY)) {
     return false;
   }
 
   // `MEDIA_URL_POLICY` permits protocol-relative URLs. `new URL("//...")` needs a base,
   // so we coerce to https for validation.
-  const trimmed = url.trim();
   if (trimmed.startsWith('//')) {
     return isValidMediaUrl(`https:${trimmed}`);
   }
 
-  return isValidMediaUrl(url);
+  return isValidMediaUrl(trimmed);
 }
