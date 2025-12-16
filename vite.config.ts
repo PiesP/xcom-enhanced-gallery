@@ -54,7 +54,9 @@ const USERSCRIPT_CONFIG = {
   description: "Media viewer and download functionality for X.com",
   author: "PiesP",
   license: "MIT",
-  match: ["https://*.x.com/*"],
+  // Note: `https://*.x.com/*` does not match the root domain (`https://x.com/*`) in
+  // common userscript managers. Include both to ensure the script runs on x.com.
+  match: ["https://x.com/*", "https://*.x.com/*"],
   grant: [
     "GM_setValue",
     "GM_getValue",
@@ -69,7 +71,7 @@ const USERSCRIPT_CONFIG = {
   icon: "https://abs.twimg.com/favicons/twitter.3.ico",
   noframes: true,
   compatible: BROWSER_COMPATIBILITY,
-} as const;
+} as const satisfies UserscriptBaseConfig;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -109,6 +111,8 @@ interface UserscriptMeta {
   readonly require?: readonly string[];
   readonly compatible?: Record<string, string>;
 }
+
+type UserscriptBaseConfig = Omit<UserscriptMeta, "version" | "downloadURL" | "updateURL">;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Build Mode Configuration

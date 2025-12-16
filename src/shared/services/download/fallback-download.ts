@@ -4,6 +4,8 @@
  * (e.g., Violentmonkey, Greasemonkey, or browser-only contexts)
  */
 
+import { isAbortError } from '@shared/async/delay';
+import { combineSignals, createTimeoutController } from '@shared/async/signal-utils';
 import { getErrorMessage } from '@shared/error/utils';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
@@ -141,23 +143,30 @@ export async function downloadWithFetchBlob(
     filename,
   });
 
-  // Create abort controller for timeout
-  const controller = new AbortController();
-  let timeoutId: number | null = null;
-  let onAbort: (() => void) | null = null;
+  // Use shared AbortSignal primitives for consistent cancellation semantics.
+  // - Timeout uses a TimeoutError reason (not a generic AbortError)
+  // - External abort preserves the caller's abort reason
+  const timeoutController = createTimeoutController(timeout);
+  const combinedSignal = signal
+    ? combineSignals([signal, timeoutController.signal])
+    : timeoutController.signal;
 
   try {
-    timeoutId = globalTimerManager.setTimeout(() => controller.abort(), timeout);
-
-    // Combine with external signal if provided
-    if (signal) {
-      onAbort = () => controller.abort(signal.reason);
-      signal.addEventListener('abort', onAbort, { once: true });
+    // If a timeout triggers immediately (e.g. ms=0), bail out deterministically.
+    if (combinedSignal.aborted) {
+      const reason = combinedSignal.reason;
+      if (reason instanceof DOMException && reason.name === 'TimeoutError') {
+        return { success: false, error: 'Download timeout' };
+      }
+      if (reason instanceof Error && reason.name === 'TimeoutError') {
+        return { success: false, error: 'Download timeout' };
+      }
+      return { success: false, error: 'Download cancelled' };
     }
 
     // Fetch the resource
     const response = await fetch(url, {
-      signal: controller.signal,
+      signal: combinedSignal,
       mode: 'cors',
       credentials: 'omit',
     });
@@ -231,12 +240,26 @@ export async function downloadWithFetchBlob(
       URL.revokeObjectURL(blobUrl);
     }
   } catch (error) {
-    const errorMsg = getErrorMessage(error);
+    // Prefer signal-based classification to avoid brittle string matching.
+    if (combinedSignal.aborted) {
+      const reason = combinedSignal.reason;
 
-    const normalizedError = errorMsg.toLowerCase();
-    if (normalizedError.includes('abort') || normalizedError.includes('cancel')) {
+      if (reason instanceof DOMException && reason.name === 'TimeoutError') {
+        return { success: false, error: 'Download timeout' };
+      }
+      if (reason instanceof Error && reason.name === 'TimeoutError') {
+        return { success: false, error: 'Download timeout' };
+      }
+
       return { success: false, error: 'Download cancelled' };
     }
+
+    // Defensive: some environments may surface abort errors without an aborted signal.
+    if (isAbortError(error)) {
+      return { success: false, error: 'Download cancelled' };
+    }
+
+    const errorMsg = getErrorMessage(error);
 
     logger.error('[FallbackDownload] Download failed:', error);
 
@@ -250,17 +273,8 @@ export async function downloadWithFetchBlob(
 
     return { success: false, error: errorMsg };
   } finally {
-    if (timeoutId !== null) {
-      globalTimerManager.clearTimeout(timeoutId);
-    }
-
-    if (signal && onAbort) {
-      try {
-        signal.removeEventListener('abort', onAbort);
-      } catch {
-        // Ignore: defensive cleanup
-      }
-    }
+    // Always clear the timeout timer to avoid lingering scheduled tasks.
+    timeoutController.cancel();
   }
 }
 
