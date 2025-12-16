@@ -49,6 +49,19 @@ function parseResponseHeaders(raw: string | undefined): Record<string, string> {
   return out;
 }
 
+function normalizeRequestHeaders(
+  headers: Record<string, string> | undefined
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!headers) return out;
+
+  for (const [key, value] of Object.entries(headers)) {
+    out[key.toLowerCase()] = value;
+  }
+
+  return out;
+}
+
 /**
  * HTTP request options
  */
@@ -160,7 +173,7 @@ export class HttpRequestService {
           reject(error);
         };
 
-        const headers: Record<string, string> = { ...(options?.headers ?? {}) };
+        const headers: Record<string, string> = normalizeRequestHeaders(options?.headers);
 
         const details: GMXMLHttpRequestDetails = {
           method: method as Exclude<GMXMLHttpRequestDetails['method'], undefined>,

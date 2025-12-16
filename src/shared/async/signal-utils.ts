@@ -7,6 +7,48 @@
 
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
+export interface TimeoutSignalController {
+  readonly signal: AbortSignal;
+  readonly cancel: () => void;
+}
+
+/**
+ * Create a cancellable timeout signal.
+ *
+ * This is useful when you want to guarantee that the underlying timer is cleared
+ * as soon as the caller no longer needs the timeout (e.g. when a raced promise settles).
+ */
+export function createTimeoutController(ms: number): TimeoutSignalController {
+  const controller = new AbortController();
+
+  // Important: declare before assignment to avoid TDZ when tests force timers
+  // to execute synchronously during the initialization expression.
+  let timeoutId: number | null = null;
+  timeoutId = globalTimerManager.setTimeout(() => {
+    controller.abort(new DOMException('The operation timed out.', 'TimeoutError'));
+  }, ms);
+
+  const clear = (): void => {
+    if (timeoutId === null) return;
+    globalTimerManager.clearTimeout(timeoutId);
+    timeoutId = null;
+  };
+
+  // Ensure the timer is cleared if/when the signal aborts.
+  controller.signal.addEventListener(
+    'abort',
+    () => {
+      clear();
+    },
+    { once: true }
+  );
+
+  return {
+    signal: controller.signal,
+    cancel: clear,
+  };
+}
+
 /**
  * Create an AbortSignal that times out after specified milliseconds
  *
@@ -24,30 +66,16 @@ import { globalTimerManager } from '@shared/utils/time/timer-management';
  * ```
  */
 export function createTimeoutSignal(ms: number): AbortSignal {
-  // Always use manual implementation for testability with fake timers
-  // Native AbortSignal.timeout() uses internal browser timers that bypass vi.useFakeTimers()
-  const controller = new AbortController();
-  const timeoutId = globalTimerManager.setTimeout(() => {
-    controller.abort(new DOMException('The operation timed out.', 'TimeoutError'));
-  }, ms);
-
-  // Clean up timeout if signal is aborted externally
-  controller.signal.addEventListener(
-    'abort',
-    () => {
-      globalTimerManager.clearTimeout(timeoutId);
-    },
-    { once: true }
-  );
-
-  return controller.signal;
+  // Always use manual implementation for testability with fake timers.
+  // Native AbortSignal.timeout() uses internal browser timers that bypass vi.useFakeTimers().
+  return createTimeoutController(ms).signal;
 }
 
 /**
  * Combine multiple AbortSignals into a single signal that aborts when any input aborts
  *
- * Uses native `AbortSignal.any()` (Chrome 116+, Firefox 124+, Safari 17.4+).
- * All target browsers support this API natively.
+ * Uses native `AbortSignal.any()` when available (Chrome 116+, Firefox 124+, Safari 17.4+).
+ * Some of our targets (e.g. Firefox 119+) do not guarantee this API, so we keep a manual fallback.
  *
  * @param signals - Array of AbortSignals to combine
  * @returns Combined AbortSignal

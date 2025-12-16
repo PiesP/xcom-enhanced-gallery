@@ -48,7 +48,7 @@ export class CoreService {
       if (!allowOverride) {
         // Silently skip duplicate registration to preserve existing instance
         if (__DEV__) {
-          logger.debug(
+          logger.warn(
             `[CoreService] Service key "${key}" already registered, skipping. ` +
               `Use { allowOverride: true } to replace existing service.`
           );

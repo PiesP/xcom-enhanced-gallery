@@ -5,9 +5,8 @@
  * @version 1.1.0
  */
 
+import { combineSignals, createTimeoutController, isAbortError } from '@shared/async/signal-utils';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
-
-import { combineSignals, createTimeoutSignal, isAbortError } from './signal-utils';
 
 /**
  * Error thrown when an operation times out
@@ -129,8 +128,10 @@ export async function timeout<T>(promise: Promise<T>, options: TimeoutOptions): 
     throw signal.reason ?? new DOMException('Operation was aborted', 'AbortError');
   }
 
-  // Create timeout signal
-  const timeoutSignal = createTimeoutSignal(ms);
+  // Create cancellable timeout signal so we can always clear the underlying timer
+  // when the wrapped promise settles (prevents lingering timers under heavy usage).
+  const timeoutController = createTimeoutController(ms);
+  const timeoutSignal = timeoutController.signal;
 
   // Combine with external signal if provided
   const combinedSignal = signal ? combineSignals([signal, timeoutSignal]) : timeoutSignal;
@@ -139,9 +140,20 @@ export async function timeout<T>(promise: Promise<T>, options: TimeoutOptions): 
   return new Promise<T>((resolve, reject) => {
     let settled = false;
 
-    const onAbort = (): void => {
+    function cleanup(): void {
+      timeoutController.cancel();
+      try {
+        combinedSignal.removeEventListener('abort', onAbort);
+      } catch {
+        // Ignore listener cleanup failures (defensive)
+      }
+    }
+
+    function onAbort(): void {
       if (settled) return;
       settled = true;
+
+      cleanup();
 
       const reason = combinedSignal.reason;
       if (reason instanceof DOMException && reason.name === 'TimeoutError') {
@@ -149,7 +161,7 @@ export async function timeout<T>(promise: Promise<T>, options: TimeoutOptions): 
       } else {
         reject(reason ?? new DOMException('Operation was aborted', 'AbortError'));
       }
-    };
+    }
 
     // Check if already aborted (race condition prevention)
     if (combinedSignal.aborted) {
@@ -163,14 +175,14 @@ export async function timeout<T>(promise: Promise<T>, options: TimeoutOptions): 
       .then((value) => {
         if (!settled) {
           settled = true;
-          combinedSignal.removeEventListener('abort', onAbort);
+          cleanup();
           resolve(value);
         }
       })
       .catch((error) => {
         if (!settled) {
           settled = true;
-          combinedSignal.removeEventListener('abort', onAbort);
+          cleanup();
           reject(error);
         }
       });

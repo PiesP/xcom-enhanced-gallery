@@ -21,7 +21,7 @@
  * await delay(1000, controller.signal);
  *
  * // Timeout wrapper
- * const result = await timeout(fetchData(), 5000);
+ * const result = await timeout(fetchData(), { ms: 5000 });
  *
  * // Retry with exponential backoff
  * const data = await withRetry(() => fetchData(), {
@@ -33,8 +33,12 @@
  *
  * @version 1.0.0
  */
-
 export { createDebounced, type DebouncedFunction } from './debounce';
 export { delay, TimeoutError, type TimeoutOptions, timeout } from './delay';
 export { type RetryOptions, type RetryResult, withRetry } from './retry';
-export { combineSignals, createTimeoutSignal, isAbortError } from './signal-utils';
+export {
+  combineSignals,
+  createTimeoutController,
+  createTimeoutSignal,
+  isAbortError,
+} from './signal-utils';

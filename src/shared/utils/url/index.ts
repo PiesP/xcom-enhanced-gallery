@@ -18,6 +18,9 @@ export {
   tryParseUrl,
 } from './host';
 
+// Combined entrypoints
+export { isSafeAndValidMediaUrl } from './media-url';
+
 // Safety utilities
 export {
   HTML_ATTRIBUTE_URL_POLICY,
