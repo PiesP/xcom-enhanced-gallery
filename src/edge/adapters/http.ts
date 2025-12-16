@@ -21,7 +21,29 @@ export interface HttpRequestOutput {
 
 function isLikelyUserscriptUnavailableError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
-  return /GM_xmlhttpRequest unavailable/i.test(error.message);
+  const message = error.message;
+
+  // Userscript adapter errors are surfaced as plain Error with stable messages.
+  // Keep this check broad enough for tests/alternate runtimes, but explicit
+  // enough to avoid treating genuine request failures as "GM is missing".
+  return (
+    /\bGM_[A-Za-z0-9_]+\s+unavailable\b/i.test(message) ||
+    /\bGM_xmlhttpRequest\s+is\s+not\s+defined\b/i.test(message)
+  );
+}
+
+function isUserscriptUnsupportedRequestShapeError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  // Thrown by this adapter when HttpRequestService cannot represent a request.
+  // In these cases the userscript request was not dispatched, so falling back
+  // to fetch is safe.
+  return /\bUserscript\b.*\bnot supported\b/i.test(error.message);
+}
+
+function shouldFallbackToFetch(error: unknown): boolean {
+  return (
+    isLikelyUserscriptUnavailableError(error) || isUserscriptUnsupportedRequestShapeError(error)
+  );
 }
 
 async function httpRequestViaUserscript(input: HttpRequestInput): Promise<HttpRequestOutput> {
@@ -101,7 +123,10 @@ export async function httpRequest(input: HttpRequestInput): Promise<HttpRequestO
   } catch (error) {
     // If GM_xmlhttpRequest is unavailable (common in tests), fall back to fetch.
     // Also fall back when HttpRequestService doesn't support a specific request shape.
-    if (isLikelyUserscriptUnavailableError(error) || typeof fetch === 'function') {
+    //
+    // Important: Do NOT fall back for arbitrary errors, otherwise non-idempotent
+    // requests (POST/PUT/PATCH/DELETE) could be dispatched twice.
+    if (shouldFallbackToFetch(error)) {
       return await httpRequestViaFetch(input);
     }
     throw error;

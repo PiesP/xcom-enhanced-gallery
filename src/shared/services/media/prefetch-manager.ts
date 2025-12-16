@@ -133,7 +133,15 @@ export class PrefetchManager {
   private evictOldest(): void {
     const first = this.cache.keys().next();
     if (!first.done) {
-      this.cache.delete(first.value);
+      const url = first.value;
+      // If the evicted entry is still in-flight, abort it to avoid wasting
+      // bandwidth/memory and to reduce the chance of duplicated requests.
+      const controller = this.activeRequests.get(url);
+      if (controller) {
+        controller.abort();
+        this.activeRequests.delete(url);
+      }
+      this.cache.delete(url);
     }
   }
 }

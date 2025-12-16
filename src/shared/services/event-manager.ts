@@ -67,6 +67,12 @@ export class EventManager {
 
   /** @internal Test helper */
   public static resetForTests(): void {
+    const existing = EventManager.singleton.peek();
+    // The lifecycle destroy() hook is a no-op unless the instance was initialized.
+    // In tests we may register listeners without calling initialize(), so ensure
+    // we always perform cleanup.
+    existing?.cleanup();
+    existing?.destroy();
     EventManager.singleton.reset();
   }
 

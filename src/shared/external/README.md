@@ -1,466 +1,104 @@
-# 🔌 External API Layer (Shared)
+# External API Layer (Shared)
 
-## 📋 개요
+This directory exposes a **stable public surface** for external APIs and vendor adapters.
+It exists to prevent deep imports, keep runtime code consistent, and make tests/mocks predictable.
 
-**목적**: 외부 라이브러리(Solid.js) 및 Tampermonkey API에 대한 **통합 배럴
-export 계층** 제공
+## Rules
 
-**아키텍처 위치**: Shared Layer의 기반 인프라 (`src/shared/external/`)
+- ✅ Use barrel exports (`@shared/external`, `@shared/external/vendors`, `@shared/external/userscript`, `@shared/external/zip`)
+- ✅ Prefer service-layer abstractions in production code (storage, downloads, HTTP, notifications)
+- ❌ Do not import internal implementation files directly
+- ❌ Do not call GM\_\* APIs directly in runtime code
 
-**설계 원칙**:
+## Directory structure
 
-- ✅ 배럴 export만 사용 (`@shared/external`, `@shared/external/vendors`,
-  `@shared/external/userscript`)
-- ✅ 내부 구현 파일 직접 import 금지 (getter 파일, 관리자 등)
-- ✅ Service Layer 패턴 준수 (Phase 309+)
-- ✅ 금지 패턴 강제 (ESLint를 통한 자동 감지)
-
-**관리 주기**:
-
-- **내부 구현**: vendor-api-safe.ts → Safe 접미사 자동 제거 후 배럴 export
-- **타입 정의**: vendor-types.ts → 배럴 export (공개)
-- **Singleton**: vendor-manager-static.ts → @internal 마킹 (테스트/디버깅만)
-
----
-
-## 📁 디렉토리 구조
-
-```
+```text
 src/shared/external/
-├── 📄 index.ts                 # 최상위 배럴 export (모든 공개 API)
-├── 📄 README.md                # 이 문서
-│
-├── 📂 vendors/                 # Solid.js & 외부 라이브러리 (Getter)
-│   ├── 📄 index.ts             # ✅ 공개 배럴 export
-│   ├── 📄 vendor-api-safe.ts   # ⛔ 내부: TDZ-safe wrapper (Safe → 제거됨)
-│   ├── 📄 vendor-manager-static.ts  # ⛔ 내부: Singleton 관리자
-│   └── 📄 vendor-types.ts      # ✅ 공개: 타입 정의
-│
-├── 📂 userscript/              # Tampermonkey & 환경 감지
-│   ├── 📄 index.ts             # ✅ 공개 배럴 export
-│   ├── 📄 adapter.ts           # ⛔ 내부: GM_* API getter
-│   └── 📄 environment-detector.ts  # ⛔ 내부: 환경 감지 로직
-│
-├── 📂 zip/                     # ZIP 파일 생성 유틸리티
-│   ├── 📄 index.ts             # ✅ 공개 배럴 export
-│   ├── 📄 zip-creator.ts       # ⛔ 내부: 핵심 구현
-│   ├── 📄 store-zip-writer.ts  # ⛔ 내부: STORE 방식
-│   └── 📄 streaming-zip-writer.ts  # ⛔ 내부: 스트리밍 (optional)
-│
-└── 📂 test/                    # ⛔ 테스트 인프라 (@internal)
-    ├── 📄 README.md            # 테스트 헬퍼 상세 가이드
-    ├── 📄 test-environment-config.ts  # 테스트 모드 설정
-    └── 📄 test-service-factory.ts     # Mock/Real 서비스 팩토리
+├── index.ts         # Top-level public barrel
+├── README.md        # This document
+├── vendors/         # Compatibility types and vendor helpers
+├── userscript/      # Userscript adapter + environment detection
+├── zip/             # Zip utilities
+└── test/            # Internal test helpers
 ```
 
-**범례**:
+## Usage
 
-- ✅ 공개 배럴 export (사용 권장)
-- ⛔ 내부 구현 (직접 import 금지)
-- 📍 우선순위
+### Solid.js
 
----
+Prefer direct imports from Solid.js.
 
-## 📚 사용 가이드
-
-### 🎯 빠른 참조 (3가지 사용 패턴)
-
-#### 패턴 1: Solid.js API (직접 import)
-
-```typescript
-// ✅ 권장: solid-js 직접 import
-import { createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
-import { render } from 'solid-js/web';
-import type { Accessor, JSX } from 'solid-js';
-
-const [count, setCount] = createSignal(0);
-
-// ✅ 타입 별칭 (선택적)
-import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
+```ts
+import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
+import { render } from "solid-js/web";
+import type { JSX } from "solid-js";
 ```
 
-#### 패턴 2: Userscript API (우선순위 순서)
+Optional compatibility type aliases:
 
-```typescript
-// 1️⃣ 우선: Service Layer 사용 (권장)
-import { NotificationService, PersistentStorage } from '@shared/services';
+```ts
+import type { ComponentChildren, JSXElement } from "@shared/external/vendors";
+```
+
+### Userscript APIs
+
+Prefer service-layer abstractions.
+
+```ts
+import { NotificationService, PersistentStorage } from "@shared/services";
 
 const storage = PersistentStorage.getInstance();
-await storage.set('user-theme', 'dark');
+await storage.set("user-theme", "dark");
 
 const notif = NotificationService.getInstance();
-notif.success('설정 저장됨');
+notif.success("Settings saved");
+```
 
-// 2️⃣ 고급/테스트: Getter 사용
-import { detectEnvironment, getUserscript } from '@shared/external/userscript';
+Advanced/debug/test-only:
+
+```ts
+import { detectEnvironment, getUserscript } from "@shared/external/userscript";
 
 const env = detectEnvironment();
 if (env.isGMAvailable) {
   const us = getUserscript();
-  // 매우 드문 경우: GM_* API 직접 확인
+  await us.setValue("key", "value");
 }
-
-// 3️⃣ 절대 금지: 직접 GM 호출
-GM_setValue('key', value); // ❌ 금지!
 ```
 
-#### 패턴 3: ZIP 유틸리티
+Forbidden in app code:
 
-```typescript
-// ✅ 배럴 export 사용
-import { createZipBytesFromFileMap } from '@shared/external/zip';
-import { DownloadService } from '@shared/services';
+```ts
+// ❌ Do not call GM_* APIs directly
+GM_setValue("key", "value");
+```
 
-// ZIP 생성
+### Zip utilities
+
+```ts
+import { createZipBytesFromFileMap } from "@shared/external/zip";
+import { DownloadService } from "@shared/services";
+
 const zipBytes = await createZipBytesFromFileMap(
   {
-    'photo1.jpg': buffer1,
-    'photo2.jpg': buffer2,
-    'video.mp4': buffer3,
+    "photo1.jpg": buffer1,
+    "photo2.jpg": buffer2,
   },
-  { compressionLevel: 0 }, // STORE 방식 (추가 압축 없음)
+  { compressionLevel: 0 }
 );
 
-// 다운로드
 const downloadService = DownloadService.getInstance();
 await downloadService.downloadBlob({
-  blob: new Blob([zipBytes], { type: 'application/zip' }),
-  name: 'media.zip',
+  blob: new Blob([zipBytes], { type: "application/zip" }),
+  name: "media.zip",
 });
 ```
 
----
+## Related docs
 
-### 1️⃣ Solid.js API (직접 import 권장)
-
-**언제 사용**: Solid.js API가 필요한 컴포넌트/훅에서
-
-**✅ 올바른 사용**:
-
-```typescript
-// ✅ solid-js 직접 import (권장)
-import { createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
-import { render } from 'solid-js/web';
-import type { Accessor, JSX } from 'solid-js';
-
-// ✅ 타입 별칭 사용 (선택적, 하위 호환용)
-import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
-```
-
-**❌ 잘못된 사용**:
-
-```typescript
-// ❌ 더 이상 지원되지 않음 (v7.0에서 제거됨)
-import { getSolid, initializeVendors } from '@shared/external/vendors';
-```
-
-**관련 파일**:
-
-- `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
-- `src/features/gallery/hooks/useGalleryScroll.ts`
+- `docs/ARCHITECTURE.md` - Architecture and service layer overview
+- `docs/CODING_GUIDELINES.md` - Coding rules and patterns
 
 ---
 
-### 2️⃣ Userscript API (Tampermonkey 접근)
-
-**언제 사용**: GM\_\* API 접근이 필요할 때
-
-**원칙**: **서비스 레이어** 사용 (Phase 309+)
-
-**✅ 올바른 방식 (권장)**:
-
-```typescript
-// ✅ Service Layer를 통한 간접 접근
-import { PersistentStorage } from '@shared/services';
-const storage = PersistentStorage.getInstance();
-await storage.set('key', value);
-
-import { NotificationService } from '@shared/services';
-const notif = NotificationService.getInstance();
-notif.success('작업 완료');
-```
-
-**🔧 getter로 직접 접근 (고급/테스트용)**:
-
-```typescript
-// 🔧 테스트/디버깅 시에만 사용
-import { getUserscript } from '@shared/external/userscript';
-const userscript = getUserscript();
-const value = await userscript.getValue('key');
-
-// 환경 감지 (선택)
-import { detectEnvironment, isGMAPIAvailable } from '@shared/external/userscript';
-if (isGMAPIAvailable()) {
-  console.log('Tampermonkey API 사용 가능');
-}
-```
-
-**❌ 금지된 패턴 (ESLint로 자동 감지)**:
-
-```typescript
-// ❌ 금지 1: 내부 파일 직접 import
-import { getSolidSafe } from '@shared/external/vendors/vendor-api-safe';
-import { getUserscript } from '@shared/external/userscript/adapter';
-import { StaticVendorManager } from '@shared/external/vendors/vendor-manager-static';
-
-// ❌ 금지 2: GM_* API 직접 호출
-GM_setValue('key', value);       // PersistentStorage 사용
-GM_notification({ text: '...' }); // NotificationService 사용
-GM_download({ ... });            // DownloadService 사용
-
-// ❌ 금지 3: 상대 경로 import
-import { x } from '../../shared/external'; // 경로 별칭 사용
-```
-
-**🔒 Service Layer 매핑** (Phase 309+):
-
-| 기능         | Tampermonkey           | Service Layer         | 파일                      | 이점              |
-| ------------ | ---------------------- | --------------------- | ------------------------- | ----------------- |
-| **저장**     | `GM_setValue/getValue` | `PersistentStorage`   | `persistent-storage.ts`   | 타입 안전, 캐싱   |
-| **알림**     | `GM_notification`      | `NotificationService` | `notification-service.ts` | 일관된 UI         |
-| **다운로드** | `GM_download`          | `DownloadService`     | `download-service.ts`     | 진행률, 에러 처리 |
-| **HTTP**     | `GM_xmlhttpRequest`    | `HttpRequestService`  | `http-request-service.ts` | CORS, 타임아웃    |
-
-**참고**: [ARCHITECTURE.md](../../docs/ARCHITECTURE.md) - Phase 309+ Service
-Layer 상세 설명
-
----
-
-### 3️⃣ ZIP 유틸리티
-
-**언제 사용**: 여러 미디어 파일을 ZIP으로 압축할 때
-
-**사용 예**:
-
-```typescript
-// ✅ 배럴 export 경로
-import { createZipBytesFromFileMap, type MediaItemForZip } from '@shared/external/zip';
-
-// 미디어 아이템 준비
-const mediaItems: MediaItemForZip[] = [
-  { url: 'https://...', filename: 'photo1.jpg' },
-  { url: 'https://...', filename: 'photo2.jpg' },
-];
-
-// ZIP 생성
-const zipBytes = await createZipBytesFromFileMap(mediaItems, {
-  compressionLevel: 0,
-  maxFileSize: 50000000,
-});
-
-// 다운로드
-await downloadService.downloadBlob({
-  blob: new Blob([zipBytes], { type: 'application/zip' }),
-  name: 'media.zip',
-});
-```
-
----
-
----
-
-## 🔐 정책 및 설계 원칙
-
-### 배럴 Export 정책 (엄격함)
-
-**목적**: 내부 구현 세부사항 숨김, 공개 API만 노출
-
-**허용된 경로** ✅:
-
-```typescript
-// 최상위 배럴
-import { getSolid, initializeVendors } from '@shared/external';
-import { getSolid } from '@shared/external/vendors';
-
-// 서브 배럴
-import { detectEnvironment, getUserscript } from '@shared/external/userscript';
-import { createZipBytesFromFileMap } from '@shared/external/zip';
-
-// 타입 import
-import type { EnvironmentInfo, SolidAPI } from '@shared/external';
-```
-
-**금지된 경로** ❌:
-
-```typescript
-// 내부 구현 파일 직접 import (ESLint 자동 감지)
-import { UserscriptAdapterImpl } from '@shared/external/userscript/adapter';
-
-// GM_* 직접 호출 (금지)
-GM_setValue('key', value); // PersistentStorage 사용
-```
-
-### API 계층화 원칙
-
-**3단계 우선순위**:
-
-```
-1️⃣  Service Layer (권장) ⭐⭐⭐
-    └─ PersistentStorage, NotificationService, DownloadService
-    └─ 이점: 타입 안전, 에러 처리, 테스트 용이
-
-2️⃣  Direct Import / Getter (표준) ⭐⭐
-    └─ solid-js 직접 import, getUserscript(), detectEnvironment()
-    └─ 사용처: 컴포넌트, 훅, 특수 상황
-
-3️⃣  직접 GM 호출 (금지) ⭐
-    └─ GM_setValue, GM_download 등
-    └─ 절대 사용 금지!
-```
-
-### 타입 안전성 원칙
-
-**배럴 export에서 타입 명시**:
-
-```typescript
-// ✅ 배럴에서 타입 export
-export type { EnvironmentInfo, SolidAPI } from './vendors';
-
-// ✅ 사용처에서 type import
-import type { SolidAPI } from '@shared/external/vendors';
-const api: SolidAPI = getSolid();
-
-// ❌ 타입 정의 파일 직접 import
-import type { SolidAPIImpl } from '@shared/external/vendors/vendor-types';
-```
-
-### 내부 구현 마킹 (@internal)
-
-**규칙**:
-
-```typescript
-/**
- * @internal 테스트/디버깅만
- * 일반 사용자는 getSolid() 함수를 사용하세요.
- */
-export { StaticVendorManager } from './vendor-manager-static';
-```
-
-**ESLint Rule** (설정됨):
-
-```javascript
-// .eslintrc.js
-rules: {
-  '@typescript-eslint/no-restricted-imports': [
-    'error',
-    {
-      patterns: [
-        '**/external/vendors/vendor-*',  // 내부 파일 금지
-        '**/external/userscript/adapter',
-        '**/external/zip/store-*',
-      ],
-      message: '배럴 export를 사용하세요: @shared/external/vendors',
-    },
-  ],
-}
-```
-
-❌ Direct GM\_\* 호출 (금지) └─ GM_setValue(), GM_notification() 등
-
-````
----
-
-## 📖 API 레퍼런스
-
-### `@shared/external/vendors`
-
-```typescript
-// 타입 별칭 (solid-js 타입의 편의 별칭)
-export type { JSX };
-export type JSXElement = JSX.Element;
-export type VNode = JSX.Element;
-export type ComponentChildren = JSX.Element;
-```
-
-**참고**: Solid.js 런타임 API는 `solid-js`에서 직접 import하세요:
-
-```typescript
-import { createSignal, createEffect, createMemo, onCleanup } from 'solid-js';
-import { render } from 'solid-js/web';
-````
-
-### `@shared/external/userscript`
-
-```typescript
-// Getter
-export function getUserscript(): UserscriptAPI;
-
-// 환경 감지
-export function detectEnvironment(): EnvironmentInfo;
-export function isGMAPIAvailable(apiName: string): boolean;
-
-// 타입
-export interface UserscriptAPI {
-  readonly hasGM: boolean;
-  readonly manager: UserscriptManager;
-  info(): GMUserScriptInfo | null;
-  download(url: string, filename: string): Promise<void>;
-  setValue(key: string, value: unknown): Promise<void>;
-  getValue<T>(key: string, defaultValue?: T): Promise<T | undefined>;
-  deleteValue(key: string): Promise<void>;
-  listValues(): Promise<string[]>;
-  addStyle(css: string): HTMLStyleElement;
-  xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl;
-  readonly cookie: CookieAPI | undefined;
-}
-
-export interface EnvironmentInfo {
-  colorScheme: 'light' | 'dark';
-  language: BaseLanguageCode;
-}
-
-// Supported API names for isGMAPIAvailable():
-// 'getValue', 'setValue', 'download', 'notification',
-// 'deleteValue', 'listValues', 'cookie'
-```
-
-### `@shared/external/zip`
-
-```typescript
-// ZIP 생성
-export async function createZipBytesFromFileMap(
-  files: Record<string, Uint8Array>,
-  config: ZipCreationConfig,
-): Promise<Uint8Array>;
-
-// 타입
-export interface MediaItemForZip {
-  url: string;
-  originalUrl?: string;
-  filename?: string;
-}
-
-export interface ZipCreationConfig {
-  compressionLevel: number;
-  maxFileSize: number;
-  requestTimeout: number;
-  maxConcurrent: number;
-}
-```
-
----
-
-## 🔍 관련 문서
-
-- **[ARCHITECTURE.md](../../docs/ARCHITECTURE.md)** - 전체 아키텍처 및 Service
-  Layer
-- **[CODING_GUIDELINES.md](../../docs/CODING_GUIDELINES.md)** - 코딩 규칙 및
-  패턴
-- **[copilot-instructions.md](.../../.github/copilot-instructions.md)** - AI
-  개발 지침
-
----
-
-## 🎯 최적화 이력
-
-| Phase     | 변경 사항                          | 상태 |
-| --------- | ---------------------------------- | ---- |
-| 309+      | Service Layer 패턴 도입            | ✅   |
-| 318.1     | GM_xmlHttpRequest 제거 (MV3 호환)  | ✅   |
-| Phase 370 | 배럴 export 정책 명확화            | ✅   |
-| Phase 373 | GM_xmlhttpRequest 복원             | ✅   |
-| v7.0.0    | Solid.js 직접 import 권장으로 전환 | ✅   |
-
----
-
-**마지막 업데이트**: 2025-12-08 (v7.1.0 - Tampermonkey API 정리)
+Last updated: 2025-12-16

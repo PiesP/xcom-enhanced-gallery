@@ -6,7 +6,7 @@
  * import { generateMediaFilename, generateZipFilename } from '@shared/services/filename';
  */
 
-export { createTestHarness, TestHarness } from './harness';
+export { createTestHarness, TestHarness } from '@shared/container/harness';
 export {
   // Lazy-Loaded Service Getters
   getDownloadOrchestrator,
@@ -21,4 +21,4 @@ export {
   // Warmup
   warmupCriticalServices,
   warmupNonCriticalServices,
-} from './service-accessors';
+} from '@shared/container/service-accessors';

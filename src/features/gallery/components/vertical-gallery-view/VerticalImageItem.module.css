@@ -141,7 +141,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Skeleton: 토큰화된 배경/모션 사용 */
+  /* Skeleton: Use tokenized background/motion */
   background: var(--xeg-skeleton-bg);
   min-height: var(--xeg-spacing-3xl, 3rem);
 }
@@ -308,14 +308,14 @@
   border: 0.0625rem solid var(--xeg-color-error); /* 1px = 0.0625rem */
 }
 
-/* Fit 모드별 컨테이너 조정 (intrinsic sizing 연동) */
-/* Phase 326: fitOriginal은 이제 다른 모드와 동일하게 컨테이너 제한을 따름 */
-/* overflow/scrollbar 스타일 제거 (일관성 적용) */
+/* Container adjustments per fit mode (intrinsic sizing integration) */
+/* Phase 326: fitOriginal now follows the same container constraints as other modes */
+/* Remove overflow/scrollbar styling (consistency) */
 
 /* Base style - lower specificity */
 .container[data-fit-mode="original"] .image,
 .container[data-fit-mode="original"] .video {
-  /* Phase 326: grab cursor 제거 (스크롤 불필요) */
+  /* Phase 326: Remove grab cursor (no scroll needed) */
   cursor: pointer;
 }
 
@@ -380,20 +380,20 @@
 /* Container width now fits content by default - no forced 100% width needed */
 /* Removed: .container:not([data-fit-mode="original"]) forced full width */
 
-/* Phase 58: 다운로드 버튼 제거로 인한 미사용 스타일 제거 */
+/* Phase 58: Removed unused styles after removing the download button */
 /*
 .downloadButton {
   pointer-events: auto;
 }
 */
 
-/* 이벤트 전파 차단을 위한 CSS 클래스 */
+/* CSS class used to block event propagation */
 .eventBlocked {
   pointer-events: none;
 }
 
-/* Phase 254: 모션 감소는 semantic 레이어의 --xeg-transition-* 토큰으로 자동 처리 */
-/* will-change는 성능 최적화이므로 auto로 변경 유지 */
+/* Phase 254: Reduced motion is handled via semantic --xeg-transition-* tokens */
+/* Keep will-change set to auto as a performance default */
 @media (prefers-reduced-motion: reduce) {
   .container {
     will-change: auto;

@@ -1,0 +1,6 @@
+packages:
+  - '.'
+
+pnpm:
+  minimumReleaseAge: 4320
+  onlyBuiltDependencies: true

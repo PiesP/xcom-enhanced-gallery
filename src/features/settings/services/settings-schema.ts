@@ -8,8 +8,7 @@ import { DEFAULT_SETTINGS as defaultSettings } from '@constants';
 /**
  * Simple hash function (JSON string based)
  */
-function computeHash(input: unknown): string {
-  const str = JSON.stringify(input);
+function computeHashString(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
@@ -17,6 +16,10 @@ function computeHash(input: unknown): string {
     hash = hash & hash; // Convert to 32-bit integer
   }
   return Math.abs(hash).toString(16);
+}
+
+function computeHash(input: unknown): string {
+  return computeHashString(JSON.stringify(input));
 }
 
 /**
@@ -28,7 +31,8 @@ export function computeSettingsSchemaHashFrom(obj: unknown): string {
   const str = JSON.stringify(filtered, (key, value) =>
     key === '__schemaHash' ? undefined : value
   );
-  return computeHash(str);
+  // Avoid double-stringify: computeHashString expects an already-serialized input.
+  return computeHashString(str);
 }
 
 /**
@@ -38,4 +42,4 @@ export function computeCurrentSettingsSchemaHash(): string {
   return computeSettingsSchemaHashFrom(defaultSettings);
 }
 
-export const __private = { computeHash };
+export const __private = { computeHash, computeHashString };

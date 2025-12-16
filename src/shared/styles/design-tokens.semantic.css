@@ -1,6 +1,6 @@
 /**
  * @fileoverview Semantic Design Tokens
- * @description 역할 기반 토큰들 - primitive 값들을 참조
+ * @description Role-based tokens that reference primitive values
  */
 
 @layer xeg.tokens {
@@ -11,7 +11,7 @@
     --color-bg-surface: var(--color-base-white);
     --color-bg-elevated: var(--color-base-white);
 
-    /* 갤러리 및 툴바 배경 토큰 */
+    /* Gallery and toolbar background tokens */
     --xeg-bg-toolbar: var(--color-bg-surface);
     --xeg-toolbar-border: var(--xeg-color-border-primary);
     --xeg-toolbar-surface: var(--xeg-bg-toolbar);
@@ -20,7 +20,7 @@
     /* Gallery Image Item Background Tokens */
     --xeg-color-bg-secondary: var(--color-bg-secondary);
 
-    /* Gallery Background - 라이트/다크 변형 */
+    /* Gallery background (light/dark variants) */
     --xeg-gallery-bg-light: var(--color-bg-primary);
     --xeg-gallery-bg-dark: var(--color-gray-900);
     --xeg-gallery-bg: var(--xeg-gallery-bg-light);
@@ -446,7 +446,7 @@
     --xeg-settings-label-font-size: var(--font-size-sm);
     --xeg-settings-label-font-weight: var(
       --font-weight-bold
-    ); /* Phase D2: 인디케이터(currentIndex)와 통일하여 700으로 변경 */
+    ); /* Phase D2: aligned with indicator (currentIndex) by switching to 700 */
     --xeg-settings-select-font-size: var(--font-size-sm);
 
     /* Input */
@@ -457,13 +457,13 @@
     --xeg-toolbar-panel-shadow: var(--xeg-shadow-xs);
 
     /* Toolbar/Counter Typography Tokens */
-    /* 미디어 카운터 기본 텍스트 톤을 공용 토큰으로 정의 (일관성 확보) */
-    /* 2025-10-21: 툴바 인디케이터 색상 통일에 따라 기본 텍스트(primary)로 승격 */
+    /* Define a shared base text tone for counters (consistency) */
+    /* 2025-10-21: promoted to primary text after toolbar indicator color unification */
     --xeg-text-counter: var(--xeg-color-text-primary);
     --xeg-counter-text: var(--xeg-text-counter);
 
     /* Legacy/Global Gallery aliases (Phase: design-unification) */
-    /* NOTE: gallery-global.css에서 사용하는 레거시 토큰명을 최신 semantic 토큰으로 연결 */
+    /* NOTE: map legacy token names used in gallery-global.css to current semantic tokens */
     --xeg-text-button: var(--xeg-color-text-primary);
     --xeg-text-button-navigation: var(--xeg-color-text-primary);
     --xeg-shadow-toolbar: var(--xeg-shadow-md);

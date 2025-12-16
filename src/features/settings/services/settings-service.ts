@@ -1,4 +1,13 @@
 import { createDefaultSettings, DEFAULT_SETTINGS } from '@constants';
+import { migrateSettings } from '@features/settings/services/settings-migration';
+import {
+  PersistentSettingsRepository,
+  type SettingsRepository,
+} from '@features/settings/services/settings-repository';
+import type {
+  FeatureFlagMap,
+  SettingsServiceContract,
+} from '@features/settings/services/settings-service.contract';
 import type {
   AppSettings,
   FeatureFlags,
@@ -11,9 +20,6 @@ import { createLifecycle } from '@shared/services/lifecycle';
 import { assignNestedPath, resolveNestedPath } from '@shared/utils/types/object-path';
 import { cloneDeep } from '@shared/utils/types/safety';
 import { createSingleton } from '@shared/utils/types/singleton';
-import { migrateSettings } from './settings-migration';
-import { PersistentSettingsRepository, type SettingsRepository } from './settings-repository';
-import type { FeatureFlagMap, SettingsServiceContract } from './settings-service.contract';
 
 const FEATURE_DEFAULTS: Readonly<FeatureFlags> = Object.freeze({ ...DEFAULT_SETTINGS.features });
 

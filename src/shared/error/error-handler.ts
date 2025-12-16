@@ -47,6 +47,8 @@ export class GlobalErrorHandler {
 
   /** @internal Test helper */
   public static resetForTests(): void {
+    const existing = GlobalErrorHandler.singleton.peek();
+    existing?.destroy();
     GlobalErrorHandler.singleton.reset();
   }
 

@@ -331,7 +331,7 @@
   border-color: var(--xeg-color-neutral-500);
 }
 
-/* ===== 상태 변형 ===== */
+/* ===== State variants ===== */
 .loading {
   opacity: 0.8;
   cursor: wait;
@@ -344,7 +344,7 @@
   transform: none;
 }
 
-/* ===== 로딩 스피너 ===== */
+/* ===== Loading spinner ===== */
 .spinner {
   --xeg-spinner-size: 1em;
   --xeg-spinner-track-color: transparent;
@@ -353,11 +353,11 @@
   margin-right: var(--xeg-spacing-xs);
 }
 
-/* ===== 다크 모드 지원 제거: semantic 레이어 토큰에 위임 (Phase 54.1) ===== */
+/* ===== Dark mode styling is delegated to semantic tokens (Phase 54.1) ===== */
 
-/* ===== 애니메이션 감소 지원 ===== */
-/* Phase 254: transition은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
-/* spinner animation만 명시적으로 비활성화 (animation-duration: 0s는 1프레임 실행) */
+/* ===== Reduced motion support ===== */
+/* Phase 254: transitions are handled via semantic --xeg-duration-* tokens */
+/* Explicitly disable spinner animation (animation-duration: 0s still runs 1 frame) */
 @media (prefers-reduced-motion: reduce) {
   .spinner {
     animation: none;
@@ -368,8 +368,8 @@
   }
 }
 
-/* ===== 반응형 디자인 ===== */
+/* ===== Responsive design ===== */
 /* PC-only: Touch/Mobile styles removed (Phase 242) */
 
-/* ===== 하위 호환성 클래스 ===== */
+/* ===== Backward compatibility classes ===== */
 /* Legacy classes removed (Phase 3 Consolidation) */

@@ -98,31 +98,31 @@
 }
 
 .galleryToolbar {
-  /* 레이아웃 속성만 정의 - semantic 토큰 사용 (alias 제거) */
+  /* Layout-only declarations; use semantic tokens (aliases removed) */
   --toolbar-surface-base: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
   --toolbar-surface-border: var(--xeg-toolbar-border);
   --xeg-button-disabled-opacity: 1;
 
   background: var(--toolbar-surface-base);
-  border: none; /* Phase 58: 툴바 외곽선 제거하여 디자인 패턴 통일 */
+  border: none; /* Phase 58: removed outer border to unify the design pattern */
   border-radius: var(--xeg-radius-lg);
 
-  /* 레이아웃 속성 - 설정 패널 절대 위치를 위한 relative 컨텍스트 */
+  /* Layout: provide a relative context for absolutely-positioned panels */
   position: fixed;
   top: 1.25em; /* 20px → 1.25em */
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--xeg-z-toolbar);
   display: var(--toolbar-display, inline-flex);
-  /* Phase 49: flex-direction 제거 - 기본 row 사용 */
-  /* 설정 패널은 absolute positioning으로 플로우에서 제외됨 */
+  /* Phase 49: removed flex-direction override (default row) */
+  /* Panels use absolute positioning and are taken out of the normal flow */
   align-items: center;
   justify-content: space-between;
-  height: 3em; /* min-height → height로 변경하여 고정 높이 */
+  height: 3em; /* switched from min-height to height for a fixed toolbar height */
   padding: 0.5em 1em; /* 8px 16px → 0.5em 1em */
-  gap: 0; /* 설정 패널과의 간격은 별도 관리 */
+  gap: 0; /* spacing to the panel is handled separately */
 
-  /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 */
+  /* Inherit toolbar visibility from the parent container via CSS variables */
   color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
   visibility: var(--toolbar-visibility, visible);
   opacity: var(--toolbar-opacity, 1);
@@ -134,16 +134,16 @@
 
 /* ===== Phase 57: Toolbar-Settings Panel Visual Continuity ===== */
 
-/* 툴바 확장 상태 - 설정 패널 또는 트윗 패널과 시각적으로 연결 */
+/* Expanded toolbar state: visually connect the toolbar with the panel */
 .galleryToolbar[data-settings-expanded="true"],
 .galleryToolbar[data-tweet-panel-expanded="true"] {
-  /* 하단 border-radius 제거하여 패널과 매끄럽게 연결 */
+  /* Remove the bottom radius for a seamless connection to the panel */
   border-radius: var(--xeg-radius-lg) var(--xeg-radius-lg) 0 0;
 }
 
-/* Phase 254: 감소된 모션은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
+/* Phase 254: reduced motion is handled via semantic --xeg-duration-* tokens */
 
-/* 상태별 CSS 커스텀 프로퍼티 정의 - 기본값 수정으로 가시성 보장 */
+/* State-driven custom properties (defaults chosen to preserve visibility) */
 .galleryToolbar[data-state="idle"],
 .galleryToolbar:not([data-state]) {
   --toolbar-opacity: 1;
@@ -192,12 +192,12 @@
 }
 
 .separator {
-  /* 구분자('/')를 인디케이터 숫자와 동일 톤(Primary)으로 통일 */
+  /* Match the separator ('/') tone to the indicator numbers (primary) */
   color: var(--xeg-toolbar-text-muted, var(--xeg-color-text-primary));
   margin: 0 0.125em; /* 0 2px → 0 0.125em */
 }
 
-/* 데이터 속성 기반 상태 관리 */
+/* State management via data attributes */
 :where(.toolbarButton[data-active="true"], .toolbarButton[data-selected="true"]) {
   border-color: var(--toolbar-button-accent-hover);
 }
@@ -214,17 +214,17 @@
   cursor: not-allowed;
 }
 
-/* 호버 상태는 glassmorphism 클래스에서 처리 */
+/* Hover state is handled by the glassmorphism class */
 @media (hover: hover) {
   .toolbarButton:hover:not([data-disabled="true"]) {
-    /* glassmorphism 클래스의 호버 효과 사용 */
-    /* 복잡한 transform 효과 제거 */
+    /* Use the hover effect defined by the glassmorphism class */
+    /* Avoid complex transform effects */
     border-color: var(--toolbar-button-accent-hover);
     transform: translateY(var(--xeg-button-lift));
   }
 }
 
-/* 의미론적 버튼 변형 */
+/* Semantic button variants */
 :where(.toolbarButton.primary, .downloadCurrent) {
   --toolbar-button-accent: var(--xeg-color-primary);
   --toolbar-button-accent-hover: var(--xeg-color-primary-hover);
@@ -243,33 +243,33 @@
   --toolbar-button-focus-border: var(--xeg-color-error-hover);
 }
 
-/* 다운로드 버튼 - 기본 스타일 상속 */
+/* Download button (inherits base styles) */
 .downloadButton {
   position: relative;
 }
 .mediaCounterWrapper {
-  /* 베이스라인 동기화를 위한 인라인 플렉스 컨테이너 */
-  position: relative; /* 진행 바를 오버레이로 배치 */
-  gap: 0; /* 세로 갭 제거 – 진행 바는 absolute로 하단에 고정 */
+  /* Inline-flex container for baseline alignment */
+  position: relative; /* overlay the progress bar */
+  gap: 0; /* progress bar is positioned absolutely at the bottom */
   min-width: 5em; /* 80px → 5em */
-  min-height: 2.5em; /* 아이콘 버튼과 동일 높이로 수직 중심 정렬 보장 */
-  padding-bottom: 0.5em; /* 진행 바 공간 확보 (em 기반) */
+  min-height: 2.5em; /* keep vertical centering consistent with icon buttons */
+  padding-bottom: 0.5em; /* reserve space for the progress bar (em-based) */
   box-sizing: border-box;
 }
 
 .mediaCounter {
-  /* 인디케이터 텍스트는 기본 텍스트 톤으로 통일 */
+  /* Keep indicator text tone consistent with the base text */
   color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
   font-size: var(--xeg-font-size-md);
   font-weight: 600;
   text-align: center;
   white-space: nowrap;
-  /* 베이스라인 동기화: 텍스트 자체의 라인 박스를 최소화 */
+  /* Baseline alignment: minimize the text line box */
   line-height: 1;
-  background: transparent; /* Phase 58: 툴바 배경색과 통일하기 위해 투명화 */
+  background: transparent; /* Phase 58: made transparent to match toolbar background */
   padding: 0.25em 0.5em; /* 4px 8px → 0.25em 0.5em */
   border-radius: var(--xeg-radius-md);
-  border: none; /* Phase 58: 외곽선 디자인 패턴 통일을 위해 제거 */
+  border: none; /* Phase 58: removed border to unify the design pattern */
 }
 
 .currentIndex {
@@ -278,16 +278,16 @@
 }
 
 .totalCount {
-  /* 현재/전체 모두 동일한 텍스트 톤 사용 */
+  /* Use the same text tone for current/total */
   color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
 }
-/* 텍스트 대비는 design-tokens.semantic.css 토큰으로 일괄 관리 */
-/* 진행률 바 */
+/* Text contrast is centralized in design-tokens.semantic.css */
+/* Progress bar */
 .progressBar {
-  /* 오버레이 배치하여 텍스트 수직 중심에 영향 없음 */
+  /* Overlay positioning keeps text vertical centering unaffected */
   position: absolute;
   left: 50%;
-  bottom: 0.125em; /* em 기반 하단 여백 */
+  bottom: 0.125em; /* em-based bottom spacing */
   transform: translateX(-50%);
   width: 3.75em; /* 60px → 3.75em */
   height: 0.125em; /* 2px → 0.125em */
@@ -323,16 +323,16 @@ button.fitButton {
   border-color: var(--toolbar-button-focus-border, var(--xeg-color-border-hover));
 }
 
-/* 다운로드 버튼 - 기본 스타일 상속 */
+/* Download button (inherits base styles) */
 .downloadButton {
   position: relative;
 }
 
-/* 반응형 디자인 */
+/* Responsive design */
 /* PC-only: Mobile styles removed (Phase 242) */
-/* 다크 모드 특화 색상은 semantic 토큰에서 일괄 관리 */
+/* Dark-mode-specific colors are centralized in semantic tokens */
 
-/* 투명도 감소 선호 사용자를 위한 대체 스타일 */
+/* Alternative styling for users who prefer reduced transparency */
 @media (prefers-reduced-transparency: reduce) {
   .galleryToolbar {
     background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
@@ -343,13 +343,13 @@ button.fitButton {
   }
 }
 
-/* 모바일 환경에서 시인성 강화 */
+/* Mobile visibility tweaks */
 /* PC-only: Mobile styles removed (Phase 242) */
 
-/* Phase 254: 감소된 모션은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
-/* animation을 사용하는 요소만 명시적으로 비활성화 */
+/* Phase 254: reduced motion is handled via semantic --xeg-duration-* tokens */
+/* Explicitly disable elements that use animation */
 @media (prefers-reduced-motion: reduce) {
-  /* 모든 버튼에서 transform 효과 제거 */
+  /* Remove transform effects from all buttons */
   .toolbarButton:hover:not(:disabled),
   .downloadButton:hover:not(:disabled),
   .closeButton:hover:not(:disabled),
@@ -392,15 +392,15 @@ button.fitButton {
   overscroll-behavior: contain;
 }
 
-/* Expandable Settings Panel - 툴바 아래 절대 위치 */
+/* Expandable settings panel (absolutely positioned below the toolbar) */
 .settingsPanel {
   /* Layout adjustments specific to settings */
   height: var(--xeg-toolbar-panel-height);
 }
 
-/* Phase 254: settingsPanel의 transition은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
+/* Phase 254: settingsPanel transitions are handled via semantic --xeg-duration-* tokens */
 
-/* Tweet Panel - Settings Panel과 동일한 패턴 */
+/* Tweet panel (same pattern as settings panel) */
 .tweetPanel {
   min-height: var(--xeg-toolbar-panel-height);
 }
@@ -420,14 +420,14 @@ button.fitButton {
   z-index: var(--xeg-z-toolbar-panel-active);
 }
 
-/* Tweet Panel Body - Settings Panel과 유사한 레이아웃 */
+/* Tweet panel body (layout similar to settings panel) */
 .tweetPanelBody {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
 }
 
-/* Tweet Content - 설정 패널의 select와 유사한 스타일 */
+/* Tweet content (styling similar to settings panel selects) */
 
 .tweetContent {
   padding: var(--space-sm);
@@ -444,14 +444,14 @@ button.fitButton {
   word-wrap: break-word;
   overflow-y: auto;
   overscroll-behavior: contain;
-  max-height: 15em; /* 약 10줄 정도의 텍스트 */
+  max-height: 15em; /* ~10 lines of text */
   transition: var(--xeg-transition-surface-fast);
   user-select: text;
   -webkit-user-select: text;
   cursor: text;
 }
 
-/* 스크롤바 스타일링 (optional) */
+/* Scrollbar styling (optional) */
 .tweetContent::-webkit-scrollbar {
   width: 0.5em;
 }
