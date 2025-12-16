@@ -1,5 +1,5 @@
-import { queryAllWithFallback, SELECTORS, STABLE_SELECTORS } from '@constants/selectors';
 import type { DomFacts, DomFactsKind } from '@core/dom-facts';
+import { queryAllWithFallback, SELECTORS, STABLE_SELECTORS } from '@shared/dom/selectors';
 
 function safeUrl(): string {
   try {

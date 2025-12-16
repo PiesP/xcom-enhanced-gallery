@@ -71,23 +71,40 @@ async function executeSingleDownloadCommand(
       }
 
       return await new Promise((resolve) => {
+        let timer: ReturnType<typeof globalTimerManager.setTimeout> | undefined;
+
         const cleanup = () => {
           if (isBlobUrl) {
             URL.revokeObjectURL(url);
           }
-          globalTimerManager.clearTimeout(timer);
+          if (timer) {
+            globalTimerManager.clearTimeout(timer);
+            timer = undefined;
+          }
         };
 
-        const timer = globalTimerManager.setTimeout(() => {
-          options.onProgress?.({
-            phase: 'complete',
-            current: 1,
-            total: 1,
-            percentage: 0,
-            filename: cmd.filename,
-          });
+        let settled = false;
+
+        const settle = (result: SingleDownloadResult, completePercentage?: number) => {
+          if (settled) return;
+          settled = true;
+
+          if (completePercentage !== undefined) {
+            options.onProgress?.({
+              phase: 'complete',
+              current: 1,
+              total: 1,
+              percentage: completePercentage,
+              filename: cmd.filename,
+            });
+          }
+
           cleanup();
-          resolve({ success: false, error: 'Download timeout' });
+          resolve(result);
+        };
+
+        timer = globalTimerManager.setTimeout(() => {
+          settle({ success: false, error: 'Download timeout' }, 0);
         }, cmd.timeoutMs);
 
         try {
@@ -96,41 +113,18 @@ async function executeSingleDownloadCommand(
             name: cmd.filename,
             onload: () => {
               logger.debug(`[SingleDownload] Download complete: ${cmd.filename}`);
-              options.onProgress?.({
-                phase: 'complete',
-                current: 1,
-                total: 1,
-                percentage: 100,
-                filename: cmd.filename,
-              });
-              cleanup();
-              resolve({ success: true, filename: cmd.filename });
+              settle({ success: true, filename: cmd.filename }, 100);
             },
             onerror: (error: unknown) => {
               const errorMsg = getErrorMessage(error);
               logger.error('[SingleDownload] Download failed:', error);
-              options.onProgress?.({
-                phase: 'complete',
-                current: 1,
-                total: 1,
-                percentage: 0,
-                filename: cmd.filename,
-              });
-              cleanup();
-              resolve({ success: false, error: errorMsg });
+              settle({ success: false, error: errorMsg }, 0);
             },
             ontimeout: () => {
-              options.onProgress?.({
-                phase: 'complete',
-                current: 1,
-                total: 1,
-                percentage: 0,
-                filename: cmd.filename,
-              });
-              cleanup();
-              resolve({ success: false, error: 'Download timeout' });
+              settle({ success: false, error: 'Download timeout' }, 0);
             },
             onprogress: (progress: { loaded: number; total: number }) => {
+              if (settled) return;
               if (options.onProgress && progress.total > 0) {
                 options.onProgress({
                   phase: 'downloading',
@@ -144,8 +138,7 @@ async function executeSingleDownloadCommand(
           });
         } catch (error) {
           const errorMsg = getErrorMessage(error);
-          cleanup();
-          resolve({ success: false, error: errorMsg });
+          settle({ success: false, error: errorMsg });
         }
       });
     }

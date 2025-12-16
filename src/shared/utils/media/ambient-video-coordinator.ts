@@ -1,4 +1,4 @@
-import { SELECTORS, STABLE_SELECTORS } from '@constants/selectors';
+import { SELECTORS, STABLE_SELECTORS } from '@shared/dom/selectors';
 import { logger } from '@shared/logging';
 import {
   type PauseAmbientVideosOptions,

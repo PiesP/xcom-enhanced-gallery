@@ -1,4 +1,4 @@
-import { SELECTORS } from '@constants/selectors';
+import { SELECTORS } from '@shared/dom/selectors';
 import { logger } from '@shared/logging';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';

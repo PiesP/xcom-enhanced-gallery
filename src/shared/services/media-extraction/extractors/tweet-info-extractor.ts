@@ -3,7 +3,7 @@
  * @description Extracts tweet metadata using a concise strategy pipeline.
  */
 
-import { SELECTORS } from '@constants/selectors';
+import { SELECTORS } from '@shared/dom/selectors';
 import { logger } from '@shared/logging';
 import type { TweetInfo } from '@shared/types/media.types';
 import { extractUsernameFromUrl } from '@shared/utils/url';

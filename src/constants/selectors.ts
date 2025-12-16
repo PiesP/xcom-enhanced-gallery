@@ -5,6 +5,7 @@
  */
 
 import { CSS } from '@constants/css';
+import { logger } from '@shared/logging';
 
 const GALLERY_SELECTORS = CSS.SELECTORS;
 
@@ -144,6 +145,21 @@ export const STABLE_SELECTORS = {
   ],
 } as const;
 
+const warnedInvalidSelectors = new Set<string>();
+
+function warnInvalidSelectorOnce(selector: string, error: unknown): void {
+  if (typeof __DEV__ === 'undefined' || !__DEV__) {
+    return;
+  }
+
+  if (warnedInvalidSelectors.has(selector)) {
+    return;
+  }
+
+  warnedInvalidSelectors.add(selector);
+  logger.warn(`[selectors] Invalid selector skipped: ${selector}`, { error });
+}
+
 /**
  * Query DOM with fallback selectors
  * Tries primary selector first, then fallbacks in order
@@ -159,13 +175,21 @@ export function queryWithFallback(
   fallbacks: readonly string[] = []
 ): Element | null {
   // Try primary selector first
-  const primary = container.querySelector(primarySelector);
-  if (primary) return primary;
+  try {
+    const primary = container.querySelector(primarySelector);
+    if (primary) return primary;
+  } catch (error) {
+    warnInvalidSelectorOnce(primarySelector, error);
+  }
 
   // Try fallbacks in order
   for (const fallback of fallbacks) {
-    const element = container.querySelector(fallback);
-    if (element) return element;
+    try {
+      const element = container.querySelector(fallback);
+      if (element) return element;
+    } catch (error) {
+      warnInvalidSelectorOnce(fallback, error);
+    }
   }
 
   return null;
@@ -195,8 +219,8 @@ export function queryAllWithFallback(
           results.push(element);
         }
       }
-    } catch {
-      // Invalid selector, skip
+    } catch (error) {
+      warnInvalidSelectorOnce(selector, error);
     }
   }
 

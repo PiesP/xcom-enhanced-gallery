@@ -2,9 +2,29 @@ import { getUserscript } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
 import { createSingleton } from '@shared/utils/types/singleton';
 
+export interface PersistentStorageGetOptions {
+  /**
+   * When JSON parsing fails, log a warning only once per key to improve observability
+   * without creating noisy logs.
+   *
+   * @default true
+   */
+  readonly warnOnParseErrorOnce?: boolean;
+
+  /**
+   * When JSON parsing fails, attempt to delete the key to self-heal corrupted values.
+   * This is opt-in because some keys may intentionally store non-JSON strings.
+   *
+   * @default false
+   */
+  readonly selfHealOnParseError?: boolean;
+}
+
 export class PersistentStorage {
   private readonly userscript = getUserscript();
   private static readonly singleton = createSingleton(() => new PersistentStorage());
+
+  private static readonly parseWarnedKeys = new Set<string>();
 
   private constructor() {}
 
@@ -15,6 +35,7 @@ export class PersistentStorage {
   /** @internal Test helper */
   static resetForTests(): void {
     PersistentStorage.singleton.reset();
+    PersistentStorage.parseWarnedKeys.clear();
   }
 
   async set<T>(key: string, value: T): Promise<void> {
@@ -81,13 +102,45 @@ export class PersistentStorage {
     }
   }
 
-  async get<T>(key: string, defaultValue?: T): Promise<T | undefined> {
+  private warnParseErrorOnce(key: string, rawValue: string, error: unknown): void {
+    if (PersistentStorage.parseWarnedKeys.has(key)) return;
+    PersistentStorage.parseWarnedKeys.add(key);
+
+    const preview = rawValue.length > 160 ? `${rawValue.slice(0, 160)}…` : rawValue;
+    logger.warn(`PersistentStorage.get failed to parse JSON for "${key}"`, {
+      preview,
+      error,
+    });
+  }
+
+  private async trySelfHealOnParseError(key: string): Promise<void> {
+    try {
+      await this.userscript.deleteValue(key);
+    } catch (error) {
+      // Best-effort: do not throw from get().
+      logger.warn(`PersistentStorage.get failed to self-heal key "${key}"`, error);
+    }
+  }
+
+  async get<T>(
+    key: string,
+    defaultValue?: T,
+    options: PersistentStorageGetOptions = {}
+  ): Promise<T | undefined> {
     try {
       const value = await this.userscript.getValue<string | undefined>(key);
       if (value === undefined || value === null) return defaultValue;
       try {
         return JSON.parse(value) as T;
-      } catch {
+      } catch (error) {
+        if (options.warnOnParseErrorOnce !== false) {
+          this.warnParseErrorOnce(key, value, error);
+        }
+
+        if (options.selfHealOnParseError === true) {
+          await this.trySelfHealOnParseError(key);
+        }
+
         return defaultValue;
       }
     } catch (error) {

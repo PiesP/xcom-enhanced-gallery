@@ -4,7 +4,7 @@
  */
 
 import { CSS } from '@constants/css';
-import { SELECTORS, STABLE_SELECTORS } from '@constants/selectors';
+import { SELECTORS, STABLE_SELECTORS } from '@shared/dom/selectors';
 import { isVideoControlElement } from '@shared/dom/utils';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import {
