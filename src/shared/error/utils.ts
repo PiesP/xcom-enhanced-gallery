@@ -1,8 +1,6 @@
 /**
- * Lightweight error helpers used by download services.
+ * @deprecated Use `getErrorMessage` from `@shared/error/normalize`.
+ * This file exists for backwards compatibility only.
  */
-import { getErrorMessage as getErrorMessageInternal } from '@shared/error/normalize';
 
-export function getErrorMessage(error: unknown): string {
-  return getErrorMessageInternal(error);
-}
+export { getErrorMessage } from '@shared/error/normalize';

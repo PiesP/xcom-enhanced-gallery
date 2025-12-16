@@ -7,7 +7,7 @@
 import { isAbortError } from '@shared/async/delay';
 import { combineSignals, createTimeoutController } from '@shared/async/signal-utils';
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
-import { getErrorMessage } from '@shared/error/utils';
+import { getErrorMessage } from '@shared/error/normalize';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
 import { globalTimerManager } from '@shared/utils/time/timer-management';

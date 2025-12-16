@@ -14,13 +14,12 @@
  * // ✅ Correct: Use barrel export
  * import { StreamingZipWriter } from '@shared/external/zip';
  * const writer = new StreamingZipWriter();
- * writer.add('photo1.jpg', buffer1);
- * const zipBytes = writer.finalize();
+ * writer.addFile('photo1.jpg', buffer1);
+ * const zipBytes: Uint8Array = writer.finalize();
  * ```
  *
  * **Constraints**:
- * - Max 50MB per file
- * - Max 5 concurrent downloads (Phase 312 default)
+ * - Concurrency is controlled by the download layer (default: 6, max: 8)
  * - STORE mode: Pre-compressed media not re-compressed (performance optimization)
  * - Memory-based: Suitable for bulk downloads with streaming support (Phase 410)
  *

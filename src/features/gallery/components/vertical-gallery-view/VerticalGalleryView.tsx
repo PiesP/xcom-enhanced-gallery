@@ -156,7 +156,10 @@ function VerticalGalleryViewCore({
   };
 
   const handleBackgroundClick = (event: MouseEvent) => {
-    const target = event.target as HTMLElement;
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
 
     // Ignore clicks on toolbar and toolbar hover zone using data attributes (production-safe)
     if (
@@ -208,7 +211,11 @@ function VerticalGalleryViewCore({
       if (!itemsContainer) return;
 
       // Check if the wheel event target is inside the items container
-      const target = event.target as HTMLElement;
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+
       if (itemsContainer.contains(target)) {
         // Let the items container handle its own scroll naturally
         return;

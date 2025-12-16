@@ -1,5 +1,5 @@
 import { createUserCancelledAbortError } from '@shared/error/cancellation';
-import { getErrorMessage } from '@shared/error/utils';
+import { getErrorMessage } from '@shared/error/normalize';
 import { DEFAULT_BACKOFF_BASE_MS, fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
 import { ensureUniqueFilenameFactory } from '@shared/services/download/download-utils';
 import type {
