@@ -25,6 +25,7 @@ export class PersistentStorage {
   private static readonly singleton = createSingleton(() => new PersistentStorage());
 
   private static readonly parseWarnedKeys = new Set<string>();
+  private static readonly maxParseWarnedKeys = 1000;
 
   private constructor() {}
 
@@ -36,6 +37,33 @@ export class PersistentStorage {
   static resetForTests(): void {
     PersistentStorage.singleton.reset();
     PersistentStorage.parseWarnedKeys.clear();
+  }
+
+  private static maybeResetWarnedKeysOnOverflow(): void {
+    if (PersistentStorage.parseWarnedKeys.size < PersistentStorage.maxParseWarnedKeys) {
+      return;
+    }
+
+    // Defensive: avoid unbounded growth. We keep this intentionally simple.
+    // When the cap is reached, we clear the set so the warning mechanism remains useful.
+    PersistentStorage.parseWarnedKeys.clear();
+  }
+
+  private parseMaybeJsonString(rawValue: string): string | undefined {
+    try {
+      const parsed = JSON.parse(rawValue) as unknown;
+      return typeof parsed === 'string' ? parsed : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private serializeValueForStorage(value: unknown): string | undefined {
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    return JSON.stringify(value) as string | undefined;
   }
 
   /**
@@ -92,8 +120,7 @@ export class PersistentStorage {
         return;
       }
 
-      const serialized =
-        typeof value === 'string' ? value : (JSON.stringify(value) as string | undefined);
+      const serialized = this.serializeValueForStorage(value);
 
       if (serialized === undefined) {
         logger.warn(
@@ -123,14 +150,8 @@ export class PersistentStorage {
       if (value === undefined || value === null) return defaultValue;
 
       // Best-effort: allow values stored as JSON strings.
-      try {
-        const parsed = JSON.parse(value) as unknown;
-        if (typeof parsed === 'string') {
-          return parsed;
-        }
-      } catch {
-        // Ignore parse failures; return raw value.
-      }
+      const parsedString = this.parseMaybeJsonString(value);
+      if (parsedString !== undefined) return parsedString;
 
       return value;
     } catch (error) {
@@ -147,6 +168,7 @@ export class PersistentStorage {
   }
 
   private warnParseErrorOnce(key: string, rawValue: string, error: unknown): void {
+    PersistentStorage.maybeResetWarnedKeysOnOverflow();
     if (PersistentStorage.parseWarnedKeys.has(key)) return;
     PersistentStorage.parseWarnedKeys.add(key);
 
@@ -265,10 +287,8 @@ export class PersistentStorage {
       if (value === undefined || value === null) return defaultValue;
 
       try {
-        const parsed = JSON.parse(value) as unknown;
-        if (typeof parsed === 'string') {
-          return parsed;
-        }
+        const parsedString = this.parseMaybeJsonString(value);
+        if (parsedString !== undefined) return parsedString;
       } catch {
         // Ignore parse failures; return raw value.
       }

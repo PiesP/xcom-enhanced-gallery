@@ -29,6 +29,7 @@ export const lifecycleState = {
   started: false,
   startPromise: null as Promise<void> | null,
   galleryApp: null as IGalleryApp | null,
+  lastError: null as unknown | null,
 };
 
 const warnCleanupLog: CleanupLogger = (message, error) => {
@@ -414,6 +415,7 @@ export async function startApplication(): Promise<void> {
     triggerPreloadStrategy();
 
     lifecycleState.started = true;
+    lifecycleState.lastError = null;
 
     logger.info('✅ Application initialization complete');
 
@@ -428,10 +430,15 @@ export async function startApplication(): Promise<void> {
     }
   })()
     .catch((error) => {
+      lifecycleState.started = false;
+      lifecycleState.lastError = error;
       bootstrapErrorReporter.error(error, {
         code: 'APP_INIT_FAILED',
         metadata: { leanMode: true },
       });
+
+      // Re-throw so callers awaiting startApplication can observe failures.
+      throw error;
     })
     .finally(() => {
       lifecycleState.startPromise = null;
@@ -468,7 +475,12 @@ export async function initializeGallery(): Promise<void> {
  *
  * Phase 236: Removed DOMContentLoaded listener to minimize interference with Twitter's native page
  */
-startApplication();
+// Fire-and-forget startup. We intentionally swallow the rejection here to avoid
+// unhandled promise rejections at the top level.
+// Callers can still await startApplication() to observe failures.
+void startApplication().catch(() => {
+  /* noop */
+});
 
 // Named exports for manual startup from external context
 export const appModule = {

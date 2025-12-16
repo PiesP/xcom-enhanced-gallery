@@ -143,13 +143,12 @@ export async function animateGalleryEnter(
   return new Promise<void>((resolve) => {
     try {
       const handleAnimationEnd = () => {
-        element.removeEventListener('animationend', handleAnimationEnd);
         element.classList.remove(ANIMATION_CLASSES.FADE_IN);
         options.onComplete?.();
         resolve();
       };
 
-      element.addEventListener('animationend', handleAnimationEnd);
+      element.addEventListener('animationend', handleAnimationEnd, { once: true });
       element.classList.add(ANIMATION_CLASSES.FADE_IN);
     } catch (error) {
       logger.warn('Gallery entry animation failed:', error);
@@ -171,13 +170,12 @@ export async function animateGalleryExit(
   return new Promise<void>((resolve) => {
     try {
       const handleAnimationEnd = () => {
-        element.removeEventListener('animationend', handleAnimationEnd);
         element.classList.remove(ANIMATION_CLASSES.FADE_OUT);
         options.onComplete?.();
         resolve();
       };
 
-      element.addEventListener('animationend', handleAnimationEnd);
+      element.addEventListener('animationend', handleAnimationEnd, { once: true });
       element.classList.add(ANIMATION_CLASSES.FADE_OUT);
     } catch (error) {
       logger.warn('Gallery exit animation failed:', error);
