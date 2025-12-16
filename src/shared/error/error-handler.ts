@@ -1,9 +1,11 @@
+import { getEventBus } from '@shared/events';
 import { logger } from '@shared/logging';
 import { createSingleton } from '@shared/utils/types/singleton';
 
 export class GlobalErrorHandler {
   private static readonly singleton = createSingleton(() => new GlobalErrorHandler());
   private isInitialized = false;
+  private controller: AbortController | null = null;
   private readonly errorListener = (event: ErrorEvent) => {
     const message = event.message ?? 'Unknown error occurred';
     const location = event.filename
@@ -55,8 +57,23 @@ export class GlobalErrorHandler {
       return;
     }
 
-    window.addEventListener('error', this.errorListener);
-    window.addEventListener('unhandledrejection', this.rejectionListener);
+    const bus = getEventBus();
+    this.controller = new AbortController();
+
+    bus.addDOMListener(window, 'error', this.errorListener as unknown as EventListener, {
+      signal: this.controller.signal,
+      context: 'global-error-handler',
+    });
+
+    bus.addDOMListener(
+      window,
+      'unhandledrejection',
+      this.rejectionListener as unknown as EventListener,
+      {
+        signal: this.controller.signal,
+        context: 'global-error-handler',
+      }
+    );
 
     this.isInitialized = true;
   }
@@ -66,8 +83,8 @@ export class GlobalErrorHandler {
       return;
     }
 
-    window.removeEventListener('error', this.errorListener);
-    window.removeEventListener('unhandledrejection', this.rejectionListener);
+    this.controller?.abort();
+    this.controller = null;
     this.isInitialized = false;
   }
 }

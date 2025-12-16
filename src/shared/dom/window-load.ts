@@ -1,3 +1,5 @@
+import { getEventBus } from '@shared/events';
+
 export type WindowLoadCallback = () => void | Promise<void>;
 
 let windowLoadPromise: Promise<void> | null = null;
@@ -25,13 +27,23 @@ function createWindowLoadPromise(): Promise<void> {
   }
 
   windowLoadPromise = new Promise((resolve) => {
-    const handleLoad = (): void => {
-      window.removeEventListener('load', handleLoad);
+    const bus = getEventBus();
+    let subscriptionId: string | null = null;
+
+    const handleLoad: EventListener = () => {
+      if (subscriptionId) {
+        bus.remove(subscriptionId);
+        subscriptionId = null;
+      }
       resolve();
       windowLoadPromise = Promise.resolve();
     };
 
-    window.addEventListener('load', handleLoad, { once: true, passive: true });
+    subscriptionId = bus.addDOMListener(window, 'load', handleLoad, {
+      once: true,
+      passive: true,
+      context: 'window-load',
+    });
   });
 
   return windowLoadPromise;

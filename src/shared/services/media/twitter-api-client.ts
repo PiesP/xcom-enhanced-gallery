@@ -5,6 +5,10 @@
  */
 
 import { TWITTER_API_CONFIG } from '@constants';
+import {
+  buildTweetResultByRestIdUrl,
+  selectTwitterApiHostFromHostname,
+} from '@shared/core/twitter-api';
 import { getSafeHostname, getSafeLocationHeaders } from '@shared/dom/safe-location';
 import { logger } from '@shared/logging';
 import { HttpRequestService } from '@shared/services/http-request-service';
@@ -54,15 +58,11 @@ function simpleHash(str: string): string {
  * @returns Host domain (e.g., 'x.com' or 'twitter.com')
  */
 function getSafeHost(): string {
-  const hostname = getSafeHostname();
-  if (hostname) {
-    // Extract base domain (handle subdomains)
-    const host = hostname.includes('twitter.com') ? 'twitter.com' : 'x.com';
-    if (TWITTER_API_CONFIG.SUPPORTED_HOSTS.includes(host as 'x.com' | 'twitter.com')) {
-      return host;
-    }
-  }
-  return TWITTER_API_CONFIG.DEFAULT_HOST;
+  return selectTwitterApiHostFromHostname({
+    hostname: getSafeHostname(),
+    supportedHosts: TWITTER_API_CONFIG.SUPPORTED_HOSTS,
+    defaultHost: TWITTER_API_CONFIG.DEFAULT_HOST,
+  });
 }
 
 function logTwitterParserDiagnostics(
@@ -303,7 +303,6 @@ export class TwitterAPI {
    */
   private static createTweetEndpointUrl(tweetId: string): string {
     const host = getSafeHost();
-    const sitename = host.replace('.com', '');
 
     const variables = {
       tweetId,
@@ -352,11 +351,13 @@ export class TwitterAPI {
       withDisallowedReplyControls: false,
     };
 
-    const urlBase = `https://${sitename}.com/i/api/graphql/${TWITTER_API_CONFIG.TWEET_RESULT_BY_REST_ID_QUERY_ID}/TweetResultByRestId`;
-    const urlObj = new URL(urlBase);
-    urlObj.searchParams.set('variables', JSON.stringify(variables));
-    urlObj.searchParams.set('features', JSON.stringify(features));
-    urlObj.searchParams.set('fieldToggles', JSON.stringify(fieldToggles));
-    return urlObj.toString();
+    return buildTweetResultByRestIdUrl({
+      host,
+      queryId: TWITTER_API_CONFIG.TWEET_RESULT_BY_REST_ID_QUERY_ID,
+      tweetId,
+      variables,
+      features,
+      fieldToggles,
+    });
   }
 }

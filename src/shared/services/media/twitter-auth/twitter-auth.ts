@@ -4,6 +4,7 @@
  * @version 5.0.0 - Added async initialization with exponential backoff
  */
 
+import { getExponentialBackoffDelayMs } from '@shared/core/twitter-auth/backoff';
 import { logger } from '@shared/logging';
 import { getCookieValue, getCookieValueSync } from '@shared/services/cookie';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
@@ -37,7 +38,7 @@ let _initPromise: Promise<string | undefined> | null = null;
  * @internal
  */
 function getBackoffDelay(attempt: number): number {
-  return BASE_RETRY_DELAY_MS * 2 ** attempt;
+  return getExponentialBackoffDelayMs({ attempt, baseDelayMs: BASE_RETRY_DELAY_MS });
 }
 
 /**

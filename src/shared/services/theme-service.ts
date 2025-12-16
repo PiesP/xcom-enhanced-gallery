@@ -6,6 +6,7 @@
 
 import { APP_SETTINGS_STORAGE_KEY } from '@constants';
 import { syncThemeAttributes } from '@shared/dom/theme';
+import { getEventBus } from '@shared/events';
 import { logger } from '@shared/logging';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
@@ -25,6 +26,7 @@ export class ThemeService implements ThemeServiceContract {
   private readonly storage = getPersistentStorage();
   private mediaQueryList: MediaQueryList | null = null;
   private mediaQueryListener: ((event: MediaQueryListEvent) => void) | null = null;
+  private domEventsController: AbortController | null = null;
   private currentTheme: Theme = 'light';
   private themeSetting: ThemeSetting = 'auto';
   private readonly listeners: Set<ThemeChangeListener> = new Set();
@@ -263,22 +265,39 @@ export class ThemeService implements ThemeServiceContract {
       this.observer = null;
     }
 
-    // MediaQueryList listener cleanup
-    if (this.mediaQueryList && this.mediaQueryListener) {
-      this.mediaQueryList.removeEventListener('change', this.mediaQueryListener);
-      this.mediaQueryListener = null;
+    // Abort-managed DOM listeners cleanup
+    if (this.domEventsController) {
+      this.domEventsController.abort();
+      this.domEventsController = null;
     }
+
+    // MediaQueryList listener cleanup
+    this.mediaQueryListener = null;
     this.mediaQueryList = null;
   }
 
   private initializeSystemDetection(): void {
     if (this.mediaQueryList && !this.mediaQueryListener) {
+      if (!this.domEventsController || this.domEventsController.signal.aborted) {
+        this.domEventsController = new AbortController();
+      }
+
       this.mediaQueryListener = () => {
         if (this.themeSetting === 'auto') {
           this.applyCurrentTheme();
         }
       };
-      this.mediaQueryList.addEventListener('change', this.mediaQueryListener);
+
+      const bus = getEventBus();
+      bus.addDOMListener(
+        this.mediaQueryList,
+        'change',
+        this.mediaQueryListener as unknown as EventListener,
+        {
+          signal: this.domEventsController.signal,
+          context: 'theme-service',
+        }
+      );
     }
   }
 

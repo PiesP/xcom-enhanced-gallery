@@ -4,6 +4,7 @@
  * @module bootstrap/events
  */
 
+import { getEventBus } from '@shared/events';
 import { logger } from '@shared/logging';
 
 /**
@@ -34,6 +35,8 @@ export function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
   }
 
   let disposed = false;
+  const bus = getEventBus();
+  const controller = new AbortController();
 
   const invokeOnce = (): void => {
     if (disposed) {
@@ -41,14 +44,20 @@ export function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
     }
 
     disposed = true;
+    controller.abort();
     onBeforeUnload();
   };
 
-  const handler = (): void => {
+  const handler: EventListener = () => {
     invokeOnce();
   };
 
-  window.addEventListener('pagehide', handler, { once: true, passive: true });
+  bus.addDOMListener(window, 'pagehide', handler, {
+    once: true,
+    passive: true,
+    signal: controller.signal,
+    context: 'bootstrap:pagehide',
+  });
 
   if (debugEnabled) {
     logger.debug('[events] 🧩 Global events wired (pagehide only)');
@@ -60,7 +69,7 @@ export function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
     }
 
     disposed = true;
-    window.removeEventListener('pagehide', handler);
+    controller.abort();
 
     if (debugEnabled) {
       logger.debug('[events] 🧩 Global events unwired');
