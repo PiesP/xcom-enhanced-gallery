@@ -1,3 +1,4 @@
+import { APP_SETTINGS_STORAGE_KEY } from '@constants';
 import type { RuntimeCommand } from '@core/cmd';
 import type { RuntimeEvent } from '@core/events';
 import type { RuntimeModel } from '@core/model';
@@ -16,7 +17,7 @@ function withRequestId(model: RuntimeModel, prefix: string): readonly [RuntimeMo
 function trackInFlight(
   model: RuntimeModel,
   requestId: string,
-  purpose: 'domFacts' | 'storageGet' | 'storageSet',
+  purpose: 'domFacts' | 'storageGet' | 'storageSet' | 'httpRequest' | 'navigate',
   now: number
 ): RuntimeModel {
   return {
@@ -53,6 +54,12 @@ export function update(model: RuntimeModel, event: RuntimeEvent): UpdateResult {
       }
 
       {
+        const [m1, requestId] = withRequestId(nextModel, 'storeGet');
+        nextModel = trackInFlight(m1, requestId, 'storageGet', event.now);
+        cmds.push({ type: 'STORE_GET', requestId, key: APP_SETTINGS_STORAGE_KEY });
+      }
+
+      {
         const [m1, requestId] = withRequestId(nextModel, 'domFacts');
         nextModel = trackInFlight(m1, requestId, 'domFacts', event.now);
         cmds.push({ type: 'TAKE_DOM_FACTS', requestId, kind: 'XComGallery' });
@@ -71,6 +78,36 @@ export function update(model: RuntimeModel, event: RuntimeEvent): UpdateResult {
         });
       }
 
+      return { model: nextModel, cmds };
+    }
+
+    case 'HttpRequested': {
+      const cmds: RuntimeCommand[] = [];
+      const [m1, requestId] = withRequestId(model, 'http');
+      const nextModel = trackInFlight(m1, requestId, 'httpRequest', event.now);
+      cmds.push({
+        type: 'HTTP_REQUEST',
+        requestId,
+        url: event.url,
+        method: event.method,
+        responseType: event.responseType,
+        ...(event.headers !== undefined ? { headers: event.headers } : {}),
+        ...(event.body !== undefined ? { body: event.body } : {}),
+      });
+      return { model: nextModel, cmds };
+    }
+
+    case 'NavigateRequested': {
+      const cmds: RuntimeCommand[] = [];
+      const [m1, requestId] = withRequestId(model, 'navigate');
+      const nextModel = trackInFlight(m1, requestId, 'navigate', event.now);
+      cmds.push({
+        type: 'NAVIGATE',
+        requestId,
+        url: event.url,
+        mode: event.mode,
+        ...(event.target !== undefined ? { target: event.target } : {}),
+      });
       return { model: nextModel, cmds };
     }
 
@@ -116,6 +153,96 @@ export function update(model: RuntimeModel, event: RuntimeEvent): UpdateResult {
       }
 
       return { model: nextModel, cmds };
+    }
+
+    case 'HttpCompleted': {
+      const nextModel: RuntimeModel = {
+        ...clearInFlight(model, event.requestId),
+        cache: {
+          ...model.cache,
+          [event.requestId]: {
+            url: event.url,
+            status: event.status,
+            body: event.body,
+            completedAt: event.now,
+          },
+        },
+      };
+
+      return {
+        model: nextModel,
+        cmds: [
+          {
+            type: 'LOG',
+            level: 'debug',
+            message: '[command-runtime] HTTP request completed',
+            context: { requestId: event.requestId, url: event.url, status: event.status },
+          },
+        ],
+      };
+    }
+
+    case 'HttpFailed': {
+      const nextModel: RuntimeModel = clearInFlight(model, event.requestId);
+      return {
+        model: nextModel,
+        cmds: [
+          {
+            type: 'LOG',
+            level: 'warn',
+            message: '[command-runtime] HTTP request failed',
+            context: {
+              requestId: event.requestId,
+              url: event.url,
+              error: event.error,
+            },
+          },
+        ],
+      };
+    }
+
+    case 'NavigateCompleted': {
+      const nextModel: RuntimeModel = {
+        ...clearInFlight(model, event.requestId),
+        cache: {
+          ...model.cache,
+          [event.requestId]: {
+            url: event.url,
+            completedAt: event.now,
+          },
+        },
+      };
+
+      return {
+        model: nextModel,
+        cmds: [
+          {
+            type: 'LOG',
+            level: 'info',
+            message: '[command-runtime] Navigation completed',
+            context: { requestId: event.requestId, url: event.url },
+          },
+        ],
+      };
+    }
+
+    case 'NavigateFailed': {
+      const nextModel: RuntimeModel = clearInFlight(model, event.requestId);
+      return {
+        model: nextModel,
+        cmds: [
+          {
+            type: 'LOG',
+            level: 'warn',
+            message: '[command-runtime] Navigation failed',
+            context: {
+              requestId: event.requestId,
+              url: event.url,
+              error: event.error,
+            },
+          },
+        ],
+      };
     }
 
     case 'DomFactsFailed': {

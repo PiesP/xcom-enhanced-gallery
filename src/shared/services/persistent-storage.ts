@@ -38,8 +38,52 @@ export class PersistentStorage {
     PersistentStorage.parseWarnedKeys.clear();
   }
 
+  /**
+   * Store a raw string value without JSON encoding.
+   *
+   * Use this with {@link getString} / {@link getStringSync}.
+   */
+  async setString(key: string, value: string | undefined): Promise<void> {
+    return this.set(key, value);
+  }
+
+  /**
+   * Store a JSON-encoded value.
+   *
+   * Use this with {@link getJson} / {@link getJsonSync}.
+   */
+  async setJson<T>(key: string, value: T | undefined): Promise<void> {
+    try {
+      // Guard: JSON.stringify(undefined) returns undefined, which can break storage adapters.
+      // Treat undefined (and other non-serializable payloads) as an explicit delete.
+      if (value === undefined) {
+        logger.warn(`PersistentStorage.setJson received undefined for "${key}", deleting key`);
+        await this.userscript.deleteValue(key);
+        return;
+      }
+
+      const serialized = JSON.stringify(value) as string | undefined;
+
+      if (serialized === undefined) {
+        logger.warn(
+          `PersistentStorage.setJson received a non-serializable value for "${key}", deleting key`
+        );
+        await this.userscript.deleteValue(key);
+        return;
+      }
+
+      await this.userscript.setValue(key, serialized);
+    } catch (error) {
+      logger.error(`PersistentStorage.setJson failed for "${key}":`, error);
+      throw error;
+    }
+  }
+
   async set<T>(key: string, value: T): Promise<void> {
     try {
+      // Prefer explicit methods for clarity.
+      // - setString(): stores raw strings
+      // - setJson(): stores JSON-encoded values
       // Guard: JSON.stringify(undefined) returns undefined, which can break storage adapters.
       // Treat undefined (and other non-serializable payloads) as an explicit delete.
       if (value === undefined) {
@@ -157,6 +201,19 @@ export class PersistentStorage {
     }
   }
 
+  /**
+   * Retrieve a JSON-parsed value.
+   *
+   * This is an explicit alias for {@link get}.
+   */
+  async getJson<T>(
+    key: string,
+    defaultValue?: T,
+    options: PersistentStorageGetOptions = {}
+  ): Promise<T | undefined> {
+    return this.get<T>(key, defaultValue, options);
+  }
+
   async has(key: string): Promise<boolean> {
     try {
       const value = await this.userscript.getValue<unknown>(key);
@@ -186,6 +243,15 @@ export class PersistentStorage {
     } catch {
       return defaultValue;
     }
+  }
+
+  /**
+   * Synchronous variant of getJson().
+   *
+   * This is an explicit alias for {@link getSync}.
+   */
+  getJsonSync<T>(key: string, defaultValue?: T): T | undefined {
+    return this.getSync<T>(key, defaultValue);
   }
 
   /**

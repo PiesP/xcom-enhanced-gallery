@@ -106,7 +106,7 @@ async function loadFeatureSettings(): Promise<SettingsWithFeatures> {
   try {
     const { getPersistentStorage } = await import('@shared/services/persistent-storage');
     const storage = getPersistentStorage();
-    const stored = await storage.get<Record<string, unknown>>(APP_SETTINGS_STORAGE_KEY);
+    const stored = await storage.getJson<Record<string, unknown>>(APP_SETTINGS_STORAGE_KEY);
 
     if (stored && typeof stored === 'object' && 'features' in stored) {
       const candidate = (stored as Partial<SettingsWithFeatures>).features;

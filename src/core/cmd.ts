@@ -2,6 +2,11 @@ import type { DomFactsKind } from '@core/dom-facts';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+export type HttpResponseType = 'json' | 'text';
+
+export type NavigateMode = 'assign' | 'open';
+
 export type RuntimeCommand =
   | {
       readonly type: 'TAKE_DOM_FACTS';
@@ -18,6 +23,22 @@ export type RuntimeCommand =
       readonly requestId: string;
       readonly key: string;
       readonly value: unknown;
+    }
+  | {
+      readonly type: 'HTTP_REQUEST';
+      readonly requestId: string;
+      readonly url: string;
+      readonly method: HttpMethod;
+      readonly headers?: Readonly<Record<string, string>>;
+      readonly body?: string;
+      readonly responseType: HttpResponseType;
+    }
+  | {
+      readonly type: 'NAVIGATE';
+      readonly requestId: string;
+      readonly url: string;
+      readonly mode: NavigateMode;
+      readonly target?: '_self' | '_blank';
     }
   | {
       readonly type: 'LOG';

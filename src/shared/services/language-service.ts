@@ -218,7 +218,7 @@ export class LanguageService {
 
   private async persistLanguage(language: SupportedLanguage): Promise<void> {
     try {
-      await this.storage.set(LanguageService.STORAGE_KEY, language);
+      await this.storage.setString(LanguageService.STORAGE_KEY, language);
     } catch (error) {
       logger.warn('Failed to persist language setting:', error);
     }

@@ -3,7 +3,9 @@ import type { RuntimeEvent } from '@core/events';
 import { createInitialModel, type RuntimeModel } from '@core/model';
 import { formatErrorMessage } from '@core/policy';
 import { update } from '@core/update';
+import { httpRequest } from '@edge/adapters/http';
 import { log } from '@edge/adapters/logger';
+import { navigate } from '@edge/adapters/navigation';
 import { createTickScheduler, type TickScheduler } from '@edge/adapters/scheduler';
 import { storeGet, storeSet } from '@edge/adapters/storage';
 import { takeDomFacts } from '@edge/dom-facts';
@@ -23,12 +25,18 @@ export interface CommandRuntimeDeps {
     storeGetMs?: number;
     /** Maximum time to wait for STORE_SET before failing the request (ms). */
     storeSetMs?: number;
+    /** Maximum time to wait for HTTP_REQUEST before failing the request (ms). */
+    httpRequestMs?: number;
+    /** Maximum time to wait for NAVIGATE before failing the request (ms). */
+    navigateMs?: number;
   };
   adapters?: {
     log?: typeof log;
     takeDomFacts?: typeof takeDomFacts;
     storeGet?: typeof storeGet;
     storeSet?: typeof storeSet;
+    httpRequest?: typeof httpRequest;
+    navigate?: typeof navigate;
     scheduler?: TickScheduler;
   };
 }
@@ -39,11 +47,15 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
 
   const storeGetTimeoutMs = deps.timeouts?.storeGetMs ?? 10_000;
   const storeSetTimeoutMs = deps.timeouts?.storeSetMs ?? 10_000;
+  const httpRequestTimeoutMs = deps.timeouts?.httpRequestMs ?? 15_000;
+  const navigateTimeoutMs = deps.timeouts?.navigateMs ?? 5_000;
 
   const runtimeLog = deps.adapters?.log ?? log;
   const runtimeTakeDomFacts = deps.adapters?.takeDomFacts ?? takeDomFacts;
   const runtimeStoreGet = deps.adapters?.storeGet ?? storeGet;
   const runtimeStoreSet = deps.adapters?.storeSet ?? storeSet;
+  const runtimeHttpRequest = deps.adapters?.httpRequest ?? httpRequest;
+  const runtimeNavigate = deps.adapters?.navigate ?? navigate;
   const scheduler = deps.adapters?.scheduler ?? createTickScheduler();
 
   let model: RuntimeModel = createInitialModel();
@@ -236,6 +248,132 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
               now: now(),
             });
           });
+        return;
+      }
+
+      case 'HTTP_REQUEST': {
+        let settled = false;
+        const timerId = startTimeout(httpRequestTimeoutMs, () => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          dispatch({
+            type: 'HttpFailed',
+            requestId: cmd.requestId,
+            url: cmd.url,
+            error: 'Timeout',
+            now: now(),
+          });
+        });
+
+        const finalize = (): void => {
+          if (timerId !== null) {
+            globalTimerManager.clearTimeout(timerId);
+            timeoutTimers.delete(timerId);
+          }
+        };
+
+        Promise.resolve(
+          runtimeHttpRequest({
+            url: cmd.url,
+            method: cmd.method,
+            responseType: cmd.responseType,
+            ...(cmd.headers !== undefined ? { headers: cmd.headers } : {}),
+            ...(cmd.body !== undefined ? { body: cmd.body } : {}),
+          })
+        )
+          .then((result) => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            finalize();
+            dispatch({
+              type: 'HttpCompleted',
+              requestId: cmd.requestId,
+              url: cmd.url,
+              status: result.status,
+              body: result.body,
+              now: now(),
+            });
+          })
+          .catch((error) => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            finalize();
+            dispatch({
+              type: 'HttpFailed',
+              requestId: cmd.requestId,
+              url: cmd.url,
+              error: formatErrorMessage(error),
+              now: now(),
+            });
+          });
+
+        return;
+      }
+
+      case 'NAVIGATE': {
+        let settled = false;
+        const timerId = startTimeout(navigateTimeoutMs, () => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          dispatch({
+            type: 'NavigateFailed',
+            requestId: cmd.requestId,
+            url: cmd.url,
+            error: 'Timeout',
+            now: now(),
+          });
+        });
+
+        const finalize = (): void => {
+          if (timerId !== null) {
+            globalTimerManager.clearTimeout(timerId);
+            timeoutTimers.delete(timerId);
+          }
+        };
+
+        Promise.resolve(
+          runtimeNavigate({
+            url: cmd.url,
+            mode: cmd.mode,
+            ...(cmd.target !== undefined ? { target: cmd.target } : {}),
+          })
+        )
+          .then(() => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            finalize();
+            dispatch({
+              type: 'NavigateCompleted',
+              requestId: cmd.requestId,
+              url: cmd.url,
+              now: now(),
+            });
+          })
+          .catch((error) => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            finalize();
+            dispatch({
+              type: 'NavigateFailed',
+              requestId: cmd.requestId,
+              url: cmd.url,
+              error: formatErrorMessage(error),
+              now: now(),
+            });
+          });
+
         return;
       }
 

@@ -25,7 +25,7 @@ export class PersistentSettingsRepository implements SettingsRepository {
 
   public async load(): Promise<AppSettings> {
     try {
-      const stored = await this.storage.get<StoredSettings>(APP_SETTINGS_STORAGE_KEY);
+      const stored = await this.storage.getJson<StoredSettings>(APP_SETTINGS_STORAGE_KEY);
       if (!stored) {
         const defaults = createDefaultSettings();
         await this.persist(defaults);
@@ -68,7 +68,7 @@ export class PersistentSettingsRepository implements SettingsRepository {
     for (const cmd of cmds) {
       switch (cmd.type) {
         case 'STORE_SET':
-          await this.storage.set(cmd.key, cmd.value);
+          await this.storage.setJson(cmd.key, cmd.value);
           break;
         case 'LOG':
           // Keep logging as a deliberate side effect.

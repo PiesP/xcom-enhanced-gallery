@@ -5,7 +5,7 @@
  * @version 1.0.0
  */
 
-import { ensureGalleryScrollAvailable } from '@shared/dom/utils';
+import { ensureGalleryScrollAvailable } from '@edge/dom/ensure-gallery-scroll';
 import { observeViewportCssVars } from '@shared/dom/viewport';
 import { logger } from '@shared/logging';
 import { animateGalleryEnter, animateGalleryExit } from '@shared/utils/css/css-animations';
