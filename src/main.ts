@@ -475,9 +475,15 @@ export async function initializeGallery(): Promise<void> {
 
     logger.debug('✅ Gallery immediate initialization complete');
   } catch (error) {
-    galleryErrorReporter.critical(error, {
+    // Keep lifecycle state consistent for subsequent retries.
+    lifecycleState.galleryApp = null;
+
+    // Report without using the reporter as control flow; the bootstrap stage should fail.
+    galleryErrorReporter.error(error, {
       code: 'GALLERY_INIT_FAILED',
     });
+
+    throw error;
   }
 }
 

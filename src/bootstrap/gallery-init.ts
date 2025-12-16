@@ -110,10 +110,9 @@ export async function initializeGalleryApp(): Promise<IGalleryApp> {
     logger.info('✅ Gallery app initialization complete');
     return galleryApp;
   } catch (error) {
-    galleryErrorReporter.critical(error, {
+    galleryErrorReporter.error(error, {
       code: 'GALLERY_APP_INIT_FAILED',
     });
-    // Note: critical throws, so this line won't be reached
     throw error;
   }
 }

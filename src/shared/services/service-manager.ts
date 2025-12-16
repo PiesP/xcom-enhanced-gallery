@@ -42,20 +42,31 @@ export class CoreService {
     CoreService.singleton.reset();
   }
 
-  public register<T>(key: string, instance: T, options?: { allowOverride?: boolean }): void {
-    const allowOverride = options?.allowOverride ?? false;
-    if (this.services.has(key)) {
-      if (!allowOverride) {
-        // Silently skip duplicate registration to preserve existing instance
-        if (__DEV__) {
-          logger.warn(
-            `[CoreService] Service key "${key}" already registered, skipping. ` +
-              `Use { allowOverride: true } to replace existing service.`
-          );
-        }
-        return;
-      }
+  public register<T>(
+    key: string,
+    instance: T,
+    options?: {
+      allowOverride?: boolean;
+      onDuplicate?: 'warn' | 'silent' | 'throw';
     }
+  ): void {
+    const allowOverride = options?.allowOverride ?? false;
+    const onDuplicate = options?.onDuplicate ?? 'warn';
+
+    if (this.services.has(key) && !allowOverride) {
+      const message =
+        `[CoreService] Service key "${key}" already registered, skipping. ` +
+        `Use { allowOverride: true } to replace existing service.`;
+
+      if (onDuplicate === 'throw') {
+        throw new Error(message);
+      }
+      if (onDuplicate === 'warn') {
+        logger.warn(message);
+      }
+      return;
+    }
+
     this.services.set(key, instance);
   }
 

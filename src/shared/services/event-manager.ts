@@ -141,6 +141,10 @@ export class EventManager {
    * Remove event listener by ID
    */
   public removeListener(id: string): boolean {
+    if (!this.ownedListenerContexts.has(id)) {
+      return false;
+    }
+
     this.ownedListenerContexts.delete(id);
     return removeEventListenerManaged(id);
   }

@@ -5,12 +5,34 @@ let elementCallbackMap = new WeakMap<
 >();
 let callbackIdCounter = 0;
 
+// Root identity tracking for stable observer keys without preventing GC.
+// IntersectionObserverInit.root can be an Element, a Document, or null/undefined.
+let rootIdCounter = 0;
+let rootIdMap = new WeakMap<object, number>();
+
+function getRootKey(root: IntersectionObserverInit['root']): string {
+  if (!root) {
+    return 'root:null';
+  }
+
+  const rootObject = root as unknown as object;
+  const existing = rootIdMap.get(rootObject);
+  if (existing) {
+    return `root:${existing}`;
+  }
+
+  const id = ++rootIdCounter;
+  rootIdMap.set(rootObject, id);
+  return `root:${id}`;
+}
+
 const createObserverKey = (options: IntersectionObserverInit = {}): string => {
+  const rootKey = getRootKey(options.root ?? null);
   const rootMargin = options.rootMargin ?? '0px';
   const threshold = Array.isArray(options.threshold)
     ? options.threshold.join(',')
     : `${options.threshold ?? 0}`;
-  return `${rootMargin}|${threshold}`;
+  return `${rootKey}|${rootMargin}|${threshold}`;
 };
 
 const getObserver = (key: string, options: IntersectionObserverInit): IntersectionObserver => {
@@ -116,4 +138,6 @@ export function _resetSharedObserverForTests(): void {
   observerPool.clear();
   elementCallbackMap = new WeakMap();
   callbackIdCounter = 0;
+  rootIdCounter = 0;
+  rootIdMap = new WeakMap();
 }
