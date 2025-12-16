@@ -79,7 +79,7 @@ const resolvedAppConfig = Object.freeze({
   },
   features: {
     gallery: true,
-    downloads: true,
+    download: true,
     settings: true,
     accessibility: true,
     debugTools: debugToolsFlag ?? isDev,

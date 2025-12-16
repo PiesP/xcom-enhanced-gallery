@@ -359,6 +359,21 @@ export async function cleanup(): Promise<void> {
       debugCleanupLog
     );
 
+    if (__DEV__) {
+      await runOptionalCleanup(
+        'Dev namespace cleanup',
+        async () => {
+          const { setupDevNamespace } = await import('@bootstrap/dev-namespace');
+          setupDevNamespace(null, {
+            start: startApplication,
+            createConfig: createAppConfig,
+            cleanup,
+          });
+        },
+        debugCleanupLog
+      );
+    }
+
     if (isDevEnvironment) {
       await runOptionalCleanup(
         '[cleanup] Event listener status check',

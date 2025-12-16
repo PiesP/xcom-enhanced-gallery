@@ -13,7 +13,11 @@
  * @returns Parsed integer or 0 (on parse failure)
  */
 export function safeParseInt(value: string | undefined | null, radix: number = 10): number {
-  const result = parseInt(value as string, radix);
+  if (value == null) {
+    return 0;
+  }
+
+  const result = Number.parseInt(value, radix);
   return Number.isNaN(result) ? 0 : result;
 }
 
@@ -21,7 +25,11 @@ export function safeParseInt(value: string | undefined | null, radix: number = 1
  * Safe parseFloat function
  */
 export function safeParseFloat(value: string | undefined | null): number {
-  const result = parseFloat(value as string);
+  if (value == null) {
+    return 0;
+  }
+
+  const result = Number.parseFloat(value);
   return Number.isNaN(result) ? 0 : result;
 }
 
