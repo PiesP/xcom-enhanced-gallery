@@ -77,6 +77,10 @@ export interface BulkDownloadPlanningInput {
   mediaItems: readonly MediaInfo[];
   prefetchedBlobs?: Map<string, Blob | Promise<Blob>> | undefined;
   zipFilename?: string | undefined;
+  /**
+   * Injected time source for filename fallbacks (keeps planning pure).
+   */
+  nowMs?: number;
 }
 
 export interface BulkDownloadPlan {
@@ -90,11 +94,18 @@ export interface BulkDownloadPlan {
 export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownloadPlan {
   const items: PlannedZipItem[] = input.mediaItems.map((media) => ({
     url: media.url,
-    desiredName: generateMediaFilename(media),
+    desiredName:
+      input.nowMs === undefined
+        ? generateMediaFilename(media)
+        : generateMediaFilename(media, { nowMs: input.nowMs }),
     blob: input.prefetchedBlobs?.get(media.url),
   }));
 
-  const zipFilename = input.zipFilename || generateZipFilename(input.mediaItems);
+  const zipFilename =
+    input.zipFilename ||
+    (input.nowMs === undefined
+      ? generateZipFilename(input.mediaItems)
+      : generateZipFilename(input.mediaItems, { nowMs: input.nowMs }));
 
   return { items, zipFilename };
 }

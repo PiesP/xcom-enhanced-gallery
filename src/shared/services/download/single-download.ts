@@ -164,7 +164,7 @@ export async function downloadSingleFile(
     return { success: false, error: 'User cancelled download' };
   }
 
-  const filename = generateMediaFilename(media);
+  const filename = generateMediaFilename(media, { nowMs: Date.now() });
   const effectiveCapability = capability ?? detectDownloadCapability();
 
   // Preserve the existing planning semantics (planSingleDownload), but execute

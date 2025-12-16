@@ -18,6 +18,8 @@
  *
  * @template Args - Tuple type representing function arguments
  */
+import { globalTimerManager } from '@shared/utils/time/timer-management';
+
 export interface DebouncedFunction<Args extends unknown[]> {
   /** Call the debounced function */
   (...args: Args): void;
@@ -39,12 +41,12 @@ export function createDebounced<Args extends unknown[]>(
   fn: (...args: Args) => void,
   delayMs = 300
 ): DebouncedFunction<Args> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let timeoutId: number | null = null;
   let pendingArgs: Args | null = null;
 
   const cancel = (): void => {
     if (timeoutId !== null) {
-      clearTimeout(timeoutId);
+      globalTimerManager.clearTimeout(timeoutId);
       timeoutId = null;
     }
     pendingArgs = null;
@@ -52,7 +54,7 @@ export function createDebounced<Args extends unknown[]>(
 
   const flush = (): void => {
     if (timeoutId !== null && pendingArgs !== null) {
-      clearTimeout(timeoutId);
+      globalTimerManager.clearTimeout(timeoutId);
       timeoutId = null;
       const args = pendingArgs;
       pendingArgs = null;
@@ -63,7 +65,7 @@ export function createDebounced<Args extends unknown[]>(
   const debounced = ((...args: Args): void => {
     cancel();
     pendingArgs = args;
-    timeoutId = setTimeout(() => {
+    timeoutId = globalTimerManager.setTimeout(() => {
       timeoutId = null;
       const savedArgs = pendingArgs;
       pendingArgs = null;

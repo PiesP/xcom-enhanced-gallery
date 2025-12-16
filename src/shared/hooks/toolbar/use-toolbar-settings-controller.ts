@@ -29,10 +29,13 @@ import {
   tryGetSettingsManager,
 } from '@shared/container/service-accessors';
 import { logger } from '@shared/logging';
+import { EventManager } from '@shared/services/event-manager';
 import type { LanguageService } from '@shared/services/language-service';
 import type { ThemeServiceContract } from '@shared/services/theme-service';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
+
+let toolbarSettingsControllerListenerSeq = 0;
 
 const DEFAULT_FOCUS_DELAY_MS = 50;
 const DEFAULT_SELECT_GUARD_MS = 300;
@@ -232,6 +235,9 @@ export function useToolbarSettingsController(
       return;
     }
 
+    const eventManager = EventManager.getInstance();
+    const listenerContext = `toolbar-settings-controller:${toolbarSettingsControllerListenerSeq++}`;
+
     let isSelectActive = false;
     let selectGuardTimeout: number | null = null;
 
@@ -256,13 +262,13 @@ export function useToolbarSettingsController(
 
     const selects = Array.from(panel.querySelectorAll('select'));
     selects.forEach((select) => {
-      select.addEventListener('focus', handleSelectFocus);
-      select.addEventListener('blur', handleSelectBlur);
-      select.addEventListener('change', handleSelectChange);
+      eventManager.addListener(select, 'focus', handleSelectFocus, undefined, listenerContext);
+      eventManager.addListener(select, 'blur', handleSelectBlur, undefined, listenerContext);
+      eventManager.addListener(select, 'change', handleSelectChange, undefined, listenerContext);
     });
 
-    const handleOutsideClick = (event: MouseEvent) => {
-      const target = event.target as Node | null;
+    const handleOutsideClick = (event: Event) => {
+      const target = (event as MouseEvent).target as Node | null;
       const settingsButton = settingsButtonRef();
       const toolbarElement = toolbarRef();
 
@@ -299,16 +305,17 @@ export function useToolbarSettingsController(
       setSettingsExpanded(false);
     };
 
-    documentRef.addEventListener('mousedown', handleOutsideClick, false);
+    eventManager.addListener(
+      documentRef,
+      'mousedown',
+      handleOutsideClick as EventListener,
+      { capture: false },
+      listenerContext
+    );
 
     onCleanup(() => {
       clearScheduledTimeout(selectGuardTimeout);
-      documentRef.removeEventListener('mousedown', handleOutsideClick, false);
-      selects.forEach((select) => {
-        select.removeEventListener('focus', handleSelectFocus);
-        select.removeEventListener('blur', handleSelectBlur);
-        select.removeEventListener('change', handleSelectChange);
-      });
+      eventManager.removeByContext(listenerContext);
     });
   });
 

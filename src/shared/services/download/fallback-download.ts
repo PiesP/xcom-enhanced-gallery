@@ -7,6 +7,7 @@
 import { getErrorMessage } from '@shared/error/utils';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
+import { globalTimerManager } from '@shared/utils/time/timer-management';
 import type { DownloadProgress } from './types';
 
 type GlobalWithGMDownload = typeof globalThis & {
@@ -142,11 +143,11 @@ export async function downloadWithFetchBlob(
 
   // Create abort controller for timeout
   const controller = new AbortController();
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let timeoutId: number | null = null;
   let onAbort: (() => void) | null = null;
 
   try {
-    timeoutId = setTimeout(() => controller.abort(), timeout);
+    timeoutId = globalTimerManager.setTimeout(() => controller.abort(), timeout);
 
     // Combine with external signal if provided
     if (signal) {
@@ -250,7 +251,7 @@ export async function downloadWithFetchBlob(
     return { success: false, error: errorMsg };
   } finally {
     if (timeoutId !== null) {
-      clearTimeout(timeoutId);
+      globalTimerManager.clearTimeout(timeoutId);
     }
 
     if (signal && onAbort) {
@@ -284,8 +285,14 @@ async function triggerAnchorDownload(url: string, filename: string): Promise<voi
       anchor.click();
 
       // Clean up after a short delay
-      setTimeout(() => {
-        document.body.removeChild(anchor);
+      globalTimerManager.setTimeout(() => {
+        // Best-effort cleanup: never allow a DOM exception here to hang the Promise.
+        try {
+          anchor.remove();
+        } catch {
+          // Ignore: cleanup must never fail the download flow.
+        }
+
         resolve();
       }, 100);
     } catch (error) {

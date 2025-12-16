@@ -4,7 +4,6 @@
  * @version 5.0.0 - Added inline media support, improved logging and validation
  */
 
-import { logger } from '@shared/logging';
 import type {
   TweetMediaEntry,
   TwitterMedia,
@@ -25,6 +24,19 @@ interface TypeIndexCounter {
 interface MediaDimensions {
   width?: number;
   height?: number;
+}
+
+export type TwitterParserDiagnosticLevel = 'debug' | 'warn' | 'error';
+
+export interface TwitterParserDiagnostic {
+  level: TwitterParserDiagnosticLevel;
+  message: string;
+  context?: Record<string, unknown>;
+}
+
+export interface TweetMediaExtractionResult {
+  items: TweetMediaEntry[];
+  diagnostics: TwitterParserDiagnostic[];
 }
 
 // ============================================================================
@@ -53,6 +65,24 @@ function resolveDimensions(media: TwitterMedia, mediaUrl: string): MediaDimensio
     result.height = height;
   }
   return result;
+}
+
+function addDiagnostic(
+  diagnostics: TwitterParserDiagnostic[],
+  level: TwitterParserDiagnosticLevel,
+  message: string,
+  context?: Record<string, unknown>
+): void {
+  diagnostics.push(context ? { level, message, context } : { level, message });
+}
+
+function stringifyUnknown(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  try {
+    return String(error);
+  } catch {
+    return 'Unknown error';
+  }
 }
 
 /**
@@ -231,33 +261,58 @@ export function extractMediaFromTweet(
   tweetUser: TwitterUser,
   sourceLocation: 'original' | 'quoted' = 'original'
 ): TweetMediaEntry[] {
+  return extractMediaFromTweetWithDiagnostics(tweetResult, tweetUser, sourceLocation).items;
+}
+
+/**
+ * Extract media items from a tweet object and emit structured diagnostics.
+ *
+ * This function performs no IO. Callers may choose to log diagnostics.
+ */
+export function extractMediaFromTweetWithDiagnostics(
+  tweetResult: TwitterTweet,
+  tweetUser: TwitterUser,
+  sourceLocation: 'original' | 'quoted' = 'original'
+): TweetMediaExtractionResult {
+  const diagnostics: TwitterParserDiagnostic[] = [];
+
   // Allow parsing quoted tweet content by using quoted_status_result.result
   // when sourceLocation is 'quoted' and a quoted result is present.
   const quotedResult = tweetResult.quoted_status_result?.result;
   const parseTarget: TwitterTweet =
     sourceLocation === 'quoted' && quotedResult ? quotedResult : tweetResult;
 
-  if (!parseTarget.extended_entities?.media) return [];
+  if (!parseTarget.extended_entities?.media) return { items: [], diagnostics };
 
   const mediaItems: TweetMediaEntry[] = [];
   const typeIndex: TypeIndexCounter = {};
 
-  // Validate and extract screen_name with logging for missing data
+  // Validate and extract screen_name, emitting diagnostics for missing data
   const screenName = tweetUser.screen_name ?? '';
   if (!screenName) {
-    logger.warn('Missing screen_name for tweet extraction, using empty string as fallback', {
-      userId: tweetUser.rest_id,
-      sourceLocation,
-    });
+    addDiagnostic(
+      diagnostics,
+      'warn',
+      'Missing screen_name for tweet extraction, using empty string as fallback',
+      {
+        userId: tweetUser.rest_id,
+        sourceLocation,
+      }
+    );
   }
 
-  // Validate and extract tweet_id with logging for missing data
+  // Validate and extract tweet_id, emitting diagnostics for missing data
   const tweetId = parseTarget.rest_id ?? parseTarget.id_str ?? '';
   if (!tweetId) {
-    logger.warn('Missing tweet_id for tweet extraction, using empty string as fallback', {
-      screenName,
-      sourceLocation,
-    });
+    addDiagnostic(
+      diagnostics,
+      'warn',
+      'Missing tweet_id for tweet extraction, using empty string as fallback',
+      {
+        screenName,
+        sourceLocation,
+      }
+    );
   }
 
   // Determine media ordering based on note_tweet inline_media when available.
@@ -272,7 +327,9 @@ export function extractMediaFromTweet(
       }
     }
     if (inlineMediaOrder.size > 0) {
-      logger.debug(`Found ${inlineMediaOrder.size} inline media items in note_tweet`);
+      addDiagnostic(diagnostics, 'debug', 'Found inline media items in note_tweet', {
+        count: inlineMediaOrder.size,
+      });
     }
   }
 
@@ -309,22 +366,27 @@ export function extractMediaFromTweet(
 
     // Validate required fields with detailed logging
     if (!media?.type) {
-      logger.debug(`Skipping media at index ${index}: missing type field`);
+      addDiagnostic(diagnostics, 'debug', 'Skipping media: missing type field', { index });
       continue;
     }
     if (!media.id_str) {
-      logger.debug(`Skipping media at index ${index}: missing id_str field`);
+      addDiagnostic(diagnostics, 'debug', 'Skipping media: missing id_str field', { index });
       continue;
     }
     if (!media.media_url_https) {
-      logger.debug(`Skipping media at index ${index}: missing media_url_https field`);
+      addDiagnostic(diagnostics, 'debug', 'Skipping media: missing media_url_https field', {
+        index,
+        mediaId: media.id_str,
+      });
       continue;
     }
 
     try {
       const mediaUrl = getHighQualityMediaUrl(media);
       if (!mediaUrl) {
-        logger.debug(`Skipping media ${media.id_str}: could not resolve high quality URL`);
+        addDiagnostic(diagnostics, 'debug', 'Skipping media: could not resolve high quality URL', {
+          mediaId: media.id_str,
+        });
         continue;
       }
 
@@ -348,11 +410,14 @@ export function extractMediaFromTweet(
 
       mediaItems.push(entry);
     } catch (error) {
-      logger.warn(`Failed to process media ${media.id_str}:`, error);
+      addDiagnostic(diagnostics, 'warn', 'Failed to process media', {
+        mediaId: media?.id_str,
+        error: stringifyUnknown(error),
+      });
     }
   }
 
-  return mediaItems;
+  return { items: mediaItems, diagnostics };
 }
 
 /**
@@ -392,7 +457,7 @@ export function normalizeLegacyTweet(tweet: TwitterTweet): void {
 /**
  * Normalize legacy user fields.
  *
- * Logs a warning if no screen_name is available after normalization,
+ * Emits diagnostics if no screen_name is available after normalization,
  * which may indicate an incomplete API response.
  *
  * @param user - User object to normalize (mutates in place)
@@ -404,6 +469,19 @@ export function normalizeLegacyTweet(tweet: TwitterTweet): void {
  * ```
  */
 export function normalizeLegacyUser(user: TwitterUser): void {
+  normalizeLegacyUserWithDiagnostics(user);
+}
+
+/**
+ * Normalize legacy user fields and emit diagnostics.
+ *
+ * Notes:
+ * - Mutates the input user object (legacy compatibility).
+ * - Emits diagnostics instead of performing IO.
+ */
+export function normalizeLegacyUserWithDiagnostics(user: TwitterUser): TwitterParserDiagnostic[] {
+  const diagnostics: TwitterParserDiagnostic[] = [];
+
   if (user.legacy) {
     if (!user.screen_name && user.legacy.screen_name) {
       user.screen_name = user.legacy.screen_name;
@@ -413,14 +491,21 @@ export function normalizeLegacyUser(user: TwitterUser): void {
     }
   }
 
-  // Log error if screen_name is still missing after normalization
+  // Emit error if screen_name is still missing after normalization
   if (!user.screen_name) {
-    logger.error('User screen_name missing after normalization - API response may be incomplete', {
-      userId: user.rest_id,
-      hasLegacy: !!user.legacy,
-      legacyScreenName: user.legacy?.screen_name,
-    });
+    addDiagnostic(
+      diagnostics,
+      'error',
+      'User screen_name missing after normalization - API response may be incomplete',
+      {
+        userId: user.rest_id,
+        hasLegacy: !!user.legacy,
+        legacyScreenName: user.legacy?.screen_name,
+      }
+    );
   }
+
+  return diagnostics;
 }
 
 // ============================================================================

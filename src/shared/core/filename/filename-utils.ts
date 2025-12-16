@@ -20,10 +20,20 @@ export interface FilenameOptions {
   extension?: string;
   fallbackPrefix?: string;
   fallbackUsername?: string;
+  /**
+   * Injected time source to keep this module pure.
+   * When omitted, 0 is used (deterministic but may collide).
+   */
+  nowMs?: number;
 }
 
 export interface ZipFilenameOptions {
   fallbackPrefix?: string;
+  /**
+   * Injected time source to keep this module pure.
+   * When omitted, 0 is used (deterministic but may collide).
+   */
+  nowMs?: number;
 }
 
 interface MediaMetadata {
@@ -44,6 +54,10 @@ function sanitize(name: string): string {
     .replace(/^[\s.]+|[\s.]+$/g, '')
     .slice(0, 255);
   return sanitized || 'media';
+}
+
+function resolveNowMs(nowMs?: number): number {
+  return Number.isFinite(nowMs as number) ? (nowMs as number) : 0;
 }
 
 /**
@@ -128,6 +142,8 @@ export function generateMediaFilename(media: MediaInfo, options: FilenameOptions
       return sanitize(media.filename);
     }
 
+    const nowMs = resolveNowMs(options.nowMs);
+
     const extension = options.extension ?? getExtension(media.originalUrl ?? media.url);
     const index = getIndexFromMediaId(media.id) ?? normalizeIndex(options.index);
     const { username, tweetId } = resolveMetadata(media, options.fallbackUsername);
@@ -141,9 +157,10 @@ export function generateMediaFilename(media: MediaInfo, options: FilenameOptions
     }
 
     const prefix = options.fallbackPrefix ?? 'media';
-    return sanitize(`${prefix}_${Date.now()}_${index}.${extension}`);
+    return sanitize(`${prefix}_${nowMs}_${index}.${extension}`);
   } catch {
-    return `media_${Date.now()}.${options.extension || 'jpg'}`;
+    const nowMs = resolveNowMs(options.nowMs);
+    return `media_${nowMs}.${options.extension || 'jpg'}`;
   }
 }
 
@@ -164,9 +181,11 @@ export function generateZipFilename(
     }
 
     const prefix = options.fallbackPrefix ?? 'xcom_gallery';
-    return sanitize(`${prefix}_${Date.now()}.zip`);
+    const nowMs = resolveNowMs(options.nowMs);
+    return sanitize(`${prefix}_${nowMs}.zip`);
   } catch {
-    return `download_${Date.now()}.zip`;
+    const nowMs = resolveNowMs(options.nowMs);
+    return `download_${nowMs}.zip`;
   }
 }
 

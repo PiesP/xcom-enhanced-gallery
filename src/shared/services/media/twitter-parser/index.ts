@@ -7,10 +7,15 @@
 // Primary exports - Pure functions
 export {
   extractMediaFromTweet,
+  extractMediaFromTweetWithDiagnostics,
   // Utilities
   getHighQualityMediaUrl,
   normalizeLegacyTweet,
   normalizeLegacyUser,
+  normalizeLegacyUserWithDiagnostics,
   resolveAspectRatio,
   resolveDimensions,
+  type TweetMediaExtractionResult,
+  type TwitterParserDiagnostic,
+  type TwitterParserDiagnosticLevel,
 } from './twitter-response-parser';

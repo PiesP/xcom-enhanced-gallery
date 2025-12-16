@@ -6,6 +6,7 @@
 
 import { logger } from '@shared/logging';
 import { getCookieValue, getCookieValueSync } from '@shared/services/cookie';
+import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 // ============================================================================
 // Configuration
@@ -45,7 +46,9 @@ function getBackoffDelay(attempt: number): number {
  * @internal
  */
 function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => {
+    globalTimerManager.setTimeout(resolve, ms);
+  });
 }
 
 /**
