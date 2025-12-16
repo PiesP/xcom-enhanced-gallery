@@ -9,6 +9,8 @@ export interface UpdateResult {
   readonly cmds: readonly RuntimeCommand[];
 }
 
+type InFlightPurpose = 'domFacts' | 'storageGet' | 'storageSet' | 'httpRequest' | 'navigate';
+
 function withRequestId(model: RuntimeModel, prefix: string): readonly [RuntimeModel, string] {
   const id = `${prefix}:${model.requestSeq}`;
   return [{ ...model, requestSeq: model.requestSeq + 1 }, id] as const;
@@ -17,7 +19,7 @@ function withRequestId(model: RuntimeModel, prefix: string): readonly [RuntimeMo
 function trackInFlight(
   model: RuntimeModel,
   requestId: string,
-  purpose: 'domFacts' | 'storageGet' | 'storageSet' | 'httpRequest' | 'navigate',
+  purpose: InFlightPurpose,
   now: number
 ): RuntimeModel {
   return {
@@ -34,6 +36,22 @@ function clearInFlight(model: RuntimeModel, requestId: string): RuntimeModel {
   return { ...model, inFlight: rest };
 }
 
+function enqueueTracked(
+  model: RuntimeModel,
+  cmds: RuntimeCommand[],
+  input: {
+    readonly prefix: string;
+    readonly purpose: InFlightPurpose;
+    readonly now: number;
+    readonly build: (requestId: string) => RuntimeCommand;
+  }
+): RuntimeModel {
+  const [m1, requestId] = withRequestId(model, input.prefix);
+  const nextModel = trackInFlight(m1, requestId, input.purpose, input.now);
+  cmds.push(input.build(requestId));
+  return nextModel;
+}
+
 export function update(model: RuntimeModel, event: RuntimeEvent): UpdateResult {
   switch (event.type) {
     case 'Booted': {
@@ -47,23 +65,34 @@ export function update(model: RuntimeModel, event: RuntimeEvent): UpdateResult {
         context: { url: event.url },
       });
 
-      {
-        const [m1, requestId] = withRequestId(nextModel, 'storeGet');
-        nextModel = trackInFlight(m1, requestId, 'storageGet', event.now);
-        cmds.push({ type: 'STORE_GET', requestId, key: COMMAND_RUNTIME_STORAGE_KEY });
-      }
+      nextModel = enqueueTracked(nextModel, cmds, {
+        prefix: 'storeGet',
+        purpose: 'storageGet',
+        now: event.now,
+        build: (requestId) => ({
+          type: 'STORE_GET',
+          requestId,
+          key: COMMAND_RUNTIME_STORAGE_KEY,
+        }),
+      });
 
-      {
-        const [m1, requestId] = withRequestId(nextModel, 'storeGet');
-        nextModel = trackInFlight(m1, requestId, 'storageGet', event.now);
-        cmds.push({ type: 'STORE_GET', requestId, key: APP_SETTINGS_STORAGE_KEY });
-      }
+      nextModel = enqueueTracked(nextModel, cmds, {
+        prefix: 'storeGet',
+        purpose: 'storageGet',
+        now: event.now,
+        build: (requestId) => ({
+          type: 'STORE_GET',
+          requestId,
+          key: APP_SETTINGS_STORAGE_KEY,
+        }),
+      });
 
-      {
-        const [m1, requestId] = withRequestId(nextModel, 'domFacts');
-        nextModel = trackInFlight(m1, requestId, 'domFacts', event.now);
-        cmds.push({ type: 'TAKE_DOM_FACTS', requestId, kind: 'XComGallery' });
-      }
+      nextModel = enqueueTracked(nextModel, cmds, {
+        prefix: 'domFacts',
+        purpose: 'domFacts',
+        now: event.now,
+        build: (requestId) => ({ type: 'TAKE_DOM_FACTS', requestId, kind: 'XComGallery' }),
+      });
 
       if (!nextModel.schedule.tickId) {
         const tickId = 'command-runtime:main';
@@ -83,31 +112,41 @@ export function update(model: RuntimeModel, event: RuntimeEvent): UpdateResult {
 
     case 'HttpRequested': {
       const cmds: RuntimeCommand[] = [];
-      const [m1, requestId] = withRequestId(model, 'http');
-      const nextModel = trackInFlight(m1, requestId, 'httpRequest', event.now);
-      cmds.push({
-        type: 'HTTP_REQUEST',
-        requestId,
-        url: event.url,
-        method: event.method,
-        responseType: event.responseType,
-        ...(event.headers !== undefined ? { headers: event.headers } : {}),
-        ...(event.body !== undefined ? { body: event.body } : {}),
+
+      const nextModel = enqueueTracked(model, cmds, {
+        prefix: 'http',
+        purpose: 'httpRequest',
+        now: event.now,
+        build: (requestId) => ({
+          type: 'HTTP_REQUEST',
+          requestId,
+          url: event.url,
+          method: event.method,
+          responseType: event.responseType,
+          ...(event.headers !== undefined ? { headers: event.headers } : {}),
+          ...(event.body !== undefined ? { body: event.body } : {}),
+        }),
       });
+
       return { model: nextModel, cmds };
     }
 
     case 'NavigateRequested': {
       const cmds: RuntimeCommand[] = [];
-      const [m1, requestId] = withRequestId(model, 'navigate');
-      const nextModel = trackInFlight(m1, requestId, 'navigate', event.now);
-      cmds.push({
-        type: 'NAVIGATE',
-        requestId,
-        url: event.url,
-        mode: event.mode,
-        ...(event.target !== undefined ? { target: event.target } : {}),
+
+      const nextModel = enqueueTracked(model, cmds, {
+        prefix: 'navigate',
+        purpose: 'navigate',
+        now: event.now,
+        build: (requestId) => ({
+          type: 'NAVIGATE',
+          requestId,
+          url: event.url,
+          mode: event.mode,
+          ...(event.target !== undefined ? { target: event.target } : {}),
+        }),
       });
+
       return { model: nextModel, cmds };
     }
 
@@ -115,9 +154,12 @@ export function update(model: RuntimeModel, event: RuntimeEvent): UpdateResult {
       const cmds: RuntimeCommand[] = [];
       let nextModel: RuntimeModel = model;
 
-      const [m1, requestId] = withRequestId(nextModel, 'domFacts');
-      nextModel = trackInFlight(m1, requestId, 'domFacts', event.now);
-      cmds.push({ type: 'TAKE_DOM_FACTS', requestId, kind: 'XComGallery' });
+      nextModel = enqueueTracked(nextModel, cmds, {
+        prefix: 'domFacts',
+        purpose: 'domFacts',
+        now: event.now,
+        build: (requestId) => ({ type: 'TAKE_DOM_FACTS', requestId, kind: 'XComGallery' }),
+      });
 
       return { model: nextModel, cmds };
     }
@@ -141,16 +183,17 @@ export function update(model: RuntimeModel, event: RuntimeEvent): UpdateResult {
         },
       });
 
-      {
-        const [m1, requestId] = withRequestId(nextModel, 'storeSet');
-        nextModel = trackInFlight(m1, requestId, 'storageSet', event.now);
-        cmds.push({
+      nextModel = enqueueTracked(nextModel, cmds, {
+        prefix: 'storeSet',
+        purpose: 'storageSet',
+        now: event.now,
+        build: (requestId) => ({
           type: 'STORE_SET',
           requestId,
           key: COMMAND_RUNTIME_STORAGE_KEY,
           value: { lastFacts: event.facts, savedAt: event.now },
-        });
-      }
+        }),
+      });
 
       return { model: nextModel, cmds };
     }

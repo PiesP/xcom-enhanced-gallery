@@ -12,7 +12,7 @@ import {
   getLanguageService,
   getThemeService,
 } from '@shared/container/service-accessors';
-import { isGMAPIAvailable } from '@shared/external/userscript';
+import { getErrorMessage } from '@shared/error/normalize';
 import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces';
 import { logger } from '@shared/logging';
 import type { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
@@ -69,7 +69,10 @@ export class GalleryRenderer implements GalleryRendererInterface {
       logger.debug('[GalleryRenderer] Component rendering complete');
     } catch (error) {
       logger.error('[GalleryRenderer] Rendering failed:', error);
-      setError('Gallery rendering failed');
+      // Ensure we never leave a half-mounted container behind (which can
+      // make the gallery appear "stuck" on subsequent open attempts).
+      this.cleanupContainer();
+      setError(getErrorMessage(error) || 'Gallery rendering failed');
     } finally {
       this.isMounting = false;
     }
@@ -137,12 +140,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
   async handleDownload(type: 'current' | 'all'): Promise<void> {
     logger.info(`[GalleryRenderer] handleDownload called with type: ${type}`);
-    if (!isGMAPIAvailable('download')) {
-      logger.warn('[GalleryRenderer] GM_download unavailable');
-      setError('Tampermonkey required for downloads.');
-      return;
-    }
-
     if (isDownloadLocked()) return;
 
     const releaseLock = acquireDownloadLock();
@@ -168,7 +165,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
       }
     } catch (error) {
       logger.error(`[GalleryRenderer] ${type} download failed:`, error);
-      setError('Download failed.');
+      setError(getErrorMessage(error) || 'Download failed.');
     } finally {
       releaseLock();
     }
@@ -190,15 +187,21 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
   private cleanupContainer(): void {
     if (this.container) {
+      const container = this.container;
+
       try {
-        unmountGallery(this.container);
-        if (document.contains(this.container)) {
-          this.container.remove();
-        }
+        unmountGallery(container);
       } catch (error) {
-        logger.warn('[GalleryRenderer] Container cleanup failed:', error);
+        logger.warn('[GalleryRenderer] Container unmount failed:', error);
       }
-      this.container = null;
+
+      try {
+        container.remove();
+      } catch (error) {
+        logger.warn('[GalleryRenderer] Container removal failed:', error);
+      } finally {
+        this.container = null;
+      }
     }
   }
 
