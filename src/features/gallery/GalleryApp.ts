@@ -9,6 +9,7 @@ import {
   tryGetSettingsManager,
 } from '@shared/container/service-accessors';
 import { galleryErrorReporter, mediaErrorReporter } from '@shared/error';
+import { getErrorMessage } from '@shared/error/normalize';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import { logger } from '@shared/logging';
 import { NotificationService } from '@shared/services/notification-service';
@@ -121,10 +122,7 @@ export class GalleryApp {
         code: 'MEDIA_EXTRACTION_ERROR',
         notify: true,
       });
-      this.notificationService.error(
-        'Error occurred',
-        error instanceof Error ? error.message : 'Unknown error'
-      );
+      this.notificationService.error('Error occurred', getErrorMessage(error) || 'Unknown error');
     }
   }
 
@@ -168,7 +166,7 @@ export class GalleryApp {
       });
       this.notificationService.error(
         'Failed to load gallery',
-        error instanceof Error ? error.message : 'Unknown error'
+        getErrorMessage(error) || 'Unknown error'
       );
       throw error;
     }

@@ -1,16 +1,9 @@
 import type { DomFacts, DomFactsKind } from '@core/dom-facts';
+import { getSafeHref } from '@shared/dom/safe-location';
 import { queryAllWithFallback, SELECTORS, STABLE_SELECTORS } from '@shared/dom/selectors';
 
-function safeUrl(): string {
-  try {
-    return typeof window !== 'undefined' && window.location ? window.location.href : '';
-  } catch {
-    return '';
-  }
-}
-
 export function takeDomFacts(kind: DomFactsKind): DomFacts {
-  const url = safeUrl();
+  const url = getSafeHref() ?? '';
 
   if (typeof document === 'undefined') {
     return {

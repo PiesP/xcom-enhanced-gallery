@@ -52,53 +52,21 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
   let drainScheduled = false;
   let stopped = false;
 
-  const timeoutTimers = new Set<number>();
+  type TimeoutTimerId = ReturnType<typeof globalTimerManager.setTimeout>;
+  const timeoutTimers = new Set<TimeoutTimerId>();
 
-  const raceWithTimeout = async <T>(
-    promise: Promise<T>,
-    timeoutMs: number
-  ): Promise<{ readonly timedOut: true } | { readonly timedOut: false; readonly value: T }> => {
+  const startTimeout = (timeoutMs: number, onTimeout: () => void): TimeoutTimerId | null => {
     if (!(timeoutMs > 0)) {
-      return { timedOut: false, value: await promise };
+      return null;
     }
 
-    return await new Promise((resolve, reject) => {
-      let settled = false;
-
-      const timerId = globalTimerManager.setTimeout(() => {
-        if (settled) {
-          return;
-        }
-
-        settled = true;
-        timeoutTimers.delete(timerId);
-        resolve({ timedOut: true } as const);
-      }, timeoutMs);
-
-      timeoutTimers.add(timerId);
-
-      promise
-        .then((value) => {
-          if (settled) {
-            return;
-          }
-
-          settled = true;
-          globalTimerManager.clearTimeout(timerId);
-          timeoutTimers.delete(timerId);
-          resolve({ timedOut: false, value } as const);
-        })
-        .catch((error) => {
-          if (settled) {
-            return;
-          }
-
-          settled = true;
-          globalTimerManager.clearTimeout(timerId);
-          timeoutTimers.delete(timerId);
-          reject(error);
-        });
-    });
+    let timerId: TimeoutTimerId;
+    timerId = globalTimerManager.setTimeout(() => {
+      timeoutTimers.delete(timerId);
+      onTimeout();
+    }, timeoutMs);
+    timeoutTimers.add(timerId);
+    return timerId;
   };
 
   const safeRuntimeLog = (
@@ -140,7 +108,7 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
     }
   };
 
-  const interpret = async (cmd: RuntimeCommand): Promise<void> => {
+  const interpret = (cmd: RuntimeCommand): void => {
     switch (cmd.type) {
       case 'LOG':
         safeRuntimeLog(cmd.level, cmd.message, cmd.context);
@@ -163,71 +131,111 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
       }
 
       case 'STORE_GET': {
-        try {
-          const result = await raceWithTimeout(runtimeStoreGet(cmd.key), storeGetTimeoutMs);
-          if (result.timedOut) {
-            dispatch({
-              type: 'StorageFailed',
-              requestId: cmd.requestId,
-              key: cmd.key,
-              error: 'Timeout',
-              now: now(),
-            });
+        let settled = false;
+        const timerId = startTimeout(storeGetTimeoutMs, () => {
+          if (settled) {
             return;
           }
-
-          const value = result.value;
-          dispatch({
-            type: 'StorageLoaded',
-            requestId: cmd.requestId,
-            key: cmd.key,
-            value,
-            now: now(),
-          });
-        } catch (error) {
+          settled = true;
           dispatch({
             type: 'StorageFailed',
             requestId: cmd.requestId,
             key: cmd.key,
-            error: formatErrorMessage(error),
+            error: 'Timeout',
             now: now(),
           });
-        }
+        });
+
+        const finalize = (): void => {
+          if (timerId !== null) {
+            globalTimerManager.clearTimeout(timerId);
+            timeoutTimers.delete(timerId);
+          }
+        };
+
+        Promise.resolve(runtimeStoreGet(cmd.key))
+          .then((value) => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            finalize();
+            dispatch({
+              type: 'StorageLoaded',
+              requestId: cmd.requestId,
+              key: cmd.key,
+              value,
+              now: now(),
+            });
+          })
+          .catch((error) => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            finalize();
+            dispatch({
+              type: 'StorageFailed',
+              requestId: cmd.requestId,
+              key: cmd.key,
+              error: formatErrorMessage(error),
+              now: now(),
+            });
+          });
         return;
       }
 
       case 'STORE_SET': {
-        try {
-          const result = await raceWithTimeout(
-            runtimeStoreSet(cmd.key, cmd.value),
-            storeSetTimeoutMs
-          );
-          if (result.timedOut) {
-            dispatch({
-              type: 'StorageSetFailed',
-              requestId: cmd.requestId,
-              key: cmd.key,
-              error: 'Timeout',
-              now: now(),
-            });
+        let settled = false;
+        const timerId = startTimeout(storeSetTimeoutMs, () => {
+          if (settled) {
             return;
           }
-
-          dispatch({
-            type: 'StorageSetCompleted',
-            requestId: cmd.requestId,
-            key: cmd.key,
-            now: now(),
-          });
-        } catch (error) {
+          settled = true;
           dispatch({
             type: 'StorageSetFailed',
             requestId: cmd.requestId,
             key: cmd.key,
-            error: formatErrorMessage(error),
+            error: 'Timeout',
             now: now(),
           });
-        }
+        });
+
+        const finalize = (): void => {
+          if (timerId !== null) {
+            globalTimerManager.clearTimeout(timerId);
+            timeoutTimers.delete(timerId);
+          }
+        };
+
+        Promise.resolve(runtimeStoreSet(cmd.key, cmd.value))
+          .then(() => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            finalize();
+            dispatch({
+              type: 'StorageSetCompleted',
+              requestId: cmd.requestId,
+              key: cmd.key,
+              now: now(),
+            });
+          })
+          .catch((error) => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            finalize();
+            dispatch({
+              type: 'StorageSetFailed',
+              requestId: cmd.requestId,
+              key: cmd.key,
+              error: formatErrorMessage(error),
+              now: now(),
+            });
+          });
         return;
       }
 
@@ -286,10 +294,8 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
         }
 
         for (const cmd of result.cmds) {
-          // Keep command execution sequential to preserve deterministic behavior.
-          // If we later need concurrency, it should be expressed explicitly in Cmd/Event.
           try {
-            await interpret(cmd);
+            interpret(cmd);
           } catch (error) {
             safeRuntimeLog('error', '[command-runtime] interpret() threw', {
               cmdType: (cmd as { type?: unknown }).type,

@@ -3,6 +3,7 @@
  * @version 2.2.0 - Simplified
  */
 
+import { getErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging';
 import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
 import { TwitterAPI } from '@shared/services/media/twitter-api-client';
@@ -75,9 +76,7 @@ export class TwitterAPIExtractor implements APIExtractor {
     } catch (error) {
       logger.warn(`[APIExtractor] ${extractionId}: API extraction failed:`, error);
       const totalProcessingTime = Math.max(0, now() - startedAt);
-      const failure = this.createFailureResult(
-        error instanceof Error ? error.message : 'API extraction failed'
-      );
+      const failure = this.createFailureResult(getErrorMessage(error) || 'API extraction failed');
       return {
         ...failure,
         metadata: {

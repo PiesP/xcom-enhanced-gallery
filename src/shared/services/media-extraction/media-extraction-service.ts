@@ -1,4 +1,5 @@
 import { SELECTORS } from '@shared/dom/selectors';
+import { getErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
@@ -83,8 +84,7 @@ export class MediaExtractionService implements MediaExtractor {
   }
 
   private createErrorResult(error: unknown): MediaExtractionResult {
-    const errorMessage =
-      error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error';
+    const errorMessage = getErrorMessage(error) || 'Unknown error';
 
     return {
       success: false,

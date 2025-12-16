@@ -5,6 +5,7 @@
  */
 
 import { TWITTER_API_CONFIG } from '@constants';
+import { getSafeHostname, getSafeLocationHeaders } from '@shared/dom/safe-location';
 import { logger } from '@shared/logging';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import { getCsrfToken, getCsrfTokenAsync } from '@shared/services/media/twitter-auth';
@@ -53,40 +54,15 @@ function simpleHash(str: string): string {
  * @returns Host domain (e.g., 'x.com' or 'twitter.com')
  */
 function getSafeHost(): string {
-  try {
-    if (typeof globalThis !== 'undefined' && 'location' in globalThis) {
-      const hostname = (globalThis as typeof globalThis & { location?: Location }).location
-        ?.hostname;
-      if (hostname) {
-        // Extract base domain (handle subdomains)
-        const host = hostname.includes('twitter.com') ? 'twitter.com' : 'x.com';
-        if (TWITTER_API_CONFIG.SUPPORTED_HOSTS.includes(host as 'x.com' | 'twitter.com')) {
-          return host;
-        }
-      }
+  const hostname = getSafeHostname();
+  if (hostname) {
+    // Extract base domain (handle subdomains)
+    const host = hostname.includes('twitter.com') ? 'twitter.com' : 'x.com';
+    if (TWITTER_API_CONFIG.SUPPORTED_HOSTS.includes(host as 'x.com' | 'twitter.com')) {
+      return host;
     }
-  } catch {
-    // Silently fall back to default
   }
   return TWITTER_API_CONFIG.DEFAULT_HOST;
-}
-
-/**
- * Get referer and origin headers safely.
- * @returns Object with referer and origin, or empty object if unavailable
- */
-function getSafeLocationHeaders(): { referer?: string; origin?: string } {
-  try {
-    if (typeof window !== 'undefined' && window.location) {
-      return {
-        referer: window.location.href,
-        origin: window.location.origin,
-      };
-    }
-  } catch {
-    // Silently continue without location headers
-  }
-  return {};
 }
 
 function logTwitterParserDiagnostics(

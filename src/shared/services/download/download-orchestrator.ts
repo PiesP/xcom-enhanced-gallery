@@ -15,6 +15,7 @@
  */
 
 import { planBulkDownload, planZipSave } from '@shared/core/download/download-plan';
+import { getErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging';
 import {
   type DownloadCapability,
@@ -201,7 +202,7 @@ export class DownloadOrchestrator {
         status: 'error',
         filesProcessed: items.length,
         filesSuccessful: 0,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: getErrorMessage(error) || 'Unknown error',
         code: ErrorCode.ALL_FAILED,
       };
     }
@@ -262,7 +263,7 @@ export class DownloadOrchestrator {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'GM_download failed',
+        error: getErrorMessage(error) || 'GM_download failed',
       };
     } finally {
       URL.revokeObjectURL(url);

@@ -2,6 +2,7 @@
  * Download state management with signals
  */
 
+import { getErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging';
 import type { MediaId, MediaInfo } from '@shared/types/media.types';
 import type { Result } from '@shared/types/result.types';
@@ -133,9 +134,9 @@ export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Res
 
     return success(taskId, { mediaId, filename: task.filename });
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    logger.error('[Download] Failed to create task:', errorMsg);
-    return failure(errorMsg, ErrorCode.UNKNOWN, {
+    const errorMessage = getErrorMessage(error) || 'Unknown error';
+    logger.error('[Download] Failed to create task:', errorMessage);
+    return failure(errorMessage, ErrorCode.UNKNOWN, {
       cause: error,
       meta: { mediaUrl: mediaInfo.url },
     });

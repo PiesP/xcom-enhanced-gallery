@@ -9,6 +9,7 @@
  * - Structured logging: Consistent format with context support
  */
 
+import { normalizeErrorMessage } from '@shared/error/normalize';
 import { DEFAULT_LOG_LEVEL, getLogLevel, LOG_LEVEL_PRIORITY } from './log-level';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -119,6 +120,6 @@ export function logError(
   context: Record<string, unknown> = {},
   source?: string
 ): void {
-  const errorMessage = error instanceof Error ? error.message : error;
+  const errorMessage = normalizeErrorMessage(error);
   logger.error(`Error${source ? ` in ${source}` : ''}: ${errorMessage}`, context);
 }

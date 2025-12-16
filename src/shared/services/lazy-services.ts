@@ -5,6 +5,7 @@
  * @phase Phase 355: Download Service Consolidation (BulkDownloadService removed)
  */
 
+import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging';
 
 // Singleton pattern: track if service has been registered
@@ -50,7 +51,7 @@ export async function ensureDownloadServiceRegistered(): Promise<void> {
     downloadServiceRegistered = true;
     logger.info('✅ DownloadService lazily registered (first download)');
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = normalizeErrorMessage(error);
     logger.error('❌ Failed to lazily register DownloadService:', message);
     throw error;
   }
