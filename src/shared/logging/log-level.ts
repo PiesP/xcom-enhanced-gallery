@@ -45,8 +45,9 @@ export type LogLevelChangeListener = (newLevel: LogLevel, oldLevel: LogLevel) =>
 // Constants
 // ============================================================================
 
-// Optimized for tree-shaking: Use __DEV__ directly when available
-const isDev: boolean = typeof __DEV__ !== 'undefined' ? __DEV__ : true;
+// Optimized for tree-shaking: Prefer __DEV__ when available.
+// Safe fallback: default to non-dev unless Vite's import.meta.env.DEV says otherwise.
+const isDev: boolean = typeof __DEV__ !== 'undefined' ? __DEV__ : Boolean(import.meta.env?.DEV);
 
 /**
  * Default log level based on environment

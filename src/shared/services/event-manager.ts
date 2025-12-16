@@ -29,9 +29,7 @@ import { createLifecycle } from '@shared/services/lifecycle';
 import {
   getEventListenerStatus,
   addListener as registerManagedListener,
-  removeAllEventListeners,
   removeEventListenerManaged,
-  removeEventListenersByContext,
 } from '@shared/utils/events/core/listener-manager';
 import { createSingleton } from '@shared/utils/types/singleton';
 
@@ -49,6 +47,11 @@ export class EventManager {
   private readonly lifecycle: Lifecycle;
   private static readonly singleton = createSingleton(() => new EventManager());
   private isDestroyed = false;
+
+  // Track only listeners registered via this EventManager instance.
+  // This prevents accidental removal of listeners registered by other systems
+  // (e.g., EventBus / DOMEventManager) that share the same low-level backend.
+  private readonly ownedListenerContexts = new Map<string, string | undefined>();
 
   private constructor() {
     this.lifecycle = createLifecycle('EventManager', {
@@ -119,6 +122,12 @@ export class EventManager {
     }
 
     const id = registerManagedListener(element, type, listener, options, context);
+
+    // The low-level backend always returns an id even if registration fails.
+    // Track it anyway; cleanup will be a no-op if it was never registered.
+    if (id) {
+      this.ownedListenerContexts.set(id, context);
+    }
     return id || null;
   }
 
@@ -126,6 +135,7 @@ export class EventManager {
    * Remove event listener by ID
    */
   public removeListener(id: string): boolean {
+    this.ownedListenerContexts.delete(id);
     return removeEventListenerManaged(id);
   }
 
@@ -133,7 +143,22 @@ export class EventManager {
    * Remove all listeners matching a context
    */
   public removeByContext(context: string): number {
-    return removeEventListenersByContext(context);
+    const toRemove: string[] = [];
+    for (const [id, ctx] of this.ownedListenerContexts) {
+      if (ctx === context) {
+        toRemove.push(id);
+      }
+    }
+
+    let count = 0;
+    for (const id of toRemove) {
+      this.ownedListenerContexts.delete(id);
+      if (removeEventListenerManaged(id)) {
+        count++;
+      }
+    }
+
+    return count;
   }
 
   /** Check if destroyed */
@@ -152,8 +177,19 @@ export class EventManager {
       return;
     }
 
-    // This service owns the internal listener registry usage. Ensure a full cleanup.
-    removeAllEventListeners();
+    // Only remove listeners registered via this service instance.
+    // Never clear the entire low-level registry, because it is shared with
+    // higher-level systems (e.g., EventBus / DOMEventManager).
+    const ids = Array.from(this.ownedListenerContexts.keys());
+    this.ownedListenerContexts.clear();
+
+    for (const id of ids) {
+      try {
+        removeEventListenerManaged(id);
+      } catch {
+        // Swallow errors during cleanup to avoid cascading teardown failures.
+      }
+    }
 
     this.isDestroyed = true;
     logger.debug('EventManager cleanup completed');
