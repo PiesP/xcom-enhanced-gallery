@@ -73,6 +73,29 @@ export interface UserscriptAPI {
 }
 
 /**
+ * Resolved GM_* bindings.
+ *
+ * Userscript managers may expose GM_* APIs in one of two ways:
+ * - Scope injection (e.g., Tampermonkey): `GM_download` is available as a free variable
+ * - Global attachment: `globalThis.GM_download` exists
+ *
+ * This helper resolves both forms and returns a best-effort snapshot.
+ * @internal
+ */
+export interface ResolvedGMAPIs {
+  readonly info: unknown;
+  readonly download: unknown;
+  readonly setValue: unknown;
+  readonly getValue: unknown;
+  readonly deleteValue: unknown;
+  readonly listValues: unknown;
+  readonly addStyle: unknown;
+  readonly xmlHttpRequest: unknown;
+  readonly notification: unknown;
+  readonly cookie: CookieAPI | undefined;
+}
+
+/**
  * GlobalWithGM: Global object containing GM_* API functions
  * @internal
  */
@@ -96,6 +119,96 @@ interface GlobalWithGM {
   GM_xmlhttpRequest?: (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl;
   GM_notification?: (details: GMNotificationDetails, ondone?: () => void) => void;
   GM_cookie?: CookieAPI;
+}
+
+/**
+ * Resolve GM_* bindings from either scope injection or globalThis.
+ *
+ * This is intentionally non-throwing: callers should validate types.
+ * @internal
+ */
+export function resolveGMAPIs(): ResolvedGMAPIs {
+  const global = globalThis as unknown as GlobalWithGM;
+
+  const info = typeof GM_info !== 'undefined' ? GM_info : global.GM_info;
+  const download =
+    typeof GM_download !== 'undefined'
+      ? GM_download
+      : typeof global.GM_download === 'function'
+        ? global.GM_download
+        : undefined;
+  const setValue =
+    typeof GM_setValue !== 'undefined'
+      ? GM_setValue
+      : typeof global.GM_setValue === 'function'
+        ? global.GM_setValue
+        : undefined;
+  const getValue =
+    typeof GM_getValue !== 'undefined'
+      ? GM_getValue
+      : typeof global.GM_getValue === 'function'
+        ? global.GM_getValue
+        : undefined;
+  const deleteValue =
+    typeof GM_deleteValue !== 'undefined'
+      ? GM_deleteValue
+      : typeof global.GM_deleteValue === 'function'
+        ? global.GM_deleteValue
+        : undefined;
+  const listValues =
+    typeof GM_listValues !== 'undefined'
+      ? GM_listValues
+      : typeof global.GM_listValues === 'function'
+        ? global.GM_listValues
+        : undefined;
+  const addStyle =
+    typeof GM_addStyle !== 'undefined'
+      ? GM_addStyle
+      : typeof global.GM_addStyle === 'function'
+        ? global.GM_addStyle
+        : undefined;
+  const xmlHttpRequest =
+    typeof GM_xmlhttpRequest !== 'undefined'
+      ? GM_xmlhttpRequest
+      : typeof global.GM_xmlhttpRequest === 'function'
+        ? global.GM_xmlhttpRequest
+        : undefined;
+  const cookie =
+    typeof GM_cookie !== 'undefined'
+      ? GM_cookie
+      : global.GM_cookie && typeof global.GM_cookie.list === 'function'
+        ? global.GM_cookie
+        : undefined;
+  const notification =
+    typeof GM_notification !== 'undefined'
+      ? GM_notification
+      : typeof global.GM_notification === 'function'
+        ? global.GM_notification
+        : undefined;
+
+  return Object.freeze({
+    info,
+    download,
+    setValue,
+    getValue,
+    deleteValue,
+    listValues,
+    addStyle,
+    xmlHttpRequest,
+    cookie,
+    notification,
+  });
+}
+
+/**
+ * Resolve the raw GM_download binding when present.
+ *
+ * Some managers support a signature like `GM_download({ url, name, ... })`.
+ * Services that need the raw function should use this helper.
+ * @internal
+ */
+export function resolveGMDownload(): unknown {
+  return resolveGMAPIs().download;
 }
 
 /**
@@ -170,61 +283,18 @@ function assertFunction<T extends (...args: never[]) => unknown>(
 export function getUserscript(): UserscriptAPI {
   const global = globalThis as unknown as GlobalWithGM;
 
+  const resolved = resolveGMAPIs();
+
   // Check for injected GM_* APIs (Tampermonkey injects these into scope, not necessarily globalThis)
-  const gmDownload =
-    typeof GM_download !== 'undefined'
-      ? GM_download
-      : typeof global.GM_download === 'function'
-        ? global.GM_download
-        : undefined;
-  const gmSetValue =
-    typeof GM_setValue !== 'undefined'
-      ? GM_setValue
-      : typeof global.GM_setValue === 'function'
-        ? global.GM_setValue
-        : undefined;
-  const gmGetValue =
-    typeof GM_getValue !== 'undefined'
-      ? GM_getValue
-      : typeof global.GM_getValue === 'function'
-        ? global.GM_getValue
-        : undefined;
-  const gmDeleteValue =
-    typeof GM_deleteValue !== 'undefined'
-      ? GM_deleteValue
-      : typeof global.GM_deleteValue === 'function'
-        ? global.GM_deleteValue
-        : undefined;
-  const gmListValues =
-    typeof GM_listValues !== 'undefined'
-      ? GM_listValues
-      : typeof global.GM_listValues === 'function'
-        ? global.GM_listValues
-        : undefined;
-  const gmAddStyle =
-    typeof GM_addStyle !== 'undefined'
-      ? GM_addStyle
-      : typeof global.GM_addStyle === 'function'
-        ? global.GM_addStyle
-        : undefined;
-  const gmXmlHttpRequest =
-    typeof GM_xmlhttpRequest !== 'undefined'
-      ? GM_xmlhttpRequest
-      : typeof global.GM_xmlhttpRequest === 'function'
-        ? global.GM_xmlhttpRequest
-        : undefined;
-  const gmCookie =
-    typeof GM_cookie !== 'undefined'
-      ? GM_cookie
-      : global.GM_cookie && typeof global.GM_cookie.list === 'function'
-        ? global.GM_cookie
-        : undefined;
-  const gmNotification =
-    typeof GM_notification !== 'undefined'
-      ? GM_notification
-      : typeof global.GM_notification === 'function'
-        ? global.GM_notification
-        : undefined;
+  const gmDownload = resolved.download as GlobalWithGM['GM_download'] | undefined;
+  const gmSetValue = resolved.setValue as GlobalWithGM['GM_setValue'] | undefined;
+  const gmGetValue = resolved.getValue as GlobalWithGM['GM_getValue'] | undefined;
+  const gmDeleteValue = resolved.deleteValue as GlobalWithGM['GM_deleteValue'] | undefined;
+  const gmListValues = resolved.listValues as GlobalWithGM['GM_listValues'] | undefined;
+  const gmAddStyle = resolved.addStyle as GlobalWithGM['GM_addStyle'] | undefined;
+  const gmXmlHttpRequest = resolved.xmlHttpRequest as GlobalWithGM['GM_xmlhttpRequest'] | undefined;
+  const gmCookie = resolved.cookie;
+  const gmNotification = resolved.notification as GlobalWithGM['GM_notification'] | undefined;
 
   const hasGM = Boolean(gmDownload || (gmSetValue && gmGetValue) || gmXmlHttpRequest);
 

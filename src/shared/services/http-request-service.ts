@@ -26,7 +26,7 @@
  */
 
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
-import { getUserscript } from '@shared/external/userscript/adapter';
+import { getUserscript } from '@shared/external/userscript';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { createDeferred, createSingleSettler } from '@shared/utils/async/promise-helpers';
 import { createSingleton } from '@shared/utils/types/singleton';

@@ -7,7 +7,7 @@
  * @version 4.0.0 - Functional refactor from StyleRegistry class
  */
 
-import { getUserscript } from '@shared/external/userscript/adapter';
+import { getUserscript } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
 
 // ============================================================================

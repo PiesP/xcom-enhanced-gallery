@@ -1,5 +1,6 @@
 import { type BaseLanguageCode, isBaseLanguageCode } from '@shared/constants/i18n/language-types';
 import { DEFAULT_LANGUAGE } from '@shared/constants/i18n/translation-registry';
+import { type ResolvedGMAPIs, resolveGMAPIs } from './adapter';
 
 /**
  * Browser environment snapshot surfaced to the userscript layer.
@@ -12,14 +13,14 @@ export interface EnvironmentInfo {
   language: BaseLanguageCode;
 }
 
-const GM_API_CHECKS: Record<string, (gm: Record<string, unknown>) => boolean> = {
-  getValue: (gm) => typeof gm.GM_getValue === 'function',
-  setValue: (gm) => typeof gm.GM_setValue === 'function',
-  download: (gm) => typeof gm.GM_download === 'function',
-  notification: (gm) => typeof gm.GM_notification === 'function',
-  deleteValue: (gm) => typeof gm.GM_deleteValue === 'function',
-  listValues: (gm) => typeof gm.GM_listValues === 'function',
-  cookie: (gm) => typeof (gm.GM_cookie as { list?: unknown } | undefined)?.list === 'function',
+const GM_API_CHECKS: Record<string, (gm: ResolvedGMAPIs) => boolean> = {
+  getValue: (gm) => typeof gm.getValue === 'function',
+  setValue: (gm) => typeof gm.setValue === 'function',
+  download: (gm) => typeof gm.download === 'function',
+  notification: (gm) => typeof gm.notification === 'function',
+  deleteValue: (gm) => typeof gm.deleteValue === 'function',
+  listValues: (gm) => typeof gm.listValues === 'function',
+  cookie: (gm) => typeof gm.cookie?.list === 'function',
 };
 
 function detectColorScheme(): 'light' | 'dark' {
@@ -73,14 +74,13 @@ export function detectEnvironment(): EnvironmentInfo {
  * ```
  */
 export function isGMAPIAvailable(apiName: string): boolean {
-  const gm = globalThis as Record<string, unknown>;
   const checker = GM_API_CHECKS[apiName];
   if (!checker) {
     return false;
   }
 
   try {
-    return checker(gm);
+    return checker(resolveGMAPIs());
   } catch {
     return false;
   }

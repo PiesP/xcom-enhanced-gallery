@@ -24,10 +24,6 @@ import { promisifyCallback, promisifyVoidCallback } from '@shared/utils/async';
 
 type CookieSetOptionsWithName = CookieSetOptions & { name: string };
 
-interface GlobalWithCookie {
-  GM_cookie?: CookieAPI;
-}
-
 // ============================================================================
 // Module State
 // ============================================================================
@@ -91,15 +87,10 @@ function resolveCookieAPI(): CookieAPI | null {
       return userscript.cookie;
     }
   } catch (error) {
-    // Ignore: fall back to global probing below
+    // Ignore: fall back to document.cookie-only mode
     if (typeof __DEV__ !== 'undefined' && __DEV__) {
       logger.debug('[cookie-utils] Userscript cookie API resolution failed (ignored)', error);
     }
-  }
-
-  const global = globalThis as GlobalWithCookie;
-  if (global.GM_cookie && typeof global.GM_cookie.list === 'function') {
-    return global.GM_cookie;
   }
 
   return null;

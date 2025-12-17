@@ -8,13 +8,9 @@ import { delay, isAbortError } from '@shared/async/delay';
 import { combineSignals, createTimeoutController } from '@shared/async/signal-utils';
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 import { getErrorMessage } from '@shared/error/normalize';
-import { isGMAPIAvailable } from '@shared/external/userscript';
+import { isGMAPIAvailable, resolveGMDownload } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
 import type { DownloadProgress } from './types';
-
-type GlobalWithGMDownload = typeof globalThis & {
-  readonly GM_download?: unknown;
-};
 
 export interface GMDownloadProgressEvent {
   loaded: number;
@@ -56,11 +52,15 @@ export interface DownloadCapability {
  * Detect available download capabilities
  */
 export function detectDownloadCapability(): DownloadCapability {
-  const gmDownload = resolveGMDownload();
+  const rawGMDownload = resolveGMDownload();
+  const gmDownload =
+    typeof rawGMDownload === 'function'
+      ? (rawGMDownload as unknown as GMDownloadFunction)
+      : undefined;
   // Delegate detection to the userscript environment helper.
   // We still resolve the raw function locally because GM_download supports an
   // options-object signature in some managers, which is not exposed via UserscriptAPI.download.
-  const hasGMDownload = isGMAPIAvailable('download') && typeof gmDownload === 'function';
+  const hasGMDownload = isGMAPIAvailable('download') && Boolean(gmDownload);
 
   const hasFetch = typeof fetch === 'function';
 
@@ -77,20 +77,6 @@ export function detectDownloadCapability(): DownloadCapability {
   }
 
   return { hasGMDownload, hasFetch, hasBlob, method, gmDownload };
-}
-
-function resolveGMDownload(): GMDownloadFunction | undefined {
-  if (typeof GM_download !== 'undefined' && typeof GM_download === 'function') {
-    return GM_download as unknown as GMDownloadFunction;
-  }
-
-  const globalObject = globalThis as GlobalWithGMDownload;
-  const fromGlobal = globalObject.GM_download;
-  if (typeof fromGlobal === 'function') {
-    return fromGlobal as unknown as GMDownloadFunction;
-  }
-
-  return undefined;
 }
 
 /**
