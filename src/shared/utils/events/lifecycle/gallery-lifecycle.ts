@@ -99,11 +99,7 @@ export async function initializeGalleryEvents(
 
   const clickHandler: EventListener = async (evt: Event) => {
     const event = evt as MouseEvent;
-    const result = await handleMediaClick(event, handlers, finalOptions);
-    if (result.handled && finalOptions.preventBubbling) {
-      event.stopPropagation();
-      event.preventDefault();
-    }
+    await handleMediaClick(event, handlers, finalOptions);
   };
 
   const target = resolveEventTarget(explicitGalleryRoot);

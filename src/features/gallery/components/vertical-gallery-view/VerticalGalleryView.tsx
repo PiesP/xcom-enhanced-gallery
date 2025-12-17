@@ -337,7 +337,6 @@ function VerticalGalleryViewCore({
                 registerContainer={(element: HTMLElement | null) =>
                   focus.registerItem(actualIndex, element)
                 }
-                {...(onDownloadCurrent ? { onDownload: handleDownloadCurrent } : {})}
                 onFocus={() => focus.handleItemFocus(actualIndex)}
               />
             );

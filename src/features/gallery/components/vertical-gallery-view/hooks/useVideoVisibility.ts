@@ -14,11 +14,19 @@ import { createEffect, onCleanup } from 'solid-js';
  */
 export interface UseVideoVisibilityOptions {
   /** Container element accessor */
-  readonly container: () => HTMLDivElement | null;
+  readonly container: () => HTMLElement | null;
   /** Video element accessor */
   readonly video: () => HTMLVideoElement | null;
   /** Whether this is a video media item */
   readonly isVideo: boolean;
+
+  /**
+   * Optional hook invoked immediately before mutating `video.muted`.
+   *
+   * This is useful for consumers that persist volume/mute state and need to
+   * ignore synthetic `volumechange` events triggered by programmatic updates.
+   */
+  readonly onBeforeMutedChange?: (video: HTMLVideoElement, nextMuted: boolean) => void;
 }
 
 /**
@@ -33,7 +41,7 @@ export interface UseVideoVisibilityOptions {
  * @param options - Hook configuration
  */
 export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
-  const { container, video, isVideo } = options;
+  const { container, video, isVideo, onBeforeMutedChange } = options;
 
   // Playback state preservation
   let wasPlayingBeforeHidden = false;
@@ -51,22 +59,6 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
       unsubscribeObserver();
     }
   };
-
-  // Initial mute effect
-  createEffect(() => {
-    if (!isVideo) {
-      return;
-    }
-
-    const videoEl = video();
-    if (videoEl && typeof videoEl.muted === 'boolean') {
-      try {
-        videoEl.muted = true;
-      } catch (err) {
-        logger.warn('Failed to mute video', { error: err });
-      }
-    }
-  });
 
   // Visibility-based playback control
   createEffect(() => {
@@ -99,6 +91,7 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
         try {
           wasPlayingBeforeHidden = !videoEl.paused;
           wasMutedBeforeHidden = videoEl.muted;
+          onBeforeMutedChange?.(videoEl, true);
           videoEl.muted = true;
           if (!videoEl.paused) {
             pauseVideo();
@@ -110,6 +103,7 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
         // Scrolled into view - restore state
         try {
           if (wasMutedBeforeHidden !== null) {
+            onBeforeMutedChange?.(videoEl, wasMutedBeforeHidden);
             videoEl.muted = wasMutedBeforeHidden;
           }
           if (wasPlayingBeforeHidden) {

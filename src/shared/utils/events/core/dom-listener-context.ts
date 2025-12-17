@@ -14,8 +14,8 @@ export interface DOMListenerContext {
   id: string;
   element: EventTarget;
   type: string;
-  listener: EventListener;
-  options?: AddEventListenerOptions | undefined;
+  listener: EventListenerOrEventListenerObject;
+  options?: boolean | AddEventListenerOptions | undefined;
   context?: string | undefined;
   created: number;
 }

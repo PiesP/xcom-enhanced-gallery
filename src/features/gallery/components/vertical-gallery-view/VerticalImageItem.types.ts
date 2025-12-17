@@ -44,7 +44,6 @@ export type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
  *
  * **Callbacks**:
  * - {@link VerticalImageItemProps.onClick} - Item click handler
- * - {@link VerticalImageItemProps.onDownload} - Download button handler
  * - {@link VerticalImageItemProps.onMediaLoad} - Media load completion
  * - {@link VerticalImageItemProps.onImageContextMenu} - Right-click handler
  *
@@ -105,12 +104,6 @@ export interface VerticalImageItemProps extends BaseComponentProps {
   readonly onClick: () => void;
 
   /**
-   * Callback invoked when download button is clicked
-   * @optional
-   */
-  readonly onDownload?: () => void;
-
-  /**
    * Image fit mode: how to scale image to container
    * @optional
    * @default undefined (use component default)
@@ -144,7 +137,7 @@ export interface VerticalImageItemProps extends BaseComponentProps {
    * @param element - Container div element or null on unmount
    * @optional
    */
-  readonly registerContainer?: (element: HTMLDivElement | null) => void;
+  readonly registerContainer?: (element: HTMLElement | null) => void;
 
   /**
    * Test identifier for automated testing

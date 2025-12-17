@@ -63,7 +63,7 @@ export class PersistentStorage {
       return value;
     }
 
-    return JSON.stringify(value) as string | undefined;
+    return JSON.stringify(value);
   }
 
   /**
@@ -90,7 +90,7 @@ export class PersistentStorage {
         return;
       }
 
-      const serialized = JSON.stringify(value) as string | undefined;
+      const serialized = JSON.stringify(value);
 
       if (serialized === undefined) {
         logger.warn(

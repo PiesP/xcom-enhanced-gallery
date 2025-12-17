@@ -6,7 +6,8 @@
  * @description Individual media item styles with fit modes and interactions
  *
  * **Design System**:
- * - All colors, spacing, sizing use CSS custom properties (--xeg-* design tokens)
+ * - Prefer --xeg-* design tokens for colors/spacing/sizing
+ * - Some shared semantic tokens are currently exposed as --color-* (legacy / shared UI)
  * - No hardcoded values
  * - Flat surfaces focused on border contrast (no blur)
  * - Responsive fit modes for different image dimensions
@@ -118,9 +119,8 @@
   align-items: center;
 }
 
-/* fitOriginal mode: Expand container to fit original image size without constraints */
-.imageWrapper:has(.image.fitOriginal),
-.imageWrapper:has(.video.fitOriginal) {
+/* fitOriginal mode: Expand container to fit original media size without constraints */
+.container[data-fit-mode="original"] .imageWrapper {
   width: auto;
   /* No max-width constraint - allow full original size with horizontal scroll */
   max-width: none;
@@ -295,7 +295,7 @@
   align-items: center;
   justify-content: center;
   background: var(--color-error-bg);
-  color: var(--color-error);
+  color: var(--xeg-color-error, var(--color-error));
   min-height: var(--xeg-spacing-3xl);
 }
 

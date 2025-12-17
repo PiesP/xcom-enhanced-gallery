@@ -43,8 +43,8 @@ function generateListenerId(ctx?: string): string {
 export function addListener(
   element: EventTarget,
   type: string,
-  listener: EventListener,
-  options?: AddEventListenerOptions,
+  listener: EventListenerOrEventListenerObject,
+  options?: boolean | AddEventListenerOptions,
   context?: string
 ): string {
   const id = generateListenerId(context);
