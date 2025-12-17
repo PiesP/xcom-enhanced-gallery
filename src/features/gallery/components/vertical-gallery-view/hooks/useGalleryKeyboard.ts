@@ -3,12 +3,12 @@
  * Licensed under the MIT License
  *
  * @fileoverview Gallery Keyboard Event Hook
- * @description Manages keyboard navigation for gallery view (Esc key to close, Help overlay toggle)
+ * @description Manages keyboard navigation for the gallery view (Escape to close)
  * @module features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard
  *
  * **Responsibilities**:
- * - Subscribe to keyboard events (Escape, Help)
- * - Execute callbacks (onClose, onOpenHelp)
+ * - Subscribe to keyboard events (Escape)
+ * - Execute callbacks (onClose)
  * - Clean up subscriptions on component unmount
  *
  * **API**:
@@ -37,14 +37,12 @@ export interface UseGalleryKeyboardOptions {
  *
  * **Features**:
  * - Handles Escape key (close gallery)
- * - Handles Help key (show keyboard shortcuts overlay)
  * - Auto-cleanup on component unmount
  *
  * **Usage**:
  * ```tsx
  * useGalleryKeyboard({
  *   onClose: () => setGalleryVisible(false),
- *   onOpenHelp: () => setHelpVisible(true),
  * });
  * ```
  *

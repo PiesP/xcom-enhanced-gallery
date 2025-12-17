@@ -162,23 +162,12 @@ function VerticalGalleryViewCore({
       return;
     }
 
-    // Ignore clicks on toolbar and toolbar hover zone using data attributes (production-safe)
-    if (
-      target.closest('[data-role="toolbar"]') ||
-      target.closest('[data-role="toolbar-hover-zone"]') ||
-      target.closest('[data-gallery-element="toolbar"]') ||
-      target.closest('[data-gallery-element]')
-    ) {
-      return;
-    }
+    // Ignore clicks on interactive zones and gallery content (production-safe selectors).
+    // Keeping this as a single selector avoids repeated closest() traversals.
+    const ignoreSelector =
+      '[data-role="toolbar"], [data-role="toolbar-hover-zone"], [data-gallery-element], [data-xeg-role="gallery-item"], [data-xeg-role="scroll-spacer"]';
 
-    // Ignore clicks on gallery items (images/videos) - use data attributes for production safety
-    if (target.closest('[data-xeg-role="gallery-item"]')) {
-      return;
-    }
-
-    // Ignore clicks on scroll spacer
-    if (target.closest('[data-xeg-role="scroll-spacer"]')) {
+    if (target.closest(ignoreSelector)) {
       return;
     }
 

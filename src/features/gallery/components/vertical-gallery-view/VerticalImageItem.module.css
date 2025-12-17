@@ -121,9 +121,9 @@
 }
 
 .container[data-media-loaded="false"] .imageWrapper {
-  min-height: var(--xeg-spacing-3xl, 3rem);
+  min-height: var(--xeg-spacing-3xl);
   /* CLS: Reserve default aspect ratio for initial layout stability */
-  aspect-ratio: var(--xeg-aspect-default, 4 / 3);
+  aspect-ratio: var(--xeg-aspect-default);
 }
 
 .placeholder {
@@ -137,7 +137,7 @@
   justify-content: center;
   /* Skeleton: Use tokenized background/motion */
   background: var(--xeg-skeleton-bg);
-  min-height: var(--xeg-spacing-3xl, 3rem);
+  min-height: var(--xeg-spacing-3xl);
 }
 
 .loadingSpinner {
@@ -196,8 +196,8 @@
 :is(.image, .video).fitHeight {
   inline-size: auto;
   block-size: auto;
-  max-inline-size: calc(100vw - var(--xeg-spacing-lg, 1.5rem) * 2);
-  max-block-size: var(--xeg-viewport-height-constrained, 90vh);
+  max-inline-size: calc(100vw - var(--xeg-spacing-lg) * 2);
+  max-block-size: var(--xeg-viewport-height-constrained);
   object-fit: scale-down;
 }
 
@@ -205,7 +205,7 @@
   inline-size: auto;
   block-size: auto;
   max-inline-size: 100%;
-  max-block-size: var(--xeg-viewport-height-constrained, 90vh);
+  max-block-size: var(--xeg-viewport-height-constrained);
   object-fit: contain;
 }
 
@@ -256,7 +256,7 @@
   max-inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
   max-block-size: min(
     var(--xeg-gallery-item-intrinsic-height, var(--xeg-spacing-5xl)),
-    var(--xeg-viewport-height-constrained, 90vh)
+    var(--xeg-viewport-height-constrained)
   );
 }
 
@@ -266,7 +266,7 @@
   max-inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
   max-block-size: min(
     var(--xeg-gallery-item-intrinsic-height, var(--xeg-spacing-5xl)),
-    var(--xeg-viewport-height-constrained, 90vh)
+    var(--xeg-viewport-height-constrained)
   );
 }
 
@@ -274,7 +274,7 @@
 .container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitContainer"] {
   --xeg-gallery-fit-height-target: min(
     var(--xeg-gallery-item-intrinsic-height, var(--xeg-spacing-5xl)),
-    var(--xeg-viewport-height-constrained, 90vh)
+    var(--xeg-viewport-height-constrained)
   );
 
   max-block-size: var(--xeg-gallery-fit-height-target);

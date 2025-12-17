@@ -92,10 +92,17 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const lang = getLanguageService();
 
-  const isVideo = isVideoMedia(local.media);
+  const isVideo = createMemo(() => isVideoMedia(local.media));
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
   const [isVisible, setIsVisible] = createSignal(forceVisible());
+
+  // Reset per-media load/error state when the item is reused with a different media.
+  createEffect(() => {
+    void local.media.url;
+    setIsLoaded(false);
+    setIsError(false);
+  });
 
   const [containerRef, setContainerRef] = createSignal<HTMLDivElement | null>(null);
   const [imageRef, setImageRef] = createSignal<HTMLImageElement | null>(null);
@@ -131,9 +138,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     container: containerRef,
     video: videoRef,
     isVideo,
-    onBeforeMutedChange: (videoEl, nextMuted) => {
-      volumeChangeGuard.markProgrammaticChange({ volume: videoEl.volume, muted: nextMuted });
-    },
+    setMuted: applyMutedProgrammatically,
   });
 
   // Video volume settings (persisted across sessions)
@@ -152,7 +157,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   // Apply saved volume/muted state when video element is ready
   createEffect(() => {
     const video = videoRef();
-    if (video && isVideo) {
+    if (video && isVideo()) {
       // Apply persisted state while preventing the volumechange handler from
       // reacting to our programmatic assignment. We set both properties under
       // a guard so any intermediate events are ignored.
@@ -210,14 +215,10 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   };
 
   // Event handlers
-  const handleClick = () => {
+  const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
+    event.stopPropagation();
     containerRef()?.focus?.({ preventScroll: true });
     local.onClick();
-  };
-
-  const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
-    (event as MouseEvent).stopPropagation();
-    handleClick();
   };
 
   const handleMediaLoad = () => {
@@ -277,7 +278,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       return;
     }
 
-    if (isVideo) {
+    if (isVideo()) {
       const video = videoRef();
       if (video && video.readyState >= 1) {
         handleMediaLoad();
@@ -349,13 +350,13 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     >
       {isVisible() && (
         <div class={styles.imageWrapper} data-xeg-role="media-wrapper">
-          {!isLoaded() && !isError() && !isVideo && (
+          {!isLoaded() && !isError() && !isVideo() && (
             <div class={styles.placeholder}>
               <div class={cx('xeg-spinner', styles.loadingSpinner)} />
             </div>
           )}
 
-          {isVideo ? (
+          {isVideo() ? (
             <video
               src={local.media.url}
               controls
@@ -374,12 +375,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             <img
               ref={setImageRef}
               src={local.media.url}
-              alt={
-                cleanFilename(local.media.filename) ||
-                lang.translate('messages.gallery.failedToLoadImage', {
-                  type: 'image',
-                })
-              }
+              alt={cleanFilename(local.media.filename)}
               loading="lazy"
               decoding="async"
               class={cx(styles.image, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
@@ -396,7 +392,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
               <span class={styles.errorIcon}>⚠️</span>
               <span class={styles.errorText}>
                 {lang.translate('messages.gallery.failedToLoadImage', {
-                  type: isVideo ? 'video' : 'image',
+                  type: isVideo() ? 'video' : 'image',
                 })}
               </span>
             </div>

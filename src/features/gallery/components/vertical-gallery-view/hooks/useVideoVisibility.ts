@@ -7,6 +7,7 @@
 
 import { logger } from '@shared/logging';
 import { SharedObserver } from '@shared/utils/performance';
+import type { Accessor } from 'solid-js';
 import { createEffect, onCleanup } from 'solid-js';
 
 /**
@@ -18,20 +19,20 @@ export interface UseVideoVisibilityOptions {
   /** Video element accessor */
   readonly video: () => HTMLVideoElement | null;
   /** Whether this is a video media item */
-  readonly isVideo: boolean;
+  readonly isVideo: Accessor<boolean>;
 
   /**
-   * Optional hook invoked immediately before mutating `video.muted`.
+   * Optional setter used when mutating `video.muted`.
    *
-   * This is useful for consumers that persist volume/mute state and need to
-   * ignore synthetic `volumechange` events triggered by programmatic updates.
+   * Consumers that persist volume/mute state can use this to mark programmatic
+   * changes (e.g., to ignore synthetic `volumechange` events).
    */
-  readonly onBeforeMutedChange?: (video: HTMLVideoElement, nextMuted: boolean) => void;
+  readonly setMuted?: (video: HTMLVideoElement, nextMuted: boolean) => void;
 }
 
 interface CreateVideoVisibilityControllerOptions {
   readonly video: HTMLVideoElement;
-  readonly onBeforeMutedChange?: (video: HTMLVideoElement, nextMuted: boolean) => void;
+  readonly setMuted?: (video: HTMLVideoElement, nextMuted: boolean) => void;
 }
 
 interface VideoVisibilityController {
@@ -41,7 +42,7 @@ interface VideoVisibilityController {
 function createVideoVisibilityController(
   options: CreateVideoVisibilityControllerOptions
 ): VideoVisibilityController {
-  const { video, onBeforeMutedChange } = options;
+  const { video, setMuted } = options;
 
   // Playback state preservation
   let wasPlayingBeforeHidden = false;
@@ -73,6 +74,14 @@ function createVideoVisibilityController(
     }
   };
 
+  const applyMuted = (nextMuted: boolean) => {
+    if (typeof setMuted === 'function') {
+      setMuted(video, nextMuted);
+      return;
+    }
+    video.muted = nextMuted;
+  };
+
   return {
     handleEntry(entry) {
       if (!entry.isIntersecting) {
@@ -87,8 +96,7 @@ function createVideoVisibilityController(
           }
 
           if (!video.muted) {
-            onBeforeMutedChange?.(video, true);
-            video.muted = true;
+            applyMuted(true);
           }
 
           if (!video.paused) {
@@ -102,8 +110,7 @@ function createVideoVisibilityController(
         try {
           if (wasMutedBeforeHidden !== null) {
             if (video.muted !== wasMutedBeforeHidden) {
-              onBeforeMutedChange?.(video, wasMutedBeforeHidden);
-              video.muted = wasMutedBeforeHidden;
+              applyMuted(wasMutedBeforeHidden);
             }
           }
 
@@ -140,11 +147,11 @@ export function createVideoVisibilityControllerForTests(
  * @param options - Hook configuration
  */
 export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
-  const { container, video, isVideo, onBeforeMutedChange } = options;
+  const { container, video, isVideo, setMuted } = options;
 
   // Visibility-based playback control
   createEffect(() => {
-    if (!isVideo) {
+    if (!isVideo()) {
       return;
     }
 
@@ -156,14 +163,7 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
     }
 
     const controller = createVideoVisibilityController(
-      onBeforeMutedChange
-        ? {
-            video: videoEl,
-            onBeforeMutedChange,
-          }
-        : {
-            video: videoEl,
-          }
+      typeof setMuted === 'function' ? { video: videoEl, setMuted } : { video: videoEl }
     );
 
     const unsubscribeObserver = SharedObserver.observe(containerEl, controller.handleEntry, {
