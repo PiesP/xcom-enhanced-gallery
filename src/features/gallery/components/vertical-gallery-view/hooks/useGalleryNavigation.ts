@@ -11,10 +11,9 @@ import {
   galleryIndexEvents,
 } from '@shared/state/signals/gallery.signals';
 import type { NavigationTrigger } from '@shared/state/signals/navigation.state';
-import { createEffect, createSignal, on, onCleanup } from 'solid-js';
+import { type Accessor, createEffect, createSignal, on, onCleanup } from 'solid-js';
 
-type Accessor<T> = () => T;
-type Cleanup = () => void;
+type Cleanup = VoidFunction;
 
 /**
  * Options for gallery navigation hook

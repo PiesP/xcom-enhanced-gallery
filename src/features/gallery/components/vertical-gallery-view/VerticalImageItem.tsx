@@ -234,8 +234,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
     event.stopPropagation();
 
-    // Avoid stealing focus from native video controls. When the click originates from the
-    // <video> element or its (shadow) controls, let the browser keep focus on the video.
     if (isVideo()) {
       const video = videoRef();
       if (video) {
@@ -245,21 +243,32 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
         const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
         const pathIncludesVideo = Array.isArray(path) && path.includes(video);
 
-        if (!targetInVideo && !pathIncludesVideo) {
-          containerRef()?.focus?.({ preventScroll: true });
+        // If the click originated from the <video> element or its native controls,
+        // do not trigger item activation. This prevents nested interaction conflicts
+        // between the gallery item click handler and native video controls.
+        if (targetInVideo || pathIncludesVideo) {
+          return;
         }
-      } else {
-        containerRef()?.focus?.({ preventScroll: true });
       }
-    } else {
+
+      // Click outside the video element: treat as item activation.
       containerRef()?.focus?.({ preventScroll: true });
+      local.onClick();
+      return;
     }
+
+    containerRef()?.focus?.({ preventScroll: true });
     local.onClick();
   };
 
   const handleContainerKeyDown: JSX.EventHandlerUnion<HTMLDivElement, KeyboardEvent> = (event) => {
     if (typeof local.onKeyDown === 'function') {
       (local.onKeyDown as (event: KeyboardEvent) => void)(event);
+      return;
+    }
+
+    // Only provide default activation semantics when the container is explicitly a button.
+    if ((local.role ?? (isVideo() ? 'group' : 'button')) !== 'button') {
       return;
     }
 
@@ -278,7 +287,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     if (!isLoaded()) {
       setIsLoaded(true);
       setIsError(false);
-      local.onMediaLoad?.(local.media.url, local.index);
+      local.onMediaLoad?.(local.media.id, local.index);
     }
   };
 
@@ -339,7 +348,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     } else {
       const image = imageRef();
       if (image?.complete) {
-        handleMediaLoad();
+        // `HTMLImageElement.complete` can be true even on failed loads (naturalWidth === 0).
+        if (image.naturalWidth > 0) {
+          handleMediaLoad();
+        } else {
+          handleMediaError();
+        }
       }
     }
   });
@@ -373,6 +387,18 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     local.registerContainer?.(element);
   };
 
+  const defaultContainerRole = createMemo(() => (isVideo() ? 'group' : 'button'));
+  const resolvedContainerRole = createMemo(
+    () => (local.role ?? defaultContainerRole()) as JSX.HTMLAttributes<HTMLDivElement>['role']
+  );
+
+  const defaultAriaLabel = createMemo(() =>
+    lang.translate('messages.gallery.mediaItemLabel', {
+      index: local.index + 1,
+      filename: cleanFilename(local.media.filename),
+    })
+  );
+
   return (
     <div
       {...rest}
@@ -393,11 +419,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       onFocus={local.onFocus as (event: FocusEvent) => void}
       onBlur={local.onBlur as (event: FocusEvent) => void}
       onKeyDown={handleContainerKeyDown}
-      aria-label={
-        local['aria-label'] || `Media ${local.index + 1}: ${cleanFilename(local.media.filename)}`
-      }
+      aria-label={local['aria-label'] || defaultAriaLabel()}
       aria-describedby={local['aria-describedby']}
-      role={(local.role || 'button') as JSX.HTMLAttributes<HTMLDivElement>['role']}
+      role={resolvedContainerRole()}
       tabIndex={local.tabIndex ?? 0}
       data-testid={local['data-testid']}
     >
@@ -415,7 +439,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
               controls
               ref={setVideoRef}
               class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
-              data-fit-mode={resolvedFitMode()}
               onLoadedMetadata={handleMediaLoad}
               onLoadedData={handleMediaLoad}
               onCanPlay={handleMediaLoad}
@@ -432,7 +455,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
               loading="lazy"
               decoding="async"
               class={cx(styles.image, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
-              data-fit-mode={resolvedFitMode()}
               onLoad={handleMediaLoad}
               onError={handleMediaError}
               onContextMenu={handleContextMenu}

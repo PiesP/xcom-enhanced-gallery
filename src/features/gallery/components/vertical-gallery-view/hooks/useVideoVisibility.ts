@@ -47,6 +47,7 @@ function createVideoVisibilityController(
   // Playback state preservation
   let wasPlayingBeforeHidden = false;
   let wasMutedBeforeHidden: boolean | null = null;
+  let didAutoMute = false;
 
   const pauseVideo = () => {
     if (typeof video.pause === 'function') {
@@ -93,10 +94,12 @@ function createVideoVisibilityController(
           if (wasMutedBeforeHidden === null) {
             wasPlayingBeforeHidden = !video.paused;
             wasMutedBeforeHidden = video.muted;
+            didAutoMute = false;
           }
 
           if (!video.muted) {
             applyMuted(true);
+            didAutoMute = true;
           }
 
           if (!video.paused) {
@@ -109,8 +112,11 @@ function createVideoVisibilityController(
         // Scrolled into view - restore state
         try {
           if (wasMutedBeforeHidden !== null) {
-            if (video.muted !== wasMutedBeforeHidden) {
-              applyMuted(wasMutedBeforeHidden);
+            // Only restore the muted state if *we* auto-muted the video.
+            // This avoids overwriting external state changes that may happen
+            // while the item is hidden (e.g., user toggles a global mute setting).
+            if (didAutoMute && video.muted === true && wasMutedBeforeHidden === false) {
+              applyMuted(false);
             }
           }
 
@@ -122,6 +128,7 @@ function createVideoVisibilityController(
         } finally {
           wasPlayingBeforeHidden = false;
           wasMutedBeforeHidden = null;
+          didAutoMute = false;
         }
       }
     },

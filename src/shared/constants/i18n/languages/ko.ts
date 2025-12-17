@@ -69,6 +69,7 @@ export const ko: LanguageStrings = {
     gallery: {
       emptyTitle: '미디어 없음',
       emptyDescription: '표시할 이미지 또는 동영상이 없습니다.',
+      mediaItemLabel: '미디어 {index}: {filename}',
       failedToLoadImage: '{type} 로드 실패',
     },
   },

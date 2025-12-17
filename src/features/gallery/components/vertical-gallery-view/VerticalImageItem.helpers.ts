@@ -29,8 +29,8 @@ const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi'] as const;
  * 2. Removes /media/ prefix if present
  * 3. Removes relative path prefix (./)
  * 4. If path separators exist, keeps only the last path segment
- * 5. Truncates long filenames (>40 chars) to the last valid component
- * 6. Falls back to "Untitled" when the input is missing; uses "Image" as a truncation fallback
+ * 5. Truncates long filenames (>40 chars) by preserving the extension and inserting "..." in the middle
+ * 6. Falls back to "Untitled" when the input is missing; uses "Image" when the cleaned result is empty
  *
  * **Examples**:
  * - `twitter_media_20240101T120000_12345.jpg` → filename without prefix
@@ -56,6 +56,34 @@ export function cleanFilename(filename?: string): string {
     return 'Untitled';
   }
 
+  const MAX_LENGTH = 40;
+  const TRUNCATION_MARKER = '...';
+
+  const truncateMiddlePreservingExtension = (value: string): string => {
+    if (value.length <= MAX_LENGTH) {
+      return value;
+    }
+
+    // Keep a short extension if present (e.g., ".jpg").
+    // Limit the extension length to avoid pathological cases.
+    const extensionMatch = value.match(/(\.[^./\\]{1,10})$/);
+    const extension = extensionMatch?.[1] ?? '';
+    const base = extension ? value.slice(0, -extension.length) : value;
+
+    const available = MAX_LENGTH - extension.length - TRUNCATION_MARKER.length;
+    if (available <= 1) {
+      return value.slice(0, MAX_LENGTH);
+    }
+
+    const headLen = Math.max(1, Math.floor(available / 2));
+    const tailLen = Math.max(1, available - headLen);
+
+    const head = base.slice(0, headLen);
+    const tail = base.slice(Math.max(0, base.length - tailLen));
+
+    return `${head}${TRUNCATION_MARKER}${tail}${extension}`;
+  };
+
   let cleaned = filename
     .replace(/^twitter_media_\d{8}T\d{6}_/, '')
     .replace(/^\/media\//, '')
@@ -74,13 +102,12 @@ export function cleanFilename(filename?: string): string {
     cleaned = '';
   }
 
-  if (cleaned.length > 40 || !cleaned) {
-    // Prefer last path segment (including extension if any) when truncating
-    const match = filename.match(/([^/\\]+)$/);
-    cleaned = match?.[1] ?? 'Image';
+  cleaned = cleaned.trim();
+  if (!cleaned) {
+    return 'Image';
   }
 
-  return cleaned;
+  return truncateMiddlePreservingExtension(cleaned);
 }
 
 /**

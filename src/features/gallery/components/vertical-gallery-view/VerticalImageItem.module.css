@@ -296,13 +296,6 @@
 /* Container width now fits content by default - no forced 100% width needed */
 /* Removed: .container:not([data-fit-mode="original"]) forced full width */
 
-/* Phase 58: Removed unused styles after removing the download button */
-/*
-.downloadButton {
-  pointer-events: auto;
-}
-*/
-
 /* Phase 254: Reduced motion is handled via semantic --xeg-transition-* tokens */
 /* Keep will-change set to auto as a performance default */
 @media (prefers-reduced-motion: reduce) {

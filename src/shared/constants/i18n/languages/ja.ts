@@ -69,6 +69,7 @@ export const ja: LanguageStrings = {
     gallery: {
       emptyTitle: 'メディアがありません',
       emptyDescription: '表示する画像や動画がありません。',
+      mediaItemLabel: 'メディア {index}: {filename}',
       failedToLoadImage: '{type} の読み込みに失敗しました',
     },
   },

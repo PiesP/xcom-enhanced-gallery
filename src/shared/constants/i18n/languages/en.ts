@@ -69,6 +69,7 @@ export const en: LanguageStrings = {
     gallery: {
       emptyTitle: 'No media available',
       emptyDescription: 'There are no images or videos to display.',
+      mediaItemLabel: 'Media {index}: {filename}',
       failedToLoadImage: 'Failed to load {type}',
     },
   },

@@ -71,7 +71,8 @@ export function useToolbarAutoHide(options: UseToolbarAutoHideOptions): UseToolb
     setIsInitialToolbarVisible(true);
 
     // Get auto-hide delay from settings (default 3s)
-    const autoHideDelay = getTypedSettingOr('toolbar.autoHideDelay', 3000);
+    const rawAutoHideDelay = getTypedSettingOr('toolbar.autoHideDelay', 3000);
+    const autoHideDelay = Math.max(0, typeof rawAutoHideDelay === 'number' ? rawAutoHideDelay : 0);
 
     // If delay is 0, hide immediately
     if (autoHideDelay === 0) {

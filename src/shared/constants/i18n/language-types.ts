@@ -73,6 +73,7 @@ export interface LanguageStrings {
     readonly gallery: {
       readonly emptyTitle: string;
       readonly emptyDescription: string;
+      readonly mediaItemLabel: string;
       readonly failedToLoadImage: string;
     };
   };
