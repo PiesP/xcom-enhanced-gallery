@@ -35,7 +35,12 @@ import { cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, onCleanup, splitProps, untrack } from 'solid-js';
 import { useVideoVisibility } from './hooks/useVideoVisibility';
 import { createVideoVolumeChangeGuard } from './utils/video-volume-change-guard';
-import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
+import {
+  cleanFilename,
+  isVideoMedia,
+  normalizeVideoMutedSetting,
+  normalizeVideoVolumeSetting,
+} from './VerticalImageItem.helpers';
 import styles from './VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from './VerticalImageItem.types';
 
@@ -132,8 +137,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   });
 
   // Video volume settings (persisted across sessions)
-  const [videoVolume, setVideoVolume] = createSignal(getTypedSettingOr('gallery.videoVolume', 1.0));
-  const [videoMuted, setVideoMuted] = createSignal(getTypedSettingOr('gallery.videoMuted', false));
+  const [videoVolume, setVideoVolume] = createSignal(
+    normalizeVideoVolumeSetting(getTypedSettingOr('gallery.videoVolume', 1.0), 1.0)
+  );
+  const [videoMuted, setVideoMuted] = createSignal(
+    normalizeVideoMutedSetting(getTypedSettingOr('gallery.videoMuted', false), false)
+  );
 
   // Guard to prevent handling synthetic volumechange events triggered by us when
   // programmatically applying persisted settings. This avoids races where the event
@@ -150,8 +159,19 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       isApplyingVideoSettings = true;
       try {
         untrack(() => {
-          applyMutedProgrammatically(video, videoMuted());
-          applyVolumeProgrammatically(video, videoVolume());
+          const nextMuted = normalizeVideoMutedSetting(videoMuted(), false);
+          const nextVolume = normalizeVideoVolumeSetting(videoVolume(), 1.0);
+
+          // Keep the signals normalized as well.
+          if (nextMuted !== videoMuted()) {
+            setVideoMuted(nextMuted);
+          }
+          if (nextVolume !== videoVolume()) {
+            setVideoVolume(nextVolume);
+          }
+
+          applyMutedProgrammatically(video, nextMuted);
+          applyVolumeProgrammatically(video, nextVolume);
         });
       } finally {
         isApplyingVideoSettings = false;
@@ -178,8 +198,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     if (isApplyingVideoSettings || volumeChangeGuard.shouldIgnoreChange(snapshot)) {
       return;
     }
-    const newVolume = snapshot.volume;
-    const newMuted = snapshot.muted;
+    const newVolume = normalizeVideoVolumeSetting(snapshot.volume, 1.0);
+    const newMuted = normalizeVideoMutedSetting(snapshot.muted, false);
 
     // Update local signals immediately for responsive UI
     setVideoVolume(newVolume);
@@ -289,12 +309,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       styles.container,
       local.isActive ? styles.active : undefined,
       isFocused() ? styles.focused : undefined,
-      fitModeClass(),
       className()
     )
   );
-
-  const imageClasses = createMemo(() => cx(styles.image, fitModeClass()));
 
   // Accessibility props
   const assignContainerRef = (element: HTMLDivElement | null) => {
@@ -309,7 +326,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       class={containerClasses()}
       data-xeg-role="gallery-item"
       data-index={local.index}
-      data-item-index={local.index}
       data-fit-mode={resolvedFitMode()}
       data-media-loaded={isLoaded() ? 'true' : 'false'}
       data-has-intrinsic-size={hasIntrinsicSize() ? 'true' : undefined}
@@ -342,7 +358,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
           {isVideo ? (
             <video
               src={local.media.url}
-              autoplay={false}
               controls
               ref={setVideoRef}
               class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
@@ -367,7 +382,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
               }
               loading="lazy"
               decoding="async"
-              class={cx(imageClasses(), isLoaded() ? styles.loaded : styles.loading)}
+              class={cx(styles.image, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
               data-fit-mode={resolvedFitMode()}
               onLoad={handleMediaLoad}
               onError={handleMediaError}

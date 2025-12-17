@@ -31,9 +31,7 @@ export interface UseVideoVisibilityOptions {
 
 interface CreateVideoVisibilityControllerOptions {
   readonly video: HTMLVideoElement;
-  readonly onBeforeMutedChange?:
-    | ((video: HTMLVideoElement, nextMuted: boolean) => void)
-    | undefined;
+  readonly onBeforeMutedChange?: (video: HTMLVideoElement, nextMuted: boolean) => void;
 }
 
 interface VideoVisibilityController {
@@ -143,19 +141,6 @@ export function createVideoVisibilityControllerForTests(
  */
 export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
   const { container, video, isVideo, onBeforeMutedChange } = options;
-  let unsubscribeObserver: (() => void) | undefined;
-  let hasRunUnsubscribe = false;
-
-  const runUnsubscribe = () => {
-    if (hasRunUnsubscribe) {
-      return;
-    }
-
-    hasRunUnsubscribe = true;
-    if (typeof unsubscribeObserver === 'function') {
-      unsubscribeObserver();
-    }
-  };
 
   // Visibility-based playback control
   createEffect(() => {
@@ -170,17 +155,24 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
       return;
     }
 
-    const controller = createVideoVisibilityController({
-      video: videoEl,
-      onBeforeMutedChange,
-    });
+    const controller = createVideoVisibilityController(
+      onBeforeMutedChange
+        ? {
+            video: videoEl,
+            onBeforeMutedChange,
+          }
+        : {
+            video: videoEl,
+          }
+    );
 
-    hasRunUnsubscribe = false;
-    unsubscribeObserver = SharedObserver.observe(containerEl, controller.handleEntry, {
+    const unsubscribeObserver = SharedObserver.observe(containerEl, controller.handleEntry, {
       threshold: 0,
       rootMargin: '0px',
     });
 
-    onCleanup(runUnsubscribe);
+    onCleanup(() => {
+      unsubscribeObserver();
+    });
   });
 }

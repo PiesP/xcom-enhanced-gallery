@@ -59,7 +59,7 @@ export function cleanFilename(filename?: string): string {
   let cleaned = filename
     .replace(/^twitter_media_\d{8}T\d{6}_/, '')
     .replace(/^\/media\//, '')
-    .replace(/^\.\//g, '');
+    .replace(/^\.\//, '');
 
   // If there are path separators, prefer the last path segment (e.g., path/to/file.png -> file.png)
   const lastSegment = cleaned.split(/[\\/]/).pop();
@@ -81,6 +81,51 @@ export function cleanFilename(filename?: string): string {
   }
 
   return cleaned;
+}
+
+/**
+ * Normalize persisted video volume setting.
+ *
+ * The stored value may be corrupted (e.g. string, NaN, out-of-range).
+ * This function ensures the returned value is always a finite number in [0, 1].
+ */
+export function normalizeVideoVolumeSetting(value: unknown, fallback = 1.0): number {
+  const candidate =
+    typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
+
+  if (!Number.isFinite(candidate)) {
+    return fallback;
+  }
+
+  return Math.min(1.0, Math.max(0.0, candidate));
+}
+
+/**
+ * Normalize persisted video muted setting.
+ *
+ * The stored value may be corrupted (e.g. number or string values).
+ * This function ensures the returned value is always a boolean.
+ */
+export function normalizeVideoMutedSetting(value: unknown, fallback = false): boolean {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    return value !== 0;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1') {
+      return true;
+    }
+    if (normalized === 'false' || normalized === '0') {
+      return false;
+    }
+  }
+
+  return fallback;
 }
 
 /**

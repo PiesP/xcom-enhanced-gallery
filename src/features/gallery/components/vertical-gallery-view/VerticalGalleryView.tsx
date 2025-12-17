@@ -332,8 +332,6 @@ function VerticalGalleryViewCore({
                   styles.galleryItem,
                   actualIndex === currentIndex() && styles.itemActive
                 )}
-                data-index={actualIndex}
-                data-xeg-role="gallery-item"
                 registerContainer={(element: HTMLElement | null) =>
                   focus.registerItem(actualIndex, element)
                 }
