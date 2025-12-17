@@ -85,6 +85,119 @@ export interface LazyLoader<T> {
   readonly reset: () => void;
 }
 
+function createRetriableLoad<T>(
+  loadOnce: () => Promise<T>,
+  options: {
+    readonly retries: number;
+    readonly retryDelay: number;
+    readonly debug: boolean;
+    readonly retryLabel: string;
+  }
+): () => Promise<T> {
+  const { retries, retryDelay, debug, retryLabel } = options;
+
+  const run = async (attempt = 0): Promise<T> => {
+    try {
+      return await loadOnce();
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+
+      if (attempt < retries) {
+        if (debug) {
+          logger.debug(`[LazyLoader] Retry ${attempt + 1}/${retries} for ${retryLabel}`);
+        }
+        await asyncDelay(retryDelay);
+        return run(attempt + 1);
+      }
+
+      throw err;
+    }
+  };
+
+  return () => run(0);
+}
+
+function createLazyLoaderStateMachine<T>(
+  loadWithRetry: () => Promise<T>,
+  debugLabel: string,
+  options: LazyLoaderOptions
+): LazyLoader<T> {
+  const { debug = false, onError } = options;
+
+  let state: LazyState<T> = { status: 'idle' };
+
+  const startLoading = (cacheError: boolean): Promise<T> => {
+    // Return cached value
+    if (state.status === 'loaded') {
+      return Promise.resolve(state.value);
+    }
+
+    // Return in-flight promise
+    if (state.status === 'loading') {
+      return state.promise;
+    }
+
+    // Re-throw cached error
+    if (state.status === 'error') {
+      return Promise.reject(state.error);
+    }
+
+    // Start loading
+    if (debug) {
+      logger.debug(`[LazyLoader] Loading ${debugLabel}...`);
+    }
+
+    const promise = loadWithRetry().then(
+      (value) => {
+        state = { status: 'loaded', value };
+        if (debug) {
+          logger.debug(`[LazyLoader] Loaded ${debugLabel}`);
+        }
+        return value;
+      },
+      (error) => {
+        const err = error instanceof Error ? error : new Error(String(error));
+
+        if (cacheError) {
+          state = { status: 'error', error: err };
+          onError?.(err);
+        } else {
+          // Preload should not poison the loader state.
+          state = { status: 'idle' };
+        }
+
+        if (debug) {
+          logger.error(`[LazyLoader] Failed to load ${debugLabel}:`, err.message);
+        }
+
+        throw err;
+      }
+    );
+
+    state = { status: 'loading', promise };
+    return promise;
+  };
+
+  const load = async (): Promise<T> => {
+    return startLoading(true);
+  };
+
+  const isLoaded = (): boolean => state.status === 'loaded';
+
+  const preload = (): void => {
+    if (state.status === 'idle') {
+      // Preload should not poison the loader state on transient failures.
+      void startLoading(false).catch(() => {});
+    }
+  };
+
+  const reset = (): void => {
+    state = { status: 'idle' };
+  };
+
+  return { load, isLoaded, preload, reset };
+}
+
 /**
  * Creates a lazy loader for a dynamic import
  *
@@ -111,105 +224,28 @@ export function createLazyLoader<
   exportName: TExport,
   options: LazyLoaderOptions = {}
 ): LazyLoader<TModule[TExport]> {
-  const { retries = 0, retryDelay = 100, debug = false, onError } = options;
+  const { retries = 0, retryDelay = 100, debug = false } = options;
 
-  let state: LazyState<TModule[TExport]> = { status: 'idle' };
+  const exportLabel = `'${String(exportName)}'`;
+  const loadOnce = async (): Promise<TModule[TExport]> => {
+    const module = await importFn();
+    const exportValue = module[exportName];
 
-  const loadWithRetry = async (attempt = 0): Promise<TModule[TExport]> => {
-    try {
-      const module = await importFn();
-      const exportValue = module[exportName];
-
-      if (exportValue === undefined) {
-        throw new Error(`Export '${String(exportName)}' not found in module`);
-      }
-
-      return exportValue;
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-
-      if (attempt < retries) {
-        if (debug) {
-          logger.debug(`[LazyLoader] Retry ${attempt + 1}/${retries} for '${String(exportName)}'`);
-        }
-        await asyncDelay(retryDelay);
-        return loadWithRetry(attempt + 1);
-      }
-
-      throw err;
+    if (exportValue === undefined) {
+      throw new Error(`Export '${String(exportName)}' not found in module`);
     }
+
+    return exportValue;
   };
 
-  const startLoading = (cacheError: boolean): Promise<TModule[TExport]> => {
-    // Return cached value
-    if (state.status === 'loaded') {
-      return Promise.resolve(state.value);
-    }
+  const loadWithRetry = createRetriableLoad(loadOnce, {
+    retries,
+    retryDelay,
+    debug,
+    retryLabel: exportLabel,
+  });
 
-    // Return in-flight promise
-    if (state.status === 'loading') {
-      return state.promise;
-    }
-
-    // Re-throw cached error
-    if (state.status === 'error') {
-      return Promise.reject(state.error);
-    }
-
-    // Start loading
-    if (debug) {
-      logger.debug(`[LazyLoader] Loading '${String(exportName)}'...`);
-    }
-
-    const promise = loadWithRetry().then(
-      (value) => {
-        state = { status: 'loaded', value };
-        if (debug) {
-          logger.debug(`[LazyLoader] Loaded '${String(exportName)}'`);
-        }
-        return value;
-      },
-      (error) => {
-        const err = error instanceof Error ? error : new Error(String(error));
-
-        if (cacheError) {
-          state = { status: 'error', error: err };
-          onError?.(err);
-        } else {
-          // Preload should not poison the loader state.
-          state = { status: 'idle' };
-        }
-
-        if (debug) {
-          logger.error(`[LazyLoader] Failed to load '${String(exportName)}':`, err.message);
-        }
-
-        throw err;
-      }
-    );
-
-    state = { status: 'loading', promise };
-    return promise;
-  };
-
-  const load = async (): Promise<TModule[TExport]> => {
-    return startLoading(true);
-  };
-
-  const isLoaded = (): boolean => state.status === 'loaded';
-
-  const preload = (): void => {
-    if (state.status === 'idle') {
-      // Preload should not poison the loader state on transient failures.
-      void startLoading(false).catch(() => {});
-    }
-  };
-
-  const reset = (): void => {
-    state = { status: 'idle' };
-  };
-
-  return { load, isLoaded, preload, reset };
+  return createLazyLoaderStateMachine(loadWithRetry, exportLabel, options);
 }
 
 /**
@@ -232,94 +268,17 @@ export function createModuleLazyLoader<TModule>(
   importFn: () => Promise<TModule>,
   options: LazyLoaderOptions = {}
 ): LazyLoader<TModule> {
-  const { retries = 0, retryDelay = 100, debug = false, onError } = options;
+  const { retries = 0, retryDelay = 100, debug = false } = options;
 
-  let state: LazyState<TModule> = { status: 'idle' };
+  const moduleLabel = 'module';
+  const loadWithRetry = createRetriableLoad(importFn, {
+    retries,
+    retryDelay,
+    debug,
+    retryLabel: moduleLabel,
+  });
 
-  const loadWithRetry = async (attempt = 0): Promise<TModule> => {
-    try {
-      return await importFn();
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-
-      if (attempt < retries) {
-        if (debug) {
-          logger.debug(`[LazyLoader] Retry ${attempt + 1}/${retries} for module`);
-        }
-        await asyncDelay(retryDelay);
-        return loadWithRetry(attempt + 1);
-      }
-
-      throw err;
-    }
-  };
-
-  const startLoading = (cacheError: boolean): Promise<TModule> => {
-    if (state.status === 'loaded') {
-      return Promise.resolve(state.value);
-    }
-
-    if (state.status === 'loading') {
-      return state.promise;
-    }
-
-    if (state.status === 'error') {
-      return Promise.reject(state.error);
-    }
-
-    if (debug) {
-      logger.debug('[LazyLoader] Loading module...');
-    }
-
-    const promise = loadWithRetry().then(
-      (value) => {
-        state = { status: 'loaded', value };
-        if (debug) {
-          logger.debug('[LazyLoader] Module loaded');
-        }
-        return value;
-      },
-      (error) => {
-        const err = error instanceof Error ? error : new Error(String(error));
-
-        if (cacheError) {
-          state = { status: 'error', error: err };
-          onError?.(err);
-        } else {
-          // Preload should not poison the loader state.
-          state = { status: 'idle' };
-        }
-
-        if (debug) {
-          logger.error('[LazyLoader] Failed to load module:', err.message);
-        }
-
-        throw err;
-      }
-    );
-
-    state = { status: 'loading', promise };
-    return promise;
-  };
-
-  const load = async (): Promise<TModule> => {
-    return startLoading(true);
-  };
-
-  const isLoaded = (): boolean => state.status === 'loaded';
-
-  const preload = (): void => {
-    if (state.status === 'idle') {
-      // Preload should not poison the loader state on transient failures.
-      void startLoading(false).catch(() => {});
-    }
-  };
-
-  const reset = (): void => {
-    state = { status: 'idle' };
-  };
-
-  return { load, isLoaded, preload, reset };
+  return createLazyLoaderStateMachine(loadWithRetry, moduleLabel, options);
 }
 
 /**

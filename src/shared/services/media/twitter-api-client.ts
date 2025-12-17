@@ -219,6 +219,10 @@ export class TwitterAPI {
       const isCsrfMismatch = cached.csrfHash !== csrfHash;
 
       if (!isExpired && !isCsrfMismatch) {
+        // Refresh insertion order to implement true LRU eviction.
+        // Note: Do not refresh `timestamp` here, to keep TTL semantics unchanged.
+        TwitterAPI.requestCache.delete(url);
+        TwitterAPI.requestCache.set(url, cached);
         logger.debug(`Cache hit for tweet request (age: ${now - cached.timestamp}ms)`);
         return cached.response;
       }

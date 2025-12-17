@@ -7,6 +7,7 @@ import { logger } from '@shared/logging';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { clampIndex } from '@shared/utils/types/safety';
+import { tryParseUrl } from '@shared/utils/url';
 
 export interface DimensionPair {
   readonly width: number;
@@ -54,17 +55,6 @@ function extractFilenameFromUrl(url: string): string | null {
   }
 }
 
-function tryParseUrl(url: string): URL | null {
-  if (!url) return null;
-
-  try {
-    // Use a base URL to support relative/protocol-relative inputs.
-    return new URL(url, 'https://example.invalid');
-  } catch {
-    return null;
-  }
-}
-
 function getMediaDedupKey(media: MediaInfo): string | null {
   const urlCandidate =
     typeof media.originalUrl === 'string' && media.originalUrl.length > 0
@@ -85,7 +75,7 @@ function getMediaDedupKey(media: MediaInfo): string | null {
   // Prefer a host+path based key to avoid collisions when different assets share the same filename.
   // For X/Twitter media URLs, the `name` query parameter commonly represents a size variant.
   // We intentionally ignore `name` so the same media doesn't appear multiple times.
-  const parsed = tryParseUrl(urlCandidate);
+  const parsed = tryParseUrl(urlCandidate, 'https://example.invalid');
   if (parsed) {
     const host = parsed.hostname;
     const path = parsed.pathname;
@@ -113,6 +103,7 @@ function removeDuplicates<T>(
   items: ReadonlyArray<T | null | undefined>,
   keyExtractor: (item: T) => string | null | undefined
 ): T[] {
+  let warnedMissingKey = false;
   const seen = new Set<string>();
   const uniqueItems: T[] = [];
 
@@ -123,7 +114,10 @@ function removeDuplicates<T>(
 
     const key = keyExtractor(item);
     if (!key) {
-      logger.warn('Skipping item without key');
+      if (__DEV__ && !warnedMissingKey) {
+        warnedMissingKey = true;
+        logger.warn('Skipping item without key');
+      }
       continue;
     }
 
@@ -171,7 +165,7 @@ export function removeDuplicateMediaItems(
  */
 export function extractVisualIndexFromUrl(url: string): number {
   if (!url) return 0;
-  const match = url.match(/\/(photo|video)\/(\d+)$/);
+  const match = url.match(/\/(photo|video)\/(\d+)(?:[?#].*)?$/);
   const visualNumber = match?.[2] ? Number.parseInt(match[2], 10) : NaN;
   return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
 }

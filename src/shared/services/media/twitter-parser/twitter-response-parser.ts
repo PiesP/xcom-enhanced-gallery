@@ -85,6 +85,36 @@ function stringifyUnknown(error: unknown): string {
   }
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function removeUrlTokensFromText(text: string, urls: readonly string[]): string {
+  let result = text;
+
+  for (const url of urls) {
+    if (!url) continue;
+
+    // Remove URL tokens that are separated by whitespace (including newlines).
+    // Handles:
+    // - URL at beginning of text
+    // - URL after newlines
+    // - repeated URLs
+    // - multiple spaces
+    const token = escapeRegExp(url);
+    const re = new RegExp(`(^|\\s+)${token}(?=\\s+|$)`, 'g');
+    result = result.replace(re, (_match, leadingWs: string) => leadingWs);
+  }
+
+  // Normalize excessive spacing introduced by removals while preserving newlines.
+  result = result
+    .replace(/[ \t\f\v\u00A0]{2,}/g, ' ')
+    .replace(/ ?\n ?/g, '\n')
+    .replace(/\n{3,}/g, '\n\n');
+
+  return result.trim();
+}
+
 /**
  * Resolve aspect ratio from video info or dimensions
  * @internal
@@ -123,27 +153,46 @@ function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
   const parsed = tryParseUrl(mediaUrlHttps, 'https://pbs.twimg.com');
   if (!parsed) {
     // Conservative fallback that preserves the path and existing query params (if any)
-    // while appending format/name.
-    const [pathPart = '', existingQuery] = mediaUrlHttps.split('?');
+    // while enforcing `name=orig` for maximum quality.
+    const [pathPart = '', existingQuery = ''] = mediaUrlHttps.split('?');
     const pathMatch = pathPart.match(/\.(jpe?g|png)$/i);
     if (!pathMatch) return mediaUrlHttps;
+
     const ext = (pathMatch[1] ?? '').toLowerCase();
-    const sep = existingQuery ? '&' : '?';
-    return `${pathPart}${sep}format=${ext}&name=orig`;
+    const params = new URLSearchParams(existingQuery);
+    const hasFormat = Array.from(params.keys()).some((k) => k.toLowerCase() === 'format');
+    if (!hasFormat) {
+      params.set('format', ext);
+    }
+    // Always enforce original size.
+    params.set('name', 'orig');
+
+    const query = params.toString();
+    return query ? `${pathPart}?${query}` : pathPart;
   }
 
-  // Check for existing 'format' param in a case-insensitive way
-  const hasFormat = Array.from(parsed.searchParams.keys()).some(
-    (k) => k.toLowerCase() === 'format'
-  );
-  if (hasFormat) return mediaUrlHttps;
+  const hasParamCaseInsensitive = (key: string): boolean => {
+    return Array.from(parsed.searchParams.keys()).some((k) => k.toLowerCase() === key);
+  };
+
+  const setParamCaseInsensitive = (key: string, value: string): void => {
+    for (const k of Array.from(parsed.searchParams.keys())) {
+      if (k !== key && k.toLowerCase() === key) {
+        parsed.searchParams.delete(k);
+      }
+    }
+    parsed.searchParams.set(key, value);
+  };
 
   const pathMatch = parsed.pathname.match(/\.(jpe?g|png)$/i);
   if (!pathMatch) return mediaUrlHttps;
   const ext = (pathMatch[1] ?? '').toLowerCase();
 
-  parsed.searchParams.set('format', ext);
-  parsed.searchParams.set('name', 'orig');
+  if (!hasParamCaseInsensitive('format')) {
+    setParamCaseInsensitive('format', ext);
+  }
+  // Always enforce original size, even if `format` is already present.
+  setParamCaseInsensitive('name', 'orig');
 
   // Preserve original absolute/relative form: return full string for absolute
   if (isAbsolute) return parsed.toString();
@@ -355,11 +404,11 @@ export function extractMediaFromTweetWithDiagnostics(
   // Normalize tweet text once per tweet: use the parse target (quoted vs original)
   // and remove any short media URLs present in the text.
   const baseTweetText = (parseTarget.full_text ?? '').trim();
-  const normalizedTweetText = orderedMedia
+  const mediaShortUrls = orderedMedia
     .map((m) => m.url)
-    .filter((u): u is string => typeof u === 'string' && u.length > 0)
-    .reduce((text, u) => text.replace(` ${u}`, ''), baseTweetText)
-    .trim();
+    .filter((u): u is string => typeof u === 'string' && u.length > 0);
+
+  const normalizedTweetText = removeUrlTokensFromText(baseTweetText, mediaShortUrls);
 
   for (let index = 0; index < orderedMedia.length; index++) {
     const media: TwitterMedia | undefined = orderedMedia[index];

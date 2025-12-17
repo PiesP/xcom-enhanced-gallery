@@ -110,6 +110,63 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
     });
   };
 
+  const runWithTimeout = <T>(
+    timeoutMs: number,
+    run: () => Promise<T> | T,
+    onTimeout: () => void,
+    onSuccess: (value: T) => void,
+    onError: (error: unknown) => void
+  ): void => {
+    let settled = false;
+    const timerId = startTimeout(timeoutMs, () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      onTimeout();
+    });
+
+    const finalize = (): void => {
+      if (timerId !== null) {
+        globalTimerManager.clearTimeout(timerId);
+        timeoutTimers.delete(timerId);
+      }
+    };
+
+    let promise: Promise<T>;
+    try {
+      // Invoke the adapter synchronously (matching the pre-refactor behavior)
+      // while still normalizing return values to a Promise.
+      promise = Promise.resolve(run());
+    } catch (error) {
+      if (!settled) {
+        settled = true;
+        finalize();
+        onError(error);
+      }
+      return;
+    }
+
+    promise.then(
+      (value) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        finalize();
+        onSuccess(value);
+      },
+      (error) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        finalize();
+        onError(error);
+      }
+    );
+  };
+
   const dispatch = (event: RuntimeEvent): void => {
     if (stopped) return;
     queue.push(event);
@@ -143,35 +200,19 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
       }
 
       case 'STORE_GET': {
-        let settled = false;
-        const timerId = startTimeout(storeGetTimeoutMs, () => {
-          if (settled) {
-            return;
-          }
-          settled = true;
-          dispatch({
-            type: 'StorageFailed',
-            requestId: cmd.requestId,
-            key: cmd.key,
-            error: 'Timeout',
-            now: now(),
-          });
-        });
-
-        const finalize = (): void => {
-          if (timerId !== null) {
-            globalTimerManager.clearTimeout(timerId);
-            timeoutTimers.delete(timerId);
-          }
-        };
-
-        Promise.resolve(runtimeStoreGet(cmd.key))
-          .then((value) => {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            finalize();
+        runWithTimeout(
+          storeGetTimeoutMs,
+          () => runtimeStoreGet(cmd.key),
+          () => {
+            dispatch({
+              type: 'StorageFailed',
+              requestId: cmd.requestId,
+              key: cmd.key,
+              error: 'Timeout',
+              now: now(),
+            });
+          },
+          (value) => {
             dispatch({
               type: 'StorageLoaded',
               requestId: cmd.requestId,
@@ -179,13 +220,8 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
               value,
               now: now(),
             });
-          })
-          .catch((error) => {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            finalize();
+          },
+          (error) => {
             dispatch({
               type: 'StorageFailed',
               requestId: cmd.requestId,
@@ -193,53 +229,33 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
               error: formatErrorMessage(error),
               now: now(),
             });
-          });
+          }
+        );
         return;
       }
 
       case 'STORE_SET': {
-        let settled = false;
-        const timerId = startTimeout(storeSetTimeoutMs, () => {
-          if (settled) {
-            return;
-          }
-          settled = true;
-          dispatch({
-            type: 'StorageSetFailed',
-            requestId: cmd.requestId,
-            key: cmd.key,
-            error: 'Timeout',
-            now: now(),
-          });
-        });
-
-        const finalize = (): void => {
-          if (timerId !== null) {
-            globalTimerManager.clearTimeout(timerId);
-            timeoutTimers.delete(timerId);
-          }
-        };
-
-        Promise.resolve(runtimeStoreSet(cmd.key, cmd.value))
-          .then(() => {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            finalize();
+        runWithTimeout(
+          storeSetTimeoutMs,
+          () => runtimeStoreSet(cmd.key, cmd.value),
+          () => {
+            dispatch({
+              type: 'StorageSetFailed',
+              requestId: cmd.requestId,
+              key: cmd.key,
+              error: 'Timeout',
+              now: now(),
+            });
+          },
+          () => {
             dispatch({
               type: 'StorageSetCompleted',
               requestId: cmd.requestId,
               key: cmd.key,
               now: now(),
             });
-          })
-          .catch((error) => {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            finalize();
+          },
+          (error) => {
             dispatch({
               type: 'StorageSetFailed',
               requestId: cmd.requestId,
@@ -247,48 +263,32 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
               error: formatErrorMessage(error),
               now: now(),
             });
-          });
+          }
+        );
         return;
       }
 
       case 'HTTP_REQUEST': {
-        let settled = false;
-        const timerId = startTimeout(httpRequestTimeoutMs, () => {
-          if (settled) {
-            return;
-          }
-          settled = true;
-          dispatch({
-            type: 'HttpFailed',
-            requestId: cmd.requestId,
-            url: cmd.url,
-            error: 'Timeout',
-            now: now(),
-          });
-        });
-
-        const finalize = (): void => {
-          if (timerId !== null) {
-            globalTimerManager.clearTimeout(timerId);
-            timeoutTimers.delete(timerId);
-          }
-        };
-
-        Promise.resolve(
-          runtimeHttpRequest({
-            url: cmd.url,
-            method: cmd.method,
-            responseType: cmd.responseType,
-            ...(cmd.headers !== undefined ? { headers: cmd.headers } : {}),
-            ...(cmd.body !== undefined ? { body: cmd.body } : {}),
-          })
-        )
-          .then((result) => {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            finalize();
+        runWithTimeout(
+          httpRequestTimeoutMs,
+          () =>
+            runtimeHttpRequest({
+              url: cmd.url,
+              method: cmd.method,
+              responseType: cmd.responseType,
+              ...(cmd.headers !== undefined ? { headers: cmd.headers } : {}),
+              ...(cmd.body !== undefined ? { body: cmd.body } : {}),
+            }),
+          () => {
+            dispatch({
+              type: 'HttpFailed',
+              requestId: cmd.requestId,
+              url: cmd.url,
+              error: 'Timeout',
+              now: now(),
+            });
+          },
+          (result) => {
             dispatch({
               type: 'HttpCompleted',
               requestId: cmd.requestId,
@@ -297,13 +297,8 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
               body: result.body,
               now: now(),
             });
-          })
-          .catch((error) => {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            finalize();
+          },
+          (error) => {
             dispatch({
               type: 'HttpFailed',
               requestId: cmd.requestId,
@@ -311,60 +306,39 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
               error: formatErrorMessage(error),
               now: now(),
             });
-          });
+          }
+        );
 
         return;
       }
 
       case 'NAVIGATE': {
-        let settled = false;
-        const timerId = startTimeout(navigateTimeoutMs, () => {
-          if (settled) {
-            return;
-          }
-          settled = true;
-          dispatch({
-            type: 'NavigateFailed',
-            requestId: cmd.requestId,
-            url: cmd.url,
-            error: 'Timeout',
-            now: now(),
-          });
-        });
-
-        const finalize = (): void => {
-          if (timerId !== null) {
-            globalTimerManager.clearTimeout(timerId);
-            timeoutTimers.delete(timerId);
-          }
-        };
-
-        Promise.resolve(
-          runtimeNavigate({
-            url: cmd.url,
-            mode: cmd.mode,
-            ...(cmd.target !== undefined ? { target: cmd.target } : {}),
-          })
-        )
-          .then(() => {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            finalize();
+        runWithTimeout(
+          navigateTimeoutMs,
+          () =>
+            runtimeNavigate({
+              url: cmd.url,
+              mode: cmd.mode,
+              ...(cmd.target !== undefined ? { target: cmd.target } : {}),
+            }),
+          () => {
+            dispatch({
+              type: 'NavigateFailed',
+              requestId: cmd.requestId,
+              url: cmd.url,
+              error: 'Timeout',
+              now: now(),
+            });
+          },
+          () => {
             dispatch({
               type: 'NavigateCompleted',
               requestId: cmd.requestId,
               url: cmd.url,
               now: now(),
             });
-          })
-          .catch((error) => {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            finalize();
+          },
+          (error) => {
             dispatch({
               type: 'NavigateFailed',
               requestId: cmd.requestId,
@@ -372,7 +346,8 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
               error: formatErrorMessage(error),
               now: now(),
             });
-          });
+          }
+        );
 
         return;
       }
