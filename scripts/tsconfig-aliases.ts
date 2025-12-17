@@ -34,7 +34,17 @@ export function resolveViteAliasesFromTsconfig(options: TsconfigAliasOptions): V
 
   const configFile = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
   if (configFile.error) {
-    return [];
+    const host: ts.FormatDiagnosticsHost = {
+      getCanonicalFileName: (fileName) => fileName,
+      getCurrentDirectory: () => rootDir,
+      getNewLine: () => ts.sys.newLine,
+    };
+    const details = ts.formatDiagnosticsWithColorAndContext([configFile.error], host);
+    throw new Error(
+      `[tsconfig-aliases] Failed to read tsconfig: ${tsconfigPath}\n` +
+        `This previously returned an empty alias list and caused hard-to-debug build/runtime failures.\n\n` +
+        details
+    );
   }
 
   const paths = (configFile.config?.compilerOptions?.paths ?? {}) as TsconfigPaths;
