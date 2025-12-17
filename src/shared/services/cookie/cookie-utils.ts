@@ -74,9 +74,8 @@ function buildDocumentCookieString(details: CookieSetOptionsWithName): string {
   if (details.secure) {
     segments.push('secure');
   }
-  if (details.httpOnly) {
-    segments.push('HttpOnly');
-  }
+  // Note: `HttpOnly` cannot be set via `document.cookie`.
+  // We intentionally ignore `details.httpOnly` in the fallback path to avoid misleading output.
   return segments.join('; ');
 }
 

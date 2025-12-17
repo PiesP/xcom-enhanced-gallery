@@ -6,6 +6,7 @@
  */
 
 import { combineSignals, createTimeoutController, isAbortError } from '@shared/async/signal-utils';
+import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 /**
@@ -68,7 +69,7 @@ export async function delay(ms: number, signal?: AbortSignal): Promise<void> {
 
   // If already aborted, reject immediately
   if (signal?.aborted) {
-    throw signal.reason ?? new DOMException('Delay was aborted', 'AbortError');
+    throw getAbortReasonOrAbortErrorFromSignal(signal);
   }
 
   return new Promise<void>((resolve, reject) => {
@@ -79,7 +80,7 @@ export async function delay(ms: number, signal?: AbortSignal): Promise<void> {
 
     const onAbort = (): void => {
       cleanup();
-      reject(signal?.reason ?? new DOMException('Delay was aborted', 'AbortError'));
+      reject(getAbortReasonOrAbortErrorFromSignal(signal));
     };
 
     const cleanup = (): void => {

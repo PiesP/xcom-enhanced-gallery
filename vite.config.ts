@@ -63,6 +63,7 @@ const USERSCRIPT_CONFIG = {
     "GM_download",
     "GM_notification",
     "GM_xmlhttpRequest",
+    "GM_cookie",
   ],
   connect: ["pbs.twimg.com", "video.twimg.com", "api.twitter.com"],
   runAt: "document-idle" as const,
@@ -443,7 +444,7 @@ function removeCssComments(css: string): string {
   }
 
   return result
-    .replace(/  +/g, " ")
+    .replace(/ {2,}/g, " ")
     .replace(/\n\s*\n/g, "\n")
     .replace(/^\s+/gm, "")
     .replace(/\s+$/gm, "")

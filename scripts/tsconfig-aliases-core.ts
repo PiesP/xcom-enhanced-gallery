@@ -14,19 +14,19 @@ export type ViteAliasEntry = {
 };
 
 function escapeRegExp(input: string): string {
-  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function toViteFind(key: string): string | RegExp | null {
   // Ignore catch-all mappings (not meaningful for bundler aliasing)
-  if (key === "*") {
+  if (key === '*') {
     return null;
   }
 
   // Convert TS-style wildcard aliases into prefix aliases.
   // - "@shared/*" -> "@shared/"
   // - "@/*" -> "@/"
-  if (key.endsWith("/*")) {
+  if (key.endsWith('/*')) {
     return key.slice(0, -1);
   }
 
@@ -37,11 +37,11 @@ function toViteFind(key: string): string | RegExp | null {
 
 function normalizeAliasTarget(target: string): string {
   // Remove leading "./" for stable path resolution.
-  let out = target.replace(/^\.\//, "");
+  let out = target.replace(/^\.\//, '');
 
   // Convert TS-style wildcard targets into directory targets.
   // - "src/shared/*" -> "src/shared/"
-  if (out.endsWith("/*")) {
+  if (out.endsWith('/*')) {
     out = out.slice(0, -1);
   }
 
@@ -49,15 +49,15 @@ function normalizeAliasTarget(target: string): string {
 }
 
 function ensureTrailingSlashIfNeeded(find: string | RegExp, replacement: string): string {
-  if (typeof find !== "string") {
+  if (typeof find !== 'string') {
     return replacement;
   }
 
-  if (!find.endsWith("/")) {
+  if (!find.endsWith('/')) {
     return replacement;
   }
 
-  return replacement.endsWith("/") ? replacement : `${replacement}/`;
+  return replacement.endsWith('/') ? replacement : `${replacement}/`;
 }
 
 export interface BuildViteAliasesOptions {
@@ -86,7 +86,7 @@ export function buildViteAliasesFromTsconfigPaths(
 
     const normalizedTarget = normalizeAliasTarget(first);
     // Skip pathological mappings (e.g. "./*")
-    if (normalizedTarget === "*") continue;
+    if (normalizedTarget === '*') continue;
 
     const baseReplacement = options.resolveReplacement(normalizedTarget);
     if (!baseReplacement) continue;

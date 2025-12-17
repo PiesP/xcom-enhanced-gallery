@@ -127,10 +127,21 @@ export class SettingsService implements SettingsServiceContract {
       if (!this.isValid(key, value)) throw new Error(`Invalid setting value for ${key}`);
     }
 
+    // Capture a stable snapshot so per-key `oldValue` reflects the pre-batch state.
+    // This also prevents intra-batch updates from affecting subsequent `oldValue` reads.
+    const previous = cloneDeep(this.settings);
+
     const timestamp = Date.now();
-    entries.forEach(([key, value]) => {
-      const oldValue = this.get(key);
+    for (const [key, value] of entries) {
       assignNestedPath(this.settings, key, value);
+    }
+
+    // Align ordering with `set()`: derived state is refreshed before notifying listeners.
+    this.settings.lastModified = timestamp;
+    this.refreshFeatureMap();
+
+    for (const [key, value] of entries) {
+      const oldValue = resolveNestedPath(previous, key);
       this.notifyListeners({
         key,
         oldValue,
@@ -138,9 +149,8 @@ export class SettingsService implements SettingsServiceContract {
         timestamp,
         status: 'success',
       });
-    });
-    this.settings.lastModified = timestamp;
-    this.refreshFeatureMap();
+    }
+
     await this.persist();
   }
 

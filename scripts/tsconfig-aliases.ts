@@ -8,14 +8,14 @@
  * We parse tsconfig.json via the TypeScript API (supports JSONC comments).
  */
 
-import { resolve } from "node:path";
-import * as ts from "typescript";
+import { resolve } from 'node:path';
+import * as ts from 'typescript';
 
 import {
   buildViteAliasesFromTsconfigPaths,
   type TsconfigPaths,
   type ViteAliasEntry,
-} from "./tsconfig-aliases-core";
+} from './tsconfig-aliases-core';
 
 export type { ViteAliasEntry };
 
@@ -29,9 +29,7 @@ export interface TsconfigAliasOptions {
 /**
  * Create Vite-compatible alias entries from tsconfig.json `compilerOptions.paths`.
  */
-export function resolveViteAliasesFromTsconfig(
-  options: TsconfigAliasOptions
-): ViteAliasEntry[] {
+export function resolveViteAliasesFromTsconfig(options: TsconfigAliasOptions): ViteAliasEntry[] {
   const { tsconfigPath, rootDir } = options;
 
   const configFile = ts.readConfigFile(tsconfigPath, ts.sys.readFile);

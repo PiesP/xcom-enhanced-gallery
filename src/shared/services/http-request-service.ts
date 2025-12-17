@@ -25,6 +25,7 @@
  * // @connect pbs.twimg.com
  */
 
+import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { createDeferred, createSingleSettler } from '@shared/utils/async/promise-helpers';
@@ -143,19 +144,6 @@ export class HttpRequestService {
   ): Promise<HttpResponse<T>> {
     const deferred = createDeferred<HttpResponse<T>>();
 
-    const createAbortError = (cause?: unknown): Error => {
-      const err = new Error('Request was aborted');
-      err.name = 'AbortError';
-      if (cause !== undefined) {
-        try {
-          (err as Error & { cause?: unknown }).cause = cause;
-        } catch {
-          // Ignore: best-effort cause assignment
-        }
-      }
-      return err;
-    };
-
     let abortListener: (() => void) | null = null;
     const cleanupAbortListener = (): void => {
       if (abortListener && options?.signal) {
@@ -172,7 +160,7 @@ export class HttpRequestService {
       const userscript = getUserscript();
 
       if (options?.signal?.aborted) {
-        safeReject(createAbortError(options.signal.reason));
+        safeReject(getAbortReasonOrAbortErrorFromSignal(options.signal));
         return deferred.promise;
       }
 
@@ -211,7 +199,7 @@ export class HttpRequestService {
           );
         },
         onabort: () => {
-          safeReject(createAbortError(options?.signal?.reason));
+          safeReject(getAbortReasonOrAbortErrorFromSignal(options?.signal));
         },
       };
 

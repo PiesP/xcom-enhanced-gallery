@@ -5,8 +5,9 @@
  */
 
 export const USER_CANCELLED_MESSAGE = 'Download cancelled by user' as const;
+const DEFAULT_ABORT_MESSAGE = 'This operation was aborted' as const;
 
-function attachCause(target: Error, cause: unknown): void {
+function attachCause(target: Error | DOMException, cause: unknown): void {
   if (cause === undefined) {
     return;
   }
@@ -15,6 +16,19 @@ function attachCause(target: Error, cause: unknown): void {
     (target as Error & { cause?: unknown }).cause = cause;
   } catch {
     // Ignore: older runtimes may not allow assigning cause
+  }
+}
+
+function createAbortError(message: string, cause?: unknown): DOMException | Error {
+  try {
+    const error = new DOMException(message, 'AbortError');
+    attachCause(error, cause);
+    return error;
+  } catch {
+    const error = new Error(message);
+    error.name = 'AbortError';
+    attachCause(error, cause);
+    return error;
   }
 }
 
@@ -67,4 +81,32 @@ export function getUserCancelledAbortErrorFromSignal(signal?: AbortSignal): DOME
   }
 
   return createUserCancelledAbortError(reason);
+}
+
+/**
+ * Convert an AbortSignal reason into a throwable error without losing explicit reasons.
+ *
+ * Policy:
+ * - Preserve DOMException/Error reasons (including custom errors).
+ * - When the reason is missing or non-error (string/object/etc), return a standardized AbortError
+ *   and attach the original reason as `cause`.
+ *
+ * This is intentionally different from `getUserCancelledAbortErrorFromSignal()`, which always
+ * normalizes to the user-cancelled message. Some primitives (e.g. delay) rely on preserving
+ * explicit reasons for debugging and testability.
+ */
+export function getAbortReasonOrAbortErrorFromSignal(signal?: AbortSignal): DOMException | Error {
+  const reason = signal?.reason;
+
+  if (reason instanceof DOMException) {
+    return reason;
+  }
+
+  if (reason instanceof Error) {
+    return reason;
+  }
+
+  // Reason is missing or not an Error/DOMException.
+  // Standardize to a native AbortError shape for consistency with AbortController().
+  return createAbortError(DEFAULT_ABORT_MESSAGE, reason);
 }
