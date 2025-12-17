@@ -2,6 +2,7 @@
  * @fileoverview Shared media utility functions for dimension extraction, URL normalization, and sorting.
  */
 
+import type { JSX } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
@@ -391,7 +392,7 @@ function toRem(pixels: number): string {
   return `${(pixels / 16).toFixed(4)}rem`;
 }
 
-export function createIntrinsicSizingStyle(dimensions: DimensionPair): Record<string, string> {
+export function createIntrinsicSizingStyle(dimensions: DimensionPair): JSX.CSSProperties {
   const ratio = dimensions.height > 0 ? dimensions.width / dimensions.height : 1;
   return {
     '--xeg-aspect-default': `${dimensions.width} / ${dimensions.height}`,

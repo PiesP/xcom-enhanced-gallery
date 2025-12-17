@@ -213,14 +213,14 @@ export class HttpRequestService {
 
       if (options && 'data' in options && options.data !== undefined) {
         const data = options.data;
-        if (
-          typeof data === 'object' &&
-          !(data instanceof Blob) &&
-          !(data instanceof ArrayBuffer) &&
-          !(data instanceof Uint8Array) &&
-          !(data instanceof FormData) &&
-          !(data instanceof URLSearchParams)
-        ) {
+        const isBinaryLike =
+          data instanceof Blob ||
+          data instanceof ArrayBuffer ||
+          (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(data)) ||
+          data instanceof FormData ||
+          data instanceof URLSearchParams;
+
+        if (typeof data === 'object' && data !== null && !isBinaryLike) {
           details.data = JSON.stringify(data);
           if (!headers['content-type']) {
             headers['content-type'] = 'application/json';

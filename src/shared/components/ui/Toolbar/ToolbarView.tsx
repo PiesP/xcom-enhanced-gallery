@@ -265,11 +265,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       tabIndex={props.tabIndex}
       onFocus={props.onFocus as ((event: FocusEvent) => void) | undefined}
       onBlur={props.onBlur as ((event: FocusEvent) => void) | undefined}
-      onKeyDown={
-        props.settingsController.handleToolbarKeyDown as unknown as
-          | ((event: KeyboardEvent) => void)
-          | undefined
-      }
+      onKeyDown={(event) => props.settingsController.handleToolbarKeyDown(event)}
     >
       <div
         class={cx(styles.toolbarContent, 'xeg-row-center')}

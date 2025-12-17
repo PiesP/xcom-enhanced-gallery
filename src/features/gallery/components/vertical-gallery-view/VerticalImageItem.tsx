@@ -83,7 +83,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const dimensions = createMemo(() => resolveMediaDimensions(media));
 
   const intrinsicSizingStyle = createMemo<JSX.CSSProperties>(() => {
-    return createIntrinsicSizingStyle(dimensions()) as unknown as JSX.CSSProperties;
+    return createIntrinsicSizingStyle(dimensions());
   });
 
   useVideoVisibility({
