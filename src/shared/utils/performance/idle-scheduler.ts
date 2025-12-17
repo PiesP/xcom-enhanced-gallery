@@ -1,3 +1,4 @@
+import { logger } from '@shared/logging';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 export type IdleHandle = { cancel: () => void };
@@ -25,6 +26,8 @@ const getIdleAPIs = (): {
   return { ric, cic };
 };
 
+let didLogIdleTaskErrorInDev = false;
+
 export function scheduleIdle(task: () => void): IdleHandle {
   const { ric, cic } = getIdleAPIs();
 
@@ -32,8 +35,13 @@ export function scheduleIdle(task: () => void): IdleHandle {
     const id = ric(() => {
       try {
         task();
-      } catch {
-        // noop — the caller decides how to handle failures
+      } catch (error) {
+        // Keep behavior: never crash the scheduler.
+        // In DEV, log the first failure to improve observability without spamming.
+        if (__DEV__ && !didLogIdleTaskErrorInDev) {
+          didLogIdleTaskErrorInDev = true;
+          logger.warn('[scheduleIdle] Task threw', error);
+        }
       }
     });
     return {
@@ -46,8 +54,11 @@ export function scheduleIdle(task: () => void): IdleHandle {
   const timerId = globalTimerManager.setTimeout(() => {
     try {
       task();
-    } catch {
-      // noop
+    } catch (error) {
+      if (__DEV__ && !didLogIdleTaskErrorInDev) {
+        didLogIdleTaskErrorInDev = true;
+        logger.warn('[scheduleIdle] Task threw', error);
+      }
     }
   }, 0);
 

@@ -289,15 +289,15 @@ export class ThemeService implements ThemeServiceContract {
       };
 
       const bus = getEventBus();
-      bus.addDOMListener(
-        this.mediaQueryList,
-        'change',
-        this.mediaQueryListener as unknown as EventListener,
-        {
-          signal: this.domEventsController.signal,
-          context: 'theme-service',
-        }
-      );
+      const listener = this.mediaQueryListener;
+      if (!listener) {
+        // Defensive: should never happen because we just assigned it above.
+        return;
+      }
+      bus.addDOMListener(this.mediaQueryList, 'change', listener, {
+        signal: this.domEventsController.signal,
+        context: 'theme-service',
+      });
     }
   }
 

@@ -12,6 +12,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { wireAbortSignal } from './abort-signal-wiring';
 import type { Subscription, SubscriptionManager } from './event-context';
 
 // ============================================================================
@@ -27,6 +28,17 @@ export interface DOMListenerOptions extends AddEventListenerOptions {
   /** Context for grouping (e.g., 'gallery', 'toolbar') */
   context?: string;
 }
+
+/**
+ * DOM event listener function type.
+ *
+ * Note: We intentionally accept typed event parameters (e.g. ErrorEvent)
+ * and cast internally when wiring to DOM APIs, so call sites don't need
+ * `as unknown as EventListener`.
+ */
+export type DOMListener<E extends Event = Event> = {
+  bivarianceHack(event: E): void;
+}['bivarianceHack'];
 
 // ============================================================================
 // Implementation
@@ -63,10 +75,10 @@ export class DOMEventManager {
    * controller.abort();
    * ```
    */
-  public addListener(
+  public addListener<E extends Event = Event>(
     element: EventTarget,
     type: string,
-    listener: EventListener,
+    listener: DOMListener<E>,
     options: DOMListenerOptions = {}
   ): string {
     const { signal, context, ...listenerOptions } = options;
@@ -87,12 +99,12 @@ export class DOMEventManager {
     try {
       // Register listener directly. This module is the public, managed facade,
       // so we avoid coupling to internal listener-manager implementation details.
-      element.addEventListener(type, listener, listenerOptions);
+      element.addEventListener(type, listener as unknown as EventListener, listenerOptions);
 
       // AbortSignal cleanup is wired via an event listener.
       // Ensure abort listeners are removed when the subscription is cleaned up
       // to avoid retaining closures for long-lived signals.
-      let abortHandler: (() => void) | null = null;
+      let abortCleanup: (() => void) | null = null;
 
       // Create subscription entry
       const subscription: Subscription = {
@@ -101,20 +113,17 @@ export class DOMEventManager {
         context,
         cleanup: () => {
           try {
-            element.removeEventListener(type, listener, listenerOptions);
+            element.removeEventListener(
+              type,
+              listener as unknown as EventListener,
+              listenerOptions
+            );
           } catch (error) {
             logger.warn(`[DOMEventManager] Failed to remove listener: ${type}`, error);
           }
 
-          if (signal && abortHandler) {
-            try {
-              signal.removeEventListener('abort', abortHandler);
-            } catch {
-              // Ignore - some environments may not support removeEventListener on AbortSignal
-            }
-          }
-
-          abortHandler = null;
+          abortCleanup?.();
+          abortCleanup = null;
         },
       };
 
@@ -123,11 +132,7 @@ export class DOMEventManager {
 
       // Wire up AbortSignal for automatic cleanup
       if (signal) {
-        abortHandler = () => {
-          this.subscriptionManager.remove(id);
-        };
-
-        signal.addEventListener('abort', abortHandler, { once: true });
+        abortCleanup = wireAbortSignal(signal, () => this.subscriptionManager.remove(id)).cleanup;
       }
 
       logger.debug(`[DOMEventManager] DOM listener added: ${type} (${id})`, { context });
@@ -152,7 +157,7 @@ export class DOMEventManager {
 export function addDOMListener(
   element: EventTarget,
   type: string,
-  listener: EventListener,
+  listener: DOMListener,
   options: DOMListenerOptions,
   subscriptionManager: SubscriptionManager
 ): string {

@@ -13,6 +13,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { wireAbortSignal } from './abort-signal-wiring';
 import type { Subscription, SubscriptionManager } from './event-context';
 
 // ============================================================================
@@ -110,7 +111,7 @@ export class AppEventManager {
     // AbortSignal cleanup is wired via an event listener.
     // To avoid retaining closures for long-lived signals, we ensure that abort listeners
     // are removed as part of subscription cleanup (manual unsubscribe, removeAll, etc.).
-    let abortHandler: (() => void) | null = null;
+    let abortCleanup: (() => void) | null = null;
 
     // Wrap callback for once behavior
     const wrappedCallback = once
@@ -133,15 +134,8 @@ export class AppEventManager {
       cleanup: () => {
         listeners.delete(wrappedCallback);
 
-        if (signal && abortHandler) {
-          try {
-            signal.removeEventListener('abort', abortHandler);
-          } catch {
-            // Ignore - some environments may not support removeEventListener on AbortSignal
-          }
-        }
-
-        abortHandler = null;
+        abortCleanup?.();
+        abortCleanup = null;
       },
     };
 
@@ -150,11 +144,7 @@ export class AppEventManager {
 
     // Wire up AbortSignal
     if (signal) {
-      abortHandler = () => {
-        this.subscriptionManager.remove(id);
-      };
-
-      signal.addEventListener('abort', abortHandler, { once: true });
+      abortCleanup = wireAbortSignal(signal, () => this.subscriptionManager.remove(id)).cleanup;
     }
 
     logger.debug(`[AppEventManager] App listener added: ${String(event)} (${id})`);

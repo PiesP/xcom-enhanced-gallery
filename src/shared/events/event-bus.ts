@@ -46,7 +46,7 @@ import { createSingleton } from '@shared/utils/types/singleton';
 
 // Import specialized modules
 import { AppEventManager, type AppEventMap, type AppEventOptions } from './app-events';
-import { DOMEventManager, type DOMListenerOptions } from './dom-events';
+import { DOMEventManager, type DOMListener, type DOMListenerOptions } from './dom-events';
 import { SubscriptionManager, type SubscriptionStats } from './event-context';
 
 // ============================================================================
@@ -133,10 +133,10 @@ export class EventBus {
    * @param options - Listener options including AbortSignal
    * @returns Subscription ID for manual removal
    */
-  public addDOMListener(
+  public addDOMListener<E extends Event = Event>(
     element: EventTarget,
     type: string,
-    listener: EventListener,
+    listener: DOMListener<E>,
     options: DOMListenerOptions = {}
   ): string {
     return this.domEventManager.addListener(element, type, listener, options);

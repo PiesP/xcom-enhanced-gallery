@@ -47,6 +47,17 @@ function extractFilenameFromUrl(url: string): string | null {
   }
 }
 
+function tryParseUrl(url: string): URL | null {
+  if (!url) return null;
+
+  try {
+    // Use a base URL to support relative/protocol-relative inputs.
+    return new URL(url, 'https://example.invalid');
+  } catch {
+    return null;
+  }
+}
+
 function getMediaDedupKey(media: MediaInfo): string | null {
   const urlCandidate =
     typeof media.originalUrl === 'string' && media.originalUrl.length > 0
@@ -64,6 +75,22 @@ function getMediaDedupKey(media: MediaInfo): string | null {
       ? `${media.type}:`
       : '';
 
+  // Prefer a host+path based key to avoid collisions when different assets share the same filename.
+  // For X/Twitter media URLs, the `name` query parameter commonly represents a size variant.
+  // We intentionally ignore `name` so the same media doesn't appear multiple times.
+  const parsed = tryParseUrl(urlCandidate);
+  if (parsed) {
+    const host = parsed.hostname;
+    const path = parsed.pathname;
+    const format = parsed.searchParams.get('format');
+    const formatSuffix = format ? `?format=${format}` : '';
+
+    if (host && path) {
+      return `${typePrefix}${host}${path}${formatSuffix}`;
+    }
+  }
+
+  // Fallback: last path segment or full URL.
   const filename = extractFilenameFromUrl(urlCandidate);
   return filename ? `${typePrefix}${filename}` : `${typePrefix}${urlCandidate}`;
 }

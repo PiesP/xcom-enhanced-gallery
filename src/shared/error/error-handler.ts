@@ -62,20 +62,15 @@ export class GlobalErrorHandler {
     const bus = getEventBus();
     this.controller = new AbortController();
 
-    bus.addDOMListener(window, 'error', this.errorListener as unknown as EventListener, {
+    bus.addDOMListener(window, 'error', this.errorListener, {
       signal: this.controller.signal,
       context: 'global-error-handler',
     });
 
-    bus.addDOMListener(
-      window,
-      'unhandledrejection',
-      this.rejectionListener as unknown as EventListener,
-      {
-        signal: this.controller.signal,
-        context: 'global-error-handler',
-      }
-    );
+    bus.addDOMListener(window, 'unhandledrejection', this.rejectionListener, {
+      signal: this.controller.signal,
+      context: 'global-error-handler',
+    });
 
     this.isInitialized = true;
   }
