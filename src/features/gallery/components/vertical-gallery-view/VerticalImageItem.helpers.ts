@@ -28,8 +28,8 @@ const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi'] as const;
  * 1. Removes Twitter media prefixes (twitter_media_YYYYMMDDThhmmss_*)
  * 2. Removes /media/ prefix if present
  * 3. Removes relative path prefix (./)
- * 4. Replaces path separators with underscores
- * 5. Truncates long filenames (>40 chars) to last valid component
+ * 4. If path separators exist, keeps only the last path segment
+ * 5. Truncates long filenames (>40 chars) to the last valid component
  * 6. Falls back to "Untitled" when the input is missing; uses "Image" as a truncation fallback
  *
  * **Examples**:
@@ -87,7 +87,7 @@ export function cleanFilename(filename?: string): string {
  * Detect if media is a video based on file extension and hostname
  *
  * **Detection Strategy**:
- * 1. Check if URL contains known video extensions (.mp4, .webm, .mov, .avi)
+ * 1. Check if URL pathname ends with known video extensions (.mp4, .webm, .mov, .avi)
  * 2. Check if filename ends with video extension
  * 3. Validate URL hostname if video.twimg.com (Twitter video host)
  * 4. Fall back to false if URL parsing fails (relative paths, data: URLs)
@@ -113,8 +113,20 @@ export function cleanFilename(filename?: string): string {
 export function isVideoMedia(media: MediaInfo): boolean {
   const urlLowerCase = media.url.toLowerCase();
 
-  // Check URL for video extensions
-  if (VIDEO_EXTENSIONS.some((ext) => urlLowerCase.includes(ext))) {
+  // Prefer parsing so we can reliably inspect `pathname` only.
+  // This avoids false positives when query strings/fragments contain ".mp4".
+  let parsedUrl: URL | null = null;
+  try {
+    parsedUrl = new URL(media.url);
+  } catch {
+    parsedUrl = null;
+  }
+
+  const pathToCheck = parsedUrl
+    ? parsedUrl.pathname.toLowerCase()
+    : (urlLowerCase.split(/[?#]/)[0] ?? '');
+
+  if (VIDEO_EXTENSIONS.some((ext) => pathToCheck.endsWith(ext))) {
     return true;
   }
 
@@ -127,13 +139,11 @@ export function isVideoMedia(media: MediaInfo): boolean {
   }
 
   // Validate URL hostname (security check)
-  // URL parsing can fail for relative paths, data: URLs, etc.
-  try {
-    const url = new URL(media.url);
-    return url.hostname === 'video.twimg.com';
-  } catch {
-    // URL parsing failed (relative path, data: URL, malformed URL, etc.)
-    // Already checked extensions above, so false is correct here
-    return false;
+  if (parsedUrl) {
+    return parsedUrl.hostname === 'video.twimg.com';
   }
+
+  // URL parsing failed (relative path, data: URL, malformed URL, etc.)
+  // Already checked extensions above, so false is correct here.
+  return false;
 }

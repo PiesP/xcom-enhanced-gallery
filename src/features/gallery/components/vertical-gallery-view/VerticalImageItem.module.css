@@ -236,54 +236,6 @@
   text-align: center;
 }
 
-.overlay {
-  position: absolute;
-  top: var(--xeg-spacing-sm);
-  right: var(--xeg-spacing-sm);
-  display: flex;
-  gap: var(--xeg-spacing-sm);
-  opacity: 0;
-  transition: var(--xeg-transition-opacity);
-}
-
-.container:hover .overlay {
-  opacity: 1;
-}
-
-.indexBadge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: var(--xeg-spacing-lg);
-  height: var(--xeg-spacing-lg);
-  background: var(--xeg-color-overlay-medium);
-  color: var(--xeg-color-text-inverse);
-  font-size: var(--xeg-font-size-xs);
-  font-weight: var(--xeg-font-weight-semibold);
-  border-radius: var(--xeg-radius-lg);
-  padding: 0 var(--xeg-spacing-sm);
-}
-
-.metadata {
-  padding: var(--xeg-spacing-sm);
-  background: var(--xeg-color-bg-primary);
-}
-
-.filename {
-  font-size: var(--xeg-font-size-sm);
-  font-weight: var(--xeg-font-weight-medium);
-  color: var(--xeg-color-text-primary);
-  margin-bottom: var(--xeg-spacing-xs);
-  overflow: clip;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.fileSize {
-  font-size: var(--xeg-font-size-xs);
-  color: var(--xeg-color-text-secondary);
-}
-
 .error {
   position: absolute;
   top: 0;
@@ -297,15 +249,6 @@
   background: var(--color-error-bg);
   color: var(--xeg-color-error, var(--color-error));
   min-height: var(--xeg-spacing-3xl);
-}
-
-/* State classes */
-.container.loaded .image {
-  opacity: 1;
-}
-
-.container.error {
-  border: 0.0625rem solid var(--xeg-color-error); /* 1px = 0.0625rem */
 }
 
 /* Container adjustments per fit mode (intrinsic sizing integration) */
@@ -386,11 +329,6 @@
   pointer-events: auto;
 }
 */
-
-/* CSS class used to block event propagation */
-.eventBlocked {
-  pointer-events: none;
-}
 
 /* Phase 254: Reduced motion is handled via semantic --xeg-transition-* tokens */
 /* Keep will-change set to auto as a performance default */

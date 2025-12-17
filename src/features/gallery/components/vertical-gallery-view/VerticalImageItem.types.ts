@@ -39,7 +39,6 @@ export type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
  * **State**:
  * - {@link VerticalImageItemProps.isActive} - Current visible item
  * - {@link VerticalImageItemProps.isFocused} - Keyboard focus state
- * - {@link VerticalImageItemProps.isVisible} - Viewport visibility
  * - {@link VerticalImageItemProps.forceVisible} - Override visibility (preload)
  *
  * **Callbacks**:
@@ -85,12 +84,6 @@ export interface VerticalImageItemProps extends Omit<BaseComponentProps, 'onClic
    * @optional
    */
   readonly isFocused?: boolean;
-
-  /**
-   * True if item is currently visible in viewport
-   * @optional
-   */
-  readonly isVisible?: boolean;
 
   /**
    * Force visibility regardless of viewport position (for preloading)

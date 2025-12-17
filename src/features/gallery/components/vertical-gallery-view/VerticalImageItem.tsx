@@ -32,7 +32,7 @@ import {
 } from '@shared/utils/media/media-dimensions';
 import { SharedObserver } from '@shared/utils/performance';
 import { cx } from '@shared/utils/text/formatting';
-import { createEffect, createMemo, createSignal, onCleanup, splitProps } from 'solid-js';
+import { createEffect, createMemo, createSignal, onCleanup, splitProps, untrack } from 'solid-js';
 import { useVideoVisibility } from './hooks/useVideoVisibility';
 import { createVideoVolumeChangeGuard } from './utils/video-volume-change-guard';
 import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
@@ -52,28 +52,34 @@ const FIT_MODE_CLASSES: Record<ImageFitMode, string | undefined> = {
  */
 export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | null {
   // NOTE: Do not destructure reactive props in Solid. Use splitProps to preserve reactivity.
-  const [local, rest] = splitProps(props, [
-    'media',
-    'index',
-    'isActive',
-    'isFocused',
-    'forceVisible',
-    'onClick',
-    'onImageContextMenu',
-    'className',
-    'onMediaLoad',
-    'fitMode',
-    'style',
-    'data-testid',
-    'aria-label',
-    'aria-describedby',
-    'registerContainer',
-    'role',
-    'tabIndex',
-    'onFocus',
-    'onBlur',
-    'onKeyDown',
-  ]);
+  const [local, rest] = splitProps(
+    props as VerticalImageItemProps & { readonly isVisible?: boolean },
+    [
+      'media',
+      'index',
+      'isActive',
+      'isFocused',
+      'forceVisible',
+      // Legacy prop: stripped to avoid leaking unknown attributes to the DOM.
+      // This prop is intentionally not part of the public VerticalImageItemProps type.
+      'isVisible',
+      'onClick',
+      'onImageContextMenu',
+      'className',
+      'onMediaLoad',
+      'fitMode',
+      'style',
+      'data-testid',
+      'aria-label',
+      'aria-describedby',
+      'registerContainer',
+      'role',
+      'tabIndex',
+      'onFocus',
+      'onBlur',
+      'onKeyDown',
+    ]
+  );
 
   const isFocused = createMemo(() => local.isFocused ?? false);
   const forceVisible = createMemo(() => local.forceVisible ?? false);
@@ -143,8 +149,10 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       // a guard so any intermediate events are ignored.
       isApplyingVideoSettings = true;
       try {
-        applyMutedProgrammatically(video, videoMuted());
-        applyVolumeProgrammatically(video, videoVolume());
+        untrack(() => {
+          applyMutedProgrammatically(video, videoMuted());
+          applyVolumeProgrammatically(video, videoVolume());
+        });
       } finally {
         isApplyingVideoSettings = false;
       }
@@ -188,8 +196,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   };
 
   const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
-    const mouseEvent = event as MouseEvent;
-    mouseEvent?.stopPropagation?.();
+    (event as MouseEvent).stopPropagation();
     handleClick();
   };
 

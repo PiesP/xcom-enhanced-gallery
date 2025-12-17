@@ -64,7 +64,13 @@ export function createVideoVolumeChangeGuard(
       if (!lastExpected) return false;
 
       const age = nowMs() - lastMarkedAt;
-      if (age < 0 || age > windowMs) return false;
+      if (age < 0 || age > windowMs) {
+        // Expired expectations should be cleared to keep guard state consistent
+        // and avoid repeatedly evaluating stale snapshots.
+        lastExpected = null;
+        lastMarkedAt = 0;
+        return false;
+      }
 
       const matches =
         areVolumesEquivalent(current.volume, lastExpected.volume) &&

@@ -195,8 +195,8 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
     lastNavigationTrigger: navigationState.lastNavigationTrigger,
   });
 
-  // Register focus sync callback
-  createEffect(() => setFocusSyncCallback(() => focusTrackerForceSync));
+  // Register focus sync callback (stable function)
+  setFocusSyncCallback(() => focusTrackerForceSync);
 
   // 6. Gallery lifecycle (animations, video cleanup, viewport CSS vars)
   useGalleryLifecycle({
