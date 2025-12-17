@@ -12,7 +12,7 @@
 
 import { logger } from '@shared/logging';
 import { createContextId, createId } from '@shared/utils/id/create-id';
-import type { DOMListenerContext } from './event-context';
+import type { DOMListenerContext } from './dom-listener-context';
 
 // ============================================================================
 // Internal Listener Registry

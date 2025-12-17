@@ -43,6 +43,19 @@ const debugCleanupLog: CleanupLogger = (message, error) => {
 let globalEventTeardown: Unregister | null = null;
 let commandRuntimeTeardown: (() => void) | null = null;
 
+async function refreshDevNamespace(app: IGalleryApp | null): Promise<void> {
+  if (!__DEV__) {
+    return;
+  }
+
+  const { setupDevNamespace } = await import('@bootstrap/dev-namespace');
+  setupDevNamespace(app, {
+    start: startApplication,
+    createConfig: createAppConfig,
+    cleanup,
+  });
+}
+
 /**
  * Set global event teardown function (used by bootstrap stages)
  */
@@ -333,14 +346,6 @@ export async function cleanup(): Promise<void> {
 
       await lifecycleState.galleryApp.cleanup();
       lifecycleState.galleryApp = null;
-      if (__DEV__) {
-        const { setupDevNamespace } = await import('@bootstrap/dev-namespace');
-        setupDevNamespace(null, {
-          start: startApplication,
-          createConfig: createAppConfig,
-          cleanup,
-        });
-      }
     });
 
     await runOptionalCleanup('CoreService cleanup', () => {
@@ -360,20 +365,13 @@ export async function cleanup(): Promise<void> {
       debugCleanupLog
     );
 
-    if (__DEV__) {
-      await runOptionalCleanup(
-        'Dev namespace cleanup',
-        async () => {
-          const { setupDevNamespace } = await import('@bootstrap/dev-namespace');
-          setupDevNamespace(null, {
-            start: startApplication,
-            createConfig: createAppConfig,
-            cleanup,
-          });
-        },
-        debugCleanupLog
-      );
-    }
+    await runOptionalCleanup(
+      'Dev namespace refresh',
+      async () => {
+        await refreshDevNamespace(lifecycleState.galleryApp);
+      },
+      debugCleanupLog
+    );
 
     if (isDevEnvironment) {
       await runOptionalCleanup(
@@ -436,14 +434,7 @@ export async function startApplication(): Promise<void> {
     logger.info('✅ Application initialization complete');
 
     // Phase 290: Namespace isolation - provide single namespace for global access in dev environment
-    if (__DEV__) {
-      const { setupDevNamespace } = await import('@bootstrap/dev-namespace');
-      setupDevNamespace(lifecycleState.galleryApp, {
-        start: startApplication,
-        createConfig: createAppConfig,
-        cleanup,
-      });
-    }
+    await refreshDevNamespace(lifecycleState.galleryApp);
   })()
     .catch((error) => {
       lifecycleState.started = false;

@@ -138,6 +138,24 @@ export class EventManager {
   }
 
   /**
+   * Add event listener with an options object that can include a context.
+   *
+   * This method exists to match the project's guidance/examples and to reduce
+   * API confusion between `addListener(..., options, context)` and an
+   * `addEventListener(..., { context })` style.
+   */
+  public addEventListener(
+    element: EventTarget,
+    type: string,
+    listener: EventListener,
+    options?: AddEventListenerOptions & { context?: string }
+  ): string | null {
+    const normalized = (options ?? {}) as AddEventListenerOptions & { context?: string };
+    const { context, ...listenerOptions } = normalized;
+    return this.addListener(element, type, listener, listenerOptions, context);
+  }
+
+  /**
    * Remove event listener by ID
    */
   public removeListener(id: string): boolean {

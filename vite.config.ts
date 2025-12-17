@@ -22,6 +22,7 @@ import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 import { resolveViteAliasesFromTsconfig } from './scripts/tsconfig-aliases';
@@ -31,7 +32,8 @@ import { resolveViteAliasesFromTsconfig } from './scripts/tsconfig-aliases';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const STYLE_ID = 'xeg-injected-styles' as const;
-const LICENSES_DIR = './LICENSES';
+const REPO_ROOT = path.dirname(fileURLToPath(import.meta.url));
+const LICENSES_DIR = resolve(REPO_ROOT, 'LICENSES');
 
 const OUTPUT_FILE_NAMES = {
   dev: 'xcom-enhanced-gallery.dev.user.js',
@@ -61,10 +63,13 @@ const USERSCRIPT_CONFIG = {
   grant: [
     'GM_setValue',
     'GM_getValue',
+    'GM_deleteValue',
+    'GM_listValues',
     'GM_download',
     'GM_notification',
     'GM_xmlhttpRequest',
     'GM_cookie',
+    'GM_addStyle',
   ],
   connect: ['pbs.twimg.com', 'video.twimg.com', 'api.twitter.com'],
   runAt: 'document-idle' as const,
@@ -161,7 +166,7 @@ function getVersionFromGit(): string | null {
 
 function getVersionFromPackageJson(): string | null {
   try {
-    const pkgPath = resolve(process.cwd(), 'package.json');
+    const pkgPath = resolve(REPO_ROOT, 'package.json');
     const raw = fs.readFileSync(pkgPath, 'utf8');
     const parsed = JSON.parse(raw) as { version?: unknown };
     const version = parsed.version;
@@ -948,7 +953,7 @@ function distCleanupPlugin(): Plugin {
     enforce: 'pre',
 
     buildStart() {
-      const distDir = resolve(process.cwd(), 'dist');
+      const distDir = resolve(REPO_ROOT, 'dist');
 
       if (!fs.existsSync(distDir)) {
         fs.mkdirSync(distDir, { recursive: true });
@@ -993,7 +998,7 @@ export default defineConfig(({ mode }): UserConfig => {
       ? true
       : !(featureMediaExtractionRaw === '0' || featureMediaExtractionRaw.toLowerCase() === 'false');
   const outputFileName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
-  const root = process.cwd();
+  const root = REPO_ROOT;
 
   return {
     plugins: [
