@@ -51,38 +51,57 @@ export function createVideoVolumeChangeGuard(
 ): VideoVolumeChangeGuard {
   const windowMs = options.windowMs ?? 500;
 
-  let lastExpected: VideoVolumeSnapshot | null = null;
-  let lastMarkedAt = 0;
+  type ExpectedMark = {
+    readonly snapshot: VideoVolumeSnapshot;
+    readonly markedAt: number;
+  };
+
+  // Keep a small window of recent programmatic expectations.
+  // This makes the guard resilient to:
+  // - browsers firing `volumechange` more than once for the same state
+  // - sequential programmatic assignments (muted + volume) whose events may arrive out-of-order
+  const MAX_EXPECTED_MARKS = 4;
+
+  let expectedMarks: ExpectedMark[] = [];
+
+  const pruneExpiredMarks = (now: number) => {
+    if (expectedMarks.length === 0) return;
+    expectedMarks = expectedMarks.filter((mark) => {
+      const age = now - mark.markedAt;
+      // If time goes backwards (or is stubbed inconsistently), treat marks as expired.
+      if (age < 0) return false;
+      return age <= windowMs;
+    });
+  };
 
   return {
     markProgrammaticChange(expected) {
-      lastExpected = expected;
-      lastMarkedAt = nowMs();
+      const now = nowMs();
+      pruneExpiredMarks(now);
+
+      expectedMarks = [...expectedMarks, { snapshot: expected, markedAt: now }];
+      if (expectedMarks.length > MAX_EXPECTED_MARKS) {
+        expectedMarks = expectedMarks.slice(-MAX_EXPECTED_MARKS);
+      }
     },
 
     shouldIgnoreChange(current) {
-      if (!lastExpected) return false;
+      if (expectedMarks.length === 0) return false;
 
-      const age = nowMs() - lastMarkedAt;
-      if (age < 0 || age > windowMs) {
-        // Expired expectations should be cleared to keep guard state consistent
-        // and avoid repeatedly evaluating stale snapshots.
-        lastExpected = null;
-        lastMarkedAt = 0;
+      const now = nowMs();
+      pruneExpiredMarks(now);
+
+      if (expectedMarks.length === 0) {
         return false;
       }
 
-      const matches =
-        areVolumesEquivalent(current.volume, lastExpected.volume) &&
-        current.muted === lastExpected.muted;
-
-      // One-shot: once the expected programmatic event is observed, clear it.
-      if (matches) {
-        lastExpected = null;
-        lastMarkedAt = 0;
-      }
-
-      return matches;
+      // Within the window, ignore *all* events that match any expected snapshot.
+      // Do not clear on match: some browsers may emit multiple identical events.
+      return expectedMarks.some(
+        (mark) =>
+          areVolumesEquivalent(current.volume, mark.snapshot.volume) &&
+          current.muted === mark.snapshot.muted
+      );
     },
   };
 }

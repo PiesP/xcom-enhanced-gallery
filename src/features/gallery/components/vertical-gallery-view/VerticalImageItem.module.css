@@ -238,17 +238,7 @@
 /* Phase 326: fitOriginal now follows the same container constraints as other modes */
 /* Remove overflow/scrollbar styling (consistency) */
 
-/* Base style - lower specificity */
-.container[data-fit-mode="original"] .image,
-.container[data-fit-mode="original"] .video {
-  /* Phase 326: Remove grab cursor (no scroll needed) */
-  cursor: pointer;
-}
-
-.container[data-fit-mode="original"] .image:active,
-.container[data-fit-mode="original"] .video:active {
-  cursor: pointer;
-}
+/* Cursor is defined on the container and inherited by media elements. */
 
 /* Loading state - higher specificity */
 .container[data-media-loaded="false"][data-fit-mode="original"] {

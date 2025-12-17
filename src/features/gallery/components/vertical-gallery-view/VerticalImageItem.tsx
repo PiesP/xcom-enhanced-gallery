@@ -92,14 +92,26 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const lang = getLanguageService();
 
-  const isVideo = createMemo(() => isVideoMedia(local.media));
+  const isVideo = createMemo(() => {
+    // Prefer the extractor-provided media.type (most accurate).
+    // Fall back to URL/extension heuristics only as a safety net.
+    switch (local.media.type) {
+      case 'video':
+      case 'gif':
+        return true;
+      case 'image':
+        return false;
+      default:
+        return isVideoMedia(local.media);
+    }
+  });
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
   const [isVisible, setIsVisible] = createSignal(forceVisible());
 
   // Reset per-media load/error state when the item is reused with a different media.
   createEffect(() => {
-    void local.media.url;
+    void local.media.id;
     setIsLoaded(false);
     setIsError(false);
   });
@@ -215,10 +227,51 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   };
 
   // Event handlers
+  const preventDragStart = (event: DragEvent) => {
+    event.preventDefault();
+  };
+
   const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
     event.stopPropagation();
-    containerRef()?.focus?.({ preventScroll: true });
+
+    // Avoid stealing focus from native video controls. When the click originates from the
+    // <video> element or its (shadow) controls, let the browser keep focus on the video.
+    if (isVideo()) {
+      const video = videoRef();
+      if (video) {
+        const target = event.target;
+        const targetInVideo = target instanceof Node && video.contains(target);
+
+        const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+        const pathIncludesVideo = Array.isArray(path) && path.includes(video);
+
+        if (!targetInVideo && !pathIncludesVideo) {
+          containerRef()?.focus?.({ preventScroll: true });
+        }
+      } else {
+        containerRef()?.focus?.({ preventScroll: true });
+      }
+    } else {
+      containerRef()?.focus?.({ preventScroll: true });
+    }
     local.onClick();
+  };
+
+  const handleContainerKeyDown: JSX.EventHandlerUnion<HTMLDivElement, KeyboardEvent> = (event) => {
+    if (typeof local.onKeyDown === 'function') {
+      (local.onKeyDown as (event: KeyboardEvent) => void)(event);
+      return;
+    }
+
+    // Default keyboard activation for role=button containers.
+    // - Enter: activate
+    // - Space: activate + prevent page scroll
+    const key = event.key;
+    if (key === 'Enter' || key === ' ' || key === 'Spacebar') {
+      event.preventDefault();
+      event.stopPropagation();
+      local.onClick();
+    }
   };
 
   const handleMediaLoad = () => {
@@ -339,7 +392,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       onClick={handleContainerClick}
       onFocus={local.onFocus as (event: FocusEvent) => void}
       onBlur={local.onBlur as (event: FocusEvent) => void}
-      onKeyDown={local.onKeyDown as (event: KeyboardEvent) => void}
+      onKeyDown={handleContainerKeyDown}
       aria-label={
         local['aria-label'] || `Media ${local.index + 1}: ${cleanFilename(local.media.filename)}`
       }
@@ -368,7 +421,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
               onCanPlay={handleMediaLoad}
               onError={handleMediaError}
               onContextMenu={handleContextMenu}
-              onDragStart={(e: DragEvent) => e.preventDefault()}
+              onDragStart={preventDragStart}
               onVolumeChange={handleVolumeChange}
             />
           ) : (
@@ -383,7 +436,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
               onLoad={handleMediaLoad}
               onError={handleMediaError}
               onContextMenu={handleContextMenu}
-              onDragStart={(e: DragEvent) => e.preventDefault()}
+              onDragStart={preventDragStart}
             />
           )}
 

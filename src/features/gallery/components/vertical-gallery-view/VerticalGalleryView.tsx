@@ -230,7 +230,7 @@ function VerticalGalleryViewCore({
   });
 
   // Empty state
-  if (!isVisible() || mediaItems().length === 0) {
+  if (!isVisible()) {
     const languageService = getLanguageService();
     const emptyTitle = languageService.translate('messages.gallery.emptyTitle');
     const emptyDesc = languageService.translate('messages.gallery.emptyDescription');

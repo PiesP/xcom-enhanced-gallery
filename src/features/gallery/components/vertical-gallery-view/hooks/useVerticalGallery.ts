@@ -20,7 +20,7 @@ import { useGalleryFocusTracker } from '@features/gallery/hooks/useGalleryFocusT
 import { useGalleryItemScroll } from '@features/gallery/hooks/useGalleryItemScroll';
 import { useGalleryScroll } from '@features/gallery/hooks/useGalleryScroll';
 import type { NavigationTrigger } from '@shared/state/signals/navigation.state';
-import { type Accessor, createEffect, createSignal } from 'solid-js';
+import { type Accessor, createEffect } from 'solid-js';
 import { useGalleryKeyboard } from './useGalleryKeyboard';
 import { useGalleryLifecycle } from './useGalleryLifecycle';
 import { useGalleryNavigation } from './useGalleryNavigation';
@@ -140,7 +140,8 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
   } = options;
 
   // Forward declaration for focus sync callback (breaks circular dependency)
-  const [focusSyncCallback, setFocusSyncCallback] = createSignal<(() => void) | null>(null);
+  // A simple local variable is sufficient here because the callback is assigned once.
+  let focusSyncCallback: (() => void) | null = null;
 
   // 1. Toolbar auto-hide
   const { isInitialToolbarVisible, setIsInitialToolbarVisible } = useToolbarAutoHide({
@@ -163,7 +164,7 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
     scrollTarget: itemsContainerEl,
     enabled: isVisible,
     programmaticScrollTimestamp: () => navigationState.programmaticScrollTimestamp(),
-    onScrollEnd: () => focusSyncCallback()?.(),
+    onScrollEnd: () => focusSyncCallback?.(),
   });
 
   // 4. Item scroll handling
@@ -196,7 +197,7 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
   });
 
   // Register focus sync callback (stable function)
-  setFocusSyncCallback(() => focusTrackerForceSync);
+  focusSyncCallback = focusTrackerForceSync;
 
   // 6. Gallery lifecycle (animations, video cleanup, viewport CSS vars)
   useGalleryLifecycle({
