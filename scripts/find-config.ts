@@ -4,4 +4,9 @@
  * This module is intended for tooling and tests (Node.js only).
  */
 
-export { findConfig, findConfigAny } from './utils/find-config';
+export {
+  findConfig,
+  findConfigAny,
+  findConfigFilePath,
+  findFirstConfigFilePath,
+} from './utils/find-config';
