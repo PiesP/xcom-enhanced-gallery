@@ -6,9 +6,10 @@
  */
 
 import { MEDIA } from '@constants';
+import { isHostMatching, tryParseUrl } from '@shared/utils/url/host';
 
-const SUPPORTED_MEDIA_HOSTS: ReadonlySet<string> = new Set(MEDIA.HOSTS.MEDIA_CDN);
 const MAX_URL_LENGTH = 2048;
+const ALLOWED_MEDIA_HOSTS = MEDIA.HOSTS.MEDIA_CDN;
 
 /**
  * Validate Twitter media URL
@@ -34,27 +35,20 @@ export function isValidMediaUrl(url: string): boolean {
     return false;
   }
 
-  let parsed: URL;
-
-  try {
-    parsed = new URL(url);
-  } catch {
+  const parsed = tryParseUrl(url);
+  if (!parsed) {
     return false;
   }
 
-  if (!verifyUrlProtocol(parsed.protocol)) {
+  if (!isHttpProtocol(parsed.protocol)) {
     return false;
   }
 
-  if (parsed.hostname === 'pbs.twimg.com') {
-    return checkPbsMediaPath(parsed.pathname);
+  if (!isHostMatching(parsed, ALLOWED_MEDIA_HOSTS)) {
+    return false;
   }
 
-  if (parsed.hostname === 'video.twimg.com') {
-    return true;
-  }
-
-  return false;
+  return isAllowedMediaPath(parsed.hostname, parsed.pathname);
 }
 
 /**
@@ -65,23 +59,37 @@ export function isValidMediaUrl(url: string): boolean {
  * @returns Whether URL is from Twitter media domain
  */
 export function isTwitterMediaUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    return SUPPORTED_MEDIA_HOSTS.has(parsed.hostname);
-  } catch {
-    return false;
-  }
+  return isHostMatching(url, ALLOWED_MEDIA_HOSTS);
 }
 
 /**
- * Validate URL protocol
+ * Validate URL protocol.
+ *
+ * Note: `tryParseUrl()` supports protocol-relative URLs by coercing to `https:`.
  *
  * @internal
  * @param protocol - URL protocol (example: 'https:', 'http:')
  * @returns Whether protocol is https or http
  */
-function verifyUrlProtocol(protocol: string): boolean {
+function isHttpProtocol(protocol: string): boolean {
   return protocol === 'https:' || protocol === 'http:';
+}
+
+/**
+ * Enforce host-specific path policy for media URLs.
+ *
+ * Keeping host allow-listing and path policy separate helps prevent policy drift.
+ */
+function isAllowedMediaPath(hostname: string, pathname: string): boolean {
+  if (hostname === 'pbs.twimg.com') {
+    return checkPbsMediaPath(pathname);
+  }
+
+  if (hostname === 'video.twimg.com') {
+    return checkVideoMediaPath(pathname);
+  }
+
+  return false;
 }
 
 /**
@@ -99,5 +107,20 @@ function checkPbsMediaPath(pathname: string): boolean {
     pathname.startsWith('/tweet_video_thumb/') ||
     pathname.startsWith('/video_thumb/') ||
     pathname.startsWith('/amplify_video_thumb/')
+  );
+}
+
+/**
+ * Validate video.twimg.com path.
+ *
+ * We intentionally do not accept arbitrary paths on video.twimg.com.
+ * Only known media path prefixes are allowed.
+ */
+function checkVideoMediaPath(pathname: string): boolean {
+  return (
+    pathname.startsWith('/ext_tw_video/') ||
+    pathname.startsWith('/tweet_video/') ||
+    pathname.startsWith('/amplify_video/') ||
+    pathname.startsWith('/dm_video/')
   );
 }

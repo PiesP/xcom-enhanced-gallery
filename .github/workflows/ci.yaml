@@ -73,7 +73,7 @@ jobs:
         run: pnpm check
 
       - name: 🎨 Check formatting (Biome)
-        run: pnpm fmt
+        run: pnpm fmt:check
 
   build:
     name: 🚀 Build

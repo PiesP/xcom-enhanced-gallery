@@ -2,9 +2,9 @@
  * @fileoverview Type definitions
  */
 
-import type { MEDIA } from './media.ts';
-import type { SERVICE_KEYS } from './service-keys.ts';
-import type { VIEW_MODES } from './video-controls.ts';
+import type { MEDIA } from '@constants/media';
+import type { SERVICE_KEYS } from '@constants/service-keys';
+import type { VIEW_MODES } from '@constants/video-controls';
 
 export type MediaType = (typeof MEDIA.TYPES)[keyof typeof MEDIA.TYPES];
 export type MediaQuality = (typeof MEDIA.QUALITY)[keyof typeof MEDIA.QUALITY];
