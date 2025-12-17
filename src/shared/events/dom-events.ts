@@ -12,10 +12,6 @@
  */
 
 import { logger } from '@shared/logging';
-import {
-  addListener as addListenerManaged,
-  removeEventListenerManaged,
-} from '@shared/utils/events/core/listener-manager';
 import type { Subscription, SubscriptionManager } from './event-context';
 
 // ============================================================================
@@ -89,10 +85,9 @@ export class DOMEventManager {
     }
 
     try {
-      // Register through the shared listener backend used by EventManager.
-      // This ensures a single low-level tracking mechanism while keeping EventBus
-      // semantics (SubscriptionManager IDs, context grouping, AbortSignal cleanup).
-      const managedId = addListenerManaged(element, type, listener, listenerOptions, context);
+      // Register listener directly. This module is the public, managed facade,
+      // so we avoid coupling to internal listener-manager implementation details.
+      element.addEventListener(type, listener, listenerOptions);
 
       // AbortSignal cleanup is wired via an event listener.
       // Ensure abort listeners are removed when the subscription is cleaned up
@@ -106,7 +101,7 @@ export class DOMEventManager {
         context,
         cleanup: () => {
           try {
-            removeEventListenerManaged(managedId);
+            element.removeEventListener(type, listener, listenerOptions);
           } catch (error) {
             logger.warn(`[DOMEventManager] Failed to remove listener: ${type}`, error);
           }

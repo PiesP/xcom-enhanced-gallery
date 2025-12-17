@@ -4,10 +4,10 @@
  * @version 5.0.0 - Added async initialization with exponential backoff
  */
 
+import { delay } from '@shared/async/delay';
 import { getExponentialBackoffDelayMs } from '@shared/core/twitter-auth/backoff';
 import { logger } from '@shared/logging';
 import { getCookieValue, getCookieValueSync } from '@shared/services/cookie';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 // ============================================================================
 // Configuration
@@ -42,17 +42,6 @@ function getBackoffDelay(attempt: number): number {
 }
 
 /**
- * Sleep for a specified duration.
- * @param ms - Duration in milliseconds
- * @internal
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    globalTimerManager.setTimeout(resolve, ms);
-  });
-}
-
-/**
  * Attempt to fetch CSRF token with exponential backoff retry.
  * @internal
  */
@@ -75,15 +64,15 @@ async function fetchTokenWithRetry(): Promise<string | undefined> {
 
       // Token not found, wait before retry
       if (attempt < MAX_RETRY_ATTEMPTS - 1) {
-        const delay = getBackoffDelay(attempt);
-        logger.debug(`CSRF token not found, retrying in ${delay}ms (attempt ${attempt + 1})`);
-        await sleep(delay);
+        const delayMs = getBackoffDelay(attempt);
+        logger.debug(`CSRF token not found, retrying in ${delayMs}ms (attempt ${attempt + 1})`);
+        await delay(delayMs);
       }
     } catch (error: unknown) {
       if (attempt < MAX_RETRY_ATTEMPTS - 1) {
-        const delay = getBackoffDelay(attempt);
-        logger.debug(`CSRF token fetch failed, retrying in ${delay}ms`, error);
-        await sleep(delay);
+        const delayMs = getBackoffDelay(attempt);
+        logger.debug(`CSRF token fetch failed, retrying in ${delayMs}ms`, error);
+        await delay(delayMs);
       } else {
         logger.info('Failed to retrieve CSRF token after all retry attempts', error);
       }
@@ -151,15 +140,16 @@ export async function initTokens(): Promise<string | undefined> {
     return _initPromise;
   }
 
-  _initPromise = fetchTokenWithRetry()
-    .then((token) => {
+  _initPromise = (async () => {
+    try {
+      const token = await fetchTokenWithRetry();
       _csrfToken = token;
       _tokensInitialized = true;
       return token;
-    })
-    .finally(() => {
+    } finally {
       _initPromise = null;
-    });
+    }
+  })();
 
   return _initPromise;
 }

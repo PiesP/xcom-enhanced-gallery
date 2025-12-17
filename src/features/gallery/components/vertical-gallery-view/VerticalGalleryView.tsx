@@ -28,6 +28,7 @@
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
+import { getEventBus } from '@shared/events';
 import type { JSXElement } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
 import { downloadState } from '@shared/state/signals/download.signals';
@@ -228,8 +229,15 @@ function VerticalGalleryViewCore({
     };
 
     // Use passive: false only when we need to call preventDefault()
-    container.addEventListener('wheel', handleContainerWheel, { passive: false });
-    onCleanup(() => container.removeEventListener('wheel', handleContainerWheel));
+    const bus = getEventBus();
+    const listener: EventListener = (event) => {
+      handleContainerWheel(event as WheelEvent);
+    };
+    const id = bus.addDOMListener(container, 'wheel', listener, {
+      passive: false,
+      context: 'gallery:wheel:container-redirect',
+    });
+    onCleanup(() => bus.remove(id));
   });
 
   // Empty state

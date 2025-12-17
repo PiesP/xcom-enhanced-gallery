@@ -98,3 +98,72 @@ export function promisifyVoidCallback(executor: (callback: VoidCallback) => void
     }
   });
 }
+
+/**
+ * A minimal Deferred implementation.
+ *
+ * Prefer this when you need to bridge event/callback-based APIs to async/await
+ * while keeping resolve/reject handles in local scope.
+ */
+export interface Deferred<T> {
+  readonly promise: Promise<T>;
+  readonly resolve: (value: T | PromiseLike<T>) => void;
+  readonly reject: (reason?: unknown) => void;
+}
+
+/**
+ * Create a Deferred promise with exposed resolve/reject.
+ */
+export function createDeferred<T>(): Deferred<T> {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+
+  return { promise, resolve, reject };
+}
+
+/**
+ * Wrap a Deferred so it can be resolved/rejected at most once.
+ *
+ * Useful for callback-based APIs that may invoke multiple terminal callbacks
+ * (e.g. onload/onerror/ontimeout/onabort).
+ */
+export function createSingleSettler<T>(
+  deferred: Pick<Deferred<T>, 'resolve' | 'reject'>,
+  cleanup?: () => void
+): {
+  readonly resolve: (value: T) => void;
+  readonly reject: (reason: unknown) => void;
+  readonly isSettled: () => boolean;
+} {
+  let settled = false;
+
+  const runCleanup = (): void => {
+    if (!cleanup) return;
+    try {
+      cleanup();
+    } catch {
+      // Ignore cleanup failures (best-effort)
+    }
+  };
+
+  return {
+    resolve: (value: T) => {
+      if (settled) return;
+      settled = true;
+      runCleanup();
+      deferred.resolve(value);
+    },
+    reject: (reason: unknown) => {
+      if (settled) return;
+      settled = true;
+      runCleanup();
+      deferred.reject(reason);
+    },
+    isSettled: () => settled,
+  };
+}

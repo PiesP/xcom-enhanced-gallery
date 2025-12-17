@@ -11,6 +11,7 @@ import {
 import { SettingsControlsLazy } from '@shared/components/ui/Settings/SettingsControlsLazy';
 import type { FitMode, MaybeAccessor } from '@shared/components/ui/Toolbar/Toolbar.types';
 import { getLanguageService } from '@shared/container/service-accessors';
+import { getEventBus } from '@shared/events';
 import type { JSXElement } from '@shared/external/vendors';
 import type { ToolbarSettingsControllerResult, ToolbarState } from '@shared/hooks';
 import { safeEventPreventAll } from '@shared/utils/events/utils';
@@ -202,16 +203,30 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   createEffect(() => {
     const toolbar = toolbarElement();
     if (toolbar) {
-      toolbar.addEventListener('wheel', preventScrollChaining, { passive: false });
-      onCleanup(() => toolbar.removeEventListener('wheel', preventScrollChaining));
+      const bus = getEventBus();
+      const listener: EventListener = (event) => {
+        preventScrollChaining(event as WheelEvent);
+      };
+      const id = bus.addDOMListener(toolbar, 'wheel', listener, {
+        passive: false,
+        context: 'toolbar:wheel:prevent-scroll-chaining',
+      });
+      onCleanup(() => bus.remove(id));
     }
   });
 
   createEffect(() => {
     const settingsPanel = settingsPanelEl();
     if (settingsPanel) {
-      settingsPanel.addEventListener('wheel', preventScrollChaining, { passive: false });
-      onCleanup(() => settingsPanel.removeEventListener('wheel', preventScrollChaining));
+      const bus = getEventBus();
+      const listener: EventListener = (event) => {
+        preventScrollChaining(event as WheelEvent);
+      };
+      const id = bus.addDOMListener(settingsPanel, 'wheel', listener, {
+        passive: false,
+        context: 'toolbar:wheel:prevent-scroll-chaining:settings-panel',
+      });
+      onCleanup(() => bus.remove(id));
     }
   });
 
@@ -219,8 +234,15 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   createEffect(() => {
     const tweetPanel = tweetPanelEl();
     if (tweetPanel) {
-      tweetPanel.addEventListener('wheel', handlePanelWheel, { passive: true });
-      onCleanup(() => tweetPanel.removeEventListener('wheel', handlePanelWheel));
+      const bus = getEventBus();
+      const listener: EventListener = (event) => {
+        handlePanelWheel(event as WheelEvent);
+      };
+      const id = bus.addDOMListener(tweetPanel, 'wheel', listener, {
+        passive: true,
+        context: 'toolbar:wheel:panel',
+      });
+      onCleanup(() => bus.remove(id));
     }
   });
 

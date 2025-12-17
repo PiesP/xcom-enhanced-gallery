@@ -4,13 +4,12 @@
  * (e.g., Violentmonkey, Greasemonkey, or browser-only contexts)
  */
 
-import { isAbortError } from '@shared/async/delay';
+import { delay, isAbortError } from '@shared/async/delay';
 import { combineSignals, createTimeoutController } from '@shared/async/signal-utils';
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 import { getErrorMessage } from '@shared/error/normalize';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
 import type { DownloadProgress } from './types';
 
 type GlobalWithGMDownload = typeof globalThis & {
@@ -286,34 +285,26 @@ export async function downloadWithFetchBlob(
  * @param filename - Desired filename
  */
 async function triggerAnchorDownload(url: string, filename: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    try {
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = filename;
-      anchor.style.display = 'none';
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.style.display = 'none';
 
-      // Append to body for Firefox compatibility
-      document.body.appendChild(anchor);
+  // Append to body for Firefox compatibility
+  document.body.appendChild(anchor);
 
-      // Trigger click
-      anchor.click();
+  // Trigger click
+  anchor.click();
 
-      // Clean up after a short delay
-      globalTimerManager.setTimeout(() => {
-        // Best-effort cleanup: never allow a DOM exception here to hang the Promise.
-        try {
-          anchor.remove();
-        } catch {
-          // Ignore: cleanup must never fail the download flow.
-        }
+  // Allow the click to be processed before cleanup.
+  await delay(100);
 
-        resolve();
-      }, 100);
-    } catch (error) {
-      reject(error);
-    }
-  });
+  // Best-effort cleanup: never fail the download flow.
+  try {
+    anchor.remove();
+  } catch {
+    // Ignore: cleanup must never fail the download flow.
+  }
 }
 
 /**

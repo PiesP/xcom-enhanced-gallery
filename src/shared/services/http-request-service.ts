@@ -27,6 +27,7 @@
 
 import { getUserscript } from '@shared/external/userscript/adapter';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
+import { createDeferred, createSingleSettler } from '@shared/utils/async/promise-helpers';
 import { createSingleton } from '@shared/utils/types/singleton';
 
 function parseResponseHeaders(raw: string | undefined): Record<string, string> {
@@ -140,140 +141,130 @@ export class HttpRequestService {
     url: string,
     options?: HttpRequestOptions | BinaryRequestOptions
   ): Promise<HttpResponse<T>> {
-    return new Promise((resolve, reject) => {
-      try {
-        const userscript = getUserscript();
+    const deferred = createDeferred<HttpResponse<T>>();
 
-        const createAbortError = (cause?: unknown): Error => {
-          const err = new Error('Request was aborted');
-          err.name = 'AbortError';
-          if (cause !== undefined) {
-            try {
-              (err as Error & { cause?: unknown }).cause = cause;
-            } catch {
-              // Ignore: best-effort cause assignment
-            }
-          }
-          return err;
-        };
-
-        if (options?.signal?.aborted) {
-          reject(createAbortError(options.signal.reason));
-          return;
+    const createAbortError = (cause?: unknown): Error => {
+      const err = new Error('Request was aborted');
+      err.name = 'AbortError';
+      if (cause !== undefined) {
+        try {
+          (err as Error & { cause?: unknown }).cause = cause;
+        } catch {
+          // Ignore: best-effort cause assignment
         }
-
-        let settled = false;
-        let abortListener: (() => void) | null = null;
-
-        const cleanupAbortListener = (): void => {
-          if (abortListener && options?.signal) {
-            options.signal.removeEventListener('abort', abortListener);
-            abortListener = null;
-          }
-        };
-
-        const safeResolve = (value: HttpResponse<T>): void => {
-          if (settled) return;
-          settled = true;
-          cleanupAbortListener();
-          resolve(value);
-        };
-
-        const safeReject = (error: unknown): void => {
-          if (settled) return;
-          settled = true;
-          cleanupAbortListener();
-          reject(error);
-        };
-
-        const headers: Record<string, string> = normalizeRequestHeaders(options?.headers);
-
-        const details: GMXMLHttpRequestDetails = {
-          method: method as Exclude<GMXMLHttpRequestDetails['method'], undefined>,
-          url,
-          headers,
-          timeout: options?.timeout ?? this.defaultTimeout,
-          onload: (response) => {
-            const responseHeaders = parseResponseHeaders(response.responseHeaders);
-
-            safeResolve({
-              ok: response.status >= 200 && response.status < 300,
-              status: response.status,
-              statusText: response.statusText,
-              data: response.response as T,
-              headers: responseHeaders,
-            });
-          },
-          onerror: (response) => {
-            const status = response.status ?? 0;
-            const statusText = response.statusText || 'Network Error';
-            const errorMessage =
-              status === 0
-                ? `Network error: Unable to connect to ${url} (CORS, network failure, or blocked request)`
-                : `HTTP ${status}: ${statusText}`;
-
-            safeReject(new HttpError(errorMessage, status, statusText));
-          },
-          ontimeout: () => {
-            const timeoutMs = options?.timeout ?? this.defaultTimeout;
-            safeReject(
-              new HttpError(`Request timed out after ${timeoutMs}ms for ${url}`, 0, 'Timeout')
-            );
-          },
-          onabort: () => {
-            safeReject(createAbortError(options?.signal?.reason));
-          },
-        };
-
-        // Avoid passing `responseType: undefined` to GM implementations.
-        if (options?.responseType) {
-          details.responseType = options.responseType as Exclude<
-            GMXMLHttpRequestDetails['responseType'],
-            undefined
-          >;
-        }
-
-        if (options && 'data' in options && options.data !== undefined) {
-          const data = options.data;
-          if (
-            typeof data === 'object' &&
-            !(data instanceof Blob) &&
-            !(data instanceof ArrayBuffer) &&
-            !(data instanceof Uint8Array) &&
-            !(data instanceof FormData) &&
-            !(data instanceof URLSearchParams)
-          ) {
-            details.data = JSON.stringify(data);
-            if (!headers['content-type']) {
-              headers['content-type'] = 'application/json';
-            }
-          } else {
-            details.data = data as Exclude<GMXMLHttpRequestDetails['data'], undefined>;
-          }
-        }
-
-        if (options?.contentType && !headers['content-type']) {
-          headers['content-type'] = options.contentType;
-        }
-
-        const control = userscript.xmlHttpRequest(details);
-
-        if (options?.signal) {
-          abortListener = () => {
-            control.abort();
-          };
-
-          options.signal.addEventListener('abort', abortListener, { once: true });
-
-          // Handle races where the signal is aborted right after the request starts.
-          if (options.signal.aborted) {
-            abortListener();
-          }
-        }
-      } catch (error) {
-        reject(error);
       }
+      return err;
+    };
+
+    let abortListener: (() => void) | null = null;
+    const cleanupAbortListener = (): void => {
+      if (abortListener && options?.signal) {
+        options.signal.removeEventListener('abort', abortListener);
+        abortListener = null;
+      }
+    };
+
+    const { resolve: safeResolve, reject: safeReject } = createSingleSettler(deferred, () => {
+      cleanupAbortListener();
     });
+
+    try {
+      const userscript = getUserscript();
+
+      if (options?.signal?.aborted) {
+        safeReject(createAbortError(options.signal.reason));
+        return deferred.promise;
+      }
+
+      const headers: Record<string, string> = normalizeRequestHeaders(options?.headers);
+
+      const details: GMXMLHttpRequestDetails = {
+        method: method as Exclude<GMXMLHttpRequestDetails['method'], undefined>,
+        url,
+        headers,
+        timeout: options?.timeout ?? this.defaultTimeout,
+        onload: (response) => {
+          const responseHeaders = parseResponseHeaders(response.responseHeaders);
+
+          safeResolve({
+            ok: response.status >= 200 && response.status < 300,
+            status: response.status,
+            statusText: response.statusText,
+            data: response.response as T,
+            headers: responseHeaders,
+          });
+        },
+        onerror: (response) => {
+          const status = response.status ?? 0;
+          const statusText = response.statusText || 'Network Error';
+          const errorMessage =
+            status === 0
+              ? `Network error: Unable to connect to ${url} (CORS, network failure, or blocked request)`
+              : `HTTP ${status}: ${statusText}`;
+
+          safeReject(new HttpError(errorMessage, status, statusText));
+        },
+        ontimeout: () => {
+          const timeoutMs = options?.timeout ?? this.defaultTimeout;
+          safeReject(
+            new HttpError(`Request timed out after ${timeoutMs}ms for ${url}`, 0, 'Timeout')
+          );
+        },
+        onabort: () => {
+          safeReject(createAbortError(options?.signal?.reason));
+        },
+      };
+
+      // Avoid passing `responseType: undefined` to GM implementations.
+      if (options?.responseType) {
+        details.responseType = options.responseType as Exclude<
+          GMXMLHttpRequestDetails['responseType'],
+          undefined
+        >;
+      }
+
+      if (options && 'data' in options && options.data !== undefined) {
+        const data = options.data;
+        if (
+          typeof data === 'object' &&
+          !(data instanceof Blob) &&
+          !(data instanceof ArrayBuffer) &&
+          !(data instanceof Uint8Array) &&
+          !(data instanceof FormData) &&
+          !(data instanceof URLSearchParams)
+        ) {
+          details.data = JSON.stringify(data);
+          if (!headers['content-type']) {
+            headers['content-type'] = 'application/json';
+          }
+        } else {
+          details.data = data as Exclude<GMXMLHttpRequestDetails['data'], undefined>;
+        }
+      }
+
+      if (options?.contentType && !headers['content-type']) {
+        headers['content-type'] = options.contentType;
+      }
+
+      const control = userscript.xmlHttpRequest(details);
+
+      if (options?.signal) {
+        abortListener = () => {
+          control.abort();
+        };
+
+        options.signal.addEventListener('abort', abortListener, { once: true });
+
+        // Handle races where the signal is aborted right after the request starts.
+        if (options.signal.aborted) {
+          abortListener();
+        }
+      }
+    } catch (error) {
+      safeReject(error);
+    }
+
+    return deferred.promise;
   }
 
   /**
