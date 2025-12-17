@@ -13,6 +13,12 @@ export interface DimensionPair {
   readonly height: number;
 }
 
+export interface ResolvedMediaDimensions {
+  readonly dimensions: DimensionPair;
+  /** True when dimensions were derived from media data (not the DEFAULT_DIMENSIONS fallback). */
+  readonly hasIntrinsicSize: boolean;
+}
+
 const STANDARD_GALLERY_HEIGHT = 720;
 
 const DEFAULT_DIMENSIONS: DimensionPair = {
@@ -363,29 +369,41 @@ function deriveDimensionsFromMediaUrls(media: MediaInfo): DimensionPair | null {
 }
 
 export function resolveMediaDimensions(media: MediaInfo | undefined): DimensionPair {
+  return resolveMediaDimensionsWithIntrinsicFlag(media).dimensions;
+}
+
+/**
+ * Resolve media dimensions and also indicate whether a real intrinsic size was found.
+ *
+ * This is useful for CLS mitigation where CSS rules should only activate when the
+ * derived dimensions are trusted (i.e., not the DEFAULT_DIMENSIONS fallback).
+ */
+export function resolveMediaDimensionsWithIntrinsicFlag(
+  media: MediaInfo | undefined
+): ResolvedMediaDimensions {
   if (!media) {
-    return DEFAULT_DIMENSIONS;
+    return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
   }
 
   const directWidth = normalizeDimension(media.width);
   const directHeight = normalizeDimension(media.height);
   if (directWidth && directHeight) {
-    return { width: directWidth, height: directHeight };
+    return { dimensions: { width: directWidth, height: directHeight }, hasIntrinsicSize: true };
   }
 
   const fromMetadata = deriveDimensionsFromMetadata(
     media.metadata as Record<string, unknown> | undefined
   );
   if (fromMetadata) {
-    return fromMetadata;
+    return { dimensions: fromMetadata, hasIntrinsicSize: true };
   }
 
   const fromUrls = deriveDimensionsFromMediaUrls(media);
   if (fromUrls) {
-    return fromUrls;
+    return { dimensions: fromUrls, hasIntrinsicSize: true };
   }
 
-  return DEFAULT_DIMENSIONS;
+  return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
 }
 
 function toRem(pixels: number): string {

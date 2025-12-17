@@ -30,6 +30,15 @@ export interface CreateVideoVolumeChangeGuardOptions {
   readonly windowMs?: number;
 }
 
+const DEFAULT_VOLUME_EPSILON = 1e-3;
+
+function areVolumesEquivalent(a: number, b: number): boolean {
+  if (!Number.isFinite(a) || !Number.isFinite(b)) {
+    return a === b;
+  }
+  return Math.abs(a - b) <= DEFAULT_VOLUME_EPSILON;
+}
+
 function nowMs(): number {
   // `performance.now()` is monotonic; fall back to Date.now() where unavailable.
   return typeof performance !== 'undefined' && typeof performance.now === 'function'
@@ -58,7 +67,8 @@ export function createVideoVolumeChangeGuard(
       if (age < 0 || age > windowMs) return false;
 
       const matches =
-        current.volume === lastExpected.volume && current.muted === lastExpected.muted;
+        areVolumesEquivalent(current.volume, lastExpected.volume) &&
+        current.muted === lastExpected.muted;
 
       // One-shot: once the expected programmatic event is observed, clear it.
       if (matches) {

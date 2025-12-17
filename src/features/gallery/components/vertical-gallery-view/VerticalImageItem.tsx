@@ -28,11 +28,11 @@ import type { JSX, JSXElement } from '@shared/external/vendors';
 import type { ImageFitMode } from '@shared/types';
 import {
   createIntrinsicSizingStyle,
-  resolveMediaDimensions,
+  resolveMediaDimensionsWithIntrinsicFlag,
 } from '@shared/utils/media/media-dimensions';
 import { SharedObserver } from '@shared/utils/performance';
 import { cx } from '@shared/utils/text/formatting';
-import { createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
+import { createEffect, createMemo, createSignal, onCleanup, splitProps } from 'solid-js';
 import { useVideoVisibility } from './hooks/useVideoVisibility';
 import { createVideoVolumeChangeGuard } from './utils/video-volume-change-guard';
 import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
@@ -51,42 +51,57 @@ const FIT_MODE_CLASSES: Record<ImageFitMode, string | undefined> = {
  * Core vertical image item component
  */
 export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | null {
-  const {
-    media,
-    index,
-    isActive,
-    isFocused = false,
-    forceVisible = false,
-    onClick,
-    onImageContextMenu,
-    className = '',
-    onMediaLoad,
-    'data-testid': testId,
-    'aria-label': ariaLabel,
-    'aria-describedby': ariaDescribedBy,
-    registerContainer,
-    role,
-    tabIndex,
-    onFocus,
-    onBlur,
-    onKeyDown,
-  } = props;
+  // NOTE: Do not destructure reactive props in Solid. Use splitProps to preserve reactivity.
+  const [local, rest] = splitProps(props, [
+    'media',
+    'index',
+    'isActive',
+    'isFocused',
+    'forceVisible',
+    'onClick',
+    'onImageContextMenu',
+    'className',
+    'onMediaLoad',
+    'fitMode',
+    'style',
+    'data-testid',
+    'aria-label',
+    'aria-describedby',
+    'registerContainer',
+    'role',
+    'tabIndex',
+    'onFocus',
+    'onBlur',
+    'onKeyDown',
+  ]);
+
+  const isFocused = createMemo(() => local.isFocused ?? false);
+  const forceVisible = createMemo(() => local.forceVisible ?? false);
+  const className = createMemo(() => local.className ?? '');
 
   const lang = getLanguageService();
 
-  const isVideo = isVideoMedia(media);
+  const isVideo = isVideoMedia(local.media);
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
-  const [isVisible, setIsVisible] = createSignal(forceVisible);
+  const [isVisible, setIsVisible] = createSignal(forceVisible());
 
   const [containerRef, setContainerRef] = createSignal<HTMLDivElement | null>(null);
   const [imageRef, setImageRef] = createSignal<HTMLImageElement | null>(null);
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
 
-  const dimensions = createMemo(() => resolveMediaDimensions(media));
+  const resolvedDimensions = createMemo(() => resolveMediaDimensionsWithIntrinsicFlag(local.media));
+  const dimensions = createMemo(() => resolvedDimensions().dimensions);
+  const hasIntrinsicSize = createMemo(() => resolvedDimensions().hasIntrinsicSize);
 
   const intrinsicSizingStyle = createMemo<JSX.CSSProperties>(() => {
     return createIntrinsicSizingStyle(dimensions());
+  });
+
+  const mergedStyle = createMemo<JSX.CSSProperties>(() => {
+    const base = intrinsicSizingStyle();
+    const extra = (local.style ?? {}) as JSX.CSSProperties;
+    return { ...base, ...extra };
   });
 
   const volumeChangeGuard = createVideoVolumeChangeGuard();
@@ -169,7 +184,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   // Event handlers
   const handleClick = () => {
     containerRef()?.focus?.({ preventScroll: true });
-    onClick();
+    local.onClick();
   };
 
   const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
@@ -182,7 +197,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     if (!isLoaded()) {
       setIsLoaded(true);
       setIsError(false);
-      onMediaLoad?.(media.url, index);
+      local.onMediaLoad?.(local.media.url, local.index);
     }
   };
 
@@ -192,19 +207,19 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   };
 
   const handleContextMenu = (event: MouseEvent) => {
-    onImageContextMenu?.(event, media);
+    local.onImageContextMenu?.(event, local.media);
   };
 
   // Sync forceVisible to isVisible
   createEffect(() => {
-    if (forceVisible && !isVisible()) {
+    if (forceVisible() && !isVisible()) {
       setIsVisible(true);
     }
   });
 
   createEffect(() => {
     const container = containerRef();
-    if (!container || isVisible() || forceVisible) {
+    if (!container || isVisible() || forceVisible()) {
       return;
     }
 
@@ -250,7 +265,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   // Fit mode handling
   const resolvedFitMode = createMemo<ImageFitMode>(() => {
-    const value = props.fitMode;
+    const value = local.fitMode;
     if (typeof value === 'function') {
       return value() ?? 'fitWidth';
     }
@@ -265,51 +280,49 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       'xeg-gallery-item',
       'vertical-item',
       styles.container,
-      isActive ? styles.active : undefined,
-      isFocused ? styles.focused : undefined,
+      local.isActive ? styles.active : undefined,
+      isFocused() ? styles.focused : undefined,
       fitModeClass(),
-      className
+      className()
     )
   );
 
   const imageClasses = createMemo(() => cx(styles.image, fitModeClass()));
 
   // Accessibility props
-  const ariaProps = {
-    'aria-label': ariaLabel || `Media ${index + 1}: ${cleanFilename(media.filename)}`,
-    'aria-describedby': ariaDescribedBy,
-    role: (role || 'button') as JSX.HTMLAttributes<HTMLDivElement>['role'],
-    tabIndex: tabIndex ?? 0,
-  };
-
-  const testProps = testId ? { 'data-testid': testId } : {};
-
   const assignContainerRef = (element: HTMLDivElement | null) => {
     setContainerRef(element);
-    registerContainer?.(element);
+    local.registerContainer?.(element);
   };
 
   return (
     <div
+      {...rest}
       ref={assignContainerRef}
       class={containerClasses()}
       data-xeg-role="gallery-item"
-      data-index={index}
-      data-item-index={index}
+      data-index={local.index}
+      data-item-index={local.index}
       data-fit-mode={resolvedFitMode()}
       data-media-loaded={isLoaded() ? 'true' : 'false'}
+      data-has-intrinsic-size={hasIntrinsicSize() ? 'true' : undefined}
       data-xeg-gallery="true"
       data-xeg-gallery-type="item"
       data-xeg-gallery-version="2.0"
       data-xeg-component="vertical-image-item"
       data-xeg-block-twitter="true"
-      style={intrinsicSizingStyle()}
+      style={mergedStyle()}
       onClick={handleContainerClick}
-      onFocus={onFocus as (event: FocusEvent) => void}
-      onBlur={onBlur as (event: FocusEvent) => void}
-      onKeyDown={onKeyDown as (event: KeyboardEvent) => void}
-      {...ariaProps}
-      {...testProps}
+      onFocus={local.onFocus as (event: FocusEvent) => void}
+      onBlur={local.onBlur as (event: FocusEvent) => void}
+      onKeyDown={local.onKeyDown as (event: KeyboardEvent) => void}
+      aria-label={
+        local['aria-label'] || `Media ${local.index + 1}: ${cleanFilename(local.media.filename)}`
+      }
+      aria-describedby={local['aria-describedby']}
+      role={(local.role || 'button') as JSX.HTMLAttributes<HTMLDivElement>['role']}
+      tabIndex={local.tabIndex ?? 0}
+      data-testid={local['data-testid']}
     >
       {isVisible() && (
         <div class={styles.imageWrapper} data-xeg-role="media-wrapper">
@@ -321,7 +334,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
           {isVideo ? (
             <video
-              src={media.url}
+              src={local.media.url}
               autoplay={false}
               controls
               ref={setVideoRef}
@@ -338,9 +351,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
           ) : (
             <img
               ref={setImageRef}
-              src={media.url}
+              src={local.media.url}
               alt={
-                cleanFilename(media.filename) ||
+                cleanFilename(local.media.filename) ||
                 lang.translate('messages.gallery.failedToLoadImage', {
                   type: 'image',
                 })

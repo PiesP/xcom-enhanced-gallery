@@ -64,7 +64,7 @@ export type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
  * **Testing**:
  * - {@link VerticalImageItemProps.data-testid} - Test identifier
  */
-export interface VerticalImageItemProps extends BaseComponentProps {
+export interface VerticalImageItemProps extends Omit<BaseComponentProps, 'onClick'> {
   /**
    * Media item data to render
    */

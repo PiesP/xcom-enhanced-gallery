@@ -30,7 +30,7 @@ const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi'] as const;
  * 3. Removes relative path prefix (./)
  * 4. Replaces path separators with underscores
  * 5. Truncates long filenames (>40 chars) to last valid component
- * 6. Falls back to "Image" if filename becomes empty
+ * 6. Falls back to "Untitled" when the input is missing; uses "Image" as a truncation fallback
  *
  * **Examples**:
  * - `twitter_media_20240101T120000_12345.jpg` → filename without prefix

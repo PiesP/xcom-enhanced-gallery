@@ -80,8 +80,22 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
     };
 
     const playVideo = () => {
-      if (typeof videoEl.play === 'function') {
-        void videoEl.play();
+      if (typeof videoEl.play !== 'function') {
+        return;
+      }
+
+      try {
+        const result = videoEl.play();
+        // Browsers may reject the promise when autoplay is blocked.
+        // We intentionally swallow that rejection to avoid unhandled-rejection noise.
+        if (result && typeof (result as Promise<void>).catch === 'function') {
+          void (result as Promise<void>).catch((err) => {
+            logger.debug('Video play() was prevented', { error: err });
+          });
+        }
+      } catch (err) {
+        // Some browsers can throw synchronously.
+        logger.debug('Video play() threw synchronously', { error: err });
       }
     };
 
