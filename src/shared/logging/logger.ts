@@ -34,9 +34,30 @@ const BASE_PREFIX = '[XEG]';
 // Safe fallback: default to non-dev unless Vite's import.meta.env.DEV says otherwise.
 const isDev: boolean = typeof __DEV__ !== 'undefined' ? __DEV__ : Boolean(import.meta.env?.DEV);
 
-const createNoOpLogger = (): Logger => {
+const createProdLogger = (config: LoggerConfig): Logger => {
   const noop = (): void => {};
-  return { info: noop, warn: noop, error: noop, debug: noop, trace: noop };
+  const hasConsole = typeof console !== 'undefined';
+
+  const formatMessage = (...args: LoggableData[]): LoggableData[] => {
+    return [config.prefix, ...args];
+  };
+
+  return {
+    // Keep production output minimal but actionable.
+    info: noop,
+    debug: noop,
+    trace: noop,
+    warn: (...args: LoggableData[]): void => {
+      if (hasConsole) {
+        console.warn(...formatMessage(...args));
+      }
+    },
+    error: (...args: LoggableData[]): void => {
+      if (hasConsole) {
+        console.error(...formatMessage(...args));
+      }
+    },
+  };
 };
 
 let createLoggerImpl: (config?: Partial<LoggerConfig>) => Logger;
@@ -100,8 +121,21 @@ if (isDev) {
       prefix: `${config.prefix ?? BASE_PREFIX} [${scope}]`,
     });
 } else {
-  createLoggerImpl = () => createNoOpLogger();
-  createScopedLoggerImpl = () => createNoOpLogger();
+  const DEFAULT_CONFIG: LoggerConfig = {
+    level: DEFAULT_LOG_LEVEL,
+    prefix: BASE_PREFIX,
+  };
+
+  createLoggerImpl = (config: Partial<LoggerConfig> = {}): Logger => {
+    const finalConfig: LoggerConfig = { ...DEFAULT_CONFIG, ...config };
+    return createProdLogger(finalConfig);
+  };
+
+  createScopedLoggerImpl = (scope: string, config: Partial<LoggerConfig> = {}): Logger =>
+    createLoggerImpl({
+      ...config,
+      prefix: `${config.prefix ?? BASE_PREFIX} [${scope}]`,
+    });
 }
 
 export function createLogger(config: Partial<LoggerConfig> = {}): Logger {

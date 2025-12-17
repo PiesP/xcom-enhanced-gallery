@@ -13,6 +13,7 @@ import type {
   MediaExtractionResult,
   MediaInfo,
 } from '@shared/types/media.types';
+import { clampIndex } from '@shared/utils/types/safety';
 import { createSingleton } from '@shared/utils/types/singleton';
 
 export type BulkDownloadOptions = DownloadOptions;
@@ -95,14 +96,24 @@ export class MediaService {
     const result = await this.mediaExtraction.extractFromClickedElement(element, options);
 
     if (result.success && result.mediaItems.length > 0) {
-      // Immediate prefetch for the first item (current view)
-      const firstItem = result.mediaItems[0];
-      if (firstItem) {
-        this.prefetchMedia(firstItem, 'immediate');
+      const items = result.mediaItems;
+      const clickedIndex = clampIndex(result.clickedIndex ?? 0, items.length);
+      const scheduled = new Set<string>();
+
+      // Immediate prefetch for the clicked item (current view)
+      const clickedItem = items[clickedIndex];
+      if (clickedItem) {
+        scheduled.add(clickedItem.url);
+        this.prefetchMedia(clickedItem, 'immediate');
       }
 
-      // Idle prefetch for others
-      result.mediaItems.slice(1).forEach((item) => {
+      // Idle prefetch for others (exclude clicked item; avoid duplicates)
+      items.forEach((item, index) => {
+        if (!item) return;
+        if (index === clickedIndex) return;
+        if (scheduled.has(item.url)) return;
+
+        scheduled.add(item.url);
         this.prefetchMedia(item, 'idle');
       });
     }

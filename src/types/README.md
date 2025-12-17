@@ -10,7 +10,7 @@ This directory contains global type definitions that are not specific to any sin
 
 ### env.d.ts
 
-- Declares build flags injected via `vite.config.ts` (`__DEV__`, `__IS_DEV__`, `__VERSION__`, `__FEATURE_MEDIA_EXTRACTION__`) plus the optional `__XEG_DEBUG__` surface for dev/test tracing.
+- Declares build flags injected via `vite.config.ts` (`__DEV__`, `__VERSION__`, `__BUILD_TIME__`, `__FEATURE_MEDIA_EXTRACTION__`).
 - Prefer these symbols over `import.meta.env` for tree-shakable conditionals.
 
 ### css-modules.d.ts

@@ -10,6 +10,37 @@ import { extractUsernameFromUrl } from '@shared/utils/url';
 
 type ExtractionStrategy = (element: HTMLElement) => TweetInfo | null;
 
+const DEFAULT_TWEET_ORIGIN = 'https://x.com';
+
+function normalizeTweetUrl(inputUrl: string): string {
+  try {
+    const url = new URL(inputUrl, DEFAULT_TWEET_ORIGIN);
+    const hostname = url.hostname.toLowerCase();
+
+    if (
+      hostname === 'twitter.com' ||
+      hostname === 'www.twitter.com' ||
+      hostname === 'mobile.twitter.com'
+    ) {
+      url.hostname = 'x.com';
+      url.protocol = 'https:';
+    }
+
+    if (hostname === 'www.x.com') {
+      url.hostname = 'x.com';
+      url.protocol = 'https:';
+    }
+
+    return url.toString();
+  } catch {
+    // Fall back to a safe absolute URL for relative paths.
+    if (inputUrl.startsWith('/')) {
+      return `${DEFAULT_TWEET_ORIGIN}${inputUrl}`;
+    }
+    return inputUrl;
+  }
+}
+
 // ============================================================================
 // Strategies
 // ============================================================================
@@ -22,7 +53,7 @@ const extractFromElement: ExtractionStrategy = (element) => {
     return {
       tweetId: dataId,
       username: element.dataset.user ?? 'unknown',
-      tweetUrl: `https://twitter.com/i/status/${dataId}`,
+      tweetUrl: `https://x.com/i/status/${dataId}`,
       extractionMethod: 'element-attribute',
       confidence: 0.9,
     };
@@ -36,7 +67,7 @@ const extractFromElement: ExtractionStrategy = (element) => {
       return {
         tweetId: match[1],
         username: extractUsernameFromUrl(href) ?? 'unknown',
-        tweetUrl: href.startsWith('http') ? href : `https://twitter.com${href}`,
+        tweetUrl: normalizeTweetUrl(href),
         extractionMethod: 'element-href',
         confidence: 0.8,
       };
@@ -67,7 +98,7 @@ const extractFromDOM: ExtractionStrategy = (element) => {
   return {
     tweetId,
     username,
-    tweetUrl: href.startsWith('http') ? href : `https://twitter.com${href}`,
+    tweetUrl: normalizeTweetUrl(href),
     extractionMethod: 'dom-structure',
     confidence: 0.85,
     metadata: { containerTag: container.tagName.toLowerCase() },
@@ -93,7 +124,7 @@ const extractFromMediaGridItem: ExtractionStrategy = (element) => {
   return {
     tweetId,
     username,
-    tweetUrl: href.startsWith('http') ? href : `https://twitter.com${href}`,
+    tweetUrl: normalizeTweetUrl(href),
     extractionMethod: 'media-grid-item',
     confidence: 0.8,
   };

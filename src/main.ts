@@ -99,7 +99,7 @@ export async function runOptionalCleanup(
 /**
  * Bootstrap stage definitions (data-driven configuration)
  *
- * 📋 10-stage bootstrap process:
+ * 📋 11-stage bootstrap process:
  * 1️⃣  Global styles - src/styles/globals
  * 2️⃣  Developer tooling - src/bootstrap/dev-tools.ts (dev-only)
  * 3️⃣  Infrastructure initialization (Vendor load) - src/bootstrap/environment.ts
@@ -108,8 +108,9 @@ export async function runOptionalCleanup(
  * 6️⃣  Theme synchronization - Apply initial theme setting
  * 7️⃣  Feature service registration (lazy load) - src/bootstrap/features.ts
  * 8️⃣  Global event handler setup - src/bootstrap/events.ts
- * 9️⃣  Gallery app initialization - src/features/gallery/GalleryApp.ts
- * 🔟  Background system initialization (non-critical services)
+ * 9️⃣  Command runtime setup (dev-only)
+ * 🔟  Gallery app initialization - src/features/gallery/GalleryApp.ts
+ * 1️⃣1️⃣  Background system initialization (non-critical services)
  *
  * 💡 Conditional Execution:
  * - Developer tooling runs only in __DEV__ mode and not in tests
