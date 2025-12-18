@@ -3,11 +3,11 @@ import type { Unregister } from '@bootstrap/events';
 import { wireGlobalEvents } from '@bootstrap/events';
 import { initializeGalleryApp } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
-import { createAppConfig } from '@constants/app-config';
 import type { IGalleryApp } from '@shared/container/app-container';
 import { warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { runAfterWindowLoad } from '@shared/dom/window-load';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
+import type { BootstrapStage } from '@shared/interfaces';
 import { logger } from '@shared/logging';
 import { EventManager } from '@shared/services/event-manager';
 import { CoreService } from '@shared/services/service-manager';
@@ -49,12 +49,26 @@ async function refreshDevNamespace(app: IGalleryApp | null): Promise<void> {
   }
 
   const { setupDevNamespace } = await import('@bootstrap/dev-namespace');
+  const { createAppConfig } = await import('@constants/app-config');
   setupDevNamespace(app, {
     start: startApplication,
     createConfig: createAppConfig,
     cleanup,
   });
 }
+
+// Avoid bundling the dev command runtime into production builds.
+// This needs to remove the dynamic import expression when __DEV__ is false.
+const initializeCommandRuntimeIfNeeded: () => Promise<void> = __DEV__
+  ? async () => {
+      tearDownCommandRuntime();
+
+      const { startDevCommandRuntime } = await import('@edge/bootstrap');
+      commandRuntimeTeardown = startDevCommandRuntime();
+    }
+  : async () => {
+      // no-op (production)
+    };
 
 function tearDownGlobalEventHandlers(): void {
   if (!globalEventTeardown) {
@@ -122,7 +136,7 @@ async function runOptionalCleanup(
  * - Developer tooling runs only in __DEV__ mode and not in tests
  * - Gallery initialization is skipped in test mode
  */
-const bootstrapStages = [
+const bootstrapStages: readonly BootstrapStage[] = [
   {
     label: 'Global styles',
     run: loadGlobalStyles,
@@ -155,14 +169,6 @@ const bootstrapStages = [
     optional: true,
   },
   {
-    label: 'Feature service registration',
-    run: async () => {
-      const { registerFeatureServicesLazy } = await import('@bootstrap/features');
-      await registerFeatureServicesLazy();
-    },
-    optional: true,
-  },
-  {
     label: 'Global event wiring',
     run: () => setupGlobalEventHandlers(),
   },
@@ -181,7 +187,7 @@ const bootstrapStages = [
     run: () => initializeNonCriticalSystems(),
     optional: true,
   },
-] as const;
+];
 
 // exported runBootstrapStages below
 async function runBootstrapStages(): Promise<void> {
@@ -287,13 +293,6 @@ async function initializeDevToolsIfNeeded(): Promise<void> {
 
   const { initializeDevTools } = await import('@bootstrap/dev-tools');
   await initializeDevTools();
-}
-
-async function initializeCommandRuntimeIfNeeded(): Promise<void> {
-  tearDownCommandRuntime();
-
-  const { startDevCommandRuntime } = await import('@edge/bootstrap');
-  commandRuntimeTeardown = startDevCommandRuntime();
 }
 
 // exported initializeGalleryIfPermitted below

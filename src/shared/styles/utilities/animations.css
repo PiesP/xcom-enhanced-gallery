@@ -4,17 +4,6 @@
  */
 
 @layer xeg.utilities {
-  @keyframes xeg-scale-in {
-    from {
-      opacity: 0;
-      transform: scale(0.8) var(--xeg-gpu-hack);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) var(--xeg-gpu-hack);
-    }
-  }
-
   .xeg-fade-in {
     animation: xeg-fade-in var(--xeg-duration-normal) var(--xeg-ease-entrance);
     animation-fill-mode: both;
@@ -25,16 +14,9 @@
     animation-fill-mode: both;
   }
 
-  .xeg-scale-in {
-    animation: xeg-scale-in var(--xeg-duration-normal) var(--xeg-ease-entrance);
-    animation-fill-mode: both;
-    backface-visibility: var(--xeg-backface-visibility);
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .xeg-fade-in,
-    .xeg-fade-out,
-    .xeg-scale-in {
+    .xeg-fade-out {
       animation: none;
     }
   }

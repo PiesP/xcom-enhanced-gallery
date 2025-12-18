@@ -87,15 +87,6 @@
     border-radius: var(--xeg-radius-lg);
   }
 
-  /* Animation Utility Classes */
-  .xeg-anim-fade-in {
-    animation: xeg-fade-in var(--xeg-duration) var(--xeg-easing-ease-out);
-  }
-
-  .xeg-anim-fade-out {
-    animation: xeg-fade-out var(--xeg-duration-fast) var(--xeg-easing-ease-in);
-  }
-
   .xeg-spinner {
     display: inline-block;
     width: var(--xeg-spinner-size, var(--xeg-spinner-size-default));

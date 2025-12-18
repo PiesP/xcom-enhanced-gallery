@@ -55,7 +55,7 @@ export class MediaService {
   }
 
   private async onInitialize(): Promise<void> {
-    if (typeof __FEATURE_MEDIA_EXTRACTION__ === 'undefined' || __FEATURE_MEDIA_EXTRACTION__) {
+    if (__FEATURE_MEDIA_EXTRACTION__) {
       const { MediaExtractionService } = await import(
         '@shared/services/media-extraction/media-extraction-service'
       );
