@@ -1,6 +1,42 @@
-import { getUserscript } from '@shared/external/userscript';
+import { getUserscript, type UserscriptAPI } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
+import type { GMNotificationDetails, GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { createSingleton } from '@shared/utils/types/singleton';
+
+// Fallback Userscript API used when GM_* bindings are unavailable at resolution time.
+const NOOP_USERSCRIPT: UserscriptAPI = Object.freeze({
+  hasGM: false,
+  manager: 'unknown',
+  info: () => null,
+  async download(_url: string, _filename: string) {
+    throw new Error('GM_download unavailable');
+  },
+  async setValue(_key: string, _value: unknown) {
+    throw new Error('GM_setValue unavailable');
+  },
+  async getValue<T>(_key: string, _default?: T): Promise<T | undefined> {
+    return undefined;
+  },
+  getValueSync<T>(_key: string, _default?: T): T | undefined {
+    return undefined;
+  },
+  async deleteValue(_key: string) {
+    throw new Error('GM_deleteValue unavailable');
+  },
+  async listValues(): Promise<string[]> {
+    return [];
+  },
+  addStyle(_css: string): HTMLStyleElement {
+    throw new Error('GM_addStyle unavailable');
+  },
+  xmlHttpRequest(_details: GMXMLHttpRequestDetails) {
+    throw new Error('GM_xmlhttpRequest unavailable');
+  },
+  notification(_details: GMNotificationDetails): void {
+    // silent no-op
+  },
+  cookie: undefined,
+});
 
 export interface PersistentStorageGetOptions {
   /**
@@ -21,7 +57,14 @@ export interface PersistentStorageGetOptions {
 }
 
 export class PersistentStorage {
-  private readonly userscript = getUserscript();
+  private get userscript(): UserscriptAPI {
+    try {
+      return getUserscript();
+    } catch {
+      return NOOP_USERSCRIPT;
+    }
+  }
+
   private static readonly singleton = createSingleton(() => new PersistentStorage());
 
   private static readonly parseWarnedKeys = new Set<string>();
