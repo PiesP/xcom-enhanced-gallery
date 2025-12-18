@@ -1204,7 +1204,20 @@ export default defineConfig(({ mode }): UserConfig => {
     root,
 
     resolve: {
-      alias: buildPathAliases(root),
+      alias: [
+        // Bundle-size optimization: In production we swap the full AppErrorReporter
+        // implementation for a much slimmer one. This avoids shipping large
+        // docstrings and verbose payload keys in a non-minified build.
+        ...(!isDev
+          ? [
+              {
+                find: '@shared/error/app-error-reporter',
+                replacement: resolve(root, 'src/shared/error/app-error-reporter.slim.ts'),
+              },
+            ]
+          : []),
+        ...buildPathAliases(root),
+      ],
     },
 
     build: {

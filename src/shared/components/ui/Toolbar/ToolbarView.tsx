@@ -18,10 +18,9 @@ import { safeEventPreventAll } from '@shared/utils/events/utils';
 import { shouldAllowWheelDefault as shouldAllowWheelDefaultBase } from '@shared/utils/events/wheel-scroll-guard';
 import { resolve, resolveOptional } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
-import { createEffect, createMemo, createSignal, lazy, onCleanup, Show, Suspense } from 'solid-js';
+import { createEffect, createMemo, createSignal, onCleanup, Show } from 'solid-js';
 import styles from './Toolbar.module.css';
-
-const TweetTextPanelLazy = lazy(() => import('./TweetTextPanel'));
+import TweetTextPanel from './TweetTextPanel';
 
 type ToolbarViewNavState = {
   readonly prevDisabled: boolean;
@@ -445,12 +444,10 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         data-gallery-element="tweet-panel"
       >
         <Show when={props.isTweetPanelExpanded() && hasTweetContent()}>
-          <Suspense fallback={<div class={styles.tweetPanelLoading}>Loading...</div>}>
-            <TweetTextPanelLazy
-              tweetText={tweetText() ?? undefined}
-              tweetTextHTML={tweetTextHTML() ?? undefined}
-            />
-          </Suspense>
+          <TweetTextPanel
+            tweetText={tweetText() ?? undefined}
+            tweetTextHTML={tweetTextHTML() ?? undefined}
+          />
         </Show>
       </div>
     </div>
