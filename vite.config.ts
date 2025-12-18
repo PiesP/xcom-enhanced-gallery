@@ -26,6 +26,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 import { resolveViteAliasesFromTsconfig } from './scripts/tsconfig-aliases';
+import { stripEmptyEsmMinInitWrappers } from './src/shared/utils/bundle/production-cleanup';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -313,23 +314,8 @@ function buildLicenseBlock(
   const fullText = options?.fullText ?? false;
 
   if (!fullText) {
-    const lines = [
-      ' * Third-Party Licenses',
-      ' * ====================',
-      ' *',
-      ' * This userscript bundles third-party components under their respective licenses.',
-      ' * Full license texts are available in the repository:',
-      ` *   ${USERSCRIPT_CONFIG.homepageURL}/tree/master/LICENSES`,
-      ' *',
-      ' * Included license files:',
-    ];
-
-    for (const license of licenses) {
-      lines.push(` * - ${license.name} (LICENSES/${license.fileName})`);
-    }
-
-    lines.push(' *');
-    return ['/*', ...lines, ' */'].join('\n');
+    // Keep the production header short (no file list) to reduce fixed overhead.
+    return `// Third-party licenses: ${USERSCRIPT_CONFIG.homepageURL}/tree/master/LICENSES`;
   }
 
   const mitCopyrights: Array<{ name: string; copyright: string }> = [];
@@ -966,6 +952,53 @@ function removeLogCalls(code: string, methods: string[]): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function productionCleanupPlugin(): Plugin {
+  function splitLeadingUserscriptHeader(source: string): { header: string; body: string } {
+    // Preserve the userscript metadata header as-is.
+    // Tampermonkey/Greasemonkey require the `// ==UserScript==` block to stay line-based.
+    if (!source.startsWith('// ==UserScript==')) {
+      return { header: '', body: source };
+    }
+
+    const lines = source.split('\n');
+    const headerLines: string[] = [];
+    let inBlockComment = false;
+    let i = 0;
+
+    for (; i < lines.length; i++) {
+      const line = lines[i] ?? '';
+      const trimmed = line.trimStart();
+
+      if (inBlockComment) {
+        headerLines.push(line);
+        if (trimmed.includes('*/')) {
+          inBlockComment = false;
+        }
+        continue;
+      }
+
+      if (trimmed.startsWith('/*')) {
+        inBlockComment = true;
+        headerLines.push(line);
+        if (trimmed.includes('*/')) {
+          inBlockComment = false;
+        }
+        continue;
+      }
+
+      if (trimmed.startsWith('//') || trimmed === '') {
+        headerLines.push(line);
+        continue;
+      }
+
+      break;
+    }
+
+    return {
+      header: headerLines.join('\n'),
+      body: lines.slice(i).join('\n'),
+    };
+  }
+
   return {
     name: 'production-cleanup',
     apply: 'build',
@@ -975,7 +1008,9 @@ function productionCleanupPlugin(): Plugin {
       for (const chunk of Object.values(bundle)) {
         if (chunk.type !== 'chunk') continue;
 
-        let code = chunk.code;
+        const split = splitLeadingUserscriptHeader(chunk.code);
+        const header = split.header;
+        let code = split.body;
 
         code = code.replace(
           /const\s+\w+\s*=\s*(?:\/\*#__PURE__\*\/\s*)?Object\.freeze\(\s*(?:\/\*#__PURE__\*\/\s*)?Object\.defineProperty\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*,\s*Symbol\.toStringTag\s*,\s*\{\s*value\s*:\s*['"]Module['"]\s*\}\s*\)\s*\)\s*;?\n?/g,
@@ -993,10 +1028,15 @@ function productionCleanupPlugin(): Plugin {
         );
         code = code.replace(/\s*\/\*\*\s*@internal[^*]*\*\/\s*/g, '\n');
         code = code.replace(/\s*\/\*\*\s*\n\s*\*[^@]*@internal\s*\n\s*\*\/\s*/g, '\n');
-        code = code.replace(/^[ \t]+$/gm, '');
-        code = code.replace(/\n{3,}/g, '\n\n');
+        code = stripEmptyEsmMinInitWrappers(code);
 
-        chunk.code = code;
+        // Whitespace-only compaction (no identifier mangling).
+        // Keep the header intact by running this only on the body.
+        code = code.replace(/^[ \t]+/gm, '');
+        code = code.replace(/[ \t]+$/gm, '');
+        code = code.replace(/\n{2,}/g, '\n');
+
+        chunk.code = header ? `${header}\n${code}` : code;
       }
     },
   };

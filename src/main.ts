@@ -7,7 +7,7 @@ import { wireGlobalEvents } from '@bootstrap/events';
 import { initializeGalleryApp } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
 import type { IGalleryApp } from '@shared/container/app-container';
-import { warmupNonCriticalServices } from '@shared/container/service-accessors';
+import { getThemeService, warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
 import type { BootstrapStage } from '@shared/interfaces';
 import { logger } from '@shared/logging';
@@ -232,7 +232,6 @@ async function initializeBaseServicesStage(): Promise<void> {
 // exported applyInitialThemeSetting below
 async function applyInitialThemeSetting(): Promise<void> {
   try {
-    const { getThemeService } = await import('@shared/container/service-accessors');
     const themeService = getThemeService();
 
     if (typeof themeService.isInitialized === 'function' && !themeService.isInitialized()) {

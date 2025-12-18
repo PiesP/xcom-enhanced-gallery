@@ -51,14 +51,7 @@ const STATIC_DEFAULT_SETTINGS = {
 export const DEFAULT_SETTINGS = STATIC_DEFAULT_SETTINGS;
 
 export function createDefaultSettings(timestamp: number = Date.now()): AppSettings {
-  return {
-    gallery: cloneDeep(DEFAULT_SETTINGS.gallery),
-    toolbar: cloneDeep(DEFAULT_SETTINGS.toolbar),
-    download: cloneDeep(DEFAULT_SETTINGS.download),
-    tokens: cloneDeep(DEFAULT_SETTINGS.tokens),
-    accessibility: cloneDeep(DEFAULT_SETTINGS.accessibility),
-    features: cloneDeep(DEFAULT_SETTINGS.features),
-    version: DEFAULT_SETTINGS.version,
-    lastModified: timestamp,
-  };
+  const settings = cloneDeep(DEFAULT_SETTINGS) as AppSettings;
+  settings.lastModified = timestamp;
+  return settings;
 }

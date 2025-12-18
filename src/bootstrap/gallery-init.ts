@@ -7,6 +7,7 @@
 
 import type { IGalleryApp } from '@shared/container/app-container';
 import {
+  getThemeService,
   registerGalleryRenderer,
   registerSettingsManager,
 } from '@shared/container/service-accessors';
@@ -18,7 +19,6 @@ import {
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
 import type { SettingsServiceLike } from '@shared/services/theme-service';
-import { isSettingsServiceLike } from '@shared/utils/types/guards';
 
 let rendererRegistrationTask: Promise<void> | null = null;
 
@@ -54,12 +54,7 @@ async function initializeServices(): Promise<void> {
     const service = new SettingsService();
     await service.initialize();
     registerSettingsManager(service);
-    // Runtime validation before type assertion for safer binding
-    if (isSettingsServiceLike(service)) {
-      // SettingsService implements a superset of SettingsServiceLike
-      // Type assertion is safe after runtime validation
-      settingsService = service as SettingsServiceLike;
-    }
+    settingsService = service as unknown as SettingsServiceLike;
     logger.debug('[Bootstrap] ✅ SettingsService initialized');
   } catch (error) {
     settingsErrorReporter.warn(error, {
@@ -69,7 +64,6 @@ async function initializeServices(): Promise<void> {
 
   // 3. Theme Service
   try {
-    const { getThemeService } = await import('@shared/container/service-accessors');
     const themeService = getThemeService();
 
     if (!themeService.isInitialized()) {
@@ -78,9 +72,6 @@ async function initializeServices(): Promise<void> {
 
     if (settingsService) {
       themeService.bindSettingsService(settingsService);
-      // Apply stored theme immediately
-      const storedTheme = themeService.getCurrentTheme();
-      themeService.setTheme(storedTheme, { force: true, persist: false });
     }
 
     logger.debug(`[Bootstrap] Theme confirmed: ${themeService.getCurrentTheme()}`);
