@@ -30,29 +30,27 @@ const DEFAULT_DIMENSIONS: DimensionPair = {
 function extractFilenameFromUrl(url: string): string | null {
   if (!url) return null;
 
-  try {
-    // Use a base URL to support relative/protocol-relative inputs.
-    const urlObj = new URL(url, 'https://example.invalid');
-    const pathname = urlObj.pathname;
-    const filename = pathname.split('/').pop();
-    return filename && filename.length > 0 ? filename : null;
-  } catch {
-    const lastSlash = url.lastIndexOf('/');
-    if (lastSlash === -1) return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
 
-    let filename = url.substring(lastSlash + 1);
-    const queryIndex = filename.indexOf('?');
-    if (queryIndex !== -1) {
-      filename = filename.substring(0, queryIndex);
-    }
-
-    const hashIndex = filename.indexOf('#');
-    if (hashIndex !== -1) {
-      filename = filename.substring(0, hashIndex);
-    }
-
-    return filename.length > 0 ? filename : null;
+  // Avoid treating arbitrary strings (e.g. "not-a-url") as relative URLs.
+  // We only support absolute URLs, protocol-relative URLs, and path-like inputs.
+  if (
+    !trimmed.startsWith('http://') &&
+    !trimmed.startsWith('https://') &&
+    !trimmed.startsWith('//') &&
+    !trimmed.startsWith('/') &&
+    !trimmed.startsWith('./') &&
+    !trimmed.startsWith('../')
+  ) {
+    return null;
   }
+
+  const parsed = tryParseUrl(trimmed, 'https://example.invalid');
+  if (!parsed) return null;
+
+  const filename = parsed.pathname.split('/').pop();
+  return filename && filename.length > 0 ? filename : null;
 }
 
 function getMediaDedupKey(media: MediaInfo): string | null {
@@ -230,41 +228,35 @@ export function normalizeDimension(value: unknown): number | null {
  */
 export function normalizeMediaUrl(url: string): string | null {
   if (!url) return null;
-  try {
-    const urlObj = new URL(url);
-    const pathname = urlObj.pathname;
-    let filename = pathname.split('/').pop();
 
-    if (filename) {
-      const dotIndex = filename.lastIndexOf('.');
-      if (dotIndex !== -1) {
-        filename = filename.substring(0, dotIndex);
-      }
-    }
+  const trimmed = url.trim();
+  if (!trimmed) return null;
 
-    return filename && filename.length > 0 ? filename : null;
-  } catch {
-    try {
-      const lastSlash = url.lastIndexOf('/');
-      if (lastSlash === -1) return null;
-      let filenamePart = url.substring(lastSlash + 1);
-      const queryIndex = filenamePart.indexOf('?');
-      if (queryIndex !== -1) {
-        filenamePart = filenamePart.substring(0, queryIndex);
-      }
-      const hashIndex = filenamePart.indexOf('#');
-      if (hashIndex !== -1) filenamePart = filenamePart.substring(0, hashIndex);
-
-      const dotIndex = filenamePart.lastIndexOf('.');
-      if (dotIndex !== -1) {
-        filenamePart = filenamePart.substring(0, dotIndex);
-      }
-
-      return filenamePart.length > 0 ? filenamePart : null;
-    } catch {
-      return null;
-    }
+  // Avoid treating arbitrary strings (e.g. "not-a-url") as relative URLs.
+  // We only support absolute URLs, protocol-relative URLs, and path-like inputs.
+  if (
+    !trimmed.startsWith('http://') &&
+    !trimmed.startsWith('https://') &&
+    !trimmed.startsWith('//') &&
+    !trimmed.startsWith('/') &&
+    !trimmed.startsWith('./') &&
+    !trimmed.startsWith('../')
+  ) {
+    return null;
   }
+
+  const parsed = tryParseUrl(trimmed, 'https://example.invalid');
+  if (!parsed) return null;
+
+  let filename = parsed.pathname.split('/').pop();
+  if (!filename) return null;
+
+  const dotIndex = filename.lastIndexOf('.');
+  if (dotIndex !== -1) {
+    filename = filename.substring(0, dotIndex);
+  }
+
+  return filename && filename.length > 0 ? filename : null;
 }
 
 type MetadataRecord = Record<string, unknown> | undefined;

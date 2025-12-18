@@ -10,14 +10,12 @@
 import { createLogger, createScopedLogger } from '@shared/logging';
 import { createComputed, createRoot, createSignal } from 'solid-js';
 
-// Debug: Log module load for diagnosing duplicate runtime instances during tests
+// Debug: Keep all debug strings and identifiers dev-only so production bundles can drop them.
 const logger = createScopedLogger?.('SignalFactory') ?? createLogger({ prefix: '[SignalFactory]' });
-const debugLogger = __DEV__ ? logger?.debug?.bind(logger) : undefined;
-const debug = (...args: unknown[]): void => {
-  debugLogger?.(...args);
-};
 
-debug('Module loaded');
+if (__DEV__) {
+  logger.debug('Module loaded');
+}
 
 /**
  * Signal interface providing value access and subscription capability.
@@ -51,23 +49,28 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
   // Solid's Setter<T> overloads intentionally reject direct function values.
   // We handle function-typed values explicitly and use a simplified signature internally.
   const setSignal = write as (value: T | ((prev: T) => T)) => void;
-  const instanceId = Math.random().toString(36).slice(2, 10);
+  const instanceId = __DEV__ ? Math.random().toString(36).slice(2, 10) : '';
   const subscribers = new Set<(value: T) => void>();
 
   const notify = (val: T): void => {
-    debug('[createSignalSafe]', instanceId, 'subscription callback invoked with', val);
     for (const subscriber of subscribers) {
-      try {
+      if (__DEV__) {
+        try {
+          subscriber(val);
+        } catch (error) {
+          logger.debug('[createSignalSafe]', instanceId, 'subscriber threw', error);
+        }
+      } else {
         subscriber(val);
-      } catch (error) {
-        debug('[createSignalSafe]', instanceId, 'subscriber threw', error);
       }
     }
   };
 
   const signalObject = {
     set(value: T): void {
-      debug('[createSignalSafe]', instanceId, 'set invoked', value);
+      if (__DEV__) {
+        logger.debug('[createSignalSafe]', instanceId, 'set invoked', value);
+      }
 
       // Solid treats function inputs as updaters. When the *value* itself is a
       // function, wrap it to avoid accidental invocation.
@@ -80,7 +83,9 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
       notify(value);
     },
     update(updater: (prev: T) => T): void {
-      debug('[createSignalSafe]', instanceId, 'update invoked');
+      if (__DEV__) {
+        logger.debug('[createSignalSafe]', instanceId, 'update invoked');
+      }
 
       // Resolve next value before calling write() to avoid stale reads inside
       // SolidJS batch().
@@ -90,9 +95,9 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
       notify(nextValue);
     },
     subscribe(callback: (value: T) => void): () => void {
-      // Debug: track subscriptions in tests; remove after stabilization
-      debug('[createSignalSafe]', instanceId, 'subscribe invoked for signal', initial);
-      debug('[createSignalSafe]', instanceId, 'createEffect for subscription (manual dispatch)');
+      if (__DEV__) {
+        logger.debug('[createSignalSafe]', instanceId, 'subscribe invoked for signal', initial);
+      }
 
       subscribers.add(callback);
       notify(read());
@@ -106,11 +111,15 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
   Object.defineProperty(signalObject, 'value', {
     get: () => {
       const value = read();
-      debug('[createSignalSafe]', instanceId, 'value getter read', value);
+      if (__DEV__) {
+        logger.debug('[createSignalSafe]', instanceId, 'value getter read', value);
+      }
       return value;
     },
     set: (v: T) => {
-      debug('[createSignalSafe]', instanceId, 'value setter fired', v);
+      if (__DEV__) {
+        logger.debug('[createSignalSafe]', instanceId, 'value setter fired', v);
+      }
       signalObject.set(v);
     },
     enumerable: true,
@@ -130,13 +139,17 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
  */
 export function effectSafe(fn: () => void): () => void {
   return createRoot((dispose) => {
-    debug('[effectSafe] createRoot invoked');
+    if (__DEV__) {
+      logger.debug('[effectSafe] createRoot invoked');
+    }
 
     // Use createComputed so this helper works reliably outside of a component
     // render cycle (including unit tests running under JSDOM). It still tracks
     // dependencies and re-runs when they change.
     createComputed(() => {
-      debug('[effectSafe] effect body invoked');
+      if (__DEV__) {
+        logger.debug('[effectSafe] effect body invoked');
+      }
       fn();
     });
 

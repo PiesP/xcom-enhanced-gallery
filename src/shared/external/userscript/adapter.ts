@@ -433,106 +433,142 @@ export function getUserscript(): UserscriptAPI {
  * - xmlHttpRequest() invokes onerror/onloadend asynchronously and returns a no-op control.
  */
 export function getUserscriptSafe(): UserscriptAPI {
-  try {
-    const api = getUserscript();
+  const global = globalThis as unknown as GlobalWithGM;
+  const resolved = resolveGMAPIs();
 
-    return Object.freeze({
-      ...api,
-      async download(url: string, filename: string): Promise<void> {
-        try {
-          await api.download(url, filename);
-        } catch {
-          // Silent no-op
-        }
-      },
-      async setValue(key: string, value: unknown): Promise<void> {
-        try {
-          await api.setValue(key, value);
-        } catch {
-          // Silent no-op
-        }
-      },
-      async getValue<T>(key: string, defaultValue?: T): Promise<T | undefined> {
-        try {
-          return await api.getValue<T>(key, defaultValue);
-        } catch {
-          return defaultValue;
-        }
-      },
-      getValueSync<T>(key: string, defaultValue?: T): T | undefined {
-        try {
-          return api.getValueSync<T>(key, defaultValue);
-        } catch {
-          return defaultValue;
-        }
-      },
-      async deleteValue(key: string): Promise<void> {
-        try {
-          await api.deleteValue(key);
-        } catch {
-          // Silent no-op
-        }
-      },
-      async listValues(): Promise<string[]> {
-        try {
-          return await api.listValues();
-        } catch {
-          return [];
-        }
-      },
-      addStyle(css: string): HTMLStyleElement {
-        try {
-          return api.addStyle(css);
-        } catch {
-          return fallbackAddStyle(css);
-        }
-      },
-      xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
-        try {
-          return api.xmlHttpRequest(details);
-        } catch {
-          const response = createNetworkErrorResponse(details);
-          scheduleUserscriptRequestFailureCallbacks(details, response);
-          return { abort() {} };
-        }
-      },
-      notification(details: GMNotificationDetails): void {
-        try {
-          api.notification(details);
-        } catch {
-          // Silent no-op
-        }
-      },
-    });
-  } catch {
-    return Object.freeze({
-      hasGM: false,
-      manager: 'unknown',
-      info: () => null,
-      async download(_url: string, _filename: string) {},
-      async setValue(_key: string, _value: unknown) {},
-      async getValue<T>(_key: string, defaultValue?: T): Promise<T | undefined> {
-        return defaultValue;
-      },
-      getValueSync<T>(_key: string, defaultValue?: T): T | undefined {
-        return defaultValue;
-      },
-      async deleteValue(_key: string) {},
-      async listValues(): Promise<string[]> {
-        return [];
-      },
-      addStyle(css: string): HTMLStyleElement {
-        return fallbackAddStyle(css);
-      },
-      xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
-        const response = createNetworkErrorResponse(details);
-        scheduleUserscriptRequestFailureCallbacks(details, response);
-        return { abort() {} };
-      },
-      notification(_details: GMNotificationDetails): void {
+  const gmDownload =
+    typeof resolved.download === 'function'
+      ? (resolved.download as GlobalWithGM['GM_download'])
+      : undefined;
+  const gmSetValue =
+    typeof resolved.setValue === 'function'
+      ? (resolved.setValue as GlobalWithGM['GM_setValue'])
+      : undefined;
+  const gmGetValue =
+    typeof resolved.getValue === 'function'
+      ? (resolved.getValue as GlobalWithGM['GM_getValue'])
+      : undefined;
+  const gmDeleteValue =
+    typeof resolved.deleteValue === 'function'
+      ? (resolved.deleteValue as GlobalWithGM['GM_deleteValue'])
+      : undefined;
+  const gmListValues =
+    typeof resolved.listValues === 'function'
+      ? (resolved.listValues as GlobalWithGM['GM_listValues'])
+      : undefined;
+  const gmAddStyle =
+    typeof resolved.addStyle === 'function'
+      ? (resolved.addStyle as GlobalWithGM['GM_addStyle'])
+      : undefined;
+  const gmXmlHttpRequest =
+    typeof resolved.xmlHttpRequest === 'function'
+      ? (resolved.xmlHttpRequest as GlobalWithGM['GM_xmlhttpRequest'])
+      : undefined;
+  const gmNotification =
+    typeof resolved.notification === 'function'
+      ? (resolved.notification as GlobalWithGM['GM_notification'])
+      : undefined;
+
+  const hasGM = Boolean(gmDownload || (gmSetValue && gmGetValue) || gmXmlHttpRequest);
+
+  return Object.freeze({
+    hasGM,
+    manager: detectManager(global),
+    info: () => safeInfo(global),
+
+    async download(url: string, filename: string): Promise<void> {
+      if (!gmDownload) return;
+      try {
+        gmDownload(url, filename);
+      } catch {
         // Silent no-op
-      },
-      cookie: undefined,
-    });
-  }
+      }
+    },
+
+    async setValue(key: string, value: unknown): Promise<void> {
+      if (!gmSetValue) return;
+      try {
+        await Promise.resolve(gmSetValue(key, value));
+      } catch {
+        // Silent no-op
+      }
+    },
+
+    async getValue<T>(key: string, defaultValue?: T): Promise<T | undefined> {
+      if (!gmGetValue) return defaultValue;
+      try {
+        const value = await Promise.resolve(gmGetValue(key, defaultValue));
+        return value as T | undefined;
+      } catch {
+        return defaultValue;
+      }
+    },
+
+    getValueSync<T>(key: string, defaultValue?: T): T | undefined {
+      if (!gmGetValue) return defaultValue;
+      try {
+        const value = gmGetValue(key, defaultValue);
+        if (value instanceof Promise) return defaultValue;
+        return value as T | undefined;
+      } catch {
+        return defaultValue;
+      }
+    },
+
+    async deleteValue(key: string): Promise<void> {
+      if (!gmDeleteValue) return;
+      try {
+        await Promise.resolve(gmDeleteValue(key));
+      } catch {
+        // Silent no-op
+      }
+    },
+
+    async listValues(): Promise<string[]> {
+      if (!gmListValues) return [];
+      try {
+        const values = await Promise.resolve(gmListValues());
+        return Array.isArray(values) ? values : [];
+      } catch {
+        return [];
+      }
+    },
+
+    addStyle(css: string): HTMLStyleElement {
+      if (!gmAddStyle) {
+        return fallbackAddStyle(css);
+      }
+
+      try {
+        return gmAddStyle(css);
+      } catch {
+        return fallbackAddStyle(css);
+      }
+    },
+
+    xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
+      if (gmXmlHttpRequest) {
+        try {
+          return gmXmlHttpRequest(details);
+        } catch {
+          // Fall through to failure callbacks
+        }
+      }
+
+      const response = createNetworkErrorResponse(details);
+      scheduleUserscriptRequestFailureCallbacks(details, response);
+      return { abort() {} };
+    },
+
+    notification(details: GMNotificationDetails): void {
+      if (!gmNotification) return;
+      try {
+        gmNotification(details, undefined);
+      } catch {
+        // Silent no-op
+      }
+    },
+
+    cookie: resolved.cookie,
+  });
 }

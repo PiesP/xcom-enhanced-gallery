@@ -18,8 +18,6 @@ const PRELOAD_TASKS: readonly PreloadTask[] = Object.freeze([
   },
 ]);
 
-const debug = __DEV__ ? (message: string) => logger.debug(message) : () => {};
-
 const DEFAULT_PRELOAD_DEPENDENCIES: PreloadDependencies = Object.freeze({
   logWarn: (message: string, error: unknown) => {
     logger.warn(message, error);
@@ -27,11 +25,15 @@ const DEFAULT_PRELOAD_DEPENDENCIES: PreloadDependencies = Object.freeze({
 });
 
 async function runPreloadTask(task: PreloadTask, deps: PreloadDependencies): Promise<void> {
-  debug(`[preload] loading ${task.label}`);
+  if (__DEV__) {
+    logger.debug(`[preload] loading ${task.label}`);
+  }
 
   try {
     await task.loader();
-    debug(`[preload] ${task.label} ready`);
+    if (__DEV__) {
+      logger.debug(`[preload] ${task.label} ready`);
+    }
   } catch (error) {
     deps.logWarn(`[preload] ${task.label} preload failed`, error);
   }

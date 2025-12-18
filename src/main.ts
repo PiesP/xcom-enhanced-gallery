@@ -25,7 +25,7 @@ const isTestMode = import.meta.env.MODE === 'test';
 type CleanupTask = () => Promise<void> | void;
 type CleanupLogger = (message: string, error: unknown) => void;
 
-export const lifecycleState = {
+const lifecycleState = {
   started: false,
   startPromise: null as Promise<void> | null,
   galleryApp: null as IGalleryApp | null,
@@ -54,13 +54,6 @@ async function refreshDevNamespace(app: IGalleryApp | null): Promise<void> {
     createConfig: createAppConfig,
     cleanup,
   });
-}
-
-/**
- * Set global event teardown function (used by bootstrap stages)
- */
-export function setGlobalEventTeardown(teardown: Unregister): void {
-  globalEventTeardown = teardown;
 }
 
 function tearDownGlobalEventHandlers(): void {
@@ -97,7 +90,7 @@ function tearDownCommandRuntime(): void {
   }
 }
 
-export async function runOptionalCleanup(
+async function runOptionalCleanup(
   label: string,
   task: CleanupTask,
   log: CleanupLogger = warnCleanupLog
@@ -191,7 +184,7 @@ const bootstrapStages = [
 ] as const;
 
 // exported runBootstrapStages below
-export async function runBootstrapStages(): Promise<void> {
+async function runBootstrapStages(): Promise<void> {
   const results = await executeStages(bootstrapStages, { stopOnFailure: true });
   const failedStage = results.find((r) => !r.success && !r.optional);
   if (failedStage) {
@@ -205,7 +198,7 @@ export async function runBootstrapStages(): Promise<void> {
  * Initialize base infrastructure
  */
 // exported initializeInfrastructure below
-export async function initializeInfrastructure(): Promise<void> {
+async function initializeInfrastructure(): Promise<void> {
   try {
     const { initializeEnvironment } = await import('@bootstrap/environment');
     await initializeEnvironment();
@@ -219,7 +212,7 @@ export async function initializeInfrastructure(): Promise<void> {
 }
 
 // exported initializeBaseServicesStage below
-export async function initializeBaseServicesStage(): Promise<void> {
+async function initializeBaseServicesStage(): Promise<void> {
   try {
     const { initializeCoreBaseServices } = await import('@bootstrap/base-services');
     await initializeCoreBaseServices();
@@ -233,7 +226,7 @@ export async function initializeBaseServicesStage(): Promise<void> {
 }
 
 // exported applyInitialThemeSetting below
-export async function applyInitialThemeSetting(): Promise<void> {
+async function applyInitialThemeSetting(): Promise<void> {
   try {
     const { getThemeService } = await import('@shared/container/service-accessors');
     const themeService = getThemeService();
@@ -258,7 +251,7 @@ export async function applyInitialThemeSetting(): Promise<void> {
  * Phase 3.1: Utilize requestIdleCallback
  */
 // exported initializeNonCriticalSystems below
-export function initializeNonCriticalSystems(): void {
+function initializeNonCriticalSystems(): void {
   // Lean mode: execute immediately without idle scheduling or test mode branching
   try {
     logger.info('Starting non-critical system initialization');
@@ -273,7 +266,7 @@ export function initializeNonCriticalSystems(): void {
  * Set up global event handlers
  */
 // exported setupGlobalEventHandlers below
-export function setupGlobalEventHandlers(): void {
+function setupGlobalEventHandlers(): void {
   tearDownGlobalEventHandlers();
 
   globalEventTeardown = wireGlobalEvents(() => {
@@ -282,12 +275,12 @@ export function setupGlobalEventHandlers(): void {
 }
 
 // exported loadGlobalStyles below
-export async function loadGlobalStyles(): Promise<void> {
+async function loadGlobalStyles(): Promise<void> {
   await import('./styles/globals');
 }
 
 // exported initializeDevToolsIfNeeded below
-export async function initializeDevToolsIfNeeded(): Promise<void> {
+async function initializeDevToolsIfNeeded(): Promise<void> {
   if (!isDevEnvironment) {
     return;
   }
@@ -296,7 +289,7 @@ export async function initializeDevToolsIfNeeded(): Promise<void> {
   await initializeDevTools();
 }
 
-export async function initializeCommandRuntimeIfNeeded(): Promise<void> {
+async function initializeCommandRuntimeIfNeeded(): Promise<void> {
   tearDownCommandRuntime();
 
   const { startDevCommandRuntime } = await import('@edge/bootstrap');
@@ -304,7 +297,7 @@ export async function initializeCommandRuntimeIfNeeded(): Promise<void> {
 }
 
 // exported initializeGalleryIfPermitted below
-export async function initializeGalleryIfPermitted(): Promise<void> {
+async function initializeGalleryIfPermitted(): Promise<void> {
   if (isTestMode) {
     logger.debug('Gallery initialization skipped (test mode)');
     return;
@@ -314,7 +307,7 @@ export async function initializeGalleryIfPermitted(): Promise<void> {
 }
 
 // exported triggerPreloadStrategy below
-export function triggerPreloadStrategy(): void {
+function triggerPreloadStrategy(): void {
   if (isTestMode) {
     return;
   }
@@ -333,7 +326,7 @@ export function triggerPreloadStrategy(): void {
  * Application cleanup
  */
 // exported cleanup below
-export async function cleanup(): Promise<void> {
+async function cleanup(): Promise<void> {
   try {
     logger.info('🧹 Starting application cleanup');
 
@@ -410,7 +403,7 @@ export async function cleanup(): Promise<void> {
  * configuration (bootstrapStages) to avoid drift.
  */
 // exported startApplication below
-export async function startApplication(): Promise<void> {
+async function startApplication(): Promise<void> {
   if (lifecycleState.started) {
     logger.debug('Application: Already started');
     return;
@@ -458,7 +451,7 @@ export async function startApplication(): Promise<void> {
  * Gallery immediate initialization (no delay)
  */
 // exported initializeGallery below
-export async function initializeGallery(): Promise<void> {
+async function initializeGallery(): Promise<void> {
   try {
     logger.debug('🎯 Starting gallery immediate initialization');
 
@@ -494,10 +487,3 @@ export async function initializeGallery(): Promise<void> {
 void startApplication().catch(() => {
   /* noop */
 });
-
-// Named exports for manual startup from external context
-export const appModule = {
-  start: startApplication,
-  createConfig: createAppConfig,
-  cleanup,
-};

@@ -132,13 +132,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const [settingsPanelEl, setSettingsPanelEl] = createSignal<HTMLDivElement | null>(null);
   const [tweetPanelEl, setTweetPanelEl] = createSignal<HTMLDivElement | null>(null);
 
-  // Phase 430: Wrap navState properties in createMemo for reactivity
-  // This ensures button states update when props.navState() changes
-  const prevDisabled = createMemo(() => props.navState().prevDisabled);
-  const nextDisabled = createMemo(() => props.navState().nextDisabled);
-  const downloadDisabled = createMemo(() => props.navState().downloadDisabled);
-  const canDownloadAll = createMemo(() => props.navState().canDownloadAll);
-  const anyActionDisabled = createMemo(() => props.navState().anyActionDisabled);
+  // Keep a single memo for nav state to avoid repeated createMemo boilerplate.
+  const nav = createMemo(() => props.navState());
 
   const assignToolbarRef = (element: HTMLDivElement | null) => {
     setToolbarElement(element);
@@ -151,21 +146,20 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   };
 
   createEffect(() => {
-    const element = toolbarElement();
-    if (!element) {
-      return;
-    }
-    element.dataset.currentIndex = String(currentIndex());
-    element.dataset.focusedIndex = String(displayedIndex());
-  });
+    const current = String(currentIndex());
+    const focused = String(displayedIndex());
 
-  createEffect(() => {
-    const element = counterElement();
-    if (!element) {
-      return;
+    const toolbar = toolbarElement();
+    if (toolbar) {
+      toolbar.dataset.currentIndex = current;
+      toolbar.dataset.focusedIndex = focused;
     }
-    element.dataset.currentIndex = String(currentIndex());
-    element.dataset.focusedIndex = String(displayedIndex());
+
+    const counter = counterElement();
+    if (counter) {
+      counter.dataset.currentIndex = current;
+      counter.dataset.focusedIndex = focused;
+    }
   });
   const hasTweetContent = () => Boolean(tweetTextHTML() ?? tweetText());
   const toolbarButtonClass = (...extra: Array<string | undefined>) =>
@@ -198,52 +192,40 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     safeEventPreventAll(event);
   };
 
-  // Register wheel event listeners with explicit passive: false option
-  // This avoids Chrome's passive event listener warnings while still allowing preventDefault()
-  createEffect(() => {
-    const toolbar = toolbarElement();
-    if (toolbar) {
-      const bus = getEventBus();
-      const listener: EventListener = (event) => {
-        preventScrollChaining(event as WheelEvent);
-      };
-      const id = bus.addDOMListener(toolbar, 'wheel', listener, {
-        passive: false,
-        context: 'toolbar:wheel:prevent-scroll-chaining',
-      });
-      onCleanup(() => bus.remove(id));
-    }
-  });
+  const registerWheelListener = (
+    getElement: () => HTMLElement | null,
+    handler: (event: WheelEvent) => void,
+    options: { readonly passive: boolean; readonly context: string }
+  ): void => {
+    createEffect(() => {
+      const element = getElement();
+      if (!element) return;
 
-  createEffect(() => {
-    const settingsPanel = settingsPanelEl();
-    if (settingsPanel) {
       const bus = getEventBus();
-      const listener: EventListener = (event) => {
-        preventScrollChaining(event as WheelEvent);
-      };
-      const id = bus.addDOMListener(settingsPanel, 'wheel', listener, {
-        passive: false,
-        context: 'toolbar:wheel:prevent-scroll-chaining:settings-panel',
+      const listener: EventListener = (event) => handler(event as WheelEvent);
+      const id = bus.addDOMListener(element, 'wheel', listener, {
+        passive: options.passive,
+        context: options.context,
       });
-      onCleanup(() => bus.remove(id));
-    }
-  });
 
-  // Tweet panel: allow scroll to propagate when at boundary (to hide toolbar)
-  createEffect(() => {
-    const tweetPanel = tweetPanelEl();
-    if (tweetPanel) {
-      const bus = getEventBus();
-      const listener: EventListener = (event) => {
-        handlePanelWheel(event as WheelEvent);
-      };
-      const id = bus.addDOMListener(tweetPanel, 'wheel', listener, {
-        passive: true,
-        context: 'toolbar:wheel:panel',
-      });
       onCleanup(() => bus.remove(id));
-    }
+    });
+  };
+
+  // Register wheel event listeners with explicit passive configuration.
+  // - passive: false when we may call preventDefault()
+  // - passive: true for tweet panel so boundaries can propagate to the gallery
+  registerWheelListener(toolbarElement, preventScrollChaining, {
+    passive: false,
+    context: 'toolbar:wheel:prevent-scroll-chaining',
+  });
+  registerWheelListener(settingsPanelEl, preventScrollChaining, {
+    passive: false,
+    context: 'toolbar:wheel:prevent-scroll-chaining:settings-panel',
+  });
+  registerWheelListener(tweetPanelEl, handlePanelWheel, {
+    passive: true,
+    context: 'toolbar:wheel:panel',
   });
 
   return (
@@ -277,11 +259,11 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             size="toolbar"
             aria-label="Previous Media"
             title="Previous Media (Left Arrow)"
-            disabled={prevDisabled()}
+            disabled={nav().prevDisabled}
             onClick={props.onPreviousClick}
             data-gallery-element="nav-previous"
-            data-disabled={prevDisabled()}
-            data-action-disabled={anyActionDisabled()}
+            data-disabled={nav().prevDisabled}
+            data-action-disabled={nav().anyActionDisabled}
           >
             <ArrowSmallLeft size={18} />
           </IconButton>
@@ -291,11 +273,11 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             size="toolbar"
             aria-label="Next Media"
             title="Next Media (Right Arrow)"
-            disabled={nextDisabled()}
+            disabled={nav().nextDisabled}
             onClick={props.onNextClick}
             data-gallery-element="nav-next"
-            data-disabled={nextDisabled()}
-            data-action-disabled={anyActionDisabled()}
+            data-disabled={nav().nextDisabled}
+            data-action-disabled={nav().anyActionDisabled}
           >
             <ArrowSmallRight size={18} />
           </IconButton>
@@ -345,27 +327,27 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             class={toolbarButtonClass(styles.downloadButton, styles.downloadCurrent)}
             size="toolbar"
             onClick={props.onDownloadCurrent}
-            disabled={downloadDisabled()}
+            disabled={nav().downloadDisabled}
             aria-label="Download Current File"
             title="Download Current File (Ctrl+D)"
             data-gallery-element="download-current"
-            data-disabled={downloadDisabled()}
-            data-action-disabled={anyActionDisabled()}
+            data-disabled={nav().downloadDisabled}
+            data-action-disabled={nav().anyActionDisabled}
           >
             <ArrowDownTray size={18} />
           </IconButton>
 
-          {canDownloadAll() && (
+          {nav().canDownloadAll && (
             <IconButton
               class={toolbarButtonClass(styles.downloadButton, styles.downloadAll)}
               size="toolbar"
               onClick={props.onDownloadAll}
-              disabled={downloadDisabled()}
+              disabled={nav().downloadDisabled}
               aria-label={`Download all ${totalCount()} files as ZIP`}
               title={`Download all ${totalCount()} files as ZIP`}
               data-gallery-element="download-all"
-              data-disabled={downloadDisabled()}
-              data-action-disabled={anyActionDisabled()}
+              data-disabled={nav().downloadDisabled}
+              data-action-disabled={nav().anyActionDisabled}
             >
               <ArrowDownOnSquareStack size={18} />
             </IconButton>

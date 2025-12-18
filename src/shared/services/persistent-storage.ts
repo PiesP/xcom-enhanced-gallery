@@ -148,26 +148,14 @@ export class PersistentStorage {
    * be parsed and returned as a plain string for backward compatibility.
    */
   async getString(key: string, defaultValue?: string): Promise<string | undefined> {
-    try {
-      const value = await this.userscript.getValue<string | undefined>(key);
-      if (value === undefined || value === null) return defaultValue;
+    const value = await this.userscript.getValue<string | undefined>(key);
+    if (value === undefined || value === null) return defaultValue;
 
-      // Best-effort: allow values stored as JSON strings.
-      const parsedString = this.parseMaybeJsonString(value);
-      if (parsedString !== undefined) return parsedString;
+    // Best-effort: allow values stored as JSON strings.
+    const parsedString = this.parseMaybeJsonString(value);
+    if (parsedString !== undefined) return parsedString;
 
-      return value;
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : typeof error === 'string' ? error : '';
-
-      if (/GM_getValue/i.test(message) && /(unavailable|not available)/i.test(message)) {
-        return defaultValue;
-      }
-
-      logger.error(`PersistentStorage.getString failed for "${key}":`, error);
-      return defaultValue;
-    }
+    return value;
   }
 
   private warnParseErrorOnce(key: string, rawValue: string, error: unknown): void {
@@ -196,32 +184,20 @@ export class PersistentStorage {
     defaultValue?: T,
     options: PersistentStorageGetOptions = {}
   ): Promise<T | undefined> {
+    const value = await this.userscript.getValue<string | undefined>(key);
+    if (value === undefined || value === null) return defaultValue;
+
     try {
-      const value = await this.userscript.getValue<string | undefined>(key);
-      if (value === undefined || value === null) return defaultValue;
-      try {
-        return JSON.parse(value) as T;
-      } catch (error) {
-        if (options.warnOnParseErrorOnce !== false) {
-          this.warnParseErrorOnce(key, value, error);
-        }
-
-        if (options.selfHealOnParseError === true) {
-          await this.trySelfHealOnParseError(key);
-        }
-
-        return defaultValue;
-      }
+      return JSON.parse(value) as T;
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : typeof error === 'string' ? error : '';
-
-      // Expected in environments where GM_* APIs are missing/limited.
-      // Keep this branch resilient to wording differences ("unavailable" vs "not available").
-      if (/GM_getValue/i.test(message) && /(unavailable|not available)/i.test(message)) {
-        return defaultValue;
+      if (options.warnOnParseErrorOnce !== false) {
+        this.warnParseErrorOnce(key, value, error);
       }
-      logger.error(`PersistentStorage.get failed for "${key}":`, error);
+
+      if (options.selfHealOnParseError === true) {
+        await this.trySelfHealOnParseError(key);
+      }
+
       return defaultValue;
     }
   }
@@ -240,12 +216,8 @@ export class PersistentStorage {
   }
 
   async has(key: string): Promise<boolean> {
-    try {
-      const value = await this.userscript.getValue<unknown>(key);
-      return value !== undefined && value !== null;
-    } catch {
-      return false;
-    }
+    const value = await this.userscript.getValue<unknown>(key);
+    return value !== undefined && value !== null;
   }
 
   /**

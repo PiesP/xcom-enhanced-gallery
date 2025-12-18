@@ -140,13 +140,14 @@ export function isGMUserScriptInfo(obj: unknown): obj is { scriptHandler?: strin
 // ========== Deep clone utilities ==========
 
 /**
- * Deep clone a value using structuredClone or JSON fallback
+ * Deep clone a value using structuredClone.
+ *
+ * Note: This helper intentionally relies on structuredClone being available
+ * in the target runtime (modern browsers / Node). It will throw if unavailable.
+ *
  * @param value - Value to clone
  * @returns Deep cloned value
  */
 export function cloneDeep<T>(value: T): T {
-  if (typeof globalThis.structuredClone === 'function') {
-    return globalThis.structuredClone(value);
-  }
-  return JSON.parse(JSON.stringify(value)) as T;
+  return globalThis.structuredClone(value);
 }
