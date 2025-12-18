@@ -7,6 +7,25 @@
 export const USER_CANCELLED_MESSAGE = 'Download cancelled by user' as const;
 const DEFAULT_ABORT_MESSAGE = 'This operation was aborted' as const;
 
+/**
+ * Check whether an unknown value represents a timeout error.
+ *
+ * This is intentionally broader than AbortError detection: timeouts may surface as
+ * DOMException("TimeoutError") (AbortSignal.timeout/our timeout controller) or as
+ * an Error subclass named "TimeoutError".
+ */
+export function isTimeoutError(value: unknown): boolean {
+  if (value instanceof DOMException) {
+    return value.name === 'TimeoutError';
+  }
+
+  if (value instanceof Error) {
+    return value.name === 'TimeoutError';
+  }
+
+  return false;
+}
+
 function attachCause(target: Error | DOMException, cause: unknown): void {
   if (cause === undefined) {
     return;
@@ -67,11 +86,7 @@ export function getUserCancelledAbortErrorFromSignal(signal?: AbortSignal): DOME
   const reason = signal?.reason;
 
   // Preserve timeout semantics when a timeout signal is used.
-  if (reason instanceof DOMException && reason.name === 'TimeoutError') {
-    return reason;
-  }
-
-  if (reason instanceof Error && reason.name === 'TimeoutError') {
+  if (isTimeoutError(reason)) {
     return reason;
   }
 

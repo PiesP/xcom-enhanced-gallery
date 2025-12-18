@@ -6,7 +6,7 @@
 
 import { delay, isAbortError } from '@shared/async/delay';
 import { combineSignals, createTimeoutController } from '@shared/async/signal-utils';
-import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
+import { isTimeoutError, USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 import { getErrorMessage } from '@shared/error/normalize';
 import { isGMAPIAvailable, resolveGMDownload } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
@@ -141,10 +141,7 @@ export async function downloadWithFetchBlob(
     // If a timeout triggers immediately (e.g. ms=0), bail out deterministically.
     if (combinedSignal.aborted) {
       const reason = combinedSignal.reason;
-      if (reason instanceof DOMException && reason.name === 'TimeoutError') {
-        return { success: false, error: 'Download timeout' };
-      }
-      if (reason instanceof Error && reason.name === 'TimeoutError') {
+      if (isTimeoutError(reason)) {
         return { success: false, error: 'Download timeout' };
       }
       return { success: false, error: USER_CANCELLED_MESSAGE };
@@ -230,10 +227,7 @@ export async function downloadWithFetchBlob(
     if (combinedSignal.aborted) {
       const reason = combinedSignal.reason;
 
-      if (reason instanceof DOMException && reason.name === 'TimeoutError') {
-        return { success: false, error: 'Download timeout' };
-      }
-      if (reason instanceof Error && reason.name === 'TimeoutError') {
+      if (isTimeoutError(reason)) {
         return { success: false, error: 'Download timeout' };
       }
 

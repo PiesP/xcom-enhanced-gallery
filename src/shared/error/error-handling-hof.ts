@@ -36,6 +36,7 @@ import {
   type ErrorReportOptions,
   type ErrorSeverity,
 } from './app-error-reporter';
+import { isTimeoutError } from './cancellation';
 
 // ============================================================================
 // Types
@@ -338,7 +339,7 @@ export function trySync<T>(fn: () => T, options: ErrorHandlingOptions<T>): T | u
  */
 function mapErrorToCode(error: unknown): ErrorCode {
   // AbortError → CANCELLED
-  if (error instanceof DOMException && error.name === 'AbortError') {
+  if ((error instanceof DOMException || error instanceof Error) && error.name === 'AbortError') {
     return ErrorCode.CANCELLED;
   }
 
@@ -351,7 +352,7 @@ function mapErrorToCode(error: unknown): ErrorCode {
   }
 
   // Timeout errors
-  if (error instanceof Error && error.name === 'TimeoutError') {
+  if (isTimeoutError(error)) {
     return ErrorCode.TIMEOUT;
   }
 

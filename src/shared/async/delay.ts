@@ -157,6 +157,9 @@ export async function timeout<T>(promise: Promise<T>, options: TimeoutOptions): 
       cleanup();
 
       const reason = combinedSignal.reason;
+      // Only treat DOMException TimeoutError as a timeout.
+      // External callers may abort with an Error named TimeoutError as a deliberate reason,
+      // and that should be preserved rather than being normalized into our TimeoutError class.
       if (reason instanceof DOMException && reason.name === 'TimeoutError') {
         reject(new TimeoutError(message ?? 'Operation timed out'));
       } else {
