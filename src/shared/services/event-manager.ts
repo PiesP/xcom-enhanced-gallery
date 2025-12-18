@@ -97,7 +97,9 @@ export class EventManager {
     // The lifecycle helper supports initialize() after destroy(); ensure the
     // instance becomes usable again.
     this.isDestroyed = false;
-    logger.debug('EventManager initialized');
+    if (__DEV__) {
+      logger.debug('EventManager initialized');
+    }
   }
 
   /** Lifecycle: Cleanup */
@@ -196,6 +198,10 @@ export class EventManager {
 
   /** Get listener statistics */
   public getListenerStatus() {
+    if (!__DEV__) {
+      return { total: 0, byContext: {}, byType: {} } as const;
+    }
+
     return getEventListenerStatus();
   }
 
@@ -220,6 +226,8 @@ export class EventManager {
     }
 
     this.isDestroyed = true;
-    logger.debug('EventManager cleanup completed');
+    if (__DEV__) {
+      logger.debug('EventManager cleanup completed');
+    }
   }
 }

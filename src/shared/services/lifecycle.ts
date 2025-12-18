@@ -128,26 +128,33 @@ export function createLifecycle(
 
   let initialized = false;
 
-  // Safe logger access for test environments where logger might not be initialized
-  const noop = () => {};
-  const log =
-    silent || !logger?.info
-      ? { info: noop, error: noop }
-      : { info: logger.info.bind(logger), error: logger.error.bind(logger) };
+  // Keep production bundles lean:
+  // - `__DEV__` is compile-time replaced by Vite.
+  // - When `__DEV__` is false, this becomes a constant false and Rollup can
+  //   drop all logging strings and branches.
+  const shouldLog =
+    __DEV__ && !silent && typeof logger?.info === 'function' && typeof logger?.error === 'function';
 
   const initialize = async (): Promise<void> => {
     if (initialized) return;
 
-    log.info(`${serviceName} initializing...`);
+    if (shouldLog) {
+      logger.info(`${serviceName} initializing...`);
+    }
 
     try {
       if (onInitialize) {
         await onInitialize();
       }
       initialized = true;
-      log.info(`${serviceName} initialized`);
+
+      if (shouldLog) {
+        logger.info(`${serviceName} initialized`);
+      }
     } catch (error) {
-      log.error(`${serviceName} initialization failed:`, error);
+      if (shouldLog) {
+        logger.error(`${serviceName} initialization failed:`, error);
+      }
       throw error;
     }
   };
@@ -155,15 +162,22 @@ export function createLifecycle(
   const destroy = (): void => {
     if (!initialized) return;
 
-    log.info(`${serviceName} destroying...`);
+    if (shouldLog) {
+      logger.info(`${serviceName} destroying...`);
+    }
 
     try {
       if (onDestroy) {
         onDestroy();
       }
-      log.info(`${serviceName} destroyed`);
+
+      if (shouldLog) {
+        logger.info(`${serviceName} destroyed`);
+      }
     } catch (error) {
-      log.error(`${serviceName} destroy failed:`, error);
+      if (shouldLog) {
+        logger.error(`${serviceName} destroy failed:`, error);
+      }
     } finally {
       initialized = false;
     }

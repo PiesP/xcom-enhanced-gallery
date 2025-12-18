@@ -1,4 +1,5 @@
 import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/language-types';
+import { LANGUAGE_CODES } from '@shared/constants/i18n/language-types';
 import {
   DEFAULT_LANGUAGE,
   LAZY_LANGUAGE_LOADERS,
@@ -12,34 +13,37 @@ export interface TranslationCatalogOptions {
 }
 
 export class TranslationCatalog {
-  private readonly bundles = new Map<BaseLanguageCode, LanguageStrings>();
+  private readonly bundles: Partial<Record<BaseLanguageCode, LanguageStrings>> = {};
   private readonly fallbackLanguage: BaseLanguageCode;
-  private readonly loadingPromises = new Map<BaseLanguageCode, Promise<void>>();
+  private readonly loadingPromises: Partial<Record<BaseLanguageCode, Promise<void>>> = {};
 
   constructor(options: TranslationCatalogOptions = {}) {
     const { bundles = TRANSLATION_REGISTRY, fallbackLanguage = DEFAULT_LANGUAGE } = options;
     this.fallbackLanguage = fallbackLanguage;
     this.registerBundles(bundles);
 
-    if (!this.bundles.has(this.fallbackLanguage)) {
+    if (!this.bundles[this.fallbackLanguage]) {
       throw new Error(`Missing fallback language bundle: ${this.fallbackLanguage}`);
     }
   }
 
   register(language: BaseLanguageCode, strings: LanguageStrings): void {
-    this.bundles.set(language, strings);
+    this.bundles[language] = strings;
   }
 
   has(language: BaseLanguageCode): boolean {
-    return this.bundles.has(language);
+    return Boolean(this.bundles[language]);
   }
 
   get(language?: BaseLanguageCode): LanguageStrings {
-    if (language && this.bundles.has(language)) {
-      return this.bundles.get(language)!;
+    if (language) {
+      const strings = this.bundles[language];
+      if (strings) {
+        return strings;
+      }
     }
 
-    return this.bundles.get(this.fallbackLanguage)!;
+    return this.bundles[this.fallbackLanguage]!;
   }
 
   /**
@@ -48,7 +52,7 @@ export class TranslationCatalog {
    */
   async ensureLanguage(language: BaseLanguageCode): Promise<boolean> {
     // Already loaded
-    if (this.bundles.has(language)) {
+    if (this.bundles[language]) {
       return false;
     }
 
@@ -59,7 +63,7 @@ export class TranslationCatalog {
     }
 
     // Deduplicate concurrent loads
-    const existingPromise = this.loadingPromises.get(language);
+    const existingPromise = this.loadingPromises[language];
     if (existingPromise) {
       await existingPromise;
       return true;
@@ -70,13 +74,13 @@ export class TranslationCatalog {
       this.register(language, strings);
     })();
 
-    this.loadingPromises.set(language, loadPromise);
+    this.loadingPromises[language] = loadPromise;
 
     try {
       await loadPromise;
       return true;
     } finally {
-      this.loadingPromises.delete(language);
+      delete this.loadingPromises[language];
     }
   }
 
@@ -84,27 +88,23 @@ export class TranslationCatalog {
    * Check if a language can be lazy-loaded.
    */
   canLazyLoad(language: BaseLanguageCode): boolean {
-    return Object.hasOwn(LAZY_LANGUAGE_LOADERS, language);
+    return Boolean(LAZY_LANGUAGE_LOADERS[language as keyof typeof LAZY_LANGUAGE_LOADERS]);
   }
 
   keys(): BaseLanguageCode[] {
-    return Array.from(this.bundles.keys());
+    return Object.keys(this.bundles) as BaseLanguageCode[];
   }
 
   /**
    * Get all available languages (loaded + lazy-loadable).
    */
   availableLanguages(): BaseLanguageCode[] {
-    const loaded = new Set(this.bundles.keys());
-    const lazyLoadable = Object.keys(LAZY_LANGUAGE_LOADERS) as BaseLanguageCode[];
-    for (const lang of lazyLoadable) {
-      loaded.add(lang);
-    }
-    return Array.from(loaded);
+    // Loaded + lazy-loadable languages are fixed for this userscript.
+    return [...LANGUAGE_CODES];
   }
 
   toRecord(): TranslationBundleInput {
-    return Object.fromEntries(this.bundles.entries()) as TranslationBundleInput;
+    return { ...this.bundles } as TranslationBundleInput;
   }
 
   private registerBundles(bundles: TranslationBundleInput): void {

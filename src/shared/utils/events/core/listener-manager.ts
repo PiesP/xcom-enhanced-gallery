@@ -64,11 +64,14 @@ export function addListener(
       listener,
       options,
       context,
-      created: Date.now(),
+      created: __DEV__ ? Date.now() : 0,
     };
 
     listeners.set(id, listenerContext);
-    logger.debug(`Listener registered: ${type} (${id})`, { context });
+
+    if (__DEV__) {
+      logger.debug(`Listener registered: ${type} (${id})`, { context });
+    }
     return id;
   } catch (error) {
     logger.error(`Failed to add listener: ${type}`, { error, context });
@@ -92,7 +95,10 @@ export function removeEventListenerManaged(id: string): boolean {
   try {
     ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
     listeners.delete(id);
-    logger.debug(`Listener removed: ${ctx.type} (${id})`);
+
+    if (__DEV__) {
+      logger.debug(`Listener removed: ${ctx.type} (${id})`);
+    }
     return true;
   } catch (error) {
     logger.error(`Failed to remove listener: ${id}`, error);
@@ -123,7 +129,9 @@ export function removeEventListenersByContext(context: string): number {
   }
 
   if (count > 0) {
-    logger.debug(`Removed ${count} listeners for context: ${context}`);
+    if (__DEV__) {
+      logger.debug(`Removed ${count} listeners for context: ${context}`);
+    }
   }
 
   return count;
@@ -150,13 +158,19 @@ export function removeAllEventListeners(): void {
     }
   }
 
-  logger.debug(`Removed all ${count} listeners`);
+  if (__DEV__) {
+    logger.debug(`Removed all ${count} listeners`);
+  }
 }
 
 /**
  * Get listener statistics
  */
 export function getEventListenerStatus() {
+  if (!__DEV__) {
+    return { total: 0, byContext: {}, byType: {} } as const;
+  }
+
   const byContext: Record<string, number> = {};
   const byType: Record<string, number> = {};
 

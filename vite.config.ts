@@ -94,6 +94,7 @@ interface BuildModeConfig {
 }
 
 interface LicenseInfo {
+  readonly fileName: string;
   readonly name: string;
   readonly text: string;
 }
@@ -253,7 +254,7 @@ function aggregateLicenses(licensesDir: string): LicenseInfo[] {
       })
       .map((filename) => {
         const content = fs.readFileSync(path.join(licensesDir, filename), 'utf8');
-        return { name: parseLicenseName(filename), text: content.trim() };
+        return { fileName: filename, name: parseLicenseName(filename), text: content.trim() };
       })
       .sort((a, b) => a.name.localeCompare(b.name));
   } catch {
@@ -303,8 +304,33 @@ function buildMetadataBlock(config: UserscriptMeta): string {
   return lines.join('\n');
 }
 
-function buildLicenseBlock(licenses: readonly LicenseInfo[]): string {
+function buildLicenseBlock(
+  licenses: readonly LicenseInfo[],
+  options?: { readonly fullText?: boolean }
+): string {
   if (licenses.length === 0) return '';
+
+  const fullText = options?.fullText ?? false;
+
+  if (!fullText) {
+    const lines = [
+      ' * Third-Party Licenses',
+      ' * ====================',
+      ' *',
+      ' * This userscript bundles third-party components under their respective licenses.',
+      ' * Full license texts are available in the repository:',
+      ` *   ${USERSCRIPT_CONFIG.homepageURL}/tree/main/LICENSES`,
+      ' *',
+      ' * Included license files:',
+    ];
+
+    for (const license of licenses) {
+      lines.push(` * - ${license.name} (LICENSES/${license.fileName})`);
+    }
+
+    lines.push(' *');
+    return ['/*', ...lines, ' */'].join('\n');
+  }
 
   const mitCopyrights: Array<{ name: string; copyright: string }> = [];
   const otherLicenses: LicenseInfo[] = [];
@@ -368,7 +394,7 @@ function generateUserscriptHeader(version: string, isDev: boolean): string {
 
   const licenses = aggregateLicenses(LICENSES_DIR);
   const metaBlock = buildMetadataBlock(config);
-  const licenseBlock = buildLicenseBlock(licenses);
+  const licenseBlock = buildLicenseBlock(licenses, { fullText: isDev });
 
   return licenseBlock ? `${metaBlock}\n${licenseBlock}` : metaBlock;
 }
@@ -827,6 +853,54 @@ function removeLogCalls(code: string, methods: string[]): string {
     const startIndex = match.index;
     const openParenIndex = startIndex + match[0].length - 1;
 
+    const sliceBefore = code.slice(Math.max(0, startIndex - 48), startIndex);
+    const prevNonWsIndex = (() => {
+      for (let j = startIndex - 1; j >= 0; j--) {
+        const c = code[j];
+        if (c !== ' ' && c !== '\n' && c !== '\r' && c !== '\t') {
+          return j;
+        }
+      }
+      return -1;
+    })();
+    const prevNonWsChar = prevNonWsIndex >= 0 ? (code[prevNonWsIndex] as string) : '';
+
+    // Heuristic: decide whether the logger call appears in an expression position.
+    // - Expression positions must stay expression-safe (use `void 0`).
+    // - Statement positions can be replaced with an empty statement (`;`) to avoid
+    //   bloating the bundle with `void 0;` noise.
+    const isArrowExpressionBody = /=>\s*$/.test(sliceBefore);
+    const isKeywordExpression = /\b(?:return|throw|yield|await)\s*$/.test(sliceBefore);
+    const prevCharForcesExpression =
+      prevNonWsChar !== '' &&
+      [
+        '=',
+        '(',
+        '[',
+        ',',
+        '?',
+        '+',
+        '-',
+        '*',
+        '/',
+        '%',
+        '!',
+        '~',
+        '&',
+        '|',
+        '^',
+        '<',
+        '>',
+      ].includes(prevNonWsChar);
+    const prevCharAllowsStatement =
+      prevNonWsIndex === -1 || [';', '{', '}', ')', ':'].includes(prevNonWsChar);
+
+    const shouldUseVoidExpression =
+      isArrowExpressionBody ||
+      isKeywordExpression ||
+      prevCharForcesExpression ||
+      !prevCharAllowsStatement;
+
     let depth = 1;
     let i = openParenIndex + 1;
     let inString = false;
@@ -868,15 +942,23 @@ function removeLogCalls(code: string, methods: string[]): string {
       // Preserve code before the logger call
       result += code.slice(lastIndex, startIndex);
 
-      // Replace the logger call with a harmless no-op to keep control-flow intact
-      // This avoids generating invalid constructs like `else }` when the call was
-      // the sole statement in an if/else branch.
-      result += 'void 0';
-
-      // Preserve trailing semicolons and whitespace
-      let endIndex = i;
-      if (code[endIndex] === ';') {
+      if (shouldUseVoidExpression) {
+        // Expression-safe replacement.
+        result += 'void 0';
+      } else {
+        // Statement-safe replacement.
         result += ';';
+      }
+
+      // Consume trailing semicolons and whitespace.
+      // - For statement replacement we always emit exactly one `;`.
+      // - For expression replacement we preserve the original `;` if present.
+      let endIndex = i;
+      const hadSemicolon = code[endIndex] === ';';
+      if (hadSemicolon) {
+        if (shouldUseVoidExpression) {
+          result += ';';
+        }
         endIndex++;
       }
       while (

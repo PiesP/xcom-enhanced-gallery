@@ -168,7 +168,9 @@ export class LanguageService {
       logger.warn('Failed to load language bundle on change:', error);
     });
 
-    logger.debug(`Language changed to: ${normalized}`);
+    if (__DEV__) {
+      logger.debug(`Language changed to: ${normalized}`);
+    }
   }
 
   /**

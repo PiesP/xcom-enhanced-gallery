@@ -141,6 +141,9 @@ export function Button(rawProps: ButtonProps): JSXElement {
   const isDisabled = createMemo(() => !!disabledAccessor() || isLoading());
 
   createEffect(() => {
+    if (!__DEV__) {
+      return;
+    }
     if (!iconOnlyAccessor()) return;
     const derived = ariaLabelAccessor() ?? ariaLabelledByAccessor() ?? titleAccessor();
     if (!derived) {

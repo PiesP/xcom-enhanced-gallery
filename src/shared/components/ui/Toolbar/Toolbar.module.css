@@ -135,8 +135,8 @@
 /* ===== Phase 57: Toolbar-Settings Panel Visual Continuity ===== */
 
 /* Expanded toolbar state: visually connect the toolbar with the panel */
-.galleryToolbar[data-settings-expanded="true"],
-.galleryToolbar[data-tweet-panel-expanded="true"] {
+.galleryToolbar.settingsExpanded,
+.galleryToolbar.tweetPanelExpanded {
   /* Remove the bottom radius for a seamless connection to the panel */
   border-radius: var(--xeg-radius-lg) var(--xeg-radius-lg) 0 0;
 }
@@ -144,17 +144,16 @@
 /* Phase 254: reduced motion is handled via semantic --xeg-duration-* tokens */
 
 /* State-driven custom properties (defaults chosen to preserve visibility) */
-.galleryToolbar[data-state="idle"],
-.galleryToolbar:not([data-state]) {
+.galleryToolbar.stateIdle {
   --toolbar-opacity: 1;
   --toolbar-pointer-events: auto;
   --toolbar-visibility: visible;
   --toolbar-display: inline-flex;
 }
 
-.galleryToolbar[data-state="loading"],
-.galleryToolbar[data-state="downloading"],
-.galleryToolbar[data-state="error"] {
+.galleryToolbar.stateLoading,
+.galleryToolbar.stateDownloading,
+.galleryToolbar.stateError {
   --toolbar-opacity: 1;
   --toolbar-pointer-events: auto;
   --toolbar-visibility: visible;
@@ -198,16 +197,16 @@
 }
 
 /* State management via data attributes */
-:where(.toolbarButton[data-active="true"], .toolbarButton[data-selected="true"]) {
+:where(.toolbarButton[aria-pressed="true"]) {
   border-color: var(--toolbar-button-accent-hover);
 }
 
-.toolbarButton[data-loading="true"] {
+.toolbarButton[aria-busy="true"] {
   --button-opacity: 0.7;
   --button-transform: scale(0.95);
 }
 
-.toolbarButton[data-disabled="true"] {
+.toolbarButton:disabled {
   --button-opacity: 0.5;
 
   color: var(--xeg-toolbar-text-muted, var(--xeg-color-neutral-400));
@@ -216,7 +215,7 @@
 
 /* Hover state is handled by the glassmorphism class */
 @media (hover: hover) {
-  .toolbarButton:hover:not([data-disabled="true"]) {
+  .toolbarButton:hover:not(:disabled) {
     /* Use the hover effect defined by the glassmorphism class */
     /* Avoid complex transform effects */
     border-color: var(--toolbar-button-accent-hover);
@@ -405,7 +404,7 @@ button.fitButton {
   min-height: var(--xeg-toolbar-panel-height);
 }
 
-:where(.settingsPanel, .tweetPanel)[data-expanded="true"] {
+:where(.settingsPanel, .tweetPanel).panelExpanded {
   height: auto;
   opacity: 1;
   transform: translateY(0);
