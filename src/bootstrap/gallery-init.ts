@@ -5,8 +5,11 @@
  * Phase 345: Enhanced type safety
  */
 
-import { registerGalleryRenderer, registerSettingsManager } from '@shared/container';
 import type { IGalleryApp } from '@shared/container/app-container';
+import {
+  registerGalleryRenderer,
+  registerSettingsManager,
+} from '@shared/container/service-accessors';
 import {
   bootstrapErrorReporter,
   galleryErrorReporter,

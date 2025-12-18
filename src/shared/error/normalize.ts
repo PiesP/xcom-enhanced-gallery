@@ -1,124 +1,18 @@
 /**
  * @fileoverview Error message normalization helpers.
  *
- * This module centralizes the "unknown -> string" conversion policy.
- * Different layers can select different strategies (e.g. logs vs. UI strings)
- * while sharing the same core implementation.
+ * Bundle-size note:
+ * Keep the surface minimal. Most call sites only need one of two fixed policies:
+ * - normalizeErrorMessage: log-oriented (literal nullish + JSON object fallback)
+ * - getErrorMessage: UI/service-oriented (empty nullish + String object fallback)
  */
 
-export type NullishStrategy = 'empty' | 'literal';
-export type ObjectStrategy = 'json' | 'string';
-export type MessagePropertyNonStringStrategy = 'ignore' | 'stringify';
-
-export type NormalizeErrorMessageOptions = Readonly<{
-  /**
-   * How to represent null/undefined values.
-   * - 'empty': return ''
-   * - 'literal': return 'null' or 'undefined'
-   */
-  nullish?: NullishStrategy;
-  /**
-   * How to represent plain objects when they have no usable string message.
-   * - 'json': JSON.stringify with String() fallback
-   * - 'string': String(value)
-   */
-  object?: ObjectStrategy;
-  /**
-   * How to handle object values with a `message` property when the message is not a string.
-   * - 'ignore': fall back to the object strategy
-   * - 'stringify': return String(message ?? '')
-   */
-  messagePropertyNonString?: MessagePropertyNonStringStrategy;
-  /**
-   * Whether Error instances without a message should fall back to their name.
-   */
-  errorFallbackToName?: boolean;
-  /**
-   * Fallback when an Error has neither message nor name (extremely rare).
-   */
-  errorUnknownFallback?: string;
-}>;
-
-const DEFAULT_OPTIONS: Required<NormalizeErrorMessageOptions> = {
-  nullish: 'literal',
-  object: 'json',
-  messagePropertyNonString: 'ignore',
-  errorFallbackToName: true,
-  errorUnknownFallback: 'Error',
-} as const;
-
-function resolveOptions(
-  options?: NormalizeErrorMessageOptions
-): Required<NormalizeErrorMessageOptions> {
-  return {
-    nullish: options?.nullish ?? DEFAULT_OPTIONS.nullish,
-    object: options?.object ?? DEFAULT_OPTIONS.object,
-    messagePropertyNonString:
-      options?.messagePropertyNonString ?? DEFAULT_OPTIONS.messagePropertyNonString,
-    errorFallbackToName: options?.errorFallbackToName ?? DEFAULT_OPTIONS.errorFallbackToName,
-    errorUnknownFallback: options?.errorUnknownFallback ?? DEFAULT_OPTIONS.errorUnknownFallback,
-  };
-}
-
-function stringifyObject(value: object, strategy: ObjectStrategy): string {
-  if (strategy === 'string') {
-    return String(value);
-  }
-
+function safeJsonStringify(value: object): string {
   try {
     return JSON.stringify(value);
   } catch {
     return String(value);
   }
-}
-
-/**
- * Normalize unknown error values into a message string with configurable behavior.
- */
-export function normalizeErrorMessageWithOptions(
-  error: unknown,
-  options?: NormalizeErrorMessageOptions
-): string {
-  const o = resolveOptions(options);
-
-  if (error instanceof Error) {
-    if (error.message) {
-      return error.message;
-    }
-
-    if (o.errorFallbackToName) {
-      return error.name || o.errorUnknownFallback;
-    }
-
-    return error.message;
-  }
-
-  if (typeof error === 'string') {
-    return error;
-  }
-
-  if (error == null) {
-    return o.nullish === 'empty' ? '' : String(error);
-  }
-
-  if (typeof error === 'object') {
-    const record = error as Record<string, unknown>;
-
-    if ('message' in record) {
-      const message = record.message;
-      if (typeof message === 'string') {
-        return message;
-      }
-
-      if (o.messagePropertyNonString === 'stringify') {
-        return String(message ?? '');
-      }
-    }
-
-    return stringifyObject(record, o.object);
-  }
-
-  return String(error);
 }
 
 /**
@@ -130,13 +24,22 @@ export function normalizeErrorMessageWithOptions(
  * - null/undefined: literal 'null'/'undefined'
  */
 export function normalizeErrorMessage(error: unknown): string {
-  return normalizeErrorMessageWithOptions(error, {
-    nullish: 'literal',
-    object: 'json',
-    messagePropertyNonString: 'ignore',
-    errorFallbackToName: true,
-    errorUnknownFallback: 'Error',
-  });
+  if (error instanceof Error) {
+    if (error.message) return error.message;
+    return error.name || 'Error';
+  }
+
+  if (typeof error === 'string') return error;
+  if (error == null) return String(error);
+
+  if (typeof error === 'object') {
+    const record = error as Record<string, unknown>;
+    const message = record.message;
+    if (typeof message === 'string') return message;
+    return safeJsonStringify(record);
+  }
+
+  return String(error);
 }
 
 /**
@@ -149,11 +52,20 @@ export function normalizeErrorMessage(error: unknown): string {
  * - null/undefined: ''
  */
 export function getErrorMessage(error: unknown): string {
-  return normalizeErrorMessageWithOptions(error, {
-    nullish: 'empty',
-    object: 'string',
-    messagePropertyNonString: 'stringify',
-    errorFallbackToName: false,
-    errorUnknownFallback: '',
-  });
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === 'string') return error;
+  if (error == null) return '';
+
+  if (typeof error === 'object') {
+    const record = error as Record<string, unknown>;
+    if ('message' in record) {
+      return String(record.message ?? '');
+    }
+    return String(record);
+  }
+
+  return String(error);
 }

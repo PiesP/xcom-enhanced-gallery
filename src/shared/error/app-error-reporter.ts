@@ -77,13 +77,6 @@ export interface ErrorReportResult {
 // Constants
 // ============================================================================
 
-const SEVERITY_LOG_MAP: Record<ErrorSeverity, 'error' | 'warn' | 'info' | 'debug'> = {
-  critical: 'error',
-  error: 'error',
-  warning: 'warn',
-  info: 'info',
-} as const;
-
 const DEFAULT_SEVERITY: ErrorSeverity = 'error';
 
 // ============================================================================
@@ -106,7 +99,7 @@ function extractStackTrace(error: unknown): string | undefined {
  * Format context tag for log messages
  */
 function formatContextTag(context: ErrorContext, code?: string): string {
-  const base = `[${context.charAt(0).toUpperCase() + context.slice(1)}]`;
+  const base = `[${context.charAt(0).toUpperCase()}${context.slice(1)}]`;
   return code ? `${base}[${code}]` : base;
 }
 
@@ -168,25 +161,43 @@ export class AppErrorReporter {
     const severity = options.severity ?? DEFAULT_SEVERITY;
     const message = normalizeErrorMessage(error);
     const tag = formatContextTag(options.context, options.code);
-    const logLevel = SEVERITY_LOG_MAP[severity];
-    const stack = extractStackTrace(error);
 
-    // Build log payload
-    const logPayload: Record<string, unknown> = {
-      context: options.context,
-      severity,
-    };
+    // Bundle-size note:
+    // - Keep direct logger method calls so the production cleanup pass can strip warn/info.
+    // - Avoid building payload objects outside removed logger calls.
+    if (severity === 'info') {
+      logger.info(
+        `${tag} ${message}`,
+        options.metadata
+          ? { context: options.context, severity, metadata: options.metadata }
+          : { context: options.context, severity }
+      );
+    } else if (severity === 'warning') {
+      logger.warn(
+        `${tag} ${message}`,
+        options.metadata
+          ? { context: options.context, severity, metadata: options.metadata }
+          : { context: options.context, severity }
+      );
+    } else {
+      const logPayload: Record<string, unknown> = {
+        context: options.context,
+        severity,
+      };
 
-    if (options.metadata) {
-      logPayload.metadata = options.metadata;
+      if (options.metadata) {
+        logPayload.metadata = options.metadata;
+      }
+
+      if (__DEV__) {
+        const stack = extractStackTrace(error);
+        if (stack) {
+          logPayload.stack = stack;
+        }
+      }
+
+      logger.error(`${tag} ${message}`, logPayload);
     }
-
-    if (stack && severity !== 'info') {
-      logPayload.stack = stack;
-    }
-
-    // Log the error
-    logger[logLevel](`${tag} ${message}`, logPayload);
 
     // Show notification if requested
     if (options.notify && AppErrorReporter.notificationCallback) {

@@ -1,4 +1,4 @@
-import { warmupCriticalServices } from '@shared/container';
+import { warmupCriticalServices } from '@shared/container/service-accessors';
 import { logger } from '@shared/logging';
 import { registerCoreServices } from '@shared/services/service-initialization';
 

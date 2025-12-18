@@ -45,14 +45,13 @@ export type LogLevelChangeListener = (newLevel: LogLevel, oldLevel: LogLevel) =>
 // Constants
 // ============================================================================
 
-// Optimized for tree-shaking: Prefer __DEV__ when available.
-// Safe fallback: default to non-dev unless Vite's import.meta.env.DEV says otherwise.
-const isDev: boolean = typeof __DEV__ !== 'undefined' ? __DEV__ : Boolean(import.meta.env?.DEV);
+// `__DEV__` is defined at build/test time (Vite + Vitest).
+const isDev: boolean = __DEV__;
 
 /**
  * Default log level based on environment
  */
-export const DEFAULT_LOG_LEVEL: LogLevel = isDev ? 'debug' : 'warn';
+export const DEFAULT_LOG_LEVEL: LogLevel = isDev ? 'debug' : 'error';
 
 /**
  * Log level priority for comparison
@@ -76,40 +75,13 @@ const VALID_LOG_LEVELS: readonly LogLevel[] = ['debug', 'info', 'warn', 'error']
 let currentLevel: LogLevel = DEFAULT_LOG_LEVEL;
 let listeners: LogLevelChangeListener[] = [];
 
-// ============================================================================
-// Initialization
-// ============================================================================
-
-/**
- * Parse log level from environment variable (development only)
- */
-function parseEnvLogLevel(): LogLevel | null {
-  if (!isDev) {
-    return null;
-  }
-
-  // Try to read from Vite's import.meta.env
+// Initialize from environment only in development.
+if (isDev) {
   const envLevel = (import.meta.env?.VITE_LOG_LEVEL as string | undefined)?.toLowerCase();
-
   if (envLevel && isValidLogLevel(envLevel)) {
-    return envLevel;
-  }
-
-  return null;
-}
-
-/**
- * Initialize log level from environment on module load
- */
-function initializeFromEnv(): void {
-  const envLevel = parseEnvLogLevel();
-  if (envLevel) {
     currentLevel = envLevel;
   }
 }
-
-// Initialize on module load
-initializeFromEnv();
 
 // ============================================================================
 // Validation
@@ -216,8 +188,10 @@ export function setQuiet(): void {
  * Reset log level to default based on environment
  */
 export function resetLogLevel(): void {
-  const envLevel = parseEnvLogLevel();
-  setLogLevel(envLevel ?? DEFAULT_LOG_LEVEL);
+  const envLevel = isDev
+    ? (import.meta.env?.VITE_LOG_LEVEL as string | undefined)?.toLowerCase()
+    : undefined;
+  setLogLevel(envLevel && isValidLogLevel(envLevel) ? envLevel : DEFAULT_LOG_LEVEL);
 }
 
 // ============================================================================

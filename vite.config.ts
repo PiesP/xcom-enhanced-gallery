@@ -267,7 +267,7 @@ function aggregateLicenses(licensesDir: string): LicenseInfo[] {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function formatMetaLine(key: string, value: string): string {
-  return `// @${key.padEnd(12)} ${value}`;
+  return `// @${key} ${value}`;
 }
 
 function formatMetaLines(key: string, values: readonly string[]): string[] {
@@ -769,7 +769,6 @@ function processCss(css: string, config: BuildModeConfig): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function cssInlinePlugin(mode: string): Plugin {
-  const isDev = mode === 'development';
   const config = getBuildModeConfig(mode);
 
   return {
@@ -802,27 +801,9 @@ function cssInlinePlugin(mode: string): Plugin {
       const css = cssChunks.join(config.cssCompress ? '' : '\n');
       if (!css.trim()) return;
 
-      const injectionCode = `
-(function() {
-  'use strict';
-  if (typeof document === 'undefined') return;
-
-  var css = ${JSON.stringify(css)};
-
-  var existingStyle = document.getElementById('${STYLE_ID}');
-  if (existingStyle) {
-    existingStyle.textContent = css;
-    return;
-  }
-
-  var style = document.createElement('style');
-  style.id = '${STYLE_ID}';
-  style.setAttribute('data-xeg-version', '${isDev ? 'dev' : 'prod'}');
-  style.textContent = css;
-
-  (document.head || document.documentElement).appendChild(style);
-})();
-`;
+      const injectionCode = `(function(){if(typeof document==='undefined')return;var css=${JSON.stringify(
+        css
+      )};var s=document.getElementById('${STYLE_ID}');if(!s){s=document.createElement('style');s.id='${STYLE_ID}';(document.head||document.documentElement).appendChild(s);}s.textContent=css;})();\n`;
 
       for (const chunk of Object.values(bundle)) {
         if (chunk.type === 'chunk' && chunk.isEntry) {
@@ -1002,7 +983,7 @@ function productionCleanupPlugin(): Plugin {
         );
         code = code.replace(/\/\*#__PURE__\*\/\s*/g, '');
         code = code.replace(/Object\.freeze\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*\)/g, '({})');
-        code = removeLogCalls(code, ['debug', 'info']);
+        code = removeLogCalls(code, ['debug', 'info', 'warn']);
         code = code.replace(/,\s*reset\(\)\s*\{\s*instance\s*=\s*null;\s*\}/g, '');
         code = code.replace(/static\s+resetForTests\(\)\s*\{[^}]*\}/g, '');
         code = code.replace(/exports\.[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*[^;]+;/g, '');

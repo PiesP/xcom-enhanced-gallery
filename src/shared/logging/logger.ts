@@ -30,31 +30,22 @@ export interface LoggerConfig {
 
 const BASE_PREFIX = '[XEG]';
 
-// Optimized for tree-shaking: Prefer __DEV__ when available.
-// Safe fallback: default to non-dev unless Vite's import.meta.env.DEV says otherwise.
-const isDev: boolean = typeof __DEV__ !== 'undefined' ? __DEV__ : Boolean(import.meta.env?.DEV);
+// `__DEV__` is defined at build/test time (Vite + Vitest).
+const isDev: boolean = __DEV__;
 
 const createProdLogger = (config: LoggerConfig): Logger => {
   const noop = (): void => {};
   const hasConsole = typeof console !== 'undefined';
-
-  const formatMessage = (...args: LoggableData[]): LoggableData[] => {
-    return [config.prefix, ...args];
-  };
 
   return {
     // Keep production output minimal but actionable.
     info: noop,
     debug: noop,
     trace: noop,
-    warn: (...args: LoggableData[]): void => {
-      if (hasConsole) {
-        console.warn(...formatMessage(...args));
-      }
-    },
+    warn: noop,
     error: (...args: LoggableData[]): void => {
       if (hasConsole) {
-        console.error(...formatMessage(...args));
+        console.error(config.prefix, ...args);
       }
     },
   };

@@ -10,16 +10,6 @@ export type BootstrapErrorSeverity = 'critical' | 'recoverable';
 
 type BootstrapErrorLogger = Pick<Logger, 'error' | 'warn'>;
 
-type BootstrapErrorBehavior = Readonly<{
-  logLevel: 'error' | 'warn';
-  throwOnError: boolean;
-}>;
-
-const ERROR_BEHAVIOR_MAP: Record<BootstrapErrorSeverity, BootstrapErrorBehavior> = {
-  critical: { logLevel: 'error', throwOnError: true },
-  recoverable: { logLevel: 'warn', throwOnError: false },
-} as const;
-
 export type BootstrapErrorOptions = Readonly<{
   context: string;
   logger: BootstrapErrorLogger;
@@ -36,12 +26,20 @@ function normalizeBootstrapErrorMessage(error: unknown): string {
  */
 export function reportBootstrapError(error: unknown, options: BootstrapErrorOptions): never | void {
   const severity = options.severity ?? 'recoverable';
-  const behavior = ERROR_BEHAVIOR_MAP[severity];
+  const isCritical = severity === 'critical';
   const message = `[${options.context}] initialization failed: ${normalizeBootstrapErrorMessage(error)}`;
 
-  options.logger[behavior.logLevel](message, error);
+  // Bundle-size note: production builds strip logger.warn calls.
+  // Keep recoverable bootstrap signals visible by promoting them to error in prod.
+  if (isCritical) {
+    options.logger.error(message, error);
+  } else if (__DEV__) {
+    options.logger.warn(message, error);
+  } else {
+    options.logger.error(message, error);
+  }
 
-  if (behavior.throwOnError) {
+  if (isCritical) {
     throw error instanceof Error ? error : new Error(message);
   }
 }
