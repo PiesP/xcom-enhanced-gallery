@@ -14,10 +14,9 @@ import { logger } from '@shared/logging';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import { getCsrfToken, getCsrfTokenAsync } from '@shared/services/media/twitter-auth';
 import {
-  extractMediaFromTweetWithDiagnostics,
+  extractMediaFromTweet,
   normalizeLegacyTweet,
-  normalizeLegacyUserWithDiagnostics,
-  type TwitterParserDiagnostic,
+  normalizeLegacyUser,
 } from '@shared/services/media/twitter-parser';
 import type { TweetMediaEntry, TwitterAPIResponse } from '@shared/services/media/types';
 import { sortMediaByVisualOrder } from '@shared/utils/media/media-dimensions';
@@ -65,35 +64,6 @@ function getSafeHost(): string {
   });
 }
 
-function logTwitterParserDiagnostics(
-  diagnostics: readonly TwitterParserDiagnostic[],
-  scope: string,
-  extraContext?: Record<string, unknown>
-): void {
-  for (const diag of diagnostics) {
-    const message = `[TwitterParser] ${scope}: ${diag.message}`;
-    const mergedContext =
-      diag.context || extraContext
-        ? { ...(extraContext ?? {}), ...(diag.context ?? {}) }
-        : undefined;
-
-    if (diag.level === 'debug') {
-      if (mergedContext) logger.debug(message, mergedContext);
-      else logger.debug(message);
-      continue;
-    }
-
-    if (diag.level === 'warn') {
-      if (mergedContext) logger.warn(message, mergedContext);
-      else logger.warn(message);
-      continue;
-    }
-
-    if (mergedContext) logger.error(message, mergedContext);
-    else logger.error(message);
-  }
-}
-
 /**
  * TwitterAPI - Facade for Twitter Media Extraction
  *
@@ -130,19 +100,9 @@ export class TwitterAPI {
     normalizeLegacyTweet(tweetResult);
 
     if (!tweetUser) return [];
-    const userDiagnostics = normalizeLegacyUserWithDiagnostics(tweetUser);
-    logTwitterParserDiagnostics(userDiagnostics, 'normalizeLegacyUser', {
-      tweetId,
-      location: 'original',
-    });
+    normalizeLegacyUser(tweetUser);
 
-    const extracted = extractMediaFromTweetWithDiagnostics(tweetResult, tweetUser, 'original');
-    logTwitterParserDiagnostics(extracted.diagnostics, 'extractMediaFromTweet', {
-      tweetId,
-      location: 'original',
-    });
-
-    let result = extracted.items;
+    let result = extractMediaFromTweet(tweetResult, tweetUser, 'original');
 
     // Sort by visual order
     result = sortMediaByVisualOrder(result);
@@ -156,23 +116,9 @@ export class TwitterAPI {
       const quotedUser = quotedTweet.core?.user_results?.result;
       if (quotedTweet && quotedUser) {
         normalizeLegacyTweet(quotedTweet);
-        const quotedUserDiagnostics = normalizeLegacyUserWithDiagnostics(quotedUser);
-        logTwitterParserDiagnostics(quotedUserDiagnostics, 'normalizeLegacyUser', {
-          tweetId,
-          location: 'quoted',
-        });
+        normalizeLegacyUser(quotedUser);
 
-        const quotedExtracted = extractMediaFromTweetWithDiagnostics(
-          quotedTweet,
-          quotedUser,
-          'quoted'
-        );
-        logTwitterParserDiagnostics(quotedExtracted.diagnostics, 'extractMediaFromTweet', {
-          tweetId,
-          location: 'quoted',
-        });
-
-        const quotedMedia = quotedExtracted.items;
+        const quotedMedia = extractMediaFromTweet(quotedTweet, quotedUser, 'quoted');
 
         const sortedQuotedMedia = sortMediaByVisualOrder(quotedMedia);
 

@@ -1,11 +1,13 @@
 // initializeDevTools dynamic import moved to initializeDevToolsIfNeeded
+
+import { initializeCriticalSystems } from '@bootstrap/critical-systems';
+import { initializeEnvironment } from '@bootstrap/environment';
 import type { Unregister } from '@bootstrap/events';
 import { wireGlobalEvents } from '@bootstrap/events';
 import { initializeGalleryApp } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
 import type { IGalleryApp } from '@shared/container/app-container';
 import { warmupNonCriticalServices } from '@shared/container/service-accessors';
-import { runAfterWindowLoad } from '@shared/dom/window-load';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
 import type { BootstrapStage } from '@shared/interfaces';
 import { logger } from '@shared/logging';
@@ -153,10 +155,7 @@ const bootstrapStages: readonly BootstrapStage[] = [
   },
   {
     label: 'Critical systems',
-    run: async () => {
-      const { initializeCriticalSystems } = await import('@bootstrap/critical-systems');
-      await initializeCriticalSystems();
-    },
+    run: initializeCriticalSystems,
   },
   {
     label: 'Base services',
@@ -206,7 +205,6 @@ async function runBootstrapStages(): Promise<void> {
 // exported initializeInfrastructure below
 async function initializeInfrastructure(): Promise<void> {
   try {
-    const { initializeEnvironment } = await import('@bootstrap/environment');
     await initializeEnvironment();
     logger.debug('✅ Vendor library initialization complete');
   } catch (error) {
@@ -305,22 +303,6 @@ async function initializeGalleryIfPermitted(): Promise<void> {
   await initializeGallery();
 }
 
-// exported triggerPreloadStrategy below
-function triggerPreloadStrategy(): void {
-  if (isTestMode) {
-    return;
-  }
-
-  void runAfterWindowLoad(async () => {
-    try {
-      const { executePreloadStrategy } = await import('@bootstrap/preload');
-      await executePreloadStrategy();
-    } catch (error) {
-      logger.warn('[Phase 326] Error executing preload strategy:', error);
-    }
-  });
-}
-
 /**
  * Application cleanup
  */
@@ -397,7 +379,7 @@ async function cleanup(): Promise<void> {
 /**
  * Main application entry point
  *
- * Executes the configured bootstrap stages and starts background preload work.
+ * Executes the configured bootstrap stages.
  * Keep the stage list and its documentation centralized in the stage
  * configuration (bootstrapStages) to avoid drift.
  */
@@ -417,8 +399,6 @@ async function startApplication(): Promise<void> {
     logger.info('🚀 Starting X.com Enhanced Gallery...');
 
     await runBootstrapStages();
-
-    triggerPreloadStrategy();
 
     lifecycleState.started = true;
     lifecycleState.lastError = null;

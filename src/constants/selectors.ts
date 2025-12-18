@@ -128,21 +128,6 @@ export const STABLE_SELECTORS = {
   ],
   /** Media player selectors */
   MEDIA_PLAYERS: ['[data-testid="videoPlayer"]', 'video', '[role="application"] video'],
-  /** Tweet action button selectors */
-  ACTION_BUTTONS: {
-    like: '[data-testid="like"]',
-    retweet: '[data-testid="retweet"]',
-    reply: '[data-testid="reply"]',
-    share: '[data-testid="share"]',
-    bookmark: '[data-testid="bookmark"]',
-  },
-  /** Quoted tweet selectors */
-  QUOTED_TWEET_ARTICLE: 'article[data-testid="tweet"] article[data-testid="tweet"]',
-  /** Quote tweet fallback */
-  QUOTED_TWEET_FALLBACK: [
-    'article[role="article"] article[role="article"]',
-    '[data-testid="quoteTweet"]',
-  ],
 } as const;
 
 const warnedInvalidSelectors = new Set<string>();
