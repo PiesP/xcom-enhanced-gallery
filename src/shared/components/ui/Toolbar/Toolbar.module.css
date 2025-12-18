@@ -70,10 +70,8 @@
   position: relative;
   overflow: clip;
   border-radius: var(--xeg-radius-md);
-  background: var(
-    --toolbar-surface-base,
-    var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface))
-  );
+  /* Icon-only visual style: no per-button border; blend with toolbar surface */
+  background: transparent;
   --toolbar-button-accent: var(--toolbar-surface-border, var(--xeg-toolbar-border));
   --toolbar-button-accent-hover: var(--xeg-color-border-hover);
   --toolbar-button-focus-border: var(
@@ -81,7 +79,8 @@
     var(--toolbar-button-accent-hover)
   );
 
-  border: var(--border-width-thin) solid var(--toolbar-button-accent, var(--xeg-toolbar-border));
+  /* Explicitly remove Button.module.css focus/border behavior for toolbar buttons. */
+  border: none;
   transition:
     var(--xeg-transition-surface-fast),
     transform var(--xeg-duration-fast) var(--xeg-ease-standard);
@@ -94,7 +93,8 @@
  */
 .toolbarButton:focus,
 .toolbarButton:focus-visible {
-  border-color: var(--toolbar-button-focus-border);
+  /* Borderless focus indicator: use background emphasis instead of border. */
+  background: var(--xeg-toolbar-element-bg, var(--xeg-color-neutral-100));
 }
 
 .galleryToolbar {
@@ -198,7 +198,8 @@
 
 /* State management via data attributes */
 :where(.toolbarButton[aria-pressed="true"]) {
-  border-color: var(--toolbar-button-accent-hover);
+  /* Selected/pressed state (e.g., active fit mode): no border, stronger background. */
+  background: var(--xeg-toolbar-element-bg-strong, var(--xeg-color-neutral-200));
 }
 
 .toolbarButton[aria-busy="true"] {
@@ -216,11 +217,15 @@
 /* Hover state is handled by the glassmorphism class */
 @media (hover: hover) {
   .toolbarButton:hover:not(:disabled) {
-    /* Use the hover effect defined by the glassmorphism class */
-    /* Avoid complex transform effects */
-    border-color: var(--toolbar-button-accent-hover);
+    /* Borderless hover: emphasize via background only */
+    background: var(--xeg-toolbar-element-bg, var(--xeg-color-neutral-100));
     transform: translateY(var(--xeg-button-lift));
   }
+}
+
+.toolbarButton:active:not(:disabled) {
+  background: var(--xeg-toolbar-element-bg-strong, var(--xeg-color-neutral-200));
+  transform: translateY(0);
 }
 
 /* Semantic button variants */
@@ -319,7 +324,8 @@ button.fitButton {
 
 .fitButton:focus,
 .fitButton:focus-visible {
-  border-color: var(--toolbar-button-focus-border, var(--xeg-color-border-hover));
+  /* Defensive override: ensure fit buttons never reintroduce borders via overrides. */
+  border: none;
 }
 
 /* Download button (inherits base styles) */
