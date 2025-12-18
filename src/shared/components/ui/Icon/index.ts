@@ -22,7 +22,6 @@ export {
   HeroCog6Tooth as Cog6Tooth,
   // Actions
   HeroDownload as ArrowDownTray,
-  HeroDownload as Download,
 } from './hero/hero-icons';
 
 // Icon path data exports for advanced use cases

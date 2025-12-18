@@ -20,6 +20,11 @@
     animation-fill-mode: both;
   }
 
+  .xeg-fade-out {
+    animation: xeg-fade-out var(--xeg-duration-fast) var(--xeg-ease-accelerate);
+    animation-fill-mode: both;
+  }
+
   .xeg-scale-in {
     animation: xeg-scale-in var(--xeg-duration-normal) var(--xeg-ease-entrance);
     animation-fill-mode: both;
@@ -28,6 +33,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .xeg-fade-in,
+    .xeg-fade-out,
     .xeg-scale-in {
       animation: none;
     }

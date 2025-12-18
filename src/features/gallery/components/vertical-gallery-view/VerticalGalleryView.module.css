@@ -446,25 +446,6 @@
     gap: var(--xeg-spacing-compact);
   }
 }
-
-/* Traditional media query fallback when container queries are unavailable */
-@media (width <= 760.5rem) {
-  .itemsContainer {
-    padding: var(--xeg-spacing-mobile);
-    gap: var(--xeg-spacing-mobile);
-  }
-
-  .toolbarWrapper {
-    padding-block-end: var(--xeg-spacing-mobile);
-  }
-}
-
-@media (width <= 45rem) {
-  .itemsContainer {
-    padding: var(--xeg-spacing-compact);
-    gap: var(--xeg-spacing-compact);
-  }
-}
 /* Phase 254: Reduced motion support (scroll-behavior + will-change overrides) */
 @media (prefers-reduced-motion: reduce) {
   .itemsContainer {

@@ -7,7 +7,7 @@ import { createAppConfig } from '@constants/app-config';
 import type { IGalleryApp } from '@shared/container/app-container';
 import { warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { runAfterWindowLoad } from '@shared/dom/window-load';
-import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error';
+import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging';
 import { EventManager } from '@shared/services/event-manager';
 import { CoreService } from '@shared/services/service-manager';
@@ -352,7 +352,7 @@ async function cleanup(): Promise<void> {
     await runOptionalCleanup(
       'Global error handler cleanup',
       async () => {
-        const { GlobalErrorHandler } = await import('@shared/error');
+        const { GlobalErrorHandler } = await import('@shared/error/error-handler');
         GlobalErrorHandler.getInstance().destroy();
       },
       debugCleanupLog

@@ -1,24 +1,17 @@
 /**
- * @fileoverview CSS-based animation system
+ * @fileoverview CSS-based animation helpers
  *
  * @description
- * Performance-optimized animation system using CSS transitions and keyframes.
+ * Lightweight helpers that rely on already-injected global CSS.
+ * Keep this module small to minimize production bundle size.
  */
 
-import { CSS } from '@constants';
 import { logger } from '@shared/logging';
-import { hasStyle, registerStyle } from '@shared/services/styles';
 
 // CSS class constants (internal)
 const ANIMATION_CLASSES = {
-  FADE_IN: 'animate-fade-in',
-  FADE_OUT: 'animate-fade-out',
-  SLIDE_IN_BOTTOM: 'animate-slide-in-bottom',
-  SLIDE_OUT_TOP: 'animate-slide-out-top',
-  SCALE_IN: 'animate-scale-in',
-  SCALE_OUT: 'animate-scale-out',
-  IMAGE_LOAD: 'animate-image-load',
-  REDUCED_MOTION: 'reduced-motion',
+  FADE_IN: 'xeg-fade-in',
+  FADE_OUT: 'xeg-fade-out',
 } as const;
 
 /**
@@ -31,103 +24,32 @@ export interface CSSAnimationOptions {
   onComplete?: () => void;
 }
 
-// Internal constants
-const ANIMATION_STYLE_ID = 'xeg-animation-styles';
-const ANIMATION_LAYER = 'xeg.utilities';
-const GALLERY_SCOPE_HOSTS = CSS.SCOPES.HOSTS;
+const safeLogAnimationFailure = (message: string, error: unknown): void => {
+  if (__DEV__) {
+    logger.warn(message, error);
+  }
+};
 
-const KEYFRAMES = {
-  FADE_IN: 'xeg-fade-in',
-  FADE_OUT: 'xeg-fade-out',
-  SLIDE_IN_BOTTOM: 'xeg-slide-in-bottom',
-  SLIDE_OUT_TOP: 'xeg-slide-out-top',
-  SCALE_IN: 'xeg-scale-in',
-  SCALE_OUT: 'xeg-scale-out',
-  IMAGE_LOAD: 'xeg-image-load',
-} as const;
+function runCssAnimation(
+  element: Element,
+  className: string,
+  options: CSSAnimationOptions
+): Promise<void> {
+  return new Promise<void>((resolve) => {
+    try {
+      const handleAnimationEnd = () => {
+        element.classList.remove(className);
+        options.onComplete?.();
+        resolve();
+      };
 
-/**
- * Inject CSS keyframes into DOM (internal, called lazily)
- */
-function injectAnimationStyles(): void {
-  if (hasStyle(ANIMATION_STYLE_ID)) {
-    return;
-  }
-
-  const cssText = buildScopedAnimationCss();
-  registerStyle({ id: ANIMATION_STYLE_ID, cssText });
-  logger.debug('CSS animation styles registered via StyleRegistry.');
-}
-
-function buildScopedAnimationCss(): string {
-  const scopedClass = (className: string): string =>
-    GALLERY_SCOPE_HOSTS.map((scope) => `${scope} .${className}`).join(', ');
-  const reducedMotionSelectors = [
-    ANIMATION_CLASSES.FADE_IN,
-    ANIMATION_CLASSES.FADE_OUT,
-    ANIMATION_CLASSES.SLIDE_IN_BOTTOM,
-    ANIMATION_CLASSES.SLIDE_OUT_TOP,
-    ANIMATION_CLASSES.SCALE_IN,
-    ANIMATION_CLASSES.SCALE_OUT,
-    ANIMATION_CLASSES.IMAGE_LOAD,
-  ]
-    .map(scopedClass)
-    .join(',\n      ');
-
-  return `
-@layer ${ANIMATION_LAYER} {
-  @keyframes ${KEYFRAMES.FADE_IN} { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes ${KEYFRAMES.FADE_OUT} { from { opacity: 1; } to { opacity: 0; } }
-  @keyframes ${KEYFRAMES.SLIDE_IN_BOTTOM} {
-    from { opacity: 0; transform: translateY(1.25rem); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes ${KEYFRAMES.SLIDE_OUT_TOP} {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(-1.25rem); }
-  }
-  @keyframes ${KEYFRAMES.SCALE_IN} {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-  }
-  @keyframes ${KEYFRAMES.SCALE_OUT} {
-    from { opacity: 1; transform: scale(1); }
-    to { opacity: 0; transform: scale(0.95); }
-  }
-  @keyframes ${KEYFRAMES.IMAGE_LOAD} {
-    from { opacity: 0; transform: scale(0.98); }
-    to { opacity: 1; transform: scale(1); }
-  }
-
-  ${scopedClass(ANIMATION_CLASSES.FADE_IN)} {
-    animation: ${KEYFRAMES.FADE_IN} var(--xeg-duration-normal) var(--xeg-ease-standard) forwards;
-  }
-  ${scopedClass(ANIMATION_CLASSES.FADE_OUT)} {
-    animation: ${KEYFRAMES.FADE_OUT} var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards;
-  }
-  ${scopedClass(ANIMATION_CLASSES.SLIDE_IN_BOTTOM)} {
-    animation: ${KEYFRAMES.SLIDE_IN_BOTTOM} var(--xeg-duration-normal) var(--xeg-ease-decelerate) forwards;
-  }
-  ${scopedClass(ANIMATION_CLASSES.SLIDE_OUT_TOP)} {
-    animation: ${KEYFRAMES.SLIDE_OUT_TOP} var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards;
-  }
-  ${scopedClass(ANIMATION_CLASSES.SCALE_IN)} {
-    animation: ${KEYFRAMES.SCALE_IN} var(--xeg-duration-normal) var(--xeg-ease-standard) forwards;
-  }
-  ${scopedClass(ANIMATION_CLASSES.SCALE_OUT)} {
-    animation: ${KEYFRAMES.SCALE_OUT} var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards;
-  }
-  ${scopedClass(ANIMATION_CLASSES.IMAGE_LOAD)} {
-    animation: ${KEYFRAMES.IMAGE_LOAD} var(--xeg-duration-slow) var(--xeg-ease-decelerate) forwards;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-      ${reducedMotionSelectors} {
-        animation: none;
-      }
-  }
-}
-`;
+      element.addEventListener('animationend', handleAnimationEnd, { once: true });
+      element.classList.add(className);
+    } catch (error) {
+      safeLogAnimationFailure('CSS animation failed', error);
+      resolve();
+    }
+  });
 }
 
 /**
@@ -137,24 +59,7 @@ export async function animateGalleryEnter(
   element: Element,
   options: CSSAnimationOptions = {}
 ): Promise<void> {
-  // Ensure styles are injected on first animation
-  injectAnimationStyles();
-
-  return new Promise<void>((resolve) => {
-    try {
-      const handleAnimationEnd = () => {
-        element.classList.remove(ANIMATION_CLASSES.FADE_IN);
-        options.onComplete?.();
-        resolve();
-      };
-
-      element.addEventListener('animationend', handleAnimationEnd, { once: true });
-      element.classList.add(ANIMATION_CLASSES.FADE_IN);
-    } catch (error) {
-      logger.warn('Gallery entry animation failed:', error);
-      resolve();
-    }
-  });
+  return runCssAnimation(element, ANIMATION_CLASSES.FADE_IN, options);
 }
 
 /**
@@ -164,22 +69,5 @@ export async function animateGalleryExit(
   element: Element,
   options: CSSAnimationOptions = {}
 ): Promise<void> {
-  // Ensure styles are injected on first animation
-  injectAnimationStyles();
-
-  return new Promise<void>((resolve) => {
-    try {
-      const handleAnimationEnd = () => {
-        element.classList.remove(ANIMATION_CLASSES.FADE_OUT);
-        options.onComplete?.();
-        resolve();
-      };
-
-      element.addEventListener('animationend', handleAnimationEnd, { once: true });
-      element.classList.add(ANIMATION_CLASSES.FADE_OUT);
-    } catch (error) {
-      logger.warn('Gallery exit animation failed:', error);
-      resolve();
-    }
-  });
+  return runCssAnimation(element, ANIMATION_CLASSES.FADE_OUT, options);
 }

@@ -225,19 +225,19 @@
 }
 
 /* Semantic button variants */
-:where(.toolbarButton.primary, .downloadCurrent) {
+.downloadCurrent {
   --toolbar-button-accent: var(--xeg-color-primary);
   --toolbar-button-accent-hover: var(--xeg-color-primary-hover);
   --toolbar-button-focus-border: var(--xeg-color-primary-hover);
 }
 
-:where(.toolbarButton.success, .downloadAll) {
+.downloadAll {
   --toolbar-button-accent: var(--xeg-color-success);
   --toolbar-button-accent-hover: var(--xeg-color-success-hover);
   --toolbar-button-focus-border: var(--xeg-color-success-hover);
 }
 
-:where(.toolbarButton.danger, .closeButton) {
+.closeButton {
   --toolbar-button-accent: var(--xeg-color-error);
   --toolbar-button-accent-hover: var(--xeg-color-error-hover);
   --toolbar-button-focus-border: var(--xeg-color-error-hover);

@@ -3,7 +3,7 @@
  * @description Provides utilities for bootstrap stage execution with timing and error handling.
  */
 
-import { bootstrapErrorReporter } from '@shared/error';
+import { bootstrapErrorReporter } from '@shared/error/app-error-reporter';
 import type { BootstrapStage, BootstrapStageResult } from '@shared/interfaces';
 import { logger } from '@shared/logging';
 

@@ -8,7 +8,7 @@ import {
   getMediaService,
   tryGetSettingsManager,
 } from '@shared/container/service-accessors';
-import { galleryErrorReporter, mediaErrorReporter } from '@shared/error';
+import { galleryErrorReporter, mediaErrorReporter } from '@shared/error/app-error-reporter';
 import { getErrorMessage } from '@shared/error/normalize';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import { logger } from '@shared/logging';

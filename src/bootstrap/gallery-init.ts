@@ -7,7 +7,11 @@
 
 import { registerGalleryRenderer, registerSettingsManager } from '@shared/container';
 import type { IGalleryApp } from '@shared/container/app-container';
-import { bootstrapErrorReporter, galleryErrorReporter, settingsErrorReporter } from '@shared/error';
+import {
+  bootstrapErrorReporter,
+  galleryErrorReporter,
+  settingsErrorReporter,
+} from '@shared/error/app-error-reporter';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
 import type { SettingsServiceLike } from '@shared/services/theme-service';
