@@ -1,4 +1,4 @@
-import { SELECTORS } from '@shared/dom/selectors';
+import { TWITTER_MEDIA_SELECTOR } from '@shared/dom/selectors';
 import { getErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
@@ -67,7 +67,7 @@ export class MediaExtractionService implements MediaExtractor {
     options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     try {
-      const firstMedia = container.querySelector(SELECTORS.TWITTER_MEDIA);
+      const firstMedia = container.querySelector(TWITTER_MEDIA_SELECTOR);
 
       if (!firstMedia || !(firstMedia instanceof HTMLElement)) {
         return this.createErrorResult('No media found in container');

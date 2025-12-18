@@ -4,7 +4,7 @@
  * @version 1.0.0 - Phase 2: DOM HTML preservation
  */
 
-import { SELECTORS } from '@constants';
+import { TWEET_SELECTOR, TWEET_TEXT_SELECTOR } from '@shared/dom/selectors';
 import { logger } from '@shared/logging';
 import { sanitizeHTML } from '@shared/utils/text/html-sanitizer';
 
@@ -17,7 +17,7 @@ import { sanitizeHTML } from '@shared/utils/text/html-sanitizer';
  *
  * @example
  * ```typescript
- * const tweetArticle = document.querySelector(SELECTORS.TWEET);
+ * const tweetArticle = document.querySelector(TWEET_SELECTOR);
  * const html = extractTweetTextHTML(tweetArticle);
  * // '<span>Tweet with <a href="...">link</a> and #hashtag</span>'
  * ```
@@ -27,7 +27,7 @@ export function extractTweetTextHTML(tweetArticle: Element | null): string | und
 
   try {
     // Find tweet text element
-    const tweetTextElement = tweetArticle.querySelector(SELECTORS.TWEET_TEXT);
+    const tweetTextElement = tweetArticle.querySelector(TWEET_TEXT_SELECTOR);
     if (!tweetTextElement) {
       logger.debug('[extractTweetTextHTML] tweetText element not found');
       return undefined;
@@ -79,7 +79,7 @@ export function extractTweetTextHTMLFromClickedElement(
     // Check if current element is a tweet article
     if (
       current.tagName === 'ARTICLE' &&
-      (current.hasAttribute('data-testid') || current.querySelector(SELECTORS.TWEET))
+      (current.hasAttribute('data-testid') || current.querySelector(TWEET_SELECTOR))
     ) {
       return extractTweetTextHTML(current);
     }

@@ -394,7 +394,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           <IconButton
             class={toolbarButtonClass(styles.closeButton)}
             size="toolbar"
-            intent="danger"
             aria-label="Close Gallery"
             title="Close Gallery (Esc)"
             disabled={isToolbarDisabled()}

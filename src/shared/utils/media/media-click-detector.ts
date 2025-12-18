@@ -4,7 +4,7 @@
  */
 
 import { CSS } from '@constants/css';
-import { SELECTORS, STABLE_SELECTORS } from '@shared/dom/selectors';
+import { STABLE_MEDIA_CONTAINERS_SELECTORS, STATUS_LINK_SELECTOR } from '@shared/dom/selectors';
 import { isVideoControlElement } from '@shared/dom/utils';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import {
@@ -22,7 +22,7 @@ import { isSafeAndValidMediaUrl } from '@shared/utils/url';
  * Includes /photo/ and /video/ links that should trigger gallery
  */
 const MEDIA_LINK_SELECTORS = [
-  SELECTORS.STATUS_LINK, // a[href*="/status/"]
+  STATUS_LINK_SELECTOR, // a[href*="/status/"]
   'a[href*="/photo/"]', // Photo links (profile grid)
   'a[href*="/video/"]', // Video links (profile grid)
 ] as const;
@@ -31,7 +31,7 @@ const MEDIA_LINK_SELECTORS = [
 const MEDIA_LINK_SELECTOR = MEDIA_LINK_SELECTORS.join(', ');
 
 /** Combined selector for robust media container detection */
-const MEDIA_CONTAINER_SELECTOR = STABLE_SELECTORS.MEDIA_CONTAINERS.join(', ');
+const MEDIA_CONTAINER_SELECTOR = STABLE_MEDIA_CONTAINERS_SELECTORS.join(', ');
 
 /** Interactive elements that should block gallery trigger */
 const INTERACTIVE_SELECTOR = [

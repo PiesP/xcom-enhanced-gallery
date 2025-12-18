@@ -1,4 +1,10 @@
-import { SELECTORS, STABLE_SELECTORS } from '@shared/dom/selectors';
+import {
+  STABLE_IMAGE_CONTAINERS_SELECTORS,
+  STABLE_TWEET_CONTAINERS_SELECTORS,
+  STABLE_VIDEO_CONTAINERS_SELECTORS,
+  TWEET_PHOTO_SELECTOR,
+  VIDEO_PLAYER_SELECTOR,
+} from '@shared/dom/selectors';
 import { logger } from '@shared/logging';
 import {
   type PauseAmbientVideosOptions,
@@ -31,13 +37,13 @@ export interface AmbientVideoPauseResponse extends PauseAmbientVideosResult {
 }
 
 const VIDEO_TRIGGER_SCOPES = new Set<string>([
-  SELECTORS.VIDEO_PLAYER,
-  ...STABLE_SELECTORS.VIDEO_CONTAINERS,
+  VIDEO_PLAYER_SELECTOR,
+  ...STABLE_VIDEO_CONTAINERS_SELECTORS,
 ]);
 
 const IMAGE_TRIGGER_SCOPES = new Set<string>([
-  SELECTORS.TWEET_PHOTO,
-  ...STABLE_SELECTORS.IMAGE_CONTAINERS,
+  TWEET_PHOTO_SELECTOR,
+  ...STABLE_IMAGE_CONTAINERS_SELECTORS,
 ]);
 
 const PAUSE_RESULT_DEFAULT: PauseAmbientVideosResult = Object.freeze({
@@ -56,7 +62,7 @@ function findTweetContainer(element?: HTMLElement | null): HTMLElement | null {
     return null;
   }
 
-  for (const selector of STABLE_SELECTORS.TWEET_CONTAINERS) {
+  for (const selector of STABLE_TWEET_CONTAINERS_SELECTORS) {
     try {
       const container = element.closest(selector);
       if (container instanceof HTMLElement) {

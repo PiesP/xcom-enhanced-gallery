@@ -1,6 +1,11 @@
 import type { DomFacts, DomFactsKind } from '@core/dom-facts';
 import { getSafeHref } from '@shared/dom/safe-location';
-import { queryAllWithFallback, SELECTORS, STABLE_SELECTORS } from '@shared/dom/selectors';
+import {
+  GALLERY_OVERLAY_SELECTOR,
+  queryAllWithFallback,
+  STABLE_MEDIA_CONTAINERS_SELECTORS,
+  STABLE_MEDIA_VIEWERS_SELECTORS,
+} from '@shared/dom/selectors';
 
 export function takeDomFacts(kind: DomFactsKind): DomFacts {
   const url = getSafeHref() ?? '';
@@ -15,12 +20,12 @@ export function takeDomFacts(kind: DomFactsKind): DomFacts {
     };
   }
 
-  const hasXegOverlay = Boolean(document.querySelector(SELECTORS.GALLERY_OVERLAY));
+  const hasXegOverlay = Boolean(document.querySelector(GALLERY_OVERLAY_SELECTOR));
   const hasXComMediaViewer =
-    queryAllWithFallback(document, STABLE_SELECTORS.MEDIA_VIEWERS).length > 0;
+    queryAllWithFallback(document, STABLE_MEDIA_VIEWERS_SELECTORS).length > 0;
   const mediaElementsCount = queryAllWithFallback(
     document,
-    STABLE_SELECTORS.MEDIA_CONTAINERS
+    STABLE_MEDIA_CONTAINERS_SELECTORS
   ).length;
 
   return { kind, url, hasXegOverlay, hasXComMediaViewer, mediaElementsCount };

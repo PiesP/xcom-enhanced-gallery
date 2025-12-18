@@ -67,6 +67,12 @@
   /* Layout: centered icon with flexbox */
   font-size: 0.875em; /* 14px typography scale */
   font-weight: 500;
+  width: var(--xeg-size-button-md);
+  height: var(--xeg-size-button-md);
+  min-width: var(--xeg-size-button-md);
+  min-height: var(--xeg-size-button-md);
+  padding: 0.5em;
+  aspect-ratio: 1;
   position: relative;
   overflow: clip;
   border-radius: var(--xeg-radius-md);

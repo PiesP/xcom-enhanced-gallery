@@ -5,12 +5,12 @@
 
 import {
   CSS as CSS_CONST,
-  SELECTORS,
   VIDEO_CONTROL_ARIA_TOKENS,
   VIDEO_CONTROL_DATASET_PREFIXES,
   VIDEO_CONTROL_ROLES,
   VIDEO_CONTROL_SELECTORS,
 } from '@constants';
+import { VIDEO_PLAYER_SELECTOR } from '@shared/dom/selectors';
 import { logger } from '@shared/logging';
 import { isHTMLElement } from '@shared/utils/types/guards';
 
@@ -21,7 +21,7 @@ const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;
  * Check if element is a video control element
  */
 const VIDEO_PLAYER_CONTEXT_SELECTORS = [
-  SELECTORS.VIDEO_PLAYER,
+  VIDEO_PLAYER_SELECTOR,
   '[data-testid="videoComponent"]',
   '[data-testid="videoPlayerControls"]',
   '[data-testid="videoPlayerOverlay"]',

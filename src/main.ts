@@ -140,49 +140,49 @@ async function runOptionalCleanup(
  */
 const bootstrapStages: readonly BootstrapStage[] = [
   {
-    label: 'Global styles',
+    label: __DEV__ ? 'Global styles' : '1',
     run: loadGlobalStyles,
   },
   {
-    label: 'Developer tooling',
+    label: __DEV__ ? 'Developer tooling' : '2',
     run: initializeDevToolsIfNeeded,
     shouldRun: () => isDevEnvironment && !isTestMode,
     optional: true,
   },
   {
-    label: 'Infrastructure',
+    label: __DEV__ ? 'Infrastructure' : '3',
     run: initializeInfrastructure,
   },
   {
-    label: 'Critical systems',
+    label: __DEV__ ? 'Critical systems' : '4',
     run: initializeCriticalSystems,
   },
   {
-    label: 'Base services',
+    label: __DEV__ ? 'Base services' : '5',
     run: initializeBaseServicesStage,
     optional: true,
   },
   {
-    label: 'Theme synchronization',
+    label: __DEV__ ? 'Theme synchronization' : '6',
     run: applyInitialThemeSetting,
     optional: true,
   },
   {
-    label: 'Global event wiring',
+    label: __DEV__ ? 'Global event wiring' : '7',
     run: () => setupGlobalEventHandlers(),
   },
   {
-    label: 'Command runtime (dev)',
+    label: __DEV__ ? 'Command runtime (dev)' : '8',
     run: initializeCommandRuntimeIfNeeded,
     shouldRun: () => isDevEnvironment && !isTestMode,
     optional: true,
   },
   {
-    label: 'Gallery initialization',
+    label: __DEV__ ? 'Gallery initialization' : '9',
     run: initializeGalleryIfPermitted,
   },
   {
-    label: 'Non-critical systems',
+    label: __DEV__ ? 'Non-critical systems' : '10',
     run: () => initializeNonCriticalSystems(),
     optional: true,
   },
