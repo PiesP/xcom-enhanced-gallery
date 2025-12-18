@@ -8,6 +8,36 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.3.0] - 2025-12-18
+
+### Added
+
+- **Command Runtime**: Implemented command runtime infrastructure with HTTP request and navigation commands.
+- **Download Pipeline**: Added a functional download planning core, a single execution flow, and fallback timers with runtime timeout handling.
+- **Config Discovery (Node)**: Added Node-only config discovery utilities and aligned browser-safe helpers.
+- **Wheel Scroll Guard**: Added utilities for managing wheel event propagation to prevent unintended page/gallery scrolling.
+- **Events**: Added handling and logging for `DomFactsFailed` event flows.
+
+### Changed
+
+- **Userscript API Adapter**: Improved GM\_\* API resolution, environment detection, and safer fallbacks across userscript managers.
+- **Event Handling**: Migrated DOM event management patterns to `EventManager`-backed cleanup and context handling.
+- **Error Handling**: Centralized error normalization and improved cancellation/timeout detection and messaging.
+- **UI/Toolbar**: Updated toolbar button styling for an icon-only design and improved accessibility/filename cleaning in the vertical gallery.
+- **Build System**: Enhanced version retrieval and introduced production bundle cleanup passes.
+- **Tree-shaking**: Refined selector exports and component imports for better dead-code elimination.
+
+### Fixed
+
+- **Licensing**: Updated license URLs to use the `master` branch.
+- **Tooling/CI**: Improved tsconfig alias resolution error handling and updated CI formatting checks.
+- **Networking**: Hardened abort/timeout signal handling in HTTP requests and retry logic.
+
+### Dependencies
+
+- Updated `@types/node` to version 25.0.2.
+- Updated `pnpm` to version 10.26.0.
+
 ## [1.2.2] - 2025-12-15
 
 ### Changed

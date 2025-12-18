@@ -43,7 +43,7 @@ const STATIC_DEFAULT_SETTINGS = {
     mediaExtraction: true, // Media extraction enabled
     accessibility: true, // Accessibility features enabled
   },
-  version: '1.2.2',
+  version: '1.3.0',
   // Static default retains deterministic timestamp for hashing comparisons
   lastModified: 0,
 } as const satisfies AppSettings;
