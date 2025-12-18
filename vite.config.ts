@@ -319,7 +319,7 @@ function buildLicenseBlock(
       ' *',
       ' * This userscript bundles third-party components under their respective licenses.',
       ' * Full license texts are available in the repository:',
-      ` *   ${USERSCRIPT_CONFIG.homepageURL}/tree/main/LICENSES`,
+      ` *   ${USERSCRIPT_CONFIG.homepageURL}/tree/master/LICENSES`,
       ' *',
       ' * Included license files:',
     ];
