@@ -32,6 +32,7 @@ import type {
   GMNotificationDetails,
   GMXMLHttpRequestControl,
   GMXMLHttpRequestDetails,
+  GMXMLHttpRequestResponse,
 } from '@shared/types/core/userscript';
 import { isGMUserScriptInfo } from '@shared/utils/types/safety';
 
@@ -71,6 +72,47 @@ export interface UserscriptAPI {
    */
   notification(details: GMNotificationDetails): void;
   readonly cookie: CookieAPI | undefined;
+}
+
+function createNetworkErrorResponse(
+  details: GMXMLHttpRequestDetails
+): GMXMLHttpRequestResponse<unknown, unknown> {
+  return {
+    finalUrl: details.url,
+    readyState: 4,
+    status: 0,
+    statusText: 'Network Error',
+    responseHeaders: '',
+    response: undefined,
+    responseXML: null,
+    responseText: '',
+    context: details.context,
+  };
+}
+
+function scheduleUserscriptRequestFailureCallbacks(
+  details: GMXMLHttpRequestDetails,
+  response: GMXMLHttpRequestResponse<unknown, unknown>
+): void {
+  Promise.resolve().then(() => {
+    try {
+      details.onerror?.(response);
+      details.onloadend?.(response);
+    } catch {
+      // Silent no-op
+    }
+  });
+}
+
+function fallbackAddStyle(css: string): HTMLStyleElement {
+  if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head?.appendChild(style);
+    return style;
+  }
+
+  return {} as unknown as HTMLStyleElement;
 }
 
 /**
@@ -442,41 +484,15 @@ export function getUserscriptSafe(): UserscriptAPI {
         try {
           return api.addStyle(css);
         } catch {
-          if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
-            const style = document.createElement('style');
-            style.textContent = css;
-            document.head?.appendChild(style);
-            return style;
-          }
-
-          return {} as unknown as HTMLStyleElement;
+          return fallbackAddStyle(css);
         }
       },
       xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
         try {
           return api.xmlHttpRequest(details);
         } catch {
-          const response = {
-            finalUrl: details.url,
-            readyState: 4,
-            status: 0,
-            statusText: 'Network Error',
-            responseHeaders: '',
-            response: undefined,
-            responseXML: null,
-            responseText: '',
-            context: details.context,
-          };
-
-          Promise.resolve().then(() => {
-            try {
-              details.onerror?.(response as never);
-              details.onloadend?.(response as never);
-            } catch {
-              // Silent no-op
-            }
-          });
-
+          const response = createNetworkErrorResponse(details);
+          scheduleUserscriptRequestFailureCallbacks(details, response);
           return { abort() {} };
         }
       },
@@ -506,34 +522,11 @@ export function getUserscriptSafe(): UserscriptAPI {
         return [];
       },
       addStyle(css: string): HTMLStyleElement {
-        if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
-          const style = document.createElement('style');
-          style.textContent = css;
-          document.head?.appendChild(style);
-          return style;
-        }
-        return {} as unknown as HTMLStyleElement;
+        return fallbackAddStyle(css);
       },
       xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
-        Promise.resolve().then(() => {
-          const response = {
-            finalUrl: details.url,
-            readyState: 4,
-            status: 0,
-            statusText: 'Network Error',
-            responseHeaders: '',
-            response: undefined,
-            responseXML: null,
-            responseText: '',
-            context: details.context,
-          };
-          try {
-            details.onerror?.(response as never);
-            details.onloadend?.(response as never);
-          } catch {
-            // Silent no-op
-          }
-        });
+        const response = createNetworkErrorResponse(details);
+        scheduleUserscriptRequestFailureCallbacks(details, response);
         return { abort() {} };
       },
       notification(_details: GMNotificationDetails): void {
