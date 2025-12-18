@@ -18,6 +18,15 @@
 
 import { calculateCRC32, encodeUtf8, writeUint16LE, writeUint32LE } from './zip-utils';
 
+const MAX_UINT16 = 0xffff;
+const MAX_UINT32 = 0xffff_ffff;
+
+function assertZip32(condition: boolean, message: string): void {
+  if (!condition) {
+    throw new Error(`ZIP format limit exceeded (Zip64 not supported): ${message}`);
+  }
+}
+
 /** @internal */
 interface FileEntry {
   filename: string;
@@ -29,12 +38,12 @@ interface FileEntry {
 /** Optimized buffer concatenation (no function call overhead) */
 const concat = (arrays: Uint8Array[]): Uint8Array => {
   let len = 0;
-  for (let i = 0; i < arrays.length; i++) len += arrays[i]!.length;
+  for (const array of arrays) len += array.length;
   const result = new Uint8Array(len);
   let offset = 0;
-  for (let i = 0; i < arrays.length; i++) {
-    result.set(arrays[i]!, offset);
-    offset += arrays[i]!.length;
+  for (const array of arrays) {
+    result.set(array, offset);
+    offset += array.length;
   }
   return result;
 };
@@ -56,6 +65,18 @@ export class StreamingZipWriter {
    * Writes Local File Header + File Data immediately
    */
   addFile(filename: string, data: Uint8Array): void {
+    // Zip32-only implementation: fail fast if Zip64 would be required.
+    // - Entry count uses 16-bit fields in EOCD.
+    // - Sizes and offsets use 32-bit fields in headers and EOCD.
+    // The Zip spec uses sentinel values (0xFFFF/0xFFFFFFFF) to indicate Zip64.
+    assertZip32(
+      this.entries.length < MAX_UINT16 - 1,
+      `too many entries (count=${this.entries.length + 1})`
+    );
+
+    assertZip32(data.length < MAX_UINT32, `file too large (size=${data.length})`);
+    assertZip32(this.currentOffset < MAX_UINT32, `offset overflow (offset=${this.currentOffset})`);
+
     const filenameBytes = encodeUtf8(filename);
     const crc32 = calculateCRC32(data);
 
@@ -75,6 +96,11 @@ export class StreamingZipWriter {
       filenameBytes,
     ]);
 
+    assertZip32(
+      this.currentOffset + localHeader.length + data.length < MAX_UINT32,
+      `archive too large (offset=${this.currentOffset}, add=${localHeader.length + data.length})`
+    );
+
     this.chunks.push(localHeader, data);
     this.entries.push({ filename, data, offset: this.currentOffset, crc32 });
     this.currentOffset += localHeader.length + data.length;
@@ -82,11 +108,24 @@ export class StreamingZipWriter {
 
   /** Finalize ZIP file (add Central Directory) */
   finalize(): Uint8Array {
+    // Zip32-only: entry count must fit in 16-bit EOCD fields.
+    assertZip32(
+      this.entries.length < MAX_UINT16,
+      `too many entries (count=${this.entries.length})`
+    );
+
     const centralDirStart = this.currentOffset;
+    assertZip32(
+      centralDirStart < MAX_UINT32,
+      `central directory offset overflow (${centralDirStart})`
+    );
+
     const centralDirChunks: Uint8Array[] = [];
 
     for (const entry of this.entries) {
       const filenameBytes = encodeUtf8(entry.filename);
+      assertZip32(entry.offset < MAX_UINT32, `entry offset overflow (${entry.offset})`);
+      assertZip32(entry.data.length < MAX_UINT32, `entry too large (size=${entry.data.length})`);
       centralDirChunks.push(
         concat([
           new Uint8Array([0x50, 0x4b, 0x01, 0x02]), // Signature
@@ -112,6 +151,11 @@ export class StreamingZipWriter {
     }
 
     const centralDir = concat(centralDirChunks);
+    assertZip32(
+      centralDir.length < MAX_UINT32,
+      `central directory too large (size=${centralDir.length})`
+    );
+
     const endOfCentralDir = concat([
       new Uint8Array([0x50, 0x4b, 0x05, 0x06]),
       writeUint16LE(0), // Disk number

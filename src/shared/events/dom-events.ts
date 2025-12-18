@@ -12,6 +12,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { EventManager } from '@shared/services/event-manager';
 import { wireAbortSignal } from './abort-signal-wiring';
 import type { Subscription, SubscriptionManager } from './event-context';
 
@@ -47,7 +48,11 @@ export type DOMListener<E extends Event = Event> = {
 /**
  * DOM Event Manager
  *
- * Manages DOM event listener registration with automatic cleanup support.
+ * @deprecated Use `EventManager` from `@shared/services/event-manager` for DOM listeners,
+ * or `EventBus` from `@shared/events` when you need unified DOM + app events.
+ *
+ * This class remains for backward compatibility and now delegates registration to
+ * `EventManager` to keep listener tracking consistent.
  */
 export class DOMEventManager {
   constructor(private readonly subscriptionManager: SubscriptionManager) {}
@@ -84,6 +89,8 @@ export class DOMEventManager {
     const { signal, context, ...listenerOptions } = options;
     const id = this.subscriptionManager.generateId('dom', context);
 
+    const eventManager = EventManager.getInstance();
+
     // Check if already aborted
     if (signal?.aborted) {
       logger.debug(`[DOMEventManager] Skipping aborted listener: ${type}`);
@@ -91,15 +98,26 @@ export class DOMEventManager {
     }
 
     // Validate element
-    if (!element || typeof element.addEventListener !== 'function') {
+    if (
+      !element ||
+      typeof (element as unknown as { addEventListener?: unknown }).addEventListener !== 'function'
+    ) {
       logger.warn('[DOMEventManager] Invalid element for DOM listener', { type, context });
       return id;
     }
 
     try {
-      // Register listener directly. This module is the public, managed facade,
-      // so we avoid coupling to internal listener-manager implementation details.
-      element.addEventListener(type, listener as unknown as EventListener, listenerOptions);
+      const managedId = eventManager.addEventListener(
+        element,
+        type,
+        listener as unknown as EventListener,
+        context === undefined ? listenerOptions : { ...listenerOptions, context }
+      );
+
+      if (!managedId) {
+        logger.debug(`[DOMEventManager] Skipping destroyed listener registration: ${type}`);
+        return id;
+      }
 
       // AbortSignal cleanup is wired via an event listener.
       // Ensure abort listeners are removed when the subscription is cleaned up
@@ -113,11 +131,7 @@ export class DOMEventManager {
         context,
         cleanup: () => {
           try {
-            element.removeEventListener(
-              type,
-              listener as unknown as EventListener,
-              listenerOptions
-            );
+            eventManager.removeListener(managedId);
           } catch (error) {
             logger.warn(`[DOMEventManager] Failed to remove listener: ${type}`, error);
           }

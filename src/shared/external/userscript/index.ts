@@ -5,10 +5,16 @@
 
 export {
   getUserscript,
+  getUserscriptSafe,
   type ResolvedGMAPIs,
   resolveGMAPIs,
   resolveGMDownload,
   type UserscriptAPI,
   type UserscriptManager,
 } from './adapter';
-export { detectEnvironment, type EnvironmentInfo, isGMAPIAvailable } from './environment-detector';
+export {
+  detectEnvironment,
+  type EnvironmentInfo,
+  type GMAPIName,
+  isGMAPIAvailable,
+} from './environment-detector';

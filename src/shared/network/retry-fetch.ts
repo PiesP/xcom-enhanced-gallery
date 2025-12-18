@@ -45,7 +45,7 @@ export async function fetchArrayBufferWithRetry(
   );
 
   if (result.success) {
-    return result.data as Uint8Array;
+    return result.data;
   }
 
   // If the caller's signal is aborted (including during retry backoff),

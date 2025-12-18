@@ -6,7 +6,8 @@
  * **Scope**: Provides typed access to GM_* APIs when available
  * **Note**: GM_xmlhttpRequest restored (Phase 373) for cross-origin support.
  *
- * **Fallback Strategy**: None. GM_* APIs must be available at runtime.
+ * **Fallback Strategy**: This adapter intentionally does not provide global fallbacks.
+ * Individual services may opt into safe defaults via `getUserscriptSafe()`.
  *
  * **Supported Managers**:
  * - Tampermonkey (GM_* + GM_info)
@@ -277,7 +278,12 @@ function assertFunction<T extends (...args: never[]) => unknown>(
  * **Security Note**: Use Service Layer (PersistentStorage) for production code
  *
  * @returns UserscriptAPI object with all methods (frozen, immutable)
- * @throws Error if required GM_* APIs are unavailable
+ *
+ * @remarks
+ * This function is intentionally non-throwing at resolution time.
+ * Availability is validated per-method: calling a missing GM_* binding throws with
+ * a standardized "GM_* unavailable" message (except for `notification()`, which
+ * is a silent no-op when unsupported).
  * @internal Advanced/testing only
  */
 export function getUserscript(): UserscriptAPI {
@@ -367,4 +373,173 @@ export function getUserscript(): UserscriptAPI {
 
     cookie: gmCookie,
   });
+}
+
+/**
+ * Non-throwing Userscript API getter.
+ *
+ * Provides best-effort, per-method safe defaults for environments where GM_* APIs
+ * are partially or fully unavailable. This is useful for services that should be
+ * resilient in dev/test/runtime contexts (e.g., notifications, storage reads).
+ *
+ * Policy:
+ * - Never throws.
+ * - Storage reads return the provided defaultValue (or undefined).
+ * - Storage writes/delete/list are silent no-ops.
+ * - download() is a silent no-op.
+ * - addStyle() falls back to injecting a <style> element when DOM is available.
+ * - xmlHttpRequest() invokes onerror/onloadend asynchronously and returns a no-op control.
+ */
+export function getUserscriptSafe(): UserscriptAPI {
+  try {
+    const api = getUserscript();
+
+    return Object.freeze({
+      ...api,
+      async download(url: string, filename: string): Promise<void> {
+        try {
+          await api.download(url, filename);
+        } catch {
+          // Silent no-op
+        }
+      },
+      async setValue(key: string, value: unknown): Promise<void> {
+        try {
+          await api.setValue(key, value);
+        } catch {
+          // Silent no-op
+        }
+      },
+      async getValue<T>(key: string, defaultValue?: T): Promise<T | undefined> {
+        try {
+          return await api.getValue<T>(key, defaultValue);
+        } catch {
+          return defaultValue;
+        }
+      },
+      getValueSync<T>(key: string, defaultValue?: T): T | undefined {
+        try {
+          return api.getValueSync<T>(key, defaultValue);
+        } catch {
+          return defaultValue;
+        }
+      },
+      async deleteValue(key: string): Promise<void> {
+        try {
+          await api.deleteValue(key);
+        } catch {
+          // Silent no-op
+        }
+      },
+      async listValues(): Promise<string[]> {
+        try {
+          return await api.listValues();
+        } catch {
+          return [];
+        }
+      },
+      addStyle(css: string): HTMLStyleElement {
+        try {
+          return api.addStyle(css);
+        } catch {
+          if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+            const style = document.createElement('style');
+            style.textContent = css;
+            document.head?.appendChild(style);
+            return style;
+          }
+
+          return {} as unknown as HTMLStyleElement;
+        }
+      },
+      xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
+        try {
+          return api.xmlHttpRequest(details);
+        } catch {
+          const response = {
+            finalUrl: details.url,
+            readyState: 4,
+            status: 0,
+            statusText: 'Network Error',
+            responseHeaders: '',
+            response: undefined,
+            responseXML: null,
+            responseText: '',
+            context: details.context,
+          };
+
+          Promise.resolve().then(() => {
+            try {
+              details.onerror?.(response as never);
+              details.onloadend?.(response as never);
+            } catch {
+              // Silent no-op
+            }
+          });
+
+          return { abort() {} };
+        }
+      },
+      notification(details: GMNotificationDetails): void {
+        try {
+          api.notification(details);
+        } catch {
+          // Silent no-op
+        }
+      },
+    });
+  } catch {
+    return Object.freeze({
+      hasGM: false,
+      manager: 'unknown',
+      info: () => null,
+      async download(_url: string, _filename: string) {},
+      async setValue(_key: string, _value: unknown) {},
+      async getValue<T>(_key: string, defaultValue?: T): Promise<T | undefined> {
+        return defaultValue;
+      },
+      getValueSync<T>(_key: string, defaultValue?: T): T | undefined {
+        return defaultValue;
+      },
+      async deleteValue(_key: string) {},
+      async listValues(): Promise<string[]> {
+        return [];
+      },
+      addStyle(css: string): HTMLStyleElement {
+        if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+          const style = document.createElement('style');
+          style.textContent = css;
+          document.head?.appendChild(style);
+          return style;
+        }
+        return {} as unknown as HTMLStyleElement;
+      },
+      xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
+        Promise.resolve().then(() => {
+          const response = {
+            finalUrl: details.url,
+            readyState: 4,
+            status: 0,
+            statusText: 'Network Error',
+            responseHeaders: '',
+            response: undefined,
+            responseXML: null,
+            responseText: '',
+            context: details.context,
+          };
+          try {
+            details.onerror?.(response as never);
+            details.onloadend?.(response as never);
+          } catch {
+            // Silent no-op
+          }
+        });
+        return { abort() {} };
+      },
+      notification(_details: GMNotificationDetails): void {
+        // Silent no-op
+      },
+      cookie: undefined,
+    });
+  }
 }

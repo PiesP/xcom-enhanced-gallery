@@ -16,9 +16,10 @@
  *
  * **Refactoring Notes**:
  * This file now acts as a facade maintaining backward compatibility.
- * New code can import from specific modules for better tree-shaking:
- * - `import { addDOMListener } from '@shared/events/dom-events'`
- * - `import { on, emit } from '@shared/events/app-events'`
+ * New code can choose one of the following patterns:
+ * - `EventBus` (recommended): unified DOM + app events
+ * - `EventManager` (DOM only): `import { EventManager } from '@shared/services/event-manager'`
+ * - `AppEventManager` (app events only): `import { AppEventManager } from '@shared/events/app-events'`
  *
  * @example
  * ```typescript

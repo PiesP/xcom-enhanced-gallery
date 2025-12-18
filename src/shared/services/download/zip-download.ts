@@ -23,16 +23,19 @@ export async function downloadAsZip(
   let processed = 0;
   let successful = 0;
   const failures: { url: string; error: string }[] = [];
-  const usedFilenames: string[] = [];
 
   const ensureUniqueFilename = ensureUniqueFilenameFactory();
+  const assignedFilenames = items.map((item) => ensureUniqueFilename(item.desiredName));
+  const usedFilenamesByIndex: Array<string | undefined> = new Array(total);
 
   // Queue management
   let currentIndex = 0;
 
   const runNext = async () => {
     while (currentIndex < total) {
-      if (abortSignal?.aborted) return;
+      if (abortSignal?.aborted) {
+        throw createUserCancelledAbortError(abortSignal.reason);
+      }
 
       const index = currentIndex++;
       const item = items[index];
@@ -43,13 +46,16 @@ export async function downloadAsZip(
         current: processed + 1,
         total,
         percentage: Math.min(100, Math.max(0, Math.round(((processed + 1) / total) * 100))),
-        filename: item.desiredName,
+        filename: assignedFilenames[index] ?? item.desiredName,
       });
 
       try {
         let data: Uint8Array;
         if (item.blob) {
           const blob = item.blob instanceof Promise ? await item.blob : item.blob;
+          if (abortSignal?.aborted) {
+            throw createUserCancelledAbortError(abortSignal.reason);
+          }
           data = new Uint8Array(await blob.arrayBuffer());
         } else {
           data = await fetchArrayBufferWithRetry(
@@ -60,10 +66,14 @@ export async function downloadAsZip(
           );
         }
 
-        const filename = ensureUniqueFilename(item.desiredName);
+        if (abortSignal?.aborted) {
+          throw createUserCancelledAbortError(abortSignal.reason);
+        }
+
+        const filename = assignedFilenames[index] ?? item.desiredName;
         writer.addFile(filename, data);
 
-        usedFilenames.push(filename);
+        usedFilenamesByIndex[index] = filename;
         successful++;
       } catch (error) {
         if (abortSignal?.aborted) throw createUserCancelledAbortError(abortSignal.reason);
@@ -78,6 +88,10 @@ export async function downloadAsZip(
   await Promise.all(workers);
 
   const zipBytes = writer.finalize();
+
+  const usedFilenames = usedFilenamesByIndex.filter(
+    (value): value is string => typeof value === 'string'
+  );
 
   return {
     filesSuccessful: successful,

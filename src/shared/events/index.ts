@@ -34,15 +34,15 @@
  * controller.abort();
  * ```
  *
- * 2. **Direct module imports (recommended for new code)**:
+ * 2. **Explicit imports (recommended for new code)**:
  * ```typescript
- * import { DOMEventManager, type DOMListenerOptions } from '@shared/events/dom-events';
  * import { AppEventManager, type AppEventMap } from '@shared/events/app-events';
  * import { SubscriptionManager } from '@shared/events/event-context';
+ * import { EventManager } from '@shared/services/event-manager';
  *
  * const subscriptions = new SubscriptionManager();
- * const domEvents = new DOMEventManager(subscriptions);
  * const appEvents = new AppEventManager(subscriptions);
+ * const domEvents = EventManager.getInstance();
  *
  * // Better tree-shaking and explicit dependencies
  * ```

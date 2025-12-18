@@ -8,14 +8,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-// Cross-environment resolver for current working directory. Prefer the explicit
-// `base` argument when provided, otherwise fall back to Node's `process.cwd()`.
+// Node-only resolver for current working directory.
 function getDefaultBase(): string {
-  if (typeof process !== 'undefined') {
-    const p = process as unknown as { cwd?: () => string };
-    if (typeof p.cwd === 'function') return p.cwd();
-  }
-  return '.';
+  return process.cwd();
 }
 
 /**

@@ -66,7 +66,7 @@ export interface ZipResult {
   failures: Array<{ url: string; error: string }>;
   /** Raw ZIP bytes */
   zipData: Uint8Array;
-  /** Filenames in completion order */
+  /** Filenames added to the ZIP (input order of successful items) */
   usedFilenames: string[];
 }
 

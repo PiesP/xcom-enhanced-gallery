@@ -28,16 +28,28 @@ export interface RetryOptions {
 /**
  * Result of a retry operation
  */
-export interface RetryResult<T> {
+export interface RetryResultBase {
   /** Whether the operation succeeded */
   readonly success: boolean;
-  /** The result value if successful */
-  readonly data?: T;
-  /** The error if failed */
-  readonly error?: unknown;
   /** Number of attempts made */
   readonly attempts: number;
 }
+
+export type RetryResultSuccess<T> = RetryResultBase & {
+  readonly success: true;
+  /** The result value if successful */
+  readonly data: T;
+  readonly error?: undefined;
+};
+
+export type RetryResultFailure = RetryResultBase & {
+  readonly success: false;
+  readonly data?: undefined;
+  /** The error if failed */
+  readonly error: unknown;
+};
+
+export type RetryResult<T> = RetryResultSuccess<T> | RetryResultFailure;
 
 /**
  * Default retry options

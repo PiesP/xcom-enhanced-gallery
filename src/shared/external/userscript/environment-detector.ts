@@ -13,7 +13,16 @@ export interface EnvironmentInfo {
   language: BaseLanguageCode;
 }
 
-const GM_API_CHECKS: Record<string, (gm: ResolvedGMAPIs) => boolean> = {
+export type GMAPIName =
+  | 'getValue'
+  | 'setValue'
+  | 'download'
+  | 'notification'
+  | 'deleteValue'
+  | 'listValues'
+  | 'cookie';
+
+const GM_API_CHECKS: Record<GMAPIName, (gm: ResolvedGMAPIs) => boolean> = {
   getValue: (gm) => typeof gm.getValue === 'function',
   setValue: (gm) => typeof gm.setValue === 'function',
   download: (gm) => typeof gm.download === 'function',
@@ -73,12 +82,8 @@ export function detectEnvironment(): EnvironmentInfo {
  * }
  * ```
  */
-export function isGMAPIAvailable(apiName: string): boolean {
+export function isGMAPIAvailable(apiName: GMAPIName): boolean {
   const checker = GM_API_CHECKS[apiName];
-  if (!checker) {
-    return false;
-  }
-
   try {
     return checker(resolveGMAPIs());
   } catch {
