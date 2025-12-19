@@ -50,5 +50,6 @@ temp/
 # AI Instructions (separate repository)
 .github/copilot-instructions.md
 .github/prompts/
+.claude/
 AGENTS.md
 CLAUDE.md
