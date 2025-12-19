@@ -7,13 +7,27 @@ export type SupportedLanguage = 'auto' | BaseLanguageCode;
 export interface LanguageStrings {
   readonly toolbar: {
     readonly previous: string;
+    readonly previousWithShortcut: string;
     readonly next: string;
+    readonly nextWithShortcut: string;
     readonly download: string;
+    readonly downloadCurrentWithShortcut: string;
     readonly downloadAll: string;
+    readonly downloadAllWithCount: string;
     readonly settings: string;
+    readonly openSettings: string;
     readonly close: string;
+    readonly closeWithShortcut: string;
     readonly tweetText: string;
     readonly tweetTextPanel: string;
+    readonly fitOriginal: string;
+    readonly fitOriginalTitle: string;
+    readonly fitWidth: string;
+    readonly fitWidthTitle: string;
+    readonly fitHeight: string;
+    readonly fitHeightTitle: string;
+    readonly fitContainer: string;
+    readonly fitContainerTitle: string;
   };
   readonly settings: {
     readonly title: string;

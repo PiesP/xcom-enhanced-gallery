@@ -1,5 +1,5 @@
-import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
+import { useTranslation } from '@shared/hooks';
 import styles from './Toolbar.module.css';
 
 interface TweetTextPanelProps {
@@ -8,12 +8,12 @@ interface TweetTextPanelProps {
 }
 
 export default function TweetTextPanel(props: TweetTextPanelProps): JSXElement {
-  const label = getLanguageService().translate('toolbar.tweetText') || 'Tweet text';
+  const translate = useTranslation();
 
   return (
     <div class={styles.tweetPanelBody}>
       <div class={styles.tweetTextHeader}>
-        <span class={styles.tweetTextLabel}>{label}</span>
+        <span class={styles.tweetTextLabel}>{translate('toolbar.tweetText')}</span>
       </div>
       <div
         class={styles.tweetContent}

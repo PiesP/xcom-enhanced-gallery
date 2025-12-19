@@ -79,3 +79,4 @@ export {
   useToolbarSettingsController,
 } from './toolbar/use-toolbar-settings-controller';
 export { useToolbarState } from './use-toolbar-state';
+export { useTranslation } from './use-translation';

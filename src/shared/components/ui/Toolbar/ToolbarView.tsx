@@ -10,9 +10,9 @@ import {
 } from '@shared/components/ui/Icon';
 import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
 import type { FitMode, MaybeAccessor } from '@shared/components/ui/Toolbar/Toolbar.types';
-import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
 import type { ToolbarSettingsControllerResult, ToolbarState } from '@shared/hooks';
+import { useTranslation } from '@shared/hooks';
 import { EventManager } from '@shared/services/event-manager';
 import { safeEventPreventAll } from '@shared/utils/events/utils';
 import { shouldAllowWheelDefault as shouldAllowWheelDefaultBase } from '@shared/utils/events/wheel-scroll-guard';
@@ -77,7 +77,7 @@ export interface ToolbarViewProps {
   /** Fit mode order */
   readonly fitModeOrder: ReadonlyArray<FitModeDefinition>;
   /** Fit mode labels */
-  readonly fitModeLabels: Record<FitMode, { label: string; title: string }>;
+  readonly fitModeLabels: MaybeAccessor<Record<FitMode, { label: string; title: string }>>;
   /** Active fit mode generator */
   readonly activeFitMode: () => FitMode;
   /** Fit mode click handler factory */
@@ -130,9 +130,11 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const [counterElement, setCounterElement] = createSignal<HTMLSpanElement | null>(null);
   const [settingsPanelEl, setSettingsPanelEl] = createSignal<HTMLDivElement | null>(null);
   const [tweetPanelEl, setTweetPanelEl] = createSignal<HTMLDivElement | null>(null);
+  const translate = useTranslation();
 
   // Keep a single memo for nav state to avoid repeated createMemo boilerplate.
   const nav = createMemo(() => props.navState());
+  const fitModeLabels = createMemo(() => resolve(props.fitModeLabels));
 
   const assignToolbarRef = (element: HTMLDivElement | null) => {
     setToolbarElement(element);
@@ -272,8 +274,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           <IconButton
             class={toolbarButtonClass()}
             size="toolbar"
-            aria-label="Previous Media"
-            title="Previous Media (Left Arrow)"
+            aria-label={translate('toolbar.previous')}
+            title={translate('toolbar.previousWithShortcut')}
             disabled={nav().prevDisabled}
             onClick={props.onPreviousClick}
             data-gallery-element="nav-previous"
@@ -284,8 +286,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           <IconButton
             class={toolbarButtonClass()}
             size="toolbar"
-            aria-label="Next Media"
-            title="Next Media (Right Arrow)"
+            aria-label={translate('toolbar.next')}
+            title={translate('toolbar.nextWithShortcut')}
             disabled={nav().nextDisabled}
             onClick={props.onNextClick}
             data-gallery-element="nav-next"
@@ -314,7 +316,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           </div>
 
           {props.fitModeOrder.map(({ mode, Icon }) => {
-            const label = props.fitModeLabels[mode];
+            const label = fitModeLabels()[mode];
             return (
               <IconButton
                 class={toolbarButtonClass(styles.fitButton)}
@@ -336,8 +338,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             size="toolbar"
             onClick={props.onDownloadCurrent}
             disabled={nav().downloadDisabled}
-            aria-label="Download Current File"
-            title="Download Current File (Ctrl+D)"
+            aria-label={translate('toolbar.download')}
+            title={translate('toolbar.downloadCurrentWithShortcut')}
             data-gallery-element="download-current"
           >
             <ArrowDownTray size={18} />
@@ -349,8 +351,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               size="toolbar"
               onClick={props.onDownloadAll}
               disabled={nav().downloadDisabled}
-              aria-label={`Download all ${totalCount()} files as ZIP`}
-              title={`Download all ${totalCount()} files as ZIP`}
+              aria-label={translate('toolbar.downloadAllWithCount', { count: totalCount() })}
+              title={translate('toolbar.downloadAllWithCount', { count: totalCount() })}
               data-gallery-element="download-all"
             >
               <ArrowDownOnSquareStack size={18} />
@@ -363,10 +365,10 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               id="settings-button"
               class={toolbarButtonClass()}
               size="toolbar"
-              aria-label="Open Settings"
+              aria-label={translate('toolbar.openSettings')}
               aria-expanded={props.settingsController.isSettingsExpanded() ? 'true' : 'false'}
               aria-controls="toolbar-settings-panel"
-              title="Settings"
+              title={translate('toolbar.openSettings')}
               disabled={isToolbarDisabled()}
               onMouseDown={props.settingsController.handleSettingsMouseDown}
               onClick={props.settingsController.handleSettingsClick}
@@ -381,10 +383,10 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               id="tweet-text-button"
               class={toolbarButtonClass()}
               size="toolbar"
-              aria-label={getLanguageService().translate('toolbar.tweetText') || 'View tweet text'}
+              aria-label={translate('toolbar.tweetText')}
               aria-expanded={props.isTweetPanelExpanded() ? 'true' : 'false'}
               aria-controls="toolbar-tweet-panel"
-              title={getLanguageService().translate('toolbar.tweetText') || 'Tweet text'}
+              title={translate('toolbar.tweetText')}
               disabled={isToolbarDisabled()}
               onClick={props.toggleTweetPanelExpanded}
               data-gallery-element="tweet-text"
@@ -396,8 +398,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           <IconButton
             class={toolbarButtonClass(styles.closeButton)}
             size="toolbar"
-            aria-label="Close Gallery"
-            title="Close Gallery (Esc)"
+            aria-label={translate('toolbar.close')}
+            title={translate('toolbar.closeWithShortcut')}
             disabled={isToolbarDisabled()}
             onClick={props.onCloseClick}
             data-gallery-element="close"
@@ -442,7 +444,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           props.isTweetPanelExpanded() ? styles.panelExpanded : undefined
         )}
         role="region"
-        aria-label={getLanguageService().translate('toolbar.tweetTextPanel') || 'Tweet text panel'}
+        aria-label={translate('toolbar.tweetTextPanel')}
         aria-labelledby="tweet-text-button"
         data-gallery-element="tweet-panel"
       >

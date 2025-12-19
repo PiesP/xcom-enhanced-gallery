@@ -22,9 +22,9 @@
  */
 
 import { createDebounced } from '@shared/async';
-import { getLanguageService } from '@shared/container/service-accessors';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
 import type { JSX, JSXElement } from '@shared/external/vendors';
+import { useTranslation } from '@shared/hooks';
 import type { ImageFitMode } from '@shared/types';
 import {
   createIntrinsicSizingStyle,
@@ -90,7 +90,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const forceVisible = createMemo(() => local.forceVisible ?? false);
   const className = createMemo(() => local.className ?? '');
 
-  const lang = getLanguageService();
+  const translate = useTranslation();
 
   const isVideo = createMemo(() => {
     // Prefer the extractor-provided media.type (most accurate).
@@ -393,7 +393,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   );
 
   const defaultAriaLabel = createMemo(() =>
-    lang.translate('messages.gallery.mediaItemLabel', {
+    translate('messages.gallery.mediaItemLabel', {
       index: local.index + 1,
       filename: cleanFilename(local.media.filename),
     })
@@ -466,7 +466,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             <div class={styles.error}>
               <span class={styles.errorIcon}>⚠️</span>
               <span class={styles.errorText}>
-                {lang.translate('messages.gallery.failedToLoadImage', {
+                {translate('messages.gallery.failedToLoadImage', {
                   type: isVideo() ? 'video' : 'image',
                 })}
               </span>

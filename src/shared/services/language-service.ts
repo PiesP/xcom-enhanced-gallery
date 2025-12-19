@@ -109,7 +109,10 @@ export class LanguageService {
 
       // Phase 356: Preload the effective language bundle
       const effectiveLang = this.getEffectiveLanguage();
-      await this.ensureLanguageLoaded(effectiveLang);
+      const loaded = await this.ensureLanguageLoaded(effectiveLang);
+      if (loaded) {
+        this.notifyListeners(this.currentLanguage);
+      }
     } catch (error) {
       logger.warn('Failed to restore language setting from storage:', error);
     }
@@ -164,9 +167,22 @@ export class LanguageService {
 
     // Phase 356: Lazy load language bundle if needed
     const effectiveLang = this.getEffectiveLanguage();
-    this.ensureLanguageLoaded(effectiveLang).catch((error) => {
-      logger.warn('Failed to load language bundle on change:', error);
-    });
+    void this.ensureLanguageLoaded(effectiveLang)
+      .then((loaded) => {
+        if (!loaded) {
+          return;
+        }
+        if (this.currentLanguage !== normalized) {
+          return;
+        }
+        if (this.getEffectiveLanguage() !== effectiveLang) {
+          return;
+        }
+        this.notifyListeners(this.currentLanguage);
+      })
+      .catch((error) => {
+        logger.warn('Failed to load language bundle on change:', error);
+      });
 
     if (__DEV__) {
       logger.debug(`Language changed to: ${normalized}`);
@@ -177,12 +193,15 @@ export class LanguageService {
    * Ensure the language bundle is loaded (lazy load if necessary).
    * This is called automatically when language changes.
    */
-  async ensureLanguageLoaded(language: BaseLanguageCode): Promise<void> {
+  async ensureLanguageLoaded(language: BaseLanguageCode): Promise<boolean> {
+    const wasLoaded = translationCatalog.has(language);
     try {
       await translator.ensureLanguage(language);
+      return !wasLoaded && translationCatalog.has(language);
     } catch (error) {
       logger.warn(`Failed to load language bundle: ${language}`, error);
     }
+    return false;
   }
 
   translate(key: TranslationKey, params?: TranslationParams): string {

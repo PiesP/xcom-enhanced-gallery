@@ -15,6 +15,7 @@ import {
   type ToolbarSettingsControllerResult,
   useToolbarSettingsController,
   useToolbarState,
+  useTranslation,
 } from '@shared/hooks';
 import type { ToolbarDataState, ToolbarState } from '@shared/types/toolbar.types';
 import { safeEventPrevent, safeEventPreventAll } from '@shared/utils/events/utils';
@@ -29,13 +30,6 @@ const DEFAULT_PROPS = {
   disabled: false,
   className: '',
 } as const;
-
-const FIT_MODE_LABELS: Record<FitMode, { label: string; title: string }> = {
-  original: { label: 'Original', title: 'Original Size (1:1)' },
-  fitWidth: { label: 'Fit Width', title: 'Fit to Width' },
-  fitHeight: { label: 'Fit Height', title: 'Fit to Height' },
-  fitContainer: { label: 'Fit Window', title: 'Fit to Window' },
-};
 
 const FIT_MODE_ORDER = [
   { mode: 'original' as const, Icon: ArrowsPointingOut },
@@ -134,6 +128,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const currentFitMode = toOptionalAccessor(() => props.currentFitMode);
   const tweetText = toOptionalAccessor(() => props.tweetText);
   const tweetTextHTML = toOptionalAccessor(() => props.tweetTextHTML);
+  const translate = useTranslation();
 
   const [toolbarState, toolbarActions] = useToolbarState();
   const [settingsExpandedSignal, setSettingsExpandedSignal] = createSignal(false);
@@ -215,6 +210,25 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     fitContainer: props.handlers.fitMode?.onFitContainer,
   }));
 
+  const fitModeLabels = createMemo<Record<FitMode, { label: string; title: string }>>(() => ({
+    original: {
+      label: translate('toolbar.fitOriginal'),
+      title: translate('toolbar.fitOriginalTitle'),
+    },
+    fitWidth: {
+      label: translate('toolbar.fitWidth'),
+      title: translate('toolbar.fitWidthTitle'),
+    },
+    fitHeight: {
+      label: translate('toolbar.fitHeight'),
+      title: translate('toolbar.fitHeightTitle'),
+    },
+    fitContainer: {
+      label: translate('toolbar.fitContainer'),
+      title: translate('toolbar.fitContainerTitle'),
+    },
+  }));
+
   const activeFitMode = createMemo<FitMode>(
     () => currentFitMode() ?? FIT_MODE_ORDER[0]?.mode ?? 'original'
   );
@@ -290,7 +304,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       displayedIndex={displayedIndex}
       progressWidth={progressWidth}
       fitModeOrder={FIT_MODE_ORDER}
-      fitModeLabels={FIT_MODE_LABELS}
+      fitModeLabels={fitModeLabels}
       activeFitMode={activeFitMode}
       handleFitModeClick={handleFitModeClick}
       isFitDisabled={isFitDisabled}

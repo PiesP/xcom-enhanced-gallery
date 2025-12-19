@@ -26,9 +26,9 @@
  */
 
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
-import { getLanguageService } from '@shared/container/service-accessors';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
 import type { JSXElement } from '@shared/external/vendors';
+import { useTranslation } from '@shared/hooks';
 import { logger } from '@shared/logging';
 import { EventManager } from '@shared/services/event-manager';
 import { downloadState } from '@shared/state/signals/download.signals';
@@ -102,6 +102,7 @@ function VerticalGalleryViewCore({
     itemsContainerEl,
     onClose,
   });
+  const translate = useTranslation();
 
   // Ensure initial focus is applied before any navigation events fire
   createEffect(() => {
@@ -235,15 +236,11 @@ function VerticalGalleryViewCore({
 
   // Empty state
   if (!isVisible()) {
-    const languageService = getLanguageService();
-    const emptyTitle = languageService.translate('messages.gallery.emptyTitle');
-    const emptyDesc = languageService.translate('messages.gallery.emptyDescription');
-
     return (
       <div class={cx(styles.container, styles.empty, className)}>
         <div class={styles.emptyMessage}>
-          <h3>{emptyTitle}</h3>
-          <p>{emptyDesc}</p>
+          <h3>{translate('messages.gallery.emptyTitle')}</h3>
+          <p>{translate('messages.gallery.emptyDescription')}</p>
         </div>
       </div>
     );
