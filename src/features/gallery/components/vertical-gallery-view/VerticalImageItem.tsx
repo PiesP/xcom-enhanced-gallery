@@ -25,6 +25,7 @@ import { createDebounced } from '@shared/async';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
 import type { JSX, JSXElement } from '@shared/external/vendors';
 import { useTranslation } from '@shared/hooks';
+import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types';
 import {
   createIntrinsicSizingStyle,
@@ -151,6 +152,22 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     video: videoRef,
     isVideo,
     setMuted: applyMutedProgrammatically,
+  });
+
+  createEffect(() => {
+    const video = videoRef();
+    if (local.isActive && video) {
+      const alreadySignaled = untrack(() => gallerySignals.currentVideoElement.value === video);
+      if (!alreadySignaled) {
+        gallerySignals.currentVideoElement.value = video;
+      }
+      return;
+    }
+
+    const shouldClear = untrack(() => gallerySignals.currentVideoElement.value === video);
+    if (shouldClear) {
+      gallerySignals.currentVideoElement.value = null;
+    }
   });
 
   // Video volume settings (persisted across sessions)

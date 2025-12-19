@@ -8,7 +8,6 @@ import {
   VIDEO_CONTROL_ARIA_TOKENS,
   VIDEO_CONTROL_DATASET_PREFIXES,
   VIDEO_CONTROL_ROLES,
-  VIDEO_CONTROL_SELECTORS,
 } from '@constants/video-controls';
 import { VIDEO_PLAYER_SELECTOR } from '@shared/dom/selectors';
 import { logger } from '@shared/logging';
@@ -20,14 +19,27 @@ const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;
 /**
  * Check if element is a video control element
  */
-const VIDEO_PLAYER_CONTEXT_SELECTORS = [
-  VIDEO_PLAYER_SELECTOR,
-  '[data-testid="videoComponent"]',
-  '[data-testid="videoPlayerControls"]',
-  '[data-testid="videoPlayerOverlay"]',
-  '[role="application"]',
-  '[aria-label*="Video"]',
-];
+const VIDEO_PLAYER_CONTEXT_SELECTOR = `${VIDEO_PLAYER_SELECTOR},[data-testid="videoComponent"],[data-testid="videoPlayerControls"],[data-testid="videoPlayerOverlay"],[role="application"],[aria-label*="Video"]`;
+const VIDEO_CONTROL_SELECTORS = [
+  '[data-testid="playButton"]',
+  '[data-testid="pauseButton"]',
+  '[data-testid="muteButton"]',
+  '[data-testid="unmuteButton"]',
+  '[data-testid="volumeButton"]',
+  '[data-testid="volumeSlider"]',
+  '[data-testid="volumeControl"]',
+  '[data-testid="videoProgressSlider"]',
+  '[data-testid="seekBar"]',
+  '[data-testid="scrubber"]',
+  '[data-testid="videoPlayer"] [role="slider"]',
+  '[data-testid="videoPlayer"] [role="progressbar"]',
+  '[data-testid="videoPlayer"] [data-testid="SliderRail"]',
+  '[data-testid="videoPlayer"] input[type="range"]',
+  '[data-testid="videoPlayer"] [aria-label*="Volume"]',
+  '.video-controls',
+  '.video-controls button',
+  '.video-progress button',
+] as const;
 
 function safeClosest(element: Element, selector: string): Element | null {
   try {
@@ -57,7 +69,7 @@ function containsControlToken(value: string | null, tokens: readonly string[]): 
   }
 
   const normalized = value.toLowerCase();
-  return tokens.some((token) => normalized.includes(token));
+  return tokens.some((token) => normalized.includes(token.toLowerCase()));
 }
 
 function getNearestAttributeValue(
@@ -65,11 +77,14 @@ function getNearestAttributeValue(
   attribute: 'data-testid' | 'aria-label'
 ): string | null {
   const host = safeClosest(element, `[${attribute}]`) as HTMLElement | null;
-  return host?.getAttribute(attribute) ?? null;
+  const value = host?.getAttribute(attribute) ?? null;
+  if (attribute === 'data-testid') {
+  }
+  return value;
 }
 
 function isWithinVideoPlayer(element: HTMLElement): boolean {
-  return VIDEO_PLAYER_CONTEXT_SELECTORS.some((selector) => safeClosest(element, selector) !== null);
+  return safeClosest(element, VIDEO_PLAYER_CONTEXT_SELECTOR) !== null;
 }
 
 function matchesVideoControlSelectors(element: HTMLElement): boolean {
@@ -95,7 +110,8 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
   }
 
   const dataTestId = getNearestAttributeValue(element, 'data-testid');
-  if (containsControlToken(dataTestId, VIDEO_CONTROL_DATASET_PREFIXES)) {
+  const dataTestIdMatch = containsControlToken(dataTestId, VIDEO_CONTROL_DATASET_PREFIXES);
+  if (dataTestIdMatch) {
     return true;
   }
 

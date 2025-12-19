@@ -23,7 +23,6 @@ export { isSafeAndValidMediaUrl } from './media-url';
 
 // Safety utilities
 export {
-  HTML_ATTRIBUTE_URL_POLICY,
   isUrlAllowed,
   MEDIA_URL_POLICY,
   type UrlSafetyPolicy,

@@ -8,7 +8,6 @@
  * - After: Single helper function integration
  */
 
-import { CSS } from '@constants/css';
 import { logger } from '@shared/logging';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 
@@ -54,46 +53,7 @@ function getCurrentGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoEleme
   }
 
   const signaled = gallerySignals.currentVideoElement.value;
-  if (signaled instanceof HTMLVideoElement) {
-    return signaled;
-  }
-
-  try {
-    const doc =
-      typeof document !== 'undefined' ? document : (globalThis as { document?: Document }).document;
-    if (!(doc instanceof Document)) return null;
-
-    const hostSelectors = [
-      CSS.SELECTORS.DATA_GALLERY,
-      CSS.SELECTORS.ROOT,
-      CSS.SELECTORS.CONTAINER,
-      CSS.SELECTORS.DATA_CONTAINER,
-    ];
-    let container: Element | null = null;
-    for (const selector of hostSelectors) {
-      const match = doc.querySelector(selector);
-      if (match) {
-        container = match;
-        break;
-      }
-    }
-    if (!container) return null;
-
-    const items = container.querySelector('[data-xeg-role="items-container"]');
-    if (!items) return null;
-
-    const index = gallerySignals.currentIndex.value;
-    const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
-    if (!target) return null;
-
-    const fallbackVideo = target.querySelector('video');
-    return fallbackVideo instanceof HTMLVideoElement ? fallbackVideo : null;
-  } catch (error) {
-    if (__DEV__) {
-      logger.debug('Failed to get current gallery video:', error);
-    }
-    return null;
-  }
+  return signaled instanceof HTMLVideoElement ? signaled : null;
 }
 
 /**

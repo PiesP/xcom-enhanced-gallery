@@ -3,29 +3,6 @@
  */
 
 /**
- * Video control element selectors
- */
-export const VIDEO_CONTROL_SELECTORS = [
-  '[data-testid="playButton"]',
-  '[data-testid="pauseButton"]',
-  '[data-testid="muteButton"]',
-  '[data-testid="unmuteButton"]',
-  '[data-testid="volumeButton"]',
-  '[data-testid="volumeSlider"]',
-  '[data-testid="volumeControl"]',
-  '[data-testid="videoProgressSlider"]',
-  '[data-testid="seekBar"]',
-  '[data-testid="scrubber"]',
-  '[data-testid="videoPlayer"] [role="slider"]',
-  '[data-testid="videoPlayer"] [role="progressbar"]',
-  '[data-testid="videoPlayer"] [data-testid="SliderRail"]',
-  '[data-testid="videoPlayer"] input[type="range"]',
-  '[data-testid="videoPlayer"] [aria-label*="Volume"]',
-  '.video-controls button',
-  '.video-progress button',
-] as const;
-
-/**
  * Data-testid prefixes that identify video chrome controls
  */
 export const VIDEO_CONTROL_DATASET_PREFIXES = [

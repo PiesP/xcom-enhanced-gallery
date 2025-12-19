@@ -20,12 +20,7 @@ export default function TweetTextPanel(props: TweetTextPanelProps): JSXElement {
         data-gallery-element="tweet-content"
         data-gallery-scrollable="true"
       >
-        {props.tweetTextHTML ? (
-          // tweetTextHTML is sanitized during extraction.
-          <div innerHTML={props.tweetTextHTML} />
-        ) : (
-          <span>{props.tweetText ?? ''}</span>
-        )}
+        <span>{props.tweetTextHTML ?? props.tweetText ?? ''}</span>
       </div>
     </div>
   );

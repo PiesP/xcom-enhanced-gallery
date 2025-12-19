@@ -35,7 +35,6 @@ const DEFAULT_BLOCKED_PROTOCOL_HINTS = Object.freeze([
 ]);
 
 const MEDIA_SAFE_PROTOCOLS = new Set(['http:', 'https:', 'blob:']) as ReadonlySet<string>;
-const HTML_ATTR_SAFE_PROTOCOLS = new Set(['http:', 'https:']) as ReadonlySet<string>;
 const DATA_IMAGE_MIME_PREFIXES = Object.freeze([
   'image/png',
   'image/jpeg',
@@ -62,14 +61,6 @@ export const MEDIA_URL_POLICY: UrlSafetyPolicy = {
   allowFragments: false,
   allowDataUrls: true,
   allowedDataMimePrefixes: DATA_IMAGE_MIME_PREFIXES,
-} as const;
-
-export const HTML_ATTRIBUTE_URL_POLICY: UrlSafetyPolicy = {
-  allowedProtocols: HTML_ATTR_SAFE_PROTOCOLS,
-  allowRelative: true,
-  allowProtocolRelative: true,
-  allowFragments: true,
-  allowDataUrls: false,
 } as const;
 
 export function isUrlAllowed(rawUrl: string | null | undefined, policy: UrlSafetyPolicy): boolean {

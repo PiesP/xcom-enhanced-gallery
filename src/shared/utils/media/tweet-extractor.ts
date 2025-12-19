@@ -6,7 +6,6 @@
 
 import { TWEET_SELECTOR, TWEET_TEXT_SELECTOR } from '@shared/dom/selectors';
 import { logger } from '@shared/logging';
-import { sanitizeHTML } from '@shared/utils/text/html-sanitizer';
 
 /**
  * Extracts tweet text HTML from tweet article element
@@ -33,27 +32,17 @@ export function extractTweetTextHTML(tweetArticle: Element | null): string | und
       return undefined;
     }
 
-    // Get innerHTML
-    const rawHTML = tweetTextElement.innerHTML;
-    if (!rawHTML?.trim()) {
-      logger.debug('[extractTweetTextHTML] Empty HTML content');
+    const text = tweetTextElement.textContent?.trim();
+    if (!text) {
+      logger.debug('[extractTweetTextHTML] Empty text content');
       return undefined;
     }
 
-    // Sanitize HTML for safe rendering
-    const sanitized = sanitizeHTML(rawHTML);
-
-    if (!sanitized?.trim()) {
-      logger.debug('[extractTweetTextHTML] HTML sanitization resulted in empty content');
-      return undefined;
-    }
-
-    logger.debug('[extractTweetTextHTML] Successfully extracted and sanitized HTML', {
-      originalLength: rawHTML.length,
-      sanitizedLength: sanitized.length,
+    logger.debug('[extractTweetTextHTML] Successfully extracted text', {
+      length: text.length,
     });
 
-    return sanitized;
+    return text;
   } catch (error) {
     logger.error('[extractTweetTextHTML] Error extracting tweet text HTML:', error);
     return undefined;
