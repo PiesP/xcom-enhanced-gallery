@@ -1,4 +1,4 @@
-import { APP_SETTINGS_STORAGE_KEY } from '@constants';
+import { APP_SETTINGS_STORAGE_KEY } from '@constants/storage';
 import type { RuntimeCommand } from '@core/cmd';
 import type { RuntimeEvent } from '@core/events';
 import type { RuntimeModel } from '@core/model';

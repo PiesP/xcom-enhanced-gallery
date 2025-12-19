@@ -1,4 +1,4 @@
-import { SERVICE_KEYS } from '@constants';
+import { SERVICE_KEYS } from '@constants/service-keys';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import { logger } from '@shared/logging';
 import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';

@@ -4,7 +4,7 @@
  * @version 5.0.0 - Composition-based lifecycle
  */
 
-import { APP_SETTINGS_STORAGE_KEY } from '@constants';
+import { APP_SETTINGS_STORAGE_KEY } from '@constants/storage';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging';
 import { EventManager } from '@shared/services/event-manager';

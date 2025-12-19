@@ -5,7 +5,7 @@
  * Media URL validation utilities.
  */
 
-import { MEDIA } from '@constants';
+import { MEDIA } from '@constants/media';
 import { isHostMatching, tryParseUrl } from '@shared/utils/url/host';
 
 const MAX_URL_LENGTH = 2048;

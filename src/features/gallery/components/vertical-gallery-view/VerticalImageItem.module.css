@@ -230,7 +230,7 @@
   align-items: center;
   justify-content: center;
   background: var(--color-error-bg);
-  color: var(--xeg-color-error, var(--color-error));
+  color: var(--xeg-color-error);
   min-height: var(--xeg-spacing-3xl);
 }
 

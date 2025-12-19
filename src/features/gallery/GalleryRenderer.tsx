@@ -3,7 +3,7 @@
  * @description Handles rendering and lifecycle of the gallery component
  */
 
-import { CSS } from '@constants';
+import { CSS } from '@constants/css';
 import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';
 import { GalleryContainer, mountGallery, unmountGallery } from '@shared/components/isolation';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';

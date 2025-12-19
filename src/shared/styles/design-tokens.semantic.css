@@ -431,11 +431,6 @@
 
   /* Component Scope Tokens */
   :where(:root, .xeg-theme-scope) {
-    /* Legacy spacing aliases (KeyboardHelpOverlay, etc.) */
-    --xeg-space-8: var(--space-sm); /* 8px */
-    --xeg-space-12: 0.75rem; /* 12px */
-    --xeg-space-16: var(--space-md); /* 16px */
-
     /* Settings Component Tokens */
     /* Layout */
     --xeg-settings-gap: var(--space-md);
@@ -455,35 +450,6 @@
 
     /* Toolbar Component Tokens */
     --xeg-toolbar-panel-shadow: var(--xeg-shadow-xs);
-
-    /* Toolbar/Counter Typography Tokens */
-    /* Define a shared base text tone for counters (consistency) */
-    /* 2025-10-21: promoted to primary text after toolbar indicator color unification */
-    --xeg-text-counter: var(--xeg-color-text-primary);
-    --xeg-counter-text: var(--xeg-text-counter);
-
-    /* Legacy/Global Gallery aliases (Phase: design-unification) */
-    /* NOTE: map legacy token names used in gallery-global.css to current semantic tokens */
-    --xeg-text-button: var(--xeg-color-text-primary);
-    --xeg-text-button-navigation: var(--xeg-color-text-primary);
-    --xeg-shadow-toolbar: var(--xeg-shadow-md);
-    --xeg-toolbar-shadow: var(--xeg-shadow-toolbar);
-    --xeg-toolbar-wrapper-gradient-start: var(--xeg-bg-toolbar);
-    --xeg-toolbar-wrapper-gradient-mid: color-mix(
-      in oklab,
-      var(--xeg-bg-toolbar) 85%,
-      var(--color-gray-900) 15%
-    );
-    --xeg-toolbar-wrapper-gradient-end: var(--xeg-bg-toolbar);
-    --xeg-toolbar-wrapper-border: none;
-    --xeg-toolbar-wrapper-radius: 0;
-    --xeg-toolbar-wrapper-margin: 0;
-    --xeg-toolbar-hover-zone-bg: transparent;
-    /* Neutral color aliases */
-    --xeg-neutral-100: var(--xeg-color-neutral-100);
-    --xeg-neutral-200: var(--xeg-color-neutral-200);
-    --xeg-neutral-300: var(--xeg-color-neutral-300);
-    --xeg-neutral-400: var(--xeg-color-neutral-400);
 
     /* Modal Component Tokens */
     /* NOTE: Modal component tokens now defer to semantic tokens to avoid

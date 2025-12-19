@@ -4,7 +4,7 @@
  * @version 4.0.0 - Added TTL-based cache, improved host detection, async CSRF support
  */
 
-import { TWITTER_API_CONFIG } from '@constants';
+import { TWITTER_API_CONFIG } from '@constants/twitter-api';
 import {
   buildTweetResultByRestIdUrl,
   selectTwitterApiHostFromHostname,
@@ -214,21 +214,27 @@ export class TwitterAPI {
         // Note: Do not refresh `timestamp` here, to keep TTL semantics unchanged.
         TwitterAPI.requestCache.delete(url);
         TwitterAPI.requestCache.set(url, cached);
-        logger.debug(`Cache hit for tweet request (age: ${now - cached.timestamp}ms)`);
+        if (__DEV__) {
+          logger.debug(`Cache hit for tweet request (age: ${now - cached.timestamp}ms)`);
+        }
         return cached.response;
       }
 
       // Remove stale entry
       TwitterAPI.requestCache.delete(url);
-      logger.debug(
-        `Cache miss: ${isExpired ? 'expired' : 'CSRF mismatch'} (age: ${now - cached.timestamp}ms)`
-      );
+      if (__DEV__) {
+        logger.debug(
+          `Cache miss: ${isExpired ? 'expired' : 'CSRF mismatch'} (age: ${now - cached.timestamp}ms)`
+        );
+      }
     }
 
     const pendingKey = `${url}|${csrfHash}`;
     const pendingRequest = TwitterAPI.pendingRequests.get(pendingKey);
     if (pendingRequest) {
-      logger.debug('Awaiting in-flight tweet request');
+      if (__DEV__) {
+        logger.debug('Awaiting in-flight tweet request');
+      }
       return pendingRequest;
     }
 
@@ -262,17 +268,21 @@ export class TwitterAPI {
         if (!response.ok) {
           // Remove cache entry on error to allow retry
           TwitterAPI.requestCache.delete(url);
-          logger.warn(
-            `Twitter API request failed: ${response.status} ${response.statusText}`,
-            response.data
-          );
+          if (__DEV__) {
+            logger.warn(
+              `Twitter API request failed: ${response.status} ${response.statusText}`,
+              response.data
+            );
+          }
           throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
         }
 
         const json = response.data;
 
         if (json.errors && json.errors.length > 0) {
-          logger.warn('Twitter API returned errors:', json.errors);
+          if (__DEV__) {
+            logger.warn('Twitter API returned errors:', json.errors);
+          }
           // Don't cache error responses
         } else {
           // Cache on success with TTL tracking

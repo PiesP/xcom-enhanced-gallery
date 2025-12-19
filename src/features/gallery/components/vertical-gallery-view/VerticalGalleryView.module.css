@@ -342,7 +342,7 @@
 /* Provide immediate feedback while the hover strip is active */
 .toolbarHoverZone:hover {
   z-index: var(--xeg-z-toolbar-hover-zone);
-  background: var(--xeg-toolbar-hover-zone-bg, transparent);
+  background: transparent;
 }
 
 /* Disable the hover strip when the toolbar is already locked open (settings expanded) */

@@ -213,7 +213,9 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
 
   resetNavigation();
 
-  logger.debug(`[Gallery] Opened with ${items.length} items, starting at index ${validIndex}`);
+  if (__DEV__) {
+    logger.debug(`[Gallery] Opened with ${items.length} items, starting at index ${validIndex}`);
+  }
 }
 
 export function closeGallery(): void {
@@ -230,7 +232,9 @@ export function closeGallery(): void {
 
   resetNavigation();
 
-  logger.debug('[Gallery] Closed');
+  if (__DEV__) {
+    logger.debug('[Gallery] Closed');
+  }
 }
 
 /**
@@ -255,9 +259,11 @@ export function navigateToItem(
   const result = recordNavigation(validIndex, navigationSource);
 
   if (result.isDuplicate) {
-    logger.debug(
-      `[Gallery] Already at index ${index} (source: ${navigationSource}), ensuring sync`
-    );
+    if (__DEV__) {
+      logger.debug(
+        `[Gallery] Already at index ${index} (source: ${navigationSource}), ensuring sync`
+      );
+    }
     // Ensure focusedIndex is synced even on duplicate navigation
     gallerySignals.focusedIndex.value = validIndex;
     return;
@@ -280,9 +286,11 @@ export function navigateToItem(
 
   galleryIndexEvents.emit('navigate:complete', { index: validIndex, trigger });
 
-  logger.debug(
-    `[Gallery] Navigated to item: ${index} (trigger: ${trigger}, source: ${navigationSource})`
-  );
+  if (__DEV__) {
+    logger.debug(
+      `[Gallery] Navigated to item: ${index} (trigger: ${trigger}, source: ${navigationSource})`
+    );
+  }
 }
 
 /**
@@ -329,14 +337,18 @@ export function setFocusedIndex(
 
   if (index === null) {
     gallerySignals.focusedIndex.value = null;
-    logger.debug('[Gallery] focusedIndex cleared');
+    if (__DEV__) {
+      logger.debug('[Gallery] focusedIndex cleared');
+    }
     return;
   }
 
   const validIndex = clampIndex(index, state.mediaItems.length);
   gallerySignals.focusedIndex.value = validIndex;
 
-  logger.debug(`[Gallery] focusedIndex set to ${validIndex} (source: ${source})`);
+  if (__DEV__) {
+    logger.debug(`[Gallery] focusedIndex set to ${validIndex} (source: ${source})`);
+  }
 }
 
 // ============================================================================

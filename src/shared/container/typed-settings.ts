@@ -20,7 +20,7 @@
  * @version 1.0.0
  */
 
-import { DEFAULT_SETTINGS } from '@constants';
+import { DEFAULT_SETTINGS } from '@constants/default-settings';
 import type { AppSettings } from '@features/settings/types/settings.types';
 import { tryGetSettingsManager } from './service-accessors';
 

@@ -49,7 +49,9 @@ async function fetchTokenWithRetry(): Promise<string | undefined> {
   // Try synchronous access first (fastest path)
   const syncToken = getCookieValueSync('ct0');
   if (syncToken) {
-    logger.debug('CSRF token retrieved synchronously');
+    if (__DEV__) {
+      logger.debug('CSRF token retrieved synchronously');
+    }
     return syncToken;
   }
 
@@ -58,28 +60,38 @@ async function fetchTokenWithRetry(): Promise<string | undefined> {
     try {
       const value = await getCookieValue('ct0');
       if (value) {
-        logger.debug(`CSRF token retrieved asynchronously (attempt ${attempt + 1})`);
+        if (__DEV__) {
+          logger.debug(`CSRF token retrieved asynchronously (attempt ${attempt + 1})`);
+        }
         return value;
       }
 
       // Token not found, wait before retry
       if (attempt < MAX_RETRY_ATTEMPTS - 1) {
         const delayMs = getBackoffDelay(attempt);
-        logger.debug(`CSRF token not found, retrying in ${delayMs}ms (attempt ${attempt + 1})`);
+        if (__DEV__) {
+          logger.debug(`CSRF token not found, retrying in ${delayMs}ms (attempt ${attempt + 1})`);
+        }
         await delay(delayMs);
       }
     } catch (error: unknown) {
       if (attempt < MAX_RETRY_ATTEMPTS - 1) {
         const delayMs = getBackoffDelay(attempt);
-        logger.debug(`CSRF token fetch failed, retrying in ${delayMs}ms`, error);
+        if (__DEV__) {
+          logger.debug(`CSRF token fetch failed, retrying in ${delayMs}ms`, error);
+        }
         await delay(delayMs);
       } else {
-        logger.info('Failed to retrieve CSRF token after all retry attempts', error);
+        if (__DEV__) {
+          logger.info('Failed to retrieve CSRF token after all retry attempts', error);
+        }
       }
     }
   }
 
-  logger.info('CSRF token initialization completed without finding token');
+  if (__DEV__) {
+    logger.info('CSRF token initialization completed without finding token');
+  }
   return undefined;
 }
 
@@ -98,7 +110,9 @@ function initializeTokensSync(): void {
   if (syncToken) {
     _csrfToken = syncToken;
     _tokensInitialized = true;
-    logger.debug('CSRF token initialized synchronously');
+    if (__DEV__) {
+      logger.debug('CSRF token initialized synchronously');
+    }
   }
 }
 

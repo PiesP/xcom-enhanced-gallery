@@ -1,4 +1,4 @@
-import { createDefaultSettings, DEFAULT_SETTINGS } from '@constants';
+import { createDefaultSettings, DEFAULT_SETTINGS } from '@constants/default-settings';
 import { migrateSettings } from '@features/settings/services/settings-migration';
 import {
   PersistentSettingsRepository,

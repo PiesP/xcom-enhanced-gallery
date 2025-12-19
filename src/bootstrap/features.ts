@@ -16,7 +16,8 @@
  */
 
 import { reportBootstrapError } from '@bootstrap/types';
-import { APP_SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS } from '@constants';
+import { DEFAULT_SETTINGS } from '@constants/default-settings';
+import { APP_SETTINGS_STORAGE_KEY } from '@constants/storage';
 import { logger } from '@shared/logging';
 // ─────────────────────────────────────────
 // Feature Flag Logic

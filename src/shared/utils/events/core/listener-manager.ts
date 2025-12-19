@@ -50,7 +50,9 @@ export function addListener(
   const id = generateListenerId(context);
 
   if (!element || typeof element.addEventListener !== 'function') {
-    logger.warn('Invalid element passed to addListener', { type, context });
+    if (__DEV__) {
+      logger.warn('Invalid element passed to addListener', { type, context });
+    }
     return id;
   }
 
@@ -88,7 +90,9 @@ export function addListener(
 export function removeEventListenerManaged(id: string): boolean {
   const ctx = listeners.get(id);
   if (!ctx) {
-    logger.warn(`Listener not found for removal: ${id}`);
+    if (__DEV__) {
+      logger.warn(`Listener not found for removal: ${id}`);
+    }
     return false;
   }
 
@@ -154,7 +158,9 @@ export function removeAllEventListeners(): void {
       ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
       count++;
     } catch (error) {
-      logger.warn(`Failed to remove listener: ${ctx.type}`, { error, context: ctx.context });
+      if (__DEV__) {
+        logger.warn(`Failed to remove listener: ${ctx.type}`, { error, context: ctx.context });
+      }
     }
   }
 

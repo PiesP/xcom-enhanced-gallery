@@ -3,13 +3,13 @@
  * @description DOM inspection utilities specific to the gallery
  */
 
+import { CSS as CSS_CONST } from '@constants/css';
 import {
-  CSS as CSS_CONST,
   VIDEO_CONTROL_ARIA_TOKENS,
   VIDEO_CONTROL_DATASET_PREFIXES,
   VIDEO_CONTROL_ROLES,
   VIDEO_CONTROL_SELECTORS,
-} from '@constants';
+} from '@constants/video-controls';
 import { VIDEO_PLAYER_SELECTOR } from '@shared/dom/selectors';
 import { logger } from '@shared/logging';
 import { isHTMLElement } from '@shared/utils/types/guards';

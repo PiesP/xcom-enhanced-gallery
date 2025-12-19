@@ -8,7 +8,7 @@
  * - After: Single helper function integration
  */
 
-import { CSS } from '@constants';
+import { CSS } from '@constants/css';
 import { logger } from '@shared/logging';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 
@@ -89,7 +89,9 @@ function getCurrentGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoEleme
     const fallbackVideo = target.querySelector('video');
     return fallbackVideo instanceof HTMLVideoElement ? fallbackVideo : null;
   } catch (error) {
-    logger.debug('Failed to get current gallery video:', error);
+    if (__DEV__) {
+      logger.debug('Failed to get current gallery video:', error);
+    }
     return null;
   }
 }
@@ -122,10 +124,12 @@ export function executeVideoControl(
   try {
     const videoElement = getCurrentGalleryVideo(video);
     if (!videoElement) {
-      logger.debug('[VideoControl] No video element found', {
-        action,
-        context,
-      });
+      if (__DEV__) {
+        logger.debug('[VideoControl] No video element found', {
+          action,
+          context,
+        });
+      }
       return;
     }
 
@@ -139,7 +143,9 @@ export function executeVideoControl(
             .catch(() => {
               // Ensure we don't incorrectly mark the video as playing when play() fails
               videoPlaybackStateMap.set(videoElement, { playing: false });
-              logger.debug('[VideoControl] Play failed', { context });
+              if (__DEV__) {
+                logger.debug('[VideoControl] Play failed', { context });
+              }
             });
         } else {
           // For environments where play() is synchronous or not a Promise
@@ -164,9 +170,11 @@ export function executeVideoControl(
               .then(() => videoPlaybackStateMap.set(videoElement, { playing: true }))
               .catch(() => {
                 videoPlaybackStateMap.set(videoElement, { playing: false });
-                logger.debug('[VideoControl] Play failed during toggle', {
-                  context,
-                });
+                if (__DEV__) {
+                  logger.debug('[VideoControl] Play failed during toggle', {
+                    context,
+                  });
+                }
               });
           } else {
             videoPlaybackStateMap.set(videoElement, { playing: true });
@@ -205,11 +213,13 @@ export function executeVideoControl(
         break;
     }
 
-    logger.debug('[VideoControl] Action executed', {
-      action,
-      context,
-      method: 'video-element',
-    });
+    if (__DEV__) {
+      logger.debug('[VideoControl] Action executed', {
+        action,
+        context,
+        method: 'video-element',
+      });
+    }
   } catch (error) {
     logger.error('[VideoControl] Unexpected error', { error, action, context });
   }

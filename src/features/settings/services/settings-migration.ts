@@ -7,7 +7,7 @@
  * (current epoch milliseconds) so that migrations stay pure and test-friendly.
  */
 
-import { DEFAULT_SETTINGS as defaultSettings } from '@constants';
+import { DEFAULT_SETTINGS as defaultSettings } from '@constants/default-settings';
 import type { AppSettings } from '@features/settings/types/settings.types';
 import { isRecord } from '@shared/utils/types/guards';
 

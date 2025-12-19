@@ -1,4 +1,4 @@
-import { SERVICE_KEYS } from '@constants';
+import { SERVICE_KEYS } from '@constants/service-keys';
 import { CoreService } from '@shared/services/service-manager';
 import {
   getLanguageServiceInstance,
