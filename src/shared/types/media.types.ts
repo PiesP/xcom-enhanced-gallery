@@ -13,7 +13,7 @@
 // ================================
 
 // MediaType and MediaQuality are single sources in constants.ts
-export type { MediaQuality, MediaType } from '@constants';
+export type { MediaQuality, MediaType } from '@constants/types';
 
 // Import ErrorCode for integration (provide ExtractionErrorCode alias)
 import type { AmbientVideoPauseRequest } from '@shared/utils/media/ambient-video-coordinator';

@@ -32,7 +32,7 @@
 // ==========================================
 
 // Media-related types (only most frequently used ones specified)
-export type { MediaQuality, MediaType } from '@constants';
+export type { MediaQuality, MediaType } from '@constants/types';
 // App global types (Phase 355.2: Result types removed, moved to result.types)
 export type {
   AppConfig,
@@ -82,7 +82,7 @@ export {
   PageType as MediaPageTypeEnum,
 } from './media.types';
 
-// Phase 421: ViewMode helpers removed; use VIEW_MODES from '@constants'
+// Phase 421: ViewMode helpers removed; use VIEW_MODES from '@constants/video-controls'
 
 // Component Props types
 export type {
