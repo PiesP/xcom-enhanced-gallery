@@ -5,7 +5,10 @@
 
 import { logger } from '@shared/logging';
 import { EventManager } from '@shared/services/event-manager';
-import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events/core/event-context';
+import type {
+  EventHandlers,
+  GalleryEventOptions,
+} from '@shared/utils/events/core/dom-listener-context';
 import { handleKeyboardEvent } from '@shared/utils/events/handlers/keyboard';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
 import { resetKeyboardDebounceState } from '@shared/utils/events/keyboard-debounce';

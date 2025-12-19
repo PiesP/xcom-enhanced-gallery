@@ -4,8 +4,8 @@
  * @module bootstrap/events
  */
 
-import { getEventBus } from '@shared/events';
 import { logger } from '@shared/logging';
+import { EventManager } from '@shared/services/event-manager';
 
 /**
  * Event handler unregister function type
@@ -35,7 +35,7 @@ export function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
   }
 
   let disposed = false;
-  const bus = getEventBus();
+  const eventManager = EventManager.getInstance();
   const controller = new AbortController();
 
   const invokeOnce = (): void => {
@@ -52,7 +52,7 @@ export function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
     invokeOnce();
   };
 
-  bus.addDOMListener(window, 'pagehide', handler, {
+  eventManager.addEventListener(window, 'pagehide', handler, {
     once: true,
     passive: true,
     signal: controller.signal,

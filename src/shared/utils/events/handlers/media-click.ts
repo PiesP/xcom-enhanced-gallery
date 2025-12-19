@@ -9,7 +9,7 @@ import type {
   EventHandlers,
   EventHandlingResult,
   GalleryEventOptions,
-} from '@shared/utils/events/core/event-context';
+} from '@shared/utils/events/core/dom-listener-context';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
 import { isHTMLElement } from '@shared/utils/types/guards';
 

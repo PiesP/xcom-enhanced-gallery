@@ -28,9 +28,9 @@
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { getLanguageService } from '@shared/container/service-accessors';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
-import { getEventBus } from '@shared/events';
 import type { JSXElement } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
+import { EventManager } from '@shared/services/event-manager';
 import { downloadState } from '@shared/state/signals/download.signals';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
 import { isDownloadUiBusy } from '@shared/state/ui/download-ui-state';
@@ -196,6 +196,8 @@ function VerticalGalleryViewCore({
     const container = containerEl();
     if (!container) return;
 
+    const controller = new AbortController();
+
     const handleContainerWheel = (event: WheelEvent): void => {
       const itemsContainer = itemsContainerEl();
       if (!itemsContainer) return;
@@ -218,15 +220,17 @@ function VerticalGalleryViewCore({
     };
 
     // Use passive: false only when we need to call preventDefault()
-    const bus = getEventBus();
+    const eventManager = EventManager.getInstance();
     const listener: EventListener = (event) => {
       handleContainerWheel(event as WheelEvent);
     };
-    const id = bus.addDOMListener(container, 'wheel', listener, {
+
+    eventManager.addEventListener(container, 'wheel', listener, {
       passive: false,
+      signal: controller.signal,
       context: 'gallery:wheel:container-redirect',
     });
-    onCleanup(() => bus.remove(id));
+    onCleanup(() => controller.abort());
   });
 
   // Empty state

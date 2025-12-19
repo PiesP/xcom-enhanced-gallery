@@ -2,9 +2,9 @@ import {
   createSingleDownloadCommands,
   type SingleDownloadCommand,
 } from '@shared/core/download/single-download-commands';
+import { generateMediaFilename } from '@shared/core/filename';
 import { getErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging';
-import { generateMediaFilename } from '@shared/services/filename';
 import type { MediaInfo } from '@shared/types/media.types';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import {

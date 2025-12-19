@@ -1,4 +1,4 @@
-import { getEventBus } from '@shared/events';
+import { EventManager } from '@shared/services/event-manager';
 import { createDeferred } from '@shared/utils/async/promise-helpers';
 
 export type WindowLoadCallback = () => void | Promise<void>;
@@ -30,21 +30,19 @@ function createWindowLoadPromise(): Promise<void> {
   const deferred = createDeferred<void>();
   windowLoadPromise = deferred.promise;
 
-  const bus = getEventBus();
-  let subscriptionId: string | null = null;
+  const eventManager = EventManager.getInstance();
+  const controller = new AbortController();
 
   const handleLoad: EventListener = () => {
-    if (subscriptionId) {
-      bus.remove(subscriptionId);
-      subscriptionId = null;
-    }
+    controller.abort();
     deferred.resolve();
     windowLoadPromise = Promise.resolve();
   };
 
-  subscriptionId = bus.addDOMListener(window, 'load', handleLoad, {
+  eventManager.addEventListener(window, 'load', handleLoad, {
     once: true,
     passive: true,
+    signal: controller.signal,
     context: 'window-load',
   });
 

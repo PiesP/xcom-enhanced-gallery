@@ -11,9 +11,9 @@ import {
 import { SettingsControlsLazy } from '@shared/components/ui/Settings/SettingsControlsLazy';
 import type { FitMode, MaybeAccessor } from '@shared/components/ui/Toolbar/Toolbar.types';
 import { getLanguageService } from '@shared/container/service-accessors';
-import { getEventBus } from '@shared/events';
 import type { JSXElement } from '@shared/external/vendors';
 import type { ToolbarSettingsControllerResult, ToolbarState } from '@shared/hooks';
+import { EventManager } from '@shared/services/event-manager';
 import { safeEventPreventAll } from '@shared/utils/events/utils';
 import { shouldAllowWheelDefault as shouldAllowWheelDefaultBase } from '@shared/utils/events/wheel-scroll-guard';
 import { resolve, resolveOptional } from '@shared/utils/solid/accessor-utils';
@@ -214,14 +214,17 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       const element = getElement();
       if (!element) return;
 
-      const bus = getEventBus();
+      const controller = new AbortController();
+      const eventManager = EventManager.getInstance();
       const listener: EventListener = (event) => handler(event as WheelEvent);
-      const id = bus.addDOMListener(element, 'wheel', listener, {
+
+      eventManager.addEventListener(element, 'wheel', listener, {
         passive: options.passive,
+        signal: controller.signal,
         context: options.context,
       });
 
-      onCleanup(() => bus.remove(id));
+      onCleanup(() => controller.abort());
     });
   };
 

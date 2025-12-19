@@ -6,8 +6,8 @@
 
 import { APP_SETTINGS_STORAGE_KEY } from '@constants';
 import { syncThemeAttributes } from '@shared/dom/theme';
-import { getEventBus } from '@shared/events';
 import { logger } from '@shared/logging';
+import { EventManager } from '@shared/services/event-manager';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
@@ -288,13 +288,17 @@ export class ThemeService implements ThemeServiceContract {
         }
       };
 
-      const bus = getEventBus();
       const listener = this.mediaQueryListener;
       if (!listener) {
         // Defensive: should never happen because we just assigned it above.
         return;
       }
-      bus.addDOMListener(this.mediaQueryList, 'change', listener, {
+
+      const eventListener: EventListener = (evt) => {
+        listener(evt as MediaQueryListEvent);
+      };
+
+      EventManager.getInstance().addEventListener(this.mediaQueryList, 'change', eventListener, {
         signal: this.domEventsController.signal,
         context: 'theme-service',
       });

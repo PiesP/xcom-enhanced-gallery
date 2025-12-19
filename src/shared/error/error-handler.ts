@@ -1,11 +1,13 @@
-import { getEventBus } from '@shared/events';
 import { logger } from '@shared/logging';
+import { EventManager } from '@shared/services/event-manager';
 import { createSingleton } from '@shared/utils/types/singleton';
 
 export class GlobalErrorHandler {
   private static readonly singleton = createSingleton(() => new GlobalErrorHandler());
   private isInitialized = false;
   private controller: AbortController | null = null;
+  private errorListenerId: string | null = null;
+  private rejectionListenerId: string | null = null;
   private readonly errorListener = (event: ErrorEvent) => {
     const message = event.message ?? 'Unknown error occurred';
     const location = event.filename
@@ -59,18 +61,28 @@ export class GlobalErrorHandler {
       return;
     }
 
-    const bus = getEventBus();
+    const eventManager = EventManager.getInstance();
     this.controller = new AbortController();
 
-    bus.addDOMListener(window, 'error', this.errorListener, {
-      signal: this.controller.signal,
-      context: 'global-error-handler',
-    });
+    const onError: EventListener = (evt) => {
+      this.errorListener(evt as ErrorEvent);
+    };
 
-    bus.addDOMListener(window, 'unhandledrejection', this.rejectionListener, {
-      signal: this.controller.signal,
-      context: 'global-error-handler',
-    });
+    const onUnhandledRejection: EventListener = (evt) => {
+      this.rejectionListener(evt as PromiseRejectionEvent);
+    };
+
+    this.errorListenerId =
+      eventManager.addEventListener(window, 'error', onError, {
+        signal: this.controller.signal,
+        context: 'global-error-handler',
+      }) ?? null;
+
+    this.rejectionListenerId =
+      eventManager.addEventListener(window, 'unhandledrejection', onUnhandledRejection, {
+        signal: this.controller.signal,
+        context: 'global-error-handler',
+      }) ?? null;
 
     this.isInitialized = true;
   }
@@ -78,6 +90,16 @@ export class GlobalErrorHandler {
   public destroy(): void {
     if (!this.isInitialized || typeof window === 'undefined') {
       return;
+    }
+
+    const eventManager = EventManager.getInstance();
+    if (this.errorListenerId) {
+      eventManager.removeListener(this.errorListenerId);
+      this.errorListenerId = null;
+    }
+    if (this.rejectionListenerId) {
+      eventManager.removeListener(this.rejectionListenerId);
+      this.rejectionListenerId = null;
     }
 
     this.controller?.abort();

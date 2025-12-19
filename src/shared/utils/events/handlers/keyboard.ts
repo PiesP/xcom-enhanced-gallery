@@ -11,7 +11,10 @@ import {
   navigatePrevious,
   navigateToItem,
 } from '@shared/state/signals/gallery.signals';
-import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events/core/event-context';
+import type {
+  EventHandlers,
+  GalleryEventOptions,
+} from '@shared/utils/events/core/dom-listener-context';
 import { executeVideoControl } from '@shared/utils/events/handlers/video-control-helper';
 import {
   shouldExecutePlayPauseKey,
