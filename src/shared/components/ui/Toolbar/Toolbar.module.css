@@ -482,7 +482,7 @@ button.fitButton {
 }
 
 /* Tweet Link Styles - Phase 1: Safe text formatting */
-:where(.tweetLink, .tweetContent a) {
+.tweetContent a {
   color: var(--xeg-color-primary);
   text-decoration: none;
   overflow-wrap: break-word;
@@ -492,18 +492,18 @@ button.fitButton {
   cursor: pointer;
 }
 
-:where(.tweetLink, .tweetContent a):hover {
+.tweetContent a:hover {
   color: var(--xeg-color-primary-hover);
   text-decoration: underline;
 }
 
-:where(.tweetLink, .tweetContent a):focus,
-:where(.tweetLink, .tweetContent a):focus-visible {
+.tweetContent a:focus,
+.tweetContent a:focus-visible {
   background: var(--xeg-toolbar-element-bg-strong, var(--xeg-color-neutral-200));
   color: var(--xeg-color-primary-hover);
   border-radius: var(--xeg-radius-xs);
 }
 
-:where(.tweetLink, .tweetContent a):active {
+.tweetContent a:active {
   color: var(--xeg-color-primary-active);
 }

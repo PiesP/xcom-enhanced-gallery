@@ -8,7 +8,7 @@ import {
   ChatBubbleLeftRight,
   Cog6Tooth,
 } from '@shared/components/ui/Icon';
-import { SettingsControlsLazy } from '@shared/components/ui/Settings/SettingsControlsLazy';
+import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
 import type { FitMode, MaybeAccessor } from '@shared/components/ui/Toolbar/Toolbar.types';
 import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
@@ -423,7 +423,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         onClick={props.settingsController.handlePanelClick}
       >
         <Show when={props.settingsController.isSettingsExpanded()}>
-          <SettingsControlsLazy
+          <SettingsControls
             currentTheme={props.settingsController.currentTheme}
             currentLanguage={props.settingsController.currentLanguage}
             onThemeChange={props.settingsController.handleThemeChange}
