@@ -4,13 +4,19 @@
  * This module is intentionally side-effect free.
  */
 
+type GraphqlQueryParams = Record<string, unknown> | string;
+
 export interface BuildTweetResultByRestIdUrlArgs {
   host: string;
   queryId: string;
   tweetId: string;
-  variables: Record<string, unknown>;
-  features: Record<string, unknown>;
-  fieldToggles: Record<string, unknown>;
+  variables: GraphqlQueryParams;
+  features: GraphqlQueryParams;
+  fieldToggles: GraphqlQueryParams;
+}
+
+function serializeQueryParams(value: GraphqlQueryParams): string {
+  return typeof value === 'string' ? value : JSON.stringify(value);
 }
 
 export function buildTweetResultByRestIdUrl(args: BuildTweetResultByRestIdUrlArgs): string {
@@ -18,9 +24,9 @@ export function buildTweetResultByRestIdUrl(args: BuildTweetResultByRestIdUrlArg
 
   const urlObj = new URL(`https://${host}/i/api/graphql/${queryId}/TweetResultByRestId`);
 
-  urlObj.searchParams.set('variables', JSON.stringify(variables));
-  urlObj.searchParams.set('features', JSON.stringify(features));
-  urlObj.searchParams.set('fieldToggles', JSON.stringify(fieldToggles));
+  urlObj.searchParams.set('variables', serializeQueryParams(variables));
+  urlObj.searchParams.set('features', serializeQueryParams(features));
+  urlObj.searchParams.set('fieldToggles', serializeQueryParams(fieldToggles));
 
   return urlObj.toString();
 }

@@ -64,6 +64,50 @@ function getSafeHost(): string {
   });
 }
 
+const TWEET_RESULT_FEATURES = {
+  creator_subscriptions_tweet_preview_api_enabled: true,
+  premium_content_api_read_enabled: false,
+  communities_web_enable_tweet_community_results_fetch: true,
+  c9s_tweet_anatomy_moderator_badge_enabled: true,
+  responsive_web_grok_analyze_button_fetch_trends_enabled: false,
+  responsive_web_grok_analyze_post_followups_enabled: false,
+  responsive_web_jetfuel_frame: false,
+  responsive_web_grok_share_attachment_enabled: true,
+  articles_preview_enabled: true,
+  responsive_web_edit_tweet_api_enabled: true,
+  graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
+  view_counts_everywhere_api_enabled: true,
+  longform_notetweets_consumption_enabled: true,
+  responsive_web_twitter_article_tweet_consumption_enabled: true,
+  tweet_awards_web_tipping_enabled: false,
+  responsive_web_grok_show_grok_translated_post: false,
+  responsive_web_grok_analysis_button_from_backend: false,
+  creator_subscriptions_quote_tweet_preview_enabled: false,
+  freedom_of_speech_not_reach_fetch_enabled: true,
+  standardized_nudges_misinfo: true,
+  tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
+  longform_notetweets_rich_text_read_enabled: true,
+  longform_notetweets_inline_media_enabled: true,
+  profile_label_improvements_pcf_label_in_post_enabled: true,
+  rweb_tipjar_consumption_enabled: true,
+  verified_phone_label_enabled: false,
+  responsive_web_grok_image_annotation_enabled: true,
+  responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
+  responsive_web_graphql_timeline_navigation_enabled: true,
+  responsive_web_enhance_cards_enabled: false,
+};
+
+const TWEET_RESULT_FEATURES_JSON = JSON.stringify(TWEET_RESULT_FEATURES);
+
+const TWEET_RESULT_FIELD_TOGGLES = {
+  withArticleRichContentState: true,
+  withArticlePlainText: false,
+  withGrokAnalyze: false,
+  withDisallowedReplyControls: false,
+};
+
+const TWEET_RESULT_FIELD_TOGGLES_JSON = JSON.stringify(TWEET_RESULT_FIELD_TOGGLES);
+
 /**
  * TwitterAPI - Facade for Twitter Media Extraction
  *
@@ -82,6 +126,7 @@ export class TwitterAPI {
   /** Cache for API responses with TTL */
   private static readonly requestCache = new Map<string, CacheEntry>();
   private static readonly CACHE_LIMIT = 16;
+  private static readonly pendingRequests = new Map<string, Promise<TwitterAPIResponse>>();
 
   /**
    * Get Tweet Medias - Main API Entry Point
@@ -180,70 +225,89 @@ export class TwitterAPI {
       );
     }
 
-    // Build headers
-    const headers = new Headers({
-      authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
-      'x-csrf-token': csrfToken,
-      'x-twitter-client-language': 'en',
-      'x-twitter-active-user': 'yes',
-      'content-type': 'application/json',
-      'x-twitter-auth-type': 'OAuth2Session',
-    });
-
-    // Add location headers safely
-    const locationHeaders = getSafeLocationHeaders();
-    if (locationHeaders.referer) {
-      headers.append('referer', locationHeaders.referer);
-    }
-    if (locationHeaders.origin) {
-      headers.append('origin', locationHeaders.origin);
+    const pendingKey = `${url}|${csrfHash}`;
+    const pendingRequest = TwitterAPI.pendingRequests.get(pendingKey);
+    if (pendingRequest) {
+      logger.debug('Awaiting in-flight tweet request');
+      return pendingRequest;
     }
 
-    try {
-      const httpService = HttpRequestService.getInstance();
-      const response = await httpService.get<TwitterAPIResponse>(url, {
-        headers: Object.fromEntries(headers.entries()),
-        responseType: 'json',
+    const requestPromise = (async () => {
+      // Build headers
+      const headers = new Headers({
+        authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
+        'x-csrf-token': csrfToken,
+        'x-twitter-client-language': 'en',
+        'x-twitter-active-user': 'yes',
+        'content-type': 'application/json',
+        'x-twitter-auth-type': 'OAuth2Session',
       });
 
-      if (!response.ok) {
-        // Remove cache entry on error to allow retry
-        TwitterAPI.requestCache.delete(url);
-        logger.warn(
-          `Twitter API request failed: ${response.status} ${response.statusText}`,
-          response.data
-        );
-        throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
+      // Add location headers safely
+      const locationHeaders = getSafeLocationHeaders();
+      if (locationHeaders.referer) {
+        headers.append('referer', locationHeaders.referer);
+      }
+      if (locationHeaders.origin) {
+        headers.append('origin', locationHeaders.origin);
       }
 
-      const json = response.data;
+      try {
+        const httpService = HttpRequestService.getInstance();
+        const response = await httpService.get<TwitterAPIResponse>(url, {
+          headers: Object.fromEntries(headers.entries()),
+          responseType: 'json',
+        });
 
-      if (json.errors && json.errors.length > 0) {
-        logger.warn('Twitter API returned errors:', json.errors);
-        // Don't cache error responses
-      } else {
-        // Cache on success with TTL tracking
-        if (TwitterAPI.requestCache.size >= TwitterAPI.CACHE_LIMIT) {
-          // LRU eviction: remove oldest entry
-          const firstKey = TwitterAPI.requestCache.keys().next().value;
-          if (firstKey) {
-            TwitterAPI.requestCache.delete(firstKey);
-          }
+        if (!response.ok) {
+          // Remove cache entry on error to allow retry
+          TwitterAPI.requestCache.delete(url);
+          logger.warn(
+            `Twitter API request failed: ${response.status} ${response.statusText}`,
+            response.data
+          );
+          throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
         }
 
-        TwitterAPI.requestCache.set(url, {
-          response: json,
-          timestamp: Date.now(),
-          csrfHash,
-        });
-      }
+        const json = response.data;
 
-      return json;
-    } catch (error) {
-      // Ensure cache is cleared on any error
-      TwitterAPI.requestCache.delete(url);
-      logger.error('Twitter API request failed:', error);
-      throw error;
+        if (json.errors && json.errors.length > 0) {
+          logger.warn('Twitter API returned errors:', json.errors);
+          // Don't cache error responses
+        } else {
+          // Cache on success with TTL tracking
+          if (TwitterAPI.requestCache.size >= TwitterAPI.CACHE_LIMIT) {
+            // LRU eviction: remove oldest entry
+            const firstKey = TwitterAPI.requestCache.keys().next().value;
+            if (firstKey) {
+              TwitterAPI.requestCache.delete(firstKey);
+            }
+          }
+
+          TwitterAPI.requestCache.set(url, {
+            response: json,
+            timestamp: Date.now(),
+            csrfHash,
+          });
+        }
+
+        return json;
+      } catch (error) {
+        // Ensure cache is cleared on any error
+        TwitterAPI.requestCache.delete(url);
+        logger.error('Twitter API request failed:', error);
+        throw error;
+      }
+    })();
+
+    TwitterAPI.pendingRequests.set(pendingKey, requestPromise);
+
+    try {
+      return await requestPromise;
+    } finally {
+      if (TwitterAPI.pendingRequests.get(pendingKey) === requestPromise) {
+        TwitterAPI.pendingRequests.delete(pendingKey);
+      }
     }
   }
 
@@ -261,53 +325,13 @@ export class TwitterAPI {
       withVoice: false,
     };
 
-    const features = {
-      creator_subscriptions_tweet_preview_api_enabled: true,
-      premium_content_api_read_enabled: false,
-      communities_web_enable_tweet_community_results_fetch: true,
-      c9s_tweet_anatomy_moderator_badge_enabled: true,
-      responsive_web_grok_analyze_button_fetch_trends_enabled: false,
-      responsive_web_grok_analyze_post_followups_enabled: false,
-      responsive_web_jetfuel_frame: false,
-      responsive_web_grok_share_attachment_enabled: true,
-      articles_preview_enabled: true,
-      responsive_web_edit_tweet_api_enabled: true,
-      graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
-      view_counts_everywhere_api_enabled: true,
-      longform_notetweets_consumption_enabled: true,
-      responsive_web_twitter_article_tweet_consumption_enabled: true,
-      tweet_awards_web_tipping_enabled: false,
-      responsive_web_grok_show_grok_translated_post: false,
-      responsive_web_grok_analysis_button_from_backend: false,
-      creator_subscriptions_quote_tweet_preview_enabled: false,
-      freedom_of_speech_not_reach_fetch_enabled: true,
-      standardized_nudges_misinfo: true,
-      tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
-      longform_notetweets_rich_text_read_enabled: true,
-      longform_notetweets_inline_media_enabled: true,
-      profile_label_improvements_pcf_label_in_post_enabled: true,
-      rweb_tipjar_consumption_enabled: true,
-      verified_phone_label_enabled: false,
-      responsive_web_grok_image_annotation_enabled: true,
-      responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-      responsive_web_graphql_timeline_navigation_enabled: true,
-      responsive_web_enhance_cards_enabled: false,
-    };
-
-    const fieldToggles = {
-      withArticleRichContentState: true,
-      withArticlePlainText: false,
-      withGrokAnalyze: false,
-      withDisallowedReplyControls: false,
-    };
-
     return buildTweetResultByRestIdUrl({
       host,
       queryId: TWITTER_API_CONFIG.TWEET_RESULT_BY_REST_ID_QUERY_ID,
       tweetId,
       variables,
-      features,
-      fieldToggles,
+      features: TWEET_RESULT_FEATURES_JSON,
+      fieldToggles: TWEET_RESULT_FIELD_TOGGLES_JSON,
     });
   }
 }
