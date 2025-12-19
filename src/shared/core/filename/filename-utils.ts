@@ -9,7 +9,7 @@
 
 import type { MediaInfo } from '@shared/types/media.types';
 import { safeParseInt } from '@shared/utils/types/safety';
-import { extractUsernameFromUrl } from '@shared/utils/url';
+import { extractUsernameFromUrl } from '@shared/utils/url/host';
 
 // ============================================================================
 // Types

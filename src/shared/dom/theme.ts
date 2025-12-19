@@ -4,7 +4,7 @@
  * and any XEG-specific theme scopes (e.g., the isolated gallery root)
  */
 
-import { THEME_DOM_ATTRIBUTE } from '@shared/constants';
+import { THEME_DOM_ATTRIBUTE } from '@shared/constants/theme';
 
 export type ThemeName = 'light' | 'dark';
 

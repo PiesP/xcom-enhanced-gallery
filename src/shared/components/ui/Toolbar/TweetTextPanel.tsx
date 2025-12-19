@@ -1,5 +1,5 @@
 import type { JSXElement } from '@shared/external/vendors';
-import { useTranslation } from '@shared/hooks';
+import { useTranslation } from '@shared/hooks/use-translation';
 import styles from './Toolbar.module.css';
 
 interface TweetTextPanelProps {

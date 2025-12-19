@@ -28,7 +28,7 @@
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
 import type { JSXElement } from '@shared/external/vendors';
-import { useTranslation } from '@shared/hooks';
+import { useTranslation } from '@shared/hooks/use-translation';
 import { logger } from '@shared/logging';
 import { EventManager } from '@shared/services/event-manager';
 import { downloadState } from '@shared/state/signals/download.signals';
@@ -36,7 +36,7 @@ import { galleryState, navigateToItem } from '@shared/state/signals/gallery.sign
 import { isDownloadUiBusy } from '@shared/state/ui/download-ui-state';
 import type { ImageFitMode } from '@shared/types';
 import { safeEventPrevent } from '@shared/utils/events/utils';
-import { computePreloadIndices } from '@shared/utils/performance';
+import { computePreloadIndices } from '@shared/utils/performance/preload';
 import { cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, For, onCleanup } from 'solid-js';
 import { useVerticalGallery } from './hooks/useVerticalGallery';

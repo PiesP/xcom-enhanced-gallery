@@ -11,9 +11,10 @@ import {
 import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
 import type { FitMode, MaybeAccessor } from '@shared/components/ui/Toolbar/Toolbar.types';
 import type { JSXElement } from '@shared/external/vendors';
-import type { ToolbarSettingsControllerResult, ToolbarState } from '@shared/hooks';
-import { useTranslation } from '@shared/hooks';
+import type { ToolbarSettingsControllerResult } from '@shared/hooks/toolbar/use-toolbar-settings-controller';
+import { useTranslation } from '@shared/hooks/use-translation';
 import { EventManager } from '@shared/services/event-manager';
+import type { ToolbarState } from '@shared/types/toolbar.types';
 import { safeEventPreventAll } from '@shared/utils/events/utils';
 import { shouldAllowWheelDefault as shouldAllowWheelDefaultBase } from '@shared/utils/events/wheel-scroll-guard';
 import { resolve, resolveOptional } from '@shared/utils/solid/accessor-utils';

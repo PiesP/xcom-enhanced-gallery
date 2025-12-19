@@ -21,17 +21,17 @@
  * @version 7.0.0 - SharedObserver integration and hook extraction
  */
 
-import { createDebounced } from '@shared/async';
+import { createDebounced } from '@shared/async/debounce';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
 import type { JSX, JSXElement } from '@shared/external/vendors';
-import { useTranslation } from '@shared/hooks';
+import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types';
 import {
   createIntrinsicSizingStyle,
   resolveMediaDimensionsWithIntrinsicFlag,
 } from '@shared/utils/media/media-dimensions';
-import { SharedObserver } from '@shared/utils/performance';
+import { SharedObserver } from '@shared/utils/performance/observer-pool';
 import { cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, onCleanup, splitProps, untrack } from 'solid-js';
 import { useVideoVisibility } from './hooks/useVideoVisibility';

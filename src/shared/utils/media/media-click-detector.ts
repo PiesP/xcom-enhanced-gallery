@@ -11,7 +11,7 @@ import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,
 } from '@shared/utils/media/media-element-utils';
-import { isSafeAndValidMediaUrl } from '@shared/utils/url';
+import { isSafeAndValidMediaUrl } from '@shared/utils/url/media-url';
 
 // ============================================================================
 // Constants

@@ -14,9 +14,9 @@ import type { JSXElement } from '@shared/external/vendors';
 import {
   type ToolbarSettingsControllerResult,
   useToolbarSettingsController,
-  useToolbarState,
-  useTranslation,
-} from '@shared/hooks';
+} from '@shared/hooks/toolbar/use-toolbar-settings-controller';
+import { useToolbarState } from '@shared/hooks/use-toolbar-state';
+import { useTranslation } from '@shared/hooks/use-translation';
 import type { ToolbarDataState, ToolbarState } from '@shared/types/toolbar.types';
 import { safeEventPrevent, safeEventPreventAll } from '@shared/utils/events/utils';
 import { toOptionalAccessor, toRequiredAccessor } from '@shared/utils/solid/accessor-utils';

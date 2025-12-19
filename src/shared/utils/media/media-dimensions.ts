@@ -7,7 +7,7 @@ import { logger } from '@shared/logging';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { clampIndex } from '@shared/utils/types/safety';
-import { tryParseUrl } from '@shared/utils/url';
+import { tryParseUrl } from '@shared/utils/url/host';
 
 export interface DimensionPair {
   readonly width: number;

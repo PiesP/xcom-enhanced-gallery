@@ -6,7 +6,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { SharedObserver } from '@shared/utils/performance';
+import { SharedObserver } from '@shared/utils/performance/observer-pool';
 import type { Accessor } from 'solid-js';
 import { createEffect, onCleanup } from 'solid-js';
 

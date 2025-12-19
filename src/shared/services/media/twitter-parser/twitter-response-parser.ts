@@ -11,7 +11,7 @@ import type {
   TwitterUser,
 } from '@shared/services/media/types';
 import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/media/media-dimensions';
-import { tryParseUrl } from '@shared/utils/url';
+import { tryParseUrl } from '@shared/utils/url/host';
 
 // ============================================================================
 // Types
