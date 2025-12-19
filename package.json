@@ -14,7 +14,7 @@
     "fmt": "biome check --write --linter-enabled=false ./src ./scripts vite.config.ts",
     "fmt:check": "biome check --linter-enabled=false ./src ./scripts vite.config.ts",
     "prebuild": "pnpm quality",
-    "preinstall": "npx only-allow pnpm",
+    "preinstall": "node --experimental-strip-types ./scripts/ensure-pnpm.ts",
     "quality": "pnpm check && biome check ./src ./scripts vite.config.ts",
     "quality:fix": "pnpm check && biome check --write ./src ./scripts vite.config.ts",
     "test:deps:check": "pnpm -C test run deps:check",
@@ -66,9 +66,6 @@
     "vite-plugin-solid": "^2.11.10"
   },
   "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ],
     "peerDependencyRules": {
       "ignoreMissing": [
         "vite"

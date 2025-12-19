@@ -39,6 +39,27 @@ cd xcom-enhanced-gallery
 pnpm install
 ```
 
+#### Supply chain security controls
+
+This repository enables pnpm client-side supply chain protections to reduce the risk
+of npm ecosystem attacks that execute code during installation.
+
+Key policies (configured in `pnpm-workspace.yaml`):
+
+- **Release cooldown**: `minimumReleaseAge` delays newly published versions.
+- **Reviewed install scripts**: `strictDepBuilds` + `allowBuilds` require explicit review
+  of dependency install scripts. Entries in `allowBuilds` are either:
+  - `true` (allowed to run), or
+  - `false` (explicitly disallowed, but considered reviewed).
+- **Trust downgrade protection**: `trustPolicy: no-downgrade` blocks versions whose
+  publish trust evidence is weaker than prior releases.
+- **No exotic transitive sources**: `blockExoticSubdeps` prevents transitive
+  dependencies from using git/tarball URLs.
+
+If installation fails due to these controls, do not disable them globally.
+Instead, update `allowBuilds` (and, if needed, the `*Exclude` settings) with a
+documented exception after reviewing the package and the specific version.
+
 ### Common commands
 
 ```bash
