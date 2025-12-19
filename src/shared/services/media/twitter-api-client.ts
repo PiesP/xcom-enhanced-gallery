@@ -5,10 +5,7 @@
  */
 
 import { TWITTER_API_CONFIG } from '@constants/twitter-api';
-import {
-  buildTweetResultByRestIdUrl,
-  selectTwitterApiHostFromHostname,
-} from '@shared/core/twitter-api';
+import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api';
 import { getSafeHostname, getSafeLocationHeaders } from '@shared/dom/safe-location';
 import { logger } from '@shared/logging';
 import { HttpRequestService } from '@shared/services/http-request-service';
@@ -56,12 +53,33 @@ function simpleHash(str: string): string {
  * Supports test environments where window may not be available.
  * @returns Host domain (e.g., 'x.com' or 'twitter.com')
  */
+function resolveTwitterApiHost(
+  hostname: string | null | undefined,
+  supportedHosts: readonly string[],
+  defaultHost: string
+): string {
+  if (!hostname) {
+    return defaultHost;
+  }
+
+  const normalized = hostname.toLowerCase();
+  let candidate: string | null = null;
+
+  if (normalized === 'x.com' || normalized.endsWith('.x.com')) {
+    candidate = 'x.com';
+  } else if (normalized === 'twitter.com' || normalized.endsWith('.twitter.com')) {
+    candidate = 'twitter.com';
+  }
+
+  return candidate && supportedHosts.includes(candidate) ? candidate : defaultHost;
+}
+
 function getSafeHost(): string {
-  return selectTwitterApiHostFromHostname({
-    hostname: getSafeHostname(),
-    supportedHosts: TWITTER_API_CONFIG.SUPPORTED_HOSTS,
-    defaultHost: TWITTER_API_CONFIG.DEFAULT_HOST,
-  });
+  return resolveTwitterApiHost(
+    getSafeHostname(),
+    TWITTER_API_CONFIG.SUPPORTED_HOSTS,
+    TWITTER_API_CONFIG.DEFAULT_HOST
+  );
 }
 
 const TWEET_RESULT_FEATURES = {
