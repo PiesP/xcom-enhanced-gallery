@@ -28,7 +28,6 @@ const VIDEO_PLAYER_CONTEXT_SELECTORS = [
   '[role="application"]',
   '[aria-label*="Video"]',
 ];
-const VIDEO_CONTROL_ROLE_SET = new Set(VIDEO_CONTROL_ROLES.map((role) => role.toLowerCase()));
 
 function safeClosest(element: Element, selector: string): Element | null {
   try {
@@ -52,51 +51,6 @@ function safeMatches(element: Element, selector: string): boolean {
   }
 }
 
-function isWithinVideoPlayer(element: HTMLElement): boolean {
-  return VIDEO_PLAYER_CONTEXT_SELECTORS.some((selector) => safeClosest(element, selector) !== null);
-}
-
-function matchesVideoControlSelectors(element: HTMLElement): boolean {
-  return VIDEO_CONTROL_SELECTORS.some(
-    (selector) => safeMatches(element, selector) || safeClosest(element, selector) !== null
-  );
-}
-
-function hasInputRangeSignature(element: HTMLElement): boolean {
-  if (typeof element.matches !== 'function') {
-    return false;
-  }
-
-  return safeMatches(element, 'input[type="range"]');
-}
-
-type ControlAttributeSnapshot = {
-  role: string | null;
-  dataTestId: string | null;
-  ariaLabel: string | null;
-};
-
-interface VideoControlEvidence {
-  selectorMatch: boolean;
-  datasetToken: boolean;
-  ariaToken: boolean;
-  playerScoped: boolean;
-  roleMatch: boolean;
-  rangeSignature: boolean;
-}
-
-function getNearestAttributeValue(
-  element: HTMLElement,
-  attribute: 'data-testid' | 'aria-label'
-): string | null {
-  if (element.hasAttribute(attribute)) {
-    return element.getAttribute(attribute);
-  }
-
-  const host = safeClosest(element, `[${attribute}]`) as HTMLElement | null;
-  return host?.getAttribute(attribute) ?? null;
-}
-
 function containsControlToken(value: string | null, tokens: readonly string[]): boolean {
   if (!value) {
     return false;
@@ -106,41 +60,22 @@ function containsControlToken(value: string | null, tokens: readonly string[]): 
   return tokens.some((token) => normalized.includes(token));
 }
 
-function collectControlAttributeSnapshot(element: HTMLElement): ControlAttributeSnapshot {
-  return {
-    role: element.getAttribute('role'),
-    dataTestId: getNearestAttributeValue(element, 'data-testid'),
-    ariaLabel: getNearestAttributeValue(element, 'aria-label'),
-  };
+function getNearestAttributeValue(
+  element: HTMLElement,
+  attribute: 'data-testid' | 'aria-label'
+): string | null {
+  const host = safeClosest(element, `[${attribute}]`) as HTMLElement | null;
+  return host?.getAttribute(attribute) ?? null;
 }
 
-function gatherVideoControlEvidence(element: HTMLElement): VideoControlEvidence {
-  if (matchesVideoControlSelectors(element)) {
-    return {
-      selectorMatch: true,
-      datasetToken: false,
-      ariaToken: false,
-      playerScoped: true,
-      roleMatch: false,
-      rangeSignature: hasInputRangeSignature(element),
-    };
-  }
+function isWithinVideoPlayer(element: HTMLElement): boolean {
+  return VIDEO_PLAYER_CONTEXT_SELECTORS.some((selector) => safeClosest(element, selector) !== null);
+}
 
-  const attributes = collectControlAttributeSnapshot(element);
-  const datasetToken = containsControlToken(attributes.dataTestId, VIDEO_CONTROL_DATASET_PREFIXES);
-  const ariaToken = containsControlToken(attributes.ariaLabel, VIDEO_CONTROL_ARIA_TOKENS);
-  const roleMatch = attributes.role
-    ? VIDEO_CONTROL_ROLE_SET.has(attributes.role.toLowerCase())
-    : false;
-
-  return {
-    selectorMatch: false,
-    datasetToken,
-    ariaToken,
-    playerScoped: isWithinVideoPlayer(element),
-    roleMatch,
-    rangeSignature: hasInputRangeSignature(element),
-  };
+function matchesVideoControlSelectors(element: HTMLElement): boolean {
+  return VIDEO_CONTROL_SELECTORS.some(
+    (selector) => safeMatches(element, selector) || safeClosest(element, selector) !== null
+  );
 }
 
 export function isVideoControlElement(element: HTMLElement | null): boolean {
@@ -155,25 +90,33 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
     return false;
   }
 
-  const evidence = gatherVideoControlEvidence(element);
-
-  if (evidence.selectorMatch) {
+  if (matchesVideoControlSelectors(element)) {
     return true;
   }
 
-  if (evidence.datasetToken || evidence.ariaToken) {
+  const dataTestId = getNearestAttributeValue(element, 'data-testid');
+  if (containsControlToken(dataTestId, VIDEO_CONTROL_DATASET_PREFIXES)) {
     return true;
   }
 
-  if (!evidence.playerScoped) {
+  const ariaLabel = getNearestAttributeValue(element, 'aria-label');
+  if (containsControlToken(ariaLabel, VIDEO_CONTROL_ARIA_TOKENS)) {
+    return true;
+  }
+
+  if (!isWithinVideoPlayer(element)) {
     return false;
   }
 
-  if (evidence.roleMatch || evidence.rangeSignature) {
+  const role = element.getAttribute('role');
+  if (
+    role &&
+    VIDEO_CONTROL_ROLES.includes(role.toLowerCase() as (typeof VIDEO_CONTROL_ROLES)[number])
+  ) {
     return true;
   }
 
-  return false;
+  return safeMatches(element, 'input[type="range"]');
 }
 
 /**
@@ -181,16 +124,11 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
  * Phase 237: Strengthen element.matches type guard
  */
 export function isGalleryInternalElement(element: HTMLElement | null): boolean {
-  if (!element) return false;
-
-  // Phase 242: Guard against non-HTMLElement nodes (e.g., Document during capture phase)
-  if (!(element instanceof HTMLElement)) {
-    return false;
-  }
-
-  // Phase 237: Check existence of matches method (strengthen type guard)
+  if (!isHTMLElement(element)) return false;
   if (typeof element.matches !== 'function') {
-    logger.warn('Invalid element: matches is not a function', element);
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      logger.warn('Invalid element: matches is not a function', element);
+    }
     return false;
   }
 
@@ -198,7 +136,9 @@ export function isGalleryInternalElement(element: HTMLElement | null): boolean {
     try {
       return element.matches(selector) || element.closest(selector) !== null;
     } catch (error) {
-      logger.warn('Invalid selector:', selector, error);
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        logger.warn('Invalid selector:', selector, error);
+      }
       return false;
     }
   });

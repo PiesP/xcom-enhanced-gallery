@@ -1,8 +1,4 @@
 import { APP_SETTINGS_STORAGE_KEY, createDefaultSettings } from '@constants';
-import {
-  planSettingsPersist,
-  type SettingsPersistCommand,
-} from '@features/settings/core/settings-persist';
 import type { AppSettings } from '@features/settings/types/settings.types';
 import { logger } from '@shared/logging';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
@@ -71,44 +67,9 @@ export class PersistentSettingsRepository implements SettingsRepository {
   }
 
   private async persist(settings: AppSettings): Promise<void> {
-    const cmds = planSettingsPersist({
-      key: APP_SETTINGS_STORAGE_KEY,
-      settings,
-      schemaHash: this.schemaHash,
+    await this.storage.setJson(APP_SETTINGS_STORAGE_KEY, {
+      ...settings,
+      __schemaHash: this.schemaHash,
     });
-    await this.executePersistCommands(cmds);
-  }
-
-  private async executePersistCommands(cmds: readonly SettingsPersistCommand[]): Promise<void> {
-    for (const cmd of cmds) {
-      switch (cmd.type) {
-        case 'STORE_SET':
-          await this.storage.setJson(cmd.key, cmd.value);
-          break;
-        case 'LOG':
-          // Keep logging as a deliberate side effect.
-          switch (cmd.level) {
-            case 'debug':
-              logger.debug(cmd.message, cmd.context);
-              break;
-            case 'info':
-              logger.info(cmd.message, cmd.context);
-              break;
-            case 'warn':
-              logger.warn(cmd.message, cmd.context);
-              break;
-            case 'error':
-              logger.error(cmd.message, cmd.context);
-              break;
-            default:
-              // Defensive fallback for forward-compatible command variants.
-              logger.info(cmd.message, cmd.context);
-              break;
-          }
-          break;
-        default:
-          break;
-      }
-    }
   }
 }

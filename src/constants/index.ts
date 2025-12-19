@@ -19,32 +19,6 @@ export { createDefaultSettings, DEFAULT_SETTINGS } from './default-settings.ts';
 // ================================
 export { MEDIA } from './media.ts';
 // ================================
-// Core Constants
-// ================================
-export {
-  FALLBACK_SELECTORS,
-  GALLERY_CONTAINER_SELECTOR,
-  GALLERY_OVERLAY_SELECTOR,
-  queryAllWithFallback,
-  queryWithFallback,
-  STABLE_IMAGE_CONTAINERS_SELECTORS,
-  STABLE_MEDIA_CONTAINERS_SELECTORS,
-  STABLE_MEDIA_LINKS_SELECTORS,
-  STABLE_MEDIA_PLAYERS_SELECTORS,
-  STABLE_MEDIA_VIEWERS_SELECTORS,
-  STABLE_TWEET_CONTAINERS_SELECTORS,
-  STABLE_VIDEO_CONTAINERS_SELECTORS,
-  STATUS_LINK_SELECTOR,
-  TWEET_ARTICLE_SELECTOR,
-  TWEET_PHOTO_SELECTOR,
-  TWEET_SELECTOR,
-  TWEET_TEXT_SELECTOR,
-  TWITTER_IMAGE_SELECTOR,
-  TWITTER_MEDIA_SELECTOR,
-  TWITTER_VIDEO_SELECTOR,
-  VIDEO_PLAYER_SELECTOR,
-} from './selectors.ts';
-// ================================
 // Services
 // ================================
 export { SERVICE_KEYS } from './service-keys.ts';

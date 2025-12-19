@@ -1,4 +1,5 @@
 import { optimizePbsImageUrlToWebP } from '@shared/core/media/url-optimization';
+import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
 import type {
   BulkDownloadResult,
   DownloadOptions,
@@ -175,7 +176,6 @@ export class MediaService {
     media: MediaInfo,
     options: DownloadOptions = {}
   ): Promise<SingleDownloadResult> {
-    const { DownloadOrchestrator } = await import('./download/download-orchestrator');
     const downloadService = DownloadOrchestrator.getInstance();
 
     // Check for pending or completed download
@@ -200,7 +200,6 @@ export class MediaService {
     items: Array<MediaInfo>,
     options: BulkDownloadOptions = {}
   ): Promise<BulkDownloadResult> {
-    const { DownloadOrchestrator } = await import('./download/download-orchestrator');
     const downloadService = DownloadOrchestrator.getInstance();
     return downloadService.downloadBulk(items, {
       ...options,
