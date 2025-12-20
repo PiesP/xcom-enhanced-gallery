@@ -9,7 +9,6 @@ type GraphqlQueryParams = Record<string, unknown> | string;
 export interface BuildTweetResultByRestIdUrlArgs {
   host: string;
   queryId: string;
-  tweetId: string;
   variables: GraphqlQueryParams;
   features: GraphqlQueryParams;
   fieldToggles: GraphqlQueryParams;

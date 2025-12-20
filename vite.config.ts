@@ -98,6 +98,10 @@ export default defineConfig(({ mode }): UserConfig => {
                 find: '@shared/logging/log-level',
                 replacement: resolve(root, 'src/shared/logging/log-level.prod.ts'),
               },
+              {
+                find: '@edge/bootstrap',
+                replacement: resolve(root, 'src/edge/bootstrap.prod.ts'),
+              },
             ]
           : []),
         ...buildPathAliases(root),
