@@ -140,17 +140,6 @@
       transform: rotate(360deg);
     }
   }
-
-  @keyframes xeg-slide-out-top {
-    from {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-    to {
-      opacity: 0;
-      transform: translateY(-1.25rem) scale(0.95); /* -20px = -1.25rem */
-    }
-  }
 }
 
 /* toolbar-slide-* keyframes removed (Animation uses JS utils) */

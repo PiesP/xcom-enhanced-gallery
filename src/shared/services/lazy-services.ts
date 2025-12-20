@@ -50,7 +50,7 @@ export async function ensureDownloadServiceRegistered(): Promise<void> {
     logger.info('✅ DownloadService lazily registered (first download)');
   } catch (error) {
     const message = normalizeErrorMessage(error);
-    logger.error('❌ Failed to lazily register DownloadService:', message);
+    logger.error('Lazy download register failed', message);
     throw error;
   }
 }

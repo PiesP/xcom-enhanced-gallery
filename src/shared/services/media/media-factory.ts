@@ -68,7 +68,7 @@ export function createMediaInfoFromAPI(
       metadata,
     };
   } catch (error) {
-    logger.error('Failed to create API MediaInfo:', error);
+    logger.error('API media create failed', error);
     return null;
   }
 }

@@ -44,51 +44,33 @@ export const GALLERY_CONTAINER_SELECTOR = GALLERY_SELECTORS.CONTAINER;
 export const STABLE_TWEET_CONTAINERS_SELECTORS = [
   'article[data-testid="tweet"]',
   'article[role="article"]',
-  '[data-testid="cellInnerDiv"] article',
 ] as const;
 
 export const STABLE_MEDIA_CONTAINERS_SELECTORS = [
   '[data-testid="tweetPhoto"]',
   '[data-testid="videoPlayer"]',
   '[aria-label*="Image"]',
-  '[aria-label*="Video"]',
-  'a[href*="/photo/"] > div',
 ] as const;
 
-export const STABLE_VIDEO_CONTAINERS_SELECTORS = [
-  '[data-testid="videoPlayer"]',
-  'video',
-  '[aria-label*="Video"]',
-  '[data-testid="videoComponent"]',
-] as const;
+export const STABLE_VIDEO_CONTAINERS_SELECTORS = ['[data-testid="videoPlayer"]', 'video'] as const;
 
 export const STABLE_IMAGE_CONTAINERS_SELECTORS = [
   '[data-testid="tweetPhoto"]',
   'img[src*="pbs.twimg.com"]',
-  '[aria-label*="Image"] img',
-  'a[href*="/photo/"] img',
 ] as const;
 
 export const STABLE_MEDIA_LINKS_SELECTORS = [
   'a[href*="/status/"][href*="/photo/"]',
   'a[href*="/status/"][href*="/video/"]',
-  'a[href*="/photo/"][aria-label]',
-  'a[href*="/video/"][aria-label]',
 ] as const;
 
 export const STABLE_MEDIA_VIEWERS_SELECTORS = [
   '[data-testid="photoViewer"]',
   '[aria-modal="true"][data-testid="Drawer"]',
   '[aria-roledescription="carousel"]',
-  '[role="dialog"][aria-modal="true"]',
-  '[aria-label*="Gallery"]',
 ] as const;
 
-export const STABLE_MEDIA_PLAYERS_SELECTORS = [
-  '[data-testid="videoPlayer"]',
-  'video',
-  '[role="application"] video',
-] as const;
+export const STABLE_MEDIA_PLAYERS_SELECTORS = ['[data-testid="videoPlayer"]', 'video'] as const;
 
 const warnedInvalidSelectors: Record<string, true> = Object.create(null);
 

@@ -54,10 +54,10 @@ export class MediaExtractionService implements MediaExtractor {
         });
       }
 
-      logger.error(`[MediaExtractor] ${extractionId}: API extraction failed`);
+      logger.error('Extract api failed', extractionId);
       return this.createApiErrorResult(apiResult, tweetInfo);
     } catch (error) {
-      logger.error(`[MediaExtractor] ${extractionId}: Extraction error`, error);
+      logger.error('Extract failed', extractionId, error);
       return this.createErrorResult(error);
     }
   }

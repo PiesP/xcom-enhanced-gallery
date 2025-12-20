@@ -95,7 +95,7 @@ async function executeSingleDownloadCommand(
             },
             onerror: (error: unknown) => {
               const errorMsg = getErrorMessage(error);
-              logger.error('[SingleDownload] Download failed:', error);
+              logger.error('Download failed', error);
               settle({ success: false, error: errorMsg }, 0);
             },
             ontimeout: () => {

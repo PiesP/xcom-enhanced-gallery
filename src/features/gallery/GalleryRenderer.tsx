@@ -68,7 +68,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
       this.renderComponent();
       logger.debug('[GalleryRenderer] Component rendering complete');
     } catch (error) {
-      logger.error('[GalleryRenderer] Rendering failed:', error);
+      logger.error('Render failed', error);
       // Ensure we never leave a half-mounted container behind (which can
       // make the gallery appear "stuck" on subsequent open attempts).
       this.cleanupContainer();
@@ -164,7 +164,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
         }
       }
     } catch (error) {
-      logger.error(`[GalleryRenderer] ${type} download failed:`, error);
+      logger.error('Download failed', error);
       setError(getErrorMessage(error) || 'Download failed.');
     } finally {
       releaseLock();

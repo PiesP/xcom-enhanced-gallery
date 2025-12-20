@@ -263,7 +263,7 @@ export class TwitterAPI {
       } catch (error) {
         // Ensure cache is cleared on any error
         TwitterAPI.requestCache.delete(url);
-        logger.error('Twitter API request failed:', error);
+        logger.error('API request failed', error);
         throw error;
       }
     })();
