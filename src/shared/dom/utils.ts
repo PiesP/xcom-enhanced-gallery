@@ -9,7 +9,7 @@ import {
   VIDEO_CONTROL_DATASET_PREFIXES,
   VIDEO_CONTROL_ROLES,
 } from '@constants/video-controls';
-import { VIDEO_PLAYER_SELECTOR } from '@shared/dom/selectors';
+import { VIDEO_PLAYER_CONTEXT_SELECTOR } from '@shared/dom/selectors';
 import { logger } from '@shared/logging';
 import { isHTMLElement } from '@shared/utils/types/guards';
 
@@ -19,7 +19,6 @@ const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;
 /**
  * Check if element is a video control element
  */
-const VIDEO_PLAYER_CONTEXT_SELECTOR = `${VIDEO_PLAYER_SELECTOR},[data-testid="videoComponent"],[data-testid="videoPlayerControls"],[data-testid="videoPlayerOverlay"],[role="application"],[aria-label*="Video"]`;
 const VIDEO_CONTROL_SELECTORS = [
   '[data-testid="playButton"]',
   '[data-testid="pauseButton"]',

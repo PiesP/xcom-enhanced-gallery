@@ -52,7 +52,7 @@
 
     /* Icon Component */
     --xeg-icon-stroke-width: 0.125rem;
-    --xeg-icon-size: var(--size-icon-md);
+    --xeg-icon-size: 1.25em;
 
     /* Spacing Variants */
     --xeg-spacing-xs: var(--space-xs);
@@ -72,7 +72,7 @@
   /* Support for reduced transparency preference */
   @media (prefers-reduced-transparency: reduce) {
     :where(:root, .xeg-theme-scope) {
-      --xeg-surface-bg: var(--color-bg-primary);
+      --xeg-surface-bg: var(--xeg-color-bg-primary);
     }
   }
 }

@@ -39,10 +39,8 @@ export function calculateCRC32(data: Uint8Array): number {
   const table = ensureCRC32Table();
   let crc = 0xffffffff;
 
-  // Uint8Array guarantees valid values (0-255) for indices within bounds
-  // The ?? 0 fallback satisfies TypeScript strict mode type checking
   for (let i = 0; i < data.length; i++) {
-    crc = (crc >>> 8) ^ (table[(crc ^ data[i]!) & 0xff] ?? 0);
+    crc = (crc >>> 8) ^ (table[(crc ^ data[i]!) & 0xff] as number);
   }
 
   return (crc ^ 0xffffffff) >>> 0;

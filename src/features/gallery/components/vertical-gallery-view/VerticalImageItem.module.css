@@ -229,7 +229,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--color-error-bg);
+  background: var(--xeg-color-error-bg);
   color: var(--xeg-color-error);
   min-height: var(--xeg-spacing-3xl);
 }

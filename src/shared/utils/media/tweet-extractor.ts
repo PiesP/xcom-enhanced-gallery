@@ -28,23 +28,27 @@ export function extractTweetTextHTML(tweetArticle: Element | null): string | und
     // Find tweet text element
     const tweetTextElement = tweetArticle.querySelector(TWEET_TEXT_SELECTOR);
     if (!tweetTextElement) {
-      logger.debug('[extractTweetTextHTML] tweetText element not found');
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        logger.debug('[tweet] no tweetText element');
+      }
       return undefined;
     }
 
     const text = tweetTextElement.textContent?.trim();
     if (!text) {
-      logger.debug('[extractTweetTextHTML] Empty text content');
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        logger.debug('[tweet] empty text');
+      }
       return undefined;
     }
 
-    logger.debug('[extractTweetTextHTML] Successfully extracted text', {
-      length: text.length,
-    });
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      logger.debug('[tweet] extracted', { length: text.length });
+    }
 
     return text;
   } catch (error) {
-    logger.error('[extractTweetTextHTML] Error extracting tweet text HTML:', error);
+    logger.error('[tweet] extract failed', error);
     return undefined;
   }
 }
@@ -77,8 +81,8 @@ export function extractTweetTextHTMLFromClickedElement(
     depth++;
   }
 
-  logger.debug('[extractTweetTextHTMLFromClickedElement] Tweet article not found within depth', {
-    maxDepth,
-  });
+  if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    logger.debug('[tweet] no article in depth', { maxDepth });
+  }
   return undefined;
 }

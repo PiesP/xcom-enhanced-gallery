@@ -113,7 +113,7 @@
    */
   --toolbar-surface-base: var(
     --xeg-toolbar-panel-surface,
-    var(--xeg-toolbar-surface, var(--color-bg-surface, var(--color-bg-primary, Canvas)))
+    var(--xeg-toolbar-surface, var(--xeg-color-bg-primary, Canvas))
   );
   --toolbar-surface-border: var(--xeg-toolbar-border);
   --xeg-button-disabled-opacity: 1;

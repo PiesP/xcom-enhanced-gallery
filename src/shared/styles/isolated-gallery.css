@@ -35,7 +35,7 @@
     z-index: var(--xeg-layer-root, 10000);
     isolation: isolate;
     contain: style paint;
-    background: var(--xeg-gallery-bg, var(--color-bg-primary));
+    background: var(--xeg-gallery-bg, var(--xeg-color-bg-primary, Canvas));
     pointer-events: auto;
     user-select: none;
     overscroll-behavior: contain;

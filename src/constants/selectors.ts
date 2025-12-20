@@ -24,6 +24,9 @@ export const TWEET_PHOTO_SELECTOR = '[data-testid="tweetPhoto"]' as const;
 export const TWEET_TEXT_SELECTOR = '[data-testid="tweetText"]' as const;
 export const VIDEO_PLAYER_SELECTOR = '[data-testid="videoPlayer"]' as const;
 
+export const VIDEO_PLAYER_CONTEXT_SELECTOR =
+  `${VIDEO_PLAYER_SELECTOR},[data-testid="videoComponent"],[data-testid="videoPlayerControls"],[data-testid="videoPlayerOverlay"],[role="application"],[aria-label*="Video"]` as const;
+
 export const STATUS_LINK_SELECTOR = 'a[href*="/status/"]' as const;
 
 export const TWITTER_IMAGE_SELECTOR = 'img[src*="pbs.twimg.com"]' as const;

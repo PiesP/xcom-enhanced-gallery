@@ -28,15 +28,15 @@
     /* Root background fallback for gallery shell */
     --xeg-color-background: oklch(95% 0 0deg);
 
+    /* Layout stability tokens */
+    --xeg-aspect-default: 4 / 3;
+
     /* Text Colors - Semantic Roles */
     --color-text-primary: var(--color-base-black);
     --color-text-secondary: var(
       --color-gray-600
     ); /* Phase: design-consistency - improved from gray-700 */
     --color-text-muted: var(--color-gray-500);
-    --color-text-inverse: var(--color-base-white);
-    --color-text-error: var(--color-base-white);
-    --color-text-on-overlay: var(--color-base-white);
 
     /* Border Colors - Semantic Roles */
     --color-border-default: var(--color-gray-200);
@@ -104,30 +104,18 @@
     );
 
     /* State Colors - Semantic Roles (monochrome, minimal) */
-    --color-success: var(--color-gray-800);
-    --color-success-hover: var(--color-gray-900);
-    --color-success-bg: var(--color-gray-100);
-    --color-error: var(--color-gray-800);
-    --color-error-hover: var(--color-gray-900);
-    --color-error-bg: var(--color-gray-100);
-    --color-warning: var(--color-gray-700);
-    --color-warning-bg: var(--color-gray-50);
-    --color-info: var(--color-gray-700);
-    --color-info-bg: var(--color-gray-50);
-
-    /* State Color Tokens - xeg prefix aliases */
-    --xeg-color-error: var(--color-error);
-    --xeg-color-error-hover: var(--color-error-hover);
-    --xeg-color-success-hover: var(--color-success-hover);
+    --xeg-color-success: var(--color-gray-800);
+    --xeg-color-success-hover: var(--color-gray-900);
+    --xeg-color-success-bg: var(--color-gray-100);
+    --xeg-color-error: var(--color-gray-800);
+    --xeg-color-error-hover: var(--color-gray-900);
+    --xeg-color-error-bg: var(--color-gray-100);
+    --xeg-color-info-bg: var(--color-gray-50);
 
     /* Interactive Colors - Semantic Roles (monochrome accent) */
-    --color-primary: var(--color-gray-900);
-    --color-primary-hover: var(--color-gray-700);
-    --color-primary-active: var(--color-gray-800);
-
-    /* Interactive Color Tokens - xeg prefix for consistency */
-    --xeg-color-primary: var(--color-primary);
-    --xeg-color-success: var(--color-success);
+    --xeg-color-primary: var(--color-gray-900);
+    --xeg-color-primary-hover: var(--color-gray-700);
+    --xeg-color-primary-active: var(--color-gray-800);
 
     /* Neutral Colors for Button States (only used values) */
     --xeg-color-neutral-100: var(--color-gray-100);
@@ -140,7 +128,7 @@
     --xeg-color-text-primary: var(--color-text-primary);
     --xeg-color-text-secondary: var(--color-text-secondary);
     --xeg-color-text-tertiary: var(--color-text-muted);
-    --xeg-color-text-inverse: var(--color-text-inverse);
+    --xeg-color-text-inverse: var(--color-base-white);
 
     /* Background color aliases for components */
     --xeg-color-bg-primary: var(--color-bg-primary);
@@ -153,11 +141,7 @@
     --xeg-color-overlay-medium: var(--color-overlay-medium);
 
     /* Component Sizing - Semantic Roles (em: relative to font-size) */
-    --size-button-md: 2.5em; /* 40px @ 16px */
-    --size-icon-md: 1.25em; /* 20px @ 16px */
-
-    /* Button Size Tokens - xeg prefix for consistency */
-    --xeg-size-button-md: var(--size-button-md);
+    --xeg-size-button-md: 2.5em; /* 40px @ 16px */
 
     /* Animation - Semantic Roles */
     --transition-fast: var(--duration-fast) cubic-bezier(0.4, 0, 0.2, 1);
@@ -258,21 +242,6 @@
     --xeg-gallery-bg: var(--xeg-gallery-bg-light);
     --xeg-modal-bg: var(--xeg-modal-bg-light);
     --xeg-modal-border: var(--xeg-modal-border-light);
-    --xeg-color-border-primary: var(--color-border-default);
-
-    --xeg-settings-gap: var(--space-md);
-    --xeg-settings-padding: var(--space-md);
-    --xeg-settings-control-gap: var(--space-sm);
-    --xeg-settings-label-font-size: var(--font-size-sm);
-    --xeg-settings-label-font-weight: var(--font-weight-medium);
-    --xeg-settings-select-padding: var(--space-sm);
-    --xeg-settings-select-font-size: var(--font-size-sm);
-
-    /* Layout stability tokens */
-    --xeg-aspect-default: 4 / 3;
-
-    /* Explicit light background for gallery root */
-    --xeg-color-background: oklch(95% 0 0deg);
   }
 
   /* Dark mode - explicit attribute */
@@ -329,9 +298,9 @@
       var(--color-base-black) 15%
     );
     --xeg-color-background: oklch(20% 0 0deg);
-    --color-primary: var(--color-gray-100);
-    --color-primary-hover: var(--color-gray-200);
-    --color-primary-active: var(--color-gray-300);
+    --xeg-color-primary: var(--color-gray-100);
+    --xeg-color-primary-hover: var(--color-gray-200);
+    --xeg-color-primary-active: var(--color-gray-300);
     --xeg-surface-bg: var(--color-gray-900);
     --xeg-surface-border: var(--color-gray-600);
     --xeg-surface-bg-hover: var(--color-gray-800);
@@ -392,9 +361,9 @@
         var(--color-base-black) 15%
       );
       --xeg-color-background: oklch(20% 0 0deg);
-      --color-primary: var(--color-gray-100);
-      --color-primary-hover: var(--color-gray-200);
-      --color-primary-active: var(--color-gray-300);
+      --xeg-color-primary: var(--color-gray-100);
+      --xeg-color-primary-hover: var(--color-gray-200);
+      --xeg-color-primary-active: var(--color-gray-300);
       --xeg-surface-bg: var(--color-gray-900);
       --xeg-surface-border: var(--color-gray-600);
       --xeg-surface-bg-hover: var(--color-gray-800);

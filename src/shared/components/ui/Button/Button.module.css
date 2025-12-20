@@ -93,14 +93,14 @@
 
 /* ===== Color Variants ===== */
 .variant-primary {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-  border-color: var(--color-primary);
+  background: var(--xeg-color-primary);
+  color: var(--xeg-color-text-inverse);
+  border-color: var(--xeg-color-primary);
 }
 
 .variant-primary:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
+  background: var(--xeg-color-primary-hover);
+  border-color: var(--xeg-color-primary-hover);
   transform: translateY(var(--xeg-button-lift));
 }
 
@@ -160,14 +160,14 @@
 }
 
 .variant-danger {
-  background: var(--color-error);
-  color: var(--color-text-inverse);
-  border-color: var(--color-error);
+  background: var(--xeg-color-error);
+  color: var(--xeg-color-text-inverse);
+  border-color: var(--xeg-color-error);
 }
 
 .variant-danger:hover:not(:disabled) {
-  background: var(--color-error-hover);
-  border-color: var(--color-error-hover);
+  background: var(--xeg-color-error-hover);
+  border-color: var(--xeg-color-error-hover);
   transform: translateY(var(--xeg-button-lift));
 }
 
@@ -224,13 +224,13 @@
 
 .variant-navigation {
   background: var(--xeg-color-primary);
-  color: var(--color-text-inverse);
+  color: var(--xeg-color-text-inverse);
   border-color: var(--xeg-color-primary);
 }
 
 .variant-navigation:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
+  background: var(--xeg-color-primary-hover);
+  border-color: var(--xeg-color-primary-hover);
   transform: translateY(var(--xeg-button-lift));
 }
 
@@ -240,13 +240,13 @@
 
 .variant-action {
   background: var(--xeg-color-success);
-  color: var(--color-text-inverse);
+  color: var(--xeg-color-text-inverse);
   border-color: var(--xeg-color-success);
 }
 
 .variant-action:hover:not(:disabled) {
-  background: var(--color-success-hover);
-  border-color: var(--color-success-hover);
+  background: var(--xeg-color-success-hover);
+  border-color: var(--xeg-color-success-hover);
   transform: translateY(var(--xeg-button-lift));
 }
 
@@ -292,33 +292,33 @@
 
 /* ===== Intent Variants (replaces iconVariant) ===== */
 .intent-primary {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  border-color: var(--xeg-color-primary);
+  color: var(--xeg-color-primary);
 }
 
 .intent-primary:hover:not(:disabled) {
-  background: var(--color-info-bg);
-  border-color: var(--color-primary-hover);
+  background: var(--xeg-color-info-bg);
+  border-color: var(--xeg-color-primary-hover);
 }
 
 .intent-success {
-  border-color: var(--color-success);
-  color: var(--color-success);
+  border-color: var(--xeg-color-success);
+  color: var(--xeg-color-success);
 }
 
 .intent-success:hover:not(:disabled) {
-  background: var(--color-success-bg);
-  border-color: var(--color-success-hover);
+  background: var(--xeg-color-success-bg);
+  border-color: var(--xeg-color-success-hover);
 }
 
 .intent-danger {
-  border-color: var(--color-error);
-  color: var(--color-error);
+  border-color: var(--xeg-color-error);
+  color: var(--xeg-color-error);
 }
 
 .intent-danger:hover:not(:disabled) {
-  background: var(--color-error-bg);
-  border-color: var(--color-error-hover);
+  background: var(--xeg-color-error-bg);
+  border-color: var(--xeg-color-error-hover);
 }
 
 .intent-neutral {

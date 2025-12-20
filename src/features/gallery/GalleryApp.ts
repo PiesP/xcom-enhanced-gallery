@@ -133,10 +133,7 @@ export class GalleryApp {
   ): Promise<void> {
     if (!this.isInitialized) {
       logger.warn('[GalleryApp] Gallery not initialized.');
-      this.notificationService.error(
-        'Gallery unavailable',
-        'Tampermonkey or similar userscript manager is required.'
-      );
+      this.notificationService.error('Gallery unavailable', 'Userscript manager required.');
       return;
     }
 

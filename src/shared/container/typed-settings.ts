@@ -89,7 +89,9 @@ function requireSettingsService(): SettingsServiceLike {
   const service = tryGetSettingsManager<SettingsServiceLike>();
   if (!service) {
     throw new Error(
-      'SettingsService is not registered. Ensure bootstrap registers it before usage.'
+      typeof __DEV__ !== 'undefined' && __DEV__
+        ? 'SettingsService is not registered. Ensure bootstrap registers it before usage.'
+        : 'SettingsService not registered.'
     );
   }
   return service;
