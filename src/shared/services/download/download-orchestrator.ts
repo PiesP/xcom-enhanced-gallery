@@ -1,7 +1,6 @@
 /**
  * @fileoverview Download Orchestrator - Unified Download Service
- * @description Orchestrates single and bulk downloads using appropriate strategy
- *              based on available capabilities (GM_download vs fetch+blob).
+ * @description Orchestrates single and bulk downloads using GM_download when available.
  *
  * **Architecture**:
  * - Single downloads: Delegates to downloadSingleFile (handles strategy internally)
@@ -9,7 +8,6 @@
  *
  * **Download Strategies**:
  * - GM_download: Tampermonkey native (preferred, better UX)
- * - fetch+blob: Violentmonkey/browser fallback (anchor download)
  *
  * @version 3.0.0 - Composition-based lifecycle
  */
@@ -20,7 +18,6 @@ import { logger } from '@shared/logging';
 import {
   type DownloadCapability,
   detectDownloadCapability,
-  downloadBlobWithAnchor,
   type GMDownloadFunction,
 } from '@shared/services/download/fallback-download';
 import { downloadSingleFile } from '@shared/services/download/single-download';
@@ -215,25 +212,13 @@ export class DownloadOrchestrator {
   private async saveZipBlob(
     zipBlob: Blob,
     filename: string,
-    options: DownloadOptions,
+    _options: DownloadOptions,
     capability: DownloadCapability
   ): Promise<{ success: boolean; error?: string }> {
     const saveStrategy = planZipSave(capability.method);
 
     if (saveStrategy === 'gm_download' && capability.gmDownload) {
       return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename);
-    }
-
-    if (saveStrategy === 'anchor') {
-      logger.debug('[DownloadOrchestrator] Using anchor fallback for ZIP download');
-      const fallbackResult = await downloadBlobWithAnchor(zipBlob, filename, {
-        signal: options.signal,
-        onProgress: options.onProgress,
-      });
-      // exactOptionalPropertyTypes: conditionally include error only if defined
-      return fallbackResult.error
-        ? { success: fallbackResult.success, error: fallbackResult.error }
-        : { success: fallbackResult.success };
     }
 
     return { success: false, error: 'No download method' };

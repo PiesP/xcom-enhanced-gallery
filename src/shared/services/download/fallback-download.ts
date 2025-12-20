@@ -1,16 +1,9 @@
 /**
- * @fileoverview Fallback Download Implementation
- * @description Provides fetch + blob + anchor download for environments without GM_download
- * (e.g., Violentmonkey, Greasemonkey, or browser-only contexts)
+ * @fileoverview GM_download capability detection.
+ * @description Keeps the download surface minimal by dropping fetch+blob fallbacks.
  */
 
-import { delay, isAbortError } from '@shared/async/delay';
-import { combineSignals, createTimeoutController } from '@shared/async/signal-utils';
-import { isTimeoutError, USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
-import { getErrorMessage } from '@shared/error/normalize';
 import { isGMAPIAvailable, resolveGMDownload } from '@shared/external/userscript';
-import { logger } from '@shared/logging';
-import type { DownloadProgress } from './types';
 
 export interface GMDownloadProgressEvent {
   loaded: number;
@@ -32,314 +25,23 @@ export interface GMDownloadOptions {
 
 export type GMDownloadFunction = (options: GMDownloadOptions) => void;
 
-/**
- * Download capability detection result
- */
 export interface DownloadCapability {
-  /** Whether GM_download is available */
   hasGMDownload: boolean;
-  /** Whether fetch API is available */
-  hasFetch: boolean;
-  /** Whether Blob/URL.createObjectURL is available */
-  hasBlob: boolean;
-  /** Recommended download method */
-  method: 'gm_download' | 'fetch_blob' | 'none';
-  /** Reference to GM_download when available */
+  method: 'gm_download' | 'none';
   gmDownload?: GMDownloadFunction | undefined;
 }
 
-/**
- * Detect available download capabilities
- */
 export function detectDownloadCapability(): DownloadCapability {
   const rawGMDownload = resolveGMDownload();
   const gmDownload =
     typeof rawGMDownload === 'function'
       ? (rawGMDownload as unknown as GMDownloadFunction)
       : undefined;
-  // Delegate detection to the userscript environment helper.
-  // We still resolve the raw function locally because GM_download supports an
-  // options-object signature in some managers, which is not exposed via UserscriptAPI.download.
   const hasGMDownload = isGMAPIAvailable('download') && Boolean(gmDownload);
 
-  const hasFetch = typeof fetch === 'function';
-
-  const hasBlob =
-    typeof Blob !== 'undefined' &&
-    typeof URL !== 'undefined' &&
-    typeof URL.createObjectURL === 'function';
-
-  let method: DownloadCapability['method'] = 'none';
-  if (hasGMDownload) {
-    method = 'gm_download';
-  } else if (hasFetch && hasBlob) {
-    method = 'fetch_blob';
-  }
-
-  return { hasGMDownload, hasFetch, hasBlob, method, gmDownload };
-}
-
-/**
- * Fallback download options
- */
-export interface FallbackDownloadOptions {
-  /** Abort signal for cancellation */
-  signal?: AbortSignal | undefined;
-  /** Progress callback */
-  onProgress?: ((progress: DownloadProgress) => void) | undefined;
-  /** Timeout in milliseconds (default: 30000) */
-  timeout?: number | undefined;
-}
-
-/**
- * Fallback download result
- */
-export interface FallbackDownloadResult {
-  success: boolean;
-  filename?: string;
-  error?: string;
-}
-
-/**
- * Download file using fetch + blob + anchor (fallback method)
- * Works in Violentmonkey and standard browser contexts
- *
- * @param url - URL to download
- * @param filename - Desired filename
- * @param options - Download options
- * @returns Download result
- */
-export async function downloadWithFetchBlob(
-  url: string,
-  filename: string,
-  options: FallbackDownloadOptions = {}
-): Promise<FallbackDownloadResult> {
-  const { signal, onProgress, timeout = 30000 } = options;
-
-  if (signal?.aborted) {
-    return { success: false, error: USER_CANCELLED_MESSAGE };
-  }
-
-  // Report preparing phase
-  onProgress?.({
-    phase: 'preparing',
-    current: 0,
-    total: 1,
-    percentage: 0,
-    filename,
-  });
-
-  // Use shared AbortSignal primitives for consistent cancellation semantics.
-  // - Timeout uses a TimeoutError reason (not a generic AbortError)
-  // - External abort preserves the caller's abort reason
-  const timeoutController = createTimeoutController(timeout);
-  const combinedSignal = signal
-    ? combineSignals([signal, timeoutController.signal])
-    : timeoutController.signal;
-
-  try {
-    // If a timeout triggers immediately (e.g. ms=0), bail out deterministically.
-    if (combinedSignal.aborted) {
-      const reason = combinedSignal.reason;
-      if (isTimeoutError(reason)) {
-        return { success: false, error: 'Download timeout' };
-      }
-      return { success: false, error: USER_CANCELLED_MESSAGE };
-    }
-
-    // Fetch the resource
-    const response = await fetch(url, {
-      signal: combinedSignal,
-      mode: 'cors',
-      credentials: 'omit',
-    });
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: `HTTP ${response.status}: ${response.statusText}`,
-      };
-    }
-
-    // Get content length for progress tracking
-    const contentLength = response.headers.get('content-length');
-    const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
-
-    // Read response with progress tracking
-    let blob: Blob;
-
-    if (totalBytes > 0 && response.body) {
-      // Stream-based reading with progress
-      const reader = response.body.getReader();
-      const chunks: Uint8Array[] = [];
-      let receivedBytes = 0;
-
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) break;
-
-        if (value) {
-          chunks.push(value);
-          receivedBytes += value.length;
-
-          onProgress?.({
-            phase: 'downloading',
-            current: 0,
-            total: 1,
-            percentage: Math.round((receivedBytes / totalBytes) * 100),
-            filename,
-          });
-        }
-      }
-
-      // Combine chunks into blob
-      blob = new Blob(chunks as BlobPart[], {
-        type: response.headers.get('content-type') || 'application/octet-stream',
-      });
-    } else {
-      // Fallback: read entire response at once (no progress tracking)
-      blob = await response.blob();
-    }
-
-    // Create object URL and trigger download
-    const blobUrl = URL.createObjectURL(blob);
-
-    try {
-      await triggerAnchorDownload(blobUrl, filename);
-
-      onProgress?.({
-        phase: 'complete',
-        current: 1,
-        total: 1,
-        percentage: 100,
-        filename,
-      });
-
-      logger.debug(`[FallbackDownload] Download complete: ${filename}`);
-      return { success: true, filename };
-    } finally {
-      // Clean up blob URL
-      URL.revokeObjectURL(blobUrl);
-    }
-  } catch (error) {
-    // Prefer signal-based classification to avoid brittle string matching.
-    if (combinedSignal.aborted) {
-      const reason = combinedSignal.reason;
-
-      if (isTimeoutError(reason)) {
-        return { success: false, error: 'Download timeout' };
-      }
-
-      return { success: false, error: USER_CANCELLED_MESSAGE };
-    }
-
-    // Defensive: some environments may surface abort errors without an aborted signal.
-    if (isAbortError(error)) {
-      return { success: false, error: USER_CANCELLED_MESSAGE };
-    }
-
-    const errorMsg = getErrorMessage(error);
-
-    logger.error('[FallbackDownload] Download failed:', error);
-
-    onProgress?.({
-      phase: 'complete',
-      current: 1,
-      total: 1,
-      percentage: 0,
-      filename,
-    });
-
-    return { success: false, error: errorMsg };
-  } finally {
-    // Always clear the timeout timer to avoid lingering scheduled tasks.
-    timeoutController.cancel();
-  }
-}
-
-/**
- * Trigger download using anchor element click
- *
- * @param url - Blob URL or data URL
- * @param filename - Desired filename
- */
-async function triggerAnchorDownload(url: string, filename: string): Promise<void> {
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.style.display = 'none';
-
-  // Append to body for Firefox compatibility
-  document.body.appendChild(anchor);
-
-  // Trigger click
-  anchor.click();
-
-  // Allow the click to be processed before cleanup.
-  await delay(100);
-
-  // Best-effort cleanup: never fail the download flow.
-  try {
-    anchor.remove();
-  } catch {
-    // Ignore: cleanup must never fail the download flow.
-  }
-}
-
-/**
- * Download blob directly using anchor element
- * Used when blob is already available (e.g., from prefetch cache)
- *
- * @param blob - Blob to download
- * @param filename - Desired filename
- * @param options - Download options
- * @returns Download result
- */
-export async function downloadBlobWithAnchor(
-  blob: Blob,
-  filename: string,
-  options: FallbackDownloadOptions = {}
-): Promise<FallbackDownloadResult> {
-  const { onProgress } = options;
-
-  onProgress?.({
-    phase: 'preparing',
-    current: 0,
-    total: 1,
-    percentage: 0,
-    filename,
-  });
-
-  const blobUrl = URL.createObjectURL(blob);
-
-  try {
-    await triggerAnchorDownload(blobUrl, filename);
-
-    onProgress?.({
-      phase: 'complete',
-      current: 1,
-      total: 1,
-      percentage: 100,
-      filename,
-    });
-
-    logger.debug(`[FallbackDownload] Blob download complete: ${filename}`);
-    return { success: true, filename };
-  } catch (error) {
-    const errorMsg = getErrorMessage(error);
-    logger.error('[FallbackDownload] Blob download failed:', error);
-
-    onProgress?.({
-      phase: 'complete',
-      current: 1,
-      total: 1,
-      percentage: 0,
-      filename,
-    });
-
-    return { success: false, error: errorMsg };
-  } finally {
-    URL.revokeObjectURL(blobUrl);
-  }
+  return {
+    hasGMDownload,
+    method: hasGMDownload ? 'gm_download' : 'none',
+    gmDownload,
+  };
 }

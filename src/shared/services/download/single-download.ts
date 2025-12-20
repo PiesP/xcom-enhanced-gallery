@@ -7,12 +7,7 @@ import { getErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging';
 import type { MediaInfo } from '@shared/types/media.types';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
-import {
-  type DownloadCapability,
-  detectDownloadCapability,
-  downloadBlobWithAnchor,
-  downloadWithFetchBlob,
-} from './fallback-download';
+import { type DownloadCapability, detectDownloadCapability } from './fallback-download';
 import type { DownloadOptions, SingleDownloadResult } from './types';
 
 async function executeSingleDownloadCommand(
@@ -34,23 +29,6 @@ async function executeSingleDownloadCommand(
         filename: cmd.filename,
       });
       return { success: true, filename: cmd.filename };
-
-    case 'DOWNLOAD_BLOB_WITH_ANCHOR': {
-      if (!blob) {
-        return { success: false, error: 'Blob unavailable' };
-      }
-      return downloadBlobWithAnchor(blob, cmd.filename, {
-        signal: options.signal,
-        onProgress: options.onProgress,
-      });
-    }
-
-    case 'DOWNLOAD_WITH_FETCH_BLOB':
-      return downloadWithFetchBlob(cmd.url, cmd.filename, {
-        signal: options.signal,
-        onProgress: options.onProgress,
-        timeout: cmd.timeoutMs,
-      });
 
     case 'DOWNLOAD_WITH_GM_DOWNLOAD': {
       const gmDownload = capability.gmDownload;

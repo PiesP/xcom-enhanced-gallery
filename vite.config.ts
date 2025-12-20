@@ -1214,6 +1214,10 @@ export default defineConfig(({ mode }): UserConfig => {
                 find: '@shared/error/app-error-reporter',
                 replacement: resolve(root, 'src/shared/error/app-error-reporter.slim.ts'),
               },
+              {
+                find: '@shared/logging/log-level',
+                replacement: resolve(root, 'src/shared/logging/log-level.prod.ts'),
+              },
             ]
           : []),
         ...buildPathAliases(root),

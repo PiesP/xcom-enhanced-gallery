@@ -7,7 +7,7 @@
 import { generateMediaFilename, generateZipFilename } from '@shared/core/filename';
 import type { MediaInfo } from '@shared/types/media.types';
 
-export type DownloadMethod = 'gm_download' | 'fetch_blob' | 'none';
+export type DownloadMethod = 'gm_download' | 'none';
 
 export interface SingleDownloadPlanningInput {
   method: DownloadMethod;
@@ -24,15 +24,6 @@ export type SingleDownloadPlan =
       useBlobUrl: boolean;
     }
   | {
-      strategy: 'anchor_blob';
-      filename: string;
-    }
-  | {
-      strategy: 'fetch_blob';
-      url: string;
-      filename: string;
-    }
-  | {
       strategy: 'none';
       filename: string;
       error: string;
@@ -47,13 +38,6 @@ export type SingleDownloadPlan =
  */
 export function planSingleDownload(input: SingleDownloadPlanningInput): SingleDownloadPlan {
   const { method, mediaUrl, filename, hasProvidedBlob } = input;
-
-  if (method === 'fetch_blob') {
-    if (hasProvidedBlob) {
-      return { strategy: 'anchor_blob', filename };
-    }
-    return { strategy: 'fetch_blob', url: mediaUrl, filename };
-  }
 
   if (method === 'gm_download') {
     return {
@@ -110,13 +94,12 @@ export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownload
   return { items, zipFilename };
 }
 
-export type ZipSaveStrategy = 'gm_download' | 'anchor' | 'none';
+export type ZipSaveStrategy = 'gm_download' | 'none';
 
 /**
  * Plan how to persist a prepared ZIP blob.
  */
 export function planZipSave(method: DownloadMethod): ZipSaveStrategy {
   if (method === 'gm_download') return 'gm_download';
-  if (method === 'fetch_blob') return 'anchor';
   return 'none';
 }

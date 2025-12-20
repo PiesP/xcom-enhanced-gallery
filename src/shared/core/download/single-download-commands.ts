@@ -17,16 +17,6 @@ export type SingleDownloadCommand =
       readonly filename: string;
     }
   | {
-      readonly type: 'DOWNLOAD_WITH_FETCH_BLOB';
-      readonly url: string;
-      readonly filename: string;
-      readonly timeoutMs: number;
-    }
-  | {
-      readonly type: 'DOWNLOAD_BLOB_WITH_ANCHOR';
-      readonly filename: string;
-    }
-  | {
       readonly type: 'DOWNLOAD_WITH_GM_DOWNLOAD';
       readonly url: string;
       readonly filename: string;
@@ -40,7 +30,7 @@ export type SingleDownloadCommand =
     };
 
 export interface SingleDownloadCommandInput {
-  readonly method: 'gm_download' | 'fetch_blob' | 'none';
+  readonly method: 'gm_download' | 'none';
   readonly mediaUrl: string;
   readonly filename: string;
   readonly hasProvidedBlob: boolean;
@@ -51,14 +41,6 @@ function toActionCommand(
   plan: SingleDownloadPlan,
   timeoutMs: number
 ): Exclude<SingleDownloadCommand, { type: 'REPORT_PROGRESS' }> {
-  if (plan.strategy === 'anchor_blob') {
-    return { type: 'DOWNLOAD_BLOB_WITH_ANCHOR', filename: plan.filename };
-  }
-
-  if (plan.strategy === 'fetch_blob') {
-    return { type: 'DOWNLOAD_WITH_FETCH_BLOB', url: plan.url, filename: plan.filename, timeoutMs };
-  }
-
   if (plan.strategy === 'gm_download') {
     return {
       type: 'DOWNLOAD_WITH_GM_DOWNLOAD',
