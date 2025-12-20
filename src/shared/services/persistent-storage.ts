@@ -159,6 +159,10 @@ export class PersistentStorage {
   }
 
   private warnParseErrorOnce(key: string, rawValue: string, error: unknown): void {
+    if (!__DEV__) {
+      return;
+    }
+
     PersistentStorage.maybeResetWarnedKeysOnOverflow();
     if (PersistentStorage.parseWarnedKeys.has(key)) return;
     PersistentStorage.parseWarnedKeys.add(key);
@@ -190,7 +194,7 @@ export class PersistentStorage {
     try {
       return JSON.parse(value) as T;
     } catch (error) {
-      if (options.warnOnParseErrorOnce !== false) {
+      if (__DEV__ && options.warnOnParseErrorOnce !== false) {
         this.warnParseErrorOnce(key, value, error);
       }
 

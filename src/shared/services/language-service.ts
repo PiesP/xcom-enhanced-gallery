@@ -10,16 +10,9 @@ import {
   LANGUAGE_CODES,
   type SupportedLanguage,
 } from '@shared/constants/i18n/language-types';
-import {
-  DEFAULT_LANGUAGE,
-  TRANSLATION_REGISTRY,
-} from '@shared/constants/i18n/translation-registry';
-import {
-  TranslationCatalog,
-  type TranslationKey,
-  type TranslationParams,
-  Translator,
-} from '@shared/i18n';
+import { DEFAULT_LANGUAGE, getLanguageStrings } from '@shared/constants/i18n/translation-registry';
+import { resolveTranslationValue } from '@shared/i18n/translation-utils';
+import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
 import { logger } from '@shared/logging';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
@@ -31,13 +24,7 @@ export type {
   LanguageStrings,
   SupportedLanguage,
 } from '@shared/constants/i18n/language-types';
-export type { TranslationKey, TranslationParams } from '@shared/i18n';
-
-const translationCatalog = new TranslationCatalog({
-  bundles: TRANSLATION_REGISTRY,
-  fallbackLanguage: DEFAULT_LANGUAGE,
-});
-const translator = new Translator(translationCatalog);
+export type { TranslationKey, TranslationParams } from '@shared/i18n/types';
 
 /**
  * Multilingual Service (Phase 355: Direct PersistentStorage usage)
@@ -49,10 +36,6 @@ const translator = new Translator(translationCatalog);
 export class LanguageService {
   private readonly lifecycle: Lifecycle;
   private static readonly STORAGE_KEY = 'xeg-language';
-  private static readonly SUPPORTED_LANGUAGES: ReadonlySet<SupportedLanguage> = new Set([
-    'auto',
-    ...LANGUAGE_CODES,
-  ]);
 
   private currentLanguage: SupportedLanguage = 'auto';
   private readonly listeners: Set<(language: SupportedLanguage) => void> = new Set();
@@ -106,13 +89,6 @@ export class LanguageService {
         this.currentLanguage = normalized;
         this.notifyListeners(normalized);
       }
-
-      // Phase 356: Preload the effective language bundle
-      const effectiveLang = this.getEffectiveLanguage();
-      const loaded = await this.ensureLanguageLoaded(effectiveLang);
-      if (loaded) {
-        this.notifyListeners(this.currentLanguage);
-      }
     } catch (error) {
       logger.warn('Failed to restore language setting from storage:', error);
     }
@@ -143,8 +119,8 @@ export class LanguageService {
     return this.currentLanguage;
   }
 
-  getAvailableLanguages(): BaseLanguageCode[] {
-    return [...LANGUAGE_CODES];
+  getAvailableLanguages(): readonly BaseLanguageCode[] {
+    return LANGUAGE_CODES;
   }
 
   setLanguage(language: SupportedLanguage): void {
@@ -165,47 +141,31 @@ export class LanguageService {
       logger.warn('Failed to persist language setting on change:', error);
     });
 
-    // Phase 356: Lazy load language bundle if needed
-    const effectiveLang = this.getEffectiveLanguage();
-    void this.ensureLanguageLoaded(effectiveLang)
-      .then((loaded) => {
-        if (!loaded) {
-          return;
-        }
-        if (this.currentLanguage !== normalized) {
-          return;
-        }
-        if (this.getEffectiveLanguage() !== effectiveLang) {
-          return;
-        }
-        this.notifyListeners(this.currentLanguage);
-      })
-      .catch((error) => {
-        logger.warn('Failed to load language bundle on change:', error);
-      });
-
     if (__DEV__) {
       logger.debug(`Language changed to: ${normalized}`);
     }
   }
 
-  /**
-   * Ensure the language bundle is loaded (lazy load if necessary).
-   * This is called automatically when language changes.
-   */
-  async ensureLanguageLoaded(language: BaseLanguageCode): Promise<boolean> {
-    const wasLoaded = translationCatalog.has(language);
-    try {
-      await translator.ensureLanguage(language);
-      return !wasLoaded && translationCatalog.has(language);
-    } catch (error) {
-      logger.warn(`Failed to load language bundle: ${language}`, error);
-    }
-    return false;
-  }
-
   translate(key: TranslationKey, params?: TranslationParams): string {
-    return translator.translate(this.getEffectiveLanguage(), key, params);
+    const language = this.getEffectiveLanguage();
+    const dictionary = getLanguageStrings(language);
+    const template = resolveTranslationValue(dictionary, key);
+
+    if (!template) {
+      return key;
+    }
+
+    if (!params) {
+      return template;
+    }
+
+    return template.replace(/\{(\w+)\}/g, (_, placeholder: string) => {
+      if (Object.hasOwn(params, placeholder)) {
+        return String(params[placeholder]);
+      }
+
+      return `{${placeholder}}`;
+    });
   }
 
   onLanguageChange(callback: (language: SupportedLanguage) => void): () => void {
@@ -220,8 +180,12 @@ export class LanguageService {
       return 'auto';
     }
 
-    if (LanguageService.SUPPORTED_LANGUAGES.has(language as SupportedLanguage)) {
-      return language as SupportedLanguage;
+    if (language === 'auto') {
+      return 'auto';
+    }
+
+    if (isBaseLanguageCode(language)) {
+      return language;
     }
 
     return DEFAULT_LANGUAGE;

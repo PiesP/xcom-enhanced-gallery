@@ -54,15 +54,15 @@ export class CoreService {
     const onDuplicate = options?.onDuplicate ?? 'warn';
 
     if (this.services.has(key) && !allowOverride) {
-      const message =
-        `[CoreService] Service key "${key}" already registered, skipping. ` +
-        `Use { allowOverride: true } to replace existing service.`;
-
       if (onDuplicate === 'throw') {
-        throw new Error(message);
+        throw new Error(`[CoreService] Duplicate service key: ${key}`);
       }
-      if (onDuplicate === 'warn') {
-        logger.warn(message);
+
+      if (__DEV__ && onDuplicate === 'warn') {
+        logger.warn(
+          `[CoreService] Service key "${key}" already registered, skipping. ` +
+            `Use { allowOverride: true } to replace existing service.`
+        );
       }
       return;
     }

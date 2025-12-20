@@ -36,28 +36,18 @@
     --radius-sm: 0.25em; /* 4px @ 16px */
     --radius-md: 0.375em; /* 6px @ 16px */
     --radius-lg: 0.5em; /* 8px @ 16px */
-    --radius-xl: 0.75em; /* 12px @ 16px */
     --radius-2xl: 1em; /* 16px @ 16px */
-    --radius-pill: 1.75em; /* 28px @ 16px, pill-shaped round button */
     --radius-full: 50%; /* Circular element */
 
     /* Typography Scale - rem base (absolute, Twitter Style) */
     --font-family-primary:
       "TwitterChirp", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --font-size-2xs: 0.6875rem; /* 11px */
     --font-size-xs: 0.75rem; /* 12px */
     --font-size-sm: 0.875rem; /* 14px */
     --font-size-base: 0.9375rem; /* 15px, Twitter default */
-    --font-size-md: 1rem; /* 16px */
-    --font-size-lg: 1.0625rem; /* 17px */
-    --font-size-xl: 1.125rem; /* 18px */
     --font-size-2xl: 1.25rem; /* 20px */
-    --font-size-3xl: 1.5rem; /* 24px */
 
     /* Font Weight Scale */
-    --font-weight-normal: 400;
-    --font-weight-medium: 500;
-    --font-weight-semibold: 600;
     --font-weight-bold: 700;
 
     /* Duration Scale */
@@ -67,11 +57,9 @@
 
     /* Border Width Scale */
     --border-width-thin: 0.0625rem; /* 1px */
-    --border-width-sm: 0.125rem; /* 2px */
 
     /* Opacity Scale */
     /* NOTE: Individual opacity values used directly where needed */
-    --opacity-overlay-backdrop: 0.85;
 
     /* Line Height Scale */
     --line-height-normal: 1.5;

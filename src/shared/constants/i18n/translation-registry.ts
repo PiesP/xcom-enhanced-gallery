@@ -20,17 +20,7 @@ export const TRANSLATION_REGISTRY: Partial<Record<BaseLanguageCode, LanguageStri
 export const DEFAULT_LANGUAGE: BaseLanguageCode = 'en';
 
 /**
- * Reserved for legacy lazy-loading flows.
- *
- * Runtime `import()` is not allowed, so this map is intentionally empty.
- */
-export const LAZY_LANGUAGE_LOADERS: Readonly<
-  Partial<Record<Exclude<BaseLanguageCode, 'en'>, () => Promise<LanguageStrings>>>
-> = Object.freeze({});
-
-/**
  * Get language strings synchronously (only works for bundled languages).
- * For historical callers, TranslationCatalog.ensureLanguage() is a no-op.
  */
 export function getLanguageStrings(language: BaseLanguageCode): LanguageStrings {
   const strings = TRANSLATION_REGISTRY[language];

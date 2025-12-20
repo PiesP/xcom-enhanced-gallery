@@ -219,46 +219,50 @@ export async function trySetTypedSetting<P extends SettingPath>(
  * @returns True if key matches setting path pattern
  */
 export function isValidSettingPath(key: string): key is SettingPath {
-  return VALID_SETTING_PATHS.has(key);
-}
-
-type UnknownRecord = Record<string, unknown>;
-
-function asUnknownRecord(value: unknown): UnknownRecord {
-  return value as UnknownRecord;
-}
-
-function isPlainObject(value: unknown): value is UnknownRecord {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-}
-
-function collectDotPaths(obj: UnknownRecord, prefix = ''): string[] {
-  const paths: string[] = [];
-
-  for (const [key, value] of Object.entries(obj)) {
-    const current = prefix ? `${prefix}.${key}` : key;
-    paths.push(current);
-
-    if (isPlainObject(value)) {
-      paths.push(...collectDotPaths(value, current));
-    }
+  if (!__DEV__) {
+    return true;
   }
 
-  return paths;
+  return Boolean(validSettingPaths?.has(key));
 }
 
-const SETTINGS_PATH_SCHEMA: UnknownRecord = {
-  ...asUnknownRecord(DEFAULT_SETTINGS),
-  download: {
-    ...asUnknownRecord(asUnknownRecord(DEFAULT_SETTINGS).download),
-    // Optional settings are intentionally included for runtime validation.
-    customTemplate: undefined,
-  },
-  tokens: {
-    ...asUnknownRecord(asUnknownRecord(DEFAULT_SETTINGS).tokens),
-    bearerToken: undefined,
-    lastRefresh: undefined,
-  },
-};
+let validSettingPaths: ReadonlySet<string> | null = null;
 
-const VALID_SETTING_PATHS = new Set<string>(collectDotPaths(SETTINGS_PATH_SCHEMA));
+if (__DEV__) {
+  type UnknownRecord = Record<string, unknown>;
+
+  const asUnknownRecord = (value: unknown): UnknownRecord => value as UnknownRecord;
+  const isPlainObject = (value: unknown): value is UnknownRecord =>
+    Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+  const collectDotPaths = (obj: UnknownRecord, prefix = ''): string[] => {
+    const paths: string[] = [];
+
+    for (const [key, value] of Object.entries(obj)) {
+      const current = prefix ? `${prefix}.${key}` : key;
+      paths.push(current);
+
+      if (isPlainObject(value)) {
+        paths.push(...collectDotPaths(value, current));
+      }
+    }
+
+    return paths;
+  };
+
+  const SETTINGS_PATH_SCHEMA: UnknownRecord = {
+    ...asUnknownRecord(DEFAULT_SETTINGS),
+    download: {
+      ...asUnknownRecord(asUnknownRecord(DEFAULT_SETTINGS).download),
+      // Optional settings are intentionally included for runtime validation.
+      customTemplate: undefined,
+    },
+    tokens: {
+      ...asUnknownRecord(asUnknownRecord(DEFAULT_SETTINGS).tokens),
+      bearerToken: undefined,
+      lastRefresh: undefined,
+    },
+  };
+
+  validSettingPaths = new Set<string>(collectDotPaths(SETTINGS_PATH_SCHEMA));
+}

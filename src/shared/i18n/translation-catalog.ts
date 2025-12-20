@@ -2,7 +2,6 @@ import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/l
 import { LANGUAGE_CODES } from '@shared/constants/i18n/language-types';
 import {
   DEFAULT_LANGUAGE,
-  LAZY_LANGUAGE_LOADERS,
   TRANSLATION_REGISTRY,
 } from '@shared/constants/i18n/translation-registry';
 import type { TranslationBundleInput } from './types';
@@ -15,7 +14,6 @@ export interface TranslationCatalogOptions {
 export class TranslationCatalog {
   private readonly bundles: Partial<Record<BaseLanguageCode, LanguageStrings>> = {};
   private readonly fallbackLanguage: BaseLanguageCode;
-  private readonly loadingPromises: Partial<Record<BaseLanguageCode, Promise<void>>> = {};
 
   constructor(options: TranslationCatalogOptions = {}) {
     const { bundles = TRANSLATION_REGISTRY, fallbackLanguage = DEFAULT_LANGUAGE } = options;
@@ -47,48 +45,22 @@ export class TranslationCatalog {
   }
 
   /**
-   * Ensure a language bundle is loaded (lazy load if necessary).
-   * Returns true if the language was loaded, false if it was already available.
+   * Ensure a language bundle is loaded.
+   *
+   * This userscript ships all language bundles synchronously in the single-file
+   * output. Runtime lazy-loading is intentionally unsupported.
    */
   async ensureLanguage(language: BaseLanguageCode): Promise<boolean> {
-    // Already loaded
-    if (this.bundles[language]) {
-      return false;
-    }
-
-    // Check if there's a lazy loader for this language
-    const loader = LAZY_LANGUAGE_LOADERS[language as keyof typeof LAZY_LANGUAGE_LOADERS];
-    if (!loader) {
-      return false;
-    }
-
-    // Deduplicate concurrent loads
-    const existingPromise = this.loadingPromises[language];
-    if (existingPromise) {
-      await existingPromise;
-      return true;
-    }
-
-    const loadPromise = (async () => {
-      const strings = await loader();
-      this.register(language, strings);
-    })();
-
-    this.loadingPromises[language] = loadPromise;
-
-    try {
-      await loadPromise;
-      return true;
-    } finally {
-      delete this.loadingPromises[language];
-    }
+    void language;
+    return false;
   }
 
   /**
    * Check if a language can be lazy-loaded.
    */
   canLazyLoad(language: BaseLanguageCode): boolean {
-    return Boolean(LAZY_LANGUAGE_LOADERS[language as keyof typeof LAZY_LANGUAGE_LOADERS]);
+    void language;
+    return false;
   }
 
   keys(): BaseLanguageCode[] {

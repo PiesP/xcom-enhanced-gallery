@@ -40,8 +40,6 @@
 
     /* Border Colors - Semantic Roles */
     --color-border-default: var(--color-gray-200);
-    --color-border-muted: var(--color-gray-100);
-    --color-border-subtle: var(--color-gray-100);
     --color-border-emphasis: var(--color-gray-500);
     --color-border-hover: var(--color-gray-300); /* Hover state for borders */
 
@@ -49,25 +47,6 @@
     --xeg-color-border-primary: var(--color-border-default);
     --xeg-color-border-hover: var(--color-border-hover);
     --xeg-color-border-strong: var(--color-border-emphasis);
-
-    /* Glass Border Variants - Semantic Aliases */
-    --xeg-glass-border-strong: var(--color-border-emphasis);
-
-    /* Button Tokens - Semantic Roles */
-    --xeg-button-bg: var(--color-bg-surface);
-    --xeg-button-border: var(--color-border-default);
-    --xeg-button-text: var(--color-text-primary);
-    --xeg-button-bg-hover: var(--color-bg-secondary);
-    --xeg-button-border-hover: var(--color-border-hover);
-    --xeg-border-button: var(--xeg-color-border-primary);
-
-    /* Modal Background/Border Tokens */
-    --xeg-modal-bg-light: var(--color-bg-elevated);
-    --xeg-modal-border-light: var(--color-border-default);
-    --xeg-modal-bg-dark: var(--color-gray-800);
-    --xeg-modal-border-dark: var(--color-border-emphasis);
-    --xeg-modal-bg: var(--xeg-modal-bg-light);
-    --xeg-modal-border: var(--xeg-modal-border-light);
 
     /* Toolbar color harmony tokens (light defaults) */
     --xeg-toolbar-text-color: var(--xeg-color-text-primary);
@@ -137,22 +116,8 @@
     --color-overlay-medium: var(--color-gray-300);
     --color-overlay-backdrop: var(--color-gray-900);
 
-    /* Overlay Color Tokens - xeg prefix aliases */
-    --xeg-color-overlay-medium: var(--color-overlay-medium);
-
     /* Component Sizing - Semantic Roles (em: relative to font-size) */
     --xeg-size-button-md: 2.5em; /* 40px @ 16px */
-
-    /* Animation - Semantic Roles */
-    --transition-fast: var(--duration-fast) cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-normal: var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-slow: var(--duration-slow) cubic-bezier(0.4, 0, 0.2, 1);
-
-    /* Shadow Tokens - flat design: all none */
-    --xeg-shadow-xs: none;
-    --xeg-shadow-sm: none;
-    --xeg-shadow-md: none;
-    --xeg-shadow-lg: none;
 
     /* Focus indicator tokens */
     --xeg-focus-indicator-color: var(--xeg-color-border-primary);
@@ -163,17 +128,12 @@
     --xeg-font-size-lg: 1.125rem;
     --xeg-font-weight-medium: 500;
     --xeg-font-size-2xl: var(--font-size-2xl);
-    --xeg-font-weight-semibold: var(--font-weight-semibold);
 
     /* Button Component Text Colors - Required by Button.module.css */
     /* Animation Timing - Semantic Roles */
     --xeg-duration-fast: var(--duration-fast);
-    --xeg-duration-slow: var(--duration-slow);
     --xeg-duration-normal: var(--duration-normal);
     --xeg-duration-toolbar: var(--duration-normal);
-
-    /* Common transition helpers */
-    --xeg-transition-opacity: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 
     /* Surface Tokens - Flat panel style */
     --xeg-surface-bg: var(--color-bg-surface);
@@ -188,33 +148,21 @@
     --xeg-border-emphasis: var(--color-border-emphasis);
 
     /* Z-Index Management - anchored above twitter.com UI */
-    --xeg-z-stack-base: 2147483600;
     --xeg-z-gallery: 2147483600;
-    --xeg-z-gallery-overlay: 2147483608;
-    --xeg-z-gallery-toolbar: 2147483612;
     --xeg-z-toolbar-hover-zone: 2147483618;
     --xeg-z-toolbar: 2147483620;
     --xeg-z-toolbar-panel: 2147483622;
     --xeg-z-toolbar-panel-active: 2147483624;
-    --xeg-z-overlay: 2147483630;
-    --xeg-z-modal-backdrop: 2147483640;
-    --xeg-z-modal: 2147483645;
-    --xeg-z-modal-foreground: 2147483646;
-    --xeg-z-tooltip: 2147483647;
 
     /* Layer Management - Semantic Roles (using z-index directly) */
     --xeg-layer-root: var(--xeg-z-gallery);
 
     /* Animation Easing */
     --xeg-easing-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
-    --xeg-easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
     --xeg-easing-linear: linear;
 
     /* Line Height - Semantic Alias */
     --xeg-line-height-normal: var(--line-height-normal, 1.5);
-
-    /* Duration - Default value for animation utilities */
-    --xeg-duration: var(--duration-normal);
 
     /* Interaction State Tokens */
     --xeg-button-lift: -0.0625rem; /* -1px */
@@ -227,7 +175,6 @@
     --xeg-radius-sm: var(--radius-sm);
     --xeg-radius-md: var(--radius-md);
     --xeg-radius-lg: var(--radius-lg);
-    --xeg-radius-xl: var(--radius-xl);
     --xeg-radius-2xl: var(--radius-2xl);
     --xeg-radius-full: var(--radius-full);
   }
@@ -237,11 +184,7 @@
     --color-bg-primary: var(--color-base-white);
     --color-text-primary: var(--color-base-black);
     --color-text-secondary: var(--color-gray-600); /* Phase: design-consistency */
-    --color-glass-bg: var(--color-bg-surface);
-    --color-glass-border: var(--color-border-default);
     --xeg-gallery-bg: var(--xeg-gallery-bg-light);
-    --xeg-modal-bg: var(--xeg-modal-bg-light);
-    --xeg-modal-border: var(--xeg-modal-border-light);
   }
 
   /* Dark mode - explicit attribute */
@@ -251,20 +194,11 @@
     --color-bg-elevated: var(--color-gray-700);
     --color-text-primary: var(--color-base-white);
     --color-text-secondary: var(--color-gray-400);
-    --color-glass-bg: var(--color-gray-900);
-    --color-glass-border: var(--color-gray-600);
     --xeg-bg-toolbar: var(--color-gray-800);
     --xeg-color-border-primary: var(--color-gray-600);
     --xeg-toolbar-border: var(--color-gray-600);
     --xeg-color-bg-secondary: var(--color-gray-800);
     --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
-    --xeg-button-bg: var(--color-gray-800);
-    --xeg-button-border: var(--color-gray-600);
-    --xeg-button-text: var(--color-text-primary);
-    --xeg-button-bg-hover: var(--color-gray-700);
-    --xeg-button-border-hover: var(--color-gray-600);
-    --xeg-modal-bg: var(--xeg-modal-bg-dark);
-    --xeg-modal-border: var(--xeg-modal-border-dark);
     --xeg-toolbar-text-color: var(--color-text-primary);
     --xeg-toolbar-text-muted: var(--color-gray-300);
     --xeg-toolbar-element-bg: color-mix(
@@ -314,20 +248,11 @@
       --color-bg-elevated: var(--color-gray-700);
       --color-text-primary: var(--color-base-white);
       --color-text-secondary: var(--color-gray-400);
-      --color-glass-bg: var(--color-gray-900);
-      --color-glass-border: var(--color-gray-600);
       --xeg-bg-toolbar: var(--color-gray-800);
       --xeg-color-border-primary: var(--color-gray-600);
       --xeg-toolbar-border: var(--color-gray-600);
       --xeg-color-bg-secondary: var(--color-gray-800);
       --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
-      --xeg-button-bg: var(--color-gray-800);
-      --xeg-button-border: var(--color-gray-600);
-      --xeg-button-text: var(--color-text-primary);
-      --xeg-button-bg-hover: var(--color-gray-700);
-      --xeg-button-border-hover: var(--color-gray-600);
-      --xeg-modal-bg: var(--xeg-modal-bg-dark);
-      --xeg-modal-border: var(--xeg-modal-border-dark);
       --xeg-toolbar-text-color: var(--color-text-primary);
       --xeg-toolbar-text-muted: var(--color-gray-300);
       --xeg-toolbar-element-bg: color-mix(
@@ -373,24 +298,14 @@
   @media (prefers-reduced-motion: reduce) {
     :where(:root, .xeg-theme-scope) {
       /* Durations (design-tokens.semantic.css) */
-      --xeg-duration: 0ms;
       --xeg-duration-fast: 0ms;
-      --xeg-duration-slow: 0ms;
-      --transition-fast: 0ms;
-      --transition-normal: 0ms;
-      --transition-slow: 0ms;
 
       /* Transitions (design-tokens.component.css) */
-      --xeg-transition-surface-normal: none;
       --xeg-transition-surface-fast: none;
       --xeg-transition-elevation-normal: none;
       --xeg-transition-elevation-fast: none;
       --xeg-transition-interaction-fast: none;
       --xeg-transition-width-normal: none;
-
-      /* Animations (design-tokens.component.css) */
-      --animation-fade-in: none;
-      --animation-fade-out: none;
     }
   }
 
@@ -412,18 +327,5 @@
     /* Input */
     --xeg-settings-select-padding: var(--space-sm) var(--space-md);
     /* Background/border reuse --xeg-bg-toolbar and --xeg-toolbar-border directly */
-
-    /* Toolbar Component Tokens */
-    --xeg-toolbar-panel-shadow: var(--xeg-shadow-xs);
-
-    /* Modal Component Tokens */
-    /* NOTE: Modal component tokens now defer to semantic tokens to avoid
-    cascading alias overwrite issues that previously caused dark mode
-    transparency regressions (see 2025-09-11 fix log). */
-    --xeg-comp-modal-backdrop: var(--color-overlay-backdrop);
-    --xeg-modal-bg-light: var(--color-bg-elevated);
-    --xeg-modal-border-light: var(--color-border-default);
-    --xeg-modal-bg: var(--xeg-modal-bg-light);
-    --xeg-modal-border: var(--xeg-modal-border-light);
   }
 }
