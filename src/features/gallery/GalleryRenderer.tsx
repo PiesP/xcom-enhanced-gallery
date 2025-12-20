@@ -10,6 +10,7 @@ import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary
 import {
   getDownloadOrchestrator,
   getLanguageService,
+  getMediaService,
   getThemeService,
 } from '@shared/container/service-accessors';
 import { getErrorMessage } from '@shared/error/normalize';
@@ -146,19 +147,42 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
     try {
       const mediaItems = gallerySignals.mediaItems.value;
+      const mediaService = getMediaService();
       // Lazy load download service on first use
       const downloadService = await this.getDownloadService();
 
       if (type === 'current') {
         const currentMedia = mediaItems[gallerySignals.currentIndex.value];
         if (currentMedia) {
-          const result = await downloadService.downloadSingle(currentMedia);
+          let blob: Blob | undefined;
+          try {
+            const pending = mediaService.getCachedMedia(currentMedia.url);
+            if (pending) {
+              blob = await pending;
+            }
+          } catch {
+            // Ignore prefetch failures; fallback to network download.
+          }
+
+          const result = await downloadService.downloadSingle(currentMedia, {
+            ...(blob ? { blob } : {}),
+          });
           if (!result.success) {
             setError(result.error || 'Download failed.');
           }
         }
       } else {
-        const result = await downloadService.downloadBulk([...mediaItems]);
+        const prefetchedBlobs = new Map<string, Blob | Promise<Blob>>();
+        for (const item of mediaItems) {
+          if (!item) continue;
+          const pending = mediaService.getCachedMedia(item.url);
+          if (!pending) continue;
+          prefetchedBlobs.set(item.url, pending);
+        }
+
+        const result = await downloadService.downloadBulk([...mediaItems], {
+          ...(prefetchedBlobs.size > 0 ? { prefetchedBlobs } : {}),
+        });
         if (!result.success) {
           setError(result.error || 'Download failed.');
         }
