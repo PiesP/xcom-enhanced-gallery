@@ -40,22 +40,22 @@ const lifecycleState = {
   lastError: null as unknown | null,
 };
 
-const warnCleanupLog: CleanupLogger = (message, error) => {
-  logger.warn(message, error);
-};
+const warnCleanupLog: CleanupLogger | undefined = __DEV__
+  ? (message, error) => {
+      logger.warn(message, error);
+    }
+  : undefined;
 
-const debugCleanupLog: CleanupLogger = (message, error) => {
-  logger.debug(message, error);
-};
+const debugCleanupLog: CleanupLogger | undefined = __DEV__
+  ? (message, error) => {
+      logger.debug(message, error);
+    }
+  : undefined;
 
 let globalEventTeardown: Unregister | null = null;
 let commandRuntimeTeardown: (() => void) | null = null;
 
 async function refreshDevNamespace(app: IGalleryApp | null): Promise<void> {
-  if (!__DEV__) {
-    return;
-  }
-
   setupDevNamespace(app, {
     start: startApplication,
     createConfig: createAppConfig,
@@ -110,12 +110,14 @@ function tearDownCommandRuntime(): void {
 async function runOptionalCleanup(
   label: string,
   task: CleanupTask,
-  log: CleanupLogger = warnCleanupLog
+  log?: CleanupLogger
 ): Promise<void> {
+  const selectedLog = log ?? warnCleanupLog;
+
   try {
     await task();
   } catch (error) {
-    log(label, error);
+    selectedLog?.(label, error);
   }
 }
 
@@ -139,55 +141,91 @@ async function runOptionalCleanup(
  * - Developer tooling runs only in __DEV__ mode and not in tests
  * - Gallery initialization is skipped in test mode
  */
-const bootstrapStages: readonly BootstrapStage[] = [
-  {
-    label: __DEV__ ? 'Global styles' : '1',
-    run: loadGlobalStyles,
-  },
-  {
-    label: __DEV__ ? 'Developer tooling' : '2',
-    run: initializeDevToolsIfNeeded,
-    shouldRun: () => isDevEnvironment && !isTestMode,
-    optional: true,
-  },
-  {
-    label: __DEV__ ? 'Infrastructure' : '3',
-    run: initializeInfrastructure,
-  },
-  {
-    label: __DEV__ ? 'Critical systems' : '4',
-    run: initializeCriticalSystems,
-  },
-  {
-    label: __DEV__ ? 'Base services' : '5',
-    run: initializeBaseServicesStage,
-    optional: true,
-  },
-  {
-    label: __DEV__ ? 'Theme synchronization' : '6',
-    run: applyInitialThemeSetting,
-    optional: true,
-  },
-  {
-    label: __DEV__ ? 'Global event wiring' : '7',
-    run: () => setupGlobalEventHandlers(),
-  },
-  {
-    label: __DEV__ ? 'Command runtime (dev)' : '8',
-    run: initializeCommandRuntimeIfNeeded,
-    shouldRun: () => isDevEnvironment && !isTestMode,
-    optional: true,
-  },
-  {
-    label: __DEV__ ? 'Gallery initialization' : '9',
-    run: initializeGalleryIfPermitted,
-  },
-  {
-    label: __DEV__ ? 'Non-critical systems' : '10',
-    run: () => initializeNonCriticalSystems(),
-    optional: true,
-  },
-];
+const bootstrapStages: readonly BootstrapStage[] = __DEV__
+  ? [
+      {
+        label: 'Global styles',
+        run: loadGlobalStyles,
+      },
+      {
+        label: 'Developer tooling',
+        run: initializeDevToolsIfNeeded,
+        shouldRun: () => !isTestMode,
+        optional: true,
+      },
+      {
+        label: 'Infrastructure',
+        run: initializeInfrastructure,
+      },
+      {
+        label: 'Critical systems',
+        run: initializeCriticalSystems,
+      },
+      {
+        label: 'Base services',
+        run: initializeBaseServicesStage,
+        optional: true,
+      },
+      {
+        label: 'Theme synchronization',
+        run: applyInitialThemeSetting,
+        optional: true,
+      },
+      {
+        label: 'Global event wiring',
+        run: () => setupGlobalEventHandlers(),
+      },
+      {
+        label: 'Command runtime (dev)',
+        run: initializeCommandRuntimeIfNeeded,
+        shouldRun: () => !isTestMode,
+        optional: true,
+      },
+      {
+        label: 'Gallery initialization',
+        run: initializeGalleryIfPermitted,
+      },
+      {
+        label: 'Non-critical systems',
+        run: () => initializeNonCriticalSystems(),
+        optional: true,
+      },
+    ]
+  : [
+      // Production does not need explicit stages for global styles or dev tooling.
+      // Keep labels short to avoid shipping verbose strings in a non-minified bundle.
+      {
+        label: '1',
+        run: initializeInfrastructure,
+      },
+      {
+        label: '2',
+        run: initializeCriticalSystems,
+      },
+      {
+        label: '3',
+        run: initializeBaseServicesStage,
+        optional: true,
+      },
+      {
+        label: '4',
+        run: applyInitialThemeSetting,
+        optional: true,
+      },
+      {
+        label: '5',
+        run: () => setupGlobalEventHandlers(),
+      },
+      {
+        label: '6',
+        run: initializeGalleryIfPermitted,
+      },
+      {
+        label: '7',
+        run: () => initializeNonCriticalSystems(),
+        optional: true,
+      },
+    ];
 
 // exported runBootstrapStages below
 async function runBootstrapStages(): Promise<void> {
@@ -206,7 +244,9 @@ async function runBootstrapStages(): Promise<void> {
 // exported initializeInfrastructure below
 async function initializeInfrastructure(): Promise<void> {
   try {
-    await initializeEnvironment();
+    if (__DEV__) {
+      await initializeEnvironment();
+    }
     logger.debug('✅ Vendor library initialization complete');
   } catch (error) {
     bootstrapErrorReporter.critical(error, {
@@ -335,13 +375,15 @@ async function cleanup(): Promise<void> {
       debugCleanupLog
     );
 
-    await runOptionalCleanup(
-      'Dev namespace refresh',
-      async () => {
-        await refreshDevNamespace(lifecycleState.galleryApp);
-      },
-      debugCleanupLog
-    );
+    if (__DEV__) {
+      await runOptionalCleanup(
+        'Dev namespace refresh',
+        async () => {
+          await refreshDevNamespace(lifecycleState.galleryApp);
+        },
+        debugCleanupLog
+      );
+    }
 
     if (isDevEnvironment) {
       await runOptionalCleanup(
@@ -402,7 +444,9 @@ async function startApplication(): Promise<void> {
     logger.info('✅ Application initialization complete');
 
     // Phase 290: Namespace isolation - provide single namespace for global access in dev environment
-    await refreshDevNamespace(lifecycleState.galleryApp);
+    if (__DEV__) {
+      await refreshDevNamespace(lifecycleState.galleryApp);
+    }
   })()
     .catch((error) => {
       lifecycleState.started = false;
