@@ -43,12 +43,7 @@ export async function initializeDevTools(): Promise<void> {
   }
 
   try {
-    // Service diagnostic tools
-    // Phase 350: Import ServiceDiagnostics directly (prevent circular reference)
-    // const { registerDiagnosticsGlobal } = await import(
-    //   "@shared/services/diagnostics"
-    // );
-    // registerDiagnosticsGlobal();
+    // Service diagnostic tools (intentionally omitted in the userscript bundle).
     devToolsRegistered = true;
 
     logger.info('🛠️ Development diagnostics ready (run window.__XEG__.diagnostics.run())');

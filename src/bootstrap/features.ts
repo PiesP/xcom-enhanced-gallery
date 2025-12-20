@@ -19,6 +19,7 @@ import { reportBootstrapError } from '@bootstrap/types';
 import { DEFAULT_SETTINGS } from '@constants/default-settings';
 import { APP_SETTINGS_STORAGE_KEY } from '@constants/storage';
 import { logger } from '@shared/logging';
+import { getPersistentStorage } from '@shared/services/persistent-storage';
 // ─────────────────────────────────────────
 // Feature Flag Logic
 // ─────────────────────────────────────────
@@ -105,7 +106,6 @@ const cloneDefaultFeatureSettings = (): SettingsWithFeatures => ({
  */
 async function loadFeatureSettings(): Promise<SettingsWithFeatures> {
   try {
-    const { getPersistentStorage } = await import('@shared/services/persistent-storage');
     const storage = getPersistentStorage();
     const stored = await storage.getJson<Record<string, unknown>>(APP_SETTINGS_STORAGE_KEY);
 

@@ -5,6 +5,9 @@
  * Phase 345: Enhanced type safety
  */
 
+import { GalleryApp } from '@features/gallery/GalleryApp';
+import { GalleryRenderer } from '@features/gallery/GalleryRenderer.tsx';
+import { SettingsService } from '@features/settings/services/settings-service';
 import type { IGalleryApp } from '@shared/container/app-container';
 import {
   getThemeService,
@@ -25,7 +28,6 @@ let rendererRegistrationTask: Promise<void> | null = null;
 async function registerRenderer(): Promise<void> {
   if (!rendererRegistrationTask) {
     rendererRegistrationTask = (async () => {
-      const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer.tsx');
       registerGalleryRenderer(new GalleryRenderer());
     })().finally(() => {
       rendererRegistrationTask = null;
@@ -50,7 +52,6 @@ async function initializeServices(): Promise<void> {
   // 2. Settings Service
   let settingsService: SettingsServiceLike | null = null;
   try {
-    const { SettingsService } = await import('@features/settings/services/settings-service');
     const service = new SettingsService();
     await service.initialize();
     registerSettingsManager(service);
@@ -101,7 +102,6 @@ export async function initializeGalleryApp(): Promise<IGalleryApp> {
     // Parallel initialization of renderer and services
     await Promise.all([registerRenderer(), initializeServices()]);
 
-    const { GalleryApp } = await import('@features/gallery/GalleryApp');
     const galleryApp = new GalleryApp();
     await galleryApp.initialize();
 

@@ -4,6 +4,7 @@
  * @version 5.0.0 - Composition-based lifecycle
  */
 
+import { SERVICE_KEYS } from '@constants/service-keys';
 import { APP_SETTINGS_STORAGE_KEY } from '@constants/storage';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging';
@@ -11,6 +12,7 @@ import { EventManager } from '@shared/services/event-manager';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
+import { CoreService } from '@shared/services/service-manager';
 import type {
   SettingsServiceLike,
   Theme,
@@ -160,8 +162,9 @@ export class ThemeService implements ThemeServiceContract {
     }
 
     try {
-      const { tryGetSettingsManager } = await import('@shared/container/service-accessors');
-      const settingsService = tryGetSettingsManager() as SettingsServiceLike | null;
+      const settingsService = CoreService.getInstance().tryGet<SettingsServiceLike>(
+        SERVICE_KEYS.SETTINGS
+      );
       if (settingsService) {
         this.bindSettingsService(settingsService);
       }

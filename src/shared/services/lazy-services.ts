@@ -5,8 +5,11 @@
  * @phase Phase 355: Download Service Consolidation (BulkDownloadService removed)
  */
 
+import { SERVICE_KEYS } from '@constants/service-keys';
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging';
+import { DownloadOrchestrator } from './download/download-orchestrator';
+import { CoreService } from './service-manager';
 
 // Singleton pattern: track if service has been registered
 let downloadServiceRegistered = false;
@@ -37,12 +40,7 @@ export async function ensureDownloadServiceRegistered(): Promise<void> {
   }
 
   try {
-    // Dynamically import at first use
-    const { DownloadOrchestrator } = await import('./download/download-orchestrator');
     const downloadService = DownloadOrchestrator.getInstance();
-    const { CoreService } = await import('./service-manager');
-    const { SERVICE_KEYS } = await import('@constants/service-keys');
-
     const serviceManager = CoreService.getInstance();
 
     // Register primary key

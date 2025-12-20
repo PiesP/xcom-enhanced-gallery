@@ -1,5 +1,6 @@
 import { createUserCancelledAbortError } from '@shared/error/cancellation';
 import { getErrorMessage } from '@shared/error/normalize';
+import { StreamingZipWriter } from '@shared/external/zip';
 import { DEFAULT_BACKOFF_BASE_MS, fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
 import { ensureUniqueFilenameFactory } from '@shared/services/download/download-utils';
 import type {
@@ -12,7 +13,6 @@ export async function downloadAsZip(
   items: OrchestratorItem[],
   options: OrchestratorOptions = {}
 ): Promise<ZipResult> {
-  const { StreamingZipWriter } = await import('@shared/external/zip');
   const writer = new StreamingZipWriter();
 
   const concurrency = Math.min(8, Math.max(1, options.concurrency ?? 6));

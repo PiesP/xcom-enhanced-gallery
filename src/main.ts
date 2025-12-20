@@ -1,25 +1,31 @@
-// initializeDevTools dynamic import moved to initializeDevToolsIfNeeded
+// Runtime `import()` is forbidden in this project (single-file userscript bundle).
 
+import { initializeCoreBaseServices } from '@bootstrap/base-services';
 import { initializeCriticalSystems } from '@bootstrap/critical-systems';
+import { setupDevNamespace } from '@bootstrap/dev-namespace';
+import { initializeDevTools } from '@bootstrap/dev-tools';
 import { initializeEnvironment } from '@bootstrap/environment';
 import type { Unregister } from '@bootstrap/events';
 import { wireGlobalEvents } from '@bootstrap/events';
 import { initializeGalleryApp } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
+import { createAppConfig } from '@constants/app-config';
+import { startDevCommandRuntime } from '@edge/bootstrap';
 import type { IGalleryApp } from '@shared/container/app-container';
 import { getThemeService, warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
+import { GlobalErrorHandler } from '@shared/error/error-handler';
 import type { BootstrapStage } from '@shared/interfaces';
 import { logger } from '@shared/logging';
 import { EventManager } from '@shared/services/event-manager';
 import { CoreService } from '@shared/services/service-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
-// Global styles
-// Global styles are loaded at runtime to avoid import-time side effects.
-// They are dynamically loaded inside startApplication for safety in both tests and bundling.
+// Global styles (side-effect import)
+import './styles/globals';
 
-// Vendor initialization moved to startApplication
+// Note: Global styles are now imported statically to comply with the
+// single-file bundle policy (no runtime `import()`).
 
 const isDevEnvironment = __DEV__;
 const isTestMode = import.meta.env.MODE === 'test';
@@ -50,8 +56,6 @@ async function refreshDevNamespace(app: IGalleryApp | null): Promise<void> {
     return;
   }
 
-  const { setupDevNamespace } = await import('@bootstrap/dev-namespace');
-  const { createAppConfig } = await import('@constants/app-config');
   setupDevNamespace(app, {
     start: startApplication,
     createConfig: createAppConfig,
@@ -59,18 +63,15 @@ async function refreshDevNamespace(app: IGalleryApp | null): Promise<void> {
   });
 }
 
-// Avoid bundling the dev command runtime into production builds.
-// This needs to remove the dynamic import expression when __DEV__ is false.
-const initializeCommandRuntimeIfNeeded: () => Promise<void> = __DEV__
-  ? async () => {
-      tearDownCommandRuntime();
+async function initializeCommandRuntimeIfNeeded(): Promise<void> {
+  // Dev-only; Rollup can drop the branch and the import in production.
+  if (!__DEV__ || isTestMode) {
+    return;
+  }
 
-      const { startDevCommandRuntime } = await import('@edge/bootstrap');
-      commandRuntimeTeardown = startDevCommandRuntime();
-    }
-  : async () => {
-      // no-op (production)
-    };
+  tearDownCommandRuntime();
+  commandRuntimeTeardown = startDevCommandRuntime();
+}
 
 function tearDownGlobalEventHandlers(): void {
   if (!globalEventTeardown) {
@@ -218,7 +219,6 @@ async function initializeInfrastructure(): Promise<void> {
 // exported initializeBaseServicesStage below
 async function initializeBaseServicesStage(): Promise<void> {
   try {
-    const { initializeCoreBaseServices } = await import('@bootstrap/base-services');
     await initializeCoreBaseServices();
     logger.debug('✅ Base services initialization complete');
   } catch (error) {
@@ -279,7 +279,7 @@ function setupGlobalEventHandlers(): void {
 
 // exported loadGlobalStyles below
 async function loadGlobalStyles(): Promise<void> {
-  await import('./styles/globals');
+  // Styles are imported statically at module load time.
 }
 
 // exported initializeDevToolsIfNeeded below
@@ -287,8 +287,6 @@ async function initializeDevToolsIfNeeded(): Promise<void> {
   if (!isDevEnvironment) {
     return;
   }
-
-  const { initializeDevTools } = await import('@bootstrap/dev-tools');
   await initializeDevTools();
 }
 
@@ -332,7 +330,6 @@ async function cleanup(): Promise<void> {
     await runOptionalCleanup(
       'Global error handler cleanup',
       async () => {
-        const { GlobalErrorHandler } = await import('@shared/error/error-handler');
         GlobalErrorHandler.getInstance().destroy();
       },
       debugCleanupLog

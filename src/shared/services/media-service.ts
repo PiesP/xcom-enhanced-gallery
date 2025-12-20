@@ -8,7 +8,7 @@ import type {
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
 import { PrefetchManager } from '@shared/services/media/prefetch-manager';
-import type { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
+import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
@@ -57,9 +57,6 @@ export class MediaService {
 
   private async onInitialize(): Promise<void> {
     if (__FEATURE_MEDIA_EXTRACTION__) {
-      const { MediaExtractionService } = await import(
-        '@shared/services/media-extraction/media-extraction-service'
-      );
       this.mediaExtraction = new MediaExtractionService();
     }
     await this.detectWebPSupport();

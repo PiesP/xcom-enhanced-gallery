@@ -16,6 +16,10 @@ import { NotificationService } from '@shared/services/notification-service';
 import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import {
+  cleanupGalleryEvents,
+  initializeGalleryEvents,
+} from '@shared/utils/events/lifecycle/gallery-lifecycle';
+import {
   type AmbientVideoPauseRequest,
   pauseAmbientVideosForGallery,
 } from '@shared/utils/media/ambient-video-coordinator';
@@ -64,10 +68,6 @@ export class GalleryApp {
 
   private async setupEventHandlers(): Promise<void> {
     try {
-      const { initializeGalleryEvents } = await import(
-        '@shared/utils/events/lifecycle/gallery-lifecycle'
-      );
-
       const settingsService = tryGetSettingsManager<{ get: (key: string) => boolean }>();
       const enableKeyboard = settingsService?.get('gallery.enableKeyboardNav') ?? true;
 
@@ -196,9 +196,6 @@ export class GalleryApp {
       this.ambientVideoGuardHandle = null;
 
       try {
-        const { cleanupGalleryEvents } = await import(
-          '@shared/utils/events/lifecycle/gallery-lifecycle'
-        );
         cleanupGalleryEvents();
       } catch (error) {
         logger.warn('[GalleryApp] Event cleanup failed:', error);

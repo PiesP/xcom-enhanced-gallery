@@ -1,25 +1,21 @@
 /**
- * @fileoverview Lazy loading utilities for dynamic imports
+ * @fileoverview Lazy loading utilities for async loaders
  *
  * Provides type-safe, cached lazy loading with built-in error handling
- * and retry capabilities. Replaces repetitive `await import(...)` patterns.
+ * and retry capabilities.
+ *
+ * Note: This project forbids runtime dynamic import() in application code.
+ * These helpers are for *any* async loader function (e.g. deferred init,
+ * fetch-once config, expensive computation), not for code-splitting.
  *
  * @example
  * ```typescript
- * // Define lazy loaders once
- * const loaders = {
- *   downloadService: createLazyLoader(
- *     () => import('@shared/services/download/download-orchestrator'),
- *     'DownloadOrchestrator'
- *   ),
- *   themeService: createLazyLoader(
- *     () => import('@shared/container/service-accessors'),
- *     'getThemeService'
- *   ),
- * };
+ * const loadOnce = createLazyLoader(
+ *   async () => ({ value: 123 as const }),
+ *   'value'
+ * );
  *
- * // Use anywhere - cached after first load
- * const DownloadOrchestrator = await loaders.downloadService.load();
+ * const value = await loadOnce.load();
  * ```
  *
  * @module shared/utils/lazy-loader
@@ -199,9 +195,9 @@ function createLazyLoaderStateMachine<T>(
 }
 
 /**
- * Creates a lazy loader for a dynamic import
+ * Creates a lazy loader for a module-like object
  *
- * @param importFn - Function that returns the dynamic import promise
+ * @param importFn - Function that returns a promise of the module-like object
  * @param exportName - Name of the export to extract from the module
  * @param options - Loader configuration
  * @returns LazyLoader instance
@@ -209,7 +205,7 @@ function createLazyLoaderStateMachine<T>(
  * @example
  * ```typescript
  * const loader = createLazyLoader(
- *   () => import('@shared/services/download/download-orchestrator'),
+ *   async () => ({ DownloadOrchestrator }),
  *   'DownloadOrchestrator'
  * );
  *
@@ -249,16 +245,16 @@ export function createLazyLoader<
 }
 
 /**
- * Creates a lazy loader for a module (no specific export extraction)
+ * Creates a lazy loader for a module-like object (no specific export extraction)
  *
- * @param importFn - Function that returns the dynamic import promise
+ * @param importFn - Function that returns a promise of the module-like object
  * @param options - Loader configuration
  * @returns LazyLoader instance for the entire module
  *
  * @example
  * ```typescript
  * const stylesLoader = createModuleLazyLoader(
- *   () => import('./styles/globals')
+ *   async () => ({ initialized: true })
  * );
  *
  * await stylesLoader.load();

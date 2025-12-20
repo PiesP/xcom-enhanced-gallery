@@ -37,6 +37,8 @@
  * - SERVICE_KEYS constants prevent string-based runtime errors
  * - Typed get/tryGet methods validate at compile time
  */
+
+import { registerCoreServices } from '@shared/services/service-initialization';
 import { CoreService } from '@shared/services/service-manager';
 import { resetAllServiceInstances } from '@shared/services/singletons';
 
@@ -78,7 +80,6 @@ export class TestHarness {
    * **Usage**: Call once per test suite or before each test
    */
   async initCoreServices(): Promise<void> {
-    const { registerCoreServices } = await import('@shared/services/service-initialization');
     await registerCoreServices();
   }
 
