@@ -139,7 +139,12 @@
   left: 0;
   right: 0;
   height: auto;
-  z-index: var(--xeg-z-toolbar);
+  /*
+   * Defensive fallback:
+   * If design tokens are temporarily unavailable (FOUC) or overridden,
+   * ensure the toolbar still stays above media items.
+   */
+  z-index: var(--xeg-z-toolbar, 2147483620);
 
   /* State via CSS variables */
   opacity: var(--toolbar-opacity, 0);
@@ -226,6 +231,9 @@
   flex-direction: column;
   overflow: auto;
   position: relative;
+
+  /* Keep scroll surface behind the fixed toolbar within the same stacking context. */
+  z-index: 0;
 
   /* Performance */
   contain: layout style;
@@ -334,7 +342,8 @@
   left: 0;
   right: 0;
   height: var(--xeg-hover-zone-height); /* Tokenized replacement for the old 120px magic number */
-  z-index: var(--xeg-z-toolbar-hover-zone); /* Keep hover detection just below the toolbar */
+  /* Keep hover detection just below the toolbar, even during token/FOUC edge cases. */
+  z-index: var(--xeg-z-toolbar-hover-zone, 2147483618);
   background: transparent;
   pointer-events: auto; /* Dedicated hover sensor */
 }

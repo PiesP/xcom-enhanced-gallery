@@ -105,7 +105,16 @@
 
 .galleryToolbar {
   /* Layout-only declarations; use semantic tokens (aliases removed) */
-  --toolbar-surface-base: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
+  /*
+   * Defensive fallbacks:
+   * - Token variables can be temporarily missing during initial style injection (FOUC)
+   *   or become inherited-only when isolation resets are applied.
+   * - Avoid hardcoded colors; prefer existing semantic vars, then system colors.
+   */
+  --toolbar-surface-base: var(
+    --xeg-toolbar-panel-surface,
+    var(--xeg-toolbar-surface, var(--color-bg-surface, var(--color-bg-primary, Canvas)))
+  );
   --toolbar-surface-border: var(--xeg-toolbar-border);
   --xeg-button-disabled-opacity: 1;
 
@@ -118,7 +127,7 @@
   top: 1.25em; /* 20px → 1.25em */
   left: 50%;
   transform: translateX(-50%);
-  z-index: var(--xeg-z-toolbar);
+  z-index: var(--xeg-z-toolbar, 2147483620);
   display: var(--toolbar-display, inline-flex);
   /* Phase 49: removed flex-direction override (default row) */
   /* Panels use absolute positioning and are taken out of the normal flow */

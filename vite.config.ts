@@ -44,6 +44,16 @@ function buildPathAliases(root: string) {
   });
 }
 
+function normalizeModuleId(id: string): string {
+  return id.replace(/\\/g, '/');
+}
+
+function hasRequiredSideEffects(id: string): boolean {
+  const normalized = normalizeModuleId(id);
+  if (normalized.endsWith('.css')) return true;
+  return normalized.endsWith('/src/styles/globals.ts');
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Vite Configuration
 // ─────────────────────────────────────────────────────────────────────────────
@@ -126,7 +136,7 @@ export default defineConfig(({ mode }): UserConfig => {
         treeshake: isDev
           ? false
           : {
-              moduleSideEffects: false,
+              moduleSideEffects: (id) => hasRequiredSideEffects(id),
               propertyReadSideEffects: false,
               unknownGlobalSideEffects: false,
             },
