@@ -5,7 +5,7 @@
  * can never break the browser bundle if imported by mistake.
  *
  * Note: These helpers do not probe the filesystem. If you need real discovery,
- * use the Node-only implementation in `scripts/utils/find-config.node.ts`.
+ * use the Node-only implementation in `tooling/node/utils/find-config.node.ts`.
  */
 
 const DEFAULT_BASE = '.';

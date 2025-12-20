@@ -5,8 +5,8 @@
  */
 
 export {
-  findConfig,
-  findConfigAny,
   findConfigFilePath,
+  findConfigFilePath as findConfig,
   findFirstConfigFilePath,
-} from './utils/find-config';
+  findFirstConfigFilePath as findConfigAny,
+} from './utils/find-config.node';

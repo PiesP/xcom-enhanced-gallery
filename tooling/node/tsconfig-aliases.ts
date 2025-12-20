@@ -50,6 +50,6 @@ export function resolveViteAliasesFromTsconfig(options: TsconfigAliasOptions): V
   const paths = (configFile.config?.compilerOptions?.paths ?? {}) as TsconfigPaths;
 
   return buildViteAliasesFromTsconfigPaths(paths, {
-    resolveReplacement: (normalizedTarget) => resolve(rootDir, normalizedTarget),
+    resolveReplacement: (normalizedTarget: string) => resolve(rootDir, normalizedTarget),
   });
 }
