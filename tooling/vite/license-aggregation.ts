@@ -15,7 +15,7 @@ export function aggregateLicenses(licensesDir: string): LicenseInfo[] {
     const validExtensions = new Set(['.txt', '.md']);
     // Exclude licenses that are not shipped/used by the current bundle.
     // (Keep them in the repository for historical context if needed.)
-    const excludePattern = /xcom-enhanced-gallery|heroicons/i;
+    const excludePattern = /xcom-enhanced-gallery/i;
 
     return entries
       .filter((entry) => {

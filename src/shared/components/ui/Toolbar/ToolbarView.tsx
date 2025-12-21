@@ -1,6 +1,6 @@
 import { IconButton } from '@shared/components/ui/Button/IconButton';
-import type tyLucideIconNameeIconNameeIconNameeIconNameeIconName } fromiconrnodesnnnodesnInodesndnodesn-nodes';
-import idLucideIconlucide/lucide-iclucide;iclucideicolucideicolucideicons
+import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
+import { LucideIcon } from '@shared/components/ui/Icon/lucide/lucide-icons';
 import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
 import type { FitMode, MaybeAccessor } from '@shared/components/ui/Toolbar/Toolbar.types';
 import type { JSXElement } from '@shared/external/vendors';
