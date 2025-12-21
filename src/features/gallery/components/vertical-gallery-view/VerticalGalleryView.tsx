@@ -239,8 +239,8 @@ function VerticalGalleryViewCore({
     return (
       <div class={cx(styles.container, styles.empty, className)}>
         <div class={styles.emptyMessage}>
-          <h3>{translate('messages.gallery.emptyTitle')}</h3>
-          <p>{translate('messages.gallery.emptyDescription')}</p>
+          <h3>{translate('msg.gal.emptyT')}</h3>
+          <p>{translate('msg.gal.emptyD')}</p>
         </div>
       </div>
     );

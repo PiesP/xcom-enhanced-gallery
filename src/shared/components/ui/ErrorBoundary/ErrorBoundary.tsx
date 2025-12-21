@@ -33,8 +33,8 @@ function translateError(error: unknown): { title: string; body: string } {
   try {
     const languageService = getLanguageService();
     return {
-      title: languageService.translate('messages.errorBoundary.title'),
-      body: languageService.translate('messages.errorBoundary.body', {
+      title: languageService.translate('msg.err.t'),
+      body: languageService.translate('msg.err.b', {
         error: stringifyError(error),
       }),
     };

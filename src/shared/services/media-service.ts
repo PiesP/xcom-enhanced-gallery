@@ -61,9 +61,9 @@ export class MediaService {
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    const existing = MediaService.singleton.peek();
+    const existing = MediaService.singleton.peek?.();
     existing?.destroy();
-    MediaService.singleton.reset();
+    MediaService.singleton.reset?.();
   }
 
   private cleanupOnce(): void {

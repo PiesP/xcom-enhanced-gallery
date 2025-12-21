@@ -94,7 +94,7 @@ export class EventBus {
   public static resetForTests(): void {
     const instance = EventBus.singleton.get();
     instance.removeAll();
-    EventBus.singleton.reset();
+    EventBus.singleton.reset?.();
   }
 
   /** Initialize service */

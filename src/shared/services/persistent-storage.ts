@@ -38,7 +38,7 @@ export class PersistentStorage {
 
   /** @internal Test helper */
   static resetForTests(): void {
-    PersistentStorage.singleton.reset();
+    PersistentStorage.singleton.reset?.();
     PersistentStorage.parseWarnedKeys.clear();
   }
 

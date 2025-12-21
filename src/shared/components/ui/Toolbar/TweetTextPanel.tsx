@@ -13,7 +13,7 @@ export default function TweetTextPanel(props: TweetTextPanelProps): JSXElement {
   return (
     <div class={styles.tweetPanelBody}>
       <div class={styles.tweetTextHeader}>
-        <span class={styles.tweetTextLabel}>{translate('toolbar.tweetText')}</span>
+        <span class={styles.tweetTextLabel}>{translate('tb.twTxt')}</span>
       </div>
       <div
         class={styles.tweetContent}

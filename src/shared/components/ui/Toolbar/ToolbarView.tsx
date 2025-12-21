@@ -1,13 +1,6 @@
 import { IconButton } from '@shared/components/ui/Button/IconButton';
-import {
-  ArrowDownOnSquareStack,
-  ArrowDownTray,
-  ArrowLeftOnRectangle,
-  ArrowSmallLeft,
-  ArrowSmallRight,
-  ChatBubbleLeftRight,
-  Cog6Tooth,
-} from '@shared/components/ui/Icon';
+import { HeroIcon } from '@shared/components/ui/Icon/hero/hero-icons';
+import type { AllIconNames } from '@shared/components/ui/Icon/hero/icon-paths';
 import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
 import type { FitMode, MaybeAccessor } from '@shared/components/ui/Toolbar/Toolbar.types';
 import type { JSXElement } from '@shared/external/vendors';
@@ -33,7 +26,7 @@ type ToolbarViewNavState = {
 
 type FitModeDefinition = {
   readonly mode: FitMode;
-  readonly Icon: (props: { size?: number }) => JSXElement;
+  readonly iconName: AllIconNames;
 };
 
 export interface ToolbarViewProps {
@@ -275,25 +268,25 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           <IconButton
             class={toolbarButtonClass()}
             size="toolbar"
-            aria-label={translate('toolbar.previous')}
-            title={translate('toolbar.previousWithShortcut')}
+            aria-label={translate('tb.prev')}
+            title={translate('tb.prevSc')}
             disabled={nav().prevDisabled}
             onClick={props.onPreviousClick}
             data-gallery-element="nav-previous"
           >
-            <ArrowSmallLeft size={18} />
+            <HeroIcon name="arrowSmallLeft" size={18} />
           </IconButton>
 
           <IconButton
             class={toolbarButtonClass()}
             size="toolbar"
-            aria-label={translate('toolbar.next')}
-            title={translate('toolbar.nextWithShortcut')}
+            aria-label={translate('tb.next')}
+            title={translate('tb.nextSc')}
             disabled={nav().nextDisabled}
             onClick={props.onNextClick}
             data-gallery-element="nav-next"
           >
-            <ArrowSmallRight size={18} />
+            <HeroIcon name="arrowSmallRight" size={18} />
           </IconButton>
 
           <div class={styles.counterBlock} data-gallery-element="counter-section">
@@ -316,7 +309,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             </div>
           </div>
 
-          {props.fitModeOrder.map(({ mode, Icon }) => {
+          {props.fitModeOrder.map(({ mode, iconName }) => {
             const label = fitModeLabels()[mode];
             return (
               <IconButton
@@ -329,7 +322,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 aria-pressed={activeFitMode() === mode}
                 data-gallery-element={`fit-${mode}`}
               >
-                <Icon size={18} />
+                <HeroIcon name={iconName} size={18} />
               </IconButton>
             );
           })}
@@ -339,11 +332,11 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             size="toolbar"
             onClick={props.onDownloadCurrent}
             disabled={nav().downloadDisabled}
-            aria-label={translate('toolbar.download')}
-            title={translate('toolbar.downloadCurrentWithShortcut')}
+            aria-label={translate('tb.dl')}
+            title={translate('tb.dlCurSc')}
             data-gallery-element="download-current"
           >
-            <ArrowDownTray size={18} />
+            <HeroIcon name="download" size={18} />
           </IconButton>
 
           {nav().canDownloadAll && (
@@ -352,11 +345,11 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               size="toolbar"
               onClick={props.onDownloadAll}
               disabled={nav().downloadDisabled}
-              aria-label={translate('toolbar.downloadAllWithCount', { count: totalCount() })}
-              title={translate('toolbar.downloadAllWithCount', { count: totalCount() })}
+              aria-label={translate('tb.dlAllCt', { count: totalCount() })}
+              title={translate('tb.dlAllCt', { count: totalCount() })}
               data-gallery-element="download-all"
             >
-              <ArrowDownOnSquareStack size={18} />
+              <HeroIcon name="arrowDownOnSquareStack" size={18} />
             </IconButton>
           )}
 
@@ -366,16 +359,16 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               id="settings-button"
               class={toolbarButtonClass()}
               size="toolbar"
-              aria-label={translate('toolbar.openSettings')}
+              aria-label={translate('tb.setOpen')}
               aria-expanded={props.settingsController.isSettingsExpanded() ? 'true' : 'false'}
               aria-controls="toolbar-settings-panel"
-              title={translate('toolbar.openSettings')}
+              title={translate('tb.setOpen')}
               disabled={isToolbarDisabled()}
               onMouseDown={props.settingsController.handleSettingsMouseDown}
               onClick={props.settingsController.handleSettingsClick}
               data-gallery-element="settings"
             >
-              <Cog6Tooth size={18} />
+              <HeroIcon name="cog6Tooth" size={18} />
             </IconButton>
           )}
 
@@ -384,28 +377,28 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               id="tweet-text-button"
               class={toolbarButtonClass()}
               size="toolbar"
-              aria-label={translate('toolbar.tweetText')}
+              aria-label={translate('tb.twTxt')}
               aria-expanded={props.isTweetPanelExpanded() ? 'true' : 'false'}
               aria-controls="toolbar-tweet-panel"
-              title={translate('toolbar.tweetText')}
+              title={translate('tb.twTxt')}
               disabled={isToolbarDisabled()}
               onClick={props.toggleTweetPanelExpanded}
               data-gallery-element="tweet-text"
             >
-              <ChatBubbleLeftRight size={18} />
+              <HeroIcon name="chatBubbleLeftRight" size={18} />
             </IconButton>
           )}
 
           <IconButton
             class={toolbarButtonClass(styles.closeButton)}
             size="toolbar"
-            aria-label={translate('toolbar.close')}
-            title={translate('toolbar.closeWithShortcut')}
+            aria-label={translate('tb.cls')}
+            title={translate('tb.clsSc')}
             disabled={isToolbarDisabled()}
             onClick={props.onCloseClick}
             data-gallery-element="close"
           >
-            <ArrowLeftOnRectangle size={18} />
+            <HeroIcon name="arrowLeftOnRectangle" size={18} />
           </IconButton>
         </div>
       </div>
@@ -445,7 +438,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           props.isTweetPanelExpanded() ? styles.panelExpanded : undefined
         )}
         role="region"
-        aria-label={translate('toolbar.tweetTextPanel')}
+        aria-label={translate('tb.twPanel')}
         aria-labelledby="tweet-text-button"
         data-gallery-element="tweet-panel"
       >

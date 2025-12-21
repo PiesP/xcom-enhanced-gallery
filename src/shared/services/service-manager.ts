@@ -39,7 +39,7 @@ export class CoreService {
   public static resetForTests(): void {
     const instance = CoreService.singleton.get();
     instance.reset();
-    CoreService.singleton.reset();
+    CoreService.singleton.reset?.();
   }
 
   public register<T>(

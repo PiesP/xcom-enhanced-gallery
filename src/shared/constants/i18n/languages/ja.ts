@@ -1,90 +1,90 @@
 import type { LanguageStrings } from '@shared/constants/i18n/language-types';
 
 export const ja: LanguageStrings = {
-  toolbar: {
-    previous: '前へ',
-    previousWithShortcut: '前へ (左矢印)',
+  tb: {
+    prev: '前へ',
+    prevSc: '前へ (左矢印)',
     next: '次へ',
-    nextWithShortcut: '次へ (右矢印)',
-    download: 'ダウンロード',
-    downloadCurrentWithShortcut: '現在のファイルをダウンロード',
-    downloadAll: 'ZIPダウンロード',
-    downloadAllWithCount: 'すべての{count}件をZIPでダウンロード',
-    settings: '設定',
-    openSettings: '設定を開く',
-    close: '閉じる',
-    closeWithShortcut: '閉じる (Esc)',
-    tweetText: 'ツイートテキスト',
-    tweetTextPanel: 'ツイートテキストパネル',
-    fitOriginal: '原寸',
-    fitOriginalTitle: '原寸サイズ (1:1)',
-    fitWidth: '幅に合わせる',
-    fitWidthTitle: '幅に合わせる',
-    fitHeight: '高さに合わせる',
-    fitHeightTitle: '高さに合わせる',
-    fitContainer: 'ウィンドウに合わせる',
-    fitContainerTitle: 'ウィンドウに合わせる',
+    nextSc: '次へ (右矢印)',
+    dl: 'ダウンロード',
+    dlCurSc: '現在のファイルをダウンロード',
+    dlAll: 'ZIPダウンロード',
+    dlAllCt: 'すべての{count}件をZIPでダウンロード',
+    set: '設定',
+    setOpen: '設定を開く',
+    cls: '閉じる',
+    clsSc: '閉じる (Esc)',
+    twTxt: 'ツイートテキスト',
+    twPanel: 'ツイートテキストパネル',
+    fitOri: '原寸',
+    fitOriT: '原寸サイズ (1:1)',
+    fitW: '幅に合わせる',
+    fitWT: '幅に合わせる',
+    fitH: '高さに合わせる',
+    fitHT: '高さに合わせる',
+    fitC: 'ウィンドウに合わせる',
+    fitCT: 'ウィンドウに合わせる',
   },
-  settings: {
-    title: '設定',
-    theme: 'テーマ',
-    language: '言語',
-    themeAuto: '自動',
-    themeLight: 'ライト',
-    themeDark: 'ダーク',
-    languageAuto: 'Auto / 자동 / 自動',
-    languageKo: '한국어',
-    languageEn: 'English',
-    languageJa: '日本語',
-    close: '閉じる',
-    gallery: {
-      sectionTitle: 'ギャラリー',
+  st: {
+    ttl: '設定',
+    th: 'テーマ',
+    lang: '言語',
+    thAuto: '自動',
+    thLt: 'ライト',
+    thDk: 'ダーク',
+    langAuto: 'Auto / 자동 / 自動',
+    langKo: '한국어',
+    langEn: 'English',
+    langJa: '日本語',
+    cls: '閉じる',
+    gal: {
+      sec: 'ギャラリー',
     },
   },
-  messages: {
-    errorBoundary: {
-      title: 'エラーが発生しました',
-      body: '予期しないエラーが発生しました: {error}',
+  msg: {
+    err: {
+      t: 'エラーが発生しました',
+      b: '予期しないエラーが発生しました: {error}',
     },
-    keyboardHelp: {
-      title: 'キーボードショートカット',
-      navPrevious: 'ArrowLeft: 前のメディア',
-      navNext: 'ArrowRight: 次のメディア',
-      close: 'Escape: ギャラリーを閉じる',
-      toggleHelp: '?: このヘルプを表示',
+    kb: {
+      t: 'キーボードショートカット',
+      prev: 'ArrowLeft: 前のメディア',
+      next: 'ArrowRight: 次のメディア',
+      cls: 'Escape: ギャラリーを閉じる',
+      toggle: '?: このヘルプを表示',
     },
-    download: {
-      single: {
-        error: {
-          title: 'ダウンロード失敗',
-          body: 'ファイルを取得できません: {error}',
+    dl: {
+      one: {
+        err: {
+          t: 'ダウンロード失敗',
+          b: 'ファイルを取得できません: {error}',
         },
       },
-      allFailed: {
-        title: 'ダウンロード失敗',
-        body: 'すべての項目をダウンロードできませんでした。',
+      allFail: {
+        t: 'ダウンロード失敗',
+        b: 'すべての項目をダウンロードできませんでした。',
       },
-      partial: {
-        title: '一部失敗',
-        body: '{count}個の項目を取得できませんでした。',
+      part: {
+        t: '一部失敗',
+        b: '{count}個の項目を取得できませんでした。',
       },
       retry: {
-        action: '再試行',
-        success: {
-          title: '再試行成功',
-          body: '失敗していた項目をすべて取得しました。',
+        act: '再試行',
+        ok: {
+          t: '再試行成功',
+          b: '失敗していた項目をすべて取得しました。',
         },
       },
-      cancelled: {
-        title: 'ダウンロードがキャンセルされました',
-        body: '要求したダウンロードはキャンセルされました。',
+      cancel: {
+        t: 'ダウンロードがキャンセルされました',
+        b: '要求したダウンロードはキャンセルされました。',
       },
     },
-    gallery: {
-      emptyTitle: 'メディアがありません',
-      emptyDescription: '表示する画像や動画がありません。',
-      mediaItemLabel: 'メディア {index}: {filename}',
-      failedToLoadImage: '{type} の読み込みに失敗しました',
+    gal: {
+      emptyT: 'メディアがありません',
+      emptyD: '表示する画像や動画がありません。',
+      itemLbl: 'メディア {index}: {filename}',
+      loadFail: '{type} の読み込みに失敗しました',
     },
   },
 };

@@ -5,90 +5,90 @@ export type SupportedLanguage = 'auto' | BaseLanguageCode;
  * Translation schema contract shared across all languages.
  */
 export interface LanguageStrings {
-  readonly toolbar: {
-    readonly previous: string;
-    readonly previousWithShortcut: string;
+  readonly tb: {
+    readonly prev: string;
+    readonly prevSc: string;
     readonly next: string;
-    readonly nextWithShortcut: string;
-    readonly download: string;
-    readonly downloadCurrentWithShortcut: string;
-    readonly downloadAll: string;
-    readonly downloadAllWithCount: string;
-    readonly settings: string;
-    readonly openSettings: string;
-    readonly close: string;
-    readonly closeWithShortcut: string;
-    readonly tweetText: string;
-    readonly tweetTextPanel: string;
-    readonly fitOriginal: string;
-    readonly fitOriginalTitle: string;
-    readonly fitWidth: string;
-    readonly fitWidthTitle: string;
-    readonly fitHeight: string;
-    readonly fitHeightTitle: string;
-    readonly fitContainer: string;
-    readonly fitContainerTitle: string;
+    readonly nextSc: string;
+    readonly dl: string;
+    readonly dlCurSc: string;
+    readonly dlAll: string;
+    readonly dlAllCt: string;
+    readonly set: string;
+    readonly setOpen: string;
+    readonly cls: string;
+    readonly clsSc: string;
+    readonly twTxt: string;
+    readonly twPanel: string;
+    readonly fitOri: string;
+    readonly fitOriT: string;
+    readonly fitW: string;
+    readonly fitWT: string;
+    readonly fitH: string;
+    readonly fitHT: string;
+    readonly fitC: string;
+    readonly fitCT: string;
   };
-  readonly settings: {
-    readonly title: string;
-    readonly theme: string;
-    readonly language: string;
-    readonly themeAuto: string;
-    readonly themeLight: string;
-    readonly themeDark: string;
-    readonly languageAuto: string;
-    readonly languageKo: string;
-    readonly languageEn: string;
-    readonly languageJa: string;
-    readonly close: string;
-    readonly gallery: {
-      readonly sectionTitle: string;
+  readonly st: {
+    readonly ttl: string;
+    readonly th: string;
+    readonly lang: string;
+    readonly thAuto: string;
+    readonly thLt: string;
+    readonly thDk: string;
+    readonly langAuto: string;
+    readonly langKo: string;
+    readonly langEn: string;
+    readonly langJa: string;
+    readonly cls: string;
+    readonly gal: {
+      readonly sec: string;
     };
   };
-  readonly messages: {
-    readonly errorBoundary: {
-      readonly title: string;
-      readonly body: string;
+  readonly msg: {
+    readonly err: {
+      readonly t: string;
+      readonly b: string;
     };
-    readonly keyboardHelp: {
-      readonly title: string;
-      readonly navPrevious: string;
-      readonly navNext: string;
-      readonly close: string;
-      readonly toggleHelp: string;
+    readonly kb: {
+      readonly t: string;
+      readonly prev: string;
+      readonly next: string;
+      readonly cls: string;
+      readonly toggle: string;
     };
-    readonly download: {
-      readonly single: {
-        readonly error: {
-          readonly title: string;
-          readonly body: string;
+    readonly dl: {
+      readonly one: {
+        readonly err: {
+          readonly t: string;
+          readonly b: string;
         };
       };
-      readonly allFailed: {
-        readonly title: string;
-        readonly body: string;
+      readonly allFail: {
+        readonly t: string;
+        readonly b: string;
       };
-      readonly partial: {
-        readonly title: string;
-        readonly body: string;
+      readonly part: {
+        readonly t: string;
+        readonly b: string;
       };
       readonly retry: {
-        readonly action: string;
-        readonly success: {
-          readonly title: string;
-          readonly body: string;
+        readonly act: string;
+        readonly ok: {
+          readonly t: string;
+          readonly b: string;
         };
       };
-      readonly cancelled: {
-        readonly title: string;
-        readonly body: string;
+      readonly cancel: {
+        readonly t: string;
+        readonly b: string;
       };
     };
-    readonly gallery: {
-      readonly emptyTitle: string;
-      readonly emptyDescription: string;
-      readonly mediaItemLabel: string;
-      readonly failedToLoadImage: string;
+    readonly gal: {
+      readonly emptyT: string;
+      readonly emptyD: string;
+      readonly itemLbl: string;
+      readonly loadFail: string;
     };
   };
 }

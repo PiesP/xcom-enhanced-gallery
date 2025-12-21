@@ -1,90 +1,90 @@
 import type { LanguageStrings } from '@shared/constants/i18n/language-types';
 
 export const en: LanguageStrings = {
-  toolbar: {
-    previous: 'Previous',
-    previousWithShortcut: 'Previous (Left Arrow)',
+  tb: {
+    prev: 'Previous',
+    prevSc: 'Previous (Left Arrow)',
     next: 'Next',
-    nextWithShortcut: 'Next (Right Arrow)',
-    download: 'Download',
-    downloadCurrentWithShortcut: 'Download Current File',
-    downloadAll: 'Download ZIP',
-    downloadAllWithCount: 'Download all {count} files as ZIP',
-    settings: 'Settings',
-    openSettings: 'Open Settings',
-    close: 'Close',
-    closeWithShortcut: 'Close (Esc)',
-    tweetText: 'Tweet text',
-    tweetTextPanel: 'Tweet text panel',
-    fitOriginal: 'Original',
-    fitOriginalTitle: 'Original Size (1:1)',
-    fitWidth: 'Fit Width',
-    fitWidthTitle: 'Fit to Width',
-    fitHeight: 'Fit Height',
-    fitHeightTitle: 'Fit to Height',
-    fitContainer: 'Fit Window',
-    fitContainerTitle: 'Fit to Window',
+    nextSc: 'Next (Right Arrow)',
+    dl: 'Download',
+    dlCurSc: 'Download Current File',
+    dlAll: 'Download ZIP',
+    dlAllCt: 'Download all {count} files as ZIP',
+    set: 'Settings',
+    setOpen: 'Open Settings',
+    cls: 'Close',
+    clsSc: 'Close (Esc)',
+    twTxt: 'Tweet text',
+    twPanel: 'Tweet text panel',
+    fitOri: 'Original',
+    fitOriT: 'Original Size (1:1)',
+    fitW: 'Fit Width',
+    fitWT: 'Fit to Width',
+    fitH: 'Fit Height',
+    fitHT: 'Fit to Height',
+    fitC: 'Fit Window',
+    fitCT: 'Fit to Window',
   },
-  settings: {
-    title: 'Settings',
-    theme: 'Theme',
-    language: 'Language',
-    themeAuto: 'Auto',
-    themeLight: 'Light',
-    themeDark: 'Dark',
-    languageAuto: 'Auto / 자동 / 自動',
-    languageKo: '한국어',
-    languageEn: 'English',
-    languageJa: '日本語',
-    close: 'Close',
-    gallery: {
-      sectionTitle: 'Gallery',
+  st: {
+    ttl: 'Settings',
+    th: 'Theme',
+    lang: 'Language',
+    thAuto: 'Auto',
+    thLt: 'Light',
+    thDk: 'Dark',
+    langAuto: 'Auto / 자동 / 自動',
+    langKo: '한국어',
+    langEn: 'English',
+    langJa: '日本語',
+    cls: 'Close',
+    gal: {
+      sec: 'Gallery',
     },
   },
-  messages: {
-    errorBoundary: {
-      title: 'An error occurred',
-      body: 'An unexpected error occurred: {error}',
+  msg: {
+    err: {
+      t: 'An error occurred',
+      b: 'An unexpected error occurred: {error}',
     },
-    keyboardHelp: {
-      title: 'Keyboard shortcuts',
-      navPrevious: 'ArrowLeft: Previous media',
-      navNext: 'ArrowRight: Next media',
-      close: 'Escape: Close gallery',
-      toggleHelp: '?: Show this help',
+    kb: {
+      t: 'Keyboard shortcuts',
+      prev: 'ArrowLeft: Previous media',
+      next: 'ArrowRight: Next media',
+      cls: 'Escape: Close gallery',
+      toggle: '?: Show this help',
     },
-    download: {
-      single: {
-        error: {
-          title: 'Download Failed',
-          body: 'Could not download the file: {error}',
+    dl: {
+      one: {
+        err: {
+          t: 'Download Failed',
+          b: 'Could not download the file: {error}',
         },
       },
-      allFailed: {
-        title: 'Download Failed',
-        body: 'Failed to download all items.',
+      allFail: {
+        t: 'Download Failed',
+        b: 'Failed to download all items.',
       },
-      partial: {
-        title: 'Partial Failure',
-        body: 'Failed to download {count} items.',
+      part: {
+        t: 'Partial Failure',
+        b: 'Failed to download {count} items.',
       },
       retry: {
-        action: 'Retry',
-        success: {
-          title: 'Retry Successful',
-          body: 'Successfully downloaded all previously failed items.',
+        act: 'Retry',
+        ok: {
+          t: 'Retry Successful',
+          b: 'Successfully downloaded all previously failed items.',
         },
       },
-      cancelled: {
-        title: 'Download Cancelled',
-        body: 'The requested download was cancelled.',
+      cancel: {
+        t: 'Download Cancelled',
+        b: 'The requested download was cancelled.',
       },
     },
-    gallery: {
-      emptyTitle: 'No media available',
-      emptyDescription: 'There are no images or videos to display.',
-      mediaItemLabel: 'Media {index}: {filename}',
-      failedToLoadImage: 'Failed to load {type}',
+    gal: {
+      emptyT: 'No media available',
+      emptyD: 'There are no images or videos to display.',
+      itemLbl: 'Media {index}: {filename}',
+      loadFail: 'Failed to load {type}',
     },
   },
 };

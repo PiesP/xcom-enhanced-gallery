@@ -44,9 +44,9 @@ export class ThemeService implements ThemeServiceContract {
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    const existing = ThemeService.singleton.peek();
+    const existing = ThemeService.singleton.peek?.();
     existing?.destroy();
-    ThemeService.singleton.reset();
+    ThemeService.singleton.reset?.();
   }
 
   /** Track whether the early restore encountered an error. */

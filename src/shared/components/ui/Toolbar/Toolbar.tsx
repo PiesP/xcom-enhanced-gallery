@@ -1,9 +1,4 @@
-import {
-  ArrowsPointingIn,
-  ArrowsPointingOut,
-  ArrowsRightLeft,
-  ArrowsUpDown,
-} from '@shared/components/ui/Icon';
+import type { AllIconNames } from '@shared/components/ui/Icon/hero/icon-paths';
 import type {
   FitMode,
   FitModeHandlers,
@@ -31,12 +26,12 @@ const DEFAULT_PROPS = {
   className: '',
 } as const;
 
-const FIT_MODE_ORDER = [
-  { mode: 'original' as const, Icon: ArrowsPointingOut },
-  { mode: 'fitWidth' as const, Icon: ArrowsRightLeft },
-  { mode: 'fitHeight' as const, Icon: ArrowsUpDown },
-  { mode: 'fitContainer' as const, Icon: ArrowsPointingIn },
-] as const;
+const FIT_MODE_ORDER: ReadonlyArray<{ mode: FitMode; iconName: AllIconNames }> = [
+  { mode: 'original', iconName: 'arrowsPointingOut' },
+  { mode: 'fitWidth', iconName: 'arrowsRightLeft' },
+  { mode: 'fitHeight', iconName: 'arrowsUpDown' },
+  { mode: 'fitContainer', iconName: 'arrowsPointingIn' },
+];
 
 /**
  * Internal fit mode handler mapping type for the toolbar view
@@ -212,20 +207,20 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
 
   const fitModeLabels = createMemo<Record<FitMode, { label: string; title: string }>>(() => ({
     original: {
-      label: translate('toolbar.fitOriginal'),
-      title: translate('toolbar.fitOriginalTitle'),
+      label: translate('tb.fitOri'),
+      title: translate('tb.fitOriT'),
     },
     fitWidth: {
-      label: translate('toolbar.fitWidth'),
-      title: translate('toolbar.fitWidthTitle'),
+      label: translate('tb.fitW'),
+      title: translate('tb.fitWT'),
     },
     fitHeight: {
-      label: translate('toolbar.fitHeight'),
-      title: translate('toolbar.fitHeightTitle'),
+      label: translate('tb.fitH'),
+      title: translate('tb.fitHT'),
     },
     fitContainer: {
-      label: translate('toolbar.fitContainer'),
-      title: translate('toolbar.fitContainerTitle'),
+      label: translate('tb.fitC'),
+      title: translate('tb.fitCT'),
     },
   }));
 

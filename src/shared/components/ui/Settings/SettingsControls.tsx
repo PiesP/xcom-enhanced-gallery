@@ -36,20 +36,20 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
     revision();
     return {
       theme: {
-        title: languageService.translate('settings.theme'),
+        title: languageService.translate('st.th'),
         labels: {
-          auto: languageService.translate('settings.themeAuto'),
-          light: languageService.translate('settings.themeLight'),
-          dark: languageService.translate('settings.themeDark'),
+          auto: languageService.translate('st.thAuto'),
+          light: languageService.translate('st.thLt'),
+          dark: languageService.translate('st.thDk'),
         } as Record<ThemeOption, string>,
       },
       language: {
-        title: languageService.translate('settings.language'),
+        title: languageService.translate('st.lang'),
         labels: {
-          auto: languageService.translate('settings.languageAuto'),
-          ko: languageService.translate('settings.languageKo'),
-          en: languageService.translate('settings.languageEn'),
-          ja: languageService.translate('settings.languageJa'),
+          auto: languageService.translate('st.langAuto'),
+          ko: languageService.translate('st.langKo'),
+          en: languageService.translate('st.langEn'),
+          ja: languageService.translate('st.langJa'),
         } as Record<LanguageOption, string>,
       },
     };

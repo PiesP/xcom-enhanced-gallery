@@ -30,7 +30,7 @@ export class NotificationService {
 
   /** @internal Test helper */
   static resetForTests(): void {
-    NotificationService.singleton.reset();
+    NotificationService.singleton.reset?.();
   }
 
   async show(options: NotificationOptions): Promise<void> {

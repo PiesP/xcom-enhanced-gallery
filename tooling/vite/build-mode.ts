@@ -16,7 +16,7 @@ const BUILD_MODE_CONFIGS: Record<'development' | 'production', BuildModeConfig> 
     cssVariableShortening: true,
     cssPruneUnusedCustomProperties: true,
     cssValueMinify: true,
-    cssClassNamePattern: 'xeg_[hash:base64:6]',
+    cssClassNamePattern: 'xeg_[hash:base64:5]',
     sourceMap: false as const,
   },
 };

@@ -47,7 +47,7 @@ export class SettingsService implements SettingsServiceContract {
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    SettingsService.singleton.reset();
+    SettingsService.singleton.reset?.();
   }
 
   private settings: AppSettings = createDefaultSettings();

@@ -74,7 +74,7 @@ export class DownloadOrchestrator {
    * @internal
    */
   public static resetForTests(): void {
-    DownloadOrchestrator.singleton.reset();
+    DownloadOrchestrator.singleton.reset?.();
   }
 
   /** Initialize service (idempotent, fail-fast on error) */

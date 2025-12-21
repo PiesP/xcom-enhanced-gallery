@@ -410,7 +410,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   );
 
   const defaultAriaLabel = createMemo(() =>
-    translate('messages.gallery.mediaItemLabel', {
+    translate('msg.gal.itemLbl', {
       index: local.index + 1,
       filename: cleanFilename(local.media.filename),
     })
@@ -483,7 +483,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             <div class={styles.error}>
               <span class={styles.errorIcon}>⚠️</span>
               <span class={styles.errorText}>
-                {translate('messages.gallery.failedToLoadImage', {
+                {translate('msg.gal.loadFail', {
                   type: isVideo() ? 'video' : 'image',
                 })}
               </span>

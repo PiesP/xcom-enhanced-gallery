@@ -264,7 +264,7 @@ export class HttpRequestService {
 
   /** @internal Test helper */
   static resetForTests(): void {
-    HttpRequestService.singleton.reset();
+    HttpRequestService.singleton.reset?.();
   }
 
   /**
