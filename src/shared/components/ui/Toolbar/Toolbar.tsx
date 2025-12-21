@@ -1,4 +1,5 @@
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
+import { UI_ICONS } from '@shared/components/ui/Icon/lucide/ui-icons';
 import type {
   FitMode,
   FitModeHandlers,
@@ -27,10 +28,10 @@ const DEFAULT_PROPS = {
 } as const;
 
 const FIT_MODE_ORDER: ReadonlyArray<{ mode: FitMode; iconName: LucideIconName }> = [
-  { mode: 'original', iconName: 'maximize-2' },
-  { mode: 'fitWidth', iconName: 'move-horizontal' },
-  { mode: 'fitHeight', iconName: 'move-vertical' },
-  { mode: 'fitContainer', iconName: 'minimize-2' },
+  { mode: 'original', iconName: UI_ICONS.fitOriginal },
+  { mode: 'fitWidth', iconName: UI_ICONS.fitWidth },
+  { mode: 'fitHeight', iconName: UI_ICONS.fitHeight },
+  { mode: 'fitContainer', iconName: UI_ICONS.fitContainer },
 ];
 
 /**
