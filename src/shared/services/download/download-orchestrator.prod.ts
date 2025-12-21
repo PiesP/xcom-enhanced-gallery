@@ -1,0 +1,249 @@
+/**
+ * @fileoverview Download Orchestrator - Unified Download Service
+ * @description Orchestrates single and bulk downloads using GM_download when available.
+ *
+ * **Architecture**:
+ * - Single downloads: Delegates to downloadSingleFile (handles strategy internally)
+ * - Bulk downloads: Creates ZIP via downloadAsZip, saves via detected method
+ *
+ * **Download Strategies**:
+ * - GM_download: Tampermonkey native (preferred, better UX)
+ *
+ * @version 3.0.0 - Composition-based lifecycle
+ */
+
+import { planBulkDownload, planZipSave } from '@shared/core/download/download-plan';
+import { getErrorMessage } from '@shared/error/normalize';
+import { logger } from '@shared/logging';
+import {
+  type DownloadCapability,
+  detectDownloadCapability,
+  type GMDownloadFunction,
+} from '@shared/services/download/fallback-download';
+import { downloadSingleFile } from '@shared/services/download/single-download';
+import type {
+  BulkDownloadResult,
+  DownloadOptions,
+  OrchestratorItem,
+  SingleDownloadResult,
+} from '@shared/services/download/types';
+import { downloadAsZip } from '@shared/services/download/zip-download';
+import type { Lifecycle } from '@shared/services/lifecycle';
+import { createLifecycle } from '@shared/services/lifecycle';
+import type { MediaInfo } from '@shared/types/media.types';
+import { ErrorCode } from '@shared/types/result.types';
+import { createSingleton } from '@shared/utils/types/singleton';
+
+/**
+ * DownloadOrchestrator - Central download service
+ *
+ * Singleton service that handles all media downloads.
+ * Automatically selects the best download method based on environment.
+ *
+ * @example
+ * ```typescript
+ * const orchestrator = DownloadOrchestrator.getInstance();
+ *
+ * // Single download
+ * await orchestrator.downloadSingle(mediaInfo);
+ *
+ * // Bulk download as ZIP
+ * await orchestrator.downloadBulk(mediaItems, { zipFilename: 'gallery.zip' });
+ * ```
+ */
+export class DownloadOrchestrator {
+  private readonly lifecycle: Lifecycle;
+  private static readonly singleton = createSingleton(() => new DownloadOrchestrator());
+
+  /** Cached download capability detection (lazy initialized) */
+  private capability: DownloadCapability | null = null;
+
+  private constructor() {
+    this.lifecycle = createLifecycle('DownloadOrchestrator', {
+      onInitialize: () => this.onInitialize(),
+      onDestroy: () => this.onDestroy(),
+    });
+  }
+
+  public static getInstance(): DownloadOrchestrator {
+    return DownloadOrchestrator.singleton.get();
+  }
+
+  /** Initialize service (idempotent, fail-fast on error) */
+  public async initialize(): Promise<void> {
+    return this.lifecycle.initialize();
+  }
+
+  /** Destroy service (idempotent, graceful on error) */
+  public destroy(): void {
+    this.lifecycle.destroy();
+  }
+
+  /** Check if service is initialized */
+  public isInitialized(): boolean {
+    return this.lifecycle.isInitialized();
+  }
+
+  private async onInitialize(): Promise<void> {
+    // Capability is lazily detected on first use
+    logger.debug('[DownloadOrchestrator] Initialized');
+  }
+
+  private onDestroy(): void {
+    this.capability = null;
+  }
+
+  /**
+   * Get download capability (cached)
+   */
+  private getCapability(): DownloadCapability {
+    if (!this.capability) {
+      this.capability = detectDownloadCapability();
+    }
+    return this.capability;
+  }
+
+  /**
+   * Download a single media file
+   *
+   * @param media - Media info containing URL and metadata
+   * @param options - Download options (signal, progress callback)
+   * @returns Download result with success status
+   */
+  public async downloadSingle(
+    media: MediaInfo,
+    options: DownloadOptions = {}
+  ): Promise<SingleDownloadResult> {
+    const capability = this.getCapability();
+    return downloadSingleFile(media, options, capability);
+  }
+
+  /**
+   * Download multiple media files as a ZIP archive
+   *
+   * @param mediaItems - Array of media items to download
+   * @param options - Download options including optional zipFilename
+   * @returns Bulk download result with per-file status
+   */
+  public async downloadBulk(
+    mediaItems: MediaInfo[],
+    options: DownloadOptions = {}
+  ): Promise<BulkDownloadResult> {
+    const plan = planBulkDownload({
+      mediaItems,
+      prefetchedBlobs: options.prefetchedBlobs,
+      zipFilename: options.zipFilename,
+      nowMs: Date.now(),
+    });
+
+    const items: OrchestratorItem[] = plan.items;
+
+    try {
+      const result = await downloadAsZip(items, options);
+
+      if (result.filesSuccessful === 0) {
+        return {
+          success: false,
+          status: 'error',
+          filesProcessed: items.length,
+          filesSuccessful: 0,
+          error: 'No files downloaded',
+          failures: result.failures,
+          code: ErrorCode.ALL_FAILED,
+        };
+      }
+
+      // Uint8Array is a valid BlobPart; explicit cast required for TypeScript strict mode
+      const zipBlob = new Blob([result.zipData as BlobPart], {
+        type: 'application/zip',
+      });
+      const filename = plan.zipFilename;
+
+      const capability = this.getCapability();
+
+      // Save ZIP using appropriate download method
+      const saveResult = await this.saveZipBlob(zipBlob, filename, options, capability);
+
+      if (!saveResult.success) {
+        return {
+          success: false,
+          status: 'error',
+          filesProcessed: items.length,
+          filesSuccessful: result.filesSuccessful,
+          error: saveResult.error || 'Failed to save ZIP file',
+          failures: result.failures,
+          code: ErrorCode.ALL_FAILED,
+        };
+      }
+
+      return {
+        success: true,
+        status: result.filesSuccessful === items.length ? 'success' : 'partial',
+        filesProcessed: items.length,
+        filesSuccessful: result.filesSuccessful,
+        filename,
+        failures: result.failures,
+        code: ErrorCode.NONE,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        status: 'error',
+        filesProcessed: items.length,
+        filesSuccessful: 0,
+        error: getErrorMessage(error) || 'Unknown error',
+        code: ErrorCode.ALL_FAILED,
+      };
+    }
+  }
+
+  /**
+   * Save ZIP blob using the detected download method
+   * @internal
+   */
+  private async saveZipBlob(
+    zipBlob: Blob,
+    filename: string,
+    _options: DownloadOptions,
+    capability: DownloadCapability
+  ): Promise<{ success: boolean; error?: string }> {
+    const saveStrategy = planZipSave(capability.method);
+
+    if (saveStrategy === 'gm_download' && capability.gmDownload) {
+      return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename);
+    }
+
+    return { success: false, error: 'No download method' };
+  }
+
+  /**
+   * Save blob using GM_download
+   * @internal
+   */
+  private async saveWithGMDownload(
+    gmDownload: GMDownloadFunction,
+    blob: Blob,
+    filename: string
+  ): Promise<{ success: boolean; error?: string }> {
+    const url = URL.createObjectURL(blob);
+    try {
+      await new Promise<void>((resolve, reject) => {
+        gmDownload({
+          url,
+          name: filename,
+          onload: () => resolve(),
+          onerror: (err: unknown) => reject(err),
+          ontimeout: () => reject(new Error('Timeout')),
+        });
+      });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: getErrorMessage(error) || 'GM_download failed',
+      };
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+}

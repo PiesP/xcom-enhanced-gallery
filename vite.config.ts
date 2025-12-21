@@ -95,12 +95,74 @@ export default defineConfig(({ mode }): UserConfig => {
                 replacement: resolve(root, 'src/shared/error/app-error-reporter.slim.ts'),
               },
               {
+                find: '@shared/error/error-handler',
+                replacement: resolve(root, 'src/shared/error/error-handler.prod.ts'),
+              },
+              {
+                find: '@shared/events/event-bus',
+                replacement: resolve(root, 'src/shared/events/event-bus.prod.ts'),
+              },
+              {
                 find: '@bootstrap/utils',
                 replacement: resolve(root, 'src/bootstrap/utils.prod.ts'),
               },
               {
+                find: '@features/settings/services/settings-service',
+                replacement: resolve(
+                  root,
+                  'src/features/settings/services/settings-service.prod.ts'
+                ),
+              },
+              {
                 find: '@shared/external/userscript/adapter',
                 replacement: resolve(root, 'src/shared/external/userscript/adapter.prod.ts'),
+              },
+              {
+                find: '@shared/services/download/download-orchestrator',
+                replacement: resolve(
+                  root,
+                  'src/shared/services/download/download-orchestrator.prod.ts'
+                ),
+              },
+              {
+                find: '@shared/services/event-manager',
+                replacement: resolve(root, 'src/shared/services/event-manager.prod.ts'),
+              },
+              {
+                find: '@shared/services/http-request-service',
+                replacement: resolve(root, 'src/shared/services/http-request-service.prod.ts'),
+              },
+              {
+                find: '@shared/services/language-service',
+                replacement: resolve(root, 'src/shared/services/language-service.prod.ts'),
+              },
+              {
+                find: '@shared/services/media-service',
+                replacement: resolve(root, 'src/shared/services/media-service.prod.ts'),
+              },
+              {
+                find: '@shared/services/notification-service',
+                replacement: resolve(root, 'src/shared/services/notification-service.prod.ts'),
+              },
+              {
+                find: '@shared/services/persistent-storage',
+                replacement: resolve(root, 'src/shared/services/persistent-storage.prod.ts'),
+              },
+              {
+                find: '@shared/services/service-manager',
+                replacement: resolve(root, 'src/shared/services/service-manager.prod.ts'),
+              },
+              {
+                find: '@shared/services/singletons',
+                replacement: resolve(root, 'src/shared/services/singletons/index.prod.ts'),
+              },
+              {
+                find: '@shared/services/theme-service',
+                replacement: resolve(root, 'src/shared/services/theme-service.prod.ts'),
+              },
+              {
+                find: '@shared/utils/events/core/listener-manager',
+                replacement: resolve(root, 'src/shared/utils/events/core/listener-manager.prod.ts'),
               },
               {
                 find: '@edge/bootstrap',

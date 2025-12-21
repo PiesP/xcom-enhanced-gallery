@@ -55,8 +55,8 @@ export function ErrorBoundary(props: Props): JSXElement {
     if (lastReportedError === error) return;
     lastReportedError = error;
 
+    const copy = translateError(error);
     try {
-      const copy = translateError(error);
       NotificationService.getInstance().error(copy.title, copy.body);
     } catch {
       // Notification failures must never propagate
@@ -72,16 +72,7 @@ export function ErrorBoundary(props: Props): JSXElement {
   };
 
   const renderFallback = (error: unknown): JSXElement => {
-    let title = 'Unexpected error';
-    let body = stringifyError(error);
-
-    try {
-      const copy = translateError(error);
-      title = copy.title;
-      body = copy.body;
-    } catch {
-      // Even translation failures should not break rendering
-    }
+    const { title, body } = translateError(error);
 
     return (
       <div role="alert" data-xeg-error-boundary="" aria-live="polite">

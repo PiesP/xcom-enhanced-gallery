@@ -68,30 +68,6 @@ function resolveFeatureStates(settings?: SettingsWithFeatures | null): Record<Fe
   );
 }
 
-const getDevOverride = (): boolean | undefined => {
-  const scopedGlobal = globalThis as { __XEG_DEV__?: boolean } | undefined;
-  if (scopedGlobal && typeof scopedGlobal.__XEG_DEV__ === 'boolean') {
-    return scopedGlobal.__XEG_DEV__;
-  }
-  return undefined;
-};
-
-const isDevelopmentBuild = (): boolean => {
-  const override = getDevOverride();
-  if (typeof override === 'boolean') {
-    return override;
-  }
-  return __DEV__;
-};
-
-const debug = (message: string) => {
-  if (!isDevelopmentBuild()) {
-    return;
-  }
-
-  logger.debug(message);
-};
-
 const DEFAULT_FEATURE_SETTINGS: Readonly<SettingsWithFeatures> = Object.freeze({
   features: { ...DEFAULT_SETTINGS.features },
 });
@@ -113,7 +89,9 @@ async function loadFeatureSettings(): Promise<SettingsWithFeatures> {
       const candidate = (stored as Partial<SettingsWithFeatures>).features;
 
       if (candidate && typeof candidate === 'object') {
-        debug('[features] Settings loaded successfully');
+        if (__DEV__) {
+          logger.debug('[features] Settings loaded successfully');
+        }
         return {
           features: {
             ...DEFAULT_FEATURE_SETTINGS.features,
@@ -141,7 +119,9 @@ async function loadFeatureSettings(): Promise<SettingsWithFeatures> {
  */
 export async function registerFeatureServicesLazy(): Promise<void> {
   try {
-    debug('[features] Loading feature settings');
+    if (__DEV__) {
+      logger.debug('[features] Loading feature settings');
+    }
 
     // Load and resolve feature states for future use
     const settings = await loadFeatureSettings();
@@ -153,7 +133,9 @@ export async function registerFeatureServicesLazy(): Promise<void> {
       logger.debug('[features] Feature states resolved:', featureStates);
     }
 
-    debug('[features] ✅ Feature settings loaded');
+    if (__DEV__) {
+      logger.debug('[features] ✅ Feature settings loaded');
+    }
   } catch (error) {
     // Phase 343: Standardized error handling (Non-Critical - warn only)
     reportBootstrapError(error, { context: 'features', logger });
