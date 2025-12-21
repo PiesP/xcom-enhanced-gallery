@@ -14,32 +14,17 @@ const ANIMATION_CLASSES = {
   FADE_OUT: 'xeg-fade-out',
 } as const;
 
-/**
- * CSS animation options interface
- */
-export interface CSSAnimationOptions {
-  duration?: number;
-  easing?: string;
-  delay?: number;
-  onComplete?: () => void;
-}
-
 const safeLogAnimationFailure = (message: string, error: unknown): void => {
   if (__DEV__) {
     logger.warn(message, error);
   }
 };
 
-function runCssAnimation(
-  element: Element,
-  className: string,
-  options: CSSAnimationOptions
-): Promise<void> {
+function runCssAnimation(element: Element, className: string): Promise<void> {
   return new Promise<void>((resolve) => {
     try {
       const handleAnimationEnd = () => {
         element.classList.remove(className);
-        options.onComplete?.();
         resolve();
       };
 
@@ -55,19 +40,13 @@ function runCssAnimation(
 /**
  * Gallery container entry animation (CSS-based)
  */
-export async function animateGalleryEnter(
-  element: Element,
-  options: CSSAnimationOptions = {}
-): Promise<void> {
-  return runCssAnimation(element, ANIMATION_CLASSES.FADE_IN, options);
+export async function animateGalleryEnter(element: Element): Promise<void> {
+  return runCssAnimation(element, ANIMATION_CLASSES.FADE_IN);
 }
 
 /**
  * Gallery container exit animation (CSS-based)
  */
-export async function animateGalleryExit(
-  element: Element,
-  options: CSSAnimationOptions = {}
-): Promise<void> {
-  return runCssAnimation(element, ANIMATION_CLASSES.FADE_OUT, options);
+export async function animateGalleryExit(element: Element): Promise<void> {
+  return runCssAnimation(element, ANIMATION_CLASSES.FADE_OUT);
 }

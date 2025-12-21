@@ -61,6 +61,7 @@ function hasRequiredSideEffects(id: string): boolean {
 
 export default defineConfig(({ mode }): UserConfig => {
   const isDev = mode === 'development';
+  const isProd = mode === 'production';
   const config = getBuildModeConfig(mode);
   const version = resolveVersion(isDev);
   const buildTime = new Date().toISOString();
@@ -71,6 +72,7 @@ export default defineConfig(({ mode }): UserConfig => {
       : !(featureMediaExtractionRaw === '0' || featureMediaExtractionRaw.toLowerCase() === 'false');
   const outputFileName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
   const root = REPO_ROOT;
+  const entryFile = isProd ? resolve(root, './src/main.prod.ts') : resolve(root, './src/main.ts');
   const mediaExtractionAliases = featureMediaExtraction
     ? []
     : [
@@ -102,11 +104,15 @@ export default defineConfig(({ mode }): UserConfig => {
         // Bundle-size optimization: In production we swap the full AppErrorReporter
         // implementation for a much slimmer one. This avoids shipping large
         // docstrings and verbose payload keys in a non-minified build.
-        ...(!isDev
+        ...(isProd
           ? [
               {
                 find: '@shared/error/app-error-reporter',
                 replacement: resolve(root, 'src/shared/error/app-error-reporter.slim.ts'),
+              },
+              {
+                find: '@shared/constants/i18n/translation-values',
+                replacement: resolve(root, 'src/shared/constants/i18n/translation-values.prod.ts'),
               },
               {
                 find: '@shared/error/error-handler',
@@ -115,6 +121,14 @@ export default defineConfig(({ mode }): UserConfig => {
               {
                 find: '@shared/events/event-bus',
                 replacement: resolve(root, 'src/shared/events/event-bus.prod.ts'),
+              },
+              {
+                find: '@bootstrap/dev-namespace',
+                replacement: resolve(root, 'src/bootstrap/dev-namespace.prod.ts'),
+              },
+              {
+                find: '@bootstrap/dev-tools',
+                replacement: resolve(root, 'src/bootstrap/dev-tools.prod.ts'),
               },
               {
                 find: '@bootstrap/utils',
@@ -202,7 +216,7 @@ export default defineConfig(({ mode }): UserConfig => {
       cssMinify: false,
 
       lib: {
-        entry: resolve(root, './src/main.ts'),
+        entry: entryFile,
         name: 'XcomEnhancedGallery',
         formats: ['iife'],
         fileName: () => outputFileName.replace('.user.js', ''),
