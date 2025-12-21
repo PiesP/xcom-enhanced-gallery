@@ -291,13 +291,6 @@ function extractDimensionsFromMetadataObject(
   return null;
 }
 
-function extractDimensionsFromUrlCandidate(candidate: unknown): DimensionPair | null {
-  if (typeof candidate !== 'string' || !candidate) {
-    return null;
-  }
-  return extractDimensionsFromUrl(candidate);
-}
-
 function deriveDimensionsFromMetadata(metadata: MetadataRecord): DimensionPair | null {
   if (!metadata) {
     return null;
@@ -321,14 +314,20 @@ function deriveDimensionsFromMetadata(metadata: MetadataRecord): DimensionPair |
     return { width: originalWidth, height: originalHeight };
   }
 
-  const fromDownloadUrl = extractDimensionsFromUrlCandidate(apiData.download_url);
-  if (fromDownloadUrl) {
-    return fromDownloadUrl;
+  const downloadUrl = apiData.download_url;
+  if (typeof downloadUrl === 'string' && downloadUrl) {
+    const fromDownloadUrl = extractDimensionsFromUrl(downloadUrl);
+    if (fromDownloadUrl) {
+      return fromDownloadUrl;
+    }
   }
 
-  const fromPreviewUrl = extractDimensionsFromUrlCandidate(apiData.preview_url);
-  if (fromPreviewUrl) {
-    return fromPreviewUrl;
+  const previewUrl = apiData.preview_url;
+  if (typeof previewUrl === 'string' && previewUrl) {
+    const fromPreviewUrl = extractDimensionsFromUrl(previewUrl);
+    if (fromPreviewUrl) {
+      return fromPreviewUrl;
+    }
   }
 
   const aspectRatio = apiData.aspect_ratio;
@@ -346,9 +345,11 @@ function deriveDimensionsFromMetadata(metadata: MetadataRecord): DimensionPair |
 function deriveDimensionsFromMediaUrls(media: MediaInfo): DimensionPair | null {
   const candidates: Array<string | undefined> = [media.url, media.originalUrl, media.thumbnailUrl];
   for (const candidate of candidates) {
-    const dimensions = extractDimensionsFromUrlCandidate(candidate);
-    if (dimensions) {
-      return dimensions;
+    if (typeof candidate === 'string' && candidate) {
+      const dimensions = extractDimensionsFromUrl(candidate);
+      if (dimensions) {
+        return dimensions;
+      }
     }
   }
   return null;
