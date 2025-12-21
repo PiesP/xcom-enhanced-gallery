@@ -49,6 +49,7 @@ export const USERSCRIPT_CONFIG = {
 
 export const LICENSE_NAME_MAP: Record<string, string> = {
   'solid-js': 'Solid.js',
-  heroicons: 'Heroicons',
+  lucide: 'Lucide',
+  'lucide-ISC': 'Lucide',
   'xcom-enhanced-gallery': 'X.com Enhanced Gallery',
 };

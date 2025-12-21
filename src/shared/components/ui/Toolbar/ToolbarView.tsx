@@ -1,6 +1,6 @@
 import { IconButton } from '@shared/components/ui/Button/IconButton';
-import { HeroIcon } from '@shared/components/ui/Icon/hero/hero-icons';
-import type { AllIconNames } from '@shared/components/ui/Icon/hero/icon-paths';
+import type tyLucideIconNameeIconNameeIconNameeIconNameeIconName } fromiconrnodesnnnodesnInodesndnodesn-nodes';
+import idLucideIconlucide/lucide-iclucide;iclucideicolucideicolucideicons
 import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
 import type { FitMode, MaybeAccessor } from '@shared/components/ui/Toolbar/Toolbar.types';
 import type { JSXElement } from '@shared/external/vendors';
@@ -26,7 +26,7 @@ type ToolbarViewNavState = {
 
 type FitModeDefinition = {
   readonly mode: FitMode;
-  readonly iconName: AllIconNames;
+  readonly iconName: LucideIconName;
 };
 
 export interface ToolbarViewProps {
@@ -272,7 +272,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             disabled={nav().prevDisabled}
             onClick={props.onPreviousClick}
           >
-            <HeroIcon name="arrowSmallLeft" size={18} />
+            <LucideIcon name="chevron-left" size={18} />
           </IconButton>
 
           <IconButton
@@ -283,7 +283,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             disabled={nav().nextDisabled}
             onClick={props.onNextClick}
           >
-            <HeroIcon name="arrowSmallRight" size={18} />
+            <LucideIcon name="chevron-right" size={18} />
           </IconButton>
 
           <div class={styles.counterBlock}>
@@ -317,7 +317,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 title={label.title}
                 aria-pressed={activeFitMode() === mode}
               >
-                <HeroIcon name={iconName} size={18} />
+                <LucideIcon name={iconName} size={18} />
               </IconButton>
             );
           })}
@@ -330,7 +330,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             aria-label={translate('tb.dl')}
             title={translate('tb.dl')}
           >
-            <HeroIcon name="download" size={18} />
+            <LucideIcon name="download" size={18} />
           </IconButton>
 
           {nav().canDownloadAll && (
@@ -342,7 +342,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               aria-label={translate('tb.dlAllCt', { count: totalCount() })}
               title={translate('tb.dlAllCt', { count: totalCount() })}
             >
-              <HeroIcon name="arrowDownOnSquareStack" size={18} />
+              <LucideIcon name="folder-down" size={18} />
             </IconButton>
           )}
 
@@ -360,7 +360,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               onMouseDown={props.settingsController.handleSettingsMouseDown}
               onClick={props.settingsController.handleSettingsClick}
             >
-              <HeroIcon name="cog6Tooth" size={18} />
+              <LucideIcon name="settings-2" size={18} />
             </IconButton>
           )}
 
@@ -376,7 +376,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               disabled={isToolbarDisabled()}
               onClick={props.toggleTweetPanelExpanded}
             >
-              <HeroIcon name="chatBubbleLeftRight" size={18} />
+              <LucideIcon name="messages-square" size={18} />
             </IconButton>
           )}
 
@@ -388,7 +388,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             disabled={isToolbarDisabled()}
             onClick={props.onCloseClick}
           >
-            <HeroIcon name="arrowLeftOnRectangle" size={18} />
+            <LucideIcon name="x" size={18} />
           </IconButton>
         </div>
       </div>

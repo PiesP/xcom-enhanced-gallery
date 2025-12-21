@@ -154,10 +154,10 @@ This project is distributed under the [MIT License](LICENSE).
 
 ### Used Open Source Libraries
 
-| Library              | License | Purpose         |
-| -------------------- | ------- | --------------- |
-| **Solid.js**         | MIT     | UI Framework    |
-| **@heroicons/react** | MIT     | Icon Components |
+| Library          | License | Purpose         |
+| ---------------- | ------- | --------------- |
+| **Solid.js**     | MIT     | UI Framework    |
+| **Lucide Icons** | ISC     | Icon SVG source |
 
 Full license texts are available in the [`LICENSES/`](LICENSES/) directory.
 

@@ -5,7 +5,7 @@ import { LICENSE_NAME_MAP } from './constants';
 import type { LicenseInfo } from './types';
 
 function parseLicenseName(filename: string): string {
-  const base = filename.replace(/\.(txt|md)$/i, '').replace(/-(MIT|LICENSE|APACHE|BSD)$/i, '');
+  const base = filename.replace(/\.(txt|md)$/i, '').replace(/-(MIT|ISC|LICENSE|APACHE|BSD)$/i, '');
   return LICENSE_NAME_MAP[base] ?? base;
 }
 
@@ -13,7 +13,9 @@ export function aggregateLicenses(licensesDir: string): LicenseInfo[] {
   try {
     const entries = fs.readdirSync(licensesDir);
     const validExtensions = new Set(['.txt', '.md']);
-    const excludePattern = /xcom-enhanced-gallery/i;
+    // Exclude licenses that are not shipped/used by the current bundle.
+    // (Keep them in the repository for historical context if needed.)
+    const excludePattern = /xcom-enhanced-gallery|heroicons/i;
 
     return entries
       .filter((entry) => {

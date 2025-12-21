@@ -1,4 +1,4 @@
-import type { AllIconNames } from '@shared/components/ui/Icon/hero/icon-paths';
+import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
 import type {
   FitMode,
   FitModeHandlers,
@@ -26,11 +26,11 @@ const DEFAULT_PROPS = {
   className: '',
 } as const;
 
-const FIT_MODE_ORDER: ReadonlyArray<{ mode: FitMode; iconName: AllIconNames }> = [
-  { mode: 'original', iconName: 'arrowsPointingOut' },
-  { mode: 'fitWidth', iconName: 'arrowsRightLeft' },
-  { mode: 'fitHeight', iconName: 'arrowsUpDown' },
-  { mode: 'fitContainer', iconName: 'arrowsPointingIn' },
+const FIT_MODE_ORDER: ReadonlyArray<{ mode: FitMode; iconName: LucideIconName }> = [
+  { mode: 'original', iconName: 'maximize-2' },
+  { mode: 'fitWidth', iconName: 'move-horizontal' },
+  { mode: 'fitHeight', iconName: 'move-vertical' },
+  { mode: 'fitContainer', iconName: 'minimize-2' },
 ];
 
 /**
