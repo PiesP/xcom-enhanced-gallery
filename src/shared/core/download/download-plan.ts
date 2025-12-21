@@ -4,7 +4,7 @@
  *              into executable download plans.
  */
 
-import { generateMediaFilename, generateZipFilename } from '@shared/core/filename';
+import { generateMediaFilename, generateZipFilename } from '@shared/core/filename/filename-utils';
 import type { MediaInfo } from '@shared/types/media.types';
 
 export type DownloadMethod = 'gm_download' | 'none';

@@ -7,7 +7,6 @@
 import { SERVICE_KEYS } from '@constants/service-keys';
 import { APP_SETTINGS_STORAGE_KEY } from '@constants/storage';
 import { syncThemeAttributes } from '@shared/dom/theme';
-import { logger } from '@shared/logging';
 import { EventManager } from '@shared/services/event-manager';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
@@ -79,8 +78,6 @@ export class ThemeService implements ThemeServiceContract {
           childList: true,
           subtree: true,
         });
-      } else {
-        logger.warn('[ThemeService] document.documentElement not available for observation');
       }
     }
     // Initial load (sync if possible) - immediate, non-blocking
@@ -109,17 +106,14 @@ export class ThemeService implements ThemeServiceContract {
           this.themeSetting = saved;
           this.applyCurrentTheme(true);
         }
-      } catch (error) {
+      } catch {
         this.earlyRestoreFailed = true;
-        logger.warn('[ThemeService] Early async theme restore failed', error);
       } finally {
         // Always enable system theme detection, even if the early async restore
         // fails midway. Initialization will be skipped once this flag is set.
         try {
           this.initializeSystemDetection();
-        } catch (error) {
-          logger.debug('[ThemeService] System theme detection initialization failed', error);
-        }
+        } catch {}
       }
     })();
   }
@@ -161,9 +155,7 @@ export class ThemeService implements ThemeServiceContract {
       if (settingsService) {
         this.bindSettingsService(settingsService);
       }
-    } catch (err) {
-      logger.debug('[ThemeService] SettingsService not available', err);
-    }
+    } catch {}
   }
 
   public bindSettingsService(settingsService: SettingsServiceLike): void {
@@ -207,9 +199,7 @@ export class ThemeService implements ThemeServiceContract {
     if (options?.persist !== false && this.boundSettingsService?.set) {
       const result = this.boundSettingsService.set('gallery.theme', this.themeSetting);
       if (result instanceof Promise) {
-        result.catch((error: unknown) => {
-          logger.warn('[ThemeService] Failed to persist theme setting', error);
-        });
+        result.catch(() => {});
       }
     }
 

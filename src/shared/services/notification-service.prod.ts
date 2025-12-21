@@ -4,7 +4,6 @@
  * No console or UI fallbacks.
  */
 import { getUserscriptSafe, type UserscriptAPI } from '@shared/external/userscript';
-import { logger } from '@shared/logging';
 import { createSingleton } from '@shared/utils/types/singleton';
 
 export interface NotificationOptions {
@@ -38,11 +37,10 @@ export class NotificationService {
       timeout: options.timeout,
       onclick: options.onclick,
     });
-    logger.debug(`Notification: ${options.title}`);
   }
 
-  async error(title: string, text?: string, timeout = 5000): Promise<void> {
-    await this.show({ title, text: text ?? 'An error occurred.', timeout });
+  async error(title: string, text: string, timeout = 5000): Promise<void> {
+    await this.show({ title, text, timeout });
   }
 }
 

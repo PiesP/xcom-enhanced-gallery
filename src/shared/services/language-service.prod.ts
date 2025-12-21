@@ -12,7 +12,6 @@ import {
 import { DEFAULT_LANGUAGE, getLanguageStrings } from '@shared/constants/i18n/translation-registry';
 import { resolveTranslationValue } from '@shared/i18n/translation-utils';
 import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
-import { logger } from '@shared/logging';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
@@ -81,11 +80,7 @@ export class LanguageService {
         this.currentLanguage = normalized;
         this.notifyListeners(normalized);
       }
-    } catch (error) {
-      if (__DEV__) {
-        logger.warn('Failed to restore language setting from storage:', error);
-      }
-    }
+    } catch {}
   }
 
   /**
@@ -116,12 +111,6 @@ export class LanguageService {
   setLanguage(language: SupportedLanguage): void {
     const normalized = this.normalizeLanguage(language);
 
-    if (language !== normalized && language !== 'auto') {
-      if (__DEV__) {
-        logger.warn(`Unsupported language: ${language}, falling back to '${normalized}'`);
-      }
-    }
-
     // Phase 117.1: Prevent duplicate saves when value hasn't changed
     if (this.currentLanguage === normalized) {
       return;
@@ -129,15 +118,7 @@ export class LanguageService {
 
     this.currentLanguage = normalized;
     this.notifyListeners(normalized);
-    this.persistLanguage(normalized).catch((error) => {
-      if (__DEV__) {
-        logger.warn('Failed to persist language setting on change:', error);
-      }
-    });
-
-    if (__DEV__) {
-      logger.debug(`Language changed to: ${normalized}`);
-    }
+    this.persistLanguage(normalized).catch(() => {});
   }
 
   translate(key: TranslationKey, params?: TranslationParams): string {
@@ -189,22 +170,14 @@ export class LanguageService {
     this.listeners.forEach((listener) => {
       try {
         listener(language);
-      } catch (error) {
-        if (__DEV__) {
-          logger.warn('Language change listener error:', error);
-        }
-      }
+      } catch {}
     });
   }
 
   private async persistLanguage(language: SupportedLanguage): Promise<void> {
     try {
       await this.storage.setString(LanguageService.STORAGE_KEY, language);
-    } catch (error) {
-      if (__DEV__) {
-        logger.warn('Failed to persist language setting:', error);
-      }
-    }
+    } catch {}
   }
 
   private getEffectiveLanguage(): BaseLanguageCode {

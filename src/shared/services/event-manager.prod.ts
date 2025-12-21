@@ -23,11 +23,9 @@
  * @see {@link EventBus} for unified event management
  */
 
-import { logger } from '@shared/logging';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
 import {
-  getEventListenerStatus,
   addListener as registerManagedListener,
   removeEventListenerManaged,
 } from '@shared/utils/events/core/listener-manager';
@@ -86,9 +84,6 @@ export class EventManager {
     // The lifecycle helper supports initialize() after destroy(); ensure the
     // instance becomes usable again.
     this.isDestroyed = false;
-    if (__DEV__) {
-      logger.debug('EventManager initialized');
-    }
   }
 
   /** Lifecycle: Cleanup */
@@ -114,7 +109,6 @@ export class EventManager {
     context?: string
   ): string | null {
     if (this.isDestroyed) {
-      logger.warn('EventManager: addListener called on destroyed instance');
       return null;
     }
 
@@ -185,15 +179,6 @@ export class EventManager {
     return this.isDestroyed;
   }
 
-  /** Get listener statistics */
-  public getListenerStatus() {
-    if (!__DEV__) {
-      return { total: 0, byContext: {}, byType: {} } as const;
-    }
-
-    return getEventListenerStatus();
-  }
-
   /** Clean up and mark as destroyed */
   public cleanup(): void {
     if (this.isDestroyed) {
@@ -215,8 +200,5 @@ export class EventManager {
     }
 
     this.isDestroyed = true;
-    if (__DEV__) {
-      logger.debug('EventManager cleanup completed');
-    }
   }
 }

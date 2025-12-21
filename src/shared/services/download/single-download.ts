@@ -2,7 +2,7 @@ import {
   createSingleDownloadCommands,
   type SingleDownloadCommand,
 } from '@shared/core/download/single-download-commands';
-import { generateMediaFilename } from '@shared/core/filename';
+import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { getErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging';
 import type { MediaInfo } from '@shared/types/media.types';

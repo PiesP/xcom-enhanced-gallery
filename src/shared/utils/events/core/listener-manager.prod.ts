@@ -10,7 +10,6 @@
  * @see {@link EventManager} for the public API
  */
 
-import { logger } from '@shared/logging';
 import { createContextId, createId } from '@shared/utils/id/create-id';
 import type { DOMListenerContext } from './dom-listener-context';
 
@@ -50,9 +49,6 @@ export function addListener(
   const id = generateListenerId(context);
 
   if (!element || typeof element.addEventListener !== 'function') {
-    if (__DEV__) {
-      logger.warn('Invalid element passed to addListener', { type, context });
-    }
     return id;
   }
 
@@ -70,13 +66,8 @@ export function addListener(
     };
 
     listeners.set(id, listenerContext);
-
-    if (__DEV__) {
-      logger.debug(`Listener registered: ${type} (${id})`, { context });
-    }
     return id;
-  } catch (error) {
-    logger.error(`Failed to add listener: ${type}`, { error, context });
+  } catch {
     return id;
   }
 }
@@ -90,22 +81,14 @@ export function addListener(
 export function removeEventListenerManaged(id: string): boolean {
   const ctx = listeners.get(id);
   if (!ctx) {
-    if (__DEV__) {
-      logger.warn(`Listener not found for removal: ${id}`);
-    }
     return false;
   }
 
   try {
     ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
     listeners.delete(id);
-
-    if (__DEV__) {
-      logger.debug(`Listener removed: ${ctx.type} (${id})`);
-    }
     return true;
-  } catch (error) {
-    logger.error(`Failed to remove listener: ${id}`, error);
+  } catch {
     return false;
   }
 }
@@ -132,12 +115,6 @@ export function removeEventListenersByContext(context: string): number {
     }
   }
 
-  if (count > 0) {
-    if (__DEV__) {
-      logger.debug(`Removed ${count} listeners for context: ${context}`);
-    }
-  }
-
   return count;
 }
 
@@ -152,39 +129,9 @@ export function removeAllEventListeners(): void {
   const all = Array.from(listeners.values());
   listeners.clear();
 
-  let count = 0;
   for (const ctx of all) {
     try {
       ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
-      count++;
-    } catch (error) {
-      if (__DEV__) {
-        logger.warn(`Failed to remove listener: ${ctx.type}`, { error, context: ctx.context });
-      }
-    }
+    } catch {}
   }
-
-  if (__DEV__) {
-    logger.debug(`Removed all ${count} listeners`);
-  }
-}
-
-/**
- * Get listener statistics
- */
-export function getEventListenerStatus() {
-  if (!__DEV__) {
-    return { total: 0, byContext: {}, byType: {} } as const;
-  }
-
-  const byContext: Record<string, number> = {};
-  const byType: Record<string, number> = {};
-
-  for (const ctx of listeners.values()) {
-    const c = ctx.context || 'default';
-    byContext[c] = (byContext[c] || 0) + 1;
-    byType[ctx.type] = (byType[ctx.type] || 0) + 1;
-  }
-
-  return { total: listeners.size, byContext, byType };
 }

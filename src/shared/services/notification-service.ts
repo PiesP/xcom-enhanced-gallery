@@ -46,8 +46,8 @@ export class NotificationService {
     logger.debug(`Notification: ${options.title}`);
   }
 
-  async error(title: string, text?: string, timeout = 5000): Promise<void> {
-    await this.show({ title, text: text ?? 'An error occurred.', timeout });
+  async error(title: string, text: string, timeout = 5000): Promise<void> {
+    await this.show({ title, text, timeout });
   }
 }
 

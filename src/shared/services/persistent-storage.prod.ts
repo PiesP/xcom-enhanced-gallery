@@ -1,24 +1,5 @@
 import { getUserscriptSafe, type UserscriptAPI } from '@shared/external/userscript';
-import { logger } from '@shared/logging';
 import { createSingleton } from '@shared/utils/types/singleton';
-
-export interface PersistentStorageGetOptions {
-  /**
-   * When JSON parsing fails, log a warning only once per key to improve observability
-   * without creating noisy logs.
-   *
-   * @default true
-   */
-  readonly warnOnParseErrorOnce?: boolean;
-
-  /**
-   * When JSON parsing fails, attempt to delete the key to self-heal corrupted values.
-   * This is opt-in because some keys may intentionally store non-JSON strings.
-   *
-   * @default false
-   */
-  readonly selfHealOnParseError?: boolean;
-}
 
 export class PersistentStorage {
   private get userscript(): UserscriptAPI {
@@ -27,23 +8,10 @@ export class PersistentStorage {
 
   private static readonly singleton = createSingleton(() => new PersistentStorage());
 
-  private static readonly parseWarnedKeys = new Set<string>();
-  private static readonly maxParseWarnedKeys = 1000;
-
   private constructor() {}
 
   static getInstance(): PersistentStorage {
     return PersistentStorage.singleton.get();
-  }
-
-  private static maybeResetWarnedKeysOnOverflow(): void {
-    if (PersistentStorage.parseWarnedKeys.size < PersistentStorage.maxParseWarnedKeys) {
-      return;
-    }
-
-    // Defensive: avoid unbounded growth. We keep this intentionally simple.
-    // When the cap is reached, we clear the set so the warning mechanism remains useful.
-    PersistentStorage.parseWarnedKeys.clear();
   }
 
   private parseMaybeJsonString(rawValue: string): string | undefined {
@@ -78,60 +46,42 @@ export class PersistentStorage {
    * Use this with {@link getJson} / {@link getJsonSync}.
    */
   async setJson<T>(key: string, value: T | undefined): Promise<void> {
-    try {
-      // Guard: JSON.stringify(undefined) returns undefined, which can break storage adapters.
-      // Treat undefined (and other non-serializable payloads) as an explicit delete.
-      if (value === undefined) {
-        logger.warn(`PersistentStorage.setJson received undefined for "${key}", deleting key`);
-        await this.userscript.deleteValue(key);
-        return;
-      }
-
-      const serialized = JSON.stringify(value);
-
-      if (serialized === undefined) {
-        logger.warn(
-          `PersistentStorage.setJson received a non-serializable value for "${key}", deleting key`
-        );
-        await this.userscript.deleteValue(key);
-        return;
-      }
-
-      await this.userscript.setValue(key, serialized);
-    } catch (error) {
-      logger.error('Storage.setJson failed', key, error);
-      throw error;
+    // Guard: JSON.stringify(undefined) returns undefined, which can break storage adapters.
+    // Treat undefined (and other non-serializable payloads) as an explicit delete.
+    if (value === undefined) {
+      await this.userscript.deleteValue(key);
+      return;
     }
+
+    const serialized = JSON.stringify(value);
+
+    if (serialized === undefined) {
+      await this.userscript.deleteValue(key);
+      return;
+    }
+
+    await this.userscript.setValue(key, serialized);
   }
 
   async set<T>(key: string, value: T): Promise<void> {
-    try {
-      // Prefer explicit methods for clarity.
-      // - setString(): stores raw strings
-      // - setJson(): stores JSON-encoded values
-      // Guard: JSON.stringify(undefined) returns undefined, which can break storage adapters.
-      // Treat undefined (and other non-serializable payloads) as an explicit delete.
-      if (value === undefined) {
-        logger.warn(`PersistentStorage.set received undefined for "${key}", deleting key`);
-        await this.userscript.deleteValue(key);
-        return;
-      }
-
-      const serialized = this.serializeValueForStorage(value);
-
-      if (serialized === undefined) {
-        logger.warn(
-          `PersistentStorage.set received a non-serializable value for "${key}", deleting key`
-        );
-        await this.userscript.deleteValue(key);
-        return;
-      }
-
-      await this.userscript.setValue(key, serialized);
-    } catch (error) {
-      logger.error('Storage.set failed', key, error);
-      throw error;
+    // Prefer explicit methods for clarity.
+    // - setString(): stores raw strings
+    // - setJson(): stores JSON-encoded values
+    // Guard: JSON.stringify(undefined) returns undefined, which can break storage adapters.
+    // Treat undefined (and other non-serializable payloads) as an explicit delete.
+    if (value === undefined) {
+      await this.userscript.deleteValue(key);
+      return;
     }
+
+    const serialized = this.serializeValueForStorage(value);
+
+    if (serialized === undefined) {
+      await this.userscript.deleteValue(key);
+      return;
+    }
+
+    await this.userscript.setValue(key, serialized);
   }
 
   /**
@@ -152,50 +102,13 @@ export class PersistentStorage {
     return value;
   }
 
-  private warnParseErrorOnce(key: string, rawValue: string, error: unknown): void {
-    if (!__DEV__) {
-      return;
-    }
-
-    PersistentStorage.maybeResetWarnedKeysOnOverflow();
-    if (PersistentStorage.parseWarnedKeys.has(key)) return;
-    PersistentStorage.parseWarnedKeys.add(key);
-
-    const preview = rawValue.length > 160 ? `${rawValue.slice(0, 160)}…` : rawValue;
-    logger.warn(`PersistentStorage.get failed to parse JSON for "${key}"`, {
-      preview,
-      error,
-    });
-  }
-
-  private async trySelfHealOnParseError(key: string): Promise<void> {
-    try {
-      await this.userscript.deleteValue(key);
-    } catch (error) {
-      // Best-effort: do not throw from get().
-      logger.warn(`PersistentStorage.get failed to self-heal key "${key}"`, error);
-    }
-  }
-
-  async get<T>(
-    key: string,
-    defaultValue?: T,
-    options: PersistentStorageGetOptions = {}
-  ): Promise<T | undefined> {
+  async get<T>(key: string, defaultValue?: T): Promise<T | undefined> {
     const value = await this.userscript.getValue<string | undefined>(key);
     if (value === undefined || value === null) return defaultValue;
 
     try {
       return JSON.parse(value) as T;
-    } catch (error) {
-      if (__DEV__ && options.warnOnParseErrorOnce !== false) {
-        this.warnParseErrorOnce(key, value, error);
-      }
-
-      if (options.selfHealOnParseError === true) {
-        await this.trySelfHealOnParseError(key);
-      }
-
+    } catch {
       return defaultValue;
     }
   }
@@ -205,12 +118,8 @@ export class PersistentStorage {
    *
    * This is an explicit alias for {@link get}.
    */
-  async getJson<T>(
-    key: string,
-    defaultValue?: T,
-    options: PersistentStorageGetOptions = {}
-  ): Promise<T | undefined> {
-    return this.get<T>(key, defaultValue, options);
+  async getJson<T>(key: string, defaultValue?: T): Promise<T | undefined> {
+    return this.get<T>(key, defaultValue);
   }
 
   async has(key: string): Promise<boolean> {
@@ -273,12 +182,7 @@ export class PersistentStorage {
   }
 
   async remove(key: string): Promise<void> {
-    try {
-      await this.userscript.deleteValue(key);
-    } catch (error) {
-      logger.error('Storage.remove failed', key, error);
-      throw error;
-    }
+    await this.userscript.deleteValue(key);
   }
 }
 
