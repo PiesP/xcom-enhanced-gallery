@@ -4,6 +4,249 @@ function escapeRegExp(source: string): string {
   return source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+type JsStripMode = 'code' | 'single' | 'double' | 'template' | 'regex';
+
+const REGEX_KEYWORDS = new Set([
+  'return',
+  'throw',
+  'case',
+  'delete',
+  'void',
+  'typeof',
+  'yield',
+  'await',
+  'in',
+  'instanceof',
+  'else',
+  'do',
+]);
+
+function isIdentifierStart(char: string): boolean {
+  return /[A-Za-z_$]/.test(char);
+}
+
+function isIdentifierPart(char: string): boolean {
+  return /[A-Za-z0-9_$]/.test(char);
+}
+
+function isWhitespace(char: string): boolean {
+  return char === ' ' || char === '\n' || char === '\r' || char === '\t';
+}
+
+function findNextNonWhitespace(code: string, startIndex: number): string | null {
+  for (let i = startIndex; i < code.length; i++) {
+    const char = code[i] as string;
+    if (!isWhitespace(char)) {
+      return char;
+    }
+  }
+  return null;
+}
+
+function stripJsComments(code: string): string {
+  let result = '';
+  let i = 0;
+  let mode: JsStripMode = 'code';
+  let regexCharClass = false;
+  let canStartRegex = true;
+  let templateDepth = 0;
+
+  while (i < code.length) {
+    const char = code[i] as string;
+    const next = code[i + 1] as string | undefined;
+
+    if (mode === 'single' || mode === 'double') {
+      result += char;
+      if (char === '\\') {
+        if (next) {
+          result += next;
+          i += 2;
+          continue;
+        }
+      } else if (char === (mode === 'single' ? "'" : '"')) {
+        mode = 'code';
+        canStartRegex = false;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (mode === 'template') {
+      if (char === '\\') {
+        result += char;
+        if (next) {
+          result += next;
+          i += 2;
+          continue;
+        }
+      }
+
+      if (char === '`') {
+        result += char;
+        mode = 'code';
+        canStartRegex = false;
+        i += 1;
+        continue;
+      }
+
+      if (char === '$' && next === '{') {
+        result += '${';
+        i += 2;
+        mode = 'code';
+        templateDepth += 1;
+        canStartRegex = true;
+        continue;
+      }
+
+      result += char;
+      i += 1;
+      continue;
+    }
+
+    if (mode === 'regex') {
+      result += char;
+      if (char === '\\') {
+        if (next) {
+          result += next;
+          i += 2;
+          continue;
+        }
+      } else if (char === '[') {
+        regexCharClass = true;
+      } else if (char === ']' && regexCharClass) {
+        regexCharClass = false;
+      } else if (char === '/' && !regexCharClass) {
+        i += 1;
+        while (i < code.length && /[a-z]/i.test(code[i] as string)) {
+          result += code[i] as string;
+          i += 1;
+        }
+        mode = 'code';
+        canStartRegex = false;
+        continue;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (char === "'" || char === '"') {
+      mode = char === "'" ? 'single' : 'double';
+      result += char;
+      i += 1;
+      continue;
+    }
+
+    if (char === '`') {
+      mode = 'template';
+      result += char;
+      i += 1;
+      continue;
+    }
+
+    if (char === '/' && next === '/') {
+      i += 2;
+      while (i < code.length && (code[i] as string) !== '\n') {
+        i += 1;
+      }
+      if (i < code.length) {
+        result += '\n';
+        i += 1;
+      }
+      continue;
+    }
+
+    if (char === '/' && next === '*') {
+      i += 2;
+      let hadNewline = false;
+      while (i < code.length && !((code[i] as string) === '*' && code[i + 1] === '/')) {
+        if ((code[i] as string) === '\n') {
+          hadNewline = true;
+        }
+        i += 1;
+      }
+      if (i < code.length) {
+        i += 2;
+      }
+      if (hadNewline) {
+        result += '\n';
+      } else {
+        const prev = result[result.length - 1];
+        const nextNonWs = findNextNonWhitespace(code, i);
+        if (prev && nextNonWs && !isWhitespace(prev) && !isWhitespace(nextNonWs)) {
+          result += ' ';
+        }
+      }
+      continue;
+    }
+
+    if (char === '/' && canStartRegex) {
+      mode = 'regex';
+      regexCharClass = false;
+      result += char;
+      i += 1;
+      continue;
+    }
+
+    if (templateDepth > 0) {
+      if (char === '{') {
+        templateDepth += 1;
+      } else if (char === '}') {
+        templateDepth -= 1;
+        result += char;
+        i += 1;
+        if (templateDepth === 0) {
+          mode = 'template';
+        }
+        continue;
+      }
+    }
+
+    if (isIdentifierStart(char)) {
+      const start = i;
+      i += 1;
+      while (i < code.length && isIdentifierPart(code[i] as string)) {
+        i += 1;
+      }
+      const word = code.slice(start, i);
+      result += word;
+      canStartRegex = REGEX_KEYWORDS.has(word);
+      continue;
+    }
+
+    if (/[0-9]/.test(char)) {
+      const start = i;
+      i += 1;
+      while (i < code.length && /[0-9a-zA-Z_.]/.test(code[i] as string)) {
+        i += 1;
+      }
+      result += code.slice(start, i);
+      canStartRegex = false;
+      continue;
+    }
+
+    if ((char === '+' && next === '+') || (char === '-' && next === '-')) {
+      result += char + next;
+      i += 2;
+      canStartRegex = false;
+      continue;
+    }
+
+    result += char;
+
+    if (!isWhitespace(char)) {
+      if (char === ')' || char === ']' || char === '}' || char === '.') {
+        canStartRegex = false;
+      } else {
+        canStartRegex = true;
+      }
+    }
+
+    i += 1;
+  }
+
+  return result;
+}
+
 /**
  * Removes empty `__esmMin(() => {})` init wrappers and their calls.
  *
@@ -242,7 +485,7 @@ export function productionCleanupPlugin(): Plugin {
         );
         code = code.replace(/\/\*#__PURE__\*\/\s*/g, '');
         code = code.replace(/Object\.freeze\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*\)/g, '({})');
-        code = removeLogCalls(code, ['debug', 'info', 'warn']);
+        code = removeLogCalls(code, ['debug', 'info', 'warn', 'trace']);
         code = code.replace(/,\s*reset\(\)\s*\{\s*instance\s*=\s*null;\s*\}/g, '');
         code = code.replace(/static\s+resetForTests\(\)\s*\{[^}]*\}/g, '');
         code = code.replace(/exports\.[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*[^;]+;/g, '');
@@ -253,6 +496,7 @@ export function productionCleanupPlugin(): Plugin {
         code = code.replace(/\s*\/\*\*\s*@internal[^*]*\*\/\s*/g, '\n');
         code = code.replace(/\s*\/\*\*\s*\n\s*\*[^@]*@internal\s*\n\s*\*\/\s*/g, '\n');
         code = stripEmptyEsmMinInitWrappers(code);
+        code = stripJsComments(code);
 
         // Whitespace-only compaction (no identifier mangling).
         // Keep the header intact by running this only on the body.
