@@ -5,8 +5,8 @@
  * @version 1.1.0
  */
 
-import { combineSignals, createTimeoutController, isAbortError } from '@shared/async/signal-utils';
-import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
+import { combineSignals, createTimeoutController } from '@shared/async/signal-utils';
+import { getAbortReasonOrAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 /**

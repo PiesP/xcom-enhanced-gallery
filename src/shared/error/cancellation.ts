@@ -8,6 +8,30 @@ export const USER_CANCELLED_MESSAGE = 'Download cancelled by user' as const;
 const DEFAULT_ABORT_MESSAGE = 'This operation was aborted' as const;
 
 /**
+ * Check whether an unknown value represents an AbortError-like cancellation.
+ *
+ * Policy:
+ * - Treat DOMException("AbortError") and DOMException("TimeoutError") as abort-like.
+ * - Treat Error named "AbortError"/"TimeoutError" as abort-like.
+ * - Preserve legacy heuristic: Error message containing "aborted" is considered abort-like.
+ */
+export function isAbortError(value: unknown): boolean {
+  if (value instanceof DOMException) {
+    return value.name === 'AbortError' || value.name === 'TimeoutError';
+  }
+
+  if (value instanceof Error) {
+    return (
+      value.name === 'AbortError' ||
+      value.name === 'TimeoutError' ||
+      value.message.toLowerCase().includes('aborted')
+    );
+  }
+
+  return false;
+}
+
+/**
  * Check whether an unknown value represents a timeout error.
  *
  * This is intentionally broader than AbortError detection: timeouts may surface as

@@ -5,6 +5,8 @@
  * @version 1.0.0
  */
 
+export { isAbortError } from '@shared/error/cancellation';
+
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 export interface TimeoutSignalController {
@@ -171,12 +173,4 @@ export function combineSignals(signals: AbortSignal[]): AbortSignal {
  * }
  * ```
  */
-export function isAbortError(error: unknown): boolean {
-  if (error instanceof DOMException) {
-    return error.name === 'AbortError' || error.name === 'TimeoutError';
-  }
-  if (error instanceof Error) {
-    return error.name === 'AbortError' || error.message.includes('aborted');
-  }
-  return false;
-}
+// isAbortError is re-exported from @shared/error/cancellation.
