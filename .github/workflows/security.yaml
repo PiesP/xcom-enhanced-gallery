@@ -98,7 +98,7 @@ jobs:
           REQUIRED_LICENSES=(
             "xcom-enhanced-gallery-MIT.txt"
             "solid-js-MIT.txt"
-            "heroicons-MIT.txt"
+            "lucide-ISC.txt"
           )
 
           MISSING_LICENSES=()

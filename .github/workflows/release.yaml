@@ -63,7 +63,8 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Release version: $VERSION"
 
-      - name: 🏷️ Create Git tag
+      - name: 🏷️ Create Git tag (workflow_dispatch only)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           set -euo pipefail
           TAG=v${{ steps.version.outputs.version }}
@@ -78,6 +79,7 @@ jobs:
           fi
 
       - name: 🏗️ Build userscript
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
           BUILD_VERSION=${{ steps.version.outputs.version }} pnpm build
           # Backup dist for later steps (survives git checkout)
@@ -88,12 +90,14 @@ jobs:
           ls -la /tmp/dist-backup/
 
       - name: 📦 Prepare release package
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
           mkdir -p release
           cp /tmp/dist-backup/xcom-enhanced-gallery.user.js release/
+          cp /tmp/dist-backup/xcom-enhanced-gallery.meta.js release/
 
           # Generate checksums
-          cd release && sha256sum xcom-enhanced-gallery.user.js > checksums.txt && cd ..
+          cd release && sha256sum xcom-enhanced-gallery.user.js xcom-enhanced-gallery.meta.js > checksums.txt && cd ..
 
           # Create metadata
           cat > release/metadata.json << EOF
@@ -121,6 +125,13 @@ jobs:
           fi
 
           # Create release notes with changelog content
+          PREV_TAG=$(git tag --list 'v*' --sort=-v:refname | grep -v "^v${{ steps.version.outputs.version }}$" | head -n 1 || true)
+          if [ -n "$PREV_TAG" ]; then
+            COMPARE_URL="https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${{ steps.version.outputs.version }}"
+          else
+            COMPARE_URL="https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.version }}"
+          fi
+
           cat > release/RELEASE_NOTES.md << EOF
           # 🚀 Release v${{ steps.version.outputs.version }}
 
@@ -134,7 +145,7 @@ jobs:
 
           ${CHANGELOG_CONTENT:-No changelog entry found for this version.}
 
-          **[📋 Full Changelog](https://github.com/${{ github.repository }}/compare/v${{ steps.version.outputs.version }}...HEAD)**
+          **[📋 Full Changelog](${COMPARE_URL})**
 
           ---
 
@@ -146,6 +157,7 @@ jobs:
           EOF
 
       - name: 📤 Deploy dist/ to release branch
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
           set -euo pipefail
 
@@ -189,6 +201,7 @@ jobs:
           fi
 
       - name: 🔄 Purge jsDelivr CDN cache
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
           echo "🔄 Purging jsDelivr CDN cache..."
 
@@ -205,12 +218,14 @@ jobs:
           echo "✅ jsDelivr cache purge completed"
 
       - name: 🏷️ Create GitHub Release
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           body_path: release/RELEASE_NOTES.md
           files: |
             release/xcom-enhanced-gallery.user.js
+            release/xcom-enhanced-gallery.meta.js
             release/checksums.txt
             release/metadata.json
           draft: false
@@ -219,6 +234,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📊 Upload release artifacts
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: actions/upload-artifact@v6
         with:
           name: release-v${{ steps.version.outputs.version }}

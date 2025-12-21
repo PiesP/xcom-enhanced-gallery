@@ -15,9 +15,9 @@ Describe how reviewers can verify the change, including relevant npm scripts
 (for example):
 
 ```bash
-npm run build
-npm run typecheck
-npm run lint
+pnpm build
+pnpm check
+pnpm lint
 ```
 
 If tests are not required, briefly explain why.
@@ -30,7 +30,7 @@ If tests are not required, briefly explain why.
       feature code
 - [ ] I avoided dynamic code execution (`eval`, `new Function`, string-based
       `setTimeout`/`setInterval`)
-- [ ] I ran `npm run build`
+- [ ] I ran `pnpm build`
 - [ ] I ran appropriate local tests for my changes (and explained in this PR
       if I could not)
 - [ ] I updated `README.md` / `CHANGELOG.md` if user-visible behavior changed

@@ -192,7 +192,7 @@ These are optional knobs for development and CI.
 
 | Variable                       | Example                 | Purpose                                                                                                      |
 | ------------------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `BUILD_VERSION`                | `1.3.0`                 | Override the computed version string embedded into the bundle.                                               |
+| `BUILD_VERSION`                | `1.4.0`                 | Override the computed version string embedded into the bundle.                                               |
 | `XEG_FEATURE_MEDIA_EXTRACTION` | `0` / `false`           | Disable media extraction feature flag at build time (defaults to enabled).                                   |
 | `XEG_BUILD_AUTO_GRANT`         | `report` / `true` / `1` | Detect used `GM_*` APIs by scanning the final bundle and either report or apply the resulting `@grant` list. |
 

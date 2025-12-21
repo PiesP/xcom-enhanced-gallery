@@ -8,6 +8,33 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.4.0] - 2025-12-22
+
+### Added
+
+- **Download Prefetching**: Added media prefetching to improve download responsiveness and reduce redundant network requests.
+- **Production Entry Point**: Added a production-only bootstrap entry for a leaner, safer bundle.
+- **License Build Tooling**: Added license management build tooling and emitted license files in the repository.
+- **Meta Generation & Dist Cleanup**: Added build tooling to generate a meta-only file and to clean up production artifacts.
+- **Icons**: Migrated UI icons to Lucide and introduced `UI_ICONS` for consistent icon usage across components.
+
+### Changed
+
+- **Runtime Imports**: Removed runtime dynamic imports to keep the userscript a single static bundle and improve tree-shaking.
+- **Services**: Consolidated core services around singleton lifecycle patterns and reduced production logging.
+- **Internationalization**: Simplified language registry definitions and removed lazy-loading for deterministic startup.
+- **Build Output**: Optimized CSS class name hashing and improved production cleanup passes.
+
+### Fixed
+
+- **HTTP Requests**: Hardened abort/timeout handling and simplified error normalization in the HTTP request service.
+- **Tooling**: Improved test helper reset safety and resolved Node typings mismatches.
+
+### Dependencies
+
+- Updated `@types/node` to version 25.0.3.
+- Updated `@biomejs/biome` and `@typescript/native-preview`.
+
 ## [1.3.0] - 2025-12-18
 
 ### Added
@@ -231,11 +258,11 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 1. The four targeted files contain zero mentions of "Phase" or obsolete migration breadcrumbs.
 2. The shared hooks barrel no longer publishes the "Deprecated/Removed Hooks" section.
 3. The toolbar hook's file header is updated to a Phase-free description.
-4. Repository builds successfully after the cleanup (implicitly exercising lint, typecheck, tests, bundle checks, and mutation tests via `npm run build`).
+4. Repository builds successfully after the cleanup (implicitly exercising lint, typecheck, tests, bundle checks, and mutation tests via `pnpm build`).
 
 **Test Plan**
 
-1. `npm run build` – execute the full verify-pipeline script (deps check, type check, lint, styles, security, clean, dev/prod builds, bundle-size gate, unit, component, visual, accessibility, E2E, and mutation tests).
+1. `pnpm build` – execute the full verify-pipeline script (deps check, type check, lint, styles, security, clean, dev/prod builds, bundle-size gate, unit, component, visual, accessibility, E2E, and mutation tests).
 2. Manual inspection of the four edited files to ensure the wording no longer references historical Phases.
 
 ## [0.5.0] - 2025-11-26
