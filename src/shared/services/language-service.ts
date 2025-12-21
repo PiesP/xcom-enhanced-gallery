@@ -7,7 +7,6 @@
 import {
   type BaseLanguageCode,
   isBaseLanguageCode,
-  LANGUAGE_CODES,
   type SupportedLanguage,
 } from '@shared/constants/i18n/language-types';
 import { DEFAULT_LANGUAGE, getLanguageStrings } from '@shared/constants/i18n/translation-registry';
@@ -90,7 +89,9 @@ export class LanguageService {
         this.notifyListeners(normalized);
       }
     } catch (error) {
-      logger.warn('Failed to restore language setting from storage:', error);
+      if (__DEV__) {
+        logger.warn('Failed to restore language setting from storage:', error);
+      }
     }
   }
 
@@ -119,15 +120,13 @@ export class LanguageService {
     return this.currentLanguage;
   }
 
-  getAvailableLanguages(): readonly BaseLanguageCode[] {
-    return LANGUAGE_CODES;
-  }
-
   setLanguage(language: SupportedLanguage): void {
     const normalized = this.normalizeLanguage(language);
 
     if (language !== normalized && language !== 'auto') {
-      logger.warn(`Unsupported language: ${language}, falling back to '${normalized}'`);
+      if (__DEV__) {
+        logger.warn(`Unsupported language: ${language}, falling back to '${normalized}'`);
+      }
     }
 
     // Phase 117.1: Prevent duplicate saves when value hasn't changed
@@ -138,7 +137,9 @@ export class LanguageService {
     this.currentLanguage = normalized;
     this.notifyListeners(normalized);
     this.persistLanguage(normalized).catch((error) => {
-      logger.warn('Failed to persist language setting on change:', error);
+      if (__DEV__) {
+        logger.warn('Failed to persist language setting on change:', error);
+      }
     });
 
     if (__DEV__) {
@@ -196,7 +197,9 @@ export class LanguageService {
       try {
         listener(language);
       } catch (error) {
-        logger.warn('Language change listener error:', error);
+        if (__DEV__) {
+          logger.warn('Language change listener error:', error);
+        }
       }
     });
   }
@@ -205,7 +208,9 @@ export class LanguageService {
     try {
       await this.storage.setString(LanguageService.STORAGE_KEY, language);
     } catch (error) {
-      logger.warn('Failed to persist language setting:', error);
+      if (__DEV__) {
+        logger.warn('Failed to persist language setting:', error);
+      }
     }
   }
 

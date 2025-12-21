@@ -84,7 +84,7 @@ function tearDownGlobalEventHandlers(): void {
   try {
     teardown();
   } catch (error) {
-    if (isDevEnvironment) {
+    if (__DEV__) {
       logger.debug('[events] Error while tearing down global handlers', error);
     }
   }
@@ -101,7 +101,7 @@ function tearDownCommandRuntime(): void {
   try {
     teardown();
   } catch (error) {
-    if (isDevEnvironment) {
+    if (__DEV__) {
       logger.debug('[command-runtime] Error while tearing down runtime', error);
     }
   }
@@ -247,7 +247,9 @@ async function initializeInfrastructure(): Promise<void> {
     if (__DEV__) {
       await initializeEnvironment();
     }
-    logger.debug('✅ Vendor library initialization complete');
+    if (__DEV__) {
+      logger.debug('✅ Vendor library initialization complete');
+    }
   } catch (error) {
     bootstrapErrorReporter.critical(error, {
       code: 'INFRASTRUCTURE_INIT_FAILED',
@@ -260,7 +262,9 @@ async function initializeInfrastructure(): Promise<void> {
 async function initializeBaseServicesStage(): Promise<void> {
   try {
     await initializeCoreBaseServices();
-    logger.debug('✅ Base services initialization complete');
+    if (__DEV__) {
+      logger.debug('✅ Base services initialization complete');
+    }
   } catch (error) {
     bootstrapErrorReporter.warn(error, {
       code: 'BASE_SERVICES_INIT_FAILED',
@@ -285,7 +289,9 @@ async function applyInitialThemeSetting(): Promise<void> {
       logger.debug(`[theme-sync] Applied saved theme: ${savedSetting}`);
     }
   } catch (error) {
-    logger.warn('[theme-sync] Initial theme application skipped:', error);
+    if (__DEV__) {
+      logger.warn('[theme-sync] Initial theme application skipped:', error);
+    }
   }
 }
 
@@ -297,11 +303,17 @@ async function applyInitialThemeSetting(): Promise<void> {
 function initializeNonCriticalSystems(): void {
   // Lean mode: execute immediately without idle scheduling or test mode branching
   try {
-    logger.info('Starting non-critical system initialization');
+    if (__DEV__) {
+      logger.info('Starting non-critical system initialization');
+    }
     warmupNonCriticalServices();
-    logger.info('✅ Non-critical system initialization complete');
+    if (__DEV__) {
+      logger.info('✅ Non-critical system initialization complete');
+    }
   } catch (error) {
-    logger.warn('Error during non-critical system initialization:', error);
+    if (__DEV__) {
+      logger.warn('Error during non-critical system initialization:', error);
+    }
   }
 }
 
@@ -333,7 +345,9 @@ async function initializeDevToolsIfNeeded(): Promise<void> {
 // exported initializeGalleryIfPermitted below
 async function initializeGalleryIfPermitted(): Promise<void> {
   if (isTestMode) {
-    logger.debug('Gallery initialization skipped (test mode)');
+    if (__DEV__) {
+      logger.debug('Gallery initialization skipped (test mode)');
+    }
     return;
   }
 
@@ -346,7 +360,9 @@ async function initializeGalleryIfPermitted(): Promise<void> {
 // exported cleanup below
 async function cleanup(): Promise<void> {
   try {
-    logger.info('🧹 Starting application cleanup');
+    if (__DEV__) {
+      logger.info('🧹 Starting application cleanup');
+    }
 
     tearDownGlobalEventHandlers();
     tearDownCommandRuntime();
@@ -391,12 +407,14 @@ async function cleanup(): Promise<void> {
         async () => {
           const status = EventManager.getInstance().getListenerStatus();
           if (status.total > 0) {
-            logger.warn('[cleanup] ⚠️ Warning: uncleared event listeners remain:', {
-              total: status.total,
-              byType: status.byType,
-              byContext: status.byContext,
-            });
-          } else {
+            if (__DEV__) {
+              logger.warn('[cleanup] ⚠️ Warning: uncleared event listeners remain:', {
+                total: status.total,
+                byType: status.byType,
+                byContext: status.byContext,
+              });
+            }
+          } else if (__DEV__) {
             logger.debug('[cleanup] ✅ All event listeners cleared successfully');
           }
         },
@@ -405,7 +423,9 @@ async function cleanup(): Promise<void> {
     }
 
     lifecycleState.started = false;
-    logger.info('✅ Application cleanup complete');
+    if (__DEV__) {
+      logger.info('✅ Application cleanup complete');
+    }
   } catch (error) {
     bootstrapErrorReporter.error(error, {
       code: 'CLEANUP_FAILED',
@@ -424,24 +444,32 @@ async function cleanup(): Promise<void> {
 // exported startApplication below
 async function startApplication(): Promise<void> {
   if (lifecycleState.started) {
-    logger.debug('Application: Already started');
+    if (__DEV__) {
+      logger.debug('Application: Already started');
+    }
     return;
   }
 
   if (lifecycleState.startPromise) {
-    logger.debug('Application: Start in progress - reusing promise');
+    if (__DEV__) {
+      logger.debug('Application: Start in progress - reusing promise');
+    }
     return lifecycleState.startPromise;
   }
 
   lifecycleState.startPromise = (async () => {
-    logger.info('🚀 Starting X.com Enhanced Gallery...');
+    if (__DEV__) {
+      logger.info('🚀 Starting X.com Enhanced Gallery...');
+    }
 
     await runBootstrapStages();
 
     lifecycleState.started = true;
     lifecycleState.lastError = null;
 
-    logger.info('✅ Application initialization complete');
+    if (__DEV__) {
+      logger.info('✅ Application initialization complete');
+    }
 
     // Phase 290: Namespace isolation - provide single namespace for global access in dev environment
     if (__DEV__) {
@@ -472,12 +500,16 @@ async function startApplication(): Promise<void> {
 // exported initializeGallery below
 async function initializeGallery(): Promise<void> {
   try {
-    logger.debug('🎯 Starting gallery immediate initialization');
+    if (__DEV__) {
+      logger.debug('🎯 Starting gallery immediate initialization');
+    }
 
     // Phase 2.1: Initialization via bootstrap module
     lifecycleState.galleryApp = await initializeGalleryApp();
 
-    logger.debug('✅ Gallery immediate initialization complete');
+    if (__DEV__) {
+      logger.debug('✅ Gallery immediate initialization complete');
+    }
   } catch (error) {
     // Keep lifecycle state consistent for subsequent retries.
     lifecycleState.galleryApp = null;

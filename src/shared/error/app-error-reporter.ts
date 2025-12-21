@@ -303,9 +303,4 @@ export interface ContextBoundReporter {
 export const bootstrapErrorReporter = AppErrorReporter.forContext('bootstrap');
 export const galleryErrorReporter = AppErrorReporter.forContext('gallery');
 export const mediaErrorReporter = AppErrorReporter.forContext('media');
-export const downloadErrorReporter = AppErrorReporter.forContext('download');
 export const settingsErrorReporter = AppErrorReporter.forContext('settings');
-export const eventErrorReporter = AppErrorReporter.forContext('event');
-export const networkErrorReporter = AppErrorReporter.forContext('network');
-export const storageErrorReporter = AppErrorReporter.forContext('storage');
-export const uiErrorReporter = AppErrorReporter.forContext('ui');

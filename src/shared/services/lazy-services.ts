@@ -47,7 +47,9 @@ export async function ensureDownloadServiceRegistered(): Promise<void> {
     serviceManager.register(SERVICE_KEYS.GALLERY_DOWNLOAD, downloadService);
 
     downloadServiceRegistered = true;
-    logger.info('✅ DownloadService lazily registered (first download)');
+    if (__DEV__) {
+      logger.info('✅ DownloadService lazily registered (first download)');
+    }
   } catch (error) {
     const message = normalizeErrorMessage(error);
     logger.error('Lazy download register failed', message);

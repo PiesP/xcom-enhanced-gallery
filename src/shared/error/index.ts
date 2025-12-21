@@ -8,15 +8,10 @@ export type {
 export {
   AppErrorReporter,
   bootstrapErrorReporter,
-  downloadErrorReporter,
-  eventErrorReporter,
   galleryErrorReporter,
   mediaErrorReporter,
-  networkErrorReporter,
   normalizeErrorMessage,
   settingsErrorReporter,
-  storageErrorReporter,
-  uiErrorReporter,
 } from './app-error-reporter';
 export { GlobalErrorHandler, globalErrorHandler } from './error-handler';
 
