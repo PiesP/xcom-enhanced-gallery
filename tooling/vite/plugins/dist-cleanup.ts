@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import { resolve } from 'node:path';
 import type { Plugin } from 'vite';
 
-import { OUTPUT_FILE_NAMES } from '../constants';
+import { LICENSE_OUTPUT_FILES, OUTPUT_FILE_NAMES } from '../constants';
 import { REPO_ROOT } from '../paths';
 
 const ALLOWED_OUTPUT_FILES = new Set([
@@ -11,6 +11,9 @@ const ALLOWED_OUTPUT_FILES = new Set([
   `${OUTPUT_FILE_NAMES.dev}.map`,
   OUTPUT_FILE_NAMES.prod,
   OUTPUT_FILE_NAMES.meta,
+  LICENSE_OUTPUT_FILES.project,
+  LICENSE_OUTPUT_FILES.thirdPartyDir,
+  LICENSE_OUTPUT_FILES.combined,
 ]);
 
 export function distCleanupPlugin(): Plugin {

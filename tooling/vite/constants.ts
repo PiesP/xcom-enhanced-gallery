@@ -8,6 +8,12 @@ export const OUTPUT_FILE_NAMES = {
   meta: 'xcom-enhanced-gallery.meta.js',
 } as const;
 
+export const LICENSE_OUTPUT_FILES = {
+  project: 'LICENSE',
+  thirdPartyDir: 'LICENSES',
+  combined: 'LICENSES.txt',
+} as const;
+
 export const CDN_BASE_URL =
   'https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@release/dist' as const;
 

@@ -29,6 +29,11 @@ function formatMetaLines(key: string, values: readonly string[]): string[] {
   return values.map((v) => formatMetaLine(key, v));
 }
 
+function resolveLicenseSourceUrl(version: string, isDev: boolean): string {
+  const tag = isDev ? 'master' : `v${version}`;
+  return `${USERSCRIPT_CONFIG.homepageURL}/tree/${tag}/LICENSES`;
+}
+
 export function collectUsedUserscriptGrants(code: string, candidates: readonly string[]): string[] {
   // Heuristic, intentionally conservative:
   // - Scan the final JS bundle for GM_* identifiers.
@@ -82,15 +87,17 @@ function buildMetadataBlock(config: UserscriptMeta): string {
 
 function buildLicenseBlock(
   licenses: readonly LicenseInfo[],
-  options?: { readonly fullText?: boolean }
+  options?: { readonly fullText?: boolean; readonly sourceUrl?: string }
 ): string {
   if (licenses.length === 0) return '';
 
   const fullText = options?.fullText ?? false;
+  const sourceUrl = options?.sourceUrl;
 
   if (!fullText) {
     // Keep the production header short (no file list) to reduce fixed overhead.
-    return `// Third-party licenses: ${USERSCRIPT_CONFIG.homepageURL}/tree/master/LICENSES`;
+    const url = sourceUrl ?? `${USERSCRIPT_CONFIG.homepageURL}/tree/master/LICENSES`;
+    return `// Third-party licenses: ${url}`;
   }
 
   const mitCopyrights: Array<{ name: string; copyright: string }> = [];
@@ -109,7 +116,11 @@ function buildLicenseBlock(
     otherLicenses.push(license);
   }
 
-  const lines = [' * Third-Party Licenses', ' * ====================', ' *'];
+  const lines = [' * Third-Party Licenses', ' * ===================='];
+  if (sourceUrl) {
+    lines.push(` * Source: ${sourceUrl}`);
+  }
+  lines.push(' *');
 
   if (mitCopyrights.length > 0) {
     lines.push(' * MIT License', ' *');
@@ -159,8 +170,9 @@ export function generateUserscriptHeader(args: {
   };
 
   const licenses = aggregateLicenses(LICENSES_DIR);
+  const licenseSourceUrl = resolveLicenseSourceUrl(args.version, args.isDev);
   const metaBlock = buildMetadataBlock(config);
-  const licenseBlock = buildLicenseBlock(licenses, { fullText: args.isDev });
+  const licenseBlock = buildLicenseBlock(licenses, { fullText: true, sourceUrl: licenseSourceUrl });
 
   return licenseBlock ? `${metaBlock}\n${licenseBlock}` : metaBlock;
 }

@@ -27,6 +27,7 @@ import { OUTPUT_FILE_NAMES } from './tooling/vite/constants';
 import { REPO_ROOT } from './tooling/vite/paths';
 import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
 import { distCleanupPlugin } from './tooling/vite/plugins/dist-cleanup';
+import { licenseAssetsPlugin } from './tooling/vite/plugins/license-assets';
 import { metaOnlyPlugin } from './tooling/vite/plugins/meta-only';
 import { productionCleanupPlugin } from './tooling/vite/plugins/production-cleanup';
 import { singleFileBundleGuardPlugin } from './tooling/vite/plugins/single-file-guard';
@@ -79,6 +80,7 @@ export default defineConfig(({ mode }): UserConfig => {
       metaOnlyPlugin(mode),
       ...(!isDev ? [productionCleanupPlugin()] : []),
       userscriptHeaderPlugin(mode),
+      licenseAssetsPlugin(),
       singleFileBundleGuardPlugin(mode),
     ],
     root,
