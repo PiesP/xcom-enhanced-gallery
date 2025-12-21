@@ -7,27 +7,19 @@ export type SupportedLanguage = 'auto' | BaseLanguageCode;
 export interface LanguageStrings {
   readonly tb: {
     readonly prev: string;
-    readonly prevSc: string;
     readonly next: string;
-    readonly nextSc: string;
     readonly dl: string;
-    readonly dlCurSc: string;
     readonly dlAll: string;
     readonly dlAllCt: string;
     readonly set: string;
     readonly setOpen: string;
     readonly cls: string;
-    readonly clsSc: string;
     readonly twTxt: string;
     readonly twPanel: string;
     readonly fitOri: string;
-    readonly fitOriT: string;
     readonly fitW: string;
-    readonly fitWT: string;
     readonly fitH: string;
-    readonly fitHT: string;
     readonly fitC: string;
-    readonly fitCT: string;
   };
   readonly st: {
     readonly ttl: string;

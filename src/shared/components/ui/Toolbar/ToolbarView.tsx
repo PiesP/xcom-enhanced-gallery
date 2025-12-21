@@ -262,19 +262,15 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       onBlur={props.onBlur as ((event: FocusEvent) => void) | undefined}
       onKeyDown={(event) => props.settingsController.handleToolbarKeyDown(event)}
     >
-      <div
-        class={cx(styles.toolbarContent, 'xeg-row-center')}
-        data-gallery-element="toolbar-content"
-      >
-        <div class={styles.toolbarControls} data-gallery-element="toolbar-controls">
+      <div class={cx(styles.toolbarContent, 'xeg-row-center')}>
+        <div class={styles.toolbarControls}>
           <IconButton
             class={toolbarButtonClass()}
             size="toolbar"
             aria-label={translate('tb.prev')}
-            title={translate('tb.prevSc')}
+            title={translate('tb.prev')}
             disabled={nav().prevDisabled}
             onClick={props.onPreviousClick}
-            data-gallery-element="nav-previous"
           >
             <HeroIcon name="arrowSmallLeft" size={18} />
           </IconButton>
@@ -283,15 +279,14 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             class={toolbarButtonClass()}
             size="toolbar"
             aria-label={translate('tb.next')}
-            title={translate('tb.nextSc')}
+            title={translate('tb.next')}
             disabled={nav().nextDisabled}
             onClick={props.onNextClick}
-            data-gallery-element="nav-next"
           >
             <HeroIcon name="arrowSmallRight" size={18} />
           </IconButton>
 
-          <div class={styles.counterBlock} data-gallery-element="counter-section">
+          <div class={styles.counterBlock}>
             <div class={cx(styles.mediaCounterWrapper, 'xeg-inline-center')}>
               <span
                 ref={(element) => {
@@ -299,7 +294,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 }}
                 class={cx(styles.mediaCounter, 'xeg-inline-center')}
                 aria-live="polite"
-                data-gallery-element="counter"
               >
                 <span class={styles.currentIndex}>{displayedIndex() + 1}</span>
                 <span class={styles.separator}>/</span>
@@ -322,7 +316,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 aria-label={label.label}
                 title={label.title}
                 aria-pressed={activeFitMode() === mode}
-                data-gallery-element={`fit-${mode}`}
               >
                 <HeroIcon name={iconName} size={18} />
               </IconButton>
@@ -335,8 +328,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             onClick={props.onDownloadCurrent}
             disabled={nav().downloadDisabled}
             aria-label={translate('tb.dl')}
-            title={translate('tb.dlCurSc')}
-            data-gallery-element="download-current"
+            title={translate('tb.dl')}
           >
             <HeroIcon name="download" size={18} />
           </IconButton>
@@ -349,7 +341,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               disabled={nav().downloadDisabled}
               aria-label={translate('tb.dlAllCt', { count: totalCount() })}
               title={translate('tb.dlAllCt', { count: totalCount() })}
-              data-gallery-element="download-all"
             >
               <HeroIcon name="arrowDownOnSquareStack" size={18} />
             </IconButton>
@@ -368,7 +359,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               disabled={isToolbarDisabled()}
               onMouseDown={props.settingsController.handleSettingsMouseDown}
               onClick={props.settingsController.handleSettingsClick}
-              data-gallery-element="settings"
             >
               <HeroIcon name="cog6Tooth" size={18} />
             </IconButton>
@@ -385,7 +375,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               title={translate('tb.twTxt')}
               disabled={isToolbarDisabled()}
               onClick={props.toggleTweetPanelExpanded}
-              data-gallery-element="tweet-text"
             >
               <HeroIcon name="chatBubbleLeftRight" size={18} />
             </IconButton>
@@ -395,10 +384,9 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             class={toolbarButtonClass(styles.closeButton)}
             size="toolbar"
             aria-label={translate('tb.cls')}
-            title={translate('tb.clsSc')}
+            title={translate('tb.cls')}
             disabled={isToolbarDisabled()}
             onClick={props.onCloseClick}
-            data-gallery-element="close"
           >
             <HeroIcon name="arrowLeftOnRectangle" size={18} />
           </IconButton>

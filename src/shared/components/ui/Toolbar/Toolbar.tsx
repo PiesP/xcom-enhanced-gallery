@@ -208,19 +208,19 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const fitModeLabels = createMemo<Record<FitMode, { label: string; title: string }>>(() => ({
     original: {
       label: translate('tb.fitOri'),
-      title: translate('tb.fitOriT'),
+      title: translate('tb.fitOri'),
     },
     fitWidth: {
       label: translate('tb.fitW'),
-      title: translate('tb.fitWT'),
+      title: translate('tb.fitW'),
     },
     fitHeight: {
       label: translate('tb.fitH'),
-      title: translate('tb.fitHT'),
+      title: translate('tb.fitH'),
     },
     fitContainer: {
       label: translate('tb.fitC'),
-      title: translate('tb.fitCT'),
+      title: translate('tb.fitC'),
     },
   }));
 

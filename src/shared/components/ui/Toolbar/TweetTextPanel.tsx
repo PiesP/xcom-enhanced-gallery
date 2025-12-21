@@ -15,11 +15,7 @@ export default function TweetTextPanel(props: TweetTextPanelProps): JSXElement {
       <div class={styles.tweetTextHeader}>
         <span class={styles.tweetTextLabel}>{translate('tb.twTxt')}</span>
       </div>
-      <div
-        class={styles.tweetContent}
-        data-gallery-element="tweet-content"
-        data-gallery-scrollable="true"
-      >
+      <div class={styles.tweetContent} data-gallery-scrollable="true">
         <span>{props.tweetTextHTML ?? props.tweetText ?? ''}</span>
       </div>
     </div>
