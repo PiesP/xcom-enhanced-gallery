@@ -11,6 +11,7 @@ import type {
   TwitterUser,
 } from '@shared/services/media/types';
 import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/media/media-dimensions';
+import { escapeRegExp } from '@shared/utils/text/formatting';
 import { tryParseUrl } from '@shared/utils/url/host';
 
 // ============================================================================
@@ -52,10 +53,6 @@ function resolveDimensions(media: TwitterMedia, mediaUrl: string): MediaDimensio
     result.height = height;
   }
   return result;
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function removeUrlTokensFromText(text: string, urls: readonly string[]): string {

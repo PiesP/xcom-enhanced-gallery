@@ -25,28 +25,26 @@ function getLocationLike(): LocationLike | undefined {
   }
 }
 
-export function getSafeHref(): string | undefined {
+function getSafeLocationValue<K extends keyof LocationLike>(key: K): LocationLike[K] | undefined {
+  const location = getLocationLike();
+  if (!location) return undefined;
   try {
-    return getLocationLike()?.href;
+    return location[key];
   } catch {
     return undefined;
   }
+}
+
+export function getSafeHref(): string | undefined {
+  return getSafeLocationValue('href');
 }
 
 export function getSafeOrigin(): string | undefined {
-  try {
-    return getLocationLike()?.origin;
-  } catch {
-    return undefined;
-  }
+  return getSafeLocationValue('origin');
 }
 
 export function getSafeHostname(): string | undefined {
-  try {
-    return getLocationLike()?.hostname;
-  } catch {
-    return undefined;
-  }
+  return getSafeLocationValue('hostname');
 }
 
 export function getSafeLocationHeaders(): SafeLocationHeaders {

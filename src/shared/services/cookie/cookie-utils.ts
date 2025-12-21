@@ -17,6 +17,7 @@ import type {
   CookieSetOptions,
 } from '@shared/types/core/cookie.types';
 import { promisifyCallback, promisifyVoidCallback } from '@shared/utils/async';
+import { escapeRegExp } from '@shared/utils/text/formatting';
 
 // ============================================================================
 // Types
@@ -33,10 +34,6 @@ let cachedCookieAPI: CookieAPI | null | undefined;
 // ============================================================================
 // Internal Utilities
 // ============================================================================
-
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 
 function decode(value: string | undefined): string | undefined {
   if (!value) return undefined;
@@ -207,7 +204,7 @@ export function getCookieValueSync(name: string): string | undefined {
     return undefined;
   }
 
-  const pattern = new RegExp(`(?:^|;\\s*)${escapeRegex(name)}=([^;]*)`);
+  const pattern = new RegExp(`(?:^|;\\s*)${escapeRegExp(name)}=([^;]*)`);
   const match = document.cookie.match(pattern);
   return decode(match?.[1]);
 }

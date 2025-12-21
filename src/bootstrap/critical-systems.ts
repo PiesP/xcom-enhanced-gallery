@@ -2,12 +2,14 @@ import { warmupCriticalServices } from '@shared/container/service-accessors';
 import { logger } from '@shared/logging';
 import { registerCoreServices } from '@shared/services/service-initialization';
 
-const devLogger = import.meta.env.PROD ? null : logger;
-
 export async function initializeCriticalSystems(): Promise<void> {
-  devLogger?.debug('[critical] initialization started');
+  if (__DEV__) {
+    logger.debug('[critical] initialization started');
+  }
 
   await registerCoreServices();
   warmupCriticalServices();
-  devLogger?.debug('[critical] initialization complete');
+  if (__DEV__) {
+    logger.debug('[critical] initialization complete');
+  }
 }

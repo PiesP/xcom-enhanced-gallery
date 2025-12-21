@@ -18,6 +18,13 @@ export type ClassRecord = Record<string, boolean | undefined | null>;
 export interface ClassArray extends Array<ClassValue> {}
 
 /**
+ * Escapes text for safe use in RegExp patterns.
+ */
+export function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
  * Combines class names with conditional logic.
  */
 export function cx(...inputs: ClassValue[]): string {
