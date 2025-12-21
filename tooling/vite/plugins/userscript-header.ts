@@ -72,7 +72,7 @@ export function userscriptHeaderPlugin(mode: string): Plugin {
           ]
         : [
             '📦 Optimized for: Distribution Size',
-            '├─ CSS class names: Hashed (xeg_*)',
+            '├─ CSS class names: Hashed (xg-*)',
             '├─ CSS formatting: Compressed',
             '├─ CSS variables: Shortened',
             '├─ CSS custom properties: Pruned',

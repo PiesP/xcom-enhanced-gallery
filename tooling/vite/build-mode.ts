@@ -16,7 +16,9 @@ const BUILD_MODE_CONFIGS: Record<'development' | 'production', BuildModeConfig> 
     cssVariableShortening: true,
     cssPruneUnusedCustomProperties: true,
     cssValueMinify: true,
-    cssClassNamePattern: 'xeg_[hash:base64:5]',
+    // Bundle-size optimization: keep the hashed CSS Module names extremely short.
+    // Note: Code should never depend on this prefix (CSS Modules exports are used instead).
+    cssClassNamePattern: 'xg-[hash:base64:5]',
     sourceMap: false as const,
   },
 };
