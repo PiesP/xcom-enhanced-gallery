@@ -151,12 +151,9 @@ export class TwitterAPI {
 
       if (!response.ok) {
         if (__DEV__) {
-          logger.warn(
-            `Twitter API request failed: ${response.status} ${response.statusText}`,
-            response.data
-          );
+          logger.warn(`Twitter API request failed: ${response.status}`, response.data);
         }
-        throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
+        throw new Error(`TW:${response.status}`);
       }
 
       const json = response.data;

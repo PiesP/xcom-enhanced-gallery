@@ -8,7 +8,7 @@ import { wireGlobalEvents } from '@bootstrap/events';
 import { initializeGalleryApp } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
 import type { IGalleryApp } from '@shared/container/app-container';
-import { getThemeService, warmupNonCriticalServices } from '@shared/container/service-accessors';
+import { getThemeService } from '@shared/container/service-accessors';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
 import { GlobalErrorHandler } from '@shared/error/error-handler';
 import type { BootstrapStage } from '@shared/interfaces/handler.interfaces';
@@ -16,8 +16,6 @@ import { CoreService } from '@shared/services/service-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 import './styles/globals';
-
-const isTestMode = import.meta.env.MODE === 'test';
 
 type CleanupTask = () => Promise<void> | void;
 
@@ -73,12 +71,7 @@ const bootstrapStages: readonly BootstrapStage[] = [
   },
   {
     label: '6',
-    run: initializeGalleryIfPermitted,
-  },
-  {
-    label: '7',
-    run: () => initializeNonCriticalSystems(),
-    optional: true,
+    run: initializeGallery,
   },
 ];
 
@@ -116,14 +109,6 @@ async function applyInitialThemeSetting(): Promise<void> {
   }
 }
 
-function initializeNonCriticalSystems(): void {
-  try {
-    warmupNonCriticalServices();
-  } catch {
-    // Best-effort.
-  }
-}
-
 function setupGlobalEventHandlers(): void {
   tearDownGlobalEventHandlers();
 
@@ -133,15 +118,6 @@ function setupGlobalEventHandlers(): void {
     });
   });
 }
-
-async function initializeGalleryIfPermitted(): Promise<void> {
-  if (isTestMode) {
-    return;
-  }
-
-  await initializeGallery();
-}
-
 async function cleanup(): Promise<void> {
   tearDownGlobalEventHandlers();
 

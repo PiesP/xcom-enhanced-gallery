@@ -31,18 +31,7 @@ import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { createDeferred, createSingleSettler } from '@shared/utils/async/promise-helpers';
 import { createSingleton } from '@shared/utils/types/singleton';
 
-function normalizeRequestHeaders(
-  headers: Record<string, string> | undefined
-): Record<string, string> {
-  const out: Record<string, string> = {};
-  if (!headers) return out;
-
-  for (const [key, value] of Object.entries(headers)) {
-    out[key.toLowerCase()] = value;
-  }
-
-  return out;
-}
+type HttpRequestData = Exclude<GMXMLHttpRequestDetails['data'], undefined>;
 
 /**
  * HTTP request options
@@ -51,7 +40,7 @@ export interface HttpRequestOptions {
   headers?: Record<string, string>;
   timeout?: number; // milliseconds, default: 10000
   responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
-  data?: unknown;
+  data?: HttpRequestData;
   signal?: AbortSignal; // for cancellation
 }
 
@@ -61,7 +50,6 @@ export interface HttpRequestOptions {
 export interface HttpResponse<T = unknown> {
   ok: boolean;
   status: number;
-  statusText: string;
   data: T;
 }
 
@@ -116,45 +104,31 @@ export class HttpRequestService {
         return deferred.promise;
       }
 
-      const headers: Record<string, string> = normalizeRequestHeaders(options?.headers);
+      const headers = options?.headers;
 
       const details: GMXMLHttpRequestDetails = {
         method: method as Exclude<GMXMLHttpRequestDetails['method'], undefined>,
         url,
-        headers,
+        ...(headers ? { headers } : {}),
         timeout: options?.timeout ?? this.defaultTimeout,
         onload: (response) => {
           safeResolve({
             ok: response.status >= 200 && response.status < 300,
             status: response.status,
-            statusText: response.statusText,
             data: response.response as T,
           });
         },
         onerror: (response) => {
           const status = response.status ?? 0;
-          const statusText = response.statusText || 'Network Error';
-          const errorMessage =
-            status === 0
-              ? `Network error: Unable to connect to ${url} (CORS, network failure, or blocked request)`
-              : `HTTP ${status}: ${statusText}`;
+          const errorMessage = status === 0 ? 'NET' : `HTTP:${status}`;
 
-          const error = new Error(errorMessage) as Error & {
-            status?: number;
-            statusText?: string;
-          };
+          const error = new Error(errorMessage) as Error & { status?: number };
           error.status = status;
-          error.statusText = statusText;
           safeReject(error);
         },
         ontimeout: () => {
-          const timeoutMs = options?.timeout ?? this.defaultTimeout;
-          const error = new Error(`Request timed out after ${timeoutMs}ms for ${url}`) as Error & {
-            status?: number;
-            statusText?: string;
-          };
+          const error = new Error('TIMEOUT') as Error & { status?: number };
           error.status = 0;
-          error.statusText = 'Timeout';
           safeReject(error);
         },
         onabort: () => {
@@ -172,21 +146,7 @@ export class HttpRequestService {
 
       const data = options?.data;
       if (data !== undefined) {
-        const isBinaryLike =
-          data instanceof Blob ||
-          data instanceof ArrayBuffer ||
-          (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(data)) ||
-          data instanceof FormData ||
-          data instanceof URLSearchParams;
-
-        if (typeof data === 'object' && data !== null && !isBinaryLike) {
-          details.data = JSON.stringify(data);
-          if (!headers['content-type']) {
-            headers['content-type'] = 'application/json';
-          }
-        } else {
-          details.data = data as Exclude<GMXMLHttpRequestDetails['data'], undefined>;
-        }
+        details.data = data;
       }
 
       const control = userscript.xmlHttpRequest(details);
@@ -234,10 +194,11 @@ export class HttpRequestService {
    */
   async post<T = unknown>(
     url: string,
-    data?: unknown,
+    data?: HttpRequestData,
     options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
-    return this.request<T>('POST', url, { ...options, data });
+    const nextOptions = data === undefined ? options : { ...options, data };
+    return this.request<T>('POST', url, nextOptions);
   }
 
   /**
@@ -245,10 +206,11 @@ export class HttpRequestService {
    */
   async put<T = unknown>(
     url: string,
-    data?: unknown,
+    data?: HttpRequestData,
     options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
-    return this.request<T>('PUT', url, { ...options, data });
+    const nextOptions = data === undefined ? options : { ...options, data };
+    return this.request<T>('PUT', url, nextOptions);
   }
 
   /**
@@ -263,9 +225,10 @@ export class HttpRequestService {
    */
   async patch<T = unknown>(
     url: string,
-    data?: unknown,
+    data?: HttpRequestData,
     options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
-    return this.request<T>('PATCH', url, { ...options, data });
+    const nextOptions = data === undefined ? options : { ...options, data };
+    return this.request<T>('PATCH', url, nextOptions);
   }
 }
