@@ -4,7 +4,7 @@
  */
 
 import type { HttpMethod, HttpResponseType } from '@core/cmd';
-import { getHttpRequestService } from '@shared/services/http-request-service';
+import { HttpRequestService } from '@shared/services/http-request-service';
 
 export interface HttpRequestInput {
   readonly url: string;
@@ -47,7 +47,7 @@ function shouldFallbackToFetch(error: unknown): boolean {
 }
 
 async function httpRequestViaUserscript(input: HttpRequestInput): Promise<HttpRequestOutput> {
-  const http = getHttpRequestService();
+  const http = HttpRequestService.getInstance();
 
   const options = {
     ...(input.headers !== undefined ? { headers: { ...input.headers } } : {}),

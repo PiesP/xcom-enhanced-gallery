@@ -37,7 +37,6 @@ const lifecycleState = {
   started: false,
   startPromise: null as Promise<void> | null,
   galleryApp: null as IGalleryApp | null,
-  lastError: null as unknown | null,
 };
 
 const warnCleanupLog: CleanupLogger | undefined = __DEV__
@@ -469,7 +468,6 @@ async function startApplication(): Promise<void> {
     await runBootstrapStages();
 
     lifecycleState.started = true;
-    lifecycleState.lastError = null;
 
     if (__DEV__) {
       logger.info('✅ Application initialization complete');
@@ -482,7 +480,6 @@ async function startApplication(): Promise<void> {
   })()
     .catch((error) => {
       lifecycleState.started = false;
-      lifecycleState.lastError = error;
       bootstrapErrorReporter.error(error, {
         code: 'APP_INIT_FAILED',
         metadata: { leanMode: true },

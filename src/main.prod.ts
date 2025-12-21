@@ -25,7 +25,6 @@ const lifecycleState = {
   started: false,
   startPromise: null as Promise<void> | null,
   galleryApp: null as IGalleryApp | null,
-  lastError: null as unknown | null,
 };
 
 let globalEventTeardown: Unregister | null = null;
@@ -45,21 +44,15 @@ function tearDownGlobalEventHandlers(): void {
   }
 }
 
-async function runOptionalCleanup(label: string, task: CleanupTask): Promise<void> {
+async function runOptionalCleanup(task: CleanupTask): Promise<void> {
   try {
     await task();
   } catch {
     // Intentionally ignored in production entry.
-    // The label is kept short to reduce shipped strings in a non-minified bundle.
-    void label;
   }
 }
 
 const bootstrapStages: readonly BootstrapStage[] = [
-  {
-    label: '1',
-    run: initializeInfrastructure,
-  },
   {
     label: '2',
     run: initializeCriticalSystems,
@@ -95,10 +88,6 @@ async function runBootstrapStages(): Promise<void> {
   if (failedStage) {
     throw failedStage.error ?? new Error('Bootstrap failed');
   }
-}
-
-async function initializeInfrastructure(): Promise<void> {
-  // Production-only entry intentionally keeps infrastructure init minimal.
 }
 
 async function initializeBaseServicesStage(): Promise<void> {
@@ -156,7 +145,7 @@ async function initializeGalleryIfPermitted(): Promise<void> {
 async function cleanup(): Promise<void> {
   tearDownGlobalEventHandlers();
 
-  await runOptionalCleanup('1', async () => {
+  await runOptionalCleanup(async () => {
     if (!lifecycleState.galleryApp) {
       return;
     }
@@ -165,15 +154,15 @@ async function cleanup(): Promise<void> {
     lifecycleState.galleryApp = null;
   });
 
-  await runOptionalCleanup('2', () => {
+  await runOptionalCleanup(() => {
     CoreService.getInstance().cleanup();
   });
 
-  await runOptionalCleanup('3', () => {
+  await runOptionalCleanup(() => {
     globalTimerManager.cleanup();
   });
 
-  await runOptionalCleanup('4', async () => {
+  await runOptionalCleanup(async () => {
     GlobalErrorHandler.getInstance().destroy();
   });
 
@@ -193,11 +182,9 @@ async function startApplication(): Promise<void> {
     await runBootstrapStages();
 
     lifecycleState.started = true;
-    lifecycleState.lastError = null;
   })()
     .catch((error) => {
       lifecycleState.started = false;
-      lifecycleState.lastError = error;
       bootstrapErrorReporter.error(error, {
         code: 'APP_INIT_FAILED',
         metadata: { leanMode: true },

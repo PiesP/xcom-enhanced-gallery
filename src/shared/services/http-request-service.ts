@@ -31,26 +31,6 @@ import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { createDeferred, createSingleSettler } from '@shared/utils/async/promise-helpers';
 import { createSingleton } from '@shared/utils/types/singleton';
 
-function parseResponseHeaders(raw: string | undefined): Record<string, string> {
-  const out: Record<string, string> = {};
-  if (!raw) return out;
-
-  for (const line of raw.split(/\r?\n/)) {
-    if (!line) continue;
-
-    const idx = line.indexOf(':');
-    if (idx <= 0) continue;
-
-    const name = line.slice(0, idx).trim().toLowerCase();
-    if (!name) continue;
-
-    const value = line.slice(idx + 1).trim();
-    out[name] = value;
-  }
-
-  return out;
-}
-
 function normalizeRequestHeaders(
   headers: Record<string, string> | undefined
 ): Record<string, string> {
@@ -73,7 +53,6 @@ export interface HttpRequestOptions {
   responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
   data?: unknown;
   signal?: AbortSignal; // for cancellation
-  contentType?: string; // MIME type for request body
 }
 
 /**
@@ -84,21 +63,6 @@ export interface HttpResponse<T = unknown> {
   status: number;
   statusText: string;
   data: T;
-  headers: Record<string, string>;
-}
-
-/**
- * HTTP error with details
- */
-export class HttpError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-    readonly statusText: string
-  ) {
-    super(message);
-    this.name = 'HttpError';
-  }
 }
 
 /**
@@ -160,14 +124,11 @@ export class HttpRequestService {
         headers,
         timeout: options?.timeout ?? this.defaultTimeout,
         onload: (response) => {
-          const responseHeaders = parseResponseHeaders(response.responseHeaders);
-
           safeResolve({
             ok: response.status >= 200 && response.status < 300,
             status: response.status,
             statusText: response.statusText,
             data: response.response as T,
-            headers: responseHeaders,
           });
         },
         onerror: (response) => {
@@ -178,13 +139,23 @@ export class HttpRequestService {
               ? `Network error: Unable to connect to ${url} (CORS, network failure, or blocked request)`
               : `HTTP ${status}: ${statusText}`;
 
-          safeReject(new HttpError(errorMessage, status, statusText));
+          const error = new Error(errorMessage) as Error & {
+            status?: number;
+            statusText?: string;
+          };
+          error.status = status;
+          error.statusText = statusText;
+          safeReject(error);
         },
         ontimeout: () => {
           const timeoutMs = options?.timeout ?? this.defaultTimeout;
-          safeReject(
-            new HttpError(`Request timed out after ${timeoutMs}ms for ${url}`, 0, 'Timeout')
-          );
+          const error = new Error(`Request timed out after ${timeoutMs}ms for ${url}`) as Error & {
+            status?: number;
+            statusText?: string;
+          };
+          error.status = 0;
+          error.statusText = 'Timeout';
+          safeReject(error);
         },
         onabort: () => {
           safeReject(getAbortReasonOrAbortErrorFromSignal(options?.signal));
@@ -216,10 +187,6 @@ export class HttpRequestService {
         } else {
           details.data = data as Exclude<GMXMLHttpRequestDetails['data'], undefined>;
         }
-      }
-
-      if (options?.contentType && !headers['content-type']) {
-        headers['content-type'] = options.contentType;
       }
 
       const control = userscript.xmlHttpRequest(details);
@@ -301,16 +268,4 @@ export class HttpRequestService {
   ): Promise<HttpResponse<T>> {
     return this.request<T>('PATCH', url, { ...options, data });
   }
-}
-
-/**
- * Singleton instance getter for convenience (lazy loading)
- *
- * Use this as an alternative to getInstance() if you prefer shorter syntax.
- * Returns the singleton instance, creating it on first access.
- *
- * @returns HttpRequestService singleton instance
- */
-export function getHttpRequestService(): HttpRequestService {
-  return HttpRequestService.getInstance();
 }
