@@ -71,6 +71,17 @@ export default defineConfig(({ mode }): UserConfig => {
       : !(featureMediaExtractionRaw === '0' || featureMediaExtractionRaw.toLowerCase() === 'false');
   const outputFileName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
   const root = REPO_ROOT;
+  const mediaExtractionAliases = featureMediaExtraction
+    ? []
+    : [
+        {
+          find: '@shared/services/media-extraction/media-extraction-service',
+          replacement: resolve(
+            root,
+            'src/shared/services/media-extraction/media-extraction-service.disabled.ts'
+          ),
+        },
+      ];
 
   return {
     plugins: [
@@ -87,6 +98,7 @@ export default defineConfig(({ mode }): UserConfig => {
 
     resolve: {
       alias: [
+        ...mediaExtractionAliases,
         // Bundle-size optimization: In production we swap the full AppErrorReporter
         // implementation for a much slimmer one. This avoids shipping large
         // docstrings and verbose payload keys in a non-minified build.

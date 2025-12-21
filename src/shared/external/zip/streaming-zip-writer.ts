@@ -20,11 +20,14 @@ import { calculateCRC32, encodeUtf8, writeUint16LE, writeUint32LE } from './zip-
 
 const MAX_UINT16 = 0xffff;
 const MAX_UINT32 = 0xffff_ffff;
+const ZIP32_ERROR = 'Zip32 limit exceeded';
 
 function assertZip32(condition: boolean, message: string): void {
-  if (!condition) {
+  if (condition) return;
+  if (__DEV__) {
     throw new Error(`ZIP format limit exceeded (Zip64 not supported): ${message}`);
   }
+  throw new Error(ZIP32_ERROR);
 }
 
 /** @internal */

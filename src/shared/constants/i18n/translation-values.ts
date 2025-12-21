@@ -3,7 +3,7 @@ import type { LanguageStrings } from './language-types';
 export const TRANSLATION_VALUE_COUNT = 48 as const;
 
 export function buildLanguageStringsFromValues(values: ReadonlyArray<string>): LanguageStrings {
-  if (values.length !== TRANSLATION_VALUE_COUNT) {
+  if (__DEV__ && values.length !== TRANSLATION_VALUE_COUNT) {
     throw new Error(
       `Invalid translation value count: expected ${TRANSLATION_VALUE_COUNT}, got ${values.length}`
     );
