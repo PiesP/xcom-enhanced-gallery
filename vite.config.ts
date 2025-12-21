@@ -72,7 +72,7 @@ export default defineConfig(({ mode }): UserConfig => {
       : !(featureMediaExtractionRaw === '0' || featureMediaExtractionRaw.toLowerCase() === 'false');
   const outputFileName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
   const root = REPO_ROOT;
-  const entryFile = isProd ? resolve(root, './src/main.prod.ts') : resolve(root, './src/main.ts');
+  const entryFile = resolve(root, './src/main.ts');
   const mediaExtractionAliases = featureMediaExtraction
     ? []
     : [
@@ -102,99 +102,13 @@ export default defineConfig(({ mode }): UserConfig => {
       alias: [
         ...mediaExtractionAliases,
         // Bundle-size optimization: In production we swap the full AppErrorReporter
-        // implementation for a much slimmer one. This avoids shipping large
-        // docstrings and verbose payload keys in a non-minified build.
+        // implementation for a slimmer one. This avoids shipping large docstrings
+        // and verbose payload keys in a non-minified build.
         ...(isProd
           ? [
               {
                 find: '@shared/error/app-error-reporter',
                 replacement: resolve(root, 'src/shared/error/app-error-reporter.slim.ts'),
-              },
-              {
-                find: '@shared/constants/i18n/translation-values',
-                replacement: resolve(root, 'src/shared/constants/i18n/translation-values.prod.ts'),
-              },
-              {
-                find: '@shared/error/error-handler',
-                replacement: resolve(root, 'src/shared/error/error-handler.prod.ts'),
-              },
-              {
-                find: '@shared/events/event-bus',
-                replacement: resolve(root, 'src/shared/events/event-bus.prod.ts'),
-              },
-              {
-                find: '@bootstrap/dev-namespace',
-                replacement: resolve(root, 'src/bootstrap/dev-namespace.prod.ts'),
-              },
-              {
-                find: '@bootstrap/dev-tools',
-                replacement: resolve(root, 'src/bootstrap/dev-tools.prod.ts'),
-              },
-              {
-                find: '@bootstrap/utils',
-                replacement: resolve(root, 'src/bootstrap/utils.prod.ts'),
-              },
-              {
-                find: '@features/settings/services/settings-service',
-                replacement: resolve(
-                  root,
-                  'src/features/settings/services/settings-service.prod.ts'
-                ),
-              },
-              {
-                find: '@shared/external/userscript/adapter',
-                replacement: resolve(root, 'src/shared/external/userscript/adapter.prod.ts'),
-              },
-              {
-                find: '@shared/services/download/download-orchestrator',
-                replacement: resolve(
-                  root,
-                  'src/shared/services/download/download-orchestrator.prod.ts'
-                ),
-              },
-              {
-                find: '@shared/services/event-manager',
-                replacement: resolve(root, 'src/shared/services/event-manager.prod.ts'),
-              },
-              {
-                find: '@shared/services/http-request-service',
-                replacement: resolve(root, 'src/shared/services/http-request-service.prod.ts'),
-              },
-              {
-                find: '@shared/services/language-service',
-                replacement: resolve(root, 'src/shared/services/language-service.prod.ts'),
-              },
-              {
-                find: '@shared/services/media-service',
-                replacement: resolve(root, 'src/shared/services/media-service.prod.ts'),
-              },
-              {
-                find: '@shared/services/notification-service',
-                replacement: resolve(root, 'src/shared/services/notification-service.prod.ts'),
-              },
-              {
-                find: '@shared/services/persistent-storage',
-                replacement: resolve(root, 'src/shared/services/persistent-storage.prod.ts'),
-              },
-              {
-                find: '@shared/services/service-manager',
-                replacement: resolve(root, 'src/shared/services/service-manager.prod.ts'),
-              },
-              {
-                find: '@shared/services/singletons',
-                replacement: resolve(root, 'src/shared/services/singletons/index.prod.ts'),
-              },
-              {
-                find: '@shared/services/theme-service',
-                replacement: resolve(root, 'src/shared/services/theme-service.prod.ts'),
-              },
-              {
-                find: '@shared/utils/events/core/listener-manager',
-                replacement: resolve(root, 'src/shared/utils/events/core/listener-manager.prod.ts'),
-              },
-              {
-                find: '@edge/bootstrap',
-                replacement: resolve(root, 'src/edge/bootstrap.prod.ts'),
               },
             ]
           : []),
