@@ -174,11 +174,6 @@ export class EventManager {
     return count;
   }
 
-  /** Check if destroyed */
-  public getIsDestroyed(): boolean {
-    return this.isDestroyed;
-  }
-
   /** Clean up and mark as destroyed */
   public cleanup(): void {
     if (this.isDestroyed) {

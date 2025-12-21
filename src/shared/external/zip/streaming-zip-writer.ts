@@ -169,14 +169,4 @@ export class StreamingZipWriter {
 
     return concat([...this.chunks, centralDir, endOfCentralDir]);
   }
-
-  /** Get current entry count */
-  getEntryCount(): number {
-    return this.entries.length;
-  }
-
-  /** Get current ZIP size (excluding Central Directory) */
-  getCurrentSize(): number {
-    return this.currentOffset;
-  }
 }

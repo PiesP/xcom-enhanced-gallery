@@ -58,8 +58,6 @@ function getNearestAttributeValue(
 ): string | null {
   const host = safeClosest(element, `[${attribute}]`) as HTMLElement | null;
   const value = host?.getAttribute(attribute) ?? null;
-  if (attribute === 'data-testid') {
-  }
   return value;
 }
 

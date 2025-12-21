@@ -48,13 +48,6 @@ export class PrefetchManager {
   }
 
   /**
-   * Check if media is cached
-   */
-  has(url: string): boolean {
-    return this.cache.has(url);
-  }
-
-  /**
    * Cancel all active prefetch requests
    */
   cancelAll(): void {
@@ -69,14 +62,6 @@ export class PrefetchManager {
    */
   clear(): void {
     this.cache.clear();
-  }
-
-  /**
-   * Get the cache for bulk downloads
-   */
-  getCache(): Map<string, Promise<Blob>> {
-    // Return a snapshot to avoid exposing internal mutable state.
-    return new Map(this.cache);
   }
 
   /**

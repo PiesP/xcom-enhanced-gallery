@@ -66,7 +66,6 @@ export function addListener(
       listener,
       options,
       context,
-      created: __DEV__ ? Date.now() : 0,
     };
 
     listeners.set(id, listenerContext);

@@ -26,7 +26,6 @@ export async function downloadAsZip(
 
   const ensureUniqueFilename = ensureUniqueFilenameFactory();
   const assignedFilenames = items.map((item) => ensureUniqueFilename(item.desiredName));
-  const usedFilenamesByIndex: Array<string | undefined> = new Array(total);
 
   // Queue management
   let currentIndex = 0;
@@ -73,7 +72,6 @@ export async function downloadAsZip(
         const filename = assignedFilenames[index] ?? item.desiredName;
         writer.addFile(filename, data);
 
-        usedFilenamesByIndex[index] = filename;
         successful++;
       } catch (error) {
         if (abortSignal?.aborted) throw createUserCancelledAbortError(abortSignal.reason);
@@ -89,14 +87,9 @@ export async function downloadAsZip(
 
   const zipBytes = writer.finalize();
 
-  const usedFilenames = usedFilenamesByIndex.filter(
-    (value): value is string => typeof value === 'string'
-  );
-
   return {
     filesSuccessful: successful,
     failures,
     zipData: zipBytes,
-    usedFilenames,
   };
 }

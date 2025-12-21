@@ -17,7 +17,6 @@ export interface DOMListenerContext {
   listener: EventListenerOrEventListenerObject;
   options?: boolean | AddEventListenerOptions | undefined;
   context?: string | undefined;
-  created: number;
 }
 
 /**
