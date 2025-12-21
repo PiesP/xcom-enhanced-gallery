@@ -2,6 +2,7 @@ export interface BuildModeConfig {
   readonly cssCompress: boolean;
   readonly cssRemoveComments: boolean;
   readonly cssVariableShortening: boolean;
+  readonly cssPruneUnusedCustomProperties: boolean;
   readonly cssValueMinify: boolean;
   readonly cssClassNamePattern: string;
   readonly sourceMap: boolean | 'inline';

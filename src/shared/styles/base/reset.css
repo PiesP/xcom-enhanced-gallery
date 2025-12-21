@@ -11,26 +11,6 @@
     padding: 0;
   }
 
-  .xeg-gallery-root {
-    scroll-behavior: smooth;
-    font-family: var(
-      --font-family-primary,
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      Roboto,
-      sans-serif
-    );
-    line-height: var(--xeg-line-height-normal, 1.5);
-    color: var(--xeg-color-text-primary);
-    background: var(--xeg-color-background, transparent);
-    -webkit-text-size-adjust: 100%;
-    -moz-text-size-adjust: 100%;
-    text-size-adjust: 100%;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
   .xeg-gallery-root button {
     border: none;
     background: none;

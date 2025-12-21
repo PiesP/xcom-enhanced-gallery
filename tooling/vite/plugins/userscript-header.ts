@@ -75,6 +75,7 @@ export function userscriptHeaderPlugin(mode: string): Plugin {
             '├─ CSS class names: Hashed (xeg_*)',
             '├─ CSS formatting: Compressed',
             '├─ CSS variables: Shortened',
+            '├─ CSS custom properties: Pruned',
             '├─ CSS comments: Removed',
             `└─ Source maps: ${sourceMapLabel}`,
           ];
