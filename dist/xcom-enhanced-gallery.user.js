@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name X.com Enhanced Gallery
 // @namespace https://github.com/PiesP/xcom-enhanced-gallery
-// @version 1.3.0
+// @version 1.4.0
 // @description Media viewer and download functionality for X.com
 // @author PiesP
 // @license MIT
+// Copyright (c) 2024-2025 X.com Enhanced Gallery Contributors
 // @homepageURL https://github.com/PiesP/xcom-enhanced-gallery
 // @match https://x.com/*
 // @match https://*.x.com/*
@@ -31,87 +32,111 @@
 // @compatible safari 17+
 // @noframes
 // ==/UserScript==
-// Third-party licenses: https://github.com/PiesP/xcom-enhanced-gallery/tree/master/LICENSES
-(function(){if(typeof document==='undefined')return;var css=".xeg_EeShbY{display:flex;flex-direction:column;gap:var(--xse-g);padding:var(--xse-p)} .xeg_nm9B3P{gap:var(--sps)} .xeg_PI5CjL{display:flex;flex-direction:column;gap:var(--xse-cg)} .xeg_VUTt8w{gap:var(--spx)} .xeg_vhT3QS{font-size:var(--xse-lf);font-weight:var(--xse-lw);color:var(--xct-p)} .xeg_Y62M5l{font-size:var(--fsx);color:var(--xct-s);letter-spacing:.04em;text-transform:uppercase} .xeg_jpiS5y{width:100%;padding:var(--xse-sp);font-size:var(--xse-sf);color:var(--xct-p);background-color:var(--xtp-s, var(--xt-s));border:var(--bwt) solid var(--xt-b);border-radius:var(--xr-m);cursor:pointer;line-height:1.375;min-height:2.5em;transform:none;overflow:visible;transition:border-color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s)} .xeg_jpiS5y:hover{border-color:var(--xcb-h);background-color:var(--xtp-s, var(--xt-s))} .xeg_jpiS5y:focus, .xeg_jpiS5y:focus-visible{border-color:var(--xfic, var(--xcb-h))} .xeg_jpiS5y option{padding:.5em .75em;line-height:1.5} .xeg_4eojab{color:var(--xtt-c, var(--xct-p));cursor:pointer;font-size:.875em;font-weight:500;width:var(--xsb-m);height:var(--xsb-m);min-width:var(--xsb-m);min-height:var(--xsb-m);padding:.5em;aspect-ratio:1;position:relative;overflow:clip;border-radius:var(--xr-m);background:transparent;--toolbar-button-accent:var(--toolbar-surface-border, var(--xt-b));--toolbar-button-accent-hover:var(--xcb-h);--toolbar-button-focus-border:var( --xfic, var(--toolbar-button-accent-hover) );border:none;transition:var(--xts), transform var(--xdf) var(--xe-s)} .xeg_4eojab:focus, .xeg_4eojab:focus-visible{background:var(--xte-b, var(--xcn1))} .xeg_fLg7uD{--toolbar-surface-base:var(--xtp-s, var(--xt-s));--toolbar-surface-border:var(--xt-b);--xb-do:1;background:var(--toolbar-surface-base);border:none;border-radius:var(--xr-l);position:fixed;top:1.25em;left:50%;transform:translateX(-50%);z-index:var(--xz-t);display:var(--toolbar-display, inline-flex);align-items:center;justify-content:space-between;height:3em;padding:.5em 1em;gap:0;color:var(--xtt-c, var(--xct-p));visibility:var(--toolbar-visibility, visible);opacity:var(--toolbar-opacity, 1);pointer-events:var(--toolbar-pointer-events, auto);transition:var(--xten);user-select:none;overscroll-behavior:contain} .xeg_fLg7uD.xeg_ZpP8ej, .xeg_fLg7uD.xeg_t4eqv-{border-radius:var(--xr-l) var(--xr-l) 0 0} .xeg_fLg7uD.xeg_ojCWl4{--toolbar-opacity:1;--toolbar-pointer-events:auto;--toolbar-visibility:visible;--toolbar-display:inline-flex} .xeg_fLg7uD.xeg_Y6KFai, .xeg_fLg7uD.xeg_n-abf0, .xeg_fLg7uD.xeg_bEzlgK{--toolbar-opacity:1;--toolbar-pointer-events:auto;--toolbar-visibility:visible;--toolbar-display:inline-flex} .xeg_f8g4ur{display:flex;align-items:center;justify-content:center;width:100%;max-width:100%;overflow:hidden} .xeg_Ix3ja2{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:var(--spx);width:100%} .xeg_Ix3ja2 > *{flex:0 0 auto} .xeg_0EHq9g{display:flex;align-items:center;justify-content:center;padding-inline:var(--sps);min-width:5em} .xeg_FKnOOH{color:var(--xtt-m, var(--xct-p));margin:0 .125em}:where(.xeg_4eojab[aria-pressed=\"true\"]){background:var(--xte-bs, var(--xcn2))} .xeg_4eojab[aria-busy=\"true\"]{--button-opacity:.7;--button-transform:scale(.95)} .xeg_4eojab:disabled{--button-opacity:.5;color:var(--xtt-m, var(--xcn4));cursor:not-allowed} @media (hover:hover){.xeg_4eojab:hover:not(:disabled){background:var(--xte-b, var(--xcn1));transform:translateY(var(--xb-l))}} .xeg_4eojab:active:not(:disabled){background:var(--xte-bs, var(--xcn2));transform:translateY(0)} .xeg_njlfQM{--toolbar-button-accent:var(--xc-p);--toolbar-button-accent-hover:var(--xc-ph);--toolbar-button-focus-border:var(--xc-ph)} .xeg_AU-dPz{--toolbar-button-accent:var(--xc-s);--toolbar-button-accent-hover:var(--xc-sh);--toolbar-button-focus-border:var(--xc-sh)} .xeg_Vn14NE{--toolbar-button-accent:var(--xc-e);--toolbar-button-accent-hover:var(--xc-eh);--toolbar-button-focus-border:var(--xc-eh)} .xeg_atmJJM{position:relative} .xeg_GG869J{position:relative;gap:0;min-width:5em;min-height:2.5em;padding-bottom:.5em;box-sizing:border-box} .xeg_2cjmvu{color:var(--xtt-c, var(--xct-p));font-size:var(--xfs-m);font-weight:600;text-align:center;white-space:nowrap;line-height:1;background:transparent;padding:.25em .5em;border-radius:var(--xr-m);border:none} .xeg_JEXmPu{color:var(--xtt-c, var(--xct-p));font-weight:700} .xeg_d1et2f{color:var(--xtt-c, var(--xct-p))} .xeg_vB6NL3{position:absolute;left:50%;bottom:.125em;transform:translateX(-50%);width:3.75em;height:.125em;background:var(--xtp-pt, var(--xcn2));border-radius:var(--xr-s);overflow:clip} .xeg_LWQwIA{width:100%;height:100%;background:var(--xtt-c, var(--xct-p));border-radius:var(--xr-s);transition:var(--xtwn);transform-origin:left} .xeg_Q7dUY4, button.xeg_Q7dUY4{transition:var(--xti);position:relative;z-index:10;pointer-events:auto} .xeg_Q7dUY4[data-selected=\"true\"]{--toolbar-button-accent-hover:var(--xc-p);--toolbar-button-focus-border:var(--xc-ph)} .xeg_Q7dUY4:focus, .xeg_Q7dUY4:focus-visible{border:none} .xeg_atmJJM{position:relative} @media (prefers-reduced-transparency:reduce){.xeg_fLg7uD{background:var(--xtp-s, var(--xt-s))} [data-theme=\"dark\"] .xeg_fLg7uD{background:var(--xtp-s, var(--xt-s))}} @media (prefers-reduced-motion:reduce){.xeg_4eojab:hover:not(:disabled), .xeg_atmJJM:hover:not(:disabled), .xeg_Vn14NE:hover:not(:disabled), .xeg_Q7dUY4:hover{transform:none}}:where(.xeg_JcF-YS, .xeg_yRtvAY){position:absolute;top:100%;left:0;right:0;width:100%;display:flex;flex-direction:column;gap:var(--spm);padding:var(--spm);max-height:var(--xtp-mh);overflow:hidden;opacity:0;transform:translateY(-.5em);visibility:hidden;pointer-events:none;transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s var(--xdn);background:var( --toolbar-surface-base, var(--xtp-s, var(--xt-s)) );border-top:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:0 0 var(--xr-l) var(--xr-l);z-index:var(--xz-tp);will-change:transform, opacity;overscroll-behavior:contain} .xeg_JcF-YS{height:var(--xtp-h)} .xeg_yRtvAY{min-height:var(--xtp-h)}:where(.xeg_JcF-YS, .xeg_yRtvAY).xeg_4a2L8u{height:auto;opacity:1;transform:translateY(0);visibility:visible;pointer-events:auto;border-top-color:var(--toolbar-surface-border, var(--xt-b));transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s 0s;z-index:var(--xz-ta)} .xeg_w56Ci4{display:flex;flex-direction:column;gap:var(--sps)} .xeg_jmjGCs{padding:var(--sps);font-size:var(--xfs-m);line-height:1.5;color:var(--xtt-c, var(--xct-p));background:var( --toolbar-surface-base, var(--xtp-s, var(--xt-s)) );border:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:var(--xr-m);white-space:pre-wrap;word-wrap:break-word;overflow-y:auto;overscroll-behavior:contain;max-height:15em;transition:var(--xts);user-select:text;-webkit-user-select:text;cursor:text} .xeg_jmjGCs::-webkit-scrollbar{width:.5em} .xeg_jmjGCs::-webkit-scrollbar-track{background:var(--xts-t, var(--xcn2));border-radius:var(--xr-s)} .xeg_jmjGCs::-webkit-scrollbar-thumb{background:var(--xts-th, var(--xcn4));border-radius:var(--xr-s)} .xeg_jmjGCs::-webkit-scrollbar-thumb:hover{background:var(--xte-bs, var(--xcn5))}:where(.xeg_ZzP6Op, .xeg_jmjGCs a){color:var(--xc-p);text-decoration:none;overflow-wrap:break-word;transition:color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s);cursor:pointer}:where(.xeg_ZzP6Op, .xeg_jmjGCs a):hover{color:var(--xc-ph);text-decoration:underline}:where(.xeg_ZzP6Op, .xeg_jmjGCs a):focus,:where(.xeg_ZzP6Op, .xeg_jmjGCs a):focus-visible{background:var(--xte-bs, var(--xcn2));color:var(--xc-ph);border-radius:var(--xr-xs)}:where(.xeg_ZzP6Op, .xeg_jmjGCs a):active{color:var(--xc-p-active)} .xeg_LSA44p{container-type:size;container-name:vertical-gallery;contain:layout style paint;content-visibility:auto;contain-intrinsic-size:100vw 100vh} @layer xeg.components{:root{--xtt:opacity var(--xdt) var(--xeo), transform var(--xdt) var(--xeo), visibility 0ms;--xeg-spacing-gallery:clamp(var(--xs-s), 2.5vw, var(--xs-l));--xeg-spacing-mobile:clamp(var(--xs-xs), 2vw, var(--xs-m));--xeg-spacing-compact:clamp(.25rem, 1.5vw, var(--xs-s));--xth-o:0;--xth-v:hidden;--xth-pe:none}} @media (prefers-reduced-motion:reduce){@layer xeg.components{:root{--xtt:none}}} .xeg_X9gZRg{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:var(--xz-g, 10000);background:var(--xg-b);display:flex;flex-direction:column;transform:var(--xgh);will-change:opacity, transform;contain:layout style paint;opacity:1;visibility:visible;transition:var(--xten);cursor:default;pointer-events:auto;container-type:size;container-name:gallery-container;scroll-behavior:smooth;overscroll-behavior:none} .xeg_meO3Up{position:fixed;top:0;left:0;right:0;height:auto;z-index:var(--xz-t);opacity:var(--toolbar-opacity, 0);visibility:var(--toolbar-visibility, hidden);display:block;transition:var(--xtt);will-change:transform, opacity, visibility;contain:layout style;transform:var(--xgh);backface-visibility:var(--xbv);pointer-events:var(--toolbar-pointer-events, none);background:transparent;border:none;border-radius:0;margin:0;padding-block-end:var(--xeg-spacing-gallery)} .xeg_meO3Up:hover{--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto;--toolbar-transform-y:0} .xeg_meO3Up:focus-within{--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto;--toolbar-transform-y:0;transition:var(--xtef)} .xeg_meO3Up *{pointer-events:inherit} .xeg_meO3Up [data-gallery-element=\"settings-panel\"][data-expanded=\"true\"]{pointer-events:auto} .xeg_meO3Up:has([data-gallery-element=\"settings-panel\"][data-expanded=\"true\"]){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xeg_X9gZRg.xeg_9abgzR{cursor:none} .xeg_X9gZRg.xeg_sOsSyv[data-xeg-gallery=\"true\"][data-xeg-role=\"gallery\"] .xeg_meO3Up{--toolbar-opacity:var(--xth-o, 0);--toolbar-visibility:var(--xth-v, hidden);--toolbar-pointer-events:var(--xth-pe, none)} .xeg_X9gZRg *{pointer-events:auto} .xeg_gmRWyH{flex:1;display:flex;flex-direction:column;overflow:auto;position:relative;contain:layout style;transform:var(--xgh);overscroll-behavior:contain;scrollbar-gutter:stable;pointer-events:auto;container-type:size;container-name:items-list} .xeg_gmRWyH::-webkit-scrollbar{width:var(--xsw)} .xeg_gmRWyH::-webkit-scrollbar-track{background:transparent} .xeg_gmRWyH::-webkit-scrollbar-thumb{background:var(--xcn3);border-radius:var( --xsbr );transition:background-color var(--xdn) var(--xe-s)} .xeg_gmRWyH::-webkit-scrollbar-thumb:hover{background:var(--xcn4)} .xeg_X9gZRg.xeg_9abgzR .xeg_meO3Up{pointer-events:none;opacity:0;transition:opacity var(--xdf) var(--xeo)} .xeg_X9gZRg.xeg_9abgzR [data-xeg-role=\"items-list\"], .xeg_X9gZRg.xeg_9abgzR .xeg_gmRWyH{pointer-events:auto} .xeg_X9gZRg.xeg_yhK-Ds{justify-content:center;align-items:center} .xeg_EfVayF{position:relative;margin-bottom:var(--xs-m, 1rem);border-radius:var(--xr-l, .5rem);transition:var(--xten);contain:layout style;transform:var(--xgh)} .xeg_LxHLC8{position:relative;z-index:1} .xeg_sfF005{height:calc(100vh - var(--xeg-toolbar-height, 3.75rem));min-height:50vh;pointer-events:none;user-select:none;flex-shrink:0;background:transparent;opacity:0;contain:strict;content-visibility:auto} .xeg_X9gZRg:has(.xeg_LxHLC8){--has-active-item:1} .xeg_X9gZRg:has(.xeg_meO3Up:hover){--toolbar-interaction:1} .xeg_gC-mQz{position:fixed;top:0;left:0;right:0;height:var(--xhzh);z-index:var(--xz-th);background:transparent;pointer-events:auto} .xeg_gC-mQz:hover{z-index:var(--xz-th);background:var(--xth-bg, transparent)} .xeg_X9gZRg.xeg_Canm64:not([data-settings-expanded=\"true\"]) .xeg_gC-mQz, .xeg_X9gZRg:has(.xeg_meO3Up:hover):not([data-settings-expanded=\"true\"]) .xeg_gC-mQz{pointer-events:none} .xeg_X9gZRg.xeg_Canm64 .xeg_meO3Up, .xeg_X9gZRg:has(.xeg_gC-mQz:hover) .xeg_meO3Up{--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto;--toolbar-transform-y:0} @supports not (selector(:has(*))){.xeg_meO3Up:hover ~ .xeg_gC-mQz{pointer-events:none} .xeg_gC-mQz:hover + .xeg_meO3Up, .xeg_gC-mQz:hover ~ .xeg_meO3Up{--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto;--toolbar-transform-y:0} .xeg_X9gZRg:hover .xeg_meO3Up{--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto;--toolbar-transform-y:0}} .xeg_meO3Up [class*=\"galleryToolbar\"], .xeg_meO3Up [data-testid*=\"toolbar\"]{opacity:var(--toolbar-opacity, 0);visibility:var(--toolbar-visibility, hidden);display:flex;pointer-events:var(--toolbar-pointer-events, none)} .xeg_meO3Up button, .xeg_meO3Up [role=\"button\"], .xeg_meO3Up .xeg_e06XPV{pointer-events:auto;position:relative;z-index:10} .xeg_fwsrVX{text-align:center;color:var(--xct-s);max-inline-size:min(25rem, 90vw);padding:clamp(1.875rem, 5vw, 2.5rem)} .xeg_fwsrVX h3{margin:0 0 clamp(.75rem, 2vw, 1rem);font-size:clamp(1.25rem, 4vw, 1.5rem);font-weight:600;color:var(--xct-p);line-height:1.2} .xeg_fwsrVX p{margin:0;font-size:clamp(.875rem, 2.5vw, 1rem);line-height:1.5;color:var(--xct-t)} @container gallery-container (max-width:48rem){.xeg_gmRWyH{padding:var(--xeg-spacing-mobile);gap:var(--xeg-spacing-mobile)} .xeg_meO3Up{padding-block-end:var(--xeg-spacing-mobile)}} @container gallery-container (max-width:30rem){.xeg_gmRWyH{padding:var(--xeg-spacing-compact);gap:var(--xeg-spacing-compact)}} @media (prefers-reduced-motion:reduce){.xeg_gmRWyH{scroll-behavior:auto;will-change:auto;transform:none}} @media (prefers-reduced-motion:reduce){.xeg_meO3Up:hover, .xeg_meO3Up:focus-within{transform:none}} .xeg_X9gZRg [class*=\"galleryToolbar\"]:hover{--toolbar-opacity:1;--toolbar-pointer-events:auto} .xeg_huYoSL{position:relative;margin-bottom:var(--xs-m);margin-inline:auto;border-radius:var(--xr-l);overflow:visible;transition:var(--xti);cursor:pointer;border:.0625rem solid var(--xcb-p);background:var(--xcbg-s);padding:var(--xs-s);width:fit-content;max-width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;pointer-events:auto;transform:var(--xgh);will-change:transform;contain:layout style} .xeg_huYoSL[data-fit-mode=\"original\"]{max-width:none;flex-shrink:0;width:max-content;align-self:center} .xeg_huYoSL:hover{transform:var(--xhl);background:var(--xc-se);border-color:var(--xbe)} .xeg_huYoSL:focus-visible{border-color:var(--xfic, var(--xcb-p))} .xeg_huYoSL.xeg_xm-1cY{border-color:var(--xbe, var(--xcb-s));transition:var(--xti)} .xeg_huYoSL.xeg_xm-1cY:focus-visible{border-color:var(--xfic, var(--xcb-s))} .xeg_huYoSL.xeg_luqi-C{border-color:var(--xfic, var(--xcb-p));transition:var(--xti)} .xeg_8-c8dL{position:relative;background:var(--xcbg-s);width:fit-content;max-width:100%;margin:0 auto;display:flex;justify-content:center;align-items:center} .xeg_huYoSL[data-fit-mode=\"original\"] .xeg_8-c8dL{width:auto;max-width:none} .xeg_huYoSL[data-media-loaded=\"false\"] .xeg_8-c8dL{min-height:var(--xs-3);aspect-ratio:var(--xad)} .xeg_lhkEW2{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:var(--xsk-b);min-height:var(--xs-3)} .xeg_6YYDYR{--xsp-s:var(--xs-l);--xsp-bw:.125rem;--xsp-tc:var(--xcb-p);--xsp-ic:var(--xc-p)} .xeg_FWlk5q, .xeg_GUevPQ{display:block;border-radius:var(--xr-m);object-fit:contain;pointer-events:auto;user-select:none;-webkit-user-drag:none;transform:var(--xgh);will-change:opacity;transition:opacity var(--xdn) var(--xeo)}:is(.xeg_FWlk5q, .xeg_GUevPQ).xeg_8Z3Su4{opacity:0}:is(.xeg_FWlk5q, .xeg_GUevPQ).xeg_y9iPua{opacity:1} .xeg_GUevPQ{inline-size:100%;overflow:clip}:is(.xeg_FWlk5q, .xeg_GUevPQ).xeg_yYtGJp{inline-size:auto;block-size:auto;max-inline-size:none;max-block-size:none;object-fit:none}:is(.xeg_FWlk5q, .xeg_GUevPQ).xeg_Uc0oUi{inline-size:auto;block-size:auto;max-inline-size:100%;max-block-size:none;object-fit:scale-down}:is(.xeg_FWlk5q, .xeg_GUevPQ).xeg_M9Z6MG{inline-size:auto;block-size:auto;max-inline-size:calc(100vw - var(--xs-l) * 2);max-block-size:var(--xvhc);object-fit:scale-down}:is(.xeg_FWlk5q, .xeg_GUevPQ).xeg_-Mlrhi{inline-size:auto;block-size:auto;max-inline-size:100%;max-block-size:var(--xvhc);object-fit:contain} .xeg_Wno7Ud{font-size:var(--xfs-2);margin-bottom:var(--xs-s)} .xeg_8-wisg{font-size:var(--xfs-s);text-align:center} .xeg_GswePL{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--ceb);color:var(--xc-e, var(--ce));min-height:var(--xs-3)} .xeg_huYoSL[data-media-loaded=\"false\"][data-fit-mode=\"original\"]{inline-size:min(var(--xgi-w, 100%), 100%);max-inline-size:min(var(--xgi-w, 100%), 100%);max-block-size:min( var(--xgi-h, var(--xs-5)), var(--xvhc) )} .xeg_huYoSL[data-media-loaded=\"false\"][data-fit-mode=\"original\"] .xeg_FWlk5q, .xeg_huYoSL[data-media-loaded=\"false\"][data-fit-mode=\"original\"] .xeg_GUevPQ{inline-size:min(var(--xgi-w, 100%), 100%);max-inline-size:min(var(--xgi-w, 100%), 100%);max-block-size:min( var(--xgi-h, var(--xs-5)), var(--xvhc) )} .xeg_huYoSL[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitHeight\"], .xeg_huYoSL[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitContainer\"]{--xgf-ht:min( var(--xgi-h, var(--xs-5)), var(--xvhc) );max-block-size:var(--xgf-ht);inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) );max-inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) )} .xeg_huYoSL[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitHeight\"] .xeg_FWlk5q, .xeg_huYoSL[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitHeight\"] .xeg_GUevPQ, .xeg_huYoSL[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitContainer\"] .xeg_FWlk5q, .xeg_huYoSL[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitContainer\"] .xeg_GUevPQ{max-block-size:var(--xgf-ht);max-inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) )} @media (prefers-reduced-motion:reduce){.xeg_huYoSL{will-change:auto} .xeg_huYoSL:hover{transform:none}} @layer xeg.features{:where(.xeg-surface, .xeg-glass-surface){background:var(--xsu-b);border:var(--bwt) solid var(--xsu-br);border-radius:var(--xr-2);isolation:isolate;transition:opacity var(--xdn) var(--xe-s)}:where(.xeg-surface, .xeg-glass-surface):hover{background:var(--xsu-bh, var(--xsu-b))} .xeg-gallery-renderer[data-renderer=\"gallery\"]{display:block;width:0;height:0;overflow:visible} .xeg-gallery-overlay{display:flex;align-items:center;justify-content:center;position:fixed;inset:0;z-index:var(--xz-g, 10000);background:var(--xg-b);opacity:1;transition:opacity var(--xdn) var(--xe-s);pointer-events:auto} .xeg-gallery-container{position:relative;width:100%;height:100%;max-width:100vw;max-height:100vh;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}} @layer xeg.tokens, xeg.base, xeg.utilities, xeg.components, xeg.features, xeg.overrides;@layer xeg.tokens{:where(:root, .xeg-theme-scope){--cbw:oklch(1 0 0);--cbb:oklch(0 0 0);--cg0:oklch(.97 .002 206.2);--cg1:oklch(.943 .006 206.2);--cg2:oklch(.896 .006 206.2);--cg3:oklch(.796 .006 206.2);--cg4:oklch(.696 .006 286.3);--cg5:oklch(.598 .006 286.3);--cg6:oklch(.488 .006 286.3);--cg7:oklch(.378 .005 286.3);--cg8:oklch( .306 .005 282 );--cg9:oklch(.234 .006 277.8);--spx:.25rem;--sps:.5rem;--spm:1rem;--spl:1.5rem;--spxl:2rem;--sp2:3rem;--rx:.125em;--rs:.25em;--rm:.375em;--rl:.5em;--rxl:.75em;--r2:1em;--rp:1.75em;--rf:50%;--ffp:\"TwitterChirp\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;--fs2x:.6875rem;--fsx:.75rem;--fss:.875rem;--fsb:.9375rem;--fsm:1rem;--fsl:1.0625rem;--fsxl:1.125rem;--fs2:1.25rem;--fs3:1.5rem;--fwn:400;--fwm:500;--fws:600;--fwb:700;--df:150ms;--dn:250ms;--ds:300ms;--bwt:.0625rem;--bws:.125rem;--oob:.85;--lhn:1.5}} @layer xeg.tokens{:where(:root, .xeg-theme-scope){--cbp:var(--cbw);--cbs:var(--cg0);--cbu:var(--cbw);--cbe:var(--cbw);--xbgt:var(--cbu);--xt-b:var(--xcb-p);--xt-s:var(--xbgt);--xtp-s:var(--xt-s);--xcbg-s:var(--cbs);--xg-bl:var(--cbp);--xg-bd:var(--cg9);--xg-b:var(--xg-bl);--xc-bg:oklch(95% 0 0deg);--ctp:var(--cbb);--cts:var( --cg6 );--ctm:var(--cg5);--cti:var(--cbw);--cte:var(--cbw);--cto:var(--cbw);--cbd:var(--cg2);--cbm:var(--cg1);--cbsu:var(--cg1);--cbe2:var(--cg5);--cbh:var(--cg3);--xcb-p:var(--cbd);--xcb-h:var(--cbh);--xcb-s:var(--cbe2);--xgbs:var(--cbe2);--xb-bg:var(--cbu);--xb-b:var(--cbd);--xb-t:var(--ctp);--xb-bgh:var(--cbs);--xb-bh:var(--cbh);--xbb:var(--xcb-p);--xm-bl:var(--cbe);--xm-brl:var(--cbd);--xm-bd:var(--cg8);--xm-brd:var(--cbe2);--xm-b:var(--xm-bl);--xm-br:var(--xm-brl);--xtt-c:var(--xct-p);--xtt-m:var(--xct-s);--xte-b:color-mix( in oklch, var(--xbgt) 80%, var(--cbw) 20% );--xte-bs:color-mix( in oklch, var(--xbgt) 65%, var(--cbw) 35% );--xte-br:color-mix( in oklch, var(--xt-b) 85%, var(--cbw) 15% );--xtp-pt:color-mix( in oklch, var(--xte-b) 60%, var(--xte-br) 40% );--xts-t:color-mix( in oklch, var(--xte-b) 50%, var(--cbw) 50% );--xts-th:color-mix( in oklch, var(--xte-br) 80%, var(--cbw) 20% );--cs:var(--cg8);--csh:var(--cg9);--csb:var(--cg1);--ce:var(--cg8);--ceh:var(--cg9);--ceb:var(--cg1);--cw:var(--cg7);--cwb:var(--cg0);--ci:var(--cg7);--cib:var(--cg0);--xc-e:var(--ce);--xc-eh:var(--ceh);--xc-sh:var(--csh);--cp:var(--cg9);--cph:var(--cg7);--cpa:var(--cg8);--xc-p:var(--cp);--xc-s:var(--cs);--xcn1:var(--cg1);--xcn2:var(--cg2);--xcn3:var(--cg3);--xcn4:var(--cg4);--xcn5:var(--cg5);--xct-p:var(--ctp);--xct-s:var(--cts);--xct-t:var(--ctm);--xct-i:var(--cti);--xcbg-p:var(--cbp);--com:var(--cg3);--cob:var(--cg9);--xc-om:var(--com);--sbm:2.5em;--sim:1.25em;--xsb-m:var(--sbm);--tf:var(--df) cubic-bezier(.4, 0, .2, 1);--tn:var(--dn) cubic-bezier(.4, 0, .2, 1);--ts:var(--ds) cubic-bezier(.4, 0, .2, 1);--xeg-shadow-xs:none;--xeg-shadow-sm:none;--xeg-shadow-md:none;--xeg-shadow-lg:none;--xfic:var(--xcb-p);--xfs-s:.875rem;--xfs-b:1rem;--xfs-l:1.125rem;--xfw-m:500;--xfs-2:var(--fs2);--xfw-s:var(--fws);--xdf:var(--df);--xds:var(--ds);--xdn:var(--dn);--xdt:var(--dn);--xto:opacity var(--xdn) var(--xeo);--xsu-b:var(--cbu);--xsu-br:var(--cbd);--xsu-bh:var(--cbs);--xc-se:var(--cbe);--xsk-b:var(--cbs);--xbe:var(--cbe2);--xz-sb:2147483600;--xz-g:2147483600;--xz-go:2147483608;--xz-gt:2147483612;--xz-th:2147483618;--xz-t:2147483620;--xz-tp:2147483622;--xz-ta:2147483624;--xz-o:2147483630;--xz-mb:2147483640;--xz-m:2147483645;--xz-mf:2147483646;--xz-tt:2147483647;--xlr:var(--xz-g);--xeo:cubic-bezier(.4, 0, .2, 1);--xei:cubic-bezier(.4, 0, 1, 1);--xel:linear;--xlh:var(--lhn, 1.5);--xd:var(--dn);--xb-l:-.0625rem;--xo-d:.5;--xhl:translateY(-.125rem);--xr-s:var(--rs);--xr-m:var(--rm);--xr-l:var(--rl);--xr-xl:var(--rxl);--xr-2:var(--r2);--xr-f:var(--rf)}:where(:root, .xeg-theme-scope)[data-theme=\"light\"]{--cbp:var(--cbw);--ctp:var(--cbb);--cts:var(--cg6);--color-glass-bg:var(--cbu);--color-glass-border:var(--cbd);--xg-b:var(--xg-bl);--xm-b:var(--xm-bl);--xm-br:var(--xm-brl);--xcb-p:var(--cbd);--xse-g:var(--spm);--xse-p:var(--spm);--xse-cg:var(--sps);--xse-lf:var(--fss);--xse-lw:var(--fwm);--xse-sp:var(--sps);--xse-sf:var(--fss);--xad:4 / 3;--xc-bg:oklch(95% 0 0deg)}:where(:root, .xeg-theme-scope)[data-theme=\"dark\"]{--cbp:var(--cg9);--cbu:var(--cg9);--cbe:var(--cg7);--ctp:var(--cbw);--cts:var(--cg4);--color-glass-bg:var(--cg9);--color-glass-border:var(--cg6);--xbgt:var(--cg8);--xcb-p:var(--cg6);--xt-b:var(--cg6);--xcbg-s:var(--cg8);--xg-b:var(--xg-bd);--xb-bg:var(--cg8);--xb-b:var(--cg6);--xb-t:var(--ctp);--xb-bgh:var(--cg7);--xb-bh:var(--cg6);--xm-b:var(--xm-bd);--xm-br:var(--xm-brd);--xtt-c:var(--ctp);--xtt-m:var(--cg3);--xte-b:color-mix( in oklch, var(--xbgt) 85%, var(--cbb) 15% );--xte-bs:color-mix( in oklch, var(--xbgt) 70%, var(--cbb) 30% );--xte-br:color-mix( in oklch, var(--xt-b) 75%, var(--cbb) 25% );--xtp-pt:color-mix( in oklch, var(--xt-b) 65%, var(--xbgt) 35% );--xts-t:color-mix( in oklch, var(--xte-b) 80%, var(--cbb) 20% );--xts-th:color-mix( in oklch, var(--xte-br) 85%, var(--cbb) 15% );--xc-bg:oklch(20% 0 0deg);--cp:var(--cg1);--cph:var(--cg2);--cpa:var(--cg3);--xsu-b:var(--cg9);--xsu-br:var(--cg6);--xsu-bh:var(--cg8)} @media (prefers-color-scheme:dark){:where(:root, .xeg-theme-scope):not([data-theme]){--cbp:var(--cg9);--cbu:var(--cg9);--cbe:var(--cg7);--ctp:var(--cbw);--cts:var(--cg4);--color-glass-bg:var(--cg9);--color-glass-border:var(--cg6);--xbgt:var(--cg8);--xcb-p:var(--cg6);--xt-b:var(--cg6);--xcbg-s:var(--cg8);--xg-b:var(--xg-bd);--xb-bg:var(--cg8);--xb-b:var(--cg6);--xb-t:var(--ctp);--xb-bgh:var(--cg7);--xb-bh:var(--cg6);--xm-b:var(--xm-bd);--xm-br:var(--xm-brd);--xtt-c:var(--ctp);--xtt-m:var(--cg3);--xte-b:color-mix( in oklch, var(--xbgt) 85%, var(--cbb) 15% );--xte-bs:color-mix( in oklch, var(--xbgt) 70%, var(--cbb) 30% );--xte-br:color-mix( in oklch, var(--xt-b) 75%, var(--cbb) 25% );--xtp-pt:color-mix( in oklch, var(--xt-b) 65%, var(--xbgt) 35% );--xts-t:color-mix( in oklch, var(--xte-b) 80%, var(--cbb) 20% );--xts-th:color-mix( in oklch, var(--xte-br) 85%, var(--cbb) 15% );--xc-bg:oklch(20% 0 0deg);--cp:var(--cg1);--cph:var(--cg2);--cpa:var(--cg3);--xsu-b:var(--cg9);--xsu-br:var(--cg6);--xsu-bh:var(--cg8)}} @media (prefers-reduced-motion:reduce){:where(:root, .xeg-theme-scope){--xd:0ms;--xdf:0ms;--xds:0ms;--tf:0ms;--tn:0ms;--ts:0ms;--xtsn:none;--xts:none;--xten:none;--xtef:none;--xti:none;--xtwn:none;--animation-fade-in:none;--animation-fade-out:none;--animation-slide-in:none;--animation-slide-out:none;--animation-toolbar-show:none;--animation-toolbar-hide:none}}:where(:root, .xeg-theme-scope){--xeg-space-8:var(--sps);--xeg-space-12:.75rem;--xeg-space-16:var(--spm);--xse-g:var(--spm);--xse-p:var(--spm);--xse-cg:var(--sps);--xse-lf:var(--fss);--xse-lw:var( --fwb );--xse-sf:var(--fss);--xse-sp:var(--sps) var(--spm);--xtp-sh:var(--xeg-shadow-xs);--xeg-text-counter:var(--xct-p);--xeg-counter-text:var(--xeg-text-counter);--xeg-text-button:var(--xct-p);--xeg-text-button-navigation:var(--xct-p);--xeg-shadow-toolbar:var(--xeg-shadow-md);--xt-sh:var(--xeg-shadow-toolbar);--xeg-toolbar-wrapper-gradient-start:var(--xbgt);--xeg-toolbar-wrapper-gradient-mid:color-mix( in oklab, var(--xbgt) 85%, var(--cg9) 15% );--xeg-toolbar-wrapper-gradient-end:var(--xbgt);--xeg-toolbar-wrapper-border:none;--xeg-toolbar-wrapper-radius:0;--xeg-toolbar-wrapper-margin:0;--xth-bg:transparent;--xeg-neutral-100:var(--xcn1);--xeg-neutral-200:var(--xcn2);--xeg-neutral-300:var(--xcn3);--xeg-neutral-400:var(--xcn4);--xeg-comp-modal-backdrop:var(--cob);--xm-bl:var(--cbe);--xm-brl:var(--cbd);--xm-b:var(--xm-bl);--xm-br:var(--xm-brl)}} @layer xeg.tokens{:where(:root, .xeg-theme-scope){--xtp-t:height var(--xdn) var(--xe-s), opacity var(--xdf) var(--xe-s);--xtp-h:0;--xtp-mh:17.5rem;--xsw:.5rem;--xhzh:7.5rem;--xsp-sd:1rem;--xsp-bw:.125rem;--xsp-tc:color-mix(in oklch, var(--xcn4) 60%, transparent);--xsp-ic:var(--xc-p, currentColor);--xsp-d:var(--xdn);--xsp-e:var(--xel);--xtsn:background-color var(--xdn) var(--xe-s), border-color var(--xdn) var(--xe-s), color var(--xdn) var(--xe-s);--xts:background-color var(--xdf) var(--xe-s), border-color var(--xdf) var(--xe-s), color var(--xdf) var(--xe-s);--xten:transform var(--xdn) var(--xe-s), opacity var(--xdn) var(--xe-s);--xtef:transform var(--xdf) var(--xe-s), opacity var(--xdf) var(--xe-s);--xti:background-color var(--xdf) var(--xeo), border-color var(--xdf) var(--xeo), color var(--xdf) var(--xeo), transform var(--xdf) var(--xeo);--xtwn:width var(--xdn) var(--xe-s);--xisw:.125rem;--xis:var(--sim);--xs-xs:var(--spx);--xs-s:var(--sps);--xs-m:var(--spm);--xs-l:var(--spl);--xs-xl:var(--spxl);--xs-2:var(--sp2);--xs-3:3rem;--xs-5:5rem;--xvhc:90vh} @media (prefers-reduced-transparency:reduce){:where(:root, .xeg-theme-scope){--xsu-b:var(--cbp)}}} @layer xeg.components{.xeg-surface{background:var(--xsu-b);border:.0625rem solid var(--xsu-br);border-radius:var(--xr-l)} .xeg-spinner{display:inline-block;width:var(--xsp-s, var(--xsp-sd));height:var(--xsp-s, var(--xsp-sd));border-radius:var(--xr-f);border:var(--xsp-bw) solid var(--xsp-tc);border-top-color:var(--xsp-ic);animation:xeg-spin var(--xsp-d) var(--xsp-e) infinite;box-sizing:border-box} @media (prefers-reduced-motion:reduce){.xeg-spinner{animation:none}}} @layer xeg.components{@keyframes xeg-fade-in{from{opacity:0} to{opacity:1}} @keyframes xeg-fade-out{from{opacity:1} to{opacity:0}} @keyframes xeg-spin{from{transform:rotate(0deg)} to{transform:rotate(360deg)}} @keyframes xeg-slide-out-top{from{opacity:1;transform:translateY(0) scale(1)} to{opacity:0;transform:translateY(-1.25rem) scale(.95)}}} @layer xeg.tokens{:root{--xe-d:cubic-bezier(0, 0, .2, 1);--xe-a:cubic-bezier(.4, 0, 1, 1);--xe-s:cubic-bezier(.4, 0, .2, 1);--xe-e:var(--xe-d);--xgh:translate3d(0, 0, 0);--xbv:hidden}} @layer xeg.base{:where(.xeg-gallery-root, .xeg-gallery-root *),:where(.xeg-gallery-root *::before, .xeg-gallery-root *::after){box-sizing:border-box;margin:0;padding:0} .xeg-gallery-root{scroll-behavior:smooth;font-family:var( --ffp, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif );line-height:var(--xlh, 1.5);color:var(--xct-p, var(--ctp, currentColor));background:var(--xc-bg, transparent);-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale} .xeg-gallery-root button{border:none;background:none;cursor:pointer;font:inherit;color:inherit} .xeg-gallery-root a{color:inherit;text-decoration:none} .xeg-gallery-root img{max-width:100%;height:auto;display:block} .xeg-gallery-root ul, .xeg-gallery-root ol{list-style:none} .xeg-gallery-root input, .xeg-gallery-root textarea, .xeg-gallery-root select{font:inherit;color:inherit;background:transparent} .xeg-gallery-root::-webkit-scrollbar{width:var(--xsw, .5rem);height:var(--xsw, .5rem)} .xeg-gallery-root::-webkit-scrollbar-track{background:transparent} .xeg-gallery-root::-webkit-scrollbar-thumb{background:var(--xcn4, oklch(60% 0 0deg));border-radius:var(--xr-s, .25em)} .xeg-gallery-root::-webkit-scrollbar-thumb:hover{background:var(--xcn5, oklch(50% 0 0deg))}} @layer xeg.utilities{.xeg-row-center{display:flex;align-items:center} .xeg-inline-center{display:inline-flex;align-items:center;justify-content:center} .xeg-gap-sm{gap:var(--xs-s)}} @layer xeg.utilities{.xeg-fade-in{animation:xeg-fade-in var(--xdn) var(--xe-e);animation-fill-mode:both} .xeg-fade-out{animation:xeg-fade-out var(--xdf) var(--xe-a);animation-fill-mode:both} @media (prefers-reduced-motion:reduce){.xeg-fade-in, .xeg-fade-out{animation:none}}} @layer xeg.features{.xeg-gallery-root{all:unset;box-sizing:border-box;font-family:var( --ffp, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif );font-size:var(--fsb, .9375rem);line-height:var(--xlh, 1.5);color:var(--xct-p, currentColor);position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:var(--xlr, 10000);isolation:isolate;contain:style paint;background:var(--xg-b, var(--cbp));pointer-events:auto;user-select:none;overscroll-behavior:contain;transform:translateZ(0);will-change:opacity, transform} .xeg-gallery-root *, .xeg-gallery-root *::before, .xeg-gallery-root *::after{box-sizing:border-box}}";var s=document.getElementById('xeg-injected-styles');if(!s){s=document.createElement('style');s.id='xeg-injected-styles';(document.head||document.documentElement).appendChild(s);}s.textContent=css;})();
+/*
+ * Third-Party Licenses
+ * ====================
+ * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.4.0/LICENSES
+ *
+ * MIT License
+ *
+ * Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2023 as part of Feather (M (Lucide)
+ * Copyright (c) 2016-2024 Ryan Carniato (Solid.js)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+(function(){if(typeof document==='undefined')return;var css=".xg-EeSh{display:flex;flex-direction:column;gap:var(--xse-g);padding:var(--xse-p)} .xg-nm9B{gap:var(--sps)} .xg-PI5C{display:flex;flex-direction:column;gap:var(--xse-cg)} .xg-VUTt{gap:var(--spx)} .xg-vhT3{font-size:var(--xse-lf);font-weight:var(--xse-lw);color:var(--xct-p)} .xg-Y62M{font-size:var(--fsx);color:var(--xct-s);letter-spacing:.04em;text-transform:uppercase} .xg-jpiS{width:100%;padding:var(--xse-sp);font-size:var(--xse-sf);color:var(--xct-p);background-color:var(--xtp-s, var(--xt-s));border:var(--bwt) solid var(--xt-b);border-radius:var(--xr-m);cursor:pointer;line-height:1.375;min-height:2.5em;transform:none;overflow:visible;transition:border-color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s)} .xg-jpiS:hover{border-color:var(--xcb-h);background-color:var(--xtp-s, var(--xt-s))} .xg-jpiS:focus, .xg-jpiS:focus-visible{border-color:var(--xfic, var(--xcb-h))} .xg-jpiS option{padding:.5em .75em;line-height:1.5} .xg-4eoj{color:var(--xtt-c, var(--xct-p));cursor:pointer;font-size:.875em;font-weight:500;width:var(--xsb-m);height:var(--xsb-m);min-width:var(--xsb-m);min-height:var(--xsb-m);padding:.5em;aspect-ratio:1;position:relative;overflow:clip;border-radius:var(--xr-m);background:transparent;--toolbar-button-accent-hover:var(--xcb-h);border:none;transition:var(--xts), transform var(--xdf) var(--xe-s)} .xg-4eoj:focus, .xg-4eoj:focus-visible{background:var(--xte-b, var(--xcn1))} .xg-fLg7{--toolbar-surface-base:var( --xtp-s, var(--xt-s, var(--xcbg-p, Canvas)) );--toolbar-surface-border:var(--xt-b);background:var(--toolbar-surface-base);border:none;border-radius:var(--xr-l);position:fixed;top:1.25em;left:50%;transform:translateX(-50%);z-index:var(--xz-t, 2147483620);display:var(--toolbar-display, inline-flex);align-items:center;justify-content:space-between;height:3em;padding:.5em 1em;gap:0;color:var(--xtt-c, var(--xct-p));visibility:var(--toolbar-visibility, visible);opacity:var(--toolbar-opacity, 1);pointer-events:var(--toolbar-pointer-events, auto);transition:var(--xten);user-select:none;overscroll-behavior:contain} .xg-fLg7.xg-ZpP8, .xg-fLg7.xg-t4eq{border-radius:var(--xr-l) var(--xr-l) 0 0} .xg-fLg7.xg-ojCW{--toolbar-opacity:1;--toolbar-pointer-events:auto;--toolbar-visibility:visible;--toolbar-display:inline-flex} .xg-fLg7.xg-Y6KF, .xg-fLg7.xg-n-ab, .xg-fLg7.xg-bEzl{--toolbar-opacity:1;--toolbar-pointer-events:auto;--toolbar-visibility:visible;--toolbar-display:inline-flex} .xg-f8g4{display:flex;align-items:center;justify-content:center;width:100%;max-width:100%;overflow:hidden} .xg-Ix3j{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:var(--spx);width:100%} .xg-Ix3j > *{flex:0 0 auto} .xg-0EHq{display:flex;align-items:center;justify-content:center;padding-inline:var(--sps);min-width:5em} .xg-FKnO{color:var(--xtt-m, var(--xct-p));margin:0 .125em}:where(.xg-4eoj[aria-pressed=\"true\"]){background:var(--xte-bs, var(--xcn2))} .xg-4eoj[aria-busy=\"true\"]{} .xg-4eoj:disabled{color:var(--xtt-m, var(--xcn4));cursor:not-allowed} @media (hover:hover){.xg-4eoj:hover:not(:disabled){background:var(--xte-b, var(--xcn1));transform:translateY(var(--xb-l))}} .xg-4eoj:active:not(:disabled){background:var(--xte-bs, var(--xcn2));transform:translateY(0)} .xg-njlf{--toolbar-button-accent-hover:var(--xc-ph)} .xg-AU-d{--toolbar-button-accent-hover:var(--xc-sh)} .xg-Vn14{--toolbar-button-accent-hover:var(--xc-eh)} .xg-atmJ{position:relative} .xg-GG86{position:relative;gap:0;min-width:5em;min-height:2.5em;padding-bottom:.5em;box-sizing:border-box} .xg-2cjm{color:var(--xtt-c, var(--xct-p));font-size:var(--xfs-m);font-weight:600;text-align:center;white-space:nowrap;line-height:1;background:transparent;padding:.25em .5em;border-radius:var(--xr-m);border:none} .xg-JEXm{color:var(--xtt-c, var(--xct-p));font-weight:700} .xg-d1et{color:var(--xtt-c, var(--xct-p))} .xg-vB6N{position:absolute;left:50%;bottom:.125em;transform:translateX(-50%);width:3.75em;height:.125em;background:var(--xtp-pt, var(--xcn2));border-radius:var(--xr-s);overflow:clip} .xg-LWQw{width:100%;height:100%;background:var(--xtt-c, var(--xct-p));border-radius:var(--xr-s);transition:var(--xtwn);transform-origin:left} .xg-Q7dU, button.xg-Q7dU{transition:var(--xti);position:relative;z-index:10;pointer-events:auto} .xg-Q7dU[data-selected=\"true\"]{--toolbar-button-accent-hover:var(--xc-p)} .xg-Q7dU:focus, .xg-Q7dU:focus-visible{border:none} .xg-atmJ{position:relative} @media (prefers-reduced-transparency:reduce){.xg-fLg7{background:var(--xtp-s, var(--xt-s))} [data-theme=\"dark\"] .xg-fLg7{background:var(--xtp-s, var(--xt-s))}} @media (prefers-reduced-motion:reduce){.xg-4eoj:hover:not(:disabled), .xg-atmJ:hover:not(:disabled), .xg-Vn14:hover:not(:disabled), .xg-Q7dU:hover{transform:none}}:where(.xg-JcF-, .xg-yRtv){position:absolute;top:100%;left:0;right:0;width:100%;display:flex;flex-direction:column;gap:var(--spm);padding:var(--spm);max-height:var(--xtp-mh);overflow:hidden;opacity:0;transform:translateY(-.5em);visibility:hidden;pointer-events:none;transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s var(--xdn);background:var( --toolbar-surface-base, var(--xtp-s, var(--xt-s)) );border-top:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:0 0 var(--xr-l) var(--xr-l);z-index:var(--xz-tp);will-change:transform, opacity;overscroll-behavior:contain} .xg-JcF-{height:var(--xtp-h)} .xg-yRtv{min-height:var(--xtp-h)}:where(.xg-JcF-, .xg-yRtv).xg-4a2L{height:auto;opacity:1;transform:translateY(0);visibility:visible;pointer-events:auto;border-top-color:var(--toolbar-surface-border, var(--xt-b));transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s 0s;z-index:var(--xz-ta)} .xg-w56C{display:flex;flex-direction:column;gap:var(--sps)} .xg-jmjG{padding:var(--sps);font-size:var(--xfs-m);line-height:1.5;color:var(--xtt-c, var(--xct-p));background:var( --toolbar-surface-base, var(--xtp-s, var(--xt-s)) );border:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:var(--xr-m);white-space:pre-wrap;word-wrap:break-word;overflow-y:auto;overscroll-behavior:contain;max-height:15em;transition:var(--xts);user-select:text;-webkit-user-select:text;cursor:text} .xg-jmjG::-webkit-scrollbar{width:.5em} .xg-jmjG::-webkit-scrollbar-track{background:var(--xts-t, var(--xcn2));border-radius:var(--xr-s)} .xg-jmjG::-webkit-scrollbar-thumb{background:var(--xts-th, var(--xcn4));border-radius:var(--xr-s)} .xg-jmjG::-webkit-scrollbar-thumb:hover{background:var(--xte-bs, var(--xcn5))} .xg-jmjG a{color:var(--xc-p);text-decoration:none;overflow-wrap:break-word;transition:color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s);cursor:pointer} .xg-jmjG a:hover{color:var(--xc-ph);text-decoration:underline} .xg-jmjG a:focus, .xg-jmjG a:focus-visible{background:var(--xte-bs, var(--xcn2));color:var(--xc-ph);border-radius:var(--xr-xs)} .xg-jmjG a:active{color:var(--xc-p-active)} .xg-LSA4{container-type:size;container-name:vertical-gallery;contain:layout style paint;content-visibility:auto;contain-intrinsic-size:100vw 100vh} @layer xeg.components{:root{--xtt:opacity var(--xdt) var(--xeo), transform var(--xdt) var(--xeo), visibility 0ms;--xeg-spacing-gallery:clamp(var(--xs-s), 2.5vw, var(--xs-l));--xeg-spacing-mobile:clamp(var(--xs-xs), 2vw, var(--xs-m));--xeg-spacing-compact:clamp(.25rem, 1.5vw, var(--xs-s));--xth-o:0;--xth-v:hidden;--xth-pe:none}} @media (prefers-reduced-motion:reduce){@layer xeg.components{:root{--xtt:none}}} .xg-X9gZ{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:var(--xz-g, 10000);background:var(--xg-b);display:flex;flex-direction:column;transform:var(--xgh);will-change:opacity, transform;contain:layout style paint;opacity:1;visibility:visible;transition:var(--xten);cursor:default;pointer-events:auto;container-type:size;container-name:gallery-container;scroll-behavior:smooth;overscroll-behavior:none} .xg-meO3{position:fixed;top:0;left:0;right:0;height:auto;z-index:var(--xz-t, 2147483620);opacity:var(--toolbar-opacity, 0);visibility:var(--toolbar-visibility, hidden);display:block;transition:var(--xtt);will-change:transform, opacity, visibility;contain:layout style;transform:var(--xgh);backface-visibility:var(--xbv);pointer-events:var(--toolbar-pointer-events, none);background:transparent;border:none;border-radius:0;margin:0;padding-block-end:var(--xeg-spacing-gallery)} .xg-meO3:is(:hover,:focus-within){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-meO3:focus-within{transition:var(--xtef)} .xg-meO3 *{pointer-events:inherit} .xg-meO3 [data-gallery-element=\"settings-panel\"][data-expanded=\"true\"]{pointer-events:auto} .xg-meO3:has([data-gallery-element=\"settings-panel\"][data-expanded=\"true\"]){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-X9gZ.xg-9abg{cursor:none} .xg-X9gZ.xg-sOsS[data-xeg-gallery=\"true\"][data-xeg-role=\"gallery\"] .xg-meO3{--toolbar-opacity:var(--xth-o, 0);--toolbar-visibility:var(--xth-v, hidden);--toolbar-pointer-events:var(--xth-pe, none)} .xg-X9gZ *{pointer-events:auto} .xg-gmRW{flex:1;display:flex;flex-direction:column;overflow:auto;position:relative;z-index:0;contain:layout style;transform:var(--xgh);overscroll-behavior:contain;scrollbar-gutter:stable;pointer-events:auto;container-type:size;container-name:items-list} .xg-gmRW::-webkit-scrollbar{width:var(--xsw)} .xg-gmRW::-webkit-scrollbar-track{background:transparent} .xg-gmRW::-webkit-scrollbar-thumb{background:var(--xcn3);border-radius:var( --xsbr );transition:background-color var(--xdn) var(--xe-s)} .xg-gmRW::-webkit-scrollbar-thumb:hover{background:var(--xcn4)} .xg-X9gZ.xg-9abg .xg-meO3{pointer-events:none;opacity:0;transition:opacity var(--xdf) var(--xeo)} .xg-X9gZ.xg-9abg [data-xeg-role=\"items-list\"], .xg-X9gZ.xg-9abg .xg-gmRW{pointer-events:auto} .xg-X9gZ.xg-yhK-{justify-content:center;align-items:center} .xg-EfVa{position:relative;margin-bottom:var(--xs-m, 1rem);border-radius:var(--xr-l, .5rem);transition:var(--xten);contain:layout style;transform:var(--xgh)} .xg-LxHL{position:relative;z-index:1} .xg-sfF0{height:calc(100vh - var(--xeg-toolbar-height, 3.75rem));min-height:50vh;pointer-events:none;user-select:none;flex-shrink:0;background:transparent;opacity:0;contain:strict;content-visibility:auto} .xg-X9gZ:has(.xg-LxHL){} .xg-X9gZ:has(.xg-meO3:hover){} .xg-gC-m{position:fixed;top:0;left:0;right:0;height:var(--xhzh);z-index:var(--xz-th, 2147483618);background:transparent;pointer-events:auto} .xg-gC-m:hover{z-index:var(--xz-th);background:transparent} .xg-X9gZ.xg-Canm:not([data-settings-expanded=\"true\"]) .xg-gC-m, .xg-X9gZ:has(.xg-meO3:hover):not([data-settings-expanded=\"true\"]) .xg-gC-m{pointer-events:none} .xg-X9gZ.xg-Canm .xg-meO3, .xg-X9gZ:has(.xg-gC-m:hover) .xg-meO3{--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} @supports not (selector(:has(*))){.xg-meO3:hover ~ .xg-gC-m{pointer-events:none} .xg-gC-m:hover + .xg-meO3, .xg-gC-m:hover ~ .xg-meO3{--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-X9gZ:hover .xg-meO3{--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto}} .xg-meO3 [class*=\"galleryToolbar\"]{opacity:var(--toolbar-opacity, 0);visibility:var(--toolbar-visibility, hidden);display:flex;pointer-events:var(--toolbar-pointer-events, none)} .xg-meO3 button, .xg-meO3 [role=\"button\"], .xg-meO3 .xg-e06X{pointer-events:auto;position:relative;z-index:10} .xg-fwsr{text-align:center;color:var(--xct-s);max-inline-size:min(25rem, 90vw);padding:clamp(1.875rem, 5vw, 2.5rem)} .xg-fwsr h3{margin:0 0 clamp(.75rem, 2vw, 1rem);font-size:clamp(1.25rem, 4vw, 1.5rem);font-weight:600;color:var(--xct-p);line-height:1.2} .xg-fwsr p{margin:0;font-size:clamp(.875rem, 2.5vw, 1rem);line-height:1.5;color:var(--xct-t)} @container gallery-container (max-width:48rem){.xg-gmRW{padding:var(--xeg-spacing-mobile);gap:var(--xeg-spacing-mobile)} .xg-meO3{padding-block-end:var(--xeg-spacing-mobile)}} @container gallery-container (max-width:30rem){.xg-gmRW{padding:var(--xeg-spacing-compact);gap:var(--xeg-spacing-compact)}} @media (prefers-reduced-motion:reduce){.xg-gmRW{scroll-behavior:auto;will-change:auto;transform:none}} @media (prefers-reduced-motion:reduce){.xg-meO3:hover, .xg-meO3:focus-within{transform:none}} .xg-X9gZ [class*=\"galleryToolbar\"]:hover{--toolbar-opacity:1;--toolbar-pointer-events:auto} .xg-huYo{position:relative;margin-bottom:var(--xs-m);margin-inline:auto;border-radius:var(--xr-l);overflow:visible;transition:var(--xti);cursor:pointer;border:.0625rem solid var(--xcb-p);background:var(--xcbg-s);padding:var(--xs-s);width:fit-content;max-width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;pointer-events:auto;transform:var(--xgh);will-change:transform;contain:layout style} .xg-huYo[data-fit-mode=\"original\"]{max-width:none;flex-shrink:0;width:max-content;align-self:center} .xg-huYo:hover{transform:var(--xhl);background:var(--xc-se);border-color:var(--xbe)} .xg-huYo:focus-visible{border-color:var(--xfic, var(--xcb-p))} .xg-huYo.xg-xm-1{border-color:var(--xbe, var(--xcb-s));transition:var(--xti)} .xg-huYo.xg-xm-1:focus-visible{border-color:var(--xfic, var(--xcb-s))} .xg-huYo.xg-luqi{border-color:var(--xfic, var(--xcb-p));transition:var(--xti)} .xg-8-c8{position:relative;background:var(--xcbg-s);width:fit-content;max-width:100%;margin:0 auto;display:flex;justify-content:center;align-items:center} .xg-huYo[data-fit-mode=\"original\"] .xg-8-c8{width:auto;max-width:none} .xg-huYo[data-media-loaded=\"false\"] .xg-8-c8{min-height:var(--xs-3);aspect-ratio:var(--xad)} .xg-lhkE{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:var(--xsk-b);min-height:var(--xs-3)} .xg-6YYD{--xsp-s:var(--xs-l);--xsp-bw:.125rem;--xsp-tc:var(--xcb-p);--xsp-ic:var(--xc-p)} .xg-FWlk, .xg-GUev{display:block;border-radius:var(--xr-m);object-fit:contain;pointer-events:auto;user-select:none;-webkit-user-drag:none;transform:var(--xgh);will-change:opacity;transition:opacity var(--xdn) var(--xeo)}:is(.xg-FWlk, .xg-GUev).xg-8Z3S{opacity:0}:is(.xg-FWlk, .xg-GUev).xg-y9iP{opacity:1} .xg-GUev{inline-size:100%;overflow:clip}:is(.xg-FWlk, .xg-GUev).xg-yYtG{inline-size:auto;block-size:auto;max-inline-size:none;max-block-size:none;object-fit:none}:is(.xg-FWlk, .xg-GUev).xg-Uc0o{inline-size:auto;block-size:auto;max-inline-size:100%;max-block-size:none;object-fit:scale-down}:is(.xg-FWlk, .xg-GUev).xg-M9Z6{inline-size:auto;block-size:auto;max-inline-size:calc(100vw - var(--xs-l) * 2);max-block-size:var(--xvhc);object-fit:scale-down}:is(.xg-FWlk, .xg-GUev).xg--Mlr{inline-size:auto;block-size:auto;max-inline-size:100%;max-block-size:var(--xvhc);object-fit:contain} .xg-Wno7{font-size:var(--xfs-2);margin-bottom:var(--xs-s)} .xg-8-wi{font-size:var(--xfs-s);text-align:center} .xg-Gswe{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--xc-e-bg);color:var(--xc-e);min-height:var(--xs-3)} .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"]{inline-size:min(var(--xgi-w, 100%), 100%);max-inline-size:min(var(--xgi-w, 100%), 100%);max-block-size:min( var(--xgi-h, var(--xs-5)), var(--xvhc) )} .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"] .xg-FWlk, .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"] .xg-GUev{inline-size:min(var(--xgi-w, 100%), 100%);max-inline-size:min(var(--xgi-w, 100%), 100%);max-block-size:min( var(--xgi-h, var(--xs-5)), var(--xvhc) )} .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitHeight\"], .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitContainer\"]{--xgf-ht:min( var(--xgi-h, var(--xs-5)), var(--xvhc) );max-block-size:var(--xgf-ht);inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) );max-inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) )} .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitHeight\"] .xg-FWlk, .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitHeight\"] .xg-GUev, .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitContainer\"] .xg-FWlk, .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitContainer\"] .xg-GUev{max-block-size:var(--xgf-ht);max-inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) )} @media (prefers-reduced-motion:reduce){.xg-huYo{will-change:auto} .xg-huYo:hover{transform:none}} @layer xeg.features{:where(.xeg-surface, .xeg-glass-surface){background:var(--xsu-b);border:var(--bwt) solid var(--xsu-br);border-radius:var(--xr-2);isolation:isolate;transition:opacity var(--xdn) var(--xe-s)}:where(.xeg-surface, .xeg-glass-surface):hover{background:var(--xsu-bh, var(--xsu-b))} .xeg-gallery-renderer[data-renderer=\"gallery\"]{display:block;width:0;height:0;overflow:visible} .xeg-gallery-overlay{display:flex;align-items:center;justify-content:center;position:fixed;inset:0;z-index:var(--xz-g, 10000);background:var(--xg-b);opacity:1;transition:opacity var(--xdn) var(--xe-s);pointer-events:auto} .xeg-gallery-container{position:relative;width:100%;height:100%;max-width:100vw;max-height:100vh;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}} @layer xeg.tokens, xeg.base, xeg.utilities, xeg.components, xeg.features, xeg.overrides;@layer xeg.tokens{:where(:root, .xeg-theme-scope){--cbw:oklch(1 0 0);--cbb:oklch(0 0 0);--cg0:oklch(.97 .002 206.2);--cg1:oklch(.943 .006 206.2);--cg2:oklch(.896 .006 206.2);--cg3:oklch(.796 .006 206.2);--cg4:oklch(.696 .006 286.3);--cg5:oklch(.598 .006 286.3);--cg6:oklch(.488 .006 286.3);--cg7:oklch(.378 .005 286.3);--cg8:oklch( .306 .005 282 );--cg9:oklch(.234 .006 277.8);--spx:.25rem;--sps:.5rem;--spm:1rem;--spl:1.5rem;--rs:.25em;--rm:.375em;--rl:.5em;--r2:1em;--rf:50%;--ffp:\"TwitterChirp\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;--fsx:.75rem;--fss:.875rem;--fsb:.9375rem;--fs2:1.25rem;--fwb:700;--df:150ms;--dn:250ms;--bwt:.0625rem;--lhn:1.5}} @layer xeg.tokens{:where(:root, .xeg-theme-scope){--cbp:var(--cbw);--cbs:var(--cg0);--cbu:var(--cbw);--cbe:var(--cbw);--xbgt:var(--cbu);--xt-b:var(--xcb-p);--xt-s:var(--xbgt);--xtp-s:var(--xt-s);--xcbg-s:var(--cbs);--xg-bl:var(--cbp);--xg-bd:var(--cg9);--xg-b:var(--xg-bl);--xad:4 / 3;--ctp:var(--cbb);--cts:var( --cg6 );--ctm:var(--cg5);--cbd:var(--cg2);--cbe2:var(--cg5);--cbh:var(--cg3);--xcb-p:var(--cbd);--xcb-h:var(--cbh);--xcb-s:var(--cbe2);--xtt-c:var(--xct-p);--xtt-m:var(--xct-s);--xte-b:color-mix( in oklch, var(--xbgt) 80%, var(--cbw) 20% );--xte-bs:color-mix( in oklch, var(--xbgt) 65%, var(--cbw) 35% );--xte-br:color-mix( in oklch, var(--xt-b) 85%, var(--cbw) 15% );--xtp-pt:color-mix( in oklch, var(--xte-b) 60%, var(--xte-br) 40% );--xts-t:color-mix( in oklch, var(--xte-b) 50%, var(--cbw) 50% );--xts-th:color-mix( in oklch, var(--xte-br) 80%, var(--cbw) 20% );--xc-s:var(--cg8);--xc-sh:var(--cg9);--xc-e:var(--cg8);--xc-eh:var(--cg9);--xc-e-bg:var(--cg1);--xc-p:var(--cg9);--xc-ph:var(--cg7);--xc-p-active:var(--cg8);--xcn1:var(--cg1);--xcn2:var(--cg2);--xcn3:var(--cg3);--xcn4:var(--cg4);--xcn5:var(--cg5);--xct-p:var(--ctp);--xct-s:var(--cts);--xct-t:var(--ctm);--xcbg-p:var(--cbp);--xsb-m:2.5em;--xfic:var(--xcb-p);--xfs-s:.875rem;--xfs-2:var(--fs2);--xdf:var(--df);--xdn:var(--dn);--xdt:var(--dn);--xsu-b:var(--cbu);--xsu-br:var(--cbd);--xsu-bh:var(--cbs);--xc-se:var(--cbe);--xsk-b:var(--cbs);--xbe:var(--cbe2);--xz-g:2147483600;--xz-th:2147483618;--xz-t:2147483620;--xz-tp:2147483622;--xz-ta:2147483624;--xlr:var(--xz-g);--xeo:cubic-bezier(.4, 0, .2, 1);--xel:linear;--xlh:var(--lhn, 1.5);--xb-l:-.0625rem;--xhl:translateY(-.125rem);--xr-s:var(--rs);--xr-m:var(--rm);--xr-l:var(--rl);--xr-2:var(--r2);--xr-f:var(--rf)}:where(:root, .xeg-theme-scope)[data-theme=\"light\"]{--cbp:var(--cbw);--ctp:var(--cbb);--cts:var(--cg6);--xg-b:var(--xg-bl)}:where(:root, .xeg-theme-scope)[data-theme=\"dark\"]{--cbp:var(--cg9);--cbu:var(--cg9);--cbe:var(--cg7);--ctp:var(--cbw);--cts:var(--cg4);--xbgt:var(--cg8);--xcb-p:var(--cg6);--xt-b:var(--cg6);--xcbg-s:var(--cg8);--xg-b:var(--xg-bd);--xtt-c:var(--ctp);--xtt-m:var(--cg3);--xte-b:color-mix( in oklch, var(--xbgt) 85%, var(--cbb) 15% );--xte-bs:color-mix( in oklch, var(--xbgt) 70%, var(--cbb) 30% );--xte-br:color-mix( in oklch, var(--xt-b) 75%, var(--cbb) 25% );--xtp-pt:color-mix( in oklch, var(--xt-b) 65%, var(--xbgt) 35% );--xts-t:color-mix( in oklch, var(--xte-b) 80%, var(--cbb) 20% );--xts-th:color-mix( in oklch, var(--xte-br) 85%, var(--cbb) 15% );--xc-p:var(--cg1);--xc-ph:var(--cg2);--xc-p-active:var(--cg3);--xsu-b:var(--cg9);--xsu-br:var(--cg6);--xsu-bh:var(--cg8)} @media (prefers-reduced-motion:reduce){:where(:root, .xeg-theme-scope){--xdf:0ms;--xts:none;--xten:none;--xtef:none;--xti:none;--xtwn:none}}:where(:root, .xeg-theme-scope){--xse-g:var(--spm);--xse-p:var(--spm);--xse-cg:var(--sps);--xse-lf:var(--fss);--xse-lw:var( --fwb );--xse-sf:var(--fss);--xse-sp:var(--sps) var(--spm)}} @layer xeg.tokens{:where(:root, .xeg-theme-scope){--xtp-t:height var(--xdn) var(--xe-s), opacity var(--xdf) var(--xe-s);--xtp-h:0;--xtp-mh:17.5rem;--xsw:.5rem;--xhzh:7.5rem;--xsp-sd:1rem;--xsp-bw:.125rem;--xsp-tc:color-mix(in oklch, var(--xcn4) 60%, transparent);--xsp-ic:var(--xc-p, currentColor);--xsp-d:var(--xdn);--xsp-e:var(--xel);--xts:background-color var(--xdf) var(--xe-s), border-color var(--xdf) var(--xe-s), color var(--xdf) var(--xe-s);--xten:transform var(--xdn) var(--xe-s), opacity var(--xdn) var(--xe-s);--xtef:transform var(--xdf) var(--xe-s), opacity var(--xdf) var(--xe-s);--xti:background-color var(--xdf) var(--xeo), border-color var(--xdf) var(--xeo), color var(--xdf) var(--xeo), transform var(--xdf) var(--xeo);--xtwn:width var(--xdn) var(--xe-s);--xs-xs:var(--spx);--xs-s:var(--sps);--xs-m:var(--spm);--xs-l:var(--spl);--xs-3:3rem;--xs-5:5rem;--xvhc:90vh} @media (prefers-reduced-transparency:reduce){:where(:root, .xeg-theme-scope){--xsu-b:var(--xcbg-p)}}} @layer xeg.components{.xeg-surface{background:var(--xsu-b);border:.0625rem solid var(--xsu-br);border-radius:var(--xr-l)} .xeg-spinner{display:inline-block;width:var(--xsp-s, var(--xsp-sd));height:var(--xsp-s, var(--xsp-sd));border-radius:var(--xr-f);border:var(--xsp-bw) solid var(--xsp-tc);border-top-color:var(--xsp-ic);animation:xeg-spin var(--xsp-d) var(--xsp-e) infinite;box-sizing:border-box} @media (prefers-reduced-motion:reduce){.xeg-spinner{animation:none}}} @layer xeg.components{@keyframes xeg-fade-in{from{opacity:0} to{opacity:1}} @keyframes xeg-fade-out{from{opacity:1} to{opacity:0}} @keyframes xeg-spin{from{transform:rotate(0deg)} to{transform:rotate(360deg)}}} @layer xeg.tokens{:root{--xe-d:cubic-bezier(0, 0, .2, 1);--xe-a:cubic-bezier(.4, 0, 1, 1);--xe-s:cubic-bezier(.4, 0, .2, 1);--xe-e:var(--xe-d);--xgh:translate3d(0, 0, 0);--xbv:hidden}} @layer xeg.base{:where(.xeg-gallery-root, .xeg-gallery-root *),:where(.xeg-gallery-root *::before, .xeg-gallery-root *::after){box-sizing:border-box;margin:0;padding:0} .xeg-gallery-root button{border:none;background:none;cursor:pointer;font:inherit;color:inherit} .xeg-gallery-root a{color:inherit;text-decoration:none} .xeg-gallery-root img{max-width:100%;height:auto;display:block} .xeg-gallery-root ul, .xeg-gallery-root ol{list-style:none} .xeg-gallery-root input, .xeg-gallery-root textarea, .xeg-gallery-root select{font:inherit;color:inherit;background:transparent} .xeg-gallery-root::-webkit-scrollbar{width:var(--xsw, .5rem);height:var(--xsw, .5rem)} .xeg-gallery-root::-webkit-scrollbar-track{background:transparent} .xeg-gallery-root::-webkit-scrollbar-thumb{background:var(--xcn4, oklch(60% 0 0deg));border-radius:var(--xr-s, .25em)} .xeg-gallery-root::-webkit-scrollbar-thumb:hover{background:var(--xcn5, oklch(50% 0 0deg))}} @layer xeg.utilities{.xeg-row-center{display:flex;align-items:center} .xeg-inline-center{display:inline-flex;align-items:center;justify-content:center} .xeg-gap-sm{gap:var(--xs-s)}} @layer xeg.utilities{.xeg-fade-in{animation:xeg-fade-in var(--xdn) var(--xe-e);animation-fill-mode:both} .xeg-fade-out{animation:xeg-fade-out var(--xdf) var(--xe-a);animation-fill-mode:both} @media (prefers-reduced-motion:reduce){.xeg-fade-in, .xeg-fade-out{animation:none}}} @layer xeg.features{.xeg-gallery-root{all:unset;box-sizing:border-box;scroll-behavior:smooth;font-family:var(--ffp);font-size:var(--fsb, .9375rem);line-height:var(--xlh, 1.5);color:var(--xct-p, currentColor);position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:var(--xlr, 10000);isolation:isolate;contain:style paint;background:var(--xg-b, var(--xcbg-p, Canvas));pointer-events:auto;user-select:none;overscroll-behavior:contain;transform:translateZ(0);will-change:opacity, transform;-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}}";var s=document.getElementById('xeg-injected-styles');if(!s){s=document.createElement('style');s.id='xeg-injected-styles';(document.head||document.documentElement).appendChild(s);}s.textContent=css;})();
 (function() {
-var __defProp = Object.defineProperty;
-var __esmMin = (fn, res) => () => (fn && (res = fn(fn = 0)), res);
-var __export = (all, symbols) => {
-let target = {};
-for (var name in all) __defProp(target, name, {
-get: all[name],
-enumerable: true
-});
-if (symbols) __defProp(target, Symbol.toStringTag, { value: "Module" });
-return target;
+const SERVICE_KEYS = {
+LANGUAGE: "core.language",
+GALLERY_DOWNLOAD: "gallery.download",
+GALLERY_RENDERER: "gallery.renderer",
+MEDIA_FILENAME: "media.filename",
+MEDIA_SERVICE: "media.service",
+SETTINGS: "settings.manager",
+THEME: "ui.theme"
 };
-var CLASSES, DATA_ATTRIBUTES, SELECTORS$1, INTERNAL_SELECTORS, SCOPES, CSS;
-var init_css = __esmMin((() => {
-CLASSES = {
-OVERLAY: "xeg-gallery-overlay",
-CONTAINER: "xeg-gallery-container",
-ROOT: "xeg-gallery-root",
-RENDERER: "xeg-gallery-renderer",
-VERTICAL_VIEW: "xeg-vertical-gallery",
-ITEM: "xeg-gallery-item"
+function formatErrorMessage(error$1, mode) {
+if (error$1 instanceof Error) return mode === "normalized" ? error$1.message || error$1.name || "Error" : error$1.message;
+if (typeof error$1 === "string") return error$1;
+if (error$1 == null) return mode === "normalized" ? String(error$1) : "";
+if (typeof error$1 === "object") {
+const record = error$1;
+const message = record.message;
+if (typeof message === "string") return message;
+if (mode === "raw") return "message" in record ? String(message ?? "") : String(record);
+try {
+return JSON.stringify(record);
+} catch {
+return String(record);
+}
+}
+return String(error$1);
+}
+function normalizeErrorMessage(error$1) {
+return formatErrorMessage(error$1, "normalized");
+}
+function getErrorMessage(error$1) {
+return formatErrorMessage(error$1, "raw");
+}
+var BASE_PREFIX = "[XEG]";
+var hasConsole = typeof console !== "undefined";
+var noop = () => {};
+function buildLogger(prefix, enableVerbose) {
+if (!hasConsole) return {
+info: noop,
+warn: noop,
+error: noop,
+debug: noop,
+trace: noop
 };
-DATA_ATTRIBUTES = {
-GALLERY: "data-xeg-gallery",
-CONTAINER: "data-xeg-gallery-container",
-ELEMENT: "data-gallery-element",
-ROLE: "data-xeg-role",
-ROLE_COMPAT: "data-xeg-role-compat",
-GALLERY_TYPE: "data-xeg-gallery-type",
-GALLERY_VERSION: "data-xeg-gallery-version"
+if (!enableVerbose) return {
+info: noop,
+warn: noop,
+debug: noop,
+trace: noop,
+error: (...args) => {
+console.error(prefix, ...args);
+}
 };
-SELECTORS$1 = {
-OVERLAY: `.${CLASSES.OVERLAY}`,
-CONTAINER: `.${CLASSES.CONTAINER}`,
-ROOT: `.${CLASSES.ROOT}`,
-RENDERER: `.${CLASSES.RENDERER}`,
-VERTICAL_VIEW: `.${CLASSES.VERTICAL_VIEW}`,
-ITEM: `.${CLASSES.ITEM}`,
-DATA_GALLERY: `[${DATA_ATTRIBUTES.GALLERY}]`,
-DATA_CONTAINER: `[${DATA_ATTRIBUTES.CONTAINER}]`,
-DATA_ELEMENT: `[${DATA_ATTRIBUTES.ELEMENT}]`,
-DATA_ROLE: `[${DATA_ATTRIBUTES.ROLE}]`,
-DATA_ROLE_COMPAT: `[${DATA_ATTRIBUTES.ROLE_COMPAT}]`,
-DATA_GALLERY_TYPE: `[${DATA_ATTRIBUTES.GALLERY_TYPE}]`,
-DATA_GALLERY_VERSION: `[${DATA_ATTRIBUTES.GALLERY_VERSION}]`,
-ROLE_GALLERY: `[${DATA_ATTRIBUTES.ROLE}="gallery"]`,
-ROLE_ITEMS_CONTAINER: `[${DATA_ATTRIBUTES.ROLE}="items-container"]`
+return {
+info: (...args) => {
+console.info(prefix, ...args);
+},
+warn: (...args) => {
+console.warn(prefix, ...args);
+},
+error: (...args) => {
+console.error(prefix, ...args);
+},
+debug: (...args) => {
+console.info(prefix, ...args);
+},
+trace: (...args) => {
+console.debug(prefix, ...args);
+}
 };
-INTERNAL_SELECTORS = [
-SELECTORS$1.OVERLAY,
-SELECTORS$1.CONTAINER,
-SELECTORS$1.ROOT,
-SELECTORS$1.RENDERER,
-SELECTORS$1.VERTICAL_VIEW,
-SELECTORS$1.ITEM,
-SELECTORS$1.DATA_GALLERY,
-SELECTORS$1.DATA_CONTAINER,
-SELECTORS$1.DATA_ELEMENT,
-SELECTORS$1.DATA_ROLE,
-SELECTORS$1.DATA_ROLE_COMPAT,
-SELECTORS$1.DATA_GALLERY_TYPE,
-SELECTORS$1.DATA_GALLERY_VERSION,
-SELECTORS$1.ROLE_GALLERY,
-SELECTORS$1.ROLE_ITEMS_CONTAINER
-];
-SCOPES = { HOSTS: [
-SELECTORS$1.ROOT,
-SELECTORS$1.DATA_GALLERY,
-SELECTORS$1.CONTAINER,
-SELECTORS$1.DATA_CONTAINER
-] };
-CSS = {
-CLASSES,
-DATA_ATTRIBUTES,
-SELECTORS: SELECTORS$1,
-INTERNAL_SELECTORS,
-SCOPES
-};
-}));
+}
+function createLogger(config = {}) {
+return buildLogger(config.prefix ?? BASE_PREFIX, false);
+}
+const logger = createLogger();
 function safeParseInt(value, radix = 10) {
 if (value == null) return 0;
 const result = Number.parseInt(value, radix);
@@ -124,905 +149,187 @@ function clampIndex(index, length) {
 if (!Number.isFinite(index) || length <= 0) return 0;
 return clamp(Math.floor(index), 0, length - 1);
 }
-function isGMUserScriptInfo(obj) {
-if (obj === null || typeof obj !== "object") return false;
-const objRecord = obj;
-return "scriptHandler" in objRecord || Object.keys(objRecord).length > 0;
-}
 function cloneDeep(value) {
 return globalThis.structuredClone(value);
 }
-function createDefaultSettings(timestamp = Date.now()) {
-const settings = cloneDeep(DEFAULT_SETTINGS);
-settings.lastModified = timestamp;
-return settings;
-}
-var STATIC_DEFAULT_SETTINGS, DEFAULT_SETTINGS;
-var init_default_settings = __esmMin((() => {
-STATIC_DEFAULT_SETTINGS = {
-gallery: {
-autoScrollSpeed: 5,
-infiniteScroll: true,
-preloadCount: 3,
-imageFitMode: "fitWidth",
-theme: "auto",
-animations: true,
-enableKeyboardNav: true,
-videoVolume: 1,
-videoMuted: false
-},
-toolbar: { autoHideDelay: 3e3 },
-download: {
-filenamePattern: "original",
-imageQuality: "original",
-maxConcurrentDownloads: 3,
-autoZip: false,
-folderStructure: "flat"
-},
-tokens: {
-autoRefresh: true,
-expirationMinutes: 60
-},
-accessibility: {
-reduceMotion: false,
-screenReaderSupport: true,
-focusIndicators: true
-},
-features: {
-gallery: true,
-settings: true,
-download: true,
-mediaExtraction: true,
-accessibility: true
-},
-version: "1.3.0",
-lastModified: 0
-};
-DEFAULT_SETTINGS = STATIC_DEFAULT_SETTINGS;
-}));
-var MEDIA;
-var init_media = __esmMin((() => {
-MEDIA = {
-DOMAINS: [
-"pbs.twimg.com",
-"video.twimg.com",
-"abs.twimg.com"
-],
-HOSTS: { MEDIA_CDN: ["pbs.twimg.com", "video.twimg.com"] },
-TYPES: {
-IMAGE: "image",
-VIDEO: "video",
-GIF: "gif"
-},
-EXTENSIONS: {
-JPEG: "jpg",
-PNG: "png",
-WEBP: "webp",
-GIF: "gif",
-MP4: "mp4",
-ZIP: "zip"
-},
-QUALITY: {
-ORIGINAL: "orig",
-LARGE: "large",
-MEDIUM: "medium",
-SMALL: "small"
-}
-};
-}));
-var DEFAULT_LOG_LEVEL;
-var init_log_level = __esmMin((() => {
-DEFAULT_LOG_LEVEL = "error";
-}));
-function safeJsonStringify(value) {
+var FALLBACK_BASE_URL = "https://x.com";
+function tryParseUrl(value, base = FALLBACK_BASE_URL) {
+if (value instanceof URL) return value;
+if (typeof value !== "string") return null;
+const trimmed = value.trim();
+if (!trimmed) return null;
 try {
-return JSON.stringify(value);
+if (trimmed.startsWith("//")) return new URL(`https:${trimmed}`);
+return new URL(trimmed, base);
 } catch {
-return String(value);
-}
-}
-function normalizeErrorMessage(error$1) {
-if (error$1 instanceof Error) {
-if (error$1.message) return error$1.message;
-return error$1.name || "Error";
-}
-if (typeof error$1 === "string") return error$1;
-if (error$1 == null) return String(error$1);
-if (typeof error$1 === "object") {
-const record = error$1;
-const message = record.message;
-if (typeof message === "string") return message;
-return safeJsonStringify(record);
-}
-return String(error$1);
-}
-function getErrorMessage(error$1) {
-if (error$1 instanceof Error) return error$1.message;
-if (typeof error$1 === "string") return error$1;
-if (error$1 == null) return "";
-if (typeof error$1 === "object") {
-const record = error$1;
-if ("message" in record) return String(record.message ?? "");
-return String(record);
-}
-return String(error$1);
-}
-function createLogger(config = {}) {
-return createLoggerImpl(config);
-}
-function createScopedLogger(scope, config = {}) {
-return createScopedLoggerImpl(scope, config);
-}
-var BASE_PREFIX, createProdLogger, createLoggerImpl, createScopedLoggerImpl, logger;
-var init_logger = __esmMin((() => {
-init_log_level();
-BASE_PREFIX = "[XEG]";
-createProdLogger = (config) => {
-const noop = () => {};
-const hasConsole = typeof console !== "undefined";
-return {
-info: noop,
-debug: noop,
-trace: noop,
-warn: noop,
-error: (...args) => {
-if (hasConsole) console.error(config.prefix, ...args);
-}
-};
-};
-{
-const DEFAULT_CONFIG$1 = {
-level: DEFAULT_LOG_LEVEL,
-prefix: BASE_PREFIX
-};
-createLoggerImpl = (config = {}) => {
-return createProdLogger({
-...DEFAULT_CONFIG$1,
-...config
-});
-};
-createScopedLoggerImpl = (scope, config = {}) => createLoggerImpl({
-...config,
-prefix: `${config.prefix ?? BASE_PREFIX} [${scope}]`
-});
-}
-logger = createLogger({ level: DEFAULT_LOG_LEVEL });
-}));
-var init_logging = __esmMin((() => {
-init_logger();
-}));
-function warnInvalidSelectorOnce(selector, error$1) {}
-function queryWithFallback(container$2, primarySelector, fallbacks = []) {
-try {
-const primary = container$2.querySelector(primarySelector);
-if (primary) return primary;
-} catch (error$1) {
-warnInvalidSelectorOnce(primarySelector, error$1);
-}
-for (const fallback of fallbacks) try {
-const element = container$2.querySelector(fallback);
-if (element) return element;
-} catch (error$1) {
-warnInvalidSelectorOnce(fallback, error$1);
-}
 return null;
 }
-function queryAllWithFallback(container$2, selectors) {
-const seen = /* @__PURE__ */ new WeakSet();
-const results = [];
-for (const selector of selectors) try {
-const elements = container$2.querySelectorAll(selector);
-for (const element of elements) if (!seen.has(element)) {
-seen.add(element);
-results.push(element);
 }
-} catch (error$1) {
-warnInvalidSelectorOnce(selector, error$1);
+function isHostMatching(value, allowedHosts, options = {}) {
+if (!Array.isArray(allowedHosts)) return false;
+const parsed = tryParseUrl(value);
+if (!parsed) return false;
+const hostname = parsed.hostname.toLowerCase();
+const allowSubdomains = options.allowSubdomains === true;
+return allowedHosts.some((host) => {
+const normalized = host.toLowerCase();
+if (hostname === normalized) return true;
+return allowSubdomains && hostname.endsWith(`.${normalized}`);
+});
 }
-return results;
-}
-var GALLERY_SELECTORS$1, TWEET_SELECTOR, TWEET_ARTICLE_SELECTOR, TWEET_PHOTO_SELECTOR, TWEET_TEXT_SELECTOR, VIDEO_PLAYER_SELECTOR, STATUS_LINK_SELECTOR, TWITTER_IMAGE_SELECTOR, TWITTER_VIDEO_SELECTOR, TWITTER_MEDIA_SELECTOR, GALLERY_OVERLAY_SELECTOR, GALLERY_CONTAINER_SELECTOR, FALLBACK_SELECTORS, STABLE_TWEET_CONTAINERS_SELECTORS, STABLE_MEDIA_CONTAINERS_SELECTORS, STABLE_VIDEO_CONTAINERS_SELECTORS, STABLE_IMAGE_CONTAINERS_SELECTORS, STABLE_MEDIA_LINKS_SELECTORS, STABLE_MEDIA_VIEWERS_SELECTORS, STABLE_MEDIA_PLAYERS_SELECTORS;
-var init_selectors$1 = __esmMin((() => {
-init_css();
-GALLERY_SELECTORS$1 = CSS.SELECTORS;
-TWEET_SELECTOR = "article[data-testid=\"tweet\"]";
-TWEET_ARTICLE_SELECTOR = "[data-testid=\"tweet\"], article";
-TWEET_PHOTO_SELECTOR = "[data-testid=\"tweetPhoto\"]";
-TWEET_TEXT_SELECTOR = "[data-testid=\"tweetText\"]";
-VIDEO_PLAYER_SELECTOR = "[data-testid=\"videoPlayer\"]";
-STATUS_LINK_SELECTOR = "a[href*=\"/status/\"]";
-TWITTER_IMAGE_SELECTOR = "img[src*=\"pbs.twimg.com\"]";
-TWITTER_VIDEO_SELECTOR = "video[src*=\"video.twimg.com\"]";
-TWITTER_MEDIA_SELECTOR = "img[src*=\"pbs.twimg.com\"], video[src*=\"video.twimg.com\"]";
-GALLERY_OVERLAY_SELECTOR = GALLERY_SELECTORS$1.OVERLAY;
-GALLERY_CONTAINER_SELECTOR = GALLERY_SELECTORS$1.CONTAINER;
-FALLBACK_SELECTORS = {
-TWEET: [
-"article[role=\"article\"]",
-"article[aria-labelledby]",
-"[data-testid=\"cellInnerDiv\"] > div > article"
-],
-TWEET_PHOTO: [
-"[aria-label*=\"Image\"]",
-"[role=\"img\"][aria-label]",
-"a[href*=\"/photo/\"] img",
-"div[aria-label] img[src*=\"pbs.twimg.com\"]"
-],
-TWEET_TEXT: [
-"[lang][dir=\"auto\"]",
-"div[data-testid=\"tweetText\"]",
-"article [lang]"
-],
-VIDEO_PLAYER: [
-"[aria-label*=\"Video\"]",
-"[role=\"application\"] video",
-"div[data-testid=\"videoComponent\"]",
-"video[src*=\"video.twimg.com\"]"
-],
-MODAL: [
-"[aria-modal=\"true\"]",
-"[role=\"dialog\"]",
-"[aria-label*=\"Close\"]"
-],
-MEDIA_VIEWER: [
-"[aria-roledescription=\"carousel\"]",
-"[aria-label*=\"Gallery\"]",
-"[role=\"dialog\"][aria-modal=\"true\"]"
-]
-};
-STABLE_TWEET_CONTAINERS_SELECTORS = [
-"article[data-testid=\"tweet\"]",
-"article[role=\"article\"]",
-"[data-testid=\"cellInnerDiv\"] article"
-];
-STABLE_MEDIA_CONTAINERS_SELECTORS = [
-"[data-testid=\"tweetPhoto\"]",
-"[data-testid=\"videoPlayer\"]",
-"[aria-label*=\"Image\"]",
-"[aria-label*=\"Video\"]",
-"a[href*=\"/photo/\"] > div"
-];
-STABLE_VIDEO_CONTAINERS_SELECTORS = [
-"[data-testid=\"videoPlayer\"]",
-"video",
-"[aria-label*=\"Video\"]",
-"[data-testid=\"videoComponent\"]"
-];
-STABLE_IMAGE_CONTAINERS_SELECTORS = [
-"[data-testid=\"tweetPhoto\"]",
-"img[src*=\"pbs.twimg.com\"]",
-"[aria-label*=\"Image\"] img",
-"a[href*=\"/photo/\"] img"
-];
-STABLE_MEDIA_LINKS_SELECTORS = [
-"a[href*=\"/status/\"][href*=\"/photo/\"]",
-"a[href*=\"/status/\"][href*=\"/video/\"]",
-"a[href*=\"/photo/\"][aria-label]",
-"a[href*=\"/video/\"][aria-label]"
-];
-STABLE_MEDIA_VIEWERS_SELECTORS = [
-"[data-testid=\"photoViewer\"]",
-"[aria-modal=\"true\"][data-testid=\"Drawer\"]",
-"[aria-roledescription=\"carousel\"]",
-"[role=\"dialog\"][aria-modal=\"true\"]",
-"[aria-label*=\"Gallery\"]"
-];
-STABLE_MEDIA_PLAYERS_SELECTORS = [
-"[data-testid=\"videoPlayer\"]",
-"video",
-"[role=\"application\"] video"
-];
-}));
-var SERVICE_KEYS;
-var init_service_keys = __esmMin((() => {
-SERVICE_KEYS = {
-LANGUAGE: "core.language",
-GALLERY_DOWNLOAD: "gallery.download",
-GALLERY_RENDERER: "gallery.renderer",
-MEDIA_FILENAME: "media.filename",
-MEDIA_SERVICE: "media.service",
-SETTINGS: "settings.manager",
-THEME: "ui.theme"
-};
-}));
-var APP_SETTINGS_STORAGE_KEY;
-var init_storage = __esmMin((() => {
-APP_SETTINGS_STORAGE_KEY = "xeg-app-settings";
-}));
-var TWITTER_API_CONFIG;
-var init_twitter_api$1 = __esmMin((() => {
-TWITTER_API_CONFIG = {
-GUEST_AUTHORIZATION: "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
-TWEET_RESULT_BY_REST_ID_QUERY_ID: "zAz9764BcLZOJ0JU2wrd1A",
-USER_BY_SCREEN_NAME_QUERY_ID: "1VOOyvKkiI3FMmkeDNxM9A",
-SUPPORTED_HOSTS: ["x.com", "twitter.com"],
-DEFAULT_HOST: "x.com",
-CACHE_TTL_MS: 12e4
-};
-}));
-var VIDEO_CONTROL_SELECTORS, VIDEO_CONTROL_DATASET_PREFIXES, VIDEO_CONTROL_ROLES, VIDEO_CONTROL_ARIA_TOKENS, SYSTEM_PAGES, VIEW_MODES;
-var init_video_controls = __esmMin((() => {
-VIDEO_CONTROL_SELECTORS = [
-"[data-testid=\"playButton\"]",
-"[data-testid=\"pauseButton\"]",
-"[data-testid=\"muteButton\"]",
-"[data-testid=\"unmuteButton\"]",
-"[data-testid=\"volumeButton\"]",
-"[data-testid=\"volumeSlider\"]",
-"[data-testid=\"volumeControl\"]",
-"[data-testid=\"videoProgressSlider\"]",
-"[data-testid=\"seekBar\"]",
-"[data-testid=\"scrubber\"]",
-"[data-testid=\"videoPlayer\"] [role=\"slider\"]",
-"[data-testid=\"videoPlayer\"] [role=\"progressbar\"]",
-"[data-testid=\"videoPlayer\"] [data-testid=\"SliderRail\"]",
-"[data-testid=\"videoPlayer\"] input[type=\"range\"]",
-"[data-testid=\"videoPlayer\"] [aria-label*=\"Volume\"]",
-".video-controls button",
-".video-progress button"
-];
-VIDEO_CONTROL_DATASET_PREFIXES = [
-"play",
-"pause",
-"mute",
-"unmute",
-"volume",
-"slider",
-"seek",
-"scrub",
-"progress"
-];
-VIDEO_CONTROL_ROLES = ["slider", "progressbar"];
-VIDEO_CONTROL_ARIA_TOKENS = [
-"volume",
-"mute",
-"unmute",
-"seek",
-"scrub",
-"timeline",
-"progress"
-];
-SYSTEM_PAGES = [
+var RESERVED_TWITTER_PATHS = new Set([
 "home",
 "explore",
 "notifications",
 "messages",
-"bookmarks",
-"lists",
-"profile",
-"settings",
-"help",
 "search",
-"login",
-"signup"
-];
-VIEW_MODES = ["verticalList"];
-}));
-var constants_exports = /* @__PURE__ */ __export({
-APP_SETTINGS_STORAGE_KEY: () => APP_SETTINGS_STORAGE_KEY,
-CSS: () => CSS,
-DEFAULT_SETTINGS: () => DEFAULT_SETTINGS,
-FALLBACK_SELECTORS: () => FALLBACK_SELECTORS,
-GALLERY_CONTAINER_SELECTOR: () => GALLERY_CONTAINER_SELECTOR,
-GALLERY_OVERLAY_SELECTOR: () => GALLERY_OVERLAY_SELECTOR,
-MEDIA: () => MEDIA,
-SERVICE_KEYS: () => SERVICE_KEYS,
-STABLE_IMAGE_CONTAINERS_SELECTORS: () => STABLE_IMAGE_CONTAINERS_SELECTORS,
-STABLE_MEDIA_CONTAINERS_SELECTORS: () => STABLE_MEDIA_CONTAINERS_SELECTORS,
-STABLE_MEDIA_LINKS_SELECTORS: () => STABLE_MEDIA_LINKS_SELECTORS,
-STABLE_MEDIA_PLAYERS_SELECTORS: () => STABLE_MEDIA_PLAYERS_SELECTORS,
-STABLE_MEDIA_VIEWERS_SELECTORS: () => STABLE_MEDIA_VIEWERS_SELECTORS,
-STABLE_TWEET_CONTAINERS_SELECTORS: () => STABLE_TWEET_CONTAINERS_SELECTORS,
-STABLE_VIDEO_CONTAINERS_SELECTORS: () => STABLE_VIDEO_CONTAINERS_SELECTORS,
-STATUS_LINK_SELECTOR: () => STATUS_LINK_SELECTOR,
-SYSTEM_PAGES: () => SYSTEM_PAGES,
-TWEET_ARTICLE_SELECTOR: () => TWEET_ARTICLE_SELECTOR,
-TWEET_PHOTO_SELECTOR: () => TWEET_PHOTO_SELECTOR,
-TWEET_SELECTOR: () => TWEET_SELECTOR,
-TWEET_TEXT_SELECTOR: () => TWEET_TEXT_SELECTOR,
-TWITTER_API_CONFIG: () => TWITTER_API_CONFIG,
-TWITTER_IMAGE_SELECTOR: () => TWITTER_IMAGE_SELECTOR,
-TWITTER_MEDIA_SELECTOR: () => TWITTER_MEDIA_SELECTOR,
-TWITTER_VIDEO_SELECTOR: () => TWITTER_VIDEO_SELECTOR,
-VIDEO_CONTROL_ARIA_TOKENS: () => VIDEO_CONTROL_ARIA_TOKENS,
-VIDEO_CONTROL_DATASET_PREFIXES: () => VIDEO_CONTROL_DATASET_PREFIXES,
-VIDEO_CONTROL_ROLES: () => VIDEO_CONTROL_ROLES,
-VIDEO_CONTROL_SELECTORS: () => VIDEO_CONTROL_SELECTORS,
-VIDEO_PLAYER_SELECTOR: () => VIDEO_PLAYER_SELECTOR,
-VIEW_MODES: () => VIEW_MODES,
-createDefaultSettings: () => createDefaultSettings,
-queryAllWithFallback: () => queryAllWithFallback,
-queryWithFallback: () => queryWithFallback
-}, 1);
-var init_constants$1 = __esmMin((() => {
-init_css();
-init_default_settings();
-init_media();
-init_selectors$1();
-init_service_keys();
-init_storage();
-init_twitter_api$1();
-init_video_controls();
-}));
-function createSingleton(factory) {
-let hasInstance = false;
-let instance;
-return {
-get() {
-if (!hasInstance) {
-instance = factory();
-hasInstance = true;
+"settings",
+"i",
+"intent",
+"compose",
+"hashtag"
+]);
+var TWITTER_USERNAME_PATTERN = /^[a-zA-Z0-9_]{1,15}$/;
+var TWITTER_HOSTS = ["twitter.com", "x.com"];
+function extractUsernameFromUrl(url, options = {}) {
+if (!url || typeof url !== "string") return null;
+try {
+let path;
+if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("//")) {
+const parsed = tryParseUrl(url);
+if (!parsed) return null;
+if (options.strictHost) {
+if (!isHostMatching(parsed, TWITTER_HOSTS, { allowSubdomains: true })) return null;
 }
-return instance;
-},
-peek() {
-return hasInstance ? instance : null;
-},
-reset() {
-hasInstance = false;
+path = parsed.pathname;
+} else path = url;
+const segments = path.split("/").filter(Boolean);
+if (segments.length >= 3 && segments[1] === "status") {
+const username = segments[0];
+if (!username) return null;
+if (RESERVED_TWITTER_PATHS.has(username.toLowerCase())) return null;
+if (TWITTER_USERNAME_PATTERN.test(username)) return username;
 }
-};
-}
-var service_manager_exports = /* @__PURE__ */ __export({
-CoreService: () => CoreService,
-serviceManager: () => serviceManager
-}, 1);
-function isDisposable(value) {
-return value !== null && typeof value === "object" && "destroy" in value && typeof value.destroy === "function";
-}
-var CoreService, serviceManager;
-var init_service_manager = __esmMin((() => {
-init_logging();
-CoreService = class CoreService {
-static singleton = createSingleton(() => new CoreService());
-services = /* @__PURE__ */ new Map();
-constructor() {}
-static getInstance() {
-return CoreService.singleton.get();
-}
-register(key, instance, options) {
-const allowOverride = options?.allowOverride ?? false;
-const onDuplicate = options?.onDuplicate ?? "warn";
-if (this.services.has(key) && !allowOverride) {
-const message = `[CoreService] Service key "${key}" already registered, skipping. Use { allowOverride: true } to replace existing service.`;
-if (onDuplicate === "throw") throw new Error(message);
-if (onDuplicate === "warn") ;
-return;
-}
-this.services.set(key, instance);
-}
-get(key) {
-if (this.services.has(key)) return this.services.get(key);
-throw new Error(`Service not found: ${key}`);
-}
-tryGet(key) {
-if (this.services.has(key)) return this.services.get(key);
+return null;
+} catch {
 return null;
 }
-has(key) {
-return this.services.has(key);
 }
-getRegisteredServices() {
-return Array.from(this.services.keys());
+function sanitize(name) {
+return name.replace(/[<>:"/\\|?*]/g, "_").replace(/^[\s.]+|[\s.]+$/g, "").slice(0, 255) || "media";
 }
-cleanup() {
-this.services.forEach((service) => {
+function resolveNowMs$1(nowMs$1) {
+return Number.isFinite(nowMs$1) ? nowMs$1 : 0;
+}
+function getExtension(url) {
 try {
-if (isDisposable(service)) service.destroy();
-} catch (e) {
-logger.error("Service cleanup failed", e);
-}
-});
-this.services.clear();
-}
-reset() {
-this.cleanup();
-}
-};
-serviceManager = CoreService.getInstance();
-}));
-function isBaseLanguageCode(value) {
-return value != null && LANGUAGE_CODE_LOOKUP.has(value);
-}
-var LANGUAGE_CODES, LANGUAGE_CODE_LOOKUP;
-var init_language_types = __esmMin((() => {
-LANGUAGE_CODES = [
-"en",
-"ko",
-"ja"
-];
-LANGUAGE_CODE_LOOKUP = new Set(LANGUAGE_CODES);
-}));
-var en;
-var init_en = __esmMin((() => {
-en = {
-toolbar: {
-previous: "Previous",
-next: "Next",
-download: "Download",
-downloadAll: "Download ZIP",
-settings: "Settings",
-close: "Close",
-tweetText: "Tweet text",
-tweetTextPanel: "Tweet text panel"
-},
-settings: {
-title: "Settings",
-theme: "Theme",
-language: "Language",
-themeAuto: "Auto",
-themeLight: "Light",
-themeDark: "Dark",
-languageAuto: "Auto / 자동 / 自動",
-languageKo: "한국어",
-languageEn: "English",
-languageJa: "日本語",
-close: "Close",
-gallery: { sectionTitle: "Gallery" }
-},
-messages: {
-errorBoundary: {
-title: "An error occurred",
-body: "An unexpected error occurred: {error}"
-},
-keyboardHelp: {
-title: "Keyboard shortcuts",
-navPrevious: "ArrowLeft: Previous media",
-navNext: "ArrowRight: Next media",
-close: "Escape: Close gallery",
-toggleHelp: "?: Show this help"
-},
-download: {
-single: { error: {
-title: "Download Failed",
-body: "Could not download the file: {error}"
-} },
-allFailed: {
-title: "Download Failed",
-body: "Failed to download all items."
-},
-partial: {
-title: "Partial Failure",
-body: "Failed to download {count} items."
-},
-retry: {
-action: "Retry",
-success: {
-title: "Retry Successful",
-body: "Successfully downloaded all previously failed items."
-}
-},
-cancelled: {
-title: "Download Cancelled",
-body: "The requested download was cancelled."
-}
-},
-gallery: {
-emptyTitle: "No media available",
-emptyDescription: "There are no images or videos to display.",
-mediaItemLabel: "Media {index}: {filename}",
-failedToLoadImage: "Failed to load {type}"
-}
-}
-};
-}));
-var ko_exports = /* @__PURE__ */ __export({ ko: () => ko }, 1);
-var ko;
-var init_ko = __esmMin((() => {
-ko = {
-toolbar: {
-previous: "이전",
-next: "다음",
-download: "다운로드",
-downloadAll: "ZIP 다운로드",
-settings: "설정",
-close: "닫기",
-tweetText: "트윗 텍스트",
-tweetTextPanel: "트윗 텍스트 패널"
-},
-settings: {
-title: "설정",
-theme: "테마",
-language: "언어",
-themeAuto: "자동",
-themeLight: "라이트",
-themeDark: "다크",
-languageAuto: "자동 / Auto / 자동",
-languageKo: "한국어",
-languageEn: "English",
-languageJa: "日本語",
-close: "닫기",
-gallery: { sectionTitle: "갤러리" }
-},
-messages: {
-errorBoundary: {
-title: "오류가 발생했습니다",
-body: "예상치 못한 오류가 발생했습니다: {error}"
-},
-keyboardHelp: {
-title: "키보드 단축키",
-navPrevious: "ArrowLeft: 이전 미디어",
-navNext: "ArrowRight: 다음 미디어",
-close: "Escape: 갤러리 닫기",
-toggleHelp: "?: 이 도움말 표시"
-},
-download: {
-single: { error: {
-title: "다운로드 실패",
-body: "파일을 가져올 수 없습니다: {error}"
-} },
-allFailed: {
-title: "다운로드 실패",
-body: "모든 항목을 다운로드할 수 없었습니다."
-},
-partial: {
-title: "일부 실패",
-body: "{count}개 항목을 가져올 수 없었습니다."
-},
-retry: {
-action: "다시 시도",
-success: {
-title: "다시 시도 성공",
-body: "실패했던 모든 항목을 가져왔습니다."
-}
-},
-cancelled: {
-title: "다운로드가 취소되었습니다",
-body: "요청한 다운로드가 취소되었습니다."
-}
-},
-gallery: {
-emptyTitle: "미디어 없음",
-emptyDescription: "표시할 이미지 또는 동영상이 없습니다.",
-mediaItemLabel: "미디어 {index}: {filename}",
-failedToLoadImage: "{type} 로드 실패"
-}
-}
-};
-}));
-var ja_exports = /* @__PURE__ */ __export({ ja: () => ja }, 1);
-var ja;
-var init_ja = __esmMin((() => {
-ja = {
-toolbar: {
-previous: "前へ",
-next: "次へ",
-download: "ダウンロード",
-downloadAll: "ZIPダウンロード",
-settings: "設定",
-close: "閉じる",
-tweetText: "ツイートテキスト",
-tweetTextPanel: "ツイートテキストパネル"
-},
-settings: {
-title: "設定",
-theme: "テーマ",
-language: "言語",
-themeAuto: "自動",
-themeLight: "ライト",
-themeDark: "ダーク",
-languageAuto: "自動 / Auto / 자동",
-languageKo: "한국어",
-languageEn: "English",
-languageJa: "日本語",
-close: "閉じる",
-gallery: { sectionTitle: "ギャラリー" }
-},
-messages: {
-errorBoundary: {
-title: "エラーが発生しました",
-body: "予期しないエラーが発生しました: {error}"
-},
-keyboardHelp: {
-title: "キーボードショートカット",
-navPrevious: "ArrowLeft: 前のメディア",
-navNext: "ArrowRight: 次のメディア",
-close: "Escape: ギャラリーを閉じる",
-toggleHelp: "?: このヘルプを表示"
-},
-download: {
-single: { error: {
-title: "ダウンロード失敗",
-body: "ファイルを取得できません: {error}"
-} },
-allFailed: {
-title: "ダウンロード失敗",
-body: "すべての項目をダウンロードできませんでした。"
-},
-partial: {
-title: "一部失敗",
-body: "{count}個の項目を取得できませんでした。"
-},
-retry: {
-action: "再試行",
-success: {
-title: "再試行成功",
-body: "失敗していた項目をすべて取得しました。"
-}
-},
-cancelled: {
-title: "ダウンロードがキャンセルされました",
-body: "要求したダウンロードはキャンセルされました。"
-}
-},
-gallery: {
-emptyTitle: "メディアがありません",
-emptyDescription: "表示する画像や動画がありません。",
-mediaItemLabel: "メディア {index}: {filename}",
-failedToLoadImage: "{type} の読み込みに失敗しました"
-}
-}
-};
-})), TRANSLATION_REGISTRY, LAZY_LANGUAGE_LOADERS;
-var init_translation_registry = __esmMin((() => {
-init_en();
-TRANSLATION_REGISTRY = Object.freeze({ en });
-LAZY_LANGUAGE_LOADERS = {
-ko: async () => {
-const { ko: ko$1 } = await Promise.resolve().then(() => (init_ko(), ko_exports));
-return ko$1;
-},
-ja: async () => {
-const { ja: ja$1 } = await Promise.resolve().then(() => (init_ja(), ja_exports));
-return ja$1;
-}
-};
-}));
-var TranslationCatalog;
-var init_translation_catalog = __esmMin((() => {
-init_language_types();
-init_translation_registry();
-TranslationCatalog = class {
-bundles = {};
-fallbackLanguage;
-loadingPromises = {};
-constructor(options = {}) {
-const { bundles = TRANSLATION_REGISTRY, fallbackLanguage = "en" } = options;
-this.fallbackLanguage = fallbackLanguage;
-this.registerBundles(bundles);
-if (!this.bundles[this.fallbackLanguage]) throw new Error(`Missing fallback language bundle: ${this.fallbackLanguage}`);
-}
-register(language, strings) {
-this.bundles[language] = strings;
-}
-has(language) {
-return Boolean(this.bundles[language]);
-}
-get(language) {
-if (language) {
-const strings = this.bundles[language];
-if (strings) return strings;
-}
-return this.bundles[this.fallbackLanguage];
-}
-async ensureLanguage(language) {
-if (this.bundles[language]) return false;
-const loader = LAZY_LANGUAGE_LOADERS[language];
-if (!loader) return false;
-const existingPromise = this.loadingPromises[language];
-if (existingPromise) {
-await existingPromise;
-return true;
-}
-const loadPromise = (async () => {
-const strings = await loader();
-this.register(language, strings);
-})();
-this.loadingPromises[language] = loadPromise;
-try {
-await loadPromise;
-return true;
-} finally {
-delete this.loadingPromises[language];
-}
-}
-canLazyLoad(language) {
-return Boolean(LAZY_LANGUAGE_LOADERS[language]);
-}
-keys() {
-return Object.keys(this.bundles);
-}
-availableLanguages() {
-return [...LANGUAGE_CODES];
-}
-toRecord() {
-return { ...this.bundles };
-}
-registerBundles(bundles) {
-for (const [language, strings] of Object.entries(bundles)) {
-if (!strings) continue;
-this.register(language, strings);
-}
-}
-};
-}));
-function resolveTranslationValue(dictionary, key) {
-const segments = key.split(".");
-let current = dictionary;
-for (const segment of segments) {
-if (!current || typeof current !== "object") return;
-current = current[segment];
-}
-return typeof current === "string" ? current : void 0;
-}
-var Translator;
-var init_translator = __esmMin((() => {
-init_language_types();
-init_translation_catalog();
-Translator = class {
-catalog;
-constructor(options = {}) {
-this.catalog = options instanceof TranslationCatalog ? options : new TranslationCatalog(options);
-}
-get languages() {
-return [...LANGUAGE_CODES];
-}
-async ensureLanguage(language) {
-await this.catalog.ensureLanguage(language);
-}
-translate(language, key, params) {
-const template$1 = resolveTranslationValue(this.catalog.get(language), key);
-if (!template$1) return key;
-if (!params) return template$1;
-return template$1.replace(/\{(\w+)\}/g, (_, placeholder$1) => {
-if (Object.hasOwn(params, placeholder$1)) return String(params[placeholder$1]);
-return `{${placeholder$1}}`;
-});
-}
-};
-}));
-var init_i18n = __esmMin((() => {
-init_translation_catalog();
-init_translator();
-}));
-function createLifecycle(serviceName, options = {}) {
-const { onInitialize, onDestroy, silent = false } = options;
-let initialized = false;
-const initialize = async () => {
-if (initialized) return;
-try {
-if (onInitialize) await onInitialize();
-initialized = true;
-} catch (error$1) {
-throw error$1;
-}
-};
-const destroy = () => {
-if (!initialized) return;
-try {
-if (onDestroy) onDestroy();
-} catch (error$1) {} finally {
-initialized = false;
-}
-};
-const isInitialized = () => initialized;
-return {
-initialize,
-destroy,
-isInitialized,
-serviceName
-};
-}
-function createNetworkErrorResponse(details) {
-return {
-finalUrl: details.url,
-readyState: 4,
-status: 0,
-statusText: "Network Error",
-responseHeaders: "",
-response: void 0,
-responseXML: null,
-responseText: "",
-context: details.context
-};
-}
-function scheduleUserscriptRequestFailureCallbacks(details, response) {
-Promise.resolve().then(() => {
-try {
-details.onerror?.(response);
-details.onloadend?.(response);
+const path = url.split("?")[0];
+if (!path) return "jpg";
+const ext = path.split(".").pop();
+if (ext && /^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i.test(ext)) return ext.toLowerCase();
 } catch {}
-});
+return "jpg";
+}
+function getIndexFromMediaId(mediaId) {
+if (!mediaId) return null;
+const match = mediaId.match(/_media_(\d+)$/) || mediaId.match(/_(\d+)$/);
+if (match) {
+const idx = safeParseInt(match[1], 10);
+return mediaId.includes("_media_") ? (idx + 1).toString() : match[1] ?? null;
+}
+return null;
+}
+function normalizeIndex(index) {
+if (index === void 0 || index === null) return "1";
+const num = typeof index === "string" ? safeParseInt(index, 10) : index;
+return Number.isNaN(num) || num < 1 ? "1" : num.toString();
+}
+function resolveMetadata(media, fallbackUsername) {
+let username = null;
+let tweetId = null;
+if (media.sourceLocation === "quoted" && media.quotedUsername && media.quotedTweetId) {
+username = media.quotedUsername;
+tweetId = media.quotedTweetId;
+} else {
+tweetId = media.tweetId ?? null;
+if (media.tweetUsername && media.tweetUsername !== "unknown") username = media.tweetUsername;
+else {
+const url = ("originalUrl" in media ? media.originalUrl : null) || media.url;
+if (typeof url === "string") username = extractUsernameFromUrl(url, { strictHost: true });
+}
+}
+if (!username && fallbackUsername) username = fallbackUsername;
+return {
+username,
+tweetId
+};
+}
+function generateMediaFilename(media, options = {}) {
+try {
+if (media.filename) return sanitize(media.filename);
+const nowMs$1 = resolveNowMs$1(options.nowMs);
+const extension = options.extension ?? getExtension(media.originalUrl ?? media.url);
+const index = getIndexFromMediaId(media.id) ?? normalizeIndex(options.index);
+const { username, tweetId } = resolveMetadata(media, options.fallbackUsername);
+if (username && tweetId) return sanitize(`${username}_${tweetId}_${index}.${extension}`);
+if (tweetId && /^\d+$/.test(tweetId)) return sanitize(`tweet_${tweetId}_${index}.${extension}`);
+return sanitize(`${options.fallbackPrefix ?? "media"}_${nowMs$1}_${index}.${extension}`);
+} catch {
+return `media_${resolveNowMs$1(options.nowMs)}.${options.extension || "jpg"}`;
+}
+}
+function generateZipFilename(mediaItems, options = {}) {
+try {
+const firstItem = mediaItems[0];
+if (firstItem) {
+const { username, tweetId } = resolveMetadata(firstItem);
+if (username && tweetId) return sanitize(`${username}_${tweetId}.zip`);
+}
+return sanitize(`${options.fallbackPrefix ?? "xcom_gallery"}_${resolveNowMs$1(options.nowMs)}.zip`);
+} catch {
+return `download_${resolveNowMs$1(options.nowMs)}.zip`;
+}
+}
+function planSingleDownload(input) {
+const { method, mediaUrl, filename, hasProvidedBlob } = input;
+if (method === "gm_download") return {
+strategy: "gm_download",
+url: mediaUrl,
+filename,
+useBlobUrl: hasProvidedBlob
+};
+return {
+strategy: "none",
+filename,
+error: "No download method"
+};
+}
+function planBulkDownload(input) {
+return {
+items: input.mediaItems.map((media) => ({
+url: media.url,
+desiredName: input.nowMs === void 0 ? generateMediaFilename(media) : generateMediaFilename(media, { nowMs: input.nowMs }),
+blob: input.prefetchedBlobs?.get(media.url)
+})),
+zipFilename: input.zipFilename || (input.nowMs === void 0 ? generateZipFilename(input.mediaItems) : generateZipFilename(input.mediaItems, { nowMs: input.nowMs }))
+};
+}
+function planZipSave(method) {
+if (method === "gm_download") return "gm_download";
+return "none";
+}
+function detectManager(info) {
+const handler = info?.scriptHandler;
+if (typeof handler !== "string") return "unknown";
+const h = handler.toLowerCase();
+if (h.includes("tamper")) return "tampermonkey";
+if (h.includes("grease")) return "greasemonkey";
+if (h.includes("violent")) return "violentmonkey";
+return "unknown";
+}
+function safeInfo(info) {
+if (info && typeof info === "object") return info;
+return null;
 }
 function fallbackAddStyle(css) {
 if (typeof document !== "undefined" && typeof document.createElement === "function") {
@@ -1032,6 +339,14 @@ document.head?.appendChild(style$1);
 return style$1;
 }
 return {};
+}
+function scheduleXhrFailure(details, response) {
+Promise.resolve().then(() => {
+try {
+details.onerror?.(response);
+details.onloadend?.(response);
+} catch {}
+});
 }
 function resolveGMAPIs() {
 const global = globalThis;
@@ -1044,127 +359,64 @@ deleteValue: typeof GM_deleteValue !== "undefined" ? GM_deleteValue : typeof glo
 listValues: typeof GM_listValues !== "undefined" ? GM_listValues : typeof global.GM_listValues === "function" ? global.GM_listValues : void 0,
 addStyle: typeof GM_addStyle !== "undefined" ? GM_addStyle : typeof global.GM_addStyle === "function" ? global.GM_addStyle : void 0,
 xmlHttpRequest: typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : typeof global.GM_xmlhttpRequest === "function" ? global.GM_xmlhttpRequest : void 0,
-cookie: typeof GM_cookie !== "undefined" ? GM_cookie : global.GM_cookie && typeof global.GM_cookie.list === "function" ? global.GM_cookie : void 0,
-notification: typeof GM_notification !== "undefined" ? GM_notification : typeof global.GM_notification === "function" ? global.GM_notification : void 0
+notification: typeof GM_notification !== "undefined" ? GM_notification : typeof global.GM_notification === "function" ? global.GM_notification : void 0,
+cookie: typeof GM_cookie !== "undefined" ? GM_cookie : global.GM_cookie && typeof global.GM_cookie.list === "function" ? global.GM_cookie : void 0
 });
 }
 function resolveGMDownload() {
 return resolveGMAPIs().download;
 }
-function detectManager(global) {
-try {
-const info = typeof GM_info !== "undefined" ? GM_info : global.GM_info;
-const handler = isGMUserScriptInfo(info) ? info?.scriptHandler?.toLowerCase?.() : void 0;
-if (!handler) return "unknown";
-if (handler.includes("tamper")) return "tampermonkey";
-if (handler.includes("grease")) return "greasemonkey";
-if (handler.includes("violent")) return "violentmonkey";
-return "unknown";
-} catch {
-return "unknown";
-}
-}
-function safeInfo(global) {
-try {
-const info = typeof GM_info !== "undefined" ? GM_info : global.GM_info;
-return isGMUserScriptInfo(info) ? info : null;
-} catch {
-return null;
-}
-}
-function assertFunction(fn, errorMessage) {
-if (typeof fn !== "function") throw new Error(errorMessage);
+var REQUIRED_ERROR_MESSAGE = "GM unavailable";
+function assertFunction(fn) {
+if (typeof fn !== "function") throw new Error(REQUIRED_ERROR_MESSAGE);
 return fn;
 }
-function getUserscript() {
-const global = globalThis;
-const resolved = resolveGMAPIs();
-const gmDownload = resolved.download;
-const gmSetValue = resolved.setValue;
-const gmGetValue = resolved.getValue;
-const gmDeleteValue = resolved.deleteValue;
-const gmListValues = resolved.listValues;
-const gmAddStyle = resolved.addStyle;
-const gmXmlHttpRequest = resolved.xmlHttpRequest;
-const gmCookie = resolved.cookie;
-const gmNotification = resolved.notification;
-return Object.freeze({
-hasGM: Boolean(gmDownload || gmSetValue && gmGetValue || gmXmlHttpRequest),
-manager: detectManager(global),
-info: () => safeInfo(global),
-async download(url, filename) {
-assertFunction(gmDownload, ERROR_MESSAGES.download)(url, filename);
-},
-async setValue(key, value) {
-const fn = assertFunction(gmSetValue, ERROR_MESSAGES.setValue);
-await Promise.resolve(fn(key, value));
-},
-async getValue(key, defaultValue) {
-const fn = assertFunction(gmGetValue, ERROR_MESSAGES.getValue);
-return await Promise.resolve(fn(key, defaultValue));
-},
-getValueSync(key, defaultValue) {
-if (!gmGetValue) return defaultValue;
-try {
-const value = gmGetValue(key, defaultValue);
-if (value instanceof Promise) return defaultValue;
-return value;
-} catch {
-return defaultValue;
+function normalizeFunction(value) {
+return typeof value === "function" ? value : void 0;
 }
-},
-async deleteValue(key) {
-const fn = assertFunction(gmDeleteValue, ERROR_MESSAGES.deleteValue);
-await Promise.resolve(fn(key));
-},
-async listValues() {
-const fn = assertFunction(gmListValues, ERROR_MESSAGES.listValues);
-const values = await Promise.resolve(fn());
-return Array.isArray(values) ? values : [];
-},
-addStyle(css) {
-return assertFunction(gmAddStyle, ERROR_MESSAGES.addStyle)(css);
-},
-xmlHttpRequest(details) {
-return assertFunction(gmXmlHttpRequest, ERROR_MESSAGES.xmlHttpRequest)(details);
-},
-notification(details) {
-if (!gmNotification) return;
-try {
-gmNotification(details, void 0);
-} catch {}
-},
-cookie: gmCookie
-});
-}
-function getUserscriptSafe() {
-const global = globalThis;
+function createUserscriptImpl(mode) {
 const resolved = resolveGMAPIs();
-const gmDownload = typeof resolved.download === "function" ? resolved.download : void 0;
-const gmSetValue = typeof resolved.setValue === "function" ? resolved.setValue : void 0;
-const gmGetValue = typeof resolved.getValue === "function" ? resolved.getValue : void 0;
-const gmDeleteValue = typeof resolved.deleteValue === "function" ? resolved.deleteValue : void 0;
-const gmListValues = typeof resolved.listValues === "function" ? resolved.listValues : void 0;
-const gmAddStyle = typeof resolved.addStyle === "function" ? resolved.addStyle : void 0;
-const gmXmlHttpRequest = typeof resolved.xmlHttpRequest === "function" ? resolved.xmlHttpRequest : void 0;
-const gmNotification = typeof resolved.notification === "function" ? resolved.notification : void 0;
+const gmDownload = normalizeFunction(resolved.download);
+const gmSetValue = normalizeFunction(resolved.setValue);
+const gmGetValue = normalizeFunction(resolved.getValue);
+const gmDeleteValue = normalizeFunction(resolved.deleteValue);
+const gmListValues = normalizeFunction(resolved.listValues);
+const gmAddStyle = normalizeFunction(resolved.addStyle);
+const gmXmlHttpRequest = normalizeFunction(resolved.xmlHttpRequest);
+const gmNotification = normalizeFunction(resolved.notification);
+const strict = mode === "strict";
+const hasGM = Boolean(gmDownload || gmSetValue && gmGetValue || gmXmlHttpRequest);
+const info = resolved.info;
 return Object.freeze({
-hasGM: Boolean(gmDownload || gmSetValue && gmGetValue || gmXmlHttpRequest),
-manager: detectManager(global),
-info: () => safeInfo(global),
+hasGM,
+manager: detectManager(info),
+info: () => safeInfo(info),
 async download(url, filename) {
+if (strict) {
+assertFunction(gmDownload)(url, filename);
+return;
+}
 if (!gmDownload) return;
 try {
 gmDownload(url, filename);
 } catch {}
 },
 async setValue(key, value) {
+if (strict) {
+const fn = assertFunction(gmSetValue);
+await Promise.resolve(fn(key, value));
+return;
+}
 if (!gmSetValue) return;
 try {
 await Promise.resolve(gmSetValue(key, value));
 } catch {}
 },
 async getValue(key, defaultValue) {
+if (strict) {
+const fn = assertFunction(gmGetValue);
+return await Promise.resolve(fn(key, defaultValue));
+}
 if (!gmGetValue) return defaultValue;
 try {
 return await Promise.resolve(gmGetValue(key, defaultValue));
@@ -1183,12 +435,22 @@ return defaultValue;
 }
 },
 async deleteValue(key) {
+if (strict) {
+const fn = assertFunction(gmDeleteValue);
+await Promise.resolve(fn(key));
+return;
+}
 if (!gmDeleteValue) return;
 try {
 await Promise.resolve(gmDeleteValue(key));
 } catch {}
 },
 async listValues() {
+if (strict) {
+const fn = assertFunction(gmListValues);
+const values = await Promise.resolve(fn());
+return Array.isArray(values) ? values : [];
+}
 if (!gmListValues) return [];
 try {
 const values = await Promise.resolve(gmListValues());
@@ -1198,6 +460,7 @@ return [];
 }
 },
 addStyle(css) {
+if (strict) return assertFunction(gmAddStyle)(css);
 if (!gmAddStyle) return fallbackAddStyle(css);
 try {
 return gmAddStyle(css);
@@ -1206,10 +469,21 @@ return fallbackAddStyle(css);
 }
 },
 xmlHttpRequest(details) {
+if (strict) return assertFunction(gmXmlHttpRequest)(details);
 if (gmXmlHttpRequest) try {
 return gmXmlHttpRequest(details);
 } catch {}
-scheduleUserscriptRequestFailureCallbacks(details, createNetworkErrorResponse(details));
+scheduleXhrFailure(details, {
+finalUrl: details.url,
+readyState: 4,
+status: 0,
+statusText: "",
+responseHeaders: "",
+response: void 0,
+responseXML: null,
+responseText: "",
+context: details.context
+});
 return { abort() {} };
 },
 notification(details) {
@@ -1221,30 +495,255 @@ gmNotification(details, void 0);
 cookie: resolved.cookie
 });
 }
-var ERROR_MESSAGES;
-var init_adapter = __esmMin((() => {
-ERROR_MESSAGES = {
-download: "GM_download unavailable",
-setValue: "GM_setValue unavailable",
-getValue: "GM_getValue unavailable",
-deleteValue: "GM_deleteValue unavailable",
-listValues: "GM_listValues unavailable",
-addStyle: "GM_addStyle unavailable",
-xmlHttpRequest: "GM_xmlhttpRequest unavailable"
+function getUserscript() {
+return createUserscriptImpl("strict");
+}
+function getUserscriptSafe() {
+return createUserscriptImpl("safe");
+}
+function isBaseLanguageCode(value) {
+return value === "en" || value === "ko" || value === "ja";
+}
+function buildLanguageStringsFromValues(values) {
+let i = 0;
+const next = () => values[i++];
+return {
+tb: {
+prev: next(),
+next: next(),
+dl: next(),
+dlAll: next(),
+dlAllCt: next(),
+set: next(),
+setOpen: next(),
+cls: next(),
+twTxt: next(),
+twPanel: next(),
+fitOri: next(),
+fitW: next(),
+fitH: next(),
+fitC: next()
+},
+st: {
+ttl: next(),
+th: next(),
+lang: next(),
+thAuto: next(),
+thLt: next(),
+thDk: next(),
+langAuto: next(),
+langKo: next(),
+langEn: next(),
+langJa: next(),
+cls: next(),
+gal: { sec: next() }
+},
+msg: {
+err: {
+t: next(),
+b: next()
+},
+kb: {
+t: next(),
+prev: next(),
+next: next(),
+cls: next(),
+toggle: next()
+},
+dl: {
+one: { err: {
+t: next(),
+b: next()
+} },
+allFail: {
+t: next(),
+b: next()
+},
+part: {
+t: next(),
+b: next()
+},
+retry: {
+act: next(),
+ok: {
+t: next(),
+b: next()
+}
+},
+cancel: {
+t: next(),
+b: next()
+}
+},
+gal: {
+emptyT: next(),
+emptyD: next(),
+itemLbl: next(),
+loadFail: next()
+}
+}
 };
-}));
-function isGMAPIAvailable(apiName) {
-const checker = GM_API_CHECKS[apiName];
-try {
-return checker(resolveGMAPIs());
-} catch {
-return false;
 }
+const en = buildLanguageStringsFromValues([
+"Previous",
+"Next",
+"Download",
+"Download ZIP",
+"Download all {count} files as ZIP",
+"Settings",
+"Open Settings",
+"Close",
+"Tweet text",
+"Tweet text panel",
+"Original",
+"Fit Width",
+"Fit Height",
+"Fit Window",
+"Settings",
+"Theme",
+"Language",
+"Auto",
+"Light",
+"Dark",
+"Auto / 자동 / 自動",
+"한국어",
+"English",
+"日本語",
+"Close",
+"Gallery",
+"An error occurred",
+"An unexpected error occurred: {error}",
+"Keyboard shortcuts",
+"ArrowLeft: Previous media",
+"ArrowRight: Next media",
+"Escape: Close gallery",
+"?: Show this help",
+"Download Failed",
+"Could not download the file: {error}",
+"Download Failed",
+"Failed to download all items.",
+"Partial Failure",
+"Failed to download {count} items.",
+"Retry",
+"Retry Successful",
+"Successfully downloaded all previously failed items.",
+"Download Cancelled",
+"The requested download was cancelled.",
+"No media available",
+"There are no images or videos to display.",
+"Media {index}: {filename}",
+"Failed to load {type}"
+]);
+const ja = buildLanguageStringsFromValues([
+"前へ",
+"次へ",
+"ダウンロード",
+"ZIPダウンロード",
+"すべての{count}件をZIPでダウンロード",
+"設定",
+"設定を開く",
+"閉じる",
+"ツイートテキスト",
+"ツイートテキストパネル",
+"原寸",
+"幅に合わせる",
+"高さに合わせる",
+"ウィンドウに合わせる",
+"設定",
+"テーマ",
+"言語",
+"自動",
+"ライト",
+"ダーク",
+"Auto / 자동 / 自動",
+"한국어",
+"English",
+"日本語",
+"閉じる",
+"ギャラリー",
+"エラーが発生しました",
+"予期しないエラーが発生しました: {error}",
+"キーボードショートカット",
+"ArrowLeft: 前のメディア",
+"ArrowRight: 次のメディア",
+"Escape: ギャラリーを閉じる",
+"?: このヘルプを表示",
+"ダウンロード失敗",
+"ファイルを取得できません: {error}",
+"ダウンロード失敗",
+"すべての項目をダウンロードできませんでした。",
+"一部失敗",
+"{count}個の項目を取得できませんでした。",
+"再試行",
+"再試行成功",
+"失敗していた項目をすべて取得しました。",
+"ダウンロードがキャンセルされました",
+"要求したダウンロードはキャンセルされました。",
+"メディアがありません",
+"表示する画像や動画がありません。",
+"メディア {index}: {filename}",
+"{type} の読み込みに失敗しました"
+]);
+const TRANSLATION_REGISTRY = {
+en,
+ko: buildLanguageStringsFromValues([
+"이전",
+"다음",
+"다운로드",
+"ZIP 다운로드",
+"모든 {count}개 파일을 ZIP으로 다운로드",
+"설정",
+"설정 열기",
+"닫기",
+"트윗 텍스트",
+"트윗 텍스트 패널",
+"원본",
+"너비 맞춤",
+"높이 맞춤",
+"창 맞춤",
+"설정",
+"테마",
+"언어",
+"자동",
+"라이트",
+"다크",
+"Auto / 자동 / 自動",
+"한국어",
+"English",
+"日本語",
+"닫기",
+"갤러리",
+"오류가 발생했습니다",
+"예상치 못한 오류가 발생했습니다: {error}",
+"키보드 단축키",
+"ArrowLeft: 이전 미디어",
+"ArrowRight: 다음 미디어",
+"Escape: 갤러리 닫기",
+"?: 이 도움말 표시",
+"다운로드 실패",
+"파일을 가져올 수 없습니다: {error}",
+"다운로드 실패",
+"모든 항목을 다운로드할 수 없었습니다.",
+"일부 실패",
+"{count}개 항목을 가져올 수 없었습니다.",
+"다시 시도",
+"다시 시도 성공",
+"실패했던 모든 항목을 가져왔습니다.",
+"다운로드가 취소되었습니다",
+"요청한 다운로드가 취소되었습니다.",
+"미디어 없음",
+"표시할 이미지 또는 동영상이 없습니다.",
+"미디어 {index}: {filename}",
+"{type} 로드 실패"
+]),
+ja
+};
+function getLanguageStrings(language) {
+const strings = TRANSLATION_REGISTRY[language];
+if (strings) return strings;
+return TRANSLATION_REGISTRY["en"];
 }
-var GM_API_CHECKS;
-var init_environment_detector = __esmMin((() => {
-init_adapter();
-GM_API_CHECKS = {
+var GM_API_CHECKS = {
 getValue: (gm) => typeof gm.getValue === "function",
 setValue: (gm) => typeof gm.setValue === "function",
 download: (gm) => typeof gm.download === "function",
@@ -1253,294 +752,222 @@ deleteValue: (gm) => typeof gm.deleteValue === "function",
 listValues: (gm) => typeof gm.listValues === "function",
 cookie: (gm) => typeof gm.cookie?.list === "function"
 };
-}));
-var init_userscript = __esmMin((() => {
-init_adapter();
-init_environment_detector();
-}));
-function getPersistentStorage() {
-return PersistentStorage.getInstance();
-}
-var PersistentStorage;
-var init_persistent_storage = __esmMin((() => {
-init_userscript();
-init_logging();
-PersistentStorage = class PersistentStorage {
-get userscript() {
-return getUserscriptSafe();
-}
-static singleton = createSingleton(() => new PersistentStorage());
-static parseWarnedKeys = /* @__PURE__ */ new Set();
-static maxParseWarnedKeys = 1e3;
-constructor() {}
-static getInstance() {
-return PersistentStorage.singleton.get();
-}
-static maybeResetWarnedKeysOnOverflow() {
-if (PersistentStorage.parseWarnedKeys.size < PersistentStorage.maxParseWarnedKeys) return;
-PersistentStorage.parseWarnedKeys.clear();
-}
-parseMaybeJsonString(rawValue) {
+function isGMAPIAvailable(apiName) {
+const checker = GM_API_CHECKS[apiName];
 try {
-const parsed = JSON.parse(rawValue);
-return typeof parsed === "string" ? parsed : void 0;
+return checker(resolveGMAPIs());
 } catch {
-return;
+return false;
 }
 }
-serializeValueForStorage(value) {
-if (typeof value === "string") return value;
-return JSON.stringify(value);
+function detectDownloadCapability() {
+const rawGMDownload = resolveGMDownload();
+const gmDownload = typeof rawGMDownload === "function" ? rawGMDownload : void 0;
+const hasGMDownload = isGMAPIAvailable("download") && Boolean(gmDownload);
+return {
+hasGMDownload,
+method: hasGMDownload ? "gm_download" : "none",
+gmDownload
+};
 }
-async setString(key, value) {
-return this.set(key, value);
+function toActionCommand(plan, timeoutMs) {
+if (plan.strategy === "gm_download") return {
+type: "DOWNLOAD_WITH_GM_DOWNLOAD",
+url: plan.url,
+filename: plan.filename,
+timeoutMs,
+useBlobUrl: plan.useBlobUrl
+};
+return {
+type: "FAIL",
+filename: plan.filename,
+error: plan.error
+};
 }
-async setJson(key, value) {
+function createSingleDownloadCommands(input) {
+const timeoutMs = input.timeoutMs ?? 3e4;
+const action = toActionCommand(planSingleDownload({
+method: input.method,
+mediaUrl: input.mediaUrl,
+filename: input.filename,
+hasProvidedBlob: input.hasProvidedBlob
+}), timeoutMs);
+return action.type === "DOWNLOAD_WITH_GM_DOWNLOAD" || action.type === "FAIL" ? [{
+type: "REPORT_PROGRESS",
+phase: "preparing",
+percentage: 0,
+filename: input.filename
+}, action] : [action];
+}
+var TimerManager = class {
+timers =  new Set();
+setTimeout(callback, delay$1) {
+let id;
+id = window.setTimeout(() => {
 try {
-if (value === void 0) {
-;
-await this.userscript.deleteValue(key);
-return;
+callback();
+} finally {
+this.timers.delete(id);
 }
-const serialized = JSON.stringify(value);
-if (serialized === void 0) {
-;
-await this.userscript.deleteValue(key);
-return;
+}, delay$1);
+this.timers.add(id);
+return id;
 }
-await this.userscript.setValue(key, serialized);
-} catch (error$1) {
-logger.error(`PersistentStorage.setJson failed for "${key}":`, error$1);
-throw error$1;
+clearTimeout(id) {
+if (this.timers.has(id)) {
+window.clearTimeout(id);
+this.timers.delete(id);
 }
 }
-async set(key, value) {
-try {
-if (value === void 0) {
-;
-await this.userscript.deleteValue(key);
-return;
+cleanup() {
+this.timers.forEach((id) => window.clearTimeout(id));
+this.timers.clear();
 }
-const serialized = this.serializeValueForStorage(value);
-if (serialized === void 0) {
-;
-await this.userscript.deleteValue(key);
-return;
-}
-await this.userscript.setValue(key, serialized);
-} catch (error$1) {
-logger.error(`PersistentStorage.set failed for "${key}":`, error$1);
-throw error$1;
-}
-}
-async getString(key, defaultValue) {
-const value = await this.userscript.getValue(key);
-if (value === void 0 || value === null) return defaultValue;
-const parsedString = this.parseMaybeJsonString(value);
-if (parsedString !== void 0) return parsedString;
-return value;
-}
-warnParseErrorOnce(key, rawValue, error$1) {
-PersistentStorage.maybeResetWarnedKeysOnOverflow();
-if (PersistentStorage.parseWarnedKeys.has(key)) return;
-PersistentStorage.parseWarnedKeys.add(key);
-const preview = rawValue.length > 160 ? `${rawValue.slice(0, 160)}…` : rawValue;
-;
-}
-async trySelfHealOnParseError(key) {
-try {
-await this.userscript.deleteValue(key);
-} catch (error$1) {
-;
-}
-}
-async get(key, defaultValue, options = {}) {
-const value = await this.userscript.getValue(key);
-if (value === void 0 || value === null) return defaultValue;
-try {
-return JSON.parse(value);
-} catch (error$1) {
-if (options.warnOnParseErrorOnce !== false) this.warnParseErrorOnce(key, value, error$1);
-if (options.selfHealOnParseError === true) await this.trySelfHealOnParseError(key);
-return defaultValue;
-}
-}
-async getJson(key, defaultValue, options = {}) {
-return this.get(key, defaultValue, options);
-}
-async has(key) {
-const value = await this.userscript.getValue(key);
-return value !== void 0 && value !== null;
-}
-getSync(key, defaultValue) {
-try {
-const value = this.userscript.getValueSync(key);
-if (value === void 0 || value === null) return defaultValue;
-try {
-return JSON.parse(value);
-} catch {
-return defaultValue;
-}
-} catch {
-return defaultValue;
-}
-}
-getJsonSync(key, defaultValue) {
-return this.getSync(key, defaultValue);
-}
-getStringSync(key, defaultValue) {
-try {
-const value = this.userscript.getValueSync(key);
-if (value === void 0 || value === null) return defaultValue;
-try {
-const parsedString = this.parseMaybeJsonString(value);
-if (parsedString !== void 0) return parsedString;
-} catch {}
-return value;
-} catch {
-return defaultValue;
-}
-}
-async remove(key) {
-try {
-await this.userscript.deleteValue(key);
-} catch (error$1) {
-logger.error(`PersistentStorage.remove failed for "${key}":`, error$1);
-throw error$1;
-}
+getActiveTimersCount() {
+return this.timers.size;
 }
 };
-}));
-var translator, LanguageService;
-var init_language_service = __esmMin((() => {
-init_language_types();
-init_translation_registry();
-init_i18n();
-init_logging();
-init_persistent_storage();
-translator = new Translator(new TranslationCatalog({
-bundles: TRANSLATION_REGISTRY,
-fallbackLanguage: "en"
-}));
-LanguageService = class LanguageService {
-lifecycle;
-static STORAGE_KEY = "xeg-language";
-static SUPPORTED_LANGUAGES = new Set(["auto", ...LANGUAGE_CODES]);
-currentLanguage = "auto";
-listeners = /* @__PURE__ */ new Set();
-storage = getPersistentStorage();
-static singleton = createSingleton(() => new LanguageService());
-static getInstance() {
-return LanguageService.singleton.get();
-}
-constructor() {
-this.lifecycle = createLifecycle("LanguageService", {
-onInitialize: () => this.onInitialize(),
-onDestroy: () => this.onDestroy()
+const globalTimerManager = new TimerManager();
+async function executeSingleDownloadCommand(cmd, options, capability, blob) {
+switch (cmd.type) {
+case "FAIL": return {
+success: false,
+error: cmd.error
+};
+case "REPORT_PROGRESS":
+options.onProgress?.({
+phase: cmd.phase,
+current: 0,
+total: 1,
+percentage: cmd.percentage,
+filename: cmd.filename
 });
+return {
+success: true,
+filename: cmd.filename
+};
+case "DOWNLOAD_WITH_GM_DOWNLOAD": {
+const gmDownload = capability.gmDownload;
+if (!gmDownload) return {
+success: false,
+error: "GM_download unavailable"
+};
+let url = cmd.url;
+let isBlobUrl = false;
+if (cmd.useBlobUrl) {
+if (!blob) return {
+success: false,
+error: "Blob unavailable"
+};
+url = URL.createObjectURL(blob);
+isBlobUrl = true;
 }
-async initialize() {
-return this.lifecycle.initialize();
-}
-destroy() {
-this.lifecycle.destroy();
-}
-isInitialized() {
-return this.lifecycle.isInitialized();
-}
-async onInitialize() {
-try {
-const saved = await this.storage.getString(LanguageService.STORAGE_KEY);
-const normalized = this.normalizeLanguage(saved);
-if (normalized !== this.currentLanguage) {
-this.currentLanguage = normalized;
-this.notifyListeners(normalized);
-}
-const effectiveLang = this.getEffectiveLanguage();
-await this.ensureLanguageLoaded(effectiveLang);
-} catch (error$1) {
-;
-}
-}
-onDestroy() {
-this.listeners.clear();
-}
-detectLanguage() {
-const browserLang = typeof navigator !== "undefined" && navigator.language ? navigator.language.slice(0, 2) : "en";
-if (isBaseLanguageCode(browserLang)) return browserLang;
-return "en";
-}
-getCurrentLanguage() {
-return this.currentLanguage;
-}
-getAvailableLanguages() {
-return [...LANGUAGE_CODES];
-}
-setLanguage(language) {
-const normalized = this.normalizeLanguage(language);
-if (language !== normalized && language !== "auto") ;
-if (this.currentLanguage === normalized) return;
-this.currentLanguage = normalized;
-this.notifyListeners(normalized);
-this.persistLanguage(normalized).catch((error$1) => {
-;
-});
-const effectiveLang = this.getEffectiveLanguage();
-this.ensureLanguageLoaded(effectiveLang).catch((error$1) => {
-;
-});
-}
-async ensureLanguageLoaded(language) {
-try {
-await translator.ensureLanguage(language);
-} catch (error$1) {
-;
-}
-}
-translate(key, params) {
-return translator.translate(this.getEffectiveLanguage(), key, params);
-}
-onLanguageChange(callback) {
-this.listeners.add(callback);
-return () => this.listeners.delete(callback);
-}
-normalizeLanguage(language) {
-if (!language) return "auto";
-if (LanguageService.SUPPORTED_LANGUAGES.has(language)) return language;
-return "en";
-}
-notifyListeners(language) {
-this.listeners.forEach((listener) => {
-try {
-listener(language);
-} catch (error$1) {
-;
-}
-});
-}
-async persistLanguage(language) {
-try {
-await this.storage.setString(LanguageService.STORAGE_KEY, language);
-} catch (error$1) {
-;
-}
-}
-getEffectiveLanguage() {
-return this.currentLanguage === "auto" ? this.detectLanguage() : this.currentLanguage;
+return await new Promise((resolve$1) => {
+let timer;
+const cleanup$1 = () => {
+if (isBlobUrl) URL.revokeObjectURL(url);
+if (timer) {
+globalTimerManager.clearTimeout(timer);
+timer = void 0;
 }
 };
-}));
-function optimizePbsImageUrlToWebP(originalUrl) {
+let settled = false;
+const settle = (result, completePercentage) => {
+if (settled) return;
+settled = true;
+if (completePercentage !== void 0) options.onProgress?.({
+phase: "complete",
+current: 1,
+total: 1,
+percentage: completePercentage,
+filename: cmd.filename
+});
+cleanup$1();
+resolve$1(result);
+};
+timer = globalTimerManager.setTimeout(() => {
+settle({
+success: false,
+error: "Download timeout"
+}, 0);
+}, cmd.timeoutMs);
 try {
-const url = new URL(originalUrl);
-if (url.hostname !== "pbs.twimg.com") return originalUrl;
-if (url.searchParams.get("format") === "webp") return originalUrl;
-url.searchParams.set("format", "webp");
-return url.toString();
-} catch {
-return originalUrl;
+gmDownload({
+url,
+name: cmd.filename,
+onload: () => {
+;
+settle({
+success: true,
+filename: cmd.filename
+}, 100);
+},
+onerror: (error$1) => {
+const errorMsg = getErrorMessage(error$1);
+logger.error("Download failed", error$1);
+settle({
+success: false,
+error: errorMsg
+}, 0);
+},
+ontimeout: () => {
+settle({
+success: false,
+error: "Download timeout"
+}, 0);
+},
+onprogress: (progress) => {
+if (settled) return;
+if (options.onProgress && progress.total > 0) options.onProgress({
+phase: "downloading",
+current: 1,
+total: 1,
+percentage: Math.round(progress.loaded / progress.total * 100),
+filename: cmd.filename
+});
+}
+});
+} catch (error$1) {
+settle({
+success: false,
+error: getErrorMessage(error$1)
+});
+}
+});
+}
+default: return {
+success: false,
+error: "Unknown download command"
+};
 }
 }
+async function downloadSingleFile(media, options = {}, capability) {
+if (options.signal?.aborted) return {
+success: false,
+error: "User cancelled download"
+};
+const filename = generateMediaFilename(media, { nowMs: Date.now() });
+const effectiveCapability = capability ?? detectDownloadCapability();
+const cmds = createSingleDownloadCommands({
+method: effectiveCapability.method,
+mediaUrl: media.url,
+filename,
+hasProvidedBlob: Boolean(options.blob),
+timeoutMs: 3e4
+});
+let lastOk = {
+success: true,
+filename
+};
+for (const cmd of cmds) {
+const result = await executeSingleDownloadCommand(cmd, options, effectiveCapability, options.blob);
+if (!result.success) return result;
+lastOk = result;
+}
+return lastOk;
+}
+const USER_CANCELLED_MESSAGE = "Download cancelled by user";
+var DEFAULT_ABORT_MESSAGE = "This operation was aborted";
 function isTimeoutError(value) {
 if (value instanceof DOMException) return value.name === "TimeoutError";
 if (value instanceof Error) return value.name === "TimeoutError";
@@ -1587,11 +1014,243 @@ if (reason instanceof DOMException) return reason;
 if (reason instanceof Error) return reason;
 return createAbortError(DEFAULT_ABORT_MESSAGE, reason);
 }
-var USER_CANCELLED_MESSAGE, DEFAULT_ABORT_MESSAGE;
-var init_cancellation = __esmMin((() => {
-USER_CANCELLED_MESSAGE = "Download cancelled by user";
-DEFAULT_ABORT_MESSAGE = "This operation was aborted";
-}));
+var textEncoder = new TextEncoder();
+var crc32Table = null;
+function ensureCRC32Table() {
+if (crc32Table) return crc32Table;
+const table = new Uint32Array(256);
+const polynomial = 3988292384;
+for (let i = 0; i < 256; i++) {
+let crc = i;
+for (let j = 0; j < 8; j++) crc = crc & 1 ? crc >>> 1 ^ polynomial : crc >>> 1;
+table[i] = crc >>> 0;
+}
+crc32Table = table;
+return table;
+}
+function encodeUtf8(value) {
+return textEncoder.encode(value);
+}
+function calculateCRC32(data) {
+const table = ensureCRC32Table();
+let crc = 4294967295;
+for (let i = 0; i < data.length; i++) crc = crc >>> 8 ^ table[(crc ^ data[i]) & 255];
+return (crc ^ 4294967295) >>> 0;
+}
+function writeUint16LE(value) {
+const bytes = new Uint8Array(2);
+bytes[0] = value & 255;
+bytes[1] = value >>> 8 & 255;
+return bytes;
+}
+function writeUint32LE(value) {
+const bytes = new Uint8Array(4);
+bytes[0] = value & 255;
+bytes[1] = value >>> 8 & 255;
+bytes[2] = value >>> 16 & 255;
+bytes[3] = value >>> 24 & 255;
+return bytes;
+}
+var MAX_UINT16 = 65535;
+var MAX_UINT32 = 4294967295;
+var ZIP32_ERROR = "Zip32 limit exceeded";
+function assertZip32(condition, message) {
+if (condition) return;
+throw new Error(ZIP32_ERROR);
+}
+var concat = (arrays) => {
+let len = 0;
+for (const array of arrays) len += array.length;
+const result = new Uint8Array(len);
+let offset = 0;
+for (const array of arrays) {
+result.set(array, offset);
+offset += array.length;
+}
+return result;
+};
+var StreamingZipWriter = class {
+chunks = [];
+entries = [];
+currentOffset = 0;
+addFile(filename, data) {
+assertZip32(this.entries.length < MAX_UINT16 - 1, `too many entries (count=${this.entries.length + 1})`);
+assertZip32(data.length < MAX_UINT32, `file too large (size=${data.length})`);
+assertZip32(this.currentOffset < MAX_UINT32, `offset overflow (offset=${this.currentOffset})`);
+const filenameBytes = encodeUtf8(filename);
+const crc32 = calculateCRC32(data);
+const localHeader = concat([
+new Uint8Array([
+80,
+75,
+3,
+4
+]),
+writeUint16LE(20),
+writeUint16LE(2048),
+writeUint16LE(0),
+writeUint16LE(0),
+writeUint16LE(0),
+writeUint32LE(crc32),
+writeUint32LE(data.length),
+writeUint32LE(data.length),
+writeUint16LE(filenameBytes.length),
+writeUint16LE(0),
+filenameBytes
+]);
+assertZip32(this.currentOffset + localHeader.length + data.length < MAX_UINT32, `archive too large (offset=${this.currentOffset}, add=${localHeader.length + data.length})`);
+this.chunks.push(localHeader, data);
+this.entries.push({
+filename,
+data,
+offset: this.currentOffset,
+crc32
+});
+this.currentOffset += localHeader.length + data.length;
+}
+finalize() {
+assertZip32(this.entries.length < MAX_UINT16, `too many entries (count=${this.entries.length})`);
+const centralDirStart = this.currentOffset;
+assertZip32(centralDirStart < MAX_UINT32, `central directory offset overflow (${centralDirStart})`);
+const centralDirChunks = [];
+for (const entry of this.entries) {
+const filenameBytes = encodeUtf8(entry.filename);
+assertZip32(entry.offset < MAX_UINT32, `entry offset overflow (${entry.offset})`);
+assertZip32(entry.data.length < MAX_UINT32, `entry too large (size=${entry.data.length})`);
+centralDirChunks.push(concat([
+new Uint8Array([
+80,
+75,
+1,
+2
+]),
+writeUint16LE(20),
+writeUint16LE(20),
+writeUint16LE(2048),
+writeUint16LE(0),
+writeUint16LE(0),
+writeUint16LE(0),
+writeUint32LE(entry.crc32),
+writeUint32LE(entry.data.length),
+writeUint32LE(entry.data.length),
+writeUint16LE(filenameBytes.length),
+writeUint16LE(0),
+writeUint16LE(0),
+writeUint16LE(0),
+writeUint16LE(0),
+writeUint32LE(0),
+writeUint32LE(entry.offset),
+filenameBytes
+]));
+}
+const centralDir = concat(centralDirChunks);
+assertZip32(centralDir.length < MAX_UINT32, `central directory too large (size=${centralDir.length})`);
+const endOfCentralDir = concat([
+new Uint8Array([
+80,
+75,
+5,
+6
+]),
+writeUint16LE(0),
+writeUint16LE(0),
+writeUint16LE(this.entries.length),
+writeUint16LE(this.entries.length),
+writeUint32LE(centralDir.length),
+writeUint32LE(centralDirStart),
+writeUint16LE(0)
+]);
+return concat([
+...this.chunks,
+centralDir,
+endOfCentralDir
+]);
+}
+};
+function isAbortError(error$1) {
+if (error$1 instanceof DOMException) return error$1.name === "AbortError" || error$1.name === "TimeoutError";
+if (error$1 instanceof Error) return error$1.name === "AbortError" || error$1.message.includes("aborted");
+return false;
+}
+async function delay(ms, signal) {
+if (ms <= 0) return;
+if (signal?.aborted) throw getAbortReasonOrAbortErrorFromSignal(signal);
+return new Promise((resolve$1, reject) => {
+const timerId = globalTimerManager.setTimeout(() => {
+cleanup$1();
+resolve$1();
+}, ms);
+const onAbort = () => {
+cleanup$1();
+reject(getAbortReasonOrAbortErrorFromSignal(signal));
+};
+const cleanup$1 = () => {
+globalTimerManager.clearTimeout(timerId);
+signal?.removeEventListener("abort", onAbort);
+};
+signal?.addEventListener("abort", onAbort, { once: true });
+});
+}
+var DEFAULT_OPTIONS = {
+maxAttempts: 3,
+baseDelayMs: 200,
+maxDelayMs: 1e4
+};
+function calculateBackoff(attempt, baseDelayMs, maxDelayMs) {
+const exponentialDelay = baseDelayMs * 2 ** attempt;
+const totalDelay = exponentialDelay + Math.random() * .25 * exponentialDelay;
+return Math.min(Math.floor(totalDelay), maxDelayMs);
+}
+async function withRetry(operation, options = {}) {
+const { maxAttempts = DEFAULT_OPTIONS.maxAttempts, baseDelayMs = DEFAULT_OPTIONS.baseDelayMs, maxDelayMs = DEFAULT_OPTIONS.maxDelayMs, signal, onRetry, shouldRetry = () => true } = options;
+let lastError;
+let attempt = 0;
+while (attempt < maxAttempts) {
+if (signal?.aborted) return {
+success: false,
+error: signal.reason ?? new DOMException("Operation was aborted", "AbortError"),
+attempts: attempt
+};
+try {
+return {
+success: true,
+data: await operation(),
+attempts: attempt + 1
+};
+} catch (error$1) {
+lastError = error$1;
+attempt++;
+if (isAbortError(error$1)) return {
+success: false,
+error: error$1,
+attempts: attempt
+};
+if (!shouldRetry(error$1)) return {
+success: false,
+error: error$1,
+attempts: attempt
+};
+if (attempt >= maxAttempts) break;
+const delayMs = calculateBackoff(attempt - 1, baseDelayMs, maxDelayMs);
+onRetry?.(attempt, error$1, delayMs);
+try {
+await delay(delayMs, signal);
+} catch (delayError) {
+if (isAbortError(delayError)) return {
+success: false,
+error: delayError,
+attempts: attempt
+};
+throw delayError;
+}
+}
+}
+return {
+success: false,
+error: lastError,
+attempts: attempt
+};
+}
 function promisifyCallback(executor, options) {
 return new Promise((resolve$1, reject) => {
 try {
@@ -1645,38 +1304,19 @@ deferred.reject(reason);
 isSettled: () => settled
 };
 }
-function parseResponseHeaders(raw) {
-const out = {};
-if (!raw) return out;
-for (const line of raw.split(/\r?\n/)) {
-if (!line) continue;
-const idx = line.indexOf(":");
-if (idx <= 0) continue;
-const name = line.slice(0, idx).trim().toLowerCase();
-if (!name) continue;
-out[name] = line.slice(idx + 1).trim();
+function createSingleton(factory) {
+let hasInstance = false;
+let instance;
+const get = () => {
+if (!hasInstance) {
+instance = factory();
+hasInstance = true;
 }
-return out;
-}
-function normalizeRequestHeaders(headers) {
-const out = {};
-if (!headers) return out;
-for (const [key, value] of Object.entries(headers)) out[key.toLowerCase()] = value;
-return out;
-}
-var HttpError, HttpRequestService;
-var init_http_request_service = __esmMin((() => {
-init_cancellation();
-init_userscript();
-HttpError = class extends Error {
-constructor(message, status, statusText) {
-super(message);
-this.status = status;
-this.statusText = statusText;
-this.name = "HttpError";
-}
+return instance;
 };
-HttpRequestService = class HttpRequestService {
+return { get };
+}
+var HttpRequestService = class HttpRequestService {
 static singleton = createSingleton(() => new HttpRequestService());
 defaultTimeout = 1e4;
 constructor() {}
@@ -1698,44 +1338,38 @@ if (options?.signal?.aborted) {
 safeReject(getAbortReasonOrAbortErrorFromSignal(options.signal));
 return deferred.promise;
 }
-const headers = normalizeRequestHeaders(options?.headers);
+const headers = options?.headers;
 const details = {
 method,
 url,
-headers,
+...headers ? { headers } : {},
 timeout: options?.timeout ?? this.defaultTimeout,
 onload: (response) => {
-const responseHeaders = parseResponseHeaders(response.responseHeaders);
 safeResolve({
 ok: response.status >= 200 && response.status < 300,
 status: response.status,
-statusText: response.statusText,
-data: response.response,
-headers: responseHeaders
+data: response.response
 });
 },
 onerror: (response) => {
 const status = response.status ?? 0;
-const statusText = response.statusText || "Network Error";
-safeReject(new HttpError(status === 0 ? `Network error: Unable to connect to ${url} (CORS, network failure, or blocked request)` : `HTTP ${status}: ${statusText}`, status, statusText));
+const errorMessage = status === 0 ? "NET" : `HTTP:${status}`;
+const error$1 = new Error(errorMessage);
+error$1.status = status;
+safeReject(error$1);
 },
 ontimeout: () => {
-safeReject(new HttpError(`Request timed out after ${options?.timeout ?? this.defaultTimeout}ms for ${url}`, 0, "Timeout"));
+const error$1 =  new Error("TIMEOUT");
+error$1.status = 0;
+safeReject(error$1);
 },
 onabort: () => {
 safeReject(getAbortReasonOrAbortErrorFromSignal(options?.signal));
 }
 };
 if (options?.responseType) details.responseType = options.responseType;
-if (options && "data" in options && options.data !== void 0) {
-const data = options.data;
-const isBinaryLike = data instanceof Blob || data instanceof ArrayBuffer || typeof ArrayBuffer !== "undefined" && ArrayBuffer.isView(data) || data instanceof FormData || data instanceof URLSearchParams;
-if (typeof data === "object" && data !== null && !isBinaryLike) {
-details.data = JSON.stringify(data);
-if (!headers["content-type"]) headers["content-type"] = "application/json";
-} else details.data = data;
-}
-if (options?.contentType && !headers["content-type"]) headers["content-type"] = options.contentType;
+const data = options?.data;
+if (data !== void 0) details.data = data;
 const control = userscript.xmlHttpRequest(details);
 if (options?.signal) {
 abortListener = () => {
@@ -1756,68 +1390,553 @@ async get(url, options) {
 return this.request("GET", url, options);
 }
 async post(url, data, options) {
-return this.request("POST", url, {
+const nextOptions = data === void 0 ? options : {
 ...options,
 data
-});
+};
+return this.request("POST", url, nextOptions);
 }
 async put(url, data, options) {
-return this.request("PUT", url, {
+const nextOptions = data === void 0 ? options : {
 ...options,
 data
-});
+};
+return this.request("PUT", url, nextOptions);
 }
 async delete(url, options) {
 return this.request("DELETE", url, options);
 }
 async patch(url, data, options) {
-return this.request("PATCH", url, {
+const nextOptions = data === void 0 ? options : {
 ...options,
 data
-});
-}
-async postBinary(url, data, options) {
-const contentType = options?.contentType ?? "application/octet-stream";
-return await this.request("POST", url, {
-...options,
-data,
-contentType
-});
+};
+return this.request("PATCH", url, nextOptions);
 }
 };
-}));
-var TimerManager, globalTimerManager;
-var init_timer_management = __esmMin((() => {
-TimerManager = class {
-timers = /* @__PURE__ */ new Set();
-setTimeout(callback, delay$1) {
-let id;
-id = window.setTimeout(() => {
+async function fetchArrayBufferWithRetry(url, retries, signal, backoffBaseMs = 200) {
+if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
+const httpService = HttpRequestService.getInstance();
+const result = await withRetry(async () => {
+if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
+const options = {
+responseType: "arraybuffer",
+timeout: 3e4,
+...signal ? { signal } : {}
+};
+const response = await httpService.get(url, options);
+if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+return new Uint8Array(response.data);
+}, {
+maxAttempts: Math.max(1, retries + 1),
+baseDelayMs: backoffBaseMs,
+...signal ? { signal } : {}
+});
+if (result.success) return result.data;
+if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
+if (isAbortError(result.error)) throw result.error;
+throw result.error;
+}
+function ensureUniqueFilenameFactory() {
+const usedNames =  new Set();
+const baseCounts =  new Map();
+return (desired) => {
+if (!usedNames.has(desired)) {
+usedNames.add(desired);
+baseCounts.set(desired, 0);
+return desired;
+}
+const lastDot = desired.lastIndexOf(".");
+const name = lastDot > 0 ? desired.slice(0, lastDot) : desired;
+const ext = lastDot > 0 ? desired.slice(lastDot) : "";
+const baseKey = desired;
+let count = baseCounts.get(baseKey) ?? 0;
+while (true) {
+count += 1;
+const candidate = `${name}-${count}${ext}`;
+if (!usedNames.has(candidate)) {
+baseCounts.set(baseKey, count);
+usedNames.add(candidate);
+return candidate;
+}
+}
+};
+}
+async function downloadAsZip(items, options = {}) {
+const writer = new StreamingZipWriter();
+const concurrency = Math.min(8, Math.max(1, options.concurrency ?? 6));
+const retries = Math.max(0, options.retries ?? 0);
+const abortSignal = options.signal;
+const total = items.length;
+let processed = 0;
+let successful = 0;
+const failures = [];
+const ensureUniqueFilename = ensureUniqueFilenameFactory();
+const assignedFilenames = items.map((item) => ensureUniqueFilename(item.desiredName));
+let currentIndex$1 = 0;
+const runNext = async () => {
+while (currentIndex$1 < total) {
+if (abortSignal?.aborted) throw createUserCancelledAbortError(abortSignal.reason);
+const index = currentIndex$1++;
+const item = items[index];
+if (!item) continue;
+options.onProgress?.({
+phase: "downloading",
+current: processed + 1,
+total,
+percentage: Math.min(100, Math.max(0, Math.round((processed + 1) / total * 100))),
+filename: assignedFilenames[index] ?? item.desiredName
+});
 try {
-callback();
+let data;
+if (item.blob) {
+const blob = item.blob instanceof Promise ? await item.blob : item.blob;
+if (abortSignal?.aborted) throw createUserCancelledAbortError(abortSignal.reason);
+data = new Uint8Array(await blob.arrayBuffer());
+} else data = await fetchArrayBufferWithRetry(item.url, retries, abortSignal, 200);
+if (abortSignal?.aborted) throw createUserCancelledAbortError(abortSignal.reason);
+const filename = assignedFilenames[index] ?? item.desiredName;
+writer.addFile(filename, data);
+successful++;
+} catch (error$1) {
+if (abortSignal?.aborted) throw createUserCancelledAbortError(abortSignal.reason);
+failures.push({
+url: item.url,
+error: getErrorMessage(error$1)
+});
 } finally {
-this.timers.delete(id);
+processed++;
 }
-}, delay$1);
-this.timers.add(id);
-return id;
 }
-clearTimeout(id) {
-if (this.timers.has(id)) {
-window.clearTimeout(id);
-this.timers.delete(id);
+};
+const workers = Array.from({ length: concurrency }, () => runNext());
+await Promise.all(workers);
+const zipBytes = writer.finalize();
+return {
+filesSuccessful: successful,
+failures,
+zipData: zipBytes
+};
 }
+function createLifecycle(serviceName, options = {}) {
+const { onInitialize, onDestroy, silent = false } = options;
+let initialized = false;
+const initialize = async () => {
+if (initialized) return;
+try {
+if (onInitialize) await onInitialize();
+initialized = true;
+} catch (error$1) {
+throw error$1;
+}
+};
+const destroy = () => {
+if (!initialized) return;
+try {
+if (onDestroy) onDestroy();
+} catch (error$1) {} finally {
+initialized = false;
+}
+};
+const isInitialized = () => initialized;
+return {
+initialize,
+destroy,
+isInitialized,
+serviceName
+};
+}
+const ErrorCode = {
+NONE: "NONE",
+CANCELLED: "CANCELLED",
+NETWORK: "NETWORK",
+TIMEOUT: "TIMEOUT",
+EMPTY_INPUT: "EMPTY_INPUT",
+ALL_FAILED: "ALL_FAILED",
+PARTIAL_FAILED: "PARTIAL_FAILED",
+UNKNOWN: "UNKNOWN",
+ELEMENT_NOT_FOUND: "ELEMENT_NOT_FOUND",
+INVALID_ELEMENT: "INVALID_ELEMENT",
+NO_MEDIA_FOUND: "NO_MEDIA_FOUND",
+INVALID_URL: "INVALID_URL",
+PERMISSION_DENIED: "PERMISSION_DENIED"
+};
+var DownloadOrchestrator = class DownloadOrchestrator {
+lifecycle;
+static singleton = createSingleton(() => new DownloadOrchestrator());
+capability = null;
+constructor() {
+this.lifecycle = createLifecycle("DownloadOrchestrator", {
+onInitialize: () => this.onInitialize(),
+onDestroy: () => this.onDestroy()
+});
+}
+static getInstance() {
+return DownloadOrchestrator.singleton.get();
+}
+async initialize() {
+return this.lifecycle.initialize();
+}
+destroy() {
+this.lifecycle.destroy();
+}
+isInitialized() {
+return this.lifecycle.isInitialized();
+}
+async onInitialize() {
+;
+}
+onDestroy() {
+this.capability = null;
+}
+getCapability() {
+if (!this.capability) this.capability = detectDownloadCapability();
+return this.capability;
+}
+async downloadSingle(media, options = {}) {
+return downloadSingleFile(media, options, this.getCapability());
+}
+async downloadBulk(mediaItems, options = {}) {
+const plan = planBulkDownload({
+mediaItems,
+prefetchedBlobs: options.prefetchedBlobs,
+zipFilename: options.zipFilename,
+nowMs: Date.now()
+});
+const items = plan.items;
+try {
+const result = await downloadAsZip(items, options);
+if (result.filesSuccessful === 0) return {
+success: false,
+status: "error",
+filesProcessed: items.length,
+filesSuccessful: 0,
+error: "No files downloaded",
+failures: result.failures,
+code: ErrorCode.ALL_FAILED
+};
+const zipBlob = new Blob([result.zipData], { type: "application/zip" });
+const filename = plan.zipFilename;
+const capability = this.getCapability();
+const saveResult = await this.saveZipBlob(zipBlob, filename, options, capability);
+if (!saveResult.success) return {
+success: false,
+status: "error",
+filesProcessed: items.length,
+filesSuccessful: result.filesSuccessful,
+error: saveResult.error || "Failed to save ZIP file",
+failures: result.failures,
+code: ErrorCode.ALL_FAILED
+};
+return {
+success: true,
+status: result.filesSuccessful === items.length ? "success" : "partial",
+filesProcessed: items.length,
+filesSuccessful: result.filesSuccessful,
+filename,
+failures: result.failures,
+code: ErrorCode.NONE
+};
+} catch (error$1) {
+return {
+success: false,
+status: "error",
+filesProcessed: items.length,
+filesSuccessful: 0,
+error: getErrorMessage(error$1) || "Unknown error",
+code: ErrorCode.ALL_FAILED
+};
+}
+}
+async saveZipBlob(zipBlob, filename, _options, capability) {
+if (planZipSave(capability.method) === "gm_download" && capability.gmDownload) return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename);
+return {
+success: false,
+error: "No download method"
+};
+}
+async saveWithGMDownload(gmDownload, blob, filename) {
+const url = URL.createObjectURL(blob);
+try {
+await new Promise((resolve$1, reject) => {
+gmDownload({
+url,
+name: filename,
+onload: () => resolve$1(),
+onerror: (err) => reject(err),
+ontimeout: () => reject(  new Error("Timeout"))
+});
+});
+return { success: true };
+} catch (error$1) {
+return {
+success: false,
+error: getErrorMessage(error$1) || "GM_download failed"
+};
+} finally {
+URL.revokeObjectURL(url);
+}
+}
+};
+function isDisposable(value) {
+return value !== null && typeof value === "object" && "destroy" in value && typeof value.destroy === "function";
+}
+var CoreService = class CoreService {
+static singleton = createSingleton(() => new CoreService());
+services =  new Map();
+constructor() {}
+static getInstance() {
+return CoreService.singleton.get();
+}
+register(key, instance, options) {
+const allowOverride = options?.allowOverride ?? false;
+const onDuplicate = options?.onDuplicate ?? "warn";
+if (this.services.has(key) && !allowOverride) {
+if (onDuplicate === "throw") throw new Error(`[CoreService] Duplicate service key: ${key}`);
+return;
+}
+this.services.set(key, instance);
+}
+get(key) {
+if (this.services.has(key)) return this.services.get(key);
+throw new Error(`Service not found: ${key}`);
+}
+tryGet(key) {
+if (this.services.has(key)) return this.services.get(key);
+return null;
+}
+has(key) {
+return this.services.has(key);
+}
+getRegisteredServices() {
+return Array.from(this.services.keys());
 }
 cleanup() {
-this.timers.forEach((id) => window.clearTimeout(id));
-this.timers.clear();
+this.services.forEach((service) => {
+try {
+if (isDisposable(service)) service.destroy();
+} catch (e) {
+logger.error("Service cleanup failed", e);
 }
-getActiveTimersCount() {
-return this.timers.size;
+});
+this.services.clear();
+}
+reset() {
+this.cleanup();
 }
 };
-globalTimerManager = new TimerManager();
-}));
+CoreService.getInstance();
+function resolveTranslationValue(dictionary, key) {
+const segments = key.split(".");
+let current = dictionary;
+for (const segment of segments) {
+if (!current || typeof current !== "object") return;
+current = current[segment];
+}
+return typeof current === "string" ? current : void 0;
+}
+var PersistentStorage = class PersistentStorage {
+get userscript() {
+return getUserscriptSafe();
+}
+static singleton = createSingleton(() => new PersistentStorage());
+constructor() {}
+static getInstance() {
+return PersistentStorage.singleton.get();
+}
+parseMaybeJsonString(rawValue) {
+try {
+const parsed = JSON.parse(rawValue);
+return typeof parsed === "string" ? parsed : void 0;
+} catch {
+return;
+}
+}
+serializeValueForStorage(value) {
+if (typeof value === "string") return value;
+return JSON.stringify(value);
+}
+async setString(key, value) {
+return this.set(key, value);
+}
+async setJson(key, value) {
+if (value === void 0) {
+await this.userscript.deleteValue(key);
+return;
+}
+const serialized = JSON.stringify(value);
+if (serialized === void 0) {
+await this.userscript.deleteValue(key);
+return;
+}
+await this.userscript.setValue(key, serialized);
+}
+async set(key, value) {
+if (value === void 0) {
+await this.userscript.deleteValue(key);
+return;
+}
+const serialized = this.serializeValueForStorage(value);
+if (serialized === void 0) {
+await this.userscript.deleteValue(key);
+return;
+}
+await this.userscript.setValue(key, serialized);
+}
+async getString(key, defaultValue) {
+const value = await this.userscript.getValue(key);
+if (value === void 0 || value === null) return defaultValue;
+const parsedString = this.parseMaybeJsonString(value);
+if (parsedString !== void 0) return parsedString;
+return value;
+}
+async get(key, defaultValue) {
+const value = await this.userscript.getValue(key);
+if (value === void 0 || value === null) return defaultValue;
+try {
+return JSON.parse(value);
+} catch {
+return defaultValue;
+}
+}
+async getJson(key, defaultValue) {
+return this.get(key, defaultValue);
+}
+async has(key) {
+const value = await this.userscript.getValue(key);
+return value !== void 0 && value !== null;
+}
+getSync(key, defaultValue) {
+try {
+const value = this.userscript.getValueSync(key);
+if (value === void 0 || value === null) return defaultValue;
+try {
+return JSON.parse(value);
+} catch {
+return defaultValue;
+}
+} catch {
+return defaultValue;
+}
+}
+getJsonSync(key, defaultValue) {
+return this.getSync(key, defaultValue);
+}
+getStringSync(key, defaultValue) {
+try {
+const value = this.userscript.getValueSync(key);
+if (value === void 0 || value === null) return defaultValue;
+try {
+const parsedString = this.parseMaybeJsonString(value);
+if (parsedString !== void 0) return parsedString;
+} catch {}
+return value;
+} catch {
+return defaultValue;
+}
+}
+async remove(key) {
+await this.userscript.deleteValue(key);
+}
+};
+function getPersistentStorage() {
+return PersistentStorage.getInstance();
+}
+var LanguageService = class LanguageService {
+lifecycle;
+static STORAGE_KEY = "xeg-language";
+currentLanguage = "auto";
+listeners =  new Set();
+storage = getPersistentStorage();
+static singleton = createSingleton(() => new LanguageService());
+static getInstance() {
+return LanguageService.singleton.get();
+}
+constructor() {
+this.lifecycle = createLifecycle("LanguageService", {
+onInitialize: () => this.onInitialize(),
+onDestroy: () => this.onDestroy()
+});
+}
+async initialize() {
+return this.lifecycle.initialize();
+}
+destroy() {
+this.lifecycle.destroy();
+}
+isInitialized() {
+return this.lifecycle.isInitialized();
+}
+async onInitialize() {
+try {
+const saved = await this.storage.getString(LanguageService.STORAGE_KEY);
+const normalized = this.normalizeLanguage(saved);
+if (normalized !== this.currentLanguage) {
+this.currentLanguage = normalized;
+this.notifyListeners(normalized);
+}
+} catch {}
+}
+onDestroy() {
+this.listeners.clear();
+}
+detectLanguage() {
+const browserLang = typeof navigator !== "undefined" && navigator.language ? navigator.language.slice(0, 2) : "en";
+if (isBaseLanguageCode(browserLang)) return browserLang;
+return "en";
+}
+getCurrentLanguage() {
+return this.currentLanguage;
+}
+setLanguage(language) {
+const normalized = this.normalizeLanguage(language);
+if (this.currentLanguage === normalized) return;
+this.currentLanguage = normalized;
+this.notifyListeners(normalized);
+this.persistLanguage(normalized).catch(() => {});
+}
+translate(key, params) {
+const template$1 = resolveTranslationValue(getLanguageStrings(this.getEffectiveLanguage()), key);
+if (!template$1) return key;
+if (!params) return template$1;
+return template$1.replace(/\{(\w+)\}/g, (_, placeholder$1) => {
+if (Object.hasOwn(params, placeholder$1)) return String(params[placeholder$1]);
+return `{${placeholder$1}}`;
+});
+}
+onLanguageChange(callback) {
+this.listeners.add(callback);
+return () => this.listeners.delete(callback);
+}
+normalizeLanguage(language) {
+if (!language) return "auto";
+if (language === "auto") return "auto";
+if (isBaseLanguageCode(language)) return language;
+return "en";
+}
+notifyListeners(language) {
+this.listeners.forEach((listener) => {
+try {
+listener(language);
+} catch {}
+});
+}
+async persistLanguage(language) {
+try {
+await this.storage.setString(LanguageService.STORAGE_KEY, language);
+} catch {}
+}
+getEffectiveLanguage() {
+return this.currentLanguage === "auto" ? this.detectLanguage() : this.currentLanguage;
+}
+};
+var getIdleAPIs = () => {
+const source = typeof globalThis !== "undefined" ? globalThis : void 0;
+return {
+ric: source && typeof source === "object" && "requestIdleCallback" in source ? source.requestIdleCallback || null : null,
+cic: source && typeof source === "object" && "cancelIdleCallback" in source ? source.cancelIdleCallback || null : null
+};
+};
 function scheduleIdle(task) {
 const { ric, cic } = getIdleAPIs();
 if (ric) {
@@ -1839,154 +1958,9 @@ return { cancel: () => {
 globalTimerManager.clearTimeout(timerId);
 } };
 }
-var getIdleAPIs;
-var init_idle_scheduler = __esmMin((() => {
-init_timer_management();
-getIdleAPIs = () => {
-const source = typeof globalThis !== "undefined" ? globalThis : void 0;
-return {
-ric: source && typeof source === "object" && "requestIdleCallback" in source ? source.requestIdleCallback || null : null,
-cic: source && typeof source === "object" && "cancelIdleCallback" in source ? source.cancelIdleCallback || null : null
-};
-};
-}));
-function getRootKey(root) {
-if (!root) return "root:null";
-const rootObject = root;
-const existing = rootIdMap.get(rootObject);
-if (existing) return `root:${existing}`;
-const id = ++rootIdCounter;
-rootIdMap.set(rootObject, id);
-return `root:${id}`;
-}
-function releaseObserverIfIdle(key) {
-const entry = observerPool.get(key);
-if (!entry) return;
-if (entry.activeElements > 0) return;
-try {
-entry.observer.disconnect();
-} catch {}
-observerPool.delete(key);
-}
-var observerPool, elementCallbackMap, callbackIdCounter, rootIdCounter, rootIdMap, createObserverKey, getObserverEntry, SharedObserver;
-var init_observer_pool = __esmMin((() => {
-observerPool = /* @__PURE__ */ new Map();
-elementCallbackMap = /* @__PURE__ */ new WeakMap();
-callbackIdCounter = 0;
-rootIdCounter = 0;
-rootIdMap = /* @__PURE__ */ new WeakMap();
-createObserverKey = (options = {}) => {
-return `${getRootKey(options.root ?? null)}|${options.rootMargin ?? "0px"}|${Array.isArray(options.threshold) ? options.threshold.join(",") : `${options.threshold ?? 0}`}`;
-};
-getObserverEntry = (key, options) => {
-const existing = observerPool.get(key);
-if (existing) return existing;
-const entry = {
-observer: new IntersectionObserver((entries) => {
-entries.forEach((entry$1) => {
-const callbacks = elementCallbackMap.get(entry$1.target)?.get(key);
-if (!callbacks || callbacks.size === 0) return;
-callbacks.forEach((cb) => {
-try {
-cb(entry$1);
-} catch (error$1) {}
-});
-});
-}, options),
-activeElements: 0
-};
-observerPool.set(key, entry);
-return entry;
-};
-SharedObserver = {
-observe(element, callback, options = {}) {
-const key = createObserverKey(options);
-const entry = getObserverEntry(key, options);
-const observer = entry.observer;
-let callbacksByKey = elementCallbackMap.get(element);
-if (!callbacksByKey) {
-callbacksByKey = /* @__PURE__ */ new Map();
-elementCallbackMap.set(element, callbacksByKey);
-}
-let callbacks = callbacksByKey.get(key);
-if (!callbacks) {
-callbacks = /* @__PURE__ */ new Map();
-callbacksByKey.set(key, callbacks);
-}
-const callbackId = ++callbackIdCounter;
-const isFirstForKey = callbacks.size === 0;
-callbacks.set(callbackId, callback);
-if (isFirstForKey) {
-observer.observe(element);
-entry.activeElements += 1;
-}
-let isActive = true;
-const unsubscribe = () => {
-if (!isActive) return;
-isActive = false;
-const callbacksByKeyCurrent = elementCallbackMap.get(element);
-const callbacksForKey = callbacksByKeyCurrent?.get(key);
-callbacksForKey?.delete(callbackId);
-if (callbacksForKey && callbacksForKey.size === 0) {
-callbacksByKeyCurrent?.delete(key);
-observer.unobserve(element);
-const pooled = observerPool.get(key);
-if (pooled) {
-pooled.activeElements = Math.max(0, pooled.activeElements - 1);
-releaseObserverIfIdle(key);
-}
-}
-if (!callbacksByKeyCurrent || callbacksByKeyCurrent.size === 0) elementCallbackMap.delete(element);
-};
-return unsubscribe;
-},
-unobserve(element) {
-const callbacksByKey = elementCallbackMap.get(element);
-if (!callbacksByKey) return;
-callbacksByKey.forEach((_callbacks, key) => {
-const entry = observerPool.get(key);
-entry?.observer.unobserve(element);
-if (entry) {
-entry.activeElements = Math.max(0, entry.activeElements - 1);
-releaseObserverIfIdle(key);
-}
-});
-elementCallbackMap.delete(element);
-}
-};
-}));
-function computePreloadIndices(currentIndex$1, total, count) {
-const safeTotal = Number.isFinite(total) && total > 0 ? Math.floor(total) : 0;
-const safeIndex = clampIndex(Math.floor(currentIndex$1), safeTotal);
-const safeCount = clamp(Math.floor(count), 0, 20);
-if (safeTotal === 0 || safeCount === 0) return [];
-const indices = [];
-for (let i = 1; i <= safeCount; i++) {
-const idx = safeIndex - i;
-if (idx >= 0) indices.push(idx);
-else break;
-}
-for (let i = 1; i <= safeCount; i++) {
-const idx = safeIndex + i;
-if (idx < safeTotal) indices.push(idx);
-else break;
-}
-return indices;
-}
-var init_preload = __esmMin((() => {
-}));
-var init_performance = __esmMin((() => {
-init_idle_scheduler();
-init_observer_pool();
-init_preload();
-}));
-var PrefetchManager;
-var init_prefetch_manager = __esmMin((() => {
-init_http_request_service();
-init_performance();
-PrefetchManager = class {
-cache = /* @__PURE__ */ new Map();
-activeRequests = /* @__PURE__ */ new Map();
+var PrefetchManager = class {
+cache =  new Map();
+activeRequests =  new Map();
 maxEntries;
 constructor(maxEntries = 20) {
 this.maxEntries = maxEntries;
@@ -2003,18 +1977,12 @@ this.prefetchSingle(media.url).catch(() => {});
 get(url) {
 return this.cache.get(url) ?? null;
 }
-has(url) {
-return this.cache.has(url);
-}
 cancelAll() {
 for (const controller of this.activeRequests.values()) controller.abort();
 this.activeRequests.clear();
 }
 clear() {
 this.cache.clear();
-}
-getCache() {
-return new Map(this.cache);
 }
 destroy() {
 this.cancelAll();
@@ -2054,234 +2022,78 @@ this.cache.delete(url);
 }
 }
 };
-}));
-var init_selectors = __esmMin((() => {
-init_selectors$1();
-}));
-function tryParseUrl(value, base = FALLBACK_BASE_URL) {
-if (value instanceof URL) return value;
-if (typeof value !== "string") return null;
-const trimmed = value.trim();
-if (!trimmed) return null;
-try {
-if (trimmed.startsWith("//")) return new URL(`https:${trimmed}`);
-return new URL(trimmed, base);
-} catch {
-return null;
-}
-}
-function isHostMatching(value, allowedHosts, options = {}) {
-if (!Array.isArray(allowedHosts)) return false;
-const parsed = tryParseUrl(value);
-if (!parsed) return false;
-const hostname = parsed.hostname.toLowerCase();
-const allowSubdomains = options.allowSubdomains === true;
-return allowedHosts.some((host) => {
-const normalized = host.toLowerCase();
-if (hostname === normalized) return true;
-return allowSubdomains && hostname.endsWith(`.${normalized}`);
-});
-}
-function extractUsernameFromUrl(url, options = {}) {
-if (!url || typeof url !== "string") return null;
-try {
-let path;
-if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("//")) {
-const parsed = tryParseUrl(url);
-if (!parsed) return null;
-if (options.strictHost) {
-if (!isHostMatching(parsed, TWITTER_HOSTS, { allowSubdomains: true })) return null;
-}
-path = parsed.pathname;
-} else path = url;
-const segments = path.split("/").filter(Boolean);
-if (segments.length >= 3 && segments[1] === "status") {
-const username = segments[0];
-if (!username) return null;
-if (RESERVED_TWITTER_PATHS.has(username.toLowerCase())) return null;
-if (TWITTER_USERNAME_PATTERN.test(username)) return username;
-}
-return null;
-} catch {
-return null;
-}
-}
-var FALLBACK_BASE_URL, RESERVED_TWITTER_PATHS, TWITTER_USERNAME_PATTERN, TWITTER_HOSTS;
-var init_host$1 = __esmMin((() => {
-FALLBACK_BASE_URL = "https://x.com";
-RESERVED_TWITTER_PATHS = new Set([
-"home",
-"explore",
-"notifications",
-"messages",
-"search",
-"settings",
-"i",
-"intent",
-"compose",
-"hashtag"
-]);
-TWITTER_USERNAME_PATTERN = /^[a-zA-Z0-9_]{1,15}$/;
-TWITTER_HOSTS = ["twitter.com", "x.com"];
-}));
-function isUrlAllowed(rawUrl, policy) {
-if (!rawUrl || typeof rawUrl !== "string") return false;
-const normalized = rawUrl.replace(CONTROL_CHARS_REGEX, "").trim();
-if (!normalized) return false;
-if (startsWithBlockedProtocolHint(normalized, policy.blockedProtocolHints ?? DEFAULT_BLOCKED_PROTOCOL_HINTS)) return false;
-const lower = normalized.toLowerCase();
-if (lower.startsWith("data:")) return policy.allowDataUrls === true && isAllowedDataUrl(lower, policy.allowedDataMimePrefixes);
-if (lower.startsWith("//")) return handleProtocolRelative(normalized, policy);
-if (policy.allowFragments && lower.startsWith("#")) return true;
-if (!EXPLICIT_SCHEME_REGEX.test(normalized)) return policy.allowRelative === true;
-try {
-const parsed = new URL(normalized);
-return policy.allowedProtocols.has(parsed.protocol);
-} catch {
-return false;
-}
-}
-function startsWithBlockedProtocolHint(value, hints) {
-const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
-if (/%(?![0-9A-Fa-f]{2})/.test(probe)) return true;
-return buildProbeVariants(probe).some((candidate) => hints.some((hint) => candidate.startsWith(hint)));
-}
-function buildProbeVariants(value) {
-const variants = /* @__PURE__ */ new Set();
-const base = value.toLowerCase();
-variants.add(base);
-variants.add(base.replace(SCHEME_WHITESPACE_REGEX, ""));
-let decoded = base;
-for (let i = 0; i < MAX_DECODE_ITERATIONS; i += 1) try {
-decoded = decodeURIComponent(decoded);
-variants.add(decoded);
-variants.add(decoded.replace(SCHEME_WHITESPACE_REGEX, ""));
-} catch {
-break;
-}
-return Array.from(variants.values());
-}
-function isAllowedDataUrl(lowerCaseValue, allowedPrefixes) {
-if (!allowedPrefixes || allowedPrefixes.length === 0) return false;
-const [mime] = lowerCaseValue.slice(5).split(";", 1);
-if (!mime) return false;
-return allowedPrefixes.some((prefix) => mime.startsWith(prefix));
-}
-function handleProtocolRelative(url, policy) {
-if (!policy.allowProtocolRelative) return false;
-const fallbackProtocol = policy.allowedProtocols.has("https:") ? "https:" : policy.allowedProtocols.has("http:") ? "http:" : "https:";
-try {
-const resolved = new URL(`${fallbackProtocol}${url}`);
-return policy.allowedProtocols.has(resolved.protocol);
-} catch {
-return false;
-}
-}
-var CONTROL_CHARS_REGEX, SCHEME_WHITESPACE_REGEX, EXPLICIT_SCHEME_REGEX, MAX_DECODE_ITERATIONS, MAX_SCHEME_PROBE_LENGTH, DEFAULT_BLOCKED_PROTOCOL_HINTS, MEDIA_SAFE_PROTOCOLS, HTML_ATTR_SAFE_PROTOCOLS, DATA_IMAGE_MIME_PREFIXES, MEDIA_URL_POLICY, HTML_ATTRIBUTE_URL_POLICY;
-var init_safety = __esmMin((() => {
-CONTROL_CHARS_REGEX = /[\u0000-\u001F\u007F]/g;
-SCHEME_WHITESPACE_REGEX = /[\u0000-\u001F\u007F\s]+/g;
-EXPLICIT_SCHEME_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
-MAX_DECODE_ITERATIONS = 3;
-MAX_SCHEME_PROBE_LENGTH = 64;
-DEFAULT_BLOCKED_PROTOCOL_HINTS = Object.freeze([
-"javascript:",
-"vbscript:",
-"file:",
-"filesystem:",
-"ms-appx:",
-"ms-appx-web:",
-"about:",
-"intent:",
-"mailto:",
-"tel:",
-"sms:",
-"wtai:",
-"chrome:",
-"chrome-extension:",
-"opera:",
-"resource:",
-"data:text",
-"data:application",
-"data:video",
-"data:audio"
-]);
-MEDIA_SAFE_PROTOCOLS = new Set([
-"http:",
-"https:",
-"blob:"
-]);
-HTML_ATTR_SAFE_PROTOCOLS = new Set(["http:", "https:"]);
-DATA_IMAGE_MIME_PREFIXES = Object.freeze([
-"image/png",
-"image/jpeg",
-"image/jpg",
-"image/gif",
-"image/webp",
-"image/avif"
-]);
-MEDIA_URL_POLICY = {
-allowedProtocols: MEDIA_SAFE_PROTOCOLS,
-allowRelative: true,
-allowProtocolRelative: true,
-allowFragments: false,
-allowDataUrls: true,
-allowedDataMimePrefixes: DATA_IMAGE_MIME_PREFIXES
+var CLASSES = {
+OVERLAY: "xeg-gallery-overlay",
+CONTAINER: "xeg-gallery-container",
+ROOT: "xeg-gallery-root",
+RENDERER: "xeg-gallery-renderer",
+VERTICAL_VIEW: "xeg-vertical-gallery",
+ITEM: "xeg-gallery-item"
 };
-HTML_ATTRIBUTE_URL_POLICY = {
-allowedProtocols: HTML_ATTR_SAFE_PROTOCOLS,
-allowRelative: true,
-allowProtocolRelative: true,
-allowFragments: true,
-allowDataUrls: false
+var DATA_ATTRIBUTES = {
+GALLERY: "data-xeg-gallery",
+CONTAINER: "data-xeg-gallery-container",
+ELEMENT: "data-gallery-element",
+ROLE: "data-xeg-role",
+ROLE_COMPAT: "data-xeg-role-compat",
+GALLERY_TYPE: "data-xeg-gallery-type",
+GALLERY_VERSION: "data-xeg-gallery-version"
 };
-}));
-function isValidMediaUrl(url) {
-if (typeof url !== "string" || url.length > MAX_URL_LENGTH) return false;
-const parsed = tryParseUrl(url);
-if (!parsed) return false;
-if (!isHttpProtocol(parsed.protocol)) return false;
-if (!isHostMatching(parsed, ALLOWED_MEDIA_HOSTS)) return false;
-return isAllowedMediaPath(parsed.hostname, parsed.pathname);
-}
-function isHttpProtocol(protocol) {
-return protocol === "https:" || protocol === "http:";
-}
-function isAllowedMediaPath(hostname, pathname) {
-if (hostname === "pbs.twimg.com") return checkPbsMediaPath(pathname);
-if (hostname === "video.twimg.com") return checkVideoMediaPath(pathname);
-return false;
-}
-function checkPbsMediaPath(pathname) {
-return pathname.startsWith("/media/") || pathname.startsWith("/ext_tw_video_thumb/") || pathname.startsWith("/tweet_video_thumb/") || pathname.startsWith("/video_thumb/") || pathname.startsWith("/amplify_video_thumb/");
-}
-function checkVideoMediaPath(pathname) {
-return pathname.startsWith("/ext_tw_video/") || pathname.startsWith("/tweet_video/") || pathname.startsWith("/amplify_video/") || pathname.startsWith("/dm_video/");
-}
-var MAX_URL_LENGTH, ALLOWED_MEDIA_HOSTS;
-var init_validator = __esmMin((() => {
-init_constants$1();
-init_host$1();
-MAX_URL_LENGTH = 2048;
-ALLOWED_MEDIA_HOSTS = MEDIA.HOSTS.MEDIA_CDN;
-}));
-function isSafeAndValidMediaUrl(url) {
-if (!url || typeof url !== "string") return false;
-const trimmed = url.trim();
-if (!trimmed) return false;
-if (!isUrlAllowed(trimmed, MEDIA_URL_POLICY)) return false;
-if (trimmed.startsWith("//")) return isValidMediaUrl(`https:${trimmed}`);
-return isValidMediaUrl(trimmed);
-}
-var init_media_url = __esmMin((() => {
-init_safety();
-init_validator();
-}));
-var init_url = __esmMin((() => {
-init_host$1();
-init_media_url();
-init_safety();
-}));
+var SELECTORS = {
+OVERLAY: `.${CLASSES.OVERLAY}`,
+CONTAINER: `.${CLASSES.CONTAINER}`,
+ROOT: `.${CLASSES.ROOT}`,
+RENDERER: `.${CLASSES.RENDERER}`,
+VERTICAL_VIEW: `.${CLASSES.VERTICAL_VIEW}`,
+ITEM: `.${CLASSES.ITEM}`,
+DATA_GALLERY: `[${DATA_ATTRIBUTES.GALLERY}]`,
+DATA_CONTAINER: `[${DATA_ATTRIBUTES.CONTAINER}]`,
+DATA_ELEMENT: `[${DATA_ATTRIBUTES.ELEMENT}]`,
+DATA_ROLE: `[${DATA_ATTRIBUTES.ROLE}]`,
+DATA_ROLE_COMPAT: `[${DATA_ATTRIBUTES.ROLE_COMPAT}]`,
+DATA_GALLERY_TYPE: `[${DATA_ATTRIBUTES.GALLERY_TYPE}]`,
+DATA_GALLERY_VERSION: `[${DATA_ATTRIBUTES.GALLERY_VERSION}]`,
+ROLE_GALLERY: `[${DATA_ATTRIBUTES.ROLE}="gallery"]`,
+ROLE_ITEMS_CONTAINER: `[${DATA_ATTRIBUTES.ROLE}="items-container"]`
+};
+const CSS = {
+CLASSES,
+DATA_ATTRIBUTES,
+SELECTORS,
+INTERNAL_SELECTORS: [
+SELECTORS.OVERLAY,
+SELECTORS.CONTAINER,
+SELECTORS.ROOT,
+SELECTORS.RENDERER,
+SELECTORS.VERTICAL_VIEW,
+SELECTORS.ITEM,
+SELECTORS.DATA_GALLERY,
+SELECTORS.DATA_CONTAINER,
+SELECTORS.DATA_ELEMENT,
+SELECTORS.DATA_ROLE,
+SELECTORS.DATA_ROLE_COMPAT,
+SELECTORS.DATA_GALLERY_TYPE,
+SELECTORS.DATA_GALLERY_VERSION,
+SELECTORS.ROLE_GALLERY,
+SELECTORS.ROLE_ITEMS_CONTAINER
+]
+};
+const TWEET_ARTICLE_SELECTOR = "[data-testid=\"tweet\"], article";
+const TWEET_PHOTO_SELECTOR = "[data-testid=\"tweetPhoto\"]";
+const TWEET_TEXT_SELECTOR = "[data-testid=\"tweetText\"]";
+const VIDEO_PLAYER_SELECTOR = "[data-testid=\"videoPlayer\"]";
+const VIDEO_PLAYER_CONTEXT_SELECTOR = `${VIDEO_PLAYER_SELECTOR},[data-testid="videoComponent"],[data-testid="videoPlayerControls"],[data-testid="videoPlayerOverlay"],[role="application"],[aria-label*="Video"]`;
+const STATUS_LINK_SELECTOR = "a[href*=\"/status/\"]";
+const TWITTER_MEDIA_SELECTOR = "img[src*=\"pbs.twimg.com\"], video[src*=\"video.twimg.com\"]";
+const STABLE_TWEET_CONTAINERS_SELECTORS = ["article[data-testid=\"tweet\"]", "article[role=\"article\"]"];
+const STABLE_MEDIA_CONTAINERS_SELECTORS = [
+"[data-testid=\"tweetPhoto\"]",
+"[data-testid=\"videoPlayer\"]",
+"[aria-label*=\"Image\"]"
+];
+const STABLE_VIDEO_CONTAINERS_SELECTORS = ["[data-testid=\"videoPlayer\"]", "video"];
+const STABLE_IMAGE_CONTAINERS_SELECTORS = ["[data-testid=\"tweetPhoto\"]", "img[src*=\"pbs.twimg.com\"]"];
+var DEFAULT_TWEET_ORIGIN = "https://x.com";
 function normalizeTweetUrl(inputUrl) {
 try {
 const url = new URL(inputUrl, DEFAULT_TWEET_ORIGIN);
@@ -2300,13 +2112,7 @@ if (inputUrl.startsWith("/")) return `${DEFAULT_TWEET_ORIGIN}${inputUrl}`;
 return inputUrl;
 }
 }
-var DEFAULT_TWEET_ORIGIN, extractFromElement, extractFromDOM, extractFromMediaGridItem, TweetInfoExtractor;
-var init_tweet_info_extractor = __esmMin((() => {
-init_selectors();
-init_logging();
-init_url();
-DEFAULT_TWEET_ORIGIN = "https://x.com";
-extractFromElement = (element) => {
+var extractFromElement = (element) => {
 const dataId = element.dataset.tweetId;
 if (dataId && /^\d+$/.test(dataId)) return {
 tweetId: dataId,
@@ -2328,7 +2134,7 @@ confidence: .8
 }
 return null;
 };
-extractFromDOM = (element) => {
+var extractFromDOM = (element) => {
 const container$2 = element.closest(TWEET_ARTICLE_SELECTOR);
 if (!container$2) return null;
 const statusLink = container$2.querySelector(STATUS_LINK_SELECTOR);
@@ -2346,7 +2152,7 @@ confidence: .85,
 metadata: { containerTag: container$2.tagName.toLowerCase() }
 };
 };
-extractFromMediaGridItem = (element) => {
+var extractFromMediaGridItem = (element) => {
 const link = element.closest("a");
 if (!link) return null;
 const href = link.getAttribute("href");
@@ -2361,7 +2167,7 @@ extractionMethod: "media-grid-item",
 confidence: .8
 };
 };
-TweetInfoExtractor = class {
+var TweetInfoExtractor = class {
 strategies = [
 extractFromElement,
 extractFromDOM,
@@ -2381,7 +2187,11 @@ isValid(info) {
 return !!info.tweetId && /^\d+$/.test(info.tweetId) && info.tweetId !== "unknown";
 }
 };
-}));
+var STANDARD_GALLERY_HEIGHT = 720;
+var DEFAULT_DIMENSIONS = {
+width: 540,
+height: STANDARD_GALLERY_HEIGHT
+};
 function extractFilenameFromUrl(url) {
 if (!url) return null;
 const trimmed = url.trim();
@@ -2408,7 +2218,7 @@ const filename = extractFilenameFromUrl(urlCandidate);
 return filename ? `${typePrefix}${filename}` : `${typePrefix}${urlCandidate}`;
 }
 function removeDuplicates(items, keyExtractor) {
-const seen = /* @__PURE__ */ new Set();
+const seen =  new Set();
 const uniqueItems = [];
 for (const item of items) {
 if (item == null) continue;
@@ -2496,10 +2306,6 @@ height
 };
 return null;
 }
-function extractDimensionsFromUrlCandidate(candidate) {
-if (typeof candidate !== "string" || !candidate) return null;
-return extractDimensionsFromUrl(candidate);
-}
 function deriveDimensionsFromMetadata(metadata) {
 if (!metadata) return null;
 const dimensions = extractDimensionsFromMetadataObject(metadata.dimensions);
@@ -2512,10 +2318,16 @@ if (originalWidth && originalHeight) return {
 width: originalWidth,
 height: originalHeight
 };
-const fromDownloadUrl = extractDimensionsFromUrlCandidate(apiData.download_url);
+const downloadUrl = apiData.download_url;
+if (typeof downloadUrl === "string" && downloadUrl) {
+const fromDownloadUrl = extractDimensionsFromUrl(downloadUrl);
 if (fromDownloadUrl) return fromDownloadUrl;
-const fromPreviewUrl = extractDimensionsFromUrlCandidate(apiData.preview_url);
+}
+const previewUrl = apiData.preview_url;
+if (typeof previewUrl === "string" && previewUrl) {
+const fromPreviewUrl = extractDimensionsFromUrl(previewUrl);
 if (fromPreviewUrl) return fromPreviewUrl;
+}
 const aspectRatio = apiData.aspect_ratio;
 if (Array.isArray(aspectRatio) && aspectRatio.length >= 2) {
 const ratioWidth = normalizeDimension(aspectRatio[0]);
@@ -2530,8 +2342,8 @@ media.url,
 media.originalUrl,
 media.thumbnailUrl
 ];
-for (const candidate of candidates) {
-const dimensions = extractDimensionsFromUrlCandidate(candidate);
+for (const candidate of candidates) if (typeof candidate === "string" && candidate) {
+const dimensions = extractDimensionsFromUrl(candidate);
 if (dimensions) return dimensions;
 }
 return null;
@@ -2588,15 +2400,6 @@ return getMediaDedupKey(item) === clickedKey;
 });
 return newIndex >= 0 ? newIndex : 0;
 }
-var STANDARD_GALLERY_HEIGHT, DEFAULT_DIMENSIONS;
-var init_media_dimensions = __esmMin((() => {
-init_url();
-STANDARD_GALLERY_HEIGHT = 720;
-DEFAULT_DIMENSIONS = {
-width: 540,
-height: STANDARD_GALLERY_HEIGHT
-};
-}));
 function resolveDimensionsFromApiMedia(apiMedia) {
 const widthFromOriginal = normalizeDimension(apiMedia.original_width);
 const heightFromOriginal = normalizeDimension(apiMedia.original_height);
@@ -2636,7 +2439,7 @@ height: dimensions.height
 metadata
 };
 } catch (error$1) {
-logger.error("Failed to create API MediaInfo:", error$1);
+logger.error("API media create failed", error$1);
 return null;
 }
 }
@@ -2650,32 +2453,24 @@ if (mediaInfo) mediaItems.push(mediaInfo);
 }
 return mediaItems;
 }
-var init_media_factory = __esmMin((() => {
-init_logging();
-init_media_dimensions();
-}));
+const TWITTER_API_CONFIG = {
+GUEST_AUTHORIZATION: "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
+TWEET_RESULT_BY_REST_ID_QUERY_ID: "zAz9764BcLZOJ0JU2wrd1A",
+USER_BY_SCREEN_NAME_QUERY_ID: "1VOOyvKkiI3FMmkeDNxM9A",
+SUPPORTED_HOSTS: ["x.com", "twitter.com"],
+DEFAULT_HOST: "x.com"
+};
+function serializeQueryParams(value) {
+return typeof value === "string" ? value : JSON.stringify(value);
+}
 function buildTweetResultByRestIdUrl(args) {
 const { host, queryId, variables, features, fieldToggles } = args;
 const urlObj = new URL(`https://${host}/i/api/graphql/${queryId}/TweetResultByRestId`);
-urlObj.searchParams.set("variables", JSON.stringify(variables));
-urlObj.searchParams.set("features", JSON.stringify(features));
-urlObj.searchParams.set("fieldToggles", JSON.stringify(fieldToggles));
+urlObj.searchParams.set("variables", serializeQueryParams(variables));
+urlObj.searchParams.set("features", serializeQueryParams(features));
+urlObj.searchParams.set("fieldToggles", serializeQueryParams(fieldToggles));
 return urlObj.toString();
 }
-function pickCandidateHost(hostname) {
-if (hostname.includes("twitter.com")) return "twitter.com";
-if (hostname.includes("x.com")) return "x.com";
-return null;
-}
-function selectTwitterApiHostFromHostname(args) {
-const { hostname, supportedHosts, defaultHost } = args;
-if (!hostname) return defaultHost;
-const candidate = pickCandidateHost(hostname);
-if (!candidate) return defaultHost;
-return supportedHosts.includes(candidate) ? candidate : defaultHost;
-}
-var init_twitter_api = __esmMin((() => {
-}));
 function getLocationLike() {
 try {
 return globalThis.location;
@@ -2683,26 +2478,23 @@ return globalThis.location;
 return;
 }
 }
-function getSafeHref() {
+function getSafeLocationValue(key) {
+const location = getLocationLike();
+if (!location) return void 0;
 try {
-return getLocationLike()?.href;
+return location[key];
 } catch {
 return;
 }
+}
+function getSafeHref() {
+return getSafeLocationValue("href");
 }
 function getSafeOrigin() {
-try {
-return getLocationLike()?.origin;
-} catch {
-return;
-}
+return getSafeLocationValue("origin");
 }
 function getSafeHostname() {
-try {
-return getLocationLike()?.hostname;
-} catch {
-return;
-}
+return getSafeLocationValue("hostname");
 }
 function getSafeLocationHeaders() {
 const referer = getSafeHref();
@@ -2713,92 +2505,33 @@ return {
 ...origin ? { origin } : {}
 };
 }
-function createTimeoutController(ms) {
-const controller = new AbortController();
-let timeoutId = null;
-timeoutId = globalTimerManager.setTimeout(() => {
-controller.abort(new DOMException("The operation timed out.", "TimeoutError"));
-}, ms);
-const clear = () => {
-if (timeoutId === null) return;
-globalTimerManager.clearTimeout(timeoutId);
-timeoutId = null;
-};
-controller.signal.addEventListener("abort", () => {
-clear();
-}, { once: true });
-return {
-signal: controller.signal,
-cancel: clear
-};
-}
-function combineSignals(signals) {
-const validSignals = signals.filter((s) => Boolean(s));
-if (validSignals.length === 0) return new AbortController().signal;
-if (validSignals.length === 1) return validSignals[0];
-if (typeof AbortSignal.any === "function") return AbortSignal.any(validSignals);
-const controller = new AbortController();
-let settled = false;
-function cleanup$1() {
-for (const s of validSignals) try {
-s.removeEventListener("abort", onAbort);
-} catch {}
-}
-function onAbort() {
-if (settled) return;
-settled = true;
-const reason = validSignals.find((s) => s.aborted)?.reason;
-controller.abort(reason);
-cleanup$1();
-}
-for (const s of validSignals) if (s.aborted) {
-controller.abort(s.reason);
-return controller.signal;
-}
-for (const s of validSignals) s.addEventListener("abort", onAbort, { once: true });
-return controller.signal;
-}
-function isAbortError(error$1) {
-if (error$1 instanceof DOMException) return error$1.name === "AbortError" || error$1.name === "TimeoutError";
-if (error$1 instanceof Error) return error$1.name === "AbortError" || error$1.message.includes("aborted");
-return false;
-}
-var init_signal_utils = __esmMin((() => {
-init_timer_management();
-}));
-async function delay(ms, signal) {
-if (ms <= 0) return;
-if (signal?.aborted) throw getAbortReasonOrAbortErrorFromSignal(signal);
-return new Promise((resolve$1, reject) => {
-const timerId = globalTimerManager.setTimeout(() => {
-cleanup$1();
-resolve$1();
-}, ms);
-const onAbort = () => {
-cleanup$1();
-reject(getAbortReasonOrAbortErrorFromSignal(signal));
-};
-const cleanup$1 = () => {
-globalTimerManager.clearTimeout(timerId);
-signal?.removeEventListener("abort", onAbort);
-};
-signal?.addEventListener("abort", onAbort, { once: true });
-});
-}
-var init_delay = __esmMin((() => {
-init_signal_utils();
-init_cancellation();
-init_timer_management();
-}));
 function getExponentialBackoffDelayMs(args) {
 const { attempt, baseDelayMs } = args;
 return baseDelayMs * 2 ** attempt;
 }
-var init_async$1 = __esmMin((() => {
-}));
-function escapeRegex(value) {
+function escapeRegExp(value) {
 return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+function cx(...inputs) {
+const classes = [];
+for (const input of inputs) {
+if (!input) continue;
+if (typeof input === "string" || typeof input === "number") {
+classes.push(String(input));
+continue;
+}
+if (Array.isArray(input)) {
+const nested = cx(...input);
+if (nested) classes.push(nested);
+continue;
+}
+if (typeof input === "object") {
+for (const key in input) if (input[key]) classes.push(key);
+}
+}
+return classes.join(" ");
+}
+var cachedCookieAPI;
 function decode(value) {
 if (!value) return void 0;
 try {
@@ -2857,18 +2590,14 @@ return getCookieValueSync(name);
 function getCookieValueSync(name) {
 if (!name) return void 0;
 if (typeof document === "undefined" || typeof document.cookie !== "string") return;
-const pattern = /* @__PURE__ */ new RegExp(`(?:^|;\\s*)${escapeRegex(name)}=([^;]*)`);
+const pattern =  new RegExp(`(?:^|;\\s*)${escapeRegExp(name)}=([^;]*)`);
 return decode(document.cookie.match(pattern)?.[1]);
 }
-var cachedCookieAPI;
-var init_cookie_utils = __esmMin((() => {
-init_userscript();
-init_logging();
-init_async$1();
-}));
-var init_cookie = __esmMin((() => {
-init_cookie_utils();
-}));
+var MAX_RETRY_ATTEMPTS = 3;
+var BASE_RETRY_DELAY_MS = 100;
+var _csrfToken;
+var _tokensInitialized = false;
+var _initPromise = null;
 function getBackoffDelay(attempt) {
 return getExponentialBackoffDelayMs({
 attempt,
@@ -2877,29 +2606,14 @@ baseDelayMs: BASE_RETRY_DELAY_MS
 }
 async function fetchTokenWithRetry() {
 const syncToken = getCookieValueSync("ct0");
-if (syncToken) {
-;
-return syncToken;
-}
+if (syncToken) return syncToken;
 for (let attempt = 0; attempt < MAX_RETRY_ATTEMPTS; attempt++) try {
 const value = await getCookieValue("ct0");
-if (value) {
-;
-return value;
-}
-if (attempt < MAX_RETRY_ATTEMPTS - 1) {
-const delayMs = getBackoffDelay(attempt);
-;
-await delay(delayMs);
-}
+if (value) return value;
+if (attempt < MAX_RETRY_ATTEMPTS - 1) await delay(getBackoffDelay(attempt));
 } catch (error$1) {
-if (attempt < MAX_RETRY_ATTEMPTS - 1) {
-const delayMs = getBackoffDelay(attempt);
-;
-await delay(delayMs);
-} else void 0;
+if (attempt < MAX_RETRY_ATTEMPTS - 1) await delay(getBackoffDelay(attempt));
 }
-;
 }
 function initializeTokensSync() {
 if (_tokensInitialized) return;
@@ -2907,7 +2621,6 @@ const syncToken = getCookieValueSync("ct0");
 if (syncToken) {
 _csrfToken = syncToken;
 _tokensInitialized = true;
-;
 }
 }
 async function initTokens() {
@@ -2933,19 +2646,6 @@ async function getCsrfTokenAsync() {
 if (_tokensInitialized && _csrfToken) return _csrfToken;
 return initTokens();
 }
-var MAX_RETRY_ATTEMPTS, BASE_RETRY_DELAY_MS, _csrfToken, _tokensInitialized, _initPromise;
-var init_twitter_auth$1 = __esmMin((() => {
-init_delay();
-init_logging();
-init_cookie();
-MAX_RETRY_ATTEMPTS = 3;
-BASE_RETRY_DELAY_MS = 100;
-_tokensInitialized = false;
-_initPromise = null;
-}));
-var init_twitter_auth = __esmMin((() => {
-init_twitter_auth$1();
-}));
 function resolveDimensions(media, mediaUrl) {
 const dimensionsFromUrl = extractDimensionsFromUrl(mediaUrl);
 const widthFromOriginal = normalizeDimension(media.original_info?.width);
@@ -2958,9 +2658,6 @@ const result = {};
 if (width !== null && width !== void 0) result.width = width;
 if (height !== null && height !== void 0) result.height = height;
 return result;
-}
-function escapeRegExp(value) {
-return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 function removeUrlTokensFromText(text, urls) {
 let result = text;
@@ -3058,7 +2755,7 @@ const typeIndex = {};
 const screenName = tweetUser.screen_name ?? "";
 const tweetId = parseTarget.rest_id ?? parseTarget.id_str ?? "";
 const inlineMedia = parseTarget.note_tweet?.note_tweet_results?.result?.media?.inline_media;
-const inlineMediaOrder = /* @__PURE__ */ new Map();
+const inlineMediaOrder =  new Map();
 if (Array.isArray(inlineMedia)) {
 for (const item of inlineMedia) if (item.media_id && typeof item.index === "number") inlineMediaOrder.set(item.media_id, item.index);
 }
@@ -3110,41 +2807,18 @@ if (!user.screen_name && user.legacy.screen_name) user.screen_name = user.legacy
 if (!user.name && user.legacy.name) user.name = user.legacy.name;
 }
 }
-var init_twitter_response_parser = __esmMin((() => {
-init_media_dimensions();
-init_url();
-}));
-var init_twitter_parser = __esmMin((() => {
-init_twitter_response_parser();
-}));
-function simpleHash(str) {
-let hash = 0;
-for (let i = 0; i < str.length; i++) {
-const char = str.charCodeAt(i);
-hash = (hash << 5) - hash + char;
-hash |= 0;
-}
-return hash.toString(36);
+function resolveTwitterApiHost(hostname, supportedHosts, defaultHost) {
+if (!hostname) return defaultHost;
+const normalized = hostname.toLowerCase();
+let candidate = null;
+if (normalized === "x.com" || normalized.endsWith(".x.com")) candidate = "x.com";
+else if (normalized === "twitter.com" || normalized.endsWith(".twitter.com")) candidate = "twitter.com";
+return candidate && supportedHosts.includes(candidate) ? candidate : defaultHost;
 }
 function getSafeHost() {
-return selectTwitterApiHostFromHostname({
-hostname: getSafeHostname(),
-supportedHosts: TWITTER_API_CONFIG.SUPPORTED_HOSTS,
-defaultHost: TWITTER_API_CONFIG.DEFAULT_HOST
-});
+return resolveTwitterApiHost(getSafeHostname(), TWITTER_API_CONFIG.SUPPORTED_HOSTS, TWITTER_API_CONFIG.DEFAULT_HOST);
 }
-var TwitterAPI;
-var init_twitter_api_client = __esmMin((() => {
-init_constants$1();
-init_twitter_api();
-init_logging();
-init_http_request_service();
-init_twitter_auth();
-init_twitter_parser();
-init_media_dimensions();
-TwitterAPI = class TwitterAPI {
-static requestCache = /* @__PURE__ */ new Map();
-static CACHE_LIMIT = 16;
+var TwitterAPI = class TwitterAPI {
 static async getTweetMedias(tweetId) {
 const url = TwitterAPI.createTweetEndpointUrl(tweetId);
 const json = await TwitterAPI.apiRequest(url);
@@ -3174,28 +2848,8 @@ result = [...sortedQuotedMedia, ...adjustedResult];
 }
 return result;
 }
-static clearCache() {
-TwitterAPI.requestCache.clear();
-}
-static getCacheSize() {
-return TwitterAPI.requestCache.size;
-}
 static async apiRequest(url) {
 const csrfToken = await getCsrfTokenAsync() ?? getCsrfToken() ?? "";
-const csrfHash = simpleHash(csrfToken);
-const cached = TwitterAPI.requestCache.get(url);
-if (cached) {
-const now = Date.now();
-const isExpired = now - cached.timestamp > TWITTER_API_CONFIG.CACHE_TTL_MS;
-if (!isExpired && !(cached.csrfHash !== csrfHash)) {
-TwitterAPI.requestCache.delete(url);
-TwitterAPI.requestCache.set(url, cached);
-;
-return cached.response;
-}
-TwitterAPI.requestCache.delete(url);
-;
-}
 const headers = new Headers({
 authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
 "x-csrf-token": csrfToken,
@@ -3212,28 +2866,10 @@ const response = await HttpRequestService.getInstance().get(url, {
 headers: Object.fromEntries(headers.entries()),
 responseType: "json"
 });
-if (!response.ok) {
-TwitterAPI.requestCache.delete(url);
-;
-throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
-}
-const json = response.data;
-if (json.errors && json.errors.length > 0) ;
-else {
-if (TwitterAPI.requestCache.size >= TwitterAPI.CACHE_LIMIT) {
-const firstKey = TwitterAPI.requestCache.keys().next().value;
-if (firstKey) TwitterAPI.requestCache.delete(firstKey);
-}
-TwitterAPI.requestCache.set(url, {
-response: json,
-timestamp: Date.now(),
-csrfHash
-});
-}
-return json;
+if (!response.ok) throw new Error(`TW:${response.status}`);
+return response.data;
 } catch (error$1) {
-TwitterAPI.requestCache.delete(url);
-logger.error("Twitter API request failed:", error$1);
+logger.error("API request failed", error$1);
 throw error$1;
 }
 }
@@ -3241,7 +2877,6 @@ static createTweetEndpointUrl(tweetId) {
 return buildTweetResultByRestIdUrl({
 host: getSafeHost(),
 queryId: TWITTER_API_CONFIG.TWEET_RESULT_BY_REST_ID_QUERY_ID,
-tweetId,
 variables: {
 tweetId,
 withCommunity: false,
@@ -3289,7 +2924,10 @@ withDisallowedReplyControls: false
 });
 }
 };
-}));
+var DEFAULT_TRAVERSAL_OPTIONS = {
+maxDescendantDepth: 6,
+maxAncestorHops: 3
+};
 function isMediaElement(element) {
 if (!element) return false;
 return element.tagName === "IMG" || element.tagName === "VIDEO";
@@ -3361,15 +2999,6 @@ function pickFirstTruthy(values) {
 for (const value of values) if (value) return value;
 return null;
 }
-var DEFAULT_MAX_DESCENDANT_DEPTH, DEFAULT_MAX_ANCESTOR_HOPS, DEFAULT_TRAVERSAL_OPTIONS;
-var init_media_element_utils = __esmMin((() => {
-DEFAULT_MAX_DESCENDANT_DEPTH = 6;
-DEFAULT_MAX_ANCESTOR_HOPS = 3;
-DEFAULT_TRAVERSAL_OPTIONS = {
-maxDescendantDepth: DEFAULT_MAX_DESCENDANT_DEPTH,
-maxAncestorHops: DEFAULT_MAX_ANCESTOR_HOPS
-};
-}));
 function determineClickedIndex(clickedElement, mediaItems) {
 try {
 const mediaElement = findMediaElementInDOM(clickedElement);
@@ -3399,98 +3028,16 @@ return 0;
 return 0;
 }
 }
-var init_determine_clicked_index = __esmMin((() => {
-init_logging();
-init_media_dimensions();
-init_media_element_utils();
-}));
-function sanitizeHTML(html, config = DEFAULT_CONFIG) {
-if (!html || typeof html !== "string") return "";
-const doc = new DOMParser().parseFromString(html, "text/html");
-function sanitizeNode(node) {
-if (node.nodeType === Node.TEXT_NODE) return node.cloneNode(false);
-if (node.nodeType !== Node.ELEMENT_NODE) return null;
-const element = node;
-const tagName = element.tagName.toLowerCase();
-if (!config.allowedTags.includes(tagName)) return document.createTextNode(element.textContent || "");
-const sanitized = document.createElement(tagName);
-const allowedAttrs = config.allowedAttributes[tagName] || [];
-for (const attr of Array.from(element.attributes)) {
-const attrName = attr.name.toLowerCase();
-if (attrName.startsWith("on")) continue;
-if (!allowedAttrs.includes(attrName)) continue;
-if ((attrName === "href" || attrName === "src") && !isSafeAttributeUrl(attr.value)) continue;
-sanitized.setAttribute(attrName, attr.value);
-}
-if (tagName === "a" && sanitized.getAttribute("target") === "_blank") sanitized.setAttribute("rel", "noopener noreferrer");
-for (const child of Array.from(element.childNodes)) {
-const sanitizedChild = sanitizeNode(child);
-if (sanitizedChild) sanitized.appendChild(sanitizedChild);
-}
-return sanitized;
-}
-const bodyContent = doc.body;
-const sanitizedBody = document.createElement("div");
-for (const child of Array.from(bodyContent.childNodes)) {
-const sanitized = sanitizeNode(child);
-if (sanitized) sanitizedBody.appendChild(sanitized);
-}
-return sanitizedBody.innerHTML;
-}
-function isSafeAttributeUrl(url) {
-return isUrlAllowed(url, HTML_ATTRIBUTE_URL_POLICY);
-}
-var DEFAULT_CONFIG;
-var init_html_sanitizer = __esmMin((() => {
-init_url();
-DEFAULT_CONFIG = {
-allowedTags: [
-"a",
-"span",
-"br",
-"strong",
-"em",
-"img"
-],
-allowedAttributes: {
-a: [
-"href",
-"title",
-"rel",
-"target",
-"dir"
-],
-span: ["class", "dir"],
-img: [
-"alt",
-"src",
-"draggable"
-]
-}
-};
-}));
 function extractTweetTextHTML(tweetArticle) {
 if (!tweetArticle) return void 0;
 try {
 const tweetTextElement = tweetArticle.querySelector(TWEET_TEXT_SELECTOR);
-if (!tweetTextElement) {
-;
-return;
-}
-const rawHTML = tweetTextElement.innerHTML;
-if (!rawHTML?.trim()) {
-;
-return;
-}
-const sanitized = sanitizeHTML(rawHTML);
-if (!sanitized?.trim()) {
-;
-return;
-}
-;
-return sanitized;
+if (!tweetTextElement) return;
+const text = tweetTextElement.textContent?.trim();
+if (!text) return;
+return text;
 } catch (error$1) {
-logger.error("[extractTweetTextHTML] Error extracting tweet text HTML:", error$1);
+logger.error("[tweet] extract failed", error$1);
 return;
 }
 }
@@ -3502,21 +3049,8 @@ if (current.tagName === "ARTICLE" && (current.hasAttribute("data-testid") || cur
 current = current.parentElement;
 depth++;
 }
-;
 }
-var init_tweet_extractor = __esmMin((() => {
-init_selectors();
-init_logging();
-init_html_sanitizer();
-}));
-var TwitterAPIExtractor;
-var init_twitter_api_extractor = __esmMin((() => {
-init_logging();
-init_media_factory();
-init_twitter_api_client();
-init_determine_clicked_index();
-init_tweet_extractor();
-TwitterAPIExtractor = class {
+var TwitterAPIExtractor = class {
 async extract(tweetInfo, clickedElement, _options, extractionId) {
 const now = typeof performance !== "undefined" && typeof performance.now === "function" ? () => performance.now() : () => Date.now();
 const startedAt = now();
@@ -3579,10 +3113,7 @@ tweetInfo: null
 };
 }
 };
-}));
-var ExtractionError;
-var init_media_types = __esmMin((() => {
-ExtractionError = class extends Error {
+var ExtractionError = class extends Error {
 constructor(code, message, originalError) {
 super(message);
 this.code = code;
@@ -3590,25 +3121,6 @@ this.originalError = originalError;
 this.name = "ExtractionError";
 }
 };
-}));
-var ErrorCode;
-var init_result_types = __esmMin((() => {
-ErrorCode = {
-NONE: "NONE",
-CANCELLED: "CANCELLED",
-NETWORK: "NETWORK",
-TIMEOUT: "TIMEOUT",
-EMPTY_INPUT: "EMPTY_INPUT",
-ALL_FAILED: "ALL_FAILED",
-PARTIAL_FAILED: "PARTIAL_FAILED",
-UNKNOWN: "UNKNOWN",
-ELEMENT_NOT_FOUND: "ELEMENT_NOT_FOUND",
-INVALID_ELEMENT: "INVALID_ELEMENT",
-NO_MEDIA_FOUND: "NO_MEDIA_FOUND",
-INVALID_URL: "INVALID_URL",
-PERMISSION_DENIED: "PERMISSION_DENIED"
-};
-}));
 function createId() {
 try {
 if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID().replaceAll("-", "");
@@ -3621,17 +3133,7 @@ return `${prefix}${separator$1}${createId()}`;
 function createContextId(context) {
 return createPrefixedId(context, ":");
 }
-var media_extraction_service_exports = /* @__PURE__ */ __export({ MediaExtractionService: () => MediaExtractionService }, 1);
-var MediaExtractionService;
-var init_media_extraction_service = __esmMin((() => {
-init_selectors();
-init_logging();
-init_tweet_info_extractor();
-init_twitter_api_extractor();
-init_media_types();
-init_result_types();
-init_media_dimensions();
-MediaExtractionService = class {
+var MediaExtractionService = class {
 tweetInfoExtractor;
 apiExtractor;
 constructor() {
@@ -3652,10 +3154,10 @@ if (apiResult.success && apiResult.mediaItems.length > 0) return this.finalizeRe
 ...apiResult,
 tweetInfo: this.mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo)
 });
-logger.error(`[MediaExtractor] ${extractionId}: API extraction failed`);
+logger.error("Extract api failed", extractionId);
 return this.createApiErrorResult(apiResult, tweetInfo);
 } catch (error$1) {
-logger.error(`[MediaExtractor] ${extractionId}: Extraction error`, error$1);
+logger.error("Extract failed", extractionId, error$1);
 return this.createErrorResult(error$1);
 }
 }
@@ -3731,1028 +3233,10 @@ metadata: {
 };
 }
 };
-}));
-function sanitize(name) {
-return name.replace(/[<>:"/\\|?*]/g, "_").replace(/^[\s.]+|[\s.]+$/g, "").slice(0, 255) || "media";
-}
-function resolveNowMs$1(nowMs$1) {
-return Number.isFinite(nowMs$1) ? nowMs$1 : 0;
-}
-function getExtension(url) {
-try {
-const path = url.split("?")[0];
-if (!path) return "jpg";
-const ext = path.split(".").pop();
-if (ext && /^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i.test(ext)) return ext.toLowerCase();
-} catch {}
-return "jpg";
-}
-function getIndexFromMediaId(mediaId) {
-if (!mediaId) return null;
-const match = mediaId.match(/_media_(\d+)$/) || mediaId.match(/_(\d+)$/);
-if (match) {
-const idx = safeParseInt(match[1], 10);
-return mediaId.includes("_media_") ? (idx + 1).toString() : match[1] ?? null;
-}
-return null;
-}
-function normalizeIndex(index) {
-if (index === void 0 || index === null) return "1";
-const num = typeof index === "string" ? safeParseInt(index, 10) : index;
-return Number.isNaN(num) || num < 1 ? "1" : num.toString();
-}
-function resolveMetadata(media, fallbackUsername) {
-let username = null;
-let tweetId = null;
-if (media.sourceLocation === "quoted" && media.quotedUsername && media.quotedTweetId) {
-username = media.quotedUsername;
-tweetId = media.quotedTweetId;
-} else {
-tweetId = media.tweetId ?? null;
-if (media.tweetUsername && media.tweetUsername !== "unknown") username = media.tweetUsername;
-else {
-const url = ("originalUrl" in media ? media.originalUrl : null) || media.url;
-if (typeof url === "string") username = extractUsernameFromUrl(url, { strictHost: true });
-}
-}
-if (!username && fallbackUsername) username = fallbackUsername;
-return {
-username,
-tweetId
-};
-}
-function generateMediaFilename(media, options = {}) {
-try {
-if (media.filename) return sanitize(media.filename);
-const nowMs$1 = resolveNowMs$1(options.nowMs);
-const extension = options.extension ?? getExtension(media.originalUrl ?? media.url);
-const index = getIndexFromMediaId(media.id) ?? normalizeIndex(options.index);
-const { username, tweetId } = resolveMetadata(media, options.fallbackUsername);
-if (username && tweetId) return sanitize(`${username}_${tweetId}_${index}.${extension}`);
-if (tweetId && /^\d+$/.test(tweetId)) return sanitize(`tweet_${tweetId}_${index}.${extension}`);
-return sanitize(`${options.fallbackPrefix ?? "media"}_${nowMs$1}_${index}.${extension}`);
-} catch {
-return `media_${resolveNowMs$1(options.nowMs)}.${options.extension || "jpg"}`;
-}
-}
-function generateZipFilename(mediaItems, options = {}) {
-try {
-const firstItem = mediaItems[0];
-if (firstItem) {
-const { username, tweetId } = resolveMetadata(firstItem);
-if (username && tweetId) return sanitize(`${username}_${tweetId}.zip`);
-}
-return sanitize(`${options.fallbackPrefix ?? "xcom_gallery"}_${resolveNowMs$1(options.nowMs)}.zip`);
-} catch {
-return `download_${resolveNowMs$1(options.nowMs)}.zip`;
-}
-}
-var init_filename_utils = __esmMin((() => {
-init_url();
-}));
-var init_filename$1 = __esmMin((() => {
-init_filename_utils();
-}));
-function planSingleDownload(input) {
-const { method, mediaUrl, filename, hasProvidedBlob } = input;
-if (method === "fetch_blob") {
-if (hasProvidedBlob) return {
-strategy: "anchor_blob",
-filename
-};
-return {
-strategy: "fetch_blob",
-url: mediaUrl,
-filename
-};
-}
-if (method === "gm_download") return {
-strategy: "gm_download",
-url: mediaUrl,
-filename,
-useBlobUrl: hasProvidedBlob
-};
-return {
-strategy: "none",
-filename,
-error: "No download method"
-};
-}
-function planBulkDownload(input) {
-return {
-items: input.mediaItems.map((media) => ({
-url: media.url,
-desiredName: input.nowMs === void 0 ? generateMediaFilename(media) : generateMediaFilename(media, { nowMs: input.nowMs }),
-blob: input.prefetchedBlobs?.get(media.url)
-})),
-zipFilename: input.zipFilename || (input.nowMs === void 0 ? generateZipFilename(input.mediaItems) : generateZipFilename(input.mediaItems, { nowMs: input.nowMs }))
-};
-}
-function planZipSave(method) {
-if (method === "gm_download") return "gm_download";
-if (method === "fetch_blob") return "anchor";
-return "none";
-}
-var init_download_plan = __esmMin((() => {
-init_filename$1();
-}));
-function detectDownloadCapability() {
-const rawGMDownload = resolveGMDownload();
-const gmDownload = typeof rawGMDownload === "function" ? rawGMDownload : void 0;
-const hasGMDownload = isGMAPIAvailable("download") && Boolean(gmDownload);
-const hasFetch = typeof fetch === "function";
-const hasBlob = typeof Blob !== "undefined" && typeof URL !== "undefined" && typeof URL.createObjectURL === "function";
-let method = "none";
-if (hasGMDownload) method = "gm_download";
-else if (hasFetch && hasBlob) method = "fetch_blob";
-return {
-hasGMDownload,
-hasFetch,
-hasBlob,
-method,
-gmDownload
-};
-}
-async function downloadWithFetchBlob(url, filename, options = {}) {
-const { signal, onProgress, timeout = 3e4 } = options;
-if (signal?.aborted) return {
-success: false,
-error: USER_CANCELLED_MESSAGE
-};
-onProgress?.({
-phase: "preparing",
-current: 0,
-total: 1,
-percentage: 0,
-filename
-});
-const timeoutController = createTimeoutController(timeout);
-const combinedSignal = signal ? combineSignals([signal, timeoutController.signal]) : timeoutController.signal;
-try {
-if (combinedSignal.aborted) {
-const reason = combinedSignal.reason;
-if (isTimeoutError(reason)) return {
-success: false,
-error: "Download timeout"
-};
-return {
-success: false,
-error: USER_CANCELLED_MESSAGE
-};
-}
-const response = await fetch(url, {
-signal: combinedSignal,
-mode: "cors",
-credentials: "omit"
-});
-if (!response.ok) return {
-success: false,
-error: `HTTP ${response.status}: ${response.statusText}`
-};
-const contentLength = response.headers.get("content-length");
-const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
-let blob;
-if (totalBytes > 0 && response.body) {
-const reader = response.body.getReader();
-const chunks = [];
-let receivedBytes = 0;
-while (true) {
-const { done, value } = await reader.read();
-if (done) break;
-if (value) {
-chunks.push(value);
-receivedBytes += value.length;
-onProgress?.({
-phase: "downloading",
-current: 0,
-total: 1,
-percentage: Math.round(receivedBytes / totalBytes * 100),
-filename
-});
-}
-}
-blob = new Blob(chunks, { type: response.headers.get("content-type") || "application/octet-stream" });
-} else blob = await response.blob();
-const blobUrl = URL.createObjectURL(blob);
-try {
-await triggerAnchorDownload(blobUrl, filename);
-onProgress?.({
-phase: "complete",
-current: 1,
-total: 1,
-percentage: 100,
-filename
-});
-;
-return {
-success: true,
-filename
-};
-} finally {
-URL.revokeObjectURL(blobUrl);
-}
-} catch (error$1) {
-if (combinedSignal.aborted) {
-const reason = combinedSignal.reason;
-if (isTimeoutError(reason)) return {
-success: false,
-error: "Download timeout"
-};
-return {
-success: false,
-error: USER_CANCELLED_MESSAGE
-};
-}
-if (isAbortError(error$1)) return {
-success: false,
-error: USER_CANCELLED_MESSAGE
-};
-const errorMsg = getErrorMessage(error$1);
-logger.error("[FallbackDownload] Download failed:", error$1);
-onProgress?.({
-phase: "complete",
-current: 1,
-total: 1,
-percentage: 0,
-filename
-});
-return {
-success: false,
-error: errorMsg
-};
-} finally {
-timeoutController.cancel();
-}
-}
-async function triggerAnchorDownload(url, filename) {
-const anchor = document.createElement("a");
-anchor.href = url;
-anchor.download = filename;
-anchor.style.display = "none";
-document.body.appendChild(anchor);
-anchor.click();
-await delay(100);
-try {
-anchor.remove();
-} catch {}
-}
-async function downloadBlobWithAnchor(blob, filename, options = {}) {
-const { onProgress } = options;
-onProgress?.({
-phase: "preparing",
-current: 0,
-total: 1,
-percentage: 0,
-filename
-});
-const blobUrl = URL.createObjectURL(blob);
-try {
-await triggerAnchorDownload(blobUrl, filename);
-onProgress?.({
-phase: "complete",
-current: 1,
-total: 1,
-percentage: 100,
-filename
-});
-;
-return {
-success: true,
-filename
-};
-} catch (error$1) {
-const errorMsg = getErrorMessage(error$1);
-logger.error("[FallbackDownload] Blob download failed:", error$1);
-onProgress?.({
-phase: "complete",
-current: 1,
-total: 1,
-percentage: 0,
-filename
-});
-return {
-success: false,
-error: errorMsg
-};
-} finally {
-URL.revokeObjectURL(blobUrl);
-}
-}
-var init_fallback_download = __esmMin((() => {
-init_delay();
-init_signal_utils();
-init_cancellation();
-init_userscript();
-init_logging();
-}));
-function toActionCommand(plan, timeoutMs) {
-if (plan.strategy === "anchor_blob") return {
-type: "DOWNLOAD_BLOB_WITH_ANCHOR",
-filename: plan.filename
-};
-if (plan.strategy === "fetch_blob") return {
-type: "DOWNLOAD_WITH_FETCH_BLOB",
-url: plan.url,
-filename: plan.filename,
-timeoutMs
-};
-if (plan.strategy === "gm_download") return {
-type: "DOWNLOAD_WITH_GM_DOWNLOAD",
-url: plan.url,
-filename: plan.filename,
-timeoutMs,
-useBlobUrl: plan.useBlobUrl
-};
-return {
-type: "FAIL",
-filename: plan.filename,
-error: plan.error
-};
-}
-function createSingleDownloadCommands(input) {
-const timeoutMs = input.timeoutMs ?? 3e4;
-const action = toActionCommand(planSingleDownload({
-method: input.method,
-mediaUrl: input.mediaUrl,
-filename: input.filename,
-hasProvidedBlob: input.hasProvidedBlob
-}), timeoutMs);
-return action.type === "DOWNLOAD_WITH_GM_DOWNLOAD" || action.type === "FAIL" ? [{
-type: "REPORT_PROGRESS",
-phase: "preparing",
-percentage: 0,
-filename: input.filename
-}, action] : [action];
-}
-var init_single_download_commands = __esmMin((() => {
-init_download_plan();
-}));
-var init_filename = __esmMin((() => {
-init_filename_utils();
-}));
-async function executeSingleDownloadCommand(cmd, options, capability, blob) {
-switch (cmd.type) {
-case "FAIL": return {
-success: false,
-error: cmd.error
-};
-case "REPORT_PROGRESS":
-options.onProgress?.({
-phase: cmd.phase,
-current: 0,
-total: 1,
-percentage: cmd.percentage,
-filename: cmd.filename
-});
-return {
-success: true,
-filename: cmd.filename
-};
-case "DOWNLOAD_BLOB_WITH_ANCHOR":
-if (!blob) return {
-success: false,
-error: "Blob unavailable"
-};
-return downloadBlobWithAnchor(blob, cmd.filename, {
-signal: options.signal,
-onProgress: options.onProgress
-});
-case "DOWNLOAD_WITH_FETCH_BLOB": return downloadWithFetchBlob(cmd.url, cmd.filename, {
-signal: options.signal,
-onProgress: options.onProgress,
-timeout: cmd.timeoutMs
-});
-case "DOWNLOAD_WITH_GM_DOWNLOAD": {
-const gmDownload = capability.gmDownload;
-if (!gmDownload) return {
-success: false,
-error: "GM_download unavailable"
-};
-let url = cmd.url;
-let isBlobUrl = false;
-if (cmd.useBlobUrl) {
-if (!blob) return {
-success: false,
-error: "Blob unavailable"
-};
-url = URL.createObjectURL(blob);
-isBlobUrl = true;
-}
-return await new Promise((resolve$1) => {
-let timer;
-const cleanup$1 = () => {
-if (isBlobUrl) URL.revokeObjectURL(url);
-if (timer) {
-globalTimerManager.clearTimeout(timer);
-timer = void 0;
-}
-};
-let settled = false;
-const settle = (result, completePercentage) => {
-if (settled) return;
-settled = true;
-if (completePercentage !== void 0) options.onProgress?.({
-phase: "complete",
-current: 1,
-total: 1,
-percentage: completePercentage,
-filename: cmd.filename
-});
-cleanup$1();
-resolve$1(result);
-};
-timer = globalTimerManager.setTimeout(() => {
-settle({
-success: false,
-error: "Download timeout"
-}, 0);
-}, cmd.timeoutMs);
-try {
-gmDownload({
-url,
-name: cmd.filename,
-onload: () => {
-;
-settle({
-success: true,
-filename: cmd.filename
-}, 100);
-},
-onerror: (error$1) => {
-const errorMsg = getErrorMessage(error$1);
-logger.error("[SingleDownload] Download failed:", error$1);
-settle({
-success: false,
-error: errorMsg
-}, 0);
-},
-ontimeout: () => {
-settle({
-success: false,
-error: "Download timeout"
-}, 0);
-},
-onprogress: (progress) => {
-if (settled) return;
-if (options.onProgress && progress.total > 0) options.onProgress({
-phase: "downloading",
-current: 1,
-total: 1,
-percentage: Math.round(progress.loaded / progress.total * 100),
-filename: cmd.filename
-});
-}
-});
-} catch (error$1) {
-settle({
-success: false,
-error: getErrorMessage(error$1)
-});
-}
-});
-}
-default: return {
-success: false,
-error: "Unknown download command"
-};
-}
-}
-async function downloadSingleFile(media, options = {}, capability) {
-if (options.signal?.aborted) return {
-success: false,
-error: "User cancelled download"
-};
-const filename = generateMediaFilename(media, { nowMs: Date.now() });
-const effectiveCapability = capability ?? detectDownloadCapability();
-const cmds = createSingleDownloadCommands({
-method: effectiveCapability.method,
-mediaUrl: media.url,
-filename,
-hasProvidedBlob: Boolean(options.blob),
-timeoutMs: 3e4
-});
-let lastOk = {
-success: true,
-filename
-};
-for (const cmd of cmds) {
-const result = await executeSingleDownloadCommand(cmd, options, effectiveCapability, options.blob);
-if (!result.success) return result;
-lastOk = result;
-}
-return lastOk;
-}
-var init_single_download = __esmMin((() => {
-init_single_download_commands();
-init_logging();
-init_filename();
-init_timer_management();
-init_fallback_download();
-}));
-function calculateBackoff(attempt, baseDelayMs, maxDelayMs) {
-const exponentialDelay = baseDelayMs * 2 ** attempt;
-const totalDelay = exponentialDelay + Math.random() * .25 * exponentialDelay;
-return Math.min(Math.floor(totalDelay), maxDelayMs);
-}
-async function withRetry(operation, options = {}) {
-const { maxAttempts = DEFAULT_OPTIONS.maxAttempts, baseDelayMs = DEFAULT_OPTIONS.baseDelayMs, maxDelayMs = DEFAULT_OPTIONS.maxDelayMs, signal, onRetry, shouldRetry = () => true } = options;
-let lastError;
-let attempt = 0;
-while (attempt < maxAttempts) {
-if (signal?.aborted) return {
-success: false,
-error: signal.reason ?? new DOMException("Operation was aborted", "AbortError"),
-attempts: attempt
-};
-try {
-return {
-success: true,
-data: await operation(),
-attempts: attempt + 1
-};
-} catch (error$1) {
-lastError = error$1;
-attempt++;
-if (isAbortError(error$1)) return {
-success: false,
-error: error$1,
-attempts: attempt
-};
-if (!shouldRetry(error$1)) return {
-success: false,
-error: error$1,
-attempts: attempt
-};
-if (attempt >= maxAttempts) break;
-const delayMs = calculateBackoff(attempt - 1, baseDelayMs, maxDelayMs);
-onRetry?.(attempt, error$1, delayMs);
-try {
-await delay(delayMs, signal);
-} catch (delayError) {
-if (isAbortError(delayError)) return {
-success: false,
-error: delayError,
-attempts: attempt
-};
-throw delayError;
-}
-}
-}
-return {
-success: false,
-error: lastError,
-attempts: attempt
-};
-}
-var DEFAULT_OPTIONS;
-var init_retry = __esmMin((() => {
-init_delay();
-DEFAULT_OPTIONS = {
-maxAttempts: 3,
-baseDelayMs: 200,
-maxDelayMs: 1e4
-};
-}));
-async function fetchArrayBufferWithRetry(url, retries, signal, backoffBaseMs = 200) {
-if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
-const httpService = HttpRequestService.getInstance();
-const result = await withRetry(async () => {
-if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
-const options = {
-responseType: "arraybuffer",
-timeout: 3e4,
-...signal ? { signal } : {}
-};
-const response = await httpService.get(url, options);
-if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-return new Uint8Array(response.data);
-}, {
-maxAttempts: Math.max(1, retries + 1),
-baseDelayMs: backoffBaseMs,
-...signal ? { signal } : {}
-});
-if (result.success) return result.data;
-if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
-if (isAbortError(result.error)) throw result.error;
-throw result.error;
-}
-var init_retry_fetch = __esmMin((() => {
-init_delay();
-init_retry();
-init_cancellation();
-init_http_request_service();
-}));
-function ensureUniqueFilenameFactory() {
-const usedNames = /* @__PURE__ */ new Set();
-const baseCounts = /* @__PURE__ */ new Map();
-return (desired) => {
-if (!usedNames.has(desired)) {
-usedNames.add(desired);
-baseCounts.set(desired, 0);
-return desired;
-}
-const lastDot = desired.lastIndexOf(".");
-const name = lastDot > 0 ? desired.slice(0, lastDot) : desired;
-const ext = lastDot > 0 ? desired.slice(lastDot) : "";
-const baseKey = desired;
-let count = baseCounts.get(baseKey) ?? 0;
-while (true) {
-count += 1;
-const candidate = `${name}-${count}${ext}`;
-if (!usedNames.has(candidate)) {
-baseCounts.set(baseKey, count);
-usedNames.add(candidate);
-return candidate;
-}
-}
-};
-}
-function ensureCRC32Table() {
-if (crc32Table) return crc32Table;
-const table = new Uint32Array(256);
-const polynomial = 3988292384;
-for (let i = 0; i < 256; i++) {
-let crc = i;
-for (let j = 0; j < 8; j++) crc = crc & 1 ? crc >>> 1 ^ polynomial : crc >>> 1;
-table[i] = crc >>> 0;
-}
-crc32Table = table;
-return table;
-}
-function encodeUtf8(value) {
-return textEncoder.encode(value);
-}
-function calculateCRC32(data) {
-const table = ensureCRC32Table();
-let crc = 4294967295;
-for (let i = 0; i < data.length; i++) crc = crc >>> 8 ^ (table[(crc ^ data[i]) & 255] ?? 0);
-return (crc ^ 4294967295) >>> 0;
-}
-function writeUint16LEToBuffer(buffer, offset, value) {
-buffer[offset] = value & 255;
-buffer[offset + 1] = value >>> 8 & 255;
-}
-function writeUint32LEToBuffer(buffer, offset, value) {
-buffer[offset] = value & 255;
-buffer[offset + 1] = value >>> 8 & 255;
-buffer[offset + 2] = value >>> 16 & 255;
-buffer[offset + 3] = value >>> 24 & 255;
-}
-function writeUint16LE(value) {
-const bytes = new Uint8Array(2);
-writeUint16LEToBuffer(bytes, 0, value);
-return bytes;
-}
-function writeUint32LE(value) {
-const bytes = new Uint8Array(4);
-writeUint32LEToBuffer(bytes, 0, value);
-return bytes;
-}
-var textEncoder, crc32Table;
-var init_zip_utils = __esmMin((() => {
-textEncoder = new TextEncoder();
-crc32Table = null;
-}));
-function assertZip32(condition, message) {
-if (!condition) throw new Error(`ZIP format limit exceeded (Zip64 not supported): ${message}`);
-}
-var MAX_UINT16, MAX_UINT32, concat, StreamingZipWriter;
-var init_streaming_zip_writer = __esmMin((() => {
-init_zip_utils();
-MAX_UINT16 = 65535;
-MAX_UINT32 = 4294967295;
-concat = (arrays) => {
-let len = 0;
-for (const array of arrays) len += array.length;
-const result = new Uint8Array(len);
-let offset = 0;
-for (const array of arrays) {
-result.set(array, offset);
-offset += array.length;
-}
-return result;
-};
-StreamingZipWriter = class {
-chunks = [];
-entries = [];
-currentOffset = 0;
-addFile(filename, data) {
-assertZip32(this.entries.length < MAX_UINT16 - 1, `too many entries (count=${this.entries.length + 1})`);
-assertZip32(data.length < MAX_UINT32, `file too large (size=${data.length})`);
-assertZip32(this.currentOffset < MAX_UINT32, `offset overflow (offset=${this.currentOffset})`);
-const filenameBytes = encodeUtf8(filename);
-const crc32 = calculateCRC32(data);
-const localHeader = concat([
-new Uint8Array([
-80,
-75,
-3,
-4
-]),
-writeUint16LE(20),
-writeUint16LE(2048),
-writeUint16LE(0),
-writeUint16LE(0),
-writeUint16LE(0),
-writeUint32LE(crc32),
-writeUint32LE(data.length),
-writeUint32LE(data.length),
-writeUint16LE(filenameBytes.length),
-writeUint16LE(0),
-filenameBytes
-]);
-assertZip32(this.currentOffset + localHeader.length + data.length < MAX_UINT32, `archive too large (offset=${this.currentOffset}, add=${localHeader.length + data.length})`);
-this.chunks.push(localHeader, data);
-this.entries.push({
-filename,
-data,
-offset: this.currentOffset,
-crc32
-});
-this.currentOffset += localHeader.length + data.length;
-}
-finalize() {
-assertZip32(this.entries.length < MAX_UINT16, `too many entries (count=${this.entries.length})`);
-const centralDirStart = this.currentOffset;
-assertZip32(centralDirStart < MAX_UINT32, `central directory offset overflow (${centralDirStart})`);
-const centralDirChunks = [];
-for (const entry of this.entries) {
-const filenameBytes = encodeUtf8(entry.filename);
-assertZip32(entry.offset < MAX_UINT32, `entry offset overflow (${entry.offset})`);
-assertZip32(entry.data.length < MAX_UINT32, `entry too large (size=${entry.data.length})`);
-centralDirChunks.push(concat([
-new Uint8Array([
-80,
-75,
-1,
-2
-]),
-writeUint16LE(20),
-writeUint16LE(20),
-writeUint16LE(2048),
-writeUint16LE(0),
-writeUint16LE(0),
-writeUint16LE(0),
-writeUint32LE(entry.crc32),
-writeUint32LE(entry.data.length),
-writeUint32LE(entry.data.length),
-writeUint16LE(filenameBytes.length),
-writeUint16LE(0),
-writeUint16LE(0),
-writeUint16LE(0),
-writeUint16LE(0),
-writeUint32LE(0),
-writeUint32LE(entry.offset),
-filenameBytes
-]));
-}
-const centralDir = concat(centralDirChunks);
-assertZip32(centralDir.length < MAX_UINT32, `central directory too large (size=${centralDir.length})`);
-const endOfCentralDir = concat([
-new Uint8Array([
-80,
-75,
-5,
-6
-]),
-writeUint16LE(0),
-writeUint16LE(0),
-writeUint16LE(this.entries.length),
-writeUint16LE(this.entries.length),
-writeUint32LE(centralDir.length),
-writeUint32LE(centralDirStart),
-writeUint16LE(0)
-]);
-return concat([
-...this.chunks,
-centralDir,
-endOfCentralDir
-]);
-}
-getEntryCount() {
-return this.entries.length;
-}
-getCurrentSize() {
-return this.currentOffset;
-}
-};
-}));
-var zip_exports = /* @__PURE__ */ __export({ StreamingZipWriter: () => StreamingZipWriter }, 1);
-var init_zip = __esmMin((() => {
-init_streaming_zip_writer();
-}));
-async function downloadAsZip(items, options = {}) {
-const { StreamingZipWriter: StreamingZipWriter$1 } = await Promise.resolve().then(() => (init_zip(), zip_exports));
-const writer = new StreamingZipWriter$1();
-const concurrency = Math.min(8, Math.max(1, options.concurrency ?? 6));
-const retries = Math.max(0, options.retries ?? 0);
-const abortSignal = options.signal;
-const total = items.length;
-let processed = 0;
-let successful = 0;
-const failures = [];
-const ensureUniqueFilename = ensureUniqueFilenameFactory();
-const assignedFilenames = items.map((item) => ensureUniqueFilename(item.desiredName));
-const usedFilenamesByIndex = new Array(total);
-let currentIndex$1 = 0;
-const runNext = async () => {
-while (currentIndex$1 < total) {
-if (abortSignal?.aborted) throw createUserCancelledAbortError(abortSignal.reason);
-const index = currentIndex$1++;
-const item = items[index];
-if (!item) continue;
-options.onProgress?.({
-phase: "downloading",
-current: processed + 1,
-total,
-percentage: Math.min(100, Math.max(0, Math.round((processed + 1) / total * 100))),
-filename: assignedFilenames[index] ?? item.desiredName
-});
-try {
-let data;
-if (item.blob) {
-const blob = item.blob instanceof Promise ? await item.blob : item.blob;
-if (abortSignal?.aborted) throw createUserCancelledAbortError(abortSignal.reason);
-data = new Uint8Array(await blob.arrayBuffer());
-} else data = await fetchArrayBufferWithRetry(item.url, retries, abortSignal, 200);
-if (abortSignal?.aborted) throw createUserCancelledAbortError(abortSignal.reason);
-const filename = assignedFilenames[index] ?? item.desiredName;
-writer.addFile(filename, data);
-usedFilenamesByIndex[index] = filename;
-successful++;
-} catch (error$1) {
-if (abortSignal?.aborted) throw createUserCancelledAbortError(abortSignal.reason);
-failures.push({
-url: item.url,
-error: getErrorMessage(error$1)
-});
-} finally {
-processed++;
-}
-}
-};
-const workers = Array.from({ length: concurrency }, () => runNext());
-await Promise.all(workers);
-const zipBytes = writer.finalize();
-const usedFilenames = usedFilenamesByIndex.filter((value) => typeof value === "string");
-return {
-filesSuccessful: successful,
-failures,
-zipData: zipBytes,
-usedFilenames
-};
-}
-var init_zip_download = __esmMin((() => {
-init_cancellation();
-init_retry_fetch();
-}));
-var download_orchestrator_exports = /* @__PURE__ */ __export({ DownloadOrchestrator: () => DownloadOrchestrator }, 1);
-var DownloadOrchestrator;
-var init_download_orchestrator = __esmMin((() => {
-init_download_plan();
-init_logging();
-init_fallback_download();
-init_single_download();
-init_zip_download();
-init_result_types();
-DownloadOrchestrator = class DownloadOrchestrator {
-lifecycle;
-static singleton = createSingleton(() => new DownloadOrchestrator());
-capability = null;
-constructor() {
-this.lifecycle = createLifecycle("DownloadOrchestrator", {
-onInitialize: () => this.onInitialize(),
-onDestroy: () => this.onDestroy()
-});
-}
-static getInstance() {
-return DownloadOrchestrator.singleton.get();
-}
-async initialize() {
-return this.lifecycle.initialize();
-}
-destroy() {
-this.lifecycle.destroy();
-}
-isInitialized() {
-return this.lifecycle.isInitialized();
-}
-async onInitialize() {
-;
-}
-onDestroy() {
-this.capability = null;
-}
-getCapability() {
-if (!this.capability) this.capability = detectDownloadCapability();
-return this.capability;
-}
-async downloadSingle(media, options = {}) {
-return downloadSingleFile(media, options, this.getCapability());
-}
-async downloadBulk(mediaItems, options = {}) {
-const plan = planBulkDownload({
-mediaItems,
-prefetchedBlobs: options.prefetchedBlobs,
-zipFilename: options.zipFilename,
-nowMs: Date.now()
-});
-const items = plan.items;
-try {
-const result = await downloadAsZip(items, options);
-if (result.filesSuccessful === 0) return {
-success: false,
-status: "error",
-filesProcessed: items.length,
-filesSuccessful: 0,
-error: "No files downloaded",
-failures: result.failures,
-code: ErrorCode.ALL_FAILED
-};
-const zipBlob = new Blob([result.zipData], { type: "application/zip" });
-const filename = plan.zipFilename;
-const capability = this.getCapability();
-const saveResult = await this.saveZipBlob(zipBlob, filename, options, capability);
-if (!saveResult.success) return {
-success: false,
-status: "error",
-filesProcessed: items.length,
-filesSuccessful: result.filesSuccessful,
-error: saveResult.error || "Failed to save ZIP file",
-failures: result.failures,
-code: ErrorCode.ALL_FAILED
-};
-return {
-success: true,
-status: result.filesSuccessful === items.length ? "success" : "partial",
-filesProcessed: items.length,
-filesSuccessful: result.filesSuccessful,
-filename,
-failures: result.failures,
-code: ErrorCode.NONE
-};
-} catch (error$1) {
-return {
-success: false,
-status: "error",
-filesProcessed: items.length,
-filesSuccessful: 0,
-error: getErrorMessage(error$1) || "Unknown error",
-code: ErrorCode.ALL_FAILED
-};
-}
-}
-async saveZipBlob(zipBlob, filename, options, capability) {
-const saveStrategy = planZipSave(capability.method);
-if (saveStrategy === "gm_download" && capability.gmDownload) return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename);
-if (saveStrategy === "anchor") {
-;
-const fallbackResult = await downloadBlobWithAnchor(zipBlob, filename, {
-signal: options.signal,
-onProgress: options.onProgress
-});
-return fallbackResult.error ? {
-success: fallbackResult.success,
-error: fallbackResult.error
-} : { success: fallbackResult.success };
-}
-return {
-success: false,
-error: "No download method"
-};
-}
-async saveWithGMDownload(gmDownload, blob, filename) {
-const url = URL.createObjectURL(blob);
-try {
-await new Promise((resolve$1, reject) => {
-gmDownload({
-url,
-name: filename,
-onload: () => resolve$1(),
-onerror: (err) => reject(err),
-ontimeout: () => reject(/* @__PURE__ */ new Error("Timeout"))
-});
-});
-return { success: true };
-} catch (error$1) {
-return {
-success: false,
-error: getErrorMessage(error$1) || "GM_download failed"
-};
-} finally {
-URL.revokeObjectURL(url);
-}
-}
-};
-}));
-var MediaService;
-var init_media_service = __esmMin((() => {
-init_prefetch_manager();
-MediaService = class MediaService {
+var MediaService = class MediaService {
 lifecycle;
 static singleton = createSingleton(() => new MediaService());
 mediaExtraction = null;
-webpSupported = null;
 prefetchManager = new PrefetchManager(20);
 didCleanup = false;
 constructor(_options = {}) {
@@ -4772,11 +3256,7 @@ isInitialized() {
 return this.lifecycle.isInitialized();
 }
 async onInitialize() {
-{
-const { MediaExtractionService: MediaExtractionService$1 } = await Promise.resolve().then(() => (init_media_extraction_service(), media_extraction_service_exports));
-this.mediaExtraction = new MediaExtractionService$1();
-}
-await this.detectWebPSupport();
+this.mediaExtraction = new MediaExtractionService();
 }
 onDestroy() {
 this.cleanupOnce();
@@ -4795,7 +3275,7 @@ const result = await this.mediaExtraction.extractFromClickedElement(element, opt
 if (result.success && result.mediaItems.length > 0) {
 const items = result.mediaItems;
 const clickedIndex = clampIndex(result.clickedIndex ?? 0, items.length);
-const scheduled = /* @__PURE__ */ new Set();
+const scheduled =  new Set();
 const clickedItem = items[clickedIndex];
 if (clickedItem) {
 scheduled.add(clickedItem.url);
@@ -4815,28 +3295,6 @@ async extractAllFromContainer(container$2, options = {}) {
 if (!this.mediaExtraction) throw new Error("Media Extraction not initialized");
 return this.mediaExtraction.extractAllFromContainer(container$2, options);
 }
-async detectWebPSupport() {
-if (typeof document === "undefined") {
-this.webpSupported = false;
-return;
-}
-const canvas = document.createElement("canvas");
-if (typeof canvas.toDataURL !== "function") {
-this.webpSupported = false;
-return;
-}
-this.webpSupported = canvas.toDataURL("image/webp").indexOf("data:image/webp") === 0;
-}
-isWebPSupported() {
-return this.webpSupported ?? false;
-}
-getOptimizedImageUrl(originalUrl) {
-if (!this.isWebPSupported()) return originalUrl;
-return optimizePbsImageUrlToWebP(originalUrl);
-}
-optimizeWebP(url) {
-return this.getOptimizedImageUrl(url);
-}
 async prefetchMedia(media, schedule = "idle") {
 return this.prefetchManager.prefetch(media, schedule);
 }
@@ -4849,43 +3307,14 @@ this.prefetchManager.cancelAll();
 clearPrefetchCache() {
 this.prefetchManager.clear();
 }
-async downloadSingle(media, options = {}) {
-const { DownloadOrchestrator: DownloadOrchestrator$1 } = await Promise.resolve().then(() => (init_download_orchestrator(), download_orchestrator_exports));
-const downloadService = DownloadOrchestrator$1.getInstance();
-const pendingPromise = this.prefetchManager.get(media.url);
-let blob;
-if (pendingPromise) try {
-blob = await pendingPromise;
-} catch {}
-return downloadService.downloadSingle(media, {
-...options,
-...blob ? { blob } : {}
-});
-}
-async downloadMultiple(items, options = {}) {
-const { DownloadOrchestrator: DownloadOrchestrator$1 } = await Promise.resolve().then(() => (init_download_orchestrator(), download_orchestrator_exports));
-return DownloadOrchestrator$1.getInstance().downloadBulk(items, {
-...options,
-prefetchedBlobs: this.prefetchManager.getCache()
-});
-}
-async downloadBulk(items, options = {}) {
-return this.downloadMultiple(Array.from(items), options);
-}
 async cleanup() {
 this.cancelAllPrefetch();
 this.clearPrefetchCache();
 this.onDestroy();
 }
 };
-}));
-var THEME_DOM_ATTRIBUTE;
-var init_theme$1 = __esmMin((() => {
-THEME_DOM_ATTRIBUTE = "data-theme";
-}));
-var init_constants = __esmMin((() => {
-init_theme$1();
-}));
+const APP_SETTINGS_STORAGE_KEY = "xeg-app-settings";
+const THEME_DOM_ATTRIBUTE = "data-theme";
 function syncThemeAttributes(theme, options = {}) {
 if (typeof document === "undefined") return;
 const { scopes, includeDocumentRoot = false } = options;
@@ -4893,108 +3322,13 @@ if (includeDocumentRoot) document.documentElement?.setAttribute(THEME_DOM_ATTRIB
 const targets = scopes ?? document.querySelectorAll(".xeg-theme-scope");
 for (const target of Array.from(targets)) if (target instanceof HTMLElement) target.setAttribute(THEME_DOM_ATTRIBUTE, theme);
 }
-var init_theme = __esmMin((() => {
-init_constants();
-}));
-function wireAbortSignal(signal, onAbort) {
-if (!signal) return {
-shouldSkip: false,
-cleanup: null
-};
-if (signal.aborted) return {
-shouldSkip: true,
-cleanup: null
-};
-const handler = () => {
-onAbort();
-};
-try {
-signal.addEventListener("abort", handler, { once: true });
-} catch {
-return {
-shouldSkip: false,
-cleanup: null
-};
-}
-return {
-shouldSkip: false,
-cleanup: () => {
-try {
-signal.removeEventListener("abort", handler);
-} catch {}
-}
-};
-}
-var AppEventManager;
-var init_app_events = __esmMin((() => {
-init_logging();
-AppEventManager = class {
-appListeners = /* @__PURE__ */ new Map();
-constructor(subscriptionManager) {
-this.subscriptionManager = subscriptionManager;
-}
-on(event, callback, options = {}) {
-const { signal, once = false } = options;
-const id = this.subscriptionManager.generateId("app", event);
-if (signal?.aborted) return () => {};
-if (!this.appListeners.has(event)) this.appListeners.set(event, /* @__PURE__ */ new Set());
-const listeners$1 = this.appListeners.get(event);
-let abortCleanup = null;
-const wrappedCallback = once ? (data) => {
-callback(data);
-this.subscriptionManager.remove(id);
-} : (data) => {
-callback(data);
-};
-listeners$1.add(wrappedCallback);
-this.subscriptionManager.add({
-id,
-type: "app",
-context: event,
-cleanup: () => {
-listeners$1.delete(wrappedCallback);
-abortCleanup?.();
-abortCleanup = null;
-}
-});
-if (signal) abortCleanup = wireAbortSignal(signal, () => this.subscriptionManager.remove(id)).cleanup;
-;
-return () => {
-this.subscriptionManager.remove(id);
-};
-}
-once(event, callback, options = {}) {
-return this.on(event, callback, {
-...options,
-once: true
-});
-}
-emit(event, data) {
-const listeners$1 = this.appListeners.get(event);
-if (!listeners$1 || listeners$1.size === 0) return;
-;
-listeners$1.forEach((callback) => {
-try {
-callback(data);
-} catch (error$1) {
-logger.error(`[AppEventManager] Listener error for "${String(event)}":`, error$1);
-}
-});
-}
-_clear() {
-this.appListeners.clear();
-}
-};
-}));
+var listeners =  new Map();
 function generateListenerId(ctx) {
 return ctx ? createContextId(ctx) : createId();
 }
 function addListener(element, type, listener, options, context) {
 const id = generateListenerId(context);
-if (!element || typeof element.addEventListener !== "function") {
-;
-return id;
-}
+if (!element || typeof element.addEventListener !== "function") return id;
 try {
 element.addEventListener(type, listener, options);
 listeners.set(id, {
@@ -5003,47 +3337,29 @@ element,
 type,
 listener,
 options,
-context,
-created: 0
-});
-return id;
-} catch (error$1) {
-logger.error(`Failed to add listener: ${type}`, {
-error: error$1,
 context
 });
+return id;
+} catch {
 return id;
 }
 }
 function removeEventListenerManaged(id) {
 const ctx = listeners.get(id);
-if (!ctx) {
-;
-return false;
-}
+if (!ctx) return false;
 try {
 ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
 listeners.delete(id);
 return true;
-} catch (error$1) {
-logger.error(`Failed to remove listener: ${id}`, error$1);
+} catch {
 return false;
 }
 }
-var listeners;
-var init_listener_manager = __esmMin((() => {
-init_logging();
-listeners = /* @__PURE__ */ new Map();
-}));
-var EventManager;
-var init_event_manager = __esmMin((() => {
-init_logging();
-init_listener_manager();
-EventManager = class EventManager {
+var EventManager = class EventManager {
 lifecycle;
 static singleton = createSingleton(() => new EventManager());
 isDestroyed = false;
-ownedListenerContexts = /* @__PURE__ */ new Map();
+ownedListenerContexts =  new Map();
 constructor() {
 this.lifecycle = createLifecycle("EventManager", {
 onInitialize: () => this.onInitialize(),
@@ -5069,10 +3385,7 @@ onDestroy() {
 this.cleanup();
 }
 addListener(element, type, listener, options, context) {
-if (this.isDestroyed) {
-;
-return null;
-}
+if (this.isDestroyed) return null;
 const id = addListener(element, type, listener, options, context);
 if (id) this.ownedListenerContexts.set(id, context);
 return id || null;
@@ -5096,16 +3409,6 @@ if (removeEventListenerManaged(id)) count++;
 }
 return count;
 }
-getIsDestroyed() {
-return this.isDestroyed;
-}
-getListenerStatus() {
-return {
-total: 0,
-byContext: {},
-byType: {}
-};
-}
 cleanup() {
 if (this.isDestroyed) return;
 const ids = Array.from(this.ownedListenerContexts.keys());
@@ -5116,209 +3419,7 @@ removeEventListenerManaged(id);
 this.isDestroyed = true;
 }
 };
-}));
-var DOMEventManager;
-var init_dom_events = __esmMin((() => {
-init_logging();
-init_event_manager();
-DOMEventManager = class {
-constructor(subscriptionManager) {
-this.subscriptionManager = subscriptionManager;
-}
-addListener(element, type, listener, options = {}) {
-const { signal, context, ...listenerOptions } = options;
-const id = this.subscriptionManager.generateId("dom", context);
-const eventManager = EventManager.getInstance();
-if (signal?.aborted) {
-;
-return id;
-}
-if (!element || typeof element.addEventListener !== "function") {
-;
-return id;
-}
-try {
-const managedId = eventManager.addEventListener(element, type, listener, context === void 0 ? listenerOptions : {
-...listenerOptions,
-context
-});
-if (!managedId) {
-;
-return id;
-}
-let abortCleanup = null;
-this.subscriptionManager.add({
-id,
-type: "dom",
-context,
-cleanup: () => {
-try {
-eventManager.removeListener(managedId);
-} catch (error$1) {
-;
-}
-abortCleanup?.();
-abortCleanup = null;
-}
-});
-if (signal) abortCleanup = wireAbortSignal(signal, () => this.subscriptionManager.remove(id)).cleanup;
-;
-return id;
-} catch (error$1) {
-logger.error(`[DOMEventManager] Failed to add listener: ${type}`, error$1);
-return id;
-}
-}
-};
-}));
-var SubscriptionManager;
-var init_event_context = __esmMin((() => {
-init_logging();
-SubscriptionManager = class {
-subscriptions = /* @__PURE__ */ new Map();
-idCounter = 0;
-add(subscription) {
-this.subscriptions.set(subscription.id, subscription);
-return subscription.id;
-}
-remove(id) {
-const subscription = this.subscriptions.get(id);
-if (!subscription) return false;
-subscription.cleanup();
-this.subscriptions.delete(id);
-return true;
-}
-removeByContext(context) {
-const toRemove = [];
-for (const [id, sub] of this.subscriptions) if (sub.context === context) toRemove.push(id);
-for (const id of toRemove) this.remove(id);
-if (toRemove.length > 0) ;
-return toRemove.length;
-}
-removeAll() {
-const count = this.subscriptions.size;
-for (const subscription of this.subscriptions.values()) subscription.cleanup();
-this.subscriptions.clear();
-if (count > 0) ;
-}
-getStats() {
-const stats = {
-total: this.subscriptions.size,
-dom: 0,
-app: 0,
-byContext: {}
-};
-for (const sub of this.subscriptions.values()) {
-if (sub.type === "dom") stats.dom++;
-else stats.app++;
-if (sub.context) stats.byContext[sub.context] = (stats.byContext[sub.context] || 0) + 1;
-}
-return stats;
-}
-generateId(type, context) {
-const id = `${type}:${++this.idCounter}`;
-return context ? `${context}:${id}` : id;
-}
-get size() {
-return this.subscriptions.size;
-}
-has(id) {
-return this.subscriptions.has(id);
-}
-_reset() {
-this.subscriptions.clear();
-this.idCounter = 0;
-}
-};
-}));
-function getEventBus() {
-return EventBus.getInstance();
-}
-var EventBus;
-var init_event_bus = __esmMin((() => {
-init_logging();
-init_app_events();
-init_dom_events();
-init_event_context();
-EventBus = class EventBus {
-lifecycle;
-static singleton = createSingleton(() => new EventBus());
-subscriptionManager;
-domEventManager;
-appEventManager;
-constructor() {
-this.subscriptionManager = new SubscriptionManager();
-this.domEventManager = new DOMEventManager(this.subscriptionManager);
-this.appEventManager = new AppEventManager(this.subscriptionManager);
-this.lifecycle = createLifecycle("EventBus", {
-onInitialize: () => this.onInitialize(),
-onDestroy: () => this.onDestroy()
-});
-}
-static getInstance() {
-return EventBus.singleton.get();
-}
-async initialize() {
-return this.lifecycle.initialize();
-}
-destroy() {
-this.lifecycle.destroy();
-}
-isInitialized() {
-return this.lifecycle.isInitialized();
-}
-async onInitialize() {
-;
-}
-onDestroy() {
-this.removeAll();
-;
-}
-addDOMListener(element, type, listener, options = {}) {
-return this.domEventManager.addListener(element, type, listener, options);
-}
-on(event, callback, options = {}) {
-return this.appEventManager.on(event, callback, options);
-}
-once(event, callback, options = {}) {
-return this.appEventManager.once(event, callback, options);
-}
-emit(event, data) {
-this.appEventManager.emit(event, data);
-}
-remove(id) {
-return this.subscriptionManager.remove(id);
-}
-removeByContext(context) {
-return this.subscriptionManager.removeByContext(context);
-}
-removeAll() {
-this.subscriptionManager.removeAll();
-this.appEventManager._clear();
-}
-getStats() {
-return this.subscriptionManager.getStats();
-}
-createScopedController(context) {
-const controller = new AbortController();
-controller.signal.addEventListener("abort", () => {
-this.removeByContext(context);
-}, { once: true });
-return controller;
-}
-};
-}));
-var init_events = __esmMin((() => {
-init_event_bus();
-}));
-var ThemeService;
-var init_theme_service = __esmMin((() => {
-init_constants$1();
-init_theme();
-init_events();
-init_logging();
-init_persistent_storage();
-ThemeService = class ThemeService {
+var ThemeService = class ThemeService {
 lifecycle;
 storage = getPersistentStorage();
 mediaQueryList = null;
@@ -5326,7 +3427,7 @@ mediaQueryListener = null;
 domEventsController = null;
 currentTheme = "light";
 themeSetting = "auto";
-listeners = /* @__PURE__ */ new Set();
+listeners =  new Set();
 boundSettingsService = null;
 settingsUnsubscribe = null;
 observer = null;
@@ -5358,7 +3459,6 @@ if (document.documentElement) this.observer.observe(document.documentElement, {
 childList: true,
 subtree: true
 });
-else void 0;
 }
 this.themeSetting = this.loadThemeSync();
 this.applyCurrentTheme(true);
@@ -5373,15 +3473,12 @@ if (saved && saved !== this.themeSetting) {
 this.themeSetting = saved;
 this.applyCurrentTheme(true);
 }
-} catch (error$1) {
+} catch {
 this.earlyRestoreFailed = true;
-;
 } finally {
 try {
 this.initializeSystemDetection();
-} catch (error$1) {
-;
-}
+} catch {}
 }
 })();
 }
@@ -5405,12 +3502,9 @@ this.applyCurrentTheme(true);
 }
 }
 try {
-const { tryGetSettingsManager: tryGetSettingsManager$1 } = await Promise.resolve().then(() => (init_service_accessors(), service_accessors_exports));
-const settingsService = tryGetSettingsManager$1();
+const settingsService = CoreService.getInstance().tryGet(SERVICE_KEYS.SETTINGS);
 if (settingsService) this.bindSettingsService(settingsService);
-} catch (err) {
-;
-}
+} catch {}
 }
 bindSettingsService(settingsService) {
 if (!settingsService || this.boundSettingsService === settingsService) return;
@@ -5449,9 +3543,7 @@ this.themeSetting = [
 ].includes(setting$1) ? setting$1 : "light";
 if (options?.persist !== false && this.boundSettingsService?.set) {
 const result = this.boundSettingsService.set("gallery.theme", this.themeSetting);
-if (result instanceof Promise) result.catch((error$1) => {
-;
-});
+if (result instanceof Promise) result.catch(() => {});
 }
 if (!this.applyCurrentTheme(options?.force)) this.notifyListeners();
 }
@@ -5497,10 +3589,12 @@ if (!this.domEventsController || this.domEventsController.signal.aborted) this.d
 this.mediaQueryListener = () => {
 if (this.themeSetting === "auto") this.applyCurrentTheme();
 };
-const bus = getEventBus();
 const listener = this.mediaQueryListener;
 if (!listener) return;
-bus.addDOMListener(this.mediaQueryList, "change", listener, {
+const eventListener = (evt) => {
+listener(evt);
+};
+EventManager.getInstance().addEventListener(this.mediaQueryList, "change", eventListener, {
 signal: this.domEventsController.signal,
 context: "theme-service"
 });
@@ -5534,7 +3628,6 @@ return null;
 }
 }
 };
-}));
 function getThemeServiceInstance() {
 return ThemeService.getInstance();
 }
@@ -5544,55 +3637,14 @@ return LanguageService.getInstance();
 function getMediaServiceInstance() {
 return MediaService.getInstance();
 }
-var init_singletons = __esmMin((() => {
-init_language_service();
-init_media_service();
-init_theme_service();
-}));
-var lazy_services_exports = /* @__PURE__ */ __export({
-__resetLazyServiceRegistration: () => __resetLazyServiceRegistration,
-ensureDownloadServiceRegistered: () => ensureDownloadServiceRegistered
-}, 1);
-async function ensureDownloadServiceRegistered() {
-if (downloadServiceRegistered) return;
-try {
-const { DownloadOrchestrator: DownloadOrchestrator$1 } = await Promise.resolve().then(() => (init_download_orchestrator(), download_orchestrator_exports));
-const downloadService = DownloadOrchestrator$1.getInstance();
-const { CoreService: CoreService$1 } = await Promise.resolve().then(() => (init_service_manager(), service_manager_exports));
-const { SERVICE_KEYS: SERVICE_KEYS$1 } = await Promise.resolve().then(() => (init_constants$1(), constants_exports));
-CoreService$1.getInstance().register(SERVICE_KEYS$1.GALLERY_DOWNLOAD, downloadService);
-downloadServiceRegistered = true;
-;
-} catch (error$1) {
-const message = normalizeErrorMessage(error$1);
-logger.error("❌ Failed to lazily register DownloadService:", message);
-throw error$1;
-}
-}
-function __resetLazyServiceRegistration() {
-downloadServiceRegistered = false;
-}
-var downloadServiceRegistered;
-var init_lazy_services = __esmMin((() => {
-init_logging();
-downloadServiceRegistered = false;
-}));
-var service_accessors_exports = /* @__PURE__ */ __export({
-CORE_BASE_SERVICE_IDENTIFIERS: () => CORE_BASE_SERVICE_IDENTIFIERS,
-LANGUAGE_SERVICE_IDENTIFIER: () => LANGUAGE_SERVICE_IDENTIFIER,
-MEDIA_SERVICE_IDENTIFIER: () => MEDIA_SERVICE_IDENTIFIER,
-THEME_SERVICE_IDENTIFIER: () => THEME_SERVICE_IDENTIFIER,
-getDownloadOrchestrator: () => getDownloadOrchestrator,
-getGalleryRenderer: () => getGalleryRenderer,
-getLanguageService: () => getLanguageService,
-getMediaService: () => getMediaService,
-getThemeService: () => getThemeService,
-registerGalleryRenderer: () => registerGalleryRenderer,
-registerSettingsManager: () => registerSettingsManager,
-tryGetSettingsManager: () => tryGetSettingsManager,
-warmupCriticalServices: () => warmupCriticalServices,
-warmupNonCriticalServices: () => warmupNonCriticalServices
-}, 1);
+const THEME_SERVICE_IDENTIFIER = SERVICE_KEYS.THEME;
+const LANGUAGE_SERVICE_IDENTIFIER = SERVICE_KEYS.LANGUAGE;
+const MEDIA_SERVICE_IDENTIFIER = SERVICE_KEYS.MEDIA_SERVICE;
+const CORE_BASE_SERVICE_IDENTIFIERS = [
+THEME_SERVICE_IDENTIFIER,
+LANGUAGE_SERVICE_IDENTIFIER,
+MEDIA_SERVICE_IDENTIFIER
+];
 function tryGetFromCoreService(key) {
 try {
 const coreService = CoreService.getInstance();
@@ -5615,10 +3667,9 @@ return CoreService.getInstance().get(SERVICE_KEYS.GALLERY_RENDERER);
 async function getDownloadOrchestrator() {
 const coreService = CoreService.getInstance();
 if (coreService.has(SERVICE_KEYS.GALLERY_DOWNLOAD)) return coreService.get(SERVICE_KEYS.GALLERY_DOWNLOAD);
-const { ensureDownloadServiceRegistered: ensureDownloadServiceRegistered$1 } = await Promise.resolve().then(() => (init_lazy_services(), lazy_services_exports));
-await ensureDownloadServiceRegistered$1();
-const { DownloadOrchestrator: DownloadOrchestrator$1 } = await Promise.resolve().then(() => (init_download_orchestrator(), download_orchestrator_exports));
-return DownloadOrchestrator$1.getInstance();
+const orchestrator = DownloadOrchestrator.getInstance();
+coreService.register(SERVICE_KEYS.GALLERY_DOWNLOAD, orchestrator);
+return orchestrator;
 }
 function registerGalleryRenderer(renderer) {
 CoreService.getInstance().register(SERVICE_KEYS.GALLERY_RENDERER, renderer);
@@ -5634,48 +3685,45 @@ try {
 getMediaService();
 } catch (error$1) {}
 }
-function warmupNonCriticalServices() {
-try {
-getThemeService();
-} catch (error$1) {}
-}
-var THEME_SERVICE_IDENTIFIER, LANGUAGE_SERVICE_IDENTIFIER, MEDIA_SERVICE_IDENTIFIER, CORE_BASE_SERVICE_IDENTIFIERS;
-var init_service_accessors = __esmMin((() => {
-init_constants$1();
-init_service_manager();
-init_singletons();
-THEME_SERVICE_IDENTIFIER = SERVICE_KEYS.THEME;
-LANGUAGE_SERVICE_IDENTIFIER = SERVICE_KEYS.LANGUAGE;
-MEDIA_SERVICE_IDENTIFIER = SERVICE_KEYS.MEDIA_SERVICE;
-CORE_BASE_SERVICE_IDENTIFIERS = [
-THEME_SERVICE_IDENTIFIER,
-LANGUAGE_SERVICE_IDENTIFIER,
-MEDIA_SERVICE_IDENTIFIER
+var BASE_SERVICE_REGISTRATIONS = [
+[THEME_SERVICE_IDENTIFIER, getThemeServiceInstance],
+[LANGUAGE_SERVICE_IDENTIFIER, getLanguageServiceInstance],
+[MEDIA_SERVICE_IDENTIFIER, getMediaServiceInstance]
 ];
-}));
-init_service_accessors();
-init_constants$1();
-init_service_manager();
-init_singletons();
+function registerMissingBaseServices(coreService) {
+let registeredCount = 0;
+for (const [key, getService] of BASE_SERVICE_REGISTRATIONS) if (!coreService.has(key)) {
+coreService.register(key, getService());
+registeredCount += 1;
+}
+return registeredCount;
+}
+async function initializeCoreBaseServices() {
+const coreService = CoreService.getInstance();
+try {
+registerMissingBaseServices(coreService);
+for (const identifier of CORE_BASE_SERVICE_IDENTIFIERS) {
+const service = coreService.get(identifier);
+if (service && typeof service.initialize === "function") await service.initialize();
+}
+} catch (error$1) {
+throw new Error("[base-services] initialization failed", { cause: error$1 instanceof Error ? error$1 : new Error(String(error$1)) });
+}
+}
 async function registerCoreServices() {
 const core = CoreService.getInstance();
 core.register(SERVICE_KEYS.THEME, getThemeServiceInstance());
 core.register(SERVICE_KEYS.LANGUAGE, getLanguageServiceInstance());
 core.register(SERVICE_KEYS.MEDIA_SERVICE, getMediaServiceInstance());
 }
-var devLogger = null;
 async function initializeCriticalSystems() {
-devLogger?.debug("[critical] initialization started");
 await registerCoreServices();
 warmupCriticalServices();
-devLogger?.debug("[critical] initialization complete");
 }
-async function initializeEnvironment() {}
-init_events();
 function wireGlobalEvents(onBeforeUnload) {
 if (!(typeof window !== "undefined" && Boolean(window.addEventListener))) return () => {};
 let disposed = false;
-const bus = getEventBus();
+const eventManager = EventManager.getInstance();
 const controller = new AbortController();
 const invokeOnce = () => {
 if (disposed) return;
@@ -5686,7 +3734,7 @@ onBeforeUnload();
 const handler = () => {
 invokeOnce();
 };
-bus.addDOMListener(window, "pagehide", handler, {
+eventManager.addEventListener(window, "pagehide", handler, {
 once: true,
 passive: true,
 signal: controller.signal,
@@ -5698,15 +3746,8 @@ disposed = true;
 controller.abort();
 };
 }
-function formatContextTag(context, code) {
-const base = `[${context.charAt(0).toUpperCase()}${context.slice(1)}]`;
-return code ? `${base}[${code}]` : base;
-}
-var DEFAULT_SEVERITY, AppErrorReporter, bootstrapErrorReporter, galleryErrorReporter, mediaErrorReporter, settingsErrorReporter;
-var init_app_error_reporter = __esmMin((() => {
-init_logging();
-DEFAULT_SEVERITY = "error";
-AppErrorReporter = class AppErrorReporter {
+var DEFAULT_SEVERITY = "error";
+var AppErrorReporter = class AppErrorReporter {
 static notificationCallback = null;
 static setNotificationCallback(callback) {
 AppErrorReporter.notificationCallback = callback;
@@ -5714,17 +3755,15 @@ AppErrorReporter.notificationCallback = callback;
 static report(error$1, options) {
 const severity = options.severity ?? DEFAULT_SEVERITY;
 const message = normalizeErrorMessage(error$1);
-const tag = formatContextTag(options.context, options.code);
+const payload = {
+c: options.context,
+s: severity
+};
+if (options.code) payload.cd = options.code;
+if (options.metadata) payload.m = options.metadata;
 if (severity === "info") ;
 else if (severity === "warning") ;
-else {
-const logPayload = {
-context: options.context,
-severity
-};
-if (options.metadata) logPayload.metadata = options.metadata;
-logger.error(`${tag} ${message}`, logPayload);
-}
+else logger.error(message, payload);
 if (options.notify && AppErrorReporter.notificationCallback) AppErrorReporter.notificationCallback(message, options.context);
 const result = {
 reported: true,
@@ -5768,16 +3807,48 @@ severity: "info"
 };
 }
 };
-bootstrapErrorReporter = AppErrorReporter.forContext("bootstrap");
-galleryErrorReporter = AppErrorReporter.forContext("gallery");
-mediaErrorReporter = AppErrorReporter.forContext("media");
-AppErrorReporter.forContext("download");
-settingsErrorReporter = AppErrorReporter.forContext("settings");
-AppErrorReporter.forContext("event");
-AppErrorReporter.forContext("network");
-AppErrorReporter.forContext("storage");
-AppErrorReporter.forContext("ui");
-}));
+const bootstrapErrorReporter = AppErrorReporter.forContext("bootstrap");
+const galleryErrorReporter = AppErrorReporter.forContext("gallery");
+const mediaErrorReporter = AppErrorReporter.forContext("media");
+const settingsErrorReporter = AppErrorReporter.forContext("settings");
+var NotificationService = class NotificationService {
+static singleton = createSingleton(() => new NotificationService());
+get userscript() {
+return getUserscriptSafe();
+}
+constructor() {}
+static getInstance() {
+return NotificationService.singleton.get();
+}
+async show(options) {
+this.userscript.notification({
+title: options.title,
+text: options.text,
+image: options.image,
+timeout: options.timeout,
+onclick: options.onclick
+});
+}
+async error(title, text, timeout = 5e3) {
+await this.show({
+title,
+text,
+timeout
+});
+}
+};
+var sharedConfig = {
+context: void 0,
+registry: void 0,
+effects: void 0,
+done: false,
+getContextId() {
+return getContextId(this.context.count);
+},
+getNextContextId() {
+return getContextId(this.context.count++);
+}
+};
 function getContextId(count) {
 const num = String(count), len = num.length - 1;
 return sharedConfig.context.id + (len ? String.fromCharCode(96 + len) : "") + num;
@@ -5792,6 +3863,29 @@ id: sharedConfig.getNextContextId(),
 count: 0
 };
 }
+var equalFn = (a, b) => a === b;
+var $PROXY = Symbol("solid-proxy");
+var SUPPORTS_PROXY = typeof Proxy === "function";
+var $TRACK = Symbol("solid-track");
+var signalOptions = { equals: equalFn };
+var ERROR = null;
+var runEffects = runQueue;
+var STALE = 1;
+var PENDING = 2;
+var UNOWNED = {
+owned: null,
+cleanups: null,
+context: null,
+owner: null
+};
+var Owner = null;
+var Transition = null;
+var Scheduler = null;
+var ExternalSourceConfig = null;
+var Listener = null;
+var Updates = null;
+var Effects = null;
+var ExecCount = 0;
 function createRoot(fn, detachedOwner) {
 const listener = Listener, owner = Owner, unowned = fn.length === 0, current = detachedOwner === void 0 ? owner : detachedOwner, root = unowned ? UNOWNED : {
 owned: null,
@@ -5852,134 +3946,6 @@ Updates.push(c);
 } else updateComputation(c);
 return readSignal.bind(c);
 }
-function isPromise(v) {
-return v && typeof v === "object" && "then" in v;
-}
-function createResource(pSource, pFetcher, pOptions) {
-let source;
-let fetcher;
-let options;
-if (typeof pFetcher === "function") {
-source = pSource;
-fetcher = pFetcher;
-options = pOptions || {};
-} else {
-source = true;
-fetcher = pSource;
-options = pFetcher || {};
-}
-let pr = null, initP = NO_INIT, id = null, loadedUnderTransition = false, scheduled = false, resolved = "initialValue" in options, dynamic = typeof source === "function" && createMemo(source);
-const contexts = /* @__PURE__ */ new Set(), [value, setValue] = (options.storage || createSignal)(options.initialValue), [error$1, setError$1] = createSignal(void 0), [track, trigger] = createSignal(void 0, { equals: false }), [state, setState] = createSignal(resolved ? "ready" : "unresolved");
-if (sharedConfig.context) {
-id = sharedConfig.getNextContextId();
-if (options.ssrLoadFrom === "initial") initP = options.initialValue;
-else if (sharedConfig.load && sharedConfig.has(id)) initP = sharedConfig.load(id);
-}
-function loadEnd(p, v, error$2, key) {
-if (pr === p) {
-pr = null;
-key !== void 0 && (resolved = true);
-if ((p === initP || v === initP) && options.onHydrated) queueMicrotask(() => options.onHydrated(key, { value: v }));
-initP = NO_INIT;
-if (Transition && p && loadedUnderTransition) {
-Transition.promises.delete(p);
-loadedUnderTransition = false;
-runUpdates(() => {
-Transition.running = true;
-completeLoad(v, error$2);
-}, false);
-} else completeLoad(v, error$2);
-}
-return v;
-}
-function completeLoad(v, err) {
-runUpdates(() => {
-if (err === void 0) setValue(() => v);
-setState(err !== void 0 ? "errored" : resolved ? "ready" : "unresolved");
-setError$1(err);
-for (const c of contexts.keys()) c.decrement();
-contexts.clear();
-}, false);
-}
-function read() {
-const c = SuspenseContext && useContext(SuspenseContext), v = value(), err = error$1();
-if (err !== void 0 && !pr) throw err;
-if (Listener && !Listener.user && c) createComputed(() => {
-track();
-if (pr) {
-if (c.resolved && Transition && loadedUnderTransition) Transition.promises.add(pr);
-else if (!contexts.has(c)) {
-c.increment();
-contexts.add(c);
-}
-}
-});
-return v;
-}
-function load(refetching = true) {
-if (refetching !== false && scheduled) return;
-scheduled = false;
-const lookup = dynamic ? dynamic() : source;
-loadedUnderTransition = Transition && Transition.running;
-if (lookup == null || lookup === false) {
-loadEnd(pr, untrack(value));
-return;
-}
-if (Transition && pr) Transition.promises.delete(pr);
-let error$2;
-const p = initP !== NO_INIT ? initP : untrack(() => {
-try {
-return fetcher(lookup, {
-value: value(),
-refetching
-});
-} catch (fetcherError) {
-error$2 = fetcherError;
-}
-});
-if (error$2 !== void 0) {
-loadEnd(pr, void 0, castError(error$2), lookup);
-return;
-} else if (!isPromise(p)) {
-loadEnd(pr, p, void 0, lookup);
-return p;
-}
-pr = p;
-if ("v" in p) {
-if (p.s === 1) loadEnd(pr, p.v, void 0, lookup);
-else loadEnd(pr, void 0, castError(p.v), lookup);
-return p;
-}
-scheduled = true;
-queueMicrotask(() => scheduled = false);
-runUpdates(() => {
-setState(resolved ? "refreshing" : "pending");
-trigger();
-}, false);
-return p.then((v) => loadEnd(p, v, void 0, lookup), (e) => loadEnd(p, void 0, castError(e), lookup));
-}
-Object.defineProperties(read, {
-state: { get: () => state() },
-error: { get: () => error$1() },
-loading: { get() {
-const s = state();
-return s === "pending" || s === "refreshing";
-} },
-latest: { get() {
-if (!resolved) return read();
-const err = error$1();
-if (err && !pr) throw err;
-return value();
-} }
-});
-let owner = Owner;
-if (dynamic) createComputed(() => (owner = Owner, load(false)));
-else load(false);
-return [read, {
-refetch: (info) => runWithOwner(owner, () => load(info)),
-mutate: setValue
-}];
-}
 function batch(fn) {
 return runUpdates(fn, false);
 }
@@ -6038,23 +4004,6 @@ handleError(err);
 Owner = Owner.owner;
 }
 }
-function getOwner() {
-return Owner;
-}
-function runWithOwner(o, fn) {
-const prev = Owner;
-const prevListener = Listener;
-Owner = o;
-Listener = null;
-try {
-return runUpdates(fn, true);
-} catch (err) {
-handleError(err);
-} finally {
-Owner = prev;
-Listener = prevListener;
-}
-}
 function startTransition(fn) {
 if (Transition && Transition.running) {
 fn();
@@ -6068,11 +4017,11 @@ Owner = o;
 let t;
 if (Scheduler || SuspenseContext) {
 t = Transition || (Transition = {
-sources: /* @__PURE__ */ new Set(),
+sources:  new Set(),
 effects: [],
-promises: /* @__PURE__ */ new Set(),
-disposed: /* @__PURE__ */ new Set(),
-queue: /* @__PURE__ */ new Set(),
+promises:  new Set(),
+disposed:  new Set(),
+queue:  new Set(),
 running: true
 });
 t.done || (t.done = new Promise((res) => t.resolve = res));
@@ -6083,34 +4032,12 @@ Listener = Owner = null;
 return t ? t.done : void 0;
 });
 }
-function resumeEffects(e) {
-Effects.push.apply(Effects, e);
-e.length = 0;
-}
-function createContext(defaultValue, options) {
-const id = Symbol("context");
-return {
-id,
-Provider: createProvider(id),
-defaultValue
-};
-}
+var [transPending, setTransPending] =  createSignal(false);
 function useContext(context) {
 let value;
 return Owner && Owner.context && (value = Owner.context[context.id]) !== void 0 ? value : context.defaultValue;
 }
-function children(fn) {
-const children$1 = createMemo(fn);
-const memo$1 = createMemo(() => resolveChildren(children$1()));
-memo$1.toArray = () => {
-const c = memo$1();
-return Array.isArray(c) ? c : c != null ? [c] : [];
-};
-return memo$1;
-}
-function getSuspenseContext() {
-return SuspenseContext || (SuspenseContext = createContext());
-}
+var SuspenseContext;
 function readSignal() {
 const runningTransition = Transition && Transition.running;
 if (this.sources && (runningTransition ? this.tState : this.state)) if ((runningTransition ? this.tState : this.state) === STALE) updateComputation(this);
@@ -6467,31 +4394,7 @@ state: STALE
 });
 else runErrors(error$1, fns, owner);
 }
-function resolveChildren(children$1) {
-if (typeof children$1 === "function" && !children$1.length) return resolveChildren(children$1());
-if (Array.isArray(children$1)) {
-const results = [];
-for (let i = 0; i < children$1.length; i++) {
-const result = resolveChildren(children$1[i]);
-Array.isArray(result) ? results.push.apply(results, result) : results.push(result);
-}
-return results;
-}
-return children$1;
-}
-function createProvider(id, options) {
-return function provider(props) {
-let res;
-createRenderEffect(() => res = untrack(() => {
-Owner.context = {
-...Owner.context,
-[id]: props.value
-};
-return children(() => props.children);
-}), void 0);
-return res;
-};
-}
+var FALLBACK = Symbol("fallback");
 function dispose(d) {
 for (let i = 0; i < d.length; i++) d[i]();
 }
@@ -6537,7 +4440,7 @@ temp[newEnd] = mapped[end];
 tempdisposers[newEnd] = disposers[end];
 indexes && (tempIndexes[newEnd] = indexes[end]);
 }
-newIndices = /* @__PURE__ */ new Map();
+newIndices =  new Map();
 newIndicesNext = new Array(newEnd + 1);
 for (j = newEnd; j >= start; j--) {
 item = newItems[j];
@@ -6580,6 +4483,7 @@ return mapFn(newItems[j]);
 }
 };
 }
+var hydrationEnabled = false;
 function createComponent(Comp, props) {
 if (hydrationEnabled) {
 if (sharedConfig.context) {
@@ -6595,6 +4499,32 @@ return untrack(() => Comp(props || {}));
 function trueFn() {
 return true;
 }
+var propTraps = {
+get(_, property, receiver) {
+if (property === $PROXY) return receiver;
+return _.get(property);
+},
+has(_, property) {
+if (property === $PROXY) return true;
+return _.has(property);
+},
+set: trueFn,
+deleteProperty: trueFn,
+getOwnPropertyDescriptor(_, property) {
+return {
+configurable: true,
+enumerable: true,
+get() {
+return _.get(property);
+},
+set: trueFn,
+deleteProperty: trueFn
+};
+},
+ownKeys(_) {
+return _.keys();
+}
+};
 function resolveSource(s) {
 return !(s = typeof s === "function" ? s() : s) ? {} : s;
 }
@@ -6704,39 +4634,7 @@ const desc = Object.getOwnPropertyDescriptor(props, propName);
 }
 return objects;
 }
-function lazy(fn) {
-let comp;
-let p;
-const wrap = (props) => {
-const ctx = sharedConfig.context;
-if (ctx) {
-const [s, set] = createSignal();
-sharedConfig.count || (sharedConfig.count = 0);
-sharedConfig.count++;
-(p || (p = fn())).then((mod) => {
-!sharedConfig.done && setHydrateContext(ctx);
-sharedConfig.count--;
-set(() => mod.default);
-setHydrateContext();
-});
-comp = s;
-} else if (!comp) {
-const [s] = createResource(() => (p || (p = fn())).then((mod) => mod.default));
-comp = s;
-}
-let Comp;
-return createMemo(() => (Comp = comp()) ? untrack(() => {
-if (!ctx || sharedConfig.done) return Comp(props);
-const c = sharedConfig.context;
-setHydrateContext(ctx);
-const r = Comp(props);
-setHydrateContext(c);
-return r;
-}) : "");
-};
-wrap.preload = () => p || ((p = fn()).then((mod) => comp = () => mod.default), p);
-return wrap;
-}
+var narrowedError = (name) => `Stale read from <${name}>.`;
 function For(props) {
 const fallback = "fallback" in props && { fallback: () => props.fallback };
 return createMemo(mapArray(() => props.each, props.children, fallback || void 0));
@@ -6757,45 +4655,12 @@ return conditionValue();
 return props.fallback;
 }, void 0, void 0);
 }
-function Switch(props) {
-const chs = children(() => props.children);
-const switchFunc = createMemo(() => {
-const ch = chs();
-const mps = Array.isArray(ch) ? ch : [ch];
-let func = () => void 0;
-for (let i = 0; i < mps.length; i++) {
-const index = i;
-const mp = mps[i];
-const prevFunc = func;
-const conditionValue = createMemo(() => prevFunc() ? void 0 : mp.when, void 0, void 0);
-const condition = mp.keyed ? conditionValue : createMemo(conditionValue, void 0, { equals: (a, b) => !a === !b });
-func = () => prevFunc() || (condition() ? [
-index,
-conditionValue,
-mp
-] : void 0);
-}
-return func;
-});
-return createMemo(() => {
-const sel = switchFunc()();
-if (!sel) return props.fallback;
-const [index, conditionValue, mp] = sel;
-const child = mp.children;
-return typeof child === "function" && child.length > 0 ? untrack(() => child(mp.keyed ? conditionValue() : () => {
-if (untrack(switchFunc)()?.[0] !== index) throw narrowedError("Match");
-return conditionValue();
-})) : child;
-}, void 0, void 0);
-}
-function Match(props) {
-return props;
-}
+var Errors;
 function ErrorBoundary$1(props) {
 let err;
 if (sharedConfig.context && sharedConfig.load) err = sharedConfig.load(sharedConfig.getContextId());
 const [errored, setErrored] = createSignal(err, void 0);
-Errors || (Errors = /* @__PURE__ */ new Set());
+Errors || (Errors =  new Set());
 Errors.add(setErrored);
 onCleanup(() => Errors.delete(setErrored));
 return createMemo(() => {
@@ -6807,157 +4672,1279 @@ return typeof f === "function" && f.length ? untrack(() => f(e, () => setErrored
 return catchError(() => props.children, setErrored);
 }, void 0, void 0);
 }
-function Suspense(props) {
-let counter = 0, show, ctx, p, flicker, error$1;
-const [inFallback, setFallback] = createSignal(false), SuspenseContext$1 = getSuspenseContext(), store = {
-increment: () => {
-if (++counter === 1) setFallback(true);
+function createSignalSafe(initial) {
+const [read, write] = createSignal(initial, { equals: false });
+const setSignal = write;
+const subscribers =  new Set();
+const notify = (val) => {
+for (const subscriber of subscribers) subscriber(val);
+};
+const signalObject = {
+set(value) {
+if (typeof value === "function") setSignal(() => value);
+else setSignal(value);
+notify(value);
 },
-decrement: () => {
-if (--counter === 0) setFallback(false);
+update(updater) {
+const nextValue = updater(read());
+setSignal(updater);
+notify(nextValue);
 },
-inFallback,
-effects: [],
-resolved: false
-}, owner = getOwner();
-if (sharedConfig.context && sharedConfig.load) {
-const key = sharedConfig.getContextId();
-let ref = sharedConfig.load(key);
-if (ref) if (typeof ref !== "object" || ref.s !== 1) p = ref;
-else sharedConfig.gather(key);
-if (p && p !== "$$f") {
-const [s, set] = createSignal(void 0, { equals: false });
-flicker = s;
-p.then(() => {
-if (sharedConfig.done) return set();
-sharedConfig.gather(key);
-setHydrateContext(ctx);
-set();
-setHydrateContext();
-}, (err) => {
-error$1 = err;
-set();
+subscribe(callback) {
+subscribers.add(callback);
+notify(read());
+return () => {
+subscribers.delete(callback);
+};
+}
+};
+Object.defineProperty(signalObject, "value", {
+get: () => {
+return read();
+},
+set: (v) => {
+signalObject.set(v);
+},
+enumerable: true
+});
+return signalObject;
+}
+function effectSafe(fn) {
+return createRoot((dispose$1) => {
+createComputed(() => {
+fn();
+});
+return dispose$1;
 });
 }
+var INITIAL_NAVIGATION_STATE = {
+lastSource: "auto-focus",
+lastTimestamp: 0,
+lastNavigatedIndex: null
+};
+const navigationSignals = {
+lastSource: createSignalSafe(INITIAL_NAVIGATION_STATE.lastSource),
+lastTimestamp: createSignalSafe(INITIAL_NAVIGATION_STATE.lastTimestamp),
+lastNavigatedIndex: createSignalSafe(INITIAL_NAVIGATION_STATE.lastNavigatedIndex)
+};
+function resolveNowMs(nowMs$1) {
+return nowMs$1 ?? Date.now();
 }
-const listContext = useContext(SuspenseListContext);
-if (listContext) show = listContext.register(store.inFallback);
-let dispose$1;
-onCleanup(() => dispose$1 && dispose$1());
-return createComponent(SuspenseContext$1.Provider, {
-value: store,
-get children() {
-return createMemo(() => {
-if (error$1) throw error$1;
-ctx = sharedConfig.context;
-if (flicker) {
-flicker();
-flicker = void 0;
+function isManualSource(source) {
+return source === "button" || source === "keyboard";
+}
+function recordNavigation(targetIndex, source, nowMs$1) {
+const timestamp = resolveNowMs(nowMs$1);
+const currentIndex$1 = navigationSignals.lastNavigatedIndex.value;
+const currentSource = navigationSignals.lastSource.value;
+if (targetIndex === currentIndex$1 && isManualSource(source) && isManualSource(currentSource)) {
+navigationSignals.lastTimestamp.value = timestamp;
+return { isDuplicate: true };
+}
+navigationSignals.lastSource.value = source;
+navigationSignals.lastTimestamp.value = timestamp;
+navigationSignals.lastNavigatedIndex.value = targetIndex;
+return { isDuplicate: false };
+}
+function resetNavigation(nowMs$1) {
+navigationSignals.lastSource.value = INITIAL_NAVIGATION_STATE.lastSource;
+navigationSignals.lastTimestamp.value = resolveNowMs(nowMs$1);
+navigationSignals.lastNavigatedIndex.value = INITIAL_NAVIGATION_STATE.lastNavigatedIndex;
+}
+function resolveNavigationSource(trigger) {
+if (trigger === "scroll") return "scroll";
+if (trigger === "keyboard") return "keyboard";
+return "button";
+}
+var INITIAL_UI_STATE = {
+viewMode: "vertical",
+isLoading: false,
+error: null
+};
+const uiSignals = {
+viewMode: createSignalSafe(INITIAL_UI_STATE.viewMode),
+isLoading: createSignalSafe(INITIAL_UI_STATE.isLoading),
+error: createSignalSafe(INITIAL_UI_STATE.error)
+};
+function setError(error$1) {
+uiSignals.error.value = error$1;
+if (error$1) {
+uiSignals.isLoading.value = false;
+logger.error(`[Gallery UI] Error: ${error$1}`);
+}
+}
+function createEventEmitter() {
+const listeners$1 =  new Map();
+return {
+on(event, callback) {
+if (!listeners$1.has(event)) listeners$1.set(event,  new Set());
+listeners$1.get(event).add(callback);
+return () => {
+listeners$1.get(event)?.delete(callback);
+};
+},
+emit(event, data) {
+const eventListeners = listeners$1.get(event);
+if (!eventListeners) return;
+eventListeners.forEach((callback) => {
+try {
+callback(data);
+} catch (error$1) {}
+});
+},
+dispose() {
+listeners$1.clear();
+}
+};
+}
+var batch$1 = batch;
+var INITIAL_STATE$2 = {
+isOpen: false,
+mediaItems: [],
+currentIndex: 0,
+isLoading: false,
+error: null,
+viewMode: "vertical"
+};
+const galleryIndexEvents = createEventEmitter();
+const gallerySignals = {
+isOpen: createSignalSafe(INITIAL_STATE$2.isOpen),
+mediaItems: createSignalSafe(INITIAL_STATE$2.mediaItems),
+currentIndex: createSignalSafe(INITIAL_STATE$2.currentIndex),
+isLoading: uiSignals.isLoading,
+error: uiSignals.error,
+viewMode: uiSignals.viewMode,
+focusedIndex: createSignalSafe(null),
+currentVideoElement: createSignalSafe(null)
+};
+function applyGalleryStateUpdate(state) {
+batch$1(() => {
+gallerySignals.mediaItems.value = state.mediaItems;
+gallerySignals.currentIndex.value = state.currentIndex;
+gallerySignals.isLoading.value = state.isLoading;
+gallerySignals.error.value = state.error;
+gallerySignals.viewMode.value = state.viewMode;
+gallerySignals.isOpen.value = state.isOpen;
+});
+}
+const galleryState = {
+get value() {
+return {
+isOpen: gallerySignals.isOpen.value,
+mediaItems: gallerySignals.mediaItems.value,
+currentIndex: gallerySignals.currentIndex.value,
+isLoading: gallerySignals.isLoading.value,
+error: gallerySignals.error.value,
+viewMode: gallerySignals.viewMode.value
+};
+},
+set value(state) {
+applyGalleryStateUpdate(state);
+},
+subscribe(callback) {
+return effectSafe(() => {
+callback(galleryState.value);
+});
+}
+};
+function openGallery(items, startIndex = 0) {
+const validIndex = clampIndex(startIndex, items.length);
+galleryState.value = {
+...galleryState.value,
+isOpen: true,
+mediaItems: items,
+currentIndex: validIndex,
+error: null
+};
+gallerySignals.focusedIndex.value = validIndex;
+resetNavigation();
+}
+function closeGallery() {
+galleryState.value = {
+...galleryState.value,
+isOpen: false,
+currentIndex: 0,
+mediaItems: [],
+error: null
+};
+gallerySignals.focusedIndex.value = null;
+gallerySignals.currentVideoElement.value = null;
+resetNavigation();
+}
+function navigateToItem(index, trigger = "button", source) {
+const state = galleryState.value;
+const validIndex = clampIndex(index, state.mediaItems.length);
+if (recordNavigation(validIndex, source ?? resolveNavigationSource(trigger)).isDuplicate) {
+gallerySignals.focusedIndex.value = validIndex;
 return;
 }
-if (ctx && p === "$$f") setHydrateContext();
-const rendered = createMemo(() => props.children);
-return createMemo((prev) => {
-const inFallback$1 = store.inFallback(), { showContent = true, showFallback = true } = show ? show() : {};
-if ((!inFallback$1 || p && p !== "$$f") && showContent) {
-store.resolved = true;
-dispose$1 && dispose$1();
-dispose$1 = ctx = p = void 0;
-resumeEffects(store.effects);
-return rendered();
-}
-if (!showFallback) return;
-if (dispose$1) return prev;
-return createRoot((disposer) => {
-dispose$1 = disposer;
-if (ctx) {
-setHydrateContext({
-id: ctx.id + "F",
-count: 0
+galleryIndexEvents.emit("navigate:start", {
+from: state.currentIndex,
+to: validIndex,
+trigger
 });
-ctx = void 0;
-}
-return props.fallback;
-}, owner);
+batch$1(() => {
+galleryState.value = {
+...state,
+currentIndex: validIndex
+};
+gallerySignals.focusedIndex.value = validIndex;
 });
+galleryIndexEvents.emit("navigate:complete", {
+index: validIndex,
+trigger
 });
 }
+function navigatePrevious(trigger = "button") {
+const state = galleryState.value;
+const baseIndex = getCurrentActiveIndex();
+navigateToItem(baseIndex > 0 ? baseIndex - 1 : state.mediaItems.length - 1, trigger, resolveNavigationSource(trigger));
+}
+function navigateNext(trigger = "button") {
+const state = galleryState.value;
+const baseIndex = getCurrentActiveIndex();
+navigateToItem(baseIndex < state.mediaItems.length - 1 ? baseIndex + 1 : 0, trigger, resolveNavigationSource(trigger));
+}
+function getCurrentActiveIndex() {
+return gallerySignals.focusedIndex.value ?? galleryState.value.currentIndex;
+}
+var videoPlaybackStateMap =  new WeakMap();
+function getCurrentGalleryVideo(video$1) {
+if (video$1) return video$1;
+const signaled = gallerySignals.currentVideoElement.value;
+return signaled instanceof HTMLVideoElement ? signaled : null;
+}
+function executeVideoControl(action, options = {}) {
+const { video: video$1, context } = options;
+try {
+const videoElement = getCurrentGalleryVideo(video$1);
+if (!videoElement) return;
+switch (action) {
+case "play": {
+const maybePromise = videoElement.play?.();
+if (maybePromise && typeof maybePromise.then === "function") maybePromise.then(() => videoPlaybackStateMap.set(videoElement, { playing: true })).catch(() => {
+videoPlaybackStateMap.set(videoElement, { playing: false });
+});
+else videoPlaybackStateMap.set(videoElement, { playing: true });
+break;
+}
+case "pause":
+videoElement.pause?.();
+videoPlaybackStateMap.set(videoElement, { playing: false });
+break;
+case "togglePlayPause":
+if (!(videoPlaybackStateMap.get(videoElement)?.playing ?? !videoElement.paused)) {
+const maybePromise = videoElement.play?.();
+if (maybePromise && typeof maybePromise.then === "function") maybePromise.then(() => videoPlaybackStateMap.set(videoElement, { playing: true })).catch(() => {
+videoPlaybackStateMap.set(videoElement, { playing: false });
+});
+else videoPlaybackStateMap.set(videoElement, { playing: true });
+} else {
+videoElement.pause?.();
+videoPlaybackStateMap.set(videoElement, { playing: false });
+}
+break;
+case "volumeUp": {
+const newVolume = Math.min(1, Math.round((videoElement.volume + .1) * 100) / 100);
+videoElement.volume = newVolume;
+if (newVolume > 0 && videoElement.muted) videoElement.muted = false;
+break;
+}
+case "volumeDown": {
+const newVolume = Math.max(0, Math.round((videoElement.volume - .1) * 100) / 100);
+videoElement.volume = newVolume;
+if (newVolume === 0 && !videoElement.muted) videoElement.muted = true;
+break;
+}
+case "mute":
+videoElement.muted = true;
+break;
+case "toggleMute":
+videoElement.muted = !videoElement.muted;
+break;
+}
+} catch (error$1) {
+logger.error("[VideoControl] Unexpected error", {
+error: error$1,
+action,
+context
 });
 }
-var sharedConfig, equalFn, $PROXY, SUPPORTS_PROXY, $TRACK, signalOptions, ERROR, runEffects, STALE, PENDING, UNOWNED, NO_INIT, Owner, Transition, Scheduler, ExternalSourceConfig, Listener, Updates, Effects, ExecCount, transPending, setTransPending, SuspenseContext, FALLBACK, hydrationEnabled, propTraps, narrowedError, Errors, SuspenseListContext;
-var init_solid = __esmMin((() => {
-sharedConfig = {
-context: void 0,
-registry: void 0,
-effects: void 0,
-done: false,
-getContextId() {
-return getContextId(this.context.count);
+}
+var debounceState = {
+lastExecutionTime: 0,
+lastKey: ""
+};
+function shouldExecuteKeyboardAction(key, minInterval = 100) {
+const now = Date.now();
+const timeSinceLastExecution = now - debounceState.lastExecutionTime;
+if (key === debounceState.lastKey && timeSinceLastExecution < minInterval) {
+;
+return false;
+}
+debounceState.lastExecutionTime = now;
+debounceState.lastKey = key;
+return true;
+}
+function shouldExecuteVideoControlKey(key) {
+if (![
+"ArrowUp",
+"ArrowDown",
+"m",
+"M"
+].includes(key)) return true;
+return shouldExecuteKeyboardAction(key, 100);
+}
+function shouldExecutePlayPauseKey(key) {
+if (key !== " " && key !== "Space") return true;
+return shouldExecuteKeyboardAction(key, 150);
+}
+function resetKeyboardDebounceState() {
+debounceState.lastExecutionTime = 0;
+debounceState.lastKey = "";
+;
+}
+function checkGalleryOpen() {
+return gallerySignals.isOpen.value;
+}
+function handleKeyboardEvent(event, handlers, options) {
+if (!options.enableKeyboard) return;
+try {
+if (checkGalleryOpen()) {
+const key = event.key;
+if (key === "Home" || key === "End" || key === "PageDown" || key === "PageUp" || key === "ArrowLeft" || key === "ArrowRight" || key === " " || key === "Space" || key === " " || key === "Space" || key === "ArrowUp" || key === "ArrowDown" || key === "m" || key === "M") {
+event.preventDefault();
+event.stopPropagation();
+switch (key) {
+case " ":
+case "Space":
+if (shouldExecutePlayPauseKey(event.key)) executeVideoControl("togglePlayPause");
+break;
+case "ArrowLeft":
+navigatePrevious("keyboard");
+break;
+case "ArrowRight":
+navigateNext("keyboard");
+break;
+case "Home":
+navigateToItem(0, "keyboard");
+break;
+case "End":
+navigateToItem(Math.max(0, gallerySignals.mediaItems.value.length - 1), "keyboard");
+break;
+case "PageDown":
+navigateToItem(Math.min(gallerySignals.mediaItems.value.length - 1, gallerySignals.currentIndex.value + 5), "keyboard");
+break;
+case "PageUp":
+navigateToItem(Math.max(0, gallerySignals.currentIndex.value - 5), "keyboard");
+break;
+case "ArrowUp":
+if (shouldExecuteVideoControlKey(event.key)) executeVideoControl("volumeUp");
+break;
+case "ArrowDown":
+if (shouldExecuteVideoControlKey(event.key)) executeVideoControl("volumeDown");
+break;
+case "m":
+case "M":
+if (shouldExecuteVideoControlKey(event.key)) executeVideoControl("toggleMute");
+break;
+}
+if (handlers.onKeyboardEvent) handlers.onKeyboardEvent(event);
+return;
+}
+}
+if (event.key === "Escape" && checkGalleryOpen()) {
+handlers.onGalleryClose();
+event.preventDefault();
+event.stopPropagation();
+return;
+}
+if (handlers.onKeyboardEvent) handlers.onKeyboardEvent(event);
+} catch (error$1) {
+logger.error("Error handling keyboard event:", error$1);
+}
+}
+const VIDEO_CONTROL_DATASET_PREFIXES = [
+"play",
+"pause",
+"mute",
+"unmute",
+"volume",
+"slider",
+"seek",
+"scrub",
+"progress"
+];
+const VIDEO_CONTROL_ROLES = ["slider", "progressbar"];
+const VIDEO_CONTROL_ARIA_TOKENS = [
+"volume",
+"mute",
+"unmute",
+"seek",
+"scrub",
+"timeline",
+"progress"
+];
+function createEventListener(handler) {
+return (event) => {
+handler(event);
+};
+}
+function isHTMLElement(element) {
+return element instanceof HTMLElement;
+}
+function isRecord(value) {
+return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+var GALLERY_SELECTORS = CSS.INTERNAL_SELECTORS;
+var VIDEO_CONTROL_SELECTORS = [".video-controls", ".video-progress button"];
+function safeClosest(element, selector) {
+try {
+return element.closest(selector);
+} catch (error$1) {
+return null;
+}
+}
+function safeMatches(element, selector) {
+try {
+return element.matches(selector);
+} catch (error$1) {
+return false;
+}
+}
+function containsControlToken(value, tokens) {
+if (!value) return false;
+const normalized = value.toLowerCase();
+return tokens.some((token) => normalized.includes(token.toLowerCase()));
+}
+function getNearestAttributeValue(element, attribute) {
+return safeClosest(element, `[${attribute}]`)?.getAttribute(attribute) ?? null;
+}
+function isWithinVideoPlayer(element) {
+return safeClosest(element, VIDEO_PLAYER_CONTEXT_SELECTOR) !== null;
+}
+function matchesVideoControlSelectors(element) {
+return VIDEO_CONTROL_SELECTORS.some((selector) => safeMatches(element, selector) || safeClosest(element, selector) !== null);
+}
+function isVideoControlElement(element) {
+if (!isHTMLElement(element)) return false;
+if (element.tagName.toLowerCase() === "video") return true;
+if (typeof element.matches !== "function") return false;
+if (matchesVideoControlSelectors(element)) return true;
+if (containsControlToken(getNearestAttributeValue(element, "data-testid"), VIDEO_CONTROL_DATASET_PREFIXES)) return true;
+if (containsControlToken(getNearestAttributeValue(element, "aria-label"), VIDEO_CONTROL_ARIA_TOKENS)) return true;
+if (!isWithinVideoPlayer(element)) return false;
+const role = element.getAttribute("role");
+if (role && VIDEO_CONTROL_ROLES.includes(role.toLowerCase())) return true;
+return safeMatches(element, "input[type=\"range\"]");
+}
+function isGalleryInternalElement(element) {
+if (!isHTMLElement(element)) return false;
+if (typeof element.matches !== "function") return false;
+return GALLERY_SELECTORS.some((selector) => {
+try {
+return element.matches(selector) || element.closest(selector) !== null;
+} catch (error$1) {
+return false;
+}
+});
+}
+function isGalleryInternalEvent(event) {
+const target = event.target;
+if (!isHTMLElement(target)) return false;
+return isGalleryInternalElement(target);
+}
+const CONTROL_CHARS_REGEX = /[\u0000-\u001F\u007F]/g;
+const SCHEME_WHITESPACE_REGEX = /[\u0000-\u001F\u007F\s]+/g;
+const EXPLICIT_SCHEME_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
+var MAX_DECODE_ITERATIONS = 3;
+var MAX_SCHEME_PROBE_LENGTH = 64;
+var DEFAULT_BLOCKED_PROTOCOL_HINTS = Object.freeze([
+"javascript:",
+"vbscript:",
+"file:",
+"filesystem:",
+"ms-appx:",
+"ms-appx-web:",
+"about:",
+"intent:",
+"mailto:",
+"tel:",
+"sms:",
+"wtai:",
+"chrome:",
+"chrome-extension:",
+"opera:",
+"resource:",
+"data:text",
+"data:application",
+"data:video",
+"data:audio"
+]);
+const MEDIA_URL_POLICY = {
+allowedProtocols: new Set([
+"http:",
+"https:",
+"blob:"
+]),
+allowRelative: true,
+allowProtocolRelative: true,
+allowFragments: false,
+allowDataUrls: true,
+allowedDataMimePrefixes: Object.freeze([
+"image/png",
+"image/jpeg",
+"image/jpg",
+"image/gif",
+"image/webp",
+"image/avif"
+])
+};
+function isUrlAllowed(rawUrl, policy) {
+if (!rawUrl || typeof rawUrl !== "string") return false;
+const normalized = rawUrl.replace(CONTROL_CHARS_REGEX, "").trim();
+if (!normalized) return false;
+if (startsWithBlockedProtocolHint(normalized, policy.blockedProtocolHints ?? DEFAULT_BLOCKED_PROTOCOL_HINTS)) return false;
+const lower = normalized.toLowerCase();
+if (lower.startsWith("data:")) return policy.allowDataUrls === true && isAllowedDataUrl(lower, policy.allowedDataMimePrefixes);
+if (lower.startsWith("//")) return handleProtocolRelative(normalized, policy);
+if (policy.allowFragments && lower.startsWith("#")) return true;
+if (!EXPLICIT_SCHEME_REGEX.test(normalized)) return policy.allowRelative === true;
+try {
+const parsed = new URL(normalized);
+return policy.allowedProtocols.has(parsed.protocol);
+} catch {
+return false;
+}
+}
+function startsWithBlockedProtocolHint(value, hints) {
+const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
+if (/%(?![0-9A-Fa-f]{2})/.test(probe)) return true;
+return buildProbeVariants(probe).some((candidate) => hints.some((hint) => candidate.startsWith(hint)));
+}
+function buildProbeVariants(value) {
+const variants =  new Set();
+const base = value.toLowerCase();
+variants.add(base);
+variants.add(base.replace(SCHEME_WHITESPACE_REGEX, ""));
+let decoded = base;
+for (let i = 0; i < MAX_DECODE_ITERATIONS; i += 1) try {
+decoded = decodeURIComponent(decoded);
+variants.add(decoded);
+variants.add(decoded.replace(SCHEME_WHITESPACE_REGEX, ""));
+} catch {
+break;
+}
+return Array.from(variants.values());
+}
+function isAllowedDataUrl(lowerCaseValue, allowedPrefixes) {
+if (!allowedPrefixes || allowedPrefixes.length === 0) return false;
+const [mime] = lowerCaseValue.slice(5).split(";", 1);
+if (!mime) return false;
+return allowedPrefixes.some((prefix) => mime.startsWith(prefix));
+}
+function handleProtocolRelative(url, policy) {
+if (!policy.allowProtocolRelative) return false;
+const fallbackProtocol = policy.allowedProtocols.has("https:") ? "https:" : policy.allowedProtocols.has("http:") ? "http:" : "https:";
+try {
+const resolved = new URL(`${fallbackProtocol}${url}`);
+return policy.allowedProtocols.has(resolved.protocol);
+} catch {
+return false;
+}
+}
+const MEDIA = {
+DOMAINS: [
+"pbs.twimg.com",
+"video.twimg.com",
+"abs.twimg.com"
+],
+HOSTS: { MEDIA_CDN: ["pbs.twimg.com", "video.twimg.com"] },
+TYPES: {
+IMAGE: "image",
+VIDEO: "video",
+GIF: "gif"
 },
-getNextContextId() {
-return getContextId(this.context.count++);
+EXTENSIONS: {
+JPEG: "jpg",
+PNG: "png",
+WEBP: "webp",
+GIF: "gif",
+MP4: "mp4",
+ZIP: "zip"
+},
+QUALITY: {
+ORIGINAL: "orig",
+LARGE: "large",
+MEDIUM: "medium",
+SMALL: "small"
 }
 };
-equalFn = (a, b) => a === b;
-$PROXY = Symbol("solid-proxy");
-SUPPORTS_PROXY = typeof Proxy === "function";
-$TRACK = Symbol("solid-track");
-signalOptions = { equals: equalFn };
-ERROR = null;
-runEffects = runQueue;
-STALE = 1;
-PENDING = 2;
-UNOWNED = {
-owned: null,
-cleanups: null,
-context: null,
-owner: null
+var MAX_URL_LENGTH = 2048;
+var ALLOWED_MEDIA_HOSTS = MEDIA.HOSTS.MEDIA_CDN;
+function isValidMediaUrl(url) {
+if (typeof url !== "string" || url.length > MAX_URL_LENGTH) return false;
+const parsed = tryParseUrl(url);
+if (!parsed) return false;
+if (!isHttpProtocol(parsed.protocol)) return false;
+if (!isHostMatching(parsed, ALLOWED_MEDIA_HOSTS)) return false;
+return isAllowedMediaPath(parsed.hostname, parsed.pathname);
+}
+function isHttpProtocol(protocol) {
+return protocol === "https:" || protocol === "http:";
+}
+function isAllowedMediaPath(hostname, pathname) {
+if (hostname === "pbs.twimg.com") return checkPbsMediaPath(pathname);
+if (hostname === "video.twimg.com") return checkVideoMediaPath(pathname);
+return false;
+}
+function checkPbsMediaPath(pathname) {
+return pathname.startsWith("/media/") || pathname.startsWith("/ext_tw_video_thumb/") || pathname.startsWith("/tweet_video_thumb/") || pathname.startsWith("/video_thumb/") || pathname.startsWith("/amplify_video_thumb/");
+}
+function checkVideoMediaPath(pathname) {
+return pathname.startsWith("/ext_tw_video/") || pathname.startsWith("/tweet_video/") || pathname.startsWith("/amplify_video/") || pathname.startsWith("/dm_video/");
+}
+function isSafeAndValidMediaUrl(url) {
+if (!url || typeof url !== "string") return false;
+const trimmed = url.trim();
+if (!trimmed) return false;
+if (!isUrlAllowed(trimmed, MEDIA_URL_POLICY)) return false;
+if (trimmed.startsWith("//")) return isValidMediaUrl(`https:${trimmed}`);
+return isValidMediaUrl(trimmed);
+}
+var MEDIA_LINK_SELECTOR = [
+STATUS_LINK_SELECTOR,
+"a[href*=\"/photo/\"]",
+"a[href*=\"/video/\"]"
+].join(", ");
+var MEDIA_CONTAINER_SELECTOR = STABLE_MEDIA_CONTAINERS_SELECTORS.join(", ");
+var INTERACTIVE_SELECTOR = [
+"button",
+"a",
+"[role=\"button\"]",
+"[data-testid=\"like\"]",
+"[data-testid=\"retweet\"]",
+"[data-testid=\"reply\"]",
+"[data-testid=\"share\"]",
+"[data-testid=\"bookmark\"]"
+].join(", ");
+function isValidMediaSource(url) {
+if (!url) return false;
+if (url.startsWith("blob:")) return true;
+return isSafeAndValidMediaUrl(url);
+}
+function shouldBlockMediaTrigger(target) {
+if (!target) return false;
+if (isVideoControlElement(target)) return true;
+if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
+const interactive = target.closest(INTERACTIVE_SELECTOR);
+if (interactive) return !(interactive.matches(MEDIA_LINK_SELECTOR) || interactive.matches(MEDIA_CONTAINER_SELECTOR) || interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null);
+return false;
+}
+function isProcessableMedia(target) {
+if (!target) return false;
+if (gallerySignals.isOpen.value) return false;
+if (shouldBlockMediaTrigger(target)) return false;
+const mediaElement = findMediaElementInDOM(target);
+if (mediaElement) {
+if (isValidMediaSource(extractMediaUrlFromElement(mediaElement))) return true;
+}
+return Boolean(target.closest(MEDIA_CONTAINER_SELECTOR));
+}
+async function handleMediaClick(event, handlers, options) {
+if (!options.enableMediaDetection) return {
+handled: false,
+reason: "Media detection disabled"
 };
-NO_INIT = {};
-Owner = null;
-Transition = null;
-Scheduler = null;
-ExternalSourceConfig = null;
-Listener = null;
-Updates = null;
-Effects = null;
-ExecCount = 0;
-[transPending, setTransPending] = /* @__PURE__ */ createSignal(false);
-FALLBACK = Symbol("fallback");
-hydrationEnabled = false;
-propTraps = {
-get(_, property, receiver) {
-if (property === $PROXY) return receiver;
-return _.get(property);
-},
-has(_, property) {
-if (property === $PROXY) return true;
-return _.has(property);
-},
-set: trueFn,
-deleteProperty: trueFn,
-getOwnPropertyDescriptor(_, property) {
+const target = event.target;
+if (!isHTMLElement(target)) return {
+handled: false,
+reason: "Invalid target (not HTMLElement)"
+};
+if (gallerySignals.isOpen.value && isGalleryInternalElement(target)) return {
+handled: false,
+reason: "Gallery internal event"
+};
+if (isVideoControlElement(target)) return {
+handled: false,
+reason: "Video control element"
+};
+if (!isProcessableMedia(target)) return {
+handled: false,
+reason: "Non-processable media target"
+};
+event.stopImmediatePropagation();
+event.preventDefault();
+await handlers.onMediaClick(target, event);
 return {
-configurable: true,
-enumerable: true,
-get() {
-return _.get(property);
-},
-set: trueFn,
-deleteProperty: trueFn
+handled: true,
+reason: "Media click handled"
 };
+}
+var DEFAULT_GALLERY_EVENT_OPTIONS = {
+enableKeyboard: true,
+enableMediaDetection: true,
+debugMode: false,
+preventBubbling: true,
+context: "gallery"
+};
+var initialLifecycleState = {
+initialized: false,
+options: null,
+handlers: null,
+keyListener: null,
+clickListener: null,
+listenerContext: null,
+eventTarget: null
+};
+var lifecycleState$1 = { ...initialLifecycleState };
+function sanitizeContext(context) {
+const trimmed = context?.trim();
+return trimmed && trimmed.length > 0 ? trimmed : DEFAULT_GALLERY_EVENT_OPTIONS.context;
+}
+function resolveInitializationInput(optionsOrRoot) {
+if (optionsOrRoot instanceof HTMLElement) return {
+options: { ...DEFAULT_GALLERY_EVENT_OPTIONS },
+root: optionsOrRoot
+};
+const partial = optionsOrRoot ?? {};
+const merged = {
+...DEFAULT_GALLERY_EVENT_OPTIONS,
+...partial
+};
+merged.context = sanitizeContext(merged.context);
+return {
+options: merged,
+root: null
+};
+}
+function resolveEventTarget(explicitRoot) {
+return explicitRoot || document.body || document.documentElement || document;
+}
+async function initializeGalleryEvents(handlers, optionsOrRoot) {
+if (lifecycleState$1.initialized) {
+;
+cleanupGalleryEvents();
+}
+if (!handlers) {
+logger.error("[GalleryLifecycle] Missing handlers");
+return () => {};
+}
+const { options: finalOptions, root: explicitGalleryRoot } = resolveInitializationInput(optionsOrRoot);
+const listenerContext = sanitizeContext(finalOptions.context);
+const keyHandler = (evt) => {
+handleKeyboardEvent(evt, handlers, finalOptions);
+};
+const clickHandler = async (evt) => {
+await handleMediaClick(evt, handlers, finalOptions);
+};
+const target = resolveEventTarget(explicitGalleryRoot);
+const listenerOptions = {
+capture: true,
+passive: false
+};
+const eventManager = EventManager.getInstance();
+if (finalOptions.enableKeyboard) eventManager.addListener(target, "keydown", keyHandler, listenerOptions, listenerContext);
+if (finalOptions.enableMediaDetection) eventManager.addListener(target, "click", clickHandler, listenerOptions, listenerContext);
+resetKeyboardDebounceState();
+lifecycleState$1 = {
+initialized: true,
+options: finalOptions,
+handlers,
+keyListener: keyHandler,
+clickListener: clickHandler,
+listenerContext,
+eventTarget: target
+};
+if (finalOptions.debugMode) ;
+return () => {
+cleanupGalleryEvents();
+};
+}
+function cleanupGalleryEvents() {
+if (!lifecycleState$1.initialized) return;
+if (lifecycleState$1.listenerContext) EventManager.getInstance().removeByContext(lifecycleState$1.listenerContext);
+resetKeyboardDebounceState();
+lifecycleState$1 = { ...initialLifecycleState };
+}
+const ZERO_RESULT = Object.freeze({
+pausedCount: 0,
+totalCandidates: 0,
+skippedCount: 0
+});
+function resolveRoot(root) {
+if (root && typeof root.querySelectorAll === "function") return root;
+return typeof document !== "undefined" && typeof document.querySelectorAll === "function" ? document : null;
+}
+function isVideoPlaying(video$1) {
+try {
+return !video$1.paused && !video$1.ended;
+} catch {
+return false;
+}
+}
+function shouldPauseVideo(video$1, force = false) {
+return video$1 instanceof HTMLVideoElement && !isGalleryInternalElement(video$1) && video$1.isConnected && (force || isVideoPlaying(video$1));
+}
+function tryPauseVideo(video$1) {
+try {
+video$1.pause?.();
+return true;
+} catch (error$1) {
+;
+return false;
+}
+}
+function pauseActiveTwitterVideos(options = {}) {
+const root = resolveRoot(options.root ?? null);
+if (!root) return ZERO_RESULT;
+const videos = Array.from(root.querySelectorAll("video"));
+const inspectedCount = videos.length;
+if (inspectedCount === 0) return ZERO_RESULT;
+let pausedCount = 0;
+let totalCandidates = 0;
+for (const video$1 of videos) {
+if (!shouldPauseVideo(video$1, options.force)) continue;
+totalCandidates += 1;
+if (tryPauseVideo(video$1)) pausedCount += 1;
+}
+const result = {
+pausedCount,
+totalCandidates,
+skippedCount: inspectedCount - pausedCount
+};
+if (result.pausedCount > 0) ;
+return result;
+}
+var VIDEO_TRIGGER_SCOPES = new Set([VIDEO_PLAYER_SELECTOR, ...STABLE_VIDEO_CONTAINERS_SELECTORS]);
+var IMAGE_TRIGGER_SCOPES = new Set([TWEET_PHOTO_SELECTOR, ...STABLE_IMAGE_CONTAINERS_SELECTORS]);
+var PAUSE_RESULT_DEFAULT = Object.freeze({
+pausedCount: 0,
+totalCandidates: 0,
+skippedCount: 0
+});
+function findTweetContainer(element) {
+if (!element) return null;
+for (const selector of STABLE_TWEET_CONTAINERS_SELECTORS) try {
+const container$2 = element.closest(selector);
+if (container$2 instanceof HTMLElement) return container$2;
+} catch {}
+return null;
+}
+function resolvePauseContext(request) {
+if (request.root !== void 0) return {
+root: request.root ?? null,
+scope: "custom"
+};
+if (findTweetContainer(request.sourceElement)) return {
+root: null,
+scope: "tweet"
+};
+return {
+root: null,
+scope: "document"
+};
+}
+function isVideoTriggerElement(element) {
+if (!element) return false;
+if (element.tagName === "VIDEO") return true;
+for (const selector of VIDEO_TRIGGER_SCOPES) try {
+if (element.matches(selector) || element.closest(selector)) return true;
+} catch {}
+return false;
+}
+function isImageTriggerElement(element) {
+if (!element) return false;
+if (element.tagName === "IMG") return true;
+for (const selector of IMAGE_TRIGGER_SCOPES) try {
+if (element.matches(selector) || element.closest(selector)) return true;
+} catch {}
+return false;
+}
+function inferAmbientVideoTrigger(element) {
+if (isVideoTriggerElement(element)) return "video-click";
+if (isImageTriggerElement(element)) return "image-click";
+return "unknown";
+}
+function pauseAmbientVideosForGallery(request = {}) {
+const trigger = request.trigger ?? inferAmbientVideoTrigger(request.sourceElement);
+const force = request.force ?? true;
+const reason = request.reason ?? trigger;
+const { root, scope } = resolvePauseContext(request);
+let result;
+try {
+result = pauseActiveTwitterVideos({
+root,
+force
+});
+} catch (error$1) {
+;
+return {
+...PAUSE_RESULT_DEFAULT,
+trigger,
+forced: force,
+reason,
+scope
+};
+}
+if (result.totalCandidates > 0 || result.pausedCount > 0) ;
+return {
+...result,
+trigger,
+forced: force,
+reason,
+scope
+};
+}
+var guardDispose = null;
+var guardSubscribers = 0;
+function ensureGuardEffect() {
+if (guardDispose) return;
+guardDispose = gallerySignals.isOpen.subscribe((isOpen) => {
+if (!isOpen) return;
+const result = pauseAmbientVideosForGallery({
+trigger: "guard",
+reason: "guard"
+});
+if (result.pausedCount <= 0) return;
+;
+});
+}
+function startAmbientVideoGuard() {
+guardSubscribers += 1;
+ensureGuardEffect();
+return () => {
+stopAmbientVideoGuard();
+};
+}
+function stopAmbientVideoGuard() {
+if (guardSubscribers === 0) return;
+guardSubscribers -= 1;
+if (guardSubscribers > 0) return;
+guardDispose?.();
+guardDispose = null;
+}
+function withAmbientVideoGuard() {
+return { dispose: startAmbientVideoGuard() };
+}
+var GalleryApp = class {
+galleryRenderer = null;
+isInitialized = false;
+notificationService = NotificationService.getInstance();
+ambientVideoGuardHandle = null;
+constructor() {
+;
+}
+async initialize() {
+try {
+;
+this.galleryRenderer = getGalleryRenderer();
+this.galleryRenderer?.setOnCloseCallback(() => this.closeGallery());
+await this.setupEventHandlers();
+this.ambientVideoGuardHandle = this.ambientVideoGuardHandle ?? withAmbientVideoGuard();
+this.isInitialized = true;
+;
+} catch (error$1) {
+galleryErrorReporter.critical(error$1, { code: "GALLERY_APP_INIT_FAILED" });
+}
+}
+async setupEventHandlers() {
+try {
+await initializeGalleryEvents({
+onMediaClick: (element, event) => this.handleMediaClick(element, event),
+onGalleryClose: () => this.closeGallery(),
+onKeyboardEvent: (event) => {
+if (event.key === "Escape" && gallerySignals.isOpen.value) this.closeGallery();
+}
+}, {
+enableKeyboard: tryGetSettingsManager()?.get("gallery.enableKeyboardNav") ?? true,
+enableMediaDetection: true,
+debugMode: false,
+preventBubbling: true,
+context: "gallery"
+});
+;
+} catch (error$1) {
+galleryErrorReporter.critical(error$1, { code: "EVENT_HANDLERS_SETUP_FAILED" });
+}
+}
+async handleMediaClick(element, _event) {
+try {
+const result = await getMediaService().extractFromClickedElement(element);
+if (result.success && result.mediaItems.length > 0) await this.openGallery(result.mediaItems, result.clickedIndex, { pauseContext: {
+sourceElement: element,
+reason: "media-click"
+} });
+else {
+mediaErrorReporter.warn(  new Error("Media extraction returned no items"), {
+code: "MEDIA_EXTRACTION_EMPTY",
+metadata: { success: result.success }
+});
+this.notificationService.error("Failed to load media", "Could not find images or videos.");
+}
+} catch (error$1) {
+mediaErrorReporter.error(error$1, {
+code: "MEDIA_EXTRACTION_ERROR",
+notify: true
+});
+this.notificationService.error("Error occurred", getErrorMessage(error$1) || "Unknown error");
+}
+}
+async openGallery(mediaItems, startIndex = 0, options = {}) {
+if (!this.isInitialized) {
+;
+this.notificationService.error("Gallery unavailable", "Userscript manager required.");
+return;
+}
+if (!mediaItems?.length) return;
+try {
+const validIndex = clampIndex(startIndex, mediaItems.length);
+const providedContext = options.pauseContext ?? null;
+const pauseContext = {
+...providedContext,
+reason: providedContext?.reason ?? (providedContext ? "media-click" : "programmatic")
+};
+try {
+pauseAmbientVideosForGallery(pauseContext);
+} catch (error$1) {
+;
+}
+openGallery(mediaItems, validIndex);
+} catch (error$1) {
+galleryErrorReporter.error(error$1, {
+code: "GALLERY_OPEN_FAILED",
+metadata: {
+itemCount: mediaItems.length,
+startIndex
 },
-ownKeys(_) {
-return _.keys();
+notify: true
+});
+this.notificationService.error("Failed to load gallery", getErrorMessage(error$1) || "Unknown error");
+throw error$1;
+}
+}
+closeGallery() {
+try {
+if (gallerySignals.isOpen.value) closeGallery();
+} catch (error$1) {
+galleryErrorReporter.error(error$1, { code: "GALLERY_CLOSE_FAILED" });
+}
+}
+async cleanup() {
+try {
+;
+if (gallerySignals.isOpen.value) this.closeGallery();
+this.ambientVideoGuardHandle?.dispose();
+this.ambientVideoGuardHandle = null;
+try {
+cleanupGalleryEvents();
+} catch (error$1) {
+;
+}
+this.galleryRenderer = null;
+this.isInitialized = false;
+delete globalThis.xegGalleryDebug;
+;
+} catch (error$1) {
+galleryErrorReporter.error(error$1, { code: "GALLERY_CLEANUP_FAILED" });
+}
 }
 };
-narrowedError = (name) => `Stale read from <${name}>.`;
-SuspenseListContext = /* @__PURE__ */ createContext();
-}));
+var Properties =  new Set([
+"className",
+"value",
+"readOnly",
+"noValidate",
+"formNoValidate",
+"isMap",
+"noModule",
+"playsInline",
+"adAuctionHeaders",
+"allowFullscreen",
+"browsingTopics",
+"defaultChecked",
+"defaultMuted",
+"defaultSelected",
+"disablePictureInPicture",
+"disableRemotePlayback",
+"preservesPitch",
+"shadowRootClonable",
+"shadowRootCustomElementRegistry",
+"shadowRootDelegatesFocus",
+"shadowRootSerializable",
+"sharedStorageWritable",
+...[
+"allowfullscreen",
+"async",
+"alpha",
+"autofocus",
+"autoplay",
+"checked",
+"controls",
+"default",
+"disabled",
+"formnovalidate",
+"hidden",
+"indeterminate",
+"inert",
+"ismap",
+"loop",
+"multiple",
+"muted",
+"nomodule",
+"novalidate",
+"open",
+"playsinline",
+"readonly",
+"required",
+"reversed",
+"seamless",
+"selected",
+"adauctionheaders",
+"browsingtopics",
+"credentialless",
+"defaultchecked",
+"defaultmuted",
+"defaultselected",
+"defer",
+"disablepictureinpicture",
+"disableremoteplayback",
+"preservespitch",
+"shadowrootclonable",
+"shadowrootcustomelementregistry",
+"shadowrootdelegatesfocus",
+"shadowrootserializable",
+"sharedstoragewritable"
+]
+]);
+var ChildProperties =  new Set([
+"innerHTML",
+"textContent",
+"innerText",
+"children"
+]);
+var Aliases =  Object.assign(Object.create(null), {
+className: "class",
+htmlFor: "for"
+});
+var PropAliases =  Object.assign(Object.create(null), {
+class: "className",
+novalidate: {
+$: "noValidate",
+FORM: 1
+},
+formnovalidate: {
+$: "formNoValidate",
+BUTTON: 1,
+INPUT: 1
+},
+ismap: {
+$: "isMap",
+IMG: 1
+},
+nomodule: {
+$: "noModule",
+SCRIPT: 1
+},
+playsinline: {
+$: "playsInline",
+VIDEO: 1
+},
+readonly: {
+$: "readOnly",
+INPUT: 1,
+TEXTAREA: 1
+},
+adauctionheaders: {
+$: "adAuctionHeaders",
+IFRAME: 1
+},
+allowfullscreen: {
+$: "allowFullscreen",
+IFRAME: 1
+},
+browsingtopics: {
+$: "browsingTopics",
+IMG: 1
+},
+defaultchecked: {
+$: "defaultChecked",
+INPUT: 1
+},
+defaultmuted: {
+$: "defaultMuted",
+AUDIO: 1,
+VIDEO: 1
+},
+defaultselected: {
+$: "defaultSelected",
+OPTION: 1
+},
+disablepictureinpicture: {
+$: "disablePictureInPicture",
+VIDEO: 1
+},
+disableremoteplayback: {
+$: "disableRemotePlayback",
+AUDIO: 1,
+VIDEO: 1
+},
+preservespitch: {
+$: "preservesPitch",
+AUDIO: 1,
+VIDEO: 1
+},
+shadowrootclonable: {
+$: "shadowRootClonable",
+TEMPLATE: 1
+},
+shadowrootdelegatesfocus: {
+$: "shadowRootDelegatesFocus",
+TEMPLATE: 1
+},
+shadowrootserializable: {
+$: "shadowRootSerializable",
+TEMPLATE: 1
+},
+sharedstoragewritable: {
+$: "sharedStorageWritable",
+IFRAME: 1,
+IMG: 1
+}
+});
 function getPropAlias(prop, tagName) {
 const a = PropAliases[prop];
 return typeof a === "object" ? a[tagName] ? a["$"] : void 0 : a;
 }
+var DelegatedEvents =  new Set([
+"beforeinput",
+"click",
+"dblclick",
+"contextmenu",
+"focusin",
+"focusout",
+"input",
+"keydown",
+"keyup",
+"mousedown",
+"mousemove",
+"mouseout",
+"mouseover",
+"mouseup",
+"pointerdown",
+"pointermove",
+"pointerout",
+"pointerover",
+"pointerup",
+"touchend",
+"touchmove",
+"touchstart"
+]);
+var SVGNamespace = {
+xlink: "http://www.w3.org/1999/xlink",
+xml: "http://www.w3.org/XML/1998/namespace"
+};
+var memo = (fn) => createMemo(() => fn());
 function reconcileArrays(parentNode, a, b) {
 let bLength = b.length, aEnd = a.length, bEnd = bLength, aStart = 0, bStart = 0, after = a[aEnd - 1].nextSibling, map = null;
 while (aStart < aEnd || bStart < bEnd) {
@@ -6984,7 +5971,7 @@ parentNode.insertBefore(b[--bEnd], node);
 a[aEnd] = b[bEnd];
 } else {
 if (!map) {
-map = /* @__PURE__ */ new Map();
+map =  new Map();
 let i = bStart;
 while (i < bEnd) map.set(b[i], i++);
 }
@@ -7004,6 +5991,7 @@ else a[aStart++].remove();
 }
 }
 }
+var $$EVENTS = "_$DX_DELEGATE";
 function render(code, element, init, options = {}) {
 let disposer;
 createRoot((dispose$1) => {
@@ -7027,7 +6015,7 @@ fn.cloneNode = fn;
 return fn;
 }
 function delegateEvents(eventNames, document$1 = window.document) {
-const e = document$1[$$EVENTS] || (document$1[$$EVENTS] = /* @__PURE__ */ new Set());
+const e = document$1[$$EVENTS] || (document$1[$$EVENTS] =  new Set());
 for (let i = 0, l = eventNames.length; i < l; i++) {
 const name = eventNames[i];
 if (!e.has(name)) {
@@ -7351,443 +6339,20 @@ else isParent && el.remove();
 } else parent.insertBefore(node, marker);
 return [node];
 }
-var Properties, ChildProperties, Aliases, PropAliases, DelegatedEvents, SVGNamespace, memo, $$EVENTS;
-var init_web = __esmMin((() => {
-init_solid();
-Properties = /* @__PURE__ */ new Set([
-"className",
-"value",
-"readOnly",
-"noValidate",
-"formNoValidate",
-"isMap",
-"noModule",
-"playsInline",
-"adAuctionHeaders",
-"allowFullscreen",
-"browsingTopics",
-"defaultChecked",
-"defaultMuted",
-"defaultSelected",
-"disablePictureInPicture",
-"disableRemotePlayback",
-"preservesPitch",
-"shadowRootClonable",
-"shadowRootCustomElementRegistry",
-"shadowRootDelegatesFocus",
-"shadowRootSerializable",
-"sharedStorageWritable",
-...[
-"allowfullscreen",
-"async",
-"alpha",
-"autofocus",
-"autoplay",
-"checked",
-"controls",
-"default",
-"disabled",
-"formnovalidate",
-"hidden",
-"indeterminate",
-"inert",
-"ismap",
-"loop",
-"multiple",
-"muted",
-"nomodule",
-"novalidate",
-"open",
-"playsinline",
-"readonly",
-"required",
-"reversed",
-"seamless",
-"selected",
-"adauctionheaders",
-"browsingtopics",
-"credentialless",
-"defaultchecked",
-"defaultmuted",
-"defaultselected",
-"defer",
-"disablepictureinpicture",
-"disableremoteplayback",
-"preservespitch",
-"shadowrootclonable",
-"shadowrootcustomelementregistry",
-"shadowrootdelegatesfocus",
-"shadowrootserializable",
-"sharedstoragewritable"
-]
-]);
-ChildProperties = /* @__PURE__ */ new Set([
-"innerHTML",
-"textContent",
-"innerText",
-"children"
-]);
-Aliases = /* @__PURE__ */ Object.assign(Object.create(null), {
-className: "class",
-htmlFor: "for"
-});
-PropAliases = /* @__PURE__ */ Object.assign(Object.create(null), {
-class: "className",
-novalidate: {
-$: "noValidate",
-FORM: 1
-},
-formnovalidate: {
-$: "formNoValidate",
-BUTTON: 1,
-INPUT: 1
-},
-ismap: {
-$: "isMap",
-IMG: 1
-},
-nomodule: {
-$: "noModule",
-SCRIPT: 1
-},
-playsinline: {
-$: "playsInline",
-VIDEO: 1
-},
-readonly: {
-$: "readOnly",
-INPUT: 1,
-TEXTAREA: 1
-},
-adauctionheaders: {
-$: "adAuctionHeaders",
-IFRAME: 1
-},
-allowfullscreen: {
-$: "allowFullscreen",
-IFRAME: 1
-},
-browsingtopics: {
-$: "browsingTopics",
-IMG: 1
-},
-defaultchecked: {
-$: "defaultChecked",
-INPUT: 1
-},
-defaultmuted: {
-$: "defaultMuted",
-AUDIO: 1,
-VIDEO: 1
-},
-defaultselected: {
-$: "defaultSelected",
-OPTION: 1
-},
-disablepictureinpicture: {
-$: "disablePictureInPicture",
-VIDEO: 1
-},
-disableremoteplayback: {
-$: "disableRemotePlayback",
-AUDIO: 1,
-VIDEO: 1
-},
-preservespitch: {
-$: "preservesPitch",
-AUDIO: 1,
-VIDEO: 1
-},
-shadowrootclonable: {
-$: "shadowRootClonable",
-TEMPLATE: 1
-},
-shadowrootdelegatesfocus: {
-$: "shadowRootDelegatesFocus",
-TEMPLATE: 1
-},
-shadowrootserializable: {
-$: "shadowRootSerializable",
-TEMPLATE: 1
-},
-sharedstoragewritable: {
-$: "sharedStorageWritable",
-IFRAME: 1,
-IMG: 1
-}
-});
-DelegatedEvents = /* @__PURE__ */ new Set([
-"beforeinput",
-"click",
-"dblclick",
-"contextmenu",
-"focusin",
-"focusout",
-"input",
-"keydown",
-"keyup",
-"mousedown",
-"mousemove",
-"mouseout",
-"mouseover",
-"mouseup",
-"pointerdown",
-"pointermove",
-"pointerout",
-"pointerover",
-"pointerup",
-"touchend",
-"touchmove",
-"touchstart"
-]);
-SVGNamespace = {
-xlink: "http://www.w3.org/1999/xlink",
-xml: "http://www.w3.org/XML/1998/namespace"
+const UI_ICONS = {
+toolbarPrev: "chevron-left",
+toolbarNext: "chevron-right",
+toolbarDownloadCurrent: "download",
+toolbarDownloadAll: "folder-down",
+fitOriginal: "maximize-2",
+fitWidth: "move-horizontal",
+fitHeight: "move-vertical",
+fitContainer: "minimize-2",
+toolbarSettings: "settings-2",
+toolbarTweetText: "messages-square",
+toolbarClose: "x"
 };
-memo = (fn) => createMemo(() => fn());
-$$EVENTS = "_$DX_DELEGATE";
-}));
-function Icon({ size = "var(--xeg-icon-size)", className: className$1 = "", children: children$1, "aria-label": ariaLabel, ...otherProps }) {
-const accessibilityProps = {};
-if (ariaLabel) {
-accessibilityProps.role = "img";
-accessibilityProps["aria-label"] = ariaLabel;
-} else accessibilityProps["aria-hidden"] = "true";
-const sizeValue = typeof size === "number" ? `${size}px` : size;
-return (() => {
-var _el$ = _tmpl$$10();
-setAttribute(_el$, "width", sizeValue);
-setAttribute(_el$, "height", sizeValue);
-setAttribute(_el$, "class", className$1);
-spread(_el$, mergeProps(accessibilityProps, otherProps), true, true);
-insert(_el$, children$1);
-return _el$;
-})();
-}
-var _tmpl$$10;
-var init_Icon$1 = __esmMin((() => {
-init_web();
-_tmpl$$10 = /* @__PURE__ */ template(`<svg xmlns=http://www.w3.org/2000/svg viewBox="0 0 24 24"fill=none stroke="var(--xeg-icon-color, currentColor)"stroke-width=var(--xeg-icon-stroke-width) stroke-linecap=round stroke-linejoin=round>`);
-}));
-var ICON_PATHS, MULTI_PATH_ICONS;
-var init_icon_paths = __esmMin((() => {
-ICON_PATHS = {
-download: "M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3",
-arrowSmallLeft: "M19.5 12H4.5m0 0l6.75 6.75M4.5 12l6.75-6.75",
-arrowSmallRight: "M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75",
-arrowsPointingIn: "M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5M15 15l5.25 5.25",
-arrowsPointingOut: "M3.75 3.75v4.5m0-4.5h4.5M3.75 3.75L9 9m-5.25 11.25v-4.5m0 4.5h4.5M3.75 20.25L9 15m11.25-11.25h-4.5m4.5 0v4.5M20.25 3.75L15 9m5.25 11.25h-4.5m4.5 0v-4.5M20.25 20.25L15 15",
-arrowsRightLeft: "M7.5 21L3 16.5M3 16.5l4.5-4.5M3 16.5h13.5M16.5 3l4.5 4.5M21 7.5l-4.5 4.5M21 7.5H7.5",
-arrowsUpDown: "M3 7.5l4.5-4.5M7.5 3l4.5 4.5M7.5 3v13.5M21 16.5l-4.5 4.5M16.5 21l-4.5-4.5M16.5 21V7.5",
-arrowDownOnSquareStack: "M7.5 7.5h-.75a2.25 2.25 0 00-2.25 2.25v7.5a2.25 2.25 0 002.25 2.25h7.5a2.25 2.25 0 002.25-2.25v-7.5a2.25 2.25 0 00-2.25-2.25h-.75m-6 3.75l3 3m0 0l3-3m-3 3V1.5m6 9h.75a2.25 2.25 0 012.25 2.25v7.5a2.25 2.25 0 01-2.25 2.25h-7.5a2.25 2.25 0 01-2.25-2.25v-.75",
-arrowLeftOnRectangle: "M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m-3.75-6l-3 3m0 0l3 3m-3-3H21.75",
-chatBubbleLeftRight: "M20.25 8.511a1.5 1.5 0 011.5 1.497v4.286a1.5 1.5 0 01-1.33 1.488c-.31.025-.62.047-.93.064v3.091L15.75 17.25c-1.353 0-2.693-.055-4.02-.163a1.5 1.5 0 01-.825-.241m9.345-8.335a4.125 4.125 0 00-.477-.095A59.924 59.924 0 0015.75 8.25c-1.355 0-2.697.056-4.023.167A1.5 1.5 0 009.75 10.608v4.286c0 .838.46 1.582 1.155 1.952m9.345-8.335V6.637a3.375 3.375 0 00-2.76-3.235A60.508 60.508 0 0011.25 3C9.135 3 7.052 3.137 5.01 3.402A3.375 3.375 0 002.25 6.637v6.225a3.375 3.375 0 002.76 3.236c.577.075 1.157.14 1.74.194V21l4.155-4.155"
-};
-MULTI_PATH_ICONS = { cog6Tooth: ["M9.593 3.94a1.125 1.125 0 011.11-.94h2.594a1.125 1.125 0 011.11.94l.214 1.281a1.125 1.125 0 00.644.87l.22.122a1.125 1.125 0 001.076-.053l1.216-.456a1.125 1.125 0 011.369.487l1.297 2.247a1.125 1.125 0 01-.259 1.41l-1.004.827a1.125 1.125 0 00-.429.908l.001.127v.255c0 .042 0 .084-.001.127a1.125 1.125 0 00.429.908l1.004.827a1.125 1.125 0 01.259 1.41l-1.297 2.246a1.125 1.125 0 01-1.369.488l-1.216-.457a1.125 1.125 0 00-1.076-.053l-.22.122a1.125 1.125 0 00-.644.87l-.214 1.281a1.125 1.125 0 01-1.11.94H10.703a1.125 1.125 0 01-1.11-.94l-.214-1.281a1.125 1.125 0 00-.644-.87l-.22-.122a1.125 1.125 0 00-1.076.053l-1.216.457a1.125 1.125 0 01-1.369-.488L3.757 15.38a1.125 1.125 0 01.259-1.41l1.005-.827a1.125 1.125 0 00.429-.908c0-.042-.001-.084-.001-.127v-.255c0-.042 0-.084.001-.127a1.125 1.125 0 00-.429-.908L4.016 9.81a1.125 1.125 0 01-.259-1.41l1.297-2.247a1.125 1.125 0 011.369-.487l1.216.456a1.125 1.125 0 001.076.052l.22-.121a1.125 1.125 0 00.644-.871L9.593 3.94z", "M15 12a3 3 0 11-6 0 3 3 0 016 0z"] };
-}));
-function createSinglePathIcon(name) {
-return function IconComponent(props) {
-return createComponent(Icon, mergeProps(props, { get children() {
-var _el$ = _tmpl$$9();
-createRenderEffect(() => setAttribute(_el$, "d", ICON_PATHS[name]));
-return _el$;
-} }));
-};
-}
-function createMultiPathIcon(name) {
-return function IconComponent(props) {
-return createComponent(Icon, mergeProps(props, { get children() {
-return createComponent(For, {
-get each() {
-return MULTI_PATH_ICONS[name];
-},
-children: (pathData) => (() => {
-var _el$2 = _tmpl$$9();
-setAttribute(_el$2, "d", pathData);
-return _el$2;
-})()
-});
-} }));
-};
-}
-var _tmpl$$9, HeroDownload, HeroArrowSmallLeft, HeroArrowSmallRight, HeroArrowsPointingIn, HeroArrowsPointingOut, HeroArrowsRightLeft, HeroArrowsUpDown, HeroArrowDownOnSquareStack, HeroArrowLeftOnRectangle, HeroChatBubbleLeftRight, HeroCog6Tooth;
-var init_hero_icons = __esmMin((() => {
-init_web();
-init_Icon$1();
-init_solid();
-init_icon_paths();
-_tmpl$$9 = /* @__PURE__ */ template(`<svg><path></svg>`, false, true, false);
-HeroDownload = createSinglePathIcon("download");
-HeroArrowSmallLeft = createSinglePathIcon("arrowSmallLeft");
-HeroArrowSmallRight = createSinglePathIcon("arrowSmallRight");
-HeroArrowsPointingIn = createSinglePathIcon("arrowsPointingIn");
-HeroArrowsPointingOut = createSinglePathIcon("arrowsPointingOut");
-HeroArrowsRightLeft = createSinglePathIcon("arrowsRightLeft");
-HeroArrowsUpDown = createSinglePathIcon("arrowsUpDown");
-HeroArrowDownOnSquareStack = createSinglePathIcon("arrowDownOnSquareStack");
-HeroArrowLeftOnRectangle = createSinglePathIcon("arrowLeftOnRectangle");
-HeroChatBubbleLeftRight = createSinglePathIcon("chatBubbleLeftRight");
-HeroCog6Tooth = createMultiPathIcon("cog6Tooth");
-}));
-var init_Icon = __esmMin((() => {
-init_hero_icons();
-}));
-function formatTweetText(text) {
-if (!text) return [];
-const tokens = [];
-const lines = text.split("\n");
-for (let i = 0; i < lines.length; i++) {
-const line = lines[i];
-if (!line) {
-if (i < lines.length - 1) tokens.push({ type: "break" });
-continue;
-}
-let lastIndex = 0;
-let match;
-ENTITY_PATTERN.lastIndex = 0;
-while ((match = ENTITY_PATTERN.exec(line)) !== null) {
-const entity = match[0];
-const matchIndex = match.index;
-if (matchIndex > lastIndex) {
-const textContent = line.slice(lastIndex, matchIndex);
-if (textContent) tokens.push({
-type: "text",
-content: textContent
-});
-}
-tokens.push(...createEntityTokens(entity));
-lastIndex = matchIndex + entity.length;
-}
-if (lastIndex < line.length) {
-const textContent = line.slice(lastIndex);
-if (textContent) tokens.push({
-type: "text",
-content: textContent
-});
-}
-if (i < lines.length - 1) tokens.push({ type: "break" });
-}
-return tokens;
-}
-function splitUrlTrailingPunctuation(url) {
-let trimmed = url;
-let trailing = "";
-while (trimmed.length > 0) {
-const last = trimmed.at(-1);
-if (!last) break;
-if (TRAILING_URL_PUNCTUATION.has(last)) {
-trailing = last + trailing;
-trimmed = trimmed.slice(0, -1);
-continue;
-}
-let strippedBracket = false;
-for (const [close, open] of TRAILING_URL_BRACKET_PAIRS) if (last === close && !trimmed.includes(open)) {
-trailing = close + trailing;
-trimmed = trimmed.slice(0, -1);
-strippedBracket = true;
-break;
-}
-if (strippedBracket) continue;
-break;
-}
-if (!trimmed) return {
-url,
-trailing: ""
-};
-return {
-url: trimmed,
-trailing
-};
-}
-function createEntityTokens(entity) {
-if (entity.startsWith("http")) {
-const { url, trailing } = splitUrlTrailingPunctuation(entity);
-const out = [{
-type: "link",
-content: url,
-href: url
-}];
-if (trailing) out.push({
-type: "text",
-content: trailing
-});
-return out;
-}
-if (entity.startsWith("@")) return [{
-type: "mention",
-content: entity,
-href: `https://x.com/${entity.slice(1)}`
-}];
-if (entity.startsWith("#")) {
-const tag = entity.slice(1);
-return [{
-type: "hashtag",
-content: entity,
-href: `https://x.com/hashtag/${encodeURIComponent(tag)}`
-}];
-}
-if (entity.startsWith("$")) {
-const symbol = entity.slice(1);
-return [{
-type: "cashtag",
-content: entity,
-href: `https://x.com/search?q=${encodeURIComponent(`$${symbol}`)}`
-}];
-}
-return [{
-type: "text",
-content: entity
-}];
-}
-function shortenUrl(url, maxLength = 50) {
-if (url.length <= maxLength) return url;
-try {
-const urlObj = new URL(url);
-const domain = urlObj.hostname;
-const path = urlObj.pathname;
-const segments = path.split("/").filter(Boolean);
-const base = `${urlObj.protocol}//${domain}`;
-const allowedPathLen = maxLength - base.length;
-if (base.length >= maxLength) return `${base}${path}`;
-if (segments.length <= 2 || path.length <= Math.min(20, Math.max(0, allowedPathLen))) return `${base}${path}`;
-if (url.length > maxLength && segments.length > 2) return `${base}/${segments[0]}/.../${segments[segments.length - 1]}`;
-return `${urlObj.protocol}//${domain}${path}`;
-} catch {
-return url.length > maxLength ? `${url.slice(0, maxLength)}...` : url;
-}
-}
-function cx(...inputs) {
-const classes = [];
-for (const input of inputs) {
-if (!input) continue;
-if (typeof input === "string") classes.push(input);
-else if (typeof input === "number") classes.push(String(input));
-else if (Array.isArray(input)) {
-const nested = cx(...input);
-if (nested) classes.push(nested);
-} else if (typeof input === "object") {
-for (const [key, value] of Object.entries(input)) if (value) classes.push(key);
-}
-}
-return classes.join(" ");
-}
-var ENTITY_PATTERN, TRAILING_URL_PUNCTUATION, TRAILING_URL_BRACKET_PAIRS;
-var init_formatting = __esmMin((() => {
-ENTITY_PATTERN = /(https?:\/\/[^\s]+|@[a-zA-Z0-9_]{1,15}|#[\p{L}\p{N}_]{1,50}|\$[A-Z]{1,6}(?:\.[A-Z]{1,2})?)/gu;
-TRAILING_URL_PUNCTUATION = new Set([
-".",
-",",
-"!",
-"?",
-";",
-":"
-]);
-TRAILING_URL_BRACKET_PAIRS = [
-[")", "("],
-["]", "["],
-["}", "{"]
-];
-}));
+var _tmpl$$9 =  template(`<button>`);
 function IconButton(props) {
 const [local, rest] = splitProps(props, [
 "children",
@@ -7796,7 +6361,7 @@ const [local, rest] = splitProps(props, [
 "size"
 ]);
 return (() => {
-var _el$ = _tmpl$$8();
+var _el$ = _tmpl$$9();
 spread(_el$, mergeProps(rest, {
 get type() {
 return local.type ?? "button";
@@ -7809,13 +6374,99 @@ insert(_el$, () => local.children);
 return _el$;
 })();
 }
-var _tmpl$$8;
-var init_IconButton = __esmMin((() => {
-init_web();
-init_formatting();
-init_solid();
-_tmpl$$8 = /* @__PURE__ */ template(`<button>`);
-}));
+var _tmpl$$8 =  template(`<svg xmlns=http://www.w3.org/2000/svg viewBox="0 0 24 24"fill=none stroke="var(--xeg-icon-color, currentColor)"stroke-width=var(--xeg-icon-stroke-width) stroke-linecap=round stroke-linejoin=round>`);
+function Icon({ size = "var(--xeg-icon-size)", className: className$1 = "", children, "aria-label": ariaLabel, ...otherProps }) {
+const accessibilityProps = {};
+if (ariaLabel) {
+accessibilityProps.role = "img";
+accessibilityProps["aria-label"] = ariaLabel;
+} else accessibilityProps["aria-hidden"] = "true";
+const sizeValue = typeof size === "number" ? `${size}px` : size;
+return (() => {
+var _el$ = _tmpl$$8();
+setAttribute(_el$, "width", sizeValue);
+setAttribute(_el$, "height", sizeValue);
+setAttribute(_el$, "class", className$1);
+spread(_el$, mergeProps(accessibilityProps, otherProps), true, true);
+insert(_el$, children);
+return _el$;
+})();
+}
+const LUCIDE_ICON_NODES = {
+"chevron-left": [["path", { d: "m15 18-6-6 6-6" }]],
+"chevron-right": [["path", { d: "m9 18 6-6-6-6" }]],
+download: [
+["path", { d: "M12 15V3" }],
+["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }],
+["path", { d: "m7 10 5 5 5-5" }]
+],
+"folder-down": [
+["path", { d: "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" }],
+["path", { d: "M12 10v6" }],
+["path", { d: "m15 13-3 3-3-3" }]
+],
+"maximize-2": [
+["path", { d: "M15 3h6v6" }],
+["path", { d: "m21 3-7 7" }],
+["path", { d: "m3 21 7-7" }],
+["path", { d: "M9 21H3v-6" }]
+],
+"minimize-2": [
+["path", { d: "m14 10 7-7" }],
+["path", { d: "M20 10h-6V4" }],
+["path", { d: "m3 21 7-7" }],
+["path", { d: "M4 14h6v6" }]
+],
+"move-horizontal": [
+["path", { d: "m18 8 4 4-4 4" }],
+["path", { d: "M2 12h20" }],
+["path", { d: "m6 8-4 4 4 4" }]
+],
+"move-vertical": [
+["path", { d: "M12 2v20" }],
+["path", { d: "m8 18 4 4 4-4" }],
+["path", { d: "m8 6 4-4 4 4" }]
+],
+"settings-2": [
+["path", { d: "M14 17H5" }],
+["path", { d: "M19 7h-9" }],
+["circle", {
+cx: 17,
+cy: 17,
+r: 3
+}],
+["circle", {
+cx: 7,
+cy: 7,
+r: 3
+}]
+],
+"messages-square": [["path", { d: "M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" }], ["path", { d: "M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1" }]],
+x: [["path", { d: "M18 6 6 18" }], ["path", { d: "m6 6 12 12" }]]
+};
+var _tmpl$$7 =  template(`<svg><path></svg>`, false, true, false), _tmpl$2$3 =  template(`<svg><circle></svg>`, false, true, false);
+var renderNode = (node) => {
+const [tag, attrs] = node;
+switch (tag) {
+case "path": return (() => {
+var _el$ = _tmpl$$7();
+spread(_el$, attrs, true, false);
+return _el$;
+})();
+case "circle": return (() => {
+var _el$2 = _tmpl$2$3();
+spread(_el$2, attrs, true, false);
+return _el$2;
+})();
+default: return tag;
+}
+};
+function LucideIcon({ name, ...rest }) {
+const nodes = LUCIDE_ICON_NODES[name];
+return createComponent(Icon, mergeProps(rest, { get children() {
+return nodes.map(renderNode);
+} }));
+}
 function resolve(value) {
 return typeof value === "function" ? value() : value;
 }
@@ -7834,26 +6485,27 @@ return resolveOptional(resolver()) ?? fallback;
 function toOptionalAccessor(resolver) {
 return () => resolveOptional(resolver());
 }
-var body, bodyCompact, setting, settingCompact, label, compactLabel, select, SettingsControls_module_default;
-var init_SettingsControls_module = __esmMin((() => {
-body = "xeg_EeShbY";
-bodyCompact = "xeg_nm9B3P";
-setting = "xeg_PI5CjL";
-settingCompact = "xeg_VUTt8w";
-label = "xeg_vhT3QS";
-compactLabel = "xeg_Y62M5l";
-select = "xeg_jpiS5y";
-SettingsControls_module_default = {
-body,
-bodyCompact,
-setting,
-settingCompact,
-label,
-compactLabel,
-select
+var SettingsControls_module_default = {
+body: "xg-EeSh",
+bodyCompact: "xg-nm9B",
+setting: "xg-PI5C",
+settingCompact: "xg-VUTt",
+label: "xg-vhT3",
+compactLabel: "xg-Y62M",
+select: "xg-jpiS"
 };
-}));
-var SettingsControls_exports = /* @__PURE__ */ __export({ SettingsControls: () => SettingsControls }, 1);
+var _tmpl$$6 =  template(`<div><div><label></label><select></select></div><div><label></label><select>`), _tmpl$2$2 =  template(`<option>`);
+var THEME_OPTIONS = [
+"auto",
+"light",
+"dark"
+];
+var LANGUAGE_OPTIONS = [
+"auto",
+"ko",
+"en",
+"ja"
+];
 function SettingsControls(props) {
 const languageService = getLanguageService();
 const [revision, setRevision] = createSignal(0);
@@ -7864,20 +6516,20 @@ const strings = createMemo(() => {
 revision();
 return {
 theme: {
-title: languageService.translate("settings.theme"),
+title: languageService.translate("st.th"),
 labels: {
-auto: languageService.translate("settings.themeAuto"),
-light: languageService.translate("settings.themeLight"),
-dark: languageService.translate("settings.themeDark")
+auto: languageService.translate("st.thAuto"),
+light: languageService.translate("st.thLt"),
+dark: languageService.translate("st.thDk")
 }
 },
 language: {
-title: languageService.translate("settings.language"),
+title: languageService.translate("st.lang"),
 labels: {
-auto: languageService.translate("settings.languageAuto"),
-ko: languageService.translate("settings.languageKo"),
-en: languageService.translate("settings.languageEn"),
-ja: languageService.translate("settings.languageJa")
+auto: languageService.translate("st.langAuto"),
+ko: languageService.translate("st.langKo"),
+en: languageService.translate("st.langEn"),
+ja: languageService.translate("st.langJa")
 }
 }
 };
@@ -7893,7 +6545,7 @@ const languageSelectId = props["data-testid"] ? `${props["data-testid"]}-languag
 const themeStrings = () => strings().theme;
 const languageStrings = () => strings().language;
 return (() => {
-var _el$ = _tmpl$$7(), _el$2 = _el$.firstChild, _el$3 = _el$2.firstChild, _el$4 = _el$3.nextSibling, _el$5 = _el$2.nextSibling, _el$6 = _el$5.firstChild, _el$7 = _el$6.nextSibling;
+var _el$ = _tmpl$$6(), _el$2 = _el$.firstChild, _el$3 = _el$2.firstChild, _el$4 = _el$3.nextSibling, _el$5 = _el$2.nextSibling, _el$6 = _el$5.firstChild, _el$7 = _el$6.nextSibling;
 className(_el$, containerClass);
 className(_el$2, settingClass);
 setAttribute(_el$3, "for", themeSelectId);
@@ -7903,7 +6555,7 @@ addEventListener(_el$4, "change", props.onThemeChange);
 setAttribute(_el$4, "id", themeSelectId);
 className(_el$4, selectClass);
 insert(_el$4, () => THEME_OPTIONS.map((option) => (() => {
-var _el$8 = _tmpl$2$4();
+var _el$8 = _tmpl$2$2();
 _el$8.value = option;
 insert(_el$8, () => themeStrings().labels[option]);
 return _el$8;
@@ -7916,13 +6568,13 @@ addEventListener(_el$7, "change", props.onLanguageChange);
 setAttribute(_el$7, "id", languageSelectId);
 className(_el$7, selectClass);
 insert(_el$7, () => LANGUAGE_OPTIONS.map((option) => (() => {
-var _el$9 = _tmpl$2$4();
+var _el$9 = _tmpl$2$2();
 _el$9.value = option;
 insert(_el$9, () => languageStrings().labels[option]);
 return _el$9;
 })()));
 createRenderEffect((_p$) => {
-var _v$ = props["data-testid"], _v$2 = themeStrings().title, _v$3 = themeStrings().title, _v$4 = props["data-testid"] ? `${props["data-testid"]}-theme` : void 0, _v$5 = languageStrings().title, _v$6 = languageStrings().title, _v$7 = props["data-testid"] ? `${props["data-testid"]}-language` : void 0;
+var _v$ = void 0, _v$2 = themeStrings().title, _v$3 = themeStrings().title, _v$4 = void 0, _v$5 = languageStrings().title, _v$6 = languageStrings().title, _v$7 = void 0;
 _v$ !== _p$.e && setAttribute(_el$, "data-testid", _p$.e = _v$);
 _v$2 !== _p$.t && setAttribute(_el$4, "aria-label", _p$.t = _v$2);
 _v$3 !== _p$.a && setAttribute(_el$4, "title", _p$.a = _v$3);
@@ -7945,44 +6597,20 @@ createRenderEffect(() => _el$7.value = languageValue());
 return _el$;
 })();
 }
-var _tmpl$$7, _tmpl$2$4, THEME_OPTIONS, LANGUAGE_OPTIONS;
-var init_SettingsControls = __esmMin((() => {
-init_web();
-init_service_accessors();
-init_formatting();
-init_solid();
-init_SettingsControls_module();
-_tmpl$$7 = /* @__PURE__ */ template(`<div><div><label></label><select></select></div><div><label></label><select>`), _tmpl$2$4 = /* @__PURE__ */ template(`<option>`);
-THEME_OPTIONS = [
-"auto",
-"light",
-"dark"
-];
-LANGUAGE_OPTIONS = [
-"auto",
-"ko",
-"en",
-"ja"
-];
-}));
-var _tmpl$$6, LazySettingsControls, SettingsControlsFallback, SettingsControlsLazy;
-var init_SettingsControlsLazy = __esmMin((() => {
-init_web();
-init_solid();
-_tmpl$$6 = /* @__PURE__ */ template(`<div style=height:7.5rem>`);
-LazySettingsControls = lazy(() => Promise.resolve().then(() => (init_SettingsControls(), SettingsControls_exports)).then((module) => ({ default: module.SettingsControls })));
-SettingsControlsFallback = () => {
-return _tmpl$$6();
-};
-SettingsControlsLazy = (props) => createComponent(Suspense, {
-get fallback() {
-return createComponent(SettingsControlsFallback, {});
-},
-get children() {
-return createComponent(LazySettingsControls, props);
-}
+function useTranslation() {
+const languageService = getLanguageService();
+const [revision, setRevision] = createSignal(0);
+const unsubscribe = languageService.onLanguageChange(() => {
+setRevision((value) => value + 1);
 });
-}));
+onCleanup(() => {
+unsubscribe();
+});
+return (key, params) => {
+revision();
+return languageService.translate(key, params);
+};
+}
 function safeEventPrevent(event) {
 if (!event) return;
 event.preventDefault();
@@ -8010,157 +6638,49 @@ const scrollable = findScrollableAncestor(event.target, options.scrollableSelect
 if (!scrollable) return false;
 return canConsumeWheelEvent(scrollable, event.deltaY, options.tolerance);
 }
-var toolbarButton$1, galleryToolbar, settingsExpanded, tweetPanelExpanded, stateIdle, stateLoading, stateDownloading, stateError, toolbarContent, toolbarControls, counterBlock, separator, downloadCurrent, downloadAll, closeButton, downloadButton, mediaCounterWrapper, mediaCounter, currentIndex, totalCount, progressBar, progressFill, fitButton, settingsPanel, tweetPanel, panelExpanded, tweetPanelBody, tweetContent, tweetLink, Toolbar_module_default;
-var init_Toolbar_module = __esmMin((() => {
-toolbarButton$1 = "xeg_4eojab";
-galleryToolbar = "xeg_fLg7uD";
-settingsExpanded = "xeg_ZpP8ej";
-tweetPanelExpanded = "xeg_t4eqv-";
-stateIdle = "xeg_ojCWl4";
-stateLoading = "xeg_Y6KFai";
-stateDownloading = "xeg_n-abf0";
-stateError = "xeg_bEzlgK";
-toolbarContent = "xeg_f8g4ur";
-toolbarControls = "xeg_Ix3ja2";
-counterBlock = "xeg_0EHq9g";
-separator = "xeg_FKnOOH";
-downloadCurrent = "xeg_njlfQM";
-downloadAll = "xeg_AU-dPz";
-closeButton = "xeg_Vn14NE";
-downloadButton = "xeg_atmJJM";
-mediaCounterWrapper = "xeg_GG869J";
-mediaCounter = "xeg_2cjmvu";
-currentIndex = "xeg_JEXmPu";
-totalCount = "xeg_d1et2f";
-progressBar = "xeg_vB6NL3";
-progressFill = "xeg_LWQwIA";
-fitButton = "xeg_Q7dUY4";
-settingsPanel = "xeg_JcF-YS";
-tweetPanel = "xeg_yRtvAY";
-panelExpanded = "xeg_4a2L8u";
-tweetPanelBody = "xeg_w56Ci4";
-tweetContent = "xeg_jmjGCs";
-tweetLink = "xeg_ZzP6Op";
-Toolbar_module_default = {
-toolbarButton: toolbarButton$1,
-galleryToolbar,
-settingsExpanded,
-tweetPanelExpanded,
-stateIdle,
-stateLoading,
-stateDownloading,
-stateError,
-toolbarContent,
-toolbarControls,
-counterBlock,
-separator,
-downloadCurrent,
-downloadAll,
-closeButton,
-downloadButton,
-mediaCounterWrapper,
-mediaCounter,
-currentIndex,
-totalCount,
-progressBar,
-progressFill,
-fitButton,
-settingsPanel,
-tweetPanel,
-panelExpanded,
-tweetPanelBody,
-tweetContent,
-tweetLink
+var Toolbar_module_default = {
+toolbarButton: "xg-4eoj",
+galleryToolbar: "xg-fLg7",
+settingsExpanded: "xg-ZpP8",
+tweetPanelExpanded: "xg-t4eq",
+stateIdle: "xg-ojCW",
+stateLoading: "xg-Y6KF",
+stateDownloading: "xg-n-ab",
+stateError: "xg-bEzl",
+toolbarContent: "xg-f8g4",
+toolbarControls: "xg-Ix3j",
+counterBlock: "xg-0EHq",
+separator: "xg-FKnO",
+downloadCurrent: "xg-njlf",
+downloadAll: "xg-AU-d",
+closeButton: "xg-Vn14",
+downloadButton: "xg-atmJ",
+mediaCounterWrapper: "xg-GG86",
+mediaCounter: "xg-2cjm",
+currentIndex: "xg-JEXm",
+totalCount: "xg-d1et",
+progressBar: "xg-vB6N",
+progressFill: "xg-LWQw",
+fitButton: "xg-Q7dU",
+settingsPanel: "xg-JcF-",
+tweetPanel: "xg-yRtv",
+panelExpanded: "xg-4a2L",
+tweetPanelBody: "xg-w56C",
+tweetContent: "xg-jmjG"
 };
-}));
-var TweetTextPanel_exports = /* @__PURE__ */ __export({ default: () => TweetTextPanel }, 1);
-function renderTweetAnchor(accessor, kind, displayText) {
-const token = accessor();
-return (() => {
-var _el$ = _tmpl$$5();
-_el$.$$click = (e) => e.stopPropagation();
-setAttribute(_el$, "data-kind", kind);
-insert(_el$, () => displayText ?? token.content);
-createRenderEffect((_p$) => {
-var _v$ = token.href, _v$2 = Toolbar_module_default.tweetLink;
-_v$ !== _p$.e && setAttribute(_el$, "href", _p$.e = _v$);
-_v$2 !== _p$.t && className(_el$, _p$.t = _v$2);
-return _p$;
-}, {
-e: void 0,
-t: void 0
-});
-return _el$;
-})();
-}
+var _tmpl$$5 =  template(`<div><div><span></span></div><div data-gallery-scrollable=true><span>`);
 function TweetTextPanel(props) {
+const translate = useTranslation();
 return (() => {
-var _el$2 = _tmpl$2$3(), _el$3 = _el$2.firstChild, _el$4 = _el$3.firstChild, _el$5 = _el$3.nextSibling;
-insert(_el$4, () => getLanguageService().translate("toolbar.tweetText") || "Tweet text");
-insert(_el$5, (() => {
-var _c$ = memo(() => !!props.tweetTextHTML);
-return () => _c$() ? (() => {
-var _el$6 = _tmpl$3$1();
-createRenderEffect(() => _el$6.innerHTML = sanitizeHTML(props.tweetTextHTML));
-return _el$6;
-})() : createComponent(For, {
-get each() {
-return formatTweetText(props.tweetText ?? "");
-},
-children: (token) => createComponent(Switch, { get children() {
-return [
-createComponent(Match, {
-get when() {
-return token.type === "link" && token;
-},
-children: (linkToken) => renderTweetAnchor(linkToken, "url", shortenUrl(linkToken().content, 40))
-}),
-createComponent(Match, {
-get when() {
-return token.type === "mention" && token;
-},
-children: (mentionToken) => renderTweetAnchor(mentionToken, "mention")
-}),
-createComponent(Match, {
-get when() {
-return token.type === "hashtag" && token;
-},
-children: (hashtagToken) => renderTweetAnchor(hashtagToken, "hashtag")
-}),
-createComponent(Match, {
-get when() {
-return token.type === "cashtag" && token;
-},
-children: (cashtagToken) => renderTweetAnchor(cashtagToken, "cashtag")
-}),
-createComponent(Match, {
-get when() {
-return token.type === "break";
-},
-get children() {
-return _tmpl$4$1();
-}
-}),
-createComponent(Match, {
-get when() {
-return token.type === "text" && token;
-},
-children: (textToken) => (() => {
-var _el$8 = _tmpl$5$1();
-insert(_el$8, () => textToken().content);
-return _el$8;
-})()
-})
-];
-} })
-});
-})());
+var _el$ = _tmpl$$5(), _el$2 = _el$.firstChild, _el$3 = _el$2.firstChild, _el$4 = _el$2.nextSibling, _el$5 = _el$4.firstChild;
+insert(_el$3, () => translate("tb.twTxt"));
+insert(_el$5, () => props.tweetTextHTML ?? props.tweetText ?? "");
 createRenderEffect((_p$) => {
-var _v$3 = Toolbar_module_default.tweetPanelBody, _v$4 = Toolbar_module_default.tweetTextHeader, _v$5 = Toolbar_module_default.tweetTextLabel, _v$6 = Toolbar_module_default.tweetContent;
-_v$3 !== _p$.e && className(_el$2, _p$.e = _v$3);
-_v$4 !== _p$.t && className(_el$3, _p$.t = _v$4);
-_v$5 !== _p$.a && className(_el$4, _p$.a = _v$5);
-_v$6 !== _p$.o && className(_el$5, _p$.o = _v$6);
+var _v$ = Toolbar_module_default.tweetPanelBody, _v$2 = Toolbar_module_default.tweetTextHeader, _v$3 = Toolbar_module_default.tweetTextLabel, _v$4 = Toolbar_module_default.tweetContent;
+_v$ !== _p$.e && className(_el$, _p$.e = _v$);
+_v$2 !== _p$.t && className(_el$2, _p$.t = _v$2);
+_v$3 !== _p$.a && className(_el$3, _p$.a = _v$3);
+_v$4 !== _p$.o && className(_el$4, _p$.o = _v$4);
 return _p$;
 }, {
 e: void 0,
@@ -8168,20 +6688,18 @@ t: void 0,
 a: void 0,
 o: void 0
 });
-return _el$2;
+return _el$;
 })();
 }
-var _tmpl$$5, _tmpl$2$3, _tmpl$3$1, _tmpl$4$1, _tmpl$5$1;
-var init_TweetTextPanel = __esmMin((() => {
-init_web();
-init_service_accessors();
-init_formatting();
-init_html_sanitizer();
-init_solid();
-init_Toolbar_module();
-_tmpl$$5 = /* @__PURE__ */ template(`<a target=_blank rel="noopener noreferrer">`), _tmpl$2$3 = /* @__PURE__ */ template(`<div><div><span></span></div><div data-gallery-element=tweet-content data-gallery-scrollable=true>`), _tmpl$3$1 = /* @__PURE__ */ template(`<div>`), _tmpl$4$1 = /* @__PURE__ */ template(`<br>`), _tmpl$5$1 = /* @__PURE__ */ template(`<span>`);
-delegateEvents(["click"]);
-}));
+var _tmpl$$4 =  template(`<div data-gallery-element=toolbar><div><div><div><div><span aria-live=polite><span></span><span>/</span><span></span></span><div><div></div></div></div></div></div></div><div id=toolbar-settings-panel data-gallery-scrollable=true role=region aria-label="Settings Panel"aria-labelledby=settings-button data-gallery-element=settings-panel></div><div id=toolbar-tweet-panel role=region aria-labelledby=tweet-text-button data-gallery-element=tweet-panel>`);
+var SCROLLABLE_SELECTOR = "[data-gallery-scrollable=\"true\"]";
+var SCROLL_LOCK_TOLERANCE = 1;
+var shouldAllowWheelDefault$1 = (event) => {
+return shouldAllowWheelDefault(event, {
+scrollableSelector: SCROLLABLE_SELECTOR,
+tolerance: SCROLL_LOCK_TOLERANCE
+});
+};
 function ToolbarView(props) {
 const totalCount$1 = createMemo(() => resolve(props.totalCount));
 const currentIndex$1 = createMemo(() => resolve(props.currentIndex));
@@ -8194,7 +6712,9 @@ const [toolbarElement, setToolbarElement] = createSignal(null);
 const [counterElement, setCounterElement] = createSignal(null);
 const [settingsPanelEl, setSettingsPanelEl] = createSignal(null);
 const [tweetPanelEl, setTweetPanelEl] = createSignal(null);
+const translate = useTranslation();
 const nav = createMemo(() => props.navState());
+const fitModeLabels = createMemo(() => resolve(props.fitModeLabels));
 const assignToolbarRef = (element) => {
 setToolbarElement(element);
 props.settingsController.assignToolbarRef(element);
@@ -8244,13 +6764,15 @@ const registerWheelListener = (getElement, handler, options) => {
 createEffect(() => {
 const element = getElement();
 if (!element) return;
-const bus = getEventBus();
+const controller = new AbortController();
+const eventManager = EventManager.getInstance();
 const listener = (event) => handler(event);
-const id = bus.addDOMListener(element, "wheel", listener, {
+eventManager.addEventListener(element, "wheel", listener, {
 passive: options.passive,
+signal: controller.signal,
 context: options.context
 });
-onCleanup(() => bus.remove(id));
+onCleanup(() => controller.abort());
 });
 };
 registerWheelListener(toolbarElement, preventScrollChaining, {
@@ -8265,6 +6787,7 @@ registerWheelListener(tweetPanelEl, handlePanelWheel, {
 passive: true,
 context: "toolbar:wheel:panel"
 });
+const settingsControlsTestId = {};
 return (() => {
 var _el$ = _tmpl$$4(), _el$2 = _el$.firstChild, _el$3 = _el$2.firstChild, _el$4 = _el$3.firstChild, _el$5 = _el$4.firstChild, _el$6 = _el$5.firstChild, _el$7 = _el$6.firstChild, _el$8 = _el$7.nextSibling, _el$9 = _el$8.nextSibling, _el$0 = _el$6.nextSibling, _el$1 = _el$0.firstChild, _el$10 = _el$2.nextSibling, _el$11 = _el$10.nextSibling;
 _el$.$$keydown = (event) => props.settingsController.handleToolbarKeyDown(event);
@@ -8276,17 +6799,25 @@ get ["class"]() {
 return toolbarButtonClass();
 },
 size: "toolbar",
-"aria-label": "Previous Media",
-title: "Previous Media (Left Arrow)",
+get ["aria-label"]() {
+return translate("tb.prev");
+},
+get title() {
+return translate("tb.prev");
+},
 get disabled() {
 return nav().prevDisabled;
 },
 get onClick() {
 return props.onPreviousClick;
 },
-"data-gallery-element": "nav-previous",
 get children() {
-return createComponent(HeroArrowSmallLeft, { size: 18 });
+return createComponent(LucideIcon, {
+get name() {
+return UI_ICONS.toolbarPrev;
+},
+size: 18
+});
 }
 }), _el$4);
 insert(_el$3, createComponent(IconButton, {
@@ -8294,17 +6825,25 @@ get ["class"]() {
 return toolbarButtonClass();
 },
 size: "toolbar",
-"aria-label": "Next Media",
-title: "Next Media (Right Arrow)",
+get ["aria-label"]() {
+return translate("tb.next");
+},
+get title() {
+return translate("tb.next");
+},
 get disabled() {
 return nav().nextDisabled;
 },
 get onClick() {
 return props.onNextClick;
 },
-"data-gallery-element": "nav-next",
 get children() {
-return createComponent(HeroArrowSmallRight, { size: 18 });
+return createComponent(LucideIcon, {
+get name() {
+return UI_ICONS.toolbarNext;
+},
+size: 18
+});
 }
 }), _el$4);
 use((element) => {
@@ -8312,8 +6851,8 @@ setCounterElement(element);
 }, _el$6);
 insert(_el$7, () => displayedIndex() + 1);
 insert(_el$9, totalCount$1);
-insert(_el$3, () => props.fitModeOrder.map(({ mode, Icon: Icon$1 }) => {
-const label$1 = props.fitModeLabels[mode];
+insert(_el$3, () => props.fitModeOrder.map(({ mode, iconName }) => {
+const label$1 = fitModeLabels()[mode];
 return createComponent(IconButton, {
 get ["class"]() {
 return toolbarButtonClass(Toolbar_module_default.fitButton);
@@ -8334,9 +6873,11 @@ return label$1.title;
 get ["aria-pressed"]() {
 return activeFitMode() === mode;
 },
-"data-gallery-element": `fit-${mode}`,
 get children() {
-return createComponent(Icon$1, { size: 18 });
+return createComponent(LucideIcon, {
+name: iconName,
+size: 18
+});
 }
 });
 }), null);
@@ -8351,11 +6892,19 @@ return props.onDownloadCurrent;
 get disabled() {
 return nav().downloadDisabled;
 },
-"aria-label": "Download Current File",
-title: "Download Current File (Ctrl+D)",
-"data-gallery-element": "download-current",
+get ["aria-label"]() {
+return translate("tb.dl");
+},
+get title() {
+return translate("tb.dl");
+},
 get children() {
-return createComponent(HeroDownload, { size: 18 });
+return createComponent(LucideIcon, {
+get name() {
+return UI_ICONS.toolbarDownloadCurrent;
+},
+size: 18
+});
 }
 }), null);
 insert(_el$3, (() => {
@@ -8372,14 +6921,18 @@ get disabled() {
 return nav().downloadDisabled;
 },
 get ["aria-label"]() {
-return `Download all ${totalCount$1()} files as ZIP`;
+return translate("tb.dlAllCt", { count: totalCount$1() });
 },
 get title() {
-return `Download all ${totalCount$1()} files as ZIP`;
+return translate("tb.dlAllCt", { count: totalCount$1() });
 },
-"data-gallery-element": "download-all",
 get children() {
-return createComponent(HeroArrowDownOnSquareStack, { size: 18 });
+return createComponent(LucideIcon, {
+get name() {
+return UI_ICONS.toolbarDownloadAll;
+},
+size: 18
+});
 }
 });
 })(), null);
@@ -8395,12 +6948,16 @@ get ["class"]() {
 return toolbarButtonClass();
 },
 size: "toolbar",
-"aria-label": "Open Settings",
+get ["aria-label"]() {
+return translate("tb.setOpen");
+},
 get ["aria-expanded"]() {
 return props.settingsController.isSettingsExpanded() ? "true" : "false";
 },
 "aria-controls": "toolbar-settings-panel",
-title: "Settings",
+get title() {
+return translate("tb.setOpen");
+},
 get disabled() {
 return isToolbarDisabled();
 },
@@ -8410,9 +6967,13 @@ return props.settingsController.handleSettingsMouseDown;
 get onClick() {
 return props.settingsController.handleSettingsClick;
 },
-"data-gallery-element": "settings",
 get children() {
-return createComponent(HeroCog6Tooth, { size: 18 });
+return createComponent(LucideIcon, {
+get name() {
+return UI_ICONS.toolbarSettings;
+},
+size: 18
+});
 }
 });
 })(), null);
@@ -8425,14 +6986,14 @@ return toolbarButtonClass();
 },
 size: "toolbar",
 get ["aria-label"]() {
-return getLanguageService().translate("toolbar.tweetText") || "View tweet text";
+return translate("tb.twTxt");
 },
 get ["aria-expanded"]() {
 return props.isTweetPanelExpanded() ? "true" : "false";
 },
 "aria-controls": "toolbar-tweet-panel",
 get title() {
-return getLanguageService().translate("toolbar.tweetText") || "Tweet text";
+return translate("tb.twTxt");
 },
 get disabled() {
 return isToolbarDisabled();
@@ -8440,9 +7001,13 @@ return isToolbarDisabled();
 get onClick() {
 return props.toggleTweetPanelExpanded;
 },
-"data-gallery-element": "tweet-text",
 get children() {
-return createComponent(HeroChatBubbleLeftRight, { size: 18 });
+return createComponent(LucideIcon, {
+get name() {
+return UI_ICONS.toolbarTweetText;
+},
+size: 18
+});
 }
 });
 })(), null);
@@ -8451,17 +7016,25 @@ get ["class"]() {
 return toolbarButtonClass(Toolbar_module_default.closeButton);
 },
 size: "toolbar",
-"aria-label": "Close Gallery",
-title: "Close Gallery (Esc)",
+get ["aria-label"]() {
+return translate("tb.cls");
+},
+get title() {
+return translate("tb.cls");
+},
 get disabled() {
 return isToolbarDisabled();
 },
 get onClick() {
 return props.onCloseClick;
 },
-"data-gallery-element": "close",
 get children() {
-return createComponent(HeroArrowLeftOnRectangle, { size: 18 });
+return createComponent(LucideIcon, {
+get name() {
+return UI_ICONS.toolbarClose;
+},
+size: 18
+});
 }
 }), null);
 addEventListener(_el$10, "click", props.settingsController.handlePanelClick, true);
@@ -8472,7 +7045,7 @@ get when() {
 return props.settingsController.isSettingsExpanded();
 },
 get children() {
-return createComponent(SettingsControlsLazy, {
+return createComponent(SettingsControls, mergeProps({
 get currentTheme() {
 return props.settingsController.currentTheme;
 },
@@ -8485,9 +7058,8 @@ return props.settingsController.handleThemeChange;
 get onLanguageChange() {
 return props.settingsController.handleLanguageChange;
 },
-compact: true,
-"data-testid": "settings-controls"
-});
+compact: true
+}, settingsControlsTestId));
 }
 }));
 use(setTweetPanelEl, _el$11);
@@ -8496,16 +7068,7 @@ get when() {
 return memo(() => !!props.isTweetPanelExpanded())() && hasTweetContent();
 },
 get children() {
-return createComponent(Suspense, {
-get fallback() {
-return (() => {
-var _el$12 = _tmpl$2$2();
-createRenderEffect(() => className(_el$12, Toolbar_module_default.tweetPanelLoading));
-return _el$12;
-})();
-},
-get children() {
-return createComponent(TweetTextPanelLazy, {
+return createComponent(TweetTextPanel, {
 get tweetText() {
 return tweetText() ?? void 0;
 },
@@ -8514,11 +7077,9 @@ return tweetTextHTML() ?? void 0;
 }
 });
 }
-});
-}
 }));
 createRenderEffect((_p$) => {
-var _v$ = cx(props.toolbarClass(), toolbarStateClass(), props.settingsController.isSettingsExpanded() ? Toolbar_module_default.settingsExpanded : void 0, props.isTweetPanelExpanded() ? Toolbar_module_default.tweetPanelExpanded : void 0), _v$2 = props.role ?? "toolbar", _v$3 = props["aria-label"] ?? "Gallery Toolbar", _v$4 = props["aria-describedby"], _v$5 = isToolbarDisabled(), _v$6 = props["data-testid"], _v$7 = props.tabIndex, _v$8 = cx(Toolbar_module_default.toolbarContent, "xeg-row-center"), _v$9 = Toolbar_module_default.toolbarControls, _v$0 = Toolbar_module_default.counterBlock, _v$1 = cx(Toolbar_module_default.mediaCounterWrapper, "xeg-inline-center"), _v$10 = cx(Toolbar_module_default.mediaCounter, "xeg-inline-center"), _v$11 = Toolbar_module_default.currentIndex, _v$12 = Toolbar_module_default.separator, _v$13 = Toolbar_module_default.totalCount, _v$14 = Toolbar_module_default.progressBar, _v$15 = Toolbar_module_default.progressFill, _v$16 = props.progressWidth(), _v$17 = cx(Toolbar_module_default.settingsPanel, props.settingsController.isSettingsExpanded() ? Toolbar_module_default.panelExpanded : void 0), _v$18 = cx(Toolbar_module_default.tweetPanel, props.isTweetPanelExpanded() ? Toolbar_module_default.panelExpanded : void 0), _v$19 = getLanguageService().translate("toolbar.tweetTextPanel") || "Tweet text panel";
+var _v$ = cx(props.toolbarClass(), toolbarStateClass(), props.settingsController.isSettingsExpanded() ? Toolbar_module_default.settingsExpanded : void 0, props.isTweetPanelExpanded() ? Toolbar_module_default.tweetPanelExpanded : void 0), _v$2 = props.role ?? "toolbar", _v$3 = props["aria-label"] ?? "Gallery Toolbar", _v$4 = props["aria-describedby"], _v$5 = isToolbarDisabled(), _v$6 = void 0, _v$7 = props.tabIndex, _v$8 = cx(Toolbar_module_default.toolbarContent, "xeg-row-center"), _v$9 = Toolbar_module_default.toolbarControls, _v$0 = Toolbar_module_default.counterBlock, _v$1 = cx(Toolbar_module_default.mediaCounterWrapper, "xeg-inline-center"), _v$10 = cx(Toolbar_module_default.mediaCounter, "xeg-inline-center"), _v$11 = Toolbar_module_default.currentIndex, _v$12 = Toolbar_module_default.separator, _v$13 = Toolbar_module_default.totalCount, _v$14 = Toolbar_module_default.progressBar, _v$15 = Toolbar_module_default.progressFill, _v$16 = props.progressWidth(), _v$17 = cx(Toolbar_module_default.settingsPanel, props.settingsController.isSettingsExpanded() ? Toolbar_module_default.panelExpanded : void 0), _v$18 = cx(Toolbar_module_default.tweetPanel, props.isTweetPanelExpanded() ? Toolbar_module_default.panelExpanded : void 0), _v$19 = translate("tb.twPanel");
 _v$ !== _p$.e && className(_el$, _p$.e = _v$);
 _v$2 !== _p$.t && setAttribute(_el$, "role", _p$.t = _v$2);
 _v$3 !== _p$.a && setAttribute(_el$, "aria-label", _p$.a = _v$3);
@@ -8567,33 +7128,14 @@ T: void 0
 return _el$;
 })();
 }
-var _tmpl$$4, _tmpl$2$2, TweetTextPanelLazy, SCROLLABLE_SELECTOR, SCROLL_LOCK_TOLERANCE, shouldAllowWheelDefault$1;
-var init_ToolbarView = __esmMin((() => {
-init_web();
-init_IconButton();
-init_Icon();
-init_SettingsControlsLazy();
-init_service_accessors();
-init_events();
-init_formatting();
-init_solid();
-init_Toolbar_module();
-_tmpl$$4 = /* @__PURE__ */ template(`<div data-gallery-element=toolbar><div data-gallery-element=toolbar-content><div data-gallery-element=toolbar-controls><div data-gallery-element=counter-section><div><span aria-live=polite data-gallery-element=counter><span></span><span>/</span><span></span></span><div><div></div></div></div></div></div></div><div id=toolbar-settings-panel data-gallery-scrollable=true role=region aria-label="Settings Panel"aria-labelledby=settings-button data-gallery-element=settings-panel></div><div id=toolbar-tweet-panel role=region aria-labelledby=tweet-text-button data-gallery-element=tweet-panel>`), _tmpl$2$2 = /* @__PURE__ */ template(`<div>Loading...`);
-TweetTextPanelLazy = lazy(() => Promise.resolve().then(() => (init_TweetTextPanel(), TweetTextPanel_exports)));
-SCROLLABLE_SELECTOR = "[data-gallery-scrollable=\"true\"]";
-SCROLL_LOCK_TOLERANCE = 1;
-shouldAllowWheelDefault$1 = (event) => {
-return shouldAllowWheelDefault(event, {
-scrollableSelector: SCROLLABLE_SELECTOR,
-tolerance: SCROLL_LOCK_TOLERANCE
-});
-};
 delegateEvents([
 "keydown",
 "mousedown",
 "click"
 ]);
-}));
+var toolbarSettingsControllerListenerSeq = 0;
+var DEFAULT_FOCUS_DELAY_MS = 50;
+var DEFAULT_SELECT_GUARD_MS = 300;
 function useToolbarSettingsController(options) {
 const { isSettingsExpanded, setSettingsExpanded, toggleSettingsExpanded, documentRef = typeof document !== "undefined" ? document : void 0, themeService: providedThemeService, languageService: providedLanguageService, focusDelayMs = DEFAULT_FOCUS_DELAY_MS, selectChangeGuardMs = DEFAULT_SELECT_GUARD_MS } = options;
 const themeManager = providedThemeService ?? getThemeService();
@@ -8772,21 +7314,15 @@ handleThemeChange,
 handleLanguageChange
 };
 }
-var toolbarSettingsControllerListenerSeq, DEFAULT_FOCUS_DELAY_MS, DEFAULT_SELECT_GUARD_MS;
-var init_use_toolbar_settings_controller = __esmMin((() => {
-init_service_accessors();
-init_logging();
-init_event_manager();
-init_timer_management();
-init_solid();
-toolbarSettingsControllerListenerSeq = 0;
-DEFAULT_FOCUS_DELAY_MS = 50;
-DEFAULT_SELECT_GUARD_MS = 300;
-}));
+var INITIAL_STATE$1 = {
+isDownloading: false,
+isLoading: false,
+hasError: false
+};
 function useToolbarState() {
-const [isDownloading, setIsDownloading] = createSignal(INITIAL_STATE$2.isDownloading);
-const [isLoading, setIsLoading] = createSignal(INITIAL_STATE$2.isLoading);
-const [hasError, setHasError] = createSignal(INITIAL_STATE$2.hasError);
+const [isDownloading, setIsDownloading] = createSignal(INITIAL_STATE$1.isDownloading);
+const [isLoading, setIsLoading] = createSignal(INITIAL_STATE$1.isLoading);
+const [hasError, setHasError] = createSignal(INITIAL_STATE$1.hasError);
 let lastDownloadToggle = 0;
 let downloadTimeoutRef = null;
 const clearDownloadTimeout = () => {
@@ -8830,9 +7366,9 @@ setIsDownloading(false);
 const resetState = () => {
 clearDownloadTimeout();
 lastDownloadToggle = 0;
-setIsDownloading(INITIAL_STATE$2.isDownloading);
-setIsLoading(INITIAL_STATE$2.isLoading);
-setHasError(INITIAL_STATE$2.hasError);
+setIsDownloading(INITIAL_STATE$1.isDownloading);
+setIsLoading(INITIAL_STATE$1.isLoading);
+setHasError(INITIAL_STATE$1.hasError);
 };
 onCleanup(() => {
 clearDownloadTimeout();
@@ -8854,20 +7390,56 @@ setError: setError$1,
 resetState
 }];
 }
-var INITIAL_STATE$2;
-var init_use_toolbar_state = __esmMin((() => {
-init_timer_management();
-init_solid();
-INITIAL_STATE$2 = {
+var DEFAULT_PROPS = {
 isDownloading: false,
-isLoading: false,
-hasError: false
+disabled: false,
+className: ""
 };
-}));
-var init_hooks = __esmMin((() => {
-init_use_toolbar_settings_controller();
-init_use_toolbar_state();
-}));
+var FIT_MODE_ORDER = [
+{
+mode: "original",
+iconName: UI_ICONS.fitOriginal
+},
+{
+mode: "fitWidth",
+iconName: UI_ICONS.fitWidth
+},
+{
+mode: "fitHeight",
+iconName: UI_ICONS.fitHeight
+},
+{
+mode: "fitContainer",
+iconName: UI_ICONS.fitContainer
+}
+];
+var resolveDisplayedIndex = ({ total, currentIndex: currentIndex$1, focusedIndex }) => {
+if (total <= 0) return 0;
+if (typeof focusedIndex === "number" && focusedIndex >= 0 && focusedIndex < total) return focusedIndex;
+return clampIndex(currentIndex$1, total);
+};
+var calculateProgressWidth = (index, total) => {
+if (total <= 0) return "0%";
+return `${(index + 1) / total * 100}%`;
+};
+var computeNavigationState = ({ total, toolbarDisabled, downloadBusy }) => {
+const hasItems = total > 0;
+const canNavigate = hasItems && total > 1;
+return {
+prevDisabled: toolbarDisabled || !canNavigate,
+nextDisabled: toolbarDisabled || !canNavigate,
+canDownloadAll: total > 1,
+downloadDisabled: toolbarDisabled || downloadBusy || !hasItems,
+anyActionDisabled: toolbarDisabled
+};
+};
+var createGuardedHandler = (guard, action) => {
+return (event) => {
+safeEventPrevent(event);
+if (guard()) return;
+action?.();
+};
+};
 function getToolbarDataState(state) {
 if (state.hasError) return "error";
 if (state.isDownloading) return "downloading";
@@ -8884,6 +7456,7 @@ const isDisabled = toRequiredAccessor(() => props.disabled, false);
 const currentFitMode = toOptionalAccessor(() => props.currentFitMode);
 const tweetText = toOptionalAccessor(() => props.tweetText);
 const tweetTextHTML = toOptionalAccessor(() => props.tweetTextHTML);
+const translate = useTranslation();
 const [toolbarState, toolbarActions] = useToolbarState();
 const [settingsExpandedSignal, setSettingsExpandedSignal] = createSignal(false);
 const [tweetExpanded, setTweetExpanded] = createSignal(false);
@@ -8937,6 +7510,24 @@ original: props.handlers.fitMode?.onFitOriginal,
 fitWidth: props.handlers.fitMode?.onFitWidth,
 fitHeight: props.handlers.fitMode?.onFitHeight,
 fitContainer: props.handlers.fitMode?.onFitContainer
+}));
+const fitModeLabels = createMemo(() => ({
+original: {
+label: translate("tb.fitOri"),
+title: translate("tb.fitOri")
+},
+fitWidth: {
+label: translate("tb.fitW"),
+title: translate("tb.fitW")
+},
+fitHeight: {
+label: translate("tb.fitH"),
+title: translate("tb.fitH")
+},
+fitContainer: {
+label: translate("tb.fitC"),
+title: translate("tb.fitC")
+}
 }));
 const activeFitMode = createMemo(() => currentFitMode() ?? FIT_MODE_ORDER[0]?.mode ?? "original");
 const isToolbarDisabled = () => Boolean(isDisabled());
@@ -8994,7 +7585,7 @@ navState,
 displayedIndex,
 progressWidth,
 fitModeOrder: FIT_MODE_ORDER,
-fitModeLabels: FIT_MODE_LABELS,
+fitModeLabels,
 activeFitMode,
 handleFitModeClick,
 isFitDisabled,
@@ -9011,88 +7602,54 @@ isTweetPanelExpanded: tweetExpanded,
 toggleTweetPanelExpanded: toggleTweet
 });
 }
-var DEFAULT_PROPS, FIT_MODE_LABELS, FIT_MODE_ORDER, resolveDisplayedIndex, calculateProgressWidth, computeNavigationState, createGuardedHandler, Toolbar;
-var init_Toolbar = __esmMin((() => {
-init_web();
-init_Icon();
-init_ToolbarView();
-init_hooks();
-init_formatting();
-init_solid();
-init_Toolbar_module();
-DEFAULT_PROPS = {
-isDownloading: false,
-disabled: false,
-className: ""
+const Toolbar = ToolbarContainer;
+const DEFAULT_SETTINGS = {
+gallery: {
+autoScrollSpeed: 5,
+infiniteScroll: true,
+preloadCount: 3,
+imageFitMode: "fitWidth",
+theme: "auto",
+animations: true,
+enableKeyboardNav: true,
+videoVolume: 1,
+videoMuted: false
+},
+toolbar: { autoHideDelay: 3e3 },
+download: {
+filenamePattern: "original",
+imageQuality: "original",
+maxConcurrentDownloads: 3,
+autoZip: false,
+folderStructure: "flat"
+},
+tokens: {
+autoRefresh: true,
+expirationMinutes: 60
+},
+accessibility: {
+reduceMotion: false,
+screenReaderSupport: true,
+focusIndicators: true
+},
+features: {
+gallery: true,
+settings: true,
+download: true,
+mediaExtraction: true,
+accessibility: true
+},
+version: "1.4.0",
+lastModified: 0
 };
-FIT_MODE_LABELS = {
-original: {
-label: "Original",
-title: "Original Size (1:1)"
-},
-fitWidth: {
-label: "Fit Width",
-title: "Fit to Width"
-},
-fitHeight: {
-label: "Fit Height",
-title: "Fit to Height"
-},
-fitContainer: {
-label: "Fit Window",
-title: "Fit to Window"
+function createDefaultSettings(timestamp = Date.now()) {
+const settings = cloneDeep(DEFAULT_SETTINGS);
+settings.lastModified = timestamp;
+return settings;
 }
-};
-FIT_MODE_ORDER = [
-{
-mode: "original",
-Icon: HeroArrowsPointingOut
-},
-{
-mode: "fitWidth",
-Icon: HeroArrowsRightLeft
-},
-{
-mode: "fitHeight",
-Icon: HeroArrowsUpDown
-},
-{
-mode: "fitContainer",
-Icon: HeroArrowsPointingIn
-}
-];
-resolveDisplayedIndex = ({ total, currentIndex: currentIndex$1, focusedIndex }) => {
-if (total <= 0) return 0;
-if (typeof focusedIndex === "number" && focusedIndex >= 0 && focusedIndex < total) return focusedIndex;
-return clampIndex(currentIndex$1, total);
-};
-calculateProgressWidth = (index, total) => {
-if (total <= 0) return "0%";
-return `${(index + 1) / total * 100}%`;
-};
-computeNavigationState = ({ total, toolbarDisabled, downloadBusy }) => {
-const hasItems = total > 0;
-const canNavigate = hasItems && total > 1;
-return {
-prevDisabled: toolbarDisabled || !canNavigate,
-nextDisabled: toolbarDisabled || !canNavigate,
-canDownloadAll: total > 1,
-downloadDisabled: toolbarDisabled || downloadBusy || !hasItems,
-anyActionDisabled: toolbarDisabled
-};
-};
-createGuardedHandler = (guard, action) => {
-return (event) => {
-safeEventPrevent(event);
-if (guard()) return;
-action?.();
-};
-};
-Toolbar = ToolbarContainer;
-}));
 function requireSettingsService() {
 const service = tryGetSettingsManager();
-if (!service) throw new Error("SettingsService is not registered. Ensure bootstrap registers it before usage.");
+if (!service) throw new Error("SettingsService not registered.");
 return service;
 }
 function getTypedSettingOr(path, fallback) {
@@ -9102,94 +7659,14 @@ return value === void 0 ? fallback : value;
 function setTypedSetting(path, value) {
 return requireSettingsService().set(path, value);
 }
-function asUnknownRecord(value) {
-return value;
-}
-function isPlainObject(value) {
-return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-function collectDotPaths(obj, prefix = "") {
-const paths = [];
-for (const [key, value] of Object.entries(obj)) {
-const current = prefix ? `${prefix}.${key}` : key;
-paths.push(current);
-if (isPlainObject(value)) paths.push(...collectDotPaths(value, current));
-}
-return paths;
-}
-var SETTINGS_PATH_SCHEMA;
-var init_typed_settings = __esmMin((() => {
-init_constants$1();
-init_service_accessors();
-SETTINGS_PATH_SCHEMA = {
-...asUnknownRecord(DEFAULT_SETTINGS),
-download: {
-...asUnknownRecord(asUnknownRecord(DEFAULT_SETTINGS).download),
-customTemplate: void 0
-},
-tokens: {
-...asUnknownRecord(asUnknownRecord(DEFAULT_SETTINGS).tokens),
-bearerToken: void 0,
-lastRefresh: void 0
-}
+var INITIAL_STATE = {
+activeTasks:  new Map(),
+queue: [],
+isProcessing: false
 };
-new Set(collectDotPaths(SETTINGS_PATH_SCHEMA));
-}));
-var init_settings_access = __esmMin((() => {
-init_typed_settings();
-}));
-function createSignalSafe(initial) {
-const [read, write] = createSignal(initial, { equals: false });
-const setSignal = write;
-const subscribers = /* @__PURE__ */ new Set();
-const notify = (val) => {
-for (const subscriber of subscribers) subscriber(val);
-};
-const signalObject = {
-set(value) {
-if (typeof value === "function") setSignal(() => value);
-else setSignal(value);
-notify(value);
-},
-update(updater) {
-const nextValue = updater(read());
-setSignal(updater);
-notify(nextValue);
-},
-subscribe(callback) {
-subscribers.add(callback);
-notify(read());
-return () => {
-subscribers.delete(callback);
-};
-}
-};
-Object.defineProperty(signalObject, "value", {
-get: () => {
-return read();
-},
-set: (v) => {
-signalObject.set(v);
-},
-enumerable: true
-});
-return signalObject;
-}
-function effectSafe(fn) {
-return createRoot((dispose$1) => {
-createComputed(() => {
-fn();
-});
-return dispose$1;
-});
-}
-var init_signal_factory = __esmMin((() => {
-init_logging();
-init_solid();
-createScopedLogger?.("SignalFactory") ?? createLogger({ prefix: "[SignalFactory]" });
-}));
+var downloadStateSignal = null;
 function getDownloadState() {
-if (!downloadStateSignal) downloadStateSignal = createSignalSafe(INITIAL_STATE$1);
+if (!downloadStateSignal) downloadStateSignal = createSignalSafe(INITIAL_STATE);
 return downloadStateSignal;
 }
 function setProcessingFlag(isProcessing) {
@@ -9210,16 +7687,7 @@ if (queue.length === 0 && activeTasks.size === 0) setProcessingFlag(false);
 function isDownloadLocked() {
 return downloadState.value.isProcessing;
 }
-var INITIAL_STATE$1, downloadStateSignal, downloadState;
-var init_download_signals = __esmMin((() => {
-init_signal_factory();
-INITIAL_STATE$1 = {
-activeTasks: /* @__PURE__ */ new Map(),
-queue: [],
-isProcessing: false
-};
-downloadStateSignal = null;
-downloadState = {
+const downloadState = {
 get value() {
 return getDownloadState().value;
 },
@@ -9230,260 +7698,70 @@ subscribe(callback) {
 return getDownloadState().subscribe(callback);
 }
 };
-}));
-function resolveNowMs(nowMs$1) {
-return nowMs$1 ?? Date.now();
-}
-function isValidNavigationSource(value) {
-return typeof value === "string" && VALID_NAVIGATION_SOURCES.includes(value);
-}
-function isValidNavigationTrigger(value) {
-return typeof value === "string" && VALID_NAVIGATION_TRIGGERS.includes(value);
-}
-function isManualSource(source) {
-return source === "button" || source === "keyboard";
-}
-function createNavigationActionError(context, reason) {
-return /* @__PURE__ */ new Error(`[Gallery] Invalid navigation action (${context}): ${reason}`);
-}
-function validateNavigationParams(targetIndex, source, trigger, context) {
-if (typeof targetIndex !== "number" || Number.isNaN(targetIndex)) throw createNavigationActionError(context, "Navigate payload targetIndex invalid");
-if (!isValidNavigationSource(source)) throw createNavigationActionError(context, `Navigate payload source invalid: ${String(source)}`);
-if (!isValidNavigationTrigger(trigger)) throw createNavigationActionError(context, `Navigate payload trigger invalid: ${String(trigger)}`);
-}
-function recordNavigation(targetIndex, source, nowMs$1) {
-const timestamp = resolveNowMs(nowMs$1);
-const currentIndex$1 = navigationSignals.lastNavigatedIndex.value;
-const currentSource = navigationSignals.lastSource.value;
-if (targetIndex === currentIndex$1 && isManualSource(source) && isManualSource(currentSource)) {
-navigationSignals.lastTimestamp.value = timestamp;
-return { isDuplicate: true };
-}
-navigationSignals.lastSource.value = source;
-navigationSignals.lastTimestamp.value = timestamp;
-navigationSignals.lastNavigatedIndex.value = targetIndex;
-return { isDuplicate: false };
-}
-function resetNavigation(nowMs$1) {
-navigationSignals.lastSource.value = INITIAL_NAVIGATION_STATE.lastSource;
-navigationSignals.lastTimestamp.value = resolveNowMs(nowMs$1);
-navigationSignals.lastNavigatedIndex.value = INITIAL_NAVIGATION_STATE.lastNavigatedIndex;
-}
-function resolveNavigationSource(trigger) {
-if (trigger === "scroll") return "scroll";
-if (trigger === "keyboard") return "keyboard";
-return "button";
-}
-var INITIAL_NAVIGATION_STATE, VALID_NAVIGATION_SOURCES, VALID_NAVIGATION_TRIGGERS, navigationSignals;
-var init_navigation_state = __esmMin((() => {
-init_signal_factory();
-INITIAL_NAVIGATION_STATE = {
-lastSource: "auto-focus",
-lastTimestamp: 0,
-lastNavigatedIndex: null
-};
-VALID_NAVIGATION_SOURCES = [
-"button",
-"keyboard",
-"scroll",
-"auto-focus"
-];
-VALID_NAVIGATION_TRIGGERS = [
-"button",
-"click",
-"keyboard",
-"scroll"
-];
-navigationSignals = {
-lastSource: createSignalSafe(INITIAL_NAVIGATION_STATE.lastSource),
-lastTimestamp: createSignalSafe(INITIAL_NAVIGATION_STATE.lastTimestamp),
-lastNavigatedIndex: createSignalSafe(INITIAL_NAVIGATION_STATE.lastNavigatedIndex)
-};
-}));
-function setError(error$1) {
-uiSignals.error.value = error$1;
-if (error$1) {
-uiSignals.isLoading.value = false;
-logger.error(`[Gallery UI] Error: ${error$1}`);
-}
-}
-var INITIAL_UI_STATE, uiSignals;
-var init_ui_state = __esmMin((() => {
-init_logging();
-init_signal_factory();
-INITIAL_UI_STATE = {
-viewMode: "vertical",
-isLoading: false,
-error: null
-};
-uiSignals = {
-viewMode: createSignalSafe(INITIAL_UI_STATE.viewMode),
-isLoading: createSignalSafe(INITIAL_UI_STATE.isLoading),
-error: createSignalSafe(INITIAL_UI_STATE.error)
-};
-}));
-function createEventEmitter() {
-const listeners$1 = /* @__PURE__ */ new Map();
-return {
-on(event, callback) {
-if (!listeners$1.has(event)) listeners$1.set(event, /* @__PURE__ */ new Set());
-listeners$1.get(event).add(callback);
-return () => {
-listeners$1.get(event)?.delete(callback);
-};
-},
-emit(event, data) {
-const eventListeners = listeners$1.get(event);
-if (!eventListeners) return;
-eventListeners.forEach((callback) => {
-try {
-callback(data);
-} catch (error$1) {
-logger.error(`[EventEmitter] Listener error for event "${String(event)}":`, error$1);
-}
-});
-},
-dispose() {
-listeners$1.clear();
-}
-};
-}
-var init_emitter = __esmMin((() => {
-init_logging();
-}));
-function applyGalleryStateUpdate(state) {
-batch$1(() => {
-gallerySignals.mediaItems.value = state.mediaItems;
-gallerySignals.currentIndex.value = state.currentIndex;
-gallerySignals.isLoading.value = state.isLoading;
-gallerySignals.error.value = state.error;
-gallerySignals.viewMode.value = state.viewMode;
-gallerySignals.isOpen.value = state.isOpen;
-});
-}
-function openGallery(items, startIndex = 0) {
-const validIndex = clampIndex(startIndex, items.length);
-galleryState.value = {
-...galleryState.value,
-isOpen: true,
-mediaItems: items,
-currentIndex: validIndex,
-error: null
-};
-gallerySignals.focusedIndex.value = validIndex;
-resetNavigation();
-;
-}
-function closeGallery() {
-galleryState.value = {
-...galleryState.value,
-isOpen: false,
-currentIndex: 0,
-mediaItems: [],
-error: null
-};
-gallerySignals.focusedIndex.value = null;
-gallerySignals.currentVideoElement.value = null;
-resetNavigation();
-;
-}
-function navigateToItem(index, trigger = "button", source) {
-const state = galleryState.value;
-const validIndex = clampIndex(index, state.mediaItems.length);
-const navigationSource = source ?? resolveNavigationSource(trigger);
-validateNavigationParams(validIndex, navigationSource, trigger, "navigateToItem");
-if (recordNavigation(validIndex, navigationSource).isDuplicate) {
-;
-gallerySignals.focusedIndex.value = validIndex;
-return;
-}
-galleryIndexEvents.emit("navigate:start", {
-from: state.currentIndex,
-to: validIndex,
-trigger
-});
-batch$1(() => {
-galleryState.value = {
-...state,
-currentIndex: validIndex
-};
-gallerySignals.focusedIndex.value = validIndex;
-});
-galleryIndexEvents.emit("navigate:complete", {
-index: validIndex,
-trigger
-});
-;
-}
-function navigatePrevious(trigger = "button") {
-const state = galleryState.value;
-const baseIndex = getCurrentActiveIndex();
-navigateToItem(baseIndex > 0 ? baseIndex - 1 : state.mediaItems.length - 1, trigger, resolveNavigationSource(trigger));
-}
-function navigateNext(trigger = "button") {
-const state = galleryState.value;
-const baseIndex = getCurrentActiveIndex();
-navigateToItem(baseIndex < state.mediaItems.length - 1 ? baseIndex + 1 : 0, trigger, resolveNavigationSource(trigger));
-}
-function getCurrentActiveIndex() {
-return gallerySignals.focusedIndex.value ?? galleryState.value.currentIndex;
-}
-var batch$1, INITIAL_STATE, galleryIndexEvents, gallerySignals, galleryState;
-var init_gallery_signals = __esmMin((() => {
-init_logging();
-init_navigation_state();
-init_signal_factory();
-init_ui_state();
-init_emitter();
-init_solid();
-batch$1 = batch;
-INITIAL_STATE = {
-isOpen: false,
-mediaItems: [],
-currentIndex: 0,
-isLoading: false,
-error: null,
-viewMode: "vertical"
-};
-galleryIndexEvents = createEventEmitter();
-gallerySignals = {
-isOpen: createSignalSafe(INITIAL_STATE.isOpen),
-mediaItems: createSignalSafe(INITIAL_STATE.mediaItems),
-currentIndex: createSignalSafe(INITIAL_STATE.currentIndex),
-isLoading: uiSignals.isLoading,
-error: uiSignals.error,
-viewMode: uiSignals.viewMode,
-focusedIndex: createSignalSafe(null),
-currentVideoElement: createSignalSafe(null)
-};
-galleryState = {
-get value() {
-return {
-isOpen: gallerySignals.isOpen.value,
-mediaItems: gallerySignals.mediaItems.value,
-currentIndex: gallerySignals.currentIndex.value,
-isLoading: gallerySignals.isLoading.value,
-error: gallerySignals.error.value,
-viewMode: gallerySignals.viewMode.value
-};
-},
-set value(state) {
-applyGalleryStateUpdate(state);
-},
-subscribe(callback) {
-return effectSafe(() => {
-callback(galleryState.value);
-});
-}
-};
-}));
 function isDownloadUiBusy(context) {
 return Boolean(context.downloadProcessing);
 }
-var DEFAULTS, FocusCoordinator;
-var init_focus_coordinator = __esmMin((() => {
-init_performance();
-DEFAULTS = {
+function computePreloadIndices(currentIndex$1, total, count) {
+const safeTotal = Number.isFinite(total) && total > 0 ? Math.floor(total) : 0;
+const safeIndex = clampIndex(Math.floor(currentIndex$1), safeTotal);
+const safeCount = clamp(Math.floor(count), 0, 20);
+if (safeTotal === 0 || safeCount === 0) return [];
+const indices = [];
+for (let i = 1; i <= safeCount; i++) {
+const idx = safeIndex - i;
+if (idx >= 0) indices.push(idx);
+else break;
+}
+for (let i = 1; i <= safeCount; i++) {
+const idx = safeIndex + i;
+if (idx < safeTotal) indices.push(idx);
+else break;
+}
+return indices;
+}
+var observerRegistry =  new WeakMap();
+const SharedObserver = {
+observe(element, callback, options = {}) {
+const observer = new IntersectionObserver((entries) => {
+for (const entry of entries) try {
+callback(entry);
+} catch (error$1) {}
+}, options);
+observer.observe(element);
+let set = observerRegistry.get(element);
+if (!set) {
+set =  new Set();
+observerRegistry.set(element, set);
+}
+set.add(observer);
+let isActive = true;
+const unsubscribe = () => {
+if (!isActive) return;
+isActive = false;
+try {
+observer.unobserve(element);
+} catch {}
+try {
+observer.disconnect();
+} catch {}
+const currentSet = observerRegistry.get(element);
+if (currentSet) {
+currentSet.delete(observer);
+if (currentSet.size === 0) observerRegistry.delete(element);
+}
+};
+return unsubscribe;
+},
+unobserve(element) {
+const set = observerRegistry.get(element);
+if (!set || set.size === 0) return;
+for (const observer of set) try {
+observer.disconnect();
+} catch {}
+observerRegistry.delete(element);
+}
+};
+var DEFAULTS = {
 THRESHOLD: [
 0,
 .1,
@@ -9499,8 +7777,8 @@ THRESHOLD: [
 ],
 ROOT_MARGIN: "0px"
 };
-FocusCoordinator = class {
-items = /* @__PURE__ */ new Map();
+var FocusCoordinator = class {
+items =  new Map();
 observerOptions;
 constructor(options) {
 this.options = options;
@@ -9587,7 +7865,6 @@ distance: 0
 return bestCandidate;
 }
 };
-}));
 function useGalleryFocusTracker(options) {
 const isEnabled = toAccessor(options.isEnabled);
 const container$2 = toAccessor(options.container);
@@ -9617,11 +7894,6 @@ handleItemFocus,
 forceSync: () => coordinator.updateFocus(true)
 };
 }
-var init_useGalleryFocusTracker = __esmMin((() => {
-init_focus_coordinator();
-init_gallery_signals();
-init_solid();
-}));
 function useGalleryItemScroll(containerRef, currentIndex$1, totalItems, options = {}) {
 const containerAccessor = typeof containerRef === "function" ? containerRef : () => containerRef.current;
 const enabled = toAccessor(options.enabled ?? true);
@@ -9668,130 +7940,8 @@ scrollToItem,
 scrollToCurrentItem: () => scrollToItem(currentIndexAccessor())
 };
 }
-var init_useGalleryItemScroll = __esmMin((() => {
-init_solid();
-}));
-function createEventListener(handler) {
-return (event) => {
-handler(event);
-};
-}
-function isHTMLElement(element) {
-return element instanceof HTMLElement;
-}
-function isRecord(value) {
-return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-function safeClosest(element, selector) {
-try {
-return element.closest(selector);
-} catch (error$1) {
-return null;
-}
-}
-function safeMatches(element, selector) {
-try {
-return element.matches(selector);
-} catch (error$1) {
-return false;
-}
-}
-function isWithinVideoPlayer(element) {
-return VIDEO_PLAYER_CONTEXT_SELECTORS.some((selector) => safeClosest(element, selector) !== null);
-}
-function matchesVideoControlSelectors(element) {
-return VIDEO_CONTROL_SELECTORS.some((selector) => safeMatches(element, selector) || safeClosest(element, selector) !== null);
-}
-function hasInputRangeSignature(element) {
-if (typeof element.matches !== "function") return false;
-return safeMatches(element, "input[type=\"range\"]");
-}
-function getNearestAttributeValue(element, attribute) {
-if (element.hasAttribute(attribute)) return element.getAttribute(attribute);
-return safeClosest(element, `[${attribute}]`)?.getAttribute(attribute) ?? null;
-}
-function containsControlToken(value, tokens) {
-if (!value) return false;
-const normalized = value.toLowerCase();
-return tokens.some((token) => normalized.includes(token));
-}
-function collectControlAttributeSnapshot(element) {
-return {
-role: element.getAttribute("role"),
-dataTestId: getNearestAttributeValue(element, "data-testid"),
-ariaLabel: getNearestAttributeValue(element, "aria-label")
-};
-}
-function gatherVideoControlEvidence(element) {
-if (matchesVideoControlSelectors(element)) return {
-selectorMatch: true,
-datasetToken: false,
-ariaToken: false,
-playerScoped: true,
-roleMatch: false,
-rangeSignature: hasInputRangeSignature(element)
-};
-const attributes = collectControlAttributeSnapshot(element);
-const datasetToken = containsControlToken(attributes.dataTestId, VIDEO_CONTROL_DATASET_PREFIXES);
-const ariaToken = containsControlToken(attributes.ariaLabel, VIDEO_CONTROL_ARIA_TOKENS);
-const roleMatch = attributes.role ? VIDEO_CONTROL_ROLE_SET.has(attributes.role.toLowerCase()) : false;
-return {
-selectorMatch: false,
-datasetToken,
-ariaToken,
-playerScoped: isWithinVideoPlayer(element),
-roleMatch,
-rangeSignature: hasInputRangeSignature(element)
-};
-}
-function isVideoControlElement(element) {
-if (!isHTMLElement(element)) return false;
-if (element.tagName.toLowerCase() === "video") return true;
-if (typeof element.matches !== "function") return false;
-const evidence = gatherVideoControlEvidence(element);
-if (evidence.selectorMatch) return true;
-if (evidence.datasetToken || evidence.ariaToken) return true;
-if (!evidence.playerScoped) return false;
-if (evidence.roleMatch || evidence.rangeSignature) return true;
-return false;
-}
-function isGalleryInternalElement(element) {
-if (!element) return false;
-if (!(element instanceof HTMLElement)) return false;
-if (typeof element.matches !== "function") {
-;
-return false;
-}
-return GALLERY_SELECTORS.some((selector) => {
-try {
-return element.matches(selector) || element.closest(selector) !== null;
-} catch (error$1) {
-;
-return false;
-}
-});
-}
-function isGalleryInternalEvent(event) {
-const target = event.target;
-if (!isHTMLElement(target)) return false;
-return isGalleryInternalElement(target);
-}
-var GALLERY_SELECTORS, VIDEO_PLAYER_CONTEXT_SELECTORS, VIDEO_CONTROL_ROLE_SET;
-var init_utils = __esmMin((() => {
-init_constants$1();
-init_selectors();
-init_logging();
-GALLERY_SELECTORS = CSS.INTERNAL_SELECTORS;
-VIDEO_PLAYER_CONTEXT_SELECTORS = [
-VIDEO_PLAYER_SELECTOR,
-"[data-testid=\"videoComponent\"]",
-"[data-testid=\"videoPlayerControls\"]",
-"[data-testid=\"videoPlayerOverlay\"]",
-"[role=\"application\"]",
-"[aria-label*=\"Video\"]"
-];
-VIDEO_CONTROL_ROLE_SET = new Set(VIDEO_CONTROL_ROLES.map((role) => role.toLowerCase()));
-}));
+var PROGRAMMATIC_SCROLL_WINDOW = 100;
+var LISTENER_CONTEXT_PREFIX = "useGalleryScroll";
 function useGalleryScroll({ container: container$2, scrollTarget, onScroll, onScrollEnd, enabled = true, programmaticScrollTimestamp }) {
 const containerAccessor = toAccessor(container$2);
 const scrollTargetAccessor = toAccessor(scrollTarget ?? containerAccessor);
@@ -9875,17 +8025,6 @@ isScrolling: isScrolling$1,
 lastScrollTime
 };
 }
-var PROGRAMMATIC_SCROLL_WINDOW, LISTENER_CONTEXT_PREFIX;
-var init_useGalleryScroll = __esmMin((() => {
-init_utils();
-init_logging();
-init_event_manager();
-init_gallery_signals();
-init_timer_management();
-init_solid();
-PROGRAMMATIC_SCROLL_WINDOW = 100;
-LISTENER_CONTEXT_PREFIX = "useGalleryScroll";
-}));
 function useGalleryKeyboard({ onClose }) {
 createEffect(() => {
 if (typeof document === "undefined") return;
@@ -9916,10 +8055,6 @@ if (listenerId) eventManager.removeListener(listenerId);
 });
 });
 }
-var init_useGalleryKeyboard = __esmMin((() => {
-init_event_manager();
-init_solid();
-}));
 function ensureGalleryScrollAvailable(element) {
 if (!element) return;
 element.querySelectorAll("[data-xeg-role=\"items-list\"], .itemsList, .content").forEach((el) => {
@@ -9988,16 +8123,16 @@ resizeListenerId = null;
 }
 };
 }
-var init_viewport = __esmMin((() => {
-init_event_manager();
-init_timer_management();
-}));
-function runCssAnimation(element, className$1, options) {
+var ANIMATION_CLASSES = {
+FADE_IN: "xeg-fade-in",
+FADE_OUT: "xeg-fade-out"
+};
+var safeLogAnimationFailure = (message, error$1) => {};
+function runCssAnimation(element, className$1) {
 return new Promise((resolve$1) => {
 try {
 const handleAnimationEnd = () => {
 element.classList.remove(className$1);
-options.onComplete?.();
 resolve$1();
 };
 element.addEventListener("animationend", handleAnimationEnd, { once: true });
@@ -10008,20 +8143,12 @@ resolve$1();
 }
 });
 }
-async function animateGalleryEnter(element, options = {}) {
-return runCssAnimation(element, ANIMATION_CLASSES.FADE_IN, options);
+async function animateGalleryEnter(element) {
+return runCssAnimation(element, ANIMATION_CLASSES.FADE_IN);
 }
-async function animateGalleryExit(element, options = {}) {
-return runCssAnimation(element, ANIMATION_CLASSES.FADE_OUT, options);
+async function animateGalleryExit(element) {
+return runCssAnimation(element, ANIMATION_CLASSES.FADE_OUT);
 }
-var ANIMATION_CLASSES, safeLogAnimationFailure;
-var init_css_animations = __esmMin((() => {
-ANIMATION_CLASSES = {
-FADE_IN: "xeg-fade-in",
-FADE_OUT: "xeg-fade-out"
-};
-safeLogAnimationFailure = (message, error$1) => {};
-}));
 function useGalleryLifecycle(options) {
 const { containerEl, toolbarWrapperEl, isVisible } = options;
 createEffect(on(containerEl, (element) => {
@@ -10065,12 +8192,6 @@ cleanup$1?.();
 });
 });
 }
-var init_useGalleryLifecycle = __esmMin((() => {
-init_viewport();
-init_logging();
-init_css_animations();
-init_solid();
-}));
 function useGalleryNavigation(options) {
 const { isVisible, scrollToItem } = options;
 const [lastNavigationTrigger, setLastNavigationTrigger] = createSignal(null);
@@ -10103,10 +8224,6 @@ stopStart();
 stopComplete();
 };
 }
-var init_useGalleryNavigation = __esmMin((() => {
-init_gallery_signals();
-init_solid();
-}));
 function useToolbarAutoHide(options) {
 const { isVisible, hasItems } = options;
 const computeInitialVisibility = () => Boolean(isVisible() && hasItems());
@@ -10140,11 +8257,6 @@ isInitialToolbarVisible,
 setIsInitialToolbarVisible
 };
 }
-var init_useToolbarAutoHide = __esmMin((() => {
-init_settings_access();
-init_timer_management();
-init_solid();
-}));
 function useVerticalGallery(options) {
 const { isVisible, currentIndex: currentIndex$1, mediaItemsCount, containerEl, toolbarWrapperEl, itemsContainerEl, onClose } = options;
 let focusSyncCallback = null;
@@ -10211,49 +8323,22 @@ setIsInitialToolbarVisible
 }
 };
 }
-var init_useVerticalGallery = __esmMin((() => {
-init_useGalleryFocusTracker();
-init_useGalleryItemScroll();
-init_useGalleryScroll();
-init_solid();
-init_useGalleryKeyboard();
-init_useGalleryLifecycle();
-init_useGalleryNavigation();
-init_useToolbarAutoHide();
-}));
-var xegVerticalGalleryContainer, container$1, toolbarWrapper, uiHidden, isScrolling, itemsContainer, empty, galleryItem, itemActive, scrollSpacer, toolbarHoverZone, initialToolbarVisible, toolbarButton, emptyMessage, VerticalGalleryView_module_default;
-var init_VerticalGalleryView_module = __esmMin((() => {
-xegVerticalGalleryContainer = "xeg_LSA44p";
-container$1 = "xeg_X9gZRg";
-toolbarWrapper = "xeg_meO3Up";
-uiHidden = "xeg_9abgzR";
-isScrolling = "xeg_sOsSyv";
-itemsContainer = "xeg_gmRWyH";
-empty = "xeg_yhK-Ds";
-galleryItem = "xeg_EfVayF";
-itemActive = "xeg_LxHLC8";
-scrollSpacer = "xeg_sfF005";
-toolbarHoverZone = "xeg_gC-mQz";
-initialToolbarVisible = "xeg_Canm64";
-toolbarButton = "xeg_e06XPV";
-emptyMessage = "xeg_fwsrVX";
-VerticalGalleryView_module_default = {
-xegVerticalGalleryContainer,
-container: container$1,
-toolbarWrapper,
-uiHidden,
-isScrolling,
-itemsContainer,
-empty,
-galleryItem,
-itemActive,
-scrollSpacer,
-toolbarHoverZone,
-initialToolbarVisible,
-toolbarButton,
-emptyMessage
+var VerticalGalleryView_module_default = {
+xegVerticalGalleryContainer: "xg-LSA4",
+container: "xg-X9gZ",
+toolbarWrapper: "xg-meO3",
+uiHidden: "xg-9abg",
+isScrolling: "xg-sOsS",
+itemsContainer: "xg-gmRW",
+empty: "xg-yhK-",
+galleryItem: "xg-EfVa",
+itemActive: "xg-LxHL",
+scrollSpacer: "xg-sfF0",
+toolbarHoverZone: "xg-gC-m",
+initialToolbarVisible: "xg-Canm",
+toolbarButton: "xg-e06X",
+emptyMessage: "xg-fwsr"
 };
-}));
 function createDebounced(fn, delayMs = 300) {
 let timeoutId = null;
 let pendingArgs = null;
@@ -10287,12 +8372,6 @@ debounced.cancel = cancel;
 debounced.flush = flush;
 return debounced;
 }
-var init_debounce = __esmMin((() => {
-init_timer_management();
-}));
-var init_async = __esmMin((() => {
-init_debounce();
-}));
 function createVideoVisibilityController(options) {
 const { video: video$1, setMuted } = options;
 let wasPlayingBeforeHidden = false;
@@ -10368,11 +8447,7 @@ unsubscribeObserver();
 });
 });
 }
-var init_useVideoVisibility = __esmMin((() => {
-init_logging();
-init_performance();
-init_solid();
-}));
+var DEFAULT_VOLUME_EPSILON = .001;
 function areVolumesEquivalent(a, b) {
 if (!Number.isFinite(a) || !Number.isFinite(b)) return a === b;
 return Math.abs(a - b) <= DEFAULT_VOLUME_EPSILON;
@@ -10410,10 +8485,12 @@ return expectedMarks.some((mark) => areVolumesEquivalent(current.volume, mark.sn
 }
 };
 }
-var DEFAULT_VOLUME_EPSILON;
-var init_video_volume_change_guard = __esmMin((() => {
-DEFAULT_VOLUME_EPSILON = .001;
-}));
+var VIDEO_EXTENSIONS = [
+".mp4",
+".webm",
+".mov",
+".avi"
+];
 function cleanFilename(filename) {
 if (!filename) return "Untitled";
 const MAX_LENGTH = 40;
@@ -10468,54 +8545,32 @@ if (VIDEO_EXTENSIONS.some((ext) => filenameLowerCase.endsWith(ext))) return true
 if (parsedUrl) return parsedUrl.hostname === "video.twimg.com";
 return false;
 }
-var VIDEO_EXTENSIONS;
-var init_VerticalImageItem_helpers = __esmMin((() => {
-VIDEO_EXTENSIONS = [
-".mp4",
-".webm",
-".mov",
-".avi"
-];
-}));
-var container, active, focused, imageWrapper, placeholder, loadingSpinner, image, video, loading, loaded, fitOriginal, fitWidth, fitHeight, fitContainer, errorIcon, errorText, error, VerticalImageItem_module_default;
-var init_VerticalImageItem_module = __esmMin((() => {
-container = "xeg_huYoSL";
-active = "xeg_xm-1cY";
-focused = "xeg_luqi-C";
-imageWrapper = "xeg_8-c8dL";
-placeholder = "xeg_lhkEW2";
-loadingSpinner = "xeg_6YYDYR";
-image = "xeg_FWlk5q";
-video = "xeg_GUevPQ";
-loading = "xeg_8Z3Su4";
-loaded = "xeg_y9iPua";
-fitOriginal = "xeg_yYtGJp";
-fitWidth = "xeg_Uc0oUi";
-fitHeight = "xeg_M9Z6MG";
-fitContainer = "xeg_-Mlrhi";
-errorIcon = "xeg_Wno7Ud";
-errorText = "xeg_8-wisg";
-error = "xeg_GswePL";
-VerticalImageItem_module_default = {
-container,
-active,
-focused,
-imageWrapper,
-placeholder,
-loadingSpinner,
-image,
-video,
-loading,
-loaded,
-fitOriginal,
-fitWidth,
-fitHeight,
-fitContainer,
-errorIcon,
-errorText,
-error
+var VerticalImageItem_module_default = {
+container: "xg-huYo",
+active: "xg-xm-1",
+focused: "xg-luqi",
+imageWrapper: "xg-8-c8",
+placeholder: "xg-lhkE",
+loadingSpinner: "xg-6YYD",
+image: "xg-FWlk",
+video: "xg-GUev",
+loading: "xg-8Z3S",
+loaded: "xg-y9iP",
+fitOriginal: "xg-yYtG",
+fitWidth: "xg-Uc0o",
+fitHeight: "xg-M9Z6",
+fitContainer: "xg--Mlr",
+errorIcon: "xg-Wno7",
+errorText: "xg-8-wi",
+error: "xg-Gswe"
 };
-}));
+var _tmpl$$3 =  template(`<div>`), _tmpl$2$1 =  template(`<div data-xeg-role=media-wrapper>`), _tmpl$3 =  template(`<div><div>`), _tmpl$4 =  template(`<video controls>`), _tmpl$5 =  template(`<img loading=lazy decoding=async>`, true, false, false), _tmpl$6 =  template(`<div><span>⚠️</span><span>`);
+var FIT_MODE_CLASSES = {
+original: VerticalImageItem_module_default.fitOriginal,
+fitHeight: VerticalImageItem_module_default.fitHeight,
+fitWidth: VerticalImageItem_module_default.fitWidth,
+fitContainer: VerticalImageItem_module_default.fitContainer
+};
 function VerticalImageItem(props) {
 const [local, rest] = splitProps(props, [
 "media",
@@ -10543,7 +8598,7 @@ const [local, rest] = splitProps(props, [
 const isFocused = createMemo(() => local.isFocused ?? false);
 const forceVisible = createMemo(() => local.forceVisible ?? false);
 const className$1 = createMemo(() => local.className ?? "");
-const lang = getLanguageService();
+const translate = useTranslation();
 const isVideo = createMemo(() => {
 switch (local.media.type) {
 case "video":
@@ -10596,6 +8651,14 @@ container: containerRef,
 video: videoRef,
 isVideo,
 setMuted: applyMutedProgrammatically
+});
+createEffect(() => {
+const video$1 = videoRef();
+if (local.isActive && video$1) {
+if (!untrack(() => gallerySignals.currentVideoElement.value === video$1)) gallerySignals.currentVideoElement.value = video$1;
+return;
+}
+if (untrack(() => gallerySignals.currentVideoElement.value === video$1)) gallerySignals.currentVideoElement.value = null;
 });
 const [videoVolume, setVideoVolume] = createSignal(normalizeVideoVolumeSetting(getTypedSettingOr("gallery.videoVolume", 1), 1));
 const [videoMuted, setVideoMuted] = createSignal(normalizeVideoMutedSetting(getTypedSettingOr("gallery.videoMuted", false), false));
@@ -10733,7 +8796,7 @@ local.registerContainer?.(element);
 };
 const defaultContainerRole = createMemo(() => isVideo() ? "group" : "button");
 const resolvedContainerRole = createMemo(() => local.role ?? defaultContainerRole());
-const defaultAriaLabel = createMemo(() => lang.translate("messages.gallery.mediaItemLabel", {
+const defaultAriaLabel = createMemo(() => translate("msg.gal.itemLbl", {
 index: local.index + 1,
 filename: cleanFilename(local.media.filename)
 }));
@@ -10785,9 +8848,7 @@ return resolvedContainerRole();
 get tabIndex() {
 return local.tabIndex ?? 0;
 },
-get ["data-testid"]() {
-return local["data-testid"];
-}
+get ["data-testid"]() {}
 }), false, true);
 insert(_el$, (() => {
 var _c$ = memo(() => !!isVisible());
@@ -10856,7 +8917,7 @@ insert(_el$2, (() => {
 var _c$4 = memo(() => !!isError());
 return () => _c$4() && (() => {
 var _el$7 = _tmpl$6(), _el$8 = _el$7.firstChild, _el$9 = _el$8.nextSibling;
-insert(_el$9, () => lang.translate("messages.gallery.failedToLoadImage", { type: isVideo() ? "video" : "image" }));
+insert(_el$9, () => translate("msg.gal.loadFail", { type: isVideo() ? "video" : "image" }));
 createRenderEffect((_p$) => {
 var _v$8 = VerticalImageItem_module_default.error, _v$9 = VerticalImageItem_module_default.errorIcon, _v$0 = VerticalImageItem_module_default.errorText;
 _v$8 !== _p$.e && className(_el$7, _p$.e = _v$8);
@@ -10878,29 +8939,8 @@ return _el$2;
 return _el$;
 })();
 }
-var _tmpl$$3, _tmpl$2$1, _tmpl$3, _tmpl$4, _tmpl$5, _tmpl$6, FIT_MODE_CLASSES;
-var init_VerticalImageItem = __esmMin((() => {
-init_web();
-init_async();
-init_service_accessors();
-init_settings_access();
-init_media_dimensions();
-init_performance();
-init_formatting();
-init_solid();
-init_useVideoVisibility();
-init_video_volume_change_guard();
-init_VerticalImageItem_helpers();
-init_VerticalImageItem_module();
-_tmpl$$3 = /* @__PURE__ */ template(`<div>`), _tmpl$2$1 = /* @__PURE__ */ template(`<div data-xeg-role=media-wrapper>`), _tmpl$3 = /* @__PURE__ */ template(`<div><div>`), _tmpl$4 = /* @__PURE__ */ template(`<video controls>`), _tmpl$5 = /* @__PURE__ */ template(`<img loading=lazy decoding=async>`, true, false, false), _tmpl$6 = /* @__PURE__ */ template(`<div><span>⚠️</span><span>`);
-FIT_MODE_CLASSES = {
-original: VerticalImageItem_module_default.fitOriginal,
-fitHeight: VerticalImageItem_module_default.fitHeight,
-fitWidth: VerticalImageItem_module_default.fitWidth,
-fitContainer: VerticalImageItem_module_default.fitContainer
-};
 delegateEvents(["contextmenu"]);
-}));
+var _tmpl$$2 =  template(`<div><div><h3></h3><p>`), _tmpl$2 =  template(`<div data-xeg-gallery=true data-xeg-role=gallery><div data-role=toolbar-hover-zone></div><div data-role=toolbar></div><div data-xeg-role=items-container data-xeg-role-compat=items-list><div aria-hidden=true data-xeg-role=scroll-spacer>`);
 function VerticalGalleryViewCore({ onClose, className: className$1 = "", onPrevious, onNext, onDownloadCurrent, onDownloadAll }) {
 const mediaItems = createMemo(() => galleryState.value.mediaItems);
 const currentIndex$1 = createMemo(() => galleryState.value.currentIndex);
@@ -10925,6 +8965,7 @@ toolbarWrapperEl,
 itemsContainerEl,
 onClose
 });
+const translate = useTranslation();
 createEffect(() => {
 if (!isVisible() || navigation.lastNavigationTrigger()) return;
 navigateToItem(currentIndex$1(), "click");
@@ -10971,6 +9012,7 @@ if (index >= 0 && index < items.length && index !== current) navigateToItem(inde
 createEffect(() => {
 const container$2 = containerEl();
 if (!container$2) return;
+const controller = new AbortController();
 const handleContainerWheel = (event) => {
 const itemsContainer$1 = itemsContainerEl();
 if (!itemsContainer$1) return;
@@ -10981,24 +9023,21 @@ event.preventDefault();
 event.stopPropagation();
 itemsContainer$1.scrollTop += event.deltaY;
 };
-const bus = getEventBus();
+const eventManager = EventManager.getInstance();
 const listener = (event) => {
 handleContainerWheel(event);
 };
-const id = bus.addDOMListener(container$2, "wheel", listener, {
+eventManager.addEventListener(container$2, "wheel", listener, {
 passive: false,
+signal: controller.signal,
 context: "gallery:wheel:container-redirect"
 });
-onCleanup(() => bus.remove(id));
+onCleanup(() => controller.abort());
 });
-if (!isVisible()) {
-const languageService = getLanguageService();
-const emptyTitle = languageService.translate("messages.gallery.emptyTitle");
-const emptyDesc = languageService.translate("messages.gallery.emptyDescription");
-return (() => {
+if (!isVisible()) return (() => {
 var _el$ = _tmpl$$2(), _el$2 = _el$.firstChild, _el$3 = _el$2.firstChild, _el$4 = _el$3.nextSibling;
-insert(_el$3, emptyTitle);
-insert(_el$4, emptyDesc);
+insert(_el$3, () => translate("msg.gal.emptyT"));
+insert(_el$4, () => translate("msg.gal.emptyD"));
 createRenderEffect((_p$) => {
 var _v$ = cx(VerticalGalleryView_module_default.container, VerticalGalleryView_module_default.empty, className$1), _v$2 = VerticalGalleryView_module_default.emptyMessage;
 _v$ !== _p$.e && className(_el$, _p$.e = _v$);
@@ -11010,7 +9049,6 @@ t: void 0
 });
 return _el$;
 })();
-}
 return (() => {
 var _el$5 = _tmpl$2(), _el$6 = _el$5.firstChild, _el$7 = _el$6.nextSibling, _el$8 = _el$7.nextSibling, _el$9 = _el$8.firstChild;
 _el$5.$$click = handleBackgroundClick;
@@ -11097,26 +9135,10 @@ i: void 0
 return _el$5;
 })();
 }
-var _tmpl$$2, _tmpl$2, VerticalGalleryView;
-var init_VerticalGalleryView = __esmMin((() => {
-init_web();
-init_Toolbar();
-init_service_accessors();
-init_settings_access();
-init_events();
-init_logging();
-init_download_signals();
-init_gallery_signals();
-init_performance();
-init_formatting();
-init_solid();
-init_useVerticalGallery();
-init_VerticalGalleryView_module();
-init_VerticalImageItem();
-_tmpl$$2 = /* @__PURE__ */ template(`<div><div><h3></h3><p>`), _tmpl$2 = /* @__PURE__ */ template(`<div data-xeg-gallery=true data-xeg-role=gallery><div data-role=toolbar-hover-zone></div><div data-role=toolbar></div><div data-xeg-role=items-container data-xeg-role-compat=items-list><div aria-hidden=true data-xeg-role=scroll-spacer>`);
-VerticalGalleryView = VerticalGalleryViewCore;
+const VerticalGalleryView = VerticalGalleryViewCore;
 delegateEvents(["click"]);
-}));
+var _tmpl$$1 =  template(`<div data-xeg-gallery-container>`);
+var DISPOSE_SYMBOL = Symbol();
 function mountGallery(container$2, element) {
 const host = container$2;
 host[DISPOSE_SYMBOL]?.();
@@ -11129,7 +9151,7 @@ host[DISPOSE_SYMBOL]?.();
 delete host[DISPOSE_SYMBOL];
 container$2.replaceChildren();
 }
-function GalleryContainer({ children: children$1, onClose, className: className$1, registerEscapeListener }) {
+function GalleryContainer({ children, onClose, className: className$1, registerEscapeListener }) {
 const classes = cx("xeg-gallery-overlay", "xeg-gallery-container", className$1);
 const hasCloseHandler = typeof onClose === "function";
 const escapeListener = (event) => {
@@ -11141,11 +9163,6 @@ keyboardEvent.stopPropagation();
 onClose?.();
 }
 };
-if (hasCloseHandler && registerEscapeListener && typeof window !== "undefined") {
-const captureWindow = window;
-captureWindow[ESCAPE_LISTENER_STORAGE_KEY] = escapeListener;
-registerEscapeListener(escapeListener);
-}
 createEffect(() => {
 if (!hasCloseHandler) return;
 const eventManager = EventManager.getInstance();
@@ -11157,55 +9174,11 @@ if (listenerId) eventManager.removeListener(listenerId);
 return (() => {
 var _el$ = _tmpl$$1();
 className(_el$, classes);
-insert(_el$, children$1);
+insert(_el$, children);
 return _el$;
 })();
 }
-var _tmpl$$1, DISPOSE_SYMBOL, ESCAPE_LISTENER_STORAGE_KEY;
-var init_GalleryContainer = __esmMin((() => {
-init_web();
-init_event_manager();
-init_formatting();
-init_solid();
-_tmpl$$1 = /* @__PURE__ */ template(`<div data-xeg-gallery-container>`);
-DISPOSE_SYMBOL = Symbol("xeg-gallery-container-dispose");
-ESCAPE_LISTENER_STORAGE_KEY = "__xegCapturedEscapeListener";
-}));
-var init_isolation = __esmMin((() => {
-init_GalleryContainer();
-}));
-var NotificationService;
-var init_notification_service = __esmMin((() => {
-init_userscript();
-init_logging();
-NotificationService = class NotificationService {
-static singleton = createSingleton(() => new NotificationService());
-get userscript() {
-return getUserscriptSafe();
-}
-constructor() {}
-static getInstance() {
-return NotificationService.singleton.get();
-}
-async show(options) {
-this.userscript.notification({
-title: options.title,
-text: options.text,
-image: options.image,
-timeout: options.timeout,
-onclick: options.onclick
-});
-;
-}
-async error(title, text, timeout = 5e3) {
-await this.show({
-title,
-text: text ?? "An error occurred.",
-timeout
-});
-}
-};
-}));
+var _tmpl$ =  template(`<div role=alert data-xeg-error-boundary aria-live=polite><p class=xeg-error-boundary__title></p><p class=xeg-error-boundary__body></p><button type=button class=xeg-error-boundary__action>Retry`);
 function stringifyError(error$1) {
 if (error$1 instanceof Error && error$1.message) return error$1.message;
 try {
@@ -11218,8 +9191,8 @@ function translateError(error$1) {
 try {
 const languageService = getLanguageService();
 return {
-title: languageService.translate("messages.errorBoundary.title"),
-body: languageService.translate("messages.errorBoundary.body", { error: stringifyError(error$1) })
+title: languageService.translate("msg.err.t"),
+body: languageService.translate("msg.err.b", { error: stringifyError(error$1) })
 };
 } catch {
 return {
@@ -11235,8 +9208,8 @@ const [boundaryMounted, setBoundaryMounted] = createSignal(true);
 const notifyError = (error$1) => {
 if (lastReportedError === error$1) return;
 lastReportedError = error$1;
-try {
 const copy = translateError(error$1);
+try {
 NotificationService.getInstance().error(copy.title, copy.body);
 } catch {}
 };
@@ -11247,13 +9220,7 @@ setBoundaryMounted(false);
 queueMicrotask(() => setBoundaryMounted(true));
 };
 const renderFallback = (error$1) => {
-let title = "Unexpected error";
-let body$1 = stringifyError(error$1);
-try {
-const copy = translateError(error$1);
-title = copy.title;
-body$1 = copy.body;
-} catch {}
+const { title, body: body$1 } = translateError(error$1);
 return (() => {
 var _el$ = _tmpl$(), _el$2 = _el$.firstChild, _el$3 = _el$2.nextSibling, _el$4 = _el$3.nextSibling;
 insert(_el$2, title);
@@ -11285,171 +9252,8 @@ return caughtError();
 children: (error$1) => renderFallback(error$1())
 })];
 }
-var _tmpl$;
-var init_ErrorBoundary = __esmMin((() => {
-init_web();
-init_service_accessors();
-init_notification_service();
-init_solid();
-_tmpl$ = /* @__PURE__ */ template(`<div role=alert data-xeg-error-boundary aria-live=polite><p class=xeg-error-boundary__title></p><p class=xeg-error-boundary__body></p><button type=button class=xeg-error-boundary__action>Retry`);
 delegateEvents(["click"]);
-}));
-function resolveRoot(root) {
-if (root && typeof root.querySelectorAll === "function") return root;
-return typeof document !== "undefined" && typeof document.querySelectorAll === "function" ? document : null;
-}
-function isVideoPlaying(video$1) {
-try {
-return !video$1.paused && !video$1.ended;
-} catch {
-return false;
-}
-}
-function shouldPauseVideo(video$1, force = false) {
-return video$1 instanceof HTMLVideoElement && !isGalleryInternalElement(video$1) && video$1.isConnected && (force || isVideoPlaying(video$1));
-}
-function tryPauseVideo(video$1) {
-try {
-video$1.pause?.();
-return true;
-} catch (error$1) {
-;
-return false;
-}
-}
-function pauseActiveTwitterVideos(options = {}) {
-const root = resolveRoot(options.root ?? null);
-if (!root) return ZERO_RESULT;
-const videos = Array.from(root.querySelectorAll("video"));
-const inspectedCount = videos.length;
-if (inspectedCount === 0) return ZERO_RESULT;
-let pausedCount = 0;
-let totalCandidates = 0;
-for (const video$1 of videos) {
-if (!shouldPauseVideo(video$1, options.force)) continue;
-totalCandidates += 1;
-if (tryPauseVideo(video$1)) pausedCount += 1;
-}
-const result = {
-pausedCount,
-totalCandidates,
-skippedCount: inspectedCount - pausedCount
-};
-if (result.pausedCount > 0) ;
-return result;
-}
-var ZERO_RESULT;
-var init_twitter_video_pauser = __esmMin((() => {
-init_utils();
-init_logging();
-ZERO_RESULT = Object.freeze({
-pausedCount: 0,
-totalCandidates: 0,
-skippedCount: 0
-});
-}));
-function findTweetContainer(element) {
-if (!element) return null;
-for (const selector of STABLE_TWEET_CONTAINERS_SELECTORS) try {
-const container$2 = element.closest(selector);
-if (container$2 instanceof HTMLElement) return container$2;
-} catch {}
-return null;
-}
-function resolvePauseContext(request) {
-if (request.root !== void 0) return {
-root: request.root ?? null,
-scope: "custom"
-};
-if (findTweetContainer(request.sourceElement)) return {
-root: null,
-scope: "tweet"
-};
-return {
-root: null,
-scope: "document"
-};
-}
-function isVideoTriggerElement(element) {
-if (!element) return false;
-if (element.tagName === "VIDEO") return true;
-for (const selector of VIDEO_TRIGGER_SCOPES) try {
-if (element.matches(selector) || element.closest(selector)) return true;
-} catch {}
-return false;
-}
-function isImageTriggerElement(element) {
-if (!element) return false;
-if (element.tagName === "IMG") return true;
-for (const selector of IMAGE_TRIGGER_SCOPES) try {
-if (element.matches(selector) || element.closest(selector)) return true;
-} catch {}
-return false;
-}
-function inferAmbientVideoTrigger(element) {
-if (isVideoTriggerElement(element)) return "video-click";
-if (isImageTriggerElement(element)) return "image-click";
-return "unknown";
-}
-function pauseAmbientVideosForGallery(request = {}) {
-const trigger = request.trigger ?? inferAmbientVideoTrigger(request.sourceElement);
-const force = request.force ?? true;
-const reason = request.reason ?? trigger;
-const { root, scope } = resolvePauseContext(request);
-let result;
-try {
-result = pauseActiveTwitterVideos({
-root,
-force
-});
-} catch (error$1) {
-;
-return {
-...PAUSE_RESULT_DEFAULT,
-trigger,
-forced: force,
-reason,
-scope
-};
-}
-if (result.totalCandidates > 0 || result.pausedCount > 0) ;
-return {
-...result,
-trigger,
-forced: force,
-reason,
-scope
-};
-}
-var VIDEO_TRIGGER_SCOPES, IMAGE_TRIGGER_SCOPES, PAUSE_RESULT_DEFAULT;
-var init_ambient_video_coordinator = __esmMin((() => {
-init_selectors();
-init_logging();
-init_twitter_video_pauser();
-VIDEO_TRIGGER_SCOPES = new Set([VIDEO_PLAYER_SELECTOR, ...STABLE_VIDEO_CONTAINERS_SELECTORS]);
-IMAGE_TRIGGER_SCOPES = new Set([TWEET_PHOTO_SELECTOR, ...STABLE_IMAGE_CONTAINERS_SELECTORS]);
-PAUSE_RESULT_DEFAULT = Object.freeze({
-pausedCount: 0,
-totalCandidates: 0,
-skippedCount: 0
-});
-}));
-var GalleryRenderer_exports = /* @__PURE__ */ __export({ GalleryRenderer: () => GalleryRenderer }, 1);
-var GalleryRenderer;
-var init_GalleryRenderer = __esmMin((() => {
-init_web();
-init_constants$1();
-init_VerticalGalleryView();
-init_isolation();
-init_ErrorBoundary();
-init_service_accessors();
-init_logging();
-init_download_signals();
-init_gallery_signals();
-init_ui_state();
-init_ambient_video_coordinator();
-init_solid();
-GalleryRenderer = class {
+var GalleryRenderer = class {
 container = null;
 isMounting = false;
 stateUnsubscribe = null;
@@ -11477,7 +9281,7 @@ this.createContainer();
 this.renderComponent();
 ;
 } catch (error$1) {
-logger.error("[GalleryRenderer] Rendering failed:", error$1);
+logger.error("Render failed", error$1);
 this.cleanupContainer();
 setError(getErrorMessage(error$1) || "Gallery rendering failed");
 } finally {
@@ -11545,19 +9349,32 @@ if (isDownloadLocked()) return;
 const releaseLock = acquireDownloadLock();
 try {
 const mediaItems = gallerySignals.mediaItems.value;
+const mediaService = getMediaService();
 const downloadService = await this.getDownloadService();
 if (type === "current") {
 const currentMedia = mediaItems[gallerySignals.currentIndex.value];
 if (currentMedia) {
-const result = await downloadService.downloadSingle(currentMedia);
+let blob;
+try {
+const pending = mediaService.getCachedMedia(currentMedia.url);
+if (pending) blob = await pending;
+} catch {}
+const result = await downloadService.downloadSingle(currentMedia, { ...blob ? { blob } : {} });
 if (!result.success) setError(result.error || "Download failed.");
 }
 } else {
-const result = await downloadService.downloadBulk([...mediaItems]);
+const prefetchedBlobs =  new Map();
+for (const item of mediaItems) {
+if (!item) continue;
+const pending = mediaService.getCachedMedia(item.url);
+if (!pending) continue;
+prefetchedBlobs.set(item.url, pending);
+}
+const result = await downloadService.downloadBulk([...mediaItems], { ...prefetchedBlobs.size > 0 ? { prefetchedBlobs } : {} });
 if (!result.success) setError(result.error || "Download failed.");
 }
 } catch (error$1) {
-logger.error(`[GalleryRenderer] ${type} download failed:`, error$1);
+logger.error("Download failed", error$1);
 setError(getErrorMessage(error$1) || "Download failed.");
 } finally {
 releaseLock();
@@ -11611,7 +9428,14 @@ this.stateUnsubscribe?.();
 this.cleanupGallery();
 }
 };
-}));
+var migrations = { "1.0.0": (input) => {
+const next = { ...input };
+next.gallery = {
+...next.gallery,
+enableKeyboardNav: true
+};
+return next;
+} };
 function pruneWithTemplate(input, template$1) {
 if (!isRecord(input)) return {};
 const out = {};
@@ -11656,74 +9480,11 @@ working = mig(working);
 } catch {}
 return fillWithDefaults(working, nowMs$1);
 }
-var migrations;
-var init_settings_migration = __esmMin((() => {
-init_constants$1();
-migrations = { "1.0.0": (input) => {
-const next = { ...input };
-next.gallery = {
-...next.gallery,
-enableKeyboardNav: true
-};
-return next;
-} };
-}));
-function planSettingsPersist(input) {
-return [{
-type: "STORE_SET",
-key: input.key,
-value: {
-...input.settings,
-__schemaHash: input.schemaHash
-}
-}];
-}
-function stableNormalizeForHash(input, seen) {
-if (input === null) return null;
-const type = typeof input;
-if (type === "string" || type === "number" || type === "boolean") return input;
-if (type !== "object") return;
-if (Array.isArray(input)) return input.map((value) => stableNormalizeForHash(value, seen));
-const obj = input;
-if (seen.has(obj)) return "[Circular]";
-seen.add(obj);
-const out = {};
-for (const key of Object.keys(obj).sort()) {
-if (key === "__schemaHash") continue;
-out[key] = stableNormalizeForHash(obj[key], seen);
-}
-return out;
-}
-function stableStringifyForHash(input) {
-const normalized = stableNormalizeForHash(input, /* @__PURE__ */ new WeakSet());
-return JSON.stringify(normalized);
-}
-function computeHashString(str) {
-let hash = 0;
-for (let i = 0; i < str.length; i++) {
-const char = str.charCodeAt(i);
-hash = (hash << 5) - hash + char;
-hash |= 0;
-}
-return Math.abs(hash).toString(16);
-}
-function computeSettingsSchemaHashFrom(obj) {
-return computeHashString(stableStringifyForHash(obj && typeof obj === "object" ? obj : {}));
-}
+var SETTINGS_SCHEMA_HASH = "1";
 function computeCurrentSettingsSchemaHash() {
-return computeSettingsSchemaHashFrom(DEFAULT_SETTINGS);
+return SETTINGS_SCHEMA_HASH;
 }
-var init_settings_schema = __esmMin((() => {
-init_constants$1();
-}));
-var PersistentSettingsRepository;
-var init_settings_repository = __esmMin((() => {
-init_constants$1();
-init_logging();
-init_persistent_storage();
-init_settings_migration();
-init_settings_schema();
-PersistentSettingsRepository = class {
+var PersistentSettingsRepository = class {
 storage = getPersistentStorage();
 schemaHash = computeCurrentSettingsSchemaHash();
 async load() {
@@ -11765,42 +9526,17 @@ throw error$1;
 }
 }
 async persist(settings) {
-const cmds = planSettingsPersist({
-key: APP_SETTINGS_STORAGE_KEY,
-settings,
-schemaHash: this.schemaHash
+await this.storage.setJson(APP_SETTINGS_STORAGE_KEY, {
+...settings,
+__schemaHash: this.schemaHash
 });
-await this.executePersistCommands(cmds);
-}
-async executePersistCommands(cmds) {
-for (const cmd of cmds) switch (cmd.type) {
-case "STORE_SET":
-await this.storage.setJson(cmd.key, cmd.value);
-break;
-case "LOG":
-switch (cmd.level) {
-case "debug":
-;
-break;
-case "info":
-;
-break;
-case "warn":
-;
-break;
-case "error":
-logger.error(cmd.message, cmd.context);
-break;
-default:
-;
-break;
-}
-break;
-default: break;
-}
 }
 };
-}));
+var FORBIDDEN_KEYS = new Set([
+"__proto__",
+"constructor",
+"prototype"
+]);
 function isSafeKey(key) {
 return !FORBIDDEN_KEYS.has(key);
 }
@@ -11851,15 +9587,7 @@ return true;
 }
 return false;
 }
-var FORBIDDEN_KEYS;
-var init_object_path = __esmMin((() => {
-FORBIDDEN_KEYS = new Set([
-"__proto__",
-"constructor",
-"prototype"
-]);
-}));
-var settings_service_exports = /* @__PURE__ */ __export({ SettingsService: () => SettingsService }, 1);
+var FEATURE_DEFAULTS = Object.freeze({ ...DEFAULT_SETTINGS.features });
 function normalizeFeatureFlags(features) {
 return Object.keys(FEATURE_DEFAULTS).reduce((acc, key) => {
 const candidate = features?.[key];
@@ -11867,15 +9595,7 @@ acc[key] = typeof candidate === "boolean" ? candidate : FEATURE_DEFAULTS[key];
 return acc;
 }, {});
 }
-var FEATURE_DEFAULTS, SettingsService;
-var init_settings_service = __esmMin((() => {
-init_constants$1();
-init_settings_migration();
-init_settings_repository();
-init_logging();
-init_object_path();
-FEATURE_DEFAULTS = Object.freeze({ ...DEFAULT_SETTINGS.features });
-SettingsService = class SettingsService {
+var SettingsService = class SettingsService {
 lifecycle;
 static singleton = createSingleton(() => new SettingsService());
 static getInstance() {
@@ -11883,7 +9603,7 @@ return SettingsService.singleton.get();
 }
 settings = createDefaultSettings();
 featureMap = normalizeFeatureFlags(this.settings.features);
-listeners = /* @__PURE__ */ new Set();
+listeners =  new Set();
 constructor(repository = new PersistentSettingsRepository()) {
 this.repository = repository;
 this.lifecycle = createLifecycle("SettingsService", {
@@ -11981,33 +9701,6 @@ return () => {
 this.listeners.delete(listener);
 };
 }
-exportSettings() {
-this.assertInitialized();
-return JSON.stringify(this.settings, null, 2);
-}
-async importSettings(jsonString) {
-this.assertInitialized();
-try {
-const imported = JSON.parse(jsonString);
-if (!imported || typeof imported !== "object") throw new Error("Invalid settings");
-const previous = this.getAllSettings();
-const nowMs$1 = Date.now();
-this.settings = migrateSettings(imported, nowMs$1);
-this.settings.lastModified = nowMs$1;
-this.refreshFeatureMap();
-this.notifyListeners({
-key: "all",
-oldValue: previous,
-newValue: this.getAllSettings(),
-timestamp: nowMs$1,
-status: "success"
-});
-await this.persist();
-} catch (error$1) {
-logger.error("Settings import failed:", error$1);
-throw error$1;
-}
-}
 getFeatureMap() {
 this.assertInitialized();
 return Object.freeze({ ...this.featureMap });
@@ -12042,602 +9735,20 @@ assertInitialized() {
 if (!this.isInitialized()) throw new Error("SettingsService must be initialized before use");
 }
 };
-}));
-function ensureGuardEffect() {
-if (guardDispose) return;
-guardDispose = gallerySignals.isOpen.subscribe((isOpen) => {
-if (!isOpen) return;
-const result = pauseAmbientVideosForGallery({
-trigger: "guard",
-reason: "guard"
-});
-if (result.pausedCount <= 0) return;
-;
-});
-}
-function startAmbientVideoGuard() {
-guardSubscribers += 1;
-ensureGuardEffect();
-return () => {
-stopAmbientVideoGuard();
-};
-}
-function stopAmbientVideoGuard() {
-if (guardSubscribers === 0) return;
-guardSubscribers -= 1;
-if (guardSubscribers > 0) return;
-guardDispose?.();
-guardDispose = null;
-}
-function withAmbientVideoGuard() {
-return { dispose: startAmbientVideoGuard() };
-}
-var guardDispose, guardSubscribers;
-var init_ambient_video_guard = __esmMin((() => {
-init_logging();
-init_gallery_signals();
-init_ambient_video_coordinator();
-guardDispose = null;
-guardSubscribers = 0;
-}));
-function getCurrentGalleryVideo(video$1) {
-if (video$1) return video$1;
-const signaled = gallerySignals.currentVideoElement.value;
-if (signaled instanceof HTMLVideoElement) return signaled;
-try {
-const doc = typeof document !== "undefined" ? document : globalThis.document;
-if (!(doc instanceof Document)) return null;
-const hostSelectors = [
-CSS.SELECTORS.DATA_GALLERY,
-CSS.SELECTORS.ROOT,
-CSS.SELECTORS.CONTAINER,
-CSS.SELECTORS.DATA_CONTAINER
-];
-let container$2 = null;
-for (const selector of hostSelectors) {
-const match = doc.querySelector(selector);
-if (match) {
-container$2 = match;
-break;
-}
-}
-if (!container$2) return null;
-const items = container$2.querySelector("[data-xeg-role=\"items-container\"]");
-if (!items) return null;
-const target = items.children?.[gallerySignals.currentIndex.value];
-if (!target) return null;
-const fallbackVideo = target.querySelector("video");
-return fallbackVideo instanceof HTMLVideoElement ? fallbackVideo : null;
-} catch (error$1) {
-;
-return null;
-}
-}
-function executeVideoControl(action, options = {}) {
-const { video: video$1, context } = options;
-try {
-const videoElement = getCurrentGalleryVideo(video$1);
-if (!videoElement) {
-;
-return;
-}
-switch (action) {
-case "play": {
-const maybePromise = videoElement.play?.();
-if (maybePromise && typeof maybePromise.then === "function") maybePromise.then(() => videoPlaybackStateMap.set(videoElement, { playing: true })).catch(() => {
-videoPlaybackStateMap.set(videoElement, { playing: false });
-;
-});
-else videoPlaybackStateMap.set(videoElement, { playing: true });
-break;
-}
-case "pause":
-videoElement.pause?.();
-videoPlaybackStateMap.set(videoElement, { playing: false });
-break;
-case "togglePlayPause":
-if (!(videoPlaybackStateMap.get(videoElement)?.playing ?? !videoElement.paused)) {
-const maybePromise = videoElement.play?.();
-if (maybePromise && typeof maybePromise.then === "function") maybePromise.then(() => videoPlaybackStateMap.set(videoElement, { playing: true })).catch(() => {
-videoPlaybackStateMap.set(videoElement, { playing: false });
-;
-});
-else videoPlaybackStateMap.set(videoElement, { playing: true });
-} else {
-videoElement.pause?.();
-videoPlaybackStateMap.set(videoElement, { playing: false });
-}
-break;
-case "volumeUp": {
-const newVolume = Math.min(1, Math.round((videoElement.volume + .1) * 100) / 100);
-videoElement.volume = newVolume;
-if (newVolume > 0 && videoElement.muted) videoElement.muted = false;
-break;
-}
-case "volumeDown": {
-const newVolume = Math.max(0, Math.round((videoElement.volume - .1) * 100) / 100);
-videoElement.volume = newVolume;
-if (newVolume === 0 && !videoElement.muted) videoElement.muted = true;
-break;
-}
-case "mute":
-videoElement.muted = true;
-break;
-case "toggleMute":
-videoElement.muted = !videoElement.muted;
-break;
-}
-;
-} catch (error$1) {
-logger.error("[VideoControl] Unexpected error", {
-error: error$1,
-action,
-context
-});
-}
-}
-var videoPlaybackStateMap;
-var init_video_control_helper = __esmMin((() => {
-init_constants$1();
-init_logging();
-init_gallery_signals();
-videoPlaybackStateMap = /* @__PURE__ */ new WeakMap();
-}));
-function shouldExecuteKeyboardAction(key, minInterval = 100) {
-const now = Date.now();
-const timeSinceLastExecution = now - debounceState.lastExecutionTime;
-if (key === debounceState.lastKey && timeSinceLastExecution < minInterval) {
-;
-return false;
-}
-debounceState.lastExecutionTime = now;
-debounceState.lastKey = key;
-return true;
-}
-function shouldExecuteVideoControlKey(key) {
-if (![
-"ArrowUp",
-"ArrowDown",
-"m",
-"M"
-].includes(key)) return true;
-return shouldExecuteKeyboardAction(key, 100);
-}
-function shouldExecutePlayPauseKey(key) {
-if (key !== " " && key !== "Space") return true;
-return shouldExecuteKeyboardAction(key, 150);
-}
-function resetKeyboardDebounceState() {
-debounceState.lastExecutionTime = 0;
-debounceState.lastKey = "";
-;
-}
-var debounceState;
-var init_keyboard_debounce = __esmMin((() => {
-init_logging();
-debounceState = {
-lastExecutionTime: 0,
-lastKey: ""
-};
-}));
-function checkGalleryOpen() {
-return gallerySignals.isOpen.value;
-}
-function handleKeyboardEvent(event, handlers, options) {
-if (!options.enableKeyboard) return;
-try {
-if (checkGalleryOpen()) {
-const key = event.key;
-if (key === "Home" || key === "End" || key === "PageDown" || key === "PageUp" || key === "ArrowLeft" || key === "ArrowRight" || key === " " || key === "Space" || key === " " || key === "Space" || key === "ArrowUp" || key === "ArrowDown" || key === "m" || key === "M") {
-event.preventDefault();
-event.stopPropagation();
-switch (key) {
-case " ":
-case "Space":
-if (shouldExecutePlayPauseKey(event.key)) executeVideoControl("togglePlayPause");
-break;
-case "ArrowLeft":
-navigatePrevious("keyboard");
-break;
-case "ArrowRight":
-navigateNext("keyboard");
-break;
-case "Home":
-navigateToItem(0, "keyboard");
-break;
-case "End":
-navigateToItem(Math.max(0, gallerySignals.mediaItems.value.length - 1), "keyboard");
-break;
-case "PageDown":
-navigateToItem(Math.min(gallerySignals.mediaItems.value.length - 1, gallerySignals.currentIndex.value + 5), "keyboard");
-break;
-case "PageUp":
-navigateToItem(Math.max(0, gallerySignals.currentIndex.value - 5), "keyboard");
-break;
-case "ArrowUp":
-if (shouldExecuteVideoControlKey(event.key)) executeVideoControl("volumeUp");
-break;
-case "ArrowDown":
-if (shouldExecuteVideoControlKey(event.key)) executeVideoControl("volumeDown");
-break;
-case "m":
-case "M":
-if (shouldExecuteVideoControlKey(event.key)) executeVideoControl("toggleMute");
-break;
-}
-if (handlers.onKeyboardEvent) handlers.onKeyboardEvent(event);
-return;
-}
-}
-if (event.key === "Escape" && checkGalleryOpen()) {
-handlers.onGalleryClose();
-event.preventDefault();
-event.stopPropagation();
-return;
-}
-if (handlers.onKeyboardEvent) handlers.onKeyboardEvent(event);
-} catch (error$1) {
-logger.error("Error handling keyboard event:", error$1);
-}
-}
-var init_keyboard = __esmMin((() => {
-init_logging();
-init_gallery_signals();
-init_video_control_helper();
-init_keyboard_debounce();
-}));
-function isValidMediaSource(url) {
-if (!url) return false;
-if (url.startsWith("blob:")) return true;
-return isSafeAndValidMediaUrl(url);
-}
-function shouldBlockMediaTrigger(target) {
-if (!target) return false;
-if (isVideoControlElement(target)) return true;
-if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
-const interactive = target.closest(INTERACTIVE_SELECTOR);
-if (interactive) return !(interactive.matches(MEDIA_LINK_SELECTOR) || interactive.matches(MEDIA_CONTAINER_SELECTOR) || interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null);
-return false;
-}
-function isProcessableMedia(target) {
-if (!target) return false;
-if (gallerySignals.isOpen.value) return false;
-if (shouldBlockMediaTrigger(target)) return false;
-const mediaElement = findMediaElementInDOM(target);
-if (mediaElement) {
-if (isValidMediaSource(extractMediaUrlFromElement(mediaElement))) return true;
-}
-return Boolean(target.closest(MEDIA_CONTAINER_SELECTOR));
-}
-var MEDIA_LINK_SELECTOR, MEDIA_CONTAINER_SELECTOR, INTERACTIVE_SELECTOR;
-var init_media_click_detector = __esmMin((() => {
-init_css();
-init_selectors();
-init_utils();
-init_gallery_signals();
-init_media_element_utils();
-init_url();
-MEDIA_LINK_SELECTOR = [
-STATUS_LINK_SELECTOR,
-"a[href*=\"/photo/\"]",
-"a[href*=\"/video/\"]"
-].join(", ");
-MEDIA_CONTAINER_SELECTOR = STABLE_MEDIA_CONTAINERS_SELECTORS.join(", ");
-INTERACTIVE_SELECTOR = [
-"button",
-"a",
-"[role=\"button\"]",
-"[data-testid=\"like\"]",
-"[data-testid=\"retweet\"]",
-"[data-testid=\"reply\"]",
-"[data-testid=\"share\"]",
-"[data-testid=\"bookmark\"]"
-].join(", ");
-}));
-async function handleMediaClick(event, handlers, options) {
-if (!options.enableMediaDetection) return {
-handled: false,
-reason: "Media detection disabled"
-};
-const target = event.target;
-if (!isHTMLElement(target)) return {
-handled: false,
-reason: "Invalid target (not HTMLElement)"
-};
-if (gallerySignals.isOpen.value && isGalleryInternalElement(target)) return {
-handled: false,
-reason: "Gallery internal event"
-};
-if (isVideoControlElement(target)) return {
-handled: false,
-reason: "Video control element"
-};
-if (!isProcessableMedia(target)) return {
-handled: false,
-reason: "Non-processable media target"
-};
-event.stopImmediatePropagation();
-event.preventDefault();
-await handlers.onMediaClick(target, event);
-return {
-handled: true,
-reason: "Media click handled"
-};
-}
-var init_media_click = __esmMin((() => {
-init_utils();
-init_gallery_signals();
-init_media_click_detector();
-}));
-var gallery_lifecycle_exports = /* @__PURE__ */ __export({
-cleanupGalleryEvents: () => cleanupGalleryEvents,
-getGalleryEventSnapshot: () => getGalleryEventSnapshot,
-initializeGalleryEvents: () => initializeGalleryEvents,
-updateGalleryEventOptions: () => updateGalleryEventOptions
-}, 1);
-function sanitizeContext(context) {
-const trimmed = context?.trim();
-return trimmed && trimmed.length > 0 ? trimmed : DEFAULT_GALLERY_EVENT_OPTIONS.context;
-}
-function resolveInitializationInput(optionsOrRoot) {
-if (optionsOrRoot instanceof HTMLElement) return {
-options: { ...DEFAULT_GALLERY_EVENT_OPTIONS },
-root: optionsOrRoot
-};
-const partial = optionsOrRoot ?? {};
-const merged = {
-...DEFAULT_GALLERY_EVENT_OPTIONS,
-...partial
-};
-merged.context = sanitizeContext(merged.context);
-return {
-options: merged,
-root: null
-};
-}
-function resolveEventTarget(explicitRoot) {
-return explicitRoot || document.body || document.documentElement || document;
-}
-async function initializeGalleryEvents(handlers, optionsOrRoot) {
-if (lifecycleState$1.initialized) {
-;
-cleanupGalleryEvents();
-}
-if (!handlers) {
-logger.error("[GalleryLifecycle] Missing handlers");
-return () => {};
-}
-const { options: finalOptions, root: explicitGalleryRoot } = resolveInitializationInput(optionsOrRoot);
-const listenerContext = sanitizeContext(finalOptions.context);
-const keyHandler = (evt) => {
-handleKeyboardEvent(evt, handlers, finalOptions);
-};
-const clickHandler = async (evt) => {
-await handleMediaClick(evt, handlers, finalOptions);
-};
-const target = resolveEventTarget(explicitGalleryRoot);
-const listenerOptions = {
-capture: true,
-passive: false
-};
-const eventManager = EventManager.getInstance();
-if (finalOptions.enableKeyboard) eventManager.addListener(target, "keydown", keyHandler, listenerOptions, listenerContext);
-if (finalOptions.enableMediaDetection) eventManager.addListener(target, "click", clickHandler, listenerOptions, listenerContext);
-resetKeyboardDebounceState();
-lifecycleState$1 = {
-initialized: true,
-options: finalOptions,
-handlers,
-keyListener: keyHandler,
-clickListener: clickHandler,
-listenerContext,
-eventTarget: target
-};
-if (finalOptions.debugMode) ;
-return () => {
-cleanupGalleryEvents();
-};
-}
-function cleanupGalleryEvents() {
-if (!lifecycleState$1.initialized) return;
-if (lifecycleState$1.listenerContext) EventManager.getInstance().removeByContext(lifecycleState$1.listenerContext);
-resetKeyboardDebounceState();
-lifecycleState$1 = { ...initialLifecycleState };
-}
-function updateGalleryEventOptions(newOptions) {
-if (lifecycleState$1.options) lifecycleState$1.options = {
-...lifecycleState$1.options,
-...newOptions
-};
-}
-function getGalleryEventSnapshot() {
-return {
-initialized: lifecycleState$1.initialized,
-options: lifecycleState$1.options,
-isConnected: lifecycleState$1.initialized
-};
-}
-var DEFAULT_GALLERY_EVENT_OPTIONS, initialLifecycleState, lifecycleState$1;
-var init_gallery_lifecycle = __esmMin((() => {
-init_logging();
-init_event_manager();
-init_keyboard();
-init_media_click();
-init_keyboard_debounce();
-DEFAULT_GALLERY_EVENT_OPTIONS = {
-enableKeyboard: true,
-enableMediaDetection: true,
-debugMode: false,
-preventBubbling: true,
-context: "gallery"
-};
-initialLifecycleState = {
-initialized: false,
-options: null,
-handlers: null,
-keyListener: null,
-clickListener: null,
-listenerContext: null,
-eventTarget: null
-};
-lifecycleState$1 = { ...initialLifecycleState };
-}));
-var GalleryApp_exports = /* @__PURE__ */ __export({ GalleryApp: () => GalleryApp }, 1);
-var GalleryApp;
-var init_GalleryApp = __esmMin((() => {
-init_service_accessors();
-init_app_error_reporter();
-init_logging();
-init_notification_service();
-init_gallery_signals();
-init_ambient_video_coordinator();
-init_ambient_video_guard();
-GalleryApp = class {
-galleryRenderer = null;
-isInitialized = false;
-notificationService = NotificationService.getInstance();
-ambientVideoGuardHandle = null;
-constructor() {
-;
-}
-async initialize() {
-try {
-;
-this.galleryRenderer = getGalleryRenderer();
-this.galleryRenderer?.setOnCloseCallback(() => this.closeGallery());
-await this.setupEventHandlers();
-this.ambientVideoGuardHandle = this.ambientVideoGuardHandle ?? withAmbientVideoGuard();
-this.isInitialized = true;
-;
-} catch (error$1) {
-galleryErrorReporter.critical(error$1, { code: "GALLERY_APP_INIT_FAILED" });
-}
-}
-async setupEventHandlers() {
-try {
-const { initializeGalleryEvents: initializeGalleryEvents$1 } = await Promise.resolve().then(() => (init_gallery_lifecycle(), gallery_lifecycle_exports));
-await initializeGalleryEvents$1({
-onMediaClick: (element, event) => this.handleMediaClick(element, event),
-onGalleryClose: () => this.closeGallery(),
-onKeyboardEvent: (event) => {
-if (event.key === "Escape" && gallerySignals.isOpen.value) this.closeGallery();
-}
-}, {
-enableKeyboard: tryGetSettingsManager()?.get("gallery.enableKeyboardNav") ?? true,
-enableMediaDetection: true,
-debugMode: false,
-preventBubbling: true,
-context: "gallery"
-});
-;
-} catch (error$1) {
-galleryErrorReporter.critical(error$1, { code: "EVENT_HANDLERS_SETUP_FAILED" });
-}
-}
-async handleMediaClick(element, _event) {
-try {
-const result = await getMediaService().extractFromClickedElement(element);
-if (result.success && result.mediaItems.length > 0) await this.openGallery(result.mediaItems, result.clickedIndex, { pauseContext: {
-sourceElement: element,
-reason: "media-click"
-} });
-else {
-mediaErrorReporter.warn(/* @__PURE__ */ new Error("Media extraction returned no items"), {
-code: "MEDIA_EXTRACTION_EMPTY",
-metadata: { success: result.success }
-});
-this.notificationService.error("Failed to load media", "Could not find images or videos.");
-}
-} catch (error$1) {
-mediaErrorReporter.error(error$1, {
-code: "MEDIA_EXTRACTION_ERROR",
-notify: true
-});
-this.notificationService.error("Error occurred", getErrorMessage(error$1) || "Unknown error");
-}
-}
-async openGallery(mediaItems, startIndex = 0, options = {}) {
-if (!this.isInitialized) {
-;
-this.notificationService.error("Gallery unavailable", "Tampermonkey or similar userscript manager is required.");
-return;
-}
-if (!mediaItems?.length) return;
-try {
-const validIndex = clampIndex(startIndex, mediaItems.length);
-const providedContext = options.pauseContext ?? null;
-const pauseContext = {
-...providedContext,
-reason: providedContext?.reason ?? (providedContext ? "media-click" : "programmatic")
-};
-try {
-pauseAmbientVideosForGallery(pauseContext);
-} catch (error$1) {
-;
-}
-openGallery(mediaItems, validIndex);
-} catch (error$1) {
-galleryErrorReporter.error(error$1, {
-code: "GALLERY_OPEN_FAILED",
-metadata: {
-itemCount: mediaItems.length,
-startIndex
-},
-notify: true
-});
-this.notificationService.error("Failed to load gallery", getErrorMessage(error$1) || "Unknown error");
-throw error$1;
-}
-}
-closeGallery() {
-try {
-if (gallerySignals.isOpen.value) closeGallery();
-} catch (error$1) {
-galleryErrorReporter.error(error$1, { code: "GALLERY_CLOSE_FAILED" });
-}
-}
-async cleanup() {
-try {
-;
-if (gallerySignals.isOpen.value) this.closeGallery();
-this.ambientVideoGuardHandle?.dispose();
-this.ambientVideoGuardHandle = null;
-try {
-const { cleanupGalleryEvents: cleanupGalleryEvents$1 } = await Promise.resolve().then(() => (init_gallery_lifecycle(), gallery_lifecycle_exports));
-cleanupGalleryEvents$1();
-} catch (error$1) {
-;
-}
-this.galleryRenderer = null;
-this.isInitialized = false;
-delete globalThis.xegGalleryDebug;
-;
-} catch (error$1) {
-galleryErrorReporter.error(error$1, { code: "GALLERY_CLEANUP_FAILED" });
-}
-}
-};
-}));
-init_service_accessors();
-init_app_error_reporter();
-init_userscript();
-init_logging();
 var rendererRegistrationTask = null;
 async function registerRenderer() {
 if (!rendererRegistrationTask) rendererRegistrationTask = (async () => {
-const { GalleryRenderer: GalleryRenderer$1 } = await Promise.resolve().then(() => (init_GalleryRenderer(), GalleryRenderer_exports));
-registerGalleryRenderer(new GalleryRenderer$1());
+registerGalleryRenderer(new GalleryRenderer());
 })().finally(() => {
 rendererRegistrationTask = null;
 });
 await rendererRegistrationTask;
 }
 async function initializeServices() {
-if (!(isGMAPIAvailable("download") || isGMAPIAvailable("setValue"))) bootstrapErrorReporter.warn(/* @__PURE__ */ new Error("Tampermonkey APIs limited"), { code: "GM_API_LIMITED" });
+if (!(isGMAPIAvailable("download") || isGMAPIAvailable("setValue"))) bootstrapErrorReporter.warn(  new Error("Tampermonkey APIs limited"), { code: "GM_API_LIMITED" });
 let settingsService = null;
 try {
-const { SettingsService: SettingsService$1 } = await Promise.resolve().then(() => (init_settings_service(), settings_service_exports));
-const service = new SettingsService$1();
+const service = new SettingsService();
 await service.initialize();
 registerSettingsManager(service);
 settingsService = service;
@@ -12658,8 +9769,7 @@ async function initializeGalleryApp() {
 try {
 ;
 await Promise.all([registerRenderer(), initializeServices()]);
-const { GalleryApp: GalleryApp$1 } = await Promise.resolve().then(() => (init_GalleryApp(), GalleryApp_exports));
-const galleryApp = new GalleryApp$1();
+const galleryApp = new GalleryApp();
 await galleryApp.initialize();
 ;
 return galleryApp;
@@ -12668,10 +9778,7 @@ galleryErrorReporter.error(error$1, { code: "GALLERY_APP_INIT_FAILED" });
 throw error$1;
 }
 }
-init_app_error_reporter();
-init_logging();
 async function executeStage(stage) {
-const startTime = performance.now();
 if (stage.shouldRun && !stage.shouldRun()) return {
 label: stage.label,
 success: true,
@@ -12680,35 +9787,27 @@ durationMs: 0
 };
 try {
 await Promise.resolve(stage.run());
-const durationMs = performance.now() - startTime;
 return {
 label: stage.label,
 success: true,
 optional: Boolean(stage.optional),
-durationMs
+durationMs: 0
 };
 } catch (error$1) {
-const durationMs = performance.now() - startTime;
 if (stage.optional) bootstrapErrorReporter.warn(error$1, {
 code: "STAGE_OPTIONAL_FAILED",
-metadata: {
-stage: stage.label,
-durationMs
-}
+metadata: { stage: stage.label }
 });
 else bootstrapErrorReporter.error(error$1, {
 code: "STAGE_FAILED",
-metadata: {
-stage: stage.label,
-durationMs
-}
+metadata: { stage: stage.label }
 });
 return {
 label: stage.label,
 success: false,
 optional: Boolean(stage.optional),
 error: error$1,
-durationMs
+durationMs: 0
 };
 }
 }
@@ -12718,60 +9817,16 @@ const stopOnFailure = options?.stopOnFailure ?? true;
 for (const stage of stages) {
 const result = await executeStage(stage);
 results.push(result);
-if (!result.success && !result.optional && stopOnFailure) {
-logger.error(`[bootstrap] ❌ Critical stage failed: ${stage.label}`);
-break;
-}
+if (!result.success && !result.optional && stopOnFailure) break;
 }
 return results;
 }
-var base_services_exports = /* @__PURE__ */ __export({ initializeCoreBaseServices: () => initializeCoreBaseServices }, 1);
-function registerMissingBaseServices(coreService) {
-let registeredCount = 0;
-for (const [key, getService] of BASE_SERVICE_REGISTRATIONS) if (!coreService.has(key)) {
-coreService.register(key, getService());
-registeredCount += 1;
-}
-return registeredCount;
-}
-async function initializeCoreBaseServices() {
-const coreService = CoreService.getInstance();
-try {
-registerMissingBaseServices(coreService);
-for (const identifier of CORE_BASE_SERVICE_IDENTIFIERS) {
-const service = coreService.get(identifier);
-if (service && typeof service.initialize === "function") await service.initialize();
-}
-} catch (error$1) {
-throw new Error("[base-services] initialization failed", { cause: error$1 instanceof Error ? error$1 : new Error(String(error$1)) });
-}
-}
-var BASE_SERVICE_REGISTRATIONS;
-var init_base_services = __esmMin((() => {
-init_service_accessors();
-init_service_manager();
-init_singletons();
-BASE_SERVICE_REGISTRATIONS = [
-[THEME_SERVICE_IDENTIFIER, getThemeServiceInstance],
-[LANGUAGE_SERVICE_IDENTIFIER, getLanguageServiceInstance],
-[MEDIA_SERVICE_IDENTIFIER, getMediaServiceInstance]
-];
-}));
-var globals_exports = /* @__PURE__ */ __export({}, 1);
-var init_globals = __esmMin((() => {
-}));
-var error_handler_exports = /* @__PURE__ */ __export({
-GlobalErrorHandler: () => GlobalErrorHandler,
-globalErrorHandler: () => globalErrorHandler
-}, 1);
-var GlobalErrorHandler, globalErrorHandler;
-var init_error_handler = __esmMin((() => {
-init_events();
-init_logging();
-GlobalErrorHandler = class GlobalErrorHandler {
+var GlobalErrorHandler = class GlobalErrorHandler {
 static singleton = createSingleton(() => new GlobalErrorHandler());
 isInitialized = false;
 controller = null;
+errorListenerId = null;
+rejectionListenerId = null;
 errorListener = (event) => {
 const message = event.message ?? "Unknown error occurred";
 const location = event.filename ? `${event.filename}:${event.lineno ?? 0}:${event.colno ?? 0}` : void 0;
@@ -12794,139 +9849,91 @@ return GlobalErrorHandler.singleton.get();
 constructor() {}
 initialize() {
 if (this.isInitialized || typeof window === "undefined") return;
-const bus = getEventBus();
+const eventManager = EventManager.getInstance();
 this.controller = new AbortController();
-bus.addDOMListener(window, "error", this.errorListener, {
+const onError = (evt) => {
+this.errorListener(evt);
+};
+const onUnhandledRejection = (evt) => {
+this.rejectionListener(evt);
+};
+this.errorListenerId = eventManager.addEventListener(window, "error", onError, {
 signal: this.controller.signal,
 context: "global-error-handler"
-});
-bus.addDOMListener(window, "unhandledrejection", this.rejectionListener, {
+}) ?? null;
+this.rejectionListenerId = eventManager.addEventListener(window, "unhandledrejection", onUnhandledRejection, {
 signal: this.controller.signal,
 context: "global-error-handler"
-});
+}) ?? null;
 this.isInitialized = true;
 }
 destroy() {
 if (!this.isInitialized || typeof window === "undefined") return;
+const eventManager = EventManager.getInstance();
+if (this.errorListenerId) {
+eventManager.removeListener(this.errorListenerId);
+this.errorListenerId = null;
+}
+if (this.rejectionListenerId) {
+eventManager.removeListener(this.rejectionListenerId);
+this.rejectionListenerId = null;
+}
 this.controller?.abort();
 this.controller = null;
 this.isInitialized = false;
 }
 };
-globalErrorHandler = GlobalErrorHandler.getInstance();
-}));
-init_service_accessors();
-init_app_error_reporter();
-init_logging();
-init_service_manager();
-init_timer_management();
-var isDevEnvironment = false;
+GlobalErrorHandler.getInstance();
 var lifecycleState = {
 started: false,
 startPromise: null,
-galleryApp: null,
-lastError: null
-};
-var warnCleanupLog = (message, error$1) => {
-;
-};
-var debugCleanupLog = (message, error$1) => {
-;
+galleryApp: null
 };
 var globalEventTeardown = null;
-var commandRuntimeTeardown = null;
-async function refreshDevNamespace(app) {}
-var initializeCommandRuntimeIfNeeded = async () => {};
 function tearDownGlobalEventHandlers() {
 if (!globalEventTeardown) return;
 const teardown = globalEventTeardown;
 globalEventTeardown = null;
 try {
 teardown();
-} catch (error$1) {}
+} catch {}
 }
-function tearDownCommandRuntime() {
-if (!commandRuntimeTeardown) return;
-const teardown = commandRuntimeTeardown;
-commandRuntimeTeardown = null;
-try {
-teardown();
-} catch (error$1) {}
-}
-async function runOptionalCleanup(label$1, task, log = warnCleanupLog) {
+async function runOptionalCleanup(task) {
 try {
 await task();
-} catch (error$1) {
-log(label$1, error$1);
-}
+} catch {}
 }
 var bootstrapStages = [
 {
-label: "1",
-run: loadGlobalStyles
-},
-{
 label: "2",
-run: initializeDevToolsIfNeeded,
-shouldRun: () => isDevEnvironment,
-optional: true
-},
-{
-label: "3",
-run: initializeInfrastructure
-},
-{
-label: "4",
 run: initializeCriticalSystems
 },
 {
-label: "5",
+label: "3",
 run: initializeBaseServicesStage,
 optional: true
 },
 {
-label: "6",
+label: "4",
 run: applyInitialThemeSetting,
 optional: true
 },
 {
-label: "7",
+label: "5",
 run: () => setupGlobalEventHandlers()
 },
 {
-label: "8",
-run: initializeCommandRuntimeIfNeeded,
-shouldRun: () => isDevEnvironment,
-optional: true
-},
-{
-label: "9",
-run: initializeGalleryIfPermitted
-},
-{
-label: "10",
-run: () => initializeNonCriticalSystems(),
-optional: true
+label: "6",
+run: initializeGallery
 }
 ];
 async function runBootstrapStages() {
 const failedStage = (await executeStages(bootstrapStages, { stopOnFailure: true })).find((r) => !r.success && !r.optional);
-if (failedStage) throw failedStage.error ?? /* @__PURE__ */ new Error(`Bootstrap stage failed: ${failedStage.label}`);
-}
-async function initializeInfrastructure() {
-try {
-await initializeEnvironment();
-;
-} catch (error$1) {
-bootstrapErrorReporter.critical(error$1, { code: "INFRASTRUCTURE_INIT_FAILED" });
-throw error$1;
-}
+if (failedStage) throw failedStage.error ??  new Error("Bootstrap failed");
 }
 async function initializeBaseServicesStage() {
 try {
-const { initializeCoreBaseServices: initializeCoreBaseServices$1 } = await Promise.resolve().then(() => (init_base_services(), base_services_exports));
-await initializeCoreBaseServices$1();
-;
+await initializeCoreBaseServices();
 } catch (error$1) {
 bootstrapErrorReporter.warn(error$1, { code: "BASE_SERVICES_INIT_FAILED" });
 throw error$1;
@@ -12941,81 +9948,40 @@ themeService.setTheme(savedSetting, {
 force: true,
 persist: false
 });
-} catch (error$1) {
-;
-}
-}
-function initializeNonCriticalSystems() {
-try {
-;
-warmupNonCriticalServices();
-;
-} catch (error$1) {
-;
-}
+} catch {}
 }
 function setupGlobalEventHandlers() {
 tearDownGlobalEventHandlers();
 globalEventTeardown = wireGlobalEvents(() => {
-cleanup().catch((error$1) => logger.error("Error during page unload cleanup:", error$1));
+cleanup().catch(() => {});
 });
 }
-async function loadGlobalStyles() {
-await Promise.resolve().then(() => (init_globals(), globals_exports));
-}
-async function initializeDevToolsIfNeeded() {}
-async function initializeGalleryIfPermitted() {
-await initializeGallery();
-}
 async function cleanup() {
-try {
-;
 tearDownGlobalEventHandlers();
-tearDownCommandRuntime();
-await runOptionalCleanup("Gallery cleanup", async () => {
+await runOptionalCleanup(async () => {
 if (!lifecycleState.galleryApp) return;
 await lifecycleState.galleryApp.cleanup();
 lifecycleState.galleryApp = null;
 });
-await runOptionalCleanup("CoreService cleanup", () => {
+await runOptionalCleanup(() => {
 CoreService.getInstance().cleanup();
 });
-await runOptionalCleanup("Global timer cleanup", () => {
+await runOptionalCleanup(() => {
 globalTimerManager.cleanup();
 });
-await runOptionalCleanup("Global error handler cleanup", async () => {
-const { GlobalErrorHandler: GlobalErrorHandler$1 } = await Promise.resolve().then(() => (init_error_handler(), error_handler_exports));
-GlobalErrorHandler$1.getInstance().destroy();
-}, debugCleanupLog);
-await runOptionalCleanup("Dev namespace refresh", async () => {
-await refreshDevNamespace(lifecycleState.galleryApp);
-}, debugCleanupLog);
+await runOptionalCleanup(async () => {
+GlobalErrorHandler.getInstance().destroy();
+});
 lifecycleState.started = false;
-;
-} catch (error$1) {
-bootstrapErrorReporter.error(error$1, { code: "CLEANUP_FAILED" });
-throw error$1;
-}
 }
 async function startApplication() {
-if (lifecycleState.started) {
-;
-return;
-}
-if (lifecycleState.startPromise) {
-;
-return lifecycleState.startPromise;
-}
+if (lifecycleState.started) return;
+if (lifecycleState.startPromise) return lifecycleState.startPromise;
 lifecycleState.startPromise = (async () => {
-;
 await runBootstrapStages();
 lifecycleState.started = true;
-lifecycleState.lastError = null;
-;
-await refreshDevNamespace(lifecycleState.galleryApp);
 })().catch((error$1) => {
 lifecycleState.started = false;
-lifecycleState.lastError = error$1;
 bootstrapErrorReporter.error(error$1, {
 code: "APP_INIT_FAILED",
 metadata: { leanMode: true }
@@ -13028,9 +9994,7 @@ return lifecycleState.startPromise;
 }
 async function initializeGallery() {
 try {
-;
 lifecycleState.galleryApp = await initializeGalleryApp();
-;
 } catch (error$1) {
 lifecycleState.galleryApp = null;
 galleryErrorReporter.error(error$1, { code: "GALLERY_INIT_FAILED" });
