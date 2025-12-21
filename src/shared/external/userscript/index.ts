@@ -11,10 +11,10 @@ export {
   resolveGMDownload,
   type UserscriptAPI,
   type UserscriptManager,
-} from './adapter';
+} from '@shared/external/userscript/adapter';
 export {
   detectEnvironment,
   type EnvironmentInfo,
   type GMAPIName,
   isGMAPIAvailable,
-} from './environment-detector';
+} from '@shared/external/userscript/environment-detector';

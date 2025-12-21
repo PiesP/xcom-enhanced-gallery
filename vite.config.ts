@@ -95,6 +95,14 @@ export default defineConfig(({ mode }): UserConfig => {
                 replacement: resolve(root, 'src/shared/error/app-error-reporter.slim.ts'),
               },
               {
+                find: '@bootstrap/utils',
+                replacement: resolve(root, 'src/bootstrap/utils.prod.ts'),
+              },
+              {
+                find: '@shared/external/userscript/adapter',
+                replacement: resolve(root, 'src/shared/external/userscript/adapter.prod.ts'),
+              },
+              {
                 find: '@shared/logging/log-level',
                 replacement: resolve(root, 'src/shared/logging/log-level.prod.ts'),
               },

@@ -1,6 +1,6 @@
 import { type BaseLanguageCode, isBaseLanguageCode } from '@shared/constants/i18n/language-types';
 import { DEFAULT_LANGUAGE } from '@shared/constants/i18n/translation-registry';
-import { type ResolvedGMAPIs, resolveGMAPIs } from './adapter';
+import { type ResolvedGMAPIs, resolveGMAPIs } from '@shared/external/userscript/adapter';
 
 /**
  * Browser environment snapshot surfaced to the userscript layer.

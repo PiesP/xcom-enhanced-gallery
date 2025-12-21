@@ -232,7 +232,11 @@ async function runBootstrapStages(): Promise<void> {
   const results = await executeStages(bootstrapStages, { stopOnFailure: true });
   const failedStage = results.find((r) => !r.success && !r.optional);
   if (failedStage) {
-    throw failedStage.error ?? new Error(`Bootstrap stage failed: ${failedStage.label}`);
+    if (__DEV__) {
+      throw failedStage.error ?? new Error(`Bootstrap stage failed: ${failedStage.label}`);
+    }
+
+    throw failedStage.error ?? new Error('Bootstrap failed');
   }
 }
 
@@ -325,7 +329,7 @@ function setupGlobalEventHandlers(): void {
   tearDownGlobalEventHandlers();
 
   globalEventTeardown = wireGlobalEvents(() => {
-    cleanup().catch((error) => logger.error('Error during page unload cleanup:', error));
+    cleanup().catch((error) => logger.error('Cleanup failed', error));
   });
 }
 
@@ -366,7 +370,7 @@ async function cleanup(): Promise<void> {
 
     tearDownGlobalEventHandlers();
     tearDownCommandRuntime();
-    await runOptionalCleanup('Gallery cleanup', async () => {
+    await runOptionalCleanup(__DEV__ ? 'Gallery cleanup' : '1', async () => {
       if (!lifecycleState.galleryApp) {
         return;
       }
@@ -375,16 +379,16 @@ async function cleanup(): Promise<void> {
       lifecycleState.galleryApp = null;
     });
 
-    await runOptionalCleanup('CoreService cleanup', () => {
+    await runOptionalCleanup(__DEV__ ? 'CoreService cleanup' : '2', () => {
       CoreService.getInstance().cleanup();
     });
 
-    await runOptionalCleanup('Global timer cleanup', () => {
+    await runOptionalCleanup(__DEV__ ? 'Global timer cleanup' : '3', () => {
       globalTimerManager.cleanup();
     });
 
     await runOptionalCleanup(
-      'Global error handler cleanup',
+      __DEV__ ? 'Global error handler cleanup' : '4',
       async () => {
         GlobalErrorHandler.getInstance().destroy();
       },
