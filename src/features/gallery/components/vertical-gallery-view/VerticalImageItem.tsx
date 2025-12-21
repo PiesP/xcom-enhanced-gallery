@@ -13,7 +13,7 @@
  * - Provide focus/blur event handling for accessibility
  *
  * **Architecture**:
- * - Uses SharedObserver for memory-efficient visibility detection
+ * - Uses SharedObserver for visibility detection
  * - Dimension calculation extracted to @shared/utils/media/media-dimensions
  * - Video visibility control extracted to useVideoVisibility hook
  *

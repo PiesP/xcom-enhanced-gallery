@@ -149,7 +149,7 @@ export function createVideoVisibilityControllerForTests(
  * - Pauses video when scrolled out of view
  * - Resumes playback when scrolled back into view
  * - Preserves muted state across visibility changes
- * - Uses SharedObserver for memory efficiency
+ * - Uses SharedObserver for visibility detection
  *
  * @param options - Hook configuration
  */
