@@ -46,26 +46,18 @@ export function calculateCRC32(data: Uint8Array): number {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-export function writeUint16LEToBuffer(buffer: Uint8Array, offset: number, value: number): void {
-  buffer[offset] = value & 0xff;
-  buffer[offset + 1] = (value >>> 8) & 0xff;
-}
-
-export function writeUint32LEToBuffer(buffer: Uint8Array, offset: number, value: number): void {
-  buffer[offset] = value & 0xff;
-  buffer[offset + 1] = (value >>> 8) & 0xff;
-  buffer[offset + 2] = (value >>> 16) & 0xff;
-  buffer[offset + 3] = (value >>> 24) & 0xff;
-}
-
 export function writeUint16LE(value: number): Uint8Array {
   const bytes = new Uint8Array(2);
-  writeUint16LEToBuffer(bytes, 0, value);
+  bytes[0] = value & 0xff;
+  bytes[1] = (value >>> 8) & 0xff;
   return bytes;
 }
 
 export function writeUint32LE(value: number): Uint8Array {
   const bytes = new Uint8Array(4);
-  writeUint32LEToBuffer(bytes, 0, value);
+  bytes[0] = value & 0xff;
+  bytes[1] = (value >>> 8) & 0xff;
+  bytes[2] = (value >>> 16) & 0xff;
+  bytes[3] = (value >>> 24) & 0xff;
   return bytes;
 }

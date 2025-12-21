@@ -9,7 +9,7 @@
  * - We normalize whitespace in path data when copying from upstream SVG files.
  */
 
-export type LucideIconTag = 'path' | 'line' | 'circle' | 'rect' | 'polyline';
+export type LucideIconTag = 'path' | 'circle';
 
 export type LucideIconNode = readonly [
   tag: LucideIconTag,

@@ -77,18 +77,6 @@ export interface HttpRequestOptions {
 }
 
 /**
- * Binary request options - Phase 320
- * For sending ArrayBuffer or UInt8Array as request body
- */
-export interface BinaryRequestOptions {
-  headers?: Record<string, string>;
-  timeout?: number; // milliseconds, default: 10000
-  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer'; // expected response type
-  contentType?: string; // MIME type for binary data, default: 'application/octet-stream'
-  signal?: AbortSignal; // for cancellation
-}
-
-/**
  * HTTP response wrapper
  */
 export interface HttpResponse<T = unknown> {
@@ -140,7 +128,7 @@ export class HttpRequestService {
   private async request<T>(
     method: string,
     url: string,
-    options?: HttpRequestOptions | BinaryRequestOptions
+    options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
     const deferred = createDeferred<HttpResponse<T>>();
 
@@ -211,8 +199,8 @@ export class HttpRequestService {
         >;
       }
 
-      if (options && 'data' in options && options.data !== undefined) {
-        const data = options.data;
+      const data = options?.data;
+      if (data !== undefined) {
         const isBinaryLike =
           data instanceof Blob ||
           data instanceof ArrayBuffer ||
@@ -312,49 +300,6 @@ export class HttpRequestService {
     options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
     return this.request<T>('PATCH', url, { ...options, data });
-  }
-
-  /**
-   * Send binary data (ArrayBuffer or UInt8Array) via POST request - Phase 320
-   * Optimized for large binary payloads with proper Content-Type handling
-   *
-   * Requires @connect directive for target domain
-   *
-   * @param url Target endpoint
-   * @param data ArrayBuffer or UInt8Array to send
-   * @param options Binary request options (contentType defaults to 'application/octet-stream')
-   * @returns Promise resolving to HTTP response with parsed data
-   *
-   * @example
-   * ```typescript
-   * // Send compressed data
-   * const compressed = await compressData(largeData);
-   * const response = await httpService.postBinary<ApiResponse>(
-   *   'https://api.example.com/upload',
-   *   compressed,
-   *   {
-   *     contentType: 'application/gzip',
-   *     responseType: 'json',
-   *     timeout: 30000
-   *   }
-   * );
-   *
-   * // Send raw binary data
-   * const binary = new Uint8Array([1, 2, 3, 4, 5]);
-   * const result = await httpService.postBinary(url, binary);
-   * ```
-   */
-  async postBinary<T = unknown>(
-    url: string,
-    data: ArrayBuffer | Uint8Array,
-    options?: BinaryRequestOptions
-  ): Promise<HttpResponse<T>> {
-    const contentType = options?.contentType ?? 'application/octet-stream';
-    return await this.request<T>('POST', url, {
-      ...options,
-      data,
-      contentType,
-    });
   }
 }
 

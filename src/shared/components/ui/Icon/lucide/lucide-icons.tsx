@@ -17,14 +17,8 @@ const renderNode = (node: LucideIconNode): JSXElement => {
   switch (tag) {
     case 'path':
       return <path {...attrs} />;
-    case 'line':
-      return <line {...attrs} />;
     case 'circle':
       return <circle {...attrs} />;
-    case 'rect':
-      return <rect {...attrs} />;
-    case 'polyline':
-      return <polyline {...attrs} />;
     default: {
       const exhaustive: never = tag;
       return exhaustive;
