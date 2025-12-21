@@ -56,6 +56,9 @@ function buildMetadataBlock(config: UserscriptMeta): string {
     formatMetaLine('description', config.description),
     formatMetaLine('author', config.author),
     formatMetaLine('license', config.license),
+    // MIT requires that the copyright notice is included in all copies.
+    // Keep it as a plain comment line to avoid relying on non-standard metadata keys.
+    '// Copyright (c) 2024-2025 X.com Enhanced Gallery Contributors',
     ...(config.homepageURL ? [formatMetaLine('homepageURL', config.homepageURL)] : []),
     ...formatMetaLines('match', config.match),
     ...formatMetaLines('grant', config.grant),
