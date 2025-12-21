@@ -440,7 +440,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       aria-describedby={local['aria-describedby']}
       role={resolvedContainerRole()}
       tabIndex={local.tabIndex ?? 0}
-      data-testid={local['data-testid']}
+      data-testid={__DEV__ ? local['data-testid'] : undefined}
     >
       {isVisible() && (
         <div class={styles.imageWrapper} data-xeg-role="media-wrapper">

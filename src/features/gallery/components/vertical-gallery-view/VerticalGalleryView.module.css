@@ -166,8 +166,8 @@
   padding-block-end: var(--xeg-spacing-gallery);
 }
 
-/* Reveal toolbar on hover */
-.toolbarWrapper:hover {
+/* Reveal toolbar on hover / keep visible when focused */
+.toolbarWrapper:is(:hover, :focus-within) {
   --toolbar-opacity: 1;
   --toolbar-visibility: visible;
   --toolbar-pointer-events: auto;
@@ -176,11 +176,6 @@
 
 /* Keep toolbar visible when focused */
 .toolbarWrapper:focus-within {
-  --toolbar-opacity: 1;
-  --toolbar-visibility: visible;
-  --toolbar-pointer-events: auto;
-  --toolbar-transform-y: 0;
-
   transition: var(--xeg-transition-elevation-fast);
 }
 
@@ -398,8 +393,7 @@
 }
 
 /* Ensure every toolbar component honors the wrapper's visibility variables */
-.toolbarWrapper [class*="galleryToolbar"],
-.toolbarWrapper [data-testid*="toolbar"] {
+.toolbarWrapper [class*="galleryToolbar"] {
   opacity: var(--toolbar-opacity, 0);
   visibility: var(--toolbar-visibility, hidden);
   display: flex;

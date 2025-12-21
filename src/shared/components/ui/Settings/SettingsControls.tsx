@@ -74,7 +74,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
   const languageStrings = () => strings().language;
 
   return (
-    <div class={containerClass} data-testid={props['data-testid']}>
+    <div class={containerClass} data-testid={__DEV__ ? props['data-testid'] : undefined}>
       <div class={settingClass}>
         <label for={themeSelectId} class={labelClass}>
           {themeStrings().title}
@@ -86,7 +86,9 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           value={themeValue()}
           aria-label={themeStrings().title}
           title={themeStrings().title}
-          data-testid={props['data-testid'] ? `${props['data-testid']}-theme` : undefined}
+          data-testid={
+            __DEV__ && props['data-testid'] ? `${props['data-testid']}-theme` : undefined
+          }
         >
           {THEME_OPTIONS.map((option) => (
             <option value={option}>{themeStrings().labels[option]}</option>
@@ -105,7 +107,9 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           value={languageValue()}
           aria-label={languageStrings().title}
           title={languageStrings().title}
-          data-testid={props['data-testid'] ? `${props['data-testid']}-language` : undefined}
+          data-testid={
+            __DEV__ && props['data-testid'] ? `${props['data-testid']}-language` : undefined
+          }
         >
           {LANGUAGE_OPTIONS.map((option) => (
             <option value={option}>{languageStrings().labels[option]}</option>

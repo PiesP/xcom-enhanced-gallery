@@ -11,7 +11,9 @@ import { createLogger, createScopedLogger } from '@shared/logging';
 import { createComputed, createRoot, createSignal } from 'solid-js';
 
 // Debug: Keep all debug strings and identifiers dev-only so production bundles can drop them.
-const logger = createScopedLogger?.('SignalFactory') ?? createLogger({ prefix: '[SignalFactory]' });
+const logger = __DEV__
+  ? (createScopedLogger?.('SignalFactory') ?? createLogger({ prefix: '[SignalFactory]' }))
+  : createLogger({ prefix: '' });
 
 if (__DEV__) {
   logger.debug('Module loaded');

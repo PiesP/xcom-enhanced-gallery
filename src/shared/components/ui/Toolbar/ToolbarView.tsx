@@ -240,6 +240,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     context: 'toolbar:wheel:panel',
   });
 
+  const settingsControlsTestId = __DEV__ ? { 'data-testid': 'settings-controls' as const } : {};
+
   return (
     <div
       ref={assignToolbarRef}
@@ -253,7 +255,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       aria-label={props['aria-label'] ?? 'Gallery Toolbar'}
       aria-describedby={props['aria-describedby']}
       aria-disabled={isToolbarDisabled()}
-      data-testid={props['data-testid']}
+      data-testid={__DEV__ ? props['data-testid'] : undefined}
       data-gallery-element="toolbar"
       tabIndex={props.tabIndex}
       onFocus={props.onFocus as ((event: FocusEvent) => void) | undefined}
@@ -425,7 +427,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             onThemeChange={props.settingsController.handleThemeChange}
             onLanguageChange={props.settingsController.handleLanguageChange}
             compact
-            data-testid="settings-controls"
+            {...settingsControlsTestId}
           />
         </Show>
       </div>

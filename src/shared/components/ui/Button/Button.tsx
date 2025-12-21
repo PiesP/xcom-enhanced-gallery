@@ -269,7 +269,7 @@ export function Button(rawProps: ButtonProps): JSXElement {
             ? (local.tabIndex as () => number)()
             : local.tabIndex
       }
-      data-testid={local['data-testid']}
+      data-testid={__DEV__ ? local['data-testid'] : undefined}
       data-gallery-element={local['data-gallery-element']}
       data-disabled={local['data-disabled']}
       data-selected={local['data-selected']}

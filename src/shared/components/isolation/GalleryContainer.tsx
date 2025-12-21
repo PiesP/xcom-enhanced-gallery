@@ -12,11 +12,10 @@ import { render } from 'solid-js/web';
  * Symbol for storing dispose callback on container element
  * @description Prevents accidental overwrites and name collisions
  */
-const DISPOSE_SYMBOL = Symbol('xeg-gallery-container-dispose');
-const ESCAPE_LISTENER_STORAGE_KEY = '__xegCapturedEscapeListener';
+const DISPOSE_SYMBOL = Symbol();
 
 type EscapeCaptureWindow = typeof window & {
-  [ESCAPE_LISTENER_STORAGE_KEY]?: (event: KeyboardEvent) => void;
+  __xegCapturedEscapeListener?: (event: KeyboardEvent) => void;
 };
 
 // ============================================================================
@@ -159,9 +158,10 @@ export function GalleryContainer({
     }
   };
 
-  if (hasCloseHandler && registerEscapeListener && typeof window !== 'undefined') {
+  if (__DEV__ && hasCloseHandler && registerEscapeListener && typeof window !== 'undefined') {
     const captureWindow = window as EscapeCaptureWindow;
-    captureWindow[ESCAPE_LISTENER_STORAGE_KEY] = escapeListener as (event: KeyboardEvent) => void;
+    const storageKey = '__xegCapturedEscapeListener' as const;
+    captureWindow[storageKey] = escapeListener as (event: KeyboardEvent) => void;
     registerEscapeListener(escapeListener as (event: KeyboardEvent) => void);
   }
 
