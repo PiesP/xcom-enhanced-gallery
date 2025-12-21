@@ -10,12 +10,11 @@ import { ko } from './languages/ko';
  * `import()` is forbidden to avoid accidental code-splitting and multi-file
  * outputs.
  */
-export const TRANSLATION_REGISTRY: Partial<Record<BaseLanguageCode, LanguageStrings>> =
-  Object.freeze({
-    en,
-    ko,
-    ja,
-  });
+export const TRANSLATION_REGISTRY: Partial<Record<BaseLanguageCode, LanguageStrings>> = {
+  en,
+  ko,
+  ja,
+};
 
 export const DEFAULT_LANGUAGE: BaseLanguageCode = 'en';
 

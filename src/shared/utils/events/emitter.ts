@@ -67,7 +67,9 @@ export function createEventEmitter<T extends Record<string, unknown>>() {
           callback(data);
         } catch (error) {
           // Error isolation: one listener failure doesn't prevent other listeners
-          logger.error(`[EventEmitter] Listener error for event "${String(event)}":`, error);
+          if (__DEV__) {
+            logger.error(`[EventEmitter] Listener error for event "${String(event)}":`, error);
+          }
         }
       });
     },

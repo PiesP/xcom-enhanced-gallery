@@ -18,7 +18,7 @@ const BUILD_MODE_CONFIGS: Record<'development' | 'production', BuildModeConfig> 
     cssValueMinify: true,
     // Bundle-size optimization: keep the hashed CSS Module names extremely short.
     // Note: Code should never depend on this prefix (CSS Modules exports are used instead).
-    cssClassNamePattern: 'xg-[hash:base64:5]',
+    cssClassNamePattern: 'xg-[hash:base64:4]',
     sourceMap: false as const,
   },
 };

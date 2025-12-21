@@ -11,12 +11,14 @@ import { createLogger, createScopedLogger } from '@shared/logging';
 import { createComputed, createRoot, createSignal } from 'solid-js';
 
 // Debug: Keep all debug strings and identifiers dev-only so production bundles can drop them.
-const logger = __DEV__
+// IMPORTANT: Do not call createLogger/createScopedLogger in production to avoid leaving
+// stray calls in the non-minified userscript bundle.
+const devLogger = __DEV__
   ? (createScopedLogger?.('SignalFactory') ?? createLogger({ prefix: '[SignalFactory]' }))
-  : createLogger({ prefix: '' });
+  : null;
 
 if (__DEV__) {
-  logger.debug('Module loaded');
+  devLogger?.debug('Module loaded');
 }
 
 /**
@@ -60,7 +62,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
         try {
           subscriber(val);
         } catch (error) {
-          logger.debug('[createSignalSafe]', instanceId, 'subscriber threw', error);
+          devLogger?.debug('[createSignalSafe]', instanceId, 'subscriber threw', error);
         }
       } else {
         subscriber(val);
@@ -71,7 +73,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
   const signalObject = {
     set(value: T): void {
       if (__DEV__) {
-        logger.debug('[createSignalSafe]', instanceId, 'set invoked', value);
+        devLogger?.debug('[createSignalSafe]', instanceId, 'set invoked', value);
       }
 
       // Solid treats function inputs as updaters. When the *value* itself is a
@@ -86,7 +88,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
     },
     update(updater: (prev: T) => T): void {
       if (__DEV__) {
-        logger.debug('[createSignalSafe]', instanceId, 'update invoked');
+        devLogger?.debug('[createSignalSafe]', instanceId, 'update invoked');
       }
 
       // Resolve next value before calling write() to avoid stale reads inside
@@ -98,7 +100,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
     },
     subscribe(callback: (value: T) => void): () => void {
       if (__DEV__) {
-        logger.debug('[createSignalSafe]', instanceId, 'subscribe invoked for signal', initial);
+        devLogger?.debug('[createSignalSafe]', instanceId, 'subscribe invoked for signal', initial);
       }
 
       subscribers.add(callback);
@@ -114,13 +116,13 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
     get: () => {
       const value = read();
       if (__DEV__) {
-        logger.debug('[createSignalSafe]', instanceId, 'value getter read', value);
+        devLogger?.debug('[createSignalSafe]', instanceId, 'value getter read', value);
       }
       return value;
     },
     set: (v: T) => {
       if (__DEV__) {
-        logger.debug('[createSignalSafe]', instanceId, 'value setter fired', v);
+        devLogger?.debug('[createSignalSafe]', instanceId, 'value setter fired', v);
       }
       signalObject.set(v);
     },
@@ -142,7 +144,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
 export function effectSafe(fn: () => void): () => void {
   return createRoot((dispose) => {
     if (__DEV__) {
-      logger.debug('[effectSafe] createRoot invoked');
+      devLogger?.debug('[effectSafe] createRoot invoked');
     }
 
     // Use createComputed so this helper works reliably outside of a component
@@ -150,7 +152,7 @@ export function effectSafe(fn: () => void): () => void {
     // dependencies and re-runs when they change.
     createComputed(() => {
       if (__DEV__) {
-        logger.debug('[effectSafe] effect body invoked');
+        devLogger?.debug('[effectSafe] effect body invoked');
       }
       fn();
     });

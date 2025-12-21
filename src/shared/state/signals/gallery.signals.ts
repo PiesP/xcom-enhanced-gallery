@@ -253,8 +253,10 @@ export function navigateToItem(
   const validIndex = clampIndex(index, state.mediaItems.length);
   const navigationSource = source ?? resolveNavigationSource(trigger);
 
-  // Validate navigation parameters
-  validateNavigationParams(validIndex, navigationSource, trigger, 'navigateToItem');
+  // Validate navigation parameters (dev-only to keep the production bundle lean)
+  if (__DEV__) {
+    validateNavigationParams(validIndex, navigationSource, trigger, 'navigateToItem');
+  }
 
   const result = recordNavigation(validIndex, navigationSource);
 
@@ -330,8 +332,10 @@ export function setFocusedIndex(
 ): void {
   const state = galleryState.value;
 
-  // Validate focus parameters
-  validateFocusParams(index, source, 'setFocusedIndex');
+  // Validate focus parameters (dev-only to keep the production bundle lean)
+  if (__DEV__) {
+    validateFocusParams(index, source, 'setFocusedIndex');
+  }
 
   recordFocusChange(source);
 
