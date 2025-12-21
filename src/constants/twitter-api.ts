@@ -14,6 +14,4 @@ export const TWITTER_API_CONFIG = {
   SUPPORTED_HOSTS: ['x.com', 'twitter.com'] as const,
   /** Default host for API requests (fallback) */
   DEFAULT_HOST: 'x.com',
-  /** Cache TTL in milliseconds (2 minutes) */
-  CACHE_TTL_MS: 120_000,
 } as const;

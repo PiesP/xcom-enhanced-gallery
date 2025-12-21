@@ -103,10 +103,6 @@ export default defineConfig(({ mode }): UserConfig => {
                 replacement: resolve(root, 'src/shared/external/userscript/adapter.prod.ts'),
               },
               {
-                find: '@shared/logging/log-level',
-                replacement: resolve(root, 'src/shared/logging/log-level.prod.ts'),
-              },
-              {
                 find: '@edge/bootstrap',
                 replacement: resolve(root, 'src/edge/bootstrap.prod.ts'),
               },

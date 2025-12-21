@@ -1,18 +1,12 @@
 /**
- * @fileoverview Centralized Logging Infrastructure
- * @version 3.0.0 - Enhanced log level management with runtime configuration
+ * @fileoverview Centralized Logging Infrastructure (minimal)
  *
- * Features:
- * - Tree-shakeable: Production builds eliminate all debug code
- * - Runtime configurable: Log level can be changed at runtime in dev
- * - Environment variable support: VITE_LOG_LEVEL in development
- * - Structured logging: Consistent format with context support
+ * Production: emit errors only.
+ * Development: emit all log levels.
  */
 
 import { normalizeErrorMessage } from '@shared/error/normalize';
-import { DEFAULT_LOG_LEVEL, getLogLevel, LOG_LEVEL_PRIORITY } from './log-level';
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 export type LoggableData = unknown;
 
 export interface Logger {
@@ -24,121 +18,59 @@ export interface Logger {
 }
 
 export interface LoggerConfig {
-  readonly level: LogLevel;
   readonly prefix: string;
 }
 
 const BASE_PREFIX = '[XEG]';
+const hasConsole = typeof console !== 'undefined';
+const noop = (): void => {};
 
-// `__DEV__` is defined at build/test time (Vite + Vitest).
-const isDev: boolean = __DEV__;
+function buildLogger(prefix: string, enableVerbose: boolean): Logger {
+  if (!hasConsole) {
+    return { info: noop, warn: noop, error: noop, debug: noop, trace: noop };
+  }
 
-const createProdLogger = (config: LoggerConfig): Logger => {
-  const noop = (): void => {};
-  const hasConsole = typeof console !== 'undefined';
-
-  return {
-    // Keep production output minimal but actionable.
-    info: noop,
-    debug: noop,
-    trace: noop,
-    warn: noop,
-    error: (...args: LoggableData[]): void => {
-      if (hasConsole) {
-        console.error(config.prefix, ...args);
-      }
-    },
-  };
-};
-
-let createLoggerImpl: (config?: Partial<LoggerConfig>) => Logger;
-let createScopedLoggerImpl: (scope: string, config?: Partial<LoggerConfig>) => Logger;
-
-if (isDev) {
-  const DEFAULT_CONFIG: LoggerConfig = {
-    level: DEFAULT_LOG_LEVEL,
-    prefix: BASE_PREFIX,
-  };
-
-  /**
-   * Check if a log level should be displayed based on current runtime level
-   * Uses the centralized log level configuration
-   */
-  const shouldLog = (level: LogLevel, _config: LoggerConfig): boolean => {
-    // Use runtime log level for dynamic configuration support
-    const currentLevel = getLogLevel();
-    return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[currentLevel];
-  };
-
-  const formatMessage = (config: LoggerConfig, ...args: LoggableData[]): LoggableData[] => {
-    return [config.prefix, ...args];
-  };
-
-  createLoggerImpl = (config: Partial<LoggerConfig> = {}): Logger => {
-    const finalConfig: LoggerConfig = { ...DEFAULT_CONFIG, ...config };
-
+  if (!enableVerbose) {
     return {
-      info: (...args: LoggableData[]): void => {
-        if (shouldLog('info', finalConfig)) {
-          console.info(...formatMessage(finalConfig, ...args));
-        }
-      },
-      warn: (...args: LoggableData[]): void => {
-        if (shouldLog('warn', finalConfig)) {
-          console.warn(...formatMessage(finalConfig, ...args));
-        }
-      },
+      info: noop,
+      warn: noop,
+      debug: noop,
+      trace: noop,
       error: (...args: LoggableData[]): void => {
-        if (shouldLog('error', finalConfig)) {
-          console.error(...formatMessage(finalConfig, ...args));
-        }
-      },
-      debug: (...args: LoggableData[]): void => {
-        if (shouldLog('debug', finalConfig)) {
-          console.info(...formatMessage(finalConfig, ...args));
-        }
-      },
-      trace: (...args: LoggableData[]): void => {
-        if (shouldLog('debug', finalConfig)) {
-          console.debug(...formatMessage(finalConfig, ...args));
-        }
+        console.error(prefix, ...args);
       },
     };
-  };
+  }
 
-  createScopedLoggerImpl = (scope: string, config: Partial<LoggerConfig> = {}): Logger =>
-    createLoggerImpl({
-      ...config,
-      prefix: `${config.prefix ?? BASE_PREFIX} [${scope}]`,
-    });
-} else {
-  const DEFAULT_CONFIG: LoggerConfig = {
-    level: DEFAULT_LOG_LEVEL,
-    prefix: BASE_PREFIX,
+  return {
+    info: (...args: LoggableData[]): void => {
+      console.info(prefix, ...args);
+    },
+    warn: (...args: LoggableData[]): void => {
+      console.warn(prefix, ...args);
+    },
+    error: (...args: LoggableData[]): void => {
+      console.error(prefix, ...args);
+    },
+    debug: (...args: LoggableData[]): void => {
+      console.info(prefix, ...args);
+    },
+    trace: (...args: LoggableData[]): void => {
+      console.debug(prefix, ...args);
+    },
   };
-
-  createLoggerImpl = (config: Partial<LoggerConfig> = {}): Logger => {
-    const finalConfig: LoggerConfig = { ...DEFAULT_CONFIG, ...config };
-    return createProdLogger(finalConfig);
-  };
-
-  createScopedLoggerImpl = (scope: string, config: Partial<LoggerConfig> = {}): Logger =>
-    createLoggerImpl({
-      ...config,
-      prefix: `${config.prefix ?? BASE_PREFIX} [${scope}]`,
-    });
 }
 
 export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
-  return createLoggerImpl(config);
+  const prefix = config.prefix ?? BASE_PREFIX;
+  return buildLogger(prefix, __DEV__);
 }
 
-export const logger: Logger = createLogger({
-  level: DEFAULT_LOG_LEVEL,
-});
+export const logger: Logger = createLogger();
 
 export function createScopedLogger(scope: string, config: Partial<LoggerConfig> = {}): Logger {
-  return createScopedLoggerImpl(scope, config);
+  const prefix = `${config.prefix ?? BASE_PREFIX} [${scope}]`;
+  return createLogger({ ...config, prefix });
 }
 
 export function logError(

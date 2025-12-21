@@ -1,7 +1,7 @@
 /**
  * @fileoverview Twitter Video Extractor - GraphQL API Integration
  * @description Facade for Twitter API interactions, delegating to specialized services.
- * @version 4.0.0 - Added TTL-based cache, improved host detection, async CSRF support
+ * @version 4.1.0 - Simplified request flow, improved host detection, async CSRF support
  */
 
 import { TWITTER_API_CONFIG } from '@constants/twitter-api';
@@ -17,17 +17,6 @@ import {
 } from '@shared/services/media/twitter-parser';
 import type { TweetMediaEntry, TwitterAPIResponse } from '@shared/services/media/types';
 import { sortMediaByVisualOrder } from '@shared/utils/media/media-dimensions';
-
-// ============================================================================
-// Types
-// ============================================================================
-
-/** Cache entry with TTL tracking */
-interface CacheEntry {
-  response: TwitterAPIResponse;
-  timestamp: number;
-  csrfToken: string;
-}
 
 // ============================================================================
 // Helper Functions
@@ -75,18 +64,8 @@ function getSafeHost(): string {
  * - normalizeLegacyTweet/User: Response normalization
  * - extractMediaFromTweet: Media extraction
  *
- * Cache features:
- * - TTL-based expiration (configurable via TWITTER_API_CONFIG.CACHE_TTL_MS)
- * - CSRF token included in cache validation
- * - Automatic invalidation on 4xx/5xx errors
- * - LRU eviction when cache limit reached
  */
 export class TwitterAPI {
-  /** Cache for API responses with TTL */
-  private static readonly requestCache = new Map<string, CacheEntry>();
-  private static readonly CACHE_LIMIT = 16;
-  private static readonly pendingRequests = new Map<string, Promise<TwitterAPIResponse>>();
-
   /**
    * Get Tweet Medias - Main API Entry Point
    */
@@ -138,144 +117,58 @@ export class TwitterAPI {
   }
 
   /**
-   * Clear the API response cache.
-   * Useful for testing or forced refresh.
-   */
-  public static clearCache(): void {
-    TwitterAPI.requestCache.clear();
-  }
-
-  /**
-   * Get current cache size.
-   * @returns Number of cached entries
-   */
-  public static getCacheSize(): number {
-    return TwitterAPI.requestCache.size;
-  }
-
-  /**
    * Execute GraphQL API request to Twitter.
    */
   private static async apiRequest(url: string): Promise<TwitterAPIResponse> {
     // Get CSRF token (try async for better reliability)
     const csrfToken = (await getCsrfTokenAsync()) ?? getCsrfToken() ?? '';
 
-    // Check cache with TTL and CSRF validation
-    const cached = TwitterAPI.requestCache.get(url);
-    if (cached) {
-      const now = Date.now();
-      const isExpired = now - cached.timestamp > TWITTER_API_CONFIG.CACHE_TTL_MS;
-      const isCsrfMismatch = cached.csrfToken !== csrfToken;
+    // Build headers
+    const headers = new Headers({
+      authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
+      'x-csrf-token': csrfToken,
+      'x-twitter-client-language': 'en',
+      'x-twitter-active-user': 'yes',
+      'content-type': 'application/json',
+      'x-twitter-auth-type': 'OAuth2Session',
+    });
 
-      if (!isExpired && !isCsrfMismatch) {
-        // Refresh insertion order to implement true LRU eviction.
-        // Note: Do not refresh `timestamp` here, to keep TTL semantics unchanged.
-        TwitterAPI.requestCache.delete(url);
-        TwitterAPI.requestCache.set(url, cached);
-        if (__DEV__) {
-          logger.debug(`Cache hit for tweet request (age: ${now - cached.timestamp}ms)`);
-        }
-        return cached.response;
-      }
-
-      // Remove stale entry
-      TwitterAPI.requestCache.delete(url);
-      if (__DEV__) {
-        logger.debug(
-          `Cache miss: ${isExpired ? 'expired' : 'CSRF mismatch'} (age: ${now - cached.timestamp}ms)`
-        );
-      }
+    // Add location headers safely
+    const locationHeaders = getSafeLocationHeaders();
+    if (locationHeaders.referer) {
+      headers.append('referer', locationHeaders.referer);
     }
-
-    const pendingKey = `${url}|${csrfToken}`;
-    const pendingRequest = TwitterAPI.pendingRequests.get(pendingKey);
-    if (pendingRequest) {
-      if (__DEV__) {
-        logger.debug('Awaiting in-flight tweet request');
-      }
-      return pendingRequest;
+    if (locationHeaders.origin) {
+      headers.append('origin', locationHeaders.origin);
     }
-
-    const requestPromise = (async () => {
-      // Build headers
-      const headers = new Headers({
-        authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
-        'x-csrf-token': csrfToken,
-        'x-twitter-client-language': 'en',
-        'x-twitter-active-user': 'yes',
-        'content-type': 'application/json',
-        'x-twitter-auth-type': 'OAuth2Session',
-      });
-
-      // Add location headers safely
-      const locationHeaders = getSafeLocationHeaders();
-      if (locationHeaders.referer) {
-        headers.append('referer', locationHeaders.referer);
-      }
-      if (locationHeaders.origin) {
-        headers.append('origin', locationHeaders.origin);
-      }
-
-      try {
-        const httpService = HttpRequestService.getInstance();
-        const response = await httpService.get<TwitterAPIResponse>(url, {
-          headers: Object.fromEntries(headers.entries()),
-          responseType: 'json',
-        });
-
-        if (!response.ok) {
-          // Remove cache entry on error to allow retry
-          TwitterAPI.requestCache.delete(url);
-          if (__DEV__) {
-            logger.warn(
-              `Twitter API request failed: ${response.status} ${response.statusText}`,
-              response.data
-            );
-          }
-          throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
-        }
-
-        const json = response.data;
-
-        if (json.errors && json.errors.length > 0) {
-          if (__DEV__) {
-            logger.warn('Twitter API returned errors:', json.errors);
-          }
-          // Don't cache error responses
-        } else {
-          // Cache on success with TTL tracking
-          if (TwitterAPI.requestCache.size >= TwitterAPI.CACHE_LIMIT) {
-            // LRU eviction: remove oldest entry
-            const firstKey = TwitterAPI.requestCache.keys().next().value;
-            if (firstKey) {
-              TwitterAPI.requestCache.delete(firstKey);
-            }
-          }
-
-          TwitterAPI.requestCache.set(url, {
-            response: json,
-            timestamp: Date.now(),
-            csrfToken,
-          });
-        }
-
-        return json;
-      } catch (error) {
-        // Ensure cache is cleared on any error
-        TwitterAPI.requestCache.delete(url);
-        logger.error('API request failed', error);
-        throw error;
-      }
-    })();
-
-    TwitterAPI.pendingRequests.set(pendingKey, requestPromise);
 
     try {
-      return await requestPromise;
-    } finally {
-      if (TwitterAPI.pendingRequests.get(pendingKey) === requestPromise) {
-        TwitterAPI.pendingRequests.delete(pendingKey);
+      const httpService = HttpRequestService.getInstance();
+      const response = await httpService.get<TwitterAPIResponse>(url, {
+        headers: Object.fromEntries(headers.entries()),
+        responseType: 'json',
+      });
+
+      if (!response.ok) {
+        if (__DEV__) {
+          logger.warn(
+            `Twitter API request failed: ${response.status} ${response.statusText}`,
+            response.data
+          );
+        }
+        throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
       }
+
+      const json = response.data;
+
+      if (__DEV__ && json.errors && json.errors.length > 0) {
+        logger.warn('Twitter API returned errors:', json.errors);
+      }
+
+      return json;
+    } catch (error) {
+      logger.error('API request failed', error);
+      throw error;
     }
   }
 
