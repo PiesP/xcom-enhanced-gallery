@@ -50,33 +50,5 @@ export function safeEventPreventAll(event?: Event): void {
   if (!event) return;
   event.preventDefault();
   event.stopPropagation();
-
-  // stopImmediatePropagation may not exist on all Event types
-  const eventWithImmediate = event as Event & {
-    stopImmediatePropagation?: () => void;
-  };
-  eventWithImmediate.stopImmediatePropagation?.();
-}
-
-/**
- * Safely stop propagation only (no preventDefault)
- *
- * @description
- * Stops event bubbling without preventing default behavior.
- * Useful when you want to isolate event handling but preserve
- * native browser behaviors (e.g., form submission, link navigation).
- *
- * @param event - Optional Event object
- *
- * @example
- * ```typescript
- * const handleNavigation = (event?: Event) => {
- *   safeEventStop(event);
- *   // ... navigation logic
- * };
- * ```
- */
-export function safeEventStop(event?: Event): void {
-  if (!event) return;
-  event.stopPropagation();
+  event.stopImmediatePropagation();
 }

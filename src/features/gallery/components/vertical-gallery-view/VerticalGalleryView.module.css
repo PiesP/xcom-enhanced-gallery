@@ -351,34 +351,6 @@
   --toolbar-transform-y: 0;
 }
 
-/**
- * Consolidated fallbacks for browsers without :has() support
- * Browsers: Safari < 15.4, Firefox < 121
- */
-@supports not (selector(:has(*))) {
-  /* Disable hover zone when toolbar is hovered */
-  .toolbarWrapper:hover ~ .toolbarHoverZone {
-    pointer-events: none;
-  }
-
-  /* Show toolbar when hover zone is active */
-  .toolbarHoverZone:hover + .toolbarWrapper,
-  .toolbarHoverZone:hover ~ .toolbarWrapper {
-    --toolbar-opacity: 1;
-    --toolbar-visibility: visible;
-    --toolbar-pointer-events: auto;
-    --toolbar-transform-y: 0;
-  }
-
-  /* Show toolbar on container hover as ultimate fallback */
-  .container:hover .toolbarWrapper {
-    --toolbar-opacity: 1;
-    --toolbar-visibility: visible;
-    --toolbar-pointer-events: auto;
-    --toolbar-transform-y: 0;
-  }
-}
-
 /* Ensure every toolbar component honors the wrapper's visibility variables */
 .toolbarWrapper [class*="galleryToolbar"] {
   opacity: var(--toolbar-opacity, 0);

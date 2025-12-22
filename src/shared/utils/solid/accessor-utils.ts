@@ -33,6 +33,7 @@ export function resolveOptional<T>(value: MaybeAccessor<T> | undefined): T | und
 export function toAccessor<T>(value: MaybeAccessor<T>): Accessor<T> {
   return typeof value === 'function' ? (value as Accessor<T>) : () => value;
 }
+
 export function toRequiredAccessor<T>(
   resolver: () => MaybeAccessor<T> | undefined,
   fallback: T
@@ -43,6 +44,7 @@ export function toRequiredAccessor<T>(
     return (resolved ?? fallback) as T;
   };
 }
+
 export function toOptionalAccessor<T>(
   resolver: () => MaybeAccessor<T> | undefined
 ): Accessor<T | undefined> {
