@@ -122,8 +122,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
 
   const resolvedDimensions = createMemo(() => resolveMediaDimensionsWithIntrinsicFlag(local.media));
-  const dimensions = createMemo(() => resolvedDimensions().dimensions);
-  const hasIntrinsicSize = createMemo(() => resolvedDimensions().hasIntrinsicSize);
+  const dimensions = () => resolvedDimensions().dimensions;
+  const hasIntrinsicSize = () => resolvedDimensions().hasIntrinsicSize;
 
   const intrinsicSizingStyle = createMemo<JSX.CSSProperties>(() => {
     return createIntrinsicSizingStyle(dimensions());
@@ -192,6 +192,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       // a guard so any intermediate events are ignored.
       isApplyingVideoSettings = true;
       try {
+        // untrack: Prevent reactive dependencies inside from re-triggering this effect.
+        // This ensures we only apply settings once when the video element becomes ready,
+        // not on every subsequent signal change.
         untrack(() => {
           const nextMuted = normalizeVideoMutedSetting(videoMuted(), false);
           const nextVolume = normalizeVideoVolumeSetting(videoVolume(), 1.0);
@@ -280,7 +283,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const handleContainerKeyDown: JSX.EventHandlerUnion<HTMLDivElement, KeyboardEvent> = (event) => {
     if (typeof local.onKeyDown === 'function') {
-      (local.onKeyDown as (event: KeyboardEvent) => void)(event);
+      local.onKeyDown(event);
       return;
     }
 
@@ -433,8 +436,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       data-xeg-block-twitter="true"
       style={mergedStyle()}
       onClick={handleContainerClick}
-      onFocus={local.onFocus as (event: FocusEvent) => void}
-      onBlur={local.onBlur as (event: FocusEvent) => void}
+      onFocus={local.onFocus}
+      onBlur={local.onBlur}
       onKeyDown={handleContainerKeyDown}
       aria-label={local['aria-label'] || defaultAriaLabel()}
       aria-describedby={local['aria-describedby']}

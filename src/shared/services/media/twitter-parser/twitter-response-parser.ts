@@ -89,6 +89,8 @@ function resolveAspectRatio(
   media: TwitterMedia,
   dimensions: MediaDimensions
 ): [number, number] | undefined {
+  // Runtime validation: Twitter API types are not guaranteed at runtime.
+  // Defensive check ensures aspect_ratio is actually an array before use.
   const aspectRatioValues = Array.isArray(media.video_info?.aspect_ratio)
     ? media.video_info?.aspect_ratio
     : undefined;
@@ -310,18 +312,23 @@ export function extractMediaFromTweet(
     if (inlineMediaOrder.size === 0) return mediaList;
 
     // Stable sort: referenced inline media first (ascending inline index), then the rest.
+    // Sorting algorithm:
+    // 1. If both items are in inline_media: sort by inline index (ascending)
+    // 2. If only left is in inline_media: left comes first (return -1)
+    // 3. If only right is in inline_media: right comes first (return 1)
+    // 4. If neither is in inline_media: preserve original order (stable sort)
     return mediaList
-      .map((m, originalIndex) => ({ m, originalIndex }))
-      .sort((a, b) => {
-        const aInline = inlineMediaOrder.get(a.m.id_str);
-        const bInline = inlineMediaOrder.get(b.m.id_str);
+      .map((media, originalIndex) => ({ media, originalIndex }))
+      .sort((left, right) => {
+        const leftInline = inlineMediaOrder.get(left.media.id_str);
+        const rightInline = inlineMediaOrder.get(right.media.id_str);
 
-        if (aInline !== undefined && bInline !== undefined) return aInline - bInline;
-        if (aInline !== undefined) return -1;
-        if (bInline !== undefined) return 1;
-        return a.originalIndex - b.originalIndex;
+        if (leftInline !== undefined && rightInline !== undefined) return leftInline - rightInline;
+        if (leftInline !== undefined) return -1;
+        if (rightInline !== undefined) return 1;
+        return left.originalIndex - right.originalIndex;
       })
-      .map((x) => x.m);
+      .map((entry) => entry.media);
   })();
 
   // Normalize tweet text once per tweet: use the parse target (quoted vs original)

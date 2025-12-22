@@ -92,6 +92,17 @@ interface GlobalWithGM {
 }
 
 /**
+ * Helper to resolve a single GM API from scope or globalThis
+ * @internal
+ */
+function resolveGMAPI<T>(
+  scopeBinding: T | undefined,
+  globalFallback: T | undefined
+): T | undefined {
+  return typeof scopeBinding !== 'undefined' ? scopeBinding : globalFallback;
+}
+
+/**
  * Resolve GM_* bindings from either scope injection or globalThis.
  *
  * This is intentionally non-throwing: callers should validate types.
@@ -99,54 +110,41 @@ interface GlobalWithGM {
  */
 export function resolveGMAPIs(): ResolvedGMAPIs {
   const global = globalThis as unknown as GlobalWithGM;
-  const download =
-    typeof GM_download !== 'undefined'
-      ? GM_download
-      : typeof global.GM_download === 'function'
-        ? global.GM_download
-        : undefined;
-  const setValue =
-    typeof GM_setValue !== 'undefined'
-      ? GM_setValue
-      : typeof global.GM_setValue === 'function'
-        ? global.GM_setValue
-        : undefined;
-  const getValue =
-    typeof GM_getValue !== 'undefined'
-      ? GM_getValue
-      : typeof global.GM_getValue === 'function'
-        ? global.GM_getValue
-        : undefined;
-  const deleteValue =
-    typeof GM_deleteValue !== 'undefined'
-      ? GM_deleteValue
-      : typeof global.GM_deleteValue === 'function'
-        ? global.GM_deleteValue
-        : undefined;
-  const listValues =
-    typeof GM_listValues !== 'undefined'
-      ? GM_listValues
-      : typeof global.GM_listValues === 'function'
-        ? global.GM_listValues
-        : undefined;
-  const xmlHttpRequest =
-    typeof GM_xmlhttpRequest !== 'undefined'
-      ? GM_xmlhttpRequest
-      : typeof global.GM_xmlhttpRequest === 'function'
-        ? global.GM_xmlhttpRequest
-        : undefined;
-  const cookie =
-    typeof GM_cookie !== 'undefined'
-      ? GM_cookie
-      : global.GM_cookie && typeof global.GM_cookie.list === 'function'
-        ? global.GM_cookie
-        : undefined;
-  const notification =
-    typeof GM_notification !== 'undefined'
-      ? GM_notification
-      : typeof global.GM_notification === 'function'
-        ? global.GM_notification
-        : undefined;
+
+  const download = resolveGMAPI(
+    GM_download,
+    typeof global.GM_download === 'function' ? global.GM_download : undefined
+  );
+  const setValue = resolveGMAPI(
+    GM_setValue,
+    typeof global.GM_setValue === 'function' ? global.GM_setValue : undefined
+  );
+  const getValue = resolveGMAPI(
+    GM_getValue,
+    typeof global.GM_getValue === 'function' ? global.GM_getValue : undefined
+  );
+  const deleteValue = resolveGMAPI(
+    GM_deleteValue,
+    typeof global.GM_deleteValue === 'function' ? global.GM_deleteValue : undefined
+  );
+  const listValues = resolveGMAPI(
+    GM_listValues,
+    typeof global.GM_listValues === 'function' ? global.GM_listValues : undefined
+  );
+  const xmlHttpRequest = resolveGMAPI(
+    GM_xmlhttpRequest,
+    typeof global.GM_xmlhttpRequest === 'function' ? global.GM_xmlhttpRequest : undefined
+  );
+  const notification = resolveGMAPI(
+    GM_notification,
+    typeof global.GM_notification === 'function' ? global.GM_notification : undefined
+  );
+
+  // GM_cookie has special validation: requires .list method
+  const cookie = resolveGMAPI(
+    GM_cookie,
+    global.GM_cookie && typeof global.GM_cookie.list === 'function' ? global.GM_cookie : undefined
+  );
 
   return {
     download,
@@ -231,6 +229,32 @@ function createStrictUserscriptAPI(): UserscriptAPI {
   };
 }
 
+/**
+ * Safe wrapper for void-returning GM APIs that may throw
+ * @internal
+ */
+function safeVoidCall(fn: (() => void) | null | undefined): void {
+  if (!fn) return;
+  try {
+    fn();
+  } catch {
+    // Silently ignore errors from userscript manager APIs
+  }
+}
+
+/**
+ * Safe wrapper for async void-returning GM APIs
+ * @internal
+ */
+async function safeAsyncVoidCall(fn: (() => unknown) | null | undefined): Promise<void> {
+  if (!fn) return;
+  try {
+    await Promise.resolve(fn());
+  } catch {
+    // Silently ignore errors from userscript manager APIs
+  }
+}
+
 function createSafeUserscriptAPI(): UserscriptAPI {
   const resolved = resolveGMAPIs();
   const gmDownload = asFunction<NonNullable<GlobalWithGM['GM_download']>>(resolved.download);
@@ -249,20 +273,10 @@ function createSafeUserscriptAPI(): UserscriptAPI {
 
   return {
     async download(url: string, filename: string): Promise<void> {
-      if (!gmDownload) return;
-      try {
-        gmDownload(url, filename);
-      } catch {
-        // noop
-      }
+      safeVoidCall(gmDownload ? () => gmDownload(url, filename) : null);
     },
     async setValue(key: string, value: unknown): Promise<void> {
-      if (!gmSetValue) return;
-      try {
-        await Promise.resolve(gmSetValue(key, value));
-      } catch {
-        // noop
-      }
+      await safeAsyncVoidCall(gmSetValue ? () => gmSetValue(key, value) : null);
     },
     async getValue<T>(key: string, defaultValue?: T): Promise<T | undefined> {
       if (!gmGetValue) return defaultValue;
@@ -283,12 +297,7 @@ function createSafeUserscriptAPI(): UserscriptAPI {
       }
     },
     async deleteValue(key: string): Promise<void> {
-      if (!gmDeleteValue) return;
-      try {
-        await Promise.resolve(gmDeleteValue(key));
-      } catch {
-        // noop
-      }
+      await safeAsyncVoidCall(gmDeleteValue ? () => gmDeleteValue(key) : null);
     },
     async listValues(): Promise<string[]> {
       if (!gmListValues) return [];
@@ -313,12 +322,7 @@ function createSafeUserscriptAPI(): UserscriptAPI {
       return { abort() {} };
     },
     notification(details: GMNotificationDetails): void {
-      if (!gmNotification) return;
-      try {
-        gmNotification(details, undefined);
-      } catch {
-        // noop
-      }
+      safeVoidCall(gmNotification ? () => gmNotification(details, undefined) : null);
     },
     cookie: resolved.cookie,
   };

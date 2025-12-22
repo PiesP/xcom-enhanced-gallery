@@ -28,7 +28,7 @@ export function extractTweetTextHTML(tweetArticle: Element | null): string | und
     // Find tweet text element
     const tweetTextElement = tweetArticle.querySelector(TWEET_TEXT_SELECTOR);
     if (!tweetTextElement) {
-      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      if (__DEV__) {
         logger.debug('[tweet] no tweetText element');
       }
       return undefined;
@@ -36,13 +36,13 @@ export function extractTweetTextHTML(tweetArticle: Element | null): string | und
 
     const text = tweetTextElement.textContent?.trim();
     if (!text) {
-      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      if (__DEV__) {
         logger.debug('[tweet] empty text');
       }
       return undefined;
     }
 
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    if (__DEV__) {
       logger.debug('[tweet] extracted', { length: text.length });
     }
 
