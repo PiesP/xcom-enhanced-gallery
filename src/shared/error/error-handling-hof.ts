@@ -38,6 +38,8 @@ import {
 } from './app-error-reporter';
 import { isTimeoutError } from './cancellation';
 
+type ErrorMetadataFn = (error: unknown) => Record<string, unknown>;
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -74,6 +76,74 @@ export interface ErrorHandlingResult<T> {
   readonly value: T | undefined;
   /** The error if operation failed */
   readonly error?: unknown;
+}
+
+/**
+ * Context-bound error handler factory output.
+ * Kept as an explicit interface to allow lazy wrappers to preserve types.
+ */
+export interface ErrorHandlers {
+  wrap: <TArgs extends unknown[], TReturn>(
+    fn: (...args: TArgs) => Promise<TReturn>,
+    options: Omit<ErrorHandlingOptions<TReturn>, 'context'>
+  ) => (...args: TArgs) => Promise<TReturn | undefined>;
+
+  wrapSync: <TArgs extends unknown[], TReturn>(
+    fn: (...args: TArgs) => TReturn,
+    options: Omit<ErrorHandlingOptions<TReturn>, 'context'>
+  ) => (...args: TArgs) => TReturn | undefined;
+
+  wrapResult: <TArgs extends unknown[], TReturn>(
+    fn: (...args: TArgs) => Promise<TReturn>,
+    options?: Omit<ErrorHandlingOptions<TReturn>, 'context' | 'fallback' | 'rethrow'>
+  ) => (...args: TArgs) => Promise<ErrorHandlingResult<TReturn>>;
+
+  wrapWithResult: <TArgs extends unknown[], TData>(
+    fn: (...args: TArgs) => Promise<TData>,
+    options?: Omit<ResultHandlingOptions, 'context'>
+  ) => (...args: TArgs) => AsyncResult<TData>;
+
+  wrapSyncWithResult: <TArgs extends unknown[], TData>(
+    fn: (...args: TArgs) => TData,
+    options?: Omit<ResultHandlingOptions, 'context'>
+  ) => (...args: TArgs) => Result<TData>;
+
+  tryAsync: <T>(
+    fn: () => Promise<T>,
+    options: Omit<ErrorHandlingOptions<T>, 'context'>
+  ) => Promise<T | undefined>;
+
+  trySync: <T>(fn: () => T, options: Omit<ErrorHandlingOptions<T>, 'context'>) => T | undefined;
+}
+
+function resolveError(rawError: unknown, transformError?: (error: unknown) => unknown): unknown {
+  return transformError ? transformError(rawError) : rawError;
+}
+
+function resolveReportOptions(
+  reportOptions: Omit<
+    ErrorHandlingOptions<unknown>,
+    'fallback' | 'rethrow' | 'metadata' | 'transformError'
+  >,
+  error: unknown,
+  metadataFn?: ErrorMetadataFn
+): ErrorReportOptions {
+  const dynamicMetadata = metadataFn ? metadataFn(error) : null;
+  return dynamicMetadata ? { ...reportOptions, metadata: dynamicMetadata } : reportOptions;
+}
+
+function reportAndReturnOrThrow<TReturn>(
+  error: unknown,
+  reportOptions: ErrorReportOptions,
+  fallback: TReturn | undefined,
+  rethrow: boolean
+): TReturn | undefined {
+  if (rethrow) {
+    AppErrorReporter.report(error, reportOptions);
+    throw error;
+  }
+
+  return AppErrorReporter.reportAndReturn(error, reportOptions, fallback as TReturn);
 }
 
 /**
@@ -133,21 +203,9 @@ export function withErrorHandling<TArgs extends unknown[], TReturn>(
     try {
       return await fn(...args);
     } catch (rawError) {
-      const error = transformError ? transformError(rawError) : rawError;
-      const dynamicMetadata = metadataFn ? metadataFn(error) : null;
-
-      const fullOptions: ErrorReportOptions = dynamicMetadata
-        ? { ...reportOptions, metadata: dynamicMetadata }
-        : reportOptions;
-
-      if (rethrow) {
-        // Report then rethrow
-        AppErrorReporter.report(error, fullOptions);
-        throw error;
-      }
-
-      // Report and return fallback
-      return AppErrorReporter.reportAndReturn(error, fullOptions, fallback as TReturn);
+      const error = resolveError(rawError, transformError);
+      const fullOptions = resolveReportOptions(reportOptions, error, metadataFn);
+      return reportAndReturnOrThrow(error, fullOptions, fallback, rethrow);
     }
   };
 }
@@ -185,19 +243,9 @@ export function withSyncErrorHandling<TArgs extends unknown[], TReturn>(
     try {
       return fn(...args);
     } catch (rawError) {
-      const error = transformError ? transformError(rawError) : rawError;
-      const dynamicMetadata = metadataFn ? metadataFn(error) : null;
-
-      const fullOptions: ErrorReportOptions = dynamicMetadata
-        ? { ...reportOptions, metadata: dynamicMetadata }
-        : reportOptions;
-
-      if (rethrow) {
-        AppErrorReporter.report(error, fullOptions);
-        throw error;
-      }
-
-      return AppErrorReporter.reportAndReturn(error, fullOptions, fallback as TReturn);
+      const error = resolveError(rawError, transformError);
+      const fullOptions = resolveReportOptions(reportOptions, error, metadataFn);
+      return reportAndReturnOrThrow(error, fullOptions, fallback, rethrow);
     }
   };
 }
@@ -235,13 +283,8 @@ export function withErrorResult<TArgs extends unknown[], TReturn>(
       const value = await fn(...args);
       return { success: true, value };
     } catch (rawError) {
-      const error = transformError ? transformError(rawError) : rawError;
-      const dynamicMetadata = metadataFn ? metadataFn(error) : null;
-
-      const fullOptions: ErrorReportOptions = dynamicMetadata
-        ? { ...reportOptions, metadata: dynamicMetadata }
-        : reportOptions;
-
+      const error = resolveError(rawError, transformError);
+      const fullOptions = resolveReportOptions(reportOptions, error, metadataFn);
       AppErrorReporter.report(error, fullOptions);
       return { success: false, value: undefined, error };
     }
@@ -266,13 +309,8 @@ export function withSyncErrorResult<TArgs extends unknown[], TReturn>(
       const value = fn(...args);
       return { success: true, value };
     } catch (rawError) {
-      const error = transformError ? transformError(rawError) : rawError;
-      const dynamicMetadata = metadataFn ? metadataFn(error) : null;
-
-      const fullOptions: ErrorReportOptions = dynamicMetadata
-        ? { ...reportOptions, metadata: dynamicMetadata }
-        : reportOptions;
-
+      const error = resolveError(rawError, transformError);
+      const fullOptions = resolveReportOptions(reportOptions, error, metadataFn);
       AppErrorReporter.report(error, fullOptions);
       return { success: false, value: undefined, error };
     }
@@ -378,6 +416,45 @@ function normalizeError(error: unknown): string {
   return String(error);
 }
 
+function createResultFailure(
+  rawError: unknown,
+  options: ResultHandlingOptions
+): {
+  readonly reportError: unknown;
+  readonly reportOptions: ErrorReportOptions;
+  readonly result: Result<never>;
+} {
+  const {
+    code: overrideCode,
+    errorCodeMapper = mapErrorToCode,
+    transformError,
+    metadata: metadataFn,
+    ...reportOptions
+  } = options;
+
+  const error = resolveError(rawError, transformError);
+  const errorMessage = normalizeError(error);
+  const errorCode = overrideCode ?? errorCodeMapper(error);
+  const dynamicMetadata = metadataFn ? metadataFn(error) : undefined;
+
+  const fullOptions: ErrorReportOptions = {
+    ...reportOptions,
+    code: String(errorCode),
+    ...(dynamicMetadata && { metadata: dynamicMetadata }),
+  };
+
+  const result = failure(errorMessage, errorCode, {
+    cause: error,
+    ...(dynamicMetadata && { meta: dynamicMetadata }),
+  });
+
+  return {
+    reportError: error,
+    reportOptions: fullOptions,
+    result: result as unknown as Result<never>,
+  };
+}
+
 /**
  * Wraps an async function to return Result<T> instead of throwing.
  * Integrates with AppErrorReporter for centralized error logging.
@@ -405,37 +482,14 @@ export function withResultHandling<TArgs extends unknown[], TData>(
   fn: (...args: TArgs) => Promise<TData>,
   options: ResultHandlingOptions
 ): (...args: TArgs) => AsyncResult<TData> {
-  const {
-    code: overrideCode,
-    errorCodeMapper = mapErrorToCode,
-    transformError,
-    metadata: metadataFn,
-    ...reportOptions
-  } = options;
-
   return async (...args: TArgs): AsyncResult<TData> => {
     try {
       const data = await fn(...args);
       return success(data);
     } catch (rawError) {
-      const error = transformError ? transformError(rawError) : rawError;
-      const errorMessage = normalizeError(error);
-      const errorCode = overrideCode ?? errorCodeMapper(error);
-      const dynamicMetadata = metadataFn ? metadataFn(error) : undefined;
-
-      // Report error to AppErrorReporter
-      const fullOptions: ErrorReportOptions = {
-        ...reportOptions,
-        code: String(errorCode),
-        ...(dynamicMetadata && { metadata: dynamicMetadata }),
-      };
-      AppErrorReporter.report(error, fullOptions);
-
-      // Return Result failure
-      return failure(errorMessage, errorCode, {
-        cause: error,
-        ...(dynamicMetadata && { meta: dynamicMetadata }),
-      });
+      const { reportError, reportOptions, result } = createResultFailure(rawError, options);
+      AppErrorReporter.report(reportError, reportOptions);
+      return result as unknown as AsyncResult<TData>;
     }
   };
 }
@@ -467,37 +521,14 @@ export function withSyncResultHandling<TArgs extends unknown[], TData>(
   fn: (...args: TArgs) => TData,
   options: ResultHandlingOptions
 ): (...args: TArgs) => Result<TData> {
-  const {
-    code: overrideCode,
-    errorCodeMapper = mapErrorToCode,
-    transformError,
-    metadata: metadataFn,
-    ...reportOptions
-  } = options;
-
   return (...args: TArgs): Result<TData> => {
     try {
       const data = fn(...args);
       return success(data);
     } catch (rawError) {
-      const error = transformError ? transformError(rawError) : rawError;
-      const errorMessage = normalizeError(error);
-      const errorCode = overrideCode ?? errorCodeMapper(error);
-      const dynamicMetadata = metadataFn ? metadataFn(error) : undefined;
-
-      // Report error to AppErrorReporter
-      const fullOptions: ErrorReportOptions = {
-        ...reportOptions,
-        code: String(errorCode),
-        ...(dynamicMetadata && { metadata: dynamicMetadata }),
-      };
-      AppErrorReporter.report(error, fullOptions);
-
-      // Return Result failure
-      return failure(errorMessage, errorCode, {
-        cause: error,
-        ...(dynamicMetadata && { meta: dynamicMetadata }),
-      });
+      const { reportError, reportOptions, result } = createResultFailure(rawError, options);
+      AppErrorReporter.report(reportError, reportOptions);
+      return result as unknown as Result<TData>;
     }
   };
 }
@@ -523,7 +554,7 @@ export function withSyncResultHandling<TArgs extends unknown[], TData>(
  * );
  * ```
  */
-export function createErrorHandlers(context: ErrorContext) {
+export function createErrorHandlers(context: ErrorContext): ErrorHandlers {
   return {
     /**
      * Wrap an async function with error handling
@@ -579,6 +610,28 @@ export function createErrorHandlers(context: ErrorContext) {
   };
 }
 
+function createLazyErrorHandlers(context: ErrorContext): ErrorHandlers {
+  let cached: ErrorHandlers | null = null;
+  const get = (): ErrorHandlers => {
+    if (!cached) {
+      cached = createErrorHandlers(context);
+    }
+    return cached;
+  };
+
+  return {
+    wrap: ((fn, options) => get().wrap(fn, options)) as ErrorHandlers['wrap'],
+    wrapSync: ((fn, options) => get().wrapSync(fn, options)) as ErrorHandlers['wrapSync'],
+    wrapResult: ((fn, options) => get().wrapResult(fn, options)) as ErrorHandlers['wrapResult'],
+    wrapWithResult: ((fn, options) =>
+      get().wrapWithResult(fn, options)) as ErrorHandlers['wrapWithResult'],
+    wrapSyncWithResult: ((fn, options) =>
+      get().wrapSyncWithResult(fn, options)) as ErrorHandlers['wrapSyncWithResult'],
+    tryAsync: ((fn, options) => get().tryAsync(fn, options)) as ErrorHandlers['tryAsync'],
+    trySync: ((fn, options) => get().trySync(fn, options)) as ErrorHandlers['trySync'],
+  };
+}
+
 // ============================================================================
 // Pre-bound Context Handlers (Alternative to pre-bound reporters)
 // ============================================================================
@@ -587,12 +640,12 @@ export function createErrorHandlers(context: ErrorContext) {
  * Pre-bound error handlers for common contexts.
  * These provide a functional alternative to bootstrapErrorReporter, etc.
  */
-export const bootstrapErrors = createErrorHandlers('bootstrap');
-export const galleryErrors = createErrorHandlers('gallery');
-export const mediaErrors = createErrorHandlers('media');
-export const downloadErrors = createErrorHandlers('download');
-export const settingsErrors = createErrorHandlers('settings');
-export const eventErrors = createErrorHandlers('event');
-export const networkErrors = createErrorHandlers('network');
-export const storageErrors = createErrorHandlers('storage');
-export const uiErrors = createErrorHandlers('ui');
+export const bootstrapErrors = createLazyErrorHandlers('bootstrap');
+export const galleryErrors = createLazyErrorHandlers('gallery');
+export const mediaErrors = createLazyErrorHandlers('media');
+export const downloadErrors = createLazyErrorHandlers('download');
+export const settingsErrors = createLazyErrorHandlers('settings');
+export const eventErrors = createLazyErrorHandlers('event');
+export const networkErrors = createLazyErrorHandlers('network');
+export const storageErrors = createLazyErrorHandlers('storage');
+export const uiErrors = createLazyErrorHandlers('ui');

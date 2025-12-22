@@ -312,6 +312,180 @@ function assertFunction<T extends (...args: never[]) => unknown>(
   return fn;
 }
 
+type AdapterMode = 'strict' | 'safe';
+
+function asFunction<T>(value: unknown): T | undefined {
+  return typeof value === 'function' ? (value as unknown as T) : undefined;
+}
+
+function createUserscriptAPI(mode: AdapterMode): UserscriptAPI {
+  const global = globalThis as unknown as GlobalWithGM;
+  const resolved = resolveGMAPIs();
+
+  // Normalize resolved APIs to typed function references.
+  const gmDownload = asFunction<NonNullable<GlobalWithGM['GM_download']>>(resolved.download);
+  const gmSetValue = asFunction<NonNullable<GlobalWithGM['GM_setValue']>>(resolved.setValue);
+  const gmGetValue = asFunction<NonNullable<GlobalWithGM['GM_getValue']>>(resolved.getValue);
+  const gmDeleteValue = asFunction<NonNullable<GlobalWithGM['GM_deleteValue']>>(
+    resolved.deleteValue
+  );
+  const gmListValues = asFunction<NonNullable<GlobalWithGM['GM_listValues']>>(resolved.listValues);
+  const gmAddStyle = asFunction<NonNullable<GlobalWithGM['GM_addStyle']>>(resolved.addStyle);
+  const gmXmlHttpRequest = asFunction<NonNullable<GlobalWithGM['GM_xmlhttpRequest']>>(
+    resolved.xmlHttpRequest
+  );
+  const gmNotification = asFunction<NonNullable<GlobalWithGM['GM_notification']>>(
+    resolved.notification
+  );
+
+  const hasGM = Boolean(gmDownload || (gmSetValue && gmGetValue) || gmXmlHttpRequest);
+
+  return Object.freeze({
+    hasGM,
+    manager: detectManager(global),
+    info: () => safeInfo(global),
+
+    async download(url: string, filename: string): Promise<void> {
+      if (mode === 'strict') {
+        const fn = assertFunction(gmDownload, ERROR_MESSAGES.download);
+        fn(url, filename);
+        return;
+      }
+
+      if (!gmDownload) return;
+      try {
+        gmDownload(url, filename);
+      } catch {
+        // Silent no-op
+      }
+    },
+
+    async setValue(key: string, value: unknown): Promise<void> {
+      if (mode === 'strict') {
+        const fn = assertFunction(gmSetValue, ERROR_MESSAGES.setValue);
+        await Promise.resolve(fn(key, value));
+        return;
+      }
+
+      if (!gmSetValue) return;
+      try {
+        await Promise.resolve(gmSetValue(key, value));
+      } catch {
+        // Silent no-op
+      }
+    },
+
+    async getValue<T>(key: string, defaultValue?: T): Promise<T | undefined> {
+      if (mode === 'strict') {
+        const fn = assertFunction(gmGetValue, ERROR_MESSAGES.getValue);
+        const value = await Promise.resolve(fn(key, defaultValue));
+        return value as T | undefined;
+      }
+
+      if (!gmGetValue) return defaultValue;
+      try {
+        const value = await Promise.resolve(gmGetValue(key, defaultValue));
+        return value as T | undefined;
+      } catch {
+        return defaultValue;
+      }
+    },
+
+    /**
+     * Synchronous value retrieval - only reliable in Tampermonkey/Violentmonkey.
+     * Returns defaultValue if: async-only environment, value is Promise, or unavailable.
+     */
+    getValueSync<T>(key: string, defaultValue?: T): T | undefined {
+      if (!gmGetValue) return defaultValue;
+      try {
+        const value = gmGetValue(key, defaultValue);
+        if (value instanceof Promise) return defaultValue;
+        return value as T | undefined;
+      } catch {
+        return defaultValue;
+      }
+    },
+
+    async deleteValue(key: string): Promise<void> {
+      if (mode === 'strict') {
+        const fn = assertFunction(gmDeleteValue, ERROR_MESSAGES.deleteValue);
+        await Promise.resolve(fn(key));
+        return;
+      }
+
+      if (!gmDeleteValue) return;
+      try {
+        await Promise.resolve(gmDeleteValue(key));
+      } catch {
+        // Silent no-op
+      }
+    },
+
+    async listValues(): Promise<string[]> {
+      if (mode === 'strict') {
+        const fn = assertFunction(gmListValues, ERROR_MESSAGES.listValues);
+        const values = await Promise.resolve(fn());
+        return Array.isArray(values) ? values : [];
+      }
+
+      if (!gmListValues) return [];
+      try {
+        const values = await Promise.resolve(gmListValues());
+        return Array.isArray(values) ? values : [];
+      } catch {
+        return [];
+      }
+    },
+
+    addStyle(css: string): HTMLStyleElement {
+      if (mode === 'strict') {
+        const fn = assertFunction(gmAddStyle, ERROR_MESSAGES.addStyle);
+        return fn(css);
+      }
+
+      if (!gmAddStyle) {
+        return fallbackAddStyle(css);
+      }
+
+      try {
+        return gmAddStyle(css);
+      } catch {
+        return fallbackAddStyle(css);
+      }
+    },
+
+    xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
+      if (mode === 'strict') {
+        const fn = assertFunction(gmXmlHttpRequest, ERROR_MESSAGES.xmlHttpRequest);
+        return fn(details);
+      }
+
+      if (gmXmlHttpRequest) {
+        try {
+          return gmXmlHttpRequest(details);
+        } catch {
+          // Fall through to failure callbacks
+        }
+      }
+
+      const response = createNetworkErrorResponse(details);
+      scheduleUserscriptRequestFailureCallbacks(details, response);
+      return { abort() {} };
+    },
+
+    notification(details: GMNotificationDetails): void {
+      if (!gmNotification) return; // Silent no-op when unavailable
+      try {
+        gmNotification(details, undefined);
+      } catch {
+        // Silently ignore notification failures
+      }
+    },
+
+    cookie: resolved.cookie,
+  });
+}
+
 /**
  * Userscript API getter (external dependency encapsulation)
  *
@@ -329,92 +503,7 @@ function assertFunction<T extends (...args: never[]) => unknown>(
  * @internal Advanced/testing only
  */
 export function getUserscript(): UserscriptAPI {
-  const global = globalThis as unknown as GlobalWithGM;
-
-  const resolved = resolveGMAPIs();
-
-  // Check for injected GM_* APIs (Tampermonkey injects these into scope, not necessarily globalThis)
-  const gmDownload = resolved.download as GlobalWithGM['GM_download'] | undefined;
-  const gmSetValue = resolved.setValue as GlobalWithGM['GM_setValue'] | undefined;
-  const gmGetValue = resolved.getValue as GlobalWithGM['GM_getValue'] | undefined;
-  const gmDeleteValue = resolved.deleteValue as GlobalWithGM['GM_deleteValue'] | undefined;
-  const gmListValues = resolved.listValues as GlobalWithGM['GM_listValues'] | undefined;
-  const gmAddStyle = resolved.addStyle as GlobalWithGM['GM_addStyle'] | undefined;
-  const gmXmlHttpRequest = resolved.xmlHttpRequest as GlobalWithGM['GM_xmlhttpRequest'] | undefined;
-  const gmCookie = resolved.cookie;
-  const gmNotification = resolved.notification as GlobalWithGM['GM_notification'] | undefined;
-
-  const hasGM = Boolean(gmDownload || (gmSetValue && gmGetValue) || gmXmlHttpRequest);
-
-  return Object.freeze({
-    hasGM,
-    manager: detectManager(global),
-    info: () => safeInfo(global),
-
-    async download(url: string, filename: string): Promise<void> {
-      const fn = assertFunction(gmDownload, ERROR_MESSAGES.download);
-      fn(url, filename);
-    },
-
-    async setValue(key: string, value: unknown): Promise<void> {
-      const fn = assertFunction(gmSetValue, ERROR_MESSAGES.setValue);
-      await Promise.resolve(fn(key, value));
-    },
-
-    async getValue<T>(key: string, defaultValue?: T): Promise<T | undefined> {
-      const fn = assertFunction(gmGetValue, ERROR_MESSAGES.getValue);
-      const value = await Promise.resolve(fn(key, defaultValue));
-      return value as T | undefined;
-    },
-
-    /**
-     * Synchronous value retrieval - only reliable in Tampermonkey/Violentmonkey.
-     * Returns defaultValue if: async-only environment, value is Promise, or unavailable.
-     */
-    getValueSync<T>(key: string, defaultValue?: T): T | undefined {
-      if (!gmGetValue) return defaultValue;
-      try {
-        const value = gmGetValue(key, defaultValue);
-        // If the result is a Promise, sync access is not supported (e.g., Greasemonkey 4+)
-        if (value instanceof Promise) return defaultValue;
-        return value as T | undefined;
-      } catch {
-        return defaultValue;
-      }
-    },
-
-    async deleteValue(key: string): Promise<void> {
-      const fn = assertFunction(gmDeleteValue, ERROR_MESSAGES.deleteValue);
-      await Promise.resolve(fn(key));
-    },
-
-    async listValues(): Promise<string[]> {
-      const fn = assertFunction(gmListValues, ERROR_MESSAGES.listValues);
-      const values = await Promise.resolve(fn());
-      return Array.isArray(values) ? values : [];
-    },
-
-    addStyle(css: string): HTMLStyleElement {
-      const fn = assertFunction(gmAddStyle, ERROR_MESSAGES.addStyle);
-      return fn(css);
-    },
-
-    xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
-      const fn = assertFunction(gmXmlHttpRequest, ERROR_MESSAGES.xmlHttpRequest);
-      return fn(details);
-    },
-
-    notification(details: GMNotificationDetails): void {
-      if (!gmNotification) return; // Silent no-op when unavailable
-      try {
-        gmNotification(details, undefined);
-      } catch {
-        // Silently ignore notification failures
-      }
-    },
-
-    cookie: gmCookie,
-  });
+  return createUserscriptAPI('strict');
 }
 
 /**
@@ -433,142 +522,5 @@ export function getUserscript(): UserscriptAPI {
  * - xmlHttpRequest() invokes onerror/onloadend asynchronously and returns a no-op control.
  */
 export function getUserscriptSafe(): UserscriptAPI {
-  const global = globalThis as unknown as GlobalWithGM;
-  const resolved = resolveGMAPIs();
-
-  const gmDownload =
-    typeof resolved.download === 'function'
-      ? (resolved.download as GlobalWithGM['GM_download'])
-      : undefined;
-  const gmSetValue =
-    typeof resolved.setValue === 'function'
-      ? (resolved.setValue as GlobalWithGM['GM_setValue'])
-      : undefined;
-  const gmGetValue =
-    typeof resolved.getValue === 'function'
-      ? (resolved.getValue as GlobalWithGM['GM_getValue'])
-      : undefined;
-  const gmDeleteValue =
-    typeof resolved.deleteValue === 'function'
-      ? (resolved.deleteValue as GlobalWithGM['GM_deleteValue'])
-      : undefined;
-  const gmListValues =
-    typeof resolved.listValues === 'function'
-      ? (resolved.listValues as GlobalWithGM['GM_listValues'])
-      : undefined;
-  const gmAddStyle =
-    typeof resolved.addStyle === 'function'
-      ? (resolved.addStyle as GlobalWithGM['GM_addStyle'])
-      : undefined;
-  const gmXmlHttpRequest =
-    typeof resolved.xmlHttpRequest === 'function'
-      ? (resolved.xmlHttpRequest as GlobalWithGM['GM_xmlhttpRequest'])
-      : undefined;
-  const gmNotification =
-    typeof resolved.notification === 'function'
-      ? (resolved.notification as GlobalWithGM['GM_notification'])
-      : undefined;
-
-  const hasGM = Boolean(gmDownload || (gmSetValue && gmGetValue) || gmXmlHttpRequest);
-
-  return Object.freeze({
-    hasGM,
-    manager: detectManager(global),
-    info: () => safeInfo(global),
-
-    async download(url: string, filename: string): Promise<void> {
-      if (!gmDownload) return;
-      try {
-        gmDownload(url, filename);
-      } catch {
-        // Silent no-op
-      }
-    },
-
-    async setValue(key: string, value: unknown): Promise<void> {
-      if (!gmSetValue) return;
-      try {
-        await Promise.resolve(gmSetValue(key, value));
-      } catch {
-        // Silent no-op
-      }
-    },
-
-    async getValue<T>(key: string, defaultValue?: T): Promise<T | undefined> {
-      if (!gmGetValue) return defaultValue;
-      try {
-        const value = await Promise.resolve(gmGetValue(key, defaultValue));
-        return value as T | undefined;
-      } catch {
-        return defaultValue;
-      }
-    },
-
-    getValueSync<T>(key: string, defaultValue?: T): T | undefined {
-      if (!gmGetValue) return defaultValue;
-      try {
-        const value = gmGetValue(key, defaultValue);
-        if (value instanceof Promise) return defaultValue;
-        return value as T | undefined;
-      } catch {
-        return defaultValue;
-      }
-    },
-
-    async deleteValue(key: string): Promise<void> {
-      if (!gmDeleteValue) return;
-      try {
-        await Promise.resolve(gmDeleteValue(key));
-      } catch {
-        // Silent no-op
-      }
-    },
-
-    async listValues(): Promise<string[]> {
-      if (!gmListValues) return [];
-      try {
-        const values = await Promise.resolve(gmListValues());
-        return Array.isArray(values) ? values : [];
-      } catch {
-        return [];
-      }
-    },
-
-    addStyle(css: string): HTMLStyleElement {
-      if (!gmAddStyle) {
-        return fallbackAddStyle(css);
-      }
-
-      try {
-        return gmAddStyle(css);
-      } catch {
-        return fallbackAddStyle(css);
-      }
-    },
-
-    xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
-      if (gmXmlHttpRequest) {
-        try {
-          return gmXmlHttpRequest(details);
-        } catch {
-          // Fall through to failure callbacks
-        }
-      }
-
-      const response = createNetworkErrorResponse(details);
-      scheduleUserscriptRequestFailureCallbacks(details, response);
-      return { abort() {} };
-    },
-
-    notification(details: GMNotificationDetails): void {
-      if (!gmNotification) return;
-      try {
-        gmNotification(details, undefined);
-      } catch {
-        // Silent no-op
-      }
-    },
-
-    cookie: resolved.cookie,
-  });
+  return createUserscriptAPI('safe');
 }
