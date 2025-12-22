@@ -46,7 +46,9 @@ export async function initializeDevTools(): Promise<void> {
     // Service diagnostic tools (intentionally omitted in the userscript bundle).
     devToolsRegistered = true;
 
-    logger.info('🛠️ Development diagnostics ready (run window.__XEG__.diagnostics.run())');
+    if (__DEV__) {
+      logger.info('🛠️ Development diagnostics ready (run window.__XEG__.diagnostics.run())');
+    }
   } catch (error) {
     // Phase 343: Standardized error handling (Non-Critical - warn only)
     reportBootstrapError(error, { context: 'dev-tools', logger });

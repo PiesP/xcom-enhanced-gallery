@@ -6,6 +6,16 @@ export function log(
   message: string,
   context?: Readonly<Record<string, unknown>>
 ): void {
+  // Production bundles keep only error logging; other levels are dev-only.
+  // This matches the default logger behavior (info/warn/debug/trace are no-ops)
+  // while allowing Rollup to tree-shake message strings and branches.
+  if (!__DEV__) {
+    if (level === 'error') {
+      logger.error(message, context);
+    }
+    return;
+  }
+
   switch (level) {
     case 'debug':
       logger.debug(message, context);

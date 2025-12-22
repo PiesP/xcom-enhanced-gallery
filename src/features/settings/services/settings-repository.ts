@@ -3,7 +3,6 @@ import { APP_SETTINGS_STORAGE_KEY } from '@constants/storage';
 import type { AppSettings } from '@features/settings/types/settings.types';
 import { logger } from '@shared/logging';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
-import { cloneDeep } from '@shared/utils/types/safety';
 import { migrateSettings } from './settings-migration';
 import { computeCurrentSettingsSchemaHash } from './settings-schema';
 
@@ -31,7 +30,7 @@ export class PersistentSettingsRepository implements SettingsRepository {
           __DEV__ &&
             logger.warn('[SettingsRepository] persist defaults failed (ignored)', persistError);
         }
-        return cloneDeep(defaults);
+        return globalThis.structuredClone(defaults);
       }
 
       const nowMs = Date.now();
@@ -47,7 +46,7 @@ export class PersistentSettingsRepository implements SettingsRepository {
             );
         }
       }
-      return cloneDeep(migrated);
+      return globalThis.structuredClone(migrated);
     } catch (error) {
       __DEV__ && logger.warn('[SettingsRepository] load failed, falling back to defaults', error);
       const defaults = createDefaultSettings();
@@ -57,7 +56,7 @@ export class PersistentSettingsRepository implements SettingsRepository {
         __DEV__ &&
           logger.warn('[SettingsRepository] persist defaults failed (ignored)', persistError);
       }
-      return cloneDeep(defaults);
+      return globalThis.structuredClone(defaults);
     }
   }
 

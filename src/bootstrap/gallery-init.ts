@@ -56,7 +56,9 @@ async function initializeServices(): Promise<void> {
     await service.initialize();
     registerSettingsManager(service);
     settingsService = service as unknown as SettingsServiceLike;
-    logger.debug('[Bootstrap] ✅ SettingsService initialized');
+    if (__DEV__) {
+      logger.debug('[Bootstrap] ✅ SettingsService initialized');
+    }
   } catch (error) {
     settingsErrorReporter.warn(error, {
       code: 'SETTINGS_SERVICE_INIT_FAILED',
@@ -75,7 +77,9 @@ async function initializeServices(): Promise<void> {
       themeService.bindSettingsService(settingsService);
     }
 
-    logger.debug(`[Bootstrap] Theme confirmed: ${themeService.getCurrentTheme()}`);
+    if (__DEV__) {
+      logger.debug(`[Bootstrap] Theme confirmed: ${themeService.getCurrentTheme()}`);
+    }
   } catch (error) {
     bootstrapErrorReporter.warn(error, {
       code: 'THEME_SYNC_FAILED',
@@ -97,7 +101,9 @@ async function initializeServices(): Promise<void> {
  */
 export async function initializeGalleryApp(): Promise<IGalleryApp> {
   try {
-    logger.info('🎨 Gallery app lazy initialization starting');
+    if (__DEV__) {
+      logger.info('🎨 Gallery app lazy initialization starting');
+    }
 
     // Parallel initialization of renderer and services
     await Promise.all([registerRenderer(), initializeServices()]);
@@ -105,7 +111,9 @@ export async function initializeGalleryApp(): Promise<IGalleryApp> {
     const galleryApp = new GalleryApp();
     await galleryApp.initialize();
 
-    logger.info('✅ Gallery app initialization complete');
+    if (__DEV__) {
+      logger.info('✅ Gallery app initialization complete');
+    }
     return galleryApp;
   } catch (error) {
     galleryErrorReporter.error(error, {

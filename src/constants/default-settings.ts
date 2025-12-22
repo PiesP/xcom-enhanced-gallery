@@ -3,7 +3,6 @@
  */
 
 import type { AppSettings } from '@features/settings/types/settings.types';
-import { cloneDeep } from '@shared/utils/types/safety';
 
 const STATIC_DEFAULT_SETTINGS = {
   gallery: {
@@ -51,7 +50,7 @@ const STATIC_DEFAULT_SETTINGS = {
 export const DEFAULT_SETTINGS = STATIC_DEFAULT_SETTINGS;
 
 export function createDefaultSettings(timestamp: number = Date.now()): AppSettings {
-  const settings = cloneDeep(DEFAULT_SETTINGS) as AppSettings;
+  const settings = globalThis.structuredClone(DEFAULT_SETTINGS) as AppSettings;
   settings.lastModified = timestamp;
   return settings;
 }

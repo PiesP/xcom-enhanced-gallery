@@ -101,7 +101,9 @@ async function loadFeatureSettings(): Promise<SettingsWithFeatures> {
       }
     }
   } catch (error) {
-    logger.warn('[features] Settings loading failed - using defaults:', error);
+    if (__DEV__) {
+      logger.warn('[features] Settings loading failed - using defaults:', error);
+    }
   }
 
   return cloneDefaultFeatureSettings();

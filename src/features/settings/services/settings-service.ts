@@ -17,9 +17,73 @@ import type {
 import { logger } from '@shared/logging';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
-import { assignNestedPath, resolveNestedPath } from '@shared/utils/types/object-path';
-import { cloneDeep } from '@shared/utils/types/safety';
 import { createSingleton } from '@shared/utils/types/singleton';
+
+const FORBIDDEN_PATH_KEYS = ['__proto__', 'constructor', 'prototype'] as const;
+
+function isSafePathKey(key: string): boolean {
+  return key !== '' && !FORBIDDEN_PATH_KEYS.includes(key as (typeof FORBIDDEN_PATH_KEYS)[number]);
+}
+
+function resolveNestedPath<T = unknown>(source: unknown, path: string): T | undefined {
+  if (typeof path !== 'string' || path === '') {
+    return undefined;
+  }
+
+  let current: unknown = source;
+  const segments = path.split('.');
+
+  for (const segment of segments) {
+    if (!isSafePathKey(segment)) {
+      return undefined;
+    }
+    if (current === null || typeof current !== 'object') {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[segment];
+  }
+
+  return current as T | undefined;
+}
+
+function assignNestedPath(target: unknown, path: string, value: unknown): boolean {
+  if (target === null || typeof target !== 'object') {
+    return false;
+  }
+  if (typeof path !== 'string' || path === '') {
+    return false;
+  }
+
+  const segments = path.split('.');
+
+  // Reject missing last key (e.g. "a.")
+  const last = segments[segments.length - 1];
+  if (!last || !isSafePathKey(last)) {
+    return false;
+  }
+
+  let current = target as Record<string, unknown>;
+
+  for (let i = 0; i < segments.length - 1; i++) {
+    const segment = segments[i];
+    if (!segment || !isSafePathKey(segment)) {
+      return false;
+    }
+
+    const existing = current[segment];
+    if (existing === null || typeof existing !== 'object') {
+      const next: Record<string, unknown> = {};
+      current[segment] = next;
+      current = next;
+      continue;
+    }
+
+    current = existing as Record<string, unknown>;
+  }
+
+  current[last] = value;
+  return true;
+}
 
 const FEATURE_DEFAULTS: Readonly<FeatureFlags> = Object.freeze({ ...DEFAULT_SETTINGS.features });
 
@@ -92,7 +156,7 @@ export class SettingsService implements SettingsServiceContract {
 
   public getAllSettings(): Readonly<AppSettings> {
     this.assertInitialized();
-    return cloneDeep(this.settings);
+    return globalThis.structuredClone(this.settings);
   }
 
   public get<T = unknown>(key: NestedSettingKey | string): T {
@@ -106,7 +170,10 @@ export class SettingsService implements SettingsServiceContract {
     if (!this.isValid(key, value)) throw new Error(`Invalid setting value for ${key}`);
 
     const oldValue = this.get(key);
-    assignNestedPath(this.settings, key, value);
+
+    if (!assignNestedPath(this.settings, key, value)) {
+      throw new Error(`Failed to assign setting value for ${key}`);
+    }
     this.settings.lastModified = Date.now();
 
     this.refreshFeatureMap();
@@ -129,11 +196,13 @@ export class SettingsService implements SettingsServiceContract {
 
     // Capture a stable snapshot so per-key `oldValue` reflects the pre-batch state.
     // This also prevents intra-batch updates from affecting subsequent `oldValue` reads.
-    const previous = cloneDeep(this.settings);
+    const previous = globalThis.structuredClone(this.settings);
 
     const timestamp = Date.now();
     for (const [key, value] of entries) {
-      assignNestedPath(this.settings, key, value);
+      if (!assignNestedPath(this.settings, key, value)) {
+        throw new Error(`Failed to assign setting value for ${key}`);
+      }
     }
 
     // Align ordering with `set()`: derived state is refreshed before notifying listeners.
@@ -164,7 +233,7 @@ export class SettingsService implements SettingsServiceContract {
       // Using intermediate object to avoid direct index signature issues
       const defaultValue = DEFAULT_SETTINGS[category as keyof typeof DEFAULT_SETTINGS];
       if (defaultValue !== undefined) {
-        Object.assign(this.settings, { [category]: cloneDeep(defaultValue) });
+        Object.assign(this.settings, { [category]: globalThis.structuredClone(defaultValue) });
       }
     }
     this.settings.lastModified = Date.now();

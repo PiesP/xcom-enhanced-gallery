@@ -112,21 +112,6 @@ export function safeTweetId(value: string | undefined): string {
 
 // NOTE: userscript/environment type guards are deduplicated in guards.ts
 
-// ========== Deep clone utilities ==========
-
-/**
- * Deep clone a value using structuredClone.
- *
- * Note: This helper intentionally relies on structuredClone being available
- * in the target runtime (modern browsers / Node). It will throw if unavailable.
- *
- * @param value - Value to clone
- * @returns Deep cloned value
- */
-export function cloneDeep<T>(value: T): T {
-  return globalThis.structuredClone(value);
-}
-
 // ========== Legacy edge-case helpers ============
 
 function isRecord(value: unknown): value is Record<string, unknown> {
