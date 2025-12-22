@@ -13,8 +13,6 @@
  *   AbortSignal / subscription tracking is not required.
  */
 
-import { logger } from '@shared/logging';
-
 /**
  * Create type-safe event emitter
  *
@@ -65,11 +63,8 @@ export function createEventEmitter<T extends Record<string, unknown>>() {
       eventListeners.forEach((callback) => {
         try {
           callback(data);
-        } catch (error) {
-          // Error isolation: one listener failure doesn't prevent other listeners
-          if (__DEV__) {
-            logger.error(`[EventEmitter] Listener error for event "${String(event)}":`, error);
-          }
+        } catch {
+          // Intentionally ignore listener errors.
         }
       });
     },

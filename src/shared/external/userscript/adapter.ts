@@ -95,56 +95,26 @@ interface GlobalWithGM {
  * Helper to resolve a single GM API from scope or globalThis
  * @internal
  */
-function resolveGMAPI<T>(
-  scopeBinding: T | undefined,
-  globalFallback: T | undefined
-): T | undefined {
-  return typeof scopeBinding !== 'undefined' ? scopeBinding : globalFallback;
-}
-
-/**
- * Resolve GM_* bindings from either scope injection or globalThis.
- *
- * This is intentionally non-throwing: callers should validate types.
- * @internal
- */
 export function resolveGMAPIs(): ResolvedGMAPIs {
   const global = globalThis as unknown as GlobalWithGM;
 
-  const download = resolveGMAPI(
-    GM_download,
-    typeof global.GM_download === 'function' ? global.GM_download : undefined
-  );
-  const setValue = resolveGMAPI(
-    GM_setValue,
-    typeof global.GM_setValue === 'function' ? global.GM_setValue : undefined
-  );
-  const getValue = resolveGMAPI(
-    GM_getValue,
-    typeof global.GM_getValue === 'function' ? global.GM_getValue : undefined
-  );
-  const deleteValue = resolveGMAPI(
-    GM_deleteValue,
-    typeof global.GM_deleteValue === 'function' ? global.GM_deleteValue : undefined
-  );
-  const listValues = resolveGMAPI(
-    GM_listValues,
-    typeof global.GM_listValues === 'function' ? global.GM_listValues : undefined
-  );
-  const xmlHttpRequest = resolveGMAPI(
-    GM_xmlhttpRequest,
-    typeof global.GM_xmlhttpRequest === 'function' ? global.GM_xmlhttpRequest : undefined
-  );
-  const notification = resolveGMAPI(
-    GM_notification,
-    typeof global.GM_notification === 'function' ? global.GM_notification : undefined
-  );
+  // IMPORTANT: In ESM/test environments, referencing an undeclared GM_* free
+  // variable throws a ReferenceError. Always guard access via typeof.
+  const download = typeof GM_download !== 'undefined' ? GM_download : global.GM_download;
+  const setValue = typeof GM_setValue !== 'undefined' ? GM_setValue : global.GM_setValue;
+  const getValue = typeof GM_getValue !== 'undefined' ? GM_getValue : global.GM_getValue;
+  const deleteValue =
+    typeof GM_deleteValue !== 'undefined' ? GM_deleteValue : global.GM_deleteValue;
+  const listValues = typeof GM_listValues !== 'undefined' ? GM_listValues : global.GM_listValues;
+  const xmlHttpRequest =
+    typeof GM_xmlhttpRequest !== 'undefined' ? GM_xmlhttpRequest : global.GM_xmlhttpRequest;
+  const notification =
+    typeof GM_notification !== 'undefined' ? GM_notification : global.GM_notification;
 
-  // GM_cookie has special validation: requires .list method
-  const cookie = resolveGMAPI(
-    GM_cookie,
-    global.GM_cookie && typeof global.GM_cookie.list === 'function' ? global.GM_cookie : undefined
-  );
+  // GM_cookie has special validation: requires .list method.
+  const cookieCandidate = typeof GM_cookie !== 'undefined' ? GM_cookie : global.GM_cookie;
+  const cookie =
+    cookieCandidate && typeof cookieCandidate.list === 'function' ? cookieCandidate : undefined;
 
   return {
     download,

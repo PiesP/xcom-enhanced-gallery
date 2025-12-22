@@ -146,8 +146,9 @@ export default defineConfig(({ mode }): UserConfig => {
           entryFileNames: outputFileName,
           inlineDynamicImports: true,
           // This userscript bundle is consumed as a single IIFE, not as a module.
-          // Prefer removing the exports wrapper in production output when possible.
-          exports: isDev ? 'named' : 'none',
+          // Do not generate any exports wrapper; it breaks userscript runtimes where
+          // `exports` is not defined.
+          exports: 'none',
         },
         treeshake: isDev
           ? false

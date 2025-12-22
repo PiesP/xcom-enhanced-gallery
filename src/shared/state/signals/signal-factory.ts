@@ -7,19 +7,7 @@
  * @see https://www.solidjs.com/docs/latest/api#createsignal
  */
 
-import { createLogger, createScopedLogger } from '@shared/logging';
 import { createComputed, createRoot, createSignal } from 'solid-js';
-
-// Debug: Keep all debug strings and identifiers dev-only so production bundles can drop them.
-// IMPORTANT: Do not call createLogger/createScopedLogger in production to avoid leaving
-// stray calls in the non-minified userscript bundle.
-const devLogger = __DEV__
-  ? (createScopedLogger?.('SignalFactory') ?? createLogger({ prefix: '[SignalFactory]' }))
-  : null;
-
-if (__DEV__) {
-  devLogger?.debug('Module loaded');
-}
 
 /**
  * Signal interface providing value access and subscription capability.
@@ -50,86 +38,51 @@ export type SafeSignal<T> = {
  */
 export function createSignalSafe<T>(initial: T): SafeSignal<T> {
   const [read, write] = createSignal(initial, { equals: false });
-  // Solid's Setter<T> overloads intentionally reject direct function values.
-  // We handle function-typed values explicitly and use a simplified signature internally.
   const setSignal = write as (value: T | ((prev: T) => T)) => void;
-  const instanceId = __DEV__ ? Math.random().toString(36).slice(2, 10) : '';
   const subscribers = new Set<(value: T) => void>();
 
-  const notify = (val: T): void => {
+  const notify = (value: T): void => {
     for (const subscriber of subscribers) {
-      if (__DEV__) {
-        try {
-          subscriber(val);
-        } catch (error) {
-          devLogger?.debug('[createSignalSafe]', instanceId, 'subscriber threw', error);
-        }
-      } else {
-        subscriber(val);
-      }
+      subscriber(value);
     }
   };
 
-  const signalObject = {
-    set(value: T): void {
-      if (__DEV__) {
-        devLogger?.debug('[createSignalSafe]', instanceId, 'set invoked', value);
-      }
+  const setValue = (value: T): void => {
+    // Solid treats function inputs as updaters. When the *value* itself is a function,
+    // wrap it to avoid accidental invocation.
+    if (typeof value === 'function') {
+      setSignal(() => value);
+    } else {
+      setSignal(value);
+    }
+    notify(value);
+  };
 
-      // Solid treats function inputs as updaters. When the *value* itself is a
-      // function, wrap it to avoid accidental invocation.
-      if (typeof value === 'function') {
-        setSignal(() => value);
-      } else {
-        setSignal(value);
-      }
+  const updateValue = (updater: (prev: T) => T): void => {
+    const nextValue = updater(read());
+    setSignal(updater);
+    notify(nextValue);
+  };
 
-      notify(value);
+  const subscribe = (callback: (value: T) => void): (() => void) => {
+    subscribers.add(callback);
+    callback(read());
+    return () => {
+      subscribers.delete(callback);
+    };
+  };
+
+  return {
+    get value() {
+      return read();
     },
-    update(updater: (prev: T) => T): void {
-      if (__DEV__) {
-        devLogger?.debug('[createSignalSafe]', instanceId, 'update invoked');
-      }
-
-      // Resolve next value before calling write() to avoid stale reads inside
-      // SolidJS batch().
-      const prevValue = read();
-      const nextValue = updater(prevValue);
-      setSignal(updater);
-      notify(nextValue);
+    set value(v: T) {
+      setValue(v);
     },
-    subscribe(callback: (value: T) => void): () => void {
-      if (__DEV__) {
-        devLogger?.debug('[createSignalSafe]', instanceId, 'subscribe invoked for signal', initial);
-      }
-
-      subscribers.add(callback);
-      notify(read());
-
-      return () => {
-        subscribers.delete(callback);
-      };
-    },
-  } as SafeSignal<T>;
-
-  Object.defineProperty(signalObject, 'value', {
-    get: () => {
-      const value = read();
-      if (__DEV__) {
-        devLogger?.debug('[createSignalSafe]', instanceId, 'value getter read', value);
-      }
-      return value;
-    },
-    set: (v: T) => {
-      if (__DEV__) {
-        devLogger?.debug('[createSignalSafe]', instanceId, 'value setter fired', v);
-      }
-      signalObject.set(v);
-    },
-    enumerable: true,
-  });
-
-  return signalObject;
+    set: setValue,
+    update: updateValue,
+    subscribe,
+  };
 }
 
 /**
@@ -143,19 +96,7 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
  */
 export function effectSafe(fn: () => void): () => void {
   return createRoot((dispose) => {
-    if (__DEV__) {
-      devLogger?.debug('[effectSafe] createRoot invoked');
-    }
-
-    // Use createComputed so this helper works reliably outside of a component
-    // render cycle (including unit tests running under JSDOM). It still tracks
-    // dependencies and re-runs when they change.
-    createComputed(() => {
-      if (__DEV__) {
-        devLogger?.debug('[effectSafe] effect body invoked');
-      }
-      fn();
-    });
+    createComputed(fn);
 
     return dispose;
   });
