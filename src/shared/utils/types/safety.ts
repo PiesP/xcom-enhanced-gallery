@@ -4,8 +4,6 @@
  * @description Helper functions for exactOptionalPropertyTypes and strict type checking
  */
 
-export { isGlobalLike, isGMUserScriptInfo } from '@shared/utils/types/guards';
-
 // ========== Number/String parsing utilities ==========
 
 /**
@@ -127,4 +125,45 @@ export function safeTweetId(value: string | undefined): string {
  */
 export function cloneDeep<T>(value: T): T {
   return globalThis.structuredClone(value);
+}
+
+// ========== Legacy edge-case helpers ============
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+/**
+ * Minimal global-like object check.
+ *
+ * Used by tests/mutation coverage helpers.
+ */
+export function isGlobalLike(value: unknown): boolean {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.requestIdleCallback === 'function' || typeof record.setTimeout === 'function'
+  );
+}
+
+/**
+ * Minimal GM_info-like object check.
+ *
+ * Legacy compatibility: treat any non-empty record as GM info.
+ */
+export function isGMUserScriptInfo(value: unknown): boolean {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  if ('scriptHandler' in record) {
+    return true;
+  }
+
+  return Object.keys(record).length > 0;
 }

@@ -209,6 +209,9 @@ export function tryGetSettingsManager<T = unknown>(): T | null {
  * **Use Case**: Eager initialization for performance (optional)
  */
 export function warmupCriticalServices(): void {
+  if (typeof __DEV__ === 'undefined' || !__DEV__) {
+    return;
+  }
   try {
     void getMediaService();
   } catch (error) {
@@ -227,6 +230,9 @@ export function warmupCriticalServices(): void {
  * **Use Case**: Eager initialization for performance (optional)
  */
 export function warmupNonCriticalServices(): void {
+  if (typeof __DEV__ === 'undefined' || !__DEV__) {
+    return;
+  }
   try {
     void getThemeService();
   } catch (error) {

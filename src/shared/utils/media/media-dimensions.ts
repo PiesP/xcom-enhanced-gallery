@@ -355,10 +355,6 @@ function deriveDimensionsFromMediaUrls(media: MediaInfo): DimensionPair | null {
   return null;
 }
 
-export function resolveMediaDimensions(media: MediaInfo | undefined): DimensionPair {
-  return resolveMediaDimensionsWithIntrinsicFlag(media).dimensions;
-}
-
 /**
  * Resolve media dimensions and also indicate whether a real intrinsic size was found.
  *
@@ -391,6 +387,15 @@ export function resolveMediaDimensionsWithIntrinsicFlag(
   }
 
   return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
+}
+
+/**
+ * Resolve media dimensions (legacy API).
+ *
+ * Prefer `resolveMediaDimensionsWithIntrinsicFlag()` for new callers.
+ */
+export function resolveMediaDimensions(media: MediaInfo | undefined): DimensionPair {
+  return resolveMediaDimensionsWithIntrinsicFlag(media).dimensions;
 }
 
 function toRem(pixels: number): string {
