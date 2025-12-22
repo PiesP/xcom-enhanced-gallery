@@ -25,7 +25,3 @@ export function createId(): string {
 export function createPrefixedId(prefix: string, separator = '_'): string {
   return `${prefix}${separator}${createId()}`;
 }
-
-export function createContextId(context: string): string {
-  return createPrefixedId(context, ':');
-}

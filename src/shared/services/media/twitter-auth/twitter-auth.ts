@@ -1,11 +1,5 @@
-/**
- * @fileoverview Twitter Authentication - Pure functional implementation
- * @description Manages CSRF tokens required for Twitter GraphQL API requests.
- * @version 5.0.0 - Added async initialization with exponential backoff
- */
-
 import { delay } from '@shared/async/delay';
-import { getExponentialBackoffDelayMs } from '@shared/core/twitter-auth/backoff';
+import { getExponentialBackoffDelayMs } from '@shared/async/retry';
 import { logger } from '@shared/logging';
 import { getCookieValue, getCookieValueSync } from '@shared/services/cookie';
 
@@ -38,7 +32,7 @@ let _initPromise: Promise<string | undefined> | null = null;
  * @internal
  */
 function getBackoffDelay(attempt: number): number {
-  return getExponentialBackoffDelayMs({ attempt, baseDelayMs: BASE_RETRY_DELAY_MS });
+  return getExponentialBackoffDelayMs(attempt, BASE_RETRY_DELAY_MS);
 }
 
 /**

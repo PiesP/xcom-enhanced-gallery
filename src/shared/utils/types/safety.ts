@@ -1,10 +1,4 @@
-/**
- * @fileoverview Type Safety Helper Functions
- * @version 4.0.0 - Optimized: Only actively used functions (Phase 326.5 Quick Wins)
- * @description Helper functions for exactOptionalPropertyTypes and strict type checking
- */
-
-// ========== Number/String parsing utilities ==========
+import { isRecord } from '@shared/utils/types/guards';
 
 /**
  * Safe parseInt function
@@ -21,9 +15,6 @@ export function safeParseInt(value: string | undefined | null, radix: number = 1
   return Number.isNaN(result) ? 0 : result;
 }
 
-/**
- * Safe parseFloat function
- */
 export function safeParseFloat(value: string | undefined | null): number {
   if (value == null) {
     return 0;
@@ -33,23 +24,13 @@ export function safeParseFloat(value: string | undefined | null): number {
   return Number.isNaN(result) ? 0 : result;
 }
 
-// ========== Type conversion utilities ==========
-
-/**
- * Convert undefined to null
- */
 export function undefinedToNull<T>(value: T | undefined): T | null {
-  return value ?? null;
+  return value === undefined ? null : value;
 }
 
-/**
- * Apply string default value
- */
-export function stringWithDefault(value: string | undefined, defaultValue: string = ''): string {
-  return value ?? defaultValue;
+export function stringWithDefault(value: string | undefined, fallback: string = ''): string {
+  return value === undefined ? fallback : value;
 }
-
-// ========== Number utilities ==========
 
 /**
  * Clamp a number within a range
@@ -75,43 +56,35 @@ export function clampIndex(index: number, length: number): number {
   return clamp(Math.floor(index), 0, length - 1);
 }
 
-// ========== Element validation utilities ==========
-
-/**
- * Safe HTMLElement validation
- */
-export function safeElementCheck<T extends Element>(element: T | undefined | null): element is T {
-  return element != null;
-}
-
-// ========== Domain-specific utilities ==========
-
-/**
- * Safe tweet ID generation - prioritize crypto.randomUUID()
- */
-export function safeTweetId(value: string | undefined): string {
-  if (!value || value.trim() === '') {
-    try {
-      // Use crypto.randomUUID() (Node.js 16+, modern browsers)
-      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-        return `generated_${crypto.randomUUID()}`;
-      }
-    } catch {
-      // Fallback on crypto.randomUUID() failure
-    }
-
-    // Fallback: enhanced random generation
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 9);
-    return `generated_${timestamp}_${random}`;
+export function safeElementCheck(value: unknown): value is Element {
+  if (value == null) {
+    return false;
   }
-  return value;
+
+  try {
+    return typeof Element !== 'undefined' && value instanceof Element;
+  } catch {
+    return false;
+  }
 }
 
-// ========== Legacy edge-case helpers ============
+export function safeTweetId(value: string | undefined | null): string {
+  const raw = value ?? '';
+  if (raw.trim().length > 0) {
+    return raw;
+  }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    try {
+      const uuid = crypto.randomUUID();
+      return `generated_${uuid}`;
+    } catch {
+      // ignore
+    }
+  }
+
+  const rand = Math.random().toString(36).substring(2, 9);
+  return `generated_${Date.now()}_${rand}`;
 }
 
 /**

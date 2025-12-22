@@ -1,6 +1,4 @@
-/**
- * @fileoverview Pure exponential backoff utilities.
- */
+import { getExponentialBackoffDelayMs as calcBackoffDelayMs } from '@shared/async/retry';
 
 export interface ExponentialBackoffArgs {
   attempt: number;
@@ -8,6 +6,5 @@ export interface ExponentialBackoffArgs {
 }
 
 export function getExponentialBackoffDelayMs(args: ExponentialBackoffArgs): number {
-  const { attempt, baseDelayMs } = args;
-  return baseDelayMs * 2 ** attempt;
+  return calcBackoffDelayMs(args.attempt, args.baseDelayMs);
 }

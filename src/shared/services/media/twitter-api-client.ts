@@ -14,7 +14,7 @@ import {
   extractMediaFromTweet,
   normalizeLegacyTweet,
   normalizeLegacyUser,
-} from '@shared/services/media/twitter-parser';
+} from '@shared/services/media/twitter-parser/twitter-response-parser';
 import type { TweetMediaEntry, TwitterAPIResponse } from '@shared/services/media/types';
 import { sortMediaByVisualOrder } from '@shared/utils/media/media-dimensions';
 

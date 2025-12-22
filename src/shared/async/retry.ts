@@ -1,11 +1,8 @@
-/**
- * @fileoverview Retry utility with exponential backoff and AbortSignal support
- * @description Modern retry mechanism for async operations
- *
- * @version 1.0.0
- */
-
 import { delay, isAbortError } from './delay';
+
+export function getExponentialBackoffDelayMs(attempt: number, baseDelayMs: number): number {
+  return baseDelayMs * 2 ** attempt;
+}
 
 /**
  * Options for retry operations
@@ -60,17 +57,8 @@ const DEFAULT_OPTIONS = {
   maxDelayMs: 10000,
 } as const;
 
-/**
- * Calculate exponential backoff delay with jitter
- *
- * @param attempt - Current attempt number (0-based)
- * @param baseDelayMs - Base delay in milliseconds
- * @param maxDelayMs - Maximum delay cap
- * @returns Delay in milliseconds
- */
 function calculateBackoff(attempt: number, baseDelayMs: number, maxDelayMs: number): number {
-  // Exponential backoff: base * 2^attempt
-  const exponentialDelay = baseDelayMs * 2 ** attempt;
+  const exponentialDelay = getExponentialBackoffDelayMs(attempt, baseDelayMs);
   // Add jitter (0-25% of delay) to prevent thundering herd
   const jitter = Math.random() * 0.25 * exponentialDelay;
   const totalDelay = exponentialDelay + jitter;

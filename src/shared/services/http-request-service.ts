@@ -28,7 +28,7 @@
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
 import { getUserscript } from '@shared/external/userscript';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
-import { createDeferred, createSingleSettler } from '@shared/utils/async/promise-helpers';
+import { createDeferred } from '@shared/utils/async/promise-helpers';
 import { createSingleton } from '@shared/utils/types/singleton';
 
 type HttpRequestData = Exclude<GMXMLHttpRequestDetails['data'], undefined>;
@@ -92,9 +92,27 @@ export class HttpRequestService {
       }
     };
 
-    const { resolve: safeResolve, reject: safeReject } = createSingleSettler(deferred, () => {
-      cleanupAbortListener();
-    });
+    let settled = false;
+    const safeResolve = (value: HttpResponse<T>): void => {
+      if (settled) return;
+      settled = true;
+      try {
+        cleanupAbortListener();
+      } catch {
+        // ignore
+      }
+      deferred.resolve(value);
+    };
+    const safeReject = (reason: unknown): void => {
+      if (settled) return;
+      settled = true;
+      try {
+        cleanupAbortListener();
+      } catch {
+        // ignore
+      }
+      deferred.reject(reason);
+    };
 
     try {
       const userscript = getUserscript();

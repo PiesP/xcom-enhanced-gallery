@@ -126,39 +126,34 @@ export function createDeferred<T>(): Deferred<T> {
   return { promise, resolve, reject };
 }
 
-/**
- * Wrap a Deferred so it can be resolved/rejected at most once.
- *
- * Useful for callback-based APIs that may invoke multiple terminal callbacks
- * (e.g. onload/onerror/ontimeout/onabort).
- */
-export function createSingleSettler<T>(
-  deferred: Pick<Deferred<T>, 'resolve' | 'reject'>,
-  cleanup?: () => void
-): {
-  readonly resolve: (value: T) => void;
-  readonly reject: (reason: unknown) => void;
+export interface SingleSettler<T> {
+  readonly resolve: (value: T | PromiseLike<T>) => void;
+  readonly reject: (reason?: unknown) => void;
   readonly isSettled: () => boolean;
-} {
+}
+
+export function createSingleSettler<T>(
+  deferred: Deferred<T>,
+  cleanup?: () => void
+): SingleSettler<T> {
   let settled = false;
 
   const runCleanup = (): void => {
-    if (!cleanup) return;
     try {
-      cleanup();
+      cleanup?.();
     } catch {
-      // Ignore cleanup failures (best-effort)
+      // ignore
     }
   };
 
   return {
-    resolve: (value: T) => {
+    resolve: (value) => {
       if (settled) return;
       settled = true;
       runCleanup();
       deferred.resolve(value);
     },
-    reject: (reason: unknown) => {
+    reject: (reason) => {
       if (settled) return;
       settled = true;
       runCleanup();

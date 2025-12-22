@@ -1,9 +1,3 @@
-/**
- * @fileoverview Twitter Response Parser - Pure functional implementation
- * @description Parses raw Twitter API responses into standardized media entries.
- * @version 5.0.0 - Added inline media support, improved logging and validation
- */
-
 import type {
   TweetMediaEntry,
   TwitterMedia,
@@ -14,10 +8,6 @@ import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/medi
 import { escapeRegExp } from '@shared/utils/text/formatting';
 import { tryParseUrl } from '@shared/utils/url/host';
 
-// ============================================================================
-// Types
-// ============================================================================
-
 interface TypeIndexCounter {
   [mediaType: string]: number;
 }
@@ -27,14 +17,6 @@ interface MediaDimensions {
   height?: number;
 }
 
-// ============================================================================
-// Internal Pure Functions
-// ============================================================================
-
-/**
- * Resolve dimensions from media object and URL
- * @internal
- */
 function resolveDimensions(media: TwitterMedia, mediaUrl: string): MediaDimensions {
   const dimensionsFromUrl = extractDimensionsFromUrl(mediaUrl);
   const widthFromOriginal = normalizeDimension(media.original_info?.width);
@@ -81,10 +63,6 @@ function removeUrlTokensFromText(text: string, urls: readonly string[]): string 
   return result.trim();
 }
 
-/**
- * Resolve aspect ratio from video info or dimensions
- * @internal
- */
 function resolveAspectRatio(
   media: TwitterMedia,
   dimensions: MediaDimensions
@@ -108,10 +86,6 @@ function resolveAspectRatio(
   return undefined;
 }
 
-/**
- * Get the highest quality URL for a photo media item
- * @internal
- */
 function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
   if (!mediaUrlHttps) return mediaUrlHttps;
 
@@ -168,10 +142,6 @@ function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
   return `${parsed.pathname}${parsed.search}`;
 }
 
-/**
- * Get the highest quality URL for a video/gif media item
- * @internal
- */
 function getVideoHighQualityUrl(media: TwitterMedia): string | null {
   const variants = media.video_info?.variants ?? [];
   const mp4Variants = variants.filter((v) => v.content_type === 'video/mp4');
@@ -185,10 +155,6 @@ function getVideoHighQualityUrl(media: TwitterMedia): string | null {
   return bestVariant.url;
 }
 
-/**
- * Get the highest quality URL for any media type
- * @internal
- */
 function getHighQualityMediaUrl(media: TwitterMedia): string | null {
   if (media.type === 'photo') {
     return getPhotoHighQualityUrl(media.media_url_https) ?? null;
@@ -199,10 +165,6 @@ function getHighQualityMediaUrl(media: TwitterMedia): string | null {
   return null;
 }
 
-/**
- * Create a TweetMediaEntry from raw media data
- * @internal
- */
 function createMediaEntry(
   media: TwitterMedia,
   mediaUrl: string,
@@ -252,27 +214,6 @@ function createMediaEntry(
   return entry;
 }
 
-// ============================================================================
-// Public API - Pure Functions
-// ============================================================================
-
-/**
- * Extract media items from a tweet object.
- *
- * Parses the extended_entities.media array from a Twitter tweet
- * and returns standardized media entries with proper URLs and metadata.
- * Also processes note_tweet inline_media when available.
- *
- * @param tweetResult - Raw tweet result from Twitter API
- * @param tweetUser - User information for the tweet author
- * @param sourceLocation - Whether this is from the original tweet or quoted tweet
- * @returns Array of TweetMediaEntry objects
- *
- * @example
- * ```typescript
- * const mediaItems = extractMediaFromTweet(tweetResult, user, 'original');
- * ```
- */
 export function extractMediaFromTweet(
   tweetResult: TwitterTweet,
   tweetUser: TwitterUser,
@@ -389,21 +330,6 @@ export function extractMediaFromTweet(
   return mediaItems;
 }
 
-/**
- * Normalize legacy tweet fields.
- *
- * Twitter API responses may have data in different locations depending
- * on the API version. This function normalizes the fields to a consistent
- * location for easier processing.
- *
- * @param tweet - Tweet object to normalize (mutates in place)
- *
- * @example
- * ```typescript
- * normalizeLegacyTweet(tweetResult);
- * // Now tweetResult.extended_entities is guaranteed to be populated if available
- * ```
- */
 export function normalizeLegacyTweet(tweet: TwitterTweet): void {
   if (tweet.legacy) {
     if (!tweet.extended_entities && tweet.legacy.extended_entities) {
@@ -423,19 +349,6 @@ export function normalizeLegacyTweet(tweet: TwitterTweet): void {
   }
 }
 
-/**
- * Normalize legacy user fields.
- *
- * This function performs only data normalization (no logging/diagnostics).
- *
- * @param user - User object to normalize (mutates in place)
- *
- * @example
- * ```typescript
- * normalizeLegacyUser(tweetUser);
- * // Now tweetUser.screen_name is guaranteed to be populated if available
- * ```
- */
 export function normalizeLegacyUser(user: TwitterUser): void {
   if (user.legacy) {
     if (!user.screen_name && user.legacy.screen_name) {
@@ -446,9 +359,5 @@ export function normalizeLegacyUser(user: TwitterUser): void {
     }
   }
 }
-
-// ============================================================================
-// Exported Utilities (for advanced use cases)
-// ============================================================================
 
 export { getHighQualityMediaUrl, resolveAspectRatio, resolveDimensions };

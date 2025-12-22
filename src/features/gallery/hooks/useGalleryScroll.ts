@@ -15,7 +15,7 @@ import { isGalleryInternalEvent } from '@shared/dom/utils';
 import { logger } from '@shared/logging';
 import { EventManager } from '@shared/services/event-manager';
 import { galleryState } from '@shared/state/signals/gallery.signals';
-import { createContextId } from '@shared/utils/id/create-id';
+import { createPrefixedId } from '@shared/utils/id/create-id';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
@@ -147,7 +147,7 @@ export function useGalleryScroll({
     }
 
     const eventManager = EventManager.getInstance();
-    const listenerContext = createContextId(LISTENER_CONTEXT_PREFIX);
+    const listenerContext = createPrefixedId(LISTENER_CONTEXT_PREFIX, ':');
     const listenerIds: string[] = [];
 
     const registerListener = (type: string, handler: EventListener): void => {

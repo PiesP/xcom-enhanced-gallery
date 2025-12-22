@@ -1,5 +1,3 @@
-// Runtime `import()` is forbidden in this project (single-file userscript bundle).
-
 import { initializeCoreBaseServices } from '@bootstrap/base-services';
 import { initializeCriticalSystems } from '@bootstrap/critical-systems';
 import { setupDevNamespace } from '@bootstrap/dev-namespace';
@@ -23,9 +21,6 @@ import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 // Global styles (side-effect import)
 import './styles/globals';
-
-// Note: Global styles are now imported statically to comply with the
-// single-file bundle policy (no runtime `import()`).
 
 const isDevEnvironment = __DEV__;
 const isTestMode = import.meta.env.MODE === 'test';
@@ -120,26 +115,6 @@ async function runOptionalCleanup(
   }
 }
 
-/**
- * Bootstrap stage definitions (data-driven configuration)
- *
- * 📋 11-stage bootstrap process:
- * 1️⃣  Global styles - src/styles/globals
- * 2️⃣  Developer tooling - src/bootstrap/dev-tools.ts (dev-only)
- * 3️⃣  Infrastructure initialization (Vendor load) - src/bootstrap/environment.ts
- * 4️⃣  Core systems (Core services + notification stack) - src/bootstrap/critical-systems.ts
- * 5️⃣  Base services (Theme/Language) - src/bootstrap/base-services.ts
- * 6️⃣  Theme synchronization - Apply initial theme setting
- * 7️⃣  Feature service registration (lazy load) - src/bootstrap/features.ts
- * 8️⃣  Global event handler setup - src/bootstrap/events.ts
- * 9️⃣  Command runtime setup (dev-only)
- * 🔟  Gallery app initialization - src/features/gallery/GalleryApp.ts
- * 1️⃣1️⃣  Background system initialization (non-critical services)
- *
- * 💡 Conditional Execution:
- * - Developer tooling runs only in __DEV__ mode and not in tests
- * - Gallery initialization is skipped in test mode
- */
 const devBootstrapStages: readonly BootstrapStage[] | null = __DEV__
   ? [
       {

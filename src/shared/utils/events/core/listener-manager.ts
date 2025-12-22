@@ -11,7 +11,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { createContextId, createId } from '@shared/utils/id/create-id';
+import { createId, createPrefixedId } from '@shared/utils/id/create-id';
 import type { DOMListenerContext } from './dom-listener-context';
 
 // ============================================================================
@@ -23,7 +23,7 @@ const listeners = new Map<string, DOMListenerContext>();
 
 /** Generate unique listener ID */
 function generateListenerId(ctx?: string): string {
-  return ctx ? createContextId(ctx) : createId();
+  return ctx ? createPrefixedId(ctx, ':') : createId();
 }
 
 // ============================================================================

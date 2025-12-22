@@ -1,161 +1,165 @@
-/**
- * @fileoverview Small async lazy-loader utilities.
- *
- * Note: This module does not use dynamic imports directly. Callers may pass an async
- * factory (e.g. a mocked import function in tests).
- */
-
 export interface LazyLoader<T> {
-  load(): Promise<T>;
-  preload(): void;
-  reset(): void;
-  isLoaded(): boolean;
+  readonly load: () => Promise<T>;
+  readonly preload: () => void;
+  readonly reset: () => void;
+  readonly isLoaded: () => boolean;
 }
 
 export interface LazyLoaderOptions {
-  /** Number of retries after the initial attempt. */
-  retries?: number;
-  /** Delay between retries in milliseconds. */
-  retryDelay?: number;
-  /** Optional callback invoked when a load attempt fails. */
-  onError?: (error: unknown) => void;
-  /** Enable extra runtime checks/logging (kept minimal). */
-  debug?: boolean;
+  readonly retries?: number;
+  readonly retryDelay?: number;
+  readonly onError?: (error: unknown) => void;
 }
 
-function toError(error: unknown): Error {
-  if (error instanceof Error) return error;
-  return new Error(typeof error === 'string' ? error : 'Unknown error');
-}
-
-async function delay(ms: number): Promise<void> {
-  if (ms <= 0) return;
-  await new Promise<void>((resolve) => {
-    setTimeout(resolve, ms);
+const delayMs = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, Math.max(0, ms));
   });
-}
 
-async function loadWithRetries<T>(
-  loadFn: () => Promise<T>,
-  options: LazyLoaderOptions
-): Promise<T> {
-  const retries = Math.max(0, options.retries ?? 0);
-  const retryDelay = Math.max(0, options.retryDelay ?? 0);
+export function createLazyLoader<
+  TModule extends Record<string, unknown>,
+  TExport extends keyof TModule,
+>(
+  importFn: () => Promise<TModule>,
+  exportName: TExport,
+  options?: LazyLoaderOptions
+): LazyLoader<TModule[TExport]> {
+  let loaded = false;
+  let value: TModule[TExport] | undefined;
+  let pending: Promise<TModule[TExport]> | null = null;
 
-  const attempt = async (remainingRetries: number): Promise<T> => {
-    try {
-      return await loadFn();
-    } catch (error) {
-      options.onError?.(error);
-      if (remainingRetries <= 0) {
-        throw error;
-      }
-
-      await delay(retryDelay);
-      return attempt(remainingRetries - 1);
+  const loadOnce = async (): Promise<TModule[TExport]> => {
+    const module = await importFn();
+    if (!(exportName in module)) {
+      throw new Error(`Export '${String(exportName)}' not found`);
     }
+    return module[exportName] as TModule[TExport];
   };
 
-  return attempt(retries);
-}
+  const loadWithRetry = async (): Promise<TModule[TExport]> => {
+    const retries = options?.retries ?? 0;
+    const retryDelay = options?.retryDelay ?? 0;
 
-function createBaseLazyLoader<T>(
-  loadFn: () => Promise<T>,
-  options: LazyLoaderOptions
-): LazyLoader<T> {
-  let hasValue = false;
-  let value!: T;
-  let error: Error | undefined;
+    let attempt = 0;
+    for (;;) {
+      try {
+        const result = await loadOnce();
+        loaded = true;
+        value = result;
+        return result;
+      } catch (error) {
+        options?.onError?.(error);
 
-  let inflight: Promise<T> | null = null;
-  let inflightShouldCacheError = false;
-
-  const start = (shouldCacheError: boolean): Promise<T> => {
-    if (hasValue) {
-      return Promise.resolve(value);
-    }
-
-    if (error) {
-      return Promise.reject(error);
-    }
-
-    if (inflight) {
-      if (shouldCacheError) {
-        inflightShouldCacheError = true;
-      }
-      return inflight;
-    }
-
-    inflightShouldCacheError = shouldCacheError;
-
-    inflight = loadWithRetries(loadFn, options)
-      .then((loaded) => {
-        value = loaded;
-        hasValue = true;
-        return loaded;
-      })
-      .catch((e) => {
-        const err = toError(e);
-        if (inflightShouldCacheError) {
-          error = err;
-        } else if (options.debug) {
-          // Preload errors are intentionally not cached.
-          // Keep behavior silent unless debug is explicitly requested.
+        if (attempt >= retries) {
+          throw error;
         }
-        throw err;
-      })
-      .finally(() => {
-        inflight = null;
-      });
-
-    return inflight;
+        attempt++;
+        if (retryDelay > 0) {
+          await delayMs(retryDelay);
+        }
+      }
+    }
   };
 
   return {
-    load: () => start(true),
-    preload: () => {
-      void start(false).catch(() => {
-        // Intentionally swallowed.
+    load: async () => {
+      if (loaded) {
+        return value as TModule[TExport];
+      }
+      if (pending) {
+        return pending;
+      }
+
+      pending = loadWithRetry().finally(() => {
+        pending = null;
       });
+      return pending;
+    },
+    preload: () => {
+      void (async () => {
+        try {
+          await (pending ?? (pending = loadWithRetry().finally(() => (pending = null))));
+        } catch {
+          // ignore
+        }
+      })();
     },
     reset: () => {
-      hasValue = false;
-      error = undefined;
-      inflight = null;
-      inflightShouldCacheError = false;
+      loaded = false;
+      value = undefined;
+      pending = null;
     },
-    isLoaded: () => hasValue,
+    isLoaded: () => loaded,
   };
 }
 
 export function createModuleLazyLoader<TModule>(
   importFn: () => Promise<TModule>,
-  options: LazyLoaderOptions = {}
+  options?: LazyLoaderOptions
 ): LazyLoader<TModule> {
-  return createBaseLazyLoader(() => importFn(), options);
+  let loaded = false;
+  let value: TModule | undefined;
+  let pending: Promise<TModule> | null = null;
+
+  const loadOnce = async (): Promise<TModule> => importFn();
+
+  const loadWithRetry = async (): Promise<TModule> => {
+    const retries = options?.retries ?? 0;
+    const retryDelay = options?.retryDelay ?? 0;
+
+    let attempt = 0;
+    for (;;) {
+      try {
+        const result = await loadOnce();
+        loaded = true;
+        value = result;
+        return result;
+      } catch (error) {
+        options?.onError?.(error);
+
+        if (attempt >= retries) {
+          throw error;
+        }
+        attempt++;
+        if (retryDelay > 0) {
+          await delayMs(retryDelay);
+        }
+      }
+    }
+  };
+
+  return {
+    load: async () => {
+      if (loaded) {
+        return value as TModule;
+      }
+      if (pending) {
+        return pending;
+      }
+      pending = loadWithRetry().finally(() => {
+        pending = null;
+      });
+      return pending;
+    },
+    preload: () => {
+      void (async () => {
+        try {
+          await (pending ?? (pending = loadWithRetry().finally(() => (pending = null))));
+        } catch {
+          // ignore
+        }
+      })();
+    },
+    reset: () => {
+      loaded = false;
+      value = undefined;
+      pending = null;
+    },
+    isLoaded: () => loaded,
+  };
 }
 
-export function createLazyLoader<TModule extends Record<string, unknown>, TExport = unknown>(
-  importFn: () => Promise<TModule>,
-  exportName: string,
-  options: LazyLoaderOptions = {}
-): LazyLoader<TExport> {
-  return createBaseLazyLoader(async () => {
-    const mod = await importFn();
-
-    if (!mod || typeof mod !== 'object') {
-      throw new Error('Module did not resolve to an object');
-    }
-
-    if (!(exportName in mod)) {
-      throw new Error(`Export '${exportName}' not found in module`);
-    }
-
-    return mod[exportName] as TExport;
-  }, options);
-}
-
-export function preloadAll(loaders: ReadonlyArray<LazyLoader<unknown>>): void {
+export function preloadAll(loaders: Array<Pick<LazyLoader<unknown>, 'preload'>>): void {
   for (const loader of loaders) {
     loader.preload();
   }
