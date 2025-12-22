@@ -25,7 +25,7 @@ export interface IconProps {
    * @example className="text-primary"
    * @example className="icon-hover-effect"
    */
-  className?: string;
+  class?: string;
 
   /**
    * SVG path elements and shapes
@@ -50,36 +50,14 @@ export interface IconProps {
    * @example 'aria-label'="Close button"
    */
   'aria-label'?: string;
-
-  /**
-   * Additional SVG attributes (stroke-width, fill, etc.)
-   * Spread onto SVG element
-   *
-   * @example
-   * ```tsx
-   * <Icon stroke-width={1.5} fill="none">
-   *   ...
-   * </Icon>
-   * ```
-   */
-  [key: string]: unknown;
 }
 
 export function Icon({
   size = 'var(--xeg-icon-size)',
-  className = '',
+  class: className = '',
   children,
   'aria-label': ariaLabel,
-  ...otherProps
 }: IconProps): JSXElement {
-  const accessibilityProps: Record<string, string> = {};
-  if (ariaLabel) {
-    accessibilityProps.role = 'img';
-    accessibilityProps['aria-label'] = ariaLabel;
-  } else {
-    accessibilityProps['aria-hidden'] = 'true';
-  }
-
   const sizeValue = typeof size === 'number' ? `${size}px` : size;
 
   return (
@@ -94,8 +72,9 @@ export function Icon({
       stroke-linecap="round"
       stroke-linejoin="round"
       class={className}
-      {...accessibilityProps}
-      {...otherProps}
+      role={ariaLabel ? 'img' : undefined}
+      aria-label={ariaLabel}
+      aria-hidden={ariaLabel ? undefined : 'true'}
     >
       {children}
     </svg>

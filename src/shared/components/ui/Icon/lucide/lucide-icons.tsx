@@ -16,9 +16,11 @@ const renderNode = (node: LucideIconNode): JSXElement => {
 
   switch (tag) {
     case 'path':
-      return <path {...attrs} />;
+      return <path d={String(attrs.d ?? '')} />;
     case 'circle':
-      return <circle {...attrs} />;
+      return (
+        <circle cx={String(attrs.cx ?? '')} cy={String(attrs.cy ?? '')} r={String(attrs.r ?? '')} />
+      );
     default: {
       const exhaustive: never = tag;
       return exhaustive;
@@ -26,8 +28,12 @@ const renderNode = (node: LucideIconNode): JSXElement => {
   }
 };
 
-export function LucideIcon({ name, ...rest }: LucideIconProps): JSXElement {
-  const nodes = LUCIDE_ICON_NODES[name];
+export function LucideIcon(props: LucideIconProps): JSXElement {
+  const nodes = LUCIDE_ICON_NODES[props.name];
 
-  return <Icon {...rest}>{nodes.map(renderNode)}</Icon>;
+  return (
+    <Icon size={props.size} class={props.class} aria-label={props['aria-label']}>
+      {nodes.map(renderNode)}
+    </Icon>
+  );
 }

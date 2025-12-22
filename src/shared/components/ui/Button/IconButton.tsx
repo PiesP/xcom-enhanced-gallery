@@ -9,13 +9,28 @@
 
 import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
 import { cx } from '@shared/utils/text/formatting';
-import type { JSX } from 'solid-js';
-import { splitProps } from 'solid-js';
 
 export type IconButtonSize = 'sm' | 'md' | 'lg' | 'toolbar';
 
-export interface IconButtonProps extends JSX.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface IconButtonProps {
   readonly children?: ComponentChildren;
+  readonly class?: string;
+  readonly type?: 'button' | 'submit' | 'reset';
+  readonly disabled?: boolean;
+  readonly id?: string;
+  readonly title?: string;
+
+  readonly 'aria-label'?: string;
+  readonly 'aria-controls'?: string;
+  readonly 'aria-expanded'?: string;
+  readonly 'aria-pressed'?: boolean;
+  readonly 'aria-busy'?: boolean;
+
+  readonly tabIndex?: number;
+  readonly ref?: (element: HTMLButtonElement) => void;
+  readonly onClick?: (event: MouseEvent) => void;
+  readonly onMouseDown?: (event: MouseEvent) => void;
+
   /**
    * Visual sizing hint. Kept as a custom prop for compatibility.
    * Styling is owned by the caller; this prop is not forwarded to the DOM.
@@ -24,11 +39,24 @@ export interface IconButtonProps extends JSX.ButtonHTMLAttributes<HTMLButtonElem
 }
 
 export function IconButton(props: IconButtonProps): JSXElement {
-  const [local, rest] = splitProps(props, ['children', 'class', 'type', 'size']);
-
   return (
-    <button {...rest} type={local.type ?? 'button'} class={cx(local.class)}>
-      {local.children}
+    <button
+      ref={props.ref}
+      id={props.id}
+      type={props.type ?? 'button'}
+      class={cx(props.class)}
+      title={props.title}
+      disabled={props.disabled}
+      tabIndex={props.tabIndex}
+      aria-label={props['aria-label']}
+      aria-controls={props['aria-controls']}
+      aria-expanded={props['aria-expanded']}
+      aria-pressed={props['aria-pressed']}
+      aria-busy={props['aria-busy']}
+      onMouseDown={props.onMouseDown}
+      onClick={props.onClick}
+    >
+      {props.children}
     </button>
   );
 }

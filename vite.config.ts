@@ -88,7 +88,12 @@ export default defineConfig(({ mode }): UserConfig => {
   return {
     plugins: [
       distCleanupPlugin(),
-      solidPlugin(),
+      solidPlugin({
+        solid: {
+          // Userscript bundles are not SSR-hydrated. Enable smaller template output in production.
+          omitNestedClosingTags: isProd,
+        },
+      }),
       cssInlinePlugin(mode),
       metaOnlyPlugin(mode),
       ...(!isDev ? [productionCleanupPlugin()] : []),

@@ -240,8 +240,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     context: 'toolbar:wheel:panel',
   });
 
-  const settingsControlsTestId = __DEV__ ? { 'data-testid': 'settings-controls' as const } : {};
-
   return (
     <div
       ref={assignToolbarRef}
@@ -415,7 +413,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             onThemeChange={props.settingsController.handleThemeChange}
             onLanguageChange={props.settingsController.handleLanguageChange}
             compact
-            {...settingsControlsTestId}
+            data-testid={__DEV__ ? 'settings-controls' : undefined}
           />
         </Show>
       </div>

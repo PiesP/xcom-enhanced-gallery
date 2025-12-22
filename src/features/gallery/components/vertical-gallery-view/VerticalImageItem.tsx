@@ -57,34 +57,31 @@ const FIT_MODE_CLASSES: Record<ImageFitMode, string | undefined> = {
  */
 export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | null {
   // NOTE: Do not destructure reactive props in Solid. Use splitProps to preserve reactivity.
-  const [local, rest] = splitProps(
-    props as VerticalImageItemProps & { readonly isVisible?: boolean },
-    [
-      'media',
-      'index',
-      'isActive',
-      'isFocused',
-      'forceVisible',
-      // Legacy prop: stripped to avoid leaking unknown attributes to the DOM.
-      // This prop is intentionally not part of the public VerticalImageItemProps type.
-      'isVisible',
-      'onClick',
-      'onImageContextMenu',
-      'className',
-      'onMediaLoad',
-      'fitMode',
-      'style',
-      'data-testid',
-      'aria-label',
-      'aria-describedby',
-      'registerContainer',
-      'role',
-      'tabIndex',
-      'onFocus',
-      'onBlur',
-      'onKeyDown',
-    ]
-  );
+  const [local] = splitProps(props as VerticalImageItemProps & { readonly isVisible?: boolean }, [
+    'media',
+    'index',
+    'isActive',
+    'isFocused',
+    'forceVisible',
+    // Legacy prop: stripped to avoid leaking unknown attributes to the DOM.
+    // This prop is intentionally not part of the public VerticalImageItemProps type.
+    'isVisible',
+    'onClick',
+    'onImageContextMenu',
+    'className',
+    'onMediaLoad',
+    'fitMode',
+    'style',
+    'data-testid',
+    'aria-label',
+    'aria-describedby',
+    'registerContainer',
+    'role',
+    'tabIndex',
+    'onFocus',
+    'onBlur',
+    'onKeyDown',
+  ]);
 
   const isFocused = createMemo(() => local.isFocused ?? false);
   const className = createMemo(() => local.className ?? '');
@@ -384,7 +381,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   return (
     <div
-      {...rest}
       ref={assignContainerRef}
       class={containerClasses()}
       data-xeg-role="gallery-item"
