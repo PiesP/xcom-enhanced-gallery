@@ -46,14 +46,3 @@ export function isHTMLElement(element: unknown): element is HTMLElement {
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
-/**
- * Check if a GM_info-like object has valid script info.
- */
-export function isGMUserScriptInfo(obj: unknown): obj is { scriptHandler?: string } {
-  if (obj === null || typeof obj !== 'object') {
-    return false;
-  }
-
-  const objRecord = obj as Record<string, unknown>;
-  return 'scriptHandler' in objRecord || Object.keys(objRecord).length > 0;
-}

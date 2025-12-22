@@ -108,10 +108,6 @@ export function safeTweetId(value: string | undefined): string {
   return value;
 }
 
-// ========== Userscript type guards ==========
-
-// NOTE: userscript/environment type guards are deduplicated in guards.ts
-
 // ========== Legacy edge-case helpers ============
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -132,23 +128,4 @@ export function isGlobalLike(value: unknown): boolean {
   return (
     typeof record.requestIdleCallback === 'function' || typeof record.setTimeout === 'function'
   );
-}
-
-/**
- * Minimal GM_info-like object check.
- *
- * Legacy compatibility: treat any non-empty record as GM info.
- */
-export function isGMUserScriptInfo(value: unknown): boolean {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  const record = value as Record<string, unknown>;
-
-  if ('scriptHandler' in record) {
-    return true;
-  }
-
-  return Object.keys(record).length > 0;
 }
