@@ -89,7 +89,9 @@ export function useGalleryScroll({
     clearScrollIdleTimer();
     scrollIdleTimerId = globalTimerManager.setTimeout(() => {
       setIsScrolling(false);
-      logger.debug('useGalleryScroll: Scroll ended');
+      if (__DEV__) {
+        logger.debug('useGalleryScroll: Scroll ended');
+      }
       onScrollEnd?.();
     }, SCROLL_IDLE_TIMEOUT);
   };
@@ -158,23 +160,29 @@ export function useGalleryScroll({
       );
       if (id) {
         listenerIds.push(id);
-        logger.debug('useGalleryScroll: listener registered', {
-          type,
-          id,
-          context: listenerContext,
-        });
+        if (__DEV__) {
+          logger.debug('useGalleryScroll: listener registered', {
+            type,
+            id,
+            context: listenerContext,
+          });
+        }
       }
     };
 
     registerListener('wheel', handleWheel as EventListener);
     registerListener('scroll', handleScroll as EventListener);
 
-    logger.debug('useGalleryScroll: Listeners registered');
+    if (__DEV__) {
+      logger.debug('useGalleryScroll: Listeners registered');
+    }
 
     onCleanup(() => {
       for (const id of listenerIds) {
         eventManager.removeListener(id);
-        logger.debug('useGalleryScroll: listener removed', { id, context: listenerContext });
+        if (__DEV__) {
+          logger.debug('useGalleryScroll: listener removed', { id, context: listenerContext });
+        }
       }
       clearScrollIdleTimer();
       setIsScrolling(false);

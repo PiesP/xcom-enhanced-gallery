@@ -14,10 +14,12 @@ export class GlobalErrorHandler {
       ? `${event.filename}:${event.lineno ?? 0}:${event.colno ?? 0}`
       : undefined;
 
-    logger.error(`[UncaughtError] ${message}`, {
-      type: 'uncaught-error',
-      location,
-    });
+    if (__DEV__) {
+      logger.error(`[UncaughtError] ${message}`, {
+        type: 'uncaught-error',
+        location,
+      });
+    }
 
     if (__DEV__) {
       event.preventDefault();
@@ -33,10 +35,12 @@ export class GlobalErrorHandler {
           ? reason
           : `Unhandled rejection: ${String(reason)}`;
 
-    logger.error(`[UnhandledRejection] ${message}`, {
-      type: 'unhandled-rejection',
-      reason,
-    });
+    if (__DEV__) {
+      logger.error(`[UnhandledRejection] ${message}`, {
+        type: 'unhandled-rejection',
+        reason,
+      });
+    }
 
     if (__DEV__) {
       event.preventDefault();

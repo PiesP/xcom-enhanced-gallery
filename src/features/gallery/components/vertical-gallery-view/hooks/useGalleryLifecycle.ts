@@ -61,7 +61,9 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
 
           // Video cleanup
           const logCleanupFailure = (error: unknown) => {
-            logger.warn('video cleanup failed', { error });
+            if (__DEV__) {
+              logger.warn('video cleanup failed', { error });
+            }
           };
 
           const videos = container.querySelectorAll('video');

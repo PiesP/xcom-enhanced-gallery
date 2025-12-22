@@ -30,9 +30,11 @@ export class TwitterAPIExtractor implements APIExtractor {
     const startedAt = now();
 
     try {
-      logger.debug(`[APIExtractor] ${extractionId}: Starting API extraction`, {
-        tweetId: tweetInfo.tweetId,
-      });
+      if (__DEV__) {
+        logger.debug(`[APIExtractor] ${extractionId}: Starting API extraction`, {
+          tweetId: tweetInfo.tweetId,
+        });
+      }
 
       // Step 1: Fetch media from API
       const apiMedias = await TwitterAPI.getTweetMedias(tweetInfo.tweetId);
@@ -74,7 +76,9 @@ export class TwitterAPIExtractor implements APIExtractor {
         tweetInfo,
       };
     } catch (error) {
-      logger.warn(`[APIExtractor] ${extractionId}: API extraction failed:`, error);
+      if (__DEV__) {
+        logger.warn(`[APIExtractor] ${extractionId}: API extraction failed:`, error);
+      }
       const totalProcessingTime = Math.max(0, now() - startedAt);
       const failure = this.createFailureResult(getErrorMessage(error) || 'API extraction failed');
       return {

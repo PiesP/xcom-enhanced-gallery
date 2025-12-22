@@ -146,9 +146,11 @@ export class TweetInfoExtractor {
       try {
         const result = strategy(element);
         if (result && this.isValid(result)) {
-          logger.debug(`[TweetInfoExtractor] Success: ${result.extractionMethod}`, {
-            tweetId: result.tweetId,
-          });
+          if (__DEV__) {
+            logger.debug(`[TweetInfoExtractor] Success: ${result.extractionMethod}`, {
+              tweetId: result.tweetId,
+            });
+          }
           return result;
         }
       } catch {

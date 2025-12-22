@@ -61,7 +61,9 @@ function tryPauseVideo(video: HTMLVideoElement): boolean {
     video.pause?.();
     return true;
   } catch (error) {
-    logger.debug('[AmbientVideo] Failed to pause Twitter video', { error });
+    if (__DEV__) {
+      logger.debug('[AmbientVideo] Failed to pause Twitter video', { error });
+    }
     return false;
   }
 }
@@ -102,10 +104,12 @@ export function pauseActiveTwitterVideos(
   };
 
   if (result.pausedCount > 0) {
-    logger.debug('[AmbientVideo] Ambient Twitter videos paused', {
-      ...result,
-      inspected: inspectedCount,
-    });
+    if (__DEV__) {
+      logger.debug('[AmbientVideo] Ambient Twitter videos paused', {
+        ...result,
+        inspected: inspectedCount,
+      });
+    }
   }
 
   return result;

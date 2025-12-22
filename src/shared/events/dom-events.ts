@@ -154,7 +154,9 @@ export class DOMEventManager {
       __DEV__ && logger.debug(`[DOMEventManager] DOM listener added: ${type} (${id})`, { context });
       return id;
     } catch (error) {
-      logger.error(`[DOMEventManager] Failed to add listener: ${type}`, error);
+      if (__DEV__) {
+        logger.error(`[DOMEventManager] Failed to add listener: ${type}`, error);
+      }
       return id;
     }
   }

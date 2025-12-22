@@ -113,12 +113,16 @@ export class EventBus {
   }
 
   private async onInitialize(): Promise<void> {
-    logger.debug('[EventBus] Initialized');
+    if (__DEV__) {
+      logger.debug('[EventBus] Initialized');
+    }
   }
 
   private onDestroy(): void {
     this.removeAll();
-    logger.debug('[EventBus] Destroyed');
+    if (__DEV__) {
+      logger.debug('[EventBus] Destroyed');
+    }
   }
 
   // ==========================================================================

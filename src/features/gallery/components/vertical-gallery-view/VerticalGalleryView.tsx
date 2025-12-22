@@ -123,7 +123,9 @@ function VerticalGalleryViewCore({
 
   const persistFitMode = (mode: ImageFitMode) =>
     setTypedSetting('gallery.imageFitMode', mode).catch((error) => {
-      logger.warn('Failed to save fit mode', { error, mode });
+      if (__DEV__) {
+        logger.warn('Failed to save fit mode', { error, mode });
+      }
     });
 
   const applyFitMode = (mode: ImageFitMode, event?: Event) => {
@@ -292,7 +294,11 @@ function VerticalGalleryViewCore({
             },
             lifecycle: {
               onClose: onClose || (() => {}),
-              onOpenSettings: () => logger.debug('[VerticalGalleryView] Settings opened'),
+              onOpenSettings: () => {
+                if (__DEV__) {
+                  logger.debug('[VerticalGalleryView] Settings opened');
+                }
+              },
             },
           }}
         />

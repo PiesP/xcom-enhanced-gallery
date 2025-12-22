@@ -87,7 +87,9 @@ export class ThemeService implements ThemeServiceContract {
           subtree: true,
         });
       } else {
-        logger.warn('[ThemeService] document.documentElement not available for observation');
+        if (__DEV__) {
+          logger.warn('[ThemeService] document.documentElement not available for observation');
+        }
       }
     }
     // Initial load (sync if possible) - immediate, non-blocking
@@ -118,14 +120,18 @@ export class ThemeService implements ThemeServiceContract {
         }
       } catch (error) {
         this.earlyRestoreFailed = true;
-        logger.warn('[ThemeService] Early async theme restore failed', error);
+        if (__DEV__) {
+          logger.warn('[ThemeService] Early async theme restore failed', error);
+        }
       } finally {
         // Always enable system theme detection, even if the early async restore
         // fails midway. Initialization will be skipped once this flag is set.
         try {
           this.initializeSystemDetection();
         } catch (error) {
-          logger.debug('[ThemeService] System theme detection initialization failed', error);
+          if (__DEV__) {
+            logger.debug('[ThemeService] System theme detection initialization failed', error);
+          }
         }
       }
     })();
@@ -169,7 +175,9 @@ export class ThemeService implements ThemeServiceContract {
         this.bindSettingsService(settingsService);
       }
     } catch (err) {
-      logger.debug('[ThemeService] SettingsService not available', err);
+      if (__DEV__) {
+        logger.debug('[ThemeService] SettingsService not available', err);
+      }
     }
   }
 
@@ -215,7 +223,9 @@ export class ThemeService implements ThemeServiceContract {
       const result = this.boundSettingsService.set('gallery.theme', this.themeSetting);
       if (result instanceof Promise) {
         result.catch((error: unknown) => {
-          logger.warn('[ThemeService] Failed to persist theme setting', error);
+          if (__DEV__) {
+            logger.warn('[ThemeService] Failed to persist theme setting', error);
+          }
         });
       }
     }

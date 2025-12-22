@@ -107,7 +107,9 @@ export class PersistentStorage {
 
       await this.userscript.setValue(key, serialized);
     } catch (error) {
-      logger.error('Storage.setJson failed', key, error);
+      if (__DEV__) {
+        logger.error('Storage.setJson failed', key, error);
+      }
       throw error;
     }
   }
@@ -139,7 +141,9 @@ export class PersistentStorage {
 
       await this.userscript.setValue(key, serialized);
     } catch (error) {
-      logger.error('Storage.set failed', key, error);
+      if (__DEV__) {
+        logger.error('Storage.set failed', key, error);
+      }
       throw error;
     }
   }
@@ -286,7 +290,9 @@ export class PersistentStorage {
     try {
       await this.userscript.deleteValue(key);
     } catch (error) {
-      logger.error('Storage.remove failed', key, error);
+      if (__DEV__) {
+        logger.error('Storage.remove failed', key, error);
+      }
       throw error;
     }
   }

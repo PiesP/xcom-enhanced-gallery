@@ -75,7 +75,9 @@ export function addListener(
     }
     return id;
   } catch (error) {
-    logger.error(`Failed to add listener: ${type}`, { error, context });
+    if (__DEV__) {
+      logger.error(`Failed to add listener: ${type}`, { error, context });
+    }
     return id;
   }
 }
@@ -104,7 +106,9 @@ export function removeEventListenerManaged(id: string): boolean {
     }
     return true;
   } catch (error) {
-    logger.error(`Failed to remove listener: ${id}`, error);
+    if (__DEV__) {
+      logger.error(`Failed to remove listener: ${id}`, error);
+    }
     return false;
   }
 }

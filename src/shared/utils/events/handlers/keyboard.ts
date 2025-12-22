@@ -147,6 +147,8 @@ export function handleKeyboardEvent(
       handlers.onKeyboardEvent(event);
     }
   } catch (error) {
-    logger.error('Error handling keyboard event:', error);
+    if (__DEV__) {
+      logger.error('Error handling keyboard event:', error);
+    }
   }
 }

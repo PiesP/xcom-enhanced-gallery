@@ -82,12 +82,14 @@ export class AppErrorReporter {
       payload.m = options.metadata;
     }
 
-    if (severity === 'info') {
-      logger.info(message, payload);
-    } else if (severity === 'warning') {
-      logger.warn(message, payload);
-    } else {
-      logger.error(message, payload);
+    if (__DEV__) {
+      if (severity === 'info') {
+        logger.info(message, payload);
+      } else if (severity === 'warning') {
+        logger.warn(message, payload);
+      } else {
+        logger.error(message, payload);
+      }
     }
 
     if (options.notify && AppErrorReporter.notificationCallback) {

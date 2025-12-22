@@ -43,7 +43,9 @@ export class NotificationService {
       timeout: options.timeout,
       onclick: options.onclick,
     });
-    logger.debug(`Notification: ${options.title}`);
+    if (__DEV__) {
+      logger.debug(`Notification: ${options.title}`);
+    }
   }
 
   async error(title: string, text: string, timeout = 5000): Promise<void> {

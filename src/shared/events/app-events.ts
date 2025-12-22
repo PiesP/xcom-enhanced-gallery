@@ -147,7 +147,9 @@ export class AppEventManager {
       abortCleanup = wireAbortSignal(signal, () => this.subscriptionManager.remove(id)).cleanup;
     }
 
-    logger.debug(`[AppEventManager] App listener added: ${String(event)} (${id})`);
+    if (__DEV__) {
+      logger.debug(`[AppEventManager] App listener added: ${String(event)} (${id})`);
+    }
 
     // Manual unsubscribe
     return () => {
@@ -185,14 +187,18 @@ export class AppEventManager {
       return;
     }
 
-    logger.debug(`[AppEventManager] Emitting: ${String(event)}`, data);
+    if (__DEV__) {
+      logger.debug(`[AppEventManager] Emitting: ${String(event)}`, data);
+    }
 
     // Execute all listeners with error isolation
     listeners.forEach((callback) => {
       try {
         callback(data);
       } catch (error) {
-        logger.error(`[AppEventManager] Listener error for "${String(event)}":`, error);
+        if (__DEV__) {
+          logger.error(`[AppEventManager] Listener error for "${String(event)}":`, error);
+        }
       }
     });
   }

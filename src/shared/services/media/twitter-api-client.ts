@@ -164,7 +164,9 @@ export class TwitterAPI {
 
       return json;
     } catch (error) {
-      logger.error('API request failed', error);
+      if (__DEV__) {
+        logger.error('API request failed', error);
+      }
       throw error;
     }
   }

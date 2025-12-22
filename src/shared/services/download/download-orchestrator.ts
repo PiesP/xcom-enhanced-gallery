@@ -94,7 +94,9 @@ export class DownloadOrchestrator {
 
   private async onInitialize(): Promise<void> {
     // Capability is lazily detected on first use
-    logger.debug('[DownloadOrchestrator] Initialized');
+    if (__DEV__) {
+      logger.debug('[DownloadOrchestrator] Initialized');
+    }
   }
 
   private onDestroy(): void {

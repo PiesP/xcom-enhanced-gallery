@@ -90,12 +90,16 @@ async function executeSingleDownloadCommand(
             url,
             name: cmd.filename,
             onload: () => {
-              logger.debug(`[SingleDownload] Download complete: ${cmd.filename}`);
+              if (__DEV__) {
+                logger.debug(`[SingleDownload] Download complete: ${cmd.filename}`);
+              }
               settle({ success: true, filename: cmd.filename }, 100);
             },
             onerror: (error: unknown) => {
               const errorMsg = getErrorMessage(error);
-              logger.error('Download failed', error);
+              if (__DEV__) {
+                logger.error('Download failed', error);
+              }
               settle({ success: false, error: errorMsg }, 0);
             },
             ontimeout: () => {

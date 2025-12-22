@@ -23,7 +23,9 @@ function ensureGuardEffect(): void {
       return;
     }
 
-    logger.debug('[AmbientVideoGuard] Ambient pause triggered by guard', result);
+    if (__DEV__) {
+      logger.debug('[AmbientVideoGuard] Ambient pause triggered by guard', result);
+    }
   });
 }
 

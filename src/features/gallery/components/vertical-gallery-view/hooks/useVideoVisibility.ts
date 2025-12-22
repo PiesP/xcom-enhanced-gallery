@@ -66,12 +66,16 @@ function createVideoVisibilityController(
       // We intentionally swallow that rejection to avoid unhandled-rejection noise.
       if (result && typeof (result as Promise<void>).catch === 'function') {
         void (result as Promise<void>).catch((err) => {
-          logger.debug('Video play() was prevented', { error: err });
+          if (__DEV__) {
+            logger.debug('Video play() was prevented', { error: err });
+          }
         });
       }
     } catch (err) {
       // Some browsers can throw synchronously.
-      logger.debug('Video play() threw synchronously', { error: err });
+      if (__DEV__) {
+        logger.debug('Video play() threw synchronously', { error: err });
+      }
     }
   };
 
@@ -106,7 +110,9 @@ function createVideoVisibilityController(
             pauseVideo();
           }
         } catch (err) {
-          logger.warn('Failed to pause video', { error: err });
+          if (__DEV__) {
+            logger.warn('Failed to pause video', { error: err });
+          }
         }
       } else {
         // Scrolled into view - restore state
@@ -124,7 +130,9 @@ function createVideoVisibilityController(
             playVideo();
           }
         } catch (err) {
-          logger.warn('Failed to resume video', { error: err });
+          if (__DEV__) {
+            logger.warn('Failed to resume video', { error: err });
+          }
         } finally {
           wasPlayingBeforeHidden = false;
           wasMutedBeforeHidden = null;

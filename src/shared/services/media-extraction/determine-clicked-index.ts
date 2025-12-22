@@ -36,17 +36,21 @@ export function determineClickedIndex(
       // Check main URL
       const itemUrl = item.url || item.originalUrl;
       if (itemUrl && normalizeMediaUrl(itemUrl) === normalizedElementUrl) {
-        logger.debug(
-          `[determineClickedIndex] Matched clicked media at index ${i}: ${normalizedElementUrl}`
-        );
+        if (__DEV__) {
+          logger.debug(
+            `[determineClickedIndex] Matched clicked media at index ${i}: ${normalizedElementUrl}`
+          );
+        }
         return true;
       }
 
       // Check thumbnail URL
       if (item.thumbnailUrl && normalizeMediaUrl(item.thumbnailUrl) === normalizedElementUrl) {
-        logger.debug(
-          `[determineClickedIndex] Matched clicked media (thumbnail) at index ${i}: ${normalizedElementUrl}`
-        );
+        if (__DEV__) {
+          logger.debug(
+            `[determineClickedIndex] Matched clicked media (thumbnail) at index ${i}: ${normalizedElementUrl}`
+          );
+        }
         return true;
       }
 
@@ -55,12 +59,16 @@ export function determineClickedIndex(
 
     if (index !== -1) return index;
 
-    logger.warn(
-      `[determineClickedIndex] No matching media found for URL: ${normalizedElementUrl}, defaulting to 0`
-    );
+    if (__DEV__) {
+      logger.warn(
+        `[determineClickedIndex] No matching media found for URL: ${normalizedElementUrl}, defaulting to 0`
+      );
+    }
     return 0;
   } catch (error) {
-    logger.warn('[determineClickedIndex] Error calculating clicked index:', error);
+    if (__DEV__) {
+      logger.warn('[determineClickedIndex] Error calculating clicked index:', error);
+    }
     return 0;
   }
 }

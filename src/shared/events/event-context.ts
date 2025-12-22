@@ -109,7 +109,7 @@ export class SubscriptionManager {
       this.remove(id);
     }
 
-    if (toRemove.length > 0) {
+    if (__DEV__ && toRemove.length > 0) {
       logger.debug(
         `[SubscriptionManager] Removed ${toRemove.length} subscriptions for context: ${context}`
       );
@@ -130,7 +130,7 @@ export class SubscriptionManager {
 
     this.subscriptions.clear();
 
-    if (count > 0) {
+    if (__DEV__ && count > 0) {
       logger.debug(`[SubscriptionManager] Removed all ${count} subscriptions`);
     }
   }

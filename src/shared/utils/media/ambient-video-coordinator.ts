@@ -160,7 +160,9 @@ export function pauseAmbientVideosForGallery(
       force,
     });
   } catch (error) {
-    logger.warn('[AmbientVideoCoordinator] Failed to pause ambient videos', { error, trigger });
+    if (__DEV__) {
+      logger.warn('[AmbientVideoCoordinator] Failed to pause ambient videos', { error, trigger });
+    }
     return {
       ...PAUSE_RESULT_DEFAULT,
       trigger,
@@ -171,13 +173,15 @@ export function pauseAmbientVideosForGallery(
   }
 
   if (result.totalCandidates > 0 || result.pausedCount > 0) {
-    logger.debug('[AmbientVideoCoordinator] Ambient videos paused', {
-      ...result,
-      reason,
-      trigger,
-      forced: force,
-      scope,
-    });
+    if (__DEV__) {
+      logger.debug('[AmbientVideoCoordinator] Ambient videos paused', {
+        ...result,
+        reason,
+        trigger,
+        forced: force,
+        scope,
+      });
+    }
   }
 
   return {

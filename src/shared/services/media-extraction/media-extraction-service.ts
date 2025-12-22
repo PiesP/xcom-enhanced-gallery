@@ -35,13 +35,17 @@ export class MediaExtractionService implements MediaExtractor {
     options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     const extractionId = this.generateExtractionId();
-    logger.info(`[MediaExtractor] ${extractionId}: Extraction started`);
+    if (__DEV__) {
+      logger.info(`[MediaExtractor] ${extractionId}: Extraction started`);
+    }
 
     try {
       const tweetInfo = await this.tweetInfoExtractor.extract(element);
 
       if (!tweetInfo?.tweetId) {
-        logger.warn(`[MediaExtractor] ${extractionId}: No tweet info found`);
+        if (__DEV__) {
+          logger.warn(`[MediaExtractor] ${extractionId}: No tweet info found`);
+        }
         return this.createErrorResult('No tweet information found');
       }
 
@@ -54,10 +58,14 @@ export class MediaExtractionService implements MediaExtractor {
         });
       }
 
-      logger.error('Extract api failed', extractionId);
+      if (__DEV__) {
+        logger.error('Extract api failed', extractionId);
+      }
       return this.createApiErrorResult(apiResult, tweetInfo);
     } catch (error) {
-      logger.error('Extract failed', extractionId, error);
+      if (__DEV__) {
+        logger.error('Extract failed', extractionId, error);
+      }
       return this.createErrorResult(error);
     }
   }

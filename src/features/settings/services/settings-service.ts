@@ -281,7 +281,9 @@ export class SettingsService implements SettingsServiceContract {
       });
       await this.persist();
     } catch (error) {
-      logger.error('Settings import failed:', error);
+      if (__DEV__) {
+        logger.error('Settings import failed:', error);
+      }
       throw error;
     }
   }
@@ -318,7 +320,9 @@ export class SettingsService implements SettingsServiceContract {
       try {
         listener(event);
       } catch (error) {
-        logger.error('Settings listener error:', error);
+        if (__DEV__) {
+          logger.error('Settings listener error:', error);
+        }
       }
     });
   }
