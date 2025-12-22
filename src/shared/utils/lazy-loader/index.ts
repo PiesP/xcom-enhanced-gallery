@@ -160,7 +160,3 @@ export function preloadAll(loaders: ReadonlyArray<LazyLoader<unknown>>): void {
     loader.preload();
   }
 }
-
-export async function loadAll<T>(loaders: ReadonlyArray<LazyLoader<T>>): Promise<T[]> {
-  return Promise.all(loaders.map((loader) => loader.load()));
-}

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unified application error reporter
+ * @fileoverview Unified application error reporter (optimized for bundle size)
  * @description Centralizes error handling patterns across the application.
  *
  * Phase: Refactoring - Error handling consolidation
@@ -73,35 +73,33 @@ export interface ErrorReportResult {
   readonly severity: ErrorSeverity;
 }
 
+/**
+ * Context-bound reporter interface
+ */
+export interface ContextBoundReporter {
+  critical: (
+    error: unknown,
+    options?: Partial<Omit<ErrorReportOptions, 'context'>>
+  ) => ErrorReportResult;
+  error: (
+    error: unknown,
+    options?: Partial<Omit<ErrorReportOptions, 'context'>>
+  ) => ErrorReportResult;
+  warn: (
+    error: unknown,
+    options?: Partial<Omit<ErrorReportOptions, 'context'>>
+  ) => ErrorReportResult;
+  info: (
+    error: unknown,
+    options?: Partial<Omit<ErrorReportOptions, 'context'>>
+  ) => ErrorReportResult;
+}
+
 // ============================================================================
 // Constants
 // ============================================================================
 
 const DEFAULT_SEVERITY: ErrorSeverity = 'error';
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-// Re-exported at bottom to preserve the existing public API surface.
-
-/**
- * Extract stack trace from error if available
- */
-function extractStackTrace(error: unknown): string | undefined {
-  if (error instanceof Error && error.stack) {
-    return error.stack;
-  }
-  return undefined;
-}
-
-/**
- * Format context tag for log messages
- */
-function formatContextTag(context: ErrorContext, code?: string): string {
-  const base = `[${context.charAt(0).toUpperCase()}${context.slice(1)}]`;
-  return code ? `${base}[${code}]` : base;
-}
 
 // ============================================================================
 // AppErrorReporter Class
@@ -160,43 +158,31 @@ export class AppErrorReporter {
   public static report(error: unknown, options: ErrorReportOptions): ErrorReportResult {
     const severity = options.severity ?? DEFAULT_SEVERITY;
     const message = normalizeErrorMessage(error);
-    const tag = formatContextTag(options.context, options.code);
 
-    // Bundle-size note:
-    // - Keep direct logger method calls so the production cleanup pass can strip warn/info.
-    // - Avoid building payload objects outside removed logger calls.
-    if (severity === 'info') {
-      logger.info(
-        `${tag} ${message}`,
-        options.metadata
-          ? { context: options.context, severity, metadata: options.metadata }
-          : { context: options.context, severity }
-      );
-    } else if (severity === 'warning') {
-      logger.warn(
-        `${tag} ${message}`,
-        options.metadata
-          ? { context: options.context, severity, metadata: options.metadata }
-          : { context: options.context, severity }
-      );
-    } else {
-      const logPayload: Record<string, unknown> = {
-        context: options.context,
-        severity,
-      };
+    // Production bundle-size note:
+    // - Keep payload keys short because minification is disabled.
+    // - Avoid tag-building / string formatting helpers.
+    const payload: Record<string, unknown> = {
+      c: options.context,
+      s: severity,
+    };
 
-      if (options.metadata) {
-        logPayload.metadata = options.metadata;
+    if (options.code) {
+      payload.cd = options.code;
+    }
+
+    if (options.metadata) {
+      payload.m = options.metadata;
+    }
+
+    if (__DEV__) {
+      if (severity === 'info') {
+        logger.info(message, payload);
+      } else if (severity === 'warning') {
+        logger.warn(message, payload);
+      } else {
+        logger.error(message, payload);
       }
-
-      if (__DEV__) {
-        const stack = extractStackTrace(error);
-        if (stack) {
-          logPayload.stack = stack;
-        }
-      }
-
-      logger.error(`${tag} ${message}`, logPayload);
     }
 
     // Show notification if requested
@@ -255,13 +241,10 @@ export class AppErrorReporter {
     return {
       critical: (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) =>
         AppErrorReporter.report(error, { ...options, context, severity: 'critical' }),
-
       error: (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) =>
         AppErrorReporter.report(error, { ...options, context, severity: 'error' }),
-
       warn: (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) =>
         AppErrorReporter.report(error, { ...options, context, severity: 'warning' }),
-
       info: (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) =>
         AppErrorReporter.report(error, { ...options, context, severity: 'info' }),
     };
@@ -270,28 +253,6 @@ export class AppErrorReporter {
 
 // Preserve the existing named export for downstream imports.
 export { normalizeErrorMessage };
-
-/**
- * Context-bound reporter interface
- */
-export interface ContextBoundReporter {
-  critical: (
-    error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>
-  ) => ErrorReportResult;
-  error: (
-    error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>
-  ) => ErrorReportResult;
-  warn: (
-    error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>
-  ) => ErrorReportResult;
-  info: (
-    error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>
-  ) => ErrorReportResult;
-}
 
 // ============================================================================
 // Convenience Exports

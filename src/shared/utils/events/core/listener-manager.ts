@@ -198,15 +198,24 @@ export function getEventListenerStatus() {
 
 /** @internal Check if listener exists */
 export function __testHasListener(id: string): boolean {
+  if (!__DEV__) {
+    return false;
+  }
   return listeners.has(id);
 }
 
 /** @internal Get listener context */
 export function __testGetListener(id: string): DOMListenerContext | undefined {
+  if (!__DEV__) {
+    return undefined;
+  }
   return listeners.get(id);
 }
 
 /** @internal Unregister without DOM removal */
 export function __testRegistryUnregister(id: string): boolean {
+  if (!__DEV__) {
+    return false;
+  }
   return listeners.delete(id);
 }
