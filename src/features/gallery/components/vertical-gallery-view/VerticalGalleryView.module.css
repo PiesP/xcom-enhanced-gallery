@@ -52,19 +52,6 @@
  * - CSS Nesting: Improved code readability (via PostCSS)
  */
 
-/**
- * Vertical Gallery Container: Outer container with size containment
- */
-.xegVerticalGalleryContainer {
-  container-type: size;
-  container-name: vertical-gallery;
-
-  /* CSS Containment for performance optimization */
-  contain: layout style paint;
-  content-visibility: auto;
-  contain-intrinsic-size: 100vw 100vh;
-}
-
 /* CSS Cascade Layer declarations remain for other rules */
 
 @layer xeg.components {

@@ -105,8 +105,6 @@ export interface TweetMediaEntry {
   type: 'photo' | 'video';
   typeOriginal: 'photo' | 'video' | 'animated_gif';
   index: number;
-  typeIndex: number;
-  typeIndexOriginal: number;
   preview_url: string;
   media_id: string;
   media_key: string;

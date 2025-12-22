@@ -8,10 +8,6 @@ import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/medi
 import { escapeRegExp } from '@shared/utils/text/formatting';
 import { tryParseUrl } from '@shared/utils/url/host';
 
-interface TypeIndexCounter {
-  [mediaType: string]: number;
-}
-
 interface MediaDimensions {
   width?: number;
   height?: number;
@@ -172,8 +168,6 @@ function createMediaEntry(
   tweetId: string,
   tweetText: string,
   index: number,
-  typeIndex: number,
-  typeIndexOriginal: number,
   sourceLocation: 'original' | 'quoted'
 ): TweetMediaEntry {
   const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
@@ -187,8 +181,6 @@ function createMediaEntry(
     type: mediaType as 'photo' | 'video',
     typeOriginal: media.type as 'photo' | 'video' | 'animated_gif',
     index,
-    typeIndex,
-    typeIndexOriginal,
     preview_url: media.media_url_https,
     media_id: media.id_str,
     media_key: media.media_key ?? '',
@@ -228,7 +220,6 @@ export function extractMediaFromTweet(
   if (!parseTarget.extended_entities?.media) return [];
 
   const mediaItems: TweetMediaEntry[] = [];
-  const typeIndex: TypeIndexCounter = {};
 
   // Extract screen_name and tweet_id with safe fallbacks.
   const screenName = tweetUser.screen_name ?? '';
@@ -301,10 +292,6 @@ export function extractMediaFromTweet(
         continue;
       }
 
-      const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
-      typeIndex[mediaType] = (typeIndex[mediaType] ?? -1) + 1;
-      typeIndex[media.type] = typeIndex[media.type] ?? typeIndex[mediaType];
-
       const tweetText = normalizedTweetText;
 
       const entry = createMediaEntry(
@@ -314,8 +301,6 @@ export function extractMediaFromTweet(
         tweetId,
         tweetText,
         index,
-        typeIndex[mediaType] ?? 0,
-        typeIndex[media.type] ?? 0,
         sourceLocation
       );
 
