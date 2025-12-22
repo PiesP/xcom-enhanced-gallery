@@ -13,7 +13,7 @@
  * - Provide focus/blur event handling for accessibility
  *
  * **Architecture**:
- * - Uses SharedObserver for visibility detection
+ * - Media is rendered eagerly (no IntersectionObserver-gated lazy loading)
  * - Dimension calculation extracted to @shared/utils/media/media-dimensions
  * - Video visibility control extracted to useVideoVisibility hook
  *
@@ -31,7 +31,6 @@ import {
   createIntrinsicSizingStyle,
   resolveMediaDimensionsWithIntrinsicFlag,
 } from '@shared/utils/media/media-dimensions';
-import { SharedObserver } from '@shared/utils/performance/observer-pool';
 import { cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, onCleanup, splitProps, untrack } from 'solid-js';
 import { useVideoVisibility } from './hooks/useVideoVisibility';
@@ -88,7 +87,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   );
 
   const isFocused = createMemo(() => local.isFocused ?? false);
-  const forceVisible = createMemo(() => local.forceVisible ?? false);
   const className = createMemo(() => local.className ?? '');
 
   const translate = useTranslation();
@@ -108,7 +106,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   });
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
-  const [isVisible, setIsVisible] = createSignal(forceVisible());
 
   // Reset per-media load/error state when the item is reused with a different media.
   createEffect(() => {
@@ -320,43 +317,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     local.onImageContextMenu?.(event, local.media);
   };
 
-  // Sync forceVisible to isVisible
-  createEffect(() => {
-    if (forceVisible() && !isVisible()) {
-      setIsVisible(true);
-    }
-  });
-
-  createEffect(() => {
-    const container = containerRef();
-    if (!container || isVisible() || forceVisible()) {
-      return;
-    }
-
-    let unsubscribe: (() => void) | null = null;
-
-    const handleEntry = (entry: IntersectionObserverEntry) => {
-      if (entry.isIntersecting) {
-        setIsVisible(true);
-        unsubscribe?.();
-        unsubscribe = null;
-      }
-    };
-
-    unsubscribe = SharedObserver.observe(container, handleEntry, {
-      threshold: 0.1,
-      rootMargin: '100px',
-    });
-
-    onCleanup(() => {
-      unsubscribe?.();
-      unsubscribe = null;
-    });
-  });
-
   // Check if media is already loaded
   createEffect(() => {
-    if (!isVisible() || isLoaded()) {
+    if (isLoaded()) {
       return;
     }
 
@@ -445,55 +408,53 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       tabIndex={local.tabIndex ?? 0}
       data-testid={__DEV__ ? local['data-testid'] : undefined}
     >
-      {isVisible() && (
-        <div class={styles.imageWrapper} data-xeg-role="media-wrapper">
-          {!isLoaded() && !isError() && !isVideo() && (
-            <div class={styles.placeholder}>
-              <div class={cx('xeg-spinner', styles.loadingSpinner)} />
-            </div>
-          )}
+      <div class={styles.imageWrapper} data-xeg-role="media-wrapper">
+        {!isLoaded() && !isError() && !isVideo() && (
+          <div class={styles.placeholder}>
+            <div class={cx('xeg-spinner', styles.loadingSpinner)} />
+          </div>
+        )}
 
-          {isVideo() ? (
-            <video
-              src={local.media.url}
-              controls
-              ref={setVideoRef}
-              class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
-              onLoadedMetadata={handleMediaLoad}
-              onLoadedData={handleMediaLoad}
-              onCanPlay={handleMediaLoad}
-              onError={handleMediaError}
-              onContextMenu={handleContextMenu}
-              onDragStart={preventDragStart}
-              onVolumeChange={handleVolumeChange}
-            />
-          ) : (
-            <img
-              ref={setImageRef}
-              src={local.media.url}
-              alt={cleanFilename(local.media.filename)}
-              loading="lazy"
-              decoding="async"
-              class={cx(styles.image, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
-              onLoad={handleMediaLoad}
-              onError={handleMediaError}
-              onContextMenu={handleContextMenu}
-              onDragStart={preventDragStart}
-            />
-          )}
+        {isVideo() ? (
+          <video
+            src={local.media.url}
+            controls
+            ref={setVideoRef}
+            class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
+            onLoadedMetadata={handleMediaLoad}
+            onLoadedData={handleMediaLoad}
+            onCanPlay={handleMediaLoad}
+            onError={handleMediaError}
+            onContextMenu={handleContextMenu}
+            onDragStart={preventDragStart}
+            onVolumeChange={handleVolumeChange}
+          />
+        ) : (
+          <img
+            ref={setImageRef}
+            src={local.media.url}
+            alt={cleanFilename(local.media.filename)}
+            loading="eager"
+            decoding="async"
+            class={cx(styles.image, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
+            onLoad={handleMediaLoad}
+            onError={handleMediaError}
+            onContextMenu={handleContextMenu}
+            onDragStart={preventDragStart}
+          />
+        )}
 
-          {isError() && (
-            <div class={styles.error}>
-              <span class={styles.errorIcon}>⚠️</span>
-              <span class={styles.errorText}>
-                {translate('msg.gal.loadFail', {
-                  type: isVideo() ? 'video' : 'image',
-                })}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
+        {isError() && (
+          <div class={styles.error}>
+            <span class={styles.errorIcon}>⚠️</span>
+            <span class={styles.errorText}>
+              {translate('msg.gal.loadFail', {
+                type: isVideo() ? 'video' : 'image',
+              })}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
