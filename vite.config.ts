@@ -107,6 +107,10 @@ export default defineConfig(({ mode }): UserConfig => {
         ...(isProd
           ? [
               {
+                find: '@shared/logging',
+                replacement: resolve(root, 'src/shared/logging/index.slim.ts'),
+              },
+              {
                 find: '@shared/error/app-error-reporter',
                 replacement: resolve(root, 'src/shared/error/app-error-reporter.slim.ts'),
               },
