@@ -25,7 +25,7 @@ function safeClosest(element: Element, selector: string): Element | null {
   try {
     return element.closest(selector);
   } catch (error) {
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    if (__DEV__) {
       logger.debug('[dom/utils] element.closest failed (ignored)', { selector, error });
     }
     return null;
@@ -36,7 +36,7 @@ function safeMatches(element: Element, selector: string): boolean {
   try {
     return element.matches(selector);
   } catch (error) {
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    if (__DEV__) {
       logger.debug('[dom/utils] element.matches failed (ignored)', { selector, error });
     }
     return false;
@@ -120,7 +120,7 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
 export function isGalleryInternalElement(element: HTMLElement | null): boolean {
   if (!isHTMLElement(element)) return false;
   if (typeof element.matches !== 'function') {
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    if (__DEV__) {
       logger.warn('Invalid element: matches is not a function', element);
     }
     return false;
@@ -130,7 +130,7 @@ export function isGalleryInternalElement(element: HTMLElement | null): boolean {
     try {
       return element.matches(selector) || element.closest(selector) !== null;
     } catch (error) {
-      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      if (__DEV__) {
         logger.warn('Invalid selector:', selector, error);
       }
       return false;

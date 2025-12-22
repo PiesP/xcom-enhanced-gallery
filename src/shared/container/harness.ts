@@ -65,7 +65,7 @@ import { resetAllServiceInstances } from '@shared/services/singletons';
 export class TestHarness {
   /**
    * Core services initialization
-   * Dynamically imports and registers all core services (lazy loading).
+   * Registers all core services for tests.
    * Safe to call multiple times - idempotent operation.
    *
    * @async
@@ -73,9 +73,7 @@ export class TestHarness {
    * @throws Error if service registration fails
    *
    * **Side Effects**:
-   * - Imports service-initialization module
-   * - Registers all services with CoreService
-   * - May initialize external dependencies (DB, API clients)
+   * - Registers services with CoreService
    *
    * **Usage**: Call once per test suite or before each test
    */

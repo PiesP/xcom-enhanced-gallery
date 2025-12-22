@@ -85,7 +85,7 @@ function resolveCookieAPI(): CookieAPI | null {
     }
   } catch (error) {
     // Ignore: fall back to document.cookie-only mode
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    if (__DEV__) {
       logger.debug('[cookie-utils] Userscript cookie API resolution failed (ignored)', error);
     }
   }

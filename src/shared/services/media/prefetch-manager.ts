@@ -106,7 +106,7 @@ export class PrefetchManager {
         this.cache.delete(url);
       }
 
-      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      if (__DEV__) {
         logger.debug('[PrefetchManager] Prefetch failed (ignored)', {
           url,
           error: normalizeErrorMessage(error),

@@ -15,7 +15,7 @@ import { logger } from '@shared/logging';
  */
 export async function initializeEnvironment(): Promise<void> {
   // Solid.js is bundled via direct imports, no initialization needed
-  if (!import.meta.env.PROD) {
+  if (__DEV__) {
     logger.debug('[environment] ✅ Environment ready (Solid.js bundled)');
   }
 }

@@ -49,7 +49,7 @@ function tryGetFromCoreService<T>(key: string): T | null {
     }
   } catch (error) {
     // CoreService not available, use ES Module singleton
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    if (__DEV__) {
       logger.debug('[service-accessors] CoreService unavailable, using singleton fallback', {
         key,
         error,
@@ -123,13 +123,20 @@ export function getGalleryRenderer(): GalleryRenderer {
 // ============================================================================
 // Lazy-Loaded Service Getters
 // ============================================================================
-// These services are loaded on-demand to optimize initial bundle size.
+// These services are *initialized/registered* on-demand.
+//
+// Note:
+// - This project ships a single-file userscript bundle (IIFE).
+// - Runtime code-splitting / dynamic import() is intentionally unsupported.
+//
+// So "lazy" here refers to deferred instantiation/registration, not module loading.
 
 /**
- * Get download orchestrator (lazy-loaded).
+ * Get download orchestrator (lazily initialized).
  *
  * This accessor ensures the download service is registered before returning it.
- * Uses lazy loading pattern to reduce initial bundle size by ~15-20KB.
+ * This does not change the shipped bundle size (single-file output). It only
+ * defers work until the first time a download is requested.
  *
  * @returns Promise resolving to DownloadOrchestrator instance
  * @throws Error if download service registration fails
@@ -209,14 +216,14 @@ export function tryGetSettingsManager<T = unknown>(): T | null {
  * **Use Case**: Eager initialization for performance (optional)
  */
 export function warmupCriticalServices(): void {
-  if (typeof __DEV__ === 'undefined' || !__DEV__) {
+  if (!__DEV__) {
     return;
   }
   try {
     void getMediaService();
   } catch (error) {
     // noop: Only needed in browser environment
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    if (__DEV__) {
       logger.debug('[service-accessors] warmupCriticalServices failed (ignored)', error);
     }
   }
@@ -230,14 +237,14 @@ export function warmupCriticalServices(): void {
  * **Use Case**: Eager initialization for performance (optional)
  */
 export function warmupNonCriticalServices(): void {
-  if (typeof __DEV__ === 'undefined' || !__DEV__) {
+  if (!__DEV__) {
     return;
   }
   try {
     void getThemeService();
   } catch (error) {
     // noop
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    if (__DEV__) {
       logger.debug('[service-accessors] warmupNonCriticalServices failed (ignored)', error);
     }
   }

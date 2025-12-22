@@ -81,7 +81,7 @@ export function extractTweetTextHTMLFromClickedElement(
     depth++;
   }
 
-  if (typeof __DEV__ !== 'undefined' && __DEV__) {
+  if (__DEV__) {
     logger.debug('[tweet] no article in depth', { maxDepth });
   }
   return undefined;

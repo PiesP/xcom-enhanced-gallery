@@ -309,7 +309,11 @@ function setupGlobalEventHandlers(): void {
   tearDownGlobalEventHandlers();
 
   globalEventTeardown = wireGlobalEvents(() => {
-    cleanup().catch((error) => logger.error('Cleanup failed', error));
+    cleanup().catch((error) => {
+      if (__DEV__) {
+        logger.error('Cleanup failed', error);
+      }
+    });
   });
 }
 

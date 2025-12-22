@@ -97,7 +97,9 @@ export function getError(): string | null {
  */
 export function setViewMode(viewMode: ViewMode): void {
   uiSignals.viewMode.value = viewMode;
-  logger.debug(`[Gallery UI] View mode changed to: ${viewMode}`);
+  if (__DEV__) {
+    logger.debug(`[Gallery UI] View mode changed to: ${viewMode}`);
+  }
 }
 
 /**
@@ -114,7 +116,9 @@ export function setError(error: string | null): void {
   uiSignals.error.value = error;
   if (error) {
     uiSignals.isLoading.value = false;
-    logger.error(`[Gallery UI] Error: ${error}`);
+    if (__DEV__) {
+      logger.error(`[Gallery UI] Error: ${error}`);
+    }
   }
 }
 

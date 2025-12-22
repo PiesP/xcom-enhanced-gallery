@@ -82,12 +82,16 @@ export async function initializeGalleryEvents(
   optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement
 ): Promise<() => void> {
   if (lifecycleState.initialized) {
-    logger.warn('[GalleryLifecycle] Already initialized, re-initializing');
+    if (__DEV__) {
+      logger.warn('[GalleryLifecycle] Already initialized, re-initializing');
+    }
     cleanupGalleryEvents();
   }
 
   if (!handlers) {
-    logger.error('[GalleryLifecycle] Missing handlers');
+    if (__DEV__) {
+      logger.error('[GalleryLifecycle] Missing handlers');
+    }
     return () => {};
   }
 
@@ -133,7 +137,7 @@ export async function initializeGalleryEvents(
     eventTarget: target,
   };
 
-  if (finalOptions.debugMode) {
+  if (__DEV__ && finalOptions.debugMode) {
     logger.debug('[GalleryEvents] Event listeners registered', {
       context: listenerContext,
     });

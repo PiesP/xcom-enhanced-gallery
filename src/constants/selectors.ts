@@ -75,7 +75,7 @@ export const STABLE_MEDIA_PLAYERS_SELECTORS = ['[data-testid="videoPlayer"]', 'v
 const warnedInvalidSelectors: Record<string, true> = Object.create(null);
 
 function warnInvalidSelectorOnce(selector: string, error: unknown): void {
-  if (typeof __DEV__ === 'undefined' || !__DEV__) {
+  if (!__DEV__) {
     return;
   }
 
