@@ -20,7 +20,7 @@ export interface SettingsControlsProps {
   onThemeChange: (event: Event) => void;
   onLanguageChange: (event: Event) => void;
   compact?: boolean;
-  'data-testid'?: string;
+  'data-testid'?: string | undefined;
 }
 export function SettingsControls(props: SettingsControlsProps): JSXElement {
   const languageService = getLanguageService();

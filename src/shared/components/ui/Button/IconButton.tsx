@@ -22,9 +22,9 @@ export interface IconButtonProps {
 
   readonly 'aria-label'?: string;
   readonly 'aria-controls'?: string;
-  readonly 'aria-expanded'?: string;
-  readonly 'aria-pressed'?: boolean;
-  readonly 'aria-busy'?: boolean;
+  readonly 'aria-expanded'?: boolean | 'true' | 'false';
+  readonly 'aria-pressed'?: boolean | 'true' | 'false';
+  readonly 'aria-busy'?: boolean | 'true' | 'false';
 
   readonly tabIndex?: number;
   readonly ref?: (element: HTMLButtonElement) => void;

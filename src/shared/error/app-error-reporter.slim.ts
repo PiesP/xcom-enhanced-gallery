@@ -66,9 +66,6 @@ export class AppErrorReporter {
     const severity = options.severity ?? DEFAULT_SEVERITY;
     const message = normalizeErrorMessage(error);
 
-    // Production bundle-size note:
-    // - Keep payload keys short because minification is disabled.
-    // - Avoid tag-building / string formatting helpers.
     const payload: Record<string, unknown> = {
       c: options.context,
       s: severity,

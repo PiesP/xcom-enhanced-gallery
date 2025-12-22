@@ -1,6 +1,4 @@
-/**
- * @fileoverview Shared media utility functions for dimension extraction, URL normalization, and sorting.
- */
+/** Media utilities: dimensions, URL normalization, sorting */
 
 import type { JSX } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
@@ -16,7 +14,6 @@ export interface DimensionPair {
 
 export interface ResolvedMediaDimensions {
   readonly dimensions: DimensionPair;
-  /** True when dimensions were derived from media data (not the DEFAULT_DIMENSIONS fallback). */
   readonly hasIntrinsicSize: boolean;
 }
 
@@ -33,8 +30,6 @@ function extractFilenameFromUrl(url: string): string | null {
   const trimmed = url.trim();
   if (!trimmed) return null;
 
-  // Avoid treating arbitrary strings (e.g. "not-a-url") as relative URLs.
-  // We only support absolute URLs, protocol-relative URLs, and path-like inputs.
   if (
     !trimmed.startsWith('http://') &&
     !trimmed.startsWith('https://') &&
@@ -70,9 +65,6 @@ function getMediaDedupKey(media: MediaInfo): string | null {
       ? `${media.type}:`
       : '';
 
-  // Prefer a host+path based key to avoid collisions when different assets share the same filename.
-  // For X/Twitter media URLs, the `name` query parameter commonly represents a size variant.
-  // We intentionally ignore `name` so the same media doesn't appear multiple times.
   const parsed = tryParseUrl(urlCandidate, 'https://example.invalid');
   if (parsed) {
     const host = parsed.hostname;
@@ -85,18 +77,10 @@ function getMediaDedupKey(media: MediaInfo): string | null {
     }
   }
 
-  // Fallback: last path segment or full URL.
   const filename = extractFilenameFromUrl(urlCandidate);
   return filename ? `${typePrefix}${filename}` : `${typePrefix}${urlCandidate}`;
 }
 
-/**
- * Generic deduplication function
- * @template T - Array element type
- * @param items - Array to deduplicate (readonly, null/undefined safe)
- * @param keyExtractor - Function to extract unique key from each item
- * @returns Deduplicated array (original order preserved)
- */
 function removeDuplicates<T>(
   items: ReadonlyArray<T | null | undefined>,
   keyExtractor: (item: T) => string | null | undefined
@@ -128,11 +112,7 @@ function removeDuplicates<T>(
   return uniqueItems;
 }
 
-/**
- * Deduplicate media items based on URL
- * @param mediaItems - Array of media items to deduplicate
- * @returns Deduplicated array of media items
- */
+/** Deduplicate media items by URL */
 export function removeDuplicateMediaItems(
   mediaItems: ReadonlyArray<MediaInfo | undefined>
 ): MediaInfo[] {
@@ -157,20 +137,14 @@ export function removeDuplicateMediaItems(
   return result;
 }
 
-/**
- * Extract visual index from expanded_url
- * Parses Twitter URL to find visual position in media grid.
- */
-export function extractVisualIndexFromUrl(url: string): number {
+function extractVisualIndexFromUrl(url: string): number {
   if (!url) return 0;
   const match = url.match(/\/(photo|video)\/(\d+)(?:[?#].*)?$/);
   const visualNumber = match?.[2] ? Number.parseInt(match[2], 10) : NaN;
   return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
 }
 
-/**
- * Sort media by visual display order
- */
+/** Sort media by visual display order */
 export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMediaEntry[] {
   if (mediaItems.length <= 1) return mediaItems;
 
@@ -187,12 +161,9 @@ export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMedi
   }));
 }
 
-/**
- * Extract Dimensions from URL - Parse WxH Pattern
- */
+/** Extract dimensions from URL (WxH pattern) */
 export function extractDimensionsFromUrl(url: string): { width: number; height: number } | null {
   if (!url) return null;
-  // Match patterns like /640x480/ or /640x480.jpg or /640x480 at end of path
   const match = url.match(/\/(\d{2,6})x(\d{2,6})(?:\/|\.|$)/);
   if (!match) return null;
 
@@ -206,9 +177,7 @@ export function extractDimensionsFromUrl(url: string): { width: number; height: 
   return { width, height };
 }
 
-/**
- * Normalize Dimension - Type-Safe Number Parsing
- */
+/** Normalize dimension value with type safety */
 export function normalizeDimension(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
     return Math.round(value);
@@ -222,18 +191,13 @@ export function normalizeDimension(value: unknown): number | null {
   return null;
 }
 
-/**
- * Normalize Media URL for Comparison
- * Extracts pure filename (removes query strings, fragments)
- */
+/** Normalize media URL for comparison */
 export function normalizeMediaUrl(url: string): string | null {
   if (!url) return null;
 
   const trimmed = url.trim();
   if (!trimmed) return null;
 
-  // Avoid treating arbitrary strings (e.g. "not-a-url") as relative URLs.
-  // We only support absolute URLs, protocol-relative URLs, and path-like inputs.
   if (
     !trimmed.startsWith('http://') &&
     !trimmed.startsWith('https://') &&
@@ -355,12 +319,7 @@ function deriveDimensionsFromMediaUrls(media: MediaInfo): DimensionPair | null {
   return null;
 }
 
-/**
- * Resolve media dimensions and also indicate whether a real intrinsic size was found.
- *
- * This is useful for CLS mitigation where CSS rules should only activate when the
- * derived dimensions are trusted (i.e., not the DEFAULT_DIMENSIONS fallback).
- */
+/** Resolve media dimensions with intrinsic size flag */
 export function resolveMediaDimensionsWithIntrinsicFlag(
   media: MediaInfo | undefined
 ): ResolvedMediaDimensions {
@@ -389,11 +348,7 @@ export function resolveMediaDimensionsWithIntrinsicFlag(
   return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
 }
 
-/**
- * Resolve media dimensions (legacy API).
- *
- * Prefer `resolveMediaDimensionsWithIntrinsicFlag()` for new callers.
- */
+/** Resolve media dimensions (legacy) */
 export function resolveMediaDimensions(media: MediaInfo | undefined): DimensionPair {
   return resolveMediaDimensionsWithIntrinsicFlag(media).dimensions;
 }
@@ -412,16 +367,7 @@ export function createIntrinsicSizingStyle(dimensions: DimensionPair): JSX.CSSPr
   };
 }
 
-/**
- * Adjust clicked index after deduplication
- *
- * Finds the new index of the clicked item in the deduplicated list.
- *
- * @param originalItems - The original list of media items
- * @param uniqueItems - The deduplicated list of media items
- * @param originalClickedIndex - The index of the clicked item in the original list
- * @returns The index of the clicked item in the uniqueItems list, or 0 if not found
- */
+/** Adjust clicked index after deduplication */
 export function adjustClickedIndexAfterDeduplication(
   originalItems: MediaInfo[],
   uniqueItems: MediaInfo[],
@@ -429,7 +375,6 @@ export function adjustClickedIndexAfterDeduplication(
 ): number {
   if (uniqueItems.length === 0) return 0;
 
-  // Normalize original index using shared clamp utility
   const safeOriginalIndex = clampIndex(originalClickedIndex, originalItems.length);
   const clickedItem = originalItems[safeOriginalIndex];
 
