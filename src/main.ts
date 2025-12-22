@@ -140,7 +140,7 @@ async function runOptionalCleanup(
  * - Developer tooling runs only in __DEV__ mode and not in tests
  * - Gallery initialization is skipped in test mode
  */
-const bootstrapStages: readonly BootstrapStage[] = __DEV__
+const devBootstrapStages: readonly BootstrapStage[] | null = __DEV__
   ? [
       {
         label: 'Global styles',
@@ -190,53 +190,34 @@ const bootstrapStages: readonly BootstrapStage[] = __DEV__
         optional: true,
       },
     ]
-  : [
-      // Production does not need explicit stages for global styles or dev tooling.
-      // Keep labels short to avoid shipping verbose strings in a non-minified bundle.
-      {
-        label: '1',
-        run: initializeInfrastructure,
-      },
-      {
-        label: '2',
-        run: initializeCriticalSystems,
-      },
-      {
-        label: '3',
-        run: initializeBaseServicesStage,
-        optional: true,
-      },
-      {
-        label: '4',
-        run: applyInitialThemeSetting,
-        optional: true,
-      },
-      {
-        label: '5',
-        run: () => setupGlobalEventHandlers(),
-      },
-      {
-        label: '6',
-        run: initializeGalleryIfPermitted,
-      },
-      {
-        label: '7',
-        run: () => initializeNonCriticalSystems(),
-        optional: true,
-      },
-    ];
+  : null;
 
 // exported runBootstrapStages below
 async function runBootstrapStages(): Promise<void> {
-  const results = await executeStages(bootstrapStages, { stopOnFailure: true });
-  const failedStage = results.find((r) => !r.success && !r.optional);
-  if (failedStage) {
-    if (__DEV__) {
+  // Keep the stage runner dev-only to avoid shipping the generic executor and
+  // its verbose strings/objects in the production (non-minified) userscript.
+  if (__DEV__) {
+    const stages = devBootstrapStages ?? [];
+    const results = await executeStages(stages, { stopOnFailure: true });
+    const failedStage = results.find((r) => !r.success && !r.optional);
+    if (failedStage) {
       throw failedStage.error ?? new Error(`Bootstrap stage failed: ${failedStage.label}`);
     }
-
-    throw failedStage.error ?? new Error('Bootstrap failed');
+    return;
   }
+
+  // Production: minimal sequential bootstrap.
+  await initializeInfrastructure();
+  await initializeCriticalSystems();
+  try {
+    await initializeBaseServicesStage();
+  } catch {
+    // Optional in production.
+  }
+  await applyInitialThemeSetting();
+  setupGlobalEventHandlers();
+  await initializeGalleryIfPermitted();
+  initializeNonCriticalSystems();
 }
 
 // Lean mode: requestIdleCallback scheduling removed

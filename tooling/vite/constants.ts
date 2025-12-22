@@ -42,7 +42,6 @@ export const USERSCRIPT_CONFIG = {
     'GM_notification',
     'GM_xmlhttpRequest',
     'GM_cookie',
-    'GM_addStyle',
   ],
   connect: ['pbs.twimg.com', 'video.twimg.com', 'api.twitter.com'],
   runAt: 'document-idle' as const,

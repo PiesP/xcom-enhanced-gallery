@@ -10,7 +10,6 @@ export {
   resolveGMAPIs,
   resolveGMDownload,
   type UserscriptAPI,
-  type UserscriptManager,
 } from '@shared/external/userscript/adapter';
 export {
   detectEnvironment,

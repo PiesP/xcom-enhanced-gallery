@@ -7,9 +7,6 @@
  * @version 4.0.0 - Functional refactor from StyleRegistry class
  */
 
-import { getUserscript } from '@shared/external/userscript';
-import { logger } from '@shared/logging';
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -66,17 +63,15 @@ function getExistingElement(id: string): HTMLStyleElement | null {
 
 /**
  * Register a style with the given options.
- * Uses GM_addStyle when available, falls back to document.createElement.
+ * Injects a <style> element into the document.
  */
 export function registerStyle(options: StyleRegistrationOptions): RegistrationResult | null {
   if (!isBrowserEnvironment()) {
-    logger.warn('[StyleRegistry] Unable to register style outside browser environment', options.id);
     return null;
   }
 
   const trimmedCss = options.cssText.trim();
   if (!trimmedCss) {
-    logger.warn('[StyleRegistry] Ignoring empty style registration', options.id);
     return null;
   }
 
@@ -90,17 +85,9 @@ export function registerStyle(options: StyleRegistrationOptions): RegistrationRe
     return { id: options.id, element: existing, replaced: false };
   }
 
-  let styleElement: HTMLStyleElement;
-
-  try {
-    // Use GM_addStyle when available
-    styleElement = getUserscript().addStyle(trimmedCss);
-  } catch {
-    // Fallback for non-GM environments
-    styleElement = document.createElement('style');
-    styleElement.textContent = trimmedCss;
-    (document.head || document.documentElement).appendChild(styleElement);
-  }
+  const styleElement = document.createElement('style');
+  styleElement.textContent = trimmedCss;
+  (document.head || document.documentElement).appendChild(styleElement);
 
   styleElement.id = options.id;
 
@@ -113,7 +100,6 @@ export function registerStyle(options: StyleRegistrationOptions): RegistrationRe
 
   styleMap.set(options.id, styleElement);
 
-  logger.debug('[StyleRegistry] Registered style', options.id);
   return { id: options.id, element: styleElement, replaced: false };
 }
 
@@ -128,7 +114,6 @@ export function removeStyle(id: string): void {
 
   element.remove();
   styleMap.delete(id);
-  logger.debug('[StyleRegistry] Removed style', id);
 }
 
 /**
