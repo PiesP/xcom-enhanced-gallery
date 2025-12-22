@@ -42,10 +42,38 @@ export function collectUsedUserscriptGrants(code: string, candidates: readonly s
   const used: string[] = [];
 
   for (const grant of candidates) {
-    const escaped = grant.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escaped = grant.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
     const regex = new RegExp(`\\b${escaped}\\b`);
     if (regex.test(code)) {
       used.push(grant);
+    }
+  }
+
+  return used;
+}
+
+/**
+ * Detect `connect` hostnames used in the final bundle.
+ *
+ * Conservative heuristic: if the host string appears anywhere in the
+ * bundle (including strings, URLs, or inline literals), keep it.
+ * False positives are acceptable; false negatives would be problematic,
+ * so we err on the side of keeping the default list when nothing matches.
+ */
+export function collectUsedUserscriptConnects(
+  code: string,
+  candidates: readonly string[]
+): string[] {
+  const used: string[] = [];
+
+  if (!code) return used;
+
+  for (const host of candidates) {
+    if (!host) continue;
+    // Simple substring-based check is intentionally conservative and
+    // robust against minification/hashing that keeps literal hostnames.
+    if (code.includes(host)) {
+      used.push(host);
     }
   }
 
@@ -152,6 +180,7 @@ export function generateUserscriptHeader(args: {
   version: string;
   isDev: boolean;
   grantOverride?: readonly string[];
+  connectOverride?: readonly string[];
 }): string {
   const fileName = args.isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
   const metaFileName = OUTPUT_FILE_NAMES.meta;
@@ -164,6 +193,7 @@ export function generateUserscriptHeader(args: {
     version: args.version,
     homepageURL: USERSCRIPT_CONFIG.homepageURL,
     grant: args.grantOverride ?? USERSCRIPT_CONFIG.grant,
+    connect: args.connectOverride ?? USERSCRIPT_CONFIG.connect,
     downloadURL: `${CDN_BASE_URL}/${fileName}`,
     updateURL: `${CDN_BASE_URL}/${metaFileName}`,
     compatible: USERSCRIPT_CONFIG.compatible,

@@ -1,7 +1,11 @@
 import type { Plugin } from 'vite';
 import { getBuildModeConfig } from '../build-mode';
 import { USERSCRIPT_CONFIG } from '../constants';
-import { collectUsedUserscriptGrants, generateUserscriptHeader } from '../userscript/metadata';
+import {
+  collectUsedUserscriptConnects,
+  collectUsedUserscriptGrants,
+  generateUserscriptHeader,
+} from '../userscript/metadata';
 import { resolveVersion } from '../version';
 
 export function userscriptHeaderPlugin(mode: string): Plugin {
@@ -13,6 +17,12 @@ export function userscriptHeaderPlugin(mode: string): Plugin {
     autoGrantRaw === '1' || autoGrantRaw?.toLowerCase?.() === 'true' || autoGrantRaw === 'on';
   const autoGrantReportOnly = autoGrantRaw?.toLowerCase?.() === 'report';
 
+  // Auto-detect `@connect` hosts similarly to how grants are auto-detected.
+  const autoConnectRaw = process.env.XEG_BUILD_AUTO_CONNECT;
+  const autoConnectEnabled =
+    autoConnectRaw === '1' || autoConnectRaw?.toLowerCase?.() === 'true' || autoConnectRaw === 'on';
+  const autoConnectReportOnly = autoConnectRaw?.toLowerCase?.() === 'report';
+
   return {
     name: 'userscript-header',
     apply: 'build',
@@ -20,6 +30,7 @@ export function userscriptHeaderPlugin(mode: string): Plugin {
 
     generateBundle(_options, bundle) {
       let grantOverride: readonly string[] | undefined;
+      let connectOverride: readonly string[] | undefined;
 
       if (autoGrantEnabled || autoGrantReportOnly) {
         for (const chunk of Object.values(bundle)) {
@@ -43,10 +54,37 @@ export function userscriptHeaderPlugin(mode: string): Plugin {
         }
       }
 
+      if (autoConnectEnabled || autoConnectReportOnly) {
+        for (const chunk of Object.values(bundle)) {
+          if (chunk.type === 'chunk' && chunk.isEntry) {
+            const usedConnects = collectUsedUserscriptConnects(
+              chunk.code,
+              USERSCRIPT_CONFIG.connect
+            );
+            const finalConnects =
+              usedConnects.length > 0 ? usedConnects : [...USERSCRIPT_CONFIG.connect];
+
+            if (autoConnectReportOnly || isDev) {
+              console.log(
+                `[userscript] Auto-connect ${autoConnectReportOnly ? 'report' : 'enabled'}:`,
+                finalConnects
+              );
+            }
+
+            if (autoConnectEnabled) {
+              connectOverride = finalConnects;
+            }
+
+            break;
+          }
+        }
+      }
+
       const header = generateUserscriptHeader({
         version,
         isDev,
         ...(grantOverride === undefined ? {} : { grantOverride }),
+        ...(connectOverride === undefined ? {} : { connectOverride }),
       });
 
       for (const chunk of Object.values(bundle)) {
