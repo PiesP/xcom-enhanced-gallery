@@ -93,7 +93,7 @@ export class DOMEventManager {
 
     // Check if already aborted
     if (signal?.aborted) {
-      logger.debug(`[DOMEventManager] Skipping aborted listener: ${type}`);
+      __DEV__ && logger.debug(`[DOMEventManager] Skipping aborted listener: ${type}`);
       return id;
     }
 
@@ -102,7 +102,8 @@ export class DOMEventManager {
       !element ||
       typeof (element as unknown as { addEventListener?: unknown }).addEventListener !== 'function'
     ) {
-      logger.warn('[DOMEventManager] Invalid element for DOM listener', { type, context });
+      __DEV__ &&
+        logger.warn('[DOMEventManager] Invalid element for DOM listener', { type, context });
       return id;
     }
 
@@ -115,7 +116,8 @@ export class DOMEventManager {
       );
 
       if (!managedId) {
-        logger.debug(`[DOMEventManager] Skipping destroyed listener registration: ${type}`);
+        __DEV__ &&
+          logger.debug(`[DOMEventManager] Skipping destroyed listener registration: ${type}`);
         return id;
       }
 
@@ -133,7 +135,7 @@ export class DOMEventManager {
           try {
             eventManager.removeListener(managedId);
           } catch (error) {
-            logger.warn(`[DOMEventManager] Failed to remove listener: ${type}`, error);
+            __DEV__ && logger.warn(`[DOMEventManager] Failed to remove listener: ${type}`, error);
           }
 
           abortCleanup?.();
@@ -149,7 +151,7 @@ export class DOMEventManager {
         abortCleanup = wireAbortSignal(signal, () => this.subscriptionManager.remove(id)).cleanup;
       }
 
-      logger.debug(`[DOMEventManager] DOM listener added: ${type} (${id})`, { context });
+      __DEV__ && logger.debug(`[DOMEventManager] DOM listener added: ${type} (${id})`, { context });
       return id;
     } catch (error) {
       logger.error(`[DOMEventManager] Failed to add listener: ${type}`, error);

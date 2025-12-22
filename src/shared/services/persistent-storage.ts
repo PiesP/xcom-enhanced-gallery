@@ -88,7 +88,8 @@ export class PersistentStorage {
       // Guard: JSON.stringify(undefined) returns undefined, which can break storage adapters.
       // Treat undefined (and other non-serializable payloads) as an explicit delete.
       if (value === undefined) {
-        logger.warn(`PersistentStorage.setJson received undefined for "${key}", deleting key`);
+        __DEV__ &&
+          logger.warn(`PersistentStorage.setJson received undefined for "${key}", deleting key`);
         await this.userscript.deleteValue(key);
         return;
       }
@@ -96,9 +97,10 @@ export class PersistentStorage {
       const serialized = JSON.stringify(value);
 
       if (serialized === undefined) {
-        logger.warn(
-          `PersistentStorage.setJson received a non-serializable value for "${key}", deleting key`
-        );
+        __DEV__ &&
+          logger.warn(
+            `PersistentStorage.setJson received a non-serializable value for "${key}", deleting key`
+          );
         await this.userscript.deleteValue(key);
         return;
       }
@@ -118,7 +120,8 @@ export class PersistentStorage {
       // Guard: JSON.stringify(undefined) returns undefined, which can break storage adapters.
       // Treat undefined (and other non-serializable payloads) as an explicit delete.
       if (value === undefined) {
-        logger.warn(`PersistentStorage.set received undefined for "${key}", deleting key`);
+        __DEV__ &&
+          logger.warn(`PersistentStorage.set received undefined for "${key}", deleting key`);
         await this.userscript.deleteValue(key);
         return;
       }
@@ -126,9 +129,10 @@ export class PersistentStorage {
       const serialized = this.serializeValueForStorage(value);
 
       if (serialized === undefined) {
-        logger.warn(
-          `PersistentStorage.set received a non-serializable value for "${key}", deleting key`
-        );
+        __DEV__ &&
+          logger.warn(
+            `PersistentStorage.set received a non-serializable value for "${key}", deleting key`
+          );
         await this.userscript.deleteValue(key);
         return;
       }
@@ -179,7 +183,7 @@ export class PersistentStorage {
       await this.userscript.deleteValue(key);
     } catch (error) {
       // Best-effort: do not throw from get().
-      logger.warn(`PersistentStorage.get failed to self-heal key "${key}"`, error);
+      __DEV__ && logger.warn(`PersistentStorage.get failed to self-heal key "${key}"`, error);
     }
   }
 

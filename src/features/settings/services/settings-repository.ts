@@ -28,7 +28,8 @@ export class PersistentSettingsRepository implements SettingsRepository {
         try {
           await this.persist(defaults);
         } catch (persistError) {
-          logger.warn('[SettingsRepository] persist defaults failed (ignored)', persistError);
+          __DEV__ &&
+            logger.warn('[SettingsRepository] persist defaults failed (ignored)', persistError);
         }
         return cloneDeep(defaults);
       }
@@ -39,20 +40,22 @@ export class PersistentSettingsRepository implements SettingsRepository {
         try {
           await this.persist(migrated);
         } catch (persistError) {
-          logger.warn(
-            '[SettingsRepository] persist migrated settings failed (ignored)',
-            persistError
-          );
+          __DEV__ &&
+            logger.warn(
+              '[SettingsRepository] persist migrated settings failed (ignored)',
+              persistError
+            );
         }
       }
       return cloneDeep(migrated);
     } catch (error) {
-      logger.warn('[SettingsRepository] load failed, falling back to defaults', error);
+      __DEV__ && logger.warn('[SettingsRepository] load failed, falling back to defaults', error);
       const defaults = createDefaultSettings();
       try {
         await this.persist(defaults);
       } catch (persistError) {
-        logger.warn('[SettingsRepository] persist defaults failed (ignored)', persistError);
+        __DEV__ &&
+          logger.warn('[SettingsRepository] persist defaults failed (ignored)', persistError);
       }
       return cloneDeep(defaults);
     }

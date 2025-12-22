@@ -44,12 +44,12 @@ export class GalleryApp {
   private ambientVideoGuardHandle: { dispose: () => void } | null = null;
 
   constructor() {
-    logger.info('[GalleryApp] Constructor called');
+    __DEV__ && logger.info('[GalleryApp] Constructor called');
   }
 
   public async initialize(): Promise<void> {
     try {
-      logger.info('[GalleryApp] Initialization started');
+      __DEV__ && logger.info('[GalleryApp] Initialization started');
 
       this.galleryRenderer = getGalleryRenderer();
       this.galleryRenderer?.setOnCloseCallback(() => this.closeGallery());
@@ -58,7 +58,7 @@ export class GalleryApp {
       this.ambientVideoGuardHandle = this.ambientVideoGuardHandle ?? withAmbientVideoGuard();
 
       this.isInitialized = true;
-      logger.info('[GalleryApp] ✅ Initialization complete');
+      __DEV__ && logger.info('[GalleryApp] ✅ Initialization complete');
     } catch (error) {
       galleryErrorReporter.critical(error, {
         code: 'GALLERY_APP_INIT_FAILED',
@@ -90,7 +90,7 @@ export class GalleryApp {
         }
       );
 
-      logger.info('[GalleryApp] ✅ Event handlers setup complete');
+      __DEV__ && logger.info('[GalleryApp] ✅ Event handlers setup complete');
     } catch (error) {
       galleryErrorReporter.critical(error, {
         code: 'EVENT_HANDLERS_SETUP_FAILED',
@@ -132,7 +132,7 @@ export class GalleryApp {
     options: GalleryOpenOptions = {}
   ): Promise<void> {
     if (!this.isInitialized) {
-      logger.warn('[GalleryApp] Gallery not initialized.');
+      __DEV__ && logger.warn('[GalleryApp] Gallery not initialized.');
       this.notificationService.error('Gallery unavailable', 'Userscript manager required.');
       return;
     }
@@ -151,7 +151,7 @@ export class GalleryApp {
       try {
         pauseAmbientVideosForGallery(pauseContext);
       } catch (error) {
-        logger.warn('[GalleryApp] Ambient video coordinator failed', error);
+        __DEV__ && logger.warn('[GalleryApp] Ambient video coordinator failed', error);
       }
 
       openGallery(mediaItems, validIndex);
@@ -183,7 +183,7 @@ export class GalleryApp {
 
   public async cleanup(): Promise<void> {
     try {
-      logger.info('[GalleryApp] Cleanup started');
+      __DEV__ && logger.info('[GalleryApp] Cleanup started');
 
       if (gallerySignals.isOpen.value) {
         this.closeGallery();
@@ -195,14 +195,14 @@ export class GalleryApp {
       try {
         cleanupGalleryEvents();
       } catch (error) {
-        logger.warn('[GalleryApp] Event cleanup failed:', error);
+        __DEV__ && logger.warn('[GalleryApp] Event cleanup failed:', error);
       }
 
       this.galleryRenderer = null;
       this.isInitialized = false;
 
       delete (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug;
-      logger.info('[GalleryApp] ✅ Cleanup complete');
+      __DEV__ && logger.info('[GalleryApp] ✅ Cleanup complete');
     } catch (error) {
       galleryErrorReporter.error(error, {
         code: 'GALLERY_CLEANUP_FAILED',

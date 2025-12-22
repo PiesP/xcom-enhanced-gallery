@@ -62,12 +62,12 @@ export class GalleryRenderer implements GalleryRendererInterface {
     if (!isOpen.value || mediaItems.value.length === 0) return;
 
     this.isMounting = true;
-    logger.info('[GalleryRenderer] Rendering started');
+    __DEV__ && logger.info('[GalleryRenderer] Rendering started');
 
     try {
       this.createContainer();
       this.renderComponent();
-      logger.debug('[GalleryRenderer] Component rendering complete');
+      __DEV__ && logger.debug('[GalleryRenderer] Component rendering complete');
     } catch (error) {
       logger.error('Render failed', error);
       // Ensure we never leave a half-mounted container behind (which can
@@ -136,11 +136,11 @@ export class GalleryRenderer implements GalleryRendererInterface {
     };
 
     mountGallery(this.container, () => <Root />);
-    logger.info('[GalleryRenderer] Gallery mounted');
+    __DEV__ && logger.info('[GalleryRenderer] Gallery mounted');
   }
 
   async handleDownload(type: 'current' | 'all'): Promise<void> {
-    logger.info(`[GalleryRenderer] handleDownload called with type: ${type}`);
+    __DEV__ && logger.info(`[GalleryRenderer] handleDownload called with type: ${type}`);
     if (isDownloadLocked()) return;
 
     const releaseLock = acquireDownloadLock();
@@ -204,7 +204,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   private cleanupGallery(): void {
-    logger.debug('[GalleryRenderer] Cleanup started');
+    __DEV__ && logger.debug('[GalleryRenderer] Cleanup started');
     this.isMounting = false;
     this.cleanupContainer();
   }
@@ -216,13 +216,13 @@ export class GalleryRenderer implements GalleryRendererInterface {
       try {
         unmountGallery(container);
       } catch (error) {
-        logger.warn('[GalleryRenderer] Container unmount failed:', error);
+        __DEV__ && logger.warn('[GalleryRenderer] Container unmount failed:', error);
       }
 
       try {
         container.remove();
       } catch (error) {
-        logger.warn('[GalleryRenderer] Container removal failed:', error);
+        __DEV__ && logger.warn('[GalleryRenderer] Container removal failed:', error);
       } finally {
         this.container = null;
       }
@@ -238,7 +238,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
     try {
       pauseAmbientVideosForGallery(pauseContext);
     } catch (error) {
-      logger.warn('[GalleryRenderer] Ambient video pause failed', { error });
+      __DEV__ && logger.warn('[GalleryRenderer] Ambient video pause failed', { error });
     }
 
     openGallery(mediaItems, renderOptions?.startIndex ?? 0);
@@ -258,7 +258,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   destroy(): void {
-    logger.info('[GalleryRenderer] Full cleanup started');
+    __DEV__ && logger.info('[GalleryRenderer] Full cleanup started');
     this.stateUnsubscribe?.();
     this.cleanupGallery();
   }

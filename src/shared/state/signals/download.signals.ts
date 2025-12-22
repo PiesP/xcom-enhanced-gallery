@@ -130,7 +130,7 @@ export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Res
       queue: [...currentState.queue, taskId],
     };
 
-    logger.info(`[Download] Task created: ${taskId} - ${mediaInfo.url}`);
+    __DEV__ && logger.info(`[Download] Task created: ${taskId} - ${mediaInfo.url}`);
 
     return success(taskId, { mediaId, filename: task.filename });
   } catch (error) {
@@ -158,7 +158,7 @@ export function startDownload(taskId: string): Result<void> {
   }
 
   if (task.status !== 'pending') {
-    logger.warn('[Download] Task is not in pending state:', task.status);
+    __DEV__ && logger.warn('[Download] Task is not in pending state:', task.status);
     return failure(`Task is not pending: ${taskId}`, ErrorCode.INVALID_ELEMENT, {
       meta: { taskId, currentStatus: task.status },
     });
@@ -179,7 +179,7 @@ export function startDownload(taskId: string): Result<void> {
     isProcessing: true,
   };
 
-  logger.info(`[Download] Download started: ${taskId}`);
+  __DEV__ && logger.info(`[Download] Download started: ${taskId}`);
 
   return success(undefined);
 }
@@ -250,7 +250,7 @@ export function completeDownload(taskId: string): Result<void> {
     isProcessing: newQueue.length > 0,
   };
 
-  logger.info(`[Download] Download completed: ${taskId}`);
+  __DEV__ && logger.info(`[Download] Download completed: ${taskId}`);
 
   return success(undefined, {
     taskId,
@@ -329,7 +329,7 @@ export function removeTask(taskId: string): Result<void> {
     activeTasks: newTasks,
   };
 
-  logger.debug(`[Download] Task removed: ${taskId}`);
+  __DEV__ && logger.debug(`[Download] Task removed: ${taskId}`);
 
   return success(undefined);
 }
@@ -352,7 +352,7 @@ export function clearCompletedTasks(): void {
     activeTasks: newTasks,
   };
 
-  logger.info('[Download] Completed tasks cleared');
+  __DEV__ && logger.info('[Download] Completed tasks cleared');
 }
 
 // ============================================================================

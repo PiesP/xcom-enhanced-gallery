@@ -4,6 +4,8 @@
  * @description Helper functions for exactOptionalPropertyTypes and strict type checking
  */
 
+export { isGlobalLike, isGMUserScriptInfo } from '@shared/utils/types/guards';
+
 // ========== Number/String parsing utilities ==========
 
 /**
@@ -110,32 +112,7 @@ export function safeTweetId(value: string | undefined): string {
 
 // ========== Userscript type guards ==========
 
-/**
- * Validate that global object has required properties
- */
-export function isGlobalLike(obj: unknown): obj is typeof globalThis {
-  if (obj === null || typeof obj !== 'object') {
-    return false;
-  }
-
-  const objRecord = obj as Record<string, unknown>;
-  return (
-    typeof objRecord.requestIdleCallback === 'function' ||
-    typeof objRecord.setTimeout === 'function'
-  );
-}
-
-/**
- * Check if GM_info object has valid script info
- */
-export function isGMUserScriptInfo(obj: unknown): obj is { scriptHandler?: string } {
-  if (obj === null || typeof obj !== 'object') {
-    return false;
-  }
-
-  const objRecord = obj as Record<string, unknown>;
-  return 'scriptHandler' in objRecord || Object.keys(objRecord).length > 0;
-}
+// NOTE: userscript/environment type guards are deduplicated in guards.ts
 
 // ========== Deep clone utilities ==========
 

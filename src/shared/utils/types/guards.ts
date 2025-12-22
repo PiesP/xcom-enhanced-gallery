@@ -252,3 +252,34 @@ export function isSettingsServiceLike(
 
   return hasGet && hasSet && hasSubscribe;
 }
+
+// ============================================================================
+// Userscript / environment guards
+// ============================================================================
+
+/**
+ * Validate that a value looks like the global object.
+ */
+export function isGlobalLike(obj: unknown): obj is typeof globalThis {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+
+  const objRecord = obj as Record<string, unknown>;
+  return (
+    typeof objRecord.requestIdleCallback === 'function' ||
+    typeof objRecord.setTimeout === 'function'
+  );
+}
+
+/**
+ * Check if a GM_info-like object has valid script info.
+ */
+export function isGMUserScriptInfo(obj: unknown): obj is { scriptHandler?: string } {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+
+  const objRecord = obj as Record<string, unknown>;
+  return 'scriptHandler' in objRecord || Object.keys(objRecord).length > 0;
+}

@@ -34,7 +34,7 @@ import type {
   GMXMLHttpRequestDetails,
   GMXMLHttpRequestResponse,
 } from '@shared/types/core/userscript';
-import { isGMUserScriptInfo } from '@shared/utils/types/safety';
+import { isGMUserScriptInfo } from '@shared/utils/types/guards';
 
 type GMUserScriptInfo = Record<string, unknown>;
 

@@ -36,16 +36,14 @@
     --color-text-secondary: var(
       --color-gray-600
     ); /* Phase: design-consistency - improved from gray-700 */
-    --color-text-muted: var(--color-gray-500);
 
     /* Border Colors - Semantic Roles */
     --color-border-default: var(--color-gray-200);
     --color-border-emphasis: var(--color-gray-500);
-    --color-border-hover: var(--color-gray-300); /* Hover state for borders */
 
     /* Border Color Tokens - xeg prefix for consistency */
     --xeg-color-border-primary: var(--color-border-default);
-    --xeg-color-border-hover: var(--color-border-hover);
+    --xeg-color-border-hover: var(--color-gray-300); /* Hover state for borders */
     --xeg-color-border-strong: var(--color-border-emphasis);
 
     /* Toolbar color harmony tokens (light defaults) */
@@ -106,15 +104,11 @@
     /* Text color aliases for components */
     --xeg-color-text-primary: var(--color-text-primary);
     --xeg-color-text-secondary: var(--color-text-secondary);
-    --xeg-color-text-tertiary: var(--color-text-muted);
+    --xeg-color-text-tertiary: var(--color-gray-500);
     --xeg-color-text-inverse: var(--color-base-white);
 
     /* Background color aliases for components */
     --xeg-color-bg-primary: var(--color-bg-primary);
-
-    /* Overlay Colors - Semantic Roles */
-    --color-overlay-medium: var(--color-gray-300);
-    --color-overlay-backdrop: var(--color-gray-900);
 
     /* Component Sizing - Semantic Roles (em: relative to font-size) */
     --xeg-size-button-md: 2.5em; /* 40px @ 16px */
@@ -155,8 +149,6 @@
     --xeg-z-toolbar-panel-active: 2147483624;
 
     /* Layer Management - Semantic Roles (using z-index directly) */
-    --xeg-layer-root: var(--xeg-z-gallery);
-
     /* Animation Easing */
     --xeg-easing-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
     --xeg-easing-linear: linear;
