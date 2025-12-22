@@ -72,7 +72,7 @@ export default defineConfig(({ mode }): UserConfig => {
       : !(featureMediaExtractionRaw === '0' || featureMediaExtractionRaw.toLowerCase() === 'false');
   const outputFileName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
   const root = REPO_ROOT;
-  const entryFile = resolve(root, './src/main.ts');
+  const entryFile = resolve(root, isProd ? './src/main.slim.ts' : './src/main.ts');
   const mediaExtractionAliases = featureMediaExtraction
     ? []
     : [
@@ -118,6 +118,13 @@ export default defineConfig(({ mode }): UserConfig => {
               {
                 find: '@shared/error/app-error-reporter',
                 replacement: resolve(root, 'src/shared/error/app-error-reporter.slim.ts'),
+              },
+              {
+                find: /[\\/]twitter-response-parser\.ts$/,
+                replacement: resolve(
+                  root,
+                  'src/shared/services/media/twitter-parser/twitter-response-parser.slim.ts'
+                ),
               },
             ]
           : []),

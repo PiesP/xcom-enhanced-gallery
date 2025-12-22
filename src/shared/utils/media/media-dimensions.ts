@@ -137,7 +137,7 @@ export function removeDuplicateMediaItems(
   return result;
 }
 
-function extractVisualIndexFromUrl(url: string): number {
+export function extractVisualIndexFromUrl(url: string): number {
   if (!url) return 0;
   const match = url.match(/\/(photo|video)\/(\d+)(?:[?#].*)?$/);
   const visualNumber = match?.[2] ? Number.parseInt(match[2], 10) : NaN;

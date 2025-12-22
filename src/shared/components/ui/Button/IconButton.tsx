@@ -20,6 +20,8 @@ export interface IconButtonProps {
   readonly id?: string;
   readonly title?: string;
 
+  readonly 'data-testid'?: string;
+
   readonly 'aria-label'?: string;
   readonly 'aria-controls'?: string;
   readonly 'aria-expanded'?: boolean | 'true' | 'false';
@@ -48,6 +50,7 @@ export function IconButton(props: IconButtonProps): JSXElement {
       title={props.title}
       disabled={props.disabled}
       tabIndex={props.tabIndex}
+      data-testid={props['data-testid']}
       aria-label={props['aria-label']}
       aria-controls={props['aria-controls']}
       aria-expanded={props['aria-expanded']}
