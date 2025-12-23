@@ -327,11 +327,6 @@ export function resolveMediaDimensionsWithIntrinsicFlag(
   return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
 }
 
-/** Resolve media dimensions (legacy) */
-function resolveMediaDimensions(media: MediaInfo | undefined): DimensionPair {
-  return resolveMediaDimensionsWithIntrinsicFlag(media).dimensions;
-}
-
 function toRem(pixels: number): string {
   return `${(pixels / 16).toFixed(4)}rem`;
 }

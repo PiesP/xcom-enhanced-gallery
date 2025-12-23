@@ -32,88 +32,23 @@
 // ==========================================
 
 // Media-related types (only most frequently used ones specified)
-;
+
 // App global types (Phase 355.2: Result types removed, moved to result.types)
-export type {
-  AppConfig,
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-} from './app.types';
+export type { AppConfig } from './app.types';
 // Core types from app.types re-exports
-export type {
-  
-  
-  
-  
-  
-  
-  
-  ViewMode,
-} from './core/core-types';
-;
-;
+export type { ViewMode } from './core/core-types';
 
 // Phase 421: ViewMode helpers removed; use VIEW_MODES from '@constants/video-controls'
 
 // Component Props types
-export type {
-  BaseComponentProps,
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-} from './component.types';
+export type { BaseComponentProps } from './component.types';
 // UserScript API types (re-exported directly from userscript definition)
-;
-
 // Navigation state types
-;
 // Result pattern types (ErrorCode and Result related)
-;
 // Result utility functions and ErrorCode (Phase: Result Unification - expanded API)
 // ErrorCode is re-exported as both value (const object) and type automatically
-;
+
 // Toolbar UI state types
-export type {
-  FitMode,
-  
-  
-  
-  
-} from './toolbar.types';
+export type { FitMode } from './toolbar.types';
 // UI/theme types
-export type {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ImageFitMode,
-  
-  
-  
-  
-} from './ui.types';
+export type { ImageFitMode } from './ui.types';

@@ -150,7 +150,3 @@ function pickFirstTruthy(values: Array<string | null | undefined>): string | nul
   }
   return null;
 }
-
-const MEDIA_TRAVERSAL_DEFAULTS = DEFAULT_TRAVERSAL_OPTIONS;
-const DEFAULT_MEDIA_DESCENDANT_DEPTH = DEFAULT_MAX_DESCENDANT_DEPTH;
-const DEFAULT_MEDIA_ANCESTOR_HOPS = DEFAULT_MAX_ANCESTOR_HOPS;

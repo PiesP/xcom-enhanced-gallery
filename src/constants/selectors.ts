@@ -28,14 +28,10 @@ export const VIDEO_PLAYER_CONTEXT_SELECTOR =
   `${VIDEO_PLAYER_SELECTOR},[data-testid="videoComponent"],[data-testid="videoPlayerControls"],[data-testid="videoPlayerOverlay"],[role="application"],[aria-label*="Video"]` as const;
 
 export const STATUS_LINK_SELECTOR = 'a[href*="/status/"]' as const;
-
-const TWITTER_IMAGE_SELECTOR = 'img[src*="pbs.twimg.com"]' as const;
-const TWITTER_VIDEO_SELECTOR = 'video[src*="video.twimg.com"]' as const;
 export const TWITTER_MEDIA_SELECTOR =
   'img[src*="pbs.twimg.com"], video[src*="video.twimg.com"]' as const;
 
 export const GALLERY_OVERLAY_SELECTOR = GALLERY_SELECTORS.OVERLAY;
-const GALLERY_CONTAINER_SELECTOR = GALLERY_SELECTORS.CONTAINER;
 
 /**
  * Stable DOM selectors with multiple fallback options
@@ -59,18 +55,11 @@ export const STABLE_IMAGE_CONTAINERS_SELECTORS = [
   'img[src*="pbs.twimg.com"]',
 ] as const;
 
-const STABLE_MEDIA_LINKS_SELECTORS = [
-  'a[href*="/status/"][href*="/photo/"]',
-  'a[href*="/status/"][href*="/video/"]',
-] as const;
-
 export const STABLE_MEDIA_VIEWERS_SELECTORS = [
   '[data-testid="photoViewer"]',
   '[aria-modal="true"][data-testid="Drawer"]',
   '[aria-roledescription="carousel"]',
 ] as const;
-
-const STABLE_MEDIA_PLAYERS_SELECTORS = ['[data-testid="videoPlayer"]', 'video'] as const;
 
 const warnedInvalidSelectors: Record<string, true> = Object.create(null);
 
@@ -96,32 +85,6 @@ function warnInvalidSelectorOnce(selector: string, error: unknown): void {
  * @param fallbacks - Array of fallback selectors
  * @returns Found element or null
  */
-function queryWithFallback(
-  container: Element | Document,
-  primarySelector: string,
-  fallbacks: readonly string[] = []
-): Element | null {
-  // Try primary selector first
-  try {
-    const primary = container.querySelector(primarySelector);
-    if (primary) return primary;
-  } catch (error) {
-    warnInvalidSelectorOnce(primarySelector, error);
-  }
-
-  // Try fallbacks in order
-  for (const fallback of fallbacks) {
-    try {
-      const element = container.querySelector(fallback);
-      if (element) return element;
-    } catch (error) {
-      warnInvalidSelectorOnce(fallback, error);
-    }
-  }
-
-  return null;
-}
-
 /**
  * Query all elements with fallback selectors
  * Combines results from all matching selectors

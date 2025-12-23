@@ -1,5 +1,3 @@
-import { isRecord } from '@shared/utils/types/guards';
-
 /**
  * Safe parseInt function
  * @param value - String to parse (null/undefined allowed)
@@ -13,23 +11,6 @@ export function safeParseInt(value: string | undefined | null, radix: number = 1
 
   const result = Number.parseInt(value, radix);
   return Number.isNaN(result) ? 0 : result;
-}
-
-function safeParseFloat(value: string | undefined | null): number {
-  if (value == null) {
-    return 0;
-  }
-
-  const result = Number.parseFloat(value);
-  return Number.isNaN(result) ? 0 : result;
-}
-
-function undefinedToNull<T>(value: T | undefined): T | null {
-  return value === undefined ? null : value;
-}
-
-function stringWithDefault(value: string | undefined, fallback: string = ''): string {
-  return value === undefined ? fallback : value;
 }
 
 /**
@@ -54,51 +35,4 @@ export function clampIndex(index: number, length: number): number {
     return 0;
   }
   return clamp(Math.floor(index), 0, length - 1);
-}
-
-function safeElementCheck(value: unknown): value is Element {
-  if (value == null) {
-    return false;
-  }
-
-  try {
-    return typeof Element !== 'undefined' && value instanceof Element;
-  } catch {
-    return false;
-  }
-}
-
-function safeTweetId(value: string | undefined | null): string {
-  const raw = value ?? '';
-  if (raw.trim().length > 0) {
-    return raw;
-  }
-
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    try {
-      const uuid = crypto.randomUUID();
-      return `generated_${uuid}`;
-    } catch {
-      // ignore
-    }
-  }
-
-  const rand = Math.random().toString(36).substring(2, 9);
-  return `generated_${Date.now()}_${rand}`;
-}
-
-/**
- * Minimal global-like object check.
- *
- * Used by tests/mutation coverage helpers.
- */
-function isGlobalLike(value: unknown): boolean {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  const record = value as Record<string, unknown>;
-  return (
-    typeof record.requestIdleCallback === 'function' || typeof record.setTimeout === 'function'
-  );
 }

@@ -33,16 +33,12 @@ export interface AppConfig {
   readonly autoStart: boolean;
 }
 
-;
-
 // ================================
 // Core types and patterns (re-export)
 // ================================
 
 // BaseService and service types
-;
 // Result pattern - re-exported from result.types (Phase 353: AsyncResult added, unified SSOT)
-;
 
 // ================================
 // Utility types
@@ -52,18 +48,18 @@ export interface AppConfig {
  * Option type - T or null
  * @note Same meaning as Nullable<T> (Phase 363: Nullable removed, integrated into Option)
  */
-type Option<T> = T | null;
+export type Option<T> = T | null;
 
 /**
  * Optional - T or undefined
  * @note Different meaning from Option (null vs undefined)
  */
-type Optional<T> = T | undefined;
+export type Optional<T> = T | undefined;
 
 /**
  * Deep Partial - all nested properties become optional
  */
-type DeepPartial<T> = {
+export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
 
@@ -77,50 +73,40 @@ type DeepPartial<T> = {
  * @template B Brand name
  * @description Exists only at compile time, behaves as T at runtime
  */
-type Brand<T, B> = T & { readonly __brand: B };
+export type Brand<T, B> = T & { readonly __brand: B };
 
 /** User ID */
-type UserId = Brand<string, 'UserId'>;
+export type UserId = Brand<string, 'UserId'>;
 /** Tweet ID */
-type TweetId = Brand<string, 'TweetId'>;
+export type TweetId = Brand<string, 'TweetId'>;
 /** Service key */
-type ServiceKey = Brand<string, 'ServiceKey'>;
+export type ServiceKey = Brand<string, 'ServiceKey'>;
 /** Element ID */
-type ElementId = Brand<string, 'ElementId'>;
+export type ElementId = Brand<string, 'ElementId'>;
 /** Media URL */
-type MediaUrl = Brand<string, 'MediaUrl'>;
+export type MediaUrl = Brand<string, 'MediaUrl'>;
 /** Thumbnail URL */
-type ThumbnailUrl = Brand<string, 'ThumbnailUrl'>;
+export type ThumbnailUrl = Brand<string, 'ThumbnailUrl'>;
 /** Original URL */
-type OriginalUrl = Brand<string, 'OriginalUrl'>;
+export type OriginalUrl = Brand<string, 'OriginalUrl'>;
 /** Filename */
-type FileName = Brand<string, 'FileName'>;
+export type FileName = Brand<string, 'FileName'>;
 /** File extension */
-type FileExtension = Brand<string, 'FileExtension'>;
+export type FileExtension = Brand<string, 'FileExtension'>;
 
 // ================================
 // Subordinate type file re-exports
 // ================================
 
 // Component Types
-;
 // Gallery Types (re-exported from core-types)
-;
 
 // Media Types
-;
-
-;
 
 // Navigation Types
-;
-;
 
 // Result and Error Codes
-;
 // Toolbar UI State Types
-;
 // UI/Theme Types
-;
 
 // Phase 421: ViewMode helper utilities removed; use VIEW_MODES from '@constants/video-controls'.

@@ -1,10 +1,6 @@
 import type { Accessor } from 'solid-js';
 export type MaybeAccessor<T> = T | Accessor<T>;
 
-function isAccessor<T = unknown>(value: unknown): value is Accessor<T> {
-  return typeof value === 'function';
-}
-
 export function resolve<T>(value: MaybeAccessor<T>): T {
   return typeof value === 'function' ? (value as Accessor<T>)() : value;
 }

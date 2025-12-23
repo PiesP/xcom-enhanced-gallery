@@ -112,7 +112,7 @@ export interface ToolbarActions {
  * Provides memo-friendly aggregate data that can be shared across
  * components without duplicating state calculations.
  */
-interface ToolbarViewModel {
+export interface ToolbarViewModel {
   readonly totalCount: number;
   readonly currentIndex: number;
   readonly focusedIndex: number;

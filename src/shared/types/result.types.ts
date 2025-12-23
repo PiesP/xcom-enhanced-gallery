@@ -87,7 +87,7 @@ export type Result<T> = ResultSuccess<T> | ResultPartial<T> | ResultError;
  *   return { status: 'success', data: {...} };
  * }
  */
-type AsyncResult<T> = Promise<Result<T>>;
+export type AsyncResult<T> = Promise<Result<T>>;
 
 // ============================================================================
 // Result Utility Functions (Phase 355.2)
@@ -154,7 +154,7 @@ export function failure<T = never>(
  * Check if Result is success (type guard)
  * For inline usage: `result.status === 'success'`
  */
-function isSuccess<T>(result: Result<T>): result is ResultSuccess<T> {
+export function isSuccess<T>(result: Result<T>): result is ResultSuccess<T> {
   return result.status === 'success';
 }
 
@@ -162,14 +162,14 @@ function isSuccess<T>(result: Result<T>): result is ResultSuccess<T> {
  * Check if Result is failure (type guard)
  * For inline usage: `result.status === 'error' || result.status === 'cancelled'`
  */
-function isFailure<T>(result: Result<T>): result is ResultError {
+export function isFailure<T>(result: Result<T>): result is ResultError {
   return result.status === 'error' || result.status === 'cancelled';
 }
 
 /**
  * Check if Result is partial success (type guard)
  */
-function isPartial<T>(result: Result<T>): result is ResultPartial<T> {
+export function isPartial<T>(result: Result<T>): result is ResultPartial<T> {
   return result.status === 'partial';
 }
 
@@ -186,7 +186,7 @@ function isPartial<T>(result: Result<T>): result is ResultPartial<T> {
  * // { status: 'success', data: { id: 1 }, code: ErrorCode.NONE }
  * ```
  */
-const ok = success;
+export const ok = success;
 
 /**
  * Create failure Result (Rust-style alias for `failure`)
@@ -197,7 +197,7 @@ const ok = success;
  * // { status: 'error', error: 'Not found', code: ErrorCode.ELEMENT_NOT_FOUND }
  * ```
  */
-const err = failure;
+export const err = failure;
 
 // ============================================================================
 // Result Utility Functions (Rust-style combinators)
@@ -212,7 +212,7 @@ const err = failure;
  * // Returns data if success, [] if failure
  * ```
  */
-function unwrapOr<T>(result: Result<T>, defaultValue: T): T {
+export function unwrapOr<T>(result: Result<T>, defaultValue: T): T {
   return result.status === 'success' || result.status === 'partial' ? result.data : defaultValue;
 }
 
@@ -224,7 +224,7 @@ function unwrapOr<T>(result: Result<T>, defaultValue: T): T {
  * const mapped = map(result, data => data.length);
  * ```
  */
-function map<T, U>(result: Result<T>, fn: (data: T) => U): Result<U> {
+export function map<T, U>(result: Result<T>, fn: (data: T) => U): Result<U> {
   if (result.status === 'success') {
     return success(fn(result.data), result.meta);
   }
@@ -245,7 +245,7 @@ function map<T, U>(result: Result<T>, fn: (data: T) => U): Result<U> {
  * const mapped = mapErr(result, msg => `Failed: ${msg}`);
  * ```
  */
-function mapErr<T>(result: Result<T>, fn: (error: string) => string): Result<T> {
+export function mapErr<T>(result: Result<T>, fn: (error: string) => string): Result<T> {
   if (result.status === 'error' || result.status === 'cancelled') {
     return { ...result, error: fn(result.error ?? '') };
   }
@@ -260,7 +260,7 @@ function mapErr<T>(result: Result<T>, fn: (error: string) => string): Result<T> 
  * const chained = andThen(result, data => ok(data.items));
  * ```
  */
-function andThen<T, U>(result: Result<T>, fn: (data: T) => Result<U>): Result<U> {
+export function andThen<T, U>(result: Result<T>, fn: (data: T) => Result<U>): Result<U> {
   if (result.status === 'success') {
     return fn(result.data);
   }

@@ -358,9 +358,5 @@ export class ThemeService implements ThemeServiceContract {
 
 export type {
   SettingsServiceLike,
-  
-  
   ThemeServiceContract,
-  
-  
 } from './theme-service.contract';

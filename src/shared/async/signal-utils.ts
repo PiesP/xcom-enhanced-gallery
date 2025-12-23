@@ -5,8 +5,6 @@
  * @version 1.0.0
  */
 
-;
-
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 interface TimeoutSignalController {
@@ -67,7 +65,7 @@ export function createTimeoutController(ms: number): TimeoutSignalController {
  * await fetch(url, { signal });
  * ```
  */
-function createTimeoutSignal(ms: number): AbortSignal {
+export function createTimeoutSignal(ms: number): AbortSignal {
   // Always use manual implementation for testability with fake timers.
   // Native AbortSignal.timeout() uses internal browser timers that bypass vi.useFakeTimers().
   return createTimeoutController(ms).signal;

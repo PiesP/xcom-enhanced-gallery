@@ -151,7 +151,7 @@ function getVideoHighQualityUrl(media: TwitterMedia): string | null {
   return bestVariant.url;
 }
 
-function getHighQualityMediaUrl(media: TwitterMedia): string | null {
+export function getHighQualityMediaUrl(media: TwitterMedia): string | null {
   if (media.type === 'photo') {
     return getPhotoHighQualityUrl(media.media_url_https) ?? null;
   }
@@ -344,5 +344,3 @@ export function normalizeLegacyUser(user: TwitterUser): void {
     }
   }
 }
-
-;

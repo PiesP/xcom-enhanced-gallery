@@ -18,9 +18,6 @@ import { createLifecycle } from '@shared/services/lifecycle';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 import { createSingleton } from '@shared/utils/types/singleton';
 
-;
-;
-
 /**
  * Multilingual Service (Phase 355: Direct PersistentStorage usage)
  * - onInitialize(): Restore language setting from storage

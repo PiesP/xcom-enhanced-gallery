@@ -145,7 +145,7 @@ export interface SettingChangeEvent<T = unknown> {
 /**
  * Settings validation result
  */
-interface SettingValidationResult {
+export interface SettingValidationResult {
   valid: boolean;
   error?: string;
   suggestion?: string;

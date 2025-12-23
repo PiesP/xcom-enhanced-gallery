@@ -51,14 +51,6 @@ export function tryParseUrl(
 }
 
 /**
- * Convenience helper to extract the hostname from a URL-like value.
- */
-function getHostname(value: string | URL | null | undefined): string | null {
-  const parsed = value instanceof URL ? value : tryParseUrl(value);
-  return parsed?.hostname ?? null;
-}
-
-/**
  * Determine whether a URL belongs to a trusted host list without relying on substring checks.
  */
 export function isHostMatching(

@@ -13,7 +13,6 @@
 // ================================
 
 // MediaType and MediaQuality are single sources in constants.ts
-;
 
 // Import ErrorCode for integration (provide ExtractionErrorCode alias)
 import type { AmbientVideoPauseRequest } from '@shared/utils/media/ambient-video-coordinator';
@@ -63,7 +62,7 @@ export interface MediaInfo {
 /**
  * Media entity (with time information)
  */
-interface MediaEntity extends MediaInfo {
+export interface MediaEntity extends MediaInfo {
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -77,7 +76,7 @@ interface MediaEntity extends MediaInfo {
  *
  * Version of MediaInfo with required fields
  */
-interface MediaInfoWithFilename extends MediaInfo {
+export interface MediaInfoWithFilename extends MediaInfo {
   /** Media unique identifier (required) */
   id: string;
   /** Original page URL (required) */
@@ -118,7 +117,7 @@ export interface TweetInfo {
  * - quotedUsername: Quoted tweet author
  * - sourceLocation: Media source from API response (quoted vs original)
  */
-interface QuoteTweetInfo {
+export interface QuoteTweetInfo {
   /** Whether it is a quote tweet */
   isQuoteTweet: boolean;
   /** Location where clicked */
@@ -151,7 +150,7 @@ export interface MediaExtractionOptions {
  * Page type definition (merged from Core)
  * Using const object for tree-shaking optimization.
  */
-const PageType = {
+export const PageType = {
   TIMELINE: 'timeline',
   SINGLE_TWEET: 'single_tweet',
   MEDIA_TAB: 'media_tab',
@@ -161,7 +160,7 @@ const PageType = {
 } as const;
 
 /** Type for PageType values */
-type PageType = (typeof PageType)[keyof typeof PageType];
+export type PageType = (typeof PageType)[keyof typeof PageType];
 
 /**
  * Extraction source type (merged from Core)
@@ -301,7 +300,7 @@ export interface GalleryRenderOptions {
 /**
  * Media extraction strategy
  */
-type ExtractionStrategy =
+export type ExtractionStrategy =
   | 'api-first'
   | 'dom-only'
   | 'hybrid'

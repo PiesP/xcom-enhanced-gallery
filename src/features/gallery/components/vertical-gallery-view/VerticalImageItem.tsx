@@ -454,5 +454,3 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     </div>
   );
 }
-
-;

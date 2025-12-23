@@ -46,14 +46,3 @@ export interface GalleryEventOptions {
   preventBubbling: boolean;
   context: string;
 }
-
-/**
- * Gallery event state snapshot
- */
-interface GalleryEventSnapshot {
-  initialized: boolean;
-  listenerCount: number;
-  options: GalleryEventOptions | null;
-  hasHandlers: boolean;
-  hasScopedTarget: boolean;
-}

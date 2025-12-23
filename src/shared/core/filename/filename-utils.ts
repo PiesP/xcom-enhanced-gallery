@@ -78,9 +78,18 @@ function getExtension(url: string): string {
 }
 
 /**
+ * Extract file extension from URL.
+ *
+ * This is exported for advanced callers and service-layer facades.
+ */
+export function getFileExtension(url: string): string {
+  return getExtension(url);
+}
+
+/**
  * Extract index from media ID.
  */
-function getIndexFromMediaId(mediaId?: string): string | null {
+export function getIndexFromMediaId(mediaId?: string): string | null {
   if (!mediaId) return null;
   const match = mediaId.match(/_media_(\d+)$/) || mediaId.match(/_(\d+)$/);
   if (match) {
@@ -93,7 +102,7 @@ function getIndexFromMediaId(mediaId?: string): string | null {
 /**
  * Normalize index to string.
  */
-function normalizeIndex(index?: string | number): string {
+export function normalizeIndex(index?: string | number): string {
   if (index === undefined || index === null) return '1';
   const num = typeof index === 'string' ? safeParseInt(index, 10) : index;
   return Number.isNaN(num) || num < 1 ? '1' : num.toString();
@@ -127,6 +136,18 @@ function resolveMetadata(media: MediaInfo, fallbackUsername?: string | null): Me
   }
 
   return { username, tweetId };
+}
+
+/**
+ * Resolve username and tweetId from media metadata.
+ *
+ * Exported alias for advanced callers.
+ */
+export function resolveMediaMetadata(
+  media: MediaInfo,
+  fallbackUsername?: string | null
+): MediaMetadata {
+  return resolveMetadata(media, fallbackUsername);
 }
 
 // ============================================================================
@@ -192,19 +213,17 @@ export function generateZipFilename(
 /**
  * Validate a media filename.
  */
-function isValidMediaFilename(filename: string): boolean {
+export function isValidMediaFilename(filename: string): boolean {
   return filename.length > 0 && !/[<>:"/\\|?*]/.test(filename);
 }
 
 /**
  * Validate a ZIP filename.
  */
-function isValidZipFilename(filename: string): boolean {
+export function isValidZipFilename(filename: string): boolean {
   return filename.endsWith('.zip') && !/[<>:"/\\|?*]/.test(filename);
 }
 
 // ============================================================================
 // Exported Utilities (for advanced use cases)
 // ============================================================================
-
-;

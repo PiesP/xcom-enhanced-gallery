@@ -315,6 +315,4 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     />
   );
 }
-
-;
 export const Toolbar = ToolbarContainer;

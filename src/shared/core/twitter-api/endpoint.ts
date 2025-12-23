@@ -6,7 +6,7 @@
 
 type GraphqlQueryParams = Record<string, unknown> | string;
 
-interface BuildTweetResultByRestIdUrlArgs {
+export interface BuildTweetResultByRestIdUrlArgs {
   host: string;
   queryId: string;
   variables: GraphqlQueryParams;

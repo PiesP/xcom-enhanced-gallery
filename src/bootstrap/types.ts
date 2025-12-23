@@ -43,5 +43,3 @@ export function reportBootstrapError(error: unknown, options: BootstrapErrorOpti
     throw error instanceof Error ? error : new Error(message);
   }
 }
-
-;

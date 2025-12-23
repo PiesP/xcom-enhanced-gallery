@@ -36,24 +36,6 @@ export const VIDEO_CONTROL_ARIA_TOKENS = [
 ] as const;
 
 /**
- * System page list
- */
-const SYSTEM_PAGES = [
-  'home',
-  'explore',
-  'notifications',
-  'messages',
-  'bookmarks',
-  'lists',
-  'profile',
-  'settings',
-  'help',
-  'search',
-  'login',
-  'signup',
-] as const;
-
-/**
  * Gallery view modes - supports vertical gallery only
  */
 export const VIEW_MODES = ['verticalList'] as const;

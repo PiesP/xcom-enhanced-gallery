@@ -3,14 +3,7 @@ import type { FitMode, ViewMode } from '@shared/types';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 
 export type { FitMode, MaybeAccessor };
-export type {
-  
-  FitModeHandlers,
-  
-  
-  
-  
-} from '@shared/components/ui/Toolbar/handler-types';
+export type { FitModeHandlers } from '@shared/components/ui/Toolbar/handler-types';
 
 /**
  * Toolbar component props with grouped handler pattern

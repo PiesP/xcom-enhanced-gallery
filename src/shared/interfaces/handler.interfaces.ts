@@ -17,12 +17,7 @@
 /**
  * Handler lifecycle phases
  */
-type HandlerLifecyclePhase =
-  | 'uninitialized'
-  | 'initializing'
-  | 'ready'
-  | 'error'
-  | 'destroyed';
+type HandlerLifecyclePhase = 'uninitialized' | 'initializing' | 'ready' | 'error' | 'destroyed';
 
 /**
  * Base handler lifecycle interface

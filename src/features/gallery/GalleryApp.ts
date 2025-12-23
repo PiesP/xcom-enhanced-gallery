@@ -26,13 +26,6 @@ import {
 import { startAmbientVideoGuard } from '@shared/utils/media/ambient-video-guard';
 import { clampIndex } from '@shared/utils/types/safety';
 
-interface GalleryConfig {
-  autoTheme?: boolean;
-  keyboardShortcuts?: boolean;
-  extractionTimeout?: number;
-  clickDebounceMs?: number;
-}
-
 interface GalleryOpenOptions {
   readonly pauseContext?: AmbientVideoPauseRequest;
 }

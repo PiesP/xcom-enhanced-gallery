@@ -190,9 +190,7 @@ export const galleryState = {
     });
   },
 };
-
 // Export for testing purposes
-;
 
 // ============================================================================
 // Actions
@@ -326,10 +324,7 @@ export function navigateNext(trigger: NavigationTrigger = 'button'): void {
 /**
  * Set focused index for scroll-based focus tracking
  */
-function setFocusedIndex(
-  index: number | null,
-  source: NavigationSource = 'auto-focus'
-): void {
+function setFocusedIndex(index: number | null, source: NavigationSource = 'auto-focus'): void {
   const state = galleryState.value;
 
   // Validate focus parameters (dev-only to keep the production bundle lean)

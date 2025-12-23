@@ -17,8 +17,6 @@ import {
   type ViteAliasEntry,
 } from './tsconfig-aliases-core';
 
-;
-
 interface TsconfigAliasOptions {
   /** Absolute project root (usually process.cwd()) */
   readonly rootDir: string;

@@ -250,9 +250,7 @@ class AppErrorReporter {
     };
   }
 }
-
 // Preserve the existing named export for downstream imports.
-;
 
 // ============================================================================
 // Convenience Exports

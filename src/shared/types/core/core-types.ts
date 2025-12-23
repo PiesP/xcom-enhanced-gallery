@@ -28,19 +28,17 @@
 
 import type { Cleanupable } from '@shared/types/lifecycle.types';
 import type { MediaInfo } from '@shared/types/media.types';
-import type { BaseService } from './base-service.types';
+
+export type { BaseService } from './base-service.types';
 
 // ========================================
 // SERVICE TYPES (from services.types.ts)
 // ========================================
 
-// Export BaseService from dedicated file (avoid duplication)
-;
-
 /**
  * Service lifecycle state
  */
-type ServiceLifecycle = 'uninitialized' | 'initializing' | 'initialized' | 'destroyed';
+export type ServiceLifecycle = 'uninitialized' | 'initializing' | 'initialized' | 'destroyed';
 
 // All unused service type definitions removed in Phase 326.6
 // Services use concrete implementations instead of interface abstractions
@@ -52,12 +50,12 @@ type ServiceLifecycle = 'uninitialized' | 'initializing' | 'initialized' | 'dest
 /**
  * Gallery view mode type
  */
-type GalleryViewMode = 'grid' | 'carousel' | 'slideshow';
+export type GalleryViewMode = 'grid' | 'carousel' | 'slideshow';
 
 /**
  * Gallery state interface (immutability guaranteed)
  */
-interface GalleryState {
+export interface GalleryState {
   readonly isOpen: boolean;
   readonly currentIndex: number;
   readonly items: readonly MediaInfo[];
@@ -70,7 +68,7 @@ interface GalleryState {
 /**
  * Gallery event type
  */
-type GalleryEvents = {
+export type GalleryEvents = {
   'gallery:open': { items: MediaInfo[]; startIndex: number };
   'gallery:close': Record<string, never>;
   'gallery:navigate': { index: number; item: MediaInfo };
@@ -99,7 +97,7 @@ export type { ViewMode } from '@constants/types';
 /**
  * Default Gallery Settings
  */
-interface GalleryConfig {
+export interface GalleryConfig {
   /** Whether to autoplay */
   autoPlay: boolean;
   /** Whether to show thumbnails */
@@ -117,7 +115,7 @@ interface GalleryConfig {
 /**
  * Download Options
  */
-interface DownloadOptions {
+export interface DownloadOptions {
   /** Download quality */
   quality?: 'original' | 'high' | 'medium';
   /** Filename format */
@@ -129,7 +127,7 @@ interface DownloadOptions {
 /**
  * Size Information
  */
-interface Size {
+export interface Size {
   width: number;
   height: number;
 }
@@ -137,7 +135,7 @@ interface Size {
 /**
  * Integrated Lifecycle Interface
  */
-interface Lifecycle extends Cleanupable {
+export interface Lifecycle extends Cleanupable {
   /**
    * Check resource status
    */
@@ -154,8 +152,6 @@ interface Lifecycle extends Cleanupable {
  *
  * Phase 353: AsyncResult type integration (moved to result.types.ts)
  */
-;
-
 // Result utility functions moved to result.types.ts (Phase 355.2)
 // - success, failure, partial, cancelled
 // - isSuccess, isFailure, isPartial

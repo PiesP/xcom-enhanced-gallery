@@ -16,12 +16,7 @@ type PauseRoot = Exclude<PauseAmbientVideosOptions['root'], undefined>;
 
 type AmbientVideoPauseScope = 'document' | 'tweet' | 'custom';
 
-type AmbientVideoTrigger =
-  | 'video-click'
-  | 'image-click'
-  | 'programmatic'
-  | 'guard'
-  | 'unknown';
+type AmbientVideoTrigger = 'video-click' | 'image-click' | 'programmatic' | 'guard' | 'unknown';
 
 export interface AmbientVideoPauseRequest extends PauseAmbientVideosOptions {
   readonly sourceElement?: HTMLElement | null;

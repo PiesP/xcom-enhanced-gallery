@@ -6,14 +6,7 @@
 export {
   getUserscript,
   getUserscriptSafe,
-  
-  
   resolveGMDownload,
   type UserscriptAPI,
 } from '@shared/external/userscript/adapter';
-export {
-  
-  
-  
-  isGMAPIAvailable,
-} from '@shared/external/userscript/environment-detector';
+export { isGMAPIAvailable } from '@shared/external/userscript/environment-detector';

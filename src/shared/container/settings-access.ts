@@ -19,12 +19,6 @@
  */
 // Re-export type-safe functions for convenient access
 export {
-  
   getTypedSettingOr,
-  
-  
-  
   setTypedSetting,
-  
-  
 } from './typed-settings';

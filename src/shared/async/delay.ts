@@ -121,7 +121,7 @@ export async function delay(ms: number, signal?: AbortSignal): Promise<void> {
  * });
  * ```
  */
-async function timeout<T>(promise: Promise<T>, options: TimeoutOptions): Promise<T> {
+export async function timeout<T>(promise: Promise<T>, options: TimeoutOptions): Promise<T> {
   const { ms, signal, message } = options;
 
   // If already aborted, reject immediately
