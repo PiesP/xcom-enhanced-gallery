@@ -24,7 +24,7 @@ import type { MediaInfo } from '@shared/types/media.types';
  * - Direct: `fitMode="original"`
  * - Function: `fitMode={() => settings.fitMode()}`
  */
-export type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
+type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
 
 /**
  * Props for VerticalImageItem component

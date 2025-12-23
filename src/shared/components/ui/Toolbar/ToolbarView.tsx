@@ -29,7 +29,7 @@ type FitModeDefinition = {
   readonly iconName: LucideIconName;
 };
 
-export interface ToolbarViewProps {
+interface ToolbarViewProps {
   /** Current media index */
   readonly currentIndex: MaybeAccessor<number>;
   /** Focused media index for keyboard navigation */

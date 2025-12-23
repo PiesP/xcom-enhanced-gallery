@@ -17,21 +17,21 @@ import type { JSXElement } from '@shared/external/vendors';
 /**
  * JSX element type alias
  */
-export type VNode = JSXElement;
+type VNode = JSXElement;
 
 /**
  * Component type (functional component)
  *
  * @template P Component props type
  */
-export type ComponentType<P = Record<string, unknown>> = (props: P) => JSXElement | null;
+type ComponentType<P = Record<string, unknown>> = (props: P) => JSXElement | null;
 
 /**
  * Component child element type
  *
  * @description All types usable as JSX children
  */
-export type ComponentChildren =
+type ComponentChildren =
   | JSXElement
   | string
   | number
@@ -43,7 +43,7 @@ export type ComponentChildren =
 /**
  * CSS properties object
  */
-export interface CSSProperties {
+interface CSSProperties {
   [key: string]: string | number | undefined;
 }
 
@@ -131,7 +131,7 @@ export interface BaseComponentProps {
  *
  * @example Buttons, links, clickable items
  */
-export interface InteractiveComponentProps extends BaseComponentProps {
+interface InteractiveComponentProps extends BaseComponentProps {
   /** Disabled state */
   disabled?: boolean;
   /** Mouse enter event */
@@ -147,7 +147,7 @@ export interface InteractiveComponentProps extends BaseComponentProps {
  *
  * @example Loading buttons, progress indicators
  */
-export interface LoadingComponentProps extends BaseComponentProps {
+interface LoadingComponentProps extends BaseComponentProps {
   /** Loading state */
   loading?: boolean;
   /** Loading display text */
@@ -161,7 +161,7 @@ export interface LoadingComponentProps extends BaseComponentProps {
  *
  * @example Buttons, badges, icons
  */
-export interface SizedComponentProps extends BaseComponentProps {
+interface SizedComponentProps extends BaseComponentProps {
   /** Size */
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
@@ -173,7 +173,7 @@ export interface SizedComponentProps extends BaseComponentProps {
  *
  * @example Buttons, badges, alerts
  */
-export interface VariantComponentProps extends BaseComponentProps {
+interface VariantComponentProps extends BaseComponentProps {
   /** Variant style */
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'warning' | 'icon';
 }
@@ -183,7 +183,7 @@ export interface VariantComponentProps extends BaseComponentProps {
  *
  * @description For input, button and other form elements
  */
-export interface FormComponentProps extends InteractiveComponentProps {
+interface FormComponentProps extends InteractiveComponentProps {
   /** Button type */
   type?: 'button' | 'submit' | 'reset';
   /** form element ID connection */
@@ -197,7 +197,7 @@ export interface FormComponentProps extends InteractiveComponentProps {
  *
  * @description For container elements like modal overlays
  */
-export interface ContainerComponentProps extends BaseComponentProps {
+interface ContainerComponentProps extends BaseComponentProps {
   /** Close callback */
   onClose?: () => void;
   /** Position */
@@ -215,24 +215,24 @@ export interface ContainerComponentProps extends BaseComponentProps {
  *
  * @template T Event type
  */
-export type EventHandler<T = Event> = (event: T) => void;
+type EventHandler<T = Event> = (event: T) => void;
 
 /**
  * Mouse event handler
  */
-export type MouseEventHandler = EventHandler<MouseEvent>;
+type MouseEventHandler = EventHandler<MouseEvent>;
 
 /**
  * Keyboard event handler
  */
-export type KeyboardEventHandler = EventHandler<KeyboardEvent>;
+type KeyboardEventHandler = EventHandler<KeyboardEvent>;
 
 /**
  * Async function type
  *
  * @template T Return type
  */
-export type AsyncFunction<T = void> = () => Promise<T>;
+type AsyncFunction<T = void> = () => Promise<T>;
 
 /**
  * Async callback function type
@@ -240,29 +240,29 @@ export type AsyncFunction<T = void> = () => Promise<T>;
  * @template T Input type
  * @template R Return type
  */
-export type AsyncCallback<T = void, R = void> = (arg: T) => Promise<R>;
+type AsyncCallback<T = void, R = void> = (arg: T) => Promise<R>;
 
 /**
  * Optional callback function type (allows undefined)
  *
  * @template T Input type
  */
-export type OptionalCallback<T = void> = ((arg: T) => void) | undefined;
+type OptionalCallback<T = void> = ((arg: T) => void) | undefined;
 
 /**
  * Error handler (synchronous)
  */
-export type ErrorHandler = (error: Error | ApiError) => void;
+type ErrorHandler = (error: Error | ApiError) => void;
 
 /**
  * Error handler (asynchronous)
  */
-export type AsyncErrorHandler = (error: Error | ApiError) => Promise<void>;
+type AsyncErrorHandler = (error: Error | ApiError) => Promise<void>;
 
 /**
  * Progress callback (0-1)
  */
-export type ProgressCallback = (progress: number) => void;
+type ProgressCallback = (progress: number) => void;
 
 // ================================
 // API-related types
@@ -273,7 +273,7 @@ export type ProgressCallback = (progress: number) => void;
  *
  * @template T Data type
  */
-export interface ApiResponse<T = Record<string, unknown>> {
+interface ApiResponse<T = Record<string, unknown>> {
   /** Success state */
   success: boolean;
   /** Response data */
@@ -287,7 +287,7 @@ export interface ApiResponse<T = Record<string, unknown>> {
 /**
  * API error
  */
-export interface ApiError {
+interface ApiError {
   /** Error code */
   code: string;
   /** Error message */
@@ -299,7 +299,7 @@ export interface ApiError {
 /**
  * API request options
  */
-export interface RequestOptions {
+interface RequestOptions {
   /** Timeout (ms) */
   timeout?: number;
   /** Retry count */
@@ -311,7 +311,7 @@ export interface RequestOptions {
 /**
  * Pagination information
  */
-export interface PaginationInfo {
+interface PaginationInfo {
   /** Current page */
   page: number;
   /** Items per page */
@@ -327,7 +327,7 @@ export interface PaginationInfo {
 /**
  * File information
  */
-export interface FileInfo {
+interface FileInfo {
   /** File name */
   name: string;
   /** File size (bytes) */

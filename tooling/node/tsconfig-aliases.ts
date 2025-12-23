@@ -17,9 +17,9 @@ import {
   type ViteAliasEntry,
 } from './tsconfig-aliases-core';
 
-export type { ViteAliasEntry };
+;
 
-export interface TsconfigAliasOptions {
+interface TsconfigAliasOptions {
   /** Absolute project root (usually process.cwd()) */
   readonly rootDir: string;
   /** Absolute path to the tsconfig.json file */

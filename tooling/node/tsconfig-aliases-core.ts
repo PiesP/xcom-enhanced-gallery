@@ -60,7 +60,7 @@ function ensureTrailingSlashIfNeeded(find: string | RegExp, replacement: string)
   return replacement.endsWith('/') ? replacement : `${replacement}/`;
 }
 
-export interface BuildViteAliasesOptions {
+interface BuildViteAliasesOptions {
   /**
    * Convert a normalized tsconfig target (e.g. "src/shared/") into an absolute path.
    * Return null to skip the mapping.

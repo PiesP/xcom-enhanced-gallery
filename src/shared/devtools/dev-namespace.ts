@@ -5,7 +5,7 @@
  * development builds, preventing duplicate exposure logic across modules.
  */
 
-export interface DevNamespace {
+interface DevNamespace {
   main?: Record<string, unknown>;
   diagnostics?: Record<string, unknown>;
   tracing?: Record<string, unknown>;
@@ -17,7 +17,7 @@ type DevNamespaceHost = typeof globalThis & {
 };
 
 // Internal helper to allow mocking in tests
-export const _env = {
+const _env = {
   get DEV() {
     return import.meta.env.DEV;
   },
@@ -48,7 +48,7 @@ export function mutateDevNamespace(mutator: (namespace: DevNamespace) => void): 
 /**
  * Retrieve the current development namespace (dev mode only).
  */
-export function getDevNamespace(): DevNamespace | undefined {
+function getDevNamespace(): DevNamespace | undefined {
   if (!_env.DEV) {
     return undefined;
   }

@@ -6,7 +6,7 @@
 import { SharedObserver } from '@shared/utils/performance/observer-pool';
 import type { Accessor } from 'solid-js';
 
-export interface FocusCoordinatorOptions {
+interface FocusCoordinatorOptions {
   isEnabled: Accessor<boolean>;
   container: Accessor<HTMLElement | null>;
   activeIndex: Accessor<number>;

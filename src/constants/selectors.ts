@@ -29,13 +29,13 @@ export const VIDEO_PLAYER_CONTEXT_SELECTOR =
 
 export const STATUS_LINK_SELECTOR = 'a[href*="/status/"]' as const;
 
-export const TWITTER_IMAGE_SELECTOR = 'img[src*="pbs.twimg.com"]' as const;
-export const TWITTER_VIDEO_SELECTOR = 'video[src*="video.twimg.com"]' as const;
+const TWITTER_IMAGE_SELECTOR = 'img[src*="pbs.twimg.com"]' as const;
+const TWITTER_VIDEO_SELECTOR = 'video[src*="video.twimg.com"]' as const;
 export const TWITTER_MEDIA_SELECTOR =
   'img[src*="pbs.twimg.com"], video[src*="video.twimg.com"]' as const;
 
 export const GALLERY_OVERLAY_SELECTOR = GALLERY_SELECTORS.OVERLAY;
-export const GALLERY_CONTAINER_SELECTOR = GALLERY_SELECTORS.CONTAINER;
+const GALLERY_CONTAINER_SELECTOR = GALLERY_SELECTORS.CONTAINER;
 
 /**
  * Stable DOM selectors with multiple fallback options
@@ -59,7 +59,7 @@ export const STABLE_IMAGE_CONTAINERS_SELECTORS = [
   'img[src*="pbs.twimg.com"]',
 ] as const;
 
-export const STABLE_MEDIA_LINKS_SELECTORS = [
+const STABLE_MEDIA_LINKS_SELECTORS = [
   'a[href*="/status/"][href*="/photo/"]',
   'a[href*="/status/"][href*="/video/"]',
 ] as const;
@@ -70,7 +70,7 @@ export const STABLE_MEDIA_VIEWERS_SELECTORS = [
   '[aria-roledescription="carousel"]',
 ] as const;
 
-export const STABLE_MEDIA_PLAYERS_SELECTORS = ['[data-testid="videoPlayer"]', 'video'] as const;
+const STABLE_MEDIA_PLAYERS_SELECTORS = ['[data-testid="videoPlayer"]', 'video'] as const;
 
 const warnedInvalidSelectors: Record<string, true> = Object.create(null);
 
@@ -96,7 +96,7 @@ function warnInvalidSelectorOnce(selector: string, error: unknown): void {
  * @param fallbacks - Array of fallback selectors
  * @returns Found element or null
  */
-export function queryWithFallback(
+function queryWithFallback(
   container: Element | Document,
   primarySelector: string,
   fallbacks: readonly string[] = []

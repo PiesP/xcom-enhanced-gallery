@@ -68,13 +68,13 @@ type SettingValueAt<T, Path extends string> = Path extends `${infer K}.${infer R
  * All valid setting paths in dot notation.
  * Provides autocomplete support and compile-time validation.
  */
-export type SettingPath = SettingPaths<AppSettings>;
+type SettingPath = SettingPaths<AppSettings>;
 
 /**
  * Get the value type for a specific setting path.
  * Enables type-safe access to deeply nested settings.
  */
-export type SettingValue<P extends SettingPath> = SettingValueAt<AppSettings, P>;
+type SettingValue<P extends SettingPath> = SettingValueAt<AppSettings, P>;
 
 // =============================================================================
 // Settings Service Interface
@@ -115,7 +115,7 @@ function requireSettingsService(): SettingsServiceLike {
  * const theme = getTypedSetting('gallery.theme'); // 'auto' | 'light' | 'dark' | undefined
  * ```
  */
-export function getTypedSetting<P extends SettingPath>(path: P): SettingValue<P> | undefined {
+function getTypedSetting<P extends SettingPath>(path: P): SettingValue<P> | undefined {
   return requireSettingsService().get<SettingValue<P>>(path);
 }
 
@@ -176,7 +176,7 @@ export function setTypedSetting<P extends SettingPath>(
  * @param path - Dot-notation path to the setting
  * @returns The setting value or undefined
  */
-export function tryGetTypedSetting<P extends SettingPath>(path: P): SettingValue<P> | undefined {
+function tryGetTypedSetting<P extends SettingPath>(path: P): SettingValue<P> | undefined {
   const service = tryGetSettingsManager<SettingsServiceLike>();
   if (!service) {
     return undefined;
@@ -192,7 +192,7 @@ export function tryGetTypedSetting<P extends SettingPath>(path: P): SettingValue
  * @param value - New value
  * @returns Promise resolving to success status
  */
-export async function trySetTypedSetting<P extends SettingPath>(
+async function trySetTypedSetting<P extends SettingPath>(
   path: P,
   value: SettingValue<P>
 ): Promise<boolean> {
@@ -218,7 +218,7 @@ export async function trySetTypedSetting<P extends SettingPath>(
  * @param key - String to validate
  * @returns True if key matches setting path pattern
  */
-export function isValidSettingPath(key: string): key is SettingPath {
+function isValidSettingPath(key: string): key is SettingPath {
   if (!__DEV__) {
     return true;
   }

@@ -17,7 +17,7 @@ export interface CommandRuntimeHandle {
   getModel(): RuntimeModel;
 }
 
-export interface CommandRuntimeDeps {
+interface CommandRuntimeDeps {
   now?: () => number;
   getUrl?: () => string;
   timeouts?: {

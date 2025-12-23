@@ -68,7 +68,7 @@ export function getMediaServiceInstance(): MediaService {
  * Reset all service instances for test isolation.
  * Use in test teardown to ensure clean state.
  */
-export function resetAllServiceInstances(): void {
+function resetAllServiceInstances(): void {
   ThemeService.resetForTests();
   LanguageService.resetForTests();
   MediaService.resetForTests();

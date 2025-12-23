@@ -1,9 +1,9 @@
 const DEFAULT_MAX_DESCENDANT_DEPTH = 6;
 const DEFAULT_MAX_ANCESTOR_HOPS = 3;
 
-export type MediaElement = HTMLImageElement | HTMLVideoElement;
+type MediaElement = HTMLImageElement | HTMLVideoElement;
 
-export type MediaTraversalOptions = {
+type MediaTraversalOptions = {
   /** Maximum depth for breadth-first descendant searches (defaults to 6) */
   maxDescendantDepth?: number;
   /** Maximum ancestor hops to evaluate during upward traversal (defaults to 3) */
@@ -25,7 +25,7 @@ const DEFAULT_TRAVERSAL_OPTIONS: Required<MediaTraversalOptions> = {
 /**
  * Determine whether the provided element is a supported media element (IMG or VIDEO)
  */
-export function isMediaElement(element: HTMLElement | null): element is MediaElement {
+function isMediaElement(element: HTMLElement | null): element is MediaElement {
   if (!element) {
     return false;
   }
@@ -151,6 +151,6 @@ function pickFirstTruthy(values: Array<string | null | undefined>): string | nul
   return null;
 }
 
-export const MEDIA_TRAVERSAL_DEFAULTS = DEFAULT_TRAVERSAL_OPTIONS;
-export const DEFAULT_MEDIA_DESCENDANT_DEPTH = DEFAULT_MAX_DESCENDANT_DEPTH;
-export const DEFAULT_MEDIA_ANCESTOR_HOPS = DEFAULT_MAX_ANCESTOR_HOPS;
+const MEDIA_TRAVERSAL_DEFAULTS = DEFAULT_TRAVERSAL_OPTIONS;
+const DEFAULT_MEDIA_DESCENDANT_DEPTH = DEFAULT_MAX_DESCENDANT_DEPTH;
+const DEFAULT_MEDIA_ANCESTOR_HOPS = DEFAULT_MAX_ANCESTOR_HOPS;

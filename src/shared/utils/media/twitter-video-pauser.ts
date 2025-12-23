@@ -8,7 +8,7 @@ import { logger } from '@shared/logging';
 
 type QueryableRoot = Document | DocumentFragment | HTMLElement;
 
-export const ZERO_RESULT: PauseAmbientVideosResult = Object.freeze({
+const ZERO_RESULT: PauseAmbientVideosResult = Object.freeze({
   pausedCount: 0,
   totalCandidates: 0,
   skippedCount: 0,

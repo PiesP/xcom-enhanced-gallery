@@ -26,7 +26,7 @@ import {
 import { startAmbientVideoGuard } from '@shared/utils/media/ambient-video-guard';
 import { clampIndex } from '@shared/utils/types/safety';
 
-export interface GalleryConfig {
+interface GalleryConfig {
   autoTheme?: boolean;
   keyboardShortcuts?: boolean;
   extractionTimeout?: number;

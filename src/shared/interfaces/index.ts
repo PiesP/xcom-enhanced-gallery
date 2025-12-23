@@ -44,12 +44,12 @@ export type { GalleryRenderer } from './gallery.interfaces';
 export type {
   BootstrapStage,
   BootstrapStageResult,
-  EventHandlerConfig,
-  GalleryController,
-  HandlerLifecycle,
-  HandlerLifecyclePhase,
-  InitializationResult,
-  ServiceHandler,
-  ServiceRegistrationOptions,
+  
+  
+  
+  
+  
+  
+  
 } from './handler.interfaces';
-export { DEFAULT_EVENT_HANDLER_CONFIG } from './handler.interfaces';
+;

@@ -4,7 +4,7 @@ import type { RuntimeEvent } from '@core/events';
 import type { RuntimeModel } from '@core/model';
 import { COMMAND_RUNTIME_DEFAULT_TICK_MS, COMMAND_RUNTIME_STORAGE_KEY } from '@core/policy';
 
-export interface UpdateResult {
+interface UpdateResult {
   readonly model: RuntimeModel;
   readonly cmds: readonly RuntimeCommand[];
 }

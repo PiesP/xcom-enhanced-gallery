@@ -19,7 +19,7 @@ export function resolveTranslationValue(
   return typeof current === 'string' ? current : undefined;
 }
 
-export function collectTranslationKeys(dictionary: LanguageStrings): TranslationKey[] {
+function collectTranslationKeys(dictionary: LanguageStrings): TranslationKey[] {
   const stack: Array<{ node: Record<string, unknown>; prefix: string }> = [
     { node: dictionary as unknown as Record<string, unknown>, prefix: '' },
   ];

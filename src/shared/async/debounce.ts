@@ -20,7 +20,7 @@
  */
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
-export interface DebouncedFunction<Args extends unknown[]> {
+interface DebouncedFunction<Args extends unknown[]> {
   /** Call the debounced function */
   (...args: Args): void;
   /** Cancel pending execution */

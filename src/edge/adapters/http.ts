@@ -6,7 +6,7 @@
 import type { HttpMethod, HttpResponseType } from '@core/cmd';
 import { HttpRequestService } from '@shared/services/http-request-service';
 
-export interface HttpRequestInput {
+interface HttpRequestInput {
   readonly url: string;
   readonly method: HttpMethod;
   readonly headers?: Readonly<Record<string, string>>;
@@ -14,7 +14,7 @@ export interface HttpRequestInput {
   readonly responseType: HttpResponseType;
 }
 
-export interface HttpRequestOutput {
+interface HttpRequestOutput {
   readonly status: number;
   readonly body: unknown;
 }

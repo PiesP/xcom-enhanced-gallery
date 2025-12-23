@@ -17,7 +17,7 @@
 /**
  * Handler lifecycle phases
  */
-export type HandlerLifecyclePhase =
+type HandlerLifecyclePhase =
   | 'uninitialized'
   | 'initializing'
   | 'ready'
@@ -57,7 +57,7 @@ export type HandlerLifecyclePhase =
  * }
  * ```
  */
-export interface HandlerLifecycle {
+interface HandlerLifecycle {
   /**
    * Initialize the handler
    * Should be idempotent - safe to call multiple times
@@ -84,7 +84,7 @@ export interface HandlerLifecycle {
 /**
  * Initialization result type
  */
-export interface InitializationResult {
+interface InitializationResult {
   /** Whether initialization succeeded */
   readonly success: boolean;
   /** Error if initialization failed */
@@ -102,7 +102,7 @@ export interface InitializationResult {
 /**
  * Service handler with optional dependencies
  */
-export interface ServiceHandler extends HandlerLifecycle {
+interface ServiceHandler extends HandlerLifecycle {
   /** Service identifier */
   readonly serviceId: string;
   /** Service dependencies (other service IDs) */
@@ -112,7 +112,7 @@ export interface ServiceHandler extends HandlerLifecycle {
 /**
  * Service registration options
  */
-export interface ServiceRegistrationOptions {
+interface ServiceRegistrationOptions {
   /** Whether to replace existing service */
   readonly replace?: boolean;
   /** Whether initialization is lazy (on first access) */
@@ -128,7 +128,7 @@ export interface ServiceRegistrationOptions {
 /**
  * Event handler configuration
  */
-export interface EventHandlerConfig {
+interface EventHandlerConfig {
   /** Whether keyboard events are enabled */
   readonly enableKeyboard: boolean;
   /** Whether media detection is enabled */
@@ -144,7 +144,7 @@ export interface EventHandlerConfig {
 /**
  * Default event handler configuration
  */
-export const DEFAULT_EVENT_HANDLER_CONFIG: EventHandlerConfig = Object.freeze({
+const DEFAULT_EVENT_HANDLER_CONFIG: EventHandlerConfig = Object.freeze({
   enableKeyboard: true,
   enableMediaDetection: true,
   debugMode: false,
@@ -162,7 +162,7 @@ export const DEFAULT_EVENT_HANDLER_CONFIG: EventHandlerConfig = Object.freeze({
  * This interface defines the contract for gallery controllers that manage
  * the gallery lifecycle, navigation, and user interactions.
  */
-export interface GalleryController {
+interface GalleryController {
   /**
    * Open the gallery with media items
    * @param mediaItems - Array of media items to display

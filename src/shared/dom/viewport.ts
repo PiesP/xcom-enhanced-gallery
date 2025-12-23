@@ -6,19 +6,19 @@ import { EventManager } from '@shared/services/event-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { createEventListener } from '@shared/utils/types/guards';
 
-export interface ChromeOffsets {
+interface ChromeOffsets {
   readonly toolbarHeight?: number; // px
   readonly paddingTop?: number; // px
   readonly paddingBottom?: number; // px
 }
 
-export interface ViewportConstraints {
+interface ViewportConstraints {
   readonly viewportW: number; // px
   readonly viewportH: number; // px
   readonly constrainedH: number; // px
 }
 
-export function computeViewportConstraints(
+function computeViewportConstraints(
   rect: { width: number; height: number },
   chrome: ChromeOffsets = {}
 ): ViewportConstraints {
@@ -35,7 +35,7 @@ export function computeViewportConstraints(
 /**
  * Apply CSS variables to an element (root of gallery container)
  */
-export function applyViewportCssVars(el: HTMLElement, v: ViewportConstraints): void {
+function applyViewportCssVars(el: HTMLElement, v: ViewportConstraints): void {
   el.style.setProperty('--xeg-viewport-w', `${v.viewportW}px`);
   el.style.setProperty('--xeg-viewport-h', `${v.viewportH}px`);
   el.style.setProperty('--xeg-viewport-height-constrained', `${v.constrainedH}px`);

@@ -11,7 +11,7 @@ import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import type { Accessor } from 'solid-js';
 import { createEffect, untrack } from 'solid-js';
 
-export interface UseGalleryItemScrollOptions {
+interface UseGalleryItemScrollOptions {
   enabled?: MaybeAccessor<boolean>;
   behavior?: MaybeAccessor<ScrollBehavior>;
   block?: MaybeAccessor<ScrollLogicalPosition>;
@@ -20,7 +20,7 @@ export interface UseGalleryItemScrollOptions {
   onScrollStart?: () => void;
 }
 
-export interface UseGalleryItemScrollReturn {
+interface UseGalleryItemScrollReturn {
   scrollToItem: (index: number) => void;
   scrollToCurrentItem: () => void;
 }

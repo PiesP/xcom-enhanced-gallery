@@ -52,7 +52,7 @@ const INTERACTIVE_SELECTOR = [
 /**
  * Check if URL is a valid media source (Twitter URL or blob)
  */
-export function isValidMediaSource(url: string | null | undefined): boolean {
+function isValidMediaSource(url: string | null | undefined): boolean {
   if (!url) return false;
   if (url.startsWith('blob:')) return true;
   return isSafeAndValidMediaUrl(url);
@@ -65,7 +65,7 @@ export function isValidMediaSource(url: string | null | undefined): boolean {
 /**
  * Check if the click target should block gallery trigger
  */
-export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
+function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   if (!target) return false;
 
   // Video controls should be blocked

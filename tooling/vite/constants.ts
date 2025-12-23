@@ -17,7 +17,7 @@ export const LICENSE_OUTPUT_FILES = {
 export const CDN_BASE_URL =
   'https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@release/dist' as const;
 
-export const BROWSER_COMPATIBILITY = {
+const BROWSER_COMPATIBILITY = {
   chrome: '117',
   firefox: '119',
   edge: '117',

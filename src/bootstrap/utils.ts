@@ -28,7 +28,7 @@ import { logger } from '@shared/logging';
  * }
  * ```
  */
-export async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult> {
+async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult> {
   const startTime = performance.now();
 
   // Check shouldRun predicate

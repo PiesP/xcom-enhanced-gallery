@@ -50,7 +50,7 @@ export interface GalleryEventOptions {
 /**
  * Gallery event state snapshot
  */
-export interface GalleryEventSnapshot {
+interface GalleryEventSnapshot {
   initialized: boolean;
   listenerCount: number;
   options: GalleryEventOptions | null;

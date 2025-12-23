@@ -6,14 +6,14 @@ import { getResolvedGMAPIsCached, type ResolvedGMAPIs } from '@shared/external/u
  * Browser environment snapshot surfaced to the userscript layer.
  * Focuses exclusively on user-facing concerns: theme preference and language.
  */
-export interface EnvironmentInfo {
+interface EnvironmentInfo {
   /** Currently preferred color scheme */
   colorScheme: 'light' | 'dark';
   /** Best-effort ISO language code resolved from the browser */
   language: BaseLanguageCode;
 }
 
-export type GMAPIName =
+type GMAPIName =
   | 'getValue'
   | 'setValue'
   | 'download'
@@ -55,7 +55,7 @@ function detectLanguageCode(): BaseLanguageCode {
   return DEFAULT_LANGUAGE;
 }
 
-export function detectEnvironment(): EnvironmentInfo {
+function detectEnvironment(): EnvironmentInfo {
   return {
     colorScheme: detectColorScheme(),
     language: detectLanguageCode(),

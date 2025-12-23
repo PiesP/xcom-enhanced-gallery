@@ -34,7 +34,7 @@ import type { AppConfig } from '@shared/types';
  * Supports severity levels: debug, info, warn, error
  * Enables filtering and selective output based on environment
  */
-export interface ILogger {
+interface ILogger {
   debug(message: string, ...args: unknown[]): void;
   info(message: string, ...args: unknown[]): void;
   warn(message: string, ...args: unknown[]): void;
@@ -45,7 +45,7 @@ export interface ILogger {
  * Media extraction service interface
  * Handles DOM-based media discovery and URL extraction
  */
-export interface IMediaService {
+interface IMediaService {
   // Required methods (extracted from MediaService)
   extractMediaUrls(element: HTMLElement): Promise<string[]>;
   cleanup(): Promise<void>;
@@ -54,7 +54,7 @@ export interface IMediaService {
 /**
  * Theme service interface
  */
-export interface IThemeService {
+interface IThemeService {
   getCurrentTheme(): 'light' | 'dark' | 'auto';
   setTheme(theme: 'light' | 'dark' | 'auto'): void;
   cleanup(): void;
@@ -63,7 +63,7 @@ export interface IThemeService {
 /**
  * Video control service interface
  */
-export interface IVideoService {
+interface IVideoService {
   pauseAll(): void;
   resumeAll(): void;
   cleanup(): void;
@@ -73,7 +73,7 @@ export interface IVideoService {
  * Settings service interface - application configuration storage
  * Handles both get/set operations and bulk updates
  */
-export interface ISettingsService {
+interface ISettingsService {
   getSettings(): Record<string, unknown>;
   updateSettings(settings: Record<string, unknown>): void;
   get<T = unknown>(key: string): T;
@@ -100,7 +100,7 @@ export interface IGalleryApp {
  * - features: Feature factory functions
  * - dispose(): Resource cleanup method
  */
-export interface AppContainer {
+interface AppContainer {
   /** Application configuration */
   config: AppConfig;
 
@@ -128,7 +128,7 @@ export interface AppContainer {
  * Container creation options - customizable configuration
  * Allows partial overrides of default application config
  */
-export interface CreateContainerOptions {
+interface CreateContainerOptions {
   config?: Partial<AppConfig>;
 }
 
@@ -137,4 +137,4 @@ export interface CreateContainerOptions {
  * Creates container with optional custom configuration
  * Async to support initialization of services
  */
-export type CreateAppContainer = (options?: CreateContainerOptions) => Promise<AppContainer>;
+type CreateAppContainer = (options?: CreateContainerOptions) => Promise<AppContainer>;

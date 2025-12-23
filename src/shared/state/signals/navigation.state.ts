@@ -26,7 +26,7 @@ export type NavigationTrigger = 'button' | 'click' | 'keyboard' | 'scroll';
 /**
  * Navigation state interface
  */
-export interface NavigationStateData {
+interface NavigationStateData {
   readonly lastSource: NavigationSource;
   readonly lastTimestamp: number;
   readonly lastNavigatedIndex: number | null;
@@ -35,7 +35,7 @@ export interface NavigationStateData {
 /**
  * Navigation transition result
  */
-export interface NavigationResult {
+interface NavigationResult {
   readonly isDuplicate: boolean;
 }
 
@@ -69,7 +69,7 @@ const VALID_NAVIGATION_TRIGGERS: readonly NavigationTrigger[] = [
 // Fine-grained Signals
 // ============================================================================
 
-export const navigationSignals = {
+const navigationSignals = {
   lastSource: createSignalSafe<NavigationSource>(INITIAL_NAVIGATION_STATE.lastSource),
   lastTimestamp: createSignalSafe<number>(INITIAL_NAVIGATION_STATE.lastTimestamp),
   lastNavigatedIndex: createSignalSafe<number | null>(INITIAL_NAVIGATION_STATE.lastNavigatedIndex),
@@ -86,14 +86,14 @@ function resolveNowMs(nowMs?: number): number {
 /**
  * Check if value is a valid navigation source
  */
-export function isValidNavigationSource(value: unknown): value is NavigationSource {
+function isValidNavigationSource(value: unknown): value is NavigationSource {
   return typeof value === 'string' && VALID_NAVIGATION_SOURCES.includes(value as NavigationSource);
 }
 
 /**
  * Check if value is a valid navigation trigger
  */
-export function isValidNavigationTrigger(value: unknown): value is NavigationTrigger {
+function isValidNavigationTrigger(value: unknown): value is NavigationTrigger {
   return (
     typeof value === 'string' && VALID_NAVIGATION_TRIGGERS.includes(value as NavigationTrigger)
   );
@@ -102,7 +102,7 @@ export function isValidNavigationTrigger(value: unknown): value is NavigationTri
 /**
  * Check if source is a manual navigation (button or keyboard)
  */
-export function isManualSource(source: NavigationSource): boolean {
+function isManualSource(source: NavigationSource): boolean {
   return source === 'button' || source === 'keyboard';
 }
 
@@ -169,7 +169,7 @@ export function validateFocusParams(
 /**
  * Get current navigation state
  */
-export function getNavigationState(): NavigationStateData {
+function getNavigationState(): NavigationStateData {
   return {
     lastSource: navigationSignals.lastSource.value,
     lastTimestamp: navigationSignals.lastTimestamp.value,
@@ -180,7 +180,7 @@ export function getNavigationState(): NavigationStateData {
 /**
  * Get last navigation source
  */
-export function getLastNavigationSource(): NavigationSource {
+function getLastNavigationSource(): NavigationSource {
   return navigationSignals.lastSource.value;
 }
 

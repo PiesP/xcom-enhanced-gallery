@@ -12,7 +12,7 @@ import { createEffect, createSignal, onCleanup } from 'solid-js';
 /**
  * Options for toolbar auto-hide hook
  */
-export interface UseToolbarAutoHideOptions {
+interface UseToolbarAutoHideOptions {
   /** Whether the gallery is visible */
   readonly isVisible: () => boolean;
   /** Whether there are media items */
@@ -22,7 +22,7 @@ export interface UseToolbarAutoHideOptions {
 /**
  * Result of toolbar auto-hide hook
  */
-export interface UseToolbarAutoHideResult {
+interface UseToolbarAutoHideResult {
   /** Whether toolbar should be initially visible */
   readonly isInitialToolbarVisible: () => boolean;
   /** Setter for initial toolbar visibility */

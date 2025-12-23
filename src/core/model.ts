@@ -1,6 +1,6 @@
 import type { DomFacts } from '@core/dom-facts';
 
-export interface InFlightRequest {
+interface InFlightRequest {
   readonly purpose: 'domFacts' | 'storageGet' | 'storageSet' | 'httpRequest' | 'navigate';
   readonly startedAt: number;
 }

@@ -14,7 +14,7 @@ import { gallerySignals } from '@shared/state/signals/gallery.signals';
 /**
  * Video control action type
  */
-export type VideoControlAction =
+type VideoControlAction =
   | 'play'
   | 'pause'
   | 'togglePlayPause'
@@ -26,7 +26,7 @@ export type VideoControlAction =
 /**
  * Video control options
  */
-export interface VideoControlOptions {
+interface VideoControlOptions {
   video?: HTMLVideoElement | null;
   context?: string;
 }

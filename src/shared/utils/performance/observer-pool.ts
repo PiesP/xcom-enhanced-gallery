@@ -87,7 +87,7 @@ export const SharedObserver = {
 };
 
 // Test helper: Reset internal state for test isolation. Not intended for production use.
-export function _resetSharedObserverForTests(): void {
+function _resetSharedObserverForTests(): void {
   observerRegistry = new WeakMap();
   didLogCallbackErrorInDev = false;
 }

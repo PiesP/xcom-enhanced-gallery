@@ -13,7 +13,7 @@
 // ================================
 
 // MediaType and MediaQuality are single sources in constants.ts
-export type { MediaQuality, MediaType } from '@constants/types';
+;
 
 // Import ErrorCode for integration (provide ExtractionErrorCode alias)
 import type { AmbientVideoPauseRequest } from '@shared/utils/media/ambient-video-coordinator';
@@ -63,7 +63,7 @@ export interface MediaInfo {
 /**
  * Media entity (with time information)
  */
-export interface MediaEntity extends MediaInfo {
+interface MediaEntity extends MediaInfo {
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -77,7 +77,7 @@ export interface MediaEntity extends MediaInfo {
  *
  * Version of MediaInfo with required fields
  */
-export interface MediaInfoWithFilename extends MediaInfo {
+interface MediaInfoWithFilename extends MediaInfo {
   /** Media unique identifier (required) */
   id: string;
   /** Original page URL (required) */
@@ -118,7 +118,7 @@ export interface TweetInfo {
  * - quotedUsername: Quoted tweet author
  * - sourceLocation: Media source from API response (quoted vs original)
  */
-export interface QuoteTweetInfo {
+interface QuoteTweetInfo {
   /** Whether it is a quote tweet */
   isQuoteTweet: boolean;
   /** Location where clicked */
@@ -151,7 +151,7 @@ export interface MediaExtractionOptions {
  * Page type definition (merged from Core)
  * Using const object for tree-shaking optimization.
  */
-export const PageType = {
+const PageType = {
   TIMELINE: 'timeline',
   SINGLE_TWEET: 'single_tweet',
   MEDIA_TAB: 'media_tab',
@@ -161,7 +161,7 @@ export const PageType = {
 } as const;
 
 /** Type for PageType values */
-export type PageType = (typeof PageType)[keyof typeof PageType];
+type PageType = (typeof PageType)[keyof typeof PageType];
 
 /**
  * Extraction source type (merged from Core)
@@ -180,7 +180,7 @@ export type ExtractionSource = (typeof ExtractionSource)[keyof typeof Extraction
 /**
  * Extraction metadata (merged from Core)
  */
-export interface ExtractionMetadata {
+interface ExtractionMetadata {
   readonly extractionTime?: number;
   readonly extractedAt?: number;
   readonly strategiesUsed?: string[];
@@ -301,7 +301,7 @@ export interface GalleryRenderOptions {
 /**
  * Media extraction strategy
  */
-export type ExtractionStrategy =
+type ExtractionStrategy =
   | 'api-first'
   | 'dom-only'
   | 'hybrid'

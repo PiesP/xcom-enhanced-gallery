@@ -19,12 +19,12 @@
  */
 // Re-export type-safe functions for convenient access
 export {
-  getTypedSetting,
+  
   getTypedSettingOr,
-  isValidSettingPath,
-  type SettingPath,
-  type SettingValue,
+  
+  
+  
   setTypedSetting,
-  tryGetTypedSetting,
-  trySetTypedSetting,
+  
+  
 } from './typed-settings';

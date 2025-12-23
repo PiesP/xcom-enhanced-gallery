@@ -6,14 +6,14 @@
 export {
   getUserscript,
   getUserscriptSafe,
-  type ResolvedGMAPIs,
-  resolveGMAPIs,
+  
+  
   resolveGMDownload,
   type UserscriptAPI,
 } from '@shared/external/userscript/adapter';
 export {
-  detectEnvironment,
-  type EnvironmentInfo,
-  type GMAPIName,
+  
+  
+  
   isGMAPIAvailable,
 } from '@shared/external/userscript/environment-detector';

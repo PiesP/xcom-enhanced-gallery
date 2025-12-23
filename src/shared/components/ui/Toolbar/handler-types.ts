@@ -18,7 +18,7 @@
 /**
  * Navigation handlers for gallery traversal
  */
-export interface NavigationHandlers {
+interface NavigationHandlers {
   /** Navigate to the previous media item */
   readonly onPrevious: () => void;
   /** Navigate to the next media item */
@@ -28,7 +28,7 @@ export interface NavigationHandlers {
 /**
  * Download handlers for media download operations
  */
-export interface DownloadHandlers {
+interface DownloadHandlers {
   /** Download the currently displayed media item */
   readonly onDownloadCurrent: () => void;
   /** Download all media items in the gallery */
@@ -52,7 +52,7 @@ export interface FitModeHandlers {
 /**
  * Lifecycle handlers for gallery state management
  */
-export interface LifecycleHandlers {
+interface LifecycleHandlers {
   /** Close the gallery */
   readonly onClose: () => void;
   /** Called when settings panel is opened */
@@ -62,7 +62,7 @@ export interface LifecycleHandlers {
 /**
  * Focus event handlers for keyboard navigation support
  */
-export interface FocusHandlers {
+interface FocusHandlers {
   /** Handle focus event */
   readonly onFocus?: ((event: FocusEvent) => void) | undefined;
   /** Handle blur event */
@@ -93,12 +93,12 @@ export interface ToolbarHandlers {
 /**
  * Helper type to extract individual handler from grouped handlers
  */
-export type ExtractHandler<T, K extends keyof T> = T[K];
+type ExtractHandler<T, K extends keyof T> = T[K];
 
 /**
  * Creates default empty handlers for optional handler groups
  */
-export function createEmptyFitModeHandlers(): FitModeHandlers {
+function createEmptyFitModeHandlers(): FitModeHandlers {
   return {
     onFitOriginal: undefined,
     onFitWidth: undefined,
@@ -110,7 +110,7 @@ export function createEmptyFitModeHandlers(): FitModeHandlers {
 /**
  * Creates default empty handlers for focus events
  */
-export function createEmptyFocusHandlers(): FocusHandlers {
+function createEmptyFocusHandlers(): FocusHandlers {
   return {
     onFocus: undefined,
     onBlur: undefined,
@@ -121,7 +121,7 @@ export function createEmptyFocusHandlers(): FocusHandlers {
 /**
  * Type guard to check if fit mode handlers are provided
  */
-export function hasFitModeHandlers(
+function hasFitModeHandlers(
   handlers: ToolbarHandlers
 ): handlers is ToolbarHandlers & { fitMode: FitModeHandlers } {
   return handlers.fitMode !== undefined;
@@ -130,7 +130,7 @@ export function hasFitModeHandlers(
 /**
  * Type guard to check if focus handlers are provided
  */
-export function hasFocusHandlers(
+function hasFocusHandlers(
   handlers: ToolbarHandlers
 ): handlers is ToolbarHandlers & { focus: FocusHandlers } {
   return handlers.focus !== undefined;

@@ -15,7 +15,7 @@ import { extractUsernameFromUrl } from '@shared/utils/url/host';
 // Types
 // ============================================================================
 
-export interface FilenameOptions {
+interface FilenameOptions {
   index?: string | number;
   extension?: string;
   fallbackPrefix?: string;
@@ -27,7 +27,7 @@ export interface FilenameOptions {
   nowMs?: number;
 }
 
-export interface ZipFilenameOptions {
+interface ZipFilenameOptions {
   fallbackPrefix?: string;
   /**
    * Injected time source to keep this module pure.
@@ -192,14 +192,14 @@ export function generateZipFilename(
 /**
  * Validate a media filename.
  */
-export function isValidMediaFilename(filename: string): boolean {
+function isValidMediaFilename(filename: string): boolean {
   return filename.length > 0 && !/[<>:"/\\|?*]/.test(filename);
 }
 
 /**
  * Validate a ZIP filename.
  */
-export function isValidZipFilename(filename: string): boolean {
+function isValidZipFilename(filename: string): boolean {
   return filename.endsWith('.zip') && !/[<>:"/\\|?*]/.test(filename);
 }
 
@@ -207,10 +207,4 @@ export function isValidZipFilename(filename: string): boolean {
 // Exported Utilities (for advanced use cases)
 // ============================================================================
 
-export {
-  getExtension as getFileExtension,
-  getIndexFromMediaId,
-  normalizeIndex,
-  resolveMetadata as resolveMediaMetadata,
-  sanitize as sanitizeFilename,
-};
+;

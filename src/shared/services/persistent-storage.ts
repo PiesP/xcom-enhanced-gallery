@@ -2,7 +2,7 @@ import { getUserscriptSafe, type UserscriptAPI } from '@shared/external/userscri
 import { logger } from '@shared/logging';
 import { createSingleton } from '@shared/utils/types/singleton';
 
-export interface PersistentStorageGetOptions {
+interface PersistentStorageGetOptions {
   /**
    * When JSON parsing fails, log a warning only once per key to improve observability
    * without creating noisy logs.

@@ -8,12 +8,12 @@
  * and ignore the matching `volumechange` event(s) within a short time window.
  */
 
-export interface VideoVolumeSnapshot {
+interface VideoVolumeSnapshot {
   readonly volume: number;
   readonly muted: boolean;
 }
 
-export interface VideoVolumeChangeGuard {
+interface VideoVolumeChangeGuard {
   /** Mark a programmatic change and the exact expected resulting state. */
   markProgrammaticChange(expected: VideoVolumeSnapshot): void;
 
@@ -21,7 +21,7 @@ export interface VideoVolumeChangeGuard {
   shouldIgnoreChange(current: VideoVolumeSnapshot): boolean;
 }
 
-export interface CreateVideoVolumeChangeGuardOptions {
+interface CreateVideoVolumeChangeGuardOptions {
   /**
    * Maximum age of a programmatic mark (milliseconds).
    *

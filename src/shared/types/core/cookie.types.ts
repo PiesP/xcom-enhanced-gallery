@@ -2,7 +2,7 @@
  * Cookie-related type definitions shared across the service and external adapters.
  */
 
-export interface CookiePartitionKey {
+interface CookiePartitionKey {
   topLevelSite?: string;
 }
 
@@ -43,9 +43,9 @@ export interface CookieDeleteOptions {
   partitionKey?: CookiePartitionKey;
 }
 
-export type CookieListCallback = (cookies: CookieRecord[], error: string | null) => void;
+type CookieListCallback = (cookies: CookieRecord[], error: string | null) => void;
 
-export type CookieOperationCallback = (error?: string) => void;
+type CookieOperationCallback = (error?: string) => void;
 
 export interface CookieAPI {
   list(details?: CookieListOptions, callback?: CookieListCallback): void;

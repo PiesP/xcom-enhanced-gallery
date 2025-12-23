@@ -7,9 +7,9 @@
 import { generateMediaFilename, generateZipFilename } from '@shared/core/filename/filename-utils';
 import type { MediaInfo } from '@shared/types/media.types';
 
-export type DownloadMethod = 'gm_download' | 'none';
+type DownloadMethod = 'gm_download' | 'none';
 
-export interface SingleDownloadPlanningInput {
+interface SingleDownloadPlanningInput {
   method: DownloadMethod;
   mediaUrl: string;
   filename: string;
@@ -51,13 +51,13 @@ export function planSingleDownload(input: SingleDownloadPlanningInput): SingleDo
   return { strategy: 'none', filename, error: 'No download method' };
 }
 
-export interface PlannedZipItem {
+interface PlannedZipItem {
   url: string;
   desiredName: string;
   blob?: Blob | Promise<Blob> | undefined;
 }
 
-export interface BulkDownloadPlanningInput {
+interface BulkDownloadPlanningInput {
   mediaItems: readonly MediaInfo[];
   prefetchedBlobs?: Map<string, Blob | Promise<Blob>> | undefined;
   zipFilename?: string | undefined;
@@ -67,7 +67,7 @@ export interface BulkDownloadPlanningInput {
   nowMs?: number;
 }
 
-export interface BulkDownloadPlan {
+interface BulkDownloadPlan {
   items: PlannedZipItem[];
   zipFilename: string;
 }
@@ -94,7 +94,7 @@ export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownload
   return { items, zipFilename };
 }
 
-export type ZipSaveStrategy = 'gm_download' | 'none';
+type ZipSaveStrategy = 'gm_download' | 'none';
 
 /**
  * Plan how to persist a prepared ZIP blob.

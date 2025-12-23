@@ -7,7 +7,7 @@ export function getExponentialBackoffDelayMs(attempt: number, baseDelayMs: numbe
 /**
  * Options for retry operations
  */
-export interface RetryOptions {
+interface RetryOptions {
   /** Maximum number of retry attempts (default: 3) */
   readonly maxAttempts?: number;
   /** Base delay in milliseconds for exponential backoff (default: 200) */
@@ -25,28 +25,28 @@ export interface RetryOptions {
 /**
  * Result of a retry operation
  */
-export interface RetryResultBase {
+interface RetryResultBase {
   /** Whether the operation succeeded */
   readonly success: boolean;
   /** Number of attempts made */
   readonly attempts: number;
 }
 
-export type RetryResultSuccess<T> = RetryResultBase & {
+type RetryResultSuccess<T> = RetryResultBase & {
   readonly success: true;
   /** The result value if successful */
   readonly data: T;
   readonly error?: undefined;
 };
 
-export type RetryResultFailure = RetryResultBase & {
+type RetryResultFailure = RetryResultBase & {
   readonly success: false;
   readonly data?: undefined;
   /** The error if failed */
   readonly error: unknown;
 };
 
-export type RetryResult<T> = RetryResultSuccess<T> | RetryResultFailure;
+type RetryResult<T> = RetryResultSuccess<T> | RetryResultFailure;
 
 /**
  * Default retry options

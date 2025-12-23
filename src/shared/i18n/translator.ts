@@ -4,12 +4,12 @@ import { TranslationCatalog, type TranslationCatalogOptions } from './translatio
 import { resolveTranslationValue } from './translation-utils';
 import type { TranslationKey, TranslationParams } from './types';
 
-export interface TranslateOptions {
+interface TranslateOptions {
   readonly params?: TranslationParams;
   readonly language?: BaseLanguageCode;
 }
 
-export type TranslationFunction = (key: TranslationKey, params?: TranslationParams) => string;
+type TranslationFunction = (key: TranslationKey, params?: TranslationParams) => string;
 
 export class Translator {
   private readonly catalog: TranslationCatalog;
@@ -56,7 +56,7 @@ export class Translator {
   }
 }
 
-export function createTranslationFunction(
+function createTranslationFunction(
   translator: Translator,
   resolveLanguage: () => BaseLanguageCode
 ): TranslationFunction {

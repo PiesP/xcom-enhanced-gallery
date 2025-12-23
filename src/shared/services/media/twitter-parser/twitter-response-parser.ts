@@ -345,4 +345,4 @@ export function normalizeLegacyUser(user: TwitterUser): void {
   }
 }
 
-export { getHighQualityMediaUrl, resolveAspectRatio, resolveDimensions };
+;

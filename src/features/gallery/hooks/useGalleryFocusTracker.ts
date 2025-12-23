@@ -22,7 +22,7 @@ import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import { type Accessor, onCleanup } from 'solid-js';
 
 /** Hook configuration */
-export interface UseGalleryFocusTrackerOptions {
+interface UseGalleryFocusTrackerOptions {
   /** Container element for tracking */
   container: MaybeAccessor<HTMLElement | null>;
   /** Whether tracking is enabled */
@@ -38,7 +38,7 @@ export interface UseGalleryFocusTrackerOptions {
 }
 
 /** Hook return type */
-export interface UseGalleryFocusTrackerReturn {
+interface UseGalleryFocusTrackerReturn {
   /** Current focused index (null if none) */
   focusedIndex: Accessor<number | null>;
   /** Register item for tracking */

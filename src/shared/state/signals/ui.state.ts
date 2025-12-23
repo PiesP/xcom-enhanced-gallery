@@ -26,7 +26,7 @@ export type ViewMode = 'horizontal' | 'vertical';
 /**
  * Gallery UI state interface
  */
-export interface GalleryUiState {
+interface GalleryUiState {
   readonly viewMode: ViewMode;
   readonly isLoading: boolean;
   readonly error: string | null;
@@ -59,7 +59,7 @@ export const uiSignals = {
 /**
  * Get current UI state
  */
-export function getUiState(): GalleryUiState {
+function getUiState(): GalleryUiState {
   return {
     viewMode: uiSignals.viewMode.value,
     isLoading: uiSignals.isLoading.value,
@@ -70,21 +70,21 @@ export function getUiState(): GalleryUiState {
 /**
  * Get current view mode
  */
-export function getViewMode(): ViewMode {
+function getViewMode(): ViewMode {
   return uiSignals.viewMode.value;
 }
 
 /**
  * Check if loading
  */
-export function isLoading(): boolean {
+function isLoading(): boolean {
   return uiSignals.isLoading.value;
 }
 
 /**
  * Get current error
  */
-export function getError(): string | null {
+function getError(): string | null {
   return uiSignals.error.value;
 }
 
@@ -95,7 +95,7 @@ export function getError(): string | null {
 /**
  * Set view mode
  */
-export function setViewMode(viewMode: ViewMode): void {
+function setViewMode(viewMode: ViewMode): void {
   uiSignals.viewMode.value = viewMode;
   if (__DEV__) {
     logger.debug(`[Gallery UI] View mode changed to: ${viewMode}`);
@@ -105,7 +105,7 @@ export function setViewMode(viewMode: ViewMode): void {
 /**
  * Set loading state
  */
-export function setLoading(isLoading: boolean): void {
+function setLoading(isLoading: boolean): void {
   uiSignals.isLoading.value = isLoading;
 }
 
@@ -125,7 +125,7 @@ export function setError(error: string | null): void {
 /**
  * Reset UI state to initial values
  */
-export function resetUiState(): void {
+function resetUiState(): void {
   uiSignals.viewMode.value = INITIAL_UI_STATE.viewMode;
   uiSignals.isLoading.value = INITIAL_UI_STATE.isLoading;
   uiSignals.error.value = INITIAL_UI_STATE.error;
@@ -134,6 +134,6 @@ export function resetUiState(): void {
 /**
  * Clear error
  */
-export function clearError(): void {
+function clearError(): void {
   uiSignals.error.value = null;
 }

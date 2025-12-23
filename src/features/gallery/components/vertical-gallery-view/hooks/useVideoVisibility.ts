@@ -13,7 +13,7 @@ import { createEffect, onCleanup } from 'solid-js';
 /**
  * Options for video visibility hook
  */
-export interface UseVideoVisibilityOptions {
+interface UseVideoVisibilityOptions {
   /** Container element accessor */
   readonly container: () => HTMLElement | null;
   /** Video element accessor */

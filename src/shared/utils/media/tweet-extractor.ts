@@ -21,7 +21,7 @@ import { logger } from '@shared/logging';
  * // '<span>Tweet with <a href="...">link</a> and #hashtag</span>'
  * ```
  */
-export function extractTweetTextHTML(tweetArticle: Element | null): string | undefined {
+function extractTweetTextHTML(tweetArticle: Element | null): string | undefined {
   if (!tweetArticle) return undefined;
 
   try {

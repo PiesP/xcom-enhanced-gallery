@@ -15,7 +15,7 @@ export function safeParseInt(value: string | undefined | null, radix: number = 1
   return Number.isNaN(result) ? 0 : result;
 }
 
-export function safeParseFloat(value: string | undefined | null): number {
+function safeParseFloat(value: string | undefined | null): number {
   if (value == null) {
     return 0;
   }
@@ -24,11 +24,11 @@ export function safeParseFloat(value: string | undefined | null): number {
   return Number.isNaN(result) ? 0 : result;
 }
 
-export function undefinedToNull<T>(value: T | undefined): T | null {
+function undefinedToNull<T>(value: T | undefined): T | null {
   return value === undefined ? null : value;
 }
 
-export function stringWithDefault(value: string | undefined, fallback: string = ''): string {
+function stringWithDefault(value: string | undefined, fallback: string = ''): string {
   return value === undefined ? fallback : value;
 }
 
@@ -56,7 +56,7 @@ export function clampIndex(index: number, length: number): number {
   return clamp(Math.floor(index), 0, length - 1);
 }
 
-export function safeElementCheck(value: unknown): value is Element {
+function safeElementCheck(value: unknown): value is Element {
   if (value == null) {
     return false;
   }
@@ -68,7 +68,7 @@ export function safeElementCheck(value: unknown): value is Element {
   }
 }
 
-export function safeTweetId(value: string | undefined | null): string {
+function safeTweetId(value: string | undefined | null): string {
   const raw = value ?? '';
   if (raw.trim().length > 0) {
     return raw;
@@ -92,7 +92,7 @@ export function safeTweetId(value: string | undefined | null): string {
  *
  * Used by tests/mutation coverage helpers.
  */
-export function isGlobalLike(value: unknown): boolean {
+function isGlobalLike(value: unknown): boolean {
   if (!isRecord(value)) {
     return false;
   }

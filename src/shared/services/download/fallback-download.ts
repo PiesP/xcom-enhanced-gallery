@@ -5,12 +5,12 @@
 
 import { isGMAPIAvailable, resolveGMDownload } from '@shared/external/userscript';
 
-export interface GMDownloadProgressEvent {
+interface GMDownloadProgressEvent {
   loaded: number;
   total: number;
 }
 
-export interface GMDownloadOptions {
+interface GMDownloadOptions {
   url: string;
   name: string;
   headers?: Record<string, string>;

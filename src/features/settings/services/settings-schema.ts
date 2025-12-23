@@ -60,7 +60,7 @@ function computeHashString(str: string): string {
  * - Sorts object keys
  * - Preserves array order
  */
-export function computeSettingsSchemaHashFrom(obj: unknown): string {
+function computeSettingsSchemaHashFrom(obj: unknown): string {
   const filtered = obj && typeof obj === 'object' ? obj : {};
   return computeHashString(stableStringifyForHash(filtered));
 }

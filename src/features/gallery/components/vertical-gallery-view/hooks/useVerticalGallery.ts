@@ -29,7 +29,7 @@ import { useToolbarAutoHide } from './useToolbarAutoHide';
 /**
  * Options for the composed VerticalGallery hook
  */
-export interface UseVerticalGalleryOptions {
+interface UseVerticalGalleryOptions {
   /** Whether gallery is visible (has media items) */
   readonly isVisible: Accessor<boolean>;
   /** Current gallery index */
@@ -49,7 +49,7 @@ export interface UseVerticalGalleryOptions {
 /**
  * Scroll state and handlers
  */
-export interface ScrollState {
+interface ScrollState {
   /** Whether user is currently scrolling */
   readonly isScrolling: Accessor<boolean>;
   /** Scroll to specific item by index */
@@ -61,7 +61,7 @@ export interface ScrollState {
 /**
  * Navigation state and handlers
  */
-export interface NavigationState {
+interface NavigationState {
   /** Last navigation trigger type */
   readonly lastNavigationTrigger: Accessor<NavigationTrigger | null>;
   /** Set navigation trigger */
@@ -75,7 +75,7 @@ export interface NavigationState {
 /**
  * Focus tracking state and handlers
  */
-export interface FocusState {
+interface FocusState {
   /** Currently focused item index */
   readonly focusedIndex: Accessor<number | null>;
   /** Register item element for focus tracking */
@@ -89,7 +89,7 @@ export interface FocusState {
 /**
  * Toolbar visibility state
  */
-export interface ToolbarState {
+interface ToolbarState {
   /** Whether toolbar should be initially visible */
   readonly isInitialToolbarVisible: Accessor<boolean>;
   /** Set initial toolbar visibility */
@@ -99,7 +99,7 @@ export interface ToolbarState {
 /**
  * Result of the composed VerticalGallery hook
  */
-export interface UseVerticalGalleryResult {
+interface UseVerticalGalleryResult {
   /** Scroll-related state and handlers */
   readonly scroll: ScrollState;
   /** Navigation-related state and handlers */

@@ -2,7 +2,7 @@ import { getLanguageService } from '@shared/container/service-accessors';
 import type { TranslationKey, TranslationParams } from '@shared/i18n';
 import { createSignal, onCleanup } from 'solid-js';
 
-export type Translate = (key: TranslationKey, params?: TranslationParams) => string;
+type Translate = (key: TranslationKey, params?: TranslationParams) => string;
 
 export function useTranslation(): Translate {
   const languageService = getLanguageService();

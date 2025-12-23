@@ -4,12 +4,12 @@ import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 
 export type { FitMode, MaybeAccessor };
 export type {
-  DownloadHandlers,
+  
   FitModeHandlers,
-  FocusHandlers,
-  LifecycleHandlers,
-  NavigationHandlers,
-  ToolbarHandlers,
+  
+  
+  
+  
 } from '@shared/components/ui/Toolbar/handler-types';
 
 /**

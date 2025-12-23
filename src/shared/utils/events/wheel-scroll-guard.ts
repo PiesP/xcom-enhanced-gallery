@@ -5,14 +5,14 @@
  * containers exist (e.g., toolbar panels inside a gallery overlay).
  */
 
-export interface WheelScrollGuardOptions {
+interface WheelScrollGuardOptions {
   /** Selector used to find the nearest scrollable ancestor. */
   readonly scrollableSelector: string;
   /** Pixel tolerance for boundary checks. Defaults to 1. */
   readonly tolerance?: number;
 }
 
-export function findScrollableAncestor(
+function findScrollableAncestor(
   target: EventTarget | null,
   scrollableSelector: string
 ): HTMLElement | null {
@@ -23,7 +23,7 @@ export function findScrollableAncestor(
   return target.closest<HTMLElement>(scrollableSelector);
 }
 
-export function canConsumeWheelEvent(element: HTMLElement, deltaY: number, tolerance = 1): boolean {
+function canConsumeWheelEvent(element: HTMLElement, deltaY: number, tolerance = 1): boolean {
   const overflow = element.scrollHeight - element.clientHeight;
 
   if (overflow <= tolerance) {

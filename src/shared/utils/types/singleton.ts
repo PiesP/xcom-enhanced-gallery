@@ -1,7 +1,7 @@
 /**
  * Shared helper for creating lazy singleton accessors.
  */
-export interface SingletonController<T> {
+interface SingletonController<T> {
   /** Lazily build (and cache) the singleton instance. */
   get(): T;
   /** Return the cached instance without creating it. */

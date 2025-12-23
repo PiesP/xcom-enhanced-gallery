@@ -137,7 +137,7 @@ function initializeTokensSync(): void {
  * const token = getCsrfToken();
  * ```
  */
-export async function initTokens(): Promise<string | undefined> {
+async function initTokens(): Promise<string | undefined> {
   // Return cached token if already initialized
   if (_tokensInitialized && _csrfToken) {
     return _csrfToken;
@@ -212,7 +212,7 @@ export async function getCsrfTokenAsync(): Promise<string | undefined> {
  *
  * @returns True if initialization has completed
  */
-export function isTokensInitialized(): boolean {
+function isTokensInitialized(): boolean {
   return _tokensInitialized;
 }
 
@@ -221,7 +221,7 @@ export function isTokensInitialized(): boolean {
  *
  * @returns True if async initialization is pending
  */
-export function isTokensInitializing(): boolean {
+function isTokensInitializing(): boolean {
   return _initPromise !== null;
 }
 
@@ -231,7 +231,7 @@ export function isTokensInitializing(): boolean {
  *
  * @internal Primarily for testing
  */
-export function resetTokens(): void {
+function resetTokens(): void {
   _csrfToken = undefined;
   _tokensInitialized = false;
   _initPromise = null;
@@ -244,7 +244,7 @@ export function resetTokens(): void {
  * @param token - CSRF token to set
  * @internal Primarily for testing
  */
-export function setCsrfToken(token: string | undefined): void {
+function setCsrfToken(token: string | undefined): void {
   _csrfToken = token;
   _tokensInitialized = true;
 }

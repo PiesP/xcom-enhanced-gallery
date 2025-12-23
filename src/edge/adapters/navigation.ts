@@ -5,7 +5,7 @@
 
 import type { NavigateMode } from '@core/cmd';
 
-export interface NavigateInput {
+interface NavigateInput {
   readonly url: string;
   readonly mode: NavigateMode;
   readonly target?: '_self' | '_blank';

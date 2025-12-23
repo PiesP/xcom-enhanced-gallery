@@ -33,7 +33,7 @@ import { logger } from '@shared/logging';
 /**
  * Lifecycle hooks configuration
  */
-export interface LifecycleHooks {
+interface LifecycleHooks {
   /**
    * Called during initialization (async supported)
    * @throws Error if initialization fails
@@ -76,7 +76,7 @@ export interface Lifecycle {
 /**
  * Options for createLifecycle
  */
-export interface CreateLifecycleOptions extends LifecycleHooks {
+interface CreateLifecycleOptions extends LifecycleHooks {
   /**
    * Skip logging (useful for internal/utility services)
    * @default false

@@ -1,7 +1,7 @@
 import { logger } from '@shared/logging';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
-export type IdleHandle = { cancel: () => void };
+type IdleHandle = { cancel: () => void };
 
 type RequestIdleCallback = (callback: () => void, opts?: { timeout?: number }) => number;
 type CancelIdleCallback = (handle: number) => void;

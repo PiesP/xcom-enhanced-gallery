@@ -9,14 +9,14 @@
  * - We normalize whitespace in path data when copying from upstream SVG files.
  */
 
-export type LucideIconTag = 'path' | 'circle';
+type LucideIconTag = 'path' | 'circle';
 
 export type LucideIconNode = readonly [
   tag: LucideIconTag,
   attrs: Readonly<Record<string, string | number>>,
 ];
 
-export type LucideIconNodes = readonly LucideIconNode[];
+type LucideIconNodes = readonly LucideIconNode[];
 
 /**
  * Minimal Lucide icon set used by the userscript.

@@ -1,6 +1,6 @@
 import type { LanguageStrings } from './language-types';
 
-export const TRANSLATION_VALUE_COUNT = 48 as const;
+const TRANSLATION_VALUE_COUNT = 48 as const;
 
 export function buildLanguageStringsFromValues(values: ReadonlyArray<string>): LanguageStrings {
   if (__DEV__ && values.length !== TRANSLATION_VALUE_COUNT) {

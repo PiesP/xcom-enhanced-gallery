@@ -112,4 +112,4 @@ export class GlobalErrorHandler {
   }
 }
 
-export const globalErrorHandler = GlobalErrorHandler.getInstance();
+const globalErrorHandler = GlobalErrorHandler.getInstance();

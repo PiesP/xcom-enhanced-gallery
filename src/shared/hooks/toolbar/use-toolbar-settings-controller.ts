@@ -42,7 +42,7 @@ const DEFAULT_SELECT_GUARD_MS = 300;
 type ThemeOption = 'auto' | 'light' | 'dark';
 type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
 
-export interface UseToolbarSettingsControllerOptions {
+interface UseToolbarSettingsControllerOptions {
   readonly isSettingsExpanded: () => boolean;
   readonly setSettingsExpanded: (expanded: boolean) => void;
   readonly toggleSettingsExpanded: () => void;

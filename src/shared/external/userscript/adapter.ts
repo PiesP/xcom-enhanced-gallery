@@ -95,7 +95,7 @@ interface GlobalWithGM {
  * Helper to resolve a single GM API from scope or globalThis
  * @internal
  */
-export function resolveGMAPIs(): ResolvedGMAPIs {
+function resolveGMAPIs(): ResolvedGMAPIs {
   const global = globalThis as unknown as GlobalWithGM;
 
   // IMPORTANT: In ESM/test environments, referencing an undeclared GM_* free

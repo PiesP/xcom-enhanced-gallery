@@ -10,7 +10,7 @@ import type {
 import { clampIndex } from '@shared/utils/types/safety';
 import { createSingleton } from '@shared/utils/types/singleton';
 
-export interface MediaServiceOptions {
+interface MediaServiceOptions {
   enableMediaExtraction?: boolean;
 }
 

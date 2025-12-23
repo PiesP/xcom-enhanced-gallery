@@ -38,7 +38,7 @@ export const VIDEO_CONTROL_ARIA_TOKENS = [
 /**
  * System page list
  */
-export const SYSTEM_PAGES = [
+const SYSTEM_PAGES = [
   'home',
   'explore',
   'notifications',

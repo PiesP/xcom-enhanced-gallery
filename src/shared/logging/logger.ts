@@ -7,7 +7,7 @@
 
 import { normalizeErrorMessage } from '@shared/error/normalize';
 
-export type LoggableData = unknown;
+type LoggableData = unknown;
 
 export interface Logger {
   info: (...args: LoggableData[]) => void;
@@ -17,7 +17,7 @@ export interface Logger {
   trace?: (...args: LoggableData[]) => void;
 }
 
-export interface LoggerConfig {
+interface LoggerConfig {
   readonly prefix: string;
 }
 
@@ -61,19 +61,19 @@ function buildLogger(prefix: string, enableVerbose: boolean): Logger {
   };
 }
 
-export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
+function createLogger(config: Partial<LoggerConfig> = {}): Logger {
   const prefix = config.prefix ?? BASE_PREFIX;
   return buildLogger(prefix, __DEV__);
 }
 
 export const logger: Logger = createLogger();
 
-export function createScopedLogger(scope: string, config: Partial<LoggerConfig> = {}): Logger {
+function createScopedLogger(scope: string, config: Partial<LoggerConfig> = {}): Logger {
   const prefix = `${config.prefix ?? BASE_PREFIX} [${scope}]`;
   return createLogger({ ...config, prefix });
 }
 
-export function logError(
+function logError(
   error: Error | string,
   context: Record<string, unknown> = {},
   source?: string

@@ -39,13 +39,13 @@ interface UseGalleryScrollOptions {
 }
 
 /** Hook return type */
-export interface UseGalleryScrollReturn {
+interface UseGalleryScrollReturn {
   isScrolling: Accessor<boolean>;
   lastScrollTime: Accessor<number>;
 }
 
 /** Idle timeout after scroll ends (ms) */
-export const SCROLL_IDLE_TIMEOUT = 250;
+const SCROLL_IDLE_TIMEOUT = 250;
 
 /** Window to ignore programmatic scroll events (ms) */
 const PROGRAMMATIC_SCROLL_WINDOW = 100;

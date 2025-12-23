@@ -7,7 +7,7 @@ import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
 import type { JSXElement } from '@shared/external/vendors';
 import { LUCIDE_ICON_NODES, type LucideIconName, type LucideIconNode } from './icon-nodes';
 
-export interface LucideIconProps extends IconProps {
+interface LucideIconProps extends IconProps {
   name: LucideIconName;
 }
 

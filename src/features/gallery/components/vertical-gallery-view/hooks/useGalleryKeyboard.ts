@@ -25,7 +25,7 @@ import { createEffect, onCleanup } from 'solid-js';
  * Gallery keyboard event options
  * @interface UseGalleryKeyboardOptions
  */
-export interface UseGalleryKeyboardOptions {
+interface UseGalleryKeyboardOptions {
   /**
    * Callback triggered when Escape key is pressed
    */

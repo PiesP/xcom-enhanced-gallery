@@ -14,7 +14,7 @@ import { createEffect, on, onCleanup } from 'solid-js';
 /**
  * Options for gallery lifecycle hook
  */
-export interface UseGalleryLifecycleOptions {
+interface UseGalleryLifecycleOptions {
   /** Container element accessor */
   readonly containerEl: () => HTMLDivElement | null;
   /** Toolbar wrapper element accessor */

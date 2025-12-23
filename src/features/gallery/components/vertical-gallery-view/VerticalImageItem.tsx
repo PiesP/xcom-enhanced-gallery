@@ -455,4 +455,4 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   );
 }
 
-export type { FitModeProp, VerticalImageItemProps } from './VerticalImageItem.types';
+;

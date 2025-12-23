@@ -6,9 +6,9 @@
 
 import { THEME_DOM_ATTRIBUTE } from '@shared/constants/theme';
 
-export type ThemeName = 'light' | 'dark';
+type ThemeName = 'light' | 'dark';
 
-export interface SyncThemeAttributesOptions {
+interface SyncThemeAttributesOptions {
   /**
    * Restrict synchronization to the provided theme scope elements.
    * When omitted, every `.xeg-theme-scope` in the document is updated.

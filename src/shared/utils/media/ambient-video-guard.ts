@@ -38,7 +38,7 @@ export function startAmbientVideoGuard(): () => void {
   };
 }
 
-export function stopAmbientVideoGuard(): void {
+function stopAmbientVideoGuard(): void {
   if (guardSubscribers === 0) {
     return;
   }

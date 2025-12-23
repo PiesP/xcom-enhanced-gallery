@@ -4,7 +4,7 @@
  * Centralizes the cancellation semantics used across download/retry layers.
  */
 
-export const USER_CANCELLED_MESSAGE = 'Download cancelled by user' as const;
+const USER_CANCELLED_MESSAGE = 'Download cancelled by user' as const;
 const DEFAULT_ABORT_MESSAGE = 'This operation was aborted' as const;
 
 /**
@@ -38,7 +38,7 @@ export function isAbortError(value: unknown): boolean {
  * DOMException("TimeoutError") (AbortSignal.timeout/our timeout controller) or as
  * an Error subclass named "TimeoutError".
  */
-export function isTimeoutError(value: unknown): boolean {
+function isTimeoutError(value: unknown): boolean {
   if (value instanceof DOMException) {
     return value.name === 'TimeoutError';
   }
@@ -88,7 +88,7 @@ export function createUserCancelledAbortError(cause?: unknown): Error {
 /**
  * Check whether an unknown value represents the standardized user cancellation.
  */
-export function isUserCancelledAbortError(error: unknown): boolean {
+function isUserCancelledAbortError(error: unknown): boolean {
   if (error instanceof DOMException) {
     return error.name === 'AbortError' && error.message === USER_CANCELLED_MESSAGE;
   }

@@ -12,7 +12,7 @@ import { globalTimerManager } from '@shared/utils/time/timer-management';
 /**
  * Error thrown when an operation times out
  */
-export class TimeoutError extends Error {
+class TimeoutError extends Error {
   override readonly name = 'TimeoutError';
 
   constructor(message = 'Operation timed out') {
@@ -25,7 +25,7 @@ export class TimeoutError extends Error {
 /**
  * Options for timeout operations
  */
-export interface TimeoutOptions {
+interface TimeoutOptions {
   /** Timeout duration in milliseconds */
   readonly ms: number;
   /** Optional external signal for additional cancellation */
@@ -121,7 +121,7 @@ export async function delay(ms: number, signal?: AbortSignal): Promise<void> {
  * });
  * ```
  */
-export async function timeout<T>(promise: Promise<T>, options: TimeoutOptions): Promise<T> {
+async function timeout<T>(promise: Promise<T>, options: TimeoutOptions): Promise<T> {
   const { ms, signal, message } = options;
 
   // If already aborted, reject immediately

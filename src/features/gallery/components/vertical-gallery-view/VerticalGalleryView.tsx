@@ -43,7 +43,7 @@ import { useVerticalGallery } from './hooks/useVerticalGallery';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 
-export interface VerticalGalleryViewProps {
+interface VerticalGalleryViewProps {
   /** Handler for closing the gallery */
   onClose?: () => void;
   /** Additional CSS class name */

@@ -6,11 +6,11 @@
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import type { Logger } from '@shared/logging';
 
-export type BootstrapErrorSeverity = 'critical' | 'recoverable';
+type BootstrapErrorSeverity = 'critical' | 'recoverable';
 
 type BootstrapErrorLogger = Pick<Logger, 'error' | 'warn'>;
 
-export type BootstrapErrorOptions = Readonly<{
+type BootstrapErrorOptions = Readonly<{
   context: string;
   logger: BootstrapErrorLogger;
   severity?: BootstrapErrorSeverity;
@@ -44,4 +44,4 @@ export function reportBootstrapError(error: unknown, options: BootstrapErrorOpti
   }
 }
 
-export type { BootstrapErrorLogger };
+;

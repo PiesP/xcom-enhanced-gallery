@@ -44,7 +44,7 @@ const DATA_IMAGE_MIME_PREFIXES = Object.freeze([
   'image/avif',
 ]);
 
-export interface UrlSafetyPolicy {
+interface UrlSafetyPolicy {
   readonly allowedProtocols: ReadonlySet<string>;
   readonly allowRelative?: boolean;
   readonly allowProtocolRelative?: boolean;

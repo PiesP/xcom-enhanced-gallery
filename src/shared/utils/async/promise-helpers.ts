@@ -6,7 +6,7 @@
 /**
  * Generic result callback signature
  */
-export type ResultCallback<TResult, TError = string | null | undefined> = (
+type ResultCallback<TResult, TError = string | null | undefined> = (
   result?: TResult,
   error?: TError
 ) => void;
@@ -14,12 +14,12 @@ export type ResultCallback<TResult, TError = string | null | undefined> = (
 /**
  * Void callback with only error parameter
  */
-export type VoidCallback<TError = string | null | undefined> = (error?: TError) => void;
+type VoidCallback<TError = string | null | undefined> = (error?: TError) => void;
 
 /**
  * Options for promisifying callback-based APIs
  */
-export interface PromisifyOptions<TFallback> {
+interface PromisifyOptions<TFallback> {
   /** Called when the primary method fails */
   fallback?: () => TFallback | Promise<TFallback>;
   /** Context for error logging */
@@ -105,7 +105,7 @@ export function promisifyVoidCallback(executor: (callback: VoidCallback) => void
  * Prefer this when you need to bridge event/callback-based APIs to async/await
  * while keeping resolve/reject handles in local scope.
  */
-export interface Deferred<T> {
+interface Deferred<T> {
   readonly promise: Promise<T>;
   readonly resolve: (value: T | PromiseLike<T>) => void;
   readonly reject: (reason?: unknown) => void;

@@ -7,7 +7,7 @@
 /**
  * Gallery settings configuration
  */
-export interface GallerySettings {
+interface GallerySettings {
   /** Auto-scroll speed (1-10) */
   autoScrollSpeed: number;
   /** Enable infinite scroll */
@@ -31,7 +31,7 @@ export interface GallerySettings {
 /**
  * Toolbar settings configuration
  */
-export interface ToolbarSettings {
+interface ToolbarSettings {
   /** Auto-hide delay in milliseconds (0 disables auto-hide) */
   autoHideDelay: number;
 }
@@ -39,7 +39,7 @@ export interface ToolbarSettings {
 /**
  * Download settings configuration
  */
-export interface DownloadSettings {
+interface DownloadSettings {
   /** Filename pattern */
   filenamePattern: 'original' | 'tweet-id' | 'timestamp' | 'custom';
   /** Custom filename template */
@@ -57,7 +57,7 @@ export interface DownloadSettings {
 /**
  * Token settings configuration
  */
-export interface TokenSettings {
+interface TokenSettings {
   /** Bearer token */
   bearerToken?: string;
   /** Auto-refresh token */
@@ -71,7 +71,7 @@ export interface TokenSettings {
 /**
  * Accessibility settings configuration
  */
-export interface AccessibilitySettings {
+interface AccessibilitySettings {
   /** Reduce animations */
   reduceMotion: boolean;
   /** Screen reader support */
@@ -116,7 +116,7 @@ export interface AppSettings {
 /**
  * Top-level setting key type (for type-safe access)
  */
-export type SettingKey = keyof AppSettings;
+type SettingKey = keyof AppSettings;
 
 /**
  * Nested setting key type (supports dot notation)
@@ -145,7 +145,7 @@ export interface SettingChangeEvent<T = unknown> {
 /**
  * Settings validation result
  */
-export interface SettingValidationResult {
+interface SettingValidationResult {
   valid: boolean;
   error?: string;
   suggestion?: string;

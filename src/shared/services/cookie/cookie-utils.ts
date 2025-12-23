@@ -144,7 +144,7 @@ function listFromDocument(options?: CookieListOptions): CookieRecord[] {
 /**
  * Returns true when GM_cookie is available.
  */
-export function hasNativeAccess(): boolean {
+function hasNativeAccess(): boolean {
   return Boolean(getCookieAPI());
 }
 
@@ -152,7 +152,7 @@ export function hasNativeAccess(): boolean {
  * List cookies matching the given options.
  * Falls back to document.cookie when GM_cookie is not available.
  */
-export async function listCookies(options?: CookieListOptions): Promise<CookieRecord[]> {
+async function listCookies(options?: CookieListOptions): Promise<CookieRecord[]> {
   const gmCookie = getCookieAPI();
 
   if (!gmCookie?.list) {
@@ -213,7 +213,7 @@ export function getCookieValueSync(name: string): string | undefined {
  * Set a cookie with the given options.
  * Uses GM_cookie.set when available, falls back to document.cookie.
  */
-export async function setCookie(details: CookieSetOptions): Promise<void> {
+async function setCookie(details: CookieSetOptions): Promise<void> {
   const name = details?.name;
   if (!name) {
     throw new Error('Cookie name is required');
@@ -241,7 +241,7 @@ export async function setCookie(details: CookieSetOptions): Promise<void> {
  * Delete a cookie by name.
  * Uses GM_cookie.delete when available, falls back to expiring via document.cookie.
  */
-export async function deleteCookie(details: CookieDeleteOptions): Promise<void> {
+async function deleteCookie(details: CookieDeleteOptions): Promise<void> {
   if (!details?.name) {
     throw new Error('Cookie name is required');
   }
@@ -260,6 +260,6 @@ export async function deleteCookie(details: CookieDeleteOptions): Promise<void> 
  * Reset the cached cookie API reference.
  * @internal For testing purposes only.
  */
-export function resetCookieAPICache(): void {
+function resetCookieAPICache(): void {
   cachedCookieAPI = undefined;
 }

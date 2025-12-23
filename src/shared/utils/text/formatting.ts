@@ -5,17 +5,17 @@
 /**
  * ClassValue type for cx function.
  */
-export type ClassValue = string | number | boolean | undefined | null | ClassRecord | ClassArray;
+type ClassValue = string | number | boolean | undefined | null | ClassRecord | ClassArray;
 
 /**
  * Object mapping class names to boolean conditions
  */
-export type ClassRecord = Record<string, boolean | undefined | null>;
+type ClassRecord = Record<string, boolean | undefined | null>;
 
 /**
  * Array of class values (can be nested).
  */
-export interface ClassArray extends Array<ClassValue> {}
+interface ClassArray extends Array<ClassValue> {}
 
 /**
  * Escapes text for safe use in RegExp patterns.

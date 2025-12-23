@@ -358,9 +358,9 @@ export class ThemeService implements ThemeServiceContract {
 
 export type {
   SettingsServiceLike,
-  Theme,
-  ThemeChangeListener,
+  
+  
   ThemeServiceContract,
-  ThemeSetOptions,
-  ThemeSetting,
+  
+  
 } from './theme-service.contract';

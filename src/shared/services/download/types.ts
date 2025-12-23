@@ -6,7 +6,7 @@
 import type { ErrorCode } from '@shared/types/result.types';
 
 /** Download progress phases */
-export interface DownloadProgress {
+interface DownloadProgress {
   /** Current phase: preparing | downloading | complete */
   phase: 'preparing' | 'downloading' | 'complete';
   /** Number of completed items (0 to total) */
@@ -69,10 +69,10 @@ export interface ZipResult {
 }
 
 /** Download data source type */
-export type DownloadDataSource = 'dom' | 'cache' | 'network';
+type DownloadDataSource = 'dom' | 'cache' | 'network';
 
 /** Single item download result with source */
-export interface SingleItemDownloadResult {
+interface SingleItemDownloadResult {
   data: Uint8Array;
   source: DownloadDataSource;
 }

@@ -14,9 +14,9 @@ import {
 
 type PauseRoot = Exclude<PauseAmbientVideosOptions['root'], undefined>;
 
-export type AmbientVideoPauseScope = 'document' | 'tweet' | 'custom';
+type AmbientVideoPauseScope = 'document' | 'tweet' | 'custom';
 
-export type AmbientVideoTrigger =
+type AmbientVideoTrigger =
   | 'video-click'
   | 'image-click'
   | 'programmatic'
@@ -29,7 +29,7 @@ export interface AmbientVideoPauseRequest extends PauseAmbientVideosOptions {
   readonly reason?: string;
 }
 
-export interface AmbientVideoPauseResponse extends PauseAmbientVideosResult {
+interface AmbientVideoPauseResponse extends PauseAmbientVideosResult {
   readonly trigger: AmbientVideoTrigger;
   readonly forced: boolean;
   readonly reason: string;
@@ -132,7 +132,7 @@ function isImageTriggerElement(element?: HTMLElement | null): boolean {
   return false;
 }
 
-export function inferAmbientVideoTrigger(element?: HTMLElement | null): AmbientVideoTrigger {
+function inferAmbientVideoTrigger(element?: HTMLElement | null): AmbientVideoTrigger {
   if (isVideoTriggerElement(element)) {
     return 'video-click';
   }

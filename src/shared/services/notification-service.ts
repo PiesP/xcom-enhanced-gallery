@@ -7,7 +7,7 @@ import { getUserscriptSafe, type UserscriptAPI } from '@shared/external/userscri
 import { logger } from '@shared/logging';
 import { createSingleton } from '@shared/utils/types/singleton';
 
-export interface NotificationOptions {
+interface NotificationOptions {
   title: string;
   text?: string;
   timeout?: number;
@@ -53,6 +53,6 @@ export class NotificationService {
   }
 }
 
-export function getNotificationService(): NotificationService {
+function getNotificationService(): NotificationService {
   return NotificationService.getInstance();
 }

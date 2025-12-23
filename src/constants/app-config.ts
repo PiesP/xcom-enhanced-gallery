@@ -95,7 +95,7 @@ const resolvedAppConfig = Object.freeze({
   },
 } as const);
 
-export type ResolvedAppConfig = typeof resolvedAppConfig;
+type ResolvedAppConfig = typeof resolvedAppConfig;
 
 const APP_CONFIG: ResolvedAppConfig = resolvedAppConfig;
 

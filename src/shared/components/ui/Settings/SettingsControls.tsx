@@ -8,13 +8,13 @@ import styles from './SettingsControls.module.css';
 
 type MaybeAccessor<T> = T | Accessor<T>;
 
-export type ThemeOption = 'auto' | 'light' | 'dark';
-export type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
+type ThemeOption = 'auto' | 'light' | 'dark';
+type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
 
 const THEME_OPTIONS: readonly ThemeOption[] = ['auto', 'light', 'dark'];
 const LANGUAGE_OPTIONS: readonly LanguageOption[] = ['auto', 'ko', 'en', 'ja'];
 
-export interface SettingsControlsProps {
+interface SettingsControlsProps {
   currentTheme: MaybeAccessor<ThemeOption>;
   currentLanguage: MaybeAccessor<LanguageOption>;
   onThemeChange: (event: Event) => void;

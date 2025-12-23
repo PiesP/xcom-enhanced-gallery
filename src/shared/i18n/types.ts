@@ -20,5 +20,5 @@ type DotNestedKeys<
 
 export type TranslationKey = DotNestedKeys<LanguageStrings>;
 export type TranslationParams = Record<string, string | number>;
-export type TranslationBundles = Record<BaseLanguageCode, LanguageStrings>;
+type TranslationBundles = Record<BaseLanguageCode, LanguageStrings>;
 export type TranslationBundleInput = Partial<TranslationBundles>;

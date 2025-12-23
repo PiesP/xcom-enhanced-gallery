@@ -2,7 +2,7 @@
  * @fileoverview Helpers for determining download UI busy state.
  */
 
-export interface DownloadUiStateContext {
+interface DownloadUiStateContext {
   readonly galleryLoading?: boolean;
   readonly downloadProcessing?: boolean;
 }

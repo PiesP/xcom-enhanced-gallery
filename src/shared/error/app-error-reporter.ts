@@ -25,12 +25,12 @@ import { logger } from '@shared/logging';
  * - warning: Non-critical issue, should log as warning
  * - info: Informational only, for debugging
  */
-export type ErrorSeverity = 'critical' | 'error' | 'warning' | 'info';
+type ErrorSeverity = 'critical' | 'error' | 'warning' | 'info';
 
 /**
  * Error context categories for grouping and filtering
  */
-export type ErrorContext =
+type ErrorContext =
   | 'bootstrap'
   | 'gallery'
   | 'media'
@@ -46,7 +46,7 @@ export type ErrorContext =
 /**
  * Error report options
  */
-export interface ErrorReportOptions {
+interface ErrorReportOptions {
   /** Error context category */
   readonly context: ErrorContext;
   /** Error severity level */
@@ -62,7 +62,7 @@ export interface ErrorReportOptions {
 /**
  * Error report result
  */
-export interface ErrorReportResult {
+interface ErrorReportResult {
   /** Whether the error was reported successfully */
   readonly reported: boolean;
   /** Normalized error message */
@@ -76,7 +76,7 @@ export interface ErrorReportResult {
 /**
  * Context-bound reporter interface
  */
-export interface ContextBoundReporter {
+interface ContextBoundReporter {
   critical: (
     error: unknown,
     options?: Partial<Omit<ErrorReportOptions, 'context'>>
@@ -133,7 +133,7 @@ const DEFAULT_SEVERITY: ErrorSeverity = 'error';
  * });
  * ```
  */
-export class AppErrorReporter {
+class AppErrorReporter {
   private static notificationCallback: ((message: string, context: ErrorContext) => void) | null =
     null;
 
@@ -252,7 +252,7 @@ export class AppErrorReporter {
 }
 
 // Preserve the existing named export for downstream imports.
-export { normalizeErrorMessage };
+;
 
 // ============================================================================
 // Convenience Exports

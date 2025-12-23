@@ -29,7 +29,7 @@ export type SingleDownloadCommand =
       readonly error: string;
     };
 
-export interface SingleDownloadCommandInput {
+interface SingleDownloadCommandInput {
   readonly method: 'gm_download' | 'none';
   readonly mediaUrl: string;
   readonly filename: string;

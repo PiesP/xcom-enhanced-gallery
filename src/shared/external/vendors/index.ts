@@ -25,7 +25,7 @@ export type { JSX };
 export type JSXElement = JSX.Element;
 
 /** Alias for JSX.Element - virtual node type */
-export type VNode = JSX.Element;
+type VNode = JSX.Element;
 
 /** Alias for JSX.Element - children prop type */
 export type ComponentChildren = JSX.Element;

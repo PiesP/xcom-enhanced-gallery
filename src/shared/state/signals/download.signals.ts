@@ -12,9 +12,9 @@ import { clamp } from '@shared/utils/types/safety';
 import { createSignalSafe, type SafeSignal } from './signal-factory';
 
 // Download status
-export type DownloadStatus = 'pending' | 'downloading' | 'completed' | 'failed';
+type DownloadStatus = 'pending' | 'downloading' | 'completed' | 'failed';
 
-export interface DownloadTask {
+interface DownloadTask {
   readonly id: string;
   readonly mediaId: MediaId;
   readonly mediaUrl: string;
@@ -26,7 +26,7 @@ export interface DownloadTask {
   readonly completedAt?: number;
 }
 
-export interface DownloadState {
+interface DownloadState {
   readonly activeTasks: ReadonlyMap<string, DownloadTask>;
   readonly queue: readonly string[];
   readonly isProcessing: boolean;
@@ -104,7 +104,7 @@ export const downloadState = {
 /**
  * Create a download task
  */
-export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Result<string> {
+function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Result<string> {
   try {
     // Generate a temp ID if mediaInfo.id is missing
     const mediaId = mediaInfo.id ?? createPrefixedId('temp');
@@ -146,7 +146,7 @@ export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Res
 /**
  * Start download
  */
-export function startDownload(taskId: string): Result<void> {
+function startDownload(taskId: string): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
@@ -187,7 +187,7 @@ export function startDownload(taskId: string): Result<void> {
 /**
  * Update download progress
  */
-export function updateDownloadProgress(taskId: string, progress: number): Result<void> {
+function updateDownloadProgress(taskId: string, progress: number): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
@@ -220,7 +220,7 @@ export function updateDownloadProgress(taskId: string, progress: number): Result
 /**
  * Mark download as completed
  */
-export function completeDownload(taskId: string): Result<void> {
+function completeDownload(taskId: string): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
@@ -263,7 +263,7 @@ export function completeDownload(taskId: string): Result<void> {
 /**
  * Download failure
  */
-export function failDownload(taskId: string, error: string): Result<void> {
+function failDownload(taskId: string, error: string): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
@@ -305,7 +305,7 @@ export function failDownload(taskId: string, error: string): Result<void> {
 /**
  * Remove a task (must be completed or failed)
  */
-export function removeTask(taskId: string): Result<void> {
+function removeTask(taskId: string): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
@@ -337,7 +337,7 @@ export function removeTask(taskId: string): Result<void> {
 /**
  * Clear completed tasks
  */
-export function clearCompletedTasks(): void {
+function clearCompletedTasks(): void {
   const currentState = downloadState.value;
   const newTasks = new Map<string, DownloadTask>();
 
@@ -362,14 +362,14 @@ export function clearCompletedTasks(): void {
 /**
  * Get task by ID
  */
-export function getDownloadTask(taskId: string): DownloadTask | null {
+function getDownloadTask(taskId: string): DownloadTask | null {
   return downloadState.value.activeTasks.get(taskId) ?? null;
 }
 
 /**
  * Get download status summary
  */
-export function getDownloadInfo(): {
+function getDownloadInfo(): {
   activeTasks: number;
   pendingTasks: number;
   completedTasks: number;

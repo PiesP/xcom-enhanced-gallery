@@ -26,7 +26,7 @@ type EscapeCaptureWindow = typeof window & {
  * Gallery container component props
  * @description Configuration for GalleryContainer component
  */
-export interface GalleryContainerProps {
+interface GalleryContainerProps {
   /** Child components to render inside container */
   children: ComponentChildren;
   /** Callback fired when container should close (Escape key) */

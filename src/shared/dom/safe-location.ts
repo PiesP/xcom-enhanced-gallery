@@ -5,7 +5,7 @@
  * where `window`/`location` may be unavailable (tests, SSR-like contexts).
  */
 
-export interface SafeLocationHeaders {
+interface SafeLocationHeaders {
   readonly referer?: string;
   readonly origin?: string;
 }
@@ -39,7 +39,7 @@ export function getSafeHref(): string | undefined {
   return getSafeLocationValue('href');
 }
 
-export function getSafeOrigin(): string | undefined {
+function getSafeOrigin(): string | undefined {
   return getSafeLocationValue('origin');
 }
 

@@ -316,5 +316,5 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   );
 }
 
-export type { FitMode, ToolbarProps } from '@shared/components/ui/Toolbar/Toolbar.types';
+;
 export const Toolbar = ToolbarContainer;

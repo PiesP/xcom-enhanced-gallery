@@ -11,14 +11,14 @@
  * - 'dark': Force dark mode
  * - 'auto': Auto-apply system settings
  */
-export type Theme = 'light' | 'dark' | 'auto';
+type Theme = 'light' | 'dark' | 'auto';
 
 /**
  * Gallery-specific theme selection (extends Theme)
  *
  * @see {@link Theme} - Base theme type
  */
-export type GalleryTheme = 'light' | 'dark' | 'auto' | 'system';
+type GalleryTheme = 'light' | 'dark' | 'auto' | 'system';
 
 /**
  * Base button variant (common across UI)
@@ -28,7 +28,7 @@ export type GalleryTheme = 'light' | 'dark' | 'auto' | 'system';
  * @shared/components/ui/Button/Button.types.ts which extends this
  * with 'icon', 'toolbar', 'navigation', 'action' variants.
  */
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 /**
  * Base button size (common across UI)
@@ -38,17 +38,17 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
  * @shared/components/ui/Button/Button.types.ts which extends this
  * with 'toolbar' size.
  */
-export type ButtonSize = 'sm' | 'md' | 'lg';
+type ButtonSize = 'sm' | 'md' | 'lg';
 
 /**
  * Color variant
  */
-export type ColorVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
+type ColorVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
 
 /**
  * Loading state (async operation progress)
  */
-export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
+type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 
 /**
  * Async state object
@@ -64,7 +64,7 @@ export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
  * });
  * ```
  */
-export interface AsyncState<T> {
+interface AsyncState<T> {
   /** Current data (null if loading, previous data maintained on error if possible) */
   data: T | null;
   /** Loading state */
@@ -78,7 +78,7 @@ export interface AsyncState<T> {
  *
  * @description CSS animation options
  */
-export interface AnimationConfig {
+interface AnimationConfig {
   /** Animation duration (ms) */
   duration?: number;
   /** Easing function (ease, ease-in, ease-out, etc.) */
@@ -104,7 +104,7 @@ export type ImageFitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer
  *
  * @description Detailed options used with ImageFitMode
  */
-export interface ImageFitOptions {
+interface ImageFitOptions {
   /** Fit mode */
   mode: ImageFitMode;
   /** Maximum width (px or em) */
@@ -120,7 +120,7 @@ export interface ImageFitOptions {
 /**
  * Image fit callback functions
  */
-export interface ImageFitCallbacks {
+interface ImageFitCallbacks {
   /** Called on size change */
   onResize?: (size: { width: number; height: number }) => void;
   /** Called on error */
@@ -135,19 +135,19 @@ export interface ImageFitCallbacks {
  * - 'timestamp': Include timestamp (e.g., 20250101_120000_media)
  * - 'custom': Custom format
  */
-export type FilenameStrategy = 'simple' | 'detailed' | 'timestamp' | 'custom';
+type FilenameStrategy = 'simple' | 'detailed' | 'timestamp' | 'custom';
 
 /**
  * Media file extension
  */
-export type MediaFileExtension = 'jpg' | 'jpeg' | 'png' | 'gif' | 'webp' | 'mp4' | 'mov';
+type MediaFileExtension = 'jpg' | 'jpeg' | 'png' | 'gif' | 'webp' | 'mp4' | 'mov';
 
 /**
  * Global configuration
  *
  * @description Application-wide UI/UX settings
  */
-export interface GlobalConfig {
+interface GlobalConfig {
   /** Theme setting */
   theme: Theme;
   /** Language setting (ISO 639-1 code) */

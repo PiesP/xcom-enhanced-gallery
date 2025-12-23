@@ -18,12 +18,8 @@ import { createLifecycle } from '@shared/services/lifecycle';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 import { createSingleton } from '@shared/utils/types/singleton';
 
-export type {
-  BaseLanguageCode,
-  LanguageStrings,
-  SupportedLanguage,
-} from '@shared/constants/i18n/language-types';
-export type { TranslationKey, TranslationParams } from '@shared/i18n/types';
+;
+;
 
 /**
  * Multilingual Service (Phase 355: Direct PersistentStorage usage)

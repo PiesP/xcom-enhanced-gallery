@@ -18,7 +18,7 @@ type Cleanup = VoidFunction;
 /**
  * Options for gallery navigation hook
  */
-export interface UseGalleryNavigationOptions {
+interface UseGalleryNavigationOptions {
   /** Whether gallery is visible */
   readonly isVisible: () => boolean;
   /** Callback to scroll to specific item */
@@ -28,7 +28,7 @@ export interface UseGalleryNavigationOptions {
 /**
  * Result of gallery navigation hook
  */
-export interface UseGalleryNavigationResult {
+interface UseGalleryNavigationResult {
   /** Last navigation trigger type */
   readonly lastNavigationTrigger: Accessor<NavigationTrigger | null>;
   /** Setter for last navigation trigger */

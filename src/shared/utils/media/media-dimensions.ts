@@ -7,12 +7,12 @@ import type { MediaInfo } from '@shared/types/media.types';
 import { clampIndex } from '@shared/utils/types/safety';
 import { tryParseUrl } from '@shared/utils/url/host';
 
-export interface DimensionPair {
+interface DimensionPair {
   readonly width: number;
   readonly height: number;
 }
 
-export interface ResolvedMediaDimensions {
+interface ResolvedMediaDimensions {
   readonly dimensions: DimensionPair;
   readonly hasIntrinsicSize: boolean;
 }
@@ -127,7 +127,7 @@ export function removeDuplicateMediaItems(
   return result;
 }
 
-export function extractVisualIndexFromUrl(url: string): number {
+function extractVisualIndexFromUrl(url: string): number {
   if (!url) return 0;
   const match = url.match(/\/(photo|video)\/(\d+)(?:[?#].*)?$/);
   const visualNumber = match?.[2] ? Number.parseInt(match[2], 10) : NaN;
@@ -328,7 +328,7 @@ export function resolveMediaDimensionsWithIntrinsicFlag(
 }
 
 /** Resolve media dimensions (legacy) */
-export function resolveMediaDimensions(media: MediaInfo | undefined): DimensionPair {
+function resolveMediaDimensions(media: MediaInfo | undefined): DimensionPair {
   return resolveMediaDimensionsWithIntrinsicFlag(media).dimensions;
 }
 

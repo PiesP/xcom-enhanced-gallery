@@ -10,9 +10,9 @@
 import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
 import { cx } from '@shared/utils/text/formatting';
 
-export type IconButtonSize = 'sm' | 'md' | 'lg' | 'toolbar';
+type IconButtonSize = 'sm' | 'md' | 'lg' | 'toolbar';
 
-export interface IconButtonProps {
+interface IconButtonProps {
   readonly children?: ComponentChildren;
   readonly class?: string;
   readonly type?: 'button' | 'submit' | 'reset';

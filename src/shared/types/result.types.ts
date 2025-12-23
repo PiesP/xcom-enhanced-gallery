@@ -2,7 +2,7 @@
  * Common Result pattern (Phase: Result Unification)
  * @version 2.2.0 - Phase 4: Type system optimization (enum → const object)
  */
-export type BaseResultStatus = 'success' | 'partial' | 'error' | 'cancelled';
+type BaseResultStatus = 'success' | 'partial' | 'error' | 'cancelled';
 
 /**
  * Integrated error codes (generic + media extraction)
@@ -51,7 +51,7 @@ export const ErrorCode = {
 /** Type for ErrorCode values */
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 
-export interface BaseResult {
+interface BaseResult {
   status: BaseResultStatus;
   error?: string;
   /** Machine readable code */
@@ -63,19 +63,19 @@ export interface BaseResult {
   failures?: Array<{ url: string; error: string }>; // Partial failure summary
 }
 
-export type ResultSuccess<T> = BaseResult & {
+type ResultSuccess<T> = BaseResult & {
   status: 'success';
   data: T;
   code?: typeof ErrorCode.NONE;
 };
-export type ResultPartial<T> = BaseResult & {
+type ResultPartial<T> = BaseResult & {
   status: 'partial';
   data: T;
   error: string;
   code: typeof ErrorCode.PARTIAL_FAILED;
   failures: Array<{ url: string; error: string }>;
 };
-export type ResultError = BaseResult & { status: 'error' | 'cancelled' };
+type ResultError = BaseResult & { status: 'error' | 'cancelled' };
 export type Result<T> = ResultSuccess<T> | ResultPartial<T> | ResultError;
 
 /**
@@ -87,7 +87,7 @@ export type Result<T> = ResultSuccess<T> | ResultPartial<T> | ResultError;
  *   return { status: 'success', data: {...} };
  * }
  */
-export type AsyncResult<T> = Promise<Result<T>>;
+type AsyncResult<T> = Promise<Result<T>>;
 
 // ============================================================================
 // Result Utility Functions (Phase 355.2)
@@ -154,7 +154,7 @@ export function failure<T = never>(
  * Check if Result is success (type guard)
  * For inline usage: `result.status === 'success'`
  */
-export function isSuccess<T>(result: Result<T>): result is ResultSuccess<T> {
+function isSuccess<T>(result: Result<T>): result is ResultSuccess<T> {
   return result.status === 'success';
 }
 
@@ -162,14 +162,14 @@ export function isSuccess<T>(result: Result<T>): result is ResultSuccess<T> {
  * Check if Result is failure (type guard)
  * For inline usage: `result.status === 'error' || result.status === 'cancelled'`
  */
-export function isFailure<T>(result: Result<T>): result is ResultError {
+function isFailure<T>(result: Result<T>): result is ResultError {
   return result.status === 'error' || result.status === 'cancelled';
 }
 
 /**
  * Check if Result is partial success (type guard)
  */
-export function isPartial<T>(result: Result<T>): result is ResultPartial<T> {
+function isPartial<T>(result: Result<T>): result is ResultPartial<T> {
   return result.status === 'partial';
 }
 
@@ -186,7 +186,7 @@ export function isPartial<T>(result: Result<T>): result is ResultPartial<T> {
  * // { status: 'success', data: { id: 1 }, code: ErrorCode.NONE }
  * ```
  */
-export const ok = success;
+const ok = success;
 
 /**
  * Create failure Result (Rust-style alias for `failure`)
@@ -197,7 +197,7 @@ export const ok = success;
  * // { status: 'error', error: 'Not found', code: ErrorCode.ELEMENT_NOT_FOUND }
  * ```
  */
-export const err = failure;
+const err = failure;
 
 // ============================================================================
 // Result Utility Functions (Rust-style combinators)
@@ -212,7 +212,7 @@ export const err = failure;
  * // Returns data if success, [] if failure
  * ```
  */
-export function unwrapOr<T>(result: Result<T>, defaultValue: T): T {
+function unwrapOr<T>(result: Result<T>, defaultValue: T): T {
   return result.status === 'success' || result.status === 'partial' ? result.data : defaultValue;
 }
 
@@ -224,7 +224,7 @@ export function unwrapOr<T>(result: Result<T>, defaultValue: T): T {
  * const mapped = map(result, data => data.length);
  * ```
  */
-export function map<T, U>(result: Result<T>, fn: (data: T) => U): Result<U> {
+function map<T, U>(result: Result<T>, fn: (data: T) => U): Result<U> {
   if (result.status === 'success') {
     return success(fn(result.data), result.meta);
   }
@@ -245,7 +245,7 @@ export function map<T, U>(result: Result<T>, fn: (data: T) => U): Result<U> {
  * const mapped = mapErr(result, msg => `Failed: ${msg}`);
  * ```
  */
-export function mapErr<T>(result: Result<T>, fn: (error: string) => string): Result<T> {
+function mapErr<T>(result: Result<T>, fn: (error: string) => string): Result<T> {
   if (result.status === 'error' || result.status === 'cancelled') {
     return { ...result, error: fn(result.error ?? '') };
   }
@@ -260,7 +260,7 @@ export function mapErr<T>(result: Result<T>, fn: (error: string) => string): Res
  * const chained = andThen(result, data => ok(data.items));
  * ```
  */
-export function andThen<T, U>(result: Result<T>, fn: (data: T) => Result<U>): Result<U> {
+function andThen<T, U>(result: Result<T>, fn: (data: T) => Result<U>): Result<U> {
   if (result.status === 'success') {
     return fn(result.data);
   }

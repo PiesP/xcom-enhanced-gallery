@@ -17,7 +17,7 @@ type TimerId = number;
  * Utility to track all setTimeout timers and clean them up in batch.
  * Note: setInterval support was removed as it was unused in production code.
  */
-export class TimerManager {
+class TimerManager {
   private readonly timers = new Set<TimerId>();
 
   /**

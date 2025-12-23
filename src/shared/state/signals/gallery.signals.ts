@@ -38,7 +38,7 @@ const batch: BatchExecutor = solidBatch;
 /**
  * Gallery state interface
  */
-export interface GalleryState {
+interface GalleryState {
   readonly isOpen: boolean;
   readonly mediaItems: readonly MediaInfo[];
   readonly currentIndex: number;
@@ -62,14 +62,14 @@ const INITIAL_STATE: GalleryState = {
 /**
  * Gallery event types
  */
-export type GalleryEvents = {
+type GalleryEvents = {
   'gallery:open': { items: readonly MediaInfo[]; startIndex: number };
   'gallery:close': Record<string, never>;
   'gallery:navigate': { index: number };
   'gallery:error': { error: string };
 };
 
-export type GalleryNavigationTrigger = NavigationTrigger;
+type GalleryNavigationTrigger = NavigationTrigger;
 
 export interface GalleryNavigateStartPayload {
   from: number;
@@ -192,7 +192,7 @@ export const galleryState = {
 };
 
 // Export for testing purposes
-export { applyGalleryStateUpdate };
+;
 
 // ============================================================================
 // Actions
@@ -326,7 +326,7 @@ export function navigateNext(trigger: NavigationTrigger = 'button'): void {
 /**
  * Set focused index for scroll-based focus tracking
  */
-export function setFocusedIndex(
+function setFocusedIndex(
   index: number | null,
   source: NavigationSource = 'auto-focus'
 ): void {
@@ -366,31 +366,31 @@ export function setFocusedIndex(
  * otherwise returns currentIndex (the officially navigated-to item).
  * This provides a single source of truth for "which item is the user looking at".
  */
-export function getCurrentActiveIndex(): number {
+function getCurrentActiveIndex(): number {
   return gallerySignals.focusedIndex.value ?? galleryState.value.currentIndex;
 }
 
-export function getCurrentMediaItem(): MediaInfo | null {
+function getCurrentMediaItem(): MediaInfo | null {
   const state = galleryState.value;
   return state.mediaItems[state.currentIndex] || null;
 }
 
-export function hasMediaItems(): boolean {
+function hasMediaItems(): boolean {
   return galleryState.value.mediaItems.length > 0;
 }
 
-export function getMediaItemsCount(): number {
+function getMediaItemsCount(): number {
   return galleryState.value.mediaItems.length;
 }
 
-export function hasPreviousMedia(): boolean {
+function hasPreviousMedia(): boolean {
   return galleryState.value.mediaItems.length > 1;
 }
 
-export function hasNextMedia(): boolean {
+function hasNextMedia(): boolean {
   return galleryState.value.mediaItems.length > 1;
 }
 
-export const isGalleryOpen = (): boolean => galleryState.value.isOpen;
-export const getCurrentIndex = (): number => galleryState.value.currentIndex;
-export const getMediaItems = (): readonly MediaInfo[] => galleryState.value.mediaItems;
+const isGalleryOpen = (): boolean => galleryState.value.isOpen;
+const getCurrentIndex = (): number => galleryState.value.currentIndex;
+const getMediaItems = (): readonly MediaInfo[] => galleryState.value.mediaItems;

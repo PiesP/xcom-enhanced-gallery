@@ -15,7 +15,7 @@ export interface TwitterAPIResponse {
 }
 
 /** Inline media reference in note_tweet */
-export interface TwitterInlineMedia {
+interface TwitterInlineMedia {
   media_id: string;
   index: number;
 }

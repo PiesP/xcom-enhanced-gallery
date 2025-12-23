@@ -7,7 +7,7 @@
 
 const FALLBACK_BASE_URL = 'https://x.com';
 
-export interface HostMatchOptions {
+interface HostMatchOptions {
   /**
    * Allow matching subdomains of the provided hostnames.
    * For example, allowing `images.example.com` when `example.com` is provided.
@@ -53,7 +53,7 @@ export function tryParseUrl(
 /**
  * Convenience helper to extract the hostname from a URL-like value.
  */
-export function getHostname(value: string | URL | null | undefined): string | null {
+function getHostname(value: string | URL | null | undefined): string | null {
   const parsed = value instanceof URL ? value : tryParseUrl(value);
   return parsed?.hostname ?? null;
 }
@@ -108,7 +108,7 @@ const TWITTER_USERNAME_PATTERN = /^[a-zA-Z0-9_]{1,15}$/;
 /** Trusted Twitter/X.com hosts */
 const TWITTER_HOSTS = ['twitter.com', 'x.com'] as const;
 
-export interface ExtractUsernameOptions {
+interface ExtractUsernameOptions {
   /**
    * Require strict host validation (only twitter.com/x.com)
    * @default false

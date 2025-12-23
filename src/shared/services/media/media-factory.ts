@@ -10,7 +10,7 @@ import { normalizeDimension } from '@shared/utils/media/media-dimensions';
 /**
  * Resolve Dimensions from API Media
  */
-export function resolveDimensionsFromApiMedia(
+function resolveDimensionsFromApiMedia(
   apiMedia: TweetMediaEntry
 ): { width: number; height: number } | null {
   const widthFromOriginal = normalizeDimension(apiMedia.original_width);
@@ -28,7 +28,7 @@ export function resolveDimensionsFromApiMedia(
 /**
  * Create MediaInfo from API Response
  */
-export function createMediaInfoFromAPI(
+function createMediaInfoFromAPI(
   apiMedia: TweetMediaEntry,
   tweetInfo: TweetInfo,
   index: number,

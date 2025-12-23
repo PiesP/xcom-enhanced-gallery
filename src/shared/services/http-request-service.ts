@@ -36,7 +36,7 @@ type HttpRequestData = Exclude<GMXMLHttpRequestDetails['data'], undefined>;
 /**
  * HTTP request options
  */
-export interface HttpRequestOptions {
+interface HttpRequestOptions {
   headers?: Record<string, string>;
   timeout?: number; // milliseconds, default: 10000
   responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
@@ -47,7 +47,7 @@ export interface HttpRequestOptions {
 /**
  * HTTP response wrapper
  */
-export interface HttpResponse<T = unknown> {
+interface HttpResponse<T = unknown> {
   ok: boolean;
   status: number;
   data: T;
