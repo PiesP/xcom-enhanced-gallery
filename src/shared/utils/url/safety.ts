@@ -5,9 +5,9 @@
 
 // Control character regex patterns for URL sanitization
 // These patterns intentionally match control characters (U+0000-U+001F, U+007F)
-export const CONTROL_CHARS_REGEX = /[\u0000-\u001F\u007F]/g;
-export const SCHEME_WHITESPACE_REGEX = /[\u0000-\u001F\u007F\s]+/g;
-export const EXPLICIT_SCHEME_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
+const CONTROL_CHARS_REGEX = /[\u0000-\u001F\u007F]/g;
+const SCHEME_WHITESPACE_REGEX = /[\u0000-\u001F\u007F\s]+/g;
+const EXPLICIT_SCHEME_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
 const MAX_DECODE_ITERATIONS = 3;
 const MAX_SCHEME_PROBE_LENGTH = 64;
 
@@ -105,7 +105,7 @@ export function isUrlAllowed(rawUrl: string | null | undefined, policy: UrlSafet
   }
 }
 
-export function startsWithBlockedProtocolHint(value: string, hints: readonly string[]): boolean {
+function startsWithBlockedProtocolHint(value: string, hints: readonly string[]): boolean {
   const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
 
   // If the probe contains an invalid percent-encoding sequence (e.g., '%ZZ'),
@@ -119,7 +119,7 @@ export function startsWithBlockedProtocolHint(value: string, hints: readonly str
   return variants.some((candidate) => hints.some((hint) => candidate.startsWith(hint)));
 }
 
-export function buildProbeVariants(value: string): string[] {
+function buildProbeVariants(value: string): string[] {
   const variants = new Set<string>();
   const base = value.toLowerCase();
   variants.add(base);
@@ -139,7 +139,7 @@ export function buildProbeVariants(value: string): string[] {
   return Array.from(variants.values());
 }
 
-export function isAllowedDataUrl(
+function isAllowedDataUrl(
   lowerCaseValue: string,
   allowedPrefixes: readonly string[] | undefined
 ): boolean {
@@ -157,7 +157,7 @@ export function isAllowedDataUrl(
   return allowedPrefixes.some((prefix) => mime.startsWith(prefix));
 }
 
-export function handleProtocolRelative(url: string, policy: UrlSafetyPolicy): boolean {
+function handleProtocolRelative(url: string, policy: UrlSafetyPolicy): boolean {
   if (!policy.allowProtocolRelative) {
     return false;
   }

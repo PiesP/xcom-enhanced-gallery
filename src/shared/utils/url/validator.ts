@@ -52,17 +52,6 @@ export function isValidMediaUrl(url: string): boolean {
 }
 
 /**
- * Validate Twitter media domain
- *
- * @internal
- * @param url - URL to validate
- * @returns Whether URL is from Twitter media domain
- */
-export function isTwitterMediaUrl(url: string): boolean {
-  return isHostMatching(url, ALLOWED_MEDIA_HOSTS);
-}
-
-/**
  * Validate URL protocol.
  *
  * Note: `tryParseUrl()` supports protocol-relative URLs by coercing to `https:`.

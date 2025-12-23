@@ -143,13 +143,6 @@ function createVideoVisibilityController(
   };
 }
 
-/** @internal Test helper */
-export function createVideoVisibilityControllerForTests(
-  options: CreateVideoVisibilityControllerOptions
-): VideoVisibilityController {
-  return createVideoVisibilityController(options);
-}
-
 /**
  * Hook to manage video auto-play/pause based on viewport visibility
  *

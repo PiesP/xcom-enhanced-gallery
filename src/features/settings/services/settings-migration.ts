@@ -106,5 +106,3 @@ export function migrateSettings(input: AppSettings, nowMs: number): AppSettings 
   // Always perform default fill/merge to ensure exactOptionalPropertyTypes safety
   return fillWithDefaults(working, nowMs);
 }
-
-export const __private = { fillWithDefaults, pruneWithTemplate };
