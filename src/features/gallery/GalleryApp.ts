@@ -23,7 +23,7 @@ import {
   type AmbientVideoPauseRequest,
   pauseAmbientVideosForGallery,
 } from '@shared/utils/media/ambient-video-coordinator';
-import { withAmbientVideoGuard } from '@shared/utils/media/ambient-video-guard';
+import { startAmbientVideoGuard } from '@shared/utils/media/ambient-video-guard';
 import { clampIndex } from '@shared/utils/types/safety';
 
 export interface GalleryConfig {
@@ -41,7 +41,7 @@ export class GalleryApp {
   private galleryRenderer: GalleryRenderer | null = null;
   private isInitialized = false;
   private readonly notificationService = NotificationService.getInstance();
-  private ambientVideoGuardHandle: { dispose: () => void } | null = null;
+  private ambientVideoGuardDispose: (() => void) | null = null;
 
   constructor() {
     __DEV__ && logger.info('[GalleryApp] Constructor called');
@@ -55,7 +55,7 @@ export class GalleryApp {
       this.galleryRenderer?.setOnCloseCallback(() => this.closeGallery());
 
       await this.setupEventHandlers();
-      this.ambientVideoGuardHandle = this.ambientVideoGuardHandle ?? withAmbientVideoGuard();
+      this.ambientVideoGuardDispose = this.ambientVideoGuardDispose ?? startAmbientVideoGuard();
 
       this.isInitialized = true;
       __DEV__ && logger.info('[GalleryApp] ✅ Initialization complete');
@@ -189,8 +189,8 @@ export class GalleryApp {
         this.closeGallery();
       }
 
-      this.ambientVideoGuardHandle?.dispose();
-      this.ambientVideoGuardHandle = null;
+      this.ambientVideoGuardDispose?.();
+      this.ambientVideoGuardDispose = null;
 
       try {
         cleanupGalleryEvents();

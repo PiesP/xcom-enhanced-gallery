@@ -278,14 +278,11 @@
   );
 }
 
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitHeight"]
-  .image,
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitHeight"]
-  .video,
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitContainer"]
-  .image,
-.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitContainer"]
-  .video {
+.container[data-media-loaded="false"][data-has-intrinsic-size="true"]:is(
+    [data-fit-mode="fitHeight"],
+    [data-fit-mode="fitContainer"]
+  )
+  :is(.image, .video) {
   max-block-size: var(--xeg-gallery-fit-height-target);
   max-inline-size: min(
     100%,

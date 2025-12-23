@@ -16,10 +16,7 @@ import type {
   GalleryEventOptions,
 } from '@shared/utils/events/core/dom-listener-context';
 import { executeVideoControl } from '@shared/utils/events/handlers/video-control-helper';
-import {
-  shouldExecutePlayPauseKey,
-  shouldExecuteVideoControlKey,
-} from '@shared/utils/events/keyboard-debounce';
+import { shouldExecuteKeyboardAction } from '@shared/utils/events/keyboard-debounce';
 
 /**
  * Check if gallery is open
@@ -71,7 +68,7 @@ export function handleKeyboardEvent(
           case ' ':
           case 'Space':
             // Keyboard debounce: Prevent duplicate play/pause calls on repeated Space input (150ms interval)
-            if (shouldExecutePlayPauseKey(event.key)) {
+            if (shouldExecuteKeyboardAction(event.key, 150)) {
               executeVideoControl('togglePlayPause');
             }
             break;
@@ -107,20 +104,20 @@ export function handleKeyboardEvent(
           }
           case 'ArrowUp':
             // Keyboard debounce: Prevent excessive volume control on repeated ArrowUp input (100ms interval)
-            if (shouldExecuteVideoControlKey(event.key)) {
+            if (shouldExecuteKeyboardAction(event.key, 100)) {
               executeVideoControl('volumeUp');
             }
             break;
           case 'ArrowDown':
             // Keyboard debounce: Prevent excessive volume control on repeated ArrowDown input (100ms interval)
-            if (shouldExecuteVideoControlKey(event.key)) {
+            if (shouldExecuteKeyboardAction(event.key, 100)) {
               executeVideoControl('volumeDown');
             }
             break;
           case 'm':
           case 'M':
             // Keyboard debounce: Prevent duplicate mute toggle calls on repeated M key input (100ms interval)
-            if (shouldExecuteVideoControlKey(event.key)) {
+            if (shouldExecuteKeyboardAction(event.key, 100)) {
               executeVideoControl('toggleMute');
             }
             break;

@@ -24,22 +24,23 @@ const DEFAULT_DIMENSIONS: DimensionPair = {
   height: STANDARD_GALLERY_HEIGHT,
 } as const;
 
+/** Check if string has a valid URL prefix */
+function hasValidUrlPrefix(str: string): boolean {
+  return (
+    str.startsWith('http://') ||
+    str.startsWith('https://') ||
+    str.startsWith('//') ||
+    str.startsWith('/') ||
+    str.startsWith('./') ||
+    str.startsWith('../')
+  );
+}
+
 function extractFilenameFromUrl(url: string): string | null {
   if (!url) return null;
 
   const trimmed = url.trim();
-  if (!trimmed) return null;
-
-  if (
-    !trimmed.startsWith('http://') &&
-    !trimmed.startsWith('https://') &&
-    !trimmed.startsWith('//') &&
-    !trimmed.startsWith('/') &&
-    !trimmed.startsWith('./') &&
-    !trimmed.startsWith('../')
-  ) {
-    return null;
-  }
+  if (!trimmed || !hasValidUrlPrefix(trimmed)) return null;
 
   const parsed = tryParseUrl(trimmed, 'https://example.invalid');
   if (!parsed) return null;
@@ -81,20 +82,22 @@ function getMediaDedupKey(media: MediaInfo): string | null {
   return filename ? `${typePrefix}${filename}` : `${typePrefix}${urlCandidate}`;
 }
 
-function removeDuplicates<T>(
-  items: ReadonlyArray<T | null | undefined>,
-  keyExtractor: (item: T) => string | null | undefined
-): T[] {
+/** Deduplicate media items by URL */
+export function removeDuplicateMediaItems(
+  mediaItems: ReadonlyArray<MediaInfo | undefined>
+): MediaInfo[] {
+  if (!mediaItems?.length) {
+    return [];
+  }
+
   let warnedMissingKey = false;
   const seen = new Set<string>();
-  const uniqueItems: T[] = [];
+  const result: MediaInfo[] = [];
 
-  for (const item of items) {
-    if (item == null) {
-      continue;
-    }
+  for (const item of mediaItems) {
+    if (item == null) continue;
 
-    const key = keyExtractor(item);
+    const key = getMediaDedupKey(item);
     if (!key) {
       if (__DEV__ && !warnedMissingKey) {
         warnedMissingKey = true;
@@ -105,22 +108,9 @@ function removeDuplicates<T>(
 
     if (!seen.has(key)) {
       seen.add(key);
-      uniqueItems.push(item);
+      result.push(item);
     }
   }
-
-  return uniqueItems;
-}
-
-/** Deduplicate media items by URL */
-export function removeDuplicateMediaItems(
-  mediaItems: ReadonlyArray<MediaInfo | undefined>
-): MediaInfo[] {
-  if (!mediaItems?.length) {
-    return [];
-  }
-
-  const result = removeDuplicates<MediaInfo>(mediaItems, getMediaDedupKey);
 
   if (__DEV__) {
     const inputCount = mediaItems.filter(Boolean).length;
@@ -196,18 +186,7 @@ export function normalizeMediaUrl(url: string): string | null {
   if (!url) return null;
 
   const trimmed = url.trim();
-  if (!trimmed) return null;
-
-  if (
-    !trimmed.startsWith('http://') &&
-    !trimmed.startsWith('https://') &&
-    !trimmed.startsWith('//') &&
-    !trimmed.startsWith('/') &&
-    !trimmed.startsWith('./') &&
-    !trimmed.startsWith('../')
-  ) {
-    return null;
-  }
+  if (!trimmed || !hasValidUrlPrefix(trimmed)) return null;
 
   const parsed = tryParseUrl(trimmed, 'https://example.invalid');
   if (!parsed) return null;

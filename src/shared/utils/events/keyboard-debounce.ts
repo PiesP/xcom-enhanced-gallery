@@ -27,17 +27,6 @@ export function shouldExecuteKeyboardAction(key: string, minIntervalMs: number):
   return true;
 }
 
-export function shouldExecuteVideoControlKey(key: string): boolean {
-  // Volume / mute keys are spammy when held down.
-  return key === 'ArrowUp' || key === 'ArrowDown' || key === 'm' || key === 'M'
-    ? shouldExecuteKeyboardAction(key, 100)
-    : true;
-}
-
-export function shouldExecutePlayPauseKey(key: string): boolean {
-  return key === ' ' || key === 'Space' ? shouldExecuteKeyboardAction(key, 150) : true;
-}
-
 export function resetKeyboardDebounceState(): void {
   keyboardDebounceState.lastExecutionTime = 0;
   keyboardDebounceState.lastKey = '';
