@@ -18,7 +18,4 @@ export {
   registerGalleryRenderer,
   registerSettingsManager,
   tryGetSettingsManager,
-  // Warmup
-  warmupCriticalServices,
-  warmupNonCriticalServices,
 } from '@shared/container/service-accessors';

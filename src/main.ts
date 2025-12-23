@@ -10,7 +10,7 @@ import { executeStages } from '@bootstrap/utils';
 import { createAppConfig } from '@constants/app-config';
 import { startDevCommandRuntime } from '@edge/bootstrap';
 import type { IGalleryApp } from '@shared/container/app-container';
-import { getThemeService, warmupNonCriticalServices } from '@shared/container/service-accessors';
+import { getThemeService } from '@shared/container/service-accessors';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
 import { GlobalErrorHandler } from '@shared/error/error-handler';
 import type { BootstrapStage } from '@shared/interfaces';
@@ -169,11 +169,6 @@ const devBootstrapStages: readonly BootstrapStage[] | null = __DEV__
         label: 'Gallery initialization',
         run: initializeGallery,
         shouldRun: () => !isTestMode,
-      },
-      {
-        label: 'Non-critical systems',
-        run: warmupNonCriticalServices,
-        optional: true,
       },
     ]
   : null;

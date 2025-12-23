@@ -1,4 +1,3 @@
-import { warmupCriticalServices } from '@shared/container/service-accessors';
 import { logger } from '@shared/logging';
 import { registerCoreServices } from '@shared/services/service-initialization';
 
@@ -8,7 +7,7 @@ export async function initializeCriticalSystems(): Promise<void> {
   }
 
   await registerCoreServices();
-  warmupCriticalServices();
+
   if (__DEV__) {
     logger.debug('[critical] initialization complete');
   }
