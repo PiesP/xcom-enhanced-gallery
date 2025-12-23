@@ -11,7 +11,7 @@ import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,
 } from '@shared/utils/media/media-element-utils';
-import { isSafeAndValidMediaUrl } from '@shared/utils/url/media-url';
+import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 // ============================================================================
 // Constants
@@ -55,7 +55,7 @@ const INTERACTIVE_SELECTOR = [
 function isValidMediaSource(url: string | null | undefined): boolean {
   if (!url) return false;
   if (url.startsWith('blob:')) return true;
-  return isSafeAndValidMediaUrl(url);
+  return isValidMediaUrl(url);
 }
 
 // ============================================================================
