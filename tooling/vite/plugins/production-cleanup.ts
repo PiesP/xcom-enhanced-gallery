@@ -1,4 +1,32 @@
+import { Script } from 'node:vm';
 import type { Plugin } from 'vite';
+
+const DEBUG_VALIDATE_STEPS = process.env.XEG_DEBUG_VALIDATE_PROD_CLEANUP === '1';
+
+function assertParsableJs(step: string, code: string): void {
+  if (!DEBUG_VALIDATE_STEPS) return;
+  try {
+    // Parse as a script (not a function body) to catch real-world syntax errors.
+    // The userscript bundle is an IIFE, so this should always be valid script code.
+    const parsed = new Script(code, { filename: `production-cleanup:${step}` });
+    void parsed;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `[production-cleanup] Bundle became unparsable after step "${step}": ${message}`
+    );
+  }
+}
+
+function assertParsableJsFinal(code: string): void {
+  try {
+    const parsed = new Script(code, { filename: 'production-cleanup:final' });
+    void parsed;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`[production-cleanup] Final bundle is unparsable: ${message}`);
+  }
+}
 
 function escapeRegExp(source: string): string {
   return source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -479,42 +507,43 @@ export function productionCleanupPlugin(): Plugin {
         const header = split.header;
         let code = split.body;
 
+        assertParsableJs('start', code);
+
         code = code.replace(
           /const\s+\w+\s*=\s*(?:\/\*#__PURE__\*\/\s*)?Object\.freeze\(\s*(?:\/\*#__PURE__\*\/\s*)?Object\.defineProperty\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*,\s*Symbol\.toStringTag\s*,\s*\{\s*value\s*:\s*['"]Module['"]\s*\}\s*\)\s*\)\s*;?\n?/g,
           ''
         );
+        assertParsableJs('strip-module-tag', code);
         code = code.replace(/\/\*#__PURE__\*\/\s*/g, '');
+        assertParsableJs('strip-pure-annotations', code);
         code = code.replace(/Object\.freeze\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*\)/g, '({})');
+        assertParsableJs('simplify-freeze-empty-object', code);
         code = removeLogCalls(code, ['debug', 'info', 'warn', 'trace']);
+        assertParsableJs('remove-log-calls', code);
         code = code.replace(/,\s*reset\(\)\s*\{\s*instance\s*=\s*null;\s*\}/g, '');
+        assertParsableJs('strip-singleton-reset', code);
         code = code.replace(/static\s+resetForTests\(\)\s*\{[^}]*\}/g, '');
+        assertParsableJs('strip-reset-for-tests', code);
         code = code.replace(/exports\.[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*[^;]+;/g, '');
+        assertParsableJs('strip-exports-assignments', code);
         code = code.replace(
           /Object\.defineProperty\(exports,['"]__esModule['"],\{value:true\}\);?/g,
           ''
         );
+        assertParsableJs('strip-esmodule-defineproperty', code);
         code = code.replace(/\s*\/\*\*\s*@internal[^*]*\*\/\s*/g, '\n');
+        assertParsableJs('strip-internal-singleline-jsdoc', code);
         code = code.replace(/\s*\/\*\*\s*\n\s*\*[^@]*@internal\s*\n\s*\*\/\s*/g, '\n');
+        assertParsableJs('strip-internal-multiline-jsdoc', code);
 
-        // Conservative JSDoc pruning (safe for production builds):
-        //  - Remove JSDoc blocks containing dev-only tags (@fileoverview, @version, @module, @description, @see)
-        //  - Remove very large JSDoc blocks (>200 chars) that are unlikely to be needed at runtime
-        //  - Preserve license-like blocks (contain 'License', 'Copyright', 'Third-Party Licenses', or '@license')
-        code = code.replace(
-          /\/\*\*[\s\S]*?(?:@fileoverview|@version|@module|@description|@see)[\s\S]*?\*\//g,
-          (m) => {
-            if (/(?:License|Copyright|Third-Party Licenses|@license)/.test(m)) return m;
-            return '\n';
-          }
-        );
-
-        code = code.replace(/\/\*\*[\s\S]{200,}?\*\//g, (m) => {
-          if (/(?:License|Copyright|Third-Party Licenses|@license)/.test(m)) return m;
-          return '\n';
-        });
+        // JSDoc pruning via regex is intentionally avoided.
+        // It can accidentally match patterns inside strings/template literals and corrupt output.
+        // We instead rely on the JS-aware comment stripper below.
 
         code = stripEmptyEsmMinInitWrappers(code);
+        assertParsableJs('strip-empty-esmmin', code);
         code = stripJsComments(code);
+        assertParsableJs('strip-js-comments', code);
 
         // Whitespace-only compaction (no identifier mangling).
         // Keep the header intact by running this only on the body.
@@ -522,7 +551,12 @@ export function productionCleanupPlugin(): Plugin {
         code = code.replace(/[ \t]+$/gm, '');
         code = code.replace(/\n{2,}/g, '\n');
 
+        assertParsableJs('compact-whitespace', code);
+
         chunk.code = header ? `${header}\n${code}` : code;
+
+        assertParsableJs('final', chunk.code);
+        assertParsableJsFinal(chunk.code);
       }
     },
   };
