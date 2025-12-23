@@ -495,6 +495,24 @@ export function productionCleanupPlugin(): Plugin {
         );
         code = code.replace(/\s*\/\*\*\s*@internal[^*]*\*\/\s*/g, '\n');
         code = code.replace(/\s*\/\*\*\s*\n\s*\*[^@]*@internal\s*\n\s*\*\/\s*/g, '\n');
+
+        // Conservative JSDoc pruning (safe for production builds):
+        //  - Remove JSDoc blocks containing dev-only tags (@fileoverview, @version, @module, @description, @see)
+        //  - Remove very large JSDoc blocks (>200 chars) that are unlikely to be needed at runtime
+        //  - Preserve license-like blocks (contain 'License', 'Copyright', 'Third-Party Licenses', or '@license')
+        code = code.replace(
+          /\/\*\*[\s\S]*?(?:@fileoverview|@version|@module|@description|@see)[\s\S]*?\*\//g,
+          (m) => {
+            if (/(?:License|Copyright|Third-Party Licenses|@license)/.test(m)) return m;
+            return '\n';
+          }
+        );
+
+        code = code.replace(/\/\*\*[\s\S]{200,}?\*\//g, (m) => {
+          if (/(?:License|Copyright|Third-Party Licenses|@license)/.test(m)) return m;
+          return '\n';
+        });
+
         code = stripEmptyEsmMinInitWrappers(code);
         code = stripJsComments(code);
 
