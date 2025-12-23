@@ -12,7 +12,7 @@ export function buildLanguageStringsFromValues(values: ReadonlyArray<string>): L
   let i = 0;
   const next = (): string => values[i++]!;
 
-  return {
+  const built: LanguageStrings = {
     tb: {
       prev: next(),
       next: next(),
@@ -92,4 +92,6 @@ export function buildLanguageStringsFromValues(values: ReadonlyArray<string>): L
       },
     },
   };
+  // Shallow-freeze to prevent accidental mutation of the translation registry objects.
+  return Object.freeze(built) as LanguageStrings;
 }

@@ -1,6 +1,6 @@
 import { type BaseLanguageCode, isBaseLanguageCode } from '@shared/constants/i18n/language-types';
 import { DEFAULT_LANGUAGE } from '@shared/constants/i18n/translation-registry';
-import { type ResolvedGMAPIs, resolveGMAPIs } from '@shared/external/userscript/adapter';
+import { getResolvedGMAPIsCached, type ResolvedGMAPIs } from '@shared/external/userscript/adapter';
 
 /**
  * Browser environment snapshot surfaced to the userscript layer.
@@ -85,7 +85,7 @@ export function detectEnvironment(): EnvironmentInfo {
 export function isGMAPIAvailable(apiName: GMAPIName): boolean {
   const checker = GM_API_CHECKS[apiName];
   try {
-    return checker(resolveGMAPIs());
+    return checker(getResolvedGMAPIsCached());
   } catch {
     return false;
   }

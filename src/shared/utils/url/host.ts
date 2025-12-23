@@ -54,7 +54,7 @@ export function tryParseUrl(
  * Convenience helper to extract the hostname from a URL-like value.
  */
 export function getHostname(value: string | URL | null | undefined): string | null {
-  const parsed = tryParseUrl(value);
+  const parsed = value instanceof URL ? value : tryParseUrl(value);
   return parsed?.hostname ?? null;
 }
 
@@ -70,7 +70,7 @@ export function isHostMatching(
     return false;
   }
 
-  const parsed = tryParseUrl(value);
+  const parsed = value instanceof URL ? value : tryParseUrl(value);
   if (!parsed) {
     return false;
   }

@@ -128,6 +128,25 @@ export function resolveGMAPIs(): ResolvedGMAPIs {
   };
 }
 
+let cachedGMAPIs: ResolvedGMAPIs | null = null;
+
+/**
+ * Get a cached snapshot of GM_* bindings.
+ *
+ * This avoids repeated probing of free variables / globalThis properties.
+ * The snapshot is resolved lazily on first use.
+ *
+ * @internal
+ */
+export function getResolvedGMAPIsCached(): ResolvedGMAPIs {
+  // In dev/test, globals may be stubbed dynamically. Avoid caching so each call reflects
+  // the current environment (helps unit tests and dev tooling).
+  if (__DEV__) return resolveGMAPIs();
+  if (cachedGMAPIs) return cachedGMAPIs;
+  cachedGMAPIs = resolveGMAPIs();
+  return cachedGMAPIs;
+}
+
 /**
  * Resolve the raw GM_download binding when present.
  *
@@ -140,11 +159,11 @@ function asFunction<T>(value: unknown): T | undefined {
 }
 
 export function resolveGMDownload(): unknown {
-  return resolveGMAPIs().download;
+  return getResolvedGMAPIsCached().download;
 }
 
 function createStrictUserscriptAPI(): UserscriptAPI {
-  const resolved = resolveGMAPIs();
+  const resolved = getResolvedGMAPIsCached();
   const gmDownload = asFunction<NonNullable<GlobalWithGM['GM_download']>>(resolved.download);
   const gmSetValue = asFunction<NonNullable<GlobalWithGM['GM_setValue']>>(resolved.setValue);
   const gmGetValue = asFunction<NonNullable<GlobalWithGM['GM_getValue']>>(resolved.getValue);
@@ -200,33 +219,26 @@ function createStrictUserscriptAPI(): UserscriptAPI {
 }
 
 /**
- * Safe wrapper for void-returning GM APIs that may throw
+ * Safe wrapper for GM APIs that may throw or return a rejected promise.
+ *
+ * Policy:
+ * - Always invokes the function synchronously (side effects happen immediately).
+ * - Never throws.
+ * - Swallows promise rejections.
+ *
  * @internal
  */
-function safeVoidCall(fn: (() => void) | null | undefined): void {
-  if (!fn) return;
+function safeCall(fn: (() => unknown) | null | undefined): Promise<unknown | undefined> {
+  if (!fn) return Promise.resolve(undefined);
   try {
-    fn();
+    return Promise.resolve(fn()).catch(() => undefined);
   } catch {
-    // Silently ignore errors from userscript manager APIs
-  }
-}
-
-/**
- * Safe wrapper for async void-returning GM APIs
- * @internal
- */
-async function safeAsyncVoidCall(fn: (() => unknown) | null | undefined): Promise<void> {
-  if (!fn) return;
-  try {
-    await Promise.resolve(fn());
-  } catch {
-    // Silently ignore errors from userscript manager APIs
+    return Promise.resolve(undefined);
   }
 }
 
 function createSafeUserscriptAPI(): UserscriptAPI {
-  const resolved = resolveGMAPIs();
+  const resolved = getResolvedGMAPIsCached();
   const gmDownload = asFunction<NonNullable<GlobalWithGM['GM_download']>>(resolved.download);
   const gmSetValue = asFunction<NonNullable<GlobalWithGM['GM_setValue']>>(resolved.setValue);
   const gmGetValue = asFunction<NonNullable<GlobalWithGM['GM_getValue']>>(resolved.getValue);
@@ -243,10 +255,10 @@ function createSafeUserscriptAPI(): UserscriptAPI {
 
   return {
     async download(url: string, filename: string): Promise<void> {
-      safeVoidCall(gmDownload ? () => gmDownload(url, filename) : null);
+      await safeCall(gmDownload ? () => gmDownload(url, filename) : null);
     },
     async setValue(key: string, value: unknown): Promise<void> {
-      await safeAsyncVoidCall(gmSetValue ? () => gmSetValue(key, value) : null);
+      await safeCall(gmSetValue ? () => gmSetValue(key, value) : null);
     },
     async getValue<T>(key: string, defaultValue?: T): Promise<T | undefined> {
       if (!gmGetValue) return defaultValue;
@@ -267,7 +279,7 @@ function createSafeUserscriptAPI(): UserscriptAPI {
       }
     },
     async deleteValue(key: string): Promise<void> {
-      await safeAsyncVoidCall(gmDeleteValue ? () => gmDeleteValue(key) : null);
+      await safeCall(gmDeleteValue ? () => gmDeleteValue(key) : null);
     },
     async listValues(): Promise<string[]> {
       if (!gmListValues) return [];
@@ -292,7 +304,7 @@ function createSafeUserscriptAPI(): UserscriptAPI {
       return { abort() {} };
     },
     notification(details: GMNotificationDetails): void {
-      safeVoidCall(gmNotification ? () => gmNotification(details, undefined) : null);
+      void safeCall(gmNotification ? () => gmNotification(details, undefined) : null);
     },
     cookie: resolved.cookie,
   };
