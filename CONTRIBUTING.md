@@ -96,8 +96,7 @@ These tasks are defined in `package.json` and use the project configuration
 ## Editor setup (VSCode)
 
 For the best development experience, configure VSCode to use the same
-lint/format rules as the CLI (`pnpm lint`, `pnpm fmt`,
-`pnpm biome:check`).
+lint/format rules as the CLI (`pnpm lint`, `pnpm fmt`).
 
 ### Recommended extensions
 
@@ -128,8 +127,7 @@ Add these settings to your `.vscode/settings.json`:
 
 This ensures:
 
-- **Format on save** uses Biome (same as `pnpm fmt` /
-  `pnpm biome:check`)
+- **Format on save** uses Biome (same as `pnpm fmt`)
 - **Lint rules** match the CLI (`biome.jsonc` configuration)
 - **Auto-fix** applies safe fixes on save
 

@@ -23,7 +23,7 @@ Built with modern tooling:
 - **UI**: Solid.js 1.9
 - **Language**: TypeScript 5.9 (strict)
 - **Runtime**: Node.js 24 (via Volta)
-- **Bundler**: Vite 8 + vite-plugin-solid
+- **Bundler**: Vite 7 + vite-plugin-solid
 - **Linter/Formatter**: Biome 2.3
 
 ## 🧱 Architecture & layering

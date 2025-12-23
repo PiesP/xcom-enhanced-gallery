@@ -6,13 +6,12 @@ name: 🏗️ CI Pipeline
 # - Format checking (Biome)
 # - Build verification (Production mode)
 #
-# Triggered on: Push/PR to master (excluding docs/assets)
+# Triggered on: Push/PR to master (excluding markdown/assets)
 
 on:
   push:
     branches: [master]
     paths-ignore:
-      - "docs/**"
       - "**/*.md"
       - "**/*.MD"
       - "**/*.txt"
@@ -23,7 +22,6 @@ on:
   pull_request:
     branches: [master]
     paths-ignore:
-      - "docs/**"
       - "**/*.md"
       - "**/*.MD"
       - "**/*.txt"

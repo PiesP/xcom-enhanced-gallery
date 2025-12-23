@@ -58,8 +58,8 @@ We use several mechanisms to keep the codebase secure:
 - **Dependabot** (`.github/dependabot.yml`)
   - Automated updates for npm packages and GitHub Actions
 - **Quality & Testing**
-  - TypeScript strict mode, ESLint/Stylelint
-  - Comprehensive automated tests (unit, browser, integration, E2E, accessibility)
+  - TypeScript strict mode, Biome linter/formatter
+  - Comprehensive automated tests (unit, browser, component, E2E, mutation)
 
 These checks run in CI for `master` and scheduled workflows; local development uses the same toolchain via `pnpm` commands.
 

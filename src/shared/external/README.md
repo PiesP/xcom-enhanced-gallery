@@ -96,9 +96,9 @@ await downloadService.downloadBlob({
 
 ## Related docs
 
-- `docs/ARCHITECTURE.md` - Architecture and service layer overview
-- `docs/CODING_GUIDELINES.md` - Coding rules and patterns
+- `AGENTS.md` - AI coding guidance including service patterns
+- `CONTRIBUTING.md` - Contributing guidelines and coding rules
 
 ---
 
-Last updated: 2025-12-16
+Last updated: 2025-12-24
