@@ -114,65 +114,6 @@ export function removeEventListenerManaged(id: string): boolean {
 }
 
 /**
- * Remove all listeners matching a context
- *
- * @param context - Context string to match
- * @returns Number of removed listeners
- */
-export function removeEventListenersByContext(context: string): number {
-  const toRemove: string[] = [];
-
-  for (const [id, ctx] of listeners) {
-    if (ctx.context === context) {
-      toRemove.push(id);
-    }
-  }
-
-  let count = 0;
-  for (const id of toRemove) {
-    if (removeEventListenerManaged(id)) {
-      count++;
-    }
-  }
-
-  if (count > 0) {
-    if (__DEV__) {
-      logger.debug(`Removed ${count} listeners for context: ${context}`);
-    }
-  }
-
-  return count;
-}
-
-/**
- * Remove all tracked listeners
- */
-export function removeAllEventListeners(): void {
-  if (listeners.size === 0) {
-    return;
-  }
-
-  const all = Array.from(listeners.values());
-  listeners.clear();
-
-  let count = 0;
-  for (const ctx of all) {
-    try {
-      ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
-      count++;
-    } catch (error) {
-      if (__DEV__) {
-        logger.warn(`Failed to remove listener: ${ctx.type}`, { error, context: ctx.context });
-      }
-    }
-  }
-
-  if (__DEV__) {
-    logger.debug(`Removed all ${count} listeners`);
-  }
-}
-
-/**
  * Get listener statistics
  */
 export function getEventListenerStatus() {
@@ -190,32 +131,4 @@ export function getEventListenerStatus() {
   }
 
   return { total: listeners.size, byContext, byType };
-}
-
-// ============================================================================
-// Test Utilities
-// ============================================================================
-
-/** @internal Check if listener exists */
-export function __testHasListener(id: string): boolean {
-  if (!__DEV__) {
-    return false;
-  }
-  return listeners.has(id);
-}
-
-/** @internal Get listener context */
-export function __testGetListener(id: string): DOMListenerContext | undefined {
-  if (!__DEV__) {
-    return undefined;
-  }
-  return listeners.get(id);
-}
-
-/** @internal Unregister without DOM removal */
-export function __testRegistryUnregister(id: string): boolean {
-  if (!__DEV__) {
-    return false;
-  }
-  return listeners.delete(id);
 }
