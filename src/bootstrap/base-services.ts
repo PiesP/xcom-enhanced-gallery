@@ -6,13 +6,7 @@
  * Refactor: ES Module singleton pattern integration
  */
 
-import {
-  CORE_BASE_SERVICE_IDENTIFIERS,
-  type CoreBaseServiceIdentifier,
-  LANGUAGE_SERVICE_IDENTIFIER,
-  MEDIA_SERVICE_IDENTIFIER,
-  THEME_SERVICE_IDENTIFIER,
-} from '@shared/container/service-accessors';
+import { SERVICE_KEYS } from '@constants/service-keys';
 import { logger } from '@shared/logging';
 import { CoreService } from '@shared/services/service-manager';
 import {
@@ -22,6 +16,14 @@ import {
 } from '@shared/services/singletons';
 import type { BaseService } from '@shared/types/core/base-service.types';
 
+/** Core base service identifiers for initialization */
+const CORE_BASE_SERVICE_IDENTIFIERS = [
+  SERVICE_KEYS.THEME,
+  SERVICE_KEYS.LANGUAGE,
+  SERVICE_KEYS.MEDIA_SERVICE,
+] as const;
+
+type CoreBaseServiceIdentifier = (typeof CORE_BASE_SERVICE_IDENTIFIERS)[number];
 type BaseServiceRegistration = readonly [CoreBaseServiceIdentifier, () => BaseService];
 
 /**
@@ -29,9 +31,9 @@ type BaseServiceRegistration = readonly [CoreBaseServiceIdentifier, () => BaseSe
  * This ensures consistent instances across the application.
  */
 const BASE_SERVICE_REGISTRATIONS: ReadonlyArray<BaseServiceRegistration> = [
-  [THEME_SERVICE_IDENTIFIER, getThemeServiceInstance],
-  [LANGUAGE_SERVICE_IDENTIFIER, getLanguageServiceInstance],
-  [MEDIA_SERVICE_IDENTIFIER, getMediaServiceInstance],
+  [SERVICE_KEYS.THEME, getThemeServiceInstance],
+  [SERVICE_KEYS.LANGUAGE, getLanguageServiceInstance],
+  [SERVICE_KEYS.MEDIA_SERVICE, getMediaServiceInstance],
 ];
 
 function registerMissingBaseServices(coreService: CoreService): number {

@@ -109,5 +109,3 @@ export class CoreService {
     this.cleanup();
   }
 }
-
-export const serviceManager = CoreService.getInstance();

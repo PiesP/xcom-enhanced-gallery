@@ -65,30 +65,6 @@ export function getMediaServiceInstance(): MediaService {
 // ============================================================================
 
 /**
- * Reset ThemeService singleton for testing.
- * @internal
- */
-export function setThemeServiceInstance(_mock: ThemeService | null): void {
-  ThemeService.resetForTests();
-}
-
-/**
- * Reset LanguageService singleton for testing.
- * @internal
- */
-export function setLanguageServiceInstance(_mock: LanguageService | null): void {
-  LanguageService.resetForTests();
-}
-
-/**
- * Reset MediaService singleton for testing.
- * @internal
- */
-export function setMediaServiceInstance(_mock: MediaService | null): void {
-  MediaService.resetForTests();
-}
-
-/**
  * Reset all service instances for test isolation.
  * Use in test teardown to ensure clean state.
  */

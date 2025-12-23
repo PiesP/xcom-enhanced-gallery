@@ -13,25 +13,6 @@ import {
 import type { ThemeServiceContract } from '@shared/services/theme-service.contract';
 
 // ============================================================================
-// Service Key Accessors (Phase 414): Centralized SERVICE_KEYS exposure
-// ============================================================================
-// Keeping the literal SERVICE_KEYS references inside this module maintains the
-// existing lint contract (only specific files may reference SERVICE_KEYS).
-// Other modules should import these constants instead of referencing
-// SERVICE_KEYS directly.
-
-export const THEME_SERVICE_IDENTIFIER = SERVICE_KEYS.THEME;
-export const LANGUAGE_SERVICE_IDENTIFIER = SERVICE_KEYS.LANGUAGE;
-export const MEDIA_SERVICE_IDENTIFIER = SERVICE_KEYS.MEDIA_SERVICE;
-
-export const CORE_BASE_SERVICE_IDENTIFIERS = [
-  THEME_SERVICE_IDENTIFIER,
-  LANGUAGE_SERVICE_IDENTIFIER,
-  MEDIA_SERVICE_IDENTIFIER,
-] as const;
-export type CoreBaseServiceIdentifier = (typeof CORE_BASE_SERVICE_IDENTIFIERS)[number];
-
-// ============================================================================
 // Helper: Try CoreService first for test mock support
 // ============================================================================
 // [CRITICAL] This priority logic is STRICTLY for testing purposes.
