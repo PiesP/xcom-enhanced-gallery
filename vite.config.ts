@@ -119,6 +119,12 @@ export default defineConfig(({ mode }): UserConfig => {
                 find: '@shared/error/app-error-reporter',
                 replacement: resolve(root, 'src/shared/error/app-error-reporter.slim.ts'),
               },
+              // Bundle-size optimization: Avoid shipping dev-only PersistentStorage members
+              // that compile to no-ops in production but still take bytes in a non-minified build.
+              {
+                find: '@shared/services/persistent-storage',
+                replacement: resolve(root, 'src/shared/services/persistent-storage.slim.ts'),
+              },
             ]
           : []),
         ...buildPathAliases(root),

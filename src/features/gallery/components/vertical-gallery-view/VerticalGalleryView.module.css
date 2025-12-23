@@ -307,16 +307,6 @@
   content-visibility: auto;
 }
 
-.container:has(.itemActive) {
-  /* Flag used by observers to know when at least one item is active */
-  --has-active-item: 1;
-}
-
-.container:has(.toolbarWrapper:hover) {
-  /* Surface-level signal to indicate the toolbar is currently interactive */
-  --toolbar-interaction: 1;
-}
-
 /* Invisible hover strip that keeps the toolbar awake without covering content */
 .toolbarHoverZone {
   position: fixed;

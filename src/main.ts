@@ -129,7 +129,17 @@ const devBootstrapStages: readonly BootstrapStage[] | null = __DEV__
       },
       {
         label: 'Infrastructure',
-        run: initializeInfrastructure,
+        run: async () => {
+          try {
+            await initializeEnvironment();
+            logger.debug('✅ Vendor library initialization complete');
+          } catch (error) {
+            bootstrapErrorReporter.critical(error, {
+              code: 'INFRASTRUCTURE_INIT_FAILED',
+            });
+            throw error;
+          }
+        },
       },
       {
         label: 'Critical systems',
@@ -157,11 +167,12 @@ const devBootstrapStages: readonly BootstrapStage[] | null = __DEV__
       },
       {
         label: 'Gallery initialization',
-        run: initializeGalleryIfPermitted,
+        run: initializeGallery,
+        shouldRun: () => !isTestMode,
       },
       {
         label: 'Non-critical systems',
-        run: () => initializeNonCriticalSystems(),
+        run: warmupNonCriticalServices,
         optional: true,
       },
     ]
@@ -182,7 +193,6 @@ async function runBootstrapStages(): Promise<void> {
   }
 
   // Production: minimal sequential bootstrap.
-  await initializeInfrastructure();
   await initializeCriticalSystems();
   try {
     await initializeBaseServicesStage();
@@ -191,31 +201,10 @@ async function runBootstrapStages(): Promise<void> {
   }
   await applyInitialThemeSetting();
   setupGlobalEventHandlers();
-  await initializeGalleryIfPermitted();
-  initializeNonCriticalSystems();
+  await initializeGallery();
 }
 
 // Lean mode: requestIdleCallback scheduling removed
-
-/**
- * Initialize base infrastructure
- */
-// exported initializeInfrastructure below
-async function initializeInfrastructure(): Promise<void> {
-  try {
-    if (__DEV__) {
-      await initializeEnvironment();
-    }
-    if (__DEV__) {
-      logger.debug('✅ Vendor library initialization complete');
-    }
-  } catch (error) {
-    bootstrapErrorReporter.critical(error, {
-      code: 'INFRASTRUCTURE_INIT_FAILED',
-    });
-    throw error;
-  }
-}
 
 // exported initializeBaseServicesStage below
 async function initializeBaseServicesStage(): Promise<void> {
@@ -258,27 +247,6 @@ async function applyInitialThemeSetting(): Promise<void> {
  * Non-Critical system background initialization
  * Phase 3.1: Utilize requestIdleCallback
  */
-// exported initializeNonCriticalSystems below
-function initializeNonCriticalSystems(): void {
-  // Lean mode: execute immediately without idle scheduling or test mode branching
-  try {
-    if (__DEV__) {
-      logger.info('Starting non-critical system initialization');
-    }
-    warmupNonCriticalServices();
-    if (__DEV__) {
-      logger.info('✅ Non-critical system initialization complete');
-    }
-  } catch (error) {
-    if (__DEV__) {
-      logger.warn('Error during non-critical system initialization:', error);
-    }
-  }
-}
-
-/**
- * Set up global event handlers
- */
 // exported setupGlobalEventHandlers below
 function setupGlobalEventHandlers(): void {
   tearDownGlobalEventHandlers();
@@ -303,18 +271,6 @@ async function initializeDevToolsIfNeeded(): Promise<void> {
     return;
   }
   await initializeDevTools();
-}
-
-// exported initializeGalleryIfPermitted below
-async function initializeGalleryIfPermitted(): Promise<void> {
-  if (isTestMode) {
-    if (__DEV__) {
-      logger.debug('Gallery initialization skipped (test mode)');
-    }
-    return;
-  }
-
-  await initializeGallery();
 }
 
 /**
