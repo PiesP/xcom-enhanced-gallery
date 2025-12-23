@@ -102,7 +102,7 @@ export function isValidNavigationTrigger(value: unknown): value is NavigationTri
 /**
  * Check if source is a manual navigation (button or keyboard)
  */
-function isManualSource(source: NavigationSource): boolean {
+export function isManualSource(source: NavigationSource): boolean {
   return source === 'button' || source === 'keyboard';
 }
 

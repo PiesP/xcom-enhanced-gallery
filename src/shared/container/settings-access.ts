@@ -17,8 +17,6 @@
  * await setTypedSetting('gallery.theme', 'dark'); // Type-checked value
  * ```
  */
-import { tryGetSettingsManager } from './service-accessors';
-
 // Re-export type-safe functions for convenient access
 export {
   getTypedSetting,
@@ -30,15 +28,3 @@ export {
   tryGetTypedSetting,
   trySetTypedSetting,
 } from './typed-settings';
-
-// Removed deprecated getSetting() and setSetting() along with their helper types.
-// Use getTypedSettingOr() and setTypedSetting() from typed-settings.ts for type-safe access.
-
-interface SettingsServiceLike {
-  get<T = unknown>(key: string): T | undefined;
-  set<T = unknown>(key: string, value: T): Promise<void>;
-}
-
-export function tryGetSettingsService(): SettingsServiceLike | null {
-  return tryGetSettingsManager<SettingsServiceLike>();
-}

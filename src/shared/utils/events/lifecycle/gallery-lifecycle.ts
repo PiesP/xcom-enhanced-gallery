@@ -161,17 +161,3 @@ export function cleanupGalleryEvents(): void {
 
   lifecycleState = { ...initialLifecycleState };
 }
-
-export function updateGalleryEventOptions(newOptions: Partial<GalleryEventOptions>): void {
-  if (lifecycleState.options) {
-    lifecycleState.options = { ...lifecycleState.options, ...newOptions };
-  }
-}
-
-export function getGalleryEventSnapshot() {
-  return {
-    initialized: lifecycleState.initialized,
-    options: lifecycleState.options,
-    isConnected: lifecycleState.initialized,
-  };
-}

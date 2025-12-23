@@ -184,23 +184,3 @@ export function executeVideoControl(
     logger.error('[VideoControl] Unexpected error', { error, action, context });
   }
 }
-
-/**
- * Get video playback state
- * (Test utility)
- *
- * @param video - Video element
- * @returns Playback state or null
- */
-export function getVideoPlaybackState(video: HTMLVideoElement): { playing: boolean } | null {
-  return videoPlaybackStateMap.get(video) || null;
-}
-
-/**
- * Reset video playback state
- * (Test utility)
- */
-export function resetVideoPlaybackState(): void {
-  // WeakMap cannot be explicitly reset, only reference removal
-  // In actual tests, create new elements or depend on GC
-}

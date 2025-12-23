@@ -11,6 +11,7 @@
  * gallery.signals.ts to avoid duplication and maintain single source of truth.
  */
 
+import { isManualSource } from '@shared/state/signals/navigation.state';
 import type { NavigationSource } from '@shared/types/navigation.types';
 
 // ============================================================================
@@ -139,10 +140,6 @@ function handleSetFocus(
 
 function handleReset(nowMs: number): NavigationTransitionResult {
   return createResult(createInitialState(nowMs));
-}
-
-function isManualSource(source: NavigationSource): boolean {
-  return source === 'button' || source === 'keyboard';
 }
 
 function createResult(state: NavigationState, isDuplicate = false): NavigationTransitionResult {
