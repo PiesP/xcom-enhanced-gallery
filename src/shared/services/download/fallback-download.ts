@@ -37,7 +37,7 @@ export function detectDownloadCapability(): DownloadCapability {
     typeof rawGMDownload === 'function'
       ? (rawGMDownload as unknown as GMDownloadFunction)
       : undefined;
-  const hasGMDownload = isGMAPIAvailable('download') && Boolean(gmDownload);
+  const hasGMDownload = isGMAPIAvailable('download') && !!gmDownload;
 
   return {
     hasGMDownload,

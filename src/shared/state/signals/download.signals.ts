@@ -387,13 +387,23 @@ export function getDownloadInfo(): {
   isProcessing: boolean;
 } {
   const state = downloadState.value;
-  const tasks = Array.from(state.activeTasks.values());
+  let activeTasks = 0;
+  let pendingTasks = 0;
+  let completedTasks = 0;
+  let failedTasks = 0;
+
+  for (const t of state.activeTasks.values()) {
+    if (t.status === 'downloading') activeTasks++;
+    else if (t.status === 'pending') pendingTasks++;
+    else if (t.status === 'completed') completedTasks++;
+    else if (t.status === 'failed') failedTasks++;
+  }
 
   return {
-    activeTasks: tasks.filter((t) => t.status === 'downloading').length,
-    pendingTasks: tasks.filter((t) => t.status === 'pending').length,
-    completedTasks: tasks.filter((t) => t.status === 'completed').length,
-    failedTasks: tasks.filter((t) => t.status === 'failed').length,
+    activeTasks,
+    pendingTasks,
+    completedTasks,
+    failedTasks,
     queueLength: state.queue.length,
     isProcessing: state.isProcessing,
   };

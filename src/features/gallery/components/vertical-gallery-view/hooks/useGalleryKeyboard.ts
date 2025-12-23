@@ -65,7 +65,7 @@ export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void
         return true;
       }
 
-      return Boolean(element.isContentEditable);
+      return !!element.isContentEditable;
     };
 
     const handleKeyDown = (event: Event) => {

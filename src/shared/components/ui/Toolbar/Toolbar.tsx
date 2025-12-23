@@ -152,7 +152,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
 
   createEffect(
     on(isDownloadingProp, (value) => {
-      toolbarActions.setDownloading(Boolean(value));
+      toolbarActions.setDownloading(!!value);
     })
   );
 
@@ -193,8 +193,8 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const navState = createMemo(() =>
     computeNavigationState({
       total: totalItems(),
-      toolbarDisabled: Boolean(isDisabled()),
-      downloadBusy: Boolean(isDownloadingProp() || toolbarState.isDownloading),
+      toolbarDisabled: !!isDisabled(),
+      downloadBusy: !!(isDownloadingProp() || toolbarState.isDownloading),
     })
   );
 
@@ -228,7 +228,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     () => currentFitMode() ?? FIT_MODE_ORDER[0]?.mode ?? 'original'
   );
 
-  const isToolbarDisabled = () => Boolean(isDisabled());
+  const isToolbarDisabled = () => !!isDisabled();
 
   const handleFitModeClick = (mode: FitMode) => (event: MouseEvent) => {
     safeEventPreventAll(event);

@@ -83,7 +83,7 @@ function listFromDocument(options?: CookieListOptions): CookieRecord[] {
       };
       return record;
     })
-    .filter((record): record is CookieRecord => Boolean(record));
+    .filter((record): record is CookieRecord => !!record);
 
   const filtered = options?.name
     ? records.filter((record) => record.name === options.name)

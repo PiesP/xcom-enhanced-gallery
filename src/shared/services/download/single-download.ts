@@ -148,7 +148,7 @@ export async function downloadSingleFile(
     method: effectiveCapability.method,
     mediaUrl: media.url,
     filename,
-    hasProvidedBlob: Boolean(options.blob),
+    hasProvidedBlob: !!options.blob,
     timeoutMs: 30_000,
   });
 

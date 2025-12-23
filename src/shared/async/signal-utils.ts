@@ -90,7 +90,7 @@ export function createTimeoutSignal(ms: number): AbortSignal {
  */
 export function combineSignals(signals: AbortSignal[]): AbortSignal {
   // Accept runtime-invalid values defensively (tests may pass null/undefined)
-  const validSignals = signals.filter((s): s is AbortSignal => Boolean(s));
+  const validSignals = signals.filter((s): s is AbortSignal => !!s);
 
   if (validSignals.length === 0) {
     return new AbortController().signal; // Never-aborting signal

@@ -116,7 +116,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const totalCount = createMemo(() => resolve(props.totalCount));
   const currentIndex = createMemo(() => resolve(props.currentIndex));
   const displayedIndex = createMemo(() => props.displayedIndex());
-  const isToolbarDisabled = createMemo(() => Boolean(resolveOptional(props.disabled)));
+  const isToolbarDisabled = createMemo(() => !!resolveOptional(props.disabled));
   const activeFitMode = createMemo(() => props.activeFitMode());
   const tweetText = createMemo(() => resolveOptional(props.tweetText) ?? null);
   const tweetTextHTML = createMemo(() => resolveOptional(props.tweetTextHTML) ?? null);
@@ -156,7 +156,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       counter.dataset.focusedIndex = focused;
     }
   });
-  const hasTweetContent = () => Boolean(tweetTextHTML() ?? tweetText());
+  const hasTweetContent = () => !!(tweetTextHTML() ?? tweetText());
   const toolbarButtonClass = (...extra: Array<string | undefined>) =>
     cx(styles.toolbarButton, 'xeg-inline-center', ...extra);
 

@@ -30,7 +30,7 @@ export class TranslationCatalog {
   }
 
   has(language: BaseLanguageCode): boolean {
-    return Boolean(this.bundles[language]);
+    return !!this.bundles[language];
   }
 
   get(language?: BaseLanguageCode): LanguageStrings {
@@ -50,16 +50,14 @@ export class TranslationCatalog {
    * This userscript ships all language bundles synchronously in the single-file
    * output. Runtime lazy-loading is intentionally unsupported.
    */
-  async ensureLanguage(language: BaseLanguageCode): Promise<boolean> {
-    void language;
+  async ensureLanguage(_language: BaseLanguageCode): Promise<boolean> {
     return false;
   }
 
   /**
    * Check if a language can be lazy-loaded.
    */
-  canLazyLoad(language: BaseLanguageCode): boolean {
-    void language;
+  canLazyLoad(_language: BaseLanguageCode): boolean {
     return false;
   }
 

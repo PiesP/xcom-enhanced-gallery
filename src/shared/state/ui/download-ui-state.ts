@@ -8,5 +8,5 @@ interface DownloadUiStateContext {
 }
 
 export function isDownloadUiBusy(context: DownloadUiStateContext): boolean {
-  return Boolean(context.downloadProcessing);
+  return !!context.downloadProcessing;
 }

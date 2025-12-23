@@ -20,7 +20,7 @@ export function takeDomFacts(kind: DomFactsKind): DomFacts {
     };
   }
 
-  const hasXegOverlay = Boolean(document.querySelector(GALLERY_OVERLAY_SELECTOR));
+  const hasXegOverlay = !!document.querySelector(GALLERY_OVERLAY_SELECTOR);
   const hasXComMediaViewer =
     queryAllWithFallback(document, STABLE_MEDIA_VIEWERS_SELECTORS).length > 0;
   const mediaElementsCount = queryAllWithFallback(

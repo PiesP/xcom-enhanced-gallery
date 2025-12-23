@@ -106,5 +106,5 @@ export function isProcessableMedia(target: HTMLElement | null): boolean {
   }
 
   // Inside media containers (images/videos that have not fully loaded yet)
-  return Boolean(target.closest(MEDIA_CONTAINER_SELECTOR));
+  return !!target.closest(MEDIA_CONTAINER_SELECTOR);
 }

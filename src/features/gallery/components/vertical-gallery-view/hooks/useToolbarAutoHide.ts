@@ -44,7 +44,7 @@ interface UseToolbarAutoHideResult {
 export function useToolbarAutoHide(options: UseToolbarAutoHideOptions): UseToolbarAutoHideResult {
   const { isVisible, hasItems } = options;
 
-  const computeInitialVisibility = (): boolean => Boolean(isVisible() && hasItems());
+  const computeInitialVisibility = (): boolean => !!(isVisible() && hasItems());
   const [isInitialToolbarVisible, setIsInitialToolbarVisible] = createSignal(
     computeInitialVisibility()
   );

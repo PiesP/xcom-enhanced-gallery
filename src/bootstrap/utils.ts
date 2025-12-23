@@ -40,7 +40,7 @@ async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult
     return {
       label: stage.label,
       success: true,
-      optional: Boolean(stage.optional),
+      optional: !!stage.optional,
       durationMs: 0,
     };
   }
@@ -61,7 +61,7 @@ async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult
     return {
       label: stage.label,
       success: true,
-      optional: Boolean(stage.optional),
+      optional: !!stage.optional,
       durationMs,
     };
   } catch (error) {
@@ -82,7 +82,7 @@ async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult
     return {
       label: stage.label,
       success: false,
-      optional: Boolean(stage.optional),
+      optional: !!stage.optional,
       error,
       durationMs,
     };

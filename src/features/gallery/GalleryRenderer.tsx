@@ -254,7 +254,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   isRendering(): boolean {
-    return Boolean(this.container && gallerySignals.isOpen.value);
+    return !!(this.container && gallerySignals.isOpen.value);
   }
 
   destroy(): void {
