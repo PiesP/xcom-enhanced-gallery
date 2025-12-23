@@ -1,66 +1,31 @@
 /**
- * @fileoverview Lazy service registration for Phase 2a bundle optimization
- * @description Load services on-demand instead of during critical initialization
- * @phase Phase 308: Bundle Optimization - Phase 2a
- * @phase Phase 355: Download Service Consolidation (BulkDownloadService removed)
+ * Lazily-registered services.
+ *
+ * This module centralizes registration that is only needed on-demand.
  */
 
 import { SERVICE_KEYS } from '@constants/service-keys';
-import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging';
-import { DownloadOrchestrator } from './download/download-orchestrator';
-import { CoreService } from './service-manager';
+import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
+import { CoreService } from '@shared/services/service-manager';
 
-// Singleton pattern: track if service has been registered
-let downloadServiceRegistered = false;
+let isDownloadServiceRegistered = false;
 
-/**
- * Phase 2a: Lazy register DownloadService
- *
- * Instead of registering during critical startup (Phase 1),
- * delay registration until first actual use (download action).
- *
- * Benefits:
- * - Removes 15-20 KB from initial bundle (not needed at startup)
- * - First download has 100-150ms delay (acceptable UX)
- * - Subsequent downloads are instant (service cached)
- *
- * Phase 355: Consolidated from BulkDownloadService (now uses DownloadService)
- *
- * Usage:
- * ```typescript
- * // In download action handlers
- * await ensureDownloadServiceRegistered();
- * const downloadService = serviceManager.get(SERVICE_KEYS.GALLERY_DOWNLOAD);
- * ```
- */
+export function __resetLazyServiceRegistration(): void {
+  isDownloadServiceRegistered = false;
+}
+
 export async function ensureDownloadServiceRegistered(): Promise<void> {
-  if (downloadServiceRegistered) {
+  if (isDownloadServiceRegistered) {
     return;
   }
 
   try {
-    const downloadService = DownloadOrchestrator.getInstance();
-    const serviceManager = CoreService.getInstance();
-
-    // Register primary key
-    serviceManager.register(SERVICE_KEYS.GALLERY_DOWNLOAD, downloadService);
-
-    downloadServiceRegistered = true;
-    if (__DEV__) {
-      logger.info('✅ DownloadService lazily registered (first download)');
-    }
+    const orchestrator = DownloadOrchestrator.getInstance();
+    CoreService.getInstance().register(SERVICE_KEYS.GALLERY_DOWNLOAD, orchestrator);
+    isDownloadServiceRegistered = true;
   } catch (error) {
-    const message = normalizeErrorMessage(error);
-    logger.error('Lazy download register failed', message);
+    logger.error('[lazy-services] Failed to register download service', error);
     throw error;
   }
-}
-
-/**
- * Test utility: Reset lazy registration state
- * Use only in test teardown
- */
-export function __resetLazyServiceRegistration(): void {
-  downloadServiceRegistered = false;
 }

@@ -1,148 +1,160 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery Team
- * Licensed under the MIT License
+ * Style registration helpers.
  *
- * @fileoverview Style Registry - Functional API
- * @description Runtime style management for dynamically injected stylesheets
- * @version 4.0.0 - Functional refactor from StyleRegistry class
+ * These helpers provide a safe wrapper around userscript style injection.
  */
 
-// ============================================================================
-// Types
-// ============================================================================
+import { getUserscript } from '@shared/external/userscript/adapter';
 
-export interface StyleRegistrationOptions {
-  readonly id: string;
-  readonly cssText: string;
-  readonly attributes?: Record<string, string | number | boolean | undefined>;
-  readonly replaceExisting?: boolean;
-}
-
-export interface RegistrationResult {
+export interface RegisteredStyle {
   readonly id: string;
   readonly element: HTMLStyleElement;
   readonly replaced: boolean;
 }
 
-// ============================================================================
-// Module State
-// ============================================================================
+type StyleAttributes = Record<string, string | number | boolean | undefined>;
 
 const styleMap = new Map<string, HTMLStyleElement>();
 
-// ============================================================================
-// Internal Utilities
-// ============================================================================
-
-function isBrowserEnvironment(): boolean {
-  return typeof document !== 'undefined' && typeof document.createElement === 'function';
-}
-
-function getExistingElement(id: string): HTMLStyleElement | null {
-  const entry = styleMap.get(id);
-  if (entry) {
-    return entry;
-  }
-
-  if (!isBrowserEnvironment()) {
-    return null;
-  }
-
-  const domEntry = document.getElementById(id);
-  if (domEntry instanceof HTMLStyleElement) {
-    styleMap.set(id, domEntry);
-    return domEntry;
-  }
-
+function getStyleElementFromDom(id: string): HTMLStyleElement | null {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  if (el instanceof HTMLStyleElement) return el;
+  if (el instanceof HTMLElement && el.tagName === 'STYLE') return el as HTMLStyleElement;
   return null;
 }
 
-// ============================================================================
-// Public API
-// ============================================================================
-
-/**
- * Register a style with the given options.
- * Injects a <style> element into the document.
- */
-export function registerStyle(options: StyleRegistrationOptions): RegistrationResult | null {
-  if (!isBrowserEnvironment()) {
-    return null;
+function getExistingStyleElement(id: string): HTMLStyleElement | null {
+  const inMap = styleMap.get(id);
+  if (inMap) {
+    if (inMap.isConnected) return inMap;
+    styleMap.delete(id);
   }
 
-  const trimmedCss = options.cssText.trim();
-  if (!trimmedCss) {
-    return null;
-  }
-
-  const existing = getExistingElement(options.id);
-  if (existing && options.replaceExisting !== false) {
-    existing.textContent = trimmedCss;
-    return { id: options.id, element: existing, replaced: true };
-  }
-
-  if (existing) {
-    return { id: options.id, element: existing, replaced: false };
-  }
-
-  const styleElement = document.createElement('style');
-  styleElement.textContent = trimmedCss;
-  (document.head || document.documentElement).appendChild(styleElement);
-
-  styleElement.id = options.id;
-
-  if (options.attributes) {
-    Object.entries(options.attributes).forEach(([key, value]) => {
-      if (value === undefined) return;
-      styleElement.setAttribute(key, String(value));
-    });
-  }
-
-  styleMap.set(options.id, styleElement);
-
-  return { id: options.id, element: styleElement, replaced: false };
+  return getStyleElementFromDom(id);
 }
 
-/**
- * Remove a registered style by ID.
- */
-export function removeStyle(id: string): void {
-  const element = getExistingElement(id);
-  if (!element) {
-    return;
-  }
-
-  element.remove();
-  styleMap.delete(id);
-}
-
-/**
- * Check if a style with the given ID exists.
- */
-export function hasStyle(id: string): boolean {
-  return styleMap.has(id) || Boolean(getExistingElement(id));
-}
-
-/**
- * Get the style element by ID.
- */
-export function getStyleElement(id: string): HTMLStyleElement | null {
-  return getExistingElement(id);
-}
-
-/**
- * Clear all registered styles from the internal map.
- * Note: This does not remove the style elements from the DOM.
- * @internal For testing purposes only.
- */
 export function clearStyleMap(): void {
+  for (const id of Array.from(styleMap.keys())) {
+    removeStyle(id);
+  }
   styleMap.clear();
 }
 
-/**
- * Get the number of registered styles.
- * @internal For testing and debugging purposes.
- */
 export function getRegisteredStyleCount(): number {
   return styleMap.size;
+}
+
+export function hasStyle(id: string): boolean {
+  return getExistingStyleElement(id) !== null;
+}
+
+export function getStyleElement(id: string): HTMLStyleElement | null {
+  return getExistingStyleElement(id);
+}
+
+function applyAttributes(el: HTMLElement, attributes: StyleAttributes | undefined): void {
+  if (!attributes) return;
+
+  for (const [name, value] of Object.entries(attributes)) {
+    if (value === undefined) continue;
+    el.setAttribute(name, String(value));
+  }
+}
+
+function createDomStyle(
+  cssText: string,
+  id: string,
+  attributes: StyleAttributes | undefined
+): HTMLStyleElement {
+  const el = document.createElement('style');
+  el.id = id;
+  applyAttributes(el, attributes);
+  el.textContent = cssText;
+  document.head.appendChild(el);
+  return el;
+}
+
+function tryUserscriptAddStyle(cssText: string): HTMLStyleElement | null {
+  try {
+    interface UserscriptAddStyleCapability {
+      addStyle: (cssText: string) => unknown;
+    }
+
+    const apiUnknown: unknown = getUserscript();
+    const maybeAddStyle = (apiUnknown as { addStyle?: unknown }).addStyle;
+    const hasAddStyle = typeof maybeAddStyle === 'function';
+    if (!hasAddStyle) return null;
+
+    const api = apiUnknown as UserscriptAddStyleCapability;
+    const el = api.addStyle(cssText);
+
+    if (el instanceof HTMLStyleElement) return el;
+    if (el instanceof HTMLElement && el.tagName === 'STYLE') return el as HTMLStyleElement;
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function registerStyle(options: {
+  readonly id: string;
+  readonly cssText: string;
+  readonly replaceExisting?: boolean;
+  readonly attributes?: StyleAttributes;
+}): RegisteredStyle | null {
+  const { id, cssText, replaceExisting, attributes } = options;
+
+  const normalizedCss = cssText.trim();
+  if (!normalizedCss) {
+    return null;
+  }
+
+  const shouldReplace = replaceExisting !== false;
+  const existing = getExistingStyleElement(id);
+  const hadExisting = existing !== null;
+
+  if (existing && !shouldReplace) {
+    return {
+      id,
+      element: existing,
+      replaced: false,
+    };
+  }
+
+  if (existing) {
+    existing.remove();
+    styleMap.delete(id);
+  }
+
+  const injected =
+    tryUserscriptAddStyle(normalizedCss) ?? createDomStyle(normalizedCss, id, attributes);
+
+  injected.id = id;
+  applyAttributes(injected, attributes);
+  if (!injected.isConnected) {
+    document.head.appendChild(injected);
+  }
+
+  styleMap.set(id, injected);
+
+  return {
+    id,
+    element: injected,
+    replaced: hadExisting,
+  };
+}
+
+export function removeStyle(id: string): void {
+  const existing = styleMap.get(id);
+  if (existing) {
+    existing.remove();
+    styleMap.delete(id);
+  }
+
+  const inDom = getStyleElementFromDom(id);
+  if (inDom) {
+    inDom.remove();
+  }
 }

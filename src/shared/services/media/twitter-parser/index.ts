@@ -1,16 +1,10 @@
 /**
- * @fileoverview Twitter Response Parser Module Entry Point
- * @description Re-exports functional API
- * @version 4.0.0 - Functional refactor
+ * Twitter response parsing public API.
  */
 
-// Primary exports - Pure functions
 export {
   extractMediaFromTweet,
-  // Utilities
   getHighQualityMediaUrl,
   normalizeLegacyTweet,
   normalizeLegacyUser,
-  resolveAspectRatio,
-  resolveDimensions,
-} from './twitter-response-parser';
+} from '@shared/services/media/twitter-parser/twitter-response-parser';

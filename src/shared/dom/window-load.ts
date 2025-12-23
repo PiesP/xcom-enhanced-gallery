@@ -1,63 +1,34 @@
-import { EventManager } from '@shared/services/event-manager';
-import { createDeferred } from '@shared/utils/async/promise-helpers';
-
-export type WindowLoadCallback = () => void | Promise<void>;
+/**
+ * Window load helpers.
+ *
+ * This module intentionally caches the in-flight promise so multiple callers
+ * can await the same window load event without registering duplicate listeners.
+ */
 
 let windowLoadPromise: Promise<void> | null = null;
 
-function hasBrowserContext(): boolean {
-  return typeof window !== 'undefined' && typeof document !== 'undefined';
-}
-
-function isWindowLoaded(): boolean {
-  if (!hasBrowserContext()) {
-    return true;
+export function waitForWindowLoad(): Promise<void> {
+  if (typeof document !== 'undefined' && document.readyState === 'complete') {
+    return Promise.resolve();
   }
 
-  return document.readyState === 'complete';
-}
-
-function createWindowLoadPromise(): Promise<void> {
   if (windowLoadPromise) {
     return windowLoadPromise;
   }
 
-  if (!hasBrowserContext()) {
-    windowLoadPromise = Promise.resolve();
-    return windowLoadPromise;
-  }
+  windowLoadPromise = new Promise<void>((resolve) => {
+    const onLoad = () => {
+      window.removeEventListener('load', onLoad);
+      resolve();
+    };
 
-  const deferred = createDeferred<void>();
-  windowLoadPromise = deferred.promise;
-
-  const eventManager = EventManager.getInstance();
-  const controller = new AbortController();
-
-  const handleLoad: EventListener = () => {
-    controller.abort();
-    deferred.resolve();
-    windowLoadPromise = Promise.resolve();
-  };
-
-  eventManager.addEventListener(window, 'load', handleLoad, {
-    once: true,
-    passive: true,
-    signal: controller.signal,
-    context: 'window-load',
+    window.addEventListener('load', onLoad);
   });
 
   return windowLoadPromise;
 }
 
-export function waitForWindowLoad(): Promise<void> {
-  if (isWindowLoaded()) {
-    return Promise.resolve();
-  }
-
-  return createWindowLoadPromise();
-}
-
-export async function runAfterWindowLoad(callback: WindowLoadCallback): Promise<void> {
+export async function runAfterWindowLoad(callback: () => void | Promise<void>): Promise<void> {
   await waitForWindowLoad();
   await callback();
 }

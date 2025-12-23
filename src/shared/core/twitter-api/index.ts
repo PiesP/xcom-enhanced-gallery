@@ -1,6 +1,6 @@
 /**
- * @fileoverview Twitter core helpers (pure).
+ * Twitter API endpoint helpers.
  */
 
-export type { BuildTweetResultByRestIdUrlArgs } from './endpoint';
-export { buildTweetResultByRestIdUrl } from './endpoint';
+export type { BuildTweetResultByRestIdUrlArgs } from '@shared/core/twitter-api/endpoint';
+export { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';

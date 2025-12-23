@@ -1,31 +1,27 @@
 /**
- * @fileoverview Media URL optimization (functional core)
- * @description Pure URL transformation helpers.
+ * URL optimization helpers.
  */
 
-/**
- * Optimize a Twitter image URL (pbs.twimg.com) to request WebP when possible.
- *
- * This is a pure transformation:
- * - It does not check browser support.
- * - It does not touch DOM APIs.
- * - It returns the original input on parse failure.
- */
-export function optimizePbsImageUrlToWebP(originalUrl: string): string {
+export function optimizePbsImageUrlToWebP(input: string): string {
   try {
-    const url = new URL(originalUrl);
+    const url = new URL(input);
 
     if (url.hostname !== 'pbs.twimg.com') {
-      return originalUrl;
+      return input;
     }
 
-    if (url.searchParams.get('format') === 'webp') {
-      return originalUrl;
+    const currentFormat = url.searchParams.get('format');
+    if (currentFormat === null) {
+      return input;
+    }
+
+    if (currentFormat.toLowerCase() === 'webp') {
+      return input;
     }
 
     url.searchParams.set('format', 'webp');
     return url.toString();
   } catch {
-    return originalUrl;
+    return input;
   }
 }

@@ -1,11 +1,10 @@
 /**
- * @fileoverview Filename utilities (compatibility shim)
- * @description Re-export pure filename helpers from shared/core.
- * @deprecated Import from `@shared/core/filename` for new code.
+ * Filename utilities (service-facing facade).
+ *
+ * Prefer importing from this module when you are working in service layers.
  */
 
 export {
-  type FilenameOptions,
   generateMediaFilename,
   generateZipFilename,
   getFileExtension,
@@ -14,6 +13,4 @@ export {
   isValidZipFilename,
   normalizeIndex,
   resolveMediaMetadata,
-  sanitizeFilename,
-  type ZipFilenameOptions,
 } from '@shared/core/filename/filename-utils';
