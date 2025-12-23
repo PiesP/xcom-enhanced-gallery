@@ -62,13 +62,6 @@ const INITIAL_STATE: GalleryState = {
 /**
  * Gallery event types
  */
-type GalleryEvents = {
-  'gallery:open': { items: readonly MediaInfo[]; startIndex: number };
-  'gallery:close': Record<string, never>;
-  'gallery:navigate': { index: number };
-  'gallery:error': { error: string };
-};
-
 type GalleryNavigationTrigger = NavigationTrigger;
 
 export interface GalleryNavigateStartPayload {
@@ -147,7 +140,7 @@ export const gallerySignals = {
  * @param state - The new gallery state to apply
  * @internal
  */
-function applyGalleryStateUpdate(state: GalleryState): void {
+export function applyGalleryStateUpdate(state: GalleryState): void {
   batch(() => {
     // Update data signals first (order among these doesn't matter)
     gallerySignals.mediaItems.value = state.mediaItems;
@@ -190,7 +183,6 @@ export const galleryState = {
     });
   },
 };
-// Export for testing purposes
 
 // ============================================================================
 // Actions
@@ -324,7 +316,11 @@ export function navigateNext(trigger: NavigationTrigger = 'button'): void {
 /**
  * Set focused index for scroll-based focus tracking
  */
-function setFocusedIndex(index: number | null, source: NavigationSource = 'auto-focus'): void {
+/** @internal */
+export function setFocusedIndex(
+  index: number | null,
+  source: NavigationSource = 'auto-focus'
+): void {
   const state = galleryState.value;
 
   // Validate focus parameters (dev-only to keep the production bundle lean)
@@ -361,31 +357,47 @@ function setFocusedIndex(index: number | null, source: NavigationSource = 'auto-
  * otherwise returns currentIndex (the officially navigated-to item).
  * This provides a single source of truth for "which item is the user looking at".
  */
-function getCurrentActiveIndex(): number {
+export function getCurrentActiveIndex(): number {
   return gallerySignals.focusedIndex.value ?? galleryState.value.currentIndex;
 }
 
-function getCurrentMediaItem(): MediaInfo | null {
+/** @internal */
+export function getCurrentMediaItem(): MediaInfo | null {
   const state = galleryState.value;
   return state.mediaItems[state.currentIndex] || null;
 }
 
-function hasMediaItems(): boolean {
+/** @internal */
+export function hasMediaItems(): boolean {
   return galleryState.value.mediaItems.length > 0;
 }
 
-function getMediaItemsCount(): number {
+/** @internal */
+export function getMediaItemsCount(): number {
   return galleryState.value.mediaItems.length;
 }
 
-function hasPreviousMedia(): boolean {
+/** @internal */
+export function hasPreviousMedia(): boolean {
   return galleryState.value.mediaItems.length > 1;
 }
 
-function hasNextMedia(): boolean {
+/** @internal */
+export function hasNextMedia(): boolean {
   return galleryState.value.mediaItems.length > 1;
 }
 
-const isGalleryOpen = (): boolean => galleryState.value.isOpen;
-const getCurrentIndex = (): number => galleryState.value.currentIndex;
-const getMediaItems = (): readonly MediaInfo[] => galleryState.value.mediaItems;
+/** @internal */
+export function isGalleryOpen(): boolean {
+  return galleryState.value.isOpen;
+}
+
+/** @internal */
+export function getCurrentIndex(): number {
+  return galleryState.value.currentIndex;
+}
+
+/** @internal */
+export function getMediaItems(): readonly MediaInfo[] {
+  return galleryState.value.mediaItems;
+}
