@@ -69,14 +69,6 @@ export interface ZipResult {
 }
 
 /** Download data source type */
-type DownloadDataSource = 'dom' | 'cache' | 'network';
-
-/** Single item download result with source */
-interface SingleItemDownloadResult {
-  data: Uint8Array;
-  source: DownloadDataSource;
-}
-
 /** Bulk download operation result */
 export interface BulkDownloadResult {
   success: boolean;

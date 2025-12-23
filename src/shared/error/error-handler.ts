@@ -111,5 +111,3 @@ export class GlobalErrorHandler {
     this.isInitialized = false;
   }
 }
-
-const globalErrorHandler = GlobalErrorHandler.getInstance();

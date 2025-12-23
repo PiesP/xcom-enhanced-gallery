@@ -81,6 +81,9 @@ pnpm lint
 # Format check
 pnpm fmt:check
 
+# Unused code/dependency checks
+pnpm knip
+
 # Run all quality checks
 pnpm quality
 ```

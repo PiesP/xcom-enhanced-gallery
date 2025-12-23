@@ -184,6 +184,7 @@ pnpm build:fast
 pnpm check      # TypeScript (src + tooling)
 pnpm lint       # Biome lint
 pnpm fmt:check  # Biome format check
+pnpm knip       # Detect unused files/exports/dependencies
 ```
 
 ### Build environment variables

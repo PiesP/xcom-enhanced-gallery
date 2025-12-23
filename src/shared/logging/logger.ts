@@ -5,8 +5,6 @@
  * Development: emit all log levels.
  */
 
-import { normalizeErrorMessage } from '@shared/error/normalize';
-
 type LoggableData = unknown;
 
 export interface Logger {
@@ -67,17 +65,3 @@ function createLogger(config: Partial<LoggerConfig> = {}): Logger {
 }
 
 export const logger: Logger = createLogger();
-
-function createScopedLogger(scope: string, config: Partial<LoggerConfig> = {}): Logger {
-  const prefix = `${config.prefix ?? BASE_PREFIX} [${scope}]`;
-  return createLogger({ ...config, prefix });
-}
-
-function logError(
-  error: Error | string,
-  context: Record<string, unknown> = {},
-  source?: string
-): void {
-  const errorMessage = normalizeErrorMessage(error);
-  logger.error(`Error${source ? ` in ${source}` : ''}: ${errorMessage}`, context);
-}

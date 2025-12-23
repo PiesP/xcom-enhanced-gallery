@@ -9,21 +9,9 @@
 
 import { getUserscript } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
-import type {
-  CookieAPI,
-  CookieDeleteOptions,
-  CookieListOptions,
-  CookieRecord,
-  CookieSetOptions,
-} from '@shared/types/core/cookie.types';
-import { promisifyCallback, promisifyVoidCallback } from '@shared/utils/async';
+import type { CookieAPI, CookieListOptions, CookieRecord } from '@shared/types/core/cookie.types';
+import { promisifyCallback } from '@shared/utils/async';
 import { escapeRegExp } from '@shared/utils/text/formatting';
-
-// ============================================================================
-// Types
-// ============================================================================
-
-type CookieSetOptionsWithName = CookieSetOptions & { name: string };
 
 // ============================================================================
 // Module State
@@ -42,39 +30,6 @@ function decode(value: string | undefined): string | undefined {
   } catch {
     return value;
   }
-}
-
-function encode(value: string): string {
-  try {
-    return encodeURIComponent(value);
-  } catch {
-    return value;
-  }
-}
-
-function buildDocumentCookieString(details: CookieSetOptionsWithName): string {
-  const segments: string[] = [];
-  const name = encode(details.name);
-  const value = encode(details.value);
-  segments.push(`${name}=${value}`);
-  segments.push(`path=${details.path ?? '/'}`);
-  if (details.domain) {
-    segments.push(`domain=${details.domain}`);
-  }
-  if (details.expirationDate) {
-    segments.push(`expires=${new Date(details.expirationDate * 1000).toUTCString()}`);
-  }
-  if (details.secure) {
-    segments.push('secure');
-  }
-  // Note: `HttpOnly` cannot be set via `document.cookie`.
-  // We intentionally ignore `details.httpOnly` in the fallback path to avoid misleading output.
-  return segments.join('; ');
-}
-
-function expireDocumentCookie(name: string): void {
-  if (typeof document === 'undefined') return;
-  document.cookie = `${encode(name)}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
 }
 
 function resolveCookieAPI(): CookieAPI | null {
@@ -142,13 +97,6 @@ function listFromDocument(options?: CookieListOptions): CookieRecord[] {
 // ============================================================================
 
 /**
- * Returns true when GM_cookie is available.
- */
-function hasNativeAccess(): boolean {
-  return Boolean(getCookieAPI());
-}
-
-/**
  * List cookies matching the given options.
  * Falls back to document.cookie when GM_cookie is not available.
  */
@@ -207,59 +155,4 @@ export function getCookieValueSync(name: string): string | undefined {
   const pattern = new RegExp(`(?:^|;\\s*)${escapeRegExp(name)}=([^;]*)`);
   const match = document.cookie.match(pattern);
   return decode(match?.[1]);
-}
-
-/**
- * Set a cookie with the given options.
- * Uses GM_cookie.set when available, falls back to document.cookie.
- */
-async function setCookie(details: CookieSetOptions): Promise<void> {
-  const name = details?.name;
-  if (!name) {
-    throw new Error('Cookie name is required');
-  }
-
-  const normalizedDetails: CookieSetOptionsWithName = {
-    ...details,
-    name,
-  };
-
-  const gmCookie = getCookieAPI();
-
-  if (!gmCookie?.set) {
-    if (typeof document === 'undefined') {
-      throw new Error('Cannot set cookie: document is not available');
-    }
-    document.cookie = buildDocumentCookieString(normalizedDetails);
-    return;
-  }
-
-  return promisifyVoidCallback((callback) => gmCookie?.set?.(normalizedDetails, callback));
-}
-
-/**
- * Delete a cookie by name.
- * Uses GM_cookie.delete when available, falls back to expiring via document.cookie.
- */
-async function deleteCookie(details: CookieDeleteOptions): Promise<void> {
-  if (!details?.name) {
-    throw new Error('Cookie name is required');
-  }
-
-  const gmCookie = getCookieAPI();
-
-  if (!gmCookie?.delete) {
-    expireDocumentCookie(details.name);
-    return;
-  }
-
-  return promisifyVoidCallback((callback) => gmCookie?.delete?.(details, callback));
-}
-
-/**
- * Reset the cached cookie API reference.
- * @internal For testing purposes only.
- */
-function resetCookieAPICache(): void {
-  cachedCookieAPI = undefined;
 }

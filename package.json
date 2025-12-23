@@ -11,14 +11,15 @@
     "check:src": "tsc --noEmit --project tsconfig.build.json",
     "check:tools": "tsc --noEmit --project tsconfig.tools.json",
     "check": "pnpm check:src && pnpm check:tools",
+    "knip": "knip",
     "lint": "biome lint ./src ./tooling vite.config.ts",
     "lint:fix": "biome lint --write ./src ./tooling vite.config.ts",
     "fmt": "biome check --write --linter-enabled=false ./src ./tooling vite.config.ts",
     "fmt:check": "biome check --linter-enabled=false ./src ./tooling vite.config.ts",
     "prebuild": "pnpm quality",
     "preinstall": "node ./tooling/node/ensure-pnpm.ts",
-    "quality": "pnpm check && biome check ./src ./tooling vite.config.ts",
-    "quality:fix": "pnpm check && biome check --write ./src ./tooling vite.config.ts",
+    "quality": "pnpm check && biome check ./src ./tooling vite.config.ts && pnpm knip",
+    "quality:fix": "pnpm check && biome check --write ./src ./tooling vite.config.ts && pnpm knip",
     "test:deps:check": "pnpm -C test run deps:check",
     "test:deps:sync": "pnpm -C test run deps:sync",
     "test:install": "pnpm -C test install",
@@ -62,8 +63,9 @@
   "devDependencies": {
     "@biomejs/biome": "^2.3.10",
     "@types/node": "^25.0.3",
+    "knip": "^5.75.2",
     "typescript": "^5.9.3",
-    "vite": "8.0.0-beta.2",
+    "vite": "8.0.0-beta.4",
     "vite-plugin-solid": "^2.11.10"
   },
   "pnpm": {

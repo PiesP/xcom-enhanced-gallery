@@ -55,7 +55,7 @@ function detectLanguageCode(): BaseLanguageCode {
   return DEFAULT_LANGUAGE;
 }
 
-function detectEnvironment(): EnvironmentInfo {
+function _detectEnvironment(): EnvironmentInfo {
   return {
     colorScheme: detectColorScheme(),
     language: detectLanguageCode(),

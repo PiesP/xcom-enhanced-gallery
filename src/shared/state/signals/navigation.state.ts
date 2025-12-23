@@ -166,24 +166,6 @@ export function validateFocusParams(
 // State Accessors
 // ============================================================================
 
-/**
- * Get current navigation state
- */
-function getNavigationState(): NavigationStateData {
-  return {
-    lastSource: navigationSignals.lastSource.value,
-    lastTimestamp: navigationSignals.lastTimestamp.value,
-    lastNavigatedIndex: navigationSignals.lastNavigatedIndex.value,
-  };
-}
-
-/**
- * Get last navigation source
- */
-function getLastNavigationSource(): NavigationSource {
-  return navigationSignals.lastSource.value;
-}
-
 // ============================================================================
 // Actions
 // ============================================================================

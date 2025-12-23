@@ -6,11 +6,11 @@
  * @example
  * ```typescript
  * // Type-safe access with auto-complete and type inference
- * const preload = getTypedSetting('gallery.preloadCount'); // number
- * const theme = getTypedSetting('gallery.theme'); // 'auto' | 'light' | 'dark'
+ * const preload = getTypedSettingOr('gallery.preloadCount', 3); // number
+ * const theme = getTypedSettingOr('gallery.theme', 'auto'); // 'auto' | 'light' | 'dark'
  *
  * // Type error: 'gallery.invalid' is not a valid key
- * const invalid = getTypedSetting('gallery.invalid');
+ * const invalid = getTypedSettingOr('gallery.invalid', 0);
  *
  * // Type error: value must be number
  * await setTypedSetting('gallery.preloadCount', 'not a number');
@@ -20,7 +20,6 @@
  * @version 1.0.0
  */
 
-import { DEFAULT_SETTINGS } from '@constants/default-settings';
 import type { AppSettings } from '@features/settings/types/settings.types';
 import { tryGetSettingsManager } from './service-accessors';
 
@@ -102,24 +101,6 @@ function requireSettingsService(): SettingsServiceLike {
 // =============================================================================
 
 /**
- * Get a setting value with full type safety.
- * Path must be a valid setting key, and return type is automatically inferred.
- *
- * @param path - Dot-notation path to the setting (autocomplete supported)
- * @returns The setting value or undefined if not set
- *
- * @example
- * ```typescript
- * // Return type is automatically inferred
- * const count = getTypedSetting('gallery.preloadCount'); // number | undefined
- * const theme = getTypedSetting('gallery.theme'); // 'auto' | 'light' | 'dark' | undefined
- * ```
- */
-function getTypedSetting<P extends SettingPath>(path: P): SettingValue<P> | undefined {
-  return requireSettingsService().get<SettingValue<P>>(path);
-}
-
-/**
  * Get a setting value with a fallback default.
  * Returns the fallback if the setting is undefined.
  *
@@ -163,106 +144,4 @@ export function setTypedSetting<P extends SettingPath>(
   value: SettingValue<P>
 ): Promise<void> {
   return requireSettingsService().set(path, value);
-}
-
-// =============================================================================
-// Optional: Try-variants for nullable service access
-// =============================================================================
-
-/**
- * Try to get a setting value without throwing if service is unavailable.
- * Returns undefined if service is not registered or setting doesn't exist.
- *
- * @param path - Dot-notation path to the setting
- * @returns The setting value or undefined
- */
-function tryGetTypedSetting<P extends SettingPath>(path: P): SettingValue<P> | undefined {
-  const service = tryGetSettingsManager<SettingsServiceLike>();
-  if (!service) {
-    return undefined;
-  }
-  return service.get<SettingValue<P>>(path);
-}
-
-/**
- * Try to set a setting value without throwing if service is unavailable.
- * Returns false if service is not registered, true if set successfully.
- *
- * @param path - Dot-notation path to the setting
- * @param value - New value
- * @returns Promise resolving to success status
- */
-async function trySetTypedSetting<P extends SettingPath>(
-  path: P,
-  value: SettingValue<P>
-): Promise<boolean> {
-  const service = tryGetSettingsManager<SettingsServiceLike>();
-  if (!service) {
-    return false;
-  }
-  await service.set(path, value);
-  return true;
-}
-
-// =============================================================================
-// Setting Key Type Guards
-// =============================================================================
-
-/**
- * Type guard to check if a string is a valid setting path.
- * Useful for runtime validation of dynamic keys.
- *
- * Note: This performs a basic structural check, not exhaustive validation.
- * For compile-time safety, prefer using SettingPath type directly.
- *
- * @param key - String to validate
- * @returns True if key matches setting path pattern
- */
-function isValidSettingPath(key: string): key is SettingPath {
-  if (!__DEV__) {
-    return true;
-  }
-
-  return Boolean(validSettingPaths?.has(key));
-}
-
-let validSettingPaths: ReadonlySet<string> | null = null;
-
-if (__DEV__) {
-  type UnknownRecord = Record<string, unknown>;
-
-  const asUnknownRecord = (value: unknown): UnknownRecord => value as UnknownRecord;
-  const isPlainObject = (value: unknown): value is UnknownRecord =>
-    Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-
-  const collectDotPaths = (obj: UnknownRecord, prefix = ''): string[] => {
-    const paths: string[] = [];
-
-    for (const [key, value] of Object.entries(obj)) {
-      const current = prefix ? `${prefix}.${key}` : key;
-      paths.push(current);
-
-      if (isPlainObject(value)) {
-        paths.push(...collectDotPaths(value, current));
-      }
-    }
-
-    return paths;
-  };
-
-  const SETTINGS_PATH_SCHEMA: UnknownRecord = {
-    ...asUnknownRecord(DEFAULT_SETTINGS),
-    download: {
-      ...asUnknownRecord(asUnknownRecord(DEFAULT_SETTINGS).download),
-      // Optional settings are intentionally included for runtime validation.
-      customTemplate: undefined,
-    },
-    tokens: {
-      ...asUnknownRecord(asUnknownRecord(DEFAULT_SETTINGS).tokens),
-      bearerToken: undefined,
-      lastRefresh: undefined,
-    },
-  };
-
-  validSettingPaths = new Set<string>(collectDotPaths(SETTINGS_PATH_SCHEMA));
 }

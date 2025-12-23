@@ -24,8 +24,5 @@ export type { JSX };
 /** Alias for JSX.Element - a rendered Solid.js component */
 export type JSXElement = JSX.Element;
 
-/** Alias for JSX.Element - virtual node type */
-type VNode = JSX.Element;
-
 /** Alias for JSX.Element - children prop type */
 export type ComponentChildren = JSX.Element;

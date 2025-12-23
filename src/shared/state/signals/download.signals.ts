@@ -103,8 +103,9 @@ export const downloadState = {
 
 /**
  * Create a download task
+ * @internal
  */
-function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Result<string> {
+export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Result<string> {
   try {
     // Generate a temp ID if mediaInfo.id is missing
     const mediaId = mediaInfo.id ?? createPrefixedId('temp');
@@ -145,8 +146,9 @@ function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Result<str
 
 /**
  * Start download
+ * @internal
  */
-function startDownload(taskId: string): Result<void> {
+export function startDownload(taskId: string): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
@@ -186,8 +188,9 @@ function startDownload(taskId: string): Result<void> {
 
 /**
  * Update download progress
+ * @internal
  */
-function updateDownloadProgress(taskId: string, progress: number): Result<void> {
+export function updateDownloadProgress(taskId: string, progress: number): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
@@ -219,8 +222,9 @@ function updateDownloadProgress(taskId: string, progress: number): Result<void> 
 
 /**
  * Mark download as completed
+ * @internal
  */
-function completeDownload(taskId: string): Result<void> {
+export function completeDownload(taskId: string): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
@@ -262,8 +266,9 @@ function completeDownload(taskId: string): Result<void> {
 
 /**
  * Download failure
+ * @internal
  */
-function failDownload(taskId: string, error: string): Result<void> {
+export function failDownload(taskId: string, error: string): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
@@ -304,8 +309,9 @@ function failDownload(taskId: string, error: string): Result<void> {
 
 /**
  * Remove a task (must be completed or failed)
+ * @internal
  */
-function removeTask(taskId: string): Result<void> {
+export function removeTask(taskId: string): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
@@ -336,8 +342,9 @@ function removeTask(taskId: string): Result<void> {
 
 /**
  * Clear completed tasks
+ * @internal
  */
-function clearCompletedTasks(): void {
+export function clearCompletedTasks(): void {
   const currentState = downloadState.value;
   const newTasks = new Map<string, DownloadTask>();
 
@@ -361,15 +368,17 @@ function clearCompletedTasks(): void {
 
 /**
  * Get task by ID
+ * @internal
  */
-function getDownloadTask(taskId: string): DownloadTask | null {
+export function getDownloadTask(taskId: string): DownloadTask | null {
   return downloadState.value.activeTasks.get(taskId) ?? null;
 }
 
 /**
  * Get download status summary
+ * @internal
  */
-function getDownloadInfo(): {
+export function getDownloadInfo(): {
   activeTasks: number;
   pendingTasks: number;
   completedTasks: number;

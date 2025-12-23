@@ -44,15 +44,3 @@ export function mutateDevNamespace(mutator: (namespace: DevNamespace) => void): 
 
   mutator(namespace);
 }
-
-/**
- * Retrieve the current development namespace (dev mode only).
- */
-function getDevNamespace(): DevNamespace | undefined {
-  if (!_env.DEV) {
-    return undefined;
-  }
-
-  const host = globalThis as DevNamespaceHost;
-  return host.__XEG__;
-}

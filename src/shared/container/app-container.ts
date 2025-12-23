@@ -138,3 +138,7 @@ interface CreateContainerOptions {
  * Async to support initialization of services
  */
 type CreateAppContainer = (options?: CreateContainerOptions) => Promise<AppContainer>;
+
+// NOTE: This is intentionally unused for now (documentation/reference type).
+// Biome treats underscore-prefixed declarations as intentionally unused.
+type _CreateAppContainer = CreateAppContainer;

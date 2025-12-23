@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema-jsonc.json",
+  "entry": ["src/main.ts", "vite.config.ts", "tooling/node/ensure-pnpm.ts"],
+  "project": ["tsconfig.build.json", "tsconfig.tools.json"],
+  "ignore": [
+    "dist/**",
+    "node_modules/**",
+    "test/**",
+    "tmp/**",
+    "stryker-report/**",
+    ".stryker-tmp/**",
+    "LICENSES/**"
+  ]
+}

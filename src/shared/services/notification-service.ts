@@ -52,7 +52,3 @@ export class NotificationService {
     await this.show({ title, text, timeout });
   }
 }
-
-function getNotificationService(): NotificationService {
-  return NotificationService.getInstance();
-}
