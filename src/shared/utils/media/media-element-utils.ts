@@ -25,7 +25,7 @@ const DEFAULT_TRAVERSAL_OPTIONS: Required<MediaTraversalOptions> = {
 /**
  * Determine whether the provided element is a supported media element (IMG or VIDEO)
  */
-function isMediaElement(element: HTMLElement | null): element is MediaElement {
+export function isMediaElement(element: HTMLElement | null): element is MediaElement {
   if (!element) {
     return false;
   }

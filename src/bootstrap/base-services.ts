@@ -8,46 +8,9 @@
 
 import { SERVICE_KEYS } from '@constants/service-keys';
 import { logger } from '@shared/logging';
+import { registerCoreServices } from '@shared/services/service-initialization';
 import { CoreService } from '@shared/services/service-manager';
-import {
-  getLanguageServiceInstance,
-  getMediaServiceInstance,
-  getThemeServiceInstance,
-} from '@shared/services/singletons';
 import type { BaseService } from '@shared/types/core/base-service.types';
-
-/** Core base service identifiers for initialization */
-const CORE_BASE_SERVICE_IDENTIFIERS = [
-  SERVICE_KEYS.THEME,
-  SERVICE_KEYS.LANGUAGE,
-  SERVICE_KEYS.MEDIA_SERVICE,
-] as const;
-
-type CoreBaseServiceIdentifier = (typeof CORE_BASE_SERVICE_IDENTIFIERS)[number];
-type BaseServiceRegistration = readonly [CoreBaseServiceIdentifier, () => BaseService];
-
-/**
- * Service registrations using singleton getter functions.
- * This ensures consistent instances across the application.
- */
-const BASE_SERVICE_REGISTRATIONS: ReadonlyArray<BaseServiceRegistration> = [
-  [SERVICE_KEYS.THEME, getThemeServiceInstance],
-  [SERVICE_KEYS.LANGUAGE, getLanguageServiceInstance],
-  [SERVICE_KEYS.MEDIA_SERVICE, getMediaServiceInstance],
-];
-
-function registerMissingBaseServices(coreService: CoreService): number {
-  let registeredCount = 0;
-
-  for (const [key, getService] of BASE_SERVICE_REGISTRATIONS) {
-    if (!coreService.has(key)) {
-      coreService.register(key, getService());
-      registeredCount += 1;
-    }
-  }
-
-  return registeredCount;
-}
 
 /**
  * Phase A5.2: Centralized BaseService lifecycle initialization
@@ -67,17 +30,23 @@ export async function initializeCoreBaseServices(): Promise<void> {
   const coreService = CoreService.getInstance();
 
   try {
-    const newlyRegistered = registerMissingBaseServices(coreService);
-    if (newlyRegistered > 0 && __DEV__) {
-      logger.debug(`[base-services] Registered ${newlyRegistered} base services`);
+    // Some environments (e.g., component tests) call this initializer directly
+    // without running the full bootstrap chain. Ensure required services exist.
+    registerCoreServices();
+
+    const theme = coreService.get<BaseService>(SERVICE_KEYS.THEME);
+    if (theme && typeof theme.initialize === 'function') {
+      await theme.initialize();
     }
 
-    // Initialize services manually
-    for (const identifier of CORE_BASE_SERVICE_IDENTIFIERS) {
-      const service = coreService.get<BaseService>(identifier);
-      if (service && typeof service.initialize === 'function') {
-        await service.initialize();
-      }
+    const language = coreService.get<BaseService>(SERVICE_KEYS.LANGUAGE);
+    if (language && typeof language.initialize === 'function') {
+      await language.initialize();
+    }
+
+    const media = coreService.get<BaseService>(SERVICE_KEYS.MEDIA_SERVICE);
+    if (media && typeof media.initialize === 'function') {
+      await media.initialize();
     }
 
     if (__DEV__) {

@@ -7,6 +7,7 @@
 
 import { MEDIA } from '@constants/media';
 import { isHostMatching, tryParseUrl } from '@shared/utils/url/host';
+import { isUrlAllowed, MEDIA_URL_POLICY } from '@shared/utils/url/safety';
 
 const MAX_URL_LENGTH = 2048;
 const ALLOWED_MEDIA_HOSTS = MEDIA.HOSTS.MEDIA_CDN;
@@ -49,6 +50,50 @@ export function isValidMediaUrl(url: string): boolean {
   }
 
   return isAllowedMediaPath(parsed.hostname, parsed.pathname);
+}
+
+/**
+ * Validate that a URL is both safe to handle and a valid Twitter/X media CDN URL.
+ *
+ * This is a convenience entrypoint intended for callers that want a single
+ * predicate covering:
+ * - Basic URL safety checks (blocked protocols, control character stripping)
+ * - Media host allow-listing and host-specific path policy
+ *
+ * Notes:
+ * - Relative URLs are rejected even though MEDIA_URL_POLICY can allow them.
+ * - blob: and data: URLs are rejected even if the safety policy permits them.
+ */
+export function isSafeAndValidMediaUrl(value: string | URL | null | undefined): boolean {
+  const raw = value instanceof URL ? value.toString() : value;
+  if (typeof raw !== 'string') {
+    return false;
+  }
+
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  const lower = trimmed.toLowerCase();
+
+  // Reject relative and fragment-only URLs; callers should supply absolute or
+  // protocol-relative media URLs.
+  if ((lower.startsWith('/') && !lower.startsWith('//')) || lower.startsWith('#')) {
+    return false;
+  }
+
+  // Reject schemes that are not suitable for media downloads/requests even if
+  // the broader safety policy allows them.
+  if (lower.startsWith('blob:') || lower.startsWith('data:')) {
+    return false;
+  }
+
+  if (!isUrlAllowed(trimmed, MEDIA_URL_POLICY)) {
+    return false;
+  }
+
+  return isValidMediaUrl(trimmed);
 }
 
 /**

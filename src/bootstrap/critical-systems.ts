@@ -6,7 +6,7 @@ export async function initializeCriticalSystems(): Promise<void> {
     logger.debug('[critical] initialization started');
   }
 
-  await registerCoreServices();
+  registerCoreServices();
 
   if (__DEV__) {
     logger.debug('[critical] initialization complete');

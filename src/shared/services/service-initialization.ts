@@ -17,12 +17,18 @@ import {
  * FilenameService removed in v3.0.0 - use functional API:
  * import { generateMediaFilename, generateZipFilename } from '@shared/services/filename';
  */
-export async function registerCoreServices(): Promise<void> {
+export function registerCoreServices(): void {
   const core = CoreService.getInstance();
 
-  // Use singleton getters to ensure consistent instances
-  // This also initializes the singletons if not already created
-  core.register(SERVICE_KEYS.THEME, getThemeServiceInstance());
-  core.register(SERVICE_KEYS.LANGUAGE, getLanguageServiceInstance());
-  core.register(SERVICE_KEYS.MEDIA_SERVICE, getMediaServiceInstance());
+  // Use singleton getters to ensure consistent instances.
+  // Register only when missing to avoid duplicate-key warnings in development.
+  if (!core.has(SERVICE_KEYS.THEME)) {
+    core.register(SERVICE_KEYS.THEME, getThemeServiceInstance());
+  }
+  if (!core.has(SERVICE_KEYS.LANGUAGE)) {
+    core.register(SERVICE_KEYS.LANGUAGE, getLanguageServiceInstance());
+  }
+  if (!core.has(SERVICE_KEYS.MEDIA_SERVICE)) {
+    core.register(SERVICE_KEYS.MEDIA_SERVICE, getMediaServiceInstance());
+  }
 }

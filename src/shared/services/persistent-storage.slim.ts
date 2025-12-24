@@ -1,15 +1,8 @@
 import { getUserscriptSafe, type UserscriptAPI } from '@shared/external/userscript';
+import type { PersistentStorageGetOptions } from '@shared/services/persistent-storage.contract';
 import { createSingleton } from '@shared/utils/types/singleton';
 
-export interface PersistentStorageGetOptions {
-  /**
-   * When JSON parsing fails, attempt to delete the key to self-heal corrupted values.
-   * This is opt-in because some keys may intentionally store non-JSON strings.
-   *
-   * @default false
-   */
-  readonly selfHealOnParseError?: boolean;
-}
+export type { PersistentStorageGetOptions } from '@shared/services/persistent-storage.contract';
 
 export class PersistentStorage {
   private get userscript(): UserscriptAPI {
