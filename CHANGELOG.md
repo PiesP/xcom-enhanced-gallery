@@ -8,6 +8,64 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.5.0] - 2025-12-24
+
+### Added
+
+- **Production Optimization**: Implemented conservative JSDoc pruning for production builds to reduce bundle size.
+- **Userscript Metadata**: Added auto-detection for `@connect` hosts in userscript header.
+- **Testing Support**: Added `data-testid` prop to IconButton component for improved testing capabilities.
+- **Media Extraction**: Implemented comprehensive media extraction from tweets in twitter-parser module.
+- **Utilities**: Added `extractVisualIndexFromUrl` function for media dimension handling.
+
+### Changed
+
+- **Service Architecture Modernization**: Removed singleton service exports and streamlined core service registration and initialization for better maintainability.
+- **Internal API Cleanup**: Unified and streamlined selector usage across selectors, services, and utilities.
+- **DOM Utilities**: Consolidated and enhanced DOM query helper functions with improved efficiency.
+- **Event Handling**: Implemented AbortSignal cleanup utilities for better resource management.
+- **Bundle Size Optimization**:
+  - Removed lazy loading from gallery and optimized media rendering.
+  - Implemented conditional logging based on `__DEV__` flag.
+  - Optimized error reporting for reduced bundle size.
+  - Replaced UI_ICONS with string literals for icons.
+  - Simplified reactive dimensions and event handling.
+  - Removed deprecated error handling and related utilities.
+- **Code Quality**: Simplified boolean expressions across dev-tools, events, utils, dom-facts, and gallery components.
+- **Logging**: Added production logging module for bundle size optimization with conditional logging in development mode.
+- **Styles**: Simplified style registration and reduced bundle size through refactoring.
+- **Type System**: Changed exported interfaces to type aliases for consistency.
+- **Build System**: Updated entry file resolution based on production mode and removed slim alias.
+
+### Removed
+
+- **Legacy Code Cleanup**: Removed legacy event bus, context management, navigation state machine implementation, and deprecated production entry points.
+- **Unused Components**: Deleted unused shared hooks layer, removed unnecessary files from filename, styles, media utilities.
+- **Service Layer**: Removed warmup functions for critical and non-critical services.
+- **Dead Code**: Cleaned up unused exports, functions, and types across toolbar, settings, i18n, logger, cookie utilities, download, twitter-auth, notification service, and singletons.
+- **Performance Code**: Removed unused event listener management functions and redundant state accessors.
+
+### Fixed
+
+- **URL Handling**: Replaced `isSafeAndValidMediaUrl` with `isValidMediaUrl` for improved validation.
+- **Documentation**: Updated security and contributing documentation for clarity.
+
+### Performance
+
+- **GM API Bindings**: Implemented cached GM_* bindings for improved performance.
+- **Gallery Optimization**: Optimized ambient video guard and cleaned up keyboard handling.
+- **Promise Utilities**: Enhanced single settler interface for better async handling.
+- **CSS Features**: Optimized CSS feature detection logic.
+- **Listener Management**: Improved listener manager with prefixed ID generation.
+- **Lazy Loading**: Enhanced lazy loading with retry mechanisms.
+- **Type Safety**: Optimized type safety helper functions.
+
+### Build
+
+- **Dependencies**: Updated knip to version 5.76.1 and @typescript/native-preview to 7.0.0-dev.20251219.1.
+- **Vite**: Downgraded to version 7.3.0 for compatibility.
+- **TypeScript**: Removed deprecated include and exclude options from tsconfig.
+
 ## [1.4.0] - 2025-12-22
 
 ### Added
