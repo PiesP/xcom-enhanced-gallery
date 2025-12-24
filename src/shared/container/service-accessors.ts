@@ -2,14 +2,10 @@ import { SERVICE_KEYS } from '@constants/service-keys';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import { logger } from '@shared/logging';
 import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
-import type { LanguageService } from '@shared/services/language-service';
-import type { MediaService } from '@shared/services/media-service';
+import { LanguageService } from '@shared/services/language-service';
+import { MediaService } from '@shared/services/media-service';
 import { CoreService } from '@shared/services/service-manager';
-import {
-  getLanguageServiceInstance,
-  getMediaServiceInstance,
-  getThemeServiceInstance,
-} from '@shared/services/singletons';
+import { ThemeService } from '@shared/services/theme-service';
 import type { ThemeServiceContract } from '@shared/services/theme-service.contract';
 
 // ============================================================================
@@ -56,7 +52,7 @@ function tryGetFromCoreService<T>(key: string): T | null {
  */
 export function getThemeService(): ThemeServiceContract {
   return (
-    tryGetFromCoreService<ThemeServiceContract>(SERVICE_KEYS.THEME) ?? getThemeServiceInstance()
+    tryGetFromCoreService<ThemeServiceContract>(SERVICE_KEYS.THEME) ?? ThemeService.getInstance()
   );
 }
 
@@ -68,7 +64,7 @@ export function getThemeService(): ThemeServiceContract {
  */
 export function getLanguageService(): LanguageService {
   return (
-    tryGetFromCoreService<LanguageService>(SERVICE_KEYS.LANGUAGE) ?? getLanguageServiceInstance()
+    tryGetFromCoreService<LanguageService>(SERVICE_KEYS.LANGUAGE) ?? LanguageService.getInstance()
   );
 }
 
@@ -80,7 +76,7 @@ export function getLanguageService(): LanguageService {
  */
 export function getMediaService(): MediaService {
   return (
-    tryGetFromCoreService<MediaService>(SERVICE_KEYS.MEDIA_SERVICE) ?? getMediaServiceInstance()
+    tryGetFromCoreService<MediaService>(SERVICE_KEYS.MEDIA_SERVICE) ?? MediaService.getInstance()
   );
 }
 

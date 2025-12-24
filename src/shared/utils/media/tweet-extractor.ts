@@ -4,7 +4,11 @@
  * @version 1.0.0 - Phase 2: DOM HTML preservation
  */
 
-import { TWEET_SELECTOR, TWEET_TEXT_SELECTOR } from '@shared/dom/selectors';
+import {
+  closestWithFallback,
+  STABLE_TWEET_CONTAINERS_SELECTORS,
+  TWEET_TEXT_SELECTOR,
+} from '@shared/dom/selectors';
 import { logger } from '@shared/logging';
 
 /**
@@ -64,25 +68,16 @@ export function extractTweetTextHTMLFromClickedElement(
   element: HTMLElement,
   maxDepth = 10
 ): string | undefined {
-  let current: HTMLElement | null = element;
-  let depth = 0;
-
-  // Traverse up to find tweet article
-  while (current && depth < maxDepth) {
-    // Check if current element is a tweet article
-    if (
-      current.tagName === 'ARTICLE' &&
-      (current.hasAttribute('data-testid') || current.querySelector(TWEET_SELECTOR))
-    ) {
-      return extractTweetTextHTML(current);
-    }
-
-    current = current.parentElement;
-    depth++;
+  // Note: closestWithFallback does not support depth limiting.
+  // Keep maxDepth parameter for API stability; callers may rely on it.
+  // If a depth limit becomes necessary, introduce a dedicated helper.
+  const tweetArticle = closestWithFallback<HTMLElement>(element, STABLE_TWEET_CONTAINERS_SELECTORS);
+  if (tweetArticle) {
+    return extractTweetTextHTML(tweetArticle);
   }
 
   if (__DEV__) {
-    logger.debug('[tweet] no article in depth', { maxDepth });
+    logger.debug('[tweet] no article found', { maxDepth });
   }
   return undefined;
 }

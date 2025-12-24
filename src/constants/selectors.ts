@@ -5,7 +5,6 @@
  */
 
 import { CSS } from '@constants/css';
-import { queryAllWithFallback as queryAllWithFallbackImpl } from '@shared/utils/dom/query-helpers';
 
 const GALLERY_SELECTORS = CSS.SELECTORS;
 
@@ -60,14 +59,3 @@ export const STABLE_MEDIA_VIEWERS_SELECTORS = [
   '[aria-modal="true"][data-testid="Drawer"]',
   '[aria-roledescription="carousel"]',
 ] as const;
-
-/**
- * Query all elements with fallback selectors
- * Combines results from all matching selectors
- *
- * @deprecated Use queryAllWithFallback from @shared/utils/dom/query-helpers instead
- * @param container - Parent element to search within
- * @param selectors - Array of selectors to try
- * @returns Array of unique matching elements
- */
-export const queryAllWithFallback = queryAllWithFallbackImpl;

@@ -1,10 +1,8 @@
 import { SERVICE_KEYS } from '@constants/service-keys';
+import { LanguageService } from '@shared/services/language-service';
+import { MediaService } from '@shared/services/media-service';
 import { CoreService } from '@shared/services/service-manager';
-import {
-  getLanguageServiceInstance,
-  getMediaServiceInstance,
-  getThemeServiceInstance,
-} from '@shared/services/singletons';
+import { ThemeService } from '@shared/services/theme-service';
 
 /**
  * Register core services to the CoreService container.
@@ -23,12 +21,12 @@ export function registerCoreServices(): void {
   // Use singleton getters to ensure consistent instances.
   // Register only when missing to avoid duplicate-key warnings in development.
   if (!core.has(SERVICE_KEYS.THEME)) {
-    core.register(SERVICE_KEYS.THEME, getThemeServiceInstance());
+    core.register(SERVICE_KEYS.THEME, ThemeService.getInstance());
   }
   if (!core.has(SERVICE_KEYS.LANGUAGE)) {
-    core.register(SERVICE_KEYS.LANGUAGE, getLanguageServiceInstance());
+    core.register(SERVICE_KEYS.LANGUAGE, LanguageService.getInstance());
   }
   if (!core.has(SERVICE_KEYS.MEDIA_SERVICE)) {
-    core.register(SERVICE_KEYS.MEDIA_SERVICE, getMediaServiceInstance());
+    core.register(SERVICE_KEYS.MEDIA_SERVICE, MediaService.getInstance());
   }
 }

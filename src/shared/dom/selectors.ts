@@ -5,7 +5,6 @@
  */
 export {
   GALLERY_OVERLAY_SELECTOR,
-  queryAllWithFallback,
   STABLE_IMAGE_CONTAINERS_SELECTORS,
   STABLE_MEDIA_CONTAINERS_SELECTORS,
   STABLE_MEDIA_VIEWERS_SELECTORS,
@@ -20,3 +19,9 @@ export {
   VIDEO_PLAYER_CONTEXT_SELECTOR,
   VIDEO_PLAYER_SELECTOR,
 } from '@constants/selectors';
+
+export {
+  closestWithFallback,
+  queryAllWithFallback,
+  querySelectorWithFallback,
+} from '@shared/utils/dom/query-helpers';
