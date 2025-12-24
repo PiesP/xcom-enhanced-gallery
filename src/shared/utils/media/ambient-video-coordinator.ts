@@ -6,6 +6,7 @@ import {
   VIDEO_PLAYER_SELECTOR,
 } from '@shared/dom/selectors';
 import { logger } from '@shared/logging';
+import { closestWithFallback } from '@shared/utils/dom/query-helpers';
 import {
   type PauseAmbientVideosOptions,
   type PauseAmbientVideosResult,
@@ -57,18 +58,7 @@ function findTweetContainer(element?: HTMLElement | null): HTMLElement | null {
     return null;
   }
 
-  for (const selector of STABLE_TWEET_CONTAINERS_SELECTORS) {
-    try {
-      const container = element.closest(selector);
-      if (container instanceof HTMLElement) {
-        return container;
-      }
-    } catch {
-      // Ignore selector failures
-    }
-  }
-
-  return null;
+  return closestWithFallback<HTMLElement>(element, STABLE_TWEET_CONTAINERS_SELECTORS);
 }
 
 function resolvePauseContext(request: AmbientVideoPauseRequest): PauseResolution {
@@ -97,9 +87,11 @@ function isVideoTriggerElement(element?: HTMLElement | null): boolean {
   if (!element) return false;
   if (element.tagName === 'VIDEO') return true;
 
-  for (const selector of VIDEO_TRIGGER_SCOPES) {
+  // Check if element matches or is within a video container
+  const selectors = Array.from(VIDEO_TRIGGER_SCOPES);
+  for (const selector of selectors) {
     try {
-      if (element.matches(selector) || element.closest(selector)) {
+      if (element.matches(selector)) {
         return true;
       }
     } catch {
@@ -107,16 +99,18 @@ function isVideoTriggerElement(element?: HTMLElement | null): boolean {
     }
   }
 
-  return false;
+  return closestWithFallback(element, selectors) !== null;
 }
 
 function isImageTriggerElement(element?: HTMLElement | null): boolean {
   if (!element) return false;
   if (element.tagName === 'IMG') return true;
 
-  for (const selector of IMAGE_TRIGGER_SCOPES) {
+  // Check if element matches or is within an image container
+  const selectors = Array.from(IMAGE_TRIGGER_SCOPES);
+  for (const selector of selectors) {
     try {
-      if (element.matches(selector) || element.closest(selector)) {
+      if (element.matches(selector)) {
         return true;
       }
     } catch {
@@ -124,7 +118,7 @@ function isImageTriggerElement(element?: HTMLElement | null): boolean {
     }
   }
 
-  return false;
+  return closestWithFallback(element, selectors) !== null;
 }
 
 function inferAmbientVideoTrigger(element?: HTMLElement | null): AmbientVideoTrigger {

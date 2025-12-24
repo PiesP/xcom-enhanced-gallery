@@ -5,7 +5,7 @@
  */
 
 import { CSS } from '@constants/css';
-import { logger } from '@shared/logging';
+import { queryAllWithFallback as queryAllWithFallbackImpl } from '@shared/utils/dom/query-helpers';
 
 const GALLERY_SELECTORS = CSS.SELECTORS;
 
@@ -61,58 +61,13 @@ export const STABLE_MEDIA_VIEWERS_SELECTORS = [
   '[aria-roledescription="carousel"]',
 ] as const;
 
-const warnedInvalidSelectors: Record<string, true> = Object.create(null);
-
-function warnInvalidSelectorOnce(selector: string, error: unknown): void {
-  if (!__DEV__) {
-    return;
-  }
-
-  if (warnedInvalidSelectors[selector]) {
-    return;
-  }
-
-  warnedInvalidSelectors[selector] = true;
-  logger.warn(`[selectors] Invalid selector skipped: ${selector}`, { error });
-}
-
-/**
- * Query DOM with fallback selectors
- * Tries primary selector first, then fallbacks in order
- *
- * @param container - Parent element to search within
- * @param primarySelector - Primary selector to try first
- * @param fallbacks - Array of fallback selectors
- * @returns Found element or null
- */
 /**
  * Query all elements with fallback selectors
  * Combines results from all matching selectors
  *
+ * @deprecated Use queryAllWithFallback from @shared/utils/dom/query-helpers instead
  * @param container - Parent element to search within
  * @param selectors - Array of selectors to try
  * @returns Array of unique matching elements
  */
-export function queryAllWithFallback(
-  container: Element | Document,
-  selectors: readonly string[]
-): Element[] {
-  const seen = new WeakSet<Element>();
-  const results: Element[] = [];
-
-  for (const selector of selectors) {
-    try {
-      const elements = container.querySelectorAll(selector);
-      for (const element of elements) {
-        if (!seen.has(element)) {
-          seen.add(element);
-          results.push(element);
-        }
-      }
-    } catch (error) {
-      warnInvalidSelectorOnce(selector, error);
-    }
-  }
-
-  return results;
-}
+export const queryAllWithFallback = queryAllWithFallbackImpl;
