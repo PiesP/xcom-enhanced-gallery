@@ -8,6 +8,13 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.5.3] - 2025-12-25
+
+### Build
+
+- **CI**: Aligned pnpm lockfile with package specifiers to restore `--frozen-lockfile` installs.
+- **Supply Chain**: Pinned `semver` to `6.3.0` via pnpm overrides to satisfy pnpm trust-policy checks.
+
 ## [1.5.2] - 2025-12-25
 
 ### Fixed
