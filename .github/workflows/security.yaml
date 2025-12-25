@@ -34,7 +34,7 @@ jobs:
   osv-scan-scheduled:
     name: 🛡️ OSV Vulnerability Scan (Full)
     if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.3"
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.1"
     permissions:
       actions: read
       contents: read
@@ -49,7 +49,7 @@ jobs:
   osv-scan-pr:
     name: 🛡️ OSV Vulnerability Scan (PR Diff)
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.3.3"
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.3.1"
     permissions:
       actions: read
       contents: read
@@ -70,7 +70,7 @@ jobs:
       contents: read
       security-events: write
     container:
-      image: semgrep/semgrep
+      image: semgrep/semgrep:latest
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v6

@@ -32,20 +32,23 @@ jobs:
       - name: 🔍 Check Semgrep version
         id: semgrep
         run: |
-          # Get current Semgrep Docker image version
+          # Get current Semgrep Docker image version (pull latest first)
+          docker pull semgrep/semgrep:latest >/dev/null 2>&1
           CURRENT_VERSION=$(docker run --rm semgrep/semgrep:latest semgrep --version 2>&1 | grep -oP '\d+\.\d+\.\d+' | head -1)
           echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
-          # Get latest Semgrep release from PyPI
-          LATEST_VERSION=$(curl -s https://pypi.org/pypi/semgrep/json | grep -oP '"version":"\K[^"]+' | head -1)
+          # Get latest Semgrep release from PyPI API
+          LATEST_VERSION=$(curl -s https://pypi.org/pypi/semgrep/json | jq -r '.info.version')
           echo "latest=$LATEST_VERSION" >> $GITHUB_OUTPUT
 
           echo "📦 Semgrep: Current=$CURRENT_VERSION, Latest=$LATEST_VERSION"
 
           if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
             echo "needs_update=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Semgrep update available: $CURRENT_VERSION → $LATEST_VERSION"
           else
             echo "needs_update=false" >> $GITHUB_OUTPUT
+            echo "✅ Semgrep is up to date"
           fi
 
       - name: 🔍 Check OSV Scanner version
@@ -55,11 +58,11 @@ jobs:
           CURRENT_VERSION=$(grep 'osv-scanner-action.*@v' .github/workflows/security.yaml | grep -oP '@v\K[0-9.]+' | head -1)
           echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
-          # Get latest OSV Scanner release from GitHub
-          LATEST_VERSION=$(curl -s https://api.github.com/repos/google/osv-scanner-action/releases/latest | grep -oP '"tag_name":"v\K[^"]+')
+          # Get latest OSV Scanner release from GitHub API
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/google/osv-scanner-action/releases/latest | jq -r '.tag_name' | sed 's/^v//')
           echo "latest=$LATEST_VERSION" >> $GITHUB_OUTPUT
 
-          echo "📦 OSV Scanner: Current=$CURRENT_VERSION, Latest=$LATEST_VERSION"
+          echo "📦 OSV Scanner: Current=v$CURRENT_VERSION, Latest=v$LATEST_VERSION"
 
           if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
             echo "needs_update=true" >> $GITHUB_OUTPUT
