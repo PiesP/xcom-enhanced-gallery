@@ -8,6 +8,8 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.5.1] - 2025-12-25
+
 ### Fixed
 
 - **Article Cards**: Prevented article card thumbnails from incorrectly triggering gallery by removing overly broad selectors (`data-testid="article-cover-image"` and `aria-label*="Image"`) from media container detection.
