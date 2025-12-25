@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name X.com Enhanced Gallery
 // @namespace https://github.com/PiesP/xcom-enhanced-gallery
-// @version 1.5.0
+// @version 1.5.1
 // @description Media viewer and download functionality for X.com
 // @author PiesP
 // @license MIT
@@ -34,7 +34,7 @@
 /*
  * Third-Party Licenses
  * ====================
- * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.5.0/LICENSES
+ * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.5.1/LICENSES
  *
  * MIT License
  *
@@ -1287,13 +1287,17 @@ const STABLE_TWEET_CONTAINERS_SELECTORS = [
 ];
 const STABLE_MEDIA_CONTAINERS_SELECTORS = [
 '[data-testid="tweetPhoto"]',
-'[data-testid="videoPlayer"]',
-'[aria-label*="Image"]'
+'[data-testid="videoPlayer"]'
 ];
 const STABLE_VIDEO_CONTAINERS_SELECTORS = ['[data-testid="videoPlayer"]', "video"];
 const STABLE_IMAGE_CONTAINERS_SELECTORS = [
 '[data-testid="tweetPhoto"]',
 'img[src*="pbs.twimg.com"]'
+];
+const STABLE_MEDIA_VIEWERS_SELECTORS = [
+'[data-testid="photoViewer"]',
+'[aria-modal="true"][data-testid="Drawer"]',
+'[aria-roledescription="carousel"]'
 ];
 function closestWithFallback(element, selectors) {
 for (const selector of selectors) {
@@ -5527,6 +5531,16 @@ const INTERACTIVE_SELECTOR = [
 '[data-testid="share"]',
 '[data-testid="bookmark"]'
 ].join(", ");
+const BLOCKED_MEDIA_CONTEXT_SELECTOR = [
+'[data-testid="card.wrapper"]',
+'[data-testid="twitterArticleReadView"]',
+'[data-testid="longformRichTextComponent"]',
+'[data-testid="twitterArticleRichTextView"]',
+'[data-testid="article-cover-image"]',
+...STABLE_MEDIA_VIEWERS_SELECTORS,
+'[data-testid="swipe-to-dismiss"]',
+'[data-testid="mask"]'
+].join(", ");
 function isValidMediaSource(url) {
 if (!url) return false;
 if (url.startsWith("blob:")) return true;
@@ -5536,9 +5550,16 @@ function shouldBlockMediaTrigger(target) {
 if (!target) return false;
 if (isVideoControlElement(target)) return true;
 if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
+if (target.closest(BLOCKED_MEDIA_CONTEXT_SELECTOR)) return true;
 const interactive = target.closest(INTERACTIVE_SELECTOR);
 if (interactive) {
-const isMediaLink = interactive.matches(MEDIA_LINK_SELECTOR) || interactive.matches(MEDIA_CONTAINER_SELECTOR) || interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null;
+const matchesMediaLinkSelector = interactive.matches(MEDIA_LINK_SELECTOR);
+if (interactive.tagName === "A" && !matchesMediaLinkSelector) {
+return true;
+}
+const matchesMediaContainerSelector = interactive.matches(MEDIA_CONTAINER_SELECTOR);
+const hasMediaContainerDescendant = interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null;
+const isMediaLink = matchesMediaLinkSelector || matchesMediaContainerSelector || hasMediaContainerDescendant;
 return !isMediaLink;
 }
 return false;
@@ -9803,7 +9824,7 @@ download: true,
 mediaExtraction: true,
 accessibility: true
 },
-version: "1.4.0",
+version: "1.5.1",
 lastModified: 0
 };
 const DEFAULT_SETTINGS = STATIC_DEFAULT_SETTINGS;
@@ -10232,7 +10253,7 @@ const DEFAULT_BOOTSTRAP_RETRY_ATTEMPTS = 3;
 const DEFAULT_BOOTSTRAP_RETRY_DELAY_MS = 100;
 const importMetaEnv = resolveImportMetaEnv();
 const nodeEnv = resolveNodeEnv();
-const buildVersion = "1.5.0" ;
+const buildVersion = "1.5.1" ;
 const rawVersion = resolveStringValue(
 buildVersion,
 importMetaEnv.VITE_VERSION,
