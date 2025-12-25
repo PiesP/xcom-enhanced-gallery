@@ -187,18 +187,6 @@ pnpm fmt:check  # Biome format check
 pnpm knip       # Detect unused files/exports/dependencies
 ```
 
-### Build environment variables
-
-These are optional knobs for development and CI.
-
-| Variable                       | Example                 | Purpose                                                                                                      |
-| ------------------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `BUILD_VERSION`                | `1.4.0`                 | Override the computed version string embedded into the bundle.                                               |
-| `XEG_FEATURE_MEDIA_EXTRACTION` | `0` / `false`           | Disable media extraction feature flag at build time (defaults to enabled).                                   |
-| `XEG_BUILD_AUTO_GRANT`         | `report` / `true` / `1` | Detect used `GM_*` APIs by scanning the final bundle and either report or apply the resulting `@grant` list. |
-
-GitHub Actions runs a subset of these commands for continuous integration and security. See `.github/workflows/` for details.
-
 ## 📞 Support and Feedback
 
 - **🐛 Report bugs**: [GitHub Issues](https://github.com/PiesP/xcom-enhanced-gallery/issues)
