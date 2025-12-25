@@ -1,6 +1,6 @@
 import type { LanguageStrings } from './language-types';
 
-const TRANSLATION_VALUE_COUNT = 48 as const;
+export const TRANSLATION_VALUE_COUNT = 38 as const;
 
 export function buildLanguageStringsFromValues(values: ReadonlyArray<string>): LanguageStrings {
   if (__DEV__ && values.length !== TRANSLATION_VALUE_COUNT) {
@@ -17,9 +17,7 @@ export function buildLanguageStringsFromValues(values: ReadonlyArray<string>): L
       prev: next(),
       next: next(),
       dl: next(),
-      dlAll: next(),
       dlAllCt: next(),
-      set: next(),
       setOpen: next(),
       cls: next(),
       twTxt: next(),
@@ -30,7 +28,6 @@ export function buildLanguageStringsFromValues(values: ReadonlyArray<string>): L
       fitC: next(),
     },
     st: {
-      ttl: next(),
       th: next(),
       lang: next(),
       thAuto: next(),
@@ -40,10 +37,6 @@ export function buildLanguageStringsFromValues(values: ReadonlyArray<string>): L
       langKo: next(),
       langEn: next(),
       langJa: next(),
-      cls: next(),
-      gal: {
-        sec: next(),
-      },
     },
     msg: {
       err: {
@@ -69,17 +62,6 @@ export function buildLanguageStringsFromValues(values: ReadonlyArray<string>): L
           b: next(),
         },
         part: {
-          t: next(),
-          b: next(),
-        },
-        retry: {
-          act: next(),
-          ok: {
-            t: next(),
-            b: next(),
-          },
-        },
-        cancel: {
           t: next(),
           b: next(),
         },

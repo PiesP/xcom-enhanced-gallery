@@ -17,6 +17,7 @@ import { getErrorMessage } from '@shared/error/normalize';
 import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces';
 import { logger } from '@shared/logging';
 import type { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
+import { NotificationService } from '@shared/services/notification-service';
 import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
 import {
   closeGallery,
@@ -145,7 +146,16 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
     const releaseLock = acquireDownloadLock();
 
+    const notifyError = (title: string, body: string): void => {
+      try {
+        void NotificationService.getInstance().error(title, body);
+      } catch {
+        // Notification failures must never block download flow
+      }
+    };
+
     try {
+      const languageService = getLanguageService();
       const mediaItems = gallerySignals.mediaItems.value;
       const mediaService = getMediaService();
       // Lazy load download service on first use
@@ -168,7 +178,11 @@ export class GalleryRenderer implements GalleryRendererInterface {
             ...(blob ? { blob } : {}),
           });
           if (!result.success) {
-            setError(result.error || 'Download failed.');
+            const error = result.error || 'Unknown error';
+            const title = languageService.translate('msg.dl.one.err.t');
+            const body = languageService.translate('msg.dl.one.err.b', { error });
+            setError(body);
+            notifyError(title, body);
           }
         }
       } else {
@@ -183,13 +197,45 @@ export class GalleryRenderer implements GalleryRendererInterface {
         const result = await downloadService.downloadBulk([...mediaItems], {
           ...(prefetchedBlobs.size > 0 ? { prefetchedBlobs } : {}),
         });
+
         if (!result.success) {
-          setError(result.error || 'Download failed.');
+          if (result.filesSuccessful === 0) {
+            const title = languageService.translate('msg.dl.allFail.t');
+            const body = languageService.translate('msg.dl.allFail.b');
+            setError(body);
+            notifyError(title, body);
+          } else {
+            const error = result.error || 'Failed to save ZIP file';
+            const title = languageService.translate('msg.dl.one.err.t');
+            const body = languageService.translate('msg.dl.one.err.b', { error });
+            setError(body);
+            notifyError(title, body);
+          }
+          return;
+        }
+
+        if (result.status === 'partial') {
+          const failures = Math.max(0, result.filesProcessed - result.filesSuccessful);
+          if (failures > 0) {
+            const title = languageService.translate('msg.dl.part.t');
+            const body = languageService.translate('msg.dl.part.b', { count: failures });
+            setError(body);
+            notifyError(title, body);
+          }
         }
       }
     } catch (error) {
       logger.error('Download failed', error);
-      setError(getErrorMessage(error) || 'Download failed.');
+      try {
+        const languageService = getLanguageService();
+        const message = getErrorMessage(error) || 'Unknown error';
+        const title = languageService.translate('msg.dl.one.err.t');
+        const body = languageService.translate('msg.dl.one.err.b', { error: message });
+        setError(body);
+        notifyError(title, body);
+      } catch {
+        setError(getErrorMessage(error) || 'Download failed.');
+      }
     } finally {
       releaseLock();
     }

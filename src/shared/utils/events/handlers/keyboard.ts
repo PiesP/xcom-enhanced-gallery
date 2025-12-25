@@ -4,7 +4,9 @@
  * Supported keys: Space (play/pause), arrow keys (navigation), M (mute)
  */
 
+import { getLanguageService } from '@shared/container/service-accessors';
 import { logger } from '@shared/logging';
+import { NotificationService } from '@shared/services/notification-service';
 import {
   gallerySignals,
   navigateNext,
@@ -47,6 +49,7 @@ export function handleKeyboardEvent(
         key === 'PageUp' ||
         key === 'ArrowLeft' ||
         key === 'ArrowRight' ||
+        key === '?' ||
         key === ' ' ||
         key === 'Space';
 
@@ -77,6 +80,29 @@ export function handleKeyboardEvent(
             break;
           case 'ArrowRight':
             navigateNext('keyboard');
+            break;
+          case '?':
+            // Keyboard debounce: Prevent notification spam when holding the key
+            if (shouldExecuteKeyboardAction(event.key, 500)) {
+              try {
+                const languageService = getLanguageService();
+                const title = languageService.translate('msg.kb.t');
+                const text = [
+                  languageService.translate('msg.kb.prev'),
+                  languageService.translate('msg.kb.next'),
+                  languageService.translate('msg.kb.cls'),
+                  languageService.translate('msg.kb.toggle'),
+                ].join('\n');
+
+                void NotificationService.getInstance().show({
+                  title,
+                  text,
+                  timeout: 6000,
+                });
+              } catch {
+                // Help UI must never break keyboard navigation
+              }
+            }
             break;
           case 'Home':
             navigateToItem(0, 'keyboard');

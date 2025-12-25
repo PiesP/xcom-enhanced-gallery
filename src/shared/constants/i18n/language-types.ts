@@ -9,9 +9,7 @@ export interface LanguageStrings {
     readonly prev: string;
     readonly next: string;
     readonly dl: string;
-    readonly dlAll: string;
     readonly dlAllCt: string;
-    readonly set: string;
     readonly setOpen: string;
     readonly cls: string;
     readonly twTxt: string;
@@ -22,7 +20,6 @@ export interface LanguageStrings {
     readonly fitC: string;
   };
   readonly st: {
-    readonly ttl: string;
     readonly th: string;
     readonly lang: string;
     readonly thAuto: string;
@@ -32,10 +29,6 @@ export interface LanguageStrings {
     readonly langKo: string;
     readonly langEn: string;
     readonly langJa: string;
-    readonly cls: string;
-    readonly gal: {
-      readonly sec: string;
-    };
   };
   readonly msg: {
     readonly err: {
@@ -61,17 +54,6 @@ export interface LanguageStrings {
         readonly b: string;
       };
       readonly part: {
-        readonly t: string;
-        readonly b: string;
-      };
-      readonly retry: {
-        readonly act: string;
-        readonly ok: {
-          readonly t: string;
-          readonly b: string;
-        };
-      };
-      readonly cancel: {
         readonly t: string;
         readonly b: string;
       };
