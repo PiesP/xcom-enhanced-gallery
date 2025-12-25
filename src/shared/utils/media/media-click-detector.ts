@@ -4,7 +4,11 @@
  */
 
 import { CSS } from '@constants/css';
-import { STABLE_MEDIA_CONTAINERS_SELECTORS, STATUS_LINK_SELECTOR } from '@shared/dom/selectors';
+import {
+  STABLE_MEDIA_CONTAINERS_SELECTORS,
+  STABLE_MEDIA_VIEWERS_SELECTORS,
+  STATUS_LINK_SELECTOR,
+} from '@shared/dom/selectors';
 import { isVideoControlElement } from '@shared/dom/utils';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import {
@@ -45,6 +49,23 @@ const INTERACTIVE_SELECTOR = [
   '[data-testid="bookmark"]',
 ].join(', ');
 
+/** Containers where media clicks should not trigger XEG gallery */
+const BLOCKED_MEDIA_CONTEXT_SELECTOR = [
+  // Link preview cards (external links, YouTube cards, etc.)
+  '[data-testid="card.wrapper"]',
+  // X Articles / longform reader UI
+  '[data-testid="twitterArticleReadView"]',
+  '[data-testid="longformRichTextComponent"]',
+  '[data-testid="twitterArticleRichTextView"]',
+  // X Article cover image (thumbnail) should preserve native navigation
+  '[data-testid="article-cover-image"]',
+  // Native X media viewers/lightboxes (prevent re-trigger inside the modal)
+  ...STABLE_MEDIA_VIEWERS_SELECTORS,
+  // Additional stable hooks observed in X media viewer DOM
+  '[data-testid="swipe-to-dismiss"]',
+  '[data-testid="mask"]',
+].join(', ');
+
 // ============================================================================
 // Media Validation
 // ============================================================================
@@ -74,15 +95,29 @@ function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   // Gallery internal elements
   if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
 
+  // Block media triggers inside contexts that should preserve native navigation
+  // (e.g., link cards and X Articles where media clicks open the card/article)
+  if (target.closest(BLOCKED_MEDIA_CONTEXT_SELECTOR)) return true;
+
   // Interactive elements (buttons, links, etc.)
   const interactive = target.closest(INTERACTIVE_SELECTOR);
   if (interactive) {
-    // Exception: Media links (links containing media) or if the interactive element IS a media container
-    // Also handles profile grid media links (/photo/, /video/)
-    const isMediaLink =
-      interactive.matches(MEDIA_LINK_SELECTOR) ||
-      interactive.matches(MEDIA_CONTAINER_SELECTOR) ||
+    const matchesMediaLinkSelector = interactive.matches(MEDIA_LINK_SELECTOR);
+
+    // If the user clicked inside an anchor that is not a tweet/status/media link,
+    // do not trigger the gallery. This preserves native navigation for articles,
+    // external link cards, profiles, etc. even when they contain images.
+    if (interactive.tagName === 'A' && !matchesMediaLinkSelector) {
+      return true;
+    }
+
+    // Keep existing behavior for non-anchor interactive elements (buttons, role=button, etc.).
+    const matchesMediaContainerSelector = interactive.matches(MEDIA_CONTAINER_SELECTOR);
+    const hasMediaContainerDescendant =
       interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null;
+
+    const isMediaLink =
+      matchesMediaLinkSelector || matchesMediaContainerSelector || hasMediaContainerDescendant;
     return !isMediaLink;
   }
 

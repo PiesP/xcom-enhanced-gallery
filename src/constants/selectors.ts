@@ -44,7 +44,6 @@ export const STABLE_TWEET_CONTAINERS_SELECTORS = [
 export const STABLE_MEDIA_CONTAINERS_SELECTORS = [
   '[data-testid="tweetPhoto"]',
   '[data-testid="videoPlayer"]',
-  '[aria-label*="Image"]',
 ] as const;
 
 export const STABLE_VIDEO_CONTAINERS_SELECTORS = ['[data-testid="videoPlayer"]', 'video'] as const;

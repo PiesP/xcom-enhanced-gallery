@@ -8,6 +8,12 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Article Cards**: Prevented article card thumbnails from incorrectly triggering gallery by removing overly broad selectors (`data-testid="article-cover-image"` and `aria-label*="Image"`) from media container detection.
+- **Link Navigation**: Prevented gallery from triggering on non-media anchors (anything not matching `/status/`, `/photo/`, or `/video/`), preserving native navigation for articles and external links even when they contain images.
+- **Native Media Viewer**: Prevented gallery from re-triggering inside X's native media viewer modal/lightbox (e.g., swipe-to-dismiss/photo viewer contexts).
+
 ## [1.5.0] - 2025-12-24
 
 ### Added
@@ -52,7 +58,7 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Performance
 
-- **GM API Bindings**: Implemented cached GM_* bindings for improved performance.
+- **GM API Bindings**: Implemented cached GM\_\* bindings for improved performance.
 - **Gallery Optimization**: Optimized ambient video guard and cleaned up keyboard handling.
 - **Promise Utilities**: Enhanced single settler interface for better async handling.
 - **CSS Features**: Optimized CSS feature detection logic.
