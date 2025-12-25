@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name X.com Enhanced Gallery
 // @namespace https://github.com/PiesP/xcom-enhanced-gallery
-// @version 1.5.1
+// @version 1.5.3
 // @description Media viewer and download functionality for X.com
 // @author PiesP
 // @license MIT
@@ -34,7 +34,7 @@
 /*
  * Third-Party Licenses
  * ====================
- * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.5.1/LICENSES
+ * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.5.3/LICENSES
  *
  * MIT License
  *
@@ -93,9 +93,7 @@ tb: {
 prev: next(),
 next: next(),
 dl: next(),
-dlAll: next(),
 dlAllCt: next(),
-set: next(),
 setOpen: next(),
 cls: next(),
 twTxt: next(),
@@ -106,7 +104,6 @@ fitH: next(),
 fitC: next()
 },
 st: {
-ttl: next(),
 th: next(),
 lang: next(),
 thAuto: next(),
@@ -115,11 +112,7 @@ thDk: next(),
 langAuto: next(),
 langKo: next(),
 langEn: next(),
-langJa: next(),
-cls: next(),
-gal: {
-sec: next()
-}
+langJa: next()
 },
 msg: {
 err: {
@@ -147,17 +140,6 @@ b: next()
 part: {
 t: next(),
 b: next()
-},
-retry: {
-act: next(),
-ok: {
-t: next(),
-b: next()
-}
-},
-cancel: {
-t: next(),
-b: next()
 }
 },
 gal: {
@@ -174,9 +156,7 @@ const EN_VALUES = [
 "Previous",
 "Next",
 "Download",
-"Download ZIP",
 "Download all {count} files as ZIP",
-"Settings",
 "Open Settings",
 "Close",
 "Tweet text",
@@ -185,9 +165,8 @@ const EN_VALUES = [
 "Fit Width",
 "Fit Height",
 "Fit Window",
-"Settings",
 "Theme",
-"Language",
+"Language / 언어 / 言語",
 "Auto",
 "Light",
 "Dark",
@@ -195,8 +174,6 @@ const EN_VALUES = [
 "한국어",
 "English",
 "日本語",
-"Close",
-"Gallery",
 "An error occurred",
 "An unexpected error occurred: {error}",
 "Keyboard shortcuts",
@@ -210,11 +187,6 @@ const EN_VALUES = [
 "Failed to download all items.",
 "Partial Failure",
 "Failed to download {count} items.",
-"Retry",
-"Retry Successful",
-"Successfully downloaded all previously failed items.",
-"Download Cancelled",
-"The requested download was cancelled.",
 "No media available",
 "There are no images or videos to display.",
 "Media {index}: {filename}",
@@ -225,9 +197,7 @@ const JA_VALUES = [
 "前へ",
 "次へ",
 "ダウンロード",
-"ZIPダウンロード",
 "すべての{count}件をZIPでダウンロード",
-"設定",
 "設定を開く",
 "閉じる",
 "ツイートテキスト",
@@ -236,9 +206,8 @@ const JA_VALUES = [
 "幅に合わせる",
 "高さに合わせる",
 "ウィンドウに合わせる",
-"設定",
 "テーマ",
-"言語",
+"Language / 언어 / 言語",
 "自動",
 "ライト",
 "ダーク",
@@ -246,8 +215,6 @@ const JA_VALUES = [
 "한국어",
 "English",
 "日本語",
-"閉じる",
-"ギャラリー",
 "エラーが発生しました",
 "予期しないエラーが発生しました: {error}",
 "キーボードショートカット",
@@ -261,11 +228,6 @@ const JA_VALUES = [
 "すべての項目をダウンロードできませんでした。",
 "一部失敗",
 "{count}個の項目を取得できませんでした。",
-"再試行",
-"再試行成功",
-"失敗していた項目をすべて取得しました。",
-"ダウンロードがキャンセルされました",
-"要求したダウンロードはキャンセルされました。",
 "メディアがありません",
 "表示する画像や動画がありません。",
 "メディア {index}: {filename}",
@@ -276,9 +238,7 @@ const KO_VALUES = [
 "이전",
 "다음",
 "다운로드",
-"ZIP 다운로드",
 "모든 {count}개 파일을 ZIP으로 다운로드",
-"설정",
 "설정 열기",
 "닫기",
 "트윗 텍스트",
@@ -287,9 +247,8 @@ const KO_VALUES = [
 "너비 맞춤",
 "높이 맞춤",
 "창 맞춤",
-"설정",
 "테마",
-"언어",
+"Language / 언어 / 言語",
 "자동",
 "라이트",
 "다크",
@@ -297,8 +256,6 @@ const KO_VALUES = [
 "한국어",
 "English",
 "日本語",
-"닫기",
-"갤러리",
 "오류가 발생했습니다",
 "예상치 못한 오류가 발생했습니다: {error}",
 "키보드 단축키",
@@ -312,11 +269,6 @@ const KO_VALUES = [
 "모든 항목을 다운로드할 수 없었습니다.",
 "일부 실패",
 "{count}개 항목을 가져올 수 없었습니다.",
-"다시 시도",
-"다시 시도 성공",
-"실패했던 모든 항목을 가져왔습니다.",
-"다운로드가 취소되었습니다",
-"요청한 다운로드가 취소되었습니다.",
 "미디어 없음",
 "표시할 이미지 또는 동영상이 없습니다.",
 "미디어 {index}: {filename}",
@@ -5285,7 +5237,7 @@ if (!options.enableKeyboard) return;
 try {
 if (checkGalleryOpen()) {
 const key = event.key;
-const isNavKey = key === "Home" || key === "End" || key === "PageDown" || key === "PageUp" || key === "ArrowLeft" || key === "ArrowRight" || key === " " || key === "Space";
+const isNavKey = key === "Home" || key === "End" || key === "PageDown" || key === "PageUp" || key === "ArrowLeft" || key === "ArrowRight" || key === "?" || key === " " || key === "Space";
 const isVideoKey = key === " " || key === "Space" || key === "ArrowUp" || key === "ArrowDown" || key === "m" || key === "M";
 if (isNavKey || isVideoKey) {
 event.preventDefault();
@@ -5302,6 +5254,26 @@ navigatePrevious("keyboard");
 break;
 case "ArrowRight":
 navigateNext("keyboard");
+break;
+case "?":
+if (shouldExecuteKeyboardAction(event.key, 500)) {
+try {
+const languageService = getLanguageService();
+const title = languageService.translate("msg.kb.t");
+const text = [
+languageService.translate("msg.kb.prev"),
+languageService.translate("msg.kb.next"),
+languageService.translate("msg.kb.cls"),
+languageService.translate("msg.kb.toggle")
+].join("\n");
+void NotificationService.getInstance().show({
+title,
+text,
+timeout: 6e3
+});
+} catch {
+}
+}
 break;
 case "Home":
 navigateToItem(0, "keyboard");
@@ -9692,7 +9664,14 @@ mountGallery(this.container, () => createComponent(Root, {}));
 async handleDownload(type) {
 if (isDownloadLocked()) return;
 const releaseLock = acquireDownloadLock();
+const notifyError = (title, body) => {
 try {
+void NotificationService.getInstance().error(title, body);
+} catch {
+}
+};
+try {
+const languageService = getLanguageService();
 const mediaItems = gallerySignals.mediaItems.value;
 const mediaService = getMediaService();
 const downloadService = await this.getDownloadService();
@@ -9713,7 +9692,13 @@ blob
 } : {}
 });
 if (!result.success) {
-setError(result.error || "Download failed.");
+const error = result.error || "Unknown error";
+const title = languageService.translate("msg.dl.one.err.t");
+const body = languageService.translate("msg.dl.one.err.b", {
+error
+});
+setError(body);
+notifyError(title, body);
 }
 }
 } else {
@@ -9730,11 +9715,47 @@ prefetchedBlobs
 } : {}
 });
 if (!result.success) {
-setError(result.error || "Download failed.");
+if (result.filesSuccessful === 0) {
+const title = languageService.translate("msg.dl.allFail.t");
+const body = languageService.translate("msg.dl.allFail.b");
+setError(body);
+notifyError(title, body);
+} else {
+const error = result.error || "Failed to save ZIP file";
+const title = languageService.translate("msg.dl.one.err.t");
+const body = languageService.translate("msg.dl.one.err.b", {
+error
+});
+setError(body);
+notifyError(title, body);
+}
+return;
+}
+if (result.status === "partial") {
+const failures = Math.max(0, result.filesProcessed - result.filesSuccessful);
+if (failures > 0) {
+const title = languageService.translate("msg.dl.part.t");
+const body = languageService.translate("msg.dl.part.b", {
+count: failures
+});
+setError(body);
+notifyError(title, body);
+}
 }
 }
 } catch (error) {
+try {
+const languageService = getLanguageService();
+const message = getErrorMessage(error) || "Unknown error";
+const title = languageService.translate("msg.dl.one.err.t");
+const body = languageService.translate("msg.dl.one.err.b", {
+error: message
+});
+setError(body);
+notifyError(title, body);
+} catch {
 setError(getErrorMessage(error) || "Download failed.");
+}
 } finally {
 releaseLock();
 }
@@ -10253,7 +10274,7 @@ const DEFAULT_BOOTSTRAP_RETRY_ATTEMPTS = 3;
 const DEFAULT_BOOTSTRAP_RETRY_DELAY_MS = 100;
 const importMetaEnv = resolveImportMetaEnv();
 const nodeEnv = resolveNodeEnv();
-const buildVersion = "1.5.1" ;
+const buildVersion = "1.5.3" ;
 const rawVersion = resolveStringValue(
 buildVersion,
 importMetaEnv.VITE_VERSION,
