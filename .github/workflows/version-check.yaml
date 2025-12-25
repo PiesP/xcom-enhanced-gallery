@@ -1,0 +1,182 @@
+name: 🔍 Workflow Tools Version Check
+
+# Responsibility: Check for updates to tools used in workflows
+# - Semgrep Docker image version
+# - OSV Scanner reusable workflow version
+# - Create issues when updates are available
+#
+# Trigger: Weekly schedule + manual trigger
+
+on:
+  schedule:
+    - cron: "0 2 * * 1" # Weekly on Mondays at 2 AM UTC (after dependency checks)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: version-check
+  cancel-in-progress: true
+
+jobs:
+  check-versions:
+    name: 🔍 Check Tool Versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v6
+
+      - name: 🔍 Check Semgrep version
+        id: semgrep
+        run: |
+          # Get current Semgrep Docker image version
+          CURRENT_VERSION=$(docker run --rm semgrep/semgrep:latest semgrep --version 2>&1 | grep -oP '\d+\.\d+\.\d+' | head -1)
+          echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+          # Get latest Semgrep release from PyPI
+          LATEST_VERSION=$(curl -s https://pypi.org/pypi/semgrep/json | grep -oP '"version":"\K[^"]+' | head -1)
+          echo "latest=$LATEST_VERSION" >> $GITHUB_OUTPUT
+
+          echo "📦 Semgrep: Current=$CURRENT_VERSION, Latest=$LATEST_VERSION"
+
+          if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🔍 Check OSV Scanner version
+        id: osv
+        run: |
+          # Get current OSV Scanner version from workflow file
+          CURRENT_VERSION=$(grep 'osv-scanner-action.*@v' .github/workflows/security.yaml | grep -oP '@v\K[0-9.]+' | head -1)
+          echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+          # Get latest OSV Scanner release from GitHub
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/google/osv-scanner-action/releases/latest | grep -oP '"tag_name":"v\K[^"]+')
+          echo "latest=$LATEST_VERSION" >> $GITHUB_OUTPUT
+
+          echo "📦 OSV Scanner: Current=$CURRENT_VERSION, Latest=$LATEST_VERSION"
+
+          if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📊 Generate summary
+        run: |
+          echo "## 🔍 Workflow Tools Version Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Tool | Current Version | Latest Version | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|----------------|----------------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Semgrep
+          if [ "${{ steps.semgrep.outputs.needs_update }}" == "true" ]; then
+            echo "| Semgrep | ${{ steps.semgrep.outputs.current }} | ${{ steps.semgrep.outputs.latest }} | ⬆️ Update available |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Semgrep | ${{ steps.semgrep.outputs.current }} | ${{ steps.semgrep.outputs.latest }} | ✅ Up to date |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # OSV Scanner
+          if [ "${{ steps.osv.outputs.needs_update }}" == "true" ]; then
+            echo "| OSV Scanner | ${{ steps.osv.outputs.current }} | ${{ steps.osv.outputs.latest }} | ⬆️ Update available |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| OSV Scanner | ${{ steps.osv.outputs.current }} | ${{ steps.osv.outputs.latest }} | ✅ Up to date |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Note:** GitHub Actions dependencies are managed by Dependabot." >> $GITHUB_STEP_SUMMARY
+
+      - name: 🚨 Create issue for Semgrep update
+        if: steps.semgrep.outputs.needs_update == 'true'
+        run: |
+          # Check if issue already exists
+          EXISTING_ISSUE=$(gh issue list --label "dependencies,automated,semgrep" --state open --json number --jq '.[0].number')
+
+          if [ -z "$EXISTING_ISSUE" ]; then
+            gh issue create \
+              --title "🔄 Update Semgrep Docker image to v${{ steps.semgrep.outputs.latest }}" \
+              --label "dependencies,automated,semgrep" \
+              --body "$(cat <<'EOF'
+          ## 📦 Semgrep Update Available
+
+          A new version of Semgrep is available.
+
+          - **Current version:** ${{ steps.semgrep.outputs.current }}
+          - **Latest version:** ${{ steps.semgrep.outputs.latest }}
+          - **Location:** `.github/workflows/security.yaml`
+
+          ### 🔧 How to update
+
+          The workflow uses `semgrep/semgrep:latest`, which will automatically pull the latest version on the next run. However, you may want to:
+
+          1. Review the [release notes](https://github.com/semgrep/semgrep/releases)
+          2. Test locally if needed: `docker pull semgrep/semgrep:latest`
+          3. Close this issue after verification
+
+          ### 📚 Resources
+
+          - [Semgrep Release Notes](https://semgrep.dev/docs/release-notes)
+          - [Semgrep Docker Hub](https://hub.docker.com/r/semgrep/semgrep)
+
+          ---
+
+          *This issue was automatically created by the [version-check workflow](https://github.com/${{ github.repository }}/actions/workflows/version-check.yaml).*
+          EOF
+          )"
+            echo "✅ Created new issue for Semgrep update"
+          else
+            echo "ℹ️ Issue #$EXISTING_ISSUE already exists for Semgrep update"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🚨 Create issue for OSV Scanner update
+        if: steps.osv.outputs.needs_update == 'true'
+        run: |
+          # Check if issue already exists
+          EXISTING_ISSUE=$(gh issue list --label "dependencies,automated,osv-scanner" --state open --json number --jq '.[0].number')
+
+          if [ -z "$EXISTING_ISSUE" ]; then
+            gh issue create \
+              --title "🔄 Update OSV Scanner to v${{ steps.osv.outputs.latest }}" \
+              --label "dependencies,automated,osv-scanner" \
+              --body "$(cat <<'EOF'
+          ## 📦 OSV Scanner Update Available
+
+          A new version of OSV Scanner is available.
+
+          - **Current version:** v${{ steps.osv.outputs.current }}
+          - **Latest version:** v${{ steps.osv.outputs.latest }}
+          - **Location:** `.github/workflows/security.yaml`
+
+          ### 🔧 How to update
+
+          Update the version in `.github/workflows/security.yaml`:
+
+          ```yaml
+          # Replace v${{ steps.osv.outputs.current }} with v${{ steps.osv.outputs.latest }}
+          uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v${{ steps.osv.outputs.latest }}"
+          uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v${{ steps.osv.outputs.latest }}"
+          ```
+
+          ### 📚 Resources
+
+          - [OSV Scanner Releases](https://github.com/google/osv-scanner-action/releases)
+          - [OSV Scanner Documentation](https://google.github.io/osv-scanner/)
+
+          ---
+
+          *This issue was automatically created by the [version-check workflow](https://github.com/${{ github.repository }}/actions/workflows/version-check.yaml).*
+          EOF
+          )"
+            echo "✅ Created new issue for OSV Scanner update"
+          else
+            echo "ℹ️ Issue #$EXISTING_ISSUE already exists for OSV Scanner update"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

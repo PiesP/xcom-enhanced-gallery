@@ -1,9 +1,10 @@
 name: 🤖 Dependabot Auto-Merge
 
-# Responsibility: Auto-merge dependabot PRs for GitHub Actions
-# - Only for patch/minor updates
-# - Only for GitHub Actions dependencies
+# Responsibility: Auto-merge safe dependabot PRs
+# - GitHub Actions: patch/minor updates
+# - npm (root workspace): patch/minor updates for specific safe groups
 # - Requires CI to pass first
+# Note: test/ directory is managed in a separate repository
 
 on:
   pull_request_target:
@@ -22,16 +23,17 @@ jobs:
     steps:
       - name: 📥 Fetch Dependabot metadata
         id: dependabot-metadata
-        uses: dependabot/fetch-metadata@v2
+        uses: dependabot/fetch-metadata@v2.3.0
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: 🔄 Auto-merge patch/minor updates
+      - name: 🔄 Auto-merge GitHub Actions updates
         if: >-
-          steps.dependabot-metadata.outputs.update-type == 'version-update:semver-patch' ||
-          steps.dependabot-metadata.outputs.update-type == 'version-update:semver-minor'
+          steps.dependabot-metadata.outputs.package-ecosystem == 'github-actions' &&
+          (steps.dependabot-metadata.outputs.update-type == 'version-update:semver-patch' ||
+           steps.dependabot-metadata.outputs.update-type == 'version-update:semver-minor')
         run: |
-          echo "🤖 Auto-merging Dependabot PR"
+          echo "🤖 Auto-merging GitHub Actions update"
           echo "📦 Package: ${{ steps.dependabot-metadata.outputs.dependency-names }}"
           echo "📊 Update type: ${{ steps.dependabot-metadata.outputs.update-type }}"
           gh pr merge --auto --squash "$PR_URL"
@@ -39,9 +41,33 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: ⏭️ Skip major updates
-        if: steps.dependabot-metadata.outputs.update-type == 'version-update:semver-major'
+      - name: 🔄 Auto-merge safe npm groups
+        if: >-
+          steps.dependabot-metadata.outputs.package-ecosystem == 'npm' &&
+          (steps.dependabot-metadata.outputs.update-type == 'version-update:semver-patch' ||
+           steps.dependabot-metadata.outputs.update-type == 'version-update:semver-minor') &&
+          (contains(steps.dependabot-metadata.outputs.dependency-names, 'typescript') ||
+           contains(steps.dependabot-metadata.outputs.dependency-names, '@types/') ||
+           contains(steps.dependabot-metadata.outputs.dependency-names, '@biomejs/') ||
+           contains(steps.dependabot-metadata.outputs.dependency-names, 'knip') ||
+           contains(steps.dependabot-metadata.outputs.dependency-names, 'vite-plugin-'))
         run: |
-          echo "⚠️ Major update detected - requires manual review"
+          echo "🤖 Auto-merging safe npm group update"
           echo "📦 Package: ${{ steps.dependabot-metadata.outputs.dependency-names }}"
           echo "📊 Update type: ${{ steps.dependabot-metadata.outputs.update-type }}"
+          gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ⏭️ Skip critical packages or major updates
+        if: >-
+          steps.dependabot-metadata.outputs.update-type == 'version-update:semver-major' ||
+          (steps.dependabot-metadata.outputs.package-ecosystem == 'npm' &&
+           (contains(steps.dependabot-metadata.outputs.dependency-names, 'solid-js') ||
+            contains(steps.dependabot-metadata.outputs.dependency-names, 'vite')))
+        run: |
+          echo "⚠️ Manual review required"
+          echo "📦 Package: ${{ steps.dependabot-metadata.outputs.dependency-names }}"
+          echo "📊 Update type: ${{ steps.dependabot-metadata.outputs.update-type }}"
+          echo "📝 Reason: Major update or critical package"

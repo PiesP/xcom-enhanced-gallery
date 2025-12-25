@@ -5,6 +5,7 @@ name: 🔒 Security Scanning
 # - SAST: static security analysis with Semgrep
 # - License compliance: verify approved licenses (MIT/ISC/BSD/Apache-2.0)
 #
+# Note: test/ directory is managed in a separate repository
 # Trigger: Weekly schedule + push to master + PR to master
 
 on:
@@ -33,7 +34,7 @@ jobs:
   osv-scan-scheduled:
     name: 🛡️ OSV Vulnerability Scan (Full)
     if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.1"
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.3"
     permissions:
       actions: read
       contents: read
@@ -48,7 +49,7 @@ jobs:
   osv-scan-pr:
     name: 🛡️ OSV Vulnerability Scan (PR Diff)
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.3.1"
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.3.3"
     permissions:
       actions: read
       contents: read
@@ -63,17 +64,32 @@ jobs:
     name: 🔍 Static Analysis (Semgrep)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Skip Dependabot PRs to avoid permission issues
+    if: github.actor != 'dependabot[bot]'
     permissions:
       contents: read
       security-events: write
+    container:
+      image: semgrep/semgrep
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
 
-      - name: 🔍 Run Semgrep
-        uses: semgrep/semgrep-action@v1
+      - name: 🔍 Run Semgrep scan
+        run: |
+          semgrep scan \
+            --config=p/typescript \
+            --config=p/javascript \
+            --config=p/security-audit \
+            --config=p/secrets \
+            --sarif \
+            --output=semgrep.sarif
+
+      - name: 📊 Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
-          config: p/typescript p/javascript p/security-audit p/secrets
+          sarif_file: semgrep.sarif
 
   license-compliance:
     name: 📜 License Compliance Check

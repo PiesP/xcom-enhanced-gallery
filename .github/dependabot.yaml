@@ -1,9 +1,10 @@
 # Dependabot configuration for xcom-enhanced-gallery
-# Optimized for Solid.js userscript project with comprehensive testing stack
+# Optimized for Solid.js userscript project
+# Note: test/ directory is managed in a separate repository
 
 version: 2
 updates:
-  # npm package updates
+  # Root workspace npm packages
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -27,40 +28,15 @@ updates:
       solid:
         patterns:
           - "solid-js"
-          - "babel-preset-solid"
         update-types:
           - "minor"
           - "patch"
 
-      # Testing framework updates
-      testing:
-        patterns:
-          - "@playwright/*"
-          - "@vitest/*"
-          - "@testing-library/*"
-          - "@solidjs/testing-library"
-          - "@stryker-mutator/*"
-          - "@axe-core/*"
-          - "axe-playwright"
-          - "vitest"
-          - "playwright"
-          - "msw"
-          - "jsdom"
-        update-types:
-          - "minor"
-          - "patch"
-
-      # Build tooling
+      # Build tooling (Vite + plugins)
       build:
         patterns:
           - "vite"
-          - "vite-*"
-          - "terser"
-          - "postcss"
-          - "postcss-*"
-          - "@csstools/*"
-          - "autoprefixer"
-          - "cssnano"
+          - "vite-plugin-*"
         update-types:
           - "minor"
           - "patch"
@@ -69,51 +45,23 @@ updates:
       typescript:
         patterns:
           - "typescript"
-          - "typescript-eslint"
           - "@types/*"
-          - "tsx"
         update-types:
           - "minor"
           - "patch"
 
-      # Linting and formatting
-      linting:
+      # Linting and formatting (Biome + Knip)
+      quality:
         patterns:
-          - "eslint"
-          - "eslint-*"
-          - "@eslint/*"
           - "@biomejs/*"
-          - "prettier"
-        update-types:
-          - "minor"
-          - "patch"
-
-      # Babel tooling
-      babel:
-        patterns:
-          - "@babel/*"
-        update-types:
-          - "minor"
-          - "patch"
-
-      # Utility packages
-      utilities:
-        patterns:
-          - "fast-glob"
-          - "jiti"
-          - "npm-run-all"
-          - "lint-staged"
-          - "depcheck"
           - "knip"
-          - "size-limit"
-          - "@size-limit/*"
         update-types:
           - "minor"
           - "patch"
 
     # Ignore packages that require manual review for major updates
     ignore:
-      # Vite 8 is beta - stay on current version
+      # Vite major updates need careful review
       - dependency-name: "vite"
         update-types: ["version-update:semver-major"]
       # Solid.js major updates need careful review
