@@ -8,6 +8,25 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.5.2] - 2025-12-25
+
+### Fixed
+
+- **Downloads**: Improved error handling and user notifications for failed download flows.
+- **Keyboard Handling**: Refined keyboard event handling to better match gallery expectations and avoid inconsistent behavior.
+
+### Changed
+
+- **i18n**: Simplified translation surface and cleaned up language constants.
+
+### Build
+
+- **Tooling**: Updated Knip and adjusted pnpm/npm configuration for more consistent installs.
+
+### Docs
+
+- **README**: Clarified features and cleaned up outdated documentation sections.
+
 ## [1.5.1] - 2025-12-25
 
 ### Fixed

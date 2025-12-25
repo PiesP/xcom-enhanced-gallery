@@ -1,6 +1,6 @@
 {
   "name": "xcom-enhanced-gallery",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Media viewer and download functionality for X.com",
   "type": "module",
   "private": true,
