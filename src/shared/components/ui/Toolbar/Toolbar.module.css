@@ -379,7 +379,7 @@ button.fitButton {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  padding: var(--space-md);
+  padding: var(--xeg-spacing-lg);
   max-height: var(--xeg-toolbar-panel-max-height);
   overflow: hidden;
   opacity: 0;
@@ -437,12 +437,29 @@ button.fitButton {
   gap: var(--space-sm);
 }
 
-/* Tweet content (styling similar to settings panel selects) */
+/* Tweet text header */
+.tweetTextHeader {
+  display: flex;
+  align-items: center;
+  padding-bottom: var(--xeg-spacing-xs);
+  border-bottom: var(--border-width-thin) solid var(--toolbar-surface-border);
+  margin-bottom: var(--xeg-spacing-sm);
+}
+
+.tweetTextLabel {
+  font-size: var(--xeg-font-size-sm);
+  font-weight: var(--xeg-font-weight-semibold);
+  color: var(--xeg-toolbar-text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Tweet content (improved typography) */
 
 .tweetContent {
-  padding: var(--space-sm);
-  font-size: var(--xeg-font-size-md);
-  line-height: 1.5;
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-size: var(--xeg-font-size-base);
+  line-height: var(--xeg-line-height-snug);
   color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
   background: var(
     --toolbar-surface-base,
@@ -454,7 +471,7 @@ button.fitButton {
   word-wrap: break-word;
   overflow-y: auto;
   overscroll-behavior: contain;
-  max-height: 15em; /* ~10 lines of text */
+  max-height: 18em; /* ~13 lines @ 1.375 line-height */
   transition: var(--xeg-transition-surface-fast);
   user-select: text;
   -webkit-user-select: text;
@@ -480,10 +497,14 @@ button.fitButton {
   background: var(--xeg-toolbar-element-bg-strong, var(--xeg-color-neutral-500));
 }
 
-/* Tweet Link Styles - Phase 1: Safe text formatting */
+/* Tweet Link Styles - Improved accessibility */
 .tweetContent a {
   color: var(--xeg-color-primary);
   text-decoration: none;
+  font-weight: var(--xeg-font-weight-medium);
+  padding: 0.125em 0.25em;
+  margin: -0.125em -0.25em;
+  border-radius: var(--xeg-radius-xs);
   overflow-wrap: break-word;
   transition:
     color var(--xeg-duration-fast) var(--xeg-ease-standard),
@@ -493,7 +514,10 @@ button.fitButton {
 
 .tweetContent a:hover {
   color: var(--xeg-color-primary-hover);
+  background: var(--xeg-toolbar-element-bg);
   text-decoration: underline;
+  text-decoration-thickness: 0.0625rem;
+  text-underline-offset: 0.125em;
 }
 
 .tweetContent a:focus,
@@ -515,14 +539,18 @@ button.fitButton {
   gap: var(--space-xs);
   padding: var(--space-sm);
   margin-bottom: var(--space-sm);
-  background: var(--xeg-toolbar-element-bg, var(--xeg-color-neutral-100));
+  background: var(--xeg-toolbar-element-bg-strong);
   border: var(--border-width-thin) solid var(--toolbar-surface-border, var(--xeg-toolbar-border));
   border-radius: var(--xeg-radius-sm);
   transition: var(--xeg-transition-surface-fast);
 }
 
 .tweetUrlSection:hover {
-  background: var(--xeg-toolbar-element-bg-strong, var(--xeg-color-neutral-200));
+  background: color-mix(
+    in oklch,
+    var(--xeg-toolbar-element-bg-strong) 85%,
+    var(--xeg-color-primary) 15%
+  );
   border-color: var(--xeg-color-border-hover);
 }
 
@@ -573,6 +601,7 @@ button.fitButton {
 .tweetUrlDivider {
   width: 100%;
   height: var(--border-width-thin);
-  background: var(--toolbar-surface-border, var(--xeg-toolbar-border));
-  margin: var(--space-sm) 0;
+  background: color-mix(in oklch, var(--toolbar-surface-border) 60%, transparent 40%);
+  margin: var(--xeg-spacing-md) 0;
+  border-radius: var(--xeg-radius-sm);
 }

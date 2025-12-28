@@ -55,8 +55,8 @@
     --xeg-spacing-sm: var(--space-sm);
     --xeg-spacing-md: var(--space-md);
     --xeg-spacing-lg: var(--space-lg);
-    --xeg-spacing-3xl: 3rem;
-    --xeg-spacing-5xl: 5rem;
+    /* Removed --xeg-spacing-3xl (use --space-3xl or --xeg-spacing-2xl) */
+    /* Removed --xeg-spacing-5xl (use --space-4xl) */
     --xeg-viewport-height-constrained: 90vh;
   }
 

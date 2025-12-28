@@ -26,7 +26,7 @@
     --xeg-gallery-bg: var(--xeg-gallery-bg-light);
 
     /* Root background fallback for gallery shell */
-    --xeg-color-background: oklch(95% 0 0deg);
+    --xeg-color-background: var(--color-gray-50);
 
     /* Layout stability tokens */
     --xeg-aspect-default: 4 / 3;
@@ -116,12 +116,21 @@
     /* Focus indicator tokens */
     --xeg-focus-indicator-color: var(--xeg-color-border-primary);
 
-    /* Button Component Typography - Required by Button.module.css */
-    --xeg-font-size-sm: 0.875rem;
-    --xeg-font-size-base: 1rem;
-    --xeg-font-size-lg: 1.125rem;
-    --xeg-font-weight-medium: 500;
+    /* Typography Tokens - Component Usage */
+    --xeg-font-size-sm: var(--font-size-sm);
+    --xeg-font-size-base: var(--font-size-base);
+    --xeg-font-size-md: var(--font-size-md);
+    --xeg-font-size-lg: var(--font-size-lg);
+    --xeg-font-size-xl: var(--font-size-xl);
     --xeg-font-size-2xl: var(--font-size-2xl);
+
+    --xeg-font-weight-normal: var(--font-weight-normal);
+    --xeg-font-weight-medium: var(--font-weight-medium);
+    --xeg-font-weight-semibold: var(--font-weight-semibold);
+
+    --xeg-line-height-tight: var(--line-height-tight);
+    --xeg-line-height-snug: var(--line-height-snug);
+    --xeg-line-height-relaxed: var(--line-height-relaxed);
 
     /* Button Component Text Colors - Required by Button.module.css */
     /* Animation Timing - Semantic Roles */
@@ -149,7 +158,10 @@
     --xeg-z-toolbar-panel-active: 2147483624;
 
     /* Layer Management - Semantic Roles (using z-index directly) */
-    /* Animation Easing */
+    /* Animation Easing - Material Design */
+    --xeg-ease-standard: cubic-bezier(0.4, 0, 0.2, 1); /* Material Design Standard */
+    --xeg-ease-decelerate: cubic-bezier(0, 0, 0.2, 1); /* Entrance */
+    --xeg-ease-accelerate: cubic-bezier(0.4, 0, 1, 1); /* Exit */
     --xeg-easing-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
     --xeg-easing-linear: linear;
 
@@ -163,12 +175,21 @@
 
     /* Typography Tokens - font-family referenced via primitive tokens */
 
+    /* Spacing Tokens - Component Usage */
+    --xeg-spacing-none: var(--space-none);
+    --xeg-spacing-xl: var(--space-xl);
+
     /* Border Radius - Extended Scale */
     --xeg-radius-sm: var(--radius-sm);
     --xeg-radius-md: var(--radius-md);
     --xeg-radius-lg: var(--radius-lg);
     --xeg-radius-2xl: var(--radius-2xl);
     --xeg-radius-full: var(--radius-full);
+
+    /* Scrollbar Tokens - For reset.css */
+    --xeg-scrollbar-thumb-color: var(--color-gray-400);
+    --xeg-scrollbar-thumb-hover-color: var(--color-gray-500);
+    --xeg-scrollbar-track-color: var(--color-gray-200);
   }
 
   /* Theme Support - Dark/Light Mode */
@@ -223,7 +244,7 @@
       var(--xeg-toolbar-element-border) 85%,
       var(--color-base-black) 15%
     );
-    --xeg-color-background: oklch(20% 0 0deg);
+    --xeg-color-background: var(--color-gray-900);
     --xeg-color-primary: var(--color-gray-100);
     --xeg-color-primary-hover: var(--color-gray-200);
     --xeg-color-primary-active: var(--color-gray-300);

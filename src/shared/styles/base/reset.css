@@ -53,11 +53,11 @@
   }
 
   .xeg-gallery-root ::-webkit-scrollbar-thumb {
-    background: var(--xeg-color-neutral-400, oklch(60% 0 0deg));
+    background: var(--xeg-scrollbar-thumb-color);
     border-radius: var(--xeg-radius-sm, 0.25em);
   }
 
   .xeg-gallery-root ::-webkit-scrollbar-thumb:hover {
-    background: var(--xeg-color-neutral-500, oklch(50% 0 0deg));
+    background: var(--xeg-scrollbar-thumb-hover-color);
   }
 }

@@ -288,14 +288,14 @@
 .select {
   width: 100%;
   padding: var(--xeg-settings-select-padding);
-  font-size: var(--xeg-settings-select-font-size);
+  font-size: var(--xeg-font-size-base);
   color: var(--xeg-color-text-primary);
-  background-color: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
+  background-color: var(--xeg-toolbar-element-bg);
   border: var(--border-width-thin) solid var(--xeg-toolbar-border);
   border-radius: var(--xeg-radius-md);
   cursor: pointer;
   line-height: 1.375;
-  min-height: 2.5em;
+  min-height: 2.75em;
   /* Prevent inherited button transforms from causing dropdown jitter */
   transform: none;
   overflow: visible;
@@ -306,7 +306,7 @@
    * Phase 318: Optimized transitions for interactive states
    * - border-color: Hover and focus border changes
    * - background-color: Hover background updates
-   * - border-color: Focus indicator (synchronized with --xeg-focus-indicator-color)
+   * - box-shadow: Focus ring effect
    * - Duration: --xeg-duration-fast (typically 0.2s)
    * - Easing: --xeg-ease-standard (typically ease-in-out)
    *
@@ -314,7 +314,8 @@
    */
   transition:
     border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    background-color var(--xeg-duration-fast) var(--xeg-ease-standard);
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
 /**
@@ -325,7 +326,8 @@
  *
  * **Changes**:
  * - border-color: Changes to --xeg-color-border-hover
- * - background-color: Matches --xeg-toolbar-panel-surface for consistent surface color
+ * - background-color: Stronger background for emphasis
+ * - box-shadow: Subtle glow effect
  * - Smooth transition via --xeg-duration-fast
  *
  * **User Experience**:
@@ -335,7 +337,8 @@
  */
 .select:hover {
   border-color: var(--xeg-color-border-hover);
-  background-color: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
+  background-color: var(--xeg-toolbar-element-bg-strong);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--xeg-toolbar-border) 20%, transparent 80%);
 }
 
 /**
@@ -349,8 +352,8 @@
  * - :focus-visible - Only keyboard focus (modern approach)
  *
  * **Changes**:
- * - border-color: Changes to --xeg-color-border-hover (matches hover)
  * - border-color: Uses --xeg-focus-indicator-color for contrast
+ * - box-shadow: Prominent focus ring (3px glow)
  * - No outline suppression; browsers manage outlines if desired
  *
  * **Accessibility**:
@@ -365,7 +368,8 @@
  */
 .select:focus,
 .select:focus-visible {
-  border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-hover));
+  border-color: var(--xeg-focus-indicator-color);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--xeg-focus-indicator-color) 25%, transparent 75%);
 }
 
 /**
