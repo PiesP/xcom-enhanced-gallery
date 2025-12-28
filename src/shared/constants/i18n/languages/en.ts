@@ -11,6 +11,7 @@ const EN_VALUES = [
   'Close',
   'Tweet text',
   'Tweet text panel',
+  'View original tweet',
   'Original',
   'Fit Width',
   'Fit Height',

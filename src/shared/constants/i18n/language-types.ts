@@ -14,6 +14,7 @@ export interface LanguageStrings {
     readonly cls: string;
     readonly twTxt: string;
     readonly twPanel: string;
+    readonly twUrl: string;
     readonly fitOri: string;
     readonly fitW: string;
     readonly fitH: string;

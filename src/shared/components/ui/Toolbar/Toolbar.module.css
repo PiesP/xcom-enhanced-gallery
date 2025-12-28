@@ -506,3 +506,73 @@ button.fitButton {
 .tweetContent a:active {
   color: var(--xeg-color-primary-active);
 }
+
+/* ===== Tweet URL Section Styles ===== */
+
+.tweetUrlSection {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  background: var(--xeg-toolbar-element-bg, var(--xeg-color-neutral-100));
+  border: var(--border-width-thin) solid var(--toolbar-surface-border, var(--xeg-toolbar-border));
+  border-radius: var(--xeg-radius-sm);
+  transition: var(--xeg-transition-surface-fast);
+}
+
+.tweetUrlSection:hover {
+  background: var(--xeg-toolbar-element-bg-strong, var(--xeg-color-neutral-200));
+  border-color: var(--xeg-color-border-hover);
+}
+
+.tweetUrlLink {
+  display: flex;
+  align-items: center;
+  gap: 0.375em;
+  width: 100%;
+  color: var(--xeg-color-primary);
+  text-decoration: none;
+  font-size: var(--xeg-font-size-sm);
+  font-weight: 500;
+  transition: color var(--xeg-duration-fast) var(--xeg-ease-standard);
+}
+
+.tweetUrlLink:hover {
+  color: var(--xeg-color-primary-hover);
+}
+
+.tweetUrlLink:focus,
+.tweetUrlLink:focus-visible {
+  outline: 2px solid var(--xeg-focus-indicator-color);
+  outline-offset: 2px;
+  border-radius: var(--xeg-radius-xs);
+}
+
+.tweetUrlIcon {
+  flex-shrink: 0;
+  width: 0.875em;
+  height: 0.875em;
+  stroke: currentColor;
+}
+
+.tweetUrlLabel {
+  flex-shrink: 0;
+  color: var(--xeg-toolbar-text-muted, var(--xeg-color-text-secondary));
+  font-weight: 600;
+}
+
+.tweetUrlValue {
+  flex: 1;
+  color: var(--xeg-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tweetUrlDivider {
+  width: 100%;
+  height: var(--border-width-thin);
+  background: var(--toolbar-surface-border, var(--xeg-toolbar-border));
+  margin: var(--space-sm) 0;
+}

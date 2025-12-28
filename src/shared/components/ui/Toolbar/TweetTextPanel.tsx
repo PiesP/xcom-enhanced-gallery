@@ -1,3 +1,4 @@
+import { LucideIcon } from '@shared/components/ui/Icon/lucide/lucide-icons';
 import type { JSXElement } from '@shared/external/vendors';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { isUrlAllowed } from '@shared/utils/url/safety';
@@ -106,6 +107,20 @@ const renderTweetTokens = (tokens: TweetToken[]): JSXElement => {
   });
 };
 
+const TweetUrlLink = (props: { url: string; label: string }): JSXElement => {
+  const translate = useTranslation();
+
+  return (
+    <div class={styles.tweetUrlSection}>
+      <a href={props.url} target="_blank" rel="noopener noreferrer" class={styles.tweetUrlLink}>
+        <LucideIcon name="external-link" size={14} class={styles.tweetUrlIcon} />
+        <span class={styles.tweetUrlLabel}>{translate('tb.twUrl')}</span>
+        <span class={styles.tweetUrlValue}>{props.label}</span>
+      </a>
+    </div>
+  );
+};
+
 export default function TweetTextPanel(props: TweetTextPanelProps): JSXElement {
   const translate = useTranslation();
   const tweetText = props.tweetTextHTML ?? props.tweetText ?? '';
@@ -119,17 +134,9 @@ export default function TweetTextPanel(props: TweetTextPanelProps): JSXElement {
         <span class={styles.tweetTextLabel}>{translate('tb.twTxt')}</span>
       </div>
       <div class={styles.tweetContent} data-gallery-scrollable="true">
-        <span>
-          {safeTweetUrl && (
-            <>
-              <a href={safeTweetUrl} target="_blank" rel="noopener noreferrer">
-                {tweetUrlLabel}
-              </a>
-              {tokens.length > 0 ? '\n' : ''}
-            </>
-          )}
-          {renderTweetTokens(tokens)}
-        </span>
+        {safeTweetUrl && <TweetUrlLink url={safeTweetUrl} label={tweetUrlLabel} />}
+        {safeTweetUrl && tokens.length > 0 && <div class={styles.tweetUrlDivider} />}
+        <span>{renderTweetTokens(tokens)}</span>
       </div>
     </div>
   );
