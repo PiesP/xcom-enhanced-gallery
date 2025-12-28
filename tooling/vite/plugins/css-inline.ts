@@ -343,46 +343,63 @@ function pruneUnusedCustomProperties(css: string): string {
   // Best-effort pruning of custom properties that are defined but never referenced.
   // This is intentionally conservative: we only remove declarations of the form
   // `--name: ...;` when `--name` does not appear elsewhere (e.g. in `var(--name)`).
+  //
+  // Important: Run pruning iteratively.
+  // A variable can appear "used" only because it is referenced by another variable
+  // that is itself unused. Example:
+  //   --a: 1; --b: var(--a);
+  // If --b is unused, the first pruning pass should remove --b, and a subsequent
+  // pass can then remove --a. A single pass cannot catch this cascade.
   const defRe = /--([a-zA-Z0-9_-]+)\s*:/g;
   const useRe = /--([a-zA-Z0-9_-]+)\b/g;
 
-  const definedCounts = new Map<string, number>();
-  for (const match of css.matchAll(defRe)) {
-    const name = match[1] as string;
-    definedCounts.set(name, (definedCounts.get(name) ?? 0) + 1);
-  }
-
-  if (definedCounts.size === 0) {
-    return css;
-  }
-
-  const usedCounts = new Map<string, number>();
-  for (const match of css.matchAll(useRe)) {
-    const name = match[1] as string;
-    usedCounts.set(name, (usedCounts.get(name) ?? 0) + 1);
-  }
-
-  const dead = new Set<string>();
-  for (const [name, defCount] of definedCounts.entries()) {
-    const total = usedCounts.get(name) ?? 0;
-    // If the only occurrences are the definitions themselves, the variable is never referenced.
-    if (total === defCount) {
-      dead.add(name);
-    }
-  }
-
-  if (dead.size === 0) {
-    return css;
-  }
-
-  // Remove `--name: ...;` for each dead property. Values are assumed to not contain ';'.
-  // This is a safe assumption for our current token set (colors, sizes, var(), color-mix()).
   let result = css;
-  // Longest-first helps avoid partial overlaps (e.g. `--x` vs `--x1`).
-  const deadNames = Array.from(dead).sort((a, b) => b.length - a.length);
-  for (const name of deadNames) {
-    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    result = result.replace(new RegExp(`--${escaped}\\s*:[^;{}]*;`, 'g'), '');
+  // Safeguard against infinite loops. Dependency chains in our token set are shallow.
+  for (let pass = 0; pass < 10; pass++) {
+    const definedCounts = new Map<string, number>();
+    for (const match of result.matchAll(defRe)) {
+      const name = match[1] as string;
+      definedCounts.set(name, (definedCounts.get(name) ?? 0) + 1);
+    }
+
+    if (definedCounts.size === 0) {
+      return result;
+    }
+
+    const usedCounts = new Map<string, number>();
+    for (const match of result.matchAll(useRe)) {
+      const name = match[1] as string;
+      usedCounts.set(name, (usedCounts.get(name) ?? 0) + 1);
+    }
+
+    const dead = new Set<string>();
+    for (const [name, defCount] of definedCounts.entries()) {
+      const total = usedCounts.get(name) ?? 0;
+      // If the only occurrences are the definitions themselves, the variable is never referenced.
+      if (total === defCount) {
+        dead.add(name);
+      }
+    }
+
+    if (dead.size === 0) {
+      return result;
+    }
+
+    // Remove `--name: ...;` for each dead property. Values are assumed to not contain ';'.
+    // This is a safe assumption for our current token set (colors, sizes, var(), color-mix()).
+    let next = result;
+    // Longest-first helps avoid partial overlaps (e.g. `--x` vs `--x1`).
+    const deadNames = Array.from(dead).sort((a, b) => b.length - a.length);
+    for (const name of deadNames) {
+      const escaped = name.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+      next = next.replace(new RegExp(`--${escaped}\\s*:[^;{}]*;`, 'g'), '');
+    }
+
+    if (next === result) {
+      return result;
+    }
+
+    result = next;
   }
 
   return result;

@@ -8,6 +8,29 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.5.4] - 2025-12-28
+
+### Added
+
+- **Toolbar**: Added a tweet URL section to make it easier to view/copy the current tweet URL.
+
+### Changed
+
+- **Toolbar**: Improved tweet text panel styling and accessibility.
+
+### Fixed
+
+- **i18n**: Updated tweet text labels for English, Japanese, and Korean.
+
+### Build
+
+- **Supply Chain**: Updated `semver` override to `7.7.3` to satisfy pnpm trust-policy checks.
+- **CSS**: Fixed unused custom property pruning to cascade through token dependencies.
+
+### Docs
+
+- **Changelog**: Backfilled the 1.5.3 release entry and aligned repository metadata.
+
 ## [1.5.3] - 2025-12-25
 
 ### Build
