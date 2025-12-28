@@ -276,6 +276,7 @@ function VerticalGalleryViewCore({
           currentFitMode={imageFitMode()}
           tweetText={() => activeMedia()?.tweetText}
           tweetTextHTML={() => activeMedia()?.tweetTextHTML}
+          tweetUrl={() => activeMedia()?.tweetUrl}
           className={styles.toolbar || ''}
           handlers={{
             navigation: {

@@ -46,6 +46,8 @@ interface ToolbarViewProps {
   readonly tweetText?: MaybeAccessor<string | null | undefined>;
   /** Tweet HTML content */
   readonly tweetTextHTML?: MaybeAccessor<string | null | undefined>;
+  /** Tweet URL */
+  readonly tweetUrl?: MaybeAccessor<string | null | undefined>;
   /** ARIA label */
   readonly 'aria-label'?: string | undefined;
   /** ARIA describedby */
@@ -120,6 +122,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const activeFitMode = createMemo(() => props.activeFitMode());
   const tweetText = createMemo(() => resolveOptional(props.tweetText) ?? null);
   const tweetTextHTML = createMemo(() => resolveOptional(props.tweetTextHTML) ?? null);
+  const tweetUrl = createMemo(() => resolveOptional(props.tweetUrl) ?? null);
   const [toolbarElement, setToolbarElement] = createSignal<HTMLDivElement | null>(null);
   const [counterElement, setCounterElement] = createSignal<HTMLSpanElement | null>(null);
   const [settingsPanelEl, setSettingsPanelEl] = createSignal<HTMLDivElement | null>(null);
@@ -156,7 +159,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       counter.dataset.focusedIndex = focused;
     }
   });
-  const hasTweetContent = () => !!(tweetTextHTML() ?? tweetText());
+  const hasTweetContent = () => !!(tweetTextHTML() ?? tweetText() ?? tweetUrl());
   const toolbarButtonClass = (...extra: Array<string | undefined>) =>
     cx(styles.toolbarButton, 'xeg-inline-center', ...extra);
 
@@ -434,6 +437,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           <TweetTextPanel
             tweetText={tweetText() ?? undefined}
             tweetTextHTML={tweetTextHTML() ?? undefined}
+            tweetUrl={tweetUrl() ?? undefined}
           />
         </Show>
       </div>

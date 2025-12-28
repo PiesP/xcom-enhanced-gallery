@@ -16,7 +16,7 @@ const EN_VALUES = [
   'Fit Height',
   'Fit Window',
   'Theme',
-  'Language / 언어 / 言語',
+  'Language',
   'Auto',
   'Light',
   'Dark',

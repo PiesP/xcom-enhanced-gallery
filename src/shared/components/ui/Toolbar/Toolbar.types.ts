@@ -66,4 +66,6 @@ export interface ToolbarProps {
   tweetText?: MaybeAccessor<string | null | undefined>;
   /** Tweet HTML content */
   tweetTextHTML?: MaybeAccessor<string | null | undefined>;
+  /** Tweet URL */
+  tweetUrl?: MaybeAccessor<string | null | undefined>;
 }

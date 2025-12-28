@@ -123,6 +123,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const currentFitMode = toOptionalAccessor(() => props.currentFitMode);
   const tweetText = toOptionalAccessor(() => props.tweetText);
   const tweetTextHTML = toOptionalAccessor(() => props.tweetTextHTML);
+  const tweetUrl = toOptionalAccessor(() => props.tweetUrl);
   const translate = useTranslation();
 
   const [toolbarState, toolbarActions] = useToolbarState();
@@ -291,6 +292,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       onBlur={props.handlers.focus?.onBlur}
       tweetText={tweetText}
       tweetTextHTML={tweetTextHTML}
+      tweetUrl={tweetUrl}
       // Derived toolbar view props
       toolbarClass={toolbarClass}
       toolbarState={toolbarState}
