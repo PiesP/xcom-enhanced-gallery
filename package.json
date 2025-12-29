@@ -24,7 +24,6 @@
     "test:deps:sync": "pnpm -C test run deps:sync",
     "test:install": "pnpm -C test install",
     "test:unit": "pnpm -C test run test",
-    "test:ct": "pnpm -C test run ct",
     "test:e2e": "pnpm -C test run e2e",
     "test:mut:priority": "pnpm -C test run mut:priority",
     "test:all": "pnpm -C test run test:all",
