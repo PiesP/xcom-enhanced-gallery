@@ -86,6 +86,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const isFocused = createMemo(() => local.isFocused ?? false);
   const className = createMemo(() => local.className ?? '');
 
+  const shouldEagerLoad = createMemo(() => {
+    const isPreloaded = local.forceVisible ?? false;
+    const isCurrent = local.isActive ?? false;
+    return isPreloaded || isCurrent;
+  });
+
   const translate = useTranslation();
 
   const isVideo = createMemo(() => {
@@ -430,7 +436,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             ref={setImageRef}
             src={local.media.url}
             alt={cleanFilename(local.media.filename)}
-            loading="eager"
+            loading={shouldEagerLoad() ? 'eager' : 'lazy'}
             decoding="async"
             class={cx(styles.image, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
             onLoad={handleMediaLoad}

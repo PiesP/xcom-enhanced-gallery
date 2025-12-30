@@ -88,7 +88,7 @@ function VerticalGalleryViewCore({
   });
 
   const preloadIndices = createMemo(() => {
-    const count = getTypedSettingOr('gallery.preloadCount', 0);
+    const count = getTypedSettingOr('gallery.preloadCount', 3);
     return computePreloadIndices(currentIndex(), mediaItems().length, count);
   });
 

@@ -41,6 +41,26 @@ export function useGalleryItemScroll(
   const currentIndexAccessor = toAccessor(currentIndex);
   const totalItemsAccessor = toAccessor(totalItems);
 
+  // DOM query cache using WeakRef to prevent memory leaks
+  const itemsCache = new Map<number, WeakRef<HTMLElement>>();
+
+  const getCachedItem = (index: number, itemsRoot: Element): HTMLElement | null => {
+    // 1. Check cache
+    const cached = itemsCache.get(index)?.deref();
+    if (cached?.isConnected) return cached;
+
+    // 2. Cache miss: query DOM
+    const items = itemsRoot.querySelectorAll('[data-xeg-role="gallery-item"]');
+    const element = items[index] as HTMLElement | undefined;
+
+    // 3. Store in cache using WeakRef
+    if (element) {
+      itemsCache.set(index, new WeakRef(element));
+    }
+
+    return element ?? null;
+  };
+
   const scrollToItem = (index: number) => {
     const container = containerAccessor();
     if (!enabled() || !container || index < 0 || index >= totalItemsAccessor()) return;
@@ -50,8 +70,7 @@ export function useGalleryItemScroll(
     );
     if (!itemsRoot) return;
 
-    const items = itemsRoot.querySelectorAll('[data-xeg-role="gallery-item"]');
-    const target = items[index] as HTMLElement;
+    const target = getCachedItem(index, itemsRoot);
 
     if (target) {
       options.onScrollStart?.();
@@ -63,8 +82,7 @@ export function useGalleryItemScroll(
     } else {
       // Retry once if not found (e.g. virtual scrolling or render delay)
       requestAnimationFrame(() => {
-        const retryItems = itemsRoot.querySelectorAll('[data-xeg-role="gallery-item"]');
-        const retryTarget = retryItems[index] as HTMLElement;
+        const retryTarget = getCachedItem(index, itemsRoot);
         if (retryTarget) {
           options.onScrollStart?.();
           retryTarget.scrollIntoView({

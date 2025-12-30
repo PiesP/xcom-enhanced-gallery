@@ -111,6 +111,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
+
+  /* Performance: Layout and paint containment */
+  contain: layout paint;
 }
 
 /* fitOriginal mode: Expand container to fit original media size without constraints */
