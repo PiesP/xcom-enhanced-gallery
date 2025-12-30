@@ -8,6 +8,16 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.6.0] - 2025-12-30
+
+### Features
+
+- `feat(gallery): enhance image loading strategy and improve performance` ([d880c485](https://github.com/PiesP/xcom-enhanced-gallery/commit/d880c4857f50b07eb2d338859990246cd9da4b3e))
+
+### Other Changes
+
+- `chore(changelog): update build status and remove unused test script` ([5d4a47d8](https://github.com/PiesP/xcom-enhanced-gallery/commit/5d4a47d81334864c0cfe05d950e9ad6a0654d1db))
+
 ## [1.5.4] - 2025-12-28
 
 ### Added
