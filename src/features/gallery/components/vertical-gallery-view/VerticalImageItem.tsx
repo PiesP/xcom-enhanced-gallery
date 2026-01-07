@@ -30,7 +30,7 @@ import {
   normalizeVideoVolumeSetting,
 } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css';
-import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.types';
+import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/vertical-image-item.types';
 import { createDebounced } from '@shared/async/debounce';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
 import type { JSX, JSXElement } from '@shared/external/vendors';

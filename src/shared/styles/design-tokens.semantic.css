@@ -9,19 +9,19 @@
     /* ─────────────────────────────────────────────────────────────────────────
      * Background Colors - Semantic Roles
      * ───────────────────────────────────────────────────────────────────────── */
-    --color-bg-primary: var(--color-base-white);
-    --color-bg-secondary: var(--color-gray-50);
-    --color-bg-surface: var(--color-base-white);
-    --color-bg-elevated: var(--color-base-white);
+    --xeg-color-bg-primary: var(--color-base-white);
+    --xeg-color-bg-secondary: var(--color-gray-50);
+    --xeg-color-bg-surface: var(--color-base-white);
+    --xeg-color-bg-elevated: var(--color-base-white);
 
     /* Gallery and toolbar background tokens */
-    --xeg-bg-toolbar: var(--color-bg-surface);
+    --xeg-bg-toolbar: var(--xeg-color-bg-surface);
     --xeg-toolbar-border: var(--xeg-color-border-primary);
     --xeg-toolbar-surface: var(--xeg-bg-toolbar);
     --xeg-toolbar-panel-surface: var(--xeg-toolbar-surface);
 
     /* Gallery Image Item Background Tokens */
-    --xeg-color-bg-secondary: var(--color-bg-secondary);
+    --xeg-color-bg-secondary-alias: var(--xeg-color-bg-secondary);
 
     /* ─────────────────────────────────────────────────────────────────────────
      * Gallery Backgrounds
@@ -39,19 +39,19 @@
     /* ─────────────────────────────────────────────────────────────────────────
      * Text Colors - Semantic Roles
      * ───────────────────────────────────────────────────────────────────────── */
-    --color-text-primary: var(--color-base-black);
-    --color-text-secondary: var(--color-gray-600); /* design-consistency */
+    --xeg-color-text-primary: var(--color-base-black);
+    --xeg-color-text-secondary: var(--color-gray-600); /* design-consistency */
 
     /* ─────────────────────────────────────────────────────────────────────────
      * Border Colors - Semantic Roles
      * ───────────────────────────────────────────────────────────────────────── */
-    --color-border-default: var(--color-gray-200);
-    --color-border-emphasis: var(--color-gray-500);
+    --xeg-color-border-default: var(--color-gray-200);
+    --xeg-color-border-emphasis: var(--color-gray-500);
 
     /* Border Color Tokens - xeg prefix for consistency */
-    --xeg-color-border-primary: var(--color-border-default);
+    --xeg-color-border-primary: var(--xeg-color-border-default);
     --xeg-color-border-hover: var(--color-gray-300);
-    --xeg-color-border-strong: var(--color-border-emphasis);
+    --xeg-color-border-strong: var(--xeg-color-border-emphasis);
 
     /* ─────────────────────────────────────────────────────────────────────────
      * Toolbar Color Harmony Tokens
@@ -117,13 +117,10 @@
     --xeg-color-neutral-500: var(--color-gray-500);
 
     /* Text color aliases for components */
-    --xeg-color-text-primary: var(--color-text-primary);
-    --xeg-color-text-secondary: var(--color-text-secondary);
+    --xeg-color-text-primary: var(--color-base-black);
+    --xeg-color-text-secondary: var(--color-gray-600);
     --xeg-color-text-tertiary: var(--color-gray-500);
     --xeg-color-text-inverse: var(--color-base-white);
-
-    /* Background color aliases for components */
-    --xeg-color-bg-primary: var(--color-bg-primary);
 
     /* ─────────────────────────────────────────────────────────────────────────
      * Component Sizing - Semantic Roles (em: relative to font-size)
@@ -161,16 +158,16 @@
     /* ─────────────────────────────────────────────────────────────────────────
      * Surface Tokens - Flat panel style
      * ───────────────────────────────────────────────────────────────────────── */
-    --xeg-surface-bg: var(--color-bg-surface);
-    --xeg-surface-border: var(--color-border-default);
-    --xeg-surface-bg-hover: var(--color-bg-secondary);
+    --xeg-surface-bg: var(--xeg-color-bg-surface);
+    --xeg-surface-border: var(--xeg-color-border-default);
+    --xeg-surface-bg-hover: var(--xeg-color-bg-secondary);
 
     /* Elevated surfaces & skeletons */
-    --xeg-color-surface-elevated: var(--color-bg-elevated);
-    --xeg-skeleton-bg: var(--color-bg-secondary);
+    --xeg-color-surface-elevated: var(--xeg-color-bg-elevated);
+    --xeg-skeleton-bg: var(--xeg-color-bg-secondary);
 
     /* Border emphasis aliases */
-    --xeg-border-emphasis: var(--color-border-emphasis);
+    --xeg-border-emphasis: var(--xeg-color-border-emphasis);
 
     /* ─────────────────────────────────────────────────────────────────────────
      * Z-Index Management
@@ -229,25 +226,25 @@
    * Theme Support - Dark/Light Mode
    * ───────────────────────────────────────────────────────────────────────────── */
   :where(:root, .xeg-theme-scope)[data-theme="light"] {
-    --color-bg-primary: var(--color-base-white);
-    --color-text-primary: var(--color-base-black);
-    --color-text-secondary: var(--color-gray-600);
+    --xeg-color-bg-primary: var(--color-base-white);
+    --xeg-color-text-primary: var(--color-base-black);
+    --xeg-color-text-secondary: var(--color-gray-600);
     --xeg-gallery-bg: var(--xeg-gallery-bg-light);
   }
 
   /* Dark mode - explicit attribute */
   :where(:root, .xeg-theme-scope)[data-theme="dark"] {
-    --color-bg-primary: var(--color-gray-900);
-    --color-bg-surface: var(--color-gray-900);
-    --color-bg-elevated: var(--color-gray-700);
-    --color-text-primary: var(--color-base-white);
-    --color-text-secondary: var(--color-gray-400);
+    --xeg-color-bg-primary: var(--color-gray-900);
+    --xeg-color-bg-surface: var(--color-gray-900);
+    --xeg-color-bg-elevated: var(--color-gray-700);
+    --xeg-color-text-primary: var(--color-base-white);
+    --xeg-color-text-secondary: var(--color-gray-400);
     --xeg-bg-toolbar: var(--color-gray-800);
     --xeg-color-border-primary: var(--color-gray-600);
     --xeg-toolbar-border: var(--color-gray-600);
     --xeg-color-bg-secondary: var(--color-gray-800);
     --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
-    --xeg-toolbar-text-color: var(--color-text-primary);
+    --xeg-toolbar-text-color: var(--xeg-color-text-primary);
     --xeg-toolbar-text-muted: var(--color-gray-300);
     --xeg-toolbar-element-bg: color-mix(
       in oklch,

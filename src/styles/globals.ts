@@ -23,17 +23,14 @@ import '@shared/styles/design-tokens.semantic.css';
 //    Tier 3: Component-specific tokens
 import '@shared/styles/design-tokens.component.css';
 
-// 3. Design tokens: Animation system
-import '@shared/styles/tokens/animation.css';
-
-// 4. Browser style reset (scoped to gallery container only)
+// 3. Browser style reset (scoped to gallery container only)
 import '@shared/styles/base/reset.css';
 
-// 5. Utility classes: Layout, spacing, sizing
+// 4. Utility classes: Layout, spacing, sizing
 import '@shared/styles/utilities/layout.css';
 
-// 6. Utility classes: @keyframes + animation utility classes
+// 5. Utility classes: @keyframes + animation utility classes
 import '@shared/styles/utilities/animations.css';
 
-// 7. Isolated gallery component styles
+// 6. Isolated gallery component styles
 import '@shared/styles/isolated-gallery.css';

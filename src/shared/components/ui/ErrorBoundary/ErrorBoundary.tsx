@@ -14,7 +14,7 @@ import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
 import { NotificationService } from '@shared/services/notification-service';
 import { createSignal, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
-import type { ErrorBoundaryProps } from './ErrorBoundary.types';
+import type { ErrorBoundaryProps } from './error-boundary.types';
 
 /**
  * Converts an unknown error to a readable string representation.

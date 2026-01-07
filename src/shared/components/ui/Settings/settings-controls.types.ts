@@ -1,6 +1,6 @@
 /**
  * @fileoverview Settings Controls Type Definitions
- * @module shared/components/ui/Settings/SettingsControls.types
+ * @module shared/components/ui/Settings/settings-controls.types
  * @description Type definitions for theme and language settings controls component
  *
  * @see {@link ./SettingsControls.tsx} - Component implementation

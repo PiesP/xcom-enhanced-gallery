@@ -13,8 +13,8 @@
  */
 
 import { DEFAULT_SETTINGS } from '@constants/default-settings';
-import type { MigrationRegistry } from '@features/settings/services/settings-migration.types';
 import type { AppSettings } from '@features/settings/types/settings.types';
+import type { MigrationRegistry } from '@features/settings/types/settings-migration.types';
 import { isRecord } from '@shared/utils/types/guards';
 
 /**
