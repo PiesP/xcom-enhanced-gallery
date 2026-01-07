@@ -8,14 +8,45 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-01-07
+
+### Features
+
+- **Gallery**: Added composed hooks for vertical gallery functionality, including video visibility management with IntersectionObserver, focus tracking, and item scroll navigation.
+- **UI Components**: Added comprehensive type definitions for ErrorBoundary, LucideIcon, SettingsControls, Toolbar, and ToolbarView components.
+- **Vite Plugin**: Enhanced userscript header plugin with auto-detection features and improved version resolution logic.
+- **Build Configuration**: Implemented userscript metadata generation and analysis utilities for better build introspection.
+- **Logging**: Implemented slim logger for production builds to reduce bundle size.
+- **Type System**: Added comprehensive type definitions for settings migration, error handling, environment detection, event operations, and media utilities.
+
 ### Changed
 
+- **Toolbar**: Renamed Toolbar types file for consistency with project conventions.
+- **Styling**: Updated color variables for semantic consistency across the application.
 - **Logging**: Aligned development and production logging exports, added scoped logger helpers, and preserved error-level output for production builds.
 - **Cookies**: Removed the cookie service barrel export and updated consumers to follow the path-alias-only import policy.
+- **Configuration**: Updated Vite configuration for better path aliasing and build optimization.
+
+### Fixed
+
+- **UI**: Corrected import paths for ErrorBoundary, LucideIcon, SettingsControls, and Toolbar components.
+
+### Refactored
+
+- **Animation Tokens**: Removed deprecated animation tokens file and cleaned up unused imports.
+- **Imports**: Updated all component type imports to follow path-alias-only import policy.
+
+### Build
+
+- **Tooling**: Cleaned up unused animation imports in globals and pruned unused custom properties.
 
 ### Tests
 
 - **Logging**: Added unit coverage for logger prefixing, scoped logging, and error routing.
+
+### Chore
+
+- **Git**: Updated `.gitignore` to exclude `TYPE_FILES_ANALYSIS.md` and `CODING_STANDARDS.md`.
 
 ## [1.6.0] - 2025-12-30
 
