@@ -1,7 +1,10 @@
 import type { LanguageStrings } from '@shared/constants/i18n/language-types';
-
 import { buildLanguageStringsFromValues } from '@shared/constants/i18n/translation-values';
 
+/**
+ * Korean language translation values
+ * Order must match the translation registry keys
+ */
 const KO_VALUES = [
   '이전',
   '다음',
@@ -44,4 +47,7 @@ const KO_VALUES = [
   '{type} 로드 실패',
 ] as const;
 
+/**
+ * Korean language strings for the application
+ */
 export const ko: LanguageStrings = buildLanguageStringsFromValues(KO_VALUES);

@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Userscript metadata generation and analysis utilities.
+ *
+ * Generates userscript headers with metadata directives (at-grant, at-connect, etc.).
+ * Supports auto-detection of used permissions by scanning bundle code.
+ * Handles license block generation with MIT license formatting.
+ */
+
 import { CDN_BASE_URL, OUTPUT_FILE_NAMES, USERSCRIPT_CONFIG } from '../constants';
 import { aggregateLicenses } from '../license-aggregation';
 import { LICENSES_DIR } from '../paths';
@@ -21,19 +29,56 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.`;
 
+/**
+ * Formats a single metadata directive as a userscript comment line.
+ *
+ * @param key - Metadata key without at-prefix (e.g., 'name', 'version')
+ * @param value - Metadata value to format
+ * @returns Formatted line as `// @key value`
+ * @internal
+ */
 function formatMetaLine(key: string, value: string): string {
   return `// @${key} ${value}`;
 }
 
+/**
+ * Formats multiple metadata values into multiple comment lines.
+ *
+ * @param key - Metadata key without at-prefix
+ * @param values - Array of values to format (one per line)
+ * @returns Array of formatted lines as `// @key value`
+ * @internal
+ */
 function formatMetaLines(key: string, values: readonly string[]): string[] {
   return values.map((v) => formatMetaLine(key, v));
 }
 
+/**
+ * Resolves the source URL for license documentation.
+ *
+ * Uses the Git tag corresponding to the version (either 'master' for dev or 'v{version}').
+ *
+ * @param version - Semantic version string
+ * @param isDev - True if development build
+ * @returns URL pointing to LICENSES directory in the repository
+ * @internal
+ */
 function resolveLicenseSourceUrl(version: string, isDev: boolean): string {
   const tag = isDev ? 'master' : `v${version}`;
   return `${USERSCRIPT_CONFIG.homepageURL}/tree/${tag}/LICENSES`;
 }
 
+/**
+ * Detects which userscript at-grant directives are used in the bundle code.
+ *
+ * Uses a conservative heuristic: scans for any GM_* identifier or grant string
+ * appearing anywhere in the code (including strings/comments). False positives
+ * are acceptable; false negatives would break runtime functionality.
+ *
+ * @param code - JavaScript bundle code to analyze
+ * @param candidates - Array of available grant strings to check for
+ * @returns Array of grants found to be used in the code
+ */
 export function collectUsedUserscriptGrants(code: string, candidates: readonly string[]): string[] {
   // Heuristic, intentionally conservative:
   // - Scan the final JS bundle for GM_* identifiers.
@@ -53,12 +98,16 @@ export function collectUsedUserscriptGrants(code: string, candidates: readonly s
 }
 
 /**
- * Detect `connect` hostnames used in the final bundle.
+ * Detects which userscript at-connect directives are used in the bundle code.
  *
- * Conservative heuristic: if the host string appears anywhere in the
- * bundle (including strings, URLs, or inline literals), keep it.
- * False positives are acceptable; false negatives would be problematic,
- * so we err on the side of keeping the default list when nothing matches.
+ * Uses a conservative heuristic: if the host string appears anywhere in the bundle
+ * (including strings, URLs, or inline literals), keep it. False positives are
+ * acceptable; false negatives would be problematic, so errs on the side of including
+ * the default list when nothing matches.
+ *
+ * @param code - JavaScript bundle code to analyze
+ * @param candidates - Array of available hostnames to check for
+ * @returns Array of connect hosts found to be used in the code
  */
 export function collectUsedUserscriptConnects(
   code: string,
@@ -80,6 +129,16 @@ export function collectUsedUserscriptConnects(
   return used;
 }
 
+/**
+ * Builds the userscript metadata block with all directives.
+ *
+ * Generates the standard userscript header including at-name, at-version, at-grant,
+ * at-connect, and other metadata directives in the correct order.
+ *
+ * @param config - Userscript metadata configuration
+ * @returns Formatted metadata block as a string
+ * @internal
+ */
 function buildMetadataBlock(config: UserscriptMeta): string {
   const lines = [
     '// ==UserScript==',
@@ -113,6 +172,19 @@ function buildMetadataBlock(config: UserscriptMeta): string {
   return lines.join('\n');
 }
 
+/**
+ * Builds the license documentation block as a multi-line comment.
+ *
+ * Aggregates and formats all third-party licenses, with special handling
+ * for MIT licenses to include copyright notices and full text.
+ *
+ * @param licenses - Array of detected license information
+ * @param options - Optional configuration for license block generation
+ * @param options.fullText - Include full license text (default: false)
+ * @param options.sourceUrl - URL to license source repository
+ * @returns Formatted license block as a comment, or empty string if no licenses
+ * @internal
+ */
 function buildLicenseBlock(
   licenses: readonly LicenseInfo[],
   options?: { readonly fullText?: boolean; readonly sourceUrl?: string }
@@ -176,6 +248,19 @@ function buildLicenseBlock(
   return ['/*', ...lines, ' */'].join('\n');
 }
 
+/**
+ * Generates the complete userscript header for the main bundle.
+ *
+ * Combines metadata directives and full license documentation.
+ * Supports overriding auto-detected grants and connects for testing.
+ *
+ * @param args - Header generation options
+ * @param args.version - Semantic version string
+ * @param args.isDev - True if development build (affects name suffix and URL paths)
+ * @param args.grantOverride - Custom grant list to use instead of defaults
+ * @param args.connectOverride - Custom connect list to use instead of defaults
+ * @returns Complete userscript header ready for injection into bundle
+ */
 export function generateUserscriptHeader(args: {
   version: string;
   isDev: boolean;
@@ -207,6 +292,15 @@ export function generateUserscriptHeader(args: {
   return licenseBlock ? `${metaBlock}\n${licenseBlock}` : metaBlock;
 }
 
+/**
+ * Generates a minimal userscript metadata header for .meta.js distribution.
+ *
+ * Used for hosting on script update registries (Greasy Fork, etc.).
+ * Includes only essential directives for update checks and downloads.
+ *
+ * @param version - Semantic version string
+ * @returns Minimal userscript metadata header as a string
+ */
 export function generateMetaOnlyHeader(version: string): string {
   const fileName = OUTPUT_FILE_NAMES.prod;
   const metaFileName = OUTPUT_FILE_NAMES.meta;

@@ -54,7 +54,7 @@
 
   .xeg-gallery-root ::-webkit-scrollbar-thumb {
     background: var(--xeg-scrollbar-thumb-color);
-    border-radius: var(--xeg-radius-sm, 0.25em);
+    border-radius: var(--xeg-radius-sm, 0.25rem);
   }
 
   .xeg-gallery-root ::-webkit-scrollbar-thumb:hover {

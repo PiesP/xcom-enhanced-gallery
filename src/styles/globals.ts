@@ -1,34 +1,39 @@
 /**
- * @fileoverview Isolated gallery global style system
- * @description Import only isolated styles that don't affect Twitter page
+ * Isolated gallery global style system.
  *
- * Import Order (Critical for CSS cascade):
- * 1. Layer declaration (establishes cascade priority)
- * 2. Design tokens (3-tier hierarchy)
- * 3. Base reset styles
- * 4. Utility classes
- * 5. Feature-specific styles
+ * @fileoverview Loads only isolated styles that don't affect Twitter page.
+ * Imports organized by CSS cascade priority (critical for correct styling).
+ *
+ * Import Order:
+ * 1. CSS layers declaration (establishes cascade priority)
+ * 2. Design tokens (3-tier: primitive → semantic → component)
+ * 3. Base reset styles (scoped to gallery container)
+ * 4. Utility classes (layout, spacing, sizing, animations)
+ * 5. Feature-specific styles (isolated gallery)
  */
 
 // 1. CSS Layer order declaration - MUST be first
 import '@shared/styles/layers.css';
 
-// 2. Design tokens (3-tier hierarchy)
-import '@shared/styles/design-tokens.primitive.css'; // Tier 1: Base values (colors, sizes)
-import '@shared/styles/design-tokens.semantic.css'; // Tier 2: Role-based tokens
-import '@shared/styles/design-tokens.component.css'; // Tier 3: Component-specific tokens
+// 2. Design tokens: 3-tier hierarchy
+//    Tier 1: Base values (colors, sizes, fonts)
+import '@shared/styles/design-tokens.primitive.css';
+//    Tier 2: Semantic/role-based tokens
+import '@shared/styles/design-tokens.semantic.css';
+//    Tier 3: Component-specific tokens
+import '@shared/styles/design-tokens.component.css';
 
-// 3. Design tokens - Animation system
+// 3. Design tokens: Animation system
 import '@shared/styles/tokens/animation.css';
 
-// 4. Browser style reset (applied only inside gallery container)
+// 4. Browser style reset (scoped to gallery container only)
 import '@shared/styles/base/reset.css';
 
-// 5. Utility classes: Layout/spacing/sizing
+// 5. Utility classes: Layout, spacing, sizing
 import '@shared/styles/utilities/layout.css';
 
-// 6. Utility classes: @keyframes definition + animation utility classes
+// 6. Utility classes: @keyframes + animation utility classes
 import '@shared/styles/utilities/animations.css';
 
-// 7. Isolated gallery styles
+// 7. Isolated gallery component styles
 import '@shared/styles/isolated-gallery.css';

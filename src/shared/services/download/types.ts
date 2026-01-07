@@ -6,9 +6,21 @@
 import type { ErrorCode } from '@shared/types/result.types';
 
 /** Download progress phases */
+type DownloadPhase = 'preparing' | 'downloading' | 'complete';
+
+/** Bulk download result status */
+type BulkDownloadStatus = 'success' | 'partial' | 'error';
+
+/** Failed download metadata */
+type DownloadFailure = {
+  url: string;
+  error: string;
+};
+
+/** Download progress payload */
 interface DownloadProgress {
   /** Current phase: preparing | downloading | complete */
-  phase: 'preparing' | 'downloading' | 'complete';
+  phase: DownloadPhase;
   /** Number of completed items (0 to total) */
   current: number;
   /** Total items to download */
@@ -22,11 +34,11 @@ interface DownloadProgress {
 /** Item to be processed by orchestrator */
 export interface OrchestratorItem {
   /** Download URL */
-  url: string;
+  readonly url: string;
   /** Desired filename */
-  desiredName: string;
+  readonly desiredName: string;
   /** Pre-fetched Blob data */
-  blob?: Blob | Promise<Blob> | undefined;
+  readonly blob?: Blob | Promise<Blob> | undefined;
 }
 
 /** Orchestrator configuration options */
@@ -63,21 +75,20 @@ export interface ZipResult {
   /** Successfully added files count */
   filesSuccessful: number;
   /** Failed downloads */
-  failures: Array<{ url: string; error: string }>;
+  failures: Array<DownloadFailure>;
   /** Raw ZIP bytes */
   zipData: Uint8Array;
 }
 
-/** Download data source type */
 /** Bulk download operation result */
 export interface BulkDownloadResult {
   success: boolean;
   /** success | partial | error */
-  status: 'success' | 'partial' | 'error';
+  status: BulkDownloadStatus;
   filesProcessed: number;
   filesSuccessful: number;
   filename?: string;
   error?: string;
-  failures?: Array<{ url: string; error: string }>;
+  failures?: Array<DownloadFailure>;
   code: ErrorCode;
 }

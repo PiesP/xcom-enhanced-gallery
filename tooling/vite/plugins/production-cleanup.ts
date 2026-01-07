@@ -1,8 +1,31 @@
+/**
+ * @fileoverview Production bundle cleanup plugin for Vite.
+ *
+ * Removes development artifacts from the final userscript bundle:
+ * - Module tags and pure annotations
+ * - Logger calls (debug, info, warn, trace)
+ * - Singleton reset methods and test helpers
+ * - Internal JSDoc comments
+ * - Comments and unnecessary whitespace
+ *
+ * Uses JS-aware parsing to safely identify and remove patterns without
+ * corrupting code within strings or template literals.
+ */
+
 import { Script } from 'node:vm';
 import type { Plugin } from 'vite';
 
 const DEBUG_VALIDATE_STEPS = process.env.XEG_DEBUG_VALIDATE_PROD_CLEANUP === '1';
 
+/**
+ * Validates that code remains parsable as a JavaScript script.
+ * Only runs when XEG_DEBUG_VALIDATE_PROD_CLEANUP environment variable is set.
+ *
+ * @param step - Name of the transformation step for error context
+ * @param code - JavaScript code to validate
+ * @throws Error if code is unparsable (when DEBUG_VALIDATE_STEPS is true)
+ * @internal
+ */
 function assertParsableJs(step: string, code: string): void {
   if (!DEBUG_VALIDATE_STEPS) return;
   try {
@@ -18,6 +41,14 @@ function assertParsableJs(step: string, code: string): void {
   }
 }
 
+/**
+ * Validates that the final bundle is parsable as JavaScript.
+ * Always runs (not conditional on DEBUG_VALIDATE_STEPS).
+ *
+ * @param code - Final JavaScript code to validate
+ * @throws Error if code is unparsable
+ * @internal
+ */
 function assertParsableJsFinal(code: string): void {
   try {
     const parsed = new Script(code, { filename: 'production-cleanup:final' });
@@ -28,6 +59,13 @@ function assertParsableJsFinal(code: string): void {
   }
 }
 
+/**
+ * Escapes special characters in a string for use in RegExp patterns.
+ *
+ * @param source - String to escape
+ * @returns Escaped string safe for RegExp literal
+ * @internal
+ */
 function escapeRegExp(source: string): string {
   return source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -49,18 +87,47 @@ const REGEX_KEYWORDS = new Set([
   'do',
 ]);
 
+/**
+ * Checks if a character can start a JavaScript identifier.
+ *
+ * @param char - Single character to test
+ * @returns True if character matches [A-Za-z_$]
+ * @internal
+ */
 function isIdentifierStart(char: string): boolean {
   return /[A-Za-z_$]/.test(char);
 }
 
+/**
+ * Checks if a character can be part of a JavaScript identifier (after first char).
+ *
+ * @param char - Single character to test
+ * @returns True if character matches [A-Za-z0-9_$]
+ * @internal
+ */
 function isIdentifierPart(char: string): boolean {
   return /[A-Za-z0-9_$]/.test(char);
 }
 
+/**
+ * Checks if a character is whitespace (space, newline, carriage return, or tab).
+ *
+ * @param char - Single character to test
+ * @returns True if character is whitespace
+ * @internal
+ */
 function isWhitespace(char: string): boolean {
   return char === ' ' || char === '\n' || char === '\r' || char === '\t';
 }
 
+/**
+ * Finds the next non-whitespace character from a given index in code.
+ *
+ * @param code - Source code to search
+ * @param startIndex - Index to start searching from
+ * @returns First non-whitespace character or null if not found
+ * @internal
+ */
 function findNextNonWhitespace(code: string, startIndex: number): string | null {
   for (let i = startIndex; i < code.length; i++) {
     const char = code[i] as string;
@@ -71,6 +138,20 @@ function findNextNonWhitespace(code: string, startIndex: number): string | null 
   return null;
 }
 
+/**
+ * Removes JavaScript comments while preserving code semantics.
+ *
+ * Handles single-line comments, multi-line comments, and preserves:
+ * - String literals (single and double quoted)
+ * - Template literals with expression interpolation
+ * - Regular expression patterns
+ *
+ * Uses JS-aware parsing to avoid corrupting patterns inside strings.
+ *
+ * @param code - JavaScript source code
+ * @returns Code with comments removed
+ * @internal
+ */
 function stripJsComments(code: string): string {
   let result = '';
   let i = 0;
@@ -276,10 +357,20 @@ function stripJsComments(code: string): string {
 }
 
 /**
- * Removes empty `__esmMin(() => {})` init wrappers and their calls.
+ * Removes empty ESM init wrapper calls and their declarations.
  *
- * Note: This duplicates the runtime repo helper to avoid parent-relative imports
- * in build-time code.
+ * Targets patterns like:
+ * ```
+ * const init_xxx = __esmMin(() => {})
+ * init_xxx()
+ * ```
+ *
+ * Note: This function duplicates runtime repo helper to avoid parent-relative
+ * imports in build-time code.
+ *
+ * @param code - JavaScript source code
+ * @returns Code with empty ESM init wrappers removed
+ * @internal
  */
 function stripEmptyEsmMinInitWrappers(code: string): string {
   const removedNames = new Set<string>();
@@ -304,6 +395,20 @@ function stripEmptyEsmMinInitWrappers(code: string): string {
   return result;
 }
 
+/**
+ * Removes logger method calls from code with proper expression/statement context handling.
+ *
+ * Replaces logger calls with either `void 0` (for expression context) or `;`
+ * (for statement context) to preserve code correctness while minimizing bundle size.
+ *
+ * Handles optional chaining (logger?.method) and various preceding contexts
+ * (arrow function bodies, return statements, operators, etc.).
+ *
+ * @param code - JavaScript source code
+ * @param methods - Array of logger method names to remove (e.g., ['debug', 'info'])
+ * @returns Code with logger calls removed
+ * @internal
+ */
 function removeLogCalls(code: string, methods: string[]): string {
   const methodPattern = methods.join('|');
   const regex = new RegExp(
@@ -446,60 +551,84 @@ function removeLogCalls(code: string, methods: string[]): string {
   return result;
 }
 
-export function productionCleanupPlugin(): Plugin {
-  function splitLeadingUserscriptHeader(source: string): { header: string; body: string } {
-    // Preserve the userscript metadata header as-is.
-    // Tampermonkey/Greasemonkey require the `// ==UserScript==` block to stay line-based.
-    if (!source.startsWith('// ==UserScript==')) {
-      return { header: '', body: source };
-    }
-
-    const lines = source.split('\n');
-    const headerLines: string[] = [];
-    let inBlockComment = false;
-    let i = 0;
-
-    for (; i < lines.length; i++) {
-      const line = lines[i] ?? '';
-      const trimmed = line.trimStart();
-
-      if (inBlockComment) {
-        headerLines.push(line);
-        if (trimmed.includes('*/')) {
-          inBlockComment = false;
-        }
-        continue;
-      }
-
-      if (trimmed.startsWith('/*')) {
-        inBlockComment = true;
-        headerLines.push(line);
-        if (trimmed.includes('*/')) {
-          inBlockComment = false;
-        }
-        continue;
-      }
-
-      if (trimmed.startsWith('//') || trimmed === '') {
-        headerLines.push(line);
-        continue;
-      }
-
-      break;
-    }
-
-    return {
-      header: headerLines.join('\n'),
-      body: lines.slice(i).join('\n'),
-    };
+/**
+ * Splits userscript source into metadata header and executable body.
+ *
+ * Preserves the userscript metadata block (lines starting with //) as-is,
+ * required by Tampermonkey/Greasemonkey runtime.
+ *
+ * @param source - Full userscript source code
+ * @returns Object with header (metadata) and body (executable code)
+ * @internal
+ */
+function splitLeadingUserscriptHeader(source: string): { header: string; body: string } {
+  // Preserve the userscript metadata header as-is.
+  // Tampermonkey/Greasemonkey require the `// ==UserScript==` block to stay line-based.
+  if (!source.startsWith('// ==UserScript==')) {
+    return { header: '', body: source };
   }
 
+  const lines = source.split('\n');
+  const headerLines: string[] = [];
+  let inBlockComment = false;
+  let i = 0;
+
+  for (; i < lines.length; i++) {
+    const line = lines[i] ?? '';
+    const trimmed = line.trimStart();
+
+    if (inBlockComment) {
+      headerLines.push(line);
+      if (trimmed.includes('*/')) {
+        inBlockComment = false;
+      }
+      continue;
+    }
+
+    if (trimmed.startsWith('/*')) {
+      inBlockComment = true;
+      headerLines.push(line);
+      if (trimmed.includes('*/')) {
+        inBlockComment = false;
+      }
+      continue;
+    }
+
+    if (trimmed.startsWith('//') || trimmed === '') {
+      headerLines.push(line);
+      continue;
+    }
+
+    break;
+  }
+
+  return {
+    header: headerLines.join('\n'),
+    body: lines.slice(i).join('\n'),
+  };
+}
+
+/**
+ * Creates a Vite plugin for production-mode bundle cleanup.
+ *
+ * Strips development artifacts from the final userscript bundle after main build:
+ * - Module metadata and pure annotations
+ * - Logger calls (debug, info, warn, trace)
+ * - Singleton reset methods and test helpers
+ * - Internal JSDoc comments
+ * - All comments and unnecessary whitespace
+ *
+ * Preserves userscript metadata header and validates output remains parsable.
+ *
+ * @returns Vite plugin instance for production cleanup
+ */
+export function productionCleanupPlugin(): Plugin {
   return {
     name: 'production-cleanup',
     apply: 'build',
     enforce: 'post',
 
-    generateBundle(_options, bundle) {
+    generateBundle(_options, bundle): void {
       for (const chunk of Object.values(bundle)) {
         if (chunk.type !== 'chunk') continue;
 

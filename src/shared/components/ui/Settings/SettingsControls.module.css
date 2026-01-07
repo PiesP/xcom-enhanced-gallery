@@ -1,121 +1,48 @@
 /**
  * @fileoverview Settings Controls Styles
- * @version 2.1.0 - Phase 391: Full English documentation, comprehensive JSDoc
  * @description Semantic styling for theme and language selection controls
  * @module shared/components/ui/Settings/SettingsControls.module.css
  *
  * **Design System Integration**:
- * Fully integrated with xeg-* design token system:
- * - Colors: --xeg-color-text-primary, --xeg-color-text-secondary, --xeg-color-border-*
- * - Spacing: --xeg-settings-gap, --xeg-settings-padding, --xeg-settings-control-gap
- * - Typography: --xeg-settings-label-font-size, --font-size-xs, --font-weight-*
- * - Interactive: --xeg-focus-ring, --xeg-focus-ring-width, transitions
- * - Radius: --xeg-radius-md (border-radius consistency)
+ * Uses xeg-* design token system for:
+ * - Colors: text, border, focus indicators (light/dark theme aware)
+ * - Spacing: gaps, padding (rem-based, responsive)
+ * - Typography: font sizes, weights (semantic tokens)
+ * - Interactive: transitions, focus rings (consistent behavior)
+ * - Radius: border-radius (--xeg-radius-md)
  *
  * **Layout Architecture**:
- * - `.body`: Flex container for theme and language controls
- *   - flex-direction: column (vertical stack)
- *   - gap: --xeg-settings-gap (standard spacing between controls)
- *   - padding: --xeg-settings-padding (inner container spacing)
- * - `.setting`: Individual control wrapper (label + select)
- *   - flex-direction: column (label above select)
- *   - gap: --xeg-settings-control-gap (label-to-select distance)
+ * - `.body`: Flex column container with standard spacing
+ * - `.setting`: Label + select wrapper with controlled gap
+ * - `.bodyCompact`, `.settingCompact`: Reduced spacing for toolbar mode
  *
- * **Responsive Variants**:
- * - `.bodyCompact`: Toolbar integration with reduced spacing
- *   - gap: --space-sm (smaller than standard)
- *   - Used in compact={true} mode (SettingsControls prop)
- * - `.settingCompact`: Compact setting with minimal gaps
- *   - gap: --space-xs (smallest spacing)
- * - `.compactLabel`: Compact label styling for toolbar
- *   - font-size: --font-size-xs (smaller)
- *   - text-transform: uppercase (visual compression)
- *   - letter-spacing: 0.04em (improved readability)
+ * **Input Styling Notes**:
+ * - Uses browser-native select styling (no appearance override)
+ * - Ensures proper option rendering across all browsers
+ * - Custom styling via design tokens for consistency
  *
- * **Input Styling** (Phase 198 Notes):
- * - appearance: REMOVED (intentionally)
- *   - Reason: appearance: none breaks <option> styling in CSS Modules
- *   - Alternative: Use browser native dropdown styling
- *   - Result: Compatible with all browsers, options render correctly
- * - Custom styling via variables instead:
- *   - --xeg-settings-select-padding: Input padding
- *   - --xeg-toolbar-panel-surface: Background color (shared toolbar surface)
- *   - --xeg-toolbar-border: Border color (shared toolbar surface)
- *   - --xeg-settings-select-font-size: Font size
+ * **Accessibility**:
+ * - Native select elements (screen reader friendly)
+ * - Focus indicators meet WCAG 2.1 AA standards
+ * - Semantic HTML structure with proper labels
  *
- * **Interactive States**:
- * - :hover (border, background, smooth transition)
- * - :focus / :focus-visible (border-color change via focus indicator tokens)
- * - Transitions: All properties via --xeg-duration-fast and --xeg-ease-standard
- * - No :disabled state (not needed for settings UI)
- *
- * **Focus Ring Integration** (Accessibility):
- * - border-color swaps driven by `--xeg-focus-indicator-color`
- * - Ring width: var(--xeg-focus-ring-width) (consistent 3px default)
- * - Color managed by design token system (light/dark aware)
- * - Ensures WCAG 2.1 AA compliance for keyboard navigation
- *
- * **Option Styling Limitation** (Phase 198):
- * - <option> elements: Limited CSS customization (browser security)
- * - CSS Modules + appearance: none = broken option styling
- * - Solution: Removed appearance: none, use native browser rendering
- * - Trade-off: Standard browser dropdown (acceptable for settings UI)
- *
- * **Mobile Responsiveness**:
- * - Layout: Same stacking, responsive via rem-based tokens
- * - Font sizes: Scale with root font size (--font-size-xs, --xeg-settings-label-font-size)
- * - Touch targets: 44px minimum (via padding + font size)
- * - Labels: Always visible (no placeholder-only approach)
- *
- * **Performance Optimization**:
- * - CSS Modules: Scoped class names (no global conflicts)
- * - Minimal transitions: Only on user interaction (hover/focus)
- * - No animations: Static layout (no layout thrashing)
- * - Hardware acceleration: Not needed for simple state changes
- *
- * **Browser Compatibility**:
- * - All modern browsers: Full support
- * - CSS Grid: Not used (simple flexbox sufficient)
- * - Custom properties: Full support (IE 11 not supported)
- * - Focus-visible: Progressive enhancement (fallback to :focus)
- * - Color contrast: 4.5:1 WCAG AA minimum ensured by tokens
- *
- * **Theme Integration**:
- * - Light/dark mode: Via design tokens (--xeg-color-text-primary changes)
- * - All colors dynamic: No hardcoded hex/rgb values
- * - Automatic switching: No media queries needed (tokens handle)
- * - Forced colors: Relies on browser defaults (no custom overrides)
- *
- * **CSS Variables Used**:
+ * **Design Tokens Used**:
  * - Layout: --xeg-settings-gap, --xeg-settings-padding, --xeg-settings-control-gap
- * - Typography: --xeg-settings-label-font-size, --font-size-xs, --font-weight-*
- * - Colors: --xeg-color-text-primary, --xeg-color-text-secondary, --xeg-color-border-*
- * - Interactive: --xeg-focus-ring, --xeg-focus-ring-width, --xeg-radius-md
- * - Input: --xeg-settings-select-padding, --xeg-toolbar-panel-surface, --xeg-settings-select-font-size
- * - Animation: --xeg-duration-fast, --xeg-ease-standard
- * - Borders: --border-width-thin
+ * - Typography: --xeg-settings-label-font-size, --xeg-settings-select-font-size, --font-size-xs
+ * - Colors: --xeg-color-text-*, --xeg-color-border-*, --xeg-focus-indicator-color
+ * - Interactive: --xeg-toolbar-element-bg, --xeg-toolbar-border, --xeg-duration-fast
+ * - Spacing: --space-sm, --space-xs
+ * - Borders: --border-width-thin, --xeg-radius-md
  *
  * @see {@link ./SettingsControls.tsx} - Component implementation
  * @see {@link ../../../styles} - Design token definitions
- * @see https://css-tricks.com/the-difference-between-appearance-none-and-appearance-auto/ - appearance notes
  */
 
 /**
  * Base Container - Theme and Language Controls
  *
- * Flex column layout for vertically stacking theme and language selectors.
- * Primary container for all settings controls.
- *
- * **Layout Properties**:
- * - display: flex - Enables flexbox layout
- * - flex-direction: column - Stack children vertically
- * - gap: --xeg-settings-gap - Space between control groups (theme + language)
- * - padding: --xeg-settings-padding - Inner container spacing (top/right/bottom/left)
- *
- * **Design Token Dependencies**:
- * - --xeg-settings-gap: Standard gap between controls (typically 1rem)
- * - --xeg-settings-padding: Container padding (typically 0.75rem)
- * - Scales with root font size (rem-based for responsiveness)
+ * Flex column layout for vertically stacking controls.
+ * Uses semantic spacing tokens for consistent gaps and padding.
  */
 .body {
   display: flex;
@@ -128,17 +55,7 @@
  * Compact Container Variant - Toolbar Mode
  *
  * Reduced spacing for inline toolbar integration.
- * Applied when compact={true} in SettingsControls props.
- *
- * **Changes from Default**:
- * - gap: Reduced from --xeg-settings-gap to --space-sm
- * - Reduces vertical space in toolbar settings dropdown
- * - Maintains readability with smaller but distinct spacing
- *
- * **Use Cases**:
- * - Toolbar settings dropdown (compact mode)
- * - Inline settings panel (space-constrained)
- * - Mobile toolbar (limited vertical space)
+ * Applied when compact={true} prop is set.
  */
 .bodyCompact {
   gap: var(--space-sm);
@@ -148,16 +65,7 @@
  * Individual Control Wrapper - Label + Select Pair
  *
  * Flex column containing label and select elements.
- * One for theme, one for language selection.
- *
- * **Layout Properties**:
- * - display: flex - Enables flexbox layout
- * - flex-direction: column - Stack label above select
- * - gap: --xeg-settings-control-gap - Space between label and select
- *
- * **Design Token Dependencies**:
- * - --xeg-settings-control-gap: Label-to-select distance (typically 0.5rem)
- * - Controls visual relationship between label and input
+ * Maintains visual relationship with controlled gap.
  */
 .setting {
   display: flex;
@@ -168,13 +76,8 @@
 /**
  * Compact Setting Variant - Toolbar Control
  *
- * Further reduced spacing for compact mode controls.
- * Applied when compact={true} in both .setting and label.
- *
- * **Changes from Default**:
- * - gap: Reduced from --xeg-settings-control-gap to --space-xs
- * - Tighter label-to-select association
- * - Emphasizes compact form factor
+ * Minimal spacing for compact mode controls.
+ * Applied alongside compact={true} prop.
  */
 .settingCompact {
   gap: var(--space-xs);
@@ -183,23 +86,8 @@
 /**
  * Label - Standard Styling
  *
- * Semantic label for select elements (theme/language).
- * Associated via htmlFor + id for accessibility.
- *
- * **Typography**:
- * - font-size: --xeg-settings-label-font-size (standard, typically 0.875rem)
- * - font-weight: --xeg-settings-label-font-weight (medium, typically 500)
- * - Color: --xeg-color-text-primary (main text color, adjusts for light/dark)
- *
- * **Design Intent**:
- * - Clear distinction from input (larger than option text)
- * - Semantic markup (not just visual formatting)
- * - Accessible to screen readers via label element
- *
- * **Design Token Dependencies**:
- * - --xeg-settings-label-font-size: Standard label size (typically 0.875rem / 14px)
- * - --xeg-settings-label-font-weight: Label weight (typically 500 / medium)
- * - --xeg-color-text-primary: Text color (adjusts for theme)
+ * Semantic label for select elements.
+ * Uses semantic typography tokens for consistency.
  */
 .label {
   font-size: var(--xeg-settings-label-font-size);
@@ -210,24 +98,8 @@
 /**
  * Compact Label Variant - Toolbar Label
  *
- * Styled for compact/toolbar mode with uppercase and letter spacing.
- * Creates visual distinction in space-constrained layouts.
- *
- * **Typography Changes**:
- * - font-size: --font-size-xs (extra small, typically 0.75rem)
- * - text-transform: uppercase (visual compression via capitalization)
- * - letter-spacing: 0.04em (improved readability of small caps)
- * - color: --xeg-color-text-secondary (reduced prominence)
- *
- * **Use Cases**:
- * - Toolbar settings dropdown labels
- * - Compact settings panel
- * - Mobile settings UI (space-constrained)
- *
- * **Design Token Dependencies**:
- * - --font-size-xs: Extra small size (typically 0.75rem / 12px)
- * - --xeg-color-text-secondary: Secondary text color (lower contrast)
- * - letter-spacing: 0.04em (fixed em-based, scalable)
+ * Styled for compact/toolbar mode with uppercase treatment.
+ * Provides visual distinction in space-constrained layouts.
  */
 .compactLabel {
   font-size: var(--font-size-xs);
@@ -240,55 +112,28 @@
  * Select Input - Theme and Language Dropdown
  *
  * Browser-native select element for theme/language selection.
- * Intentionally uses standard browser styling (no appearance: none).
+ * Uses standard browser styling (no appearance override).
  *
- * **Layout**:
- * - width: 100% - Full container width (flexbox alignment)
- * - padding: --xeg-settings-select-padding - Input padding (typically 0.5rem)
+ * **Layout**: Full width with responsive padding
+ * **Typography**: Uses semantic token for consistent sizing
+ * **Interactive**: Smooth transitions for hover/focus states
+ * **Accessibility**: Native select element with focus indicators
  *
- * **Typography**:
- * - font-size: --xeg-settings-select-font-size (typically 0.875rem)
- * - color: --xeg-color-text-primary (text color, theme-aware)
- *
- * **Visual Design**:
- * - background-color: --xeg-toolbar-panel-surface (input background, shared surface)
- * - border: var(--border-width-thin) solid --xeg-toolbar-border (1px border)
- * - border-radius: --xeg-radius-md (rounded corners)
- *
- * **Interactive States**:
- * - All transitions via --xeg-duration-fast and --xeg-ease-standard
- * - Hover: Border/background color change
- * - Focus/Focus-visible: Border-color swap via focus indicator tokens
- *
- * **Phase 198 Note** (Critical):
- * - appearance: REMOVED intentionally
- * - Reason: appearance: none breaks <option> styling in CSS Modules
- * - Browser uses native dropdown (option elements render correctly)
- * - Trade-off: Standard browser styling vs. full CSS control (acceptable)
- *
- * **Accessibility**:
- * - Native select (screen reader friendly)
- * - Focus halo (keyboard navigation)
- * - Semantic HTML (not custom-built dropdown)
- *
- * **Design Token Dependencies**:
+ * **Design Tokens**:
  * - --xeg-settings-select-padding: Input padding
- * - --xeg-settings-select-font-size: Input font size
- * - --xeg-toolbar-panel-surface: Background color
+ * - --xeg-settings-select-font-size: Font size
+ * - --xeg-toolbar-element-bg: Background color
  * - --xeg-toolbar-border: Border color
- * - --border-width-thin: Border width (typically 1px)
- * - --xeg-radius-md: Border radius
- * - --xeg-focus-indicator-color: Focus border color
- * - --xeg-focus-indicator-width: Recommended 3px-equivalent treatment
- * - --xeg-duration-fast: Transition duration (typically 0.2s)
- * - --xeg-ease-standard: Easing function (typically ease-in-out)
  * - --xeg-color-text-primary: Text color
- * - --xeg-color-border-hover: Hover border color
+ * - --xeg-color-border-hover: Hover border
+ * - --xeg-focus-indicator-color: Focus border
+ * - --border-width-thin, --xeg-radius-md: Visual styling
+ * - --xeg-duration-fast, --xeg-ease-standard: Transitions
  */
 .select {
   width: 100%;
   padding: var(--xeg-settings-select-padding);
-  font-size: var(--xeg-font-size-base);
+  font-size: var(--xeg-settings-select-font-size);
   color: var(--xeg-color-text-primary);
   background-color: var(--xeg-toolbar-element-bg);
   border: var(--border-width-thin) solid var(--xeg-toolbar-border);
@@ -296,22 +141,8 @@
   cursor: pointer;
   line-height: 1.375;
   min-height: 2.75em;
-  /* Prevent inherited button transforms from causing dropdown jitter */
   transform: none;
   overflow: visible;
-
-  /**
-   * Transition Effects - Smooth state changes
-   *
-   * Phase 318: Optimized transitions for interactive states
-   * - border-color: Hover and focus border changes
-   * - background-color: Hover background updates
-   * - box-shadow: Focus ring effect
-   * - Duration: --xeg-duration-fast (typically 0.2s)
-   * - Easing: --xeg-ease-standard (typically ease-in-out)
-   *
-   * Ensures smooth visual feedback without jank or performance impact.
-   */
   transition:
     border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
     background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
@@ -321,19 +152,8 @@
 /**
  * Hover State - Select Input
  *
- * Visual feedback when user hovers over select element.
- * Indicates interactivity and prepares for selection.
- *
- * **Changes**:
- * - border-color: Changes to --xeg-color-border-hover
- * - background-color: Stronger background for emphasis
- * - box-shadow: Subtle glow effect
- * - Smooth transition via --xeg-duration-fast
- *
- * **User Experience**:
- * - Communicates that element is clickable
- * - Matches web convention for interactive elements
- * - Subtle change (not jarring or distracting)
+ * Visual feedback on hover indicating interactivity.
+ * Smooth transition provides better user experience.
  */
 .select:hover {
   border-color: var(--xeg-color-border-hover);
@@ -342,29 +162,10 @@
 }
 
 /**
- * Focus States - Select Input (Keyboard Navigation)
+ * Focus States - Select Input
  *
- * Visual feedback when select element receives focus.
- * Critical for keyboard accessibility (WCAG 2.1 AA).
- *
- * **Two Focus Selectors**:
- * - :focus - All focus events (compatibility)
- * - :focus-visible - Only keyboard focus (modern approach)
- *
- * **Changes**:
- * - border-color: Uses --xeg-focus-indicator-color for contrast
- * - box-shadow: Prominent focus ring (3px glow)
- * - No outline suppression; browsers manage outlines if desired
- *
- * **Accessibility**:
- * - Clear halo indicator (essential for keyboard navigation)
- * - Sufficient contrast (WCAG color contrast requirements)
- * - Soft glow avoids jittery offsets around curved corners
- * - Consistent with other gallery controls (buttons, toolbar)
- *
- * **Design Token Dependencies**:
- * - --xeg-focus-indicator-color: Focus border color token
- * - --xeg-focus-indicator-width: Recommended thickness guidance
+ * Clear keyboard navigation indicators for accessibility (WCAG 2.1 AA).
+ * Uses semantic focus tokens for consistent styling across components.
  */
 .select:focus,
 .select:focus-visible {
@@ -375,49 +176,10 @@
 /**
  * Option Element Styling
  *
- * Browser-native <option> elements within select dropdown.
- * Limited customization due to browser security restrictions.
- *
- * **Phase 198 Constraint**:
- * - CSS Modules + appearance: none = broken option styling
- * - Solution: No appearance: none, use browser native rendering
- * - Result: Options render correctly in all browsers
- * - Trade-off: Cannot fully customize option text color/background
- *
- * **Available Styling**:
- * - padding: 0.5em 0.75em (em-based, scales with select font)
- * - line-height: 1.5 (improves vertical spacing in dropdown)
- * - Other properties: Limited by browser sandbox (checkmark, hover, etc.)
- *
- * **Browser Behavior**:
- * - Chrome/Edge: Native dropdown with limited CSS support
- * - Firefox: More CSS customization possible
- * - Safari: Very limited CSS customization
- * - Result: Use conservative styling (em-based, focus on spacing)
- *
- * **User Experience**:
- * - Consistent with OS native dropdowns (familiar)
- * - No inconsistency across browsers (reliability)
- * - Standard option rendering (accessibility)
- *
- * **Design Intent**:
- * - Embrace browser native styling (accessibility priority)
- * - Focus on container styling (select element, not options)
- * - Accept browser limitations (security/usability trade-off)
+ * Browser-native option elements with limited customization.
+ * Uses em-based spacing for scalability.
  */
 .select option {
-  /**
-   * em-based padding for scalable spacing
-   * 0.5em = 0.5 * select font-size
-   * 0.75em = 0.75 * select font-size
-   * Scales automatically with select font-size changes
-   */
   padding: 0.5em 0.75em;
-
-  /**
-   * line-height: 1.5 for vertical spacing in dropdown list
-   * Improves readability of option items
-   * Typical default is 1.2, we increase for better visibility
-   */
   line-height: 1.5;
 }

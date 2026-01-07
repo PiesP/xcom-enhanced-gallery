@@ -1,25 +1,25 @@
 # External API Layer (Shared)
 
-This directory exposes a **stable public surface** for external APIs and vendor adapters.
-It exists to prevent deep imports, keep runtime code consistent, and make tests/mocks predictable.
+This directory provides a **stable public interface** for external APIs and vendor adapters.
+It maintains runtime code consistency and ensures predictable test/mock behavior.
 
 ## Rules
 
-- ✅ Use barrel exports (`@shared/external`, `@shared/external/vendors`, `@shared/external/userscript`, `@shared/external/zip`)
+- ✅ Import from `@shared/external/vendors`, `@shared/external/userscript`, or `@shared/external/zip`
 - ✅ Prefer service-layer abstractions in production code (storage, downloads, HTTP, notifications)
 - ❌ Do not import internal implementation files directly
-- ❌ Do not call GM\_\* APIs directly in runtime code
+- ❌ Do not call `GM_*` APIs directly in runtime code
+- ❌ Do not use barrel imports (no `index.*` re-exports)
 
-## Directory structure
+## Directory Structure
 
 ```text
 src/shared/external/
-├── index.ts         # Top-level public barrel
 ├── README.md        # This document
 ├── vendors/         # Compatibility types and vendor helpers
 ├── userscript/      # Userscript adapter + environment detection
 ├── zip/             # Zip utilities
-└── test/            # Internal test helpers
+└── test/            # Internal test helpers (test-only)
 ```
 
 ## Usage
@@ -42,7 +42,7 @@ import type { ComponentChildren, JSXElement } from "@shared/external/vendors";
 
 ### Userscript APIs
 
-Prefer service-layer abstractions.
+Prefer service-layer abstractions:
 
 ```ts
 import { NotificationService, PersistentStorage } from "@shared/services";
@@ -54,7 +54,7 @@ const notif = NotificationService.getInstance();
 notif.success("Settings saved");
 ```
 
-Advanced/debug/test-only:
+Advanced/debug/test-only use:
 
 ```ts
 import { detectEnvironment, getUserscript } from "@shared/external/userscript";
@@ -66,14 +66,14 @@ if (env.isGMAvailable) {
 }
 ```
 
-Forbidden in app code:
+**Forbidden** in application code:
 
 ```ts
 // ❌ Do not call GM_* APIs directly
 GM_setValue("key", "value");
 ```
 
-### Zip utilities
+### Zip Utilities
 
 ```ts
 import { createZipBytesFromFileMap } from "@shared/external/zip";
@@ -94,10 +94,11 @@ await downloadService.downloadBlob({
 });
 ```
 
-## Related docs
+## Related Documentation
 
-- `AGENTS.md` - AI coding guidance including service patterns
-- `CONTRIBUTING.md` - Contributing guidelines and coding rules
+- [AGENTS.md](../../../AGENTS.md) - AI coding guidance including service patterns
+- [CODING_STANDARDS.md](../../../CODING_STANDARDS.md) - Comprehensive coding standards
+- [CONTRIBUTING.md](../../../CONTRIBUTING.md) - Contributing guidelines and coding rules
 
 ---
 

@@ -18,9 +18,12 @@
  *   pnpm quality:fix - Typecheck + Biome check (write)
  */
 
+// External dependencies
 import { resolve } from 'node:path';
 import { defineConfig, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
+
+// Internal modules
 import { resolveViteAliasesFromTsconfig } from './tooling/node/tsconfig-aliases';
 import { getBuildModeConfig } from './tooling/vite/build-mode';
 import { OUTPUT_FILE_NAMES } from './tooling/vite/constants';
@@ -38,6 +41,10 @@ import { resolveVersion } from './tooling/vite/version';
 // Path Aliases
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Build path aliases from tsconfig.json
+ * Resolves path mappings for the import resolver
+ */
 function buildPathAliases(root: string) {
   return resolveViteAliasesFromTsconfig({
     rootDir: root,
@@ -45,10 +52,18 @@ function buildPathAliases(root: string) {
   });
 }
 
+/**
+ * Normalize module ID paths to use forward slashes
+ * Windows compatibility: Convert backslashes to forward slashes
+ */
 function normalizeModuleId(id: string): string {
   return id.replace(/\\/g, '/');
 }
 
+/**
+ * Determine if a module has required side effects for tree-shaking
+ * CSS files and globals always have side effects and should be preserved
+ */
 function hasRequiredSideEffects(id: string): boolean {
   const normalized = normalizeModuleId(id);
   if (normalized.endsWith('.css')) return true;
@@ -65,14 +80,20 @@ export default defineConfig(({ mode }): UserConfig => {
   const config = getBuildModeConfig(mode);
   const version = resolveVersion(isDev);
   const buildTime = new Date().toISOString();
+  const root = REPO_ROOT;
+  const entryFile = resolve(root, './src/main.ts');
+
+  // Feature flags: parse environment variable for media extraction feature
   const featureMediaExtractionRaw = process.env.XEG_FEATURE_MEDIA_EXTRACTION;
   const featureMediaExtraction =
     featureMediaExtractionRaw === undefined
       ? true
       : !(featureMediaExtractionRaw === '0' || featureMediaExtractionRaw.toLowerCase() === 'false');
+
+  // Build output configuration
   const outputFileName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
-  const root = REPO_ROOT;
-  const entryFile = resolve(root, './src/main.ts');
+
+  // Aliases for disabled features in build
   const mediaExtractionAliases = featureMediaExtraction
     ? []
     : [
@@ -112,8 +133,8 @@ export default defineConfig(({ mode }): UserConfig => {
         ...(isProd
           ? [
               {
-                find: '@shared/logging',
-                replacement: resolve(root, 'src/shared/logging/index.slim.ts'),
+                find: '@shared/logging/logger',
+                replacement: resolve(root, 'src/shared/logging/logger.slim.ts'),
               },
               {
                 find: '@shared/error/app-error-reporter',

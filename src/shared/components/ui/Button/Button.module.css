@@ -1,29 +1,33 @@
 /**
- * @fileoverview Unified Button CSS Module - All button styles in single source
- * @version 4.1.0 - Phase 385: Unified button styling
- * @description CSS Module for unified button component supporting all variants and sizes
+ * Unified Button CSS Module
  *
- * Design System:
+ * @description CSS Module for unified button component with comprehensive variant support
+ *
+ * Design System Integration:
  * - Layout: Flexbox-based button with customizable gap
- * - Typography: Uses design token font family and weights
- * - Colors: Intent-based color system (primary, secondary, success, warning, danger)
- * - Accessibility: Focus ring, disabled states, loading states
- * - Animation: Smooth transitions for all state changes
+ * - Typography: Design token-based font family and weights
+ * - Colors: Intent-based color system (primary, secondary, success, danger)
+ * - Accessibility: Focus rings, disabled states, loading states
+ * - Animation: Smooth transitions via design tokens
  *
- * @module Button.module.css
- *
- * Classes:
- * - .unifiedButton: Base button styles
- * - .variant-*: Variant specific styling (primary, secondary, icon, danger, etc.)
+ * Class Structure:
+ * - .unifiedButton: Base button styles with shared behaviors
+ * - .variant-*: Visual style variants (primary, secondary, outline, ghost, danger, icon, toolbar, navigation, action)
  * - .size-*: Size variants (sm, md, lg, toolbar)
- * - .intent-*: Semantic color intents
- * - .iconOnly: Icon-only button adjustment
- * - .loading: Loading state with spinner
- * - .disabled: Disabled state styling
+ * - .intent-*: Semantic color intents (primary, success, danger, neutral)
+ * - .iconOnly: Icon-only button layout adjustment
+ * - .loading: Loading state with reduced opacity and pointer events disabled
+ * - .disabled: Disabled state with reduced opacity and no interactions
+ * - .spinner: Loading spinner with currentColor inheritance
+ *
+ * Responsive & Accessibility:
+ * - PC-only (no touch/mobile styles)
+ * - Reduced motion support via @media query
+ * - Focus-visible indicators for keyboard navigation
  */
 
-/* =========================================================================
- * Shared Behaviors
+/* ============================================================================
+ * Shared Transition Behavior
  * ========================================================================= */
 
 :where(.unifiedButton) {
@@ -32,11 +36,11 @@
 
 /* ============================================================================
  * Base Button Styles
- * ============================================================================ */
+ * ========================================================================= */
 
 .unifiedButton {
   /* Layout */
-  border: 0.0625rem solid transparent; /* 1px */
+  border: 0.0625rem solid transparent;
   border-radius: var(--xeg-radius-md);
 
   /* Typography */
@@ -56,13 +60,14 @@
   /* Default state */
   background: transparent;
   color: inherit;
-  /* Focus state */
+
+  /* Focus state - keyboard navigation indicator */
   &:focus-visible {
     border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-primary));
     z-index: 1;
   }
 
-  /* Disabled state */
+  /* Disabled state - prevents interaction */
   &:disabled {
     opacity: var(--xeg-button-disabled-opacity, var(--xeg-opacity-disabled));
     cursor: not-allowed;
@@ -70,7 +75,13 @@
   }
 }
 
-/* ===== Size Variants ===== */
+/* ============================================================================
+ * Size Variants
+ * ========================================================================= */
+/* ============================================================================
+ * Size Variants
+ * ========================================================================= */
+
 .size-sm {
   padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
   font-size: var(--xeg-font-size-sm);
@@ -91,7 +102,9 @@
   border-radius: var(--xeg-radius-lg);
 }
 
-/* ===== Color Variants ===== */
+/* ============================================================================
+ * Color Variants
+ * ========================================================================= */
 .variant-primary {
   background: var(--xeg-color-primary);
   color: var(--xeg-color-text-inverse);
@@ -195,7 +208,10 @@
   background: var(--xeg-color-neutral-200);
 }
 
-/* ===== Toolbar Specific Variants ===== */
+/* ============================================================================
+ * Toolbar-Specific Variants
+ * ========================================================================= */
+
 :where(.variant-toolbar, .variant-navigation, .variant-action, .size-toolbar) {
   width: var(--xeg-button-square-size, var(--xeg-size-button-md));
   height: var(--xeg-button-square-size, var(--xeg-size-button-md));
@@ -254,7 +270,10 @@
   transform: translateY(0);
 }
 
-/* ===== Toolbar Specific Sizes ===== */
+/* ============================================================================
+ * Toolbar-Specific Sizes
+ * ========================================================================= */
+
 .size-toolbar {
   --xeg-button-square-size: var(--xeg-size-button-md);
   --xeg-button-square-padding: 0.5em;
@@ -262,7 +281,10 @@
   font-size: 0.875em;
 }
 
-/* ===== Icon Only Mode ===== */
+/* ============================================================================
+ * Icon-Only Mode
+ * ========================================================================= */
+
 .iconOnly {
   --xeg-icon-only-size: var(--xeg-size-button-md);
 
@@ -290,7 +312,10 @@
   padding: var(--xeg-spacing-md);
 }
 
-/* ===== Intent Variants (replaces iconVariant) ===== */
+/* ============================================================================
+ * Intent Variants (Semantic Colors)
+ * ========================================================================= */
+
 .intent-primary {
   border-color: var(--xeg-color-primary);
   color: var(--xeg-color-primary);
@@ -331,7 +356,10 @@
   border-color: var(--xeg-color-neutral-500);
 }
 
-/* ===== State variants ===== */
+/* ============================================================================
+ * State Variants
+ * ========================================================================= */
+
 .loading {
   opacity: 0.8;
   cursor: wait;
@@ -344,7 +372,10 @@
   transform: none;
 }
 
-/* ===== Loading spinner ===== */
+/* ============================================================================
+ * Loading Spinner
+ * ========================================================================= */
+
 .spinner {
   --xeg-spinner-size: 1em;
   --xeg-spinner-track-color: transparent;
@@ -353,11 +384,10 @@
   margin-right: var(--xeg-spacing-xs);
 }
 
-/* ===== Dark mode styling is delegated to semantic tokens (Phase 54.1) ===== */
+/* ============================================================================
+ * Accessibility - Reduced Motion Support
+ * ========================================================================= */
 
-/* ===== Reduced motion support ===== */
-/* Phase 254: transitions are handled via semantic --xeg-duration-* tokens */
-/* Explicitly disable spinner animation (animation-duration: 0s still runs 1 frame) */
 @media (prefers-reduced-motion: reduce) {
   .spinner {
     animation: none;
@@ -367,9 +397,3 @@
     transform: none;
   }
 }
-
-/* ===== Responsive design ===== */
-/* PC-only: Touch/Mobile styles removed (Phase 242) */
-
-/* ===== Backward compatibility classes ===== */
-/* Legacy classes removed (Phase 3 Consolidation) */

@@ -1,37 +1,77 @@
+/**
+ * @fileoverview Settings Controls Component
+ * @module shared/components/ui/Settings/SettingsControls
+ * @description Theme and language selection controls for application settings
+ *
+ * **Features**:
+ * - Theme selection (auto, light, dark)
+ * - Language selection (auto, Korean, English, Japanese)
+ * - Compact mode for toolbar integration
+ * - Reactive translations via language service
+ * - Fully accessible with proper ARIA labels
+ *
+ * **Design Pattern**:
+ * - Reactive: Uses createMemo for derived state
+ * - Effect cleanup: Language change subscription properly cleaned up
+ * - Accessibility: Native select elements with proper labels
+ *
+ * @see {@link ./SettingsControls.types.ts} - Type definitions
+ * @see {@link ./SettingsControls.module.css} - Component styles
+ */
+
 import { getLanguageService } from '@shared/container/service-accessors';
 import type { JSXElement } from '@shared/external/vendors';
 import { resolve } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
-import type { Accessor } from 'solid-js';
 import { createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 import styles from './SettingsControls.module.css';
+import type { LanguageOption, SettingsControlsProps, ThemeOption } from './SettingsControls.types';
 
-type MaybeAccessor<T> = T | Accessor<T>;
+/**
+ * Available theme options
+ */
+const THEME_OPTIONS: readonly ThemeOption[] = ['auto', 'light', 'dark'] as const;
 
-type ThemeOption = 'auto' | 'light' | 'dark';
-type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
+/**
+ * Available language options
+ */
+const LANGUAGE_OPTIONS: readonly LanguageOption[] = ['auto', 'ko', 'en', 'ja'] as const;
 
-const THEME_OPTIONS: readonly ThemeOption[] = ['auto', 'light', 'dark'];
-const LANGUAGE_OPTIONS: readonly LanguageOption[] = ['auto', 'ko', 'en', 'ja'];
-
-interface SettingsControlsProps {
-  currentTheme: MaybeAccessor<ThemeOption>;
-  currentLanguage: MaybeAccessor<LanguageOption>;
-  onThemeChange: (event: Event) => void;
-  onLanguageChange: (event: Event) => void;
-  compact?: boolean;
-  'data-testid'?: string | undefined;
-}
+/**
+ * Settings Controls Component
+ *
+ * Renders theme and language selection controls with reactive translations.
+ * Supports compact mode for toolbar integration.
+ *
+ * @param props - Component props
+ * @returns Settings controls JSX element
+ *
+ * @example
+ * ```tsx
+ * <SettingsControls
+ *   currentTheme="auto"
+ *   currentLanguage="ko"
+ *   onThemeChange={(e) => handleThemeChange(e)}
+ *   onLanguageChange={(e) => handleLanguageChange(e)}
+ *   compact={false}
+ *   data-testid="settings-controls"
+ * />
+ * ```
+ */
 export function SettingsControls(props: SettingsControlsProps): JSXElement {
+  // Service instance
   const languageService = getLanguageService();
 
+  // Revision signal for reactive translation updates
   const [revision, setRevision] = createSignal(0);
 
+  // Subscribe to language changes
   onMount(() => {
     const unsubscribe = languageService.onLanguageChange(() => setRevision((v) => v + 1));
     onCleanup(unsubscribe);
   });
 
+  // Reactive translation strings
   const strings = createMemo(() => {
     revision();
     return {
@@ -55,14 +95,17 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
     };
   });
 
+  // Derived styles
   const selectClass = cx('xeg-inline-center', styles.select);
   const containerClass = cx(styles.body, props.compact && styles.bodyCompact);
   const settingClass = cx(styles.setting, props.compact && styles.settingCompact);
   const labelClass = cx(styles.label, props.compact && styles.compactLabel);
 
+  // Reactive prop values
   const themeValue = createMemo(() => resolve(props.currentTheme));
   const languageValue = createMemo(() => resolve(props.currentLanguage));
 
+  // Element IDs for accessibility
   const themeSelectId = props['data-testid']
     ? `${props['data-testid']}-theme-select`
     : 'settings-theme-select';
@@ -70,9 +113,11 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
     ? `${props['data-testid']}-language-select`
     : 'settings-language-select';
 
+  // Memoized string accessors
   const themeStrings = () => strings().theme;
   const languageStrings = () => strings().language;
 
+  // JSX return
   return (
     <div class={containerClass} data-testid={__DEV__ ? props['data-testid'] : undefined}>
       <div class={settingClass}>

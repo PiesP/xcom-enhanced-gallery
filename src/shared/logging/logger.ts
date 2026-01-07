@@ -5,7 +5,7 @@
  * Development: emit all log levels.
  */
 
-type LoggableData = unknown;
+export type LoggableData = unknown;
 
 export interface Logger {
   info: (...args: LoggableData[]) => void;
@@ -15,7 +15,7 @@ export interface Logger {
   trace?: (...args: LoggableData[]) => void;
 }
 
-interface LoggerConfig {
+export interface LoggerConfig {
   readonly prefix: string;
 }
 
@@ -51,7 +51,7 @@ function buildLogger(prefix: string, enableVerbose: boolean): Logger {
       console.error(prefix, ...args);
     },
     debug: (...args: LoggableData[]): void => {
-      console.info(prefix, ...args);
+      console.debug(prefix, ...args);
     },
     trace: (...args: LoggableData[]): void => {
       console.debug(prefix, ...args);
@@ -59,9 +59,34 @@ function buildLogger(prefix: string, enableVerbose: boolean): Logger {
   };
 }
 
-function createLogger(config: Partial<LoggerConfig> = {}): Logger {
+function formatPrefix(prefix: string, scope?: string): string {
+  if (!scope) {
+    return prefix;
+  }
+  return `${prefix} [${scope}]`;
+}
+
+export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
   const prefix = config.prefix ?? BASE_PREFIX;
   return buildLogger(prefix, __DEV__);
 }
 
+export function createScopedLogger(scope: string, config: Partial<LoggerConfig> = {}): Logger {
+  const basePrefix = config.prefix ?? BASE_PREFIX;
+  return buildLogger(formatPrefix(basePrefix, scope), __DEV__);
+}
+
 export const logger: Logger = createLogger();
+
+export function logError(
+  error: unknown,
+  context: Readonly<Record<string, unknown>> = {},
+  source?: string
+): void {
+  const message = error instanceof Error ? error.message : String(error);
+  if (source) {
+    createScopedLogger(source).error(message, context);
+    return;
+  }
+  logger.error(message, context);
+}

@@ -1,28 +1,14 @@
-import { type BaseLanguageCode, isBaseLanguageCode } from '@shared/constants/i18n/language-types';
-import { DEFAULT_LANGUAGE } from '@shared/constants/i18n/translation-registry';
-import { getResolvedGMAPIsCached, type ResolvedGMAPIs } from '@shared/external/userscript/adapter';
+import { getResolvedGMAPIsCached } from '@shared/external/userscript/adapter';
+import type { GMAPIName } from '@shared/external/userscript/environment-detector.types';
 
 /**
- * Browser environment snapshot surfaced to the userscript layer.
- * Focuses exclusively on user-facing concerns: theme preference and language.
+ * Mapping of API names to detector functions.
+ * Each checker validates if the corresponding Tampermonkey API is available and callable.
  */
-interface EnvironmentInfo {
-  /** Currently preferred color scheme */
-  colorScheme: 'light' | 'dark';
-  /** Best-effort ISO language code resolved from the browser */
-  language: BaseLanguageCode;
-}
-
-type GMAPIName =
-  | 'getValue'
-  | 'setValue'
-  | 'download'
-  | 'notification'
-  | 'deleteValue'
-  | 'listValues'
-  | 'cookie';
-
-const GM_API_CHECKS: Record<GMAPIName, (gm: ResolvedGMAPIs) => boolean> = {
+const GM_API_CHECKS: Record<
+  GMAPIName,
+  (gm: ReturnType<typeof getResolvedGMAPIsCached>) => boolean
+> = {
   getValue: (gm) => typeof gm.getValue === 'function',
   setValue: (gm) => typeof gm.setValue === 'function',
   download: (gm) => typeof gm.download === 'function',
@@ -31,36 +17,6 @@ const GM_API_CHECKS: Record<GMAPIName, (gm: ResolvedGMAPIs) => boolean> = {
   listValues: (gm) => typeof gm.listValues === 'function',
   cookie: (gm) => typeof gm.cookie?.list === 'function',
 };
-
-function detectColorScheme(): 'light' | 'dark' {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    return 'light';
-  }
-
-  try {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  } catch {
-    return 'light';
-  }
-}
-
-function detectLanguageCode(): BaseLanguageCode {
-  if (typeof navigator !== 'undefined' && typeof navigator.language === 'string') {
-    const candidate = navigator.language.slice(0, 2).toLowerCase();
-    if (isBaseLanguageCode(candidate)) {
-      return candidate;
-    }
-  }
-
-  return DEFAULT_LANGUAGE;
-}
-
-function _detectEnvironment(): EnvironmentInfo {
-  return {
-    colorScheme: detectColorScheme(),
-    language: detectLanguageCode(),
-  };
-}
 
 /**
  * Check if a specific Tampermonkey API is available

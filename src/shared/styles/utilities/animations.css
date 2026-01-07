@@ -1,11 +1,12 @@
 /**
  * @fileoverview Reusable animation utilities (keyframes + helper classes).
  * @description Complements design tokens by exposing lightweight motion presets.
+ * Uses semantic animation tokens for easing and duration, respects user motion preferences.
  */
 
 @layer xeg.utilities {
   .xeg-fade-in {
-    animation: xeg-fade-in var(--xeg-duration-normal) var(--xeg-ease-entrance);
+    animation: xeg-fade-in var(--xeg-duration-normal) var(--xeg-ease-decelerate);
     animation-fill-mode: both;
   }
 

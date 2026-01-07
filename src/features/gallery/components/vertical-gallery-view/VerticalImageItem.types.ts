@@ -13,8 +13,9 @@
  * @version 1.1.0 - Enhanced documentation and type clarity (Phase 354+)
  */
 
-import type { BaseComponentProps, ImageFitMode } from '@shared/types';
+import type { BaseComponentProps } from '@shared/types/component.types';
 import type { MediaInfo } from '@shared/types/media.types';
+import type { ImageFitMode } from '@shared/types/ui.types';
 
 /**
  * Fit mode prop that can be either a direct value or a function that returns it
@@ -24,7 +25,7 @@ import type { MediaInfo } from '@shared/types/media.types';
  * - Direct: `fitMode="original"`
  * - Function: `fitMode={() => settings.fitMode()}`
  */
-type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
+export type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
 
 /**
  * Props for VerticalImageItem component
@@ -130,7 +131,7 @@ export interface VerticalImageItemProps extends Omit<BaseComponentProps, 'onClic
    * @param element - Container div element or null on unmount
    * @optional
    */
-  readonly registerContainer?: (element: HTMLElement | null) => void;
+  readonly registerContainer?: (element: HTMLDivElement | null) => void;
 
   /**
    * Test identifier for automated testing

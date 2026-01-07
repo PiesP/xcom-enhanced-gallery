@@ -1,7 +1,6 @@
 /**
- * @fileoverview Tweet text HTML extraction utility
- * @description Extracts and sanitizes tweet text HTML from DOM
- * @version 1.0.0 - Phase 2: DOM HTML preservation
+ * @fileoverview Tweet text extraction utility
+ * @description Extracts tweet text content from DOM elements
  */
 
 import {
@@ -9,20 +8,20 @@ import {
   STABLE_TWEET_CONTAINERS_SELECTORS,
   TWEET_TEXT_SELECTOR,
 } from '@shared/dom/selectors';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 
 /**
- * Extracts tweet text HTML from tweet article element
- * Searches for [data-testid="tweetText"] element and sanitizes its HTML
+ * Extracts tweet text from tweet article element
+ * Searches for [data-testid="tweetText"] element and returns its text content
  *
  * @param tweetArticle - Tweet article element or any parent element
- * @returns Sanitized HTML string or undefined if not found
+ * @returns Extracted text content, or undefined if element not found or text is empty
  *
  * @example
  * ```typescript
  * const tweetArticle = document.querySelector(TWEET_SELECTOR);
- * const html = extractTweetTextHTML(tweetArticle);
- * // '<span>Tweet with <a href="...">link</a> and #hashtag</span>'
+ * const text = extractTweetTextHTML(tweetArticle);
+ * // 'Tweet with link and #hashtag'
  * ```
  */
 function extractTweetTextHTML(tweetArticle: Element | null): string | undefined {
@@ -58,26 +57,28 @@ function extractTweetTextHTML(tweetArticle: Element | null): string | undefined 
 }
 
 /**
- * Extracts tweet text HTML from a clicked element by traversing up to find tweet article
+ * Extracts tweet text from a clicked element by traversing up to find tweet article
  *
  * @param element - Clicked element
- * @param maxDepth - Maximum depth to traverse (default: 10)
- * @returns Sanitized HTML string or undefined
+ * @param _maxDepth - Reserved parameter for API stability (currently unused; closestWithFallback handles depth)
+ * @returns Extracted tweet text, or undefined if tweet article not found or text is empty
+ *
+ * @remarks
+ * The maxDepth parameter is kept for backwards compatibility with existing callers.
+ * The underlying closestWithFallback utility does not currently support depth limiting.
+ * If depth limiting becomes necessary, introduce a dedicated traversal helper.
  */
 export function extractTweetTextHTMLFromClickedElement(
   element: HTMLElement,
-  maxDepth = 10
+  _maxDepth = 10
 ): string | undefined {
-  // Note: closestWithFallback does not support depth limiting.
-  // Keep maxDepth parameter for API stability; callers may rely on it.
-  // If a depth limit becomes necessary, introduce a dedicated helper.
   const tweetArticle = closestWithFallback<HTMLElement>(element, STABLE_TWEET_CONTAINERS_SELECTORS);
   if (tweetArticle) {
     return extractTweetTextHTML(tweetArticle);
   }
 
   if (__DEV__) {
-    logger.debug('[tweet] no article found', { maxDepth });
+    logger.debug('[tweet] no article found');
   }
   return undefined;
 }

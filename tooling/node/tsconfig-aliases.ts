@@ -17,6 +17,9 @@ import {
   type ViteAliasEntry,
 } from './tsconfig-aliases-core';
 
+/**
+ * Options for resolving Vite aliases from tsconfig.json.
+ */
 interface TsconfigAliasOptions {
   /** Absolute project root (usually process.cwd()) */
   readonly rootDir: string;
@@ -26,6 +29,15 @@ interface TsconfigAliasOptions {
 
 /**
  * Create Vite-compatible alias entries from tsconfig.json `compilerOptions.paths`.
+ *
+ * Reads and parses the tsconfig file using the TypeScript API (JSONC-aware),
+ * then transforms `compilerOptions.paths` entries into Vite-compatible alias format.
+ *
+ * @param options Configuration object containing paths and root directory
+ * @param options.rootDir Absolute project root for resolving relative targets
+ * @param options.tsconfigPath Absolute path to tsconfig.json
+ * @returns Array of Vite alias entries (e.g., `{ find: /@shared/, replacement: '/absolute/path/to/src/shared' }`)
+ * @throws {Error} If tsconfig.json cannot be read or parsed
  */
 export function resolveViteAliasesFromTsconfig(options: TsconfigAliasOptions): ViteAliasEntry[] {
   const { tsconfigPath, rootDir } = options;

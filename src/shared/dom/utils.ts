@@ -1,6 +1,7 @@
 /**
  * @fileoverview Gallery DOM Utilities
- * @description DOM inspection utilities specific to the gallery
+ * @description DOM inspection utilities specific to the gallery.
+ * Provides type-safe element detection and validation functions.
  */
 
 import { CSS as CSS_CONST } from '@constants/css';
@@ -10,17 +11,29 @@ import {
   VIDEO_CONTROL_ROLES,
 } from '@constants/video-controls';
 import { VIDEO_PLAYER_CONTEXT_SELECTOR } from '@shared/dom/selectors';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { isHTMLElement } from '@shared/utils/types/guards';
 
 // Gallery element selectors (constants)
 const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;
 
 /**
- * Check if element is a video control element
+ * Selectors for video control elements
+ * @internal
  */
 const VIDEO_CONTROL_SELECTORS = ['.video-controls', '.video-progress button'] as const;
 
+// ============================================================================
+// Internal Helper Functions
+// ============================================================================
+
+/**
+ * Safely calls element.closest with error handling
+ * @param element - Element to query from
+ * @param selector - CSS selector to match
+ * @returns Closest matching ancestor element or null
+ * @internal
+ */
 function safeClosest(element: Element, selector: string): Element | null {
   try {
     return element.closest(selector);
@@ -32,6 +45,13 @@ function safeClosest(element: Element, selector: string): Element | null {
   }
 }
 
+/**
+ * Safely calls element.matches with error handling
+ * @param element - Element to test
+ * @param selector - CSS selector to match
+ * @returns True if element matches selector, false otherwise
+ * @internal
+ */
 function safeMatches(element: Element, selector: string): boolean {
   try {
     return element.matches(selector);
@@ -43,6 +63,13 @@ function safeMatches(element: Element, selector: string): boolean {
   }
 }
 
+/**
+ * Checks if a string value contains any of the control tokens (case-insensitive)
+ * @param value - String value to check (nullable)
+ * @param tokens - Array of tokens to search for
+ * @returns True if value contains any token, false otherwise
+ * @internal
+ */
 function containsControlToken(value: string | null, tokens: readonly string[]): boolean {
   if (!value) {
     return false;
@@ -52,6 +79,13 @@ function containsControlToken(value: string | null, tokens: readonly string[]): 
   return tokens.some((token) => normalized.includes(token.toLowerCase()));
 }
 
+/**
+ * Gets the value of an attribute from the element or its nearest ancestor
+ * @param element - Element to query from
+ * @param attribute - Attribute name to retrieve
+ * @returns Attribute value or null if not found
+ * @internal
+ */
 function getNearestAttributeValue(
   element: HTMLElement,
   attribute: 'data-testid' | 'aria-label'
@@ -61,16 +95,41 @@ function getNearestAttributeValue(
   return value;
 }
 
+/**
+ * Checks if element is within a video player context
+ * @param element - Element to test
+ * @returns True if element is within video player, false otherwise
+ * @internal
+ */
 function isWithinVideoPlayer(element: HTMLElement): boolean {
   return safeClosest(element, VIDEO_PLAYER_CONTEXT_SELECTOR) !== null;
 }
 
+/**
+ * Checks if element matches any video control selector
+ * @param element - Element to test
+ * @returns True if element matches any selector, false otherwise
+ * @internal
+ */
 function matchesVideoControlSelectors(element: HTMLElement): boolean {
   return VIDEO_CONTROL_SELECTORS.some(
     (selector) => safeMatches(element, selector) || safeClosest(element, selector) !== null
   );
 }
 
+// ============================================================================
+// Public API
+// ============================================================================
+
+/**
+ * Determines if an element is a video control element
+ * @description Checks multiple conditions including tag name, selectors,
+ * data attributes, ARIA labels, roles, and input types to identify
+ * video control elements within the DOM
+ * @param element - Element to test (nullable for convenience)
+ * @returns True if element is a video control, false otherwise
+ * @public
+ */
 export function isVideoControlElement(element: HTMLElement | null): boolean {
   if (!isHTMLElement(element)) return false;
 
@@ -114,8 +173,12 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
 }
 
 /**
- * Check if element is inside gallery
- * Phase 237: Strengthen element.matches type guard
+ * Checks if an element is inside the gallery UI
+ * @description Tests if element or its ancestors match gallery internal selectors.
+ * Phase 237: Strengthens element.matches type guard
+ * @param element - Element to test (nullable for convenience)
+ * @returns True if element is within gallery, false otherwise
+ * @public
  */
 export function isGalleryInternalElement(element: HTMLElement | null): boolean {
   if (!isHTMLElement(element)) return false;
@@ -139,8 +202,12 @@ export function isGalleryInternalElement(element: HTMLElement | null): boolean {
 }
 
 /**
- * Check if event is internal to gallery
- * Phase 241: Apply event.target type guard
+ * Checks if an event originated from within the gallery UI
+ * @description Tests if the event target is a gallery internal element.
+ * Phase 241: Applies event.target type guard
+ * @param event - DOM event to test
+ * @returns True if event originated from gallery, false otherwise
+ * @public
  */
 export function isGalleryInternalEvent(event: Event): boolean {
   const target = event.target;

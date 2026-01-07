@@ -1,5 +1,6 @@
 import type { ToolbarHandlers } from '@shared/components/ui/Toolbar/handler-types';
-import type { FitMode, ViewMode } from '@shared/types';
+import type { ViewMode } from '@shared/types/core/core-types';
+import type { FitMode } from '@shared/types/toolbar.types';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 
 export type { FitMode, MaybeAccessor };
@@ -23,49 +24,49 @@ export type { FitModeHandlers } from '@shared/components/ui/Toolbar/handler-type
  */
 export interface ToolbarProps {
   /** Current media index (0-based) */
-  currentIndex: MaybeAccessor<number>;
+  readonly currentIndex: MaybeAccessor<number>;
   /** Focused index for keyboard navigation (null if none) */
-  focusedIndex?: MaybeAccessor<number | null>;
+  readonly focusedIndex?: MaybeAccessor<number | null> | undefined;
   /** Total number of media items */
-  totalCount: MaybeAccessor<number>;
+  readonly totalCount: MaybeAccessor<number>;
 
   /**
    * Grouped handlers for toolbar actions
    * @see ToolbarHandlers
    */
-  handlers: ToolbarHandlers;
+  readonly handlers: ToolbarHandlers;
 
   /** Current view mode (e.g., 'grid', 'single') */
-  currentViewMode?: MaybeAccessor<ViewMode | undefined>;
+  readonly currentViewMode?: MaybeAccessor<ViewMode | undefined> | undefined;
   /** Callback when view mode changes */
-  onViewModeChange?: ((mode: ViewMode) => void) | undefined;
+  readonly onViewModeChange?: ((mode: ViewMode) => void) | undefined;
   /** Current fit mode for image display */
-  currentFitMode?: MaybeAccessor<FitMode | undefined>;
+  readonly currentFitMode?: MaybeAccessor<FitMode | undefined> | undefined;
 
   /** Whether a download is in progress */
-  isDownloading?: MaybeAccessor<boolean | undefined>;
+  readonly isDownloading?: MaybeAccessor<boolean | undefined> | undefined;
   /** Whether toolbar controls are disabled */
-  disabled?: MaybeAccessor<boolean | undefined>;
+  readonly disabled?: MaybeAccessor<boolean | undefined> | undefined;
   /** Additional CSS class name */
-  className?: string | undefined;
+  readonly className?: string | undefined;
   /** Toolbar position relative to gallery */
-  position?: 'top' | 'bottom' | 'left' | 'right' | undefined;
+  readonly position?: 'top' | 'bottom' | 'left' | 'right' | undefined;
 
   /** ARIA label for accessibility */
-  'aria-label'?: string | undefined;
+  readonly 'aria-label'?: string | undefined;
   /** ARIA describedby for accessibility */
-  'aria-describedby'?: string | undefined;
+  readonly 'aria-describedby'?: string | undefined;
   /** ARIA role (defaults to 'toolbar') */
-  role?: 'toolbar' | undefined;
+  readonly role?: 'toolbar' | undefined;
   /** Tab index for keyboard navigation */
-  tabIndex?: number | undefined;
+  readonly tabIndex?: number | undefined;
   /** Test ID for testing */
-  'data-testid'?: string | undefined;
+  readonly 'data-testid'?: string | undefined;
 
   /** Tweet text content */
-  tweetText?: MaybeAccessor<string | null | undefined>;
+  readonly tweetText?: MaybeAccessor<string | null | undefined> | undefined;
   /** Tweet HTML content */
-  tweetTextHTML?: MaybeAccessor<string | null | undefined>;
+  readonly tweetTextHTML?: MaybeAccessor<string | null | undefined> | undefined;
   /** Tweet URL */
-  tweetUrl?: MaybeAccessor<string | null | undefined>;
+  readonly tweetUrl?: MaybeAccessor<string | null | undefined> | undefined;
 }

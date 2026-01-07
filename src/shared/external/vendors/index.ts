@@ -21,8 +21,14 @@ import type { JSX } from 'solid-js';
 // Re-export types only - all runtime imports should use solid-js directly
 export type { JSX };
 
-/** Alias for JSX.Element - a rendered Solid.js component */
+/**
+ * Alias for JSX.Element - a rendered Solid.js component.
+ * Preferred import path for component return types across the project.
+ */
 export type JSXElement = JSX.Element;
 
-/** Alias for JSX.Element - children prop type */
+/**
+ * Alias for JSX.Element - children prop type.
+ * Equivalent to JSXElement; use JSXElement for consistency.
+ */
 export type ComponentChildren = JSX.Element;

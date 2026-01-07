@@ -19,7 +19,8 @@ import {
 } from '@shared/state/signals/gallery.signals';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 import { toAccessor } from '@shared/utils/solid/accessor-utils';
-import { type Accessor, onCleanup } from 'solid-js';
+import type { Accessor } from 'solid-js';
+import { onCleanup } from 'solid-js';
 
 /** Hook configuration */
 interface UseGalleryFocusTrackerOptions {

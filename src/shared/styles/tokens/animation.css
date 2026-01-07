@@ -1,18 +1,16 @@
 /**
- * @fileoverview Animation design tokens shared across gallery surfaces.
- * @description Extends duration/easing/delay presets without redefining base token values.
+ * @fileoverview Animation design tokens (deprecated).
+ * @description Animation easing tokens are now defined in design-tokens.semantic.css.
+ * This file is kept for backward compatibility but should not be used directly.
+ * @deprecated All animation easing tokens have been moved to design-tokens.semantic.css
  */
 
-@layer xeg.tokens {
-  :root {
-    /* Motion easing */
-    --xeg-ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
-    --xeg-ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
-    --xeg-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
-    --xeg-ease-entrance: var(--xeg-ease-decelerate);
+/* Note: Animation tokens have been consolidated into design-tokens.semantic.css
+   - --xeg-ease-standard: cubic-bezier(0.4, 0, 0.2, 1) - Material Design Standard
+   - --xeg-ease-decelerate: cubic-bezier(0, 0, 0.2, 1) - Entrance
+   - --xeg-ease-accelerate: cubic-bezier(0.4, 0, 1, 1) - Exit
+   - --xeg-duration-fast: Animation duration (fast)
+   - --xeg-duration-normal: Animation duration (normal)
 
-    /* Performance assists */
-    --xeg-gpu-hack: translate3d(0, 0, 0);
-    --xeg-backface-visibility: hidden;
-  }
-}
+   For animation tokens, refer to design-tokens.semantic.css instead.
+*/

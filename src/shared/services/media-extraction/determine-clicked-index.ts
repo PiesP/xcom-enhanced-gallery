@@ -1,4 +1,4 @@
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import type { MediaInfo } from '@shared/types/media.types';
 import { normalizeMediaUrl } from '@shared/utils/media/media-dimensions';
 import {

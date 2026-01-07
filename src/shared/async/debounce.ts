@@ -13,14 +13,14 @@
  * ```
  */
 
+import { globalTimerManager } from '@shared/utils/time/timer-management';
+
 /**
  * Debounced function interface with cancel and flush capabilities
  *
  * @template Args - Tuple type representing function arguments
  */
-import { globalTimerManager } from '@shared/utils/time/timer-management';
-
-interface DebouncedFunction<Args extends unknown[]> {
+export interface DebouncedFunction<Args extends unknown[]> {
   /** Call the debounced function */
   (...args: Args): void;
   /** Cancel pending execution */
@@ -39,7 +39,7 @@ interface DebouncedFunction<Args extends unknown[]> {
  */
 export function createDebounced<Args extends unknown[]>(
   fn: (...args: Args) => void,
-  delayMs = 300
+  delayMs: number = 300
 ): DebouncedFunction<Args> {
   let timeoutId: number | null = null;
   let pendingArgs: Args | null = null;

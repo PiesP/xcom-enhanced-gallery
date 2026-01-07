@@ -1,6 +1,7 @@
 /**
  * @fileoverview Media click event handler
- * Single delegated handler for detecting external media clicks.
+ * @description Single delegated handler for detecting and processing external media clicks.
+ * Prevents Twitter's native gallery and triggers custom gallery behavior.
  */
 
 import { isGalleryInternalElement, isVideoControlElement } from '@shared/dom/utils';
@@ -14,39 +15,45 @@ import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
 import { isHTMLElement } from '@shared/utils/types/guards';
 
 /**
- * Handle media click event
+ * Handle media click event with multi-stage validation.
+ * @param event - The mouse event triggered on a media element.
+ * @param handlers - Event handler callbacks including onMediaClick.
+ * @param options - Configuration options for media detection.
+ * @returns Promise resolving to handling result with status and reason.
  */
 export async function handleMediaClick(
   event: MouseEvent,
   handlers: EventHandlers,
   options: GalleryEventOptions
 ): Promise<EventHandlingResult> {
-  // Early exits
+  // Guard: Media detection disabled
   if (!options.enableMediaDetection) {
     return { handled: false, reason: 'Media detection disabled' };
   }
 
   const target = event.target;
+
+  // Guard: Invalid target type
   if (!isHTMLElement(target)) {
     return { handled: false, reason: 'Invalid target (not HTMLElement)' };
   }
 
-  // Skip if gallery is open and target is internal
+  // Guard: Gallery-internal event (when gallery is open)
   if (gallerySignals.isOpen.value && isGalleryInternalElement(target)) {
     return { handled: false, reason: 'Gallery internal event' };
   }
 
-  // Skip video control elements
+  // Guard: Video control element (skip interactive elements)
   if (isVideoControlElement(target)) {
     return { handled: false, reason: 'Video control element' };
   }
 
-  // Check if target is processable media
+  // Guard: Non-processable media (final validation)
   if (!isProcessableMedia(target)) {
     return { handled: false, reason: 'Non-processable media target' };
   }
 
-  // Block Twitter native gallery and handle ourselves
+  // Handle media click: block native gallery and process with custom handler
   event.stopImmediatePropagation();
   event.preventDefault();
 

@@ -13,9 +13,9 @@ export type ThemeSetting = 'auto' | Theme;
  */
 export interface ThemeSetOptions {
   /** Force DOM updates and listener notifications even if the effective theme is unchanged. */
-  force?: boolean;
+  readonly force?: boolean;
   /** Skip persistence when true (useful for startup reapply). Defaults to true (persist). */
-  persist?: boolean;
+  readonly persist?: boolean;
 }
 
 /**

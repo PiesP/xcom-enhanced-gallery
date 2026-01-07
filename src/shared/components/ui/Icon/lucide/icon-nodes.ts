@@ -9,19 +9,64 @@
  * - We normalize whitespace in path data when copying from upstream SVG files.
  */
 
+/**
+ * Allowed SVG element tags for icon nodes.
+ *
+ * - `path` - SVG path element for drawing shapes
+ * - `circle` - SVG circle element for circular shapes
+ */
 type LucideIconTag = 'path' | 'circle';
 
+/**
+ * Single SVG node representation for a Lucide icon element.
+ *
+ * A tuple containing:
+ * - `tag` - The SVG element type
+ * - `attrs` - Element attributes (viewBox, d, cx, cy, r, etc.)
+ *
+ * @example
+ * // Path node
+ * ['path', { d: 'M18 6 6 18' }]
+ * // Circle node
+ * ['circle', { cx: 17, cy: 17, r: 3 }]
+ */
 export type LucideIconNode = readonly [
   tag: LucideIconTag,
   attrs: Readonly<Record<string, string | number>>,
 ];
 
+/**
+ * Array of SVG nodes representing a complete Lucide icon.
+ *
+ * Multiple nodes can be combined to create complex icon shapes.
+ * The base <svg> wrapper is provided separately by the Icon component.
+ *
+ * @example
+ * [
+ *   ['path', { d: 'M12 15V3' }],
+ *   ['path', { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' }],
+ * ]
+ */
 type LucideIconNodes = readonly LucideIconNode[];
 
 /**
  * Minimal Lucide icon set used by the userscript.
  *
- * Keep this list intentionally small to reduce bundle size.
+ * Each icon is defined as an array of SVG nodes (path or circle elements).
+ * Icons are organized by category (Navigation, Download, Settings, etc.) for clarity.
+ *
+ * Keep this list intentionally small to reduce bundle size. Only add icons that are
+ * actually used in the userscript. Prefer reusing existing icons over adding new ones.
+ *
+ * Source: https://github.com/lucide-icons/lucide (ISC License)
+ *
+ * @see LucideIconNode - Type definition for individual icon nodes
+ * @see Icon.tsx - Component that renders these icon definitions
+ *
+ * @example
+ * const iconName: LucideIconName = 'download';
+ * const nodes = LUCIDE_ICON_NODES[iconName];
+ * // nodes = [['path', { d: 'M12 15V3' }], ...]
  */
 export const LUCIDE_ICON_NODES = {
   // Navigation
@@ -107,4 +152,17 @@ export const LUCIDE_ICON_NODES = {
   ],
 } as const satisfies Record<string, LucideIconNodes>;
 
+/**
+ * Type-safe icon name literal.
+ *
+ * Derived from the keys of LUCIDE_ICON_NODES, ensuring only defined icons
+ * can be referenced by name. When adding new icons, this type automatically
+ * includes the new icon name.
+ *
+ * @example
+ * const iconName: LucideIconName = 'download'; // ✓ Valid
+ * const invalidIcon: LucideIconName = 'invalid'; // ✗ TypeScript error
+ *
+ * @see LUCIDE_ICON_NODES
+ */
 export type LucideIconName = keyof typeof LUCIDE_ICON_NODES;

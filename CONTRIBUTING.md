@@ -79,7 +79,7 @@ pnpm check
 pnpm lint
 
 # Format check
-pnpm fmt:check
+pnpm fmt
 
 # Unused code/dependency checks
 pnpm knip

@@ -11,7 +11,7 @@ import { clampIndex } from '@shared/utils/types/safety';
 import { createSingleton } from '@shared/utils/types/singleton';
 
 interface MediaServiceOptions {
-  enableMediaExtraction?: boolean;
+  readonly enableMediaExtraction?: boolean;
 }
 
 export class MediaService {

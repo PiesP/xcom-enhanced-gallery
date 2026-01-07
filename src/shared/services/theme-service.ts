@@ -7,7 +7,7 @@
 import { SERVICE_KEYS } from '@constants/service-keys';
 import { APP_SETTINGS_STORAGE_KEY } from '@constants/storage';
 import { syncThemeAttributes } from '@shared/dom/theme';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';

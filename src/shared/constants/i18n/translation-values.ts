@@ -1,7 +1,25 @@
 import type { LanguageStrings } from './language-types';
 
+/**
+ * Expected number of translation values in a complete language strings array.
+ * Used for validation when building language strings from value arrays.
+ */
 export const TRANSLATION_VALUE_COUNT = 39 as const;
 
+/**
+ * Builds a typed LanguageStrings object from a flat array of translation values.
+ *
+ * @param values - Array of translation strings in predefined order
+ * @returns Immutable LanguageStrings object with structured translation keys
+ * @throws {Error} In development mode if value count doesn't match expected count
+ *
+ * @example
+ * ```typescript
+ * const values = ['Previous', 'Next', 'Download', ...]; // 39 values
+ * const strings = buildLanguageStringsFromValues(values);
+ * console.log(strings.tb.prev); // 'Previous'
+ * ```
+ */
 export function buildLanguageStringsFromValues(values: ReadonlyArray<string>): LanguageStrings {
   if (__DEV__ && values.length !== TRANSLATION_VALUE_COUNT) {
     throw new Error(
@@ -75,6 +93,7 @@ export function buildLanguageStringsFromValues(values: ReadonlyArray<string>): L
       },
     },
   };
+
   // Shallow-freeze to prevent accidental mutation of the translation registry objects.
   return Object.freeze(built) as LanguageStrings;
 }

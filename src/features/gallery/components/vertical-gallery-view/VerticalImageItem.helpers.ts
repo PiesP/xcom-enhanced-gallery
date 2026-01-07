@@ -21,6 +21,13 @@ import type { MediaInfo } from '@shared/types/media.types';
  */
 const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi'] as const;
 
+const CLEAN_FILENAME_MAX_LENGTH = 40;
+const CLEAN_FILENAME_TRUNCATION_MARKER = '...';
+const CLEAN_FILENAME_EXTENSION_REGEX = /(?:\.[^./\\]{1,10})$/;
+const CLEAN_FILENAME_TWITTER_PREFIX_REGEX = /^twitter_media_\d{8}T\d{6}_/;
+const CLEAN_FILENAME_MEDIA_PREFIX_REGEX = /^\/media\//;
+const CLEAN_FILENAME_RELATIVE_PREFIX_REGEX = /^\.\//;
+
 /**
  * Clean and normalize a filename for display and saving
  *
@@ -56,23 +63,21 @@ export function cleanFilename(filename?: string): string {
     return 'Untitled';
   }
 
-  const MAX_LENGTH = 40;
-  const TRUNCATION_MARKER = '...';
-
   const truncateMiddlePreservingExtension = (value: string): string => {
-    if (value.length <= MAX_LENGTH) {
+    if (value.length <= CLEAN_FILENAME_MAX_LENGTH) {
       return value;
     }
 
     // Keep a short extension if present (e.g., ".jpg").
     // Limit the extension length to avoid pathological cases.
-    const extensionMatch = value.match(/(\.[^./\\]{1,10})$/);
+    const extensionMatch = value.match(CLEAN_FILENAME_EXTENSION_REGEX);
     const extension = extensionMatch?.[1] ?? '';
     const base = extension ? value.slice(0, -extension.length) : value;
 
-    const available = MAX_LENGTH - extension.length - TRUNCATION_MARKER.length;
+    const available =
+      CLEAN_FILENAME_MAX_LENGTH - extension.length - CLEAN_FILENAME_TRUNCATION_MARKER.length;
     if (available <= 1) {
-      return value.slice(0, MAX_LENGTH);
+      return value.slice(0, CLEAN_FILENAME_MAX_LENGTH);
     }
 
     const headLen = Math.max(1, Math.floor(available / 2));
@@ -81,13 +86,13 @@ export function cleanFilename(filename?: string): string {
     const head = base.slice(0, headLen);
     const tail = base.slice(Math.max(0, base.length - tailLen));
 
-    return `${head}${TRUNCATION_MARKER}${tail}${extension}`;
+    return `${head}${CLEAN_FILENAME_TRUNCATION_MARKER}${tail}${extension}`;
   };
 
   let cleaned = filename
-    .replace(/^twitter_media_\d{8}T\d{6}_/, '')
-    .replace(/^\/media\//, '')
-    .replace(/^\.\//, '');
+    .replace(CLEAN_FILENAME_TWITTER_PREFIX_REGEX, '')
+    .replace(CLEAN_FILENAME_MEDIA_PREFIX_REGEX, '')
+    .replace(CLEAN_FILENAME_RELATIVE_PREFIX_REGEX, '');
 
   // If there are path separators, prefer the last path segment (e.g., path/to/file.png -> file.png)
   const lastSegment = cleaned.split(/[\\/]/).pop();

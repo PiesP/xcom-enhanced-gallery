@@ -1,51 +1,37 @@
 /**
  * @fileoverview Unified video control helper
- * @description Integration of Service/Video fallback pattern
- *              Single integration point for video control logic duplicated in 3+ locations
+ * @description Integration of Service/Video fallback pattern.
+ *              Single integration point for video control logic duplicated in 3+ locations.
  *
- * Phase 329: Code deduplication
- * - Before: Service check → Video fallback repeated in 3 locations
- * - After: Single helper function integration
+ *              Phase 329: Code deduplication
+ *              - Before: Service check → Video fallback repeated in 3 locations
+ *              - After: Single helper function integration (30% perf improvement)
  */
 
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
+import type { VideoControlAction, VideoControlOptions } from './video-control-helper.types';
 
 /**
- * Video control action type
- */
-type VideoControlAction =
-  | 'play'
-  | 'pause'
-  | 'togglePlayPause'
-  | 'volumeUp'
-  | 'volumeDown'
-  | 'mute'
-  | 'toggleMute';
-
-/**
- * Video control options
- */
-interface VideoControlOptions {
-  video?: HTMLVideoElement | null;
-  context?: string;
-}
-
-/**
- * Video playback state tracking (WeakMap)
- * When Service is unavailable, track video element's playback state locally
+ * Video playback state tracking using WeakMap
+ *
+ * When the Service is unavailable, tracks video element's playback state locally.
+ * WeakMap allows garbage collection of video elements without memory leaks.
+ *
+ * @internal
  */
 const videoPlaybackStateMap = new WeakMap<HTMLVideoElement, { playing: boolean }>();
 
 /**
  * Get current gallery video element
  *
- * Phase 329 optimization:
- * - Signal-based caching: Eliminated DOM queries (30% performance ↑)
- * - Fallback: DOM query only when Signal unavailable
+ * Phase 329 optimization: Signal-based caching eliminates DOM queries (30% perf ↑).
+ * Falls back to DOM query only when Signal is unavailable.
  *
- * @param video - Optional video element (use if provided)
- * @returns Video element or null
+ * @param video - Optional video element. If provided, returns immediately.
+ * @returns Video element from signal/DOM or null if not found.
+ *
+ * @internal
  */
 function getCurrentGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoElement | null {
   if (video) {
@@ -57,22 +43,31 @@ function getCurrentGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoEleme
 }
 
 /**
- * Execute video control action
+ * Execute video control action on gallery video element
  *
- * Service → Video fallback pattern integration
- * Deduplication: Logic repeated in 3+ locations integrated to single point
+ * Unified integration point for video control operations using Service → Video fallback pattern.
+ * Deduplicates logic that was repeated in 3+ locations.
  *
- * @param action - Action to execute
- * @param options - Options (video, context included)
+ * Actions:
+ * - `play`: Plays video and tracks playback state
+ * - `pause`: Pauses video and updates state
+ * - `togglePlayPause`: Toggles between play/pause
+ * - `volumeUp`: Increases volume by 0.1 (max 1.0)
+ * - `volumeDown`: Decreases volume by 0.1 (min 0.0)
+ * - `mute`: Mutes video audio
+ * - `toggleMute`: Toggles mute state
+ *
+ * @param action - Video control action to execute
+ * @param options - Configuration options including video element and context
  *
  * @example
- * // Toggle play/pause
+ * // Toggle play/pause on current gallery video
  * executeVideoControl('togglePlayPause');
  *
- * // Adjust volume (Service priority, Video fallback)
- * executeVideoControl('volumeUp');
+ * // Adjust volume using keyboard shortcut
+ * executeVideoControl('volumeUp', { context: 'keyboard-shortcut' });
  *
- * // Explicit video element
+ * // Control specific video element
  * executeVideoControl('mute', { video: myVideoElement });
  */
 export function executeVideoControl(

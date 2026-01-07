@@ -3,12 +3,52 @@ import {
   type SingleDownloadCommand,
 } from '@shared/core/download/single-download-commands';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
+import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
 import { getErrorMessage } from '@shared/error/normalize';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
+import {
+  type DownloadCapability,
+  detectDownloadCapability,
+} from '@shared/services/download/fallback-download';
+import type { DownloadOptions, SingleDownloadResult } from '@shared/services/download/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
-import { type DownloadCapability, detectDownloadCapability } from './fallback-download';
-import type { DownloadOptions, SingleDownloadResult } from './types';
+
+const SINGLE_DOWNLOAD_TOTAL = 1;
+const DOWNLOAD_TIMEOUT_MESSAGE = 'Download timeout';
+
+type ProgressCallback = DownloadOptions['onProgress'];
+type ProgressPayload = Parameters<NonNullable<ProgressCallback>>[0];
+
+function reportSingleProgress(
+  onProgress: ProgressCallback | undefined,
+  payload: Omit<ProgressPayload, 'current' | 'total'> & { current?: number; total?: number }
+): void {
+  if (!onProgress) return;
+
+  const current = payload.current ?? SINGLE_DOWNLOAD_TOTAL;
+  const total = payload.total ?? SINGLE_DOWNLOAD_TOTAL;
+  const { current: _current, total: _total, ...rest } = payload;
+
+  onProgress({
+    ...rest,
+    current,
+    total,
+  });
+}
+
+function calculatePercentage(loaded: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.min(100, Math.max(0, Math.round((loaded / total) * 100)));
+}
+
+function createAbortResult(signal?: AbortSignal): SingleDownloadResult {
+  const abortError = getUserCancelledAbortErrorFromSignal(signal);
+  return {
+    success: false,
+    error: getErrorMessage(abortError) || 'Download cancelled by user',
+  };
+}
 
 async function executeSingleDownloadCommand(
   cmd: SingleDownloadCommand,
@@ -16,17 +56,19 @@ async function executeSingleDownloadCommand(
   capability: DownloadCapability,
   blob: Blob | undefined
 ): Promise<SingleDownloadResult> {
+  const onProgress = options.onProgress;
+  const filename = cmd.filename;
+
   switch (cmd.type) {
     case 'FAIL':
       return { success: false, error: cmd.error };
 
     case 'REPORT_PROGRESS':
-      options.onProgress?.({
+      reportSingleProgress(onProgress, {
         phase: cmd.phase,
         current: 0,
-        total: 1,
         percentage: cmd.percentage,
-        filename: cmd.filename,
+        filename,
       });
       return { success: true, filename: cmd.filename };
 
@@ -68,12 +110,10 @@ async function executeSingleDownloadCommand(
           settled = true;
 
           if (completePercentage !== undefined) {
-            options.onProgress?.({
+            reportSingleProgress(onProgress, {
               phase: 'complete',
-              current: 1,
-              total: 1,
               percentage: completePercentage,
-              filename: cmd.filename,
+              filename,
             });
           }
 
@@ -82,18 +122,18 @@ async function executeSingleDownloadCommand(
         };
 
         timer = globalTimerManager.setTimeout(() => {
-          settle({ success: false, error: 'Download timeout' }, 0);
+          settle({ success: false, error: DOWNLOAD_TIMEOUT_MESSAGE }, 0);
         }, cmd.timeoutMs);
 
         try {
           gmDownload({
             url,
-            name: cmd.filename,
+            name: filename,
             onload: () => {
               if (__DEV__) {
-                logger.debug(`[SingleDownload] Download complete: ${cmd.filename}`);
+                logger.debug(`[SingleDownload] Download complete: ${filename}`);
               }
-              settle({ success: true, filename: cmd.filename }, 100);
+              settle({ success: true, filename }, 100);
             },
             onerror: (error: unknown) => {
               const errorMsg = getErrorMessage(error);
@@ -103,19 +143,17 @@ async function executeSingleDownloadCommand(
               settle({ success: false, error: errorMsg }, 0);
             },
             ontimeout: () => {
-              settle({ success: false, error: 'Download timeout' }, 0);
+              settle({ success: false, error: DOWNLOAD_TIMEOUT_MESSAGE }, 0);
             },
             onprogress: (progress: { loaded: number; total: number }) => {
               if (settled) return;
-              if (options.onProgress && progress.total > 0) {
-                options.onProgress({
-                  phase: 'downloading',
-                  current: 1,
-                  total: 1,
-                  percentage: Math.round((progress.loaded / progress.total) * 100),
-                  filename: cmd.filename,
-                });
-              }
+              if (!onProgress || progress.total <= 0) return;
+
+              reportSingleProgress(onProgress, {
+                phase: 'downloading',
+                percentage: calculatePercentage(progress.loaded, progress.total),
+                filename,
+              });
             },
           });
         } catch (error) {
@@ -135,8 +173,9 @@ export async function downloadSingleFile(
   options: DownloadOptions = {},
   capability?: DownloadCapability
 ): Promise<SingleDownloadResult> {
-  if (options.signal?.aborted) {
-    return { success: false, error: 'User cancelled download' };
+  const abortSignal = options.signal;
+  if (abortSignal?.aborted) {
+    return createAbortResult(abortSignal);
   }
 
   const filename = generateMediaFilename(media, { nowMs: Date.now() });
@@ -155,6 +194,10 @@ export async function downloadSingleFile(
   // Execute commands sequentially; first failing command ends the program.
   let lastOk: SingleDownloadResult = { success: true, filename };
   for (const cmd of cmds) {
+    if (abortSignal?.aborted) {
+      return createAbortResult(abortSignal);
+    }
+
     const result = await executeSingleDownloadCommand(
       cmd,
       options,

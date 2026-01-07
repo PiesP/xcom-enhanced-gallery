@@ -1,4 +1,5 @@
 import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
+
 import { EventManager } from '@shared/services/event-manager';
 import { cx } from '@shared/utils/text/formatting';
 import { createEffect, onCleanup } from 'solid-js';
@@ -28,13 +29,13 @@ type EscapeCaptureWindow = typeof window & {
  */
 interface GalleryContainerProps {
   /** Child components to render inside container */
-  children: ComponentChildren;
+  readonly children: ComponentChildren;
   /** Callback fired when container should close (Escape key) */
-  onClose?: () => void;
+  readonly onClose?: () => void;
   /** Additional CSS class names */
-  className?: string;
+  readonly className?: string;
   /** Optional hook to observe the Escape key listener (testing utilities) */
-  registerEscapeListener?: (listener: (event: KeyboardEvent) => void) => void;
+  readonly registerEscapeListener?: (listener: (event: KeyboardEvent) => void) => void;
 }
 
 type HostElement = HTMLElement & {

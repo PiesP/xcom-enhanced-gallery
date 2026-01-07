@@ -1,6 +1,6 @@
-import { createUserCancelledAbortError } from '@shared/error/cancellation';
+import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
 import { getErrorMessage } from '@shared/error/normalize';
-import { StreamingZipWriter } from '@shared/external/zip';
+import { StreamingZipWriter } from '@shared/external/zip/streaming-zip-writer';
 import { DEFAULT_BACKOFF_BASE_MS, fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
 import { ensureUniqueFilenameFactory } from '@shared/services/download/download-utils';
 import type {
@@ -9,15 +9,59 @@ import type {
   ZipResult,
 } from '@shared/services/download/types';
 
+const MAX_CONCURRENCY = 8;
+const MIN_CONCURRENCY = 1;
+const DEFAULT_CONCURRENCY = 4;
+const DEFAULT_RETRIES = 3;
+
+type ProgressCallback = OrchestratorOptions['onProgress'];
+type ProgressPayload = Parameters<NonNullable<ProgressCallback>>[0];
+
+function clampConcurrency(value: number | undefined): number {
+  const resolved = value ?? DEFAULT_CONCURRENCY;
+  return Math.min(MAX_CONCURRENCY, Math.max(MIN_CONCURRENCY, resolved));
+}
+
+function clampRetries(value: number | undefined): number {
+  return Math.max(0, value ?? DEFAULT_RETRIES);
+}
+
+function calculatePercentage(current: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.min(100, Math.max(0, Math.round((current / total) * 100)));
+}
+
+function reportProgress(
+  onProgress: ProgressCallback | undefined,
+  payload: Omit<ProgressPayload, 'percentage'> & { percentage?: number }
+): void {
+  if (!onProgress) return;
+
+  const percentage = payload.percentage ?? calculatePercentage(payload.current, payload.total);
+  onProgress({
+    ...payload,
+    percentage,
+  });
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    throw getUserCancelledAbortErrorFromSignal(signal);
+  }
+}
+
 export async function downloadAsZip(
-  items: OrchestratorItem[],
+  items: readonly OrchestratorItem[],
   options: OrchestratorOptions = {}
 ): Promise<ZipResult> {
   const writer = new StreamingZipWriter();
 
-  const concurrency = Math.min(8, Math.max(1, options.concurrency ?? 6));
-  const retries = Math.max(0, options.retries ?? 0);
+  const concurrency = clampConcurrency(options.concurrency);
+  const retries = clampRetries(options.retries);
   const abortSignal = options.signal;
+  const onProgress = options.onProgress;
+
+  throwIfAborted(abortSignal);
 
   const total = items.length;
   let processed = 0;
@@ -30,31 +74,21 @@ export async function downloadAsZip(
   // Queue management
   let currentIndex = 0;
 
-  const runNext = async () => {
+  const runNext = async (): Promise<void> => {
     while (currentIndex < total) {
-      if (abortSignal?.aborted) {
-        throw createUserCancelledAbortError(abortSignal.reason);
-      }
+      throwIfAborted(abortSignal);
 
       const index = currentIndex++;
       const item = items[index];
       if (!item) continue;
 
-      options.onProgress?.({
-        phase: 'downloading',
-        current: processed + 1,
-        total,
-        percentage: Math.min(100, Math.max(0, Math.round(((processed + 1) / total) * 100))),
-        filename: assignedFilenames[index] ?? item.desiredName,
-      });
+      const filename = assignedFilenames[index] ?? item.desiredName;
 
       try {
         let data: Uint8Array;
         if (item.blob) {
           const blob = item.blob instanceof Promise ? await item.blob : item.blob;
-          if (abortSignal?.aborted) {
-            throw createUserCancelledAbortError(abortSignal.reason);
-          }
+          throwIfAborted(abortSignal);
           data = new Uint8Array(await blob.arrayBuffer());
         } else {
           data = await fetchArrayBufferWithRetry(
@@ -65,25 +99,35 @@ export async function downloadAsZip(
           );
         }
 
-        if (abortSignal?.aborted) {
-          throw createUserCancelledAbortError(abortSignal.reason);
-        }
+        throwIfAborted(abortSignal);
 
-        const filename = assignedFilenames[index] ?? item.desiredName;
         writer.addFile(filename, data);
 
         successful++;
       } catch (error) {
-        if (abortSignal?.aborted) throw createUserCancelledAbortError(abortSignal.reason);
+        throwIfAborted(abortSignal);
         failures.push({ url: item.url, error: getErrorMessage(error) });
       } finally {
         processed++;
+        reportProgress(onProgress, {
+          phase: 'downloading',
+          current: processed,
+          total,
+          filename,
+        });
       }
     }
   };
 
-  const workers = Array.from({ length: concurrency }, () => runNext());
+  const workerCount = Math.min(concurrency, total);
+  const workers = Array.from({ length: workerCount }, () => runNext());
   await Promise.all(workers);
+
+  reportProgress(onProgress, {
+    phase: 'complete',
+    current: processed,
+    total,
+  });
 
   const zipBytes = writer.finalize();
 

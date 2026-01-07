@@ -14,7 +14,7 @@ import type {
   NestedSettingKey,
   SettingChangeEvent,
 } from '@features/settings/types/settings.types';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
 import { createSingleton } from '@shared/utils/types/singleton';
@@ -111,6 +111,8 @@ export class SettingsService implements SettingsServiceContract {
 
   /** @internal Test helper */
   public static resetForTests(): void {
+    const existing = SettingsService.singleton.peek?.();
+    existing?.destroy();
     SettingsService.singleton.reset?.();
   }
 

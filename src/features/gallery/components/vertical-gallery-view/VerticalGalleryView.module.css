@@ -79,6 +79,16 @@
     :root {
       --xeg-transition-toolbar: none;
     }
+
+    .container {
+      /* Respect reduced-motion: avoid smooth scrolling/animated opacity */
+      scroll-behavior: auto;
+      transition: none;
+    }
+
+    .toolbarWrapper {
+      transition: none;
+    }
   }
 }
 

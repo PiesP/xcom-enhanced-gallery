@@ -32,31 +32,31 @@ export type MediaId = Brand<string, 'MediaId'>;
  * Basic media information
  */
 export interface MediaInfo {
-  id: string;
-  url: string;
-  originalUrl?: string | undefined;
-  type: 'image' | 'video' | 'gif';
-  filename?: string;
-  fileSize?: number;
-  width?: number;
-  height?: number;
-  thumbnailUrl?: string;
-  alt?: string;
-  tweetUsername?: string | undefined;
-  tweetId?: string | undefined;
-  tweetUrl?: string;
-  tweetText?: string | undefined;
-  tweetTextHTML?: string | undefined; // Phase 2: Sanitized HTML from DOM
-  metadata?: Record<string, unknown>;
-  // Phase 342: Quote tweet fields
+  readonly id: string;
+  readonly url: string;
+  readonly originalUrl?: string | undefined;
+  readonly type: 'image' | 'video' | 'gif';
+  readonly filename?: string | undefined;
+  readonly fileSize?: number | undefined;
+  readonly width?: number | undefined;
+  readonly height?: number | undefined;
+  readonly thumbnailUrl?: string | undefined;
+  readonly alt?: string | undefined;
+  readonly tweetUsername?: string | undefined;
+  readonly tweetId?: string | undefined;
+  readonly tweetUrl?: string | undefined;
+  readonly tweetText?: string | undefined;
+  /** Phase 2: Sanitized HTML from DOM */
+  readonly tweetTextHTML?: string | undefined;
+  readonly metadata?: Record<string, unknown> | undefined;
   /** Media source location (quote tweet case) */
-  sourceLocation?: 'original' | 'quoted' | undefined;
+  readonly sourceLocation?: 'original' | 'quoted' | undefined;
   /** Quoted tweet ID (quote tweet case) */
-  quotedTweetId?: string | undefined;
+  readonly quotedTweetId?: string | undefined;
   /** Quoted tweet author (quote tweet case) */
-  quotedUsername?: string | undefined;
+  readonly quotedUsername?: string | undefined;
   /** Quoted tweet URL (quote tweet case) */
-  quotedTweetUrl?: string | undefined;
+  readonly quotedTweetUrl?: string | undefined;
 }
 
 /**
@@ -68,21 +68,17 @@ export interface MediaEntity extends MediaInfo {
 }
 
 /**
- * Media item (MediaInfo alias)
- */
-
-/**
  * MediaInfoWithFilename - Media information with filename (for download)
  *
  * Version of MediaInfo with required fields
  */
 export interface MediaInfoWithFilename extends MediaInfo {
   /** Media unique identifier (required) */
-  id: string;
+  readonly id: string;
   /** Original page URL (required) */
-  originalUrl: string;
+  readonly originalUrl: string;
   /** Filename to save (required) */
-  filename: string;
+  readonly filename: string;
 }
 
 // ================================
@@ -94,17 +90,17 @@ export interface MediaInfoWithFilename extends MediaInfo {
  */
 export interface TweetInfo {
   /** Tweet ID */
-  tweetId: string;
+  readonly tweetId: string;
   /** Username */
-  username: string;
+  readonly username: string;
   /** Tweet URL */
-  tweetUrl: string;
+  readonly tweetUrl: string;
   /** Extraction method */
-  extractionMethod: string;
+  readonly extractionMethod: string;
   /** Extraction confidence (0-1) */
-  confidence: number;
+  readonly confidence: number;
   /** Additional metadata */
-  metadata?: Record<string, unknown>;
+  readonly metadata?: Record<string, unknown> | undefined;
 }
 
 /**
@@ -119,15 +115,15 @@ export interface TweetInfo {
  */
 export interface QuoteTweetInfo {
   /** Whether it is a quote tweet */
-  isQuoteTweet: boolean;
+  readonly isQuoteTweet: boolean;
   /** Location where clicked */
-  clickedLocation: 'quoted' | 'original' | 'unknown';
+  readonly clickedLocation: 'quoted' | 'original' | 'unknown';
   /** Original tweet ID (quote tweet only) */
-  quotedTweetId?: string | undefined;
+  readonly quotedTweetId?: string | undefined;
   /** Original tweet author (quote tweet only) */
-  quotedUsername?: string | undefined;
+  readonly quotedUsername?: string | undefined;
   /** Media source indicator */
-  sourceLocation?: 'original' | 'quoted' | undefined;
+  readonly sourceLocation?: 'original' | 'quoted' | undefined;
 }
 
 /**
@@ -135,15 +131,15 @@ export interface QuoteTweetInfo {
  */
 export interface MediaExtractionOptions {
   /** Include videos */
-  includeVideos?: boolean;
+  readonly includeVideos?: boolean | undefined;
   /** Timeout (milliseconds) */
-  timeoutMs?: number;
+  readonly timeoutMs?: number | undefined;
   /** Use API fallback */
-  useApiFallback?: boolean;
+  readonly useApiFallback?: boolean | undefined;
   /** Enable background loading */
-  enableBackgroundLoading?: boolean;
+  readonly enableBackgroundLoading?: boolean | undefined;
   /** Enable validation */
-  enableValidation?: boolean;
+  readonly enableValidation?: boolean | undefined;
 }
 
 /**
@@ -180,15 +176,15 @@ export type ExtractionSource = (typeof ExtractionSource)[keyof typeof Extraction
  * Extraction metadata (merged from Core)
  */
 interface ExtractionMetadata {
-  readonly extractionTime?: number;
-  readonly extractedAt?: number;
-  readonly strategiesUsed?: string[];
-  readonly sourceCount?: number;
-  readonly cacheHits?: number;
-  readonly retryCount?: number;
-  readonly sourceType?: string;
-  readonly strategy?: string;
-  readonly error?: string;
+  readonly extractionTime?: number | undefined;
+  readonly extractedAt?: number | undefined;
+  readonly strategiesUsed?: readonly string[] | undefined;
+  readonly sourceCount?: number | undefined;
+  readonly cacheHits?: number | undefined;
+  readonly retryCount?: number | undefined;
+  readonly sourceType?: string | undefined;
+  readonly strategy?: string | undefined;
+  readonly error?: string | undefined;
   readonly [key: string]: unknown;
 }
 
@@ -196,26 +192,27 @@ interface ExtractionMetadata {
  * Media extraction result
  */
 export interface MediaExtractionResult {
-  mediaItems: MediaInfo[];
-  success: boolean;
-  errors?: ExtractionError[];
-  clickedIndex?: number | undefined;
-  tweetInfo?: TweetInfo | null | undefined;
-  // Backward compatibility with core version
-  source?: ExtractionSource;
-  sourceType?: string;
-  metadata?:
+  readonly mediaItems: MediaInfo[];
+  readonly success: boolean;
+  readonly errors?: readonly ExtractionError[] | undefined;
+  readonly clickedIndex?: number | undefined;
+  readonly tweetInfo?: TweetInfo | null | undefined;
+  /** Backward compatibility with core version */
+  readonly source?: ExtractionSource | undefined;
+  readonly sourceType?: string | undefined;
+  readonly metadata?:
     | ExtractionMetadata
     | {
-        extractionMethod?: string;
-        extractionTime?: number;
-        source?: string;
-        extractionId?: string;
-        extractedAt?: number;
-        sourceType?: string;
-        error?: string;
-        [key: string]: unknown;
-      };
+        readonly extractionMethod?: string | undefined;
+        readonly extractionTime?: number | undefined;
+        readonly source?: string | undefined;
+        readonly extractionId?: string | undefined;
+        readonly extractedAt?: number | undefined;
+        readonly sourceType?: string | undefined;
+        readonly error?: string | undefined;
+        readonly [key: string]: unknown;
+      }
+    | undefined;
 }
 
 // ExtractionErrorCode was removed in Phase 353
@@ -282,19 +279,19 @@ export interface MediaExtractor {
  */
 export interface GalleryRenderOptions {
   /** Start index */
-  startIndex?: number | undefined;
+  readonly startIndex?: number | undefined;
   /** Class name */
-  className?: string | undefined;
+  readonly className?: string | undefined;
   /** Tweet ID */
-  tweetId?: string | undefined;
+  readonly tweetId?: string | undefined;
   /** Show download button */
-  showDownloadButton?: boolean;
+  readonly showDownloadButton?: boolean | undefined;
   /** Show filenames */
-  showFilenames?: boolean;
+  readonly showFilenames?: boolean | undefined;
   /** Auto play */
-  autoPlay?: boolean;
+  readonly autoPlay?: boolean | undefined;
   /** Optional ambient video pause context */
-  pauseContext?: AmbientVideoPauseRequest;
+  readonly pauseContext?: AmbientVideoPauseRequest | undefined;
 }
 
 /**

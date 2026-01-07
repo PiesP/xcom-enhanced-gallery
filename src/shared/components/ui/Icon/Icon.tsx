@@ -15,7 +15,7 @@ export interface IconProps {
    * @example size="2em" => "2em"
    * @example size="var(--xeg-icon-size-lg)" => "2rem"
    */
-  size?: number | string | undefined;
+  readonly size?: number | string | undefined;
 
   /**
    * CSS class name(s)
@@ -25,7 +25,7 @@ export interface IconProps {
    * @example className="text-primary"
    * @example className="icon-hover-effect"
    */
-  class?: string | undefined;
+  readonly class?: string | undefined;
 
   /**
    * SVG path elements and shapes
@@ -39,7 +39,7 @@ export interface IconProps {
    * </Icon>
    * ```
    */
-  children?: ComponentChildren;
+  readonly children?: ComponentChildren;
 
   /**
    * Accessibility label for icon
@@ -49,7 +49,7 @@ export interface IconProps {
    * @default undefined
    * @example 'aria-label'="Close button"
    */
-  'aria-label'?: string | undefined;
+  readonly 'aria-label'?: string | undefined;
 }
 
 export function Icon({

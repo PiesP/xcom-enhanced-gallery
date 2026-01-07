@@ -1,16 +1,29 @@
 /**
  * Preinstall guard to ensure this repository is installed with pnpm.
  *
- * Why not `npx only-allow pnpm`?
- * - `npx` may download and execute remote code during install.
- * - This repo uses pnpm-specific supply chain security controls.
+ * This script runs automatically via the `preinstall` hook in package.json.
+ * It prevents installation with npm or yarn, which could bypass
+ * pnpm-specific supply chain security controls.
+ *
+ * Why not use `npx only-allow pnpm`?
+ * - `npx` may download and execute remote code during installation
+ * - This repo uses pnpm-specific supply chain security settings
+ *
+ * Exit codes:
+ * - 0: pnpm detected, installation allowed
+ * - 1: non-pnpm package manager detected, installation blocked
  */
 
-const userAgent: string = process.env.npm_config_user_agent ?? '';
+const PNPM_PREFIX = 'pnpm/';
+const userAgent = process.env.npm_config_user_agent ?? '';
 
-if (!userAgent.startsWith('pnpm/')) {
-  // Keep the message short and actionable (CI-friendly).
-  console.error('This project must be installed with pnpm.');
-  console.error('Use: pnpm install');
+// Verify the package manager is pnpm
+if (!userAgent.startsWith(PNPM_PREFIX)) {
+  // Keep error message short and actionable (CI/log-friendly)
+  console.error('Error: This project must be installed with pnpm.');
+  console.error('Installation blocked: npm and yarn are not supported.');
+  console.error('');
+  console.error('To proceed, use:');
+  console.error('  pnpm install');
   process.exit(1);
 }

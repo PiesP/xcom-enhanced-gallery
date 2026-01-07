@@ -1,11 +1,34 @@
 import { delay, isAbortError } from './delay';
 
+/**
+ * Calculate exponential backoff delay
+ *
+ * Computes delay using exponential backoff algorithm: baseDelayMs * 2^attempt
+ *
+ * @param attempt - Zero-based attempt number (0 = first retry)
+ * @param baseDelayMs - Base delay in milliseconds
+ * @returns Delay in milliseconds without jitter or cap
+ *
+ * @example
+ * ```typescript
+ * getExponentialBackoffDelayMs(0, 200); // 200ms
+ * getExponentialBackoffDelayMs(1, 200); // 400ms
+ * getExponentialBackoffDelayMs(2, 200); // 800ms
+ * ```
+ */
 export function getExponentialBackoffDelayMs(attempt: number, baseDelayMs: number): number {
   return baseDelayMs * 2 ** attempt;
 }
 
 /**
  * Options for retry operations
+ *
+ * @property maxAttempts - Maximum number of retry attempts (default: 3)
+ * @property baseDelayMs - Base delay in milliseconds for exponential backoff (default: 200)
+ * @property maxDelayMs - Maximum delay in milliseconds (default: 10000)
+ * @property signal - Optional AbortSignal for cancellation
+ * @property onRetry - Optional callback for retry events, receives attempt number, error, and next delay
+ * @property shouldRetry - Custom function to determine if error should trigger retry (default: all errors retry)
  */
 interface RetryOptions {
   /** Maximum number of retry attempts (default: 3) */
@@ -23,7 +46,10 @@ interface RetryOptions {
 }
 
 /**
- * Result of a retry operation
+ * Base properties shared by all retry results
+ *
+ * @property success - Whether the operation succeeded
+ * @property attempts - Number of attempts made (including initial attempt)
  */
 interface RetryResultBase {
   /** Whether the operation succeeded */
@@ -32,6 +58,14 @@ interface RetryResultBase {
   readonly attempts: number;
 }
 
+/**
+ * Successful retry result
+ *
+ * @template T - Type of the operation result data
+ * @property success - Always true for success case
+ * @property data - The result value from successful operation
+ * @property error - Always undefined for success case
+ */
 type RetryResultSuccess<T> = RetryResultBase & {
   readonly success: true;
   /** The result value if successful */
@@ -39,6 +73,13 @@ type RetryResultSuccess<T> = RetryResultBase & {
   readonly error?: undefined;
 };
 
+/**
+ * Failed retry result
+ *
+ * @property success - Always false for failure case
+ * @property data - Always undefined for failure case
+ * @property error - The error from the last failed attempt
+ */
 type RetryResultFailure = RetryResultBase & {
   readonly success: false;
   readonly data?: undefined;
@@ -46,6 +87,11 @@ type RetryResultFailure = RetryResultBase & {
   readonly error: unknown;
 };
 
+/**
+ * Discriminated union of retry results
+ *
+ * @template T - Type of the operation result data
+ */
 type RetryResult<T> = RetryResultSuccess<T> | RetryResultFailure;
 
 /**
@@ -57,6 +103,25 @@ const DEFAULT_OPTIONS = {
   maxDelayMs: 10000,
 } as const;
 
+/**
+ * Calculate backoff delay with jitter
+ *
+ * Computes exponential backoff with random jitter (0-25%) to prevent thundering herd.
+ * Result is capped at maxDelayMs.
+ *
+ * @param attempt - Zero-based attempt number
+ * @param baseDelayMs - Base delay in milliseconds
+ * @param maxDelayMs - Maximum delay cap in milliseconds
+ * @returns Floor-rounded delay in milliseconds with jitter applied
+ *
+ * @example
+ * ```typescript
+ * // First retry: ~200-250ms (200 * 2^0 + jitter)
+ * calculateBackoff(0, 200, 10000);
+ * // Second retry: ~400-500ms (200 * 2^1 + jitter)
+ * calculateBackoff(1, 200, 10000);
+ * ```
+ */
 function calculateBackoff(attempt: number, baseDelayMs: number, maxDelayMs: number): number {
   const exponentialDelay = getExponentialBackoffDelayMs(attempt, baseDelayMs);
   // Add jitter (0-25% of delay) to prevent thundering herd
@@ -69,38 +134,43 @@ function calculateBackoff(attempt: number, baseDelayMs: number, maxDelayMs: numb
 /**
  * Execute an async operation with retry and exponential backoff
  *
- * Automatically retries failed operations with exponential backoff.
+ * Automatically retries failed operations with exponential backoff and jitter.
  * Supports cancellation via AbortSignal and custom retry conditions.
+ * AbortErrors are never retried and return immediately.
  *
+ * @template T - Type of the operation result
  * @param operation - Async function to execute
- * @param options - Retry options
- * @returns Result object with success, data, error, and attempts
+ * @param options - Retry configuration options
+ * @returns Promise resolving to discriminated union result (success/failure with metadata)
  *
  * @example
  * ```typescript
- * // Basic retry
+ * // Basic retry with defaults (3 attempts, 200ms base delay)
  * const result = await withRetry(() => fetchData());
+ * if (result.success) {
+ *   console.log(result.data);
+ * } else {
+ *   console.error(`Failed after ${result.attempts} attempts:`, result.error);
+ * }
  *
- * // With options
+ * // Advanced usage with all options
  * const controller = new AbortController();
  * const result = await withRetry(
  *   () => fetchData(),
  *   {
  *     maxAttempts: 5,
  *     baseDelayMs: 500,
+ *     maxDelayMs: 30000,
  *     signal: controller.signal,
- *     onRetry: (attempt, error) => {
- *       console.log(`Retry ${attempt}: ${error}`);
+ *     onRetry: (attempt, error, nextDelayMs) => {
+ *       console.log(`Retry ${attempt} after ${nextDelayMs}ms:`, error);
  *     },
  *     shouldRetry: (error) => error instanceof NetworkError,
  *   }
  * );
  *
- * if (result.success) {
- *   console.log(result.data);
- * } else {
- *   console.error(`Failed after ${result.attempts} attempts:`, result.error);
- * }
+ * // Cancel ongoing operation
+ * controller.abort();
  * ```
  */
 export async function withRetry<T>(

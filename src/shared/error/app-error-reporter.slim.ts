@@ -1,54 +1,21 @@
+import type {
+  ContextBoundReporter,
+  ErrorContext,
+  ErrorReportOptions,
+  ErrorReportResult,
+  ErrorSeverity,
+} from '@shared/error/app-error-reporter.types';
 import { normalizeErrorMessage } from '@shared/error/normalize';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 
-export type ErrorSeverity = 'critical' | 'error' | 'warning' | 'info';
-
-export type ErrorContext =
-  | 'bootstrap'
-  | 'gallery'
-  | 'media'
-  | 'download'
-  | 'settings'
-  | 'theme'
-  | 'event'
-  | 'network'
-  | 'storage'
-  | 'ui'
-  | 'unknown';
-
-export interface ErrorReportOptions {
-  readonly context: ErrorContext;
-  readonly severity?: ErrorSeverity;
-  readonly metadata?: Record<string, unknown>;
-  readonly notify?: boolean;
-  readonly code?: string;
-}
-
-export interface ErrorReportResult {
-  readonly reported: boolean;
-  readonly message: string;
-  readonly context: ErrorContext;
-  readonly severity: ErrorSeverity;
-}
-
-export interface ContextBoundReporter {
-  critical: (
-    error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>
-  ) => ErrorReportResult;
-  error: (
-    error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>
-  ) => ErrorReportResult;
-  warn: (
-    error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>
-  ) => ErrorReportResult;
-  info: (
-    error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>
-  ) => ErrorReportResult;
-}
+export type {
+  ContextBoundReporter,
+  ErrorContext,
+  ErrorReportOptions,
+  ErrorReportResult,
+  ErrorSeverity,
+} from '@shared/error/app-error-reporter.types';
+export { normalizeErrorMessage };
 
 const DEFAULT_SEVERITY: ErrorSeverity = 'error';
 
@@ -134,8 +101,6 @@ export class AppErrorReporter {
     };
   }
 }
-
-export { normalizeErrorMessage };
 
 export const bootstrapErrorReporter = AppErrorReporter.forContext('bootstrap');
 export const galleryErrorReporter = AppErrorReporter.forContext('gallery');

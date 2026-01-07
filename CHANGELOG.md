@@ -8,6 +8,15 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **Logging**: Aligned development and production logging exports, added scoped logger helpers, and preserved error-level output for production builds.
+- **Cookies**: Removed the cookie service barrel export and updated consumers to follow the path-alias-only import policy.
+
+### Tests
+
+- **Logging**: Added unit coverage for logger prefixing, scoped logging, and error routing.
+
 ## [1.6.0] - 2025-12-30
 
 ### Features

@@ -7,24 +7,29 @@ import { SharedObserver } from '@shared/utils/performance/observer-pool';
 import type { Accessor } from 'solid-js';
 
 interface FocusCoordinatorOptions {
-  isEnabled: Accessor<boolean>;
-  container: Accessor<HTMLElement | null>;
-  activeIndex: Accessor<number>;
-  onFocusChange: (index: number | null, source: 'auto' | 'manual') => void;
-  threshold?: number | number[];
-  rootMargin?: string;
+  readonly isEnabled: Accessor<boolean>;
+  readonly container: Accessor<HTMLElement | null>;
+  readonly activeIndex: Accessor<number>;
+  readonly onFocusChange: (index: number | null, source: 'auto' | 'manual') => void;
+  readonly threshold?: number | readonly number[];
+  readonly rootMargin?: string;
 }
 
 interface TrackedItem {
-  element: HTMLElement;
+  readonly element: HTMLElement;
   isVisible: boolean;
   entry?: IntersectionObserverEntry;
   unsubscribe?: () => void;
 }
 
 interface FocusCandidate {
-  index: number;
-  distance: number;
+  readonly index: number;
+  readonly distance: number;
+}
+
+interface ObserverOptions {
+  readonly threshold: number | number[];
+  readonly rootMargin: string;
 }
 
 const DEFAULTS = {
@@ -34,11 +39,20 @@ const DEFAULTS = {
 
 export class FocusCoordinator {
   private readonly items = new Map<number, TrackedItem>();
-  private readonly observerOptions: { threshold: number | number[]; rootMargin: string };
+  private readonly observerOptions: ObserverOptions;
 
   constructor(private readonly options: FocusCoordinatorOptions) {
+    const threshold = options.threshold;
+    let resolvedThreshold: number | number[];
+    if (typeof threshold === 'number') {
+      resolvedThreshold = threshold;
+    } else if (Array.isArray(threshold)) {
+      resolvedThreshold = [...threshold];
+    } else {
+      resolvedThreshold = [...DEFAULTS.THRESHOLD];
+    }
     this.observerOptions = {
-      threshold: options.threshold ?? [...DEFAULTS.THRESHOLD],
+      threshold: resolvedThreshold,
       rootMargin: options.rootMargin ?? DEFAULTS.ROOT_MARGIN,
     };
   }

@@ -9,7 +9,7 @@
  * @version 3.0.0 - Simplified Service Registry
  */
 
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { createSingleton } from '@shared/utils/types/singleton';
 
 interface Disposable {

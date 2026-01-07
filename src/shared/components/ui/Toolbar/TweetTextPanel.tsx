@@ -4,32 +4,62 @@ import { useTranslation } from '@shared/hooks/use-translation';
 import { isUrlAllowed } from '@shared/utils/url/safety';
 import styles from './Toolbar.module.css';
 
+/**
+ * Props for the TweetTextPanel component
+ */
 interface TweetTextPanelProps {
-  tweetText: string | undefined;
-  tweetTextHTML: string | undefined;
-  tweetUrl: string | undefined;
+  readonly tweetText: string | undefined;
+  readonly tweetTextHTML: string | undefined;
+  readonly tweetUrl: string | undefined;
 }
 
+/**
+ * Represents a tokenized segment of tweet text
+ */
 type TweetToken = {
   readonly type: 'text' | 'url' | 'hashtag';
   readonly value: string;
   readonly href?: string;
 };
 
+/**
+ * URL safety policy for tweet text links
+ */
 const TWEET_TEXT_URL_POLICY = {
   allowedProtocols: new Set(['http:', 'https:']),
   allowRelative: false,
   allowProtocolRelative: false,
   allowFragments: false,
   allowDataUrls: false,
-} satisfies Parameters<typeof isUrlAllowed>[1];
+} as const satisfies Parameters<typeof isUrlAllowed>[1];
 
+/**
+ * Pattern to match URLs and hashtags in tweet text
+ */
 const LINK_PATTERN = /https?:\/\/[^\s]+|(?<![\p{L}\p{N}_])#[\p{L}\p{N}_]+/gu;
+
+/**
+ * Pattern to match trailing punctuation in URLs
+ */
 const URL_TRAILING_PUNCTUATION = /[),.!?:;\]]+$/;
+
+/**
+ * Pattern to match protocol prefix in URLs
+ */
 const PROTOCOL_PREFIX = /^https?:\/\//;
 
+/**
+ * Builds a Twitter/X.com hashtag URL
+ * @param tag - Hashtag text without the # symbol
+ * @returns Full URL to the hashtag page
+ */
 const buildHashtagUrl = (tag: string): string => `https://x.com/hashtag/${encodeURIComponent(tag)}`;
 
+/**
+ * Splits trailing punctuation from a URL
+ * @param value - URL string that may contain trailing punctuation
+ * @returns Object with separated url and trailing punctuation
+ */
 const splitUrlTrailingPunctuation = (value: string): { url: string; trailing: string } => {
   const match = value.match(URL_TRAILING_PUNCTUATION);
   if (!match) {
@@ -42,6 +72,11 @@ const splitUrlTrailingPunctuation = (value: string): { url: string; trailing: st
   return { url, trailing };
 };
 
+/**
+ * Tokenizes tweet text into structured segments (text, URLs, hashtags)
+ * @param input - Raw tweet text
+ * @returns Array of tokens representing different text segments
+ */
 const tokenizeTweetText = (input: string): TweetToken[] => {
   const tokens: TweetToken[] = [];
   let lastIndex = 0;
@@ -85,6 +120,11 @@ const tokenizeTweetText = (input: string): TweetToken[] => {
   return tokens;
 };
 
+/**
+ * Normalizes and validates a tweet URL
+ * @param value - Raw tweet URL string
+ * @returns Validated URL string or null if invalid
+ */
 const normalizeTweetUrl = (value: string | undefined): string | null => {
   const trimmed = value?.trim();
   if (!trimmed) return null;
@@ -92,9 +132,19 @@ const normalizeTweetUrl = (value: string | undefined): string | null => {
   return trimmed;
 };
 
+/**
+ * Formats a tweet URL for display by removing protocol prefix
+ * @param url - Full URL string
+ * @returns URL without http:// or https:// prefix
+ */
 const formatTweetUrlLabel = (url: string): string => url.replace(PROTOCOL_PREFIX, '');
 
-const renderTweetTokens = (tokens: TweetToken[]): JSXElement => {
+/**
+ * Renders tweet tokens as JSX elements with proper links
+ * @param tokens - Array of tweet tokens
+ * @returns JSX element array
+ */
+const renderTweetTokens = (tokens: readonly TweetToken[]): JSXElement => {
   return tokens.map((token) => {
     if ((token.type === 'url' || token.type === 'hashtag') && token.href) {
       return (
@@ -107,7 +157,12 @@ const renderTweetTokens = (tokens: TweetToken[]): JSXElement => {
   });
 };
 
-const TweetUrlLink = (props: { url: string; label: string }): JSXElement => {
+/**
+ * Tweet URL link component
+ * @param props - Component props
+ * @returns JSX element
+ */
+function TweetUrlLink(props: { readonly url: string; readonly label: string }): JSXElement {
   const translate = useTranslation();
 
   return (
@@ -119,9 +174,14 @@ const TweetUrlLink = (props: { url: string; label: string }): JSXElement => {
       </a>
     </div>
   );
-};
+}
 
-export default function TweetTextPanel(props: TweetTextPanelProps): JSXElement {
+/**
+ * TweetTextPanel component - Displays tweet text with parsed links and hashtags
+ * @param props - Component props
+ * @returns JSX element
+ */
+export function TweetTextPanel(props: TweetTextPanelProps): JSXElement {
   const translate = useTranslation();
   const tweetText = props.tweetTextHTML ?? props.tweetText ?? '';
   const tokens = tweetText ? tokenizeTweetText(tweetText) : [];

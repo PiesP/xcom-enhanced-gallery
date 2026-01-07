@@ -54,5 +54,7 @@
     flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable both-edges;
   }
 }

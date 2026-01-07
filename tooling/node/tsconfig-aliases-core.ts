@@ -13,10 +13,27 @@ export type ViteAliasEntry = {
   readonly replacement: string;
 };
 
+/**
+ * Escape special regex characters in a string for use in RegExp patterns.
+ * @param input - The string to escape
+ * @returns The escaped string safe for regex use
+ */
 function escapeRegExp(input: string): string {
   return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/**
+ * Convert a TypeScript path alias key to a Vite-compatible find pattern.
+ * Handles wildcards and exact matches appropriately.
+ *
+ * @param key - The TypeScript path alias key (e.g., "@shared/*" or "@core")
+ * @returns A string for prefix matching or RegExp for exact matching; null to skip
+ *
+ * Conversions:
+ * - "*" (catch-all) → null (skipped, not meaningful for bundler)
+ * - "@shared/*" → "@shared/" (prefix match)
+ * - "@core" → /^@core$/ (exact match with regex)
+ */
 function toViteFind(key: string): string | RegExp | null {
   // Ignore catch-all mappings (not meaningful for bundler aliasing)
   if (key === '*') {
@@ -35,6 +52,13 @@ function toViteFind(key: string): string | RegExp | null {
   return new RegExp(`^${escapeRegExp(key)}$`);
 }
 
+/**
+ * Normalize a TypeScript path alias target to a consistent format.
+ * Removes leading "./" and converts wildcard patterns to directory paths.
+ *
+ * @param target - The TypeScript path target (e.g., "./src/shared/*" or "src/shared")
+ * @returns The normalized target suitable for further processing
+ */
 function normalizeAliasTarget(target: string): string {
   // Remove leading "./" for stable path resolution.
   let out = target.replace(/^\.\//, '');
@@ -48,6 +72,14 @@ function normalizeAliasTarget(target: string): string {
   return out;
 }
 
+/**
+ * Ensure replacement path has a trailing slash if the find pattern is a prefix.
+ * Maintains consistency between find patterns and replacement paths.
+ *
+ * @param find - The find pattern (string for prefix, RegExp for exact match)
+ * @param replacement - The replacement path
+ * @returns The replacement path, potentially with added trailing slash
+ */
 function ensureTrailingSlashIfNeeded(find: string | RegExp, replacement: string): string {
   if (typeof find !== 'string') {
     return replacement;
@@ -70,6 +102,15 @@ interface BuildViteAliasesOptions {
 
 /**
  * Build Vite-compatible alias entries from a tsconfig `paths` record.
+ *
+ * Transforms TypeScript path aliases into Vite-compatible format, handling:
+ * - Wildcard patterns ("@shared/*" → "@shared/")
+ * - Exact matches ("@core" → /^@core$/)
+ * - Path normalization and trailing slash consistency
+ *
+ * @param paths - The TypeScript compilerOptions.paths record
+ * @param options - Configuration with a resolver function for absolute paths
+ * @returns Array of Vite alias entries ready for use in vite.config.ts
  */
 export function buildViteAliasesFromTsconfigPaths(
   paths: TsconfigPaths,

@@ -112,17 +112,17 @@ src/shared/types/
 - **Size**: 12 lines (very small)
 - **Reason**: Separated to prevent circular dependency
 
-#### `core/extraction.types.ts` (removed) - Backward compatibility bridge
+#### `core/extraction.types.ts` - Backward compatibility bridge
 
 - **Status**: Removed; extraction types now imported from `media.types.ts`
+- **Reason**: Consolidation to reduce file duplication
 - **Note**: Legacy guides should reference `@shared/types/media.types`
 
 #### `core/userscript.d.ts` - UserScript API (205 lines)
 
 - **Purpose**: Type definitions for UserScript API
-- **Includes**: GM\_\* function declarations (download, getValue, setValue,
-  etc.)
-- **Characteristic**: Infrastructure/definition file
+- **Includes**: GM\_\* function declarations (download, getValue, setValue, etc.)
+- **Characteristic**: Infrastructure/definition file only
 
 ---
 
@@ -132,14 +132,14 @@ src/shared/types/
 
 ```typescript
 // Recommended: Import from barrel export
-import type { BaseService, MediaInfo, Result } from '@shared/types';
+import type { BaseService, MediaInfo, Result } from "@shared/types";
 
 // When detailed types needed
-import type { MediaExtractionOptions } from '@shared/types/media.types';
-import type { ToolbarState } from '@shared/types/toolbar.types';
+import type { MediaExtractionOptions } from "@shared/types/media.types";
+import type { ToolbarState } from "@shared/types/toolbar.types";
 
 // Using Result pattern
-import { failure, isSuccess, success } from '@shared/types';
+import { failure, isSuccess, success } from "@shared/types";
 ```
 
 ### Import Principles
@@ -155,10 +155,10 @@ import { failure, isSuccess, success } from '@shared/types';
 
 ```typescript
 // Legacy path (removed during gallery cleanup)
-import type { GalleryConfig } from '@features/gallery/types';
+import type { GalleryConfig } from "@features/gallery/types";
 
 // Use shared types directly instead
-import type { ToolbarState } from '@shared/types/toolbar.types';
+import type { ToolbarState } from "@shared/types/toolbar.types";
 ```
 
 ---

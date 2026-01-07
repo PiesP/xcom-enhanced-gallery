@@ -9,7 +9,22 @@ import { MEDIA } from '@constants/media';
 import { isHostMatching, tryParseUrl } from '@shared/utils/url/host';
 import { isUrlAllowed, MEDIA_URL_POLICY } from '@shared/utils/url/safety';
 
-const MAX_URL_LENGTH = 2048;
+/**
+ * Maximum allowed URL length for media validation.
+ *
+ * @remarks
+ * Prevents excessively long URLs that may indicate malformed or malicious input.
+ * Standard HTTP URL length limit is 2048 characters.
+ */
+const MAX_URL_LENGTH = 2048 as const;
+
+/**
+ * Allowed media CDN hosts for Twitter/X media.
+ *
+ * @remarks
+ * This is derived from the media constant. Kept as a separate variable for
+ * performance optimization and clarity in the validation logic.
+ */
 const ALLOWED_MEDIA_HOSTS = MEDIA.HOSTS.MEDIA_CDN;
 
 /**
@@ -112,7 +127,13 @@ function isHttpProtocol(protocol: string): boolean {
 /**
  * Enforce host-specific path policy for media URLs.
  *
- * Keeping host allow-listing and path policy separate helps prevent policy drift.
+ * This function routes validation to host-specific path checkers, keeping
+ * host allow-listing and path policy separate to prevent policy drift.
+ *
+ * @internal
+ * @param hostname - The hostname to validate (e.g., 'pbs.twimg.com')
+ * @param pathname - The pathname to validate against host-specific rules
+ * @returns Whether the pathname is allowed for the given hostname
  */
 function isAllowedMediaPath(hostname: string, pathname: string): boolean {
   if (hostname === 'pbs.twimg.com') {
@@ -127,11 +148,15 @@ function isAllowedMediaPath(hostname: string, pathname: string): boolean {
 }
 
 /**
- * Validate pbs.twimg.com path
+ * Validate pbs.twimg.com path for allowed media prefixes.
  *
  * @internal
- * @param pathname - URL pathname
- * @returns Whether path is valid media path
+ * @param pathname - URL pathname to validate
+ * @returns Whether the pathname matches an allowed media prefix for pbs.twimg.com
+ *
+ * @remarks
+ * Uses strict prefix matching to prevent substring-based bypasses.
+ * Allowed prefixes include media, thumbnails, and video metadata paths.
  */
 function checkPbsMediaPath(pathname: string): boolean {
   // Use strict prefix matching instead of substring search
@@ -145,10 +170,16 @@ function checkPbsMediaPath(pathname: string): boolean {
 }
 
 /**
- * Validate video.twimg.com path.
+ * Validate video.twimg.com path for allowed media prefixes.
  *
+ * @internal
+ * @param pathname - URL pathname to validate
+ * @returns Whether the pathname matches an allowed media prefix for video.twimg.com
+ *
+ * @remarks
  * We intentionally do not accept arbitrary paths on video.twimg.com.
- * Only known media path prefixes are allowed.
+ * Only known media path prefixes (video, thumbnails, DM videos) are allowed.
+ * Uses strict prefix matching to prevent substring-based bypasses.
  */
 function checkVideoMediaPath(pathname: string): boolean {
   return (

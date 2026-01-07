@@ -1,21 +1,22 @@
 /**
- * @fileoverview Class name helpers.
+ * @fileoverview Utilities for text formatting and class name composition.
  */
 
 /**
- * ClassValue type for cx function.
- */
-type ClassValue = string | number | boolean | undefined | null | ClassRecord | ClassArray;
-
-/**
- * Object mapping class names to boolean conditions
+ * Object mapping class names to boolean conditions.
  */
 type ClassRecord = Record<string, boolean | undefined | null>;
 
 /**
- * Array of class values (can be nested).
+ * ClassValue type for cx function.
+ *
+ * Supports:
+ * - strings and numbers
+ * - conditional values (boolean, undefined, null)
+ * - nested objects with conditions
+ * - nested arrays (recursive)
  */
-interface ClassArray extends Array<ClassValue> {}
+type ClassValue = string | number | boolean | undefined | null | ClassRecord | ClassValue[];
 
 /**
  * Escapes text for safe use in RegExp patterns.

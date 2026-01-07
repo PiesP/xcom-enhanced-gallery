@@ -1,3 +1,20 @@
+/**
+ * @fileoverview Main application entry point and lifecycle management.
+ *
+ * Orchestrates bootstrap stages (infrastructure, services, events, gallery initialization),
+ * application startup, and graceful cleanup. Handles both development and production modes
+ * with distinct optimization strategies.
+ *
+ * Key responsibilities:
+ * - Execute bootstrap stages in correct order (with optional/failure handling)
+ * - Manage application startup and lifecycle state
+ * - Coordinate global event wiring and teardown
+ * - Handle theme initialization and dev tooling setup
+ * - Ensure proper cleanup of services, timers, and event listeners
+ *
+ * @run-at document-idle - Executes after DOM is ready per userscript engine guarantee
+ */
+
 import { initializeCoreBaseServices } from '@bootstrap/base-services';
 import { initializeCriticalSystems } from '@bootstrap/critical-systems';
 import { setupDevNamespace } from '@bootstrap/dev-namespace';
@@ -13,8 +30,8 @@ import type { IGalleryApp } from '@shared/container/app-container';
 import { getThemeService } from '@shared/container/service-accessors';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
 import { GlobalErrorHandler } from '@shared/error/error-handler';
-import type { BootstrapStage } from '@shared/interfaces';
-import { logger } from '@shared/logging';
+import type { BootstrapStage } from '@shared/interfaces/handler.interfaces';
+import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import { CoreService } from '@shared/services/service-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
@@ -49,6 +66,16 @@ const debugCleanupLog: CleanupLogger | undefined = __DEV__
 let globalEventTeardown: Unregister | null = null;
 let commandRuntimeTeardown: (() => void) | null = null;
 
+/**
+ * Refresh development namespace with current application state.
+ *
+ * Updates global dev namespace to expose application instance and control functions.
+ * Dev-only utility for debugging and inspection.
+ *
+ * @param app - Current gallery application instance or null
+ * @returns Promise resolving when namespace is updated
+ * @internal
+ */
 async function refreshDevNamespace(app: IGalleryApp | null): Promise<void> {
   setupDevNamespace(app, {
     start: startApplication,
@@ -57,6 +84,15 @@ async function refreshDevNamespace(app: IGalleryApp | null): Promise<void> {
   });
 }
 
+/**
+ * Initialize dev command runtime if needed (dev mode only).
+ *
+ * Starts the command runtime for interactive development mode.
+ * Automatically skipped in production and test modes.
+ *
+ * @returns Promise resolving when runtime is initialized
+ * @internal
+ */
 async function initializeCommandRuntimeIfNeeded(): Promise<void> {
   // Dev-only; Rollup can drop the branch and the import in production.
   if (!__DEV__ || isTestMode) {
@@ -67,6 +103,11 @@ async function initializeCommandRuntimeIfNeeded(): Promise<void> {
   commandRuntimeTeardown = startDevCommandRuntime();
 }
 
+/**
+ * Tear down global event handlers and unsubscribe all listeners.
+ *
+ * @internal
+ */
 function tearDownGlobalEventHandlers(): void {
   if (!globalEventTeardown) {
     return;
@@ -84,6 +125,11 @@ function tearDownGlobalEventHandlers(): void {
   }
 }
 
+/**
+ * Tear down dev command runtime.
+ *
+ * @internal
+ */
 function tearDownCommandRuntime(): void {
   if (!commandRuntimeTeardown) {
     return;
@@ -101,6 +147,15 @@ function tearDownCommandRuntime(): void {
   }
 }
 
+/**
+ * Execute optional cleanup task with error handling and logging.
+ *
+ * @param label - Descriptive label for cleanup task (used in logging)
+ * @param task - Async or sync cleanup function to execute
+ * @param log - Optional custom logger (defaults to warn logger)
+ * @returns Promise resolving when cleanup completes (errors logged, not thrown)
+ * @internal
+ */
 async function runOptionalCleanup(
   label: string,
   task: CleanupTask,
@@ -174,6 +229,17 @@ const devBootstrapStages: readonly BootstrapStage[] | null = __DEV__
   : null;
 
 // exported runBootstrapStages below
+/**
+ * Execute all configured bootstrap stages in sequence.
+ *
+ * Development mode uses verbose stage executor with detailed logging and optional recovery.
+ * Production mode uses minimal sequential bootstrap without stage introspection.
+ * Fails on first critical (non-optional) stage failure.
+ *
+ * @returns Promise resolving when all stages complete
+ * @throws Error if critical bootstrap stage fails
+ * @internal
+ */
 async function runBootstrapStages(): Promise<void> {
   // Keep the stage runner dev-only to avoid shipping the generic executor and
   // its verbose strings/objects in the production (non-minified) userscript.
@@ -202,6 +268,13 @@ async function runBootstrapStages(): Promise<void> {
 // Lean mode: requestIdleCallback scheduling removed
 
 // exported initializeBaseServicesStage below
+/**
+ * Initialize core base services (fonts, API clients, storage, etc.).
+ *
+ * @returns Promise resolving when services are initialized
+ * @throws Error if initialization fails
+ * @internal
+ */
 async function initializeBaseServicesStage(): Promise<void> {
   try {
     await initializeCoreBaseServices();
@@ -217,6 +290,15 @@ async function initializeBaseServicesStage(): Promise<void> {
 }
 
 // exported applyInitialThemeSetting below
+/**
+ * Apply initial theme setting from saved configuration.
+ *
+ * Initializes theme service if needed and applies previously saved theme preference
+ * without persisting changes. Errors are logged but do not block bootstrap.
+ *
+ * @returns Promise resolving when theme is applied
+ * @internal
+ */
 async function applyInitialThemeSetting(): Promise<void> {
   try {
     const themeService = getThemeService();
@@ -239,8 +321,12 @@ async function applyInitialThemeSetting(): Promise<void> {
 }
 
 /**
- * Non-Critical system background initialization
- * Phase 3.1: Utilize requestIdleCallback
+ * Set up global event handlers and wire application-wide event system.
+ *
+ * Registers listeners for page events that trigger cleanup when needed.
+ * Tears down previous handlers before wiring new ones.
+ *
+ * @internal
  */
 // exported setupGlobalEventHandlers below
 function setupGlobalEventHandlers(): void {
@@ -256,11 +342,26 @@ function setupGlobalEventHandlers(): void {
 }
 
 // exported loadGlobalStyles below
+/**
+ * Load global styles (placeholder).
+ *
+ * Actual styles are imported statically at module load time via the
+ * side-effect import at the top of this file.
+ *
+ * @returns Promise resolving immediately
+ * @internal
+ */
 async function loadGlobalStyles(): Promise<void> {
   // Styles are imported statically at module load time.
 }
 
 // exported initializeDevToolsIfNeeded below
+/**
+ * Initialize developer tools if in development environment.
+ *
+ * @returns Promise resolving when dev tools are initialized
+ * @internal
+ */
 async function initializeDevToolsIfNeeded(): Promise<void> {
   if (!isDevEnvironment) {
     return;
@@ -269,7 +370,22 @@ async function initializeDevToolsIfNeeded(): Promise<void> {
 }
 
 /**
- * Application cleanup
+ * Perform complete application cleanup and resource teardown.
+ *
+ * Executes cleanup in reverse initialization order:
+ * 1. Global event handlers teardown
+ * 2. Command runtime teardown
+ * 3. Gallery application cleanup
+ * 4. Core services cleanup
+ * 5. Global timers cleanup
+ * 6. Error handler cleanup
+ * 7. Event listener status verification (dev mode)
+ *
+ * Individual cleanup tasks are optional; errors logged but not thrown.
+ * Marks application as stopped for restart capability.
+ *
+ * @returns Promise resolving when cleanup completes
+ * @throws Error if critical cleanup fails
  */
 // exported cleanup below
 async function cleanup(): Promise<void> {
@@ -349,11 +465,25 @@ async function cleanup(): Promise<void> {
 }
 
 /**
- * Main application entry point
+ * Start application and execute bootstrap stages.
  *
- * Executes the configured bootstrap stages.
- * Keep the stage list and its documentation centralized in the stage
- * configuration (bootstrapStages) to avoid drift.
+ * Prevents duplicate initialization by tracking startup state and promise.
+ * Re-entrant: concurrent calls return the same startup promise.
+ * Can be called multiple times; returns cached result during initial startup.
+ *
+ * Executes bootstrap stages in order:
+ * 1. Global styles loading
+ * 2. Dev tools initialization (dev mode)
+ * 3. Infrastructure/environment initialization
+ * 4. Critical systems initialization
+ * 5. Base services initialization
+ * 6. Theme synchronization
+ * 7. Global event wiring
+ * 8. Command runtime setup (dev mode)
+ * 9. Gallery initialization
+ *
+ * @returns Promise resolving when application is fully initialized
+ * @throws Error if bootstrap fails; marked as "not started" for retry
  */
 // exported startApplication below
 async function startApplication(): Promise<void> {
@@ -407,7 +537,15 @@ async function startApplication(): Promise<void> {
 }
 
 /**
- * Gallery immediate initialization (no delay)
+ * Initialize gallery application and attach to DOM.
+ *
+ * Creates and initializes the gallery app instance. Clears state on failure
+ * to allow subsequent retries. Reports initialization errors but does not catch them
+ * to allow bootstrap stage to handle failure appropriately.
+ *
+ * @returns Promise resolving when gallery is fully initialized
+ * @throws Error if initialization fails
+ * @internal
  */
 // exported initializeGallery below
 async function initializeGallery(): Promise<void> {

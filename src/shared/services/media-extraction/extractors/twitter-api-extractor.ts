@@ -4,7 +4,7 @@
  */
 
 import { getErrorMessage } from '@shared/error/normalize';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
 import { TwitterAPI } from '@shared/services/media/twitter-api-client';
 import { determineClickedIndex } from '@shared/services/media-extraction/determine-clicked-index';

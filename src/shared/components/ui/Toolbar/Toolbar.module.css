@@ -189,7 +189,7 @@
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: var(--space-xs);
+  gap: var(--xeg-spacing-xs);
   width: 100%;
 }
 
@@ -201,7 +201,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-inline: var(--space-sm);
+  padding-inline: var(--xeg-spacing-sm);
   min-width: 5em;
 }
 
@@ -378,7 +378,7 @@ button.fitButton {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--xeg-spacing-md);
   padding: var(--xeg-spacing-lg);
   max-height: var(--xeg-toolbar-panel-max-height);
   overflow: hidden;
@@ -434,7 +434,7 @@ button.fitButton {
 .tweetPanelBody {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: var(--xeg-spacing-sm);
 }
 
 /* Tweet text header */
@@ -536,9 +536,9 @@ button.fitButton {
 .tweetUrlSection {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-sm);
-  margin-bottom: var(--space-sm);
+  gap: var(--xeg-spacing-xs);
+  padding: var(--xeg-spacing-sm);
+  margin-bottom: var(--xeg-spacing-sm);
   background: var(--xeg-toolbar-element-bg-strong);
   border: var(--border-width-thin) solid var(--toolbar-surface-border, var(--xeg-toolbar-border));
   border-radius: var(--xeg-radius-sm);
@@ -572,8 +572,8 @@ button.fitButton {
 
 .tweetUrlLink:focus,
 .tweetUrlLink:focus-visible {
-  outline: 2px solid var(--xeg-focus-indicator-color);
-  outline-offset: 2px;
+  outline: 0.125rem solid var(--xeg-focus-indicator-color);
+  outline-offset: 0.125rem;
   border-radius: var(--xeg-radius-xs);
 }
 

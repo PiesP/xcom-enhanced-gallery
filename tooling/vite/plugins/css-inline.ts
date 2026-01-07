@@ -1,8 +1,32 @@
+/**
+ * @fileoverview CSS inlining plugin for Vite
+ *
+ * Processes and optimizes CSS during the build phase:
+ * - Removes comments
+ * - Shortens CSS variable names (--xeg-* -> --x*)
+ * - Prunes unused custom properties
+ * - Compresses values and whitespace
+ * - Injects final CSS into entry chunk as IIFE
+ */
+
 import type { Plugin } from 'vite';
+
 import { getBuildModeConfig } from '../build-mode';
 import { STYLE_ID } from '../constants';
 import type { BuildModeConfig } from '../types';
 
+/**
+ * Remove CSS block comments while preserving content in string literals.
+ *
+ * Handles:
+ * - Single and double quoted strings
+ * - Escaped quotes within strings
+ * - Block comments (&#47;* ... *&#47;)
+ * - Whitespace normalization after comment removal
+ *
+ * @param css CSS source code with potential comments
+ * @returns CSS with all comments removed and normalized whitespace
+ */
 function removeCssComments(css: string): string {
   let result = '';
   let i = 0;
@@ -57,6 +81,16 @@ function removeCssComments(css: string): string {
     .trim();
 }
 
+/**
+ * Map of long CSS variable names to shortened equivalents.
+ *
+ * Production builds use this map to reduce CSS file size by replacing
+ * verbose variable names (--xeg-color-primary) with short codes (--xc-p).
+ * This reduction is safe because the final CSS is injected inline into
+ * the JavaScript bundle (not exposed as a separate stylesheet).
+ *
+ * Variables are sorted by length in processing to avoid partial overlaps.
+ */
 const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   '--xeg-ease-standard': '--xe-s',
   '--xeg-ease-decelerate': '--xe-d',
@@ -310,6 +344,16 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   '--size-icon-md': '--sim',
 };
 
+/**
+ * Replace long CSS variable names with shortened versions.
+ *
+ * Sorted by name length (longest first) to avoid partial overlaps
+ * (e.g., --x vs --x1). Escapes regex special characters in variable names
+ * before performing global replacements.
+ *
+ * @param css CSS source with long variable names
+ * @returns CSS with variable names replaced by shorter equivalents
+ */
 function shortenCssVariables(css: string): string {
   let result = css;
   const sortedEntries = Object.entries(CSS_VAR_SHORTENING_MAP).sort(
@@ -324,6 +368,20 @@ function shortenCssVariables(css: string): string {
   return result;
 }
 
+/**
+ * Compress CSS values and whitespace while preserving functionality.
+ *
+ * Handles:
+ * - Decimal normalization (0.5 -> .5)
+ * - Unit compression (0px -> 0)
+ * - Property-value separator compression (: -> :, ; -> ;)
+ * - Bracket whitespace removal
+ * - Multiple spaces -> single space
+ * - Newline removal
+ *
+ * @param css CSS source code
+ * @returns Minified CSS with compressed values and whitespace
+ */
 function compressCssValues(css: string): string {
   return css
     .replace(/\b0+\.(\d)/g, '.$1')
@@ -339,6 +397,21 @@ function compressCssValues(css: string): string {
     .trim();
 }
 
+/**
+ * Remove unused CSS custom property definitions (best-effort).
+ *
+ * Conservative approach: only removes declarations `--name: ...;` when the
+ * variable does not appear elsewhere (e.g., in `var(--name)` calls).
+ *
+ * Runs iteratively to catch dependency cascades:
+ * - If --b: var(--a) is unused, first pass removes --b
+ * - Second pass can then remove --a (which becomes unused)
+ *
+ * Max 10 iterations to prevent infinite loops (actual chains are shallow).
+ *
+ * @param css CSS source code with custom property definitions
+ * @returns CSS with unused custom properties removed
+ */
 function pruneUnusedCustomProperties(css: string): string {
   // Best-effort pruning of custom properties that are defined but never referenced.
   // This is intentionally conservative: we only remove declarations of the form
@@ -405,6 +478,19 @@ function pruneUnusedCustomProperties(css: string): string {
   return result;
 }
 
+/**
+ * Apply configured CSS optimizations in sequence.
+ *
+ * Optimizations are applied conditionally based on `BuildModeConfig`:
+ * 1. Remove comments (if cssRemoveComments enabled)
+ * 2. Shorten variable names (if cssVariableShortening enabled)
+ * 3. Prune unused properties (if cssPruneUnusedCustomProperties enabled)
+ * 4. Compress values (if cssValueMinify enabled)
+ *
+ * @param css Raw CSS source code
+ * @param config Build mode configuration controlling which optimizations to apply
+ * @returns Processed CSS with applied optimizations
+ */
 function processCss(css: string, config: BuildModeConfig): string {
   let result = css;
   if (config.cssRemoveComments) result = removeCssComments(result);
@@ -414,6 +500,21 @@ function processCss(css: string, config: BuildModeConfig): string {
   return result;
 }
 
+/**
+ * Vite build plugin for inlining and optimizing CSS.
+ *
+ * During the post-build phase:
+ * 1. Extracts all .css assets from the bundle
+ * 2. Processes CSS according to build mode config
+ * 3. Injects processed CSS as IIFE into the entry chunk
+ * 4. Removes original .css files from bundle
+ *
+ * The IIFE creates or updates a <style> element with id STYLE_ID in the document.
+ * This ensures the userscript has only a single .user.js output file.
+ *
+ * @param mode Build mode identifier (e.g., 'production', 'development')
+ * @returns Vite Plugin object
+ */
 export function cssInlinePlugin(mode: string): Plugin {
   const config = getBuildModeConfig(mode);
 

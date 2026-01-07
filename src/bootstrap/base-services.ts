@@ -1,30 +1,46 @@
 /**
- * @fileoverview Base Services Initialization
- * @description Phase 2.1: Centralize BaseService lifecycle
- * Base services initialization separated in Phase A5.2
- * Phase 343: Standardized error handling
- * Refactor: ES Module singleton pattern integration
+ * @fileoverview Core base services initialization for application bootstrap.
+ *
+ * Initializes and registers essential services (theme, language, media) required
+ * for application functionality. Part of the bootstrap stage pipeline, executed
+ * after critical systems initialization but before gallery initialization.
+ *
+ * Services initialized:
+ * - ThemeService: UI theme management and dark/light mode
+ * - LanguageService: i18n and translation support
+ * - MediaService: Media detection and API integration
+ *
+ * Historical notes:
+ * - Phase A5.2: Centralized BaseService lifecycle management
+ * - Phase 343: Standardized error handling and non-critical classification
+ * - Phase 414: AnimationService removed (optional feature)
+ * - Refactor: ES Module singleton pattern integration
  */
 
 import { SERVICE_KEYS } from '@constants/service-keys';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { registerCoreServices } from '@shared/services/service-initialization';
 import { CoreService } from '@shared/services/service-manager';
 import type { BaseService } from '@shared/types/core/base-service.types';
 
 /**
- * Phase A5.2: Centralized BaseService lifecycle initialization
+ * Initialize core base services (theme, language, media).
  *
- * Responsibilities:
- * - Register and initialize ThemeService
- * - Register and initialize LanguageService
- * - Central management from service-manager
- * - Phase 414: AnimationService removed (optional feature)
+ * Registers core services via service-initialization module and initializes
+ * each service sequentially. Safe to call in isolated environments (e.g., tests)
+ * as it ensures services are registered before initialization.
  *
- * Phase 343: Non-Critical system - on failure, warn only and continue app
+ * Lifecycle:
+ * 1. Register services (theme, language, media) via registerCoreServices()
+ * 2. Initialize ThemeService if available
+ * 3. Initialize LanguageService if available
+ * 4. Initialize MediaService if available
  *
- * @note Errors are intentionally propagated so the bootstrap runner can record failures.
- *       Whether the app continues depends on the stage optionality.
+ * Errors are propagated to allow bootstrap stage runner to handle failures
+ * according to stage optionality configuration.
+ *
+ * @returns Promise resolving when all base services are initialized
+ * @throws Error with cause chain if any service initialization fails
  */
 export async function initializeCoreBaseServices(): Promise<void> {
   const coreService = CoreService.getInstance();

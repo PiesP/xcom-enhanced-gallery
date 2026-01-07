@@ -1,4 +1,4 @@
-import { getUserscriptSafe, type UserscriptAPI } from '@shared/external/userscript';
+import { getUserscriptSafe, type UserscriptAPI } from '@shared/external/userscript/adapter';
 import type { PersistentStorageGetOptions } from '@shared/services/persistent-storage.contract';
 import { createSingleton } from '@shared/utils/types/singleton';
 

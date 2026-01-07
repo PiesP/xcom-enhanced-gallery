@@ -1,20 +1,19 @@
-# 🧪 Test Infrastructure (Internal)
+# Test Infrastructure (Internal)
 
-**Purpose**: Test environment configuration and service factory pattern for
-mock/real implementation selection
+**Purpose**: Test environment configuration and service factory pattern for mock/real implementation selection
 
 **Policy**:
 
-- 🔒 Internal implementation (within `src/`, Git tracked)
-- 📦 No barrel export (direct imports required)
-- 🧬 Test-driven development (TDD) and integration testing
-- 🔄 Conditional mock vs real service selection
+- Internal implementation (within `src/`, Git tracked)
+- No barrel export (direct imports required)
+- Test-driven development (TDD) and integration testing
+- Conditional mock vs real service selection
 
 ---
 
-## 📁 File Structure
+## File Structure
 
-```
+```text
 test/
 ├── test-environment-config.ts   # Test environment configuration management
 ├── test-service-factory.ts      # Mock/Real service factory pattern
@@ -23,7 +22,7 @@ test/
 
 ---
 
-## 🔧 API Guide
+## API Guide
 
 ### test-environment-config.ts
 
@@ -52,7 +51,10 @@ isTestFeatureEnabled(feature: keyof TestModeOptions): boolean;
 **Usage Example**:
 
 ```typescript
-import { enableTestMode, getTestConfig } from '@shared/external/test/test-environment-config';
+import {
+  enableTestMode,
+  getTestConfig,
+} from "@shared/external/test/test-environment-config";
 
 // Enable test mode
 enableTestMode({
@@ -102,45 +104,45 @@ assertServiceIsReal(serviceName: string, options?: ServiceFactoryOptions): void;
 
 **Selection Priority**:
 
-```
-1️⃣  Custom selector (highest)
+```text
+1. Custom selector (highest)
     ↓
-2️⃣  forceMock / forceReal
+2. forceMock / forceReal
     ↓
-3️⃣  Test mode + mockServices option
+3. Test mode + mockServices option
     ↓
-4️⃣  Default: 'real'
+4. Default: 'real'
 ```
 
 **Usage Example**:
 
 ```typescript
-import { createConditionalService } from '@shared/external/test/test-service-factory';
-import { enableTestMode } from '@shared/external/test/test-environment-config';
+import { createConditionalService } from "@shared/external/test/test-service-factory";
+import { enableTestMode } from "@shared/external/test/test-environment-config";
 
 // Enable test mode
 enableTestMode({ mockServices: true });
 
 // Conditionally create service
 const httpService = createConditionalService(
-  'HttpRequestService',
+  "HttpRequestService",
   () => new HttpRequestService(), // Real implementation
-  () => new MockHttpRequestService(), // Mock implementation
+  () => new MockHttpRequestService() // Mock implementation
   // options omitted: auto-detects test mode
 );
 
 // Or with explicit override
 const forceRealService = createConditionalService(
-  'StorageService',
+  "StorageService",
   () => new PersistentStorage(),
   () => new MockPersistentStorage(),
-  { forceReal: true }, // Use real even in test mode
+  { forceReal: true } // Use real even in test mode
 );
 ```
 
 ---
 
-## 📊 Test Configuration Options
+## Test Configuration Options
 
 ### TestModeOptions
 
@@ -177,7 +179,7 @@ enableTestMode({
 
 ---
 
-## 🔍 Usage Patterns
+## Usage Patterns
 
 ### Pattern 1: Automatic Test Mode Detection
 
@@ -187,7 +189,7 @@ import {
   clearCurrentTest,
   enableTestMode,
   setCurrentTest,
-} from '@shared/external/test/test-environment-config';
+} from "@shared/external/test/test-environment-config";
 
 export function beforeEach(testName: string) {
   enableTestMode({ mockServices: true });
@@ -203,12 +205,12 @@ export function afterEach() {
 
 ```typescript
 // Test code
-import { createConditionalService } from '@shared/external/test/test-service-factory';
+import { createConditionalService } from "@shared/external/test/test-service-factory";
 
 const storage = createConditionalService(
-  'PersistentStorage',
+  "PersistentStorage",
   () => PersistentStorage.getInstance(), // Real
-  () => MockPersistentStorage.getInstance(), // Mock
+  () => MockPersistentStorage.getInstance() // Mock
   // Test mode: mock | Production mode: real
 );
 ```
@@ -219,28 +221,28 @@ const storage = createConditionalService(
 import {
   assertServiceIsMock,
   createConditionalService,
-} from '@shared/external/test/test-service-factory';
+} from "@shared/external/test/test-service-factory";
 
-describe('Mock service test', () => {
-  it('should use mock implementation', () => {
+describe("Mock service test", () => {
+  it("should use mock implementation", () => {
     const service = createConditionalService(
-      'HttpService',
+      "HttpService",
       () => new HttpRequestService(),
       () => new MockHttpRequestService(),
-      { forceMock: true },
+      { forceMock: true }
     );
 
     // Verify: Is mock?
-    assertServiceIsMock('HttpService', { forceMock: true });
+    assertServiceIsMock("HttpService", { forceMock: true });
   });
 });
 ```
 
 ---
 
-## �️ Architecture & Policy
+## Architecture and Policy
 
-### Location & Scope
+### Location and Scope
 
 - **Location**: `src/shared/external/test/`
 - **Scope**: Internal source code (Git tracked)
@@ -258,26 +260,23 @@ describe('Mock service test', () => {
 
 ```typescript
 // ❌ WRONG: Using in production code
-import { createConditionalService } from '@shared/external/test';
+import { createConditionalService } from "@shared/external/test";
 
 // ❌ WRONG: Barrel import (no barrel export)
-import { enableTestMode } from '@shared/external/test';
+import { enableTestMode } from "@shared/external/test";
 
 // ✅ CORRECT: Direct path imports
-import { enableTestMode } from '@shared/external/test/test-environment-config';
-import { createConditionalService } from '@shared/external/test/test-service-factory';
+import { enableTestMode } from "@shared/external/test/test-environment-config";
+import { createConditionalService } from "@shared/external/test/test-service-factory";
 ```
 
 ---
 
-## 🔗 Related Documentation
+## Related Documentation
 
-- 📘 **[../README.md](../README.md)** - Parent directory overview
-- 📙 **[../../../../docs/ARCHITECTURE.md](../../../../docs/ARCHITECTURE.md)** -
-  Project architecture
-- 📕
-  **[../../../../docs/CODING_GUIDELINES.md](../../../../docs/CODING_GUIDELINES.md)** -
-  Coding standards
+- [Parent directory overview](../README.md)
+- [Project architecture](../../../../docs/ARCHITECTURE.md)
+- [Coding standards](../../../../CODING_STANDARDS.md)
 
 ---
 

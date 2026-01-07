@@ -87,7 +87,7 @@ export interface BaseComponentProps {
   /** Inline style */
   style?: CSSProperties;
   /** Test identifier */
-  'data-testid'?: string;
+  'data-testid'?: string | undefined;
   /** Accessibility: element description */
   'aria-label'?: string;
   /** Accessibility: detailed description element ID */
@@ -131,7 +131,7 @@ export interface BaseComponentProps {
  *
  * @example Buttons, links, clickable items
  */
-interface InteractiveComponentProps extends BaseComponentProps {
+export interface InteractiveComponentProps extends BaseComponentProps {
   /** Disabled state */
   disabled?: boolean;
   /** Mouse enter event */
@@ -215,7 +215,7 @@ export interface ContainerComponentProps extends BaseComponentProps {
  *
  * @template T Event type
  */
-type EventHandler<T = Event> = (event: T) => void;
+export type EventHandler<T = Event> = (event: T) => void;
 
 /**
  * Mouse event handler
@@ -287,7 +287,7 @@ export interface ApiResponse<T = Record<string, unknown>> {
 /**
  * API error
  */
-interface ApiError {
+export interface ApiError {
   /** Error code */
   code: string;
   /** Error message */

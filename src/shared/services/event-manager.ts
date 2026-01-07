@@ -23,7 +23,7 @@
  * @see {@link EventBus} for unified event management
  */
 
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
 import {

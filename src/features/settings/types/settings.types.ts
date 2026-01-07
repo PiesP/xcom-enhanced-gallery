@@ -6,17 +6,18 @@
 
 /**
  * Gallery settings configuration
+ * @description Controls gallery display, interaction, and media playback behavior
  */
-interface GallerySettings {
+export interface GallerySettings {
   /** Auto-scroll speed (1-10) */
   autoScrollSpeed: number;
   /** Enable infinite scroll */
   infiniteScroll: boolean;
   /** Number of images to preload */
   preloadCount: number;
-  /** Image fitting mode */
+  /** Image fitting mode: 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer' */
   imageFitMode: 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
-  /** Gallery theme */
+  /** Gallery theme: 'auto' | 'light' | 'dark' */
   theme: 'auto' | 'light' | 'dark';
   /** Enable animations */
   animations: boolean;
@@ -30,96 +31,111 @@ interface GallerySettings {
 
 /**
  * Toolbar settings configuration
+ * @description Controls toolbar visibility and auto-hide behavior
  */
-interface ToolbarSettings {
+export interface ToolbarSettings {
   /** Auto-hide delay in milliseconds (0 disables auto-hide) */
   autoHideDelay: number;
 }
 
 /**
  * Download settings configuration
+ * @description Controls download behavior, filename patterns, and compression
  */
-interface DownloadSettings {
-  /** Filename pattern */
+export interface DownloadSettings {
+  /** Filename pattern: 'original' | 'tweet-id' | 'timestamp' | 'custom' */
   filenamePattern: 'original' | 'tweet-id' | 'timestamp' | 'custom';
-  /** Custom filename template */
+  /** Custom filename template (used when filenamePattern is 'custom') */
   customTemplate?: string;
-  /** Image quality */
+  /** Image quality: 'original' | 'large' | 'medium' | 'small' */
   imageQuality: 'original' | 'large' | 'medium' | 'small';
   /** Maximum concurrent downloads */
   maxConcurrentDownloads: number;
   /** Auto-compress to ZIP */
   autoZip: boolean;
-  /** Download folder structure */
+  /** Download folder structure: 'flat' | 'by-date' | 'by-user' */
   folderStructure: 'flat' | 'by-date' | 'by-user';
 }
 
 /**
  * Token settings configuration
+ * @description Manages API authentication tokens and refresh behavior
  */
-interface TokenSettings {
-  /** Bearer token */
+export interface TokenSettings {
+  /** Bearer token (optional, empty if not configured) */
   bearerToken?: string;
-  /** Auto-refresh token */
+  /** Auto-refresh token on expiration */
   autoRefresh: boolean;
   /** Token expiration time (minutes) */
   expirationMinutes: number;
-  /** Last refresh time */
+  /** Last token refresh time (UNIX timestamp in milliseconds) */
   lastRefresh?: number;
 }
 
 /**
  * Accessibility settings configuration
+ * @description Controls accessibility features for motion sensitivity and screen readers
  */
-interface AccessibilitySettings {
-  /** Reduce animations */
+export interface AccessibilitySettings {
+  /** Reduce animations and transitions */
   reduceMotion: boolean;
-  /** Screen reader support */
+  /** Enable screen reader support and ARIA announcements */
   screenReaderSupport: boolean;
-  /** Focus indicators */
+  /** Show prominent focus indicators for keyboard navigation */
   focusIndicators: boolean;
 }
 
 /**
- * Phase 326.4: Feature flags configuration
+ * Feature flags configuration
+ * @description Phase 326.4: Controls feature toggles and experimental features
+ * @note All flags are required boolean values
  */
 export interface FeatureFlags {
-  /** Enable gallery feature (required) */
+  /** Enable gallery feature (required, core functionality) */
   gallery: boolean;
-  /** Enable settings UI */
+  /** Enable settings UI and preferences panel */
   settings: boolean;
-  /** Enable download feature */
+  /** Enable download feature for media files */
   download: boolean;
-  /** Enable media extraction */
+  /** Enable media extraction and processing */
   mediaExtraction: boolean;
-  /** Enable accessibility features */
+  /** Enable accessibility features and enhancements */
   accessibility: boolean;
 }
 
 /**
  * Complete application settings
+ * @description Root settings interface aggregating all configuration categories
  */
 export interface AppSettings {
+  /** Gallery display and interaction settings */
   gallery: GallerySettings;
+  /** Toolbar visibility and behavior settings */
   toolbar: ToolbarSettings;
+  /** Download behavior and compression settings */
   download: DownloadSettings;
+  /** API authentication token settings */
   tokens: TokenSettings;
+  /** Accessibility and usability settings */
   accessibility: AccessibilitySettings;
-  /** Phase 326.4: Feature flags */
+  /** Feature flags for toggleable functionality (Phase 326.4) */
   features: FeatureFlags;
-  /** Settings version (for compatibility management) */
+  /** Settings version for compatibility management */
   version: string;
-  /** Last modification time */
+  /** Last modification time (UNIX timestamp in milliseconds) */
   lastModified: number;
 }
 
 /**
- * Top-level setting key type (for type-safe access)
+ * Top-level setting key type for type-safe access to root settings
+ * @description Represents keys directly under AppSettings
  */
-type SettingKey = keyof AppSettings;
+export type SettingKey = keyof AppSettings;
 
 /**
- * Nested setting key type (supports dot notation)
+ * Nested setting key type supporting dot notation for deep access
+ * @description Allows type-safe access to nested properties via 'category.property' format
+ * @example 'gallery.autoScrollSpeed' | 'download.filenamePattern' | 'version'
  */
 export type NestedSettingKey =
   | `gallery.${keyof GallerySettings}`
@@ -132,22 +148,32 @@ export type NestedSettingKey =
 
 /**
  * Settings change event
+ * @description Emitted when a setting value changes
+ * @template T The type of the setting value being changed
  */
 export interface SettingChangeEvent<T = unknown> {
+  /** The setting key using dot notation (e.g., 'gallery.theme') */
   key: NestedSettingKey;
+  /** Previous setting value */
   oldValue: T;
+  /** New setting value */
   newValue: T;
+  /** Event timestamp (UNIX timestamp in milliseconds) */
   timestamp: number;
-  /** Result pattern alignment: event status (currently success only) */
+  /** Result pattern alignment: event status (currently success only, reserved for future error handling) */
   status?: 'success' | 'error';
 }
 
 /**
  * Settings validation result
+ * @description Result of validating a setting value or configuration
  */
 export interface SettingValidationResult {
+  /** Whether the setting passed validation */
   valid: boolean;
+  /** Error message if validation failed */
   error?: string;
+  /** Suggested corrected value or usage hint */
   suggestion?: string;
 }
 

@@ -7,9 +7,9 @@
 import { TWITTER_API_CONFIG } from '@constants/twitter-api';
 import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
 import { getSafeHostname, getSafeLocationHeaders } from '@shared/dom/safe-location';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { HttpRequestService } from '@shared/services/http-request-service';
-import { getCsrfToken, getCsrfTokenAsync } from '@shared/services/media/twitter-auth';
+import { getCsrfToken, getCsrfTokenAsync } from '@shared/services/media/twitter-auth/twitter-auth';
 import {
   extractMediaFromTweet,
   normalizeLegacyTweet,

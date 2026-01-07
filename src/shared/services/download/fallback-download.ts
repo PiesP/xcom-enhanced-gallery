@@ -3,7 +3,8 @@
  * @description Keeps the download surface minimal by dropping fetch+blob fallbacks.
  */
 
-import { isGMAPIAvailable, resolveGMDownload } from '@shared/external/userscript';
+import { resolveGMDownload } from '@shared/external/userscript/adapter';
+import { isGMAPIAvailable } from '@shared/external/userscript/environment-detector';
 
 interface GMDownloadProgressEvent {
   loaded: number;
@@ -31,17 +32,17 @@ export interface DownloadCapability {
   gmDownload?: GMDownloadFunction | undefined;
 }
 
+function asGMDownloadFunction(value: unknown): GMDownloadFunction | undefined {
+  return typeof value === 'function' ? (value as GMDownloadFunction) : undefined;
+}
+
 export function detectDownloadCapability(): DownloadCapability {
-  const rawGMDownload = resolveGMDownload();
-  const gmDownload =
-    typeof rawGMDownload === 'function'
-      ? (rawGMDownload as unknown as GMDownloadFunction)
-      : undefined;
-  const hasGMDownload = isGMAPIAvailable('download') && !!gmDownload;
+  const gmDownload = asGMDownloadFunction(resolveGMDownload());
+  const hasGMDownload = !!gmDownload && isGMAPIAvailable('download');
 
   return {
     hasGMDownload,
     method: hasGMDownload ? 'gm_download' : 'none',
-    gmDownload,
+    gmDownload: hasGMDownload ? gmDownload : undefined,
   };
 }

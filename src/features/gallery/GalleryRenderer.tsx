@@ -5,7 +5,11 @@
 
 import { CSS } from '@constants/css';
 import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';
-import { GalleryContainer, mountGallery, unmountGallery } from '@shared/components/isolation';
+import {
+  GalleryContainer,
+  mountGallery,
+  unmountGallery,
+} from '@shared/components/isolation/GalleryContainer';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import {
   getDownloadOrchestrator,
@@ -14,8 +18,8 @@ import {
   getThemeService,
 } from '@shared/container/service-accessors';
 import { getErrorMessage } from '@shared/error/normalize';
-import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces';
-import { logger } from '@shared/logging';
+import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces/gallery.interfaces';
+import { logger } from '@shared/logging/logger';
 import type { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
 import { NotificationService } from '@shared/services/notification-service';
 import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
@@ -30,19 +34,20 @@ import { setError } from '@shared/state/signals/ui.state';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
 import { createSignal, onCleanup } from 'solid-js';
+
 import './styles/gallery-global.css';
 
 export class GalleryRenderer implements GalleryRendererInterface {
   private container: HTMLDivElement | null = null;
   private isMounting = false;
   private stateUnsubscribe: (() => void) | null = null;
-  private onCloseCallback?: () => void;
+  private onCloseCallback: (() => void) | null = null;
 
   constructor() {
     this.setupStateSubscription();
   }
 
-  setOnCloseCallback(onClose: () => void): void {
+  setOnCloseCallback(onClose: (() => void) | null): void {
     this.onCloseCallback = onClose;
   }
 

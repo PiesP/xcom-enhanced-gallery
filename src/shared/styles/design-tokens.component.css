@@ -1,25 +1,23 @@
 /**
  * @fileoverview Component Design Tokens
- * @description Component-specific tokens - referencing semantic values
+ * @description Component-specific tokens referencing semantic values and layout constraints
+ * @layer xeg.tokens Component token layer
  */
 
 @layer xeg.tokens {
   :where(:root, .xeg-theme-scope) {
     /* Toolbar Component */
-    /* --xeg-toolbar-bg is defined in semantic.css */
-
-    /* Toolbar Expandable Panel */
     --xeg-toolbar-panel-transition:
       height var(--xeg-duration-normal) var(--xeg-ease-standard), opacity var(--xeg-duration-fast)
       var(--xeg-ease-standard);
     --xeg-toolbar-panel-height: 0;
-    --xeg-toolbar-panel-max-height: 17.5rem; /* 280px */
+    --xeg-toolbar-panel-max-height: 17.5rem;
 
     /* Scrollbar Component */
-    --xeg-scrollbar-width: 0.5rem; /* 8px */
+    --xeg-scrollbar-width: 0.5rem;
 
     /* Hover Zone Component */
-    --xeg-hover-zone-height: 7.5rem; /* 120px */
+    --xeg-hover-zone-height: 7.5rem;
 
     /* Spinner Component */
     --xeg-spinner-size-default: 1rem;
@@ -50,20 +48,17 @@
     --xeg-icon-stroke-width: 0.125rem;
     --xeg-icon-size: 1.25em;
 
-    /* Spacing Variants */
+    /* Spacing Aliases */
     --xeg-spacing-xs: var(--space-xs);
     --xeg-spacing-sm: var(--space-sm);
     --xeg-spacing-md: var(--space-md);
     --xeg-spacing-lg: var(--space-lg);
-    /* Removed --xeg-spacing-3xl (use --space-3xl or --xeg-spacing-2xl) */
-    /* Removed --xeg-spacing-5xl (use --space-4xl) */
+
+    /* Layout Constraints */
     --xeg-viewport-height-constrained: 90vh;
   }
 
-  /* Accessibility Media Queries */
-  /* ======================================= */
-
-  /* Support for reduced transparency preference */
+  /* Accessibility: Reduced Transparency Support */
   @media (prefers-reduced-transparency: reduce) {
     :where(:root, .xeg-theme-scope) {
       --xeg-surface-bg: var(--xeg-color-bg-primary);
@@ -72,15 +67,14 @@
 }
 
 @layer xeg.components {
-  /* Utility Classes */
-
-  /* Surface utility - flat panel style */
+  /* Utility Classes: Surface Panel */
   .xeg-surface {
     background: var(--xeg-surface-bg);
     border: 0.0625rem solid var(--xeg-surface-border);
     border-radius: var(--xeg-radius-lg);
   }
 
+  /* Utility Classes: Spinner */
   .xeg-spinner {
     display: inline-block;
     width: var(--xeg-spinner-size, var(--xeg-spinner-size-default));
@@ -97,21 +91,13 @@
       animation: none;
     }
   }
-}
 
-/* ======================================= */
-/* Accessibility Media Queries */
-/* ======================================= */
-
-/* Support for reduced transparency preference - Moved to main @layer xeg.tokens block */
-
-/* NOTE: prefers-reduced-motion tokens integrated into design-tokens.semantic.css */
-
-@layer xeg.components {
+  /* Keyframe Animations */
   @keyframes xeg-fade-in {
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
@@ -121,6 +107,7 @@
     from {
       opacity: 1;
     }
+
     to {
       opacity: 0;
     }
@@ -130,10 +117,9 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
   }
 }
-
-/* toolbar-slide-* keyframes removed (Animation uses JS utils) */

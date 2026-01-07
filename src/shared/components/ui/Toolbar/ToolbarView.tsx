@@ -14,7 +14,7 @@ import { resolve, resolveOptional } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, onCleanup, Show } from 'solid-js';
 import styles from './Toolbar.module.css';
-import TweetTextPanel from './TweetTextPanel';
+import { TweetTextPanel } from './TweetTextPanel';
 
 type ToolbarViewNavState = {
   readonly prevDisabled: boolean;

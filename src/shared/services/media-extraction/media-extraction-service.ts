@@ -1,6 +1,6 @@
 import { TWITTER_MEDIA_SELECTOR } from '@shared/dom/selectors';
 import { getErrorMessage } from '@shared/error/normalize';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
 import type {

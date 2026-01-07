@@ -26,10 +26,9 @@
  */
 
 /**
- * Toolbar data state (business logic)
+ * Toolbar data state (business logic).
  *
  * @description State type that tracks toolbar state in business logic
- *
  * - 'idle': Idle state (no operations)
  * - 'loading': Data loading
  * - 'downloading': Download in progress
@@ -38,10 +37,9 @@
 export type ToolbarDataState = 'idle' | 'loading' | 'downloading' | 'error';
 
 /**
- * Image fit mode (Fit Mode)
+ * Image fit mode (Fit Mode).
  *
  * @description Defines how images are rendered within container
- *
  * - 'original': Keep original size
  * - 'fitWidth': Fit to width
  * - 'fitHeight': Fit to height
@@ -54,7 +52,7 @@ export type ToolbarDataState = 'idle' | 'loading' | 'downloading' | 'error';
 export type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
 
 /**
- * Toolbar UI state object
+ * Toolbar UI state object.
  *
  * @description UI/visual state managed by Toolbar component
  *
@@ -81,7 +79,7 @@ export interface ToolbarState {
 }
 
 /**
- * Toolbar actions interface
+ * Toolbar actions interface.
  *
  * @description Actions that modify ToolbarState
  *
@@ -106,7 +104,7 @@ export interface ToolbarActions {
 }
 
 /**
- * Toolbar ViewModel (derived state)
+ * Toolbar ViewModel (derived state).
  *
  * @description Normalized toolbar information ready for UI consumption.
  * Provides memo-friendly aggregate data that can be shared across

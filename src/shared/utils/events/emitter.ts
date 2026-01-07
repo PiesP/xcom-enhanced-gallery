@@ -13,8 +13,14 @@
  *   AbortSignal / subscription tracking is not required.
  */
 
+import type { EventEmitterInterface } from './emitter.types';
+
 /**
- * Create type-safe event emitter
+ * Create a type-safe event emitter with minimal overhead.
+ *
+ * @template T - Record mapping event names to their data payloads.
+ *   Keys are event names (strings), values are payload types.
+ * @returns Type-safe emitter with `on`, `emit`, and `dispose` methods.
  *
  * @example
  * ```ts
@@ -28,31 +34,47 @@
  * });
  *
  * emitter.emit('user:login', { userId: '123' });
- * unsubscribe();
+ * unsubscribe(); // Stop listening
  * ```
  */
-export function createEventEmitter<T extends Record<string, unknown>>() {
+export function createEventEmitter<T extends Record<string, unknown>>(): EventEmitterInterface<T> {
   const listeners = new Map<keyof T, Set<(data: unknown) => void>>();
 
   return {
     /**
-     * Register event listener
-     * @returns Unsubscribe function
+     * Register an event listener.
+     *
+     * @template K - The specific event key.
+     * @param event - Event name from the T type.
+     * @param callback - Handler called with the event payload.
+     * @returns Unsubscribe function; calling it removes the listener.
      */
     on<K extends keyof T>(event: K, callback: (data: T[K]) => void): () => void {
-      if (!listeners.has(event)) {
-        listeners.set(event, new Set());
+      const eventListeners = listeners.get(event);
+
+      if (eventListeners) {
+        eventListeners.add(callback as (data: unknown) => void);
+      } else {
+        listeners.set(event, new Set([callback as (data: unknown) => void]));
       }
-      listeners.get(event)!.add(callback as (data: unknown) => void);
 
       return () => {
-        listeners.get(event)?.delete(callback as (data: unknown) => void);
+        const currentListeners = listeners.get(event);
+        if (currentListeners) {
+          currentListeners.delete(callback as (data: unknown) => void);
+        }
       };
     },
 
     /**
-     * Emit event (synchronous execution)
-     * Listener errors are isolated - one listener failure doesn't prevent others
+     * Emit an event to all registered listeners (synchronous execution).
+     *
+     * Listener errors are isolated: one listener's exception does not prevent
+     * other listeners from being called.
+     *
+     * @template K - The specific event key.
+     * @param event - Event name from the T type.
+     * @param data - Payload matching the event's data type.
      */
     emit<K extends keyof T>(event: K, data: T[K]): void {
       const eventListeners = listeners.get(event);
@@ -60,17 +82,17 @@ export function createEventEmitter<T extends Record<string, unknown>>() {
         return;
       }
 
-      eventListeners.forEach((callback) => {
+      for (const callback of eventListeners) {
         try {
           callback(data);
         } catch {
-          // Intentionally ignore listener errors.
+          // Intentionally ignore listener errors to prevent cascade failures.
         }
-      });
+      }
     },
 
     /**
-     * Remove all listeners (optional)
+     * Remove all listeners and clear internal state (optional cleanup).
      */
     dispose(): void {
       listeners.clear();

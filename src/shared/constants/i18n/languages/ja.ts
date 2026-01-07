@@ -1,7 +1,10 @@
 import type { LanguageStrings } from '@shared/constants/i18n/language-types';
-
 import { buildLanguageStringsFromValues } from '@shared/constants/i18n/translation-values';
 
+/**
+ * Japanese language translation values
+ * Order must match the translation registry keys
+ */
 const JA_VALUES = [
   '前へ',
   '次へ',
@@ -44,4 +47,7 @@ const JA_VALUES = [
   '{type} の読み込みに失敗しました',
 ] as const;
 
+/**
+ * Japanese language strings for the application
+ */
 export const ja: LanguageStrings = buildLanguageStringsFromValues(JA_VALUES);

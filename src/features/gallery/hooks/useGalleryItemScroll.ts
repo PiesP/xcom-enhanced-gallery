@@ -12,17 +12,17 @@ import type { Accessor } from 'solid-js';
 import { createEffect, untrack } from 'solid-js';
 
 interface UseGalleryItemScrollOptions {
-  enabled?: MaybeAccessor<boolean>;
-  behavior?: MaybeAccessor<ScrollBehavior>;
-  block?: MaybeAccessor<ScrollLogicalPosition>;
-  alignToCenter?: MaybeAccessor<boolean>;
-  isScrolling?: MaybeAccessor<boolean>;
-  onScrollStart?: () => void;
+  readonly enabled?: MaybeAccessor<boolean>;
+  readonly behavior?: MaybeAccessor<ScrollBehavior>;
+  readonly block?: MaybeAccessor<ScrollLogicalPosition>;
+  readonly alignToCenter?: MaybeAccessor<boolean>;
+  readonly isScrolling?: MaybeAccessor<boolean>;
+  readonly onScrollStart?: () => void;
 }
 
 interface UseGalleryItemScrollReturn {
-  scrollToItem: (index: number) => void;
-  scrollToCurrentItem: () => void;
+  readonly scrollToItem: (index: number) => void;
+  readonly scrollToCurrentItem: () => void;
 }
 
 export function useGalleryItemScroll(

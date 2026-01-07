@@ -1,18 +1,18 @@
 /**
- * @fileoverview Unified DOM query helpers with fallback selector support
- * @description Provides type-safe query functions that try multiple selectors in order.
+ * @fileoverview DOM query helpers with fallback selector support.
+ * Provides type-safe query functions that try multiple selectors in order.
  * Consolidates duplicate selector fallback patterns across the codebase.
  */
 
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 
 /**
- * Cache for invalid selectors to avoid repeated warnings
+ * Cache for invalid selectors to avoid repeated warnings.
  */
 const warnedInvalidSelectors: Record<string, true> = Object.create(null);
 
 /**
- * Warn about invalid selector once (dev mode only)
+ * Warn about invalid selector once (development mode only).
  */
 function warnInvalidSelectorOnce(selector: string, error: unknown): void {
   if (!__DEV__) {
@@ -28,8 +28,8 @@ function warnInvalidSelectorOnce(selector: string, error: unknown): void {
 }
 
 /**
- * Query a single element with fallback selectors
- * Tries each selector in order until one succeeds
+ * Query a single element with fallback selectors.
+ * Tries each selector in order until one succeeds.
  *
  * @param container - Parent element to search within
  * @param selectors - Array of selectors to try in order (first = highest priority)
@@ -62,8 +62,8 @@ export function querySelectorWithFallback<T extends Element = Element>(
 }
 
 /**
- * Query all elements with fallback selectors
- * Combines results from all matching selectors (deduplicated)
+ * Query all elements with fallback selectors.
+ * Combines results from all matching selectors (deduplicated).
  *
  * @param container - Parent element to search within
  * @param selectors - Array of selectors to try
@@ -102,8 +102,8 @@ export function queryAllWithFallback<T extends Element = Element>(
 }
 
 /**
- * Find closest ancestor matching any of the fallback selectors
- * Tries each selector in order until one succeeds
+ * Find closest ancestor matching any of the fallback selectors.
+ * Tries each selector in order until one succeeds.
  *
  * @param element - Starting element
  * @param selectors - Array of selectors to try in order (first = highest priority)

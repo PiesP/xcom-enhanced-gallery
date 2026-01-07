@@ -66,11 +66,11 @@ export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
  */
 export interface AsyncState<T> {
   /** Current data (null if loading, previous data maintained on error if possible) */
-  data: T | null;
+  readonly data: T | null;
   /** Loading state */
-  loading: boolean;
+  readonly loading: boolean;
   /** Error message (null if successful) */
-  error: string | null;
+  readonly error: string | null;
 }
 
 /**
@@ -80,11 +80,11 @@ export interface AsyncState<T> {
  */
 export interface AnimationConfig {
   /** Animation duration (ms) */
-  duration?: number;
+  readonly duration?: number;
   /** Easing function (ease, ease-in, ease-out, etc.) */
-  easing?: string;
+  readonly easing?: string;
   /** Animation delay (ms) */
-  delay?: number;
+  readonly delay?: number;
 }
 
 /**
@@ -106,25 +106,25 @@ export type ImageFitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer
  */
 export interface ImageFitOptions {
   /** Fit mode */
-  mode: ImageFitMode;
+  readonly mode: ImageFitMode;
   /** Maximum width (px or em) */
-  maxWidth?: number;
+  readonly maxWidth?: number;
   /** Maximum height (px or em) */
-  maxHeight?: number;
+  readonly maxHeight?: number;
   /** Image quality (0-1) */
-  quality?: number;
+  readonly quality?: number;
   /** Callback functions */
-  callbacks?: ImageFitCallbacks;
+  readonly callbacks?: ImageFitCallbacks;
 }
 
 /**
  * Image fit callback functions
  */
-interface ImageFitCallbacks {
+export interface ImageFitCallbacks {
   /** Called on size change */
-  onResize?: (size: { width: number; height: number }) => void;
+  readonly onResize?: (size: { readonly width: number; readonly height: number }) => void;
   /** Called on error */
-  onError?: (error: Error) => void;
+  readonly onError?: (error: Error) => void;
 }
 
 /**
@@ -149,9 +149,9 @@ export type MediaFileExtension = 'jpg' | 'jpeg' | 'png' | 'gif' | 'webp' | 'mp4'
  */
 export interface GlobalConfig {
   /** Theme setting */
-  theme: Theme;
+  readonly theme: Theme;
   /** Language setting (ISO 639-1 code) */
-  language: string;
+  readonly language: string;
   /** Debug mode */
-  debug: boolean;
+  readonly debug: boolean;
 }

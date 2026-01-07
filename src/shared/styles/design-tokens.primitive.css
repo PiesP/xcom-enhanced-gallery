@@ -1,80 +1,111 @@
 /**
- * @fileoverview Primitive Design Tokens
- * @description Basic colors, spacing, typography values - Lowest layer
+ * @fileoverview Primitive Design Tokens - Base layer
+ * @description
+ * Lowest-level design token definitions: colors, spacing, typography,
+ * and timing values. Uses oklch() color space for consistent perceptual
+ * lightness and rel/em units for responsive scaling.
+ *
+ * @layer xeg.tokens
+ * @see CODING_STANDARDS.md#6-styling-conventions
  */
 
 @layer xeg.tokens {
   :where(:root, .xeg-theme-scope) {
-    /* Base Colors - Raw Values */
+    /**
+     * BASE COLORS - Raw values
+     * Pure white and black reference points
+     */
     --color-base-white: oklch(1 0 0);
     --color-base-black: oklch(0 0 0);
 
-    /* Gray Scale */
+    /**
+     * GRAYSCALE - Neutral color ramp
+     * Hue ~206-288° for consistency across scale
+     */
     --color-gray-50: oklch(0.97 0.002 206.2);
     --color-gray-100: oklch(0.943 0.006 206.2);
     --color-gray-200: oklch(0.896 0.006 206.2);
     --color-gray-300: oklch(0.796 0.006 206.2);
-    --color-gray-400: oklch(0.696 0.006 286.3); /* Added: secondary text for dark mode */
+    --color-gray-400: oklch(0.696 0.006 286.3);
     --color-gray-500: oklch(0.598 0.006 286.3);
-    --color-gray-600: oklch(0.488 0.006 286.3); /* Added: secondary text for light mode, borders */
+    --color-gray-600: oklch(0.488 0.006 286.3);
     --color-gray-700: oklch(0.378 0.005 286.3);
-    --color-gray-800: oklch(
-      0.306 0.005 282
-    ); /* Between gray-700 and 900, modal/toolbar background */
+    --color-gray-800: oklch(0.306 0.005 282);
     --color-gray-900: oklch(0.234 0.006 277.8);
 
-    /* Spacing Scale - rem base (absolute, 16px base) */
-    --space-none: 0; /* Explicit zero spacing */
-    --space-xs: 0.25rem; /* 4px */
-    --space-sm: 0.5rem; /* 8px */
-    --space-md: 1rem; /* 16px */
-    --space-lg: 1.5rem; /* 24px */
-    --space-xl: 2rem; /* 32px */
-    --space-2xl: 3rem; /* 48px */
-    --space-3xl: 4rem; /* 64px */
-    --space-4xl: 5rem; /* 80px */
+    /**
+     * SPACING SCALE - Relative spacing units
+     * Base: 1rem = 16px
+     * Scale: 4px increments
+     */
+    --space-none: 0;
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+    --space-3xl: 4rem;
+    --space-4xl: 5rem;
 
-    /* Border Radius - em base (relative to font-size) */
-    --radius-xs: 0.125em; /* 2px @ 16px */
-    --radius-sm: 0.25em; /* 4px @ 16px */
-    --radius-md: 0.375em; /* 6px @ 16px */
-    --radius-lg: 0.5em; /* 8px @ 16px */
-    --radius-2xl: 1em; /* 16px @ 16px */
-    --radius-full: 50%; /* Circular element */
+    /**
+     * BORDER RADIUS - Responsive units
+     * Base: em (relative to element font-size)
+     * Allows radius to scale with text size
+     */
+    --radius-xs: 0.125em;
+    --radius-sm: 0.25em;
+    --radius-md: 0.375em;
+    --radius-lg: 0.5em;
+    --radius-2xl: 1em;
+    --radius-full: 50%;
 
-    /* Typography Scale - rem base (absolute, Twitter Style) */
+    /**
+     * TYPOGRAPHY - Font family and size scale
+     * Primary: System fonts + TwitterChirp fallback
+     * Sizes: 12px-24px range, rem-based for accessibility
+     */
     --font-family-primary:
       "TwitterChirp", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --font-size-xs: 0.75rem; /* 12px */
-    --font-size-sm: 0.875rem; /* 14px */
-    --font-size-base: 0.9375rem; /* 15px, Twitter default */
-    --font-size-md: 1rem; /* 16px */
-    --font-size-lg: 1.125rem; /* 18px */
-    --font-size-xl: 1.25rem; /* 20px */
-    --font-size-2xl: 1.5rem; /* 24px */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 0.9375rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
 
-    /* Font Weight Scale */
+    /**
+     * FONT WEIGHT - Semantic weight scale
+     * Used for hierarchy and emphasis
+     */
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
 
-    /* Duration Scale */
+    /**
+     * DURATION SCALE - Animation/transition timing
+     * Used for interaction feedback and transitions
+     */
     --duration-instant: 100ms;
     --duration-fast: 150ms;
     --duration-normal: 250ms;
     --duration-slow: 300ms;
     --duration-slower: 400ms;
 
-    /* Border Width Scale */
-    --border-width-thin: 0.0625rem; /* 1px */
+    /**
+     * BORDER WIDTH - Subtle to visible strokes
+     * Thin: 1px = 0.0625rem @ 16px base
+     */
+    --border-width-thin: 0.0625rem;
 
-    /* Opacity Scale */
-    /* NOTE: Individual opacity values used directly where needed */
-
-    /* Line Height Scale */
+    /**
+     * LINE HEIGHT - Text vertical rhythm
+     * Snug: optimized for tweet text readability
+     */
     --line-height-tight: 1.25;
-    --line-height-snug: 1.375; /* Optimal for tweet text readability */
+    --line-height-snug: 1.375;
     --line-height-normal: 1.5;
     --line-height-relaxed: 1.75;
   }

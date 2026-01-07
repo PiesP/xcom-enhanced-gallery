@@ -12,7 +12,7 @@ import { globalTimerManager } from '@shared/utils/time/timer-management';
 /**
  * Error thrown when an operation times out
  */
-class TimeoutError extends Error {
+export class TimeoutError extends Error {
   override readonly name = 'TimeoutError';
 
   constructor(message = 'Operation timed out') {
@@ -25,7 +25,7 @@ class TimeoutError extends Error {
 /**
  * Options for timeout operations
  */
-interface TimeoutOptions {
+export interface TimeoutOptions {
   /** Timeout duration in milliseconds */
   readonly ms: number;
   /** Optional external signal for additional cancellation */

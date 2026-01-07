@@ -1,29 +1,22 @@
 /**
  * @fileoverview Core Types - Integrated domain and infrastructure types
- * @version 3.0.0 - Phase 197.1: Structure clarification
  *
- * **Role**:
- * This file integrates multiple domain and infrastructure types.
- * Since app.types.ts re-exports these types, direct imports are rare.
+ * **Role**: Integrates domain and infrastructure types for the gallery system.
+ * Since `app.types.ts` re-exports these types, direct imports should be rare.
  *
  * **Composition** (by section):
- * 1. SERVICE TYPES - Service base interface
- * 2. GALLERY TYPES - Gallery domain (state, action, event)
- * 3. CORE FOUNDATION TYPES - App config & lifecycle
+ * 1. SERVICE TYPES - Service lifecycle and base interface
+ * 2. GALLERY TYPES - Gallery domain (state, events, view modes)
+ * 3. CORE FOUNDATION TYPES - App config, download options, and lifecycle
  * 4. RESULT TYPES - Explicit success/failure representation
  *
  * **Recommended usage**:
  * - General: `import type { Result, BaseService } from '@shared/types'` (via app.types.ts)
- * - Detail: `import type { GalleryState } from '@shared/types/core/core-types'`
- *
- * **Phase 197 improvements**:
- * - BaseService duplication removed (re-export from base-service.types.ts)
- * - Result pattern integrated
- * - JSDoc enhanced & sections clarified
+ * - Specific: `import type { GalleryState } from '@shared/types/core/core-types'`
  *
  * @see {@link ../app.types.ts} - Re-export hub
  * @see {@link ./base-service.types.ts} - BaseService definition
- * @see {@link ../result.types.ts} - Result pattern & ErrorCode
+ * @see {@link ../result.types.ts} - Result pattern utilities
  */
 
 import type { Cleanupable } from '@shared/types/lifecycle.types';
@@ -37,11 +30,10 @@ export type { BaseService } from './base-service.types';
 
 /**
  * Service lifecycle state
+ *
+ * @see {@link ../lifecycle.types.ts} - Lifecycle interface
  */
 export type ServiceLifecycle = 'uninitialized' | 'initializing' | 'initialized' | 'destroyed';
-
-// All unused service type definitions removed in Phase 326.6
-// Services use concrete implementations instead of interface abstractions
 
 // ========================================
 // GALLERY TYPES (from gallery.types.ts)
@@ -53,7 +45,15 @@ export type ServiceLifecycle = 'uninitialized' | 'initializing' | 'initialized' 
 export type GalleryViewMode = 'grid' | 'carousel' | 'slideshow';
 
 /**
- * Gallery state interface (immutability guaranteed)
+ * Gallery state (immutable)
+ *
+ * @property isOpen - Whether the gallery is currently open
+ * @property currentIndex - Zero-based index of the active item
+ * @property items - Readonly array of media items
+ * @property viewMode - Current gallery view mode
+ * @property isFullscreen - Whether fullscreen is active
+ * @property isLoading - Whether content is loading
+ * @property error - Error message if any, null otherwise
  */
 export interface GalleryState {
   readonly isOpen: boolean;
@@ -66,7 +66,14 @@ export interface GalleryState {
 }
 
 /**
- * Gallery event type
+ * Gallery event payloads
+ *
+ * @property gallery:open - Fired when gallery opens
+ * @property gallery:close - Fired when gallery closes
+ * @property gallery:navigate - Fired when navigating to a different item
+ * @property gallery:viewModeChange - Fired when view mode changes
+ * @property gallery:fullscreenToggle - Fired when fullscreen state changes
+ * @property gallery:error - Fired when an error occurs
  */
 export type GalleryEvents = {
   'gallery:open': { items: MediaInfo[]; startIndex: number };
@@ -78,82 +85,82 @@ export type GalleryEvents = {
 };
 
 // ========================================
-// VIEW MODE TYPES (from view-mode.types.ts)
+// VIEW MODE TYPES
 // ========================================
 
-// Phase 380: Type-only export to break circular dependency
-// Import removed, re-export ViewMode type only
 export type { ViewMode } from '@constants/types';
-
-/**
- * ViewMode helper functions were removed in Phase 421 cleanup.
- * Use VIEW_MODES from '@constants/video-controls' for validation when needed.
- */
 
 // ========================================
 // CORE FOUNDATION TYPES (from core.types.ts)
 // ========================================
 
 /**
- * Default Gallery Settings
+ * Gallery configuration settings
+ *
+ * @property autoPlay - Whether to autoplay media
+ * @property showThumbnails - Whether to show thumbnail previews
+ * @property downloadEnabled - Whether download feature is enabled
+ * @property keyboardNavigation - Whether keyboard navigation is enabled (optional)
+ * @property fullscreenEnabled - Whether fullscreen mode is supported (optional)
+ * @property zoomEnabled - Whether image zoom is enabled (optional)
  */
 export interface GalleryConfig {
-  /** Whether to autoplay */
-  autoPlay: boolean;
-  /** Whether to show thumbnails */
-  showThumbnails: boolean;
-  /** Whether download feature is enabled */
-  downloadEnabled: boolean;
-  /** Whether keyboard navigation is enabled */
-  keyboardNavigation?: boolean;
-  /** Whether fullscreen mode is supported */
-  fullscreenEnabled?: boolean;
-  /** Image zoom capability */
-  zoomEnabled?: boolean;
+  readonly autoPlay: boolean;
+  readonly showThumbnails: boolean;
+  readonly downloadEnabled: boolean;
+  readonly keyboardNavigation?: boolean;
+  readonly fullscreenEnabled?: boolean;
+  readonly zoomEnabled?: boolean;
 }
 
 /**
- * Download Options
+ * Download configuration options
+ *
+ * @property quality - Download quality level (optional)
+ * @property filenameFormat - Custom filename format template (optional)
+ * @property compressionEnabled - Whether to compress files (optional)
  */
 export interface DownloadOptions {
-  /** Download quality */
-  quality?: 'original' | 'high' | 'medium';
-  /** Filename format */
-  filenameFormat?: string;
-  /** Whether compression is enabled */
-  compressionEnabled?: boolean;
+  readonly quality?: 'original' | 'high' | 'medium';
+  readonly filenameFormat?: string;
+  readonly compressionEnabled?: boolean;
 }
 
 /**
- * Size Information
+ * 2D size dimensions
+ *
+ * @property width - Width value in pixels
+ * @property height - Height value in pixels
  */
 export interface Size {
-  width: number;
-  height: number;
+  readonly width: number;
+  readonly height: number;
 }
 
 /**
- * Integrated Lifecycle Interface
+ * Integrated lifecycle interface
+ *
+ * Extends Cleanupable with resource status checking capability.
+ *
+ * @see {@link ./lifecycle.types.ts} - Cleanupable interface
  */
 export interface Lifecycle extends Cleanupable {
   /**
-   * Check resource status
+   * Check if the resource is active
+   * @returns true if resource is active and usable
    */
   isActive(): boolean;
 }
 
 // ========================================
-// RESULT TYPES (from result.ts)
+// RESULT TYPES
 // ========================================
 
 /**
- * Result Type - Uses Enhanced Result Pattern
- * @see {@link ../result.types.ts} - Enhanced Result definition and utilities (including AsyncResult)
+ * Result type for explicit error handling
  *
- * Phase 353: AsyncResult type integration (moved to result.types.ts)
+ * Use this pattern for operations that may fail. Utility functions
+ * are available in `result.types.ts` (success, failure, isSuccess, etc.).
+ *
+ * @see {@link ../result.types.ts} - Result utilities and AsyncResult type
  */
-// Result utility functions moved to result.types.ts (Phase 355.2)
-// - success, failure, partial, cancelled
-// - isSuccess, isFailure, isPartial
-// - unwrapOr, safe, safeAsync, chain, map
-// import { success, failure, isSuccess, ... } from '@shared/types/result.types';

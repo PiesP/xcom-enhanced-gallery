@@ -8,9 +8,12 @@ import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/medi
 import { escapeRegExp } from '@shared/utils/text/formatting';
 import { tryParseUrl } from '@shared/utils/url/host';
 
+/** Utility type to make properties writable for normalization functions */
+type Writable<T> = { -readonly [P in keyof T]: T[P] };
+
 interface MediaDimensions {
-  width?: number;
-  height?: number;
+  readonly width?: number;
+  readonly height?: number;
 }
 
 function resolveDimensions(media: TwitterMedia, mediaUrl: string): MediaDimensions {
@@ -23,13 +26,10 @@ function resolveDimensions(media: TwitterMedia, mediaUrl: string): MediaDimensio
   const width = widthFromOriginal ?? widthFromUrl;
   const height = heightFromOriginal ?? heightFromUrl;
 
-  const result: MediaDimensions = {};
-  if (width !== null && width !== undefined) {
-    result.width = width;
-  }
-  if (height !== null && height !== undefined) {
-    result.height = height;
-  }
+  const result: MediaDimensions = {
+    ...(width !== null && width !== undefined && { width }),
+    ...(height !== null && height !== undefined && { height }),
+  };
   return result;
 }
 
@@ -189,19 +189,10 @@ function createMediaEntry(
     short_tweet_url: media.url ?? '',
     tweet_text: tweetText,
     sourceLocation,
+    ...(dimensions.width && { original_width: dimensions.width }),
+    ...(dimensions.height && { original_height: dimensions.height }),
+    ...(aspectRatio && { aspect_ratio: aspectRatio }),
   };
-
-  if (dimensions.width) {
-    entry.original_width = dimensions.width;
-  }
-
-  if (dimensions.height) {
-    entry.original_height = dimensions.height;
-  }
-
-  if (aspectRatio) {
-    entry.aspect_ratio = aspectRatio;
-  }
 
   return entry;
 }
@@ -316,31 +307,33 @@ export function extractMediaFromTweet(
 }
 
 export function normalizeLegacyTweet(tweet: TwitterTweet): void {
-  if (tweet.legacy) {
-    if (!tweet.extended_entities && tweet.legacy.extended_entities) {
-      tweet.extended_entities = tweet.legacy.extended_entities;
+  const mutableTweet = tweet as Writable<TwitterTweet>;
+  if (mutableTweet.legacy) {
+    if (!mutableTweet.extended_entities && mutableTweet.legacy.extended_entities) {
+      mutableTweet.extended_entities = mutableTweet.legacy.extended_entities;
     }
-    if (!tweet.full_text && tweet.legacy.full_text) {
-      tweet.full_text = tweet.legacy.full_text;
+    if (!mutableTweet.full_text && mutableTweet.legacy.full_text) {
+      mutableTweet.full_text = mutableTweet.legacy.full_text;
     }
-    if (!tweet.id_str && tweet.legacy.id_str) {
-      tweet.id_str = tweet.legacy.id_str;
+    if (!mutableTweet.id_str && mutableTweet.legacy.id_str) {
+      mutableTweet.id_str = mutableTweet.legacy.id_str;
     }
   }
 
-  const noteTweetText = tweet.note_tweet?.note_tweet_results?.result?.text;
+  const noteTweetText = mutableTweet.note_tweet?.note_tweet_results?.result?.text;
   if (noteTweetText) {
-    tweet.full_text = noteTweetText;
+    mutableTweet.full_text = noteTweetText;
   }
 }
 
 export function normalizeLegacyUser(user: TwitterUser): void {
-  if (user.legacy) {
-    if (!user.screen_name && user.legacy.screen_name) {
-      user.screen_name = user.legacy.screen_name;
+  const mutableUser = user as Writable<TwitterUser>;
+  if (mutableUser.legacy) {
+    if (!mutableUser.screen_name && mutableUser.legacy.screen_name) {
+      mutableUser.screen_name = mutableUser.legacy.screen_name;
     }
-    if (!user.name && user.legacy.name) {
-      user.name = user.legacy.name;
+    if (!mutableUser.name && mutableUser.legacy.name) {
+      mutableUser.name = mutableUser.legacy.name;
     }
   }
 }

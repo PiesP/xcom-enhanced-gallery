@@ -4,7 +4,7 @@
  */
 
 import { normalizeErrorMessage } from '@shared/error/normalize';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import type { MediaInfo } from '@shared/types/media.types';
 import { scheduleIdle } from '@shared/utils/performance/idle-scheduler';

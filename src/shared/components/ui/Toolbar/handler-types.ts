@@ -18,7 +18,7 @@
 /**
  * Navigation handlers for gallery traversal
  */
-interface NavigationHandlers {
+export interface NavigationHandlers {
   /** Navigate to the previous media item */
   readonly onPrevious: () => void;
   /** Navigate to the next media item */
@@ -28,7 +28,7 @@ interface NavigationHandlers {
 /**
  * Download handlers for media download operations
  */
-interface DownloadHandlers {
+export interface DownloadHandlers {
   /** Download the currently displayed media item */
   readonly onDownloadCurrent: () => void;
   /** Download all media items in the gallery */
@@ -52,7 +52,7 @@ export interface FitModeHandlers {
 /**
  * Lifecycle handlers for gallery state management
  */
-interface LifecycleHandlers {
+export interface LifecycleHandlers {
   /** Close the gallery */
   readonly onClose: () => void;
   /** Called when settings panel is opened */
@@ -62,7 +62,7 @@ interface LifecycleHandlers {
 /**
  * Focus event handlers for keyboard navigation support
  */
-interface FocusHandlers {
+export interface FocusHandlers {
   /** Handle focus event */
   readonly onFocus?: ((event: FocusEvent) => void) | undefined;
   /** Handle blur event */

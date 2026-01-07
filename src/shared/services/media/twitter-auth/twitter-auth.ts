@@ -1,7 +1,7 @@
 import { delay } from '@shared/async/delay';
 import { getExponentialBackoffDelayMs } from '@shared/async/retry';
-import { logger } from '@shared/logging';
-import { getCookieValue, getCookieValueSync } from '@shared/services/cookie';
+import { logger } from '@shared/logging/logger';
+import { getCookieValue, getCookieValueSync } from '@shared/services/cookie/cookie-utils';
 
 // ============================================================================
 // Configuration

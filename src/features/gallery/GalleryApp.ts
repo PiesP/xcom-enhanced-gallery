@@ -11,18 +11,17 @@ import {
 import { galleryErrorReporter, mediaErrorReporter } from '@shared/error/app-error-reporter';
 import { getErrorMessage } from '@shared/error/normalize';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { NotificationService } from '@shared/services/notification-service';
+import type { SettingsServiceLike } from '@shared/services/theme-service.contract';
 import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import {
   cleanupGalleryEvents,
   initializeGalleryEvents,
 } from '@shared/utils/events/lifecycle/gallery-lifecycle';
-import {
-  type AmbientVideoPauseRequest,
-  pauseAmbientVideosForGallery,
-} from '@shared/utils/media/ambient-video-coordinator';
+import type { AmbientVideoPauseRequest } from '@shared/utils/media/ambient-video-coordinator';
+import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
 import { startAmbientVideoGuard } from '@shared/utils/media/ambient-video-guard';
 import { clampIndex } from '@shared/utils/types/safety';
 
@@ -41,6 +40,11 @@ export class GalleryApp {
   }
 
   public async initialize(): Promise<void> {
+    if (this.isInitialized) {
+      __DEV__ && logger.info('[GalleryApp] Initialization skipped (already initialized)');
+      return;
+    }
+
     try {
       __DEV__ && logger.info('[GalleryApp] Initialization started');
 
@@ -61,8 +65,10 @@ export class GalleryApp {
 
   private async setupEventHandlers(): Promise<void> {
     try {
-      const settingsService = tryGetSettingsManager<{ get: (key: string) => boolean }>();
-      const enableKeyboard = settingsService?.get('gallery.enableKeyboardNav') ?? true;
+      const settingsService = tryGetSettingsManager<SettingsServiceLike>();
+      const enableKeyboardSetting = settingsService?.get?.('gallery.enableKeyboardNav');
+      const enableKeyboard =
+        typeof enableKeyboardSetting === 'boolean' ? enableKeyboardSetting : true;
 
       await initializeGalleryEvents(
         {
@@ -91,7 +97,7 @@ export class GalleryApp {
     }
   }
 
-  private async handleMediaClick(element: HTMLElement, _event?: MouseEvent): Promise<void> {
+  private async handleMediaClick(element: HTMLElement, _event: MouseEvent): Promise<void> {
     try {
       const mediaService = getMediaService();
       const result = await mediaService.extractFromClickedElement(element);
@@ -130,7 +136,9 @@ export class GalleryApp {
       return;
     }
 
-    if (!mediaItems?.length) return;
+    if (mediaItems.length === 0) {
+      return;
+    }
 
     try {
       const validIndex = clampIndex(startIndex, mediaItems.length);

@@ -81,7 +81,7 @@ export function isHostMatching(
 }
 
 /** Reserved Twitter/X.com paths that are not usernames */
-const RESERVED_TWITTER_PATHS = new Set([
+const RESERVED_TWITTER_PATHS_ARRAY = [
   'home',
   'explore',
   'notifications',
@@ -92,10 +92,12 @@ const RESERVED_TWITTER_PATHS = new Set([
   'intent',
   'compose',
   'hashtag',
-]);
+] as const;
+
+const RESERVED_TWITTER_PATHS = new Set(RESERVED_TWITTER_PATHS_ARRAY);
 
 /** Valid Twitter username pattern: 1-15 alphanumeric or underscore characters */
-const TWITTER_USERNAME_PATTERN = /^[a-zA-Z0-9_]{1,15}$/;
+const TWITTER_USERNAME_PATTERN = /^[a-zA-Z0-9_]{1,15}$/u;
 
 /** Trusted Twitter/X.com hosts */
 const TWITTER_HOSTS = ['twitter.com', 'x.com'] as const;
@@ -165,7 +167,11 @@ export function extractUsernameFromUrl(
       }
 
       // Check for reserved paths
-      if (RESERVED_TWITTER_PATHS.has(username.toLowerCase())) {
+      if (
+        RESERVED_TWITTER_PATHS.has(
+          username.toLowerCase() as (typeof RESERVED_TWITTER_PATHS_ARRAY)[number]
+        )
+      ) {
         return null;
       }
 

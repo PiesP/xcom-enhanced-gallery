@@ -1,3 +1,16 @@
+/**
+ * @fileoverview Userscript header injection plugin for Vite.
+ *
+ * Injects the userscript metadata header into the final bundle and generates
+ * build mode information summary. Supports auto-detection of permissions:
+ * - Auto-grant: Analyzes code to detect GM_* API usage and includes only needed @grant directives
+ * - Auto-connect: Analyzes code to detect network requests and includes only needed @connect hosts
+ *
+ * Environment variables:
+ * - XEG_BUILD_AUTO_GRANT: '1', 'true', 'on' enable auto-detection; 'report' shows analysis
+ * - XEG_BUILD_AUTO_CONNECT: '1', 'true', 'on' enable auto-detection; 'report' shows analysis
+ */
+
 import type { Plugin } from 'vite';
 import { getBuildModeConfig } from '../build-mode';
 import { USERSCRIPT_CONFIG } from '../constants';
@@ -8,6 +21,19 @@ import {
 } from '../userscript/metadata';
 import { resolveVersion } from '../version';
 
+/**
+ * Creates a Vite plugin that injects userscript metadata header and build summary.
+ *
+ * Runs post-build to inject the userscript header containing metadata directives
+ * (@grant, @connect, @version, etc.). Optionally auto-detects used permissions
+ * by analyzing the bundle code for GM_* API calls and network requests.
+ *
+ * Also outputs a formatted build mode summary showing optimization settings
+ * (CSS minification, source maps, etc.) to the console.
+ *
+ * @param mode - Build mode ('development' or 'production')
+ * @returns Vite plugin instance for userscript header injection
+ */
 export function userscriptHeaderPlugin(mode: string): Plugin {
   const isDev = mode === 'development';
   const version = resolveVersion(isDev);
@@ -28,7 +54,7 @@ export function userscriptHeaderPlugin(mode: string): Plugin {
     apply: 'build',
     enforce: 'post',
 
-    generateBundle(_options, bundle) {
+    generateBundle(_options, bundle): void {
       let grantOverride: readonly string[] | undefined;
       let connectOverride: readonly string[] | undefined;
 
@@ -95,7 +121,7 @@ export function userscriptHeaderPlugin(mode: string): Plugin {
       }
     },
 
-    closeBundle() {
+    closeBundle(): void {
       const modeLabel = isDev ? 'Development' : 'Production';
       const sourceMapLabel =
         buildMode.sourceMap === 'inline' ? 'Inline' : buildMode.sourceMap ? 'External' : 'Disabled';

@@ -4,15 +4,15 @@
  */
 
 import { isGalleryInternalElement } from '@shared/dom/utils';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 
 type QueryableRoot = Document | DocumentFragment | HTMLElement;
 
-const ZERO_RESULT: PauseAmbientVideosResult = Object.freeze({
+const ZERO_RESULT = {
   pausedCount: 0,
   totalCandidates: 0,
   skippedCount: 0,
-});
+} as const;
 
 export interface PauseAmbientVideosOptions {
   root?: QueryableRoot | null;
@@ -28,7 +28,7 @@ export interface PauseAmbientVideosResult {
   skippedCount: number;
 }
 
-/** Resolves the queryable root element, falling back to document. */
+/** Resolves the queryable root element, defaulting to document if available. */
 function resolveRoot(root?: QueryableRoot | null): QueryableRoot | null {
   if (root && typeof root.querySelectorAll === 'function') return root;
   return typeof document !== 'undefined' && typeof document.querySelectorAll === 'function'

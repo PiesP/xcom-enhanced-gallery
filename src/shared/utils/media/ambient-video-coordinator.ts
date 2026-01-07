@@ -5,7 +5,7 @@ import {
   TWEET_PHOTO_SELECTOR,
   VIDEO_PLAYER_SELECTOR,
 } from '@shared/dom/selectors';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { closestWithFallback } from '@shared/utils/dom/query-helpers';
 import {
   type PauseAmbientVideosOptions,
@@ -32,21 +32,21 @@ interface AmbientVideoPauseResponse extends PauseAmbientVideosResult {
   readonly scope: AmbientVideoPauseScope;
 }
 
-const VIDEO_TRIGGER_SCOPES = new Set<string>([
+const VIDEO_TRIGGER_SELECTORS = [
   VIDEO_PLAYER_SELECTOR,
   ...STABLE_VIDEO_CONTAINERS_SELECTORS,
-]);
+] as const;
 
-const IMAGE_TRIGGER_SCOPES = new Set<string>([
+const IMAGE_TRIGGER_SELECTORS = [
   TWEET_PHOTO_SELECTOR,
   ...STABLE_IMAGE_CONTAINERS_SELECTORS,
-]);
+] as const;
 
-const PAUSE_RESULT_DEFAULT: PauseAmbientVideosResult = Object.freeze({
+const PAUSE_RESULT_DEFAULT = {
   pausedCount: 0,
   totalCandidates: 0,
   skippedCount: 0,
-});
+} as const satisfies PauseAmbientVideosResult;
 
 interface PauseResolution {
   readonly root: PauseRoot;
@@ -72,7 +72,7 @@ function resolvePauseContext(request: AmbientVideoPauseRequest): PauseResolution
   const tweetContainer = findTweetContainer(request.sourceElement);
   if (tweetContainer) {
     return {
-      root: null,
+      root: tweetContainer,
       scope: 'tweet',
     };
   }
@@ -83,42 +83,48 @@ function resolvePauseContext(request: AmbientVideoPauseRequest): PauseResolution
   };
 }
 
+/**
+ * Check if element is a video trigger (video tag or video container)
+ * Uses fast tag check first, then selector matching as fallback
+ */
 function isVideoTriggerElement(element?: HTMLElement | null): boolean {
   if (!element) return false;
   if (element.tagName === 'VIDEO') return true;
 
   // Check if element matches or is within a video container
-  const selectors = Array.from(VIDEO_TRIGGER_SCOPES);
-  for (const selector of selectors) {
+  for (const selector of VIDEO_TRIGGER_SELECTORS) {
     try {
       if (element.matches(selector)) {
         return true;
       }
     } catch {
-      // Ignore selector failures
+      // Ignore invalid selector patterns
     }
   }
 
-  return closestWithFallback(element, selectors) !== null;
+  return closestWithFallback(element, VIDEO_TRIGGER_SELECTORS) !== null;
 }
 
+/**
+ * Check if element is an image trigger (img tag or image container)
+ * Uses fast tag check first, then selector matching as fallback
+ */
 function isImageTriggerElement(element?: HTMLElement | null): boolean {
   if (!element) return false;
   if (element.tagName === 'IMG') return true;
 
   // Check if element matches or is within an image container
-  const selectors = Array.from(IMAGE_TRIGGER_SCOPES);
-  for (const selector of selectors) {
+  for (const selector of IMAGE_TRIGGER_SELECTORS) {
     try {
       if (element.matches(selector)) {
         return true;
       }
     } catch {
-      // Ignore selector failures
+      // Ignore invalid selector patterns
     }
   }
 
-  return closestWithFallback(element, selectors) !== null;
+  return closestWithFallback(element, IMAGE_TRIGGER_SELECTORS) !== null;
 }
 
 function inferAmbientVideoTrigger(element?: HTMLElement | null): AmbientVideoTrigger {
@@ -150,7 +156,10 @@ export function pauseAmbientVideosForGallery(
     });
   } catch (error) {
     if (__DEV__) {
-      logger.warn('[AmbientVideoCoordinator] Failed to pause ambient videos', { error, trigger });
+      logger.warn('[AmbientVideoCoordinator] Failed to pause ambient videos', {
+        error,
+        trigger,
+      });
     }
     return {
       ...PAUSE_RESULT_DEFAULT,

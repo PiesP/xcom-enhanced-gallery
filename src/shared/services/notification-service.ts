@@ -3,16 +3,16 @@
  * Simplified: Only uses Tampermonkey GM_notification when available via UserscriptAPI adapter.
  * No console or UI fallbacks.
  */
-import { getUserscriptSafe, type UserscriptAPI } from '@shared/external/userscript';
-import { logger } from '@shared/logging';
+import { getUserscriptSafe, type UserscriptAPI } from '@shared/external/userscript/adapter';
+import { logger } from '@shared/logging/logger';
 import { createSingleton } from '@shared/utils/types/singleton';
 
 interface NotificationOptions {
-  title: string;
-  text?: string;
-  timeout?: number;
-  image?: string;
-  onclick?: () => void;
+  readonly title: string;
+  readonly text?: string;
+  readonly timeout?: number;
+  readonly image?: string;
+  readonly onclick?: () => void;
 }
 
 export class NotificationService {

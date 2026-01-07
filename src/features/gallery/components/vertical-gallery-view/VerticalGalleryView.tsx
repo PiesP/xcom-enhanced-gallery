@@ -25,47 +25,51 @@
  * @version 8.0 - Refactored with useVerticalGallery composed hook
  */
 
+import { useVerticalGallery } from '@features/gallery/components/vertical-gallery-view/hooks/useVerticalGallery';
+import styles from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css';
+import { VerticalImageItem } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
-import type { JSXElement } from '@shared/external/vendors';
+import type { JSX, JSXElement } from '@shared/external/vendors';
 import { useTranslation } from '@shared/hooks/use-translation';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import { downloadState } from '@shared/state/signals/download.signals';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
 import { isDownloadUiBusy } from '@shared/state/ui/download-ui-state';
-import type { ImageFitMode } from '@shared/types';
+import type { ImageFitMode } from '@shared/types/ui.types';
 import { safeEventPrevent } from '@shared/utils/events/utils';
 import { computePreloadIndices } from '@shared/utils/performance/preload';
 import { cx } from '@shared/utils/text/formatting';
-import { createEffect, createMemo, createSignal, For, onCleanup } from 'solid-js';
-import { useVerticalGallery } from './hooks/useVerticalGallery';
-import styles from './VerticalGalleryView.module.css';
-import { VerticalImageItem } from './VerticalImageItem';
+import { createEffect, createMemo, createSignal, For, onCleanup, splitProps } from 'solid-js';
 
-interface VerticalGalleryViewProps {
+const noop = (): void => {};
+
+export interface VerticalGalleryViewProps {
   /** Handler for closing the gallery */
-  onClose?: () => void;
+  readonly onClose?: () => void;
   /** Additional CSS class name */
-  className?: string;
+  readonly className?: string;
   /** Handler for navigating to previous item */
-  onPrevious?: () => void;
+  readonly onPrevious?: () => void;
   /** Handler for navigating to next item */
-  onNext?: () => void;
+  readonly onNext?: () => void;
   /** Handler for downloading current media item */
-  onDownloadCurrent?: () => void;
+  readonly onDownloadCurrent?: () => void;
   /** Handler for downloading all media items */
-  onDownloadAll?: () => void;
+  readonly onDownloadAll?: () => void;
 }
 
-function VerticalGalleryViewCore({
-  onClose,
-  className = '',
-  onPrevious,
-  onNext,
-  onDownloadCurrent,
-  onDownloadAll,
-}: VerticalGalleryViewProps): JSXElement {
+function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
+  const [local] = splitProps(props, [
+    'onClose',
+    'className',
+    'onPrevious',
+    'onNext',
+    'onDownloadCurrent',
+    'onDownloadAll',
+  ]);
+
   // State accessors - using galleryState with createMemo for fine-grained reactivity
   const mediaItems = createMemo(() => galleryState.value.mediaItems);
   const currentIndex = createMemo(() => galleryState.value.currentIndex);
@@ -100,7 +104,7 @@ function VerticalGalleryViewCore({
     containerEl,
     toolbarWrapperEl,
     itemsContainerEl,
-    onClose,
+    onClose: local.onClose,
   });
   const translate = useTranslation();
 
@@ -121,14 +125,14 @@ function VerticalGalleryViewCore({
 
   const [imageFitMode, setImageFitMode] = createSignal<ImageFitMode>(getInitialFitMode());
 
-  const persistFitMode = (mode: ImageFitMode) =>
+  const persistFitMode = (mode: ImageFitMode): Promise<void> =>
     setTypedSetting('gallery.imageFitMode', mode).catch((error) => {
       if (__DEV__) {
         logger.warn('Failed to save fit mode', { error, mode });
       }
     });
 
-  const applyFitMode = (mode: ImageFitMode, event?: Event) => {
+  const applyFitMode = (mode: ImageFitMode, event?: Event): void => {
     safeEventPrevent(event);
     setImageFitMode(mode);
     void persistFitMode(mode);
@@ -137,8 +141,8 @@ function VerticalGalleryViewCore({
   };
 
   // Event handlers
-  const handleDownloadCurrent = () => onDownloadCurrent?.();
-  const handleDownloadAll = () => onDownloadAll?.();
+  const handleDownloadCurrent = () => local.onDownloadCurrent?.();
+  const handleDownloadAll = () => local.onDownloadAll?.();
   const handleFitOriginal = (event?: Event) => applyFitMode('original', event);
   const handleFitWidth = (event?: Event) => applyFitMode('fitWidth', event);
   const handleFitHeight = (event?: Event) => applyFitMode('fitHeight', event);
@@ -159,7 +163,7 @@ function VerticalGalleryViewCore({
     }
   };
 
-  const handleBackgroundClick = (event: MouseEvent) => {
+  const handleBackgroundClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
     const target = event.target;
     if (!(target instanceof Element)) {
       return;
@@ -175,7 +179,7 @@ function VerticalGalleryViewCore({
     }
 
     // Close gallery when clicking on background area (outside items and toolbar)
-    onClose?.();
+    local.onClose?.();
   };
 
   const handleMediaItemClick = (index: number) => {
@@ -239,7 +243,7 @@ function VerticalGalleryViewCore({
   // Empty state
   if (!isVisible()) {
     return (
-      <div class={cx(styles.container, styles.empty, className)}>
+      <div class={cx(styles.container, styles.empty, local.className)}>
         <div class={styles.emptyMessage}>
           <h3>{translate('msg.gal.emptyT')}</h3>
           <p>{translate('msg.gal.emptyD')}</p>
@@ -255,7 +259,7 @@ function VerticalGalleryViewCore({
         styles.container,
         toolbar.isInitialToolbarVisible() && styles.initialToolbarVisible,
         scroll.isScrolling() && styles.isScrolling,
-        className
+        local.className
       )}
       onClick={handleBackgroundClick}
       data-xeg-gallery="true"
@@ -277,11 +281,11 @@ function VerticalGalleryViewCore({
           tweetText={() => activeMedia()?.tweetText}
           tweetTextHTML={() => activeMedia()?.tweetTextHTML}
           tweetUrl={() => activeMedia()?.tweetUrl}
-          className={styles.toolbar || ''}
+          className={styles.toolbar}
           handlers={{
             navigation: {
-              onPrevious: onPrevious || handlePrevious,
-              onNext: onNext || handleNext,
+              onPrevious: local.onPrevious ?? handlePrevious,
+              onNext: local.onNext ?? handleNext,
             },
             download: {
               onDownloadCurrent: handleDownloadCurrent,
@@ -294,7 +298,7 @@ function VerticalGalleryViewCore({
               onFitContainer: handleFitContainer,
             },
             lifecycle: {
-              onClose: onClose || (() => {}),
+              onClose: local.onClose ?? noop,
               onOpenSettings: () => {
                 if (__DEV__) {
                   logger.debug('[VerticalGalleryView] Settings opened');

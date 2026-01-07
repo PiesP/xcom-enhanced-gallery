@@ -5,6 +5,34 @@ import { HttpRequestService } from '@shared/services/http-request-service';
 
 export const DEFAULT_BACKOFF_BASE_MS = 200;
 
+class HttpStatusError extends Error {
+  readonly status: number;
+
+  constructor(status: number) {
+    super(`HTTP status ${status}`);
+    this.name = 'HttpStatusError';
+    this.status = status;
+  }
+}
+
+function isRetryableStatus(status: number): boolean {
+  return (
+    status === 0 ||
+    status === 408 ||
+    status === 425 ||
+    status === 429 ||
+    (status >= 500 && status < 600)
+  );
+}
+
+function getStatusFromError(error: unknown): number | null {
+  if (error && typeof error === 'object' && 'status' in error) {
+    const statusValue = (error as { status?: unknown }).status;
+    if (typeof statusValue === 'number') return statusValue;
+  }
+  return null;
+}
+
 export async function fetchArrayBufferWithRetry(
   url: string,
   retries: number,
@@ -33,7 +61,7 @@ export async function fetchArrayBufferWithRetry(
       };
       const response = await httpService.get<ArrayBuffer>(url, options);
       if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status}`);
+        throw new HttpStatusError(response.status);
       }
       return new Uint8Array(response.data);
     },
@@ -41,6 +69,12 @@ export async function fetchArrayBufferWithRetry(
       maxAttempts,
       baseDelayMs: backoffBaseMs,
       ...(signal ? { signal } : {}),
+      shouldRetry: (error) => {
+        if (isAbortError(error)) return false;
+        const status = getStatusFromError(error);
+        if (status === null) return false;
+        return isRetryableStatus(status);
+      },
     }
   );
 

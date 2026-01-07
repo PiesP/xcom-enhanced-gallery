@@ -22,9 +22,14 @@ const ZIP_CONST = {
   MAX_UINT16: 0xffff,
   MAX_UINT32: 0xffff_ffff,
   ZIP32_ERROR: 'Zip32 limit exceeded',
+  SIG_LOCAL_HEADER: new Uint8Array([0x50, 0x4b, 0x03, 0x04]),
+  SIG_CENTRAL_DIR: new Uint8Array([0x50, 0x4b, 0x01, 0x02]),
+  SIG_END_CENTRAL_DIR: new Uint8Array([0x50, 0x4b, 0x05, 0x06]),
+  UTF8_FLAG: 0x0800,
+  VERSION: 20,
 } as const;
 
-function assertZip32(condition: boolean, message: string): void {
+function assertZip32(condition: boolean, message: string): asserts condition {
   if (condition) return;
   if (__DEV__) {
     throw new Error(`ZIP format limit exceeded (Zip64 not supported): ${message}`);
@@ -34,14 +39,14 @@ function assertZip32(condition: boolean, message: string): void {
 
 /** @internal */
 interface FileEntry {
-  filename: string;
-  data: Uint8Array;
-  offset: number;
-  crc32: number;
+  readonly filename: string;
+  readonly data: Uint8Array;
+  readonly offset: number;
+  readonly crc32: number;
 }
 
 /** Optimized buffer concatenation (no function call overhead) */
-const concat = (arrays: Uint8Array[]): Uint8Array => {
+const concat = (arrays: readonly Uint8Array[]): Uint8Array => {
   let len = 0;
   for (const array of arrays) len += array.length;
   const result = new Uint8Array(len);
@@ -58,6 +63,13 @@ const concat = (arrays: Uint8Array[]): Uint8Array => {
  *
  * Writes Local File Header immediately when adding each file,
  * finalize() adds Central Directory to complete the ZIP
+ *
+ * @example
+ * ```typescript
+ * const writer = new StreamingZipWriter();
+ * writer.addFile('file.txt', new TextEncoder().encode('Hello'));
+ * const zipBlob = writer.finalize();
+ * ```
  */
 export class StreamingZipWriter {
   private readonly chunks: Uint8Array[] = [];
@@ -68,6 +80,10 @@ export class StreamingZipWriter {
    * Add file (streaming mode)
    *
    * Writes Local File Header + File Data immediately
+   *
+   * @param filename The name of the file in the archive
+   * @param data The file content bytes
+   * @throws {Error} If archive size or entry count would exceed Zip32 limits
    */
   addFile(filename: string, data: Uint8Array): void {
     // Zip32-only implementation: fail fast if Zip64 would be required.
@@ -90,9 +106,9 @@ export class StreamingZipWriter {
 
     // Local File Header (30 bytes + filename length)
     const localHeader = concat([
-      new Uint8Array([0x50, 0x4b, 0x03, 0x04]), // Signature
-      writeUint16LE(20), // Version needed
-      writeUint16LE(0x0800), // UTF-8 flag
+      ZIP_CONST.SIG_LOCAL_HEADER,
+      writeUint16LE(ZIP_CONST.VERSION),
+      writeUint16LE(ZIP_CONST.UTF8_FLAG),
       writeUint16LE(0), // No compression
       writeUint16LE(0), // Time
       writeUint16LE(0), // Date
@@ -114,7 +130,11 @@ export class StreamingZipWriter {
     this.currentOffset += localHeader.length + data.length;
   }
 
-  /** Finalize ZIP file (add Central Directory) */
+  /** Finalize ZIP file (add Central Directory)
+   *
+   * @returns The complete ZIP archive as a Uint8Array
+   * @throws {Error} If archive exceeds Zip32 limits
+   */
   finalize(): Uint8Array {
     // Zip32-only: entry count must fit in 16-bit EOCD fields.
     assertZip32(
@@ -139,10 +159,10 @@ export class StreamingZipWriter {
       );
       centralDirChunks.push(
         concat([
-          new Uint8Array([0x50, 0x4b, 0x01, 0x02]), // Signature
-          writeUint16LE(20), // Version made by
-          writeUint16LE(20), // Version needed
-          writeUint16LE(0x0800), // UTF-8
+          ZIP_CONST.SIG_CENTRAL_DIR,
+          writeUint16LE(ZIP_CONST.VERSION),
+          writeUint16LE(ZIP_CONST.VERSION),
+          writeUint16LE(ZIP_CONST.UTF8_FLAG),
           writeUint16LE(0), // No compression
           writeUint16LE(0), // Time
           writeUint16LE(0), // Date
@@ -168,7 +188,7 @@ export class StreamingZipWriter {
     );
 
     const endOfCentralDir = concat([
-      new Uint8Array([0x50, 0x4b, 0x05, 0x06]),
+      ZIP_CONST.SIG_END_CENTRAL_DIR,
       writeUint16LE(0), // Disk number
       writeUint16LE(0), // Central dir disk
       writeUint16LE(this.entries.length),

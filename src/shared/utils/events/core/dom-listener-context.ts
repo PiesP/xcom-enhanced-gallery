@@ -11,38 +11,38 @@
  * Metadata tracking of registered DOM event listeners.
  */
 export interface DOMListenerContext {
-  id: string;
-  element: EventTarget;
-  type: string;
-  listener: EventListenerOrEventListenerObject;
-  options?: boolean | AddEventListenerOptions | undefined;
-  context?: string | undefined;
+  readonly id: string;
+  readonly element: EventTarget;
+  readonly type: string;
+  readonly listener: EventListenerOrEventListenerObject;
+  readonly options?: boolean | AddEventListenerOptions | undefined;
+  readonly context?: string | undefined;
 }
 
 /**
  * Event handling result
  */
 export interface EventHandlingResult {
-  handled: boolean;
-  reason?: string;
+  readonly handled: boolean;
+  readonly reason?: string;
 }
 
 /**
  * Gallery event handler interface
  */
 export interface EventHandlers {
-  onMediaClick: (element: HTMLElement, event: MouseEvent) => Promise<void>;
-  onGalleryClose: () => void;
-  onKeyboardEvent?: (event: KeyboardEvent) => void;
+  readonly onMediaClick: (element: HTMLElement, event: MouseEvent) => Promise<void>;
+  readonly onGalleryClose: () => void;
+  readonly onKeyboardEvent?: (event: KeyboardEvent) => void;
 }
 
 /**
  * Gallery event options
  */
 export interface GalleryEventOptions {
-  enableKeyboard: boolean;
-  enableMediaDetection: boolean;
-  debugMode: boolean;
-  preventBubbling: boolean;
-  context: string;
+  readonly enableKeyboard: boolean;
+  readonly enableMediaDetection: boolean;
+  readonly debugMode: boolean;
+  readonly preventBubbling: boolean;
+  readonly context: string;
 }

@@ -3,32 +3,30 @@
  * @description Utilities for converting callback-based APIs to Promises
  */
 
-/**
- * Generic result callback signature
- */
-type ResultCallback<TResult, TError = string | null | undefined> = (
-  result?: TResult,
-  error?: TError
-) => void;
+import type {
+  Deferred,
+  PromisifyOptions,
+  ResultCallback,
+  VoidCallback,
+} from './promise-helpers.types';
 
-/**
- * Void callback with only error parameter
- */
-type VoidCallback<TError = string | null | undefined> = (error?: TError) => void;
-
-/**
- * Options for promisifying callback-based APIs
- */
-interface PromisifyOptions<TFallback> {
-  /** Called when the primary method fails */
-  fallback?: () => TFallback | Promise<TFallback>;
-  /** Context for error logging */
-  context?: string;
-}
+export type {
+  Deferred,
+  PromisifyOptions,
+  ResultCallback,
+  VoidCallback,
+} from './promise-helpers.types';
 
 /**
  * Converts a callback-based method to a Promise.
  * Handles error cases and optional fallback logic.
+ *
+ * @template TResult - The type of value the callback receives on success
+ *
+ * @param executor - Function that receives the callback.
+ *                   Must invoke the callback exactly once with either a result or error.
+ * @param options - Optional fallback handler and context for error logging
+ * @returns Promise resolving to the result on success, or fallback value on error
  *
  * @example
  * ```typescript
@@ -39,9 +37,7 @@ interface PromisifyOptions<TFallback> {
  * );
  * ```
  *
- * @param executor - Function that receives the callback
- * @param options - Options for fallback and context
- * @returns Promise resolving to the result
+ * @throws Error if callback reports an error and no fallback is provided
  */
 export function promisifyCallback<TResult>(
   executor: (callback: ResultCallback<TResult>) => void,
@@ -72,6 +68,11 @@ export function promisifyCallback<TResult>(
 
 /**
  * Converts a void callback-based method to a Promise.
+ * Use this for callback-based APIs that only report errors, not values.
+ *
+ * @param executor - Function that receives the callback.
+ *                   Must invoke the callback exactly once with an optional error.
+ * @returns Promise that resolves when callback is called without error
  *
  * @example
  * ```typescript
@@ -80,8 +81,7 @@ export function promisifyCallback<TResult>(
  * );
  * ```
  *
- * @param executor - Function that receives the callback
- * @returns Promise that resolves when callback is called without error
+ * @throws Error if callback reports an error
  */
 export function promisifyVoidCallback(executor: (callback: VoidCallback) => void): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -100,19 +100,21 @@ export function promisifyVoidCallback(executor: (callback: VoidCallback) => void
 }
 
 /**
- * A minimal Deferred implementation.
+ * Create a Deferred promise with exposed resolve/reject handlers.
  *
+ * A Deferred represents a Promise with exposed resolve/reject handlers.
  * Prefer this when you need to bridge event/callback-based APIs to async/await
- * while keeping resolve/reject handles in local scope.
- */
-interface Deferred<T> {
-  readonly promise: Promise<T>;
-  readonly resolve: (value: T | PromiseLike<T>) => void;
-  readonly reject: (reason?: unknown) => void;
-}
-
-/**
- * Create a Deferred promise with exposed resolve/reject.
+ * while keeping resolve/reject references in local scope.
+ *
+ * @template T - The type of value the promise resolves to
+ * @returns A Deferred object with promise, resolve, and reject properties
+ *
+ * @example
+ * ```typescript
+ * const deferred = createDeferred<string>();
+ * setTimeout(() => deferred.resolve('done'), 1000);
+ * const result = await deferred.promise; // 'done'
+ * ```
  */
 export function createDeferred<T>(): Deferred<T> {
   let resolve!: (value: T | PromiseLike<T>) => void;

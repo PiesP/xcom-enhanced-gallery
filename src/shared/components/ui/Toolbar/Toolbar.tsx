@@ -1,15 +1,17 @@
+// External dependencies
+
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
 import type {
   FitMode,
   FitModeHandlers,
   ToolbarProps,
 } from '@shared/components/ui/Toolbar/Toolbar.types';
+// Internal components and utilities
 import { ToolbarView } from '@shared/components/ui/Toolbar/ToolbarView';
+// Internal types
 import type { JSXElement } from '@shared/external/vendors';
-import {
-  type ToolbarSettingsControllerResult,
-  useToolbarSettingsController,
-} from '@shared/hooks/toolbar/use-toolbar-settings-controller';
+import type { ToolbarSettingsControllerResult } from '@shared/hooks/toolbar/use-toolbar-settings-controller';
+import { useToolbarSettingsController } from '@shared/hooks/toolbar/use-toolbar-settings-controller';
 import { useToolbarState } from '@shared/hooks/use-toolbar-state';
 import { useTranslation } from '@shared/hooks/use-translation';
 import type { ToolbarDataState, ToolbarState } from '@shared/types/toolbar.types';
@@ -17,7 +19,9 @@ import { safeEventPrevent, safeEventPreventAll } from '@shared/utils/events/util
 import { toOptionalAccessor, toRequiredAccessor } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import { clampIndex } from '@shared/utils/types/safety';
-import { createEffect, createMemo, createSignal, mergeProps, on } from 'solid-js';
+import { createEffect, createMemo, createSignal, mergeProps, on, splitProps } from 'solid-js';
+
+// Styles
 import styles from './Toolbar.module.css';
 
 const DEFAULT_PROPS = {
@@ -38,12 +42,19 @@ const FIT_MODE_ORDER: ReadonlyArray<{ mode: FitMode; iconName: LucideIconName }>
  */
 type InternalFitModeHandlers = Record<FitMode, FitModeHandlers['onFitOriginal'] | undefined>;
 
+/**
+ * Parameters for computing navigation state
+ */
 interface NavigationStateParams {
   readonly total: number;
   readonly toolbarDisabled: boolean;
   readonly downloadBusy: boolean;
 }
 
+/**
+ * Resolve the displayed index for UI purposes
+ * Prioritizes focused index over current index if valid
+ */
 const resolveDisplayedIndex = ({
   total,
   currentIndex,
@@ -64,6 +75,9 @@ const resolveDisplayedIndex = ({
   return clampIndex(currentIndex, total);
 };
 
+/**
+ * Calculate progress bar width as percentage
+ */
 const calculateProgressWidth = (index: number, total: number): string => {
   if (total <= 0) {
     return '0%';
@@ -72,6 +86,9 @@ const calculateProgressWidth = (index: number, total: number): string => {
   return `${((index + 1) / total) * 100}%`;
 };
 
+/**
+ * Compute navigation and action states for toolbar buttons
+ */
 const computeNavigationState = ({
   total,
   toolbarDisabled,
@@ -92,6 +109,11 @@ const computeNavigationState = ({
   } as const;
 };
 
+/**
+ * Create a guarded event handler with conditional execution
+ * @param guard - Function to check if handler should be blocked
+ * @param action - Action to execute if guard passes
+ */
 const createGuardedHandler = (
   guard: () => boolean,
   action?: () => void
@@ -105,6 +127,9 @@ const createGuardedHandler = (
   };
 };
 
+/**
+ * Derive toolbar data state from toolbar state object
+ */
 function getToolbarDataState(state: ToolbarState): ToolbarDataState {
   if (state.hasError) return 'error';
   if (state.isDownloading) return 'downloading';
@@ -112,71 +137,49 @@ function getToolbarDataState(state: ToolbarState): ToolbarDataState {
   return 'idle';
 }
 
+/**
+ * Main toolbar component container
+ * Manages toolbar state, handlers, and coordinates with ToolbarView
+ */
 function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
+  // 1. Props merging and splitting (preserve reactivity)
   const props = mergeProps(DEFAULT_PROPS, rawProps);
+  const [local, domProps] = splitProps(props, [
+    'currentIndex',
+    'totalCount',
+    'focusedIndex',
+    'isDownloading',
+    'disabled',
+    'className',
+    'currentFitMode',
+    'handlers',
+    'tweetText',
+    'tweetTextHTML',
+    'tweetUrl',
+  ]);
 
-  const currentIndex = toRequiredAccessor(() => props.currentIndex, 0);
-  const totalCount = toRequiredAccessor(() => props.totalCount, 0);
-  const focusedIndex = toRequiredAccessor(() => props.focusedIndex, null);
-  const isDownloadingProp = toRequiredAccessor(() => props.isDownloading, false);
-  const isDisabled = toRequiredAccessor(() => props.disabled, false);
-  const currentFitMode = toOptionalAccessor(() => props.currentFitMode);
-  const tweetText = toOptionalAccessor(() => props.tweetText);
-  const tweetTextHTML = toOptionalAccessor(() => props.tweetTextHTML);
-  const tweetUrl = toOptionalAccessor(() => props.tweetUrl);
+  // 2. Accessors for reactive props
+  const currentIndex = toRequiredAccessor(() => local.currentIndex, 0);
+  const totalCount = toRequiredAccessor(() => local.totalCount, 0);
+  const focusedIndex = toRequiredAccessor(() => local.focusedIndex, null);
+  const isDownloadingProp = toRequiredAccessor(() => local.isDownloading, false);
+  const isDisabled = toRequiredAccessor(() => local.disabled, false);
+  const currentFitMode = toOptionalAccessor(() => local.currentFitMode);
+  const tweetText = toOptionalAccessor(() => local.tweetText);
+  const tweetTextHTML = toOptionalAccessor(() => local.tweetTextHTML);
+  const tweetUrl = toOptionalAccessor(() => local.tweetUrl);
+
+  // 3. Hooks
   const translate = useTranslation();
-
   const [toolbarState, toolbarActions] = useToolbarState();
-  const [settingsExpandedSignal, setSettingsExpandedSignal] = createSignal(false);
-  const [tweetExpanded, setTweetExpanded] = createSignal(false);
 
-  const setSettingsExpanded = (expanded: boolean): void => {
-    setSettingsExpandedSignal(expanded);
-    if (expanded) {
-      setTweetExpanded(false);
-    }
-  };
+  // 4. Signal declarations
+  const [settingsExpandedSignal, setSettingsExpandedSignal] = createSignal<boolean>(false);
+  const [tweetExpanded, setTweetExpanded] = createSignal<boolean>(false);
 
-  const toggleSettings = (): void => {
-    setSettingsExpanded(!settingsExpandedSignal());
-  };
-
-  const toggleTweet = (): void => {
-    setTweetExpanded((prev) => {
-      const next = !prev;
-      if (next) {
-        setSettingsExpanded(false);
-      }
-      return next;
-    });
-  };
-
-  createEffect(
-    on(isDownloadingProp, (value) => {
-      toolbarActions.setDownloading(!!value);
-    })
-  );
-
-  const baseSettingsController = useToolbarSettingsController({
-    isSettingsExpanded: settingsExpandedSignal,
-    setSettingsExpanded,
-    toggleSettingsExpanded: toggleSettings,
-  });
-
-  const settingsController: ToolbarSettingsControllerResult = {
-    ...baseSettingsController,
-    handleSettingsClick: (event) => {
-      const wasOpen = settingsExpandedSignal();
-      baseSettingsController.handleSettingsClick(event);
-      if (!wasOpen && settingsExpandedSignal()) {
-        props.handlers.lifecycle.onOpenSettings?.();
-      }
-    },
-  };
-
-  const toolbarClass = createMemo(() => cx(styles.toolbar, styles.galleryToolbar, props.className));
+  // 5. Derived memos
+  const toolbarClass = createMemo(() => cx(styles.toolbar, styles.galleryToolbar, local.className));
   const totalItems = createMemo(() => Math.max(0, totalCount()));
-
   const currentIndexForNav = createMemo(() => clampIndex(currentIndex(), totalItems()));
 
   const displayedIndex = createMemo(() =>
@@ -188,7 +191,6 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   );
 
   const progressWidth = createMemo(() => calculateProgressWidth(displayedIndex(), totalItems()));
-
   const toolbarDataState = createMemo(() => getToolbarDataState(toolbarState));
 
   const navState = createMemo(() =>
@@ -200,10 +202,10 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   );
 
   const fitModeHandlers = createMemo<InternalFitModeHandlers>(() => ({
-    original: props.handlers.fitMode?.onFitOriginal,
-    fitWidth: props.handlers.fitMode?.onFitWidth,
-    fitHeight: props.handlers.fitMode?.onFitHeight,
-    fitContainer: props.handlers.fitMode?.onFitContainer,
+    original: local.handlers.fitMode?.onFitOriginal,
+    fitWidth: local.handlers.fitMode?.onFitWidth,
+    fitHeight: local.handlers.fitMode?.onFitHeight,
+    fitContainer: local.handlers.fitMode?.onFitContainer,
   }));
 
   const fitModeLabels = createMemo<Record<FitMode, { label: string; title: string }>>(() => ({
@@ -229,16 +231,36 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     () => currentFitMode() ?? FIT_MODE_ORDER[0]?.mode ?? 'original'
   );
 
-  const isToolbarDisabled = () => !!isDisabled();
+  // 6. Effects
+  createEffect(
+    on(isDownloadingProp, (value) => {
+      toolbarActions.setDownloading(!!value);
+    })
+  );
 
-  const handleFitModeClick = (mode: FitMode) => (event: MouseEvent) => {
-    safeEventPreventAll(event);
-    if (isToolbarDisabled()) {
-      return;
+  // 7. Helper functions
+  const setSettingsExpanded = (expanded: boolean): void => {
+    setSettingsExpandedSignal(expanded);
+    if (expanded) {
+      setTweetExpanded(false);
     }
-
-    fitModeHandlers()[mode]?.(event);
   };
+
+  const toggleSettings = (): void => {
+    setSettingsExpanded(!settingsExpandedSignal());
+  };
+
+  const toggleTweet = (): void => {
+    setTweetExpanded((prev) => {
+      const next = !prev;
+      if (next) {
+        setSettingsExpanded(false);
+      }
+      return next;
+    });
+  };
+
+  const isToolbarDisabled = (): boolean => !!isDisabled();
 
   const isFitDisabled = (mode: FitMode): boolean => {
     if (isToolbarDisabled()) {
@@ -253,28 +275,62 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     return activeFitMode() === mode;
   };
 
+  // 8. Event handlers
+  const handleFitModeClick =
+    (mode: FitMode) =>
+    (event: MouseEvent): void => {
+      safeEventPreventAll(event);
+      if (isToolbarDisabled()) {
+        return;
+      }
+
+      fitModeHandlers()[mode]?.(event);
+    };
+
   const handlePrevious = createGuardedHandler(
     () => navState().prevDisabled,
-    props.handlers.navigation.onPrevious
+    local.handlers.navigation.onPrevious
   );
+
   const handleNext = createGuardedHandler(
     () => navState().nextDisabled,
-    props.handlers.navigation.onNext
+    local.handlers.navigation.onNext
   );
+
   const handleDownloadCurrent = createGuardedHandler(
     () => navState().downloadDisabled,
-    props.handlers.download.onDownloadCurrent
+    local.handlers.download.onDownloadCurrent
   );
+
   const handleDownloadAll = createGuardedHandler(
     () => navState().downloadDisabled,
-    props.handlers.download.onDownloadAll
+    local.handlers.download.onDownloadAll
   );
 
-  const handleClose = (event: MouseEvent) => {
+  const handleClose = (event: MouseEvent): void => {
     safeEventPrevent(event);
-    props.handlers.lifecycle.onClose();
+    local.handlers.lifecycle.onClose();
   };
 
+  // 9. Settings controller
+  const baseSettingsController = useToolbarSettingsController({
+    isSettingsExpanded: settingsExpandedSignal,
+    setSettingsExpanded,
+    toggleSettingsExpanded: toggleSettings,
+  });
+
+  const settingsController: ToolbarSettingsControllerResult = {
+    ...baseSettingsController,
+    handleSettingsClick: (event) => {
+      const wasOpen = settingsExpandedSignal();
+      baseSettingsController.handleSettingsClick(event);
+      if (!wasOpen && settingsExpandedSignal()) {
+        local.handlers.lifecycle.onOpenSettings?.();
+      }
+    },
+  };
+
+  // 10. JSX return
   return (
     <ToolbarView
       // Base toolbar props (reactive via Solid JSX transform)
@@ -283,13 +339,13 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       totalCount={totalCount}
       isDownloading={isDownloadingProp}
       disabled={isDisabled}
-      aria-label={props['aria-label']}
-      aria-describedby={props['aria-describedby']}
-      role={props.role}
-      tabIndex={props.tabIndex}
-      data-testid={props['data-testid']}
-      onFocus={props.handlers.focus?.onFocus}
-      onBlur={props.handlers.focus?.onBlur}
+      aria-label={domProps['aria-label']}
+      aria-describedby={domProps['aria-describedby']}
+      role={domProps.role}
+      tabIndex={domProps.tabIndex}
+      data-testid={domProps['data-testid']}
+      onFocus={local.handlers.focus?.onFocus}
+      onBlur={local.handlers.focus?.onBlur}
       tweetText={tweetText}
       tweetTextHTML={tweetTextHTML}
       tweetUrl={tweetUrl}
@@ -311,7 +367,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       onDownloadAll={handleDownloadAll}
       onCloseClick={handleClose}
       settingsController={settingsController}
-      showSettingsButton={typeof props.handlers.lifecycle.onOpenSettings === 'function'}
+      showSettingsButton={typeof local.handlers.lifecycle.onOpenSettings === 'function'}
       isTweetPanelExpanded={tweetExpanded}
       toggleTweetPanelExpanded={toggleTweet}
     />

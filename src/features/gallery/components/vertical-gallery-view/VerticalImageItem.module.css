@@ -301,9 +301,15 @@
 @media (prefers-reduced-motion: reduce) {
   .container {
     will-change: auto;
+    transition: none;
   }
 
   .container:hover {
     transform: none;
+  }
+
+  :where(.image, .video) {
+    will-change: auto;
+    transition: none;
   }
 }

@@ -1,11 +1,14 @@
 /**
  * @fileoverview Semantic Design Tokens
  * @description Role-based tokens that reference primitive values
+ * @layer xeg.tokens
  */
 
 @layer xeg.tokens {
   :where(:root, .xeg-theme-scope) {
-    /* Background Colors - Semantic Roles */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Background Colors - Semantic Roles
+     * ───────────────────────────────────────────────────────────────────────── */
     --color-bg-primary: var(--color-base-white);
     --color-bg-secondary: var(--color-gray-50);
     --color-bg-surface: var(--color-base-white);
@@ -20,7 +23,9 @@
     /* Gallery Image Item Background Tokens */
     --xeg-color-bg-secondary: var(--color-bg-secondary);
 
-    /* Gallery background (light/dark variants) */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Gallery Backgrounds
+     * ───────────────────────────────────────────────────────────────────────── */
     --xeg-gallery-bg-light: var(--color-bg-primary);
     --xeg-gallery-bg-dark: var(--color-gray-900);
     --xeg-gallery-bg: var(--xeg-gallery-bg-light);
@@ -31,22 +36,26 @@
     /* Layout stability tokens */
     --xeg-aspect-default: 4 / 3;
 
-    /* Text Colors - Semantic Roles */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Text Colors - Semantic Roles
+     * ───────────────────────────────────────────────────────────────────────── */
     --color-text-primary: var(--color-base-black);
-    --color-text-secondary: var(
-      --color-gray-600
-    ); /* Phase: design-consistency - improved from gray-700 */
+    --color-text-secondary: var(--color-gray-600); /* design-consistency */
 
-    /* Border Colors - Semantic Roles */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Border Colors - Semantic Roles
+     * ───────────────────────────────────────────────────────────────────────── */
     --color-border-default: var(--color-gray-200);
     --color-border-emphasis: var(--color-gray-500);
 
     /* Border Color Tokens - xeg prefix for consistency */
     --xeg-color-border-primary: var(--color-border-default);
-    --xeg-color-border-hover: var(--color-gray-300); /* Hover state for borders */
+    --xeg-color-border-hover: var(--color-gray-300);
     --xeg-color-border-strong: var(--color-border-emphasis);
 
-    /* Toolbar color harmony tokens (light defaults) */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Toolbar Color Harmony Tokens
+     * ───────────────────────────────────────────────────────────────────────── */
     --xeg-toolbar-text-color: var(--xeg-color-text-primary);
     --xeg-toolbar-text-muted: var(--xeg-color-text-secondary);
     --xeg-toolbar-element-bg: color-mix(
@@ -80,7 +89,9 @@
       var(--color-base-white) 20%
     );
 
-    /* State Colors - Semantic Roles (monochrome, minimal) */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * State Colors - Semantic Roles (monochrome, minimal)
+     * ───────────────────────────────────────────────────────────────────────── */
     --xeg-color-success: var(--color-gray-800);
     --xeg-color-success-hover: var(--color-gray-900);
     --xeg-color-success-bg: var(--color-gray-100);
@@ -89,12 +100,16 @@
     --xeg-color-error-bg: var(--color-gray-100);
     --xeg-color-info-bg: var(--color-gray-50);
 
-    /* Interactive Colors - Semantic Roles (monochrome accent) */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Interactive Colors - Semantic Roles (monochrome accent)
+     * ───────────────────────────────────────────────────────────────────────── */
     --xeg-color-primary: var(--color-gray-900);
     --xeg-color-primary-hover: var(--color-gray-700);
     --xeg-color-primary-active: var(--color-gray-800);
 
-    /* Neutral Colors for Button States (only used values) */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Neutral Colors for Button States
+     * ───────────────────────────────────────────────────────────────────────── */
     --xeg-color-neutral-100: var(--color-gray-100);
     --xeg-color-neutral-200: var(--color-gray-200);
     --xeg-color-neutral-300: var(--color-gray-300);
@@ -110,13 +125,17 @@
     /* Background color aliases for components */
     --xeg-color-bg-primary: var(--color-bg-primary);
 
-    /* Component Sizing - Semantic Roles (em: relative to font-size) */
-    --xeg-size-button-md: 2.5em; /* 40px @ 16px */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Component Sizing - Semantic Roles (em: relative to font-size)
+     * ───────────────────────────────────────────────────────────────────────── */
+    --xeg-size-button-md: 2.5em;
 
     /* Focus indicator tokens */
     --xeg-focus-indicator-color: var(--xeg-color-border-primary);
 
-    /* Typography Tokens - Component Usage */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Typography Tokens - Component Usage
+     * ───────────────────────────────────────────────────────────────────────── */
     --xeg-font-size-sm: var(--font-size-sm);
     --xeg-font-size-base: var(--font-size-base);
     --xeg-font-size-md: var(--font-size-md);
@@ -132,13 +151,16 @@
     --xeg-line-height-snug: var(--line-height-snug);
     --xeg-line-height-relaxed: var(--line-height-relaxed);
 
-    /* Button Component Text Colors - Required by Button.module.css */
-    /* Animation Timing - Semantic Roles */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Animation Timing - Semantic Roles
+     * ───────────────────────────────────────────────────────────────────────── */
     --xeg-duration-fast: var(--duration-fast);
     --xeg-duration-normal: var(--duration-normal);
     --xeg-duration-toolbar: var(--duration-normal);
 
-    /* Surface Tokens - Flat panel style */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Surface Tokens - Flat panel style
+     * ───────────────────────────────────────────────────────────────────────── */
     --xeg-surface-bg: var(--color-bg-surface);
     --xeg-surface-border: var(--color-border-default);
     --xeg-surface-bg-hover: var(--color-bg-secondary);
@@ -150,53 +172,66 @@
     /* Border emphasis aliases */
     --xeg-border-emphasis: var(--color-border-emphasis);
 
-    /* Z-Index Management - anchored above twitter.com UI */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Z-Index Management
+     * ───────────────────────────────────────────────────────────────────────── */
     --xeg-z-gallery: 2147483600;
     --xeg-z-toolbar-hover-zone: 2147483618;
     --xeg-z-toolbar: 2147483620;
     --xeg-z-toolbar-panel: 2147483622;
     --xeg-z-toolbar-panel-active: 2147483624;
 
-    /* Layer Management - Semantic Roles (using z-index directly) */
-    /* Animation Easing - Material Design */
-    --xeg-ease-standard: cubic-bezier(0.4, 0, 0.2, 1); /* Material Design Standard */
-    --xeg-ease-decelerate: cubic-bezier(0, 0, 0.2, 1); /* Entrance */
-    --xeg-ease-accelerate: cubic-bezier(0.4, 0, 1, 1); /* Exit */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Animation Easing - Material Design
+     * ───────────────────────────────────────────────────────────────────────── */
+    --xeg-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --xeg-ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+    --xeg-ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
     --xeg-easing-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
     --xeg-easing-linear: linear;
 
-    /* Line Height - Semantic Alias */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Line Height - Semantic Alias
+     * ───────────────────────────────────────────────────────────────────────── */
     --xeg-line-height-normal: var(--line-height-normal, 1.5);
 
-    /* Interaction State Tokens */
-    --xeg-button-lift: -0.0625rem; /* -1px */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Interaction State Tokens
+     * ───────────────────────────────────────────────────────────────────────── */
+    --xeg-button-lift: -0.0625rem;
     --xeg-opacity-disabled: 0.5;
     --xeg-hover-lift: translateY(-0.125rem);
 
-    /* Typography Tokens - font-family referenced via primitive tokens */
-
-    /* Spacing Tokens - Component Usage */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Spacing Tokens - Component Usage
+     * ───────────────────────────────────────────────────────────────────────── */
     --xeg-spacing-none: var(--space-none);
     --xeg-spacing-xl: var(--space-xl);
 
-    /* Border Radius - Extended Scale */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Border Radius - Extended Scale
+     * ───────────────────────────────────────────────────────────────────────── */
     --xeg-radius-sm: var(--radius-sm);
     --xeg-radius-md: var(--radius-md);
     --xeg-radius-lg: var(--radius-lg);
     --xeg-radius-2xl: var(--radius-2xl);
     --xeg-radius-full: var(--radius-full);
 
-    /* Scrollbar Tokens - For reset.css */
+    /* ─────────────────────────────────────────────────────────────────────────
+     * Scrollbar Tokens - For reset.css
+     * ───────────────────────────────────────────────────────────────────────── */
     --xeg-scrollbar-thumb-color: var(--color-gray-400);
     --xeg-scrollbar-thumb-hover-color: var(--color-gray-500);
     --xeg-scrollbar-track-color: var(--color-gray-200);
   }
 
-  /* Theme Support - Dark/Light Mode */
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * Theme Support - Dark/Light Mode
+   * ───────────────────────────────────────────────────────────────────────────── */
   :where(:root, .xeg-theme-scope)[data-theme="light"] {
     --color-bg-primary: var(--color-base-white);
     --color-text-primary: var(--color-base-black);
-    --color-text-secondary: var(--color-gray-600); /* Phase: design-consistency */
+    --color-text-secondary: var(--color-gray-600);
     --xeg-gallery-bg: var(--xeg-gallery-bg-light);
   }
 
@@ -253,12 +288,10 @@
     --xeg-surface-bg-hover: var(--color-gray-800);
   }
 
+  /* Reduced motion preferences */
   @media (prefers-reduced-motion: reduce) {
     :where(:root, .xeg-theme-scope) {
-      /* Durations (design-tokens.semantic.css) */
       --xeg-duration-fast: 0ms;
-
-      /* Transitions (design-tokens.component.css) */
       --xeg-transition-surface-fast: none;
       --xeg-transition-elevation-normal: none;
       --xeg-transition-elevation-fast: none;
@@ -267,7 +300,9 @@
     }
   }
 
-  /* Component Scope Tokens */
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * Component Scope Tokens
+   * ───────────────────────────────────────────────────────────────────────────── */
   :where(:root, .xeg-theme-scope) {
     /* Settings Component Tokens */
     /* Layout */
@@ -277,13 +312,10 @@
 
     /* Typography */
     --xeg-settings-label-font-size: var(--font-size-sm);
-    --xeg-settings-label-font-weight: var(
-      --font-weight-bold
-    ); /* Phase D2: aligned with indicator (currentIndex) by switching to 700 */
+    --xeg-settings-label-font-weight: var(--font-weight-bold);
     --xeg-settings-select-font-size: var(--font-size-sm);
 
     /* Input */
     --xeg-settings-select-padding: var(--space-sm) var(--space-md);
-    /* Background/border reuse --xeg-bg-toolbar and --xeg-toolbar-border directly */
   }
 }

@@ -1,7 +1,10 @@
 import type { LanguageStrings } from '@shared/constants/i18n/language-types';
-
 import { buildLanguageStringsFromValues } from '@shared/constants/i18n/translation-values';
 
+/**
+ * English language translation values
+ * Order must match the translation registry keys
+ */
 const EN_VALUES = [
   'Previous',
   'Next',
@@ -44,4 +47,7 @@ const EN_VALUES = [
   'Failed to load {type}',
 ] as const;
 
+/**
+ * English language strings for the application
+ */
 export const en: LanguageStrings = buildLanguageStringsFromValues(EN_VALUES);

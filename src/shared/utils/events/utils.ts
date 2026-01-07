@@ -5,14 +5,13 @@
  */
 
 /**
- * Safely prevent default and stop propagation on an event
+ * Safely prevent default and stop propagation on an event.
  *
- * @description
  * Unified event handling pattern for consistent behavior across components.
  * Handles optional events gracefully (useful for handlers that can be called
  * programmatically or from DOM events).
  *
- * @param event - Optional Event object
+ * @param event - Optional Event object to prevent. If not provided, function returns early.
  *
  * @example
  * ```typescript
@@ -29,14 +28,13 @@ export function safeEventPrevent(event?: Event): void {
 }
 
 /**
- * Safely prevent default, stop propagation, and stop immediate propagation
+ * Safely prevent default, stop propagation, and stop immediate propagation.
  *
- * @description
  * Enhanced event prevention that also stops immediate propagation.
  * Useful when multiple handlers are attached to the same element and you want
  * to ensure no other handlers execute.
  *
- * @param event - Optional Event object
+ * @param event - Optional Event object to prevent. If not provided, function returns early.
  *
  * @example
  * ```typescript

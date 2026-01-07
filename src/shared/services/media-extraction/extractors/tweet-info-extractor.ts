@@ -4,7 +4,7 @@
  */
 
 import { STATUS_LINK_SELECTOR, TWEET_ARTICLE_SELECTOR } from '@shared/dom/selectors';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import type { TweetInfo } from '@shared/types/media.types';
 import { extractUsernameFromUrl } from '@shared/utils/url/host';
 

@@ -1,41 +1,41 @@
 /** Media utilities: dimensions, URL normalization, sorting */
 
 import type { JSX } from '@shared/external/vendors';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { clampIndex } from '@shared/utils/types/safety';
 import { tryParseUrl } from '@shared/utils/url/host';
 
+/** Immutable width and height pair */
 interface DimensionPair {
   readonly width: number;
   readonly height: number;
 }
 
+/** Media dimensions with intrinsic size flag */
 interface ResolvedMediaDimensions {
   readonly dimensions: DimensionPair;
   readonly hasIntrinsicSize: boolean;
 }
 
-const STANDARD_GALLERY_HEIGHT = 720;
+const STANDARD_GALLERY_HEIGHT = 720 as const;
 
-const DEFAULT_DIMENSIONS: DimensionPair = {
+const DEFAULT_DIMENSIONS = {
   width: 540,
   height: STANDARD_GALLERY_HEIGHT,
-} as const;
+} as const satisfies DimensionPair;
 
 /** Check if string has a valid URL prefix */
 function hasValidUrlPrefix(str: string): boolean {
-  return (
-    str.startsWith('http://') ||
-    str.startsWith('https://') ||
-    str.startsWith('//') ||
-    str.startsWith('/') ||
-    str.startsWith('./') ||
-    str.startsWith('../')
-  );
+  return /^(?:https?:\/\/|\/\/|\/|\.\/|\.\.\/)/u.test(str);
 }
 
+/**
+ * Extract filename from URL pathname
+ * @param url - URL string to parse
+ * @returns Filename or null if extraction fails
+ */
 function extractFilenameFromUrl(url: string): string | null {
   if (!url) return null;
 
@@ -49,6 +49,11 @@ function extractFilenameFromUrl(url: string): string | null {
   return filename && filename.length > 0 ? filename : null;
 }
 
+/**
+ * Generate deduplication key for media item
+ * @param media - Media info to generate key for
+ * @returns Unique key for deduplication or null
+ */
 function getMediaDedupKey(media: MediaInfo): string | null {
   const urlCandidate =
     typeof media.originalUrl === 'string' && media.originalUrl.length > 0
@@ -127,6 +132,11 @@ export function removeDuplicateMediaItems(
   return result;
 }
 
+/**
+ * Extract visual index (1-based) from photo/video URL
+ * @param url - URL to parse
+ * @returns Zero-based index or 0 if not found
+ */
 function extractVisualIndexFromUrl(url: string): number {
   if (!url) return 0;
   const match = url.match(/\/(photo|video)\/(\d+)(?:[?#].*)?$/);
@@ -151,8 +161,12 @@ export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMedi
   }));
 }
 
-/** Extract dimensions from URL (WxH pattern) */
-export function extractDimensionsFromUrl(url: string): { width: number; height: number } | null {
+/**
+ * Extract dimensions from URL containing WxH pattern
+ * @param url - URL to parse
+ * @returns Dimension pair or null if not found
+ */
+export function extractDimensionsFromUrl(url: string): DimensionPair | null {
   if (!url) return null;
   const match = url.match(/\/(\d{2,6})x(\d{2,6})(?:\/|\.|$)/);
   if (!match) return null;
@@ -167,7 +181,12 @@ export function extractDimensionsFromUrl(url: string): { width: number; height: 
   return { width, height };
 }
 
-/** Normalize dimension value with type safety */
+/**
+ * Normalize dimension value to positive integer
+ * Accepts numbers or numeric strings
+ * @param value - Value to normalize
+ * @returns Rounded positive integer or null if invalid
+ */
 export function normalizeDimension(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
     return Math.round(value);
@@ -181,7 +200,11 @@ export function normalizeDimension(value: unknown): number | null {
   return null;
 }
 
-/** Normalize media URL for comparison */
+/**
+ * Normalize media URL to comparable filename (extension removed)
+ * @param url - URL to normalize
+ * @returns Normalized filename or null if invalid
+ */
 export function normalizeMediaUrl(url: string): string | null {
   if (!url) return null;
 
@@ -204,6 +227,12 @@ export function normalizeMediaUrl(url: string): string | null {
 
 type MetadataRecord = Record<string, unknown> | undefined;
 
+/**
+ * Scale aspect ratio to standard gallery height
+ * @param widthRatio - Width component of aspect ratio
+ * @param heightRatio - Height component of aspect ratio
+ * @returns Scaled dimensions or default if invalid
+ */
 function scaleAspectRatio(widthRatio: number, heightRatio: number): DimensionPair {
   if (heightRatio <= 0 || widthRatio <= 0) {
     return DEFAULT_DIMENSIONS;
@@ -218,6 +247,11 @@ function scaleAspectRatio(widthRatio: number, heightRatio: number): DimensionPai
   };
 }
 
+/**
+ * Extract dimensions from metadata object
+ * @param dimensions - Metadata dimensions object
+ * @returns Dimension pair or null if not found
+ */
 function extractDimensionsFromMetadataObject(
   dimensions?: Record<string, unknown>
 ): DimensionPair | null {
@@ -234,6 +268,11 @@ function extractDimensionsFromMetadataObject(
   return null;
 }
 
+/**
+ * Derive dimensions from metadata using multiple strategies
+ * @param metadata - Metadata record
+ * @returns Dimension pair or null if not found
+ */
 function deriveDimensionsFromMetadata(metadata: MetadataRecord): DimensionPair | null {
   if (!metadata) {
     return null;
@@ -285,8 +324,17 @@ function deriveDimensionsFromMetadata(metadata: MetadataRecord): DimensionPair |
   return null;
 }
 
+/**
+ * Derive dimensions from media URL candidates
+ * @param media - Media info object
+ * @returns Dimension pair or null if not found in any URL
+ */
 function deriveDimensionsFromMediaUrls(media: MediaInfo): DimensionPair | null {
-  const candidates: Array<string | undefined> = [media.url, media.originalUrl, media.thumbnailUrl];
+  const candidates: readonly (string | undefined)[] = [
+    media.url,
+    media.originalUrl,
+    media.thumbnailUrl,
+  ];
   for (const candidate of candidates) {
     if (typeof candidate === 'string' && candidate) {
       const dimensions = extractDimensionsFromUrl(candidate);
@@ -327,6 +375,11 @@ export function resolveMediaDimensionsWithIntrinsicFlag(
   return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
 }
 
+/**
+ * Convert pixel value to rem unit
+ * @param pixels - Pixel value to convert
+ * @returns CSS rem value with 4 decimal places
+ */
 function toRem(pixels: number): string {
   return `${(pixels / 16).toFixed(4)}rem`;
 }

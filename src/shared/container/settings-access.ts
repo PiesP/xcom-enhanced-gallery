@@ -11,12 +11,32 @@
  *
  * @example
  * ```typescript
- * // NEW: Type-safe access with autocomplete
+ * // Type-safe access with autocomplete
  * import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
  * const count = getTypedSettingOr('gallery.preloadCount', 0); // Infers number
  * await setTypedSetting('gallery.theme', 'dark'); // Type-checked value
  * ```
+ *
+ * @example
+ * ```typescript
+ * // Using exported types for custom utilities
+ * import type { SettingPath, SettingValue } from '@shared/container/settings-access';
+ *
+ * function createSettingValidator<P extends SettingPath>(
+ *   path: P,
+ *   validator: (value: SettingValue<P>) => boolean
+ * ): (value: SettingValue<P>) => boolean {
+ *   return validator;
+ * }
+ * ```
  */
+
+// Re-export utility types for external consumers
+export type {
+  SettingPath,
+  SettingValue,
+} from './typed-settings';
+
 // Re-export type-safe functions for convenient access
 export {
   getTypedSettingOr,

@@ -5,7 +5,7 @@
  */
 
 import { SERVICE_KEYS } from '@constants/service-keys';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
 import { CoreService } from '@shared/services/service-manager';
 

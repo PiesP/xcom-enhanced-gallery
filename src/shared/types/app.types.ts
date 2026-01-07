@@ -99,14 +99,51 @@ export type FileExtension = Brand<string, 'FileExtension'>;
 // ================================
 
 // Component Types
-// Gallery Types (re-exported from core-types)
-
+export type {
+  BaseComponentProps,
+  ComponentChildren,
+  ComponentType,
+  CSSProperties,
+  VNode,
+} from './component.types';
+// Lifecycle/Cleanup Types
+export type { Cleanupable } from './lifecycle.types';
 // Media Types
-
+export type {
+  APIExtractor,
+  ExtractionStrategy,
+  GalleryRenderOptions,
+  MediaEntity,
+  MediaExtractionOptions,
+  MediaExtractionResult,
+  MediaExtractor,
+  MediaId,
+  MediaInfo,
+  MediaInfoWithFilename,
+  QuoteTweetInfo,
+  TweetInfo,
+} from './media.types';
+export { ExtractionError, ExtractionSource, PageType } from './media.types';
 // Navigation Types
-
+export type { NavigationSource } from './navigation.types';
 // Result and Error Codes
+export type { AsyncResult, Result } from './result.types';
+export { ErrorCode, failure, isSuccess, success } from './result.types';
 // Toolbar UI State Types
+export type { FitMode, ToolbarActions, ToolbarDataState, ToolbarState } from './toolbar.types';
 // UI/Theme Types
-
-// Phase 421: ViewMode helper utilities removed; use VIEW_MODES from '@constants/video-controls'.
+export type {
+  AnimationConfig,
+  AsyncState,
+  ButtonSize,
+  ButtonVariant,
+  ColorVariant,
+  FilenameStrategy,
+  GalleryTheme,
+  GlobalConfig,
+  ImageFitMode,
+  ImageFitOptions,
+  LoadingState,
+  MediaFileExtension,
+  Theme,
+} from './ui.types';

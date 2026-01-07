@@ -21,28 +21,28 @@
  * @version 7.0.0 - SharedObserver integration and hook extraction
  */
 
+import { useVideoVisibility } from '@features/gallery/components/vertical-gallery-view/hooks/useVideoVisibility';
+import { createVideoVolumeChangeGuard } from '@features/gallery/components/vertical-gallery-view/utils/video-volume-change-guard';
+import {
+  cleanFilename,
+  isVideoMedia,
+  normalizeVideoMutedSetting,
+  normalizeVideoVolumeSetting,
+} from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
+import styles from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css';
+import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.types';
 import { createDebounced } from '@shared/async/debounce';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
 import type { JSX, JSXElement } from '@shared/external/vendors';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
-import type { ImageFitMode } from '@shared/types';
+import type { ImageFitMode } from '@shared/types/ui.types';
 import {
   createIntrinsicSizingStyle,
   resolveMediaDimensionsWithIntrinsicFlag,
 } from '@shared/utils/media/media-dimensions';
 import { cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, onCleanup, splitProps, untrack } from 'solid-js';
-import { useVideoVisibility } from './hooks/useVideoVisibility';
-import { createVideoVolumeChangeGuard } from './utils/video-volume-change-guard';
-import {
-  cleanFilename,
-  isVideoMedia,
-  normalizeVideoMutedSetting,
-  normalizeVideoVolumeSetting,
-} from './VerticalImageItem.helpers';
-import styles from './VerticalImageItem.module.css';
-import type { VerticalImageItemProps } from './VerticalImageItem.types';
 
 /** Fit mode CSS class mapping */
 const FIT_MODE_CLASSES: Record<ImageFitMode, string | undefined> = {
@@ -228,7 +228,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   });
 
   // Handle volume change events from video controls
-  const handleVolumeChange = (event: Event) => {
+  const handleVolumeChange: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
     const video = event.currentTarget as HTMLVideoElement;
     const snapshot = { volume: video.volume, muted: video.muted };
 

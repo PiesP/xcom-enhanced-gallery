@@ -1,49 +1,70 @@
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
-type IdleHandle = { cancel: () => void };
+type IdleHandle = {
+  readonly cancel: () => void;
+};
 
-type RequestIdleCallback = (callback: () => void, opts?: { timeout?: number }) => number;
+type RequestIdleCallback = (
+  callback: IdleRequestCallback,
+  opts?: { readonly timeout?: number }
+) => number;
+
 type CancelIdleCallback = (handle: number) => void;
 
-const getIdleAPIs = (): {
-  ric: RequestIdleCallback | null;
-  cic: CancelIdleCallback | null;
-} => {
+type IdleRequestCallback = () => void;
+
+interface IdleAPIs {
+  readonly ric: RequestIdleCallback | null;
+  readonly cic: CancelIdleCallback | null;
+}
+
+const getIdleAPIs = (): IdleAPIs => {
   const source = typeof globalThis !== 'undefined' ? globalThis : undefined;
+
+  if (!source || typeof source !== 'object') {
+    return { ric: null, cic: null };
+  }
+
   const ric =
-    source && typeof source === 'object' && 'requestIdleCallback' in source
+    'requestIdleCallback' in source
       ? ((source as { requestIdleCallback?: unknown }).requestIdleCallback as
           | RequestIdleCallback
           | undefined) || null
       : null;
+
   const cic =
-    source && typeof source === 'object' && 'cancelIdleCallback' in source
+    'cancelIdleCallback' in source
       ? ((source as { cancelIdleCallback?: unknown }).cancelIdleCallback as
           | CancelIdleCallback
           | undefined) || null
       : null;
+
   return { ric, cic };
 };
 
 let didLogIdleTaskErrorInDev = false;
 
-export function scheduleIdle(task: () => void): IdleHandle {
+/**
+ * Schedules a task to run during browser idle time, with fallback to setTimeout.
+ * Errors in tasks are caught and logged (in DEV only) without crashing the scheduler.
+ *
+ * @param task - The callback to execute when idle
+ * @returns A handle to cancel the scheduled task
+ */
+export function scheduleIdle(task: IdleRequestCallback): IdleHandle {
   const { ric, cic } = getIdleAPIs();
 
+  // Prefer requestIdleCallback if available
   if (ric) {
     const id = ric(() => {
       try {
         task();
       } catch (error) {
-        // Keep behavior: never crash the scheduler.
-        // In DEV, log the first failure to improve observability without spamming.
-        if (__DEV__ && !didLogIdleTaskErrorInDev) {
-          didLogIdleTaskErrorInDev = true;
-          logger.warn('[scheduleIdle] Task threw', error);
-        }
+        logIdleTaskError(error);
       }
     });
+
     return {
       cancel: () => {
         cic?.(id);
@@ -51,14 +72,12 @@ export function scheduleIdle(task: () => void): IdleHandle {
     };
   }
 
+  // Fallback to setTimeout for browsers without requestIdleCallback
   const timerId = globalTimerManager.setTimeout(() => {
     try {
       task();
     } catch (error) {
-      if (__DEV__ && !didLogIdleTaskErrorInDev) {
-        didLogIdleTaskErrorInDev = true;
-        logger.warn('[scheduleIdle] Task threw', error);
-      }
+      logIdleTaskError(error);
     }
   }, 0);
 
@@ -67,4 +86,17 @@ export function scheduleIdle(task: () => void): IdleHandle {
       globalTimerManager.clearTimeout(timerId);
     },
   };
+}
+
+/**
+ * Logs idle task errors in development, only once per session.
+ * @param error - The error to log
+ */
+function logIdleTaskError(error: unknown): void {
+  if (!__DEV__ || didLogIdleTaskErrorInDev) {
+    return;
+  }
+
+  didLogIdleTaskErrorInDev = true;
+  logger.warn('[scheduleIdle] Idle task error', error);
 }

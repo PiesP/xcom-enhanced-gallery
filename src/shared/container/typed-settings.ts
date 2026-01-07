@@ -66,24 +66,47 @@ type SettingValueAt<T, Path extends string> = Path extends `${infer K}.${infer R
 /**
  * All valid setting paths in dot notation.
  * Provides autocomplete support and compile-time validation.
+ *
+ * @example
+ * ```typescript
+ * const validPath: SettingPath = 'gallery.preloadCount'; // ✅
+ * const invalid: SettingPath = 'invalid.path'; // ❌ Type error
+ * ```
  */
-type SettingPath = SettingPaths<AppSettings>;
+export type SettingPath = SettingPaths<AppSettings>;
 
 /**
  * Get the value type for a specific setting path.
  * Enables type-safe access to deeply nested settings.
+ *
+ * @example
+ * ```typescript
+ * type PreloadType = SettingValue<'gallery.preloadCount'>; // number
+ * type ThemeType = SettingValue<'gallery.theme'>; // 'auto' | 'light' | 'dark'
+ * ```
  */
-type SettingValue<P extends SettingPath> = SettingValueAt<AppSettings, P>;
+export type SettingValue<P extends SettingPath> = SettingValueAt<AppSettings, P>;
 
 // =============================================================================
 // Settings Service Interface
 // =============================================================================
 
+/**
+ * Minimal interface for settings service integration.
+ * Used to decouple typed settings utilities from concrete implementations.
+ */
 interface SettingsServiceLike {
   get<T = unknown>(key: string): T | undefined;
   set<T = unknown>(key: string, value: T): Promise<void>;
 }
 
+/**
+ * Retrieves the registered SettingsService instance.
+ * Throws an error if the service is not registered.
+ *
+ * @throws {Error} If SettingsService is not registered during bootstrap
+ * @returns The registered SettingsService instance
+ */
 function requireSettingsService(): SettingsServiceLike {
   const service = tryGetSettingsManager<SettingsServiceLike>();
   if (!service) {

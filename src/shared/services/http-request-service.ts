@@ -26,7 +26,7 @@
  */
 
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
-import { getUserscript } from '@shared/external/userscript';
+import { getUserscript } from '@shared/external/userscript/adapter';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { createDeferred } from '@shared/utils/async/promise-helpers';
 import { createSingleton } from '@shared/utils/types/singleton';
@@ -37,20 +37,20 @@ type HttpRequestData = Exclude<GMXMLHttpRequestDetails['data'], undefined>;
  * HTTP request options
  */
 interface HttpRequestOptions {
-  headers?: Record<string, string>;
-  timeout?: number; // milliseconds, default: 10000
-  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
-  data?: HttpRequestData;
-  signal?: AbortSignal; // for cancellation
+  readonly headers?: Record<string, string>;
+  readonly timeout?: number; // milliseconds, default: 10000
+  readonly responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
+  readonly data?: HttpRequestData;
+  readonly signal?: AbortSignal; // for cancellation
 }
 
 /**
  * HTTP response wrapper
  */
 interface HttpResponse<T = unknown> {
-  ok: boolean;
-  status: number;
-  data: T;
+  readonly ok: boolean;
+  readonly status: number;
+  readonly data: T;
 }
 
 /**

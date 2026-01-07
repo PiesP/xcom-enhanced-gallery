@@ -12,7 +12,7 @@ import {
 import { DEFAULT_LANGUAGE, getLanguageStrings } from '@shared/constants/i18n/translation-registry';
 import { resolveTranslationValue } from '@shared/i18n/translation-utils';
 import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
 import { getPersistentStorage } from '@shared/services/persistent-storage';

@@ -14,14 +14,14 @@ import type {
 } from '@shared/types/core/userscript';
 
 export interface UserscriptAPI {
-  download(url: string, filename: string): Promise<void>;
-  setValue(key: string, value: unknown): Promise<void>;
-  getValue<T>(key: string, defaultValue?: T): Promise<T | undefined>;
-  getValueSync<T>(key: string, defaultValue?: T): T | undefined;
-  deleteValue(key: string): Promise<void>;
-  listValues(): Promise<string[]>;
-  xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl;
-  notification(details: GMNotificationDetails): void;
+  readonly download: (url: string, filename: string) => Promise<void>;
+  readonly setValue: (key: string, value: unknown) => Promise<void>;
+  readonly getValue: <T>(key: string, defaultValue?: T) => Promise<T | undefined>;
+  readonly getValueSync: <T>(key: string, defaultValue?: T) => T | undefined;
+  readonly deleteValue: (key: string) => Promise<void>;
+  readonly listValues: () => Promise<string[]>;
+  readonly xmlHttpRequest: (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl;
+  readonly notification: (details: GMNotificationDetails) => void;
   readonly cookie: CookieAPI | undefined;
 }
 

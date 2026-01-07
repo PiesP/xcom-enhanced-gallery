@@ -2,7 +2,8 @@
  * Common Result pattern (Phase: Result Unification)
  * @version 2.2.0 - Phase 4: Type system optimization (enum → const object)
  */
-type BaseResultStatus = 'success' | 'partial' | 'error' | 'cancelled';
+const BaseResultStatusValues = ['success', 'partial', 'error', 'cancelled'] as const;
+type BaseResultStatus = (typeof BaseResultStatusValues)[number];
 
 /**
  * Integrated error codes (generic + media extraction)
@@ -147,12 +148,26 @@ export function failure<T = never>(
 }
 
 // ============================================================================
+// ============================================================================
 // Type Guards (inline usage recommended for tree-shaking)
 // ============================================================================
 
 /**
  * Check if Result is success (type guard)
+ *
+ * Narrows Result type to ResultSuccess<T>.
  * For inline usage: `result.status === 'success'`
+ *
+ * @param result - Result instance to test
+ * @returns True if result status is 'success'
+ *
+ * @example
+ * ```typescript
+ * const result = success({ id: 1 });
+ * if (isSuccess(result)) {
+ *   console.log(result.data); // Typed as T
+ * }
+ * ```
  */
 export function isSuccess<T>(result: Result<T>): result is ResultSuccess<T> {
   return result.status === 'success';
@@ -160,7 +175,20 @@ export function isSuccess<T>(result: Result<T>): result is ResultSuccess<T> {
 
 /**
  * Check if Result is failure (type guard)
+ *
+ * Narrows Result type to ResultError (status 'error' | 'cancelled').
  * For inline usage: `result.status === 'error' || result.status === 'cancelled'`
+ *
+ * @param result - Result instance to test
+ * @returns True if result status is 'error' or 'cancelled'
+ *
+ * @example
+ * ```typescript
+ * const result = failure('Not found');
+ * if (isFailure(result)) {
+ *   console.log(result.error); // error message available
+ * }
+ * ```
  */
 export function isFailure<T>(result: Result<T>): result is ResultError {
   return result.status === 'error' || result.status === 'cancelled';
@@ -168,6 +196,20 @@ export function isFailure<T>(result: Result<T>): result is ResultError {
 
 /**
  * Check if Result is partial success (type guard)
+ *
+ * Narrows Result type to ResultPartial<T>.
+ *
+ * @param result - Result instance to test
+ * @returns True if result status is 'partial'
+ *
+ * @example
+ * ```typescript
+ * const result = partial(items, 'Some items failed');
+ * if (isPartial(result)) {
+ *   console.log(result.data); // Available data
+ *   console.log(result.failures); // Individual failures
+ * }
+ * ```
  */
 export function isPartial<T>(result: Result<T>): result is ResultPartial<T> {
   return result.status === 'partial';
@@ -180,6 +222,12 @@ export function isPartial<T>(result: Result<T>): result is ResultPartial<T> {
 /**
  * Create success Result (Rust-style alias for `success`)
  *
+ * Convenience alias for Rust-like API. Same behavior as `success()`.
+ *
+ * @param data - Success data
+ * @param meta - Optional metadata
+ * @returns Enhanced Result (success)
+ *
  * @example
  * ```typescript
  * const result = ok({ id: 1 });
@@ -190,6 +238,13 @@ export const ok = success;
 
 /**
  * Create failure Result (Rust-style alias for `failure`)
+ *
+ * Convenience alias for Rust-like API. Same behavior as `failure()`.
+ *
+ * @param error - Error message
+ * @param code - ErrorCode (default: UNKNOWN)
+ * @param options - Additional options (cause, meta, failures)
+ * @returns Enhanced Result (error)
  *
  * @example
  * ```typescript
@@ -203,13 +258,23 @@ export const err = failure;
 // Result Utility Functions (Rust-style combinators)
 // ============================================================================
 
+// ============================================================================
+// Result Utility Functions (Rust-style combinators)
+// ============================================================================
+
 /**
  * Unwrap Result value or return default on failure
+ *
+ * Extracts data from success/partial results or returns default value on error/cancellation.
+ *
+ * @param result - Result instance to unwrap
+ * @param defaultValue - Default value if result is error/cancelled
+ * @returns Extracted data or default value
  *
  * @example
  * ```typescript
  * const value = unwrapOr(result, []);
- * // Returns data if success, [] if failure
+ * // Returns data if success or partial, [] if failure
  * ```
  */
 export function unwrapOr<T>(result: Result<T>, defaultValue: T): T {
@@ -219,9 +284,17 @@ export function unwrapOr<T>(result: Result<T>, defaultValue: T): T {
 /**
  * Map success data to a new value
  *
+ * Transforms success result data using provided function.
+ * Preserves failure state.
+ *
+ * @param result - Result instance to map
+ * @param fn - Transformation function applied to success data
+ * @returns New Result with transformed data (or unchanged failure)
+ *
  * @example
  * ```typescript
  * const mapped = map(result, data => data.length);
+ * // Transforms data from T to U, preserves errors
  * ```
  */
 export function map<T, U>(result: Result<T>, fn: (data: T) => U): Result<U> {
@@ -240,9 +313,17 @@ export function map<T, U>(result: Result<T>, fn: (data: T) => U): Result<U> {
 /**
  * Map error message to a new message
  *
+ * Transforms error/cancelled result message using provided function.
+ * Leaves success/partial results unchanged.
+ *
+ * @param result - Result instance to map
+ * @param fn - Error message transformation function
+ * @returns Result with transformed error message (or unchanged success)
+ *
  * @example
  * ```typescript
  * const mapped = mapErr(result, msg => `Failed: ${msg}`);
+ * // Wraps error message with context
  * ```
  */
 export function mapErr<T>(result: Result<T>, fn: (error: string) => string): Result<T> {
@@ -255,9 +336,17 @@ export function mapErr<T>(result: Result<T>, fn: (error: string) => string): Res
 /**
  * Chain Result operations (flatMap)
  *
+ * Chains multiple Result-returning operations.
+ * Short-circuits on first error, but preserves partial state.
+ *
+ * @param result - Result instance to chain
+ * @param fn - Function returning a new Result
+ * @returns Chained Result
+ *
  * @example
  * ```typescript
  * const chained = andThen(result, data => ok(data.items));
+ * // Applies transformation only if result is successful
  * ```
  */
 export function andThen<T, U>(result: Result<T>, fn: (data: T) => Result<U>): Result<U> {

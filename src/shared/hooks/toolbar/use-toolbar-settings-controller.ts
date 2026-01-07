@@ -28,46 +28,30 @@ import {
   getThemeService,
   tryGetSettingsManager,
 } from '@shared/container/service-accessors';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
-import type { LanguageService } from '@shared/services/language-service';
-import type { ThemeServiceContract } from '@shared/services/theme-service';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 
+import type {
+  LanguageOption,
+  ThemeOption,
+  ToolbarSettingsControllerResult,
+  UseToolbarSettingsControllerOptions,
+} from './use-toolbar-settings-controller.types';
+
 let toolbarSettingsControllerListenerSeq = 0;
 
-const DEFAULT_FOCUS_DELAY_MS = 50;
-const DEFAULT_SELECT_GUARD_MS = 300;
-type ThemeOption = 'auto' | 'light' | 'dark';
-type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
+const DEFAULTS = {
+  FOCUS_DELAY_MS: 50,
+  SELECT_GUARD_MS: 300,
+} as const;
 
-interface UseToolbarSettingsControllerOptions {
-  readonly isSettingsExpanded: () => boolean;
-  readonly setSettingsExpanded: (expanded: boolean) => void;
-  readonly toggleSettingsExpanded: () => void;
-  readonly documentRef?: Document;
-  readonly themeService?: ThemeServiceContract;
-  readonly languageService?: LanguageService;
-  readonly focusDelayMs?: number;
-  readonly selectChangeGuardMs?: number;
-}
-
-export interface ToolbarSettingsControllerResult {
-  readonly assignToolbarRef: (element: HTMLDivElement | null | undefined) => void;
-  readonly assignSettingsPanelRef: (element: HTMLDivElement | null | undefined) => void;
-  readonly assignSettingsButtonRef: (element: HTMLButtonElement | null | undefined) => void;
-  readonly isSettingsExpanded: () => boolean;
-  readonly currentTheme: () => ThemeOption;
-  readonly currentLanguage: () => LanguageOption;
-  readonly handleSettingsClick: (event: MouseEvent) => void;
-  readonly handleSettingsMouseDown: (event: MouseEvent) => void;
-  readonly handleToolbarKeyDown: (event: KeyboardEvent) => void;
-  readonly handlePanelMouseDown: (event: MouseEvent) => void;
-  readonly handlePanelClick: (event: MouseEvent) => void;
-  readonly handleThemeChange: (event: Event) => void;
-  readonly handleLanguageChange: (event: Event) => void;
-}
+export type { LanguageOption, ThemeOption };
+export type {
+  ToolbarSettingsControllerResult,
+  UseToolbarSettingsControllerOptions,
+} from './use-toolbar-settings-controller.types';
 
 export function useToolbarSettingsController(
   options: UseToolbarSettingsControllerOptions
@@ -132,8 +116,8 @@ export function useToolbarSettingsController(
     documentRef = typeof document !== 'undefined' ? document : undefined,
     themeService: providedThemeService,
     languageService: providedLanguageService,
-    focusDelayMs = DEFAULT_FOCUS_DELAY_MS,
-    selectChangeGuardMs = DEFAULT_SELECT_GUARD_MS,
+    focusDelayMs = DEFAULTS.FOCUS_DELAY_MS,
+    selectChangeGuardMs = DEFAULTS.SELECT_GUARD_MS,
   } = options;
 
   const themeManager = providedThemeService ?? getThemeService();

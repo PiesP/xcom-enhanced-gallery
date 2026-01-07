@@ -1,6 +1,7 @@
 /**
  * @fileoverview CSS Layer Order Declaration
  * @description Establishes explicit cascade layer ordering for XEG styles.
+ *              This is a critical bootstrap file that must be imported first.
  *
  * Layer Priority (lowest to highest specificity):
  * 1. xeg.tokens   - Design tokens (CSS custom properties)
@@ -10,9 +11,8 @@
  * 5. xeg.features - Feature-specific styles (gallery, settings)
  * 6. xeg.overrides - Theme and state overrides (highest priority)
  *
- * @note This file MUST be imported first in globals.ts
- *       to ensure correct cascade ordering.
- *
+ * @note CRITICAL: This file MUST be imported first in globals.ts to ensure
+ *       correct cascade layer ordering across all CSS Modules.
  * @see https://developer.mozilla.org/en-US/docs/Web/CSS/@layer
  */
 

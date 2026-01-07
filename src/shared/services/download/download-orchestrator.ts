@@ -13,13 +13,14 @@
  */
 
 import { planBulkDownload, planZipSave } from '@shared/core/download/download-plan';
+import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
 import { getErrorMessage } from '@shared/error/normalize';
-import { logger } from '@shared/logging';
-import {
-  type DownloadCapability,
-  detectDownloadCapability,
-  type GMDownloadFunction,
+import { logger } from '@shared/logging/logger';
+import type {
+  DownloadCapability,
+  GMDownloadFunction,
 } from '@shared/services/download/fallback-download';
+import { detectDownloadCapability } from '@shared/services/download/fallback-download';
 import { downloadSingleFile } from '@shared/services/download/single-download';
 import type {
   BulkDownloadResult,
@@ -74,6 +75,8 @@ export class DownloadOrchestrator {
    * @internal
    */
   public static resetForTests(): void {
+    const existing = DownloadOrchestrator.singleton.peek?.();
+    existing?.destroy();
     DownloadOrchestrator.singleton.reset?.();
   }
 
@@ -139,6 +142,42 @@ export class DownloadOrchestrator {
     mediaItems: MediaInfo[],
     options: DownloadOptions = {}
   ): Promise<BulkDownloadResult> {
+    if (options.signal?.aborted) {
+      const abortError = getUserCancelledAbortErrorFromSignal(options.signal);
+      return {
+        success: false,
+        status: 'error',
+        filesProcessed: 0,
+        filesSuccessful: 0,
+        error: getErrorMessage(abortError) || 'Download cancelled',
+        code: ErrorCode.CANCELLED,
+      };
+    }
+
+    if (mediaItems.length === 0) {
+      return {
+        success: false,
+        status: 'error',
+        filesProcessed: 0,
+        filesSuccessful: 0,
+        error: 'No media to download',
+        code: ErrorCode.EMPTY_INPUT,
+      };
+    }
+
+    const capability = this.getCapability();
+
+    if (capability.method === 'none') {
+      return {
+        success: false,
+        status: 'error',
+        filesProcessed: mediaItems.length,
+        filesSuccessful: 0,
+        error: 'No download method',
+        code: ErrorCode.ALL_FAILED,
+      };
+    }
+
     const plan = planBulkDownload({
       mediaItems,
       prefetchedBlobs: options.prefetchedBlobs,
@@ -146,7 +185,7 @@ export class DownloadOrchestrator {
       nowMs: Date.now(),
     });
 
-    const items: OrchestratorItem[] = plan.items;
+    const items: readonly OrchestratorItem[] = plan.items;
 
     try {
       const result = await downloadAsZip(items, options);
@@ -168,8 +207,6 @@ export class DownloadOrchestrator {
         type: 'application/zip',
       });
       const filename = plan.zipFilename;
-
-      const capability = this.getCapability();
 
       // Save ZIP using appropriate download method
       const saveResult = await this.saveZipBlob(zipBlob, filename, options, capability);
@@ -196,6 +233,17 @@ export class DownloadOrchestrator {
         code: ErrorCode.NONE,
       };
     } catch (error) {
+      if (isAbortError(error)) {
+        return {
+          success: false,
+          status: 'error',
+          filesProcessed: items.length,
+          filesSuccessful: 0,
+          error: getErrorMessage(error) || 'Download cancelled',
+          code: ErrorCode.CANCELLED,
+        };
+      }
+
       return {
         success: false,
         status: 'error',

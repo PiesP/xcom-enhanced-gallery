@@ -8,12 +8,18 @@
  * and ignore the matching `volumechange` event(s) within a short time window.
  */
 
-interface VideoVolumeSnapshot {
+/**
+ * Snapshot of a video's volume state for comparison against volumechange events.
+ */
+export interface VideoVolumeSnapshot {
   readonly volume: number;
   readonly muted: boolean;
 }
 
-interface VideoVolumeChangeGuard {
+/**
+ * Guard contract used to identify and ignore programmatic volume changes.
+ */
+export interface VideoVolumeChangeGuard {
   /** Mark a programmatic change and the exact expected resulting state. */
   markProgrammaticChange(expected: VideoVolumeSnapshot): void;
 
@@ -21,7 +27,10 @@ interface VideoVolumeChangeGuard {
   shouldIgnoreChange(current: VideoVolumeSnapshot): boolean;
 }
 
-interface CreateVideoVolumeChangeGuardOptions {
+/**
+ * Configuration for the volume change guard.
+ */
+export interface CreateVideoVolumeChangeGuardOptions {
   /**
    * Maximum age of a programmatic mark (milliseconds).
    *
@@ -32,6 +41,9 @@ interface CreateVideoVolumeChangeGuardOptions {
 
 const DEFAULT_VOLUME_EPSILON = 1e-3;
 
+/**
+ * Compare two volume values with a small epsilon to account for rounding errors.
+ */
 function areVolumesEquivalent(a: number, b: number): boolean {
   if (!Number.isFinite(a) || !Number.isFinite(b)) {
     return a === b;
@@ -39,6 +51,9 @@ function areVolumesEquivalent(a: number, b: number): boolean {
   return Math.abs(a - b) <= DEFAULT_VOLUME_EPSILON;
 }
 
+/**
+ * Monotonic timestamp in milliseconds (performance.now() fallback safe for SSR/tests).
+ */
 function nowMs(): number {
   // `performance.now()` is monotonic; fall back to Date.now() where unavailable.
   return typeof performance !== 'undefined' && typeof performance.now === 'function'
@@ -49,7 +64,11 @@ function nowMs(): number {
 export function createVideoVolumeChangeGuard(
   options: CreateVideoVolumeChangeGuardOptions = {}
 ): VideoVolumeChangeGuard {
-  const windowMs = options.windowMs ?? 500;
+  const windowMsInput = options.windowMs;
+  const windowMs =
+    typeof windowMsInput === 'number' && Number.isFinite(windowMsInput)
+      ? Math.max(0, windowMsInput)
+      : 500;
 
   type ExpectedMark = {
     readonly snapshot: VideoVolumeSnapshot;
@@ -60,11 +79,11 @@ export function createVideoVolumeChangeGuard(
   // This makes the guard resilient to:
   // - browsers firing `volumechange` more than once for the same state
   // - sequential programmatic assignments (muted + volume) whose events may arrive out-of-order
-  const MAX_EXPECTED_MARKS = 4;
+  const MAX_EXPECTED_MARKS = 4 as const;
 
   let expectedMarks: ExpectedMark[] = [];
 
-  const pruneExpiredMarks = (now: number) => {
+  const pruneExpiredMarks = (now: number): void => {
     if (expectedMarks.length === 0) return;
     expectedMarks = expectedMarks.filter((mark) => {
       const age = now - mark.markedAt;

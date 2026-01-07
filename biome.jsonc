@@ -59,7 +59,8 @@
       "quoteStyle": "single",
       "semicolons": "always",
       "trailingCommas": "es5",
-      "arrowParentheses": "always"
+      "arrowParentheses": "always",
+      "lineEnding": "lf"
     }
   },
   "json": {

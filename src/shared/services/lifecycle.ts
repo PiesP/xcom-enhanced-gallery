@@ -24,7 +24,7 @@
  * ```
  */
 
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 
 // ============================================================================
 // Types

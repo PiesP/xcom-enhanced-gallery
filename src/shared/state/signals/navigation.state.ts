@@ -19,12 +19,16 @@ import type { NavigationSource } from '@shared/types/navigation.types';
 // ============================================================================
 
 /**
- * Navigation trigger types
+ * Navigation trigger types representing user interaction methods
  */
 export type NavigationTrigger = 'button' | 'click' | 'keyboard' | 'scroll';
 
 /**
- * Navigation state interface
+ * Navigation state data structure
+ *
+ * @property lastSource - Most recent navigation source type
+ * @property lastTimestamp - Timestamp of last navigation in milliseconds
+ * @property lastNavigatedIndex - Index of last navigated item, null if none
  */
 interface NavigationStateData {
   readonly lastSource: NavigationSource;
@@ -34,6 +38,8 @@ interface NavigationStateData {
 
 /**
  * Navigation transition result
+ *
+ * @property isDuplicate - True if navigation was duplicate and ignored
  */
 interface NavigationResult {
   readonly isDuplicate: boolean;
@@ -43,6 +49,9 @@ interface NavigationResult {
 // Constants
 // ============================================================================
 
+/**
+ * Initial navigation state values
+ */
 const INITIAL_NAVIGATION_STATE: NavigationStateData = {
   lastSource: 'auto-focus',
   // Avoid non-deterministic timestamps at module evaluation time.
@@ -51,30 +60,46 @@ const INITIAL_NAVIGATION_STATE: NavigationStateData = {
   lastNavigatedIndex: null,
 };
 
-const VALID_NAVIGATION_SOURCES: readonly NavigationSource[] = [
+/**
+ * Valid navigation source values
+ */
+const VALID_NAVIGATION_SOURCES = [
   'button',
   'keyboard',
   'scroll',
   'auto-focus',
-];
+] as const satisfies readonly NavigationSource[];
 
-const VALID_NAVIGATION_TRIGGERS: readonly NavigationTrigger[] = [
+/**
+ * Valid navigation trigger values
+ */
+const VALID_NAVIGATION_TRIGGERS = [
   'button',
   'click',
   'keyboard',
   'scroll',
-];
+] as const satisfies readonly NavigationTrigger[];
 
 // ============================================================================
 // Fine-grained Signals
 // ============================================================================
 
+/**
+ * Navigation state signals
+ * @internal
+ */
 const navigationSignals = {
   lastSource: createSignalSafe<NavigationSource>(INITIAL_NAVIGATION_STATE.lastSource),
   lastTimestamp: createSignalSafe<number>(INITIAL_NAVIGATION_STATE.lastTimestamp),
   lastNavigatedIndex: createSignalSafe<number | null>(INITIAL_NAVIGATION_STATE.lastNavigatedIndex),
 };
 
+/**
+ * Resolve timestamp parameter to current time if not provided
+ *
+ * @param nowMs - Optional timestamp in milliseconds
+ * @returns Resolved timestamp (provided value or Date.now())
+ */
 function resolveNowMs(nowMs?: number): number {
   return nowMs ?? Date.now();
 }
@@ -85,6 +110,9 @@ function resolveNowMs(nowMs?: number): number {
 
 /**
  * Check if value is a valid navigation source
+ *
+ * @param value - Value to validate
+ * @returns True if value is a valid NavigationSource
  */
 function isValidNavigationSource(value: unknown): value is NavigationSource {
   return typeof value === 'string' && VALID_NAVIGATION_SOURCES.includes(value as NavigationSource);
@@ -92,6 +120,9 @@ function isValidNavigationSource(value: unknown): value is NavigationSource {
 
 /**
  * Check if value is a valid navigation trigger
+ *
+ * @param value - Value to validate
+ * @returns True if value is a valid NavigationTrigger
  */
 function isValidNavigationTrigger(value: unknown): value is NavigationTrigger {
   return (
@@ -101,6 +132,9 @@ function isValidNavigationTrigger(value: unknown): value is NavigationTrigger {
 
 /**
  * Check if source is a manual navigation (button or keyboard)
+ *
+ * @param source - Navigation source to check
+ * @returns True if source is button or keyboard
  */
 function isManualSource(source: NavigationSource): boolean {
   return source === 'button' || source === 'keyboard';
@@ -110,12 +144,25 @@ function isManualSource(source: NavigationSource): boolean {
 // Error Handling
 // ============================================================================
 
+/**
+ * Create navigation action error
+ *
+ * @param context - Context where error occurred
+ * @param reason - Reason for the error
+ * @returns Formatted error object
+ */
 function createNavigationActionError(context: string, reason: string): Error {
   return new Error(`[Gallery] Invalid navigation action (${context}): ${reason}`);
 }
 
 /**
  * Validate navigation parameters
+ *
+ * @param targetIndex - Target navigation index
+ * @param source - Navigation source type
+ * @param trigger - Navigation trigger type
+ * @param context - Context for error messages
+ * @throws {Error} If any parameter is invalid
  */
 export function validateNavigationParams(
   targetIndex: number,
@@ -144,6 +191,11 @@ export function validateNavigationParams(
 
 /**
  * Validate focus parameters
+ *
+ * @param focusIndex - Target focus index (null to clear focus)
+ * @param source - Navigation source type
+ * @param context - Context for error messages
+ * @throws {Error} If any parameter is invalid
  */
 export function validateFocusParams(
   focusIndex: number | null,
@@ -172,6 +224,10 @@ export function validateFocusParams(
 
 /**
  * Record a navigation action
+ *
+ * @param targetIndex - Target navigation index
+ * @param source - Navigation source type
+ * @param nowMs - Optional timestamp in milliseconds (uses Date.now() if not provided)
  * @returns Navigation result indicating if this was a duplicate
  */
 export function recordNavigation(
@@ -203,6 +259,9 @@ export function recordNavigation(
 
 /**
  * Record a focus change (doesn't affect navigation history)
+ *
+ * @param source - Navigation source type
+ * @param nowMs - Optional timestamp in milliseconds (uses Date.now() if not provided)
  */
 export function recordFocusChange(source: NavigationSource, nowMs?: number): void {
   const timestamp = resolveNowMs(nowMs);
@@ -212,6 +271,8 @@ export function recordFocusChange(source: NavigationSource, nowMs?: number): voi
 
 /**
  * Reset navigation state to initial values
+ *
+ * @param nowMs - Optional timestamp in milliseconds (uses Date.now() if not provided)
  */
 export function resetNavigation(nowMs?: number): void {
   navigationSignals.lastSource.value = INITIAL_NAVIGATION_STATE.lastSource;
@@ -225,6 +286,9 @@ export function resetNavigation(nowMs?: number): void {
 
 /**
  * Resolve navigation trigger to navigation source
+ *
+ * @param trigger - Navigation trigger type
+ * @returns Corresponding NavigationSource for the trigger
  */
 export function resolveNavigationSource(trigger: NavigationTrigger): NavigationSource {
   if (trigger === 'scroll') {

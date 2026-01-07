@@ -1,28 +1,30 @@
 /**
  * @fileoverview Toolbar State Management Hook
- * @description Custom Solid.js hook for toolbar UI state management
+ * @description Custom Solid.js hook for toolbar UI state management with debounced download state
  *
  * **Responsibilities**:
  * - Download state management with 300ms minimum display
- * - Loading state management
- * - Error state management
- * - State reset and cleanup
+ * - Loading state management (with error clearing)
+ * - Error state management (with loading/downloading clearing)
+ * - State reset and cleanup with timer management
  *
  * **Features**:
- * - Download debounce: Minimum 300ms display even for quick operations
- * - State sync: Error clears loading/downloading; loading clears error
- * - Proper cleanup: Timeout cleared on component unmount
- * - Solid.js signal-based: Reactive updates with fine-grained reactivity
+ * - Download debounce: Minimum 300ms display even for quick operations (prevents UI flickering)
+ * - State sync: Error clears loading/downloading; loading clears error (prevents invalid states)
+ * - Proper cleanup: Timeout cleared on component unmount (prevents memory leaks)
+ * - Solid.js signal-based: Fine-grained reactivity with tree-shaking benefits
  *
  * **Integration**:
  * - Uses globalTimerManager for timer management
- * - Uses Solid.js createSignal for reactive state (tree-shaking friendly)
+ * - Uses Solid.js createSignal for reactive state (tree-shaking friendly vs createStore)
+ *
  * **Performance**:
  * - Download timeout only scheduled when needed
  * - Signal updates batched within Solid.js reactivity system
  * - Cleanup prevents timer leaks
  * - No solid-js/store dependency for smaller bundle size
  *
+ * **Related Resources**:
  * - {@link ../utils/toolbar-utils.ts} - State extraction and styling utilities
  * - {@link ../types/toolbar.types.ts} - State type definitions
  * - {@link ../../features/gallery/hooks/use-gallery-app.ts} - Main app integration
@@ -34,6 +36,13 @@
 import type { ToolbarActions, ToolbarState } from '@shared/types/toolbar.types';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { createSignal, onCleanup } from 'solid-js';
+
+/**
+ * Minimum display time (ms) for download state to prevent UI flickering
+ *
+ * @internal Download state debounce time constant
+ */
+const DOWNLOAD_MIN_DISPLAY_TIME = 300;
 
 /**
  * Initial toolbar state constant
@@ -120,13 +129,15 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
   };
 
   /**
-   * Set downloading state with 300ms minimum display debounce
+   * Set downloading state with minimum display debounce
    *
    * **Behavior**:
-   * - On true: Mark start time, clear any pending timeout, set state immediately
+   * - On true: Mark start time, clear any pending timeout, set state immediately, clear error
    * - On false:
-   *   - If > 300ms elapsed: Clear state immediately
-   *   - If < 300ms elapsed: Schedule state clear after remaining time
+   *   - If elapsed time >= DOWNLOAD_MIN_DISPLAY_TIME: Clear state immediately
+   *   - If elapsed time < DOWNLOAD_MIN_DISPLAY_TIME: Schedule state clear after remaining time
+   *
+   * **Purpose**: Prevents UI flickering on fast operations while providing user feedback
    *
    * @param downloading - New downloading state
    * @internal State action
@@ -143,20 +154,29 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     }
 
     const timeSinceStart = now - lastDownloadToggle;
-    const minDisplayTime = 300;
 
-    if (timeSinceStart < minDisplayTime) {
+    if (timeSinceStart < DOWNLOAD_MIN_DISPLAY_TIME) {
       clearDownloadTimeout();
       downloadTimeoutRef = globalTimerManager.setTimeout(() => {
         setIsDownloading(false);
         downloadTimeoutRef = null;
-      }, minDisplayTime - timeSinceStart);
+      }, DOWNLOAD_MIN_DISPLAY_TIME - timeSinceStart);
       return;
     }
 
     setIsDownloading(false);
   };
 
+  /**
+   * Set loading state
+   *
+   * **Behavior**:
+   * - When loading starts: Clear error state to prevent conflicting signals
+   * - Prevents invalid state where both loading and error are true
+   *
+   * @param loading - New loading state
+   * @internal State action
+   */
   const setLoading = (loading: boolean): void => {
     setIsLoading(loading);
     // Clear error when loading starts

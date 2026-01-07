@@ -12,7 +12,7 @@
  */
 
 import { isGalleryInternalEvent } from '@shared/dom/utils';
-import { logger } from '@shared/logging';
+import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import { createPrefixedId } from '@shared/utils/id/create-id';
@@ -25,23 +25,23 @@ import { createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
 /** Hook configuration */
 interface UseGalleryScrollOptions {
   /** Gallery container element */
-  container: MaybeAccessor<HTMLElement | null>;
+  readonly container: MaybeAccessor<HTMLElement | null>;
   /** Scroll target (defaults to container) */
-  scrollTarget?: MaybeAccessor<HTMLElement | null>;
+  readonly scrollTarget?: MaybeAccessor<HTMLElement | null>;
   /** Callback on scroll events */
-  onScroll?: () => void;
+  readonly onScroll?: () => void;
   /** Callback when scrolling ends (after idle timeout) */
-  onScrollEnd?: () => void;
+  readonly onScrollEnd?: () => void;
   /** Whether scroll handling is enabled */
-  enabled?: MaybeAccessor<boolean>;
+  readonly enabled?: MaybeAccessor<boolean>;
   /** Timestamp of last programmatic scroll (events within 100ms ignored) */
-  programmaticScrollTimestamp?: Accessor<number>;
+  readonly programmaticScrollTimestamp?: Accessor<number>;
 }
 
 /** Hook return type */
 interface UseGalleryScrollReturn {
-  isScrolling: Accessor<boolean>;
-  lastScrollTime: Accessor<number>;
+  readonly isScrolling: Accessor<boolean>;
+  readonly lastScrollTime: Accessor<number>;
 }
 
 /** Idle timeout after scroll ends (ms) */

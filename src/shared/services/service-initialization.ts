@@ -14,6 +14,8 @@ import { ThemeService } from '@shared/services/theme-service';
  *
  * FilenameService removed in v3.0.0 - use functional API:
  * import { generateMediaFilename, generateZipFilename } from '@shared/services/filename';
+ *
+ * @throws Does not throw; silently skips duplicate registrations
  */
 export function registerCoreServices(): void {
   const core = CoreService.getInstance();

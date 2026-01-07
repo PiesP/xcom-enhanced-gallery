@@ -1,17 +1,17 @@
 /**
- * @fileoverview AbortSignal cleanup utilities
- * @description Helper functions for managing AbortSignal listener lifecycle
+ * @fileoverview AbortSignal cleanup utilities.
+ * @description Helper functions for managing AbortSignal listener lifecycle.
  *
  * Consolidates common patterns for attaching abort listeners and ensuring proper cleanup.
  */
 
 /**
- * Attach an abort listener and return a cleanup function
+ * Attach an abort listener and return a cleanup function.
  *
- * @param signal - AbortSignal to listen to (nullable)
- * @param onAbort - Callback to execute when signal aborts
- * @param options - addEventListener options
- * @returns Cleanup function that removes the listener
+ * @param signal - AbortSignal to listen to (nullable).
+ * @param onAbort - Callback to execute when signal aborts.
+ * @param options - addEventListener options.
+ * @returns Cleanup function that removes the listener.
  *
  * @example
  * ```typescript
@@ -45,13 +45,13 @@ export function attachAbortListener(
 }
 
 /**
- * Execute cleanup when signal aborts (fire-and-forget pattern)
+ * Execute cleanup when signal aborts (fire-and-forget pattern).
  *
  * Use this when you don't need to manually detach the listener.
  * The listener is automatically removed after first abort (once: true).
  *
- * @param signal - AbortSignal to listen to (nullable)
- * @param cleanup - Cleanup function to execute on abort
+ * @param signal - AbortSignal to listen to (nullable).
+ * @param cleanup - Cleanup function to execute on abort.
  *
  * @example
  * ```typescript
@@ -68,12 +68,12 @@ export function onSignalAbort(signal: AbortSignal | null | undefined, cleanup: (
 }
 
 /**
- * Check if a signal is null, undefined, or already aborted
+ * Check if a signal is null, undefined, or already aborted.
  *
  * Useful for early-exit checks in abort-aware functions.
  *
- * @param signal - AbortSignal to check (nullable)
- * @returns true if signal is absent or already aborted
+ * @param signal - AbortSignal to check (nullable).
+ * @returns true if signal is absent or already aborted.
  *
  * @example
  * ```typescript
