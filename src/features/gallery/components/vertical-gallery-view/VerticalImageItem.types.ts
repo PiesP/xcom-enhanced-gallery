@@ -4,7 +4,7 @@
  *
  * @fileoverview VerticalImageItem Component Types
  * @description Type definitions for vertical gallery image item component
- * @module features/gallery/components/vertical-gallery-view/vertical-image-item.types
+ * @module features/gallery/components/vertical-gallery-view/VerticalImageItem.types
  *
  * **Types**:
  * - {@link FitModeProp} - Image fit mode type (direct or function)

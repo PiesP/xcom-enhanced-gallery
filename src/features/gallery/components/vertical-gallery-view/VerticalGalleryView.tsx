@@ -25,7 +25,7 @@
  * @version 8.0 - Refactored with useVerticalGallery composed hook
  */
 
-import { useVerticalGallery } from '@features/gallery/components/vertical-gallery-view/hooks/useVerticalGallery';
+import { useVerticalGallery } from '@features/gallery/components/vertical-gallery-view/hooks/use-vertical-gallery';
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css';
 import { VerticalImageItem } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';

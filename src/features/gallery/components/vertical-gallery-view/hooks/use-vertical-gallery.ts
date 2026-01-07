@@ -15,16 +15,16 @@
  * - useGalleryKeyboard - Handles keyboard events (Escape, etc.)
  */
 
-import { useGalleryFocusTracker } from '@features/gallery/hooks/useGalleryFocusTracker';
-import { useGalleryItemScroll } from '@features/gallery/hooks/useGalleryItemScroll';
-import { useGalleryScroll } from '@features/gallery/hooks/useGalleryScroll';
+import { useGalleryFocusTracker } from '@features/gallery/hooks/use-gallery-focus-tracker';
+import { useGalleryItemScroll } from '@features/gallery/hooks/use-gallery-item-scroll';
+import { useGalleryScroll } from '@features/gallery/hooks/use-gallery-scroll';
 import type { NavigationTrigger } from '@shared/state/signals/navigation.state';
 import type { Accessor } from 'solid-js';
 import { createEffect } from 'solid-js';
-import { useGalleryKeyboard } from './useGalleryKeyboard';
-import { useGalleryLifecycle } from './useGalleryLifecycle';
-import { useGalleryNavigation } from './useGalleryNavigation';
-import { useToolbarAutoHide } from './useToolbarAutoHide';
+import { useGalleryKeyboard } from './use-gallery-keyboard';
+import { useGalleryLifecycle } from './use-gallery-lifecycle';
+import { useGalleryNavigation } from './use-gallery-navigation';
+import { useToolbarAutoHide } from './use-toolbar-auto-hide';
 
 /**
  * Configuration options for the composed VerticalGallery hook

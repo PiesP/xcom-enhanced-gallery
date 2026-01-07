@@ -15,7 +15,7 @@
  * - Effect cleanup: Language change subscription properly cleaned up
  * - Accessibility: Native select elements with proper labels
  *
- * @see {@link ./settings-controls.types.ts} - Type definitions
+ * @see {@link ./SettingsControls.types.ts} - Type definitions
  * @see {@link ./SettingsControls.module.css} - Component styles
  */
 
@@ -25,7 +25,7 @@ import { resolve } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import { createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 import styles from './SettingsControls.module.css';
-import type { LanguageOption, SettingsControlsProps, ThemeOption } from './settings-controls.types';
+import type { LanguageOption, SettingsControlsProps, ThemeOption } from './SettingsControls.types';
 
 /**
  * Available theme options

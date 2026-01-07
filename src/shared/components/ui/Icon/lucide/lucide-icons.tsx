@@ -7,7 +7,7 @@
 import { Icon } from '@shared/components/ui/Icon/Icon';
 import type { JSXElement } from '@shared/external/vendors';
 import { LUCIDE_ICON_NODES, type LucideIconNode } from './icon-nodes';
-import type { LucideIconProps } from './lucide-icons.types';
+import type { LucideIconProps } from './LucideIcons.types';
 
 /**
  * Renders a single Lucide icon node as an SVG element.

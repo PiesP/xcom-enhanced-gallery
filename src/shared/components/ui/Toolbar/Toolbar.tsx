@@ -1,12 +1,12 @@
 // External dependencies
 
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
-import { ToolbarView } from '@shared/components/ui/Toolbar/ToolbarView';
 import type {
   FitMode,
   FitModeHandlers,
   ToolbarProps,
-} from '@shared/components/ui/Toolbar/toolbar.types';
+} from '@shared/components/ui/Toolbar/Toolbar.types';
+import { ToolbarView } from '@shared/components/ui/Toolbar/ToolbarView';
 import type { JSXElement } from '@shared/external/vendors';
 import type { ToolbarSettingsControllerResult } from '@shared/hooks/toolbar/use-toolbar-settings-controller';
 import { useToolbarSettingsController } from '@shared/hooks/toolbar/use-toolbar-settings-controller';
