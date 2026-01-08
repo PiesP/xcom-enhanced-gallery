@@ -20,10 +20,10 @@ const DOWNLOAD_TIMEOUT_MESSAGE = 'Download timeout';
 type ProgressCallback = DownloadOptions['onProgress'];
 type ProgressPayload = Parameters<NonNullable<ProgressCallback>>[0];
 
-function reportSingleProgress(
+const reportSingleProgress = (
   onProgress: ProgressCallback | undefined,
   payload: Omit<ProgressPayload, 'current' | 'total'> & { current?: number; total?: number }
-): void {
+): void => {
   if (!onProgress) return;
 
   const current = payload.current ?? SINGLE_DOWNLOAD_TOTAL;
@@ -35,20 +35,20 @@ function reportSingleProgress(
     current,
     total,
   });
-}
+};
 
-function calculatePercentage(loaded: number, total: number): number {
+const calculatePercentage = (loaded: number, total: number): number => {
   if (total <= 0) return 0;
   return Math.min(100, Math.max(0, Math.round((loaded / total) * 100)));
-}
+};
 
-function createAbortResult(signal?: AbortSignal): SingleDownloadResult {
+const createAbortResult = (signal?: AbortSignal): SingleDownloadResult => {
   const abortError = getUserCancelledAbortErrorFromSignal(signal);
   return {
     success: false,
     error: getErrorMessage(abortError) || 'Download cancelled by user',
   };
-}
+};
 
 async function executeSingleDownloadCommand(
   cmd: SingleDownloadCommand,
@@ -90,22 +90,16 @@ async function executeSingleDownloadCommand(
         isBlobUrl = true;
       }
 
-      return await new Promise((resolve) => {
+      return new Promise((resolve) => {
         let timer: ReturnType<typeof globalTimerManager.setTimeout> | undefined;
-
-        const cleanup = () => {
-          if (isBlobUrl) {
-            URL.revokeObjectURL(url);
-          }
-          if (timer) {
-            globalTimerManager.clearTimeout(timer);
-            timer = undefined;
-          }
-        };
-
         let settled = false;
 
-        const settle = (result: SingleDownloadResult, completePercentage?: number) => {
+        const cleanup = (): void => {
+          if (isBlobUrl) URL.revokeObjectURL(url);
+          if (timer) globalTimerManager.clearTimeout(timer);
+        };
+
+        const settle = (result: SingleDownloadResult, completePercentage?: number): void => {
           if (settled) return;
           settled = true;
 
@@ -146,8 +140,7 @@ async function executeSingleDownloadCommand(
               settle({ success: false, error: DOWNLOAD_TIMEOUT_MESSAGE }, 0);
             },
             onprogress: (progress: { loaded: number; total: number }) => {
-              if (settled) return;
-              if (!onProgress || progress.total <= 0) return;
+              if (settled || !onProgress || progress.total <= 0) return;
 
               reportSingleProgress(onProgress, {
                 phase: 'downloading',

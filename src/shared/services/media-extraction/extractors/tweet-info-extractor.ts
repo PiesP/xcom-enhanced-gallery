@@ -12,7 +12,7 @@ type ExtractionStrategy = (element: HTMLElement) => TweetInfo | null;
 
 const DEFAULT_TWEET_ORIGIN = 'https://x.com';
 
-function normalizeTweetUrl(inputUrl: string): string {
+const normalizeTweetUrl = (inputUrl: string): string => {
   try {
     const url = new URL(inputUrl, DEFAULT_TWEET_ORIGIN);
     const hostname = url.hostname.toLowerCase();
@@ -34,12 +34,9 @@ function normalizeTweetUrl(inputUrl: string): string {
     return url.toString();
   } catch {
     // Fall back to a safe absolute URL for relative paths.
-    if (inputUrl.startsWith('/')) {
-      return `${DEFAULT_TWEET_ORIGIN}${inputUrl}`;
-    }
-    return inputUrl;
+    return inputUrl.startsWith('/') ? `${DEFAULT_TWEET_ORIGIN}${inputUrl}` : inputUrl;
   }
-}
+};
 
 // ============================================================================
 // Strategies

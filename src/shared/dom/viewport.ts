@@ -1,54 +1,26 @@
 /**
- * Viewport/Container constraint helpers (PC-only)
- * - Pure calculator + DOM hook to expose values via CSS variables
- * @module viewport
+ * @fileoverview Viewport/Container constraint helpers (PC-only)
+ * @description Pure calculator and DOM hook to expose viewport values via CSS variables.
  */
 import { EventManager } from '@shared/services/event-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { createEventListener } from '@shared/utils/types/guards';
 
-/**
- * Chrome UI offsets that affect available viewport space
- * All values in pixels (px)
- */
 interface ChromeOffsets {
-  /**
-   * Toolbar height (px)
-   */
   readonly toolbarHeight?: number;
-  /**
-   * Top padding (px)
-   */
   readonly paddingTop?: number;
-  /**
-   * Bottom padding (px)
-   */
   readonly paddingBottom?: number;
 }
 
-/**
- * Calculated viewport constraints
- * All values in pixels (px)
- */
 interface ViewportConstraints {
-  /**
-   * Viewport width (px)
-   */
   readonly viewportW: number;
-  /**
-   * Viewport height (px)
-   */
   readonly viewportH: number;
-  /**
-   * Constrained height after subtracting chrome offsets (px)
-   */
   readonly constrainedH: number;
 }
 
 /**
- * Computes viewport constraints after applying chrome offsets
- * All measurements are floored for pixel-perfect rendering consistency
- *
+ * Compute viewport constraints after applying chrome offsets.
+ * All measurements are floored for pixel-perfect rendering.
  * @param rect - Element bounding rectangle (width/height)
  * @param chrome - UI chrome offsets (toolbar, padding) in pixels
  * @returns Calculated viewport constraints
@@ -71,9 +43,8 @@ function computeViewportConstraints(
 }
 
 /**
- * Applies viewport constraints as CSS custom properties to an element
- * Sets --xeg-viewport-w, --xeg-viewport-h, and --xeg-viewport-height-constrained
- *
+ * Apply viewport constraints as CSS custom properties.
+ * Sets --xeg-viewport-w, --xeg-viewport-h, and --xeg-viewport-height-constrained.
  * @param el - Target HTML element (typically gallery container root)
  * @param v - Viewport constraints to apply
  */
@@ -84,25 +55,11 @@ function applyViewportCssVars(el: HTMLElement, v: ViewportConstraints): void {
 }
 
 /**
- * Observes viewport changes and updates CSS custom properties
- * Uses ResizeObserver (if available) and window resize events for reactivity
- * Updates are RAF-throttled for performance
- *
+ * Observe viewport changes and update CSS custom properties.
+ * Uses ResizeObserver and window resize events, RAF-throttled.
  * @param el - Target HTML element to observe and apply CSS vars to
  * @param getChrome - Function returning current chrome offsets
  * @returns Cleanup function to disconnect observers and remove listeners
- *
- * @example
- * ```typescript
- * const cleanup = observeViewportCssVars(containerEl, () => ({
- *   toolbarHeight: 60,
- *   paddingTop: 10,
- *   paddingBottom: 10,
- * }));
- *
- * // Later, to cleanup:
- * cleanup();
- * ```
  */
 export function observeViewportCssVars(
   el: HTMLElement,

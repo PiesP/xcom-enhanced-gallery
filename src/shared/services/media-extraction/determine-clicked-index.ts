@@ -16,10 +16,10 @@ import {
  * @param mediaItems - The list of extracted media items
  * @returns The 0-based index of the clicked media item, or 0 if not found
  */
-export function determineClickedIndex(
+export const determineClickedIndex = (
   clickedElement: HTMLElement,
   mediaItems: MediaInfo[]
-): number {
+): number => {
   try {
     const mediaElement = findMediaElementInDOM(clickedElement);
     if (!mediaElement) return 0;
@@ -30,7 +30,7 @@ export function determineClickedIndex(
     const normalizedElementUrl = normalizeMediaUrl(elementUrl);
     if (!normalizedElementUrl) return 0;
 
-    const index = mediaItems.findIndex((item, i) => {
+    const index = mediaItems.findIndex((item) => {
       if (!item) return false;
 
       // Check main URL
@@ -38,7 +38,7 @@ export function determineClickedIndex(
       if (itemUrl && normalizeMediaUrl(itemUrl) === normalizedElementUrl) {
         if (__DEV__) {
           logger.debug(
-            `[determineClickedIndex] Matched clicked media at index ${i}: ${normalizedElementUrl}`
+            `[determineClickedIndex] Matched clicked media at index ${mediaItems.indexOf(item)}: ${normalizedElementUrl}`
           );
         }
         return true;
@@ -48,7 +48,7 @@ export function determineClickedIndex(
       if (item.thumbnailUrl && normalizeMediaUrl(item.thumbnailUrl) === normalizedElementUrl) {
         if (__DEV__) {
           logger.debug(
-            `[determineClickedIndex] Matched clicked media (thumbnail) at index ${i}: ${normalizedElementUrl}`
+            `[determineClickedIndex] Matched clicked media (thumbnail) at index ${mediaItems.indexOf(item)}: ${normalizedElementUrl}`
           );
         }
         return true;
@@ -71,4 +71,4 @@ export function determineClickedIndex(
     }
     return 0;
   }
-}
+};

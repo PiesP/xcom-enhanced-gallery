@@ -1,69 +1,13 @@
-/**
- * Copyright (c) 2024 X.com Enhanced Gallery
- * Licensed under the MIT License
- *
- * @fileoverview VerticalImageItem Component Types
- * @description Type definitions for vertical gallery image item component
- * @module features/gallery/components/vertical-gallery-view/VerticalImageItem.types
- *
- * **Types**:
- * - {@link FitModeProp} - Image fit mode type (direct or function)
- * - {@link VerticalImageItemProps} - Component props interface
- *
- * @version 1.1.0 - Enhanced documentation and type clarity (Phase 354+)
- */
+/** Type definitions for vertical gallery image item component. */
 
 import type { BaseComponentProps } from '@shared/types/component.types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { ImageFitMode } from '@shared/types/ui.types';
 
-/**
- * Fit mode prop that can be either a direct value or a function that returns it
- * @type {(ImageFitMode | (() => ImageFitMode | undefined))}
- *
- * **Usage**:
- * - Direct: `fitMode="original"`
- * - Function: `fitMode={() => settings.fitMode()}`
- */
+/** Fit mode prop: ImageFitMode value or function returning it. */
 export type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
 
-/**
- * Props for VerticalImageItem component
- * @interface VerticalImageItemProps
- *
- * **Extends**: {@link BaseComponentProps}
- *
- * **Media Data**:
- * - {@link VerticalImageItemProps.media} - MediaInfo object
- * - {@link VerticalImageItemProps.index} - Position in gallery
- *
- * **State**:
- * - {@link VerticalImageItemProps.isActive} - Current visible item
- * - {@link VerticalImageItemProps.isFocused} - Keyboard focus state
- * - {@link VerticalImageItemProps.forceVisible} - Override visibility (preload)
- *
- * **Callbacks**:
- * - {@link VerticalImageItemProps.onClick} - Item click handler
- * - {@link VerticalImageItemProps.onMediaLoad} - Media load completion
- * - {@link VerticalImageItemProps.onImageContextMenu} - Right-click handler
- *
- * **Layout**:
- * - {@link VerticalImageItemProps.fitMode} - Image fit mode (original, fitWidth, fitHeight, fitContainer)
- * - {@link VerticalImageItemProps.className} - Additional CSS classes
- * - {@link VerticalImageItemProps.registerContainer} - DOM ref callback
- *
- * **Accessibility**:
- * - {@link VerticalImageItemProps.role} - ARIA role attribute
- * - {@link VerticalImageItemProps.tabIndex} - Keyboard navigation index
- * - {@link VerticalImageItemProps.aria-label} - Screen reader label
- * - {@link VerticalImageItemProps.aria-describedby} - Description element ID
- * - {@link VerticalImageItemProps.onFocus} - Focus event handler
- * - {@link VerticalImageItemProps.onBlur} - Blur event handler
- * - {@link VerticalImageItemProps.onKeyDown} - Keyboard event handler
- *
- * **Testing**:
- * - {@link VerticalImageItemProps.data-testid} - Test identifier
- */
+/** Props for VerticalImageItem component. */
 export interface VerticalImageItemProps extends Omit<BaseComponentProps, 'onClick'> {
   /**
    * Media item data to render

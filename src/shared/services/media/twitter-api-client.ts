@@ -27,11 +27,11 @@ import { sortMediaByVisualOrder } from '@shared/utils/media/media-dimensions';
  * Supports test environments where window may not be available.
  * @returns Host domain (e.g., 'x.com' or 'twitter.com')
  */
-function resolveTwitterApiHost(
+const resolveTwitterApiHost = (
   hostname: string | null | undefined,
   supportedHosts: readonly string[],
   defaultHost: string
-): string {
+): string => {
   if (!hostname) {
     return defaultHost;
   }
@@ -46,15 +46,14 @@ function resolveTwitterApiHost(
   }
 
   return candidate && supportedHosts.includes(candidate) ? candidate : defaultHost;
-}
+};
 
-function getSafeHost(): string {
-  return resolveTwitterApiHost(
+const getSafeHost = (): string =>
+  resolveTwitterApiHost(
     getSafeHostname(),
     TWITTER_API_CONFIG.SUPPORTED_HOSTS,
     TWITTER_API_CONFIG.DEFAULT_HOST
   );
-}
 
 /**
  * TwitterAPI - Facade for Twitter Media Extraction

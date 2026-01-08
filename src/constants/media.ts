@@ -1,35 +1,18 @@
 /**
- * @fileoverview Media-related constants
- * @description Centralized media domain, type, extension, and quality constants
- * for Twitter/X.com media processing and validation
+ * @fileoverview Media-related constants for Twitter/X.com media handling.
  * @module constants/media
  */
 
 /**
- * Media-related constants for Twitter/X.com media handling
+ * Media-related constants: domains, types, extensions, quality variants.
  *
- * @remarks
- * This object uses `as const` to preserve literal types for all string values,
- * ensuring type safety and enabling exhaustive pattern matching.
- *
- * Structure:
- * - DOMAINS: All Twitter CDN domains (includes static assets)
- * - HOSTS: Categorized host allow-lists for URL validation
- * - TYPES: Media type identifiers
- * - EXTENSIONS: Supported file extensions
- * - QUALITY: Media quality/size variants
+ * Uses `as const` to preserve literal types for exhaustive pattern matching.
  *
  * @example
  * ```typescript
- * import { MEDIA } from '@constants/media';
- *
- * // Validate media CDN host
  * if (MEDIA.HOSTS.MEDIA_CDN.includes(hostname)) {
  *   // Process media URL
  * }
- *
- * // Build quality URL
- * const qualityUrl = `${baseUrl}?name=${MEDIA.QUALITY.ORIGINAL}`;
  * ```
  */
 export const MEDIA = {
@@ -52,20 +35,7 @@ export const MEDIA = {
    * Each category represents a specific use case for domain validation.
    */
   HOSTS: {
-    /**
-     * Media CDN hosts that can serve images and videos
-     *
-     * @remarks
-     * Intentionally excludes `abs.twimg.com` (static assets, not media URLs).
-     * Use this list for validating actual media content URLs.
-     *
-     * @example
-     * ```typescript
-     * const isMediaHost = MEDIA.HOSTS.MEDIA_CDN.some(
-     *   host => url.hostname === host
-     * );
-     * ```
-     */
+    /** Media CDN hosts (excludes abs.twimg.com which is static assets) */
     MEDIA_CDN: ['pbs.twimg.com', 'video.twimg.com'],
   },
 

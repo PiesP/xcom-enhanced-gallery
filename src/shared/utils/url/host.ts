@@ -72,11 +72,7 @@ export function isHostMatching(
 
   return allowedHosts.some((host) => {
     const normalized = host.toLowerCase();
-    if (hostname === normalized) {
-      return true;
-    }
-
-    return allowSubdomains && hostname.endsWith(`.${normalized}`);
+    return hostname === normalized || (allowSubdomains && hostname.endsWith(`.${normalized}`));
   });
 }
 

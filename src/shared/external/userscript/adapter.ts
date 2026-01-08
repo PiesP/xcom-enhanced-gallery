@@ -1,8 +1,6 @@
 /**
- * Userscript API Adapter (Tampermonkey/Greasemonkey/Violentmonkey)
- *
- * Bundle-size note:
- * Keep this surface minimal. Prefer the service layer over direct GM_* usage.
+ * @fileoverview Userscript API adapter for Tampermonkey/Greasemonkey/Violentmonkey
+ * @description Minimal surface for GM_* binding resolution and wrapping
  */
 
 import type { CookieAPI } from '@shared/types/core/cookie.types';
@@ -56,13 +54,7 @@ function scheduleUserscriptRequestFailureCallbacks(
 }
 
 /**
- * Resolved GM_* bindings.
- *
- * Userscript managers may expose GM_* APIs in one of two ways:
- * - Scope injection (e.g., Tampermonkey): `GM_download` is available as a free variable
- * - Global attachment: `globalThis.GM_download` exists
- *
- * This helper resolves both forms and returns a best-effort snapshot.
+ * Resolved GM_* bindings (scope injection or global attachment)
  * @internal
  */
 export interface ResolvedGMAPIs {
@@ -92,14 +84,13 @@ interface GlobalWithGM {
 }
 
 /**
- * Helper to resolve a single GM API from scope or globalThis
+ * Helper to resolve GM_* APIs from scope or globalThis
  * @internal
  */
 function resolveGMAPIs(): ResolvedGMAPIs {
   const global = globalThis as unknown as GlobalWithGM;
 
-  // IMPORTANT: In ESM/test environments, referencing an undeclared GM_* free
-  // variable throws a ReferenceError. Always guard access via typeof.
+  // Resolve free variables or globals (avoid ReferenceError in ESM/test)
   const download = typeof GM_download !== 'undefined' ? GM_download : global.GM_download;
   const setValue = typeof GM_setValue !== 'undefined' ? GM_setValue : global.GM_setValue;
   const getValue = typeof GM_getValue !== 'undefined' ? GM_getValue : global.GM_getValue;
@@ -131,11 +122,8 @@ function resolveGMAPIs(): ResolvedGMAPIs {
 let cachedGMAPIs: ResolvedGMAPIs | null = null;
 
 /**
- * Get a cached snapshot of GM_* bindings.
- *
- * This avoids repeated probing of free variables / globalThis properties.
- * The snapshot is resolved lazily on first use.
- *
+ * Get cached snapshot of GM_* bindings (avoids repeated probing)
+ * In dev/test, globals may be stubbed dynamically so skip caching
  * @internal
  */
 export function getResolvedGMAPIsCached(): ResolvedGMAPIs {
@@ -148,10 +136,7 @@ export function getResolvedGMAPIsCached(): ResolvedGMAPIs {
 }
 
 /**
- * Resolve the raw GM_download binding when present.
- *
- * Some managers support a signature like `GM_download({ url, name, ... })`.
- * Services that need the raw function should use this helper.
+ * Helper to cast value to function type
  * @internal
  */
 function asFunction<T>(value: unknown): T | undefined {
@@ -162,6 +147,10 @@ export function resolveGMDownload(): unknown {
   return getResolvedGMAPIsCached().download;
 }
 
+/**
+ * Create strict UserscriptAPI with per-method availability validation
+ * @internal
+ */
 function createStrictUserscriptAPI(): UserscriptAPI {
   const resolved = getResolvedGMAPIsCached();
   const gmDownload = asFunction<NonNullable<GlobalWithGM['GM_download']>>(resolved.download);
@@ -219,13 +208,7 @@ function createStrictUserscriptAPI(): UserscriptAPI {
 }
 
 /**
- * Safe wrapper for GM APIs that may throw or return a rejected promise.
- *
- * Policy:
- * - Always invokes the function synchronously (side effects happen immediately).
- * - Never throws.
- * - Swallows promise rejections.
- *
+ * Safe call wrapper that never throws (swallows promise rejections)
  * @internal
  */
 function safeCall(fn: (() => unknown) | null | undefined): Promise<unknown | undefined> {
@@ -237,6 +220,10 @@ function safeCall(fn: (() => unknown) | null | undefined): Promise<unknown | und
   }
 }
 
+/**
+ * Non-throwing safe UserscriptAPI variant (best-effort defaults)
+ * @internal
+ */
 function createSafeUserscriptAPI(): UserscriptAPI {
   const resolved = getResolvedGMAPIsCached();
   const gmDownload = asFunction<NonNullable<GlobalWithGM['GM_download']>>(resolved.download);
@@ -311,19 +298,8 @@ function createSafeUserscriptAPI(): UserscriptAPI {
 }
 
 /**
- * Userscript API getter (external dependency encapsulation)
- *
- * Provides access to GM_* APIs in Tampermonkey environments.
- *
- * **Security Note**: Use Service Layer (PersistentStorage) for production code
- *
- * @returns UserscriptAPI object with all methods
- *
- * @remarks
- * This function is intentionally non-throwing at resolution time.
- * Availability is validated per-method: calling a missing GM_* binding throws with
- * a standardized "GM_* unavailable" message (except for `notification()`, which
- * is a silent no-op when unsupported).
+ * Get UserscriptAPI with per-method validation (throws if API unavailable)
+ * Use Service Layer (PersistentStorage) for production code
  * @internal Advanced/testing only
  */
 export function getUserscript(): UserscriptAPI {
@@ -331,18 +307,9 @@ export function getUserscript(): UserscriptAPI {
 }
 
 /**
- * Non-throwing Userscript API getter.
- *
- * Provides best-effort, per-method safe defaults for environments where GM_* APIs
- * are partially or fully unavailable. This is useful for services that should be
- * resilient in dev/test/runtime contexts (e.g., notifications, storage reads).
- *
- * Policy:
- * - Never throws.
- * - Storage reads return the provided defaultValue (or undefined).
- * - Storage writes/delete/list are silent no-ops.
- * - download() is a silent no-op.
- * - xmlHttpRequest() invokes onerror/onloadend asynchronously and returns a no-op control.
+ * Get safe UserscriptAPI with best-effort defaults (never throws)
+ * Provides resilience in dev/test/runtime when GM_* APIs partially unavailable
+ * @internal
  */
 export function getUserscriptSafe(): UserscriptAPI {
   return createSafeUserscriptAPI();

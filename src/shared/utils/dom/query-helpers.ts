@@ -14,18 +14,13 @@ const warnedInvalidSelectors: Record<string, true> = Object.create(null);
 /**
  * Warn about invalid selector once (development mode only).
  */
-function warnInvalidSelectorOnce(selector: string, error: unknown): void {
-  if (!__DEV__) {
-    return;
-  }
-
-  if (warnedInvalidSelectors[selector]) {
-    return;
-  }
+const warnInvalidSelectorOnce = (selector: string, error: unknown): void => {
+  if (!__DEV__) return;
+  if (warnedInvalidSelectors[selector]) return;
 
   warnedInvalidSelectors[selector] = true;
   logger.warn(`[query-helpers] Invalid selector skipped: ${selector}`, { error });
-}
+};
 
 /**
  * Query a single element with fallback selectors.

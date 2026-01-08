@@ -95,69 +95,72 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
     };
   });
 
-  // Derived styles
-  const selectClass = cx('xeg-inline-center', styles.select);
-  const containerClass = cx(styles.body, props.compact && styles.bodyCompact);
-  const settingClass = cx(styles.setting, props.compact && styles.settingCompact);
-  const labelClass = cx(styles.label, props.compact && styles.compactLabel);
-
   // Reactive prop values
-  const themeValue = createMemo(() => resolve(props.currentTheme));
-  const languageValue = createMemo(() => resolve(props.currentLanguage));
-
-  // Element IDs for accessibility
-  const themeSelectId = props['data-testid']
-    ? `${props['data-testid']}-theme-select`
-    : 'settings-theme-select';
-  const languageSelectId = props['data-testid']
-    ? `${props['data-testid']}-language-select`
-    : 'settings-language-select';
-
-  // Memoized string accessors
-  const themeStrings = () => strings().theme;
-  const languageStrings = () => strings().language;
+  const themeValue = () => resolve(props.currentTheme);
+  const languageValue = () => resolve(props.currentLanguage);
 
   // JSX return
   return (
-    <div class={containerClass} data-testid={__DEV__ ? props['data-testid'] : undefined}>
-      <div class={settingClass}>
-        <label for={themeSelectId} class={labelClass}>
-          {themeStrings().title}
+    <div
+      class={cx(styles.body, props.compact && styles.bodyCompact)}
+      data-testid={__DEV__ ? props['data-testid'] : undefined}
+    >
+      <div class={cx(styles.setting, props.compact && styles.settingCompact)}>
+        <label
+          for={
+            props['data-testid'] ? `${props['data-testid']}-theme-select` : 'settings-theme-select'
+          }
+          class={cx(styles.label, props.compact && styles.compactLabel)}
+        >
+          {strings().theme.title}
         </label>
         <select
-          id={themeSelectId}
-          class={selectClass}
+          id={
+            props['data-testid'] ? `${props['data-testid']}-theme-select` : 'settings-theme-select'
+          }
+          class={cx('xeg-inline-center', styles.select)}
           onChange={props.onThemeChange}
           value={themeValue()}
-          aria-label={themeStrings().title}
-          title={themeStrings().title}
+          aria-label={strings().theme.title}
+          title={strings().theme.title}
           data-testid={
             __DEV__ && props['data-testid'] ? `${props['data-testid']}-theme` : undefined
           }
         >
           {THEME_OPTIONS.map((option) => (
-            <option value={option}>{themeStrings().labels[option]}</option>
+            <option value={option}>{strings().theme.labels[option]}</option>
           ))}
         </select>
       </div>
 
-      <div class={settingClass}>
-        <label for={languageSelectId} class={labelClass}>
-          {languageStrings().title}
+      <div class={cx(styles.setting, props.compact && styles.settingCompact)}>
+        <label
+          for={
+            props['data-testid']
+              ? `${props['data-testid']}-language-select`
+              : 'settings-language-select'
+          }
+          class={cx(styles.label, props.compact && styles.compactLabel)}
+        >
+          {strings().language.title}
         </label>
         <select
-          id={languageSelectId}
-          class={selectClass}
+          id={
+            props['data-testid']
+              ? `${props['data-testid']}-language-select`
+              : 'settings-language-select'
+          }
+          class={cx('xeg-inline-center', styles.select)}
           onChange={props.onLanguageChange}
           value={languageValue()}
-          aria-label={languageStrings().title}
-          title={languageStrings().title}
+          aria-label={strings().language.title}
+          title={strings().language.title}
           data-testid={
             __DEV__ && props['data-testid'] ? `${props['data-testid']}-language` : undefined
           }
         >
           {LANGUAGE_OPTIONS.map((option) => (
-            <option value={option}>{languageStrings().labels[option]}</option>
+            <option value={option}>{strings().language.labels[option]}</option>
           ))}
         </select>
       </div>

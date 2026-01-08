@@ -1,110 +1,8 @@
 /**
- * @fileoverview Gallery Navigation Hook
+ * @fileoverview Gallery navigation hook for event handling and scroll coordination
  *
- * Manages gallery navigation event handling, trigger tracking, and scroll coordination.
- * Bridges navigation system state with gallery UI scrolling behavior.
- *
- * **Purpose**
- * - Tracks navigation trigger source (keyboard, click, scroll) for analytics/UX
- * - Listens for navigation completion events from central navigation system
- * - Coordinates programmatic scrolling for non-scroll triggers
- * - Manages event subscriptions conditionally based on gallery visibility
- *
- * **Architecture: Event-Driven Navigation**
- *
- * Navigation flow:
- * 1. User triggers action (keyboard, click, scroll)
- * 2. `navigate:start` event fired with trigger type
- * 3. Gallery index updated in state
- * 4. `navigate:complete` event fired with final index + trigger
- * 5. Hook responds: if non-scroll trigger, scroll to item
- *
- * Trigger types:
- * - `'keyboard'`: ArrowUp/ArrowDown/Home/End keys
- * - `'click'`: Direct item click in gallery
- * - `'scroll'`: User mouse wheel/scrollbar (skip programmatic scroll)
- * - `'external'`: Programmatic/API navigation
- *
- * **Design Patterns**
- *
- * 1. **Reactive Event Subscription**: Events only registered when gallery visible
- *    - Prevents unnecessary listeners during navigation of other UI
- *    - Automatic cleanup on visibility toggle
- *    - Dependency array with isVisible accessor
- *
- * 2. **Conditional Scroll Coordination**: Skip scroll trigger
- *    - User scroll events should NOT trigger programmatic scroll
- *    - Non-scroll triggers need UI catch-up (keyboard, click, external)
- *    - Prevents double-scroll artifacts and UX confusion
- *
- * 3. **Trigger Tracking State**: Two-stage event handling
- *    - `navigate:start`: Early trigger notification (for analytics)
- *    - `navigate:complete`: Final index + trigger (for scroll)
- *    - Both stages update trigger state for consumers
- *
- * **Navigation Event System**
- *
- * Events published by central navigation system:
- * - galleryIndexEvents.on('navigate:start', handler)
- * - galleryIndexEvents.on('navigate:complete', handler)
- *
- * This hook is a consumer (listener):
- * - Doesn't emit events
- * - Doesn't manage gallery index directly
- * - Delegates index management to central system
- * - Synchronizes UI scroll position as side effect
- *
- * **Performance Characteristics**
- * - Event listener registration: O(1)
- * - Trigger tracking: O(1) signal update
- * - Scroll coordination: O(1) scrollToItem call (consumer's responsibility)
- * - Cleanup: O(1) unsubscribe
- *
- * **Memory Management**
- * - Event subscriptions stored in register function scope
- * - Cleanup function returned for onCleanup binding
- * - No closure over non-signal data (no memory leaks)
- * - Subscriptions cleared when visibility changes or component unmounts
- *
- * **Browser Compatibility**
- * - Event system: Custom publish-subscribe (no browser APIs)
- * - Solid.js effects: Modern browsers (Chrome 117+, Firefox 119+, etc.)
- * - No platform-specific code
- *
- * @example
- * // Basic usage in gallery component
- * const navigation = useGalleryNavigation({
- *   isVisible: () => isGalleryOpen(),
- *   scrollToItem: (index) => {
- *     containerRef()?.scrollToIndex(index);
- *   },
- * });
- *
- * // Access last trigger
- * createEffect(() => {
- *   const trigger = navigation.lastNavigationTrigger();
- *   if (trigger === 'keyboard') {
- *     logger.info('keyboard navigation');
- *   }
- * });
- *
- * @example
- * // Tracking programmatic scroll timing
- * const navigateToIndex = (index: number) => {
- *   navigation.setProgrammaticScrollTimestamp(performance.now());
- *   triggeredNavigation(index);
- * };
- *
- * @remarks
- * This hook demonstrates reactive event subscription pattern:
- * - Dependencies on visibility prevent unnecessary listeners
- * - Event cleanup happens automatically via onCleanup
- * - Dual-signal pattern (lastTrigger + timestamp) for different concerns
- * - Separation of concerns: hook doesn't manage index, only UI sync
- *
- * @see galleryIndexEvents - Central navigation event system
- * @see NavigationTrigger - Trigger type definitions
- * @see VerticalGalleryView - Consumer component
+ * Manages navigation trigger tracking and programmatic scrolling based on navigation events.
+ * Coordinates scroll position with central navigation system.
  */
 
 import {
@@ -218,66 +116,10 @@ type Cleanup = VoidFunction;
  * ```
  */
 interface UseGalleryNavigationOptions {
-  /**
-   * Accessor indicating if gallery is currently visible
-   *
-   * Used to conditionally register/unregister event listeners.
-   * When value changes, effect re-runs and event listeners updated.
-   *
-   * **Reactivity**: Signal change triggers effect re-execution
-   * **Scope**: Should represent gallery visibility, not just render visibility
-   * **Type**: Must return boolean (never null/undefined)
-   *
-   * @example
-   * const [isGalleryOpen, setIsGalleryOpen] = createSignal(false);
-   * useGalleryNavigation({
-   *   isVisible: () => isGalleryOpen(),
-   *   ...
-   * });
-   */
+  /** Accessor indicating if gallery is currently visible */
   readonly isVisible: () => boolean;
 
-  /**
-   * Callback to scroll gallery container to specific item
-   *
-   * Invoked when navigate:complete event fires with non-scroll trigger.
-   * Allows UI to catch up with gallery index (e.g., keyboard nav).
-   *
-   * **Purpose**: Synchronize scroll position with internal gallery state
-   * **Type**: (index: number) => void (async not supported)
-   * **When called**:
-   *   - navigate:start event: Trigger recorded but NO scroll
-   *   - navigate:complete event: IF trigger !== 'scroll', scroll called
-   * **Exceptions**: No scroll if trigger is 'scroll' (user already scrolling)
-   * **Consumer responsibility**: Implement scroll behavior (virtual list, smooth scroll, etc.)
-   * **Error handling**: Errors in scrollToItem should be caught by consumer
-   *
-   * @example
-   * // Simple DOM scroll
-   * scrollToItem: (index) => {
-   *   const element = document.querySelector(`[data-index="${index}"]`);
-   *   element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-   * }
-   *
-   * @example
-   * // Virtual list scroll
-   * scrollToItem: (index) => {
-   *   const virtualList = containerRef();
-   *   if (virtualList?.scrollToIndex) {
-   *     virtualList.scrollToIndex(index, { align: 'center' });
-   *   }
-   * }
-   *
-   * @example
-   * // Conditional scroll (e.g., only scroll if out of view)
-   * scrollToItem: (index) => {
-   *   const items = containerRef()?.children ?? [];
-   *   const item = items[index];
-   *   if (item && !isInViewport(item)) {
-   *     item.scrollIntoView({ behavior: 'smooth' });
-   *   }
-   * }
-   */
+  /** Callback to scroll gallery container to specific item */
   readonly scrollToItem: (index: number) => void;
 }
 

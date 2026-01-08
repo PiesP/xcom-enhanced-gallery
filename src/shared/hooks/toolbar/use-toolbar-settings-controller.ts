@@ -1,26 +1,6 @@
 /**
- * @fileoverview Toolbar Settings Controller Hook - Phase 375
+ * @fileoverview Toolbar settings controller hook for settings panel management
  * @description Manages settings panel toggling, outside click handling, and localized options
- *
- * **Responsibilities**:
- * - Settings panel show/hide toggling with document outside-click detection
- * - Theme selection (auto/light/dark) with persistence via ThemeService
- * - Language selection (auto/ko/en/ja) with persistence via LanguageService
- * - Focus management (auto-focus first control, restore on close)
- * - Select element guard (prevents closing on select dropdown interactions)
- *
- * **Event Management**:
- * - Uses EventManager (Phase 329) for listener registration
- * - Proper cleanup via onCleanup in createEffect blocks (Solid.js)
- * - Outside click detection via document mousedown (not click)
- *
- * **Service Integration**:
- * - ThemeService: Theme persistence (auto/light/dark)
- * - LanguageService: Language persistence (auto/ko/en/ja)
- * - EventManager: Centralized event listener tracking
- *
- * @version 11.0.0 - Phase 375
- * @internal Solid.js hook, PC-only, used by toolbar container
  */
 
 import {
@@ -57,57 +37,8 @@ export function useToolbarSettingsController(
   options: UseToolbarSettingsControllerOptions
 ): ToolbarSettingsControllerResult {
   /**
-   * Toolbar Settings Controller Implementation
-   *
-   * **Core Features**:
-   *
-   * 1. **Settings Panel Management** - Toggle with outside-click detection
-   *    - Click settings button to toggle panel
-   *    - Panel closes on document mousedown (outside click)
-   *    - Panel closes on Escape key
-   *    - Focus restored to button on close
-   *
-   * 2. **Select Guard System** - Prevents premature panel closure
-   *    - Detects select element interactions (focus/blur/change)
-   *    - Keeps panel open during select dropdown
-   *    - Guard timeout: 300ms (configurable)
-   *
-   * 3. **Theme Selection** - 'auto' | 'light' | 'dark'
-   *    - Persisted via ThemeService
-   *    - Reactive to service changes
-   *    - Updates DOM via CSS class binding
-   *
-   * 4. **Language Selection** - 'auto' | 'ko' | 'en' | 'ja'
-   *    - Persisted via LanguageService
-   *    - Reactive to service changes
-   *    - Affects UI language immediately
-   *
-   * **Event Flow**:
-   * Settings Click → Toggle Panel
-   *   ↓ (if opening)
-   * Focus First Select (50ms delay)
-   *   ↓
-   * Outside Click → Check Guard/Panel → Close if valid
-   *
-   * **Usage Example**:
-   * ```typescript
-   * const controller = useToolbarSettingsController({
-   *   isSettingsExpanded: () => expanded(),
-   *   setSettingsExpanded: setExpanded,
-   *   toggleSettingsExpanded: () => setExpanded(e => !e),
-   * });
-   *
-   * <div ref={controller.assignToolbarRef} onKeyDown={controller.handleToolbarKeyDown}>
-   *   <button onClick={controller.handleSettingsClick}>Settings</button>
-   *   <div ref={controller.assignSettingsPanelRef} onClick={controller.handlePanelClick}>
-   *     <select onChange={controller.handleThemeChange}>...</select>
-   *   </div>
-   * </div>
-   * ```
-   *
-   * @param options - Configuration (see UseToolbarSettingsControllerOptions)
-   * @returns Controller with ref assigners and event handlers
-   * @internal Phase 375: Solid.js hook, PC-only
+   * Settings panel management hook
+   * Handles toggling, outside-click detection, theme/language selection, and focus management
    */
   const {
     isSettingsExpanded,
@@ -146,12 +77,9 @@ export function useToolbarSettingsController(
     return value === 'light' || value === 'dark' ? value : 'auto';
   };
 
-  // Phase 430: Read initial theme from ThemeService reliably
-  // Service may not be fully initialized during first render, so we ensure proper fallback
+  // Read initial theme from ThemeService (with fallback)
   const getInitialTheme = (): ThemeOption => {
     try {
-      // ThemeService.getCurrentTheme() returns themeSetting which is set in constructor
-      // This should be available even before full initialization
       const currentSetting = themeManager.getCurrentTheme();
       return toThemeOption(currentSetting);
     } catch (error) {

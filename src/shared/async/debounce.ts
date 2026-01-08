@@ -55,8 +55,8 @@ export function createDebounced<Args extends unknown[]>(
   const flush = (): void => {
     if (timeoutId !== null && pendingArgs !== null) {
       globalTimerManager.clearTimeout(timeoutId);
-      timeoutId = null;
       const args = pendingArgs;
+      timeoutId = null;
       pendingArgs = null;
       fn(...args);
     }
@@ -66,8 +66,8 @@ export function createDebounced<Args extends unknown[]>(
     cancel();
     pendingArgs = args;
     timeoutId = globalTimerManager.setTimeout(() => {
-      timeoutId = null;
       const savedArgs = pendingArgs;
+      timeoutId = null;
       pendingArgs = null;
       if (savedArgs !== null) {
         fn(...savedArgs);

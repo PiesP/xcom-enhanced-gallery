@@ -1,5 +1,5 @@
-import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/language-types';
-import { LANGUAGE_CODES } from '@shared/constants/i18n/language-types';
+import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/i18n.types';
+import { LANGUAGE_CODES } from '@shared/constants/i18n/i18n.types';
 import {
   DEFAULT_LANGUAGE,
   TRANSLATION_REGISTRY,
@@ -10,23 +10,12 @@ import type { TranslationBundleInput } from './types';
  * Configuration options for TranslationCatalog
  */
 export interface TranslationCatalogOptions {
-  /**
-   * Translation bundles indexed by language code
-   * @default TRANSLATION_REGISTRY
-   */
   readonly bundles?: TranslationBundleInput;
-  /**
-   * Language code to use when requested language is not available
-   * @default DEFAULT_LANGUAGE
-   */
   readonly fallbackLanguage?: BaseLanguageCode;
 }
 
 /**
- * Manages translation bundles for multiple languages with fallback support.
- *
- * All language bundles are shipped synchronously in the userscript output.
- * Runtime lazy-loading is intentionally unsupported to maintain single-file architecture.
+ * Manages translation bundles with fallback support (all bundles shipped synchronously)
  */
 export class TranslationCatalog {
   private readonly bundles: Partial<Record<BaseLanguageCode, LanguageStrings>> = {};
@@ -43,30 +32,27 @@ export class TranslationCatalog {
   }
 
   /**
-   * Register a translation bundle for a specific language.
-   *
-   * @param language - Language code for the bundle
-   * @param strings - Translation strings for the language
+   * Register a translation bundle for a language
+   * @param language Language code
+   * @param strings Translation strings
    */
   public register(language: BaseLanguageCode, strings: LanguageStrings): void {
     this.bundles[language] = strings;
   }
 
   /**
-   * Check if a language bundle is loaded.
-   *
-   * @param language - Language code to check
-   * @returns true if the language bundle exists
+   * Check if a language bundle is loaded
+   * @param language Language code to check
+   * @returns true if bundle exists
    */
   public has(language: BaseLanguageCode): boolean {
     return !!this.bundles[language];
   }
 
   /**
-   * Get translation strings for a language with fallback support.
-   *
-   * @param language - Requested language code (optional)
-   * @returns Translation strings for requested language, or fallback language if not found
+   * Get translation strings with fallback support
+   * @param language Requested language code (optional)
+   * @returns Translation strings (fallback if not found)
    */
   public get(language?: BaseLanguageCode): LanguageStrings {
     if (language) {
@@ -80,31 +66,25 @@ export class TranslationCatalog {
   }
 
   /**
-   * Ensure a language bundle is loaded.
-   *
-   * This userscript ships all language bundles synchronously in the single-file
-   * output. Runtime lazy-loading is intentionally unsupported.
-   *
-   * @param _language - Language code (unused)
-   * @returns Always false (lazy-loading not supported)
+   * Ensure language bundle is loaded (lazy-loading not supported)
+   * @param _language Language code (unused)
+   * @returns Always false
    */
   public async ensureLanguage(_language: BaseLanguageCode): Promise<boolean> {
     return false;
   }
 
   /**
-   * Check if a language can be lazy-loaded.
-   *
-   * @param _language - Language code (unused)
-   * @returns Always false (lazy-loading not supported)
+   * Check if lazy-loading is supported (not supported)
+   * @param _language Language code (unused)
+   * @returns Always false
    */
   public canLazyLoad(_language: BaseLanguageCode): boolean {
     return false;
   }
 
   /**
-   * Get list of currently loaded language codes.
-   *
+   * Get list of currently loaded language codes
    * @returns Array of loaded language codes
    */
   public keys(): BaseLanguageCode[] {
@@ -112,10 +92,7 @@ export class TranslationCatalog {
   }
 
   /**
-   * Get all available languages (loaded + lazy-loadable).
-   *
-   * For this userscript, all languages are bundled and available immediately.
-   *
+   * Get all available languages (all bundled and available immediately)
    * @returns Array of all supported language codes
    */
   public availableLanguages(): readonly BaseLanguageCode[] {
@@ -123,8 +100,7 @@ export class TranslationCatalog {
   }
 
   /**
-   * Export catalog as a plain record object.
-   *
+   * Export catalog as plain record object
    * @returns Translation bundles indexed by language code
    */
   public toRecord(): TranslationBundleInput {
@@ -132,9 +108,8 @@ export class TranslationCatalog {
   }
 
   /**
-   * Register multiple language bundles at once.
-   *
-   * @param bundles - Translation bundles indexed by language code
+   * Register multiple language bundles at once
+   * @param bundles Translation bundles indexed by language code
    */
   private registerBundles(bundles: TranslationBundleInput): void {
     for (const [language, strings] of Object.entries(bundles) as Array<

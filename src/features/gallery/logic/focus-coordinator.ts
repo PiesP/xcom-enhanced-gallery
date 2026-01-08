@@ -6,6 +6,7 @@
 import { SharedObserver } from '@shared/utils/performance/observer-pool';
 import type { Accessor } from 'solid-js';
 
+/** Configuration for FocusCoordinator (IntersectionObserver-based focus selection) */
 interface FocusCoordinatorOptions {
   readonly isEnabled: Accessor<boolean>;
   readonly container: Accessor<HTMLElement | null>;
@@ -15,6 +16,7 @@ interface FocusCoordinatorOptions {
   readonly rootMargin?: string;
 }
 
+/** Tracked item with visibility state and observer unsubscribe */
 interface TrackedItem {
   readonly element: HTMLElement;
   isVisible: boolean;
@@ -22,11 +24,13 @@ interface TrackedItem {
   unsubscribe?: () => void;
 }
 
+/** Focus candidate with distance metric */
 interface FocusCandidate {
   readonly index: number;
   readonly distance: number;
 }
 
+/** IntersectionObserver configuration */
 interface ObserverOptions {
   readonly threshold: number | number[];
   readonly rootMargin: string;

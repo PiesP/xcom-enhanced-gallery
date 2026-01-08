@@ -29,45 +29,42 @@ let cachedCookieAPI: CookieAPI | null | undefined;
 // Internal Utilities
 // ============================================================================
 
-function decode(value: string | undefined): string | undefined {
+const decode = (value: string | undefined): string | undefined => {
   if (!value) return undefined;
   try {
     return decodeURIComponent(value);
   } catch {
     return value;
   }
-}
+};
 
-function encode(value: string): string {
+const encode = (value: string): string => {
   try {
     return encodeURIComponent(value);
   } catch {
     return value;
   }
-}
+};
 
-function resolveCookieAPI(): CookieAPI | null {
+const resolveCookieAPI = (): CookieAPI | null => {
   try {
     const userscript = getUserscript();
-    if (userscript.cookie) {
-      return userscript.cookie;
-    }
+    return userscript.cookie ?? null;
   } catch (error) {
     // Ignore: fall back to document.cookie-only mode
     if (__DEV__) {
       logger.debug('[cookie-utils] Userscript cookie API resolution failed (ignored)', error);
     }
+    return null;
   }
+};
 
-  return null;
-}
-
-function getCookieAPI(): CookieAPI | null {
+const getCookieAPI = (): CookieAPI | null => {
   if (cachedCookieAPI === undefined) {
     cachedCookieAPI = resolveCookieAPI();
   }
   return cachedCookieAPI;
-}
+};
 
 /**
  * Reset the cached cookie API reference.
@@ -77,7 +74,7 @@ export function resetCookieAPICache(): void {
   cachedCookieAPI = undefined;
 }
 
-function listFromDocument(options?: CookieListOptions): CookieRecord[] {
+const listFromDocument = (options?: CookieListOptions): CookieRecord[] => {
   if (typeof document === 'undefined' || typeof document.cookie !== 'string') {
     return [];
   }
@@ -92,13 +89,11 @@ function listFromDocument(options?: CookieListOptions): CookieRecord[] {
     .map((entry) => {
       const [rawName, ...rest] = entry.split('=');
       const nameDecoded = decode(rawName);
-      if (!nameDecoded) {
-        return null;
-      }
-      const value = decode(rest.join('=')) ?? '';
+      if (!nameDecoded) return null;
+
       const record: CookieRecord = {
         name: nameDecoded,
-        value,
+        value: decode(rest.join('=')) ?? '',
         path: '/',
         session: true,
         ...(domain ? { domain } : {}),
@@ -107,47 +102,36 @@ function listFromDocument(options?: CookieListOptions): CookieRecord[] {
     })
     .filter((record): record is CookieRecord => !!record);
 
-  const filtered = options?.name
-    ? records.filter((record) => record.name === options.name)
-    : records;
+  return options?.name ? records.filter((r) => r.name === options.name) : records;
+};
 
-  return filtered;
-}
-
-function buildExpires(expirationDate?: number): string | undefined {
+const buildExpires = (expirationDate?: number): string | undefined => {
   if (typeof expirationDate !== 'number') return undefined;
   const epochMs = expirationDate > 1_000_000_000_000 ? expirationDate : expirationDate * 1000;
   return new Date(epochMs).toUTCString();
-}
+};
 
-function setDocumentCookie(details: CookieSetOptions & { name: string }): void {
+const setDocumentCookie = (details: CookieSetOptions & { name: string }): void => {
   if (typeof document === 'undefined') return;
 
   const { name, value, path = '/', domain, expirationDate, secure } = details;
-  const encodedName = encode(name);
-  const encodedValue = encode(value ?? '');
-  const parts = [`${encodedName}=${encodedValue}`];
+  const parts = [`${encode(name)}=${encode(value ?? '')}`];
 
   if (path) parts.push(`path=${path}`);
   if (domain) parts.push(`domain=${domain}`);
 
   const expires = buildExpires(expirationDate);
-  if (expires) {
-    parts.push(`expires=${expires}`);
-  }
-
-  if (secure) {
-    parts.push('secure');
-  }
+  if (expires) parts.push(`expires=${expires}`);
+  if (secure) parts.push('secure');
 
   document.cookie = parts.join('; ');
-}
+};
 
-function deleteDocumentCookie(details: CookieDeleteOptions): void {
+const deleteDocumentCookie = (details: CookieDeleteOptions): void => {
   if (typeof document === 'undefined') return;
   const { name, partitionKey: _partitionKey, ...rest } = details;
   setDocumentCookie({ ...rest, name, value: '', expirationDate: 0 });
-}
+};
 
 // ============================================================================
 // Public API
@@ -184,12 +168,8 @@ export async function setCookie(details: CookieSetOptions): Promise<void> {
     throw new Error('Cookie name is required');
   }
 
-  const normalizedDetails: CookieSetOptions & { name: string } = {
-    ...details,
-    name: details.name,
-  };
-
   const gmCookie = getCookieAPI();
+  const normalizedDetails = details as CookieSetOptions & { name: string };
 
   if (!gmCookie?.set) {
     setDocumentCookie(normalizedDetails);

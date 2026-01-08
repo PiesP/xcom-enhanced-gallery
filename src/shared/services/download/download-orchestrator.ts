@@ -110,10 +110,7 @@ export class DownloadOrchestrator {
    * Get download capability (cached)
    */
   private getCapability(): DownloadCapability {
-    if (!this.capability) {
-      this.capability = detectDownloadCapability();
-    }
-    return this.capability;
+    return (this.capability ??= detectDownloadCapability());
   }
 
   /**

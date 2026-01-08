@@ -1,44 +1,17 @@
 /**
- * @fileoverview User cancellation helpers.
- *
- * Centralizes the cancellation semantics used across download/retry layers.
- * Provides standardized AbortError creation and detection for user-initiated
- * cancellations and timeout scenarios.
+ * @fileoverview User cancellation helpers
+ * @description Centralized cancellation semantics for download/retry layers.
  */
 
-/**
- * Standard message for user-initiated cancellations.
- * @internal
- */
 const USER_CANCELLED_MESSAGE = 'Download cancelled by user' as const;
-
-/**
- * Default message for generic abort operations.
- * @internal
- */
 const DEFAULT_ABORT_MESSAGE = 'This operation was aborted' as const;
 
 /**
- * Check whether an unknown value represents an AbortError-like cancellation.
- *
- * Policy:
- * - Treat DOMException("AbortError") and DOMException("TimeoutError") as abort-like.
- * - Treat Error named "AbortError"/"TimeoutError" as abort-like.
- * - Preserve legacy heuristic: Error message containing "aborted" is considered abort-like.
- *
+ * Check if value represents an AbortError-like cancellation.
+ * Treats DOMException("AbortError"/"TimeoutError") and Error named AbortError/TimeoutError as abort-like.
+ * Also preserves legacy heuristic: Error message containing "aborted" is abort-like.
  * @param value - Value to check
  * @returns true if the value represents an abort-like error
- *
- * @example
- * ```typescript
- * try {
- *   await fetch(url, { signal });
- * } catch (error) {
- *   if (isAbortError(error)) {
- *     console.log('Request was aborted');
- *   }
- * }
- * ```
  */
 export function isAbortError(value: unknown): boolean {
   if (value instanceof DOMException) {
@@ -57,13 +30,8 @@ export function isAbortError(value: unknown): boolean {
 }
 
 /**
- * Check whether an unknown value represents a timeout error.
- *
- * This is intentionally broader than AbortError detection: timeouts may surface as
- * DOMException("TimeoutError") (AbortSignal.timeout/our timeout controller) or as
- * an Error subclass named "TimeoutError".
- *
- * @internal
+ * Check if value represents a timeout error.
+ * Broader than AbortError: TimeoutError may surface as DOMException or Error subclass.
  * @param value - Value to check
  * @returns true if the value represents a timeout error
  */
@@ -80,9 +48,7 @@ function isTimeoutError(value: unknown): boolean {
 }
 
 /**
- * Attach a cause property to an error object if supported.
- *
- * @internal
+ * Attach a cause property to an error if supported.
  * @param target - Error or DOMException to attach cause to
  * @param cause - Cause value to attach
  */
@@ -100,11 +66,7 @@ function attachCause(target: Error | DOMException, cause: unknown): void {
 
 /**
  * Create an AbortError with the specified message.
- *
- * Attempts to create a DOMException first (preferred), falling back to Error
- * if DOMException is not supported or throws.
- *
- * @internal
+ * Attempts to create a DOMException first (preferred), falling back to Error.
  * @param message - Error message
  * @param cause - Optional cause to attach
  * @returns DOMException or Error with name "AbortError"
@@ -124,18 +86,9 @@ function createAbortError(message: string, cause?: unknown): DOMException | Erro
 
 /**
  * Create an AbortError representing a user-initiated cancellation.
- *
- * Uses the standardized USER_CANCELLED_MESSAGE for consistent detection
- * across the application.
- *
+ * Uses standardized USER_CANCELLED_MESSAGE for consistent detection.
  * @param cause - Optional cause to attach (e.g., original AbortSignal reason)
  * @returns Error with name "AbortError" and standardized message
- *
- * @example
- * ```typescript
- * const error = createUserCancelledAbortError();
- * throw error;
- * ```
  */
 export function createUserCancelledAbortError(cause?: unknown): Error {
   const error = new Error(USER_CANCELLED_MESSAGE);
@@ -145,12 +98,8 @@ export function createUserCancelledAbortError(cause?: unknown): Error {
 }
 
 /**
- * Check whether an unknown value represents the standardized user cancellation.
- *
- * Only returns true for errors created by createUserCancelledAbortError or
- * manually constructed errors matching the exact message and name.
- *
- * @internal
+ * Check if value represents the standardized user cancellation.
+ * Only returns true for errors created by createUserCancelledAbortError.
  * @param error - Value to check
  * @returns true if the error represents a user-initiated cancellation
  */
@@ -168,22 +117,11 @@ function isUserCancelledAbortError(error: unknown): boolean {
 
 /**
  * Convert an AbortSignal state/reason into a standardized AbortError.
- *
- * - Preserves TimeoutError semantics when the signal reason represents a timeout.
- * - Preserves an already-standardized cancellation error.
- * - Otherwise creates a new user-cancelled error with the original reason as cause.
- *
+ * Preserves TimeoutError semantics when signal reason represents timeout.
+ * Preserves already-standardized cancellation errors.
+ * Otherwise creates a new user-cancelled error with original reason as cause.
  * @param signal - AbortSignal to extract error from
  * @returns DOMException or Error representing the cancellation
- *
- * @example
- * ```typescript
- * try {
- *   await someOperation(signal);
- * } catch {
- *   throw getUserCancelledAbortErrorFromSignal(signal);
- * }
- * ```
  */
 export function getUserCancelledAbortErrorFromSignal(signal?: AbortSignal): DOMException | Error {
   const reason = signal?.reason;
@@ -203,15 +141,11 @@ export function getUserCancelledAbortErrorFromSignal(signal?: AbortSignal): DOME
 
 /**
  * Convert an AbortSignal reason into a throwable error without losing explicit reasons.
- *
- * Policy:
- * - Preserve DOMException/Error reasons (including custom errors).
- * - When the reason is missing or non-error (string/object/etc), return a standardized AbortError
- *   and attach the original reason as `cause`.
- *
- * This is intentionally different from `getUserCancelledAbortErrorFromSignal()`, which always
- * normalizes to the user-cancelled message. Some primitives (e.g. delay) rely on preserving
- * explicit reasons for debugging and testability.
+ * Preserves DOMException/Error reasons.
+ * When reason is missing or non-error, returns standardized AbortError with original reason as cause.
+ * Different from getUserCancelledAbortErrorFromSignal, which normalizes to user-cancelled message.
+ * @param signal - AbortSignal to extract error from
+ * @returns DOMException or Error representing the abort
  */
 export function getAbortReasonOrAbortErrorFromSignal(signal?: AbortSignal): DOMException | Error {
   const reason = signal?.reason;

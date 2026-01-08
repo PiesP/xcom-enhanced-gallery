@@ -31,15 +31,14 @@ let _initPromise: Promise<string | undefined> | null = null;
  * @returns Delay in milliseconds
  * @internal
  */
-function getBackoffDelay(attempt: number): number {
-  return getExponentialBackoffDelayMs(attempt, BASE_RETRY_DELAY_MS);
-}
+const getBackoffDelay = (attempt: number): number =>
+  getExponentialBackoffDelayMs(attempt, BASE_RETRY_DELAY_MS);
 
 /**
  * Attempt to fetch CSRF token with exponential backoff retry.
  * @internal
  */
-async function fetchTokenWithRetry(): Promise<string | undefined> {
+const fetchTokenWithRetry = async (): Promise<string | undefined> => {
   // Try synchronous access first (fastest path)
   const syncToken = getCookieValueSync('ct0');
   if (syncToken) {
@@ -87,14 +86,14 @@ async function fetchTokenWithRetry(): Promise<string | undefined> {
     logger.info('CSRF token initialization completed without finding token');
   }
   return undefined;
-}
+};
 
 /**
  * Initialize tokens from cookies (synchronous, non-blocking).
  * Used for backward compatibility with getCsrfToken().
  * @internal
  */
-function initializeTokensSync(): void {
+const initializeTokensSync = (): void => {
   if (_tokensInitialized) {
     return;
   }
@@ -108,7 +107,7 @@ function initializeTokensSync(): void {
       logger.debug('CSRF token initialized synchronously');
     }
   }
-}
+};
 
 // ============================================================================
 // Public API - Pure Functions
@@ -137,7 +136,7 @@ function initializeTokensSync(): void {
  * const token = getCsrfToken();
  * ```
  */
-async function initTokens(): Promise<string | undefined> {
+const initTokens = async (): Promise<string | undefined> => {
   // Return cached token if already initialized
   if (_tokensInitialized && _csrfToken) {
     return _csrfToken;
@@ -160,7 +159,7 @@ async function initTokens(): Promise<string | undefined> {
   })();
 
   return _initPromise;
-}
+};
 
 /**
  * Get the current CSRF token for Twitter API requests.

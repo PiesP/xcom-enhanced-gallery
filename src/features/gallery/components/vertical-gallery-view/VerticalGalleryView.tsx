@@ -3,26 +3,9 @@
  * Licensed under the MIT License
  *
  * @fileoverview Vertical Gallery View Component (Solid.js)
- * @description Main gallery view component that renders media items in vertical layout
- *
- * **Responsibilities**:
- * - Render media items collection with vertical scrolling
- * - Manage gallery state (current index, loading, etc.)
- * - Coordinate scroll behavior and focus tracking
- * - Handle keyboard navigation (Escape, Help)
- * - Manage toolbar visibility and auto-hide behavior
- * - Implement animations (enter/exit)
- * - Support image fit modes (original, fitWidth, fitHeight, fitContainer)
- * - Provide download UI and interactions
- *
- * **Architecture**:
- * - Follows PC-only event policy (click, keydown/keyup, wheel, mouse*)
- * - Uses design tokens for all colors and sizes (no hardcoding)
- * - Vendor APIs accessed via getSolid() getter pattern
- * - Logic extracted to useVerticalGallery composed hook
- *
- * @module features/gallery/components/vertical-gallery-view
- * @version 8.0 - Refactored with useVerticalGallery composed hook
+ * @description Main gallery component rendering media items with vertical scrolling, state management,
+ * toolbar visibility, keyboard navigation, and fit mode support via useVerticalGallery hook.
+ * @version 8.0
  */
 
 import { useVerticalGallery } from '@features/gallery/components/vertical-gallery-view/hooks/use-vertical-gallery';

@@ -1,9 +1,5 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery
- * Licensed under the MIT License
- *
- * @fileoverview Simplified Gallery Item Scroll Hook
- * @description Uses Solid.js reactivity and native scrollIntoView
+ * Scrolls gallery item into view using Solid.js reactivity and scrollIntoView.
  */
 
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
@@ -11,6 +7,7 @@ import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import type { Accessor } from 'solid-js';
 import { createEffect, untrack } from 'solid-js';
 
+/** Configuration for item scroll behavior. */
 interface UseGalleryItemScrollOptions {
   readonly enabled?: MaybeAccessor<boolean>;
   readonly behavior?: MaybeAccessor<ScrollBehavior>;
@@ -20,6 +17,7 @@ interface UseGalleryItemScrollOptions {
   readonly onScrollStart?: () => void;
 }
 
+/** Return type for useGalleryItemScroll. */
 interface UseGalleryItemScrollReturn {
   readonly scrollToItem: (index: number) => void;
   readonly scrollToCurrentItem: () => void;

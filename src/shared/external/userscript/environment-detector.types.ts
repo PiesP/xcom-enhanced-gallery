@@ -1,20 +1,21 @@
-import type { BaseLanguageCode } from '@shared/constants/i18n/language-types';
+/**
+ * @fileoverview Browser environment and GM API type definitions
+ * @description Type definitions for environment detection
+ */
+
+import type { BaseLanguageCode } from '@shared/constants/i18n/i18n.types';
 import type { ResolvedGMAPIs } from '@shared/external/userscript/adapter';
 
 /**
- * Browser environment snapshot surfaced to the userscript layer.
- * Focuses exclusively on user-facing concerns: theme preference and language.
+ * Browser environment snapshot (theme and language preferences)
  */
 export interface EnvironmentInfo {
-  /** Currently preferred color scheme */
   colorScheme: 'light' | 'dark';
-  /** Best-effort ISO language code resolved from the browser */
   language: BaseLanguageCode;
 }
 
 /**
- * Names of Tampermonkey APIs available for capability detection.
- * Maps to GM_* function names.
+ * Tampermonkey API names for capability detection
  */
 export type GMAPIName =
   | 'getValue'
@@ -26,7 +27,6 @@ export type GMAPIName =
   | 'cookie';
 
 /**
- * Type-safe detector functions for Tampermonkey API availability.
- * Each key maps to a checker function that validates if the corresponding API exists.
+ * Type-safe detector functions for GM API availability
  */
 export type GMAPIChecks = Record<GMAPIName, (gm: ResolvedGMAPIs) => boolean>;

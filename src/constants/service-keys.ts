@@ -1,63 +1,17 @@
 /**
- * @fileoverview Service key constants for dependency injection container
- * @description Centralized string constants for service registration and lookup in CoreService.
- * All keys follow dot-notation format: `<category>.<name>` and are grouped by functional category.
+ * @fileoverview Service key constants for dependency injection.
+ *
+ * Centralized string constants (dot-notation format: `<category>.<name>`)
+ * for service registration and lookup in CoreService.
+ *
  * @module constants/service-keys
- *
- * @remarks
- * **Key Format Convention**:
- * - Pattern: `<category>.<name>`
- * - Category: Broad functional area (core, gallery, media, settings, ui)
- * - Name: Specific service identifier (lowercase, descriptive)
- *
- * **Usage Pattern**:
- * ```typescript
- * // Registration
- * CoreService.getInstance().register(SERVICE_KEYS.THEME, themeService);
- *
- * // Lookup (prefer service accessors)
- * import { getThemeService } from '@shared/container/service-accessors';
- * const theme = getThemeService();
- * ```
- *
- * **Reserved Keys**:
- * Some keys are defined but commented out, reserved for future features.
- * These maintain naming consistency and prevent conflicts during development.
- *
- * @example
- * ```typescript
- * import { SERVICE_KEYS } from '@constants/service-keys';
- * import { CoreService } from '@shared/services/service-manager';
- *
- * // Register a service
- * const service = new MyService();
- * CoreService.getInstance().register(SERVICE_KEYS.MEDIA_SERVICE, service);
- *
- * // Retrieve a service (not recommended, use accessors instead)
- * const retrieved = CoreService.getInstance().get(SERVICE_KEYS.MEDIA_SERVICE);
- * ```
- *
- * @see {@link CoreService} for service registration and lifecycle
- * @see {@link module:shared/container/service-accessors} for typed service access
  */
 
 /**
- * Service key constants for dependency injection
+ * Service key constants for dependency injection.
  *
- * @remarks
- * This object uses `as const` to preserve literal types, enabling:
- * - Type-safe service key references
- * - Exhaustive pattern matching in TypeScript
- * - IDE autocomplete for all service keys
- *
- * Keys are organized by functional category and sorted alphabetically within each group.
- *
- * **Categories**:
- * - **Core**: Fundamental application services (language, i18n)
- * - **Gallery**: Gallery feature services (rendering, downloads)
- * - **Media**: Media processing services (extraction, metadata)
- * - **Settings**: Configuration and preferences services
- * - **UI**: User interface services (theme, animations)
+ * Uses `as const` for literal type preservation and exhaustive pattern matching.
+ * Keys are organized by functional category (Core, Gallery, Media, Settings, UI).
  */
 export const SERVICE_KEYS = {
   // ========================================

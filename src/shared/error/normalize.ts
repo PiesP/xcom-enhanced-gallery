@@ -1,36 +1,44 @@
 /**
- * @fileoverview Error message normalization helpers.
- *
- * Provides utilities for extracting and formatting error messages from various error types.
- * Designed for minimal bundle size by relying on native string coercion.
- *
- * @module shared/error/normalize
+ * @fileoverview Error message normalization helpers
+ * @description Extract and format error messages from various error types (minimal bundle).
  */
 
 /**
- * Defines the output format mode for error message extraction.
- *
- * - `normalized`: Always returns a non-empty string representation, suitable for logging.
- * - `raw`: Returns the raw message string, may be empty for non-error objects.
+ * @fileoverview Error message normalization helpers
+ * @description Extract and format error messages from various error types (minimal bundle).
  */
+
 type ErrorMessageMode = 'normalized' | 'raw';
+
+const extractFromError = (error: Error, mode: ErrorMessageMode): string =>
+  mode === 'normalized' ? error.message || error.name || 'Error' : error.message;
+
+const extractFromObject = (record: Record<string, unknown>, mode: ErrorMessageMode): string => {
+  const message = record.message;
+  if (typeof message === 'string') return message;
+
+  if (mode === 'raw') {
+    return 'message' in record ? String(message ?? '') : String(record);
+  }
+
+  try {
+    return JSON.stringify(record);
+  } catch {
+    return String(record);
+  }
+};
 
 /**
  * Core error message formatting logic.
- *
- * Handles Error instances, strings, null/undefined, objects with message properties,
- * and fallback string coercion.
- *
+ * Handles Error instances, strings, null/undefined, objects, and fallback string coercion.
  * @param error - The error value to extract a message from
  * @param mode - Output format mode
  * @returns Formatted error message string
- *
- * @internal
  */
 function formatErrorMessage(error: unknown, mode: ErrorMessageMode): string {
   // Handle native Error instances
   if (error instanceof Error) {
-    return mode === 'normalized' ? error.message || error.name || 'Error' : error.message;
+    return extractFromError(error, mode);
   }
 
   // Handle string values
@@ -45,24 +53,7 @@ function formatErrorMessage(error: unknown, mode: ErrorMessageMode): string {
 
   // Handle objects with potential message property
   if (typeof error === 'object') {
-    const record = error as Record<string, unknown>;
-    const message = record.message;
-
-    if (typeof message === 'string') {
-      return message;
-    }
-
-    // Raw mode: return empty or string representation
-    if (mode === 'raw') {
-      return 'message' in record ? String(message ?? '') : String(record);
-    }
-
-    // Normalized mode: attempt JSON serialization, fallback to String()
-    try {
-      return JSON.stringify(record);
-    } catch {
-      return String(record);
-    }
+    return extractFromObject(error as Record<string, unknown>, mode);
   }
 
   // Fallback for primitives (number, boolean, symbol, bigint)
@@ -70,42 +61,20 @@ function formatErrorMessage(error: unknown, mode: ErrorMessageMode): string {
 }
 
 /**
- * Normalizes an error value into a guaranteed non-empty string.
- *
- * This function always returns a meaningful string representation,
- * suitable for logging and error tracking.
- *
+ * Normalize error value into a guaranteed non-empty string.
+ * Always returns a meaningful string suitable for logging and error tracking.
  * @param error - The error value to normalize
  * @returns A non-empty normalized error message
- *
- * @example
- * ```ts
- * normalizeErrorMessage(new Error('Failed'));  // => 'Failed'
- * normalizeErrorMessage('Something went wrong'); // => 'Something went wrong'
- * normalizeErrorMessage(null);                  // => 'null'
- * normalizeErrorMessage({ message: 'Error' });  // => 'Error'
- * ```
  */
 export function normalizeErrorMessage(error: unknown): string {
   return formatErrorMessage(error, 'normalized');
 }
 
 /**
- * Extracts the raw error message from an error value.
- *
- * Returns the message string directly without fallback formatting.
- * May return an empty string for non-error objects.
- *
+ * Extract raw error message from error value.
+ * Returns message string directly without fallback formatting (may be empty).
  * @param error - The error value to extract message from
  * @returns Raw error message string (may be empty)
- *
- * @example
- * ```ts
- * getErrorMessage(new Error('Failed'));  // => 'Failed'
- * getErrorMessage('Something went wrong'); // => 'Something went wrong'
- * getErrorMessage(null);                  // => ''
- * getErrorMessage({ message: 'Error' });  // => 'Error'
- * ```
  */
 export function getErrorMessage(error: unknown): string {
   return formatErrorMessage(error, 'raw');

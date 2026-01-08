@@ -1,11 +1,4 @@
-/**
- * Gallery Component Global Styles - Twitter Native UI Integration
- * @version 4.0.0
- *
- * @description
- * Global styles for the gallery component. Only includes actively used classes.
- * Component-specific styles are in CSS Modules (*.module.css).
- */
+/** Global styles for the gallery component. Component-specific styles are in CSS Modules. */
 
 @layer xeg.features {
   /* ====== Surface Styles ====== */

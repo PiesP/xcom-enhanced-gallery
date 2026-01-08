@@ -1,81 +1,19 @@
 /**
- * @fileoverview Centralized gallery DOM tokens (class names, data attributes, selectors)
+ * @fileoverview Gallery DOM tokens (class names, data attributes, selectors).
  *
- * ## Purpose
- *
- * Single source of truth for all CSS class names, data attributes, and DOM selectors used
- * in the gallery system. Ensures consistency across feature detection, DOM manipulation,
- * and UI component rendering.
- *
- * ## Key Responsibilities
- *
- * 1. **Class Name Constants**: Define all CSS class names with `xeg-` prefix
- * 2. **Data Attribute Constants**: Define all data attribute names for metadata storage
- * 3. **Selector Generation**: Generate CSS selectors from classes and attributes
- * 4. **Internal Selector List**: Provide de-duplicated array for DOM queries
- *
- * ## Design Decisions
- *
- * ### Compile-Time Literals
- * All constants use `as const` assertions to preserve literal types and enable:
- * - Type-safe property access with autocomplete
- * - Zero runtime initialization overhead
- * - Tree-shaking optimization for unused selectors
- *
- * ### Manual De-duplication
- * INTERNAL_SELECTORS array is manually de-duplicated instead of using Set/Array.from
- * at runtime to minimize bundle size and initialization cost.
- *
- * ### Namespace Strategy
- * - Class names: `xeg-` prefix prevents conflicts with Twitter's styles
- * - Data attributes: `data-xeg-` prefix for custom metadata
- * - Selectors: Generated from constants to ensure consistency
- *
- * ## Usage Context
- *
- * Used by:
- * - Feature detection logic (src/features/gallery/logic/)
- * - DOM manipulation utilities (src/shared/dom/)
- * - Component rendering (src/features/gallery/components/)
- * - Gallery initialization (src/bootstrap/gallery-init.ts)
+ * Single source of truth for CSS classes, data attributes, and DOM selectors.
+ * All classes use `xeg-` prefix to avoid conflicts with Twitter's styles.
  *
  * @module constants/css
  */
 
 /**
- * CSS class names for gallery elements.
- *
- * All class names use the `xeg-` prefix to avoid conflicts with Twitter's native styles.
- * These classes are used for both styling (CSS Modules) and DOM queries (feature detection).
+ * CSS class names for gallery elements (use `xeg-` prefix).
  *
  * @example
  * ```typescript
- * import { CSS } from '@constants/css';
- *
- * // Create element with gallery class
  * const overlay = document.createElement('div');
  * overlay.classList.add(CSS.CLASSES.OVERLAY);
- *
- * // Query gallery elements
- * const containers = document.querySelectorAll(`.${CSS.CLASSES.CONTAINER}`);
- * ```
- */
-/**
- * CSS class names for gallery elements.
- *
- * All class names use the `xeg-` prefix to avoid conflicts with Twitter's native styles.
- * These classes are used for both styling (CSS Modules) and DOM queries (feature detection).
- *
- * @example
- * ```typescript
- * import { CSS } from '@constants/css';
- *
- * // Create element with gallery class
- * const overlay = document.createElement('div');
- * overlay.classList.add(CSS.CLASSES.OVERLAY);
- *
- * // Query gallery elements
- * const containers = document.querySelectorAll(`.${CSS.CLASSES.CONTAINER}`);
  * ```
  */
 const CLASSES = {
@@ -94,55 +32,12 @@ const CLASSES = {
 } as const;
 
 /**
- * Data attribute names for gallery metadata storage.
- *
- * These attributes store runtime state, configuration, and identification data on DOM elements.
- * All attribute names use the `data-xeg-` prefix to avoid conflicts with native or third-party attributes.
- *
- * @remarks
- * Data attributes are preferred over classes for metadata storage because they:
- * - Allow value storage (e.g., `data-xeg-role="gallery"`)
- * - Are easier to query with attribute selectors
- * - Don't interfere with CSS styling specificity
+ * Data attribute names for gallery metadata storage (use `data-xeg-` prefix).
  *
  * @example
  * ```typescript
- * import { CSS } from '@constants/css';
- *
- * // Set gallery metadata
  * element.setAttribute(CSS.DATA_ATTRIBUTES.GALLERY, 'true');
- * element.setAttribute(CSS.DATA_ATTRIBUTES.ROLE, 'gallery');
- * element.setAttribute(CSS.DATA_ATTRIBUTES.GALLERY_VERSION, '1.6.0');
- *
- * // Query by data attribute
  * const galleries = document.querySelectorAll(`[${CSS.DATA_ATTRIBUTES.GALLERY}]`);
- * const containers = document.querySelectorAll(`[${CSS.DATA_ATTRIBUTES.ROLE}="items-container"]`);
- * ```
- */
-/**
- * Data attribute names for gallery metadata storage.
- *
- * These attributes store runtime state, configuration, and identification data on DOM elements.
- * All attribute names use the `data-xeg-` prefix to avoid conflicts with native or third-party attributes.
- *
- * @remarks
- * Data attributes are preferred over classes for metadata storage because they:
- * - Allow value storage (e.g., `data-xeg-role="gallery"`)
- * - Are easier to query with attribute selectors
- * - Don't interfere with CSS styling specificity
- *
- * @example
- * ```typescript
- * import { CSS } from '@constants/css';
- *
- * // Set gallery metadata
- * element.setAttribute(CSS.DATA_ATTRIBUTES.GALLERY, 'true');
- * element.setAttribute(CSS.DATA_ATTRIBUTES.ROLE, 'gallery');
- * element.setAttribute(CSS.DATA_ATTRIBUTES.GALLERY_VERSION, '1.6.0');
- *
- * // Query by data attribute
- * const galleries = document.querySelectorAll(`[${CSS.DATA_ATTRIBUTES.GALLERY}]`);
- * const containers = document.querySelectorAll(`[${CSS.DATA_ATTRIBUTES.ROLE}="items-container"]`);
  * ```
  */
 const DATA_ATTRIBUTES = {

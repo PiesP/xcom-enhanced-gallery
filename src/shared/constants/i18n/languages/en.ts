@@ -1,10 +1,6 @@
-import type { LanguageStrings } from '@shared/constants/i18n/language-types';
+import type { LanguageStrings } from '@shared/constants/i18n/i18n.types';
 import { buildLanguageStringsFromValues } from '@shared/constants/i18n/translation-values';
 
-/**
- * English language translation values
- * Order must match the translation registry keys
- */
 const EN_VALUES = [
   'Previous',
   'Next',

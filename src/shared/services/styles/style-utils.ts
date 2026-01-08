@@ -21,13 +21,12 @@ const styleMap = new Map<string, HTMLStyleElement>();
  * @param id - The style element's id attribute
  * @returns The style element if found and valid, null otherwise
  */
-function getStyleElementFromDom(id: string): HTMLStyleElement | null {
+const getStyleElementFromDom = (id: string): HTMLStyleElement | null => {
   const el = document.getElementById(id);
   if (!el) return null;
   if (el instanceof HTMLStyleElement) return el;
-  if (el instanceof HTMLElement && el.tagName === 'STYLE') return el as HTMLStyleElement;
-  return null;
-}
+  return el instanceof HTMLElement && el.tagName === 'STYLE' ? (el as HTMLStyleElement) : null;
+};
 
 /**
  * Gets an existing style element from the map or DOM.
@@ -35,65 +34,54 @@ function getStyleElementFromDom(id: string): HTMLStyleElement | null {
  * @param id - The style element's id
  * @returns The style element if found, null otherwise
  */
-function getExistingStyleElement(id: string): HTMLStyleElement | null {
+const getExistingStyleElement = (id: string): HTMLStyleElement | null => {
   const inMap = styleMap.get(id);
-  if (inMap) {
-    if (inMap.isConnected) return inMap;
-    styleMap.delete(id);
-  }
-
+  if (inMap?.isConnected) return inMap;
+  if (inMap) styleMap.delete(id);
   return getStyleElementFromDom(id);
-}
+};
 
 /**
  * Clears all registered styles from the map and DOM.
  */
-export function clearStyleMap(): void {
+export const clearStyleMap = (): void => {
   for (const id of Array.from(styleMap.keys())) {
     removeStyle(id);
   }
   styleMap.clear();
-}
+};
 
 /**
  * Gets the number of currently registered styles.
  * @returns The count of styles in the map
  */
-export function getRegisteredStyleCount(): number {
-  return styleMap.size;
-}
+export const getRegisteredStyleCount = (): number => styleMap.size;
 
 /**
  * Checks if a style with the given id is registered.
  * @param id - The style id
  * @returns True if the style exists, false otherwise
  */
-export function hasStyle(id: string): boolean {
-  return getExistingStyleElement(id) !== null;
-}
+export const hasStyle = (id: string): boolean => getExistingStyleElement(id) !== null;
 
 /**
  * Retrieves a registered style element by id.
  * @param id - The style id
  * @returns The HTMLStyleElement if found, null otherwise
  */
-export function getStyleElement(id: string): HTMLStyleElement | null {
-  return getExistingStyleElement(id);
-}
+export const getStyleElement = (id: string): HTMLStyleElement | null => getExistingStyleElement(id);
 
 /**
  * Applies attributes to an element.
  * @param el - The element to modify
  * @param attributes - Key-value pairs to set as attributes
  */
-function applyAttributes(el: HTMLElement, attributes: StyleAttributes | undefined): void {
+const applyAttributes = (el: HTMLElement, attributes: StyleAttributes | undefined): void => {
   if (!attributes) return;
-
   for (const [name, value] of Object.entries(attributes)) {
-    if (value === undefined) continue;
-    el.setAttribute(name, String(value));
+    if (value !== undefined) el.setAttribute(name, String(value));
   }
-}
+};
 
 /**
  * Creates a style element and injects it into the DOM.
@@ -102,18 +90,18 @@ function applyAttributes(el: HTMLElement, attributes: StyleAttributes | undefine
  * @param attributes - Optional attributes to set on the element
  * @returns The created HTMLStyleElement
  */
-function createDomStyle(
+const createDomStyle = (
   cssText: string,
   id: string,
   attributes: StyleAttributes | undefined
-): HTMLStyleElement {
+): HTMLStyleElement => {
   const el = document.createElement('style');
   el.id = id;
-  applyAttributes(el, attributes);
   el.textContent = cssText;
+  applyAttributes(el, attributes);
   document.head.appendChild(el);
   return el;
-}
+};
 
 /**
  * Attempts to inject a style using the userscript's addStyle API.
@@ -121,28 +109,18 @@ function createDomStyle(
  * @param cssText - The CSS content
  * @returns The style element if successful, null otherwise
  */
-function tryUserscriptAddStyle(cssText: string): HTMLStyleElement | null {
+const tryUserscriptAddStyle = (cssText: string): HTMLStyleElement | null => {
   try {
-    interface UserscriptAddStyleCapability {
-      addStyle: (cssText: string) => unknown;
-    }
+    const api = getUserscript() as { addStyle?: (cssText: string) => unknown };
+    if (typeof api.addStyle !== 'function') return null;
 
-    const apiUnknown: unknown = getUserscript();
-    const maybeAddStyle = (apiUnknown as { addStyle?: unknown }).addStyle;
-    const hasAddStyle = typeof maybeAddStyle === 'function';
-    if (!hasAddStyle) return null;
-
-    const api = apiUnknown as UserscriptAddStyleCapability;
     const el = api.addStyle(cssText);
-
     if (el instanceof HTMLStyleElement) return el;
-    if (el instanceof HTMLElement && el.tagName === 'STYLE') return el as HTMLStyleElement;
-
-    return null;
+    return el instanceof HTMLElement && el.tagName === 'STYLE' ? (el as HTMLStyleElement) : null;
   } catch {
     return null;
   }
-}
+};
 
 /**
  * Registers a style with the given options.
@@ -156,23 +134,16 @@ export function registerStyle(options: {
   readonly replaceExisting?: boolean;
   readonly attributes?: StyleAttributes;
 }): RegisteredStyle | null {
-  const { id, cssText, replaceExisting, attributes } = options;
+  const { id, cssText, replaceExisting = true, attributes } = options;
 
   const normalizedCss = cssText.trim();
-  if (!normalizedCss) {
-    return null;
-  }
+  if (!normalizedCss) return null;
 
-  const shouldReplace = replaceExisting !== false;
   const existing = getExistingStyleElement(id);
   const hadExisting = existing !== null;
 
-  if (existing && !shouldReplace) {
-    return {
-      id,
-      element: existing,
-      replaced: false,
-    };
+  if (existing && !replaceExisting) {
+    return { id, element: existing, replaced: false };
   }
 
   if (existing) {
@@ -203,7 +174,7 @@ export function registerStyle(options: {
  * Cleans up both the internal map and DOM references.
  * @param id - The id of the style to remove
  */
-export function removeStyle(id: string): void {
+export const removeStyle = (id: string): void => {
   const existing = styleMap.get(id);
   if (existing) {
     existing.remove();
@@ -214,4 +185,4 @@ export function removeStyle(id: string): void {
   if (inDom) {
     inDom.remove();
   }
-}
+};

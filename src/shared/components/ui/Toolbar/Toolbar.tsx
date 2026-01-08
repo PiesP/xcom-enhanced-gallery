@@ -50,41 +50,6 @@ interface NavigationStateParams {
 }
 
 /**
- * Resolve the displayed index for UI purposes
- * Prioritizes focused index over current index if valid
- */
-const resolveDisplayedIndex = ({
-  total,
-  currentIndex,
-  focusedIndex,
-}: {
-  total: number;
-  currentIndex: number;
-  focusedIndex?: number | null | undefined;
-}): number => {
-  if (total <= 0) {
-    return 0;
-  }
-
-  if (typeof focusedIndex === 'number' && focusedIndex >= 0 && focusedIndex < total) {
-    return focusedIndex;
-  }
-
-  return clampIndex(currentIndex, total);
-};
-
-/**
- * Calculate progress bar width as percentage
- */
-const calculateProgressWidth = (index: number, total: number): string => {
-  if (total <= 0) {
-    return '0%';
-  }
-
-  return `${((index + 1) / total) * 100}%`;
-};
-
-/**
  * Compute navigation and action states for toolbar buttons
  */
 const computeNavigationState = ({
@@ -94,13 +59,11 @@ const computeNavigationState = ({
 }: NavigationStateParams) => {
   const hasItems = total > 0;
   const canNavigate = hasItems && total > 1;
-  const prevDisabled = toolbarDisabled || !canNavigate;
-  const nextDisabled = toolbarDisabled || !canNavigate;
   const downloadDisabled = toolbarDisabled || downloadBusy || !hasItems;
 
   return {
-    prevDisabled,
-    nextDisabled,
+    prevDisabled: toolbarDisabled || !canNavigate,
+    nextDisabled: toolbarDisabled || !canNavigate,
     canDownloadAll: total > 1,
     downloadDisabled,
     anyActionDisabled: toolbarDisabled,
@@ -118,9 +81,7 @@ const createGuardedHandler = (
 ): ((event: MouseEvent) => void) => {
   return (event) => {
     safeEventPrevent(event);
-    if (guard()) {
-      return;
-    }
+    if (guard()) return;
     action?.();
   };
 };
@@ -180,15 +141,21 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const totalItems = createMemo(() => Math.max(0, totalCount()));
   const currentIndexForNav = createMemo(() => clampIndex(currentIndex(), totalItems()));
 
-  const displayedIndex = createMemo(() =>
-    resolveDisplayedIndex({
-      total: totalItems(),
-      currentIndex: currentIndexForNav(),
-      focusedIndex: focusedIndex(),
-    })
-  );
+  const displayedIndex = createMemo(() => {
+    const total = totalItems();
+    const currentIdx = currentIndexForNav();
+    const focusIdx = focusedIndex();
+    if (total <= 0) return 0;
+    if (typeof focusIdx === 'number' && focusIdx >= 0 && focusIdx < total) return focusIdx;
+    return currentIdx;
+  });
 
-  const progressWidth = createMemo(() => calculateProgressWidth(displayedIndex(), totalItems()));
+  const progressWidth = createMemo(() => {
+    const total = totalItems();
+    const idx = displayedIndex();
+    return total <= 0 ? '0%' : `${((idx + 1) / total) * 100}%`;
+  });
+
   const toolbarDataState = createMemo(() => getToolbarDataState(toolbarState));
 
   const navState = createMemo(() =>
@@ -207,22 +174,10 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   }));
 
   const fitModeLabels = createMemo<Record<FitMode, { label: string; title: string }>>(() => ({
-    original: {
-      label: translate('tb.fitOri'),
-      title: translate('tb.fitOri'),
-    },
-    fitWidth: {
-      label: translate('tb.fitW'),
-      title: translate('tb.fitW'),
-    },
-    fitHeight: {
-      label: translate('tb.fitH'),
-      title: translate('tb.fitH'),
-    },
-    fitContainer: {
-      label: translate('tb.fitC'),
-      title: translate('tb.fitC'),
-    },
+    original: { label: translate('tb.fitOri'), title: translate('tb.fitOri') },
+    fitWidth: { label: translate('tb.fitW'), title: translate('tb.fitW') },
+    fitHeight: { label: translate('tb.fitH'), title: translate('tb.fitH') },
+    fitContainer: { label: translate('tb.fitC'), title: translate('tb.fitC') },
   }));
 
   const activeFitMode = createMemo<FitMode>(
@@ -237,53 +192,36 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   );
 
   // 7. Helper functions
-  const setSettingsExpanded = (expanded: boolean): void => {
+  const setSettingsExpanded = (expanded: boolean) => {
     setSettingsExpandedSignal(expanded);
-    if (expanded) {
-      setTweetExpanded(false);
-    }
+    if (expanded) setTweetExpanded(false);
   };
 
-  const toggleSettings = (): void => {
-    setSettingsExpanded(!settingsExpandedSignal());
-  };
+  const toggleSettings = () => setSettingsExpanded(!settingsExpandedSignal());
 
-  const toggleTweet = (): void => {
+  const toggleTweet = () => {
     setTweetExpanded((prev) => {
-      const next = !prev;
-      if (next) {
-        setSettingsExpanded(false);
-      }
-      return next;
+      if (!prev) setSettingsExpanded(false);
+      return !prev;
     });
   };
 
-  const isToolbarDisabled = (): boolean => !!isDisabled();
+  const isToolbarDisabled = () => !!isDisabled();
 
   const isFitDisabled = (mode: FitMode): boolean => {
-    if (isToolbarDisabled()) {
-      return true;
-    }
-
+    if (isToolbarDisabled()) return true;
     const handler = fitModeHandlers()[mode];
-    if (!handler) {
-      return true;
-    }
-
+    if (!handler) return true;
     return activeFitMode() === mode;
   };
 
   // 8. Event handlers
-  const handleFitModeClick =
-    (mode: FitMode) =>
-    (event: MouseEvent): void => {
-      safeEventPreventAll(event);
-      if (isToolbarDisabled()) {
-        return;
-      }
-
+  const handleFitModeClick = (mode: FitMode) => (event: MouseEvent) => {
+    safeEventPreventAll(event);
+    if (!isToolbarDisabled()) {
       fitModeHandlers()[mode]?.(event);
-    };
+    }
+  };
 
   const handlePrevious = createGuardedHandler(
     () => navState().prevDisabled,
@@ -305,7 +243,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     local.handlers.download.onDownloadAll
   );
 
-  const handleClose = (event: MouseEvent): void => {
+  const handleClose = (event: MouseEvent) => {
     safeEventPrevent(event);
     local.handlers.lifecycle.onClose();
   };

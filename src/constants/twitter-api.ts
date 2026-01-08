@@ -1,59 +1,10 @@
 /**
- * @fileoverview Twitter/X.com API configuration constants for GraphQL queries and authentication
+ * @fileoverview Twitter/X.com API configuration for GraphQL queries and authentication.
  *
- * @description
- * Provides essential configuration for interacting with Twitter's public GraphQL API endpoints,
- * including authentication tokens, query IDs, and host configuration. These constants enable
- * the userscript to fetch tweet and user data from X.com/Twitter.
+ * Provides authentication tokens, query IDs, and host configuration.
+ * Query IDs may change on Twitter API updates; monitor for 400/404 errors.
  *
  * @module constants/twitter-api
- *
- * @remarks
- * **Configuration Categories**:
- * - **GUEST_AUTHORIZATION**: Bearer token for unauthenticated API access
- * - **Query IDs**: GraphQL operation identifiers for specific data fetching operations
- * - **Host Configuration**: Domain validation and fallback settings
- *
- * **Query ID Stability**:
- * Query IDs (e.g., TWEET_RESULT_BY_REST_ID_QUERY_ID) may change when Twitter updates
- * their GraphQL schema or API versions. Monitor API responses for 400/404 errors
- * that may indicate outdated query IDs requiring updates.
- *
- * **Security Considerations**:
- * - GUEST_AUTHORIZATION token is public and rate-limited by Twitter
- * - All API requests must be made from browser context (CORS-protected)
- * - Do not expose user-specific tokens or credentials through this configuration
- *
- * @example
- * ```typescript
- * // Fetch tweet data using configured query ID
- * import { TWITTER_API_CONFIG } from '@constants/twitter-api';
- *
- * const tweetId = '1234567890123456789';
- * const response = await fetch(
- *   `https://${TWITTER_API_CONFIG.DEFAULT_HOST}/i/api/graphql/${TWITTER_API_CONFIG.TWEET_RESULT_BY_REST_ID_QUERY_ID}/TweetResultByRestId`,
- *   {
- *     headers: {
- *       'Authorization': TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
- *     },
- *   }
- * );
- * ```
- *
- * @example
- * ```typescript
- * // Validate API host domain
- * import { TWITTER_API_CONFIG } from '@constants/twitter-api';
- *
- * function isValidHost(hostname: string): boolean {
- *   return TWITTER_API_CONFIG.SUPPORTED_HOSTS.includes(
- *     hostname as TwitterHost
- *   );
- * }
- * ```
- *
- * @see {@link TwitterAPIClient} Twitter API client implementation
- * @see {@link MediaService} Media extraction service using these constants
  */
 
 /**

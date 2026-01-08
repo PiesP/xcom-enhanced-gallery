@@ -1,46 +1,18 @@
 /**
- * @fileoverview DOM selector constants for X.com elements
- * @description Centralized CSS selectors for X.com/Twitter DOM elements with fallback support.
- * Primary selectors use data-testid attributes for stability, with aria-* and structural fallbacks.
- * @module constants/selectors
+ * @fileoverview DOM selector constants for X.com elements.
+ *
+ * Primary selectors use data-testid attributes (most stable),
+ * with aria-* and structural fallbacks.
  *
  * @remarks
- * **Tree-Shaking Optimization**:
- * Each selector is exported individually rather than as an object to enable optimal tree-shaking.
- * Importing a single selector does not force bundling the entire selector set.
+ * Each selector is exported individually for optimal tree-shaking.
+ * STABLE_*_SELECTORS arrays provide fallback options ordered by reliability.
  *
- * **Selector Stability Strategy**:
- * - Primary selectors: `data-testid` attributes (most stable)
- * - Secondary: `aria-*` attributes and semantic roles
- * - Tertiary: Structural patterns and attribute matching
- *
- * **Fallback Arrays**:
- * `STABLE_*_SELECTORS` arrays provide multiple fallback options ordered by reliability.
- * First element is the most stable, subsequent elements are progressively more fragile.
- *
- * @example
- * ```typescript
- * import { TWEET_SELECTOR, STABLE_MEDIA_CONTAINERS_SELECTORS } from '@constants/selectors';
- *
- * // Single selector
- * const tweet = document.querySelector(TWEET_SELECTOR);
- *
- * // Try multiple fallbacks
- * let container: Element | null = null;
- * for (const selector of STABLE_MEDIA_CONTAINERS_SELECTORS) {
- *   container = document.querySelector(selector);
- *   if (container) break;
- * }
- * ```
+ * @module constants/selectors
  */
 
 import { CSS } from '@constants/css';
 
-/**
- * Gallery overlay selector from CSS constants
- *
- * @internal
- */
 const GALLERY_SELECTORS = CSS.SELECTORS;
 
 // ============================================================================
@@ -50,55 +22,28 @@ const GALLERY_SELECTORS = CSS.SELECTORS;
 /**
  * Tweet article container selector
  *
- * @remarks
- * Matches individual tweet articles in the timeline or thread views.
- * Most reliable selector for identifying tweet boundaries.
- *
- * @example
- * ```typescript
- * const tweets = document.querySelectorAll(TWEET_SELECTOR);
- * tweets.forEach(tweet => console.log(tweet.textContent));
- * ```
+ * Matches individual tweet articles in timeline or thread views.
  */
 export const TWEET_SELECTOR = 'article[data-testid="tweet"]' as const;
 
 /**
- * Combined tweet article selector with fallback
+ * Tweet article selector with fallback
  *
- * @remarks
- * Provides fallback to generic `article` elements when data-testid is unavailable.
- * Use when broader matching is acceptable.
- *
- * @example
- * ```typescript
- * const articles = document.querySelectorAll(TWEET_ARTICLE_SELECTOR);
- * ```
+ * Fallback to generic `article` when data-testid unavailable.
  */
 export const TWEET_ARTICLE_SELECTOR = '[data-testid="tweet"], article' as const;
 
 /**
  * Tweet photo container selector
  *
- * @remarks
- * Matches photo containers within tweets. Used for identifying image media.
- *
- * @example
- * ```typescript
- * const photos = tweet.querySelectorAll(TWEET_PHOTO_SELECTOR);
- * ```
+ * Matches photo containers within tweets.
  */
 export const TWEET_PHOTO_SELECTOR = '[data-testid="tweetPhoto"]' as const;
 
 /**
  * Tweet text content selector
  *
- * @remarks
- * Matches the main text content area of a tweet.
- *
- * @example
- * ```typescript
- * const text = tweet.querySelector(TWEET_TEXT_SELECTOR)?.textContent;
- * ```
+ * Matches main text content area of a tweet.
  */
 export const TWEET_TEXT_SELECTOR = '[data-testid="tweetText"]' as const;
 

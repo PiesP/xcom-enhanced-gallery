@@ -3,53 +3,9 @@
  * Licensed under the MIT License
  *
  * @fileoverview Vertical Gallery View Component Styles
- * @description Modal gallery container layout and styling
- *
- * **Design System**:
- * - All colors, spacing, sizing use CSS custom properties (--xeg-* design tokens)
- * - No hardcoded colors or dimensions
- * - Responsive design via container queries and media queries
- * - Accessibility: focus-visible, reduced-motion support
- *
- * **Key Selectors**:
- * - .container: Fixed modal gallery container
- * - .toolbarWrapper: Toolbar with hover/focus auto-show
- * - .itemsContainer: Scrollable items list
- * - .galleryItem: Individual media item wrapper
- * - .scrollSpacer: Top-align scroll anchor spacer
- *
- * **Performance Optimizations**:
- * - CSS Containment (contain: layout style paint)
- * - content-visibility: auto for off-screen content
- * - transform: translateZ(0) for GPU acceleration
- * - will-change for animated properties
- * - CSS custom properties for dynamic values
- *
- * **Responsive Features**:
- * - Container queries for layout adaptation
- * - Media queries fallback for unsupported browsers
- * - Responsive spacing via clamp()
- *
- * @version 5.1.0 - Enhanced documentation and style organization (Phase 354+)
- */
-
-/**
- * VerticalGalleryView Component Styles
- * @version 5.0.0 - Modern CSS features with OKLCH colors and Container Queries
- *
- * @description
- * Phase 2 integrates modern CSS features: Cascade Layers, OKLCH color space,
- * Container Queries, CSS Subgrid, CSS Containment, and Logical Properties.
- *
- * @features
- * - CSS Cascade Layers: Clear layer priority (base, components, utilities)
- * - OKLCH Color Space: Perceptually uniform color system
- * - Container Queries: True component-based responsive design
- * - CSS Subgrid: Advanced layout implementation
- * - CSS Containment: Better performance optimization
- * - CSS Logical Properties: Direction-agnostic layout
- * - Advanced CSS Selectors: :has, :where, :is for better specificity
- * - CSS Nesting: Improved code readability (via PostCSS)
+ * @description Modal gallery container layout with responsive design, CSS custom properties,
+ * and modern CSS features (Cascade Layers, Container Queries, Containment, Logical Properties).
+ * @version 5.1.0
  */
 
 /* CSS Cascade Layer declarations remain for other rules */
@@ -59,8 +15,8 @@
   :root {
     /* Transitions - toolbar visibility helper only */
     --xeg-transition-toolbar:
-      opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), transform
-      var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), visibility 0ms;
+      opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out),
+      transform var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), visibility 0ms;
 
     /* Spacing - CSS Logical Properties */
     --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));

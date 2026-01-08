@@ -20,24 +20,24 @@ export interface LoggerConfig {
   readonly prefix: string;
 }
 
-const BASE_PREFIX = '[XEG]';
+const BASE_PREFIX = '[X]';
 const noop = (): void => {};
 const hasConsole = typeof console !== 'undefined';
 
-function buildErrorOnlyLogger(prefix: string): Logger {
-  if (!hasConsole) {
-    return { info: noop, warn: noop, error: noop, debug: noop, trace: noop };
-  }
+const createErrorOnlyLogger = (prefix: string): Logger => ({
+  info: noop,
+  warn: noop,
+  debug: noop,
+  trace: noop,
+  error: (...args: LoggableData[]): void => {
+    console.error(prefix, ...args);
+  },
+});
 
-  return {
-    info: noop,
-    warn: noop,
-    debug: noop,
-    trace: noop,
-    error: (...args: LoggableData[]): void => {
-      console.error(prefix, ...args);
-    },
-  };
+const noopLogger: Logger = { info: noop, warn: noop, error: noop, debug: noop, trace: noop };
+
+function buildErrorOnlyLogger(prefix: string): Logger {
+  return !hasConsole ? noopLogger : createErrorOnlyLogger(prefix);
 }
 
 function formatPrefix(prefix: string, scope?: string): string {

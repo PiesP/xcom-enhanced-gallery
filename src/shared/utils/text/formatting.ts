@@ -34,7 +34,8 @@ export function cx(...inputs: ClassValue[]): string {
   for (const input of inputs) {
     if (!input) continue;
 
-    if (typeof input === 'string' || typeof input === 'number') {
+    const inputType = typeof input;
+    if (inputType === 'string' || inputType === 'number') {
       classes.push(String(input));
       continue;
     }
@@ -45,9 +46,10 @@ export function cx(...inputs: ClassValue[]): string {
       continue;
     }
 
-    if (typeof input === 'object') {
-      for (const key in input) {
-        if ((input as ClassRecord)[key]) {
+    if (inputType === 'object' && input !== null && !Array.isArray(input)) {
+      const record = input as ClassRecord;
+      for (const key in record) {
+        if (record[key]) {
           classes.push(key);
         }
       }

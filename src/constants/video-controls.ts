@@ -1,85 +1,14 @@
 /**
- * @fileoverview Video player control detection and gallery view mode constants
+ * @fileoverview Video player control detection and gallery view mode constants.
  *
- * @description
- * Provides constant arrays for identifying video player controls through various HTML attributes
- * (data-testid, role, aria-label) and defining supported gallery view modes. These constants
- * enable the userscript to detect and avoid interfering with native X.com video controls
- * while implementing custom gallery navigation.
+ * Provides patterns for identifying video controls through HTML attributes.
+ * Enables userscript to distinguish gallery interactions from video control interactions.
  *
  * @module constants/video-controls
- *
- * @remarks
- * **Control Detection Strategy**:
- * The userscript needs to distinguish between user interactions with the gallery and
- * interactions with native video player controls (play/pause, volume, seek bar). These
- * constants define patterns for identifying video control elements through multiple
- * HTML attribute types for robust detection across X.com UI updates.
- *
- * **Detection Layers**:
- * 1. **data-testid prefixes**: X.com's internal test identifiers for controls
- * 2. **ARIA roles**: Standard accessibility roles for media controls
- * 3. **aria-label tokens**: Descriptive text tokens in control labels
- *
- * **View Mode System**:
- * Currently supports vertical list gallery layout. The VIEW_MODES array defines
- * valid layout options for future extensibility (horizontal, grid, etc.).
- *
- * **Usage Context**:
- * - Event delegation: Filter out clicks on video controls
- * - Focus management: Skip video controls in keyboard navigation
- * - Layout rendering: Select appropriate gallery component based on view mode
- *
- * @example
- * ```typescript
- * // Check if element is a video control
- * import {
- *   VIDEO_CONTROL_DATASET_PREFIXES,
- *   VIDEO_CONTROL_ROLES,
- *   VIDEO_CONTROL_ARIA_TOKENS,
- * } from '@constants/video-controls';
- *
- * function isVideoControl(element: HTMLElement): boolean {
- *   const testId = element.dataset.testid;
- *   if (testId && VIDEO_CONTROL_DATASET_PREFIXES.some(prefix =>
- *     testId.startsWith(prefix)
- *   )) {
- *     return true;
- *   }
- *
- *   const role = element.getAttribute('role');
- *   if (role && VIDEO_CONTROL_ROLES.includes(role as VideoControlRole)) {
- *     return true;
- *   }
- *
- *   const ariaLabel = element.getAttribute('aria-label')?.toLowerCase();
- *   if (ariaLabel && VIDEO_CONTROL_ARIA_TOKENS.some(token =>
- *     ariaLabel.includes(token)
- *   )) {
- *     return true;
- *   }
- *
- *   return false;
- * }
- * ```
- *
- * @example
- * ```typescript
- * // Validate view mode
- * import { VIEW_MODES } from '@constants/video-controls';
- * import type { ViewMode } from '@constants/types';
- *
- * function setViewMode(mode: string): void {
- *   if (VIEW_MODES.includes(mode as ViewMode)) {
- *     applyViewMode(mode as ViewMode);
- *   } else {
- *     console.error(`Invalid view mode: ${mode}`);
- *   }
- * }
- * ```
- *
- * @see {@link EventManager} Event handling with control filtering
- * @see {@link GalleryRenderer} Gallery rendering based on VIEW_MODES
+ */
+
+/**
+ * Video control detection patterns and view mode definitions.
  * @see {@link ViewMode} Type definition extracted from VIEW_MODES
  */
 

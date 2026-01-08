@@ -1,8 +1,5 @@
 /**
- * @fileoverview Centralized Logging Infrastructure (minimal)
- *
- * Production: emit errors only.
- * Development: emit all log levels.
+ * @fileoverview Centralized logging infrastructure (production: errors only, dev: all levels)
  */
 
 export type LoggableData = unknown;
@@ -23,40 +20,39 @@ const BASE_PREFIX = '[XEG]';
 const hasConsole = typeof console !== 'undefined';
 const noop = (): void => {};
 
+const createErrorOnlyLogger = (prefix: string): Logger => ({
+  info: noop,
+  warn: noop,
+  debug: noop,
+  trace: noop,
+  error: (...args: LoggableData[]): void => {
+    console.error(prefix, ...args);
+  },
+});
+
+const createVerboseLogger = (prefix: string): Logger => ({
+  info: (...args: LoggableData[]): void => {
+    console.info(prefix, ...args);
+  },
+  warn: (...args: LoggableData[]): void => {
+    console.warn(prefix, ...args);
+  },
+  error: (...args: LoggableData[]): void => {
+    console.error(prefix, ...args);
+  },
+  debug: (...args: LoggableData[]): void => {
+    console.debug(prefix, ...args);
+  },
+  trace: (...args: LoggableData[]): void => {
+    console.debug(prefix, ...args);
+  },
+});
+
+const noopLogger: Logger = { info: noop, warn: noop, error: noop, debug: noop, trace: noop };
+
 function buildLogger(prefix: string, enableVerbose: boolean): Logger {
-  if (!hasConsole) {
-    return { info: noop, warn: noop, error: noop, debug: noop, trace: noop };
-  }
-
-  if (!enableVerbose) {
-    return {
-      info: noop,
-      warn: noop,
-      debug: noop,
-      trace: noop,
-      error: (...args: LoggableData[]): void => {
-        console.error(prefix, ...args);
-      },
-    };
-  }
-
-  return {
-    info: (...args: LoggableData[]): void => {
-      console.info(prefix, ...args);
-    },
-    warn: (...args: LoggableData[]): void => {
-      console.warn(prefix, ...args);
-    },
-    error: (...args: LoggableData[]): void => {
-      console.error(prefix, ...args);
-    },
-    debug: (...args: LoggableData[]): void => {
-      console.debug(prefix, ...args);
-    },
-    trace: (...args: LoggableData[]): void => {
-      console.debug(prefix, ...args);
-    },
-  };
+  if (!hasConsole) return noopLogger;
+  return enableVerbose ? createVerboseLogger(prefix) : createErrorOnlyLogger(prefix);
 }
 
 function formatPrefix(prefix: string, scope?: string): string {

@@ -36,7 +36,7 @@ function asGMDownloadFunction(value: unknown): GMDownloadFunction | undefined {
   return typeof value === 'function' ? (value as GMDownloadFunction) : undefined;
 }
 
-export function detectDownloadCapability(): DownloadCapability {
+export const detectDownloadCapability = (): DownloadCapability => {
   const gmDownload = asGMDownloadFunction(resolveGMDownload());
   const hasGMDownload = !!gmDownload && isGMAPIAvailable('download');
 
@@ -45,4 +45,4 @@ export function detectDownloadCapability(): DownloadCapability {
     method: hasGMDownload ? 'gm_download' : 'none',
     gmDownload: hasGMDownload ? gmDownload : undefined,
   };
-}
+};

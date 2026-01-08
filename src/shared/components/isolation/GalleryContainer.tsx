@@ -1,9 +1,11 @@
-import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
+import type { JSXElement } from '@shared/external/vendors';
 
 import { EventManager } from '@shared/services/event-manager';
 import { cx } from '@shared/utils/text/formatting';
-import { createEffect, onCleanup } from 'solid-js';
+import { createEffect, onCleanup, splitProps } from 'solid-js';
 import { render } from 'solid-js/web';
+
+import type { GalleryContainerProps } from './GalleryContainer.types';
 
 // ============================================================================
 // Constants
@@ -15,34 +17,15 @@ import { render } from 'solid-js/web';
  */
 const DISPOSE_SYMBOL = Symbol();
 
-type EscapeCaptureWindow = typeof window & {
-  __xegCapturedEscapeListener?: (event: KeyboardEvent) => void;
-};
-
-// ============================================================================
-// Type Definitions
-// ============================================================================
-
-/**
- * Gallery container component props
- * @description Configuration for GalleryContainer component
- */
-interface GalleryContainerProps {
-  /** Child components to render inside container */
-  readonly children: ComponentChildren;
-  /** Callback fired when container should close (Escape key) */
-  readonly onClose?: () => void;
-  /** Additional CSS class names */
-  readonly className?: string;
-  /** Optional hook to observe the Escape key listener (testing utilities) */
-  readonly registerEscapeListener?: (listener: (event: KeyboardEvent) => void) => void;
-}
-
 type HostElement = HTMLElement & {
   [DISPOSE_SYMBOL]?: () => void;
 };
 
 type GalleryRenderable = JSXElement | null | undefined | (() => JSXElement | null | undefined);
+
+type EscapeCaptureWindow = typeof window & {
+  __xegCapturedEscapeListener?: (event: KeyboardEvent) => void;
+};
 
 // ============================================================================
 // Gallery Mounting and Unmounting
@@ -137,47 +120,35 @@ export function unmountGallery(container: Element): void {
  * </GalleryContainer>
  * ```
  */
-export function GalleryContainer({
-  children,
-  onClose,
-  className,
-  registerEscapeListener,
-}: GalleryContainerProps): JSXElement {
-  const classes = cx('xeg-gallery-overlay', 'xeg-gallery-container', className);
-  const hasCloseHandler = typeof onClose === 'function';
+export function GalleryContainer(props: GalleryContainerProps): JSXElement {
+  const [local] = splitProps(props, ['children', 'onClose', 'className', 'registerEscapeListener']);
 
-  const escapeListener = (event: Event) => {
-    if (!hasCloseHandler) {
-      return;
-    }
+  const classes = cx('xeg-gallery-overlay', 'xeg-gallery-container', local.className);
 
+  const escapeListener = (event: Event): void => {
     const keyboardEvent = event as KeyboardEvent;
     if (keyboardEvent.key === 'Escape') {
       keyboardEvent.preventDefault();
       keyboardEvent.stopPropagation();
-      onClose?.();
+      local.onClose?.();
     }
   };
 
-  if (__DEV__ && hasCloseHandler && registerEscapeListener && typeof window !== 'undefined') {
+  if (__DEV__ && local.onClose && local.registerEscapeListener && typeof window !== 'undefined') {
     const captureWindow = window as EscapeCaptureWindow;
-    const storageKey = '__xegCapturedEscapeListener' as const;
-    captureWindow[storageKey] = escapeListener as (event: KeyboardEvent) => void;
-    registerEscapeListener(escapeListener as (event: KeyboardEvent) => void);
+    captureWindow.__xegCapturedEscapeListener = escapeListener as (event: KeyboardEvent) => void;
+    local.registerEscapeListener(escapeListener as (event: KeyboardEvent) => void);
   }
 
   // Setup keyboard event handling
   createEffect(() => {
-    if (!hasCloseHandler) {
+    if (!local.onClose) {
       return;
     }
 
-    // Register Escape key handler
     const eventManager = EventManager.getInstance();
-
     const listenerId = eventManager.addListener(document, 'keydown', escapeListener);
 
-    // Cleanup listener on component unmount
     onCleanup(() => {
       if (listenerId) {
         eventManager.removeListener(listenerId);
@@ -187,7 +158,7 @@ export function GalleryContainer({
 
   return (
     <div class={classes} data-xeg-gallery-container="">
-      {children}
+      {local.children}
     </div>
   );
 }

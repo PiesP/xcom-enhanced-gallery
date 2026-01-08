@@ -12,28 +12,26 @@ import { tryParseUrl } from '@shared/utils/url/host';
 type Writable<T> = { -readonly [P in keyof T]: T[P] };
 
 interface MediaDimensions {
-  readonly width?: number;
-  readonly height?: number;
+  readonly width?: number | undefined;
+  readonly height?: number | undefined;
 }
 
 function resolveDimensions(media: TwitterMedia, mediaUrl: string): MediaDimensions {
   const dimensionsFromUrl = extractDimensionsFromUrl(mediaUrl);
   const widthFromOriginal = normalizeDimension(media.original_info?.width);
   const heightFromOriginal = normalizeDimension(media.original_info?.height);
-  const widthFromUrl = normalizeDimension(dimensionsFromUrl?.width);
-  const heightFromUrl = normalizeDimension(dimensionsFromUrl?.height);
+  const widthFromUrl = dimensionsFromUrl?.width;
+  const heightFromUrl = dimensionsFromUrl?.height;
 
-  const width = widthFromOriginal ?? widthFromUrl;
-  const height = heightFromOriginal ?? heightFromUrl;
-
-  const result: MediaDimensions = {
-    ...(width !== null && width !== undefined && { width }),
-    ...(height !== null && height !== undefined && { height }),
+  return {
+    ...((widthFromOriginal ?? widthFromUrl) ? { width: widthFromOriginal ?? widthFromUrl } : {}),
+    ...((heightFromOriginal ?? heightFromUrl)
+      ? { height: heightFromOriginal ?? heightFromUrl }
+      : {}),
   };
-  return result;
 }
 
-function removeUrlTokensFromText(text: string, urls: readonly string[]): string {
+const removeUrlTokensFromText = (text: string, urls: readonly string[]): string => {
   let result = text;
 
   for (const url of urls) {
@@ -51,18 +49,17 @@ function removeUrlTokensFromText(text: string, urls: readonly string[]): string 
   }
 
   // Normalize excessive spacing introduced by removals while preserving newlines.
-  result = result
+  return result
     .replace(/[ \t\f\v\u00A0]{2,}/g, ' ')
     .replace(/ ?\n ?/g, '\n')
-    .replace(/\n{3,}/g, '\n\n');
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
 
-  return result.trim();
-}
-
-function resolveAspectRatio(
+const resolveAspectRatio = (
   media: TwitterMedia,
   dimensions: MediaDimensions
-): [number, number] | undefined {
+): [number, number] | undefined => {
   // Runtime validation: Twitter API types are not guaranteed at runtime.
   // Defensive check ensures aspect_ratio is actually an array before use.
   const aspectRatioValues = Array.isArray(media.video_info?.aspect_ratio)
@@ -80,9 +77,9 @@ function resolveAspectRatio(
   }
 
   return undefined;
-}
+};
 
-function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
+const getPhotoHighQualityUrl = (mediaUrlHttps?: string): string | undefined => {
   if (!mediaUrlHttps) return mediaUrlHttps;
 
   // A helper to determine whether the input is absolute (contains a scheme)
@@ -109,9 +106,8 @@ function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
     return query ? `${pathPart}?${query}` : pathPart;
   }
 
-  const hasParamCaseInsensitive = (key: string): boolean => {
-    return Array.from(parsed.searchParams.keys()).some((k) => k.toLowerCase() === key);
-  };
+  const hasParamCaseInsensitive = (key: string): boolean =>
+    Array.from(parsed.searchParams.keys()).some((k) => k.toLowerCase() === key);
 
   const setParamCaseInsensitive = (key: string, value: string): void => {
     for (const k of Array.from(parsed.searchParams.keys())) {
@@ -136,20 +132,19 @@ function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
   if (isAbsolute) return parsed.toString();
   // For relative inputs, return pathname + search to avoid embedding the host
   return `${parsed.pathname}${parsed.search}`;
-}
+};
 
-function getVideoHighQualityUrl(media: TwitterMedia): string | null {
+const getVideoHighQualityUrl = (media: TwitterMedia): string | null => {
   const variants = media.video_info?.variants ?? [];
   const mp4Variants = variants.filter((v) => v.content_type === 'video/mp4');
   if (mp4Variants.length === 0) return null;
 
-  const bestVariant = mp4Variants.reduce((best, current) => {
+  return mp4Variants.reduce((best, current) => {
     const bestBitrate = best.bitrate ?? 0;
     const currentBitrate = current.bitrate ?? 0;
     return currentBitrate > bestBitrate ? current : best;
-  });
-  return bestVariant.url;
-}
+  }).url;
+};
 
 export function getHighQualityMediaUrl(media: TwitterMedia): string | null {
   if (media.type === 'photo') {
@@ -161,7 +156,7 @@ export function getHighQualityMediaUrl(media: TwitterMedia): string | null {
   return null;
 }
 
-function createMediaEntry(
+const createMediaEntry = (
   media: TwitterMedia,
   mediaUrl: string,
   screenName: string,
@@ -169,12 +164,12 @@ function createMediaEntry(
   tweetText: string,
   index: number,
   sourceLocation: 'original' | 'quoted'
-): TweetMediaEntry {
+): TweetMediaEntry => {
   const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
   const dimensions = resolveDimensions(media, mediaUrl);
   const aspectRatio = resolveAspectRatio(media, dimensions);
 
-  const entry: TweetMediaEntry = {
+  return {
     screen_name: screenName,
     tweet_id: tweetId,
     download_url: mediaUrl,
@@ -193,9 +188,7 @@ function createMediaEntry(
     ...(dimensions.height && { original_height: dimensions.height }),
     ...(aspectRatio && { aspect_ratio: aspectRatio }),
   };
-
-  return entry;
-}
+};
 
 export function extractMediaFromTweet(
   tweetResult: TwitterTweet,

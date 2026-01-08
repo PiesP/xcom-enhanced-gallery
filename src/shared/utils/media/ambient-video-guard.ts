@@ -25,10 +25,8 @@ let guardSubscribers = 0;
  *
  * @internal
  */
-function ensureGuardEffect(): void {
-  if (guardDispose) {
-    return;
-  }
+const ensureGuardEffect = (): void => {
+  if (guardDispose) return;
 
   guardDispose = gallerySignals.isOpen.subscribe((isOpen: boolean) => {
     if (!isOpen) return;
@@ -38,15 +36,13 @@ function ensureGuardEffect(): void {
       reason: 'guard',
     });
 
-    if (result.pausedCount <= 0) {
-      return;
-    }
+    if (result.pausedCount <= 0) return;
 
     if (__DEV__) {
       logger.debug('[AmbientVideoGuard] Ambient pause triggered by guard', result);
     }
   });
-}
+};
 
 /**
  * Starts the ambient video guard with reference counting.
@@ -67,14 +63,11 @@ function ensureGuardEffect(): void {
  *
  * @returns A cleanup function to stop the guard for this consumer
  */
-export function startAmbientVideoGuard(): () => void {
+export const startAmbientVideoGuard = (): (() => void) => {
   guardSubscribers += 1;
   ensureGuardEffect();
-
-  return () => {
-    stopAmbientVideoGuard();
-  };
-}
+  return stopAmbientVideoGuard;
+};
 
 /**
  * Stops the ambient video guard for one consumer.
@@ -84,16 +77,12 @@ export function startAmbientVideoGuard(): () => void {
  *
  * @internal
  */
-function stopAmbientVideoGuard(): void {
-  if (guardSubscribers === 0) {
-    return;
-  }
+const stopAmbientVideoGuard = (): void => {
+  if (guardSubscribers === 0) return;
 
   guardSubscribers -= 1;
-  if (guardSubscribers > 0) {
-    return;
-  }
+  if (guardSubscribers > 0) return;
 
   guardDispose?.();
   guardDispose = null;
-}
+};

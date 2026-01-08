@@ -10,30 +10,29 @@ import { normalizeDimension } from '@shared/utils/media/media-dimensions';
 /**
  * Resolve Dimensions from API Media
  */
-function resolveDimensionsFromApiMedia(
+const resolveDimensionsFromApiMedia = (
   apiMedia: TweetMediaEntry
-): { width: number; height: number } | null {
+): { width: number; height: number } | null => {
   const widthFromOriginal = normalizeDimension(apiMedia.original_width);
   const heightFromOriginal = normalizeDimension(apiMedia.original_height);
 
-  if (widthFromOriginal && heightFromOriginal) {
-    return {
-      width: widthFromOriginal,
-      height: heightFromOriginal,
-    };
-  }
-  return null;
-}
+  return widthFromOriginal && heightFromOriginal
+    ? {
+        width: widthFromOriginal,
+        height: heightFromOriginal,
+      }
+    : null;
+};
 
 /**
  * Create MediaInfo from API Response
  */
-function createMediaInfoFromAPI(
+const createMediaInfoFromAPI = (
   apiMedia: TweetMediaEntry,
   tweetInfo: TweetInfo,
   index: number,
   tweetTextHTML?: string | undefined
-): MediaInfo | null {
+): MediaInfo | null => {
   try {
     const mediaType = apiMedia.type === 'photo' ? 'image' : 'video';
     const dimensions = resolveDimensionsFromApiMedia(apiMedia);
@@ -73,7 +72,7 @@ function createMediaInfoFromAPI(
     }
     return null;
   }
-}
+};
 
 /**
  * Transform API Media to MediaInfo Array

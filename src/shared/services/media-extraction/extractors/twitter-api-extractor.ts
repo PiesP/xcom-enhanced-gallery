@@ -16,6 +16,25 @@ import type {
 } from '@shared/types/media.types';
 import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/media/tweet-extractor';
 
+const getTimestamp = (): number =>
+  typeof performance !== 'undefined' && typeof performance.now === 'function'
+    ? performance.now()
+    : Date.now();
+
+const createFailureResult = (error: string): MediaExtractionResult => ({
+  success: false,
+  mediaItems: [],
+  clickedIndex: 0,
+  metadata: {
+    extractedAt: Date.now(),
+    sourceType: 'twitter-api',
+    strategy: 'api-extraction-failed',
+    error,
+    totalProcessingTime: 0,
+  },
+  tweetInfo: null,
+});
+
 export class TwitterAPIExtractor implements APIExtractor {
   async extract(
     tweetInfo: TweetInfo,
@@ -23,11 +42,7 @@ export class TwitterAPIExtractor implements APIExtractor {
     _options: MediaExtractionOptions,
     extractionId: string
   ): Promise<MediaExtractionResult> {
-    const now =
-      typeof performance !== 'undefined' && typeof performance.now === 'function'
-        ? () => performance.now()
-        : () => Date.now();
-    const startedAt = now();
+    const startedAt = getTimestamp();
 
     try {
       if (__DEV__) {
@@ -40,13 +55,14 @@ export class TwitterAPIExtractor implements APIExtractor {
       const apiMedias = await TwitterAPI.getTweetMedias(tweetInfo.tweetId);
 
       if (!apiMedias || apiMedias.length === 0) {
-        const totalProcessingTime = Math.max(0, now() - startedAt);
-        const failure = this.createFailureResult('No media found in API response');
         return {
-          ...failure,
+          ...createFailureResult('No media found in API response'),
           metadata: {
-            ...(failure.metadata ?? {}),
-            totalProcessingTime,
+            extractedAt: Date.now(),
+            sourceType: 'twitter-api',
+            strategy: 'api-extraction-failed',
+            error: 'No media found in API response',
+            totalProcessingTime: Math.max(0, getTimestamp() - startedAt),
           },
         };
       }
@@ -60,8 +76,6 @@ export class TwitterAPIExtractor implements APIExtractor {
       // Step 4: Calculate which media user clicked
       const clickedIndex = determineClickedIndex(clickedElement, mediaItems);
 
-      const totalProcessingTime = Math.max(0, now() - startedAt);
-
       return {
         success: true,
         mediaItems,
@@ -70,7 +84,7 @@ export class TwitterAPIExtractor implements APIExtractor {
           extractedAt: Date.now(),
           sourceType: 'twitter-api',
           strategy: 'api-extraction',
-          totalProcessingTime,
+          totalProcessingTime: Math.max(0, getTimestamp() - startedAt),
           apiMediaCount: apiMedias.length,
         },
         tweetInfo,
@@ -79,31 +93,16 @@ export class TwitterAPIExtractor implements APIExtractor {
       if (__DEV__) {
         logger.warn(`[APIExtractor] ${extractionId}: API extraction failed:`, error);
       }
-      const totalProcessingTime = Math.max(0, now() - startedAt);
-      const failure = this.createFailureResult(getErrorMessage(error) || 'API extraction failed');
       return {
-        ...failure,
+        ...createFailureResult(getErrorMessage(error) || 'API extraction failed'),
         metadata: {
-          ...(failure.metadata ?? {}),
-          totalProcessingTime,
+          extractedAt: Date.now(),
+          sourceType: 'twitter-api',
+          strategy: 'api-extraction-failed',
+          error: getErrorMessage(error) || 'API extraction failed',
+          totalProcessingTime: Math.max(0, getTimestamp() - startedAt),
         },
       };
     }
-  }
-
-  private createFailureResult(error: string): MediaExtractionResult {
-    return {
-      success: false,
-      mediaItems: [],
-      clickedIndex: 0,
-      metadata: {
-        extractedAt: Date.now(),
-        sourceType: 'twitter-api',
-        strategy: 'api-extraction-failed',
-        error,
-        totalProcessingTime: 0,
-      },
-      tweetInfo: null,
-    };
   }
 }

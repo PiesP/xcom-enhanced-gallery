@@ -1,9 +1,13 @@
+/**
+ * @fileoverview Tampermonkey API availability detector
+ * @description Check which GM_* APIs are available in runtime
+ */
+
 import { getResolvedGMAPIsCached } from '@shared/external/userscript/adapter';
 import type { GMAPIName } from '@shared/external/userscript/environment-detector.types';
 
 /**
- * Mapping of API names to detector functions.
- * Each checker validates if the corresponding Tampermonkey API is available and callable.
+ * Detector functions for GM API availability
  */
 const GM_API_CHECKS: Record<
   GMAPIName,
@@ -19,24 +23,10 @@ const GM_API_CHECKS: Record<
 };
 
 /**
- * Check if a specific Tampermonkey API is available
- *
- * Maps simplified API names to full GM_* function names and verifies availability.
- *
- * **Supported API Names**:
- * - 'getValue', 'setValue', 'download', 'notification'
- * - 'deleteValue', 'listValues', 'cookie'
- *
- * @param apiName - Name of the API to check (e.g., 'download', 'notification')
- * @returns True if the API function is available and is a function
+ * Check if specific Tampermonkey API is available
+ * @param apiName API name to check (e.g., 'download', 'notification')
+ * @returns true if API is available and callable
  * @internal
- *
- * @example
- * ```typescript
- * if (isGMAPIAvailable('download')) {
- *   // Can use DownloadService (Tampermonkey required)
- * }
- * ```
  */
 export function isGMAPIAvailable(apiName: GMAPIName): boolean {
   const checker = GM_API_CHECKS[apiName];

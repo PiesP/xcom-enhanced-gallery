@@ -1,7 +1,4 @@
-/**
- * @fileoverview Gallery Renderer
- * @description Handles rendering and lifecycle of the gallery component
- */
+/** Handles rendering and lifecycle of the gallery component. */
 
 import { CSS } from '@constants/css';
 import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';

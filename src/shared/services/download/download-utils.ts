@@ -1,6 +1,6 @@
 type UniqueFilenameFactory = (desired: string) => string;
 
-export function ensureUniqueFilenameFactory(): UniqueFilenameFactory {
+export const ensureUniqueFilenameFactory = (): UniqueFilenameFactory => {
   const usedNames = new Set<string>();
   const baseCounts = new Map<string, number>();
 
@@ -27,4 +27,4 @@ export function ensureUniqueFilenameFactory(): UniqueFilenameFactory {
     usedNames.add(candidate);
     return candidate;
   };
-}
+};

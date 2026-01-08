@@ -1,7 +1,4 @@
-/**
- * @fileoverview Gallery Application
- * @description Gallery application orchestrator
- */
+/** Gallery application orchestrator. */
 
 import {
   getGalleryRenderer,

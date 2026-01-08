@@ -69,66 +69,35 @@ export class PersistentSettingsRepository implements SettingsRepository {
   private readonly storage = getPersistentStorage();
   private readonly schemaHash = computeCurrentSettingsSchemaHash();
 
-  /**
-   * Load settings with automatic migration and fallback
-   *
-   * Flow:
-   * 1. Attempt to load from storage
-   * 2. If empty, persist and return defaults
-   * 3. If schema hash differs, migrate and persist
-   * 4. On any error, fall back to defaults
-   *
-   * @returns Deep-cloned settings (never mutates originals)
-   */
   public async load(): Promise<AppSettings> {
     try {
       const stored = await this.storage.getJson<StoredSettings>(APP_SETTINGS_STORAGE_KEY);
       if (!stored) {
-        // No stored settings: initialize with defaults
         const defaults = createDefaultSettings();
-        try {
-          await this.persist(defaults);
-        } catch (persistError) {
-          __DEV__ &&
-            logger.warn('[SettingsRepository] Failed to persist defaults (ignored)', persistError);
-        }
+        await this.persist(defaults).catch(() => {
+          __DEV__ && logger.warn('[SettingsRepository] Failed to persist defaults');
+        });
         return globalThis.structuredClone(defaults);
       }
 
-      // Migrate settings and update if schema changed
       const nowMs = Date.now();
       const migrated = migrateSettings(stored, nowMs);
       if (stored.__schemaHash !== this.schemaHash) {
-        try {
-          await this.persist(migrated);
-        } catch (persistError) {
-          __DEV__ &&
-            logger.warn(
-              '[SettingsRepository] Failed to persist migrated settings (ignored)',
-              persistError
-            );
-        }
+        await this.persist(migrated).catch(() => {
+          __DEV__ && logger.warn('[SettingsRepository] Failed to persist migrated settings');
+        });
       }
       return globalThis.structuredClone(migrated);
     } catch (error) {
       __DEV__ && logger.warn('[SettingsRepository] Load failed, falling back to defaults', error);
       const defaults = createDefaultSettings();
-      try {
-        await this.persist(defaults);
-      } catch (persistError) {
-        __DEV__ &&
-          logger.warn('[SettingsRepository] Failed to persist defaults (ignored)', persistError);
-      }
+      await this.persist(defaults).catch(() => {
+        __DEV__ && logger.warn('[SettingsRepository] Failed to persist defaults');
+      });
       return globalThis.structuredClone(defaults);
     }
   }
 
-  /**
-   * Save settings to persistent storage
-   *
-   * @param settings - Settings to persist
-   * @throws {Error} If storage operation fails
-   */
   public async save(settings: AppSettings): Promise<void> {
     try {
       await this.persist(settings);
@@ -138,13 +107,6 @@ export class PersistentSettingsRepository implements SettingsRepository {
     }
   }
 
-  /**
-   * Internal persistence helper with schema hash injection
-   *
-   * @param settings - Settings to persist
-   * @throws {Error} If storage.setJson fails
-   * @private
-   */
   private async persist(settings: AppSettings): Promise<void> {
     await this.storage.setJson(APP_SETTINGS_STORAGE_KEY, {
       ...settings,

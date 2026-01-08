@@ -17,24 +17,22 @@ const DEFAULT_RETRIES = 3;
 type ProgressCallback = OrchestratorOptions['onProgress'];
 type ProgressPayload = Parameters<NonNullable<ProgressCallback>>[0];
 
-function clampConcurrency(value: number | undefined): number {
+const clampConcurrency = (value: number | undefined): number => {
   const resolved = value ?? DEFAULT_CONCURRENCY;
   return Math.min(MAX_CONCURRENCY, Math.max(MIN_CONCURRENCY, resolved));
-}
+};
 
-function clampRetries(value: number | undefined): number {
-  return Math.max(0, value ?? DEFAULT_RETRIES);
-}
+const clampRetries = (value: number | undefined): number => Math.max(0, value ?? DEFAULT_RETRIES);
 
-function calculatePercentage(current: number, total: number): number {
+const calculatePercentage = (current: number, total: number): number => {
   if (total <= 0) return 0;
   return Math.min(100, Math.max(0, Math.round((current / total) * 100)));
-}
+};
 
-function reportProgress(
+const reportProgress = (
   onProgress: ProgressCallback | undefined,
   payload: Omit<ProgressPayload, 'percentage'> & { percentage?: number }
-): void {
+): void => {
   if (!onProgress) return;
 
   const percentage = payload.percentage ?? calculatePercentage(payload.current, payload.total);
@@ -42,13 +40,13 @@ function reportProgress(
     ...payload,
     percentage,
   });
-}
+};
 
-function throwIfAborted(signal?: AbortSignal): void {
+const throwIfAborted = (signal?: AbortSignal): void => {
   if (signal?.aborted) {
     throw getUserCancelledAbortErrorFromSignal(signal);
   }
-}
+};
 
 export async function downloadAsZip(
   items: readonly OrchestratorItem[],

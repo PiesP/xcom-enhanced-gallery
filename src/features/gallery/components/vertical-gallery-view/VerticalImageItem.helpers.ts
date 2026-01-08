@@ -3,14 +3,8 @@
  * Licensed under the MIT License
  *
  * @fileoverview VerticalImageItem Helper Utilities
- * @description Helper functions for media detection and filename processing
- * @module features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers
- *
- * **Functions**:
- * - {@link cleanFilename} - Sanitize and normalize filenames
- * - {@link isVideoMedia} - Detect video media by extension and hostname
- *
- * @version 1.1.0 - Enhanced documentation and security (Phase 354+)
+ * @description Helpers for filename cleaning, video detection, and media processing.
+ * @version 1.1.0
  */
 
 import type { MediaInfo } from '@shared/types/media.types';
@@ -29,34 +23,12 @@ const CLEAN_FILENAME_MEDIA_PREFIX_REGEX = /^\/media\//;
 const CLEAN_FILENAME_RELATIVE_PREFIX_REGEX = /^\.\//;
 
 /**
- * Clean and normalize a filename for display and saving
+ * Clean and normalize filename for display and file saving.
+ * Removes Twitter prefixes, /media/ prefix, relative paths, and truncates long filenames (>40 chars).
+ * Falls back to "Untitled" when input is missing or empty.
  *
- * **Processing**:
- * 1. Removes Twitter media prefixes (twitter_media_YYYYMMDDThhmmss_*)
- * 2. Removes /media/ prefix if present
- * 3. Removes relative path prefix (./)
- * 4. If path separators exist, keeps only the last path segment
- * 5. Truncates long filenames (>40 chars) by preserving the extension and inserting "..." in the middle
- * 6. Falls back to "Untitled" when the input is missing; uses "Image" when the cleaned result is empty
- *
- * **Examples**:
- * - `twitter_media_20240101T120000_12345.jpg` → filename without prefix
- * - `/media/photo.png` → `photo.png`
- * - `very-long-folder-structure-with-many-segments/final.jpg` → `final.jpg`
- * - `""` or undefined → `"Untitled"`
- *
- * @param filename - Original filename to clean (optional, defaults to "Untitled")
- * @returns Cleaned filename suitable for display and file saving
- *
- * @example
- * cleanFilename('twitter_media_20240115T143022_987654321.jpg')
- * // Returns something like 'image-123.jpg'
- *
- * cleanFilename('/media/path/to/photo.png')
- * // Returns 'photo.png'
- *
- * cleanFilename(undefined)
- * // Returns 'Untitled'
+ * @param filename - Original filename (optional)
+ * @returns Cleaned filename
  */
 export function cleanFilename(filename?: string): string {
   if (!filename) {

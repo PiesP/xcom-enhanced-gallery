@@ -1,14 +1,5 @@
 /**
- * @fileoverview Gallery Scroll State Hook
- * @description Tracks user scroll activity for focus tracking integration.
- *
- * Key behaviors:
- * - Detects user scroll events (wheel, scrollbar drag)
- * - Filters programmatic scrolls (within 100ms window)
- * - Reports scroll state (isScrolling, lastScrollTime)
- * - Triggers callbacks for focus recomputation
- *
- * Note: Does NOT trigger auto-scroll - tracking only.
+ * Tracks user scroll activity and reports scroll state for focus tracking.
  */
 
 import { isGalleryInternalEvent } from '@shared/dom/utils';
@@ -22,7 +13,7 @@ import { globalTimerManager } from '@shared/utils/time/timer-management';
 import type { Accessor } from 'solid-js';
 import { createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
 
-/** Hook configuration */
+/** Configuration for scroll tracking. */
 interface UseGalleryScrollOptions {
   /** Gallery container element */
   readonly container: MaybeAccessor<HTMLElement | null>;
@@ -38,7 +29,7 @@ interface UseGalleryScrollOptions {
   readonly programmaticScrollTimestamp?: Accessor<number>;
 }
 
-/** Hook return type */
+/** Return type for useGalleryScroll. */
 interface UseGalleryScrollReturn {
   readonly isScrolling: Accessor<boolean>;
   readonly lastScrollTime: Accessor<number>;

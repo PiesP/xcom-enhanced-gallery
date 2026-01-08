@@ -1,19 +1,6 @@
 /**
- * Streaming ZIP Writer - Phase 410
- *
- * Streaming ZIP writer for progressive ZIP generation
- * - Pipelined file downloads and ZIP assembly
- * - Local File Header written immediately (Central Directory later)
- * - Memory usage -50%, processing time -30-40%
- *
- * **ZIP Structure**:
- * 1. Local File Header + File Data (streaming)
- * 2. Central Directory (finalize)
- * 3. End of Central Directory (finalize)
- *
- * **Performance**: Suitable for bulk downloads with large files
- *
- * @internal Phase 410 feature, used by BulkDownloadService
+ * @fileoverview Streaming ZIP writer for progressive ZIP generation
+ * @description Pipelined file downloads and ZIP assembly with immediate Local File Headers
  */
 
 import { calculateCRC32, encodeUtf8, writeUint16LE, writeUint32LE } from './zip-utils';
@@ -59,17 +46,8 @@ const concat = (arrays: readonly Uint8Array[]): Uint8Array => {
 };
 
 /**
- * Streaming ZIP Writer
- *
- * Writes Local File Header immediately when adding each file,
- * finalize() adds Central Directory to complete the ZIP
- *
- * @example
- * ```typescript
- * const writer = new StreamingZipWriter();
- * writer.addFile('file.txt', new TextEncoder().encode('Hello'));
- * const zipBlob = writer.finalize();
- * ```
+ * Streaming ZIP writer with immediate Local File Header writes
+ * Finalize() adds Central Directory to complete the ZIP
  */
 export class StreamingZipWriter {
   private readonly chunks: Uint8Array[] = [];
@@ -77,19 +55,14 @@ export class StreamingZipWriter {
   private currentOffset = 0;
 
   /**
-   * Add file (streaming mode)
-   *
+   * Add file to archive (streaming mode)
    * Writes Local File Header + File Data immediately
-   *
-   * @param filename The name of the file in the archive
-   * @param data The file content bytes
-   * @throws {Error} If archive size or entry count would exceed Zip32 limits
+   * @param filename Name of file in archive
+   * @param data File content bytes
+   * @throws Error if archive/entry would exceed Zip32 limits
    */
   addFile(filename: string, data: Uint8Array): void {
-    // Zip32-only implementation: fail fast if Zip64 would be required.
-    // - Entry count uses 16-bit fields in EOCD.
-    // - Sizes and offsets use 32-bit fields in headers and EOCD.
-    // The Zip spec uses sentinel values (0xFFFF/0xFFFFFFFF) to indicate Zip64.
+    // Zip32-only: entry count fits in 16-bit EOCD fields, sizes in 32-bit fields
     assertZip32(
       this.entries.length < ZIP_CONST.MAX_UINT16 - 1,
       `too many entries (count=${this.entries.length + 1})`
@@ -130,13 +103,13 @@ export class StreamingZipWriter {
     this.currentOffset += localHeader.length + data.length;
   }
 
-  /** Finalize ZIP file (add Central Directory)
-   *
-   * @returns The complete ZIP archive as a Uint8Array
-   * @throws {Error} If archive exceeds Zip32 limits
+  /**
+   * Finalize ZIP file (add Central Directory)
+   * @returns Complete ZIP archive as Uint8Array
+   * @throws Error if archive exceeds Zip32 limits
    */
   finalize(): Uint8Array {
-    // Zip32-only: entry count must fit in 16-bit EOCD fields.
+    // Zip32-only: entry count must fit in 16-bit EOCD fields
     assertZip32(
       this.entries.length < ZIP_CONST.MAX_UINT16,
       `too many entries (count=${this.entries.length})`

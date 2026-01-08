@@ -120,9 +120,7 @@ export function isSafeAndValidMediaUrl(value: string | URL | null | undefined): 
  * @param protocol - URL protocol (example: 'https:', 'http:')
  * @returns Whether protocol is https or http
  */
-function isHttpProtocol(protocol: string): boolean {
-  return protocol === 'https:' || protocol === 'http:';
-}
+const isHttpProtocol = (protocol: string): boolean => protocol === 'https:' || protocol === 'http:';
 
 /**
  * Enforce host-specific path policy for media URLs.
@@ -158,16 +156,12 @@ function isAllowedMediaPath(hostname: string, pathname: string): boolean {
  * Uses strict prefix matching to prevent substring-based bypasses.
  * Allowed prefixes include media, thumbnails, and video metadata paths.
  */
-function checkPbsMediaPath(pathname: string): boolean {
-  // Use strict prefix matching instead of substring search
-  return (
-    pathname.startsWith('/media/') ||
-    pathname.startsWith('/ext_tw_video_thumb/') ||
-    pathname.startsWith('/tweet_video_thumb/') ||
-    pathname.startsWith('/video_thumb/') ||
-    pathname.startsWith('/amplify_video_thumb/')
-  );
-}
+const checkPbsMediaPath = (pathname: string): boolean =>
+  pathname.startsWith('/media/') ||
+  pathname.startsWith('/ext_tw_video_thumb/') ||
+  pathname.startsWith('/tweet_video_thumb/') ||
+  pathname.startsWith('/video_thumb/') ||
+  pathname.startsWith('/amplify_video_thumb/');
 
 /**
  * Validate video.twimg.com path for allowed media prefixes.
@@ -181,11 +175,8 @@ function checkPbsMediaPath(pathname: string): boolean {
  * Only known media path prefixes (video, thumbnails, DM videos) are allowed.
  * Uses strict prefix matching to prevent substring-based bypasses.
  */
-function checkVideoMediaPath(pathname: string): boolean {
-  return (
-    pathname.startsWith('/ext_tw_video/') ||
-    pathname.startsWith('/tweet_video/') ||
-    pathname.startsWith('/amplify_video/') ||
-    pathname.startsWith('/dm_video/')
-  );
-}
+const checkVideoMediaPath = (pathname: string): boolean =>
+  pathname.startsWith('/ext_tw_video/') ||
+  pathname.startsWith('/tweet_video/') ||
+  pathname.startsWith('/amplify_video/') ||
+  pathname.startsWith('/dm_video/');

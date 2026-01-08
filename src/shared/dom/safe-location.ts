@@ -1,23 +1,13 @@
 /**
- * Safe location helpers.
- *
- * This module centralizes best-effort access to location fields in environments
- * where `window`/`location` may be unavailable (tests, SSR-like contexts).
- *
- * @module safe-location
+ * @fileoverview Safe location helpers for test/SSR environments
+ * @description Centralized access to location fields when unavailable.
  */
 
-/**
- * HTTP headers derived from location properties.
- */
 interface SafeLocationHeaders {
   readonly referer?: string;
   readonly origin?: string;
 }
 
-/**
- * Subset of Location API properties.
- */
 type LocationLike = {
   readonly href?: string;
   readonly origin?: string;
@@ -25,9 +15,8 @@ type LocationLike = {
 };
 
 /**
- * Attempts to retrieve the global location object.
- *
- * @returns Location-like object if available, undefined otherwise.
+ * Retrieve the global location object if available.
+ * @returns Location-like object, or undefined if unavailable
  */
 function getLocationLike(): LocationLike | undefined {
   try {
@@ -39,11 +28,10 @@ function getLocationLike(): LocationLike | undefined {
 }
 
 /**
- * Safely retrieves a specific location property.
- *
+ * Safely retrieve a specific location property.
  * @template K - Key of LocationLike
  * @param key - Property name to retrieve
- * @returns Property value if available, undefined otherwise.
+ * @returns Property value, or undefined if unavailable
  */
 function getSafeLocationValue<K extends keyof LocationLike>(key: K): LocationLike[K] | undefined {
   const location = getLocationLike();
@@ -58,60 +46,32 @@ function getSafeLocationValue<K extends keyof LocationLike>(key: K): LocationLik
 }
 
 /**
- * Internal helper to retrieve the origin property.
- *
- * @returns Origin string if available, undefined otherwise.
+ * Retrieve the origin property.
+ * @returns Origin string, or undefined if unavailable
  */
 function getSafeOrigin(): string | undefined {
   return getSafeLocationValue('origin');
 }
 
 /**
- * Safely retrieves the current page URL.
- *
- * @returns Current href if available, undefined in test/SSR contexts.
- *
- * @example
- * ```typescript
- * const url = getSafeHref();
- * if (url) {
- *   console.log('Current URL:', url);
- * }
- * ```
+ * Safely retrieve the current page URL.
+ * @returns Current href, or undefined in test/SSR contexts
  */
 export function getSafeHref(): string | undefined {
   return getSafeLocationValue('href');
 }
 
 /**
- * Safely retrieves the current hostname.
- *
- * @returns Hostname if available, undefined in test/SSR contexts.
- *
- * @example
- * ```typescript
- * const host = getSafeHostname();
- * if (host === 'x.com') {
- *   // X.com-specific logic
- * }
- * ```
+ * Safely retrieve the current hostname.
+ * @returns Hostname, or undefined in test/SSR contexts
  */
 export function getSafeHostname(): string | undefined {
   return getSafeLocationValue('hostname');
 }
 
 /**
- * Builds HTTP headers from location properties.
- *
- * Useful for API requests that require referrer/origin headers.
- *
- * @returns Object containing available location-based headers.
- *
- * @example
- * ```typescript
- * const headers = getSafeLocationHeaders();
- * fetch(url, { headers: { ...headers, 'Content-Type': 'application/json' } });
- * ```
+ * Build HTTP headers from location properties for API requests.
+ * @returns Object containing available location-based headers
  */
 export function getSafeLocationHeaders(): SafeLocationHeaders {
   const referer = getSafeHref();

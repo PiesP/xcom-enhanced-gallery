@@ -122,14 +122,14 @@ const DEFAULT_OPTIONS = {
  * calculateBackoff(1, 200, 10000);
  * ```
  */
-function calculateBackoff(attempt: number, baseDelayMs: number, maxDelayMs: number): number {
+const calculateBackoff = (attempt: number, baseDelayMs: number, maxDelayMs: number): number => {
   const exponentialDelay = getExponentialBackoffDelayMs(attempt, baseDelayMs);
   // Add jitter (0-25% of delay) to prevent thundering herd
   const jitter = Math.random() * 0.25 * exponentialDelay;
   const totalDelay = exponentialDelay + jitter;
   // Cap at maximum
   return Math.min(Math.floor(totalDelay), maxDelayMs);
-}
+};
 
 /**
  * Execute an async operation with retry and exponential backoff

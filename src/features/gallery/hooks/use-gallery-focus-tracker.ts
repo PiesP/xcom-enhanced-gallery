@@ -1,14 +1,5 @@
 /**
- * @fileoverview Gallery Focus Tracker Hook
- * @description Tracks which gallery item should be focused based on scroll position.
- * Uses FocusCoordinator with IntersectionObserver for visibility detection.
- *
- * Key behaviors:
- * - Tracks items via IntersectionObserver
- * - Supports manual focus (click, keyboard) vs auto-focus (scroll)
- * - Updates global gallery state for toolbar sync
- *
- * Note: Does NOT trigger auto-scroll. Tracking only.
+ * Tracks focused gallery item based on scroll position using IntersectionObserver.
  */
 
 import { FocusCoordinator } from '@features/gallery/logic/focus-coordinator';
@@ -22,7 +13,7 @@ import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import type { Accessor } from 'solid-js';
 import { onCleanup } from 'solid-js';
 
-/** Hook configuration */
+/** Configuration for focus tracking. */
 interface UseGalleryFocusTrackerOptions {
   /** Container element for tracking */
   container: MaybeAccessor<HTMLElement | null>;
@@ -38,7 +29,7 @@ interface UseGalleryFocusTrackerOptions {
   rootMargin?: string;
 }
 
-/** Hook return type */
+/** Return type for useGalleryFocusTracker. */
 interface UseGalleryFocusTrackerReturn {
   /** Current focused index (null if none) */
   focusedIndex: Accessor<number | null>;

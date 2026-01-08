@@ -8,42 +8,26 @@
  * and ignore the matching `volumechange` event(s) within a short time window.
  */
 
-/**
- * Snapshot of a video's volume state for comparison against volumechange events.
- */
+/** Video volume and muted state snapshot for comparison */
 export interface VideoVolumeSnapshot {
   readonly volume: number;
   readonly muted: boolean;
 }
 
-/**
- * Guard contract used to identify and ignore programmatic volume changes.
- */
+/** Guard to identify and ignore programmatic volume changes */
 export interface VideoVolumeChangeGuard {
-  /** Mark a programmatic change and the exact expected resulting state. */
   markProgrammaticChange(expected: VideoVolumeSnapshot): void;
-
-  /** Return true when the change should be ignored as programmatic noise. */
   shouldIgnoreChange(current: VideoVolumeSnapshot): boolean;
 }
 
-/**
- * Configuration for the volume change guard.
- */
+/** Configuration for volume change guard (windowMs: max age in milliseconds, default 500) */
 export interface CreateVideoVolumeChangeGuardOptions {
-  /**
-   * Maximum age of a programmatic mark (milliseconds).
-   *
-   * @default 500
-   */
   readonly windowMs?: number;
 }
 
 const DEFAULT_VOLUME_EPSILON = 1e-3;
 
-/**
- * Compare two volume values with a small epsilon to account for rounding errors.
- */
+/** Compare volume values with epsilon for rounding tolerance */
 function areVolumesEquivalent(a: number, b: number): boolean {
   if (!Number.isFinite(a) || !Number.isFinite(b)) {
     return a === b;
@@ -51,9 +35,7 @@ function areVolumesEquivalent(a: number, b: number): boolean {
   return Math.abs(a - b) <= DEFAULT_VOLUME_EPSILON;
 }
 
-/**
- * Monotonic timestamp in milliseconds (performance.now() fallback safe for SSR/tests).
- */
+/** Monotonic timestamp in milliseconds (performance.now() with Date.now() fallback) */
 function nowMs(): number {
   // `performance.now()` is monotonic; fall back to Date.now() where unavailable.
   return typeof performance !== 'undefined' && typeof performance.now === 'function'

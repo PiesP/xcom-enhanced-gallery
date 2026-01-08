@@ -171,7 +171,7 @@ export function combineSignals(signals: AbortSignal[]): AbortSignal {
    * Defensive implementation catches and ignores errors during cleanup
    * to prevent cleanup failures from disrupting abort handling.
    */
-  function cleanup(): void {
+  const cleanup = (): void => {
     for (const s of validSignals) {
       try {
         s.removeEventListener('abort', onAbort);
@@ -179,7 +179,7 @@ export function combineSignals(signals: AbortSignal[]): AbortSignal {
         // Ignore listener cleanup failures (defensive)
       }
     }
-  }
+  };
 
   /**
    * Handle abort event from any input signal
@@ -190,7 +190,7 @@ export function combineSignals(signals: AbortSignal[]): AbortSignal {
    * Defensive implementation handles test scenarios where abort handler may be
    * invoked without a corresponding aborted signal.
    */
-  function onAbort(): void {
+  const onAbort = (): void => {
     if (settled) return;
     settled = true;
 
@@ -203,7 +203,7 @@ export function combineSignals(signals: AbortSignal[]): AbortSignal {
     // When reason is undefined, platforms typically supply a default AbortError.
     controller.abort(reason);
     cleanup();
-  }
+  };
 
   // If any signal is already aborted, abort immediately without registering listeners.
   for (const s of validSignals) {

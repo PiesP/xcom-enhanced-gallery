@@ -115,21 +115,23 @@ const shouldAllowWheelDefault = (event: WheelEvent): boolean => {
 };
 
 export function ToolbarView(props: ToolbarViewProps): JSXElement {
-  const totalCount = createMemo(() => resolve(props.totalCount));
-  const currentIndex = createMemo(() => resolve(props.currentIndex));
-  const displayedIndex = createMemo(() => props.displayedIndex());
-  const isToolbarDisabled = createMemo(() => !!resolveOptional(props.disabled));
-  const activeFitMode = createMemo(() => props.activeFitMode());
-  const tweetText = createMemo(() => resolveOptional(props.tweetText) ?? null);
-  const tweetTextHTML = createMemo(() => resolveOptional(props.tweetTextHTML) ?? null);
-  const tweetUrl = createMemo(() => resolveOptional(props.tweetUrl) ?? null);
+  // Resolved values (via createMemo for reactivity)
+  const totalCount = () => resolve(props.totalCount);
+  const currentIndex = () => resolve(props.currentIndex);
+  const isToolbarDisabled = () => !!resolveOptional(props.disabled);
+  const activeFitMode = () => props.activeFitMode();
+  const tweetText = () => resolveOptional(props.tweetText) ?? null;
+  const tweetTextHTML = () => resolveOptional(props.tweetTextHTML) ?? null;
+  const tweetUrl = () => resolveOptional(props.tweetUrl) ?? null;
+
+  // Element refs
   const [toolbarElement, setToolbarElement] = createSignal<HTMLDivElement | null>(null);
   const [counterElement, setCounterElement] = createSignal<HTMLSpanElement | null>(null);
   const [settingsPanelEl, setSettingsPanelEl] = createSignal<HTMLDivElement | null>(null);
   const [tweetPanelEl, setTweetPanelEl] = createSignal<HTMLDivElement | null>(null);
   const translate = useTranslation();
 
-  // Keep a single memo for nav state to avoid repeated createMemo boilerplate.
+  // Memos for derived state
   const nav = createMemo(() => props.navState());
   const fitModeLabels = createMemo(() => resolve(props.fitModeLabels));
 
@@ -144,28 +146,29 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   };
 
   createEffect(() => {
-    const current = String(currentIndex());
-    const focused = String(displayedIndex());
-
     const toolbar = toolbarElement();
+    const counter = counterElement();
+    if (!toolbar && !counter) return;
+
+    const current = String(currentIndex());
+    const focused = String(props.displayedIndex());
+
     if (toolbar) {
       toolbar.dataset.currentIndex = current;
       toolbar.dataset.focusedIndex = focused;
     }
-
-    const counter = counterElement();
     if (counter) {
       counter.dataset.currentIndex = current;
       counter.dataset.focusedIndex = focused;
     }
   });
   const hasTweetContent = () => !!(tweetTextHTML() ?? tweetText() ?? tweetUrl());
-  const toolbarButtonClass = (...extra: Array<string | undefined>) =>
+
+  const toolbarButtonClass = (...extra: (string | undefined)[]) =>
     cx(styles.toolbarButton, 'xeg-inline-center', ...extra);
 
   const toolbarStateClass = () => {
-    const state = props.toolbarDataState();
-    switch (state) {
+    switch (props.toolbarDataState()) {
       case 'loading':
         return styles.stateLoading;
       case 'downloading':
@@ -182,21 +185,15 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
    * - If inside a scrollable element (e.g., tweet text): consume scroll internally, stop propagation
    * - Otherwise: let event propagate to gallery (which may hide toolbar on scroll)
    */
-  const handlePanelWheel = (event: WheelEvent): void => {
-    if (shouldAllowWheelDefault(event)) {
-      // Internal scrollable element can handle this scroll
-      // Stop propagation so gallery doesn't also react to it
-      event.stopPropagation();
-      return;
-    }
-    // At scroll boundary or no scrollable content - let event propagate to gallery
+  const handlePanelWheel = (event: WheelEvent) => {
+    if (!shouldAllowWheelDefault(event)) return;
+    event.stopPropagation();
   };
 
   /**
    * Prevent scroll chaining from toolbar buttons/controls.
-   * Uses passive: false to allow preventDefault() when needed.
    */
-  const preventScrollChaining = (event: WheelEvent): void => {
+  const preventScrollChaining = (event: WheelEvent) => {
     if (shouldAllowWheelDefault(event)) {
       event.stopPropagation();
       return;
@@ -208,7 +205,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     getElement: () => HTMLElement | null,
     handler: (event: WheelEvent) => void,
     options: { readonly passive: boolean; readonly context: string }
-  ): void => {
+  ) => {
     createEffect(() => {
       const element = getElement();
       if (!element) return;
@@ -296,7 +293,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 class={cx(styles.mediaCounter, 'xeg-inline-center')}
                 aria-live="polite"
               >
-                <span class={styles.currentIndex}>{displayedIndex() + 1}</span>
+                <span class={styles.currentIndex}>{props.displayedIndex() + 1}</span>
                 <span class={styles.separator}>/</span>
                 <span class={styles.totalCount}>{totalCount()}</span>
               </span>

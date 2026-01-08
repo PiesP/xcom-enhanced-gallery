@@ -100,9 +100,7 @@ const navigationSignals = {
  * @param nowMs - Optional timestamp in milliseconds
  * @returns Resolved timestamp (provided value or Date.now())
  */
-function resolveNowMs(nowMs?: number): number {
-  return nowMs ?? Date.now();
-}
+const resolveNowMs = (nowMs?: number): number => nowMs ?? Date.now();
 
 // ============================================================================
 // Validation
@@ -114,9 +112,8 @@ function resolveNowMs(nowMs?: number): number {
  * @param value - Value to validate
  * @returns True if value is a valid NavigationSource
  */
-function isValidNavigationSource(value: unknown): value is NavigationSource {
-  return typeof value === 'string' && VALID_NAVIGATION_SOURCES.includes(value as NavigationSource);
-}
+const isValidNavigationSource = (value: unknown): value is NavigationSource =>
+  typeof value === 'string' && VALID_NAVIGATION_SOURCES.includes(value as NavigationSource);
 
 /**
  * Check if value is a valid navigation trigger
@@ -124,11 +121,8 @@ function isValidNavigationSource(value: unknown): value is NavigationSource {
  * @param value - Value to validate
  * @returns True if value is a valid NavigationTrigger
  */
-function isValidNavigationTrigger(value: unknown): value is NavigationTrigger {
-  return (
-    typeof value === 'string' && VALID_NAVIGATION_TRIGGERS.includes(value as NavigationTrigger)
-  );
-}
+const isValidNavigationTrigger = (value: unknown): value is NavigationTrigger =>
+  typeof value === 'string' && VALID_NAVIGATION_TRIGGERS.includes(value as NavigationTrigger);
 
 /**
  * Check if source is a manual navigation (button or keyboard)
@@ -136,9 +130,8 @@ function isValidNavigationTrigger(value: unknown): value is NavigationTrigger {
  * @param source - Navigation source to check
  * @returns True if source is button or keyboard
  */
-function isManualSource(source: NavigationSource): boolean {
-  return source === 'button' || source === 'keyboard';
-}
+const isManualSource = (source: NavigationSource): boolean =>
+  source === 'button' || source === 'keyboard';
 
 // ============================================================================
 // Error Handling
@@ -151,9 +144,8 @@ function isManualSource(source: NavigationSource): boolean {
  * @param reason - Reason for the error
  * @returns Formatted error object
  */
-function createNavigationActionError(context: string, reason: string): Error {
-  return new Error(`[Gallery] Invalid navigation action (${context}): ${reason}`);
-}
+const createNavigationActionError = (context: string, reason: string): Error =>
+  new Error(`[Gallery] Invalid navigation action (${context}): ${reason}`);
 
 /**
  * Validate navigation parameters

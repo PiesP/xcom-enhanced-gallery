@@ -48,7 +48,7 @@ import { batch as solidBatch } from 'solid-js';
  */
 type BatchExecutor = (fn: () => void) => void;
 
-const batch: BatchExecutor = solidBatch;
+const batch: BatchExecutor = (fn: () => void): void => solidBatch(fn);
 
 /**
  * Gallery state interface

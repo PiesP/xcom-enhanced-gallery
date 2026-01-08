@@ -1,18 +1,7 @@
 /**
- * @fileoverview Composed hook for VerticalGalleryView component
- * @description Combines multiple gallery hooks into a single unified interface
- * @module features/gallery/components/vertical-gallery-view/hooks/useVerticalGallery
+ * @fileoverview Composed hook combining all gallery functionality into a single interface
  *
- * This composition hook reduces hook call complexity and centralizes state management
- * by combining the following specialized hooks:
- *
- * - useToolbarAutoHide - Manages toolbar visibility with auto-hide timer
- * - useGalleryScroll - Tracks scroll state and programmatic scroll timing
- * - useGalleryItemScroll - Provides scroll-to-item functionality
- * - useGalleryNavigation - Handles navigation state and triggers
- * - useGalleryFocusTracker - Tracks focused item for keyboard navigation
- * - useGalleryLifecycle - Manages animations, cleanup, and CSS variables
- * - useGalleryKeyboard - Handles keyboard events (Escape, etc.)
+ * Integrates toolbar auto-hide, scroll state, navigation, focus tracking, lifecycle, and keyboard handling.
  */
 
 import { useGalleryFocusTracker } from '@features/gallery/hooks/use-gallery-focus-tracker';
@@ -56,10 +45,6 @@ interface UseVerticalGalleryOptions {
 
 /**
  * Scroll state and handlers for gallery scrolling behavior
- *
- * @property isScrolling - Accessor that returns true when user is actively scrolling
- * @property scrollToItem - Function to scroll to a specific item by index
- * @property scrollToCurrentItem - Function to scroll to the currently active item
  */
 interface ScrollState {
   /** Whether user is currently scrolling */
@@ -72,11 +57,6 @@ interface ScrollState {
 
 /**
  * Navigation state and handlers for tracking navigation triggers
- *
- * @property lastNavigationTrigger - Accessor for the most recent navigation trigger type
- * @property setLastNavigationTrigger - Function to update the navigation trigger
- * @property programmaticScrollTimestamp - Accessor for programmatic scroll timing
- * @property setProgrammaticScrollTimestamp - Function to update programmatic scroll timestamp
  */
 interface NavigationState {
   /** Last navigation trigger type (keyboard, scroll, etc.) */
@@ -91,11 +71,6 @@ interface NavigationState {
 
 /**
  * Focus tracking state and handlers for keyboard navigation
- *
- * @property focusedIndex - Accessor for the currently focused item index (null if none)
- * @property registerItem - Function to register an item element for focus tracking
- * @property handleItemFocus - Function to handle focus events on items
- * @property forceSync - Function to force synchronization of focus state
  */
 interface FocusState {
   /** Currently focused item index (null if no item focused) */
@@ -110,9 +85,6 @@ interface FocusState {
 
 /**
  * Toolbar visibility state and controls
- *
- * @property isInitialToolbarVisible - Accessor for toolbar visibility state
- * @property setIsInitialToolbarVisible - Function to control toolbar visibility
  */
 interface ToolbarState {
   /** Whether toolbar should be initially visible */
@@ -123,14 +95,6 @@ interface ToolbarState {
 
 /**
  * Return value of the composed VerticalGallery hook
- *
- * Organizes all gallery functionality into logical domain groups for easier
- * consumption and clearer intent at call sites.
- *
- * @property scroll - Scroll-related state and handlers
- * @property navigation - Navigation-related state and handlers
- * @property focus - Focus-related state and handlers for keyboard navigation
- * @property toolbar - Toolbar visibility state and controls
  */
 interface UseVerticalGalleryResult {
   /** Scroll-related state and handlers */
@@ -144,53 +108,12 @@ interface UseVerticalGalleryResult {
 }
 
 /**
- * Composed hook that combines all VerticalGalleryView sub-hooks into a unified interface
+ * Composed hook combining all gallery sub-hooks into a unified interface
  *
- * This composition hook encapsulates the complex inter-dependencies between gallery hooks:
- *
- * **Dependencies:**
- * - useGalleryScroll depends on navigationState.programmaticScrollTimestamp
- * - useGalleryItemScroll depends on isScrolling and navigationState.lastNavigationTrigger
- * - useGalleryNavigation depends on scrollToItem function
- * - useGalleryFocusTracker depends on isScrolling and navigationState.lastNavigationTrigger
- *
- * **Benefits of composition:**
- * 1. Reduces hook call count in component from 7+ individual hooks to 1 composed hook
- * 2. Centralizes state management and inter-hook communication
- * 3. Simplifies component logic by providing organized domain-specific interfaces
- * 4. Improves testability by allowing single mock point for all gallery behavior
- * 5. Manages circular dependencies through forward references
- *
- * **Hook execution order:**
- * 1. Toolbar auto-hide initialization
- * 2. Navigation state setup (with forward reference to scrollToItem)
- * 3. Scroll tracking with programmatic scroll detection
- * 4. Item scroll handling with conditional enabling
- * 5. Focus tracking with scroll awareness
- * 6. Lifecycle management (animations, cleanup, CSS variables)
- * 7. Effect for hiding toolbar on scroll
- * 8. Keyboard event handling
+ * Manages dependencies between toolbar, navigation, scroll, focus, lifecycle, and keyboard hooks.
  *
  * @param options - Hook configuration with element refs and state accessors
  * @returns Composed state and handlers organized by functional domain
- *
- * @example
- * ```typescript
- * const gallery = useVerticalGallery({
- *   isVisible: () => isOpen(),
- *   currentIndex: () => activeIndex(),
- *   mediaItemsCount: () => items().length,
- *   containerEl: () => containerRef(),
- *   toolbarWrapperEl: () => toolbarRef(),
- *   itemsContainerEl: () => itemsRef(),
- *   onClose: handleClose,
- * });
- *
- * // Access organized functionality
- * gallery.scroll.scrollToItem(5);
- * gallery.focus.handleItemFocus(3);
- * gallery.toolbar.setIsInitialToolbarVisible(true);
- * ```
  */
 export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerticalGalleryResult {
   const {

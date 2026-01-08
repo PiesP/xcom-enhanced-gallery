@@ -8,7 +8,7 @@ import {
   type BaseLanguageCode,
   isBaseLanguageCode,
   type SupportedLanguage,
-} from '@shared/constants/i18n/language-types';
+} from '@shared/constants/i18n/i18n.types';
 import { DEFAULT_LANGUAGE, getLanguageStrings } from '@shared/constants/i18n/translation-registry';
 import { resolveTranslationValue } from '@shared/i18n/translation-utils';
 import type { TranslationKey, TranslationParams } from '@shared/i18n/types';

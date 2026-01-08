@@ -60,15 +60,12 @@ const buildHashtagUrl = (tag: string): string => `https://x.com/hashtag/${encode
  * @param value - URL string that may contain trailing punctuation
  * @returns Object with separated url and trailing punctuation
  */
-const splitUrlTrailingPunctuation = (value: string): { url: string; trailing: string } => {
+const splitUrlTrailingPunctuation = (value: string) => {
   const match = value.match(URL_TRAILING_PUNCTUATION);
-  if (!match) {
-    return { url: value, trailing: '' };
-  }
+  if (!match) return { url: value, trailing: '' };
 
   const trailing = match[0] ?? '';
   const url = value.slice(0, Math.max(0, value.length - trailing.length));
-
   return { url, trailing };
 };
 
@@ -127,9 +124,7 @@ const tokenizeTweetText = (input: string): TweetToken[] => {
  */
 const normalizeTweetUrl = (value: string | undefined): string | null => {
   const trimmed = value?.trim();
-  if (!trimmed) return null;
-  if (!isUrlAllowed(trimmed, TWEET_TEXT_URL_POLICY)) return null;
-  return trimmed;
+  return trimmed && isUrlAllowed(trimmed, TWEET_TEXT_URL_POLICY) ? trimmed : null;
 };
 
 /**
@@ -144,8 +139,8 @@ const formatTweetUrlLabel = (url: string): string => url.replace(PROTOCOL_PREFIX
  * @param tokens - Array of tweet tokens
  * @returns JSX element array
  */
-const renderTweetTokens = (tokens: readonly TweetToken[]): JSXElement => {
-  return tokens.map((token) => {
+const renderTweetTokens = (tokens: readonly TweetToken[]): JSXElement =>
+  tokens.map((token) => {
     if ((token.type === 'url' || token.type === 'hashtag') && token.href) {
       return (
         <a href={token.href} target="_blank" rel="noopener noreferrer">
@@ -155,7 +150,6 @@ const renderTweetTokens = (tokens: readonly TweetToken[]): JSXElement => {
     }
     return token.value;
   });
-};
 
 /**
  * Tweet URL link component

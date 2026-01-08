@@ -8,8 +8,8 @@
   :where(:root, .xeg-theme-scope) {
     /* Toolbar Component */
     --xeg-toolbar-panel-transition:
-      height var(--xeg-duration-normal) var(--xeg-ease-standard), opacity var(--xeg-duration-fast)
-      var(--xeg-ease-standard);
+      height var(--xeg-duration-normal) var(--xeg-ease-standard),
+      opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
     --xeg-toolbar-panel-height: 0;
     --xeg-toolbar-panel-max-height: 17.5rem;
 
@@ -29,19 +29,20 @@
 
     /* Transition Presets */
     --xeg-transition-surface-fast:
-      background-color var(--xeg-duration-fast) var(--xeg-ease-standard), border-color
-      var(--xeg-duration-fast) var(--xeg-ease-standard), color var(--xeg-duration-fast)
-      var(--xeg-ease-standard);
+      background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+      border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+      color var(--xeg-duration-fast) var(--xeg-ease-standard);
     --xeg-transition-elevation-normal:
-      transform var(--xeg-duration-normal) var(--xeg-ease-standard), opacity
-      var(--xeg-duration-normal) var(--xeg-ease-standard);
+      transform var(--xeg-duration-normal) var(--xeg-ease-standard),
+      opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
     --xeg-transition-elevation-fast:
-      transform var(--xeg-duration-fast) var(--xeg-ease-standard), opacity var(--xeg-duration-fast)
-      var(--xeg-ease-standard);
+      transform var(--xeg-duration-fast) var(--xeg-ease-standard),
+      opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
     --xeg-transition-interaction-fast:
-      background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out), border-color
-      var(--xeg-duration-fast) var(--xeg-easing-ease-out), color var(--xeg-duration-fast)
-      var(--xeg-easing-ease-out), transform var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+      background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+      border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+      color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+      transform var(--xeg-duration-fast) var(--xeg-easing-ease-out);
     --xeg-transition-width-normal: width var(--xeg-duration-normal) var(--xeg-ease-standard);
 
     /* Icon Component */

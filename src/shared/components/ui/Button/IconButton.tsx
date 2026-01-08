@@ -103,8 +103,8 @@ export function IconButton(props: IconButtonProps): JSXElement {
       aria-expanded={props['aria-expanded']}
       aria-pressed={props['aria-pressed']}
       aria-busy={props['aria-busy']}
-      onMouseDown={props.onMouseDown}
       onClick={props.onClick}
+      onMouseDown={props.onMouseDown}
     >
       {props.children}
     </button>

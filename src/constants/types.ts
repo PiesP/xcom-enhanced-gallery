@@ -1,60 +1,10 @@
 /**
- * @fileoverview Shared type definitions extracted from constant values
+ * @fileoverview Shared type definitions extracted from constant values.
  *
- * @description
- * Provides utility types derived from constant objects and arrays defined elsewhere
- * in the constants directory. These types enable type-safe access to constant values
- * without hardcoding literal types in multiple locations.
+ * Provides utility types derived from constants using `typeof` operators.
+ * Types automatically reflect constant value changes (single source of truth).
  *
  * @module constants/types
- *
- * @remarks
- * **Type Extraction Pattern**:
- * This module uses TypeScript's `typeof` and indexed access operators to extract
- * literal types from constant definitions. This pattern ensures type safety while
- * maintaining a single source of truth for constant values.
- *
- * **Design Benefits**:
- * - **Single Source of Truth**: Types automatically reflect constant value changes
- * - **Type Safety**: Compile-time validation of literal values
- * - **Maintainability**: No manual synchronization between types and constants
- * - **IntelliSense Support**: Auto-completion for valid constant values
- *
- * **Usage Pattern**:
- * Import these types when you need to accept or validate constant values in
- * function parameters, component props, or service interfaces.
- *
- * @example
- * ```typescript
- * // Function parameter with ViewMode type
- * import type { ViewMode } from '@constants/types';
- *
- * function setGalleryView(mode: ViewMode): void {
- *   // TypeScript ensures mode is 'vertical' | 'horizontal' | 'grid'
- *   console.log(`Switching to ${mode} view`);
- * }
- *
- * setGalleryView('vertical');  // ✅ Valid
- * setGalleryView('invalid');   // ❌ TypeScript error
- * ```
- *
- * @example
- * ```typescript
- * // Component props with extracted type
- * import type { ViewMode } from '@constants/types';
- * import type { JSXElement } from '@shared/external/vendors';
- *
- * interface GalleryProps {
- *   readonly mode: ViewMode;
- *   readonly onModeChange: (mode: ViewMode) => void;
- * }
- *
- * export function Gallery(props: GalleryProps): JSXElement {
- *   return <div data-mode={props.mode}>Gallery content</div>;
- * }
- * ```
- *
- * @see {@link VIEW_MODES} Source constant array for ViewMode type
  */
 
 import type { VIEW_MODES } from '@constants/video-controls';

@@ -26,21 +26,20 @@ const getIdleAPIs = (): IdleAPIs => {
     return { ric: null, cic: null };
   }
 
-  const ric =
-    'requestIdleCallback' in source
-      ? ((source as { requestIdleCallback?: unknown }).requestIdleCallback as
-          | RequestIdleCallback
-          | undefined) || null
-      : null;
-
-  const cic =
-    'cancelIdleCallback' in source
-      ? ((source as { cancelIdleCallback?: unknown }).cancelIdleCallback as
-          | CancelIdleCallback
-          | undefined) || null
-      : null;
-
-  return { ric, cic };
+  return {
+    ric:
+      ('requestIdleCallback' in source
+        ? ((source as { requestIdleCallback?: unknown }).requestIdleCallback as
+            | RequestIdleCallback
+            | undefined)
+        : undefined) || null,
+    cic:
+      ('cancelIdleCallback' in source
+        ? ((source as { cancelIdleCallback?: unknown }).cancelIdleCallback as
+            | CancelIdleCallback
+            | undefined)
+        : undefined) || null,
+  };
 };
 
 let didLogIdleTaskErrorInDev = false;
@@ -92,11 +91,8 @@ export function scheduleIdle(task: IdleRequestCallback): IdleHandle {
  * Logs idle task errors in development, only once per session.
  * @param error - The error to log
  */
-function logIdleTaskError(error: unknown): void {
-  if (!__DEV__ || didLogIdleTaskErrorInDev) {
-    return;
-  }
-
+const logIdleTaskError = (error: unknown): void => {
+  if (!__DEV__ || didLogIdleTaskErrorInDev) return;
   didLogIdleTaskErrorInDev = true;
   logger.warn('[scheduleIdle] Idle task error', error);
-}
+};

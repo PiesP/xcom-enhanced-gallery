@@ -68,26 +68,13 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
   const setSignal = write as (value: T | ((prev: T) => T)) => void;
   const subscribers = new Set<(value: T) => void>();
 
-  /**
-   * Notify all subscribers of value change.
-   *
-   * @param value - New value to broadcast
-   */
   const notify = (value: T): void => {
     for (const subscriber of subscribers) {
       subscriber(value);
     }
   };
 
-  /**
-   * Set value explicitly. Wraps functions to prevent accidental invocation
-   * by Solid's updater mechanism.
-   *
-   * @param value - New value to set
-   */
   const setValue = (value: T): void => {
-    // Solid treats function inputs as updaters. When the *value* itself is a function,
-    // wrap it to avoid accidental invocation.
     if (typeof value === 'function') {
       setSignal(() => value);
     } else {
@@ -96,23 +83,12 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
     notify(value);
   };
 
-  /**
-   * Update value using previous value.
-   *
-   * @param updater - Function that receives previous value and returns new value
-   */
   const updateValue = (updater: (prev: T) => T): void => {
     const nextValue = updater(read());
     setSignal(updater);
     notify(nextValue);
   };
 
-  /**
-   * Subscribe to value changes. Callback is invoked immediately with current value.
-   *
-   * @param callback - Function to call when value changes
-   * @returns Unsubscribe function to remove the listener
-   */
   const subscribe = (callback: (value: T) => void): (() => void) => {
     subscribers.add(callback);
     callback(read());

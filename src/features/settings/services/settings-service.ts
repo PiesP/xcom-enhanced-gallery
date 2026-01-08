@@ -10,7 +10,6 @@ import type {
 } from '@features/settings/services/settings-service.contract';
 import type {
   AppSettings,
-  FeatureFlags,
   NestedSettingKey,
   SettingChangeEvent,
 } from '@features/settings/types/settings.types';
@@ -18,88 +17,7 @@ import { logger } from '@shared/logging/logger';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
 import { createSingleton } from '@shared/utils/types/singleton';
-
-const FORBIDDEN_PATH_KEYS = ['__proto__', 'constructor', 'prototype'] as const;
-
-function isSafePathKey(key: string): boolean {
-  return key !== '' && !FORBIDDEN_PATH_KEYS.includes(key as (typeof FORBIDDEN_PATH_KEYS)[number]);
-}
-
-function resolveNestedPath<T = unknown>(source: unknown, path: string): T | undefined {
-  if (typeof path !== 'string' || path === '') {
-    return undefined;
-  }
-
-  let current: unknown = source;
-  const segments = path.split('.');
-
-  for (const segment of segments) {
-    if (!isSafePathKey(segment)) {
-      return undefined;
-    }
-    if (current === null || typeof current !== 'object') {
-      return undefined;
-    }
-    current = (current as Record<string, unknown>)[segment];
-  }
-
-  return current as T | undefined;
-}
-
-function assignNestedPath(target: unknown, path: string, value: unknown): boolean {
-  if (target === null || typeof target !== 'object') {
-    return false;
-  }
-  if (typeof path !== 'string' || path === '') {
-    return false;
-  }
-
-  const segments = path.split('.');
-
-  // Reject missing last key (e.g. "a.")
-  const last = segments[segments.length - 1];
-  if (!last || !isSafePathKey(last)) {
-    return false;
-  }
-
-  let current = target as Record<string, unknown>;
-
-  for (let i = 0; i < segments.length - 1; i++) {
-    const segment = segments[i];
-    if (!segment || !isSafePathKey(segment)) {
-      return false;
-    }
-
-    const existing = current[segment];
-    if (existing === null || typeof existing !== 'object') {
-      const next: Record<string, unknown> = {};
-      current[segment] = next;
-      current = next;
-      continue;
-    }
-
-    current = existing as Record<string, unknown>;
-  }
-
-  current[last] = value;
-  return true;
-}
-
-const FEATURE_DEFAULTS: Readonly<FeatureFlags> = Object.freeze({ ...DEFAULT_SETTINGS.features });
-
-function normalizeFeatureFlags(
-  features?: Partial<Record<keyof FeatureFlags, unknown>>
-): FeatureFlagMap {
-  const featureKeys = Object.keys(FEATURE_DEFAULTS) as Array<keyof FeatureFlags>;
-  return featureKeys.reduce<Record<keyof FeatureFlags, boolean>>(
-    (acc, key) => {
-      const candidate = features?.[key];
-      acc[key] = typeof candidate === 'boolean' ? candidate : FEATURE_DEFAULTS[key];
-      return acc;
-    },
-    {} as Record<keyof FeatureFlags, boolean>
-  );
-}
+import { assignNestedPath, normalizeFeatureFlags, resolveNestedPath } from './settings-helpers';
 
 export class SettingsService implements SettingsServiceContract {
   private readonly lifecycle: Lifecycle;
@@ -129,17 +47,14 @@ export class SettingsService implements SettingsServiceContract {
     });
   }
 
-  /** Initialize service (idempotent, fail-fast on error) */
   public async initialize(): Promise<void> {
     return this.lifecycle.initialize();
   }
 
-  /** Destroy service (idempotent, graceful on error) */
   public destroy(): void {
     this.lifecycle.destroy();
   }
 
-  /** Check if service is initialized */
   public isInitialized(): boolean {
     return this.lifecycle.isInitialized();
   }
@@ -306,7 +221,6 @@ export class SettingsService implements SettingsServiceContract {
   private isValid(key: NestedSettingKey, value: unknown): boolean {
     const def = this.getDefaultValue(key);
     if (def === undefined) return true;
-
     const type = Array.isArray(def) ? 'array' : typeof def;
     if (type === 'array') return Array.isArray(value);
     if (type === 'object') return typeof value === 'object' && value !== null;

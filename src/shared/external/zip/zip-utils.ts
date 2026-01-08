@@ -1,10 +1,6 @@
 /**
- * Internal helpers for ZIP writers.
- *
- * Shared across StoreZipWriter and StreamingZipWriter to keep duplicate
- * implementations in sync and reduce per-file allocations.
- *
- * @internal
+ * @fileoverview ZIP utility helpers for CRC32 and byte encoding
+ * @description Shared ZIP encoding and checksum functions
  */
 
 const textEncoder = new TextEncoder();
@@ -12,11 +8,8 @@ const textEncoder = new TextEncoder();
 let crc32Table: Uint32Array | null = null;
 
 /**
- * Lazily initializes and caches the CRC32 lookup table.
- *
- * Uses polynomial 0xEDB88320. Returns a cached table on subsequent calls.
- *
- * @returns Cached 256-element Uint32Array with precomputed CRC32 values
+ * Lazily initialize and cache CRC32 lookup table (polynomial 0xEDB88320)
+ * @returns Cached 256-element Uint32Array
  * @internal
  */
 function ensureCRC32Table(): Uint32Array {
@@ -40,22 +33,17 @@ function ensureCRC32Table(): Uint32Array {
 }
 
 /**
- * Encodes a UTF-8 string to a byte array.
- *
- * @param value - String to encode
- * @returns Uint8Array containing UTF-8 encoded bytes
+ * Encode UTF-8 string to byte array
+ * @param value String to encode
+ * @returns Uint8Array with UTF-8 bytes
  */
 export function encodeUtf8(value: string): Uint8Array {
   return textEncoder.encode(value);
 }
 
 /**
- * Calculates the CRC32 checksum for the given data.
- *
- * Uses the standard CRC32 polynomial (0xEDB88320) and initial value.
- * Result is suitable for ZIP file local/central headers.
- *
- * @param data - Byte array to checksum
+ * Calculate CRC32 checksum using polynomial 0xEDB88320
+ * @param data Byte array to checksum
  * @returns 32-bit unsigned CRC32 value
  */
 export function calculateCRC32(data: Uint8Array): number {
@@ -70,9 +58,8 @@ export function calculateCRC32(data: Uint8Array): number {
 }
 
 /**
- * Encodes a 16-bit unsigned integer to little-endian bytes.
- *
- * @param value - 16-bit unsigned integer
+ * Encode 16-bit unsigned integer to little-endian bytes
+ * @param value 16-bit unsigned integer
  * @returns 2-byte Uint8Array in little-endian order
  */
 export function writeUint16LE(value: number): Uint8Array {
@@ -83,9 +70,8 @@ export function writeUint16LE(value: number): Uint8Array {
 }
 
 /**
- * Encodes a 32-bit unsigned integer to little-endian bytes.
- *
- * @param value - 32-bit unsigned integer
+ * Encode 32-bit unsigned integer to little-endian bytes
+ * @param value 32-bit unsigned integer
  * @returns 4-byte Uint8Array in little-endian order
  */
 export function writeUint32LE(value: number): Uint8Array {

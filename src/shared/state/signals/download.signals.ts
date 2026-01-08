@@ -100,12 +100,12 @@ let downloadStateSignal: SafeSignal<DownloadState> | null = null;
  * @remarks
  * Uses lazy initialization pattern - signal is only created on first access
  */
-function getDownloadState(): SafeSignal<DownloadState> {
+const getDownloadState = (): SafeSignal<DownloadState> => {
   if (!downloadStateSignal) {
     downloadStateSignal = createSignalSafe<DownloadState>(INITIAL_STATE);
   }
   return downloadStateSignal!;
-}
+};
 
 /**
  * Update the processing flag in download state
@@ -115,7 +115,7 @@ function getDownloadState(): SafeSignal<DownloadState> {
  * @remarks
  * Only updates state if the value has changed to prevent unnecessary reactivity triggers
  */
-function setProcessingFlag(isProcessing: boolean): void {
+const setProcessingFlag = (isProcessing: boolean): void => {
   const currentState = downloadState.value;
   if (currentState.isProcessing === isProcessing) {
     return;
@@ -124,7 +124,7 @@ function setProcessingFlag(isProcessing: boolean): void {
     ...currentState,
     isProcessing,
   };
-}
+};
 
 /**
  * Acquire a download processing lock

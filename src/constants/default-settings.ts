@@ -1,23 +1,16 @@
 /**
- * @fileoverview Default settings configuration
- * @description Provides immutable default settings for the application and factory function
- * for creating runtime settings instances with timestamps
+ * @fileoverview Default settings configuration.
  * @module constants/default-settings
  */
 
 import type { AppSettings } from '@features/settings/types/settings.types';
 
 /**
- * Static default application settings
+ * Static default application settings.
  *
- * @remarks
- * This object uses `as const satisfies AppSettings` to ensure:
- * - Literal type preservation for all const values
- * - Type safety against AppSettings interface
- * - Immutability through readonly properties
- *
- * The `lastModified` timestamp is set to 0 for deterministic hashing and comparisons.
- * Use `createDefaultSettings()` to generate runtime instances with actual timestamps.
+ * Uses `as const satisfies AppSettings` for literal type preservation and type safety.
+ * lastModified is 0 for deterministic hashing; use `createDefaultSettings()` for
+ * runtime instances with actual timestamps.
  *
  * @internal
  */
@@ -64,51 +57,21 @@ const STATIC_DEFAULT_SETTINGS = {
 } as const satisfies AppSettings;
 
 /**
- * Immutable default application settings
+ * Immutable default application settings.
  *
- * @remarks
- * Exported for direct read-only access in configuration, validation, and testing contexts.
- * Do not modify. Use `createDefaultSettings()` to create mutable runtime instances.
- *
- * @example
- * ```typescript
- * import { DEFAULT_SETTINGS } from '@constants/default-settings';
- *
- * // Read-only access for validation
- * if (userSettings.version !== DEFAULT_SETTINGS.version) {
- *   migrateSettings(userSettings);
- * }
- * ```
- *
- * @see {@link createDefaultSettings} for creating runtime instances
+ * Exported for read-only access in validation and testing.
+ * Use `createDefaultSettings()` to create mutable runtime instances.
  */
 export const DEFAULT_SETTINGS = STATIC_DEFAULT_SETTINGS;
 
 /**
- * Creates a new mutable settings object with a timestamp
+ * Creates a new mutable settings object with a timestamp.
+ *
+ * Uses `globalThis.structuredClone` for deep cloning to ensure complete isolation
+ * from the immutable source object.
  *
  * @param timestamp - Unix timestamp in milliseconds (defaults to current time)
  * @returns A deep clone of default settings with updated lastModified timestamp
- *
- * @remarks
- * Uses `globalThis.structuredClone` for deep cloning to ensure complete isolation
- * from the immutable source object. The resulting object is fully mutable and safe
- * to modify without affecting DEFAULT_SETTINGS.
- *
- * @example
- * ```typescript
- * // Create with current timestamp
- * const userSettings = createDefaultSettings();
- *
- * // Create with specific timestamp (e.g., for testing)
- * const testSettings = createDefaultSettings(1672531200000);
- *
- * // Modify without affecting defaults
- * userSettings.gallery.theme = 'dark';
- * userSettings.lastModified = Date.now();
- * ```
- *
- * @see {@link DEFAULT_SETTINGS} for the immutable source object
  */
 export function createDefaultSettings(timestamp: number = Date.now()): AppSettings {
   const settings = globalThis.structuredClone(DEFAULT_SETTINGS) as AppSettings;

@@ -3,39 +3,9 @@
  * Licensed under the MIT License
  *
  * @fileoverview Vertical Image Item Component Styles
- * @description Individual media item styles with fit modes and interactions
- *
- * **Design System**:
- * - Prefer --xeg-* design tokens for colors/spacing/sizing
- * - Some shared semantic tokens are currently exposed as --color-* (legacy / shared UI)
- * - No hardcoded values
- * - Flat surfaces focused on border contrast (no blur)
- * - Responsive fit modes for different image dimensions
- *
- * **Fit Modes** (CSS class-based):
- * - .fitOriginal: Image at 1:1 scale
- * - .fitWidth: Image fills container width
- * - .fitHeight: Image fills container height
- * - .fitContainer: Image fills both width and height (with aspect preservation)
- *
- * **Key Selectors**:
- * - .container: Item wrapper with interactive states
- * - .imageWrapper: Image/video container
- * - .image / .video: Media element
- * - .videoOverlay: Video play button overlay
- * - .downloadButton: Download action button
- *
- * **Performance Optimizations**:
- * - CSS Containment (contain: layout style)
- * - transform: translateZ(0) for GPU acceleration
- * - will-change for animated properties
- *
- * **Accessibility**:
- * - :focus-visible for keyboard navigation
- * - .active state for current item
- * - .focused state for scroll target
- *
- * @version 3.1.0 - Enhanced documentation and accessibility (Phase 354+)
+ * @description Individual media item styles with fit modes (original, fitWidth, fitHeight, fitContainer),
+ * interactive states, performance optimizations (containment, GPU acceleration), and accessibility features.
+ * @version 3.1.0
  */
 
 .container {

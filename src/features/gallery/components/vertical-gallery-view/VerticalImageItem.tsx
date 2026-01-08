@@ -3,22 +3,9 @@
  * Licensed under the MIT License
  *
  * @fileoverview Vertical Image/Video Item Component (Solid.js)
- * @description Individual media item component for displaying images and videos in gallery
- *
- * **Responsibilities**:
- * - Render image or video element based on media type
- * - Manage fit mode (original, fitWidth, fitHeight, fitContainer)
- * - Handle loading, error, and visibility states
- * - Auto-pause videos when item becomes invisible
- * - Provide focus/blur event handling for accessibility
- *
- * **Architecture**:
- * - Media is rendered eagerly (no IntersectionObserver-gated lazy loading)
- * - Dimension calculation extracted to @shared/utils/media/media-dimensions
- * - Video visibility control extracted to useVideoVisibility hook
- *
- * @module features/gallery/components/vertical-gallery-view
- * @version 7.0.0 - SharedObserver integration and hook extraction
+ * @description Renders individual media items with fit mode, visibility/loading states,
+ * video auto-pause, and accessibility support via useVideoVisibility hook.
+ * @version 7.0.0
  */
 
 import { useVideoVisibility } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-visibility';

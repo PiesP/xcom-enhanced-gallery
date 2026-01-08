@@ -1,14 +1,7 @@
 /**
- * @fileoverview Video visibility hook for viewport-based auto-play/pause control
- * @description Manages video playback state based on viewport visibility using IntersectionObserver
- * @module features/gallery/components/vertical-gallery-view/hooks/useVideoVisibility
+ * @fileoverview Video visibility hook for auto-play/pause based on viewport visibility
  *
- * This hook provides automatic video playback management:
- * - Pauses videos when scrolled out of viewport
- * - Resumes playback when scrolled back into viewport
- * - Preserves and restores mute state across visibility changes
- * - Handles auto-mute for out-of-viewport videos
- * - Uses shared IntersectionObserver for performance optimization
+ * Manages video playback state using IntersectionObserver with mute state preservation.
  */
 
 import { logger } from '@shared/logging/logger';
