@@ -47,11 +47,13 @@ temp/
 .env.local
 .env.*.local
 
+!CHANGELOG.md
+!CODE_OF_CONDUCT.md
+!CONTRIBUTING.md
+!README.md
+*.md
+
 # AI Instructions (separate repository)
 .github/copilot-instructions.md
 .github/prompts/
 .claude/
-AGENTS.md
-CLAUDE.md
-CODING_STANDARDS.md
-TYPE_FILES_ANALYSIS.md
