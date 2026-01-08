@@ -2,7 +2,6 @@
 
 > Design-token CSS and shared style utilities for the X.com Enhanced Gallery userscript
 > **Target Audience**: UI developers and AI coding agents
-> **Related Documentation**: [CODING_STANDARDS.md](../../CODING_STANDARDS.md) for styling conventions
 
 This directory implements a **token-first** architecture optimized for predictable theming and maintainability.
 
@@ -70,8 +69,6 @@ Always use design tokens for colors, spacing, and sizing.
 **Rationale**: Hardcoded values break theming consistency and make maintenance harder.
 
 ### 2. Prefer CSS Modules
-
-Component styles should use CSS Modules (`*.module.css`) for scoping. See [CODING_STANDARDS.md § 1.5](../../CODING_STANDARDS.md#15-css-modules-modulecss) for naming conventions.
 
 **✅ GOOD:**
 

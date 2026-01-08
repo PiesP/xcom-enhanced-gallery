@@ -80,8 +80,6 @@ Stub declaration for `babel-preset-solid` dynamic import compatibility.
 
 ### Naming & Organization
 
-Follow [CODING_STANDARDS.md](../CODING_STANDARDS.md#file-naming-conventions):
-
 - Use **kebab-case** for file names: `my-feature.d.ts`
 - Use **PascalCase** for exported types: `MyType`
 - Add **JSDoc comments** for complex types
@@ -118,6 +116,5 @@ src/types/
 
 ## Related Documentation
 
-- [CODING_STANDARDS.md](../CODING_STANDARDS.md) — File naming, TypeScript conventions
 - [CLAUDE.md](../CLAUDE.md) — Project context and architecture
 - [AGENTS.md](../AGENTS.md) — Workspace and service patterns

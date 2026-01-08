@@ -44,10 +44,6 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **Logging**: Added unit coverage for logger prefixing, scoped logging, and error routing.
 
-### Chore
-
-- **Git**: Updated `.gitignore` to exclude `TYPE_FILES_ANALYSIS.md` and `CODING_STANDARDS.md`.
-
 ## [1.6.0] - 2025-12-30
 
 ### Features

@@ -97,7 +97,6 @@ await downloadService.downloadBlob({
 ## Related Documentation
 
 - [AGENTS.md](../../../AGENTS.md) - AI coding guidance including service patterns
-- [CODING_STANDARDS.md](../../../CODING_STANDARDS.md) - Comprehensive coding standards
 - [CONTRIBUTING.md](../../../CONTRIBUTING.md) - Contributing guidelines and coding rules
 
 ---

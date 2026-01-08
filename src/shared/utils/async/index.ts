@@ -13,7 +13,6 @@
  * ```
  *
  * Barrel exports are discouraged per coding standards.
- * See: CODING_STANDARDS.md § 3.2 "No Barrel Imports"
  */
 
 export { attachAbortListener, isSignalAborted, onSignalAbort } from './abort-helpers';

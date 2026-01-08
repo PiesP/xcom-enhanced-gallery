@@ -16,7 +16,6 @@
  * - `Lifecycle` (@shared/services/lifecycle) - Composition-based lifecycle management
  *
  * @see {@link https://github.com/xom-enhanced-gallery/blob/main/src/shared/services/lifecycle.ts} Lifecycle implementation
- * @see {@link https://github.com/xom-enhanced-gallery/blob/main/CODING_STANDARDS.md#service-implementation-patterns} Service patterns
  *
  * @module shared/types/lifecycle
  * @version 2.0.0
