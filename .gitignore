@@ -51,6 +51,8 @@ temp/
 !CODE_OF_CONDUCT.md
 !CONTRIBUTING.md
 !README.md
+!.github/pull_request_template.md
+!.github/SECURITY.md
 *.md
 
 # AI Instructions (separate repository)
