@@ -1,69 +1,26 @@
 /**
  * @fileoverview UI/theme related type definitions
- * @version 1.1.0 - Phase 196: Split from app.types.ts
- * @description Integration of theme, button style, animation and other UI-related types
  */
 
-/**
- * Theme selection
- *
- * - 'light': Force light mode
- * - 'dark': Force dark mode
- * - 'auto': Auto-apply system settings
- */
+/** Theme selection */
 export type Theme = 'light' | 'dark' | 'auto';
 
-/**
- * Gallery-specific theme selection (extends Theme)
- *
- * @see {@link Theme} - Base theme type
- */
+/** Gallery-specific theme selection */
 export type GalleryTheme = 'light' | 'dark' | 'auto' | 'system';
 
-/**
- * Base button variant (common across UI)
- *
- * @remarks
- * For component-specific extended variants, see ButtonVariant in
- * @shared/components/ui/Button/Button.types.ts which extends this
- * with 'icon', 'toolbar', 'navigation', 'action' variants.
- */
+/** Base button variant */
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
-/**
- * Base button size (common across UI)
- *
- * @remarks
- * For component-specific extended sizes, see ButtonSize in
- * @shared/components/ui/Button/Button.types.ts which extends this
- * with 'toolbar' size.
- */
+/** Base button size */
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
-/**
- * Color variant
- */
+/** Color variant */
 export type ColorVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
 
-/**
- * Loading state (async operation progress)
- */
+/** Loading state (async operation progress) */
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 
-/**
- * Async state object
- *
- * @template T Data type
- *
- * @example
- * ```typescript
- * const [state, setState] = createSignal<AsyncState<User>>({
- *   data: null,
- *   loading: false,
- *   error: null,
- * });
- * ```
- */
+/** Async state object */
 export interface AsyncState<T> {
   /** Current data (null if loading, previous data maintained on error if possible) */
   readonly data: T | null;
@@ -73,37 +30,20 @@ export interface AsyncState<T> {
   readonly error: string | null;
 }
 
-/**
- * Animation configuration
- *
- * @description CSS animation options
- */
+/** Animation configuration */
 export interface AnimationConfig {
   /** Animation duration (ms) */
   readonly duration?: number;
-  /** Easing function (ease, ease-in, ease-out, etc.) */
+  /** Easing function */
   readonly easing?: string;
   /** Animation delay (ms) */
   readonly delay?: number;
 }
 
-/**
- * Image fit mode
- *
- * @description How to render images within container
- *
- * - 'original': Keep original size
- * - 'fitWidth': Fit to width
- * - 'fitHeight': Fit to height
- * - 'fitContainer': Fill container
- */
+/** Image fit mode */
 export type ImageFitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
 
-/**
- * Image fit options
- *
- * @description Detailed options used with ImageFitMode
- */
+/** Image fit options */
 export interface ImageFitOptions {
   /** Fit mode */
   readonly mode: ImageFitMode;
@@ -117,9 +57,7 @@ export interface ImageFitOptions {
   readonly callbacks?: ImageFitCallbacks;
 }
 
-/**
- * Image fit callback functions
- */
+/** Image fit callback functions */
 export interface ImageFitCallbacks {
   /** Called on size change */
   readonly onResize?: (size: { readonly width: number; readonly height: number }) => void;
@@ -127,26 +65,13 @@ export interface ImageFitCallbacks {
   readonly onError?: (error: Error) => void;
 }
 
-/**
- * Filename generation strategy
- *
- * - 'simple': Simple filename (e.g., image_001)
- * - 'detailed': Detailed filename (e.g., @username_description_20250101)
- * - 'timestamp': Include timestamp (e.g., 20250101_120000_media)
- * - 'custom': Custom format
- */
+/** Filename generation strategy */
 export type FilenameStrategy = 'simple' | 'detailed' | 'timestamp' | 'custom';
 
-/**
- * Media file extension
- */
+/** Media file extension */
 export type MediaFileExtension = 'jpg' | 'jpeg' | 'png' | 'gif' | 'webp' | 'mp4' | 'mov';
 
-/**
- * Global configuration
- *
- * @description Application-wide UI/UX settings
- */
+/** Global configuration */
 export interface GlobalConfig {
   /** Theme setting */
   readonly theme: Theme;

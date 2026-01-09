@@ -32,16 +32,14 @@ function generateListenerId(ctx?: string): string {
 // ============================================================================
 
 /**
- * Add event listener with tracking
+ * Register event listener with tracking.
  *
  * @param element - Target element
  * @param type - Event type
  * @param listener - Event handler
  * @param options - Listener options (passive, capture, once)
- * @param context - Context string for grouping (e.g., 'gallery-keyboard')
+ * @param context - Context string for grouping
  * @returns Listener ID for removal
- *
- * @throws Nothing - errors are logged and listener ID returned
  */
 export function addListener(
   element: EventTarget,
@@ -95,12 +93,10 @@ export function addListener(
 }
 
 /**
- * Remove event listener by ID
+ * Remove registered event listener by ID.
  *
  * @param id - Listener ID from addListener
  * @returns true if removed, false if not found
- *
- * @throws Nothing - errors are logged and false returned
  */
 export function removeEventListenerManaged(id: string): boolean {
   const ctx = listeners.get(id);
@@ -132,7 +128,9 @@ export function removeEventListenerManaged(id: string): boolean {
 }
 
 /**
- * Get listener statistics
+ * Get listener statistics (dev mode only).
+ * @returns Statistics with total count, listeners per context, and per type
+ * @internal For debugging and monitoring only
  */
 export function getEventListenerStatus() {
   if (!__DEV__) {

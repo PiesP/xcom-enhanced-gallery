@@ -1,25 +1,26 @@
 import { logger } from '@shared/logging/logger';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
+/**
+ * Handle to cancel a scheduled idle task.
+ */
 type IdleHandle = {
   readonly cancel: () => void;
 };
 
-type RequestIdleCallback = (
-  callback: IdleRequestCallback,
-  opts?: { readonly timeout?: number }
-) => number;
-
-type CancelIdleCallback = (handle: number) => void;
-
+/**
+ * Idle callback function type.
+ */
 type IdleRequestCallback = () => void;
 
-interface IdleAPIs {
-  readonly ric: RequestIdleCallback | null;
-  readonly cic: CancelIdleCallback | null;
-}
-
-const getIdleAPIs = (): IdleAPIs => {
+/**
+ * Safely detects and returns available idle APIs.
+ * @internal
+ */
+function getIdleAPIs(): {
+  readonly ric: ((cb: IdleRequestCallback, opts?: { readonly timeout?: number }) => number) | null;
+  readonly cic: ((handle: number) => void) | null;
+} {
   const source = typeof globalThis !== 'undefined' ? globalThis : undefined;
 
   if (!source || typeof source !== 'object') {
@@ -29,18 +30,18 @@ const getIdleAPIs = (): IdleAPIs => {
   return {
     ric:
       ('requestIdleCallback' in source
-        ? ((source as { requestIdleCallback?: unknown }).requestIdleCallback as
-            | RequestIdleCallback
+        ? ((source as unknown as Record<string, unknown>).requestIdleCallback as
+            | ((cb: IdleRequestCallback, opts?: { readonly timeout?: number }) => number)
             | undefined)
-        : undefined) || null,
+        : undefined) ?? null,
     cic:
       ('cancelIdleCallback' in source
-        ? ((source as { cancelIdleCallback?: unknown }).cancelIdleCallback as
-            | CancelIdleCallback
+        ? ((source as unknown as Record<string, unknown>).cancelIdleCallback as
+            | ((handle: number) => void)
             | undefined)
-        : undefined) || null,
+        : undefined) ?? null,
   };
-};
+}
 
 let didLogIdleTaskErrorInDev = false;
 

@@ -22,49 +22,28 @@ import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
 import { resetKeyboardDebounceState } from '@shared/utils/events/keyboard-debounce';
 
 /**
- * Internal state tracking for gallery event lifecycle.
- */
-interface LifecycleState {
-  readonly initialized: boolean;
-  readonly options: GalleryEventOptions | null;
-  readonly handlers: EventHandlers | null;
-  readonly keyListener: EventListener | null;
-  readonly clickListener: EventListener | null;
-  readonly listenerContext: string | null;
-  readonly eventTarget: EventTarget | null;
-}
-
-/**
  * Default configuration for gallery event listeners.
- * Used when no explicit options are provided during initialization.
  */
-const DEFAULT_GALLERY_EVENT_OPTIONS: GalleryEventOptions = {
+const DEFAULT_GALLERY_EVENT_OPTIONS = {
   enableKeyboard: true,
   enableMediaDetection: true,
   debugMode: false,
   preventBubbling: true,
   context: 'gallery',
-} as const;
+} as const satisfies GalleryEventOptions;
 
 /**
- * Initial state for lifecycle tracking.
- * Used to reset state during cleanup.
+ * Minimal state tracking for gallery event lifecycle.
  */
-const initialLifecycleState: Readonly<LifecycleState> = {
-  initialized: false,
-  options: null,
-  handlers: null,
-  keyListener: null,
-  clickListener: null,
-  listenerContext: null,
-  eventTarget: null,
-} as const;
+interface LifecycleState {
+  readonly initialized: boolean;
+  readonly context: string | null;
+}
 
 /**
- * Mutable state tracking for the current gallery event lifecycle.
- * Updated during initialization and cleanup.
+ * Mutable state for the current lifecycle.
  */
-let lifecycleState: LifecycleState = { ...initialLifecycleState };
+let lifecycleState: LifecycleState = { initialized: false, context: null };
 
 /**
  * Sanitizes a context string by trimming and validating it.
@@ -79,11 +58,11 @@ function sanitizeContext(context: string | undefined): string {
 }
 
 /**
- * Resolves initialization input to a normalized format.
- * Handles both HTMLElement root and partial options as input.
+ * Resolves initialization input to normalized format.
+ * Handles both HTMLElement root and partial options.
  *
  * @param optionsOrRoot - Either partial options or an HTMLElement root
- * @returns Resolved options and explicit root (if provided as HTMLElement)
+ * @returns Resolved options and root
  */
 function resolveInitializationInput(
   optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement
@@ -92,28 +71,22 @@ function resolveInitializationInput(
   root: HTMLElement | null;
 }> {
   if (optionsOrRoot instanceof HTMLElement) {
-    return {
-      options: { ...DEFAULT_GALLERY_EVENT_OPTIONS },
-      root: optionsOrRoot,
-    };
+    return { options: { ...DEFAULT_GALLERY_EVENT_OPTIONS }, root: optionsOrRoot };
   }
 
   const partial = optionsOrRoot ?? {};
-  const merged: GalleryEventOptions = {
-    ...DEFAULT_GALLERY_EVENT_OPTIONS,
-    ...partial,
-    context: sanitizeContext(partial.context),
-  };
-
   return {
-    options: merged,
+    options: {
+      ...DEFAULT_GALLERY_EVENT_OPTIONS,
+      ...partial,
+      context: sanitizeContext(partial.context),
+    },
     root: null,
   };
 }
 
 /**
  * Resolves the event target for listener registration.
- * Prioritizes explicit root, then falls back to document.body or document.
  *
  * @param explicitRoot - An optional explicit root element
  * @returns The resolved event target
@@ -123,24 +96,53 @@ function resolveEventTarget(explicitRoot: HTMLElement | null): EventTarget {
 }
 
 /**
+ * Registers event listeners with the EventManager.
+ *
+ * @param eventManager - EventManager instance
+ * @param target - Event target
+ * @param handlers - Event handler callbacks
+ * @param options - Configuration options
+ * @param context - Listener context
+ */
+function registerListeners(
+  eventManager: EventManager,
+  target: EventTarget,
+  handlers: EventHandlers,
+  options: GalleryEventOptions,
+  context: string
+): void {
+  const listenerOptions: AddEventListenerOptions = { capture: true, passive: false };
+
+  if (options.enableKeyboard) {
+    const keyHandler: EventListener = (evt: Event) => {
+      handleKeyboardEvent(evt as KeyboardEvent, handlers, options);
+    };
+    eventManager.addListener(target, 'keydown', keyHandler, listenerOptions, context);
+  }
+
+  if (options.enableMediaDetection) {
+    const clickHandler: EventListener = async (evt: Event) => {
+      await handleMediaClick(evt as MouseEvent, handlers, options);
+    };
+    eventManager.addListener(target, 'click', clickHandler, listenerOptions, context);
+  }
+}
+
+/**
  * Initializes gallery event listeners.
  *
  * Automatically cleans up any previous initialization. Registers keyboard and click
- * handlers according to provided options. Returns a cleanup function for manual cleanup
- * if needed, though cleanup is also called automatically during re-initialization.
+ * handlers according to provided options. Returns a cleanup function.
  *
  * @param handlers - Event handler callbacks (keyboard, click)
- * @param optionsOrRoot - Configuration options or an optional HTMLElement root for listener attachment
+ * @param optionsOrRoot - Configuration options or an optional HTMLElement root
  * @returns A cleanup function that unregisters all listeners and resets state
- *
- * @throws No explicit errors, but logs warnings/errors in development mode
  *
  * @example
  * const cleanup = await initializeGalleryEvents(
- *   { keyboard: handleKey, click: handleClick },
- *   { enableKeyboard: true, enableMediaDetection: false }
+ *   { onMediaClick: handleClick, onGalleryClose: handleClose },
+ *   { enableKeyboard: true }
  * );
- * // Later...
  * cleanup(); // Unregisters listeners
  */
 export async function initializeGalleryEvents(
@@ -149,7 +151,7 @@ export async function initializeGalleryEvents(
 ): Promise<() => void> {
   if (lifecycleState.initialized) {
     if (__DEV__) {
-      logger.warn('[GalleryLifecycle] Already initialized, re-initializing');
+      logger.warn('[GalleryLifecycle] Re-initializing, cleaning up previous listeners');
     }
     cleanupGalleryEvents();
   }
@@ -158,60 +160,25 @@ export async function initializeGalleryEvents(
     if (__DEV__) {
       logger.error('[GalleryLifecycle] Missing handlers');
     }
-    return () => {};
+    return cleanupGalleryEvents;
   }
 
   const { options: finalOptions, root: explicitGalleryRoot } =
     resolveInitializationInput(optionsOrRoot);
-  const listenerContext = sanitizeContext(finalOptions.context);
-
-  const keyHandler: EventListener = (evt: Event) => {
-    const event = evt as KeyboardEvent;
-    handleKeyboardEvent(event, handlers, finalOptions);
-  };
-
-  const clickHandler: EventListener = async (evt: Event) => {
-    const event = evt as MouseEvent;
-    await handleMediaClick(event, handlers, finalOptions);
-  };
-
+  const context = sanitizeContext(finalOptions.context);
   const target = resolveEventTarget(explicitGalleryRoot);
-  const listenerOptions: AddEventListenerOptions = {
-    capture: true,
-    passive: false,
-  };
 
   const eventManager = EventManager.getInstance();
-
-  if (finalOptions.enableKeyboard) {
-    eventManager.addListener(target, 'keydown', keyHandler, listenerOptions, listenerContext);
-  }
-
-  if (finalOptions.enableMediaDetection) {
-    eventManager.addListener(target, 'click', clickHandler, listenerOptions, listenerContext);
-  }
-
+  registerListeners(eventManager, target, handlers, finalOptions, context);
   resetKeyboardDebounceState();
 
-  lifecycleState = {
-    initialized: true,
-    options: finalOptions,
-    handlers,
-    keyListener: keyHandler,
-    clickListener: clickHandler,
-    listenerContext,
-    eventTarget: target,
-  };
+  lifecycleState = { initialized: true, context };
 
   if (__DEV__ && finalOptions.debugMode) {
-    logger.debug('[GalleryEvents] Event listeners registered', {
-      context: listenerContext,
-    });
+    logger.debug('[GalleryEvents] Listeners registered', { context });
   }
 
-  return () => {
-    cleanupGalleryEvents();
-  };
+  return cleanupGalleryEvents;
 }
 
 /**
@@ -224,15 +191,12 @@ export async function initializeGalleryEvents(
  * cleanupGalleryEvents(); // Safe even if not initialized
  */
 export function cleanupGalleryEvents(): void {
-  if (!lifecycleState.initialized) {
-    return;
-  }
+  if (!lifecycleState.initialized) return;
 
-  if (lifecycleState.listenerContext) {
-    EventManager.getInstance().removeByContext(lifecycleState.listenerContext);
+  if (lifecycleState.context) {
+    EventManager.getInstance().removeByContext(lifecycleState.context);
   }
 
   resetKeyboardDebounceState();
-
-  lifecycleState = { ...initialLifecycleState };
+  lifecycleState = { initialized: false, context: null };
 }

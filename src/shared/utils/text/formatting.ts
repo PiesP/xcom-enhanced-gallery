@@ -3,30 +3,27 @@
  */
 
 /**
- * Object mapping class names to boolean conditions.
+ * Class name record mapping strings to conditional values.
  */
 type ClassRecord = Record<string, boolean | undefined | null>;
 
 /**
- * ClassValue type for cx function.
+ * Supported class value types for conditional class composition.
  *
- * Supports:
- * - strings and numbers
- * - conditional values (boolean, undefined, null)
- * - nested objects with conditions
- * - nested arrays (recursive)
+ * Supports: strings, numbers, conditional values (boolean, undefined, null),
+ * conditional objects, and nested arrays (recursive).
  */
 type ClassValue = string | number | boolean | undefined | null | ClassRecord | ClassValue[];
 
 /**
- * Escapes text for safe use in RegExp patterns.
+ * Escapes special regex characters in strings.
  */
 export function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
- * Combines class names with conditional logic.
+ * Combines class names with conditional logic, handling strings, arrays, and objects.
  */
 export function cx(...inputs: ClassValue[]): string {
   const classes: string[] = [];
@@ -34,24 +31,14 @@ export function cx(...inputs: ClassValue[]): string {
   for (const input of inputs) {
     if (!input) continue;
 
-    const inputType = typeof input;
-    if (inputType === 'string' || inputType === 'number') {
+    if (typeof input === 'string' || typeof input === 'number') {
       classes.push(String(input));
-      continue;
-    }
-
-    if (Array.isArray(input)) {
+    } else if (Array.isArray(input)) {
       const nested = cx(...input);
       if (nested) classes.push(nested);
-      continue;
-    }
-
-    if (inputType === 'object' && input !== null && !Array.isArray(input)) {
-      const record = input as ClassRecord;
-      for (const key in record) {
-        if (record[key]) {
-          classes.push(key);
-        }
+    } else if (typeof input === 'object') {
+      for (const [key, value] of Object.entries(input as ClassRecord)) {
+        if (value) classes.push(key);
       }
     }
   }

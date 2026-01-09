@@ -1,82 +1,60 @@
 /**
- * @fileoverview CSS-based animation helpers
+ * @fileoverview CSS animation helpers for gallery entrance/exit effects.
  *
- * Lightweight helpers that rely on already-injected global CSS.
- * Keep this module small to minimize production bundle size.
+ * Lightweight helpers using pre-injected global CSS rules.
+ * Keeps module small for minimal bundle size impact.
  */
 
-import { logger } from '@shared/logging/logger';
-
-/**
- * CSS animation class names.
- * Used to apply fade animations via pre-defined CSS rules.
- */
+/** CSS animation class names for fade effects. */
 const ANIMATION_CLASSES = {
   FADE_IN: 'xeg-fade-in',
   FADE_OUT: 'xeg-fade-out',
 } as const;
 
 /**
- * Logs animation failures safely in development mode.
- *
- * @param message - Error message describing the animation failure
- * @param error - The underlying error object
- */
-function safeLogAnimationFailure(message: string, error: unknown): void {
-  if (__DEV__) {
-    logger.warn(message, error);
-  }
-}
-
-/**
  * Applies a CSS animation class to an element and waits for completion.
  *
- * Adds the specified animation class to the element, listens for the
- * `animationend` event, and removes the class when the animation completes.
- * Resolves successfully even if the animation fails or is not supported.
+ * Adds the animation class, listens for animationend event, and removes
+ * the class when animation completes. Resolves on failure to ensure
+ * graceful degradation if CSS animations are unsupported.
  *
  * @param element - The DOM element to animate
  * @param className - The CSS class name to apply
- * @returns A promise that resolves when the animation completes or fails
+ * @returns Promise resolving when animation completes or fails
  */
 function runCssAnimation(element: Element, className: string): Promise<void> {
   return new Promise<void>((resolve) => {
     try {
-      const handleAnimationEnd = (): void => {
+      const cleanup = (): void => {
+        element.removeEventListener('animationend', cleanup);
         element.classList.remove(className);
         resolve();
       };
 
-      element.addEventListener('animationend', handleAnimationEnd, { once: true });
+      element.addEventListener('animationend', cleanup, { once: true });
       element.classList.add(className);
-    } catch (error) {
-      safeLogAnimationFailure('CSS animation failed', error);
+    } catch {
+      // Graceful fallback: resolve even if animation setup fails
       resolve();
     }
   });
 }
 
 /**
- * Animates the gallery container's entry (fade-in).
+ * Animates gallery container entrance with fade-in effect.
  *
- * Applies the fade-in animation to the element and waits for completion.
- * The actual animation is defined in global CSS.
- *
- * @param element - The gallery container element to animate
- * @returns A promise that resolves when the fade-in animation completes
+ * @param element - Gallery container element to animate
+ * @returns Promise resolving when fade-in completes
  */
 export async function animateGalleryEnter(element: Element): Promise<void> {
   return runCssAnimation(element, ANIMATION_CLASSES.FADE_IN);
 }
 
 /**
- * Animates the gallery container's exit (fade-out).
+ * Animates gallery container exit with fade-out effect.
  *
- * Applies the fade-out animation to the element and waits for completion.
- * The actual animation is defined in global CSS.
- *
- * @param element - The gallery container element to animate
- * @returns A promise that resolves when the fade-out animation completes
+ * @param element - Gallery container element to animate
+ * @returns Promise resolving when fade-out completes
  */
 export async function animateGalleryExit(element: Element): Promise<void> {
   return runCssAnimation(element, ANIMATION_CLASSES.FADE_OUT);

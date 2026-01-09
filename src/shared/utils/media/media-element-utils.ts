@@ -5,16 +5,22 @@ import type {
   QueueNode,
 } from './media-element-utils.types';
 
+/** Default maximum descendant search depth */
 const DEFAULT_MAX_DESCENDANT_DEPTH = 6;
+
+/** Default maximum ancestor hop count */
 const DEFAULT_MAX_ANCESTOR_HOPS = 3;
 
+/** Default traversal options with all required fields */
 const DEFAULT_TRAVERSAL_OPTIONS: Required<MediaTraversalOptions> = {
   maxDescendantDepth: DEFAULT_MAX_DESCENDANT_DEPTH,
   maxAncestorHops: DEFAULT_MAX_ANCESTOR_HOPS,
 };
 
 /**
- * Determine whether the provided element is a supported media element (IMG or VIDEO)
+ * Check if element is a supported media element (IMG or VIDEO)
+ * @param element - Element to check
+ * @returns true if element is IMG or VIDEO tag
  */
 export function isMediaElement(element: HTMLElement | null): element is MediaElement {
   if (!element) {
@@ -25,12 +31,16 @@ export function isMediaElement(element: HTMLElement | null): element is MediaEle
 }
 
 /**
- * Attempt to locate a media element starting from a click target
+ * Find media element starting from click target
  *
  * Traversal order:
  * 1. Direct hit (target itself)
  * 2. Descendant search (breadth-first, depth-limited)
- * 3. Ancestor walk where each ancestor performs the same descendant search including itself
+ * 3. Ancestor walk with descendant search at each level
+ *
+ * @param target - Click target element
+ * @param options - Traversal options (depth limits)
+ * @returns Found media element or null
  */
 export function findMediaElementInDOM(
   target: HTMLElement,
@@ -75,9 +85,13 @@ export function findMediaElementInDOM(
 }
 
 /**
- * Extract the best-available URL from a media element
- * - Images prefer `currentSrc` and then `src`
- * - Videos prefer `currentSrc`, then `src`, then `poster`
+ * Extract best-available URL from media element
+ *
+ * Images: currentSrc → src attribute → src property
+ * Videos: currentSrc → src → poster attribute → poster property
+ *
+ * @param element - Media element (IMG or VIDEO)
+ * @returns URL string or null
  */
 export function extractMediaUrlFromElement(element: MediaElement): string | null {
   const isImage = element instanceof HTMLImageElement;
@@ -100,6 +114,7 @@ export function extractMediaUrlFromElement(element: MediaElement): string | null
   return pickFirstTruthy([current, resolved, attr, posterResolved, posterAttr]);
 }
 
+/** Find media element among node descendants (breadth-first, depth-limited) */
 function findMediaDescendant(
   root: HTMLElement,
   { includeRoot, maxDepth }: DescendantSearchConfig
@@ -133,10 +148,9 @@ function findMediaDescendant(
 }
 
 /**
- * Return the first truthy value from an array, or null if none exist
- *
- * @param values - Array of values to evaluate
- * @returns The first truthy value, or null if all values are falsy
+ * Return first truthy value from array
+ * @param values - Values to evaluate
+ * @returns First truthy value or null
  */
 function pickFirstTruthy(values: Array<string | null | undefined>): string | null {
   for (const value of values) {

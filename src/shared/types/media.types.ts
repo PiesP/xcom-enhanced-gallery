@@ -1,36 +1,17 @@
 /**
  * @fileoverview Integrated media type definitions
- * @version 4.1.0 - Phase 327: MediaType SSOT establishment (constants.ts single source)
- *
- * All media-related types unified in one place:
- * - media.types.ts (core media types)
- * - core/media.types.ts (extraction and gallery related) ← Merge completed
- * - extraction.types.ts (extraction strategies and options) ← Planned merge
  */
 
-// ================================
-// Basic media types (re-exported from constants.ts - SSOT)
-// ================================
-
-// MediaType and MediaQuality are single sources in constants.ts
-
-// Import ErrorCode for integration (provide ExtractionErrorCode alias)
 import type { AmbientVideoPauseRequest } from '@shared/utils/media/ambient-video-coordinator';
 import type { ErrorCode } from './result.types';
 
-/**
- * Brand type base structure
- */
+/** Brand type base structure */
 type Brand<T, B> = T & { readonly __brand: B };
 
-/**
- * Media ID brand type
- */
+/** Media ID brand type */
 export type MediaId = Brand<string, 'MediaId'>;
 
-/**
- * Basic media information
- */
+/** Basic media information */
 export interface MediaInfo {
   readonly id: string;
   readonly url: string;
@@ -58,20 +39,12 @@ export interface MediaInfo {
   /** Quoted tweet URL (quote tweet case) */
   readonly quotedTweetUrl?: string | undefined;
 }
-
-/**
- * Media entity (with time information)
- */
+/** Media entity (with time information) */
 export interface MediaEntity extends MediaInfo {
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
-
-/**
- * MediaInfoWithFilename - Media information with filename (for download)
- *
- * Version of MediaInfo with required fields
- */
+/** MediaInfoWithFilename - Media information with filename (for download) */
 export interface MediaInfoWithFilename extends MediaInfo {
   /** Media unique identifier (required) */
   readonly id: string;
@@ -80,14 +53,7 @@ export interface MediaInfoWithFilename extends MediaInfo {
   /** Filename to save (required) */
   readonly filename: string;
 }
-
-// ================================
-// Extraction-related types
-// ================================
-
-/**
- * Tweet information interface
- */
+/** Tweet information interface */
 export interface TweetInfo {
   /** Tweet ID */
   readonly tweetId: string;

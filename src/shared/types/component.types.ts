@@ -1,36 +1,16 @@
 /**
  * @fileoverview Component Props and related type definitions
- * @version 1.0.0 - Phase 196: Split from app.types.ts
- * @description Definition of base Props and extended Props for all components
- *
- * Design Pattern:
- * - BaseComponentProps: Top-level base props for all components
- * - SpecificComponentProps: Role-specific props extending BaseComponentProps
  */
 
 import type { JSXElement } from '@shared/external/vendors';
 
-// ================================
-// Basic type definitions
-// ================================
-
-/**
- * JSX element type alias
- */
+/** JSX element type alias */
 export type VNode = JSXElement;
 
-/**
- * Component type (functional component)
- *
- * @template P Component props type
- */
+/** Component type (functional component) */
 export type ComponentType<P = Record<string, unknown>> = (props: P) => JSXElement | null;
 
-/**
- * Component child element type
- *
- * @description All types usable as JSX children
- */
+/** Component child element type */
 export type ComponentChildren =
   | JSXElement
   | string
@@ -40,45 +20,12 @@ export type ComponentChildren =
   | undefined
   | ComponentChildren[];
 
-/**
- * CSS properties object
- */
+/** CSS properties object */
 export interface CSSProperties {
   [key: string]: string | number | undefined;
 }
 
-// ================================
-// Base component Props
-// ================================
-
-/**
- * Top-level base Props for all components
- *
- * @description Phase 2-3A: Integrated (migrated from previous base/BaseComponentProps.ts)
- *
- * Inclusions:
- * - Basic HTML attributes (className, style, etc.)
- * - Accessibility attributes (aria-*, role)
- * - Data attributes (data-*)
- * - Event handlers (onClick, onKeyDown, etc.)
- *
- * @example
- * ```typescript
- * interface MyComponentProps extends BaseComponentProps {
- *   variant?: 'primary' | 'secondary';
- * }
- *
- * const MyComponent = (props: MyComponentProps) => (
- *   <button
- *     className={props.className}
- *     aria-label={props['aria-label']}
- *     data-testid={props['data-testid']}
- *   >
- *     {props.children}
- *   </button>
- * );
- * ```
- */
+/** Top-level base Props for all components */
 export interface BaseComponentProps {
   /** Child elements */
   children?: ComponentChildren;
@@ -120,17 +67,7 @@ export interface BaseComponentProps {
   [key: `data-${string}`]: string | number | boolean | undefined;
 }
 
-// ================================
-// Role-specific component Props (extends BaseComponentProps)
-// ================================
-
-/**
- * Interactive component Props
- *
- * @description For components that handle click/mouse events
- *
- * @example Buttons, links, clickable items
- */
+/** Interactive component Props - for clickable elements **/
 export interface InteractiveComponentProps extends BaseComponentProps {
   /** Disabled state */
   disabled?: boolean;
@@ -140,13 +77,7 @@ export interface InteractiveComponentProps extends BaseComponentProps {
   onMouseLeave?: (event: MouseEvent) => void;
 }
 
-/**
- * Loading-state component Props
- *
- * @description For components that display async operation progress
- *
- * @example Loading buttons, progress indicators
- */
+/** Loading-state component Props - for async operation progress **/
 export interface LoadingComponentProps extends BaseComponentProps {
   /** Loading state */
   loading?: boolean;

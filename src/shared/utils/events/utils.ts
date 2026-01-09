@@ -1,7 +1,6 @@
 /**
  * @fileoverview Event Utilities
- * @description Safe event handling utilities for consistent event management
- * @version 1.0.0 - Phase 326
+ * @description Safe event handling utilities for consistent event management.
  */
 
 /**

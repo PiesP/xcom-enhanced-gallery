@@ -1,16 +1,15 @@
 /**
- * @fileoverview Event Emitter (Phase 63 - Step 1)
- * @description Lightweight type-safe event system
+ * @fileoverview Event Emitter
+ * @description Lightweight type-safe event system for feature-local coordination.
  *
- * Purpose:
- * - Propagate gallerySignals navigation events
- * - Maintain loose coupling (between useGalleryFocusTracker and gallery.signals)
- * - Minimal bundle size (+~200 bytes)
+ * Features:
+ * - Type-safe event emission and subscription
+ * - Minimal bundle footprint
+ * - Error isolation: listener exceptions do not cascade
  *
- * Guidance:
- * - Use AppEventManager (@shared/events/app-events) for application-wide events.
- * - Use this emitter only for feature-local, short-lived coordination where
- *   AbortSignal / subscription tracking is not required.
+ * Guidelines:
+ * - Use AppEventManager (@shared/events/app-events) for application-wide events
+ * - Use this emitter for feature-local, short-lived coordination
  */
 
 import type { EventEmitterInterface } from './emitter.types';

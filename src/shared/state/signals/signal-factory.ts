@@ -65,27 +65,20 @@ export interface SafeSignal<T> {
  */
 export function createSignalSafe<T>(initial: T): SafeSignal<T> {
   const [read, write] = createSignal<T>(initial, { equals: false });
-  const setSignal = write as (value: T | ((prev: T) => T)) => void;
   const subscribers = new Set<(value: T) => void>();
 
   const notify = (value: T): void => {
-    for (const subscriber of subscribers) {
-      subscriber(value);
-    }
+    subscribers.forEach((subscriber) => subscriber(value));
   };
 
   const setValue = (value: T): void => {
-    if (typeof value === 'function') {
-      setSignal(() => value);
-    } else {
-      setSignal(value);
-    }
+    write(() => value as never);
     notify(value);
   };
 
   const updateValue = (updater: (prev: T) => T): void => {
     const nextValue = updater(read());
-    setSignal(updater);
+    write(() => nextValue as never);
     notify(nextValue);
   };
 
@@ -131,7 +124,6 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
 export function effectSafe(fn: () => void): () => void {
   return createRoot((dispose) => {
     createComputed(fn);
-
     return dispose;
   });
 }

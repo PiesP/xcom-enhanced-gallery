@@ -33,7 +33,7 @@ const MAX_SCHEME_PROBE_LENGTH = 64;
 // ============================================================================
 
 /** Default blocked protocol hints to prevent malicious URL schemes */
-const DEFAULT_BLOCKED_PROTOCOL_HINTS = Object.freeze([
+const DEFAULT_BLOCKED_PROTOCOL_HINTS = [
   'javascript:',
   'vbscript:',
   'file:',
@@ -54,24 +54,26 @@ const DEFAULT_BLOCKED_PROTOCOL_HINTS = Object.freeze([
   'data:application',
   'data:video',
   'data:audio',
-]);
+] as const;
 
 // ============================================================================
 // MEDIA PROTOCOL AND MIME TYPE CONFIGURATION
 // ============================================================================
 
 /** Safe protocols allowed for media resources (HTTP/HTTPS/Blob) */
-const MEDIA_SAFE_PROTOCOLS = new Set(['http:', 'https:', 'blob:']) as ReadonlySet<string>;
+const MEDIA_SAFE_PROTOCOLS = Object.freeze(
+  new Set(['http:', 'https:', 'blob:'])
+) as ReadonlySet<string>;
 
 /** Allowed MIME type prefixes for data: URLs (image formats only) */
-const DATA_IMAGE_MIME_PREFIXES = Object.freeze([
+const DATA_IMAGE_MIME_PREFIXES = [
   'image/png',
   'image/jpeg',
   'image/jpg',
   'image/gif',
   'image/webp',
   'image/avif',
-]);
+] as const;
 
 // ============================================================================
 // URL SAFETY POLICY INTERFACE
@@ -108,7 +110,7 @@ interface UrlSafetyPolicy {
  * Allows HTTP/HTTPS/Blob protocols, relative and protocol-relative URLs,
  * and image data URLs. Blocks fragments and malicious schemes.
  */
-export const MEDIA_URL_POLICY: UrlSafetyPolicy = {
+export const MEDIA_URL_POLICY = {
   allowedProtocols: MEDIA_SAFE_PROTOCOLS,
   allowRelative: true,
   allowProtocolRelative: true,
@@ -206,6 +208,8 @@ export function isUrlAllowed(rawUrl: string | null | undefined, policy: UrlSafet
  * @param value - The normalized URL string (lowercase)
  * @param hints - Array of blocked protocol hints to match
  * @returns True if the URL starts with a blocked hint, false otherwise
+ *
+ * @internal
  */
 function startsWithBlockedProtocolHint(value: string, hints: readonly string[]): boolean {
   const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
@@ -221,6 +225,17 @@ function startsWithBlockedProtocolHint(value: string, hints: readonly string[]):
   return variants.some((candidate) => hints.some((hint) => candidate.startsWith(hint)));
 }
 
+/**
+ * Builds URL variants to detect obfuscated blocking schemes.
+ *
+ * Generates alternatives with whitespace removed and iteratively decoded
+ * percent-encoded characters to catch variations like 'jav%61script:'.
+ *
+ * @param value - The probe string to build variants for
+ * @returns Array of URL variants to check against blocked hints
+ *
+ * @internal
+ */
 function buildProbeVariants(value: string): string[] {
   const variants = new Set<string>();
   const base = value.toLowerCase();
@@ -251,6 +266,8 @@ function buildProbeVariants(value: string): string[] {
  * @param lowerCaseValue - The lowercase data: URL string (should start with 'data:')
  * @param allowedPrefixes - Array of allowed MIME type prefixes (e.g., 'image/png', 'image/jpeg')
  * @returns True if the data URL's MIME type is in the allowed list, false otherwise
+ *
+ * @internal
  */
 function isAllowedDataUrl(
   lowerCaseValue: string,
@@ -277,6 +294,8 @@ function isAllowedDataUrl(
  * @param url - The protocol-relative URL string
  * @param policy - Security policy with allowed protocols
  * @returns True if the resolved URL uses an allowed protocol, false otherwise
+ *
+ * @internal
  */
 function handleProtocolRelative(url: string, policy: UrlSafetyPolicy): boolean {
   if (!policy.allowProtocolRelative) {

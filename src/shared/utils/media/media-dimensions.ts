@@ -19,14 +19,16 @@ interface ResolvedMediaDimensions {
   readonly hasIntrinsicSize: boolean;
 }
 
+/** Standard gallery height constant */
 const STANDARD_GALLERY_HEIGHT = 720 as const;
 
+/** Default media dimensions */
 const DEFAULT_DIMENSIONS = {
   width: 540,
   height: STANDARD_GALLERY_HEIGHT,
 } as const satisfies DimensionPair;
 
-/** Check if string has a valid URL prefix */
+/** Check if string has valid URL prefix */
 function hasValidUrlPrefix(str: string): boolean {
   return /^(?:https?:\/\/|\/\/|\/|\.\/|\.\.\/)/u.test(str);
 }
@@ -161,11 +163,7 @@ export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMedi
   }));
 }
 
-/**
- * Extract dimensions from URL containing WxH pattern
- * @param url - URL to parse
- * @returns Dimension pair or null if not found
- */
+/** Extract dimensions from URL containing WxH pattern */
 export function extractDimensionsFromUrl(url: string): DimensionPair | null {
   if (!url) return null;
   const match = url.match(/\/(\d{2,6})x(\d{2,6})(?:\/|\.|$)/);
@@ -181,12 +179,7 @@ export function extractDimensionsFromUrl(url: string): DimensionPair | null {
   return { width, height };
 }
 
-/**
- * Normalize dimension value to positive integer
- * Accepts numbers or numeric strings
- * @param value - Value to normalize
- * @returns Rounded positive integer or null if invalid
- */
+/** Normalize dimension value to positive integer */
 export function normalizeDimension(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
     return Math.round(value);
@@ -200,11 +193,7 @@ export function normalizeDimension(value: unknown): number | null {
   return null;
 }
 
-/**
- * Normalize media URL to comparable filename (extension removed)
- * @param url - URL to normalize
- * @returns Normalized filename or null if invalid
- */
+/** Normalize media URL to comparable filename (extension removed) */
 export function normalizeMediaUrl(url: string): string | null {
   if (!url) return null;
 
@@ -227,12 +216,7 @@ export function normalizeMediaUrl(url: string): string | null {
 
 type MetadataRecord = Record<string, unknown> | undefined;
 
-/**
- * Scale aspect ratio to standard gallery height
- * @param widthRatio - Width component of aspect ratio
- * @param heightRatio - Height component of aspect ratio
- * @returns Scaled dimensions or default if invalid
- */
+/** Scale aspect ratio to standard gallery height */
 function scaleAspectRatio(widthRatio: number, heightRatio: number): DimensionPair {
   if (heightRatio <= 0 || widthRatio <= 0) {
     return DEFAULT_DIMENSIONS;
@@ -247,11 +231,7 @@ function scaleAspectRatio(widthRatio: number, heightRatio: number): DimensionPai
   };
 }
 
-/**
- * Extract dimensions from metadata object
- * @param dimensions - Metadata dimensions object
- * @returns Dimension pair or null if not found
- */
+/** Extract dimensions from metadata object */
 function extractDimensionsFromMetadataObject(
   dimensions?: Record<string, unknown>
 ): DimensionPair | null {
@@ -268,11 +248,7 @@ function extractDimensionsFromMetadataObject(
   return null;
 }
 
-/**
- * Derive dimensions from metadata using multiple strategies
- * @param metadata - Metadata record
- * @returns Dimension pair or null if not found
- */
+/** Derive dimensions from metadata using multiple strategies */
 function deriveDimensionsFromMetadata(metadata: MetadataRecord): DimensionPair | null {
   if (!metadata) {
     return null;
@@ -324,11 +300,7 @@ function deriveDimensionsFromMetadata(metadata: MetadataRecord): DimensionPair |
   return null;
 }
 
-/**
- * Derive dimensions from media URL candidates
- * @param media - Media info object
- * @returns Dimension pair or null if not found in any URL
- */
+/** Derive dimensions from media URL candidates */
 function deriveDimensionsFromMediaUrls(media: MediaInfo): DimensionPair | null {
   const candidates: readonly (string | undefined)[] = [
     media.url,
@@ -375,11 +347,7 @@ export function resolveMediaDimensionsWithIntrinsicFlag(
   return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
 }
 
-/**
- * Convert pixel value to rem unit
- * @param pixels - Pixel value to convert
- * @returns CSS rem value with 4 decimal places
- */
+/** Convert pixel value to rem unit */
 function toRem(pixels: number): string {
   return `${(pixels / 16).toFixed(4)}rem`;
 }

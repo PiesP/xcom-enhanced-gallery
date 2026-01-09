@@ -1,7 +1,6 @@
 /**
- * @fileoverview Reusable animation utilities (keyframes + helper classes).
- * @description Complements design tokens by exposing lightweight motion presets.
- * Uses semantic animation tokens for easing and duration, respects user motion preferences.
+ * @fileoverview Reusable animation utilities (keyframes + helper classes)
+ * @description Lightweight motion presets using semantic animation tokens
  */
 
 @layer xeg.utilities {

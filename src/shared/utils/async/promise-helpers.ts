@@ -10,33 +10,13 @@ import type {
   VoidCallback,
 } from './promise-helpers.types';
 
-export type {
-  Deferred,
-  PromisifyOptions,
-  ResultCallback,
-  VoidCallback,
-} from './promise-helpers.types';
-
 /**
  * Converts a callback-based method to a Promise.
  * Handles error cases and optional fallback logic.
- *
  * @template TResult - The type of value the callback receives on success
- *
- * @param executor - Function that receives the callback.
- *                   Must invoke the callback exactly once with either a result or error.
+ * @param executor - Function that receives the callback, invoked once with result or error
  * @param options - Optional fallback handler and context for error logging
  * @returns Promise resolving to the result on success, or fallback value on error
- *
- * @example
- * ```typescript
- * // With GM_cookie.list
- * const cookies = await promisifyCallback<CookieRecord[]>(
- *   (callback) => gmCookie.list(options, callback),
- *   { fallback: () => this.listFromDocument(options) }
- * );
- * ```
- *
  * @throws Error if callback reports an error and no fallback is provided
  */
 export function promisifyCallback<TResult>(
@@ -69,18 +49,8 @@ export function promisifyCallback<TResult>(
 /**
  * Converts a void callback-based method to a Promise.
  * Use this for callback-based APIs that only report errors, not values.
- *
- * @param executor - Function that receives the callback.
- *                   Must invoke the callback exactly once with an optional error.
+ * @param executor - Function that receives the callback, invoked once with optional error
  * @returns Promise that resolves when callback is called without error
- *
- * @example
- * ```typescript
- * await promisifyVoidCallback(
- *   (callback) => gmCookie.set(details, callback)
- * );
- * ```
- *
  * @throws Error if callback reports an error
  */
 export function promisifyVoidCallback(executor: (callback: VoidCallback) => void): Promise<void> {
@@ -101,20 +71,13 @@ export function promisifyVoidCallback(executor: (callback: VoidCallback) => void
 
 /**
  * Create a Deferred promise with exposed resolve/reject handlers.
- *
  * A Deferred represents a Promise with exposed resolve/reject handlers.
- * Prefer this when you need to bridge event/callback-based APIs to async/await
- * while keeping resolve/reject references in local scope.
- *
  * @template T - The type of value the promise resolves to
  * @returns A Deferred object with promise, resolve, and reject properties
- *
  * @example
- * ```typescript
  * const deferred = createDeferred<string>();
- * setTimeout(() => deferred.resolve('done'), 1000);
+ * deferred.resolve('done');
  * const result = await deferred.promise; // 'done'
- * ```
  */
 export function createDeferred<T>(): Deferred<T> {
   let resolve!: (value: T | PromiseLike<T>) => void;

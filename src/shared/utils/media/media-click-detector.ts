@@ -23,37 +23,20 @@ import { isValidMediaUrl } from '@shared/utils/url/validator';
 // Constants
 // ============================================================================
 
-/**
- * Media link selectors for profile grid and timeline media.
- * Includes /photo/ and /video/ links that should trigger gallery.
- *
- * @see STATUS_LINK_SELECTOR - Core selector for status/tweet links
- */
+/** Media link selectors - Profile grid and timeline media links */
 const MEDIA_LINK_SELECTORS = [
-  STATUS_LINK_SELECTOR, // a[href*="/status/"]
-  'a[href*="/photo/"]', // Photo links (profile grid)
-  'a[href*="/video/"]', // Video links (profile grid)
+  STATUS_LINK_SELECTOR,
+  'a[href*="/photo/"]',
+  'a[href*="/video/"]',
 ] as const;
 
-/**
- * Combined selector string for media link detection.
- * Generated from MEDIA_LINK_SELECTORS for efficient DOM queries.
- */
+/** Combined selector string for media links */
 const MEDIA_LINK_SELECTOR: string = MEDIA_LINK_SELECTORS.join(', ');
 
-/**
- * Combined selector string for media container detection.
- * Covers images, videos, and other media containers.
- */
+/** Combined selector string for media containers */
 const MEDIA_CONTAINER_SELECTOR: string = STABLE_MEDIA_CONTAINERS_SELECTORS.join(', ');
 
-/**
- * Interactive element selectors that may contain or trigger gallery.
- * Used to differentiate interactive elements from media containers.
- *
- * Includes buttons, links, and Twitter-specific action elements
- * (like, retweet, reply, share, bookmark).
- */
+/** Interactive element selectors */
 const INTERACTIVE_SELECTOR: string = [
   'button',
   'a',
@@ -65,29 +48,14 @@ const INTERACTIVE_SELECTOR: string = [
   '[data-testid="bookmark"]',
 ].join(', ');
 
-/**
- * Context selectors where media clicks should NOT trigger XEG gallery.
- * Preserves native navigation for link cards, X Articles, and native media viewers.
- *
- * Includes:
- * - Link preview cards (external links, YouTube cards)
- * - X Articles / longform reader UI
- * - Article cover images
- * - Native X media viewers/lightboxes
- * - Additional stable X media viewer DOM hooks
- */
+/** Blocked media context selectors */
 const BLOCKED_MEDIA_CONTEXT_SELECTOR: string = [
-  // Link preview cards (external links, YouTube cards, etc.)
   '[data-testid="card.wrapper"]',
-  // X Articles / longform reader UI
   '[data-testid="twitterArticleReadView"]',
   '[data-testid="longformRichTextComponent"]',
   '[data-testid="twitterArticleRichTextView"]',
-  // X Article cover image (thumbnail) should preserve native navigation
   '[data-testid="article-cover-image"]',
-  // Native X media viewers/lightboxes (prevent re-trigger inside the modal)
   ...STABLE_MEDIA_VIEWERS_SELECTORS,
-  // Additional stable hooks observed in X media viewer DOM
   '[data-testid="swipe-to-dismiss"]',
   '[data-testid="mask"]',
 ].join(', ');
@@ -96,12 +64,7 @@ const BLOCKED_MEDIA_CONTEXT_SELECTOR: string = [
 // Media Validation
 // ============================================================================
 
-/**
- * Check if URL is a valid media source (Twitter URL or blob).
- *
- * @param url - The URL to validate
- * @returns true if the URL is a valid media source
- */
+/** Check if URL is valid media source (Twitter URL or blob) */
 function isValidMediaSource(url: string | null | undefined): boolean {
   if (!url) return false;
   if (url.startsWith('blob:')) return true;
@@ -113,16 +76,9 @@ function isValidMediaSource(url: string | null | undefined): boolean {
 // ============================================================================
 
 /**
- * Check if the click target should block gallery trigger.
- *
- * Evaluates target element against multiple block conditions:
- * - Video control elements
- * - Gallery internal elements (root, overlay)
- * - Contexts that should preserve native navigation (link cards, X Articles)
- * - Non-media interactive elements (buttons, links, etc.)
- *
- * @param target - The element that was clicked
- * @returns true if the click should block gallery trigger
+ * Check if click target should block gallery trigger
+ * @param target - Clicked element
+ * @returns true if click should be blocked
  */
 function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   if (!target) return false;
@@ -163,16 +119,9 @@ function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
 }
 
 /**
- * Check if element is processable media that should trigger the gallery.
- *
- * Validates that:
- * 1. Gallery is not already open
- * 2. Click target is not in a blocked context
- * 3. Target contains valid media with extractable URL, or
- * 4. Target is within a media container (for unloaded media)
- *
- * @param target - The element that was clicked
- * @returns true if the element represents valid media that should open the gallery
+ * Check if element is processable media for gallery trigger
+ * @param target - Clicked element
+ * @returns true if valid media that should open gallery
  */
 export function isProcessableMedia(target: HTMLElement | null): boolean {
   if (!target) return false;

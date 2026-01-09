@@ -25,7 +25,7 @@ const MAX_URL_LENGTH = 2048 as const;
  * This is derived from the media constant. Kept as a separate variable for
  * performance optimization and clarity in the validation logic.
  */
-const ALLOWED_MEDIA_HOSTS = MEDIA.HOSTS.MEDIA_CDN;
+const ALLOWED_MEDIA_HOSTS = Object.freeze(MEDIA.HOSTS.MEDIA_CDN) as ReadonlyArray<string>;
 
 /**
  * Validate Twitter media URL
@@ -75,7 +75,10 @@ export function isValidMediaUrl(url: string): boolean {
  * - Basic URL safety checks (blocked protocols, control character stripping)
  * - Media host allow-listing and host-specific path policy
  *
- * Notes:
+ * @param value - URL to validate (string, URL object, null, or undefined)
+ * @returns True if URL is safe and valid for media, false otherwise
+ *
+ * @remarks
  * - Relative URLs are rejected even though MEDIA_URL_POLICY can allow them.
  * - blob: and data: URLs are rejected even if the safety policy permits them.
  */
@@ -114,11 +117,13 @@ export function isSafeAndValidMediaUrl(value: string | URL | null | undefined): 
 /**
  * Validate URL protocol.
  *
- * Note: `tryParseUrl()` supports protocol-relative URLs by coercing to `https:`.
- *
- * @internal
  * @param protocol - URL protocol (example: 'https:', 'http:')
  * @returns Whether protocol is https or http
+ *
+ * @remarks
+ * `tryParseUrl()` supports protocol-relative URLs by coercing to `https:`.
+ *
+ * @internal
  */
 const isHttpProtocol = (protocol: string): boolean => protocol === 'https:' || protocol === 'http:';
 
@@ -128,10 +133,11 @@ const isHttpProtocol = (protocol: string): boolean => protocol === 'https:' || p
  * This function routes validation to host-specific path checkers, keeping
  * host allow-listing and path policy separate to prevent policy drift.
  *
- * @internal
  * @param hostname - The hostname to validate (e.g., 'pbs.twimg.com')
  * @param pathname - The pathname to validate against host-specific rules
  * @returns Whether the pathname is allowed for the given hostname
+ *
+ * @internal
  */
 function isAllowedMediaPath(hostname: string, pathname: string): boolean {
   if (hostname === 'pbs.twimg.com') {
@@ -148,13 +154,13 @@ function isAllowedMediaPath(hostname: string, pathname: string): boolean {
 /**
  * Validate pbs.twimg.com path for allowed media prefixes.
  *
- * @internal
+ * Uses strict prefix matching to prevent substring-based bypasses.
+ * Allowed prefixes include media, thumbnails, and video metadata paths.
+ *
  * @param pathname - URL pathname to validate
  * @returns Whether the pathname matches an allowed media prefix for pbs.twimg.com
  *
- * @remarks
- * Uses strict prefix matching to prevent substring-based bypasses.
- * Allowed prefixes include media, thumbnails, and video metadata paths.
+ * @internal
  */
 const checkPbsMediaPath = (pathname: string): boolean =>
   pathname.startsWith('/media/') ||
@@ -166,14 +172,14 @@ const checkPbsMediaPath = (pathname: string): boolean =>
 /**
  * Validate video.twimg.com path for allowed media prefixes.
  *
- * @internal
+ * Uses strict prefix matching to prevent substring-based bypasses.
+ * Only known media path prefixes (video, thumbnails, DM videos) are allowed.
+ * We intentionally do not accept arbitrary paths on video.twimg.com.
+ *
  * @param pathname - URL pathname to validate
  * @returns Whether the pathname matches an allowed media prefix for video.twimg.com
  *
- * @remarks
- * We intentionally do not accept arbitrary paths on video.twimg.com.
- * Only known media path prefixes (video, thumbnails, DM videos) are allowed.
- * Uses strict prefix matching to prevent substring-based bypasses.
+ * @internal
  */
 const checkVideoMediaPath = (pathname: string): boolean =>
   pathname.startsWith('/ext_tw_video/') ||

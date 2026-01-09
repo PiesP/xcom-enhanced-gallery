@@ -2,14 +2,11 @@
 
 ## 📚 Overview
 
-`src/shared/types/` directory is responsible for shared type definitions across
-the entire project.
+`src/shared/types/` directory contains shared type definitions.
 
-- **Single import point**: `@shared/types`
-- **Domain separation**: Detailed files for each domain
-- **Re-export hub**: app.types.ts provides centralized export
-- **Backward Compatibility**: Previous import paths also supported to a limited
-  extent
+- **Domain separation**: Import directly from specific type files as needed
+- **No barrel exports**: Follows CODE_STANDARDS.md no-barrel-imports rule
+- **Organized by domain**: Each file contains related types
 
 ---
 
@@ -17,86 +14,51 @@ the entire project.
 
 ```
 src/shared/types/
-├── index.ts                      # Barrel export (recommended import point)
-├── app.types.ts (205 lines)     # App level + re-export hub
-├── ui.types.ts                   # UI/theme related types
-├── component.types.ts           # Component Props/events
-├── media.types.ts (558 lines)   # Media & extraction domain
-├── result.types.ts              # Result pattern & ErrorCode
-├── navigation.types.ts          # Navigation types
-├── toolbar.types.ts             # Toolbar UI state (Phase 197.1)
-└── core/                        # Infrastructure & core domain
-    ├── index.ts                 # Core barrel
-    ├── core-types.ts (613 lines) # Integrated domain types
-    ├── base-service.types.ts    # BaseService definition
-    ├── extraction.types.ts      # Backward compat layer
-    └── userscript.d.ts (205 lines) # UserScript API
+├── app.types.ts              # App-level types (AppConfig, Brand types)
+├── ui.types.ts               # UI/theme types (Theme, Button variants)
+├── component.types.ts        # Component Props (BaseComponentProps)
+├── media.types.ts            # Media domain types
+├── result.types.ts           # Result pattern & ErrorCode
+├── navigation.types.ts       # Navigation types
+├── toolbar.types.ts          # Toolbar UI state types
+├── lifecycle.types.ts        # Lifecycle/cleanup types
+└── core/                     # Core infrastructure types
+    ├── base-service.types.ts # BaseService definition
+    ├── core-types.ts         # Gallery domain types
+    ├── cookie.types.ts       # Cookie API types
+    └── userscript.d.ts       # UserScript API definitions
 ```
 
 ---
 
-## 📖 Purpose of Each File
+## 📖 Import Patterns
 
-### Root Level Files
+### ✅ Recommended - Direct imports
 
-#### `index.ts` - Barrel export
+```typescript
+// Import from specific domain files
+import type { MediaInfo } from "@shared/types/media.types";
+import type { Theme } from "@shared/types/ui.types";
+import type { Result } from "@shared/types/result.types";
+import type { GalleryState } from "@shared/types/core/core-types";
+```
 
-- **Purpose**: Single entry point for entire type system
-- **Role**: Re-export all public types
-- **Usage**: `import type { Result, MediaInfo } from '@shared/types'`
+### ❌ Not Allowed - Barrel exports
 
-#### `app.types.ts` - App-level types
+```typescript
+// Do NOT use barrel imports - violates CODE_STANDARDS.md 3.2
+import type { MediaInfo } from "@shared/types";
+import type { Theme } from "@shared/types";
+```
 
-- **Purpose**: App global type definitions + re-export hub for subordinate files
-- **Includes**: AppConfig, Cleanupable, Nullable, DeepPartial
-- **Brand types**: UserId, TweetId etc.
-- **Size**: 205 lines (reduced from 350 lines in Phase 197)
+---
 
-#### `ui.types.ts` - UI/theme types
+## 📖 File Descriptions
 
-- **Purpose**: UI-related types
-- **Includes**: Theme, GalleryTheme, ButtonVariant
-- **Usage**: UI components, theme system
+### `app.types.ts`
 
-#### `component.types.ts` - Component types
-
-- **Purpose**: Component Props and event types
-- **Includes**: BaseComponentProps, InteractiveComponentProps
-- **Role**: Basic Props definition that all components inherit
-
-#### `media.types.ts` - Media & extraction types
-
-- **Purpose**: Media domain types (size: 558 lines)
-- **Includes**: MediaInfo, MediaExtractionOptions, TweetInfo
-- **Characteristic**: Includes ExtractionError class
-
-#### `result.types.ts` - Result pattern & ErrorCode
-
-- **Purpose**: Explicit representation of success/failure
-- **Includes**: BaseResult, ResultSuccess, ResultError
-- **ErrorCode**: Integrated generic + media-specific
-
-#### `navigation.types.ts` - Navigation types
-
-- **Purpose**: Gallery navigation-related types
-- **Includes**: NavigationSource ('button' | 'keyboard' | 'scroll' |
-  'auto-focus')
-
-#### `toolbar.types.ts` - Toolbar UI types (Phase 197.1 new)
-
-- **Purpose**: Toolbar UI state types
-- **Includes**: ToolbarDataState, ToolbarState, ToolbarActions, FitMode
-- **Reason**: @shared code depends on this, moved from @features
-
-### Core Layer Files
-
-#### `core/index.ts` (removed) - Legacy core barrel
-
-- **Status**: Removed after Phase 364 simplification
-- **Reason**: Direct imports from `core/core-types.ts` and `userscript.d.ts`
-  replace the barrel
-
-#### `core/core-types.ts` - Integrated domain types (613 lines)
+- **Purpose**: App-level type definitions
+- **Includes**: AppConfig, Brand types (UserId, TweetId, etc.), DeepPartial, Option, Optional
 
 - **Purpose**: Unified management of multiple domain types
 - **Sections**:

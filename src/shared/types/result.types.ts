@@ -1,34 +1,15 @@
 /**
- * Common Result pattern (Phase: Result Unification)
- * @version 2.2.0 - Phase 4: Type system optimization (enum → const object)
+ * Common Result pattern
+ * @version 2.2.0 - Enum → const object for tree-shaking optimization
  */
+
 const BaseResultStatusValues = ['success', 'partial', 'error', 'cancelled'] as const;
 type BaseResultStatus = (typeof BaseResultStatusValues)[number];
 
 /**
- * Integrated error codes (generic + media extraction)
+ * Integrated error codes
  *
  * Using const object instead of enum for tree-shaking optimization.
- * Enum generates runtime code, while const object is purely compile-time.
- *
- * Generic error codes:
- *   - NONE: No error
- *   - CANCELLED: Operation cancelled
- *   - EMPTY_INPUT: Input is empty
- *   - ALL_FAILED: All operations failed
- *   - PARTIAL_FAILED: Some operations failed
- *   - UNKNOWN: Unknown error
- *
- * Network/Timeout:
- *   - NETWORK: Network error
- *   - TIMEOUT: Operation timeout
- *
- * Media extraction specific (Phase 195: ExtractionErrorCode integrated):
- *   - ELEMENT_NOT_FOUND: Element not found
- *   - INVALID_ELEMENT: Invalid element
- *   - NO_MEDIA_FOUND: No media found
- *   - INVALID_URL: Invalid URL
- *   - PERMISSION_DENIED: Permission denied
  */
 export const ErrorCode = {
   // Generic error codes
@@ -41,7 +22,7 @@ export const ErrorCode = {
   PARTIAL_FAILED: 'PARTIAL_FAILED',
   UNKNOWN: 'UNKNOWN',
 
-  // Media extraction specific error codes (previous ExtractionErrorCode integrated)
+  // Media extraction specific error codes
   ELEMENT_NOT_FOUND: 'ELEMENT_NOT_FOUND',
   INVALID_ELEMENT: 'INVALID_ELEMENT',
   NO_MEDIA_FOUND: 'NO_MEDIA_FOUND',

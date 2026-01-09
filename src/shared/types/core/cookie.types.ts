@@ -1,19 +1,13 @@
 /**
- * Cookie-related type definitions shared across the service and external adapters.
+ * @fileoverview Cookie-related type definitions
  */
 
-/**
- * Represents a cookie partition key for advanced cookie storage scenarios.
- * Used in browsers supporting First-Party Sets or similar privacy features.
- */
+/** Cookie partition key for advanced cookie storage scenarios */
 interface CookiePartitionKey {
   readonly topLevelSite?: string;
 }
 
-/**
- * Represents a single cookie record with complete metadata.
- * Includes standard cookie properties and browser-specific extensions.
- */
+/** Single cookie record with complete metadata */
 export interface CookieRecord {
   readonly name: string;
   readonly value: string;
@@ -28,10 +22,7 @@ export interface CookieRecord {
   readonly partitionKey?: CookiePartitionKey;
 }
 
-/**
- * Query options for listing cookies.
- * Filter cookies by URL, domain, name, path, or partition.
- */
+/** Query options for listing cookies */
 export interface CookieListOptions {
   readonly url?: string;
   readonly domain?: string;
@@ -40,10 +31,7 @@ export interface CookieListOptions {
   readonly partitionKey?: CookiePartitionKey;
 }
 
-/**
- * Options for setting a new cookie.
- * Extends CookieListOptions with required value and optional cookie attributes.
- */
+/** Options for setting a new cookie */
 export interface CookieSetOptions extends CookieListOptions {
   readonly value: string;
   readonly secure?: boolean;
@@ -52,10 +40,7 @@ export interface CookieSetOptions extends CookieListOptions {
   readonly firstPartyDomain?: string;
 }
 
-/**
- * Options for deleting a cookie.
- * Requires cookie name and optional URL/domain for specificity.
- */
+/** Options for deleting a cookie */
 export interface CookieDeleteOptions {
   readonly name: string;
   readonly url?: string;
@@ -63,42 +48,18 @@ export interface CookieDeleteOptions {
   readonly partitionKey?: CookiePartitionKey;
 }
 
-/**
- * Callback signature for cookie list operations.
- * @param cookies - Array of cookie records matching the query
- * @param error - Error message if operation failed, null on success
- */
+/** Callback signature for cookie list operations */
 type CookieListCallback = (cookies: readonly CookieRecord[], error: string | null) => void;
 
-/**
- * Callback signature for cookie set/delete operations.
- * @param error - Error message if operation failed, undefined on success
- */
+/** Callback signature for cookie set/delete operations */
 type CookieOperationCallback = (error?: string) => void;
 
-/**
- * Cookie API contract for browser extension cookie access.
- * Provides methods to query, set, and delete cookies with callback-based results.
- */
+/** Cookie API contract for browser extension cookie access */
 export interface CookieAPI {
-  /**
-   * List cookies matching the given options.
-   * @param details - Filter options for the cookie query
-   * @param callback - Callback invoked with results or error
-   */
+  /** List cookies matching the given options */
   readonly list: (details?: CookieListOptions, callback?: CookieListCallback) => void;
-
-  /**
-   * Set a new cookie or update an existing one.
-   * @param details - Cookie properties to set
-   * @param callback - Callback invoked on completion
-   */
+  /** Set a new cookie or update an existing one */
   readonly set?: (details: CookieSetOptions, callback?: CookieOperationCallback) => void;
-
-  /**
-   * Delete a cookie by name and optional domain.
-   * @param details - Cookie identifier and optional scope
-   * @param callback - Callback invoked on completion
-   */
+  /** Delete a cookie by name and optional domain */
   readonly delete?: (details: CookieDeleteOptions, callback?: CookieOperationCallback) => void;
 }

@@ -1,20 +1,18 @@
 /**
- * @fileoverview Semantic Design Tokens
- * @description Role-based tokens that reference primitive values
+ * @fileoverview Semantic Design Tokens - role-based mappings
+ * @description References primitive values with semantic roles
  * @layer xeg.tokens
  */
 
 @layer xeg.tokens {
   :where(:root, .xeg-theme-scope) {
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Background Colors - Semantic Roles
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Background Colors */
     --xeg-color-bg-primary: var(--color-base-white);
     --xeg-color-bg-secondary: var(--color-gray-50);
     --xeg-color-bg-surface: var(--color-base-white);
     --xeg-color-bg-elevated: var(--color-base-white);
 
-    /* Gallery and toolbar background tokens */
+    /* Toolbar backgrounds */
     --xeg-bg-toolbar: var(--xeg-color-bg-surface);
     --xeg-toolbar-border: var(--xeg-color-border-primary);
     --xeg-toolbar-surface: var(--xeg-bg-toolbar);
@@ -23,9 +21,7 @@
     /* Gallery Image Item Background Tokens */
     --xeg-color-bg-secondary-alias: var(--xeg-color-bg-secondary);
 
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Gallery Backgrounds
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Gallery backgrounds */
     --xeg-gallery-bg-light: var(--color-bg-primary);
     --xeg-gallery-bg-dark: var(--color-gray-900);
     --xeg-gallery-bg: var(--xeg-gallery-bg-light);
@@ -36,15 +32,11 @@
     /* Layout stability tokens */
     --xeg-aspect-default: 4 / 3;
 
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Text Colors - Semantic Roles
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Text Colors */
     --xeg-color-text-primary: var(--color-base-black);
-    --xeg-color-text-secondary: var(--color-gray-600); /* design-consistency */
+    --xeg-color-text-secondary: var(--color-gray-600);
 
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Border Colors - Semantic Roles
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Border Colors */
     --xeg-color-border-default: var(--color-gray-200);
     --xeg-color-border-emphasis: var(--color-gray-500);
 
@@ -117,22 +109,16 @@
     --xeg-color-neutral-500: var(--color-gray-500);
 
     /* Text color aliases for components */
-    --xeg-color-text-primary: var(--color-base-black);
-    --xeg-color-text-secondary: var(--color-gray-600);
     --xeg-color-text-tertiary: var(--color-gray-500);
     --xeg-color-text-inverse: var(--color-base-white);
 
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Component Sizing - Semantic Roles (em: relative to font-size)
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Component Sizing (em: relative to font-size) */
     --xeg-size-button-md: 2.5em;
 
     /* Focus indicator tokens */
     --xeg-focus-indicator-color: var(--xeg-color-border-primary);
 
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Typography Tokens - Component Usage
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Typography Tokens - component usage */
     --xeg-font-size-sm: var(--font-size-sm);
     --xeg-font-size-base: var(--font-size-base);
     --xeg-font-size-md: var(--font-size-md);
@@ -148,16 +134,12 @@
     --xeg-line-height-snug: var(--line-height-snug);
     --xeg-line-height-relaxed: var(--line-height-relaxed);
 
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Animation Timing - Semantic Roles
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Animation Timing - semantic roles */
     --xeg-duration-fast: var(--duration-fast);
     --xeg-duration-normal: var(--duration-normal);
     --xeg-duration-toolbar: var(--duration-normal);
 
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Surface Tokens - Flat panel style
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Surface Tokens - flat panel style */
     --xeg-surface-bg: var(--xeg-color-bg-surface);
     --xeg-surface-border: var(--xeg-color-border-default);
     --xeg-surface-bg-hover: var(--xeg-color-bg-secondary);
@@ -169,62 +151,46 @@
     /* Border emphasis aliases */
     --xeg-border-emphasis: var(--xeg-color-border-emphasis);
 
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Z-Index Management
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Z-Index Management */
     --xeg-z-gallery: 2147483600;
     --xeg-z-toolbar-hover-zone: 2147483618;
     --xeg-z-toolbar: 2147483620;
     --xeg-z-toolbar-panel: 2147483622;
     --xeg-z-toolbar-panel-active: 2147483624;
 
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Animation Easing - Material Design
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Animation Easing - Material Design */
     --xeg-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
     --xeg-ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
     --xeg-ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
     --xeg-easing-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
     --xeg-easing-linear: linear;
 
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Line Height - Semantic Alias
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Line Height - semantic alias */
     --xeg-line-height-normal: var(--line-height-normal, 1.5);
 
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Interaction State Tokens
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Interaction State Tokens */
     --xeg-button-lift: -0.0625rem;
     --xeg-opacity-disabled: 0.5;
     --xeg-hover-lift: translateY(-0.125rem);
 
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Spacing Tokens - Component Usage
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Spacing Tokens - component usage */
     --xeg-spacing-none: var(--space-none);
     --xeg-spacing-xl: var(--space-xl);
 
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Border Radius - Extended Scale
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Border Radius - extended scale */
     --xeg-radius-sm: var(--radius-sm);
     --xeg-radius-md: var(--radius-md);
     --xeg-radius-lg: var(--radius-lg);
     --xeg-radius-2xl: var(--radius-2xl);
     --xeg-radius-full: var(--radius-full);
 
-    /* ─────────────────────────────────────────────────────────────────────────
-     * Scrollbar Tokens - For reset.css
-     * ───────────────────────────────────────────────────────────────────────── */
+    /* Scrollbar Tokens */
     --xeg-scrollbar-thumb-color: var(--color-gray-400);
     --xeg-scrollbar-thumb-hover-color: var(--color-gray-500);
     --xeg-scrollbar-track-color: var(--color-gray-200);
   }
 
-  /* ─────────────────────────────────────────────────────────────────────────────
-   * Theme Support - Dark/Light Mode
-   * ───────────────────────────────────────────────────────────────────────────── */
+  /* Theme Support - dark/light mode */
   :where(:root, .xeg-theme-scope)[data-theme="light"] {
     --xeg-color-bg-primary: var(--color-base-white);
     --xeg-color-text-primary: var(--color-base-black);
@@ -302,17 +268,12 @@
    * ───────────────────────────────────────────────────────────────────────────── */
   :where(:root, .xeg-theme-scope) {
     /* Settings Component Tokens */
-    /* Layout */
     --xeg-settings-gap: var(--space-md);
     --xeg-settings-padding: var(--space-md);
     --xeg-settings-control-gap: var(--space-sm);
-
-    /* Typography */
     --xeg-settings-label-font-size: var(--font-size-sm);
     --xeg-settings-label-font-weight: var(--font-weight-bold);
     --xeg-settings-select-font-size: var(--font-size-sm);
-
-    /* Input */
     --xeg-settings-select-padding: var(--space-sm) var(--space-md);
   }
 }

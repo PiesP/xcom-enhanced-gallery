@@ -1,14 +1,12 @@
 /**
- * @fileoverview Wheel scroll guard utilities
- *
- * Provides helpers for controlling wheel event propagation when nested scroll
- * containers exist (e.g., toolbar panels inside a gallery overlay).
+ * @fileoverview Wheel scroll guard utilities.
+ * @description Helpers for controlling wheel event propagation in nested scroll containers.
  */
 
 /**
- * Configuration options for wheel scroll guard behavior
+ * Configuration options for wheel scroll guard behavior.
  *
- * @property scrollableSelector - Selector used to find the nearest scrollable ancestor
+ * @property scrollableSelector - CSS selector for finding scrollable ancestors
  * @property tolerance - Pixel tolerance for boundary checks (default: 1)
  */
 export interface WheelScrollGuardOptions {
@@ -19,11 +17,12 @@ export interface WheelScrollGuardOptions {
 }
 
 /**
- * Finds the nearest scrollable ancestor element matching the given selector
+ * Finds the nearest scrollable ancestor element matching the given selector.
  *
  * @param target - The event target or element to start searching from
  * @param scrollableSelector - CSS selector for scrollable containers
  * @returns The nearest matching HTMLElement or null if not found
+ * @internal
  */
 function findScrollableAncestor(
   target: EventTarget | null,
@@ -37,12 +36,13 @@ function findScrollableAncestor(
 }
 
 /**
- * Determines whether a scrollable element can consume a wheel scroll event
+ * Determines whether a scrollable element can consume a wheel scroll event.
  *
  * @param element - The scrollable element to check
  * @param deltaY - The wheel event's vertical scroll delta
  * @param tolerance - Pixel tolerance for boundary detection
  * @returns True if the element can consume the scroll in the given direction
+ * @internal
  */
 function canConsumeWheelEvent(
   element: HTMLElement,

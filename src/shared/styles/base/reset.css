@@ -1,6 +1,6 @@
 /**
- * @fileoverview Global gallery reset scoped to XEG injection context.
- * @description Normalizes browser defaults while preserving design-token fallbacks.
+ * @fileoverview Global gallery reset scoped to XEG injection context
+ * @description Normalizes browser defaults while preserving design-token fallbacks
  */
 
 @layer xeg.base {

@@ -1,74 +1,14 @@
 /**
  * @fileoverview Toolbar Types - Shared UI State Types
- * @version 3.0.0 - Phase 219: Type System Consolidation
- * @description Toolbar related UI state type definitions
- *
- * **Important: Type System Clarification (Phase 219)**:
- * ToolbarState in this file is a "UI state" type.
- *
- * Do not confuse with separate "mode state":
- * - This file (toolbar.types.ts): ToolbarState = UI state
- *   Structure: { isDownloading, isLoading, hasError }
- *   Purpose: Component visual state management
- *
- * - @shared/state/signals/toolbar.signals.ts: ToolbarModeStateData = Mode state
- *   Structure: { currentMode: 'gallery'|'settings'|'download' }
- *   Purpose: Global mode management (which panel to show)
- *
- * **History**:
- * - Phase 196: src/shared/types/toolbar-types.ts created
- * - Phase 197.1: Moved to @shared/types (resolved circular dependency)
- * - Phase 219: Separated ToolbarModeState (resolved naming conflict)
- *
- * **Migration Note**:
- * - Import directly from `@shared/types/toolbar.types`
- * - Legacy `@features/gallery/types` barrel was removed in gallery cleanup (Phase 360+)
  */
 
-/**
- * Toolbar data state (business logic).
- *
- * @description State type that tracks toolbar state in business logic
- * - 'idle': Idle state (no operations)
- * - 'loading': Data loading
- * - 'downloading': Download in progress
- * - 'error': Error occurred
- */
+/** Toolbar data state (business logic) */
 export type ToolbarDataState = 'idle' | 'loading' | 'downloading' | 'error';
 
-/**
- * Image fit mode (Fit Mode).
- *
- * @description Defines how images are rendered within container
- * - 'original': Keep original size
- * - 'fitWidth': Fit to width
- * - 'fitHeight': Fit to height
- * - 'fitContainer': Fill container
- *
- * @note Toolbar component and UI rendering only
- * @note Maintain consistency with ImageFitMode in ui.types.ts
- * @see ui.types.ts ImageFitMode
- */
+/** Image fit mode */
 export type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
 
-/**
- * Toolbar UI state object.
- *
- * @description UI/visual state managed by Toolbar component
- *
- * **⚠️ Important**: This is "UI state".
- * Different from global "mode state".
- * @see @shared/state/signals/toolbar.signals.ts ToolbarModeStateData
- *
- * @example
- * ```typescript
- * const [state, setState] = createSignal<ToolbarState>({
- *   isDownloading: false,
- *   isLoading: false,
- *   hasError: false,
- * });
- * ```
- */
+/** Toolbar UI state object */
 export interface ToolbarState {
   /** Download in progress state */
   readonly isDownloading: boolean;

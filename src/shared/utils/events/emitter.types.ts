@@ -1,6 +1,6 @@
 /**
  * @fileoverview Event Emitter type definitions
- * @description Type contracts for lightweight event emitter
+ * @description Type contracts for lightweight event emitter.
  */
 
 /**

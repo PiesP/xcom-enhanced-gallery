@@ -1,5 +1,5 @@
 /**
- * @fileoverview Media click event handler
+ * @fileoverview Media click event handler with multi-stage validation
  * @description Single delegated handler for detecting and processing external media clicks.
  * Prevents Twitter's native gallery and triggers custom gallery behavior.
  */
@@ -15,11 +15,13 @@ import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
 import { isHTMLElement } from '@shared/utils/types/guards';
 
 /**
- * Handle media click event with multi-stage validation.
- * @param event - The mouse event triggered on a media element.
- * @param handlers - Event handler callbacks including onMediaClick.
- * @param options - Configuration options for media detection.
- * @returns Promise resolving to handling result with status and reason.
+ * Handles media click events with multi-stage validation.
+ * Routes processable media clicks to custom handler while blocking native gallery.
+ *
+ * @param event - Mouse event from media element
+ * @param handlers - Event handler callbacks
+ * @param options - Configuration for media detection
+ * @returns Promise resolving to handling result with status and reason
  */
 export async function handleMediaClick(
   event: MouseEvent,
@@ -38,7 +40,7 @@ export async function handleMediaClick(
     return { handled: false, reason: 'Invalid target (not HTMLElement)' };
   }
 
-  // Guard: Gallery-internal event (when gallery is open)
+  // Guard: Gallery-internal event (gallery open)
   if (gallerySignals.isOpen.value && isGalleryInternalElement(target)) {
     return { handled: false, reason: 'Gallery internal event' };
   }
@@ -48,19 +50,16 @@ export async function handleMediaClick(
     return { handled: false, reason: 'Video control element' };
   }
 
-  // Guard: Non-processable media (final validation)
+  // Guard: Non-processable media
   if (!isProcessableMedia(target)) {
-    return { handled: false, reason: 'Non-processable media target' };
+    return { handled: false, reason: 'Non-processable media' };
   }
 
-  // Handle media click: block native gallery and process with custom handler
+  // Process media click
   event.stopImmediatePropagation();
   event.preventDefault();
 
   await handlers.onMediaClick(target, event);
 
-  return {
-    handled: true,
-    reason: 'Media click handled',
-  };
+  return { handled: true, reason: 'Media click processed' };
 }

@@ -1,18 +1,11 @@
 /**
- * @fileoverview Main application entry point and lifecycle management.
+ * Main application entry point and lifecycle management.
  *
- * Orchestrates bootstrap stages (infrastructure, services, events, gallery initialization),
- * application startup, and graceful cleanup. Handles both development and production modes
- * with distinct optimization strategies.
+ * Orchestrates bootstrap stages, startup, and graceful cleanup.
+ * Executes stages in order: infrastructure → services → events → gallery.
+ * Handles dev/prod modes with distinct optimization strategies.
  *
- * Key responsibilities:
- * - Execute bootstrap stages in correct order (with optional/failure handling)
- * - Manage application startup and lifecycle state
- * - Coordinate global event wiring and teardown
- * - Handle theme initialization and dev tooling setup
- * - Ensure proper cleanup of services, timers, and event listeners
- *
- * @run-at document-idle - Executes after DOM is ready per userscript engine guarantee
+ * @run-at document-idle - Executes after DOM is ready per userscript guarantee
  */
 
 import { initializeCoreBaseServices } from '@bootstrap/base-services';
@@ -67,13 +60,10 @@ let globalEventTeardown: Unregister | null = null;
 let commandRuntimeTeardown: (() => void) | null = null;
 
 /**
- * Refresh development namespace with current application state.
+ * Refresh dev namespace with current application state.
+ * Updates global dev namespace to expose app instance and control functions.
+ * Dev-only utility for debugging.
  *
- * Updates global dev namespace to expose application instance and control functions.
- * Dev-only utility for debugging and inspection.
- *
- * @param app - Current gallery application instance or null
- * @returns Promise resolving when namespace is updated
  * @internal
  */
 async function refreshDevNamespace(app: IGalleryApp | null): Promise<void> {
@@ -86,11 +76,8 @@ async function refreshDevNamespace(app: IGalleryApp | null): Promise<void> {
 
 /**
  * Initialize dev command runtime if needed (dev mode only).
- *
- * Starts the command runtime for interactive development mode.
  * Automatically skipped in production and test modes.
  *
- * @returns Promise resolving when runtime is initialized
  * @internal
  */
 async function initializeCommandRuntimeIfNeeded(): Promise<void> {
@@ -150,10 +137,6 @@ function tearDownCommandRuntime(): void {
 /**
  * Execute optional cleanup task with error handling and logging.
  *
- * @param label - Descriptive label for cleanup task (used in logging)
- * @param task - Async or sync cleanup function to execute
- * @param log - Optional custom logger (defaults to warn logger)
- * @returns Promise resolving when cleanup completes (errors logged, not thrown)
  * @internal
  */
 async function runOptionalCleanup(
@@ -231,13 +214,9 @@ const devBootstrapStages: readonly BootstrapStage[] | null = __DEV__
 // exported runBootstrapStages below
 /**
  * Execute all configured bootstrap stages in sequence.
+ * Dev mode: verbose logging and optional recovery.
+ * Prod mode: minimal sequential bootstrap.
  *
- * Development mode uses verbose stage executor with detailed logging and optional recovery.
- * Production mode uses minimal sequential bootstrap without stage introspection.
- * Fails on first critical (non-optional) stage failure.
- *
- * @returns Promise resolving when all stages complete
- * @throws Error if critical bootstrap stage fails
  * @internal
  */
 async function runBootstrapStages(): Promise<void> {
@@ -271,8 +250,6 @@ async function runBootstrapStages(): Promise<void> {
 /**
  * Initialize core base services (fonts, API clients, storage, etc.).
  *
- * @returns Promise resolving when services are initialized
- * @throws Error if initialization fails
  * @internal
  */
 async function initializeBaseServicesStage(): Promise<void> {
@@ -292,11 +269,8 @@ async function initializeBaseServicesStage(): Promise<void> {
 // exported applyInitialThemeSetting below
 /**
  * Apply initial theme setting from saved configuration.
+ * Initializes theme service and applies saved preference without persisting changes.
  *
- * Initializes theme service if needed and applies previously saved theme preference
- * without persisting changes. Errors are logged but do not block bootstrap.
- *
- * @returns Promise resolving when theme is applied
  * @internal
  */
 async function applyInitialThemeSetting(): Promise<void> {
@@ -322,9 +296,7 @@ async function applyInitialThemeSetting(): Promise<void> {
 
 /**
  * Set up global event handlers and wire application-wide event system.
- *
  * Registers listeners for page events that trigger cleanup when needed.
- * Tears down previous handlers before wiring new ones.
  *
  * @internal
  */
@@ -344,11 +316,8 @@ function setupGlobalEventHandlers(): void {
 // exported loadGlobalStyles below
 /**
  * Load global styles (placeholder).
+ * Actual styles imported statically via side-effect import at module load time.
  *
- * Actual styles are imported statically at module load time via the
- * side-effect import at the top of this file.
- *
- * @returns Promise resolving immediately
  * @internal
  */
 async function loadGlobalStyles(): Promise<void> {
@@ -359,7 +328,6 @@ async function loadGlobalStyles(): Promise<void> {
 /**
  * Initialize developer tools if in development environment.
  *
- * @returns Promise resolving when dev tools are initialized
  * @internal
  */
 async function initializeDevToolsIfNeeded(): Promise<void> {
@@ -373,19 +341,8 @@ async function initializeDevToolsIfNeeded(): Promise<void> {
  * Perform complete application cleanup and resource teardown.
  *
  * Executes cleanup in reverse initialization order:
- * 1. Global event handlers teardown
- * 2. Command runtime teardown
- * 3. Gallery application cleanup
- * 4. Core services cleanup
- * 5. Global timers cleanup
- * 6. Error handler cleanup
- * 7. Event listener status verification (dev mode)
- *
- * Individual cleanup tasks are optional; errors logged but not thrown.
- * Marks application as stopped for restart capability.
- *
- * @returns Promise resolving when cleanup completes
- * @throws Error if critical cleanup fails
+ * global events → command runtime → gallery → services → timers → error handler.
+ * Individual tasks are optional; errors logged but not thrown.
  */
 // exported cleanup below
 async function cleanup(): Promise<void> {
@@ -469,21 +426,7 @@ async function cleanup(): Promise<void> {
  *
  * Prevents duplicate initialization by tracking startup state and promise.
  * Re-entrant: concurrent calls return the same startup promise.
- * Can be called multiple times; returns cached result during initial startup.
- *
- * Executes bootstrap stages in order:
- * 1. Global styles loading
- * 2. Dev tools initialization (dev mode)
- * 3. Infrastructure/environment initialization
- * 4. Critical systems initialization
- * 5. Base services initialization
- * 6. Theme synchronization
- * 7. Global event wiring
- * 8. Command runtime setup (dev mode)
- * 9. Gallery initialization
- *
- * @returns Promise resolving when application is fully initialized
- * @throws Error if bootstrap fails; marked as "not started" for retry
+ * Executes bootstrap stages in order.
  */
 // exported startApplication below
 async function startApplication(): Promise<void> {
@@ -540,11 +483,8 @@ async function startApplication(): Promise<void> {
  * Initialize gallery application and attach to DOM.
  *
  * Creates and initializes the gallery app instance. Clears state on failure
- * to allow subsequent retries. Reports initialization errors but does not catch them
- * to allow bootstrap stage to handle failure appropriately.
+ * to allow subsequent retries. Reports initialization errors without catching them.
  *
- * @returns Promise resolving when gallery is fully initialized
- * @throws Error if initialization fails
  * @internal
  */
 // exported initializeGallery below
@@ -577,10 +517,8 @@ async function initializeGallery(): Promise<void> {
  * Application immediate startup
  *
  * @run-at document-idle guarantee:
- * The userscript engine (Tampermonkey/Greasemonkey) executes after the DOM is ready,
- * so DOMContentLoaded listeners are unnecessary. We call startApplication immediately.
- *
- * Phase 236: Removed DOMContentLoaded listener to minimize interference with Twitter's native page
+ * The userscript engine executes after DOM is ready, so DOMContentLoaded listeners
+ * are unnecessary. We call startApplication immediately.
  */
 // Fire-and-forget startup. We intentionally swallow the rejection here to avoid
 // unhandled promise rejections at the top level.

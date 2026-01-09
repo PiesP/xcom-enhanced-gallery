@@ -4,25 +4,15 @@ import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
 
 /**
- * Module: Ambient Video Guard
- *
- * Manages automatic pausing of ambient videos when the gallery opens.
- * Uses a reference-counted subscription pattern to handle multiple consumers.
- *
- * @module ambient-video-guard
+ * Manages automatic pausing of ambient videos when gallery opens.
+ * Uses reference-counted subscriptions to handle multiple consumers.
  */
 
 let guardDispose: (() => void) | null = null;
 let guardSubscribers = 0;
 
 /**
- * Initializes the gallery open signal subscription for ambient video pausing.
- *
- * Subscribes directly to the signal to avoid cross-runtime issues with
- * Solid.js `createEffect` in test environments where multiple runtimes
- * may be loaded. The `subscribe()` method returns a dispose function
- * compatible with root lifecycle semantics.
- *
+ * Initializes gallery open signal subscription for ambient video pausing.
  * @internal
  */
 const ensureGuardEffect = (): void => {
@@ -46,22 +36,9 @@ const ensureGuardEffect = (): void => {
 
 /**
  * Starts the ambient video guard with reference counting.
+ * Returns a cleanup function for this consumer.
  *
- * Increments the subscriber count and ensures the guard effect is initialized.
- * Multiple calls to this function are safe; they will share the same underlying
- * signal subscription.
- *
- * Returns a cleanup function that should be called to deregister this consumer.
- * When all consumers have called their cleanup functions, the effect is disposed.
- *
- * @example
- * ```typescript
- * const cleanup = startAmbientVideoGuard();
- * // ... later
- * cleanup();
- * ```
- *
- * @returns A cleanup function to stop the guard for this consumer
+ * @returns Cleanup function to stop the guard
  */
 export const startAmbientVideoGuard = (): (() => void) => {
   guardSubscribers += 1;
@@ -71,10 +48,6 @@ export const startAmbientVideoGuard = (): (() => void) => {
 
 /**
  * Stops the ambient video guard for one consumer.
- *
- * Decrements the subscriber count. When the count reaches zero, the underlying
- * signal subscription is cleaned up to prevent memory leaks.
- *
  * @internal
  */
 const stopAmbientVideoGuard = (): void => {

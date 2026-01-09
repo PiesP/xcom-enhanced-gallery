@@ -1,33 +1,18 @@
 /// <reference types="vite/client" />
 
-/**
- * Development mode flag injected by Vite build.
- * Set to `true` during development, `false` in production builds.
- */
+/** Development mode flag injected by Vite build. */
 declare const __DEV__: boolean;
 
-/**
- * Feature flag for media extraction capabilities.
- * Set during build configuration; controls optional media extraction features.
- */
+/** Feature flag for media extraction capabilities. */
 declare const __FEATURE_MEDIA_EXTRACTION__: boolean;
 
-/**
- * Application version string from package.json.
- * Injected at build time for version reporting and logging.
- */
+/** Application version string from package.json. */
 declare const __VERSION__: string;
 
-/**
- * Build timestamp generated during the build process.
- * ISO 8601 format string for debugging and audit purposes.
- */
+/** Build timestamp in ISO 8601 format. */
 declare const __BUILD_TIME__: string;
 
-/**
- * Vite-injected environment variables and metadata.
- * Contains standard Vite environment properties available at runtime.
- */
+/** Vite-injected environment variables and metadata. */
 interface ImportMetaEnv {
   readonly PROD: boolean;
   readonly DEV: boolean;
@@ -36,21 +21,13 @@ interface ImportMetaEnv {
   readonly SSR: boolean;
 }
 
-/**
- * Extended ImportMeta interface with Vite's environment augmentation.
- * Provides access to build-time and runtime environment variables.
- * This augments the global ImportMeta type from Vite's type definitions.
- */
+/** Extended ImportMeta interface with Vite environment augmentation. */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
-/**
- * Node.js process global for Vitest compatibility.
- * Allows ambient type checking during test execution.
- * Type: undefined in browser; contains env object in Node.js (test) environment.
- */
+/** Node.js process global for Vitest (undefined in browser, env object in Node.js). */
 declare const process:
   | {
       env?: {

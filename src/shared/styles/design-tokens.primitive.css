@@ -1,26 +1,17 @@
 /**
  * @fileoverview Primitive Design Tokens - Base layer
- * @description
- * Lowest-level design token definitions: colors, spacing, typography,
- * and timing values. Uses oklch() color space for consistent perceptual
- * lightness and rel/em units for responsive scaling.
- *
+ * @description Lowest-level token definitions: colors, spacing, typography, timing.
+ * Uses oklch() and rel/em units for responsive scaling.
  * @layer xeg.tokens
  */
 
 @layer xeg.tokens {
   :where(:root, .xeg-theme-scope) {
-    /**
-     * BASE COLORS - Raw values
-     * Pure white and black reference points
-     */
+    /* Base Colors - white/black reference */
     --color-base-white: oklch(1 0 0);
     --color-base-black: oklch(0 0 0);
 
-    /**
-     * GRAYSCALE - Neutral color ramp
-     * Hue ~206-288° for consistency across scale
-     */
+    /* Grayscale - neutral color ramp (hue ~206-288°) */
     --color-gray-50: oklch(0.97 0.002 206.2);
     --color-gray-100: oklch(0.943 0.006 206.2);
     --color-gray-200: oklch(0.896 0.006 206.2);
@@ -32,11 +23,7 @@
     --color-gray-800: oklch(0.306 0.005 282);
     --color-gray-900: oklch(0.234 0.006 277.8);
 
-    /**
-     * SPACING SCALE - Relative spacing units
-     * Base: 1rem = 16px
-     * Scale: 4px increments
-     */
+    /* Spacing Scale (1rem = 16px, 4px increments) */
     --space-none: 0;
     --space-xs: 0.25rem;
     --space-sm: 0.5rem;
@@ -47,11 +34,7 @@
     --space-3xl: 4rem;
     --space-4xl: 5rem;
 
-    /**
-     * BORDER RADIUS - Responsive units
-     * Base: em (relative to element font-size)
-     * Allows radius to scale with text size
-     */
+    /* Border Radius (em: relative to element font-size) */
     --radius-xs: 0.125em;
     --radius-sm: 0.25em;
     --radius-md: 0.375em;
@@ -59,11 +42,7 @@
     --radius-2xl: 1em;
     --radius-full: 50%;
 
-    /**
-     * TYPOGRAPHY - Font family and size scale
-     * Primary: System fonts + TwitterChirp fallback
-     * Sizes: 12px-24px range, rem-based for accessibility
-     */
+    /* Typography - font family and size scale (12-24px, rem-based) */
     --font-family-primary:
       "TwitterChirp", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-size-xs: 0.75rem;
@@ -74,35 +53,23 @@
     --font-size-xl: 1.25rem;
     --font-size-2xl: 1.5rem;
 
-    /**
-     * FONT WEIGHT - Semantic weight scale
-     * Used for hierarchy and emphasis
-     */
+    /* Font Weight - semantic scale for hierarchy */
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
 
-    /**
-     * DURATION SCALE - Animation/transition timing
-     * Used for interaction feedback and transitions
-     */
+    /* Animation Duration (timing scale for interactions/transitions) */
     --duration-instant: 100ms;
     --duration-fast: 150ms;
     --duration-normal: 250ms;
     --duration-slow: 300ms;
     --duration-slower: 400ms;
 
-    /**
-     * BORDER WIDTH - Subtle to visible strokes
-     * Thin: 1px = 0.0625rem @ 16px base
-     */
+    /* Border Width (subtle to visible strokes: 1px = 0.0625rem @ 16px base) */
     --border-width-thin: 0.0625rem;
 
-    /**
-     * LINE HEIGHT - Text vertical rhythm
-     * Snug: optimized for tweet text readability
-     */
+    /* Line Height - text vertical rhythm */
     --line-height-tight: 1.25;
     --line-height-snug: 1.375;
     --line-height-normal: 1.5;

@@ -15,22 +15,11 @@ export type VideoControlAction =
   | 'toggleMute';
 
 /**
- * Options for executing video control actions
+ * Options for video control operations
  */
 export interface VideoControlOptions {
-  /** Video element to control. If not provided, uses current gallery video */
+  /** Video element to control (uses current gallery video if omitted) */
   readonly video?: HTMLVideoElement | null;
-  /** Context identifier for logging and debugging */
+  /** Logging context identifier */
   readonly context?: string;
-}
-
-/**
- * Video playback state record stored in WeakMap
- * Tracks whether video is currently playing when Service is unavailable
- *
- * @internal
- */
-export interface VideoPlaybackState {
-  /** Whether video is currently in playing state */
-  readonly playing: boolean;
 }

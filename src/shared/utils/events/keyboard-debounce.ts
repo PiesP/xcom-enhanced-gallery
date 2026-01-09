@@ -1,19 +1,7 @@
 /**
- * @fileoverview Keyboard debounce utilities for preventing rapid keyboard action execution.
- *
- * Provides debouncing logic to throttle keyboard events by key and time interval.
- * Intentionally kept simple and dependency-free for performance-critical paths.
- *
- * @example
- * ```typescript
- * // Check if keyboard action should execute
- * if (shouldExecuteKeyboardAction('Enter', 100)) {
- *   handleEnterKey();
- * }
- *
- * // Reset state for testing
- * resetKeyboardDebounceState();
- * ```
+ * @fileoverview Keyboard debounce utilities.
+ * @description Debouncing logic to throttle keyboard events by key and time interval.
+ * Kept simple and dependency-free for performance-critical paths.
  */
 
 /**

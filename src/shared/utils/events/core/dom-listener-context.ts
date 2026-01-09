@@ -1,9 +1,6 @@
 /**
- * @fileoverview DOM listener context type definitions
- * @description Types used by the internal listener registry.
- *
- * Note: This file exists to avoid name collisions with
- * `@shared/events/event-context.ts` (app-level subscriptions).
+ * @fileoverview DOM listener context and event handler types
+ * @description Types for internal listener registry and gallery event management.
  */
 
 /**
@@ -20,15 +17,7 @@ export interface DOMListenerContext {
 }
 
 /**
- * Event handling result
- */
-export interface EventHandlingResult {
-  readonly handled: boolean;
-  readonly reason?: string;
-}
-
-/**
- * Gallery event handler interface
+ * Gallery event handler callback signatures.
  */
 export interface EventHandlers {
   readonly onMediaClick: (element: HTMLElement, event: MouseEvent) => Promise<void>;
@@ -37,7 +26,7 @@ export interface EventHandlers {
 }
 
 /**
- * Gallery event options
+ * Gallery event configuration.
  */
 export interface GalleryEventOptions {
   readonly enableKeyboard: boolean;
@@ -45,4 +34,12 @@ export interface GalleryEventOptions {
   readonly debugMode: boolean;
   readonly preventBubbling: boolean;
   readonly context: string;
+}
+
+/**
+ * Media click handling result.
+ */
+export interface EventHandlingResult {
+  readonly handled: boolean;
+  readonly reason?: string;
 }

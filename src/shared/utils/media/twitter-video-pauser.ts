@@ -1,6 +1,5 @@
 /**
- * @fileoverview Twitter ambient video auto-pause helper.
- * @description Pauses actively playing videos in the host timeline before gallery opens.
+ * Pauses active videos in timeline before gallery opens
  */
 
 import { isGalleryInternalElement } from '@shared/dom/utils';
@@ -28,7 +27,7 @@ export interface PauseAmbientVideosResult {
   skippedCount: number;
 }
 
-/** Resolves the queryable root element, defaulting to document if available. */
+/** Resolves queryable root, defaults to document */
 function resolveRoot(root?: QueryableRoot | null): QueryableRoot | null {
   if (root && typeof root.querySelectorAll === 'function') return root;
   return typeof document !== 'undefined' && typeof document.querySelectorAll === 'function'
@@ -36,7 +35,7 @@ function resolveRoot(root?: QueryableRoot | null): QueryableRoot | null {
     : null;
 }
 
-/** Checks if video is actively playing (not paused and not ended). */
+/** Checks if video is actively playing */
 function isVideoPlaying(video: HTMLVideoElement): boolean {
   try {
     return !video.paused && !video.ended;
@@ -45,7 +44,7 @@ function isVideoPlaying(video: HTMLVideoElement): boolean {
   }
 }
 
-/** Determines if a video should be paused (external, connected, and playing). */
+/** Determines if video should be paused */
 function shouldPauseVideo(video: Element, force = false): video is HTMLVideoElement {
   return (
     video instanceof HTMLVideoElement &&
@@ -55,7 +54,7 @@ function shouldPauseVideo(video: Element, force = false): video is HTMLVideoElem
   );
 }
 
-/** Attempts to pause a video and returns success status. */
+/** Attempts to pause video */
 function tryPauseVideo(video: HTMLVideoElement): boolean {
   try {
     video.pause?.();
@@ -69,8 +68,7 @@ function tryPauseVideo(video: HTMLVideoElement): boolean {
 }
 
 /**
- * Pauses all actively playing videos in the Twitter timeline.
- * Skips gallery-owned videos to prevent interference with gallery playback.
+ * Pauses active videos in timeline, skips gallery-owned videos
  */
 export function pauseActiveTwitterVideos(
   options: PauseAmbientVideosOptions = {}

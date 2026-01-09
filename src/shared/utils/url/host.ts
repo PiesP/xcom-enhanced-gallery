@@ -77,7 +77,7 @@ export function isHostMatching(
 }
 
 /** Reserved Twitter/X.com paths that are not usernames */
-const RESERVED_TWITTER_PATHS_ARRAY = [
+const RESERVED_TWITTER_PATHS_ARRAY = Object.freeze([
   'home',
   'explore',
   'notifications',
@@ -88,7 +88,7 @@ const RESERVED_TWITTER_PATHS_ARRAY = [
   'intent',
   'compose',
   'hashtag',
-] as const;
+] as const);
 
 const RESERVED_TWITTER_PATHS = new Set(RESERVED_TWITTER_PATHS_ARRAY);
 
@@ -96,7 +96,7 @@ const RESERVED_TWITTER_PATHS = new Set(RESERVED_TWITTER_PATHS_ARRAY);
 const TWITTER_USERNAME_PATTERN = /^[a-zA-Z0-9_]{1,15}$/u;
 
 /** Trusted Twitter/X.com hosts */
-const TWITTER_HOSTS = ['twitter.com', 'x.com'] as const;
+const TWITTER_HOSTS = Object.freeze(['twitter.com', 'x.com'] as const);
 
 interface ExtractUsernameOptions {
   /**

@@ -5,21 +5,21 @@
 /** Union type for supported media elements */
 export type MediaElement = HTMLImageElement | HTMLVideoElement;
 
-/** Configuration options for DOM traversal when searching for media elements */
+/** DOM traversal options for media element search */
 export type MediaTraversalOptions = {
-  /** Maximum depth for breadth-first descendant searches (defaults to 6) */
+  /** Max depth for descendant searches (default 6) */
   readonly maxDescendantDepth?: number;
-  /** Maximum ancestor hops to evaluate during upward traversal (defaults to 3) */
+  /** Max ancestor hops (default 3) */
   readonly maxAncestorHops?: number;
 };
 
-/** Internal configuration for descendant search operations */
+/** Descendant search configuration */
 export type DescendantSearchConfig = {
   readonly includeRoot: boolean;
   readonly maxDepth: number;
 };
 
-/** Node in the breadth-first search queue with tracking information */
+/** Breadth-first search queue node */
 export type QueueNode = {
   readonly node: HTMLElement;
   readonly depth: number;

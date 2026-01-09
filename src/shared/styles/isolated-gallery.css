@@ -1,17 +1,12 @@
 /**
- * @fileoverview Gallery root element isolation layer.
- * @description Ensures the light-DOM gallery stays sandboxed from twitter.com.
- * @note Apply only to `.xeg-gallery-root` container element.
+ * @fileoverview Gallery root element isolation layer
+ * @description Ensures light-DOM gallery stays sandboxed from twitter.com
  * @version 2.0.0
  */
 
 @layer xeg.base {
   .xeg-gallery-root {
-    /* Reset inherited styles without dropping design tokens.
-     * `all: initial` wipes custom properties, which removes token values
-     * when CSS is bundled/inlined. Using `unset` keeps inherited custom
-     * properties while resetting non-inherited defaults.
-     */
+    /* Use unset to preserve inherited custom properties (tokens) */
     all: unset;
     box-sizing: border-box;
     scroll-behavior: smooth;
@@ -25,18 +20,12 @@
     height: 100vh;
     display: block;
     z-index: var(--xeg-z-gallery, 10000);
-
-    /* Containment and isolation */
     isolation: isolate;
     contain: style paint;
     overscroll-behavior: contain;
-
-    /* Background and interaction */
     background: var(--xeg-gallery-bg, var(--xeg-color-bg-primary, Canvas));
     pointer-events: auto;
     user-select: none;
-
-    /* Performance and rendering */
     transform: translateZ(0);
     will-change: opacity, transform;
     -webkit-text-size-adjust: 100%;
