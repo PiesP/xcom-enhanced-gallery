@@ -35,6 +35,21 @@ export class ThemeService implements ThemeServiceContract {
   private boundSettingsService: SettingsServiceLike | null = null;
   private settingsUnsubscribe: (() => void) | null = null;
   private observer: MutationObserver | null = null;
+  private observedThemeScopes: WeakSet<Element> = new WeakSet();
+
+  private applyThemeToScopes(scopes: Element[]): void {
+    const newScopes: Element[] = [];
+    for (const scope of scopes) {
+      if (!this.observedThemeScopes.has(scope)) {
+        this.observedThemeScopes.add(scope);
+        newScopes.push(scope);
+      }
+    }
+
+    if (newScopes.length > 0) {
+      syncThemeAttributes(this.currentTheme, { scopes: newScopes });
+    }
+  }
 
   private static readonly singleton = createSingleton(() => new ThemeService());
 
@@ -70,26 +85,28 @@ export class ThemeService implements ThemeServiceContract {
         for (const m of mutations) {
           m.addedNodes.forEach((node) => {
             if (node instanceof Element) {
+              const scopes: Element[] = [];
               if (node.classList.contains('xeg-theme-scope')) {
-                syncThemeAttributes(this.currentTheme, { scopes: [node] });
+                scopes.push(node);
               }
               node.querySelectorAll('.xeg-theme-scope').forEach((scope) => {
-                syncThemeAttributes(this.currentTheme, { scopes: [scope] });
+                scopes.push(scope);
               });
+              if (scopes.length > 0) {
+                this.applyThemeToScopes(scopes);
+              }
             }
           });
         }
       });
 
-      if (document.documentElement) {
-        this.observer.observe(document.documentElement, {
+      if (document.body) {
+        this.observer.observe(document.body, {
           childList: true,
           subtree: true,
         });
-      } else {
-        if (__DEV__) {
-          logger.warn('[ThemeService] document.documentElement not available for observation');
-        }
+      } else if (__DEV__) {
+        logger.warn('[ThemeService] document.body not available for observation');
       }
     }
     // Initial load (sync if possible) - immediate, non-blocking
@@ -271,6 +288,7 @@ export class ThemeService implements ThemeServiceContract {
       this.settingsUnsubscribe = null;
     }
     this.listeners.clear();
+    this.observedThemeScopes = new WeakSet();
 
     // MutationObserver cleanup
     if (this.observer) {

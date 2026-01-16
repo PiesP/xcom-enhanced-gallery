@@ -54,6 +54,8 @@ export class GalleryApp {
       this.isInitialized = true;
       __DEV__ && logger.info('[GalleryApp] ✅ Initialization complete');
     } catch (error) {
+      this.isInitialized = false;
+      this.galleryRenderer = null;
       galleryErrorReporter.critical(error, {
         code: 'GALLERY_APP_INIT_FAILED',
       });
@@ -61,37 +63,31 @@ export class GalleryApp {
   }
 
   private async setupEventHandlers(): Promise<void> {
-    try {
-      const settingsService = tryGetSettingsManager<SettingsServiceLike>();
-      const enableKeyboardSetting = settingsService?.get?.('gallery.enableKeyboardNav');
-      const enableKeyboard =
-        typeof enableKeyboardSetting === 'boolean' ? enableKeyboardSetting : true;
+    const settingsService = tryGetSettingsManager<SettingsServiceLike>();
+    const enableKeyboardSetting = settingsService?.get?.('gallery.enableKeyboardNav');
+    const enableKeyboard =
+      typeof enableKeyboardSetting === 'boolean' ? enableKeyboardSetting : true;
 
-      await initializeGalleryEvents(
-        {
-          onMediaClick: (element, event) => this.handleMediaClick(element, event),
-          onGalleryClose: () => this.closeGallery(),
-          onKeyboardEvent: (event) => {
-            if (event.key === 'Escape' && gallerySignals.isOpen.value) {
-              this.closeGallery();
-            }
-          },
+    await initializeGalleryEvents(
+      {
+        onMediaClick: (element, event) => this.handleMediaClick(element, event),
+        onGalleryClose: () => this.closeGallery(),
+        onKeyboardEvent: (event) => {
+          if (event.key === 'Escape' && gallerySignals.isOpen.value) {
+            this.closeGallery();
+          }
         },
-        {
-          enableKeyboard,
-          enableMediaDetection: true,
-          debugMode: false,
-          preventBubbling: true,
-          context: 'gallery',
-        }
-      );
+      },
+      {
+        enableKeyboard,
+        enableMediaDetection: true,
+        debugMode: false,
+        preventBubbling: true,
+        context: 'gallery',
+      }
+    );
 
-      __DEV__ && logger.info('[GalleryApp] ✅ Event handlers setup complete');
-    } catch (error) {
-      galleryErrorReporter.critical(error, {
-        code: 'EVENT_HANDLERS_SETUP_FAILED',
-      });
-    }
+    __DEV__ && logger.info('[GalleryApp] ✅ Event handlers setup complete');
   }
 
   private async handleMediaClick(element: HTMLElement, _event: MouseEvent): Promise<void> {

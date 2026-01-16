@@ -73,7 +73,7 @@ jobs:
       image: semgrep/semgrep:latest
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: 🔍 Run Semgrep scan
         run: |
@@ -97,7 +97,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: 📜 Verify LICENSES directory
         run: |

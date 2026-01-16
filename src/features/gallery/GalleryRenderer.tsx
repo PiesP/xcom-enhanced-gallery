@@ -308,6 +308,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   destroy(): void {
     __DEV__ && logger.info('[GalleryRenderer] Full cleanup started');
     this.stateUnsubscribe?.();
+    this.stateUnsubscribe = null;
     this.cleanupGallery();
   }
 }

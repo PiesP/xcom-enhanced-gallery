@@ -23,6 +23,7 @@ import {
 } from '@shared/error/app-error-reporter';
 import { isGMAPIAvailable } from '@shared/external/userscript/environment-detector';
 import { logger } from '@shared/logging/logger';
+import { NotificationService } from '@shared/services/notification-service';
 import type { SettingsServiceLike } from '@shared/services/theme-service';
 
 /** @internal Singleton guard for renderer registration */
@@ -65,6 +66,16 @@ async function initializeServices(): Promise<void> {
     settingsErrorReporter.warn(error, {
       code: 'SETTINGS_SERVICE_INIT_FAILED',
     });
+    try {
+      await NotificationService.getInstance().error(
+        'Settings unavailable',
+        'Defaults will be used until settings load.'
+      );
+    } catch (notifyError) {
+      if (__DEV__) {
+        logger.debug('[Bootstrap] Settings fallback notice failed', notifyError);
+      }
+    }
   }
 
   // 3. Theme Service
