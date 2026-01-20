@@ -11,6 +11,7 @@
 import { useVerticalGallery } from '@features/gallery/components/vertical-gallery-view/hooks/use-vertical-gallery';
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css';
 import { VerticalImageItem } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem';
+import { createDebounced } from '@shared/async/debounce';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
 import type { JSX, JSXElement } from '@shared/external/vendors';
@@ -90,6 +91,22 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     onClose: local.onClose,
   });
   const translate = useTranslation();
+
+  const debouncedScrollCorrection = createDebounced((index: number, mediaId: string) => {
+    if (!isVisible()) {
+      return;
+    }
+
+    if (index !== currentIndex() || activeMedia()?.id !== mediaId) {
+      return;
+    }
+
+    scroll.scrollToItem(index);
+  }, 120);
+
+  onCleanup(() => {
+    debouncedScrollCorrection.cancel();
+  });
 
   // Ensure initial focus is applied before any navigation events fire
   createEffect(() => {
@@ -312,6 +329,9 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
                 forceVisible={forcePreload}
                 fitMode={imageFitMode}
                 onClick={() => handleMediaItemClick(actualIndex)}
+                onMediaLoad={(mediaId, indexValue) =>
+                  debouncedScrollCorrection(indexValue, mediaId)
+                }
                 className={cx(
                   styles.galleryItem,
                   actualIndex === currentIndex() && styles.itemActive

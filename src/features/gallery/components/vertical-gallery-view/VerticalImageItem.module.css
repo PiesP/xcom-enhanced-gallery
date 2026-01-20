@@ -96,7 +96,7 @@
 .container[data-media-loaded="false"] .imageWrapper {
   min-height: var(--xeg-spacing-3xl);
   /* CLS: Reserve default aspect ratio for initial layout stability */
-  aspect-ratio: var(--xeg-aspect-default);
+  aspect-ratio: var(--xeg-gallery-item-intrinsic-ratio, var(--xeg-aspect-default));
 }
 
 .placeholder {
