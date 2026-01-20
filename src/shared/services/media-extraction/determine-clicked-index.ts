@@ -21,10 +21,7 @@ export const determineClickedIndex = (
   mediaItems: MediaInfo[]
 ): number => {
   try {
-    const mediaElement = findMediaElementInDOM(clickedElement);
-    if (!mediaElement) return 0;
-
-    const elementUrl = extractMediaUrlFromElement(mediaElement);
+    const elementUrl = resolveClickedElementUrl(clickedElement);
     if (!elementUrl) return 0;
 
     const normalizedElementUrl = normalizeMediaUrl(elementUrl);
@@ -33,28 +30,16 @@ export const determineClickedIndex = (
     const index = mediaItems.findIndex((item) => {
       if (!item) return false;
 
-      // Check main URL
-      const itemUrl = item.url || item.originalUrl;
-      if (itemUrl && normalizeMediaUrl(itemUrl) === normalizedElementUrl) {
-        if (__DEV__) {
-          logger.debug(
-            `[determineClickedIndex] Matched clicked media at index ${mediaItems.indexOf(item)}: ${normalizedElementUrl}`
-          );
-        }
-        return true;
+      const normalizedCandidates = getNormalizedMediaCandidates(item);
+      const matched = normalizedCandidates.includes(normalizedElementUrl);
+
+      if (matched && __DEV__) {
+        logger.debug(
+          `[determineClickedIndex] Matched clicked media at index ${mediaItems.indexOf(item)}: ${normalizedElementUrl}`
+        );
       }
 
-      // Check thumbnail URL
-      if (item.thumbnailUrl && normalizeMediaUrl(item.thumbnailUrl) === normalizedElementUrl) {
-        if (__DEV__) {
-          logger.debug(
-            `[determineClickedIndex] Matched clicked media (thumbnail) at index ${mediaItems.indexOf(item)}: ${normalizedElementUrl}`
-          );
-        }
-        return true;
-      }
-
-      return false;
+      return matched;
     });
 
     if (index !== -1) return index;
@@ -71,4 +56,69 @@ export const determineClickedIndex = (
     }
     return 0;
   }
+};
+
+const resolveClickedElementUrl = (clickedElement: HTMLElement): string | null => {
+  const mediaElement = findMediaElementInDOM(clickedElement);
+  const elementUrl = mediaElement ? extractMediaUrlFromElement(mediaElement) : null;
+  if (elementUrl) return elementUrl;
+
+  const fallbackTarget = mediaElement ?? clickedElement;
+  return extractBackgroundImageUrl(fallbackTarget, 3);
+};
+
+const extractBackgroundImageUrl = (
+  element: HTMLElement | null,
+  maxAncestorHops: number
+): string | null => {
+  if (!element) return null;
+
+  let current: HTMLElement | null = element;
+  for (let hops = 0; hops <= maxAncestorHops && current; hops += 1) {
+    const style = globalThis.getComputedStyle?.(current);
+    const backgroundImage = style?.backgroundImage ?? '';
+    const url = extractUrlFromCssValue(backgroundImage);
+    if (url) return url;
+
+    current = current.parentElement;
+  }
+
+  return null;
+};
+
+const extractUrlFromCssValue = (value: string): string | null => {
+  if (!value || value === 'none') return null;
+  const match = value.match(/url\((?:"|')?(.*?)(?:"|')?\)/i);
+  return match?.[1]?.trim() || null;
+};
+
+const getNormalizedMediaCandidates = (item: MediaInfo): string[] => {
+  const candidates: Array<string | null | undefined> = [
+    item.url,
+    item.originalUrl,
+    item.thumbnailUrl,
+  ];
+
+  const metadata = item.metadata as Record<string, unknown> | undefined;
+  const apiData = metadata?.apiData as Record<string, unknown> | undefined;
+  if (apiData) {
+    candidates.push(
+      getStringValue(apiData, 'download_url'),
+      getStringValue(apiData, 'preview_url'),
+      getStringValue(apiData, 'expanded_url'),
+      getStringValue(apiData, 'short_expanded_url'),
+      getStringValue(apiData, 'short_tweet_url')
+    );
+  }
+
+  const normalized = candidates
+    .map((candidate) => (candidate ? normalizeMediaUrl(candidate) : null))
+    .filter((candidate): candidate is string => !!candidate);
+
+  return Array.from(new Set(normalized));
+};
+
+const getStringValue = (record: Record<string, unknown>, key: string): string | null => {
+  const value = record[key];
+  return typeof value === 'string' && value.trim() ? value : null;
 };
