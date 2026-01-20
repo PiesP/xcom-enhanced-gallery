@@ -8,6 +8,14 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-01-20
+
+### Fixed
+
+- **Gallery**: Corrected clicked media index matching by expanding URL resolution to include background images and API metadata variants.
+- **Scrolling**: Added debounced scroll correction when the active media finishes loading to reduce post-load drift.
+- **Layout**: Strengthened intrinsic aspect-ratio reservations to reduce layout shifts during media load.
+
 ## [1.7.0] - 2026-01-07
 
 ### Features
