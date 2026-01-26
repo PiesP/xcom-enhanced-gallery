@@ -95,7 +95,7 @@ jobs:
           echo "**Note:** GitHub Actions dependencies are managed by Dependabot." >> $GITHUB_STEP_SUMMARY
 
       - name: 🚨 Create issue for Semgrep update
-        if: steps.semgrep.outputs.needs_update == 'true'
+        if: steps.semgrep.outputs.needs_update == 'true' && github.event.repository.has_issues == true
         run: |
           # Check if issue already exists
           EXISTING_ISSUE=$(gh issue list --label "dependencies,automated,semgrep" --state open --json number --jq '.[0].number')
@@ -139,7 +139,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🚨 Create issue for OSV Scanner update
-        if: steps.osv.outputs.needs_update == 'true'
+        if: steps.osv.outputs.needs_update == 'true' && github.event.repository.has_issues == true
         run: |
           # Check if issue already exists
           EXISTING_ISSUE=$(gh issue list --label "dependencies,automated,osv-scanner" --state open --json number --jq '.[0].number')
