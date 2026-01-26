@@ -1,17 +1,11 @@
 packages:
-  - '.'
+  - .
 
-# Supply chain hardening (see pnpm supply-chain-security docs)
-# - minimumReleaseAge: delay newly published versions (in minutes)
-# - strictDepBuilds + allowBuilds: explicitly review all dependency install scripts
-# - trustPolicy: block trust downgrades (provenance / trusted publisher regressions)
-# - blockExoticSubdeps: prevent transitive deps from using git/tarball URLs
-minimumReleaseAge: 4320
-trustPolicy: no-downgrade
-blockExoticSubdeps: true
-strictDepBuilds: true
-
-# Explicitly reviewed install-script policy.
-# Use true to allow execution, false to explicitly disallow (still considered reviewed).
 allowBuilds:
   esbuild: true
+
+blockExoticSubdeps: true
+
+strictDepBuilds: true
+
+trustPolicy: no-downgrade
