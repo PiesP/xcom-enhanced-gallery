@@ -57,22 +57,19 @@
     "pnpm": "10.27.0"
   },
   "dependencies": {
-    "solid-js": "^1.9.10"
+    "solid-js": "^1.9.11"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.11",
+    "@biomejs/biome": "^2.3.12",
     "@types/node": "^25.0.10",
-    "knip": "^5.82.0",
-    "seroval": "1.4.1",
-    "seroval-plugins": "1.4.2",
+    "knip": "^5.82.1",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-plugin-solid": "^2.11.10"
   },
   "pnpm": {
     "overrides": {
-      "semver": "7.7.3",
-      "seroval": "1.4.1"
+      "semver": "7.7.3"
     },
     "peerDependencyRules": {
       "ignoreMissing": [
