@@ -8,6 +8,37 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.7.2] - 2026-02-07
+
+### Added
+
+- **Card Media Support**: Added support for Twitter/X.com card images (`pbs.twimg.com/card_img`) that appear in article previews and other card formats. Card images can now be opened in the gallery and downloaded.
+- **DOM Fallback Extraction**: Implemented secondary media extraction strategy that reads media directly from the DOM when Twitter API doesn't return card images. This provides robust fallback handling for media types not included in API responses.
+- **Performance Timing Utilities**: Added shared high-resolution timing functions (`getTimestamp()`, `getElapsedTime()`) for consistent performance measurement across extractors.
+
+### Fixed
+
+- **Index Calculation Bug**: Fixed critical bug in DOM fallback extractor where clicking an image would open the next image instead of the clicked one. Implemented element-to-index mapping pattern to maintain correct indices after filtering.
+- **Card Wrapper Blocking**: Enhanced media click detection to distinguish between media cards (containing card images) and link preview cards (containing external navigation links). Media cards now correctly trigger gallery opening while link previews preserve native navigation.
+
+### Changed
+
+- **Code Consistency**: Refactored media extractors for consistency with existing codebase patterns:
+  - Extracted duplicate `getTimestamp()` implementation into shared utility module.
+  - Unified error handling using `getErrorMessage()` utility.
+  - Used `TWEET_ARTICLE_SELECTOR` constant instead of hardcoded selectors.
+  - Standardized performance timing calculations across extractors.
+- **Extraction Strategy**: Modified media extraction service to implement 2-stage extraction flow: primary API extraction with automatic DOM fallback when API returns no media items.
+
+### Technical Details
+
+- Created `src/shared/services/media-extraction/extractors/dom-fallback-extractor.ts` (228 lines) - Complete DOM-based media extractor.
+- Created `src/shared/services/media-extraction/utils/performance-timing.ts` (53 lines) - Shared performance timing utilities.
+- Modified `src/shared/utils/url/validator.ts` - Added `/card_img/` path validation for Twitter CDN URLs.
+- Modified `src/shared/utils/media/media-click-detector.ts` - Added `isMediaCard()` function for intelligent card type detection.
+- Modified `src/shared/services/media-extraction/media-extraction-service.ts` - Implemented fallback mechanism.
+- Refactored `src/shared/services/media-extraction/extractors/twitter-api-extractor.ts` - Used shared utilities.
+
 ## [1.7.1] - 2026-01-20
 
 ### Fixed
