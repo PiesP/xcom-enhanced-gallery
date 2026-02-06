@@ -1,0 +1,106 @@
+name: 🧹 Cleanup Stale PRs
+
+# Responsibility: Close stale dependabot PRs that are superseded
+# - Identifies PRs older than 30 days
+# - Checks if newer PR exists for same dependency
+# - Auto-closes with informative comment
+#
+# Trigger: Weekly schedule + manual trigger
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # Weekly on Mondays at 3 AM UTC (after dependency checks)
+  workflow_dispatch:
+
+permissions:
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: cleanup-stale-prs
+  cancel-in-progress: true
+
+jobs:
+  cleanup:
+    name: 🧹 Close Stale Dependabot PRs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v6
+
+      - name: 🔍 Find and close stale PRs
+        run: |
+          echo "🔍 Searching for stale Dependabot PRs..."
+
+          # Get all open dependabot PRs
+          STALE_AGE_DAYS=30
+          CURRENT_DATE=$(date +%s)
+
+          # Get PR list and process each one
+          gh pr list \
+            --author "dependabot[bot]" \
+            --state open \
+            --json number,title,createdAt,headRefName \
+            --limit 100 | \
+          jq -c '.[]' | \
+          while IFS= read -r pr; do
+            PR_NUMBER=$(echo "$pr" | jq -r '.number')
+            PR_TITLE=$(echo "$pr" | jq -r '.title')
+            CREATED_AT=$(echo "$pr" | jq -r '.createdAt')
+            HEAD_REF=$(echo "$pr" | jq -r '.headRefName')
+
+            # Calculate age in days
+            CREATED_TIMESTAMP=$(date -d "$CREATED_AT" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$CREATED_AT" +%s 2>/dev/null || echo "0")
+            if [ "$CREATED_TIMESTAMP" == "0" ]; then
+              echo "⚠️ Could not parse date for PR #$PR_NUMBER, skipping"
+              continue
+            fi
+
+            AGE_SECONDS=$((CURRENT_DATE - CREATED_TIMESTAMP))
+            AGE_DAYS=$((AGE_SECONDS / 86400))
+
+            if [ $AGE_DAYS -ge $STALE_AGE_DAYS ]; then
+              echo "📋 Found stale PR #$PR_NUMBER (${AGE_DAYS} days old): $PR_TITLE"
+
+              # Check if merge conflicts exist
+              MERGEABLE_STATE=$(gh pr view "$PR_NUMBER" --json mergeable --jq '.mergeable')
+
+              if [ "$MERGEABLE_STATE" == "CONFLICTING" ]; then
+                echo "⚠️ Closing PR #$PR_NUMBER due to merge conflicts"
+
+                gh pr comment "$PR_NUMBER" --body "🧹 **Auto-closing stale PR**
+
+          This Dependabot PR has been open for ${AGE_DAYS} days and has merge conflicts.
+
+          **Reason:** Likely superseded by a newer PR or requires manual intervention.
+
+          **To re-enable this update:**
+          1. Close this PR
+          2. Run \`@dependabot recreate\` to create a fresh PR
+          3. Or wait for the next scheduled Dependabot run (every Monday at 09:00 KST)"
+
+                gh pr close "$PR_NUMBER"
+                echo "✅ Closed stale PR #$PR_NUMBER"
+              else
+                echo "ℹ️ PR #$PR_NUMBER is old but has no conflicts, leaving open"
+              fi
+            fi
+          done
+
+          echo "✅ Stale PR cleanup complete"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📊 Generate summary
+        run: |
+          echo "## 🧹 Stale PR Cleanup Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          CLOSED_COUNT=$(gh pr list --author "dependabot[bot]" --state closed --search "closed:>=$(date -d '1 hour ago' -Iseconds 2>/dev/null || date -v-1H -Iseconds 2>/dev/null)" --json number --jq 'length' || echo "0")
+
+          echo "- **Closed PRs:** $CLOSED_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "- **Criteria:** PRs older than 30 days with merge conflicts" >> $GITHUB_STEP_SUMMARY
+          echo "- **Next run:** Weekly on Mondays at 03:00 UTC" >> $GITHUB_STEP_SUMMARY
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

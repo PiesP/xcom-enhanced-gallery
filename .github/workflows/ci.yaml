@@ -96,10 +96,46 @@ jobs:
       - name: 📐 Run TypeScript check
         run: pnpm check
 
+  lockfile-validation:
+    name: 🔒 Lockfile Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v6
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 🔒 Validate lockfile integrity
+        run: |
+          echo "🔍 Validating lockfile integrity..."
+          pnpm install --frozen-lockfile --prefer-offline
+
+          echo "✅ Lockfile validation passed"
+
+      - name: 🔍 Check for security vulnerabilities
+        run: |
+          echo "🔍 Checking for known vulnerabilities..."
+          # Run audit but don't fail on low/moderate (only high/critical)
+          pnpm audit --audit-level=high || {
+            echo "⚠️ High or critical vulnerabilities found"
+            echo "Please review and update affected packages"
+            exit 1
+          }
+
+          echo "✅ No high/critical vulnerabilities found"
+
   build:
     name: 🚀 Build
     runs-on: ubuntu-latest
-    needs: [biome, quality]
+    needs: [biome, quality, lockfile-validation]
     timeout-minutes: 15
     steps:
       - name: 📥 Checkout code

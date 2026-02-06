@@ -9,16 +9,25 @@ name: 🤖 Dependabot Auto-Merge
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
+  # Re-evaluate when check suites complete
+  check_suite:
+    types: [completed]
 
 permissions:
   contents: write
   pull-requests: write
+  checks: read
+
+# Concurrency control for sequential processing
+concurrency:
+  group: dependabot-auto-merge
+  cancel-in-progress: false
 
 jobs:
   auto-merge:
     name: 🤖 Auto-Merge Dependabot
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15 # Increased to accommodate check waiting time
     if: github.actor == 'dependabot[bot]'
     steps:
       - name: 📥 Fetch Dependabot metadata
@@ -27,8 +36,59 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
+      - name: ⏳ Wait for required checks
+        id: wait-checks
+        run: |
+          echo "⏳ Waiting for required CI and security checks..."
+
+          # Required checks (must match job names in ci.yaml and security.yaml)
+          REQUIRED_CHECKS=(
+            "🧹 Biome (Lint + Format)"
+            "🧪 TypeScript Checks"
+            "🚀 Build"
+            "🛡️ OSV Vulnerability Scan (PR Diff)"
+            "📜 License Compliance Check"
+          )
+
+          MAX_WAIT=600  # 10 minutes
+          ELAPSED=0
+          INTERVAL=30
+
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            ALL_SUCCESS=true
+
+            for check in "${REQUIRED_CHECKS[@]}"; do
+              STATUS=$(gh pr checks "$PR_NUMBER" --json name,state --jq ".[] | select(.name == \"$check\") | .state" 2>/dev/null || echo "PENDING")
+
+              if [ "$STATUS" == "FAILURE" ]; then
+                echo "❌ Check failed: $check"
+                echo "checks_passed=false" >> $GITHUB_OUTPUT
+                exit 0
+              elif [ "$STATUS" != "SUCCESS" ]; then
+                ALL_SUCCESS=false
+              fi
+            done
+
+            if [ "$ALL_SUCCESS" = true ]; then
+              echo "✅ All required checks passed"
+              echo "checks_passed=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+
+            echo "⏳ Waiting for checks to complete... (${ELAPSED}s/${MAX_WAIT}s)"
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+          echo "⏰ Timeout waiting for checks"
+          echo "checks_passed=false" >> $GITHUB_OUTPUT
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: 🔄 Auto-merge GitHub Actions updates
         if: >-
+          steps.wait-checks.outputs.checks_passed == 'true' &&
           steps.dependabot-metadata.outputs.package-ecosystem == 'github-actions' &&
           (steps.dependabot-metadata.outputs.update-type == 'version-update:semver-patch' ||
            steps.dependabot-metadata.outputs.update-type == 'version-update:semver-minor')
@@ -43,6 +103,7 @@ jobs:
 
       - name: 🔄 Auto-merge safe npm groups
         if: >-
+          steps.wait-checks.outputs.checks_passed == 'true' &&
           steps.dependabot-metadata.outputs.package-ecosystem == 'npm' &&
           (steps.dependabot-metadata.outputs.update-type == 'version-update:semver-patch' ||
            steps.dependabot-metadata.outputs.update-type == 'version-update:semver-minor') &&
@@ -71,3 +132,17 @@ jobs:
           echo "📦 Package: ${{ steps.dependabot-metadata.outputs.dependency-names }}"
           echo "📊 Update type: ${{ steps.dependabot-metadata.outputs.update-type }}"
           echo "📝 Reason: Major update or critical package"
+
+      - name: 🚨 Notify on merge failure
+        if: failure()
+        run: |
+          gh pr comment "$PR_NUMBER" --body "⚠️ **Auto-merge failed**
+
+          Required checks did not pass or timed out. Please review manually.
+
+          - Check CI pipeline: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          - Review security scan results
+          - Verify no merge conflicts exist"
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -12,7 +12,7 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Asia/Seoul"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5  # Reduced to minimize lockfile conflicts
     commit-message:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
@@ -21,6 +21,9 @@ updates:
       - "automated"
     reviewers:
       - "PiesP"
+
+    # Auto-rebase to reduce merge conflicts
+    rebase-strategy: "auto"
 
     # Group updates by category to reduce PR noise
     groups:
@@ -76,6 +79,7 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Asia/Seoul"
+    open-pull-requests-limit: 3  # Limit concurrent PRs
     commit-message:
       prefix: "ci(deps)"
     labels:

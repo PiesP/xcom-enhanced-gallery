@@ -1,0 +1,95 @@
+# Branch Protection Settings Reference
+
+# This file documents the recommended branch protection settings for the master branch.
+# These settings must be configured manually in GitHub repository settings.
+#
+# Location: Repository → Settings → Branches → Branch protection rules → master
+#
+# Note: The settings app (github.com/apps/settings) can automate this,
+# but manual configuration is also acceptable.
+
+branches:
+  - name: master
+    protection:
+      # Pull request reviews
+      required_pull_request_reviews:
+        required_approving_review_count: 0 # Allow Dependabot auto-merge without approval
+        dismiss_stale_reviews: false
+        require_code_owner_reviews: false
+        require_last_push_approval: false
+
+      # Status checks
+      required_status_checks:
+        strict: true # Require branches to be up to date before merging (prevents conflicts)
+        # Required status check names (must match exactly with workflow job names)
+        contexts:
+          # CI Pipeline checks (ci.yaml)
+          - "🧹 Biome (Lint + Format)"
+          - "🧪 TypeScript Checks"
+          - "🔒 Lockfile Validation"
+          - "🚀 Build"
+
+          # Security checks (security.yaml)
+          # Note: OSV Scanner has conditional jobs (scheduled vs PR)
+          # Only PR diff scan is required for PRs
+          - "🛡️ OSV Vulnerability Scan (PR Diff)"
+          - "📜 License Compliance Check"
+
+          # Semgrep is intentionally excluded because it skips Dependabot PRs
+          # See security.yaml:68 - if: github.actor != 'dependabot[bot]'
+
+      # Additional protection
+      enforce_admins: false # Allow admins to bypass (for emergency fixes)
+      required_linear_history: false # Allow merge commits
+      allow_force_pushes: false # Prevent force pushes
+      allow_deletions: false # Prevent branch deletion
+      required_conversation_resolution: false # Don't block on unresolved comments
+      lock_branch: false # Allow pushes
+      restrictions: null # No push restrictions (all collaborators can push)
+
+# Manual Configuration Steps:
+#
+# 1. Go to: https://github.com/PiesP/xcom-enhanced-gallery/settings/branches
+#
+# 2. Click "Add branch protection rule" or edit existing rule for "master"
+#
+# 3. Configure the following:
+#    ✅ Require a pull request before merging
+#       - Required approvals: 0 (for Dependabot auto-merge)
+#
+#    ✅ Require status checks to pass before merging
+#       ✅ Require branches to be up to date before merging
+#       Add status checks (type each name exactly):
+#         - 🧹 Biome (Lint + Format)
+#         - 🧪 TypeScript Checks
+#         - 🔒 Lockfile Validation
+#         - 🚀 Build
+#         - 🛡️ OSV Vulnerability Scan (PR Diff)
+#         - 📜 License Compliance Check
+#
+#    ❌ Do not require reviews from Code Owners
+#    ❌ Do not require deployments to succeed
+#    ❌ Do not lock branch
+#    ❌ Do not allow force pushes
+#    ❌ Do not allow deletions
+#
+# 4. Click "Save changes"
+#
+# Verification:
+# - Create a test PR and ensure all required checks appear
+# - Verify that PR cannot be merged until all checks pass
+# - Confirm that Dependabot PRs can auto-merge without manual approval
+
+# Alternative: GitHub Settings App
+#
+# If you prefer automation, you can use the GitHub Settings app:
+# 1. Install: https://github.com/apps/settings
+# 2. Rename this file to: .github/settings.yaml
+# 3. Remove this comment block above
+# 4. Push to repository
+# 5. The app will automatically configure branch protection
+#
+# Note: The app requires specific YAML format:
+# - Use "contexts" (not "checks") for status check names
+# - Emoji work fine in status check names
+# - The app syncs on every push to master
