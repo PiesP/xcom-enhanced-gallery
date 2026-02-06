@@ -8,6 +8,10 @@ import { logger } from '@shared/logging/logger';
 import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
 import { TwitterAPI } from '@shared/services/media/twitter-api-client';
 import { determineClickedIndex } from '@shared/services/media-extraction/determine-clicked-index';
+import {
+  getElapsedTime,
+  getTimestamp,
+} from '@shared/services/media-extraction/utils/performance-timing';
 import type {
   APIExtractor,
   MediaExtractionOptions,
@@ -16,12 +20,7 @@ import type {
 } from '@shared/types/media.types';
 import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/media/tweet-extractor';
 
-const getTimestamp = (): number =>
-  typeof performance !== 'undefined' && typeof performance.now === 'function'
-    ? performance.now()
-    : Date.now();
-
-const createFailureResult = (error: string): MediaExtractionResult => ({
+const createFailureResult = (error: string, startTime: number): MediaExtractionResult => ({
   success: false,
   mediaItems: [],
   clickedIndex: 0,
@@ -30,7 +29,7 @@ const createFailureResult = (error: string): MediaExtractionResult => ({
     sourceType: 'twitter-api',
     strategy: 'api-extraction-failed',
     error,
-    totalProcessingTime: 0,
+    totalProcessingTime: getElapsedTime(startTime),
   },
   tweetInfo: null,
 });
@@ -55,16 +54,7 @@ export class TwitterAPIExtractor implements APIExtractor {
       const apiMedias = await TwitterAPI.getTweetMedias(tweetInfo.tweetId);
 
       if (!apiMedias || apiMedias.length === 0) {
-        return {
-          ...createFailureResult('No media found in API response'),
-          metadata: {
-            extractedAt: Date.now(),
-            sourceType: 'twitter-api',
-            strategy: 'api-extraction-failed',
-            error: 'No media found in API response',
-            totalProcessingTime: Math.max(0, getTimestamp() - startedAt),
-          },
-        };
+        return createFailureResult('No media found in API response', startedAt);
       }
 
       // Step 2: Extract tweet text HTML
@@ -84,7 +74,7 @@ export class TwitterAPIExtractor implements APIExtractor {
           extractedAt: Date.now(),
           sourceType: 'twitter-api',
           strategy: 'api-extraction',
-          totalProcessingTime: Math.max(0, getTimestamp() - startedAt),
+          totalProcessingTime: getElapsedTime(startedAt),
           apiMediaCount: apiMedias.length,
         },
         tweetInfo,
@@ -93,16 +83,7 @@ export class TwitterAPIExtractor implements APIExtractor {
       if (__DEV__) {
         logger.warn(`[APIExtractor] ${extractionId}: API extraction failed:`, error);
       }
-      return {
-        ...createFailureResult(getErrorMessage(error) || 'API extraction failed'),
-        metadata: {
-          extractedAt: Date.now(),
-          sourceType: 'twitter-api',
-          strategy: 'api-extraction-failed',
-          error: getErrorMessage(error) || 'API extraction failed',
-          totalProcessingTime: Math.max(0, getTimestamp() - startedAt),
-        },
-      };
+      return createFailureResult(getErrorMessage(error) || 'API extraction failed', startedAt);
     }
   }
 }

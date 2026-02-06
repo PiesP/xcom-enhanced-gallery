@@ -4,7 +4,13 @@
  * Primary use case: card images and other media not available via API.
  */
 
+import { TWEET_ARTICLE_SELECTOR } from '@shared/dom/selectors';
+import { getErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
+import {
+  getElapsedTime,
+  getTimestamp,
+} from '@shared/services/media-extraction/utils/performance-timing';
 import type {
   APIExtractor,
   MediaExtractionOptions,
@@ -21,12 +27,7 @@ import type { MediaElement } from '@shared/utils/media/media-element-utils.types
 import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/media/tweet-extractor';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
-const getTimestamp = (): number =>
-  typeof performance !== 'undefined' && typeof performance.now === 'function'
-    ? performance.now()
-    : Date.now();
-
-const createFailureResult = (error: string, startedAt: number): MediaExtractionResult => ({
+const createFailureResult = (error: string, startTime: number): MediaExtractionResult => ({
   success: false,
   mediaItems: [],
   clickedIndex: 0,
@@ -35,7 +36,7 @@ const createFailureResult = (error: string, startedAt: number): MediaExtractionR
     sourceType: 'dom-fallback',
     strategy: 'dom-extraction-failed',
     error,
-    totalProcessingTime: Math.max(0, getTimestamp() - startedAt),
+    totalProcessingTime: getElapsedTime(startTime),
   },
   tweetInfo: null,
 });
@@ -151,7 +152,7 @@ export class DOMFallbackExtractor implements APIExtractor {
       }
 
       // Step 1: Find the tweet container
-      const tweetContainer = clickedElement.closest('article[data-testid="tweet"], article');
+      const tweetContainer = clickedElement.closest(TWEET_ARTICLE_SELECTOR);
 
       if (!tweetContainer || !(tweetContainer instanceof HTMLElement)) {
         return createFailureResult('No tweet container found', startedAt);
@@ -215,7 +216,7 @@ export class DOMFallbackExtractor implements APIExtractor {
           extractedAt: Date.now(),
           sourceType: 'dom-fallback',
           strategy: 'dom-extraction',
-          totalProcessingTime: Math.max(0, getTimestamp() - startedAt),
+          totalProcessingTime: getElapsedTime(startedAt),
           domMediaCount: mediaItems.length,
         },
         tweetInfo,
@@ -224,10 +225,7 @@ export class DOMFallbackExtractor implements APIExtractor {
       if (__DEV__) {
         logger.warn(`[DOMFallbackExtractor] ${extractionId}: DOM extraction failed:`, error);
       }
-      return createFailureResult(
-        error instanceof Error ? error.message : 'DOM extraction failed',
-        startedAt
-      );
+      return createFailureResult(getErrorMessage(error) || 'DOM extraction failed', startedAt);
     }
   }
 }
