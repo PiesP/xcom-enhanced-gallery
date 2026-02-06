@@ -1,6 +1,7 @@
 import { TWITTER_MEDIA_SELECTOR } from '@shared/dom/selectors';
 import { getErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
+import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
 import type {
@@ -92,15 +93,17 @@ const finalizeResult = (result: MediaExtractionResult): MediaExtractionResult =>
 
 /**
  * Media Extraction Service
- * Orchestrates tweet metadata extraction and API-based media retrieval.
+ * Orchestrates tweet metadata extraction, API-based media retrieval, and DOM fallback.
  */
 export class MediaExtractionService implements MediaExtractor {
   private readonly tweetInfoExtractor: TweetInfoExtractor;
   private readonly apiExtractor: TwitterAPIExtractor;
+  private readonly domFallbackExtractor: DOMFallbackExtractor;
 
   constructor() {
     this.tweetInfoExtractor = new TweetInfoExtractor();
     this.apiExtractor = new TwitterAPIExtractor();
+    this.domFallbackExtractor = new DOMFallbackExtractor();
   }
 
   async extractFromClickedElement(
@@ -122,6 +125,7 @@ export class MediaExtractionService implements MediaExtractor {
         return createErrorResult('No tweet information found');
       }
 
+      // Try API extraction first
       const apiResult = await this.apiExtractor.extract(tweetInfo, element, options, extractionId);
 
       if (apiResult.success && apiResult.mediaItems.length > 0) {
@@ -131,8 +135,28 @@ export class MediaExtractionService implements MediaExtractor {
         });
       }
 
+      // API failed or returned no media - try DOM fallback
       if (__DEV__) {
-        logger.error('Extract api failed', extractionId);
+        logger.info(`[MediaExtractor] ${extractionId}: API failed, trying DOM fallback`);
+      }
+
+      const domResult = await this.domFallbackExtractor.extract(
+        tweetInfo,
+        element,
+        options,
+        extractionId
+      );
+
+      if (domResult.success && domResult.mediaItems.length > 0) {
+        return finalizeResult({
+          ...domResult,
+          tweetInfo: mergeTweetInfoMetadata(tweetInfo, domResult.tweetInfo),
+        });
+      }
+
+      // Both API and DOM extraction failed
+      if (__DEV__) {
+        logger.error('Both API and DOM extraction failed', extractionId);
       }
       return createApiErrorResult(apiResult, tweetInfo);
     } catch (error) {

@@ -48,18 +48,6 @@ const INTERACTIVE_SELECTOR: string = [
   '[data-testid="bookmark"]',
 ].join(', ');
 
-/** Blocked media context selectors */
-const BLOCKED_MEDIA_CONTEXT_SELECTOR: string = [
-  '[data-testid="card.wrapper"]',
-  '[data-testid="twitterArticleReadView"]',
-  '[data-testid="longformRichTextComponent"]',
-  '[data-testid="twitterArticleRichTextView"]',
-  '[data-testid="article-cover-image"]',
-  ...STABLE_MEDIA_VIEWERS_SELECTORS,
-  '[data-testid="swipe-to-dismiss"]',
-  '[data-testid="mask"]',
-].join(', ');
-
 // ============================================================================
 // Media Validation
 // ============================================================================
@@ -76,6 +64,35 @@ function isValidMediaSource(url: string | null | undefined): boolean {
 // ============================================================================
 
 /**
+ * Check if card wrapper contains media card (not link preview card)
+ * @param cardWrapper - Card wrapper element
+ * @returns true if card contains media that should open in gallery
+ */
+function isMediaCard(cardWrapper: HTMLElement): boolean {
+  // Check for card_img pattern (media cards use pbs.twimg.com/card_img)
+  const cardImages = cardWrapper.querySelectorAll('img[src*="pbs.twimg.com/card_img"]');
+  if (cardImages.length > 0) return true;
+
+  // Check if card has external navigation link
+  const cardLinks = cardWrapper.querySelectorAll('a[href]');
+  for (const link of cardLinks) {
+    const href = (link as HTMLAnchorElement).href;
+    // If card has external link (not status/photo/video link), it's a link preview card
+    if (
+      href &&
+      !href.includes('/status/') &&
+      !href.includes('/photo/') &&
+      !href.includes('/video/')
+    ) {
+      return false;
+    }
+  }
+
+  // If no external links and has images, likely a media card
+  return cardWrapper.querySelector('img, video') !== null;
+}
+
+/**
  * Check if click target should block gallery trigger
  * @param target - Clicked element
  * @returns true if click should be blocked
@@ -89,9 +106,29 @@ function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   // Gallery internal elements
   if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
 
-  // Block media triggers inside contexts that should preserve native navigation
-  // (e.g., link cards and X Articles where media clicks open the card/article)
-  if (target.closest(BLOCKED_MEDIA_CONTEXT_SELECTOR)) return true;
+  // Check if inside card wrapper
+  const cardWrapper = target.closest('[data-testid="card.wrapper"]');
+  if (cardWrapper instanceof HTMLElement) {
+    // Allow media cards, block link preview cards
+    if (isMediaCard(cardWrapper)) {
+      return false;
+    }
+    return true;
+  }
+
+  // Block media triggers inside other contexts that should preserve native navigation
+  // (e.g., X Articles where media clicks open the article)
+  const blockedContextSelector = [
+    '[data-testid="twitterArticleReadView"]',
+    '[data-testid="longformRichTextComponent"]',
+    '[data-testid="twitterArticleRichTextView"]',
+    '[data-testid="article-cover-image"]',
+    ...STABLE_MEDIA_VIEWERS_SELECTORS,
+    '[data-testid="swipe-to-dismiss"]',
+    '[data-testid="mask"]',
+  ].join(', ');
+
+  if (target.closest(blockedContextSelector)) return true;
 
   // Interactive elements (buttons, links, etc.)
   const interactive = target.closest(INTERACTIVE_SELECTOR);

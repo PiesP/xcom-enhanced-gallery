@@ -155,7 +155,7 @@ function isAllowedMediaPath(hostname: string, pathname: string): boolean {
  * Validate pbs.twimg.com path for allowed media prefixes.
  *
  * Uses strict prefix matching to prevent substring-based bypasses.
- * Allowed prefixes include media, thumbnails, and video metadata paths.
+ * Allowed prefixes include media, thumbnails, card images, and video metadata paths.
  *
  * @param pathname - URL pathname to validate
  * @returns Whether the pathname matches an allowed media prefix for pbs.twimg.com
@@ -167,7 +167,8 @@ const checkPbsMediaPath = (pathname: string): boolean =>
   pathname.startsWith('/ext_tw_video_thumb/') ||
   pathname.startsWith('/tweet_video_thumb/') ||
   pathname.startsWith('/video_thumb/') ||
-  pathname.startsWith('/amplify_video_thumb/');
+  pathname.startsWith('/amplify_video_thumb/') ||
+  pathname.startsWith('/card_img/');
 
 /**
  * Validate video.twimg.com path for allowed media prefixes.
