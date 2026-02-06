@@ -29,9 +29,11 @@ const renderNode = (node: LucideIconNode): JSXElement => {
  * @returns JSX element containing the rendered icon SVG
  *
  * @example
+ * ```tsx
  * <LucideIcon name="download" />
  * <LucideIcon name="download" size="2em" aria-label="Download file" />
  * <LucideIcon name="chevron-right" size={24} class="text-primary" />
+ * ```
  */
 export function LucideIcon(props: LucideIconProps): JSXElement {
   const nodes = LUCIDE_ICON_NODES[props.name];

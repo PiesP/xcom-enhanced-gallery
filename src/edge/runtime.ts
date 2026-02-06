@@ -101,9 +101,9 @@ export function startCommandRuntime(deps: CommandRuntimeDeps = {}): CommandRunti
 
   /**
    * Schedules a timeout callback with automatic tracking and cleanup.
-   * Returns null if timeoutMs <= 0 (skips timeout for config-driven tests).
+   * Returns null if timeoutMs is less than or equal to 0 (skips timeout for config-driven tests).
    * Callback auto-unregisters from timeoutTimers set on firing.
-   * @param timeoutMs - Timeout duration in ms. Returns null if <= 0.
+   * @param timeoutMs - Timeout duration in ms. Returns null if less than or equal to 0.
    * @param onTimeout - Callback invoked if timeout fires.
    * @returns Timer ID for cleanup, or null if timeout disabled.
    */

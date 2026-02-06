@@ -3,7 +3,7 @@
  * @module shared/components/ui/Settings/SettingsControls.types
  * @description Type definitions for theme and language settings controls component
  *
- * @see {@link ./SettingsControls.tsx} - Component implementation
+ * @see {@link SettingsControls} - Component implementation
  */
 
 import type { BaseComponentProps } from '@shared/types/component.types';

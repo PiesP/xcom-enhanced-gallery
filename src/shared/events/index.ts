@@ -23,8 +23,8 @@ export class SubscriptionManager {
 
   /**
    * Add subscription with optional AbortSignal support
-   * @param unsubscribe Callback to invoke when removed
-   * @param options Configuration including AbortSignal
+   * @param unsubscribe - Callback to invoke when removed
+   * @param options - Configuration including AbortSignal
    * @returns Subscription ID for later removal
    */
   public add(unsubscribe: () => void, options?: { signal?: AbortSignal }): SubscriptionId {
@@ -46,7 +46,7 @@ export class SubscriptionManager {
 
   /**
    * Remove subscription by ID and invoke unsubscribe callback
-   * @param id Subscription ID from add()
+   * @param id - Subscription ID from add()
    * @returns true if found and removed
    */
   public remove(id: SubscriptionId): boolean {
@@ -73,9 +73,9 @@ export class AppEventManager {
 
   /**
    * Register event listener for custom event
-   * @param eventName Event name
-   * @param callback Handler to invoke on emission
-   * @param options Configuration including AbortSignal
+   * @param eventName - Event name
+   * @param callback - Handler to invoke on emission
+   * @param options - Configuration including AbortSignal
    * @returns Unsubscribe function
    */
   public on(
@@ -112,10 +112,10 @@ export class DOMEventManager {
 
   /**
    * Add DOM event listener with automatic cleanup tracking
-   * @param target EventTarget to attach listener
-   * @param type Event type (e.g., 'click', 'keydown')
-   * @param handler Event handler
-   * @param options Configuration (signal, capture, passive, once, context)
+   * @param target - EventTarget to attach listener
+   * @param type - Event type (e.g., 'click', 'keydown')
+   * @param handler - Event handler
+   * @param options - Configuration (signal, capture, passive, once, context)
    * @returns Subscription ID for manual removal
    */
   public addListener(

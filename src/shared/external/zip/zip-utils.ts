@@ -34,7 +34,7 @@ function ensureCRC32Table(): Uint32Array {
 
 /**
  * Encode UTF-8 string to byte array
- * @param value String to encode
+ * @param value - String to encode
  * @returns Uint8Array with UTF-8 bytes
  */
 export function encodeUtf8(value: string): Uint8Array {
@@ -43,7 +43,7 @@ export function encodeUtf8(value: string): Uint8Array {
 
 /**
  * Calculate CRC32 checksum using polynomial 0xEDB88320
- * @param data Byte array to checksum
+ * @param data - Byte array to checksum
  * @returns 32-bit unsigned CRC32 value
  */
 export function calculateCRC32(data: Uint8Array): number {
@@ -59,7 +59,7 @@ export function calculateCRC32(data: Uint8Array): number {
 
 /**
  * Encode 16-bit unsigned integer to little-endian bytes
- * @param value 16-bit unsigned integer
+ * @param value - 16-bit unsigned integer
  * @returns 2-byte Uint8Array in little-endian order
  */
 export function writeUint16LE(value: number): Uint8Array {
@@ -71,7 +71,7 @@ export function writeUint16LE(value: number): Uint8Array {
 
 /**
  * Encode 32-bit unsigned integer to little-endian bytes
- * @param value 32-bit unsigned integer
+ * @param value - 32-bit unsigned integer
  * @returns 4-byte Uint8Array in little-endian order
  */
 export function writeUint32LE(value: number): Uint8Array {

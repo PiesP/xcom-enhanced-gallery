@@ -11,8 +11,8 @@ import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types'
 export interface GalleryRenderer {
   /**
    * Mount and display gallery for provided media items
-   * @param mediaItems Media items to render in order
-   * @param options Optional render configuration (index, fit mode, etc.)
+   * @param mediaItems - Media items to render in order
+   * @param options - Optional render configuration (index, fit mode, etc.)
    */
   render(mediaItems: readonly MediaInfo[], options?: GalleryRenderOptions): Promise<void>;
 
@@ -33,7 +33,7 @@ export interface GalleryRenderer {
 
   /**
    * Register or clear callback invoked after gallery closes
-   * @param onClose Callback to fire on close, or null to clear
+   * @param onClose - Callback to fire on close, or null to clear
    */
   setOnCloseCallback(onClose: (() => void) | null): void;
 }

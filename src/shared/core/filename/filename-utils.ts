@@ -141,7 +141,7 @@ export function resolveMediaMetadata(
 
 /**
  * Generate a filename for a media item.
- * Priority: media.filename → {username}_{tweetId}_{index} → tweet_{tweetId}_{index} → {fallbackPrefix}_{nowMs}_{index}
+ * Priority: media.filename → `${username}_${tweetId}_${index}` → `tweet_${tweetId}_${index}` → `${fallbackPrefix}_${nowMs}_${index}`
  * @param media - Media item to generate filename for
  * @param options - Optional configuration for filename generation
  * @returns Sanitized filename string
@@ -175,7 +175,7 @@ export function generateMediaFilename(media: MediaInfo, options: FilenameOptions
 
 /**
  * Generate a filename for a ZIP archive.
- * Priority: {username}_{tweetId}.zip (from first media) → {fallbackPrefix}_{nowMs}.zip
+ * Priority: `${username}_${tweetId}.zip` (from first media) → `${fallbackPrefix}_${nowMs}.zip`
  * @param mediaItems - Array of media items to archive (uses first item for metadata)
  * @param options - Optional configuration for ZIP filename generation
  * @returns Sanitized ZIP filename string

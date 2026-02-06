@@ -67,7 +67,7 @@ class AppErrorReporter {
 
   /**
    * Set callback for UI notifications (decouples from NotificationService)
-   * @param callback Notification callback or null to disable
+   * @param callback - Notification callback or null to disable
    */
   public static setNotificationCallback(
     callback: ((message: string, context: ErrorContext) => void) | null
@@ -77,8 +77,8 @@ class AppErrorReporter {
 
   /**
    * Report an error with context and severity
-   * @param error The error to report (can be any type)
-   * @param options Report options including context and severity
+   * @param error - The error to report (can be any type)
+   * @param options - Report options including context and severity
    * @returns Report result with normalized message
    * @throws Re-throws error if severity is 'critical'
    */
@@ -136,9 +136,9 @@ class AppErrorReporter {
   /**
    * Report an error and return a default value (never throws)
    * Critical errors are downgraded to 'error' severity.
-   * @param error The error to report
-   * @param options Report options including context and severity
-   * @param defaultValue Value to return after reporting
+   * @param error - The error to report
+   * @param options - Report options including context and severity
+   * @param defaultValue - Value to return after reporting
    * @returns The provided default value
    */
   public static reportAndReturn<T>(
@@ -158,7 +158,7 @@ class AppErrorReporter {
 
   /**
    * Create a context-bound reporter with predefined context
-   * @param context Default context for all reports
+   * @param context - Default context for all reports
    * @returns Bound reporter functions (critical, error, warn, info)
    */
   public static forContext(context: ErrorContext): ContextBoundReporter {

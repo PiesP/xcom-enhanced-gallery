@@ -12,8 +12,8 @@ import { ThemeService } from '@shared/services/theme-service';
  * but we still register them with CoreService for backward compatibility
  * with dynamic lookups (e.g., GalleryRenderer, Settings).
  *
- * FilenameService removed in v3.0.0 - use functional API:
- * import { generateMediaFilename, generateZipFilename } from '@shared/services/filename';
+ * FilenameService removed in v3.0.0 - use functional API.
+ * Example: import generateMediaFilename and generateZipFilename from \@shared/services/filename.
  *
  * @throws Does not throw; silently skips duplicate registrations
  */

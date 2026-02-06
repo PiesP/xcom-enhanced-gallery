@@ -10,8 +10,10 @@
  * @param options - addEventListener options
  * @returns Cleanup function that removes the listener
  * @example
+ * ```ts
  * const cleanup = attachAbortListener(signal, () => console.log('Aborted!'));
- * cleanup(); // Remove listener before abort
+ * cleanup();
+ * ```
  */
 export function attachAbortListener(
   signal: AbortSignal | null | undefined,
@@ -40,7 +42,9 @@ export function attachAbortListener(
  * @param signal - AbortSignal to listen to (nullable)
  * @param cleanup - Cleanup function to execute on abort
  * @example
+ * ```ts
  * onSignalAbort(signal, () => clearTimeout(timerId));
+ * ```
  */
 export function onSignalAbort(signal: AbortSignal | null | undefined, cleanup: () => void): void {
   if (!signal || signal.aborted) {
@@ -56,7 +60,11 @@ export function onSignalAbort(signal: AbortSignal | null | undefined, cleanup: (
  * @param signal - AbortSignal to check (nullable)
  * @returns true if signal is absent or already aborted
  * @example
- * if (isSignalAborted(signal)) throw new DOMException('Operation was aborted', 'AbortError');
+ * ```ts
+ * if (isSignalAborted(signal)) {
+ *   throw new DOMException('Operation was aborted', 'AbortError');
+ * }
+ * ```
  */
 export function isSignalAborted(signal: AbortSignal | null | undefined): boolean {
   return !signal || signal.aborted;

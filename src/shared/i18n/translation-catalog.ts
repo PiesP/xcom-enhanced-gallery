@@ -33,8 +33,8 @@ export class TranslationCatalog {
 
   /**
    * Register a translation bundle for a language
-   * @param language Language code
-   * @param strings Translation strings
+   * @param language - Language code
+   * @param strings - Translation strings
    */
   public register(language: BaseLanguageCode, strings: LanguageStrings): void {
     this.bundles[language] = strings;
@@ -42,7 +42,7 @@ export class TranslationCatalog {
 
   /**
    * Check if a language bundle is loaded
-   * @param language Language code to check
+   * @param language - Language code to check
    * @returns true if bundle exists
    */
   public has(language: BaseLanguageCode): boolean {
@@ -51,7 +51,7 @@ export class TranslationCatalog {
 
   /**
    * Get translation strings with fallback support
-   * @param language Requested language code (optional)
+   * @param language - Requested language code (optional)
    * @returns Translation strings (fallback if not found)
    */
   public get(language?: BaseLanguageCode): LanguageStrings {
@@ -67,7 +67,7 @@ export class TranslationCatalog {
 
   /**
    * Ensure language bundle is loaded (lazy-loading not supported)
-   * @param _language Language code (unused)
+   * @param _language - Language code (unused)
    * @returns Always false
    */
   public async ensureLanguage(_language: BaseLanguageCode): Promise<boolean> {
@@ -76,7 +76,7 @@ export class TranslationCatalog {
 
   /**
    * Check if lazy-loading is supported (not supported)
-   * @param _language Language code (unused)
+   * @param _language - Language code (unused)
    * @returns Always false
    */
   public canLazyLoad(_language: BaseLanguageCode): boolean {
@@ -109,7 +109,7 @@ export class TranslationCatalog {
 
   /**
    * Register multiple language bundles at once
-   * @param bundles Translation bundles indexed by language code
+   * @param bundles - Translation bundles indexed by language code
    */
   private registerBundles(bundles: TranslationBundleInput): void {
     for (const [language, strings] of Object.entries(bundles) as Array<

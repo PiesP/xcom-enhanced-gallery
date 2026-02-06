@@ -8,7 +8,7 @@
  * - Error isolation: listener exceptions do not cascade
  *
  * Guidelines:
- * - Use AppEventManager (@shared/events/app-events) for application-wide events
+ * - Use AppEventManager (\@shared/events/app-events) for application-wide events
  * - Use this emitter for feature-local, short-lived coordination
  */
 

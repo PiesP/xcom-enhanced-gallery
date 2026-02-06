@@ -5,7 +5,7 @@
  * Executes stages in order: infrastructure → services → events → gallery.
  * Handles dev/prod modes with distinct optimization strategies.
  *
- * @run-at document-idle - Executes after DOM is ready per userscript guarantee
+ * \@run-at document-idle - Executes after DOM is ready per userscript guarantee
  */
 
 import { initializeCoreBaseServices } from '@bootstrap/base-services';
@@ -516,7 +516,7 @@ async function initializeGallery(): Promise<void> {
 /**
  * Application immediate startup
  *
- * @run-at document-idle guarantee:
+ * \@run-at document-idle guarantee:
  * The userscript engine executes after DOM is ready, so DOMContentLoaded listeners
  * are unnecessary. We call startApplication immediately.
  */

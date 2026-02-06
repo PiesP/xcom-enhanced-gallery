@@ -6,9 +6,11 @@
  * proper cleanup of listeners and debounce state.
  *
  * @example
+ * ```ts
  * const cleanup = await initializeGalleryEvents(handlers, { enableKeyboard: true });
  * // Later...
- * cleanupGalleryEvents(); // or cleanup();
+ * cleanupGalleryEvents();
+ * ```
  */
 
 import { logger } from '@shared/logging/logger';
@@ -139,11 +141,13 @@ function registerListeners(
  * @returns A cleanup function that unregisters all listeners and resets state
  *
  * @example
+ * ```ts
  * const cleanup = await initializeGalleryEvents(
  *   { onMediaClick: handleClick, onGalleryClose: handleClose },
  *   { enableKeyboard: true }
  * );
- * cleanup(); // Unregisters listeners
+ * cleanup();
+ * ```
  */
 export async function initializeGalleryEvents(
   handlers: EventHandlers,

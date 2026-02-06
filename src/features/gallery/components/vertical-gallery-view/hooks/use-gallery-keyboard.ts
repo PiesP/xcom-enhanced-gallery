@@ -1,60 +1,60 @@
 /**
- * @fileoverview Gallery keyboard navigation hook (Escape key listener)
+ *   @fileoverview Gallery keyboard navigation hook (Escape key listener)
  *
- * Manages keyboard event handling for gallery overlay close.
- * Respects editable form fields (INPUT, TEXTAREA, contenteditable).
+ *   Manages keyboard event handling for gallery overlay close.
+ *   Respects editable form fields (INPUT, TEXTAREA, contenteditable).
  */
 
 import { EventManager } from '@shared/services/event-manager';
 import { createEffect, onCleanup } from 'solid-js';
 
 /**
- * Configuration options for useGalleryKeyboard hook.
+ *   Configuration options for useGalleryKeyboard hook.
  *
  * **Purpose**
- * Defines the contract for keyboard event handling configuration.
- * Currently supports only Escape key, but extensible for future
- * keyboard shortcuts (e.g., ArrowUp, ArrowDown for navigation).
+ *   Defines the contract for keyboard event handling configuration.
+ *   Currently supports only Escape key, but extensible for future
+ *   keyboard shortcuts (e.g., ArrowUp, ArrowDown for navigation).
  *
  * **Properties**
- * - onClose: Callback invoked when Escape key is pressed by user
+ *   - onClose: Callback invoked when Escape key is pressed by user
  *
  * **Callback Semantics**
- * The onClose callback is invoked after event interception:
- * - Only called if keyboardEvent.key === 'Escape'
- * - Only called if target element is not editable (INPUT, TEXTAREA, contenteditable)
- * - preventDefault() and stopPropagation() called before callback
- * - Callback should update component state to hide gallery (e.g., setGalleryVisible(false))
+ *   The onClose callback is invoked after event interception:
+ *   - Only called if keyboardEvent.key === 'Escape'
+ *   - Only called if target element is not editable (INPUT, TEXTAREA, contenteditable)
+ *   - preventDefault() and stopPropagation() called before callback
+ *   - Callback should update component state to hide gallery (for example: setGalleryVisible(false))
  *
  * **Type Safety**
- * All properties are required (no optional fields). If a property is not
- * needed in the future, use undefined type instead of making it optional.
+ *   All properties are required (no optional fields). If a property is not
+ *   needed in the future, use undefined type instead of making it optional.
  *
  * @property onClose - Callback function invoked on Escape key press.
- *   Type: () => void - Takes no arguments, returns void.
- *   Called synchronously during event handler execution.
- *   Must not throw (wrap in try-catch if uncertain).
+ * Type: function returning void - Takes no arguments, returns void.
+ * Called synchronously during event handler execution.
+ * Must not throw (wrap in try-catch if uncertain).
  *
  * @example
  * Basic usage:
- * \`\`\`typescript
+ * ```ts
  * const options: UseGalleryKeyboardOptions = {
  *   onClose: () => {
  *     setGalleryVisible(false);
  *     console.log('Gallery closed by user (Escape key)');
  *   },
  * };
- * \`\`\`
+ * ```
  *
  * @example
  * With state update:
- * \`\`\`typescript
+ * ```ts
  * const [galleryVisible, setGalleryVisible] = createSignal(true);
  *
  * useGalleryKeyboard({
  *   onClose: () => setGalleryVisible(false),
  * });
- * \`\`\`
+ * ```
  */
 interface UseGalleryKeyboardOptions {
   /**
@@ -64,110 +64,69 @@ interface UseGalleryKeyboardOptions {
 }
 
 /**
- * Custom Solid.js hook for gallery keyboard navigation.
+ *   Custom Solid.js hook for gallery keyboard navigation.
  *
- * Registers a document-level keydown listener (capture phase) that:
- * 1. Detects Escape key presses
- * 2. Filters out presses on editable targets (INPUT, TEXTAREA, contenteditable)
- * 3. Calls onClose callback and prevents default behavior
- * 4. Auto-cleans up listener on component unmount
+ *   Registers a document-level keydown listener (capture phase) that:
+ *   1. Detects Escape key presses
+ *   2. Filters out presses on editable targets (INPUT, TEXTAREA, contenteditable)
+ *   3. Calls onClose callback and prevents default behavior
+ *   4. Auto-cleans up listener on component unmount
  *
  * **Hook Classification**
- * - Side-effect hook (returns void, not a value)
- * - Reactive hook (integrates with Solid.js createEffect)
- * - Must be called at component top level (Solid.js rules)
- * - Cleanup is automatic via onCleanup
+ *   - Side-effect hook (returns void, not a value)
+ *   - Reactive hook (integrates with Solid.js createEffect)
+ *   - Must be called at component top level (Solid.js rules)
+ *   - Cleanup is automatic via onCleanup
  *
  * **Implementation Details**
  *
  * **SSR Safety**: Checks typeof document !== 'undefined' to avoid SSR errors
- * in non-browser environments (Node.js, Web Workers, etc.)
+ *   in non-browser environments (Node.js, Web Workers, etc.)
  *
  * **Editable Target Detection**: isEditableTarget helper checks:
- * - Element exists (null check)
- * - Tag name is INPUT or TEXTAREA (case-insensitive via toUpperCase)
- * - Element has contenteditable=true attribute (for rich editors)
+ *   - Element exists (null check)
+ *   - Tag name is INPUT or TEXTAREA (case-insensitive via toUpperCase)
+ *   - Element has contenteditable=true attribute (for rich editors)
  *
  * **Event Handler Flow**:
- * 1. handleKeyDown receives Event, casts to KeyboardEvent
- * 2. isEditableTarget check: if true, return early (skip processing)
- * 3. Check if event.key === 'Escape': if true, call onClose()
- * 4. If handled: preventDefault() and stopPropagation()
+ *   1. handleKeyDown receives Event, casts to KeyboardEvent
+ *   2. isEditableTarget check: if true, return early (skip processing)
+ *   3. Check if event.key === 'Escape': if true, call onClose()
+ *   4. If handled: preventDefault() and stopPropagation()
  *
  * **Capture Phase Rationale**:
- * - Capture phase executes before bubbling phase
- * - Allows gallery to intercept Escape even if child elements have handlers
- * - Prevents accidental event suppression by form inputs
- * - Standard pattern for overlay/modal keyboard handling
+ *   - Capture phase executes before bubbling phase
+ *   - Allows gallery to intercept Escape even if child elements have handlers
+ *   - Prevents accidental event suppression by form inputs
+ *   - Standard pattern for overlay/modal keyboard handling
  *
  * **EventManager Integration**:
- * - addListener returns listenerId (unique identifier)
- * - listenerId used to remove listener in onCleanup
- * - context parameter ('gallery-keyboard-navigation') enables
+ *   - addListener returns listenerId (unique identifier)
+ *   - listenerId used to remove listener in onCleanup
+ *   - context parameter ('gallery-keyboard-navigation') enables
  *   centralized cleanup if gallery context is destroyed
  *
  * **Memory Management**:
- * - No closure over component state (only onClose callback)
- * - No circular references
- * - Listener guaranteed removed via onCleanup
- * - Safe to mount/unmount repeatedly
+ *   - No closure over component state (only onClose callback)
+ *   - No circular references
+ *   - Listener guaranteed removed via onCleanup
+ *   - Safe to mount/unmount repeatedly
  *
  * **Error Boundaries**:
- * - onClose callback is called synchronously (must not throw)
- * - Event handler itself has no try-catch (browser handles KeyboardEvent safely)
- * - If onClose throws, error propagates (component responsible for error boundary)
+ *   - onClose callback is called synchronously (must not throw)
+ *   - Event handler itself has no try-catch (browser handles KeyboardEvent safely)
+ *   - If onClose throws, error propagates (component responsible for error boundary)
  *
  * **Interaction with Other Handlers**:
- * - preventDefault() blocks browser default Escape behavior
- * - stopPropagation() blocks parent elements' Escape handlers
- * - capture phase: parent gallery handlers fire before child element handlers
- * - Escape in focused input: preventDefault called, isEditableTarget true, returns early
+ *   - preventDefault() blocks browser default Escape behavior
+ *   - stopPropagation() blocks parent elements' Escape handlers
+ *   - capture phase: parent gallery handlers fire before child element handlers
+ *   - Escape in focused input: preventDefault called, isEditableTarget true, returns early
  *
  * @param options - Configuration with onClose callback
  * @returns void - This is a side-effect hook with no return value
  *
  * @throws Never - All errors in onClose are caller's responsibility
- *
- * @example
- * Basic gallery with keyboard close:
- * \`\`\`typescript
- * export function VerticalGalleryView(props: Props): JSXElement {
- *   const [visible, setVisible] = createSignal(true);
- *
- *   useGalleryKeyboard({ onClose: () => setVisible(false) });
- *
- *   return (
- *     <Show when={visible()}>
- *       <div class={styles.overlay}>Gallery</div>
- *     </Show>
- *   );
- * }
- * \`\`\`
- *
- * @example
- * With logging:
- * \`\`\`typescript
- * useGalleryKeyboard({
- *   onClose: () => {
- *     console.log('User pressed Escape to close gallery');
- *     setGalleryVisible(false);
- *   },
- * });
- * \`\`\`
- *
- * @example
- * Multiple hooks in single component:
- * \`\`\`typescript
- * export function Gallery(): JSXElement {
- *   // Keyboard navigation
- *   useGalleryKeyboard({ onClose: () => setVisible(false) });
- *
- *   // Click outside to close (another hook)
- *   useGalleryClickOutside({ onClickOutside: () => setVisible(false) });
- *
- *   return <div>Gallery</div>;
- * }
- * \`\`\`
  *
  * @see {@link UseGalleryKeyboardOptions} - Options interface
  * @see {@link EventManager.addListener} - Event listener registration
@@ -202,7 +161,7 @@ export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void
      *
      * **Tag Name Normalization**
      * toUpperCase() converts to uppercase for comparison because:
-     * - DOM API returns uppercase tag names: <input> becomes "INPUT"
+     * - DOM API returns uppercase tag names: \<input\> becomes "INPUT"
      * - Ensures case-insensitive matching (standard DOM behavior)
      * - Handles malformed tags gracefully
      *
@@ -236,10 +195,10 @@ export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void
      * @returns true if target is editable (suppress Escape handling), false otherwise
      *
      * @example
-     * isEditableTarget(<input>) → true (INPUT tag)
-     * isEditableTarget(<textarea>) → true (TEXTAREA tag)
-     * isEditableTarget(<div contenteditable>) → true (isContentEditable=true)
-     * isEditableTarget(<div>) → false (regular div)
+     * isEditableTarget(\<input\>) → true (INPUT tag)
+     * isEditableTarget(\<textarea\>) → true (TEXTAREA tag)
+     * isEditableTarget(\<div contenteditable\>) → true (isContentEditable=true)
+     * isEditableTarget(\<div\>) → false (regular div)
      * isEditableTarget(null) → false (no element)
      */
     const isEditableTarget = (target: EventTarget | null | undefined): boolean => {
@@ -334,7 +293,7 @@ export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void
      *
      * @example
      * Escape key on div:
-     * \`\`\`
+     * ```
      * User presses Escape
      * handleKeyDown fired
      * isEditableTarget returns false
@@ -342,18 +301,18 @@ export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void
      * onClose() called
      * preventDefault() and stopPropagation() called
      * Gallery closes
-     * \`\`\`
+     * ```
      *
      * @example
      * Escape key in input field:
-     * \`\`\`
-     * User presses Escape (while focused on <input>)
+     * ```
+     * User presses Escape (while focused on \<input\>)
      * handleKeyDown fired
      * isEditableTarget returns true (INPUT tag)
      * Return early (do not process)
      * Browser handles Escape normally for input
      * Gallery stays open
-     * \`\`\`
+     * ```
      */
     const handleKeyDown = (event: Event) => {
       const keyboardEvent = event as KeyboardEvent;
@@ -390,7 +349,7 @@ export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void
      * - document: Global keyboard listener (all keydown events pass through)
      * - 'keydown': Keyboard event type (fires for every key press)
      * - handleKeyDown: Handler function (called for each event)
-     * - { capture: true }: Options - capture phase (intercept before bubbling)
+     * - `{ capture: true }`: Options - capture phase (intercept before bubbling)
      * - 'gallery-keyboard-navigation': Context string for filtering/cleanup
      *
      * **Return Value: listenerId**
@@ -401,7 +360,7 @@ export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void
      * - Type: string or number (opaque ID, don't inspect contents)
      *
      * **Capture Phase Benefits**
-     * { capture: true } means:
+     * `{ capture: true }` means:
      * - Listener fires during capture phase (before event bubbles)
      * - Executes before any target element's listeners
      * - Can intercept before child event handlers
@@ -493,11 +452,11 @@ export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void
      *
      * @example
      * Component lifecycle:
-     * \`\`\`
+     * ```
      * Mount: createEffect runs → addListener → listener active
      * User presses Escape → handleKeyDown → onClose()
      * Unmount: onCleanup runs → removeListener → listener inactive
-     * \`\`\`
+     * ```
      *
      * @example
      * Reactive re-execution:

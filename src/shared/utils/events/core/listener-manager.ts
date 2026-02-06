@@ -4,7 +4,7 @@
  *              Provides context-based grouping for batch removal.
  *
  * @internal This module is an internal implementation detail of EventManager.
- *           External code should use EventManager from @shared/services/event-manager
+ *           External code should use EventManager from \@shared/services/event-manager
  *           for unified event management with proper lifecycle support.
  *           DO NOT USE THIS MODULE DIRECTLY - use EventManager instead.
  *

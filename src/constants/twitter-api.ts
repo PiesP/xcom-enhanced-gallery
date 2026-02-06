@@ -90,7 +90,7 @@ export const TWITTER_API_CONFIG = {
    * `https://x.com/i/api/graphql/{queryId}/UserByScreenName?variables={...}`
    *
    * **Required Variables**:
-   * - `screen_name` (string): User handle without '@' prefix (e.g., "username")
+   * - `screen_name` (string): User handle without '\@' prefix (e.g., "username")
    * - `withSafetyModeUserFields` (boolean): Include safety/moderation fields
    *
    * @example

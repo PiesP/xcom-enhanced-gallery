@@ -15,8 +15,8 @@
  * - Effect cleanup: Language change subscription properly cleaned up
  * - Accessibility: Native select elements with proper labels
  *
- * @see {@link ./SettingsControls.types.ts} - Type definitions
- * @see {@link ./SettingsControls.module.css} - Component styles
+ * @see {@link SettingsControlsProps} - Type definitions
+ * Component styles: `SettingsControls.module.css`
  */
 
 import { getLanguageService } from '@shared/container/service-accessors';

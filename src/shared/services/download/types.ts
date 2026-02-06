@@ -1,6 +1,6 @@
 /**
  * Download Service Type Definitions
- * @module @shared/services/download/types
+ * @module \@shared/services/download/types
  */
 
 import type { ErrorCode } from '@shared/types/result.types';

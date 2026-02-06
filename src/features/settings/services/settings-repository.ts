@@ -42,7 +42,7 @@ export interface SettingsRepository {
    * Persists settings with current schema hash for future migration detection.
    *
    * @param settings - Settings object to persist
-   * @throws {Error} If storage operation fails
+   * @throws Error - If storage operation fails
    */
   save(settings: AppSettings): Promise<void>;
 }

@@ -184,7 +184,7 @@ declare global {
  */
 export interface UserScriptInfo {
   /**
-   * Script manifest data extracted from the @-header comments.
+   * Script manifest data extracted from the \@-header comments.
    */
   readonly script: {
     /**
@@ -223,7 +223,7 @@ export interface UserScriptInfo {
     readonly icon64: string;
 
     /**
-     * Array of URL patterns where the script should run (@include)
+     * Array of URL patterns where the script should run (\@include)
      */
     readonly includes: readonly string[];
 
@@ -233,7 +233,7 @@ export interface UserScriptInfo {
     readonly lastModified: number;
 
     /**
-     * Array of URL patterns where the script matches (@match)
+     * Array of URL patterns where the script matches (\@match)
      */
     readonly matches: readonly string[];
 
@@ -253,7 +253,7 @@ export interface UserScriptInfo {
     readonly position: number;
 
     /**
-     * Array of resources declared in the script (@resource)
+     * Array of resources declared in the script (\@resource)
      */
     readonly resources: readonly Array<{
       /**
@@ -278,7 +278,7 @@ export interface UserScriptInfo {
     }>;
 
     /**
-     * Execution timing (@run-at)
+     * Execution timing (\@run-at)
      */
     readonly 'run-at': string;
 
@@ -304,7 +304,7 @@ export interface UserScriptInfo {
   };
 
   /**
-   * Raw metadata string from @-header comments
+   * Raw metadata string from \@-header comments
    */
   readonly scriptMetaStr: string;
 
@@ -688,74 +688,74 @@ export type UserScriptRunAt = 'document-start' | 'document-body' | 'document-end
  * Complete UserScript metadata configuration.
  *
  * Represents the script's manifest information typically declared in the
- * @-header comments of a UserScript. All properties are marked readonly
+ * \@-header comments of a UserScript. All properties are marked readonly
  * as they represent static script configuration.
  *
  * @see {@link https://www.tampermonkey.net/documentation.php#meta:header}
  */
 export interface UserScriptMetadata {
   /**
-   * Script name (@name)
+   * Script name (\@name)
    */
   readonly name: string;
 
   /**
-   * Script namespace (@namespace) - should be unique
+   * Script namespace (\@namespace) - should be unique
    */
   readonly namespace: string;
 
   /**
-   * Script version (@version) - typically semantic versioning
+   * Script version (\@version) - typically semantic versioning
    */
   readonly version: string;
 
   /**
-   * Human-readable script description (@description)
+   * Human-readable script description (\@description)
    */
   readonly description: string;
 
   /**
-   * Script author name(s) (@author)
+   * Script author name(s) (\@author)
    */
   readonly author: string;
 
   /**
-   * URL patterns where script should run (@match)
+   * URL patterns where script should run (\@match)
    */
   readonly match: readonly string[];
 
   /**
-   * Privileged operations the script can perform (@grant)
+   * Privileged operations the script can perform (\@grant)
    */
   readonly grant: readonly UserScriptGrant[];
 
   /**
-   * External hosts allowed for XHR/fetch (@connect)
+   * External hosts allowed for XHR/fetch (\@connect)
    */
   readonly connect: readonly UserScriptConnect[];
 
   /**
-   * Execution timing (@run-at)
+   * Execution timing (\@run-at)
    */
   readonly 'run-at': UserScriptRunAt;
 
   /**
-   * Support/issues URL (@supportURL)
+   * Support/issues URL (\@supportURL)
    */
   readonly supportURL: string;
 
   /**
-   * URL to download the latest script version (@downloadURL)
+   * URL to download the latest script version (\@downloadURL)
    */
   readonly downloadURL: string;
 
   /**
-   * URL to check for updates (@updateURL)
+   * URL to check for updates (\@updateURL)
    */
   readonly updateURL: string;
 
   /**
-   * Whether the script should not run in frames (@noframes)
+   * Whether the script should not run in frames (\@noframes)
    * @default false
    */
   readonly noframes?: boolean;

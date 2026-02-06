@@ -21,9 +21,11 @@ const playbackStateMap = new WeakMap<HTMLVideoElement, { playing: boolean }>();
  * @param options - Configuration with video element and context
  *
  * @example
+ * ```ts
  * executeVideoControl('togglePlayPause');
  * executeVideoControl('volumeUp', { context: 'keyboard' });
  * executeVideoControl('mute', { video: videoElement });
+ * ```
  */
 export function executeVideoControl(
   action: VideoControlAction,

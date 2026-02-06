@@ -2,9 +2,9 @@ import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/i
 
 /**
  * Produces dot-notation union of every leaf string in LanguageStrings
- * @typeParam TValue Source language structure
- * @typeParam TPrefix Accumulated key prefix
- * @typeParam TDepth Recursion depth tracker
+ * @typeParam TValue - Source language structure
+ * @typeParam TPrefix - Accumulated key prefix
+ * @typeParam TDepth - Recursion depth tracker
  * @returns Union of dot-notation paths to leaf strings
  */
 type DotNestedKeys<

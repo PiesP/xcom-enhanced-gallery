@@ -11,14 +11,14 @@
  *
  * | Layer | Module | Use Case |
  * |-------|--------|----------|
- * | Low-level | `@shared/utils/events/core/listener-manager` | Internal DOM listener tracking (@internal) |
+ * | Low-level | `@shared/utils/events/core/listener-manager` | Internal DOM listener tracking (\@internal) |
  * | Mid-level | `@shared/services/event-manager` (this file) | Service-level DOM events with lifecycle |
  * | High-level | `@shared/events/event-bus` | Unified facade for both DOM and app events |
  *
  * **Recommended Usage:**
  * - For new code, prefer `EventBus` from `@shared/events` for unified event handling
  * - Use `EventManager` when you need service-level lifecycle integration
- * - Never use `listener-manager` directly (it's @internal)
+ * - Never use `listener-manager` directly (it's \@internal)
  *
  * @see {@link EventBus} for unified event management
  */

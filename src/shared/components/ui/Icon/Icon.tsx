@@ -9,7 +9,7 @@ export interface IconProps {
   /**
    * Icon size: supports CSS variables, em/px units, or numeric pixels.
    * @default "var(--xeg-icon-size)" (1.5em)
-   * @example size={16} => "16px" | size="2em" => "2em"
+   * @example size=16 maps to "16px"; size="2em" stays "2em"
    */
   readonly size?: number | string | undefined;
 
@@ -21,7 +21,7 @@ export interface IconProps {
 
   /**
    * SVG path elements and shapes.
-   * @example <Icon><path d="M18 6l-12 12" /></Icon>
+   * @example render with SVG path children (see LucideIcon for examples)
    */
   readonly children?: ComponentChildren;
 

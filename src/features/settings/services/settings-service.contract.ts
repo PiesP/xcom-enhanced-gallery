@@ -168,7 +168,7 @@ export interface SettingsServiceContract extends BaseService {
    *
    * @param jsonString - JSON string containing settings to import
    * @returns Promise that resolves when the import is complete and persisted
-   * @throws {Error} If the JSON string is malformed or invalid
+   * @throws Error - If the JSON string is malformed or invalid
    *
    * @example
    * ```typescript

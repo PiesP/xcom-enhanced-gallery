@@ -44,7 +44,7 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
 
   /**
    * Set downloading state with minimum display debounce
-   * @param downloading New downloading state
+   * @param downloading - New downloading state
    */
   const setDownloading = (downloading: boolean): void => {
     const now = Date.now();
@@ -73,7 +73,7 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
 
   /**
    * Set loading state (clears error when loading starts)
-   * @param loading New loading state
+   * @param loading - New loading state
    */
   const setLoading = (loading: boolean): void => {
     setIsLoading(loading);
@@ -84,7 +84,7 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
 
   /**
    * Set error state (clears loading and downloading when error occurs)
-   * @param errorState New error state
+   * @param errorState - New error state
    */
   const setError = (errorState: boolean): void => {
     setHasError(errorState);

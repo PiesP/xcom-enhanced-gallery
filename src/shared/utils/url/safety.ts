@@ -200,7 +200,7 @@ export function isUrlAllowed(rawUrl: string | null | undefined, policy: UrlSafet
  *
  * Detects and prevents:
  * - Direct blocked schemes (e.g., 'javascript:')
- * - Whitespace-padded schemes (e.g., 'java\t\tscript:')
+ * - Whitespace-padded schemes (e.g., 'java [tab][tab] script:')
  * - Percent-encoded schemes (e.g., 'java%73cript:')
  * - Invalid percent sequences (e.g., 'java%ZZscript:')
  * - Mixed obfuscation (e.g., 'jav%61script:')

@@ -24,7 +24,7 @@ const CLEAN_FILENAME_RELATIVE_PREFIX_REGEX = /^\.\//;
 
 /**
  * Clean and normalize filename for display and file saving.
- * Removes Twitter prefixes, /media/ prefix, relative paths, and truncates long filenames (>40 chars).
+ * Removes Twitter prefixes, /media/ prefix, relative paths, and truncates long filenames (over 40 chars).
  * Falls back to "Untitled" when input is missing or empty.
  *
  * @param filename - Original filename (optional)
@@ -150,13 +150,13 @@ export function normalizeVideoMutedSetting(value: unknown, fallback = false): bo
  * @returns true if media is detected as video, false otherwise
  *
  * @example
- * isVideoMedia({ url: 'https://video.twimg.com/video.mp4', filename: 'clip.mp4' })
+ * `isVideoMedia({ url: 'https://video.twimg.com/video.mp4', filename: 'clip.mp4' })`
  * // Returns true
  *
- * isVideoMedia({ url: 'https://pbs.twimg.com/image.jpg', filename: 'photo.jpg' })
+ * `isVideoMedia({ url: 'https://pbs.twimg.com/image.jpg', filename: 'photo.jpg' })`
  * // Returns false
  *
- * isVideoMedia({ url: 'relative/path/video.webm', filename: undefined })
+ * `isVideoMedia({ url: 'relative/path/video.webm', filename: undefined })`
  * // Returns true (from extension check)
  */
 export function isVideoMedia(media: MediaInfo): boolean {

@@ -20,10 +20,10 @@ import { createEffect, createSignal, on, onCleanup } from 'solid-js';
  * Represents a function that tears down resources (subscriptions, listeners, etc.).
  *
  * **Purpose**
- * - Unsubscribe from event listeners
- * - Release allocated resources
- * - Prevent memory leaks
- * - Called by onCleanup() or explicit invoke
+ *   - Unsubscribe from event listeners
+ *   - Release allocated resources
+ *   - Prevent memory leaks
+ *   - Called by onCleanup() or explicit invoke
  *
  * **Usage Pattern**
  * const cleanup = registerNavigationEvents(...);
@@ -39,79 +39,79 @@ type Cleanup = VoidFunction;
  *
  * **Purpose**
  * Provides hook with necessary context to coordinate navigation:
- * - Visibility signal to control event listener lifecycle
- * - Scroll callback to synchronize UI with navigation state
+ *   - Visibility signal to control event listener lifecycle
+ *   - Scroll callback to synchronize UI with navigation state
  *
  * **Properties**
  *
  * @property isVisible - Accessor returning true if gallery is visible
- *   - Type: () => boolean (Solid.js signal getter)
+ *   - Type: `() => boolean` (Solid.js signal getter)
  *   - Purpose: Conditional event subscription
  *   - When true: Event listeners registered
  *   - When false: Event listeners unregistered, cleanup runs
  *   - Usage: Used in createEffect dependency array via on(isVisible, ...)
  *   - Importance: Critical for preventing listener leaks
  *
- *   **Example**:
- *   ```typescript
- *   // Gallery open/close state
- *   const [isOpen, setIsOpen] = createSignal(false);
+ * **Example**:
+ * ```ts
+ * // Gallery open/close state
+ * const [isOpen, setIsOpen] = createSignal(false);
  *
- *   useGalleryNavigation({
- *     isVisible: () => isOpen(),  // Track open/close
- *     scrollToItem: ...,
- *   });
- *   ```
+ * useGalleryNavigation({
+ * isVisible: () => isOpen(),  // Track open/close
+ * scrollToItem: ...,
+ * });
+ * ```
  *
  * @property scrollToItem - Callback to scroll gallery to specific index
- *   - Type: (index: number) => void
+ *   - Type: `(index: number) => void`
  *   - Purpose: Synchronize UI scroll position with navigation
  *   - When called: After navigate:complete event
  *   - Triggers: Only for non-scroll triggers (not for 'scroll' trigger)
  *   - Consumer responsibility: Implementation depends on UI library
  *   - Importance: Essential for keyboard/click navigation UX
  *
- *   **Example**:
- *   ```typescript
- *   // Virtual list scroll implementation
- *   const scrollToItem = (index: number) => {
- *     const virtualList = containerRef();
- *     if (virtualList) {
- *       virtualList.scrollToIndex(index, { align: 'center' });
- *     }
- *   };
+ * **Example**:
+ * ```ts
+ * // Virtual list scroll implementation
+ * const scrollToItem = (index: number) => {
+ * const virtualList = containerRef();
+ * if (virtualList) {
+ *   virtualList.scrollToIndex(index, { align: 'center' });
+ * }
+ * };
  *
- *   useGalleryNavigation({
- *     isVisible: ...,
- *     scrollToItem,  // Pass implementation
- *   });
- *   ```
+ * useGalleryNavigation({
+ * isVisible: ...,
+ * scrollToItem,  // Pass implementation
+ * });
+ * ```
  *
  * **Null Handling**
- * - isVisible never returns null (always boolean)
- * - scrollToItem may be no-op if container not ready
- * - Hook doesn't validate or null-check (consumer responsibility)
+ *   - isVisible never returns null (always boolean)
+ *   - scrollToItem may be no-op if container not ready
+ *   - Hook doesn't validate or null-check (consumer responsibility)
  *
  * **Full Configuration Example**:
- * ```typescript
+ * ```ts
  * interface GalleryState {
- *   isOpen: boolean;
- *   containerRef: HTMLDivElement | null;
+ * isOpen: boolean;
+ * containerRef: HTMLDivElement | null;
  * }
  *
  * const [state, setState] = createSignal<GalleryState>({
- *   isOpen: false,
- *   containerRef: null,
+ * isOpen: false,
+ * containerRef: null,
  * });
  *
  * useGalleryNavigation({
- *   isVisible: () => state().isOpen,
- *   scrollToItem: (index) => {
- *     const container = state().containerRef;
- *     if (container?.scrollToIndex) {
- *       container.scrollToIndex(index);
- *     }
- *   },
+ * isVisible: () => state().isOpen,
+ * scrollToItem: (index) => {
+ * const container = state().containerRef;
+ * if (container?.scrollToIndex) {
+ *   container.scrollToIndex(index);
+ * }
+ * },
  * });
  * ```
  */
@@ -137,94 +137,95 @@ interface UseGalleryNavigationOptions {
  * **Properties**
  *
  * @property lastNavigationTrigger - Accessor to last navigation trigger type
- *   - Type: Accessor<NavigationTrigger | null>
+ *   - Type: `Accessor<NavigationTrigger | null>`
  *   - InitialValue: null (no navigation yet)
  *   - Updated: On both navigate:start AND navigate:complete events
  *   - Values: 'keyboard' | 'click' | 'scroll' | 'external' | null
  *   - Reactivity: Fine-grained (memo can track changes)
  *   - Usage: Analytics, UX feedback, conditional logic
  *
- *   **Example: Analytics tracking**:
- *   ```typescript
- *   createEffect(() => {
- *     const trigger = navigation.lastNavigationTrigger();
- *     if (trigger) {
- *       analytics.trackNavigation(trigger);
- *     }
- *   });
- *   ```
+ * **Example: Analytics tracking**:
+ * ```ts
+ * createEffect(() => {
+ * const trigger = navigation.lastNavigationTrigger();
+ * if (trigger) {
+ *   analytics.trackNavigation(trigger);
+ * }
+ * });
+ * ```
  *
- *   **Example: Keyboard vs scroll styling**:
- *   ```typescript
- *   const className = createMemo(() =>
- *     navigation.lastNavigationTrigger() === 'keyboard'
- *       ? styles.keyboardNav
- *       : styles.mouseNav
- *   );
- *   ```
+ * **Example: Keyboard vs scroll styling**:
+ * ```ts
+ * const className = createMemo(
+ * () =>
+ *   navigation.lastNavigationTrigger() === 'keyboard'
+ *     ? styles.keyboardNav
+ *     : styles.mouseNav
+ * );
+ * ```
  *
  * @property setLastNavigationTrigger - Setter for navigation trigger
- *   - Type: (trigger: NavigationTrigger | null) => void
+ *   - Type: `(trigger: NavigationTrigger | null) => void`
  *   - Purpose: Update trigger state from event handlers or externally
  *   - Called by: navigate:start, navigate:complete event handlers
  *   - External usage: Reset trigger (setLastNavigationTrigger(null))
  *   - Reactivity: Updates signal, triggers dependents
  *
  * @property programmaticScrollTimestamp - Accessor to last programmatic scroll timestamp
- *   - Type: Accessor<number> (milliseconds from performance.now())
+ *   - Type: `Accessor<number>` (milliseconds from performance.now())
  *   - InitialValue: 0 (no scroll yet)
  *   - Purpose: Track timing of programmatic scrolls
  *   - Usage: Detect if scroll was user-initiated or programmatic
  *   - Importance: Prevents re-scrolling on scroll events within timing window
  *
- *   **Example: Scroll event debounce**:
- *   ```typescript
- *   const handleScrollEvent = (event: ScrollEvent) => {
- *     const lastProgrammaticTime = navigation.programmaticScrollTimestamp();
- *     const timeSinceLastProgrammatic = performance.now() - lastProgrammaticTime;
+ * **Example: Scroll event debounce**:
+ * ```ts
+ * const handleScrollEvent = (event: ScrollEvent) => {
+ * const lastProgrammaticTime = navigation.programmaticScrollTimestamp();
+ * const timeSinceLastProgrammatic = performance.now() - lastProgrammaticTime;
  *
- *     // Ignore scroll within 300ms of programmatic scroll
- *     if (timeSinceLastProgrammatic < 300) {
- *       return;  // Skip processing (was our scroll)
- *     }
+ * // Ignore scroll within 300ms of programmatic scroll
+ * if (timeSinceLastProgrammatic < 300) {
+ *   return;  // Skip processing (was our scroll)
+ * }
  *
- *     // Process user scroll
- *     handleUserScroll(event);
- *   };
- *   ```
+ * // Process user scroll
+ * handleUserScroll(event);
+ * };
+ * ```
  *
  * @property setProgrammaticScrollTimestamp - Setter for scroll timestamp
- *   - Type: (timestamp: number) => void
+ *   - Type: `(timestamp: number) => void`
  *   - Purpose: Record when programmatic scroll was triggered
  *   - Called by: External navigation functions
  *   - Parameter: performance.now() timestamp
  *   - Typical usage: Called before triggering navigation
  *
- *   **Example: Programmatic navigation**:
- *   ```typescript
- *   const goToIndex = (index: number) => {
- *     navigation.setProgrammaticScrollTimestamp(performance.now());
- *     triggerNavigation(index);
- *   };
- *   ```
+ * **Example: Programmatic navigation**:
+ * ```ts
+ * const goToIndex = (index: number) => {
+ * navigation.setProgrammaticScrollTimestamp(performance.now());
+ * triggerNavigation(index);
+ * };
+ * ```
  *
  * **Return Value Pattern**
  * Hook returns 4 items:
- * - 2 accessors (read-only, reactive)
- * - 2 setters (write, update signal)
- * - Allows external control while maintaining reactivity
- * - Consumer can read state + update when needed
+ *   - 2 accessors (read-only, reactive)
+ *   - 2 setters (write, update signal)
+ *   - Allows external control while maintaining reactivity
+ *   - Consumer can read state + update when needed
  *
  * **Type Safety**
- * - All types explicit and readonly
- * - lastNavigationTrigger can be null (before first nav)
- * - programmaticScrollTimestamp is number (0 = no scroll)
- * - Setters have exact types (no inference)
+ *   - All types explicit and readonly
+ *   - lastNavigationTrigger can be null (before first nav)
+ *   - programmaticScrollTimestamp is number (0 = no scroll)
+ *   - Setters have exact types (no inference)
  *
  * **Memory Characteristics**
- * - Return object is stable (same reference across renders)
- * - Signals created once in hook (no re-creation)
- * - No closures over component state (no memory leaks)
+ *   - Return object is stable (same reference across renders)
+ *   - Signals created once in hook (no re-creation)
+ *   - No closures over component state (no memory leaks)
  */
 interface UseGalleryNavigationResult {
   /**
@@ -241,8 +242,7 @@ interface UseGalleryNavigationResult {
    * - null: No navigation has occurred yet
    *
    * **Usage Examples**:
-   * ```typescript
-   * // Track analytics
+   * ```ts
    * createEffect(() => {
    *   const trigger = lastNavigationTrigger();
    *   if (trigger) {
@@ -250,10 +250,9 @@ interface UseGalleryNavigationResult {
    *   }
    * });
    *
-   * // Conditional rendering
-   * <Show when={lastNavigationTrigger() === 'keyboard'}>
-   *   <KeyboardIndicator />
-   * </Show>
+   * \<Show when={lastNavigationTrigger() === 'keyboard'}\>
+   *   \<KeyboardIndicator /\>
+   * \</Show\>
    * ```
    */
   readonly lastNavigationTrigger: Accessor<NavigationTrigger | null>;
@@ -270,7 +269,7 @@ interface UseGalleryNavigationResult {
    * - External code (reset, override)
    *
    * **Usage Examples**:
-   * ```typescript
+   * ```ts
    * // Reset navigation trigger
    * setLastNavigationTrigger(null);
    *
@@ -294,7 +293,7 @@ interface UseGalleryNavigationResult {
    * **Range**: 0 (never) to current time
    *
    * **Usage Pattern**:
-   * ```typescript
+   * ```ts
    * const lastTime = programmaticScrollTimestamp();
    * const elapsed = performance.now() - lastTime;
    * const isRecent = elapsed < 300;  // Within 300ms
@@ -334,7 +333,7 @@ interface UseGalleryNavigationResult {
    * - User keyboard (unless keyboard nav)
    *
    * **Example: Programmatic navigation**:
-   * ```typescript
+   * ```ts
    * const navigateToIndex = (index: number) => {
    *   // Record timestamp FIRST
    *   setProgrammaticScrollTimestamp(performance.now());
@@ -372,104 +371,104 @@ interface UseGalleryNavigationResult {
  * **Lifecycle**
  *
  * **1. Initialization (Mount)**
- * - Signals created: lastNavigationTrigger (null), programmaticScrollTimestamp (0)
- * - Effect setup: on(isVisible, ...) dependency
- * - Subscriptions not yet registered (waiting for isVisible true)
+ *   - Signals created: lastNavigationTrigger (null), programmaticScrollTimestamp (0)
+ *   - Effect setup: on(isVisible, ...) dependency
+ *   - Subscriptions not yet registered (waiting for isVisible true)
  *
  * **2. Visibility = true (Gallery Opens)**
- * - Effect callback fires
- * - registerNavigationEvents called with event handlers
- * - Event listeners attached to galleryIndexEvents
- * - Ready to receive navigate:start and navigate:complete
+ *   - Effect callback fires
+ *   - registerNavigationEvents called with event handlers
+ *   - Event listeners attached to galleryIndexEvents
+ *   - Ready to receive navigate:start and navigate:complete
  *
  * **3. Navigation Event: navigate:start**
- * - Fires before index change
- * - Payload includes: trigger type, next index
- * - Hook action: setLastNavigationTrigger(trigger)
- * - Signal updates, reactive dependents notified
+ *   - Fires before index change
+ *   - Payload includes: trigger type, next index
+ *   - Hook action: setLastNavigationTrigger(trigger)
+ *   - Signal updates, reactive dependents notified
  *
  * **4. Navigation Event: navigate:complete**
- * - Fires after index change
- * - Payload includes: final index, trigger type
- * - Hook actions:
+ *   - Fires after index change
+ *   - Payload includes: final index, trigger type
+ *   - Hook actions:
  *   - setLastNavigationTrigger(trigger)
  *   - IF trigger !== 'scroll': scrollToItem(index)
- * - Scroll call allows UI to catch up with state
+ *   - Scroll call allows UI to catch up with state
  *
  * **5. Visibility = false (Gallery Closes)**
- * - Effect re-runs (isVisible changed)
- * - Previous effect cleanup runs first
- * - onCleanup() called with dispose function
- * - Event listeners unsubscribed
- * - No more events processed until visibility true again
+ *   - Effect re-runs (isVisible changed)
+ *   - Previous effect cleanup runs first
+ *   - onCleanup() called with dispose function
+ *   - Event listeners unsubscribed
+ *   - No more events processed until visibility true again
  *
  * **6. Unmount (Component Destroyed)**
- * - Effect cleanup runs (visibility change or unmount)
- * - onCleanup() called
- * - All subscriptions disposed
- * - Signals garbage collected
+ *   - Effect cleanup runs (visibility change or unmount)
+ *   - onCleanup() called
+ *   - All subscriptions disposed
+ *   - Signals garbage collected
  *
  * **Event Flow Diagram**
  *
  * User Action (keyboard/click/scroll)
- *    ↓
+ *   ↓
  * galleryIndexEvents emit navigate:start
- *    ↓
+ *   ↓
  * Hook receives: setLastNavigationTrigger(trigger)
- *    ↓
+ *   ↓
  * Solid.js reactivity: dependents notified
- *    ↓
+ *   ↓
  * Gallery system updates index
- *    ↓
+ *   ↓
  * galleryIndexEvents emit navigate:complete
- *    ↓
+ *   ↓
  * Hook receives: setLastNavigationTrigger(trigger)
- *    ↓
+ *   ↓
  * Hook decision:
- *    ├─ if (trigger === 'scroll') → skip scroll
- *    └─ else → scrollToItem(index)
- *    ↓
+ *   ├─ if (trigger === 'scroll') → skip scroll
+ *   └─ else → scrollToItem(index)
+ *   ↓
  * UI scroll position synchronized with index
  *
  * **Trigger Handling Logic**
  *
  * **'keyboard' trigger**:
- * - Source: Arrow keys, Home, End
- * - Hook action: scrollToItem(index)
- * - Reason: Keyboard nav doesn't auto-scroll, need manual sync
- * - Timing: Immediate (no delay)
+ *   - Source: Arrow keys, Home, End
+ *   - Hook action: scrollToItem(index)
+ *   - Reason: Keyboard nav doesn't auto-scroll, need manual sync
+ *   - Timing: Immediate (no delay)
  *
  * **'click' trigger**:
- * - Source: Direct item click
- * - Hook action: scrollToItem(index)
- * - Reason: Click may be off-screen, need to scroll into view
- * - Timing: Immediate
+ *   - Source: Direct item click
+ *   - Hook action: scrollToItem(index)
+ *   - Reason: Click may be off-screen, need to scroll into view
+ *   - Timing: Immediate
  *
  * **'scroll' trigger**:
- * - Source: User wheel/scrollbar
- * - Hook action: SKIP scrollToItem (no-op)
- * - Reason: User already scrolling, don't interfere
- * - Consequence: No double-scroll artifacts
+ *   - Source: User wheel/scrollbar
+ *   - Hook action: SKIP scrollToItem (no-op)
+ *   - Reason: User already scrolling, don't interfere
+ *   - Consequence: No double-scroll artifacts
  *
  * **'external' trigger**:
- * - Source: Programmatic/API navigation
- * - Hook action: scrollToItem(index)
- * - Reason: External nav doesn't sync UI, need manual catch-up
- * - Timing: After external nav completes
+ *   - Source: Programmatic/API navigation
+ *   - Hook action: scrollToItem(index)
+ *   - Reason: External nav doesn't sync UI, need manual catch-up
+ *   - Timing: After external nav completes
  *
  * **Scroll Trigger Special Case**
  *
  * Why skip scroll triggers?
- * - User is actively scrolling with mouse wheel
- * - Gallery system detects scroll → updates index
- * - Hook receives navigate:complete with trigger='scroll'
- * - If hook called scrollToItem → double scroll (user's scroll + hook's scroll)
- * - Result: Jittery UX, scroll fight, poor performance
+ *   - User is actively scrolling with mouse wheel
+ *   - Gallery system detects scroll → updates index
+ *   - Hook receives navigate:complete with trigger='scroll'
+ *   - If hook called scrollToItem → double scroll (user's scroll + hook's scroll)
+ *   - Result: Jittery UX, scroll fight, poor performance
  *
  * Solution: Simple check
- * ```typescript
+ * ```ts
  * if (trigger === 'scroll') {
- *   return;  // Skip, user is already scrolling
+ * return;  // Skip, user is already scrolling
  * }
  * scrollToItem(index);  // Only for keyboard/click/external
  * ```
@@ -477,90 +476,90 @@ interface UseGalleryNavigationResult {
  * **Visibility-Based Subscription**
  *
  * Why conditional on isVisible?
- * - User navigates other UI (tabs, panels)
- * - Gallery not visible (hidden tab)
- * - No need for gallery navigation listeners
- * - Prevents unnecessary event processing
- * - Reduces memory footprint
- * - Enables clean teardown on tab switch
+ *   - User navigates other UI (tabs, panels)
+ *   - Gallery not visible (hidden tab)
+ *   - No need for gallery navigation listeners
+ *   - Prevents unnecessary event processing
+ *   - Reduces memory footprint
+ *   - Enables clean teardown on tab switch
  *
  * Implementation:
- * ```typescript
+ * ```ts
  * createEffect(on(isVisible, (visible) => {
- *   if (!visible) {
- *     return;  // Early exit, cleanup runs
- *   }
+ * if (!visible) {
+ * return;  // Early exit, cleanup runs
+ * }
  *
- *   const dispose = registerNavigationEvents(...);
- *   onCleanup(dispose);
+ * const dispose = registerNavigationEvents(...);
+ * onCleanup(dispose);
  * }));
  * ```
  *
  * **Return Value Strategy**
  *
  * Returns 4 items:
- * - 2 accessors (for reading state)
- * - 2 setters (for updating state)
- * - Separation allows:
+ *   - 2 accessors (for reading state)
+ *   - 2 setters (for updating state)
+ *   - Separation allows:
  *   - Consumers to observe trigger changes
  *   - External code to record programmatic scrolls
  *   - Hook to update both internally
  *   - Fine-grained reactivity
  *
  * **Error Handling**
- * - No error handling in hook (consumer responsibility)
- * - scrollToItem exceptions not caught
- * - Navigation events assumed valid
- * - Index bounds checking done by consumer
+ *   - No error handling in hook (consumer responsibility)
+ *   - scrollToItem exceptions not caught
+ *   - Navigation events assumed valid
+ *   - Index bounds checking done by consumer
  *
  * **Performance Characteristics**
- * - Hook creation: O(1)
- * - Signal updates: O(1)
- * - Event subscription: O(1)
- * - Scroll call: O(n) where n = item count (consumer's impl)
- * - Memory: 2 signals + 1 effect + closures
+ *   - Hook creation: O(1)
+ *   - Signal updates: O(1)
+ *   - Event subscription: O(1)
+ *   - Scroll call: O(n) where n = item count (consumer's impl)
+ *   - Memory: 2 signals + 1 effect + closures
  *
  * **Dependency Analysis**
- * - Effect dependency: isVisible (explicit via on)
- * - Signal dependencies: none (signals don't depend on each other)
- * - External: galleryIndexEvents (global, not dependency)
- * - Options: captured in closure, no signal dependencies
+ *   - Effect dependency: isVisible (explicit via on)
+ *   - Signal dependencies: none (signals don't depend on each other)
+ *   - External: galleryIndexEvents (global, not dependency)
+ *   - Options: captured in closure, no signal dependencies
  *
  * **Usage Patterns**
  *
  * **Pattern 1: Basic gallery**
- * ```typescript
+ * ```ts
  * const [isOpen, setIsOpen] = createSignal(false);
  * const navigation = useGalleryNavigation({
- *   isVisible: () => isOpen(),
- *   scrollToItem: (index) => {
- *     containerRef()?.scrollToIndex(index);
- *   },
+ * isVisible: () => isOpen(),
+ * scrollToItem: (index) => {
+ *   containerRef()?.scrollToIndex(index);
+ * },
  * });
  * ```
  *
  * **Pattern 2: With navigation tracking**
- * ```typescript
+ * ```ts
  * const navigation = useGalleryNavigation({
- *   isVisible: () => isGalleryOpen(),
- *   scrollToItem: (index) => { ... },
+ * isVisible: () => isGalleryOpen(),
+ * scrollToItem: (index) => { ... },
  * });
  *
- * const showKeyboardHint = createMemo(() =>
- *   navigation.lastNavigationTrigger() === 'keyboard'
+ * const showKeyboardHint = createMemo(
+ * () => navigation.lastNavigationTrigger() === 'keyboard'
  * );
  * ```
  *
  * **Pattern 3: External navigation**
- * ```typescript
+ * ```ts
  * const navigation = useGalleryNavigation({
- *   isVisible: () => isGalleryOpen(),
- *   scrollToItem: (index) => { ... },
+ * isVisible: () => isGalleryOpen(),
+ * scrollToItem: (index) => { ... },
  * });
  *
  * const goToIndex = (index: number) => {
- *   navigation.setProgrammaticScrollTimestamp(performance.now());
- *   triggerNavigation(index);
+ * navigation.setProgrammaticScrollTimestamp(performance.now());
+ * triggerNavigation(index);
  * };
  * ```
  *
@@ -571,11 +570,11 @@ interface UseGalleryNavigationResult {
  *
  * @remarks
  * This hook is minimal and focused:
- * - Doesn't manage gallery index (central system does)
- * - Doesn't control navigation (just responds)
- * - Doesn't validate index bounds
- * - Doesn't implement scroll behavior
- * - Separation of concerns: hooks one aspect only
+ *   - Doesn't manage gallery index (central system does)
+ *   - Doesn't control navigation (just responds)
+ *   - Doesn't validate index bounds
+ *   - Doesn't implement scroll behavior
+ *   - Separation of concerns: hooks one aspect only
  */
 export function useGalleryNavigation(
   options: UseGalleryNavigationOptions
@@ -608,7 +607,7 @@ export function useGalleryNavigation(
    * 2. visible parameter = true
    * 3. registerNavigationEvents called
    * 4. Event subscriptions attached
-   * 5. onCleanup(() => dispose) registered
+   * 5. `onCleanup(() => dispose)` registered
    * 6. Ready for navigation events
    *
    * **True → False (Gallery Closes)**:
@@ -621,7 +620,7 @@ export function useGalleryNavigation(
    *
    * **Early Return Pattern**
    *
-   * ```typescript
+   * ```ts
    * if (!visible) {
    *   return;  // No subscription needed
    * }
@@ -643,7 +642,7 @@ export function useGalleryNavigation(
    *   - Action: setLastNavigationTrigger(trigger)
    *
    * - onNavigateComplete: Called on navigate:complete only
-   *   - Parameter: payload { index, trigger }
+   *   - Parameter: payload `{ index, trigger }`
    *   - Conditional scroll:
    *     - If trigger === 'scroll': skip (user already scrolling)
    *     - Else: scrollToItem(index) (sync UI position)
@@ -697,7 +696,7 @@ export function useGalleryNavigation(
    * **Comparison: With vs Without Visibility Check**
    *
    * ❌ BAD: Always listening
-   * ```typescript
+   * ```ts
    * createEffect(() => {
    *   const dispose = registerNavigationEvents(...);
    *   onCleanup(dispose);
@@ -707,7 +706,7 @@ export function useGalleryNavigation(
    * ```
    *
    * ✅ GOOD: Conditional on visibility
-   * ```typescript
+   * ```ts
    * createEffect(on(isVisible, (visible) => {
    *   if (!visible) return;
    *   const dispose = registerNavigationEvents(...);
@@ -755,9 +754,9 @@ export function useGalleryNavigation(
  * 2. navigate:complete - Final state (index + trigger)
  *
  * **Design**: Callback pattern for event handling
- * - Decouples event source from hook implementation
- * - Allows injection of custom handlers
- * - Testable (can mock callbacks)
+ *   - Decouples event source from hook implementation
+ *   - Allows injection of custom handlers
+ *   - Testable (can mock callbacks)
  *
  * **Properties**
  *
@@ -768,77 +767,77 @@ export function useGalleryNavigation(
  *   - Frequency: 2x per navigation (start + complete)
  *   - Error handling: Errors in callback will crash effect
  *
- *   **Trigger Types**:
+ * **Trigger Types**:
  *   - 'keyboard': ArrowUp, ArrowDown, Home, End
  *   - 'click': Item clicked
  *   - 'scroll': Wheel or scrollbar
  *   - 'external': API/programmatic
  *
- *   **Event Timeline**:
- *   Time 0: User presses arrow key
- *   Time 5: navigate:start event
- *   Time 6: onTriggerChange('keyboard') called
- *   Time 10: Index updated
- *   Time 15: navigate:complete event
- *   Time 16: onTriggerChange('keyboard') called again
+ * **Event Timeline**:
+ * Time 0: User presses arrow key
+ * Time 5: navigate:start event
+ * Time 6: onTriggerChange('keyboard') called
+ * Time 10: Index updated
+ * Time 15: navigate:complete event
+ * Time 16: onTriggerChange('keyboard') called again
  *
- *   **Why Called Twice?**
+ * **Why Called Twice?**
  *   - Start: Notify early (for analytics, UI feedback)
  *   - Complete: Update with certainty (navigation done)
  *   - Both use same value (trigger doesn't change mid-nav)
  *   - Allows dual-phase processing
  *
- *   **Implementation Example**:
- *   ```typescript
- *   onTriggerChange: (trigger) => {
- *     setLastNavigationTrigger(trigger);
- *     analytics.trackTrigger(trigger);  // Can do both
- *   }
- *   ```
+ * **Implementation Example**:
+ * ```ts
+ * onTriggerChange: (trigger) => {
+ * setLastNavigationTrigger(trigger);
+ * analytics.trackTrigger(trigger);  // Can do both
+ * }
+ * ```
  *
  * @property onNavigateComplete - Callback for completion events
  *   - Called on: navigate:complete only (not start)
- *   - Parameter: { index: number, trigger: NavigationTrigger }
+ *   - Parameter: `{ index: number, trigger: NavigationTrigger }`
  *   - Purpose: Handle final index with knowledge of how it changed
  *   - Frequency: 1x per navigation (complete only)
  *   - Error handling: Errors in callback will crash effect
  *
- *   **Payload Properties**:
+ * **Payload Properties**:
  *   - index: Final gallery index (0-based)
  *   - trigger: Type of navigation trigger
  *
- *   **Typical Implementation**:
- *   ```typescript
- *   onNavigateComplete: ({ index, trigger }) => {
- *     // Update UI if needed
- *     if (trigger !== 'scroll') {
- *       containerRef()?.scrollToIndex(index);
- *     }
+ * **Typical Implementation**:
+ * ```ts
+ * onNavigateComplete: ({ index, trigger }) => {
+ * // Update UI if needed
+ * if (trigger !== 'scroll') {
+ *   containerRef()?.scrollToIndex(index);
+ * }
  *
- *     // Log or analyze
- *     analytics.trackCompletion({
- *       index,
- *       trigger,
- *       timestamp: Date.now(),
- *     });
- *   }
- *   ```
+ * // Log or analyze
+ * analytics.trackCompletion({
+ *   index,
+ *   trigger,
+ *   timestamp: Date.now(),
+ * });
+ * }
+ * ```
  *
- *   **Why Separate from onTriggerChange?**
+ * **Why Separate from onTriggerChange?**
  *   - Start event doesn't have index (not calculated yet)
  *   - Complete event has final index
  *   - Allows different handling for different stages
  *   - Complete can do index-dependent actions (like scroll)
  *
  * **Callback Contract**
- * - Both must be synchronous (not async)
- * - Both must not throw errors (or handle internally)
- * - Both should complete quickly (event handlers)
- * - Both have access to closure scope
+ *   - Both must be synchronous (not async)
+ *   - Both must not throw errors (or handle internally)
+ *   - Both should complete quickly (event handlers)
+ *   - Both have access to closure scope
  *
  * **Return Type**
- * - No return value expected
- * - Both are void functions (side-effect only)
+ *   - No return value expected
+ *   - Both are void functions (side-effect only)
  */
 interface RegisterNavigationEventsOptions {
   readonly onTriggerChange: (trigger: NavigationTrigger) => void;
@@ -859,53 +858,53 @@ interface RegisterNavigationEventsOptions {
  * 4. Return cleanup function to unsubscribe both
  *
  * **Not Responsible For**
- * - Managing gallery index (central system does)
- * - Scrolling (that's in onNavigateComplete callback)
- * - Timing/debouncing (passed through as-is)
- * - Error handling (caller's responsibility)
+ *   - Managing gallery index (central system does)
+ *   - Scrolling (that's in onNavigateComplete callback)
+ *   - Timing/debouncing (passed through as-is)
+ *   - Error handling (caller's responsibility)
  *
  * **Event Subscription Pattern**
  *
  * galleryIndexEvents.on() returns:
- * - Type: () => void (unsubscribe function)
- * - Store in variable: stopStart, stopComplete
- * - Call to remove listener: stopStart()
+ *   - Type: `() => void` (unsubscribe function)
+ *   - Store in variable: stopStart, stopComplete
+ *   - Call to remove listener: stopStart()
  *
  * Example from galleryIndexEvents source:
- * ```typescript
+ * ```ts
  * const events = {
- *   on(event, callback) {
- *     listeners[event].push(callback);
- *     return () => {
- *       listeners[event] = listeners[event].filter(cb => cb !== callback);
- *     };
- *   }
+ * on(event, callback) {
+ * listeners[event].push(callback);
+ * return () => {
+ *   listeners[event] = listeners[event].filter(cb => cb !== callback);
+ * };
+ * }
  * };
  * ```
  *
  * **Handler Flow**
  *
  * **navigate:start handler**:
- * ```typescript
+ * ```ts
  * (payload: GalleryNavigateStartPayload) => onTriggerChange(payload.trigger)
  * ```
- * - Input: Full navigate:start payload
- * - Extract: payload.trigger
- * - Call: onTriggerChange(trigger)
- * - Effect: Updates lastNavigationTrigger signal
+ *   - Input: Full navigate:start payload
+ *   - Extract: payload.trigger
+ *   - Call: onTriggerChange(trigger)
+ *   - Effect: Updates lastNavigationTrigger signal
  *
  * **navigate:complete handler**:
- * ```typescript
+ * ```ts
  * (payload: GalleryNavigateCompletePayload) => {
- *   onTriggerChange(payload.trigger);
- *   onNavigateComplete(payload);
+ * onTriggerChange(payload.trigger);
+ * onNavigateComplete(payload);
  * }
  * ```
- * - Input: Full navigate:complete payload
- * - Step 1: onTriggerChange(payload.trigger) - update signal
- * - Step 2: onNavigateComplete(payload) - handle completion
+ *   - Input: Full navigate:complete payload
+ *   - Step 1: onTriggerChange(payload.trigger) - update signal
+ *   - Step 2: onNavigateComplete(payload) - handle completion
  *   - In hook: checks trigger, conditionally calls scrollToItem
- * - Order: Trigger updated first, then navigate complete
+ *   - Order: Trigger updated first, then navigate complete
  *
  * **Cleanup Function**
  *
@@ -915,69 +914,69 @@ interface RegisterNavigationEventsOptions {
  * 3. Both subscriptions removed simultaneously
  * 4. Ready for new subscriptions (if re-called)
  *
- * ```typescript
+ * ```ts
  * return () => {
- *   stopStart();
- *   stopComplete();
+ * stopStart();
+ * stopComplete();
  * };
  * ```
  *
  * **Memory Semantics**
  *
  * Closure captures:
- * - stopStart function reference
- * - stopComplete function reference
- * - onTriggerChange callback reference
- * - onNavigateComplete callback reference
+ *   - stopStart function reference
+ *   - stopComplete function reference
+ *   - onTriggerChange callback reference
+ *   - onNavigateComplete callback reference
  *
  * These are kept alive as long as:
- * - Cleanup not called (listeners still active)
- * - Component not unmounted
- * - Gallery not hidden
+ *   - Cleanup not called (listeners still active)
+ *   - Component not unmounted
+ *   - Gallery not hidden
  *
  * Cleanup frees:
- * - Event listener references
- * - Callback references (if no other references)
- * - Subscriptions cleared
- * - Memory reclaimed
+ *   - Event listener references
+ *   - Callback references (if no other references)
+ *   - Subscriptions cleared
+ *   - Memory reclaimed
  *
  * **Type Safety**
  *
- * - Payload types from @shared/state/signals/gallery.signals
- * - NavigationTrigger validated at source
- * - GalleryNavigateCompletePayload structure defined
- * - No type casting needed (trust source)
+ *   - Payload types from `@shared/state/signals/gallery.signals`
+ *   - NavigationTrigger validated at source
+ *   - GalleryNavigateCompletePayload structure defined
+ *   - No type casting needed (trust source)
  *
  * **Error Handling**
  *
  * NOT handled in this function:
- * - onTriggerChange throwing (propagates to effect)
- * - onNavigateComplete throwing (propagates to effect)
- * - galleryIndexEvents.on failing (unlikely)
+ *   - onTriggerChange throwing (propagates to effect)
+ *   - onNavigateComplete throwing (propagates to effect)
+ *   - galleryIndexEvents.on failing (unlikely)
  *
  * Should be handled by caller:
- * - Wrap callbacks in try-catch if needed
- * - Handle errors in effect body
- * - Provide fallback or logging
+ *   - Wrap callbacks in try-catch if needed
+ *   - Handle errors in effect body
+ *   - Provide fallback or logging
  *
  * **Performance**
- * - Registration: O(1) array push in each event listener
- * - Trigger: O(1) callback invocation
- * - Cleanup: O(n) array filter where n = listener count (usually 1)
- * - Overall: Very fast, event-driven
+ *   - Registration: O(1) array push in each event listener
+ *   - Trigger: O(1) callback invocation
+ *   - Cleanup: O(n) array filter where n = listener count (usually 1)
+ *   - Overall: Very fast, event-driven
  *
  * **Usage Example**
  *
- * ```typescript
+ * ```ts
  * const cleanup = registerNavigationEvents({
- *   onTriggerChange: (trigger) => {
- *     setLastNavigationTrigger(trigger);
- *   },
- *   onNavigateComplete: ({ index, trigger }) => {
- *     if (trigger !== 'scroll') {
- *       scrollToItem(index);
- *     }
- *   },
+ * onTriggerChange: (trigger) => {
+ * setLastNavigationTrigger(trigger);
+ * },
+ * onNavigateComplete: ({ index, trigger }) => {
+ * if (trigger !== 'scroll') {
+ *   scrollToItem(index);
+ * }
+ * },
  * });
  *
  * // Later, cleanup
@@ -992,9 +991,9 @@ interface RegisterNavigationEventsOptions {
  * Cleanup: onCleanup(dispose)
  *
  * Hook ensures cleanup runs automatically:
- * - When isVisible changes to false
- * - When component unmounts
- * - Never has dangling listeners
+ *   - When isVisible changes to false
+ *   - When component unmounts
+ *   - Never has dangling listeners
  *
  * @param options - Callbacks for event handling
  * @returns Cleanup function to unsubscribe

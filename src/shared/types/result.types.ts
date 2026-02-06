@@ -65,9 +65,11 @@ export type Result<T> = ResultSuccess<T> | ResultPartial<T> | ResultError;
  * Commonly used for async operations (Phase 353)
  *
  * @example
+ * ```ts
  * async function processFile(): AsyncResult<FileData> {
- *   return { status: 'success', data: {...} };
+ *   return { status: 'success', data: { ...payload } };
  * }
+ * ```
  */
 export type AsyncResult<T> = Promise<Result<T>>;
 

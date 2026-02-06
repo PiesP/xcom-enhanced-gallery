@@ -1,8 +1,8 @@
 /**
- * @fileoverview Gallery lifecycle management hook for animations, cleanup, viewport tracking
+ *   @fileoverview Gallery lifecycle management hook for animations, cleanup, viewport tracking
  *
- * Orchestrates gallery enter/exit animations, video cleanup, and viewport CSS synchronization.
- * Manages three coordinated effects: scroll setup, animation timing, and viewport observation.
+ *   Orchestrates gallery enter/exit animations, video cleanup, and viewport CSS synchronization.
+ *   Manages three coordinated effects: scroll setup, animation timing, and viewport observation.
  */
 
 import { ensureGalleryScrollAvailable } from '@edge/dom/ensure-gallery-scroll';
@@ -12,11 +12,11 @@ import { animateGalleryEnter, animateGalleryExit } from '@shared/utils/css/css-a
 import { createEffect, on, onCleanup } from 'solid-js';
 
 /**
- * Configuration options for useGalleryLifecycle hook
+ *   Configuration options for useGalleryLifecycle hook
  *
- * @property containerEl - Gallery container element accessor
- * @property toolbarWrapperEl - Toolbar wrapper element accessor
- * @property isVisible - Gallery visibility state accessor
+ *   @property containerEl - Gallery container element accessor
+ *   @property toolbarWrapperEl - Toolbar wrapper element accessor
+ *   @property isVisible - Gallery visibility state accessor
  */
 interface UseGalleryLifecycleOptions {
   /** Container element accessor */
@@ -28,185 +28,147 @@ interface UseGalleryLifecycleOptions {
 }
 
 /**
- * Manages the complete gallery lifecycle through coordinated effects.
+ *   Manages the complete gallery lifecycle through coordinated effects.
  *
- * Orchestrates three independent Solid.js effects that handle:
- * 1. **Container Scroll Setup** - Makes container scrollable when needed
- * 2. **Enter/Exit Animations** - Animates gallery appearing and disappearing
- * 3. **Video Cleanup** - Stops and resets video playback on close
- * 4. **Viewport Tracking** - Synchronizes toolbar height with CSS variables
+ *   Orchestrates three independent Solid.js effects that handle:
+ *   1. **Container Scroll Setup** - Makes container scrollable when needed
+ *   2. **Enter/Exit Animations** - Animates gallery appearing and disappearing
+ *   3. **Video Cleanup** - Stops and resets video playback on close
+ *   4. **Viewport Tracking** - Synchronizes toolbar height with CSS variables
  *
  * **Lifecycle Stages**
  *
  * **Stage 1: Mount**
- * - Component initializes with containerEl and toolbarWrapperEl
- * - First effect runs: ensureGalleryScrollAvailable(container)
- * - Result: Container configured for overflow scrolling
+ *   - Component initializes with containerEl and toolbarWrapperEl
+ *   - First effect runs: ensureGalleryScrollAvailable(container)
+ *   - Result: Container configured for overflow scrolling
  *
  * **Stage 2: Open Gallery (isVisible = true)**
- * - Second effect runs with visible=true
- * - animateGalleryEnter(container) called
- * - Result: CSS animations played (fade-in, scale, etc.)
- * - Videos may start playing (user interaction)
+ *   - Second effect runs with visible=true
+ *   - animateGalleryEnter(container) called
+ *   - Result: CSS animations played (fade-in, scale, etc.)
+ *   - Videos may start playing (user interaction)
  *
  * **Stage 3: Viewport Tracking (continuous)**
- * - Third effect runs immediately
- * - observeViewportCssVars monitors toolbar height
- * - CSS variables updated as toolbar resizes
- * - Result: Gallery adjusts padding dynamically
+ *   - Third effect runs immediately
+ *   - observeViewportCssVars monitors toolbar height
+ *   - CSS variables updated as toolbar resizes
+ *   - Result: Gallery adjusts padding dynamically
  *
  * **Stage 4: Close Gallery (isVisible = false)**
- * - Second effect runs with visible=false
- * - animateGalleryExit(container) called
- * - All videos paused and reset (currentTime = 0)
- * - Result: Smooth closing animation + cleanup
+ *   - Second effect runs with visible=false
+ *   - animateGalleryExit(container) called
+ *   - All videos paused and reset (currentTime = 0)
+ *   - Result: Smooth closing animation + cleanup
  *
  * **Stage 5: Unmount**
- * - Component removed from DOM
- * - All effects cleaned up automatically
- * - Observers, listeners, timers all terminated
- * - Memory released (no leaks)
+ *   - Component removed from DOM
+ *   - All effects cleaned up automatically
+ *   - Observers, listeners, timers all terminated
+ *   - Memory released (no leaks)
  *
  * **Effect 1: Container Setup**
- * \`\`\`typescript
- * createEffect(on(containerEl, (element) => {
+ * ```ts
+ *   createEffect(on(containerEl, (element) => {
  *   if (element) ensureGalleryScrollAvailable(element);
- * }));
- * \`\`\`
- * - Dependencies: containerEl
- * - Runs when container reference changes
- * - Calls ensureGalleryScrollAvailable to set overflow style
- * - Skips if container is null
- * - Idempotent: safe to run multiple times
+ *   }));
+ * ```
+ *   - Dependencies: containerEl
+ *   - Runs when container reference changes
+ *   - Calls ensureGalleryScrollAvailable to set overflow style
+ *   - Skips if container is null
+ *   - Idempotent: safe to run multiple times
  *
  * **Effect 2: Animation & Video Cleanup**
- * \`\`\`typescript
- * createEffect(on(
+ * ```ts
+ *   createEffect(on(
  *   [containerEl, isVisible],
  *   ([container, visible]) => {
- *     if (!container) return;
- *     if (visible) animateGalleryEnter(container);
- *     else {
- *       animateGalleryExit(container);
- *       // Video cleanup...
- *     }
+ *   if (!container) return;
+ *   if (visible) animateGalleryEnter(container);
+ *   else {
+ *     animateGalleryExit(container);
+ *     // Video cleanup...
+ *   }
  *   },
- *   { defer: true }
- * ));
- * \`\`\`
- * - Dependencies: containerEl, isVisible
- * - Runs when either dependency changes
- * - { defer: true } ensures animation classes applied before transitions
- * - Videos paused: video.pause()
- * - Videos reset: video.currentTime = 0
- * - Errors caught and logged (never crashes)
- * - Only on close (visible = false)
+ *   `{ defer: true }`
+ *   ));
+ * ```
+ *   - Dependencies: containerEl, isVisible
+ *   - Runs when either dependency changes
+ *   - `{ defer: true }` ensures animation classes applied before transitions
+ *   - Videos paused: video.pause()
+ *   - Videos reset: video.currentTime = 0
+ *   - Errors caught and logged (never crashes)
+ *   - Only on close (visible = false)
  *
  * **Effect 3: Viewport Tracking**
- * \`\`\`typescript
- * createEffect(() => {
- *   const container = containerEl();
- *   const wrapper = toolbarWrapperEl();
- *   if (!container || !wrapper) return;
- *   const cleanup = observeViewportCssVars(container, ...);
- *   onCleanup(() => cleanup?.());
- * });
- * \`\`\`
- * - Dependencies: containerEl, toolbarWrapperEl (implicit)
- * - Runs when either element accessor called
- * - observeViewportCssVars returns cleanup function
- * - cleanup() called on effect re-run or component unmount
- * - Calculates toolbar height from getBoundingClientRect()
- * - Updates CSS variables for dynamic layout
+ * ```ts
+ *   createEffect(() => {
+ *     const container = containerEl();
+ *     const wrapper = toolbarWrapperEl();
+ *     if (!container || !wrapper) return;
+ *     const cleanup = observeViewportCssVars(container, ...);
+ *     onCleanup(() => cleanup?.());
+ *   });
+ * ```
+ *   - Dependencies: containerEl, toolbarWrapperEl (implicit)
+ *   - Runs when either element accessor called
+ *   - observeViewportCssVars returns cleanup function
+ *   - cleanup() called on effect re-run or component unmount
+ *   - Calculates toolbar height from getBoundingClientRect()
+ *   - Updates CSS variables for dynamic layout
  *
  * **Error Handling**
  *
  * **Animation Errors**
- * animateGalleryEnter and animateGalleryExit should not throw.
- * If they do, error propagates to browser (component error boundary).
+ *   animateGalleryEnter and animateGalleryExit should not throw.
+ *   If they do, error propagates to browser (component error boundary).
  *
  * **Video Cleanup Errors**
- * wrapped in try-catch blocks. If pause() or currentTime assignment fails:
- * - Logged via logger.warn('video cleanup failed', { error })
- * - Only in development (__DEV__)
- * - Continues to next video (no early exit)
+ *   wrapped in try-catch blocks. If pause() or currentTime assignment fails:
+ *   - Logged via logger.warn('video cleanup failed', `{ error }`)
+ *   - Only in development (__DEV__)
+ *   - Continues to next video (no early exit)
  *
  * **Viewport Tracking Errors**
- * observeViewportCssVars may fail if elements don't support observers.
- * Error handled by observeViewportCssVars implementation.
- * cleanup() is called safely in onCleanup.
+ *   observeViewportCssVars may fail if elements don't support observers.
+ *   Error handled by observeViewportCssVars implementation.
+ *   cleanup() is called safely in onCleanup.
  *
  * **Performance Optimization**
  *
- * **{ defer: true }**
- * Second effect uses { defer: true } option:
- * - Effect callback queued as microtask
- * - Allows CSS to apply before transitions fire
- * - Prevents animation queueing/batching issues
- * - Alternative: requestAnimationFrame, but defer is cleaner
+ * **`{ defer: true }`**
+ *   Second effect uses `{ defer: true }` option:
+ *   - Effect callback queued as microtask
+ *   - Allows CSS to apply before transitions fire
+ *   - Prevents animation queueing/batching issues
+ *   - Alternative: requestAnimationFrame, but defer is cleaner
  *
  * **Video Cleanup Batching**
- * Videos accessed via querySelectorAll once:
- * - Caches NodeList (single DOM traversal)
- * - forEach iterates over static list
- * - O(n) where n = number of videos (typically 1-5)
- * - No re-querying per video
+ *   Videos accessed via querySelectorAll once:
+ *   - Caches NodeList (single DOM traversal)
+ *   - forEach iterates over static list
+ *   - O(n) where n = number of videos (typically 1-5)
+ *   - No re-querying per video
  *
  * **Viewport Tracking Overhead**
- * observeViewportCssVars likely uses ResizeObserver:
- * - Efficient: only fires on actual size changes
- * - Batched: multiple changes fire once per frame
- * - No polling (not O(n) on timer)
+ *   observeViewportCssVars likely uses ResizeObserver:
+ *   - Efficient: only fires on actual size changes
+ *   - Batched: multiple changes fire once per frame
+ *   - No polling (not O(n) on timer)
  *
  * **Memory Management**
- * - No closures over component state
- * - No event listener leaks (cleanup called)
- * - No observer leaks (cleanup called via onCleanup)
- * - Safe to mount/unmount repeatedly
- * - Garbage collector reclaims all memory
+ *   - No closures over component state
+ *   - No event listener leaks (cleanup called)
+ *   - No observer leaks (cleanup called via onCleanup)
+ *   - Safe to mount/unmount repeatedly
+ *   - Garbage collector reclaims all memory
  *
  * @param options - Configuration with element accessors and visibility signal
  * @returns void - This is a side-effect hook with no return value
  *
  * @throws Never - All errors caught internally (video cleanup, logging)
- *
- * @example
- * Basic gallery with lifecycle management:
- * \`\`\`typescript
- * export function VerticalGalleryView(): JSXElement {
- *   const [containerRef, setContainerRef] = createSignal<HTMLDivElement | null>(null);
- *   const [isVisible, setIsVisible] = createSignal(true);
- *
- *   useGalleryLifecycle({
- *     containerEl: containerRef,
- *     toolbarWrapperEl: () => document.querySelector('.toolbar'),
- *     isVisible,
- *   });
- *
- *   return (
- *     <Show when={isVisible()}>
- *       <div ref={setContainerRef} class={styles.container}>
- *         Gallery items
- *       </div>
- *     </Show>
- *   );
- * }
- * \`\`\`
- *
- * @example
- * Gallery with video handling on close:
- * \`\`\`typescript
- * useGalleryLifecycle({
- *   containerEl,
- *   toolbarWrapperEl,
- *   isVisible,
- * });
- * // When isVisible becomes false:
- * // 1. Exit animation plays
- * // 2. All videos pause()
- * // 3. All videos reset to start (currentTime = 0)
- * // 4. Viewport observer cleaned up
- * \`\`\`
  *
  * @see {@link UseGalleryLifecycleOptions} - Configuration options
  * @see {@link ensureGalleryScrollAvailable} - Container scroll setup
@@ -234,7 +196,7 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
    * - Tracking specific signal changes
    * - Accessing current value in callback
    * - Running immediately (vs createEffect default)
-   * - Cleaner code than createEffect({ track: true })
+   * - Cleaner code than `createEffect({ track: true })`
    *
    * **Null Safety**
    * if (element) guard ensures:
@@ -285,7 +247,7 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
    * - Uses array notation to track multiple dependencies
    * - Receives destructured values ([container, visible])
    *
-   * **{ defer: true } Option**
+   * **`{ defer: true }` option**
    * Defers effect callback to microtask queue:
    * - Allows CSS to apply before transitions fire
    * - Prevents requestAnimationFrame timing issues
@@ -293,20 +255,27 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
    * - Equivalent to setTimeout(..., 0) but cleaner
    *
    * **Null Safety**
-   * if (!container) return exits early:
+   * `if (!container) return` exits early:
    * - animateGalleryEnter/Exit never called on null
    * - Safe even if element unmounts during visibility change
    * - No error thrown, just skipped
    *
    * **Enter Animation (visible = true)**
-   * if (visible) { animateGalleryEnter(container); }
+   * ```ts
+   * if (visible) {
+   *   animateGalleryEnter(container);
+   * }
+   * ```
    * - Plays opening animation when gallery becomes visible
    * - Applies CSS classes for fade-in, scale, etc.
    * - Called once per visibility toggle (true)
    * - May trigger user interactions (clicking media)
    *
    * **Exit Animation & Cleanup (visible = false)**
-   * else { animateGalleryExit(container); ... }
+   * ```ts
+   * animateGalleryExit(container);
+   * // Additional cleanup...
+   * ```
    * - Plays closing animation when gallery becomes hidden
    * - Then stops all video playback
    *
@@ -319,13 +288,13 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
    *    - Handles multiple videos in gallery
    *
    * 2. Pause Logic (forEach):
-   *    try { video.pause(); } catch(error) { logCleanupFailure(error); }
+   *    `try { video.pause(); } catch (error) { logCleanupFailure(error); }`
    *    - pause() may throw if video not properly loaded
    *    - Catch silences error, logs to dev console
    *    - Continue to next video (no early exit)
    *
    * 3. Reset Logic (forEach):
-   *    try { if (video.currentTime !== 0) { video.currentTime = 0; } }
+   *    `try { if (video.currentTime !== 0) { video.currentTime = 0; } }`
    *    - Setting currentTime may throw (unsupported property)
    *    - Skip if already at start (optimization)
    *    - Catch silences error, logs to dev console
@@ -457,26 +426,28 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
    * - If either null, effect exits early (no observer)
    *
    * **Null Safety Pattern**
-   * if (!container || !wrapper) return;
+   * `if (!container || !wrapper) return;`
    * - Prevents observer creation without valid DOM elements
    * - No error thrown (simple early exit)
    * - Effect completes without crash
    * - Acceptable if gallery not fully rendered yet
    *
    * **observeViewportCssVars Function**
-   * const cleanup = observeViewportCssVars(container, measureFn);
+   * `const cleanup = observeViewportCssVars(container, measureFn);`
    * - Takes gallery container and measure function
-   * - Measure function returns { toolbarHeight, paddingTop, paddingBottom }
+   * - Measure function returns `{ toolbarHeight, paddingTop, paddingBottom }`
    * - Sets up ResizeObserver on toolbar
    * - Monitors toolbar height changes
    * - Updates CSS variables on container
    * - Returns cleanup function (may be undefined if setup fails)
    *
    * **Measure Function**
+   * ```ts
    * () => {
    *   const toolbarHeight = wrapper ? Math.floor(wrapper.getBoundingClientRect().height) : 0;
    *   return { toolbarHeight, paddingTop: 0, paddingBottom: 0 } as const;
    * }
+   * ```
    * - Closure captures wrapper reference
    * - Called on each observer callback
    * - getBoundingClientRect() gets current toolbar dimensions
@@ -507,7 +478,7 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
    * - Continues until disconnect() called
    *
    * **Cleanup Mechanism**
-   * onCleanup(() => { cleanup?.(); });
+   * `onCleanup(() => { cleanup?.(); });`
    * - Runs when component unmounts
    * - Calls returned cleanup function (if provided)
    * - cleanup?.() = optional chaining (safe if undefined)

@@ -93,11 +93,11 @@ async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult
  *
  * @param stages - Bootstrap stage configurations
  * @param options - Execution options
- * @param options.stopOnFailure - Halt on critical failure (default: true)
+ * Options: stopOnFailure - Halt on critical failure (default: true)
  * @returns Array of stage results in execution order; never throws
  *
  * @example
- * ```typescript
+ * ```ts
  * const stages = [
  *   { label: 'Services', run: () => initializeServices() },
  *   { label: 'Gallery', run: () => initializeGallery() },

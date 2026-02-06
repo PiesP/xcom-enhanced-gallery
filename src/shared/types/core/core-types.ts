@@ -76,7 +76,7 @@ export interface Size {
  *
  * Extends Cleanupable with resource status checking capability.
  *
- * @see {@link ./lifecycle.types.ts} - Cleanupable interface
+ * @see {@link Cleanupable} - Cleanupable interface
  */
 export interface Lifecycle extends Cleanupable {
   /**
@@ -96,5 +96,5 @@ export interface Lifecycle extends Cleanupable {
  * Use this pattern for operations that may fail. Utility functions
  * are available in `result.types.ts` (success, failure, isSuccess, etc.).
  *
- * @see {@link ../result.types.ts} - Result utilities and AsyncResult type
+ * @see {@link Result} - Result utilities and AsyncResult type
  */

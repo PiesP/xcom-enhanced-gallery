@@ -24,7 +24,7 @@ const GM_API_CHECKS: Record<
 
 /**
  * Check if specific Tampermonkey API is available
- * @param apiName API name to check (e.g., 'download', 'notification')
+ * @param apiName - API name to check (e.g., 'download', 'notification')
  * @returns true if API is available and callable
  * @internal
  */

@@ -4,8 +4,8 @@ import { createSignal, onCleanup } from 'solid-js';
 
 /**
  * Translation function type
- * @param key Translation key to look up
- * @param params Optional interpolation parameters
+ * @param key - Translation key to look up
+ * @param params - Optional interpolation parameters
  * @returns Localized string
  */
 type Translate = (key: TranslationKey, params?: TranslationParams) => string;

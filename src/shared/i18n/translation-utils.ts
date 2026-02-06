@@ -3,8 +3,8 @@ import type { TranslationKey } from './types';
 
 /**
  * Resolve nested translation value using dot notation
- * @param dictionary Language strings dictionary
- * @param key Translation key (e.g., 'msg.welcome.title')
+ * @param dictionary - Language strings dictionary
+ * @param key - Translation key (e.g., 'msg.welcome.title')
  * @returns Resolved string or undefined if not found
  */
 export function resolveTranslationValue(

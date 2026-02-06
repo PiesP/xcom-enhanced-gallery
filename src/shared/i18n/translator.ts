@@ -13,7 +13,7 @@ export class Translator {
 
   /**
    * Creates a new Translator instance
-   * @param options Translation catalog or configuration options
+   * @param options - Translation catalog or configuration options
    */
   constructor(options: TranslationCatalog | TranslationCatalogOptions = {}) {
     this.catalog =
@@ -30,7 +30,7 @@ export class Translator {
 
   /**
    * Ensure language bundle is loaded (lazy-loading not supported)
-   * @param language Language code to ensure
+   * @param language - Language code to ensure
    * @returns Promise that resolves immediately
    */
   public async ensureLanguage(language: BaseLanguageCode): Promise<void> {
@@ -39,9 +39,9 @@ export class Translator {
 
   /**
    * Translate key with optional parameter interpolation
-   * @param language Target language code
-   * @param key Translation key (dot notation)
-   * @param params Optional parameters for interpolation
+   * @param language - Target language code
+   * @param key - Translation key (dot notation)
+   * @param params - Optional parameters for interpolation
    * @returns Translated string with interpolated parameters (key if not found)
    */
   public translate(

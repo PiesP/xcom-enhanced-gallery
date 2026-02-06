@@ -57,8 +57,8 @@ export class StreamingZipWriter {
   /**
    * Add file to archive (streaming mode)
    * Writes Local File Header + File Data immediately
-   * @param filename Name of file in archive
-   * @param data File content bytes
+   * @param filename - Name of file in archive
+   * @param data - File content bytes
    * @throws Error if archive/entry would exceed Zip32 limits
    */
   addFile(filename: string, data: Uint8Array): void {

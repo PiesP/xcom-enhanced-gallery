@@ -10,6 +10,7 @@
     "tmp/**",
     "stryker-report/**",
     ".stryker-tmp/**",
-    "LICENSES/**"
-  ]
+    "LICENSES/**",
+  ],
+  "ignoreDependencies": ["@biomejs/cli-linux-x64"],
 }
