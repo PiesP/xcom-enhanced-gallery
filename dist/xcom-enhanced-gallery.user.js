@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name X.com Enhanced Gallery
 // @namespace https://github.com/PiesP/xcom-enhanced-gallery
-// @version 1.7.1
+// @version 1.7.2
 // @description Media viewer and download functionality for X.com
 // @author PiesP
 // @license MIT
@@ -34,7 +34,7 @@
 /*
  * Third-Party Licenses
  * ====================
- * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.7.1/LICENSES
+ * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.7.2/LICENSES
  *
  * MIT License
  *
@@ -1279,6 +1279,125 @@ return match;
 }
 return null;
 }
+function getTimestamp() {
+return typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
+}
+function getElapsedTime(startTime) {
+return Math.max(0, getTimestamp() - startTime);
+}
+const DEFAULT_MAX_DESCENDANT_DEPTH = 6;
+const DEFAULT_MAX_ANCESTOR_HOPS = 3;
+const DEFAULT_TRAVERSAL_OPTIONS = {
+maxDescendantDepth: DEFAULT_MAX_DESCENDANT_DEPTH,
+maxAncestorHops: DEFAULT_MAX_ANCESTOR_HOPS
+};
+function isMediaElement(element) {
+if (!element) {
+return false;
+}
+return element.tagName === "IMG" || element.tagName === "VIDEO";
+}
+function findMediaElementInDOM(target, options = {}) {
+const { maxDescendantDepth, maxAncestorHops } = {
+...DEFAULT_TRAVERSAL_OPTIONS,
+...options
+};
+if (isMediaElement(target)) {
+return target;
+}
+const descendant = findMediaDescendant(target, {
+includeRoot: false,
+maxDepth: maxDescendantDepth
+});
+if (descendant) {
+return descendant;
+}
+let branch = target;
+for (let hops = 0; hops < maxAncestorHops && branch; hops++) {
+branch = branch.parentElement;
+if (!branch) {
+break;
+}
+const ancestorMedia = findMediaDescendant(branch, {
+includeRoot: true,
+maxDepth: maxDescendantDepth
+});
+if (ancestorMedia) {
+return ancestorMedia;
+}
+}
+return null;
+}
+function extractMediaUrlFromElement(element) {
+const isImage = element instanceof HTMLImageElement;
+if (isImage) {
+const attr2 = element.getAttribute("src");
+const current2 = element.currentSrc || null;
+const resolved2 = attr2 ? element.src : null;
+return pickFirstTruthy([current2, resolved2, attr2]);
+}
+const attr = element.getAttribute("src");
+const posterAttr = element.getAttribute("poster");
+const current = element.currentSrc || null;
+const resolved = attr ? element.src : null;
+const posterResolved = posterAttr ? element.poster : null;
+return pickFirstTruthy([current, resolved, attr, posterResolved, posterAttr]);
+}
+function findMediaDescendant(root, { includeRoot, maxDepth }) {
+const queue = [{ node: root, depth: 0 }];
+while (queue.length) {
+const current = queue.shift();
+if (!current) {
+break;
+}
+const { node, depth } = current;
+if ((includeRoot || node !== root) && isMediaElement(node)) {
+return node;
+}
+if (depth >= maxDepth) {
+continue;
+}
+for (const child of Array.from(node.children)) {
+if (child instanceof HTMLElement) {
+queue.push({ node: child, depth: depth + 1 });
+}
+}
+}
+return null;
+}
+function pickFirstTruthy(values) {
+for (const value of values) {
+if (value) {
+return value;
+}
+}
+return null;
+}
+function extractTweetTextHTML(tweetArticle) {
+if (!tweetArticle) return void 0;
+try {
+const tweetTextElement = tweetArticle.querySelector(TWEET_TEXT_SELECTOR);
+if (!tweetTextElement) return void 0;
+const text = tweetTextElement.textContent?.trim();
+if (!text) return void 0;
+if (false) ;
+return text;
+} catch (error) {
+logger.error("[tweet] extract failed", error);
+return void 0;
+}
+}
+function extractTweetTextHTMLFromClickedElement(element, _maxDepth = 10) {
+const tweetArticle = closestWithFallback(element, STABLE_TWEET_CONTAINERS_SELECTORS);
+if (tweetArticle) {
+return extractTweetTextHTML(tweetArticle);
+}
+return void 0;
+}
+const MEDIA = {
+HOSTS: {
+MEDIA_CDN: ["pbs.twimg.com", "video.twimg.com"]
+}};
 const FALLBACK_BASE_URL = "https://x.com";
 function tryParseUrl(value, base = FALLBACK_BASE_URL) {
 if (value instanceof URL) {
@@ -1368,6 +1487,262 @@ return username;
 return null;
 } catch {
 return null;
+}
+}
+const CONTROL_CHARS_REGEX = /[\u0000-\u001F\u007F]/g;
+const SCHEME_WHITESPACE_REGEX = /[\u0000-\u001F\u007F\s]+/g;
+const EXPLICIT_SCHEME_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
+const MAX_DECODE_ITERATIONS = 3;
+const MAX_SCHEME_PROBE_LENGTH = 64;
+const DEFAULT_BLOCKED_PROTOCOL_HINTS = [
+"javascript:",
+"vbscript:",
+"file:",
+"filesystem:",
+"ms-appx:",
+"ms-appx-web:",
+"about:",
+"intent:",
+"mailto:",
+"tel:",
+"sms:",
+"wtai:",
+"chrome:",
+"chrome-extension:",
+"opera:",
+"resource:",
+"data:text",
+"data:application",
+"data:video",
+"data:audio"
+];
+Object.freeze(
+new Set(["http:", "https:", "blob:"])
+);
+function isUrlAllowed(rawUrl, policy) {
+if (!rawUrl || typeof rawUrl !== "string") {
+return false;
+}
+const normalized = rawUrl.replace(CONTROL_CHARS_REGEX, "").trim();
+if (!normalized) {
+return false;
+}
+const blockedHints = policy.blockedProtocolHints ?? DEFAULT_BLOCKED_PROTOCOL_HINTS;
+if (startsWithBlockedProtocolHint(normalized, blockedHints)) {
+return false;
+}
+const lower = normalized.toLowerCase();
+if (lower.startsWith("data:")) {
+return policy.allowDataUrls === true && isAllowedDataUrl(lower, policy.allowedDataMimePrefixes);
+}
+if (lower.startsWith("//")) {
+return handleProtocolRelative();
+}
+const hasScheme = EXPLICIT_SCHEME_REGEX.test(normalized);
+if (!hasScheme) {
+return policy.allowRelative === true;
+}
+try {
+const parsed = new URL(normalized);
+return policy.allowedProtocols.has(parsed.protocol);
+} catch {
+return false;
+}
+}
+function startsWithBlockedProtocolHint(value, hints) {
+const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
+if (/%(?![0-9A-Fa-f]{2})/.test(probe)) {
+return true;
+}
+const variants = buildProbeVariants(probe);
+return variants.some((candidate) => hints.some((hint) => candidate.startsWith(hint)));
+}
+function buildProbeVariants(value) {
+const variants =  new Set();
+const base = value.toLowerCase();
+variants.add(base);
+variants.add(base.replace(SCHEME_WHITESPACE_REGEX, ""));
+let decoded = base;
+for (let i = 0; i < MAX_DECODE_ITERATIONS; i += 1) {
+try {
+decoded = decodeURIComponent(decoded);
+variants.add(decoded);
+variants.add(decoded.replace(SCHEME_WHITESPACE_REGEX, ""));
+} catch {
+break;
+}
+}
+return Array.from(variants.values());
+}
+function isAllowedDataUrl(lowerCaseValue, allowedPrefixes) {
+if (!allowedPrefixes || allowedPrefixes.length === 0) {
+return false;
+}
+const metaSection = lowerCaseValue.slice("data:".length);
+const [mime] = metaSection.split(";", 1);
+if (!mime) {
+return false;
+}
+return allowedPrefixes.some((prefix) => mime.startsWith(prefix));
+}
+function handleProtocolRelative(url, policy) {
+{
+return false;
+}
+}
+const MAX_URL_LENGTH = 2048;
+const ALLOWED_MEDIA_HOSTS = Object.freeze(MEDIA.HOSTS.MEDIA_CDN);
+function isValidMediaUrl(url) {
+if (typeof url !== "string" || url.length > MAX_URL_LENGTH) {
+return false;
+}
+const parsed = tryParseUrl(url);
+if (!parsed) {
+return false;
+}
+if (!isHttpProtocol(parsed.protocol)) {
+return false;
+}
+if (!isHostMatching(parsed, ALLOWED_MEDIA_HOSTS)) {
+return false;
+}
+return isAllowedMediaPath(parsed.hostname, parsed.pathname);
+}
+const isHttpProtocol = (protocol) => protocol === "https:" || protocol === "http:";
+function isAllowedMediaPath(hostname, pathname) {
+if (hostname === "pbs.twimg.com") {
+return checkPbsMediaPath(pathname);
+}
+if (hostname === "video.twimg.com") {
+return checkVideoMediaPath(pathname);
+}
+return false;
+}
+const checkPbsMediaPath = (pathname) => pathname.startsWith("/media/") || pathname.startsWith("/ext_tw_video_thumb/") || pathname.startsWith("/tweet_video_thumb/") || pathname.startsWith("/video_thumb/") || pathname.startsWith("/amplify_video_thumb/") || pathname.startsWith("/card_img/");
+const checkVideoMediaPath = (pathname) => pathname.startsWith("/ext_tw_video/") || pathname.startsWith("/tweet_video/") || pathname.startsWith("/amplify_video/") || pathname.startsWith("/dm_video/");
+const createFailureResult$1 = (error, startTime) => ({
+success: false,
+mediaItems: [],
+clickedIndex: 0,
+metadata: {
+extractedAt: Date.now(),
+sourceType: "dom-fallback",
+strategy: "dom-extraction-failed",
+error,
+totalProcessingTime: getElapsedTime(startTime)
+},
+tweetInfo: null
+});
+function findAllMediaInContainer(container) {
+const mediaElements = [];
+const images = container.querySelectorAll(
+'img[src*="pbs.twimg.com"], img[src*="video.twimg.com"]'
+);
+for (const img of images) {
+if (isMediaElement(img)) {
+mediaElements.push(img);
+}
+}
+const videos = container.querySelectorAll("video");
+for (const video of videos) {
+if (isMediaElement(video)) {
+mediaElements.push(video);
+}
+}
+return mediaElements;
+}
+function createMediaInfoFromDOM(element, tweetInfo, index, tweetTextHTML) {
+try {
+const mediaUrl = extractMediaUrlFromElement(element);
+if (!mediaUrl || !isValidMediaUrl(mediaUrl)) {
+return null;
+}
+const mediaType = element.tagName.toLowerCase() === "video" ? "video" : "image";
+let width;
+let height;
+if (element instanceof HTMLImageElement) {
+width = element.naturalWidth || element.width || void 0;
+height = element.naturalHeight || element.height || void 0;
+} else if (element instanceof HTMLVideoElement) {
+width = element.videoWidth || element.width || void 0;
+height = element.videoHeight || element.height || void 0;
+}
+return {
+id: `${tweetInfo.tweetId}_dom_${index}`,
+url: mediaUrl,
+type: mediaType,
+filename: "",
+tweetUsername: tweetInfo.username,
+tweetId: tweetInfo.tweetId,
+tweetUrl: tweetInfo.tweetUrl,
+tweetTextHTML,
+originalUrl: mediaUrl,
+thumbnailUrl: mediaUrl,
+alt: `${mediaType} ${index + 1}`,
+...width && height && { width, height },
+metadata: {
+domIndex: index,
+extractionSource: "dom-fallback",
+elementTag: element.tagName.toLowerCase()
+}
+};
+} catch (error) {
+return null;
+}
+}
+class DOMFallbackExtractor {
+async extract(tweetInfo, clickedElement, _options, extractionId) {
+const startedAt = getTimestamp();
+try {
+if (false) ;
+const tweetContainer = clickedElement.closest(TWEET_ARTICLE_SELECTOR);
+if (!tweetContainer || !(tweetContainer instanceof HTMLElement)) {
+return createFailureResult$1("No tweet container found", startedAt);
+}
+const tweetTextHTML = extractTweetTextHTMLFromClickedElement(clickedElement);
+const mediaElements = findAllMediaInContainer(tweetContainer);
+if (mediaElements.length === 0) {
+return createFailureResult$1("No media elements found in DOM", startedAt);
+}
+const mediaItems = [];
+const elementToIndexMap =  new Map();
+for (let i = 0; i < mediaElements.length; i++) {
+const element = mediaElements[i];
+if (!element) continue;
+const mediaInfo = createMediaInfoFromDOM(element, tweetInfo, i, tweetTextHTML);
+if (mediaInfo) {
+elementToIndexMap.set(element, mediaItems.length);
+mediaItems.push(mediaInfo);
+}
+}
+if (mediaItems.length === 0) {
+return createFailureResult$1("No valid media items extracted from DOM", startedAt);
+}
+const clickedMedia = findMediaElementInDOM(clickedElement);
+let clickedIndex = 0;
+if (clickedMedia) {
+const mappedIndex = elementToIndexMap.get(clickedMedia);
+if (mappedIndex !== void 0) {
+clickedIndex = mappedIndex;
+}
+}
+if (false) ;
+return {
+success: true,
+mediaItems,
+clickedIndex,
+metadata: {
+extractedAt: Date.now(),
+sourceType: "dom-fallback",
+strategy: "dom-extraction",
+totalProcessingTime: getElapsedTime(startedAt),
+domMediaCount: mediaItems.length
+},
+tweetInfo
+};
+} catch (error) {
+return createFailureResult$1(getErrorMessage(error) || "DOM extraction failed", startedAt);
+}
 }
 }
 const DEFAULT_TWEET_ORIGIN = "https://x.com";
@@ -2451,94 +2826,6 @@ withDisallowedReplyControls: false
 });
 }
 }
-const DEFAULT_MAX_DESCENDANT_DEPTH = 6;
-const DEFAULT_MAX_ANCESTOR_HOPS = 3;
-const DEFAULT_TRAVERSAL_OPTIONS = {
-maxDescendantDepth: DEFAULT_MAX_DESCENDANT_DEPTH,
-maxAncestorHops: DEFAULT_MAX_ANCESTOR_HOPS
-};
-function isMediaElement(element) {
-if (!element) {
-return false;
-}
-return element.tagName === "IMG" || element.tagName === "VIDEO";
-}
-function findMediaElementInDOM(target, options = {}) {
-const { maxDescendantDepth, maxAncestorHops } = {
-...DEFAULT_TRAVERSAL_OPTIONS,
-...options
-};
-if (isMediaElement(target)) {
-return target;
-}
-const descendant = findMediaDescendant(target, {
-includeRoot: false,
-maxDepth: maxDescendantDepth
-});
-if (descendant) {
-return descendant;
-}
-let branch = target;
-for (let hops = 0; hops < maxAncestorHops && branch; hops++) {
-branch = branch.parentElement;
-if (!branch) {
-break;
-}
-const ancestorMedia = findMediaDescendant(branch, {
-includeRoot: true,
-maxDepth: maxDescendantDepth
-});
-if (ancestorMedia) {
-return ancestorMedia;
-}
-}
-return null;
-}
-function extractMediaUrlFromElement(element) {
-const isImage = element instanceof HTMLImageElement;
-if (isImage) {
-const attr2 = element.getAttribute("src");
-const current2 = element.currentSrc || null;
-const resolved2 = attr2 ? element.src : null;
-return pickFirstTruthy([current2, resolved2, attr2]);
-}
-const attr = element.getAttribute("src");
-const posterAttr = element.getAttribute("poster");
-const current = element.currentSrc || null;
-const resolved = attr ? element.src : null;
-const posterResolved = posterAttr ? element.poster : null;
-return pickFirstTruthy([current, resolved, attr, posterResolved, posterAttr]);
-}
-function findMediaDescendant(root, { includeRoot, maxDepth }) {
-const queue = [{ node: root, depth: 0 }];
-while (queue.length) {
-const current = queue.shift();
-if (!current) {
-break;
-}
-const { node, depth } = current;
-if ((includeRoot || node !== root) && isMediaElement(node)) {
-return node;
-}
-if (depth >= maxDepth) {
-continue;
-}
-for (const child of Array.from(node.children)) {
-if (child instanceof HTMLElement) {
-queue.push({ node: child, depth: depth + 1 });
-}
-}
-}
-return null;
-}
-function pickFirstTruthy(values) {
-for (const value of values) {
-if (value) {
-return value;
-}
-}
-return null;
-}
 const determineClickedIndex = (clickedElement, mediaItems) => {
 try {
 const elementUrl = resolveClickedElementUrl(clickedElement);
@@ -2607,29 +2894,7 @@ const getStringValue = (record, key) => {
 const value = record[key];
 return typeof value === "string" && value.trim() ? value : null;
 };
-function extractTweetTextHTML(tweetArticle) {
-if (!tweetArticle) return void 0;
-try {
-const tweetTextElement = tweetArticle.querySelector(TWEET_TEXT_SELECTOR);
-if (!tweetTextElement) return void 0;
-const text = tweetTextElement.textContent?.trim();
-if (!text) return void 0;
-if (false) ;
-return text;
-} catch (error) {
-logger.error("[tweet] extract failed", error);
-return void 0;
-}
-}
-function extractTweetTextHTMLFromClickedElement(element, _maxDepth = 10) {
-const tweetArticle = closestWithFallback(element, STABLE_TWEET_CONTAINERS_SELECTORS);
-if (tweetArticle) {
-return extractTweetTextHTML(tweetArticle);
-}
-return void 0;
-}
-const getTimestamp = () => typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
-const createFailureResult = (error) => ({
+const createFailureResult = (error, startTime) => ({
 success: false,
 mediaItems: [],
 clickedIndex: 0,
@@ -2638,7 +2903,7 @@ extractedAt: Date.now(),
 sourceType: "twitter-api",
 strategy: "api-extraction-failed",
 error,
-totalProcessingTime: 0
+totalProcessingTime: getElapsedTime(startTime)
 },
 tweetInfo: null
 });
@@ -2649,16 +2914,7 @@ try {
 if (false) ;
 const apiMedias = await TwitterAPI.getTweetMedias(tweetInfo.tweetId);
 if (!apiMedias || apiMedias.length === 0) {
-return {
-...createFailureResult("No media found in API response"),
-metadata: {
-extractedAt: Date.now(),
-sourceType: "twitter-api",
-strategy: "api-extraction-failed",
-error: "No media found in API response",
-totalProcessingTime: Math.max(0, getTimestamp() - startedAt)
-}
-};
+return createFailureResult("No media found in API response", startedAt);
 }
 const tweetTextHTML = extractTweetTextHTMLFromClickedElement(clickedElement);
 const mediaItems = await convertAPIMediaToMediaInfo(apiMedias, tweetInfo, tweetTextHTML);
@@ -2671,22 +2927,13 @@ metadata: {
 extractedAt: Date.now(),
 sourceType: "twitter-api",
 strategy: "api-extraction",
-totalProcessingTime: Math.max(0, getTimestamp() - startedAt),
+totalProcessingTime: getElapsedTime(startedAt),
 apiMediaCount: apiMedias.length
 },
 tweetInfo
 };
 } catch (error) {
-return {
-...createFailureResult(getErrorMessage(error) || "API extraction failed"),
-metadata: {
-extractedAt: Date.now(),
-sourceType: "twitter-api",
-strategy: "api-extraction-failed",
-error: getErrorMessage(error) || "API extraction failed",
-totalProcessingTime: Math.max(0, getTimestamp() - startedAt)
-}
-};
+return createFailureResult(getErrorMessage(error) || "API extraction failed", startedAt);
 }
 }
 }
@@ -2786,9 +3033,11 @@ clickedIndex: adjustedIndex
 class MediaExtractionService {
 tweetInfoExtractor;
 apiExtractor;
+domFallbackExtractor;
 constructor() {
 this.tweetInfoExtractor = new TweetInfoExtractor();
 this.apiExtractor = new TwitterAPIExtractor();
+this.domFallbackExtractor = new DOMFallbackExtractor();
 }
 async extractFromClickedElement(element, options = {}) {
 const extractionId = generateExtractionId();
@@ -2803,6 +3052,19 @@ if (apiResult.success && apiResult.mediaItems.length > 0) {
 return finalizeResult({
 ...apiResult,
 tweetInfo: mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo)
+});
+}
+if (false) ;
+const domResult = await this.domFallbackExtractor.extract(
+tweetInfo,
+element,
+options,
+extractionId
+);
+if (domResult.success && domResult.mediaItems.length > 0) {
+return finalizeResult({
+...domResult,
+tweetInfo: mergeTweetInfoMetadata(tweetInfo, domResult.tweetInfo)
 });
 }
 if (false) ;
@@ -5594,141 +5856,6 @@ const target = event.target;
 if (!isHTMLElement(target)) return false;
 return isGalleryInternalElement(target);
 }
-const MEDIA = {
-HOSTS: {
-MEDIA_CDN: ["pbs.twimg.com", "video.twimg.com"]
-}};
-const CONTROL_CHARS_REGEX = /[\u0000-\u001F\u007F]/g;
-const SCHEME_WHITESPACE_REGEX = /[\u0000-\u001F\u007F\s]+/g;
-const EXPLICIT_SCHEME_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
-const MAX_DECODE_ITERATIONS = 3;
-const MAX_SCHEME_PROBE_LENGTH = 64;
-const DEFAULT_BLOCKED_PROTOCOL_HINTS = [
-"javascript:",
-"vbscript:",
-"file:",
-"filesystem:",
-"ms-appx:",
-"ms-appx-web:",
-"about:",
-"intent:",
-"mailto:",
-"tel:",
-"sms:",
-"wtai:",
-"chrome:",
-"chrome-extension:",
-"opera:",
-"resource:",
-"data:text",
-"data:application",
-"data:video",
-"data:audio"
-];
-Object.freeze(
-new Set(["http:", "https:", "blob:"])
-);
-function isUrlAllowed(rawUrl, policy) {
-if (!rawUrl || typeof rawUrl !== "string") {
-return false;
-}
-const normalized = rawUrl.replace(CONTROL_CHARS_REGEX, "").trim();
-if (!normalized) {
-return false;
-}
-const blockedHints = policy.blockedProtocolHints ?? DEFAULT_BLOCKED_PROTOCOL_HINTS;
-if (startsWithBlockedProtocolHint(normalized, blockedHints)) {
-return false;
-}
-const lower = normalized.toLowerCase();
-if (lower.startsWith("data:")) {
-return policy.allowDataUrls === true && isAllowedDataUrl(lower, policy.allowedDataMimePrefixes);
-}
-if (lower.startsWith("//")) {
-return handleProtocolRelative();
-}
-const hasScheme = EXPLICIT_SCHEME_REGEX.test(normalized);
-if (!hasScheme) {
-return policy.allowRelative === true;
-}
-try {
-const parsed = new URL(normalized);
-return policy.allowedProtocols.has(parsed.protocol);
-} catch {
-return false;
-}
-}
-function startsWithBlockedProtocolHint(value, hints) {
-const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
-if (/%(?![0-9A-Fa-f]{2})/.test(probe)) {
-return true;
-}
-const variants = buildProbeVariants(probe);
-return variants.some((candidate) => hints.some((hint) => candidate.startsWith(hint)));
-}
-function buildProbeVariants(value) {
-const variants =  new Set();
-const base = value.toLowerCase();
-variants.add(base);
-variants.add(base.replace(SCHEME_WHITESPACE_REGEX, ""));
-let decoded = base;
-for (let i = 0; i < MAX_DECODE_ITERATIONS; i += 1) {
-try {
-decoded = decodeURIComponent(decoded);
-variants.add(decoded);
-variants.add(decoded.replace(SCHEME_WHITESPACE_REGEX, ""));
-} catch {
-break;
-}
-}
-return Array.from(variants.values());
-}
-function isAllowedDataUrl(lowerCaseValue, allowedPrefixes) {
-if (!allowedPrefixes || allowedPrefixes.length === 0) {
-return false;
-}
-const metaSection = lowerCaseValue.slice("data:".length);
-const [mime] = metaSection.split(";", 1);
-if (!mime) {
-return false;
-}
-return allowedPrefixes.some((prefix) => mime.startsWith(prefix));
-}
-function handleProtocolRelative(url, policy) {
-{
-return false;
-}
-}
-const MAX_URL_LENGTH = 2048;
-const ALLOWED_MEDIA_HOSTS = Object.freeze(MEDIA.HOSTS.MEDIA_CDN);
-function isValidMediaUrl(url) {
-if (typeof url !== "string" || url.length > MAX_URL_LENGTH) {
-return false;
-}
-const parsed = tryParseUrl(url);
-if (!parsed) {
-return false;
-}
-if (!isHttpProtocol(parsed.protocol)) {
-return false;
-}
-if (!isHostMatching(parsed, ALLOWED_MEDIA_HOSTS)) {
-return false;
-}
-return isAllowedMediaPath(parsed.hostname, parsed.pathname);
-}
-const isHttpProtocol = (protocol) => protocol === "https:" || protocol === "http:";
-function isAllowedMediaPath(hostname, pathname) {
-if (hostname === "pbs.twimg.com") {
-return checkPbsMediaPath(pathname);
-}
-if (hostname === "video.twimg.com") {
-return checkVideoMediaPath(pathname);
-}
-return false;
-}
-const checkPbsMediaPath = (pathname) => pathname.startsWith("/media/") || pathname.startsWith("/ext_tw_video_thumb/") || pathname.startsWith("/tweet_video_thumb/") || pathname.startsWith("/video_thumb/") || pathname.startsWith("/amplify_video_thumb/");
-const checkVideoMediaPath = (pathname) => pathname.startsWith("/ext_tw_video/") || pathname.startsWith("/tweet_video/") || pathname.startsWith("/amplify_video/") || pathname.startsWith("/dm_video/");
 const MEDIA_LINK_SELECTORS = [
 STATUS_LINK_SELECTOR,
 'a[href*="/photo/"]',
@@ -5746,8 +5873,35 @@ const INTERACTIVE_SELECTOR = [
 '[data-testid="share"]',
 '[data-testid="bookmark"]'
 ].join(", ");
-const BLOCKED_MEDIA_CONTEXT_SELECTOR = [
-'[data-testid="card.wrapper"]',
+function isValidMediaSource(url) {
+if (!url) return false;
+if (url.startsWith("blob:")) return true;
+return isValidMediaUrl(url);
+}
+function isMediaCard(cardWrapper) {
+const cardImages = cardWrapper.querySelectorAll('img[src*="pbs.twimg.com/card_img"]');
+if (cardImages.length > 0) return true;
+const cardLinks = cardWrapper.querySelectorAll("a[href]");
+for (const link of cardLinks) {
+const href = link.href;
+if (href && !href.includes("/status/") && !href.includes("/photo/") && !href.includes("/video/")) {
+return false;
+}
+}
+return cardWrapper.querySelector("img, video") !== null;
+}
+function shouldBlockMediaTrigger(target) {
+if (!target) return false;
+if (isVideoControlElement(target)) return true;
+if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
+const cardWrapper = target.closest('[data-testid="card.wrapper"]');
+if (cardWrapper instanceof HTMLElement) {
+if (isMediaCard(cardWrapper)) {
+return false;
+}
+return true;
+}
+const blockedContextSelector = [
 '[data-testid="twitterArticleReadView"]',
 '[data-testid="longformRichTextComponent"]',
 '[data-testid="twitterArticleRichTextView"]',
@@ -5756,16 +5910,7 @@ const BLOCKED_MEDIA_CONTEXT_SELECTOR = [
 '[data-testid="swipe-to-dismiss"]',
 '[data-testid="mask"]'
 ].join(", ");
-function isValidMediaSource(url) {
-if (!url) return false;
-if (url.startsWith("blob:")) return true;
-return isValidMediaUrl(url);
-}
-function shouldBlockMediaTrigger(target) {
-if (!target) return false;
-if (isVideoControlElement(target)) return true;
-if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
-if (target.closest(BLOCKED_MEDIA_CONTEXT_SELECTOR)) return true;
+if (target.closest(blockedContextSelector)) return true;
 const interactive = target.closest(INTERACTIVE_SELECTOR);
 if (interactive) {
 const matchesMediaLinkSelector = interactive.matches(MEDIA_LINK_SELECTOR);
@@ -10236,7 +10381,7 @@ download: true,
 mediaExtraction: true,
 accessibility: true
 },
-version: "1.5.1",
+version: "1.7.1",
 lastModified: 0
 };
 const DEFAULT_SETTINGS = STATIC_DEFAULT_SETTINGS;
@@ -10669,7 +10814,7 @@ const DEFAULT_BOOTSTRAP_RETRY_ATTEMPTS = 3;
 const DEFAULT_BOOTSTRAP_RETRY_DELAY_MS = 100;
 const importMetaEnv = resolveImportMetaEnv();
 const nodeEnv = resolveNodeEnv();
-const buildVersion = "1.7.1" ;
+const buildVersion = "1.7.2" ;
 const rawVersion = resolveStringValue(
 buildVersion,
 importMetaEnv.VITE_VERSION,
