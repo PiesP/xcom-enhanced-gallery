@@ -28,7 +28,7 @@ jobs:
     name: 🤖 Auto-Merge Dependabot
     runs-on: ubuntu-latest
     timeout-minutes: 15 # Increased to accommodate check waiting time
-    if: github.actor == 'dependabot[bot]'
+    if: github.actor == 'dependabot[bot]' && github.event.pull_request != null
     steps:
       - name: 📥 Fetch Dependabot metadata
         id: dependabot-metadata

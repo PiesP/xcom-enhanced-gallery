@@ -8,6 +8,10 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Workflows**: Guarded the Dependabot auto-merge job to run only with pull_request context, preventing check_suite failures.
+
 ## [1.7.2] - 2026-02-07
 
 ### Added
