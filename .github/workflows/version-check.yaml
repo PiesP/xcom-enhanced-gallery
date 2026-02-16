@@ -96,9 +96,11 @@ jobs:
 
       - name: 🚨 Create issue for Semgrep update
         if: steps.semgrep.outputs.needs_update == 'true' && github.event.repository.has_issues == true
+        continue-on-error: true
         run: |
+          set -e
           # Check if issue already exists
-          EXISTING_ISSUE=$(gh issue list --label "dependencies,automated,semgrep" --state open --json number --jq '.[0].number')
+          EXISTING_ISSUE=$(gh issue list --label "dependencies,automated,semgrep" --state open --json number --jq '.[0].number' || echo "")
 
           if [ -z "$EXISTING_ISSUE" ]; then
             gh issue create \
@@ -140,9 +142,11 @@ jobs:
 
       - name: 🚨 Create issue for OSV Scanner update
         if: steps.osv.outputs.needs_update == 'true' && github.event.repository.has_issues == true
+        continue-on-error: true
         run: |
+          set -e
           # Check if issue already exists
-          EXISTING_ISSUE=$(gh issue list --label "dependencies,automated,osv-scanner" --state open --json number --jq '.[0].number')
+          EXISTING_ISSUE=$(gh issue list --label "dependencies,automated,osv-scanner" --state open --json number --jq '.[0].number' || echo "")
 
           if [ -z "$EXISTING_ISSUE" ]; then
             gh issue create \

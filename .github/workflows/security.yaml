@@ -168,10 +168,25 @@ jobs:
   security-summary:
     name: 📊 Security Summary
     runs-on: ubuntu-latest
-    needs: [osv-scan-scheduled, osv-scan-pr, semgrep, license-compliance]
+    needs: [semgrep, license-compliance]
     if: always()
     timeout-minutes: 5
     steps:
+      - name: 📥 Checkout code (for OSV status check)
+        uses: actions/checkout@v6
+
+      - name: 🔍 Check OSV Scanner status
+        id: osv-status
+        run: |
+          # Retrieve conclusion of both OSV jobs using GitHub API
+          OSV_SCHEDULED_CONCLUSION=$(gh api "/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" --jq '.jobs[] | select(.name == "🛡️ OSV Vulnerability Scan (Full)") | .conclusion' || echo "skipped")
+          OSV_PR_CONCLUSION=$(gh api "/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" --jq '.jobs[] | select(.name == "🛡️ OSV Vulnerability Scan (PR Diff)") | .conclusion' || echo "skipped")
+
+          echo "osv_scheduled=$OSV_SCHEDULED_CONCLUSION" >> $GITHUB_OUTPUT
+          echo "osv_pr=$OSV_PR_CONCLUSION" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: 📊 Generate summary
         run: |
           echo "## 🔒 Security Scan Results" >> $GITHUB_STEP_SUMMARY
@@ -179,9 +194,9 @@ jobs:
           echo "| Status | Check | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|-------|--------|" >> $GITHUB_STEP_SUMMARY
 
-          # OSV Scanner (check both scheduled and PR jobs)
-          OSV_SCHEDULED="${{ needs.osv-scan-scheduled.result }}"
-          OSV_PR="${{ needs.osv-scan-pr.result }}"
+          # OSV Scanner (check both scheduled and PR jobs using API results)
+          OSV_SCHEDULED="${{ steps.osv-status.outputs.osv_scheduled }}"
+          OSV_PR="${{ steps.osv-status.outputs.osv_pr }}"
           if [ "$OSV_SCHEDULED" == "success" ] || [ "$OSV_PR" == "success" ]; then
             echo "| ✅ | OSV Vulnerability Scan | Passed |" >> $GITHUB_STEP_SUMMARY
           elif [ "$OSV_SCHEDULED" == "failure" ] || [ "$OSV_PR" == "failure" ]; then
