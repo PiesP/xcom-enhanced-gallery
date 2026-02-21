@@ -22,7 +22,7 @@
     --xeg-color-bg-secondary-alias: var(--xeg-color-bg-secondary);
 
     /* Gallery backgrounds */
-    --xeg-gallery-bg-light: var(--color-bg-primary);
+    --xeg-gallery-bg-light: var(--xeg-color-bg-primary);
     --xeg-gallery-bg-dark: var(--color-gray-900);
     --xeg-gallery-bg: var(--xeg-gallery-bg-light);
 
