@@ -17,6 +17,7 @@ import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,
 } from '@shared/utils/media/media-element-utils';
+import { tryParseUrl } from '@shared/utils/url/host';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 // ============================================================================
@@ -59,6 +60,35 @@ function isValidMediaSource(url: string | null | undefined): boolean {
   return isValidMediaUrl(url);
 }
 
+/** Twitter/X host matcher for status/media routes */
+const TWITTER_HOSTNAME_PATTERN = /(^|\.)(?:x|twitter)\.com$/iu;
+
+/** Check if pathname points to tweet status media routes that XEG should handle */
+function isSupportedStatusMediaPath(pathname: string): boolean {
+  return (
+    /\/status\/\d+/iu.test(pathname) ||
+    /\/photo\/\d+/iu.test(pathname) ||
+    /\/video\/\d+/iu.test(pathname)
+  );
+}
+
+/**
+ * Determine if anchor href is an internal tweet/status media link.
+ * Accepts relative links and absolute links on x.com/twitter.com hosts.
+ */
+function isNativeStatusMediaLink(href: string | null | undefined): boolean {
+  if (!href) return false;
+
+  const parsed = tryParseUrl(href);
+  if (!parsed) return false;
+
+  if (!TWITTER_HOSTNAME_PATTERN.test(parsed.hostname)) {
+    return false;
+  }
+
+  return isSupportedStatusMediaPath(parsed.pathname);
+}
+
 // ============================================================================
 // Block Detection
 // ============================================================================
@@ -69,24 +99,19 @@ function isValidMediaSource(url: string | null | undefined): boolean {
  * @returns true if card contains media that should open in gallery
  */
 function isMediaCard(cardWrapper: HTMLElement): boolean {
-  // Check for card_img pattern (media cards use pbs.twimg.com/card_img)
-  const cardImages = cardWrapper.querySelectorAll('img[src*="pbs.twimg.com/card_img"]');
-  if (cardImages.length > 0) return true;
-
   // Check if card has external navigation link
   const cardLinks = cardWrapper.querySelectorAll('a[href]');
   for (const link of cardLinks) {
-    const href = (link as HTMLAnchorElement).href;
-    // If card has external link (not status/photo/video link), it's a link preview card
-    if (
-      href &&
-      !href.includes('/status/') &&
-      !href.includes('/photo/') &&
-      !href.includes('/video/')
-    ) {
+    const href = (link as HTMLAnchorElement).getAttribute('href');
+    // If card has non-status/media link, preserve native navigation.
+    if (!isNativeStatusMediaLink(href)) {
       return false;
     }
   }
+
+  // Check for card_img pattern (media cards use pbs.twimg.com/card_img)
+  const cardImages = cardWrapper.querySelectorAll('img[src*="pbs.twimg.com/card_img"]');
+  if (cardImages.length > 0) return true;
 
   // If no external links and has images, likely a media card
   return cardWrapper.querySelector('img, video') !== null;
@@ -133,7 +158,10 @@ function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   // Interactive elements (buttons, links, etc.)
   const interactive = target.closest(INTERACTIVE_SELECTOR);
   if (interactive) {
-    const matchesMediaLinkSelector = interactive.matches(MEDIA_LINK_SELECTOR);
+    const matchesMediaLinkSelector =
+      interactive instanceof HTMLAnchorElement
+        ? isNativeStatusMediaLink(interactive.getAttribute('href'))
+        : interactive.matches(MEDIA_LINK_SELECTOR);
 
     // If the user clicked inside an anchor that is not a tweet/status/media link,
     // do not trigger the gallery. This preserves native navigation for articles,

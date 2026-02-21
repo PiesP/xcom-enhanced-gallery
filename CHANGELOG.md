@@ -11,6 +11,7 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - **Workflows**: Guarded the Dependabot auto-merge job to run only with pull_request context, preventing check_suite failures.
+- **Link Preview Navigation**: Refined media click activation for `card.wrapper` thumbnails so external/card-preview links keep native navigation, while internal tweet status media links remain gallery-processable.
 
 ## [1.7.2] - 2026-02-07
 
