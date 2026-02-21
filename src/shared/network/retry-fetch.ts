@@ -9,7 +9,7 @@ class HttpStatusError extends Error {
   override readonly name = 'HttpStatusError';
 
   constructor(readonly status: number) {
-    super(`HTTP status ${status}`);
+    super(`HTTP error: ${status}`);
   }
 }
 
@@ -64,7 +64,8 @@ export async function fetchArrayBufferWithRetry(
       shouldRetry: (error) => {
         if (isAbortError(error)) return false;
         const status = getStatusFromError(error);
-        return status !== null && isRetryableStatus(status);
+        if (status === null) return true;
+        return isRetryableStatus(status);
       },
     }
   );

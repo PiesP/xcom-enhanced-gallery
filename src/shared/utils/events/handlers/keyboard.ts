@@ -78,7 +78,9 @@ export function handleKeyboardEvent(
 
     if (key === '?') {
       showKeyboardHelp();
-    } else if (NAVIGATION_KEYS.has(key) || key === ' ' || key === 'Space') {
+    } else if (key === ' ' || key === 'Space') {
+      handleVideoControl(key);
+    } else if (NAVIGATION_KEYS.has(key)) {
       handleNavigation(key);
     } else {
       handleVideoControl(key);
