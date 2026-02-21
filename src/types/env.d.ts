@@ -39,4 +39,9 @@ declare const process: {
     [key: string]: string | undefined;
   };
   cwd: () => string;
+  argv: string[];
+  exit: (code?: number) => never;
+  stderr?: {
+    write: (chunk: string | Uint8Array, encoding?: string, cb?: (err?: Error) => void) => boolean;
+  };
 };
