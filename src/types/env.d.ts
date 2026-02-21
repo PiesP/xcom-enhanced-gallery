@@ -27,12 +27,16 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
-/** Node.js process global for Vitest (undefined in browser, env object in Node.js). */
-declare const process:
-  | {
-      env?: {
-        VITEST?: string;
-        [key: string]: string | undefined;
-      };
-    }
-  | undefined;
+/**
+ * Minimal process global typing for browser+test/tooling builds.
+ *
+ * - Keeps source code portable without importing Node types in browser bundles
+ * - Exposes `env` and `cwd()` used by test/tooling code paths
+ */
+declare const process: {
+  env: {
+    VITEST?: string;
+    [key: string]: string | undefined;
+  };
+  cwd: () => string;
+};

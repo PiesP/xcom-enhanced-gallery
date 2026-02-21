@@ -91,7 +91,7 @@ const DATA_IMAGE_MIME_PREFIXES = [
  * @property allowedDataMimePrefixes - MIME type prefixes permitted for data URLs
  * @property blockedProtocolHints - Custom blocked protocol hints (overrides default)
  */
-interface UrlSafetyPolicy {
+export interface UrlSafetyPolicy {
   readonly allowedProtocols: ReadonlySet<string>;
   readonly allowRelative?: boolean;
   readonly allowProtocolRelative?: boolean;
@@ -211,7 +211,7 @@ export function isUrlAllowed(rawUrl: string | null | undefined, policy: UrlSafet
  *
  * @internal
  */
-function startsWithBlockedProtocolHint(value: string, hints: readonly string[]): boolean {
+export function startsWithBlockedProtocolHint(value: string, hints: readonly string[]): boolean {
   const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
 
   // If the probe contains an invalid percent-encoding sequence (e.g., '%ZZ'),
