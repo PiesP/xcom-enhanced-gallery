@@ -8,10 +8,26 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.7.3] - 2026-02-21
+
+### Added
+
+- **CI/Automation**: Added lockfile validation checks and improved Dependabot maintenance workflows (auto-rebase strategy and stale PR cleanup).
+
+### Changed
+
+- **Dependencies**: Updated development dependencies across the quality/tooling stack, including `@types/node` updates and Biome alignment to `2.4.2`.
+- **CI Workflows**: Improved workflow resiliency with enhanced status checks and error-handling paths.
+
 ### Fixed
 
 - **Workflows**: Guarded the Dependabot auto-merge job to run only with pull_request context, preventing check_suite failures.
 - **Link Preview Navigation**: Refined media click activation for `card.wrapper` thumbnails so external/card-preview links keep native navigation, while internal tweet status media links remain gallery-processable.
+- **URL Safety**: Exported `UrlSafetyPolicy` and `startsWithBlockedProtocolHint` to stabilize URL safety module boundaries.
+- **Environment Typings**: Added missing properties to process global typings for stricter environment compatibility.
+- **Retry Fetch**: Improved fetch retry logic and error messaging for better retry diagnostics.
+- **Styles**: Corrected the gallery light background token reference to prevent unresolved variable fallback behavior.
+- **Lockfile**: Updated `babel-plugin-jsx-dom-expressions` to `0.40.5` for lockfile consistency.
 
 ## [1.7.2] - 2026-02-07
 
