@@ -68,26 +68,10 @@ jobs:
         uses: biomejs/setup-biome@v2
 
       - name: 🔍 Run Biome lint
-        id: lint
-        continue-on-error: true
         run: pnpm lint
 
       - name: 🎨 Check formatting (Biome)
-        id: format
-        continue-on-error: true
         run: pnpm fmt
-
-      - name: ✅ Verify all checks passed
-        if: steps.lint.outcome == 'failure' || steps.format.outcome == 'failure'
-        run: |
-          echo "❌ Biome checks failed:"
-          if [ "${{ steps.lint.outcome }}" == "failure" ]; then
-            echo "  - Lint check failed"
-          fi
-          if [ "${{ steps.format.outcome }}" == "failure" ]; then
-            echo "  - Format check failed"
-          fi
-          exit 1
 
   quality:
     name: 🧪 TypeScript Checks
@@ -111,6 +95,9 @@ jobs:
 
       - name: 📐 Run TypeScript check
         run: pnpm check
+
+      - name: 🧩 Run Knip dependency check
+        run: pnpm knip
 
   lockfile-validation:
     name: 🔒 Lockfile Validation

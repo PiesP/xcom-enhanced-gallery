@@ -55,6 +55,7 @@ jobs:
       - name: 📝 Determine version
         id: version
         run: |
+          set -euo pipefail
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             VERSION="${{ inputs.version }}"
           else
@@ -81,6 +82,7 @@ jobs:
       - name: 🏗️ Build userscript
         if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
+          set -euo pipefail
           BUILD_VERSION=${{ steps.version.outputs.version }} pnpm build
           # Backup dist for later steps (survives git checkout)
           mkdir -p /tmp/dist-backup
@@ -92,6 +94,7 @@ jobs:
       - name: 📦 Prepare release package
         if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
+          set -euo pipefail
           mkdir -p release
           cp /tmp/dist-backup/xcom-enhanced-gallery.user.js release/
           cp /tmp/dist-backup/xcom-enhanced-gallery.meta.js release/
@@ -203,6 +206,7 @@ jobs:
       - name: 🔄 Purge jsDelivr CDN cache
         if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
+          set -euo pipefail
           echo "🔄 Purging jsDelivr CDN cache..."
 
           # Purge main userscript file
