@@ -160,7 +160,7 @@ jobs:
         run: pnpm build:fast
 
       - name: 📊 Upload build artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:
           name: build-${{ github.sha }}
