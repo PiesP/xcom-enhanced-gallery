@@ -126,14 +126,15 @@ jobs:
       - name: 🔍 Check for security vulnerabilities
         run: |
           echo "🔍 Checking for known vulnerabilities..."
-          # Run audit but don't fail on low/moderate (only high/critical)
-          pnpm audit --audit-level=high || {
-            echo "⚠️ High or critical vulnerabilities found"
+          # Fail only on critical vulnerabilities in CI.
+          # High vulnerabilities are still tracked via Security Scanning (OSV + SARIF).
+          pnpm audit --audit-level=critical || {
+            echo "⚠️ Critical vulnerabilities found"
             echo "Please review and update affected packages"
             exit 1
           }
 
-          echo "✅ No high/critical vulnerabilities found"
+          echo "✅ No critical vulnerabilities found"
 
   build:
     name: 🚀 Build
