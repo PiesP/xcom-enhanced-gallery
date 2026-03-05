@@ -54,26 +54,24 @@
   },
   "packageManager": "pnpm@10.27.0",
   "volta": {
-    "node": "24.13.0",
+    "node": "24.14.0",
     "pnpm": "10.27.0"
   },
   "dependencies": {
     "solid-js": "^1.9.11"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.11",
-    "@biomejs/cli-linux-x64": "^2.3.10",
+    "@biomejs/biome": "^2.4.4",
+    "@biomejs/cli-linux-x64": "^2.4.4",
     "@microsoft/tsdoc": "^0.16.0",
-    "@types/node": "^25.3.0",
-    "knip": "^5.82.1",
+    "@types/node": "^25.3.3",
+    "knip": "^5.85.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-plugin-solid": "^2.11.10"
   },
   "pnpm": {
     "overrides": {
-      "rollup": "4.59.0",
-      "minimatch": "10.2.3",
       "semver": "7.7.3"
     },
     "peerDependencyRules": {
