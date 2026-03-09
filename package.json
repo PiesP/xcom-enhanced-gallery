@@ -61,10 +61,10 @@
     "solid-js": "^1.9.11"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.4",
-    "@biomejs/cli-linux-x64": "^2.4.4",
+    "@biomejs/biome": "^2.4.6",
+    "@biomejs/cli-linux-x64": "^2.4.6",
     "@microsoft/tsdoc": "^0.16.0",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.3.5",
     "knip": "^5.85.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
