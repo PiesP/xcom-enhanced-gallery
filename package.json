@@ -65,7 +65,7 @@
     "@biomejs/cli-linux-x64": "^2.4.6",
     "@microsoft/tsdoc": "^0.16.0",
     "@types/node": "^25.3.5",
-    "knip": "^5.86.0",
+    "knip": "^5.85.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-plugin-solid": "^2.11.10"
