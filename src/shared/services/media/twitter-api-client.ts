@@ -39,9 +39,11 @@ const resolveTwitterApiHost = (
   const normalized = hostname.toLowerCase();
   let candidate: string | null = null;
 
-  if (normalized === 'x.com' || normalized.endsWith('.x.com')) {
+  // Use anchored regex to ensure the full hostname matches, preventing
+  // incomplete substring sanitization (e.g., 'evilx.com' or 'x.com.evil.com')
+  if (/^(?:[\w-]+\.)*x\.com$/.test(normalized)) {
     candidate = 'x.com';
-  } else if (normalized === 'twitter.com' || normalized.endsWith('.twitter.com')) {
+  } else if (/^(?:[\w-]+\.)*twitter\.com$/.test(normalized)) {
     candidate = 'twitter.com';
   }
 

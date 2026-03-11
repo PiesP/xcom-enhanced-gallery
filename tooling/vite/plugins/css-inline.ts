@@ -548,9 +548,11 @@ export function cssInlinePlugin(mode: string): Plugin {
       const css = cssChunks.join(config.cssCompress ? '' : '\n');
       if (!css.trim()) return;
 
+      // Use JSON.stringify to safely embed STYLE_ID in generated code
+      const safeStyleId = JSON.stringify(STYLE_ID);
       const injectionCode = `(function(){if(typeof document==='undefined')return;var css=${JSON.stringify(
         css
-      )};var s=document.getElementById('${STYLE_ID}');if(!s){s=document.createElement('style');s.id='${STYLE_ID}';(document.head||document.documentElement).appendChild(s);}s.textContent=css;})();\n`;
+      )};var s=document.getElementById(${safeStyleId});if(!s){s=document.createElement('style');s.id=${safeStyleId};(document.head||document.documentElement).appendChild(s);}s.textContent=css;})();\n`;
 
       for (const chunk of Object.values(bundle)) {
         if (chunk.type === 'chunk' && chunk.isEntry) {

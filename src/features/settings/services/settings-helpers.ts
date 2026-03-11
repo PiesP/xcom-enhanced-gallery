@@ -59,9 +59,10 @@ export function assignNestedPath(target: unknown, path: string, value: unknown):
       return false;
     }
 
-    const existing = current[segment];
+    // Use Object.hasOwn to prevent traversing inherited prototype properties
+    const existing = Object.hasOwn(current, segment) ? current[segment] : undefined;
     if (existing === null || typeof existing !== 'object') {
-      const next: Record<string, unknown> = {};
+      const next = Object.create(null) as Record<string, unknown>;
       current[segment] = next;
       current = next;
       continue;
