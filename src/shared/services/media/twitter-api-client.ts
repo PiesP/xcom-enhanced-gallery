@@ -37,17 +37,23 @@ const resolveTwitterApiHost = (
   }
 
   const normalized = hostname.toLowerCase();
-  let candidate: string | null = null;
 
-  // Use anchored regex to ensure the full hostname matches, preventing
-  // incomplete substring sanitization (e.g., 'evilx.com' or 'x.com.evil.com')
-  if (/^(?:[\w-]+\.)*x\.com$/.test(normalized)) {
-    candidate = 'x.com';
-  } else if (/^(?:[\w-]+\.)*twitter\.com$/.test(normalized)) {
-    candidate = 'twitter.com';
+  // Extract the base domain (last two DNS labels) from the hostname.
+  // e.g., 'www.x.com' -> 'x.com', 'x.com' -> 'x.com'
+  // Splitting and taking the trailing two labels avoids any substring-based
+  // URL check and allows strict equality comparison against the supported list.
+  const parts = normalized.split('.');
+  if (parts.length < 2) {
+    return defaultHost;
   }
+  const baseDomain = `${parts[parts.length - 2]}.${parts[parts.length - 1]}`;
 
-  return candidate && supportedHosts.includes(candidate) ? candidate : defaultHost;
+  for (const host of supportedHosts) {
+    if (baseDomain === host) {
+      return host;
+    }
+  }
+  return defaultHost;
 };
 
 const getSafeHost = (): string =>

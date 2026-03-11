@@ -501,6 +501,25 @@ function processCss(css: string, config: BuildModeConfig): string {
 }
 
 /**
+ * Safely serialize a string for embedding inside JavaScript code.
+ *
+ * JSON.stringify alone does not escape '<', '>', or '/' characters.
+ * If the generated JavaScript is ever embedded inside an HTML <script> tag,
+ * an unescaped '</script>' sequence in the CSS could break out of that tag
+ * and allow code injection.  Encoding these characters as Unicode escapes
+ * produces valid JSON/JS while eliminating that risk.
+ *
+ * @param str - Arbitrary string to embed in JS source
+ * @returns JSON-encoded string literal with '<', '>', '/' encoded as Unicode
+ */
+function safeJsStringify(str: string): string {
+  return JSON.stringify(str)
+    .replace(/</g, '\\u003C')
+    .replace(/>/g, '\\u003E')
+    .replace(/\//g, '\\u002F');
+}
+
+/**
  * Vite build plugin for inlining and optimizing CSS.
  *
  * During the post-build phase:
@@ -548,9 +567,11 @@ export function cssInlinePlugin(mode: string): Plugin {
       const css = cssChunks.join(config.cssCompress ? '' : '\n');
       if (!css.trim()) return;
 
-      // Use JSON.stringify to safely embed STYLE_ID in generated code
-      const safeStyleId = JSON.stringify(STYLE_ID);
-      const injectionCode = `(function(){if(typeof document==='undefined')return;var css=${JSON.stringify(
+      // Use safeJsStringify to embed strings in generated code.
+      // This encodes '<', '>', '/' as Unicode escapes to prevent '</script>'
+      // from breaking out of an HTML script tag if the bundle is ever inlined.
+      const safeStyleId = safeJsStringify(STYLE_ID);
+      const injectionCode = `(function(){if(typeof document==='undefined')return;var css=${safeJsStringify(
         css
       )};var s=document.getElementById(${safeStyleId});if(!s){s=document.createElement('style');s.id=${safeStyleId};(document.head||document.documentElement).appendChild(s);}s.textContent=css;})();\n`;
 
