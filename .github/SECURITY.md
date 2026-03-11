@@ -52,10 +52,11 @@ We aim to respond within **7 business days** and coordinate disclosure once a fi
 
 We use several mechanisms to keep the codebase secure:
 
-- **GitHub Security Suite** (`.github/workflows/security.yml`)
+- **GitHub Security Suite** (`.github/workflows/security.yaml`)
   - CodeQL analysis for JavaScript/TypeScript
+  - Static analysis (Semgrep)
   - Dependency scanning (OSV Scanner, npm audit)
-- **Dependabot** (`.github/dependabot.yml`)
+- **Dependabot** (`.github/dependabot.yaml`)
   - Automated updates for npm packages and GitHub Actions
 - **Quality & Testing**
   - TypeScript strict mode, Biome linter/formatter
