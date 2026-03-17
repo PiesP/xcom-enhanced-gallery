@@ -3,14 +3,5 @@
   "entry": ["src/main.ts"],
   "project": ["tsconfig.build.json", "tsconfig.tools.json"],
   "tags": ["-@internal"],
-  "ignore": [
-    "dist/**",
-    "node_modules/**",
-    "test/**",
-    "tmp/**",
-    "stryker-report/**",
-    ".stryker-tmp/**",
-    "LICENSES/**",
-  ],
   "ignoreDependencies": ["@biomejs/cli-linux-x64"],
 }

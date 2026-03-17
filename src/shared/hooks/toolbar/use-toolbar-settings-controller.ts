@@ -27,11 +27,11 @@ const DEFAULTS = {
   SELECT_GUARD_MS: 300,
 } as const;
 
-export type { LanguageOption, ThemeOption };
 export type {
   ToolbarSettingsControllerResult,
   UseToolbarSettingsControllerOptions,
 } from './use-toolbar-settings-controller.types';
+export type { LanguageOption, ThemeOption };
 
 export function useToolbarSettingsController(
   options: UseToolbarSettingsControllerOptions
