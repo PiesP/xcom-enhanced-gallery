@@ -660,10 +660,8 @@ export function productionCleanupPlugin(): Plugin {
           ''
         );
         assertParsableJs('strip-esmodule-defineproperty', code);
-        code = code.replace(/\s*\/\*\*\s*@internal[^*]*\*\/\s*/g, '\n');
-        assertParsableJs('strip-internal-singleline-jsdoc', code);
-        code = code.replace(/\s*\/\*\*\s*\n\s*\*[^@]*@internal\s*\n\s*\*\/\s*/g, '\n');
-        assertParsableJs('strip-internal-multiline-jsdoc', code);
+        code = code.replace(/\s*\/\*\*(?:[^*]|\*(?!\/))*@internal(?:[^*]|\*(?!\/))*\*\/\s*/g, '\n');
+        assertParsableJs('strip-internal-jsdoc', code);
 
         // JSDoc pruning via regex is intentionally avoided.
         // It can accidentally match patterns inside strings/template literals and corrupt output.
