@@ -58,7 +58,7 @@
     "pnpm": "10.27.0"
   },
   "dependencies": {
-    "solid-js": "^1.9.11"
+    "solid-js": "^1.9.12"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.8",
