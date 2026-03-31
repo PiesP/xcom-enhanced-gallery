@@ -87,7 +87,7 @@ const extractFromDOM: ExtractionStrategy = (element) => {
   if (!href) return null;
 
   const match = href.match(/\/status\/(\d+)/);
-  if (!match || !match[1]) return null;
+  if (!match?.[1]) return null;
 
   const tweetId = match[1];
   const username = extractUsernameFromUrl(href) ?? 'unknown';
@@ -113,7 +113,7 @@ const extractFromMediaGridItem: ExtractionStrategy = (element) => {
 
   // Match /status/ID
   const match = href.match(/\/status\/(\d+)/);
-  if (!match || !match[1]) return null;
+  if (!match?.[1]) return null;
 
   const tweetId = match[1];
   const username = extractUsernameFromUrl(href) ?? 'unknown';
