@@ -62,7 +62,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.10",
-    "@biomejs/cli-linux-x64": "^2.4.10",
+    "@biomejs/cli-linux-x64": "^2.4.9",
     "@microsoft/tsdoc": "^0.16.0",
     "@types/node": "^25.5.0",
     "knip": "^6.1.0",
