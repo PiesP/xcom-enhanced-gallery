@@ -62,10 +62,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.10",
-    "@biomejs/cli-linux-x64": "^2.4.9",
+    "@biomejs/cli-linux-x64": "^2.4.10",
     "@microsoft/tsdoc": "^0.16.0",
     "@types/node": "^25.5.0",
-    "knip": "^6.1.0",
+    "knip": "^6.1.1",
     "typescript": "^6.0.2",
     "vite": "^8.0.3",
     "vite-plugin-solid": "^2.11.11"
