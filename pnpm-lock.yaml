@@ -29,8 +29,8 @@ importers:
         specifier: ^25.5.0
         version: 25.5.0
       knip:
-        specifier: ^6.1.1
-        version: 6.1.1(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)
+        specifier: ^6.2.0
+        version: 6.2.0(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -790,8 +790,8 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
-  electron-to-chromium@1.5.330:
-    resolution: {integrity: sha512-jFNydB5kFtYUobh4IkWUnXeyDbjf/r9gcUEXe1xcrcUxIGfTdzPXA+ld6zBRbwvgIGVzDll/LTIiDztEtckSnA==}
+  electron-to-chromium@1.5.331:
+    resolution: {integrity: sha512-IbxXrsTlD3hRodkLnbxAPP4OuJYdWCeM3IOdT+CpcMoIwIoDfCmRpEtSPfwBXxVkg9xmBeY7Lz2Eo2TDn/HC3Q==}
 
   entities@6.0.1:
     resolution: {integrity: sha512-aN97NXWF6AWBTahfVOIrB/NShkzi5H7F9r1s9mD3cDj4Ko5f2qhhVoYMibXF7GlLveb/D2ioWay8lxI97Ven3g==}
@@ -886,8 +886,8 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  knip@6.1.1:
-    resolution: {integrity: sha512-BC/kbdxwCgv+p/3YkGbtlLxbOXhQDuR+CeKKFEpJyKb3BFwG1gZa+CMWSqAnPi+kUexz74m327d3zWxyn2fMew==}
+  knip@6.2.0:
+    resolution: {integrity: sha512-4OMUMJARvNble8e8TeFv12flp4fKzAITrQec1eKO4g2eA4HnNqEa8CXy2UOPLjuYuAETpe0N0r25jF9yY9FLig==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
@@ -991,8 +991,8 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  node-releases@2.0.36:
-    resolution: {integrity: sha512-TdC8FSgHz8Mwtw9g5L4gR/Sh9XhSP/0DEkQxfEFXOpiul5IiHgHan2VhYYb6agDSfp4KuvltmGApc8HMgUrIkA==}
+  node-releases@2.0.37:
+    resolution: {integrity: sha512-1h5gKZCF+pO/o3Iqt5Jp7wc9rH3eJJ0+nh/CIoiRwjRxde/hAHyLPXYN4V3CqKAbiZPSeJFSWHmJsbkicta0Eg==}
 
   oxc-parser@0.121.0:
     resolution: {integrity: sha512-ek9o58+SCv6AV7nchiAcUJy1DNE2CC5WRdBcO0mF+W4oRjNQfPO7b3pLjTHSFECpHkKGOZSQxx3hk8viIL5YCg==}
@@ -1696,8 +1696,8 @@ snapshots:
     dependencies:
       baseline-browser-mapping: 2.10.13
       caniuse-lite: 1.0.30001784
-      electron-to-chromium: 1.5.330
-      node-releases: 2.0.36
+      electron-to-chromium: 1.5.331
+      node-releases: 2.0.37
       update-browserslist-db: 1.2.3(browserslist@4.28.2)
 
   caniuse-lite@1.0.30001784: {}
@@ -1712,7 +1712,7 @@ snapshots:
 
   detect-libc@2.1.2: {}
 
-  electron-to-chromium@1.5.330: {}
+  electron-to-chromium@1.5.331: {}
 
   entities@6.0.1: {}
 
@@ -1809,7 +1809,7 @@ snapshots:
 
   json5@2.2.3: {}
 
-  knip@6.1.1(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1):
+  knip@6.2.0(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1):
     dependencies:
       '@nodelib/fs.walk': 1.2.8
       fast-glob: 3.3.3
@@ -1900,7 +1900,7 @@ snapshots:
 
   nanoid@3.3.11: {}
 
-  node-releases@2.0.36: {}
+  node-releases@2.0.37: {}
 
   oxc-parser@0.121.0(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1):
     dependencies:
