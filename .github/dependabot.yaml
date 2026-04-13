@@ -92,3 +92,9 @@ updates:
       actions:
         patterns:
           - "*"
+    # pnpm/action-setup@v6 has a known bug (pnpm/action-setup#225) that always
+    # installs pnpm v11 beta, ignoring the packageManager field. Skip major
+    # upgrades until the bug is resolved upstream.
+    ignore:
+      - dependency-name: "pnpm/action-setup"
+        update-types: ["version-update:semver-major"]
