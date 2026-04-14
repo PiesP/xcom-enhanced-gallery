@@ -3,17 +3,14 @@
  * @description Extracts tweet metadata using a concise strategy pipeline.
  */
 
-import {
-  STATUS_LINK_SELECTOR,
-  TWEET_ARTICLE_SELECTOR,
-} from "@shared/dom/selectors";
-import { logger } from "@shared/logging/logger";
-import type { TweetInfo } from "@shared/types/media.types";
-import { extractUsernameFromUrl } from "@shared/utils/url/host";
+import { STATUS_LINK_SELECTOR, TWEET_ARTICLE_SELECTOR } from '@shared/dom/selectors';
+import { logger } from '@shared/logging/logger';
+import type { TweetInfo } from '@shared/types/media.types';
+import { extractUsernameFromUrl } from '@shared/utils/url/host';
 
 type ExtractionStrategy = (element: HTMLElement) => TweetInfo | null;
 
-const DEFAULT_TWEET_ORIGIN = "https://x.com";
+const DEFAULT_TWEET_ORIGIN = 'https://x.com';
 
 const normalizeTweetUrl = (inputUrl: string): string => {
   try {
@@ -21,25 +18,23 @@ const normalizeTweetUrl = (inputUrl: string): string => {
     const hostname = url.hostname.toLowerCase();
 
     if (
-      hostname === "twitter.com" ||
-      hostname === "www.twitter.com" ||
-      hostname === "mobile.twitter.com"
+      hostname === 'twitter.com' ||
+      hostname === 'www.twitter.com' ||
+      hostname === 'mobile.twitter.com'
     ) {
-      url.hostname = "x.com";
-      url.protocol = "https:";
+      url.hostname = 'x.com';
+      url.protocol = 'https:';
     }
 
-    if (hostname === "www.x.com") {
-      url.hostname = "x.com";
-      url.protocol = "https:";
+    if (hostname === 'www.x.com') {
+      url.hostname = 'x.com';
+      url.protocol = 'https:';
     }
 
     return url.toString();
   } catch {
     // Fall back to a safe absolute URL for relative paths.
-    return inputUrl.startsWith("/")
-      ? `${DEFAULT_TWEET_ORIGIN}${inputUrl}`
-      : inputUrl;
+    return inputUrl.startsWith('/') ? `${DEFAULT_TWEET_ORIGIN}${inputUrl}` : inputUrl;
   }
 };
 
@@ -54,23 +49,23 @@ const extractFromElement: ExtractionStrategy = (element) => {
   if (dataId && /^\d+$/.test(dataId)) {
     return {
       tweetId: dataId,
-      username: element.dataset.user ?? "unknown",
+      username: element.dataset.user ?? 'unknown',
       tweetUrl: `https://x.com/i/status/${dataId}`,
-      extractionMethod: "element-attribute",
+      extractionMethod: 'element-attribute',
       confidence: 0.9,
     };
   }
 
   // 2. href attribute (e.g. timestamp link)
-  const href = element.getAttribute("href");
+  const href = element.getAttribute('href');
   if (href) {
     const match = href.match(/\/status\/(\d+)/);
     if (match?.[1]) {
       return {
         tweetId: match[1],
-        username: extractUsernameFromUrl(href) ?? "unknown",
+        username: extractUsernameFromUrl(href) ?? 'unknown',
         tweetUrl: normalizeTweetUrl(href),
-        extractionMethod: "element-href",
+        extractionMethod: 'element-href',
         confidence: 0.8,
       };
     }
@@ -88,20 +83,20 @@ const extractFromDOM: ExtractionStrategy = (element) => {
   const statusLink = container.querySelector(STATUS_LINK_SELECTOR);
   if (!statusLink) return null;
 
-  const href = statusLink.getAttribute("href");
+  const href = statusLink.getAttribute('href');
   if (!href) return null;
 
   const match = href.match(/\/status\/(\d+)/);
   if (!match?.[1]) return null;
 
   const tweetId = match[1];
-  const username = extractUsernameFromUrl(href) ?? "unknown";
+  const username = extractUsernameFromUrl(href) ?? 'unknown';
 
   return {
     tweetId,
     username,
     tweetUrl: normalizeTweetUrl(href),
-    extractionMethod: "dom-structure",
+    extractionMethod: 'dom-structure',
     confidence: 0.85,
     metadata: { containerTag: container.tagName.toLowerCase() },
   };
@@ -110,10 +105,10 @@ const extractFromDOM: ExtractionStrategy = (element) => {
 /** Strategy 3: Media Grid Item (For Media Tab) */
 const extractFromMediaGridItem: ExtractionStrategy = (element) => {
   // On media tabs, images are wrapped in links like /User/status/ID/photo/1
-  const link = element.closest("a");
+  const link = element.closest('a');
   if (!link) return null;
 
-  const href = link.getAttribute("href");
+  const href = link.getAttribute('href');
   if (!href) return null;
 
   // Match /status/ID
@@ -121,13 +116,13 @@ const extractFromMediaGridItem: ExtractionStrategy = (element) => {
   if (!match?.[1]) return null;
 
   const tweetId = match[1];
-  const username = extractUsernameFromUrl(href) ?? "unknown";
+  const username = extractUsernameFromUrl(href) ?? 'unknown';
 
   return {
     tweetId,
     username,
     tweetUrl: normalizeTweetUrl(href),
-    extractionMethod: "media-grid-item",
+    extractionMethod: 'media-grid-item',
     confidence: 0.8,
   };
 };
@@ -149,12 +144,9 @@ export class TweetInfoExtractor {
         const result = strategy(element);
         if (result && this.isValid(result)) {
           if (__DEV__) {
-            logger.debug(
-              `[TweetInfoExtractor] Success: ${result.extractionMethod}`,
-              {
-                tweetId: result.tweetId,
-              },
-            );
+            logger.debug(`[TweetInfoExtractor] Success: ${result.extractionMethod}`, {
+              tweetId: result.tweetId,
+            });
           }
           return result;
         }
@@ -166,8 +158,6 @@ export class TweetInfoExtractor {
   }
 
   private isValid(info: TweetInfo): boolean {
-    return (
-      !!info.tweetId && /^\d+$/.test(info.tweetId) && info.tweetId !== "unknown"
-    );
+    return !!info.tweetId && /^\d+$/.test(info.tweetId) && info.tweetId !== 'unknown';
   }
 }
