@@ -12,10 +12,11 @@
  * corrupting code within strings or template literals.
  */
 
-import { Script } from 'node:vm';
-import type { Plugin } from 'vite';
+import { Script } from "node:vm";
+import type { Plugin } from "vite";
 
-const DEBUG_VALIDATE_STEPS = process.env.XEG_DEBUG_VALIDATE_PROD_CLEANUP === '1';
+const DEBUG_VALIDATE_STEPS =
+  process.env.XEG_DEBUG_VALIDATE_PROD_CLEANUP === "1";
 
 /**
  * Validates that code remains parsable as a JavaScript script.
@@ -36,7 +37,7 @@ function assertParsableJs(step: string, code: string): void {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(
-      `[production-cleanup] Bundle became unparsable after step "${step}": ${message}`
+      `[production-cleanup] Bundle became unparsable after step "${step}": ${message}`,
     );
   }
 }
@@ -51,11 +52,13 @@ function assertParsableJs(step: string, code: string): void {
  */
 function assertParsableJsFinal(code: string): void {
   try {
-    const parsed = new Script(code, { filename: 'production-cleanup:final' });
+    const parsed = new Script(code, { filename: "production-cleanup:final" });
     void parsed;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`[production-cleanup] Final bundle is unparsable: ${message}`);
+    throw new Error(
+      `[production-cleanup] Final bundle is unparsable: ${message}`,
+    );
   }
 }
 
@@ -67,24 +70,24 @@ function assertParsableJsFinal(code: string): void {
  * @internal
  */
 function escapeRegExp(source: string): string {
-  return source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return source.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-type JsStripMode = 'code' | 'single' | 'double' | 'template' | 'regex';
+type JsStripMode = "code" | "single" | "double" | "template" | "regex";
 
 const REGEX_KEYWORDS = new Set([
-  'return',
-  'throw',
-  'case',
-  'delete',
-  'void',
-  'typeof',
-  'yield',
-  'await',
-  'in',
-  'instanceof',
-  'else',
-  'do',
+  "return",
+  "throw",
+  "case",
+  "delete",
+  "void",
+  "typeof",
+  "yield",
+  "await",
+  "in",
+  "instanceof",
+  "else",
+  "do",
 ]);
 
 /**
@@ -117,7 +120,7 @@ function isIdentifierPart(char: string): boolean {
  * @internal
  */
 function isWhitespace(char: string): boolean {
-  return char === ' ' || char === '\n' || char === '\r' || char === '\t';
+  return char === " " || char === "\n" || char === "\r" || char === "\t";
 }
 
 /**
@@ -128,7 +131,10 @@ function isWhitespace(char: string): boolean {
  * @returns First non-whitespace character or null if not found
  * @internal
  */
-function findNextNonWhitespace(code: string, startIndex: number): string | null {
+function findNextNonWhitespace(
+  code: string,
+  startIndex: number,
+): string | null {
   for (let i = startIndex; i < code.length; i++) {
     const char = code[i] as string;
     if (!isWhitespace(char)) {
@@ -153,9 +159,9 @@ function findNextNonWhitespace(code: string, startIndex: number): string | null 
  * @internal
  */
 function stripJsComments(code: string): string {
-  let result = '';
+  let result = "";
   let i = 0;
-  let mode: JsStripMode = 'code';
+  let mode: JsStripMode = "code";
   let regexCharClass = false;
   let canStartRegex = true;
   let templateDepth = 0;
@@ -164,24 +170,24 @@ function stripJsComments(code: string): string {
     const char = code[i] as string;
     const next = code[i + 1] as string | undefined;
 
-    if (mode === 'single' || mode === 'double') {
+    if (mode === "single" || mode === "double") {
       result += char;
-      if (char === '\\') {
+      if (char === "\\") {
         if (next) {
           result += next;
           i += 2;
           continue;
         }
-      } else if (char === (mode === 'single' ? "'" : '"')) {
-        mode = 'code';
+      } else if (char === (mode === "single" ? "'" : '"')) {
+        mode = "code";
         canStartRegex = false;
       }
       i += 1;
       continue;
     }
 
-    if (mode === 'template') {
-      if (char === '\\') {
+    if (mode === "template") {
+      if (char === "\\") {
         result += char;
         if (next) {
           result += next;
@@ -190,18 +196,18 @@ function stripJsComments(code: string): string {
         }
       }
 
-      if (char === '`') {
+      if (char === "`") {
         result += char;
-        mode = 'code';
+        mode = "code";
         canStartRegex = false;
         i += 1;
         continue;
       }
 
-      if (char === '$' && next === '{') {
-        result += '${';
+      if (char === "$" && next === "{") {
+        result += "${";
         i += 2;
-        mode = 'code';
+        mode = "code";
         templateDepth += 1;
         canStartRegex = true;
         continue;
@@ -212,25 +218,25 @@ function stripJsComments(code: string): string {
       continue;
     }
 
-    if (mode === 'regex') {
+    if (mode === "regex") {
       result += char;
-      if (char === '\\') {
+      if (char === "\\") {
         if (next) {
           result += next;
           i += 2;
           continue;
         }
-      } else if (char === '[') {
+      } else if (char === "[") {
         regexCharClass = true;
-      } else if (char === ']' && regexCharClass) {
+      } else if (char === "]" && regexCharClass) {
         regexCharClass = false;
-      } else if (char === '/' && !regexCharClass) {
+      } else if (char === "/" && !regexCharClass) {
         i += 1;
         while (i < code.length && /[a-z]/i.test(code[i] as string)) {
           result += code[i] as string;
           i += 1;
         }
-        mode = 'code';
+        mode = "code";
         canStartRegex = false;
         continue;
       }
@@ -239,36 +245,39 @@ function stripJsComments(code: string): string {
     }
 
     if (char === "'" || char === '"') {
-      mode = char === "'" ? 'single' : 'double';
+      mode = char === "'" ? "single" : "double";
       result += char;
       i += 1;
       continue;
     }
 
-    if (char === '`') {
-      mode = 'template';
+    if (char === "`") {
+      mode = "template";
       result += char;
       i += 1;
       continue;
     }
 
-    if (char === '/' && next === '/') {
+    if (char === "/" && next === "/") {
       i += 2;
-      while (i < code.length && (code[i] as string) !== '\n') {
+      while (i < code.length && (code[i] as string) !== "\n") {
         i += 1;
       }
       if (i < code.length) {
-        result += '\n';
+        result += "\n";
         i += 1;
       }
       continue;
     }
 
-    if (char === '/' && next === '*') {
+    if (char === "/" && next === "*") {
       i += 2;
       let hadNewline = false;
-      while (i < code.length && !((code[i] as string) === '*' && code[i + 1] === '/')) {
-        if ((code[i] as string) === '\n') {
+      while (
+        i < code.length &&
+        !((code[i] as string) === "*" && code[i + 1] === "/")
+      ) {
+        if ((code[i] as string) === "\n") {
           hadNewline = true;
         }
         i += 1;
@@ -277,19 +286,24 @@ function stripJsComments(code: string): string {
         i += 2;
       }
       if (hadNewline) {
-        result += '\n';
+        result += "\n";
       } else {
         const prev = result[result.length - 1];
         const nextNonWs = findNextNonWhitespace(code, i);
-        if (prev && nextNonWs && !isWhitespace(prev) && !isWhitespace(nextNonWs)) {
-          result += ' ';
+        if (
+          prev &&
+          nextNonWs &&
+          !isWhitespace(prev) &&
+          !isWhitespace(nextNonWs)
+        ) {
+          result += " ";
         }
       }
       continue;
     }
 
-    if (char === '/' && canStartRegex) {
-      mode = 'regex';
+    if (char === "/" && canStartRegex) {
+      mode = "regex";
       regexCharClass = false;
       result += char;
       i += 1;
@@ -297,14 +311,14 @@ function stripJsComments(code: string): string {
     }
 
     if (templateDepth > 0) {
-      if (char === '{') {
+      if (char === "{") {
         templateDepth += 1;
-      } else if (char === '}') {
+      } else if (char === "}") {
         templateDepth -= 1;
         result += char;
         i += 1;
         if (templateDepth === 0) {
-          mode = 'template';
+          mode = "template";
         }
         continue;
       }
@@ -333,7 +347,7 @@ function stripJsComments(code: string): string {
       continue;
     }
 
-    if ((char === '+' && next === '+') || (char === '-' && next === '-')) {
+    if ((char === "+" && next === "+") || (char === "-" && next === "-")) {
       result += char + next;
       i += 2;
       canStartRegex = false;
@@ -343,7 +357,7 @@ function stripJsComments(code: string): string {
     result += char;
 
     if (!isWhitespace(char)) {
-      if (char === ')' || char === ']' || char === '}' || char === '.') {
+      if (char === ")" || char === "]" || char === "}" || char === ".") {
         canStartRegex = false;
       } else {
         canStartRegex = true;
@@ -380,7 +394,7 @@ function stripEmptyEsmMinInitWrappers(code: string): string {
 
   let result = code.replace(declRe, (_match, name: string) => {
     removedNames.add(name);
-    return '';
+    return "";
   });
 
   if (removedNames.size === 0) {
@@ -388,8 +402,11 @@ function stripEmptyEsmMinInitWrappers(code: string): string {
   }
 
   for (const name of removedNames) {
-    const callRe = new RegExp(`\\b${escapeRegExp(name)}\\(\\)\\s*;?\\s*\\n?`, 'g');
-    result = result.replace(callRe, '');
+    const callRe = new RegExp(
+      `\\b${escapeRegExp(name)}\\(\\)\\s*;?\\s*\\n?`,
+      "g",
+    );
+    result = result.replace(callRe, "");
   }
 
   return result;
@@ -410,13 +427,13 @@ function stripEmptyEsmMinInitWrappers(code: string): string {
  * @internal
  */
 function removeLogCalls(code: string, methods: string[]): string {
-  const methodPattern = methods.join('|');
+  const methodPattern = methods.join("|");
   const regex = new RegExp(
     `logger(?:\\$\\d+)?\\?\\.(?:${methodPattern})\\(|logger(?:\\$\\d+)?\\.(?:${methodPattern})\\(`,
-    'g'
+    "g",
   );
 
-  let result = '';
+  let result = "";
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -428,43 +445,47 @@ function removeLogCalls(code: string, methods: string[]): string {
     const prevNonWsIndex = (() => {
       for (let j = startIndex - 1; j >= 0; j--) {
         const c = code[j];
-        if (c !== ' ' && c !== '\n' && c !== '\r' && c !== '\t') {
+        if (c !== " " && c !== "\n" && c !== "\r" && c !== "\t") {
           return j;
         }
       }
       return -1;
     })();
-    const prevNonWsChar = prevNonWsIndex >= 0 ? (code[prevNonWsIndex] as string) : '';
+    const prevNonWsChar =
+      prevNonWsIndex >= 0 ? (code[prevNonWsIndex] as string) : "";
 
     // Heuristic: decide whether the logger call appears in an expression position.
     // - Expression positions must stay expression-safe (use `void 0`).
     // - Statement positions can be replaced with an empty statement (`;`) to avoid
     //   bloating the bundle with `void 0;` noise.
     const isArrowExpressionBody = /=>\s*$/.test(sliceBefore);
-    const isKeywordExpression = /\b(?:return|throw|yield|await)\s*$/.test(sliceBefore);
+    const isKeywordExpression = /\b(?:return|throw|yield|await)\s*$/.test(
+      sliceBefore,
+    );
     const prevCharForcesExpression =
-      prevNonWsChar !== '' &&
+      prevNonWsChar !== "" &&
       [
-        '=',
-        '(',
-        '[',
-        ',',
-        '?',
-        '+',
-        '-',
-        '*',
-        '/',
-        '%',
-        '!',
-        '~',
-        '&',
-        '|',
-        '^',
-        '<',
-        '>',
+        "=",
+        "(",
+        "[",
+        ",",
+        "?",
+        "+",
+        "-",
+        "*",
+        "/",
+        "%",
+        "!",
+        "~",
+        "&",
+        "|",
+        "^",
+        "<",
+        ">",
       ].includes(prevNonWsChar);
     const prevCharAllowsStatement =
-      prevNonWsIndex === -1 || [';', '{', '}', ')', ':'].includes(prevNonWsChar);
+      prevNonWsIndex === -1 ||
+      [";", "{", "}", ")", ":"].includes(prevNonWsChar);
 
     const shouldUseVoidExpression =
       isArrowExpressionBody ||
@@ -475,7 +496,7 @@ function removeLogCalls(code: string, methods: string[]): string {
     let depth = 1;
     let i = openParenIndex + 1;
     let inString = false;
-    let stringChar = '';
+    let stringChar = "";
     let inTemplate = false;
     let templateDepth = 0;
 
@@ -483,27 +504,31 @@ function removeLogCalls(code: string, methods: string[]): string {
       const char = code[i];
       const prevChar = code[i - 1];
 
-      if (!inString && !inTemplate && (char === '"' || char === "'" || char === '`')) {
+      if (
+        !inString &&
+        !inTemplate &&
+        (char === '"' || char === "'" || char === "`")
+      ) {
         inString = true;
         stringChar = char;
-        if (char === '`') {
+        if (char === "`") {
           inTemplate = true;
           inString = false;
         }
-      } else if (inString && char === stringChar && prevChar !== '\\') {
+      } else if (inString && char === stringChar && prevChar !== "\\") {
         inString = false;
       } else if (inTemplate) {
-        if (char === '`' && prevChar !== '\\') {
+        if (char === "`" && prevChar !== "\\") {
           inTemplate = false;
-        } else if (char === '$' && code[i + 1] === '{') {
+        } else if (char === "$" && code[i + 1] === "{") {
           templateDepth++;
           i++;
-        } else if (char === '}' && templateDepth > 0) {
+        } else if (char === "}" && templateDepth > 0) {
           templateDepth--;
         }
       } else if (!inString && !inTemplate) {
-        if (char === '(') depth++;
-        else if (char === ')') depth--;
+        if (char === "(") depth++;
+        else if (char === ")") depth--;
       }
 
       i++;
@@ -515,28 +540,28 @@ function removeLogCalls(code: string, methods: string[]): string {
 
       if (shouldUseVoidExpression) {
         // Expression-safe replacement.
-        result += 'void 0';
+        result += "void 0";
       } else {
         // Statement-safe replacement.
-        result += ';';
+        result += ";";
       }
 
       // Consume trailing semicolons and whitespace.
       // - For statement replacement we always emit exactly one `;`.
       // - For expression replacement we preserve the original `;` if present.
       let endIndex = i;
-      const hadSemicolon = code[endIndex] === ';';
+      const hadSemicolon = code[endIndex] === ";";
       if (hadSemicolon) {
         if (shouldUseVoidExpression) {
-          result += ';';
+          result += ";";
         }
         endIndex++;
       }
       while (
-        code[endIndex] === '\n' ||
-        code[endIndex] === '\r' ||
-        code[endIndex] === '\t' ||
-        code[endIndex] === ' '
+        code[endIndex] === "\n" ||
+        code[endIndex] === "\r" ||
+        code[endIndex] === "\t" ||
+        code[endIndex] === " "
       ) {
         result += code[endIndex];
         endIndex++;
@@ -561,40 +586,43 @@ function removeLogCalls(code: string, methods: string[]): string {
  * @returns Object with header (metadata) and body (executable code)
  * @internal
  */
-function splitLeadingUserscriptHeader(source: string): { header: string; body: string } {
+function splitLeadingUserscriptHeader(source: string): {
+  header: string;
+  body: string;
+} {
   // Preserve the userscript metadata header as-is.
   // Tampermonkey/Greasemonkey require the `// ==UserScript==` block to stay line-based.
-  if (!source.startsWith('// ==UserScript==')) {
-    return { header: '', body: source };
+  if (!source.startsWith("// ==UserScript==")) {
+    return { header: "", body: source };
   }
 
-  const lines = source.split('\n');
+  const lines = source.split("\n");
   const headerLines: string[] = [];
   let inBlockComment = false;
   let i = 0;
 
   for (; i < lines.length; i++) {
-    const line = lines[i] ?? '';
+    const line = lines[i] ?? "";
     const trimmed = line.trimStart();
 
     if (inBlockComment) {
       headerLines.push(line);
-      if (trimmed.includes('*/')) {
+      if (trimmed.includes("*/")) {
         inBlockComment = false;
       }
       continue;
     }
 
-    if (trimmed.startsWith('/*')) {
+    if (trimmed.startsWith("/*")) {
       inBlockComment = true;
       headerLines.push(line);
-      if (trimmed.includes('*/')) {
+      if (trimmed.includes("*/")) {
         inBlockComment = false;
       }
       continue;
     }
 
-    if (trimmed.startsWith('//') || trimmed === '') {
+    if (trimmed.startsWith("//") || trimmed === "") {
       headerLines.push(line);
       continue;
     }
@@ -603,8 +631,8 @@ function splitLeadingUserscriptHeader(source: string): { header: string; body: s
   }
 
   return {
-    header: headerLines.join('\n'),
-    body: lines.slice(i).join('\n'),
+    header: headerLines.join("\n"),
+    body: lines.slice(i).join("\n"),
   };
 }
 
@@ -624,65 +652,77 @@ function splitLeadingUserscriptHeader(source: string): { header: string; body: s
  */
 export function productionCleanupPlugin(): Plugin {
   return {
-    name: 'production-cleanup',
-    apply: 'build',
-    enforce: 'post',
+    name: "production-cleanup",
+    apply: "build",
+    enforce: "post",
 
     generateBundle(_options, bundle): void {
       for (const chunk of Object.values(bundle)) {
-        if (chunk.type !== 'chunk') continue;
+        if (chunk.type !== "chunk") continue;
 
         const split = splitLeadingUserscriptHeader(chunk.code);
         const header = split.header;
         let code = split.body;
 
-        assertParsableJs('start', code);
+        assertParsableJs("start", code);
 
         code = code.replace(
           /const\s+\w+\s*=\s*(?:\/\*#__PURE__\*\/\s*)?Object\.freeze\(\s*(?:\/\*#__PURE__\*\/\s*)?Object\.defineProperty\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*,\s*Symbol\.toStringTag\s*,\s*\{\s*value\s*:\s*['"]Module['"]\s*\}\s*\)\s*\)\s*;?\n?/g,
-          ''
+          "",
         );
-        assertParsableJs('strip-module-tag', code);
-        code = code.replace(/\/\*#__PURE__\*\/\s*/g, '');
-        assertParsableJs('strip-pure-annotations', code);
-        code = code.replace(/Object\.freeze\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*\)/g, '({})');
-        assertParsableJs('simplify-freeze-empty-object', code);
-        code = removeLogCalls(code, ['debug', 'info', 'warn', 'trace']);
-        assertParsableJs('remove-log-calls', code);
-        code = code.replace(/,\s*reset\(\)\s*\{\s*instance\s*=\s*null;\s*\}/g, '');
-        assertParsableJs('strip-singleton-reset', code);
-        code = code.replace(/static\s+resetForTests\(\)\s*\{[^}]*\}/g, '');
-        assertParsableJs('strip-reset-for-tests', code);
-        code = code.replace(/exports\.[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*[^;]+;/g, '');
-        assertParsableJs('strip-exports-assignments', code);
+        assertParsableJs("strip-module-tag", code);
+        code = code.replace(/\/\*#__PURE__\*\/\s*/g, "");
+        assertParsableJs("strip-pure-annotations", code);
+        code = code.replace(
+          /Object\.freeze\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*\)/g,
+          "({})",
+        );
+        assertParsableJs("simplify-freeze-empty-object", code);
+        code = removeLogCalls(code, ["debug", "info", "warn", "trace"]);
+        assertParsableJs("remove-log-calls", code);
+        code = code.replace(
+          /,\s*reset\(\)\s*\{\s*instance\s*=\s*null;\s*\}/g,
+          "",
+        );
+        assertParsableJs("strip-singleton-reset", code);
+        code = code.replace(/static\s+resetForTests\(\)\s*\{[^}]*\}/g, "");
+        assertParsableJs("strip-reset-for-tests", code);
+        code = code.replace(
+          /exports\.[a-zA-Z_$][a-zA-Z0-9_$]*\s*=\s*[^;]+;/g,
+          "",
+        );
+        assertParsableJs("strip-exports-assignments", code);
         code = code.replace(
           /Object\.defineProperty\(exports,['"]__esModule['"],\{value:true\}\);?/g,
-          ''
+          "",
         );
-        assertParsableJs('strip-esmodule-defineproperty', code);
-        code = code.replace(/\s*\/\*\*(?:[^*]|\*(?!\/))*@internal(?:[^*]|\*(?!\/))*\*\/\s*/g, '\n');
-        assertParsableJs('strip-internal-jsdoc', code);
+        assertParsableJs("strip-esmodule-defineproperty", code);
+        code = code.replace(
+          /\s*\/\*\*(?:[^*]|\*(?!\/))*@internal(?:[^*]|\*(?!\/))*\*\/\s*/g,
+          "\n",
+        );
+        assertParsableJs("strip-internal-jsdoc", code);
 
         // JSDoc pruning via regex is intentionally avoided.
         // It can accidentally match patterns inside strings/template literals and corrupt output.
         // We instead rely on the JS-aware comment stripper below.
 
         code = stripEmptyEsmMinInitWrappers(code);
-        assertParsableJs('strip-empty-esmmin', code);
+        assertParsableJs("strip-empty-esmmin", code);
         code = stripJsComments(code);
-        assertParsableJs('strip-js-comments', code);
+        assertParsableJs("strip-js-comments", code);
 
         // Whitespace-only compaction (no identifier mangling).
         // Keep the header intact by running this only on the body.
-        code = code.replace(/^[ \t]+/gm, '');
-        code = code.replace(/[ \t]+$/gm, '');
-        code = code.replace(/\n{2,}/g, '\n');
+        code = code.replace(/^[ \t]+/gm, "");
+        code = code.replace(/[ \t]+$/gm, "");
+        code = code.replace(/\n{2,}/g, "\n");
 
-        assertParsableJs('compact-whitespace', code);
+        assertParsableJs("compact-whitespace", code);
 
         chunk.code = header ? `${header}\n${code}` : code;
 
-        assertParsableJs('final', chunk.code);
+        assertParsableJs("final", chunk.code);
         assertParsableJsFinal(chunk.code);
       }
     },
