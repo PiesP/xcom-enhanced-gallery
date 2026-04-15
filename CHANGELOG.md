@@ -8,6 +8,15 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **Service Access**: Simplified shared service accessors so singleton-backed services resolve directly from their canonical singleton source instead of falling back through `CoreService`.
+- **Theme Lifecycle**: Rebuilt `ThemeService` around a single initialization path by removing constructor-time async restoration, moving scope observation into `initialize()`, and keeping cleanup explicit.
+
+### Fixed
+
+- **Userscript Error Handling**: Stopped silently swallowing required GM storage/download/request failures in shared userscript and persistent-storage paths while keeping notifications best-effort.
+
 ## [1.7.3] - 2026-02-21
 
 ### Added

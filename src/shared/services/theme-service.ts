@@ -23,6 +23,12 @@ import type {
 } from '@shared/services/theme-service.contract';
 import { createSingleton } from '@shared/utils/types/singleton';
 
+const VALID_THEME_SETTINGS: readonly ThemeSetting[] = ['light', 'dark', 'auto'];
+
+function isThemeSetting(value: unknown): value is ThemeSetting {
+  return typeof value === 'string' && VALID_THEME_SETTINGS.includes(value as ThemeSetting);
+}
+
 export class ThemeService implements ThemeServiceContract {
   private readonly lifecycle: Lifecycle;
   private readonly storage = getPersistentStorage();
@@ -37,20 +43,6 @@ export class ThemeService implements ThemeServiceContract {
   private observer: MutationObserver | null = null;
   private observedThemeScopes: WeakSet<Element> = new WeakSet();
 
-  private applyThemeToScopes(scopes: Element[]): void {
-    const newScopes: Element[] = [];
-    for (const scope of scopes) {
-      if (!this.observedThemeScopes.has(scope)) {
-        this.observedThemeScopes.add(scope);
-        newScopes.push(scope);
-      }
-    }
-
-    if (newScopes.length > 0) {
-      syncThemeAttributes(this.currentTheme, { scopes: newScopes });
-    }
-  }
-
   private static readonly singleton = createSingleton(() => new ThemeService());
 
   public static getInstance(): ThemeService {
@@ -64,94 +56,14 @@ export class ThemeService implements ThemeServiceContract {
     ThemeService.singleton.reset?.();
   }
 
-  /** Track whether the early restore encountered an error. */
-  private earlyRestoreFailed = false;
-
-  /** Hold the early restore promise to avoid untracked async work. */
-  private earlyRestorePromise: Promise<void> | null = null;
-
-  /** Ensure cleanup runs at most once per instance. */
-  private didCleanup = false;
-
   constructor() {
     this.lifecycle = createLifecycle('ThemeService', {
       onInitialize: () => this.onInitialize(),
-      onDestroy: () => this.onDestroy(),
     });
 
-    if (typeof window !== 'undefined') {
-      this.mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
-      this.observer = new MutationObserver((mutations) => {
-        for (const m of mutations) {
-          m.addedNodes.forEach((node) => {
-            if (node instanceof Element) {
-              const scopes: Element[] = [];
-              if (node.classList.contains('xeg-theme-scope')) {
-                scopes.push(node);
-              }
-              node.querySelectorAll('.xeg-theme-scope').forEach((scope) => {
-                scopes.push(scope);
-              });
-              if (scopes.length > 0) {
-                this.applyThemeToScopes(scopes);
-              }
-            }
-          });
-        }
-      });
-
-      if (document.body) {
-        this.observer.observe(document.body, {
-          childList: true,
-          subtree: true,
-        });
-      } else if (__DEV__) {
-        logger.warn('[ThemeService] document.body not available for observation');
-      }
-    }
-    // Initial load (sync if possible) - immediate, non-blocking
+    this.mediaQueryList = this.createMediaQueryList();
     this.themeSetting = this.loadThemeSync();
     this.applyCurrentTheme(true);
-
-    // Schedule early async restore (before initialize() is called)
-    // This ensures theme is applied ASAP even before full initialization
-    this.scheduleEarlyAsyncRestore();
-  }
-
-  /**
-   * Schedule early async theme restore.
-   * Separated from constructor for better testability and clarity.
-   * @internal
-   */
-  private scheduleEarlyAsyncRestore(): void {
-    if (this.earlyRestorePromise) {
-      return;
-    }
-
-    this.earlyRestorePromise = (async () => {
-      try {
-        const saved = await this.loadThemeAsync();
-        if (saved && saved !== this.themeSetting) {
-          this.themeSetting = saved;
-          this.applyCurrentTheme(true);
-        }
-      } catch (error) {
-        this.earlyRestoreFailed = true;
-        if (__DEV__) {
-          logger.warn('[ThemeService] Early async theme restore failed', error);
-        }
-      } finally {
-        // Always enable system theme detection, even if the early async restore
-        // fails midway. Initialization will be skipped once this flag is set.
-        try {
-          this.initializeSystemDetection();
-        } catch (error) {
-          if (__DEV__) {
-            logger.debug('[ThemeService] System theme detection initialization failed', error);
-          }
-        }
-      }
-    })();
   }
 
   /** Initialize service (idempotent, fail-fast on error) */
@@ -161,8 +73,7 @@ export class ThemeService implements ThemeServiceContract {
 
   /** Destroy service (idempotent, graceful on error) */
   public destroy(): void {
-    // Ensure we clean up constructor-time side effects even if initialize() was never called.
-    this.cleanupOnce();
+    this.cleanup();
     this.lifecycle.destroy();
   }
 
@@ -172,68 +83,59 @@ export class ThemeService implements ThemeServiceContract {
   }
 
   private async onInitialize(): Promise<void> {
-    // Ensure the constructor-scheduled early restore has completed.
-    await (this.earlyRestorePromise ?? Promise.resolve());
-
-    // If early restore failed, attempt a best-effort restore again during initialization.
-    if (this.earlyRestoreFailed) {
-      const saved = await this.loadThemeAsync();
-      if (saved && saved !== this.themeSetting) {
-        this.themeSetting = saved;
-        this.applyCurrentTheme(true);
-      }
-    }
-
-    try {
+    if (!this.boundSettingsService) {
       const settingsService = CoreService.getInstance().tryGet<SettingsServiceLike>(
         SERVICE_KEYS.SETTINGS
       );
+
       if (settingsService) {
         this.bindSettingsService(settingsService);
-      }
-    } catch (err) {
-      if (__DEV__) {
-        logger.debug('[ThemeService] SettingsService not available', err);
+      } else {
+        await this.restoreThemeSettingFromStorage();
       }
     }
+
+    this.initializeThemeScopeObservation();
+    this.initializeSystemDetection();
   }
 
   public bindSettingsService(settingsService: SettingsServiceLike): void {
-    if (!settingsService || this.boundSettingsService === settingsService) return;
+    if (!settingsService || this.boundSettingsService === settingsService) {
+      return;
+    }
 
     if (this.settingsUnsubscribe) {
       this.settingsUnsubscribe();
+      this.settingsUnsubscribe = null;
     }
 
     this.boundSettingsService = settingsService;
 
-    // Sync initial
-    const settingsTheme = settingsService.get?.('gallery.theme') as ThemeSetting | undefined;
-    if (settingsTheme && ['light', 'dark', 'auto'].includes(settingsTheme)) {
-      if (settingsTheme !== this.themeSetting) {
-        this.themeSetting = settingsTheme;
-        this.applyCurrentTheme(true);
-      }
+    const settingsTheme = settingsService.get?.('gallery.theme');
+    if (isThemeSetting(settingsTheme) && settingsTheme !== this.themeSetting) {
+      this.themeSetting = settingsTheme;
+      this.applyCurrentTheme(true);
     }
 
     if (typeof settingsService.subscribe === 'function') {
       this.settingsUnsubscribe = settingsService.subscribe((event) => {
-        if (event?.key === 'gallery.theme') {
-          const newVal = event.newValue as ThemeSetting;
-          if (['light', 'dark', 'auto'].includes(newVal) && newVal !== this.themeSetting) {
-            this.themeSetting = newVal;
-            this.applyCurrentTheme();
-          }
+        if (event?.key !== 'gallery.theme') {
+          return;
         }
+
+        const nextTheme = event.newValue;
+        if (!isThemeSetting(nextTheme) || nextTheme === this.themeSetting) {
+          return;
+        }
+
+        this.themeSetting = nextTheme;
+        this.applyCurrentTheme();
       });
     }
   }
 
   public setTheme(setting: ThemeSetting | string, options?: ThemeSetOptions): void {
-    const validSettings: ThemeSetting[] = ['light', 'dark', 'auto'];
-    const normalized = validSettings.includes(setting as ThemeSetting)
-      ? (setting as ThemeSetting)
-      : 'light';
+    const normalized = isThemeSetting(setting) ? setting : 'light';
     this.themeSetting = normalized;
 
     if (options?.persist !== false && this.boundSettingsService?.set) {
@@ -257,6 +159,7 @@ export class ThemeService implements ThemeServiceContract {
     if (this.themeSetting === 'auto') {
       return this.mediaQueryList?.matches ? 'dark' : 'light';
     }
+
     return this.themeSetting;
   }
 
@@ -273,67 +176,130 @@ export class ThemeService implements ThemeServiceContract {
     return () => this.listeners.delete(listener);
   }
 
-  private onDestroy(): void {
-    this.cleanupOnce();
+  private applyThemeToScopes(scopes: Element[]): void {
+    const newScopes: Element[] = [];
+    for (const scope of scopes) {
+      if (!this.observedThemeScopes.has(scope)) {
+        this.observedThemeScopes.add(scope);
+        newScopes.push(scope);
+      }
+    }
+
+    if (newScopes.length > 0) {
+      syncThemeAttributes(this.currentTheme, { scopes: newScopes });
+    }
   }
 
-  private cleanupOnce(): void {
-    if (this.didCleanup) {
+  private createMediaQueryList(): MediaQueryList | null {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return null;
+    }
+
+    return window.matchMedia('(prefers-color-scheme: dark)');
+  }
+
+  private async restoreThemeSettingFromStorage(): Promise<void> {
+    const saved = await this.loadThemeAsync();
+    if (saved && saved !== this.themeSetting) {
+      this.themeSetting = saved;
+      this.applyCurrentTheme(true);
+    }
+  }
+
+  private initializeThemeScopeObservation(): void {
+    if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') {
       return;
     }
-    this.didCleanup = true;
 
+    this.applyThemeToScopes(Array.from(document.querySelectorAll('.xeg-theme-scope')));
+
+    this.observer?.disconnect();
+    this.observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        mutation.addedNodes.forEach((node) => {
+          if (!(node instanceof Element)) {
+            return;
+          }
+
+          const scopes: Element[] = [];
+          if (node.classList.contains('xeg-theme-scope')) {
+            scopes.push(node);
+          }
+          node.querySelectorAll('.xeg-theme-scope').forEach((scope) => {
+            scopes.push(scope);
+          });
+
+          if (scopes.length > 0) {
+            this.applyThemeToScopes(scopes);
+          }
+        });
+      }
+    });
+
+    if (document.body) {
+      this.observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+      return;
+    }
+
+    if (__DEV__) {
+      logger.warn('[ThemeService] document.body not available for observation');
+    }
+  }
+
+  private cleanup(): void {
     if (this.settingsUnsubscribe) {
       this.settingsUnsubscribe();
       this.settingsUnsubscribe = null;
     }
+
+    this.boundSettingsService = null;
     this.listeners.clear();
     this.observedThemeScopes = new WeakSet();
 
-    // MutationObserver cleanup
     if (this.observer) {
       this.observer.disconnect();
       this.observer = null;
     }
 
-    // Abort-managed DOM listeners cleanup
     if (this.domEventsController) {
       this.domEventsController.abort();
       this.domEventsController = null;
     }
 
-    // MediaQueryList listener cleanup
     this.mediaQueryListener = null;
     this.mediaQueryList = null;
   }
 
   private initializeSystemDetection(): void {
-    if (this.mediaQueryList && !this.mediaQueryListener) {
-      if (!this.domEventsController || this.domEventsController.signal.aborted) {
-        this.domEventsController = new AbortController();
-      }
-
-      this.mediaQueryListener = () => {
-        if (this.themeSetting === 'auto') {
-          this.applyCurrentTheme();
-        }
-      };
-
-      const listener = this.mediaQueryListener;
-      if (!listener) {
-        // Defensive: should never happen because we just assigned it above.
-        return;
-      }
-
-      const eventListener: EventListener = (evt) => {
-        listener(evt as MediaQueryListEvent);
-      };
-
-      EventManager.getInstance().addEventListener(this.mediaQueryList, 'change', eventListener, {
-        signal: this.domEventsController.signal,
-        context: 'theme-service',
-      });
+    if (!this.mediaQueryList) {
+      this.mediaQueryList = this.createMediaQueryList();
     }
+    if (!this.mediaQueryList || this.mediaQueryListener) {
+      return;
+    }
+
+    if (!this.domEventsController || this.domEventsController.signal.aborted) {
+      this.domEventsController = new AbortController();
+    }
+
+    this.mediaQueryListener = () => {
+      if (this.themeSetting === 'auto') {
+        this.applyCurrentTheme();
+      }
+    };
+
+    const listener = this.mediaQueryListener;
+    const eventListener: EventListener = (event) => {
+      listener(event as MediaQueryListEvent);
+    };
+
+    EventManager.getInstance().addEventListener(this.mediaQueryList, 'change', eventListener, {
+      signal: this.domEventsController.signal,
+      context: 'theme-service',
+    });
   }
 
   private applyCurrentTheme(force = false): boolean {
@@ -348,7 +314,7 @@ export class ThemeService implements ThemeServiceContract {
   }
 
   private notifyListeners(): void {
-    this.listeners.forEach((l) => l(this.currentTheme, this.themeSetting));
+    this.listeners.forEach((listener) => listener(this.currentTheme, this.themeSetting));
   }
 
   private loadThemeSync(): ThemeSetting {

@@ -1,4 +1,4 @@
-import { getUserscriptSafe, type UserscriptAPI } from '@shared/external/userscript/adapter';
+import { getUserscript, type UserscriptAPI } from '@shared/external/userscript/adapter';
 import type { PersistentStorageGetOptions } from '@shared/services/persistent-storage.contract';
 import { createSingleton } from '@shared/utils/types/singleton';
 
@@ -6,7 +6,7 @@ export type { PersistentStorageGetOptions } from '@shared/services/persistent-st
 
 export class PersistentStorage {
   private get userscript(): UserscriptAPI {
-    return getUserscriptSafe();
+    return getUserscript();
   }
 
   private static readonly singleton = createSingleton(() => new PersistentStorage());

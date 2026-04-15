@@ -8,7 +8,6 @@ import type {
   GMNotificationDetails,
   GMXMLHttpRequestControl,
   GMXMLHttpRequestDetails,
-  GMXMLHttpRequestResponse,
 } from '@shared/types/core/userscript';
 
 export interface UserscriptAPI {
@@ -21,36 +20,6 @@ export interface UserscriptAPI {
   readonly xmlHttpRequest: (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl;
   readonly notification: (details: GMNotificationDetails) => void;
   readonly cookie: CookieAPI | undefined;
-}
-
-function createNetworkErrorResponse(
-  details: GMXMLHttpRequestDetails
-): GMXMLHttpRequestResponse<unknown, unknown> {
-  return {
-    finalUrl: details.url,
-    readyState: 4,
-    status: 0,
-    statusText: 'Network Error',
-    responseHeaders: '',
-    response: undefined,
-    responseXML: null,
-    responseText: '',
-    context: details.context,
-  };
-}
-
-function scheduleUserscriptRequestFailureCallbacks(
-  details: GMXMLHttpRequestDetails,
-  response: GMXMLHttpRequestResponse<unknown, unknown>
-): void {
-  Promise.resolve().then(() => {
-    try {
-      details.onerror?.(response);
-      details.onloadend?.(response);
-    } catch {
-      // Silent no-op
-    }
-  });
 }
 
 /**
@@ -208,90 +177,47 @@ function createStrictUserscriptAPI(): UserscriptAPI {
 }
 
 /**
- * Safe call wrapper that never throws (swallows promise rejections)
- * @internal
- */
-function safeCall(fn: (() => unknown) | null | undefined): Promise<unknown | undefined> {
-  if (!fn) return Promise.resolve(undefined);
-  try {
-    return Promise.resolve(fn()).catch(() => undefined);
-  } catch {
-    return Promise.resolve(undefined);
-  }
-}
-
-/**
  * Non-throwing safe UserscriptAPI variant (best-effort defaults)
  * @internal
  */
 function createSafeUserscriptAPI(): UserscriptAPI {
+  const strict = createStrictUserscriptAPI();
   const resolved = getResolvedGMAPIsCached();
-  const gmDownload = asFunction<NonNullable<GlobalWithGM['GM_download']>>(resolved.download);
-  const gmSetValue = asFunction<NonNullable<GlobalWithGM['GM_setValue']>>(resolved.setValue);
-  const gmGetValue = asFunction<NonNullable<GlobalWithGM['GM_getValue']>>(resolved.getValue);
-  const gmDeleteValue = asFunction<NonNullable<GlobalWithGM['GM_deleteValue']>>(
-    resolved.deleteValue
-  );
-  const gmListValues = asFunction<NonNullable<GlobalWithGM['GM_listValues']>>(resolved.listValues);
-  const gmXmlHttpRequest = asFunction<NonNullable<GlobalWithGM['GM_xmlhttpRequest']>>(
-    resolved.xmlHttpRequest
-  );
   const gmNotification = asFunction<NonNullable<GlobalWithGM['GM_notification']>>(
     resolved.notification
   );
 
   return {
     async download(url: string, filename: string): Promise<void> {
-      await safeCall(gmDownload ? () => gmDownload(url, filename) : null);
+      return strict.download(url, filename);
     },
     async setValue(key: string, value: unknown): Promise<void> {
-      await safeCall(gmSetValue ? () => gmSetValue(key, value) : null);
+      return strict.setValue(key, value);
     },
     async getValue<T>(key: string, defaultValue?: T): Promise<T | undefined> {
-      if (!gmGetValue) return defaultValue;
-      try {
-        const value = await Promise.resolve(gmGetValue(key, defaultValue));
-        return value as T | undefined;
-      } catch {
-        return defaultValue;
-      }
+      return strict.getValue(key, defaultValue);
     },
     getValueSync<T>(key: string, defaultValue?: T): T | undefined {
-      if (!gmGetValue) return defaultValue;
-      try {
-        const value = gmGetValue(key, defaultValue);
-        return value instanceof Promise ? defaultValue : (value as T | undefined);
-      } catch {
-        return defaultValue;
-      }
+      return strict.getValueSync(key, defaultValue);
     },
     async deleteValue(key: string): Promise<void> {
-      await safeCall(gmDeleteValue ? () => gmDeleteValue(key) : null);
+      return strict.deleteValue(key);
     },
     async listValues(): Promise<string[]> {
-      if (!gmListValues) return [];
-      try {
-        const values = await Promise.resolve(gmListValues());
-        return Array.isArray(values) ? values : [];
-      } catch {
-        return [];
-      }
+      return strict.listValues();
     },
     xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
-      if (gmXmlHttpRequest) {
-        try {
-          return gmXmlHttpRequest(details);
-        } catch {
-          // fall through
-        }
-      }
-
-      const response = createNetworkErrorResponse(details);
-      scheduleUserscriptRequestFailureCallbacks(details, response);
-      return { abort() {} };
+      return strict.xmlHttpRequest(details);
     },
     notification(details: GMNotificationDetails): void {
-      void safeCall(gmNotification ? () => gmNotification(details, undefined) : null);
+      if (!gmNotification) {
+        return;
+      }
+      try {
+        gmNotification(details, undefined);
+      } catch {
+        // Optional capability: notification failures should not affect callers.
+      }
     },
     cookie: resolved.cookie,
   };
@@ -307,8 +233,8 @@ export function getUserscript(): UserscriptAPI {
 }
 
 /**
- * Get safe UserscriptAPI with best-effort defaults (never throws)
- * Provides resilience in dev/test/runtime when GM_* APIs partially unavailable
+ * Get safe UserscriptAPI for optional capability access.
+ * Required storage/download/network operations still use strict semantics.
  * @internal
  */
 export function getUserscriptSafe(): UserscriptAPI {
