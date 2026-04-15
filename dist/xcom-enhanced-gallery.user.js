@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name X.com Enhanced Gallery
 // @namespace https://github.com/PiesP/xcom-enhanced-gallery
-// @version 1.7.3
+// @version 1.7.4
 // @description Media viewer and download functionality for X.com
 // @author PiesP
 // @license MIT
@@ -34,7 +34,7 @@
 /*
  * Third-Party Licenses
  * ====================
- * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.7.3/LICENSES
+ * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.7.4/LICENSES
  *
  * MIT License
  *
@@ -60,10 +60,9 @@
  * SOFTWARE.
  *
  */
-(function(){if(typeof document==='undefined')return;var css="@layer xeg.components{:root{--xtt:opacity var(--xdt) var(--xeo), transform var(--xdt) var(--xeo), visibility 0ms;--xeg-spacing-gallery:clamp(var(--xs-s), 2.5vw, var(--xs-l));--xeg-spacing-mobile:clamp(var(--xs-xs), 2vw, var(--xs-m));--xeg-spacing-compact:clamp(.25rem, 1.5vw, var(--xs-s));--xth-o:0;--xth-v:hidden;--xth-pe:none}} @media (prefers-reduced-motion:reduce){@layer xeg.components{:root{--xtt:none} .xg-X9gZ{scroll-behavior:auto;transition:none} .xg-meO3{transition:none}}} .xg-X9gZ{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:var(--xz-g, 10000);background:var(--xg-b);display:flex;flex-direction:column;transform:var(--xgh);will-change:opacity, transform;contain:layout style paint;opacity:1;visibility:visible;transition:var(--xten);cursor:default;pointer-events:auto;container-type:size;container-name:gallery-container;scroll-behavior:smooth;overscroll-behavior:none} .xg-meO3{position:fixed;top:0;left:0;right:0;height:auto;z-index:var(--xz-t, 2147483620);opacity:var(--toolbar-opacity, 0);visibility:var(--toolbar-visibility, hidden);display:block;transition:var(--xtt);will-change:transform, opacity, visibility;contain:layout style;transform:var(--xgh);backface-visibility:var(--xbv);pointer-events:var(--toolbar-pointer-events, none);background:transparent;border:none;border-radius:0;margin:0;padding-block-end:var(--xeg-spacing-gallery)} .xg-meO3:is(:hover,:focus-within){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-meO3:focus-within{transition:var(--xtef)} .xg-meO3 *{pointer-events:inherit} .xg-meO3 [data-gallery-element=\"settings-panel\"][data-expanded=\"true\"]{pointer-events:auto} .xg-meO3:has([data-gallery-element=\"settings-panel\"][data-expanded=\"true\"]){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-X9gZ.xg-9abg{cursor:none} .xg-X9gZ.xg-sOsS[data-xeg-gallery=\"true\"][data-xeg-role=\"gallery\"] .xg-meO3{--toolbar-opacity:var(--xth-o, 0);--toolbar-visibility:var(--xth-v, hidden);--toolbar-pointer-events:var(--xth-pe, none)} .xg-X9gZ *{pointer-events:auto} .xg-gmRW{flex:1;display:flex;flex-direction:column;overflow:auto;position:relative;z-index:0;contain:layout style;transform:var(--xgh);overscroll-behavior:contain;scrollbar-gutter:stable;pointer-events:auto;container-type:size;container-name:items-list} .xg-gmRW::-webkit-scrollbar{width:var(--xsw)} .xg-gmRW::-webkit-scrollbar-track{background:transparent} .xg-gmRW::-webkit-scrollbar-thumb{background:var(--xcn3);border-radius:var( --xsbr );transition:background-color var(--xdn) var(--xe-s)} .xg-gmRW::-webkit-scrollbar-thumb:hover{background:var(--xcn4)} .xg-X9gZ.xg-9abg .xg-meO3{pointer-events:none;opacity:0;transition:opacity var(--xdf) var(--xeo)} .xg-X9gZ.xg-9abg [data-xeg-role=\"items-list\"], .xg-X9gZ.xg-9abg .xg-gmRW{pointer-events:auto} .xg-X9gZ.xg-yhK-{justify-content:center;align-items:center} .xg-EfVa{position:relative;margin-bottom:var(--xs-m, 1rem);border-radius:var(--xr-l, .5rem);transition:var(--xten);contain:layout style;transform:var(--xgh)} .xg-LxHL{position:relative;z-index:1} .xg-sfF0{height:calc(100vh - var(--xeg-toolbar-height, 3.75rem));min-height:50vh;pointer-events:none;user-select:none;flex-shrink:0;background:transparent;opacity:0;contain:strict;content-visibility:auto} .xg-gC-m{position:fixed;top:0;left:0;right:0;height:var(--xhzh);z-index:var(--xz-th, 2147483618);background:transparent;pointer-events:auto} .xg-gC-m:hover{z-index:var(--xz-th);background:transparent} .xg-X9gZ.xg-Canm:not([data-settings-expanded=\"true\"]) .xg-gC-m, .xg-X9gZ:has(.xg-meO3:hover):not([data-settings-expanded=\"true\"]) .xg-gC-m{pointer-events:none} .xg-X9gZ.xg-Canm .xg-meO3, .xg-X9gZ:has(.xg-gC-m:hover) .xg-meO3{--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-meO3 [class*=\"galleryToolbar\"]{opacity:var(--toolbar-opacity, 0);visibility:var(--toolbar-visibility, hidden);display:flex;pointer-events:var(--toolbar-pointer-events, none)} .xg-meO3 button, .xg-meO3 [role=\"button\"], .xg-meO3 .xg-e06X{pointer-events:auto;position:relative;z-index:10} .xg-fwsr{text-align:center;color:var(--xct-s);max-inline-size:min(25rem, 90vw);padding:clamp(1.875rem, 5vw, 2.5rem)} .xg-fwsr h3{margin:0 0 clamp(.75rem, 2vw, 1rem);font-size:clamp(1.25rem, 4vw, 1.5rem);font-weight:600;color:var(--xct-p);line-height:1.2} .xg-fwsr p{margin:0;font-size:clamp(.875rem, 2.5vw, 1rem);line-height:1.5;color:var(--xct-t)} @container gallery-container (max-width:48rem){.xg-gmRW{padding:var(--xeg-spacing-mobile);gap:var(--xeg-spacing-mobile)} .xg-meO3{padding-block-end:var(--xeg-spacing-mobile)}} @container gallery-container (max-width:30rem){.xg-gmRW{padding:var(--xeg-spacing-compact);gap:var(--xeg-spacing-compact)}} @media (prefers-reduced-motion:reduce){.xg-gmRW{scroll-behavior:auto;will-change:auto;transform:none}} @media (prefers-reduced-motion:reduce){.xg-meO3:hover, .xg-meO3:focus-within{transform:none}} .xg-X9gZ [class*=\"galleryToolbar\"]:hover{--toolbar-opacity:1;--toolbar-pointer-events:auto} .xg-huYo{position:relative;margin-bottom:var(--xs-m);margin-inline:auto;border-radius:var(--xr-l);overflow:visible;transition:var(--xti);cursor:pointer;border:.0625rem solid var(--xcb-p);background:var(--xcbg-s);padding:var(--xs-s);width:fit-content;max-width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;pointer-events:auto;transform:var(--xgh);will-change:transform;contain:layout style} .xg-huYo[data-fit-mode=\"original\"]{max-width:none;flex-shrink:0;width:max-content;align-self:center} .xg-huYo:hover{transform:var(--xhl);background:var(--xc-se);border-color:var(--xbe)} .xg-huYo:focus-visible{border-color:var(--xfic, var(--xcb-p))} .xg-huYo.xg-xm-1{border-color:var(--xbe, var(--xcb-s));transition:var(--xti)} .xg-huYo.xg-xm-1:focus-visible{border-color:var(--xfic, var(--xcb-s))} .xg-huYo.xg-luqi{border-color:var(--xfic, var(--xcb-p));transition:var(--xti)} .xg-8-c8{position:relative;background:var(--xcbg-s);width:fit-content;max-width:100%;margin:0 auto;display:flex;justify-content:center;align-items:center;contain:layout paint} .xg-huYo[data-fit-mode=\"original\"] .xg-8-c8{width:auto;max-width:none} .xg-huYo[data-media-loaded=\"false\"] .xg-8-c8{min-height:var(--xs-3);aspect-ratio:var(--xgi-r, var(--xad))} .xg-lhkE{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:var(--xsk-b);min-height:var(--xs-3)} .xg-6YYD{--xsp-s:var(--xs-l);--xsp-bw:.125rem;--xsp-tc:var(--xcb-p);--xsp-ic:var(--xc-p)} .xg-FWlk, .xg-GUev{display:block;border-radius:var(--xr-m);object-fit:contain;pointer-events:auto;user-select:none;-webkit-user-drag:none;transform:var(--xgh);will-change:opacity;transition:opacity var(--xdn) var(--xeo)}:is(.xg-FWlk, .xg-GUev).xg-8Z3S{opacity:0}:is(.xg-FWlk, .xg-GUev).xg-y9iP{opacity:1} .xg-GUev{inline-size:100%;overflow:clip}:is(.xg-FWlk, .xg-GUev).xg-yYtG{inline-size:auto;block-size:auto;max-inline-size:none;max-block-size:none;object-fit:none}:is(.xg-FWlk, .xg-GUev).xg-Uc0o{inline-size:auto;block-size:auto;max-inline-size:100%;max-block-size:none;object-fit:scale-down}:is(.xg-FWlk, .xg-GUev).xg-M9Z6{inline-size:auto;block-size:auto;max-inline-size:calc(100vw - var(--xs-l) * 2);max-block-size:var(--xvhc);object-fit:scale-down}:is(.xg-FWlk, .xg-GUev).xg--Mlr{inline-size:auto;block-size:auto;max-inline-size:100%;max-block-size:var(--xvhc);object-fit:contain} .xg-Wno7{font-size:var(--xfs-2);margin-bottom:var(--xs-s)} .xg-8-wi{font-size:var(--xfs-s);text-align:center} .xg-Gswe{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--xc-e-bg);color:var(--xc-e);min-height:var(--xs-3)} .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"]{inline-size:min(var(--xgi-w, 100%), 100%);max-inline-size:min(var(--xgi-w, 100%), 100%);max-block-size:min( var(--xgi-h, var(--xs-5)), var(--xvhc) )} .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"] .xg-FWlk, .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"] .xg-GUev{inline-size:min(var(--xgi-w, 100%), 100%);max-inline-size:min(var(--xgi-w, 100%), 100%);max-block-size:min( var(--xgi-h, var(--xs-5)), var(--xvhc) )} .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitHeight\"], .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitContainer\"]{--xgf-ht:min( var(--xgi-h, var(--xs-5)), var(--xvhc) );max-block-size:var(--xgf-ht);inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) );max-inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) )} .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"]:is( [data-fit-mode=\"fitHeight\"], [data-fit-mode=\"fitContainer\"] ):is(.xg-FWlk, .xg-GUev){max-block-size:var(--xgf-ht);max-inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) )} @media (prefers-reduced-motion:reduce){.xg-huYo{will-change:auto;transition:none} .xg-huYo:hover{transform:none}:where(.xg-FWlk, .xg-GUev){will-change:auto;transition:none}} .xg-EeSh{display:flex;flex-direction:column;gap:var(--xse-g);padding:var(--xse-p)} .xg-nm9B{gap:var(--sps)} .xg-PI5C{display:flex;flex-direction:column;gap:var(--xse-cg)} .xg-VUTt{gap:var(--spx)} .xg-vhT3{font-size:var(--xse-lf);font-weight:var(--xse-lw);color:var(--xct-p)} .xg-Y62M{font-size:var(--fsx);color:var(--xct-s);letter-spacing:.04em;text-transform:uppercase} .xg-jpiS{width:100%;padding:var(--xse-sp);font-size:var(--xse-sf);color:var(--xct-p);background-color:var(--xte-b);border:var(--bwt) solid var(--xt-b);border-radius:var(--xr-m);cursor:pointer;line-height:1.375;min-height:2.75em;transform:none;overflow:visible;transition:border-color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s), box-shadow var(--xdf) var(--xe-s)} .xg-jpiS:hover{border-color:var(--xcb-h);background-color:var(--xte-bs);box-shadow:0 0 0 2px color-mix(in oklch, var(--xt-b) 20%, transparent 80%)} .xg-jpiS:focus, .xg-jpiS:focus-visible{border-color:var(--xfic);box-shadow:0 0 0 3px color-mix(in oklch, var(--xfic) 25%, transparent 75%)} .xg-jpiS option{padding:.5em .75em;line-height:1.5} .xg-4eoj{color:var(--xtt-c, var(--xct-p));cursor:pointer;font-size:.875em;font-weight:500;width:var(--xsb-m);height:var(--xsb-m);min-width:var(--xsb-m);min-height:var(--xsb-m);padding:.5em;aspect-ratio:1;position:relative;overflow:clip;border-radius:var(--xr-m);background:transparent;border:none;transition:var(--xts), transform var(--xdf) var(--xe-s)} .xg-4eoj:focus, .xg-4eoj:focus-visible{background:var(--xte-b, var(--xcn1))} .xg-fLg7{--toolbar-surface-base:var( --xtp-s, var(--xt-s, var(--xcbg-p, Canvas)) );--toolbar-surface-border:var(--xt-b);background:var(--toolbar-surface-base);border:none;border-radius:var(--xr-l);position:fixed;top:1.25em;left:50%;transform:translateX(-50%);z-index:var(--xz-t, 2147483620);display:var(--toolbar-display, inline-flex);align-items:center;justify-content:space-between;height:3em;padding:.5em 1em;gap:0;color:var(--xtt-c, var(--xct-p));visibility:var(--toolbar-visibility, visible);opacity:var(--toolbar-opacity, 1);pointer-events:var(--toolbar-pointer-events, auto);transition:var(--xten);user-select:none;overscroll-behavior:contain} .xg-fLg7.xg-ZpP8, .xg-fLg7.xg-t4eq{border-radius:var(--xr-l) var(--xr-l) 0 0} .xg-fLg7.xg-ojCW{--toolbar-opacity:1;--toolbar-pointer-events:auto;--toolbar-visibility:visible;--toolbar-display:inline-flex} .xg-fLg7.xg-Y6KF, .xg-fLg7.xg-n-ab, .xg-fLg7.xg-bEzl{--toolbar-opacity:1;--toolbar-pointer-events:auto;--toolbar-visibility:visible;--toolbar-display:inline-flex} .xg-f8g4{display:flex;align-items:center;justify-content:center;width:100%;max-width:100%;overflow:hidden} .xg-Ix3j{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:var(--xs-xs);width:100%} .xg-Ix3j > *{flex:0 0 auto} .xg-0EHq{display:flex;align-items:center;justify-content:center;padding-inline:var(--xs-s);min-width:5em} .xg-FKnO{color:var(--xtt-m, var(--xct-p));margin:0 .125em}:where(.xg-4eoj[aria-pressed=\"true\"]){background:var(--xte-bs, var(--xcn2))} .xg-4eoj:disabled{color:var(--xtt-m, var(--xcn4));cursor:not-allowed} @media (hover:hover){.xg-4eoj:hover:not(:disabled){background:var(--xte-b, var(--xcn1));transform:translateY(var(--xb-l))}} .xg-4eoj:active:not(:disabled){background:var(--xte-bs, var(--xcn2));transform:translateY(0)} .xg-njlf{} .xg-AU-d{} .xg-Vn14{} .xg-atmJ{position:relative} .xg-GG86{position:relative;gap:0;min-width:5em;min-height:2.5em;padding-bottom:.5em;box-sizing:border-box} .xg-2cjm{color:var(--xtt-c, var(--xct-p));font-size:var(--xfs-m);font-weight:600;text-align:center;white-space:nowrap;line-height:1;background:transparent;padding:.25em .5em;border-radius:var(--xr-m);border:none} .xg-JEXm{color:var(--xtt-c, var(--xct-p));font-weight:700} .xg-d1et{color:var(--xtt-c, var(--xct-p))} .xg-vB6N{position:absolute;left:50%;bottom:.125em;transform:translateX(-50%);width:3.75em;height:.125em;background:var(--xtp-pt, var(--xcn2));border-radius:var(--xr-s);overflow:clip} .xg-LWQw{width:100%;height:100%;background:var(--xtt-c, var(--xct-p));border-radius:var(--xr-s);transition:var(--xtwn);transform-origin:left} .xg-Q7dU, button.xg-Q7dU{transition:var(--xti);position:relative;z-index:10;pointer-events:auto} .xg-Q7dU[data-selected=\"true\"]{} .xg-Q7dU:focus, .xg-Q7dU:focus-visible{border:none} @media (prefers-reduced-transparency:reduce){.xg-fLg7{background:var(--xtp-s, var(--xt-s))} [data-theme=\"dark\"] .xg-fLg7{background:var(--xtp-s, var(--xt-s))}} @media (prefers-reduced-motion:reduce){.xg-4eoj:hover:not(:disabled), .xg-atmJ:hover:not(:disabled), .xg-Vn14:hover:not(:disabled), .xg-Q7dU:hover{transform:none}}:where(.xg-JcF-, .xg-yRtv){position:absolute;top:100%;left:0;right:0;width:100%;display:flex;flex-direction:column;gap:var(--xs-m);padding:var(--xs-l);max-height:var(--xtp-mh);overflow:hidden;opacity:0;transform:translateY(-.5em);visibility:hidden;pointer-events:none;transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s var(--xdn);background:var( --toolbar-surface-base, var(--xtp-s, var(--xt-s)) );border-top:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:0 0 var(--xr-l) var(--xr-l);z-index:var(--xz-tp);will-change:transform, opacity;overscroll-behavior:contain} .xg-JcF-{height:var(--xtp-h)} .xg-yRtv{min-height:var(--xtp-h)}:where(.xg-JcF-, .xg-yRtv).xg-4a2L{height:auto;opacity:1;transform:translateY(0);visibility:visible;pointer-events:auto;border-top-color:var(--toolbar-surface-border, var(--xt-b));transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s 0s;z-index:var(--xz-ta)} .xg-w56C{display:flex;flex-direction:column;gap:var(--xs-s)} .xg-rSWg{display:flex;align-items:center;padding-bottom:var(--xs-xs);border-bottom:var(--bwt) solid var(--toolbar-surface-border);margin-bottom:var(--xs-s)} .xg-jd-V{font-size:var(--xfs-s);font-weight:var(--xfw-s);color:var(--xtt-c);text-transform:uppercase;letter-spacing:.04em} .xg-jmjG{padding:var(--xs-s) var(--xs-m);font-size:var(--xfs-b);line-height:var(--xeg-line-height-snug);color:var(--xtt-c, var(--xct-p));background:var( --toolbar-surface-base, var(--xtp-s, var(--xt-s)) );border:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:var(--xr-m);white-space:pre-wrap;word-wrap:break-word;overflow-y:auto;overscroll-behavior:contain;max-height:18em;transition:var(--xts);user-select:text;-webkit-user-select:text;cursor:text} .xg-jmjG::-webkit-scrollbar{width:.5em} .xg-jmjG::-webkit-scrollbar-track{background:var(--xts-t, var(--xcn2));border-radius:var(--xr-s)} .xg-jmjG::-webkit-scrollbar-thumb{background:var(--xts-th, var(--xcn4));border-radius:var(--xr-s)} .xg-jmjG::-webkit-scrollbar-thumb:hover{background:var(--xte-bs, var(--xcn5))} .xg-jmjG a{color:var(--xc-p);text-decoration:none;font-weight:var(--xfw-m);padding:.125em .25em;margin:-.125em -.25em;border-radius:var(--xr-xs);overflow-wrap:break-word;transition:color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s);cursor:pointer} .xg-jmjG a:hover{color:var(--xc-ph);background:var(--xte-b);text-decoration:underline;text-decoration-thickness:.0625rem;text-underline-offset:.125em} .xg-jmjG a:focus, .xg-jmjG a:focus-visible{background:var(--xte-bs, var(--xcn2));color:var(--xc-ph);border-radius:var(--xr-xs)} .xg-jmjG a:active{color:var(--xc-p-active)} .xg-0Eeq{display:flex;align-items:center;gap:var(--xs-xs);padding:var(--xs-s);margin-bottom:var(--xs-s);background:var(--xte-bs);border:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:var(--xr-s);transition:var(--xts)} .xg-0Eeq:hover{background:color-mix( in oklch, var(--xte-bs) 85%, var(--xc-p) 15% );border-color:var(--xcb-h)} .xg-AVKe{display:flex;align-items:center;gap:.375em;width:100%;color:var(--xc-p);text-decoration:none;font-size:var(--xfs-s);font-weight:500;transition:color var(--xdf) var(--xe-s)} .xg-AVKe:hover{color:var(--xc-ph)} .xg-AVKe:focus, .xg-AVKe:focus-visible{outline:.125rem solid var(--xfic);outline-offset:.125rem;border-radius:var(--xr-xs)} .xg-5RjR{flex-shrink:0;width:.875em;height:.875em;stroke:currentColor} .xg-8Stf{flex-shrink:0;color:var(--xtt-m, var(--xct-s));font-weight:600} .xg-3pwZ{flex:1;color:var(--xc-p);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .xg-sltl{width:100%;height:var(--bwt);background:color-mix(in oklch, var(--toolbar-surface-border) 60%, transparent 40%);margin:var(--xs-m) 0;border-radius:var(--xr-s)} @layer xeg.features{:where(.xeg-surface, .xeg-glass-surface){background:var(--xsu-b);border:var(--bwt) solid var(--xsu-br);border-radius:var(--xr-2);isolation:isolate;transition:opacity var(--xdn) var(--xe-s)}:where(.xeg-surface, .xeg-glass-surface):hover{background:var(--xsu-bh, var(--xsu-b))} .xeg-gallery-renderer[data-renderer=\"gallery\"]{display:block;width:0;height:0;overflow:visible} .xeg-gallery-overlay{display:flex;align-items:center;justify-content:center;position:fixed;inset:0;z-index:var(--xz-g, 10000);background:var(--xg-b);opacity:1;transition:opacity var(--xdn) var(--xe-s);pointer-events:auto} .xeg-gallery-container{position:relative;width:100%;height:100%;max-width:100vw;max-height:100vh;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable both-edges}} @layer xeg.tokens, xeg.base, xeg.utilities, xeg.components, xeg.features, xeg.overrides;@layer xeg.tokens{:where(:root, .xeg-theme-scope){--cbw:oklch(1 0 0);--cbb:oklch(0 0 0);--cg0:oklch(.97 .002 206.2);--cg1:oklch(.943 .006 206.2);--cg2:oklch(.896 .006 206.2);--cg3:oklch(.796 .006 206.2);--cg4:oklch(.696 .006 286.3);--cg5:oklch(.598 .006 286.3);--cg6:oklch(.488 .006 286.3);--cg7:oklch(.378 .005 286.3);--cg8:oklch(.306 .005 282);--cg9:oklch(.234 .006 277.8);--spx:.25rem;--sps:.5rem;--spm:1rem;--spl:1.5rem;--rs:.25em;--rm:.375em;--rl:.5em;--r2:1em;--rf:50%;--ffp:\"TwitterChirp\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;--fsx:.75rem;--fss:.875rem;--fsb:.9375rem;--fsm:1rem;--fs2:1.5rem;--fwm:500;--fws:600;--fwb:700;--df:150ms;--dn:250ms;--bwt:.0625rem;--line-height-snug:1.375;--lhn:1.5}} @layer xeg.tokens{:where(:root, .xeg-theme-scope){--xcbg-p:var(--cbw);--xcbg-s:var(--cg0);--xeg-color-bg-surface:var(--cbw);--xeg-color-bg-elevated:var(--cbw);--xbgt:var(--xeg-color-bg-surface);--xt-b:var(--xcb-p);--xt-s:var(--xbgt);--xtp-s:var(--xt-s);--xg-bl:var(--xcbg-p);--xg-bd:var(--cg9);--xg-b:var(--xg-bl);--xad:4 / 3;--xct-p:var(--cbb);--xct-s:var(--cg6);--xeg-color-border-default:var(--cg2);--xeg-color-border-emphasis:var(--cg5);--xcb-p:var(--xeg-color-border-default);--xcb-h:var(--cg3);--xcb-s:var(--xeg-color-border-emphasis);--xtt-c:var(--xct-p);--xtt-m:var(--xct-s);--xte-b:color-mix( in oklch, var(--xbgt) 80%, var(--cbw) 20% );--xte-bs:color-mix( in oklch, var(--xbgt) 65%, var(--cbw) 35% );--xte-br:color-mix( in oklch, var(--xt-b) 85%, var(--cbw) 15% );--xtp-pt:color-mix( in oklch, var(--xte-b) 60%, var(--xte-br) 40% );--xts-t:color-mix( in oklch, var(--xte-b) 50%, var(--cbw) 50% );--xts-th:color-mix( in oklch, var(--xte-br) 80%, var(--cbw) 20% );--xc-e:var(--cg8);--xc-e-bg:var(--cg1);--xc-p:var(--cg9);--xc-ph:var(--cg7);--xc-p-active:var(--cg8);--xcn1:var(--cg1);--xcn2:var(--cg2);--xcn3:var(--cg3);--xcn4:var(--cg4);--xcn5:var(--cg5);--xct-t:var(--cg5);--xsb-m:2.5em;--xfic:var(--xcb-p);--xfs-s:var(--fss);--xfs-b:var(--fsb);--xfs-m:var(--fsm);--xfs-2:var(--fs2);--xfw-m:var(--fwm);--xfw-s:var(--fws);--xeg-line-height-snug:var(--line-height-snug);--xdf:var(--df);--xdn:var(--dn);--xdt:var(--dn);--xsu-b:var(--xeg-color-bg-surface);--xsu-br:var(--xeg-color-border-default);--xsu-bh:var(--xcbg-s);--xc-se:var(--xeg-color-bg-elevated);--xsk-b:var(--xcbg-s);--xbe:var(--xeg-color-border-emphasis);--xz-g:2147483600;--xz-th:2147483618;--xz-t:2147483620;--xz-tp:2147483622;--xz-ta:2147483624;--xe-s:cubic-bezier(.4, 0, .2, 1);--xe-d:cubic-bezier(0, 0, .2, 1);--xe-a:cubic-bezier(.4, 0, 1, 1);--xeo:cubic-bezier(.4, 0, .2, 1);--xel:linear;--xlh:var(--lhn, 1.5);--xb-l:-.0625rem;--xhl:translateY(-.125rem);--xr-s:var(--rs);--xr-m:var(--rm);--xr-l:var(--rl);--xr-2:var(--r2);--xr-f:var(--rf);--xeg-scrollbar-thumb-color:var(--cg4);--xeg-scrollbar-thumb-hover-color:var(--cg5)}:where(:root, .xeg-theme-scope)[data-theme=\"light\"]{--xcbg-p:var(--cbw);--xct-p:var(--cbb);--xct-s:var(--cg6);--xg-b:var(--xg-bl)}:where(:root, .xeg-theme-scope)[data-theme=\"dark\"]{--xcbg-p:var(--cg9);--xeg-color-bg-surface:var(--cg9);--xeg-color-bg-elevated:var(--cg7);--xct-p:var(--cbw);--xct-s:var(--cg4);--xbgt:var(--cg8);--xcb-p:var(--cg6);--xt-b:var(--cg6);--xcbg-s:var(--cg8);--xg-b:var(--xg-bd);--xtt-c:var(--xct-p);--xtt-m:var(--cg3);--xte-b:color-mix( in oklch, var(--xbgt) 85%, var(--cbb) 15% );--xte-bs:color-mix( in oklch, var(--xbgt) 70%, var(--cbb) 30% );--xte-br:color-mix( in oklch, var(--xt-b) 75%, var(--cbb) 25% );--xtp-pt:color-mix( in oklch, var(--xt-b) 65%, var(--xbgt) 35% );--xts-t:color-mix( in oklch, var(--xte-b) 80%, var(--cbb) 20% );--xts-th:color-mix( in oklch, var(--xte-br) 85%, var(--cbb) 15% );--xc-p:var(--cg1);--xc-ph:var(--cg2);--xc-p-active:var(--cg3);--xsu-b:var(--cg9);--xsu-br:var(--cg6);--xsu-bh:var(--cg8)} @media (prefers-reduced-motion:reduce){:where(:root, .xeg-theme-scope){--xdf:0ms;--xts:none;--xten:none;--xtef:none;--xti:none;--xtwn:none}}:where(:root, .xeg-theme-scope){--xse-g:var(--spm);--xse-p:var(--spm);--xse-cg:var(--sps);--xse-lf:var(--fss);--xse-lw:var(--fwb);--xse-sf:var(--fss);--xse-sp:var(--sps) var(--spm)}} @layer xeg.tokens{:where(:root, .xeg-theme-scope){--xtp-t:height var(--xdn) var(--xe-s), opacity var(--xdf) var(--xe-s);--xtp-h:0;--xtp-mh:17.5rem;--xsw:.5rem;--xhzh:7.5rem;--xsp-sd:1rem;--xsp-bw:.125rem;--xsp-tc:color-mix(in oklch, var(--xcn4) 60%, transparent);--xsp-ic:var(--xc-p, currentColor);--xsp-d:var(--xdn);--xsp-e:var(--xel);--xts:background-color var(--xdf) var(--xe-s), border-color var(--xdf) var(--xe-s), color var(--xdf) var(--xe-s);--xten:transform var(--xdn) var(--xe-s), opacity var(--xdn) var(--xe-s);--xtef:transform var(--xdf) var(--xe-s), opacity var(--xdf) var(--xe-s);--xti:background-color var(--xdf) var(--xeo), border-color var(--xdf) var(--xeo), color var(--xdf) var(--xeo), transform var(--xdf) var(--xeo);--xtwn:width var(--xdn) var(--xe-s);--xs-xs:var(--spx);--xs-s:var(--sps);--xs-m:var(--spm);--xs-l:var(--spl);--xvhc:90vh} @media (prefers-reduced-transparency:reduce){:where(:root, .xeg-theme-scope){--xsu-b:var(--xcbg-p)}}} @layer xeg.components{.xeg-surface{background:var(--xsu-b);border:.0625rem solid var(--xsu-br);border-radius:var(--xr-l)} .xeg-spinner{display:inline-block;width:var(--xsp-s, var(--xsp-sd));height:var(--xsp-s, var(--xsp-sd));border-radius:var(--xr-f);border:var(--xsp-bw) solid var(--xsp-tc);border-top-color:var(--xsp-ic);animation:xeg-spin var(--xsp-d) var(--xsp-e) infinite;box-sizing:border-box} @media (prefers-reduced-motion:reduce){.xeg-spinner{animation:none}} @keyframes xeg-fade-in{from{opacity:0} to{opacity:1}} @keyframes xeg-fade-out{from{opacity:1} to{opacity:0}} @keyframes xeg-spin{from{transform:rotate(0deg)} to{transform:rotate(360deg)}}} @layer xeg.base{:where(.xeg-gallery-root, .xeg-gallery-root *),:where(.xeg-gallery-root *::before, .xeg-gallery-root *::after){box-sizing:border-box;margin:0;padding:0} .xeg-gallery-root button{border:none;background:none;cursor:pointer;font:inherit;color:inherit} .xeg-gallery-root a{color:inherit;text-decoration:none} .xeg-gallery-root img{max-width:100%;height:auto;display:block} .xeg-gallery-root ul, .xeg-gallery-root ol{list-style:none} .xeg-gallery-root input, .xeg-gallery-root textarea, .xeg-gallery-root select{font:inherit;color:inherit;background:transparent} .xeg-gallery-root::-webkit-scrollbar{width:var(--xsw, .5rem);height:var(--xsw, .5rem)} .xeg-gallery-root::-webkit-scrollbar-track{background:transparent} .xeg-gallery-root::-webkit-scrollbar-thumb{background:var(--xeg-scrollbar-thumb-color);border-radius:var(--xr-s, .25rem)} .xeg-gallery-root::-webkit-scrollbar-thumb:hover{background:var(--xeg-scrollbar-thumb-hover-color)}} @layer xeg.utilities{.xeg-row-center{display:flex;align-items:center} .xeg-inline-center{display:inline-flex;align-items:center;justify-content:center} .xeg-gap-sm{gap:var(--xs-s)}} @layer xeg.utilities{.xeg-fade-in{animation:xeg-fade-in var(--xdn) var(--xe-d);animation-fill-mode:both} .xeg-fade-out{animation:xeg-fade-out var(--xdf) var(--xe-a);animation-fill-mode:both} @media (prefers-reduced-motion:reduce){.xeg-fade-in, .xeg-fade-out{animation:none}}} @layer xeg.base{.xeg-gallery-root{all:unset;box-sizing:border-box;scroll-behavior:smooth;font-family:var(--ffp);font-size:var(--fsb, .9375rem);line-height:var(--xlh, 1.5);color:var(--xct-p, currentColor);position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:var(--xz-g, 10000);isolation:isolate;contain:style paint;overscroll-behavior:contain;background:var(--xg-b, var(--xcbg-p, Canvas));pointer-events:auto;user-select:none;transform:translateZ(0);will-change:opacity, transform;-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}}";var s=document.getElementById('xeg-injected-styles');if(!s){s=document.createElement('style');s.id='xeg-injected-styles';(document.head||document.documentElement).appendChild(s);}s.textContent=css;})();
-(function () {
-'use strict';
-const SERVICE_KEYS = {
+(function(){if(typeof document==='undefined')return;var css="@layer xeg.components{:root{--xtt:opacity var(--xdt) var(--xeo), transform var(--xdt) var(--xeo), visibility 0ms;--xeg-spacing-gallery:clamp(var(--xs-s), 2.5vw, var(--xs-l));--xeg-spacing-mobile:clamp(var(--xs-xs), 2vw, var(--xs-m));--xeg-spacing-compact:clamp(.25rem, 1.5vw, var(--xs-s));--xth-o:0;--xth-v:hidden;--xth-pe:none}} @media (prefers-reduced-motion:reduce){@layer xeg.components{:root{--xtt:none} .xg-X9gZ{scroll-behavior:auto;transition:none} .xg-meO3{transition:none}}} .xg-X9gZ{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:var(--xz-g, 10000);background:var(--xg-b);display:flex;flex-direction:column;transform:var(--xgh);will-change:opacity, transform;contain:layout style paint;opacity:1;visibility:visible;transition:var(--xten);cursor:default;pointer-events:auto;container-type:size;container-name:gallery-container;scroll-behavior:smooth;overscroll-behavior:none} .xg-meO3{position:fixed;top:0;left:0;right:0;height:auto;z-index:var(--xz-t, 2147483620);opacity:var(--toolbar-opacity, 0);visibility:var(--toolbar-visibility, hidden);display:block;transition:var(--xtt);will-change:transform, opacity, visibility;contain:layout style;transform:var(--xgh);backface-visibility:var(--xbv);pointer-events:var(--toolbar-pointer-events, none);background:transparent;border:none;border-radius:0;margin:0;padding-block-end:var(--xeg-spacing-gallery)} .xg-meO3:is(:hover,:focus-within){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-meO3:focus-within{transition:var(--xtef)} .xg-meO3 *{pointer-events:inherit} .xg-meO3 [data-gallery-element=\"settings-panel\"][data-expanded=\"true\"]{pointer-events:auto} .xg-meO3:has([data-gallery-element=\"settings-panel\"][data-expanded=\"true\"]){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-X9gZ.xg-9abg{cursor:none} .xg-X9gZ.xg-sOsS[data-xeg-gallery=\"true\"][data-xeg-role=\"gallery\"] .xg-meO3{--toolbar-opacity:var(--xth-o, 0);--toolbar-visibility:var(--xth-v, hidden);--toolbar-pointer-events:var(--xth-pe, none)} .xg-X9gZ *{pointer-events:auto} .xg-gmRW{flex:1;display:flex;flex-direction:column;overflow:auto;position:relative;z-index:0;contain:layout style;transform:var(--xgh);overscroll-behavior:contain;scrollbar-gutter:stable;pointer-events:auto;container-type:size;container-name:items-list} .xg-gmRW::-webkit-scrollbar{width:var(--xsw)} .xg-gmRW::-webkit-scrollbar-track{background:transparent} .xg-gmRW::-webkit-scrollbar-thumb{background:var(--xcn3);border-radius:var( --xsbr );transition:background-color var(--xdn) var(--xe-s)} .xg-gmRW::-webkit-scrollbar-thumb:hover{background:var(--xcn4)} .xg-X9gZ.xg-9abg .xg-meO3{pointer-events:none;opacity:0;transition:opacity var(--xdf) var(--xeo)} .xg-X9gZ.xg-9abg [data-xeg-role=\"items-list\"], .xg-X9gZ.xg-9abg .xg-gmRW{pointer-events:auto} .xg-X9gZ.xg-yhK-{justify-content:center;align-items:center} .xg-EfVa{position:relative;margin-bottom:var(--xs-m, 1rem);border-radius:var(--xr-l, .5rem);transition:var(--xten);contain:layout style;transform:var(--xgh)} .xg-LxHL{position:relative;z-index:1} .xg-sfF0{height:calc(100vh - var(--xeg-toolbar-height, 3.75rem));min-height:50vh;pointer-events:none;user-select:none;flex-shrink:0;background:transparent;opacity:0;contain:strict;content-visibility:auto} .xg-gC-m{position:fixed;top:0;left:0;right:0;height:var(--xhzh);z-index:var(--xz-th, 2147483618);background:transparent;pointer-events:auto} .xg-gC-m:hover{z-index:var(--xz-th);background:transparent} .xg-X9gZ.xg-Canm:not([data-settings-expanded=\"true\"]) .xg-gC-m, .xg-X9gZ:has(.xg-meO3:hover):not([data-settings-expanded=\"true\"]) .xg-gC-m{pointer-events:none} .xg-X9gZ.xg-Canm .xg-meO3, .xg-X9gZ:has(.xg-gC-m:hover) .xg-meO3{--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-meO3 [class*=\"galleryToolbar\"]{opacity:var(--toolbar-opacity, 0);visibility:var(--toolbar-visibility, hidden);display:flex;pointer-events:var(--toolbar-pointer-events, none)} .xg-meO3 button, .xg-meO3 [role=\"button\"], .xg-meO3 .xg-e06X{pointer-events:auto;position:relative;z-index:10} .xg-fwsr{text-align:center;color:var(--xct-s);max-inline-size:min(25rem, 90vw);padding:clamp(1.875rem, 5vw, 2.5rem)} .xg-fwsr h3{margin:0 0 clamp(.75rem, 2vw, 1rem);font-size:clamp(1.25rem, 4vw, 1.5rem);font-weight:600;color:var(--xct-p);line-height:1.2} .xg-fwsr p{margin:0;font-size:clamp(.875rem, 2.5vw, 1rem);line-height:1.5;color:var(--xct-t)} @container gallery-container (max-width:48rem){.xg-gmRW{padding:var(--xeg-spacing-mobile);gap:var(--xeg-spacing-mobile)} .xg-meO3{padding-block-end:var(--xeg-spacing-mobile)}} @container gallery-container (max-width:30rem){.xg-gmRW{padding:var(--xeg-spacing-compact);gap:var(--xeg-spacing-compact)}} @media (prefers-reduced-motion:reduce){.xg-gmRW{scroll-behavior:auto;will-change:auto;transform:none}} @media (prefers-reduced-motion:reduce){.xg-meO3:hover, .xg-meO3:focus-within{transform:none}} .xg-X9gZ [class*=\"galleryToolbar\"]:hover{--toolbar-opacity:1;--toolbar-pointer-events:auto} .xg-huYo{position:relative;margin-bottom:var(--xs-m);margin-inline:auto;border-radius:var(--xr-l);overflow:visible;transition:var(--xti);cursor:pointer;border:.0625rem solid var(--xcb-p);background:var(--xcbg-s);padding:var(--xs-s);width:fit-content;max-width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;pointer-events:auto;transform:var(--xgh);will-change:transform;contain:layout style} .xg-huYo[data-fit-mode=\"original\"]{max-width:none;flex-shrink:0;width:max-content;align-self:center} .xg-huYo:hover{transform:var(--xhl);background:var(--xc-se);border-color:var(--xbe)} .xg-huYo:focus-visible{border-color:var(--xfic, var(--xcb-p))} .xg-huYo.xg-xm-1{border-color:var(--xbe, var(--xcb-s));transition:var(--xti)} .xg-huYo.xg-xm-1:focus-visible{border-color:var(--xfic, var(--xcb-s))} .xg-huYo.xg-luqi{border-color:var(--xfic, var(--xcb-p));transition:var(--xti)} .xg-8-c8{position:relative;background:var(--xcbg-s);width:fit-content;max-width:100%;margin:0 auto;display:flex;justify-content:center;align-items:center;contain:layout paint} .xg-huYo[data-fit-mode=\"original\"] .xg-8-c8{width:auto;max-width:none} .xg-huYo[data-media-loaded=\"false\"] .xg-8-c8{min-height:var(--xs-3);aspect-ratio:var(--xgi-r, var(--xad))} .xg-lhkE{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:var(--xsk-b);min-height:var(--xs-3)} .xg-6YYD{--xsp-s:var(--xs-l);--xsp-bw:.125rem;--xsp-tc:var(--xcb-p);--xsp-ic:var(--xc-p)} .xg-FWlk, .xg-GUev{display:block;border-radius:var(--xr-m);object-fit:contain;pointer-events:auto;user-select:none;-webkit-user-drag:none;transform:var(--xgh);will-change:opacity;transition:opacity var(--xdn) var(--xeo)}:is(.xg-FWlk, .xg-GUev).xg-8Z3S{opacity:0}:is(.xg-FWlk, .xg-GUev).xg-y9iP{opacity:1} .xg-GUev{inline-size:100%;overflow:clip}:is(.xg-FWlk, .xg-GUev).xg-yYtG{inline-size:auto;block-size:auto;max-inline-size:none;max-block-size:none;object-fit:none}:is(.xg-FWlk, .xg-GUev).xg-Uc0o{inline-size:auto;block-size:auto;max-inline-size:100%;max-block-size:none;object-fit:scale-down}:is(.xg-FWlk, .xg-GUev).xg-M9Z6{inline-size:auto;block-size:auto;max-inline-size:calc(100vw - var(--xs-l) * 2);max-block-size:var(--xvhc);object-fit:scale-down}:is(.xg-FWlk, .xg-GUev).xg--Mlr{inline-size:auto;block-size:auto;max-inline-size:100%;max-block-size:var(--xvhc);object-fit:contain} .xg-Wno7{font-size:var(--xfs-2);margin-bottom:var(--xs-s)} .xg-8-wi{font-size:var(--xfs-s);text-align:center} .xg-Gswe{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--xc-e-bg);color:var(--xc-e);min-height:var(--xs-3)} .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"]{inline-size:min(var(--xgi-w, 100%), 100%);max-inline-size:min(var(--xgi-w, 100%), 100%);max-block-size:min( var(--xgi-h, var(--xs-5)), var(--xvhc) )} .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"] .xg-FWlk, .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"] .xg-GUev{inline-size:min(var(--xgi-w, 100%), 100%);max-inline-size:min(var(--xgi-w, 100%), 100%);max-block-size:min( var(--xgi-h, var(--xs-5)), var(--xvhc) )} .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitHeight\"], .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitContainer\"]{--xgf-ht:min( var(--xgi-h, var(--xs-5)), var(--xvhc) );max-block-size:var(--xgf-ht);inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) );max-inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) )} .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"]:is( [data-fit-mode=\"fitHeight\"], [data-fit-mode=\"fitContainer\"] ):is(.xg-FWlk, .xg-GUev){max-block-size:var(--xgf-ht);max-inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) )} @media (prefers-reduced-motion:reduce){.xg-huYo{will-change:auto;transition:none} .xg-huYo:hover{transform:none}:where(.xg-FWlk, .xg-GUev){will-change:auto;transition:none}} .xg-EeSh{display:flex;flex-direction:column;gap:var(--xse-g);padding:var(--xse-p)} .xg-nm9B{gap:var(--sps)} .xg-PI5C{display:flex;flex-direction:column;gap:var(--xse-cg)} .xg-VUTt{gap:var(--spx)} .xg-vhT3{font-size:var(--xse-lf);font-weight:var(--xse-lw);color:var(--xct-p)} .xg-Y62M{font-size:var(--fsx);color:var(--xct-s);letter-spacing:.04em;text-transform:uppercase} .xg-jpiS{width:100%;padding:var(--xse-sp);font-size:var(--xse-sf);color:var(--xct-p);background-color:var(--xte-b);border:var(--bwt) solid var(--xt-b);border-radius:var(--xr-m);cursor:pointer;line-height:1.375;min-height:2.75em;transform:none;overflow:visible;transition:border-color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s), box-shadow var(--xdf) var(--xe-s)} .xg-jpiS:hover{border-color:var(--xcb-h);background-color:var(--xte-bs);box-shadow:0 0 0 2px color-mix(in oklch, var(--xt-b) 20%, transparent 80%)} .xg-jpiS:focus, .xg-jpiS:focus-visible{border-color:var(--xfic);box-shadow:0 0 0 3px color-mix(in oklch, var(--xfic) 25%, transparent 75%)} .xg-jpiS option{padding:.5em .75em;line-height:1.5} .xg-4eoj{color:var(--xtt-c, var(--xct-p));cursor:pointer;font-size:.875em;font-weight:500;width:var(--xsb-m);height:var(--xsb-m);min-width:var(--xsb-m);min-height:var(--xsb-m);padding:.5em;aspect-ratio:1;position:relative;overflow:clip;border-radius:var(--xr-m);background:transparent;border:none;transition:var(--xts), transform var(--xdf) var(--xe-s)} .xg-4eoj:focus, .xg-4eoj:focus-visible{background:var(--xte-b, var(--xcn1))} .xg-fLg7{--toolbar-surface-base:var( --xtp-s, var(--xt-s, var(--xcbg-p, Canvas)) );--toolbar-surface-border:var(--xt-b);background:var(--toolbar-surface-base);border:none;border-radius:var(--xr-l);position:fixed;top:1.25em;left:50%;transform:translateX(-50%);z-index:var(--xz-t, 2147483620);display:var(--toolbar-display, inline-flex);align-items:center;justify-content:space-between;height:3em;padding:.5em 1em;gap:0;color:var(--xtt-c, var(--xct-p));visibility:var(--toolbar-visibility, visible);opacity:var(--toolbar-opacity, 1);pointer-events:var(--toolbar-pointer-events, auto);transition:var(--xten);user-select:none;overscroll-behavior:contain} .xg-fLg7.xg-ZpP8, .xg-fLg7.xg-t4eq{border-radius:var(--xr-l) var(--xr-l) 0 0} .xg-fLg7.xg-ojCW{--toolbar-opacity:1;--toolbar-pointer-events:auto;--toolbar-visibility:visible;--toolbar-display:inline-flex} .xg-fLg7.xg-Y6KF, .xg-fLg7.xg-n-ab, .xg-fLg7.xg-bEzl{--toolbar-opacity:1;--toolbar-pointer-events:auto;--toolbar-visibility:visible;--toolbar-display:inline-flex} .xg-f8g4{display:flex;align-items:center;justify-content:center;width:100%;max-width:100%;overflow:hidden} .xg-Ix3j{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:var(--xs-xs);width:100%} .xg-Ix3j \u003E *{flex:0 0 auto} .xg-0EHq{display:flex;align-items:center;justify-content:center;padding-inline:var(--xs-s);min-width:5em} .xg-FKnO{color:var(--xtt-m, var(--xct-p));margin:0 .125em}:where(.xg-4eoj[aria-pressed=\"true\"]){background:var(--xte-bs, var(--xcn2))} .xg-4eoj:disabled{color:var(--xtt-m, var(--xcn4));cursor:not-allowed} @media (hover:hover){.xg-4eoj:hover:not(:disabled){background:var(--xte-b, var(--xcn1));transform:translateY(var(--xb-l))}} .xg-4eoj:active:not(:disabled){background:var(--xte-bs, var(--xcn2));transform:translateY(0)} .xg-njlf{} .xg-AU-d{} .xg-Vn14{} .xg-atmJ{position:relative} .xg-GG86{position:relative;gap:0;min-width:5em;min-height:2.5em;padding-bottom:.5em;box-sizing:border-box} .xg-2cjm{color:var(--xtt-c, var(--xct-p));font-size:var(--xfs-m);font-weight:600;text-align:center;white-space:nowrap;line-height:1;background:transparent;padding:.25em .5em;border-radius:var(--xr-m);border:none} .xg-JEXm{color:var(--xtt-c, var(--xct-p));font-weight:700} .xg-d1et{color:var(--xtt-c, var(--xct-p))} .xg-vB6N{position:absolute;left:50%;bottom:.125em;transform:translateX(-50%);width:3.75em;height:.125em;background:var(--xtp-pt, var(--xcn2));border-radius:var(--xr-s);overflow:clip} .xg-LWQw{width:100%;height:100%;background:var(--xtt-c, var(--xct-p));border-radius:var(--xr-s);transition:var(--xtwn);transform-origin:left} .xg-Q7dU, button.xg-Q7dU{transition:var(--xti);position:relative;z-index:10;pointer-events:auto} .xg-Q7dU[data-selected=\"true\"]{} .xg-Q7dU:focus, .xg-Q7dU:focus-visible{border:none} @media (prefers-reduced-transparency:reduce){.xg-fLg7{background:var(--xtp-s, var(--xt-s))} [data-theme=\"dark\"] .xg-fLg7{background:var(--xtp-s, var(--xt-s))}} @media (prefers-reduced-motion:reduce){.xg-4eoj:hover:not(:disabled), .xg-atmJ:hover:not(:disabled), .xg-Vn14:hover:not(:disabled), .xg-Q7dU:hover{transform:none}}:where(.xg-JcF-, .xg-yRtv){position:absolute;top:100%;left:0;right:0;width:100%;display:flex;flex-direction:column;gap:var(--xs-m);padding:var(--xs-l);max-height:var(--xtp-mh);overflow:hidden;opacity:0;transform:translateY(-.5em);visibility:hidden;pointer-events:none;transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s var(--xdn);background:var( --toolbar-surface-base, var(--xtp-s, var(--xt-s)) );border-top:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:0 0 var(--xr-l) var(--xr-l);z-index:var(--xz-tp);will-change:transform, opacity;overscroll-behavior:contain} .xg-JcF-{height:var(--xtp-h)} .xg-yRtv{min-height:var(--xtp-h)}:where(.xg-JcF-, .xg-yRtv).xg-4a2L{height:auto;opacity:1;transform:translateY(0);visibility:visible;pointer-events:auto;border-top-color:var(--toolbar-surface-border, var(--xt-b));transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s 0s;z-index:var(--xz-ta)} .xg-w56C{display:flex;flex-direction:column;gap:var(--xs-s)} .xg-rSWg{display:flex;align-items:center;padding-bottom:var(--xs-xs);border-bottom:var(--bwt) solid var(--toolbar-surface-border);margin-bottom:var(--xs-s)} .xg-jd-V{font-size:var(--xfs-s);font-weight:var(--xfw-s);color:var(--xtt-c);text-transform:uppercase;letter-spacing:.04em} .xg-jmjG{padding:var(--xs-s) var(--xs-m);font-size:var(--xfs-b);line-height:var(--xeg-line-height-snug);color:var(--xtt-c, var(--xct-p));background:var( --toolbar-surface-base, var(--xtp-s, var(--xt-s)) );border:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:var(--xr-m);white-space:pre-wrap;word-wrap:break-word;overflow-y:auto;overscroll-behavior:contain;max-height:18em;transition:var(--xts);user-select:text;-webkit-user-select:text;cursor:text} .xg-jmjG::-webkit-scrollbar{width:.5em} .xg-jmjG::-webkit-scrollbar-track{background:var(--xts-t, var(--xcn2));border-radius:var(--xr-s)} .xg-jmjG::-webkit-scrollbar-thumb{background:var(--xts-th, var(--xcn4));border-radius:var(--xr-s)} .xg-jmjG::-webkit-scrollbar-thumb:hover{background:var(--xte-bs, var(--xcn5))} .xg-jmjG a{color:var(--xc-p);text-decoration:none;font-weight:var(--xfw-m);padding:.125em .25em;margin:-.125em -.25em;border-radius:var(--xr-xs);overflow-wrap:break-word;transition:color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s);cursor:pointer} .xg-jmjG a:hover{color:var(--xc-ph);background:var(--xte-b);text-decoration:underline;text-decoration-thickness:.0625rem;text-underline-offset:.125em} .xg-jmjG a:focus, .xg-jmjG a:focus-visible{background:var(--xte-bs, var(--xcn2));color:var(--xc-ph);border-radius:var(--xr-xs)} .xg-jmjG a:active{color:var(--xc-p-active)} .xg-0Eeq{display:flex;align-items:center;gap:var(--xs-xs);padding:var(--xs-s);margin-bottom:var(--xs-s);background:var(--xte-bs);border:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:var(--xr-s);transition:var(--xts)} .xg-0Eeq:hover{background:color-mix( in oklch, var(--xte-bs) 85%, var(--xc-p) 15% );border-color:var(--xcb-h)} .xg-AVKe{display:flex;align-items:center;gap:.375em;width:100%;color:var(--xc-p);text-decoration:none;font-size:var(--xfs-s);font-weight:500;transition:color var(--xdf) var(--xe-s)} .xg-AVKe:hover{color:var(--xc-ph)} .xg-AVKe:focus, .xg-AVKe:focus-visible{outline:.125rem solid var(--xfic);outline-offset:.125rem;border-radius:var(--xr-xs)} .xg-5RjR{flex-shrink:0;width:.875em;height:.875em;stroke:currentColor} .xg-8Stf{flex-shrink:0;color:var(--xtt-m, var(--xct-s));font-weight:600} .xg-3pwZ{flex:1;color:var(--xc-p);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .xg-sltl{width:100%;height:var(--bwt);background:color-mix(in oklch, var(--toolbar-surface-border) 60%, transparent 40%);margin:var(--xs-m) 0;border-radius:var(--xr-s)} @layer xeg.features{:where(.xeg-surface, .xeg-glass-surface){background:var(--xsu-b);border:var(--bwt) solid var(--xsu-br);border-radius:var(--xr-2);isolation:isolate;transition:opacity var(--xdn) var(--xe-s)}:where(.xeg-surface, .xeg-glass-surface):hover{background:var(--xsu-bh, var(--xsu-b))} .xeg-gallery-renderer[data-renderer=\"gallery\"]{display:block;width:0;height:0;overflow:visible} .xeg-gallery-overlay{display:flex;align-items:center;justify-content:center;position:fixed;inset:0;z-index:var(--xz-g, 10000);background:var(--xg-b);opacity:1;transition:opacity var(--xdn) var(--xe-s);pointer-events:auto} .xeg-gallery-container{position:relative;width:100%;height:100%;max-width:100vw;max-height:100vh;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable both-edges}} @layer xeg.tokens, xeg.base, xeg.utilities, xeg.components, xeg.features, xeg.overrides;@layer xeg.tokens{:where(:root, .xeg-theme-scope){--cbw:oklch(1 0 0);--cbb:oklch(0 0 0);--cg0:oklch(.97 .002 206.2);--cg1:oklch(.943 .006 206.2);--cg2:oklch(.896 .006 206.2);--cg3:oklch(.796 .006 206.2);--cg4:oklch(.696 .006 286.3);--cg5:oklch(.598 .006 286.3);--cg6:oklch(.488 .006 286.3);--cg7:oklch(.378 .005 286.3);--cg8:oklch(.306 .005 282);--cg9:oklch(.234 .006 277.8);--spx:.25rem;--sps:.5rem;--spm:1rem;--spl:1.5rem;--rs:.25em;--rm:.375em;--rl:.5em;--r2:1em;--rf:50%;--ffp:\"TwitterChirp\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;--fsx:.75rem;--fss:.875rem;--fsb:.9375rem;--fsm:1rem;--fs2:1.5rem;--fwm:500;--fws:600;--fwb:700;--df:150ms;--dn:250ms;--bwt:.0625rem;--line-height-snug:1.375;--lhn:1.5}} @layer xeg.tokens{:where(:root, .xeg-theme-scope){--xcbg-p:var(--cbw);--xcbg-s:var(--cg0);--xeg-color-bg-surface:var(--cbw);--xeg-color-bg-elevated:var(--cbw);--xbgt:var(--xeg-color-bg-surface);--xt-b:var(--xcb-p);--xt-s:var(--xbgt);--xtp-s:var(--xt-s);--xg-bl:var(--xcbg-p);--xg-bd:var(--cg9);--xg-b:var(--xg-bl);--xad:4 \u002F 3;--xct-p:var(--cbb);--xct-s:var(--cg6);--xeg-color-border-default:var(--cg2);--xeg-color-border-emphasis:var(--cg5);--xcb-p:var(--xeg-color-border-default);--xcb-h:var(--cg3);--xcb-s:var(--xeg-color-border-emphasis);--xtt-c:var(--xct-p);--xtt-m:var(--xct-s);--xte-b:color-mix( in oklch, var(--xbgt) 80%, var(--cbw) 20% );--xte-bs:color-mix( in oklch, var(--xbgt) 65%, var(--cbw) 35% );--xte-br:color-mix( in oklch, var(--xt-b) 85%, var(--cbw) 15% );--xtp-pt:color-mix( in oklch, var(--xte-b) 60%, var(--xte-br) 40% );--xts-t:color-mix( in oklch, var(--xte-b) 50%, var(--cbw) 50% );--xts-th:color-mix( in oklch, var(--xte-br) 80%, var(--cbw) 20% );--xc-e:var(--cg8);--xc-e-bg:var(--cg1);--xc-p:var(--cg9);--xc-ph:var(--cg7);--xc-p-active:var(--cg8);--xcn1:var(--cg1);--xcn2:var(--cg2);--xcn3:var(--cg3);--xcn4:var(--cg4);--xcn5:var(--cg5);--xct-t:var(--cg5);--xsb-m:2.5em;--xfic:var(--xcb-p);--xfs-s:var(--fss);--xfs-b:var(--fsb);--xfs-m:var(--fsm);--xfs-2:var(--fs2);--xfw-m:var(--fwm);--xfw-s:var(--fws);--xeg-line-height-snug:var(--line-height-snug);--xdf:var(--df);--xdn:var(--dn);--xdt:var(--dn);--xsu-b:var(--xeg-color-bg-surface);--xsu-br:var(--xeg-color-border-default);--xsu-bh:var(--xcbg-s);--xc-se:var(--xeg-color-bg-elevated);--xsk-b:var(--xcbg-s);--xbe:var(--xeg-color-border-emphasis);--xz-g:2147483600;--xz-th:2147483618;--xz-t:2147483620;--xz-tp:2147483622;--xz-ta:2147483624;--xe-s:cubic-bezier(.4, 0, .2, 1);--xe-d:cubic-bezier(0, 0, .2, 1);--xe-a:cubic-bezier(.4, 0, 1, 1);--xeo:cubic-bezier(.4, 0, .2, 1);--xel:linear;--xlh:var(--lhn, 1.5);--xb-l:-.0625rem;--xhl:translateY(-.125rem);--xr-s:var(--rs);--xr-m:var(--rm);--xr-l:var(--rl);--xr-2:var(--r2);--xr-f:var(--rf);--xeg-scrollbar-thumb-color:var(--cg4);--xeg-scrollbar-thumb-hover-color:var(--cg5)}:where(:root, .xeg-theme-scope)[data-theme=\"light\"]{--xcbg-p:var(--cbw);--xct-p:var(--cbb);--xct-s:var(--cg6);--xg-b:var(--xg-bl)}:where(:root, .xeg-theme-scope)[data-theme=\"dark\"]{--xcbg-p:var(--cg9);--xeg-color-bg-surface:var(--cg9);--xeg-color-bg-elevated:var(--cg7);--xct-p:var(--cbw);--xct-s:var(--cg4);--xbgt:var(--cg8);--xcb-p:var(--cg6);--xt-b:var(--cg6);--xcbg-s:var(--cg8);--xg-b:var(--xg-bd);--xtt-c:var(--xct-p);--xtt-m:var(--cg3);--xte-b:color-mix( in oklch, var(--xbgt) 85%, var(--cbb) 15% );--xte-bs:color-mix( in oklch, var(--xbgt) 70%, var(--cbb) 30% );--xte-br:color-mix( in oklch, var(--xt-b) 75%, var(--cbb) 25% );--xtp-pt:color-mix( in oklch, var(--xt-b) 65%, var(--xbgt) 35% );--xts-t:color-mix( in oklch, var(--xte-b) 80%, var(--cbb) 20% );--xts-th:color-mix( in oklch, var(--xte-br) 85%, var(--cbb) 15% );--xc-p:var(--cg1);--xc-ph:var(--cg2);--xc-p-active:var(--cg3);--xsu-b:var(--cg9);--xsu-br:var(--cg6);--xsu-bh:var(--cg8)} @media (prefers-reduced-motion:reduce){:where(:root, .xeg-theme-scope){--xdf:0ms;--xts:none;--xten:none;--xtef:none;--xti:none;--xtwn:none}}:where(:root, .xeg-theme-scope){--xse-g:var(--spm);--xse-p:var(--spm);--xse-cg:var(--sps);--xse-lf:var(--fss);--xse-lw:var(--fwb);--xse-sf:var(--fss);--xse-sp:var(--sps) var(--spm)}} @layer xeg.tokens{:where(:root, .xeg-theme-scope){--xtp-t:height var(--xdn) var(--xe-s), opacity var(--xdf) var(--xe-s);--xtp-h:0;--xtp-mh:17.5rem;--xsw:.5rem;--xhzh:7.5rem;--xsp-sd:1rem;--xsp-bw:.125rem;--xsp-tc:color-mix(in oklch, var(--xcn4) 60%, transparent);--xsp-ic:var(--xc-p, currentColor);--xsp-d:var(--xdn);--xsp-e:var(--xel);--xts:background-color var(--xdf) var(--xe-s), border-color var(--xdf) var(--xe-s), color var(--xdf) var(--xe-s);--xten:transform var(--xdn) var(--xe-s), opacity var(--xdn) var(--xe-s);--xtef:transform var(--xdf) var(--xe-s), opacity var(--xdf) var(--xe-s);--xti:background-color var(--xdf) var(--xeo), border-color var(--xdf) var(--xeo), color var(--xdf) var(--xeo), transform var(--xdf) var(--xeo);--xtwn:width var(--xdn) var(--xe-s);--xs-xs:var(--spx);--xs-s:var(--sps);--xs-m:var(--spm);--xs-l:var(--spl);--xvhc:90vh} @media (prefers-reduced-transparency:reduce){:where(:root, .xeg-theme-scope){--xsu-b:var(--xcbg-p)}}} @layer xeg.components{.xeg-surface{background:var(--xsu-b);border:.0625rem solid var(--xsu-br);border-radius:var(--xr-l)} .xeg-spinner{display:inline-block;width:var(--xsp-s, var(--xsp-sd));height:var(--xsp-s, var(--xsp-sd));border-radius:var(--xr-f);border:var(--xsp-bw) solid var(--xsp-tc);border-top-color:var(--xsp-ic);animation:xeg-spin var(--xsp-d) var(--xsp-e) infinite;box-sizing:border-box} @media (prefers-reduced-motion:reduce){.xeg-spinner{animation:none}} @keyframes xeg-fade-in{from{opacity:0} to{opacity:1}} @keyframes xeg-fade-out{from{opacity:1} to{opacity:0}} @keyframes xeg-spin{from{transform:rotate(0deg)} to{transform:rotate(360deg)}}} @layer xeg.base{:where(.xeg-gallery-root, .xeg-gallery-root *),:where(.xeg-gallery-root *::before, .xeg-gallery-root *::after){box-sizing:border-box;margin:0;padding:0} .xeg-gallery-root button{border:none;background:none;cursor:pointer;font:inherit;color:inherit} .xeg-gallery-root a{color:inherit;text-decoration:none} .xeg-gallery-root img{max-width:100%;height:auto;display:block} .xeg-gallery-root ul, .xeg-gallery-root ol{list-style:none} .xeg-gallery-root input, .xeg-gallery-root textarea, .xeg-gallery-root select{font:inherit;color:inherit;background:transparent} .xeg-gallery-root::-webkit-scrollbar{width:var(--xsw, .5rem);height:var(--xsw, .5rem)} .xeg-gallery-root::-webkit-scrollbar-track{background:transparent} .xeg-gallery-root::-webkit-scrollbar-thumb{background:var(--xeg-scrollbar-thumb-color);border-radius:var(--xr-s, .25rem)} .xeg-gallery-root::-webkit-scrollbar-thumb:hover{background:var(--xeg-scrollbar-thumb-hover-color)}} @layer xeg.utilities{.xeg-row-center{display:flex;align-items:center} .xeg-inline-center{display:inline-flex;align-items:center;justify-content:center} .xeg-gap-sm{gap:var(--xs-s)}} @layer xeg.utilities{.xeg-fade-in{animation:xeg-fade-in var(--xdn) var(--xe-d);animation-fill-mode:both} .xeg-fade-out{animation:xeg-fade-out var(--xdf) var(--xe-a);animation-fill-mode:both} @media (prefers-reduced-motion:reduce){.xeg-fade-in, .xeg-fade-out{animation:none}}} @layer xeg.base{.xeg-gallery-root{all:unset;box-sizing:border-box;scroll-behavior:smooth;font-family:var(--ffp);font-size:var(--fsb, .9375rem);line-height:var(--xlh, 1.5);color:var(--xct-p, currentColor);position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:var(--xz-g, 10000);isolation:isolate;contain:style paint;overscroll-behavior:contain;background:var(--xg-b, var(--xcbg-p, Canvas));pointer-events:auto;user-select:none;transform:translateZ(0);will-change:opacity, transform;-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}}";var s=document.getElementById("xeg-injected-styles");if(!s){s=document.createElement('style');s.id="xeg-injected-styles";(document.head||document.documentElement).appendChild(s);}s.textContent=css;})();
+(function() {
+var SERVICE_KEYS = {
 LANGUAGE: "core.language",
 GALLERY_DOWNLOAD: "gallery.download",
 GALLERY_RENDERER: "gallery.renderer",
@@ -72,11 +71,10 @@ MEDIA_SERVICE: "media.service",
 SETTINGS: "settings.manager",
 THEME: "ui.theme"
 };
-const BASE_PREFIX = "[X]";
-const noop$1 = () => {
-};
-const hasConsole = typeof console !== "undefined";
-const createErrorOnlyLogger = (prefix) => ({
+var BASE_PREFIX = "[X]";
+var noop$1 = () => {};
+var hasConsole = typeof console !== "undefined";
+var createErrorOnlyLogger = (prefix) => ({
 info: noop$1,
 warn: noop$1,
 debug: noop$1,
@@ -85,15 +83,20 @@ error: (...args) => {
 console.error(prefix, ...args);
 }
 });
-const noopLogger = { info: noop$1, warn: noop$1, error: noop$1, debug: noop$1, trace: noop$1 };
+var noopLogger = {
+info: noop$1,
+warn: noop$1,
+error: noop$1,
+debug: noop$1,
+trace: noop$1
+};
 function buildErrorOnlyLogger(prefix) {
 return !hasConsole ? noopLogger : createErrorOnlyLogger(prefix);
 }
 function createLogger(config = {}) {
-const prefix = config.prefix ?? BASE_PREFIX;
-return buildErrorOnlyLogger(prefix);
+return buildErrorOnlyLogger(config.prefix ?? BASE_PREFIX);
 }
-const logger = createLogger();
+var logger = createLogger();
 function isBaseLanguageCode(value) {
 return value === "en" || value === "ko" || value === "ja";
 }
@@ -140,12 +143,10 @@ cls: next(),
 toggle: next()
 },
 dl: {
-one: {
-err: {
+one: { err: {
 t: next(),
 b: next()
-}
-},
+} },
 allFail: {
 t: next(),
 b: next()
@@ -165,7 +166,7 @@ loadFail: next()
 };
 return Object.freeze(built);
 }
-const EN_VALUES = [
+var en = buildLanguageStringsFromValues([
 "Previous",
 "Next",
 "Download",
@@ -205,9 +206,8 @@ const EN_VALUES = [
 "There are no images or videos to display.",
 "Media {index}: {filename}",
 "Failed to load {type}"
-];
-const en = buildLanguageStringsFromValues(EN_VALUES);
-const JA_VALUES = [
+]);
+var ja = buildLanguageStringsFromValues([
 "前へ",
 "次へ",
 "ダウンロード",
@@ -247,9 +247,10 @@ const JA_VALUES = [
 "表示する画像や動画がありません。",
 "メディア {index}: {filename}",
 "{type} の読み込みに失敗しました"
-];
-const ja = buildLanguageStringsFromValues(JA_VALUES);
-const KO_VALUES = [
+]);
+var TRANSLATION_REGISTRY = {
+en,
+ko: buildLanguageStringsFromValues([
 "이전",
 "다음",
 "다운로드",
@@ -289,50 +290,33 @@ const KO_VALUES = [
 "표시할 이미지 또는 동영상이 없습니다.",
 "미디어 {index}: {filename}",
 "{type} 로드 실패"
-];
-const ko = buildLanguageStringsFromValues(KO_VALUES);
-const TRANSLATION_REGISTRY = {
-en,
-ko,
+]),
 ja
 };
-const DEFAULT_LANGUAGE = "en";
 function getLanguageStrings(language) {
 const strings = TRANSLATION_REGISTRY[language];
-if (strings) {
-return strings;
-}
-const defaultStrings = TRANSLATION_REGISTRY[DEFAULT_LANGUAGE];
-if (!defaultStrings) {
-throw new Error(
-`Fatal: Default language '${DEFAULT_LANGUAGE}' not found in TRANSLATION_REGISTRY.`
-);
-}
+if (strings) return strings;
+const defaultStrings = TRANSLATION_REGISTRY["en"];
+if (!defaultStrings) throw new Error(`Fatal: Default language 'en' not found in TRANSLATION_REGISTRY.`);
 return defaultStrings;
 }
 function resolveTranslationValue(dictionary, key) {
 const segments = key.split(".");
 let current = dictionary;
 for (const segment of segments) {
-if (current == null || typeof current !== "object") {
-return void 0;
-}
+if (current == null || typeof current !== "object") return;
 current = current[segment];
 }
 return typeof current === "string" ? current : void 0;
 }
 function createLifecycle(serviceName, options = {}) {
-const { onInitialize, onDestroy} = options;
+const { onInitialize, onDestroy, silent = false } = options;
 let initialized = false;
-const shouldLog = false;
 const initialize = async () => {
 if (initialized) return;
 try {
-if (onInitialize) {
-await onInitialize();
-}
+if (onInitialize) await onInitialize();
 initialized = true;
-if (shouldLog) ;
 } catch (error) {
 throw error;
 }
@@ -340,12 +324,8 @@ throw error;
 const destroy = () => {
 if (!initialized) return;
 try {
-if (onDestroy) {
-onDestroy();
-}
-if (shouldLog) ;
-} catch (error) {
-} finally {
+if (onDestroy) onDestroy();
+} catch (error) {} finally {
 initialized = false;
 }
 };
@@ -357,28 +337,6 @@ isInitialized,
 serviceName
 };
 }
-function createNetworkErrorResponse(details) {
-return {
-finalUrl: details.url,
-readyState: 4,
-status: 0,
-statusText: "Network Error",
-responseHeaders: "",
-response: void 0,
-responseXML: null,
-responseText: "",
-context: details.context
-};
-}
-function scheduleUserscriptRequestFailureCallbacks(details, response) {
-Promise.resolve().then(() => {
-try {
-details.onerror?.(response);
-details.onloadend?.(response);
-} catch {
-}
-});
-}
 function resolveGMAPIs() {
 const global = globalThis;
 const download = typeof GM_download !== "undefined" ? GM_download : global.GM_download;
@@ -389,7 +347,6 @@ const listValues = typeof GM_listValues !== "undefined" ? GM_listValues : global
 const xmlHttpRequest = typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : global.GM_xmlhttpRequest;
 const notification = typeof GM_notification !== "undefined" ? GM_notification : global.GM_notification;
 const cookieCandidate = typeof GM_cookie !== "undefined" ? GM_cookie : global.GM_cookie;
-const cookie = cookieCandidate && typeof cookieCandidate.list === "function" ? cookieCandidate : void 0;
 return {
 download,
 setValue,
@@ -397,11 +354,11 @@ getValue,
 deleteValue,
 listValues,
 xmlHttpRequest,
-cookie,
+cookie: cookieCandidate && typeof cookieCandidate.list === "function" ? cookieCandidate : void 0,
 notification
 };
 }
-let cachedGMAPIs = null;
+var cachedGMAPIs = null;
 function getResolvedGMAPIsCached() {
 if (cachedGMAPIs) return cachedGMAPIs;
 cachedGMAPIs = resolveGMAPIs();
@@ -418,16 +375,10 @@ const resolved = getResolvedGMAPIsCached();
 const gmDownload = asFunction(resolved.download);
 const gmSetValue = asFunction(resolved.setValue);
 const gmGetValue = asFunction(resolved.getValue);
-const gmDeleteValue = asFunction(
-resolved.deleteValue
-);
+const gmDeleteValue = asFunction(resolved.deleteValue);
 const gmListValues = asFunction(resolved.listValues);
-const gmXmlHttpRequest = asFunction(
-resolved.xmlHttpRequest
-);
-const gmNotification = asFunction(
-resolved.notification
-);
+const gmXmlHttpRequest = asFunction(resolved.xmlHttpRequest);
+const gmNotification = asFunction(resolved.notification);
 return {
 async download(url, filename) {
 if (!gmDownload) throw new Error("GM_download unavailable");
@@ -439,8 +390,7 @@ await Promise.resolve(gmSetValue(key, value));
 },
 async getValue(key, defaultValue) {
 if (!gmGetValue) throw new Error("GM_getValue unavailable");
-const value = await Promise.resolve(gmGetValue(key, defaultValue));
-return value;
+return await Promise.resolve(gmGetValue(key, defaultValue));
 },
 getValueSync(key, defaultValue) {
 if (!gmGetValue) return defaultValue;
@@ -467,80 +417,37 @@ gmNotification(details, void 0);
 cookie: resolved.cookie
 };
 }
-function safeCall(fn) {
-if (!fn) return Promise.resolve(void 0);
-try {
-return Promise.resolve(fn()).catch(() => void 0);
-} catch {
-return Promise.resolve(void 0);
-}
-}
 function createSafeUserscriptAPI() {
+const strict = createStrictUserscriptAPI();
 const resolved = getResolvedGMAPIsCached();
-const gmDownload = asFunction(resolved.download);
-const gmSetValue = asFunction(resolved.setValue);
-const gmGetValue = asFunction(resolved.getValue);
-const gmDeleteValue = asFunction(
-resolved.deleteValue
-);
-const gmListValues = asFunction(resolved.listValues);
-const gmXmlHttpRequest = asFunction(
-resolved.xmlHttpRequest
-);
-const gmNotification = asFunction(
-resolved.notification
-);
+const gmNotification = asFunction(resolved.notification);
 return {
 async download(url, filename) {
-await safeCall(gmDownload ? () => gmDownload(url, filename) : null);
+return strict.download(url, filename);
 },
 async setValue(key, value) {
-await safeCall(gmSetValue ? () => gmSetValue(key, value) : null);
+return strict.setValue(key, value);
 },
 async getValue(key, defaultValue) {
-if (!gmGetValue) return defaultValue;
-try {
-const value = await Promise.resolve(gmGetValue(key, defaultValue));
-return value;
-} catch {
-return defaultValue;
-}
+return strict.getValue(key, defaultValue);
 },
 getValueSync(key, defaultValue) {
-if (!gmGetValue) return defaultValue;
-try {
-const value = gmGetValue(key, defaultValue);
-return value instanceof Promise ? defaultValue : value;
-} catch {
-return defaultValue;
-}
+return strict.getValueSync(key, defaultValue);
 },
 async deleteValue(key) {
-await safeCall(gmDeleteValue ? () => gmDeleteValue(key) : null);
+return strict.deleteValue(key);
 },
 async listValues() {
-if (!gmListValues) return [];
-try {
-const values = await Promise.resolve(gmListValues());
-return Array.isArray(values) ? values : [];
-} catch {
-return [];
-}
+return strict.listValues();
 },
 xmlHttpRequest(details) {
-if (gmXmlHttpRequest) {
-try {
-return gmXmlHttpRequest(details);
-} catch {
-}
-}
-const response = createNetworkErrorResponse(details);
-scheduleUserscriptRequestFailureCallbacks(details, response);
-return { abort() {
-} };
+return strict.xmlHttpRequest(details);
 },
 notification(details) {
-void safeCall(gmNotification ? () => gmNotification(details, void 0) : null);
+if (!gmNotification) return;
+try {
+gmNotification(details, void 0);
+} catch {}
 },
 cookie: resolved.cookie
 };
@@ -561,17 +468,14 @@ hasInstance = true;
 }
 return instance;
 };
-{
 return { get };
 }
-}
-class PersistentStorage {
+var PersistentStorage = class PersistentStorage {
 get userscript() {
-return getUserscriptSafe();
+return getUserscript();
 }
 static singleton = createSingleton(() => new PersistentStorage());
-constructor() {
-}
+constructor() {}
 static getInstance() {
 return PersistentStorage.singleton.get();
 }
@@ -580,13 +484,11 @@ try {
 const parsed = JSON.parse(rawValue);
 return typeof parsed === "string" ? parsed : void 0;
 } catch {
-return void 0;
+return;
 }
 }
 serializeValueForStorage(value) {
-if (typeof value === "string") {
-return value;
-}
+if (typeof value === "string") return value;
 return JSON.stringify(value);
 }
 async setString(key, value) {
@@ -626,8 +528,7 @@ return value;
 async trySelfHealOnParseError(key) {
 try {
 await this.userscript.deleteValue(key);
-} catch {
-}
+} catch {}
 }
 async get(key, defaultValue, options = {}) {
 const value = await this.userscript.getValue(key);
@@ -635,9 +536,7 @@ if (value === void 0 || value === null) return defaultValue;
 try {
 return JSON.parse(value);
 } catch {
-if (options.selfHealOnParseError === true) {
-await this.trySelfHealOnParseError(key);
-}
+if (options.selfHealOnParseError === true) await this.trySelfHealOnParseError(key);
 return defaultValue;
 }
 }
@@ -671,8 +570,7 @@ if (value === void 0 || value === null) return defaultValue;
 try {
 const parsedString = this.parseMaybeJsonString(value);
 if (parsedString !== void 0) return parsedString;
-} catch {
-}
+} catch {}
 return value;
 } catch {
 return defaultValue;
@@ -681,11 +579,11 @@ return defaultValue;
 async remove(key) {
 await this.userscript.deleteValue(key);
 }
-}
+};
 function getPersistentStorage() {
 return PersistentStorage.getInstance();
 }
-class LanguageService {
+var LanguageService = class LanguageService {
 lifecycle;
 static STORAGE_KEY = "xeg-language";
 currentLanguage = "auto";
@@ -718,46 +616,33 @@ if (normalized !== this.currentLanguage) {
 this.currentLanguage = normalized;
 this.notifyListeners(normalized);
 }
-} catch (error) {
-}
+} catch (error) {}
 }
 onDestroy() {
 this.listeners.clear();
 }
 detectLanguage() {
-const browserLang = typeof navigator !== "undefined" && navigator.language ? navigator.language.slice(0, 2) : DEFAULT_LANGUAGE;
-if (isBaseLanguageCode(browserLang)) {
-return browserLang;
-}
-return DEFAULT_LANGUAGE;
+const browserLang = typeof navigator !== "undefined" && navigator.language ? navigator.language.slice(0, 2) : "en";
+if (isBaseLanguageCode(browserLang)) return browserLang;
+return "en";
 }
 getCurrentLanguage() {
 return this.currentLanguage;
 }
 setLanguage(language) {
 const normalized = this.normalizeLanguage(language);
-if (this.currentLanguage === normalized) {
-return;
-}
+if (language !== normalized && language !== "auto") {}
+if (this.currentLanguage === normalized) return;
 this.currentLanguage = normalized;
 this.notifyListeners(normalized);
-this.persistLanguage(normalized).catch((error) => {
-});
+this.persistLanguage(normalized).catch((error) => {});
 }
 translate(key, params) {
-const language = this.getEffectiveLanguage();
-const dictionary = getLanguageStrings(language);
-const template = resolveTranslationValue(dictionary, key);
-if (!template) {
-return key;
-}
-if (!params) {
-return template;
-}
+const template = resolveTranslationValue(getLanguageStrings(this.getEffectiveLanguage()), key);
+if (!template) return key;
+if (!params) return template;
 return template.replace(/\{(\w+)\}/g, (_, placeholder) => {
-if (Object.hasOwn(params, placeholder)) {
-return String(params[placeholder]);
-}
+if (Object.hasOwn(params, placeholder)) return String(params[placeholder]);
 return `{${placeholder}}`;
 });
 }
@@ -766,42 +651,32 @@ this.listeners.add(callback);
 return () => this.listeners.delete(callback);
 }
 normalizeLanguage(language) {
-if (!language) {
-return "auto";
-}
-if (language === "auto") {
-return "auto";
-}
-if (isBaseLanguageCode(language)) {
-return language;
-}
-return DEFAULT_LANGUAGE;
+if (!language) return "auto";
+if (language === "auto") return "auto";
+if (isBaseLanguageCode(language)) return language;
+return "en";
 }
 notifyListeners(language) {
 this.listeners.forEach((listener) => {
 try {
 listener(language);
-} catch (error) {
-}
+} catch (error) {}
 });
 }
 async persistLanguage(language) {
 try {
 await this.storage.setString(LanguageService.STORAGE_KEY, language);
-} catch (error) {
-}
+} catch (error) {}
 }
 getEffectiveLanguage() {
 return this.currentLanguage === "auto" ? this.detectLanguage() : this.currentLanguage;
 }
-}
-const extractFromError = (error, mode) => mode === "normalized" ? error.message || error.name || "Error" : error.message;
-const extractFromObject = (record, mode) => {
+};
+var extractFromError = (error, mode) => mode === "normalized" ? error.message || error.name || "Error" : error.message;
+var extractFromObject = (record, mode) => {
 const message = record.message;
 if (typeof message === "string") return message;
-if (mode === "raw") {
-return "message" in record ? String(message ?? "") : String(record);
-}
+if (mode === "raw") return "message" in record ? String(message ?? "") : String(record);
 try {
 return JSON.stringify(record);
 } catch {
@@ -809,18 +684,10 @@ return String(record);
 }
 };
 function formatErrorMessage(error, mode) {
-if (error instanceof Error) {
-return extractFromError(error, mode);
-}
-if (typeof error === "string") {
-return error;
-}
-if (error == null) {
-return mode === "normalized" ? String(error) : "";
-}
-if (typeof error === "object") {
-return extractFromObject(error, mode);
-}
+if (error instanceof Error) return extractFromError(error, mode);
+if (typeof error === "string") return error;
+if (error == null) return mode === "normalized" ? String(error) : "";
+if (typeof error === "object") return extractFromObject(error, mode);
 return String(error);
 }
 function normalizeErrorMessage(error) {
@@ -829,34 +696,23 @@ return formatErrorMessage(error, "normalized");
 function getErrorMessage(error) {
 return formatErrorMessage(error, "raw");
 }
-const USER_CANCELLED_MESSAGE = "Download cancelled by user";
-const DEFAULT_ABORT_MESSAGE = "This operation was aborted";
+var USER_CANCELLED_MESSAGE = "Download cancelled by user";
+var DEFAULT_ABORT_MESSAGE = "This operation was aborted";
 function isAbortError(value) {
-if (value instanceof DOMException) {
-return value.name === "AbortError" || value.name === "TimeoutError";
-}
-if (value instanceof Error) {
-return value.name === "AbortError" || value.name === "TimeoutError" || value.message.toLowerCase().includes("aborted");
-}
+if (value instanceof DOMException) return value.name === "AbortError" || value.name === "TimeoutError";
+if (value instanceof Error) return value.name === "AbortError" || value.name === "TimeoutError" || value.message.toLowerCase().includes("aborted");
 return false;
 }
 function isTimeoutError(value) {
-if (value instanceof DOMException) {
-return value.name === "TimeoutError";
-}
-if (value instanceof Error) {
-return value.name === "TimeoutError";
-}
+if (value instanceof DOMException) return value.name === "TimeoutError";
+if (value instanceof Error) return value.name === "TimeoutError";
 return false;
 }
 function attachCause(target, cause) {
-if (cause === void 0) {
-return;
-}
+if (cause === void 0) return;
 try {
 target.cause = cause;
-} catch {
-}
+} catch {}
 }
 function createAbortError(message, cause) {
 try {
@@ -877,32 +733,20 @@ attachCause(error, cause);
 return error;
 }
 function isUserCancelledAbortError(error) {
-if (error instanceof DOMException) {
-return error.name === "AbortError" && error.message === USER_CANCELLED_MESSAGE;
-}
-if (error instanceof Error) {
-return error.name === "AbortError" && error.message === USER_CANCELLED_MESSAGE;
-}
+if (error instanceof DOMException) return error.name === "AbortError" && error.message === USER_CANCELLED_MESSAGE;
+if (error instanceof Error) return error.name === "AbortError" && error.message === USER_CANCELLED_MESSAGE;
 return false;
 }
 function getUserCancelledAbortErrorFromSignal(signal) {
 const reason = signal?.reason;
-if (isTimeoutError(reason)) {
-return reason;
-}
-if (isUserCancelledAbortError(reason)) {
-return reason;
-}
+if (isTimeoutError(reason)) return reason;
+if (isUserCancelledAbortError(reason)) return reason;
 return createUserCancelledAbortError(reason);
 }
 function getAbortReasonOrAbortErrorFromSignal(signal) {
 const reason = signal?.reason;
-if (reason instanceof DOMException) {
-return reason;
-}
-if (reason instanceof Error) {
-return reason;
-}
+if (reason instanceof DOMException) return reason;
+if (reason instanceof Error) return reason;
 return createAbortError(DEFAULT_ABORT_MESSAGE, reason);
 }
 function promisifyCallback(executor, options) {
@@ -910,38 +754,34 @@ return new Promise((resolve, reject) => {
 try {
 executor((result, error) => {
 if (error) {
-if (options?.fallback) {
-resolve(Promise.resolve(options.fallback()));
-} else {
-reject(new Error(String(error)));
-}
+if (options?.fallback) resolve(Promise.resolve(options.fallback()));
+else reject(new Error(String(error)));
 return;
 }
 resolve(result);
 });
 } catch (error) {
-if (options?.fallback) {
-resolve(Promise.resolve(options.fallback()));
-} else {
-reject(error instanceof Error ? error : new Error(String(error)));
-}
+if (options?.fallback) resolve(Promise.resolve(options.fallback()));
+else reject(error instanceof Error ? error : new Error(String(error)));
 }
 });
 }
 function createDeferred() {
 let resolve;
 let reject;
-const promise = new Promise((res, rej) => {
+return {
+promise: new Promise((res, rej) => {
 resolve = res;
 reject = rej;
-});
-return { promise, resolve, reject };
+}),
+resolve,
+reject
+};
 }
-class HttpRequestService {
+var HttpRequestService = class HttpRequestService {
 static singleton = createSingleton(() => new HttpRequestService());
 defaultTimeout = 1e4;
-constructor() {
-}
+constructor() {}
 async request(method, url, options) {
 const deferred = createDeferred();
 let abortListener = null;
@@ -957,8 +797,7 @@ if (settled) return;
 settled = true;
 try {
 cleanupAbortListener();
-} catch {
-}
+} catch {}
 deferred.resolve(value);
 };
 const safeReject = (reason) => {
@@ -966,8 +805,7 @@ if (settled) return;
 settled = true;
 try {
 cleanupAbortListener();
-} catch {
-}
+} catch {}
 deferred.reject(reason);
 };
 try {
@@ -997,7 +835,7 @@ error.status = status;
 safeReject(error);
 },
 ontimeout: () => {
-const error = new Error("TIMEOUT");
+const error =  new Error("TIMEOUT");
 error.status = 0;
 safeReject(error);
 },
@@ -1005,22 +843,16 @@ onabort: () => {
 safeReject(getAbortReasonOrAbortErrorFromSignal(options?.signal));
 }
 };
-if (options?.responseType) {
-details.responseType = options.responseType;
-}
+if (options?.responseType) details.responseType = options.responseType;
 const data = options?.data;
-if (data !== void 0) {
-details.data = data;
-}
+if (data !== void 0) details.data = data;
 const control = userscript.xmlHttpRequest(details);
 if (options?.signal) {
 abortListener = () => {
 control.abort();
 };
 options.signal.addEventListener("abort", abortListener, { once: true });
-if (options.signal.aborted) {
-abortListener();
-}
+if (options.signal.aborted) abortListener();
 }
 } catch (error) {
 safeReject(error);
@@ -1034,22 +866,28 @@ async get(url, options) {
 return this.request("GET", url, options);
 }
 async post(url, data, options) {
-const nextOptions = data === void 0 ? options : { ...options, data };
-return this.request("POST", url, nextOptions);
+return this.request("POST", url, data === void 0 ? options : {
+...options,
+data
+});
 }
 async put(url, data, options) {
-const nextOptions = data === void 0 ? options : { ...options, data };
-return this.request("PUT", url, nextOptions);
+return this.request("PUT", url, data === void 0 ? options : {
+...options,
+data
+});
 }
 async delete(url, options) {
 return this.request("DELETE", url, options);
 }
 async patch(url, data, options) {
-const nextOptions = data === void 0 ? options : { ...options, data };
-return this.request("PATCH", url, nextOptions);
+return this.request("PATCH", url, data === void 0 ? options : {
+...options,
+data
+});
 }
-}
-class TimerManager {
+};
+var TimerManager = class {
 timers =  new Set();
 setTimeout(callback, delay) {
 let id;
@@ -1076,13 +914,14 @@ this.timers.clear();
 getActiveTimersCount() {
 return this.timers.size;
 }
-}
-const globalTimerManager = new TimerManager();
+};
+var globalTimerManager = new TimerManager();
 function getIdleAPIs() {
 const source = typeof globalThis !== "undefined" ? globalThis : void 0;
-if (!source || typeof source !== "object") {
-return { ric: null, cic: null };
-}
+if (!source || typeof source !== "object") return {
+ric: null,
+cic: null
+};
 return {
 ric: ("requestIdleCallback" in source ? source.requestIdleCallback : void 0) ?? null,
 cic: ("cancelIdleCallback" in source ? source.cancelIdleCallback : void 0) ?? null
@@ -1095,27 +934,26 @@ const id = ric(() => {
 try {
 task();
 } catch (error) {
+logIdleTaskError(error);
 }
 });
-return {
-cancel: () => {
+return { cancel: () => {
 cic?.(id);
-}
-};
+} };
 }
 const timerId = globalTimerManager.setTimeout(() => {
 try {
 task();
 } catch (error) {
+logIdleTaskError(error);
 }
 }, 0);
-return {
-cancel: () => {
+return { cancel: () => {
 globalTimerManager.clearTimeout(timerId);
+} };
 }
-};
-}
-class PrefetchManager {
+var logIdleTaskError = (error) => {};
+var PrefetchManager = class {
 cache =  new Map();
 activeRequests =  new Map();
 maxEntries;
@@ -1128,17 +966,14 @@ await this.prefetchSingle(media.url);
 return;
 }
 scheduleIdle(() => {
-void this.prefetchSingle(media.url).catch(() => {
-});
+this.prefetchSingle(media.url).catch(() => {});
 });
 }
 get(url) {
 return this.cache.get(url) ?? null;
 }
 cancelAll() {
-for (const controller of this.activeRequests.values()) {
-controller.abort();
-}
+for (const controller of this.activeRequests.values()) controller.abort();
 this.activeRequests.clear();
 }
 clear() {
@@ -1161,16 +996,12 @@ return response.data;
 }).finally(() => {
 this.activeRequests.delete(url);
 });
-if (this.cache.size >= this.maxEntries) {
-this.evictOldest();
-}
+if (this.cache.size >= this.maxEntries) this.evictOldest();
 this.cache.set(url, fetchPromise);
 try {
 await fetchPromise;
 } catch (error) {
-if (this.cache.get(url) === fetchPromise) {
-this.cache.delete(url);
-}
+if (this.cache.get(url) === fetchPromise) this.cache.delete(url);
 }
 }
 evictOldest() {
@@ -1185,8 +1016,8 @@ this.activeRequests.delete(url);
 this.cache.delete(url);
 }
 }
-}
-const CLASSES = {
+};
+var CLASSES = {
 OVERLAY: "xeg-gallery-overlay",
 CONTAINER: "xeg-gallery-container",
 ROOT: "xeg-gallery-root",
@@ -1194,7 +1025,7 @@ RENDERER: "xeg-gallery-renderer",
 VERTICAL_VIEW: "xeg-vertical-gallery",
 ITEM: "xeg-gallery-item"
 };
-const DATA_ATTRIBUTES = {
+var DATA_ATTRIBUTES = {
 GALLERY: "data-xeg-gallery",
 CONTAINER: "data-xeg-gallery-container",
 ELEMENT: "data-gallery-element",
@@ -1203,7 +1034,7 @@ ROLE_COMPAT: "data-xeg-role-compat",
 GALLERY_TYPE: "data-xeg-gallery-type",
 GALLERY_VERSION: "data-xeg-gallery-version"
 };
-const SELECTORS = {
+var SELECTORS = {
 OVERLAY: `.${CLASSES.OVERLAY}`,
 CONTAINER: `.${CLASSES.CONTAINER}`,
 ROOT: `.${CLASSES.ROOT}`,
@@ -1220,7 +1051,11 @@ DATA_GALLERY_VERSION: `[${DATA_ATTRIBUTES.GALLERY_VERSION}]`,
 ROLE_GALLERY: `[${DATA_ATTRIBUTES.ROLE}="gallery"]`,
 ROLE_ITEMS_CONTAINER: `[${DATA_ATTRIBUTES.ROLE}="items-container"]`
 };
-const INTERNAL_SELECTORS = [
+var CSS = {
+CLASSES,
+DATA_ATTRIBUTES,
+SELECTORS,
+INTERNAL_SELECTORS: [
 SELECTORS.OVERLAY,
 SELECTORS.CONTAINER,
 SELECTORS.ROOT,
@@ -1236,46 +1071,31 @@ SELECTORS.DATA_GALLERY_TYPE,
 SELECTORS.DATA_GALLERY_VERSION,
 SELECTORS.ROLE_GALLERY,
 SELECTORS.ROLE_ITEMS_CONTAINER
-];
-const CSS = {
-CLASSES,
-SELECTORS,
-INTERNAL_SELECTORS
+]
 };
-const TWEET_ARTICLE_SELECTOR = '[data-testid="tweet"], article';
-const TWEET_PHOTO_SELECTOR = '[data-testid="tweetPhoto"]';
-const TWEET_TEXT_SELECTOR = '[data-testid="tweetText"]';
-const VIDEO_PLAYER_SELECTOR = '[data-testid="videoPlayer"]';
-const VIDEO_PLAYER_CONTEXT_SELECTOR = `${VIDEO_PLAYER_SELECTOR},[data-testid="videoComponent"],[data-testid="videoPlayerControls"],[data-testid="videoPlayerOverlay"],[role="application"],[aria-label*="Video"]`;
-const STATUS_LINK_SELECTOR = 'a[href*="/status/"]';
-const TWITTER_MEDIA_SELECTOR = 'img[src*="pbs.twimg.com"], video[src*="video.twimg.com"]';
-const STABLE_TWEET_CONTAINERS_SELECTORS = [
-'article[data-testid="tweet"]',
-'article[role="article"]'
+var TWEET_ARTICLE_SELECTOR = "[data-testid=\"tweet\"], article";
+var TWEET_PHOTO_SELECTOR = "[data-testid=\"tweetPhoto\"]";
+var TWEET_TEXT_SELECTOR = "[data-testid=\"tweetText\"]";
+var VIDEO_PLAYER_SELECTOR = "[data-testid=\"videoPlayer\"]";
+var VIDEO_PLAYER_CONTEXT_SELECTOR = `${VIDEO_PLAYER_SELECTOR},[data-testid="videoComponent"],[data-testid="videoPlayerControls"],[data-testid="videoPlayerOverlay"],[role="application"],[aria-label*="Video"]`;
+var STATUS_LINK_SELECTOR = "a[href*=\"/status/\"]";
+var TWITTER_MEDIA_SELECTOR = "img[src*=\"pbs.twimg.com\"], video[src*=\"video.twimg.com\"]";
+var STABLE_TWEET_CONTAINERS_SELECTORS = ["article[data-testid=\"tweet\"]", "article[role=\"article\"]"];
+var STABLE_MEDIA_CONTAINERS_SELECTORS = ["[data-testid=\"tweetPhoto\"]", "[data-testid=\"videoPlayer\"]"];
+var STABLE_VIDEO_CONTAINERS_SELECTORS = ["[data-testid=\"videoPlayer\"]", "video"];
+var STABLE_IMAGE_CONTAINERS_SELECTORS = ["[data-testid=\"tweetPhoto\"]", "img[src*=\"pbs.twimg.com\"]"];
+var STABLE_MEDIA_VIEWERS_SELECTORS = [
+"[data-testid=\"photoViewer\"]",
+"[aria-modal=\"true\"][data-testid=\"Drawer\"]",
+"[aria-roledescription=\"carousel\"]"
 ];
-const STABLE_MEDIA_CONTAINERS_SELECTORS = [
-'[data-testid="tweetPhoto"]',
-'[data-testid="videoPlayer"]'
-];
-const STABLE_VIDEO_CONTAINERS_SELECTORS = ['[data-testid="videoPlayer"]', "video"];
-const STABLE_IMAGE_CONTAINERS_SELECTORS = [
-'[data-testid="tweetPhoto"]',
-'img[src*="pbs.twimg.com"]'
-];
-const STABLE_MEDIA_VIEWERS_SELECTORS = [
-'[data-testid="photoViewer"]',
-'[aria-modal="true"][data-testid="Drawer"]',
-'[aria-roledescription="carousel"]'
-];
+var warnInvalidSelectorOnce = (selector, error) => {};
 function closestWithFallback(element, selectors) {
-for (const selector of selectors) {
-try {
+for (const selector of selectors) try {
 const match = element.closest(selector);
-if (match) {
-return match;
-}
+if (match) return match;
 } catch (error) {
-}
+warnInvalidSelectorOnce(selector, error);
 }
 return null;
 }
@@ -1285,16 +1105,12 @@ return typeof performance !== "undefined" && typeof performance.now === "functio
 function getElapsedTime(startTime) {
 return Math.max(0, getTimestamp() - startTime);
 }
-const DEFAULT_MAX_DESCENDANT_DEPTH = 6;
-const DEFAULT_MAX_ANCESTOR_HOPS = 3;
-const DEFAULT_TRAVERSAL_OPTIONS = {
-maxDescendantDepth: DEFAULT_MAX_DESCENDANT_DEPTH,
-maxAncestorHops: DEFAULT_MAX_ANCESTOR_HOPS
+var DEFAULT_TRAVERSAL_OPTIONS = {
+maxDescendantDepth: 6,
+maxAncestorHops: 3
 };
 function isMediaElement(element) {
-if (!element) {
-return false;
-}
+if (!element) return false;
 return element.tagName === "IMG" || element.tagName === "VIDEO";
 }
 function findMediaElementInDOM(target, options = {}) {
@@ -1302,75 +1118,63 @@ const { maxDescendantDepth, maxAncestorHops } = {
 ...DEFAULT_TRAVERSAL_OPTIONS,
 ...options
 };
-if (isMediaElement(target)) {
-return target;
-}
+if (isMediaElement(target)) return target;
 const descendant = findMediaDescendant(target, {
 includeRoot: false,
 maxDepth: maxDescendantDepth
 });
-if (descendant) {
-return descendant;
-}
+if (descendant) return descendant;
 let branch = target;
 for (let hops = 0; hops < maxAncestorHops && branch; hops++) {
 branch = branch.parentElement;
-if (!branch) {
-break;
-}
+if (!branch) break;
 const ancestorMedia = findMediaDescendant(branch, {
 includeRoot: true,
 maxDepth: maxDescendantDepth
 });
-if (ancestorMedia) {
-return ancestorMedia;
-}
+if (ancestorMedia) return ancestorMedia;
 }
 return null;
 }
 function extractMediaUrlFromElement(element) {
-const isImage = element instanceof HTMLImageElement;
-if (isImage) {
-const attr2 = element.getAttribute("src");
-const current2 = element.currentSrc || null;
-const resolved2 = attr2 ? element.src : null;
-return pickFirstTruthy([current2, resolved2, attr2]);
+if (element instanceof HTMLImageElement) {
+const attr = element.getAttribute("src");
+return pickFirstTruthy([
+element.currentSrc || null,
+attr ? element.src : null,
+attr
+]);
 }
 const attr = element.getAttribute("src");
 const posterAttr = element.getAttribute("poster");
-const current = element.currentSrc || null;
-const resolved = attr ? element.src : null;
-const posterResolved = posterAttr ? element.poster : null;
-return pickFirstTruthy([current, resolved, attr, posterResolved, posterAttr]);
+return pickFirstTruthy([
+element.currentSrc || null,
+attr ? element.src : null,
+attr,
+posterAttr ? element.poster : null,
+posterAttr
+]);
 }
 function findMediaDescendant(root, { includeRoot, maxDepth }) {
-const queue = [{ node: root, depth: 0 }];
+const queue = [{
+node: root,
+depth: 0
+}];
 while (queue.length) {
 const current = queue.shift();
-if (!current) {
-break;
-}
+if (!current) break;
 const { node, depth } = current;
-if ((includeRoot || node !== root) && isMediaElement(node)) {
-return node;
-}
-if (depth >= maxDepth) {
-continue;
-}
-for (const child of Array.from(node.children)) {
-if (child instanceof HTMLElement) {
-queue.push({ node: child, depth: depth + 1 });
-}
-}
+if ((includeRoot || node !== root) && isMediaElement(node)) return node;
+if (depth >= maxDepth) continue;
+for (const child of Array.from(node.children)) if (child instanceof HTMLElement) queue.push({
+node: child,
+depth: depth + 1
+});
 }
 return null;
 }
 function pickFirstTruthy(values) {
-for (const value of values) {
-if (value) {
-return value;
-}
-}
+for (const value of values) if (value) return value;
 return null;
 }
 function extractTweetTextHTML(tweetArticle) {
@@ -1380,53 +1184,60 @@ const tweetTextElement = tweetArticle.querySelector(TWEET_TEXT_SELECTOR);
 if (!tweetTextElement) return void 0;
 const text = tweetTextElement.textContent?.trim();
 if (!text) return void 0;
-if (false) ;
 return text;
 } catch (error) {
 logger.error("[tweet] extract failed", error);
-return void 0;
+return;
 }
 }
 function extractTweetTextHTMLFromClickedElement(element, _maxDepth = 10) {
 const tweetArticle = closestWithFallback(element, STABLE_TWEET_CONTAINERS_SELECTORS);
-if (tweetArticle) {
-return extractTweetTextHTML(tweetArticle);
+if (tweetArticle) return extractTweetTextHTML(tweetArticle);
 }
-return void 0;
+var MEDIA = {
+DOMAINS: [
+"pbs.twimg.com",
+"video.twimg.com",
+"abs.twimg.com"
+],
+HOSTS: { MEDIA_CDN: ["pbs.twimg.com", "video.twimg.com"] },
+TYPES: {
+IMAGE: "image",
+VIDEO: "video",
+GIF: "gif"
+},
+EXTENSIONS: {
+JPEG: "jpg",
+PNG: "png",
+WEBP: "webp",
+GIF: "gif",
+MP4: "mp4",
+ZIP: "zip"
+},
+QUALITY: {
+ORIGINAL: "orig",
+LARGE: "large",
+MEDIUM: "medium",
+SMALL: "small"
 }
-const MEDIA = {
-HOSTS: {
-MEDIA_CDN: ["pbs.twimg.com", "video.twimg.com"]
-}};
-const FALLBACK_BASE_URL = "https://x.com";
+};
+var FALLBACK_BASE_URL = "https://x.com";
 function tryParseUrl(value, base = FALLBACK_BASE_URL) {
-if (value instanceof URL) {
-return value;
-}
-if (typeof value !== "string") {
-return null;
-}
+if (value instanceof URL) return value;
+if (typeof value !== "string") return null;
 const trimmed = value.trim();
-if (!trimmed) {
-return null;
-}
+if (!trimmed) return null;
 try {
-if (trimmed.startsWith("//")) {
-return new URL(`https:${trimmed}`);
-}
+if (trimmed.startsWith("//")) return new URL(`https:${trimmed}`);
 return new URL(trimmed, base);
 } catch {
 return null;
 }
 }
 function isHostMatching(value, allowedHosts, options = {}) {
-if (!Array.isArray(allowedHosts)) {
-return false;
-}
+if (!Array.isArray(allowedHosts)) return false;
 const parsed = value instanceof URL ? value : tryParseUrl(value);
-if (!parsed) {
-return false;
-}
+if (!parsed) return false;
 const hostname = parsed.hostname.toLowerCase();
 const allowSubdomains = options.allowSubdomains === true;
 return allowedHosts.some((host) => {
@@ -1434,7 +1245,7 @@ const normalized = host.toLowerCase();
 return hostname === normalized || allowSubdomains && hostname.endsWith(`.${normalized}`);
 });
 }
-const RESERVED_TWITTER_PATHS_ARRAY = Object.freeze([
+var RESERVED_TWITTER_PATHS_ARRAY = Object.freeze([
 "home",
 "explore",
 "notifications",
@@ -1446,55 +1257,39 @@ const RESERVED_TWITTER_PATHS_ARRAY = Object.freeze([
 "compose",
 "hashtag"
 ]);
-const RESERVED_TWITTER_PATHS = new Set(RESERVED_TWITTER_PATHS_ARRAY);
-const TWITTER_USERNAME_PATTERN = /^[a-zA-Z0-9_]{1,15}$/u;
-const TWITTER_HOSTS = Object.freeze(["twitter.com", "x.com"]);
+var RESERVED_TWITTER_PATHS = new Set(RESERVED_TWITTER_PATHS_ARRAY);
+var TWITTER_USERNAME_PATTERN = /^[a-zA-Z0-9_]{1,15}$/u;
+var TWITTER_HOSTS = Object.freeze(["twitter.com", "x.com"]);
 function extractUsernameFromUrl(url, options = {}) {
-if (!url || typeof url !== "string") {
-return null;
-}
+if (!url || typeof url !== "string") return null;
 try {
 let path;
 if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("//")) {
 const parsed = tryParseUrl(url);
-if (!parsed) {
-return null;
-}
+if (!parsed) return null;
 if (options.strictHost) {
-if (!isHostMatching(parsed, TWITTER_HOSTS, { allowSubdomains: true })) {
-return null;
-}
+if (!isHostMatching(parsed, TWITTER_HOSTS, { allowSubdomains: true })) return null;
 }
 path = parsed.pathname;
-} else {
-path = url;
-}
+} else path = url;
 const segments = path.split("/").filter(Boolean);
 if (segments.length >= 3 && segments[1] === "status") {
 const username = segments[0];
-if (!username) {
-return null;
-}
-if (RESERVED_TWITTER_PATHS.has(
-username.toLowerCase()
-)) {
-return null;
-}
-if (TWITTER_USERNAME_PATTERN.test(username)) {
-return username;
-}
+if (!username) return null;
+if (RESERVED_TWITTER_PATHS.has(username.toLowerCase())) return null;
+if (TWITTER_USERNAME_PATTERN.test(username)) return username;
 }
 return null;
 } catch {
 return null;
 }
 }
-const CONTROL_CHARS_REGEX = /[\u0000-\u001F\u007F]/g;
-const SCHEME_WHITESPACE_REGEX = /[\u0000-\u001F\u007F\s]+/g;
-const EXPLICIT_SCHEME_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
-const MAX_DECODE_ITERATIONS = 3;
-const MAX_SCHEME_PROBE_LENGTH = 64;
-const DEFAULT_BLOCKED_PROTOCOL_HINTS = [
+var CONTROL_CHARS_REGEX = /[\u0000-\u001F\u007F]/g;
+var SCHEME_WHITESPACE_REGEX = /[\u0000-\u001F\u007F\s]+/g;
+var EXPLICIT_SCHEME_REGEX = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
+var MAX_DECODE_ITERATIONS = 3;
+var MAX_SCHEME_PROBE_LENGTH = 64;
+var DEFAULT_BLOCKED_PROTOCOL_HINTS = [
 "javascript:",
 "vbscript:",
 "file:",
@@ -1516,32 +1311,21 @@ const DEFAULT_BLOCKED_PROTOCOL_HINTS = [
 "data:video",
 "data:audio"
 ];
-Object.freeze(
-new Set(["http:", "https:", "blob:"])
-);
+Object.freeze(new Set([
+"http:",
+"https:",
+"blob:"
+]));
 function isUrlAllowed(rawUrl, policy) {
-if (!rawUrl || typeof rawUrl !== "string") {
-return false;
-}
+if (!rawUrl || typeof rawUrl !== "string") return false;
 const normalized = rawUrl.replace(CONTROL_CHARS_REGEX, "").trim();
-if (!normalized) {
-return false;
-}
-const blockedHints = policy.blockedProtocolHints ?? DEFAULT_BLOCKED_PROTOCOL_HINTS;
-if (startsWithBlockedProtocolHint(normalized, blockedHints)) {
-return false;
-}
+if (!normalized) return false;
+if (startsWithBlockedProtocolHint(normalized, policy.blockedProtocolHints ?? DEFAULT_BLOCKED_PROTOCOL_HINTS)) return false;
 const lower = normalized.toLowerCase();
-if (lower.startsWith("data:")) {
-return policy.allowDataUrls === true && isAllowedDataUrl(lower, policy.allowedDataMimePrefixes);
-}
-if (lower.startsWith("//")) {
-return handleProtocolRelative();
-}
-const hasScheme = EXPLICIT_SCHEME_REGEX.test(normalized);
-if (!hasScheme) {
-return policy.allowRelative === true;
-}
+if (lower.startsWith("data:")) return policy.allowDataUrls === true && isAllowedDataUrl(lower, policy.allowedDataMimePrefixes);
+if (lower.startsWith("//")) return handleProtocolRelative(normalized, policy);
+if (policy.allowFragments && lower.startsWith("#")) return true;
+if (!EXPLICIT_SCHEME_REGEX.test(normalized)) return policy.allowRelative === true;
 try {
 const parsed = new URL(normalized);
 return policy.allowedProtocols.has(parsed.protocol);
@@ -1551,11 +1335,8 @@ return false;
 }
 function startsWithBlockedProtocolHint(value, hints) {
 const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
-if (/%(?![0-9A-Fa-f]{2})/.test(probe)) {
-return true;
-}
-const variants = buildProbeVariants(probe);
-return variants.some((candidate) => hints.some((hint) => candidate.startsWith(hint)));
+if (/%(?![0-9A-Fa-f]{2})/.test(probe)) return true;
+return buildProbeVariants(probe).some((candidate) => hints.some((hint) => candidate.startsWith(hint)));
 }
 function buildProbeVariants(value) {
 const variants =  new Set();
@@ -1563,64 +1344,50 @@ const base = value.toLowerCase();
 variants.add(base);
 variants.add(base.replace(SCHEME_WHITESPACE_REGEX, ""));
 let decoded = base;
-for (let i = 0; i < MAX_DECODE_ITERATIONS; i += 1) {
-try {
+for (let i = 0; i < MAX_DECODE_ITERATIONS; i += 1) try {
 decoded = decodeURIComponent(decoded);
 variants.add(decoded);
 variants.add(decoded.replace(SCHEME_WHITESPACE_REGEX, ""));
 } catch {
 break;
 }
-}
 return Array.from(variants.values());
 }
 function isAllowedDataUrl(lowerCaseValue, allowedPrefixes) {
-if (!allowedPrefixes || allowedPrefixes.length === 0) {
-return false;
-}
-const metaSection = lowerCaseValue.slice("data:".length);
-const [mime] = metaSection.split(";", 1);
-if (!mime) {
-return false;
-}
+if (!allowedPrefixes || allowedPrefixes.length === 0) return false;
+const [mime] = lowerCaseValue.slice(5).split(";", 1);
+if (!mime) return false;
 return allowedPrefixes.some((prefix) => mime.startsWith(prefix));
 }
 function handleProtocolRelative(url, policy) {
-{
+if (!policy.allowProtocolRelative) return false;
+const fallbackProtocol = policy.allowedProtocols.has("https:") ? "https:" : policy.allowedProtocols.has("http:") ? "http:" : "https:";
+try {
+const resolved = new URL(`${fallbackProtocol}${url}`);
+return policy.allowedProtocols.has(resolved.protocol);
+} catch {
 return false;
 }
 }
-const MAX_URL_LENGTH = 2048;
-const ALLOWED_MEDIA_HOSTS = Object.freeze(MEDIA.HOSTS.MEDIA_CDN);
+var MAX_URL_LENGTH = 2048;
+var ALLOWED_MEDIA_HOSTS = Object.freeze(MEDIA.HOSTS.MEDIA_CDN);
 function isValidMediaUrl(url) {
-if (typeof url !== "string" || url.length > MAX_URL_LENGTH) {
-return false;
-}
+if (typeof url !== "string" || url.length > MAX_URL_LENGTH) return false;
 const parsed = tryParseUrl(url);
-if (!parsed) {
-return false;
-}
-if (!isHttpProtocol(parsed.protocol)) {
-return false;
-}
-if (!isHostMatching(parsed, ALLOWED_MEDIA_HOSTS)) {
-return false;
-}
+if (!parsed) return false;
+if (!isHttpProtocol(parsed.protocol)) return false;
+if (!isHostMatching(parsed, ALLOWED_MEDIA_HOSTS)) return false;
 return isAllowedMediaPath(parsed.hostname, parsed.pathname);
 }
-const isHttpProtocol = (protocol) => protocol === "https:" || protocol === "http:";
+var isHttpProtocol = (protocol) => protocol === "https:" || protocol === "http:";
 function isAllowedMediaPath(hostname, pathname) {
-if (hostname === "pbs.twimg.com") {
-return checkPbsMediaPath(pathname);
-}
-if (hostname === "video.twimg.com") {
-return checkVideoMediaPath(pathname);
-}
+if (hostname === "pbs.twimg.com") return checkPbsMediaPath(pathname);
+if (hostname === "video.twimg.com") return checkVideoMediaPath(pathname);
 return false;
 }
-const checkPbsMediaPath = (pathname) => pathname.startsWith("/media/") || pathname.startsWith("/ext_tw_video_thumb/") || pathname.startsWith("/tweet_video_thumb/") || pathname.startsWith("/video_thumb/") || pathname.startsWith("/amplify_video_thumb/") || pathname.startsWith("/card_img/");
-const checkVideoMediaPath = (pathname) => pathname.startsWith("/ext_tw_video/") || pathname.startsWith("/tweet_video/") || pathname.startsWith("/amplify_video/") || pathname.startsWith("/dm_video/");
-const createFailureResult$1 = (error, startTime) => ({
+var checkPbsMediaPath = (pathname) => pathname.startsWith("/media/") || pathname.startsWith("/ext_tw_video_thumb/") || pathname.startsWith("/tweet_video_thumb/") || pathname.startsWith("/video_thumb/") || pathname.startsWith("/amplify_video_thumb/") || pathname.startsWith("/card_img/");
+var checkVideoMediaPath = (pathname) => pathname.startsWith("/ext_tw_video/") || pathname.startsWith("/tweet_video/") || pathname.startsWith("/amplify_video/") || pathname.startsWith("/dm_video/");
+var createFailureResult$1 = (error, startTime) => ({
 success: false,
 mediaItems: [],
 clickedIndex: 0,
@@ -1635,28 +1402,16 @@ tweetInfo: null
 });
 function findAllMediaInContainer(container) {
 const mediaElements = [];
-const images = container.querySelectorAll(
-'img[src*="pbs.twimg.com"], img[src*="video.twimg.com"]'
-);
-for (const img of images) {
-if (isMediaElement(img)) {
-mediaElements.push(img);
-}
-}
+const images = container.querySelectorAll("img[src*=\"pbs.twimg.com\"], img[src*=\"video.twimg.com\"]");
+for (const img of images) if (isMediaElement(img)) mediaElements.push(img);
 const videos = container.querySelectorAll("video");
-for (const video of videos) {
-if (isMediaElement(video)) {
-mediaElements.push(video);
-}
-}
+for (const video of videos) if (isMediaElement(video)) mediaElements.push(video);
 return mediaElements;
 }
 function createMediaInfoFromDOM(element, tweetInfo, index, tweetTextHTML) {
 try {
 const mediaUrl = extractMediaUrlFromElement(element);
-if (!mediaUrl || !isValidMediaUrl(mediaUrl)) {
-return null;
-}
+if (!mediaUrl || !isValidMediaUrl(mediaUrl)) return null;
 const mediaType = element.tagName.toLowerCase() === "video" ? "video" : "image";
 let width;
 let height;
@@ -1679,7 +1434,10 @@ tweetTextHTML,
 originalUrl: mediaUrl,
 thumbnailUrl: mediaUrl,
 alt: `${mediaType} ${index + 1}`,
-...width && height && { width, height },
+...width && height && {
+width,
+height
+},
 metadata: {
 domIndex: index,
 extractionSource: "dom-fallback",
@@ -1690,20 +1448,15 @@ elementTag: element.tagName.toLowerCase()
 return null;
 }
 }
-class DOMFallbackExtractor {
+var DOMFallbackExtractor = class {
 async extract(tweetInfo, clickedElement, _options, extractionId) {
 const startedAt = getTimestamp();
 try {
-if (false) ;
 const tweetContainer = clickedElement.closest(TWEET_ARTICLE_SELECTOR);
-if (!tweetContainer || !(tweetContainer instanceof HTMLElement)) {
-return createFailureResult$1("No tweet container found", startedAt);
-}
+if (!tweetContainer || !(tweetContainer instanceof HTMLElement)) return createFailureResult$1("No tweet container found", startedAt);
 const tweetTextHTML = extractTweetTextHTMLFromClickedElement(clickedElement);
 const mediaElements = findAllMediaInContainer(tweetContainer);
-if (mediaElements.length === 0) {
-return createFailureResult$1("No media elements found in DOM", startedAt);
-}
+if (mediaElements.length === 0) return createFailureResult$1("No media elements found in DOM", startedAt);
 const mediaItems = [];
 const elementToIndexMap =  new Map();
 for (let i = 0; i < mediaElements.length; i++) {
@@ -1715,18 +1468,13 @@ elementToIndexMap.set(element, mediaItems.length);
 mediaItems.push(mediaInfo);
 }
 }
-if (mediaItems.length === 0) {
-return createFailureResult$1("No valid media items extracted from DOM", startedAt);
-}
+if (mediaItems.length === 0) return createFailureResult$1("No valid media items extracted from DOM", startedAt);
 const clickedMedia = findMediaElementInDOM(clickedElement);
 let clickedIndex = 0;
 if (clickedMedia) {
 const mappedIndex = elementToIndexMap.get(clickedMedia);
-if (mappedIndex !== void 0) {
-clickedIndex = mappedIndex;
+if (mappedIndex !== void 0) clickedIndex = mappedIndex;
 }
-}
-if (false) ;
 return {
 success: true,
 mediaItems,
@@ -1744,9 +1492,9 @@ tweetInfo
 return createFailureResult$1(getErrorMessage(error) || "DOM extraction failed", startedAt);
 }
 }
-}
-const DEFAULT_TWEET_ORIGIN = "https://x.com";
-const normalizeTweetUrl$1 = (inputUrl) => {
+};
+var DEFAULT_TWEET_ORIGIN = "https://x.com";
+var normalizeTweetUrl$1 = (inputUrl) => {
 try {
 const url = new URL(inputUrl, DEFAULT_TWEET_ORIGIN);
 const hostname = url.hostname.toLowerCase();
@@ -1763,33 +1511,29 @@ return url.toString();
 return inputUrl.startsWith("/") ? `${DEFAULT_TWEET_ORIGIN}${inputUrl}` : inputUrl;
 }
 };
-const extractFromElement = (element) => {
+var extractFromElement = (element) => {
 const dataId = element.dataset.tweetId;
-if (dataId && /^\d+$/.test(dataId)) {
-return {
+if (dataId && /^\d+$/.test(dataId)) return {
 tweetId: dataId,
 username: element.dataset.user ?? "unknown",
 tweetUrl: `https://x.com/i/status/${dataId}`,
 extractionMethod: "element-attribute",
-confidence: 0.9
+confidence: .9
 };
-}
 const href = element.getAttribute("href");
 if (href) {
 const match = href.match(/\/status\/(\d+)/);
-if (match?.[1]) {
-return {
+if (match?.[1]) return {
 tweetId: match[1],
 username: extractUsernameFromUrl(href) ?? "unknown",
 tweetUrl: normalizeTweetUrl$1(href),
 extractionMethod: "element-href",
-confidence: 0.8
+confidence: .8
 };
-}
 }
 return null;
 };
-const extractFromDOM = (element) => {
+var extractFromDOM = (element) => {
 const container = element.closest(TWEET_ARTICLE_SELECTOR);
 if (!container) return null;
 const statusLink = container.querySelector(STATUS_LINK_SELECTOR);
@@ -1797,62 +1541,50 @@ if (!statusLink) return null;
 const href = statusLink.getAttribute("href");
 if (!href) return null;
 const match = href.match(/\/status\/(\d+)/);
-if (!match || !match[1]) return null;
-const tweetId = match[1];
-const username = extractUsernameFromUrl(href) ?? "unknown";
+if (!match?.[1]) return null;
 return {
-tweetId,
-username,
+tweetId: match[1],
+username: extractUsernameFromUrl(href) ?? "unknown",
 tweetUrl: normalizeTweetUrl$1(href),
 extractionMethod: "dom-structure",
-confidence: 0.85,
+confidence: .85,
 metadata: { containerTag: container.tagName.toLowerCase() }
 };
 };
-const extractFromMediaGridItem = (element) => {
+var extractFromMediaGridItem = (element) => {
 const link = element.closest("a");
 if (!link) return null;
 const href = link.getAttribute("href");
 if (!href) return null;
 const match = href.match(/\/status\/(\d+)/);
-if (!match || !match[1]) return null;
-const tweetId = match[1];
-const username = extractUsernameFromUrl(href) ?? "unknown";
+if (!match?.[1]) return null;
 return {
-tweetId,
-username,
+tweetId: match[1],
+username: extractUsernameFromUrl(href) ?? "unknown",
 tweetUrl: normalizeTweetUrl$1(href),
 extractionMethod: "media-grid-item",
-confidence: 0.8
+confidence: .8
 };
 };
-class TweetInfoExtractor {
+var TweetInfoExtractor = class {
 strategies = [
 extractFromElement,
 extractFromDOM,
 extractFromMediaGridItem
 ];
 async extract(element) {
-for (const strategy of this.strategies) {
-try {
+for (const strategy of this.strategies) try {
 const result = strategy(element);
-if (result && this.isValid(result)) {
-if (false) ;
-return result;
-}
-} catch {
-}
-}
+if (result && this.isValid(result)) return result;
+} catch {}
 return null;
 }
 isValid(info) {
 return !!info.tweetId && /^\d+$/.test(info.tweetId) && info.tweetId !== "unknown";
 }
-}
+};
 function safeParseInt(value, radix = 10) {
-if (value == null) {
-return 0;
-}
+if (value == null) return 0;
 const result = Number.parseInt(value, radix);
 return Number.isNaN(result) ? 0 : result;
 }
@@ -1860,13 +1592,11 @@ function clamp(value, min = 0, max = 1) {
 return Math.min(Math.max(value, min), max);
 }
 function clampIndex(index, length) {
-if (!Number.isFinite(index) || length <= 0) {
-return 0;
-}
+if (!Number.isFinite(index) || length <= 0) return 0;
 return clamp(Math.floor(index), 0, length - 1);
 }
-const STANDARD_GALLERY_HEIGHT = 720;
-const DEFAULT_DIMENSIONS = {
+var STANDARD_GALLERY_HEIGHT = 720;
+var DEFAULT_DIMENSIONS = {
 width: 540,
 height: STANDARD_GALLERY_HEIGHT
 };
@@ -1884,9 +1614,7 @@ return filename && filename.length > 0 ? filename : null;
 }
 function getMediaDedupKey(media) {
 const urlCandidate = typeof media.originalUrl === "string" && media.originalUrl.length > 0 ? media.originalUrl : typeof media.url === "string" && media.url.length > 0 ? media.url : null;
-if (!urlCandidate) {
-return null;
-}
+if (!urlCandidate) return null;
 const typePrefix = media.type === "image" || media.type === "video" || media.type === "gif" ? `${media.type}:` : "";
 const parsed = tryParseUrl(urlCandidate, "https://example.invalid");
 if (parsed) {
@@ -1894,25 +1622,19 @@ const host = parsed.hostname;
 const path = parsed.pathname;
 const format = parsed.searchParams.get("format");
 const formatSuffix = format ? `?format=${format}` : "";
-if (host && path) {
-return `${typePrefix}${host}${path}${formatSuffix}`;
-}
+if (host && path) return `${typePrefix}${host}${path}${formatSuffix}`;
 }
 const filename = extractFilenameFromUrl(urlCandidate);
 return filename ? `${typePrefix}${filename}` : `${typePrefix}${urlCandidate}`;
 }
 function removeDuplicateMediaItems(mediaItems) {
-if (!mediaItems?.length) {
-return [];
-}
+if (!mediaItems?.length) return [];
 const seen =  new Set();
 const result = [];
 for (const item of mediaItems) {
 if (item == null) continue;
 const key = getMediaDedupKey(item);
-if (!key) {
-continue;
-}
+if (!key) continue;
 if (!seen.has(key)) {
 seen.add(key);
 result.push(item);
@@ -1929,8 +1651,10 @@ return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
 function sortMediaByVisualOrder(mediaItems) {
 if (mediaItems.length <= 1) return mediaItems;
 const withVisualIndex = mediaItems.map((media) => {
-const visualIndex = extractVisualIndexFromUrl(media.expanded_url || "");
-return { media, visualIndex };
+return {
+media,
+visualIndex: extractVisualIndexFromUrl(media.expanded_url || "")
+};
 });
 withVisualIndex.sort((a, b) => a.visualIndex - b.visualIndex);
 return withVisualIndex.map(({ media }, newIndex) => ({
@@ -1944,20 +1668,17 @@ const match = url.match(/\/(\d{2,6})x(\d{2,6})(?:\/|\.|$)/);
 if (!match) return null;
 const width = Number.parseInt(match[1] ?? "", 10);
 const height = Number.parseInt(match[2] ?? "", 10);
-if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
-return null;
-}
-return { width, height };
+if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) return null;
+return {
+width,
+height
+};
 }
 function normalizeDimension(value) {
-if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-return Math.round(value);
-}
+if (typeof value === "number" && Number.isFinite(value) && value > 0) return Math.round(value);
 if (typeof value === "string") {
 const parsed = Number.parseFloat(value);
-if (Number.isFinite(parsed) && parsed > 0) {
-return Math.round(parsed);
-}
+if (Number.isFinite(parsed) && parsed > 0) return Math.round(parsed);
 }
 return null;
 }
@@ -1970,73 +1691,54 @@ if (!parsed) return null;
 let filename = parsed.pathname.split("/").pop();
 if (!filename) return null;
 const dotIndex = filename.lastIndexOf(".");
-if (dotIndex !== -1) {
-filename = filename.substring(0, dotIndex);
-}
+if (dotIndex !== -1) filename = filename.substring(0, dotIndex);
 return filename && filename.length > 0 ? filename : null;
 }
 function scaleAspectRatio(widthRatio, heightRatio) {
-if (heightRatio <= 0 || widthRatio <= 0) {
-return DEFAULT_DIMENSIONS;
-}
+if (heightRatio <= 0 || widthRatio <= 0) return DEFAULT_DIMENSIONS;
 const scaledHeight = STANDARD_GALLERY_HEIGHT;
-const scaledWidth = Math.max(1, Math.round(widthRatio / heightRatio * scaledHeight));
 return {
-width: scaledWidth,
+width: Math.max(1, Math.round(widthRatio / heightRatio * scaledHeight)),
 height: scaledHeight
 };
 }
 function extractDimensionsFromMetadataObject(dimensions) {
-if (!dimensions) {
-return null;
-}
+if (!dimensions) return null;
 const width = normalizeDimension(dimensions.width);
 const height = normalizeDimension(dimensions.height);
-if (width && height) {
-return { width, height };
-}
+if (width && height) return {
+width,
+height
+};
 return null;
 }
 function deriveDimensionsFromMetadata(metadata) {
-if (!metadata) {
-return null;
-}
-const dimensions = extractDimensionsFromMetadataObject(
-metadata.dimensions
-);
-if (dimensions) {
-return dimensions;
-}
+if (!metadata) return null;
+const dimensions = extractDimensionsFromMetadataObject(metadata.dimensions);
+if (dimensions) return dimensions;
 const apiData = metadata.apiData;
-if (!apiData) {
-return null;
-}
+if (!apiData) return null;
 const originalWidth = normalizeDimension(apiData.original_width ?? apiData.originalWidth);
 const originalHeight = normalizeDimension(apiData.original_height ?? apiData.originalHeight);
-if (originalWidth && originalHeight) {
-return { width: originalWidth, height: originalHeight };
-}
+if (originalWidth && originalHeight) return {
+width: originalWidth,
+height: originalHeight
+};
 const downloadUrl = apiData.download_url;
 if (typeof downloadUrl === "string" && downloadUrl) {
 const fromDownloadUrl = extractDimensionsFromUrl(downloadUrl);
-if (fromDownloadUrl) {
-return fromDownloadUrl;
-}
+if (fromDownloadUrl) return fromDownloadUrl;
 }
 const previewUrl = apiData.preview_url;
 if (typeof previewUrl === "string" && previewUrl) {
 const fromPreviewUrl = extractDimensionsFromUrl(previewUrl);
-if (fromPreviewUrl) {
-return fromPreviewUrl;
-}
+if (fromPreviewUrl) return fromPreviewUrl;
 }
 const aspectRatio = apiData.aspect_ratio;
 if (Array.isArray(aspectRatio) && aspectRatio.length >= 2) {
 const ratioWidth = normalizeDimension(aspectRatio[0]);
 const ratioHeight = normalizeDimension(aspectRatio[1]);
-if (ratioWidth && ratioHeight) {
-return scaleAspectRatio(ratioWidth, ratioHeight);
-}
+if (ratioWidth && ratioHeight) return scaleAspectRatio(ratioWidth, ratioHeight);
 }
 return null;
 }
@@ -2046,36 +1748,40 @@ media.url,
 media.originalUrl,
 media.thumbnailUrl
 ];
-for (const candidate of candidates) {
-if (typeof candidate === "string" && candidate) {
+for (const candidate of candidates) if (typeof candidate === "string" && candidate) {
 const dimensions = extractDimensionsFromUrl(candidate);
-if (dimensions) {
-return dimensions;
-}
-}
+if (dimensions) return dimensions;
 }
 return null;
 }
 function resolveMediaDimensionsWithIntrinsicFlag(media) {
-if (!media) {
-return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
-}
+if (!media) return {
+dimensions: DEFAULT_DIMENSIONS,
+hasIntrinsicSize: false
+};
 const directWidth = normalizeDimension(media.width);
 const directHeight = normalizeDimension(media.height);
-if (directWidth && directHeight) {
-return { dimensions: { width: directWidth, height: directHeight }, hasIntrinsicSize: true };
-}
-const fromMetadata = deriveDimensionsFromMetadata(
-media.metadata
-);
-if (fromMetadata) {
-return { dimensions: fromMetadata, hasIntrinsicSize: true };
-}
+if (directWidth && directHeight) return {
+dimensions: {
+width: directWidth,
+height: directHeight
+},
+hasIntrinsicSize: true
+};
+const fromMetadata = deriveDimensionsFromMetadata(media.metadata);
+if (fromMetadata) return {
+dimensions: fromMetadata,
+hasIntrinsicSize: true
+};
 const fromUrls = deriveDimensionsFromMediaUrls(media);
-if (fromUrls) {
-return { dimensions: fromUrls, hasIntrinsicSize: true };
-}
-return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
+if (fromUrls) return {
+dimensions: fromUrls,
+hasIntrinsicSize: true
+};
+return {
+dimensions: DEFAULT_DIMENSIONS,
+hasIntrinsicSize: false
+};
 }
 function toRem(pixels) {
 return `${(pixels / 16).toFixed(4)}rem`;
@@ -2091,8 +1797,7 @@ return {
 }
 function adjustClickedIndexAfterDeduplication(originalItems, uniqueItems, originalClickedIndex) {
 if (uniqueItems.length === 0) return 0;
-const safeOriginalIndex = clampIndex(originalClickedIndex, originalItems.length);
-const clickedItem = originalItems[safeOriginalIndex];
+const clickedItem = originalItems[clampIndex(originalClickedIndex, originalItems.length)];
 if (!clickedItem) return 0;
 const clickedKey = getMediaDedupKey(clickedItem);
 if (!clickedKey) return 0;
@@ -2101,7 +1806,7 @@ return getMediaDedupKey(item) === clickedKey;
 });
 return newIndex >= 0 ? newIndex : 0;
 }
-const resolveDimensionsFromApiMedia = (apiMedia) => {
+var resolveDimensionsFromApiMedia = (apiMedia) => {
 const widthFromOriginal = normalizeDimension(apiMedia.original_width);
 const heightFromOriginal = normalizeDimension(apiMedia.original_height);
 return widthFromOriginal && heightFromOriginal ? {
@@ -2109,7 +1814,7 @@ width: widthFromOriginal,
 height: heightFromOriginal
 } : null;
 };
-const createMediaInfoFromAPI = (apiMedia, tweetInfo, index, tweetTextHTML) => {
+var createMediaInfoFromAPI = (apiMedia, tweetInfo, index, tweetTextHTML) => {
 try {
 const mediaType = apiMedia.type === "photo" ? "image" : "video";
 const dimensions = resolveDimensionsFromApiMedia(apiMedia);
@@ -2117,9 +1822,7 @@ const metadata = {
 apiIndex: index,
 apiData: apiMedia
 };
-if (dimensions) {
-metadata.dimensions = dimensions;
-}
+if (dimensions) metadata.dimensions = dimensions;
 const username = apiMedia.screen_name || tweetInfo.username;
 return {
 id: `${tweetInfo.tweetId}_api_${index}`,
@@ -2150,15 +1853,14 @@ for (let i = 0; i < apiMedias.length; i++) {
 const apiMedia = apiMedias[i];
 if (!apiMedia) continue;
 const mediaInfo = createMediaInfoFromAPI(apiMedia, tweetInfo, i, tweetTextHTML);
-if (mediaInfo) {
-mediaItems.push(mediaInfo);
-}
+if (mediaInfo) mediaItems.push(mediaInfo);
 }
 return mediaItems;
 }
-const TWITTER_API_CONFIG = {
+var TWITTER_API_CONFIG = {
 GUEST_AUTHORIZATION: "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
 TWEET_RESULT_BY_REST_ID_QUERY_ID: "zAz9764BcLZOJ0JU2wrd1A",
+USER_BY_SCREEN_NAME_QUERY_ID: "1VOOyvKkiI3FMmkeDNxM9A",
 SUPPORTED_HOSTS: ["x.com", "twitter.com"],
 DEFAULT_HOST: "x.com"
 };
@@ -2175,21 +1877,18 @@ return urlObj.toString();
 }
 function getLocationLike() {
 try {
-const anyGlobal = globalThis;
-return anyGlobal.location;
+return globalThis.location;
 } catch {
-return void 0;
+return;
 }
 }
 function getSafeLocationValue(key) {
 const location = getLocationLike();
-if (!location) {
-return void 0;
-}
+if (!location) return;
 try {
 return location[key];
 } catch {
-return void 0;
+return;
 }
 }
 function getSafeOrigin() {
@@ -2204,9 +1903,7 @@ return getSafeLocationValue("hostname");
 function getSafeLocationHeaders() {
 const referer = getSafeHref();
 const origin = getSafeOrigin();
-if (!referer && !origin) {
-return {};
-}
+if (!referer && !origin) return {};
 return {
 ...referer ? { referer } : {},
 ...origin ? { origin } : {}
@@ -2214,9 +1911,7 @@ return {
 }
 async function delay(ms, signal) {
 if (ms <= 0) return;
-if (signal?.aborted) {
-throw getAbortReasonOrAbortErrorFromSignal(signal);
-}
+if (signal?.aborted) throw getAbortReasonOrAbortErrorFromSignal(signal);
 return new Promise((resolve, reject) => {
 const timerId = globalTimerManager.setTimeout(() => {
 cleanup();
@@ -2236,75 +1931,56 @@ signal?.addEventListener("abort", onAbort, { once: true });
 function getExponentialBackoffDelayMs(attempt, baseDelayMs) {
 return baseDelayMs * 2 ** attempt;
 }
-const DEFAULT_OPTIONS = {
+var DEFAULT_OPTIONS = {
 maxAttempts: 3,
 baseDelayMs: 200,
 maxDelayMs: 1e4
 };
-const calculateBackoff = (attempt, baseDelayMs, maxDelayMs) => {
+var calculateBackoff = (attempt, baseDelayMs, maxDelayMs) => {
 const exponentialDelay = getExponentialBackoffDelayMs(attempt, baseDelayMs);
-const jitter = Math.random() * 0.25 * exponentialDelay;
-const totalDelay = exponentialDelay + jitter;
+const totalDelay = exponentialDelay + Math.random() * .25 * exponentialDelay;
 return Math.min(Math.floor(totalDelay), maxDelayMs);
 };
 async function withRetry(operation, options = {}) {
-const {
-maxAttempts = DEFAULT_OPTIONS.maxAttempts,
-baseDelayMs = DEFAULT_OPTIONS.baseDelayMs,
-maxDelayMs = DEFAULT_OPTIONS.maxDelayMs,
-signal,
-onRetry,
-shouldRetry = () => true
-} = options;
+const { maxAttempts = DEFAULT_OPTIONS.maxAttempts, baseDelayMs = DEFAULT_OPTIONS.baseDelayMs, maxDelayMs = DEFAULT_OPTIONS.maxDelayMs, signal, onRetry, shouldRetry = () => true } = options;
 let lastError;
 let attempt = 0;
 while (attempt < maxAttempts) {
-if (signal?.aborted) {
-return {
+if (signal?.aborted) return {
 success: false,
 error: signal.reason ?? new DOMException("Operation was aborted", "AbortError"),
 attempts: attempt
 };
-}
 try {
-const data = await operation();
 return {
 success: true,
-data,
+data: await operation(),
 attempts: attempt + 1
 };
 } catch (error) {
 lastError = error;
 attempt++;
-if (isAbortError(error)) {
-return {
+if (isAbortError(error)) return {
 success: false,
 error,
 attempts: attempt
 };
-}
-if (!shouldRetry(error)) {
-return {
+if (!shouldRetry(error)) return {
 success: false,
 error,
 attempts: attempt
 };
-}
-if (attempt >= maxAttempts) {
-break;
-}
+if (attempt >= maxAttempts) break;
 const delayMs = calculateBackoff(attempt - 1, baseDelayMs, maxDelayMs);
 onRetry?.(attempt, error, delayMs);
 try {
 await delay(delayMs, signal);
 } catch (delayError) {
-if (isAbortError(delayError)) {
-return {
+if (isAbortError(delayError)) return {
 success: false,
 error: delayError,
 attempts: attempt
 };
-}
 throw delayError;
 }
 }
@@ -2322,21 +1998,18 @@ function cx(...inputs) {
 const classes = [];
 for (const input of inputs) {
 if (!input) continue;
-if (typeof input === "string" || typeof input === "number") {
-classes.push(String(input));
-} else if (Array.isArray(input)) {
+if (typeof input === "string" || typeof input === "number") classes.push(String(input));
+else if (Array.isArray(input)) {
 const nested = cx(...input);
 if (nested) classes.push(nested);
 } else if (typeof input === "object") {
-for (const [key, value] of Object.entries(input)) {
-if (value) classes.push(key);
-}
+for (const [key, value] of Object.entries(input)) if (value) classes.push(key);
 }
 }
 return classes.join(" ");
 }
-let cachedCookieAPI;
-const decode = (value) => {
+var cachedCookieAPI;
+var decode = (value) => {
 if (!value) return void 0;
 try {
 return decodeURIComponent(value);
@@ -2344,123 +2017,87 @@ return decodeURIComponent(value);
 return value;
 }
 };
-const resolveCookieAPI = () => {
+var resolveCookieAPI = () => {
 try {
-const userscript = getUserscript();
-return userscript.cookie ?? null;
+return getUserscript().cookie ?? null;
 } catch (error) {
 return null;
 }
 };
-const getCookieAPI = () => {
-if (cachedCookieAPI === void 0) {
-cachedCookieAPI = resolveCookieAPI();
-}
+var getCookieAPI = () => {
+if (cachedCookieAPI === void 0) cachedCookieAPI = resolveCookieAPI();
 return cachedCookieAPI;
 };
-const listFromDocument = (options) => {
-if (typeof document === "undefined" || typeof document.cookie !== "string") {
-return [];
-}
+var listFromDocument = (options) => {
+if (typeof document === "undefined" || typeof document.cookie !== "string") return [];
 const domain = typeof document.location?.hostname === "string" ? document.location.hostname : void 0;
 const records = document.cookie.split(";").map((entry) => entry.trim()).filter(Boolean).map((entry) => {
 const [rawName, ...rest] = entry.split("=");
 const nameDecoded = decode(rawName);
 if (!nameDecoded) return null;
-const record = {
+return {
 name: nameDecoded,
 value: decode(rest.join("=")) ?? "",
 path: "/",
 session: true,
 ...domain ? { domain } : {}
 };
-return record;
 }).filter((record) => !!record);
 return options?.name ? records.filter((r) => r.name === options.name) : records;
 };
 async function listCookies(options) {
 const gmCookie = getCookieAPI();
-if (!gmCookie?.list) {
-return listFromDocument(options);
-}
-return promisifyCallback(
-(callback) => gmCookie?.list(options, (cookies, error) => {
-if (error) {
-;
-}
+if (!gmCookie?.list) return listFromDocument(options);
+return promisifyCallback((callback) => gmCookie?.list(options, (cookies, error) => {
+if (error) ;
 callback(error ? void 0 : (cookies ?? []).map((c) => ({ ...c })), error);
-}),
-{ fallback: () => listFromDocument(options) }
-);
+}), { fallback: () => listFromDocument(options) });
 }
 async function getCookieValue(name, options) {
-const gmCookie = getCookieAPI();
-if (gmCookie?.list) {
-const cookies = await listCookies({ ...options, name });
-const value = cookies[0]?.value;
-if (value) {
-return value;
-}
+if (!name) return void 0;
+if (getCookieAPI()?.list) {
+const value = (await listCookies({
+...options,
+name
+}))[0]?.value;
+if (value) return value;
 }
 return getCookieValueSync(name);
 }
 function getCookieValueSync(name) {
-if (typeof document === "undefined" || typeof document.cookie !== "string") {
-return void 0;
-}
+if (!name) return void 0;
+if (typeof document === "undefined" || typeof document.cookie !== "string") return;
 const pattern = new RegExp(`(?:^|;\\s*)${escapeRegExp(name)}=([^;]*)`);
-const match = document.cookie.match(pattern);
-return decode(match?.[1]);
+return decode(document.cookie.match(pattern)?.[1]);
 }
-const MAX_RETRY_ATTEMPTS = 3;
-const BASE_RETRY_DELAY_MS = 100;
-let _csrfToken;
-let _tokensInitialized = false;
-let _initPromise = null;
-const getBackoffDelay = (attempt) => getExponentialBackoffDelayMs(attempt, BASE_RETRY_DELAY_MS);
-const fetchTokenWithRetry = async () => {
+var MAX_RETRY_ATTEMPTS = 3;
+var BASE_RETRY_DELAY_MS = 100;
+var _csrfToken;
+var _tokensInitialized = false;
+var _initPromise = null;
+var getBackoffDelay = (attempt) => getExponentialBackoffDelayMs(attempt, BASE_RETRY_DELAY_MS);
+var fetchTokenWithRetry = async () => {
 const syncToken = getCookieValueSync("ct0");
-if (syncToken) {
-return syncToken;
-}
-for (let attempt = 0; attempt < MAX_RETRY_ATTEMPTS; attempt++) {
-try {
+if (syncToken) return syncToken;
+for (let attempt = 0; attempt < MAX_RETRY_ATTEMPTS; attempt++) try {
 const value = await getCookieValue("ct0");
-if (value) {
-if (false) ;
-return value;
-}
-if (attempt < MAX_RETRY_ATTEMPTS - 1) {
-const delayMs = getBackoffDelay(attempt);
-if (false) ;
-await delay(delayMs);
-}
+if (value) return value;
+if (attempt < MAX_RETRY_ATTEMPTS - 1) await delay(getBackoffDelay(attempt));
 } catch (error) {
-if (attempt < MAX_RETRY_ATTEMPTS - 1) {
-const delayMs = getBackoffDelay(attempt);
-await delay(delayMs);
+if (attempt < MAX_RETRY_ATTEMPTS - 1) await delay(getBackoffDelay(attempt));
 }
-}
-}
-return void 0;
 };
-const initializeTokensSync = () => {
-if (_tokensInitialized) {
-return;
-}
+var initializeTokensSync = () => {
+if (_tokensInitialized) return;
 const syncToken = getCookieValueSync("ct0");
 if (syncToken) {
 _csrfToken = syncToken;
 _tokensInitialized = true;
 }
 };
-const initTokens = async () => {
-if (_tokensInitialized && _csrfToken) {
-return _csrfToken;
-}
-if (_initPromise) {
-return _initPromise;
-}
+var initTokens = async () => {
+if (_tokensInitialized && _csrfToken) return _csrfToken;
+if (_initPromise) return _initPromise;
 _initPromise = (async () => {
 try {
 const token = await fetchTokenWithRetry();
@@ -2478,9 +2115,7 @@ initializeTokensSync();
 return _csrfToken;
 }
 async function getCsrfTokenAsync() {
-if (_tokensInitialized && _csrfToken) {
-return _csrfToken;
-}
+if (_tokensInitialized && _csrfToken) return _csrfToken;
 return initTokens();
 }
 function resolveDimensions(media, mediaUrl) {
@@ -2494,7 +2129,7 @@ return {
 ...heightFromOriginal ?? heightFromUrl ? { height: heightFromOriginal ?? heightFromUrl } : {}
 };
 }
-const removeUrlTokensFromText = (text, urls) => {
+var removeUrlTokensFromText = (text, urls) => {
 let result = text;
 for (const url of urls) {
 if (!url) continue;
@@ -2504,75 +2139,54 @@ result = result.replace(re, (_match, leadingWs) => leadingWs);
 }
 return result.replace(/[ \t\f\v\u00A0]{2,}/g, " ").replace(/ ?\n ?/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 };
-const resolveAspectRatio = (media, dimensions) => {
+var resolveAspectRatio = (media, dimensions) => {
 const aspectRatioValues = Array.isArray(media.video_info?.aspect_ratio) ? media.video_info?.aspect_ratio : void 0;
 const aspectRatioWidth = normalizeDimension(aspectRatioValues?.[0]);
 const aspectRatioHeight = normalizeDimension(aspectRatioValues?.[1]);
-if (aspectRatioWidth && aspectRatioHeight) {
-return [aspectRatioWidth, aspectRatioHeight];
-}
-if (dimensions.width && dimensions.height) {
-return [dimensions.width, dimensions.height];
-}
-return void 0;
+if (aspectRatioWidth && aspectRatioHeight) return [aspectRatioWidth, aspectRatioHeight];
+if (dimensions.width && dimensions.height) return [dimensions.width, dimensions.height];
 };
-const getPhotoHighQualityUrl = (mediaUrlHttps) => {
+var getPhotoHighQualityUrl = (mediaUrlHttps) => {
 if (!mediaUrlHttps) return mediaUrlHttps;
 const isAbsolute = /^(https?:)?\/\//i.test(mediaUrlHttps);
 const parsed = tryParseUrl(mediaUrlHttps, "https://pbs.twimg.com");
 if (!parsed) {
 const [pathPart = "", existingQuery = ""] = mediaUrlHttps.split("?");
-const pathMatch2 = pathPart.match(/\.(jpe?g|png)$/i);
-if (!pathMatch2) return mediaUrlHttps;
-const ext2 = (pathMatch2[1] ?? "").toLowerCase();
+const pathMatch = pathPart.match(/\.(jpe?g|png)$/i);
+if (!pathMatch) return mediaUrlHttps;
+const ext = (pathMatch[1] ?? "").toLowerCase();
 const params = new URLSearchParams(existingQuery);
-const hasFormat = Array.from(params.keys()).some((k) => k.toLowerCase() === "format");
-if (!hasFormat) {
-params.set("format", ext2);
-}
+if (!Array.from(params.keys()).some((k) => k.toLowerCase() === "format")) params.set("format", ext);
 params.set("name", "orig");
 const query = params.toString();
 return query ? `${pathPart}?${query}` : pathPart;
 }
 const hasParamCaseInsensitive = (key) => Array.from(parsed.searchParams.keys()).some((k) => k.toLowerCase() === key);
 const setParamCaseInsensitive = (key, value) => {
-for (const k of Array.from(parsed.searchParams.keys())) {
-if (k !== key && k.toLowerCase() === key) {
-parsed.searchParams.delete(k);
-}
-}
+for (const k of Array.from(parsed.searchParams.keys())) if (k !== key && k.toLowerCase() === key) parsed.searchParams.delete(k);
 parsed.searchParams.set(key, value);
 };
 const pathMatch = parsed.pathname.match(/\.(jpe?g|png)$/i);
 if (!pathMatch) return mediaUrlHttps;
 const ext = (pathMatch[1] ?? "").toLowerCase();
-if (!hasParamCaseInsensitive("format")) {
-setParamCaseInsensitive("format", ext);
-}
+if (!hasParamCaseInsensitive("format")) setParamCaseInsensitive("format", ext);
 setParamCaseInsensitive("name", "orig");
 if (isAbsolute) return parsed.toString();
 return `${parsed.pathname}${parsed.search}`;
 };
-const getVideoHighQualityUrl = (media) => {
-const variants = media.video_info?.variants ?? [];
-const mp4Variants = variants.filter((v) => v.content_type === "video/mp4");
+var getVideoHighQualityUrl = (media) => {
+const mp4Variants = (media.video_info?.variants ?? []).filter((v) => v.content_type === "video/mp4");
 if (mp4Variants.length === 0) return null;
 return mp4Variants.reduce((best, current) => {
-const bestBitrate = best.bitrate ?? 0;
-const currentBitrate = current.bitrate ?? 0;
-return currentBitrate > bestBitrate ? current : best;
+return (current.bitrate ?? 0) > (best.bitrate ?? 0) ? current : best;
 }).url;
 };
 function getHighQualityMediaUrl(media) {
-if (media.type === "photo") {
-return getPhotoHighQualityUrl(media.media_url_https) ?? null;
-}
-if (media.type === "video" || media.type === "animated_gif") {
-return getVideoHighQualityUrl(media);
-}
+if (media.type === "photo") return getPhotoHighQualityUrl(media.media_url_https) ?? null;
+if (media.type === "video" || media.type === "animated_gif") return getVideoHighQualityUrl(media);
 return null;
 }
-const createMediaEntry = (media, mediaUrl, screenName, tweetId, tweetText, index, sourceLocation) => {
+var createMediaEntry = (media, mediaUrl, screenName, tweetId, tweetText, index, sourceLocation) => {
 const mediaType = media.type === "animated_gif" ? "video" : media.type;
 const dimensions = resolveDimensions(media, mediaUrl);
 const aspectRatio = resolveAspectRatio(media, dimensions);
@@ -2606,16 +2220,15 @@ const tweetId = parseTarget.rest_id ?? parseTarget.id_str ?? "";
 const inlineMedia = parseTarget.note_tweet?.note_tweet_results?.result?.media?.inline_media;
 const inlineMediaOrder =  new Map();
 if (Array.isArray(inlineMedia)) {
-for (const item of inlineMedia) {
-if (item.media_id && typeof item.index === "number") {
-inlineMediaOrder.set(item.media_id, item.index);
-}
-}
+for (const item of inlineMedia) if (item.media_id && typeof item.index === "number") inlineMediaOrder.set(item.media_id, item.index);
 }
 const orderedMedia = (() => {
 const mediaList = parseTarget.extended_entities?.media ?? [];
 if (inlineMediaOrder.size === 0) return mediaList;
-return mediaList.map((media, originalIndex) => ({ media, originalIndex })).sort((left, right) => {
+return mediaList.map((media, originalIndex) => ({
+media,
+originalIndex
+})).sort((left, right) => {
 const leftInline = inlineMediaOrder.get(left.media.id_str);
 const rightInline = inlineMediaOrder.get(right.media.id_str);
 if (leftInline !== void 0 && rightInline !== void 0) return leftInline - rightInline;
@@ -2624,89 +2237,48 @@ if (rightInline !== void 0) return 1;
 return left.originalIndex - right.originalIndex;
 }).map((entry) => entry.media);
 })();
-const baseTweetText = (parseTarget.full_text ?? "").trim();
-const mediaShortUrls = orderedMedia.map((m) => m.url).filter((u) => typeof u === "string" && u.length > 0);
-const normalizedTweetText = removeUrlTokensFromText(baseTweetText, mediaShortUrls);
+const normalizedTweetText = removeUrlTokensFromText((parseTarget.full_text ?? "").trim(), orderedMedia.map((m) => m.url).filter((u) => typeof u === "string" && u.length > 0));
 for (let index = 0; index < orderedMedia.length; index++) {
 const media = orderedMedia[index];
-if (!media?.type) {
-continue;
-}
-if (!media.id_str) {
-continue;
-}
-if (!media.media_url_https) {
-continue;
-}
+if (!media?.type) continue;
+if (!media.id_str) continue;
+if (!media.media_url_https) continue;
 try {
 const mediaUrl = getHighQualityMediaUrl(media);
-if (!mediaUrl) {
-continue;
-}
-const tweetText = normalizedTweetText;
-const entry = createMediaEntry(
-media,
-mediaUrl,
-screenName,
-tweetId,
-tweetText,
-index,
-sourceLocation
-);
+if (!mediaUrl) continue;
+const entry = createMediaEntry(media, mediaUrl, screenName, tweetId, normalizedTweetText, index, sourceLocation);
 mediaItems.push(entry);
-} catch (error) {
-}
+} catch (error) {}
 }
 return mediaItems;
 }
 function normalizeLegacyTweet(tweet) {
 const mutableTweet = tweet;
 if (mutableTweet.legacy) {
-if (!mutableTweet.extended_entities && mutableTweet.legacy.extended_entities) {
-mutableTweet.extended_entities = mutableTweet.legacy.extended_entities;
-}
-if (!mutableTweet.full_text && mutableTweet.legacy.full_text) {
-mutableTweet.full_text = mutableTweet.legacy.full_text;
-}
-if (!mutableTweet.id_str && mutableTweet.legacy.id_str) {
-mutableTweet.id_str = mutableTweet.legacy.id_str;
-}
+if (!mutableTweet.extended_entities && mutableTweet.legacy.extended_entities) mutableTweet.extended_entities = mutableTweet.legacy.extended_entities;
+if (!mutableTweet.full_text && mutableTweet.legacy.full_text) mutableTweet.full_text = mutableTweet.legacy.full_text;
+if (!mutableTweet.id_str && mutableTweet.legacy.id_str) mutableTweet.id_str = mutableTweet.legacy.id_str;
 }
 const noteTweetText = mutableTweet.note_tweet?.note_tweet_results?.result?.text;
-if (noteTweetText) {
-mutableTweet.full_text = noteTweetText;
-}
+if (noteTweetText) mutableTweet.full_text = noteTweetText;
 }
 function normalizeLegacyUser(user) {
 const mutableUser = user;
 if (mutableUser.legacy) {
-if (!mutableUser.screen_name && mutableUser.legacy.screen_name) {
-mutableUser.screen_name = mutableUser.legacy.screen_name;
-}
-if (!mutableUser.name && mutableUser.legacy.name) {
-mutableUser.name = mutableUser.legacy.name;
+if (!mutableUser.screen_name && mutableUser.legacy.screen_name) mutableUser.screen_name = mutableUser.legacy.screen_name;
+if (!mutableUser.name && mutableUser.legacy.name) mutableUser.name = mutableUser.legacy.name;
 }
 }
-}
-const resolveTwitterApiHost = (hostname, supportedHosts, defaultHost) => {
-if (!hostname) {
+var resolveTwitterApiHost = (hostname, supportedHosts, defaultHost) => {
+if (!hostname) return defaultHost;
+const parts = hostname.toLowerCase().split(".");
+if (parts.length < 2) return defaultHost;
+const baseDomain = `${parts[parts.length - 2]}.${parts[parts.length - 1]}`;
+for (const host of supportedHosts) if (baseDomain === host) return host;
 return defaultHost;
-}
-const normalized = hostname.toLowerCase();
-let candidate = null;
-if (normalized === "x.com" || normalized.endsWith(".x.com")) {
-candidate = "x.com";
-} else if (normalized === "twitter.com" || normalized.endsWith(".twitter.com")) {
-candidate = "twitter.com";
-}
-return candidate && supportedHosts.includes(candidate) ? candidate : defaultHost;
 };
-const getSafeHost = () => resolveTwitterApiHost(
-getSafeHostname(),
-TWITTER_API_CONFIG.SUPPORTED_HOSTS,
-TWITTER_API_CONFIG.DEFAULT_HOST
-);
-class TwitterAPI {
+var getSafeHost = () => resolveTwitterApiHost(getSafeHostname(), TWITTER_API_CONFIG.SUPPORTED_HOSTS, TWITTER_API_CONFIG.DEFAULT_HOST);
+var TwitterAPI = class TwitterAPI {
 static async getTweetMedias(tweetId) {
 const url = TwitterAPI.createTweetEndpointUrl(tweetId);
 const json = await TwitterAPI.apiRequest(url);
@@ -2721,15 +2293,12 @@ let result = extractMediaFromTweet(tweetResult, tweetUser, "original");
 result = sortMediaByVisualOrder(result);
 if (tweetResult.quoted_status_result?.result) {
 let quotedTweet = tweetResult.quoted_status_result.result;
-if (quotedTweet.tweet) {
-quotedTweet = quotedTweet.tweet;
-}
+if (quotedTweet.tweet) quotedTweet = quotedTweet.tweet;
 const quotedUser = quotedTweet.core?.user_results?.result;
 if (quotedTweet && quotedUser) {
 normalizeLegacyTweet(quotedTweet);
 normalizeLegacyUser(quotedUser);
-const quotedMedia = extractMediaFromTweet(quotedTweet, quotedUser, "quoted");
-const sortedQuotedMedia = sortMediaByVisualOrder(quotedMedia);
+const sortedQuotedMedia = sortMediaByVisualOrder(extractMediaFromTweet(quotedTweet, quotedUser, "quoted"));
 const adjustedResult = result.map((media) => ({
 ...media,
 index: media.index + sortedQuotedMedia.length
@@ -2750,41 +2319,29 @@ authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
 "x-twitter-auth-type": "OAuth2Session"
 });
 const locationHeaders = getSafeLocationHeaders();
-if (locationHeaders.referer) {
-headers.append("referer", locationHeaders.referer);
-}
-if (locationHeaders.origin) {
-headers.append("origin", locationHeaders.origin);
-}
+if (locationHeaders.referer) headers.append("referer", locationHeaders.referer);
+if (locationHeaders.origin) headers.append("origin", locationHeaders.origin);
 try {
-const httpService = HttpRequestService.getInstance();
-const response = await httpService.get(url, {
+const response = await HttpRequestService.getInstance().get(url, {
 headers: Object.fromEntries(headers.entries()),
 responseType: "json"
 });
-if (!response.ok) {
-if (false) ;
-throw new Error(`TW:${response.status}`);
-}
-const json = response.data;
-if (false) ;
-return json;
+if (!response.ok) throw new Error(`TW:${response.status}`);
+return response.data;
 } catch (error) {
 throw error;
 }
 }
 static createTweetEndpointUrl(tweetId) {
-const host = getSafeHost();
-const variables = {
+return buildTweetResultByRestIdUrl({
+host: getSafeHost(),
+queryId: TWITTER_API_CONFIG.TWEET_RESULT_BY_REST_ID_QUERY_ID,
+variables: {
 tweetId,
 withCommunity: false,
 includePromotedContent: false,
 withVoice: false
-};
-return buildTweetResultByRestIdUrl({
-host,
-queryId: TWITTER_API_CONFIG.TWEET_RESULT_BY_REST_ID_QUERY_ID,
-variables,
+},
 features: {
 creator_subscriptions_tweet_preview_api_enabled: true,
 premium_content_api_read_enabled: false,
@@ -2825,8 +2382,8 @@ withDisallowedReplyControls: false
 }
 });
 }
-}
-const determineClickedIndex = (clickedElement, mediaItems) => {
+};
+var determineClickedIndex = (clickedElement, mediaItems) => {
 try {
 const elementUrl = resolveClickedElementUrl(clickedElement);
 if (!elementUrl) return 0;
@@ -2834,67 +2391,50 @@ const normalizedElementUrl = normalizeMediaUrl(elementUrl);
 if (!normalizedElementUrl) return 0;
 const index = mediaItems.findIndex((item) => {
 if (!item) return false;
-const normalizedCandidates = getNormalizedMediaCandidates(item);
-const matched = normalizedCandidates.includes(normalizedElementUrl);
-if (matched && false) ;
-return matched;
+return getNormalizedMediaCandidates(item).includes(normalizedElementUrl);
 });
 if (index !== -1) return index;
-if (false) ;
 return 0;
 } catch (error) {
 return 0;
 }
 };
-const resolveClickedElementUrl = (clickedElement) => {
+var resolveClickedElementUrl = (clickedElement) => {
 const mediaElement = findMediaElementInDOM(clickedElement);
 const elementUrl = mediaElement ? extractMediaUrlFromElement(mediaElement) : null;
 if (elementUrl) return elementUrl;
-const fallbackTarget = mediaElement ?? clickedElement;
-return extractBackgroundImageUrl(fallbackTarget, 3);
+return extractBackgroundImageUrl(mediaElement ?? clickedElement, 3);
 };
-const extractBackgroundImageUrl = (element, maxAncestorHops) => {
+var extractBackgroundImageUrl = (element, maxAncestorHops) => {
 if (!element) return null;
 let current = element;
 for (let hops = 0; hops <= maxAncestorHops && current; hops += 1) {
-const style = globalThis.getComputedStyle?.(current);
-const backgroundImage = style?.backgroundImage ?? "";
-const url = extractUrlFromCssValue(backgroundImage);
+const url = extractUrlFromCssValue((globalThis.getComputedStyle?.(current))?.backgroundImage ?? "");
 if (url) return url;
 current = current.parentElement;
 }
 return null;
 };
-const extractUrlFromCssValue = (value) => {
+var extractUrlFromCssValue = (value) => {
 if (!value || value === "none") return null;
-const match = value.match(/url\((?:"|')?(.*?)(?:"|')?\)/i);
-return match?.[1]?.trim() || null;
+return value.match(/url\((?:"|')?(.*?)(?:"|')?\)/i)?.[1]?.trim() || null;
 };
-const getNormalizedMediaCandidates = (item) => {
+var getNormalizedMediaCandidates = (item) => {
 const candidates = [
 item.url,
 item.originalUrl,
 item.thumbnailUrl
 ];
-const metadata = item.metadata;
-const apiData = metadata?.apiData;
-if (apiData) {
-candidates.push(
-getStringValue(apiData, "download_url"),
-getStringValue(apiData, "preview_url"),
-getStringValue(apiData, "expanded_url"),
-getStringValue(apiData, "short_expanded_url"),
-getStringValue(apiData, "short_tweet_url")
-);
-}
+const apiData = item.metadata?.apiData;
+if (apiData) candidates.push(getStringValue(apiData, "download_url"), getStringValue(apiData, "preview_url"), getStringValue(apiData, "expanded_url"), getStringValue(apiData, "short_expanded_url"), getStringValue(apiData, "short_tweet_url"));
 const normalized = candidates.map((candidate) => candidate ? normalizeMediaUrl(candidate) : null).filter((candidate) => !!candidate);
 return Array.from(new Set(normalized));
 };
-const getStringValue = (record, key) => {
+var getStringValue = (record, key) => {
 const value = record[key];
 return typeof value === "string" && value.trim() ? value : null;
 };
-const createFailureResult = (error, startTime) => ({
+var createFailureResult = (error, startTime) => ({
 success: false,
 mediaItems: [],
 clickedIndex: 0,
@@ -2907,22 +2447,17 @@ totalProcessingTime: getElapsedTime(startTime)
 },
 tweetInfo: null
 });
-class TwitterAPIExtractor {
+var TwitterAPIExtractor = class {
 async extract(tweetInfo, clickedElement, _options, extractionId) {
 const startedAt = getTimestamp();
 try {
-if (false) ;
 const apiMedias = await TwitterAPI.getTweetMedias(tweetInfo.tweetId);
-if (!apiMedias || apiMedias.length === 0) {
-return createFailureResult("No media found in API response", startedAt);
-}
-const tweetTextHTML = extractTweetTextHTMLFromClickedElement(clickedElement);
-const mediaItems = await convertAPIMediaToMediaInfo(apiMedias, tweetInfo, tweetTextHTML);
-const clickedIndex = determineClickedIndex(clickedElement, mediaItems);
+if (!apiMedias || apiMedias.length === 0) return createFailureResult("No media found in API response", startedAt);
+const mediaItems = await convertAPIMediaToMediaInfo(apiMedias, tweetInfo, extractTweetTextHTMLFromClickedElement(clickedElement));
 return {
 success: true,
 mediaItems,
-clickedIndex,
+clickedIndex: determineClickedIndex(clickedElement, mediaItems),
 metadata: {
 extractedAt: Date.now(),
 sourceType: "twitter-api",
@@ -2936,16 +2471,16 @@ tweetInfo
 return createFailureResult(getErrorMessage(error) || "API extraction failed", startedAt);
 }
 }
-}
-class ExtractionError extends Error {
+};
+var ExtractionError = class extends Error {
 constructor(code, message, originalError) {
 super(message);
 this.code = code;
 this.originalError = originalError;
 this.name = "ExtractionError";
 }
-}
-const ErrorCode = {
+};
+var ErrorCode = {
 NONE: "NONE",
 CANCELLED: "CANCELLED",
 NETWORK: "NETWORK",
@@ -2961,16 +2496,14 @@ INVALID_URL: "INVALID_URL",
 PERMISSION_DENIED: "PERMISSION_DENIED"
 };
 function createId() {
-if (typeof crypto !== "undefined" && crypto.randomUUID) {
-return crypto.randomUUID().replaceAll("-", "");
-}
+if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID().replaceAll("-", "");
 return `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
 }
 function createPrefixedId(prefix, separator = "_") {
 return `${prefix}${separator}${createId()}`;
 }
-const generateExtractionId = () => createPrefixedId("simp");
-const createErrorResult = (error) => {
+var generateExtractionId = () => createPrefixedId("simp");
+var createErrorResult = (error) => {
 const errorMessage = getErrorMessage(error) || "Unknown error";
 return {
 success: false,
@@ -2986,7 +2519,7 @@ tweetInfo: null,
 errors: [new ExtractionError(ErrorCode.NO_MEDIA_FOUND, errorMessage)]
 };
 };
-const createApiErrorResult = (apiResult, tweetInfo) => {
+var createApiErrorResult = (apiResult, tweetInfo) => {
 const apiErrorMessage = apiResult.metadata?.error ?? apiResult.errors?.[0]?.message ?? "API extraction failed";
 return {
 success: false,
@@ -3001,7 +2534,7 @@ tweetInfo: mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo),
 errors: [new ExtractionError(ErrorCode.NO_MEDIA_FOUND, apiErrorMessage)]
 };
 };
-const mergeTweetInfoMetadata = (base, override) => {
+var mergeTweetInfoMetadata = (base, override) => {
 if (!base) return override ?? null;
 if (!override) return base;
 return {
@@ -3013,24 +2546,22 @@ metadata: {
 }
 };
 };
-const finalizeResult = (result) => {
+var finalizeResult = (result) => {
 if (!result.success) return result;
 const uniqueItems = removeDuplicateMediaItems(result.mediaItems);
-if (uniqueItems.length === 0) {
-return { ...result, mediaItems: [], clickedIndex: 0 };
-}
-const adjustedIndex = adjustClickedIndexAfterDeduplication(
-result.mediaItems,
-uniqueItems,
-result.clickedIndex ?? 0
-);
+if (uniqueItems.length === 0) return {
+...result,
+mediaItems: [],
+clickedIndex: 0
+};
+const adjustedIndex = adjustClickedIndexAfterDeduplication(result.mediaItems, uniqueItems, result.clickedIndex ?? 0);
 return {
 ...result,
 mediaItems: uniqueItems,
 clickedIndex: adjustedIndex
 };
 };
-class MediaExtractionService {
+var MediaExtractionService = class {
 tweetInfoExtractor;
 apiExtractor;
 domFallbackExtractor;
@@ -3043,31 +2574,17 @@ async extractFromClickedElement(element, options = {}) {
 const extractionId = generateExtractionId();
 try {
 const tweetInfo = await this.tweetInfoExtractor.extract(element);
-if (!tweetInfo?.tweetId) {
-if (false) ;
-return createErrorResult("No tweet information found");
-}
+if (!tweetInfo?.tweetId) return createErrorResult("No tweet information found");
 const apiResult = await this.apiExtractor.extract(tweetInfo, element, options, extractionId);
-if (apiResult.success && apiResult.mediaItems.length > 0) {
-return finalizeResult({
+if (apiResult.success && apiResult.mediaItems.length > 0) return finalizeResult({
 ...apiResult,
 tweetInfo: mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo)
 });
-}
-if (false) ;
-const domResult = await this.domFallbackExtractor.extract(
-tweetInfo,
-element,
-options,
-extractionId
-);
-if (domResult.success && domResult.mediaItems.length > 0) {
-return finalizeResult({
+const domResult = await this.domFallbackExtractor.extract(tweetInfo, element, options, extractionId);
+if (domResult.success && domResult.mediaItems.length > 0) return finalizeResult({
 ...domResult,
 tweetInfo: mergeTweetInfoMetadata(tweetInfo, domResult.tweetInfo)
 });
-}
-if (false) ;
 return createApiErrorResult(apiResult, tweetInfo);
 } catch (error) {
 return createErrorResult(error);
@@ -3076,16 +2593,14 @@ return createErrorResult(error);
 async extractAllFromContainer(container, options = {}) {
 try {
 const firstMedia = container.querySelector(TWITTER_MEDIA_SELECTOR);
-if (!firstMedia || !(firstMedia instanceof HTMLElement)) {
-return createErrorResult("No media found in container");
-}
+if (!firstMedia || !(firstMedia instanceof HTMLElement)) return createErrorResult("No media found in container");
 return this.extractFromClickedElement(firstMedia, options);
 } catch (error) {
 return createErrorResult(error);
 }
 }
-}
-class MediaService {
+};
+var MediaService = class MediaService {
 lifecycle;
 static singleton = createSingleton(() => new MediaService());
 mediaExtraction = null;
@@ -3108,9 +2623,7 @@ isInitialized() {
 return this.lifecycle.isInitialized();
 }
 async onInitialize() {
-{
 this.mediaExtraction = new MediaExtractionService();
-}
 }
 onDestroy() {
 this.cleanupOnce();
@@ -3119,9 +2632,7 @@ static getInstance(_options) {
 return MediaService.singleton.get();
 }
 cleanupOnce() {
-if (this.didCleanup) {
-return;
-}
+if (this.didCleanup) return;
 this.didCleanup = true;
 this.prefetchManager.destroy();
 }
@@ -3168,15 +2679,14 @@ this.cancelAllPrefetch();
 this.clearPrefetchCache();
 this.onDestroy();
 }
-}
+};
 function isDisposable(value) {
 return value !== null && typeof value === "object" && "destroy" in value && typeof value.destroy === "function";
 }
-class CoreService {
+var CoreService = class CoreService {
 static singleton = createSingleton(() => new CoreService());
 services =  new Map();
-constructor() {
-}
+constructor() {}
 static getInstance() {
 return CoreService.singleton.get();
 }
@@ -3184,23 +2694,17 @@ register(key, instance, options) {
 const allowOverride = options?.allowOverride ?? false;
 const onDuplicate = options?.onDuplicate ?? "warn";
 if (this.services.has(key) && !allowOverride) {
-if (onDuplicate === "throw") {
-throw new Error(`[CoreService] Duplicate service key: ${key}`);
-}
+if (onDuplicate === "throw") throw new Error(`[CoreService] Duplicate service key: ${key}`);
 return;
 }
 this.services.set(key, instance);
 }
 get(key) {
-if (this.services.has(key)) {
-return this.services.get(key);
-}
+if (this.services.has(key)) return this.services.get(key);
 throw new Error(`Service not found: ${key}`);
 }
 tryGet(key) {
-if (this.services.has(key)) {
-return this.services.get(key);
-}
+if (this.services.has(key)) return this.services.get(key);
 return null;
 }
 has(key) {
@@ -3212,9 +2716,7 @@ return Array.from(this.services.keys());
 cleanup() {
 this.services.forEach((service) => {
 try {
-if (isDisposable(service)) {
-service.destroy();
-}
+if (isDisposable(service)) service.destroy();
 } catch (e) {
 logger.error("Service cleanup failed", e);
 }
@@ -3224,45 +2726,33 @@ this.services.clear();
 reset() {
 this.cleanup();
 }
-}
-const APP_SETTINGS_STORAGE_KEY = "xeg-app-settings";
-const THEME_DOM_ATTRIBUTE = "data-theme";
+};
+var APP_SETTINGS_STORAGE_KEY = "xeg-app-settings";
+var THEME_DOM_ATTRIBUTE = "data-theme";
 function syncThemeAttributes(theme, options = {}) {
-if (typeof document === "undefined") {
-return;
-}
+if (typeof document === "undefined") return;
 const { scopes, includeDocumentRoot = false } = options;
-if (includeDocumentRoot && document.documentElement) {
-document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, theme);
-}
+if (includeDocumentRoot && document.documentElement) document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, theme);
 const targets = scopes ?? document.querySelectorAll(".xeg-theme-scope");
-for (const target of Array.from(targets)) {
-if (target instanceof HTMLElement) {
-target.setAttribute(THEME_DOM_ATTRIBUTE, theme);
+for (const target of Array.from(targets)) if (target instanceof HTMLElement) target.setAttribute(THEME_DOM_ATTRIBUTE, theme);
 }
-}
-}
-const listeners =  new Map();
+var listeners =  new Map();
 function generateListenerId(ctx) {
 return ctx ? createPrefixedId(ctx, ":") : createId();
 }
 function addListener(element, type, listener, options, context) {
 const id = generateListenerId(context);
-if (!element || typeof element.addEventListener !== "function") {
-return id;
-}
+if (!element || typeof element.addEventListener !== "function") return id;
 try {
 element.addEventListener(type, listener, options);
-const listenerContext = {
+listeners.set(id, {
 id,
 element,
 type,
 listener,
 options,
 context
-};
-listeners.set(id, listenerContext);
-if (false) ;
+});
 return id;
 } catch (error) {
 return id;
@@ -3270,19 +2760,16 @@ return id;
 }
 function removeEventListenerManaged(id) {
 const ctx = listeners.get(id);
-if (!ctx) {
-return false;
-}
+if (!ctx) return false;
 try {
 ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
 listeners.delete(id);
-if (false) ;
 return true;
 } catch (error) {
 return false;
 }
 }
-class EventManager {
+var EventManager = class EventManager {
 lifecycle;
 static singleton = createSingleton(() => new EventManager());
 isDestroyed = false;
@@ -3313,39 +2800,29 @@ this.cleanup();
 }
 addListener(element, type, listener, options, context) {
 if (this.isDestroyed) {
+;
 return null;
 }
 const id = addListener(element, type, listener, options, context);
-if (id) {
-this.ownedListenerContexts.set(id, context);
-}
+if (id) this.ownedListenerContexts.set(id, context);
 return id || null;
 }
 addEventListener(element, type, listener, options) {
-const normalized = options ?? {};
-const { context, ...listenerOptions } = normalized;
+const { context, ...listenerOptions } = options ?? {};
 return this.addListener(element, type, listener, listenerOptions, context);
 }
 removeListener(id) {
-if (!this.ownedListenerContexts.has(id)) {
-return false;
-}
+if (!this.ownedListenerContexts.has(id)) return false;
 this.ownedListenerContexts.delete(id);
 return removeEventListenerManaged(id);
 }
 removeByContext(context) {
 const toRemove = [];
-for (const [id, ctx] of this.ownedListenerContexts) {
-if (ctx === context) {
-toRemove.push(id);
-}
-}
+for (const [id, ctx] of this.ownedListenerContexts) if (ctx === context) toRemove.push(id);
 let count = 0;
 for (const id of toRemove) {
 this.ownedListenerContexts.delete(id);
-if (removeEventListenerManaged(id)) {
-count++;
-}
+if (removeEventListenerManaged(id)) count++;
 }
 return count;
 }
@@ -3353,26 +2830,31 @@ getIsDestroyed() {
 return this.isDestroyed;
 }
 getListenerStatus() {
-{
-return { total: 0, byContext: {}, byType: {} };
-}
+return {
+total: 0,
+byContext: {},
+byType: {}
+};
 }
 cleanup() {
-if (this.isDestroyed) {
-return;
-}
+if (this.isDestroyed) return;
 const ids = Array.from(this.ownedListenerContexts.keys());
 this.ownedListenerContexts.clear();
-for (const id of ids) {
-try {
+for (const id of ids) try {
 removeEventListenerManaged(id);
-} catch {
-}
-}
+} catch {}
 this.isDestroyed = true;
 }
+};
+var VALID_THEME_SETTINGS = [
+"light",
+"dark",
+"auto"
+];
+function isThemeSetting(value) {
+return typeof value === "string" && VALID_THEME_SETTINGS.includes(value);
 }
-class ThemeService {
+var ThemeService = class ThemeService {
 lifecycle;
 storage = getPersistentStorage();
 mediaQueryList = null;
@@ -3385,156 +2867,65 @@ boundSettingsService = null;
 settingsUnsubscribe = null;
 observer = null;
 observedThemeScopes =  new WeakSet();
-applyThemeToScopes(scopes) {
-const newScopes = [];
-for (const scope of scopes) {
-if (!this.observedThemeScopes.has(scope)) {
-this.observedThemeScopes.add(scope);
-newScopes.push(scope);
-}
-}
-if (newScopes.length > 0) {
-syncThemeAttributes(this.currentTheme, { scopes: newScopes });
-}
-}
 static singleton = createSingleton(() => new ThemeService());
 static getInstance() {
 return ThemeService.singleton.get();
 }
-earlyRestoreFailed = false;
-earlyRestorePromise = null;
-didCleanup = false;
 constructor() {
-this.lifecycle = createLifecycle("ThemeService", {
-onInitialize: () => this.onInitialize(),
-onDestroy: () => this.onDestroy()
-});
-if (typeof window !== "undefined") {
-this.mediaQueryList = window.matchMedia("(prefers-color-scheme: dark)");
-this.observer = new MutationObserver((mutations) => {
-for (const m of mutations) {
-m.addedNodes.forEach((node) => {
-if (node instanceof Element) {
-const scopes = [];
-if (node.classList.contains("xeg-theme-scope")) {
-scopes.push(node);
-}
-node.querySelectorAll(".xeg-theme-scope").forEach((scope) => {
-scopes.push(scope);
-});
-if (scopes.length > 0) {
-this.applyThemeToScopes(scopes);
-}
-}
-});
-}
-});
-if (document.body) {
-this.observer.observe(document.body, {
-childList: true,
-subtree: true
-});
-}
-}
+this.lifecycle = createLifecycle("ThemeService", { onInitialize: () => this.onInitialize() });
+this.mediaQueryList = this.createMediaQueryList();
 this.themeSetting = this.loadThemeSync();
 this.applyCurrentTheme(true);
-this.scheduleEarlyAsyncRestore();
-}
-scheduleEarlyAsyncRestore() {
-if (this.earlyRestorePromise) {
-return;
-}
-this.earlyRestorePromise = (async () => {
-try {
-const saved = await this.loadThemeAsync();
-if (saved && saved !== this.themeSetting) {
-this.themeSetting = saved;
-this.applyCurrentTheme(true);
-}
-} catch (error) {
-this.earlyRestoreFailed = true;
-} finally {
-try {
-this.initializeSystemDetection();
-} catch (error) {
-}
-}
-})();
 }
 async initialize() {
 return this.lifecycle.initialize();
 }
 destroy() {
-this.cleanupOnce();
+this.cleanup();
 this.lifecycle.destroy();
 }
 isInitialized() {
 return this.lifecycle.isInitialized();
 }
 async onInitialize() {
-await (this.earlyRestorePromise ?? Promise.resolve());
-if (this.earlyRestoreFailed) {
-const saved = await this.loadThemeAsync();
-if (saved && saved !== this.themeSetting) {
-this.themeSetting = saved;
-this.applyCurrentTheme(true);
+if (!this.boundSettingsService) {
+const settingsService = CoreService.getInstance().tryGet(SERVICE_KEYS.SETTINGS);
+if (settingsService) this.bindSettingsService(settingsService);
+else await this.restoreThemeSettingFromStorage();
 }
-}
-try {
-const settingsService = CoreService.getInstance().tryGet(
-SERVICE_KEYS.SETTINGS
-);
-if (settingsService) {
-this.bindSettingsService(settingsService);
-}
-} catch (err) {
-}
+this.initializeThemeScopeObservation();
+this.initializeSystemDetection();
 }
 bindSettingsService(settingsService) {
 if (!settingsService || this.boundSettingsService === settingsService) return;
 if (this.settingsUnsubscribe) {
 this.settingsUnsubscribe();
+this.settingsUnsubscribe = null;
 }
 this.boundSettingsService = settingsService;
 const settingsTheme = settingsService.get?.("gallery.theme");
-if (settingsTheme && ["light", "dark", "auto"].includes(settingsTheme)) {
-if (settingsTheme !== this.themeSetting) {
+if (isThemeSetting(settingsTheme) && settingsTheme !== this.themeSetting) {
 this.themeSetting = settingsTheme;
 this.applyCurrentTheme(true);
 }
-}
-if (typeof settingsService.subscribe === "function") {
-this.settingsUnsubscribe = settingsService.subscribe((event) => {
-if (event?.key === "gallery.theme") {
-const newVal = event.newValue;
-if (["light", "dark", "auto"].includes(newVal) && newVal !== this.themeSetting) {
-this.themeSetting = newVal;
+if (typeof settingsService.subscribe === "function") this.settingsUnsubscribe = settingsService.subscribe((event) => {
+if (event?.key !== "gallery.theme") return;
+const nextTheme = event.newValue;
+if (!isThemeSetting(nextTheme) || nextTheme === this.themeSetting) return;
+this.themeSetting = nextTheme;
 this.applyCurrentTheme();
-}
-}
 });
-}
 }
 setTheme(setting, options) {
-const validSettings = ["light", "dark", "auto"];
-const normalized = validSettings.includes(setting) ? setting : "light";
-this.themeSetting = normalized;
+this.themeSetting = isThemeSetting(setting) ? setting : "light";
 if (options?.persist !== false && this.boundSettingsService?.set) {
 const result = this.boundSettingsService.set("gallery.theme", this.themeSetting);
-if (result instanceof Promise) {
-result.catch((error) => {
-});
+if (result instanceof Promise) result.catch((error) => {});
 }
-}
-const notified = this.applyCurrentTheme(options?.force);
-if (!notified) {
-this.notifyListeners();
-}
+if (!this.applyCurrentTheme(options?.force)) this.notifyListeners();
 }
 getEffectiveTheme() {
-if (this.themeSetting === "auto") {
-return this.mediaQueryList?.matches ? "dark" : "light";
-}
+if (this.themeSetting === "auto") return this.mediaQueryList?.matches ? "dark" : "light";
 return this.themeSetting;
 }
 getCurrentTheme() {
@@ -3547,18 +2938,54 @@ onThemeChange(listener) {
 this.listeners.add(listener);
 return () => this.listeners.delete(listener);
 }
-onDestroy() {
-this.cleanupOnce();
+applyThemeToScopes(scopes) {
+const newScopes = [];
+for (const scope of scopes) if (!this.observedThemeScopes.has(scope)) {
+this.observedThemeScopes.add(scope);
+newScopes.push(scope);
 }
-cleanupOnce() {
-if (this.didCleanup) {
+if (newScopes.length > 0) syncThemeAttributes(this.currentTheme, { scopes: newScopes });
+}
+createMediaQueryList() {
+if (typeof window === "undefined" || typeof window.matchMedia !== "function") return null;
+return window.matchMedia("(prefers-color-scheme: dark)");
+}
+async restoreThemeSettingFromStorage() {
+const saved = await this.loadThemeAsync();
+if (saved && saved !== this.themeSetting) {
+this.themeSetting = saved;
+this.applyCurrentTheme(true);
+}
+}
+initializeThemeScopeObservation() {
+if (typeof document === "undefined" || typeof MutationObserver === "undefined") return;
+this.applyThemeToScopes(Array.from(document.querySelectorAll(".xeg-theme-scope")));
+this.observer?.disconnect();
+this.observer = new MutationObserver((mutations) => {
+for (const mutation of mutations) mutation.addedNodes.forEach((node) => {
+if (!(node instanceof Element)) return;
+const scopes = [];
+if (node.classList.contains("xeg-theme-scope")) scopes.push(node);
+node.querySelectorAll(".xeg-theme-scope").forEach((scope) => {
+scopes.push(scope);
+});
+if (scopes.length > 0) this.applyThemeToScopes(scopes);
+});
+});
+if (document.body) {
+this.observer.observe(document.body, {
+childList: true,
+subtree: true
+});
 return;
 }
-this.didCleanup = true;
+}
+cleanup() {
 if (this.settingsUnsubscribe) {
 this.settingsUnsubscribe();
 this.settingsUnsubscribe = null;
 }
+this.boundSettingsService = null;
 this.listeners.clear();
 this.observedThemeScopes =  new WeakSet();
 if (this.observer) {
@@ -3573,27 +3000,20 @@ this.mediaQueryListener = null;
 this.mediaQueryList = null;
 }
 initializeSystemDetection() {
-if (this.mediaQueryList && !this.mediaQueryListener) {
-if (!this.domEventsController || this.domEventsController.signal.aborted) {
-this.domEventsController = new AbortController();
-}
+if (!this.mediaQueryList) this.mediaQueryList = this.createMediaQueryList();
+if (!this.mediaQueryList || this.mediaQueryListener) return;
+if (!this.domEventsController || this.domEventsController.signal.aborted) this.domEventsController = new AbortController();
 this.mediaQueryListener = () => {
-if (this.themeSetting === "auto") {
-this.applyCurrentTheme();
-}
+if (this.themeSetting === "auto") this.applyCurrentTheme();
 };
 const listener = this.mediaQueryListener;
-if (!listener) {
-return;
-}
-const eventListener = (evt) => {
-listener(evt);
+const eventListener = (event) => {
+listener(event);
 };
 EventManager.getInstance().addEventListener(this.mediaQueryList, "change", eventListener, {
 signal: this.domEventsController.signal,
 context: "theme-service"
 });
-}
 }
 applyCurrentTheme(force = false) {
 const effective = this.getEffectiveTheme();
@@ -3606,36 +3026,28 @@ return true;
 return false;
 }
 notifyListeners() {
-this.listeners.forEach((l) => l(this.currentTheme, this.themeSetting));
+this.listeners.forEach((listener) => listener(this.currentTheme, this.themeSetting));
 }
 loadThemeSync() {
 try {
-const snapshot = this.storage.getSync(APP_SETTINGS_STORAGE_KEY);
-return snapshot?.gallery?.theme ?? "auto";
+return this.storage.getSync("xeg-app-settings")?.gallery?.theme ?? "auto";
 } catch {
 return "auto";
 }
 }
 async loadThemeAsync() {
 try {
-const snapshot = await this.storage.get(APP_SETTINGS_STORAGE_KEY);
-return snapshot?.gallery?.theme ?? null;
+return (await this.storage.get("xeg-app-settings"))?.gallery?.theme ?? null;
 } catch {
 return null;
 }
 }
-}
+};
 function registerCoreServices() {
 const core = CoreService.getInstance();
-if (!core.has(SERVICE_KEYS.THEME)) {
-core.register(SERVICE_KEYS.THEME, ThemeService.getInstance());
-}
-if (!core.has(SERVICE_KEYS.LANGUAGE)) {
-core.register(SERVICE_KEYS.LANGUAGE, LanguageService.getInstance());
-}
-if (!core.has(SERVICE_KEYS.MEDIA_SERVICE)) {
-core.register(SERVICE_KEYS.MEDIA_SERVICE, MediaService.getInstance());
-}
+if (!core.has(SERVICE_KEYS.THEME)) core.register(SERVICE_KEYS.THEME, ThemeService.getInstance());
+if (!core.has(SERVICE_KEYS.LANGUAGE)) core.register(SERVICE_KEYS.LANGUAGE, LanguageService.getInstance());
+if (!core.has(SERVICE_KEYS.MEDIA_SERVICE)) core.register(SERVICE_KEYS.MEDIA_SERVICE, MediaService.getInstance());
 }
 async function initializeCoreBaseServices() {
 try {
@@ -3648,62 +3060,22 @@ SERVICE_KEYS.MEDIA_SERVICE
 ];
 for (const key of serviceKeys) {
 const service = coreService.get(key);
-if (service?.initialize) {
-await service.initialize();
+if (service?.initialize) await service.initialize();
 }
-}
-if (false) ;
 } catch (error) {
-throw new Error("[base-services] initialization failed", {
-cause: error instanceof Error ? error : new Error(String(error))
-});
+throw new Error("[base-services] initialization failed", { cause: error instanceof Error ? error : new Error(String(error)) });
 }
 }
 async function initializeCriticalSystems() {
 registerCoreServices();
 }
-function ensureDevNamespace() {
-{
-return void 0;
-}
-}
-function mutateDevNamespace(mutator) {
-const namespace = ensureDevNamespace();
-if (!namespace) {
-return;
-}
-mutator(namespace);
-}
-function setupDevNamespace(galleryAppInstance, actions) {
-mutateDevNamespace((namespace) => {
-const mainNamespace = namespace.main ??= {
-...actions
-};
-mainNamespace.start = actions.start;
-mainNamespace.createConfig = actions.createConfig;
-mainNamespace.cleanup = actions.cleanup;
-if (galleryAppInstance !== void 0) {
-if (galleryAppInstance) {
-mainNamespace.galleryApp = galleryAppInstance;
-} else {
-delete mainNamespace.galleryApp;
-}
-}
-});
-}
 function wireGlobalEvents(onBeforeUnload) {
-const hasWindow = typeof window !== "undefined" && !!window.addEventListener;
-if (!hasWindow) {
-return () => {
-};
-}
+if (!(typeof window !== "undefined" && !!window.addEventListener)) return () => {};
 let disposed = false;
 const eventManager = EventManager.getInstance();
 const controller = new AbortController();
 const invokeOnce = () => {
-if (disposed) {
-return;
-}
+if (disposed) return;
 disposed = true;
 controller.abort();
 onBeforeUnload();
@@ -3718,16 +3090,13 @@ signal: controller.signal,
 context: "bootstrap:pagehide"
 });
 return () => {
-if (disposed) {
-return;
-}
+if (disposed) return;
 disposed = true;
 controller.abort();
 };
 }
 function sanitize(name) {
-const sanitized = name.replace(/[<>:"/\\|?*]/g, "_").replace(/^[\s.]+|[\s.]+$/g, "").slice(0, 255);
-return sanitized || "media";
+return name.replace(/[<>:"/\\|?*]/g, "_").replace(/^[\s.]+|[\s.]+$/g, "").slice(0, 255) || "media";
 }
 function resolveNowMs$1(nowMs) {
 return Number.isFinite(nowMs) ? nowMs : 0;
@@ -3737,11 +3106,8 @@ try {
 const path = url.split("?")[0];
 if (!path) return "jpg";
 const ext = path.split(".").pop();
-if (ext && /^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i.test(ext)) {
-return ext.toLowerCase();
-}
-} catch {
-}
+if (ext && /^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i.test(ext)) return ext.toLowerCase();
+} catch {}
 return "jpg";
 }
 function getIndexFromMediaId(mediaId) {
@@ -3766,40 +3132,30 @@ username = media.quotedUsername;
 tweetId = media.quotedTweetId;
 } else {
 tweetId = media.tweetId ?? null;
-if (media.tweetUsername && media.tweetUsername !== "unknown") {
-username = media.tweetUsername;
-} else {
+if (media.tweetUsername && media.tweetUsername !== "unknown") username = media.tweetUsername;
+else {
 const url = ("originalUrl" in media ? media.originalUrl : null) || media.url;
-if (typeof url === "string") {
-username = extractUsernameFromUrl(url, { strictHost: true });
+if (typeof url === "string") username = extractUsernameFromUrl(url, { strictHost: true });
 }
 }
-}
-if (!username && fallbackUsername) {
-username = fallbackUsername;
-}
-return { username, tweetId };
+if (!username && fallbackUsername) username = fallbackUsername;
+return {
+username,
+tweetId
+};
 }
 function generateMediaFilename(media, options = {}) {
 try {
-if (media.filename) {
-return sanitize(media.filename);
-}
+if (media.filename) return sanitize(media.filename);
 const nowMs = resolveNowMs$1(options.nowMs);
 const extension = options.extension ?? getExtension(media.originalUrl ?? media.url);
 const index = getIndexFromMediaId(media.id) ?? normalizeIndex(options.index);
 const { username, tweetId } = resolveMetadata(media, options.fallbackUsername);
-if (username && tweetId) {
-return sanitize(`${username}_${tweetId}_${index}.${extension}`);
-}
-if (tweetId && /^\d+$/.test(tweetId)) {
-return sanitize(`tweet_${tweetId}_${index}.${extension}`);
-}
-const prefix = options.fallbackPrefix ?? "media";
-return sanitize(`${prefix}_${nowMs}_${index}.${extension}`);
+if (username && tweetId) return sanitize(`${username}_${tweetId}_${index}.${extension}`);
+if (tweetId && /^\d+$/.test(tweetId)) return sanitize(`tweet_${tweetId}_${index}.${extension}`);
+return sanitize(`${options.fallbackPrefix ?? "media"}_${nowMs}_${index}.${extension}`);
 } catch {
-const nowMs = resolveNowMs$1(options.nowMs);
-return `media_${nowMs}.${options.extension || "jpg"}`;
+return `media_${resolveNowMs$1(options.nowMs)}.${options.extension || "jpg"}`;
 }
 }
 function generateZipFilename(mediaItems, options = {}) {
@@ -3807,29 +3163,26 @@ try {
 const firstItem = mediaItems[0];
 if (firstItem) {
 const { username, tweetId } = resolveMetadata(firstItem);
-if (username && tweetId) {
-return sanitize(`${username}_${tweetId}.zip`);
+if (username && tweetId) return sanitize(`${username}_${tweetId}.zip`);
 }
-}
-const prefix = options.fallbackPrefix ?? "xcom_gallery";
-const nowMs = resolveNowMs$1(options.nowMs);
-return sanitize(`${prefix}_${nowMs}.zip`);
+return sanitize(`${options.fallbackPrefix ?? "xcom_gallery"}_${resolveNowMs$1(options.nowMs)}.zip`);
 } catch {
-const nowMs = resolveNowMs$1(options.nowMs);
-return `download_${nowMs}.zip`;
+return `download_${resolveNowMs$1(options.nowMs)}.zip`;
 }
 }
 function planSingleDownload(input) {
 const { method, mediaUrl, filename, hasProvidedBlob } = input;
-if (method === "gm_download") {
-return {
+if (method === "gm_download") return {
 strategy: "gm_download",
 url: mediaUrl,
 filename,
 useBlobUrl: hasProvidedBlob
 };
-}
-return { strategy: "none", filename, error: "No download method" };
+return {
+strategy: "none",
+filename,
+error: "No download method"
+};
 }
 function generateDesiredName(media, nowMs) {
 return nowMs === void 0 ? generateMediaFilename(media) : generateMediaFilename(media, { nowMs });
@@ -3838,18 +3191,19 @@ function generateZipName(items, nowMs) {
 return nowMs === void 0 ? generateZipFilename(items) : generateZipFilename(items, { nowMs });
 }
 function planBulkDownload(input) {
-const items = input.mediaItems.map((media) => ({
+return {
+items: input.mediaItems.map((media) => ({
 url: media.url,
 desiredName: generateDesiredName(media, input.nowMs),
 blob: input.prefetchedBlobs?.get(media.url)
-}));
-const zipFilename = input.zipFilename ?? generateZipName(input.mediaItems, input.nowMs);
-return { items, zipFilename };
+})),
+zipFilename: input.zipFilename ?? generateZipName(input.mediaItems, input.nowMs)
+};
 }
 function planZipSave(method) {
 return method === "gm_download" ? "gm_download" : "none";
 }
-const GM_API_CHECKS = {
+var GM_API_CHECKS = {
 getValue: (gm) => typeof gm.getValue === "function",
 setValue: (gm) => typeof gm.setValue === "function",
 download: (gm) => typeof gm.download === "function",
@@ -3869,7 +3223,7 @@ return false;
 function asGMDownloadFunction(value) {
 return typeof value === "function" ? value : void 0;
 }
-const detectDownloadCapability = () => {
+var detectDownloadCapability = () => {
 const gmDownload = asGMDownloadFunction(resolveGMDownload());
 const hasGMDownload = !!gmDownload && isGMAPIAvailable("download");
 return {
@@ -3879,35 +3233,32 @@ gmDownload: hasGMDownload ? gmDownload : void 0
 };
 };
 function toActionCommand(plan, timeoutMs) {
-if (plan.strategy === "gm_download") {
-return {
+if (plan.strategy === "gm_download") return {
 type: "DOWNLOAD_WITH_GM_DOWNLOAD",
 url: plan.url,
 filename: plan.filename,
 timeoutMs,
 useBlobUrl: plan.useBlobUrl
 };
-}
-return { type: "FAIL", filename: plan.filename, error: plan.error };
+return {
+type: "FAIL",
+filename: plan.filename,
+error: plan.error
+};
 }
 function createSingleDownloadCommands(input) {
 const timeoutMs = input.timeoutMs ?? 3e4;
-const plan = planSingleDownload(input);
-const action = toActionCommand(plan, timeoutMs);
-const shouldReportPreparing = action.type === "DOWNLOAD_WITH_GM_DOWNLOAD" || action.type === "FAIL";
-return shouldReportPreparing ? [
-{
+const action = toActionCommand(planSingleDownload(input), timeoutMs);
+return action.type === "DOWNLOAD_WITH_GM_DOWNLOAD" || action.type === "FAIL" ? [{
 type: "REPORT_PROGRESS",
 phase: "preparing",
 percentage: 0,
 filename: input.filename
-},
-action
-] : [action];
+}, action] : [action];
 }
-const SINGLE_DOWNLOAD_TOTAL = 1;
-const DOWNLOAD_TIMEOUT_MESSAGE = "Download timeout";
-const reportSingleProgress = (onProgress, payload) => {
+var SINGLE_DOWNLOAD_TOTAL = 1;
+var DOWNLOAD_TIMEOUT_MESSAGE = "Download timeout";
+var reportSingleProgress = (onProgress, payload) => {
 if (!onProgress) return;
 const current = payload.current ?? SINGLE_DOWNLOAD_TOTAL;
 const total = payload.total ?? SINGLE_DOWNLOAD_TOTAL;
@@ -3918,23 +3269,24 @@ current,
 total
 });
 };
-const calculatePercentage$1 = (loaded, total) => {
+var calculatePercentage$1 = (loaded, total) => {
 if (total <= 0) return 0;
 return Math.min(100, Math.max(0, Math.round(loaded / total * 100)));
 };
-const createAbortResult = (signal) => {
-const abortError = getUserCancelledAbortErrorFromSignal(signal);
+var createAbortResult = (signal) => {
 return {
 success: false,
-error: getErrorMessage(abortError) || "Download cancelled by user"
+error: getErrorMessage(getUserCancelledAbortErrorFromSignal(signal)) || "Download cancelled by user"
 };
 };
 async function executeSingleDownloadCommand(cmd, options, capability, blob) {
 const onProgress = options.onProgress;
 const filename = cmd.filename;
 switch (cmd.type) {
-case "FAIL":
-return { success: false, error: cmd.error };
+case "FAIL": return {
+success: false,
+error: cmd.error
+};
 case "REPORT_PROGRESS":
 reportSingleProgress(onProgress, {
 phase: cmd.phase,
@@ -3942,18 +3294,23 @@ current: 0,
 percentage: cmd.percentage,
 filename
 });
-return { success: true, filename: cmd.filename };
+return {
+success: true,
+filename: cmd.filename
+};
 case "DOWNLOAD_WITH_GM_DOWNLOAD": {
 const gmDownload = capability.gmDownload;
-if (!gmDownload) {
-return { success: false, error: "GM_download unavailable" };
-}
+if (!gmDownload) return {
+success: false,
+error: "GM_download unavailable"
+};
 let url = cmd.url;
 let isBlobUrl = false;
 if (cmd.useBlobUrl) {
-if (!blob) {
-return { success: false, error: "Blob unavailable" };
-}
+if (!blob) return {
+success: false,
+error: "Blob unavailable"
+};
 url = URL.createObjectURL(blob);
 isBlobUrl = true;
 }
@@ -3967,34 +3324,41 @@ if (timer) globalTimerManager.clearTimeout(timer);
 const settle = (result, completePercentage) => {
 if (settled) return;
 settled = true;
-if (completePercentage !== void 0) {
-reportSingleProgress(onProgress, {
+if (completePercentage !== void 0) reportSingleProgress(onProgress, {
 phase: "complete",
 percentage: completePercentage,
 filename
 });
-}
 cleanup();
 resolve(result);
 };
 timer = globalTimerManager.setTimeout(() => {
-settle({ success: false, error: DOWNLOAD_TIMEOUT_MESSAGE }, 0);
+settle({
+success: false,
+error: DOWNLOAD_TIMEOUT_MESSAGE
+}, 0);
 }, cmd.timeoutMs);
 try {
 gmDownload({
 url,
 name: filename,
 onload: () => {
-if (false) ;
-settle({ success: true, filename }, 100);
+settle({
+success: true,
+filename
+}, 100);
 },
 onerror: (error) => {
-const errorMsg = getErrorMessage(error);
-if (false) ;
-settle({ success: false, error: errorMsg }, 0);
+settle({
+success: false,
+error: getErrorMessage(error)
+}, 0);
 },
 ontimeout: () => {
-settle({ success: false, error: DOWNLOAD_TIMEOUT_MESSAGE }, 0);
+settle({
+success: false,
+error: DOWNLOAD_TIMEOUT_MESSAGE
+}, 0);
 },
 onprogress: (progress) => {
 if (settled || !onProgress || progress.total <= 0) return;
@@ -4006,20 +3370,22 @@ filename
 }
 });
 } catch (error) {
-const errorMsg = getErrorMessage(error);
-settle({ success: false, error: errorMsg });
+settle({
+success: false,
+error: getErrorMessage(error)
+});
 }
 });
 }
-default:
-return { success: false, error: "Unknown download command" };
+default: return {
+success: false,
+error: "Unknown download command"
+};
 }
 }
 async function downloadSingleFile(media, options = {}, capability) {
 const abortSignal = options.signal;
-if (abortSignal?.aborted) {
-return createAbortResult(abortSignal);
-}
+if (abortSignal?.aborted) return createAbortResult(abortSignal);
 const filename = generateMediaFilename(media, { nowMs: Date.now() });
 const effectiveCapability = capability ?? detectDownloadCapability();
 const cmds = createSingleDownloadCommands({
@@ -4029,37 +3395,27 @@ filename,
 hasProvidedBlob: !!options.blob,
 timeoutMs: 3e4
 });
-let lastOk = { success: true, filename };
+let lastOk = {
+success: true,
+filename
+};
 for (const cmd of cmds) {
-if (abortSignal?.aborted) {
-return createAbortResult(abortSignal);
-}
-const result = await executeSingleDownloadCommand(
-cmd,
-options,
-effectiveCapability,
-options.blob
-);
-if (!result.success) {
-return result;
-}
+if (abortSignal?.aborted) return createAbortResult(abortSignal);
+const result = await executeSingleDownloadCommand(cmd, options, effectiveCapability, options.blob);
+if (!result.success) return result;
 lastOk = result;
 }
 return lastOk;
 }
-const textEncoder = new TextEncoder();
-let crc32Table = null;
+var textEncoder = new TextEncoder();
+var crc32Table = null;
 function ensureCRC32Table() {
-if (crc32Table) {
-return crc32Table;
-}
+if (crc32Table) return crc32Table;
 const table = new Uint32Array(256);
 const polynomial = 3988292384;
 for (let i = 0; i < 256; i++) {
 let crc = i;
-for (let j = 0; j < 8; j++) {
-crc = crc & 1 ? crc >>> 1 ^ polynomial : crc >>> 1;
-}
+for (let j = 0; j < 8; j++) crc = crc & 1 ? crc >>> 1 ^ polynomial : crc >>> 1;
 table[i] = crc >>> 0;
 }
 crc32Table = table;
@@ -4071,9 +3427,7 @@ return textEncoder.encode(value);
 function calculateCRC32(data) {
 const table = ensureCRC32Table();
 let crc = 4294967295;
-for (let i = 0; i < data.length; i++) {
-crc = crc >>> 8 ^ table[(crc ^ data[i]) & 255];
-}
+for (let i = 0; i < data.length; i++) crc = crc >>> 8 ^ table[(crc ^ data[i]) & 255];
 return (crc ^ 4294967295) >>> 0;
 }
 function writeUint16LE(value) {
@@ -4090,13 +3444,28 @@ bytes[2] = value >>> 16 & 255;
 bytes[3] = value >>> 24 & 255;
 return bytes;
 }
-const ZIP_CONST = {
+var ZIP_CONST = {
 MAX_UINT16: 65535,
 MAX_UINT32: 4294967295,
 ZIP32_ERROR: "Zip32 limit exceeded",
-SIG_LOCAL_HEADER: new Uint8Array([80, 75, 3, 4]),
-SIG_CENTRAL_DIR: new Uint8Array([80, 75, 1, 2]),
-SIG_END_CENTRAL_DIR: new Uint8Array([80, 75, 5, 6]),
+SIG_LOCAL_HEADER: new Uint8Array([
+80,
+75,
+3,
+4
+]),
+SIG_CENTRAL_DIR: new Uint8Array([
+80,
+75,
+1,
+2
+]),
+SIG_END_CENTRAL_DIR: new Uint8Array([
+80,
+75,
+5,
+6
+]),
 UTF8_FLAG: 2048,
 VERSION: 20
 };
@@ -4104,7 +3473,7 @@ function assertZip32(condition, message) {
 if (condition) return;
 throw new Error(ZIP_CONST.ZIP32_ERROR);
 }
-const concat = (arrays) => {
+var concat = (arrays) => {
 let len = 0;
 for (const array of arrays) len += array.length;
 const result = new Uint8Array(len);
@@ -4115,16 +3484,14 @@ offset += array.length;
 }
 return result;
 };
-class StreamingZipWriter {
+var StreamingZipWriter = class {
 chunks = [];
 entries = [];
 currentOffset = 0;
 addFile(filename, data) {
-assertZip32(
-this.entries.length < ZIP_CONST.MAX_UINT16 - 1);
-assertZip32(data.length < ZIP_CONST.MAX_UINT32);
-assertZip32(
-this.currentOffset < ZIP_CONST.MAX_UINT32);
+assertZip32(this.entries.length < ZIP_CONST.MAX_UINT16 - 1, `too many entries (count=${this.entries.length + 1})`);
+assertZip32(data.length < ZIP_CONST.MAX_UINT32, `file too large (size=${data.length})`);
+assertZip32(this.currentOffset < ZIP_CONST.MAX_UINT32, `offset overflow (offset=${this.currentOffset})`);
 const filenameBytes = encodeUtf8(filename);
 const crc32 = calculateCRC32(data);
 const localHeader = concat([
@@ -4141,26 +3508,26 @@ writeUint16LE(filenameBytes.length),
 writeUint16LE(0),
 filenameBytes
 ]);
-assertZip32(
-this.currentOffset + localHeader.length + data.length < ZIP_CONST.MAX_UINT32);
+assertZip32(this.currentOffset + localHeader.length + data.length < ZIP_CONST.MAX_UINT32, `archive too large (offset=${this.currentOffset}, add=${localHeader.length + data.length})`);
 this.chunks.push(localHeader, data);
-this.entries.push({ filename, data, offset: this.currentOffset, crc32 });
+this.entries.push({
+filename,
+data,
+offset: this.currentOffset,
+crc32
+});
 this.currentOffset += localHeader.length + data.length;
 }
 finalize() {
-assertZip32(
-this.entries.length < ZIP_CONST.MAX_UINT16);
+assertZip32(this.entries.length < ZIP_CONST.MAX_UINT16, `too many entries (count=${this.entries.length})`);
 const centralDirStart = this.currentOffset;
-assertZip32(
-centralDirStart < ZIP_CONST.MAX_UINT32);
+assertZip32(centralDirStart < ZIP_CONST.MAX_UINT32, `central directory offset overflow (${centralDirStart})`);
 const centralDirChunks = [];
 for (const entry of this.entries) {
 const filenameBytes = encodeUtf8(entry.filename);
-assertZip32(entry.offset < ZIP_CONST.MAX_UINT32);
-assertZip32(
-entry.data.length < ZIP_CONST.MAX_UINT32);
-centralDirChunks.push(
-concat([
+assertZip32(entry.offset < ZIP_CONST.MAX_UINT32, `entry offset overflow (${entry.offset})`);
+assertZip32(entry.data.length < ZIP_CONST.MAX_UINT32, `entry too large (size=${entry.data.length})`);
+centralDirChunks.push(concat([
 ZIP_CONST.SIG_CENTRAL_DIR,
 writeUint16LE(ZIP_CONST.VERSION),
 writeUint16LE(ZIP_CONST.VERSION),
@@ -4179,12 +3546,10 @@ writeUint16LE(0),
 writeUint32LE(0),
 writeUint32LE(entry.offset),
 filenameBytes
-])
-);
+]));
 }
 const centralDir = concat(centralDirChunks);
-assertZip32(
-centralDir.length < ZIP_CONST.MAX_UINT32);
+assertZip32(centralDir.length < ZIP_CONST.MAX_UINT32, `central directory too large (size=${centralDir.length})`);
 const endOfCentralDir = concat([
 ZIP_CONST.SIG_END_CENTRAL_DIR,
 writeUint16LE(0),
@@ -4195,46 +3560,40 @@ writeUint32LE(centralDir.length),
 writeUint32LE(centralDirStart),
 writeUint16LE(0)
 ]);
-return concat([...this.chunks, centralDir, endOfCentralDir]);
+return concat([
+...this.chunks,
+centralDir,
+endOfCentralDir
+]);
 }
-}
-const DEFAULT_BACKOFF_BASE_MS = 200;
-class HttpStatusError extends Error {
+};
+var HttpStatusError = class extends Error {
+name = "HttpStatusError";
 constructor(status) {
 super(`HTTP error: ${status}`);
 this.status = status;
 }
-name = "HttpStatusError";
-}
-const isRetryableStatus = (status) => status === 0 || status === 408 || status === 425 || status === 429 || status >= 500 && status < 600;
-const getStatusFromError = (error) => {
+};
+var isRetryableStatus = (status) => status === 0 || status === 408 || status === 425 || status === 429 || status >= 500 && status < 600;
+var getStatusFromError = (error) => {
 if (!error || typeof error !== "object" || !("status" in error)) return null;
 const statusValue = error.status;
 return typeof statusValue === "number" ? statusValue : null;
 };
-async function fetchArrayBufferWithRetry(url, retries, signal, backoffBaseMs = DEFAULT_BACKOFF_BASE_MS) {
-if (signal?.aborted) {
-throw getUserCancelledAbortErrorFromSignal(signal);
-}
+async function fetchArrayBufferWithRetry(url, retries, signal, backoffBaseMs = 200) {
+if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
 const httpService = HttpRequestService.getInstance();
-const maxAttempts = Math.max(1, retries + 1);
-const result = await withRetry(
-async () => {
-if (signal?.aborted) {
-throw getUserCancelledAbortErrorFromSignal(signal);
-}
+const result = await withRetry(async () => {
+if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
 const response = await httpService.get(url, {
 responseType: "arraybuffer",
 timeout: 3e4,
 ...signal ? { signal } : {}
 });
-if (!response.ok) {
-throw new HttpStatusError(response.status);
-}
+if (!response.ok) throw new HttpStatusError(response.status);
 return new Uint8Array(response.data);
-},
-{
-maxAttempts,
+}, {
+maxAttempts: Math.max(1, retries + 1),
 baseDelayMs: backoffBaseMs,
 ...signal ? { signal } : {},
 shouldRetry: (error) => {
@@ -4243,17 +3602,12 @@ const status = getStatusFromError(error);
 if (status === null) return true;
 return isRetryableStatus(status);
 }
-}
-);
-if (result.success) {
-return result.data;
-}
-if (signal?.aborted) {
-throw getUserCancelledAbortErrorFromSignal(signal);
-}
+});
+if (result.success) return result.data;
+if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
 throw result.error;
 }
-const ensureUniqueFilenameFactory = () => {
+var ensureUniqueFilenameFactory = () => {
 const usedNames =  new Set();
 const baseCounts =  new Map();
 return (desired) => {
@@ -4277,20 +3631,19 @@ usedNames.add(candidate);
 return candidate;
 };
 };
-const MAX_CONCURRENCY = 8;
-const MIN_CONCURRENCY = 1;
-const DEFAULT_CONCURRENCY = 4;
-const DEFAULT_RETRIES = 3;
-const clampConcurrency = (value) => {
-const resolved = value ?? DEFAULT_CONCURRENCY;
-return Math.min(MAX_CONCURRENCY, Math.max(MIN_CONCURRENCY, resolved));
+var MAX_CONCURRENCY = 8;
+var MIN_CONCURRENCY = 1;
+var DEFAULT_CONCURRENCY = 4;
+var DEFAULT_RETRIES = 3;
+var clampConcurrency = (value) => {
+return Math.min(MAX_CONCURRENCY, Math.max(MIN_CONCURRENCY, value ?? DEFAULT_CONCURRENCY));
 };
-const clampRetries = (value) => Math.max(0, value ?? DEFAULT_RETRIES);
-const calculatePercentage = (current, total) => {
+var clampRetries = (value) => Math.max(0, value ?? DEFAULT_RETRIES);
+var calculatePercentage = (current, total) => {
 if (total <= 0) return 0;
 return Math.min(100, Math.max(0, Math.round(current / total * 100)));
 };
-const reportProgress = (onProgress, payload) => {
+var reportProgress = (onProgress, payload) => {
 if (!onProgress) return;
 const percentage = payload.percentage ?? calculatePercentage(payload.current, payload.total);
 onProgress({
@@ -4298,10 +3651,8 @@ onProgress({
 percentage
 });
 };
-const throwIfAborted = (signal) => {
-if (signal?.aborted) {
-throw getUserCancelledAbortErrorFromSignal(signal);
-}
+var throwIfAborted = (signal) => {
+if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
 };
 async function downloadAsZip(items, options = {}) {
 const writer = new StreamingZipWriter();
@@ -4330,20 +3681,16 @@ if (item.blob) {
 const blob = item.blob instanceof Promise ? await item.blob : item.blob;
 throwIfAborted(abortSignal);
 data = new Uint8Array(await blob.arrayBuffer());
-} else {
-data = await fetchArrayBufferWithRetry(
-item.url,
-retries,
-abortSignal,
-DEFAULT_BACKOFF_BASE_MS
-);
-}
+} else data = await fetchArrayBufferWithRetry(item.url, retries, abortSignal, 200);
 throwIfAborted(abortSignal);
 writer.addFile(filename, data);
 successful++;
 } catch (error) {
 throwIfAborted(abortSignal);
-failures.push({ url: item.url, error: getErrorMessage(error) });
+failures.push({
+url: item.url,
+error: getErrorMessage(error)
+});
 } finally {
 processed++;
 reportProgress(onProgress, {
@@ -4355,8 +3702,7 @@ filename
 }
 }
 };
-const workerCount = Math.min(concurrency, total);
-const workers = Array.from({ length: workerCount }, () => runNext());
+const workers = Array.from({ length: Math.min(concurrency, total) }, () => runNext());
 await Promise.all(workers);
 reportProgress(onProgress, {
 phase: "complete",
@@ -4370,7 +3716,7 @@ failures,
 zipData: zipBytes
 };
 }
-class DownloadOrchestrator {
+var DownloadOrchestrator = class DownloadOrchestrator {
 lifecycle;
 static singleton = createSingleton(() => new DownloadOrchestrator());
 capability = null;
@@ -4392,8 +3738,7 @@ this.lifecycle.destroy();
 isInitialized() {
 return this.lifecycle.isInitialized();
 }
-async onInitialize() {
-}
+async onInitialize() {}
 onDestroy() {
 this.capability = null;
 }
@@ -4401,23 +3746,18 @@ getCapability() {
 return this.capability ??= detectDownloadCapability();
 }
 async downloadSingle(media, options = {}) {
-const capability = this.getCapability();
-return downloadSingleFile(media, options, capability);
+return downloadSingleFile(media, options, this.getCapability());
 }
 async downloadBulk(mediaItems, options = {}) {
-if (options.signal?.aborted) {
-const abortError = getUserCancelledAbortErrorFromSignal(options.signal);
-return {
+if (options.signal?.aborted) return {
 success: false,
 status: "error",
 filesProcessed: 0,
 filesSuccessful: 0,
-error: getErrorMessage(abortError) || "Download cancelled",
+error: getErrorMessage(getUserCancelledAbortErrorFromSignal(options.signal)) || "Download cancelled",
 code: ErrorCode.CANCELLED
 };
-}
-if (mediaItems.length === 0) {
-return {
+if (mediaItems.length === 0) return {
 success: false,
 status: "error",
 filesProcessed: 0,
@@ -4425,10 +3765,8 @@ filesSuccessful: 0,
 error: "No media to download",
 code: ErrorCode.EMPTY_INPUT
 };
-}
 const capability = this.getCapability();
-if (capability.method === "none") {
-return {
+if (capability.method === "none") return {
 success: false,
 status: "error",
 filesProcessed: mediaItems.length,
@@ -4436,7 +3774,6 @@ filesSuccessful: 0,
 error: "No download method",
 code: ErrorCode.ALL_FAILED
 };
-}
 const plan = planBulkDownload({
 mediaItems,
 prefetchedBlobs: options.prefetchedBlobs,
@@ -4446,8 +3783,7 @@ nowMs: Date.now()
 const items = plan.items;
 try {
 const result = await downloadAsZip(items, options);
-if (result.filesSuccessful === 0) {
-return {
+if (result.filesSuccessful === 0) return {
 success: false,
 status: "error",
 filesProcessed: items.length,
@@ -4456,14 +3792,10 @@ error: "No files downloaded",
 failures: result.failures,
 code: ErrorCode.ALL_FAILED
 };
-}
-const zipBlob = new Blob([result.zipData], {
-type: "application/zip"
-});
+const zipBlob = new Blob([result.zipData], { type: "application/zip" });
 const filename = plan.zipFilename;
 const saveResult = await this.saveZipBlob(zipBlob, filename, options, capability);
-if (!saveResult.success) {
-return {
+if (!saveResult.success) return {
 success: false,
 status: "error",
 filesProcessed: items.length,
@@ -4472,7 +3804,6 @@ error: saveResult.error || "Failed to save ZIP file",
 failures: result.failures,
 code: ErrorCode.ALL_FAILED
 };
-}
 return {
 success: true,
 status: result.filesSuccessful === items.length ? "success" : "partial",
@@ -4483,8 +3814,7 @@ failures: result.failures,
 code: ErrorCode.NONE
 };
 } catch (error) {
-if (isAbortError(error)) {
-return {
+if (isAbortError(error)) return {
 success: false,
 status: "error",
 filesProcessed: items.length,
@@ -4492,7 +3822,6 @@ filesSuccessful: 0,
 error: getErrorMessage(error) || "Download cancelled",
 code: ErrorCode.CANCELLED
 };
-}
 return {
 success: false,
 status: "error",
@@ -4504,11 +3833,11 @@ code: ErrorCode.ALL_FAILED
 }
 }
 async saveZipBlob(zipBlob, filename, _options, capability) {
-const saveStrategy = planZipSave(capability.method);
-if (saveStrategy === "gm_download" && capability.gmDownload) {
-return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename);
-}
-return { success: false, error: "No download method" };
+if (planZipSave(capability.method) === "gm_download" && capability.gmDownload) return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename);
+return {
+success: false,
+error: "No download method"
+};
 }
 async saveWithGMDownload(gmDownload, blob, filename) {
 const url = URL.createObjectURL(blob);
@@ -4519,7 +3848,7 @@ url,
 name: filename,
 onload: () => resolve(),
 onerror: (err) => reject(err),
-ontimeout: () => reject(new Error("Timeout"))
+ontimeout: () => reject(  new Error("Timeout"))
 });
 });
 return { success: true };
@@ -4532,34 +3861,22 @@ error: getErrorMessage(error) || "GM_download failed"
 URL.revokeObjectURL(url);
 }
 }
-}
-function tryGetFromCoreService(key) {
-try {
-const coreService = CoreService.getInstance();
-if (coreService.has(key)) {
-return coreService.get(key);
-}
-} catch (error) {
-}
-return null;
-}
+};
 function getThemeService() {
-return tryGetFromCoreService(SERVICE_KEYS.THEME) ?? ThemeService.getInstance();
+return ThemeService.getInstance();
 }
 function getLanguageService() {
-return tryGetFromCoreService(SERVICE_KEYS.LANGUAGE) ?? LanguageService.getInstance();
+return LanguageService.getInstance();
 }
 function getMediaService() {
-return tryGetFromCoreService(SERVICE_KEYS.MEDIA_SERVICE) ?? MediaService.getInstance();
+return MediaService.getInstance();
 }
 function getGalleryRenderer() {
 return CoreService.getInstance().get(SERVICE_KEYS.GALLERY_RENDERER);
 }
 async function getDownloadOrchestrator() {
 const coreService = CoreService.getInstance();
-if (coreService.has(SERVICE_KEYS.GALLERY_DOWNLOAD)) {
-return coreService.get(SERVICE_KEYS.GALLERY_DOWNLOAD);
-}
+if (coreService.has(SERVICE_KEYS.GALLERY_DOWNLOAD)) return coreService.get(SERVICE_KEYS.GALLERY_DOWNLOAD);
 const orchestrator = DownloadOrchestrator.getInstance();
 coreService.register(SERVICE_KEYS.GALLERY_DOWNLOAD, orchestrator);
 return orchestrator;
@@ -4573,8 +3890,8 @@ CoreService.getInstance().register(SERVICE_KEYS.SETTINGS, settings);
 function tryGetSettingsManager() {
 return CoreService.getInstance().tryGet(SERVICE_KEYS.SETTINGS);
 }
-const DEFAULT_SEVERITY = "error";
-class AppErrorReporter {
+var DEFAULT_SEVERITY = "error";
+var AppErrorReporter = class AppErrorReporter {
 static notificationCallback = null;
 static setNotificationCallback(callback) {
 AppErrorReporter.notificationCallback = callback;
@@ -4582,48 +3899,64 @@ AppErrorReporter.notificationCallback = callback;
 static report(error, options) {
 const severity = options.severity ?? DEFAULT_SEVERITY;
 const message = normalizeErrorMessage(error);
-if (options.notify && AppErrorReporter.notificationCallback) {
-AppErrorReporter.notificationCallback(message, options.context);
-}
+const payload = {
+c: options.context,
+s: severity
+};
+if (options.code) payload.cd = options.code;
+if (options.metadata) payload.m = options.metadata;
+if (options.notify && AppErrorReporter.notificationCallback) AppErrorReporter.notificationCallback(message, options.context);
 const result = {
 reported: true,
 message,
 context: options.context,
 severity
 };
-if (severity === "critical") {
-throw error instanceof Error ? error : new Error(message);
-}
+if (severity === "critical") throw error instanceof Error ? error : new Error(message);
 return result;
 }
 static reportAndReturn(error, options, defaultValue) {
-const effectiveOptions = {
+AppErrorReporter.report(error, {
 ...options,
 severity: options.severity === "critical" ? "error" : options.severity
-};
-AppErrorReporter.report(error, effectiveOptions);
+});
 return defaultValue;
 }
 static forContext(context) {
 return {
-critical: (error, options) => AppErrorReporter.report(error, { ...options, context, severity: "critical" }),
-error: (error, options) => AppErrorReporter.report(error, { ...options, context, severity: "error" }),
-warn: (error, options) => AppErrorReporter.report(error, { ...options, context, severity: "warning" }),
-info: (error, options) => AppErrorReporter.report(error, { ...options, context, severity: "info" })
+critical: (error, options) => AppErrorReporter.report(error, {
+...options,
+context,
+severity: "critical"
+}),
+error: (error, options) => AppErrorReporter.report(error, {
+...options,
+context,
+severity: "error"
+}),
+warn: (error, options) => AppErrorReporter.report(error, {
+...options,
+context,
+severity: "warning"
+}),
+info: (error, options) => AppErrorReporter.report(error, {
+...options,
+context,
+severity: "info"
+})
 };
 }
-}
-const bootstrapErrorReporter = AppErrorReporter.forContext("bootstrap");
-const galleryErrorReporter = AppErrorReporter.forContext("gallery");
-const mediaErrorReporter = AppErrorReporter.forContext("media");
-const settingsErrorReporter = AppErrorReporter.forContext("settings");
-class NotificationService {
+};
+var bootstrapErrorReporter = AppErrorReporter.forContext("bootstrap");
+var galleryErrorReporter = AppErrorReporter.forContext("gallery");
+var mediaErrorReporter = AppErrorReporter.forContext("media");
+var settingsErrorReporter = AppErrorReporter.forContext("settings");
+var NotificationService = class NotificationService {
 static singleton = createSingleton(() => new NotificationService());
 get userscript() {
 return getUserscriptSafe();
 }
-constructor() {
-}
+constructor() {}
 static getInstance() {
 return NotificationService.singleton.get();
 }
@@ -4637,45 +3970,68 @@ onclick: options.onclick
 });
 }
 async error(title, text, timeout = 5e3) {
-await this.show({ title, text, timeout });
+await this.show({
+title,
+text,
+timeout
+});
 }
-}
-const IS_DEV = false;
-const equalFn = (a, b) => a === b;
-const $PROXY = Symbol("solid-proxy");
-const SUPPORTS_PROXY = typeof Proxy === "function";
-const signalOptions = {
-equals: equalFn
 };
-let ERROR = null;
-let runEffects = runQueue;
-const STALE = 1;
-const PENDING = 2;
-const UNOWNED = {
+var sharedConfig = {
+context: void 0,
+registry: void 0,
+effects: void 0,
+done: false,
+getContextId() {
+return getContextId(this.context.count);
+},
+getNextContextId() {
+return getContextId(this.context.count++);
+}
+};
+function getContextId(count) {
+const num = String(count), len = num.length - 1;
+return sharedConfig.context.id + (len ? String.fromCharCode(96 + len) : "") + num;
+}
+function setHydrateContext(context) {
+sharedConfig.context = context;
+}
+function nextHydrateContext() {
+return {
+...sharedConfig.context,
+id: sharedConfig.getNextContextId(),
+count: 0
+};
+}
+var equalFn = (a, b) => a === b;
+var $PROXY = Symbol("solid-proxy");
+var SUPPORTS_PROXY = typeof Proxy === "function";
+var signalOptions = { equals: equalFn };
+var ERROR = null;
+var runEffects = runQueue;
+var STALE = 1;
+var PENDING = 2;
+var UNOWNED = {
 owned: null,
 cleanups: null,
 context: null,
 owner: null
 };
 var Owner = null;
-let Transition = null;
-let ExternalSourceConfig = null;
-let Listener = null;
-let Updates = null;
-let Effects = null;
-let ExecCount = 0;
+var Transition = null;
+var Scheduler = null;
+var ExternalSourceConfig = null;
+var Listener = null;
+var Updates = null;
+var Effects = null;
+var ExecCount = 0;
 function createRoot(fn, detachedOwner) {
-const listener = Listener,
-owner = Owner,
-unowned = fn.length === 0,
-current = detachedOwner === undefined ? owner : detachedOwner,
-root = unowned ? UNOWNED : {
+const listener = Listener, owner = Owner, unowned = fn.length === 0, current = detachedOwner === void 0 ? owner : detachedOwner, root = unowned ? UNOWNED : {
 owned: null,
 cleanups: null,
 context: current ? current.context : null,
 owner: current
-},
-updateFn = unowned ? fn : () => fn(() => untrack(() => cleanNode(root)));
+}, updateFn = unowned ? fn : () => fn(() => untrack(() => cleanNode(root)));
 Owner = root;
 Listener = null;
 try {
@@ -4691,24 +4047,30 @@ const s = {
 value,
 observers: null,
 observerSlots: null,
-comparator: options.equals || undefined
+comparator: options.equals || void 0
 };
-const setter = value => {
-if (typeof value === "function") {
-value = value(s.value);
-}
+const setter = (value) => {
+if (typeof value === "function") if (Transition && Transition.running && Transition.sources.has(s)) value = value(s.tValue);
+else value = value(s.value);
 return writeSignal(s, value);
 };
 return [readSignal.bind(s), setter];
 }
+function createComputed(fn, value, options) {
+const c = createComputation(fn, value, true, STALE);
+if (Scheduler && Transition && Transition.running) Updates.push(c);
+else updateComputation(c);
+}
 function createRenderEffect(fn, value, options) {
 const c = createComputation(fn, value, false, STALE);
-updateComputation(c);
+if (Scheduler && Transition && Transition.running) Updates.push(c);
+else updateComputation(c);
 }
 function createEffect(fn, value, options) {
 runEffects = runUserEffects;
-const c = createComputation(fn, value, false, STALE);
-c.user = true;
+const c = createComputation(fn, value, false, STALE), s = SuspenseContext && useContext(SuspenseContext);
+if (s) c.suspense = s;
+if (!options || !options.render) c.user = true;
 Effects ? Effects.push(c) : updateComputation(c);
 }
 function createMemo(fn, value, options) {
@@ -4716,19 +4078,22 @@ options = options ? Object.assign({}, signalOptions, options) : signalOptions;
 const c = createComputation(fn, value, true, 0);
 c.observers = null;
 c.observerSlots = null;
-c.comparator = options.equals || undefined;
-updateComputation(c);
+c.comparator = options.equals || void 0;
+if (Scheduler && Transition && Transition.running) {
+c.tState = STALE;
+Updates.push(c);
+} else updateComputation(c);
 return readSignal.bind(c);
 }
 function batch$1(fn) {
 return runUpdates(fn, false);
 }
 function untrack(fn) {
-if (Listener === null) return fn();
+if (!ExternalSourceConfig && Listener === null) return fn();
 const listener = Listener;
 Listener = null;
 try {
-if (ExternalSourceConfig) ;
+if (ExternalSourceConfig) return ExternalSourceConfig.untrack(fn);
 return fn();
 } finally {
 Listener = listener;
@@ -4738,7 +4103,7 @@ function on(deps, fn, options) {
 const isArray = Array.isArray(deps);
 let prevInput;
 let defer = options && options.defer;
-return prevValue => {
+return (prevValue) => {
 let input;
 if (isArray) {
 input = Array(deps.length);
@@ -4757,16 +4122,19 @@ function onMount(fn) {
 createEffect(() => untrack(fn));
 }
 function onCleanup(fn) {
-if (Owner === null) ;else if (Owner.cleanups === null) Owner.cleanups = [fn];else Owner.cleanups.push(fn);
+if (Owner === null);
+else if (Owner.cleanups === null) Owner.cleanups = [fn];
+else Owner.cleanups.push(fn);
 return fn;
 }
 function catchError(fn, handler) {
 ERROR || (ERROR = Symbol("error"));
-Owner = createComputation(undefined, undefined, true);
+Owner = createComputation(void 0, void 0, true);
 Owner.context = {
 ...Owner.context,
 [ERROR]: [handler]
 };
+if (Transition && Transition.running) Transition.sources.add(Owner);
 try {
 return fn();
 } catch (err) {
@@ -4775,14 +4143,48 @@ handleError(err);
 Owner = Owner.owner;
 }
 }
+function startTransition(fn) {
+if (Transition && Transition.running) {
+fn();
+return Transition.done;
+}
+const l = Listener;
+const o = Owner;
+return Promise.resolve().then(() => {
+Listener = l;
+Owner = o;
+let t;
+if (Scheduler || SuspenseContext) {
+t = Transition || (Transition = {
+sources:  new Set(),
+effects: [],
+promises:  new Set(),
+disposed:  new Set(),
+queue:  new Set(),
+running: true
+});
+t.done || (t.done = new Promise((res) => t.resolve = res));
+t.running = true;
+}
+runUpdates(fn, false);
+Listener = Owner = null;
+return t ? t.done : void 0;
+});
+}
+var [transPending, setTransPending] =  createSignal(false);
+function useContext(context) {
+let value;
+return Owner && Owner.context && (value = Owner.context[context.id]) !== void 0 ? value : context.defaultValue;
+}
+var SuspenseContext;
 function readSignal() {
-if (this.sources && (this.state)) {
-if ((this.state) === STALE) updateComputation(this);else {
+const runningTransition = Transition && Transition.running;
+if (this.sources && (runningTransition ? this.tState : this.state)) if ((runningTransition ? this.tState : this.state) === STALE) updateComputation(this);
+else {
 const updates = Updates;
 Updates = null;
 runUpdates(() => lookUpstream(this), false);
 Updates = updates;
-}
 }
 if (Listener) {
 const sSlot = this.observers ? this.observers.length : 0;
@@ -4801,31 +4203,38 @@ this.observers.push(Listener);
 this.observerSlots.push(Listener.sources.length - 1);
 }
 }
+if (runningTransition && Transition.sources.has(this)) return this.tValue;
 return this.value;
 }
 function writeSignal(node, value, isComp) {
-let current = node.value;
+let current = Transition && Transition.running && Transition.sources.has(node) ? node.tValue : node.value;
 if (!node.comparator || !node.comparator(current, value)) {
-node.value = value;
-if (node.observers && node.observers.length) {
-runUpdates(() => {
+if (Transition) {
+const TransitionRunning = Transition.running;
+if (TransitionRunning || !isComp && Transition.sources.has(node)) {
+Transition.sources.add(node);
+node.tValue = value;
+}
+if (!TransitionRunning) node.value = value;
+} else node.value = value;
+if (node.observers && node.observers.length) runUpdates(() => {
 for (let i = 0; i < node.observers.length; i += 1) {
 const o = node.observers[i];
 const TransitionRunning = Transition && Transition.running;
-if (TransitionRunning && Transition.disposed.has(o)) ;
+if (TransitionRunning && Transition.disposed.has(o)) continue;
 if (TransitionRunning ? !o.tState : !o.state) {
-if (o.pure) Updates.push(o);else Effects.push(o);
+if (o.pure) Updates.push(o);
+else Effects.push(o);
 if (o.observers) markDownstream(o);
 }
 if (!TransitionRunning) o.state = STALE;
+else o.tState = STALE;
 }
-if (Updates.length > 10e5) {
+if (Updates.length > 1e6) {
 Updates = [];
-if (IS_DEV) ;
 throw new Error();
 }
 }, false);
-}
 }
 return value;
 }
@@ -4833,22 +4242,31 @@ function updateComputation(node) {
 if (!node.fn) return;
 cleanNode(node);
 const time = ExecCount;
-runComputation(node, node.value, time);
+runComputation(node, Transition && Transition.running && Transition.sources.has(node) ? node.tValue : node.value, time);
+if (Transition && !Transition.running && Transition.sources.has(node)) queueMicrotask(() => {
+runUpdates(() => {
+Transition && (Transition.running = true);
+Listener = Owner = node;
+runComputation(node, node.tValue, time);
+Listener = Owner = null;
+}, false);
+});
 }
 function runComputation(node, value, time) {
 let nextValue;
-const owner = Owner,
-listener = Listener;
+const owner = Owner, listener = Listener;
 Listener = Owner = node;
 try {
 nextValue = node.fn(value);
 } catch (err) {
-if (node.pure) {
-{
+if (node.pure) if (Transition && Transition.running) {
+node.tState = STALE;
+node.tOwned && node.tOwned.forEach(cleanNode);
+node.tOwned = void 0;
+} else {
 node.state = STALE;
 node.owned && node.owned.forEach(cleanNode);
 node.owned = null;
-}
 }
 node.updatedAt = time + 1;
 return handleError(err);
@@ -4857,8 +4275,11 @@ Listener = listener;
 Owner = owner;
 }
 if (!node.updatedAt || node.updatedAt <= time) {
-if (node.updatedAt != null && "observers" in node) {
-writeSignal(node, nextValue);
+if (node.updatedAt != null && "observers" in node) writeSignal(node, nextValue, true);
+else if (Transition && Transition.running && node.pure) {
+if (!Transition.sources.has(node)) node.value = nextValue;
+Transition.sources.add(node);
+node.tValue = nextValue;
 } else node.value = nextValue;
 node.updatedAt = time;
 }
@@ -4866,7 +4287,7 @@ node.updatedAt = time;
 function createComputation(fn, init, pure, state = STALE, options) {
 const c = {
 fn,
-state: state,
+state,
 updatedAt: null,
 owned: null,
 sources: null,
@@ -4877,26 +4298,56 @@ owner: Owner,
 context: Owner ? Owner.context : null,
 pure
 };
-if (Owner === null) ;else if (Owner !== UNOWNED) {
-{
-if (!Owner.owned) Owner.owned = [c];else Owner.owned.push(c);
+if (Transition && Transition.running) {
+c.state = 0;
+c.tState = state;
 }
+if (Owner === null);
+else if (Owner !== UNOWNED) if (Transition && Transition.running && Owner.pure) if (!Owner.tOwned) Owner.tOwned = [c];
+else Owner.tOwned.push(c);
+else if (!Owner.owned) Owner.owned = [c];
+else Owner.owned.push(c);
+if (ExternalSourceConfig && c.fn) {
+const sourceFn = c.fn;
+const [track, trigger] = createSignal(void 0, { equals: false });
+const ordinary = ExternalSourceConfig.factory(sourceFn, trigger);
+onCleanup(() => ordinary.dispose());
+let inTransition;
+const triggerInTransition = () => startTransition(trigger).then(() => {
+if (inTransition) {
+inTransition.dispose();
+inTransition = void 0;
+}
+});
+c.fn = (x) => {
+track();
+if (Transition && Transition.running) {
+if (!inTransition) inTransition = ExternalSourceConfig.factory(sourceFn, triggerInTransition);
+return inTransition.track(x);
+}
+return ordinary.track(x);
+};
 }
 return c;
 }
 function runTop(node) {
-if ((node.state) === 0) return;
-if ((node.state) === PENDING) return lookUpstream(node);
+const runningTransition = Transition && Transition.running;
+if ((runningTransition ? node.tState : node.state) === 0) return;
+if ((runningTransition ? node.tState : node.state) === PENDING) return lookUpstream(node);
 if (node.suspense && untrack(node.suspense.inFallback)) return node.suspense.effects.push(node);
 const ancestors = [node];
 while ((node = node.owner) && (!node.updatedAt || node.updatedAt < ExecCount)) {
-if (node.state) ancestors.push(node);
+if (runningTransition && Transition.disposed.has(node)) return;
+if (runningTransition ? node.tState : node.state) ancestors.push(node);
 }
 for (let i = ancestors.length - 1; i >= 0; i--) {
 node = ancestors[i];
-if ((node.state) === STALE) {
-updateComputation(node);
-} else if ((node.state) === PENDING) {
+if (runningTransition) {
+let top = node, prev = ancestors[i + 1];
+while ((top = top.owner) && top !== prev) if (Transition.disposed.has(top)) return;
+}
+if ((runningTransition ? node.tState : node.state) === STALE) updateComputation(node);
+else if ((runningTransition ? node.tState : node.state) === PENDING) {
 const updates = Updates;
 Updates = null;
 runUpdates(() => lookUpstream(node, ancestors[0]), false);
@@ -4908,7 +4359,8 @@ function runUpdates(fn, init) {
 if (Updates) return fn();
 let wait = false;
 if (!init) Updates = [];
-if (Effects) wait = true;else Effects = [];
+if (Effects) wait = true;
+else Effects = [];
 ExecCount++;
 try {
 const res = fn();
@@ -4922,32 +4374,98 @@ handleError(err);
 }
 function completeUpdates(wait) {
 if (Updates) {
-runQueue(Updates);
+if (Scheduler && Transition && Transition.running) scheduleQueue(Updates);
+else runQueue(Updates);
 Updates = null;
 }
 if (wait) return;
+let res;
+if (Transition) {
+if (!Transition.promises.size && !Transition.queue.size) {
+const sources = Transition.sources;
+const disposed = Transition.disposed;
+Effects.push.apply(Effects, Transition.effects);
+res = Transition.resolve;
+for (const e of Effects) {
+"tState" in e && (e.state = e.tState);
+delete e.tState;
+}
+Transition = null;
+runUpdates(() => {
+for (const d of disposed) cleanNode(d);
+for (const v of sources) {
+v.value = v.tValue;
+if (v.owned) for (let i = 0, len = v.owned.length; i < len; i++) cleanNode(v.owned[i]);
+if (v.tOwned) v.owned = v.tOwned;
+delete v.tValue;
+delete v.tOwned;
+v.tState = 0;
+}
+setTransPending(false);
+}, false);
+} else if (Transition.running) {
+Transition.running = false;
+Transition.effects.push.apply(Transition.effects, Effects);
+Effects = null;
+setTransPending(true);
+return;
+}
+}
 const e = Effects;
 Effects = null;
 if (e.length) runUpdates(() => runEffects(e), false);
+if (res) res();
 }
 function runQueue(queue) {
 for (let i = 0; i < queue.length; i++) runTop(queue[i]);
 }
+function scheduleQueue(queue) {
+for (let i = 0; i < queue.length; i++) {
+const item = queue[i];
+const tasks = Transition.queue;
+if (!tasks.has(item)) {
+tasks.add(item);
+Scheduler(() => {
+tasks.delete(item);
+runUpdates(() => {
+Transition.running = true;
+runTop(item);
+}, false);
+Transition && (Transition.running = false);
+});
+}
+}
+}
 function runUserEffects(queue) {
-let i,
-userLength = 0;
+let i, userLength = 0;
 for (i = 0; i < queue.length; i++) {
 const e = queue[i];
-if (!e.user) runTop(e);else queue[userLength++] = e;
+if (!e.user) runTop(e);
+else queue[userLength++] = e;
+}
+if (sharedConfig.context) {
+if (sharedConfig.count) {
+sharedConfig.effects || (sharedConfig.effects = []);
+sharedConfig.effects.push(...queue.slice(0, userLength));
+return;
+}
+setHydrateContext();
+}
+if (sharedConfig.effects && (sharedConfig.done || !sharedConfig.count)) {
+queue = [...sharedConfig.effects, ...queue];
+userLength += sharedConfig.effects.length;
+delete sharedConfig.effects;
 }
 for (i = 0; i < userLength; i++) runTop(queue[i]);
 }
 function lookUpstream(node, ignore) {
-node.state = 0;
+const runningTransition = Transition && Transition.running;
+if (runningTransition) node.tState = 0;
+else node.state = 0;
 for (let i = 0; i < node.sources.length; i += 1) {
 const source = node.sources[i];
 if (source.sources) {
-const state = source.state;
+const state = runningTransition ? source.tState : source.state;
 if (state === STALE) {
 if (source !== ignore && (!source.updatedAt || source.updatedAt < ExecCount)) runTop(source);
 } else if (state === PENDING) lookUpstream(source, ignore);
@@ -4955,25 +4473,24 @@ if (source !== ignore && (!source.updatedAt || source.updatedAt < ExecCount)) ru
 }
 }
 function markDownstream(node) {
+const runningTransition = Transition && Transition.running;
 for (let i = 0; i < node.observers.length; i += 1) {
 const o = node.observers[i];
-if (!o.state) {
-o.state = PENDING;
-if (o.pure) Updates.push(o);else Effects.push(o);
+if (runningTransition ? !o.tState : !o.state) {
+if (runningTransition) o.tState = PENDING;
+else o.state = PENDING;
+if (o.pure) Updates.push(o);
+else Effects.push(o);
 o.observers && markDownstream(o);
 }
 }
 }
 function cleanNode(node) {
 let i;
-if (node.sources) {
-while (node.sources.length) {
-const source = node.sources.pop(),
-index = node.sourceSlots.pop(),
-obs = source.observers;
+if (node.sources) while (node.sources.length) {
+const source = node.sources.pop(), index = node.sourceSlots.pop(), obs = source.observers;
 if (obs && obs.length) {
-const n = obs.pop(),
-s = source.observerSlots.pop();
+const n = obs.pop(), s = source.observerSlots.pop();
 if (index < obs.length) {
 n.sourceSlots[s] = index;
 obs[index] = n;
@@ -4981,12 +4498,12 @@ source.observerSlots[index] = s;
 }
 }
 }
-}
 if (node.tOwned) {
 for (i = node.tOwned.length - 1; i >= 0; i--) cleanNode(node.tOwned[i]);
 delete node.tOwned;
 }
-if (node.owned) {
+if (Transition && Transition.running && node.pure) reset(node, true);
+else if (node.owned) {
 for (i = node.owned.length - 1; i >= 0; i--) cleanNode(node.owned[i]);
 node.owned = null;
 }
@@ -4994,13 +4511,19 @@ if (node.cleanups) {
 for (i = node.cleanups.length - 1; i >= 0; i--) node.cleanups[i]();
 node.cleanups = null;
 }
-node.state = 0;
+if (Transition && Transition.running) node.tState = 0;
+else node.state = 0;
+}
+function reset(node, top) {
+if (!top) {
+node.tState = 0;
+Transition.disposed.add(node);
+}
+if (node.owned) for (let i = 0; i < node.owned.length; i++) reset(node.owned[i]);
 }
 function castError(err) {
 if (err instanceof Error) return err;
-return new Error(typeof err === "string" ? err : "Unknown error", {
-cause: err
-});
+return new Error(typeof err === "string" ? err : "Unknown error", { cause: err });
 }
 function runErrors(err, fns, owner) {
 try {
@@ -5018,24 +4541,18 @@ fn() {
 runErrors(error, fns, owner);
 },
 state: STALE
-});else runErrors(error, fns, owner);
+});
+else runErrors(error, fns, owner);
 }
-const FALLBACK = Symbol("fallback");
+var FALLBACK = Symbol("fallback");
 function dispose(d) {
 for (let i = 0; i < d.length; i++) d[i]();
 }
 function mapArray(list, mapFn, options = {}) {
-let items = [],
-mapped = [],
-disposers = [],
-len = 0,
-indexes = mapFn.length > 1 ? [] : null;
+let items = [], mapped = [], disposers = [], len = 0, indexes = mapFn.length > 1 ? [] : null;
 onCleanup(() => dispose(disposers));
 return () => {
-let newItems = list() || [],
-newLen = newItems.length,
-i,
-j;
+let newItems = list() || [], newLen = newItems.length, i, j;
 return untrack(() => {
 let newIndices, newIndicesNext, temp, tempdisposers, tempIndexes, start, end, newEnd, item;
 if (newLen === 0) {
@@ -5049,14 +4566,13 @@ indexes && (indexes = []);
 }
 if (options.fallback) {
 items = [FALLBACK];
-mapped[0] = createRoot(disposer => {
+mapped[0] = createRoot((disposer) => {
 disposers[0] = disposer;
 return options.fallback();
 });
 len = 1;
 }
-}
-else if (len === 0) {
+} else if (len === 0) {
 mapped = new Array(newLen);
 for (j = 0; j < newLen; j++) {
 items[j] = newItems[j];
@@ -5073,18 +4589,18 @@ temp[newEnd] = mapped[end];
 tempdisposers[newEnd] = disposers[end];
 indexes && (tempIndexes[newEnd] = indexes[end]);
 }
-newIndices = new Map();
+newIndices =  new Map();
 newIndicesNext = new Array(newEnd + 1);
 for (j = newEnd; j >= start; j--) {
 item = newItems[j];
 i = newIndices.get(item);
-newIndicesNext[j] = i === undefined ? -1 : i;
+newIndicesNext[j] = i === void 0 ? -1 : i;
 newIndices.set(item, j);
 }
 for (i = start; i <= end; i++) {
 item = items[i];
 j = newIndices.get(item);
-if (j !== undefined && j !== -1) {
+if (j !== void 0 && j !== -1) {
 temp[j] = mapped[i];
 tempdisposers[j] = disposers[i];
 indexes && (tempIndexes[j] = indexes[i]);
@@ -5092,8 +4608,7 @@ j = newIndicesNext[j];
 newIndices.set(item, j);
 } else disposers[i]();
 }
-for (j = start; j < newLen; j++) {
-if (j in temp) {
+for (j = start; j < newLen; j++) if (j in temp) {
 mapped[j] = temp[j];
 disposers[j] = tempdisposers[j];
 if (indexes) {
@@ -5101,7 +4616,6 @@ indexes[j] = tempIndexes[j];
 indexes[j](j);
 }
 } else mapped[j] = createRoot(mapper);
-}
 mapped = mapped.slice(0, len = newLen);
 items = newItems.slice(0);
 }
@@ -5118,13 +4632,23 @@ return mapFn(newItems[j]);
 }
 };
 }
+var hydrationEnabled = false;
 function createComponent(Comp, props) {
+if (hydrationEnabled) {
+if (sharedConfig.context) {
+const c = sharedConfig.context;
+setHydrateContext(nextHydrateContext());
+const r = untrack(() => Comp(props || {}));
+setHydrateContext(c);
+return r;
+}
+}
 return untrack(() => Comp(props || {}));
 }
 function trueFn() {
 return true;
 }
-const propTraps = {
+var propTraps = {
 get(_, property, receiver) {
 if (property === $PROXY) return receiver;
 return _.get(property);
@@ -5156,7 +4680,7 @@ return !(s = typeof s === "function" ? s() : s) ? {} : s;
 function resolveSources() {
 for (let i = 0, length = this.length; i < length; ++i) {
 const v = this[i]();
-if (v !== undefined) return v;
+if (v !== void 0) return v;
 }
 }
 function mergeProps(...sources) {
@@ -5166,18 +4690,15 @@ const s = sources[i];
 proxy = proxy || !!s && $PROXY in s;
 sources[i] = typeof s === "function" ? (proxy = true, createMemo(s)) : s;
 }
-if (SUPPORTS_PROXY && proxy) {
-return new Proxy({
+if (SUPPORTS_PROXY && proxy) return new Proxy({
 get(property) {
 for (let i = sources.length - 1; i >= 0; i--) {
 const v = resolveSource(sources[i])[property];
-if (v !== undefined) return v;
+if (v !== void 0) return v;
 }
 },
 has(property) {
-for (let i = sources.length - 1; i >= 0; i--) {
-if (property in resolveSource(sources[i])) return true;
-}
+for (let i = sources.length - 1; i >= 0; i--) if (property in resolveSource(sources[i])) return true;
 return false;
 },
 keys() {
@@ -5186,7 +4707,6 @@ for (let i = 0; i < sources.length; i++) keys.push(...Object.keys(resolveSource(
 return [...new Set(keys)];
 }
 }, propTraps);
-}
 const sourcesMap = {};
 const defined = Object.create(null);
 for (let i = sources.length - 1; i >= 0; i--) {
@@ -5197,16 +4717,16 @@ for (let i = sourceKeys.length - 1; i >= 0; i--) {
 const key = sourceKeys[i];
 if (key === "__proto__" || key === "constructor") continue;
 const desc = Object.getOwnPropertyDescriptor(source, key);
-if (!defined[key]) {
-defined[key] = desc.get ? {
+if (!defined[key]) defined[key] = desc.get ? {
 enumerable: true,
 configurable: true,
 get: resolveSources.bind(sourcesMap[key] = [desc.get.bind(source)])
-} : desc.value !== undefined ? desc : undefined;
-} else {
+} : desc.value !== void 0 ? desc : void 0;
+else {
 const sources = sourcesMap[key];
 if (sources) {
-if (desc.get) sources.push(desc.get.bind(source));else if (desc.value !== undefined) sources.push(() => desc.value);
+if (desc.get) sources.push(desc.get.bind(source));
+else if (desc.value !== void 0) sources.push(() => desc.value);
 }
 }
 }
@@ -5214,9 +4734,9 @@ if (desc.get) sources.push(desc.get.bind(source));else if (desc.value !== undefi
 const target = {};
 const definedKeys = Object.keys(defined);
 for (let i = definedKeys.length - 1; i >= 0; i--) {
-const key = definedKeys[i],
-desc = defined[key];
-if (desc && desc.get) Object.defineProperty(target, key, desc);else target[key] = desc ? desc.value : undefined;
+const key = definedKeys[i], desc = defined[key];
+if (desc && desc.get) Object.defineProperty(target, key, desc);
+else target[key] = desc ? desc.value : void 0;
 }
 return target;
 }
@@ -5224,81 +4744,72 @@ function splitProps(props, ...keys) {
 const len = keys.length;
 if (SUPPORTS_PROXY && $PROXY in props) {
 const blocked = len > 1 ? keys.flat() : keys[0];
-const res = keys.map(k => {
+const res = keys.map((k) => {
 return new Proxy({
 get(property) {
-return k.includes(property) ? props[property] : undefined;
+return k.includes(property) ? props[property] : void 0;
 },
 has(property) {
 return k.includes(property) && property in props;
 },
 keys() {
-return k.filter(property => property in props);
+return k.filter((property) => property in props);
 }
 }, propTraps);
 });
 res.push(new Proxy({
 get(property) {
-return blocked.includes(property) ? undefined : props[property];
+return blocked.includes(property) ? void 0 : props[property];
 },
 has(property) {
 return blocked.includes(property) ? false : property in props;
 },
 keys() {
-return Object.keys(props).filter(k => !blocked.includes(k));
+return Object.keys(props).filter((k) => !blocked.includes(k));
 }
 }, propTraps));
 return res;
 }
 const objects = [];
-for (let i = 0; i <= len; i++) {
-objects[i] = {};
-}
+for (let i = 0; i <= len; i++) objects[i] = {};
 for (const propName of Object.getOwnPropertyNames(props)) {
 let keyIndex = len;
-for (let i = 0; i < keys.length; i++) {
-if (keys[i].includes(propName)) {
+for (let i = 0; i < keys.length; i++) if (keys[i].includes(propName)) {
 keyIndex = i;
 break;
 }
-}
 const desc = Object.getOwnPropertyDescriptor(props, propName);
-const isDefaultDesc = !desc.get && !desc.set && desc.enumerable && desc.writable && desc.configurable;
-isDefaultDesc ? objects[keyIndex][propName] = desc.value : Object.defineProperty(objects[keyIndex], propName, desc);
+!desc.get && !desc.set && desc.enumerable && desc.writable && desc.configurable ? objects[keyIndex][propName] = desc.value : Object.defineProperty(objects[keyIndex], propName, desc);
 }
 return objects;
 }
-const narrowedError = name => `Stale read from <${name}>.`;
+var narrowedError = (name) => `Stale read from <${name}>.`;
 function For(props) {
-const fallback = "fallback" in props && {
-fallback: () => props.fallback
-};
-return createMemo(mapArray(() => props.each, props.children, fallback || undefined));
+const fallback = "fallback" in props && { fallback: () => props.fallback };
+return createMemo(mapArray(() => props.each, props.children, fallback || void 0));
 }
 function Show(props) {
 const keyed = props.keyed;
-const conditionValue = createMemo(() => props.when, undefined, undefined);
-const condition = keyed ? conditionValue : createMemo(conditionValue, undefined, {
-equals: (a, b) => !a === !b
-});
+const conditionValue = createMemo(() => props.when, void 0, void 0);
+const condition = keyed ? conditionValue : createMemo(conditionValue, void 0, { equals: (a, b) => !a === !b });
 return createMemo(() => {
 const c = condition();
 if (c) {
 const child = props.children;
-const fn = typeof child === "function" && child.length > 0;
-return fn ? untrack(() => child(keyed ? c : () => {
+return typeof child === "function" && child.length > 0 ? untrack(() => child(keyed ? c : () => {
 if (!untrack(condition)) throw narrowedError("Show");
 return conditionValue();
 })) : child;
 }
 return props.fallback;
-}, undefined, undefined);
+}, void 0, void 0);
 }
-let Errors;
+var Errors;
 function ErrorBoundary$1(props) {
 let err;
-const [errored, setErrored] = createSignal(err, undefined);
-Errors || (Errors = new Set());
+if (sharedConfig.context && sharedConfig.load) err = sharedConfig.load(sharedConfig.getContextId());
+const [errored, setErrored] = createSignal(err, void 0);
+Errors || (Errors =  new Set());
 Errors.add(setErrored);
 onCleanup(() => Errors.delete(setErrored));
 return createMemo(() => {
@@ -5308,7 +4819,7 @@ const f = props.fallback;
 return typeof f === "function" && f.length ? untrack(() => f(e, () => setErrored())) : f;
 }
 return catchError(() => props.children, setErrored);
-}, undefined, undefined);
+}, void 0, void 0);
 }
 function createSignalSafe(initial) {
 const [read, write] = createSignal(initial, { equals: false });
@@ -5344,24 +4855,29 @@ update: updateValue,
 subscribe
 };
 }
-const INITIAL_NAVIGATION_STATE = {
+function effectSafe(fn) {
+return createRoot((dispose) => {
+createComputed(fn);
+return dispose;
+});
+}
+var INITIAL_NAVIGATION_STATE = {
 lastSource: "auto-focus",
 lastTimestamp: 0,
 lastNavigatedIndex: null
 };
-const navigationSignals = {
+var navigationSignals = {
 lastSource: createSignalSafe(INITIAL_NAVIGATION_STATE.lastSource),
 lastTimestamp: createSignalSafe(INITIAL_NAVIGATION_STATE.lastTimestamp),
 lastNavigatedIndex: createSignalSafe(INITIAL_NAVIGATION_STATE.lastNavigatedIndex)
 };
-const resolveNowMs = (nowMs) => nowMs ?? Date.now();
-const isManualSource = (source) => source === "button" || source === "keyboard";
+var resolveNowMs = (nowMs) => nowMs ?? Date.now();
+var isManualSource = (source) => source === "button" || source === "keyboard";
 function recordNavigation(targetIndex, source, nowMs) {
 const timestamp = resolveNowMs(nowMs);
 const currentIndex = navigationSignals.lastNavigatedIndex.value;
 const currentSource = navigationSignals.lastSource.value;
-const isDuplicate = targetIndex === currentIndex && isManualSource(source) && isManualSource(currentSource);
-if (isDuplicate) {
+if (targetIndex === currentIndex && isManualSource(source) && isManualSource(currentSource)) {
 navigationSignals.lastTimestamp.value = timestamp;
 return { isDuplicate: true };
 }
@@ -5376,71 +4892,59 @@ navigationSignals.lastTimestamp.value = resolveNowMs(nowMs);
 navigationSignals.lastNavigatedIndex.value = INITIAL_NAVIGATION_STATE.lastNavigatedIndex;
 }
 function resolveNavigationSource(trigger) {
-if (trigger === "scroll") {
-return "scroll";
-}
-if (trigger === "keyboard") {
-return "keyboard";
-}
+if (trigger === "scroll") return "scroll";
+if (trigger === "keyboard") return "keyboard";
 return "button";
 }
-const INITIAL_UI_STATE = {
+var INITIAL_UI_STATE = {
 viewMode: "vertical",
 isLoading: false,
 error: null
 };
-const uiSignals = {
+var uiSignals = {
 viewMode: createSignalSafe(INITIAL_UI_STATE.viewMode),
 isLoading: createSignalSafe(INITIAL_UI_STATE.isLoading),
 error: createSignalSafe(INITIAL_UI_STATE.error)
 };
 function setError(error) {
 uiSignals.error.value = error;
-if (error) {
-uiSignals.isLoading.value = false;
-}
+if (error) uiSignals.isLoading.value = false;
 }
 function createEventEmitter() {
 const listeners =  new Map();
 return {
 on(event, callback) {
 const eventListeners = listeners.get(event);
-if (eventListeners) {
-eventListeners.add(callback);
-} else {
-listeners.set(event,  new Set([callback]));
-}
+if (eventListeners) eventListeners.add(callback);
+else listeners.set(event, new Set([callback]));
 return () => {
 const currentListeners = listeners.get(event);
-if (currentListeners) {
-currentListeners.delete(callback);
-}
+if (currentListeners) currentListeners.delete(callback);
 };
 },
 emit(event, data) {
 const eventListeners = listeners.get(event);
-if (!eventListeners) {
-return;
-}
-for (const callback of eventListeners) {
-try {
+if (!eventListeners) return;
+for (const callback of eventListeners) try {
 callback(data);
-} catch {
-}
-}
+} catch {}
 },
 dispose() {
 listeners.clear();
 }
 };
 }
-const batch = (fn) => batch$1(fn);
-const INITIAL_STATE$2 = {
+var batch = (fn) => batch$1(fn);
+var INITIAL_STATE$2 = {
 isOpen: false,
 mediaItems: [],
-currentIndex: 0};
-const galleryIndexEvents = createEventEmitter();
-const gallerySignals = {
+currentIndex: 0,
+isLoading: false,
+error: null,
+viewMode: "vertical"
+};
+var galleryIndexEvents = createEventEmitter();
+var gallerySignals = {
 isOpen: createSignalSafe(INITIAL_STATE$2.isOpen),
 mediaItems: createSignalSafe(INITIAL_STATE$2.mediaItems),
 currentIndex: createSignalSafe(INITIAL_STATE$2.currentIndex),
@@ -5460,7 +4964,7 @@ gallerySignals.viewMode.value = state.viewMode;
 gallerySignals.isOpen.value = state.isOpen;
 });
 }
-const galleryState = {
+var galleryState = {
 get value() {
 return {
 isOpen: gallerySignals.isOpen.value,
@@ -5473,7 +4977,13 @@ viewMode: gallerySignals.viewMode.value
 },
 set value(state) {
 applyGalleryStateUpdate(state);
-}};
+},
+subscribe(callback) {
+return effectSafe(() => {
+callback(galleryState.value);
+});
+}
+};
 function openGallery(items, startIndex = 0) {
 const validIndex = clampIndex(startIndex, items.length);
 galleryState.value = {
@@ -5501,9 +5011,7 @@ resetNavigation();
 function navigateToItem(index, trigger = "button", source) {
 const state = galleryState.value;
 const validIndex = clampIndex(index, state.mediaItems.length);
-const navigationSource = source ?? resolveNavigationSource(trigger);
-const result = recordNavigation(validIndex, navigationSource);
-if (result.isDuplicate) {
+if (recordNavigation(validIndex, source ?? resolveNavigationSource(trigger)).isDuplicate) {
 gallerySignals.focusedIndex.value = validIndex;
 return;
 }
@@ -5513,36 +5021,35 @@ to: validIndex,
 trigger
 });
 batch(() => {
-galleryState.value = { ...state, currentIndex: validIndex };
+galleryState.value = {
+...state,
+currentIndex: validIndex
+};
 gallerySignals.focusedIndex.value = validIndex;
 });
-galleryIndexEvents.emit("navigate:complete", { index: validIndex, trigger });
+galleryIndexEvents.emit("navigate:complete", {
+index: validIndex,
+trigger
+});
 }
 function navigatePrevious(trigger = "button") {
 const state = galleryState.value;
 const baseIndex = getCurrentActiveIndex();
-const newIndex = baseIndex > 0 ? baseIndex - 1 : state.mediaItems.length - 1;
-const source = resolveNavigationSource(trigger);
-navigateToItem(newIndex, trigger, source);
+navigateToItem(baseIndex > 0 ? baseIndex - 1 : state.mediaItems.length - 1, trigger, resolveNavigationSource(trigger));
 }
 function navigateNext(trigger = "button") {
 const state = galleryState.value;
 const baseIndex = getCurrentActiveIndex();
-const newIndex = baseIndex < state.mediaItems.length - 1 ? baseIndex + 1 : 0;
-const source = resolveNavigationSource(trigger);
-navigateToItem(newIndex, trigger, source);
+navigateToItem(baseIndex < state.mediaItems.length - 1 ? baseIndex + 1 : 0, trigger, resolveNavigationSource(trigger));
 }
 function getCurrentActiveIndex() {
 return gallerySignals.focusedIndex.value ?? galleryState.value.currentIndex;
 }
-const playbackStateMap =  new WeakMap();
+var playbackStateMap =  new WeakMap();
 function executeVideoControl(action, options = {}) {
 try {
 const video = getGalleryVideo(options.video);
-if (!video) {
-if (false) ;
-return;
-}
+if (!video) return;
 switch (action) {
 case "play":
 playVideo(video, options.context);
@@ -5554,10 +5061,10 @@ case "togglePlayPause":
 togglePlayPause(video, options.context);
 break;
 case "volumeUp":
-adjustVolume(video, 0.1);
+adjustVolume(video, .1);
 break;
 case "volumeDown":
-adjustVolume(video, -0.1);
+adjustVolume(video, -.1);
 break;
 case "mute":
 video.muted = true;
@@ -5566,60 +5073,48 @@ case "toggleMute":
 video.muted = !video.muted;
 break;
 }
-if (false) ;
 } catch (error) {
-logger.error("Video control error", { error, action, context: options.context });
+logger.error("Video control error", {
+error,
+action,
+context: options.context
+});
 }
 }
 function getGalleryVideo(video) {
-if (video instanceof HTMLVideoElement) {
-return video;
-}
+if (video instanceof HTMLVideoElement) return video;
 const signaled = gallerySignals.currentVideoElement.value;
 return signaled instanceof HTMLVideoElement ? signaled : null;
 }
 function playVideo(video, context) {
 const promise = video.play?.();
-if (promise && typeof promise.then === "function") {
-promise.then(() => playbackStateMap.set(video, { playing: true })).catch(() => {
+if (promise && typeof promise.then === "function") promise.then(() => playbackStateMap.set(video, { playing: true })).catch(() => {
 playbackStateMap.set(video, { playing: false });
 });
-} else {
-playbackStateMap.set(video, { playing: true });
-}
+else playbackStateMap.set(video, { playing: true });
 }
 function pauseVideo(video) {
 video.pause?.();
 playbackStateMap.set(video, { playing: false });
 }
 function togglePlayPause(video, context) {
-const isPlaying = playbackStateMap.get(video)?.playing ?? !video.paused;
-if (isPlaying) {
-pauseVideo(video);
-} else {
-playVideo(video);
-}
+if (playbackStateMap.get(video)?.playing ?? !video.paused) pauseVideo(video);
+else playVideo(video, context);
 }
 function adjustVolume(video, delta) {
 const newVolume = Math.max(0, Math.min(1, Math.round((video.volume + delta) * 100) / 100));
 video.volume = newVolume;
-if (newVolume > 0 && video.muted) {
-video.muted = false;
+if (newVolume > 0 && video.muted) video.muted = false;
+if (newVolume === 0 && !video.muted) video.muted = true;
 }
-if (newVolume === 0 && !video.muted) {
-video.muted = true;
-}
-}
-let keyboardDebounceState = {
+var keyboardDebounceState = {
 lastExecutionTime: 0,
 lastKey: ""
 };
 function shouldExecuteKeyboardAction(key, minIntervalMs) {
 const now = Date.now();
 const timeSinceLastExecution = now - keyboardDebounceState.lastExecutionTime;
-if (key === keyboardDebounceState.lastKey && timeSinceLastExecution < minIntervalMs) {
-return false;
-}
+if (key === keyboardDebounceState.lastKey && timeSinceLastExecution < minIntervalMs) return false;
 keyboardDebounceState = {
 lastExecutionTime: now,
 lastKey: key
@@ -5632,7 +5127,7 @@ lastExecutionTime: 0,
 lastKey: ""
 };
 }
-const NAVIGATION_KEYS =  new Set([
+var NAVIGATION_KEYS = new Set([
 "Home",
 "End",
 "PageDown",
@@ -5641,7 +5136,12 @@ const NAVIGATION_KEYS =  new Set([
 "ArrowRight",
 "?"
 ]);
-const VIDEO_CONTROL_KEYS =  new Set(["ArrowUp", "ArrowDown", "m", "M"]);
+var VIDEO_CONTROL_KEYS = new Set([
+"ArrowUp",
+"ArrowDown",
+"m",
+"M"
+]);
 function handleKeyboardEvent(event, handlers, options) {
 if (!options.enableKeyboard) return;
 try {
@@ -5665,18 +5165,12 @@ return;
 }
 event.preventDefault();
 event.stopPropagation();
-if (key === "?") {
-showKeyboardHelp();
-} else if (key === " " || key === "Space") {
-handleVideoControl(key);
-} else if (NAVIGATION_KEYS.has(key)) {
-handleNavigation(key);
-} else {
-handleVideoControl(key);
-}
+if (key === "?") showKeyboardHelp();
+else if (key === " " || key === "Space") handleVideoControl(key);
+else if (NAVIGATION_KEYS.has(key)) handleNavigation(key);
+else handleVideoControl(key);
 handlers.onKeyboardEvent?.(event);
-} catch (error) {
-}
+} catch (error) {}
 }
 function handleNavigation(key) {
 const current = gallerySignals.currentIndex.value;
@@ -5706,25 +5200,17 @@ function handleVideoControl(key) {
 switch (key) {
 case " ":
 case "Space":
-if (shouldExecuteKeyboardAction("Space", 150)) {
-executeVideoControl("togglePlayPause");
-}
+if (shouldExecuteKeyboardAction("Space", 150)) executeVideoControl("togglePlayPause");
 break;
 case "ArrowUp":
-if (shouldExecuteKeyboardAction("ArrowUp", 100)) {
-executeVideoControl("volumeUp");
-}
+if (shouldExecuteKeyboardAction("ArrowUp", 100)) executeVideoControl("volumeUp");
 break;
 case "ArrowDown":
-if (shouldExecuteKeyboardAction("ArrowDown", 100)) {
-executeVideoControl("volumeDown");
-}
+if (shouldExecuteKeyboardAction("ArrowDown", 100)) executeVideoControl("volumeDown");
 break;
 case "m":
 case "M":
-if (shouldExecuteKeyboardAction("M", 100)) {
-executeVideoControl("toggleMute");
-}
+if (shouldExecuteKeyboardAction("M", 100)) executeVideoControl("toggleMute");
 break;
 }
 }
@@ -5732,7 +5218,7 @@ function showKeyboardHelp() {
 if (!shouldExecuteKeyboardAction("?", 500)) return;
 try {
 const lang = getLanguageService();
-void NotificationService.getInstance().show({
+NotificationService.getInstance().show({
 title: lang.translate("msg.kb.t"),
 text: [
 lang.translate("msg.kb.prev"),
@@ -5742,10 +5228,9 @@ lang.translate("msg.kb.toggle")
 ].join("\n"),
 timeout: 6e3
 });
-} catch {
+} catch {}
 }
-}
-const VIDEO_CONTROL_DATASET_PREFIXES = [
+var VIDEO_CONTROL_DATASET_PREFIXES = [
 "play",
 "pause",
 "mute",
@@ -5756,8 +5241,8 @@ const VIDEO_CONTROL_DATASET_PREFIXES = [
 "scrub",
 "progress"
 ];
-const VIDEO_CONTROL_ROLES = ["slider", "progressbar"];
-const VIDEO_CONTROL_ARIA_TOKENS = [
+var VIDEO_CONTROL_ROLES = ["slider", "progressbar"];
+var VIDEO_CONTROL_ARIA_TOKENS = [
 "volume",
 "mute",
 "unmute",
@@ -5777,8 +5262,8 @@ return element instanceof HTMLElement;
 function isRecord(value) {
 return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-const GALLERY_SELECTORS = CSS.INTERNAL_SELECTORS;
-const VIDEO_CONTROL_SELECTORS = [".video-controls", ".video-progress button"];
+var GALLERY_SELECTORS = CSS.INTERNAL_SELECTORS;
+var VIDEO_CONTROL_SELECTORS = [".video-controls", ".video-progress button"];
 function safeClosest(element, selector) {
 try {
 return element.closest(selector);
@@ -5794,58 +5279,34 @@ return false;
 }
 }
 function containsControlToken(value, tokens) {
-if (!value) {
-return false;
-}
+if (!value) return false;
 const normalized = value.toLowerCase();
 return tokens.some((token) => normalized.includes(token.toLowerCase()));
 }
 function getNearestAttributeValue(element, attribute) {
-const host = safeClosest(element, `[${attribute}]`);
-const value = host?.getAttribute(attribute) ?? null;
-return value;
+return safeClosest(element, `[${attribute}]`)?.getAttribute(attribute) ?? null;
 }
 function isWithinVideoPlayer(element) {
 return safeClosest(element, VIDEO_PLAYER_CONTEXT_SELECTOR) !== null;
 }
 function matchesVideoControlSelectors(element) {
-return VIDEO_CONTROL_SELECTORS.some(
-(selector) => safeMatches(element, selector) || safeClosest(element, selector) !== null
-);
+return VIDEO_CONTROL_SELECTORS.some((selector) => safeMatches(element, selector) || safeClosest(element, selector) !== null);
 }
 function isVideoControlElement(element) {
 if (!isHTMLElement(element)) return false;
-const tagName = element.tagName.toLowerCase();
-if (tagName === "video") return true;
-if (typeof element.matches !== "function") {
-return false;
-}
-if (matchesVideoControlSelectors(element)) {
-return true;
-}
-const dataTestId = getNearestAttributeValue(element, "data-testid");
-const dataTestIdMatch = containsControlToken(dataTestId, VIDEO_CONTROL_DATASET_PREFIXES);
-if (dataTestIdMatch) {
-return true;
-}
-const ariaLabel = getNearestAttributeValue(element, "aria-label");
-if (containsControlToken(ariaLabel, VIDEO_CONTROL_ARIA_TOKENS)) {
-return true;
-}
-if (!isWithinVideoPlayer(element)) {
-return false;
-}
+if (element.tagName.toLowerCase() === "video") return true;
+if (typeof element.matches !== "function") return false;
+if (matchesVideoControlSelectors(element)) return true;
+if (containsControlToken(getNearestAttributeValue(element, "data-testid"), VIDEO_CONTROL_DATASET_PREFIXES)) return true;
+if (containsControlToken(getNearestAttributeValue(element, "aria-label"), VIDEO_CONTROL_ARIA_TOKENS)) return true;
+if (!isWithinVideoPlayer(element)) return false;
 const role = element.getAttribute("role");
-if (role && VIDEO_CONTROL_ROLES.includes(role.toLowerCase())) {
-return true;
-}
-return safeMatches(element, 'input[type="range"]');
+if (role && VIDEO_CONTROL_ROLES.includes(role.toLowerCase())) return true;
+return safeMatches(element, "input[type=\"range\"]");
 }
 function isGalleryInternalElement(element) {
 if (!isHTMLElement(element)) return false;
-if (typeof element.matches !== "function") {
-return false;
-}
+if (typeof element.matches !== "function") return false;
 return GALLERY_SELECTORS.some((selector) => {
 try {
 return element.matches(selector) || element.closest(selector) !== null;
@@ -5859,29 +5320,28 @@ const target = event.target;
 if (!isHTMLElement(target)) return false;
 return isGalleryInternalElement(target);
 }
-const MEDIA_LINK_SELECTORS = [
+var MEDIA_LINK_SELECTOR = [
 STATUS_LINK_SELECTOR,
-'a[href*="/photo/"]',
-'a[href*="/video/"]'
-];
-const MEDIA_LINK_SELECTOR = MEDIA_LINK_SELECTORS.join(", ");
-const MEDIA_CONTAINER_SELECTOR = STABLE_MEDIA_CONTAINERS_SELECTORS.join(", ");
-const INTERACTIVE_SELECTOR = [
+"a[href*=\"/photo/\"]",
+"a[href*=\"/video/\"]"
+].join(", ");
+var MEDIA_CONTAINER_SELECTOR = STABLE_MEDIA_CONTAINERS_SELECTORS.join(", ");
+var INTERACTIVE_SELECTOR = [
 "button",
 "a",
-'[role="button"]',
-'[data-testid="like"]',
-'[data-testid="retweet"]',
-'[data-testid="reply"]',
-'[data-testid="share"]',
-'[data-testid="bookmark"]'
+"[role=\"button\"]",
+"[data-testid=\"like\"]",
+"[data-testid=\"retweet\"]",
+"[data-testid=\"reply\"]",
+"[data-testid=\"share\"]",
+"[data-testid=\"bookmark\"]"
 ].join(", ");
 function isValidMediaSource(url) {
 if (!url) return false;
 if (url.startsWith("blob:")) return true;
 return isValidMediaUrl(url);
 }
-const TWITTER_HOSTNAME_PATTERN = /(^|\.)(?:x|twitter)\.com$/iu;
+var TWITTER_HOSTNAME_PATTERN = /(^|\.)(?:x|twitter)\.com$/iu;
 function isSupportedStatusMediaPath(pathname) {
 return /\/status\/\d+/iu.test(pathname) || /\/photo\/\d+/iu.test(pathname) || /\/video\/\d+/iu.test(pathname);
 }
@@ -5889,54 +5349,41 @@ function isNativeStatusMediaLink(href) {
 if (!href) return false;
 const parsed = tryParseUrl(href);
 if (!parsed) return false;
-if (!TWITTER_HOSTNAME_PATTERN.test(parsed.hostname)) {
-return false;
-}
+if (!TWITTER_HOSTNAME_PATTERN.test(parsed.hostname)) return false;
 return isSupportedStatusMediaPath(parsed.pathname);
 }
 function isMediaCard(cardWrapper) {
 const cardLinks = cardWrapper.querySelectorAll("a[href]");
-for (const link of cardLinks) {
-const href = link.getAttribute("href");
-if (!isNativeStatusMediaLink(href)) {
-return false;
-}
-}
-const cardImages = cardWrapper.querySelectorAll('img[src*="pbs.twimg.com/card_img"]');
-if (cardImages.length > 0) return true;
+for (const link of cardLinks) if (!isNativeStatusMediaLink(link.getAttribute("href"))) return false;
+if (cardWrapper.querySelectorAll("img[src*=\"pbs.twimg.com/card_img\"]").length > 0) return true;
 return cardWrapper.querySelector("img, video") !== null;
 }
 function shouldBlockMediaTrigger(target) {
 if (!target) return false;
 if (isVideoControlElement(target)) return true;
 if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
-const cardWrapper = target.closest('[data-testid="card.wrapper"]');
+const cardWrapper = target.closest("[data-testid=\"card.wrapper\"]");
 if (cardWrapper instanceof HTMLElement) {
-if (isMediaCard(cardWrapper)) {
-return false;
-}
+if (isMediaCard(cardWrapper)) return false;
 return true;
 }
 const blockedContextSelector = [
-'[data-testid="twitterArticleReadView"]',
-'[data-testid="longformRichTextComponent"]',
-'[data-testid="twitterArticleRichTextView"]',
-'[data-testid="article-cover-image"]',
+"[data-testid=\"twitterArticleReadView\"]",
+"[data-testid=\"longformRichTextComponent\"]",
+"[data-testid=\"twitterArticleRichTextView\"]",
+"[data-testid=\"article-cover-image\"]",
 ...STABLE_MEDIA_VIEWERS_SELECTORS,
-'[data-testid="swipe-to-dismiss"]',
-'[data-testid="mask"]'
+"[data-testid=\"swipe-to-dismiss\"]",
+"[data-testid=\"mask\"]"
 ].join(", ");
 if (target.closest(blockedContextSelector)) return true;
 const interactive = target.closest(INTERACTIVE_SELECTOR);
 if (interactive) {
 const matchesMediaLinkSelector = interactive instanceof HTMLAnchorElement ? isNativeStatusMediaLink(interactive.getAttribute("href")) : interactive.matches(MEDIA_LINK_SELECTOR);
-if (interactive.tagName === "A" && !matchesMediaLinkSelector) {
-return true;
-}
+if (interactive.tagName === "A" && !matchesMediaLinkSelector) return true;
 const matchesMediaContainerSelector = interactive.matches(MEDIA_CONTAINER_SELECTOR);
 const hasMediaContainerDescendant = interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null;
-const isMediaLink = matchesMediaLinkSelector || matchesMediaContainerSelector || hasMediaContainerDescendant;
-return !isMediaLink;
+return !(matchesMediaLinkSelector || matchesMediaContainerSelector || hasMediaContainerDescendant);
 }
 return false;
 }
@@ -5946,51 +5393,60 @@ if (gallerySignals.isOpen.value) return false;
 if (shouldBlockMediaTrigger(target)) return false;
 const mediaElement = findMediaElementInDOM(target);
 if (mediaElement) {
-const mediaUrl = extractMediaUrlFromElement(mediaElement);
-if (isValidMediaSource(mediaUrl)) {
-return true;
-}
+if (isValidMediaSource(extractMediaUrlFromElement(mediaElement))) return true;
 }
 return !!target.closest(MEDIA_CONTAINER_SELECTOR);
 }
 async function handleMediaClick(event, handlers, options) {
-if (!options.enableMediaDetection) {
-return { handled: false, reason: "Media detection disabled" };
-}
+if (!options.enableMediaDetection) return {
+handled: false,
+reason: "Media detection disabled"
+};
 const target = event.target;
-if (!isHTMLElement(target)) {
-return { handled: false, reason: "Invalid target (not HTMLElement)" };
-}
-if (gallerySignals.isOpen.value && isGalleryInternalElement(target)) {
-return { handled: false, reason: "Gallery internal event" };
-}
-if (isVideoControlElement(target)) {
-return { handled: false, reason: "Video control element" };
-}
-if (!isProcessableMedia(target)) {
-return { handled: false, reason: "Non-processable media" };
-}
+if (!isHTMLElement(target)) return {
+handled: false,
+reason: "Invalid target (not HTMLElement)"
+};
+if (gallerySignals.isOpen.value && isGalleryInternalElement(target)) return {
+handled: false,
+reason: "Gallery internal event"
+};
+if (isVideoControlElement(target)) return {
+handled: false,
+reason: "Video control element"
+};
+if (!isProcessableMedia(target)) return {
+handled: false,
+reason: "Non-processable media"
+};
 event.stopImmediatePropagation();
 event.preventDefault();
 await handlers.onMediaClick(target, event);
-return { handled: true, reason: "Media click processed" };
+return {
+handled: true,
+reason: "Media click processed"
+};
 }
-const DEFAULT_GALLERY_EVENT_OPTIONS = {
+var DEFAULT_GALLERY_EVENT_OPTIONS = {
 enableKeyboard: true,
 enableMediaDetection: true,
 debugMode: false,
 preventBubbling: true,
 context: "gallery"
 };
-let lifecycleState$1 = { initialized: false, context: null };
+var lifecycleState$1 = {
+initialized: false,
+context: null
+};
 function sanitizeContext(context) {
 const trimmed = context?.trim();
 return trimmed && trimmed.length > 0 ? trimmed : DEFAULT_GALLERY_EVENT_OPTIONS.context;
 }
 function resolveInitializationInput(optionsOrRoot) {
-if (optionsOrRoot instanceof HTMLElement) {
-return { options: { ...DEFAULT_GALLERY_EVENT_OPTIONS }, root: optionsOrRoot };
-}
+if (optionsOrRoot instanceof HTMLElement) return {
+options: { ...DEFAULT_GALLERY_EVENT_OPTIONS },
+root: optionsOrRoot
+};
 const partial = optionsOrRoot ?? {};
 return {
 options: {
@@ -6005,7 +5461,10 @@ function resolveEventTarget(explicitRoot) {
 return explicitRoot || document.body || document.documentElement || document;
 }
 function registerListeners(eventManager, target, handlers, options, context) {
-const listenerOptions = { capture: true, passive: false };
+const listenerOptions = {
+capture: true,
+passive: false
+};
 if (options.enableKeyboard) {
 const keyHandler = (evt) => {
 handleKeyboardEvent(evt, handlers, options);
@@ -6020,30 +5479,29 @@ eventManager.addListener(target, "click", clickHandler, listenerOptions, context
 }
 }
 async function initializeGalleryEvents(handlers, optionsOrRoot) {
-if (lifecycleState$1.initialized) {
-cleanupGalleryEvents();
-}
-if (!handlers) {
-return cleanupGalleryEvents;
-}
+if (lifecycleState$1.initialized) cleanupGalleryEvents();
+if (!handlers) return cleanupGalleryEvents;
 const { options: finalOptions, root: explicitGalleryRoot } = resolveInitializationInput(optionsOrRoot);
 const context = sanitizeContext(finalOptions.context);
 const target = resolveEventTarget(explicitGalleryRoot);
-const eventManager = EventManager.getInstance();
-registerListeners(eventManager, target, handlers, finalOptions, context);
+registerListeners(EventManager.getInstance(), target, handlers, finalOptions, context);
 resetKeyboardDebounceState();
-lifecycleState$1 = { initialized: true, context };
+lifecycleState$1 = {
+initialized: true,
+context
+};
 return cleanupGalleryEvents;
 }
 function cleanupGalleryEvents() {
 if (!lifecycleState$1.initialized) return;
-if (lifecycleState$1.context) {
-EventManager.getInstance().removeByContext(lifecycleState$1.context);
-}
+if (lifecycleState$1.context) EventManager.getInstance().removeByContext(lifecycleState$1.context);
 resetKeyboardDebounceState();
-lifecycleState$1 = { initialized: false, context: null };
+lifecycleState$1 = {
+initialized: false,
+context: null
+};
 }
-const ZERO_RESULT = {
+var ZERO_RESULT = {
 pausedCount: 0,
 totalCandidates: 0,
 skippedCount: 0
@@ -6079,54 +5537,39 @@ if (inspectedCount === 0) return ZERO_RESULT;
 let pausedCount = 0;
 let totalCandidates = 0;
 for (const video of videos) {
-if (!shouldPauseVideo(video, options.force)) {
-continue;
-}
+if (!shouldPauseVideo(video, options.force)) continue;
 totalCandidates += 1;
-if (tryPauseVideo(video)) {
-pausedCount += 1;
-}
+if (tryPauseVideo(video)) pausedCount += 1;
 }
 const result = {
 pausedCount,
 totalCandidates,
 skippedCount: inspectedCount - pausedCount
 };
+if (result.pausedCount > 0) {}
 return result;
 }
-const VIDEO_TRIGGER_SELECTORS = [
-VIDEO_PLAYER_SELECTOR,
-...STABLE_VIDEO_CONTAINERS_SELECTORS
-];
-const IMAGE_TRIGGER_SELECTORS = [
-TWEET_PHOTO_SELECTOR,
-...STABLE_IMAGE_CONTAINERS_SELECTORS
-];
-const PAUSE_RESULT_DEFAULT = {
+var VIDEO_TRIGGER_SELECTORS = [VIDEO_PLAYER_SELECTOR, ...STABLE_VIDEO_CONTAINERS_SELECTORS];
+var IMAGE_TRIGGER_SELECTORS = [TWEET_PHOTO_SELECTOR, ...STABLE_IMAGE_CONTAINERS_SELECTORS];
+var PAUSE_RESULT_DEFAULT = {
 pausedCount: 0,
 totalCandidates: 0,
 skippedCount: 0
 };
 function findTweetContainer(element) {
-if (!element) {
-return null;
-}
+if (!element) return null;
 return closestWithFallback(element, STABLE_TWEET_CONTAINERS_SELECTORS);
 }
 function resolvePauseContext(request) {
-if (request.root !== void 0) {
-return {
+if (request.root !== void 0) return {
 root: request.root ?? null,
 scope: "custom"
 };
-}
 const tweetContainer = findTweetContainer(request.sourceElement);
-if (tweetContainer) {
-return {
+if (tweetContainer) return {
 root: tweetContainer,
 scope: "tweet"
 };
-}
 return {
 root: null,
 scope: "document"
@@ -6135,36 +5578,22 @@ scope: "document"
 function isVideoTriggerElement(element) {
 if (!element) return false;
 if (element.tagName === "VIDEO") return true;
-for (const selector of VIDEO_TRIGGER_SELECTORS) {
-try {
-if (element.matches(selector)) {
-return true;
-}
-} catch {
-}
-}
+for (const selector of VIDEO_TRIGGER_SELECTORS) try {
+if (element.matches(selector)) return true;
+} catch {}
 return closestWithFallback(element, VIDEO_TRIGGER_SELECTORS) !== null;
 }
 function isImageTriggerElement(element) {
 if (!element) return false;
 if (element.tagName === "IMG") return true;
-for (const selector of IMAGE_TRIGGER_SELECTORS) {
-try {
-if (element.matches(selector)) {
-return true;
-}
-} catch {
-}
-}
+for (const selector of IMAGE_TRIGGER_SELECTORS) try {
+if (element.matches(selector)) return true;
+} catch {}
 return closestWithFallback(element, IMAGE_TRIGGER_SELECTORS) !== null;
 }
 function inferAmbientVideoTrigger(element) {
-if (isVideoTriggerElement(element)) {
-return "video-click";
-}
-if (isImageTriggerElement(element)) {
-return "image-click";
-}
+if (isVideoTriggerElement(element)) return "video-click";
+if (isImageTriggerElement(element)) return "image-click";
 return "unknown";
 }
 function pauseAmbientVideosForGallery(request = {}) {
@@ -6187,6 +5616,7 @@ reason,
 scope
 };
 }
+if (result.totalCandidates > 0 || result.pausedCount > 0) {}
 return {
 ...result,
 trigger,
@@ -6195,42 +5625,38 @@ reason,
 scope
 };
 }
-let guardDispose = null;
-let guardSubscribers = 0;
-const ensureGuardEffect = () => {
+var guardDispose = null;
+var guardSubscribers = 0;
+var ensureGuardEffect = () => {
 if (guardDispose) return;
 guardDispose = gallerySignals.isOpen.subscribe((isOpen) => {
 if (!isOpen) return;
-const result = pauseAmbientVideosForGallery({
+if (pauseAmbientVideosForGallery({
 trigger: "guard",
 reason: "guard"
-});
-if (result.pausedCount <= 0) return;
+}).pausedCount <= 0) return;
 });
 };
-const startAmbientVideoGuard = () => {
+var startAmbientVideoGuard = () => {
 guardSubscribers += 1;
 ensureGuardEffect();
 return stopAmbientVideoGuard;
 };
-const stopAmbientVideoGuard = () => {
+var stopAmbientVideoGuard = () => {
 if (guardSubscribers === 0) return;
 guardSubscribers -= 1;
 if (guardSubscribers > 0) return;
 guardDispose?.();
 guardDispose = null;
 };
-class GalleryApp {
+var GalleryApp = class {
 galleryRenderer = null;
 isInitialized = false;
 notificationService = NotificationService.getInstance();
 ambientVideoGuardDispose = null;
-constructor() {
-}
+constructor() {}
 async initialize() {
-if (this.isInitialized) {
-return;
-}
+if (this.isInitialized) return;
 try {
 this.galleryRenderer = getGalleryRenderer();
 this.galleryRenderer?.setOnCloseCallback(() => this.closeGallery());
@@ -6240,47 +5666,34 @@ this.isInitialized = true;
 } catch (error) {
 this.isInitialized = false;
 this.galleryRenderer = null;
-galleryErrorReporter.critical(error, {
-code: "GALLERY_APP_INIT_FAILED"
-});
+galleryErrorReporter.critical(error, { code: "GALLERY_APP_INIT_FAILED" });
 }
 }
 async setupEventHandlers() {
-const settingsService = tryGetSettingsManager();
-const enableKeyboardSetting = settingsService?.get?.("gallery.enableKeyboardNav");
-const enableKeyboard = typeof enableKeyboardSetting === "boolean" ? enableKeyboardSetting : true;
-await initializeGalleryEvents(
-{
+const enableKeyboardSetting = tryGetSettingsManager()?.get?.("gallery.enableKeyboardNav");
+await initializeGalleryEvents({
 onMediaClick: (element, event) => this.handleMediaClick(element, event),
 onGalleryClose: () => this.closeGallery(),
 onKeyboardEvent: (event) => {
-if (event.key === "Escape" && gallerySignals.isOpen.value) {
-this.closeGallery();
+if (event.key === "Escape" && gallerySignals.isOpen.value) this.closeGallery();
 }
-}
-},
-{
-enableKeyboard,
+}, {
+enableKeyboard: typeof enableKeyboardSetting === "boolean" ? enableKeyboardSetting : true,
 enableMediaDetection: true,
 debugMode: false,
 preventBubbling: true,
 context: "gallery"
-}
-);
+});
 }
 async handleMediaClick(element, _event) {
 try {
-const mediaService = getMediaService();
-const result = await mediaService.extractFromClickedElement(element);
-if (result.success && result.mediaItems.length > 0) {
-await this.openGallery(result.mediaItems, result.clickedIndex, {
-pauseContext: {
+const result = await getMediaService().extractFromClickedElement(element);
+if (result.success && result.mediaItems.length > 0) await this.openGallery(result.mediaItems, result.clickedIndex, { pauseContext: {
 sourceElement: element,
 reason: "media-click"
-}
-});
-} else {
-mediaErrorReporter.warn(new Error("Media extraction returned no items"), {
+} });
+else {
+mediaErrorReporter.warn(  new Error("Media extraction returned no items"), {
 code: "MEDIA_EXTRACTION_EMPTY",
 metadata: { success: result.success }
 });
@@ -6299,9 +5712,7 @@ if (!this.isInitialized) {
 this.notificationService.error("Gallery unavailable", "Userscript manager required.");
 return;
 }
-if (mediaItems.length === 0) {
-return;
-}
+if (mediaItems.length === 0) return;
 try {
 const validIndex = clampIndex(startIndex, mediaItems.length);
 const providedContext = options.pauseContext ?? null;
@@ -6311,63 +5722,47 @@ reason: providedContext?.reason ?? (providedContext ? "media-click" : "programma
 };
 try {
 pauseAmbientVideosForGallery(pauseContext);
-} catch (error) {
-}
+} catch (error) {}
 openGallery(mediaItems, validIndex);
 } catch (error) {
 galleryErrorReporter.error(error, {
 code: "GALLERY_OPEN_FAILED",
-metadata: { itemCount: mediaItems.length, startIndex },
+metadata: {
+itemCount: mediaItems.length,
+startIndex
+},
 notify: true
 });
-this.notificationService.error(
-"Failed to load gallery",
-getErrorMessage(error) || "Unknown error"
-);
+this.notificationService.error("Failed to load gallery", getErrorMessage(error) || "Unknown error");
 throw error;
 }
 }
 closeGallery() {
 try {
-if (gallerySignals.isOpen.value) {
-closeGallery();
-}
+if (gallerySignals.isOpen.value) closeGallery();
 } catch (error) {
-galleryErrorReporter.error(error, {
-code: "GALLERY_CLOSE_FAILED"
-});
+galleryErrorReporter.error(error, { code: "GALLERY_CLOSE_FAILED" });
 }
 }
 async cleanup() {
 try {
-if (gallerySignals.isOpen.value) {
-this.closeGallery();
-}
+if (gallerySignals.isOpen.value) this.closeGallery();
 this.ambientVideoGuardDispose?.();
 this.ambientVideoGuardDispose = null;
 try {
 cleanupGalleryEvents();
-} catch (error) {
-}
+} catch (error) {}
 this.galleryRenderer = null;
 this.isInitialized = false;
 delete globalThis.xegGalleryDebug;
 } catch (error) {
-galleryErrorReporter.error(error, {
-code: "GALLERY_CLEANUP_FAILED"
-});
+galleryErrorReporter.error(error, { code: "GALLERY_CLEANUP_FAILED" });
 }
 }
-}
-const memo = fn => createMemo(() => fn());
+};
+var memo = (fn) => createMemo(() => fn());
 function reconcileArrays(parentNode, a, b) {
-let bLength = b.length,
-aEnd = a.length,
-bEnd = bLength,
-aStart = 0,
-bStart = 0,
-after = a[aEnd - 1].nextSibling,
-map = null;
+let bLength = b.length, aEnd = a.length, bEnd = bLength, aStart = 0, bStart = 0, after = a[aEnd - 1].nextSibling, map = null;
 while (aStart < aEnd || bStart < bEnd) {
 if (a[aStart] === b[bStart]) {
 aStart++;
@@ -6381,28 +5776,24 @@ bEnd--;
 if (aEnd === aStart) {
 const node = bEnd < bLength ? bStart ? b[bStart - 1].nextSibling : b[bEnd - bStart] : after;
 while (bStart < bEnd) parentNode.insertBefore(b[bStart++], node);
-} else if (bEnd === bStart) {
-while (aStart < aEnd) {
+} else if (bEnd === bStart) while (aStart < aEnd) {
 if (!map || !map.has(a[aStart])) a[aStart].remove();
 aStart++;
 }
-} else if (a[aStart] === b[bEnd - 1] && b[bStart] === a[aEnd - 1]) {
+else if (a[aStart] === b[bEnd - 1] && b[bStart] === a[aEnd - 1]) {
 const node = a[--aEnd].nextSibling;
 parentNode.insertBefore(b[bStart++], a[aStart++].nextSibling);
 parentNode.insertBefore(b[--bEnd], node);
 a[aEnd] = b[bEnd];
 } else {
 if (!map) {
-map = new Map();
+map =  new Map();
 let i = bStart;
 while (i < bEnd) map.set(b[i], i++);
 }
 const index = map.get(a[aStart]);
-if (index != null) {
-if (bStart < index && index < bEnd) {
-let i = aStart,
-sequence = 1,
-t;
+if (index != null) if (bStart < index && index < bEnd) {
+let i = aStart, sequence = 1, t;
 while (++i < aEnd && i < bEnd) {
 if ((t = map.get(a[i])) == null || t !== index + sequence) break;
 sequence++;
@@ -6412,16 +5803,16 @@ const node = a[aStart];
 while (bStart < index) parentNode.insertBefore(b[bStart++], node);
 } else parentNode.replaceChild(b[bStart++], a[aStart++]);
 } else aStart++;
-} else a[aStart++].remove();
+else a[aStart++].remove();
 }
 }
 }
-const $$EVENTS = "_$DX_DELEGATE";
+var $$EVENTS = "_$DX_DELEGATE";
 function render(code, element, init, options = {}) {
 let disposer;
-createRoot(dispose => {
+createRoot((dispose) => {
 disposer = dispose;
-element === document ? code() : insert(element, code(), element.firstChild ? null : undefined, init);
+element === document ? code() : insert(element, code(), element.firstChild ? null : void 0, init);
 }, options.owner);
 return () => {
 disposer();
@@ -6440,7 +5831,7 @@ fn.cloneNode = fn;
 return fn;
 }
 function delegateEvents(eventNames, document = window.document) {
-const e = document[$$EVENTS] || (document[$$EVENTS] = new Set());
+const e = document[$$EVENTS] || (document[$$EVENTS] =  new Set());
 for (let i = 0, l = eventNames.length; i < l; i++) {
 const name = eventNames[i];
 if (!e.has(name)) {
@@ -6450,32 +5841,35 @@ document.addEventListener(name, eventHandler);
 }
 }
 function setAttribute(node, name, value) {
-if (value == null) node.removeAttribute(name);else node.setAttribute(name, value);
+if (isHydrating(node)) return;
+if (value == null) node.removeAttribute(name);
+else node.setAttribute(name, value);
 }
 function className(node, value) {
-if (value == null) node.removeAttribute("class");else node.className = value;
+if (isHydrating(node)) return;
+if (value == null) node.removeAttribute("class");
+else node.className = value;
 }
 function addEventListener(node, name, handler, delegate) {
-if (delegate) {
-if (Array.isArray(handler)) {
+if (delegate) if (Array.isArray(handler)) {
 node[`$$${name}`] = handler[0];
 node[`$$${name}Data`] = handler[1];
 } else node[`$$${name}`] = handler;
-} else if (Array.isArray(handler)) {
+else if (Array.isArray(handler)) {
 const handlerFn = handler[0];
-node.addEventListener(name, handler[0] = e => handlerFn.call(node, handler[1], e));
+node.addEventListener(name, handler[0] = (e) => handlerFn.call(node, handler[1], e));
 } else node.addEventListener(name, handler, typeof handler !== "function" && handler);
 }
 function style(node, value, prev) {
 if (!value) return prev ? setAttribute(node, "style") : value;
 const nodeStyle = node.style;
 if (typeof value === "string") return nodeStyle.cssText = value;
-typeof prev === "string" && (nodeStyle.cssText = prev = undefined);
+typeof prev === "string" && (nodeStyle.cssText = prev = void 0);
 prev || (prev = {});
 value || (value = {});
 let v, s;
 for (s in prev) {
-value[s] == null && nodeStyle.removeProperty(s);
+value[s] ?? nodeStyle.removeProperty(s);
 delete prev[s];
 }
 for (s in value) {
@@ -6494,16 +5888,22 @@ function use(fn, element, arg) {
 return untrack(() => fn(element, arg));
 }
 function insert(parent, accessor, marker, initial) {
-if (marker !== undefined && !initial) initial = [];
+if (marker !== void 0 && !initial) initial = [];
 if (typeof accessor !== "function") return insertExpression(parent, accessor, initial, marker);
-createRenderEffect(current => insertExpression(parent, accessor(), current, marker), initial);
+createRenderEffect((current) => insertExpression(parent, accessor(), current, marker), initial);
+}
+function isHydrating(node) {
+return !!sharedConfig.context && !sharedConfig.done && (!node || node.isConnected);
 }
 function eventHandler(e) {
+if (sharedConfig.registry && sharedConfig.events) {
+if (sharedConfig.events.find(([el, ev]) => ev === e)) return;
+}
 let node = e.target;
 const key = `$$${e.type}`;
 const oriTarget = e.target;
 const oriCurrentTarget = e.currentTarget;
-const retarget = value => Object.defineProperty(e, "target", {
+const retarget = (value) => Object.defineProperty(e, "target", {
 configurable: true,
 value
 });
@@ -6511,7 +5911,7 @@ const handleNode = () => {
 const handler = node[key];
 if (handler && !node.disabled) {
 const data = node[`${key}Data`];
-data !== undefined ? handler.call(node, data, e) : handler.call(node, e);
+data !== void 0 ? handler.call(node, data, e) : handler.call(node, e);
 if (e.cancelBubble) return;
 }
 node.host && typeof node.host !== "string" && !node.host._$host && node.contains(e.target) && retarget(node.host);
@@ -6526,6 +5926,7 @@ get() {
 return node || document;
 }
 });
+if (sharedConfig.registry && !sharedConfig.done) sharedConfig.done = _$HY.done = true;
 if (e.composedPath) {
 const path = e.composedPath();
 retarget(path[0]);
@@ -6537,37 +5938,42 @@ node = node._$host;
 walkUpTree();
 break;
 }
-if (node.parentNode === oriCurrentTarget) {
-break;
+if (node.parentNode === oriCurrentTarget) break;
 }
-}
-}
-else walkUpTree();
+} else walkUpTree();
 retarget(oriTarget);
 }
 function insertExpression(parent, value, current, marker, unwrapArray) {
+const hydrating = isHydrating(parent);
+if (hydrating) {
+!current && (current = [...parent.childNodes]);
+let cleaned = [];
+for (let i = 0; i < current.length; i++) {
+const node = current[i];
+if (node.nodeType === 8 && node.data.slice(0, 2) === "!$") node.remove();
+else cleaned.push(node);
+}
+current = cleaned;
+}
 while (typeof current === "function") current = current();
 if (value === current) return current;
-const t = typeof value,
-multi = marker !== undefined;
+const t = typeof value, multi = marker !== void 0;
 parent = multi && current[0] && current[0].parentNode || parent;
 if (t === "string" || t === "number") {
+if (hydrating) return current;
 if (t === "number") {
 value = value.toString();
 if (value === current) return current;
 }
 if (multi) {
 let node = current[0];
-if (node && node.nodeType === 3) {
-node.data !== value && (node.data = value);
-} else node = document.createTextNode(value);
+if (node && node.nodeType === 3) node.data !== value && (node.data = value);
+else node = document.createTextNode(value);
 current = cleanChildren(parent, current, marker, node);
-} else {
-if (current !== "" && typeof current === "string") {
-current = parent.firstChild.data = value;
-} else current = parent.textContent = value;
-}
+} else if (current !== "" && typeof current === "string") current = parent.firstChild.data = value;
+else current = parent.textContent = value;
 } else if (value == null || t === "boolean") {
+if (hydrating) return current;
 current = cleanChildren(parent, current, marker);
 } else if (t === "function") {
 createRenderEffect(() => {
@@ -6583,50 +5989,54 @@ if (normalizeIncomingArray(array, value, current, unwrapArray)) {
 createRenderEffect(() => current = insertExpression(parent, array, current, marker, true));
 return () => current;
 }
+if (hydrating) {
+if (!array.length) return current;
+if (marker === void 0) return current = [...parent.childNodes];
+let node = array[0];
+if (node.parentNode !== parent) return current;
+const nodes = [node];
+while ((node = node.nextSibling) !== marker) nodes.push(node);
+return current = nodes;
+}
 if (array.length === 0) {
 current = cleanChildren(parent, current, marker);
 if (multi) return current;
-} else if (currentArray) {
-if (current.length === 0) {
-appendNodes(parent, array, marker);
-} else reconcileArrays(parent, current, array);
-} else {
+} else if (currentArray) if (current.length === 0) appendNodes(parent, array, marker);
+else reconcileArrays(parent, current, array);
+else {
 current && cleanChildren(parent);
 appendNodes(parent, array);
 }
 current = array;
 } else if (value.nodeType) {
+if (hydrating && value.parentNode) return current = multi ? [value] : value;
 if (Array.isArray(current)) {
 if (multi) return current = cleanChildren(parent, current, marker, value);
 cleanChildren(parent, current, null, value);
-} else if (current == null || current === "" || !parent.firstChild) {
-parent.appendChild(value);
-} else parent.replaceChild(value, parent.firstChild);
+} else if (current == null || current === "" || !parent.firstChild) parent.appendChild(value);
+else parent.replaceChild(value, parent.firstChild);
 current = value;
-} else ;
+}
 return current;
 }
 function normalizeIncomingArray(normalized, array, current, unwrap) {
 let dynamic = false;
 for (let i = 0, len = array.length; i < len; i++) {
-let item = array[i],
-prev = current && current[normalized.length],
-t;
-if (item == null || item === true || item === false) ; else if ((t = typeof item) === "object" && item.nodeType) {
-normalized.push(item);
-} else if (Array.isArray(item)) {
-dynamic = normalizeIncomingArray(normalized, item, prev) || dynamic;
-} else if (t === "function") {
-if (unwrap) {
+let item = array[i], prev = current && current[normalized.length], t;
+if (item == null || item === true || item === false);
+else if ((t = typeof item) === "object" && item.nodeType) normalized.push(item);
+else if (Array.isArray(item)) dynamic = normalizeIncomingArray(normalized, item, prev) || dynamic;
+else if (t === "function") if (unwrap) {
 while (typeof item === "function") item = item();
 dynamic = normalizeIncomingArray(normalized, Array.isArray(item) ? item : [item], Array.isArray(prev) ? prev : [prev]) || dynamic;
 } else {
 normalized.push(item);
 dynamic = true;
 }
-} else {
+else {
 const value = String(item);
-if (prev && prev.nodeType === 3 && prev.data === value) normalized.push(prev);else normalized.push(document.createTextNode(value));
+if (prev && prev.nodeType === 3 && prev.data === value) normalized.push(prev);
+else normalized.push(document.createTextNode(value));
 }
 }
 return dynamic;
@@ -6635,7 +6045,7 @@ function appendNodes(parent, array, marker = null) {
 for (let i = 0, len = array.length; i < len; i++) parent.insertBefore(array[i], marker);
 }
 function cleanChildren(parent, current, marker, replacement) {
-if (marker === undefined) return parent.textContent = "";
+if (marker === void 0) return parent.textContent = "";
 const node = replacement || document.createTextNode("");
 if (current.length) {
 let inserted = false;
@@ -6643,22 +6053,20 @@ for (let i = current.length - 1; i >= 0; i--) {
 const el = current[i];
 if (node !== el) {
 const isParent = el.parentNode === parent;
-if (!inserted && !i) isParent ? parent.replaceChild(node, el) : parent.insertBefore(node, marker);else isParent && el.remove();
+if (!inserted && !i) isParent ? parent.replaceChild(node, el) : parent.insertBefore(node, marker);
+else isParent && el.remove();
 } else inserted = true;
 }
 } else parent.insertBefore(node, marker);
 return [node];
 }
-let observerRegistry =  new WeakMap();
-const SharedObserver = {
+var observerRegistry =  new WeakMap();
+var SharedObserver = {
 observe(element, callback, options = {}) {
 const observer = new IntersectionObserver((entries) => {
-for (const entry of entries) {
-try {
+for (const entry of entries) try {
 callback(entry);
-} catch (error) {
-}
-}
+} catch (error) {}
 }, options);
 observer.observe(element);
 let set = observerRegistry.get(element);
@@ -6669,84 +6077,79 @@ observerRegistry.set(element, set);
 set.add(observer);
 let isActive = true;
 const unsubscribe = () => {
-if (!isActive) {
-return;
-}
+if (!isActive) return;
 isActive = false;
 try {
 observer.unobserve(element);
-} catch {
-}
+} catch {}
 try {
 observer.disconnect();
-} catch {
-}
+} catch {}
 const currentSet = observerRegistry.get(element);
 if (currentSet) {
 currentSet.delete(observer);
-if (currentSet.size === 0) {
-observerRegistry.delete(element);
-}
+if (currentSet.size === 0) observerRegistry.delete(element);
 }
 };
 return unsubscribe;
 },
 unobserve(element) {
 const set = observerRegistry.get(element);
-if (!set || set.size === 0) {
-return;
-}
-for (const observer of set) {
-try {
+if (!set || set.size === 0) return;
+for (const observer of set) try {
 observer.disconnect();
-} catch {
-}
-}
+} catch {}
 observerRegistry.delete(element);
 }
 };
-const DEFAULTS$1 = {
-THRESHOLD: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
+var DEFAULTS$1 = {
+THRESHOLD: [
+0,
+.1,
+.2,
+.3,
+.4,
+.5,
+.6,
+.7,
+.8,
+.9,
+1
+],
 ROOT_MARGIN: "0px"
 };
-class FocusCoordinator {
+var FocusCoordinator = class {
+items =  new Map();
+observerOptions;
 constructor(options) {
 this.options = options;
 const threshold = options.threshold;
 let resolvedThreshold;
-if (typeof threshold === "number") {
-resolvedThreshold = threshold;
-} else if (Array.isArray(threshold)) {
-resolvedThreshold = [...threshold];
-} else {
-resolvedThreshold = [...DEFAULTS$1.THRESHOLD];
-}
+if (typeof threshold === "number") resolvedThreshold = threshold;
+else if (Array.isArray(threshold)) resolvedThreshold = [...threshold];
+else resolvedThreshold = [...DEFAULTS$1.THRESHOLD];
 this.observerOptions = {
 threshold: resolvedThreshold,
 rootMargin: options.rootMargin ?? DEFAULTS$1.ROOT_MARGIN
 };
 }
-items =  new Map();
-observerOptions;
 registerItem(index, element) {
-const prev = this.items.get(index);
-prev?.unsubscribe?.();
+this.items.get(index)?.unsubscribe?.();
 if (!element) {
 this.items.delete(index);
 return;
 }
-const trackedItem = { element, isVisible: false };
-trackedItem.unsubscribe = SharedObserver.observe(
+const trackedItem = {
 element,
-(entry) => {
+isVisible: false
+};
+trackedItem.unsubscribe = SharedObserver.observe(element, (entry) => {
 const item = this.items.get(index);
 if (item) {
 item.entry = entry;
 item.isVisible = entry.isIntersecting;
 }
-},
-this.observerOptions
-);
+}, this.observerOptions);
 this.items.set(index, trackedItem);
 }
 updateFocus(force = false) {
@@ -6756,16 +6159,10 @@ if (!container) return;
 const containerRect = container.getBoundingClientRect();
 const selection = this.selectBestCandidate(containerRect);
 if (!selection) return;
-const currentIndex = this.options.activeIndex();
-const hasChanged = currentIndex !== selection.index;
-if (hasChanged) {
-this.options.onFocusChange(selection.index, "auto");
-}
+if (this.options.activeIndex() !== selection.index) this.options.onFocusChange(selection.index, "auto");
 }
 cleanup() {
-for (const item of this.items.values()) {
-item.unsubscribe?.();
-}
+for (const item of this.items.values()) item.unsubscribe?.();
 this.items.clear();
 }
 selectBestCandidate(containerRect) {
@@ -6784,36 +6181,36 @@ const itemTop = rect.top;
 const itemHeight = rect.height;
 const itemBottom = itemTop + itemHeight;
 const itemCenter = itemTop + itemHeight / 2;
-const visibleTop = Math.max(itemTop, viewportTop);
-const visibleBottom = Math.min(itemBottom, viewportBottom);
-const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+const visibleHeight = Math.max(0, Math.min(itemBottom, viewportBottom) - Math.max(itemTop, viewportTop));
 const visibilityRatio = itemHeight > 0 ? visibleHeight / itemHeight : 0;
 const centerDistance = Math.abs(itemCenter - viewportCenter);
 const topDistance = Math.abs(itemTop - viewportTop);
-if (topDistance <= topProximityThreshold && visibilityRatio > 0.1) {
-if (!topAlignedCandidate || topDistance < topAlignedCandidate.distance) {
-topAlignedCandidate = { index, distance: topDistance };
+if (topDistance <= topProximityThreshold && visibilityRatio > .1) {
+if (!topAlignedCandidate || topDistance < topAlignedCandidate.distance) topAlignedCandidate = {
+index,
+distance: topDistance
+};
 }
+if (visibilityRatio > .1) {
+if (!highestVisibilityCandidate || visibilityRatio > highestVisibilityCandidate.ratio || visibilityRatio === highestVisibilityCandidate.ratio && centerDistance < highestVisibilityCandidate.centerDistance) highestVisibilityCandidate = {
+index,
+ratio: visibilityRatio,
+centerDistance
+};
 }
-if (visibilityRatio > 0.1) {
-const isBetterVisibility = !highestVisibilityCandidate || visibilityRatio > highestVisibilityCandidate.ratio || visibilityRatio === highestVisibilityCandidate.ratio && centerDistance < highestVisibilityCandidate.centerDistance;
-if (isBetterVisibility) {
-highestVisibilityCandidate = { index, ratio: visibilityRatio, centerDistance };
+if (!bestCandidate || centerDistance < bestCandidate.distance) bestCandidate = {
+index,
+distance: centerDistance
+};
 }
-}
-if (!bestCandidate || centerDistance < bestCandidate.distance) {
-bestCandidate = { index, distance: centerDistance };
-}
-}
-if (topAlignedCandidate) {
-return topAlignedCandidate;
-}
-if (highestVisibilityCandidate) {
-return { index: highestVisibilityCandidate.index, distance: 0 };
-}
+if (topAlignedCandidate) return topAlignedCandidate;
+if (highestVisibilityCandidate) return {
+index: highestVisibilityCandidate.index,
+distance: 0
+};
 return bestCandidate;
 }
-}
+};
 function resolve(value) {
 return typeof value === "function" ? value() : value;
 }
@@ -6825,8 +6222,7 @@ return typeof value === "function" ? value : () => value;
 }
 function toRequiredAccessor(resolver, fallback) {
 return () => {
-const resolved = resolveOptional(resolver());
-return resolved ?? fallback;
+return resolveOptional(resolver()) ?? fallback;
 };
 }
 function toOptionalAccessor(resolver) {
@@ -6847,9 +6243,7 @@ activeIndex: () => galleryState.value.currentIndex,
 ...options.threshold !== void 0 && { threshold: options.threshold },
 rootMargin: options.rootMargin ?? "0px",
 onFocusChange: (index, source) => {
-if (source === "auto" && index !== null) {
-navigateToItem(index, "scroll", "auto-focus");
-}
+if (source === "auto" && index !== null) navigateToItem(index, "scroll", "auto-focus");
 }
 });
 onCleanup(() => coordinator.cleanup());
@@ -6876,19 +6270,14 @@ const itemsCache =  new Map();
 const getCachedItem = (index, itemsRoot) => {
 const cached = itemsCache.get(index)?.deref();
 if (cached?.isConnected) return cached;
-const items = itemsRoot.querySelectorAll('[data-xeg-role="gallery-item"]');
-const element = items[index];
-if (element) {
-itemsCache.set(index, new WeakRef(element));
-}
+const element = itemsRoot.querySelectorAll("[data-xeg-role=\"gallery-item\"]")[index];
+if (element) itemsCache.set(index, new WeakRef(element));
 return element ?? null;
 };
 const scrollToItem = (index) => {
 const container = containerAccessor();
 if (!enabled() || !container || index < 0 || index >= totalItemsAccessor()) return;
-const itemsRoot = container.querySelector(
-'[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
-);
+const itemsRoot = container.querySelector("[data-xeg-role=\"items-list\"], [data-xeg-role=\"items-container\"]");
 if (!itemsRoot) return;
 const target = getCachedItem(index, itemsRoot);
 if (target) {
@@ -6898,8 +6287,7 @@ behavior: behavior(),
 block: alignToCenter() ? "center" : block(),
 inline: "nearest"
 });
-} else {
-requestAnimationFrame(() => {
+} else requestAnimationFrame(() => {
 const retryTarget = getCachedItem(index, itemsRoot);
 if (retryTarget) {
 options.onScrollStart?.();
@@ -6910,35 +6298,23 @@ inline: "nearest"
 });
 }
 });
-}
 };
 createEffect(() => {
 const index = currentIndexAccessor();
 const container = containerAccessor();
 const total = totalItemsAccessor();
-if (!container || total <= 0) {
-return;
-}
-if (untrack(enabled) && !untrack(isScrolling)) {
-scrollToItem(index);
-}
+if (!container || total <= 0) return;
+if (untrack(enabled) && !untrack(isScrolling)) scrollToItem(index);
 });
 return {
 scrollToItem,
 scrollToCurrentItem: () => scrollToItem(currentIndexAccessor())
 };
 }
-const SCROLL_IDLE_TIMEOUT = 250;
-const PROGRAMMATIC_SCROLL_WINDOW = 100;
-const LISTENER_CONTEXT_PREFIX = "useGalleryScroll";
-function useGalleryScroll({
-container,
-scrollTarget,
-onScroll,
-onScrollEnd,
-enabled = true,
-programmaticScrollTimestamp
-}) {
+var SCROLL_IDLE_TIMEOUT = 250;
+var PROGRAMMATIC_SCROLL_WINDOW = 100;
+var LISTENER_CONTEXT_PREFIX = "useGalleryScroll";
+function useGalleryScroll({ container, scrollTarget, onScroll, onScrollEnd, enabled = true, programmaticScrollTimestamp }) {
 const containerAccessor = toAccessor(container);
 const scrollTargetAccessor = toAccessor(scrollTarget ?? containerAccessor);
 const enabledAccessor = toAccessor(enabled);
@@ -6968,7 +6344,7 @@ const shouldIgnoreScroll = () => Date.now() - programmaticTimestampAccessor() < 
 const isToolbarScroll = (event) => {
 const target = event.target;
 if (!(target instanceof HTMLElement)) return false;
-return !!(target.closest('[data-gallery-element="toolbar"]') || target.closest('[data-gallery-element="settings-panel"]') || target.closest('[data-gallery-element="tweet-panel"]') || target.closest('[data-role="toolbar"]'));
+return !!(target.closest("[data-gallery-element=\"toolbar\"]") || target.closest("[data-gallery-element=\"settings-panel\"]") || target.closest("[data-gallery-element=\"tweet-panel\"]") || target.closest("[data-role=\"toolbar\"]"));
 };
 const handleWheel = (event) => {
 if (!isGalleryOpen() || !isGalleryInternalEvent(event)) return;
@@ -6986,8 +6362,7 @@ scheduleScrollEnd();
 createEffect(() => {
 const isEnabled = enabledAccessor();
 const containerElement = containerAccessor();
-const scrollElement = scrollTargetAccessor();
-const eventTarget = scrollElement ?? containerElement;
+const eventTarget = scrollTargetAccessor() ?? containerElement;
 if (!isEnabled || !eventTarget) {
 setIsScrolling(false);
 clearScrollIdleTimer();
@@ -6997,51 +6372,36 @@ const eventManager = EventManager.getInstance();
 const listenerContext = createPrefixedId(LISTENER_CONTEXT_PREFIX, ":");
 const listenerIds = [];
 const registerListener = (type, handler) => {
-const id = eventManager.addListener(
-eventTarget,
-type,
-handler,
-{ passive: true },
-listenerContext
-);
-if (id) {
-listenerIds.push(id);
-}
+const id = eventManager.addListener(eventTarget, type, handler, { passive: true }, listenerContext);
+if (id) listenerIds.push(id);
 };
 registerListener("wheel", handleWheel);
 registerListener("scroll", handleScroll);
 onCleanup(() => {
-for (const id of listenerIds) {
-eventManager.removeListener(id);
-}
+for (const id of listenerIds) eventManager.removeListener(id);
 clearScrollIdleTimer();
 setIsScrolling(false);
 });
 });
 onCleanup(clearScrollIdleTimer);
-return { isScrolling, lastScrollTime };
+return {
+isScrolling,
+lastScrollTime
+};
 }
 function useGalleryKeyboard({ onClose }) {
 createEffect(() => {
-if (typeof document === "undefined") {
-return;
-}
+if (typeof document === "undefined") return;
 const isEditableTarget = (target) => {
 const element = target;
-if (!element) {
-return false;
-}
+if (!element) return false;
 const tag = element.tagName?.toUpperCase();
-if (tag === "INPUT" || tag === "TEXTAREA") {
-return true;
-}
+if (tag === "INPUT" || tag === "TEXTAREA") return true;
 return !!element.isContentEditable;
 };
 const handleKeyDown = (event) => {
 const keyboardEvent = event;
-if (isEditableTarget(keyboardEvent.target)) {
-return;
-}
+if (isEditableTarget(keyboardEvent.target)) return;
 let handled = false;
 if (keyboardEvent.key === "Escape") {
 onClose();
@@ -7053,31 +6413,16 @@ keyboardEvent.stopPropagation();
 }
 };
 const eventManager = EventManager.getInstance();
-const listenerId = eventManager.addListener(
-document,
-"keydown",
-handleKeyDown,
-{ capture: true },
-"gallery-keyboard-navigation"
-);
+const listenerId = eventManager.addListener(document, "keydown", handleKeyDown, { capture: true }, "gallery-keyboard-navigation");
 onCleanup(() => {
-if (listenerId) {
-eventManager.removeListener(listenerId);
-}
+if (listenerId) eventManager.removeListener(listenerId);
 });
 });
 }
 function ensureGalleryScrollAvailable(element) {
-if (!element) {
-return;
-}
-const scrollableElements = element.querySelectorAll(
-'[data-xeg-role="items-list"], .itemsList, .content'
-);
-scrollableElements.forEach((el) => {
-if (el.style.overflowY !== "auto" && el.style.overflowY !== "scroll") {
-el.style.overflowY = "auto";
-}
+if (!element) return;
+element.querySelectorAll("[data-xeg-role=\"items-list\"], .itemsList, .content").forEach((el) => {
+if (el.style.overflowY !== "auto" && el.style.overflowY !== "scroll") el.style.overflowY = "auto";
 });
 }
 function computeViewportConstraints(rect, chrome = {}) {
@@ -7086,8 +6431,11 @@ const vh = Math.max(0, Math.floor(rect.height));
 const top = Math.max(0, Math.floor(chrome.paddingTop ?? 0));
 const bottom = Math.max(0, Math.floor(chrome.paddingBottom ?? 0));
 const toolbar = Math.max(0, Math.floor(chrome.toolbarHeight ?? 0));
-const constrained = Math.max(0, vh - top - bottom - toolbar);
-return { viewportW: vw, viewportH: vh, constrainedH: constrained };
+return {
+viewportW: vw,
+viewportH: vh,
+constrainedH: Math.max(0, vh - top - bottom - toolbar)
+};
 }
 function applyViewportCssVars(el, v) {
 el.style.setProperty("--xeg-viewport-w", `${v.viewportW}px`);
@@ -7099,24 +6447,23 @@ let disposed = false;
 const calcAndApply = () => {
 if (disposed) return;
 const rect = el.getBoundingClientRect();
-const v = computeViewportConstraints({ width: rect.width, height: rect.height }, getChrome());
-applyViewportCssVars(el, v);
+applyViewportCssVars(el, computeViewportConstraints({
+width: rect.width,
+height: rect.height
+}, getChrome()));
 };
 let pending = false;
 const schedule = () => {
 if (pending) return;
 pending = true;
-if (typeof requestAnimationFrame === "function") {
-requestAnimationFrame(() => {
+if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => {
 pending = false;
 calcAndApply();
 });
-} else {
-globalTimerManager.setTimeout(() => {
+else globalTimerManager.setTimeout(() => {
 pending = false;
 calcAndApply();
 }, 0);
-}
 };
 calcAndApply();
 let ro = null;
@@ -7124,35 +6471,23 @@ if (typeof ResizeObserver !== "undefined") {
 ro = new ResizeObserver(() => schedule());
 try {
 ro.observe(el);
-} catch {
-}
+} catch {}
 }
 const onResize = () => schedule();
 let resizeListenerId = null;
-if (typeof window !== "undefined") {
-resizeListenerId = EventManager.getInstance().addListener(
-window,
-"resize",
-createEventListener(onResize),
-{ passive: true },
-"viewport:resize"
-);
-}
+if (typeof window !== "undefined") resizeListenerId = EventManager.getInstance().addListener(window, "resize", createEventListener(onResize), { passive: true }, "viewport:resize");
 return () => {
 disposed = true;
-if (ro) {
-try {
+if (ro) try {
 ro.disconnect();
-} catch {
-}
-}
+} catch {}
 if (resizeListenerId) {
 EventManager.getInstance().removeListener(resizeListenerId);
 resizeListenerId = null;
 }
 };
 }
-const ANIMATION_CLASSES = {
+var ANIMATION_CLASSES = {
 FADE_IN: "xeg-fade-in",
 FADE_OUT: "xeg-fade-out"
 };
@@ -7179,47 +6514,39 @@ return runCssAnimation(element, ANIMATION_CLASSES.FADE_OUT);
 }
 function useGalleryLifecycle(options) {
 const { containerEl, toolbarWrapperEl, isVisible } = options;
-createEffect(
-on(containerEl, (element) => {
-if (element) {
-ensureGalleryScrollAvailable(element);
-}
-})
-);
-createEffect(
-on(
-[containerEl, isVisible],
-([container, visible]) => {
+createEffect(on(containerEl, (element) => {
+if (element) ensureGalleryScrollAvailable(element);
+}));
+createEffect(on([containerEl, isVisible], ([container, visible]) => {
 if (!container) return;
-if (visible) {
-animateGalleryEnter(container);
-} else {
+if (visible) animateGalleryEnter(container);
+else {
 animateGalleryExit(container);
-const videos = container.querySelectorAll("video");
-videos.forEach((video) => {
+const logCleanupFailure = (error) => {};
+container.querySelectorAll("video").forEach((video) => {
 try {
 video.pause();
 } catch (error) {
+logCleanupFailure(error);
 }
 try {
-if (video.currentTime !== 0) {
-video.currentTime = 0;
-}
+if (video.currentTime !== 0) video.currentTime = 0;
 } catch (error) {
+logCleanupFailure(error);
 }
 });
 }
-},
-{ defer: true }
-)
-);
+}, { defer: true }));
 createEffect(() => {
 const container = containerEl();
 const wrapper = toolbarWrapperEl();
 if (!container || !wrapper) return;
 const cleanup = observeViewportCssVars(container, () => {
-const toolbarHeight = wrapper ? Math.floor(wrapper.getBoundingClientRect().height) : 0;
-return { toolbarHeight, paddingTop: 0, paddingBottom: 0 };
+return {
+toolbarHeight: wrapper ? Math.floor(wrapper.getBoundingClientRect().height) : 0,
+paddingTop: 0,
+paddingBottom: 0
+};
 });
 onCleanup(() => {
 cleanup?.();
@@ -7228,27 +6555,18 @@ cleanup?.();
 }
 function useGalleryNavigation(options) {
 const { isVisible, scrollToItem } = options;
-const [lastNavigationTrigger, setLastNavigationTrigger] = createSignal(
-null
-);
+const [lastNavigationTrigger, setLastNavigationTrigger] = createSignal(null);
 const [programmaticScrollTimestamp, setProgrammaticScrollTimestamp] = createSignal(0);
-createEffect(
-on(isVisible, (visible) => {
-if (!visible) {
-return;
-}
-const dispose = registerNavigationEvents({
+createEffect(on(isVisible, (visible) => {
+if (!visible) return;
+onCleanup(registerNavigationEvents({
 onTriggerChange: setLastNavigationTrigger,
 onNavigateComplete: ({ index, trigger }) => {
-if (trigger === "scroll") {
-return;
-}
+if (trigger === "scroll") return;
 scrollToItem(index);
 }
-});
-onCleanup(dispose);
-})
-);
+}));
+}));
 return {
 lastNavigationTrigger,
 setLastNavigationTrigger,
@@ -7256,21 +6574,12 @@ programmaticScrollTimestamp,
 setProgrammaticScrollTimestamp
 };
 }
-function registerNavigationEvents({
-onTriggerChange,
-onNavigateComplete
-}) {
-const stopStart = galleryIndexEvents.on(
-"navigate:start",
-(payload) => onTriggerChange(payload.trigger)
-);
-const stopComplete = galleryIndexEvents.on(
-"navigate:complete",
-(payload) => {
+function registerNavigationEvents({ onTriggerChange, onNavigateComplete }) {
+const stopStart = galleryIndexEvents.on("navigate:start", (payload) => onTriggerChange(payload.trigger));
+const stopComplete = galleryIndexEvents.on("navigate:complete", (payload) => {
 onTriggerChange(payload.trigger);
 onNavigateComplete(payload);
-}
-);
+});
 return () => {
 stopStart();
 stopComplete();
@@ -7278,11 +6587,7 @@ stopComplete();
 }
 function requireSettingsService() {
 const service = tryGetSettingsManager();
-if (!service) {
-throw new Error(
-"SettingsService not registered."
-);
-}
+if (!service) throw new Error("SettingsService not registered.");
 return service;
 }
 function getTypedSettingOr(path, fallback) {
@@ -7295,14 +6600,10 @@ return requireSettingsService().set(path, value);
 function useToolbarAutoHide(options) {
 const { isVisible, hasItems } = options;
 const computeInitialVisibility = () => !!(isVisible() && hasItems());
-const [isInitialToolbarVisible, setIsInitialToolbarVisible] = createSignal(
-computeInitialVisibility()
-);
+const [isInitialToolbarVisible, setIsInitialToolbarVisible] = createSignal(computeInitialVisibility());
 let activeTimer = null;
 const clearActiveTimer = () => {
-if (activeTimer === null) {
-return;
-}
+if (activeTimer === null) return;
 globalTimerManager.clearTimeout(activeTimer);
 activeTimer = null;
 };
@@ -7330,15 +6631,7 @@ setIsInitialToolbarVisible
 };
 }
 function useVerticalGallery(options) {
-const {
-isVisible,
-currentIndex,
-mediaItemsCount,
-containerEl,
-toolbarWrapperEl,
-itemsContainerEl,
-onClose
-} = options;
+const { isVisible, currentIndex, mediaItemsCount, containerEl, toolbarWrapperEl, itemsContainerEl, onClose } = options;
 let focusSyncCallback = null;
 const { isInitialToolbarVisible, setIsInitialToolbarVisible } = useToolbarAutoHide({
 isVisible,
@@ -7356,24 +6649,14 @@ enabled: isVisible,
 programmaticScrollTimestamp: () => navigationState.programmaticScrollTimestamp(),
 onScrollEnd: () => focusSyncCallback?.()
 });
-const { scrollToItem, scrollToCurrentItem } = useGalleryItemScroll(
-containerEl,
-currentIndex,
-mediaItemsCount,
-{
+const { scrollToItem, scrollToCurrentItem } = useGalleryItemScroll(containerEl, currentIndex, mediaItemsCount, {
 enabled: () => !isScrolling() && navigationState.lastNavigationTrigger() !== "scroll",
 block: "start",
 isScrolling,
 onScrollStart: () => navigationState.setProgrammaticScrollTimestamp(Date.now())
-}
-);
+});
 scrollToItemRef = scrollToItem;
-const {
-focusedIndex,
-registerItem: registerFocusItem,
-handleItemFocus,
-forceSync: focusTrackerForceSync
-} = useGalleryFocusTracker({
+const { focusedIndex, registerItem: registerFocusItem, handleItemFocus, forceSync: focusTrackerForceSync } = useGalleryFocusTracker({
 container: containerEl,
 isEnabled: isVisible,
 isScrolling,
@@ -7386,14 +6669,9 @@ toolbarWrapperEl,
 isVisible
 });
 createEffect(() => {
-if (isScrolling()) {
-setIsInitialToolbarVisible(false);
-}
+if (isScrolling()) setIsInitialToolbarVisible(false);
 });
-useGalleryKeyboard({
-onClose: onClose ?? (() => {
-})
-});
+useGalleryKeyboard({ onClose: onClose ?? (() => {}) });
 return {
 scroll: {
 isScrolling,
@@ -7418,29 +6696,20 @@ setIsInitialToolbarVisible
 }
 };
 }
-const container$1 = "xg-X9gZ";
-const toolbarWrapper = "xg-meO3";
-const isScrolling = "xg-sOsS";
-const itemsContainer = "xg-gmRW";
-const empty = "xg-yhK-";
-const galleryItem = "xg-EfVa";
-const itemActive = "xg-LxHL";
-const scrollSpacer = "xg-sfF0";
-const toolbarHoverZone = "xg-gC-m";
-const initialToolbarVisible = "xg-Canm";
-const emptyMessage = "xg-fwsr";
-const styles$3 = {
-container: container$1,
-toolbarWrapper: toolbarWrapper,
-isScrolling: isScrolling,
-itemsContainer: itemsContainer,
-empty: empty,
-galleryItem: galleryItem,
-itemActive: itemActive,
-scrollSpacer: scrollSpacer,
-toolbarHoverZone: toolbarHoverZone,
-initialToolbarVisible: initialToolbarVisible,
-emptyMessage: emptyMessage
+var VerticalGalleryView_module_default = {
+container: "xg-X9gZ",
+toolbarWrapper: "xg-meO3",
+uiHidden: "xg-9abg",
+isScrolling: "xg-sOsS",
+itemsContainer: "xg-gmRW",
+empty: "xg-yhK-",
+galleryItem: "xg-EfVa",
+itemActive: "xg-LxHL",
+scrollSpacer: "xg-sfF0",
+toolbarHoverZone: "xg-gC-m",
+initialToolbarVisible: "xg-Canm",
+toolbarButton: "xg-e06X",
+emptyMessage: "xg-fwsr"
 };
 function createVideoVisibilityController(options) {
 const { video, setMuted } = options;
@@ -7448,23 +6717,14 @@ let wasPlayingBeforeHidden = false;
 let wasMutedBeforeHidden = null;
 let didAutoMute = false;
 const pauseVideo = () => {
-if (typeof video.pause === "function") {
-video.pause();
-}
+if (typeof video.pause === "function") video.pause();
 };
 const playVideo = () => {
-if (typeof video.play !== "function") {
-return;
-}
+if (typeof video.play !== "function") return;
 try {
 const result = video.play();
-if (result && typeof result.catch === "function") {
-void result.catch((err) => {
-if (false) ;
-});
-}
-} catch (err) {
-}
+if (result && typeof result.catch === "function") result.catch((err) => {});
+} catch (err) {}
 };
 const applyMuted = (nextMuted) => {
 if (typeof setMuted === "function") {
@@ -7473,10 +6733,8 @@ return;
 }
 video.muted = nextMuted;
 };
-return {
-handleEntry(entry) {
-if (!entry.isIntersecting) {
-try {
+return { handleEntry(entry) {
+if (!entry.isIntersecting) try {
 if (wasMutedBeforeHidden === null) {
 wasPlayingBeforeHidden = !video.paused;
 wasMutedBeforeHidden = video.muted;
@@ -7486,45 +6744,31 @@ if (!video.muted) {
 applyMuted(true);
 didAutoMute = true;
 }
-if (!video.paused) {
-pauseVideo();
-}
-} catch (err) {
-}
-} else {
-try {
+if (!video.paused) pauseVideo();
+} catch (err) {}
+else try {
 if (wasMutedBeforeHidden !== null) {
-if (didAutoMute && video.muted === true && wasMutedBeforeHidden === false) {
-applyMuted(false);
+if (didAutoMute && video.muted === true && wasMutedBeforeHidden === false) applyMuted(false);
 }
-}
-if (wasPlayingBeforeHidden) {
-playVideo();
-}
-} catch (err) {
-} finally {
+if (wasPlayingBeforeHidden) playVideo();
+} catch (err) {} finally {
 wasPlayingBeforeHidden = false;
 wasMutedBeforeHidden = null;
 didAutoMute = false;
 }
-}
-}
-};
+} };
 }
 function useVideoVisibility(options) {
 const { container, video, isVideo, setMuted } = options;
 createEffect(() => {
-if (!isVideo()) {
-return;
-}
+if (!isVideo()) return;
 const containerEl = container();
 const videoEl = video();
-if (!containerEl || !videoEl) {
-return;
-}
-const controller = createVideoVisibilityController(
-typeof setMuted === "function" ? { video: videoEl, setMuted } : { video: videoEl }
-);
+if (!containerEl || !videoEl) return;
+const controller = createVideoVisibilityController(typeof setMuted === "function" ? {
+video: videoEl,
+setMuted
+} : { video: videoEl });
 const unsubscribeObserver = SharedObserver.observe(containerEl, controller.handleEntry, {
 threshold: 0,
 rootMargin: "0px"
@@ -7534,11 +6778,9 @@ unsubscribeObserver();
 });
 });
 }
-const DEFAULT_VOLUME_EPSILON = 1e-3;
+var DEFAULT_VOLUME_EPSILON = .001;
 function areVolumesEquivalent(a, b) {
-if (!Number.isFinite(a) || !Number.isFinite(b)) {
-return a === b;
-}
+if (!Number.isFinite(a) || !Number.isFinite(b)) return a === b;
 return Math.abs(a - b) <= DEFAULT_VOLUME_EPSILON;
 }
 function nowMs() {
@@ -7561,88 +6803,64 @@ return {
 markProgrammaticChange(expected) {
 const now = nowMs();
 pruneExpiredMarks(now);
-expectedMarks = [...expectedMarks, { snapshot: expected, markedAt: now }];
-if (expectedMarks.length > MAX_EXPECTED_MARKS) {
-expectedMarks = expectedMarks.slice(-MAX_EXPECTED_MARKS);
-}
+expectedMarks = [...expectedMarks, {
+snapshot: expected,
+markedAt: now
+}];
+if (expectedMarks.length > MAX_EXPECTED_MARKS) expectedMarks = expectedMarks.slice(-MAX_EXPECTED_MARKS);
 },
 shouldIgnoreChange(current) {
 if (expectedMarks.length === 0) return false;
-const now = nowMs();
-pruneExpiredMarks(now);
-if (expectedMarks.length === 0) {
-return false;
-}
-return expectedMarks.some(
-(mark) => areVolumesEquivalent(current.volume, mark.snapshot.volume) && current.muted === mark.snapshot.muted
-);
+pruneExpiredMarks(nowMs());
+if (expectedMarks.length === 0) return false;
+return expectedMarks.some((mark) => areVolumesEquivalent(current.volume, mark.snapshot.volume) && current.muted === mark.snapshot.muted);
 }
 };
 }
-const VIDEO_EXTENSIONS = [".mp4", ".webm", ".mov", ".avi"];
-const CLEAN_FILENAME_MAX_LENGTH = 40;
-const CLEAN_FILENAME_TRUNCATION_MARKER = "...";
-const CLEAN_FILENAME_EXTENSION_REGEX = /(?:\.[^./\\]{1,10})$/;
-const CLEAN_FILENAME_TWITTER_PREFIX_REGEX = /^twitter_media_\d{8}T\d{6}_/;
-const CLEAN_FILENAME_MEDIA_PREFIX_REGEX = /^\/media\//;
-const CLEAN_FILENAME_RELATIVE_PREFIX_REGEX = /^\.\//;
+var VIDEO_EXTENSIONS = [
+".mp4",
+".webm",
+".mov",
+".avi"
+];
+var CLEAN_FILENAME_MAX_LENGTH = 40;
+var CLEAN_FILENAME_TRUNCATION_MARKER = "...";
+var CLEAN_FILENAME_EXTENSION_REGEX = /(?:\.[^./\\]{1,10})$/;
+var CLEAN_FILENAME_TWITTER_PREFIX_REGEX = /^twitter_media_\d{8}T\d{6}_/;
+var CLEAN_FILENAME_MEDIA_PREFIX_REGEX = /^\/media\//;
+var CLEAN_FILENAME_RELATIVE_PREFIX_REGEX = /^\.\//;
 function cleanFilename(filename) {
-if (!filename) {
-return "Untitled";
-}
+if (!filename) return "Untitled";
 const truncateMiddlePreservingExtension = (value) => {
-if (value.length <= CLEAN_FILENAME_MAX_LENGTH) {
-return value;
-}
-const extensionMatch = value.match(CLEAN_FILENAME_EXTENSION_REGEX);
-const extension = extensionMatch?.[1] ?? "";
+if (value.length <= CLEAN_FILENAME_MAX_LENGTH) return value;
+const extension = value.match(CLEAN_FILENAME_EXTENSION_REGEX)?.[1] ?? "";
 const base = extension ? value.slice(0, -extension.length) : value;
-const available = CLEAN_FILENAME_MAX_LENGTH - extension.length - CLEAN_FILENAME_TRUNCATION_MARKER.length;
-if (available <= 1) {
-return value.slice(0, CLEAN_FILENAME_MAX_LENGTH);
-}
+const available = CLEAN_FILENAME_MAX_LENGTH - extension.length - 3;
+if (available <= 1) return value.slice(0, CLEAN_FILENAME_MAX_LENGTH);
 const headLen = Math.max(1, Math.floor(available / 2));
 const tailLen = Math.max(1, available - headLen);
-const head = base.slice(0, headLen);
-const tail = base.slice(Math.max(0, base.length - tailLen));
-return `${head}${CLEAN_FILENAME_TRUNCATION_MARKER}${tail}${extension}`;
+return `${base.slice(0, headLen)}${CLEAN_FILENAME_TRUNCATION_MARKER}${base.slice(Math.max(0, base.length - tailLen))}${extension}`;
 };
 let cleaned = filename.replace(CLEAN_FILENAME_TWITTER_PREFIX_REGEX, "").replace(CLEAN_FILENAME_MEDIA_PREFIX_REGEX, "").replace(CLEAN_FILENAME_RELATIVE_PREFIX_REGEX, "");
 const lastSegment = cleaned.split(/[\\/]/).pop();
-if (lastSegment) {
-cleaned = lastSegment;
-}
-if (/^[\\/]+$/.test(cleaned)) {
-cleaned = "";
-}
+if (lastSegment) cleaned = lastSegment;
+if (/^[\\/]+$/.test(cleaned)) cleaned = "";
 cleaned = cleaned.trim();
-if (!cleaned) {
-return "Image";
-}
+if (!cleaned) return "Image";
 return truncateMiddlePreservingExtension(cleaned);
 }
 function normalizeVideoVolumeSetting(value, fallback = 1) {
-const candidate = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
-if (!Number.isFinite(candidate)) {
-return fallback;
-}
+const candidate = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+if (!Number.isFinite(candidate)) return fallback;
 return Math.min(1, Math.max(0, candidate));
 }
 function normalizeVideoMutedSetting(value, fallback = false) {
-if (typeof value === "boolean") {
-return value;
-}
-if (typeof value === "number") {
-return value !== 0;
-}
+if (typeof value === "boolean") return value;
+if (typeof value === "number") return value !== 0;
 if (typeof value === "string") {
 const normalized = value.trim().toLowerCase();
-if (normalized === "true" || normalized === "1") {
-return true;
-}
-if (normalized === "false" || normalized === "0") {
-return false;
-}
+if (normalized === "true" || normalized === "1") return true;
+if (normalized === "false" || normalized === "0") return false;
 }
 return fallback;
 }
@@ -7655,55 +6873,32 @@ parsedUrl = new URL(media.url);
 parsedUrl = null;
 }
 const pathToCheck = parsedUrl ? parsedUrl.pathname.toLowerCase() : urlLowerCase.split(/[?#]/)[0] ?? "";
-if (VIDEO_EXTENSIONS.some((ext) => pathToCheck.endsWith(ext))) {
-return true;
-}
+if (VIDEO_EXTENSIONS.some((ext) => pathToCheck.endsWith(ext))) return true;
 if (media.filename) {
 const filenameLowerCase = media.filename.toLowerCase();
-if (VIDEO_EXTENSIONS.some((ext) => filenameLowerCase.endsWith(ext))) {
-return true;
+if (VIDEO_EXTENSIONS.some((ext) => filenameLowerCase.endsWith(ext))) return true;
 }
-}
-if (parsedUrl) {
-return parsedUrl.hostname === "video.twimg.com";
-}
+if (parsedUrl) return parsedUrl.hostname === "video.twimg.com";
 return false;
 }
-const container = "xg-huYo";
-const active = "xg-xm-1";
-const focused = "xg-luqi";
-const imageWrapper = "xg-8-c8";
-const placeholder = "xg-lhkE";
-const loadingSpinner = "xg-6YYD";
-const image = "xg-FWlk";
-const video = "xg-GUev";
-const loading = "xg-8Z3S";
-const loaded = "xg-y9iP";
-const fitOriginal = "xg-yYtG";
-const fitWidth = "xg-Uc0o";
-const fitHeight = "xg-M9Z6";
-const fitContainer = "xg--Mlr";
-const errorIcon = "xg-Wno7";
-const errorText = "xg-8-wi";
-const error = "xg-Gswe";
-const styles$2 = {
-container: container,
-active: active,
-focused: focused,
-imageWrapper: imageWrapper,
-placeholder: placeholder,
-loadingSpinner: loadingSpinner,
-image: image,
-video: video,
-loading: loading,
-loaded: loaded,
-fitOriginal: fitOriginal,
-fitWidth: fitWidth,
-fitHeight: fitHeight,
-fitContainer: fitContainer,
-errorIcon: errorIcon,
-errorText: errorText,
-error: error
+var VerticalImageItem_module_default = {
+container: "xg-huYo",
+active: "xg-xm-1",
+focused: "xg-luqi",
+imageWrapper: "xg-8-c8",
+placeholder: "xg-lhkE",
+loadingSpinner: "xg-6YYD",
+image: "xg-FWlk",
+video: "xg-GUev",
+loading: "xg-8Z3S",
+loaded: "xg-y9iP",
+fitOriginal: "xg-yYtG",
+fitWidth: "xg-Uc0o",
+fitHeight: "xg-M9Z6",
+fitContainer: "xg--Mlr",
+errorIcon: "xg-Wno7",
+errorText: "xg-8-wi",
+error: "xg-Gswe"
 };
 function createDebounced(fn, delayMs = 300) {
 let timeoutId = null;
@@ -7731,9 +6926,7 @@ timeoutId = globalTimerManager.setTimeout(() => {
 const savedArgs = pendingArgs;
 timeoutId = null;
 pendingArgs = null;
-if (savedArgs !== null) {
-fn(...savedArgs);
-}
+if (savedArgs !== null) fn(...savedArgs);
 }, delayMs);
 });
 debounced.cancel = cancel;
@@ -7743,21 +6936,20 @@ return debounced;
 function useTranslation() {
 const languageService = getLanguageService();
 const [revision, setRevision] = createSignal(0);
-const unsubscribe = languageService.onLanguageChange(() => {
+onCleanup(languageService.onLanguageChange(() => {
 setRevision((value) => value + 1);
-});
-onCleanup(unsubscribe);
+}));
 return (key, params) => {
 revision();
 return languageService.translate(key, params);
 };
 }
 var _tmpl$$9 =  template(`<div data-xeg-role=gallery-item data-xeg-gallery=true data-xeg-gallery-type=item data-xeg-gallery-version=2.0 data-xeg-component=vertical-image-item data-xeg-block-twitter=true><div data-xeg-role=media-wrapper>`), _tmpl$2$4 =  template(`<div><div>`), _tmpl$3$1 =  template(`<video controls>`), _tmpl$4$1 =  template(`<img decoding=async>`, true, false, false), _tmpl$5 =  template(`<div><span>⚠️</span><span>`);
-const FIT_MODE_CLASSES = {
-original: styles$2.fitOriginal,
-fitHeight: styles$2.fitHeight,
-fitWidth: styles$2.fitWidth,
-fitContainer: styles$2.fitContainer
+var FIT_MODE_CLASSES = {
+original: VerticalImageItem_module_default.fitOriginal,
+fitHeight: VerticalImageItem_module_default.fitHeight,
+fitWidth: VerticalImageItem_module_default.fitWidth,
+fitContainer: VerticalImageItem_module_default.fitContainer
 };
 function VerticalImageItem(props) {
 const [local] = splitProps(props, [
@@ -7786,20 +6978,15 @@ const [local] = splitProps(props, [
 const isFocused = createMemo(() => local.isFocused ?? false);
 const className$1 = createMemo(() => local.className ?? "");
 const shouldEagerLoad = createMemo(() => {
-const isPreloaded = local.forceVisible ?? false;
-const isCurrent = local.isActive ?? false;
-return isPreloaded || isCurrent;
+return (local.forceVisible ?? false) || (local.isActive ?? false);
 });
 const translate = useTranslation();
 const isVideo = createMemo(() => {
 switch (local.media.type) {
 case "video":
-case "gif":
-return true;
-case "image":
-return false;
-default:
-return isVideoMedia(local.media);
+case "gif": return true;
+case "image": return false;
+default: return isVideoMedia(local.media);
 }
 });
 const [isLoaded, setIsLoaded] = createSignal(false);
@@ -7849,16 +7036,10 @@ setMuted: applyMutedProgrammatically
 createEffect(() => {
 const video = videoRef();
 if (local.isActive && video) {
-const alreadySignaled = untrack(() => gallerySignals.currentVideoElement.value === video);
-if (!alreadySignaled) {
-gallerySignals.currentVideoElement.value = video;
-}
+if (!untrack(() => gallerySignals.currentVideoElement.value === video)) gallerySignals.currentVideoElement.value = video;
 return;
 }
-const shouldClear = untrack(() => gallerySignals.currentVideoElement.value === video);
-if (shouldClear) {
-gallerySignals.currentVideoElement.value = null;
-}
+if (untrack(() => gallerySignals.currentVideoElement.value === video)) gallerySignals.currentVideoElement.value = null;
 });
 const [videoVolume, setVideoVolume] = createSignal(normalizeVideoVolumeSetting(getTypedSettingOr("gallery.videoVolume", 1), 1));
 const [videoMuted, setVideoMuted] = createSignal(normalizeVideoMutedSetting(getTypedSettingOr("gallery.videoMuted", false), false));
@@ -7871,12 +7052,8 @@ try {
 untrack(() => {
 const nextMuted = normalizeVideoMutedSetting(videoMuted(), false);
 const nextVolume = normalizeVideoVolumeSetting(videoVolume(), 1);
-if (nextMuted !== videoMuted()) {
-setVideoMuted(nextMuted);
-}
-if (nextVolume !== videoVolume()) {
-setVideoVolume(nextVolume);
-}
+if (nextMuted !== videoMuted()) setVideoMuted(nextMuted);
+if (nextVolume !== videoVolume()) setVideoVolume(nextVolume);
 applyMutedProgrammatically(video, nextMuted);
 applyVolumeProgrammatically(video, nextVolume);
 });
@@ -7886,8 +7063,8 @@ isApplyingVideoSettings = false;
 }
 });
 const debouncedSaveVolume = createDebounced((volume, muted) => {
-void setTypedSetting("gallery.videoVolume", volume);
-void setTypedSetting("gallery.videoMuted", muted);
+setTypedSetting("gallery.videoVolume", volume);
+setTypedSetting("gallery.videoMuted", muted);
 }, 300);
 onCleanup(() => {
 debouncedSaveVolume.flush();
@@ -7898,9 +7075,7 @@ const snapshot = {
 volume: video.volume,
 muted: video.muted
 };
-if (isApplyingVideoSettings || volumeChangeGuard.shouldIgnoreChange(snapshot)) {
-return;
-}
+if (isApplyingVideoSettings || volumeChangeGuard.shouldIgnoreChange(snapshot)) return;
 const newVolume = normalizeVideoVolumeSetting(snapshot.volume, 1);
 const newMuted = normalizeVideoMutedSetting(snapshot.muted, false);
 setVideoVolume(newVolume);
@@ -7919,19 +7094,13 @@ const target = event.target;
 const targetInVideo = target instanceof Node && video.contains(target);
 const path = typeof event.composedPath === "function" ? event.composedPath() : [];
 const pathIncludesVideo = Array.isArray(path) && path.includes(video);
-if (targetInVideo || pathIncludesVideo) {
-return;
+if (targetInVideo || pathIncludesVideo) return;
 }
-}
-containerRef()?.focus?.({
-preventScroll: true
-});
+containerRef()?.focus?.({ preventScroll: true });
 local.onClick();
 return;
 }
-containerRef()?.focus?.({
-preventScroll: true
-});
+containerRef()?.focus?.({ preventScroll: true });
 local.onClick();
 };
 const handleContainerKeyDown = (event) => {
@@ -7939,9 +7108,7 @@ if (typeof local.onKeyDown === "function") {
 local.onKeyDown(event);
 return;
 }
-if ((local.role ?? (isVideo() ? "group" : "button")) !== "button") {
-return;
-}
+if ((local.role ?? (isVideo() ? "group" : "button")) !== "button") return;
 const key = event.key;
 if (key === "Enter" || key === " " || key === "Spacebar") {
 event.preventDefault();
@@ -7964,34 +7131,23 @@ const handleContextMenu = (event) => {
 local.onImageContextMenu?.(event, local.media);
 };
 createEffect(() => {
-if (isLoaded()) {
-return;
-}
+if (isLoaded()) return;
 if (isVideo()) {
 const video = videoRef();
-if (video && video.readyState >= 1) {
-handleMediaLoad();
-}
+if (video && video.readyState >= 1) handleMediaLoad();
 } else {
 const image = imageRef();
-if (image?.complete) {
-if (image.naturalWidth > 0) {
-handleMediaLoad();
-} else {
-handleMediaError();
-}
-}
+if (image?.complete) if (image.naturalWidth > 0) handleMediaLoad();
+else handleMediaError();
 }
 });
 const resolvedFitMode = createMemo(() => {
 const value = local.fitMode;
-if (typeof value === "function") {
-return value() ?? "fitWidth";
-}
+if (typeof value === "function") return value() ?? "fitWidth";
 return value ?? "fitWidth";
 });
 const fitModeClass = createMemo(() => FIT_MODE_CLASSES[resolvedFitMode()] ?? "");
-const containerClasses = createMemo(() => cx("xeg-gallery", "xeg-gallery-item", "vertical-item", styles$2.container, local.isActive ? styles$2.active : void 0, isFocused() ? styles$2.focused : void 0, className$1()));
+const containerClasses = createMemo(() => cx("xeg-gallery", "xeg-gallery-item", "vertical-item", VerticalImageItem_module_default.container, local.isActive ? VerticalImageItem_module_default.active : void 0, isFocused() ? VerticalImageItem_module_default.focused : void 0, className$1()));
 const assignContainerRef = (element) => {
 setContainerRef(element);
 local.registerContainer?.(element);
@@ -8014,7 +7170,7 @@ var _c$ = memo(() => !!(!isLoaded() && !isError() && !isVideo()));
 return () => _c$() && (() => {
 var _el$3 = _tmpl$2$4(), _el$4 = _el$3.firstChild;
 createRenderEffect((_p$) => {
-var _v$11 = styles$2.placeholder, _v$12 = cx("xeg-spinner", styles$2.loadingSpinner);
+var _v$11 = VerticalImageItem_module_default.placeholder, _v$12 = cx("xeg-spinner", VerticalImageItem_module_default.loadingSpinner);
 _v$11 !== _p$.e && className(_el$3, _p$.e = _v$11);
 _v$12 !== _p$.t && className(_el$4, _p$.t = _v$12);
 return _p$;
@@ -8038,7 +7194,7 @@ _el$5.addEventListener("loadeddata", handleMediaLoad);
 _el$5.addEventListener("loadedmetadata", handleMediaLoad);
 use(setVideoRef, _el$5);
 createRenderEffect((_p$) => {
-var _v$13 = local.media.url, _v$14 = cx(styles$2.video, fitModeClass(), isLoaded() ? styles$2.loaded : styles$2.loading);
+var _v$13 = local.media.url, _v$14 = cx(VerticalImageItem_module_default.video, fitModeClass(), isLoaded() ? VerticalImageItem_module_default.loaded : VerticalImageItem_module_default.loading);
 _v$13 !== _p$.e && setAttribute(_el$5, "src", _p$.e = _v$13);
 _v$14 !== _p$.t && className(_el$5, _p$.t = _v$14);
 return _p$;
@@ -8055,7 +7211,7 @@ _el$6.addEventListener("error", handleMediaError);
 _el$6.addEventListener("load", handleMediaLoad);
 use(setImageRef, _el$6);
 createRenderEffect((_p$) => {
-var _v$15 = local.media.url, _v$16 = cleanFilename(local.media.filename), _v$17 = shouldEagerLoad() ? "eager" : "lazy", _v$18 = cx(styles$2.image, fitModeClass(), isLoaded() ? styles$2.loaded : styles$2.loading);
+var _v$15 = local.media.url, _v$16 = cleanFilename(local.media.filename), _v$17 = shouldEagerLoad() ? "eager" : "lazy", _v$18 = cx(VerticalImageItem_module_default.image, fitModeClass(), isLoaded() ? VerticalImageItem_module_default.loaded : VerticalImageItem_module_default.loading);
 _v$15 !== _p$.e && setAttribute(_el$6, "src", _p$.e = _v$15);
 _v$16 !== _p$.t && setAttribute(_el$6, "alt", _p$.t = _v$16);
 _v$17 !== _p$.a && setAttribute(_el$6, "loading", _p$.a = _v$17);
@@ -8074,11 +7230,9 @@ insert(_el$2, (() => {
 var _c$3 = memo(() => !!isError());
 return () => _c$3() && (() => {
 var _el$7 = _tmpl$5(), _el$8 = _el$7.firstChild, _el$9 = _el$8.nextSibling;
-insert(_el$9, () => translate("msg.gal.loadFail", {
-type: isVideo() ? "video" : "image"
-}));
+insert(_el$9, () => translate("msg.gal.loadFail", { type: isVideo() ? "video" : "image" }));
 createRenderEffect((_p$) => {
-var _v$19 = styles$2.error, _v$20 = styles$2.errorIcon, _v$21 = styles$2.errorText;
+var _v$19 = VerticalImageItem_module_default.error, _v$20 = VerticalImageItem_module_default.errorIcon, _v$21 = VerticalImageItem_module_default.errorText;
 _v$19 !== _p$.e && className(_el$7, _p$.e = _v$19);
 _v$20 !== _p$.t && className(_el$8, _p$.t = _v$20);
 _v$21 !== _p$.a && className(_el$9, _p$.a = _v$21);
@@ -8092,7 +7246,7 @@ return _el$7;
 })();
 })(), null);
 createRenderEffect((_p$) => {
-var _v$ = containerClasses(), _v$2 = local.index, _v$3 = resolvedFitMode(), _v$4 = isLoaded() ? "true" : "false", _v$5 = hasIntrinsicSize() ? "true" : void 0, _v$6 = mergedStyle(), _v$7 = local["aria-label"] || defaultAriaLabel(), _v$8 = local["aria-describedby"], _v$9 = resolvedContainerRole(), _v$0 = local.tabIndex ?? 0, _v$1 = void 0, _v$10 = styles$2.imageWrapper;
+var _v$ = containerClasses(), _v$2 = local.index, _v$3 = resolvedFitMode(), _v$4 = isLoaded() ? "true" : "false", _v$5 = hasIntrinsicSize() ? "true" : void 0, _v$6 = mergedStyle(), _v$7 = local["aria-label"] || defaultAriaLabel(), _v$8 = local["aria-describedby"], _v$9 = resolvedContainerRole(), _v$0 = local.tabIndex ?? 0, _v$1 = void 0, _v$10 = VerticalImageItem_module_default.imageWrapper;
 _v$ !== _p$.e && className(_el$, _p$.e = _v$);
 _v$2 !== _p$.t && setAttribute(_el$, "data-index", _p$.t = _v$2);
 _v$3 !== _p$.a && setAttribute(_el$, "data-fit-mode", _p$.a = _v$3);
@@ -8123,7 +7277,11 @@ u: void 0
 return _el$;
 })();
 }
-delegateEvents(["click", "keydown", "contextmenu"]);
+delegateEvents([
+"click",
+"keydown",
+"contextmenu"
+]);
 var _tmpl$$8 =  template(`<button>`);
 function IconButton(props) {
 return (() => {
@@ -8167,12 +7325,7 @@ return _el$;
 }
 delegateEvents(["click", "mousedown"]);
 var _tmpl$$7 =  template(`<svg xmlns=http://www.w3.org/2000/svg viewBox="0 0 24 24"fill=none stroke="var(--xeg-icon-color, currentColor)"stroke-width=var(--xeg-icon-stroke-width) stroke-linecap=round stroke-linejoin=round>`);
-function Icon({
-size = "var(--xeg-icon-size)",
-class: className = "",
-children,
-"aria-label": ariaLabel
-}) {
+function Icon({ size = "var(--xeg-icon-size)", class: className = "", children, "aria-label": ariaLabel }) {
 const sizeValue = typeof size === "number" ? `${size}px` : size;
 return (() => {
 var _el$ = _tmpl$$7();
@@ -8186,7 +7339,7 @@ insert(_el$, children);
 return _el$;
 })();
 }
-const LUCIDE_ICON_NODES = {
+var LUCIDE_ICON_NODES = {
 "chevron-left": [["path", { d: "m15 18-6-6 6-6" }]],
 "chevron-right": [["path", { d: "m9 18 6-6-6-6" }]],
 download: [
@@ -8195,12 +7348,7 @@ download: [
 ["path", { d: "m7 10 5 5 5-5" }]
 ],
 "folder-down": [
-[
-"path",
-{
-d: "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
-}
-],
+["path", { d: "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" }],
 ["path", { d: "M12 10v6" }],
 ["path", { d: "m15 13-3 3-3-3" }]
 ],
@@ -8229,45 +7377,35 @@ d: "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 
 "settings-2": [
 ["path", { d: "M14 17H5" }],
 ["path", { d: "M19 7h-9" }],
-["circle", { cx: 17, cy: 17, r: 3 }],
-["circle", { cx: 7, cy: 7, r: 3 }]
+["circle", {
+cx: 17,
+cy: 17,
+r: 3
+}],
+["circle", {
+cx: 7,
+cy: 7,
+r: 3
+}]
 ],
-"messages-square": [
-[
-"path",
-{
-d: "M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
-}
-],
-[
-"path",
-{
-d: "M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1"
-}
-]
-],
+"messages-square": [["path", { d: "M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" }], ["path", { d: "M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1" }]],
 "external-link": [
 ["path", { d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" }],
 ["path", { d: "m15 3 6 6" }],
 ["path", { d: "M10 14 21 3" }]
 ],
-x: [
-["path", { d: "M18 6 6 18" }],
-["path", { d: "m6 6 12 12" }]
-]
+x: [["path", { d: "M18 6 6 18" }], ["path", { d: "m6 6 12 12" }]]
 };
 var _tmpl$$6 =  template(`<svg><path></svg>`, false, true, false), _tmpl$2$3 =  template(`<svg><circle></svg>`, false, true, false);
-const renderNode = (node) => {
+var renderNode = (node) => {
 const [tag, attrs] = node;
 switch (tag) {
-case "path":
-return (() => {
+case "path": return (() => {
 var _el$ = _tmpl$$6();
 createRenderEffect(() => setAttribute(_el$, "d", attrs.d));
 return _el$;
 })();
-case "circle":
-return (() => {
+case "circle": return (() => {
 var _el$2 = _tmpl$2$3();
 createRenderEffect((_p$) => {
 var _v$ = attrs.cx, _v$2 = attrs.cy, _v$3 = attrs.r;
@@ -8282,10 +7420,7 @@ a: void 0
 });
 return _el$2;
 })();
-default: {
-const exhaustive = tag;
-return exhaustive;
-}
+default: return tag;
 }
 };
 function LucideIcon(props) {
@@ -8305,31 +7440,32 @@ return nodes.map(renderNode);
 }
 });
 }
-const body = "xg-EeSh";
-const bodyCompact = "xg-nm9B";
-const setting = "xg-PI5C";
-const settingCompact = "xg-VUTt";
-const label = "xg-vhT3";
-const compactLabel = "xg-Y62M";
-const select = "xg-jpiS";
-const styles$1 = {
-body: body,
-bodyCompact: bodyCompact,
-setting: setting,
-settingCompact: settingCompact,
-label: label,
-compactLabel: compactLabel,
-select: select
+var SettingsControls_module_default = {
+body: "xg-EeSh",
+bodyCompact: "xg-nm9B",
+setting: "xg-PI5C",
+settingCompact: "xg-VUTt",
+label: "xg-vhT3",
+compactLabel: "xg-Y62M",
+select: "xg-jpiS"
 };
 var _tmpl$$5 =  template(`<div><div><label></label><select></select></div><div><label></label><select>`), _tmpl$2$2 =  template(`<option>`);
-const THEME_OPTIONS = ["auto", "light", "dark"];
-const LANGUAGE_OPTIONS = ["auto", "ko", "en", "ja"];
+var THEME_OPTIONS = [
+"auto",
+"light",
+"dark"
+];
+var LANGUAGE_OPTIONS = [
+"auto",
+"ko",
+"en",
+"ja"
+];
 function SettingsControls(props) {
 const languageService = getLanguageService();
 const [revision, setRevision] = createSignal(0);
 onMount(() => {
-const unsubscribe = languageService.onLanguageChange(() => setRevision((v) => v + 1));
-onCleanup(unsubscribe);
+onCleanup(languageService.onLanguageChange(() => setRevision((v) => v + 1)));
 });
 const strings = createMemo(() => {
 revision();
@@ -8374,7 +7510,7 @@ insert(_el$9, () => strings().language.labels[option]);
 return _el$9;
 })()));
 createRenderEffect((_p$) => {
-var _v$ = cx(styles$1.body, props.compact && styles$1.bodyCompact), _v$2 = void 0, _v$3 = cx(styles$1.setting, props.compact && styles$1.settingCompact), _v$4 = props["data-testid"] ? `${props["data-testid"]}-theme-select` : "settings-theme-select", _v$5 = cx(styles$1.label, props.compact && styles$1.compactLabel), _v$6 = props["data-testid"] ? `${props["data-testid"]}-theme-select` : "settings-theme-select", _v$7 = cx("xeg-inline-center", styles$1.select), _v$8 = strings().theme.title, _v$9 = strings().theme.title, _v$0 = void 0, _v$1 = cx(styles$1.setting, props.compact && styles$1.settingCompact), _v$10 = props["data-testid"] ? `${props["data-testid"]}-language-select` : "settings-language-select", _v$11 = cx(styles$1.label, props.compact && styles$1.compactLabel), _v$12 = props["data-testid"] ? `${props["data-testid"]}-language-select` : "settings-language-select", _v$13 = cx("xeg-inline-center", styles$1.select), _v$14 = strings().language.title, _v$15 = strings().language.title, _v$16 = void 0;
+var _v$ = cx(SettingsControls_module_default.body, props.compact && SettingsControls_module_default.bodyCompact), _v$2 = void 0, _v$3 = cx(SettingsControls_module_default.setting, props.compact && SettingsControls_module_default.settingCompact), _v$4 = props["data-testid"] ? `${props["data-testid"]}-theme-select` : "settings-theme-select", _v$5 = cx(SettingsControls_module_default.label, props.compact && SettingsControls_module_default.compactLabel), _v$6 = props["data-testid"] ? `${props["data-testid"]}-theme-select` : "settings-theme-select", _v$7 = cx("xeg-inline-center", SettingsControls_module_default.select), _v$8 = strings().theme.title, _v$9 = strings().theme.title, _v$0 = void 0, _v$1 = cx(SettingsControls_module_default.setting, props.compact && SettingsControls_module_default.settingCompact), _v$10 = props["data-testid"] ? `${props["data-testid"]}-language-select` : "settings-language-select", _v$11 = cx(SettingsControls_module_default.label, props.compact && SettingsControls_module_default.compactLabel), _v$12 = props["data-testid"] ? `${props["data-testid"]}-language-select` : "settings-language-select", _v$13 = cx("xeg-inline-center", SettingsControls_module_default.select), _v$14 = strings().language.title, _v$15 = strings().language.title, _v$16 = void 0;
 _v$ !== _p$.e && className(_el$, _p$.e = _v$);
 _v$2 !== _p$.t && setAttribute(_el$, "data-testid", _p$.t = _v$2);
 _v$3 !== _p$.a && className(_el$2, _p$.a = _v$3);
@@ -8431,210 +7567,144 @@ event.stopPropagation();
 event.stopImmediatePropagation();
 }
 function findScrollableAncestor(target, scrollableSelector) {
-if (!(target instanceof HTMLElement)) {
-return null;
-}
+if (!(target instanceof HTMLElement)) return null;
 return target.closest(scrollableSelector);
 }
 function canConsumeWheelEvent(element, deltaY, tolerance = 1) {
 const overflow = element.scrollHeight - element.clientHeight;
-if (overflow <= tolerance) {
-return false;
-}
-if (deltaY < 0) {
-return element.scrollTop > tolerance;
-}
-if (deltaY > 0) {
-const maxScrollTop = overflow;
-return element.scrollTop < maxScrollTop - tolerance;
-}
+if (overflow <= tolerance) return false;
+if (deltaY < 0) return element.scrollTop > tolerance;
+if (deltaY > 0) return element.scrollTop < overflow - tolerance;
 return true;
 }
 function shouldAllowWheelDefault$1(event, options) {
 const scrollable = findScrollableAncestor(event.target, options.scrollableSelector);
-if (!scrollable) {
-return false;
-}
+if (!scrollable) return false;
 return canConsumeWheelEvent(scrollable, event.deltaY, options.tolerance);
 }
-const toolbarButton = "xg-4eoj";
-const galleryToolbar = "xg-fLg7";
-const settingsExpanded = "xg-ZpP8";
-const tweetPanelExpanded = "xg-t4eq";
-const stateIdle = "xg-ojCW";
-const stateLoading = "xg-Y6KF";
-const stateDownloading = "xg-n-ab";
-const stateError = "xg-bEzl";
-const toolbarContent = "xg-f8g4";
-const toolbarControls = "xg-Ix3j";
-const counterBlock = "xg-0EHq";
-const separator = "xg-FKnO";
-const downloadCurrent = "xg-njlf";
-const downloadAll = "xg-AU-d";
-const closeButton = "xg-Vn14";
-const downloadButton = "xg-atmJ";
-const mediaCounterWrapper = "xg-GG86";
-const mediaCounter = "xg-2cjm";
-const currentIndex = "xg-JEXm";
-const totalCount = "xg-d1et";
-const progressBar = "xg-vB6N";
-const progressFill = "xg-LWQw";
-const fitButton = "xg-Q7dU";
-const settingsPanel = "xg-JcF-";
-const tweetPanel = "xg-yRtv";
-const panelExpanded = "xg-4a2L";
-const tweetPanelBody = "xg-w56C";
-const tweetTextHeader = "xg-rSWg";
-const tweetTextLabel = "xg-jd-V";
-const tweetContent = "xg-jmjG";
-const tweetUrlSection = "xg-0Eeq";
-const tweetUrlLink = "xg-AVKe";
-const tweetUrlIcon = "xg-5RjR";
-const tweetUrlLabel = "xg-8Stf";
-const tweetUrlValue = "xg-3pwZ";
-const tweetUrlDivider = "xg-sltl";
-const styles = {
-toolbarButton: toolbarButton,
-galleryToolbar: galleryToolbar,
-settingsExpanded: settingsExpanded,
-tweetPanelExpanded: tweetPanelExpanded,
-stateIdle: stateIdle,
-stateLoading: stateLoading,
-stateDownloading: stateDownloading,
-stateError: stateError,
-toolbarContent: toolbarContent,
-toolbarControls: toolbarControls,
-counterBlock: counterBlock,
-separator: separator,
-downloadCurrent: downloadCurrent,
-downloadAll: downloadAll,
-closeButton: closeButton,
-downloadButton: downloadButton,
-mediaCounterWrapper: mediaCounterWrapper,
-mediaCounter: mediaCounter,
-currentIndex: currentIndex,
-totalCount: totalCount,
-progressBar: progressBar,
-progressFill: progressFill,
-fitButton: fitButton,
-settingsPanel: settingsPanel,
-tweetPanel: tweetPanel,
-panelExpanded: panelExpanded,
-tweetPanelBody: tweetPanelBody,
-tweetTextHeader: tweetTextHeader,
-tweetTextLabel: tweetTextLabel,
-tweetContent: tweetContent,
-tweetUrlSection: tweetUrlSection,
-tweetUrlLink: tweetUrlLink,
-tweetUrlIcon: tweetUrlIcon,
-tweetUrlLabel: tweetUrlLabel,
-tweetUrlValue: tweetUrlValue,
-tweetUrlDivider: tweetUrlDivider
+var Toolbar_module_default = {
+toolbarButton: "xg-4eoj",
+galleryToolbar: "xg-fLg7",
+settingsExpanded: "xg-ZpP8",
+tweetPanelExpanded: "xg-t4eq",
+stateIdle: "xg-ojCW",
+stateLoading: "xg-Y6KF",
+stateDownloading: "xg-n-ab",
+stateError: "xg-bEzl",
+toolbarContent: "xg-f8g4",
+toolbarControls: "xg-Ix3j",
+counterBlock: "xg-0EHq",
+separator: "xg-FKnO",
+downloadCurrent: "xg-njlf",
+downloadAll: "xg-AU-d",
+closeButton: "xg-Vn14",
+downloadButton: "xg-atmJ",
+mediaCounterWrapper: "xg-GG86",
+mediaCounter: "xg-2cjm",
+currentIndex: "xg-JEXm",
+totalCount: "xg-d1et",
+progressBar: "xg-vB6N",
+progressFill: "xg-LWQw",
+fitButton: "xg-Q7dU",
+settingsPanel: "xg-JcF-",
+tweetPanel: "xg-yRtv",
+panelExpanded: "xg-4a2L",
+tweetPanelBody: "xg-w56C",
+tweetTextHeader: "xg-rSWg",
+tweetTextLabel: "xg-jd-V",
+tweetContent: "xg-jmjG",
+tweetUrlSection: "xg-0Eeq",
+tweetUrlLink: "xg-AVKe",
+tweetUrlIcon: "xg-5RjR",
+tweetUrlLabel: "xg-8Stf",
+tweetUrlValue: "xg-3pwZ",
+tweetUrlDivider: "xg-sltl"
 };
 var _tmpl$$4 =  template(`<a target=_blank rel="noopener noreferrer">`), _tmpl$2$1 =  template(`<div><a target=_blank rel="noopener noreferrer"><span></span><span>`), _tmpl$3 =  template(`<div><div><span></div><div data-gallery-scrollable=true><span>`), _tmpl$4 =  template(`<div>`);
-const TWEET_TEXT_URL_POLICY = {
-allowedProtocols:  new Set(["http:", "https:"]),
+var TWEET_TEXT_URL_POLICY = {
+allowedProtocols: new Set(["http:", "https:"]),
 allowRelative: false,
 allowProtocolRelative: false,
 allowFragments: false,
 allowDataUrls: false
 };
-const LINK_PATTERN = /https?:\/\/[^\s]+|(?<![\p{L}\p{N}_])#[\p{L}\p{N}_]+/gu;
-const URL_TRAILING_PUNCTUATION = /[),.!?:;\]]+$/;
-const PROTOCOL_PREFIX = /^https?:\/\//;
-const buildHashtagUrl = (tag) => `https://x.com/hashtag/${encodeURIComponent(tag)}`;
-const splitUrlTrailingPunctuation = (value) => {
+var LINK_PATTERN = /https?:\/\/[^\s]+|(?<![\p{L}\p{N}_])#[\p{L}\p{N}_]+/gu;
+var URL_TRAILING_PUNCTUATION = /[),.!?:;\]]+$/;
+var PROTOCOL_PREFIX = /^https?:\/\//;
+var buildHashtagUrl = (tag) => `https://x.com/hashtag/${encodeURIComponent(tag)}`;
+var splitUrlTrailingPunctuation = (value) => {
 const match = value.match(URL_TRAILING_PUNCTUATION);
 if (!match) return {
 url: value,
 trailing: ""
 };
 const trailing = match[0] ?? "";
-const url = value.slice(0, Math.max(0, value.length - trailing.length));
 return {
-url,
+url: value.slice(0, Math.max(0, value.length - trailing.length)),
 trailing
 };
 };
-const tokenizeTweetText = (input) => {
+var tokenizeTweetText = (input) => {
 const tokens = [];
 let lastIndex = 0;
 for (const match of input.matchAll(LINK_PATTERN)) {
 const startIndex = match.index ?? 0;
 const rawMatch = match[0] ?? "";
-if (startIndex > lastIndex) {
-tokens.push({
+if (startIndex > lastIndex) tokens.push({
 type: "text",
 value: input.slice(lastIndex, startIndex)
 });
-}
 if (rawMatch.startsWith("http://") || rawMatch.startsWith("https://")) {
-const {
-url,
-trailing
-} = splitUrlTrailingPunctuation(rawMatch);
+const { url, trailing } = splitUrlTrailingPunctuation(rawMatch);
 if (url && isUrlAllowed(url, TWEET_TEXT_URL_POLICY)) {
 tokens.push({
 type: "url",
 value: url,
 href: url
 });
-if (trailing) {
-tokens.push({
+if (trailing) tokens.push({
 type: "text",
 value: trailing
 });
-}
-} else {
-tokens.push({
+} else tokens.push({
 type: "text",
 value: rawMatch
 });
-}
 } else if (rawMatch.startsWith("#")) {
 const tag = rawMatch.slice(1);
-if (tag) {
-tokens.push({
+if (tag) tokens.push({
 type: "hashtag",
 value: rawMatch,
 href: buildHashtagUrl(tag)
 });
-} else {
-tokens.push({
+else tokens.push({
 type: "text",
 value: rawMatch
 });
-}
-} else {
-tokens.push({
+} else tokens.push({
 type: "text",
 value: rawMatch
 });
-}
 lastIndex = startIndex + rawMatch.length;
 }
-if (lastIndex < input.length) {
-tokens.push({
+if (lastIndex < input.length) tokens.push({
 type: "text",
 value: input.slice(lastIndex)
 });
-}
 return tokens;
 };
-const normalizeTweetUrl = (value) => {
+var normalizeTweetUrl = (value) => {
 const trimmed = value?.trim();
 return trimmed && isUrlAllowed(trimmed, TWEET_TEXT_URL_POLICY) ? trimmed : null;
 };
-const formatTweetUrlLabel = (url) => url.replace(PROTOCOL_PREFIX, "");
-const renderTweetTokens = (tokens) => tokens.map((token) => {
-if ((token.type === "url" || token.type === "hashtag") && token.href) {
-return (() => {
+var formatTweetUrlLabel = (url) => url.replace(PROTOCOL_PREFIX, "");
+var renderTweetTokens = (tokens) => tokens.map((token) => {
+if ((token.type === "url" || token.type === "hashtag") && token.href) return (() => {
 var _el$ = _tmpl$$4();
 insert(_el$, () => token.value);
 createRenderEffect(() => setAttribute(_el$, "href", token.href));
 return _el$;
 })();
-}
 return token.value;
 });
 function TweetUrlLink(props) {
@@ -8645,13 +7715,13 @@ insert(_el$3, createComponent(LucideIcon, {
 name: "external-link",
 size: 14,
 get ["class"]() {
-return styles.tweetUrlIcon;
+return Toolbar_module_default.tweetUrlIcon;
 }
 }), _el$4);
 insert(_el$4, () => translate("tb.twUrl"));
 insert(_el$5, () => props.label);
 createRenderEffect((_p$) => {
-var _v$ = styles.tweetUrlSection, _v$2 = props.url, _v$3 = styles.tweetUrlLink, _v$4 = styles.tweetUrlLabel, _v$5 = styles.tweetUrlValue;
+var _v$ = Toolbar_module_default.tweetUrlSection, _v$2 = props.url, _v$3 = Toolbar_module_default.tweetUrlLink, _v$4 = Toolbar_module_default.tweetUrlLabel, _v$5 = Toolbar_module_default.tweetUrlValue;
 _v$ !== _p$.e && className(_el$2, _p$.e = _v$);
 _v$2 !== _p$.t && setAttribute(_el$3, "href", _p$.t = _v$2);
 _v$3 !== _p$.a && className(_el$3, _p$.a = _v$3);
@@ -8685,13 +7755,13 @@ insert(_el$9, (() => {
 var _c$ = memo(() => !!(safeTweetUrl && tokens.length > 0));
 return () => _c$() && (() => {
 var _el$1 = _tmpl$4();
-createRenderEffect(() => className(_el$1, styles.tweetUrlDivider));
+createRenderEffect(() => className(_el$1, Toolbar_module_default.tweetUrlDivider));
 return _el$1;
 })();
 })(), _el$0);
 insert(_el$0, () => renderTweetTokens(tokens));
 createRenderEffect((_p$) => {
-var _v$6 = styles.tweetPanelBody, _v$7 = styles.tweetTextHeader, _v$8 = styles.tweetTextLabel, _v$9 = styles.tweetContent;
+var _v$6 = Toolbar_module_default.tweetPanelBody, _v$7 = Toolbar_module_default.tweetTextHeader, _v$8 = Toolbar_module_default.tweetTextLabel, _v$9 = Toolbar_module_default.tweetContent;
 _v$6 !== _p$.e && className(_el$6, _p$.e = _v$6);
 _v$7 !== _p$.t && className(_el$7, _p$.t = _v$7);
 _v$8 !== _p$.a && className(_el$8, _p$.a = _v$8);
@@ -8707,9 +7777,9 @@ return _el$6;
 })();
 }
 var _tmpl$$3 =  template(`<div data-gallery-element=toolbar><div><div><div><div><span aria-live=polite><span></span><span>/</span><span></span></span><div><div></div></div></div></div></div></div><div id=toolbar-settings-panel data-gallery-scrollable=true role=region aria-label="Settings Panel"aria-labelledby=settings-button data-gallery-element=settings-panel></div><div id=toolbar-tweet-panel role=region aria-labelledby=tweet-text-button data-gallery-element=tweet-panel>`);
-const SCROLLABLE_SELECTOR = '[data-gallery-scrollable="true"]';
-const SCROLL_LOCK_TOLERANCE = 1;
-const shouldAllowWheelDefault = (event) => {
+var SCROLLABLE_SELECTOR = "[data-gallery-scrollable=\"true\"]";
+var SCROLL_LOCK_TOLERANCE = 1;
+var shouldAllowWheelDefault = (event) => {
 return shouldAllowWheelDefault$1(event, {
 scrollableSelector: SCROLLABLE_SELECTOR,
 tolerance: SCROLL_LOCK_TOLERANCE
@@ -8754,17 +7824,13 @@ counter.dataset.focusedIndex = focused;
 }
 });
 const hasTweetContent = () => !!(tweetTextHTML() ?? tweetText() ?? tweetUrl());
-const toolbarButtonClass = (...extra) => cx(styles.toolbarButton, "xeg-inline-center", ...extra);
+const toolbarButtonClass = (...extra) => cx(Toolbar_module_default.toolbarButton, "xeg-inline-center", ...extra);
 const toolbarStateClass = () => {
 switch (props.toolbarDataState()) {
-case "loading":
-return styles.stateLoading;
-case "downloading":
-return styles.stateDownloading;
-case "error":
-return styles.stateError;
-default:
-return styles.stateIdle;
+case "loading": return Toolbar_module_default.stateLoading;
+case "downloading": return Toolbar_module_default.stateDownloading;
+case "error": return Toolbar_module_default.stateError;
+default: return Toolbar_module_default.stateIdle;
 }
 };
 const handlePanelWheel = (event) => {
@@ -8864,14 +7930,11 @@ setCounterElement(element);
 }, _el$6);
 insert(_el$7, () => props.displayedIndex() + 1);
 insert(_el$9, totalCount);
-insert(_el$3, () => props.fitModeOrder.map(({
-mode,
-iconName
-}) => {
+insert(_el$3, () => props.fitModeOrder.map(({ mode, iconName }) => {
 const label = fitModeLabels()[mode];
 return createComponent(IconButton, {
 get ["class"]() {
-return toolbarButtonClass(styles.fitButton);
+return toolbarButtonClass(Toolbar_module_default.fitButton);
 },
 size: "toolbar",
 get onClick() {
@@ -8899,7 +7962,7 @@ size: 18
 }), null);
 insert(_el$3, createComponent(IconButton, {
 get ["class"]() {
-return toolbarButtonClass(styles.downloadButton, styles.downloadCurrent);
+return toolbarButtonClass(Toolbar_module_default.downloadButton, Toolbar_module_default.downloadCurrent);
 },
 size: "toolbar",
 get onClick() {
@@ -8925,7 +7988,7 @@ insert(_el$3, (() => {
 var _c$ = memo(() => !!nav().canDownloadAll);
 return () => _c$() && createComponent(IconButton, {
 get ["class"]() {
-return toolbarButtonClass(styles.downloadButton, styles.downloadAll);
+return toolbarButtonClass(Toolbar_module_default.downloadButton, Toolbar_module_default.downloadAll);
 },
 size: "toolbar",
 get onClick() {
@@ -8935,14 +7998,10 @@ get disabled() {
 return nav().downloadDisabled;
 },
 get ["aria-label"]() {
-return translate("tb.dlAllCt", {
-count: totalCount()
-});
+return translate("tb.dlAllCt", { count: totalCount() });
 },
 get title() {
-return translate("tb.dlAllCt", {
-count: totalCount()
-});
+return translate("tb.dlAllCt", { count: totalCount() });
 },
 get children() {
 return createComponent(LucideIcon, {
@@ -9025,7 +8084,7 @@ size: 18
 })(), null);
 insert(_el$3, createComponent(IconButton, {
 get ["class"]() {
-return toolbarButtonClass(styles.closeButton);
+return toolbarButtonClass(Toolbar_module_default.closeButton);
 },
 size: "toolbar",
 get ["aria-label"]() {
@@ -9093,7 +8152,7 @@ return tweetUrl() ?? void 0;
 }
 }));
 createRenderEffect((_p$) => {
-var _v$ = cx(props.toolbarClass(), toolbarStateClass(), props.settingsController.isSettingsExpanded() ? styles.settingsExpanded : void 0, props.isTweetPanelExpanded() ? styles.tweetPanelExpanded : void 0), _v$2 = props.role ?? "toolbar", _v$3 = props["aria-label"] ?? "Gallery Toolbar", _v$4 = props["aria-describedby"], _v$5 = isToolbarDisabled(), _v$6 = void 0, _v$7 = props.tabIndex, _v$8 = cx(styles.toolbarContent, "xeg-row-center"), _v$9 = styles.toolbarControls, _v$0 = styles.counterBlock, _v$1 = cx(styles.mediaCounterWrapper, "xeg-inline-center"), _v$10 = cx(styles.mediaCounter, "xeg-inline-center"), _v$11 = styles.currentIndex, _v$12 = styles.separator, _v$13 = styles.totalCount, _v$14 = styles.progressBar, _v$15 = styles.progressFill, _v$16 = props.progressWidth(), _v$17 = cx(styles.settingsPanel, props.settingsController.isSettingsExpanded() ? styles.panelExpanded : void 0), _v$18 = cx(styles.tweetPanel, props.isTweetPanelExpanded() ? styles.panelExpanded : void 0), _v$19 = translate("tb.twPanel");
+var _v$ = cx(props.toolbarClass(), toolbarStateClass(), props.settingsController.isSettingsExpanded() ? Toolbar_module_default.settingsExpanded : void 0, props.isTweetPanelExpanded() ? Toolbar_module_default.tweetPanelExpanded : void 0), _v$2 = props.role ?? "toolbar", _v$3 = props["aria-label"] ?? "Gallery Toolbar", _v$4 = props["aria-describedby"], _v$5 = isToolbarDisabled(), _v$6 = void 0, _v$7 = props.tabIndex, _v$8 = cx(Toolbar_module_default.toolbarContent, "xeg-row-center"), _v$9 = Toolbar_module_default.toolbarControls, _v$0 = Toolbar_module_default.counterBlock, _v$1 = cx(Toolbar_module_default.mediaCounterWrapper, "xeg-inline-center"), _v$10 = cx(Toolbar_module_default.mediaCounter, "xeg-inline-center"), _v$11 = Toolbar_module_default.currentIndex, _v$12 = Toolbar_module_default.separator, _v$13 = Toolbar_module_default.totalCount, _v$14 = Toolbar_module_default.progressBar, _v$15 = Toolbar_module_default.progressFill, _v$16 = props.progressWidth(), _v$17 = cx(Toolbar_module_default.settingsPanel, props.settingsController.isSettingsExpanded() ? Toolbar_module_default.panelExpanded : void 0), _v$18 = cx(Toolbar_module_default.tweetPanel, props.isTweetPanelExpanded() ? Toolbar_module_default.panelExpanded : void 0), _v$19 = translate("tb.twPanel");
 _v$ !== _p$.e && className(_el$, _p$.e = _v$);
 _v$2 !== _p$.t && setAttribute(_el$, "role", _p$.t = _v$2);
 _v$3 !== _p$.a && setAttribute(_el$, "aria-label", _p$.a = _v$3);
@@ -9142,68 +8201,52 @@ T: void 0
 return _el$;
 })();
 }
-delegateEvents(["keydown", "mousedown", "click"]);
-let toolbarSettingsControllerListenerSeq = 0;
-const DEFAULTS = {
+delegateEvents([
+"keydown",
+"mousedown",
+"click"
+]);
+var toolbarSettingsControllerListenerSeq = 0;
+var DEFAULTS = {
 FOCUS_DELAY_MS: 50,
 SELECT_GUARD_MS: 300
 };
 function useToolbarSettingsController(options) {
-const {
-isSettingsExpanded,
-setSettingsExpanded,
-toggleSettingsExpanded,
-documentRef = typeof document !== "undefined" ? document : void 0,
-themeService: providedThemeService,
-languageService: providedLanguageService,
-focusDelayMs = DEFAULTS.FOCUS_DELAY_MS,
-selectChangeGuardMs = DEFAULTS.SELECT_GUARD_MS
-} = options;
+const { isSettingsExpanded, setSettingsExpanded, toggleSettingsExpanded, documentRef = typeof document !== "undefined" ? document : void 0, themeService: providedThemeService, languageService: providedLanguageService, focusDelayMs = DEFAULTS.FOCUS_DELAY_MS, selectChangeGuardMs = DEFAULTS.SELECT_GUARD_MS } = options;
 const themeManager = providedThemeService ?? getThemeService();
 const languageService = providedLanguageService ?? getLanguageService();
 const scheduleTimeout = (callback, delay) => {
 return globalTimerManager.setTimeout(callback, delay);
 };
 const clearScheduledTimeout = (handle) => {
-if (handle == null) {
-return;
-}
+if (handle == null) return;
 globalTimerManager.clearTimeout(handle);
 };
 const [toolbarRef, setToolbarRef] = createSignal(void 0);
-const [settingsPanelRef, setSettingsPanelRef] = createSignal(
-void 0
-);
-const [settingsButtonRef, setSettingsButtonRef] = createSignal(
-void 0
-);
+const [settingsPanelRef, setSettingsPanelRef] = createSignal(void 0);
+const [settingsButtonRef, setSettingsButtonRef] = createSignal(void 0);
 const toThemeOption = (value) => {
 return value === "light" || value === "dark" ? value : "auto";
 };
 const getInitialTheme = () => {
 try {
-const currentSetting = themeManager.getCurrentTheme();
-return toThemeOption(currentSetting);
-} catch (error) {
-}
+return toThemeOption(themeManager.getCurrentTheme());
+} catch (error) {}
 return "auto";
 };
 const [currentTheme, setCurrentTheme] = createSignal(getInitialTheme());
-const [currentLanguage, setCurrentLanguage] = createSignal(
-languageService.getCurrentLanguage()
-);
+const [currentLanguage, setCurrentLanguage] = createSignal(languageService.getCurrentLanguage());
 const syncThemeFromService = () => {
 try {
-const setting = themeManager.getCurrentTheme();
-setCurrentTheme(toThemeOption(setting));
+setCurrentTheme(toThemeOption(themeManager.getCurrentTheme()));
 } catch (error) {
+;
 }
 };
 syncThemeFromService();
-if (typeof themeManager.isInitialized === "function" && !themeManager.isInitialized()) {
-void themeManager.initialize().then(syncThemeFromService).catch((error) => {
+if (typeof themeManager.isInitialized === "function" && !themeManager.isInitialized()) themeManager.initialize().then(syncThemeFromService).catch((error) => {
+;
 });
-}
 createEffect(() => {
 const unsubscribe = themeManager.onThemeChange((_, setting) => {
 setCurrentTheme(toThemeOption(setting));
@@ -9221,14 +8264,10 @@ unsubscribe();
 });
 });
 createEffect(() => {
-if (!documentRef) {
-return;
-}
+if (!documentRef) return;
 const expanded = isSettingsExpanded();
 const panel = settingsPanelRef();
-if (!expanded || !panel) {
-return;
-}
+if (!expanded || !panel) return;
 const eventManager = EventManager.getInstance();
 const listenerContext = `toolbar-settings-controller:${toolbarSettingsControllerListenerSeq++}`;
 let isSelectActive = false;
@@ -9249,8 +8288,7 @@ isSelectActive = false;
 selectGuardTimeout = null;
 }, selectChangeGuardMs);
 };
-const selects = Array.from(panel.querySelectorAll("select"));
-selects.forEach((select) => {
+Array.from(panel.querySelectorAll("select")).forEach((select) => {
 eventManager.addListener(select, "focus", handleSelectFocus, void 0, listenerContext);
 eventManager.addListener(select, "blur", handleSelectBlur, void 0, listenerContext);
 eventManager.addListener(select, "change", handleSelectChange, void 0, listenerContext);
@@ -9259,38 +8297,20 @@ const handleOutsideClick = (event) => {
 const target = event.target;
 const settingsButton = settingsButtonRef();
 const toolbarElement = toolbarRef();
-if (!target) {
-return;
-}
-if (isSelectActive) {
-return;
-}
+if (!target) return;
+if (isSelectActive) return;
 const targetElement = target;
-if (toolbarElement?.contains(targetElement)) {
-return;
-}
-if (settingsButton?.contains(targetElement)) {
-return;
-}
-if (panel.contains(targetElement)) {
-return;
-}
+if (toolbarElement?.contains(targetElement)) return;
+if (settingsButton?.contains(targetElement)) return;
+if (panel.contains(targetElement)) return;
 let currentNode = targetElement;
 while (currentNode) {
-if (currentNode.tagName === "SELECT" || currentNode.tagName === "OPTION") {
-return;
-}
+if (currentNode.tagName === "SELECT" || currentNode.tagName === "OPTION") return;
 currentNode = currentNode.parentElement;
 }
 setSettingsExpanded(false);
 };
-eventManager.addListener(
-documentRef,
-"mousedown",
-handleOutsideClick,
-{ capture: false },
-listenerContext
-);
+eventManager.addListener(documentRef, "mousedown", handleOutsideClick, { capture: false }, listenerContext);
 onCleanup(() => {
 clearScheduledTimeout(selectGuardTimeout);
 eventManager.removeByContext(listenerContext);
@@ -9300,15 +8320,10 @@ const handleSettingsClick = (event) => {
 event.stopImmediatePropagation?.();
 const wasExpanded = isSettingsExpanded();
 toggleSettingsExpanded();
-if (!wasExpanded) {
-scheduleTimeout(() => {
-const panel = settingsPanelRef();
-const firstControl = panel?.querySelector("select");
-if (firstControl) {
-firstControl.focus({ preventScroll: true });
-}
+if (!wasExpanded) scheduleTimeout(() => {
+const firstControl = settingsPanelRef()?.querySelector("select");
+if (firstControl) firstControl.focus({ preventScroll: true });
 }, focusDelayMs);
-}
 };
 const handleSettingsMouseDown = (event) => {
 event.stopPropagation();
@@ -9320,9 +8335,7 @@ event.stopPropagation();
 setSettingsExpanded(false);
 scheduleTimeout(() => {
 const settingsButton = settingsButtonRef();
-if (settingsButton) {
-settingsButton.focus({ preventScroll: true });
-}
+if (settingsButton) settingsButton.focus({ preventScroll: true });
 }, focusDelayMs);
 }
 };
@@ -9334,27 +8347,22 @@ event.stopPropagation();
 };
 const handleThemeChange = (event) => {
 const select = event.target;
-if (!select) {
-return;
-}
+if (!select) return;
 const theme = toThemeOption(select.value);
 setCurrentTheme(theme);
 themeManager.setTheme(theme);
 try {
 const settingsService = tryGetSettingsManager();
-if (settingsService) {
-void settingsService.set("gallery.theme", theme).catch((error) => {
+if (settingsService) settingsService.set("gallery.theme", theme).catch((error) => {
 ;
 });
-}
 } catch (error) {
+;
 }
 };
 const handleLanguageChange = (event) => {
 const select = event.target;
-if (!select) {
-return;
-}
+if (!select) return;
 const language = select.value || "auto";
 setCurrentLanguage(language);
 languageService.setLanguage(language);
@@ -9381,8 +8389,8 @@ handleThemeChange,
 handleLanguageChange
 };
 }
-const DOWNLOAD_MIN_DISPLAY_TIME = 300;
-const INITIAL_STATE$1 = {
+var DOWNLOAD_MIN_DISPLAY_TIME = 300;
+var INITIAL_STATE$1 = {
 isDownloading: false,
 isLoading: false,
 hasError: false
@@ -9421,9 +8429,7 @@ setIsDownloading(false);
 };
 const setLoading = (loading) => {
 setIsLoading(loading);
-if (loading) {
-setHasError(false);
-}
+if (loading) setHasError(false);
 };
 const setError = (errorState) => {
 setHasError(errorState);
@@ -9442,13 +8448,7 @@ setHasError(INITIAL_STATE$1.hasError);
 onCleanup(() => {
 clearDownloadTimeout();
 });
-const actions = {
-setDownloading,
-setLoading,
-setError,
-resetState
-};
-const state = {
+return [{
 get isDownloading() {
 return isDownloading();
 },
@@ -9458,44 +8458,48 @@ return isLoading();
 get hasError() {
 return hasError();
 }
-};
-return [state, actions];
+}, {
+setDownloading,
+setLoading,
+setError,
+resetState
+}];
 }
-const DEFAULT_PROPS = {
+var DEFAULT_PROPS = {
 isDownloading: false,
 disabled: false,
 className: ""
 };
-const FIT_MODE_ORDER = [{
+var FIT_MODE_ORDER = [
+{
 mode: "original",
 iconName: "maximize-2"
-}, {
+},
+{
 mode: "fitWidth",
 iconName: "move-horizontal"
-}, {
+},
+{
 mode: "fitHeight",
 iconName: "move-vertical"
-}, {
+},
+{
 mode: "fitContainer",
 iconName: "minimize-2"
-}];
-const computeNavigationState = ({
-total,
-toolbarDisabled,
-downloadBusy
-}) => {
+}
+];
+var computeNavigationState = ({ total, toolbarDisabled, downloadBusy }) => {
 const hasItems = total > 0;
 const canNavigate = hasItems && total > 1;
-const downloadDisabled = toolbarDisabled || downloadBusy || !hasItems;
 return {
 prevDisabled: toolbarDisabled || !canNavigate,
 nextDisabled: toolbarDisabled || !canNavigate,
 canDownloadAll: total > 1,
-downloadDisabled,
+downloadDisabled: toolbarDisabled || downloadBusy || !hasItems,
 anyActionDisabled: toolbarDisabled
 };
 };
-const createGuardedHandler = (guard, action) => {
+var createGuardedHandler = (guard, action) => {
 return (event) => {
 safeEventPrevent(event);
 if (guard()) return;
@@ -9509,8 +8513,19 @@ if (state.isLoading) return "loading";
 return "idle";
 }
 function ToolbarContainer(rawProps) {
-const props = mergeProps(DEFAULT_PROPS, rawProps);
-const [local, domProps] = splitProps(props, ["currentIndex", "totalCount", "focusedIndex", "isDownloading", "disabled", "className", "currentFitMode", "handlers", "tweetText", "tweetTextHTML", "tweetUrl"]);
+const [local, domProps] = splitProps(mergeProps(DEFAULT_PROPS, rawProps), [
+"currentIndex",
+"totalCount",
+"focusedIndex",
+"isDownloading",
+"disabled",
+"className",
+"currentFitMode",
+"handlers",
+"tweetText",
+"tweetTextHTML",
+"tweetUrl"
+]);
 const currentIndex = toRequiredAccessor(() => local.currentIndex, 0);
 const totalCount = toRequiredAccessor(() => local.totalCount, 0);
 const focusedIndex = toRequiredAccessor(() => local.focusedIndex, null);
@@ -9524,7 +8539,7 @@ const translate = useTranslation();
 const [toolbarState, toolbarActions] = useToolbarState();
 const [settingsExpandedSignal, setSettingsExpandedSignal] = createSignal(false);
 const [tweetExpanded, setTweetExpanded] = createSignal(false);
-const toolbarClass = createMemo(() => cx(styles.toolbar, styles.galleryToolbar, local.className));
+const toolbarClass = createMemo(() => cx(Toolbar_module_default.toolbar, Toolbar_module_default.galleryToolbar, local.className));
 const totalItems = createMemo(() => Math.max(0, totalCount()));
 const currentIndexForNav = createMemo(() => clampIndex(currentIndex(), totalItems()));
 const displayedIndex = createMemo(() => {
@@ -9588,15 +8603,12 @@ return !prev;
 const isToolbarDisabled = () => !!isDisabled();
 const isFitDisabled = (mode) => {
 if (isToolbarDisabled()) return true;
-const handler = fitModeHandlers()[mode];
-if (!handler) return true;
+if (!fitModeHandlers()[mode]) return true;
 return activeFitMode() === mode;
 };
 const handleFitModeClick = (mode) => (event) => {
 safeEventPreventAll(event);
-if (!isToolbarDisabled()) {
-fitModeHandlers()[mode]?.(event);
-}
+if (!isToolbarDisabled()) fitModeHandlers()[mode]?.(event);
 };
 const handlePrevious = createGuardedHandler(() => navState().prevDisabled, local.handlers.navigation.onPrevious);
 const handleNext = createGuardedHandler(() => navState().nextDisabled, local.handlers.navigation.onNext);
@@ -9616,14 +8628,10 @@ const settingsController = {
 handleSettingsClick: (event) => {
 const wasOpen = settingsExpandedSignal();
 baseSettingsController.handleSettingsClick(event);
-if (!wasOpen && settingsExpandedSignal()) {
-local.handlers.lifecycle.onOpenSettings?.();
-}
+if (!wasOpen && settingsExpandedSignal()) local.handlers.lifecycle.onOpenSettings?.();
 }
 };
-return createComponent(
-ToolbarView,
-{
+return createComponent(ToolbarView, {
 currentIndex,
 focusedIndex,
 totalCount,
@@ -9675,27 +8683,22 @@ return typeof local.handlers.lifecycle.onOpenSettings === "function";
 },
 isTweetPanelExpanded: tweetExpanded,
 toggleTweetPanelExpanded: toggleTweet
+});
 }
-);
-}
-const Toolbar = ToolbarContainer;
-const INITIAL_STATE = {
+var Toolbar = ToolbarContainer;
+var INITIAL_STATE = {
 activeTasks:  new Map(),
 queue: [],
 isProcessing: false
 };
-let downloadStateSignal = null;
-const getDownloadState = () => {
-if (!downloadStateSignal) {
-downloadStateSignal = createSignalSafe(INITIAL_STATE);
-}
+var downloadStateSignal = null;
+var getDownloadState = () => {
+if (!downloadStateSignal) downloadStateSignal = createSignalSafe(INITIAL_STATE);
 return downloadStateSignal;
 };
-const setProcessingFlag = (isProcessing) => {
+var setProcessingFlag = (isProcessing) => {
 const currentState = downloadState.value;
-if (currentState.isProcessing === isProcessing) {
-return;
-}
+if (currentState.isProcessing === isProcessing) return;
 downloadState.value = {
 ...currentState,
 isProcessing
@@ -9705,21 +8708,23 @@ function acquireDownloadLock() {
 setProcessingFlag(true);
 return () => {
 const { queue, activeTasks } = downloadState.value;
-if (queue.length === 0 && activeTasks.size === 0) {
-setProcessingFlag(false);
-}
+if (queue.length === 0 && activeTasks.size === 0) setProcessingFlag(false);
 };
 }
 function isDownloadLocked() {
 return downloadState.value.isProcessing;
 }
-const downloadState = {
+var downloadState = {
 get value() {
 return getDownloadState().value;
 },
 set value(newState) {
 getDownloadState().value = newState;
-}};
+},
+subscribe(callback) {
+return getDownloadState().subscribe(callback);
+}
+};
 function isDownloadUiBusy(context) {
 return context.downloadProcessing ?? false;
 }
@@ -9743,34 +8748,31 @@ else break;
 return indices;
 }
 var _tmpl$$2 =  template(`<div><div><h3></h3><p>`), _tmpl$2 =  template(`<div data-xeg-gallery=true data-xeg-role=gallery><div data-role=toolbar-hover-zone></div><div data-role=toolbar></div><div data-xeg-role=items-container data-xeg-role-compat=items-list><div aria-hidden=true data-xeg-role=scroll-spacer>`);
-const noop = () => {
-};
+var noop = () => {};
 function VerticalGalleryViewCore(props) {
-const [local] = splitProps(props, ["onClose", "className", "onPrevious", "onNext", "onDownloadCurrent", "onDownloadAll"]);
+const [local] = splitProps(props, [
+"onClose",
+"className",
+"onPrevious",
+"onNext",
+"onDownloadCurrent",
+"onDownloadAll"
+]);
 const mediaItems = createMemo(() => galleryState.value.mediaItems);
 const currentIndex = createMemo(() => galleryState.value.currentIndex);
-const isDownloading = createMemo(() => isDownloadUiBusy({
-downloadProcessing: downloadState.value.isProcessing
-}));
+const isDownloading = createMemo(() => isDownloadUiBusy({ downloadProcessing: downloadState.value.isProcessing }));
 const [containerEl, setContainerEl] = createSignal(null);
 const [toolbarWrapperEl, setToolbarWrapperEl] = createSignal(null);
 const [itemsContainerEl, setItemsContainerEl] = createSignal(null);
 const isVisible = createMemo(() => mediaItems().length > 0);
 const activeMedia = createMemo(() => {
-const items = mediaItems();
-const index = currentIndex();
-return items[index] ?? null;
+return mediaItems()[currentIndex()] ?? null;
 });
 const preloadIndices = createMemo(() => {
 const count = getTypedSettingOr("gallery.preloadCount", 3);
 return computePreloadIndices(currentIndex(), mediaItems().length, count);
 });
-const {
-scroll,
-navigation,
-focus,
-toolbar
-} = useVerticalGallery({
+const { scroll, navigation, focus, toolbar } = useVerticalGallery({
 isVisible,
 currentIndex,
 mediaItemsCount: () => mediaItems().length,
@@ -9781,33 +8783,26 @@ onClose: local.onClose
 });
 const translate = useTranslation();
 const debouncedScrollCorrection = createDebounced((index, mediaId) => {
-if (!isVisible()) {
-return;
-}
-if (index !== currentIndex() || activeMedia()?.id !== mediaId) {
-return;
-}
+if (!isVisible()) return;
+if (index !== currentIndex() || activeMedia()?.id !== mediaId) return;
 scroll.scrollToItem(index);
 }, 120);
 onCleanup(() => {
 debouncedScrollCorrection.cancel();
 });
 createEffect(() => {
-if (!isVisible() || navigation.lastNavigationTrigger()) {
-return;
-}
+if (!isVisible() || navigation.lastNavigationTrigger()) return;
 navigateToItem(currentIndex(), "click");
 });
 const getInitialFitMode = () => {
 return getTypedSettingOr("gallery.imageFitMode", "fitWidth");
 };
 const [imageFitMode, setImageFitMode] = createSignal(getInitialFitMode());
-const persistFitMode = (mode) => setTypedSetting("gallery.imageFitMode", mode).catch((error) => {
-});
+const persistFitMode = (mode) => setTypedSetting("gallery.imageFitMode", mode).catch((error) => {});
 const applyFitMode = (mode, event) => {
 safeEventPrevent(event);
 setImageFitMode(mode);
-void persistFitMode(mode);
+persistFitMode(mode);
 scroll.scrollToCurrentItem();
 navigateToItem(currentIndex(), "click");
 };
@@ -9819,34 +8814,22 @@ const handleFitHeight = (event) => applyFitMode("fitHeight", event);
 const handleFitContainer = (event) => applyFitMode("fitContainer", event);
 const handlePrevious = () => {
 const current = currentIndex();
-if (current > 0) {
-navigateToItem(current - 1, "click");
-}
+if (current > 0) navigateToItem(current - 1, "click");
 };
 const handleNext = () => {
 const current = currentIndex();
-const items = mediaItems();
-if (current < items.length - 1) {
-navigateToItem(current + 1, "click");
-}
+if (current < mediaItems().length - 1) navigateToItem(current + 1, "click");
 };
 const handleBackgroundClick = (event) => {
 const target = event.target;
-if (!(target instanceof Element)) {
-return;
-}
-const ignoreSelector = '[data-role="toolbar"], [data-role="toolbar-hover-zone"], [data-gallery-element], [data-xeg-role="gallery-item"], [data-xeg-role="scroll-spacer"]';
-if (target.closest(ignoreSelector)) {
-return;
-}
+if (!(target instanceof Element)) return;
+if (target.closest("[data-role=\"toolbar\"], [data-role=\"toolbar-hover-zone\"], [data-gallery-element], [data-xeg-role=\"gallery-item\"], [data-xeg-role=\"scroll-spacer\"]")) return;
 local.onClose?.();
 };
 const handleMediaItemClick = (index) => {
 const items = mediaItems();
 const current = currentIndex();
-if (index >= 0 && index < items.length && index !== current) {
-navigateToItem(index, "click");
-}
+if (index >= 0 && index < items.length && index !== current) navigateToItem(index, "click");
 };
 createEffect(() => {
 const container = containerEl();
@@ -9856,12 +8839,8 @@ const handleContainerWheel = (event) => {
 const itemsContainer = itemsContainerEl();
 if (!itemsContainer) return;
 const target = event.target;
-if (!(target instanceof Element)) {
-return;
-}
-if (itemsContainer.contains(target)) {
-return;
-}
+if (!(target instanceof Element)) return;
+if (itemsContainer.contains(target)) return;
 event.preventDefault();
 event.stopPropagation();
 itemsContainer.scrollTop += event.deltaY;
@@ -9877,13 +8856,12 @@ context: "gallery:wheel:container-redirect"
 });
 onCleanup(() => controller.abort());
 });
-if (!isVisible()) {
-return (() => {
+if (!isVisible()) return (() => {
 var _el$ = _tmpl$$2(), _el$2 = _el$.firstChild, _el$3 = _el$2.firstChild, _el$4 = _el$3.nextSibling;
 insert(_el$3, () => translate("msg.gal.emptyT"));
 insert(_el$4, () => translate("msg.gal.emptyD"));
 createRenderEffect((_p$) => {
-var _v$ = cx(styles$3.container, styles$3.empty, local.className), _v$2 = styles$3.emptyMessage;
+var _v$ = cx(VerticalGalleryView_module_default.container, VerticalGalleryView_module_default.empty, local.className), _v$2 = VerticalGalleryView_module_default.emptyMessage;
 _v$ !== _p$.e && className(_el$, _p$.e = _v$);
 _v$2 !== _p$.t && className(_el$2, _p$.t = _v$2);
 return _p$;
@@ -9893,7 +8871,6 @@ t: void 0
 });
 return _el$;
 })();
-}
 return (() => {
 var _el$5 = _tmpl$2(), _el$6 = _el$5.firstChild, _el$7 = _el$6.nextSibling, _el$8 = _el$7.nextSibling, _el$9 = _el$8.firstChild;
 _el$5.$$click = handleBackgroundClick;
@@ -9913,7 +8890,7 @@ tweetText: () => activeMedia()?.tweetText,
 tweetTextHTML: () => activeMedia()?.tweetTextHTML,
 tweetUrl: () => activeMedia()?.tweetUrl,
 get className() {
-return styles$3.toolbar;
+return VerticalGalleryView_module_default.toolbar;
 },
 get handlers() {
 return {
@@ -9933,8 +8910,7 @@ onFitContainer: handleFitContainer
 },
 lifecycle: {
 onClose: local.onClose ?? noop,
-onOpenSettings: () => {
-}
+onOpenSettings: () => {}
 }
 };
 }
@@ -9946,7 +8922,6 @@ return mediaItems();
 },
 children: (item, index) => {
 const actualIndex = index();
-const forcePreload = preloadIndices().includes(actualIndex);
 return createComponent(VerticalImageItem, {
 media: item,
 index: actualIndex,
@@ -9956,12 +8931,12 @@ return actualIndex === currentIndex();
 get isFocused() {
 return actualIndex === focus.focusedIndex();
 },
-forceVisible: forcePreload,
+forceVisible: preloadIndices().includes(actualIndex),
 fitMode: imageFitMode,
 onClick: () => handleMediaItemClick(actualIndex),
 onMediaLoad: (mediaId, indexValue) => debouncedScrollCorrection(indexValue, mediaId),
 get className() {
-return cx(styles$3.galleryItem, actualIndex === currentIndex() && styles$3.itemActive);
+return cx(VerticalGalleryView_module_default.galleryItem, actualIndex === currentIndex() && VerticalGalleryView_module_default.itemActive);
 },
 registerContainer: (element) => focus.registerItem(actualIndex, element),
 onFocus: () => focus.handleItemFocus(actualIndex)
@@ -9969,7 +8944,7 @@ onFocus: () => focus.handleItemFocus(actualIndex)
 }
 }), _el$9);
 createRenderEffect((_p$) => {
-var _v$3 = cx(styles$3.container, toolbar.isInitialToolbarVisible() && styles$3.initialToolbarVisible, scroll.isScrolling() && styles$3.isScrolling, local.className), _v$4 = styles$3.toolbarHoverZone, _v$5 = styles$3.toolbarWrapper, _v$6 = styles$3.itemsContainer, _v$7 = styles$3.scrollSpacer;
+var _v$3 = cx(VerticalGalleryView_module_default.container, toolbar.isInitialToolbarVisible() && VerticalGalleryView_module_default.initialToolbarVisible, scroll.isScrolling() && VerticalGalleryView_module_default.isScrolling, local.className), _v$4 = VerticalGalleryView_module_default.toolbarHoverZone, _v$5 = VerticalGalleryView_module_default.toolbarWrapper, _v$6 = VerticalGalleryView_module_default.itemsContainer, _v$7 = VerticalGalleryView_module_default.scrollSpacer;
 _v$3 !== _p$.e && className(_el$5, _p$.e = _v$3);
 _v$4 !== _p$.t && className(_el$6, _p$.t = _v$4);
 _v$5 !== _p$.a && className(_el$7, _p$.a = _v$5);
@@ -9986,15 +8961,14 @@ i: void 0
 return _el$5;
 })();
 }
-const VerticalGalleryView = VerticalGalleryViewCore;
+var VerticalGalleryView = VerticalGalleryViewCore;
 delegateEvents(["click"]);
 var _tmpl$$1 =  template(`<div data-xeg-gallery-container>`);
-const DISPOSE_SYMBOL =  Symbol();
+var DISPOSE_SYMBOL = Symbol();
 function mountGallery(container, element) {
 const host = container;
 host[DISPOSE_SYMBOL]?.();
-const factory = typeof element === "function" ? element : () => element ?? null;
-host[DISPOSE_SYMBOL] = render(factory, host);
+host[DISPOSE_SYMBOL] = render(typeof element === "function" ? element : () => element ?? null, host);
 return container;
 }
 function unmountGallery(container) {
@@ -10004,7 +8978,12 @@ delete host[DISPOSE_SYMBOL];
 container.replaceChildren();
 }
 function GalleryContainer(props) {
-const [local] = splitProps(props, ["children", "onClose", "className", "registerEscapeListener"]);
+const [local] = splitProps(props, [
+"children",
+"onClose",
+"className",
+"registerEscapeListener"
+]);
 const classes = cx("xeg-gallery-overlay", "xeg-gallery-container", local.className);
 const escapeListener = (event) => {
 const keyboardEvent = event;
@@ -10015,15 +8994,11 @@ local.onClose?.();
 }
 };
 createEffect(() => {
-if (!local.onClose) {
-return;
-}
+if (!local.onClose) return;
 const eventManager = EventManager.getInstance();
 const listenerId = eventManager.addListener(document, "keydown", escapeListener);
 onCleanup(() => {
-if (listenerId) {
-eventManager.removeListener(listenerId);
-}
+if (listenerId) eventManager.removeListener(listenerId);
 });
 });
 return (() => {
@@ -10047,9 +9022,7 @@ try {
 const lang = getLanguageService();
 return {
 title: lang.translate("msg.err.t"),
-body: lang.translate("msg.err.b", {
-error: stringifyError(error)
-})
+body: lang.translate("msg.err.b", { error: stringifyError(error) })
 };
 } catch {
 return {
@@ -10066,13 +9039,9 @@ const notifyError = (error) => {
 if (lastError === error) return;
 lastError = error;
 try {
-const {
-title,
-body
-} = translateError(error);
+const { title, body } = translateError(error);
 NotificationService.getInstance().error(title, body);
-} catch {
-}
+} catch {}
 };
 const handleRetry = () => {
 lastError = void 0;
@@ -10101,10 +9070,7 @@ get when() {
 return caughtError();
 },
 children: (error) => {
-const {
-title,
-body
-} = translateError(error());
+const { title, body } = translateError(error());
 return (() => {
 var _el$ = _tmpl$(), _el$2 = _el$.firstChild, _el$3 = _el$2.nextSibling, _el$4 = _el$3.nextSibling;
 insert(_el$2, title);
@@ -10116,7 +9082,7 @@ return _el$;
 })];
 }
 delegateEvents(["click"]);
-class GalleryRenderer {
+var GalleryRenderer = class {
 container = null;
 isMounting = false;
 stateUnsubscribe = null;
@@ -10129,19 +9095,13 @@ this.onCloseCallback = onClose;
 }
 setupStateSubscription() {
 this.stateUnsubscribe = gallerySignals.isOpen.subscribe((isOpen) => {
-if (isOpen && !this.container) {
-this.renderGallery();
-} else if (!isOpen && this.container) {
-this.cleanupGallery();
-}
+if (isOpen && !this.container) this.renderGallery();
+else if (!isOpen && this.container) this.cleanupGallery();
 });
 }
 renderGallery() {
 if (this.isMounting || this.container) return;
-const {
-isOpen,
-mediaItems
-} = gallerySignals;
+const { isOpen, mediaItems } = gallerySignals;
 if (!isOpen.value || mediaItems.value.length === 0) return;
 this.isMounting = true;
 try {
@@ -10192,8 +9152,7 @@ get ["data-language"]() {
 return currentLanguage();
 },
 get children() {
-return createComponent(ErrorBoundary, {
-get children() {
+return createComponent(ErrorBoundary, { get children() {
 return createComponent(VerticalGalleryView, {
 onClose: handleClose,
 onPrevious: () => navigatePrevious("button"),
@@ -10204,8 +9163,7 @@ get className() {
 return CSS.CLASSES.VERTICAL_VIEW;
 }
 });
-}
-});
+} });
 }
 });
 };
@@ -10216,9 +9174,8 @@ if (isDownloadLocked()) return;
 const releaseLock = acquireDownloadLock();
 const notifyError = (title, body) => {
 try {
-void NotificationService.getInstance().error(title, body);
-} catch {
-}
+NotificationService.getInstance().error(title, body);
+} catch {}
 };
 try {
 const languageService = getLanguageService();
@@ -10231,22 +9188,13 @@ if (currentMedia) {
 let blob;
 try {
 const pending = mediaService.getCachedMedia(currentMedia.url);
-if (pending) {
-blob = await pending;
-}
-} catch {
-}
-const result = await downloadService.downloadSingle(currentMedia, {
-...blob ? {
-blob
-} : {}
-});
+if (pending) blob = await pending;
+} catch {}
+const result = await downloadService.downloadSingle(currentMedia, { ...blob ? { blob } : {} });
 if (!result.success) {
 const error = result.error || "Unknown error";
 const title = languageService.translate("msg.dl.one.err.t");
-const body = languageService.translate("msg.dl.one.err.b", {
-error
-});
+const body = languageService.translate("msg.dl.one.err.b", { error });
 setError(body);
 notifyError(title, body);
 }
@@ -10259,11 +9207,7 @@ const pending = mediaService.getCachedMedia(item.url);
 if (!pending) continue;
 prefetchedBlobs.set(item.url, pending);
 }
-const result = await downloadService.downloadBulk([...mediaItems], {
-...prefetchedBlobs.size > 0 ? {
-prefetchedBlobs
-} : {}
-});
+const result = await downloadService.downloadBulk([...mediaItems], { ...prefetchedBlobs.size > 0 ? { prefetchedBlobs } : {} });
 if (!result.success) {
 if (result.filesSuccessful === 0) {
 const title = languageService.translate("msg.dl.allFail.t");
@@ -10273,9 +9217,7 @@ notifyError(title, body);
 } else {
 const error = result.error || "Failed to save ZIP file";
 const title = languageService.translate("msg.dl.one.err.t");
-const body = languageService.translate("msg.dl.one.err.b", {
-error
-});
+const body = languageService.translate("msg.dl.one.err.b", { error });
 setError(body);
 notifyError(title, body);
 }
@@ -10285,9 +9227,7 @@ if (result.status === "partial") {
 const failures = Math.max(0, result.filesProcessed - result.filesSuccessful);
 if (failures > 0) {
 const title = languageService.translate("msg.dl.part.t");
-const body = languageService.translate("msg.dl.part.b", {
-count: failures
-});
+const body = languageService.translate("msg.dl.part.b", { count: failures });
 setError(body);
 notifyError(title, body);
 }
@@ -10299,9 +9239,7 @@ try {
 const languageService = getLanguageService();
 const message = getErrorMessage(error) || "Unknown error";
 const title = languageService.translate("msg.dl.one.err.t");
-const body = languageService.translate("msg.dl.one.err.b", {
-error: message
-});
+const body = languageService.translate("msg.dl.one.err.b", { error: message });
 setError(body);
 notifyError(title, body);
 } catch {
@@ -10323,30 +9261,23 @@ if (this.container) {
 const container = this.container;
 try {
 unmountGallery(container);
-} catch (error) {
-}
+} catch (error) {}
 try {
 container.remove();
-} catch (error) {
-} finally {
+} catch (error) {} finally {
 this.container = null;
 }
 }
 }
 async render(mediaItems, renderOptions) {
-const pauseContext = renderOptions?.pauseContext ?? {
-reason: "programmatic"
-};
+const pauseContext = renderOptions?.pauseContext ?? { reason: "programmatic" };
 try {
 pauseAmbientVideosForGallery(pauseContext);
-} catch (error) {
-}
+} catch (error) {}
 openGallery(mediaItems, renderOptions?.startIndex ?? 0);
 }
 close() {
-if (!gallerySignals.isOpen.value) {
-return;
-}
+if (!gallerySignals.isOpen.value) return;
 closeGallery();
 this.onCloseCallback?.();
 }
@@ -10358,8 +9289,8 @@ this.stateUnsubscribe?.();
 this.stateUnsubscribe = null;
 this.cleanupGallery();
 }
-}
-const STATIC_DEFAULT_SETTINGS = {
+};
+var DEFAULT_SETTINGS = {
 gallery: {
 autoScrollSpeed: 5,
 infiniteScroll: true,
@@ -10371,9 +9302,7 @@ enableKeyboardNav: true,
 videoVolume: 1,
 videoMuted: false
 },
-toolbar: {
-autoHideDelay: 3e3
-},
+toolbar: { autoHideDelay: 3e3 },
 download: {
 filenamePattern: "original",
 imageQuality: "original",
@@ -10400,22 +9329,19 @@ accessibility: true
 version: "1.7.1",
 lastModified: 0
 };
-const DEFAULT_SETTINGS = STATIC_DEFAULT_SETTINGS;
 function createDefaultSettings(timestamp = Date.now()) {
 const settings = globalThis.structuredClone(DEFAULT_SETTINGS);
 settings.lastModified = timestamp;
 return settings;
 }
-const migrations = {
-"1.0.0": (input) => {
+var migrations = { "1.0.0": (input) => {
 const next = { ...input };
 next.gallery = {
 ...next.gallery,
 enableKeyboardNav: true
 };
 return next;
-}
-};
+} };
 function pruneWithTemplate(input, template) {
 if (!isRecord(input)) return {};
 const out = {};
@@ -10423,11 +9349,8 @@ for (const key of Object.keys(template)) {
 const tplVal = template[key];
 const inVal = input[key];
 if (inVal === void 0) continue;
-if (isRecord(tplVal) && !Array.isArray(tplVal)) {
-out[key] = pruneWithTemplate(inVal, tplVal);
-} else {
-out[key] = inVal;
-}
+if (isRecord(tplVal) && !Array.isArray(tplVal)) out[key] = pruneWithTemplate(inVal, tplVal);
+else out[key] = inVal;
 }
 return out;
 }
@@ -10441,13 +9364,14 @@ tokens: DEFAULT_SETTINGS.tokens,
 accessibility: DEFAULT_SETTINGS.accessibility,
 features: DEFAULT_SETTINGS.features
 };
-const merged = { ...DEFAULT_SETTINGS, ...pruned };
-for (const [key, defaults] of Object.entries(categories)) {
-merged[key] = {
+const merged = {
+...DEFAULT_SETTINGS,
+...pruned
+};
+for (const [key, defaults] of Object.entries(categories)) merged[key] = {
 ...defaults,
 ...pruned[key] ?? {}
 };
-}
 return {
 ...merged,
 version: DEFAULT_SETTINGS.version,
@@ -10456,21 +9380,17 @@ lastModified: nowMs
 }
 function migrateSettings(input, nowMs) {
 let working = { ...input };
-const currentVersion = input.version;
-const mig = migrations[currentVersion];
-if (typeof mig === "function") {
-try {
+const mig = migrations[input.version];
+if (typeof mig === "function") try {
 working = mig(working);
-} catch {
-}
-}
+} catch {}
 return fillWithDefaults(working, nowMs);
 }
-const SETTINGS_SCHEMA_HASH = "1";
+var SETTINGS_SCHEMA_HASH = "1";
 function computeCurrentSettingsSchemaHash() {
 return SETTINGS_SCHEMA_HASH;
 }
-class PersistentSettingsRepository {
+var PersistentSettingsRepository = class {
 storage = getPersistentStorage();
 schemaHash = computeCurrentSettingsSchemaHash();
 async load() {
@@ -10478,21 +9398,15 @@ try {
 const stored = await this.storage.getJson(APP_SETTINGS_STORAGE_KEY);
 if (!stored) {
 const defaults = createDefaultSettings();
-await this.persist(defaults).catch(() => {
-});
+await this.persist(defaults).catch(() => {});
 return globalThis.structuredClone(defaults);
 }
-const nowMs = Date.now();
-const migrated = migrateSettings(stored, nowMs);
-if (stored.__schemaHash !== this.schemaHash) {
-await this.persist(migrated).catch(() => {
-});
-}
+const migrated = migrateSettings(stored, Date.now());
+if (stored.__schemaHash !== this.schemaHash) await this.persist(migrated).catch(() => {});
 return globalThis.structuredClone(migrated);
 } catch (error) {
 const defaults = createDefaultSettings();
-await this.persist(defaults).catch(() => {
-});
+await this.persist(defaults).catch(() => {});
 return globalThis.structuredClone(defaults);
 }
 }
@@ -10510,49 +9424,39 @@ await this.storage.setJson(APP_SETTINGS_STORAGE_KEY, {
 __schemaHash: this.schemaHash
 });
 }
-}
-const FORBIDDEN_PATH_KEYS = ["__proto__", "constructor", "prototype"];
+};
+var FORBIDDEN_PATH_KEYS = [
+"__proto__",
+"constructor",
+"prototype"
+];
 function isSafePathKey(key) {
 return key !== "" && !FORBIDDEN_PATH_KEYS.includes(key);
 }
 function resolveNestedPath(source, path) {
-if (typeof path !== "string" || path === "") {
-return void 0;
-}
+if (typeof path !== "string" || path === "") return;
 let current = source;
 const segments = path.split(".");
 for (const segment of segments) {
-if (!isSafePathKey(segment)) {
-return void 0;
-}
-if (current === null || typeof current !== "object") {
-return void 0;
-}
+if (!isSafePathKey(segment)) return;
+if (current === null || typeof current !== "object") return;
 current = current[segment];
 }
 return current;
 }
 function assignNestedPath(target, path, value) {
-if (target === null || typeof target !== "object") {
-return false;
-}
-if (typeof path !== "string" || path === "") {
-return false;
-}
+if (target === null || typeof target !== "object") return false;
+if (typeof path !== "string" || path === "") return false;
 const segments = path.split(".");
 const last = segments[segments.length - 1];
-if (!last || !isSafePathKey(last)) {
-return false;
-}
+if (!last || !isSafePathKey(last)) return false;
 let current = target;
 for (let i = 0; i < segments.length - 1; i++) {
 const segment = segments[i];
-if (!segment || !isSafePathKey(segment)) {
-return false;
-}
-const existing = current[segment];
+if (!segment || !isSafePathKey(segment)) return false;
+const existing = Object.hasOwn(current, segment) ? current[segment] : void 0;
 if (existing === null || typeof existing !== "object") {
-const next = {};
+const next = Object.create(null);
 current[segment] = next;
 current = next;
 continue;
@@ -10565,25 +9469,13 @@ return true;
 function normalizeFeatureFlags(features) {
 const featureKeys = Object.keys(DEFAULT_SETTINGS.features);
 const featureDefaults = DEFAULT_SETTINGS.features;
-return Object.freeze(
-featureKeys.reduce(
-(acc, key) => {
+return Object.freeze(featureKeys.reduce((acc, key) => {
 const candidate = features?.[key];
 acc[key] = typeof candidate === "boolean" ? candidate : featureDefaults[key];
 return acc;
-},
-{}
-)
-);
+}, {}));
 }
-class SettingsService {
-constructor(repository = new PersistentSettingsRepository()) {
-this.repository = repository;
-this.lifecycle = createLifecycle("SettingsService", {
-onInitialize: () => this.onInitialize(),
-onDestroy: () => this.onDestroy()
-});
-}
+var SettingsService = class SettingsService {
 lifecycle;
 static singleton = createSingleton(() => new SettingsService());
 static getInstance() {
@@ -10592,6 +9484,13 @@ return SettingsService.singleton.get();
 settings = createDefaultSettings();
 featureMap = normalizeFeatureFlags(this.settings.features);
 listeners =  new Set();
+constructor(repository = new PersistentSettingsRepository()) {
+this.repository = repository;
+this.lifecycle = createLifecycle("SettingsService", {
+onInitialize: () => this.onInitialize(),
+onDestroy: () => this.onDestroy()
+});
+}
 async initialize() {
 return this.lifecycle.initialize();
 }
@@ -10607,8 +9506,7 @@ this.refreshFeatureMap();
 }
 onDestroy() {
 this.listeners.clear();
-this.repository.save(this.settings).catch((error) => {
-});
+this.repository.save(this.settings).catch((error) => {});
 }
 getAllSettings() {
 this.assertInitialized();
@@ -10623,9 +9521,7 @@ async set(key, value) {
 this.assertInitialized();
 if (!this.isValid(key, value)) throw new Error(`Invalid setting value for ${key}`);
 const oldValue = this.get(key);
-if (!assignNestedPath(this.settings, key, value)) {
-throw new Error(`Failed to assign setting value for ${key}`);
-}
+if (!assignNestedPath(this.settings, key, value)) throw new Error(`Failed to assign setting value for ${key}`);
 this.settings.lastModified = Date.now();
 this.refreshFeatureMap();
 this.notifyListeners({
@@ -10640,16 +9536,10 @@ await this.persist();
 async updateBatch(updates) {
 this.assertInitialized();
 const entries = Object.entries(updates);
-for (const [key, value] of entries) {
-if (!this.isValid(key, value)) throw new Error(`Invalid setting value for ${key}`);
-}
+for (const [key, value] of entries) if (!this.isValid(key, value)) throw new Error(`Invalid setting value for ${key}`);
 const previous = globalThis.structuredClone(this.settings);
 const timestamp = Date.now();
-for (const [key, value] of entries) {
-if (!assignNestedPath(this.settings, key, value)) {
-throw new Error(`Failed to assign setting value for ${key}`);
-}
-}
+for (const [key, value] of entries) if (!assignNestedPath(this.settings, key, value)) throw new Error(`Failed to assign setting value for ${key}`);
 this.settings.lastModified = timestamp;
 this.refreshFeatureMap();
 for (const [key, value] of entries) {
@@ -10667,13 +9557,10 @@ await this.persist();
 async resetToDefaults(category) {
 this.assertInitialized();
 const previous = this.getAllSettings();
-if (!category) {
-this.settings = createDefaultSettings();
-} else if (category in DEFAULT_SETTINGS) {
+if (!category) this.settings = createDefaultSettings();
+else if (category in DEFAULT_SETTINGS) {
 const defaultValue = DEFAULT_SETTINGS[category];
-if (defaultValue !== void 0) {
-Object.assign(this.settings, { [category]: globalThis.structuredClone(defaultValue) });
-}
+if (defaultValue !== void 0) Object.assign(this.settings, { [category]: globalThis.structuredClone(defaultValue) });
 }
 this.settings.lastModified = Date.now();
 this.refreshFeatureMap();
@@ -10743,224 +9630,79 @@ notifyListeners(event) {
 this.listeners.forEach((listener) => {
 try {
 listener(event);
-} catch (error) {
-}
+} catch (error) {}
 });
 }
 assertInitialized() {
-if (!this.isInitialized()) {
-throw new Error("SettingsService must be initialized before use");
+if (!this.isInitialized()) throw new Error("SettingsService must be initialized before use");
 }
-}
-}
-let rendererRegistrationTask = null;
+};
+var rendererRegistrationTask = null;
 async function registerRenderer() {
-if (!rendererRegistrationTask) {
-rendererRegistrationTask = (async () => {
+if (!rendererRegistrationTask) rendererRegistrationTask = (async () => {
 registerGalleryRenderer(new GalleryRenderer());
 })().finally(() => {
 rendererRegistrationTask = null;
 });
-}
 await rendererRegistrationTask;
 }
 async function initializeServices() {
-const hasRequiredGMAPIs = isGMAPIAvailable("download") || isGMAPIAvailable("setValue");
-if (!hasRequiredGMAPIs) {
-bootstrapErrorReporter.warn(new Error("Tampermonkey APIs limited"), {
-code: "GM_API_LIMITED"
-});
-}
+if (!(isGMAPIAvailable("download") || isGMAPIAvailable("setValue"))) bootstrapErrorReporter.warn(  new Error("Tampermonkey APIs limited"), { code: "GM_API_LIMITED" });
 let settingsService = null;
 try {
 const service = new SettingsService();
 await service.initialize();
 registerSettingsManager(service);
 settingsService = service;
-if (false) ;
 } catch (error) {
-settingsErrorReporter.warn(error, {
-code: "SETTINGS_SERVICE_INIT_FAILED"
-});
+settingsErrorReporter.warn(error, { code: "SETTINGS_SERVICE_INIT_FAILED" });
 try {
-await NotificationService.getInstance().error(
-"Settings unavailable",
-"Defaults will be used until settings load."
-);
-} catch (notifyError) {
-}
+await NotificationService.getInstance().error("Settings unavailable", "Defaults will be used until settings load.");
+} catch (notifyError) {}
 }
 try {
 const themeService = getThemeService();
-if (!themeService.isInitialized()) {
-await themeService.initialize();
-}
-if (settingsService) {
-themeService.bindSettingsService(settingsService);
-}
-if (false) ;
+if (!themeService.isInitialized()) await themeService.initialize();
+if (settingsService) themeService.bindSettingsService(settingsService);
 } catch (error) {
-bootstrapErrorReporter.warn(error, {
-code: "THEME_SYNC_FAILED"
-});
+bootstrapErrorReporter.warn(error, { code: "THEME_SYNC_FAILED" });
 }
 }
 async function initializeGalleryApp() {
 try {
-if (false) ;
 await Promise.all([registerRenderer(), initializeServices()]);
 const galleryApp = new GalleryApp();
 await galleryApp.initialize();
-if (false) ;
 return galleryApp;
 } catch (error) {
-galleryErrorReporter.error(error, {
-code: "GALLERY_APP_INIT_FAILED"
-});
+galleryErrorReporter.error(error, { code: "GALLERY_APP_INIT_FAILED" });
 throw error;
 }
 }
-const __vite_import_meta_env__ = {"BASE_URL": "/", "DEV": false, "MODE": "production", "PROD": true, "SSR": false};
-const FALLBACK_VERSION = "0.0.0";
-const APP_NAME = "X.com Enhanced Gallery";
-const MAX_GALLERY_ITEMS = 100;
-const DEFAULT_ANIMATION_DURATION = "var(--xeg-duration-normal)";
-const DEFAULT_SERVICE_TIMEOUT_MS = 1e4;
-const DEFAULT_BOOTSTRAP_RETRY_ATTEMPTS = 3;
-const DEFAULT_BOOTSTRAP_RETRY_DELAY_MS = 100;
-const importMetaEnv = resolveImportMetaEnv();
-const nodeEnv = resolveNodeEnv();
-const buildVersion = "1.7.3" ;
-const rawVersion = resolveStringValue(
-buildVersion,
-importMetaEnv.VITE_VERSION,
-nodeEnv.VITE_VERSION,
-nodeEnv.npm_package_version
-) ?? FALLBACK_VERSION;
-const devFlag = parseBooleanFlag(importMetaEnv.DEV);
-const nodeDevFlag = parseBooleanFlag(nodeEnv.DEV);
-const mode = importMetaEnv.MODE ?? nodeEnv.NODE_ENV ?? "production";
-const isTest = mode === "test";
-const isDev = devFlag ?? nodeDevFlag ?? (!isTest && mode !== "production");
-const isProd = !isDev && !isTest;
-const autoStartFlag = parseBooleanFlag(importMetaEnv.VITE_AUTO_START ?? nodeEnv.VITE_AUTO_START);
-const debugToolsFlag = parseBooleanFlag(
-importMetaEnv.VITE_ENABLE_DEBUG_TOOLS ?? nodeEnv.VITE_ENABLE_DEBUG_TOOLS
-);
-const resolvedAppConfig = Object.freeze({
-meta: {
-name: APP_NAME,
-version: rawVersion
-},
-environment: {
-mode,
-isDev,
-isTest,
-isProduction: isProd
-},
-runtime: {
-autoStart: autoStartFlag ?? true
-},
-limits: {
-maxGalleryItems: MAX_GALLERY_ITEMS
-},
-ui: {
-animationDuration: DEFAULT_ANIMATION_DURATION
-},
-features: {
-gallery: true,
-download: true,
-settings: true,
-accessibility: true,
-debugTools: debugToolsFlag ?? isDev
-},
-diagnostics: {
-enableLogger: true,
-enableVerboseLogs: isDev
-},
-bootstrap: {
-serviceTimeoutMs: DEFAULT_SERVICE_TIMEOUT_MS,
-retryAttempts: DEFAULT_BOOTSTRAP_RETRY_ATTEMPTS,
-retryDelayMs: DEFAULT_BOOTSTRAP_RETRY_DELAY_MS
-}
-});
-const APP_CONFIG = resolvedAppConfig;
-function getAppConfig() {
-return APP_CONFIG;
-}
-function createAppConfig() {
-const config = getAppConfig();
-return {
-version: config.meta.version,
-isDevelopment: config.environment.isDev,
-debug: config.features.debugTools,
-autoStart: config.runtime.autoStart
+var formatErrorLocation = (filename, lineno, colno) => filename && `${filename}:${lineno ?? 0}:${colno ?? 0}`;
+var formatRejectionMessage = (reason) => {
+if (reason instanceof Error) return reason.message;
+if (typeof reason === "string") return reason;
+return `Unhandled rejection: ${String(reason)}`;
 };
-}
-function resolveImportMetaEnv() {
-if (typeof globalThis !== "undefined" && globalThis.__XEG_IMPORT_META_ENV__) {
-return globalThis.__XEG_IMPORT_META_ENV__;
-}
-try {
-return __vite_import_meta_env__ ?? {};
-} catch {
-return {};
-}
-}
-function resolveNodeEnv() {
-if (typeof process !== "undefined" && process?.env) {
-return process.env;
-}
-return {};
-}
-function parseBooleanFlag(value) {
-if (typeof value === "boolean") {
-return value;
-}
-if (typeof value === "string") {
-const normalized = value.trim().toLowerCase();
-if (!normalized) {
-return void 0;
-}
-if (["1", "true", "yes", "on"].includes(normalized)) {
-return true;
-}
-if (["0", "false", "no", "off"].includes(normalized)) {
-return false;
-}
-}
-return void 0;
-}
-function resolveStringValue(...values) {
-for (const value of values) {
-if (typeof value === "string") {
-const normalized = value.trim();
-if (normalized.length > 0) {
-return normalized;
-}
-}
-}
-return void 0;
-}
-class GlobalErrorHandler {
+var GlobalErrorHandler = class GlobalErrorHandler {
 static singleton = createSingleton(() => new GlobalErrorHandler());
 isInitialized = false;
 controller = null;
 errorListenerId = null;
 rejectionListenerId = null;
 errorListener = (event) => {
+formatErrorLocation(event.filename, event.lineno, event.colno);
 };
 rejectionListener = (event) => {
+formatRejectionMessage(event.reason);
 };
 static getInstance() {
 return GlobalErrorHandler.singleton.get();
 }
-constructor() {
-}
+constructor() {}
 initialize() {
-if (this.isInitialized || typeof window === "undefined") {
-return;
-}
+if (this.isInitialized || typeof window === "undefined") return;
 const eventManager = EventManager.getInstance();
 this.controller = new AbortController();
 const onError = (evt) => {
@@ -10980,9 +9722,7 @@ context: "global-error-handler"
 this.isInitialized = true;
 }
 destroy() {
-if (!this.isInitialized || typeof window === "undefined") {
-return;
-}
+if (!this.isInitialized || typeof window === "undefined") return;
 const eventManager = EventManager.getInstance();
 if (this.errorListenerId) {
 eventManager.removeListener(this.errorListenerId);
@@ -10996,50 +9736,45 @@ this.controller?.abort();
 this.controller = null;
 this.isInitialized = false;
 }
-}
-const isDevEnvironment = false;
-const lifecycleState = {
+};
+var lifecycleState = {
 started: false,
 startPromise: null,
 galleryApp: null
 };
-const debugCleanupLog = void 0;
-let globalEventTeardown = null;
-async function refreshDevNamespace(app) {
-setupDevNamespace(app, {
-start: startApplication,
-createConfig: createAppConfig,
-cleanup
-});
-}
+var warnCleanupLog = void 0;
+var debugCleanupLog = void 0;
+var globalEventTeardown = null;
+var commandRuntimeTeardown = null;
 function tearDownGlobalEventHandlers() {
-if (!globalEventTeardown) {
-return;
-}
+if (!globalEventTeardown) return;
 const teardown = globalEventTeardown;
 globalEventTeardown = null;
 try {
 teardown();
-} catch (error) {
-}
+} catch (error) {}
 }
 function tearDownCommandRuntime() {
-{
-return;
-}
+if (!commandRuntimeTeardown) return;
+const teardown = commandRuntimeTeardown;
+commandRuntimeTeardown = null;
+try {
+teardown();
+} catch (error) {}
 }
 async function runOptionalCleanup(label, task, log) {
+const selectedLog = log ?? warnCleanupLog;
 try {
 await task();
 } catch (error) {
+selectedLog?.(label, error);
 }
 }
 async function runBootstrapStages() {
 await initializeCriticalSystems();
 try {
 await initializeBaseServicesStage();
-} catch {
-}
+} catch {}
 await applyInitialThemeSetting();
 setupGlobalEventHandlers();
 await initializeGallery();
@@ -11047,76 +9782,55 @@ await initializeGallery();
 async function initializeBaseServicesStage() {
 try {
 await initializeCoreBaseServices();
-if (false) ;
 } catch (error) {
-bootstrapErrorReporter.warn(error, {
-code: "BASE_SERVICES_INIT_FAILED"
-});
+bootstrapErrorReporter.warn(error, { code: "BASE_SERVICES_INIT_FAILED" });
 throw error;
 }
 }
 async function applyInitialThemeSetting() {
 try {
 const themeService = getThemeService();
-if (typeof themeService.isInitialized === "function" && !themeService.isInitialized()) {
-await themeService.initialize();
-}
+if (typeof themeService.isInitialized === "function" && !themeService.isInitialized()) await themeService.initialize();
 const savedSetting = themeService.getCurrentTheme();
-themeService.setTheme(savedSetting, { force: true, persist: false });
-if (false) ;
-} catch (error) {
-}
+themeService.setTheme(savedSetting, {
+force: true,
+persist: false
+});
+} catch (error) {}
 }
 function setupGlobalEventHandlers() {
 tearDownGlobalEventHandlers();
 globalEventTeardown = wireGlobalEvents(() => {
-cleanup().catch((error) => {
-});
+cleanup().catch((error) => {});
 });
 }
 async function cleanup() {
 try {
-if (false) ;
 tearDownGlobalEventHandlers();
 tearDownCommandRuntime();
-await runOptionalCleanup(false ? "Gallery cleanup" : "1", async () => {
-if (!lifecycleState.galleryApp) {
-return;
-}
+await runOptionalCleanup("1", async () => {
+if (!lifecycleState.galleryApp) return;
 await lifecycleState.galleryApp.cleanup();
 lifecycleState.galleryApp = null;
 });
-await runOptionalCleanup(false ? "CoreService cleanup" : "2", () => {
+await runOptionalCleanup("2", () => {
 CoreService.getInstance().cleanup();
 });
-await runOptionalCleanup(false ? "Global timer cleanup" : "3", () => {
+await runOptionalCleanup("3", () => {
 globalTimerManager.cleanup();
 });
-await runOptionalCleanup(
-false ? "Global error handler cleanup" : "4",
-async () => {
+await runOptionalCleanup("4", async () => {
 GlobalErrorHandler.getInstance().destroy();
-},
-debugCleanupLog
-);
-if (false) ;
-if (isDevEnvironment) ;
+}, debugCleanupLog);
 lifecycleState.started = false;
-if (false) ;
 } catch (error) {
-bootstrapErrorReporter.error(error, {
-code: "CLEANUP_FAILED"
-});
+bootstrapErrorReporter.error(error, { code: "CLEANUP_FAILED" });
 throw error;
 }
 }
 async function startApplication() {
-if (lifecycleState.started) {
-return;
-}
-if (lifecycleState.startPromise) {
-return lifecycleState.startPromise;
-}
+if (lifecycleState.started) return;
+if (lifecycleState.startPromise) return lifecycleState.startPromise;
 lifecycleState.startPromise = (async () => {
 await runBootstrapStages();
 lifecycleState.started = true;
@@ -11134,17 +9848,12 @@ return lifecycleState.startPromise;
 }
 async function initializeGallery() {
 try {
-if (false) ;
 lifecycleState.galleryApp = await initializeGalleryApp();
-if (false) ;
 } catch (error) {
 lifecycleState.galleryApp = null;
-galleryErrorReporter.error(error, {
-code: "GALLERY_INIT_FAILED"
-});
+galleryErrorReporter.error(error, { code: "GALLERY_INIT_FAILED" });
 throw error;
 }
 }
-void startApplication().catch(() => {
-});
+startApplication().catch(() => {});
 })();
