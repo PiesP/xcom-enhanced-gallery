@@ -8,15 +8,18 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.7.4] - 2026-04-15
+
 ### Changed
 
+- **Dependencies & Tooling**: Refreshed the build/quality dependency set and aligned CI automation updates since `v1.7.3` to keep the release pipeline and local tooling compatible with current Node/Vite/Biome expectations.
 - **Service Access**: Simplified shared service accessors so singleton-backed services resolve directly from their canonical singleton source instead of falling back through `CoreService`.
 - **Theme Lifecycle**: Rebuilt `ThemeService` around a single initialization path by removing constructor-time async restoration, moving scope observation into `initialize()`, and keeping cleanup explicit.
 
 ### Fixed
 
+- **Automation & Security**: Collected post-`v1.7.3` maintenance fixes for workflow compatibility, dependency pinning, and security-related package updates into this release line.
 - **Userscript Error Handling**: Stopped silently swallowing required GM storage/download/request failures in shared userscript and persistent-storage paths while keeping notifications best-effort.
-
 ## [1.7.3] - 2026-02-21
 
 ### Added
