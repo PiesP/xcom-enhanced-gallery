@@ -4,7 +4,7 @@
 
 import {
   closestWithFallback,
-  STABLE_TWEET_CONTAINERS_SELECTORS,
+  TWEET_CONTAINER_SELECTORS,
   TWEET_TEXT_SELECTOR,
 } from '@shared/dom/selectors';
 import { logger } from '@shared/logging/logger';
@@ -47,7 +47,9 @@ export function extractTweetTextHTMLFromClickedElement(
   element: HTMLElement,
   _maxDepth = 10
 ): string | undefined {
-  const tweetArticle = closestWithFallback<HTMLElement>(element, STABLE_TWEET_CONTAINERS_SELECTORS);
+  const tweetArticle = closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS, {
+    debugLabel: 'tweet-container',
+  });
   if (tweetArticle) {
     return extractTweetTextHTML(tweetArticle);
   }

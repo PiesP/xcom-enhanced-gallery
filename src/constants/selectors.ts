@@ -27,11 +27,11 @@ const GALLERY_SELECTORS = CSS.SELECTORS;
 export const TWEET_SELECTOR = 'article[data-testid="tweet"]' as const;
 
 /**
- * Tweet article selector with fallback
+ * Primary tweet article selector
  *
- * Fallback to generic `article` when data-testid unavailable.
+ * Use `TWEET_CONTAINER_SELECTORS` when a fallback chain is required.
  */
-export const TWEET_ARTICLE_SELECTOR = '[data-testid="tweet"], article' as const;
+export const TWEET_ARTICLE_SELECTOR = TWEET_SELECTOR;
 
 /**
  * Tweet photo container selector
@@ -116,6 +116,42 @@ export const TWITTER_MEDIA_SELECTOR =
  */
 export const GALLERY_OVERLAY_SELECTOR = GALLERY_SELECTORS.OVERLAY;
 
+/**
+ * Canonical tweet container selectors with fallback chain
+ *
+ * Ordered by reliability:
+ * 1. `data-testid="tweet"` - Most stable, Twitter's official test identifier
+ * 2. `role="article"` - Semantic fallback for article elements
+ */
+export const TWEET_CONTAINER_SELECTORS = [TWEET_SELECTOR, 'article[role="article"]'] as const;
+
+/**
+ * Canonical media container selectors with fallback chain.
+ */
+export const MEDIA_CONTAINER_SELECTORS = [TWEET_PHOTO_SELECTOR, VIDEO_PLAYER_SELECTOR] as const;
+
+/**
+ * Canonical video container selectors with fallback chain.
+ */
+export const VIDEO_CONTAINER_SELECTORS = [VIDEO_PLAYER_SELECTOR, 'video'] as const;
+
+/**
+ * Canonical image container selectors with fallback chain.
+ */
+export const IMAGE_CONTAINER_SELECTORS = [
+  TWEET_PHOTO_SELECTOR,
+  'img[src*="pbs.twimg.com"]',
+] as const;
+
+/**
+ * Canonical media viewer selectors with fallback chain.
+ */
+export const MEDIA_VIEWER_SELECTORS = [
+  '[data-testid="photoViewer"]',
+  '[aria-modal="true"][data-testid="Drawer"]',
+  '[aria-roledescription="carousel"]',
+] as const;
+
 // ============================================================================
 // Stable Selectors with Fallbacks
 // ============================================================================
@@ -139,10 +175,7 @@ export const GALLERY_OVERLAY_SELECTOR = GALLERY_SELECTORS.OVERLAY;
  * }
  * ```
  */
-export const STABLE_TWEET_CONTAINERS_SELECTORS = [
-  'article[data-testid="tweet"]',
-  'article[role="article"]',
-] as const;
+export const STABLE_TWEET_CONTAINERS_SELECTORS = TWEET_CONTAINER_SELECTORS;
 
 /**
  * Stable media container selectors with fallback chain
@@ -158,10 +191,7 @@ export const STABLE_TWEET_CONTAINERS_SELECTORS = [
  *   .flatMap(sel => Array.from(document.querySelectorAll(sel)));
  * ```
  */
-export const STABLE_MEDIA_CONTAINERS_SELECTORS = [
-  '[data-testid="tweetPhoto"]',
-  '[data-testid="videoPlayer"]',
-] as const;
+export const STABLE_MEDIA_CONTAINERS_SELECTORS = MEDIA_CONTAINER_SELECTORS;
 
 /**
  * Stable video container selectors with fallback chain
@@ -178,7 +208,7 @@ export const STABLE_MEDIA_CONTAINERS_SELECTORS = [
  *   .find(Boolean);
  * ```
  */
-export const STABLE_VIDEO_CONTAINERS_SELECTORS = ['[data-testid="videoPlayer"]', 'video'] as const;
+export const STABLE_VIDEO_CONTAINERS_SELECTORS = VIDEO_CONTAINER_SELECTORS;
 
 /**
  * Stable image container selectors with fallback chain
@@ -195,10 +225,7 @@ export const STABLE_VIDEO_CONTAINERS_SELECTORS = ['[data-testid="videoPlayer"]',
  *   .find(Boolean);
  * ```
  */
-export const STABLE_IMAGE_CONTAINERS_SELECTORS = [
-  '[data-testid="tweetPhoto"]',
-  'img[src*="pbs.twimg.com"]',
-] as const;
+export const STABLE_IMAGE_CONTAINERS_SELECTORS = IMAGE_CONTAINER_SELECTORS;
 
 /**
  * Stable media viewer overlay selectors with fallback chain
@@ -215,11 +242,7 @@ export const STABLE_IMAGE_CONTAINERS_SELECTORS = [
  *   .some(sel => document.querySelector(sel) !== null);
  * ```
  */
-export const STABLE_MEDIA_VIEWERS_SELECTORS = [
-  '[data-testid="photoViewer"]',
-  '[aria-modal="true"][data-testid="Drawer"]',
-  '[aria-roledescription="carousel"]',
-] as const;
+export const STABLE_MEDIA_VIEWERS_SELECTORS = MEDIA_VIEWER_SELECTORS;
 
 // ============================================================================
 // Type Helpers

@@ -1,9 +1,7 @@
 import {
-  STABLE_IMAGE_CONTAINERS_SELECTORS,
-  STABLE_TWEET_CONTAINERS_SELECTORS,
-  STABLE_VIDEO_CONTAINERS_SELECTORS,
-  TWEET_PHOTO_SELECTOR,
-  VIDEO_PLAYER_SELECTOR,
+  IMAGE_CONTAINER_SELECTORS,
+  TWEET_CONTAINER_SELECTORS,
+  VIDEO_CONTAINER_SELECTORS,
 } from '@shared/dom/selectors';
 import { logger } from '@shared/logging/logger';
 import { closestWithFallback } from '@shared/utils/dom/query-helpers';
@@ -30,6 +28,7 @@ export interface AmbientVideoPauseRequest extends PauseAmbientVideosOptions {
 
 /** Response from pause operation with detailed metadata */
 interface AmbientVideoPauseResponse extends PauseAmbientVideosResult {
+  readonly failed: boolean;
   readonly trigger: AmbientVideoTrigger;
   readonly forced: boolean;
   readonly reason: string;
@@ -37,16 +36,10 @@ interface AmbientVideoPauseResponse extends PauseAmbientVideosResult {
 }
 
 /** Video trigger selectors (constant) */
-const VIDEO_TRIGGER_SELECTORS = [
-  VIDEO_PLAYER_SELECTOR,
-  ...STABLE_VIDEO_CONTAINERS_SELECTORS,
-] as const;
+const VIDEO_TRIGGER_SELECTORS = VIDEO_CONTAINER_SELECTORS;
 
 /** Image trigger selectors (constant) */
-const IMAGE_TRIGGER_SELECTORS = [
-  TWEET_PHOTO_SELECTOR,
-  ...STABLE_IMAGE_CONTAINERS_SELECTORS,
-] as const;
+const IMAGE_TRIGGER_SELECTORS = IMAGE_CONTAINER_SELECTORS;
 
 /** Default pause result value */
 const PAUSE_RESULT_DEFAULT = {
@@ -71,7 +64,9 @@ function findTweetContainer(element?: HTMLElement | null): HTMLElement | null {
     return null;
   }
 
-  return closestWithFallback<HTMLElement>(element, STABLE_TWEET_CONTAINERS_SELECTORS);
+  return closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS, {
+    debugLabel: 'tweet-container',
+  });
 }
 
 /**
@@ -111,18 +106,11 @@ function isVideoTriggerElement(element?: HTMLElement | null): boolean {
   if (!element) return false;
   if (element.tagName === 'VIDEO') return true;
 
-  // Check if element matches or is within a video container
-  for (const selector of VIDEO_TRIGGER_SELECTORS) {
-    try {
-      if (element.matches(selector)) {
-        return true;
-      }
-    } catch {
-      // Ignore invalid selector patterns
-    }
-  }
-
-  return closestWithFallback(element, VIDEO_TRIGGER_SELECTORS) !== null;
+  return (
+    closestWithFallback(element, VIDEO_TRIGGER_SELECTORS, {
+      debugLabel: 'video-container',
+    }) !== null
+  );
 }
 
 /**
@@ -135,18 +123,11 @@ function isImageTriggerElement(element?: HTMLElement | null): boolean {
   if (!element) return false;
   if (element.tagName === 'IMG') return true;
 
-  // Check if element matches or is within an image container
-  for (const selector of IMAGE_TRIGGER_SELECTORS) {
-    try {
-      if (element.matches(selector)) {
-        return true;
-      }
-    } catch {
-      // Ignore invalid selector patterns
-    }
-  }
-
-  return closestWithFallback(element, IMAGE_TRIGGER_SELECTORS) !== null;
+  return (
+    closestWithFallback(element, IMAGE_TRIGGER_SELECTORS, {
+      debugLabel: 'image-container',
+    }) !== null
+  );
 }
 
 /**
@@ -195,6 +176,7 @@ export function pauseAmbientVideosForGallery(
     }
     return {
       ...PAUSE_RESULT_DEFAULT,
+      failed: true,
       trigger,
       forced: force,
       reason,
@@ -216,6 +198,7 @@ export function pauseAmbientVideosForGallery(
 
   return {
     ...result,
+    failed: false,
     trigger,
     forced: force,
     reason,

@@ -15,12 +15,11 @@ import { initializeDevTools } from '@bootstrap/dev-tools';
 import { initializeEnvironment } from '@bootstrap/environment';
 import type { Unregister } from '@bootstrap/events';
 import { wireGlobalEvents } from '@bootstrap/events';
-import { initializeGalleryApp } from '@bootstrap/gallery-init';
+import { initializeGalleryApp, initializeGalleryServices } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
 import { createAppConfig } from '@constants/app-config';
 import { startDevCommandRuntime } from '@edge/bootstrap';
 import type { IGalleryApp } from '@shared/container/app-container';
-import { getThemeService } from '@shared/container/service-accessors';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
 import { GlobalErrorHandler } from '@shared/error/error-handler';
 import type { BootstrapStage } from '@shared/interfaces/handler.interfaces';
@@ -184,13 +183,13 @@ const devBootstrapStages: readonly BootstrapStage[] | null = __DEV__
         run: initializeCriticalSystems,
       },
       {
-        label: 'Base services',
-        run: initializeBaseServicesStage,
+        label: 'Gallery services',
+        run: initializeGalleryServicesStage,
         optional: true,
       },
       {
-        label: 'Theme synchronization',
-        run: applyInitialThemeSetting,
+        label: 'Base services',
+        run: initializeBaseServicesStage,
         optional: true,
       },
       {
@@ -235,11 +234,15 @@ async function runBootstrapStages(): Promise<void> {
   // Production: minimal sequential bootstrap.
   await initializeCriticalSystems();
   try {
+    await initializeGalleryServicesStage();
+  } catch {
+    // Optional in production.
+  }
+  try {
     await initializeBaseServicesStage();
   } catch {
     // Optional in production.
   }
-  await applyInitialThemeSetting();
   setupGlobalEventHandlers();
   await initializeGallery();
 }
@@ -266,31 +269,24 @@ async function initializeBaseServicesStage(): Promise<void> {
   }
 }
 
-// exported applyInitialThemeSetting below
+// exported initializeGalleryServicesStage below
 /**
- * Apply initial theme setting from saved configuration.
- * Initializes theme service and applies saved preference without persisting changes.
+ * Initialize gallery-adjacent services required before gallery startup.
  *
  * @internal
  */
-async function applyInitialThemeSetting(): Promise<void> {
+async function initializeGalleryServicesStage(): Promise<void> {
   try {
-    const themeService = getThemeService();
-
-    if (typeof themeService.isInitialized === 'function' && !themeService.isInitialized()) {
-      await themeService.initialize();
-    }
-
-    const savedSetting = themeService.getCurrentTheme();
-    themeService.setTheme(savedSetting, { force: true, persist: false });
+    await initializeGalleryServices();
 
     if (__DEV__) {
-      logger.debug(`[theme-sync] Applied saved theme: ${savedSetting}`);
+      logger.debug('✅ Gallery services initialization complete');
     }
   } catch (error) {
-    if (__DEV__) {
-      logger.warn('[theme-sync] Initial theme application skipped:', error);
-    }
+    bootstrapErrorReporter.warn(error, {
+      code: 'GALLERY_SERVICES_INIT_FAILED',
+    });
+    throw error;
   }
 }
 
@@ -341,7 +337,7 @@ async function initializeDevToolsIfNeeded(): Promise<void> {
  * Perform complete application cleanup and resource teardown.
  *
  * Executes cleanup in reverse initialization order:
- * global events → command runtime → gallery → services → timers → error handler.
+ * gallery → command runtime → global events → services → timers → error handler.
  * Individual tasks are optional; errors logged but not thrown.
  */
 // exported cleanup below
@@ -351,16 +347,18 @@ async function cleanup(): Promise<void> {
       logger.info('🧹 Starting application cleanup');
     }
 
-    tearDownGlobalEventHandlers();
-    tearDownCommandRuntime();
     await runOptionalCleanup(__DEV__ ? 'Gallery cleanup' : '1', async () => {
-      if (!lifecycleState.galleryApp) {
+      const galleryApp = lifecycleState.galleryApp;
+      lifecycleState.galleryApp = null;
+
+      if (!galleryApp) {
         return;
       }
 
-      await lifecycleState.galleryApp.cleanup();
-      lifecycleState.galleryApp = null;
+      await galleryApp.cleanup();
     });
+    tearDownCommandRuntime();
+    tearDownGlobalEventHandlers();
 
     await runOptionalCleanup(__DEV__ ? 'CoreService cleanup' : '2', () => {
       CoreService.getInstance().cleanup();

@@ -1,13 +1,8 @@
 /** Gallery application orchestrator. */
 
-import {
-  getGalleryRenderer,
-  getMediaService,
-  tryGetSettingsManager,
-} from '@shared/container/service-accessors';
+import { getMediaService, tryGetSettingsManager } from '@shared/container/service-accessors';
 import { galleryErrorReporter, mediaErrorReporter } from '@shared/error/app-error-reporter';
 import { getErrorMessage } from '@shared/error/normalize';
-import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import { logger } from '@shared/logging/logger';
 import { NotificationService } from '@shared/services/notification-service';
 import type { SettingsServiceLike } from '@shared/services/theme-service.contract';
@@ -27,7 +22,6 @@ interface GalleryOpenOptions {
 }
 
 export class GalleryApp {
-  private galleryRenderer: GalleryRenderer | null = null;
   private isInitialized = false;
   private readonly notificationService = NotificationService.getInstance();
   private ambientVideoGuardDispose: (() => void) | null = null;
@@ -45,9 +39,6 @@ export class GalleryApp {
     try {
       __DEV__ && logger.info('[GalleryApp] Initialization started');
 
-      this.galleryRenderer = getGalleryRenderer();
-      this.galleryRenderer?.setOnCloseCallback(() => this.closeGallery());
-
       await this.setupEventHandlers();
       this.ambientVideoGuardDispose = this.ambientVideoGuardDispose ?? startAmbientVideoGuard();
 
@@ -55,10 +46,10 @@ export class GalleryApp {
       __DEV__ && logger.info('[GalleryApp] ✅ Initialization complete');
     } catch (error) {
       this.isInitialized = false;
-      this.galleryRenderer = null;
       galleryErrorReporter.critical(error, {
         code: 'GALLERY_APP_INIT_FAILED',
       });
+      throw error;
     }
   }
 
@@ -142,12 +133,7 @@ export class GalleryApp {
         reason: providedContext?.reason ?? (providedContext ? 'media-click' : 'programmatic'),
       };
 
-      try {
-        pauseAmbientVideosForGallery(pauseContext);
-      } catch (error) {
-        __DEV__ && logger.warn('[GalleryApp] Ambient video coordinator failed', error);
-      }
-
+      pauseAmbientVideosForGallery(pauseContext);
       openGallery(mediaItems, validIndex);
     } catch (error) {
       galleryErrorReporter.error(error, {
@@ -192,7 +178,6 @@ export class GalleryApp {
         __DEV__ && logger.warn('[GalleryApp] Event cleanup failed:', error);
       }
 
-      this.galleryRenderer = null;
       this.isInitialized = false;
 
       delete (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug;

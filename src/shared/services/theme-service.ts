@@ -62,8 +62,6 @@ export class ThemeService implements ThemeServiceContract {
     });
 
     this.mediaQueryList = this.createMediaQueryList();
-    this.themeSetting = this.loadThemeSync();
-    this.applyCurrentTheme(true);
   }
 
   /** Initialize service (idempotent, fail-fast on error) */
@@ -97,6 +95,7 @@ export class ThemeService implements ThemeServiceContract {
 
     this.initializeThemeScopeObservation();
     this.initializeSystemDetection();
+    this.applyCurrentTheme(true);
   }
 
   public bindSettingsService(settingsService: SettingsServiceLike): void {
@@ -315,17 +314,6 @@ export class ThemeService implements ThemeServiceContract {
 
   private notifyListeners(): void {
     this.listeners.forEach((listener) => listener(this.currentTheme, this.themeSetting));
-  }
-
-  private loadThemeSync(): ThemeSetting {
-    try {
-      const snapshot = this.storage.getSync<{
-        gallery?: { theme?: ThemeSetting };
-      }>(APP_SETTINGS_STORAGE_KEY);
-      return snapshot?.gallery?.theme ?? 'auto';
-    } catch {
-      return 'auto';
-    }
   }
 
   private async loadThemeAsync(): Promise<ThemeSetting | null> {

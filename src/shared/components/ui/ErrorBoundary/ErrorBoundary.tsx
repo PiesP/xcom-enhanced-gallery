@@ -47,12 +47,8 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
   const notifyError = (error: unknown): void => {
     if (lastError === error) return;
     lastError = error;
-    try {
-      const { title, body } = translateError(error);
-      NotificationService.getInstance().error(title, body);
-    } catch {
-      // Notification failures must not propagate
-    }
+    const { title, body } = translateError(error);
+    void NotificationService.getInstance().error(title, body);
   };
 
   const handleRetry = (): void => {

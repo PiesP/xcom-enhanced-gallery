@@ -29,7 +29,6 @@ import {
 } from '@shared/state/signals/gallery.signals';
 import { setError } from '@shared/state/signals/ui.state';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
-import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
 import { createSignal, onCleanup } from 'solid-js';
 
 import './styles/gallery-global.css';
@@ -39,6 +38,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private isMounting = false;
   private stateUnsubscribe: (() => void) | null = null;
   private onCloseCallback: (() => void) | null = null;
+  private readonly notificationService = NotificationService.getInstance();
 
   constructor() {
     this.setupStateSubscription();
@@ -142,6 +142,23 @@ export class GalleryRenderer implements GalleryRendererInterface {
     __DEV__ && logger.info('[GalleryRenderer] Gallery mounted');
   }
 
+  private getDownloadErrorNotification(error: unknown): { body: string; title: string } {
+    const message = getErrorMessage(error) || 'Unknown error';
+
+    try {
+      const languageService = getLanguageService();
+      return {
+        title: languageService.translate('msg.dl.one.err.t'),
+        body: languageService.translate('msg.dl.one.err.b', { error: message }),
+      };
+    } catch {
+      return {
+        title: 'Download failed',
+        body: message,
+      };
+    }
+  }
+
   async handleDownload(type: 'current' | 'all'): Promise<void> {
     __DEV__ && logger.info(`[GalleryRenderer] handleDownload called with type: ${type}`);
     if (isDownloadLocked()) return;
@@ -149,11 +166,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
     const releaseLock = acquireDownloadLock();
 
     const notifyError = (title: string, body: string): void => {
-      try {
-        void NotificationService.getInstance().error(title, body);
-      } catch {
-        // Notification failures must never block download flow
-      }
+      void this.notificationService.error(title, body);
     };
 
     try {
@@ -228,16 +241,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
       }
     } catch (error) {
       logger.error('Download failed', error);
-      try {
-        const languageService = getLanguageService();
-        const message = getErrorMessage(error) || 'Unknown error';
-        const title = languageService.translate('msg.dl.one.err.t');
-        const body = languageService.translate('msg.dl.one.err.b', { error: message });
-        setError(body);
-        notifyError(title, body);
-      } catch {
-        setError(getErrorMessage(error) || 'Download failed.');
-      }
+      const { title, body } = this.getDownloadErrorNotification(error);
+      setError(body);
+      notifyError(title, body);
     } finally {
       releaseLock();
     }
@@ -281,14 +287,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
     mediaItems: readonly MediaInfo[],
     renderOptions?: GalleryRenderOptions
   ): Promise<void> {
-    const pauseContext = renderOptions?.pauseContext ?? { reason: 'programmatic' };
-
-    try {
-      pauseAmbientVideosForGallery(pauseContext);
-    } catch (error) {
-      __DEV__ && logger.warn('[GalleryRenderer] Ambient video pause failed', { error });
-    }
-
     openGallery(mediaItems, renderOptions?.startIndex ?? 0);
   }
 

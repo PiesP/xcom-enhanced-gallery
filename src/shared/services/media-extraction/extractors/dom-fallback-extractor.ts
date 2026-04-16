@@ -4,7 +4,7 @@
  * Primary use case: card images and other media not available via API.
  */
 
-import { TWEET_ARTICLE_SELECTOR } from '@shared/dom/selectors';
+import { closestWithFallback, TWEET_CONTAINER_SELECTORS } from '@shared/dom/selectors';
 import { getErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
 import {
@@ -152,7 +152,11 @@ export class DOMFallbackExtractor implements APIExtractor {
       }
 
       // Step 1: Find the tweet container
-      const tweetContainer = clickedElement.closest(TWEET_ARTICLE_SELECTOR);
+      const tweetContainer = closestWithFallback<HTMLElement>(
+        clickedElement,
+        TWEET_CONTAINER_SELECTORS,
+        { debugLabel: 'tweet-container' }
+      );
 
       if (!tweetContainer || !(tweetContainer instanceof HTMLElement)) {
         return createFailureResult('No tweet container found', startedAt);

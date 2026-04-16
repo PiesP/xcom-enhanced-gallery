@@ -3,7 +3,11 @@
  * @description Extracts tweet metadata using a concise strategy pipeline.
  */
 
-import { STATUS_LINK_SELECTOR, TWEET_ARTICLE_SELECTOR } from '@shared/dom/selectors';
+import {
+  closestWithFallback,
+  STATUS_LINK_SELECTOR,
+  TWEET_CONTAINER_SELECTORS,
+} from '@shared/dom/selectors';
 import { logger } from '@shared/logging/logger';
 import type { TweetInfo } from '@shared/types/media.types';
 import { extractUsernameFromUrl } from '@shared/utils/url/host';
@@ -76,7 +80,9 @@ const extractFromElement: ExtractionStrategy = (element) => {
 
 /** Strategy 2: DOM Structure (Most Reliable) */
 const extractFromDOM: ExtractionStrategy = (element) => {
-  const container = element.closest(TWEET_ARTICLE_SELECTOR);
+  const container = closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS, {
+    debugLabel: 'tweet-container',
+  });
   if (!container) return null;
 
   // Find status link

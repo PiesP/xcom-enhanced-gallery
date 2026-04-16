@@ -10,6 +10,11 @@ import { logger } from '@shared/logging/logger';
  * Cache for invalid selectors to avoid repeated warnings.
  */
 const warnedInvalidSelectors: Record<string, true> = Object.create(null);
+const loggedFallbackMatches: Record<string, true> = Object.create(null);
+
+interface FallbackQueryOptions {
+  readonly debugLabel?: string;
+}
 
 /**
  * Warn about invalid selector once (development mode only).
@@ -20,6 +25,26 @@ const warnInvalidSelectorOnce = (selector: string, error: unknown): void => {
 
   warnedInvalidSelectors[selector] = true;
   logger.warn(`[query-helpers] Invalid selector skipped: ${selector}`, { error });
+};
+
+const logFallbackSelectorMatchOnce = (
+  selector: string,
+  index: number,
+  options: FallbackQueryOptions
+): void => {
+  if (!__DEV__ || index === 0 || !options.debugLabel) {
+    return;
+  }
+
+  const key = `${options.debugLabel}:${selector}`;
+  if (loggedFallbackMatches[key]) {
+    return;
+  }
+
+  loggedFallbackMatches[key] = true;
+  logger.debug(`[query-helpers] Fallback selector matched for ${options.debugLabel}`, {
+    selector,
+  });
 };
 
 /**
@@ -40,12 +65,14 @@ const warnInvalidSelectorOnce = (selector: string, error: unknown): void => {
  */
 export function querySelectorWithFallback<T extends Element = Element>(
   container: Element | Document,
-  selectors: readonly string[]
+  selectors: readonly string[],
+  options: FallbackQueryOptions = {}
 ): T | null {
-  for (const selector of selectors) {
+  for (const [index, selector] of selectors.entries()) {
     try {
       const element = container.querySelector<T>(selector);
       if (element) {
+        logFallbackSelectorMatchOnce(selector, index, options);
         return element;
       }
     } catch (error) {
@@ -74,14 +101,18 @@ export function querySelectorWithFallback<T extends Element = Element>(
  */
 export function queryAllWithFallback<T extends Element = Element>(
   container: Element | Document,
-  selectors: readonly string[]
+  selectors: readonly string[],
+  options: FallbackQueryOptions = {}
 ): T[] {
   const seen = new WeakSet<Element>();
   const results: T[] = [];
 
-  for (const selector of selectors) {
+  for (const [index, selector] of selectors.entries()) {
     try {
       const elements = container.querySelectorAll<T>(selector);
+      if (elements.length > 0) {
+        logFallbackSelectorMatchOnce(selector, index, options);
+      }
       for (const element of elements) {
         if (!seen.has(element)) {
           seen.add(element);
@@ -114,12 +145,14 @@ export function queryAllWithFallback<T extends Element = Element>(
  */
 export function closestWithFallback<T extends Element = Element>(
   element: Element,
-  selectors: readonly string[]
+  selectors: readonly string[],
+  options: FallbackQueryOptions = {}
 ): T | null {
-  for (const selector of selectors) {
+  for (const [index, selector] of selectors.entries()) {
     try {
       const match = element.closest<T>(selector);
       if (match) {
+        logFallbackSelectorMatchOnce(selector, index, options);
         return match;
       }
     } catch (error) {

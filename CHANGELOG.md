@@ -8,6 +8,16 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **Bootstrap & Gallery Lifecycle**: Collapsed gallery startup into a single lifecycle path, moved persisted theme restoration into `ThemeService.initialize()`, and kept `GalleryRenderer` as a signal-driven view while `GalleryApp` owns the active gallery session flow.
+- **Selectors & State Contracts**: Added canonical selector groups for tweet/media detection, routed extraction and ambient-video checks through shared fallback helpers, and committed gallery open/close state through one atomic session update path.
+
+### Fixed
+
+- **Failure Boundaries**: Removed duplicate caller-side notification and ambient-video fallback handling, consolidated persistent-storage parse/write helpers, and now re-throw gallery initialization failures after reporting them.
+- **Tests**: Replaced hoisted Vitest mock patterns in the affected unit suites so current warnings do not become future hard errors.
+
 ## [1.7.4] - 2026-04-15
 
 ### Changed

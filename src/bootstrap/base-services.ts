@@ -7,22 +7,19 @@
 
 import { SERVICE_KEYS } from '@constants/service-keys';
 import { logger } from '@shared/logging/logger';
-import { registerCoreServices } from '@shared/services/service-initialization';
 import { CoreService } from '@shared/services/service-manager';
 import type { BaseService } from '@shared/types/core/base-service.types';
 
 /**
  * Initialize core base services (theme, language, media).
  *
- * Registers and initializes services sequentially. Safe to call in isolated
- * environments (e.g., tests) as it ensures services are registered first.
+ * Initializes services sequentially after `initializeCriticalSystems()` has
+ * registered them with the service container.
  *
  * @throws Error if any service initialization fails
  */
 export async function initializeCoreBaseServices(): Promise<void> {
   try {
-    registerCoreServices();
-
     const coreService = CoreService.getInstance();
     const serviceKeys = [
       SERVICE_KEYS.THEME,

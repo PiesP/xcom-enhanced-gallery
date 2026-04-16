@@ -1,20 +1,21 @@
 /**
- * @fileoverview Gallery app lazy initialization with service setup.
+ * @fileoverview Gallery bootstrap helpers.
  *
- * Orchestrates renderer, settings, and theme service initialization.
- * Parallel initialization for performance; graceful degradation on non-critical failures.
+ * Separates gallery-adjacent service preparation from gallery app creation so
+ * startup ordering stays deterministic.
  *
  * @module bootstrap/gallery-init
  */
 
+import { SERVICE_KEYS } from '@constants/service-keys';
 import { GalleryApp } from '@features/gallery/GalleryApp';
 import { GalleryRenderer } from '@features/gallery/GalleryRenderer.tsx';
 import { SettingsService } from '@features/settings/services/settings-service';
 import type { IGalleryApp } from '@shared/container/app-container';
 import {
-  getThemeService,
   registerGalleryRenderer,
   registerSettingsManager,
+  tryGetSettingsManager,
 } from '@shared/container/service-accessors';
 import {
   bootstrapErrorReporter,
@@ -24,27 +25,41 @@ import {
 import { isGMAPIAvailable } from '@shared/external/userscript/environment-detector';
 import { logger } from '@shared/logging/logger';
 import { NotificationService } from '@shared/services/notification-service';
-import type { SettingsServiceLike } from '@shared/services/theme-service';
+import { CoreService } from '@shared/services/service-manager';
 
-/** @internal Singleton guard for renderer registration */
-let rendererRegistrationTask: Promise<void> | null = null;
+type InitializableSettingsService = {
+  initialize?: () => Promise<void>;
+  isInitialized?: () => boolean;
+};
 
-/** @internal Register GalleryRenderer with singleton pattern */
-async function registerRenderer(): Promise<void> {
-  if (!rendererRegistrationTask) {
-    rendererRegistrationTask = (async () => {
-      registerGalleryRenderer(new GalleryRenderer());
-    })().finally(() => {
-      rendererRegistrationTask = null;
-    });
+function ensureRendererRegistered(): void {
+  if (CoreService.getInstance().has(SERVICE_KEYS.GALLERY_RENDERER)) {
+    return;
   }
 
-  await rendererRegistrationTask;
+  registerGalleryRenderer(new GalleryRenderer());
 }
 
-/** @internal Initialize SettingsService and ThemeService with graceful degradation */
-async function initializeServices(): Promise<void> {
-  // 1. Environment Check
+async function initializeSettingsService(): Promise<void> {
+  const existingSettings = tryGetSettingsManager<InitializableSettingsService>();
+  if (existingSettings) {
+    if (existingSettings.isInitialized?.() === false && existingSettings.initialize) {
+      await existingSettings.initialize();
+    }
+    return;
+  }
+
+  const service = new SettingsService();
+  await service.initialize();
+  registerSettingsManager(service);
+}
+
+/**
+ * Initialize settings and other gallery-adjacent services before gallery startup.
+ *
+ * Settings remain non-fatal: startup continues with defaults if they cannot load.
+ */
+export async function initializeGalleryServices(): Promise<void> {
   const hasRequiredGMAPIs = isGMAPIAvailable('download') || isGMAPIAvailable('setValue');
   if (!hasRequiredGMAPIs) {
     bootstrapErrorReporter.warn(new Error('Tampermonkey APIs limited'), {
@@ -52,13 +67,8 @@ async function initializeServices(): Promise<void> {
     });
   }
 
-  // 2. Settings Service
-  let settingsService: SettingsServiceLike | null = null;
   try {
-    const service = new SettingsService();
-    await service.initialize();
-    registerSettingsManager(service);
-    settingsService = service as unknown as SettingsServiceLike;
+    await initializeSettingsService();
     if (__DEV__) {
       logger.debug('[Bootstrap] ✅ SettingsService initialized');
     }
@@ -66,46 +76,17 @@ async function initializeServices(): Promise<void> {
     settingsErrorReporter.warn(error, {
       code: 'SETTINGS_SERVICE_INIT_FAILED',
     });
-    try {
-      await NotificationService.getInstance().error(
-        'Settings unavailable',
-        'Defaults will be used until settings load.'
-      );
-    } catch (notifyError) {
-      if (__DEV__) {
-        logger.debug('[Bootstrap] Settings fallback notice failed', notifyError);
-      }
-    }
-  }
-
-  // 3. Theme Service
-  try {
-    const themeService = getThemeService();
-
-    if (!themeService.isInitialized()) {
-      await themeService.initialize();
-    }
-
-    if (settingsService) {
-      themeService.bindSettingsService(settingsService);
-    }
-
-    if (__DEV__) {
-      logger.debug(`[Bootstrap] Theme confirmed: ${themeService.getCurrentTheme()}`);
-    }
-  } catch (error) {
-    bootstrapErrorReporter.warn(error, {
-      code: 'THEME_SYNC_FAILED',
-    });
+    await NotificationService.getInstance().error(
+      'Settings unavailable',
+      'Defaults will be used until settings load.'
+    );
   }
 }
 
 /**
  * Initialize and return the gallery application instance.
  *
- * Sets up renderer, settings, and theme services in parallel, then creates and initializes
- * the GalleryApp. Non-critical service failures are logged but don't block initialization;
- * fatal errors are caught, logged, and re-thrown.
+ * Ensures the renderer is registered, then creates and initializes the GalleryApp.
  *
  * @returns Initialized IGalleryApp instance
  * @throws If gallery app creation or initialization fails
@@ -116,8 +97,7 @@ export async function initializeGalleryApp(): Promise<IGalleryApp> {
       logger.info('🎨 Gallery app lazy initialization starting');
     }
 
-    // Parallel initialization of renderer and services
-    await Promise.all([registerRenderer(), initializeServices()]);
+    ensureRendererRegistered();
 
     const galleryApp = new GalleryApp();
     await galleryApp.initialize();

@@ -6,8 +6,8 @@
  * - navigation.state.ts for navigation tracking
  * - ui.state.ts for UI state (loading, error, viewMode)
  *
- * **CRITICAL**: `isOpen` signal must be updated LAST in batch() to prevent
- * race conditions with subscribers that depend on other state values.
+ * Gallery open/close transitions are committed through a dedicated session
+ * update helper so subscribers observe a complete snapshot.
  *
  * @module gallery.signals
  */
@@ -50,6 +50,15 @@ export interface GalleryNavigateStartPayload {
   readonly trigger: GalleryNavigationTrigger;
 }
 
+interface GallerySessionState {
+  readonly isOpen: boolean;
+  readonly mediaItems: readonly MediaInfo[];
+  readonly currentIndex: number;
+  readonly focusedIndex: number | null;
+  readonly currentVideoElement: HTMLVideoElement | null;
+  readonly error: string | null;
+}
+
 export interface GalleryNavigateCompletePayload {
   readonly index: number;
   readonly trigger: GalleryNavigationTrigger;
@@ -79,6 +88,17 @@ export const gallerySignals = {
   focusedIndex: createSignalSafe<number | null>(null),
   currentVideoElement: createSignalSafe<HTMLVideoElement | null>(null),
 };
+
+function applyGallerySessionUpdate(state: GallerySessionState): void {
+  batch(() => {
+    gallerySignals.mediaItems.value = state.mediaItems;
+    gallerySignals.currentIndex.value = state.currentIndex;
+    gallerySignals.focusedIndex.value = state.focusedIndex;
+    gallerySignals.currentVideoElement.value = state.currentVideoElement;
+    gallerySignals.error.value = state.error;
+    gallerySignals.isOpen.value = state.isOpen;
+  });
+}
 
 export function applyGalleryStateUpdate(state: GalleryState): void {
   batch(() => {
@@ -120,14 +140,14 @@ export const galleryState = {
 
 export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   const validIndex = clampIndex(startIndex, items.length);
-  galleryState.value = {
-    ...galleryState.value,
+  applyGallerySessionUpdate({
     isOpen: true,
     mediaItems: items,
     currentIndex: validIndex,
+    focusedIndex: validIndex,
+    currentVideoElement: null,
     error: null,
-  };
-  gallerySignals.focusedIndex.value = validIndex;
+  });
   resetNavigation();
   if (__DEV__) {
     logger.debug(`[Gallery] Opened with ${items.length} items, starting at index ${validIndex}`);
@@ -135,15 +155,14 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
 }
 
 export function closeGallery(): void {
-  galleryState.value = {
-    ...galleryState.value,
+  applyGallerySessionUpdate({
     isOpen: false,
     currentIndex: 0,
     mediaItems: [],
+    focusedIndex: null,
+    currentVideoElement: null,
     error: null,
-  };
-  gallerySignals.focusedIndex.value = null;
-  gallerySignals.currentVideoElement.value = null;
+  });
   resetNavigation();
   if (__DEV__) {
     logger.debug('[Gallery] Closed');
