@@ -8,6 +8,8 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.7.5] - 2026-04-16
+
 ### Changed
 
 - **Bootstrap & Gallery Lifecycle**: Collapsed gallery startup into a single lifecycle path, moved persisted theme restoration into `ThemeService.initialize()`, and kept `GalleryRenderer` as a signal-driven view while `GalleryApp` owns the active gallery session flow.
