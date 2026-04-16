@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name X.com Enhanced Gallery
 // @namespace https://github.com/PiesP/xcom-enhanced-gallery
-// @version 1.7.4
+// @version 1.7.5
 // @description Media viewer and download functionality for X.com
 // @author PiesP
 // @license MIT
@@ -34,7 +34,7 @@
 /*
  * Third-Party Licenses
  * ====================
- * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.7.4/LICENSES
+ * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.7.5/LICENSES
  *
  * MIT License
  *
@@ -97,6 +97,81 @@ function createLogger(config = {}) {
 return buildErrorOnlyLogger(config.prefix ?? BASE_PREFIX);
 }
 var logger = createLogger();
+function createSingleton(factory) {
+let hasInstance = false;
+let instance;
+const get = () => {
+if (!hasInstance) {
+instance = factory();
+hasInstance = true;
+}
+return instance;
+};
+return { get };
+}
+function isDisposable(value) {
+return value !== null && typeof value === "object" && "destroy" in value && typeof value.destroy === "function";
+}
+var CoreService = class CoreService {
+static singleton = createSingleton(() => new CoreService());
+services =  new Map();
+constructor() {}
+static getInstance() {
+return CoreService.singleton.get();
+}
+register(key, instance, options) {
+const allowOverride = options?.allowOverride ?? false;
+const onDuplicate = options?.onDuplicate ?? "warn";
+if (this.services.has(key) && !allowOverride) {
+if (onDuplicate === "throw") throw new Error(`[CoreService] Duplicate service key: ${key}`);
+return;
+}
+this.services.set(key, instance);
+}
+get(key) {
+if (this.services.has(key)) return this.services.get(key);
+throw new Error(`Service not found: ${key}`);
+}
+tryGet(key) {
+if (this.services.has(key)) return this.services.get(key);
+return null;
+}
+has(key) {
+return this.services.has(key);
+}
+getRegisteredServices() {
+return Array.from(this.services.keys());
+}
+cleanup() {
+this.services.forEach((service) => {
+try {
+if (isDisposable(service)) service.destroy();
+} catch (e) {
+logger.error("Service cleanup failed", e);
+}
+});
+this.services.clear();
+}
+reset() {
+this.cleanup();
+}
+};
+async function initializeCoreBaseServices() {
+try {
+const coreService = CoreService.getInstance();
+const serviceKeys = [
+SERVICE_KEYS.THEME,
+SERVICE_KEYS.LANGUAGE,
+SERVICE_KEYS.MEDIA_SERVICE
+];
+for (const key of serviceKeys) {
+const service = coreService.get(key);
+if (service?.initialize) await service.initialize();
+}
+} catch (error) {
+throw new Error("[base-services] initialization failed", { cause: error instanceof Error ? error : new Error(String(error)) });
+}
+}
 function isBaseLanguageCode(value) {
 return value === "en" || value === "ko" || value === "ja";
 }
@@ -457,18 +532,6 @@ return createStrictUserscriptAPI();
 }
 function getUserscriptSafe() {
 return createSafeUserscriptAPI();
-}
-function createSingleton(factory) {
-let hasInstance = false;
-let instance;
-const get = () => {
-if (!hasInstance) {
-instance = factory();
-hasInstance = true;
-}
-return instance;
-};
-return { get };
 }
 var PersistentStorage = class PersistentStorage {
 get userscript() {
@@ -1073,27 +1136,33 @@ SELECTORS.ROLE_GALLERY,
 SELECTORS.ROLE_ITEMS_CONTAINER
 ]
 };
-var TWEET_ARTICLE_SELECTOR = "[data-testid=\"tweet\"], article";
+var TWEET_SELECTOR = "article[data-testid=\"tweet\"]";
 var TWEET_PHOTO_SELECTOR = "[data-testid=\"tweetPhoto\"]";
 var TWEET_TEXT_SELECTOR = "[data-testid=\"tweetText\"]";
 var VIDEO_PLAYER_SELECTOR = "[data-testid=\"videoPlayer\"]";
 var VIDEO_PLAYER_CONTEXT_SELECTOR = `${VIDEO_PLAYER_SELECTOR},[data-testid="videoComponent"],[data-testid="videoPlayerControls"],[data-testid="videoPlayerOverlay"],[role="application"],[aria-label*="Video"]`;
 var STATUS_LINK_SELECTOR = "a[href*=\"/status/\"]";
 var TWITTER_MEDIA_SELECTOR = "img[src*=\"pbs.twimg.com\"], video[src*=\"video.twimg.com\"]";
-var STABLE_TWEET_CONTAINERS_SELECTORS = ["article[data-testid=\"tweet\"]", "article[role=\"article\"]"];
-var STABLE_MEDIA_CONTAINERS_SELECTORS = ["[data-testid=\"tweetPhoto\"]", "[data-testid=\"videoPlayer\"]"];
-var STABLE_VIDEO_CONTAINERS_SELECTORS = ["[data-testid=\"videoPlayer\"]", "video"];
-var STABLE_IMAGE_CONTAINERS_SELECTORS = ["[data-testid=\"tweetPhoto\"]", "img[src*=\"pbs.twimg.com\"]"];
-var STABLE_MEDIA_VIEWERS_SELECTORS = [
+var TWEET_CONTAINER_SELECTORS = [TWEET_SELECTOR, "article[role=\"article\"]"];
+var MEDIA_CONTAINER_SELECTORS = [TWEET_PHOTO_SELECTOR, VIDEO_PLAYER_SELECTOR];
+var VIDEO_CONTAINER_SELECTORS = [VIDEO_PLAYER_SELECTOR, "video"];
+var IMAGE_CONTAINER_SELECTORS = [TWEET_PHOTO_SELECTOR, "img[src*=\"pbs.twimg.com\"]"];
+var MEDIA_VIEWER_SELECTORS = [
 "[data-testid=\"photoViewer\"]",
 "[aria-modal=\"true\"][data-testid=\"Drawer\"]",
 "[aria-roledescription=\"carousel\"]"
 ];
+var STABLE_MEDIA_CONTAINERS_SELECTORS = MEDIA_CONTAINER_SELECTORS;
+var STABLE_MEDIA_VIEWERS_SELECTORS = MEDIA_VIEWER_SELECTORS;
 var warnInvalidSelectorOnce = (selector, error) => {};
-function closestWithFallback(element, selectors) {
-for (const selector of selectors) try {
+var logFallbackSelectorMatchOnce = (selector, index, options) => {};
+function closestWithFallback(element, selectors, options = {}) {
+for (const [index, selector] of selectors.entries()) try {
 const match = element.closest(selector);
-if (match) return match;
+if (match) {
+logFallbackSelectorMatchOnce(selector, index, options);
+return match;
+}
 } catch (error) {
 warnInvalidSelectorOnce(selector, error);
 }
@@ -1191,7 +1260,7 @@ return;
 }
 }
 function extractTweetTextHTMLFromClickedElement(element, _maxDepth = 10) {
-const tweetArticle = closestWithFallback(element, STABLE_TWEET_CONTAINERS_SELECTORS);
+const tweetArticle = closestWithFallback(element, TWEET_CONTAINER_SELECTORS, { debugLabel: "tweet-container" });
 if (tweetArticle) return extractTweetTextHTML(tweetArticle);
 }
 var MEDIA = {
@@ -1452,7 +1521,7 @@ var DOMFallbackExtractor = class {
 async extract(tweetInfo, clickedElement, _options, extractionId) {
 const startedAt = getTimestamp();
 try {
-const tweetContainer = clickedElement.closest(TWEET_ARTICLE_SELECTOR);
+const tweetContainer = closestWithFallback(clickedElement, TWEET_CONTAINER_SELECTORS, { debugLabel: "tweet-container" });
 if (!tweetContainer || !(tweetContainer instanceof HTMLElement)) return createFailureResult$1("No tweet container found", startedAt);
 const tweetTextHTML = extractTweetTextHTMLFromClickedElement(clickedElement);
 const mediaElements = findAllMediaInContainer(tweetContainer);
@@ -1534,7 +1603,7 @@ confidence: .8
 return null;
 };
 var extractFromDOM = (element) => {
-const container = element.closest(TWEET_ARTICLE_SELECTOR);
+const container = closestWithFallback(element, TWEET_CONTAINER_SELECTORS, { debugLabel: "tweet-container" });
 if (!container) return null;
 const statusLink = container.querySelector(STATUS_LINK_SELECTOR);
 if (!statusLink) return null;
@@ -2680,53 +2749,6 @@ this.clearPrefetchCache();
 this.onDestroy();
 }
 };
-function isDisposable(value) {
-return value !== null && typeof value === "object" && "destroy" in value && typeof value.destroy === "function";
-}
-var CoreService = class CoreService {
-static singleton = createSingleton(() => new CoreService());
-services =  new Map();
-constructor() {}
-static getInstance() {
-return CoreService.singleton.get();
-}
-register(key, instance, options) {
-const allowOverride = options?.allowOverride ?? false;
-const onDuplicate = options?.onDuplicate ?? "warn";
-if (this.services.has(key) && !allowOverride) {
-if (onDuplicate === "throw") throw new Error(`[CoreService] Duplicate service key: ${key}`);
-return;
-}
-this.services.set(key, instance);
-}
-get(key) {
-if (this.services.has(key)) return this.services.get(key);
-throw new Error(`Service not found: ${key}`);
-}
-tryGet(key) {
-if (this.services.has(key)) return this.services.get(key);
-return null;
-}
-has(key) {
-return this.services.has(key);
-}
-getRegisteredServices() {
-return Array.from(this.services.keys());
-}
-cleanup() {
-this.services.forEach((service) => {
-try {
-if (isDisposable(service)) service.destroy();
-} catch (e) {
-logger.error("Service cleanup failed", e);
-}
-});
-this.services.clear();
-}
-reset() {
-this.cleanup();
-}
-};
 var APP_SETTINGS_STORAGE_KEY = "xeg-app-settings";
 var THEME_DOM_ATTRIBUTE = "data-theme";
 function syncThemeAttributes(theme, options = {}) {
@@ -2874,8 +2896,6 @@ return ThemeService.singleton.get();
 constructor() {
 this.lifecycle = createLifecycle("ThemeService", { onInitialize: () => this.onInitialize() });
 this.mediaQueryList = this.createMediaQueryList();
-this.themeSetting = this.loadThemeSync();
-this.applyCurrentTheme(true);
 }
 async initialize() {
 return this.lifecycle.initialize();
@@ -2895,6 +2915,7 @@ else await this.restoreThemeSettingFromStorage();
 }
 this.initializeThemeScopeObservation();
 this.initializeSystemDetection();
+this.applyCurrentTheme(true);
 }
 bindSettingsService(settingsService) {
 if (!settingsService || this.boundSettingsService === settingsService) return;
@@ -3028,13 +3049,6 @@ return false;
 notifyListeners() {
 this.listeners.forEach((listener) => listener(this.currentTheme, this.themeSetting));
 }
-loadThemeSync() {
-try {
-return this.storage.getSync("xeg-app-settings")?.gallery?.theme ?? "auto";
-} catch {
-return "auto";
-}
-}
 async loadThemeAsync() {
 try {
 return (await this.storage.get("xeg-app-settings"))?.gallery?.theme ?? null;
@@ -3048,23 +3062,6 @@ const core = CoreService.getInstance();
 if (!core.has(SERVICE_KEYS.THEME)) core.register(SERVICE_KEYS.THEME, ThemeService.getInstance());
 if (!core.has(SERVICE_KEYS.LANGUAGE)) core.register(SERVICE_KEYS.LANGUAGE, LanguageService.getInstance());
 if (!core.has(SERVICE_KEYS.MEDIA_SERVICE)) core.register(SERVICE_KEYS.MEDIA_SERVICE, MediaService.getInstance());
-}
-async function initializeCoreBaseServices() {
-try {
-registerCoreServices();
-const coreService = CoreService.getInstance();
-const serviceKeys = [
-SERVICE_KEYS.THEME,
-SERVICE_KEYS.LANGUAGE,
-SERVICE_KEYS.MEDIA_SERVICE
-];
-for (const key of serviceKeys) {
-const service = coreService.get(key);
-if (service?.initialize) await service.initialize();
-}
-} catch (error) {
-throw new Error("[base-services] initialization failed", { cause: error instanceof Error ? error : new Error(String(error)) });
-}
 }
 async function initializeCriticalSystems() {
 registerCoreServices();
@@ -3870,9 +3867,6 @@ return LanguageService.getInstance();
 }
 function getMediaService() {
 return MediaService.getInstance();
-}
-function getGalleryRenderer() {
-return CoreService.getInstance().get(SERVICE_KEYS.GALLERY_RENDERER);
 }
 async function getDownloadOrchestrator() {
 const coreService = CoreService.getInstance();
@@ -4954,6 +4948,16 @@ viewMode: uiSignals.viewMode,
 focusedIndex: createSignalSafe(null),
 currentVideoElement: createSignalSafe(null)
 };
+function applyGallerySessionUpdate(state) {
+batch(() => {
+gallerySignals.mediaItems.value = state.mediaItems;
+gallerySignals.currentIndex.value = state.currentIndex;
+gallerySignals.focusedIndex.value = state.focusedIndex;
+gallerySignals.currentVideoElement.value = state.currentVideoElement;
+gallerySignals.error.value = state.error;
+gallerySignals.isOpen.value = state.isOpen;
+});
+}
 function applyGalleryStateUpdate(state) {
 batch(() => {
 gallerySignals.mediaItems.value = state.mediaItems;
@@ -4986,26 +4990,25 @@ callback(galleryState.value);
 };
 function openGallery(items, startIndex = 0) {
 const validIndex = clampIndex(startIndex, items.length);
-galleryState.value = {
-...galleryState.value,
+applyGallerySessionUpdate({
 isOpen: true,
 mediaItems: items,
 currentIndex: validIndex,
+focusedIndex: validIndex,
+currentVideoElement: null,
 error: null
-};
-gallerySignals.focusedIndex.value = validIndex;
+});
 resetNavigation();
 }
 function closeGallery() {
-galleryState.value = {
-...galleryState.value,
+applyGallerySessionUpdate({
 isOpen: false,
 currentIndex: 0,
 mediaItems: [],
+focusedIndex: null,
+currentVideoElement: null,
 error: null
-};
-gallerySignals.focusedIndex.value = null;
-gallerySignals.currentVideoElement.value = null;
+});
 resetNavigation();
 }
 function navigateToItem(index, trigger = "button", source) {
@@ -5549,8 +5552,8 @@ skippedCount: inspectedCount - pausedCount
 if (result.pausedCount > 0) {}
 return result;
 }
-var VIDEO_TRIGGER_SELECTORS = [VIDEO_PLAYER_SELECTOR, ...STABLE_VIDEO_CONTAINERS_SELECTORS];
-var IMAGE_TRIGGER_SELECTORS = [TWEET_PHOTO_SELECTOR, ...STABLE_IMAGE_CONTAINERS_SELECTORS];
+var VIDEO_TRIGGER_SELECTORS = VIDEO_CONTAINER_SELECTORS;
+var IMAGE_TRIGGER_SELECTORS = IMAGE_CONTAINER_SELECTORS;
 var PAUSE_RESULT_DEFAULT = {
 pausedCount: 0,
 totalCandidates: 0,
@@ -5558,7 +5561,7 @@ skippedCount: 0
 };
 function findTweetContainer(element) {
 if (!element) return null;
-return closestWithFallback(element, STABLE_TWEET_CONTAINERS_SELECTORS);
+return closestWithFallback(element, TWEET_CONTAINER_SELECTORS, { debugLabel: "tweet-container" });
 }
 function resolvePauseContext(request) {
 if (request.root !== void 0) return {
@@ -5578,18 +5581,12 @@ scope: "document"
 function isVideoTriggerElement(element) {
 if (!element) return false;
 if (element.tagName === "VIDEO") return true;
-for (const selector of VIDEO_TRIGGER_SELECTORS) try {
-if (element.matches(selector)) return true;
-} catch {}
-return closestWithFallback(element, VIDEO_TRIGGER_SELECTORS) !== null;
+return closestWithFallback(element, VIDEO_TRIGGER_SELECTORS, { debugLabel: "video-container" }) !== null;
 }
 function isImageTriggerElement(element) {
 if (!element) return false;
 if (element.tagName === "IMG") return true;
-for (const selector of IMAGE_TRIGGER_SELECTORS) try {
-if (element.matches(selector)) return true;
-} catch {}
-return closestWithFallback(element, IMAGE_TRIGGER_SELECTORS) !== null;
+return closestWithFallback(element, IMAGE_TRIGGER_SELECTORS, { debugLabel: "image-container" }) !== null;
 }
 function inferAmbientVideoTrigger(element) {
 if (isVideoTriggerElement(element)) return "video-click";
@@ -5610,6 +5607,7 @@ force
 } catch (error) {
 return {
 ...PAUSE_RESULT_DEFAULT,
+failed: true,
 trigger,
 forced: force,
 reason,
@@ -5619,6 +5617,7 @@ scope
 if (result.totalCandidates > 0 || result.pausedCount > 0) {}
 return {
 ...result,
+failed: false,
 trigger,
 forced: force,
 reason,
@@ -5650,7 +5649,6 @@ guardDispose?.();
 guardDispose = null;
 };
 var GalleryApp = class {
-galleryRenderer = null;
 isInitialized = false;
 notificationService = NotificationService.getInstance();
 ambientVideoGuardDispose = null;
@@ -5658,15 +5656,13 @@ constructor() {}
 async initialize() {
 if (this.isInitialized) return;
 try {
-this.galleryRenderer = getGalleryRenderer();
-this.galleryRenderer?.setOnCloseCallback(() => this.closeGallery());
 await this.setupEventHandlers();
 this.ambientVideoGuardDispose = this.ambientVideoGuardDispose ?? startAmbientVideoGuard();
 this.isInitialized = true;
 } catch (error) {
 this.isInitialized = false;
-this.galleryRenderer = null;
 galleryErrorReporter.critical(error, { code: "GALLERY_APP_INIT_FAILED" });
+throw error;
 }
 }
 async setupEventHandlers() {
@@ -5716,13 +5712,10 @@ if (mediaItems.length === 0) return;
 try {
 const validIndex = clampIndex(startIndex, mediaItems.length);
 const providedContext = options.pauseContext ?? null;
-const pauseContext = {
+pauseAmbientVideosForGallery({
 ...providedContext,
 reason: providedContext?.reason ?? (providedContext ? "media-click" : "programmatic")
-};
-try {
-pauseAmbientVideosForGallery(pauseContext);
-} catch (error) {}
+});
 openGallery(mediaItems, validIndex);
 } catch (error) {
 galleryErrorReporter.error(error, {
@@ -5752,7 +5745,6 @@ this.ambientVideoGuardDispose = null;
 try {
 cleanupGalleryEvents();
 } catch (error) {}
-this.galleryRenderer = null;
 this.isInitialized = false;
 delete globalThis.xegGalleryDebug;
 } catch (error) {
@@ -9038,10 +9030,8 @@ const [mounted, setMounted] = createSignal(true);
 const notifyError = (error) => {
 if (lastError === error) return;
 lastError = error;
-try {
 const { title, body } = translateError(error);
 NotificationService.getInstance().error(title, body);
-} catch {}
 };
 const handleRetry = () => {
 lastError = void 0;
@@ -9087,6 +9077,7 @@ container = null;
 isMounting = false;
 stateUnsubscribe = null;
 onCloseCallback = null;
+notificationService = NotificationService.getInstance();
 constructor() {
 this.setupStateSubscription();
 }
@@ -9169,13 +9160,26 @@ return CSS.CLASSES.VERTICAL_VIEW;
 };
 mountGallery(this.container, () => createComponent(Root, {}));
 }
+getDownloadErrorNotification(error) {
+const message = getErrorMessage(error) || "Unknown error";
+try {
+const languageService = getLanguageService();
+return {
+title: languageService.translate("msg.dl.one.err.t"),
+body: languageService.translate("msg.dl.one.err.b", { error: message })
+};
+} catch {
+return {
+title: "Download failed",
+body: message
+};
+}
+}
 async handleDownload(type) {
 if (isDownloadLocked()) return;
 const releaseLock = acquireDownloadLock();
 const notifyError = (title, body) => {
-try {
-NotificationService.getInstance().error(title, body);
-} catch {}
+this.notificationService.error(title, body);
 };
 try {
 const languageService = getLanguageService();
@@ -9235,16 +9239,9 @@ notifyError(title, body);
 }
 } catch (error) {
 logger.error("Download failed", error);
-try {
-const languageService = getLanguageService();
-const message = getErrorMessage(error) || "Unknown error";
-const title = languageService.translate("msg.dl.one.err.t");
-const body = languageService.translate("msg.dl.one.err.b", { error: message });
+const { title, body } = this.getDownloadErrorNotification(error);
 setError(body);
 notifyError(title, body);
-} catch {
-setError(getErrorMessage(error) || "Download failed.");
-}
 } finally {
 releaseLock();
 }
@@ -9270,10 +9267,6 @@ this.container = null;
 }
 }
 async render(mediaItems, renderOptions) {
-const pauseContext = renderOptions?.pauseContext ?? { reason: "programmatic" };
-try {
-pauseAmbientVideosForGallery(pauseContext);
-} catch (error) {}
 openGallery(mediaItems, renderOptions?.startIndex ?? 0);
 }
 close() {
@@ -9637,40 +9630,32 @@ assertInitialized() {
 if (!this.isInitialized()) throw new Error("SettingsService must be initialized before use");
 }
 };
-var rendererRegistrationTask = null;
-async function registerRenderer() {
-if (!rendererRegistrationTask) rendererRegistrationTask = (async () => {
+function ensureRendererRegistered() {
+if (CoreService.getInstance().has(SERVICE_KEYS.GALLERY_RENDERER)) return;
 registerGalleryRenderer(new GalleryRenderer());
-})().finally(() => {
-rendererRegistrationTask = null;
-});
-await rendererRegistrationTask;
 }
-async function initializeServices() {
-if (!(isGMAPIAvailable("download") || isGMAPIAvailable("setValue"))) bootstrapErrorReporter.warn(  new Error("Tampermonkey APIs limited"), { code: "GM_API_LIMITED" });
-let settingsService = null;
-try {
+async function initializeSettingsService() {
+const existingSettings = tryGetSettingsManager();
+if (existingSettings) {
+if (existingSettings.isInitialized?.() === false && existingSettings.initialize) await existingSettings.initialize();
+return;
+}
 const service = new SettingsService();
 await service.initialize();
 registerSettingsManager(service);
-settingsService = service;
+}
+async function initializeGalleryServices() {
+if (!(isGMAPIAvailable("download") || isGMAPIAvailable("setValue"))) bootstrapErrorReporter.warn(  new Error("Tampermonkey APIs limited"), { code: "GM_API_LIMITED" });
+try {
+await initializeSettingsService();
 } catch (error) {
 settingsErrorReporter.warn(error, { code: "SETTINGS_SERVICE_INIT_FAILED" });
-try {
 await NotificationService.getInstance().error("Settings unavailable", "Defaults will be used until settings load.");
-} catch (notifyError) {}
-}
-try {
-const themeService = getThemeService();
-if (!themeService.isInitialized()) await themeService.initialize();
-if (settingsService) themeService.bindSettingsService(settingsService);
-} catch (error) {
-bootstrapErrorReporter.warn(error, { code: "THEME_SYNC_FAILED" });
 }
 }
 async function initializeGalleryApp() {
 try {
-await Promise.all([registerRenderer(), initializeServices()]);
+ensureRendererRegistered();
 const galleryApp = new GalleryApp();
 await galleryApp.initialize();
 return galleryApp;
@@ -9773,9 +9758,11 @@ selectedLog?.(label, error);
 async function runBootstrapStages() {
 await initializeCriticalSystems();
 try {
+await initializeGalleryServicesStage();
+} catch {}
+try {
 await initializeBaseServicesStage();
 } catch {}
-await applyInitialThemeSetting();
 setupGlobalEventHandlers();
 await initializeGallery();
 }
@@ -9787,16 +9774,13 @@ bootstrapErrorReporter.warn(error, { code: "BASE_SERVICES_INIT_FAILED" });
 throw error;
 }
 }
-async function applyInitialThemeSetting() {
+async function initializeGalleryServicesStage() {
 try {
-const themeService = getThemeService();
-if (typeof themeService.isInitialized === "function" && !themeService.isInitialized()) await themeService.initialize();
-const savedSetting = themeService.getCurrentTheme();
-themeService.setTheme(savedSetting, {
-force: true,
-persist: false
-});
-} catch (error) {}
+await initializeGalleryServices();
+} catch (error) {
+bootstrapErrorReporter.warn(error, { code: "GALLERY_SERVICES_INIT_FAILED" });
+throw error;
+}
 }
 function setupGlobalEventHandlers() {
 tearDownGlobalEventHandlers();
@@ -9806,13 +9790,14 @@ cleanup().catch((error) => {});
 }
 async function cleanup() {
 try {
-tearDownGlobalEventHandlers();
-tearDownCommandRuntime();
 await runOptionalCleanup("1", async () => {
-if (!lifecycleState.galleryApp) return;
-await lifecycleState.galleryApp.cleanup();
+const galleryApp = lifecycleState.galleryApp;
 lifecycleState.galleryApp = null;
+if (!galleryApp) return;
+await galleryApp.cleanup();
 });
+tearDownCommandRuntime();
+tearDownGlobalEventHandlers();
 await runOptionalCleanup("2", () => {
 CoreService.getInstance().cleanup();
 });
