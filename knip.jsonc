@@ -12,5 +12,5 @@
   ],
   "ignoreDependencies": [
     "@biomejs/cli-linux-x64"
-  ],
+  ]
 }

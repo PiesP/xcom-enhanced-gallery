@@ -11,15 +11,23 @@
  * - XEG_BUILD_AUTO_CONNECT: '1', 'true', 'on' enable auto-detection; 'report' shows analysis
  */
 
+import { readFileSync, statSync } from 'node:fs';
+import { gzipSync } from 'node:zlib';
 import type { Plugin } from 'vite';
 import { getBuildModeConfig } from '../build-mode';
-import { USERSCRIPT_CONFIG } from '../constants';
+import { OUTPUT_FILE_NAMES, USERSCRIPT_CONFIG } from '../constants';
 import {
   collectUsedUserscriptConnects,
   collectUsedUserscriptGrants,
   generateUserscriptHeader,
 } from '../userscript/metadata';
 import { resolveVersion } from '../version';
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
 
 /**
  * Creates a Vite plugin that injects userscript metadata header and build summary.
@@ -149,6 +157,18 @@ export function userscriptHeaderPlugin(mode: string): Plugin {
       info.forEach((line) => console.log(`   ${line}`));
       console.log('─'.repeat(50));
       console.log(`📌 Version: ${version}`);
+
+      const bundleName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
+      const bundlePath = `dist/${bundleName}`;
+      try {
+        const stats = statSync(bundlePath);
+        const gzipped = gzipSync(readFileSync(bundlePath)).length;
+        console.log(
+          `📦 Bundle: ${bundleName} — ${formatBytes(stats.size)} (gzip ${formatBytes(gzipped)})`
+        );
+      } catch {
+        // Bundle size reporting is best-effort; ignore read errors.
+      }
     },
   };
 }

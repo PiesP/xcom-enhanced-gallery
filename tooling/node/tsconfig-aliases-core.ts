@@ -26,13 +26,13 @@ function escapeRegExp(input: string): string {
  * Convert a TypeScript path alias key to a Vite-compatible find pattern.
  * Handles wildcards and exact matches appropriately.
  *
- * @param key - The TypeScript path alias key (e.g., "@shared/*" or "@core")
+ * @param key - The TypeScript path alias key (e.g., "@shared/*" or "@constants")
  * @returns A string for prefix matching or RegExp for exact matching; null to skip
  *
  * Conversions:
  * - "*" (catch-all) → null (skipped, not meaningful for bundler)
  * - "@shared/*" → "@shared/" (prefix match)
- * - "@core" → /^@core$/ (exact match with regex)
+ * - "@constants" → /^@constants$/ (exact match with regex)
  */
 function toViteFind(key: string): string | RegExp | null {
   // Ignore catch-all mappings (not meaningful for bundler aliasing)
@@ -105,7 +105,7 @@ interface BuildViteAliasesOptions {
  *
  * Transforms TypeScript path aliases into Vite-compatible format, handling:
  * - Wildcard patterns ("@shared/*" → "@shared/")
- * - Exact matches ("@core" → /^@core$/)
+ * - Exact matches ("@constants" → /^@constants$/)
  * - Path normalization and trailing slash consistency
  *
  * @param paths - The TypeScript compilerOptions.paths record

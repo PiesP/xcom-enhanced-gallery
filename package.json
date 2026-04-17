@@ -12,7 +12,7 @@
     "check:tools": "tsc --noEmit --project tsconfig.tools.json",
     "check": "pnpm check:src && pnpm check:tools",
     "check:tsdoc": "node ./tooling/node/check-tsdoc.ts",
-    "knip": "knip",
+    "knip": "knip --no-config-hints",
     "lint": "biome lint ./src ./tooling vite.config.ts",
     "lint:fix": "biome lint --write ./src ./tooling vite.config.ts",
     "fmt:fix": "biome check --write --linter-enabled=false ./src ./tooling vite.config.ts",
