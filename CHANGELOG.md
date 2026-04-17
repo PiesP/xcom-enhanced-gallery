@@ -8,6 +8,18 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-04-17
+
+### Changed
+
+- **Bootstrap & Lifecycle**: Removed the unused MVU dev runtime layer, collapsed `main.ts` into a single startup/cleanup path, and switched base service initialization to direct singleton lifecycles.
+- **Tooling & Build UX**: Merged the production slim variants back into the canonical sources, added bundle-size reporting to the build banner, and silenced knip config-hint noise in the default script.
+- **Architecture Cleanup**: Removed unused barrels, legacy service-registration indirection, and stale alias/comment markers across shared tooling.
+
+### Fixed
+
+- **Tests & Runtime Consistency**: Updated the affected unit suites and storage expectations to match the simplified runtime.
+
 ## [1.7.5] - 2026-04-16
 
 ### Changed
