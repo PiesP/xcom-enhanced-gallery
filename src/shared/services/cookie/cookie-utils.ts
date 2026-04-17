@@ -4,7 +4,6 @@
  *
  * @fileoverview Cookie Service - Functional API
  * @description Provides cookie management with GM_cookie support and document.cookie fallback
- * @version 4.0.0 - Functional refactor from CookieService class
  */
 
 import { getUserscript } from '@shared/external/userscript/adapter';

@@ -1,6 +1,5 @@
 /**
  * @fileoverview Twitter API-Based Media Extractor (Primary Strategy)
- * @version 2.2.0 - Simplified
  */
 
 import { getErrorMessage } from '@shared/error/normalize';

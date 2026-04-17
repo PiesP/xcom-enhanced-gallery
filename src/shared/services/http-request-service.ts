@@ -1,5 +1,5 @@
 /**
- * HTTP Request Service - Phase 373
+ * HTTP Request Service
  *
  * Provides a type-safe, Promise-based HTTP client using GM_xmlhttpRequest.
  *
@@ -60,7 +60,7 @@ interface HttpResponse<T = unknown> {
  * Uses GM_xmlhttpRequest as primary method for cross-origin support.
  *
  * Features:
- * - Phase 373: GM_xmlhttpRequest as primary HTTP method
+ * - GM_xmlhttpRequest as primary HTTP method
  * - Detects Tampermonkey, test, extension, and console environments
  * - Requires @connect directives for cross-origin requests
  */
@@ -75,7 +75,7 @@ export class HttpRequestService {
 
   /**
    * Perform HTTP request using GM_xmlhttpRequest
-   * Phase 373: Re-introduced for cross-origin support
+   * Re-introduced for cross-origin support
    */
   private async request<T>(
     method: string,

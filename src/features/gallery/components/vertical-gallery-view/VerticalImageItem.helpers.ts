@@ -4,7 +4,6 @@
  *
  * @fileoverview VerticalImageItem Helper Utilities
  * @description Helpers for filename cleaning, video detection, and media processing.
- * @version 1.1.0
  */
 
 import type { MediaInfo } from '@shared/types/media.types';

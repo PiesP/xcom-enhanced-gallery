@@ -1,6 +1,5 @@
 /**
  * @fileoverview Gallery UI State Management
- * @version 1.0.0 - Phase: State Management Simplification
  *
  * UI state extracted from gallery.signals.ts for modularity.
  * Manages view mode, loading, and error states.

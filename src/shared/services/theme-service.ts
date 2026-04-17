@@ -1,7 +1,6 @@
 /**
  * Core Layer - Theme Service
  * System theme detection and application service
- * @version 5.0.0 - Composition-based lifecycle
  */
 
 import { SERVICE_KEYS } from '@constants/service-keys';

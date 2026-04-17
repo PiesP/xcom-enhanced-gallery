@@ -1,41 +1,24 @@
 /**
  * @fileoverview Core base services initialization for application bootstrap.
  *
- * Initializes and registers essential services (theme, language, media) required
- * for application functionality.
+ * Invokes lifecycle `initialize()` on ES module singletons (theme, language, media).
  */
 
-import { SERVICE_KEYS } from '@constants/service-keys';
-import { logger } from '@shared/logging/logger';
-import { CoreService } from '@shared/services/service-manager';
-import type { BaseService } from '@shared/types/core/base-service.types';
+import { LanguageService } from '@shared/services/language-service';
+import { MediaService } from '@shared/services/media-service';
+import { ThemeService } from '@shared/services/theme-service';
 
-/**
- * Initialize core base services (theme, language, media).
- *
- * Initializes services sequentially after `initializeCriticalSystems()` has
- * registered them with the service container.
- *
- * @throws Error if any service initialization fails
- */
 export async function initializeCoreBaseServices(): Promise<void> {
   try {
-    const coreService = CoreService.getInstance();
-    const serviceKeys = [
-      SERVICE_KEYS.THEME,
-      SERVICE_KEYS.LANGUAGE,
-      SERVICE_KEYS.MEDIA_SERVICE,
-    ] as const;
-
-    for (const key of serviceKeys) {
-      const service = coreService.get<BaseService>(key);
+    const services = [
+      ThemeService.getInstance(),
+      LanguageService.getInstance(),
+      MediaService.getInstance(),
+    ];
+    for (const service of services) {
       if (service?.initialize) {
         await service.initialize();
       }
-    }
-
-    if (__DEV__) {
-      logger.debug('[base-services] Base services ready');
     }
   } catch (error) {
     throw new Error('[base-services] initialization failed', {

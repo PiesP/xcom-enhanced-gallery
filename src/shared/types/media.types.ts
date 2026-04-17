@@ -27,7 +27,7 @@ export interface MediaInfo {
   readonly tweetId?: string | undefined;
   readonly tweetUrl?: string | undefined;
   readonly tweetText?: string | undefined;
-  /** Phase 2: Sanitized HTML from DOM */
+  /** Sanitized HTML from DOM */
   readonly tweetTextHTML?: string | undefined;
   readonly metadata?: Record<string, unknown> | undefined;
   /** Media source location (quote tweet case) */
@@ -70,7 +70,6 @@ export interface TweetInfo {
 }
 
 /**
- * Phase 342: Quote tweet information interface
  *
  * Represents the structure of a quote tweet (Quote Tweet):
  * - isQuoteTweet: Whether it is a quote tweet
@@ -181,7 +180,6 @@ export interface MediaExtractionResult {
     | undefined;
 }
 
-// ExtractionErrorCode was removed in Phase 353
 // Use ErrorCode directly: import { ErrorCode } from '@shared/types'
 
 /**

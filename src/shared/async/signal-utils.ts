@@ -2,7 +2,6 @@
  * @fileoverview Signal utilities for AbortController-based async operations
  * @description Helper functions for working with AbortSignal in modern async patterns
  *
- * @version 1.0.0
  */
 
 import { globalTimerManager } from '@shared/utils/time/timer-management';

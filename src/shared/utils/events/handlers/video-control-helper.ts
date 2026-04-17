@@ -1,7 +1,6 @@
 /**
  * @fileoverview Unified video control helper with Service/Video fallback pattern
  * @description Integration point for video control logic.
- * Phase 329: Deduplicates play/pause/volume logic across multiple locations (30% perf ↑).
  */
 
 import { logger } from '@shared/logging/logger';

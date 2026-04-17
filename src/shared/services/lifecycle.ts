@@ -1,6 +1,5 @@
 /**
  * @fileoverview Service Lifecycle Composition Utilities
- * @version 1.0.0 - Phase: Service Initialization Abstraction
  *
  * Provides composition-based service lifecycle management as an alternative
  * to the inheritance-based BaseServiceImpl pattern.

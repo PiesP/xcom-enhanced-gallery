@@ -22,7 +22,6 @@ import { isRecord } from '@shared/utils/types/guards';
  * Maps version strings to migration functions.
  *
  * @remarks
- * Currently includes Phase 447 migration for keyboard navigation fix.
  * Additional migrations can be added for future schema versions.
  */
 const migrations: MigrationRegistry = {

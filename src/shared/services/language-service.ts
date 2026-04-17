@@ -1,7 +1,6 @@
 /**
  * @fileoverview Multilingual Support Service
  * @description TDD-based simple i18n system with lazy language loading
- * @version 3.0.0 - Composition-based lifecycle
  */
 
 import {
@@ -19,7 +18,7 @@ import { getPersistentStorage } from '@shared/services/persistent-storage';
 import { createSingleton } from '@shared/utils/types/singleton';
 
 /**
- * Multilingual Service (Phase 355: Direct PersistentStorage usage)
+ * Multilingual Service
  * - onInitialize(): Restore language setting from storage
  * - onDestroy(): Clean up listeners
  *
@@ -122,7 +121,7 @@ export class LanguageService {
       }
     }
 
-    // Phase 117.1: Prevent duplicate saves when value hasn't changed
+    // Prevent duplicate saves when value is unchanged
     if (this.currentLanguage === normalized) {
       return;
     }

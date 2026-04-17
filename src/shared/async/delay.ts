@@ -2,7 +2,6 @@
  * @fileoverview Delay and timeout utilities with AbortSignal support
  * @description Modern async delay/timeout primitives replacing setTimeout-based patterns
  *
- * @version 1.1.0
  */
 
 import { combineSignals, createTimeoutController } from '@shared/async/signal-utils';

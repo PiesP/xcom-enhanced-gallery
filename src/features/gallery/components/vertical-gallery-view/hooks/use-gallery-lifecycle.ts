@@ -5,7 +5,7 @@
  *   Manages three coordinated effects: scroll setup, animation timing, and viewport observation.
  */
 
-import { ensureGalleryScrollAvailable } from '@edge/dom/ensure-gallery-scroll';
+import { ensureGalleryScrollAvailable } from '@shared/dom/ensure-gallery-scroll';
 import { observeViewportCssVars } from '@shared/dom/viewport';
 import { logger } from '@shared/logging/logger';
 import { animateGalleryEnter, animateGalleryExit } from '@shared/utils/css/css-animations';

@@ -1,15 +1,6 @@
 /**
- * @fileoverview Event Emitter
- * @description Lightweight type-safe event system for feature-local coordination.
- *
- * Features:
- * - Type-safe event emission and subscription
- * - Minimal bundle footprint
- * - Error isolation: listener exceptions do not cascade
- *
- * Guidelines:
- * - Use AppEventManager (\@shared/events/app-events) for application-wide events
- * - Use this emitter for feature-local, short-lived coordination
+ * @fileoverview Lightweight type-safe event emitter for feature-local coordination.
+ * Listener exceptions are isolated and do not cascade.
  */
 
 import type { EventEmitterInterface } from './emitter.types';

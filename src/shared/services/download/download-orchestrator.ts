@@ -9,7 +9,6 @@
  * **Download Strategies**:
  * - GM_download: Tampermonkey native (preferred, better UX)
  *
- * @version 3.0.0 - Composition-based lifecycle
  */
 
 import { planBulkDownload, planZipSave } from '@shared/core/download/download-plan';

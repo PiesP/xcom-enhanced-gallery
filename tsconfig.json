@@ -34,8 +34,6 @@
     // Path Aliases (synchronized with package.json imports)
     "paths": {
       "@/*": ["./src/*"],
-      "@core/*": ["./src/core/*"],
-      "@edge/*": ["./src/edge/*"],
       "@bootstrap/*": ["./src/bootstrap/*"],
       "@constants/*": ["./src/constants/*"],
       "@features/*": ["./src/features/*"],

@@ -1,7 +1,6 @@
 /**
  * Twitter Media Types and API Response Structures
  * @module \@shared/services/media/types
- * @version 2.0.0 - Added inline media types for note_tweet support
  */
 
 /** Twitter API response envelope */

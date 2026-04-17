@@ -125,31 +125,7 @@ export default defineConfig(({ mode }): UserConfig => {
     root,
 
     resolve: {
-      alias: [
-        ...mediaExtractionAliases,
-        // Bundle-size optimization: In production we swap the full AppErrorReporter
-        // implementation for a slimmer one. This avoids shipping large docstrings
-        // and verbose payload keys in a non-minified build.
-        ...(isProd
-          ? [
-              {
-                find: '@shared/logging/logger',
-                replacement: resolve(root, 'src/shared/logging/logger.slim.ts'),
-              },
-              {
-                find: '@shared/error/app-error-reporter',
-                replacement: resolve(root, 'src/shared/error/app-error-reporter.slim.ts'),
-              },
-              // Bundle-size optimization: Avoid shipping dev-only PersistentStorage members
-              // that compile to no-ops in production but still take bytes in a non-minified build.
-              {
-                find: '@shared/services/persistent-storage',
-                replacement: resolve(root, 'src/shared/services/persistent-storage.slim.ts'),
-              },
-            ]
-          : []),
-        ...buildPathAliases(root),
-      ],
+      alias: [...mediaExtractionAliases, ...buildPathAliases(root)],
     },
 
     build: {

@@ -1,6 +1,5 @@
 /**
  * Common Result pattern
- * @version 2.2.0 - Enum → const object for tree-shaking optimization
  */
 
 const BaseResultStatusValues = ['success', 'partial', 'error', 'cancelled'] as const;
@@ -62,7 +61,7 @@ export type Result<T> = ResultSuccess<T> | ResultPartial<T> | ResultError;
 
 /**
  * Asynchronous Result type - wraps Result in Promise
- * Commonly used for async operations (Phase 353)
+ * Commonly used for async operations
  *
  * @example
  * ```ts
@@ -74,7 +73,7 @@ export type Result<T> = ResultSuccess<T> | ResultPartial<T> | ResultError;
 export type AsyncResult<T> = Promise<Result<T>>;
 
 // ============================================================================
-// Result Utility Functions (Phase 355.2)
+// Result Utility Functions
 // ============================================================================
 
 /**

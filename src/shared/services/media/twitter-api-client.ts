@@ -1,7 +1,6 @@
 /**
  * @fileoverview Twitter Video Extractor - GraphQL API Integration
  * @description Facade for Twitter API interactions, delegating to specialized services.
- * @version 4.1.0 - Simplified request flow, improved host detection, async CSRF support
  */
 
 import { TWITTER_API_CONFIG } from '@constants/twitter-api';
