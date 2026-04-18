@@ -2,33 +2,30 @@ name: 🤖 Dependabot Auto-Merge
 
 # Responsibility: Auto-merge safe dependabot PRs
 # - GitHub Actions: patch/minor updates
-# - npm (root workspace): patch/minor updates for specific safe groups
-# - Requires CI to pass first
+# - npm: patch/minor updates for specific safe packages
+# - Requires CI to pass first (via GitHub branch protection)
 # Note: test/ directory is managed in a separate repository
 
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
-  # Re-evaluate when check suites complete
-  check_suite:
-    types: [completed]
 
 permissions:
   contents: write
   pull-requests: write
-  checks: read
 
-# Concurrency control for sequential processing
 concurrency:
-  group: dependabot-auto-merge
-  cancel-in-progress: false
+  group: auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
-  auto-merge:
+  dependabot:
     name: 🤖 Auto-Merge Dependabot
     runs-on: ubuntu-latest
-    timeout-minutes: 15 # Increased to accommodate check waiting time
-    if: github.actor == 'dependabot[bot]' && github.event.pull_request != null
+    timeout-minutes: 10
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: 📥 Fetch Dependabot metadata
         id: dependabot-metadata
@@ -36,131 +33,59 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: ⏳ Wait for required checks
-        id: wait-checks
+      - name: 🔍 Decide merge eligibility
+        id: decide
         run: |
-          echo "⏳ Waiting for required CI and security checks..."
+          set -euo pipefail
 
-          # Required checks (must match job names in ci.yaml and security.yaml)
-          REQUIRED_CHECKS=(
-            "🧹 Biome (Lint + Format)"
-            "🧪 TypeScript Checks"
-            "🚀 Build"
-            "🛡️ OSV Vulnerability Scan (PR Diff)"
-            "📜 License Compliance Check"
-          )
+          ECOSYSTEM="${{ steps.dependabot-metadata.outputs.package-ecosystem }}"
+          UPDATE_TYPE="${{ steps.dependabot-metadata.outputs.update-type }}"
+          DEPENDENCIES="${{ steps.dependabot-metadata.outputs.dependency-names }}"
+          ALERT_STATE="${{ steps.dependabot-metadata.outputs.alert-state }}"
+          SHOULD_MERGE="false"
+          REASON="manual review required"
 
-          MAX_WAIT=600  # 10 minutes
-          ELAPSED=0
-          INTERVAL=30
-
-          while [ $ELAPSED -lt $MAX_WAIT ]; do
-            ALL_SUCCESS=true
-
-            for check in "${REQUIRED_CHECKS[@]}"; do
-              STATUS=$(gh pr checks "$PR_NUMBER" --json name,state --jq ".[] | select(.name == \"$check\") | .state" 2>/dev/null || echo "PENDING")
-
-              if [ "$STATUS" == "FAILURE" ]; then
-                echo "❌ Check failed: $check"
-                echo "checks_passed=false" >> $GITHUB_OUTPUT
-                exit 0
-              elif [ "$STATUS" != "SUCCESS" ]; then
-                ALL_SUCCESS=false
-              fi
+          if [[ -n "$ALERT_STATE" ]]; then
+            SHOULD_MERGE="true"
+            REASON="security advisory update"
+          elif [[ "$ECOSYSTEM" == "github-actions" && ("$UPDATE_TYPE" == "version-update:semver-patch" || "$UPDATE_TYPE" == "version-update:semver-minor") ]]; then
+            SHOULD_MERGE="true"
+            REASON="safe github-actions patch/minor"
+          elif [[ "$ECOSYSTEM" == "npm" && ("$UPDATE_TYPE" == "version-update:semver-patch" || "$UPDATE_TYPE" == "version-update:semver-minor") ]]; then
+            SAFE="true"
+            IFS=',' read -ra DEPS <<< "$DEPENDENCIES"
+            for dep in "${DEPS[@]}"; do
+              dep=$(echo "$dep" | xargs)
+              case "$dep" in
+                typescript|knip|vite|@types/*|@biomejs/*)
+                  ;;
+                *)
+                  SAFE="false"
+                  ;;
+              esac
             done
 
-            if [ "$ALL_SUCCESS" = true ]; then
-              echo "✅ All required checks passed"
-              echo "checks_passed=true" >> $GITHUB_OUTPUT
-              exit 0
+            if [[ "$SAFE" == "true" ]]; then
+              SHOULD_MERGE="true"
+              REASON="safe npm patch/minor set"
             fi
+          fi
 
-            echo "⏳ Waiting for checks to complete... (${ELAPSED}s/${MAX_WAIT}s)"
-            sleep $INTERVAL
-            ELAPSED=$((ELAPSED + INTERVAL))
-          done
+          echo "should_merge=$SHOULD_MERGE" >> "$GITHUB_OUTPUT"
+          echo "reason=$REASON" >> "$GITHUB_OUTPUT"
 
-          echo "⏰ Timeout waiting for checks"
-          echo "checks_passed=false" >> $GITHUB_OUTPUT
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 🔄 Auto-merge GitHub Actions updates
-        if: >-
-          steps.wait-checks.outputs.checks_passed == 'true' &&
-          steps.dependabot-metadata.outputs.package-ecosystem == 'github-actions' &&
-          (steps.dependabot-metadata.outputs.update-type == 'version-update:semver-patch' ||
-           steps.dependabot-metadata.outputs.update-type == 'version-update:semver-minor')
-        run: |
-          echo "🤖 Auto-merging GitHub Actions update"
-          echo "📦 Package: ${{ steps.dependabot-metadata.outputs.dependency-names }}"
-          echo "📊 Update type: ${{ steps.dependabot-metadata.outputs.update-type }}"
-          gh pr merge --auto --squash "$PR_URL"
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 🔄 Auto-merge safe npm groups
-        if: >-
-          steps.wait-checks.outputs.checks_passed == 'true' &&
-          steps.dependabot-metadata.outputs.package-ecosystem == 'npm' &&
-          (steps.dependabot-metadata.outputs.update-type == 'version-update:semver-patch' ||
-           steps.dependabot-metadata.outputs.update-type == 'version-update:semver-minor') &&
-          (contains(steps.dependabot-metadata.outputs.dependency-names, 'typescript') ||
-           contains(steps.dependabot-metadata.outputs.dependency-names, '@types/') ||
-           contains(steps.dependabot-metadata.outputs.dependency-names, '@biomejs/') ||
-           contains(steps.dependabot-metadata.outputs.dependency-names, 'knip') ||
-           contains(steps.dependabot-metadata.outputs.dependency-names, 'vite-plugin-'))
-        run: |
-          echo "🤖 Auto-merging safe npm group update"
-          echo "📦 Package: ${{ steps.dependabot-metadata.outputs.dependency-names }}"
-          echo "📊 Update type: ${{ steps.dependabot-metadata.outputs.update-type }}"
-          gh pr merge --auto --squash "$PR_URL"
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: ⏭️ Skip critical packages or major updates
-        if: >-
-          steps.dependabot-metadata.outputs.update-type == 'version-update:semver-major' ||
-          (steps.dependabot-metadata.outputs.package-ecosystem == 'npm' &&
-           (contains(steps.dependabot-metadata.outputs.dependency-names, 'solid-js') ||
-            contains(steps.dependabot-metadata.outputs.dependency-names, 'vite')))
-        run: |
-          echo "⚠️ Manual review required"
-          echo "📦 Package: ${{ steps.dependabot-metadata.outputs.dependency-names }}"
-          echo "📊 Update type: ${{ steps.dependabot-metadata.outputs.update-type }}"
-          echo "📝 Reason: Major update or critical package"
-
-      - name: 🚨 Notify on merge failure
-        if: failure()
-        run: |
-          gh pr comment "$PR_NUMBER" --body "⚠️ **Auto-merge failed**
-
-          Required checks did not pass or timed out. Please review manually.
-
-          - Check CI pipeline: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          - Review security scan results
-          - Verify no merge conflicts exist"
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  workflow-bot:
-    name: ⚙️ Auto-Merge Workflow PRs
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    if: >-
-      github.event.pull_request.user.login == 'github-actions[bot]' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      contains(github.event.pull_request.labels.*.name, 'automerge')
-    steps:
-      - name: 🔄 Queue auto-merge for workflow PR
+      - name: 🔄 Queue auto-merge
+        if: steps.decide.outputs.should_merge == 'true'
         run: |
           set -euo pipefail
           gh pr merge --auto --squash "$PR_URL"
-          echo "✅ Auto-merge queued for workflow PR"
+          echo "✅ Auto-merge queued: ${{ steps.decide.outputs.reason }}"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ⏭️ Keep for manual review
+        if: steps.decide.outputs.should_merge != 'true'
+        run: |
+          echo "⏭️ Manual review required"
+          echo "Reason: ${{ steps.decide.outputs.reason }}"

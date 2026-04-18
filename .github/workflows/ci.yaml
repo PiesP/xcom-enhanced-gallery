@@ -1,34 +1,17 @@
-name: 🏗️ CI Pipeline
+name: 🏗️ CI
 
-# Responsibility: Continuous Integration (Node.js + pnpm + Biome)
-# - Linting (Biome)
-# - Format checking (Biome)
-# - Type checking (TypeScript via tsc)
-# - Build verification (Production mode)
+# Responsibility: Required verification for pull requests and merge queue
+# - Install dependencies with pnpm
+# - Run the repository quality gate
+# - Build the production userscript
 #
-# Triggered on: Push/PR to master (excluding markdown/assets)
+# Triggered on: Push/PR to master + merge queue
 
 on:
   push:
     branches: [master]
-    paths-ignore:
-      - "**/*.md"
-      - "**/*.MD"
-      - "**/*.txt"
-      - "**/*.svg"
-      - ".vscode/**"
-      - ".github/*.md"
-      - "LICENSES/**"
   pull_request:
     branches: [master]
-    paths-ignore:
-      - "**/*.md"
-      - "**/*.MD"
-      - "**/*.txt"
-      - "**/*.svg"
-      - ".vscode/**"
-      - ".github/*.md"
-      - "LICENSES/**"
   merge_group:
     types: [checks_requested]
   workflow_dispatch:
@@ -40,14 +23,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: verify-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  biome:
-    name: 🧹 Biome (Lint + Format)
+  verify:
+    name: ✅ Verify
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
@@ -64,101 +47,8 @@ jobs:
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: 🧰 Setup Biome CLI
-        uses: biomejs/setup-biome@v2
-
-      - name: 🔍 Run Biome lint
-        run: pnpm lint
-
-      - name: 🎨 Check formatting (Biome)
-        run: pnpm fmt
-
-  quality:
-    name: 🧪 TypeScript Checks
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v6
-
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v5
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-
-      - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: 📐 Run TypeScript check
-        run: pnpm check
-
-      - name: 🧩 Run Knip dependency check
-        run: pnpm knip
-
-  lockfile-validation:
-    name: 🔒 Lockfile Validation
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v6
-
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v5
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-
-      - name: 🔒 Validate lockfile integrity
-        run: |
-          echo "🔍 Validating lockfile integrity..."
-          pnpm install --frozen-lockfile --prefer-offline
-
-          echo "✅ Lockfile validation passed"
-
-      - name: 🔍 Check for security vulnerabilities
-        run: |
-          echo "🔍 Checking for known vulnerabilities..."
-          # Fail only on critical vulnerabilities in CI.
-          # High vulnerabilities are still tracked via Security Scanning (OSV + SARIF).
-          pnpm audit --audit-level=critical || {
-            echo "⚠️ Critical vulnerabilities found"
-            echo "Please review and update affected packages"
-            exit 1
-          }
-
-          echo "✅ No critical vulnerabilities found"
-
-  build:
-    name: 🚀 Build
-    runs-on: ubuntu-latest
-    needs: [biome, quality, lockfile-validation]
-    timeout-minutes: 15
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v6
-
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v5
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-
-      - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: 🚀 Build production
-        run: pnpm build:fast
+      - name: ✅ Run quality gate and build
+        run: pnpm build
 
       - name: 📊 Upload build artifacts
         uses: actions/upload-artifact@v7

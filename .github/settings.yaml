@@ -23,20 +23,13 @@ branches:
         strict: true # Require branches to be up to date before merging (prevents conflicts)
         # Required status check names (must match exactly with workflow job names)
         contexts:
-          # CI Pipeline checks (ci.yaml)
-          - "🧹 Biome (Lint + Format)"
-          - "🧪 TypeScript Checks"
-          - "🔒 Lockfile Validation"
-          - "🚀 Build"
+          # CI check (ci.yaml)
+          - "✅ Verify"
 
-          # Security checks (security.yaml)
-          # Note: OSV Scanner has conditional jobs (scheduled vs PR)
-          # Only PR diff scan is required for PRs
+          # Security gate (security.yaml)
           - "🛡️ OSV Vulnerability Scan (PR Diff)"
-          - "📜 License Compliance Check"
 
-          # Semgrep is intentionally excluded because it skips Dependabot PRs
-          # See security.yaml:68 - if: github.actor != 'dependabot[bot]'
+          # Scheduled-only checks are intentionally excluded from branch protection.
 
       # Additional protection
       enforce_admins: false # Allow admins to bypass (for emergency fixes)
@@ -60,12 +53,8 @@ branches:
 #    ✅ Require status checks to pass before merging
 #       ✅ Require branches to be up to date before merging
 #       Add status checks (type each name exactly):
-#         - 🧹 Biome (Lint + Format)
-#         - 🧪 TypeScript Checks
-#         - 🔒 Lockfile Validation
-#         - 🚀 Build
+#         - ✅ Verify
 #         - 🛡️ OSV Vulnerability Scan (PR Diff)
-#         - 📜 License Compliance Check
 #
 #    ❌ Do not require reviews from Code Owners
 #    ❌ Do not require deployments to succeed

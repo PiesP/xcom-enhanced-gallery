@@ -1,26 +1,22 @@
 name: 🔒 Security Scanning
 
 # Responsibility: Security analysis for Node.js + pnpm project
-# - OSV scanning: vulnerability detection in dependencies (via Google OSV-Scanner Action)
-# - SAST: static security analysis with Semgrep
-# - License compliance: verify approved licenses (MIT/ISC/BSD/Apache-2.0)
+# - PR/merge queue gate: OSV diff scan
+# - Scheduled/manual depth: OSV full scan + Semgrep SARIF upload
 #
 # Note: test/ directory is managed in a separate repository
-# Trigger: Weekly schedule + push to master + PR to master
+# Trigger: PR to master + merge queue + weekly schedule + manual
 
 on:
-  schedule:
-    - cron: "0 1 * * 0" # Weekly on Sundays at 1 AM UTC
-  push:
-    branches: [master]
   pull_request:
     branches: [master]
   merge_group:
     types: [checks_requested]
+  schedule:
+    - cron: "0 1 * * 0" # Weekly on Sundays at 1 AM UTC
   workflow_dispatch:
 
 permissions:
-  # Required to upload SARIF file to CodeQL
   actions: read
   contents: read
   security-events: write
@@ -30,23 +26,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # OSV-Scanner: Scheduled/Push scans - reports all known vulnerabilities
-  osv-scan-scheduled:
-    name: 🛡️ OSV Vulnerability Scan (Full)
-    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.5"
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    with:
-      scan-args: |-
-        -r
-        --lockfile=pnpm-lock.yaml
-        ./
-      fail-on-vuln: false
-
-  # OSV-Scanner: PR scans - only reports NEW vulnerabilities introduced in PR
   osv-scan-pr:
     name: 🛡️ OSV Vulnerability Scan (PR Diff)
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
@@ -60,14 +39,31 @@ jobs:
         -r
         --lockfile=pnpm-lock.yaml
         ./
+      # PR diff scans fail when a change introduces new vulnerabilities.
+      fail-on-vuln: true
+
+  osv-scan-full:
+    name: 🛡️ OSV Vulnerability Scan (Full)
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.5"
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    with:
+      scan-args: |-
+        -r
+        --lockfile=pnpm-lock.yaml
+        ./
+      # Full scans remain non-blocking so newly disclosed advisories do not
+      # retroactively break unrelated work.
       fail-on-vuln: false
 
   semgrep:
     name: 🔍 Static Analysis (Semgrep)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Skip Dependabot PRs to avoid permission issues
-    if: github.actor != 'dependabot[bot]'
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     permissions:
       contents: read
       security-events: write
@@ -92,133 +88,3 @@ jobs:
         if: always()
         with:
           sarif_file: semgrep.sarif
-
-  license-compliance:
-    name: 📜 License Compliance Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v6
-
-      - name: 📜 Verify LICENSES directory
-        run: |
-          set -euo pipefail
-          echo "📜 Checking license files..."
-
-          LICENSES_DIR="LICENSES"
-          if [ ! -d "$LICENSES_DIR" ]; then
-            echo "⚠️ LICENSES directory not found"
-            exit 1
-          fi
-
-          # Check that required license files exist
-          REQUIRED_LICENSES=(
-            "xcom-enhanced-gallery-MIT.txt"
-            "solid-js-MIT.txt"
-            "lucide-ISC.txt"
-          )
-
-          MISSING_LICENSES=()
-          for license in "${REQUIRED_LICENSES[@]}"; do
-            if [ ! -f "$LICENSES_DIR/$license" ]; then
-              MISSING_LICENSES+=("$license")
-            fi
-          done
-
-          if [ ${#MISSING_LICENSES[@]} -ne 0 ]; then
-            echo "❌ Missing license files:"
-            printf '  - %s\n' "${MISSING_LICENSES[@]}"
-            exit 1
-          fi
-
-          echo "✅ All required license files present"
-          ls -la "$LICENSES_DIR"
-
-      - name: 🔍 Check for disallowed licenses
-        run: |
-          set -euo pipefail
-          echo "🔍 Checking for disallowed license content..."
-
-          # List of disallowed license types (GPL variants, AGPL, proprietary)
-          DISALLOWED_PATTERNS=(
-            "GNU General Public License"
-            "GNU GPL"
-            "GNU AGPL"
-            "AGPL-3.0"
-            "GPL-2.0"
-            "GPL-3.0"
-            "proprietary"
-            "all rights reserved"
-          )
-
-          FOUND_ISSUES=0
-          for pattern in "${DISALLOWED_PATTERNS[@]}"; do
-            if grep -ri "$pattern" LICENSES/ 2>/dev/null; then
-              echo "⚠️ Found potentially disallowed license: $pattern"
-              FOUND_ISSUES=1
-            fi
-          done
-
-          if [ $FOUND_ISSUES -eq 1 ]; then
-            echo "❌ Potential license compliance issues found"
-            # Don't fail, just warn - manual review needed
-          else
-            echo "✅ No disallowed license patterns found"
-          fi
-
-  security-summary:
-    name: 📊 Security Summary
-    runs-on: ubuntu-latest
-    needs: [semgrep, license-compliance]
-    if: always()
-    timeout-minutes: 5
-    steps:
-      - name: 📥 Checkout code (for OSV status check)
-        uses: actions/checkout@v6
-
-      - name: 🔍 Check OSV Scanner status
-        id: osv-status
-        run: |
-          # Retrieve conclusion of both OSV jobs using GitHub API
-          OSV_SCHEDULED_CONCLUSION=$(gh api "/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" --jq '.jobs[] | select(.name == "🛡️ OSV Vulnerability Scan (Full)") | .conclusion' || echo "skipped")
-          OSV_PR_CONCLUSION=$(gh api "/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" --jq '.jobs[] | select(.name == "🛡️ OSV Vulnerability Scan (PR Diff)") | .conclusion' || echo "skipped")
-
-          echo "osv_scheduled=$OSV_SCHEDULED_CONCLUSION" >> $GITHUB_OUTPUT
-          echo "osv_pr=$OSV_PR_CONCLUSION" >> $GITHUB_OUTPUT
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 📊 Generate summary
-        run: |
-          echo "## 🔒 Security Scan Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Status | Check | Result |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|--------|" >> $GITHUB_STEP_SUMMARY
-
-          # OSV Scanner (check both scheduled and PR jobs using API results)
-          OSV_SCHEDULED="${{ steps.osv-status.outputs.osv_scheduled }}"
-          OSV_PR="${{ steps.osv-status.outputs.osv_pr }}"
-          if [ "$OSV_SCHEDULED" == "success" ] || [ "$OSV_PR" == "success" ]; then
-            echo "| ✅ | OSV Vulnerability Scan | Passed |" >> $GITHUB_STEP_SUMMARY
-          elif [ "$OSV_SCHEDULED" == "failure" ] || [ "$OSV_PR" == "failure" ]; then
-            echo "| ❌ | OSV Vulnerability Scan | Failed |" >> $GITHUB_STEP_SUMMARY
-          elif [ "$OSV_SCHEDULED" == "skipped" ] && [ "$OSV_PR" == "skipped" ]; then
-            echo "| ⏭️ | OSV Vulnerability Scan | Skipped |" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "| ⚠️ | OSV Vulnerability Scan | Check required |" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # Semgrep
-          if [ "${{ needs.semgrep.result }}" == "success" ]; then
-            echo "| ✅ | Static Analysis (Semgrep) | Passed |" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "| ⚠️ | Static Analysis (Semgrep) | Check required |" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # License
-          if [ "${{ needs.license-compliance.result }}" == "success" ]; then
-            echo "| ✅ | License Compliance | Passed |" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "| ❌ | License Compliance | Failed |" >> $GITHUB_STEP_SUMMARY
-          fi

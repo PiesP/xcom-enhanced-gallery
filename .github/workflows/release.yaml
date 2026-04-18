@@ -1,23 +1,9 @@
 name: 🚀 Release
 
-# Responsibility: Release artifact creation (Node.js + pnpm)
-# - Version detection: git tag or manual trigger
-# - Production build: userscript + checksums + metadata
-# - GitHub Release: automated creation with downloadable assets
-# - dist/ update: commit built scripts to 'release' branch for jsDelivr CDN
-#
-# Trigger: Tag push (v*) or manual dispatch
-
 on:
   push:
     tags:
       - "v*"
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to release (e.g., 1.2.3)"
-        required: true
-        type: string
 
 env:
   NODE_VERSION: "24"
@@ -31,7 +17,7 @@ concurrency:
 
 jobs:
   release:
-    name: 🏗️ Build & Release
+    name: 🚀 Publish Release
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -56,53 +42,28 @@ jobs:
         id: version
         run: |
           set -euo pipefail
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            VERSION="${{ inputs.version }}"
-          else
-            VERSION="${GITHUB_REF#refs/tags/v}"
-          fi
+          VERSION="${GITHUB_REF_NAME#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Release version: $VERSION"
 
-      - name: 🏷️ Create Git tag (workflow_dispatch only)
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        run: |
-          set -euo pipefail
-          TAG=v${{ steps.version.outputs.version }}
-          if git rev-parse "${TAG}" >/dev/null 2>&1; then
-            echo "Tag ${TAG} already exists; skipping"
-          else
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git tag -a "${TAG}" -m "Release ${TAG}"
-            git push origin "${TAG}"
-            echo "✅ Tag created: ${TAG}"
-          fi
-
       - name: 🏗️ Build userscript
-        if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
           set -euo pipefail
           BUILD_VERSION=${{ steps.version.outputs.version }} pnpm build
-          # Backup dist for later steps (survives git checkout)
           mkdir -p /tmp/dist-backup
           cp -r dist/* /tmp/dist-backup/
-          # List backed up files for verification
           echo "📦 Built files:"
           ls -la /tmp/dist-backup/
 
       - name: 📦 Prepare release package
-        if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
           set -euo pipefail
           mkdir -p release
           cp /tmp/dist-backup/xcom-enhanced-gallery.user.js release/
           cp /tmp/dist-backup/xcom-enhanced-gallery.meta.js release/
 
-          # Generate checksums
           cd release && sha256sum xcom-enhanced-gallery.user.js xcom-enhanced-gallery.meta.js > checksums.txt && cd ..
 
-          # Create metadata
           cat > release/metadata.json << EOF
           {
             "version": "${{ steps.version.outputs.version }}",
@@ -112,7 +73,6 @@ jobs:
           }
           EOF
 
-          # Extract changelog for current version
           CHANGELOG_CONTENT=""
           if [ -f "CHANGELOG.md" ]; then
             CHANGELOG_CONTENT=$(awk -v ver="${{ steps.version.outputs.version }}" '
@@ -127,9 +87,18 @@ jobs:
             ' CHANGELOG.md)
           fi
 
-          # Create release notes with changelog content
-          PREV_TAG=$(git tag --list 'v*' --sort=-v:refname | grep -v "^v${{ steps.version.outputs.version }}$" | head -n 1 || true)
-          if [ -n "$PREV_TAG" ]; then
+          PREV_VERSION=$(
+            {
+              printf '%s\n' "${{ steps.version.outputs.version }}"
+              git tag --list 'v*' | sed 's/^v//'
+            } | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -u -V | awk -v ver="${{ steps.version.outputs.version }}" '
+              $0 == ver { print prev; exit }
+              { prev = $0 }
+            '
+          )
+
+          if [ -n "$PREV_VERSION" ]; then
+            PREV_TAG="v${PREV_VERSION}"
             COMPARE_URL="https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${{ steps.version.outputs.version }}"
           else
             COMPARE_URL="https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.version }}"
@@ -140,7 +109,7 @@ jobs:
 
           ## 📥 Installation
 
-          **[📥 Click here to install](https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v${{ steps.version.outputs.version }}/xcom-enhanced-gallery.user.js)**
+          **[📥 Click here to install](https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/xcom-enhanced-gallery.user.js)**
 
           ---
 
@@ -160,14 +129,12 @@ jobs:
           EOF
 
       - name: 📤 Deploy dist/ to release branch
-        if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
           set -euo pipefail
 
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          # Check if release branch exists remotely
           if git ls-remote --heads origin release | grep -q release; then
             echo "📦 Fetching existing release branch..."
             git fetch origin release:release
@@ -187,12 +154,10 @@ jobs:
             git commit -m "chore: initialize release branch"
           fi
 
-          # Copy built files from backup (user.js + meta.js for jsDelivr CDN)
           mkdir -p dist
           cp /tmp/dist-backup/xcom-enhanced-gallery.user.js dist/
           cp /tmp/dist-backup/xcom-enhanced-gallery.meta.js dist/
 
-          # Add and commit
           git add dist/xcom-enhanced-gallery.user.js dist/xcom-enhanced-gallery.meta.js
 
           if git diff --staged --quiet; then
@@ -204,17 +169,14 @@ jobs:
           fi
 
       - name: 🔄 Purge jsDelivr CDN cache
-        if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
           set -euo pipefail
           echo "🔄 Purging jsDelivr CDN cache..."
 
-          # Purge main userscript file
           PURGE_URL_USER="https://purge.jsdelivr.net/gh/${{ github.repository }}@release/dist/xcom-enhanced-gallery.user.js"
           echo "Purging: $PURGE_URL_USER"
           curl -s "$PURGE_URL_USER" | jq '.' || echo "Purge request sent"
 
-          # Purge meta.js file
           PURGE_URL_META="https://purge.jsdelivr.net/gh/${{ github.repository }}@release/dist/xcom-enhanced-gallery.meta.js"
           echo "Purging: $PURGE_URL_META"
           curl -s "$PURGE_URL_META" | jq '.' || echo "Purge request sent"
@@ -222,7 +184,6 @@ jobs:
           echo "✅ jsDelivr cache purge completed"
 
       - name: 🏷️ Create GitHub Release
-        if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.version.outputs.version }}
@@ -238,7 +199,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📊 Upload release artifacts
-        if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: actions/upload-artifact@v7
         with:
           name: release-v${{ steps.version.outputs.version }}
