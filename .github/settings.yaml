@@ -1,12 +1,10 @@
 # Branch Protection Settings Reference
 
-# This file documents the recommended branch protection settings for the master branch.
-# These settings must be configured manually in GitHub repository settings.
+# This file is already in the path expected by the GitHub Settings app.
+# It also serves as the living reference for manual branch protection setup.
 #
-# Location: Repository → Settings → Branches → Branch protection rules → master
-#
-# Note: The settings app (github.com/apps/settings) can automate this,
-# but manual configuration is also acceptable.
+# Location in the GitHub UI:
+# Repository → Settings → Branches → Branch protection rules → master
 
 branches:
   - name: master
@@ -69,16 +67,6 @@ branches:
 # - Verify that PR cannot be merged until all checks pass
 # - Confirm that Dependabot PRs can auto-merge without manual approval
 
-# Alternative: GitHub Settings App
-#
-# If you prefer automation, you can use the GitHub Settings app:
-# 1. Install: https://github.com/apps/settings
-# 2. Rename this file to: .github/settings.yaml
-# 3. Remove this comment block above
-# 4. Push to repository
-# 5. The app will automatically configure branch protection
-#
-# Note: The app requires specific YAML format:
-# - Use "contexts" (not "checks") for status check names
-# - Emoji work fine in status check names
-# - The app syncs on every push to master
+# Settings app note:
+# - If https://github.com/apps/settings is installed, this file can be applied directly.
+# - Otherwise, keep using the manual steps above with this file as the source of truth.

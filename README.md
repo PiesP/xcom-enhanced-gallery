@@ -12,7 +12,7 @@
 
 ## ✨ Features
 
-- **Vertical gallery** for all images and videos in a tweet
+- **Vertical gallery** for images, videos, and supported card media in a tweet
 - **Original quality downloads** (single file or bulk ZIP)
 - **Keyboard and mouse navigation** optimized for desktop
 - **Privacy-focused** - runs entirely in your browser, no data collection
@@ -43,6 +43,9 @@ manager_
 [View latest release](https://github.com/PiesP/xcom-enhanced-gallery/releases)**
 
 </div>
+
+Automatic updates are delivered through the userscript header metadata that
+points to the published release artifacts.
 
 ### 3️⃣ Verify Installation
 
@@ -92,7 +95,10 @@ Desktop browsers only (no mobile/touch support):
 
 - Runs entirely in your browser - no external data collection
 - No analytics, telemetry, or third-party tracking
-- Network requests limited to X.com media and GitHub (update checks only)
+- Runtime network requests stay within X/Twitter APIs and media CDNs needed for
+  gallery extraction and downloads
+- Installation and update metadata are served from GitHub Releases and the
+  jsDelivr-hosted `release` branch artifacts referenced by the userscript header
 
 For security reports, see the [Security Policy](.github/SECURITY.md).
 

@@ -46,11 +46,12 @@ of npm ecosystem attacks that execute code during installation.
 
 Key policies (configured in `pnpm-workspace.yaml`):
 
-- **Release cooldown**: `minimumReleaseAge` delays newly published versions.
 - **Reviewed install scripts**: `strictDepBuilds` + `allowBuilds` require explicit review
   of dependency install scripts. Entries in `allowBuilds` are either:
   - `true` (allowed to run), or
   - `false` (explicitly disallowed, but considered reviewed).
+- **Current reviewed install scripts**: `esbuild` is the only dependency install
+  script explicitly allowed in the root workspace today.
 - **Trust downgrade protection**: `trustPolicy: no-downgrade` blocks versions whose
   publish trust evidence is weaker than prior releases.
 - **No exotic transitive sources**: `blockExoticSubdeps` prevents transitive
@@ -86,10 +87,32 @@ pnpm knip
 
 # Run all quality checks
 pnpm quality
+
+# Full local verification (build + test workspace)
+pnpm verify
 ```
 
 These tasks are defined in `package.json` and use the project configuration
 (`tsconfig*.json`, `biome.jsonc`, build scripts).
+
+### Test workspace
+
+The browser and mutation suites live in the separate `test/` workspace. You can
+either use the root wrappers or work in `test/` directly:
+
+```bash
+# From the repository root
+pnpm test:unit
+pnpm test:e2e
+pnpm test:mut:priority
+pnpm test:all
+
+# Or inside the isolated test workspace
+cd test
+pnpm test
+pnpm e2e
+pnpm mut:priority
+```
 
 ---
 
@@ -174,19 +197,22 @@ Please keep changes small, focused, and consistent with the existing codebase.
 Before you submit a PR, please:
 
 1. **Sync with `master`** and rebase your branch if necessary.
-2. Run at least a build and basic static checks locally:
+2. Run the relevant local checks for your change. A typical full pass is:
 
 ```bash
-pnpm build
-# or individual checks:
 pnpm quality
+pnpm build
+pnpm test:all
 ```
 
+If your change is docs-only or otherwise isolated, explain why a smaller check
+set was sufficient.
+
 3. Ensure the gallery still behaves correctly on X.com in a desktop browser
-   (Chrome, Firefox, Safari, or Edge).
+   (Chrome, Firefox, Safari, or Edge) when runtime behavior changed.
 4. Update documentation if behavior visible to end users has changed:
-   - `README.md` for user-facing changes
-   - `CHANGELOG.md` for notable changes between releases
+    - `README.md` for user-facing changes
+    - `CHANGELOG.md` for notable changes between releases
 
 ---
 

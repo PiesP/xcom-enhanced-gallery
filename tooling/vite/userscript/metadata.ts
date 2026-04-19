@@ -29,6 +29,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.`;
 
+const CURRENT_PROJECT_YEAR = new Date().getUTCFullYear();
+const PROJECT_COPYRIGHT_RANGE =
+  CURRENT_PROJECT_YEAR <= 2024 ? '2024' : `2024-${CURRENT_PROJECT_YEAR}`;
+
 /**
  * Formats a single metadata directive as a userscript comment line.
  *
@@ -150,7 +154,7 @@ function buildMetadataBlock(config: UserscriptMeta): string {
     formatMetaLine('license', config.license),
     // MIT requires that the copyright notice is included in all copies.
     // Keep it as a plain comment line to avoid relying on non-standard metadata keys.
-    '// Copyright (c) 2024-2025 X.com Enhanced Gallery Contributors',
+    `// Copyright (c) ${PROJECT_COPYRIGHT_RANGE} X.com Enhanced Gallery Contributors`,
     ...(config.homepageURL ? [formatMetaLine('homepageURL', config.homepageURL)] : []),
     ...formatMetaLines('match', config.match),
     ...formatMetaLines('grant', config.grant),

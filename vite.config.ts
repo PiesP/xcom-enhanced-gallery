@@ -6,7 +6,7 @@
  * - CSS processing and inlining
  * - Userscript metadata generation
  * - Third-party license aggregation
- * - Quality checks (type checking, linting)
+ * - Quality checks (type checking, linting, TSDoc validation, unused-code checks)
  *
  * Build modes:
  *   pnpm build      - Production build (runs `pnpm quality` via prebuild)
@@ -14,8 +14,8 @@
  *   pnpm build:fast - Production build (no implicit quality checks)
  *
  * Quality checks:
- *   pnpm quality     - Typecheck + Biome check
- *   pnpm quality:fix - Typecheck + Biome check (write)
+ *   pnpm quality     - Typecheck + Biome + TSDoc + Knip
+ *   pnpm quality:fix - Typecheck + Biome (write) + TSDoc + Knip
  */
 
 // External dependencies

@@ -41,9 +41,13 @@ We aim to respond within **7 business days** and coordinate disclosure once a fi
 
 - All logic executes locally in the browser.
 - We do **not** collect, store, or transmit personal data or authentication tokens.
-- Network requests are limited to:
-  - `api.github.com` (update checks)
-  - `x.com` / `twitter.com` APIs and media CDNs (image/video loading and download)
+- Runtime network requests are limited to:
+  - `api.twitter.com`
+  - `pbs.twimg.com`
+  - `video.twimg.com`
+- Installation and update metadata are distributed through GitHub Releases and
+  the jsDelivr-hosted `release` branch artifacts referenced by the userscript
+  header.
 - The script does not use `eval()` or similar dynamic code execution.
 
 ---
@@ -53,16 +57,17 @@ We aim to respond within **7 business days** and coordinate disclosure once a fi
 We use several mechanisms to keep the codebase secure:
 
 - **GitHub Security Suite** (`.github/workflows/security.yaml`)
-  - CodeQL analysis for JavaScript/TypeScript
+  - OSV Scanner for pull-request diff scans and scheduled full scans
   - Static analysis (Semgrep)
-  - Dependency scanning (OSV Scanner, npm audit)
 - **Dependabot** (`.github/dependabot.yaml`)
   - Automated updates for npm packages and GitHub Actions
 - **Quality & Testing**
-  - TypeScript strict mode, Biome linter/formatter
-  - Comprehensive automated tests (unit, browser, component, E2E, mutation)
+  - TypeScript strict mode, Biome linter/formatter, TSDoc validation, and Knip
+  - Automated unit, Playwright E2E, and mutation tests in the separate `test/`
+    workspace
 
-These checks run in CI for `master` and scheduled workflows; local development uses the same toolchain via `pnpm` commands.
+These checks run through GitHub Actions and the same local `pnpm` workflows used
+for development.
 
 ---
 
