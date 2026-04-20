@@ -203,4 +203,5 @@ jobs:
         with:
           name: release-v${{ steps.version.outputs.version }}
           path: release/
+          if-no-files-found: error
           retention-days: 30
