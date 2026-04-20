@@ -11,16 +11,19 @@
     "check:src": "tsc --noEmit --project tsconfig.build.json",
     "check:tools": "tsc --noEmit --project tsconfig.tools.json",
     "check": "pnpm check:src && pnpm check:tools",
+    "typecheck": "pnpm -s check",
     "check:tsdoc": "node ./tooling/node/check-tsdoc.ts",
     "knip": "knip --no-config-hints",
-    "lint": "biome lint ./src ./tooling vite.config.ts",
-    "lint:fix": "biome lint --write ./src ./tooling vite.config.ts",
-    "fmt:fix": "biome check --write --linter-enabled=false ./src ./tooling vite.config.ts",
-    "fmt": "biome check --linter-enabled=false ./src ./tooling vite.config.ts",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "fmt": "biome check --linter-enabled=false .",
+    "fmt:fix": "biome check --write --linter-enabled=false .",
+    "fmt:check": "pnpm -s fmt",
     "prebuild": "pnpm quality",
     "preinstall": "node ./tooling/node/ensure-pnpm.ts",
-    "quality": "pnpm check && biome check ./src ./tooling vite.config.ts && pnpm check:tsdoc && pnpm knip",
-    "quality:fix": "pnpm check && biome check --write ./src ./tooling vite.config.ts && pnpm check:tsdoc && pnpm knip",
+    "quality": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s check:tsdoc && pnpm -s knip",
+    "quality:fix": "pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s check && pnpm -s check:tsdoc && pnpm -s knip",
+    "quality:ci": "pnpm -s quality",
     "test:deps:check": "pnpm -C test run deps:check",
     "test:deps:sync": "pnpm -C test run deps:sync",
     "test:install": "pnpm -C test install",
@@ -50,12 +53,12 @@
   "homepage": "https://github.com/PiesP/xcom-enhanced-gallery#readme",
   "engines": {
     "node": ">=24.0.0",
-    "pnpm": ">=10.0.0"
+    "pnpm": ">=10.29.2"
   },
-  "packageManager": "pnpm@10.27.0",
+  "packageManager": "pnpm@10.29.2",
   "volta": {
     "node": "24.15.0",
-    "pnpm": "10.27.0"
+    "pnpm": "10.29.2"
   },
   "dependencies": {
     "solid-js": "^1.9.12"
