@@ -36,7 +36,7 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
       vite:
-        specifier: ^8.0.8
+        specifier: ^8.0.7
         version: 8.0.8(@types/node@25.6.0)(esbuild@0.27.3)(jiti@2.6.1)(yaml@2.8.3)
       vite-plugin-solid:
         specifier: ^2.11.12
@@ -168,7 +168,6 @@ packages:
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
-    libc: [glibc]
 
   '@biomejs/cli-win32-arm64@2.4.12':
     resolution: {integrity: sha512-B0DLnx0vA9ya/3v7XyCaP+/lCpnbWbMOfUFFve+xb5OxyYvdHaS55YsSddr228Y+JAFk58agCuZTsqNiw2a6ig==}
