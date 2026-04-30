@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name X.com Enhanced Gallery
 // @namespace https://github.com/PiesP/xcom-enhanced-gallery
-// @version 1.8.1
+// @version 1.8.2
 // @description Media viewer and download functionality for X.com
 // @author PiesP
 // @license MIT
-// Copyright (c) 2024-2025 X.com Enhanced Gallery Contributors
+// Copyright (c) 2024-2026 X.com Enhanced Gallery Contributors
 // @homepageURL https://github.com/PiesP/xcom-enhanced-gallery
 // @match https://x.com/*
 // @match https://*.x.com/*
@@ -34,7 +34,7 @@
 /*
  * Third-Party Licenses
  * ====================
- * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.8.1/LICENSES
+ * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.8.2/LICENSES
  *
  * MIT License
  *
@@ -286,23 +286,6 @@ error: (...args) => {
 console.error(prefix, ...args);
 }
 });
-var createVerboseLogger = (prefix) => ({
-info: (...args) => {
-console.info(prefix, ...args);
-},
-warn: (...args) => {
-console.warn(prefix, ...args);
-},
-error: (...args) => {
-console.error(prefix, ...args);
-},
-debug: (...args) => {
-console.debug(prefix, ...args);
-},
-trace: (...args) => {
-console.debug(prefix, ...args);
-}
-});
 var noopLogger = {
 info: noop$1,
 warn: noop$1,
@@ -310,12 +293,12 @@ error: noop$1,
 debug: noop$1,
 trace: noop$1
 };
-function buildLogger(prefix, enableVerbose) {
+function buildLogger(prefix) {
 if (!hasConsole) return noopLogger;
-return enableVerbose ? createVerboseLogger(prefix) : createErrorOnlyLogger(prefix);
+return createErrorOnlyLogger(prefix);
 }
 function createLogger(config = {}) {
-return buildLogger(config.prefix ?? BASE_PREFIX, false);
+return buildLogger(config.prefix ?? BASE_PREFIX);
 }
 var logger = createLogger();
 function createLifecycle(serviceName, options = {}) {
@@ -875,25 +858,28 @@ async get(url, options) {
 return this.request("GET", url, options);
 }
 async post(url, data, options) {
-return this.request("POST", url, data === void 0 ? options : {
+const nextOptions = data === void 0 ? options : {
 ...options,
 data
-});
+};
+return this.request("POST", url, nextOptions);
 }
 async put(url, data, options) {
-return this.request("PUT", url, data === void 0 ? options : {
+const nextOptions = data === void 0 ? options : {
 ...options,
 data
-});
+};
+return this.request("PUT", url, nextOptions);
 }
 async delete(url, options) {
 return this.request("DELETE", url, options);
 }
 async patch(url, data, options) {
-return this.request("PATCH", url, data === void 0 ? options : {
+const nextOptions = data === void 0 ? options : {
 ...options,
 data
-});
+};
+return this.request("PATCH", url, nextOptions);
 }
 };
 var TimerManager = class {
@@ -1215,7 +1201,8 @@ DOMAINS: [
 "video.twimg.com",
 "abs.twimg.com"
 ],
-HOSTS: { MEDIA_CDN: ["pbs.twimg.com", "video.twimg.com"] },
+HOSTS: {
+MEDIA_CDN: ["pbs.twimg.com", "video.twimg.com"] },
 TYPES: {
 IMAGE: "image",
 VIDEO: "video",
@@ -2857,13 +2844,12 @@ getRegisteredServices() {
 return Array.from(this.services.keys());
 }
 cleanup() {
-this.services.forEach((service) => {
-try {
+const entries = Array.from(this.services.entries()).reverse();
+for (const [key, service] of entries) try {
 if (isDisposable(service)) service.destroy();
 } catch (e) {
-logger.error("Service cleanup failed", e);
+logger.error(`Service cleanup failed: ${key}`, e);
 }
-});
 this.services.clear();
 }
 reset() {
@@ -2940,7 +2926,8 @@ this.applyCurrentTheme();
 });
 }
 setTheme(setting, options) {
-this.themeSetting = isThemeSetting(setting) ? setting : "light";
+const normalized = isThemeSetting(setting) ? setting : "light";
+this.themeSetting = normalized;
 if (options?.persist !== false && this.boundSettingsService?.set) {
 const result = this.boundSettingsService.set("gallery.theme", this.themeSetting);
 if (result instanceof Promise) result.catch((error) => {});
@@ -9638,6 +9625,7 @@ assertInitialized() {
 if (!this.isInitialized()) throw new Error("SettingsService must be initialized before use");
 }
 };
+var hasRequiredGMAPIs = isGMAPIAvailable("download") || isGMAPIAvailable("setValue");
 function ensureRendererRegistered() {
 if (CoreService.getInstance().has(SERVICE_KEYS.GALLERY_RENDERER)) return;
 registerGalleryRenderer(new GalleryRenderer());
@@ -9653,7 +9641,7 @@ await service.initialize();
 registerSettingsManager(service);
 }
 async function initializeGalleryServices() {
-if (!(isGMAPIAvailable("download") || isGMAPIAvailable("setValue"))) bootstrapErrorReporter.warn(  new Error("Tampermonkey APIs limited"), { code: "GM_API_LIMITED" });
+if (!hasRequiredGMAPIs) bootstrapErrorReporter.warn(  new Error("Tampermonkey APIs limited"), { code: "GM_API_LIMITED" });
 try {
 await initializeSettingsService();
 } catch (error) {
@@ -9904,8 +9892,8 @@ throw error;
 }
 }
 async function startApplication() {
-if (lifecycleState.started) return;
 if (lifecycleState.startPromise) return lifecycleState.startPromise;
+if (lifecycleState.started) return;
 lifecycleState.startPromise = (async () => {
 await runBootstrapStages();
 lifecycleState.started = true;
