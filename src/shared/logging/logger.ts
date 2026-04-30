@@ -50,9 +50,12 @@ const createVerboseLogger = (prefix: string): Logger => ({
 
 const noopLogger: Logger = { info: noop, warn: noop, error: noop, debug: noop, trace: noop };
 
-function buildLogger(prefix: string, enableVerbose: boolean): Logger {
+// Capture __DEV__ once at module load to avoid repeated checks per log call
+const isDevMode = __DEV__;
+
+function buildLogger(prefix: string): Logger {
   if (!hasConsole) return noopLogger;
-  return enableVerbose ? createVerboseLogger(prefix) : createErrorOnlyLogger(prefix);
+  return isDevMode ? createVerboseLogger(prefix) : createErrorOnlyLogger(prefix);
 }
 
 function formatPrefix(prefix: string, scope?: string): string {
@@ -64,12 +67,12 @@ function formatPrefix(prefix: string, scope?: string): string {
 
 export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
   const prefix = config.prefix ?? BASE_PREFIX;
-  return buildLogger(prefix, __DEV__);
+  return buildLogger(prefix);
 }
 
 export function createScopedLogger(scope: string, config: Partial<LoggerConfig> = {}): Logger {
   const basePrefix = config.prefix ?? BASE_PREFIX;
-  return buildLogger(formatPrefix(basePrefix, scope), __DEV__);
+  return buildLogger(formatPrefix(basePrefix, scope));
 }
 
 export const logger: Logger = createLogger();

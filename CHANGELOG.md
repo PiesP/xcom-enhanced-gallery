@@ -8,6 +8,20 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-04-30
+
+### Fixed
+
+- **Race Condition**: Fixed potential race condition in `startApplication()` by checking `startPromise` before `started` flag.
+- **Service Cleanup Order**: Reversed `CoreService.cleanup()` to destroy services in reverse registration order, respecting service dependencies.
+- **Cleanup Error Handling**: Added explicit comment in `main.ts` clarifying that individual cleanup failures are intentionally swallowed.
+
+### Changed
+
+- **GM API Caching**: Cached `isGMAPIAvailable()` result in `gallery-init.ts` to avoid repeated API checks during a session.
+- **Logger Optimization**: Captured `__DEV__` once at module load in `logger.ts` to avoid repeated checks per log call.
+- **Biome Config**: Updated schema reference to `2.4.13`.
+
 ## [1.8.0] - 2026-04-17
 
 ### Changed

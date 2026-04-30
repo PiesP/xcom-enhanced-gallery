@@ -92,15 +92,17 @@ export class CoreService {
   }
 
   public cleanup(): void {
-    this.services.forEach((service) => {
+    // Clean up in reverse registration order to respect service dependencies
+    const entries = Array.from(this.services.entries()).reverse();
+    for (const [key, service] of entries) {
       try {
         if (isDisposable(service)) {
           service.destroy();
         }
       } catch (e) {
-        logger.error('Service cleanup failed', e);
+        logger.error(`Service cleanup failed: ${key}`, e);
       }
-    });
+    }
     this.services.clear();
   }
 

@@ -32,6 +32,9 @@ type InitializableSettingsService = {
   isInitialized?: () => boolean;
 };
 
+// Cache GM API availability (does not change during a session)
+const hasRequiredGMAPIs = isGMAPIAvailable('download') || isGMAPIAvailable('setValue');
+
 function ensureRendererRegistered(): void {
   if (CoreService.getInstance().has(SERVICE_KEYS.GALLERY_RENDERER)) {
     return;
@@ -60,7 +63,6 @@ async function initializeSettingsService(): Promise<void> {
  * Settings remain non-fatal: startup continues with defaults if they cannot load.
  */
 export async function initializeGalleryServices(): Promise<void> {
-  const hasRequiredGMAPIs = isGMAPIAvailable('download') || isGMAPIAvailable('setValue');
   if (!hasRequiredGMAPIs) {
     bootstrapErrorReporter.warn(new Error('Tampermonkey APIs limited'), {
       code: 'GM_API_LIMITED',

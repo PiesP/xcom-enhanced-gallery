@@ -135,6 +135,8 @@ async function initializeGallery(): Promise<void> {
   }
 }
 
+// Errors in individual cleanup tasks are swallowed intentionally
+// to prevent one failed cleanup from blocking the rest of the teardown
 async function cleanup(): Promise<void> {
   try {
     if (__DEV__) logger.info('🧹 Starting application cleanup');
@@ -171,8 +173,9 @@ async function cleanup(): Promise<void> {
 }
 
 async function startApplication(): Promise<void> {
-  if (lifecycleState.started) return;
+  // Check startPromise first to prevent race between started/startPromise checks
   if (lifecycleState.startPromise) return lifecycleState.startPromise;
+  if (lifecycleState.started) return;
 
   lifecycleState.startPromise = (async () => {
     if (__DEV__) logger.info('🚀 Starting X.com Enhanced Gallery...');
