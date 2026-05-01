@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name X.com Enhanced Gallery
 // @namespace https://github.com/PiesP/xcom-enhanced-gallery
-// @version 1.8.2
+// @version 1.9.0
 // @description Media viewer and download functionality for X.com
 // @author PiesP
 // @license MIT
@@ -34,7 +34,7 @@
 /*
  * Third-Party Licenses
  * ====================
- * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.8.2/LICENSES
+ * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.9.0/LICENSES
  *
  * MIT License
  *
@@ -276,22 +276,22 @@ return typeof current === "string" ? current : void 0;
 }
 var BASE_PREFIX = "[XEG]";
 var hasConsole = typeof console !== "undefined";
-var noop$1 = () => {};
+var noop = () => {};
 var createErrorOnlyLogger = (prefix) => ({
-info: noop$1,
-warn: noop$1,
-debug: noop$1,
-trace: noop$1,
+info: noop,
+warn: noop,
+debug: noop,
+trace: noop,
 error: (...args) => {
 console.error(prefix, ...args);
 }
 });
 var noopLogger = {
-info: noop$1,
-warn: noop$1,
-error: noop$1,
-debug: noop$1,
-trace: noop$1
+info: noop,
+warn: noop,
+error: noop,
+debug: noop,
+trace: noop
 };
 function buildLogger(prefix) {
 if (!hasConsole) return noopLogger;
@@ -471,56 +471,17 @@ constructor() {}
 static getInstance() {
 return PersistentStorage.singleton.get();
 }
-parseMaybeJsonString(rawValue) {
-try {
-const parsed = JSON.parse(rawValue);
-return typeof parsed === "string" ? parsed : void 0;
-} catch {
-return;
-}
-}
-serializeValueForStorage(value) {
-if (typeof value === "string") return value;
-return JSON.stringify(value);
-}
-async setString(key, value) {
-return this.set(key, value);
-}
-async setJson(key, value) {
-if (value === void 0) {
-await this.userscript.deleteValue(key);
-return;
-}
-const serialized = JSON.stringify(value);
-if (serialized === void 0) {
-await this.userscript.deleteValue(key);
-return;
-}
-await this.userscript.setValue(key, serialized);
-}
 async set(key, value) {
 if (value === void 0) {
 await this.userscript.deleteValue(key);
 return;
 }
-const serialized = this.serializeValueForStorage(value);
+const serialized = typeof value === "string" ? value : JSON.stringify(value);
 if (serialized === void 0) {
 await this.userscript.deleteValue(key);
 return;
 }
 await this.userscript.setValue(key, serialized);
-}
-async getString(key, defaultValue) {
-const value = await this.userscript.getValue(key);
-if (value === void 0 || value === null) return defaultValue;
-const parsedString = this.parseMaybeJsonString(value);
-if (parsedString !== void 0) return parsedString;
-return value;
-}
-async trySelfHealOnParseError(key) {
-try {
-await this.userscript.deleteValue(key);
-} catch {}
 }
 async get(key, defaultValue, options = {}) {
 const value = await this.userscript.getValue(key);
@@ -528,12 +489,16 @@ if (value === void 0 || value === null) return defaultValue;
 try {
 return JSON.parse(value);
 } catch {
-if (options.selfHealOnParseError === true) await this.trySelfHealOnParseError(key);
+if (options.selfHealOnParseError === true) try {
+await this.userscript.deleteValue(key);
+} catch {}
 return defaultValue;
 }
 }
-async getJson(key, defaultValue, options = {}) {
-return this.get(key, defaultValue, options);
+async getString(key, defaultValue) {
+const value = await this.userscript.getValue(key);
+if (value === void 0 || value === null) return defaultValue;
+return value;
 }
 async has(key) {
 const value = await this.userscript.getValue(key);
@@ -548,22 +513,6 @@ return JSON.parse(value);
 } catch {
 return defaultValue;
 }
-} catch {
-return defaultValue;
-}
-}
-getJsonSync(key, defaultValue) {
-return this.getSync(key, defaultValue);
-}
-getStringSync(key, defaultValue) {
-try {
-const value = this.userscript.getValueSync(key);
-if (value === void 0 || value === null) return defaultValue;
-try {
-const parsedString = this.parseMaybeJsonString(value);
-if (parsedString !== void 0) return parsedString;
-} catch {}
-return value;
 } catch {
 return defaultValue;
 }
@@ -657,7 +606,7 @@ listener(language);
 }
 async persistLanguage(language) {
 try {
-await this.storage.setString(LanguageService.STORAGE_KEY, language);
+await this.storage.set(LanguageService.STORAGE_KEY, language);
 } catch (error) {}
 }
 getEffectiveLanguage() {
@@ -1191,7 +1140,7 @@ logger.error("[tweet] extract failed", error);
 return;
 }
 }
-function extractTweetTextHTMLFromClickedElement(element, _maxDepth = 10) {
+function extractTweetTextHTMLFromClickedElement(element) {
 const tweetArticle = closestWithFallback(element, TWEET_CONTAINER_SELECTORS, { debugLabel: "tweet-container" });
 if (tweetArticle) return extractTweetTextHTML(tweetArticle);
 }
@@ -2762,18 +2711,15 @@ this.isDestroyed = false;
 onDestroy() {
 this.cleanup();
 }
-addListener(element, type, listener, options, context) {
+addEventListener(element, type, listener, options) {
 if (this.isDestroyed) {
 ;
 return null;
 }
-const id = addListener(element, type, listener, options, context);
+const { context, ...listenerOptions } = options ?? {};
+const id = addListener(element, type, listener, listenerOptions, context);
 if (id) this.ownedListenerContexts.set(id, context);
 return id || null;
-}
-addEventListener(element, type, listener, options) {
-const { context, ...listenerOptions } = options ?? {};
-return this.addListener(element, type, listener, listenerOptions, context);
 }
 removeListener(id) {
 if (!this.ownedListenerContexts.has(id)) return false;
@@ -2840,9 +2786,6 @@ return null;
 has(key) {
 return this.services.has(key);
 }
-getRegisteredServices() {
-return Array.from(this.services.keys());
-}
 cleanup() {
 const entries = Array.from(this.services.entries()).reverse();
 for (const [key, service] of entries) try {
@@ -2874,7 +2817,6 @@ currentTheme = "light";
 themeSetting = "auto";
 listeners =  new Set();
 boundSettingsService = null;
-settingsUnsubscribe = null;
 observer = null;
 observedThemeScopes =  new WeakSet();
 static singleton = createSingleton(() => new ThemeService());
@@ -2907,23 +2849,12 @@ this.applyCurrentTheme(true);
 }
 bindSettingsService(settingsService) {
 if (!settingsService || this.boundSettingsService === settingsService) return;
-if (this.settingsUnsubscribe) {
-this.settingsUnsubscribe();
-this.settingsUnsubscribe = null;
-}
 this.boundSettingsService = settingsService;
 const settingsTheme = settingsService.get?.("gallery.theme");
 if (isThemeSetting(settingsTheme) && settingsTheme !== this.themeSetting) {
 this.themeSetting = settingsTheme;
 this.applyCurrentTheme(true);
 }
-if (typeof settingsService.subscribe === "function") this.settingsUnsubscribe = settingsService.subscribe((event) => {
-if (event?.key !== "gallery.theme") return;
-const nextTheme = event.newValue;
-if (!isThemeSetting(nextTheme) || nextTheme === this.themeSetting) return;
-this.themeSetting = nextTheme;
-this.applyCurrentTheme();
-});
 }
 setTheme(setting, options) {
 const normalized = isThemeSetting(setting) ? setting : "light";
@@ -2991,10 +2922,6 @@ return;
 }
 }
 cleanup() {
-if (this.settingsUnsubscribe) {
-this.settingsUnsubscribe();
-this.settingsUnsubscribe = null;
-}
 this.boundSettingsService = null;
 this.listeners.clear();
 this.observedThemeScopes =  new WeakSet();
@@ -3058,9 +2985,6 @@ for (const service of services) if (service?.initialize) await service.initializ
 throw new Error("[base-services] initialization failed", { cause: error instanceof Error ? error : new Error(String(error)) });
 }
 }
-async function initializeCriticalSystems() {}
-async function initializeDevTools() {}
-async function initializeEnvironment() {}
 function wireGlobalEvents(onBeforeUnload) {
 if (!(typeof window !== "undefined" && !!window.addEventListener)) return () => {};
 let disposed = false;
@@ -3713,10 +3637,7 @@ lifecycle;
 static singleton = createSingleton(() => new DownloadOrchestrator());
 capability = null;
 constructor() {
-this.lifecycle = createLifecycle("DownloadOrchestrator", {
-onInitialize: () => this.onInitialize(),
-onDestroy: () => this.onDestroy()
-});
+this.lifecycle = createLifecycle("DownloadOrchestrator", { onDestroy: () => this.onDestroy() });
 }
 static getInstance() {
 return DownloadOrchestrator.singleton.get();
@@ -3730,7 +3651,6 @@ this.lifecycle.destroy();
 isInitialized() {
 return this.lifecycle.isInitialized();
 }
-async onInitialize() {}
 onDestroy() {
 this.capability = null;
 }
@@ -3904,13 +3824,6 @@ severity
 if (severity === "critical") throw error instanceof Error ? error : new Error(message);
 return result;
 }
-static reportAndReturn(error, options, defaultValue) {
-AppErrorReporter.report(error, {
-...options,
-severity: options.severity === "critical" ? "error" : options.severity
-});
-return defaultValue;
-}
 static forContext(context) {
 return {
 critical: (error, options) => AppErrorReporter.report(error, {
@@ -3940,32 +3853,6 @@ var bootstrapErrorReporter = AppErrorReporter.forContext("bootstrap");
 var galleryErrorReporter = AppErrorReporter.forContext("gallery");
 var mediaErrorReporter = AppErrorReporter.forContext("media");
 var settingsErrorReporter = AppErrorReporter.forContext("settings");
-var NotificationService = class NotificationService {
-static singleton = createSingleton(() => new NotificationService());
-get userscript() {
-return getUserscriptSafe();
-}
-constructor() {}
-static getInstance() {
-return NotificationService.singleton.get();
-}
-async show(options) {
-this.userscript.notification({
-title: options.title,
-text: options.text,
-image: options.image,
-timeout: options.timeout,
-onclick: options.onclick
-});
-}
-async error(title, text, timeout = 5e3) {
-await this.show({
-title,
-text,
-timeout
-});
-}
-};
 var sharedConfig = {
 context: void 0,
 registry: void 0,
@@ -4811,38 +4698,7 @@ return catchError(() => props.children, setErrored);
 }, void 0, void 0);
 }
 function createSignalSafe(initial) {
-const [read, write] = createSignal(initial, { equals: false });
-const subscribers =  new Set();
-const notify = (value) => {
-subscribers.forEach((subscriber) => subscriber(value));
-};
-const setValue = (value) => {
-write(() => value);
-notify(value);
-};
-const updateValue = (updater) => {
-const nextValue = updater(read());
-write(() => nextValue);
-notify(nextValue);
-};
-const subscribe = (callback) => {
-subscribers.add(callback);
-callback(read());
-return () => {
-subscribers.delete(callback);
-};
-};
-return {
-get value() {
-return read();
-},
-set value(v) {
-setValue(v);
-},
-set: setValue,
-update: updateValue,
-subscribe
-};
+return createSignal(initial, { equals: false });
 }
 function effectSafe(fn) {
 return createRoot((dispose) => {
@@ -4855,30 +4711,68 @@ lastSource: "auto-focus",
 lastTimestamp: 0,
 lastNavigatedIndex: null
 };
+var VALID_NAVIGATION_SOURCES = [
+"button",
+"keyboard",
+"scroll",
+"auto-focus"
+];
+var VALID_NAVIGATION_TRIGGERS = [
+"button",
+"click",
+"keyboard",
+"scroll"
+];
+var [_lastSource, setLastSource] = createSignalSafe(INITIAL_NAVIGATION_STATE.lastSource);
+var [_lastTimestamp, setLastTimestamp] = createSignalSafe(INITIAL_NAVIGATION_STATE.lastTimestamp);
+var [_lastNavigatedIndex, setLastNavigatedIndex] = createSignalSafe(INITIAL_NAVIGATION_STATE.lastNavigatedIndex);
 var navigationSignals = {
-lastSource: createSignalSafe(INITIAL_NAVIGATION_STATE.lastSource),
-lastTimestamp: createSignalSafe(INITIAL_NAVIGATION_STATE.lastTimestamp),
-lastNavigatedIndex: createSignalSafe(INITIAL_NAVIGATION_STATE.lastNavigatedIndex)
+get lastSource() {
+return _lastSource();
+},
+set lastSource(v) {
+setLastSource(v);
+},
+get lastTimestamp() {
+return _lastTimestamp();
+},
+set lastTimestamp(v) {
+setLastTimestamp(v);
+},
+get lastNavigatedIndex() {
+return _lastNavigatedIndex();
+},
+set lastNavigatedIndex(v) {
+setLastNavigatedIndex(v);
+}
 };
 var resolveNowMs = (nowMs) => nowMs ?? Date.now();
+var isValidNavigationSource = (value) => typeof value === "string" && VALID_NAVIGATION_SOURCES.includes(value);
+var isValidNavigationTrigger = (value) => typeof value === "string" && VALID_NAVIGATION_TRIGGERS.includes(value);
 var isManualSource = (source) => source === "button" || source === "keyboard";
+var createNavigationActionError = (context, reason) =>  new Error(`[Gallery] Invalid navigation action (${context}): ${reason}`);
+function validateNavigationParams(targetIndex, source, trigger, context) {
+if (typeof targetIndex !== "number" || Number.isNaN(targetIndex)) throw createNavigationActionError(context, "Navigate payload targetIndex invalid");
+if (!isValidNavigationSource(source)) throw createNavigationActionError(context, `Navigate payload source invalid: ${String(source)}`);
+if (!isValidNavigationTrigger(trigger)) throw createNavigationActionError(context, `Navigate payload trigger invalid: ${String(trigger)}`);
+}
 function recordNavigation(targetIndex, source, nowMs) {
 const timestamp = resolveNowMs(nowMs);
-const currentIndex = navigationSignals.lastNavigatedIndex.value;
-const currentSource = navigationSignals.lastSource.value;
+const currentIndex = navigationSignals.lastNavigatedIndex;
+const currentSource = navigationSignals.lastSource;
 if (targetIndex === currentIndex && isManualSource(source) && isManualSource(currentSource)) {
-navigationSignals.lastTimestamp.value = timestamp;
+navigationSignals.lastTimestamp = timestamp;
 return { isDuplicate: true };
 }
-navigationSignals.lastSource.value = source;
-navigationSignals.lastTimestamp.value = timestamp;
-navigationSignals.lastNavigatedIndex.value = targetIndex;
+navigationSignals.lastSource = source;
+navigationSignals.lastTimestamp = timestamp;
+navigationSignals.lastNavigatedIndex = targetIndex;
 return { isDuplicate: false };
 }
 function resetNavigation(nowMs) {
-navigationSignals.lastSource.value = INITIAL_NAVIGATION_STATE.lastSource;
-navigationSignals.lastTimestamp.value = resolveNowMs(nowMs);
-navigationSignals.lastNavigatedIndex.value = INITIAL_NAVIGATION_STATE.lastNavigatedIndex;
+navigationSignals.lastSource = INITIAL_NAVIGATION_STATE.lastSource;
+navigationSignals.lastTimestamp = resolveNowMs(nowMs);
+navigationSignals.lastNavigatedIndex = INITIAL_NAVIGATION_STATE.lastNavigatedIndex;
 }
 function resolveNavigationSource(trigger) {
 if (trigger === "scroll") return "scroll";
@@ -4890,14 +4784,32 @@ viewMode: "vertical",
 isLoading: false,
 error: null
 };
+var [_viewMode, setViewMode] = createSignalSafe(INITIAL_UI_STATE.viewMode);
+var [_isLoading, setIsLoading] = createSignalSafe(INITIAL_UI_STATE.isLoading);
+var [_error, setErrorSignal] = createSignalSafe(INITIAL_UI_STATE.error);
 var uiSignals = {
-viewMode: createSignalSafe(INITIAL_UI_STATE.viewMode),
-isLoading: createSignalSafe(INITIAL_UI_STATE.isLoading),
-error: createSignalSafe(INITIAL_UI_STATE.error)
+get viewMode() {
+return _viewMode();
+},
+set viewMode(v) {
+setViewMode(v);
+},
+get isLoading() {
+return _isLoading();
+},
+set isLoading(v) {
+setIsLoading(v);
+},
+get error() {
+return _error();
+},
+set error(v) {
+setErrorSignal(v);
+}
 };
 function setError(error) {
-uiSignals.error.value = error;
-if (error) uiSignals.isLoading.value = false;
+uiSignals.error = error;
+if (error) uiSignals.isLoading = false;
 }
 function createEventEmitter() {
 const listeners =  new Map();
@@ -4924,7 +4836,7 @@ listeners.clear();
 };
 }
 var batch = (fn) => batch$1(fn);
-var INITIAL_STATE$2 = {
+var INITIAL_STATE$1 = {
 isOpen: false,
 mediaItems: [],
 currentIndex: 0,
@@ -4933,45 +4845,75 @@ error: null,
 viewMode: "vertical"
 };
 var galleryIndexEvents = createEventEmitter();
+var [isOpenSig, setIsOpen] = createSignalSafe(INITIAL_STATE$1.isOpen);
+var [mediaItemsSig, setMediaItems] = createSignalSafe(INITIAL_STATE$1.mediaItems);
+var [currentIndexSig, setCurrentIndex] = createSignalSafe(INITIAL_STATE$1.currentIndex);
+var [focusedIndexSig, setFocusedIndex] = createSignalSafe(null);
+var [currentVideoElementSig, setCurrentVideoElement] = createSignalSafe(null);
 var gallerySignals = {
-isOpen: createSignalSafe(INITIAL_STATE$2.isOpen),
-mediaItems: createSignalSafe(INITIAL_STATE$2.mediaItems),
-currentIndex: createSignalSafe(INITIAL_STATE$2.currentIndex),
+get isOpen() {
+return isOpenSig();
+},
+set isOpen(v) {
+setIsOpen(v);
+},
+get mediaItems() {
+return mediaItemsSig();
+},
+set mediaItems(v) {
+setMediaItems(v);
+},
+get currentIndex() {
+return currentIndexSig();
+},
+set currentIndex(v) {
+setCurrentIndex(v);
+},
 isLoading: uiSignals.isLoading,
 error: uiSignals.error,
 viewMode: uiSignals.viewMode,
-focusedIndex: createSignalSafe(null),
-currentVideoElement: createSignalSafe(null)
+get focusedIndex() {
+return focusedIndexSig();
+},
+set focusedIndex(v) {
+setFocusedIndex(v);
+},
+get currentVideoElement() {
+return currentVideoElementSig();
+},
+set currentVideoElement(v) {
+setCurrentVideoElement(v);
+}
 };
 function applyGallerySessionUpdate(state) {
 batch(() => {
-gallerySignals.mediaItems.value = state.mediaItems;
-gallerySignals.currentIndex.value = state.currentIndex;
-gallerySignals.focusedIndex.value = state.focusedIndex;
-gallerySignals.currentVideoElement.value = state.currentVideoElement;
-gallerySignals.error.value = state.error;
-gallerySignals.isOpen.value = state.isOpen;
+setMediaItems(state.mediaItems);
+setCurrentIndex(state.currentIndex);
+setFocusedIndex(state.focusedIndex);
+setCurrentVideoElement(state.currentVideoElement);
+uiSignals.error = state.error;
+setIsOpen(state.isOpen);
 });
 }
 function applyGalleryStateUpdate(state) {
 batch(() => {
-gallerySignals.mediaItems.value = state.mediaItems;
-gallerySignals.currentIndex.value = state.currentIndex;
-gallerySignals.isLoading.value = state.isLoading;
-gallerySignals.error.value = state.error;
-gallerySignals.viewMode.value = state.viewMode;
-gallerySignals.isOpen.value = state.isOpen;
+setMediaItems(state.mediaItems);
+setCurrentIndex(state.currentIndex);
+uiSignals.isLoading = state.isLoading;
+uiSignals.error = state.error;
+uiSignals.viewMode = state.viewMode;
+setIsOpen(state.isOpen);
 });
 }
 var galleryState = {
 get value() {
 return {
-isOpen: gallerySignals.isOpen.value,
-mediaItems: gallerySignals.mediaItems.value,
-currentIndex: gallerySignals.currentIndex.value,
-isLoading: gallerySignals.isLoading.value,
-error: gallerySignals.error.value,
-viewMode: gallerySignals.viewMode.value
+isOpen: isOpenSig(),
+mediaItems: mediaItemsSig(),
+currentIndex: currentIndexSig(),
+isLoading: uiSignals.isLoading,
+error: uiSignals.error,
+viewMode: uiSignals.viewMode
 };
 },
 set value(state) {
@@ -5006,42 +4948,51 @@ error: null
 });
 resetNavigation();
 }
-function navigateToItem(index, trigger = "button", source) {
-const state = galleryState.value;
-const validIndex = clampIndex(index, state.mediaItems.length);
-if (recordNavigation(validIndex, source ?? resolveNavigationSource(trigger)).isDuplicate) {
-gallerySignals.focusedIndex.value = validIndex;
-return;
-}
-galleryIndexEvents.emit("navigate:start", {
-from: state.currentIndex,
-to: validIndex,
-trigger
-});
+function navigateNext(trigger = "click") {
+const items = mediaItemsSig();
+const current = currentIndexSig();
+if (items.length <= 1) return;
+const next = current + 1;
+if (next >= items.length) return;
 batch(() => {
-galleryState.value = {
-...state,
-currentIndex: validIndex
-};
-gallerySignals.focusedIndex.value = validIndex;
+setCurrentIndex(next);
+setFocusedIndex(next);
 });
+recordNavigation(next, resolveNavigationSource(trigger));
 galleryIndexEvents.emit("navigate:complete", {
-index: validIndex,
+index: next,
 trigger
 });
 }
-function navigatePrevious(trigger = "button") {
-const state = galleryState.value;
-const baseIndex = getCurrentActiveIndex();
-navigateToItem(baseIndex > 0 ? baseIndex - 1 : state.mediaItems.length - 1, trigger, resolveNavigationSource(trigger));
+function navigatePrevious(trigger = "click") {
+const items = mediaItemsSig();
+const current = currentIndexSig();
+if (items.length <= 1) return;
+const prev = current - 1;
+if (prev < 0) return;
+batch(() => {
+setCurrentIndex(prev);
+setFocusedIndex(prev);
+});
+recordNavigation(prev, resolveNavigationSource(trigger));
+galleryIndexEvents.emit("navigate:complete", {
+index: prev,
+trigger
+});
 }
-function navigateNext(trigger = "button") {
-const state = galleryState.value;
-const baseIndex = getCurrentActiveIndex();
-navigateToItem(baseIndex < state.mediaItems.length - 1 ? baseIndex + 1 : 0, trigger, resolveNavigationSource(trigger));
-}
-function getCurrentActiveIndex() {
-return gallerySignals.focusedIndex.value ?? galleryState.value.currentIndex;
+function navigateToItem(targetIndex, trigger, source) {
+validateNavigationParams(targetIndex, source, trigger, "navigateToItem");
+const clampedIndex = clampIndex(targetIndex, mediaItemsSig().length);
+if (clampedIndex === currentIndexSig()) return;
+batch(() => {
+setCurrentIndex(clampedIndex);
+setFocusedIndex(clampedIndex);
+});
+recordNavigation(clampedIndex, source);
+galleryIndexEvents.emit("navigate:complete", {
+index: clampedIndex,
+trigger
+});
 }
 var playbackStateMap =  new WeakMap();
 function executeVideoControl(action, options = {}) {
@@ -5081,7 +5032,7 @@ context: options.context
 }
 function getGalleryVideo(video) {
 if (video instanceof HTMLVideoElement) return video;
-const signaled = gallerySignals.currentVideoElement.value;
+const signaled = gallerySignals.currentVideoElement;
 return signaled instanceof HTMLVideoElement ? signaled : null;
 }
 function playVideo(video, context) {
@@ -5144,7 +5095,7 @@ function handleKeyboardEvent(event, handlers, options) {
 if (!options.enableKeyboard) return;
 try {
 const key = event.key;
-const isGalleryOpen = gallerySignals.isOpen.value;
+const isGalleryOpen = gallerySignals.isOpen;
 if (key === "Escape" && isGalleryOpen) {
 handlers.onGalleryClose();
 event.preventDefault();
@@ -5171,8 +5122,8 @@ handlers.onKeyboardEvent?.(event);
 } catch (error) {}
 }
 function handleNavigation(key) {
-const current = gallerySignals.currentIndex.value;
-const total = gallerySignals.mediaItems.value.length;
+const current = gallerySignals.currentIndex;
+const total = gallerySignals.mediaItems.length;
 switch (key) {
 case "ArrowLeft":
 navigatePrevious("keyboard");
@@ -5181,16 +5132,16 @@ case "ArrowRight":
 navigateNext("keyboard");
 break;
 case "Home":
-navigateToItem(0, "keyboard");
+navigateToItem(0, "keyboard", "keyboard");
 break;
 case "End":
-navigateToItem(Math.max(0, total - 1), "keyboard");
+navigateToItem(Math.max(0, total - 1), "keyboard", "keyboard");
 break;
 case "PageUp":
-navigateToItem(Math.max(0, current - 5), "keyboard");
+navigateToItem(Math.max(0, current - 5), "keyboard", "keyboard");
 break;
 case "PageDown":
-navigateToItem(Math.min(total - 1, current + 5), "keyboard");
+navigateToItem(Math.min(total - 1, current + 5), "keyboard", "keyboard");
 break;
 }
 }
@@ -5216,7 +5167,7 @@ function showKeyboardHelp() {
 if (!shouldExecuteKeyboardAction("?", 500)) return;
 try {
 const lang = getLanguageService();
-NotificationService.getInstance().show({
+getUserscriptSafe().notification({
 title: lang.translate("msg.kb.t"),
 text: [
 lang.translate("msg.kb.prev"),
@@ -5387,7 +5338,7 @@ return false;
 }
 function isProcessableMedia(target) {
 if (!target) return false;
-if (gallerySignals.isOpen.value) return false;
+if (gallerySignals.isOpen) return false;
 if (shouldBlockMediaTrigger(target)) return false;
 const mediaElement = findMediaElementInDOM(target);
 if (mediaElement) {
@@ -5405,7 +5356,7 @@ if (!isHTMLElement(target)) return {
 handled: false,
 reason: "Invalid target (not HTMLElement)"
 };
-if (gallerySignals.isOpen.value && isGalleryInternalElement(target)) return {
+if (gallerySignals.isOpen && isGalleryInternalElement(target)) return {
 handled: false,
 reason: "Gallery internal event"
 };
@@ -5467,13 +5418,19 @@ if (options.enableKeyboard) {
 const keyHandler = (evt) => {
 handleKeyboardEvent(evt, handlers, options);
 };
-eventManager.addListener(target, "keydown", keyHandler, listenerOptions, context);
+eventManager.addEventListener(target, "keydown", keyHandler, {
+...listenerOptions,
+context
+});
 }
 if (options.enableMediaDetection) {
 const clickHandler = async (evt) => {
 await handleMediaClick(evt, handlers, options);
 };
-eventManager.addListener(target, "click", clickHandler, listenerOptions, context);
+eventManager.addEventListener(target, "click", clickHandler, {
+...listenerOptions,
+context
+});
 }
 }
 async function initializeGalleryEvents(handlers, optionsOrRoot) {
@@ -5623,8 +5580,8 @@ var guardDispose = null;
 var guardSubscribers = 0;
 var ensureGuardEffect = () => {
 if (guardDispose) return;
-guardDispose = gallerySignals.isOpen.subscribe((isOpen) => {
-if (!isOpen) return;
+guardDispose = effectSafe(() => {
+if (!gallerySignals.isOpen) return;
 if (pauseAmbientVideosForGallery({
 trigger: "guard",
 reason: "guard"
@@ -5645,7 +5602,9 @@ guardDispose = null;
 };
 var GalleryApp = class {
 isInitialized = false;
-notificationService = NotificationService.getInstance();
+get userscript() {
+return getUserscriptSafe();
+}
 ambientVideoGuardDispose = null;
 constructor() {}
 async initialize() {
@@ -5666,7 +5625,7 @@ await initializeGalleryEvents({
 onMediaClick: (element, event) => this.handleMediaClick(element, event),
 onGalleryClose: () => this.closeGallery(),
 onKeyboardEvent: (event) => {
-if (event.key === "Escape" && gallerySignals.isOpen.value) this.closeGallery();
+if (event.key === "Escape" && gallerySignals.isOpen) this.closeGallery();
 }
 }, {
 enableKeyboard: typeof enableKeyboardSetting === "boolean" ? enableKeyboardSetting : true,
@@ -5688,19 +5647,28 @@ mediaErrorReporter.warn(  new Error("Media extraction returned no items"), {
 code: "MEDIA_EXTRACTION_EMPTY",
 metadata: { success: result.success }
 });
-this.notificationService.error("Failed to load media", "Could not find images or videos.");
+this.userscript.notification({
+title: "Failed to load media",
+text: "Could not find images or videos."
+});
 }
 } catch (error) {
 mediaErrorReporter.error(error, {
 code: "MEDIA_EXTRACTION_ERROR",
 notify: true
 });
-this.notificationService.error("Error occurred", getErrorMessage(error) || "Unknown error");
+this.userscript.notification({
+title: "Error occurred",
+text: getErrorMessage(error) || "Unknown error"
+});
 }
 }
 async openGallery(mediaItems, startIndex = 0, options = {}) {
 if (!this.isInitialized) {
-this.notificationService.error("Gallery unavailable", "Userscript manager required.");
+this.userscript.notification({
+title: "Gallery unavailable",
+text: "Userscript manager required."
+});
 return;
 }
 if (mediaItems.length === 0) return;
@@ -5721,20 +5689,23 @@ startIndex
 },
 notify: true
 });
-this.notificationService.error("Failed to load gallery", getErrorMessage(error) || "Unknown error");
+this.userscript.notification({
+title: "Failed to load gallery",
+text: getErrorMessage(error) || "Unknown error"
+});
 throw error;
 }
 }
 closeGallery() {
 try {
-if (gallerySignals.isOpen.value) closeGallery();
+if (gallerySignals.isOpen) closeGallery();
 } catch (error) {
 galleryErrorReporter.error(error, { code: "GALLERY_CLOSE_FAILED" });
 }
 }
 async cleanup() {
 try {
-if (gallerySignals.isOpen.value) this.closeGallery();
+if (gallerySignals.isOpen) this.closeGallery();
 this.ambientVideoGuardDispose?.();
 this.ambientVideoGuardDispose = null;
 try {
@@ -6235,10 +6206,10 @@ if (source === "auto" && index !== null) navigateToItem(index, "scroll", "auto-f
 });
 onCleanup(() => coordinator.cleanup());
 const handleItemFocus = (index) => {
-navigateToItem(index, "keyboard");
+navigateToItem(index, "keyboard", "keyboard");
 };
 return {
-focusedIndex: () => gallerySignals.focusedIndex.value,
+focusedIndex: () => gallerySignals.focusedIndex,
 registerItem: (index, element) => coordinator.registerItem(index, element),
 handleItemFocus,
 forceSync: () => coordinator.updateFocus(true)
@@ -6359,7 +6330,10 @@ const eventManager = EventManager.getInstance();
 const listenerContext = createPrefixedId(LISTENER_CONTEXT_PREFIX, ":");
 const listenerIds = [];
 const registerListener = (type, handler) => {
-const id = eventManager.addListener(eventTarget, type, handler, { passive: true }, listenerContext);
+const id = eventManager.addEventListener(eventTarget, type, handler, {
+passive: true,
+context: listenerContext
+});
 if (id) listenerIds.push(id);
 };
 registerListener("wheel", handleWheel);
@@ -6400,7 +6374,10 @@ keyboardEvent.stopPropagation();
 }
 };
 const eventManager = EventManager.getInstance();
-const listenerId = eventManager.addListener(document, "keydown", handleKeyDown, { capture: true }, "gallery-keyboard-navigation");
+const listenerId = eventManager.addEventListener(document, "keydown", handleKeyDown, {
+capture: true,
+context: "gallery-keyboard-navigation"
+});
 onCleanup(() => {
 if (listenerId) eventManager.removeListener(listenerId);
 });
@@ -6462,7 +6439,10 @@ ro.observe(el);
 }
 const onResize = () => schedule();
 let resizeListenerId = null;
-if (typeof window !== "undefined") resizeListenerId = EventManager.getInstance().addListener(window, "resize", createEventListener(onResize), { passive: true }, "viewport:resize");
+if (typeof window !== "undefined") resizeListenerId = EventManager.getInstance().addEventListener(window, "resize", createEventListener(onResize), {
+passive: true,
+context: "viewport:resize"
+});
 return () => {
 disposed = true;
 if (ro) try {
@@ -6945,7 +6925,6 @@ const [local] = splitProps(props, [
 "isActive",
 "isFocused",
 "forceVisible",
-"isVisible",
 "onClick",
 "onImageContextMenu",
 "className",
@@ -7023,10 +7002,10 @@ setMuted: applyMutedProgrammatically
 createEffect(() => {
 const video = videoRef();
 if (local.isActive && video) {
-if (!untrack(() => gallerySignals.currentVideoElement.value === video)) gallerySignals.currentVideoElement.value = video;
+if (!untrack(() => gallerySignals.currentVideoElement === video)) gallerySignals.currentVideoElement = video;
 return;
 }
-if (untrack(() => gallerySignals.currentVideoElement.value === video)) gallerySignals.currentVideoElement.value = null;
+if (untrack(() => gallerySignals.currentVideoElement === video)) gallerySignals.currentVideoElement = null;
 });
 const [videoVolume, setVideoVolume] = createSignal(normalizeVideoVolumeSetting(getTypedSettingOr("gallery.videoVolume", 1), 1));
 const [videoMuted, setVideoMuted] = createSignal(normalizeVideoMutedSetting(getTypedSettingOr("gallery.videoMuted", false), false));
@@ -8276,9 +8255,9 @@ selectGuardTimeout = null;
 }, selectChangeGuardMs);
 };
 Array.from(panel.querySelectorAll("select")).forEach((select) => {
-eventManager.addListener(select, "focus", handleSelectFocus, void 0, listenerContext);
-eventManager.addListener(select, "blur", handleSelectBlur, void 0, listenerContext);
-eventManager.addListener(select, "change", handleSelectChange, void 0, listenerContext);
+eventManager.addEventListener(select, "focus", handleSelectFocus, { context: listenerContext });
+eventManager.addEventListener(select, "blur", handleSelectBlur, { context: listenerContext });
+eventManager.addEventListener(select, "change", handleSelectChange, { context: listenerContext });
 });
 const handleOutsideClick = (event) => {
 const target = event.target;
@@ -8297,7 +8276,10 @@ currentNode = currentNode.parentElement;
 }
 setSettingsExpanded(false);
 };
-eventManager.addListener(documentRef, "mousedown", handleOutsideClick, { capture: false }, listenerContext);
+eventManager.addEventListener(documentRef, "mousedown", handleOutsideClick, {
+capture: false,
+context: listenerContext
+});
 onCleanup(() => {
 clearScheduledTimeout(selectGuardTimeout);
 eventManager.removeByContext(listenerContext);
@@ -8377,15 +8359,15 @@ handleLanguageChange
 };
 }
 var DOWNLOAD_MIN_DISPLAY_TIME = 300;
-var INITIAL_STATE$1 = {
+var INITIAL_STATE = {
 isDownloading: false,
 isLoading: false,
 hasError: false
 };
 function useToolbarState() {
-const [isDownloading, setIsDownloading] = createSignal(INITIAL_STATE$1.isDownloading);
-const [isLoading, setIsLoading] = createSignal(INITIAL_STATE$1.isLoading);
-const [hasError, setHasError] = createSignal(INITIAL_STATE$1.hasError);
+const [isDownloading, setIsDownloading] = createSignal(INITIAL_STATE.isDownloading);
+const [isLoading, setIsLoading] = createSignal(INITIAL_STATE.isLoading);
+const [hasError, setHasError] = createSignal(INITIAL_STATE.hasError);
 let lastDownloadToggle = 0;
 let downloadTimeoutRef = null;
 const clearDownloadTimeout = () => {
@@ -8428,9 +8410,9 @@ setIsDownloading(false);
 const resetState = () => {
 clearDownloadTimeout();
 lastDownloadToggle = 0;
-setIsDownloading(INITIAL_STATE$1.isDownloading);
-setIsLoading(INITIAL_STATE$1.isLoading);
-setHasError(INITIAL_STATE$1.hasError);
+setIsDownloading(INITIAL_STATE.isDownloading);
+setIsLoading(INITIAL_STATE.isLoading);
+setHasError(INITIAL_STATE.hasError);
 };
 onCleanup(() => {
 clearDownloadTimeout();
@@ -8673,43 +8655,35 @@ toggleTweetPanelExpanded: toggleTweet
 });
 }
 var Toolbar = ToolbarContainer;
-var INITIAL_STATE = {
+var [_downloadState, setDownloadState] = createSignalSafe({
 activeTasks:  new Map(),
 queue: [],
 isProcessing: false
-};
-var downloadStateSignal = null;
-var getDownloadState = () => {
-if (!downloadStateSignal) downloadStateSignal = createSignalSafe(INITIAL_STATE);
-return downloadStateSignal;
-};
+});
 var setProcessingFlag = (isProcessing) => {
-const currentState = downloadState.value;
+const currentState = _downloadState();
 if (currentState.isProcessing === isProcessing) return;
-downloadState.value = {
+setDownloadState({
 ...currentState,
 isProcessing
-};
+});
 };
 function acquireDownloadLock() {
 setProcessingFlag(true);
 return () => {
-const { queue, activeTasks } = downloadState.value;
+const { queue, activeTasks } = _downloadState();
 if (queue.length === 0 && activeTasks.size === 0) setProcessingFlag(false);
 };
 }
 function isDownloadLocked() {
-return downloadState.value.isProcessing;
+return _downloadState().isProcessing;
 }
 var downloadState = {
 get value() {
-return getDownloadState().value;
+return _downloadState();
 },
 set value(newState) {
-getDownloadState().value = newState;
-},
-subscribe(callback) {
-return getDownloadState().subscribe(callback);
+setDownloadState(newState);
 }
 };
 function isDownloadUiBusy(context) {
@@ -8735,7 +8709,6 @@ else break;
 return indices;
 }
 var _tmpl$$2 =  template(`<div><div><h3></h3><p>`), _tmpl$2 =  template(`<div data-xeg-gallery=true data-xeg-role=gallery><div data-role=toolbar-hover-zone></div><div data-role=toolbar></div><div data-xeg-role=items-container data-xeg-role-compat=items-list><div aria-hidden=true data-xeg-role=scroll-spacer>`);
-var noop = () => {};
 function VerticalGalleryViewCore(props) {
 const [local] = splitProps(props, [
 "onClose",
@@ -8745,8 +8718,8 @@ const [local] = splitProps(props, [
 "onDownloadCurrent",
 "onDownloadAll"
 ]);
-const mediaItems = createMemo(() => galleryState.value.mediaItems);
-const currentIndex = createMemo(() => galleryState.value.currentIndex);
+const mediaItems = createMemo(() => gallerySignals.mediaItems);
+const currentIndex = createMemo(() => gallerySignals.currentIndex);
 const isDownloading = createMemo(() => isDownloadUiBusy({ downloadProcessing: downloadState.value.isProcessing }));
 const [containerEl, setContainerEl] = createSignal(null);
 const [toolbarWrapperEl, setToolbarWrapperEl] = createSignal(null);
@@ -8779,7 +8752,7 @@ debouncedScrollCorrection.cancel();
 });
 createEffect(() => {
 if (!isVisible() || navigation.lastNavigationTrigger()) return;
-navigateToItem(currentIndex(), "click");
+navigateToItem(currentIndex(), "click", "auto-focus");
 });
 const getInitialFitMode = () => {
 return getTypedSettingOr("gallery.imageFitMode", "fitWidth");
@@ -8791,7 +8764,7 @@ safeEventPrevent(event);
 setImageFitMode(mode);
 persistFitMode(mode);
 scroll.scrollToCurrentItem();
-navigateToItem(currentIndex(), "click");
+navigateToItem(currentIndex(), "click", "auto-focus");
 };
 const handleDownloadCurrent = () => local.onDownloadCurrent?.();
 const handleDownloadAll = () => local.onDownloadAll?.();
@@ -8801,11 +8774,11 @@ const handleFitHeight = (event) => applyFitMode("fitHeight", event);
 const handleFitContainer = (event) => applyFitMode("fitContainer", event);
 const handlePrevious = () => {
 const current = currentIndex();
-if (current > 0) navigateToItem(current - 1, "click");
+if (current > 0) navigateToItem(current - 1, "click", "button");
 };
 const handleNext = () => {
 const current = currentIndex();
-if (current < mediaItems().length - 1) navigateToItem(current + 1, "click");
+if (current < mediaItems().length - 1) navigateToItem(current + 1, "click", "button");
 };
 const handleBackgroundClick = (event) => {
 const target = event.target;
@@ -8816,7 +8789,7 @@ local.onClose?.();
 const handleMediaItemClick = (index) => {
 const items = mediaItems();
 const current = currentIndex();
-if (index >= 0 && index < items.length && index !== current) navigateToItem(index, "click");
+if (index >= 0 && index < items.length && index !== current) navigateToItem(index, "click", "scroll");
 };
 createEffect(() => {
 const container = containerEl();
@@ -8896,7 +8869,7 @@ onFitHeight: handleFitHeight,
 onFitContainer: handleFitContainer
 },
 lifecycle: {
-onClose: local.onClose ?? noop,
+onClose: local.onClose ?? (() => {}),
 onOpenSettings: () => {}
 }
 };
@@ -8983,7 +8956,7 @@ local.onClose?.();
 createEffect(() => {
 if (!local.onClose) return;
 const eventManager = EventManager.getInstance();
-const listenerId = eventManager.addListener(document, "keydown", escapeListener);
+const listenerId = eventManager.addEventListener(document, "keydown", escapeListener);
 onCleanup(() => {
 if (listenerId) eventManager.removeListener(listenerId);
 });
@@ -9026,7 +8999,10 @@ const notifyError = (error) => {
 if (lastError === error) return;
 lastError = error;
 const { title, body } = translateError(error);
-NotificationService.getInstance().error(title, body);
+getUserscriptSafe().notification({
+title,
+text: body
+});
 };
 const handleRetry = () => {
 lastError = void 0;
@@ -9072,7 +9048,9 @@ container = null;
 isMounting = false;
 stateUnsubscribe = null;
 onCloseCallback = null;
-notificationService = NotificationService.getInstance();
+get userscript() {
+return getUserscriptSafe();
+}
 constructor() {
 this.setupStateSubscription();
 }
@@ -9080,15 +9058,14 @@ setOnCloseCallback(onClose) {
 this.onCloseCallback = onClose;
 }
 setupStateSubscription() {
-this.stateUnsubscribe = gallerySignals.isOpen.subscribe((isOpen) => {
-if (isOpen && !this.container) this.renderGallery();
-else if (!isOpen && this.container) this.cleanupGallery();
+this.stateUnsubscribe = effectSafe(() => {
+if (gallerySignals.isOpen && !this.container) this.renderGallery();
+else if (!gallerySignals.isOpen && this.container) this.cleanupGallery();
 });
 }
 renderGallery() {
 if (this.isMounting || this.container) return;
-const { isOpen, mediaItems } = gallerySignals;
-if (!isOpen.value || mediaItems.value.length === 0) return;
+if (!gallerySignals.isOpen || gallerySignals.mediaItems.length === 0) return;
 this.isMounting = true;
 try {
 this.createContainer();
@@ -9174,15 +9151,18 @@ async handleDownload(type) {
 if (isDownloadLocked()) return;
 const releaseLock = acquireDownloadLock();
 const notifyError = (title, body) => {
-this.notificationService.error(title, body);
+this.userscript.notification({
+title,
+text: body
+});
 };
 try {
 const languageService = getLanguageService();
-const mediaItems = gallerySignals.mediaItems.value;
+const mediaItems = gallerySignals.mediaItems;
 const mediaService = getMediaService();
 const downloadService = await this.getDownloadService();
 if (type === "current") {
-const currentMedia = mediaItems[gallerySignals.currentIndex.value];
+const currentMedia = mediaItems[gallerySignals.currentIndex];
 if (currentMedia) {
 let blob;
 try {
@@ -9265,12 +9245,12 @@ async render(mediaItems, renderOptions) {
 openGallery(mediaItems, renderOptions?.startIndex ?? 0);
 }
 close() {
-if (!gallerySignals.isOpen.value) return;
+if (!gallerySignals.isOpen) return;
 closeGallery();
 this.onCloseCallback?.();
 }
 isRendering() {
-return !!(this.container && gallerySignals.isOpen.value);
+return !!(this.container && gallerySignals.isOpen);
 }
 destroy() {
 this.stateUnsubscribe?.();
@@ -9298,10 +9278,6 @@ maxConcurrentDownloads: 3,
 autoZip: false,
 folderStructure: "flat"
 },
-tokens: {
-autoRefresh: true,
-expirationMinutes: 60
-},
 accessibility: {
 reduceMotion: false,
 screenReaderSupport: true,
@@ -9322,14 +9298,21 @@ const settings = globalThis.structuredClone(DEFAULT_SETTINGS);
 settings.lastModified = timestamp;
 return settings;
 }
-var migrations = { "1.0.0": (input) => {
+var migrations = {
+"1.0.0": (input) => {
 const next = { ...input };
 next.gallery = {
 ...next.gallery,
 enableKeyboardNav: true
 };
 return next;
-} };
+},
+"1.8.2": (input) => {
+const next = { ...input };
+delete next.tokens;
+return next;
+}
+};
 function pruneWithTemplate(input, template) {
 if (!isRecord(input)) return {};
 const out = {};
@@ -9348,7 +9331,6 @@ const categories = {
 gallery: DEFAULT_SETTINGS.gallery,
 toolbar: DEFAULT_SETTINGS.toolbar,
 download: DEFAULT_SETTINGS.download,
-tokens: DEFAULT_SETTINGS.tokens,
 accessibility: DEFAULT_SETTINGS.accessibility,
 features: DEFAULT_SETTINGS.features
 };
@@ -9383,7 +9365,7 @@ storage = getPersistentStorage();
 schemaHash = computeCurrentSettingsSchemaHash();
 async load() {
 try {
-const stored = await this.storage.getJson(APP_SETTINGS_STORAGE_KEY);
+const stored = await this.storage.get(APP_SETTINGS_STORAGE_KEY);
 if (!stored) {
 const defaults = createDefaultSettings();
 await this.persist(defaults).catch(() => {});
@@ -9407,7 +9389,7 @@ throw error;
 }
 }
 async persist(settings) {
-await this.storage.setJson(APP_SETTINGS_STORAGE_KEY, {
+await this.storage.set(APP_SETTINGS_STORAGE_KEY, {
 ...settings,
 __schemaHash: this.schemaHash
 });
@@ -9646,7 +9628,10 @@ try {
 await initializeSettingsService();
 } catch (error) {
 settingsErrorReporter.warn(error, { code: "SETTINGS_SERVICE_INIT_FAILED" });
-await NotificationService.getInstance().error("Settings unavailable", "Defaults will be used until settings load.");
+getUserscriptSafe().notification({
+title: "Settings unavailable",
+text: "Defaults will be used until settings load."
+});
 }
 }
 async function initializeGalleryApp() {
@@ -9805,27 +9790,6 @@ await task();
 }
 function buildStages() {
 return [
-{
-label: "Infrastructure",
-run: async () => {
-try {
-await initializeEnvironment();
-} catch (error) {
-bootstrapErrorReporter.critical(error, { code: "INFRASTRUCTURE_INIT_FAILED" });
-throw error;
-}
-}
-},
-{
-label: "Developer tooling",
-run: initializeDevTools,
-shouldRun: () => false,
-optional: true
-},
-{
-label: "Critical systems",
-run: initializeCriticalSystems
-},
 {
 label: "Gallery services",
 run: async () => {
