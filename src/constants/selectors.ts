@@ -211,23 +211,6 @@ export const STABLE_MEDIA_CONTAINERS_SELECTORS = MEDIA_CONTAINER_SELECTORS;
 export const STABLE_VIDEO_CONTAINERS_SELECTORS = VIDEO_CONTAINER_SELECTORS;
 
 /**
- * Stable image container selectors with fallback chain
- *
- * @remarks
- * Image-specific selectors:
- * 1. `tweetPhoto` testid - Most reliable
- * 2. Twitter CDN images - Broad content-based fallback
- *
- * @example
- * ```typescript
- * const imageContainer = STABLE_IMAGE_CONTAINERS_SELECTORS
- *   .map(sel => element.querySelector(sel))
- *   .find(Boolean);
- * ```
- */
-export const STABLE_IMAGE_CONTAINERS_SELECTORS = IMAGE_CONTAINER_SELECTORS;
-
-/**
  * Stable media viewer overlay selectors with fallback chain
  *
  * @remarks
