@@ -40,12 +40,10 @@ function extractTweetTextHTML(tweetArticle: Element | null): string | undefined 
  * Extracts tweet text from clicked element by traversing up
  *
  * @param element - Clicked element
- * @param _maxDepth - Reserved for API stability (unused)
  * @returns Tweet text or undefined
  */
 export function extractTweetTextHTMLFromClickedElement(
-  element: HTMLElement,
-  _maxDepth = 10
+  element: HTMLElement
 ): string | undefined {
   const tweetArticle = closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS, {
     debugLabel: 'tweet-container',

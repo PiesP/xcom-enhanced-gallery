@@ -66,21 +66,12 @@ export class TranslationCatalog {
   }
 
   /**
-   * Ensure language bundle is loaded (lazy-loading not supported)
+   * Ensure language bundle is loaded (all bundles are pre-loaded).
    * @param _language - Language code (unused)
-   * @returns Always false
+   * @returns Always true
    */
   public async ensureLanguage(_language: BaseLanguageCode): Promise<boolean> {
-    return false;
-  }
-
-  /**
-   * Check if lazy-loading is supported (not supported)
-   * @param _language - Language code (unused)
-   * @returns Always false
-   */
-  public canLazyLoad(_language: BaseLanguageCode): boolean {
-    return false;
+    return true;
   }
 
   /**
