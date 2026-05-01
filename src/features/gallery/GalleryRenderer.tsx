@@ -27,6 +27,7 @@ import {
   navigatePrevious,
   openGallery,
 } from '@shared/state/signals/gallery.signals';
+import { effectSafe } from '@shared/state/signals/signal-factory';
 import { setError } from '@shared/state/signals/ui.state';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { createSignal, onCleanup } from 'solid-js';
@@ -51,7 +52,8 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   private setupStateSubscription(): void {
-    this.stateUnsubscribe = gallerySignals.isOpen.subscribe((isOpen) => {
+    this.stateUnsubscribe = effectSafe(() => {
+      const isOpen = gallerySignals.isOpen[0]();
       if (isOpen && !this.container) {
         this.renderGallery();
       } else if (!isOpen && this.container) {

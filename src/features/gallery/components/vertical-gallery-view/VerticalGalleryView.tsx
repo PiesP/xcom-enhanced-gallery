@@ -56,7 +56,7 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
   const mediaItems = createMemo(() => galleryState.mediaItems);
   const currentIndex = createMemo(() => galleryState.currentIndex);
   const isDownloading = createMemo(() =>
-    isDownloadUiBusy({ downloadProcessing: downloadState.isProcessing })
+    isDownloadUiBusy({ downloadProcessing: downloadState.value.isProcessing })
   );
 
   // Element refs

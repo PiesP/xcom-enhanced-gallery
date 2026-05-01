@@ -78,59 +78,54 @@ export const galleryIndexEvents = createEventEmitter<{
   'navigate:complete': GalleryNavigateCompletePayload;
 }>();
 
-const [_isOpen, setIsOpen] = createSignalSafe<boolean>(INITIAL_STATE.isOpen);
-const [_mediaItems, setMediaItems] = createSignalSafe<readonly MediaInfo[]>(INITIAL_STATE.mediaItems);
-const [_currentIndex, setCurrentIndex] = createSignalSafe<number>(INITIAL_STATE.currentIndex);
-const [_focusedIndex, _setFocusedIndex] = createSignalSafe<number | null>(null);
-const [_currentVideoElement, setCurrentVideoElement] = createSignalSafe<HTMLVideoElement | null>(null);
+const [isOpenSig, setIsOpen] = createSignalSafe<boolean>(INITIAL_STATE.isOpen);
+const [mediaItemsSig, setMediaItems] = createSignalSafe<readonly MediaInfo[]>(INITIAL_STATE.mediaItems);
+const [currentIndexSig, setCurrentIndex] = createSignalSafe<number>(INITIAL_STATE.currentIndex);
+const [focusedIndexSig, setFocusedIndex] = createSignalSafe<number | null>(null);
+const [currentVideoElementSig, setCurrentVideoElement] = createSignalSafe<HTMLVideoElement | null>(null);
 
 export const gallerySignals = {
-  get isOpen() { return _isOpen(); },
-  set isOpen(v: boolean) { setIsOpen(v); },
-  get mediaItems() { return _mediaItems(); },
-  set mediaItems(v: readonly MediaInfo[]) { setMediaItems(v); },
-  get currentIndex() { return _currentIndex(); },
-  set currentIndex(v: number) { setCurrentIndex(v); },
+  isOpen: isOpenSig,
+  mediaItems: mediaItemsSig,
+  currentIndex: currentIndexSig,
   isLoading: uiSignals.isLoading,
   error: uiSignals.error,
   viewMode: uiSignals.viewMode,
-  get focusedIndex() { return _focusedIndex(); },
-  set focusedIndex(v: number | null) { _setFocusedIndex(v); },
-  get currentVideoElement() { return _currentVideoElement(); },
-  set currentVideoElement(v: HTMLVideoElement | null) { setCurrentVideoElement(v); },
+  focusedIndex: focusedIndexSig,
+  currentVideoElement: currentVideoElementSig,
 };
 
 function applyGallerySessionUpdate(state: GallerySessionState): void {
   batch(() => {
-    gallerySignals.mediaItems = state.mediaItems;
-    gallerySignals.currentIndex = state.currentIndex;
-    gallerySignals.focusedIndex = state.focusedIndex;
-    gallerySignals.currentVideoElement = state.currentVideoElement;
-    gallerySignals.error = state.error;
-    gallerySignals.isOpen = state.isOpen;
+    setMediaItems(state.mediaItems);
+    setCurrentIndex(state.currentIndex);
+    setFocusedIndex(state.focusedIndex);
+    setCurrentVideoElement(state.currentVideoElement);
+    uiSignals.error = state.error;
+    setIsOpen(state.isOpen);
   });
 }
 
 export function applyGalleryStateUpdate(state: GalleryState): void {
   batch(() => {
-    gallerySignals.mediaItems = state.mediaItems;
-    gallerySignals.currentIndex = state.currentIndex;
-    gallerySignals.isLoading = state.isLoading;
-    gallerySignals.error = state.error;
-    gallerySignals.viewMode = state.viewMode;
-    gallerySignals.isOpen = state.isOpen;
+    setMediaItems(state.mediaItems);
+    setCurrentIndex(state.currentIndex);
+    uiSignals.isLoading = state.isLoading;
+    uiSignals.error = state.error;
+    uiSignals.viewMode = state.viewMode;
+    setIsOpen(state.isOpen);
   });
 }
 
 export const galleryState = {
   get value(): GalleryState {
     return {
-      isOpen: gallerySignals.isOpen,
-      mediaItems: gallerySignals.mediaItems,
-      currentIndex: gallerySignals.currentIndex,
-      isLoading: gallerySignals.isLoading,
-      error: gallerySignals.error,
-      viewMode: gallerySignals.viewMode,
+      isOpen: isOpenSig(),
+      mediaItems: mediaItemsSig(),
+      currentIndex: currentIndexSig(),
+      isLoading: uiSignals.isLoading,
+      error: uiSignals.error,
+      viewMode: uiSignals.viewMode,
     };
   },
 
@@ -144,10 +139,6 @@ export const galleryState = {
     });
   },
 };
-
-// ============================================================================
-// Actions
-// ============================================================================
 
 export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   const validIndex = clampIndex(startIndex, items.length);
@@ -180,127 +171,65 @@ export function closeGallery(): void {
   }
 }
 
-export function navigateToItem(
-  index: number,
-  trigger: NavigationTrigger = 'button',
-  source?: NavigationSource
-): void {
-  const state = galleryState.value;
-  const validIndex = clampIndex(index, state.mediaItems.length);
-  const navigationSource = source ?? resolveNavigationSource(trigger);
+export function navigateNext(trigger: GalleryNavigationTrigger = 'click'): void {
+  const items = mediaItemsSig();
+  const current = currentIndexSig();
+  if (items.length <= 1) return;
 
-  if (__DEV__) {
-    validateNavigationParams(validIndex, navigationSource, trigger, 'navigateToItem');
-  }
-
-  const result = recordNavigation(validIndex, navigationSource);
-
-  if (result.isDuplicate) {
-    gallerySignals.focusedIndex.value = validIndex;
-    return;
-  }
-
-  galleryIndexEvents.emit('navigate:start', {
-    from: state.currentIndex,
-    to: validIndex,
-    trigger,
-  });
+  const next = current + 1;
+  if (next >= items.length) return;
 
   batch(() => {
-    galleryState.value = { ...state, currentIndex: validIndex };
-    gallerySignals.focusedIndex.value = validIndex;
+    setCurrentIndex(next);
+    setFocusedIndex(next);
+  });
+  recordNavigation(next, trigger, resolveNavigationSource(trigger));
+  galleryIndexEvents.emit('navigate:complete', { index: next, trigger });
+}
+
+export function navigatePrevious(trigger: GalleryNavigationTrigger = 'click'): void {
+  const items = mediaItemsSig();
+  const current = currentIndexSig();
+  if (items.length <= 1) return;
+
+  const prev = current - 1;
+  if (prev < 0) return;
+
+  batch(() => {
+    setCurrentIndex(prev);
+    setFocusedIndex(prev);
+  });
+  recordNavigation(prev, trigger, resolveNavigationSource(trigger));
+  galleryIndexEvents.emit('navigate:complete', { index: prev, trigger });
+}
+
+export function navigateToItem(
+  targetIndex: number,
+  trigger: GalleryNavigationTrigger,
+  source: NavigationSource
+): void {
+  validateNavigationParams(targetIndex, source, trigger, 'navigateToItem');
+
+  const items = mediaItemsSig();
+  const clampedIndex = clampIndex(targetIndex, items.length);
+  const current = currentIndexSig();
+
+  if (clampedIndex === current) return;
+
+  batch(() => {
+    setCurrentIndex(clampedIndex);
+    setFocusedIndex(clampedIndex);
   });
 
-  galleryIndexEvents.emit('navigate:complete', { index: validIndex, trigger });
-
-  if (__DEV__) {
-    logger.debug(
-      `[Gallery] Navigated to item: ${index} (trigger: ${trigger}, source: ${navigationSource})`
-    );
-  }
+  recordNavigation(clampedIndex, trigger, source);
+  galleryIndexEvents.emit('navigate:complete', { index: clampedIndex, trigger });
 }
 
-export function navigatePrevious(trigger: NavigationTrigger = 'button'): void {
-  const state = galleryState.value;
-  const baseIndex = getCurrentActiveIndex();
-  const newIndex = baseIndex > 0 ? baseIndex - 1 : state.mediaItems.length - 1;
-  const source = resolveNavigationSource(trigger);
-  navigateToItem(newIndex, trigger, source);
-}
-
-export function navigateNext(trigger: NavigationTrigger = 'button'): void {
-  const state = galleryState.value;
-  const baseIndex = getCurrentActiveIndex();
-  const newIndex = baseIndex < state.mediaItems.length - 1 ? baseIndex + 1 : 0;
-  const source = resolveNavigationSource(trigger);
-  navigateToItem(newIndex, trigger, source);
-}
-
-export function setFocusedIndex(
-  index: number | null,
-  source: NavigationSource = 'auto-focus'
+export function setGalleryFocus(
+  focusIndex: number | null,
+  source: NavigationSource
 ): void {
-  const state = galleryState.value;
-
-  if (__DEV__) {
-    validateFocusParams(index, source, 'setFocusedIndex');
-  }
-
-  recordFocusChange(source);
-
-  if (index === null) {
-    gallerySignals.focusedIndex.value = null;
-    if (__DEV__) {
-      logger.debug('[Gallery] focusedIndex cleared');
-    }
-    return;
-  }
-
-  const validIndex = clampIndex(index, state.mediaItems.length);
-  gallerySignals.focusedIndex.value = validIndex;
-
-  if (__DEV__) {
-    logger.debug(`[Gallery] focusedIndex set to ${validIndex} (source: ${source})`);
-  }
-}
-
-// ============================================================================
-// Selectors
-// ============================================================================
-
-export function getCurrentActiveIndex(): number {
-  return gallerySignals.focusedIndex.value ?? galleryState.value.currentIndex;
-}
-
-export function getCurrentMediaItem(): MediaInfo | null {
-  const state = galleryState.value;
-  return state.mediaItems[state.currentIndex] || null;
-}
-
-export function hasMediaItems(): boolean {
-  return galleryState.value.mediaItems.length > 0;
-}
-
-export function getMediaItemsCount(): number {
-  return galleryState.value.mediaItems.length;
-}
-
-export function hasPreviousMedia(): boolean {
-  return galleryState.value.mediaItems.length > 1;
-}
-
-export function hasNextMedia(): boolean {
-  return galleryState.value.mediaItems.length > 1;
-}
-
-export function isGalleryOpen(): boolean {
-  return galleryState.value.isOpen;
-}
-
-export function getCurrentIndex(): number {
-  return galleryState.value.currentIndex;
-}
-
-export function getMediaItems(): readonly MediaInfo[] {
-  return galleryState.value.mediaItems;
+  validateFocusParams(focusIndex, source, 'setGalleryFocus');
+  setFocusedIndex(focusIndex);
+  recordFocusChange(focusIndex, source);
 }
