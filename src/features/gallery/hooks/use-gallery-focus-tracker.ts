@@ -71,11 +71,11 @@ export function useGalleryFocusTracker(
 
   const handleItemFocus = (index: number): void => {
     // Treat focus event (e.g. Tab) as keyboard navigation
-    navigateToItem(index, 'keyboard');
+    navigateToItem(index, 'keyboard', 'keyboard');
   };
 
   return {
-    focusedIndex: () => gallerySignals.focusedIndex.value,
+    focusedIndex: () => gallerySignals.focusedIndex,
     registerItem: (index, element) => coordinator.registerItem(index, element),
     handleItemFocus,
     forceSync: () => coordinator.updateFocus(true),

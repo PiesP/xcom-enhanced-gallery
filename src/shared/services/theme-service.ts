@@ -226,11 +226,6 @@ export class ThemeService implements ThemeServiceContract {
   }
 
   private cleanup(): void {
-    if (this.settingsUnsubscribe) {
-      this.settingsUnsubscribe();
-      this.settingsUnsubscribe = null;
-    }
-
     this.boundSettingsService = null;
     this.listeners.clear();
     this.observedThemeScopes = new WeakSet();

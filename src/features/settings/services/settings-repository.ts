@@ -71,7 +71,7 @@ export class PersistentSettingsRepository implements SettingsRepository {
 
   public async load(): Promise<AppSettings> {
     try {
-      const stored = await this.storage.getJson<StoredSettings>(APP_SETTINGS_STORAGE_KEY);
+      const stored = await this.storage.get<StoredSettings>(APP_SETTINGS_STORAGE_KEY);
       if (!stored) {
         const defaults = createDefaultSettings();
         await this.persist(defaults).catch(() => {

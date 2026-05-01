@@ -174,9 +174,13 @@ export function useToolbarSettingsController(
 
     const selects = Array.from(panel.querySelectorAll('select'));
     selects.forEach((select) => {
-      eventManager.addEventListener(select, 'focus', handleSelectFocus, { context: listenerContext });
+      eventManager.addEventListener(select, 'focus', handleSelectFocus, {
+        context: listenerContext,
+      });
       eventManager.addEventListener(select, 'blur', handleSelectBlur, { context: listenerContext });
-      eventManager.addEventListener(select, 'change', handleSelectChange, { context: listenerContext });
+      eventManager.addEventListener(select, 'change', handleSelectChange, {
+        context: listenerContext,
+      });
     });
 
     const handleOutsideClick = (event: Event) => {
@@ -217,12 +221,10 @@ export function useToolbarSettingsController(
       setSettingsExpanded(false);
     };
 
-    eventManager.addEventListener(
-      documentRef,
-      'mousedown',
-      handleOutsideClick as EventListener,
-      { capture: false, context: listenerContext }
-    );
+    eventManager.addEventListener(documentRef, 'mousedown', handleOutsideClick as EventListener, {
+      capture: false,
+      context: listenerContext,
+    });
 
     onCleanup(() => {
       clearScheduledTimeout(selectGuardTimeout);

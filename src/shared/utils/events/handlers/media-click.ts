@@ -41,7 +41,7 @@ export async function handleMediaClick(
   }
 
   // Guard: Gallery-internal event (gallery open)
-  if (gallerySignals.isOpen() && isGalleryInternalElement(target)) {
+  if (gallerySignals.isOpen && isGalleryInternalElement(target)) {
     return { handled: false, reason: 'Gallery internal event' };
   }
 

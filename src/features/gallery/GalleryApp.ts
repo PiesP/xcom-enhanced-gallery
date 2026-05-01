@@ -23,7 +23,9 @@ interface GalleryOpenOptions {
 
 export class GalleryApp {
   private isInitialized = false;
-  private get userscript() { return getUserscriptSafe(); }
+  private get userscript() {
+    return getUserscriptSafe();
+  }
   private ambientVideoGuardDispose: (() => void) | null = null;
 
   constructor() {
@@ -64,7 +66,7 @@ export class GalleryApp {
         onMediaClick: (element, event) => this.handleMediaClick(element, event),
         onGalleryClose: () => this.closeGallery(),
         onKeyboardEvent: (event) => {
-          if (event.key === 'Escape' && gallerySignals.isOpen()) {
+          if (event.key === 'Escape' && gallerySignals.isOpen) {
             this.closeGallery();
           }
         },
@@ -98,14 +100,20 @@ export class GalleryApp {
           code: 'MEDIA_EXTRACTION_EMPTY',
           metadata: { success: result.success },
         });
-        this.userscript.notification({ title: 'Failed to load media', text: 'Could not find images or videos.' });
+        this.userscript.notification({
+          title: 'Failed to load media',
+          text: 'Could not find images or videos.',
+        });
       }
     } catch (error) {
       mediaErrorReporter.error(error, {
         code: 'MEDIA_EXTRACTION_ERROR',
         notify: true,
       });
-      this.userscript.notification({ title: 'Error occurred', text: getErrorMessage(error) || 'Unknown error' });
+      this.userscript.notification({
+        title: 'Error occurred',
+        text: getErrorMessage(error) || 'Unknown error',
+      });
     }
   }
 
@@ -116,7 +124,10 @@ export class GalleryApp {
   ): Promise<void> {
     if (!this.isInitialized) {
       __DEV__ && logger.warn('[GalleryApp] Gallery not initialized.');
-      this.userscript.notification({ title: 'Gallery unavailable', text: 'Userscript manager required.' });
+      this.userscript.notification({
+        title: 'Gallery unavailable',
+        text: 'Userscript manager required.',
+      });
       return;
     }
 
@@ -151,7 +162,7 @@ export class GalleryApp {
 
   public closeGallery(): void {
     try {
-      if (gallerySignals.isOpen()) {
+      if (gallerySignals.isOpen) {
         closeGallery();
       }
     } catch (error) {
@@ -165,7 +176,7 @@ export class GalleryApp {
     try {
       __DEV__ && logger.info('[GalleryApp] Cleanup started');
 
-      if (gallerySignals.isOpen()) {
+      if (gallerySignals.isOpen) {
         this.closeGallery();
       }
 

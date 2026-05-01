@@ -190,7 +190,7 @@ function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
  */
 export function isProcessableMedia(target: HTMLElement | null): boolean {
   if (!target) return false;
-  if (gallerySignals.isOpen()) return false;
+  if (gallerySignals.isOpen) return false;
   if (shouldBlockMediaTrigger(target)) return false;
 
   const mediaElement = findMediaElementInDOM(target);

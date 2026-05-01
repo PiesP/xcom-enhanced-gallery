@@ -19,7 +19,11 @@ import { useTranslation } from '@shared/hooks/use-translation';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import { downloadState } from '@shared/state/signals/download.signals';
-import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
+import {
+  gallerySignals,
+  galleryState,
+  navigateToItem,
+} from '@shared/state/signals/gallery.signals';
 import { isDownloadUiBusy } from '@shared/state/ui/download-ui-state';
 import type { ImageFitMode } from '@shared/types/ui.types';
 import { safeEventPrevent } from '@shared/utils/events/utils';
@@ -52,9 +56,9 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     'onDownloadAll',
   ]);
 
-  // State accessors - using galleryState with createMemo for fine-grained reactivity
-  const mediaItems = createMemo(() => galleryState.mediaItems);
-  const currentIndex = createMemo(() => galleryState.currentIndex);
+  // State accessors - using gallerySignals with createMemo for fine-grained reactivity
+  const mediaItems = createMemo(() => gallerySignals.mediaItems);
+  const currentIndex = createMemo(() => gallerySignals.currentIndex);
   const isDownloading = createMemo(() =>
     isDownloadUiBusy({ downloadProcessing: downloadState.value.isProcessing })
   );
@@ -113,7 +117,7 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     }
 
     // Initial focus is treated as keyboard/manual navigation
-    navigateToItem(currentIndex(), 'click');
+    navigateToItem(currentIndex(), 'click', 'auto-focus');
   });
 
   // Fit mode state
@@ -135,7 +139,7 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     setImageFitMode(mode);
     void persistFitMode(mode);
     scroll.scrollToCurrentItem();
-    navigateToItem(currentIndex(), 'click');
+    navigateToItem(currentIndex(), 'click', 'auto-focus');
   };
 
   // Event handlers
@@ -149,7 +153,7 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
   const handlePrevious = () => {
     const current = currentIndex();
     if (current > 0) {
-      navigateToItem(current - 1, 'click');
+      navigateToItem(current - 1, 'click', 'button');
     }
   };
 
@@ -157,7 +161,7 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     const current = currentIndex();
     const items = mediaItems();
     if (current < items.length - 1) {
-      navigateToItem(current + 1, 'click');
+      navigateToItem(current + 1, 'click', 'button');
     }
   };
 
@@ -185,7 +189,7 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     const current = currentIndex();
 
     if (index >= 0 && index < items.length && index !== current) {
-      navigateToItem(index, 'click');
+      navigateToItem(index, 'click', 'scroll');
     }
   };
 
@@ -296,7 +300,7 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
               onFitContainer: handleFitContainer,
             },
             lifecycle: {
-              onClose: local.onClose ?? noop,
+              onClose: local.onClose ?? (() => {}),
               onOpenSettings: () => {
                 if (__DEV__) {
                   logger.debug('[VerticalGalleryView] Settings opened');

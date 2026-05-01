@@ -83,7 +83,7 @@ function getGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoElement | nu
     return video;
   }
 
-  const signaled = gallerySignals.currentVideoElement.value;
+  const signaled = gallerySignals.currentVideoElement;
   return signaled instanceof HTMLVideoElement ? signaled : null;
 }
 

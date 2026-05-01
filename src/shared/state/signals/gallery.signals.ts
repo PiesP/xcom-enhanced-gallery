@@ -79,35 +79,54 @@ export const galleryIndexEvents = createEventEmitter<{
 }>();
 
 const [isOpenSig, setIsOpen] = createSignalSafe<boolean>(INITIAL_STATE.isOpen);
-const [mediaItemsSig, setMediaItems] = createSignalSafe<readonly MediaInfo[]>(INITIAL_STATE.mediaItems);
+const [mediaItemsSig, setMediaItems] = createSignalSafe<readonly MediaInfo[]>(
+  INITIAL_STATE.mediaItems
+);
 const [currentIndexSig, setCurrentIndex] = createSignalSafe<number>(INITIAL_STATE.currentIndex);
 const [focusedIndexSig, setFocusedIndex] = createSignalSafe<number | null>(null);
-const [currentVideoElementSig, setCurrentVideoElement] = createSignalSafe<HTMLVideoElement | null>(null);
-
-function isOpenRead() { return isOpenSig(); }
-function isOpenWrite(v: boolean) { setIsOpen(v); }
-function isOpenSubscribe(cb: (v: boolean) => void): () => void {
-  return effectSafe(() => cb(isOpenSig()));
-}
+const [currentVideoElementSig, setCurrentVideoElement] = createSignalSafe<HTMLVideoElement | null>(
+  null
+);
 
 export const gallerySignals = {
-  isOpen: Object.assign(isOpenRead, { set: isOpenWrite, subscribe: isOpenSubscribe }) as {
-    (): boolean;
-    set(v: boolean): void;
-    subscribe(cb: (v: boolean) => void): () => void;
+  get isOpen() {
+    return isOpenSig();
   },
-  get mediaItems() { return mediaItemsSig(); },
-  set mediaItems(v: readonly MediaInfo[]) { setMediaItems(v); },
-  get currentIndex() { return currentIndexSig(); },
-  set currentIndex(v: number) { setCurrentIndex(v); },
+  set isOpen(v: boolean) {
+    setIsOpen(v);
+  },
+  get mediaItems() {
+    return mediaItemsSig();
+  },
+  set mediaItems(v: readonly MediaInfo[]) {
+    setMediaItems(v);
+  },
+  get currentIndex() {
+    return currentIndexSig();
+  },
+  set currentIndex(v: number) {
+    setCurrentIndex(v);
+  },
   isLoading: uiSignals.isLoading,
   error: uiSignals.error,
   viewMode: uiSignals.viewMode,
-  get focusedIndex() { return focusedIndexSig(); },
-  set focusedIndex(v: number | null) { setFocusedIndex(v); },
-  get currentVideoElement() { return currentVideoElementSig(); },
-  set currentVideoElement(v: HTMLVideoElement | null) { setCurrentVideoElement(v); },
+  get focusedIndex() {
+    return focusedIndexSig();
+  },
+  set focusedIndex(v: number | null) {
+    setFocusedIndex(v);
+  },
+  get currentVideoElement() {
+    return currentVideoElementSig();
+  },
+  set currentVideoElement(v: HTMLVideoElement | null) {
+    setCurrentVideoElement(v);
+  },
 };
+
+export function subscribeIsOpen(cb: (v: boolean) => void): () => void {
+  return effectSafe(() => cb(isOpenSig()));
+}
 
 function applyGallerySessionUpdate(state: GallerySessionState): void {
   batch(() => {
@@ -197,7 +216,7 @@ export function navigateNext(trigger: GalleryNavigationTrigger = 'click'): void 
     setCurrentIndex(next);
     setFocusedIndex(next);
   });
-  recordNavigation(next, trigger, resolveNavigationSource(trigger));
+  recordNavigation(next, resolveNavigationSource(trigger));
   galleryIndexEvents.emit('navigate:complete', { index: next, trigger });
 }
 
@@ -213,7 +232,7 @@ export function navigatePrevious(trigger: GalleryNavigationTrigger = 'click'): v
     setCurrentIndex(prev);
     setFocusedIndex(prev);
   });
-  recordNavigation(prev, trigger, resolveNavigationSource(trigger));
+  recordNavigation(prev, resolveNavigationSource(trigger));
   galleryIndexEvents.emit('navigate:complete', { index: prev, trigger });
 }
 
@@ -235,15 +254,12 @@ export function navigateToItem(
     setFocusedIndex(clampedIndex);
   });
 
-  recordNavigation(clampedIndex, trigger, source);
+  recordNavigation(clampedIndex, source);
   galleryIndexEvents.emit('navigate:complete', { index: clampedIndex, trigger });
 }
 
-export function setGalleryFocus(
-  focusIndex: number | null,
-  source: NavigationSource
-): void {
+export function setGalleryFocus(focusIndex: number | null, source: NavigationSource): void {
   validateFocusParams(focusIndex, source, 'setGalleryFocus');
   setFocusedIndex(focusIndex);
-  recordFocusChange(focusIndex, source);
+  recordFocusChange(source);
 }

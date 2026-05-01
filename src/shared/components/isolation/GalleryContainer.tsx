@@ -147,7 +147,7 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     }
 
     const eventManager = EventManager.getInstance();
-    const listenerId = eventManager.addListener(document, 'keydown', escapeListener);
+    const listenerId = eventManager.addEventListener(document, 'keydown', escapeListener);
 
     onCleanup(() => {
       if (listenerId) {

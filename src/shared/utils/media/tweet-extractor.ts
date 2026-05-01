@@ -42,9 +42,7 @@ function extractTweetTextHTML(tweetArticle: Element | null): string | undefined 
  * @param element - Clicked element
  * @returns Tweet text or undefined
  */
-export function extractTweetTextHTMLFromClickedElement(
-  element: HTMLElement
-): string | undefined {
+export function extractTweetTextHTMLFromClickedElement(element: HTMLElement): string | undefined {
   const tweetArticle = closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS, {
     debugLabel: 'tweet-container',
   });

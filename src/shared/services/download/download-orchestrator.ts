@@ -59,7 +59,6 @@ export class DownloadOrchestrator {
 
   private constructor() {
     this.lifecycle = createLifecycle('DownloadOrchestrator', {
-      onInitialize: () => this.onInitialize(),
       onDestroy: () => this.onDestroy(),
     });
   }

@@ -40,17 +40,35 @@ const VALID_NAVIGATION_TRIGGERS = [
   'scroll',
 ] as const satisfies readonly NavigationTrigger[];
 
-const [_lastSource, setLastSource] = createSignalSafe<NavigationSource>(INITIAL_NAVIGATION_STATE.lastSource);
-const [_lastTimestamp, setLastTimestamp] = createSignalSafe<number>(INITIAL_NAVIGATION_STATE.lastTimestamp);
-const [_lastNavigatedIndex, setLastNavigatedIndex] = createSignalSafe<number | null>(INITIAL_NAVIGATION_STATE.lastNavigatedIndex);
+const [_lastSource, setLastSource] = createSignalSafe<NavigationSource>(
+  INITIAL_NAVIGATION_STATE.lastSource
+);
+const [_lastTimestamp, setLastTimestamp] = createSignalSafe<number>(
+  INITIAL_NAVIGATION_STATE.lastTimestamp
+);
+const [_lastNavigatedIndex, setLastNavigatedIndex] = createSignalSafe<number | null>(
+  INITIAL_NAVIGATION_STATE.lastNavigatedIndex
+);
 
 const navigationSignals = {
-  get lastSource() { return _lastSource(); },
-  set lastSource(v: NavigationSource) { setLastSource(v); },
-  get lastTimestamp() { return _lastTimestamp(); },
-  set lastTimestamp(v: number) { setLastTimestamp(v); },
-  get lastNavigatedIndex() { return _lastNavigatedIndex(); },
-  set lastNavigatedIndex(v: number | null) { setLastNavigatedIndex(v); },
+  get lastSource() {
+    return _lastSource();
+  },
+  set lastSource(v: NavigationSource) {
+    setLastSource(v);
+  },
+  get lastTimestamp() {
+    return _lastTimestamp();
+  },
+  set lastTimestamp(v: number) {
+    setLastTimestamp(v);
+  },
+  get lastNavigatedIndex() {
+    return _lastNavigatedIndex();
+  },
+  set lastNavigatedIndex(v: number | null) {
+    setLastNavigatedIndex(v);
+  },
 };
 
 const resolveNowMs = (nowMs?: number): number => nowMs ?? Date.now();
@@ -115,34 +133,34 @@ export function recordNavigation(
   nowMs?: number
 ): NavigationResult {
   const timestamp = resolveNowMs(nowMs);
-  const currentIndex = navigationSignals.lastNavigatedIndex.value;
-  const currentSource = navigationSignals.lastSource.value;
+  const currentIndex = navigationSignals.lastNavigatedIndex;
+  const currentSource = navigationSignals.lastSource;
 
   const isDuplicate =
     targetIndex === currentIndex && isManualSource(source) && isManualSource(currentSource);
 
   if (isDuplicate) {
-    navigationSignals.lastTimestamp.value = timestamp;
+    navigationSignals.lastTimestamp = timestamp;
     return { isDuplicate: true };
   }
 
-  navigationSignals.lastSource.value = source;
-  navigationSignals.lastTimestamp.value = timestamp;
-  navigationSignals.lastNavigatedIndex.value = targetIndex;
+  navigationSignals.lastSource = source;
+  navigationSignals.lastTimestamp = timestamp;
+  navigationSignals.lastNavigatedIndex = targetIndex;
 
   return { isDuplicate: false };
 }
 
 export function recordFocusChange(source: NavigationSource, nowMs?: number): void {
   const timestamp = resolveNowMs(nowMs);
-  navigationSignals.lastSource.value = source;
-  navigationSignals.lastTimestamp.value = timestamp;
+  navigationSignals.lastSource = source;
+  navigationSignals.lastTimestamp = timestamp;
 }
 
 export function resetNavigation(nowMs?: number): void {
-  navigationSignals.lastSource.value = INITIAL_NAVIGATION_STATE.lastSource;
-  navigationSignals.lastTimestamp.value = resolveNowMs(nowMs);
-  navigationSignals.lastNavigatedIndex.value = INITIAL_NAVIGATION_STATE.lastNavigatedIndex;
+  navigationSignals.lastSource = INITIAL_NAVIGATION_STATE.lastSource;
+  navigationSignals.lastTimestamp = resolveNowMs(nowMs);
+  navigationSignals.lastNavigatedIndex = INITIAL_NAVIGATION_STATE.lastNavigatedIndex;
 }
 
 export function resolveNavigationSource(trigger: NavigationTrigger): NavigationSource {

@@ -142,12 +142,10 @@ export function useGalleryScroll({
     const listenerIds: string[] = [];
 
     const registerListener = (type: string, handler: EventListener): void => {
-      const id = eventManager.addEventListener(
-        eventTarget,
-        type,
-        handler,
-        { passive: true, context: listenerContext }
-      );
+      const id = eventManager.addEventListener(eventTarget, type, handler, {
+        passive: true,
+        context: listenerContext,
+      });
       if (id) {
         listenerIds.push(id);
         if (__DEV__) {

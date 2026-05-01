@@ -34,10 +34,10 @@ const migrations: MigrationRegistry = {
     return next;
   },
   '1.8.2': (input): AppSettings => {
-    const next = { ...input } as AppSettings;
+    const next = { ...input } as unknown as Record<string, unknown>;
     // Remove tokens field (token refresh logic was never implemented)
-    delete (next as Record<string, unknown>).tokens;
-    return next;
+    delete next.tokens;
+    return next as unknown as AppSettings;
   },
 };
 
@@ -108,7 +108,6 @@ function fillWithDefaults(settings: AppSettings, nowMs: number): AppSettings {
     gallery: DEFAULT_SETTINGS.gallery,
     toolbar: DEFAULT_SETTINGS.toolbar,
     download: DEFAULT_SETTINGS.download,
-    tokens: DEFAULT_SETTINGS.tokens,
     accessibility: DEFAULT_SETTINGS.accessibility,
     features: DEFAULT_SETTINGS.features,
   } as const;

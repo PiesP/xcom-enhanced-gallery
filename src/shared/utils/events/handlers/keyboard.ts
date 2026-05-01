@@ -49,7 +49,7 @@ export function handleKeyboardEvent(
 
   try {
     const key = event.key;
-    const isGalleryOpen = gallerySignals.isOpen();
+    const isGalleryOpen = gallerySignals.isOpen;
 
     // ESC closes gallery regardless of other state
     if (key === 'Escape' && isGalleryOpen) {
@@ -99,8 +99,8 @@ export function handleKeyboardEvent(
  * @internal
  */
 function handleNavigation(key: string): void {
-  const current = gallerySignals.currentIndex.value;
-  const total = gallerySignals.mediaItems.value.length;
+  const current = gallerySignals.currentIndex;
+  const total = gallerySignals.mediaItems.length;
 
   switch (key) {
     case 'ArrowLeft':
@@ -110,16 +110,16 @@ function handleNavigation(key: string): void {
       navigateNext('keyboard');
       break;
     case 'Home':
-      navigateToItem(0, 'keyboard');
+      navigateToItem(0, 'keyboard', 'keyboard');
       break;
     case 'End':
-      navigateToItem(Math.max(0, total - 1), 'keyboard');
+      navigateToItem(Math.max(0, total - 1), 'keyboard', 'keyboard');
       break;
     case 'PageUp':
-      navigateToItem(Math.max(0, current - 5), 'keyboard');
+      navigateToItem(Math.max(0, current - 5), 'keyboard', 'keyboard');
       break;
     case 'PageDown':
-      navigateToItem(Math.min(total - 1, current + 5), 'keyboard');
+      navigateToItem(Math.min(total - 1, current + 5), 'keyboard', 'keyboard');
       break;
   }
 }

@@ -1,7 +1,6 @@
 import { logger } from '@shared/logging/logger';
-
-import { effectSafe } from '@shared/state/signals/signal-factory';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
+import { effectSafe } from '@shared/state/signals/signal-factory';
 import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
 
 /**
@@ -20,7 +19,7 @@ const ensureGuardEffect = (): void => {
   if (guardDispose) return;
 
   guardDispose = effectSafe(() => {
-    const isOpen = gallerySignals.isOpen();
+    const isOpen = gallerySignals.isOpen;
     if (!isOpen) return;
 
     const result = pauseAmbientVideosForGallery({

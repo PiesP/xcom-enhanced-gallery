@@ -393,12 +393,10 @@ export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void
      * @see {@link EventManager.removeListener} - Remove listener by ID
      */
     const eventManager = EventManager.getInstance();
-    const listenerId = eventManager.addEventListener(
-      document,
-      'keydown',
-      handleKeyDown,
-      { capture: true, context: 'gallery-keyboard-navigation' }
-    );
+    const listenerId = eventManager.addEventListener(document, 'keydown', handleKeyDown, {
+      capture: true,
+      context: 'gallery-keyboard-navigation',
+    });
 
     /**
      * Cleanup listener on component unmount.

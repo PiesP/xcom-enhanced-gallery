@@ -53,10 +53,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
   private setupStateSubscription(): void {
     this.stateUnsubscribe = effectSafe(() => {
-      const isOpen = gallerySignals.isOpen[0]();
-      if (isOpen && !this.container) {
+      if (gallerySignals.isOpen && !this.container) {
         this.renderGallery();
-      } else if (!isOpen && this.container) {
+      } else if (!gallerySignals.isOpen && this.container) {
         this.cleanupGallery();
       }
     });
