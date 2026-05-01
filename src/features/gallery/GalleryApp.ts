@@ -4,7 +4,7 @@ import { getMediaService, tryGetSettingsManager } from '@shared/container/servic
 import { galleryErrorReporter, mediaErrorReporter } from '@shared/error/app-error-reporter';
 import { getErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
-import { NotificationService } from '@shared/services/notification-service';
+import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import type { SettingsServiceLike } from '@shared/services/theme-service.contract';
 import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
@@ -23,7 +23,7 @@ interface GalleryOpenOptions {
 
 export class GalleryApp {
   private isInitialized = false;
-  private readonly notificationService = NotificationService.getInstance();
+  private get userscript() { return getUserscriptSafe(); }
   private ambientVideoGuardDispose: (() => void) | null = null;
 
   constructor() {
@@ -98,14 +98,14 @@ export class GalleryApp {
           code: 'MEDIA_EXTRACTION_EMPTY',
           metadata: { success: result.success },
         });
-        this.notificationService.error('Failed to load media', 'Could not find images or videos.');
+        this.userscript.notification({ title: 'Failed to load media', text: 'Could not find images or videos.' });
       }
     } catch (error) {
       mediaErrorReporter.error(error, {
         code: 'MEDIA_EXTRACTION_ERROR',
         notify: true,
       });
-      this.notificationService.error('Error occurred', getErrorMessage(error) || 'Unknown error');
+      this.userscript.notification({ title: 'Error occurred', text: getErrorMessage(error) || 'Unknown error' });
     }
   }
 
@@ -116,7 +116,7 @@ export class GalleryApp {
   ): Promise<void> {
     if (!this.isInitialized) {
       __DEV__ && logger.warn('[GalleryApp] Gallery not initialized.');
-      this.notificationService.error('Gallery unavailable', 'Userscript manager required.');
+      this.userscript.notification({ title: 'Gallery unavailable', text: 'Userscript manager required.' });
       return;
     }
 
@@ -141,10 +141,10 @@ export class GalleryApp {
         metadata: { itemCount: mediaItems.length, startIndex },
         notify: true,
       });
-      this.notificationService.error(
-        'Failed to load gallery',
-        getErrorMessage(error) || 'Unknown error'
-      );
+      this.userscript.notification({
+        title: 'Failed to load gallery',
+        text: getErrorMessage(error) || 'Unknown error',
+      });
       throw error;
     }
   }

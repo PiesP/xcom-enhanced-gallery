@@ -18,7 +18,7 @@ import { getErrorMessage } from '@shared/error/normalize';
 import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces/gallery.interfaces';
 import { logger } from '@shared/logging/logger';
 import type { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
-import { NotificationService } from '@shared/services/notification-service';
+import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
 import {
   closeGallery,
@@ -38,7 +38,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private isMounting = false;
   private stateUnsubscribe: (() => void) | null = null;
   private onCloseCallback: (() => void) | null = null;
-  private readonly notificationService = NotificationService.getInstance();
+  private get userscript() { return getUserscriptSafe(); }
 
   constructor() {
     this.setupStateSubscription();
@@ -165,7 +165,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
     const releaseLock = acquireDownloadLock();
 
     const notifyError = (title: string, body: string): void => {
-      void this.notificationService.error(title, body);
+      this.userscript.notification({ title, text: body });
     };
 
     try {

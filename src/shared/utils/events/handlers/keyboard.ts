@@ -5,7 +5,7 @@
 
 import { getLanguageService } from '@shared/container/service-accessors';
 import { logger } from '@shared/logging/logger';
-import { NotificationService } from '@shared/services/notification-service';
+import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import {
   gallerySignals,
   navigateNext,
@@ -164,7 +164,7 @@ function showKeyboardHelp(): void {
 
   try {
     const lang = getLanguageService();
-    void NotificationService.getInstance().show({
+    getUserscriptSafe().notification({
       title: lang.translate('msg.kb.t'),
       text: [
         lang.translate('msg.kb.prev'),

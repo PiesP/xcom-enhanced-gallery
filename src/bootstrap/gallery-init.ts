@@ -24,7 +24,7 @@ import {
 } from '@shared/error/app-error-reporter';
 import { isGMAPIAvailable } from '@shared/external/userscript/environment-detector';
 import { logger } from '@shared/logging/logger';
-import { NotificationService } from '@shared/services/notification-service';
+import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import { CoreService } from '@shared/services/service-manager';
 
 type InitializableSettingsService = {
@@ -78,10 +78,10 @@ export async function initializeGalleryServices(): Promise<void> {
     settingsErrorReporter.warn(error, {
       code: 'SETTINGS_SERVICE_INIT_FAILED',
     });
-    await NotificationService.getInstance().error(
-      'Settings unavailable',
-      'Defaults will be used until settings load.'
-    );
+    getUserscriptSafe().notification({
+      title: 'Settings unavailable',
+      text: 'Defaults will be used until settings load.',
+    });
   }
 }
 
