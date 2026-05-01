@@ -19,11 +19,9 @@ type EnvSource = Partial<{
 }>;
 type NodeEnvSource = Partial<Record<string, string | undefined>>;
 
-const FALLBACK_VERSION = '0.0.0';
 const APP_NAME = 'X.com Enhanced Gallery';
 const MAX_GALLERY_ITEMS = 100;
 const DEFAULT_ANIMATION_DURATION = 'var(--xeg-duration-normal)';
-const DEFAULT_SERVICE_TIMEOUT_MS = 10000;
 const DEFAULT_BOOTSTRAP_RETRY_ATTEMPTS = 3;
 const DEFAULT_BOOTSTRAP_RETRY_DELAY_MS = 100;
 
@@ -48,16 +46,9 @@ const nodeEnv = resolveNodeEnv();
 const buildVersion = typeof __VERSION__ !== 'undefined' ? __VERSION__ : undefined;
 
 /**
- * Resolved application version from multiple sources with priority order.
- * Priority: buildVersion → VITE_VERSION → npm_package_version → FALLBACK_VERSION
+ * Resolved application version from build-time injection.
  */
-const rawVersion =
-  resolveStringValue(
-    buildVersion,
-    importMetaEnv.VITE_VERSION,
-    nodeEnv.VITE_VERSION,
-    nodeEnv.npm_package_version
-  ) ?? FALLBACK_VERSION;
+const rawVersion = buildVersion ?? '0.0.0';
 
 /**
  * Development flag from import.meta.env (Vite boolean flag).
@@ -149,7 +140,6 @@ const resolvedAppConfig = Object.freeze({
     enableVerboseLogs: isDev,
   },
   bootstrap: {
-    serviceTimeoutMs: DEFAULT_SERVICE_TIMEOUT_MS,
     retryAttempts: DEFAULT_BOOTSTRAP_RETRY_ATTEMPTS,
     retryDelayMs: DEFAULT_BOOTSTRAP_RETRY_DELAY_MS,
   },
@@ -266,20 +256,4 @@ function parseBooleanFlag(value: BooleanFlagValue): boolean | undefined {
   return undefined;
 }
 
-/**
- * Resolve first non-empty string from multiple values with priority fallback.
- * @internal
- */
-function resolveStringValue(...values: Array<string | undefined>): string | undefined {
-  for (const value of values) {
-    if (typeof value === 'string') {
-      const normalized = value.trim();
 
-      if (normalized.length > 0) {
-        return normalized;
-      }
-    }
-  }
-
-  return undefined;
-}
