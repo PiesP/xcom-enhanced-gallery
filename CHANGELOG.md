@@ -8,6 +8,34 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-05-01
+
+### Changed
+
+- **Signal System**: Replaced `SafeSignal` wrapper with SolidJS native `createSignal` across all state modules (gallery, download, navigation, ui).
+- **Event System**: Unified `addListener` into `addEventListener` with context via options object.
+- **Persistent Storage**: Simplified API from 6 methods to 5 (`set`, `get`, `getString`, `getSync`, `has`, `remove`), removing redundant `setJson`/`setString`/`getJson`/`getJsonSync`/`getStringSync` wrappers.
+- **Notification Service**: Removed `NotificationService` class, replaced with direct `getUserscriptSafe().notification()` calls.
+- **Theme Service**: Removed unused `subscribe` pattern from `bindSettingsService`.
+- **Settings Types**: Removed `TokenSettings` interface and related fields (token refresh logic was never implemented).
+- **View Mode**: Unified `ViewMode` type to `'vertical'` only (horizontal/grid were unimplemented).
+- **Bootstrap**: Removed 3 empty bootstrap stages (`environment`, `critical-systems`, `dev-tools`).
+- **DI Contracts**: Removed unused container interfaces (`ILogger`, `IMediaService`, `IThemeService`, `IVideoService`, `ISettingsService`, `AppContainer`).
+- **Constants**: Removed 5 reserved service keys, 3 unused brand types, and simplified version resolution.
+- **Migration Pipeline**: Added `1.8.2` migration step to remove `tokens` field from stored settings.
+
+### Fixed
+
+- **Gallery Initialization**: Fixed critical runtime error caused by broken SolidJS reactivity after signal refactor.
+- **Type Consistency**: Fixed `NavigationTrigger`/`NavigationSource` type mismatches in navigation functions.
+- **Translation Catalog**: Fixed `ensureLanguage()` to return `true` (all bundles are pre-loaded).
+
+### Removed
+
+- Deleted `src/bootstrap/environment.ts`, `src/bootstrap/critical-systems.ts`, `src/bootstrap/dev-tools.ts` (empty implementations).
+- Deleted `src/shared/services/notification-service.ts` (inlined into callers).
+- Deleted `src/shared/dom/window-load.ts`, `src/shared/services/styles/style-utils.ts` (unused).
+
 ## [1.8.1] - 2026-04-30
 
 ### Fixed

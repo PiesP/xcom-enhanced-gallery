@@ -19,11 +19,7 @@ import { useTranslation } from '@shared/hooks/use-translation';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import { downloadState } from '@shared/state/signals/download.signals';
-import {
-  gallerySignals,
-  galleryState,
-  navigateToItem,
-} from '@shared/state/signals/gallery.signals';
+import { gallerySignals, navigateToItem } from '@shared/state/signals/gallery.signals';
 import { isDownloadUiBusy } from '@shared/state/ui/download-ui-state';
 import type { ImageFitMode } from '@shared/types/ui.types';
 import { safeEventPrevent } from '@shared/utils/events/utils';
