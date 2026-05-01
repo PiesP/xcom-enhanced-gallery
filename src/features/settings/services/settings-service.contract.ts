@@ -84,45 +84,6 @@ export interface SettingsServiceContract extends BaseService {
   set<T = unknown>(key: NestedSettingKey, value: T): Promise<void>;
 
   /**
-   * Updates multiple settings atomically in a single batch operation.
-   *
-   * All updates are applied together and persisted as a single transaction.
-   * Subscribers are notified once after all changes are applied. This is more
-   * efficient than calling set() multiple times.
-   *
-   * @param updates - Partial map of nested keys to their new values
-   * @returns Promise that resolves when all updates are persisted
-   *
-   * @example
-   * ```typescript
-   * await settings.updateBatch({
-   *   'ui.theme': 'dark',
-   *   'media.autoPlay': false,
-   *   'gallery.fitMode': 'fitWidth'
-   * });
-   * ```
-   */
-  updateBatch(updates: Partial<Record<NestedSettingKey, unknown>>): Promise<void>;
-
-  /**
-   * Resets settings to their default values.
-   *
-   * If a category is specified, only settings within that category are reset.
-   * If no category is provided, all settings are reset to defaults.
-   * The operation is persisted and triggers change notifications.
-   *
-   * @param category - Optional settings category to reset (e.g., 'ui', 'media', 'gallery')
-   * @returns Promise that resolves when the reset is persisted
-   *
-   * @example
-   * ```typescript
-   * await settings.resetToDefaults('ui');      // Reset only UI settings
-   * await settings.resetToDefaults();          // Reset all settings
-   * ```
-   */
-  resetToDefaults(category?: keyof AppSettings): Promise<void>;
-
-  /**
    * Subscribes to setting change events.
    *
    * The listener is invoked whenever any setting value changes, receiving an event
@@ -142,43 +103,6 @@ export interface SettingsServiceContract extends BaseService {
    * ```
    */
   subscribe(listener: (event: SettingChangeEvent) => void): () => void;
-
-  /**
-   * Exports all current settings as a JSON string.
-   *
-   * The exported format is suitable for backup, sharing, or migration purposes.
-   * The JSON string includes all settings categories and values.
-   *
-   * @returns JSON string representation of all settings
-   *
-   * @example
-   * ```typescript
-   * const backup = settings.exportSettings();
-   * localStorage.setItem('settings-backup', backup);
-   * ```
-   */
-  exportSettings(): string;
-
-  /**
-   * Imports settings from a JSON string.
-   *
-   * Validates and applies settings from the provided JSON string. Invalid or
-   * unrecognized settings are ignored. The operation is persisted and triggers
-   * change notifications for all modified settings.
-   *
-   * @param jsonString - JSON string containing settings to import
-   * @returns Promise that resolves when the import is complete and persisted
-   * @throws Error - If the JSON string is malformed or invalid
-   *
-   * @example
-   * ```typescript
-   * const backup = localStorage.getItem('settings-backup');
-   * if (backup) {
-   *   await settings.importSettings(backup);
-   * }
-   * ```
-   */
-  importSettings(jsonString: string): Promise<void>;
 
   /**
    * Retrieves the current feature flag states as an immutable map.

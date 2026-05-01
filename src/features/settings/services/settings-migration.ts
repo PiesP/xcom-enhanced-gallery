@@ -33,7 +33,12 @@ const migrations: MigrationRegistry = {
     };
     return next;
   },
-  // '0.9.0': (input) => { /* example: rename keys, adjust ranges */ return input; },
+  '1.8.2': (input): AppSettings => {
+    const next = { ...input } as AppSettings;
+    // Remove tokens field (token refresh logic was never implemented)
+    delete (next as Record<string, unknown>).tokens;
+    return next;
+  },
 };
 
 /**
