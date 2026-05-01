@@ -108,7 +108,7 @@ export class PersistentSettingsRepository implements SettingsRepository {
   }
 
   private async persist(settings: AppSettings): Promise<void> {
-    await this.storage.setJson(APP_SETTINGS_STORAGE_KEY, {
+    await this.storage.set(APP_SETTINGS_STORAGE_KEY, {
       ...settings,
       __schemaHash: this.schemaHash,
     });
