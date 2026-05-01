@@ -4,8 +4,8 @@
  */
 
 import { getLanguageService } from '@shared/container/service-accessors';
-import { logger } from '@shared/logging/logger';
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';
+import { logger } from '@shared/logging/logger';
 import {
   gallerySignals,
   navigateNext,

@@ -29,9 +29,6 @@ export type ThemeChangeListener = (theme: Theme, setting: ThemeSetting) => void;
 export interface SettingsServiceLike {
   get?: (key: string) => unknown;
   set?: (key: string, value: unknown) => Promise<void> | void;
-  subscribe?: (
-    listener: (event: { key: string; oldValue: unknown; newValue: unknown }) => void
-  ) => () => void;
 }
 
 /**

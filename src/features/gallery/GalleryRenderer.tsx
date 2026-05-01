@@ -15,10 +15,10 @@ import {
   getThemeService,
 } from '@shared/container/service-accessors';
 import { getErrorMessage } from '@shared/error/normalize';
+import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces/gallery.interfaces';
 import { logger } from '@shared/logging/logger';
 import type { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
-import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
 import {
   closeGallery,

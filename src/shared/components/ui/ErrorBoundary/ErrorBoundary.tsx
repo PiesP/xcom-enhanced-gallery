@@ -4,8 +4,8 @@
  */
 
 import { getLanguageService } from '@shared/container/service-accessors';
-import type { JSXElement } from '@shared/external/vendors';
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';
+import type { JSXElement } from '@shared/external/vendors';
 import { createSignal, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
 import type { ErrorBoundaryProps } from './ErrorBoundary.types';
 

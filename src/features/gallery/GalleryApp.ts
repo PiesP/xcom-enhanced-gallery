@@ -3,8 +3,8 @@
 import { getMediaService, tryGetSettingsManager } from '@shared/container/service-accessors';
 import { galleryErrorReporter, mediaErrorReporter } from '@shared/error/app-error-reporter';
 import { getErrorMessage } from '@shared/error/normalize';
-import { logger } from '@shared/logging/logger';
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';
+import { logger } from '@shared/logging/logger';
 import type { SettingsServiceLike } from '@shared/services/theme-service.contract';
 import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';

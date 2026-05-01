@@ -22,9 +22,9 @@ import {
   galleryErrorReporter,
   settingsErrorReporter,
 } from '@shared/error/app-error-reporter';
+import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import { isGMAPIAvailable } from '@shared/external/userscript/environment-detector';
 import { logger } from '@shared/logging/logger';
-import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import { CoreService } from '@shared/services/service-manager';
 
 type InitializableSettingsService = {

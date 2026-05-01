@@ -38,7 +38,6 @@ export class ThemeService implements ThemeServiceContract {
   private themeSetting: ThemeSetting = 'auto';
   private readonly listeners: Set<ThemeChangeListener> = new Set();
   private boundSettingsService: SettingsServiceLike | null = null;
-  private settingsUnsubscribe: (() => void) | null = null;
   private observer: MutationObserver | null = null;
   private observedThemeScopes: WeakSet<Element> = new WeakSet();
 
@@ -102,33 +101,12 @@ export class ThemeService implements ThemeServiceContract {
       return;
     }
 
-    if (this.settingsUnsubscribe) {
-      this.settingsUnsubscribe();
-      this.settingsUnsubscribe = null;
-    }
-
     this.boundSettingsService = settingsService;
 
     const settingsTheme = settingsService.get?.('gallery.theme');
     if (isThemeSetting(settingsTheme) && settingsTheme !== this.themeSetting) {
       this.themeSetting = settingsTheme;
       this.applyCurrentTheme(true);
-    }
-
-    if (typeof settingsService.subscribe === 'function') {
-      this.settingsUnsubscribe = settingsService.subscribe((event) => {
-        if (event?.key !== 'gallery.theme') {
-          return;
-        }
-
-        const nextTheme = event.newValue;
-        if (!isThemeSetting(nextTheme) || nextTheme === this.themeSetting) {
-          return;
-        }
-
-        this.themeSetting = nextTheme;
-        this.applyCurrentTheme();
-      });
     }
   }
 
