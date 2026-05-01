@@ -50,9 +50,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     'isActive',
     'isFocused',
     'forceVisible',
-    // Legacy prop: stripped to avoid leaking unknown attributes to the DOM.
-    // This prop is intentionally not part of the public VerticalImageItemProps type.
-    'isVisible',
     'onClick',
     'onImageContextMenu',
     'className',

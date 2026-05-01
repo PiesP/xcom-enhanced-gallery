@@ -36,10 +36,6 @@ const STATIC_DEFAULT_SETTINGS = {
     autoZip: false,
     folderStructure: 'flat' as const,
   },
-  tokens: {
-    autoRefresh: true,
-    expirationMinutes: 60,
-  },
   accessibility: {
     reduceMotion: false,
     screenReaderSupport: true,

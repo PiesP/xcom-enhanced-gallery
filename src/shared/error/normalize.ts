@@ -3,11 +3,6 @@
  * @description Extract and format error messages from various error types (minimal bundle).
  */
 
-/**
- * @fileoverview Error message normalization helpers
- * @description Extract and format error messages from various error types (minimal bundle).
- */
-
 type ErrorMessageMode = 'normalized' | 'raw';
 
 const extractFromError = (error: Error, mode: ErrorMessageMode): string =>

@@ -20,10 +20,9 @@ import { createSignalSafe } from '@shared/state/signals/signal-factory';
 /**
  * View mode types for gallery display
  *
- * @property horizontal - Horizontal scrolling layout
  * @property vertical - Vertical stacked layout
  */
-export type ViewMode = 'horizontal' | 'vertical';
+export type ViewMode = 'vertical';
 
 /**
  * Gallery UI state interface

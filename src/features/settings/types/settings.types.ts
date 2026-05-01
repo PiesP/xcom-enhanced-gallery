@@ -29,8 +29,6 @@ export interface ToolbarSettings {
 export interface DownloadSettings {
   /** Filename pattern */
   filenamePattern: 'original' | 'tweet-id' | 'timestamp' | 'custom';
-  /** Custom filename template (when filenamePattern is 'custom') */
-  customTemplate?: string;
   /** Image quality */
   imageQuality: 'original' | 'large' | 'medium' | 'small';
   /** Maximum concurrent downloads */
@@ -38,18 +36,7 @@ export interface DownloadSettings {
   /** Auto-compress to ZIP */
   autoZip: boolean;
   /** Download folder structure */
-  folderStructure: 'flat' | 'by-date' | 'by-user';
-}
-
-export interface TokenSettings {
-  /** Bearer token (optional, empty if not configured) */
-  bearerToken?: string;
-  /** Auto-refresh on expiration */
-  autoRefresh: boolean;
-  /** Token expiration time (minutes) */
-  expirationMinutes: number;
-  /** Last token refresh time (UNIX timestamp in milliseconds) */
-  lastRefresh?: number;
+  folderStructure: 'flat';
 }
 
 export interface AccessibilitySettings {
@@ -78,7 +65,6 @@ export interface AppSettings {
   gallery: GallerySettings;
   toolbar: ToolbarSettings;
   download: DownloadSettings;
-  tokens: TokenSettings;
   accessibility: AccessibilitySettings;
   features: FeatureFlags;
   version: string;
@@ -91,7 +77,6 @@ export type NestedSettingKey =
   | `gallery.${keyof GallerySettings}`
   | `toolbar.${keyof ToolbarSettings}`
   | `download.${keyof DownloadSettings}`
-  | `tokens.${keyof TokenSettings}`
   | `accessibility.${keyof AccessibilitySettings}`
   | `features.${keyof FeatureFlags}`
   | SettingKey;
