@@ -20,7 +20,7 @@ const ensureGuardEffect = (): void => {
   if (guardDispose) return;
 
   guardDispose = effectSafe(() => {
-    const isOpen = gallerySignals.isOpen[0]();
+    const isOpen = gallerySignals.isOpen();
     if (!isOpen) return;
 
     const result = pauseAmbientVideosForGallery({

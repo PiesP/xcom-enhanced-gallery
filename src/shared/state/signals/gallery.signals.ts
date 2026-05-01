@@ -84,15 +84,29 @@ const [currentIndexSig, setCurrentIndex] = createSignalSafe<number>(INITIAL_STAT
 const [focusedIndexSig, setFocusedIndex] = createSignalSafe<number | null>(null);
 const [currentVideoElementSig, setCurrentVideoElement] = createSignalSafe<HTMLVideoElement | null>(null);
 
+function isOpenRead() { return isOpenSig(); }
+function isOpenWrite(v: boolean) { setIsOpen(v); }
+function isOpenSubscribe(cb: (v: boolean) => void): () => void {
+  return effectSafe(() => cb(isOpenSig()));
+}
+
 export const gallerySignals = {
-  isOpen: isOpenSig,
-  mediaItems: mediaItemsSig,
-  currentIndex: currentIndexSig,
+  isOpen: Object.assign(isOpenRead, { set: isOpenWrite, subscribe: isOpenSubscribe }) as {
+    (): boolean;
+    set(v: boolean): void;
+    subscribe(cb: (v: boolean) => void): () => void;
+  },
+  get mediaItems() { return mediaItemsSig(); },
+  set mediaItems(v: readonly MediaInfo[]) { setMediaItems(v); },
+  get currentIndex() { return currentIndexSig(); },
+  set currentIndex(v: number) { setCurrentIndex(v); },
   isLoading: uiSignals.isLoading,
   error: uiSignals.error,
   viewMode: uiSignals.viewMode,
-  focusedIndex: focusedIndexSig,
-  currentVideoElement: currentVideoElementSig,
+  get focusedIndex() { return focusedIndexSig(); },
+  set focusedIndex(v: number | null) { setFocusedIndex(v); },
+  get currentVideoElement() { return currentVideoElementSig(); },
+  set currentVideoElement(v: HTMLVideoElement | null) { setCurrentVideoElement(v); },
 };
 
 function applyGallerySessionUpdate(state: GallerySessionState): void {

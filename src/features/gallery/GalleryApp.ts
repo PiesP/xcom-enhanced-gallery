@@ -64,7 +64,7 @@ export class GalleryApp {
         onMediaClick: (element, event) => this.handleMediaClick(element, event),
         onGalleryClose: () => this.closeGallery(),
         onKeyboardEvent: (event) => {
-          if (event.key === 'Escape' && gallerySignals.isOpen[0]()) {
+          if (event.key === 'Escape' && gallerySignals.isOpen()) {
             this.closeGallery();
           }
         },
@@ -151,7 +151,7 @@ export class GalleryApp {
 
   public closeGallery(): void {
     try {
-      if (gallerySignals.isOpen[0]()) {
+      if (gallerySignals.isOpen()) {
         closeGallery();
       }
     } catch (error) {
@@ -165,7 +165,7 @@ export class GalleryApp {
     try {
       __DEV__ && logger.info('[GalleryApp] Cleanup started');
 
-      if (gallerySignals.isOpen[0]()) {
+      if (gallerySignals.isOpen()) {
         this.closeGallery();
       }
 

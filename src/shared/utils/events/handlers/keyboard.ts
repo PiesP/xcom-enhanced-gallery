@@ -49,7 +49,7 @@ export function handleKeyboardEvent(
 
   try {
     const key = event.key;
-    const isGalleryOpen = gallerySignals.isOpen[0]();
+    const isGalleryOpen = gallerySignals.isOpen();
 
     // ESC closes gallery regardless of other state
     if (key === 'Escape' && isGalleryOpen) {

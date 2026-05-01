@@ -70,13 +70,14 @@ const [_viewMode, setViewMode] = createSignalSafe<ViewMode>(INITIAL_UI_STATE.vie
 const [_isLoading, setIsLoading] = createSignalSafe<boolean>(INITIAL_UI_STATE.isLoading);
 const [_error, setErrorSignal] = createSignalSafe<string | null>(INITIAL_UI_STATE.error);
 
+function subscribeRead(read: () => unknown, cb: (v: unknown) => void): () => void {
+  return effectSafe(() => cb(read()));
+}
+
 export const uiSignals = {
-  get viewMode() { return _viewMode(); },
-  set viewMode(v: ViewMode) { setViewMode(v); },
-  get isLoading() { return _isLoading(); },
-  set isLoading(v: boolean) { setIsLoading(v); },
-  get error() { return _error(); },
-  set error(v: string | null) { setErrorSignal(v); },
+  viewMode: Object.assign(() => _viewMode(), { set: setViewMode, subscribe: (cb: (v: ViewMode) => void) => subscribeRead(_viewMode, cb as (v: unknown) => void) }) as { (): ViewMode; set(v: ViewMode): void; subscribe(cb: (v: ViewMode) => void): () => void; },
+  isLoading: Object.assign(() => _isLoading(), { set: setIsLoading, subscribe: (cb: (v: boolean) => void) => subscribeRead(_isLoading, cb as (v: unknown) => void) }) as { (): boolean; set(v: boolean): void; subscribe(cb: (v: boolean) => void): () => void; },
+  error: Object.assign(() => _error(), { set: setErrorSignal, subscribe: (cb: (v: string | null) => void) => subscribeRead(_error, cb as (v: unknown) => void) }) as { (): string | null; set(v: string | null): void; subscribe(cb: (v: string | null) => void): () => void; },
 };
 
 /**
