@@ -112,12 +112,11 @@ export function observeViewportCssVars(
   let resizeListenerId: string | null = null;
   if (typeof window !== 'undefined') {
     // Register with EventManager for unified event tracking/cleanup
-    resizeListenerId = EventManager.getInstance().addListener(
+    resizeListenerId = EventManager.getInstance().addEventListener(
       window,
       'resize',
       createEventListener(onResize),
-      { passive: true },
-      'viewport:resize'
+      { passive: true, context: 'viewport:resize' }
     );
   }
 

@@ -22,7 +22,6 @@ export type {
 } from './component.types';
 // Lifecycle/Cleanup Types
 export type { Cleanupable } from './lifecycle.types';
-// Media Types
 export type {
   APIExtractor,
   ExtractionStrategy,
@@ -37,11 +36,12 @@ export type {
   QuoteTweetInfo,
   TweetInfo,
 } from './media.types';
+// Media Types
 export { ExtractionError, ExtractionSource, PageType } from './media.types';
 // Navigation Types
 export type { NavigationSource } from './navigation.types';
-// Result and Error Codes
 export type { AsyncResult, Result } from './result.types';
+// Result and Error Codes
 export { ErrorCode, failure, isSuccess, success } from './result.types';
 // Toolbar UI State Types
 export type { FitMode, ToolbarActions, ToolbarDataState, ToolbarState } from './toolbar.types';

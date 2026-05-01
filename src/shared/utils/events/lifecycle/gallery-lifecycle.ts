@@ -119,14 +119,14 @@ function registerListeners(
     const keyHandler: EventListener = (evt: Event) => {
       handleKeyboardEvent(evt as KeyboardEvent, handlers, options);
     };
-    eventManager.addListener(target, 'keydown', keyHandler, listenerOptions, context);
+    eventManager.addEventListener(target, 'keydown', keyHandler, { ...listenerOptions, context });
   }
 
   if (options.enableMediaDetection) {
     const clickHandler: EventListener = async (evt: Event) => {
       await handleMediaClick(evt as MouseEvent, handlers, options);
     };
-    eventManager.addListener(target, 'click', clickHandler, listenerOptions, context);
+    eventManager.addEventListener(target, 'click', clickHandler, { ...listenerOptions, context });
   }
 }
 

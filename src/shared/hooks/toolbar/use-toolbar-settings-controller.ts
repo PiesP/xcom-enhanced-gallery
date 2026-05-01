@@ -174,9 +174,9 @@ export function useToolbarSettingsController(
 
     const selects = Array.from(panel.querySelectorAll('select'));
     selects.forEach((select) => {
-      eventManager.addListener(select, 'focus', handleSelectFocus, undefined, listenerContext);
-      eventManager.addListener(select, 'blur', handleSelectBlur, undefined, listenerContext);
-      eventManager.addListener(select, 'change', handleSelectChange, undefined, listenerContext);
+      eventManager.addEventListener(select, 'focus', handleSelectFocus, { context: listenerContext });
+      eventManager.addEventListener(select, 'blur', handleSelectBlur, { context: listenerContext });
+      eventManager.addEventListener(select, 'change', handleSelectChange, { context: listenerContext });
     });
 
     const handleOutsideClick = (event: Event) => {
@@ -217,12 +217,11 @@ export function useToolbarSettingsController(
       setSettingsExpanded(false);
     };
 
-    eventManager.addListener(
+    eventManager.addEventListener(
       documentRef,
       'mousedown',
       handleOutsideClick as EventListener,
-      { capture: false },
-      listenerContext
+      { capture: false, context: listenerContext }
     );
 
     onCleanup(() => {

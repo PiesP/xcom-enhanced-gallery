@@ -81,43 +81,13 @@ export class EventManager {
   }
 
   /**
-   * Add event listener with tracking
+   * Add event listener with tracking and optional context for grouping.
    *
    * @param element - Target element
    * @param type - Event type
    * @param listener - Event handler
-   * @param options - Listener options
-   * @param context - Context for grouping (e.g., 'gallery-keyboard')
+   * @param options - Listener options (may include context for grouping)
    * @returns Listener ID for removal, or null if registration failed
-   */
-  public addListener(
-    element: EventTarget,
-    type: string,
-    listener: EventListener,
-    options?: AddEventListenerOptions,
-    context?: string
-  ): string | null {
-    if (this.isDestroyed) {
-      logger.warn('EventManager: addListener called on destroyed instance');
-      return null;
-    }
-
-    const id = registerManagedListener(element, type, listener, options, context);
-
-    // The low-level backend always returns an id even if registration fails.
-    // Track it anyway; cleanup will be a no-op if it was never registered.
-    if (id) {
-      this.ownedListenerContexts.set(id, context);
-    }
-    return id || null;
-  }
-
-  /**
-   * Add event listener with an options object that can include a context.
-   *
-   * This method exists to match the project's guidance/examples and to reduce
-   * API confusion between `addListener(..., options, context)` and an
-   * `addEventListener(..., { context })` style.
    */
   public addEventListener(
     element: EventTarget,
@@ -125,9 +95,19 @@ export class EventManager {
     listener: EventListener,
     options?: AddEventListenerOptions & { context?: string }
   ): string | null {
+    if (this.isDestroyed) {
+      logger.warn('EventManager: addEventListener called on destroyed instance');
+      return null;
+    }
+
     const normalized = (options ?? {}) as AddEventListenerOptions & { context?: string };
     const { context, ...listenerOptions } = normalized;
-    return this.addListener(element, type, listener, listenerOptions, context);
+    const id = registerManagedListener(element, type, listener, listenerOptions, context);
+
+    if (id) {
+      this.ownedListenerContexts.set(id, context);
+    }
+    return id || null;
   }
 
   /**

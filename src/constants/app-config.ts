@@ -255,5 +255,3 @@ function parseBooleanFlag(value: BooleanFlagValue): boolean | undefined {
 
   return undefined;
 }
-
-
