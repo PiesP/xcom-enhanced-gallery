@@ -5,10 +5,7 @@
  */
 
 import { initializeCoreBaseServices } from '@bootstrap/base-services';
-import { initializeCriticalSystems } from '@bootstrap/critical-systems';
 import { setupDevNamespace } from '@bootstrap/dev-namespace';
-import { initializeDevTools } from '@bootstrap/dev-tools';
-import { initializeEnvironment } from '@bootstrap/environment';
 import type { Unregister } from '@bootstrap/events';
 import { wireGlobalEvents } from '@bootstrap/events';
 import { initializeGalleryApp, initializeGalleryServices } from '@bootstrap/gallery-init';
@@ -66,24 +63,6 @@ async function runOptionalCleanup(label: string, task: () => Promise<void> | voi
 
 function buildStages(): readonly BootstrapStage[] {
   return [
-    {
-      label: 'Infrastructure',
-      run: async () => {
-        try {
-          await initializeEnvironment();
-        } catch (error) {
-          bootstrapErrorReporter.critical(error, { code: 'INFRASTRUCTURE_INIT_FAILED' });
-          throw error;
-        }
-      },
-    },
-    {
-      label: 'Developer tooling',
-      run: initializeDevTools,
-      shouldRun: () => __DEV__ && !isTestMode,
-      optional: true,
-    },
-    { label: 'Critical systems', run: initializeCriticalSystems },
     {
       label: 'Gallery services',
       run: async () => {
