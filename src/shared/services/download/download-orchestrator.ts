@@ -14,7 +14,6 @@
 import { planBulkDownload, planZipSave } from '@shared/core/download/download-plan';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
 import { getErrorMessage } from '@shared/error/normalize';
-import { logger } from '@shared/logging/logger';
 import type {
   DownloadCapability,
   GMDownloadFunction,
@@ -92,13 +91,6 @@ export class DownloadOrchestrator {
   /** Check if service is initialized */
   public isInitialized(): boolean {
     return this.lifecycle.isInitialized();
-  }
-
-  private async onInitialize(): Promise<void> {
-    // Capability is lazily detected on first use
-    if (__DEV__) {
-      logger.debug('[DownloadOrchestrator] Initialized');
-    }
   }
 
   private onDestroy(): void {

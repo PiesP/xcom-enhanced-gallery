@@ -74,20 +74,6 @@ export class AppErrorReporter {
     return result;
   }
 
-  public static reportAndReturn<T>(
-    error: unknown,
-    options: ErrorReportOptions,
-    defaultValue: T
-  ): T {
-    const effectiveOptions = {
-      ...options,
-      severity: options.severity === 'critical' ? 'error' : options.severity,
-    } as ErrorReportOptions;
-
-    AppErrorReporter.report(error, effectiveOptions);
-    return defaultValue;
-  }
-
   public static forContext(context: ErrorContext): ContextBoundReporter {
     return {
       critical: (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) =>

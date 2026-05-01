@@ -27,8 +27,6 @@ import { computePreloadIndices } from '@shared/utils/performance/preload';
 import { cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, For, onCleanup, splitProps } from 'solid-js';
 
-const noop = (): void => {};
-
 export interface VerticalGalleryViewProps {
   /** Handler for closing the gallery */
   readonly onClose?: () => void;

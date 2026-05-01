@@ -87,10 +87,6 @@ export class CoreService {
     return this.services.has(key);
   }
 
-  public getRegisteredServices(): string[] {
-    return Array.from(this.services.keys());
-  }
-
   public cleanup(): void {
     // Clean up in reverse registration order to respect service dependencies
     const entries = Array.from(this.services.entries()).reverse();
