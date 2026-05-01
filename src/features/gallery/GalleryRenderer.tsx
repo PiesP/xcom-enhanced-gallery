@@ -38,7 +38,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private isMounting = false;
   private stateUnsubscribe: (() => void) | null = null;
   private onCloseCallback: (() => void) | null = null;
-  private get userscript() { return getUserscriptSafe(); }
+  private get userscript() {
+    return getUserscriptSafe();
+  }
 
   constructor() {
     this.setupStateSubscription();
