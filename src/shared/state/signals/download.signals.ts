@@ -14,7 +14,7 @@ import type { Result } from '@shared/types/result.types';
 import { ErrorCode, failure, success } from '@shared/types/result.types';
 import { createPrefixedId } from '@shared/utils/id/create-id';
 import { clamp } from '@shared/utils/types/safety';
-import { createSignalSafe, type SafeSignal } from './signal-factory';
+import { createSignalSafe } from './signal-factory';
 
 type DownloadStatus = 'pending' | 'downloading' | 'completed' | 'failed';
 
@@ -42,30 +42,23 @@ const INITIAL_STATE: DownloadState = {
   isProcessing: false,
 };
 
-let downloadStateSignal: SafeSignal<DownloadState> | null = null;
-
-const getDownloadState = (): SafeSignal<DownloadState> => {
-  if (!downloadStateSignal) {
-    downloadStateSignal = createSignalSafe<DownloadState>(INITIAL_STATE);
-  }
-  return downloadStateSignal!;
-};
+const [_downloadState, setDownloadState] = createSignalSafe<DownloadState>(INITIAL_STATE);
 
 const setProcessingFlag = (isProcessing: boolean): void => {
-  const currentState = downloadState.value;
+  const currentState = _downloadState();
   if (currentState.isProcessing === isProcessing) {
     return;
   }
-  downloadState.value = {
+  setDownloadState({
     ...currentState,
     isProcessing,
-  };
+  });
 };
 
 export function acquireDownloadLock(): () => void {
   setProcessingFlag(true);
   return () => {
-    const { queue, activeTasks } = downloadState.value;
+    const { queue, activeTasks } = _downloadState();
     if (queue.length === 0 && activeTasks.size === 0) {
       setProcessingFlag(false);
     }
@@ -73,20 +66,16 @@ export function acquireDownloadLock(): () => void {
 }
 
 export function isDownloadLocked(): boolean {
-  return downloadState.value.isProcessing;
+  return _downloadState().isProcessing;
 }
 
 export const downloadState = {
   get value(): DownloadState {
-    return getDownloadState().value;
+    return _downloadState();
   },
 
   set value(newState: DownloadState) {
-    getDownloadState().value = newState;
-  },
-
-  subscribe(callback: (state: DownloadState) => void): () => void {
-    return getDownloadState().subscribe(callback);
+    setDownloadState(newState);
   },
 };
 

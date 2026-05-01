@@ -67,10 +67,17 @@ const INITIAL_UI_STATE: GalleryUiState = {
  * @property isLoading - Signal for loading state indicator
  * @property error - Signal for error message (null when no error)
  */
+const [_viewMode, setViewMode] = createSignalSafe<ViewMode>(INITIAL_UI_STATE.viewMode);
+const [_isLoading, setIsLoading] = createSignalSafe<boolean>(INITIAL_UI_STATE.isLoading);
+const [_error, setErrorSignal] = createSignalSafe<string | null>(INITIAL_UI_STATE.error);
+
 export const uiSignals = {
-  viewMode: createSignalSafe<ViewMode>(INITIAL_UI_STATE.viewMode),
-  isLoading: createSignalSafe<boolean>(INITIAL_UI_STATE.isLoading),
-  error: createSignalSafe<string | null>(INITIAL_UI_STATE.error),
+  get viewMode() { return _viewMode(); },
+  set viewMode(v: ViewMode) { setViewMode(v); },
+  get isLoading() { return _isLoading(); },
+  set isLoading(v: boolean) { setIsLoading(v); },
+  get error() { return _error(); },
+  set error(v: string | null) { setErrorSignal(v); },
 };
 
 /**
@@ -89,9 +96,9 @@ export const uiSignals = {
  * ```
  */
 export function setError(error: string | null): void {
-  uiSignals.error.value = error;
+  uiSignals.error = error;
   if (error) {
-    uiSignals.isLoading.value = false;
+    uiSignals.isLoading = false;
     if (__DEV__) {
       logger.error(`[Gallery UI] Error: ${error}`);
     }

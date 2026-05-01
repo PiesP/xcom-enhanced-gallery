@@ -53,10 +53,10 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
   ]);
 
   // State accessors - using galleryState with createMemo for fine-grained reactivity
-  const mediaItems = createMemo(() => galleryState.value.mediaItems);
-  const currentIndex = createMemo(() => galleryState.value.currentIndex);
+  const mediaItems = createMemo(() => galleryState.mediaItems);
+  const currentIndex = createMemo(() => galleryState.currentIndex);
   const isDownloading = createMemo(() =>
-    isDownloadUiBusy({ downloadProcessing: downloadState.value.isProcessing })
+    isDownloadUiBusy({ downloadProcessing: downloadState.isProcessing })
   );
 
   // Element refs

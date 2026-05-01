@@ -40,10 +40,17 @@ const VALID_NAVIGATION_TRIGGERS = [
   'scroll',
 ] as const satisfies readonly NavigationTrigger[];
 
+const [_lastSource, setLastSource] = createSignalSafe<NavigationSource>(INITIAL_NAVIGATION_STATE.lastSource);
+const [_lastTimestamp, setLastTimestamp] = createSignalSafe<number>(INITIAL_NAVIGATION_STATE.lastTimestamp);
+const [_lastNavigatedIndex, setLastNavigatedIndex] = createSignalSafe<number | null>(INITIAL_NAVIGATION_STATE.lastNavigatedIndex);
+
 const navigationSignals = {
-  lastSource: createSignalSafe<NavigationSource>(INITIAL_NAVIGATION_STATE.lastSource),
-  lastTimestamp: createSignalSafe<number>(INITIAL_NAVIGATION_STATE.lastTimestamp),
-  lastNavigatedIndex: createSignalSafe<number | null>(INITIAL_NAVIGATION_STATE.lastNavigatedIndex),
+  get lastSource() { return _lastSource(); },
+  set lastSource(v: NavigationSource) { setLastSource(v); },
+  get lastTimestamp() { return _lastTimestamp(); },
+  set lastTimestamp(v: number) { setLastTimestamp(v); },
+  get lastNavigatedIndex() { return _lastNavigatedIndex(); },
+  set lastNavigatedIndex(v: number | null) { setLastNavigatedIndex(v); },
 };
 
 const resolveNowMs = (nowMs?: number): number => nowMs ?? Date.now();

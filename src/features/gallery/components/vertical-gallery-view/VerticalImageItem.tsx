@@ -144,16 +144,16 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   createEffect(() => {
     const video = videoRef();
     if (local.isActive && video) {
-      const alreadySignaled = untrack(() => gallerySignals.currentVideoElement.value === video);
+      const alreadySignaled = untrack(() => gallerySignals.currentVideoElement === video);
       if (!alreadySignaled) {
-        gallerySignals.currentVideoElement.value = video;
+        gallerySignals.currentVideoElement = video;
       }
       return;
     }
 
-    const shouldClear = untrack(() => gallerySignals.currentVideoElement.value === video);
+    const shouldClear = untrack(() => gallerySignals.currentVideoElement === video);
     if (shouldClear) {
-      gallerySignals.currentVideoElement.value = null;
+      gallerySignals.currentVideoElement = null;
     }
   });
 

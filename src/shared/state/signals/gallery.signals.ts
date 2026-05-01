@@ -78,48 +78,59 @@ export const galleryIndexEvents = createEventEmitter<{
   'navigate:complete': GalleryNavigateCompletePayload;
 }>();
 
+const [_isOpen, setIsOpen] = createSignalSafe<boolean>(INITIAL_STATE.isOpen);
+const [_mediaItems, setMediaItems] = createSignalSafe<readonly MediaInfo[]>(INITIAL_STATE.mediaItems);
+const [_currentIndex, setCurrentIndex] = createSignalSafe<number>(INITIAL_STATE.currentIndex);
+const [_focusedIndex, _setFocusedIndex] = createSignalSafe<number | null>(null);
+const [_currentVideoElement, setCurrentVideoElement] = createSignalSafe<HTMLVideoElement | null>(null);
+
 export const gallerySignals = {
-  isOpen: createSignalSafe<boolean>(INITIAL_STATE.isOpen),
-  mediaItems: createSignalSafe<readonly MediaInfo[]>(INITIAL_STATE.mediaItems),
-  currentIndex: createSignalSafe<number>(INITIAL_STATE.currentIndex),
+  get isOpen() { return _isOpen(); },
+  set isOpen(v: boolean) { setIsOpen(v); },
+  get mediaItems() { return _mediaItems(); },
+  set mediaItems(v: readonly MediaInfo[]) { setMediaItems(v); },
+  get currentIndex() { return _currentIndex(); },
+  set currentIndex(v: number) { setCurrentIndex(v); },
   isLoading: uiSignals.isLoading,
   error: uiSignals.error,
   viewMode: uiSignals.viewMode,
-  focusedIndex: createSignalSafe<number | null>(null),
-  currentVideoElement: createSignalSafe<HTMLVideoElement | null>(null),
+  get focusedIndex() { return _focusedIndex(); },
+  set focusedIndex(v: number | null) { _setFocusedIndex(v); },
+  get currentVideoElement() { return _currentVideoElement(); },
+  set currentVideoElement(v: HTMLVideoElement | null) { setCurrentVideoElement(v); },
 };
 
 function applyGallerySessionUpdate(state: GallerySessionState): void {
   batch(() => {
-    gallerySignals.mediaItems.value = state.mediaItems;
-    gallerySignals.currentIndex.value = state.currentIndex;
-    gallerySignals.focusedIndex.value = state.focusedIndex;
-    gallerySignals.currentVideoElement.value = state.currentVideoElement;
-    gallerySignals.error.value = state.error;
-    gallerySignals.isOpen.value = state.isOpen;
+    gallerySignals.mediaItems = state.mediaItems;
+    gallerySignals.currentIndex = state.currentIndex;
+    gallerySignals.focusedIndex = state.focusedIndex;
+    gallerySignals.currentVideoElement = state.currentVideoElement;
+    gallerySignals.error = state.error;
+    gallerySignals.isOpen = state.isOpen;
   });
 }
 
 export function applyGalleryStateUpdate(state: GalleryState): void {
   batch(() => {
-    gallerySignals.mediaItems.value = state.mediaItems;
-    gallerySignals.currentIndex.value = state.currentIndex;
-    gallerySignals.isLoading.value = state.isLoading;
-    gallerySignals.error.value = state.error;
-    gallerySignals.viewMode.value = state.viewMode;
-    gallerySignals.isOpen.value = state.isOpen;
+    gallerySignals.mediaItems = state.mediaItems;
+    gallerySignals.currentIndex = state.currentIndex;
+    gallerySignals.isLoading = state.isLoading;
+    gallerySignals.error = state.error;
+    gallerySignals.viewMode = state.viewMode;
+    gallerySignals.isOpen = state.isOpen;
   });
 }
 
 export const galleryState = {
   get value(): GalleryState {
     return {
-      isOpen: gallerySignals.isOpen.value,
-      mediaItems: gallerySignals.mediaItems.value,
-      currentIndex: gallerySignals.currentIndex.value,
-      isLoading: gallerySignals.isLoading.value,
-      error: gallerySignals.error.value,
-      viewMode: gallerySignals.viewMode.value,
+      isOpen: gallerySignals.isOpen,
+      mediaItems: gallerySignals.mediaItems,
+      currentIndex: gallerySignals.currentIndex,
+      isLoading: gallerySignals.isLoading,
+      error: gallerySignals.error,
+      viewMode: gallerySignals.viewMode,
     };
   },
 

@@ -61,8 +61,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private renderGallery(): void {
     if (this.isMounting || this.container) return;
 
-    const { isOpen, mediaItems } = gallerySignals;
-    if (!isOpen.value || mediaItems.value.length === 0) return;
+    if (!gallerySignals.isOpen || gallerySignals.mediaItems.length === 0) return;
 
     this.isMounting = true;
     __DEV__ && logger.info('[GalleryRenderer] Rendering started');
@@ -171,13 +170,13 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
     try {
       const languageService = getLanguageService();
-      const mediaItems = gallerySignals.mediaItems.value;
+      const mediaItems = gallerySignals.mediaItems;
       const mediaService = getMediaService();
       // Lazy load download service on first use
       const downloadService = await this.getDownloadService();
 
       if (type === 'current') {
-        const currentMedia = mediaItems[gallerySignals.currentIndex.value];
+        const currentMedia = mediaItems[gallerySignals.currentIndex];
         if (currentMedia) {
           let blob: Blob | undefined;
           try {
@@ -291,7 +290,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   close(): void {
-    if (!gallerySignals.isOpen.value) {
+    if (!gallerySignals.isOpen) {
       return;
     }
 
@@ -300,7 +299,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   isRendering(): boolean {
-    return !!(this.container && gallerySignals.isOpen.value);
+    return !!(this.container && gallerySignals.isOpen);
   }
 
   destroy(): void {
