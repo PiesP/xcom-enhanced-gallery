@@ -3,7 +3,6 @@
  * System theme detection and application service
  */
 
-import { SERVICE_KEYS } from '@constants/service-keys';
 import { APP_SETTINGS_STORAGE_KEY } from '@constants/storage';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';
@@ -11,9 +10,8 @@ import { EventManager } from '@shared/services/event-manager';
 import type { Lifecycle } from '@shared/services/lifecycle';
 import { createLifecycle } from '@shared/services/lifecycle';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
-import { CoreService } from '@shared/services/service-manager';
+import { tryGetSettings } from '@shared/services/service-registry';
 import type {
-  SettingsServiceLike,
   Theme,
   ThemeChangeListener,
   ThemeServiceContract,
@@ -80,9 +78,7 @@ export class ThemeService implements ThemeServiceContract {
 
   private async onInitialize(): Promise<void> {
     if (!this.boundSettingsService) {
-      const settingsService = CoreService.getInstance().tryGet<SettingsServiceLike>(
-        SERVICE_KEYS.SETTINGS
-      );
+      const settingsService = tryGetSettings();
 
       if (settingsService) {
         this.bindSettingsService(settingsService);

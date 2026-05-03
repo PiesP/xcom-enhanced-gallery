@@ -7,7 +7,6 @@
  * @module bootstrap/gallery-init
  */
 
-import { SERVICE_KEYS } from '@constants/service-keys';
 import { GalleryApp } from '@features/gallery/GalleryApp';
 import { GalleryRenderer } from '@features/gallery/GalleryRenderer.tsx';
 import { SettingsService } from '@features/settings/services/settings-service';
@@ -17,15 +16,12 @@ import {
   registerSettingsManager,
   tryGetSettingsManager,
 } from '@shared/container/service-accessors';
+import { hasRenderer } from '@shared/services/service-registry';
 import {
   bootstrapErrorReporter,
   galleryErrorReporter,
   settingsErrorReporter,
 } from '@shared/error/app-error-reporter';
-import { getUserscriptSafe } from '@shared/external/userscript/adapter';
-import { isGMAPIAvailable } from '@shared/external/userscript/environment-detector';
-import { logger } from '@shared/logging/logger';
-import { CoreService } from '@shared/services/service-manager';
 
 type InitializableSettingsService = {
   initialize?: () => Promise<void>;
@@ -36,7 +32,7 @@ type InitializableSettingsService = {
 const hasRequiredGMAPIs = isGMAPIAvailable('download') || isGMAPIAvailable('setValue');
 
 function ensureRendererRegistered(): void {
-  if (CoreService.getInstance().has(SERVICE_KEYS.GALLERY_RENDERER)) {
+  if (hasRenderer()) {
     return;
   }
 

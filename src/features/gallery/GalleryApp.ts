@@ -5,7 +5,6 @@ import { galleryErrorReporter, mediaErrorReporter } from '@shared/error/app-erro
 import { getErrorMessage } from '@shared/error/normalize';
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
-import type { SettingsServiceLike } from '@shared/services/theme-service.contract';
 import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import {
@@ -56,7 +55,7 @@ export class GalleryApp {
   }
 
   private async setupEventHandlers(): Promise<void> {
-    const settingsService = tryGetSettingsManager<SettingsServiceLike>();
+    const settingsService = tryGetSettingsManager<{ get?: (key: string) => unknown }>();
     const enableKeyboardSetting = settingsService?.get?.('gallery.enableKeyboardNav');
     const enableKeyboard =
       typeof enableKeyboardSetting === 'boolean' ? enableKeyboardSetting : true;

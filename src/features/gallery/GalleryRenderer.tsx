@@ -16,7 +16,6 @@ import {
 } from '@shared/container/service-accessors';
 import { getErrorMessage } from '@shared/error/normalize';
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';
-import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces/gallery.interfaces';
 import { logger } from '@shared/logging/logger';
 import type { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
 import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
@@ -34,7 +33,7 @@ import { createSignal, onCleanup } from 'solid-js';
 
 import './styles/gallery-global.css';
 
-export class GalleryRenderer implements GalleryRendererInterface {
+export class GalleryRenderer {
   private container: HTMLDivElement | null = null;
   private isMounting = false;
   private stateUnsubscribe: (() => void) | null = null;

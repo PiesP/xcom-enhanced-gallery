@@ -4,7 +4,7 @@
  */
 
 import type { AppSettings } from '@features/settings/types/settings.types';
-import { tryGetSettingsManager } from './service-accessors';
+import { tryGetSettings } from '@shared/services/service-registry';
 
 // =============================================================================
 // Type Utilities for Dot-Notation Path Access
@@ -47,7 +47,7 @@ interface SettingsServiceLike {
 
 /** Retrieve registered SettingsService or throw if not registered. */
 function requireSettingsService(): SettingsServiceLike {
-  const service = tryGetSettingsManager<SettingsServiceLike>();
+  const service = tryGetSettings();
   if (!service) {
     throw new Error(
       __DEV__

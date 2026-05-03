@@ -17,7 +17,6 @@ import { GlobalErrorHandler } from '@shared/error/error-handler';
 import type { BootstrapStage } from '@shared/interfaces/handler.interfaces';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
-import { CoreService } from '@shared/services/service-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 // Global styles (side-effect import)
@@ -126,7 +125,6 @@ async function cleanup(): Promise<void> {
       if (app) await app.cleanup();
     });
     tearDownGlobalEventHandlers();
-    await runOptionalCleanup('core-service', () => CoreService.getInstance().cleanup());
     await runOptionalCleanup('timers', () => globalTimerManager.cleanup());
     await runOptionalCleanup('error-handler', () => GlobalErrorHandler.getInstance().destroy());
 

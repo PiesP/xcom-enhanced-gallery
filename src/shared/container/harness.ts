@@ -3,26 +3,24 @@
  * Simplifies mock injection and service registration in tests.
  */
 
-import { CoreService } from '@shared/services/service-manager';
+import { registerRenderer, registerSettings } from '@shared/services/service-registry';
 
 export interface TestHarness {
-  register: <T>(key: string, instance: T) => void;
-  get: <T>(key: string) => T;
-  tryGet: <T>(key: string) => T | null;
+  registerRenderer: (r: unknown) => void;
+  registerSettings: (s: unknown) => void;
   reset: () => void;
 }
 
 export function createTestHarness(): TestHarness {
-  const registry = CoreService.getInstance();
-
   return {
-    register: <T>(key: string, instance: T): void => {
-      registry.register<T>(key, instance);
+    registerRenderer: (r: unknown): void => {
+      registerRenderer(r as Parameters<typeof registerRenderer>[0]);
     },
-    get: <T>(key: string): T => registry.get<T>(key),
-    tryGet: <T>(key: string): T | null => registry.tryGet<T>(key),
+    registerSettings: (s: unknown): void => {
+      registerSettings(s as Parameters<typeof registerSettings>[0]);
+    },
     reset: (): void => {
-      registry.reset();
+      // Module-level vars are reset by re-importing in tests
     },
   };
 }
