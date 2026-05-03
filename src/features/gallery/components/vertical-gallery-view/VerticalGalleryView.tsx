@@ -20,7 +20,6 @@ import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import { downloadState } from '@shared/state/signals/download.signals';
 import { gallerySignals, navigateToItem } from '@shared/state/signals/gallery.signals';
-import { isDownloadUiBusy } from '@shared/state/ui/download-ui-state';
 import type { ImageFitMode } from '@shared/types/ui.types';
 import { safeEventPrevent } from '@shared/utils/events/utils';
 import { computePreloadIndices } from '@shared/utils/performance/preload';
@@ -55,9 +54,7 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
   // State accessors - using gallerySignals with createMemo for fine-grained reactivity
   const mediaItems = createMemo(() => gallerySignals.mediaItems);
   const currentIndex = createMemo(() => gallerySignals.currentIndex);
-  const isDownloading = createMemo(() =>
-    isDownloadUiBusy({ downloadProcessing: downloadState.value.isProcessing })
-  );
+  const isDownloading = createMemo(() => downloadState.value.isProcessing);
 
   // Element refs
   const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);
