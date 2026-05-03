@@ -1,5 +1,5 @@
 import type { ToolbarHandlers } from '@shared/components/ui/Toolbar/handler-types';
-import type { ViewMode } from '@shared/types/core/core-types';
+import type { ViewMode } from '@shared/state/signals/ui.state';
 import type { FitMode } from '@shared/types/toolbar.types';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 

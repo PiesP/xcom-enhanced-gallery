@@ -21,6 +21,9 @@ import {
   galleryErrorReporter,
   settingsErrorReporter,
 } from '@shared/error/app-error-reporter';
+import { getUserscriptSafe } from '@shared/external/userscript/adapter';
+import { isGMAPIAvailable } from '@shared/external/userscript/environment-detector';
+import { logger } from '@shared/logging/logger';
 
 type InitializableSettingsService = {
   initialize?: () => Promise<void>;
