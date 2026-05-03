@@ -29,7 +29,6 @@ import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation
 import { getUserscript } from '@shared/external/userscript/adapter';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { createDeferred } from '@shared/utils/async/promise-helpers';
-import { createSingleton } from '@shared/utils/types/singleton';
 
 type HttpRequestData = Exclude<GMXMLHttpRequestDetails['data'], undefined>;
 
@@ -64,14 +63,12 @@ interface HttpResponse<T = unknown> {
  * - Detects Tampermonkey, test, extension, and console environments
  * - Requires @connect directives for cross-origin requests
  */
+let _httpInstance: HttpRequestService | null = null;
+
 export class HttpRequestService {
-  private static readonly singleton = createSingleton(() => new HttpRequestService());
+  private readonly defaultTimeout = 10000;
 
-  private readonly defaultTimeout = 10000; // 10 seconds
-
-  private constructor() {
-    // Private constructor for singleton pattern
-  }
+  private constructor() {}
 
   /**
    * Perform HTTP request using GM_xmlhttpRequest
@@ -192,12 +189,13 @@ export class HttpRequestService {
    * Get or create the singleton instance
    */
   static getInstance(): HttpRequestService {
-    return HttpRequestService.singleton.get();
+    if (!_httpInstance) _httpInstance = new HttpRequestService();
+    return _httpInstance;
   }
 
   /** @internal Test helper */
   static resetForTests(): void {
-    HttpRequestService.singleton.reset?.();
+    _httpInstance = null;
   }
 
   /**

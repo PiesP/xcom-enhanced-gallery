@@ -5,7 +5,6 @@
 
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
-import { createSingleton } from '@shared/utils/types/singleton';
 
 const formatErrorLocation = (
   filename: string | undefined,
@@ -19,66 +18,42 @@ const formatRejectionMessage = (reason: unknown): string => {
   return `Unhandled rejection: ${String(reason)}`;
 };
 
+let _errorHandlerInstance: GlobalErrorHandler | null = null;
+
 export class GlobalErrorHandler {
-  private static readonly singleton = createSingleton(() => new GlobalErrorHandler());
   private isInitialized = false;
   private controller: AbortController | null = null;
   private errorListenerId: string | null = null;
   private rejectionListenerId: string | null = null;
 
-  /**
-   * Handle uncaught errors.
-   * @param event - Error event from window
-   */
-  private readonly errorListener = (event: ErrorEvent): void => {
-    const message = event.message || 'Unknown error occurred';
-    const location = formatErrorLocation(event.filename, event.lineno, event.colno);
+  private constructor() {}
 
+  public static getInstance(): GlobalErrorHandler {
+    if (!_errorHandlerInstance) _errorHandlerInstance = new GlobalErrorHandler();
+    return _errorHandlerInstance;
+  }
+
+  public static resetForTests(): void {
+    _errorHandlerInstance?.destroy();
+    _errorHandlerInstance = null;
+  }
+
+  private readonly errorListener = (event: ErrorEvent): void => {
+    const message = event.message || 'Unknown error';
+    const location = formatErrorLocation(event.filename, event.lineno, event.colno);
     if (__DEV__) {
-      logger.error(`[UncaughtError] ${message}`, {
-        type: 'uncaught-error',
-        location,
-        error: event.error,
-      });
+      logger.error(`[UncaughtError] ${message}`, { type: 'uncaught-error', location, error: event.error });
       event.preventDefault();
     }
   };
 
-  /**
-   * Handle unhandled promise rejections.
-   * @param event - Promise rejection event from window
-   */
   private readonly rejectionListener = (event: PromiseRejectionEvent): void => {
     const message = formatRejectionMessage(event.reason);
-
     if (__DEV__) {
-      logger.error(`[UnhandledRejection] ${message}`, {
-        type: 'unhandled-rejection',
-        reason: event.reason,
-      });
+      logger.error(`[UnhandledRejection] ${message}`, { type: 'unhandled-rejection', reason: event.reason });
       event.preventDefault();
     }
   };
-
-  /**
-   * Get the singleton instance of GlobalErrorHandler.
-   * @returns The GlobalErrorHandler instance
-   */
-  public static getInstance(): GlobalErrorHandler {
-    return GlobalErrorHandler.singleton.get();
-  }
-
-  /**
-   * Reset the singleton instance for testing purposes.
-   * @internal Test helper - should only be called in test environments
-   */
-  public static resetForTests(): void {
-    const existing = GlobalErrorHandler.singleton.peek?.();
-    existing?.destroy();
-    GlobalErrorHandler.singleton.reset?.();
-  }
-
-  private constructor() {}
 
   /**
    * Initialize the global error handler.

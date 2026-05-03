@@ -12,10 +12,9 @@ import { DEFAULT_LANGUAGE, getLanguageStrings } from '@shared/constants/i18n/tra
 import { resolveTranslationValue } from '@shared/i18n/translation-utils';
 import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
 import { logger } from '@shared/logging/logger';
-import type { Lifecycle } from '@shared/services/lifecycle';
-import { createLifecycle } from '@shared/services/lifecycle';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
-import { createSingleton } from '@shared/utils/types/singleton';
+
+let _instance: LanguageService | null = null;
 
 /**
  * Multilingual Service
@@ -25,74 +24,49 @@ import { createSingleton } from '@shared/utils/types/singleton';
  * Note: Global singleton export requires initialize() call from main.ts
  */
 export class LanguageService {
-  private readonly lifecycle: Lifecycle;
   private static readonly STORAGE_KEY = 'xeg-language';
-
+  private _initialized = false;
   private currentLanguage: SupportedLanguage = 'auto';
   private readonly listeners: Set<(language: SupportedLanguage) => void> = new Set();
   private readonly storage = getPersistentStorage();
 
-  private static readonly singleton = createSingleton(() => new LanguageService());
-
   public static getInstance(): LanguageService {
-    return LanguageService.singleton.get();
+    if (!_instance) _instance = new LanguageService();
+    return _instance;
   }
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    const existing = LanguageService.singleton.peek?.();
-    existing?.destroy();
-    LanguageService.singleton.reset?.();
+    _instance = null;
   }
 
-  constructor() {
-    this.lifecycle = createLifecycle('LanguageService', {
-      onInitialize: () => this.onInitialize(),
-      onDestroy: () => this.onDestroy(),
-    });
-  }
+  constructor() {}
 
-  /** Initialize service (idempotent, fail-fast on error) */
+  /** Initialize service (idempotent) */
   public async initialize(): Promise<void> {
-    return this.lifecycle.initialize();
-  }
-
-  /** Destroy service (idempotent, graceful on error) */
-  public destroy(): void {
-    this.lifecycle.destroy();
-  }
-
-  /** Check if service is initialized */
-  public isInitialized(): boolean {
-    return this.lifecycle.isInitialized();
-  }
-
-  /**
-   * Service initialization hook
-   * Restore language setting from storage and lazy load language bundle if needed
-   */
-  private async onInitialize(): Promise<void> {
+    if (this._initialized) return;
     try {
       const saved = await this.storage.getString(LanguageService.STORAGE_KEY);
       const normalized = this.normalizeLanguage(saved);
-
       if (normalized !== this.currentLanguage) {
         this.currentLanguage = normalized;
         this.notifyListeners(normalized);
       }
     } catch (error) {
-      if (__DEV__) {
-        logger.warn('Failed to restore language setting from storage:', error);
-      }
+      if (__DEV__) logger.warn('Failed to restore language setting from storage:', error);
     }
+    this._initialized = true;
   }
 
-  /**
-   * Service cleanup hook
-   * Clean up listeners
-   */
-  private onDestroy(): void {
+  /** Destroy service (idempotent) */
+  public destroy(): void {
     this.listeners.clear();
+    this._initialized = false;
+  }
+
+  /** Check if service is initialized */
+  public isInitialized(): boolean {
+    return this._initialized;
   }
   detectLanguage(): BaseLanguageCode {
     // Safe navigator.language access

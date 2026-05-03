@@ -27,11 +27,10 @@ import type {
   SingleDownloadResult,
 } from '@shared/services/download/types';
 import { downloadAsZip } from '@shared/services/download/zip-download';
-import type { Lifecycle } from '@shared/services/lifecycle';
-import { createLifecycle } from '@shared/services/lifecycle';
 import type { MediaInfo } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/result.types';
-import { createSingleton } from '@shared/utils/types/singleton';
+
+let _downloadInstance: DownloadOrchestrator | null = null;
 
 /**
  * DownloadOrchestrator - Central download service
@@ -51,20 +50,15 @@ import { createSingleton } from '@shared/utils/types/singleton';
  * ```
  */
 export class DownloadOrchestrator {
-  private readonly lifecycle: Lifecycle;
-  private static readonly singleton = createSingleton(() => new DownloadOrchestrator());
-
   /** Cached download capability detection (lazy initialized) */
   private capability: DownloadCapability | null = null;
+  private _initialized = false;
 
-  private constructor() {
-    this.lifecycle = createLifecycle('DownloadOrchestrator', {
-      onDestroy: () => this.onDestroy(),
-    });
-  }
+  private constructor() {}
 
   public static getInstance(): DownloadOrchestrator {
-    return DownloadOrchestrator.singleton.get();
+    if (!_downloadInstance) _downloadInstance = new DownloadOrchestrator();
+    return _downloadInstance;
   }
 
   /**
@@ -72,28 +66,23 @@ export class DownloadOrchestrator {
    * @internal
    */
   public static resetForTests(): void {
-    const existing = DownloadOrchestrator.singleton.peek?.();
-    existing?.destroy();
-    DownloadOrchestrator.singleton.reset?.();
+    _downloadInstance = null;
   }
 
-  /** Initialize service (idempotent, fail-fast on error) */
+  /** Initialize service (idempotent) */
   public async initialize(): Promise<void> {
-    return this.lifecycle.initialize();
+    this._initialized = true;
   }
 
-  /** Destroy service (idempotent, graceful on error) */
+  /** Destroy service (idempotent) */
   public destroy(): void {
-    this.lifecycle.destroy();
+    this.capability = null;
+    this._initialized = false;
   }
 
   /** Check if service is initialized */
   public isInitialized(): boolean {
-    return this.lifecycle.isInitialized();
-  }
-
-  private onDestroy(): void {
-    this.capability = null;
+    return this._initialized;
   }
 
   /**

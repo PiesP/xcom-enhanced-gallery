@@ -14,24 +14,21 @@ import type {
   SettingChangeEvent,
 } from '@features/settings/types/settings.types';
 import { logger } from '@shared/logging/logger';
-import type { Lifecycle } from '@shared/services/lifecycle';
-import { createLifecycle } from '@shared/services/lifecycle';
-import { createSingleton } from '@shared/utils/types/singleton';
 import { assignNestedPath, normalizeFeatureFlags, resolveNestedPath } from './settings-helpers';
 
+let _settingsInstance: SettingsService | null = null;
+
 export class SettingsService implements SettingsServiceContract {
-  private readonly lifecycle: Lifecycle;
-  private static readonly singleton = createSingleton(() => new SettingsService());
+  private _initialized = false;
 
   public static getInstance(): SettingsService {
-    return SettingsService.singleton.get();
+    if (!_settingsInstance) _settingsInstance = new SettingsService();
+    return _settingsInstance;
   }
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    const existing = SettingsService.singleton.peek?.();
-    existing?.destroy();
-    SettingsService.singleton.reset?.();
+    _settingsInstance = null;
   }
 
   private settings: AppSettings = createDefaultSettings();
@@ -40,35 +37,26 @@ export class SettingsService implements SettingsServiceContract {
 
   constructor(
     private readonly repository: SettingsRepository = new PersistentSettingsRepository()
-  ) {
-    this.lifecycle = createLifecycle('SettingsService', {
-      onInitialize: () => this.onInitialize(),
-      onDestroy: () => this.onDestroy(),
-    });
-  }
+  ) {}
 
   public async initialize(): Promise<void> {
-    return this.lifecycle.initialize();
+    if (this._initialized) return;
+    this.settings = await this.repository.load();
+    this.refreshFeatureMap();
+    this._initialized = true;
   }
 
   public destroy(): void {
-    this.lifecycle.destroy();
-  }
-
-  public isInitialized(): boolean {
-    return this.lifecycle.isInitialized();
-  }
-
-  private async onInitialize(): Promise<void> {
-    this.settings = await this.repository.load();
-    this.refreshFeatureMap();
-  }
-
-  private onDestroy(): void {
+    if (!this._initialized) return;
     this.listeners.clear();
     this.repository.save(this.settings).catch((error) => {
       __DEV__ && logger.warn('Failed to save settings on destroy:', error);
     });
+    this._initialized = false;
+  }
+
+  public isInitialized(): boolean {
+    return this._initialized;
   }
 
   public getAllSettings(): Readonly<AppSettings> {

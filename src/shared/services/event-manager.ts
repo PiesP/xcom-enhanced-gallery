@@ -4,21 +4,19 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import type { Lifecycle } from '@shared/services/lifecycle';
-import { createLifecycle } from '@shared/services/lifecycle';
 import {
   getEventListenerStatus,
   addListener as registerManagedListener,
   removeEventListenerManaged,
 } from '@shared/utils/events/core/listener-manager';
-import { createSingleton } from '@shared/utils/types/singleton';
+
+let _eventManagerInstance: EventManager | null = null;
 
 /**
  * Singleton EventManager with context-based listener grouping.
  */
 export class EventManager {
-  private readonly lifecycle: Lifecycle;
-  private static readonly singleton = createSingleton(() => new EventManager());
+  private _initialized = false;
   private isDestroyed = false;
 
   // Only tracks listeners registered through this instance so cleanup() does
@@ -26,58 +24,38 @@ export class EventManager {
   // the underlying listener manager.
   private readonly ownedListenerContexts = new Map<string, string | undefined>();
 
-  private constructor() {
-    this.lifecycle = createLifecycle('EventManager', {
-      onInitialize: () => this.onInitialize(),
-      onDestroy: () => this.onDestroy(),
-    });
-  }
+  private constructor() {}
 
   /** Get singleton instance */
   public static getInstance(): EventManager {
-    return EventManager.singleton.get();
+    if (!_eventManagerInstance) _eventManagerInstance = new EventManager();
+    return _eventManagerInstance;
   }
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    const existing = EventManager.singleton.peek?.();
-    // The lifecycle destroy() hook is a no-op unless the instance was initialized.
-    // In tests we may register listeners without calling initialize(), so ensure
-    // we always perform cleanup.
-    existing?.cleanup();
-    existing?.destroy();
-    EventManager.singleton.reset?.();
+    _eventManagerInstance?.cleanup();
+    _eventManagerInstance = null;
   }
 
-  /** Initialize service (idempotent, fail-fast on error) */
+  /** Initialize service (idempotent) */
   public async initialize(): Promise<void> {
-    return this.lifecycle.initialize();
+    if (this._initialized) return;
+    this.isDestroyed = false;
+    if (__DEV__) logger.debug('EventManager initialized');
+    this._initialized = true;
   }
 
-  /** Destroy service (idempotent, graceful on error) */
+  /** Destroy service (idempotent) */
   public destroy(): void {
-    this.lifecycle.destroy();
+    if (!this._initialized) return;
+    this.cleanup();
+    this._initialized = false;
   }
 
   /** Check if service is initialized */
   public isInitialized(): boolean {
-    return this.lifecycle.isInitialized();
-  }
-
-  /** Lifecycle: Initialization */
-  private async onInitialize(): Promise<void> {
-    // Allow re-initialization after destroy().
-    // The lifecycle helper supports initialize() after destroy(); ensure the
-    // instance becomes usable again.
-    this.isDestroyed = false;
-    if (__DEV__) {
-      logger.debug('EventManager initialized');
-    }
-  }
-
-  /** Lifecycle: Cleanup */
-  private onDestroy(): void {
-    this.cleanup();
+    return this._initialized;
   }
 
   /**

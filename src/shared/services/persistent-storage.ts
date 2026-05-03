@@ -1,25 +1,25 @@
 import { getUserscript, type UserscriptAPI } from '@shared/external/userscript/adapter';
 import type { PersistentStorageGetOptions } from '@shared/services/persistent-storage.contract';
-import { createSingleton } from '@shared/utils/types/singleton';
 
 export type { PersistentStorageGetOptions } from '@shared/services/persistent-storage.contract';
+
+let _persistentStorageInstance: PersistentStorage | null = null;
 
 export class PersistentStorage {
   private get userscript(): UserscriptAPI {
     return getUserscript();
   }
 
-  private static readonly singleton = createSingleton(() => new PersistentStorage());
-
   private constructor() {}
 
   static getInstance(): PersistentStorage {
-    return PersistentStorage.singleton.get();
+    if (!_persistentStorageInstance) _persistentStorageInstance = new PersistentStorage();
+    return _persistentStorageInstance;
   }
 
   /** @internal Test helper */
   static resetForTests(): void {
-    PersistentStorage.singleton.reset?.();
+    _persistentStorageInstance = null;
   }
 
   async set(key: string, value: unknown): Promise<void> {

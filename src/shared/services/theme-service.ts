@@ -7,8 +7,6 @@ import { APP_SETTINGS_STORAGE_KEY } from '@constants/storage';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
-import type { Lifecycle } from '@shared/services/lifecycle';
-import { createLifecycle } from '@shared/services/lifecycle';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 import { tryGetSettings } from '@shared/services/service-registry';
 import type {
@@ -18,7 +16,6 @@ import type {
   ThemeSetOptions,
   ThemeSetting,
 } from '@shared/services/theme-service.contract';
-import { createSingleton } from '@shared/utils/types/singleton';
 
 const VALID_THEME_SETTINGS: readonly ThemeSetting[] = ['light', 'dark', 'auto'];
 
@@ -26,8 +23,10 @@ function isThemeSetting(value: unknown): value is ThemeSetting {
   return typeof value === 'string' && VALID_THEME_SETTINGS.includes(value as ThemeSetting);
 }
 
+let _themeInstance: ThemeService | null = null;
+
 export class ThemeService implements ThemeServiceContract {
-  private readonly lifecycle: Lifecycle;
+  private _initialized = false;
   private readonly storage = getPersistentStorage();
   private mediaQueryList: MediaQueryList | null = null;
   private mediaQueryListener: ((event: MediaQueryListEvent) => void) | null = null;
@@ -39,57 +38,47 @@ export class ThemeService implements ThemeServiceContract {
   private observer: MutationObserver | null = null;
   private observedThemeScopes: WeakSet<Element> = new WeakSet();
 
-  private static readonly singleton = createSingleton(() => new ThemeService());
-
   public static getInstance(): ThemeService {
-    return ThemeService.singleton.get();
+    if (!_themeInstance) _themeInstance = new ThemeService();
+    return _themeInstance;
   }
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    const existing = ThemeService.singleton.peek?.();
-    existing?.destroy();
-    ThemeService.singleton.reset?.();
+    _themeInstance?.destroy();
+    _themeInstance = null;
   }
 
   constructor() {
-    this.lifecycle = createLifecycle('ThemeService', {
-      onInitialize: () => this.onInitialize(),
-    });
-
     this.mediaQueryList = this.createMediaQueryList();
   }
 
-  /** Initialize service (idempotent, fail-fast on error) */
+  /** Initialize service (idempotent) */
   public async initialize(): Promise<void> {
-    return this.lifecycle.initialize();
-  }
-
-  /** Destroy service (idempotent, graceful on error) */
-  public destroy(): void {
-    this.cleanup();
-    this.lifecycle.destroy();
-  }
-
-  /** Check if service is initialized */
-  public isInitialized(): boolean {
-    return this.lifecycle.isInitialized();
-  }
-
-  private async onInitialize(): Promise<void> {
+    if (this._initialized) return;
     if (!this.boundSettingsService) {
       const settingsService = tryGetSettings();
-
       if (settingsService) {
         this.bindSettingsService(settingsService);
       } else {
         await this.restoreThemeSettingFromStorage();
       }
     }
-
     this.initializeThemeScopeObservation();
     this.initializeSystemDetection();
     this.applyCurrentTheme(true);
+    this._initialized = true;
+  }
+
+  /** Destroy service (idempotent) */
+  public destroy(): void {
+    this.cleanup();
+    this._initialized = false;
+  }
+
+  /** Check if service is initialized */
+  public isInitialized(): boolean {
+    return this._initialized;
   }
 
   public bindSettingsService(settingsService: SettingsServiceLike): void {

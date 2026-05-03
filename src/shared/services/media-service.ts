@@ -1,5 +1,3 @@
-import type { Lifecycle } from '@shared/services/lifecycle';
-import { createLifecycle } from '@shared/services/lifecycle';
 import { PrefetchManager } from '@shared/services/media/prefetch-manager';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import type {
@@ -8,62 +6,50 @@ import type {
   MediaInfo,
 } from '@shared/types/media.types';
 import { clampIndex } from '@shared/utils/types/safety';
-import { createSingleton } from '@shared/utils/types/singleton';
+
+let _instance: MediaService | null = null;
 
 interface MediaServiceOptions {
   readonly enableMediaExtraction?: boolean;
 }
 
 export class MediaService {
-  private readonly lifecycle: Lifecycle;
-  private static readonly singleton = createSingleton(() => new MediaService());
   private mediaExtraction: MediaExtractionService | null = null;
   private readonly prefetchManager = new PrefetchManager(20);
   private didCleanup = false;
+  private _initialized = false;
 
-  constructor(_options: MediaServiceOptions = {}) {
-    this.lifecycle = createLifecycle('MediaService', {
-      onInitialize: () => this.onInitialize(),
-      onDestroy: () => this.onDestroy(),
-    });
-  }
+  constructor(_options: MediaServiceOptions = {}) {}
 
-  /** Initialize service (idempotent, fail-fast on error) */
+  /** Initialize service (idempotent) */
   public async initialize(): Promise<void> {
-    return this.lifecycle.initialize();
+    if (this._initialized) return;
+    if (__FEATURE_MEDIA_EXTRACTION__) {
+      this.mediaExtraction = new MediaExtractionService();
+    }
+    this._initialized = true;
   }
 
-  /** Destroy service (idempotent, graceful on error) */
+  /** Destroy service (idempotent) */
   public destroy(): void {
-    // Ensure we clean up constructor-time allocations even if initialize() was never called.
     this.cleanupOnce();
-    this.lifecycle.destroy();
+    this._initialized = false;
   }
 
   /** Check if service is initialized */
   public isInitialized(): boolean {
-    return this.lifecycle.isInitialized();
-  }
-
-  private async onInitialize(): Promise<void> {
-    if (__FEATURE_MEDIA_EXTRACTION__) {
-      this.mediaExtraction = new MediaExtractionService();
-    }
-  }
-
-  private onDestroy(): void {
-    this.cleanupOnce();
+    return this._initialized;
   }
 
   public static getInstance(_options?: MediaServiceOptions): MediaService {
-    return MediaService.singleton.get();
+    if (!_instance) _instance = new MediaService();
+    return _instance;
   }
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    const existing = MediaService.singleton.peek?.();
-    existing?.destroy();
-    MediaService.singleton.reset?.();
+    _instance?.destroy();
+    _instance = null;
   }
 
   private cleanupOnce(): void {
