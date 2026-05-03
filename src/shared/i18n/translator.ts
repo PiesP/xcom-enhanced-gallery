@@ -1,70 +1,56 @@
-import type { BaseLanguageCode } from '@shared/constants/i18n/i18n.types';
-import { LANGUAGE_CODES } from '@shared/constants/i18n/i18n.types';
-import { TranslationCatalog, type TranslationCatalogOptions } from './translation-catalog';
-import { resolveTranslationValue } from './translation-utils';
-import type { TranslationKey, TranslationParams } from './types';
-
 /**
- * Translator with parameter interpolation and fallback support
- * All language bundles are pre-loaded in the single-file userscript
+ * @fileoverview Translator — merged from TranslationCatalog, Translator, and translation-utils.
+ * All language bundles are pre-loaded in the single-file userscript.
  */
-export class Translator {
-  private readonly catalog: TranslationCatalog;
 
-  /**
-   * Creates a new Translator instance
-   * @param options - Translation catalog or configuration options
-   */
-  constructor(options: TranslationCatalog | TranslationCatalogOptions = {}) {
-    this.catalog =
-      options instanceof TranslationCatalog ? options : new TranslationCatalog(options);
+import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/i18n.types';
+import { LANGUAGE_CODES } from '@shared/constants/i18n/i18n.types';
+import { DEFAULT_LANGUAGE, TRANSLATION_REGISTRY } from '@shared/constants/i18n/translation-registry';
+import type { TranslationBundleInput, TranslationKey, TranslationParams } from './types';
+
+function resolveTranslationValue(dictionary: LanguageStrings, key: TranslationKey): string | undefined {
+  const segments = key.split('.');
+  let current: unknown = dictionary;
+  for (const segment of segments) {
+    if (current == null || typeof current !== 'object') return undefined;
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return typeof current === 'string' ? current : undefined;
+}
+
+interface TranslatorOptions {
+  readonly bundles?: TranslationBundleInput;
+  readonly fallbackLanguage?: BaseLanguageCode;
+}
+
+export class Translator {
+  private readonly bundles: Partial<Record<BaseLanguageCode, LanguageStrings>> = {};
+  private readonly fallbackLanguage: BaseLanguageCode;
+
+  constructor(options: TranslatorOptions = {}) {
+    const { bundles = TRANSLATION_REGISTRY, fallbackLanguage = DEFAULT_LANGUAGE } = options;
+    this.fallbackLanguage = fallbackLanguage;
+    for (const [lang, strings] of Object.entries(bundles) as Array<[BaseLanguageCode, LanguageStrings | undefined]>) {
+      if (strings) this.bundles[lang] = strings;
+    }
+    if (!this.bundles[this.fallbackLanguage]) {
+      throw new Error(`Missing fallback language bundle: ${this.fallbackLanguage}`);
+    }
   }
 
-  /**
-   * Get all available language codes (pre-loaded bundles)
-   * @returns Array of available language codes
-   */
   get languages(): BaseLanguageCode[] {
     return [...LANGUAGE_CODES];
   }
 
-  /**
-   * Ensure language bundle is loaded (lazy-loading not supported)
-   * @param language - Language code to ensure
-   * @returns Promise that resolves immediately
-   */
-  public async ensureLanguage(language: BaseLanguageCode): Promise<void> {
-    await this.catalog.ensureLanguage(language);
-  }
+  public async ensureLanguage(_language: BaseLanguageCode): Promise<void> {}
 
-  /**
-   * Translate key with optional parameter interpolation
-   * @param language - Target language code
-   * @param key - Translation key (dot notation)
-   * @param params - Optional parameters for interpolation
-   * @returns Translated string with interpolated parameters (key if not found)
-   */
-  public translate(
-    language: BaseLanguageCode,
-    key: TranslationKey,
-    params?: TranslationParams
-  ): string {
-    const dictionary = this.catalog.get(language);
-    const template = resolveTranslationValue(dictionary, key);
-
-    if (!template) {
-      return key;
-    }
-
-    if (!params) {
-      return template;
-    }
-
-    return template.replace(/\{(\w+)\}/g, (match: string, placeholder: string): string => {
-      if (Object.hasOwn(params, placeholder)) {
-        return String(params[placeholder]);
-      }
-      return match;
-    });
+  public translate(language: BaseLanguageCode, key: TranslationKey, params?: TranslationParams): string {
+    const strings = this.bundles[language] ?? this.bundles[this.fallbackLanguage]!;
+    const template = resolveTranslationValue(strings, key);
+    if (!template) return key;
+    if (!params) return template;
+    return template.replace(/\{(\w+)\}/g, (match, placeholder) =>
+      Object.hasOwn(params, placeholder) ? String(params[placeholder]) : match,
+    );
   }
 }

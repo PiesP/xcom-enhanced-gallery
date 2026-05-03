@@ -9,10 +9,19 @@ import {
   type SupportedLanguage,
 } from '@shared/constants/i18n/i18n.types';
 import { DEFAULT_LANGUAGE, getLanguageStrings } from '@shared/constants/i18n/translation-registry';
-import { resolveTranslationValue } from '@shared/i18n/translation-utils';
 import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
 import { logger } from '@shared/logging/logger';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
+
+function resolveTranslationValue(dictionary: Record<string, unknown>, key: string): string | undefined {
+  const segments = key.split('.');
+  let current: unknown = dictionary;
+  for (const segment of segments) {
+    if (current == null || typeof current !== 'object') return undefined;
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return typeof current === 'string' ? current : undefined;
+}
 
 let _instance: LanguageService | null = null;
 
