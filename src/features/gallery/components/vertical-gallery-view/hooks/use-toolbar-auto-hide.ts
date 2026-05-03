@@ -4,7 +4,7 @@
  * @module features/gallery/components/vertical-gallery-view/hooks/useToolbarAutoHide
  */
 
-import { getTypedSettingOr } from '@shared/container/settings-access';
+import { getTypedSettingOr } from '@shared/container/container';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import type { Accessor, Setter } from 'solid-js';
 import { createEffect, createSignal, onCleanup } from 'solid-js';

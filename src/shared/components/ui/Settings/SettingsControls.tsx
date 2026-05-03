@@ -19,7 +19,7 @@
  * Component styles: `SettingsControls.module.css`
  */
 
-import { getLanguageService } from '@shared/container/service-accessors';
+import { getLanguageService } from '@shared/container/container';
 import type { JSXElement } from '@shared/external/vendors';
 import { resolve } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';

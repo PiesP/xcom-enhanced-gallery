@@ -19,7 +19,7 @@ import {
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.types';
 import { createDebounced } from '@shared/async/debounce';
-import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
+import { getTypedSettingOr, setTypedSetting } from '@shared/container/container';
 import type { JSX, JSXElement } from '@shared/external/vendors';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';

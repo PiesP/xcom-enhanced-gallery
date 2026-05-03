@@ -3,7 +3,7 @@
  * Simplifies mock injection and service registration in tests.
  */
 
-import { registerRenderer, registerSettings } from '@shared/services/service-registry';
+import { registerRenderer, registerSettings } from '@shared/container/container';
 
 export interface TestHarness {
   registerRenderer: (r: unknown) => void;

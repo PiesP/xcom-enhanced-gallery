@@ -3,7 +3,7 @@
  * Provides a retry-friendly fallback UI and deduplicates error notifications.
  */
 
-import { getLanguageService } from '@shared/container/service-accessors';
+import { getLanguageService } from '@shared/container/container';
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import type { JSXElement } from '@shared/external/vendors';
 import { createSignal, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';

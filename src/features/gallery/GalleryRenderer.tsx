@@ -13,7 +13,7 @@ import {
   getLanguageService,
   getMediaService,
   getThemeService,
-} from '@shared/container/service-accessors';
+} from '@shared/container/container';
 import { getErrorMessage } from '@shared/error/normalize';
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';

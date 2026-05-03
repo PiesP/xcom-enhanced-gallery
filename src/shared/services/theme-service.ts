@@ -8,7 +8,7 @@ import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
-import { tryGetSettings } from '@shared/services/service-registry';
+import { tryGetSettings } from '@shared/container/container';
 
 // Theme types (inlined from theme-service.contract.ts)
 export type Theme = 'light' | 'dark';

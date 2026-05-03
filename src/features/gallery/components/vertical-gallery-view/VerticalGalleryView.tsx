@@ -13,7 +13,7 @@ import styles from '@features/gallery/components/vertical-gallery-view/VerticalG
 import { VerticalImageItem } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem';
 import { createDebounced } from '@shared/async/debounce';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
-import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-access';
+import { getTypedSettingOr, setTypedSetting } from '@shared/container/container';
 import type { JSX, JSXElement } from '@shared/external/vendors';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { logger } from '@shared/logging/logger';

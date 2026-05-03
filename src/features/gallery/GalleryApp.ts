@@ -1,6 +1,6 @@
 /** Gallery application orchestrator. */
 
-import { getMediaService, tryGetSettingsManager } from '@shared/container/service-accessors';
+import { getMediaService, tryGetSettingsManager } from '@shared/container/container';
 import { galleryErrorReporter, mediaErrorReporter } from '@shared/error/app-error-reporter';
 import { getErrorMessage } from '@shared/error/normalize';
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';

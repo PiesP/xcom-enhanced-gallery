@@ -1,4 +1,4 @@
-import { getLanguageService } from '@shared/container/service-accessors';
+import { getLanguageService } from '@shared/container/container';
 import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
 import { createSignal, onCleanup } from 'solid-js';
 

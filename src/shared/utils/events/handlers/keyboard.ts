@@ -3,7 +3,7 @@
  * PC-only policy: Handles keyboard events only
  */
 
-import { getLanguageService } from '@shared/container/service-accessors';
+import { getLanguageService } from '@shared/container/container';
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import {

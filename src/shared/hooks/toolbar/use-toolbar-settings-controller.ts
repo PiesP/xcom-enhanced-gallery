@@ -7,7 +7,7 @@ import {
   getLanguageService,
   getThemeService,
   tryGetSettingsManager,
-} from '@shared/container/service-accessors';
+} from '@shared/container/container';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
