@@ -5,12 +5,10 @@
  */
 
 import { initializeCoreBaseServices } from '@bootstrap/base-services';
-import { setupDevNamespace } from '@bootstrap/dev-namespace';
-import type { Unregister } from '@bootstrap/events';
-import { wireGlobalEvents } from '@bootstrap/events';
 import { initializeGalleryApp, initializeGalleryServices } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
 import { createAppConfig } from '@constants/app-config';
+import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
 import { GlobalErrorHandler } from '@shared/error/error-handler';
 import { logger } from '@shared/logging/logger';
@@ -39,6 +37,54 @@ const lifecycleState = {
   startPromise: null as Promise<void> | null,
   galleryApp: null as GalleryLifecycleApp | null,
 };
+
+// Inlined from @bootstrap/events
+type Unregister = () => void;
+
+function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
+  const hasWindow = typeof window !== 'undefined' && !!window.addEventListener;
+  const debugEnabled = __DEV__;
+  if (!hasWindow) {
+    if (debugEnabled) logger.debug('[events] 🧩 Global events wiring skipped (no window context)');
+    return () => { /* noop */ };
+  }
+  let disposed = false;
+  const eventManager = EventManager.getInstance();
+  const controller = new AbortController();
+  const invokeOnce = (): void => {
+    if (disposed) return;
+    disposed = true;
+    controller.abort();
+    onBeforeUnload();
+  };
+  eventManager.addEventListener(window, 'pagehide', invokeOnce as EventListener, {
+    once: true, passive: true, signal: controller.signal, context: 'bootstrap:pagehide',
+  });
+  if (debugEnabled) logger.debug('[events] 🧩 Global events wired (pagehide only)');
+  return () => {
+    if (disposed) return;
+    disposed = true;
+    controller.abort();
+    if (debugEnabled) logger.debug('[events] 🧩 Global events unwired');
+  };
+}
+
+// Inlined from @bootstrap/dev-namespace
+function setupDevNamespace(
+  galleryAppInstance: { initialize(): Promise<void>; cleanup(): Promise<void> } | null | undefined,
+  actions: { start: () => Promise<void>; createConfig: typeof createAppConfig; cleanup: () => Promise<void> },
+): void {
+  mutateDevNamespace((namespace) => {
+    const mainNamespace = (namespace.main ??= { ...actions }) as typeof namespace.main;
+    mainNamespace.start = actions.start;
+    mainNamespace.createConfig = actions.createConfig;
+    mainNamespace.cleanup = actions.cleanup;
+    if (galleryAppInstance !== undefined) {
+      if (galleryAppInstance) mainNamespace.galleryApp = galleryAppInstance;
+      else delete mainNamespace.galleryApp;
+    }
+  });
+}
 
 let globalEventTeardown: Unregister | null = null;
 
