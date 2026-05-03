@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name X.com Enhanced Gallery
 // @namespace https://github.com/PiesP/xcom-enhanced-gallery
-// @version 1.9.0
+// @version 1.9.1
 // @description Media viewer and download functionality for X.com
 // @author PiesP
 // @license MIT
@@ -34,7 +34,7 @@
 /*
  * Third-Party Licenses
  * ====================
- * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.9.0/LICENSES
+ * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.9.1/LICENSES
  *
  * MIT License
  *
@@ -301,34 +301,6 @@ function createLogger(config = {}) {
 return buildLogger(config.prefix ?? BASE_PREFIX);
 }
 var logger = createLogger();
-function createLifecycle(serviceName, options = {}) {
-const { onInitialize, onDestroy, silent = false } = options;
-let initialized = false;
-const initialize = async () => {
-if (initialized) return;
-try {
-if (onInitialize) await onInitialize();
-initialized = true;
-} catch (error) {
-throw error;
-}
-};
-const destroy = () => {
-if (!initialized) return;
-try {
-if (onDestroy) onDestroy();
-} catch (error) {} finally {
-initialized = false;
-}
-};
-const isInitialized = () => initialized;
-return {
-initialize,
-destroy,
-isInitialized,
-serviceName
-};
-}
 function resolveGMAPIs() {
 const global = globalThis;
 const download = typeof GM_download !== "undefined" ? GM_download : global.GM_download;
@@ -450,26 +422,15 @@ return createStrictUserscriptAPI();
 function getUserscriptSafe() {
 return createSafeUserscriptAPI();
 }
-function createSingleton(factory) {
-let hasInstance = false;
-let instance;
-const get = () => {
-if (!hasInstance) {
-instance = factory();
-hasInstance = true;
-}
-return instance;
-};
-return { get };
-}
+var _persistentStorageInstance = null;
 var PersistentStorage = class PersistentStorage {
 get userscript() {
 return getUserscript();
 }
-static singleton = createSingleton(() => new PersistentStorage());
 constructor() {}
 static getInstance() {
-return PersistentStorage.singleton.get();
+if (!_persistentStorageInstance) _persistentStorageInstance = new PersistentStorage();
+return _persistentStorageInstance;
 }
 async set(key, value) {
 if (value === void 0) {
@@ -524,32 +485,19 @@ await this.userscript.deleteValue(key);
 function getPersistentStorage() {
 return PersistentStorage.getInstance();
 }
+var _instance$1 = null;
 var LanguageService = class LanguageService {
-lifecycle;
 static STORAGE_KEY = "xeg-language";
+_initialized = false;
 currentLanguage = "auto";
 listeners =  new Set();
 storage = getPersistentStorage();
-static singleton = createSingleton(() => new LanguageService());
 static getInstance() {
-return LanguageService.singleton.get();
-}
-constructor() {
-this.lifecycle = createLifecycle("LanguageService", {
-onInitialize: () => this.onInitialize(),
-onDestroy: () => this.onDestroy()
-});
+if (!_instance$1) _instance$1 = new LanguageService();
+return _instance$1;
 }
 async initialize() {
-return this.lifecycle.initialize();
-}
-destroy() {
-this.lifecycle.destroy();
-}
-isInitialized() {
-return this.lifecycle.isInitialized();
-}
-async onInitialize() {
+if (this._initialized) return;
 try {
 const saved = await this.storage.getString(LanguageService.STORAGE_KEY);
 const normalized = this.normalizeLanguage(saved);
@@ -558,9 +506,14 @@ this.currentLanguage = normalized;
 this.notifyListeners(normalized);
 }
 } catch (error) {}
+this._initialized = true;
 }
-onDestroy() {
+destroy() {
 this.listeners.clear();
+this._initialized = false;
+}
+isInitialized() {
+return this._initialized;
 }
 detectLanguage() {
 const browserLang = typeof navigator !== "undefined" && navigator.language ? navigator.language.slice(0, 2) : "en";
@@ -719,8 +672,8 @@ resolve,
 reject
 };
 }
+var _httpInstance = null;
 var HttpRequestService = class HttpRequestService {
-static singleton = createSingleton(() => new HttpRequestService());
 defaultTimeout = 1e4;
 constructor() {}
 async request(method, url, options) {
@@ -801,7 +754,8 @@ safeReject(error);
 return deferred.promise;
 }
 static getInstance() {
-return HttpRequestService.singleton.get();
+if (!_httpInstance) _httpInstance = new HttpRequestService();
+return _httpInstance;
 }
 async get(url, options) {
 return this.request("GET", url, options);
@@ -2551,36 +2505,27 @@ return createErrorResult(error);
 }
 }
 };
+var _instance = null;
 var MediaService = class MediaService {
-lifecycle;
-static singleton = createSingleton(() => new MediaService());
 mediaExtraction = null;
 prefetchManager = new PrefetchManager(20);
 didCleanup = false;
-constructor(_options = {}) {
-this.lifecycle = createLifecycle("MediaService", {
-onInitialize: () => this.onInitialize(),
-onDestroy: () => this.onDestroy()
-});
-}
+_initialized = false;
 async initialize() {
-return this.lifecycle.initialize();
+if (this._initialized) return;
+this.mediaExtraction = new MediaExtractionService();
+this._initialized = true;
 }
 destroy() {
 this.cleanupOnce();
-this.lifecycle.destroy();
+this._initialized = false;
 }
 isInitialized() {
-return this.lifecycle.isInitialized();
+return this._initialized;
 }
-async onInitialize() {
-this.mediaExtraction = new MediaExtractionService();
-}
-onDestroy() {
-this.cleanupOnce();
-}
-static getInstance(_options) {
-return MediaService.singleton.get();
+static getInstance() {
+if (!_instance) _instance = new MediaService();
+return _instance;
 }
 cleanupOnce() {
 if (this.didCleanup) return;
@@ -2628,17 +2573,8 @@ this.prefetchManager.clear();
 async cleanup() {
 this.cancelAllPrefetch();
 this.clearPrefetchCache();
-this.onDestroy();
+this.cleanupOnce();
 }
-};
-var SERVICE_KEYS = {
-LANGUAGE: "core.language",
-GALLERY_DOWNLOAD: "gallery.download",
-GALLERY_RENDERER: "gallery.renderer",
-MEDIA_FILENAME: "media.filename",
-MEDIA_SERVICE: "media.service",
-SETTINGS: "settings.manager",
-THEME: "ui.theme"
 };
 var APP_SETTINGS_STORAGE_KEY = "xeg-app-settings";
 var THEME_DOM_ATTRIBUTE = "data-theme";
@@ -2682,34 +2618,28 @@ return true;
 return false;
 }
 }
+var _eventManagerInstance = null;
 var EventManager = class EventManager {
-lifecycle;
-static singleton = createSingleton(() => new EventManager());
+_initialized = false;
 isDestroyed = false;
 ownedListenerContexts =  new Map();
-constructor() {
-this.lifecycle = createLifecycle("EventManager", {
-onInitialize: () => this.onInitialize(),
-onDestroy: () => this.onDestroy()
-});
-}
+constructor() {}
 static getInstance() {
-return EventManager.singleton.get();
+if (!_eventManagerInstance) _eventManagerInstance = new EventManager();
+return _eventManagerInstance;
 }
 async initialize() {
-return this.lifecycle.initialize();
+if (this._initialized) return;
+this.isDestroyed = false;
+this._initialized = true;
 }
 destroy() {
-this.lifecycle.destroy();
+if (!this._initialized) return;
+this.cleanup();
+this._initialized = false;
 }
 isInitialized() {
-return this.lifecycle.isInitialized();
-}
-async onInitialize() {
-this.isDestroyed = false;
-}
-onDestroy() {
-this.cleanup();
+return this._initialized;
 }
 addEventListener(element, type, listener, options) {
 if (this.isDestroyed) {
@@ -2756,49 +2686,20 @@ removeEventListenerManaged(id);
 this.isDestroyed = true;
 }
 };
-function isDisposable(value) {
-return value !== null && typeof value === "object" && "destroy" in value && typeof value.destroy === "function";
+var _renderer = null;
+function registerRenderer(r) {
+_renderer = r;
 }
-var CoreService = class CoreService {
-static singleton = createSingleton(() => new CoreService());
-services =  new Map();
-constructor() {}
-static getInstance() {
-return CoreService.singleton.get();
+function hasRenderer() {
+return _renderer !== null;
 }
-register(key, instance, options) {
-const allowOverride = options?.allowOverride ?? false;
-const onDuplicate = options?.onDuplicate ?? "warn";
-if (this.services.has(key) && !allowOverride) {
-if (onDuplicate === "throw") throw new Error(`[CoreService] Duplicate service key: ${key}`);
-return;
+var _settings = null;
+function registerSettings(s) {
+_settings = s;
 }
-this.services.set(key, instance);
+function tryGetSettings() {
+return _settings;
 }
-get(key) {
-if (this.services.has(key)) return this.services.get(key);
-throw new Error(`Service not found: ${key}`);
-}
-tryGet(key) {
-if (this.services.has(key)) return this.services.get(key);
-return null;
-}
-has(key) {
-return this.services.has(key);
-}
-cleanup() {
-const entries = Array.from(this.services.entries()).reverse();
-for (const [key, service] of entries) try {
-if (isDisposable(service)) service.destroy();
-} catch (e) {
-logger.error(`Service cleanup failed: ${key}`, e);
-}
-this.services.clear();
-}
-reset() {
-this.cleanup();
-}
-};
 var VALID_THEME_SETTINGS = [
 "light",
 "dark",
@@ -2807,8 +2708,9 @@ var VALID_THEME_SETTINGS = [
 function isThemeSetting(value) {
 return typeof value === "string" && VALID_THEME_SETTINGS.includes(value);
 }
+var _themeInstance = null;
 var ThemeService = class ThemeService {
-lifecycle;
+_initialized = false;
 storage = getPersistentStorage();
 mediaQueryList = null;
 mediaQueryListener = null;
@@ -2819,33 +2721,31 @@ listeners =  new Set();
 boundSettingsService = null;
 observer = null;
 observedThemeScopes =  new WeakSet();
-static singleton = createSingleton(() => new ThemeService());
 static getInstance() {
-return ThemeService.singleton.get();
+if (!_themeInstance) _themeInstance = new ThemeService();
+return _themeInstance;
 }
 constructor() {
-this.lifecycle = createLifecycle("ThemeService", { onInitialize: () => this.onInitialize() });
 this.mediaQueryList = this.createMediaQueryList();
 }
 async initialize() {
-return this.lifecycle.initialize();
-}
-destroy() {
-this.cleanup();
-this.lifecycle.destroy();
-}
-isInitialized() {
-return this.lifecycle.isInitialized();
-}
-async onInitialize() {
+if (this._initialized) return;
 if (!this.boundSettingsService) {
-const settingsService = CoreService.getInstance().tryGet(SERVICE_KEYS.SETTINGS);
+const settingsService = tryGetSettings();
 if (settingsService) this.bindSettingsService(settingsService);
 else await this.restoreThemeSettingFromStorage();
 }
 this.initializeThemeScopeObservation();
 this.initializeSystemDetection();
 this.applyCurrentTheme(true);
+this._initialized = true;
+}
+destroy() {
+this.cleanup();
+this._initialized = false;
+}
+isInitialized() {
+return this._initialized;
 }
 bindSettingsService(settingsService) {
 if (!settingsService || this.boundSettingsService === settingsService) return;
@@ -3632,27 +3532,24 @@ failures,
 zipData: zipBytes
 };
 }
+var _downloadInstance = null;
 var DownloadOrchestrator = class DownloadOrchestrator {
-lifecycle;
-static singleton = createSingleton(() => new DownloadOrchestrator());
 capability = null;
-constructor() {
-this.lifecycle = createLifecycle("DownloadOrchestrator", { onDestroy: () => this.onDestroy() });
-}
+_initialized = false;
+constructor() {}
 static getInstance() {
-return DownloadOrchestrator.singleton.get();
+if (!_downloadInstance) _downloadInstance = new DownloadOrchestrator();
+return _downloadInstance;
 }
 async initialize() {
-return this.lifecycle.initialize();
+this._initialized = true;
 }
 destroy() {
-this.lifecycle.destroy();
+this.capability = null;
+this._initialized = false;
 }
 isInitialized() {
-return this.lifecycle.isInitialized();
-}
-onDestroy() {
-this.capability = null;
+return this._initialized;
 }
 getCapability() {
 return this.capability ??= detectDownloadCapability();
@@ -3783,21 +3680,16 @@ return LanguageService.getInstance();
 function getMediaService() {
 return MediaService.getInstance();
 }
-async function getDownloadOrchestrator() {
-const coreService = CoreService.getInstance();
-if (coreService.has(SERVICE_KEYS.GALLERY_DOWNLOAD)) return coreService.get(SERVICE_KEYS.GALLERY_DOWNLOAD);
-const orchestrator = DownloadOrchestrator.getInstance();
-coreService.register(SERVICE_KEYS.GALLERY_DOWNLOAD, orchestrator);
-return orchestrator;
-}
-function registerGalleryRenderer(renderer) {
-CoreService.getInstance().register(SERVICE_KEYS.GALLERY_RENDERER, renderer);
-}
 function registerSettingsManager(settings) {
-CoreService.getInstance().register(SERVICE_KEYS.SETTINGS, settings);
+registerSettings(settings);
 }
 function tryGetSettingsManager() {
-return CoreService.getInstance().tryGet(SERVICE_KEYS.SETTINGS);
+return tryGetSettings();
+}
+var _downloadOrchestrator = null;
+function getDownloadOrchestrator() {
+if (!_downloadOrchestrator) _downloadOrchestrator = DownloadOrchestrator.getInstance();
+return _downloadOrchestrator;
 }
 var DEFAULT_SEVERITY = "error";
 var AppErrorReporter = class AppErrorReporter {
@@ -6553,7 +6445,7 @@ stopComplete();
 };
 }
 function requireSettingsService() {
-const service = tryGetSettingsManager();
+const service = tryGetSettings();
 if (!service) throw new Error("SettingsService not registered.");
 return service;
 }
@@ -9290,7 +9182,7 @@ download: true,
 mediaExtraction: true,
 accessibility: true
 },
-version: "1.7.1",
+version: "1.9.1",
 lastModified: 0
 };
 function createDefaultSettings(timestamp = Date.now()) {
@@ -9445,38 +9337,33 @@ acc[key] = typeof candidate === "boolean" ? candidate : featureDefaults[key];
 return acc;
 }, {}));
 }
+var _settingsInstance = null;
 var SettingsService = class SettingsService {
-lifecycle;
-static singleton = createSingleton(() => new SettingsService());
+_initialized = false;
 static getInstance() {
-return SettingsService.singleton.get();
+if (!_settingsInstance) _settingsInstance = new SettingsService();
+return _settingsInstance;
 }
 settings = createDefaultSettings();
 featureMap = normalizeFeatureFlags(this.settings.features);
 listeners =  new Set();
 constructor(repository = new PersistentSettingsRepository()) {
 this.repository = repository;
-this.lifecycle = createLifecycle("SettingsService", {
-onInitialize: () => this.onInitialize(),
-onDestroy: () => this.onDestroy()
-});
 }
 async initialize() {
-return this.lifecycle.initialize();
-}
-destroy() {
-this.lifecycle.destroy();
-}
-isInitialized() {
-return this.lifecycle.isInitialized();
-}
-async onInitialize() {
+if (this._initialized) return;
 this.settings = await this.repository.load();
 this.refreshFeatureMap();
+this._initialized = true;
 }
-onDestroy() {
+destroy() {
+if (!this._initialized) return;
 this.listeners.clear();
 this.repository.save(this.settings).catch((error) => {});
+this._initialized = false;
+}
+isInitialized() {
+return this._initialized;
 }
 getAllSettings() {
 this.assertInitialized();
@@ -9609,8 +9496,8 @@ if (!this.isInitialized()) throw new Error("SettingsService must be initialized 
 };
 var hasRequiredGMAPIs = isGMAPIAvailable("download") || isGMAPIAvailable("setValue");
 function ensureRendererRegistered() {
-if (CoreService.getInstance().has(SERVICE_KEYS.GALLERY_RENDERER)) return;
-registerGalleryRenderer(new GalleryRenderer());
+if (hasRenderer()) return;
+registerRenderer(new GalleryRenderer());
 }
 async function initializeSettingsService() {
 const existingSettings = tryGetSettingsManager();
@@ -9711,22 +9598,23 @@ if (reason instanceof Error) return reason.message;
 if (typeof reason === "string") return reason;
 return `Unhandled rejection: ${String(reason)}`;
 };
+var _errorHandlerInstance = null;
 var GlobalErrorHandler = class GlobalErrorHandler {
-static singleton = createSingleton(() => new GlobalErrorHandler());
 isInitialized = false;
 controller = null;
 errorListenerId = null;
 rejectionListenerId = null;
+constructor() {}
+static getInstance() {
+if (!_errorHandlerInstance) _errorHandlerInstance = new GlobalErrorHandler();
+return _errorHandlerInstance;
+}
 errorListener = (event) => {
 formatErrorLocation(event.filename, event.lineno, event.colno);
 };
 rejectionListener = (event) => {
 formatRejectionMessage(event.reason);
 };
-static getInstance() {
-return GlobalErrorHandler.singleton.get();
-}
-constructor() {}
 initialize() {
 if (this.isInitialized || typeof window === "undefined") return;
 const eventManager = EventManager.getInstance();
@@ -9846,7 +9734,6 @@ lifecycleState.galleryApp = null;
 if (app) await app.cleanup();
 });
 tearDownGlobalEventHandlers();
-await runOptionalCleanup("core-service", () => CoreService.getInstance().cleanup());
 await runOptionalCleanup("timers", () => globalTimerManager.cleanup());
 await runOptionalCleanup("error-handler", () => GlobalErrorHandler.getInstance().destroy());
 lifecycleState.started = false;
