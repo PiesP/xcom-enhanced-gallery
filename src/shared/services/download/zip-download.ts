@@ -2,12 +2,53 @@ import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation
 import { getErrorMessage } from '@shared/error/normalize';
 import { StreamingZipWriter } from '@shared/external/zip/streaming-zip-writer';
 import { DEFAULT_BACKOFF_BASE_MS, fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
-import { ensureUniqueFilenameFactory } from '@shared/services/download/download-utils';
-import type {
-  OrchestratorItem,
-  OrchestratorOptions,
-  ZipResult,
-} from '@shared/services/download/types';
+import type { OrchestratorItem, OrchestratorOptions } from './types';
+
+// Inlined from types.ts (moved from download-orchestrator to avoid circular dep)
+export interface ZipResult {
+  filesSuccessful: number;
+  failures: Array<{ url: string; error: string }>;
+  zipData: Uint8Array;
+}
+
+export interface BulkDownloadResult {
+  success: boolean;
+  status: 'success' | 'partial' | 'error';
+  filesProcessed: number;
+  filesSuccessful: number;
+  filename?: string;
+  error?: string;
+  failures?: Array<{ url: string; error: string }>;
+  code: string;
+}
+
+// Inlined from download-utils.ts
+type UniqueFilenameFactory = (desired: string) => string;
+
+const ensureUniqueFilenameFactory = (): UniqueFilenameFactory => {
+  const usedNames = new Set<string>();
+  const baseCounts = new Map<string, number>();
+  return (desired: string): string => {
+    if (!usedNames.has(desired)) {
+      usedNames.add(desired);
+      baseCounts.set(desired, 0);
+      return desired;
+    }
+    const lastDot = desired.lastIndexOf('.');
+    const name = lastDot > 0 ? desired.slice(0, lastDot) : desired;
+    const ext = lastDot > 0 ? desired.slice(lastDot) : '';
+    const baseKey = desired;
+    let count = baseCounts.get(baseKey) ?? 0;
+    let candidate = '';
+    do {
+      count += 1;
+      candidate = `${name}-${count}${ext}`;
+    } while (usedNames.has(candidate));
+    baseCounts.set(baseKey, count);
+    usedNames.add(candidate);
+    return candidate;
+  };
+};
 
 const MAX_CONCURRENCY = 8;
 const MIN_CONCURRENCY = 1;
