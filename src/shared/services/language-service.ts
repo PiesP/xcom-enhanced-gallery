@@ -13,7 +13,7 @@ import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
 import { logger } from '@shared/logging/logger';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 
-function resolveTranslationValue(dictionary: Record<string, unknown>, key: string): string | undefined {
+function resolveTranslationValue(dictionary: object, key: string): string | undefined {
   const segments = key.split('.');
   let current: unknown = dictionary;
   for (const segment of segments) {

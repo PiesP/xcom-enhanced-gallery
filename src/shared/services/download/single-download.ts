@@ -1,7 +1,5 @@
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
-import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
 import { getErrorMessage } from '@shared/error/normalize';
-import { logger } from '@shared/logging/logger';
 import {
   type DownloadCapability,
   detectDownloadCapability,
@@ -19,30 +17,29 @@ const reportProgress = (
   onProgress: ProgressCallback | undefined,
   phase: 'preparing' | 'downloading' | 'complete',
   percentage: number,
-  filename: string,
+  filename: string
 ): void => {
   if (!onProgress) return;
   onProgress({ phase, current: 1, total: 1, percentage, filename });
 };
 
-const createAbortResult = (signal?: AbortSignal): SingleDownloadResult => ({
+const createAbortResult = (): SingleDownloadResult => ({
   success: false,
-  error: getErrorMessage(
-    getUserCancelledAbortErrorFromSignal(signal ?? new AbortController().signal),
-  ) || 'Download cancelled by user',
+  error: 'Download cancelled by user',
 });
 
 export async function downloadSingleFile(
   media: MediaInfo,
   options: DownloadOptions = {},
-  capability?: DownloadCapability,
+  capability?: DownloadCapability
 ): Promise<SingleDownloadResult> {
   const abortSignal = options.signal;
-  if (abortSignal?.aborted) return createAbortResult(abortSignal);
+  if (abortSignal?.aborted) return createAbortResult();
 
   const filename = generateMediaFilename(media, { nowMs: Date.now() });
   const cap = capability ?? detectDownloadCapability();
-  if (!cap.gmDownload) {
+  const gmDownload = cap.gmDownload;
+  if (!gmDownload) {
     return { success: false, error: 'No download method available' };
   }
 
@@ -81,7 +78,7 @@ export async function downloadSingleFile(
     }, DOWNLOAD_TIMEOUT_MS);
 
     try {
-      cap.gmDownload({
+      gmDownload({
         url,
         name: filename,
         onload: () => settle({ success: true, filename }),
@@ -91,7 +88,10 @@ export async function downloadSingleFile(
         ontimeout: () => settle({ success: false, error: DOWNLOAD_TIMEOUT_MESSAGE }),
         onprogress: (progress) => {
           if (settled || !options.onProgress || progress.total <= 0) return;
-          const pct = Math.min(100, Math.max(0, Math.round((progress.loaded / progress.total) * 100)));
+          const pct = Math.min(
+            100,
+            Math.max(0, Math.round((progress.loaded / progress.total) * 100))
+          );
           reportProgress(options.onProgress, 'downloading', pct, filename);
         },
       });

@@ -40,10 +40,22 @@ export interface ErrorReportResult {
 }
 
 export interface ContextBoundReporter {
-  critical: (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) => ErrorReportResult;
-  error: (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) => ErrorReportResult;
-  warn: (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) => ErrorReportResult;
-  info: (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) => ErrorReportResult;
+  critical: (
+    error: unknown,
+    options?: Partial<Omit<ErrorReportOptions, 'context'>>
+  ) => ErrorReportResult;
+  error: (
+    error: unknown,
+    options?: Partial<Omit<ErrorReportOptions, 'context'>>
+  ) => ErrorReportResult;
+  warn: (
+    error: unknown,
+    options?: Partial<Omit<ErrorReportOptions, 'context'>>
+  ) => ErrorReportResult;
+  info: (
+    error: unknown,
+    options?: Partial<Omit<ErrorReportOptions, 'context'>>
+  ) => ErrorReportResult;
 }
 
 // ============================================================================
@@ -83,10 +95,16 @@ export function reportError(error: unknown, options: ErrorReportOptions): ErrorR
 }
 
 function forContext(context: ErrorContext): ContextBoundReporter {
-  const bind = (severity: ErrorSeverity) =>
+  const bind =
+    (severity: ErrorSeverity) =>
     (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) =>
       reportError(error, { ...options, context, severity });
-  return { critical: bind('critical'), error: bind('error'), warn: bind('warning'), info: bind('info') };
+  return {
+    critical: bind('critical'),
+    error: bind('error'),
+    warn: bind('warning'),
+    info: bind('info'),
+  };
 }
 
 export const bootstrapErrorReporter = forContext('bootstrap');

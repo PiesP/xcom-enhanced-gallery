@@ -11,10 +11,10 @@ import { GalleryApp } from '@features/gallery/GalleryApp';
 import { GalleryRenderer } from '@features/gallery/GalleryRenderer.tsx';
 import { SettingsService } from '@features/settings/services/settings-service';
 import {
+  hasRenderer,
   registerGalleryRenderer,
   registerSettingsManager,
   tryGetSettingsManager,
-  hasRenderer,
 } from '@shared/container/container';
 import {
   bootstrapErrorReporter,

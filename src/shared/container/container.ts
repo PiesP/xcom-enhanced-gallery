@@ -2,8 +2,8 @@
  * @fileoverview Service registry, type-safe settings access, and singleton accessors.
  */
 
-import type { AppSettings } from '@features/settings/types/settings.types';
 import type { GalleryRenderer } from '@features/gallery/GalleryRenderer';
+import type { AppSettings } from '@features/settings/types/settings.types';
 import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
 import { LanguageService } from '@shared/services/language-service';
 import { MediaService } from '@shared/services/media-service';

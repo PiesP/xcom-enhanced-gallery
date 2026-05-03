@@ -22,7 +22,6 @@ interface GalleryOpenOptions {
 
 export class GalleryApp {
   private isInitialized = false;
-  private initAttempted = false;
   private get userscript() {
     return getUserscriptSafe();
   }
@@ -37,7 +36,7 @@ export class GalleryApp {
       __DEV__ && logger.info('[GalleryApp] Initialization skipped (already initialized)');
       return;
     }
-    this.initAttempted = true;
+    this.isInitialized = true;
 
     try {
       __DEV__ && logger.info('[GalleryApp] Initialization started');
@@ -59,7 +58,6 @@ export class GalleryApp {
   /** Retry initialization after a prior failure. */
   public async retryInitialize(): Promise<void> {
     if (this.isInitialized) return;
-    this.initAttempted = false;
     return this.initialize();
   }
 
