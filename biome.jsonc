@@ -39,11 +39,15 @@
         "noControlCharactersInRegex": "off",
         "noAssignInExpressions": "off",
         "noDocumentCookie": "off",
+        "noImplicitAnyLet": "error",
         "useIterableCallbackReturn": "off"
       },
       "complexity": {
         "noForEach": "off",
         "noStaticOnlyClass": "off"
+      },
+      "performance": {
+        "noAccumulatingSpread": "warn"
       },
       "a11y": {
         "noStaticElementInteractions": "off",
