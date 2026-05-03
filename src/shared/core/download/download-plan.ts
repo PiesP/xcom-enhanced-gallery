@@ -7,29 +7,6 @@
 import { generateMediaFilename, generateZipFilename } from '@shared/core/filename/filename-utils';
 import type { MediaInfo } from '@shared/types/media.types';
 
-type DownloadMethod = 'gm_download' | 'none';
-type ZipSaveStrategy = 'gm_download' | 'none';
-
-interface SingleDownloadPlanningInput {
-  readonly method: DownloadMethod;
-  readonly mediaUrl: string;
-  readonly filename: string;
-  readonly hasProvidedBlob: boolean;
-}
-
-export type SingleDownloadPlan =
-  | {
-      readonly strategy: 'gm_download';
-      readonly url: string;
-      readonly filename: string;
-      readonly useBlobUrl: boolean;
-    }
-  | {
-      readonly strategy: 'none';
-      readonly filename: string;
-      readonly error: string;
-    };
-
 interface PlannedZipItem {
   readonly url: string;
   readonly desiredName: string;
@@ -48,25 +25,7 @@ interface BulkDownloadPlan {
   readonly zipFilename: string;
 }
 
-/**
- * Plan the download strategy for a single item.
- * @param input - Configuration for single download planning
- * @returns Download plan with strategy and metadata
- */
-export function planSingleDownload(input: SingleDownloadPlanningInput): SingleDownloadPlan {
-  const { method, mediaUrl, filename, hasProvidedBlob } = input;
-
-  if (method === 'gm_download') {
-    return {
-      strategy: 'gm_download',
-      url: mediaUrl,
-      filename,
-      useBlobUrl: hasProvidedBlob,
-    };
-  }
-
-  return { strategy: 'none', filename, error: 'No download method' };
-}
+type ZipSaveStrategy = 'gm_download' | 'none';
 
 /** Helper to generate filename with optional time source */
 function generateDesiredName(media: MediaInfo, nowMs?: number): string {
@@ -102,6 +61,6 @@ export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownload
  * @param method - Available download method
  * @returns Strategy for saving the ZIP file
  */
-export function planZipSave(method: DownloadMethod): ZipSaveStrategy {
+export function planZipSave(method: 'gm_download' | 'none'): ZipSaveStrategy {
   return method === 'gm_download' ? 'gm_download' : 'none';
 }
