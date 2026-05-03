@@ -1,19 +1,20 @@
 /**
- * @fileoverview Default settings configuration.
- * @module constants/default-settings
+ * @fileoverview Settings configuration: defaults, storage key, and factory.
+ * @module constants/settings
  */
 
 import type { AppSettings } from '@features/settings/types/settings.types';
 
-/**
- * Static default application settings.
- *
- * Uses `as const satisfies AppSettings` for literal type preservation and type safety.
- * lastModified is 0 for deterministic hashing; use `createDefaultSettings()` for
- * runtime instances with actual timestamps.
- *
- * @internal
- */
+// ============================================================================
+// Storage Key
+// ============================================================================
+
+export const APP_SETTINGS_STORAGE_KEY = 'xeg-app-settings' as const;
+
+// ============================================================================
+// Default Settings
+// ============================================================================
+
 const STATIC_DEFAULT_SETTINGS = {
   gallery: {
     autoScrollSpeed: 5,
@@ -52,23 +53,8 @@ const STATIC_DEFAULT_SETTINGS = {
   lastModified: 0,
 } as const satisfies AppSettings;
 
-/**
- * Immutable default application settings.
- *
- * Exported for read-only access in validation and testing.
- * Use `createDefaultSettings()` to create mutable runtime instances.
- */
 export const DEFAULT_SETTINGS = STATIC_DEFAULT_SETTINGS;
 
-/**
- * Creates a new mutable settings object with a timestamp.
- *
- * Uses `globalThis.structuredClone` for deep cloning to ensure complete isolation
- * from the immutable source object.
- *
- * @param timestamp - Unix timestamp in milliseconds (defaults to current time)
- * @returns A deep clone of default settings with updated lastModified timestamp
- */
 export function createDefaultSettings(timestamp: number = Date.now()): AppSettings {
   const settings = globalThis.structuredClone(DEFAULT_SETTINGS) as AppSettings;
   settings.lastModified = timestamp;

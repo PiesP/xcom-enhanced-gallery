@@ -3,7 +3,7 @@
  * System theme detection and application service
  */
 
-import { APP_SETTINGS_STORAGE_KEY } from '@constants/storage';
+import { APP_SETTINGS_STORAGE_KEY } from '@constants/settings';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';

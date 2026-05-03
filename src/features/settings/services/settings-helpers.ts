@@ -3,7 +3,7 @@
  * @description Shared utilities for path resolution, feature normalization, and validation.
  */
 
-import { DEFAULT_SETTINGS } from '@constants/default-settings';
+import { DEFAULT_SETTINGS } from '@constants/settings';
 import type { FeatureFlags } from '@features/settings/types/settings.types';
 
 const FORBIDDEN_PATH_KEYS = ['__proto__', 'constructor', 'prototype'] as const;
