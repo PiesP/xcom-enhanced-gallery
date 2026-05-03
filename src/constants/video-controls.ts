@@ -1,15 +1,10 @@
 /**
- * @fileoverview Video player control detection and gallery view mode constants.
+ * @fileoverview Video player control detection constants.
  *
  * Provides patterns for identifying video controls through HTML attributes.
  * Enables userscript to distinguish gallery interactions from video control interactions.
  *
  * @module constants/video-controls
- */
-
-/**
- * Video control detection patterns and view mode definitions.
- * @see {@link ViewMode} Type definition extracted from VIEW_MODES
  */
 
 /**
@@ -163,74 +158,6 @@ export const VIDEO_CONTROL_ARIA_TOKENS = [
   'timeline',
   'progress',
 ] as const;
-
-/**
- * Supported gallery view modes
- *
- * @remarks
- * Defines available layout modes for the gallery renderer. Currently supports
- * only vertical list layout, but structured as an array for future extensibility
- * to additional layouts (horizontal, grid, masonry, etc.).
- *
- * **Current Mode**:
- * - `verticalList` - Vertical scrolling list with one item per row
- *
- * **Future Extensions** (planned):
- * - `horizontalList` - Horizontal scrolling carousel
- * - `grid` - Grid layout with multiple columns
- * - `masonry` - Masonry grid with variable heights
- *
- * **Type Extraction**:
- * The ViewMode type is extracted from this constant using:
- * ```typescript
- * export type ViewMode = (typeof VIEW_MODES)[number];
- * // Results in: 'verticalList'
- * ```
- *
- * **Usage Pattern**:
- * Use this array for runtime validation of user settings or API inputs:
- * ```typescript
- * function isValidViewMode(mode: string): mode is ViewMode {
- *   return VIEW_MODES.includes(mode as ViewMode);
- * }
- * ```
- *
- * **Why "verticalList" instead of "vertical"**:
- * Explicit naming distinguishes list-style vertical layouts from potential
- * future variants (e.g., "verticalGrid", "verticalMasonry"). This naming
- * convention provides clarity as layout options expand.
- *
- * @example
- * ```typescript
- * // Validate and apply view mode
- * import { VIEW_MODES } from '@constants/video-controls';
- * import type { ViewMode } from '@constants/types';
- *
- * function applyViewMode(mode: string): void {
- *   if (!VIEW_MODES.includes(mode as ViewMode)) {
- *     console.error(`Unsupported view mode: ${mode}`);
- *     return;
- *   }
- *
- *   const validMode = mode as ViewMode;
- *   galleryRenderer.setViewMode(validMode);
- * }
- * ```
- *
- * @example
- * ```typescript
- * // Settings dropdown options
- * const viewModeOptions = VIEW_MODES.map(mode => ({
- *   value: mode,
- *   label: formatViewModeLabel(mode),
- * }));
- * ```
- *
- * @see {@link ViewMode} Type definition in types.ts
- * @see {@link GalleryRenderer} Gallery renderer using view modes
- * @see {@link SettingsService} User preference storage for view mode
- */
-export const VIEW_MODES = ['verticalList'] as const;
 
 /**
  * Type helper: Video control data-testid prefix type
