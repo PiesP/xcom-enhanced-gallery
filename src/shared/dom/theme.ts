@@ -3,7 +3,7 @@
  * @description Keep theme-related data attributes in sync across document root and XEG scopes.
  */
 
-import { THEME_DOM_ATTRIBUTE } from '@shared/constants/theme';
+const THEME_DOM_ATTRIBUTE = 'data-theme' as const;
 
 export type ThemeName = 'light' | 'dark';
 
