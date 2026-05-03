@@ -5,11 +5,8 @@ import {
   type SettingsRepository,
 } from '@features/settings/services/settings-repository';
 import type {
-  FeatureFlagMap,
-  SettingsServiceContract,
-} from '@features/settings/services/settings-service.contract';
-import type {
   AppSettings,
+  FeatureFlags,
   NestedSettingKey,
   SettingChangeEvent,
 } from '@features/settings/types/settings.types';
@@ -18,7 +15,9 @@ import { assignNestedPath, normalizeFeatureFlags, resolveNestedPath } from './se
 
 let _settingsInstance: SettingsService | null = null;
 
-export class SettingsService implements SettingsServiceContract {
+type FeatureFlagMap = Readonly<Record<keyof FeatureFlags, boolean>>;
+
+export class SettingsService {
   private _initialized = false;
 
   public static getInstance(): SettingsService {

@@ -9,13 +9,30 @@ import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 import { tryGetSettings } from '@shared/services/service-registry';
-import type {
-  Theme,
-  ThemeChangeListener,
-  ThemeServiceContract,
-  ThemeSetOptions,
-  ThemeSetting,
-} from '@shared/services/theme-service.contract';
+
+// Theme types (inlined from theme-service.contract.ts)
+export type Theme = 'light' | 'dark';
+export type ThemeSetting = 'auto' | Theme;
+export interface ThemeSetOptions {
+  readonly force?: boolean;
+  readonly persist?: boolean;
+}
+export type ThemeChangeListener = (theme: Theme, setting: ThemeSetting) => void;
+export interface SettingsServiceLike {
+  get?: (key: string) => unknown;
+  set?: (key: string, value: unknown) => Promise<void> | void;
+}
+export interface ThemeServiceContract {
+  initialize(): Promise<void>;
+  destroy(): void;
+  isInitialized(): boolean;
+  getCurrentTheme(): ThemeSetting;
+  getEffectiveTheme(): Theme;
+  setTheme(setting: ThemeSetting | string, options?: ThemeSetOptions): void;
+  isDarkMode(): boolean;
+  onThemeChange(listener: ThemeChangeListener): () => void;
+  bindSettingsService(settingsService: SettingsServiceLike): void;
+}
 
 const VALID_THEME_SETTINGS: readonly ThemeSetting[] = ['light', 'dark', 'auto'];
 
@@ -284,8 +301,3 @@ export class ThemeService implements ThemeServiceContract {
     }
   }
 }
-
-export type {
-  SettingsServiceLike,
-  ThemeServiceContract,
-} from './theme-service.contract';
