@@ -77,6 +77,7 @@ export class GalleryRenderer {
       // Ensure we never leave a half-mounted container behind (which can
       // make the gallery appear "stuck" on subsequent open attempts).
       this.cleanupContainer();
+      this.container = null;
       setError(getErrorMessage(error) || 'Gallery rendering failed');
     } finally {
       this.isMounting = false;

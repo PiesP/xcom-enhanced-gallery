@@ -22,6 +22,7 @@ interface GalleryOpenOptions {
 
 export class GalleryApp {
   private isInitialized = false;
+  private initAttempted = false;
   private get userscript() {
     return getUserscriptSafe();
   }
@@ -36,6 +37,7 @@ export class GalleryApp {
       __DEV__ && logger.info('[GalleryApp] Initialization skipped (already initialized)');
       return;
     }
+    this.initAttempted = true;
 
     try {
       __DEV__ && logger.info('[GalleryApp] Initialization started');
@@ -52,6 +54,13 @@ export class GalleryApp {
       });
       throw error;
     }
+  }
+
+  /** Retry initialization after a prior failure. */
+  public async retryInitialize(): Promise<void> {
+    if (this.isInitialized) return;
+    this.initAttempted = false;
+    return this.initialize();
   }
 
   private async setupEventHandlers(): Promise<void> {
@@ -122,12 +131,16 @@ export class GalleryApp {
     options: GalleryOpenOptions = {}
   ): Promise<void> {
     if (!this.isInitialized) {
-      __DEV__ && logger.warn('[GalleryApp] Gallery not initialized.');
-      this.userscript.notification({
-        title: 'Gallery unavailable',
-        text: 'Userscript manager required.',
-      });
-      return;
+      __DEV__ && logger.warn('[GalleryApp] Gallery not initialized, retrying...');
+      try {
+        await this.retryInitialize();
+      } catch {
+        this.userscript.notification({
+          title: 'Gallery unavailable',
+          text: 'Userscript manager required.',
+        });
+        return;
+      }
     }
 
     if (mediaItems.length === 0) {
