@@ -56,7 +56,9 @@ temp/
 *.md
 
 # AI Instructions (separate repository)
+AGENTS.md
 .github/copilot-instructions.md
 .github/prompts/
 .claude/
+memory/
 .editorconfig
