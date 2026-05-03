@@ -10,7 +10,6 @@
 import { GalleryApp } from '@features/gallery/GalleryApp';
 import { GalleryRenderer } from '@features/gallery/GalleryRenderer.tsx';
 import { SettingsService } from '@features/settings/services/settings-service';
-import type { IGalleryApp } from '@shared/container/app-container';
 import {
   registerGalleryRenderer,
   registerSettingsManager,
@@ -89,7 +88,7 @@ export async function initializeGalleryServices(): Promise<void> {
  * @returns Initialized IGalleryApp instance
  * @throws If gallery app creation or initialization fails
  */
-export async function initializeGalleryApp(): Promise<IGalleryApp> {
+export async function initializeGalleryApp(): Promise<GalleryApp> {
   try {
     if (__DEV__) {
       logger.info('🎨 Gallery app lazy initialization starting');

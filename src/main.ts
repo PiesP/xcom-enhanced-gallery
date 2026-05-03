@@ -11,10 +11,8 @@ import { wireGlobalEvents } from '@bootstrap/events';
 import { initializeGalleryApp, initializeGalleryServices } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
 import { createAppConfig } from '@constants/app-config';
-import type { IGalleryApp } from '@shared/container/app-container';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
 import { GlobalErrorHandler } from '@shared/error/error-handler';
-import type { BootstrapStage } from '@shared/interfaces/handler.interfaces';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
@@ -22,12 +20,24 @@ import { globalTimerManager } from '@shared/utils/time/timer-management';
 // Global styles (side-effect import)
 import './styles/globals';
 
+// Inline types (were from @shared/container/app-container and @shared/interfaces/handler.interfaces)
+interface GalleryLifecycleApp {
+  initialize(): Promise<void>;
+  cleanup(): Promise<void>;
+}
+interface BootstrapStage {
+  readonly label: string;
+  readonly run: () => Promise<void> | void;
+  readonly shouldRun?: () => boolean;
+  readonly optional?: boolean;
+}
+
 const isTestMode = import.meta.env.MODE === 'test';
 
 const lifecycleState = {
   started: false,
   startPromise: null as Promise<void> | null,
-  galleryApp: null as IGalleryApp | null,
+  galleryApp: null as GalleryLifecycleApp | null,
 };
 
 let globalEventTeardown: Unregister | null = null;

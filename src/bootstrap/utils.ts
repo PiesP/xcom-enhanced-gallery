@@ -9,8 +9,22 @@
  */
 
 import { bootstrapErrorReporter } from '@shared/error/app-error-reporter';
-import type { BootstrapStage, BootstrapStageResult } from '@shared/interfaces/handler.interfaces';
 import { logger } from '@shared/logging/logger';
+
+interface BootstrapStage {
+  readonly label: string;
+  readonly run: () => Promise<void> | void;
+  readonly shouldRun?: () => boolean;
+  readonly optional?: boolean;
+}
+interface BootstrapStageResult {
+  readonly label: string;
+  readonly success: boolean;
+  readonly skipped: boolean;
+  readonly optional: boolean;
+  readonly error: unknown;
+  readonly durationMs: number;
+}
 
 /**
  * @internal Execute a single bootstrap stage with timing and error handling.

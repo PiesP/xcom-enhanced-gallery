@@ -1,7 +1,9 @@
 import { getUserscript, type UserscriptAPI } from '@shared/external/userscript/adapter';
-import type { PersistentStorageGetOptions } from '@shared/services/persistent-storage.contract';
 
-export type { PersistentStorageGetOptions } from '@shared/services/persistent-storage.contract';
+export interface PersistentStorageGetOptions {
+  readonly warnOnParseErrorOnce?: boolean;
+  readonly selfHealOnParseError?: boolean;
+}
 
 let _persistentStorageInstance: PersistentStorage | null = null;
 
