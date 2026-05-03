@@ -9,17 +9,11 @@ import { clampIndex } from '@shared/utils/types/safety';
 
 let _instance: MediaService | null = null;
 
-interface MediaServiceOptions {
-  readonly enableMediaExtraction?: boolean;
-}
-
 export class MediaService {
   private mediaExtraction: MediaExtractionService | null = null;
   private readonly prefetchManager = new PrefetchManager(20);
   private didCleanup = false;
   private _initialized = false;
-
-  constructor(_options: MediaServiceOptions = {}) {}
 
   /** Initialize service (idempotent) */
   public async initialize(): Promise<void> {
@@ -41,7 +35,7 @@ export class MediaService {
     return this._initialized;
   }
 
-  public static getInstance(_options?: MediaServiceOptions): MediaService {
+  public static getInstance(): MediaService {
     if (!_instance) _instance = new MediaService();
     return _instance;
   }

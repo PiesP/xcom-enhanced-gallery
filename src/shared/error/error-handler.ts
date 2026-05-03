@@ -42,7 +42,11 @@ export class GlobalErrorHandler {
     const message = event.message || 'Unknown error';
     const location = formatErrorLocation(event.filename, event.lineno, event.colno);
     if (__DEV__) {
-      logger.error(`[UncaughtError] ${message}`, { type: 'uncaught-error', location, error: event.error });
+      logger.error(`[UncaughtError] ${message}`, {
+        type: 'uncaught-error',
+        location,
+        error: event.error,
+      });
       event.preventDefault();
     }
   };
@@ -50,7 +54,10 @@ export class GlobalErrorHandler {
   private readonly rejectionListener = (event: PromiseRejectionEvent): void => {
     const message = formatRejectionMessage(event.reason);
     if (__DEV__) {
-      logger.error(`[UnhandledRejection] ${message}`, { type: 'unhandled-rejection', reason: event.reason });
+      logger.error(`[UnhandledRejection] ${message}`, {
+        type: 'unhandled-rejection',
+        reason: event.reason,
+      });
       event.preventDefault();
     }
   };

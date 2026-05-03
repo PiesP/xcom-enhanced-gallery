@@ -15,7 +15,6 @@ import {
   registerSettingsManager,
   tryGetSettingsManager,
 } from '@shared/container/service-accessors';
-import { hasRenderer } from '@shared/services/service-registry';
 import {
   bootstrapErrorReporter,
   galleryErrorReporter,
@@ -24,6 +23,7 @@ import {
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import { isGMAPIAvailable } from '@shared/external/userscript/environment-detector';
 import { logger } from '@shared/logging/logger';
+import { hasRenderer } from '@shared/services/service-registry';
 
 type InitializableSettingsService = {
   initialize?: () => Promise<void>;

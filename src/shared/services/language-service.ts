@@ -40,8 +40,6 @@ export class LanguageService {
     _instance = null;
   }
 
-  constructor() {}
-
   /** Initialize service (idempotent) */
   public async initialize(): Promise<void> {
     if (this._initialized) return;

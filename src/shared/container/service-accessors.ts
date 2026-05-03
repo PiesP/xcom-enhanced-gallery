@@ -1,13 +1,13 @@
 import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
 import { LanguageService } from '@shared/services/language-service';
 import { MediaService } from '@shared/services/media-service';
-import { ThemeService } from '@shared/services/theme-service';
 import {
   getRenderer,
   registerRenderer,
   registerSettings,
   tryGetSettings,
 } from '@shared/services/service-registry';
+import { ThemeService } from '@shared/services/theme-service';
 
 export { registerRenderer as registerGalleryRenderer };
 

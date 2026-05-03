@@ -8,6 +8,27 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.9.1] - 2026-05-03
+
+### Changed
+
+- **CoreService DI**: Removed Service Locator pattern (`CoreService` + `SERVICE_KEYS`), replaced with module-level `service-registry.ts` for 3 runtime-registered deps.
+- **Lifecycle/Singleton**: Inlined `createLifecycle` and `createSingleton` utilities into all 9 service classes, using plain `_initialized` flag and `let _instance` module pattern.
+- **Contract Files**: Removed 9 contract/interface files (`theme-service.contract.ts`, `settings-service.contract.ts`, `persistent-storage.contract.ts`, `app-container.ts`, `handler.interfaces.ts`, `gallery.interfaces.ts`, `base-service.types.ts`, `core-types.ts`, `bootstrap/types.ts`), inlined types into implementation files.
+- **Service Initialization**: All singletons (`MediaService`, `ThemeService`, `LanguageService`, `SettingsService`, `EventManager`, `DownloadOrchestrator`, `PersistentStorage`, `HttpRequestService`, `GlobalErrorHandler`) now use consistent `_initialized` flag pattern.
+
+### Removed
+
+- Deleted `src/constants/service-keys.ts` (DI key constants)
+- Deleted `src/shared/services/service-manager.ts` (CoreService)
+- Deleted `src/shared/services/lifecycle.ts` (createLifecycle)
+- Deleted `src/shared/utils/types/singleton.ts` (createSingleton)
+- Deleted `src/shared/container/app-container.ts` (IGalleryApp)
+- Deleted `src/shared/interfaces/` (gallery.interfaces, handler.interfaces)
+- Deleted `src/shared/services/*.contract.ts` (3 files)
+- Deleted `src/shared/types/core/` (base-service, core-types)
+- Deleted `src/bootstrap/types.ts`
+
 ## [1.9.0] - 2026-05-01
 
 ### Changed
