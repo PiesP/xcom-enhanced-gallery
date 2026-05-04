@@ -262,6 +262,8 @@ export class GalleryRenderer {
   private cleanupGallery(): void {
     __DEV__ && logger.debug('[GalleryRenderer] Cleanup started');
     this.isMounting = false;
+    this.stateUnsubscribe?.();
+    this.stateUnsubscribe = null;
     this.cleanupContainer();
   }
 
