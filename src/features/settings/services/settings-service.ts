@@ -48,9 +48,6 @@ export class SettingsService {
   public destroy(): void {
     if (!this._initialized) return;
     this.listeners.clear();
-    this.repository.save(this.settings).catch((error) => {
-      __DEV__ && logger.warn('Failed to save settings on destroy:', error);
-    });
     this._initialized = false;
   }
 
