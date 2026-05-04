@@ -262,8 +262,10 @@ export class GalleryRenderer {
   private cleanupGallery(): void {
     __DEV__ && logger.debug('[GalleryRenderer] Cleanup started');
     this.isMounting = false;
-    this.stateUnsubscribe?.();
-    this.stateUnsubscribe = null;
+    // NOTE: Do NOT dispose stateUnsubscribe here — it is the Solid.js reactive root
+    // created by effectSafe (createRoot). Disposing it would destroy the reactive
+    // effect that watches gallerySignals.isOpen, making re-opening impossible.
+    // stateUnsubscribe is only disposed in destroy() (permanent teardown).
     this.cleanupContainer();
   }
 
