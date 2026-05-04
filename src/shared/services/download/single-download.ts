@@ -25,12 +25,6 @@ export interface SingleDownloadResult {
   error?: string;
 }
 
-export interface SingleDownloadResult {
-  success: boolean;
-  filename?: string;
-  error?: string;
-}
-
 import { resolveGMDownload } from '@shared/external/userscript/adapter';
 import { isGMAPIAvailable } from '@shared/external/userscript/environment-detector';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
