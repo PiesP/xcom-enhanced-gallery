@@ -60,10 +60,10 @@ export class SettingsService {
     return globalThis.structuredClone(this.settings);
   }
 
-  public get<T = unknown>(key: NestedSettingKey | string): T {
+  public get(key: NestedSettingKey | string): unknown {
     this.assertInitialized();
-    const value = resolveNestedPath<T>(this.settings, key);
-    return value === undefined ? (this.getDefaultValue(key as NestedSettingKey) as T) : value;
+    const value = resolveNestedPath(this.settings, key);
+    return value === undefined ? this.getDefaultValue(key) : value;
   }
 
   public async set<T = unknown>(key: NestedSettingKey, value: T): Promise<void> {
@@ -211,7 +211,7 @@ export class SettingsService {
     return typeof value === type;
   }
 
-  private getDefaultValue(key: NestedSettingKey): unknown {
+  private getDefaultValue(key: string): unknown {
     return resolveNestedPath(DEFAULT_SETTINGS, key);
   }
 
