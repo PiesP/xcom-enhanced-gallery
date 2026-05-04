@@ -32,20 +32,9 @@ export function safeEventPrevent(event?: Event): void {
  * Enhanced event prevention that also stops immediate propagation.
  * Useful when multiple handlers are attached to the same element and you want
  * to ensure no other handlers execute.
- *
- * @param event - Optional Event object to prevent. If not provided, function returns early.
- *
- * @example
- * ```typescript
- * const handleCriticalClick = (event?: Event) => {
- *   safeEventPreventAll(event);
- *   // ... critical logic that must not be interrupted
- * };
- * ```
  */
 export function safeEventPreventAll(event?: Event): void {
+  safeEventPrevent(event);
   if (!event) return;
-  event.preventDefault();
-  event.stopPropagation();
   event.stopImmediatePropagation();
 }
