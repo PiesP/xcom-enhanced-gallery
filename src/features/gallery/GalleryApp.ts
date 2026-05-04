@@ -36,7 +36,6 @@ export class GalleryApp {
       __DEV__ && logger.info('[GalleryApp] Initialization skipped (already initialized)');
       return;
     }
-    this.isInitialized = true;
 
     try {
       __DEV__ && logger.info('[GalleryApp] Initialization started');
@@ -47,7 +46,6 @@ export class GalleryApp {
       this.isInitialized = true;
       __DEV__ && logger.info('[GalleryApp] ✅ Initialization complete');
     } catch (error) {
-      this.isInitialized = false;
       galleryErrorReporter.critical(error, {
         code: 'GALLERY_APP_INIT_FAILED',
       });
