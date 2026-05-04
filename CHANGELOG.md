@@ -6,7 +6,34 @@ The format follows the principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and the project
 roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.9.2] - 2026-05-04
+
+### Fixed
+
+- **GalleryApp**: Fixed retry on init failure, premature `isInitialized` flag, and cleanup in `main.ts`.
+- **GalleryRenderer**: Fixed `stateUnsubscribe` missing in cleanup causing memory leak; fixed disposal preventing viewer restart.
+- **GlobalErrorHandler**: Added missing initialization in bootstrap pipeline.
+- **SettingsService**: Removed type casting in `get()`, removed fire-and-forget save in `destroy()`, improved type safety.
+- **SingleDownloadResult**: Removed duplicate interface declaration.
+- **Quality**: Resolved type errors and lint warnings from quality check.
+
+### Changed
+
+- **File Consolidation**: Merged `shared/container/` into single `container.ts`; merged `constants/default-settings` + storage into `constants/settings.ts`; merged `bootstrap/events` and `bootstrap/dev-namespace` into `main.ts`; merged i18n layers removing `TranslationCatalog` and `translation-utils`; flattened `shared/external/vendors` to single file; merged `app-error-reporter.types` into `app-error-reporter.ts`; consolidated download pipeline from 8 files to 5.
+- **Download System**: Removed unused Command pattern, inlined into `single-download.ts`; inlined `download-ui-state.ts` into `VerticalGalleryView`; simplified `download.signals.ts` removing unused task tracking.
+- **Dead Code Removal**: Removed `constants/types.ts` and `VIEW_MODES`; removed 1.8.2 deadcode from `settings-migration`; pruned legacy CSS attributes and JSDoc.
+- **Event Safety**: Improved `safeEventPreventAll` to delegate to `safeEventPrevent`.
+- **Styling**: Inlined `shared/constants/theme.ts` into `dom/theme.ts`.
+
+### Removed
+
+- Deleted `src/shared/container/` (merged to single file)
+- Deleted `src/constants/default-settings.ts` (merged into `settings.ts`)
+- Deleted `src/shared/external/vendors/` (flattened to single file)
+- Deleted `src/bootstrap/events.ts`, `src/bootstrap/dev-namespace.ts` (inlined into `main.ts`)
+- Deleted `src/constants/types.ts` (dead code)
+- Deleted `src/shared/i18n/translation-catalog.ts`, `src/shared/i18n/translation-utils.ts` (dead code)
+- Deleted `src/shared/utils/events/core/listener-manager.ts` (deprecated)
 
 ## [1.9.1] - 2026-05-03
 
