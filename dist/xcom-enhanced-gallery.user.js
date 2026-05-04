@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name X.com Enhanced Gallery
 // @namespace https://github.com/PiesP/xcom-enhanced-gallery
-// @version 1.9.1
+// @version 1.9.2
 // @description Media viewer and download functionality for X.com
 // @author PiesP
 // @license MIT
@@ -34,7 +34,7 @@
 /*
  * Third-Party Licenses
  * ====================
- * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.9.1/LICENSES
+ * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.9.2/LICENSES
  *
  * MIT License
  *
@@ -265,15 +265,6 @@ const defaultStrings = TRANSLATION_REGISTRY["en"];
 if (!defaultStrings) throw new Error(`Fatal: Default language 'en' not found in TRANSLATION_REGISTRY.`);
 return defaultStrings;
 }
-function resolveTranslationValue(dictionary, key) {
-const segments = key.split(".");
-let current = dictionary;
-for (const segment of segments) {
-if (current == null || typeof current !== "object") return;
-current = current[segment];
-}
-return typeof current === "string" ? current : void 0;
-}
 var BASE_PREFIX = "[XEG]";
 var hasConsole = typeof console !== "undefined";
 var noop = () => {};
@@ -484,6 +475,15 @@ await this.userscript.deleteValue(key);
 };
 function getPersistentStorage() {
 return PersistentStorage.getInstance();
+}
+function resolveTranslationValue(dictionary, key) {
+const segments = key.split(".");
+let current = dictionary;
+for (const segment of segments) {
+if (current == null || typeof current !== "object") return void 0;
+current = current[segment];
+}
+return typeof current === "string" ? current : void 0;
 }
 var _instance$1 = null;
 var LanguageService = class LanguageService {
@@ -925,12 +925,7 @@ ITEM: "xeg-gallery-item"
 };
 var DATA_ATTRIBUTES = {
 GALLERY: "data-xeg-gallery",
-CONTAINER: "data-xeg-gallery-container",
-ELEMENT: "data-gallery-element",
-ROLE: "data-xeg-role",
-ROLE_COMPAT: "data-xeg-role-compat",
-GALLERY_TYPE: "data-xeg-gallery-type",
-GALLERY_VERSION: "data-xeg-gallery-version"
+ROLE: "data-xeg-role"
 };
 var SELECTORS = {
 OVERLAY: `.${CLASSES.OVERLAY}`,
@@ -940,14 +935,8 @@ RENDERER: `.${CLASSES.RENDERER}`,
 VERTICAL_VIEW: `.${CLASSES.VERTICAL_VIEW}`,
 ITEM: `.${CLASSES.ITEM}`,
 DATA_GALLERY: `[${DATA_ATTRIBUTES.GALLERY}]`,
-DATA_CONTAINER: `[${DATA_ATTRIBUTES.CONTAINER}]`,
-DATA_ELEMENT: `[${DATA_ATTRIBUTES.ELEMENT}]`,
 DATA_ROLE: `[${DATA_ATTRIBUTES.ROLE}]`,
-DATA_ROLE_COMPAT: `[${DATA_ATTRIBUTES.ROLE_COMPAT}]`,
-DATA_GALLERY_TYPE: `[${DATA_ATTRIBUTES.GALLERY_TYPE}]`,
-DATA_GALLERY_VERSION: `[${DATA_ATTRIBUTES.GALLERY_VERSION}]`,
-ROLE_GALLERY: `[${DATA_ATTRIBUTES.ROLE}="gallery"]`,
-ROLE_ITEMS_CONTAINER: `[${DATA_ATTRIBUTES.ROLE}="items-container"]`
+ROLE_GALLERY: `[${DATA_ATTRIBUTES.ROLE}="gallery"]`
 };
 var CSS = {
 CLASSES,
@@ -961,14 +950,8 @@ SELECTORS.RENDERER,
 SELECTORS.VERTICAL_VIEW,
 SELECTORS.ITEM,
 SELECTORS.DATA_GALLERY,
-SELECTORS.DATA_CONTAINER,
-SELECTORS.DATA_ELEMENT,
 SELECTORS.DATA_ROLE,
-SELECTORS.DATA_ROLE_COMPAT,
-SELECTORS.DATA_GALLERY_TYPE,
-SELECTORS.DATA_GALLERY_VERSION,
-SELECTORS.ROLE_GALLERY,
-SELECTORS.ROLE_ITEMS_CONTAINER
+SELECTORS.ROLE_GALLERY
 ]
 };
 var TWEET_SELECTOR = "article[data-testid=\"tweet\"]";
@@ -2577,339 +2560,45 @@ this.cleanupOnce();
 }
 };
 var APP_SETTINGS_STORAGE_KEY = "xeg-app-settings";
-var THEME_DOM_ATTRIBUTE = "data-theme";
-function syncThemeAttributes(theme, options = {}) {
-if (typeof document === "undefined") return;
-const { scopes, includeDocumentRoot = false } = options;
-if (includeDocumentRoot && document.documentElement) document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, theme);
-const targets = scopes ?? document.querySelectorAll(".xeg-theme-scope");
-for (const target of Array.from(targets)) if (target instanceof HTMLElement) target.setAttribute(THEME_DOM_ATTRIBUTE, theme);
-}
-var listeners =  new Map();
-function generateListenerId(ctx) {
-return ctx ? createPrefixedId(ctx, ":") : createId();
-}
-function addListener(element, type, listener, options, context) {
-const id = generateListenerId(context);
-if (!element || typeof element.addEventListener !== "function") return id;
-try {
-element.addEventListener(type, listener, options);
-listeners.set(id, {
-id,
-element,
-type,
-listener,
-options,
-context
-});
-return id;
-} catch (error) {
-return id;
-}
-}
-function removeEventListenerManaged(id) {
-const ctx = listeners.get(id);
-if (!ctx) return false;
-try {
-ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
-listeners.delete(id);
-return true;
-} catch (error) {
-return false;
-}
-}
-var _eventManagerInstance = null;
-var EventManager = class EventManager {
-_initialized = false;
-isDestroyed = false;
-ownedListenerContexts =  new Map();
-constructor() {}
-static getInstance() {
-if (!_eventManagerInstance) _eventManagerInstance = new EventManager();
-return _eventManagerInstance;
-}
-async initialize() {
-if (this._initialized) return;
-this.isDestroyed = false;
-this._initialized = true;
-}
-destroy() {
-if (!this._initialized) return;
-this.cleanup();
-this._initialized = false;
-}
-isInitialized() {
-return this._initialized;
-}
-addEventListener(element, type, listener, options) {
-if (this.isDestroyed) {
-;
-return null;
-}
-const { context, ...listenerOptions } = options ?? {};
-const id = addListener(element, type, listener, listenerOptions, context);
-if (id) this.ownedListenerContexts.set(id, context);
-return id || null;
-}
-removeListener(id) {
-if (!this.ownedListenerContexts.has(id)) return false;
-this.ownedListenerContexts.delete(id);
-return removeEventListenerManaged(id);
-}
-removeByContext(context) {
-const toRemove = [];
-for (const [id, ctx] of this.ownedListenerContexts) if (ctx === context) toRemove.push(id);
-let count = 0;
-for (const id of toRemove) {
-this.ownedListenerContexts.delete(id);
-if (removeEventListenerManaged(id)) count++;
-}
-return count;
-}
-getIsDestroyed() {
-return this.isDestroyed;
-}
-getListenerStatus() {
-return {
-total: 0,
-byContext: {},
-byType: {}
+var DEFAULT_SETTINGS = {
+gallery: {
+autoScrollSpeed: 5,
+infiniteScroll: true,
+preloadCount: 3,
+imageFitMode: "fitWidth",
+theme: "auto",
+animations: true,
+enableKeyboardNav: true,
+videoVolume: 1,
+videoMuted: false
+},
+toolbar: { autoHideDelay: 3e3 },
+download: {
+filenamePattern: "original",
+imageQuality: "original",
+maxConcurrentDownloads: 3,
+autoZip: false,
+folderStructure: "flat"
+},
+accessibility: {
+reduceMotion: false,
+screenReaderSupport: true,
+focusIndicators: true
+},
+features: {
+gallery: true,
+settings: true,
+download: true,
+mediaExtraction: true,
+accessibility: true
+},
+version: "1.9.2",
+lastModified: 0
 };
-}
-cleanup() {
-if (this.isDestroyed) return;
-const ids = Array.from(this.ownedListenerContexts.keys());
-this.ownedListenerContexts.clear();
-for (const id of ids) try {
-removeEventListenerManaged(id);
-} catch {}
-this.isDestroyed = true;
-}
-};
-var _renderer = null;
-function registerRenderer(r) {
-_renderer = r;
-}
-function hasRenderer() {
-return _renderer !== null;
-}
-var _settings = null;
-function registerSettings(s) {
-_settings = s;
-}
-function tryGetSettings() {
-return _settings;
-}
-var VALID_THEME_SETTINGS = [
-"light",
-"dark",
-"auto"
-];
-function isThemeSetting(value) {
-return typeof value === "string" && VALID_THEME_SETTINGS.includes(value);
-}
-var _themeInstance = null;
-var ThemeService = class ThemeService {
-_initialized = false;
-storage = getPersistentStorage();
-mediaQueryList = null;
-mediaQueryListener = null;
-domEventsController = null;
-currentTheme = "light";
-themeSetting = "auto";
-listeners =  new Set();
-boundSettingsService = null;
-observer = null;
-observedThemeScopes =  new WeakSet();
-static getInstance() {
-if (!_themeInstance) _themeInstance = new ThemeService();
-return _themeInstance;
-}
-constructor() {
-this.mediaQueryList = this.createMediaQueryList();
-}
-async initialize() {
-if (this._initialized) return;
-if (!this.boundSettingsService) {
-const settingsService = tryGetSettings();
-if (settingsService) this.bindSettingsService(settingsService);
-else await this.restoreThemeSettingFromStorage();
-}
-this.initializeThemeScopeObservation();
-this.initializeSystemDetection();
-this.applyCurrentTheme(true);
-this._initialized = true;
-}
-destroy() {
-this.cleanup();
-this._initialized = false;
-}
-isInitialized() {
-return this._initialized;
-}
-bindSettingsService(settingsService) {
-if (!settingsService || this.boundSettingsService === settingsService) return;
-this.boundSettingsService = settingsService;
-const settingsTheme = settingsService.get?.("gallery.theme");
-if (isThemeSetting(settingsTheme) && settingsTheme !== this.themeSetting) {
-this.themeSetting = settingsTheme;
-this.applyCurrentTheme(true);
-}
-}
-setTheme(setting, options) {
-const normalized = isThemeSetting(setting) ? setting : "light";
-this.themeSetting = normalized;
-if (options?.persist !== false && this.boundSettingsService?.set) {
-const result = this.boundSettingsService.set("gallery.theme", this.themeSetting);
-if (result instanceof Promise) result.catch((error) => {});
-}
-if (!this.applyCurrentTheme(options?.force)) this.notifyListeners();
-}
-getEffectiveTheme() {
-if (this.themeSetting === "auto") return this.mediaQueryList?.matches ? "dark" : "light";
-return this.themeSetting;
-}
-getCurrentTheme() {
-return this.themeSetting;
-}
-isDarkMode() {
-return this.getEffectiveTheme() === "dark";
-}
-onThemeChange(listener) {
-this.listeners.add(listener);
-return () => this.listeners.delete(listener);
-}
-applyThemeToScopes(scopes) {
-const newScopes = [];
-for (const scope of scopes) if (!this.observedThemeScopes.has(scope)) {
-this.observedThemeScopes.add(scope);
-newScopes.push(scope);
-}
-if (newScopes.length > 0) syncThemeAttributes(this.currentTheme, { scopes: newScopes });
-}
-createMediaQueryList() {
-if (typeof window === "undefined" || typeof window.matchMedia !== "function") return null;
-return window.matchMedia("(prefers-color-scheme: dark)");
-}
-async restoreThemeSettingFromStorage() {
-const saved = await this.loadThemeAsync();
-if (saved && saved !== this.themeSetting) {
-this.themeSetting = saved;
-this.applyCurrentTheme(true);
-}
-}
-initializeThemeScopeObservation() {
-if (typeof document === "undefined" || typeof MutationObserver === "undefined") return;
-this.applyThemeToScopes(Array.from(document.querySelectorAll(".xeg-theme-scope")));
-this.observer?.disconnect();
-this.observer = new MutationObserver((mutations) => {
-for (const mutation of mutations) mutation.addedNodes.forEach((node) => {
-if (!(node instanceof Element)) return;
-const scopes = [];
-if (node.classList.contains("xeg-theme-scope")) scopes.push(node);
-node.querySelectorAll(".xeg-theme-scope").forEach((scope) => {
-scopes.push(scope);
-});
-if (scopes.length > 0) this.applyThemeToScopes(scopes);
-});
-});
-if (document.body) {
-this.observer.observe(document.body, {
-childList: true,
-subtree: true
-});
-return;
-}
-}
-cleanup() {
-this.boundSettingsService = null;
-this.listeners.clear();
-this.observedThemeScopes =  new WeakSet();
-if (this.observer) {
-this.observer.disconnect();
-this.observer = null;
-}
-if (this.domEventsController) {
-this.domEventsController.abort();
-this.domEventsController = null;
-}
-this.mediaQueryListener = null;
-this.mediaQueryList = null;
-}
-initializeSystemDetection() {
-if (!this.mediaQueryList) this.mediaQueryList = this.createMediaQueryList();
-if (!this.mediaQueryList || this.mediaQueryListener) return;
-if (!this.domEventsController || this.domEventsController.signal.aborted) this.domEventsController = new AbortController();
-this.mediaQueryListener = () => {
-if (this.themeSetting === "auto") this.applyCurrentTheme();
-};
-const listener = this.mediaQueryListener;
-const eventListener = (event) => {
-listener(event);
-};
-EventManager.getInstance().addEventListener(this.mediaQueryList, "change", eventListener, {
-signal: this.domEventsController.signal,
-context: "theme-service"
-});
-}
-applyCurrentTheme(force = false) {
-const effective = this.getEffectiveTheme();
-if (force || this.currentTheme !== effective) {
-this.currentTheme = effective;
-syncThemeAttributes(this.currentTheme);
-this.notifyListeners();
-return true;
-}
-return false;
-}
-notifyListeners() {
-this.listeners.forEach((listener) => listener(this.currentTheme, this.themeSetting));
-}
-async loadThemeAsync() {
-try {
-return (await this.storage.get("xeg-app-settings"))?.gallery?.theme ?? null;
-} catch {
-return null;
-}
-}
-};
-async function initializeCoreBaseServices() {
-try {
-const services = [
-ThemeService.getInstance(),
-LanguageService.getInstance(),
-MediaService.getInstance()
-];
-for (const service of services) if (service?.initialize) await service.initialize();
-} catch (error) {
-throw new Error("[base-services] initialization failed", { cause: error instanceof Error ? error : new Error(String(error)) });
-}
-}
-function wireGlobalEvents(onBeforeUnload) {
-if (!(typeof window !== "undefined" && !!window.addEventListener)) return () => {};
-let disposed = false;
-const eventManager = EventManager.getInstance();
-const controller = new AbortController();
-const invokeOnce = () => {
-if (disposed) return;
-disposed = true;
-controller.abort();
-onBeforeUnload();
-};
-const handler = () => {
-invokeOnce();
-};
-eventManager.addEventListener(window, "pagehide", handler, {
-once: true,
-passive: true,
-signal: controller.signal,
-context: "bootstrap:pagehide"
-});
-return () => {
-if (disposed) return;
-disposed = true;
-controller.abort();
-};
+function createDefaultSettings(timestamp = Date.now()) {
+const settings = globalThis.structuredClone(DEFAULT_SETTINGS);
+settings.lastModified = timestamp;
+return settings;
 }
 function sanitize(name) {
 return name.replace(/[<>:"/\\|?*]/g, "_").replace(/^[\s.]+|[\s.]+$/g, "").slice(0, 255) || "media";
@@ -2986,20 +2675,6 @@ return sanitize(`${options.fallbackPrefix ?? "xcom_gallery"}_${resolveNowMs$1(op
 return `download_${resolveNowMs$1(options.nowMs)}.zip`;
 }
 }
-function planSingleDownload(input) {
-const { method, mediaUrl, filename, hasProvidedBlob } = input;
-if (method === "gm_download") return {
-strategy: "gm_download",
-url: mediaUrl,
-filename,
-useBlobUrl: hasProvidedBlob
-};
-return {
-strategy: "none",
-filename,
-error: "No download method"
-};
-}
 function generateDesiredName(media, nowMs) {
 return nowMs === void 0 ? generateMediaFilename(media) : generateMediaFilename(media, { nowMs });
 }
@@ -3039,7 +2714,7 @@ return false;
 function asGMDownloadFunction(value) {
 return typeof value === "function" ? value : void 0;
 }
-var detectDownloadCapability = () => {
+function detectDownloadCapability() {
 const gmDownload = asGMDownloadFunction(resolveGMDownload());
 const hasGMDownload = !!gmDownload && isGMAPIAvailable("download");
 return {
@@ -3047,86 +2722,36 @@ hasGMDownload,
 method: hasGMDownload ? "gm_download" : "none",
 gmDownload: hasGMDownload ? gmDownload : void 0
 };
-};
-function toActionCommand(plan, timeoutMs) {
-if (plan.strategy === "gm_download") return {
-type: "DOWNLOAD_WITH_GM_DOWNLOAD",
-url: plan.url,
-filename: plan.filename,
-timeoutMs,
-useBlobUrl: plan.useBlobUrl
-};
-return {
-type: "FAIL",
-filename: plan.filename,
-error: plan.error
-};
 }
-function createSingleDownloadCommands(input) {
-const timeoutMs = input.timeoutMs ?? 3e4;
-const action = toActionCommand(planSingleDownload(input), timeoutMs);
-return action.type === "DOWNLOAD_WITH_GM_DOWNLOAD" || action.type === "FAIL" ? [{
-type: "REPORT_PROGRESS",
-phase: "preparing",
-percentage: 0,
-filename: input.filename
-}, action] : [action];
-}
-var SINGLE_DOWNLOAD_TOTAL = 1;
+var DOWNLOAD_TIMEOUT_MS = 3e4;
 var DOWNLOAD_TIMEOUT_MESSAGE = "Download timeout";
-var reportSingleProgress = (onProgress, payload) => {
+var reportProgress$1 = (onProgress, phase, percentage, filename) => {
 if (!onProgress) return;
-const current = payload.current ?? SINGLE_DOWNLOAD_TOTAL;
-const total = payload.total ?? SINGLE_DOWNLOAD_TOTAL;
-const { current: _current, total: _total, ...rest } = payload;
 onProgress({
-...rest,
-current,
-total
-});
-};
-var calculatePercentage$1 = (loaded, total) => {
-if (total <= 0) return 0;
-return Math.min(100, Math.max(0, Math.round(loaded / total * 100)));
-};
-var createAbortResult = (signal) => {
-return {
-success: false,
-error: getErrorMessage(getUserCancelledAbortErrorFromSignal(signal)) || "Download cancelled by user"
-};
-};
-async function executeSingleDownloadCommand(cmd, options, capability, blob) {
-const onProgress = options.onProgress;
-const filename = cmd.filename;
-switch (cmd.type) {
-case "FAIL": return {
-success: false,
-error: cmd.error
-};
-case "REPORT_PROGRESS":
-reportSingleProgress(onProgress, {
-phase: cmd.phase,
-current: 0,
-percentage: cmd.percentage,
+phase,
+current: 1,
+total: 1,
+percentage,
 filename
 });
-return {
-success: true,
-filename: cmd.filename
 };
-case "DOWNLOAD_WITH_GM_DOWNLOAD": {
-const gmDownload = capability.gmDownload;
+var createAbortResult = () => ({
+success: false,
+error: "Download cancelled by user"
+});
+async function downloadSingleFile(media, options = {}, capability) {
+if (options.signal?.aborted) return createAbortResult();
+const filename = generateMediaFilename(media, { nowMs: Date.now() });
+const gmDownload = (capability ?? detectDownloadCapability()).gmDownload;
 if (!gmDownload) return {
 success: false,
-error: "GM_download unavailable"
+error: "No download method available"
 };
-let url = cmd.url;
+reportProgress$1(options.onProgress, "preparing", 0, filename);
+let url = media.url;
 let isBlobUrl = false;
-if (cmd.useBlobUrl) {
-if (!blob) return {
-success: false,
-error: "Blob unavailable"
-};
+const blob = options.blob;
+if (blob) {
 url = URL.createObjectURL(blob);
 isBlobUrl = true;
 }
@@ -3137,14 +2762,10 @@ const cleanup = () => {
 if (isBlobUrl) URL.revokeObjectURL(url);
 if (timer) globalTimerManager.clearTimeout(timer);
 };
-const settle = (result, completePercentage) => {
+const settle = (result) => {
 if (settled) return;
 settled = true;
-if (completePercentage !== void 0) reportSingleProgress(onProgress, {
-phase: "complete",
-percentage: completePercentage,
-filename
-});
+if (result.success) reportProgress$1(options.onProgress, "complete", 100, filename);
 cleanup();
 resolve(result);
 };
@@ -3152,37 +2773,30 @@ timer = globalTimerManager.setTimeout(() => {
 settle({
 success: false,
 error: DOWNLOAD_TIMEOUT_MESSAGE
-}, 0);
-}, cmd.timeoutMs);
+});
+}, DOWNLOAD_TIMEOUT_MS);
 try {
 gmDownload({
 url,
 name: filename,
-onload: () => {
-settle({
+onload: () => settle({
 success: true,
 filename
-}, 100);
-},
+}),
 onerror: (error) => {
 settle({
 success: false,
 error: getErrorMessage(error)
-}, 0);
+});
 },
-ontimeout: () => {
-settle({
+ontimeout: () => settle({
 success: false,
 error: DOWNLOAD_TIMEOUT_MESSAGE
-}, 0);
-},
+}),
 onprogress: (progress) => {
-if (settled || !onProgress || progress.total <= 0) return;
-reportSingleProgress(onProgress, {
-phase: "downloading",
-percentage: calculatePercentage$1(progress.loaded, progress.total),
-filename
-});
+if (settled || !options.onProgress || progress.total <= 0) return;
+const pct = Math.min(100, Math.max(0, Math.round(progress.loaded / progress.total * 100)));
+reportProgress$1(options.onProgress, "downloading", pct, filename);
 }
 });
 } catch (error) {
@@ -3192,36 +2806,6 @@ error: getErrorMessage(error)
 });
 }
 });
-}
-default: return {
-success: false,
-error: "Unknown download command"
-};
-}
-}
-async function downloadSingleFile(media, options = {}, capability) {
-const abortSignal = options.signal;
-if (abortSignal?.aborted) return createAbortResult(abortSignal);
-const filename = generateMediaFilename(media, { nowMs: Date.now() });
-const effectiveCapability = capability ?? detectDownloadCapability();
-const cmds = createSingleDownloadCommands({
-method: effectiveCapability.method,
-mediaUrl: media.url,
-filename,
-hasProvidedBlob: !!options.blob,
-timeoutMs: 3e4
-});
-let lastOk = {
-success: true,
-filename
-};
-for (const cmd of cmds) {
-if (abortSignal?.aborted) return createAbortResult(abortSignal);
-const result = await executeSingleDownloadCommand(cmd, options, effectiveCapability, options.blob);
-if (!result.success) return result;
-lastOk = result;
-}
-return lastOk;
 }
 var textEncoder = new TextEncoder();
 var crc32Table = null;
@@ -3671,6 +3255,20 @@ URL.revokeObjectURL(url);
 }
 }
 };
+var _renderer = null;
+function registerRenderer(r) {
+_renderer = r;
+}
+function hasRenderer() {
+return _renderer !== null;
+}
+var _settings = null;
+function registerSettings(s) {
+_settings = s;
+}
+function tryGetSettings() {
+return _settings;
+}
 function getThemeService() {
 return ThemeService.getInstance();
 }
@@ -3691,13 +3289,315 @@ function getDownloadOrchestrator() {
 if (!_downloadOrchestrator) _downloadOrchestrator = DownloadOrchestrator.getInstance();
 return _downloadOrchestrator;
 }
-var DEFAULT_SEVERITY = "error";
-var AppErrorReporter = class AppErrorReporter {
-static notificationCallback = null;
-static setNotificationCallback(callback) {
-AppErrorReporter.notificationCallback = callback;
+function requireSettingsService() {
+const service = tryGetSettings();
+if (!service) throw new Error("SettingsService not registered.");
+return service;
 }
-static report(error, options) {
+function getTypedSettingOr(path, fallback) {
+const value = requireSettingsService().get(path);
+return value === void 0 ? fallback : value;
+}
+function setTypedSetting(path, value) {
+return requireSettingsService().set(path, value);
+}
+var THEME_DOM_ATTRIBUTE = "data-theme";
+function syncThemeAttributes(theme, options = {}) {
+if (typeof document === "undefined") return;
+const { scopes, includeDocumentRoot = false } = options;
+if (includeDocumentRoot && document.documentElement) document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, theme);
+const targets = scopes ?? document.querySelectorAll(".xeg-theme-scope");
+for (const target of Array.from(targets)) if (target instanceof HTMLElement) target.setAttribute(THEME_DOM_ATTRIBUTE, theme);
+}
+var listeners =  new Map();
+function generateListenerId(ctx) {
+return ctx ? createPrefixedId(ctx, ":") : createId();
+}
+function addListener(element, type, listener, options, context) {
+const id = generateListenerId(context);
+if (!element || typeof element.addEventListener !== "function") return id;
+try {
+element.addEventListener(type, listener, options);
+listeners.set(id, {
+id,
+element,
+type,
+listener,
+options,
+context
+});
+return id;
+} catch (error) {
+return id;
+}
+}
+function removeEventListenerManaged(id) {
+const ctx = listeners.get(id);
+if (!ctx) return false;
+try {
+ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
+listeners.delete(id);
+return true;
+} catch (error) {
+return false;
+}
+}
+var _eventManagerInstance = null;
+var EventManager = class EventManager {
+_initialized = false;
+isDestroyed = false;
+ownedListenerContexts =  new Map();
+constructor() {}
+static getInstance() {
+if (!_eventManagerInstance) _eventManagerInstance = new EventManager();
+return _eventManagerInstance;
+}
+async initialize() {
+if (this._initialized) return;
+this.isDestroyed = false;
+this._initialized = true;
+}
+destroy() {
+if (!this._initialized) return;
+this.cleanup();
+this._initialized = false;
+}
+isInitialized() {
+return this._initialized;
+}
+addEventListener(element, type, listener, options) {
+if (this.isDestroyed) {
+;
+return null;
+}
+const { context, ...listenerOptions } = options ?? {};
+const id = addListener(element, type, listener, listenerOptions, context);
+if (id) this.ownedListenerContexts.set(id, context);
+return id || null;
+}
+removeListener(id) {
+if (!this.ownedListenerContexts.has(id)) return false;
+this.ownedListenerContexts.delete(id);
+return removeEventListenerManaged(id);
+}
+removeByContext(context) {
+const toRemove = [];
+for (const [id, ctx] of this.ownedListenerContexts) if (ctx === context) toRemove.push(id);
+let count = 0;
+for (const id of toRemove) {
+this.ownedListenerContexts.delete(id);
+if (removeEventListenerManaged(id)) count++;
+}
+return count;
+}
+getIsDestroyed() {
+return this.isDestroyed;
+}
+getListenerStatus() {
+return {
+total: 0,
+byContext: {},
+byType: {}
+};
+}
+cleanup() {
+if (this.isDestroyed) return;
+const ids = Array.from(this.ownedListenerContexts.keys());
+this.ownedListenerContexts.clear();
+for (const id of ids) try {
+removeEventListenerManaged(id);
+} catch {}
+this.isDestroyed = true;
+}
+};
+var VALID_THEME_SETTINGS = [
+"light",
+"dark",
+"auto"
+];
+function isThemeSetting(value) {
+return typeof value === "string" && VALID_THEME_SETTINGS.includes(value);
+}
+var _themeInstance = null;
+var ThemeService = class ThemeService {
+_initialized = false;
+storage = getPersistentStorage();
+mediaQueryList = null;
+mediaQueryListener = null;
+domEventsController = null;
+currentTheme = "light";
+themeSetting = "auto";
+listeners =  new Set();
+boundSettingsService = null;
+observer = null;
+observedThemeScopes =  new WeakSet();
+static getInstance() {
+if (!_themeInstance) _themeInstance = new ThemeService();
+return _themeInstance;
+}
+constructor() {
+this.mediaQueryList = this.createMediaQueryList();
+}
+async initialize() {
+if (this._initialized) return;
+if (!this.boundSettingsService) {
+const settingsService = tryGetSettings();
+if (settingsService) this.bindSettingsService(settingsService);
+else await this.restoreThemeSettingFromStorage();
+}
+this.initializeThemeScopeObservation();
+this.initializeSystemDetection();
+this.applyCurrentTheme(true);
+this._initialized = true;
+}
+destroy() {
+this.cleanup();
+this._initialized = false;
+}
+isInitialized() {
+return this._initialized;
+}
+bindSettingsService(settingsService) {
+if (!settingsService || this.boundSettingsService === settingsService) return;
+this.boundSettingsService = settingsService;
+const settingsTheme = settingsService.get?.("gallery.theme");
+if (isThemeSetting(settingsTheme) && settingsTheme !== this.themeSetting) {
+this.themeSetting = settingsTheme;
+this.applyCurrentTheme(true);
+}
+}
+setTheme(setting, options) {
+const normalized = isThemeSetting(setting) ? setting : "light";
+this.themeSetting = normalized;
+if (options?.persist !== false && this.boundSettingsService?.set) {
+const result = this.boundSettingsService.set("gallery.theme", this.themeSetting);
+if (result instanceof Promise) result.catch((error) => {});
+}
+if (!this.applyCurrentTheme(options?.force)) this.notifyListeners();
+}
+getEffectiveTheme() {
+if (this.themeSetting === "auto") return this.mediaQueryList?.matches ? "dark" : "light";
+return this.themeSetting;
+}
+getCurrentTheme() {
+return this.themeSetting;
+}
+isDarkMode() {
+return this.getEffectiveTheme() === "dark";
+}
+onThemeChange(listener) {
+this.listeners.add(listener);
+return () => this.listeners.delete(listener);
+}
+applyThemeToScopes(scopes) {
+const newScopes = [];
+for (const scope of scopes) if (!this.observedThemeScopes.has(scope)) {
+this.observedThemeScopes.add(scope);
+newScopes.push(scope);
+}
+if (newScopes.length > 0) syncThemeAttributes(this.currentTheme, { scopes: newScopes });
+}
+createMediaQueryList() {
+if (typeof window === "undefined" || typeof window.matchMedia !== "function") return null;
+return window.matchMedia("(prefers-color-scheme: dark)");
+}
+async restoreThemeSettingFromStorage() {
+const saved = await this.loadThemeAsync();
+if (saved && saved !== this.themeSetting) {
+this.themeSetting = saved;
+this.applyCurrentTheme(true);
+}
+}
+initializeThemeScopeObservation() {
+if (typeof document === "undefined" || typeof MutationObserver === "undefined") return;
+this.applyThemeToScopes(Array.from(document.querySelectorAll(".xeg-theme-scope")));
+this.observer?.disconnect();
+this.observer = new MutationObserver((mutations) => {
+for (const mutation of mutations) mutation.addedNodes.forEach((node) => {
+if (!(node instanceof Element)) return;
+const scopes = [];
+if (node.classList.contains("xeg-theme-scope")) scopes.push(node);
+node.querySelectorAll(".xeg-theme-scope").forEach((scope) => {
+scopes.push(scope);
+});
+if (scopes.length > 0) this.applyThemeToScopes(scopes);
+});
+});
+if (document.body) {
+this.observer.observe(document.body, {
+childList: true,
+subtree: true
+});
+return;
+}
+}
+cleanup() {
+this.boundSettingsService = null;
+this.listeners.clear();
+this.observedThemeScopes =  new WeakSet();
+if (this.observer) {
+this.observer.disconnect();
+this.observer = null;
+}
+if (this.domEventsController) {
+this.domEventsController.abort();
+this.domEventsController = null;
+}
+this.mediaQueryListener = null;
+this.mediaQueryList = null;
+}
+initializeSystemDetection() {
+if (!this.mediaQueryList) this.mediaQueryList = this.createMediaQueryList();
+if (!this.mediaQueryList || this.mediaQueryListener) return;
+if (!this.domEventsController || this.domEventsController.signal.aborted) this.domEventsController = new AbortController();
+this.mediaQueryListener = () => {
+if (this.themeSetting === "auto") this.applyCurrentTheme();
+};
+const listener = this.mediaQueryListener;
+const eventListener = (event) => {
+listener(event);
+};
+EventManager.getInstance().addEventListener(this.mediaQueryList, "change", eventListener, {
+signal: this.domEventsController.signal,
+context: "theme-service"
+});
+}
+applyCurrentTheme(force = false) {
+const effective = this.getEffectiveTheme();
+if (force || this.currentTheme !== effective) {
+this.currentTheme = effective;
+syncThemeAttributes(this.currentTheme);
+this.notifyListeners();
+return true;
+}
+return false;
+}
+notifyListeners() {
+this.listeners.forEach((listener) => listener(this.currentTheme, this.themeSetting));
+}
+async loadThemeAsync() {
+try {
+return (await this.storage.get("xeg-app-settings"))?.gallery?.theme ?? null;
+} catch {
+return null;
+}
+}
+};
+async function initializeCoreBaseServices() {
+try {
+const services = [
+ThemeService.getInstance(),
+LanguageService.getInstance(),
+MediaService.getInstance()
+];
+for (const service of services) if (service?.initialize) await service.initialize();
+} catch (error) {
+throw new Error("[base-services] initialization failed", { cause: error instanceof Error ? error : new Error(String(error)) });
+}
+}
+var DEFAULT_SEVERITY = "error";
+var notificationCallback = null;
+function reportError(error, options) {
 const severity = options.severity ?? DEFAULT_SEVERITY;
 const message = normalizeErrorMessage(error);
 const payload = {
@@ -3706,45 +3606,32 @@ s: severity
 };
 if (options.code) payload.cd = options.code;
 if (options.metadata) payload.m = options.metadata;
-if (options.notify && AppErrorReporter.notificationCallback) AppErrorReporter.notificationCallback(message, options.context);
-const result = {
+if (options.notify && notificationCallback) notificationCallback(message, options.context);
+if (severity === "critical") throw error instanceof Error ? error : new Error(message);
+return {
 reported: true,
 message,
 context: options.context,
 severity
 };
-if (severity === "critical") throw error instanceof Error ? error : new Error(message);
-return result;
 }
-static forContext(context) {
+function forContext(context) {
+const bind = (severity) => (error, options) => reportError(error, {
+...options,
+context,
+severity
+});
 return {
-critical: (error, options) => AppErrorReporter.report(error, {
-...options,
-context,
-severity: "critical"
-}),
-error: (error, options) => AppErrorReporter.report(error, {
-...options,
-context,
-severity: "error"
-}),
-warn: (error, options) => AppErrorReporter.report(error, {
-...options,
-context,
-severity: "warning"
-}),
-info: (error, options) => AppErrorReporter.report(error, {
-...options,
-context,
-severity: "info"
-})
+critical: bind("critical"),
+error: bind("error"),
+warn: bind("warning"),
+info: bind("info")
 };
 }
-};
-var bootstrapErrorReporter = AppErrorReporter.forContext("bootstrap");
-var galleryErrorReporter = AppErrorReporter.forContext("gallery");
-var mediaErrorReporter = AppErrorReporter.forContext("media");
-var settingsErrorReporter = AppErrorReporter.forContext("settings");
+var bootstrapErrorReporter = forContext("bootstrap");
+var galleryErrorReporter = forContext("gallery");
+var mediaErrorReporter = forContext("media");
+var settingsErrorReporter = forContext("settings");
 var sharedConfig = {
 context: void 0,
 registry: void 0,
@@ -5506,10 +5393,13 @@ await this.setupEventHandlers();
 this.ambientVideoGuardDispose = this.ambientVideoGuardDispose ?? startAmbientVideoGuard();
 this.isInitialized = true;
 } catch (error) {
-this.isInitialized = false;
 galleryErrorReporter.critical(error, { code: "GALLERY_APP_INIT_FAILED" });
 throw error;
 }
+}
+async retryInitialize() {
+if (this.isInitialized) return;
+return this.initialize();
 }
 async setupEventHandlers() {
 const enableKeyboardSetting = tryGetSettingsManager()?.get?.("gallery.enableKeyboardNav");
@@ -5556,7 +5446,9 @@ text: getErrorMessage(error) || "Unknown error"
 }
 }
 async openGallery(mediaItems, startIndex = 0, options = {}) {
-if (!this.isInitialized) {
+if (!this.isInitialized) try {
+await this.retryInitialize();
+} catch {
 this.userscript.notification({
 title: "Gallery unavailable",
 text: "Userscript manager required."
@@ -6443,18 +6335,6 @@ return () => {
 stopStart();
 stopComplete();
 };
-}
-function requireSettingsService() {
-const service = tryGetSettings();
-if (!service) throw new Error("SettingsService not registered.");
-return service;
-}
-function getTypedSettingOr(path, fallback) {
-const value = requireSettingsService().get(path);
-return value === void 0 ? fallback : value;
-}
-function setTypedSetting(path, value) {
-return requireSettingsService().set(path, value);
 }
 function useToolbarAutoHide(options) {
 const { isVisible, hasItems } = options;
@@ -7419,9 +7299,8 @@ event.preventDefault();
 event.stopPropagation();
 }
 function safeEventPreventAll(event) {
+safeEventPrevent(event);
 if (!event) return;
-event.preventDefault();
-event.stopPropagation();
 event.stopImmediatePropagation();
 }
 function findScrollableAncestor(target, scrollableSelector) {
@@ -8547,40 +8426,19 @@ toggleTweetPanelExpanded: toggleTweet
 });
 }
 var Toolbar = ToolbarContainer;
-var [_downloadState, setDownloadState] = createSignalSafe({
-activeTasks:  new Map(),
-queue: [],
-isProcessing: false
-});
-var setProcessingFlag = (isProcessing) => {
-const currentState = _downloadState();
-if (currentState.isProcessing === isProcessing) return;
-setDownloadState({
-...currentState,
-isProcessing
-});
-};
+var [_isProcessing, setIsProcessing] = createSignalSafe(false);
 function acquireDownloadLock() {
-setProcessingFlag(true);
+setIsProcessing(true);
 return () => {
-const { queue, activeTasks } = _downloadState();
-if (queue.length === 0 && activeTasks.size === 0) setProcessingFlag(false);
+setIsProcessing(false);
 };
 }
 function isDownloadLocked() {
-return _downloadState().isProcessing;
+return _isProcessing();
 }
-var downloadState = {
-get value() {
-return _downloadState();
-},
-set value(newState) {
-setDownloadState(newState);
-}
-};
-function isDownloadUiBusy(context) {
-return context.downloadProcessing ?? false;
-}
+var downloadState = { get value() {
+return { isProcessing: _isProcessing() };
+} };
 function computePreloadIndices(currentIndex, total, count) {
 const safeTotal = Number.isFinite(total) && total > 0 ? Math.floor(total) : 0;
 if (safeTotal === 0) return [];
@@ -8612,7 +8470,7 @@ const [local] = splitProps(props, [
 ]);
 const mediaItems = createMemo(() => gallerySignals.mediaItems);
 const currentIndex = createMemo(() => gallerySignals.currentIndex);
-const isDownloading = createMemo(() => isDownloadUiBusy({ downloadProcessing: downloadState.value.isProcessing }));
+const isDownloading = createMemo(() => downloadState.value.isProcessing);
 const [containerEl, setContainerEl] = createSignal(null);
 const [toolbarWrapperEl, setToolbarWrapperEl] = createSignal(null);
 const [itemsContainerEl, setItemsContainerEl] = createSignal(null);
@@ -8965,6 +8823,7 @@ this.renderComponent();
 } catch (error) {
 logger.error("Render failed", error);
 this.cleanupContainer();
+this.container = null;
 setError(getErrorMessage(error) || "Gallery rendering failed");
 } finally {
 this.isMounting = false;
@@ -9150,61 +9009,14 @@ this.stateUnsubscribe = null;
 this.cleanupGallery();
 }
 };
-var DEFAULT_SETTINGS = {
-gallery: {
-autoScrollSpeed: 5,
-infiniteScroll: true,
-preloadCount: 3,
-imageFitMode: "fitWidth",
-theme: "auto",
-animations: true,
-enableKeyboardNav: true,
-videoVolume: 1,
-videoMuted: false
-},
-toolbar: { autoHideDelay: 3e3 },
-download: {
-filenamePattern: "original",
-imageQuality: "original",
-maxConcurrentDownloads: 3,
-autoZip: false,
-folderStructure: "flat"
-},
-accessibility: {
-reduceMotion: false,
-screenReaderSupport: true,
-focusIndicators: true
-},
-features: {
-gallery: true,
-settings: true,
-download: true,
-mediaExtraction: true,
-accessibility: true
-},
-version: "1.9.1",
-lastModified: 0
-};
-function createDefaultSettings(timestamp = Date.now()) {
-const settings = globalThis.structuredClone(DEFAULT_SETTINGS);
-settings.lastModified = timestamp;
-return settings;
-}
-var migrations = {
-"1.0.0": (input) => {
+var migrations = { "1.0.0": (input) => {
 const next = { ...input };
 next.gallery = {
 ...next.gallery,
 enableKeyboardNav: true
 };
 return next;
-},
-"1.8.2": (input) => {
-const next = { ...input };
-delete next.tokens;
-return next;
-}
-};
+} };
 function pruneWithTemplate(input, template) {
 if (!isRecord(input)) return {};
 const out = {};
@@ -9359,7 +9171,6 @@ this._initialized = true;
 destroy() {
 if (!this._initialized) return;
 this.listeners.clear();
-this.repository.save(this.settings).catch((error) => {});
 this._initialized = false;
 }
 isInitialized() {
@@ -9656,6 +9467,29 @@ started: false,
 startPromise: null,
 galleryApp: null
 };
+function wireGlobalEvents(onBeforeUnload) {
+if (!(typeof window !== "undefined" && !!window.addEventListener)) return () => {};
+let disposed = false;
+const eventManager = EventManager.getInstance();
+const controller = new AbortController();
+const invokeOnce = () => {
+if (disposed) return;
+disposed = true;
+controller.abort();
+onBeforeUnload();
+};
+eventManager.addEventListener(window, "pagehide", invokeOnce, {
+once: true,
+passive: true,
+signal: controller.signal,
+context: "bootstrap:pagehide"
+});
+return () => {
+if (disposed) return;
+disposed = true;
+controller.abort();
+};
+}
 var globalEventTeardown = null;
 function tearDownGlobalEventHandlers() {
 if (!globalEventTeardown) return;
@@ -9678,6 +9512,12 @@ await task();
 }
 function buildStages() {
 return [
+{
+label: "Error handler",
+run: () => {
+GlobalErrorHandler.getInstance().initialize();
+}
+},
 {
 label: "Gallery services",
 run: async () => {
