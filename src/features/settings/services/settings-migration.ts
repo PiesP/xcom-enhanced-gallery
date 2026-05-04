@@ -21,6 +21,11 @@ import { isRecord } from '@shared/utils/types/guards';
  * Registry of versioned migrations for schema evolution.
  * Maps version strings to migration functions.
  *
+ * NOTE: pruneWithTemplate + fillWithDefaults handles most schema evolution
+ * automatically by discarding unknown keys and filling missing defaults.
+ * Explicit migrations here are only needed for semantic transformations
+ * (e.g., renaming a key or changing a value's meaning).
+ *
  * @remarks
  * Additional migrations can be added for future schema versions.
  */
@@ -32,12 +37,6 @@ const migrations: MigrationRegistry = {
       enableKeyboardNav: true,
     };
     return next;
-  },
-  '1.8.2': (input): AppSettings => {
-    const next = { ...input } as unknown as Record<string, unknown>;
-    // Remove tokens field (token refresh logic was never implemented)
-    delete next.tokens;
-    return next as unknown as AppSettings;
   },
 };
 
