@@ -65,6 +65,8 @@ export function handleKeyboardEvent(
       return;
     }
 
+    // isNavKey/isVideoKey: Space included in both to pass the reject guard
+    // below, then routed to video control (play/pause) before navigation check.
     const isNavKey = NAVIGATION_KEYS.has(key) || key === ' ' || key === 'Space';
     const isVideoKey = VIDEO_CONTROL_KEYS.has(key) || key === ' ' || key === 'Space';
 
