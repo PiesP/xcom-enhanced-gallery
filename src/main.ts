@@ -128,6 +128,12 @@ async function runOptionalCleanup(label: string, task: () => Promise<void> | voi
 function buildStages(): readonly BootstrapStage[] {
   return [
     {
+      label: 'Error handler',
+      run: () => {
+        GlobalErrorHandler.getInstance().initialize();
+      },
+    },
+    {
       label: 'Gallery services',
       run: async () => {
         try {
