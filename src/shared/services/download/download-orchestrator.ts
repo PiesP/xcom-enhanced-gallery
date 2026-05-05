@@ -2,7 +2,7 @@
 
 import { planBulkDownload, planZipSave } from '@shared/core/download/download-plan';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
-import { getErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/normalize';
 import {
   type DownloadCapability,
   type DownloadOptions,
@@ -93,7 +93,7 @@ export class DownloadOrchestrator {
         status: 'error',
         filesProcessed: 0,
         filesSuccessful: 0,
-        error: getErrorMessage(abortError) || 'Download cancelled',
+        error: normalizeErrorMessage(abortError),
         code: ErrorCode.CANCELLED,
       };
     }
@@ -183,7 +183,7 @@ export class DownloadOrchestrator {
           status: 'error',
           filesProcessed: items.length,
           filesSuccessful: 0,
-          error: getErrorMessage(error) || 'Download cancelled',
+          error: normalizeErrorMessage(error),
           code: ErrorCode.CANCELLED,
         };
       }
@@ -193,7 +193,7 @@ export class DownloadOrchestrator {
         status: 'error',
         filesProcessed: items.length,
         filesSuccessful: 0,
-        error: getErrorMessage(error) || 'Unknown error',
+        error: normalizeErrorMessage(error),
         code: ErrorCode.ALL_FAILED,
       };
     }
@@ -242,7 +242,7 @@ export class DownloadOrchestrator {
     } catch (error) {
       return {
         success: false,
-        error: getErrorMessage(error) || 'GM_download failed',
+        error: normalizeErrorMessage(error),
       };
     } finally {
       URL.revokeObjectURL(url);

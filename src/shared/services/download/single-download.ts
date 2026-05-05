@@ -1,5 +1,5 @@
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
-import { getErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/normalize';
 import type { MediaInfo } from '@shared/types/media.types';
 
 // Inlined from types.ts
@@ -147,7 +147,7 @@ export async function downloadSingleFile(
         name: filename,
         onload: () => settle({ success: true, filename }),
         onerror: (error: unknown) => {
-          settle({ success: false, error: getErrorMessage(error) });
+          settle({ success: false, error: normalizeErrorMessage(error) });
         },
         ontimeout: () => settle({ success: false, error: DOWNLOAD_TIMEOUT_MESSAGE }),
         onprogress: (progress) => {
@@ -160,7 +160,7 @@ export async function downloadSingleFile(
         },
       });
     } catch (error) {
-      settle({ success: false, error: getErrorMessage(error) });
+      settle({ success: false, error: normalizeErrorMessage(error) });
     }
   });
 }

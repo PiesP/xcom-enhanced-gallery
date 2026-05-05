@@ -2,7 +2,7 @@
  * @fileoverview Twitter API-Based Media Extractor (Primary Strategy)
  */
 
-import { getErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
 import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
 import { TwitterAPI } from '@shared/services/media/twitter-api-client';
@@ -82,7 +82,7 @@ export class TwitterAPIExtractor implements APIExtractor {
       if (__DEV__) {
         logger.warn(`[APIExtractor] ${extractionId}: API extraction failed:`, error);
       }
-      return createFailureResult(getErrorMessage(error) || 'API extraction failed', startedAt);
+      return createFailureResult(normalizeErrorMessage(error), startedAt);
     }
   }
 }

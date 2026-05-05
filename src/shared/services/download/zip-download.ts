@@ -1,5 +1,5 @@
 import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
-import { getErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/normalize';
 import { StreamingZipWriter } from '@shared/external/zip/streaming-zip-writer';
 import { DEFAULT_BACKOFF_BASE_MS, fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
 import type { OrchestratorItem, OrchestratorOptions } from './types';
@@ -145,7 +145,7 @@ export async function downloadAsZip(
         successful++;
       } catch (error) {
         throwIfAborted(abortSignal);
-        failures.push({ url: item.url, error: getErrorMessage(error) });
+        failures.push({ url: item.url, error: normalizeErrorMessage(error) });
       } finally {
         processed++;
         reportProgress(onProgress, {

@@ -1,5 +1,5 @@
 import { TWITTER_MEDIA_SELECTOR } from '@shared/dom/selectors';
-import { getErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
@@ -21,7 +21,7 @@ import {
 const generateExtractionId = (): string => createPrefixedId('simp');
 
 const createErrorResult = (error: unknown): MediaExtractionResult => {
-  const errorMessage = getErrorMessage(error) || 'Unknown error';
+  const errorMessage = normalizeErrorMessage(error);
   return {
     success: false,
     mediaItems: [],

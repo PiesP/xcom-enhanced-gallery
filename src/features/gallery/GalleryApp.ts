@@ -2,7 +2,7 @@
 
 import { getMediaService, tryGetSettingsManager } from '@shared/container/container';
 import { galleryErrorReporter, mediaErrorReporter } from '@shared/error/app-error-reporter';
-import { getErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/normalize';
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
@@ -116,7 +116,7 @@ export class GalleryApp {
       });
       this.userscript.notification({
         title: 'Error occurred',
-        text: getErrorMessage(error) || 'Unknown error',
+        text: normalizeErrorMessage(error),
       });
     }
   }
@@ -162,7 +162,7 @@ export class GalleryApp {
       });
       this.userscript.notification({
         title: 'Failed to load gallery',
-        text: getErrorMessage(error) || 'Unknown error',
+        text: normalizeErrorMessage(error),
       });
       throw error;
     }

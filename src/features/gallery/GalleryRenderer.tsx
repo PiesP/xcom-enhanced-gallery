@@ -14,7 +14,7 @@ import {
   getMediaService,
   getThemeService,
 } from '@shared/container/container';
-import { getErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/normalize';
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import type { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
@@ -78,7 +78,7 @@ export class GalleryRenderer {
       // make the gallery appear "stuck" on subsequent open attempts).
       this.cleanupContainer();
       this.container = null;
-      setError(getErrorMessage(error) || 'Gallery rendering failed');
+      setError(normalizeErrorMessage(error));
     } finally {
       this.isMounting = false;
     }
@@ -145,7 +145,7 @@ export class GalleryRenderer {
   }
 
   private getDownloadErrorNotification(error: unknown): { body: string; title: string } {
-    const message = getErrorMessage(error) || 'Unknown error';
+    const message = normalizeErrorMessage(error);
 
     try {
       const languageService = getLanguageService();

@@ -5,7 +5,7 @@
  */
 
 import { closestWithFallback, TWEET_CONTAINER_SELECTORS } from '@shared/dom/selectors';
-import { getErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
 import {
   getElapsedTime,
@@ -229,7 +229,7 @@ export class DOMFallbackExtractor implements APIExtractor {
       if (__DEV__) {
         logger.warn(`[DOMFallbackExtractor] ${extractionId}: DOM extraction failed:`, error);
       }
-      return createFailureResult(getErrorMessage(error) || 'DOM extraction failed', startedAt);
+      return createFailureResult(normalizeErrorMessage(error), startedAt);
     }
   }
 }
