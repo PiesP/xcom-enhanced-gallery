@@ -10,7 +10,6 @@ import { useGalleryScroll } from '@features/gallery/hooks/use-gallery-scroll';
 import type { NavigationTrigger } from '@shared/state/signals/navigation.state';
 import type { Accessor } from 'solid-js';
 import { createEffect } from 'solid-js';
-import { useGalleryKeyboard } from './use-gallery-keyboard';
 import { useGalleryLifecycle } from './use-gallery-lifecycle';
 import { useGalleryNavigation } from './use-gallery-navigation';
 import { useToolbarAutoHide } from './use-toolbar-auto-hide';
@@ -39,8 +38,6 @@ interface UseVerticalGalleryOptions {
   readonly toolbarWrapperEl: Accessor<HTMLDivElement | null>;
   /** Scrollable items container element */
   readonly itemsContainerEl: Accessor<HTMLDivElement | null>;
-  /** Callback invoked when gallery should close (e.g., Escape key) */
-  readonly onClose?: (() => void) | undefined;
 }
 
 /**
@@ -123,7 +120,6 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
     containerEl,
     toolbarWrapperEl,
     itemsContainerEl,
-    onClose,
   } = options;
 
   // Forward declaration for focus sync callback to break circular dependency
@@ -198,11 +194,6 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
     if (isScrolling()) {
       setIsInitialToolbarVisible(false);
     }
-  });
-
-  // 8. Keyboard handling - Escape key to close gallery
-  useGalleryKeyboard({
-    onClose: onClose ?? ((): void => {}),
   });
 
   return {

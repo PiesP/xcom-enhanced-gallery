@@ -55,9 +55,6 @@ export function executeVideoControl(
       case 'volumeDown':
         adjustVolume(video, -0.1);
         break;
-      case 'mute':
-        video.muted = true;
-        break;
       case 'toggleMute':
         video.muted = !video.muted;
         break;

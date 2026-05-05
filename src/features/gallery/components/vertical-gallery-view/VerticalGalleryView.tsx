@@ -83,7 +83,6 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     containerEl,
     toolbarWrapperEl,
     itemsContainerEl,
-    onClose: local.onClose,
   });
   const translate = useTranslation();
 

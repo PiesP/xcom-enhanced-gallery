@@ -17,21 +17,16 @@ import {
   tryGetSettingsManager,
 } from '@shared/container/container';
 import {
-  bootstrapErrorReporter,
   galleryErrorReporter,
   settingsErrorReporter,
 } from '@shared/error/app-error-reporter';
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';
-import { isGMAPIAvailable } from '@shared/external/userscript/environment-detector';
 import { logger } from '@shared/logging/logger';
 
 type InitializableSettingsService = {
   initialize?: () => Promise<void>;
   isInitialized?: () => boolean;
 };
-
-// Cache GM API availability (does not change during a session)
-const hasRequiredGMAPIs = isGMAPIAvailable('download') || isGMAPIAvailable('setValue');
 
 function ensureRendererRegistered(): void {
   if (hasRenderer()) {
@@ -61,12 +56,6 @@ async function initializeSettingsService(): Promise<void> {
  * Settings remain non-fatal: startup continues with defaults if they cannot load.
  */
 export async function initializeGalleryServices(): Promise<void> {
-  if (!hasRequiredGMAPIs) {
-    bootstrapErrorReporter.warn(new Error('Tampermonkey APIs limited'), {
-      code: 'GM_API_LIMITED',
-    });
-  }
-
   try {
     await initializeSettingsService();
     if (__DEV__) {
