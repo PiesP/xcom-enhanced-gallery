@@ -5,7 +5,28 @@
 
 import { logger } from '@shared/logging/logger';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
-import type { VideoControlAction, VideoControlOptions } from './video-control-helper.types';
+
+/**
+ * Supported video control actions
+ */
+export type VideoControlAction =
+  | 'play'
+  | 'pause'
+  | 'togglePlayPause'
+  | 'volumeUp'
+  | 'volumeDown'
+  | 'mute'
+  | 'toggleMute';
+
+/**
+ * Options for video control operations
+ */
+export interface VideoControlOptions {
+  /** Video element to control (uses current gallery video if omitted) */
+  readonly video?: HTMLVideoElement | null;
+  /** Logging context identifier */
+  readonly context?: string;
+}
 
 /** Tracks video playback state when Service is unavailable */
 const playbackStateMap = new WeakMap<HTMLVideoElement, { playing: boolean }>();
