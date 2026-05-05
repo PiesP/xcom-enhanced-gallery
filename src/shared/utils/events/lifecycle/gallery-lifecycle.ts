@@ -41,7 +41,11 @@ function resolveInitializationInput(
   }
   const partial = optionsOrRoot ?? {};
   return {
-    options: { ...DEFAULT_GALLERY_EVENT_OPTIONS, ...partial, context: sanitizeContext(partial.context) },
+    options: {
+      ...DEFAULT_GALLERY_EVENT_OPTIONS,
+      ...partial,
+      context: sanitizeContext(partial.context),
+    },
     root: null,
   };
 }
@@ -88,7 +92,8 @@ export async function initializeGalleryEvents(
     return cleanupGalleryEvents;
   }
 
-  const { options: finalOptions, root: explicitGalleryRoot } = resolveInitializationInput(optionsOrRoot);
+  const { options: finalOptions, root: explicitGalleryRoot } =
+    resolveInitializationInput(optionsOrRoot);
   const context = sanitizeContext(finalOptions.context);
   const target = resolveEventTarget(explicitGalleryRoot);
 

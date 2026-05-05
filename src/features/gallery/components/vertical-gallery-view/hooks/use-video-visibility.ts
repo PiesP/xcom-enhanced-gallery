@@ -65,8 +65,13 @@ function createVideoVisibilityController(
             wasMutedBeforeHidden = video.muted;
             didAutoMute = false;
           }
-          if (!video.muted) { applyMuted(true); didAutoMute = true; }
-          if (!video.paused) { pauseVideo(); }
+          if (!video.muted) {
+            applyMuted(true);
+            didAutoMute = true;
+          }
+          if (!video.paused) {
+            pauseVideo();
+          }
         } catch (err) {
           if (__DEV__) logger.warn('Failed to pause video on scroll out', { error: err });
         }
@@ -77,7 +82,9 @@ function createVideoVisibilityController(
               applyMuted(false);
             }
           }
-          if (wasPlayingBeforeHidden) { playVideo(); }
+          if (wasPlayingBeforeHidden) {
+            playVideo();
+          }
         } catch (err) {
           if (__DEV__) logger.warn('Failed to resume video on scroll in', { error: err });
         } finally {
@@ -109,6 +116,8 @@ export function useVideoVisibility(options: UseVideoVisibilityOptions): void {
       rootMargin: '0px',
     });
 
-    onCleanup(() => { unsubscribeObserver(); });
+    onCleanup(() => {
+      unsubscribeObserver();
+    });
   });
 }

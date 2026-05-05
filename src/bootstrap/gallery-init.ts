@@ -16,10 +16,7 @@ import {
   registerSettingsManager,
   tryGetSettingsManager,
 } from '@shared/container/container';
-import {
-  galleryErrorReporter,
-  settingsErrorReporter,
-} from '@shared/error/app-error-reporter';
+import { galleryErrorReporter, settingsErrorReporter } from '@shared/error/app-error-reporter';
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 

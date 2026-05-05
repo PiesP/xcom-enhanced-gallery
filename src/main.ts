@@ -39,7 +39,9 @@ function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
   const debugEnabled = __DEV__;
   if (!hasWindow) {
     if (debugEnabled) logger.debug('[events] Global events wiring skipped (no window context)');
-    return () => { /* noop */ };
+    return () => {
+      /* noop */
+    };
   }
   let disposed = false;
   const eventManager = EventManager.getInstance();
@@ -51,7 +53,10 @@ function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
     onBeforeUnload();
   };
   eventManager.addEventListener(window, 'pagehide', invokeOnce as EventListener, {
-    once: true, passive: true, signal: controller.signal, context: 'bootstrap:pagehide',
+    once: true,
+    passive: true,
+    signal: controller.signal,
+    context: 'bootstrap:pagehide',
   });
   if (debugEnabled) logger.debug('[events] Global events wired (pagehide only)');
   return () => {
@@ -233,4 +238,6 @@ async function startApplication(): Promise<void> {
   return lifecycleState.startPromise;
 }
 
-void startApplication().catch(() => { /* noop */ });
+void startApplication().catch(() => {
+  /* noop */
+});

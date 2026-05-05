@@ -46,7 +46,10 @@ function registerNavigationEvents({
       onNavigateComplete(payload);
     }
   );
-  return () => { stopStart(); stopComplete(); };
+  return () => {
+    stopStart();
+    stopComplete();
+  };
 }
 
 export function useGalleryNavigation(
@@ -54,7 +57,9 @@ export function useGalleryNavigation(
 ): UseGalleryNavigationResult {
   const { isVisible, scrollToItem } = options;
 
-  const [lastNavigationTrigger, setLastNavigationTrigger] = createSignal<NavigationTrigger | null>(null);
+  const [lastNavigationTrigger, setLastNavigationTrigger] = createSignal<NavigationTrigger | null>(
+    null
+  );
   const [programmaticScrollTimestamp, setProgrammaticScrollTimestamp] = createSignal(0);
 
   createEffect(

@@ -43,8 +43,16 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
 
           const videos = container.querySelectorAll('video');
           videos.forEach((video) => {
-            try { video.pause(); } catch (error) { logCleanupFailure(error); }
-            try { if (video.currentTime !== 0) video.currentTime = 0; } catch (error) { logCleanupFailure(error); }
+            try {
+              video.pause();
+            } catch (error) {
+              logCleanupFailure(error);
+            }
+            try {
+              if (video.currentTime !== 0) video.currentTime = 0;
+            } catch (error) {
+              logCleanupFailure(error);
+            }
           });
         }
       },

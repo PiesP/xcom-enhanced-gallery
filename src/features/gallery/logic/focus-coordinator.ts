@@ -57,14 +57,20 @@ export class FocusCoordinator {
   registerItem(index: number, element: HTMLElement | null): void {
     const prev = this.items.get(index);
     prev?.unsubscribe?.();
-    if (!element) { this.items.delete(index); return; }
+    if (!element) {
+      this.items.delete(index);
+      return;
+    }
 
     const trackedItem: TrackedItem = { element, isVisible: false };
     trackedItem.unsubscribe = SharedObserver.observe(
       element,
       (entry) => {
         const item = this.items.get(index);
-        if (item) { item.entry = entry; item.isVisible = entry.isIntersecting; }
+        if (item) {
+          item.entry = entry;
+          item.isVisible = entry.isIntersecting;
+        }
       },
       this.observerOptions
     );
@@ -96,7 +102,11 @@ export class FocusCoordinator {
 
     let bestCandidate: FocusCandidate | null = null;
     let topAlignedCandidate: FocusCandidate | null = null;
-    let highestVisibilityCandidate: { index: number; ratio: number; centerDistance: number } | null = null;
+    let highestVisibilityCandidate: {
+      index: number;
+      ratio: number;
+      centerDistance: number;
+    } | null = null;
 
     for (const [index, item] of this.items) {
       if (!item.isVisible || !item.element.isConnected) continue;
@@ -121,9 +131,11 @@ export class FocusCoordinator {
       }
 
       if (visibilityRatio > 0.1) {
-        const isBetter = !highestVisibilityCandidate ||
+        const isBetter =
+          !highestVisibilityCandidate ||
           visibilityRatio > highestVisibilityCandidate.ratio ||
-          (visibilityRatio === highestVisibilityCandidate.ratio && centerDistance < highestVisibilityCandidate.centerDistance);
+          (visibilityRatio === highestVisibilityCandidate.ratio &&
+            centerDistance < highestVisibilityCandidate.centerDistance);
         if (isBetter) {
           highestVisibilityCandidate = { index, ratio: visibilityRatio, centerDistance };
         }
