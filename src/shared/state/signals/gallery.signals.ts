@@ -23,7 +23,6 @@ import {
   validateNavigationParams,
 } from '@shared/state/signals/navigation.state';
 import { createSignalSafe, effectSafe } from '@shared/state/signals/signal-factory';
-import { uiSignals, type ViewMode } from '@shared/state/signals/ui.state';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { NavigationSource } from '@shared/types/navigation.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
@@ -35,7 +34,9 @@ const batch: BatchExecutor = (fn: () => void): void => solidBatch(fn);
 
 type GalleryNavigationTrigger = NavigationTrigger;
 
-interface GalleryState {
+export type ViewMode = 'vertical';
+
+export interface GalleryState {
   readonly isOpen: boolean;
   readonly mediaItems: readonly MediaInfo[];
   readonly currentIndex: number;
@@ -88,6 +89,11 @@ const [currentVideoElementSig, setCurrentVideoElement] = createSignalSafe<HTMLVi
   null
 );
 
+// UI state signals (inlined from ui.state.ts)
+const [_viewModeSig, _setViewMode] = createSignalSafe<ViewMode>(INITIAL_STATE.viewMode);
+const [_isLoadingSig, _setIsLoading] = createSignalSafe<boolean>(INITIAL_STATE.isLoading);
+const [_errorSig, _setErrorSig] = createSignalSafe<string | null>(INITIAL_STATE.error);
+
 export const gallerySignals = {
   get isOpen() {
     return isOpenSig();
@@ -107,9 +113,24 @@ export const gallerySignals = {
   set currentIndex(v: number) {
     setCurrentIndex(v);
   },
-  isLoading: uiSignals.isLoading,
-  error: uiSignals.error,
-  viewMode: uiSignals.viewMode,
+  get isLoading() {
+    return _isLoadingSig();
+  },
+  set isLoading(v: boolean) {
+    _setIsLoading(v);
+  },
+  get error() {
+    return _errorSig();
+  },
+  set error(v: string | null) {
+    _setErrorSig(v);
+  },
+  get viewMode() {
+    return _viewModeSig();
+  },
+  set viewMode(v: ViewMode) {
+    _setViewMode(v);
+  },
   get focusedIndex() {
     return focusedIndexSig();
   },
@@ -124,6 +145,13 @@ export const gallerySignals = {
   },
 };
 
+export function setError(error: string | null): void {
+  gallerySignals.error = error;
+  if (error) {
+    gallerySignals.isLoading = false;
+  }
+}
+
 export function subscribeIsOpen(cb: (v: boolean) => void): () => void {
   return effectSafe(() => cb(isOpenSig()));
 }
@@ -134,7 +162,7 @@ function applyGallerySessionUpdate(state: GallerySessionState): void {
     setCurrentIndex(state.currentIndex);
     setFocusedIndex(state.focusedIndex);
     setCurrentVideoElement(state.currentVideoElement);
-    uiSignals.error = state.error;
+    gallerySignals.error = state.error;
     setIsOpen(state.isOpen);
   });
 }
@@ -143,9 +171,9 @@ export function applyGalleryStateUpdate(state: GalleryState): void {
   batch(() => {
     setMediaItems(state.mediaItems);
     setCurrentIndex(state.currentIndex);
-    uiSignals.isLoading = state.isLoading;
-    uiSignals.error = state.error;
-    uiSignals.viewMode = state.viewMode;
+    gallerySignals.isLoading = state.isLoading;
+    gallerySignals.error = state.error;
+    gallerySignals.viewMode = state.viewMode;
     setIsOpen(state.isOpen);
   });
 }
@@ -156,9 +184,9 @@ export const galleryState = {
       isOpen: isOpenSig(),
       mediaItems: mediaItemsSig(),
       currentIndex: currentIndexSig(),
-      isLoading: uiSignals.isLoading,
-      error: uiSignals.error,
-      viewMode: uiSignals.viewMode,
+      isLoading: gallerySignals.isLoading,
+      error: gallerySignals.error,
+      viewMode: gallerySignals.viewMode,
     };
   },
 
