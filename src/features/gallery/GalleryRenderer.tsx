@@ -25,9 +25,9 @@ import {
   navigateNext,
   navigatePrevious,
   openGallery,
+  setError,
 } from '@shared/state/signals/gallery.signals';
 import { effectSafe } from '@shared/state/signals/signal-factory';
-import { setError } from '@shared/state/signals/ui.state';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { createSignal, onCleanup } from 'solid-js';
 
