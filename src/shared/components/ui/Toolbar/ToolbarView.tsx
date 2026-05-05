@@ -8,7 +8,6 @@ import type { ToolbarSettingsControllerResult } from '@shared/hooks/toolbar/use-
 import { useTranslation } from '@shared/hooks/use-translation';
 import { EventManager } from '@shared/services/event-manager';
 import type { ToolbarState } from '@shared/types/toolbar.types';
-import { safeEventPreventAll } from '@shared/utils/events/utils';
 import { shouldAllowWheelDefault as shouldAllowWheelDefaultBase } from '@shared/utils/events/wheel-scroll-guard';
 import { resolve, resolveOptional } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
@@ -198,7 +197,9 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       event.stopPropagation();
       return;
     }
-    safeEventPreventAll(event);
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
   };
 
   const registerWheelListener = (

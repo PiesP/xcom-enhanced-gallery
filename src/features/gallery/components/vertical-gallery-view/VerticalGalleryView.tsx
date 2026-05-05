@@ -21,7 +21,6 @@ import { EventManager } from '@shared/services/event-manager';
 import { downloadState } from '@shared/state/signals/download.signals';
 import { gallerySignals, navigateToItem } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types/ui.types';
-import { safeEventPrevent } from '@shared/utils/events/utils';
 import { computePreloadIndices } from '@shared/utils/performance/preload';
 import { cx } from '@shared/utils/text/formatting';
 import { createEffect, createMemo, createSignal, For, onCleanup, splitProps } from 'solid-js';
@@ -127,7 +126,8 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     });
 
   const applyFitMode = (mode: ImageFitMode, event?: Event): void => {
-    safeEventPrevent(event);
+    event?.preventDefault();
+    event?.stopPropagation();
     setImageFitMode(mode);
     void persistFitMode(mode);
     scroll.scrollToCurrentItem();

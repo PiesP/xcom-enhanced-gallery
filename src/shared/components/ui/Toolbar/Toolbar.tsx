@@ -13,7 +13,6 @@ import { useToolbarSettingsController } from '@shared/hooks/toolbar/use-toolbar-
 import { useToolbarState } from '@shared/hooks/use-toolbar-state';
 import { useTranslation } from '@shared/hooks/use-translation';
 import type { ToolbarDataState, ToolbarState } from '@shared/types/toolbar.types';
-import { safeEventPrevent, safeEventPreventAll } from '@shared/utils/events/utils';
 import { toOptionalAccessor, toRequiredAccessor } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import { clampIndex } from '@shared/utils/types/safety';
@@ -80,7 +79,8 @@ const createGuardedHandler = (
   action?: () => void
 ): ((event: MouseEvent) => void) => {
   return (event) => {
-    safeEventPrevent(event);
+    event.preventDefault();
+    event.stopPropagation();
     if (guard()) return;
     action?.();
   };
@@ -217,7 +217,9 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
 
   // 8. Event handlers
   const handleFitModeClick = (mode: FitMode) => (event: MouseEvent) => {
-    safeEventPreventAll(event);
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
     if (!isToolbarDisabled()) {
       fitModeHandlers()[mode]?.(event);
     }
@@ -244,7 +246,8 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   );
 
   const handleClose = (event: MouseEvent) => {
-    safeEventPrevent(event);
+    event.preventDefault();
+    event.stopPropagation();
     local.handlers.lifecycle.onClose();
   };
 
