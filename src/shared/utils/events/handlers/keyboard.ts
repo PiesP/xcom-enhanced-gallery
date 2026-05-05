@@ -27,6 +27,8 @@ const NAVIGATION_KEYS = new Set([
   'PageUp',
   'ArrowLeft',
   'ArrowRight',
+  'ArrowUp',
+  'ArrowDown',
   '?',
 ]);
 /** Video control keys: ArrowUp/Down, M (mute) */
@@ -81,6 +83,8 @@ export function handleKeyboardEvent(
     if (key === '?') {
       showKeyboardHelp();
     } else if (key === ' ' || key === 'Space') {
+      handleVideoControl(key);
+    } else if ((key === 'ArrowUp' || key === 'ArrowDown') && gallerySignals.currentVideoElement) {
       handleVideoControl(key);
     } else if (NAVIGATION_KEYS.has(key)) {
       handleNavigation(key);

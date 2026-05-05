@@ -8,7 +8,7 @@
 import { createSignalSafe } from '@shared/state/signals/signal-factory';
 import type { NavigationSource } from '@shared/types/navigation.types';
 
-export type NavigationTrigger = 'button' | 'click' | 'keyboard' | 'scroll';
+export type NavigationTrigger = 'button' | 'click' | 'keyboard' | 'programmatic' | 'scroll';
 
 interface NavigationStateData {
   readonly lastSource: NavigationSource;
@@ -37,6 +37,7 @@ const VALID_NAVIGATION_TRIGGERS = [
   'button',
   'click',
   'keyboard',
+  'programmatic',
   'scroll',
 ] as const satisfies readonly NavigationTrigger[];
 

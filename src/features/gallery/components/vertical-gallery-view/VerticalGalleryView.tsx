@@ -132,7 +132,7 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     setImageFitMode(mode);
     void persistFitMode(mode);
     scroll.scrollToCurrentItem();
-    navigateToItem(currentIndex(), 'click', 'auto-focus');
+    navigateToItem(currentIndex(), 'programmatic', 'auto-focus');
   };
 
   // Event handlers
