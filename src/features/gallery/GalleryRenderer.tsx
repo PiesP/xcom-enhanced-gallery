@@ -15,7 +15,7 @@ import {
   getThemeService,
 } from '@shared/container/container';
 import { normalizeErrorMessage } from '@shared/error/normalize';
-import { getUserscriptSafe } from '@shared/external/userscript/adapter';
+import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import type { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
 import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
@@ -39,7 +39,7 @@ export class GalleryRenderer {
   private stateUnsubscribe: (() => void) | null = null;
   private onCloseCallback: (() => void) | null = null;
   private get userscript() {
-    return getUserscriptSafe();
+    return getUserscript();
   }
 
   constructor() {

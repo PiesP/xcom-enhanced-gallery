@@ -17,7 +17,7 @@ import {
   tryGetSettingsManager,
 } from '@shared/container/container';
 import { galleryErrorReporter, settingsErrorReporter } from '@shared/error/app-error-reporter';
-import { getUserscriptSafe } from '@shared/external/userscript/adapter';
+import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 
 type InitializableSettingsService = {
@@ -62,7 +62,7 @@ export async function initializeGalleryServices(): Promise<void> {
     settingsErrorReporter.warn(error, {
       code: 'SETTINGS_SERVICE_INIT_FAILED',
     });
-    getUserscriptSafe().notification({
+    getUserscript().notification({
       title: 'Settings unavailable',
       text: 'Defaults will be used until settings load.',
     });

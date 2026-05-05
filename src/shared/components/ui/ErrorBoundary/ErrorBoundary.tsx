@@ -4,7 +4,7 @@
  */
 
 import { getLanguageService } from '@shared/container/container';
-import { getUserscriptSafe } from '@shared/external/userscript/adapter';
+import { getUserscript } from '@shared/external/userscript/adapter';
 import type { JSXElement } from '@shared/external/vendors';
 import { createSignal, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
 import type { ErrorBoundaryProps } from './ErrorBoundary.types';
@@ -48,7 +48,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
     if (lastError === error) return;
     lastError = error;
     const { title, body } = translateError(error);
-    getUserscriptSafe().notification({ title, text: body });
+    getUserscript().notification({ title, text: body });
   };
 
   const handleRetry = (): void => {

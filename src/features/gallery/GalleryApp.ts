@@ -3,7 +3,7 @@
 import { getMediaService, tryGetSettingsManager } from '@shared/container/container';
 import { galleryErrorReporter, mediaErrorReporter } from '@shared/error/app-error-reporter';
 import { normalizeErrorMessage } from '@shared/error/normalize';
-import { getUserscriptSafe } from '@shared/external/userscript/adapter';
+import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
@@ -23,7 +23,7 @@ interface GalleryOpenOptions {
 export class GalleryApp {
   private isInitialized = false;
   private get userscript() {
-    return getUserscriptSafe();
+    return getUserscript();
   }
   private ambientVideoGuardDispose: (() => void) | null = null;
 

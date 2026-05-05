@@ -4,7 +4,7 @@
  */
 
 import { getLanguageService } from '@shared/container/container';
-import { getUserscriptSafe } from '@shared/external/userscript/adapter';
+import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import {
@@ -202,7 +202,7 @@ function showKeyboardHelp(): void {
 
   try {
     const lang = getLanguageService();
-    getUserscriptSafe().notification({
+    getUserscript().notification({
       title: lang.translate('msg.kb.t'),
       text: [
         lang.translate('msg.kb.prev'),
