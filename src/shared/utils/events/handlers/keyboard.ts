@@ -17,7 +17,42 @@ import type {
   GalleryEventOptions,
 } from '@shared/utils/events/core/dom-listener-context';
 import { executeVideoControl } from '@shared/utils/events/handlers/video-control-helper';
-import { shouldExecuteKeyboardAction } from '@shared/utils/events/keyboard-debounce';
+
+// ============================================================================
+// Keyboard Debounce State
+// ============================================================================
+
+interface KeyboardDebounceState {
+  readonly lastExecutionTime: number;
+  readonly lastKey: string;
+}
+
+let keyboardDebounceState: KeyboardDebounceState = {
+  lastExecutionTime: 0,
+  lastKey: '',
+};
+
+function shouldExecuteKeyboardAction(key: string, minIntervalMs: number): boolean {
+  const now = Date.now();
+  const timeSinceLastExecution = now - keyboardDebounceState.lastExecutionTime;
+
+  if (key === keyboardDebounceState.lastKey && timeSinceLastExecution < minIntervalMs) {
+    return false;
+  }
+
+  keyboardDebounceState = {
+    lastExecutionTime: now,
+    lastKey: key,
+  };
+  return true;
+}
+
+export function resetKeyboardDebounceState(): void {
+  keyboardDebounceState = {
+    lastExecutionTime: 0,
+    lastKey: '',
+  };
+}
 
 /** Navigation and help keys: Home, End, PageUp/Down, Arrows, ? */
 const NAVIGATION_KEYS = new Set([

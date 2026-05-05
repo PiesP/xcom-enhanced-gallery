@@ -6,9 +6,11 @@ import type {
   EventHandlers,
   GalleryEventOptions,
 } from '@shared/utils/events/core/dom-listener-context';
-import { handleKeyboardEvent } from '@shared/utils/events/handlers/keyboard';
+import {
+  handleKeyboardEvent,
+  resetKeyboardDebounceState,
+} from '@shared/utils/events/handlers/keyboard';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
-import { resetKeyboardDebounceState } from '@shared/utils/events/keyboard-debounce';
 
 const DEFAULT_GALLERY_EVENT_OPTIONS = {
   enableKeyboard: true,
