@@ -5,12 +5,12 @@
  */
 
 import { isGalleryInternalElement, isVideoControlElement } from '@shared/dom/utils';
-import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import type {
   EventHandlers,
   EventHandlingResult,
   GalleryEventOptions,
-} from '@shared/utils/events/core/dom-listener-context';
+} from '@shared/services/event-manager';
+import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
 import { isHTMLElement } from '@shared/utils/types/guards';
 

@@ -1,11 +1,11 @@
 /** @fileoverview Gallery event lifecycle: init/teardown keyboard + click listeners. */
 
 import { logger } from '@shared/logging/logger';
-import { EventManager } from '@shared/services/event-manager';
-import type {
-  EventHandlers,
-  GalleryEventOptions,
-} from '@shared/utils/events/core/dom-listener-context';
+import {
+  type EventHandlers,
+  EventManager,
+  type GalleryEventOptions,
+} from '@shared/services/event-manager';
 import {
   handleKeyboardEvent,
   resetKeyboardDebounceState,

@@ -6,16 +6,13 @@
 import { getLanguageService } from '@shared/container/container';
 import { getUserscriptSafe } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
+import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import {
   gallerySignals,
   navigateNext,
   navigatePrevious,
   navigateToItem,
 } from '@shared/state/signals/gallery.signals';
-import type {
-  EventHandlers,
-  GalleryEventOptions,
-} from '@shared/utils/events/core/dom-listener-context';
 import { executeVideoControl } from '@shared/utils/events/handlers/video-control-helper';
 
 // ============================================================================

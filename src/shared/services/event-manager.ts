@@ -1,14 +1,60 @@
 /**
- * @fileoverview Event Manager — singleton facade over the low-level listener manager.
- * Provides context-based cleanup and lifecycle integration.
+ * @fileoverview Event Manager — singleton managing DOM event listener registration,
+ * context-based cleanup, and lifecycle integration.
  */
 
 import { logger } from '@shared/logging/logger';
-import {
-  getEventListenerStatus,
-  addListener as registerManagedListener,
-  removeEventListenerManaged,
-} from '@shared/utils/events/core/listener-manager';
+
+// ============================================================================
+// Shared Types (moved from dom-listener-context.ts)
+// ============================================================================
+
+/**
+ * Gallery event handler callback signatures.
+ */
+export interface EventHandlers {
+  readonly onMediaClick: (element: HTMLElement, event: MouseEvent) => Promise<void>;
+  readonly onGalleryClose: () => void;
+  readonly onKeyboardEvent?: (event: KeyboardEvent) => void;
+}
+
+/**
+ * Gallery event configuration.
+ */
+export interface GalleryEventOptions {
+  readonly enableKeyboard: boolean;
+  readonly enableMediaDetection: boolean;
+  readonly debugMode: boolean;
+  readonly preventBubbling: boolean;
+  readonly context: string;
+}
+
+/**
+ * Media click handling result.
+ */
+export interface EventHandlingResult {
+  readonly handled: boolean;
+  readonly reason?: string;
+}
+
+// ============================================================================
+// Internal listener registry (previously in listener-manager.ts)
+// ============================================================================
+
+interface ListenerContext {
+  readonly id: string;
+  readonly element: EventTarget;
+  readonly type: string;
+  readonly listener: EventListenerOrEventListenerObject;
+  readonly options?: boolean | AddEventListenerOptions;
+  readonly context: string | undefined;
+}
+
+const listeners = new Map<string, ListenerContext>();
+
+// ============================================================================
+// EventManager
+// ============================================================================
 
 let _eventManagerInstance: EventManager | null = null;
 
@@ -19,9 +65,6 @@ export class EventManager {
   private _initialized = false;
   private isDestroyed = false;
 
-  // Only tracks listeners registered through this instance so cleanup() does
-  // not accidentally remove listeners owned by unrelated code paths that share
-  // the underlying listener manager.
   private readonly ownedListenerContexts = new Map<string, string | undefined>();
 
   private constructor() {}
@@ -35,6 +78,7 @@ export class EventManager {
   /** @internal Test helper */
   public static resetForTests(): void {
     _eventManagerInstance?.cleanup();
+    listeners.clear();
     _eventManagerInstance = null;
   }
 
@@ -60,12 +104,6 @@ export class EventManager {
 
   /**
    * Add event listener with tracking and optional context for grouping.
-   *
-   * @param element - Target element
-   * @param type - Event type
-   * @param listener - Event handler
-   * @param options - Listener options (may include context for grouping)
-   * @returns Listener ID for removal, or null if registration failed
    */
   public addEventListener(
     element: EventTarget,
@@ -80,16 +118,43 @@ export class EventManager {
 
     const normalized = (options ?? {}) as AddEventListenerOptions & { context?: string };
     const { context, ...listenerOptions } = normalized;
-    const id = registerManagedListener(element, type, listener, listenerOptions, context);
 
-    if (id) {
-      this.ownedListenerContexts.set(id, context);
+    if (!element || typeof element.addEventListener !== 'function') {
+      if (__DEV__) {
+        logger.warn('[EventManager] Invalid element for addEventListener', { type, context });
+      }
+      return null;
     }
-    return id || null;
+
+    try {
+      element.addEventListener(type, listener, listenerOptions);
+
+      const id = context
+        ? `${context}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
+        : crypto.randomUUID().replaceAll('-', '');
+
+      const ctx: ListenerContext = {
+        id,
+        element,
+        type,
+        listener,
+        options: listenerOptions,
+        context,
+      };
+      listeners.set(id, ctx);
+      this.ownedListenerContexts.set(id, context);
+
+      return id;
+    } catch (error) {
+      if (__DEV__) {
+        logger.error('[EventManager] Failed to add listener', { type, context, error });
+      }
+      return null;
+    }
   }
 
   /**
-   * Remove event listener by ID
+   * Remove event listener by ID.
    */
   public removeListener(id: string): boolean {
     if (!this.ownedListenerContexts.has(id)) {
@@ -97,11 +162,11 @@ export class EventManager {
     }
 
     this.ownedListenerContexts.delete(id);
-    return removeEventListenerManaged(id);
+    return removeListenerById(id);
   }
 
   /**
-   * Remove all listeners matching a context
+   * Remove all listeners matching a context.
    */
   public removeByContext(context: string): number {
     const toRemove: string[] = [];
@@ -114,7 +179,7 @@ export class EventManager {
     let count = 0;
     for (const id of toRemove) {
       this.ownedListenerContexts.delete(id);
-      if (removeEventListenerManaged(id)) {
+      if (removeListenerById(id)) {
         count++;
       }
     }
@@ -127,31 +192,36 @@ export class EventManager {
     return this.isDestroyed;
   }
 
-  /** Get listener statistics */
+  /** Get listener statistics (dev only) */
   public getListenerStatus() {
     if (!__DEV__) {
       return { total: 0, byContext: {}, byType: {} } as const;
     }
 
-    return getEventListenerStatus();
+    const byContext: Record<string, number> = {};
+    const byType: Record<string, number> = {};
+
+    for (const ctx of listeners.values()) {
+      const c = ctx.context || 'default';
+      byContext[c] = (byContext[c] || 0) + 1;
+      byType[ctx.type] = (byType[ctx.type] || 0) + 1;
+    }
+
+    return { total: listeners.size, byContext, byType };
   }
 
   /** Clean up and mark as destroyed */
   public cleanup(): void {
-    if (this.isDestroyed) {
-      return;
-    }
+    if (this.isDestroyed) return;
 
-    // Only remove listeners registered via this service instance. Never clear
-    // the entire low-level registry to avoid affecting unrelated consumers.
     const ids = Array.from(this.ownedListenerContexts.keys());
     this.ownedListenerContexts.clear();
 
     for (const id of ids) {
       try {
-        removeEventListenerManaged(id);
+        removeListenerById(id);
       } catch {
-        // Swallow errors during cleanup to avoid cascading teardown failures.
+        // Swallow errors during cleanup
       }
     }
 
@@ -159,5 +229,29 @@ export class EventManager {
     if (__DEV__) {
       logger.debug('EventManager cleanup completed');
     }
+  }
+}
+
+/**
+ * Remove a listener from the registry and DOM by ID.
+ */
+function removeListenerById(id: string): boolean {
+  const ctx = listeners.get(id);
+  if (!ctx) {
+    if (__DEV__) {
+      logger.warn('[EventManager] Listener not found for removal', { id });
+    }
+    return false;
+  }
+
+  try {
+    ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
+    listeners.delete(id);
+    return true;
+  } catch (error) {
+    if (__DEV__) {
+      logger.error('[EventManager] Failed to remove listener', { id, type: ctx.type, error });
+    }
+    return false;
   }
 }
