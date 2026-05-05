@@ -1,12 +1,8 @@
-/**
- * @fileoverview Focus Coordinator - Natural Scroll-Based Focus Selection
- * @description Selects the most naturally visible gallery item after scroll stops.
- */
+/** @fileoverview Scroll-based focus selection via IntersectionObserver. Selects most visible gallery item. */
 
 import { SharedObserver } from '@shared/utils/performance/observer-pool';
 import type { Accessor } from 'solid-js';
 
-/** Configuration for FocusCoordinator (IntersectionObserver-based focus selection) */
 interface FocusCoordinatorOptions {
   readonly isEnabled: Accessor<boolean>;
   readonly container: Accessor<HTMLElement | null>;
@@ -16,7 +12,6 @@ interface FocusCoordinatorOptions {
   readonly rootMargin?: string;
 }
 
-/** Tracked item with visibility state and observer unsubscribe */
 interface TrackedItem {
   readonly element: HTMLElement;
   isVisible: boolean;
@@ -24,13 +19,11 @@ interface TrackedItem {
   unsubscribe?: () => void;
 }
 
-/** Focus candidate with distance metric */
 interface FocusCandidate {
   readonly index: number;
   readonly distance: number;
 }
 
-/** IntersectionObserver configuration */
 interface ObserverOptions {
   readonly threshold: number | number[];
   readonly rootMargin: string;
@@ -64,51 +57,33 @@ export class FocusCoordinator {
   registerItem(index: number, element: HTMLElement | null): void {
     const prev = this.items.get(index);
     prev?.unsubscribe?.();
-
-    if (!element) {
-      this.items.delete(index);
-      return;
-    }
+    if (!element) { this.items.delete(index); return; }
 
     const trackedItem: TrackedItem = { element, isVisible: false };
     trackedItem.unsubscribe = SharedObserver.observe(
       element,
       (entry) => {
         const item = this.items.get(index);
-        if (item) {
-          item.entry = entry;
-          item.isVisible = entry.isIntersecting;
-        }
+        if (item) { item.entry = entry; item.isVisible = entry.isIntersecting; }
       },
       this.observerOptions
     );
-
     this.items.set(index, trackedItem);
   }
 
   updateFocus(force: boolean = false): void {
     if (!force && !this.options.isEnabled()) return;
-
     const container = this.options.container();
     if (!container) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const selection = this.selectBestCandidate(containerRect);
-
+    const selection = this.selectBestCandidate(container.getBoundingClientRect());
     if (!selection) return;
-
-    const currentIndex = this.options.activeIndex();
-    const hasChanged = currentIndex !== selection.index;
-
-    if (hasChanged) {
+    if (this.options.activeIndex() !== selection.index) {
       this.options.onFocusChange(selection.index, 'auto');
     }
   }
 
   cleanup(): void {
-    for (const item of this.items.values()) {
-      item.unsubscribe?.();
-    }
+    for (const item of this.items.values()) item.unsubscribe?.();
     this.items.clear();
   }
 
@@ -117,17 +92,11 @@ export class FocusCoordinator {
     const viewportTop = containerRect.top;
     const viewportBottom = viewportTop + viewportHeight;
     const viewportCenter = viewportTop + viewportHeight / 2;
-
-    // Threshold for considering an image top as "very close" to viewport top (in pixels)
     const topProximityThreshold = 50;
 
     let bestCandidate: FocusCandidate | null = null;
     let topAlignedCandidate: FocusCandidate | null = null;
-    let highestVisibilityCandidate: {
-      index: number;
-      ratio: number;
-      centerDistance: number;
-    } | null = null;
+    let highestVisibilityCandidate: { index: number; ratio: number; centerDistance: number } | null = null;
 
     for (const [index, item] of this.items) {
       if (!item.isVisible || !item.element.isConnected) continue;
@@ -138,14 +107,12 @@ export class FocusCoordinator {
       const itemBottom = itemTop + itemHeight;
       const itemCenter = itemTop + itemHeight / 2;
 
-      // Calculate actual visible portion within viewport
       const visibleTop = Math.max(itemTop, viewportTop);
       const visibleBottom = Math.min(itemBottom, viewportBottom);
       const visibleHeight = Math.max(0, visibleBottom - visibleTop);
       const visibilityRatio = itemHeight > 0 ? visibleHeight / itemHeight : 0;
       const centerDistance = Math.abs(itemCenter - viewportCenter);
 
-      // Check if image top is very close to viewport top
       const topDistance = Math.abs(itemTop - viewportTop);
       if (topDistance <= topProximityThreshold && visibilityRatio > 0.1) {
         if (!topAlignedCandidate || topDistance < topAlignedCandidate.distance) {
@@ -153,33 +120,22 @@ export class FocusCoordinator {
         }
       }
 
-      // Track highest visibility candidate (most visible item in viewport)
-      // On equal visibility ratio, prefer the one closer to center
       if (visibilityRatio > 0.1) {
-        const isBetterVisibility =
-          !highestVisibilityCandidate ||
+        const isBetter = !highestVisibilityCandidate ||
           visibilityRatio > highestVisibilityCandidate.ratio ||
-          (visibilityRatio === highestVisibilityCandidate.ratio &&
-            centerDistance < highestVisibilityCandidate.centerDistance);
-
-        if (isBetterVisibility) {
+          (visibilityRatio === highestVisibilityCandidate.ratio && centerDistance < highestVisibilityCandidate.centerDistance);
+        if (isBetter) {
           highestVisibilityCandidate = { index, ratio: visibilityRatio, centerDistance };
         }
       }
 
-      // Center-based candidate as final fallback
       if (!bestCandidate || centerDistance < bestCandidate.distance) {
         bestCandidate = { index, distance: centerDistance };
       }
     }
 
-    // Priority: top-aligned > highest visibility > center-based
-    if (topAlignedCandidate) {
-      return topAlignedCandidate;
-    }
-    if (highestVisibilityCandidate) {
-      return { index: highestVisibilityCandidate.index, distance: 0 };
-    }
+    if (topAlignedCandidate) return topAlignedCandidate;
+    if (highestVisibilityCandidate) return { index: highestVisibilityCandidate.index, distance: 0 };
     return bestCandidate;
   }
 }

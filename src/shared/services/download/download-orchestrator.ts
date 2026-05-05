@@ -1,15 +1,4 @@
-/**
- * @fileoverview Download Orchestrator - Unified Download Service
- * @description Orchestrates single and bulk downloads using GM_download when available.
- *
- * **Architecture**:
- * - Single downloads: Delegates to downloadSingleFile (handles strategy internally)
- * - Bulk downloads: Creates ZIP via downloadAsZip, saves via detected method
- *
- * **Download Strategies**:
- * - GM_download: Tampermonkey native (preferred, better UX)
- *
- */
+/** @fileoverview Unified download service: single + bulk (ZIP) via GM_download. */
 
 import { planBulkDownload, planZipSave } from '@shared/core/download/download-plan';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
@@ -29,25 +18,7 @@ import { ErrorCode } from '@shared/types/result.types';
 
 let _downloadInstance: DownloadOrchestrator | null = null;
 
-/**
- * DownloadOrchestrator - Central download service
- *
- * Singleton service that handles all media downloads.
- * Automatically selects the best download method based on environment.
- *
- * @example
- * ```typescript
- * const orchestrator = DownloadOrchestrator.getInstance();
- *
- * // Single download
- * await orchestrator.downloadSingle(mediaInfo);
- *
- * // Bulk download as ZIP
- * await orchestrator.downloadBulk(mediaItems, { zipFilename: 'gallery.zip' });
- * ```
- */
 export class DownloadOrchestrator {
-  /** Cached download capability detection (lazy initialized) */
   private capability: DownloadCapability | null = null;
   private _initialized = false;
 

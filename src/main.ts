@@ -1,8 +1,4 @@
-/**
- * @fileoverview Main entry point.
- * Orchestrates bootstrap stages, startup, and graceful cleanup.
- * \@run-at document-idle — runs after DOM is ready per userscript guarantee.
- */
+/** @fileoverview Main entry. Orchestrates bootstrap stages, startup, and cleanup. */
 
 import { initializeCoreBaseServices } from '@bootstrap/base-services';
 import { initializeGalleryApp, initializeGalleryServices } from '@bootstrap/gallery-init';
@@ -15,10 +11,8 @@ import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
-// Global styles (side-effect import)
 import './styles/globals';
 
-// Inline types (were from @shared/container/app-container and @shared/interfaces/handler.interfaces)
 interface GalleryLifecycleApp {
   initialize(): Promise<void>;
   cleanup(): Promise<void>;
@@ -38,17 +32,14 @@ const lifecycleState = {
   galleryApp: null as GalleryLifecycleApp | null,
 };
 
-// Inlined from @bootstrap/events
 type Unregister = () => void;
 
 function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
   const hasWindow = typeof window !== 'undefined' && !!window.addEventListener;
   const debugEnabled = __DEV__;
   if (!hasWindow) {
-    if (debugEnabled) logger.debug('[events] 🧩 Global events wiring skipped (no window context)');
-    return () => {
-      /* noop */
-    };
+    if (debugEnabled) logger.debug('[events] Global events wiring skipped (no window context)');
+    return () => { /* noop */ };
   }
   let disposed = false;
   const eventManager = EventManager.getInstance();
@@ -60,21 +51,17 @@ function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
     onBeforeUnload();
   };
   eventManager.addEventListener(window, 'pagehide', invokeOnce as EventListener, {
-    once: true,
-    passive: true,
-    signal: controller.signal,
-    context: 'bootstrap:pagehide',
+    once: true, passive: true, signal: controller.signal, context: 'bootstrap:pagehide',
   });
-  if (debugEnabled) logger.debug('[events] 🧩 Global events wired (pagehide only)');
+  if (debugEnabled) logger.debug('[events] Global events wired (pagehide only)');
   return () => {
     if (disposed) return;
     disposed = true;
     controller.abort();
-    if (debugEnabled) logger.debug('[events] 🧩 Global events unwired');
+    if (debugEnabled) logger.debug('[events] Global events unwired');
   };
 }
 
-// Inlined from @bootstrap/dev-namespace
 function setupDevNamespace(
   galleryAppInstance: { initialize(): Promise<void>; cleanup(): Promise<void> } | null | undefined,
   actions: {
@@ -246,7 +233,4 @@ async function startApplication(): Promise<void> {
   return lifecycleState.startPromise;
 }
 
-// Fire-and-forget startup. Callers can still await startApplication() to observe failures.
-void startApplication().catch(() => {
-  /* noop */
-});
+void startApplication().catch(() => { /* noop */ });
