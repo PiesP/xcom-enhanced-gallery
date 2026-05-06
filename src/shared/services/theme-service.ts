@@ -10,6 +10,8 @@ import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 
+const MAX_RECURSION_DEPTH = 5;
+
 // Theme types (inlined from theme-service.contract.ts)
 export type Theme = 'light' | 'dark';
 export type ThemeSetting = 'auto' | Theme;
@@ -29,7 +31,6 @@ export interface ThemeServiceContract {
   getCurrentTheme(): ThemeSetting;
   getEffectiveTheme(): Theme;
   setTheme(setting: ThemeSetting | string, options?: ThemeSetOptions): void;
-  setMaxRecursion(maxRecursion: number): void;
   isDarkMode(): boolean;
   onThemeChange(listener: ThemeChangeListener): () => void;
   bindSettingsService(settingsService: SettingsServiceLike): void;
@@ -55,7 +56,6 @@ export class ThemeService implements ThemeServiceContract {
   private boundSettingsService: SettingsServiceLike | null = null;
   private observer: MutationObserver | null = null;
   private observedThemeScopes: WeakSet<Element> = new WeakSet();
-  private maxRecursion = 5;
   private recursionDepth = 0;
 
   public static getInstance(): ThemeService {
@@ -113,11 +113,6 @@ export class ThemeService implements ThemeServiceContract {
       this.themeSetting = settingsTheme;
       this.applyCurrentTheme(true);
     }
-  }
-
-  /** @internal Override max recursion depth (default 5) for test scenarios */
-  public setMaxRecursion(maxRecursion: number): void {
-    this.maxRecursion = maxRecursion;
   }
 
   public setTheme(setting: ThemeSetting | string, options?: ThemeSetOptions): void {
@@ -295,10 +290,10 @@ export class ThemeService implements ThemeServiceContract {
   }
 
   private notifyListeners(): void {
-    if (this.recursionDepth >= this.maxRecursion) {
+    if (this.recursionDepth >= MAX_RECURSION_DEPTH) {
       if (__DEV__) {
         logger.warn(
-          `[ThemeService] Max recursion depth (${this.maxRecursion}) reached; bailing out`
+          `[ThemeService] Max recursion depth (${MAX_RECURSION_DEPTH}) reached; bailing out`
         );
       }
       this.recursionDepth = 0;
