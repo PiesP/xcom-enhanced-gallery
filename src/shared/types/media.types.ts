@@ -141,16 +141,15 @@ export type ExtractionSource = (typeof ExtractionSource)[keyof typeof Extraction
  * Extraction metadata (merged from Core)
  */
 interface ExtractionMetadata {
-  readonly extractionTime?: number | undefined;
-  readonly extractedAt?: number | undefined;
-  readonly strategiesUsed?: readonly string[] | undefined;
-  readonly sourceCount?: number | undefined;
-  readonly cacheHits?: number | undefined;
-  readonly retryCount?: number | undefined;
-  readonly sourceType?: string | undefined;
-  readonly strategy?: string | undefined;
-  readonly error?: string | undefined;
-  readonly [key: string]: unknown;
+  readonly extractionTime?: number;
+  readonly extractedAt?: number;
+  readonly strategiesUsed?: readonly string[];
+  readonly sourceCount?: number;
+  readonly cacheHits?: number;
+  readonly retryCount?: number;
+  readonly sourceType?: string;
+  readonly strategy?: string;
+  readonly error?: string;
 }
 
 /**
