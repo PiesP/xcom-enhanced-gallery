@@ -2,24 +2,36 @@
  * @fileoverview Service registry, type-safe settings access, and singleton accessors.
  */
 
-import type { GalleryRenderer } from '@features/gallery/GalleryRenderer';
 import type { AppSettings } from '@features/settings/types/settings.types';
 import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
 import { LanguageService } from '@shared/services/language-service';
 import { MediaService } from '@shared/services/media-service';
 import { ThemeService } from '@shared/services/theme-service';
 
+/**
+ * Minimal interface for GalleryRenderer to avoid depending on the Features layer
+ * from the Shared layer (DIP violation).
+ */
+export interface GalleryRendererLike {
+  render(
+    mediaItems: readonly import('@shared/types/media.types').MediaInfo[],
+    options?: Record<string, unknown>
+  ): Promise<void>;
+  close(): void;
+  isRendering(): boolean;
+}
+
 // ============================================================================
 // Service Registry (module-level vars)
 // ============================================================================
 
-let _renderer: GalleryRenderer | null = null;
+let _renderer: GalleryRendererLike | null = null;
 
-export function registerRenderer(r: GalleryRenderer): void {
+export function registerRenderer(r: GalleryRendererLike): void {
   _renderer = r;
 }
 
-export function getRenderer(): GalleryRenderer {
+export function getRenderer(): GalleryRendererLike {
   if (!_renderer) throw new Error('GalleryRenderer not registered');
   return _renderer;
 }
@@ -29,8 +41,8 @@ export function hasRenderer(): boolean {
 }
 
 interface SettingsLike {
-  get<T = unknown>(key: string): T | undefined;
-  set<T = unknown>(key: string, value: T): Promise<void>;
+  get(key: string): unknown;
+  set(key: string, value: unknown): Promise<void>;
 }
 
 let _settings: SettingsLike | null = null;
@@ -70,8 +82,8 @@ export function getGalleryRenderer() {
   return getRenderer();
 }
 
-export function registerSettingsManager(settings: unknown): void {
-  registerSettings(settings as Parameters<typeof registerSettings>[0]);
+export function registerSettingsManager(settings: SettingsLike): void {
+  registerSettings(settings);
 }
 
 export function tryGetSettingsManager<T = unknown>(): T | null {
@@ -122,7 +134,7 @@ export function getTypedSettingOr<P extends SettingPath>(
   path: P,
   fallback: SettingValue<P>
 ): SettingValue<P> {
-  const value = requireSettingsService().get<SettingValue<P>>(path);
+  const value = requireSettingsService().get(path) as SettingValue<P> | undefined;
   return value === undefined ? fallback : value;
 }
 

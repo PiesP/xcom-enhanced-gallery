@@ -22,7 +22,7 @@ import { createDebounced } from '@shared/async/debounce';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/container';
 import type { JSX, JSXElement } from '@shared/external/vendors';
 import { useTranslation } from '@shared/hooks/use-translation';
-import { gallerySignals } from '@shared/state/signals/gallery.signals';
+import { gallerySignals, setCurrentVideoElement } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types/ui.types';
 import {
   createIntrinsicSizingStyle,
@@ -143,14 +143,14 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     if (local.isActive && video) {
       const alreadySignaled = untrack(() => gallerySignals.currentVideoElement === video);
       if (!alreadySignaled) {
-        gallerySignals.currentVideoElement = video;
+        setCurrentVideoElement(video);
       }
       return;
     }
 
     const shouldClear = untrack(() => gallerySignals.currentVideoElement === video);
     if (shouldClear) {
-      gallerySignals.currentVideoElement = null;
+      setCurrentVideoElement(null);
     }
   });
 

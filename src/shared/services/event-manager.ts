@@ -50,8 +50,6 @@ interface ListenerContext {
   readonly context: string | undefined;
 }
 
-const listeners = new Map<string, ListenerContext>();
-
 // ============================================================================
 // EventManager
 // ============================================================================
@@ -65,6 +63,7 @@ export class EventManager {
   private _initialized = false;
   private isDestroyed = false;
 
+  private readonly listeners = new Map<string, ListenerContext>();
   private readonly ownedListenerContexts = new Map<string, string | undefined>();
 
   private constructor() {}
@@ -78,7 +77,6 @@ export class EventManager {
   /** @internal Test helper */
   public static resetForTests(): void {
     _eventManagerInstance?.cleanup();
-    listeners.clear();
     _eventManagerInstance = null;
   }
 
@@ -141,7 +139,7 @@ export class EventManager {
         options: listenerOptions,
         context,
       };
-      listeners.set(id, ctx);
+      this.listeners.set(id, ctx);
       this.ownedListenerContexts.set(id, context);
 
       return id;
@@ -162,7 +160,7 @@ export class EventManager {
     }
 
     this.ownedListenerContexts.delete(id);
-    return removeListenerById(id);
+    return this.removeListenerById(id);
   }
 
   /**
@@ -179,7 +177,7 @@ export class EventManager {
     let count = 0;
     for (const id of toRemove) {
       this.ownedListenerContexts.delete(id);
-      if (removeListenerById(id)) {
+      if (this.removeListenerById(id)) {
         count++;
       }
     }
@@ -201,13 +199,13 @@ export class EventManager {
     const byContext: Record<string, number> = {};
     const byType: Record<string, number> = {};
 
-    for (const ctx of listeners.values()) {
+    for (const ctx of this.listeners.values()) {
       const c = ctx.context || 'default';
       byContext[c] = (byContext[c] || 0) + 1;
       byType[ctx.type] = (byType[ctx.type] || 0) + 1;
     }
 
-    return { total: listeners.size, byContext, byType };
+    return { total: this.listeners.size, byContext, byType };
   }
 
   /** Clean up and mark as destroyed */
@@ -219,7 +217,7 @@ export class EventManager {
 
     for (const id of ids) {
       try {
-        removeListenerById(id);
+        this.removeListenerById(id);
       } catch {
         // Swallow errors during cleanup
       }
@@ -230,28 +228,28 @@ export class EventManager {
       logger.debug('EventManager cleanup completed');
     }
   }
-}
 
-/**
- * Remove a listener from the registry and DOM by ID.
- */
-function removeListenerById(id: string): boolean {
-  const ctx = listeners.get(id);
-  if (!ctx) {
-    if (__DEV__) {
-      logger.warn('[EventManager] Listener not found for removal', { id });
+  /**
+   * Remove a listener from the registry and DOM by ID.
+   */
+  private removeListenerById(id: string): boolean {
+    const ctx = this.listeners.get(id);
+    if (!ctx) {
+      if (__DEV__) {
+        logger.warn('[EventManager] Listener not found for removal', { id });
+      }
+      return false;
     }
-    return false;
-  }
 
-  try {
-    ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
-    listeners.delete(id);
-    return true;
-  } catch (error) {
-    if (__DEV__) {
-      logger.error('[EventManager] Failed to remove listener', { id, type: ctx.type, error });
+    try {
+      ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
+      this.listeners.delete(id);
+      return true;
+    } catch (error) {
+      if (__DEV__) {
+        logger.error('[EventManager] Failed to remove listener', { id, type: ctx.type, error });
+      }
+      return false;
     }
-    return false;
   }
 }

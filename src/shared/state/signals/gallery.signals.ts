@@ -85,9 +85,8 @@ const [mediaItemsSig, setMediaItems] = createSignalSafe<readonly MediaInfo[]>(
 );
 const [currentIndexSig, setCurrentIndex] = createSignalSafe<number>(INITIAL_STATE.currentIndex);
 const [focusedIndexSig, setFocusedIndex] = createSignalSafe<number | null>(null);
-const [currentVideoElementSig, setCurrentVideoElement] = createSignalSafe<HTMLVideoElement | null>(
-  null
-);
+export const [currentVideoElementSig, setCurrentVideoElement] =
+  createSignalSafe<HTMLVideoElement | null>(null);
 
 // UI state signals (inlined from ui.state.ts)
 const [_viewModeSig, _setViewMode] = createSignalSafe<ViewMode>(INITIAL_STATE.viewMode);
@@ -98,57 +97,33 @@ export const gallerySignals = {
   get isOpen() {
     return isOpenSig();
   },
-  set isOpen(v: boolean) {
-    setIsOpen(v);
-  },
   get mediaItems() {
     return mediaItemsSig();
-  },
-  set mediaItems(v: readonly MediaInfo[]) {
-    setMediaItems(v);
   },
   get currentIndex() {
     return currentIndexSig();
   },
-  set currentIndex(v: number) {
-    setCurrentIndex(v);
-  },
   get isLoading() {
     return _isLoadingSig();
-  },
-  set isLoading(v: boolean) {
-    _setIsLoading(v);
   },
   get error() {
     return _errorSig();
   },
-  set error(v: string | null) {
-    _setErrorSig(v);
-  },
   get viewMode() {
     return _viewModeSig();
-  },
-  set viewMode(v: ViewMode) {
-    _setViewMode(v);
   },
   get focusedIndex() {
     return focusedIndexSig();
   },
-  set focusedIndex(v: number | null) {
-    setFocusedIndex(v);
-  },
   get currentVideoElement() {
     return currentVideoElementSig();
-  },
-  set currentVideoElement(v: HTMLVideoElement | null) {
-    setCurrentVideoElement(v);
   },
 };
 
 export function setError(error: string | null): void {
-  gallerySignals.error = error;
+  _setErrorSig(error);
   if (error) {
-    gallerySignals.isLoading = false;
+    _setIsLoading(false);
   }
 }
 
@@ -162,7 +137,7 @@ function applyGallerySessionUpdate(state: GallerySessionState): void {
     setCurrentIndex(state.currentIndex);
     setFocusedIndex(state.focusedIndex);
     setCurrentVideoElement(state.currentVideoElement);
-    gallerySignals.error = state.error;
+    _setErrorSig(state.error);
     setIsOpen(state.isOpen);
   });
 }
@@ -171,9 +146,9 @@ export function applyGalleryStateUpdate(state: GalleryState): void {
   batch(() => {
     setMediaItems(state.mediaItems);
     setCurrentIndex(state.currentIndex);
-    gallerySignals.isLoading = state.isLoading;
-    gallerySignals.error = state.error;
-    gallerySignals.viewMode = state.viewMode;
+    _setIsLoading(state.isLoading);
+    _setErrorSig(state.error);
+    _setViewMode(state.viewMode);
     setIsOpen(state.isOpen);
   });
 }

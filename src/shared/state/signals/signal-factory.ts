@@ -5,7 +5,7 @@ import { createComputed, createRoot, createSignal } from 'solid-js';
 export type Signal<T> = ReturnType<typeof createSignal<T>>;
 
 export function createSignalSafe<T>(initial: T): Signal<T> {
-  return createSignal<T>(initial, { equals: false });
+  return createSignal<T>(initial);
 }
 
 export function effectSafe(fn: () => void): () => void {
