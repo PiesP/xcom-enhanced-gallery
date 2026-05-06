@@ -88,7 +88,7 @@ export function reportError(error: unknown, options: ErrorReportOptions): ErrorR
   }
 
   if (severity === 'critical') {
-    throw error instanceof Error ? error : new Error(message);
+    console.error('[Critical Error]', message, payload);
   }
 
   return { reported: true, message, context: options.context, severity };

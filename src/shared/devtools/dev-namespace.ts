@@ -14,18 +14,12 @@ type DevNamespaceHost = typeof globalThis & {
   __XEG__?: DevNamespace;
 };
 
-const _env = {
-  get DEV(): boolean {
-    return import.meta.env.DEV;
-  },
-} as const;
-
 /**
  * Ensure development namespace exists on globalThis (dev builds only).
  * @returns The development namespace, or `undefined` in production
  */
 function ensureDevNamespace(): DevNamespace | undefined {
-  if (!_env.DEV) {
+  if (!import.meta.env.DEV) {
     return undefined;
   }
 

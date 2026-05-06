@@ -2,7 +2,7 @@ import type { JSXElement } from '@shared/external/vendors';
 
 import { EventManager } from '@shared/services/event-manager';
 import { cx } from '@shared/utils/text/formatting';
-import { createEffect, onCleanup, splitProps } from 'solid-js';
+import { onCleanup, onMount, splitProps } from 'solid-js';
 import { render } from 'solid-js/web';
 
 import type { GalleryContainerProps } from './GalleryContainer.types';
@@ -38,19 +38,10 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
 
   const classes = cx('xeg-gallery-overlay', 'xeg-gallery-container', local.className);
 
-  // Track previous listener ID so we can clean it up before registering a new one.
-  let prevListenerId: string | null = null;
-
-  createEffect(() => {
-    if (!local.onClose) return;
-
-    // Clean up previous listener before registering a new one.
-    if (prevListenerId) {
-      EventManager.getInstance().removeListener(prevListenerId);
-      prevListenerId = null;
-    }
-
-    const escapeListener = (event: Event): void => {
+  // Register the Escape key listener once on mount.
+  // local.onClose is a reactive getter, so it always reads the latest callback value at invocation time.
+  onMount(() => {
+    const handler = (event: Event): void => {
       const keyboardEvent = event as KeyboardEvent;
       if (keyboardEvent.key === 'Escape') {
         keyboardEvent.preventDefault();
@@ -60,12 +51,11 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     };
 
     const eventManager = EventManager.getInstance();
-    prevListenerId = eventManager.addEventListener(document, 'keydown', escapeListener);
+    const listenerId = eventManager.addEventListener(document, 'keydown', handler);
 
     onCleanup(() => {
-      if (prevListenerId) {
-        eventManager.removeListener(prevListenerId);
-        prevListenerId = null;
+      if (listenerId) {
+        eventManager.removeListener(listenerId);
       }
     });
   });
