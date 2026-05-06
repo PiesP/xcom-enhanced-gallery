@@ -3,9 +3,9 @@
  * Simplified to only track isProcessing flag — full task tracking was unused.
  */
 
-import { createSignalSafe } from './signal-factory';
+import { createSignal } from 'solid-js';
 
-const [_isProcessing, setIsProcessing] = createSignalSafe<boolean>(false);
+const [_isProcessing, setIsProcessing] = createSignal<boolean>(false);
 
 export function acquireDownloadLock(): (() => void) | null {
   if (_isProcessing()) return null; // Already locked — prevent re-entry

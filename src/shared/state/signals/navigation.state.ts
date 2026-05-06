@@ -5,8 +5,8 @@
  * Uses fine-grained signals instead of state machine for simplicity.
  */
 
-import { createSignalSafe } from '@shared/state/signals/signal-factory';
 import type { NavigationSource } from '@shared/types/navigation.types';
+import { createSignal } from 'solid-js';
 
 interface NavigationStateData {
   readonly lastSource: NavigationSource;
@@ -33,13 +33,13 @@ const VALID_NAVIGATION_SOURCES = [
   'auto-focus',
 ] as const satisfies readonly NavigationSource[];
 
-const [_lastSource, setLastSource] = createSignalSafe<NavigationSource>(
+const [_lastSource, setLastSource] = createSignal<NavigationSource>(
   INITIAL_NAVIGATION_STATE.lastSource
 );
-const [_lastTimestamp, setLastTimestamp] = createSignalSafe<number>(
+const [_lastTimestamp, setLastTimestamp] = createSignal<number>(
   INITIAL_NAVIGATION_STATE.lastTimestamp
 );
-const [_lastNavigatedIndex, setLastNavigatedIndex] = createSignalSafe<number | null>(
+const [_lastNavigatedIndex, setLastNavigatedIndex] = createSignal<number | null>(
   INITIAL_NAVIGATION_STATE.lastNavigatedIndex
 );
 

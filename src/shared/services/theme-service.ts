@@ -4,7 +4,7 @@
  */
 
 import { APP_SETTINGS_STORAGE_KEY } from '@constants/settings';
-import { tryGetSettings } from '@shared/container/container';
+import { tryGetSettings } from '@shared/container/settings-registry';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';

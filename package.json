@@ -19,7 +19,7 @@
     "fmt": "biome check --linter-enabled=false .",
     "fmt:fix": "biome check --write --linter-enabled=false .",
     "fmt:check": "pnpm -s fmt",
-    "circular": "pnpm dlx madge --circular src/**/*.ts",
+    "circular": "pnpm dlx madge --circular --ts-config tsconfig.json --extensions ts,tsx src",
     "prebuild": "pnpm quality",
     "preinstall": "node ./tooling/node/ensure-pnpm.ts",
     "quality": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s circular && pnpm -s check:tsdoc && pnpm -s knip",

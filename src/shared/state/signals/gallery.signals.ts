@@ -21,12 +21,12 @@ import {
   validateFocusParams,
   validateNavigationParams,
 } from '@shared/state/signals/navigation.state';
-import { createSignalSafe, effectSafe } from '@shared/state/signals/signal-factory';
+import { effectSafe } from '@shared/state/signals/signal-factory';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { NavigationSource } from '@shared/types/navigation.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
 import { clampIndex } from '@shared/utils/types/safety';
-import { batch as solidBatch } from 'solid-js';
+import { createSignal, batch as solidBatch } from 'solid-js';
 
 type BatchExecutor = (fn: () => void) => void;
 const batch: BatchExecutor = (fn: () => void): void => solidBatch(fn);
@@ -78,19 +78,17 @@ export const galleryIndexEvents = createEventEmitter<{
   'navigate:complete': GalleryNavigateCompletePayload;
 }>();
 
-const [isOpenSig, setIsOpen] = createSignalSafe<boolean>(INITIAL_STATE.isOpen);
-const [mediaItemsSig, setMediaItems] = createSignalSafe<readonly MediaInfo[]>(
-  INITIAL_STATE.mediaItems
-);
-const [currentIndexSig, setCurrentIndex] = createSignalSafe<number>(INITIAL_STATE.currentIndex);
-const [focusedIndexSig, setFocusedIndex] = createSignalSafe<number | null>(null);
+const [isOpenSig, setIsOpen] = createSignal<boolean>(INITIAL_STATE.isOpen);
+const [mediaItemsSig, setMediaItems] = createSignal<readonly MediaInfo[]>(INITIAL_STATE.mediaItems);
+const [currentIndexSig, setCurrentIndex] = createSignal<number>(INITIAL_STATE.currentIndex);
+const [focusedIndexSig, setFocusedIndex] = createSignal<number | null>(null);
 export const [currentVideoElementSig, setCurrentVideoElement] =
-  createSignalSafe<HTMLVideoElement | null>(null);
+  createSignal<HTMLVideoElement | null>(null);
 
 // UI state signals (inlined from ui.state.ts)
-const [_viewModeSig, _setViewMode] = createSignalSafe<ViewMode>(INITIAL_STATE.viewMode);
-const [_isLoadingSig, _setIsLoading] = createSignalSafe<boolean>(INITIAL_STATE.isLoading);
-const [_errorSig, _setErrorSig] = createSignalSafe<string | null>(INITIAL_STATE.error);
+const [_viewModeSig, _setViewMode] = createSignal<ViewMode>(INITIAL_STATE.viewMode);
+const [_isLoadingSig, _setIsLoading] = createSignal<boolean>(INITIAL_STATE.isLoading);
+const [_errorSig, _setErrorSig] = createSignal<string | null>(INITIAL_STATE.error);
 
 export const gallerySignals = {
   get isOpen() {

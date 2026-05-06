@@ -197,53 +197,6 @@ export function isPartial<T>(result: Result<T>): result is ResultPartial<T> {
   return result.status === 'partial';
 }
 
-// ============================================================================
-// Rust-style Aliases (Phase: Result Unification)
-// ============================================================================
-
-/**
- * Create success Result (Rust-style alias for `success`)
- *
- * Convenience alias for Rust-like API. Same behavior as `success()`.
- *
- * @param data - Success data
- * @param meta - Optional metadata
- * @returns Enhanced Result (success)
- *
- * @example
- * ```typescript
- * const result = ok({ id: 1 });
- * // { status: 'success', data: { id: 1 }, code: ErrorCode.NONE }
- * ```
- */
-export const ok = success;
-
-/**
- * Create failure Result (Rust-style alias for `failure`)
- *
- * Convenience alias for Rust-like API. Same behavior as `failure()`.
- *
- * @param error - Error message
- * @param code - ErrorCode (default: UNKNOWN)
- * @param options - Additional options (cause, meta, failures)
- * @returns Enhanced Result (error)
- *
- * @example
- * ```typescript
- * const result = err('Not found', ErrorCode.ELEMENT_NOT_FOUND);
- * // { status: 'error', error: 'Not found', code: ErrorCode.ELEMENT_NOT_FOUND }
- * ```
- */
-export const err = failure;
-
-// ============================================================================
-// Result Utility Functions (Rust-style combinators)
-// ============================================================================
-
-// ============================================================================
-// Result Utility Functions (Rust-style combinators)
-// ============================================================================
-
 /**
  * Unwrap Result value or return default on failure
  *

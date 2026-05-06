@@ -50,8 +50,6 @@ export class Translator {
     return [...LANGUAGE_CODES];
   }
 
-  public async ensureLanguage(_language: BaseLanguageCode): Promise<void> {}
-
   public translate(
     language: BaseLanguageCode,
     key: TranslationKey,

@@ -226,29 +226,3 @@ export const STABLE_VIDEO_CONTAINERS_SELECTORS = VIDEO_CONTAINER_SELECTORS;
  * ```
  */
 export const STABLE_MEDIA_VIEWERS_SELECTORS = MEDIA_VIEWER_SELECTORS;
-
-// ============================================================================
-// Type Helpers
-// ============================================================================
-
-/**
- * Type helper: Extract selector string from single selector constant
- *
- * @example
- * ```typescript
- * type TweetSelectorType = SelectorString<typeof TWEET_SELECTOR>;
- * // "article[data-testid=\"tweet\"]"
- * ```
- */
-export type SelectorString<T extends string> = T;
-
-/**
- * Type helper: Extract selector union from selector array constant
- *
- * @example
- * ```typescript
- * type MediaSelectors = SelectorArray<typeof STABLE_MEDIA_CONTAINERS_SELECTORS>;
- * // "[data-testid=\"tweetPhoto\"]" | "[data-testid=\"videoPlayer\"]"
- * ```
- */
-export type SelectorArray<T extends readonly string[]> = T[number];
