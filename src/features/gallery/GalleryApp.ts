@@ -112,7 +112,6 @@ export class GalleryApp {
     } catch (error) {
       mediaErrorReporter.error(error, {
         code: 'MEDIA_EXTRACTION_ERROR',
-        notify: true,
       });
       this.userscript.notification({
         title: 'Error occurred',
@@ -158,7 +157,6 @@ export class GalleryApp {
       galleryErrorReporter.error(error, {
         code: 'GALLERY_OPEN_FAILED',
         metadata: { itemCount: mediaItems.length, startIndex },
-        notify: true,
       });
       this.userscript.notification({
         title: 'Failed to load gallery',

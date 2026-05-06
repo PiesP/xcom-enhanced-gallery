@@ -22,9 +22,51 @@ import {
 } from '@shared/state/signals/gallery.signals';
 import { effectSafe } from '@shared/state/signals/signal-factory';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
-import { createSignal, onCleanup } from 'solid-js';
+import { createSignal, type JSX, onCleanup } from 'solid-js';
 
 import './styles/gallery-global.css';
+
+interface GalleryRootProps {
+  readonly onClose: () => void;
+  readonly onDownloadCurrent: () => void;
+  readonly onDownloadAll: () => void;
+}
+
+function GalleryRoot(props: GalleryRootProps): JSX.Element {
+  const themeService = getThemeService();
+  const languageService = getLanguageService();
+
+  const [currentTheme, setCurrentTheme] = createSignal(themeService.getCurrentTheme());
+  const [currentLanguage, setCurrentLanguage] = createSignal(languageService.getCurrentLanguage());
+
+  const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));
+  const unbindLanguage = languageService.onLanguageChange((lang) => setCurrentLanguage(lang));
+
+  onCleanup(() => {
+    unbindTheme();
+    unbindLanguage();
+  });
+
+  return (
+    <GalleryContainer
+      onClose={props.onClose}
+      className={`${CSS.CLASSES.RENDERER} ${CSS.CLASSES.ROOT} xeg-theme-scope`}
+      data-theme={currentTheme()}
+      data-language={currentLanguage()}
+    >
+      <ErrorBoundary>
+        <VerticalGalleryView
+          onClose={props.onClose}
+          onPrevious={() => navigatePrevious('button')}
+          onNext={() => navigateNext('button')}
+          onDownloadCurrent={() => props.onDownloadCurrent()}
+          onDownloadAll={() => props.onDownloadAll()}
+          className={CSS.CLASSES.VERTICAL_VIEW}
+        />
+      </ErrorBoundary>
+    </GalleryContainer>
+  );
+}
 
 export class GalleryRenderer {
   private container: HTMLDivElement | null = null;
@@ -87,52 +129,18 @@ export class GalleryRenderer {
   private renderComponent(): void {
     if (!this.container) return;
 
-    const themeService = getThemeService();
-    const languageService = getLanguageService();
-
     const handleClose = () => {
       closeGallery();
       this.onCloseCallback?.();
     };
 
-    const handleDownload = (type: 'current' | 'all') => this.downloadHandler(type);
-
-    const Root = () => {
-      const [currentTheme, setCurrentTheme] = createSignal(themeService.getCurrentTheme());
-      const [currentLanguage, setCurrentLanguage] = createSignal(
-        languageService.getCurrentLanguage()
-      );
-
-      const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));
-      const unbindLanguage = languageService.onLanguageChange((lang) => setCurrentLanguage(lang));
-
-      onCleanup(() => {
-        unbindTheme();
-        unbindLanguage();
-      });
-
-      return (
-        <GalleryContainer
-          onClose={handleClose}
-          className={`${CSS.CLASSES.RENDERER} ${CSS.CLASSES.ROOT} xeg-theme-scope`}
-          data-theme={currentTheme()}
-          data-language={currentLanguage()}
-        >
-          <ErrorBoundary>
-            <VerticalGalleryView
-              onClose={handleClose}
-              onPrevious={() => navigatePrevious('button')}
-              onNext={() => navigateNext('button')}
-              onDownloadCurrent={() => handleDownload('current')}
-              onDownloadAll={() => handleDownload('all')}
-              className={CSS.CLASSES.VERTICAL_VIEW}
-            />
-          </ErrorBoundary>
-        </GalleryContainer>
-      );
-    };
-
-    mountGallery(this.container, () => <Root />);
+    mountGallery(this.container, () => (
+      <GalleryRoot
+        onClose={handleClose}
+        onDownloadCurrent={() => this.downloadHandler('current')}
+        onDownloadAll={() => this.downloadHandler('all')}
+      />
+    ));
     __DEV__ && logger.info('[GalleryRenderer] Gallery mounted');
   }
 
