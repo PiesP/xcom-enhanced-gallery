@@ -29,6 +29,7 @@ export interface ThemeServiceContract {
   getCurrentTheme(): ThemeSetting;
   getEffectiveTheme(): Theme;
   setTheme(setting: ThemeSetting | string, options?: ThemeSetOptions): void;
+  setMaxRecursion(maxRecursion: number): void;
   isDarkMode(): boolean;
   onThemeChange(listener: ThemeChangeListener): () => void;
   bindSettingsService(settingsService: SettingsServiceLike): void;
@@ -54,6 +55,8 @@ export class ThemeService implements ThemeServiceContract {
   private boundSettingsService: SettingsServiceLike | null = null;
   private observer: MutationObserver | null = null;
   private observedThemeScopes: WeakSet<Element> = new WeakSet();
+  private maxRecursion = 5;
+  private recursionDepth = 0;
 
   public static getInstance(): ThemeService {
     if (!_themeInstance) _themeInstance = new ThemeService();
@@ -110,6 +113,11 @@ export class ThemeService implements ThemeServiceContract {
       this.themeSetting = settingsTheme;
       this.applyCurrentTheme(true);
     }
+  }
+
+  /** @internal Override max recursion depth (default 5) for test scenarios */
+  public setMaxRecursion(maxRecursion: number): void {
+    this.maxRecursion = maxRecursion;
   }
 
   public setTheme(setting: ThemeSetting | string, options?: ThemeSetOptions): void {
@@ -287,7 +295,21 @@ export class ThemeService implements ThemeServiceContract {
   }
 
   private notifyListeners(): void {
-    this.listeners.forEach((listener) => listener(this.currentTheme, this.themeSetting));
+    if (this.recursionDepth >= this.maxRecursion) {
+      if (__DEV__) {
+        logger.warn(
+          `[ThemeService] Max recursion depth (${this.maxRecursion}) reached; bailing out`
+        );
+      }
+      this.recursionDepth = 0;
+      return;
+    }
+    this.recursionDepth++;
+    try {
+      this.listeners.forEach((listener) => listener(this.currentTheme, this.themeSetting));
+    } finally {
+      this.recursionDepth--;
+    }
   }
 
   private async loadThemeAsync(): Promise<ThemeSetting | null> {

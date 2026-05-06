@@ -101,8 +101,8 @@ export function handleKeyboardEvent(
 
     // isNavKey/isVideoKey: Space included in both to pass the reject guard
     // below, then routed to video control (play/pause) before navigation check.
-    const isNavKey = NAVIGATION_KEYS.has(key) || key === ' ' || key === 'Space';
-    const isVideoKey = VIDEO_CONTROL_KEYS.has(key) || key === ' ' || key === 'Space';
+    const isNavKey = NAVIGATION_KEYS.has(key) || key === 'Space';
+    const isVideoKey = VIDEO_CONTROL_KEYS.has(key) || key === 'Space';
 
     if (!isNavKey && !isVideoKey) {
       handlers.onKeyboardEvent?.(event);
@@ -114,7 +114,7 @@ export function handleKeyboardEvent(
 
     if (key === '?') {
       showKeyboardHelp();
-    } else if (key === ' ' || key === 'Space') {
+    } else if (key === 'Space') {
       handleVideoControl(key);
     } else if ((key === 'ArrowUp' || key === 'ArrowDown') && gallerySignals.currentVideoElement) {
       handleVideoControl(key);
@@ -168,7 +168,6 @@ function handleNavigation(key: string): void {
  */
 function handleVideoControl(key: string): void {
   switch (key) {
-    case ' ':
     case 'Space':
       if (shouldExecuteKeyboardAction('Space', 150)) {
         executeVideoControl('togglePlayPause');

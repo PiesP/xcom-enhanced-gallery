@@ -90,7 +90,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
 
-  // Reset per-media load/error state when the item is reused with a different media.
+  // Track media.id changes to reset load/error state when media item changes
   createEffect(() => {
     void local.media.id;
     setIsLoaded(false);
@@ -194,7 +194,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     // - Enter: activate
     // - Space: activate + prevent page scroll
     const key = event.key;
-    if (key === 'Enter' || key === ' ' || key === 'Spacebar') {
+    if (key === 'Enter' || key === 'Space') {
       event.preventDefault();
       event.stopPropagation();
       local.onClick();
@@ -309,7 +309,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       data-testid={__DEV__ ? local['data-testid'] : undefined}
     >
       <div class={styles.imageWrapper} data-xeg-role="media-wrapper">
-        {!isLoaded() && !isError() && !isVideo() && (
+        {!isLoaded() && !isError() && (
           <div class={styles.placeholder}>
             <div class={cx('xeg-spinner', styles.loadingSpinner)} />
           </div>

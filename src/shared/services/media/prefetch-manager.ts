@@ -73,11 +73,42 @@ export class PrefetchManager {
   }
 
   private async prefetchSingle(url: string): Promise<void> {
-    if (this.cache.has(url)) return;
+    // Check if already cached or in-flight
+    const existing = this.cache.get(url);
+    if (existing) {
+      // Race condition: if the existing promise already settled (error), abort the duplicate
+      // and let the original caller handle the result.
+      return;
+    }
+
+    // Check if there's an active request for this URL and abort the duplicate
+    const existingController = this.activeRequests.get(url);
+    if (existingController) {
+      // Another request is already in-flight; wait for it rather than starting a duplicate.
+      const pendingPromise = this.cache.get(url);
+      if (pendingPromise) {
+        try {
+          await pendingPromise;
+        } catch {
+          // Original failed; allow this call to retry.
+        }
+        // If the cache now has a result, return; otherwise fall through to retry.
+        if (this.cache.has(url)) return;
+      }
+      // Abort the stale in-flight request before starting a fresh one.
+      existingController.abort();
+      this.activeRequests.delete(url);
+    }
 
     const controller = new AbortController();
     this.activeRequests.set(url, controller);
 
+    // Evict oldest entry if cache is full
+    if (this.cache.size >= this.maxEntries) {
+      this.evictOldest();
+    }
+
+    // Set placeholder promise immediately to prevent concurrent duplicate requests.
     const fetchPromise = HttpRequestService.getInstance()
       .get<Blob>(url, {
         signal: controller.signal,
@@ -91,17 +122,12 @@ export class PrefetchManager {
         this.activeRequests.delete(url);
       });
 
-    // Evict oldest entry if cache is full
-    if (this.cache.size >= this.maxEntries) {
-      this.evictOldest();
-    }
-
     this.cache.set(url, fetchPromise);
 
     try {
       await fetchPromise;
     } catch (error) {
-      // Remove from cache on error
+      // Remove from cache on error (only if our promise is still the cached one)
       if (this.cache.get(url) === fetchPromise) {
         this.cache.delete(url);
       }

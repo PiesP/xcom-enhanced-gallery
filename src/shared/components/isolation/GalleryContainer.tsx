@@ -38,8 +38,17 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
 
   const classes = cx('xeg-gallery-overlay', 'xeg-gallery-container', local.className);
 
+  // Track previous listener ID so we can clean it up before registering a new one.
+  let prevListenerId: string | null = null;
+
   createEffect(() => {
     if (!local.onClose) return;
+
+    // Clean up previous listener before registering a new one.
+    if (prevListenerId) {
+      EventManager.getInstance().removeListener(prevListenerId);
+      prevListenerId = null;
+    }
 
     const escapeListener = (event: Event): void => {
       const keyboardEvent = event as KeyboardEvent;
@@ -51,10 +60,13 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     };
 
     const eventManager = EventManager.getInstance();
-    const listenerId = eventManager.addEventListener(document, 'keydown', escapeListener);
+    prevListenerId = eventManager.addEventListener(document, 'keydown', escapeListener);
 
     onCleanup(() => {
-      if (listenerId) eventManager.removeListener(listenerId);
+      if (prevListenerId) {
+        eventManager.removeListener(prevListenerId);
+        prevListenerId = null;
+      }
     });
   });
 

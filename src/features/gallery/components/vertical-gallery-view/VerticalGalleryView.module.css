@@ -204,7 +204,7 @@
 }
 
 .itemsContainer::-webkit-scrollbar-thumb {
-  background: var(--xeg-color-neutral-300);
+  background: var(--xeg-scrollbar-thumb-color, var(--xeg-color-neutral-300));
   border-radius: var(
     --xeg-scrollbar-border-radius
   ); /* Tokenized replacement for the old 0.25rem radius */
@@ -213,7 +213,7 @@
 }
 
 .itemsContainer::-webkit-scrollbar-thumb:hover {
-  background: var(--xeg-color-neutral-400);
+  background: var(--xeg-scrollbar-thumb-hover-color, var(--xeg-color-neutral-400));
 }
 
 .container.uiHidden .toolbarWrapper {
