@@ -5,9 +5,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "vite build",
+    "build": "pnpm quality && vite build",
     "build:dev": "vite build --mode development",
-    "build:fast": "vite build",
     "check:src": "tsc --noEmit --project tsconfig.build.json",
     "check:tools": "tsc --noEmit --project tsconfig.tools.json",
     "check": "pnpm check:src && pnpm check:tools",
@@ -20,11 +19,9 @@
     "fmt:fix": "biome check --write --linter-enabled=false .",
     "fmt:check": "pnpm -s fmt",
     "circular": "pnpm dlx madge --circular --ts-config tsconfig.json --extensions ts,tsx src",
-    "prebuild": "pnpm quality",
     "preinstall": "node ./tooling/node/ensure-pnpm.ts",
     "quality": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s circular && pnpm -s check:tsdoc && pnpm -s knip",
     "quality:fix": "pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s check && pnpm -s circular && pnpm -s check:tsdoc && pnpm -s knip",
-    "quality:ci": "pnpm -s quality",
     "test:deps:check": "pnpm -C test run deps:check",
     "test:deps:sync": "pnpm -C test run deps:sync",
     "test:install": "pnpm -C test install",
@@ -32,8 +29,7 @@
     "test:e2e": "pnpm -C test run e2e",
     "test:mut:priority": "pnpm -C test run mut:priority",
     "test:all": "pnpm -C test run test:all",
-    "verify": "pnpm build && pnpm run test:all",
-    "verify:fast": "pnpm build:fast && pnpm run test:all"
+    "verify": "pnpm build && pnpm run test:all"
   },
   "keywords": [
     "userscript",

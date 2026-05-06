@@ -9,9 +9,8 @@
  * - Quality checks (type checking, linting, TSDoc validation, unused-code checks)
  *
  * Build modes:
- *   pnpm build      - Production build (runs `pnpm quality` via prebuild)
- *   pnpm build:dev  - Development build (no implicit quality checks)
- *   pnpm build:fast - Production build (no implicit quality checks)
+ *   pnpm build      - Production build (runs quality checks inline)
+ *   pnpm build:dev  - Development build (no quality checks)
  *
  * Quality checks:
  *   pnpm quality     - Typecheck + Biome + TSDoc + Knip
@@ -181,9 +180,6 @@ export default defineConfig(({ mode }): UserConfig => {
       __FEATURE_MEDIA_EXTRACTION__: JSON.stringify(featureMediaExtraction),
       __VERSION__: JSON.stringify(version),
       __BUILD_TIME__: JSON.stringify(buildTime),
-      'import.meta.env.MODE': JSON.stringify(mode),
-      'import.meta.env.DEV': JSON.stringify(isDev),
-      'import.meta.env.PROD': JSON.stringify(!isDev),
     },
 
     logLevel: 'warn',
