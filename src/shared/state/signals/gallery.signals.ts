@@ -78,7 +78,10 @@ export const galleryIndexEvents = createEventEmitter<{
   'navigate:complete': GalleryNavigateCompletePayload;
 }>();
 
-const [isOpenSig, setIsOpen] = createSignal<boolean>(INITIAL_STATE.isOpen);
+const [isOpenSig, _setIsOpenInternal] = createSignal<boolean>(INITIAL_STATE.isOpen);
+export function setIsOpen(value: boolean): void {
+  _setIsOpenInternal(value);
+}
 const [mediaItemsSig, setMediaItems] = createSignal<readonly MediaInfo[]>(INITIAL_STATE.mediaItems);
 const [currentIndexSig, setCurrentIndex] = createSignal<number>(INITIAL_STATE.currentIndex);
 const [focusedIndexSig, setFocusedIndex] = createSignal<number | null>(null);
