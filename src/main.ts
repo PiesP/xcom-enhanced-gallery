@@ -9,6 +9,7 @@ import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-
 import { GlobalErrorHandler } from '@shared/error/error-handler';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
+import type { BootstrapStage } from '@shared/types/lifecycle.types';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 import './styles/globals';
@@ -16,12 +17,6 @@ import './styles/globals';
 interface GalleryLifecycleApp {
   initialize(): Promise<void>;
   cleanup(): Promise<void>;
-}
-interface BootstrapStage {
-  readonly label: string;
-  readonly run: () => Promise<void> | void;
-  readonly shouldRun?: () => boolean;
-  readonly optional?: boolean;
 }
 
 const isTestMode = import.meta.env.MODE === 'test';

@@ -146,29 +146,15 @@ const resolvedAppConfig = Object.freeze({
 } as const);
 
 /**
- * Type alias for the resolved application configuration.
- * Preserves literal types from the frozen configuration object.
- */
-type ResolvedAppConfig = typeof resolvedAppConfig;
-
-/**
  * Application configuration singleton.
  * Immutable reference to the resolved configuration object.
  *
  * @internal
  * @remarks
  * Direct access is internal. External consumers should use {@link createAppConfig}
- * for bootstrap context or {@link getAppConfig} for general access.
+ * for bootstrap context or for general access.
  */
-const APP_CONFIG: ResolvedAppConfig = resolvedAppConfig;
-
-/**
- * Get the application configuration object.
- * @internal Resolve first non-empty string from multiple values with priority fallback.
- */
-function getAppConfig(): ResolvedAppConfig {
-  return APP_CONFIG;
-}
+const APP_CONFIG: typeof resolvedAppConfig = resolvedAppConfig;
 
 /**
  * Create bootstrap-facing application configuration.
@@ -187,7 +173,7 @@ function getAppConfig(): ResolvedAppConfig {
  * ```
  */
 export function createAppConfig(): BootstrapAppConfig {
-  const config = getAppConfig();
+  const config = APP_CONFIG;
 
   return {
     version: config.meta.version,

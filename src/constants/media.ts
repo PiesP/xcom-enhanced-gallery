@@ -4,6 +4,17 @@
  */
 
 /**
+ * Media CDN host allow-lists used by URL validators.
+ *
+ * Extracted as a separate const so MEDIA.DOMAINS can reference it
+ * without duplicating string literals.
+ */
+const MEDIA_HOSTS = {
+  /** Media CDN hosts (excludes abs.twimg.com which is static assets) */
+  MEDIA_CDN: ['pbs.twimg.com', 'video.twimg.com'],
+} as const;
+
+/**
  * Media-related constants: domains, types, extensions, quality variants.
  *
  * Uses `as const` to preserve literal types for exhaustive pattern matching.
@@ -25,19 +36,10 @@ export const MEDIA = {
    *
    * @see {@link MEDIA.HOSTS.MEDIA_CDN} for media-specific hosts
    */
-  DOMAINS: ['pbs.twimg.com', 'video.twimg.com', 'abs.twimg.com'],
+  DOMAINS: [...MEDIA_HOSTS.MEDIA_CDN, 'abs.twimg.com'],
 
-  /**
-   * Host allow-lists used by URL validators
-   *
-   * @remarks
-   * Keep this as the single source of truth to avoid policy drift.
-   * Each category represents a specific use case for domain validation.
-   */
-  HOSTS: {
-    /** Media CDN hosts (excludes abs.twimg.com which is static assets) */
-    MEDIA_CDN: ['pbs.twimg.com', 'video.twimg.com'],
-  },
+  /** @internal Reference to MEDIA_HOSTS const */
+  HOSTS: MEDIA_HOSTS,
 
   /**
    * Media type identifiers
