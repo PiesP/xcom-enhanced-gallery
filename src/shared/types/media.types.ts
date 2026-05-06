@@ -197,11 +197,11 @@ export class ExtractionError extends Error {
 }
 
 /**
- * API extractor interface
+ * Media extractor strategy interface
  */
-export interface APIExtractor {
+export interface MediaExtractorStrategy {
   /**
-   * Media extraction via API
+   * Media extraction via strategy
    */
   extract(
     tweetInfo: TweetInfo,

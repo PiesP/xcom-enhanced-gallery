@@ -23,13 +23,13 @@ export type {
 // Lifecycle/Cleanup Types
 export type { Cleanupable } from './lifecycle.types';
 export type {
-  APIExtractor,
   ExtractionStrategy,
   GalleryRenderOptions,
   MediaEntity,
   MediaExtractionOptions,
   MediaExtractionResult,
   MediaExtractor,
+  MediaExtractorStrategy,
   MediaId,
   MediaInfo,
   MediaInfoWithFilename,

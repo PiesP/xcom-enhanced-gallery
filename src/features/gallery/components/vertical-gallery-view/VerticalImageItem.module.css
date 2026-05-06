@@ -131,7 +131,7 @@
   -webkit-user-drag: none;
   transform: var(--xeg-gpu-hack);
   will-change: opacity;
-  transition: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
 /* Loading/Loaded state transitions */

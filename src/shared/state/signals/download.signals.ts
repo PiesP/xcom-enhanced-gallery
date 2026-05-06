@@ -7,7 +7,8 @@ import { createSignalSafe } from './signal-factory';
 
 const [_isProcessing, setIsProcessing] = createSignalSafe<boolean>(false);
 
-export function acquireDownloadLock(): () => void {
+export function acquireDownloadLock(): (() => void) | null {
+  if (_isProcessing()) return null; // Already locked — prevent re-entry
   setIsProcessing(true);
   return () => {
     setIsProcessing(false);

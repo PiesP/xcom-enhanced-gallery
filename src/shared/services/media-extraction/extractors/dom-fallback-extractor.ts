@@ -7,14 +7,15 @@
 import { closestWithFallback, TWEET_CONTAINER_SELECTORS } from '@shared/dom/selectors';
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
+import { createFailureResult } from '@shared/services/media-extraction/utils/extraction-result-factory';
 import {
   getElapsedTime,
   getTimestamp,
 } from '@shared/services/media-extraction/utils/performance-timing';
 import type {
-  APIExtractor,
   MediaExtractionOptions,
   MediaExtractionResult,
+  MediaExtractorStrategy,
   MediaInfo,
   TweetInfo,
 } from '@shared/types/media.types';
@@ -26,20 +27,6 @@ import {
 import type { MediaElement } from '@shared/utils/media/media-element-utils.types';
 import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/media/tweet-extractor';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
-
-const createFailureResult = (error: string, startTime: number): MediaExtractionResult => ({
-  success: false,
-  mediaItems: [],
-  clickedIndex: 0,
-  metadata: {
-    extractedAt: Date.now(),
-    sourceType: 'dom-fallback',
-    strategy: 'dom-extraction-failed',
-    error,
-    totalProcessingTime: getElapsedTime(startTime),
-  },
-  tweetInfo: null,
-});
 
 /**
  * Find all media elements in the tweet container
@@ -135,7 +122,7 @@ function createMediaInfoFromDOM(
  * DOM Fallback Extractor
  * Extracts media directly from DOM when API is unavailable.
  */
-export class DOMFallbackExtractor implements APIExtractor {
+export class DOMFallbackExtractor implements MediaExtractorStrategy {
   async extract(
     tweetInfo: TweetInfo,
     clickedElement: HTMLElement,
@@ -159,7 +146,12 @@ export class DOMFallbackExtractor implements APIExtractor {
       );
 
       if (!tweetContainer || !(tweetContainer instanceof HTMLElement)) {
-        return createFailureResult('No tweet container found', startedAt);
+        return createFailureResult(
+          'No tweet container found',
+          startedAt,
+          'dom-fallback',
+          'dom-extraction-failed'
+        );
       }
 
       // Step 2: Extract tweet text HTML
@@ -169,7 +161,12 @@ export class DOMFallbackExtractor implements APIExtractor {
       const mediaElements = findAllMediaInContainer(tweetContainer);
 
       if (mediaElements.length === 0) {
-        return createFailureResult('No media elements found in DOM', startedAt);
+        return createFailureResult(
+          'No media elements found in DOM',
+          startedAt,
+          'dom-fallback',
+          'dom-extraction-failed'
+        );
       }
 
       // Step 4: Convert media elements to MediaInfo objects
@@ -189,7 +186,12 @@ export class DOMFallbackExtractor implements APIExtractor {
       }
 
       if (mediaItems.length === 0) {
-        return createFailureResult('No valid media items extracted from DOM', startedAt);
+        return createFailureResult(
+          'No valid media items extracted from DOM',
+          startedAt,
+          'dom-fallback',
+          'dom-extraction-failed'
+        );
       }
 
       // Step 5: Determine which media was clicked
@@ -229,7 +231,12 @@ export class DOMFallbackExtractor implements APIExtractor {
       if (__DEV__) {
         logger.warn(`[DOMFallbackExtractor] ${extractionId}: DOM extraction failed:`, error);
       }
-      return createFailureResult(normalizeErrorMessage(error), startedAt);
+      return createFailureResult(
+        normalizeErrorMessage(error),
+        startedAt,
+        'dom-fallback',
+        'dom-extraction-failed'
+      );
     }
   }
 }

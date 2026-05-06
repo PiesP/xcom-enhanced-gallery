@@ -82,14 +82,14 @@
     );
 
     /* ─────────────────────────────────────────────────────────────────────────
-     * State Colors - Semantic Roles (monochrome, minimal)
+     * State Colors - Semantic Roles
      * ───────────────────────────────────────────────────────────────────────── */
-    --xeg-color-success: var(--color-gray-800);
-    --xeg-color-success-hover: var(--color-gray-900);
-    --xeg-color-success-bg: var(--color-gray-100);
-    --xeg-color-error: var(--color-gray-800);
-    --xeg-color-error-hover: var(--color-gray-900);
-    --xeg-color-error-bg: var(--color-gray-100);
+    --xeg-color-success: oklch(55% 0.18 145);
+    --xeg-color-success-hover: oklch(48% 0.18 145);
+    --xeg-color-success-bg: oklch(90% 0.08 145);
+    --xeg-color-error: oklch(50% 0.22 25);
+    --xeg-color-error-hover: oklch(43% 0.22 25);
+    --xeg-color-error-bg: oklch(90% 0.08 25);
     --xeg-color-info-bg: var(--color-gray-50);
 
     /* ─────────────────────────────────────────────────────────────────────────
@@ -162,7 +162,6 @@
     --xeg-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
     --xeg-ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
     --xeg-ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
-    --xeg-easing-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
     --xeg-easing-linear: linear;
 
     /* Line Height - semantic alias */

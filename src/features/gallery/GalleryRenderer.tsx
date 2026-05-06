@@ -18,7 +18,7 @@ import { normalizeErrorMessage } from '@shared/error/normalize';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import type { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
-import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
+import { acquireDownloadLock } from '@shared/state/signals/download.signals';
 import {
   closeGallery,
   gallerySignals,
@@ -163,9 +163,8 @@ export class GalleryRenderer {
 
   async handleDownload(type: 'current' | 'all'): Promise<void> {
     __DEV__ && logger.info(`[GalleryRenderer] handleDownload called with type: ${type}`);
-    if (isDownloadLocked()) return;
-
     const releaseLock = acquireDownloadLock();
+    if (!releaseLock) return; // Already locked — prevent re-entry
 
     const notifyError = (title: string, body: string): void => {
       this.userscript.notification({ title, text: body });

@@ -15,8 +15,8 @@
   :root {
     /* Transitions - toolbar visibility helper only */
     --xeg-transition-toolbar:
-      opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out),
-      transform var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), visibility 0ms;
+      opacity var(--xeg-duration-toolbar) var(--xeg-ease-standard),
+      transform var(--xeg-duration-toolbar) var(--xeg-ease-standard), visibility 0ms;
 
     /* Spacing - CSS Logical Properties */
     --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
@@ -220,7 +220,7 @@
   /* Hide non-content UI surfaces while the gallery is in immersive mode */
   pointer-events: none;
   opacity: 0;
-  transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transition: opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
 .container.uiHidden [data-xeg-role="items-list"],

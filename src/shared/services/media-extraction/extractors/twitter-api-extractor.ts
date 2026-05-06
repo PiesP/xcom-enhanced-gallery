@@ -7,33 +7,20 @@ import { logger } from '@shared/logging/logger';
 import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
 import { TwitterAPI } from '@shared/services/media/twitter-api-client';
 import { determineClickedIndex } from '@shared/services/media-extraction/determine-clicked-index';
+import { createFailureResult } from '@shared/services/media-extraction/utils/extraction-result-factory';
 import {
   getElapsedTime,
   getTimestamp,
 } from '@shared/services/media-extraction/utils/performance-timing';
 import type {
-  APIExtractor,
   MediaExtractionOptions,
   MediaExtractionResult,
+  MediaExtractorStrategy,
   TweetInfo,
 } from '@shared/types/media.types';
 import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/media/tweet-extractor';
 
-const createFailureResult = (error: string, startTime: number): MediaExtractionResult => ({
-  success: false,
-  mediaItems: [],
-  clickedIndex: 0,
-  metadata: {
-    extractedAt: Date.now(),
-    sourceType: 'twitter-api',
-    strategy: 'api-extraction-failed',
-    error,
-    totalProcessingTime: getElapsedTime(startTime),
-  },
-  tweetInfo: null,
-});
-
-export class TwitterAPIExtractor implements APIExtractor {
+export class TwitterAPIExtractor implements MediaExtractorStrategy {
   async extract(
     tweetInfo: TweetInfo,
     clickedElement: HTMLElement,
@@ -53,7 +40,12 @@ export class TwitterAPIExtractor implements APIExtractor {
       const apiMedias = await TwitterAPI.getTweetMedias(tweetInfo.tweetId);
 
       if (!apiMedias || apiMedias.length === 0) {
-        return createFailureResult('No media found in API response', startedAt);
+        return createFailureResult(
+          'No media found in API response',
+          startedAt,
+          'twitter-api',
+          'api-extraction-failed'
+        );
       }
 
       // Step 2: Extract tweet text HTML
@@ -82,7 +74,12 @@ export class TwitterAPIExtractor implements APIExtractor {
       if (__DEV__) {
         logger.warn(`[APIExtractor] ${extractionId}: API extraction failed:`, error);
       }
-      return createFailureResult(normalizeErrorMessage(error), startedAt);
+      return createFailureResult(
+        normalizeErrorMessage(error),
+        startedAt,
+        'twitter-api',
+        'api-extraction-failed'
+      );
     }
   }
 }

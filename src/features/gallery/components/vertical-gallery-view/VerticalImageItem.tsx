@@ -9,17 +9,13 @@
  */
 
 import { useVideoVisibility } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-visibility';
-import { createVideoVolumeChangeGuard } from '@features/gallery/components/vertical-gallery-view/utils/video-volume-change-guard';
+import { useVideoVolumePersistence } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-volume-persistence';
 import {
   cleanFilename,
   isVideoMedia,
-  normalizeVideoMutedSetting,
-  normalizeVideoVolumeSetting,
 } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.types';
-import { createDebounced } from '@shared/async/debounce';
-import { getTypedSettingOr, setTypedSetting } from '@shared/container/container';
 import type { JSX, JSXElement } from '@shared/external/vendors';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals, setCurrentVideoElement } from '@shared/state/signals/gallery.signals';
@@ -29,7 +25,7 @@ import {
   resolveMediaDimensionsWithIntrinsicFlag,
 } from '@shared/utils/media/media-dimensions';
 import { cx } from '@shared/utils/text/formatting';
-import { createEffect, createMemo, createSignal, onCleanup, splitProps, untrack } from 'solid-js';
+import { createEffect, createMemo, createSignal, splitProps, untrack } from 'solid-js';
 
 /** Fit mode CSS class mapping */
 const FIT_MODE_CLASSES: Record<ImageFitMode, string | undefined> = {
@@ -119,17 +115,11 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     return { ...base, ...extra };
   });
 
-  const volumeChangeGuard = createVideoVolumeChangeGuard();
-
-  const applyMutedProgrammatically = (videoEl: HTMLVideoElement, muted: boolean) => {
-    volumeChangeGuard.markProgrammaticChange({ volume: videoEl.volume, muted });
-    videoEl.muted = muted;
-  };
-
-  const applyVolumeProgrammatically = (videoEl: HTMLVideoElement, volume: number) => {
-    volumeChangeGuard.markProgrammaticChange({ volume, muted: videoEl.muted });
-    videoEl.volume = volume;
-  };
+  // Video volume persistence hook — manages volume/muted state, settings sync, and change guarding
+  const { applyMutedProgrammatically, handleVolumeChange } = useVideoVolumePersistence({
+    videoRef,
+    isVideo,
+  });
 
   useVideoVisibility({
     container: containerRef,
@@ -153,82 +143,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       setCurrentVideoElement(null);
     }
   });
-
-  // Video volume settings (persisted across sessions)
-  const [videoVolume, setVideoVolume] = createSignal(
-    normalizeVideoVolumeSetting(getTypedSettingOr('gallery.videoVolume', 1.0), 1.0)
-  );
-  const [videoMuted, setVideoMuted] = createSignal(
-    normalizeVideoMutedSetting(getTypedSettingOr('gallery.videoMuted', false), false)
-  );
-
-  // Guard to prevent handling synthetic volumechange events triggered by us when
-  // programmatically applying persisted settings. This avoids races where the event
-  // handler reads stale values during the initial apply and overwrites the signal.
-  let isApplyingVideoSettings = false;
-
-  // Apply saved volume/muted state when video element is ready
-  createEffect(() => {
-    const video = videoRef();
-    if (video && isVideo()) {
-      // Apply persisted state while preventing the volumechange handler from
-      // reacting to our programmatic assignment. We set both properties under
-      // a guard so any intermediate events are ignored.
-      isApplyingVideoSettings = true;
-      try {
-        // untrack: Prevent reactive dependencies inside from re-triggering this effect.
-        // This ensures we only apply settings once when the video element becomes ready,
-        // not on every subsequent signal change.
-        untrack(() => {
-          const nextMuted = normalizeVideoMutedSetting(videoMuted(), false);
-          const nextVolume = normalizeVideoVolumeSetting(videoVolume(), 1.0);
-
-          // Keep the signals normalized as well.
-          if (nextMuted !== videoMuted()) {
-            setVideoMuted(nextMuted);
-          }
-          if (nextVolume !== videoVolume()) {
-            setVideoVolume(nextVolume);
-          }
-
-          applyMutedProgrammatically(video, nextMuted);
-          applyVolumeProgrammatically(video, nextVolume);
-        });
-      } finally {
-        isApplyingVideoSettings = false;
-      }
-    }
-  });
-
-  // Debounced settings persistence to reduce GM_setValue calls during slider drag
-  const debouncedSaveVolume = createDebounced((volume: number, muted: boolean) => {
-    void setTypedSetting('gallery.videoVolume', volume);
-    void setTypedSetting('gallery.videoMuted', muted);
-  }, 300);
-
-  // Cleanup debounced function on unmount
-  onCleanup(() => {
-    debouncedSaveVolume.flush();
-  });
-
-  // Handle volume change events from video controls
-  const handleVolumeChange: JSX.EventHandlerUnion<HTMLVideoElement, Event> = (event) => {
-    const video = event.currentTarget as HTMLVideoElement;
-    const snapshot = { volume: video.volume, muted: video.muted };
-
-    if (isApplyingVideoSettings || volumeChangeGuard.shouldIgnoreChange(snapshot)) {
-      return;
-    }
-    const newVolume = normalizeVideoVolumeSetting(snapshot.volume, 1.0);
-    const newMuted = normalizeVideoMutedSetting(snapshot.muted, false);
-
-    // Update local signals immediately for responsive UI
-    setVideoVolume(newVolume);
-    setVideoMuted(newMuted);
-
-    // Persist to settings with debounce (reduces GM_setValue calls during drag)
-    debouncedSaveVolume(newVolume, newMuted);
-  };
 
   // Event handlers
   const preventDragStart = (event: DragEvent) => {

@@ -100,6 +100,20 @@ export class FocusCoordinator {
     const viewportCenter = viewportTop + viewportHeight / 2;
     const topProximityThreshold = 50;
 
+    // Batch-read all rects first to avoid layout thrashing from individual
+    // getBoundingClientRect() calls interleaved with computation.
+    const itemRects = new Map<
+      number,
+      { top: number; height: number; bottom: number; center: number }
+    >();
+    for (const [index, item] of this.items) {
+      if (!item.isVisible || !item.element.isConnected) continue;
+      const rect = item.element.getBoundingClientRect();
+      const top = rect.top;
+      const height = rect.height;
+      itemRects.set(index, { top, height, bottom: top + height, center: top + height / 2 });
+    }
+
     let bestCandidate: FocusCandidate | null = null;
     let topAlignedCandidate: FocusCandidate | null = null;
     let highestVisibilityCandidate: {
@@ -108,14 +122,11 @@ export class FocusCoordinator {
       centerDistance: number;
     } | null = null;
 
-    for (const [index, item] of this.items) {
-      if (!item.isVisible || !item.element.isConnected) continue;
-
-      const rect = item.element.getBoundingClientRect();
-      const itemTop = rect.top;
-      const itemHeight = rect.height;
-      const itemBottom = itemTop + itemHeight;
-      const itemCenter = itemTop + itemHeight / 2;
+    for (const [index, itemRect] of itemRects) {
+      const itemTop = itemRect.top;
+      const itemHeight = itemRect.height;
+      const itemBottom = itemRect.bottom;
+      const itemCenter = itemRect.center;
 
       const visibleTop = Math.max(itemTop, viewportTop);
       const visibleBottom = Math.min(itemBottom, viewportBottom);

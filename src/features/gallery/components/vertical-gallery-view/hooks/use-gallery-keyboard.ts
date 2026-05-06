@@ -18,7 +18,9 @@ export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void
       const element = target as HTMLElement | null;
       if (!element) return false;
       const tag = element.tagName?.toUpperCase();
-      return tag === 'INPUT' || tag === 'TEXTAREA' || !!element.isContentEditable;
+      return (
+        tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!element.isContentEditable
+      );
     };
 
     const handleKeyDown = (event: Event): void => {
