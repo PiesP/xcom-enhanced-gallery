@@ -8,7 +8,11 @@ import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
 import { getSafeHostname, getSafeLocationHeaders } from '@shared/dom/safe-location';
 import { logger } from '@shared/logging/logger';
 import { HttpRequestService } from '@shared/services/http-request-service';
-import { getCsrfToken, getCsrfTokenAsync } from '@shared/services/media/twitter-auth/twitter-auth';
+import {
+  getCsrfToken,
+  getCsrfTokenAsync,
+  resolveBearerToken,
+} from '@shared/services/media/twitter-auth/twitter-auth';
 import {
   extractMediaFromTweet,
   normalizeLegacyTweet,
@@ -129,9 +133,12 @@ export class TwitterAPI {
     // Get CSRF token (try async for better reliability)
     const csrfToken = (await getCsrfTokenAsync()) ?? getCsrfToken() ?? '';
 
+    // Resolve Bearer token dynamically, fall back to hardcoded constant
+    const authorization = resolveBearerToken() ?? TWITTER_API_CONFIG.GUEST_AUTHORIZATION;
+
     // Build headers
     const headers = new Headers({
-      authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
+      authorization,
       'x-csrf-token': csrfToken,
       'x-twitter-client-language': 'en',
       'x-twitter-active-user': 'yes',

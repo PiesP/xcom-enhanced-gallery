@@ -205,3 +205,59 @@ export async function getCsrfTokenAsync(): Promise<string | undefined> {
 
   return initTokens();
 }
+
+// ============================================================================
+// Bearer Token Resolution
+// ============================================================================
+
+/**
+ * Default/fallback Bearer token for guest access to Twitter API.
+ *
+ * @remarks
+ * This token provides unauthenticated read-only access to public tweet and
+ * user data. It is used only as a fallback when runtime extraction from the
+ * X.com page fails.
+ */
+const FALLBACK_BEARER_TOKEN =
+  'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
+
+/**
+ * Resolve the Bearer token for Twitter API requests at runtime.
+ *
+ * Attempts to extract the token dynamically from the X.com page's
+ * `__NEXT_DATA__` script. Falls back to the hardcoded default if
+ * extraction fails.
+ *
+ * **Extraction strategy**:
+ * 1. Locate `#__NEXT_DATA__` script element on the page
+ * 2. Parse its JSON content
+ * 3. Extract the Bearer token from `props.pageProps.token.Bearer`
+ *    or `props.token.Bearer` (X.com structure dependent)
+ *
+ * @returns A Bearer token string (always prefixed with "Bearer ")
+ *
+ * @example
+ * ```typescript
+ * const headers = new Headers({
+ *   authorization: resolveBearerToken(),
+ * });
+ * ```
+ */
+export function resolveBearerToken(): string {
+  try {
+    const nextDataScript = document.getElementById('__NEXT_DATA__');
+    if (nextDataScript?.textContent) {
+      const nextData = JSON.parse(nextDataScript.textContent);
+      // X.com의 __NEXT_DATA__ 구조에서 Bearer 토큰 찾기
+      const token = nextData?.props?.pageProps?.token?.Bearer ?? nextData?.props?.token?.Bearer;
+      if (token && typeof token === 'string') {
+        return `Bearer ${token}`;
+      }
+    }
+  } catch {
+    // 파싱 실패 시 무시하고 폴백 사용
+  }
+
+  // Fallback: 런타임 수집 실패 시 하드코딩된 기본값 사용
+  return FALLBACK_BEARER_TOKEN;
+}
