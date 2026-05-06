@@ -9,7 +9,6 @@ const DEFAULT_ABORT_MESSAGE = 'This operation was aborted' as const;
 /**
  * Check if value represents an AbortError-like cancellation.
  * Treats DOMException("AbortError"/"TimeoutError") and Error named AbortError/TimeoutError as abort-like.
- * Also preserves legacy heuristic: Error message containing "aborted" is abort-like.
  * @param value - Value to check
  * @returns true if the value represents an abort-like error
  */
@@ -19,11 +18,7 @@ export function isAbortError(value: unknown): boolean {
   }
 
   if (value instanceof Error) {
-    return (
-      value.name === 'AbortError' ||
-      value.name === 'TimeoutError' ||
-      value.message.toLowerCase().includes('aborted')
-    );
+    return value.name === 'AbortError' || value.name === 'TimeoutError';
   }
 
   return false;

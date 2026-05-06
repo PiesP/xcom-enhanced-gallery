@@ -122,6 +122,18 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
   const handleDownloadCurrent = () => local.onDownloadCurrent?.();
   const handleDownloadAll = () => local.onDownloadAll?.();
 
+  // Stable callback for media load — does not depend on item index
+  const handleMediaLoad = (mediaId: string, indexValue: number): void =>
+    debouncedScrollCorrection(indexValue, mediaId);
+
+  // Memoized callback factories for per-item refs
+  // Avoids recreating closures on every parent render
+  const createRegisterContainer =
+    (index: number) =>
+    (element: HTMLElement | null): void =>
+      focus.registerItem(index, element);
+  const createHandleFocus = (index: number) => (): void => focus.handleItemFocus(index);
+
   // Navigation handlers — previous/next, background click, media item click
   const { handlePrevious, handleNext, handleBackgroundClick, handleMediaItemClick } =
     useGalleryNavigationHandlers({
@@ -225,17 +237,13 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
                 forceVisible={forcePreload}
                 fitMode={imageFitMode}
                 onClick={() => handleMediaItemClick(actualIndex)}
-                onMediaLoad={(mediaId, indexValue) =>
-                  debouncedScrollCorrection(indexValue, mediaId)
-                }
+                onMediaLoad={handleMediaLoad}
                 className={cx(
                   styles.galleryItem,
                   actualIndex === currentIndex() && styles.itemActive
                 )}
-                registerContainer={(element: HTMLElement | null) =>
-                  focus.registerItem(actualIndex, element)
-                }
-                onFocus={() => focus.handleItemFocus(actualIndex)}
+                registerContainer={createRegisterContainer(actualIndex)}
+                onFocus={createHandleFocus(actualIndex)}
               />
             );
           }}

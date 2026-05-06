@@ -37,6 +37,7 @@ const DEFAULTS = {
 export class FocusCoordinator {
   private readonly items = new Map<number, TrackedItem>();
   private readonly observerOptions: ObserverOptions;
+  private _rafId: number | null = null;
 
   constructor(private readonly options: FocusCoordinatorOptions) {
     const threshold = options.threshold;
@@ -79,16 +80,24 @@ export class FocusCoordinator {
 
   updateFocus(force: boolean = false): void {
     if (!force && !this.options.isEnabled()) return;
-    const container = this.options.container();
-    if (!container) return;
-    const selection = this.selectBestCandidate(container.getBoundingClientRect());
-    if (!selection) return;
-    if (this.options.activeIndex() !== selection.index) {
-      this.options.onFocusChange(selection.index, 'auto');
-    }
+    if (this._rafId !== null) return; // already throttled
+    this._rafId = requestAnimationFrame(() => {
+      this._rafId = null;
+      const container = this.options.container();
+      if (!container) return;
+      const selection = this.selectBestCandidate(container.getBoundingClientRect());
+      if (!selection) return;
+      if (this.options.activeIndex() !== selection.index) {
+        this.options.onFocusChange(selection.index, 'auto');
+      }
+    });
   }
 
   cleanup(): void {
+    if (this._rafId !== null) {
+      cancelAnimationFrame(this._rafId);
+      this._rafId = null;
+    }
     for (const item of this.items.values()) item.unsubscribe?.();
     this.items.clear();
   }

@@ -54,17 +54,9 @@ export const SharedObserver = {
       }
       isActive = false;
 
-      try {
-        observer.unobserve(element);
-      } catch {
-        // Ignore: unobserve should be best-effort.
-      }
+      observer.unobserve(element);
 
-      try {
-        observer.disconnect();
-      } catch {
-        // Ignore: disconnect should be best-effort.
-      }
+      observer.disconnect();
 
       const currentSet = observerRegistry.get(element);
       if (currentSet) {
@@ -90,11 +82,7 @@ export const SharedObserver = {
     }
 
     for (const observer of set) {
-      try {
-        observer.disconnect();
-      } catch {
-        // Ignore: disconnect should be best-effort.
-      }
+      observer.disconnect();
     }
 
     observerRegistry.delete(element);

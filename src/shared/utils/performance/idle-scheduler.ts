@@ -21,25 +21,11 @@ function getIdleAPIs(): {
   readonly ric: ((cb: IdleRequestCallback, opts?: { readonly timeout?: number }) => number) | null;
   readonly cic: ((handle: number) => void) | null;
 } {
-  const source = typeof globalThis !== 'undefined' ? globalThis : undefined;
-
-  if (!source || typeof source !== 'object') {
-    return { ric: null, cic: null };
-  }
+  const hasRIC = typeof requestIdleCallback !== 'undefined';
 
   return {
-    ric:
-      ('requestIdleCallback' in source
-        ? ((source as unknown as Record<string, unknown>).requestIdleCallback as
-            | ((cb: IdleRequestCallback, opts?: { readonly timeout?: number }) => number)
-            | undefined)
-        : undefined) ?? null,
-    cic:
-      ('cancelIdleCallback' in source
-        ? ((source as unknown as Record<string, unknown>).cancelIdleCallback as
-            | ((handle: number) => void)
-            | undefined)
-        : undefined) ?? null,
+    ric: hasRIC ? requestIdleCallback.bind(globalThis) : null,
+    cic: hasRIC ? cancelIdleCallback.bind(globalThis) : null,
   };
 }
 

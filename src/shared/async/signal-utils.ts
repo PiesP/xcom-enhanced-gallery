@@ -143,7 +143,7 @@ export function createTimeoutSignal(ms: number): AbortSignal {
  * ```
  */
 export function combineSignals(signals: AbortSignal[]): AbortSignal {
-  // Accept runtime-invalid values defensively (tests may pass null/undefined)
+  // Filter out any runtime-invalid values (tests may pass null/undefined)
   const validSignals = signals.filter((s): s is AbortSignal => !!s);
 
   if (validSignals.length === 0) {
@@ -154,92 +154,9 @@ export function combineSignals(signals: AbortSignal[]): AbortSignal {
     return validSignals[0]!;
   }
 
-  // Prefer native AbortSignal.any when available.
-  // Note: Some test environments deliberately patch AbortSignal.any to undefined.
-  if (typeof AbortSignal.any === 'function') {
-    return AbortSignal.any(validSignals);
-  }
-
-  // Manual fallback: create a signal that aborts when any input aborts.
-  const controller = new AbortController();
-  let settled = false;
-
-  /**
-   * Remove all abort event listeners from input signals
-   *
-   * Defensive implementation catches and ignores errors during cleanup
-   * to prevent cleanup failures from disrupting abort handling.
-   */
-  const cleanup = (): void => {
-    for (const s of validSignals) {
-      try {
-        s.removeEventListener('abort', onAbort);
-      } catch {
-        // Ignore listener cleanup failures (defensive)
-      }
-    }
-  };
-
-  /**
-   * Handle abort event from any input signal
-   *
-   * Aborts the combined signal with the reason from the first aborted input signal.
-   * Guards against multiple invocations and cleans up all event listeners.
-   *
-   * Defensive implementation handles test scenarios where abort handler may be
-   * invoked without a corresponding aborted signal.
-   */
-  const onAbort = (): void => {
-    if (settled) return;
-    settled = true;
-
-    // Preserve abort reason if an input signal is actually aborted.
-    // In some defensive test scenarios, the abort handler can be invoked
-    // without a corresponding aborted signal.
-    const abortedSignal = validSignals.find((s) => s.aborted);
-    const reason = abortedSignal?.reason;
-
-    // When reason is undefined, platforms typically supply a default AbortError.
-    controller.abort(reason);
-    cleanup();
-  };
-
-  // If any signal is already aborted, abort immediately without registering listeners.
-  for (const s of validSignals) {
-    if (s.aborted) {
-      controller.abort(s.reason);
-      return controller.signal;
-    }
-  }
-
-  for (const s of validSignals) {
-    s.addEventListener('abort', onAbort, { once: true });
-  }
-
-  return controller.signal;
+  // Use native AbortSignal.any() (Chrome 116+, Firefox 124+, Safari 17.4+).
+  // Well-supported as of 2026; no fallback needed.
+  return AbortSignal.any(validSignals);
 }
 
-/**
- * Note: isAbortError utility
- *
- * The `isAbortError` function is re-exported from `@shared/error/cancellation`.
- * Use it to check if an error is an AbortError (name === 'AbortError').
- *
- * This is useful for distinguishing user cancellation from actual errors.
- *
- * @example
- * ```typescript
- * import { isAbortError } from '@shared/error/cancellation';
- *
- * try {
- *   await fetch(url, { signal });
- * } catch (error) {
- *   if (isAbortError(error)) {
- *     console.log('Request was cancelled');
- *     return;
- *   }
- *   throw error;
- * }
- * ```
- */
 // isAbortError is re-exported from @shared/error/cancellation.
