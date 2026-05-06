@@ -90,11 +90,8 @@ function createAbortError(message: string, cause?: unknown): DOMException | Erro
  * @param cause - Optional cause to attach (e.g., original AbortSignal reason)
  * @returns Error with name "AbortError" and standardized message
  */
-export function createUserCancelledAbortError(cause?: unknown): Error {
-  const error = new Error(USER_CANCELLED_MESSAGE);
-  error.name = 'AbortError';
-  attachCause(error, cause);
-  return error;
+export function createUserCancelledAbortError(cause?: unknown): DOMException | Error {
+  return createAbortError(USER_CANCELLED_MESSAGE, cause);
 }
 
 /**

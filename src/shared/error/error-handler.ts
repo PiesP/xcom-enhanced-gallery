@@ -23,8 +23,6 @@ let _errorHandlerInstance: GlobalErrorHandler | null = null;
 export class GlobalErrorHandler {
   private isInitialized = false;
   private controller: AbortController | null = null;
-  private errorListenerId: string | null = null;
-  private rejectionListenerId: string | null = null;
 
   private constructor() {}
 
@@ -83,17 +81,15 @@ export class GlobalErrorHandler {
       this.rejectionListener(evt as PromiseRejectionEvent);
     };
 
-    this.errorListenerId =
-      eventManager.addEventListener(window, 'error', onError, {
-        signal: this.controller.signal,
-        context: 'global-error-handler',
-      }) ?? null;
+    eventManager.addEventListener(window, 'error', onError, {
+      signal: this.controller.signal,
+      context: 'global-error-handler',
+    });
 
-    this.rejectionListenerId =
-      eventManager.addEventListener(window, 'unhandledrejection', onUnhandledRejection, {
-        signal: this.controller.signal,
-        context: 'global-error-handler',
-      }) ?? null;
+    eventManager.addEventListener(window, 'unhandledrejection', onUnhandledRejection, {
+      signal: this.controller.signal,
+      context: 'global-error-handler',
+    });
 
     this.isInitialized = true;
   }
@@ -106,16 +102,6 @@ export class GlobalErrorHandler {
   public destroy(): void {
     if (!this.isInitialized || typeof window === 'undefined') {
       return;
-    }
-
-    const eventManager = EventManager.getInstance();
-    if (this.errorListenerId) {
-      eventManager.removeListener(this.errorListenerId);
-      this.errorListenerId = null;
-    }
-    if (this.rejectionListenerId) {
-      eventManager.removeListener(this.rejectionListenerId);
-      this.rejectionListenerId = null;
     }
 
     this.controller?.abort();
