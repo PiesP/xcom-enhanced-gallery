@@ -335,15 +335,15 @@
 .emptyMessage h3 {
   margin: 0 0 clamp(0.75rem, 2vw, 1rem); /* 10.125rem-16px = 0.75rem-1rem */
   font-size: clamp(1.25rem, 4vw, 1.5rem); /* 20px-20.25rem = 1.25rem-1.5rem */
-  font-weight: 600;
+  font-weight: var(--xeg-font-weight-semibold);
   color: var(--xeg-color-text-primary);
-  line-height: 1.2;
+  line-height: var(--xeg-line-height-tight);
 }
 
 .emptyMessage p {
   margin: 0;
   font-size: clamp(0.875rem, 2.5vw, 1rem); /* 10.25rem-16px = 0.875rem-1rem */
-  line-height: 1.5;
+  line-height: var(--xeg-line-height-normal);
   color: var(--xeg-color-text-tertiary);
 }
 /* Container query responsive sizing */

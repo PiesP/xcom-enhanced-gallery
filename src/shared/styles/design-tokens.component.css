@@ -15,6 +15,7 @@
 
     /* Scrollbar Component */
     --xeg-scrollbar-width: 0.5rem;
+    --xeg-scrollbar-border-radius: 0;
 
     /* Hover Zone Component */
     --xeg-hover-zone-height: 7.5rem;
@@ -54,6 +55,10 @@
     --xeg-spacing-sm: var(--space-sm);
     --xeg-spacing-md: var(--space-md);
     --xeg-spacing-lg: var(--space-lg);
+
+    /* GPU Acceleration Hacks */
+    --xeg-gpu-hack: translateZ(0);
+    --xeg-backface-visibility: hidden;
 
     /* Layout Constraints */
     --xeg-viewport-height-constrained: 90vh;

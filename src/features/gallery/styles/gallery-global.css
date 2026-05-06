@@ -1,19 +1,6 @@
 /** Global styles for the gallery component. Component-specific styles are in CSS Modules. */
 
 @layer xeg.features {
-  /* ====== Surface Styles ====== */
-  :where(.xeg-surface, .xeg-glass-surface) {
-    background: var(--xeg-surface-bg);
-    border: var(--border-width-thin) solid var(--xeg-surface-border);
-    border-radius: var(--xeg-radius-2xl);
-    isolation: isolate;
-    transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
-  }
-
-  :where(.xeg-surface, .xeg-glass-surface):hover {
-    background: var(--xeg-surface-bg-hover, var(--xeg-surface-bg));
-  }
-
   /* Gallery renderer wrapper - Ensure block display */
   .xeg-gallery-renderer[data-renderer="gallery"] {
     display: block;

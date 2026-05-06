@@ -110,7 +110,9 @@
     --xeg-color-text-inverse: var(--color-base-white);
 
     /* Component Sizing (em: relative to font-size) */
+    --xeg-size-button-sm: 2rem;
     --xeg-size-button-md: 2.5em;
+    --xeg-size-button-lg: 3rem;
 
     /* Focus indicator tokens */
     --xeg-focus-indicator-color: var(--xeg-color-border-primary);
@@ -123,13 +125,18 @@
     --xeg-font-size-xl: var(--font-size-xl);
     --xeg-font-size-2xl: var(--font-size-2xl);
 
+    --xeg-font-family-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
     --xeg-font-weight-normal: var(--font-weight-normal);
     --xeg-font-weight-medium: var(--font-weight-medium);
     --xeg-font-weight-semibold: var(--font-weight-semibold);
+    --xeg-font-weight-bold: var(--font-weight-bold);
 
     --xeg-line-height-tight: var(--line-height-tight);
     --xeg-line-height-snug: var(--line-height-snug);
     --xeg-line-height-relaxed: var(--line-height-relaxed);
+
+    --xeg-letter-spacing-wide: 0.04em;
 
     /* Animation Timing - semantic roles */
     --xeg-duration-fast: var(--duration-fast);
@@ -172,6 +179,7 @@
     /* Spacing Tokens - component usage */
     --xeg-spacing-none: var(--space-none);
     --xeg-spacing-xl: var(--space-xl);
+    --xeg-spacing-5xl: var(--space-2xl);
 
     /* Border Radius - extended scale */
     --xeg-radius-sm: var(--radius-sm);

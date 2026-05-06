@@ -66,7 +66,7 @@
 
   /* Layout: centered icon with flexbox */
   font-size: 0.875em; /* 14px typography scale */
-  font-weight: 500;
+  font-weight: var(--xeg-font-weight-medium);
   width: var(--xeg-size-button-md);
   height: var(--xeg-size-button-md);
   min-width: var(--xeg-size-button-md);
@@ -263,7 +263,7 @@
   /* Keep indicator text tone consistent with the base text */
   color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
   font-size: var(--xeg-font-size-md);
-  font-weight: 600;
+  font-weight: var(--xeg-font-weight-semibold);
   text-align: center;
   white-space: nowrap;
   /* Baseline alignment: minimize the text line box */
@@ -276,7 +276,7 @@
 
 .currentIndex {
   color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
-  font-weight: 700;
+  font-weight: var(--xeg-font-weight-bold);
 }
 
 .totalCount {
@@ -439,7 +439,7 @@ button.fitButton {
   font-weight: var(--xeg-font-weight-semibold);
   color: var(--xeg-toolbar-text-color);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--xeg-letter-spacing-wide);
 }
 
 /* Tweet content (improved typography) */
@@ -550,7 +550,7 @@ button.fitButton {
   color: var(--xeg-color-primary);
   text-decoration: none;
   font-size: var(--xeg-font-size-sm);
-  font-weight: 500;
+  font-weight: var(--xeg-font-weight-medium);
   transition: color var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
@@ -575,7 +575,7 @@ button.fitButton {
 .tweetUrlLabel {
   flex-shrink: 0;
   color: var(--xeg-toolbar-text-muted, var(--xeg-color-text-secondary));
-  font-weight: 600;
+  font-weight: var(--xeg-font-weight-semibold);
 }
 
 .tweetUrlValue {

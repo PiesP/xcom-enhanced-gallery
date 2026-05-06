@@ -104,7 +104,7 @@
 .compactLabel {
   font-size: var(--font-size-xs);
   color: var(--xeg-color-text-secondary);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--xeg-letter-spacing-wide);
   text-transform: uppercase;
 }
 
@@ -139,7 +139,7 @@
   border: var(--border-width-thin) solid var(--xeg-toolbar-border);
   border-radius: var(--xeg-radius-md);
   cursor: pointer;
-  line-height: 1.375;
+  line-height: var(--xeg-line-height-snug);
   min-height: 2.75em;
   transform: none;
   overflow: visible;
@@ -181,5 +181,5 @@
  */
 .select option {
   padding: 0.5em 0.75em;
-  line-height: 1.5;
+  line-height: var(--xeg-line-height-normal);
 }
