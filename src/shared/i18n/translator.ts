@@ -11,7 +11,7 @@ import {
 } from '@shared/constants/i18n/translation-registry';
 import type { TranslationBundleInput, TranslationKey, TranslationParams } from './types';
 
-function resolveTranslationValue(
+export function resolveTranslationValue(
   dictionary: LanguageStrings,
   key: TranslationKey
 ): string | undefined {

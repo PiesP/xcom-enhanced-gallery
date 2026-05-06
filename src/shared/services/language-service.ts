@@ -8,20 +8,11 @@ import {
   isBaseLanguageCode,
   type SupportedLanguage,
 } from '@shared/constants/i18n/i18n.types';
-import { DEFAULT_LANGUAGE, getLanguageStrings } from '@shared/constants/i18n/translation-registry';
+import { DEFAULT_LANGUAGE } from '@shared/constants/i18n/translation-registry';
+import { Translator } from '@shared/i18n/translator';
 import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
 import { logger } from '@shared/logging/logger';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
-
-function resolveTranslationValue(dictionary: object, key: string): string | undefined {
-  const segments = key.split('.');
-  let current: unknown = dictionary;
-  for (const segment of segments) {
-    if (current == null || typeof current !== 'object') return undefined;
-    current = (current as Record<string, unknown>)[segment];
-  }
-  return typeof current === 'string' ? current : undefined;
-}
 
 let _instance: LanguageService | null = null;
 
@@ -38,6 +29,11 @@ export class LanguageService {
   private currentLanguage: SupportedLanguage = 'auto';
   private readonly listeners: Set<(language: SupportedLanguage) => void> = new Set();
   private readonly storage = getPersistentStorage();
+  private readonly translator: Translator;
+
+  public constructor() {
+    this.translator = new Translator();
+  }
 
   public static getInstance(): LanguageService {
     if (!_instance) _instance = new LanguageService();
@@ -122,24 +118,7 @@ export class LanguageService {
 
   translate(key: TranslationKey, params?: TranslationParams): string {
     const language = this.getEffectiveLanguage();
-    const dictionary = getLanguageStrings(language);
-    const template = resolveTranslationValue(dictionary, key);
-
-    if (!template) {
-      return key;
-    }
-
-    if (!params) {
-      return template;
-    }
-
-    return template.replace(/\{(\w+)\}/g, (_, placeholder: string) => {
-      if (Object.hasOwn(params, placeholder)) {
-        return String(params[placeholder]);
-      }
-
-      return `{${placeholder}}`;
-    });
+    return this.translator.translate(language, key, params);
   }
 
   onLanguageChange(callback: (language: SupportedLanguage) => void): () => void {
