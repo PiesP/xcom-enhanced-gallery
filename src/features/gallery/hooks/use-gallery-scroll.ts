@@ -19,8 +19,6 @@ interface UseGalleryScrollOptions {
   readonly container: MaybeAccessor<HTMLElement | null>;
   /** Scroll target (defaults to container) */
   readonly scrollTarget?: MaybeAccessor<HTMLElement | null>;
-  /** Callback on scroll events */
-  readonly onScroll?: () => void;
   /** Callback when scrolling ends (after idle timeout) */
   readonly onScrollEnd?: () => void;
   /** Whether scroll handling is enabled */
@@ -47,7 +45,6 @@ const LISTENER_CONTEXT_PREFIX = 'useGalleryScroll';
 export function useGalleryScroll({
   container,
   scrollTarget,
-  onScroll,
   onScrollEnd,
   enabled = true,
   programmaticScrollTimestamp,
@@ -114,14 +111,12 @@ export function useGalleryScroll({
     if (isToolbarScroll(event)) return;
 
     markScrolling();
-    onScroll?.();
     scheduleScrollEnd();
   };
 
   const handleScroll = (): void => {
     if (!isGalleryOpen() || shouldIgnoreScroll()) return;
     markScrolling();
-    onScroll?.();
     scheduleScrollEnd();
   };
 

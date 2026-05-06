@@ -52,6 +52,8 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     'onDownloadAll',
   ]);
 
+  const handleClose = local.onClose ?? (() => {});
+
   // State accessors - using gallerySignals with createMemo for fine-grained reactivity
   const mediaItems = createMemo(() => gallerySignals.mediaItems);
   const currentIndex = createMemo(() => gallerySignals.currentIndex);
@@ -87,7 +89,7 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
   });
 
   // Keyboard escape handler - integrated from useGalleryKeyboard hook
-  useGalleryKeyboard({ onClose: local.onClose ?? (() => {}) });
+  useGalleryKeyboard({ onClose: handleClose });
 
   const translate = useTranslation();
 
@@ -125,7 +127,7 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     useGalleryNavigationHandlers({
       currentIndex,
       mediaItems,
-      onClose: local.onClose ?? (() => {}),
+      onClose: handleClose,
     });
 
   // Wheel event redirection — redirects scroll from container to items container
@@ -192,7 +194,7 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
               onFitContainer: handleFitContainer,
             },
             lifecycle: {
-              onClose: local.onClose ?? (() => {}),
+              onClose: handleClose,
               onOpenSettings: () => {
                 if (__DEV__) {
                   logger.debug('[VerticalGalleryView] Settings opened');

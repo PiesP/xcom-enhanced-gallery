@@ -5,7 +5,6 @@
 
 import {
   type GalleryNavigateCompletePayload,
-  type GalleryNavigateStartPayload,
   galleryIndexEvents,
 } from '@shared/state/signals/gallery.signals';
 import type { NavigationSource } from '@shared/types/navigation.types';
@@ -35,10 +34,9 @@ function registerNavigationEvents({
   onTriggerChange,
   onNavigateComplete,
 }: RegisterEventsOptions): CleanupFn {
-  const stopStart = galleryIndexEvents.on(
-    'navigate:start',
-    (payload: GalleryNavigateStartPayload) => onTriggerChange(payload.trigger)
-  );
+  const stopStart = galleryIndexEvents.on('navigate:start', () => {
+    // trigger is already handled by navigate:complete below
+  });
   const stopComplete = galleryIndexEvents.on(
     'navigate:complete',
     (payload: GalleryNavigateCompletePayload) => {

@@ -185,8 +185,10 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       return;
     }
 
-    // Only provide default activation semantics when the container is explicitly a button.
-    if ((local.role ?? (isVideo() ? 'group' : 'button')) !== 'button') {
+    // Only provide default activation semantics when no explicit role is set,
+    // or when the container is explicitly a button.
+    // Video items use role='group' by default but should still support Enter/Space.
+    if (local.role !== undefined && local.role !== 'button') {
       return;
     }
 

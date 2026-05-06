@@ -42,7 +42,7 @@ export function cleanFilename(filename?: string): string {
     // Keep a short extension if present (e.g., ".jpg").
     // Limit the extension length to avoid pathological cases.
     const extensionMatch = value.match(CLEAN_FILENAME_EXTENSION_REGEX);
-    const extension = extensionMatch?.[1] ?? '';
+    const extension = extensionMatch?.[0] ?? '';
     const base = extension ? value.slice(0, -extension.length) : value;
 
     const available =
