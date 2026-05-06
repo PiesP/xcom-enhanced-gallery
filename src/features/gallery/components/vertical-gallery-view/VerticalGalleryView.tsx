@@ -8,23 +8,24 @@
  * @version 8.0
  */
 
+import { useGalleryFitMode } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-fit-mode';
 import { useGalleryKeyboard } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-keyboard';
+import { useGalleryNavigationHandlers } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-navigation-handlers';
+import { useGalleryScrollCorrection } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-scroll-correction';
+import { useGalleryWheelRedirect } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-wheel-redirect';
 import { useVerticalGallery } from '@features/gallery/components/vertical-gallery-view/hooks/use-vertical-gallery';
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css';
 import { VerticalImageItem } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem';
-import { createDebounced } from '@shared/async/debounce';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
-import { getTypedSettingOr, setTypedSetting } from '@shared/container/container';
-import type { JSX, JSXElement } from '@shared/external/vendors';
+import { getTypedSettingOr } from '@shared/container/container';
+import type { JSXElement } from '@shared/external/vendors';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { logger } from '@shared/logging/logger';
-import { EventManager } from '@shared/services/event-manager';
 import { downloadState } from '@shared/state/signals/download.signals';
 import { gallerySignals, navigateToItem } from '@shared/state/signals/gallery.signals';
-import type { ImageFitMode } from '@shared/types/ui.types';
 import { computePreloadIndices } from '@shared/utils/performance/preload';
 import { cx } from '@shared/utils/text/formatting';
-import { createEffect, createMemo, createSignal, For, onCleanup, splitProps } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, splitProps } from 'solid-js';
 
 export interface VerticalGalleryViewProps {
   /** Handler for closing the gallery */
@@ -90,20 +91,12 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
 
   const translate = useTranslation();
 
-  const debouncedScrollCorrection = createDebounced((index: number, mediaId: string) => {
-    if (!isVisible()) {
-      return;
-    }
-
-    if (index !== currentIndex() || activeMedia()?.id !== mediaId) {
-      return;
-    }
-
-    scroll.scrollToItem(index);
-  }, 120);
-
-  onCleanup(() => {
-    debouncedScrollCorrection.cancel();
+  // Debounced scroll correction — adjusts scroll position after media loads
+  const { debouncedScrollCorrection } = useGalleryScrollCorrection({
+    isVisible,
+    currentIndex,
+    activeMedia,
+    scrollToItem: scroll.scrollToItem,
   });
 
   // Ensure initial focus is applied before any navigation events fire
@@ -116,127 +109,29 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     navigateToItem(currentIndex(), 'click', 'auto-focus');
   });
 
-  // Fit mode state
-  const getInitialFitMode = (): ImageFitMode => {
-    return getTypedSettingOr('gallery.imageFitMode', 'fitWidth');
-  };
-
-  const [imageFitMode, setImageFitMode] = createSignal<ImageFitMode>(getInitialFitMode());
-
-  const persistFitMode = (mode: ImageFitMode): Promise<void> =>
-    setTypedSetting('gallery.imageFitMode', mode).catch((error) => {
-      if (__DEV__) {
-        logger.warn('Failed to save fit mode', { error, mode });
-      }
+  // Fit mode state — managed via useGalleryFitMode hook with persistence
+  const { imageFitMode, handleFitOriginal, handleFitWidth, handleFitHeight, handleFitContainer } =
+    useGalleryFitMode({
+      scrollToCurrentItem: scroll.scrollToCurrentItem,
+      currentIndex,
     });
-
-  const applyFitMode = (mode: ImageFitMode, event?: Event): void => {
-    event?.preventDefault();
-    event?.stopPropagation();
-    setImageFitMode(mode);
-    void persistFitMode(mode);
-    scroll.scrollToCurrentItem();
-    navigateToItem(currentIndex(), 'programmatic', 'auto-focus');
-  };
 
   // Event handlers
   const handleDownloadCurrent = () => local.onDownloadCurrent?.();
   const handleDownloadAll = () => local.onDownloadAll?.();
-  const handleFitOriginal = (event?: Event) => applyFitMode('original', event);
-  const handleFitWidth = (event?: Event) => applyFitMode('fitWidth', event);
-  const handleFitHeight = (event?: Event) => applyFitMode('fitHeight', event);
-  const handleFitContainer = (event?: Event) => applyFitMode('fitContainer', event);
 
-  const handlePrevious = () => {
-    const current = currentIndex();
-    if (current > 0) {
-      navigateToItem(current - 1, 'click', 'button');
-    }
-  };
-
-  const handleNext = () => {
-    const current = currentIndex();
-    const items = mediaItems();
-    if (current < items.length - 1) {
-      navigateToItem(current + 1, 'click', 'button');
-    }
-  };
-
-  const handleBackgroundClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) {
-      return;
-    }
-
-    // Ignore clicks on interactive zones and gallery content (production-safe selectors).
-    // Keeping this as a single selector avoids repeated closest() traversals.
-    const ignoreSelector =
-      '[data-role="toolbar"], [data-role="toolbar-hover-zone"], [data-gallery-element], [data-xeg-role="gallery-item"], [data-xeg-role="scroll-spacer"]';
-
-    if (target.closest(ignoreSelector)) {
-      return;
-    }
-
-    // Close gallery when clicking on background area (outside items and toolbar)
-    local.onClose?.();
-  };
-
-  const handleMediaItemClick = (index: number) => {
-    const items = mediaItems();
-    const current = currentIndex();
-
-    if (index >= 0 && index < items.length && index !== current) {
-      navigateToItem(index, 'click', 'scroll');
-    }
-  };
-
-  /**
-   * Handle wheel events on the gallery container.
-   * Redirects scroll to the items container when wheel event occurs outside of it,
-   * preventing the underlying Twitter page from scrolling.
-   *
-   * Note: We use createEffect with addEventListener instead of onWheel to control
-   * the passive option and avoid Chrome's passive event listener warnings.
-   */
-  createEffect(() => {
-    const container = containerEl();
-    if (!container) return;
-
-    const controller = new AbortController();
-
-    const handleContainerWheel = (event: WheelEvent): void => {
-      const itemsContainer = itemsContainerEl();
-      if (!itemsContainer) return;
-
-      // Check if the wheel event target is inside the items container
-      const target = event.target;
-      if (!(target instanceof Element)) {
-        return;
-      }
-
-      if (itemsContainer.contains(target)) {
-        // Let the items container handle its own scroll naturally
-        return;
-      }
-
-      // For events outside the items container, redirect scroll to items container
-      event.preventDefault();
-      event.stopPropagation();
-      itemsContainer.scrollTop += event.deltaY;
-    };
-
-    // Use passive: false only when we need to call preventDefault()
-    const eventManager = EventManager.getInstance();
-    const listener: EventListener = (event) => {
-      handleContainerWheel(event as WheelEvent);
-    };
-
-    eventManager.addEventListener(container, 'wheel', listener, {
-      passive: false,
-      signal: controller.signal,
-      context: 'gallery:wheel:container-redirect',
+  // Navigation handlers — previous/next, background click, media item click
+  const { handlePrevious, handleNext, handleBackgroundClick, handleMediaItemClick } =
+    useGalleryNavigationHandlers({
+      currentIndex,
+      mediaItems,
+      onClose: local.onClose ?? (() => {}),
     });
-    onCleanup(() => controller.abort());
+
+  // Wheel event redirection — redirects scroll from container to items container
+  useGalleryWheelRedirect({
+    containerEl,
+    itemsContainerEl,
   });
 
   // Empty state
