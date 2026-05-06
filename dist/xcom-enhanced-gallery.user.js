@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name X.com Enhanced Gallery
 // @namespace https://github.com/PiesP/xcom-enhanced-gallery
-// @version 1.9.2
+// @version 1.9.3
 // @description Media viewer and download functionality for X.com
 // @author PiesP
 // @license MIT
@@ -34,7 +34,7 @@
 /*
  * Third-Party Licenses
  * ====================
- * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.9.2/LICENSES
+ * Source: https://github.com/PiesP/xcom-enhanced-gallery/tree/v1.9.3/LICENSES
  *
  * MIT License
  *
@@ -60,8 +60,13 @@
  * SOFTWARE.
  *
  */
-(function(){if(typeof document==='undefined')return;var css="@layer xeg.components{:root{--xtt:opacity var(--xdt) var(--xeo), transform var(--xdt) var(--xeo), visibility 0ms;--xeg-spacing-gallery:clamp(var(--xs-s), 2.5vw, var(--xs-l));--xeg-spacing-mobile:clamp(var(--xs-xs), 2vw, var(--xs-m));--xeg-spacing-compact:clamp(.25rem, 1.5vw, var(--xs-s));--xth-o:0;--xth-v:hidden;--xth-pe:none}} @media (prefers-reduced-motion:reduce){@layer xeg.components{:root{--xtt:none} .xg-X9gZ{scroll-behavior:auto;transition:none} .xg-meO3{transition:none}}} .xg-X9gZ{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:var(--xz-g, 10000);background:var(--xg-b);display:flex;flex-direction:column;transform:var(--xgh);will-change:opacity, transform;contain:layout style paint;opacity:1;visibility:visible;transition:var(--xten);cursor:default;pointer-events:auto;container-type:size;container-name:gallery-container;scroll-behavior:smooth;overscroll-behavior:none} .xg-meO3{position:fixed;top:0;left:0;right:0;height:auto;z-index:var(--xz-t, 2147483620);opacity:var(--toolbar-opacity, 0);visibility:var(--toolbar-visibility, hidden);display:block;transition:var(--xtt);will-change:transform, opacity, visibility;contain:layout style;transform:var(--xgh);backface-visibility:var(--xbv);pointer-events:var(--toolbar-pointer-events, none);background:transparent;border:none;border-radius:0;margin:0;padding-block-end:var(--xeg-spacing-gallery)} .xg-meO3:is(:hover,:focus-within){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-meO3:focus-within{transition:var(--xtef)} .xg-meO3 *{pointer-events:inherit} .xg-meO3 [data-gallery-element=\"settings-panel\"][data-expanded=\"true\"]{pointer-events:auto} .xg-meO3:has([data-gallery-element=\"settings-panel\"][data-expanded=\"true\"]){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-X9gZ.xg-9abg{cursor:none} .xg-X9gZ.xg-sOsS[data-xeg-gallery=\"true\"][data-xeg-role=\"gallery\"] .xg-meO3{--toolbar-opacity:var(--xth-o, 0);--toolbar-visibility:var(--xth-v, hidden);--toolbar-pointer-events:var(--xth-pe, none)} .xg-X9gZ *{pointer-events:auto} .xg-gmRW{flex:1;display:flex;flex-direction:column;overflow:auto;position:relative;z-index:0;contain:layout style;transform:var(--xgh);overscroll-behavior:contain;scrollbar-gutter:stable;pointer-events:auto;container-type:size;container-name:items-list} .xg-gmRW::-webkit-scrollbar{width:var(--xsw)} .xg-gmRW::-webkit-scrollbar-track{background:transparent} .xg-gmRW::-webkit-scrollbar-thumb{background:var(--xcn3);border-radius:var( --xsbr );transition:background-color var(--xdn) var(--xe-s)} .xg-gmRW::-webkit-scrollbar-thumb:hover{background:var(--xcn4)} .xg-X9gZ.xg-9abg .xg-meO3{pointer-events:none;opacity:0;transition:opacity var(--xdf) var(--xeo)} .xg-X9gZ.xg-9abg [data-xeg-role=\"items-list\"], .xg-X9gZ.xg-9abg .xg-gmRW{pointer-events:auto} .xg-X9gZ.xg-yhK-{justify-content:center;align-items:center} .xg-EfVa{position:relative;margin-bottom:var(--xs-m, 1rem);border-radius:var(--xr-l, .5rem);transition:var(--xten);contain:layout style;transform:var(--xgh)} .xg-LxHL{position:relative;z-index:1} .xg-sfF0{height:calc(100vh - var(--xeg-toolbar-height, 3.75rem));min-height:50vh;pointer-events:none;user-select:none;flex-shrink:0;background:transparent;opacity:0;contain:strict;content-visibility:auto} .xg-gC-m{position:fixed;top:0;left:0;right:0;height:var(--xhzh);z-index:var(--xz-th, 2147483618);background:transparent;pointer-events:auto} .xg-gC-m:hover{z-index:var(--xz-th);background:transparent} .xg-X9gZ.xg-Canm:not([data-settings-expanded=\"true\"]) .xg-gC-m, .xg-X9gZ:has(.xg-meO3:hover):not([data-settings-expanded=\"true\"]) .xg-gC-m{pointer-events:none} .xg-X9gZ.xg-Canm .xg-meO3, .xg-X9gZ:has(.xg-gC-m:hover) .xg-meO3{--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-meO3 [class*=\"galleryToolbar\"]{opacity:var(--toolbar-opacity, 0);visibility:var(--toolbar-visibility, hidden);display:flex;pointer-events:var(--toolbar-pointer-events, none)} .xg-meO3 button, .xg-meO3 [role=\"button\"], .xg-meO3 .xg-e06X{pointer-events:auto;position:relative;z-index:10} .xg-fwsr{text-align:center;color:var(--xct-s);max-inline-size:min(25rem, 90vw);padding:clamp(1.875rem, 5vw, 2.5rem)} .xg-fwsr h3{margin:0 0 clamp(.75rem, 2vw, 1rem);font-size:clamp(1.25rem, 4vw, 1.5rem);font-weight:600;color:var(--xct-p);line-height:1.2} .xg-fwsr p{margin:0;font-size:clamp(.875rem, 2.5vw, 1rem);line-height:1.5;color:var(--xct-t)} @container gallery-container (max-width:48rem){.xg-gmRW{padding:var(--xeg-spacing-mobile);gap:var(--xeg-spacing-mobile)} .xg-meO3{padding-block-end:var(--xeg-spacing-mobile)}} @container gallery-container (max-width:30rem){.xg-gmRW{padding:var(--xeg-spacing-compact);gap:var(--xeg-spacing-compact)}} @media (prefers-reduced-motion:reduce){.xg-gmRW{scroll-behavior:auto;will-change:auto;transform:none}} @media (prefers-reduced-motion:reduce){.xg-meO3:hover, .xg-meO3:focus-within{transform:none}} .xg-X9gZ [class*=\"galleryToolbar\"]:hover{--toolbar-opacity:1;--toolbar-pointer-events:auto} .xg-huYo{position:relative;margin-bottom:var(--xs-m);margin-inline:auto;border-radius:var(--xr-l);overflow:visible;transition:var(--xti);cursor:pointer;border:.0625rem solid var(--xcb-p);background:var(--xcbg-s);padding:var(--xs-s);width:fit-content;max-width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;pointer-events:auto;transform:var(--xgh);will-change:transform;contain:layout style} .xg-huYo[data-fit-mode=\"original\"]{max-width:none;flex-shrink:0;width:max-content;align-self:center} .xg-huYo:hover{transform:var(--xhl);background:var(--xc-se);border-color:var(--xbe)} .xg-huYo:focus-visible{border-color:var(--xfic, var(--xcb-p))} .xg-huYo.xg-xm-1{border-color:var(--xbe, var(--xcb-s));transition:var(--xti)} .xg-huYo.xg-xm-1:focus-visible{border-color:var(--xfic, var(--xcb-s))} .xg-huYo.xg-luqi{border-color:var(--xfic, var(--xcb-p));transition:var(--xti)} .xg-8-c8{position:relative;background:var(--xcbg-s);width:fit-content;max-width:100%;margin:0 auto;display:flex;justify-content:center;align-items:center;contain:layout paint} .xg-huYo[data-fit-mode=\"original\"] .xg-8-c8{width:auto;max-width:none} .xg-huYo[data-media-loaded=\"false\"] .xg-8-c8{min-height:var(--xs-3);aspect-ratio:var(--xgi-r, var(--xad))} .xg-lhkE{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:var(--xsk-b);min-height:var(--xs-3)} .xg-6YYD{--xsp-s:var(--xs-l);--xsp-bw:.125rem;--xsp-tc:var(--xcb-p);--xsp-ic:var(--xc-p)} .xg-FWlk, .xg-GUev{display:block;border-radius:var(--xr-m);object-fit:contain;pointer-events:auto;user-select:none;-webkit-user-drag:none;transform:var(--xgh);will-change:opacity;transition:opacity var(--xdn) var(--xeo)}:is(.xg-FWlk, .xg-GUev).xg-8Z3S{opacity:0}:is(.xg-FWlk, .xg-GUev).xg-y9iP{opacity:1} .xg-GUev{inline-size:100%;overflow:clip}:is(.xg-FWlk, .xg-GUev).xg-yYtG{inline-size:auto;block-size:auto;max-inline-size:none;max-block-size:none;object-fit:none}:is(.xg-FWlk, .xg-GUev).xg-Uc0o{inline-size:auto;block-size:auto;max-inline-size:100%;max-block-size:none;object-fit:scale-down}:is(.xg-FWlk, .xg-GUev).xg-M9Z6{inline-size:auto;block-size:auto;max-inline-size:calc(100vw - var(--xs-l) * 2);max-block-size:var(--xvhc);object-fit:scale-down}:is(.xg-FWlk, .xg-GUev).xg--Mlr{inline-size:auto;block-size:auto;max-inline-size:100%;max-block-size:var(--xvhc);object-fit:contain} .xg-Wno7{font-size:var(--xfs-2);margin-bottom:var(--xs-s)} .xg-8-wi{font-size:var(--xfs-s);text-align:center} .xg-Gswe{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--xc-e-bg);color:var(--xc-e);min-height:var(--xs-3)} .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"]{inline-size:min(var(--xgi-w, 100%), 100%);max-inline-size:min(var(--xgi-w, 100%), 100%);max-block-size:min( var(--xgi-h, var(--xs-5)), var(--xvhc) )} .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"] .xg-FWlk, .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"] .xg-GUev{inline-size:min(var(--xgi-w, 100%), 100%);max-inline-size:min(var(--xgi-w, 100%), 100%);max-block-size:min( var(--xgi-h, var(--xs-5)), var(--xvhc) )} .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitHeight\"], .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitContainer\"]{--xgf-ht:min( var(--xgi-h, var(--xs-5)), var(--xvhc) );max-block-size:var(--xgf-ht);inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) );max-inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) )} .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"]:is( [data-fit-mode=\"fitHeight\"], [data-fit-mode=\"fitContainer\"] ):is(.xg-FWlk, .xg-GUev){max-block-size:var(--xgf-ht);max-inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) )} @media (prefers-reduced-motion:reduce){.xg-huYo{will-change:auto;transition:none} .xg-huYo:hover{transform:none}:where(.xg-FWlk, .xg-GUev){will-change:auto;transition:none}} .xg-EeSh{display:flex;flex-direction:column;gap:var(--xse-g);padding:var(--xse-p)} .xg-nm9B{gap:var(--sps)} .xg-PI5C{display:flex;flex-direction:column;gap:var(--xse-cg)} .xg-VUTt{gap:var(--spx)} .xg-vhT3{font-size:var(--xse-lf);font-weight:var(--xse-lw);color:var(--xct-p)} .xg-Y62M{font-size:var(--fsx);color:var(--xct-s);letter-spacing:.04em;text-transform:uppercase} .xg-jpiS{width:100%;padding:var(--xse-sp);font-size:var(--xse-sf);color:var(--xct-p);background-color:var(--xte-b);border:var(--bwt) solid var(--xt-b);border-radius:var(--xr-m);cursor:pointer;line-height:1.375;min-height:2.75em;transform:none;overflow:visible;transition:border-color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s), box-shadow var(--xdf) var(--xe-s)} .xg-jpiS:hover{border-color:var(--xcb-h);background-color:var(--xte-bs);box-shadow:0 0 0 2px color-mix(in oklch, var(--xt-b) 20%, transparent 80%)} .xg-jpiS:focus, .xg-jpiS:focus-visible{border-color:var(--xfic);box-shadow:0 0 0 3px color-mix(in oklch, var(--xfic) 25%, transparent 75%)} .xg-jpiS option{padding:.5em .75em;line-height:1.5} .xg-4eoj{color:var(--xtt-c, var(--xct-p));cursor:pointer;font-size:.875em;font-weight:500;width:var(--xsb-m);height:var(--xsb-m);min-width:var(--xsb-m);min-height:var(--xsb-m);padding:.5em;aspect-ratio:1;position:relative;overflow:clip;border-radius:var(--xr-m);background:transparent;border:none;transition:var(--xts), transform var(--xdf) var(--xe-s)} .xg-4eoj:focus, .xg-4eoj:focus-visible{background:var(--xte-b, var(--xcn1))} .xg-fLg7{--toolbar-surface-base:var( --xtp-s, var(--xt-s, var(--xcbg-p, Canvas)) );--toolbar-surface-border:var(--xt-b);background:var(--toolbar-surface-base);border:none;border-radius:var(--xr-l);position:fixed;top:1.25em;left:50%;transform:translateX(-50%);z-index:var(--xz-t, 2147483620);display:var(--toolbar-display, inline-flex);align-items:center;justify-content:space-between;height:3em;padding:.5em 1em;gap:0;color:var(--xtt-c, var(--xct-p));visibility:var(--toolbar-visibility, visible);opacity:var(--toolbar-opacity, 1);pointer-events:var(--toolbar-pointer-events, auto);transition:var(--xten);user-select:none;overscroll-behavior:contain} .xg-fLg7.xg-ZpP8, .xg-fLg7.xg-t4eq{border-radius:var(--xr-l) var(--xr-l) 0 0} .xg-fLg7.xg-ojCW{--toolbar-opacity:1;--toolbar-pointer-events:auto;--toolbar-visibility:visible;--toolbar-display:inline-flex} .xg-fLg7.xg-Y6KF, .xg-fLg7.xg-n-ab, .xg-fLg7.xg-bEzl{--toolbar-opacity:1;--toolbar-pointer-events:auto;--toolbar-visibility:visible;--toolbar-display:inline-flex} .xg-f8g4{display:flex;align-items:center;justify-content:center;width:100%;max-width:100%;overflow:hidden} .xg-Ix3j{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:var(--xs-xs);width:100%} .xg-Ix3j \u003E *{flex:0 0 auto} .xg-0EHq{display:flex;align-items:center;justify-content:center;padding-inline:var(--xs-s);min-width:5em} .xg-FKnO{color:var(--xtt-m, var(--xct-p));margin:0 .125em}:where(.xg-4eoj[aria-pressed=\"true\"]){background:var(--xte-bs, var(--xcn2))} .xg-4eoj:disabled{color:var(--xtt-m, var(--xcn4));cursor:not-allowed} @media (hover:hover){.xg-4eoj:hover:not(:disabled){background:var(--xte-b, var(--xcn1));transform:translateY(var(--xb-l))}} .xg-4eoj:active:not(:disabled){background:var(--xte-bs, var(--xcn2));transform:translateY(0)} .xg-njlf{} .xg-AU-d{} .xg-Vn14{} .xg-atmJ{position:relative} .xg-GG86{position:relative;gap:0;min-width:5em;min-height:2.5em;padding-bottom:.5em;box-sizing:border-box} .xg-2cjm{color:var(--xtt-c, var(--xct-p));font-size:var(--xfs-m);font-weight:600;text-align:center;white-space:nowrap;line-height:1;background:transparent;padding:.25em .5em;border-radius:var(--xr-m);border:none} .xg-JEXm{color:var(--xtt-c, var(--xct-p));font-weight:700} .xg-d1et{color:var(--xtt-c, var(--xct-p))} .xg-vB6N{position:absolute;left:50%;bottom:.125em;transform:translateX(-50%);width:3.75em;height:.125em;background:var(--xtp-pt, var(--xcn2));border-radius:var(--xr-s);overflow:clip} .xg-LWQw{width:100%;height:100%;background:var(--xtt-c, var(--xct-p));border-radius:var(--xr-s);transition:var(--xtwn);transform-origin:left} .xg-Q7dU, button.xg-Q7dU{transition:var(--xti);position:relative;z-index:10;pointer-events:auto} .xg-Q7dU[data-selected=\"true\"]{} .xg-Q7dU:focus, .xg-Q7dU:focus-visible{border:none} @media (prefers-reduced-transparency:reduce){.xg-fLg7{background:var(--xtp-s, var(--xt-s))} [data-theme=\"dark\"] .xg-fLg7{background:var(--xtp-s, var(--xt-s))}} @media (prefers-reduced-motion:reduce){.xg-4eoj:hover:not(:disabled), .xg-atmJ:hover:not(:disabled), .xg-Vn14:hover:not(:disabled), .xg-Q7dU:hover{transform:none}}:where(.xg-JcF-, .xg-yRtv){position:absolute;top:100%;left:0;right:0;width:100%;display:flex;flex-direction:column;gap:var(--xs-m);padding:var(--xs-l);max-height:var(--xtp-mh);overflow:hidden;opacity:0;transform:translateY(-.5em);visibility:hidden;pointer-events:none;transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s var(--xdn);background:var( --toolbar-surface-base, var(--xtp-s, var(--xt-s)) );border-top:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:0 0 var(--xr-l) var(--xr-l);z-index:var(--xz-tp);will-change:transform, opacity;overscroll-behavior:contain} .xg-JcF-{height:var(--xtp-h)} .xg-yRtv{min-height:var(--xtp-h)}:where(.xg-JcF-, .xg-yRtv).xg-4a2L{height:auto;opacity:1;transform:translateY(0);visibility:visible;pointer-events:auto;border-top-color:var(--toolbar-surface-border, var(--xt-b));transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s 0s;z-index:var(--xz-ta)} .xg-w56C{display:flex;flex-direction:column;gap:var(--xs-s)} .xg-rSWg{display:flex;align-items:center;padding-bottom:var(--xs-xs);border-bottom:var(--bwt) solid var(--toolbar-surface-border);margin-bottom:var(--xs-s)} .xg-jd-V{font-size:var(--xfs-s);font-weight:var(--xfw-s);color:var(--xtt-c);text-transform:uppercase;letter-spacing:.04em} .xg-jmjG{padding:var(--xs-s) var(--xs-m);font-size:var(--xfs-b);line-height:var(--xeg-line-height-snug);color:var(--xtt-c, var(--xct-p));background:var( --toolbar-surface-base, var(--xtp-s, var(--xt-s)) );border:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:var(--xr-m);white-space:pre-wrap;word-wrap:break-word;overflow-y:auto;overscroll-behavior:contain;max-height:18em;transition:var(--xts);user-select:text;-webkit-user-select:text;cursor:text} .xg-jmjG::-webkit-scrollbar{width:.5em} .xg-jmjG::-webkit-scrollbar-track{background:var(--xts-t, var(--xcn2));border-radius:var(--xr-s)} .xg-jmjG::-webkit-scrollbar-thumb{background:var(--xts-th, var(--xcn4));border-radius:var(--xr-s)} .xg-jmjG::-webkit-scrollbar-thumb:hover{background:var(--xte-bs, var(--xcn5))} .xg-jmjG a{color:var(--xc-p);text-decoration:none;font-weight:var(--xfw-m);padding:.125em .25em;margin:-.125em -.25em;border-radius:var(--xr-xs);overflow-wrap:break-word;transition:color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s);cursor:pointer} .xg-jmjG a:hover{color:var(--xc-ph);background:var(--xte-b);text-decoration:underline;text-decoration-thickness:.0625rem;text-underline-offset:.125em} .xg-jmjG a:focus, .xg-jmjG a:focus-visible{background:var(--xte-bs, var(--xcn2));color:var(--xc-ph);border-radius:var(--xr-xs)} .xg-jmjG a:active{color:var(--xc-p-active)} .xg-0Eeq{display:flex;align-items:center;gap:var(--xs-xs);padding:var(--xs-s);margin-bottom:var(--xs-s);background:var(--xte-bs);border:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:var(--xr-s);transition:var(--xts)} .xg-0Eeq:hover{background:color-mix( in oklch, var(--xte-bs) 85%, var(--xc-p) 15% );border-color:var(--xcb-h)} .xg-AVKe{display:flex;align-items:center;gap:.375em;width:100%;color:var(--xc-p);text-decoration:none;font-size:var(--xfs-s);font-weight:500;transition:color var(--xdf) var(--xe-s)} .xg-AVKe:hover{color:var(--xc-ph)} .xg-AVKe:focus, .xg-AVKe:focus-visible{outline:.125rem solid var(--xfic);outline-offset:.125rem;border-radius:var(--xr-xs)} .xg-5RjR{flex-shrink:0;width:.875em;height:.875em;stroke:currentColor} .xg-8Stf{flex-shrink:0;color:var(--xtt-m, var(--xct-s));font-weight:600} .xg-3pwZ{flex:1;color:var(--xc-p);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .xg-sltl{width:100%;height:var(--bwt);background:color-mix(in oklch, var(--toolbar-surface-border) 60%, transparent 40%);margin:var(--xs-m) 0;border-radius:var(--xr-s)} @layer xeg.features{:where(.xeg-surface, .xeg-glass-surface){background:var(--xsu-b);border:var(--bwt) solid var(--xsu-br);border-radius:var(--xr-2);isolation:isolate;transition:opacity var(--xdn) var(--xe-s)}:where(.xeg-surface, .xeg-glass-surface):hover{background:var(--xsu-bh, var(--xsu-b))} .xeg-gallery-renderer[data-renderer=\"gallery\"]{display:block;width:0;height:0;overflow:visible} .xeg-gallery-overlay{display:flex;align-items:center;justify-content:center;position:fixed;inset:0;z-index:var(--xz-g, 10000);background:var(--xg-b);opacity:1;transition:opacity var(--xdn) var(--xe-s);pointer-events:auto} .xeg-gallery-container{position:relative;width:100%;height:100%;max-width:100vw;max-height:100vh;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable both-edges}} @layer xeg.tokens, xeg.base, xeg.utilities, xeg.components, xeg.features, xeg.overrides;@layer xeg.tokens{:where(:root, .xeg-theme-scope){--cbw:oklch(1 0 0);--cbb:oklch(0 0 0);--cg0:oklch(.97 .002 206.2);--cg1:oklch(.943 .006 206.2);--cg2:oklch(.896 .006 206.2);--cg3:oklch(.796 .006 206.2);--cg4:oklch(.696 .006 286.3);--cg5:oklch(.598 .006 286.3);--cg6:oklch(.488 .006 286.3);--cg7:oklch(.378 .005 286.3);--cg8:oklch(.306 .005 282);--cg9:oklch(.234 .006 277.8);--spx:.25rem;--sps:.5rem;--spm:1rem;--spl:1.5rem;--rs:.25em;--rm:.375em;--rl:.5em;--r2:1em;--rf:50%;--ffp:\"TwitterChirp\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;--fsx:.75rem;--fss:.875rem;--fsb:.9375rem;--fsm:1rem;--fs2:1.5rem;--fwm:500;--fws:600;--fwb:700;--df:150ms;--dn:250ms;--bwt:.0625rem;--line-height-snug:1.375;--lhn:1.5}} @layer xeg.tokens{:where(:root, .xeg-theme-scope){--xcbg-p:var(--cbw);--xcbg-s:var(--cg0);--xeg-color-bg-surface:var(--cbw);--xeg-color-bg-elevated:var(--cbw);--xbgt:var(--xeg-color-bg-surface);--xt-b:var(--xcb-p);--xt-s:var(--xbgt);--xtp-s:var(--xt-s);--xg-bl:var(--xcbg-p);--xg-bd:var(--cg9);--xg-b:var(--xg-bl);--xad:4 \u002F 3;--xct-p:var(--cbb);--xct-s:var(--cg6);--xeg-color-border-default:var(--cg2);--xeg-color-border-emphasis:var(--cg5);--xcb-p:var(--xeg-color-border-default);--xcb-h:var(--cg3);--xcb-s:var(--xeg-color-border-emphasis);--xtt-c:var(--xct-p);--xtt-m:var(--xct-s);--xte-b:color-mix( in oklch, var(--xbgt) 80%, var(--cbw) 20% );--xte-bs:color-mix( in oklch, var(--xbgt) 65%, var(--cbw) 35% );--xte-br:color-mix( in oklch, var(--xt-b) 85%, var(--cbw) 15% );--xtp-pt:color-mix( in oklch, var(--xte-b) 60%, var(--xte-br) 40% );--xts-t:color-mix( in oklch, var(--xte-b) 50%, var(--cbw) 50% );--xts-th:color-mix( in oklch, var(--xte-br) 80%, var(--cbw) 20% );--xc-e:var(--cg8);--xc-e-bg:var(--cg1);--xc-p:var(--cg9);--xc-ph:var(--cg7);--xc-p-active:var(--cg8);--xcn1:var(--cg1);--xcn2:var(--cg2);--xcn3:var(--cg3);--xcn4:var(--cg4);--xcn5:var(--cg5);--xct-t:var(--cg5);--xsb-m:2.5em;--xfic:var(--xcb-p);--xfs-s:var(--fss);--xfs-b:var(--fsb);--xfs-m:var(--fsm);--xfs-2:var(--fs2);--xfw-m:var(--fwm);--xfw-s:var(--fws);--xeg-line-height-snug:var(--line-height-snug);--xdf:var(--df);--xdn:var(--dn);--xdt:var(--dn);--xsu-b:var(--xeg-color-bg-surface);--xsu-br:var(--xeg-color-border-default);--xsu-bh:var(--xcbg-s);--xc-se:var(--xeg-color-bg-elevated);--xsk-b:var(--xcbg-s);--xbe:var(--xeg-color-border-emphasis);--xz-g:2147483600;--xz-th:2147483618;--xz-t:2147483620;--xz-tp:2147483622;--xz-ta:2147483624;--xe-s:cubic-bezier(.4, 0, .2, 1);--xe-d:cubic-bezier(0, 0, .2, 1);--xe-a:cubic-bezier(.4, 0, 1, 1);--xeo:cubic-bezier(.4, 0, .2, 1);--xel:linear;--xlh:var(--lhn, 1.5);--xb-l:-.0625rem;--xhl:translateY(-.125rem);--xr-s:var(--rs);--xr-m:var(--rm);--xr-l:var(--rl);--xr-2:var(--r2);--xr-f:var(--rf);--xeg-scrollbar-thumb-color:var(--cg4);--xeg-scrollbar-thumb-hover-color:var(--cg5)}:where(:root, .xeg-theme-scope)[data-theme=\"light\"]{--xcbg-p:var(--cbw);--xct-p:var(--cbb);--xct-s:var(--cg6);--xg-b:var(--xg-bl)}:where(:root, .xeg-theme-scope)[data-theme=\"dark\"]{--xcbg-p:var(--cg9);--xeg-color-bg-surface:var(--cg9);--xeg-color-bg-elevated:var(--cg7);--xct-p:var(--cbw);--xct-s:var(--cg4);--xbgt:var(--cg8);--xcb-p:var(--cg6);--xt-b:var(--cg6);--xcbg-s:var(--cg8);--xg-b:var(--xg-bd);--xtt-c:var(--xct-p);--xtt-m:var(--cg3);--xte-b:color-mix( in oklch, var(--xbgt) 85%, var(--cbb) 15% );--xte-bs:color-mix( in oklch, var(--xbgt) 70%, var(--cbb) 30% );--xte-br:color-mix( in oklch, var(--xt-b) 75%, var(--cbb) 25% );--xtp-pt:color-mix( in oklch, var(--xt-b) 65%, var(--xbgt) 35% );--xts-t:color-mix( in oklch, var(--xte-b) 80%, var(--cbb) 20% );--xts-th:color-mix( in oklch, var(--xte-br) 85%, var(--cbb) 15% );--xc-p:var(--cg1);--xc-ph:var(--cg2);--xc-p-active:var(--cg3);--xsu-b:var(--cg9);--xsu-br:var(--cg6);--xsu-bh:var(--cg8)} @media (prefers-reduced-motion:reduce){:where(:root, .xeg-theme-scope){--xdf:0ms;--xts:none;--xten:none;--xtef:none;--xti:none;--xtwn:none}}:where(:root, .xeg-theme-scope){--xse-g:var(--spm);--xse-p:var(--spm);--xse-cg:var(--sps);--xse-lf:var(--fss);--xse-lw:var(--fwb);--xse-sf:var(--fss);--xse-sp:var(--sps) var(--spm)}} @layer xeg.tokens{:where(:root, .xeg-theme-scope){--xtp-t:height var(--xdn) var(--xe-s), opacity var(--xdf) var(--xe-s);--xtp-h:0;--xtp-mh:17.5rem;--xsw:.5rem;--xhzh:7.5rem;--xsp-sd:1rem;--xsp-bw:.125rem;--xsp-tc:color-mix(in oklch, var(--xcn4) 60%, transparent);--xsp-ic:var(--xc-p, currentColor);--xsp-d:var(--xdn);--xsp-e:var(--xel);--xts:background-color var(--xdf) var(--xe-s), border-color var(--xdf) var(--xe-s), color var(--xdf) var(--xe-s);--xten:transform var(--xdn) var(--xe-s), opacity var(--xdn) var(--xe-s);--xtef:transform var(--xdf) var(--xe-s), opacity var(--xdf) var(--xe-s);--xti:background-color var(--xdf) var(--xeo), border-color var(--xdf) var(--xeo), color var(--xdf) var(--xeo), transform var(--xdf) var(--xeo);--xtwn:width var(--xdn) var(--xe-s);--xs-xs:var(--spx);--xs-s:var(--sps);--xs-m:var(--spm);--xs-l:var(--spl);--xvhc:90vh} @media (prefers-reduced-transparency:reduce){:where(:root, .xeg-theme-scope){--xsu-b:var(--xcbg-p)}}} @layer xeg.components{.xeg-surface{background:var(--xsu-b);border:.0625rem solid var(--xsu-br);border-radius:var(--xr-l)} .xeg-spinner{display:inline-block;width:var(--xsp-s, var(--xsp-sd));height:var(--xsp-s, var(--xsp-sd));border-radius:var(--xr-f);border:var(--xsp-bw) solid var(--xsp-tc);border-top-color:var(--xsp-ic);animation:xeg-spin var(--xsp-d) var(--xsp-e) infinite;box-sizing:border-box} @media (prefers-reduced-motion:reduce){.xeg-spinner{animation:none}} @keyframes xeg-fade-in{from{opacity:0} to{opacity:1}} @keyframes xeg-fade-out{from{opacity:1} to{opacity:0}} @keyframes xeg-spin{from{transform:rotate(0deg)} to{transform:rotate(360deg)}}} @layer xeg.base{:where(.xeg-gallery-root, .xeg-gallery-root *),:where(.xeg-gallery-root *::before, .xeg-gallery-root *::after){box-sizing:border-box;margin:0;padding:0} .xeg-gallery-root button{border:none;background:none;cursor:pointer;font:inherit;color:inherit} .xeg-gallery-root a{color:inherit;text-decoration:none} .xeg-gallery-root img{max-width:100%;height:auto;display:block} .xeg-gallery-root ul, .xeg-gallery-root ol{list-style:none} .xeg-gallery-root input, .xeg-gallery-root textarea, .xeg-gallery-root select{font:inherit;color:inherit;background:transparent} .xeg-gallery-root::-webkit-scrollbar{width:var(--xsw, .5rem);height:var(--xsw, .5rem)} .xeg-gallery-root::-webkit-scrollbar-track{background:transparent} .xeg-gallery-root::-webkit-scrollbar-thumb{background:var(--xeg-scrollbar-thumb-color);border-radius:var(--xr-s, .25rem)} .xeg-gallery-root::-webkit-scrollbar-thumb:hover{background:var(--xeg-scrollbar-thumb-hover-color)}} @layer xeg.utilities{.xeg-row-center{display:flex;align-items:center} .xeg-inline-center{display:inline-flex;align-items:center;justify-content:center} .xeg-gap-sm{gap:var(--xs-s)}} @layer xeg.utilities{.xeg-fade-in{animation:xeg-fade-in var(--xdn) var(--xe-d);animation-fill-mode:both} .xeg-fade-out{animation:xeg-fade-out var(--xdf) var(--xe-a);animation-fill-mode:both} @media (prefers-reduced-motion:reduce){.xeg-fade-in, .xeg-fade-out{animation:none}}} @layer xeg.base{.xeg-gallery-root{all:unset;box-sizing:border-box;scroll-behavior:smooth;font-family:var(--ffp);font-size:var(--fsb, .9375rem);line-height:var(--xlh, 1.5);color:var(--xct-p, currentColor);position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:var(--xz-g, 10000);isolation:isolate;contain:style paint;overscroll-behavior:contain;background:var(--xg-b, var(--xcbg-p, Canvas));pointer-events:auto;user-select:none;transform:translateZ(0);will-change:opacity, transform;-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}}";var s=document.getElementById("xeg-injected-styles");if(!s){s=document.createElement('style');s.id="xeg-injected-styles";(document.head||document.documentElement).appendChild(s);}s.textContent=css;})();
+(function(){if(typeof document==='undefined')return;var css="@layer xeg.components{:root{--xtt:opacity var(--xdt) var(--xe-s), transform var(--xdt) var(--xe-s), visibility 0ms;--xeg-spacing-gallery:clamp(var(--xs-s), 2.5vw, var(--xs-l));--xeg-spacing-mobile:clamp(var(--xs-xs), 2vw, var(--xs-m));--xeg-spacing-compact:clamp(.25rem, 1.5vw, var(--xs-s));--xth-o:0;--xth-v:hidden;--xth-pe:none}} @media (prefers-reduced-motion:reduce){@layer xeg.components{:root{--xtt:none} .xg-X9gZ{scroll-behavior:auto;transition:none} .xg-meO3{transition:none}}} .xg-X9gZ{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:var(--xz-g, 10000);background:var(--xg-b);display:flex;flex-direction:column;transform:var(--xgh);will-change:opacity, transform;contain:layout style paint;opacity:1;visibility:visible;transition:var(--xten);cursor:default;pointer-events:auto;container-type:size;container-name:gallery-container;scroll-behavior:smooth;overscroll-behavior:none} .xg-meO3{position:fixed;top:0;left:0;right:0;height:auto;z-index:var(--xz-t, 2147483620);opacity:var(--toolbar-opacity, 0);visibility:var(--toolbar-visibility, hidden);display:block;transition:var(--xtt);will-change:transform, opacity, visibility;contain:layout style;transform:var(--xgh);backface-visibility:var(--xbv);pointer-events:var(--toolbar-pointer-events, none);background:transparent;border:none;border-radius:0;margin:0;padding-block-end:var(--xeg-spacing-gallery)} .xg-meO3:is(:hover,:focus-within){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-meO3:focus-within{transition:var(--xtef)} .xg-meO3 *{pointer-events:inherit} .xg-meO3 [data-gallery-element=\"settings-panel\"][data-expanded=\"true\"]{pointer-events:auto} .xg-meO3:has([data-gallery-element=\"settings-panel\"][data-expanded=\"true\"]){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-X9gZ.xg-9abg{cursor:none} .xg-X9gZ.xg-sOsS[data-xeg-gallery=\"true\"][data-xeg-role=\"gallery\"] .xg-meO3{--toolbar-opacity:var(--xth-o, 0);--toolbar-visibility:var(--xth-v, hidden);--toolbar-pointer-events:var(--xth-pe, none)} .xg-X9gZ *{pointer-events:auto} .xg-gmRW{flex:1;display:flex;flex-direction:column;overflow:auto;position:relative;z-index:0;contain:layout style;transform:var(--xgh);overscroll-behavior:contain;scrollbar-gutter:stable;pointer-events:auto;container-type:size;container-name:items-list} .xg-gmRW::-webkit-scrollbar{width:var(--xsw)} .xg-gmRW::-webkit-scrollbar-track{background:transparent} .xg-gmRW::-webkit-scrollbar-thumb{background:var(--xeg-scrollbar-thumb-color, var(--xcn3));border-radius:var( --xsbr );transition:background-color var(--xdn) var(--xe-s)} .xg-gmRW::-webkit-scrollbar-thumb:hover{background:var(--xeg-scrollbar-thumb-hover-color, var(--xcn4))} .xg-X9gZ.xg-9abg .xg-meO3{pointer-events:none;opacity:0;transition:opacity var(--xdf) var(--xe-s)} .xg-X9gZ.xg-9abg [data-xeg-role=\"items-list\"], .xg-X9gZ.xg-9abg .xg-gmRW{pointer-events:auto} .xg-X9gZ.xg-yhK-{justify-content:center;align-items:center} .xg-EfVa{position:relative;margin-bottom:var(--xs-m, 1rem);border-radius:var(--xr-l, .5rem);transition:var(--xten);contain:layout style;transform:var(--xgh)} .xg-LxHL{position:relative;z-index:1} .xg-sfF0{height:calc(100vh - var(--xeg-toolbar-height, 3.75rem));min-height:50vh;pointer-events:none;user-select:none;flex-shrink:0;background:transparent;opacity:0;contain:strict;content-visibility:auto} .xg-gC-m{position:fixed;top:0;left:0;right:0;height:var(--xhzh);z-index:var(--xz-th, 2147483618);background:transparent;pointer-events:auto} .xg-gC-m:hover{z-index:var(--xz-th);background:transparent} .xg-X9gZ.xg-Canm:not([data-settings-expanded=\"true\"]) .xg-gC-m, .xg-X9gZ:has(.xg-meO3:hover):not([data-settings-expanded=\"true\"]) .xg-gC-m{pointer-events:none} .xg-X9gZ.xg-Canm .xg-meO3, .xg-X9gZ:has(.xg-gC-m:hover) .xg-meO3{--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto} .xg-meO3 [class*=\"galleryToolbar\"]{opacity:var(--toolbar-opacity, 0);visibility:var(--toolbar-visibility, hidden);display:flex;pointer-events:var(--toolbar-pointer-events, none)} .xg-meO3 button, .xg-meO3 [role=\"button\"], .xg-meO3 .xg-e06X{pointer-events:auto;position:relative;z-index:10} .xg-fwsr{text-align:center;color:var(--xct-s);max-inline-size:min(25rem, 90vw);padding:clamp(1.875rem, 5vw, 2.5rem)} .xg-fwsr h3{margin:0 0 clamp(.75rem, 2vw, 1rem);font-size:clamp(1.25rem, 4vw, 1.5rem);font-weight:var(--xfw-s);color:var(--xct-p);line-height:var(--xeg-line-height-tight)} .xg-fwsr p{margin:0;font-size:clamp(.875rem, 2.5vw, 1rem);line-height:var(--xlh);color:var(--xct-t)} @container gallery-container (max-width:48rem){.xg-gmRW{padding:var(--xeg-spacing-mobile);gap:var(--xeg-spacing-mobile)} .xg-meO3{padding-block-end:var(--xeg-spacing-mobile)}} @container gallery-container (max-width:30rem){.xg-gmRW{padding:var(--xeg-spacing-compact);gap:var(--xeg-spacing-compact)}} @media (prefers-reduced-motion:reduce){.xg-gmRW{scroll-behavior:auto;will-change:auto;transform:none}} @media (prefers-reduced-motion:reduce){.xg-meO3:hover, .xg-meO3:focus-within{transform:none}} .xg-X9gZ [class*=\"galleryToolbar\"]:hover{--toolbar-opacity:1;--toolbar-pointer-events:auto} .xg-huYo{position:relative;margin-bottom:var(--xs-m);margin-inline:auto;border-radius:var(--xr-l);overflow:visible;transition:var(--xti);cursor:pointer;border:.0625rem solid var(--xcb-p);background:var(--xcbg-s);padding:var(--xs-s);width:fit-content;max-width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;pointer-events:auto;transform:var(--xgh);will-change:transform;contain:layout style} .xg-huYo[data-fit-mode=\"original\"]{max-width:none;flex-shrink:0;width:max-content;align-self:center} .xg-huYo:hover{transform:var(--xhl);background:var(--xc-se);border-color:var(--xbe)} .xg-huYo:focus-visible{border-color:var(--xfic, var(--xcb-p))} .xg-huYo.xg-xm-1{border-color:var(--xbe, var(--xcb-s));transition:var(--xti)} .xg-huYo.xg-xm-1:focus-visible{border-color:var(--xfic, var(--xcb-s))} .xg-huYo.xg-luqi{border-color:var(--xfic, var(--xcb-p));transition:var(--xti)} .xg-8-c8{position:relative;background:var(--xcbg-s);width:fit-content;max-width:100%;margin:0 auto;display:flex;justify-content:center;align-items:center;contain:layout paint} .xg-huYo[data-fit-mode=\"original\"] .xg-8-c8{width:auto;max-width:none} .xg-huYo[data-media-loaded=\"false\"] .xg-8-c8{min-height:var(--xs-3);aspect-ratio:var(--xgi-r, var(--xad))} .xg-lhkE{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:var(--xsk-b);min-height:var(--xs-3)} .xg-6YYD{--xsp-s:var(--xs-l);--xsp-bw:.125rem;--xsp-tc:var(--xcb-p);--xsp-ic:var(--xc-p)} .xg-FWlk, .xg-GUev{display:block;border-radius:var(--xr-m);object-fit:contain;pointer-events:auto;user-select:none;-webkit-user-drag:none;transform:var(--xgh);will-change:opacity;transition:opacity var(--xdn) var(--xe-s)}:is(.xg-FWlk, .xg-GUev).xg-8Z3S{opacity:0}:is(.xg-FWlk, .xg-GUev).xg-y9iP{opacity:1} .xg-GUev{inline-size:100%;overflow:clip}:is(.xg-FWlk, .xg-GUev).xg-yYtG{inline-size:auto;block-size:auto;max-inline-size:none;max-block-size:none;object-fit:none}:is(.xg-FWlk, .xg-GUev).xg-Uc0o{inline-size:auto;block-size:auto;max-inline-size:100%;max-block-size:none;object-fit:scale-down}:is(.xg-FWlk, .xg-GUev).xg-M9Z6{inline-size:auto;block-size:auto;max-inline-size:calc(100vw - var(--xs-l) * 2);max-block-size:var(--xvhc);object-fit:scale-down}:is(.xg-FWlk, .xg-GUev).xg--Mlr{inline-size:auto;block-size:auto;max-inline-size:100%;max-block-size:var(--xvhc);object-fit:contain} .xg-Wno7{font-size:var(--xfs-2);margin-bottom:var(--xs-s)} .xg-8-wi{font-size:var(--xfs-s);text-align:center} .xg-Gswe{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--xc-e-bg);color:var(--xc-e);min-height:var(--xs-3)} .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"]{inline-size:min(var(--xgi-w, 100%), 100%);max-inline-size:min(var(--xgi-w, 100%), 100%);max-block-size:min( var(--xgi-h, var(--xs-5)), var(--xvhc) )} .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"] .xg-FWlk, .xg-huYo[data-media-loaded=\"false\"][data-fit-mode=\"original\"] .xg-GUev{inline-size:min(var(--xgi-w, 100%), 100%);max-inline-size:min(var(--xgi-w, 100%), 100%);max-block-size:min( var(--xgi-h, var(--xs-5)), var(--xvhc) )} .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitHeight\"], .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"][data-fit-mode=\"fitContainer\"]{--xgf-ht:min( var(--xgi-h, var(--xs-5)), var(--xvhc) );max-block-size:var(--xgf-ht);inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) );max-inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) )} .xg-huYo[data-media-loaded=\"false\"][data-has-intrinsic-size=\"true\"]:is( [data-fit-mode=\"fitHeight\"], [data-fit-mode=\"fitContainer\"] ):is(.xg-FWlk, .xg-GUev){max-block-size:var(--xgf-ht);max-inline-size:min( 100%, calc(var(--xgf-ht) * var(--xgi-r, 1)) )} @media (prefers-reduced-motion:reduce){.xg-huYo{will-change:auto;transition:none} .xg-huYo:hover{transform:none}:where(.xg-FWlk, .xg-GUev){will-change:auto;transition:none}} .xg-EeSh{display:flex;flex-direction:column;gap:var(--xse-g);padding:var(--xse-p)} .xg-nm9B{gap:var(--sps)} .xg-PI5C{display:flex;flex-direction:column;gap:var(--xse-cg)} .xg-VUTt{gap:var(--spx)} .xg-vhT3{font-size:var(--xse-lf);font-weight:var(--xse-lw);color:var(--xct-p)} .xg-Y62M{font-size:var(--fsx);color:var(--xct-s);letter-spacing:var(--xeg-letter-spacing-wide);text-transform:uppercase} .xg-jpiS{width:100%;padding:var(--xse-sp);font-size:var(--xse-sf);color:var(--xct-p);background-color:var(--xte-b);border:var(--bwt) solid var(--xt-b);border-radius:var(--xr-m);cursor:pointer;line-height:var(--xeg-line-height-snug);min-height:2.75em;transform:none;overflow:visible;transition:border-color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s), box-shadow var(--xdf) var(--xe-s)} .xg-jpiS:hover{border-color:var(--xcb-h);background-color:var(--xte-bs);box-shadow:0 0 0 2px color-mix(in oklch, var(--xt-b) 20%, transparent 80%)} .xg-jpiS:focus, .xg-jpiS:focus-visible{border-color:var(--xfic);box-shadow:0 0 0 3px color-mix(in oklch, var(--xfic) 25%, transparent 75%)} .xg-jpiS option{padding:.5em .75em;line-height:var(--xlh)} .xg-4eoj{color:var(--xtt-c, var(--xct-p));cursor:pointer;font-size:.875em;font-weight:var(--xfw-m);width:var(--xsb-m);height:var(--xsb-m);min-width:var(--xsb-m);min-height:var(--xsb-m);padding:.5em;aspect-ratio:1;position:relative;overflow:clip;border-radius:var(--xr-m);background:transparent;border:none;transition:var(--xts), transform var(--xdf) var(--xe-s)} .xg-4eoj:focus, .xg-4eoj:focus-visible{background:var(--xte-b, var(--xcn1))} .xg-fLg7{--toolbar-surface-base:var( --xtp-s, var(--xt-s, var(--xcbg-p, Canvas)) );--toolbar-surface-border:var(--xt-b);background:var(--toolbar-surface-base);border:none;border-radius:var(--xr-l);position:fixed;top:1.25em;left:50%;transform:translateX(-50%);z-index:var(--xz-t, 2147483620);display:var(--toolbar-display, inline-flex);align-items:center;justify-content:space-between;height:3em;padding:.5em 1em;gap:0;color:var(--xtt-c, var(--xct-p));visibility:var(--toolbar-visibility, visible);opacity:var(--toolbar-opacity, 1);pointer-events:var(--toolbar-pointer-events, auto);transition:var(--xten);user-select:none;overscroll-behavior:contain} .xg-fLg7.xg-ZpP8, .xg-fLg7.xg-t4eq{border-radius:var(--xr-l) var(--xr-l) 0 0} .xg-fLg7.xg-ojCW{--toolbar-opacity:1;--toolbar-pointer-events:auto;--toolbar-visibility:visible;--toolbar-display:inline-flex} .xg-fLg7.xg-Y6KF, .xg-fLg7.xg-n-ab, .xg-fLg7.xg-bEzl{--toolbar-opacity:1;--toolbar-pointer-events:auto;--toolbar-visibility:visible;--toolbar-display:inline-flex} .xg-f8g4{display:flex;align-items:center;justify-content:center;width:100%;max-width:100%;overflow:hidden} .xg-Ix3j{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:var(--xs-xs);width:100%} .xg-Ix3j \u003E *{flex:0 0 auto} .xg-0EHq{display:flex;align-items:center;justify-content:center;padding-inline:var(--xs-s);min-width:5em} .xg-FKnO{color:var(--xtt-m, var(--xct-p));margin:0 .125em}:where(.xg-4eoj[aria-pressed=\"true\"]){background:var(--xte-bs, var(--xcn2))} .xg-4eoj:disabled{color:var(--xtt-m, var(--xcn4));cursor:not-allowed} @media (hover:hover){.xg-4eoj:hover:not(:disabled){background:var(--xte-b, var(--xcn1));transform:translateY(var(--xb-l))}} .xg-4eoj:active:not(:disabled){background:var(--xte-bs, var(--xcn2));transform:translateY(0)} .xg-njlf{} .xg-AU-d{} .xg-Vn14{} .xg-atmJ{position:relative} .xg-GG86{position:relative;gap:0;min-width:5em;min-height:2.5em;padding-bottom:.5em;box-sizing:border-box} .xg-2cjm{color:var(--xtt-c, var(--xct-p));font-size:var(--xfs-m);font-weight:var(--xfw-s);text-align:center;white-space:nowrap;line-height:1;background:transparent;padding:.25em .5em;border-radius:var(--xr-m);border:none} .xg-JEXm{color:var(--xtt-c, var(--xct-p));font-weight:var(--xeg-font-weight-bold)} .xg-d1et{color:var(--xtt-c, var(--xct-p))} .xg-vB6N{position:absolute;left:50%;bottom:.125em;transform:translateX(-50%);width:3.75em;height:.125em;background:var(--xtp-pt, var(--xcn2));border-radius:var(--xr-s);overflow:clip} .xg-LWQw{width:100%;height:100%;background:var(--xtt-c, var(--xct-p));border-radius:var(--xr-s);transition:var(--xtwn);transform-origin:left} .xg-Q7dU, button.xg-Q7dU{transition:var(--xti);position:relative;z-index:10;pointer-events:auto} .xg-Q7dU[data-selected=\"true\"]{} .xg-Q7dU:focus, .xg-Q7dU:focus-visible{border:none} @media (prefers-reduced-transparency:reduce){.xg-fLg7{background:var(--xtp-s, var(--xt-s))} [data-theme=\"dark\"] .xg-fLg7{background:var(--xtp-s, var(--xt-s))}} @media (prefers-reduced-motion:reduce){.xg-4eoj:hover:not(:disabled), .xg-atmJ:hover:not(:disabled), .xg-Vn14:hover:not(:disabled), .xg-Q7dU:hover{transform:none}}:where(.xg-JcF-, .xg-yRtv){position:absolute;top:100%;left:0;right:0;width:100%;display:flex;flex-direction:column;gap:var(--xs-m);padding:var(--xs-l);max-height:var(--xtp-mh);overflow:hidden;opacity:0;transform:translateY(-.5em);visibility:hidden;pointer-events:none;transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s var(--xdn);background:var( --toolbar-surface-base, var(--xtp-s, var(--xt-s)) );border-top:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:0 0 var(--xr-l) var(--xr-l);z-index:var(--xz-tp);will-change:transform, opacity;overscroll-behavior:contain} .xg-JcF-{height:var(--xtp-h)} .xg-yRtv{min-height:var(--xtp-h)}:where(.xg-JcF-, .xg-yRtv).xg-4a2L{height:auto;opacity:1;transform:translateY(0);visibility:visible;pointer-events:auto;border-top-color:var(--toolbar-surface-border, var(--xt-b));transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s 0s;z-index:var(--xz-ta)} .xg-w56C{display:flex;flex-direction:column;gap:var(--xs-s)} .xg-rSWg{display:flex;align-items:center;padding-bottom:var(--xs-xs);border-bottom:var(--bwt) solid var(--toolbar-surface-border);margin-bottom:var(--xs-s)} .xg-jd-V{font-size:var(--xfs-s);font-weight:var(--xfw-s);color:var(--xtt-c);text-transform:uppercase;letter-spacing:var(--xeg-letter-spacing-wide)} .xg-jmjG{padding:var(--xs-s) var(--xs-m);font-size:var(--xfs-b);line-height:var(--xeg-line-height-snug);color:var(--xtt-c, var(--xct-p));background:var( --toolbar-surface-base, var(--xtp-s, var(--xt-s)) );border:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:var(--xr-m);white-space:pre-wrap;word-wrap:break-word;overflow-y:auto;overscroll-behavior:contain;max-height:18em;transition:var(--xts);user-select:text;-webkit-user-select:text;cursor:text} .xg-jmjG::-webkit-scrollbar{width:.5em} .xg-jmjG::-webkit-scrollbar-track{background:var(--xts-t, var(--xcn2));border-radius:var(--xr-s)} .xg-jmjG::-webkit-scrollbar-thumb{background:var(--xts-th, var(--xcn4));border-radius:var(--xr-s)} .xg-jmjG::-webkit-scrollbar-thumb:hover{background:var(--xte-bs, var(--xcn5))} .xg-jmjG a{color:var(--xc-p);text-decoration:none;font-weight:var(--xfw-m);padding:.125em .25em;margin:-.125em -.25em;border-radius:var(--xr-xs);overflow-wrap:break-word;transition:color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s);cursor:pointer} .xg-jmjG a:hover{color:var(--xc-ph);background:var(--xte-b);text-decoration:underline;text-decoration-thickness:.0625rem;text-underline-offset:.125em} .xg-jmjG a:focus, .xg-jmjG a:focus-visible{background:var(--xte-bs, var(--xcn2));color:var(--xc-ph);border-radius:var(--xr-xs)} .xg-jmjG a:active{color:var(--xc-p-active)} .xg-0Eeq{display:flex;align-items:center;gap:var(--xs-xs);padding:var(--xs-s);margin-bottom:var(--xs-s);background:var(--xte-bs);border:var(--bwt) solid var(--toolbar-surface-border, var(--xt-b));border-radius:var(--xr-s);transition:var(--xts)} .xg-0Eeq:hover{background:color-mix( in oklch, var(--xte-bs) 85%, var(--xc-p) 15% );border-color:var(--xcb-h)} .xg-AVKe{display:flex;align-items:center;gap:.375em;width:100%;color:var(--xc-p);text-decoration:none;font-size:var(--xfs-s);font-weight:var(--xfw-m);transition:color var(--xdf) var(--xe-s)} .xg-AVKe:hover{color:var(--xc-ph)} .xg-AVKe:focus, .xg-AVKe:focus-visible{outline:.125rem solid var(--xfic);outline-offset:.125rem;border-radius:var(--xr-xs)} .xg-5RjR{flex-shrink:0;width:.875em;height:.875em;stroke:currentColor} .xg-8Stf{flex-shrink:0;color:var(--xtt-m, var(--xct-s));font-weight:var(--xfw-s)} .xg-3pwZ{flex:1;color:var(--xc-p);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .xg-sltl{width:100%;height:var(--bwt);background:color-mix(in oklch, var(--toolbar-surface-border) 60%, transparent 40%);margin:var(--xs-m) 0;border-radius:var(--xr-s)} @layer xeg.features{.xeg-gallery-renderer[data-renderer=\"gallery\"]{display:block;width:0;height:0;overflow:visible} .xeg-gallery-overlay{display:flex;align-items:center;justify-content:center;position:fixed;inset:0;z-index:var(--xz-g, 10000);background:var(--xg-b);opacity:1;transition:opacity var(--xdn) var(--xe-s);pointer-events:auto} .xeg-gallery-container{position:relative;width:100%;height:100%;max-width:100vw;max-height:100vh;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable both-edges}} @layer xeg.tokens, xeg.base, xeg.utilities, xeg.components, xeg.features, xeg.overrides;@layer xeg.tokens{:where(:root, .xeg-theme-scope){--cbw:oklch(1 0 0);--cbb:oklch(0 0 0);--cg0:oklch(.97 .002 206.2);--cg1:oklch(.943 .006 206.2);--cg2:oklch(.896 .006 206.2);--cg3:oklch(.796 .006 206.2);--cg4:oklch(.696 .006 286.3);--cg5:oklch(.598 .006 286.3);--cg6:oklch(.488 .006 286.3);--cg7:oklch(.378 .005 286.3);--cg8:oklch(.306 .005 282);--cg9:oklch(.234 .006 277.8);--spx:.25rem;--sps:.5rem;--spm:1rem;--spl:1.5rem;--sp2:3rem;--rs:.25em;--rm:.375em;--rl:.5em;--rf:50%;--ffp:\"TwitterChirp\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;--fsx:.75rem;--fss:.875rem;--fsb:.9375rem;--fsm:1rem;--fs2:1.5rem;--fwm:500;--fws:600;--fwb:700;--df:150ms;--dn:250ms;--bwt:.0625rem;--line-height-tight:1.25;--line-height-snug:1.375;--lhn:1.5}} @layer xeg.tokens{:where(:root, .xeg-theme-scope){--xcbg-p:var(--cbw);--xcbg-s:var(--cg0);--xeg-color-bg-surface:var(--cbw);--xeg-color-bg-elevated:var(--cbw);--xbgt:var(--xeg-color-bg-surface);--xt-b:var(--xcb-p);--xt-s:var(--xbgt);--xtp-s:var(--xt-s);--xg-bl:var(--xcbg-p);--xg-bd:var(--cg9);--xg-b:var(--xg-bl);--xad:4 \u002F 3;--xct-p:var(--cbb);--xct-s:var(--cg6);--xeg-color-border-default:var(--cg2);--xeg-color-border-emphasis:var(--cg5);--xcb-p:var(--xeg-color-border-default);--xcb-h:var(--cg3);--xcb-s:var(--xeg-color-border-emphasis);--xtt-c:var(--xct-p);--xtt-m:var(--xct-s);--xte-b:color-mix( in oklch, var(--xbgt) 80%, var(--cbw) 20% );--xte-bs:color-mix( in oklch, var(--xbgt) 65%, var(--cbw) 35% );--xte-br:color-mix( in oklch, var(--xt-b) 85%, var(--cbw) 15% );--xtp-pt:color-mix( in oklch, var(--xte-b) 60%, var(--xte-br) 40% );--xts-t:color-mix( in oklch, var(--xte-b) 50%, var(--cbw) 50% );--xts-th:color-mix( in oklch, var(--xte-br) 80%, var(--cbw) 20% );--xc-e:oklch(50% .22 25);--xc-e-bg:oklch(90% .08 25);--xc-p:var(--cg9);--xc-ph:var(--cg7);--xc-p-active:var(--cg8);--xcn1:var(--cg1);--xcn2:var(--cg2);--xcn3:var(--cg3);--xcn4:var(--cg4);--xcn5:var(--cg5);--xct-t:var(--cg5);--xsb-m:2.5em;--xfic:var(--xcb-p);--xfs-s:var(--fss);--xfs-b:var(--fsb);--xfs-m:var(--fsm);--xfs-2:var(--fs2);--xfw-m:var(--fwm);--xfw-s:var(--fws);--xeg-font-weight-bold:var(--fwb);--xeg-line-height-tight:var(--line-height-tight);--xeg-line-height-snug:var(--line-height-snug);--xeg-letter-spacing-wide:.04em;--xdf:var(--df);--xdn:var(--dn);--xdt:var(--dn);--xsu-b:var(--xeg-color-bg-surface);--xsu-br:var(--xeg-color-border-default);--xc-se:var(--xeg-color-bg-elevated);--xsk-b:var(--xcbg-s);--xbe:var(--xeg-color-border-emphasis);--xz-g:2147483600;--xz-th:2147483618;--xz-t:2147483620;--xz-tp:2147483622;--xz-ta:2147483624;--xe-s:cubic-bezier(.4, 0, .2, 1);--xe-d:cubic-bezier(0, 0, .2, 1);--xe-a:cubic-bezier(.4, 0, 1, 1);--xel:linear;--xlh:var(--lhn, 1.5);--xb-l:-.0625rem;--xhl:translateY(-.125rem);--xs-5:var(--sp2);--xr-s:var(--rs);--xr-m:var(--rm);--xr-l:var(--rl);--xr-f:var(--rf);--xeg-scrollbar-thumb-color:var(--cg4);--xeg-scrollbar-thumb-hover-color:var(--cg5)}:where(:root, .xeg-theme-scope)[data-theme=\"light\"]{--xcbg-p:var(--cbw);--xct-p:var(--cbb);--xct-s:var(--cg6);--xg-b:var(--xg-bl)}:where(:root, .xeg-theme-scope)[data-theme=\"dark\"]{--xcbg-p:var(--cg9);--xeg-color-bg-surface:var(--cg9);--xeg-color-bg-elevated:var(--cg7);--xct-p:var(--cbw);--xct-s:var(--cg4);--xbgt:var(--cg8);--xcb-p:var(--cg6);--xt-b:var(--cg6);--xcbg-s:var(--cg8);--xg-b:var(--xg-bd);--xtt-c:var(--xct-p);--xtt-m:var(--cg3);--xte-b:color-mix( in oklch, var(--xbgt) 85%, var(--cbb) 15% );--xte-bs:color-mix( in oklch, var(--xbgt) 70%, var(--cbb) 30% );--xte-br:color-mix( in oklch, var(--xt-b) 75%, var(--cbb) 25% );--xtp-pt:color-mix( in oklch, var(--xt-b) 65%, var(--xbgt) 35% );--xts-t:color-mix( in oklch, var(--xte-b) 80%, var(--cbb) 20% );--xts-th:color-mix( in oklch, var(--xte-br) 85%, var(--cbb) 15% );--xc-p:var(--cg1);--xc-ph:var(--cg2);--xc-p-active:var(--cg3);--xsu-b:var(--cg9);--xsu-br:var(--cg6)} @media (prefers-reduced-motion:reduce){:where(:root, .xeg-theme-scope){--xdf:0ms;--xts:none;--xten:none;--xtef:none;--xti:none;--xtwn:none}}:where(:root, .xeg-theme-scope){--xse-g:var(--spm);--xse-p:var(--spm);--xse-cg:var(--sps);--xse-lf:var(--fss);--xse-lw:var(--fwb);--xse-sf:var(--fss);--xse-sp:var(--sps) var(--spm)}} @layer xeg.tokens{:where(:root, .xeg-theme-scope){--xtp-t:height var(--xdn) var(--xe-s), opacity var(--xdf) var(--xe-s);--xtp-h:0;--xtp-mh:17.5rem;--xsw:.5rem;--xsbr:0;--xhzh:7.5rem;--xsp-sd:1rem;--xsp-bw:.125rem;--xsp-tc:color-mix(in oklch, var(--xcn4) 60%, transparent);--xsp-ic:var(--xc-p, currentColor);--xsp-d:var(--xdn);--xsp-e:var(--xel);--xts:background-color var(--xdf) var(--xe-s), border-color var(--xdf) var(--xe-s), color var(--xdf) var(--xe-s);--xten:transform var(--xdn) var(--xe-s), opacity var(--xdn) var(--xe-s);--xtef:transform var(--xdf) var(--xe-s), opacity var(--xdf) var(--xe-s);--xti:background-color var(--xdf) var(--xe-s), border-color var(--xdf) var(--xe-s), color var(--xdf) var(--xe-s), transform var(--xdf) var(--xe-s);--xtwn:width var(--xdn) var(--xe-s);--xs-xs:var(--spx);--xs-s:var(--sps);--xs-m:var(--spm);--xs-l:var(--spl);--xgh:translateZ(0);--xbv:hidden;--xvhc:90vh} @media (prefers-reduced-transparency:reduce){:where(:root, .xeg-theme-scope){--xsu-b:var(--xcbg-p)}}} @layer xeg.components{.xeg-surface{background:var(--xsu-b);border:.0625rem solid var(--xsu-br);border-radius:var(--xr-l)} .xeg-spinner{display:inline-block;width:var(--xsp-s, var(--xsp-sd));height:var(--xsp-s, var(--xsp-sd));border-radius:var(--xr-f);border:var(--xsp-bw) solid var(--xsp-tc);border-top-color:var(--xsp-ic);animation:xeg-spin var(--xsp-d) var(--xsp-e) infinite;box-sizing:border-box} @media (prefers-reduced-motion:reduce){.xeg-spinner{animation:none}} @keyframes xeg-fade-in{from{opacity:0} to{opacity:1}} @keyframes xeg-fade-out{from{opacity:1} to{opacity:0}} @keyframes xeg-spin{from{transform:rotate(0deg)} to{transform:rotate(360deg)}}} @layer xeg.base{:where(.xeg-gallery-root, .xeg-gallery-root *),:where(.xeg-gallery-root *::before, .xeg-gallery-root *::after){box-sizing:border-box;margin:0;padding:0} .xeg-gallery-root button{border:none;background:none;cursor:pointer;font:inherit;color:inherit} .xeg-gallery-root a{color:inherit;text-decoration:none} .xeg-gallery-root img{max-width:100%;height:auto;display:block} .xeg-gallery-root ul, .xeg-gallery-root ol{list-style:none} .xeg-gallery-root input, .xeg-gallery-root textarea, .xeg-gallery-root select{font:inherit;color:inherit;background:transparent} .xeg-gallery-root::-webkit-scrollbar{width:var(--xsw, .5rem);height:var(--xsw, .5rem)} .xeg-gallery-root::-webkit-scrollbar-track{background:transparent} .xeg-gallery-root::-webkit-scrollbar-thumb{background:var(--xeg-scrollbar-thumb-color);border-radius:var(--xr-s, .25rem)} .xeg-gallery-root::-webkit-scrollbar-thumb:hover{background:var(--xeg-scrollbar-thumb-hover-color)}} @layer xeg.utilities{.xeg-row-center{display:flex;align-items:center} .xeg-inline-center{display:inline-flex;align-items:center;justify-content:center} .xeg-gap-sm{gap:var(--xs-s)}} @layer xeg.utilities{.xeg-fade-in{animation:xeg-fade-in var(--xdn) var(--xe-d);animation-fill-mode:both} .xeg-fade-out{animation:xeg-fade-out var(--xdf) var(--xe-a);animation-fill-mode:both} @media (prefers-reduced-motion:reduce){.xeg-fade-in, .xeg-fade-out{animation:none}}} @layer xeg.base{.xeg-gallery-root{all:unset;box-sizing:border-box;scroll-behavior:smooth;font-family:var(--ffp);font-size:var(--fsb, .9375rem);line-height:var(--xlh, 1.5);color:var(--xct-p, currentColor);position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:var(--xz-g, 10000);isolation:isolate;contain:style paint;overscroll-behavior:contain;background:var(--xg-b, var(--xcbg-p, Canvas));pointer-events:auto;user-select:none;transform:translateZ(0);will-change:opacity, transform;-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}}";var s=document.getElementById("xeg-injected-styles");if(!s){s=document.createElement('style');s.id="xeg-injected-styles";(document.head||document.documentElement).appendChild(s);}s.textContent=css;})();
 (function() {
+var LANGUAGE_CODES = [
+"en",
+"ko",
+"ja"
+];
 function isBaseLanguageCode(value) {
 return value === "en" || value === "ko" || value === "ja";
 }
@@ -258,13 +263,34 @@ ko: buildLanguageStringsFromValues([
 ]),
 ja
 };
-function getLanguageStrings(language) {
-const strings = TRANSLATION_REGISTRY[language];
-if (strings) return strings;
-const defaultStrings = TRANSLATION_REGISTRY["en"];
-if (!defaultStrings) throw new Error(`Fatal: Default language 'en' not found in TRANSLATION_REGISTRY.`);
-return defaultStrings;
+function resolveTranslationValue(dictionary, key) {
+const segments = key.split(".");
+let current = dictionary;
+for (const segment of segments) {
+if (current == null || typeof current !== "object") return void 0;
+current = current[segment];
 }
+return typeof current === "string" ? current : void 0;
+}
+var Translator = class {
+bundles = {};
+fallbackLanguage;
+constructor(options = {}) {
+const { bundles = TRANSLATION_REGISTRY, fallbackLanguage = "en" } = options;
+this.fallbackLanguage = fallbackLanguage;
+for (const [lang, strings] of Object.entries(bundles)) if (strings) this.bundles[lang] = strings;
+if (!this.bundles[this.fallbackLanguage]) throw new Error(`Missing fallback language bundle: ${this.fallbackLanguage}`);
+}
+get languages() {
+return [...LANGUAGE_CODES];
+}
+translate(language, key, params) {
+const template = resolveTranslationValue(this.bundles[language] ?? this.bundles[this.fallbackLanguage], key);
+if (!template) return key;
+if (!params) return template;
+return template.replace(/\{(\w+)\}/g, (match, placeholder) => Object.hasOwn(params, placeholder) ? String(params[placeholder]) : match);
+}
+};
 var BASE_PREFIX = "[XEG]";
 var hasConsole = typeof console !== "undefined";
 var noop = () => {};
@@ -325,7 +351,7 @@ return typeof value === "function" ? value : void 0;
 function resolveGMDownload() {
 return getResolvedGMAPIsCached().download;
 }
-function createStrictUserscriptAPI() {
+function createUserscriptAPI() {
 const resolved = getResolvedGMAPIsCached();
 const gmDownload = asFunction(resolved.download);
 const gmSetValue = asFunction(resolved.setValue);
@@ -367,39 +393,6 @@ return gmXmlHttpRequest(details);
 },
 notification(details) {
 if (!gmNotification) return;
-gmNotification(details, void 0);
-},
-cookie: resolved.cookie
-};
-}
-function createSafeUserscriptAPI() {
-const strict = createStrictUserscriptAPI();
-const resolved = getResolvedGMAPIsCached();
-const gmNotification = asFunction(resolved.notification);
-return {
-async download(url, filename) {
-return strict.download(url, filename);
-},
-async setValue(key, value) {
-return strict.setValue(key, value);
-},
-async getValue(key, defaultValue) {
-return strict.getValue(key, defaultValue);
-},
-getValueSync(key, defaultValue) {
-return strict.getValueSync(key, defaultValue);
-},
-async deleteValue(key) {
-return strict.deleteValue(key);
-},
-async listValues() {
-return strict.listValues();
-},
-xmlHttpRequest(details) {
-return strict.xmlHttpRequest(details);
-},
-notification(details) {
-if (!gmNotification) return;
 try {
 gmNotification(details, void 0);
 } catch {}
@@ -408,10 +401,7 @@ cookie: resolved.cookie
 };
 }
 function getUserscript() {
-return createStrictUserscriptAPI();
-}
-function getUserscriptSafe() {
-return createSafeUserscriptAPI();
+return createUserscriptAPI();
 }
 var _persistentStorageInstance = null;
 var PersistentStorage = class PersistentStorage {
@@ -476,15 +466,6 @@ await this.userscript.deleteValue(key);
 function getPersistentStorage() {
 return PersistentStorage.getInstance();
 }
-function resolveTranslationValue(dictionary, key) {
-const segments = key.split(".");
-let current = dictionary;
-for (const segment of segments) {
-if (current == null || typeof current !== "object") return void 0;
-current = current[segment];
-}
-return typeof current === "string" ? current : void 0;
-}
 var _instance$1 = null;
 var LanguageService = class LanguageService {
 static STORAGE_KEY = "xeg-language";
@@ -492,6 +473,10 @@ _initialized = false;
 currentLanguage = "auto";
 listeners =  new Set();
 storage = getPersistentStorage();
+translator;
+constructor() {
+this.translator = new Translator();
+}
 static getInstance() {
 if (!_instance$1) _instance$1 = new LanguageService();
 return _instance$1;
@@ -532,13 +517,8 @@ this.notifyListeners(normalized);
 this.persistLanguage(normalized).catch((error) => {});
 }
 translate(key, params) {
-const template = resolveTranslationValue(getLanguageStrings(this.getEffectiveLanguage()), key);
-if (!template) return key;
-if (!params) return template;
-return template.replace(/\{(\w+)\}/g, (_, placeholder) => {
-if (Object.hasOwn(params, placeholder)) return String(params[placeholder]);
-return `{${placeholder}}`;
-});
+const language = this.getEffectiveLanguage();
+return this.translator.translate(language, key, params);
 }
 onLanguageChange(callback) {
 this.listeners.add(callback);
@@ -566,35 +546,26 @@ getEffectiveLanguage() {
 return this.currentLanguage === "auto" ? this.detectLanguage() : this.currentLanguage;
 }
 };
-var extractFromError = (error, mode) => mode === "normalized" ? error.message || error.name || "Error" : error.message;
-var extractFromObject = (record, mode) => {
-const message = record.message;
-if (typeof message === "string") return message;
-if (mode === "raw") return "message" in record ? String(message ?? "") : String(record);
+function normalizeErrorMessage(error) {
+if (error instanceof Error) return error.message || error.name || "Error";
+if (typeof error === "string") return error;
+if (error == null) return String(error);
+if (typeof error === "object") {
+const record = error;
+if (typeof record.message === "string") return record.message;
 try {
 return JSON.stringify(record);
 } catch {
 return String(record);
 }
-};
-function formatErrorMessage(error, mode) {
-if (error instanceof Error) return extractFromError(error, mode);
-if (typeof error === "string") return error;
-if (error == null) return mode === "normalized" ? String(error) : "";
-if (typeof error === "object") return extractFromObject(error, mode);
+}
 return String(error);
-}
-function normalizeErrorMessage(error) {
-return formatErrorMessage(error, "normalized");
-}
-function getErrorMessage(error) {
-return formatErrorMessage(error, "raw");
 }
 var USER_CANCELLED_MESSAGE = "Download cancelled by user";
 var DEFAULT_ABORT_MESSAGE = "This operation was aborted";
 function isAbortError(value) {
 if (value instanceof DOMException) return value.name === "AbortError" || value.name === "TimeoutError";
-if (value instanceof Error) return value.name === "AbortError" || value.name === "TimeoutError" || value.message.toLowerCase().includes("aborted");
+if (value instanceof Error) return value.name === "AbortError" || value.name === "TimeoutError";
 return false;
 }
 function isTimeoutError(value) {
@@ -621,10 +592,7 @@ return error;
 }
 }
 function createUserCancelledAbortError(cause) {
-const error = new Error(USER_CANCELLED_MESSAGE);
-error.name = "AbortError";
-attachCause(error, cause);
-return error;
+return createAbortError(USER_CANCELLED_MESSAGE, cause);
 }
 function isUserCancelledAbortError(error) {
 if (error instanceof DOMException) return error.name === "AbortError" && error.message === USER_CANCELLED_MESSAGE;
@@ -677,11 +645,12 @@ var HttpRequestService = class HttpRequestService {
 defaultTimeout = 1e4;
 constructor() {}
 async request(method, url, options) {
+function createDeferredWithSettledGuard(signal) {
 const deferred = createDeferred();
 let abortListener = null;
 const cleanupAbortListener = () => {
-if (abortListener && options?.signal) {
-options.signal.removeEventListener("abort", abortListener);
+if (abortListener && signal) {
+signal.removeEventListener("abort", abortListener);
 abortListener = null;
 }
 };
@@ -702,17 +671,30 @@ cleanupAbortListener();
 } catch {}
 deferred.reject(reason);
 };
+return {
+promise: deferred.promise,
+safeResolve,
+safeReject
+};
+}
+function connectAbortSignal(signal, control) {
+const abortListener = () => {
+control.abort();
+};
+signal.addEventListener("abort", abortListener, { once: true });
+if (signal.aborted) abortListener();
+}
+const { promise, safeResolve, safeReject } = createDeferredWithSettledGuard(options?.signal);
 try {
 const userscript = getUserscript();
 if (options?.signal?.aborted) {
 safeReject(getAbortReasonOrAbortErrorFromSignal(options.signal));
-return deferred.promise;
+return promise;
 }
-const headers = options?.headers;
 const details = {
 method,
 url,
-...headers ? { headers } : {},
+...options?.headers ? { headers: options.headers } : {},
 timeout: options?.timeout ?? this.defaultTimeout,
 onload: (response) => {
 safeResolve({
@@ -741,17 +723,11 @@ if (options?.responseType) details.responseType = options.responseType;
 const data = options?.data;
 if (data !== void 0) details.data = data;
 const control = userscript.xmlHttpRequest(details);
-if (options?.signal) {
-abortListener = () => {
-control.abort();
-};
-options.signal.addEventListener("abort", abortListener, { once: true });
-if (options.signal.aborted) abortListener();
-}
+if (options?.signal) connectAbortSignal(options.signal, control);
 } catch (error) {
 safeReject(error);
 }
-return deferred.promise;
+return promise;
 }
 static getInstance() {
 if (!_httpInstance) _httpInstance = new HttpRequestService();
@@ -815,14 +791,10 @@ return this.timers.size;
 };
 var globalTimerManager = new TimerManager();
 function getIdleAPIs() {
-const source = typeof globalThis !== "undefined" ? globalThis : void 0;
-if (!source || typeof source !== "object") return {
-ric: null,
-cic: null
-};
+const hasRIC = typeof requestIdleCallback !== "undefined";
 return {
-ric: ("requestIdleCallback" in source ? source.requestIdleCallback : void 0) ?? null,
-cic: ("cancelIdleCallback" in source ? source.cancelIdleCallback : void 0) ?? null
+ric: hasRIC ? requestIdleCallback.bind(globalThis) : null,
+cic: hasRIC ? cancelIdleCallback.bind(globalThis) : null
 };
 }
 function scheduleIdle(task) {
@@ -882,9 +854,22 @@ this.cancelAll();
 this.clear();
 }
 async prefetchSingle(url) {
+if (this.cache.get(url)) return;
+const existingController = this.activeRequests.get(url);
+if (existingController) {
+const pendingPromise = this.cache.get(url);
+if (pendingPromise) {
+try {
+await pendingPromise;
+} catch {}
 if (this.cache.has(url)) return;
+}
+existingController.abort();
+this.activeRequests.delete(url);
+}
 const controller = new AbortController();
 this.activeRequests.set(url, controller);
+if (this.cache.size >= this.maxEntries) this.evictOldest();
 const fetchPromise = HttpRequestService.getInstance().get(url, {
 signal: controller.signal,
 responseType: "blob"
@@ -894,7 +879,6 @@ return response.data;
 }).finally(() => {
 this.activeRequests.delete(url);
 });
-if (this.cache.size >= this.maxEntries) this.evictOldest();
 this.cache.set(url, fetchPromise);
 try {
 await fetchPromise;
@@ -992,6 +976,21 @@ return typeof performance !== "undefined" && typeof performance.now === "functio
 function getElapsedTime(startTime) {
 return Math.max(0, getTimestamp() - startTime);
 }
+function createFailureResult(error, startTime, sourceType, strategy) {
+return {
+success: false,
+mediaItems: [],
+clickedIndex: 0,
+metadata: {
+extractedAt: Date.now(),
+sourceType,
+strategy,
+error,
+totalProcessingTime: getElapsedTime(startTime)
+},
+tweetInfo: null
+};
+}
 var DEFAULT_TRAVERSAL_OPTIONS = {
 maxDescendantDepth: 6,
 maxAncestorHops: 3
@@ -1081,14 +1080,11 @@ function extractTweetTextHTMLFromClickedElement(element) {
 const tweetArticle = closestWithFallback(element, TWEET_CONTAINER_SELECTORS, { debugLabel: "tweet-container" });
 if (tweetArticle) return extractTweetTextHTML(tweetArticle);
 }
+var MEDIA_HOSTS = {
+MEDIA_CDN: ["pbs.twimg.com", "video.twimg.com"] };
 var MEDIA = {
-DOMAINS: [
-"pbs.twimg.com",
-"video.twimg.com",
-"abs.twimg.com"
-],
-HOSTS: {
-MEDIA_CDN: ["pbs.twimg.com", "video.twimg.com"] },
+DOMAINS: [...MEDIA_HOSTS.MEDIA_CDN, "abs.twimg.com"],
+HOSTS: MEDIA_HOSTS,
 TYPES: {
 IMAGE: "image",
 VIDEO: "video",
@@ -1275,19 +1271,6 @@ return false;
 }
 var checkPbsMediaPath = (pathname) => pathname.startsWith("/media/") || pathname.startsWith("/ext_tw_video_thumb/") || pathname.startsWith("/tweet_video_thumb/") || pathname.startsWith("/video_thumb/") || pathname.startsWith("/amplify_video_thumb/") || pathname.startsWith("/card_img/");
 var checkVideoMediaPath = (pathname) => pathname.startsWith("/ext_tw_video/") || pathname.startsWith("/tweet_video/") || pathname.startsWith("/amplify_video/") || pathname.startsWith("/dm_video/");
-var createFailureResult$1 = (error, startTime) => ({
-success: false,
-mediaItems: [],
-clickedIndex: 0,
-metadata: {
-extractedAt: Date.now(),
-sourceType: "dom-fallback",
-strategy: "dom-extraction-failed",
-error,
-totalProcessingTime: getElapsedTime(startTime)
-},
-tweetInfo: null
-});
 function findAllMediaInContainer(container) {
 const mediaElements = [];
 const images = container.querySelectorAll("img[src*=\"pbs.twimg.com\"], img[src*=\"video.twimg.com\"]");
@@ -1341,10 +1324,10 @@ async extract(tweetInfo, clickedElement, _options, extractionId) {
 const startedAt = getTimestamp();
 try {
 const tweetContainer = closestWithFallback(clickedElement, TWEET_CONTAINER_SELECTORS, { debugLabel: "tweet-container" });
-if (!tweetContainer || !(tweetContainer instanceof HTMLElement)) return createFailureResult$1("No tweet container found", startedAt);
+if (!tweetContainer || !(tweetContainer instanceof HTMLElement)) return createFailureResult("No tweet container found", startedAt, "dom-fallback", "dom-extraction-failed");
 const tweetTextHTML = extractTweetTextHTMLFromClickedElement(clickedElement);
 const mediaElements = findAllMediaInContainer(tweetContainer);
-if (mediaElements.length === 0) return createFailureResult$1("No media elements found in DOM", startedAt);
+if (mediaElements.length === 0) return createFailureResult("No media elements found in DOM", startedAt, "dom-fallback", "dom-extraction-failed");
 const mediaItems = [];
 const elementToIndexMap =  new Map();
 for (let i = 0; i < mediaElements.length; i++) {
@@ -1356,7 +1339,7 @@ elementToIndexMap.set(element, mediaItems.length);
 mediaItems.push(mediaInfo);
 }
 }
-if (mediaItems.length === 0) return createFailureResult$1("No valid media items extracted from DOM", startedAt);
+if (mediaItems.length === 0) return createFailureResult("No valid media items extracted from DOM", startedAt, "dom-fallback", "dom-extraction-failed");
 const clickedMedia = findMediaElementInDOM(clickedElement);
 let clickedIndex = 0;
 if (clickedMedia) {
@@ -1377,7 +1360,7 @@ domMediaCount: mediaItems.length
 tweetInfo
 };
 } catch (error) {
-return createFailureResult$1(getErrorMessage(error) || "DOM extraction failed", startedAt);
+return createFailureResult(normalizeErrorMessage(error), startedAt, "dom-fallback", "dom-extraction-failed");
 }
 }
 };
@@ -2006,6 +1989,18 @@ async function getCsrfTokenAsync() {
 if (_tokensInitialized && _csrfToken) return _csrfToken;
 return initTokens();
 }
+var FALLBACK_BEARER_TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
+function resolveBearerToken() {
+try {
+const nextDataScript = document.getElementById("__NEXT_DATA__");
+if (nextDataScript?.textContent) {
+const nextData = JSON.parse(nextDataScript.textContent);
+const token = nextData?.props?.pageProps?.token?.Bearer ?? nextData?.props?.token?.Bearer;
+if (token && typeof token === "string") return `Bearer ${token}`;
+}
+} catch {}
+return FALLBACK_BEARER_TOKEN;
+}
 function resolveDimensions(media, mediaUrl) {
 const dimensionsFromUrl = extractDimensionsFromUrl(mediaUrl);
 const widthFromOriginal = normalizeDimension(media.original_info?.width);
@@ -2198,8 +2193,9 @@ return result;
 }
 static async apiRequest(url) {
 const csrfToken = await getCsrfTokenAsync() ?? getCsrfToken() ?? "";
+const authorization = resolveBearerToken() ?? TWITTER_API_CONFIG.GUEST_AUTHORIZATION;
 const headers = new Headers({
-authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
+authorization,
 "x-csrf-token": csrfToken,
 "x-twitter-client-language": "en",
 "x-twitter-active-user": "yes",
@@ -2322,25 +2318,12 @@ var getStringValue = (record, key) => {
 const value = record[key];
 return typeof value === "string" && value.trim() ? value : null;
 };
-var createFailureResult = (error, startTime) => ({
-success: false,
-mediaItems: [],
-clickedIndex: 0,
-metadata: {
-extractedAt: Date.now(),
-sourceType: "twitter-api",
-strategy: "api-extraction-failed",
-error,
-totalProcessingTime: getElapsedTime(startTime)
-},
-tweetInfo: null
-});
 var TwitterAPIExtractor = class {
 async extract(tweetInfo, clickedElement, _options, extractionId) {
 const startedAt = getTimestamp();
 try {
 const apiMedias = await TwitterAPI.getTweetMedias(tweetInfo.tweetId);
-if (!apiMedias || apiMedias.length === 0) return createFailureResult("No media found in API response", startedAt);
+if (!apiMedias || apiMedias.length === 0) return createFailureResult("No media found in API response", startedAt, "twitter-api", "api-extraction-failed");
 const mediaItems = await convertAPIMediaToMediaInfo(apiMedias, tweetInfo, extractTweetTextHTMLFromClickedElement(clickedElement));
 return {
 success: true,
@@ -2356,7 +2339,7 @@ apiMediaCount: apiMedias.length
 tweetInfo
 };
 } catch (error) {
-return createFailureResult(getErrorMessage(error) || "API extraction failed", startedAt);
+return createFailureResult(normalizeErrorMessage(error), startedAt, "twitter-api", "api-extraction-failed");
 }
 }
 };
@@ -2392,7 +2375,7 @@ return `${prefix}${separator}${createId()}`;
 }
 var generateExtractionId = () => createPrefixedId("simp");
 var createErrorResult = (error) => {
-const errorMessage = getErrorMessage(error) || "Unknown error";
+const errorMessage = normalizeErrorMessage(error);
 return {
 success: false,
 mediaItems: [],
@@ -2408,18 +2391,17 @@ errors: [new ExtractionError(ErrorCode.NO_MEDIA_FOUND, errorMessage)]
 };
 };
 var createApiErrorResult = (apiResult, tweetInfo) => {
-const apiErrorMessage = apiResult.metadata?.error ?? apiResult.errors?.[0]?.message ?? "API extraction failed";
+const base = createErrorResult(apiResult.metadata?.error ?? apiResult.errors?.[0]?.message ?? "API extraction failed");
 return {
-success: false,
-mediaItems: [],
+...base,
 clickedIndex: apiResult.clickedIndex ?? 0,
 metadata: {
+...base.metadata,
 ...apiResult.metadata ?? {},
 strategy: "api-extraction",
 sourceType: "extraction-failed"
 },
-tweetInfo: mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo),
-errors: [new ExtractionError(ErrorCode.NO_MEDIA_FOUND, apiErrorMessage)]
+tweetInfo: mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo)
 };
 };
 var mergeTweetInfoMetadata = (base, override) => {
@@ -2599,6 +2581,330 @@ function createDefaultSettings(timestamp = Date.now()) {
 const settings = globalThis.structuredClone(DEFAULT_SETTINGS);
 settings.lastModified = timestamp;
 return settings;
+}
+var _settings = null;
+function registerSettings(s) {
+_settings = s;
+}
+function tryGetSettings() {
+return _settings;
+}
+function registerSettingsManager(settings) {
+registerSettings(settings);
+}
+function tryGetSettingsManager() {
+return tryGetSettings();
+}
+function requireSettingsService() {
+const service = tryGetSettings();
+if (!service) throw new Error("SettingsService not registered.");
+return service;
+}
+function getTypedSettingOr(path, fallback) {
+const value = requireSettingsService().get(path);
+return value === void 0 ? fallback : value;
+}
+function setTypedSetting(path, value) {
+return requireSettingsService().set(path, value);
+}
+var THEME_DOM_ATTRIBUTE = "data-theme";
+function syncThemeAttributes(theme, options = {}) {
+if (typeof document === "undefined") return;
+const { scopes, includeDocumentRoot = false } = options;
+if (includeDocumentRoot && document.documentElement) document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, theme);
+const targets = scopes ?? document.querySelectorAll(".xeg-theme-scope");
+for (const target of Array.from(targets)) if (target instanceof HTMLElement) target.setAttribute(THEME_DOM_ATTRIBUTE, theme);
+}
+var _eventManagerInstance = null;
+var EventManager = class EventManager {
+_initialized = false;
+isDestroyed = false;
+listeners =  new Map();
+ownedListenerContexts =  new Map();
+constructor() {}
+static getInstance() {
+if (!_eventManagerInstance) _eventManagerInstance = new EventManager();
+return _eventManagerInstance;
+}
+async initialize() {
+if (this._initialized) return;
+this.isDestroyed = false;
+this._initialized = true;
+}
+destroy() {
+if (!this._initialized) return;
+this.cleanup();
+this._initialized = false;
+}
+isInitialized() {
+return this._initialized;
+}
+addEventListener(element, type, listener, options) {
+if (this.isDestroyed) {
+;
+return null;
+}
+const { context, ...listenerOptions } = options ?? {};
+if (!element || typeof element.addEventListener !== "function") return null;
+try {
+element.addEventListener(type, listener, listenerOptions);
+const id = context ? `${context}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}` : crypto.randomUUID().replaceAll("-", "");
+const ctx = {
+id,
+element,
+type,
+listener,
+options: listenerOptions,
+context
+};
+this.listeners.set(id, ctx);
+this.ownedListenerContexts.set(id, context);
+return id;
+} catch (error) {
+return null;
+}
+}
+removeListener(id) {
+if (!this.ownedListenerContexts.has(id)) return false;
+this.ownedListenerContexts.delete(id);
+return this.removeListenerById(id);
+}
+removeByContext(context) {
+const toRemove = [];
+for (const [id, ctx] of this.ownedListenerContexts) if (ctx === context) toRemove.push(id);
+let count = 0;
+for (const id of toRemove) {
+this.ownedListenerContexts.delete(id);
+if (this.removeListenerById(id)) count++;
+}
+return count;
+}
+getIsDestroyed() {
+return this.isDestroyed;
+}
+getListenerStatus() {
+return {
+total: 0,
+byContext: {},
+byType: {}
+};
+}
+cleanup() {
+if (this.isDestroyed) return;
+const ids = Array.from(this.ownedListenerContexts.keys());
+this.ownedListenerContexts.clear();
+for (const id of ids) try {
+this.removeListenerById(id);
+} catch {}
+this.isDestroyed = true;
+}
+removeListenerById(id) {
+const ctx = this.listeners.get(id);
+if (!ctx) return false;
+try {
+ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
+this.listeners.delete(id);
+return true;
+} catch (error) {
+return false;
+}
+}
+};
+var MAX_RECURSION_DEPTH = 5;
+var VALID_THEME_SETTINGS = [
+"light",
+"dark",
+"auto"
+];
+function isThemeSetting(value) {
+return typeof value === "string" && VALID_THEME_SETTINGS.includes(value);
+}
+var _themeInstance = null;
+var ThemeService = class ThemeService {
+_initialized = false;
+storage = getPersistentStorage();
+mediaQueryList = null;
+mediaQueryListener = null;
+domEventsController = null;
+currentTheme = "light";
+themeSetting = "auto";
+listeners =  new Set();
+boundSettingsService = null;
+observer = null;
+observedThemeScopes =  new WeakSet();
+recursionDepth = 0;
+static getInstance() {
+if (!_themeInstance) _themeInstance = new ThemeService();
+return _themeInstance;
+}
+constructor() {
+this.mediaQueryList = this.createMediaQueryList();
+}
+async initialize() {
+if (this._initialized) return;
+if (!this.boundSettingsService) {
+const settingsService = tryGetSettings();
+if (settingsService) this.bindSettingsService(settingsService);
+else await this.restoreThemeSettingFromStorage();
+}
+this.initializeThemeScopeObservation();
+this.initializeSystemDetection();
+this.applyCurrentTheme(true);
+this._initialized = true;
+}
+destroy() {
+this.cleanup();
+this._initialized = false;
+}
+isInitialized() {
+return this._initialized;
+}
+bindSettingsService(settingsService) {
+if (!settingsService || this.boundSettingsService === settingsService) return;
+this.boundSettingsService = settingsService;
+const settingsTheme = settingsService.get?.("gallery.theme");
+if (isThemeSetting(settingsTheme) && settingsTheme !== this.themeSetting) {
+this.themeSetting = settingsTheme;
+this.applyCurrentTheme(true);
+}
+}
+setTheme(setting, options) {
+const normalized = isThemeSetting(setting) ? setting : "light";
+this.themeSetting = normalized;
+if (options?.persist !== false && this.boundSettingsService?.set) {
+const result = this.boundSettingsService.set("gallery.theme", this.themeSetting);
+if (result instanceof Promise) result.catch((error) => {});
+}
+if (!this.applyCurrentTheme(options?.force)) this.notifyListeners();
+}
+getEffectiveTheme() {
+if (this.themeSetting === "auto") return this.mediaQueryList?.matches ? "dark" : "light";
+return this.themeSetting;
+}
+getCurrentTheme() {
+return this.themeSetting;
+}
+isDarkMode() {
+return this.getEffectiveTheme() === "dark";
+}
+onThemeChange(listener) {
+this.listeners.add(listener);
+return () => this.listeners.delete(listener);
+}
+applyThemeToScopes(scopes) {
+const newScopes = [];
+for (const scope of scopes) if (!this.observedThemeScopes.has(scope)) {
+this.observedThemeScopes.add(scope);
+newScopes.push(scope);
+}
+if (newScopes.length > 0) syncThemeAttributes(this.currentTheme, { scopes: newScopes });
+}
+createMediaQueryList() {
+if (typeof window === "undefined" || typeof window.matchMedia !== "function") return null;
+return window.matchMedia("(prefers-color-scheme: dark)");
+}
+async restoreThemeSettingFromStorage() {
+const saved = await this.loadThemeAsync();
+if (saved && saved !== this.themeSetting) {
+this.themeSetting = saved;
+this.applyCurrentTheme(true);
+}
+}
+initializeThemeScopeObservation() {
+if (typeof document === "undefined" || typeof MutationObserver === "undefined") return;
+this.applyThemeToScopes(Array.from(document.querySelectorAll(".xeg-theme-scope")));
+this.observer?.disconnect();
+this.observer = new MutationObserver((mutations) => {
+for (const mutation of mutations) mutation.addedNodes.forEach((node) => {
+if (!(node instanceof Element)) return;
+const scopes = [];
+if (node.classList.contains("xeg-theme-scope")) scopes.push(node);
+node.querySelectorAll(".xeg-theme-scope").forEach((scope) => {
+scopes.push(scope);
+});
+if (scopes.length > 0) this.applyThemeToScopes(scopes);
+});
+});
+if (document.body) {
+this.observer.observe(document.body, {
+childList: true,
+subtree: true
+});
+return;
+}
+}
+cleanup() {
+this.boundSettingsService = null;
+this.listeners.clear();
+this.observedThemeScopes =  new WeakSet();
+if (this.observer) {
+this.observer.disconnect();
+this.observer = null;
+}
+if (this.domEventsController) {
+this.domEventsController.abort();
+this.domEventsController = null;
+}
+this.mediaQueryListener = null;
+this.mediaQueryList = null;
+}
+initializeSystemDetection() {
+if (!this.mediaQueryList) this.mediaQueryList = this.createMediaQueryList();
+if (!this.mediaQueryList || this.mediaQueryListener) return;
+if (!this.domEventsController || this.domEventsController.signal.aborted) this.domEventsController = new AbortController();
+this.mediaQueryListener = () => {
+if (this.themeSetting === "auto") this.applyCurrentTheme();
+};
+const listener = this.mediaQueryListener;
+const eventListener = (event) => {
+listener(event);
+};
+EventManager.getInstance().addEventListener(this.mediaQueryList, "change", eventListener, {
+signal: this.domEventsController.signal,
+context: "theme-service"
+});
+}
+applyCurrentTheme(force = false) {
+const effective = this.getEffectiveTheme();
+if (force || this.currentTheme !== effective) {
+this.currentTheme = effective;
+syncThemeAttributes(this.currentTheme);
+this.notifyListeners();
+return true;
+}
+return false;
+}
+notifyListeners() {
+if (this.recursionDepth >= MAX_RECURSION_DEPTH) {
+this.recursionDepth = 0;
+return;
+}
+this.recursionDepth++;
+try {
+this.listeners.forEach((listener) => listener(this.currentTheme, this.themeSetting));
+} finally {
+this.recursionDepth--;
+}
+}
+async loadThemeAsync() {
+try {
+return (await this.storage.get("xeg-app-settings"))?.gallery?.theme ?? null;
+} catch {
+return null;
+}
+}
+};
+async function initializeCoreBaseServices() {
+try {
+const services = [
+ThemeService.getInstance(),
+LanguageService.getInstance(),
+MediaService.getInstance()
+];
+for (const service of services) if (service?.initialize) await service.initialize();
+} catch (error) {
+throw new Error("[base-services] initialization failed", { cause: error instanceof Error ? error : new Error(String(error)) });
+}
 }
 function sanitize(name) {
 return name.replace(/[<>:"/\\|?*]/g, "_").replace(/^[\s.]+|[\s.]+$/g, "").slice(0, 255) || "media";
@@ -2786,7 +3092,7 @@ filename
 onerror: (error) => {
 settle({
 success: false,
-error: getErrorMessage(error)
+error: normalizeErrorMessage(error)
 });
 },
 ontimeout: () => settle({
@@ -2802,7 +3108,7 @@ reportProgress$1(options.onProgress, "downloading", pct, filename);
 } catch (error) {
 settle({
 success: false,
-error: getErrorMessage(error)
+error: normalizeErrorMessage(error)
 });
 }
 });
@@ -3089,7 +3395,7 @@ successful++;
 throwIfAborted(abortSignal);
 failures.push({
 url: item.url,
-error: getErrorMessage(error)
+error: normalizeErrorMessage(error)
 });
 } finally {
 processed++;
@@ -3147,7 +3453,7 @@ success: false,
 status: "error",
 filesProcessed: 0,
 filesSuccessful: 0,
-error: getErrorMessage(getUserCancelledAbortErrorFromSignal(options.signal)) || "Download cancelled",
+error: normalizeErrorMessage(getUserCancelledAbortErrorFromSignal(options.signal)),
 code: ErrorCode.CANCELLED
 };
 if (mediaItems.length === 0) return {
@@ -3212,7 +3518,7 @@ success: false,
 status: "error",
 filesProcessed: items.length,
 filesSuccessful: 0,
-error: getErrorMessage(error) || "Download cancelled",
+error: normalizeErrorMessage(error),
 code: ErrorCode.CANCELLED
 };
 return {
@@ -3220,19 +3526,19 @@ success: false,
 status: "error",
 filesProcessed: items.length,
 filesSuccessful: 0,
-error: getErrorMessage(error) || "Unknown error",
+error: normalizeErrorMessage(error),
 code: ErrorCode.ALL_FAILED
 };
 }
 }
-async saveZipBlob(zipBlob, filename, _options, capability) {
-if (planZipSave(capability.method) === "gm_download" && capability.gmDownload) return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename);
+async saveZipBlob(zipBlob, filename, options, capability) {
+if (planZipSave(capability.method) === "gm_download" && capability.gmDownload) return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename, options.onProgress);
 return {
 success: false,
 error: "No download method"
 };
 }
-async saveWithGMDownload(gmDownload, blob, filename) {
+async saveWithGMDownload(gmDownload, blob, filename, onprogress) {
 const url = URL.createObjectURL(blob);
 try {
 await new Promise((resolve, reject) => {
@@ -3241,14 +3547,25 @@ url,
 name: filename,
 onload: () => resolve(),
 onerror: (err) => reject(err),
-ontimeout: () => reject(  new Error("Timeout"))
+ontimeout: () => reject(  new Error("Timeout")),
+...onprogress ? { onprogress: (progress) => {
+if (progress.total <= 0) return;
+const pct = Math.min(100, Math.max(0, Math.round(progress.loaded / progress.total * 100)));
+onprogress({
+phase: "saving",
+current: progress.loaded,
+total: progress.total,
+percentage: pct,
+filename
+});
+} } : {}
 });
 });
 return { success: true };
 } catch (error) {
 return {
 success: false,
-error: getErrorMessage(error) || "GM_download failed"
+error: normalizeErrorMessage(error)
 };
 } finally {
 URL.revokeObjectURL(url);
@@ -3262,13 +3579,6 @@ _renderer = r;
 function hasRenderer() {
 return _renderer !== null;
 }
-var _settings = null;
-function registerSettings(s) {
-_settings = s;
-}
-function tryGetSettings() {
-return _settings;
-}
 function getThemeService() {
 return ThemeService.getInstance();
 }
@@ -3278,322 +3588,10 @@ return LanguageService.getInstance();
 function getMediaService() {
 return MediaService.getInstance();
 }
-function registerSettingsManager(settings) {
-registerSettings(settings);
-}
-function tryGetSettingsManager() {
-return tryGetSettings();
-}
 var _downloadOrchestrator = null;
 function getDownloadOrchestrator() {
 if (!_downloadOrchestrator) _downloadOrchestrator = DownloadOrchestrator.getInstance();
 return _downloadOrchestrator;
-}
-function requireSettingsService() {
-const service = tryGetSettings();
-if (!service) throw new Error("SettingsService not registered.");
-return service;
-}
-function getTypedSettingOr(path, fallback) {
-const value = requireSettingsService().get(path);
-return value === void 0 ? fallback : value;
-}
-function setTypedSetting(path, value) {
-return requireSettingsService().set(path, value);
-}
-var THEME_DOM_ATTRIBUTE = "data-theme";
-function syncThemeAttributes(theme, options = {}) {
-if (typeof document === "undefined") return;
-const { scopes, includeDocumentRoot = false } = options;
-if (includeDocumentRoot && document.documentElement) document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, theme);
-const targets = scopes ?? document.querySelectorAll(".xeg-theme-scope");
-for (const target of Array.from(targets)) if (target instanceof HTMLElement) target.setAttribute(THEME_DOM_ATTRIBUTE, theme);
-}
-var listeners =  new Map();
-function generateListenerId(ctx) {
-return ctx ? createPrefixedId(ctx, ":") : createId();
-}
-function addListener(element, type, listener, options, context) {
-const id = generateListenerId(context);
-if (!element || typeof element.addEventListener !== "function") return id;
-try {
-element.addEventListener(type, listener, options);
-listeners.set(id, {
-id,
-element,
-type,
-listener,
-options,
-context
-});
-return id;
-} catch (error) {
-return id;
-}
-}
-function removeEventListenerManaged(id) {
-const ctx = listeners.get(id);
-if (!ctx) return false;
-try {
-ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
-listeners.delete(id);
-return true;
-} catch (error) {
-return false;
-}
-}
-var _eventManagerInstance = null;
-var EventManager = class EventManager {
-_initialized = false;
-isDestroyed = false;
-ownedListenerContexts =  new Map();
-constructor() {}
-static getInstance() {
-if (!_eventManagerInstance) _eventManagerInstance = new EventManager();
-return _eventManagerInstance;
-}
-async initialize() {
-if (this._initialized) return;
-this.isDestroyed = false;
-this._initialized = true;
-}
-destroy() {
-if (!this._initialized) return;
-this.cleanup();
-this._initialized = false;
-}
-isInitialized() {
-return this._initialized;
-}
-addEventListener(element, type, listener, options) {
-if (this.isDestroyed) {
-;
-return null;
-}
-const { context, ...listenerOptions } = options ?? {};
-const id = addListener(element, type, listener, listenerOptions, context);
-if (id) this.ownedListenerContexts.set(id, context);
-return id || null;
-}
-removeListener(id) {
-if (!this.ownedListenerContexts.has(id)) return false;
-this.ownedListenerContexts.delete(id);
-return removeEventListenerManaged(id);
-}
-removeByContext(context) {
-const toRemove = [];
-for (const [id, ctx] of this.ownedListenerContexts) if (ctx === context) toRemove.push(id);
-let count = 0;
-for (const id of toRemove) {
-this.ownedListenerContexts.delete(id);
-if (removeEventListenerManaged(id)) count++;
-}
-return count;
-}
-getIsDestroyed() {
-return this.isDestroyed;
-}
-getListenerStatus() {
-return {
-total: 0,
-byContext: {},
-byType: {}
-};
-}
-cleanup() {
-if (this.isDestroyed) return;
-const ids = Array.from(this.ownedListenerContexts.keys());
-this.ownedListenerContexts.clear();
-for (const id of ids) try {
-removeEventListenerManaged(id);
-} catch {}
-this.isDestroyed = true;
-}
-};
-var VALID_THEME_SETTINGS = [
-"light",
-"dark",
-"auto"
-];
-function isThemeSetting(value) {
-return typeof value === "string" && VALID_THEME_SETTINGS.includes(value);
-}
-var _themeInstance = null;
-var ThemeService = class ThemeService {
-_initialized = false;
-storage = getPersistentStorage();
-mediaQueryList = null;
-mediaQueryListener = null;
-domEventsController = null;
-currentTheme = "light";
-themeSetting = "auto";
-listeners =  new Set();
-boundSettingsService = null;
-observer = null;
-observedThemeScopes =  new WeakSet();
-static getInstance() {
-if (!_themeInstance) _themeInstance = new ThemeService();
-return _themeInstance;
-}
-constructor() {
-this.mediaQueryList = this.createMediaQueryList();
-}
-async initialize() {
-if (this._initialized) return;
-if (!this.boundSettingsService) {
-const settingsService = tryGetSettings();
-if (settingsService) this.bindSettingsService(settingsService);
-else await this.restoreThemeSettingFromStorage();
-}
-this.initializeThemeScopeObservation();
-this.initializeSystemDetection();
-this.applyCurrentTheme(true);
-this._initialized = true;
-}
-destroy() {
-this.cleanup();
-this._initialized = false;
-}
-isInitialized() {
-return this._initialized;
-}
-bindSettingsService(settingsService) {
-if (!settingsService || this.boundSettingsService === settingsService) return;
-this.boundSettingsService = settingsService;
-const settingsTheme = settingsService.get?.("gallery.theme");
-if (isThemeSetting(settingsTheme) && settingsTheme !== this.themeSetting) {
-this.themeSetting = settingsTheme;
-this.applyCurrentTheme(true);
-}
-}
-setTheme(setting, options) {
-const normalized = isThemeSetting(setting) ? setting : "light";
-this.themeSetting = normalized;
-if (options?.persist !== false && this.boundSettingsService?.set) {
-const result = this.boundSettingsService.set("gallery.theme", this.themeSetting);
-if (result instanceof Promise) result.catch((error) => {});
-}
-if (!this.applyCurrentTheme(options?.force)) this.notifyListeners();
-}
-getEffectiveTheme() {
-if (this.themeSetting === "auto") return this.mediaQueryList?.matches ? "dark" : "light";
-return this.themeSetting;
-}
-getCurrentTheme() {
-return this.themeSetting;
-}
-isDarkMode() {
-return this.getEffectiveTheme() === "dark";
-}
-onThemeChange(listener) {
-this.listeners.add(listener);
-return () => this.listeners.delete(listener);
-}
-applyThemeToScopes(scopes) {
-const newScopes = [];
-for (const scope of scopes) if (!this.observedThemeScopes.has(scope)) {
-this.observedThemeScopes.add(scope);
-newScopes.push(scope);
-}
-if (newScopes.length > 0) syncThemeAttributes(this.currentTheme, { scopes: newScopes });
-}
-createMediaQueryList() {
-if (typeof window === "undefined" || typeof window.matchMedia !== "function") return null;
-return window.matchMedia("(prefers-color-scheme: dark)");
-}
-async restoreThemeSettingFromStorage() {
-const saved = await this.loadThemeAsync();
-if (saved && saved !== this.themeSetting) {
-this.themeSetting = saved;
-this.applyCurrentTheme(true);
-}
-}
-initializeThemeScopeObservation() {
-if (typeof document === "undefined" || typeof MutationObserver === "undefined") return;
-this.applyThemeToScopes(Array.from(document.querySelectorAll(".xeg-theme-scope")));
-this.observer?.disconnect();
-this.observer = new MutationObserver((mutations) => {
-for (const mutation of mutations) mutation.addedNodes.forEach((node) => {
-if (!(node instanceof Element)) return;
-const scopes = [];
-if (node.classList.contains("xeg-theme-scope")) scopes.push(node);
-node.querySelectorAll(".xeg-theme-scope").forEach((scope) => {
-scopes.push(scope);
-});
-if (scopes.length > 0) this.applyThemeToScopes(scopes);
-});
-});
-if (document.body) {
-this.observer.observe(document.body, {
-childList: true,
-subtree: true
-});
-return;
-}
-}
-cleanup() {
-this.boundSettingsService = null;
-this.listeners.clear();
-this.observedThemeScopes =  new WeakSet();
-if (this.observer) {
-this.observer.disconnect();
-this.observer = null;
-}
-if (this.domEventsController) {
-this.domEventsController.abort();
-this.domEventsController = null;
-}
-this.mediaQueryListener = null;
-this.mediaQueryList = null;
-}
-initializeSystemDetection() {
-if (!this.mediaQueryList) this.mediaQueryList = this.createMediaQueryList();
-if (!this.mediaQueryList || this.mediaQueryListener) return;
-if (!this.domEventsController || this.domEventsController.signal.aborted) this.domEventsController = new AbortController();
-this.mediaQueryListener = () => {
-if (this.themeSetting === "auto") this.applyCurrentTheme();
-};
-const listener = this.mediaQueryListener;
-const eventListener = (event) => {
-listener(event);
-};
-EventManager.getInstance().addEventListener(this.mediaQueryList, "change", eventListener, {
-signal: this.domEventsController.signal,
-context: "theme-service"
-});
-}
-applyCurrentTheme(force = false) {
-const effective = this.getEffectiveTheme();
-if (force || this.currentTheme !== effective) {
-this.currentTheme = effective;
-syncThemeAttributes(this.currentTheme);
-this.notifyListeners();
-return true;
-}
-return false;
-}
-notifyListeners() {
-this.listeners.forEach((listener) => listener(this.currentTheme, this.themeSetting));
-}
-async loadThemeAsync() {
-try {
-return (await this.storage.get("xeg-app-settings"))?.gallery?.theme ?? null;
-} catch {
-return null;
-}
-}
-};
-async function initializeCoreBaseServices() {
-try {
-const services = [
-ThemeService.getInstance(),
-LanguageService.getInstance(),
-MediaService.getInstance()
-];
-for (const service of services) if (service?.initialize) await service.initialize();
-} catch (error) {
-throw new Error("[base-services] initialization failed", { cause: error instanceof Error ? error : new Error(String(error)) });
-}
 }
 var DEFAULT_SEVERITY = "error";
 var notificationCallback = null;
@@ -3607,7 +3605,7 @@ s: severity
 if (options.code) payload.cd = options.code;
 if (options.metadata) payload.m = options.metadata;
 if (options.notify && notificationCallback) notificationCallback(message, options.context);
-if (severity === "critical") throw error instanceof Error ? error : new Error(message);
+if (severity === "critical") console.error("[Critical Error]", message, payload);
 return {
 reported: true,
 message,
@@ -4476,15 +4474,6 @@ return typeof f === "function" && f.length ? untrack(() => f(e, () => setErrored
 return catchError(() => props.children, setErrored);
 }, void 0, void 0);
 }
-function createSignalSafe(initial) {
-return createSignal(initial, { equals: false });
-}
-function effectSafe(fn) {
-return createRoot((dispose) => {
-createComputed(fn);
-return dispose;
-});
-}
 var INITIAL_NAVIGATION_STATE = {
 lastSource: "auto-focus",
 lastTimestamp: 0,
@@ -4492,19 +4481,15 @@ lastNavigatedIndex: null
 };
 var VALID_NAVIGATION_SOURCES = [
 "button",
+"click",
 "keyboard",
+"programmatic",
 "scroll",
 "auto-focus"
 ];
-var VALID_NAVIGATION_TRIGGERS = [
-"button",
-"click",
-"keyboard",
-"scroll"
-];
-var [_lastSource, setLastSource] = createSignalSafe(INITIAL_NAVIGATION_STATE.lastSource);
-var [_lastTimestamp, setLastTimestamp] = createSignalSafe(INITIAL_NAVIGATION_STATE.lastTimestamp);
-var [_lastNavigatedIndex, setLastNavigatedIndex] = createSignalSafe(INITIAL_NAVIGATION_STATE.lastNavigatedIndex);
+var [_lastSource, setLastSource] = createSignal(INITIAL_NAVIGATION_STATE.lastSource);
+var [_lastTimestamp, setLastTimestamp] = createSignal(INITIAL_NAVIGATION_STATE.lastTimestamp);
+var [_lastNavigatedIndex, setLastNavigatedIndex] = createSignal(INITIAL_NAVIGATION_STATE.lastNavigatedIndex);
 var navigationSignals = {
 get lastSource() {
 return _lastSource();
@@ -4527,13 +4512,12 @@ setLastNavigatedIndex(v);
 };
 var resolveNowMs = (nowMs) => nowMs ?? Date.now();
 var isValidNavigationSource = (value) => typeof value === "string" && VALID_NAVIGATION_SOURCES.includes(value);
-var isValidNavigationTrigger = (value) => typeof value === "string" && VALID_NAVIGATION_TRIGGERS.includes(value);
 var isManualSource = (source) => source === "button" || source === "keyboard";
 var createNavigationActionError = (context, reason) =>  new Error(`[Gallery] Invalid navigation action (${context}): ${reason}`);
 function validateNavigationParams(targetIndex, source, trigger, context) {
 if (typeof targetIndex !== "number" || Number.isNaN(targetIndex)) throw createNavigationActionError(context, "Navigate payload targetIndex invalid");
 if (!isValidNavigationSource(source)) throw createNavigationActionError(context, `Navigate payload source invalid: ${String(source)}`);
-if (!isValidNavigationTrigger(trigger)) throw createNavigationActionError(context, `Navigate payload trigger invalid: ${String(trigger)}`);
+if (!isValidNavigationSource(trigger)) throw createNavigationActionError(context, `Navigate payload trigger invalid: ${String(trigger)}`);
 }
 function recordNavigation(targetIndex, source, nowMs) {
 const timestamp = resolveNowMs(nowMs);
@@ -4558,37 +4542,11 @@ if (trigger === "scroll") return "scroll";
 if (trigger === "keyboard") return "keyboard";
 return "button";
 }
-var INITIAL_UI_STATE = {
-viewMode: "vertical",
-isLoading: false,
-error: null
-};
-var [_viewMode, setViewMode] = createSignalSafe(INITIAL_UI_STATE.viewMode);
-var [_isLoading, setIsLoading] = createSignalSafe(INITIAL_UI_STATE.isLoading);
-var [_error, setErrorSignal] = createSignalSafe(INITIAL_UI_STATE.error);
-var uiSignals = {
-get viewMode() {
-return _viewMode();
-},
-set viewMode(v) {
-setViewMode(v);
-},
-get isLoading() {
-return _isLoading();
-},
-set isLoading(v) {
-setIsLoading(v);
-},
-get error() {
-return _error();
-},
-set error(v) {
-setErrorSignal(v);
-}
-};
-function setError(error) {
-uiSignals.error = error;
-if (error) uiSignals.isLoading = false;
+function effectSafe(fn) {
+return createRoot((dispose) => {
+createComputed(fn);
+return dispose;
+});
 }
 function createEventEmitter() {
 const listeners =  new Map();
@@ -4624,53 +4582,54 @@ error: null,
 viewMode: "vertical"
 };
 var galleryIndexEvents = createEventEmitter();
-var [isOpenSig, setIsOpen] = createSignalSafe(INITIAL_STATE$1.isOpen);
-var [mediaItemsSig, setMediaItems] = createSignalSafe(INITIAL_STATE$1.mediaItems);
-var [currentIndexSig, setCurrentIndex] = createSignalSafe(INITIAL_STATE$1.currentIndex);
-var [focusedIndexSig, setFocusedIndex] = createSignalSafe(null);
-var [currentVideoElementSig, setCurrentVideoElement] = createSignalSafe(null);
+var [isOpenSig, _setIsOpenInternal] = createSignal(INITIAL_STATE$1.isOpen);
+function setIsOpen(value) {
+_setIsOpenInternal(value);
+}
+var [mediaItemsSig, setMediaItems] = createSignal(INITIAL_STATE$1.mediaItems);
+var [currentIndexSig, setCurrentIndex] = createSignal(INITIAL_STATE$1.currentIndex);
+var [focusedIndexSig, setFocusedIndex] = createSignal(null);
+var [currentVideoElementSig, setCurrentVideoElement] = createSignal(null);
+var [_viewModeSig, _setViewMode] = createSignal(INITIAL_STATE$1.viewMode);
+var [_isLoadingSig, _setIsLoading] = createSignal(INITIAL_STATE$1.isLoading);
+var [_errorSig, _setErrorSig] = createSignal(INITIAL_STATE$1.error);
 var gallerySignals = {
 get isOpen() {
 return isOpenSig();
 },
-set isOpen(v) {
-setIsOpen(v);
-},
 get mediaItems() {
 return mediaItemsSig();
-},
-set mediaItems(v) {
-setMediaItems(v);
 },
 get currentIndex() {
 return currentIndexSig();
 },
-set currentIndex(v) {
-setCurrentIndex(v);
+get isLoading() {
+return _isLoadingSig();
 },
-isLoading: uiSignals.isLoading,
-error: uiSignals.error,
-viewMode: uiSignals.viewMode,
+get error() {
+return _errorSig();
+},
+get viewMode() {
+return _viewModeSig();
+},
 get focusedIndex() {
 return focusedIndexSig();
 },
-set focusedIndex(v) {
-setFocusedIndex(v);
-},
 get currentVideoElement() {
 return currentVideoElementSig();
-},
-set currentVideoElement(v) {
-setCurrentVideoElement(v);
 }
 };
+function setError(error) {
+_setErrorSig(error);
+if (error) _setIsLoading(false);
+}
 function applyGallerySessionUpdate(state) {
 batch(() => {
 setMediaItems(state.mediaItems);
 setCurrentIndex(state.currentIndex);
 setFocusedIndex(state.focusedIndex);
 setCurrentVideoElement(state.currentVideoElement);
-uiSignals.error = state.error;
+_setErrorSig(state.error);
 setIsOpen(state.isOpen);
 });
 }
@@ -4678,9 +4637,9 @@ function applyGalleryStateUpdate(state) {
 batch(() => {
 setMediaItems(state.mediaItems);
 setCurrentIndex(state.currentIndex);
-uiSignals.isLoading = state.isLoading;
-uiSignals.error = state.error;
-uiSignals.viewMode = state.viewMode;
+_setIsLoading(state.isLoading);
+_setErrorSig(state.error);
+_setViewMode(state.viewMode);
 setIsOpen(state.isOpen);
 });
 }
@@ -4690,9 +4649,9 @@ return {
 isOpen: isOpenSig(),
 mediaItems: mediaItemsSig(),
 currentIndex: currentIndexSig(),
-isLoading: uiSignals.isLoading,
-error: uiSignals.error,
-viewMode: uiSignals.viewMode
+isLoading: gallerySignals.isLoading,
+error: gallerySignals.error,
+viewMode: gallerySignals.viewMode
 };
 },
 set value(state) {
@@ -4794,9 +4753,6 @@ break;
 case "volumeDown":
 adjustVolume(video, -.1);
 break;
-case "mute":
-video.muted = true;
-break;
 case "toggleMute":
 video.muted = !video.muted;
 break;
@@ -4862,6 +4818,8 @@ var NAVIGATION_KEYS = new Set([
 "PageUp",
 "ArrowLeft",
 "ArrowRight",
+"ArrowUp",
+"ArrowDown",
 "?"
 ]);
 var VIDEO_CONTROL_KEYS = new Set([
@@ -4885,8 +4843,8 @@ if (!isGalleryOpen) {
 handlers.onKeyboardEvent?.(event);
 return;
 }
-const isNavKey = NAVIGATION_KEYS.has(key) || key === " " || key === "Space";
-const isVideoKey = VIDEO_CONTROL_KEYS.has(key) || key === " " || key === "Space";
+const isNavKey = NAVIGATION_KEYS.has(key) || key === "Space";
+const isVideoKey = VIDEO_CONTROL_KEYS.has(key) || key === "Space";
 if (!isNavKey && !isVideoKey) {
 handlers.onKeyboardEvent?.(event);
 return;
@@ -4894,7 +4852,8 @@ return;
 event.preventDefault();
 event.stopPropagation();
 if (key === "?") showKeyboardHelp();
-else if (key === " " || key === "Space") handleVideoControl(key);
+else if (key === "Space") handleVideoControl(key);
+else if ((key === "ArrowUp" || key === "ArrowDown") && gallerySignals.currentVideoElement) handleVideoControl(key);
 else if (NAVIGATION_KEYS.has(key)) handleNavigation(key);
 else handleVideoControl(key);
 handlers.onKeyboardEvent?.(event);
@@ -4926,7 +4885,6 @@ break;
 }
 function handleVideoControl(key) {
 switch (key) {
-case " ":
 case "Space":
 if (shouldExecuteKeyboardAction("Space", 150)) executeVideoControl("togglePlayPause");
 break;
@@ -4946,7 +4904,7 @@ function showKeyboardHelp() {
 if (!shouldExecuteKeyboardAction("?", 500)) return;
 try {
 const lang = getLanguageService();
-getUserscriptSafe().notification({
+getUserscript().notification({
 title: lang.translate("msg.kb.t"),
 text: [
 lang.translate("msg.kb.prev"),
@@ -5382,7 +5340,7 @@ guardDispose = null;
 var GalleryApp = class {
 isInitialized = false;
 get userscript() {
-return getUserscriptSafe();
+return getUserscript();
 }
 ambientVideoGuardDispose = null;
 constructor() {}
@@ -5435,13 +5393,10 @@ text: "Could not find images or videos."
 });
 }
 } catch (error) {
-mediaErrorReporter.error(error, {
-code: "MEDIA_EXTRACTION_ERROR",
-notify: true
-});
+mediaErrorReporter.error(error, { code: "MEDIA_EXTRACTION_ERROR" });
 this.userscript.notification({
 title: "Error occurred",
-text: getErrorMessage(error) || "Unknown error"
+text: normalizeErrorMessage(error)
 });
 }
 }
@@ -5470,12 +5425,11 @@ code: "GALLERY_OPEN_FAILED",
 metadata: {
 itemCount: mediaItems.length,
 startIndex
-},
-notify: true
+}
 });
 this.userscript.notification({
 title: "Failed to load gallery",
-text: getErrorMessage(error) || "Unknown error"
+text: normalizeErrorMessage(error)
 });
 throw error;
 }
@@ -5802,6 +5756,162 @@ else isParent && el.remove();
 } else parent.insertBefore(node, marker);
 return [node];
 }
+function useGalleryFitMode(options) {
+const { scrollToCurrentItem, currentIndex } = options;
+const getInitialFitMode = () => {
+return getTypedSettingOr("gallery.imageFitMode", "fitWidth");
+};
+const [imageFitMode, setImageFitMode] = createSignal(getInitialFitMode());
+const persistFitMode = (mode) => setTypedSetting("gallery.imageFitMode", mode).catch((error) => {});
+const applyFitMode = (mode, event) => {
+event?.preventDefault();
+event?.stopPropagation();
+setImageFitMode(mode);
+persistFitMode(mode);
+scrollToCurrentItem();
+navigateToItem(currentIndex(), "programmatic", "auto-focus");
+};
+const handleFitOriginal = (event) => applyFitMode("original", event);
+const handleFitWidth = (event) => applyFitMode("fitWidth", event);
+const handleFitHeight = (event) => applyFitMode("fitHeight", event);
+const handleFitContainer = (event) => applyFitMode("fitContainer", event);
+return {
+imageFitMode,
+handleFitOriginal,
+handleFitWidth,
+handleFitHeight,
+handleFitContainer
+};
+}
+function useGalleryKeyboard({ onClose }) {
+createEffect(() => {
+if (typeof document === "undefined") return;
+const isEditableTarget = (target) => {
+const element = target;
+if (!element) return false;
+const tag = element.tagName?.toUpperCase();
+return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || !!element.isContentEditable;
+};
+const handleKeyDown = (event) => {
+const keyboardEvent = event;
+if (isEditableTarget(keyboardEvent.target)) return;
+if (keyboardEvent.key === "Escape") {
+keyboardEvent.preventDefault();
+keyboardEvent.stopPropagation();
+onClose();
+}
+};
+const eventManager = EventManager.getInstance();
+const listenerId = eventManager.addEventListener(document, "keydown", handleKeyDown, {
+capture: true,
+context: "gallery-keyboard-navigation"
+});
+onCleanup(() => {
+if (listenerId) eventManager.removeListener(listenerId);
+});
+});
+}
+function useGalleryNavigationHandlers(options) {
+const { currentIndex, mediaItems, onClose } = options;
+const handlePrevious = () => {
+const current = currentIndex();
+if (current > 0) navigateToItem(current - 1, "click", "button");
+};
+const handleNext = () => {
+const current = currentIndex();
+if (current < mediaItems().length - 1) navigateToItem(current + 1, "click", "button");
+};
+const handleBackgroundClick = (event) => {
+const target = event.target;
+if (!(target instanceof Element)) return;
+if (target.closest("[data-role=\"toolbar\"], [data-role=\"toolbar-hover-zone\"], [data-gallery-element], [data-xeg-role=\"gallery-item\"], [data-xeg-role=\"scroll-spacer\"]")) return;
+onClose();
+};
+const handleMediaItemClick = (index) => {
+const items = mediaItems();
+const current = currentIndex();
+if (index >= 0 && index < items.length && index !== current) navigateToItem(index, "click", "scroll");
+};
+return {
+handlePrevious,
+handleNext,
+handleBackgroundClick,
+handleMediaItemClick
+};
+}
+function createDebounced(fn, delayMs = 300) {
+let timeoutId = null;
+let pendingArgs = null;
+const cancel = () => {
+if (timeoutId !== null) {
+globalTimerManager.clearTimeout(timeoutId);
+timeoutId = null;
+}
+pendingArgs = null;
+};
+const flush = () => {
+if (timeoutId !== null && pendingArgs !== null) {
+globalTimerManager.clearTimeout(timeoutId);
+const args = pendingArgs;
+timeoutId = null;
+pendingArgs = null;
+fn(...args);
+}
+};
+const debounced = ((...args) => {
+cancel();
+pendingArgs = args;
+timeoutId = globalTimerManager.setTimeout(() => {
+const savedArgs = pendingArgs;
+timeoutId = null;
+pendingArgs = null;
+if (savedArgs !== null) fn(...savedArgs);
+}, delayMs);
+});
+debounced.cancel = cancel;
+debounced.flush = flush;
+return debounced;
+}
+function useGalleryScrollCorrection(options) {
+const { isVisible, currentIndex, activeMedia, scrollToItem } = options;
+const debouncedScrollCorrection = createDebounced((index, mediaId) => {
+if (!isVisible()) return;
+if (index !== currentIndex() || activeMedia()?.id !== mediaId) return;
+scrollToItem(index);
+}, 120);
+onCleanup(() => {
+debouncedScrollCorrection.cancel();
+});
+return { debouncedScrollCorrection };
+}
+function useGalleryWheelRedirect(options) {
+const { containerEl, itemsContainerEl } = options;
+createEffect(() => {
+const container = containerEl();
+if (!container) return;
+const controller = new AbortController();
+const handleContainerWheel = (event) => {
+const itemsContainer = itemsContainerEl();
+if (!itemsContainer) return;
+const target = event.target;
+if (!(target instanceof Element)) return;
+if (itemsContainer.contains(target)) return;
+event.preventDefault();
+event.stopPropagation();
+itemsContainer.scrollTop += event.deltaY;
+};
+const eventManager = EventManager.getInstance();
+const listener = (event) => {
+handleContainerWheel(event);
+};
+eventManager.addEventListener(container, "wheel", listener, {
+passive: false,
+signal: controller.signal,
+context: "gallery:wheel:container-redirect"
+});
+onCleanup(() => controller.abort());
+});
+}
 var observerRegistry =  new WeakMap();
 var SharedObserver = {
 observe(element, callback, options = {}) {
@@ -5821,12 +5931,8 @@ let isActive = true;
 const unsubscribe = () => {
 if (!isActive) return;
 isActive = false;
-try {
 observer.unobserve(element);
-} catch {}
-try {
 observer.disconnect();
-} catch {}
 const currentSet = observerRegistry.get(element);
 if (currentSet) {
 currentSet.delete(observer);
@@ -5838,24 +5944,14 @@ return unsubscribe;
 unobserve(element) {
 const set = observerRegistry.get(element);
 if (!set || set.size === 0) return;
-for (const observer of set) try {
-observer.disconnect();
-} catch {}
+for (const observer of set) observer.disconnect();
 observerRegistry.delete(element);
 }
 };
 var DEFAULTS$1 = {
 THRESHOLD: [
 0,
-.1,
-.2,
-.3,
-.4,
 .5,
-.6,
-.7,
-.8,
-.9,
 1
 ],
 ROOT_MARGIN: "0px"
@@ -5863,6 +5959,7 @@ ROOT_MARGIN: "0px"
 var FocusCoordinator = class {
 items =  new Map();
 observerOptions;
+_rafId = null;
 constructor(options) {
 this.options = options;
 const threshold = options.threshold;
@@ -5896,14 +5993,21 @@ this.items.set(index, trackedItem);
 }
 updateFocus(force = false) {
 if (!force && !this.options.isEnabled()) return;
+if (this._rafId !== null) return;
+this._rafId = requestAnimationFrame(() => {
+this._rafId = null;
 const container = this.options.container();
 if (!container) return;
-const containerRect = container.getBoundingClientRect();
-const selection = this.selectBestCandidate(containerRect);
+const selection = this.selectBestCandidate(container.getBoundingClientRect());
 if (!selection) return;
 if (this.options.activeIndex() !== selection.index) this.options.onFocusChange(selection.index, "auto");
+});
 }
 cleanup() {
+if (this._rafId !== null) {
+cancelAnimationFrame(this._rafId);
+this._rafId = null;
+}
 for (const item of this.items.values()) item.unsubscribe?.();
 this.items.clear();
 }
@@ -5913,16 +6017,27 @@ const viewportTop = containerRect.top;
 const viewportBottom = viewportTop + viewportHeight;
 const viewportCenter = viewportTop + viewportHeight / 2;
 const topProximityThreshold = 50;
-let bestCandidate = null;
-let topAlignedCandidate = null;
-let highestVisibilityCandidate = null;
+const itemRects =  new Map();
 for (const [index, item] of this.items) {
 if (!item.isVisible || !item.element.isConnected) continue;
 const rect = item.element.getBoundingClientRect();
-const itemTop = rect.top;
-const itemHeight = rect.height;
-const itemBottom = itemTop + itemHeight;
-const itemCenter = itemTop + itemHeight / 2;
+const top = rect.top;
+const height = rect.height;
+itemRects.set(index, {
+top,
+height,
+bottom: top + height,
+center: top + height / 2
+});
+}
+let bestCandidate = null;
+let topAlignedCandidate = null;
+let highestVisibilityCandidate = null;
+for (const [index, itemRect] of itemRects) {
+const itemTop = itemRect.top;
+const itemHeight = itemRect.height;
+const itemBottom = itemRect.bottom;
+const itemCenter = itemRect.center;
 const visibleHeight = Math.max(0, Math.min(itemBottom, viewportBottom) - Math.max(itemTop, viewportTop));
 const visibilityRatio = itemHeight > 0 ? visibleHeight / itemHeight : 0;
 const centerDistance = Math.abs(itemCenter - viewportCenter);
@@ -6056,7 +6171,7 @@ scrollToCurrentItem: () => scrollToItem(currentIndexAccessor())
 var SCROLL_IDLE_TIMEOUT = 250;
 var PROGRAMMATIC_SCROLL_WINDOW = 100;
 var LISTENER_CONTEXT_PREFIX = "useGalleryScroll";
-function useGalleryScroll({ container, scrollTarget, onScroll, onScrollEnd, enabled = true, programmaticScrollTimestamp }) {
+function useGalleryScroll({ container, scrollTarget, onScrollEnd, enabled = true, programmaticScrollTimestamp }) {
 const containerAccessor = toAccessor(container);
 const scrollTargetAccessor = toAccessor(scrollTarget ?? containerAccessor);
 const enabledAccessor = toAccessor(enabled);
@@ -6092,13 +6207,11 @@ const handleWheel = (event) => {
 if (!isGalleryOpen() || !isGalleryInternalEvent(event)) return;
 if (isToolbarScroll(event)) return;
 markScrolling();
-onScroll?.();
 scheduleScrollEnd();
 };
 const handleScroll = () => {
 if (!isGalleryOpen() || shouldIgnoreScroll()) return;
 markScrolling();
-onScroll?.();
 scheduleScrollEnd();
 };
 createEffect(() => {
@@ -6133,39 +6246,6 @@ return {
 isScrolling,
 lastScrollTime
 };
-}
-function useGalleryKeyboard({ onClose }) {
-createEffect(() => {
-if (typeof document === "undefined") return;
-const isEditableTarget = (target) => {
-const element = target;
-if (!element) return false;
-const tag = element.tagName?.toUpperCase();
-if (tag === "INPUT" || tag === "TEXTAREA") return true;
-return !!element.isContentEditable;
-};
-const handleKeyDown = (event) => {
-const keyboardEvent = event;
-if (isEditableTarget(keyboardEvent.target)) return;
-let handled = false;
-if (keyboardEvent.key === "Escape") {
-onClose();
-handled = true;
-}
-if (handled) {
-keyboardEvent.preventDefault();
-keyboardEvent.stopPropagation();
-}
-};
-const eventManager = EventManager.getInstance();
-const listenerId = eventManager.addEventListener(document, "keydown", handleKeyDown, {
-capture: true,
-context: "gallery-keyboard-navigation"
-});
-onCleanup(() => {
-if (listenerId) eventManager.removeListener(listenerId);
-});
-});
 }
 function ensureGalleryScrollAvailable(element) {
 if (!element) return;
@@ -6299,10 +6379,19 @@ paddingTop: 0,
 paddingBottom: 0
 };
 });
-onCleanup(() => {
-cleanup?.();
+onCleanup(() => cleanup?.());
 });
+}
+function registerNavigationEvents({ onTriggerChange, onNavigateComplete }) {
+const stopStart = galleryIndexEvents.on("navigate:start", () => {});
+const stopComplete = galleryIndexEvents.on("navigate:complete", (payload) => {
+onTriggerChange(payload.trigger);
+onNavigateComplete(payload);
 });
+return () => {
+stopStart();
+stopComplete();
+};
 }
 function useGalleryNavigation(options) {
 const { isVisible, scrollToItem } = options;
@@ -6323,17 +6412,6 @@ lastNavigationTrigger,
 setLastNavigationTrigger,
 programmaticScrollTimestamp,
 setProgrammaticScrollTimestamp
-};
-}
-function registerNavigationEvents({ onTriggerChange, onNavigateComplete }) {
-const stopStart = galleryIndexEvents.on("navigate:start", (payload) => onTriggerChange(payload.trigger));
-const stopComplete = galleryIndexEvents.on("navigate:complete", (payload) => {
-onTriggerChange(payload.trigger);
-onNavigateComplete(payload);
-});
-return () => {
-stopStart();
-stopComplete();
 };
 }
 function useToolbarAutoHide(options) {
@@ -6370,7 +6448,7 @@ setIsInitialToolbarVisible
 };
 }
 function useVerticalGallery(options) {
-const { isVisible, currentIndex, mediaItemsCount, containerEl, toolbarWrapperEl, itemsContainerEl, onClose } = options;
+const { isVisible, currentIndex, mediaItemsCount, containerEl, toolbarWrapperEl, itemsContainerEl } = options;
 let focusSyncCallback = null;
 const { isInitialToolbarVisible, setIsInitialToolbarVisible } = useToolbarAutoHide({
 isVisible,
@@ -6410,7 +6488,6 @@ isVisible
 createEffect(() => {
 if (isScrolling()) setIsInitialToolbarVisible(false);
 });
-useGalleryKeyboard({ onClose: onClose ?? (() => {}) });
 return {
 scroll: {
 isScrolling,
@@ -6572,7 +6649,7 @@ function cleanFilename(filename) {
 if (!filename) return "Untitled";
 const truncateMiddlePreservingExtension = (value) => {
 if (value.length <= CLEAN_FILENAME_MAX_LENGTH) return value;
-const extension = value.match(CLEAN_FILENAME_EXTENSION_REGEX)?.[1] ?? "";
+const extension = value.match(CLEAN_FILENAME_EXTENSION_REGEX)?.[0] ?? "";
 const base = extension ? value.slice(0, -extension.length) : value;
 const available = CLEAN_FILENAME_MAX_LENGTH - extension.length - 3;
 if (available <= 1) return value.slice(0, CLEAN_FILENAME_MAX_LENGTH);
@@ -6620,6 +6697,71 @@ if (VIDEO_EXTENSIONS.some((ext) => filenameLowerCase.endsWith(ext))) return true
 if (parsedUrl) return parsedUrl.hostname === "video.twimg.com";
 return false;
 }
+function useVideoVolumePersistence(options) {
+const { videoRef, isVideo } = options;
+const [videoVolume, setVideoVolume] = createSignal(normalizeVideoVolumeSetting(getTypedSettingOr("gallery.videoVolume", 1), 1));
+const [videoMuted, setVideoMuted] = createSignal(normalizeVideoMutedSetting(getTypedSettingOr("gallery.videoMuted", false), false));
+let isApplyingVideoSettings = false;
+const volumeChangeGuard = createVideoVolumeChangeGuard();
+const applyMutedProgrammatically = (videoEl, muted) => {
+volumeChangeGuard.markProgrammaticChange({
+volume: videoEl.volume,
+muted
+});
+videoEl.muted = muted;
+};
+const applyVolumeProgrammatically = (videoEl, volume) => {
+volumeChangeGuard.markProgrammaticChange({
+volume,
+muted: videoEl.muted
+});
+videoEl.volume = volume;
+};
+createEffect(() => {
+const video = videoRef();
+if (video && isVideo()) {
+isApplyingVideoSettings = true;
+try {
+untrack(() => {
+const nextMuted = normalizeVideoMutedSetting(videoMuted(), false);
+const nextVolume = normalizeVideoVolumeSetting(videoVolume(), 1);
+if (nextMuted !== videoMuted()) setVideoMuted(nextMuted);
+if (nextVolume !== videoVolume()) setVideoVolume(nextVolume);
+applyMutedProgrammatically(video, nextMuted);
+applyVolumeProgrammatically(video, nextVolume);
+});
+} finally {
+isApplyingVideoSettings = false;
+}
+}
+});
+const debouncedSaveVolume = createDebounced((volume, muted) => {
+setTypedSetting("gallery.videoVolume", volume);
+setTypedSetting("gallery.videoMuted", muted);
+}, 300);
+onCleanup(() => {
+debouncedSaveVolume.flush();
+});
+const handleVolumeChange = (event) => {
+const video = event.currentTarget;
+const snapshot = {
+volume: video.volume,
+muted: video.muted
+};
+if (isApplyingVideoSettings || volumeChangeGuard.shouldIgnoreChange(snapshot)) return;
+const newVolume = normalizeVideoVolumeSetting(snapshot.volume, 1);
+const newMuted = normalizeVideoMutedSetting(snapshot.muted, false);
+setVideoVolume(newVolume);
+setVideoMuted(newMuted);
+debouncedSaveVolume(newVolume, newMuted);
+};
+return {
+volumeChangeGuard,
+applyMutedProgrammatically,
+applyVolumeProgrammatically,
+handleVolumeChange
+};
+}
 var VerticalImageItem_module_default = {
 container: "xg-huYo",
 active: "xg-xm-1",
@@ -6639,39 +6781,6 @@ errorIcon: "xg-Wno7",
 errorText: "xg-8-wi",
 error: "xg-Gswe"
 };
-function createDebounced(fn, delayMs = 300) {
-let timeoutId = null;
-let pendingArgs = null;
-const cancel = () => {
-if (timeoutId !== null) {
-globalTimerManager.clearTimeout(timeoutId);
-timeoutId = null;
-}
-pendingArgs = null;
-};
-const flush = () => {
-if (timeoutId !== null && pendingArgs !== null) {
-globalTimerManager.clearTimeout(timeoutId);
-const args = pendingArgs;
-timeoutId = null;
-pendingArgs = null;
-fn(...args);
-}
-};
-const debounced = ((...args) => {
-cancel();
-pendingArgs = args;
-timeoutId = globalTimerManager.setTimeout(() => {
-const savedArgs = pendingArgs;
-timeoutId = null;
-pendingArgs = null;
-if (savedArgs !== null) fn(...savedArgs);
-}, delayMs);
-});
-debounced.cancel = cancel;
-debounced.flush = flush;
-return debounced;
-}
 function useTranslation() {
 const languageService = getLanguageService();
 const [revision, setRevision] = createSignal(0);
@@ -6750,21 +6859,10 @@ return {
 ...extra
 };
 });
-const volumeChangeGuard = createVideoVolumeChangeGuard();
-const applyMutedProgrammatically = (videoEl, muted) => {
-volumeChangeGuard.markProgrammaticChange({
-volume: videoEl.volume,
-muted
+const { applyMutedProgrammatically, handleVolumeChange } = useVideoVolumePersistence({
+videoRef,
+isVideo
 });
-videoEl.muted = muted;
-};
-const applyVolumeProgrammatically = (videoEl, volume) => {
-volumeChangeGuard.markProgrammaticChange({
-volume,
-muted: videoEl.muted
-});
-videoEl.volume = volume;
-};
 useVideoVisibility({
 container: containerRef,
 video: videoRef,
@@ -6774,52 +6872,11 @@ setMuted: applyMutedProgrammatically
 createEffect(() => {
 const video = videoRef();
 if (local.isActive && video) {
-if (!untrack(() => gallerySignals.currentVideoElement === video)) gallerySignals.currentVideoElement = video;
+if (!untrack(() => gallerySignals.currentVideoElement === video)) setCurrentVideoElement(video);
 return;
 }
-if (untrack(() => gallerySignals.currentVideoElement === video)) gallerySignals.currentVideoElement = null;
+if (untrack(() => gallerySignals.currentVideoElement === video)) setCurrentVideoElement(null);
 });
-const [videoVolume, setVideoVolume] = createSignal(normalizeVideoVolumeSetting(getTypedSettingOr("gallery.videoVolume", 1), 1));
-const [videoMuted, setVideoMuted] = createSignal(normalizeVideoMutedSetting(getTypedSettingOr("gallery.videoMuted", false), false));
-let isApplyingVideoSettings = false;
-createEffect(() => {
-const video = videoRef();
-if (video && isVideo()) {
-isApplyingVideoSettings = true;
-try {
-untrack(() => {
-const nextMuted = normalizeVideoMutedSetting(videoMuted(), false);
-const nextVolume = normalizeVideoVolumeSetting(videoVolume(), 1);
-if (nextMuted !== videoMuted()) setVideoMuted(nextMuted);
-if (nextVolume !== videoVolume()) setVideoVolume(nextVolume);
-applyMutedProgrammatically(video, nextMuted);
-applyVolumeProgrammatically(video, nextVolume);
-});
-} finally {
-isApplyingVideoSettings = false;
-}
-}
-});
-const debouncedSaveVolume = createDebounced((volume, muted) => {
-setTypedSetting("gallery.videoVolume", volume);
-setTypedSetting("gallery.videoMuted", muted);
-}, 300);
-onCleanup(() => {
-debouncedSaveVolume.flush();
-});
-const handleVolumeChange = (event) => {
-const video = event.currentTarget;
-const snapshot = {
-volume: video.volume,
-muted: video.muted
-};
-if (isApplyingVideoSettings || volumeChangeGuard.shouldIgnoreChange(snapshot)) return;
-const newVolume = normalizeVideoVolumeSetting(snapshot.volume, 1);
-const newMuted = normalizeVideoMutedSetting(snapshot.muted, false);
-setVideoVolume(newVolume);
-setVideoMuted(newMuted);
-debouncedSaveVolume(newVolume, newMuted);
-};
 const preventDragStart = (event) => {
 event.preventDefault();
 };
@@ -6846,9 +6903,9 @@ if (typeof local.onKeyDown === "function") {
 local.onKeyDown(event);
 return;
 }
-if ((local.role ?? (isVideo() ? "group" : "button")) !== "button") return;
+if (local.role !== void 0 && local.role !== "button") return;
 const key = event.key;
-if (key === "Enter" || key === " " || key === "Spacebar") {
+if (key === "Enter" || key === "Space") {
 event.preventDefault();
 event.stopPropagation();
 local.onClick();
@@ -6904,7 +6961,7 @@ addEventListener(_el$, "focus", local.onFocus);
 _el$.$$click = handleContainerClick;
 use(assignContainerRef, _el$);
 insert(_el$2, (() => {
-var _c$ = memo(() => !!(!isLoaded() && !isError() && !isVideo()));
+var _c$ = memo(() => !!(!isLoaded() && !isError()));
 return () => _c$() && (() => {
 var _el$3 = _tmpl$2$4(), _el$4 = _el$3.firstChild;
 createRenderEffect((_p$) => {
@@ -6923,7 +6980,7 @@ insert(_el$2, (() => {
 var _c$2 = memo(() => !!isVideo());
 return () => _c$2() ? (() => {
 var _el$5 = _tmpl$3$1();
-_el$5.addEventListener("volumechange", handleVolumeChange);
+addEventListener(_el$5, "volumechange", handleVolumeChange);
 _el$5.addEventListener("dragstart", preventDragStart);
 _el$5.$$contextmenu = handleContextMenu;
 _el$5.addEventListener("error", handleMediaError);
@@ -7293,16 +7350,6 @@ createRenderEffect(() => _el$7.value = languageValue());
 return _el$;
 })();
 }
-function safeEventPrevent(event) {
-if (!event) return;
-event.preventDefault();
-event.stopPropagation();
-}
-function safeEventPreventAll(event) {
-safeEventPrevent(event);
-if (!event) return;
-event.stopImmediatePropagation();
-}
 function findScrollableAncestor(target, scrollableSelector) {
 if (!(target instanceof HTMLElement)) return null;
 return target.closest(scrollableSelector);
@@ -7579,7 +7626,9 @@ if (shouldAllowWheelDefault(event)) {
 event.stopPropagation();
 return;
 }
-safeEventPreventAll(event);
+event.preventDefault();
+event.stopPropagation();
+event.stopImmediatePropagation();
 };
 const registerWheelListener = (getElement, handler, options) => {
 createEffect(() => {
@@ -8241,7 +8290,8 @@ anyActionDisabled: toolbarDisabled
 };
 var createGuardedHandler = (guard, action) => {
 return (event) => {
-safeEventPrevent(event);
+event.preventDefault();
+event.stopPropagation();
 if (guard()) return;
 action?.();
 };
@@ -8347,7 +8397,9 @@ if (!fitModeHandlers()[mode]) return true;
 return activeFitMode() === mode;
 };
 const handleFitModeClick = (mode) => (event) => {
-safeEventPreventAll(event);
+event.preventDefault();
+event.stopPropagation();
+event.stopImmediatePropagation();
 if (!isToolbarDisabled()) fitModeHandlers()[mode]?.(event);
 };
 const handlePrevious = createGuardedHandler(() => navState().prevDisabled, local.handlers.navigation.onPrevious);
@@ -8355,7 +8407,8 @@ const handleNext = createGuardedHandler(() => navState().nextDisabled, local.han
 const handleDownloadCurrent = createGuardedHandler(() => navState().downloadDisabled, local.handlers.download.onDownloadCurrent);
 const handleDownloadAll = createGuardedHandler(() => navState().downloadDisabled, local.handlers.download.onDownloadAll);
 const handleClose = (event) => {
-safeEventPrevent(event);
+event.preventDefault();
+event.stopPropagation();
 local.handlers.lifecycle.onClose();
 };
 const baseSettingsController = useToolbarSettingsController({
@@ -8426,15 +8479,13 @@ toggleTweetPanelExpanded: toggleTweet
 });
 }
 var Toolbar = ToolbarContainer;
-var [_isProcessing, setIsProcessing] = createSignalSafe(false);
+var [_isProcessing, setIsProcessing] = createSignal(false);
 function acquireDownloadLock() {
+if (_isProcessing()) return null;
 setIsProcessing(true);
 return () => {
 setIsProcessing(false);
 };
-}
-function isDownloadLocked() {
-return _isProcessing();
 }
 var downloadState = { get value() {
 return { isProcessing: _isProcessing() };
@@ -8468,6 +8519,7 @@ const [local] = splitProps(props, [
 "onDownloadCurrent",
 "onDownloadAll"
 ]);
+const handleClose = local.onClose ?? (() => {});
 const mediaItems = createMemo(() => gallerySignals.mediaItems);
 const currentIndex = createMemo(() => gallerySignals.currentIndex);
 const isDownloading = createMemo(() => downloadState.value.isProcessing);
@@ -8488,83 +8540,37 @@ currentIndex,
 mediaItemsCount: () => mediaItems().length,
 containerEl,
 toolbarWrapperEl,
-itemsContainerEl,
-onClose: local.onClose
+itemsContainerEl
 });
+useGalleryKeyboard({ onClose: handleClose });
 const translate = useTranslation();
-const debouncedScrollCorrection = createDebounced((index, mediaId) => {
-if (!isVisible()) return;
-if (index !== currentIndex() || activeMedia()?.id !== mediaId) return;
-scroll.scrollToItem(index);
-}, 120);
-onCleanup(() => {
-debouncedScrollCorrection.cancel();
+const { debouncedScrollCorrection } = useGalleryScrollCorrection({
+isVisible,
+currentIndex,
+activeMedia,
+scrollToItem: scroll.scrollToItem
 });
 createEffect(() => {
 if (!isVisible() || navigation.lastNavigationTrigger()) return;
 navigateToItem(currentIndex(), "click", "auto-focus");
 });
-const getInitialFitMode = () => {
-return getTypedSettingOr("gallery.imageFitMode", "fitWidth");
-};
-const [imageFitMode, setImageFitMode] = createSignal(getInitialFitMode());
-const persistFitMode = (mode) => setTypedSetting("gallery.imageFitMode", mode).catch((error) => {});
-const applyFitMode = (mode, event) => {
-safeEventPrevent(event);
-setImageFitMode(mode);
-persistFitMode(mode);
-scroll.scrollToCurrentItem();
-navigateToItem(currentIndex(), "click", "auto-focus");
-};
+const { imageFitMode, handleFitOriginal, handleFitWidth, handleFitHeight, handleFitContainer } = useGalleryFitMode({
+scrollToCurrentItem: scroll.scrollToCurrentItem,
+currentIndex
+});
 const handleDownloadCurrent = () => local.onDownloadCurrent?.();
 const handleDownloadAll = () => local.onDownloadAll?.();
-const handleFitOriginal = (event) => applyFitMode("original", event);
-const handleFitWidth = (event) => applyFitMode("fitWidth", event);
-const handleFitHeight = (event) => applyFitMode("fitHeight", event);
-const handleFitContainer = (event) => applyFitMode("fitContainer", event);
-const handlePrevious = () => {
-const current = currentIndex();
-if (current > 0) navigateToItem(current - 1, "click", "button");
-};
-const handleNext = () => {
-const current = currentIndex();
-if (current < mediaItems().length - 1) navigateToItem(current + 1, "click", "button");
-};
-const handleBackgroundClick = (event) => {
-const target = event.target;
-if (!(target instanceof Element)) return;
-if (target.closest("[data-role=\"toolbar\"], [data-role=\"toolbar-hover-zone\"], [data-gallery-element], [data-xeg-role=\"gallery-item\"], [data-xeg-role=\"scroll-spacer\"]")) return;
-local.onClose?.();
-};
-const handleMediaItemClick = (index) => {
-const items = mediaItems();
-const current = currentIndex();
-if (index >= 0 && index < items.length && index !== current) navigateToItem(index, "click", "scroll");
-};
-createEffect(() => {
-const container = containerEl();
-if (!container) return;
-const controller = new AbortController();
-const handleContainerWheel = (event) => {
-const itemsContainer = itemsContainerEl();
-if (!itemsContainer) return;
-const target = event.target;
-if (!(target instanceof Element)) return;
-if (itemsContainer.contains(target)) return;
-event.preventDefault();
-event.stopPropagation();
-itemsContainer.scrollTop += event.deltaY;
-};
-const eventManager = EventManager.getInstance();
-const listener = (event) => {
-handleContainerWheel(event);
-};
-eventManager.addEventListener(container, "wheel", listener, {
-passive: false,
-signal: controller.signal,
-context: "gallery:wheel:container-redirect"
+const handleMediaLoad = (mediaId, indexValue) => debouncedScrollCorrection(indexValue, mediaId);
+const createRegisterContainer = (index) => (element) => focus.registerItem(index, element);
+const createHandleFocus = (index) => () => focus.handleItemFocus(index);
+const { handlePrevious, handleNext, handleBackgroundClick, handleMediaItemClick } = useGalleryNavigationHandlers({
+currentIndex,
+mediaItems,
+onClose: handleClose
 });
-onCleanup(() => controller.abort());
+useGalleryWheelRedirect({
+containerEl,
+itemsContainerEl
 });
 if (!isVisible()) return (() => {
 var _el$ = _tmpl$$2(), _el$2 = _el$.firstChild, _el$3 = _el$2.firstChild, _el$4 = _el$3.nextSibling;
@@ -8583,7 +8589,7 @@ return _el$;
 })();
 return (() => {
 var _el$5 = _tmpl$2(), _el$6 = _el$5.firstChild, _el$7 = _el$6.nextSibling, _el$8 = _el$7.nextSibling, _el$9 = _el$8.firstChild;
-_el$5.$$click = handleBackgroundClick;
+addEventListener(_el$5, "click", handleBackgroundClick, true);
 use((el) => setContainerEl(el ?? null), _el$5);
 use((el) => setToolbarWrapperEl(el ?? null), _el$7);
 insert(_el$7, createComponent(Toolbar, {
@@ -8619,7 +8625,7 @@ onFitHeight: handleFitHeight,
 onFitContainer: handleFitContainer
 },
 lifecycle: {
-onClose: local.onClose ?? (() => {}),
+onClose: handleClose,
 onOpenSettings: () => {}
 }
 };
@@ -8644,12 +8650,16 @@ return actualIndex === focus.focusedIndex();
 forceVisible: preloadIndices().includes(actualIndex),
 fitMode: imageFitMode,
 onClick: () => handleMediaItemClick(actualIndex),
-onMediaLoad: (mediaId, indexValue) => debouncedScrollCorrection(indexValue, mediaId),
+onMediaLoad: handleMediaLoad,
 get className() {
 return cx(VerticalGalleryView_module_default.galleryItem, actualIndex === currentIndex() && VerticalGalleryView_module_default.itemActive);
 },
-registerContainer: (element) => focus.registerItem(actualIndex, element),
-onFocus: () => focus.handleItemFocus(actualIndex)
+get registerContainer() {
+return createRegisterContainer(actualIndex);
+},
+get onFocus() {
+return createHandleFocus(actualIndex);
+}
 });
 }
 }), _el$9);
@@ -8673,218 +8683,10 @@ return _el$5;
 }
 var VerticalGalleryView = VerticalGalleryViewCore;
 delegateEvents(["click"]);
-var _tmpl$$1 =  template(`<div data-xeg-gallery-container>`);
-var DISPOSE_SYMBOL = Symbol();
-function mountGallery(container, element) {
-const host = container;
-host[DISPOSE_SYMBOL]?.();
-host[DISPOSE_SYMBOL] = render(typeof element === "function" ? element : () => element ?? null, host);
-return container;
-}
-function unmountGallery(container) {
-const host = container;
-host[DISPOSE_SYMBOL]?.();
-delete host[DISPOSE_SYMBOL];
-container.replaceChildren();
-}
-function GalleryContainer(props) {
-const [local] = splitProps(props, [
-"children",
-"onClose",
-"className",
-"registerEscapeListener"
-]);
-const classes = cx("xeg-gallery-overlay", "xeg-gallery-container", local.className);
-const escapeListener = (event) => {
-const keyboardEvent = event;
-if (keyboardEvent.key === "Escape") {
-keyboardEvent.preventDefault();
-keyboardEvent.stopPropagation();
-local.onClose?.();
-}
-};
-createEffect(() => {
-if (!local.onClose) return;
-const eventManager = EventManager.getInstance();
-const listenerId = eventManager.addEventListener(document, "keydown", escapeListener);
-onCleanup(() => {
-if (listenerId) eventManager.removeListener(listenerId);
-});
-});
-return (() => {
-var _el$ = _tmpl$$1();
-className(_el$, classes);
-insert(_el$, () => local.children);
-return _el$;
-})();
-}
-var _tmpl$ =  template(`<div aria-live=polite data-xeg-error-boundary role=alert><p class=xeg-error-boundary__title></p><p class=xeg-error-boundary__body></p><button class=xeg-error-boundary__action type=button>Retry`);
-function stringifyError(error) {
-if (error instanceof Error && error.message) return error.message;
-try {
-return String(error);
-} catch {
-return "Unknown error";
-}
-}
-function translateError(error) {
-try {
-const lang = getLanguageService();
-return {
-title: lang.translate("msg.err.t"),
-body: lang.translate("msg.err.b", { error: stringifyError(error) })
-};
-} catch {
-return {
-body: stringifyError(error),
-title: "Unexpected error"
-};
-}
-}
-function ErrorBoundary(props) {
-let lastError;
-const [caughtError, setCaughtError] = createSignal(void 0);
-const [mounted, setMounted] = createSignal(true);
-const notifyError = (error) => {
-if (lastError === error) return;
-lastError = error;
-const { title, body } = translateError(error);
-getUserscriptSafe().notification({
-title,
-text: body
-});
-};
-const handleRetry = () => {
-lastError = void 0;
-setCaughtError(void 0);
-setMounted(false);
-queueMicrotask(() => setMounted(true));
-};
-return [createComponent(Show, {
-get when() {
-return mounted();
-},
-get children() {
-return createComponent(ErrorBoundary$1, {
-fallback: (error) => {
-notifyError(error);
-setCaughtError(error);
-return null;
-},
-get children() {
-return props.children;
-}
-});
-}
-}), createComponent(Show, {
-get when() {
-return caughtError();
-},
-children: (error) => {
-const { title, body } = translateError(error());
-return (() => {
-var _el$ = _tmpl$(), _el$2 = _el$.firstChild, _el$3 = _el$2.nextSibling, _el$4 = _el$3.nextSibling;
-insert(_el$2, title);
-insert(_el$3, body);
-_el$4.$$click = handleRetry;
-return _el$;
-})();
-}
-})];
-}
-delegateEvents(["click"]);
-var GalleryRenderer = class {
-container = null;
-isMounting = false;
-stateUnsubscribe = null;
-onCloseCallback = null;
-get userscript() {
-return getUserscriptSafe();
-}
-constructor() {
-this.setupStateSubscription();
-}
-setOnCloseCallback(onClose) {
-this.onCloseCallback = onClose;
-}
-setupStateSubscription() {
-this.stateUnsubscribe = effectSafe(() => {
-if (gallerySignals.isOpen && !this.container) this.renderGallery();
-else if (!gallerySignals.isOpen && this.container) this.cleanupGallery();
-});
-}
-renderGallery() {
-if (this.isMounting || this.container) return;
-if (!gallerySignals.isOpen || gallerySignals.mediaItems.length === 0) return;
-this.isMounting = true;
-try {
-this.createContainer();
-this.renderComponent();
-} catch (error) {
-logger.error("Render failed", error);
-this.cleanupContainer();
-this.container = null;
-setError(getErrorMessage(error) || "Gallery rendering failed");
-} finally {
-this.isMounting = false;
-}
-}
-createContainer() {
-this.cleanupContainer();
-this.container = document.createElement("div");
-this.container.className = CSS.CLASSES.RENDERER;
-this.container.setAttribute("data-renderer", "gallery");
-document.body.appendChild(this.container);
-}
-renderComponent() {
-if (!this.container) return;
-const themeService = getThemeService();
-const languageService = getLanguageService();
-const handleClose = () => {
-closeGallery();
-this.onCloseCallback?.();
-};
-const handleDownload = (type) => this.handleDownload(type);
-const Root = () => {
-const [currentTheme, setCurrentTheme] = createSignal(themeService.getCurrentTheme());
-const [currentLanguage, setCurrentLanguage] = createSignal(languageService.getCurrentLanguage());
-const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));
-const unbindLanguage = languageService.onLanguageChange((lang) => setCurrentLanguage(lang));
-onCleanup(() => {
-unbindTheme();
-unbindLanguage();
-});
-return createComponent(GalleryContainer, {
-onClose: handleClose,
-get className() {
-return `${CSS.CLASSES.RENDERER} ${CSS.CLASSES.ROOT} xeg-theme-scope`;
-},
-get ["data-theme"]() {
-return currentTheme();
-},
-get ["data-language"]() {
-return currentLanguage();
-},
-get children() {
-return createComponent(ErrorBoundary, { get children() {
-return createComponent(VerticalGalleryView, {
-onClose: handleClose,
-onPrevious: () => navigatePrevious("button"),
-onNext: () => navigateNext("button"),
-onDownloadCurrent: () => handleDownload("current"),
-onDownloadAll: () => handleDownload("all"),
-get className() {
-return CSS.CLASSES.VERTICAL_VIEW;
-}
-});
-} });
-}
-});
-};
-mountGallery(this.container, () => createComponent(Root, {}));
-}
-getDownloadErrorNotification(error) {
-const message = getErrorMessage(error) || "Unknown error";
+function useGalleryDownload() {
+const userscript = getUserscript();
+const getDownloadErrorNotification = (error) => {
+const message = normalizeErrorMessage(error);
 try {
 const languageService = getLanguageService();
 return {
@@ -8897,12 +8699,12 @@ title: "Download failed",
 body: message
 };
 }
-}
-async handleDownload(type) {
-if (isDownloadLocked()) return;
+};
+const handleDownload = async (type) => {
 const releaseLock = acquireDownloadLock();
+if (!releaseLock) return;
 const notifyError = (title, body) => {
-this.userscript.notification({
+userscript.notification({
 title,
 text: body
 });
@@ -8911,7 +8713,7 @@ try {
 const languageService = getLanguageService();
 const mediaItems = gallerySignals.mediaItems;
 const mediaService = getMediaService();
-const downloadService = await this.getDownloadService();
+const downloadService = await getLazyDownloadService();
 if (type === "current") {
 const currentMedia = mediaItems[gallerySignals.currentIndex];
 if (currentMedia) {
@@ -8965,15 +8767,234 @@ notifyError(title, body);
 }
 } catch (error) {
 logger.error("Download failed", error);
-const { title, body } = this.getDownloadErrorNotification(error);
+const { title, body } = getDownloadErrorNotification(error);
 setError(body);
 notifyError(title, body);
 } finally {
 releaseLock();
 }
+};
+return { handleDownload };
 }
-async getDownloadService() {
+async function getLazyDownloadService() {
 return getDownloadOrchestrator();
+}
+var _tmpl$$1 =  template(`<div data-xeg-gallery-container>`);
+var DISPOSE_SYMBOL = Symbol();
+function mountGallery(container, element) {
+const host = container;
+host[DISPOSE_SYMBOL]?.();
+host[DISPOSE_SYMBOL] = render(typeof element === "function" ? element : () => element ?? null, host);
+return container;
+}
+function unmountGallery(container) {
+const host = container;
+host[DISPOSE_SYMBOL]?.();
+delete host[DISPOSE_SYMBOL];
+container.replaceChildren();
+}
+function GalleryContainer(props) {
+const [local] = splitProps(props, [
+"children",
+"onClose",
+"className"
+]);
+const classes = cx("xeg-gallery-overlay", "xeg-gallery-container", local.className);
+onMount(() => {
+const handler = (event) => {
+const keyboardEvent = event;
+if (keyboardEvent.key === "Escape") {
+keyboardEvent.preventDefault();
+keyboardEvent.stopPropagation();
+local.onClose?.();
+}
+};
+const eventManager = EventManager.getInstance();
+const listenerId = eventManager.addEventListener(document, "keydown", handler);
+onCleanup(() => {
+if (listenerId) eventManager.removeListener(listenerId);
+});
+});
+return (() => {
+var _el$ = _tmpl$$1();
+className(_el$, classes);
+insert(_el$, () => local.children);
+return _el$;
+})();
+}
+var _tmpl$ =  template(`<div aria-live=polite data-xeg-error-boundary role=alert><p class=xeg-error-boundary__title></p><p class=xeg-error-boundary__body></p><button class=xeg-error-boundary__action type=button>Retry`);
+function stringifyError(error) {
+if (error instanceof Error && error.message) return error.message;
+try {
+return String(error);
+} catch {
+return "Unknown error";
+}
+}
+function translateError(error) {
+try {
+const lang = getLanguageService();
+return {
+title: lang.translate("msg.err.t"),
+body: lang.translate("msg.err.b", { error: stringifyError(error) })
+};
+} catch {
+return {
+body: stringifyError(error),
+title: "Unexpected error"
+};
+}
+}
+function ErrorBoundary(props) {
+let lastError;
+const [caughtError, setCaughtError] = createSignal(void 0);
+const [mounted, setMounted] = createSignal(true);
+const notifyError = (error) => {
+if (lastError === error) return;
+lastError = error;
+const { title, body } = translateError(error);
+getUserscript().notification({
+title,
+text: body
+});
+};
+const handleRetry = () => {
+lastError = void 0;
+setCaughtError(void 0);
+setMounted(false);
+queueMicrotask(() => setMounted(true));
+};
+return [createComponent(Show, {
+get when() {
+return mounted();
+},
+get children() {
+return createComponent(ErrorBoundary$1, {
+fallback: (error) => {
+notifyError(error);
+setCaughtError(error);
+return null;
+},
+get children() {
+return props.children;
+}
+});
+}
+}), createComponent(Show, {
+get when() {
+return caughtError();
+},
+children: (error) => {
+const { title, body } = translateError(error());
+return (() => {
+var _el$ = _tmpl$(), _el$2 = _el$.firstChild, _el$3 = _el$2.nextSibling, _el$4 = _el$3.nextSibling;
+insert(_el$2, title);
+insert(_el$3, body);
+_el$4.$$click = handleRetry;
+return _el$;
+})();
+}
+})];
+}
+delegateEvents(["click"]);
+function GalleryRoot(props) {
+const themeService = getThemeService();
+const languageService = getLanguageService();
+const [currentTheme, setCurrentTheme] = createSignal(themeService.getCurrentTheme());
+const [currentLanguage, setCurrentLanguage] = createSignal(languageService.getCurrentLanguage());
+const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));
+const unbindLanguage = languageService.onLanguageChange((lang) => setCurrentLanguage(lang));
+onCleanup(() => {
+unbindTheme();
+unbindLanguage();
+});
+return createComponent(GalleryContainer, {
+get onClose() {
+return props.onClose;
+},
+get className() {
+return `${CSS.CLASSES.RENDERER} ${CSS.CLASSES.ROOT} xeg-theme-scope`;
+},
+get ["data-theme"]() {
+return currentTheme();
+},
+get ["data-language"]() {
+return currentLanguage();
+},
+get children() {
+return createComponent(ErrorBoundary, { get children() {
+return createComponent(VerticalGalleryView, {
+get onClose() {
+return props.onClose;
+},
+onPrevious: () => navigatePrevious("button"),
+onNext: () => navigateNext("button"),
+onDownloadCurrent: () => props.onDownloadCurrent(),
+onDownloadAll: () => props.onDownloadAll(),
+get className() {
+return CSS.CLASSES.VERTICAL_VIEW;
+}
+});
+} });
+}
+});
+}
+var GalleryRenderer = class {
+container = null;
+isMounting = false;
+stateUnsubscribe = null;
+onCloseCallback = null;
+downloadHandler;
+constructor() {
+this.downloadHandler = useGalleryDownload().handleDownload;
+this.setupStateSubscription();
+}
+setOnCloseCallback(onClose) {
+this.onCloseCallback = onClose;
+}
+setupStateSubscription() {
+this.stateUnsubscribe = effectSafe(() => {
+if (gallerySignals.isOpen && !this.container) this.renderGallery();
+else if (!gallerySignals.isOpen && this.container) this.cleanupGallery();
+});
+}
+renderGallery() {
+if (this.isMounting || this.container) return;
+if (!gallerySignals.isOpen || gallerySignals.mediaItems.length === 0) return;
+this.isMounting = true;
+try {
+this.createContainer();
+this.renderComponent();
+} catch (error) {
+logger.error("Render failed", error);
+this.cleanupContainer();
+this.container = null;
+setError(normalizeErrorMessage(error));
+} finally {
+this.isMounting = false;
+}
+}
+createContainer() {
+this.cleanupContainer();
+this.container = document.createElement("div");
+this.container.className = CSS.CLASSES.RENDERER;
+this.container.setAttribute("data-renderer", "gallery");
+document.body.appendChild(this.container);
+}
+renderComponent() {
+if (!this.container) return;
+const handleClose = () => {
+closeGallery();
+this.onCloseCallback?.();
+};
+mountGallery(this.container, () => {
+const _self$ = this;
+return createComponent(GalleryRoot, {
+onClose: handleClose,
+onDownloadCurrent: () => _self$.downloadHandler("current"),
+onDownloadAll: () => _self$.downloadHandler("all")
+});
+});
 }
 cleanupGallery() {
 this.isMounting = false;
@@ -9305,7 +9326,6 @@ assertInitialized() {
 if (!this.isInitialized()) throw new Error("SettingsService must be initialized before use");
 }
 };
-var hasRequiredGMAPIs = isGMAPIAvailable("download") || isGMAPIAvailable("setValue");
 function ensureRendererRegistered() {
 if (hasRenderer()) return;
 registerRenderer(new GalleryRenderer());
@@ -9321,12 +9341,11 @@ await service.initialize();
 registerSettingsManager(service);
 }
 async function initializeGalleryServices() {
-if (!hasRequiredGMAPIs) bootstrapErrorReporter.warn(  new Error("Tampermonkey APIs limited"), { code: "GM_API_LIMITED" });
 try {
 await initializeSettingsService();
 } catch (error) {
 settingsErrorReporter.warn(error, { code: "SETTINGS_SERVICE_INIT_FAILED" });
-getUserscriptSafe().notification({
+getUserscript().notification({
 title: "Settings unavailable",
 text: "Defaults will be used until settings load."
 });
@@ -9413,8 +9432,6 @@ var _errorHandlerInstance = null;
 var GlobalErrorHandler = class GlobalErrorHandler {
 isInitialized = false;
 controller = null;
-errorListenerId = null;
-rejectionListenerId = null;
 constructor() {}
 static getInstance() {
 if (!_errorHandlerInstance) _errorHandlerInstance = new GlobalErrorHandler();
@@ -9436,27 +9453,18 @@ this.errorListener(evt);
 const onUnhandledRejection = (evt) => {
 this.rejectionListener(evt);
 };
-this.errorListenerId = eventManager.addEventListener(window, "error", onError, {
+eventManager.addEventListener(window, "error", onError, {
 signal: this.controller.signal,
 context: "global-error-handler"
-}) ?? null;
-this.rejectionListenerId = eventManager.addEventListener(window, "unhandledrejection", onUnhandledRejection, {
+});
+eventManager.addEventListener(window, "unhandledrejection", onUnhandledRejection, {
 signal: this.controller.signal,
 context: "global-error-handler"
-}) ?? null;
+});
 this.isInitialized = true;
 }
 destroy() {
 if (!this.isInitialized || typeof window === "undefined") return;
-const eventManager = EventManager.getInstance();
-if (this.errorListenerId) {
-eventManager.removeListener(this.errorListenerId);
-this.errorListenerId = null;
-}
-if (this.rejectionListenerId) {
-eventManager.removeListener(this.rejectionListenerId);
-this.rejectionListenerId = null;
-}
 this.controller?.abort();
 this.controller = null;
 this.isInitialized = false;
