@@ -6,6 +6,29 @@ The format follows the principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and the project
 roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.3] - 2026-05-06
+
+### Fixed
+
+- **Extension regex**: Fixed `cleanFilename` where a non-capturing group in `CLEAN_FILENAME_EXTENSION_REGEX` caused extensions to always be empty during filename middle-truncation.
+- **Video keyboard handler**: Fixed `handleContainerKeyDown` dead code where `role='group'` on video items caused early return, making Enter/Space keyboard activation non-functional for video items.
+
+### Changed
+
+- **Config cleanup**: Removed duplicate build scripts (`build:fast`, `verify:fast`, `quality:ci`); removed `prebuild` hook (build now runs quality inline); removed duplicate `import.meta.env.*` define in vite config.
+- **Import structure**: Removed barrel re-export (`app.types.ts` → dedicated `app-config.types.ts`); moved `AppSettings` type family from features to shared to fix layer dependency direction; replaced dynamic `import()` with static `import type` in `container.ts`; removed unused path aliases (`@/*`, `@styles/*`, `@types/*`).
+- **Dead code removal**: Removed unused `timeout()` function (70 lines) from `delay.ts`; removed dead CSS custom properties (`--toolbar-button-accent`, `--toolbar-button-focus-border`) from `Toolbar.module.css`.
+- **Error utilities**: Consolidated `createUserCancelledAbortError` with `createAbortError` to eliminate duplicate logic; removed redundant manual listener cleanup in `error-handler.ts` (AbortController handles it).
+- **CSS design tokens**: Added 7 missing design tokens (`--xeg-size-button-sm`, `--xeg-size-button-lg`, `--xeg-spacing-5xl`, `--xeg-gpu-hack`, `--xeg-backface-visibility`, `--xeg-scrollbar-border-radius`, `--xeg-font-family-ui`); replaced hardcoded `font-weight`, `line-height`, `letter-spacing` values with semantic tokens; removed duplicate `.xeg-surface` definition and undefined `.xeg-glass-surface` reference.
+- **Hook cleanup**: Removed unused `onScroll` parameter from `useGalleryScroll`; unified triple `onClose ?? (() => {})` fallback into a single constant; removed duplicate `onTriggerChange` call in navigation.
+- **Complexity reduction**: Replaced manual `combineSignals` implementation (60 lines) with native `AbortSignal.any()`; removed `message.includes('aborted')` legacy heuristic from `isAbortError`; removed try/catch wrappers from DOM observer methods; simplified `globalThis` type checking in idle scheduler.
+- **Performance**: Added `requestAnimationFrame` throttling to `FocusCoordinator.selectBestCandidate` to prevent layout thrashing; extracted inline callbacks from `<For>` loop in `VerticalGalleryView`.
+
+### Removed
+
+- Deleted `src/shared/types/app.types.ts` (barrel re-export, replaced by `app-config.types.ts`).
+- Deleted `src/shared/async/delay.ts` `timeout()` function (completely unused, 70 lines).
+
 ## [1.9.2] - 2026-05-04
 
 ### Fixed
