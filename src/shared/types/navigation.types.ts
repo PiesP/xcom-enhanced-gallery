@@ -2,5 +2,11 @@
  * @fileoverview Navigation Types
  */
 
-/** Navigation source type - tracks the source of navigation */
-export type NavigationSource = 'button' | 'keyboard' | 'scroll' | 'auto-focus';
+/** Navigation source type - tracks what triggered the navigation */
+export type NavigationSource =
+  | 'button'
+  | 'click'
+  | 'keyboard'
+  | 'programmatic'
+  | 'scroll'
+  | 'auto-focus';

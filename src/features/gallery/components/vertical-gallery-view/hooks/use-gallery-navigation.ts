@@ -8,7 +8,7 @@ import {
   type GalleryNavigateStartPayload,
   galleryIndexEvents,
 } from '@shared/state/signals/gallery.signals';
-import type { NavigationTrigger } from '@shared/state/signals/navigation.state';
+import type { NavigationSource } from '@shared/types/navigation.types';
 import type { Accessor } from 'solid-js';
 import { createEffect, createSignal, on, onCleanup } from 'solid-js';
 
@@ -20,14 +20,14 @@ interface UseGalleryNavigationOptions {
 }
 
 interface UseGalleryNavigationResult {
-  readonly lastNavigationTrigger: Accessor<NavigationTrigger | null>;
-  readonly setLastNavigationTrigger: (trigger: NavigationTrigger | null) => void;
+  readonly lastNavigationTrigger: Accessor<NavigationSource | null>;
+  readonly setLastNavigationTrigger: (trigger: NavigationSource | null) => void;
   readonly programmaticScrollTimestamp: Accessor<number>;
   readonly setProgrammaticScrollTimestamp: (timestamp: number) => void;
 }
 
 interface RegisterEventsOptions {
-  readonly onTriggerChange: (trigger: NavigationTrigger) => void;
+  readonly onTriggerChange: (trigger: NavigationSource) => void;
   readonly onNavigateComplete: (payload: GalleryNavigateCompletePayload) => void;
 }
 
@@ -57,7 +57,7 @@ export function useGalleryNavigation(
 ): UseGalleryNavigationResult {
   const { isVisible, scrollToItem } = options;
 
-  const [lastNavigationTrigger, setLastNavigationTrigger] = createSignal<NavigationTrigger | null>(
+  const [lastNavigationTrigger, setLastNavigationTrigger] = createSignal<NavigationSource | null>(
     null
   );
   const [programmaticScrollTimestamp, setProgrammaticScrollTimestamp] = createSignal(0);

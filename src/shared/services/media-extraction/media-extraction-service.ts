@@ -43,17 +43,18 @@ const createApiErrorResult = (
 ): MediaExtractionResult => {
   const apiErrorMessage =
     apiResult.metadata?.error ?? apiResult.errors?.[0]?.message ?? 'API extraction failed';
+  // Reuse base error result structure, override with API-specific metadata
+  const base = createErrorResult(apiErrorMessage);
   return {
-    success: false,
-    mediaItems: [],
+    ...base,
     clickedIndex: apiResult.clickedIndex ?? 0,
     metadata: {
+      ...base.metadata,
       ...(apiResult.metadata ?? {}),
       strategy: 'api-extraction',
       sourceType: 'extraction-failed',
     },
     tweetInfo: mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo),
-    errors: [new ExtractionError(ErrorCode.NO_MEDIA_FOUND, apiErrorMessage)],
   };
 };
 

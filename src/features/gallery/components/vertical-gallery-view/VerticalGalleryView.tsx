@@ -8,6 +8,7 @@
  * @version 8.0
  */
 
+import { useGalleryKeyboard } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-keyboard';
 import { useVerticalGallery } from '@features/gallery/components/vertical-gallery-view/hooks/use-vertical-gallery';
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css';
 import { VerticalImageItem } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem';
@@ -83,6 +84,10 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     toolbarWrapperEl,
     itemsContainerEl,
   });
+
+  // Keyboard escape handler - integrated from useGalleryKeyboard hook
+  useGalleryKeyboard({ onClose: local.onClose ?? (() => {}) });
+
   const translate = useTranslation();
 
   const debouncedScrollCorrection = createDebounced((index: number, mediaId: string) => {

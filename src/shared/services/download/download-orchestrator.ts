@@ -206,13 +206,13 @@ export class DownloadOrchestrator {
   private async saveZipBlob(
     zipBlob: Blob,
     filename: string,
-    _options: DownloadOptions,
+    options: DownloadOptions,
     capability: DownloadCapability
   ): Promise<{ success: boolean; error?: string }> {
     const saveStrategy = planZipSave(capability.method);
 
     if (saveStrategy === 'gm_download' && capability.gmDownload) {
-      return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename);
+      return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename, options.onProgress);
     }
 
     return { success: false, error: 'No download method' };
@@ -225,7 +225,8 @@ export class DownloadOrchestrator {
   private async saveWithGMDownload(
     gmDownload: GMDownloadFunction,
     blob: Blob,
-    filename: string
+    filename: string,
+    onprogress?: DownloadOptions['onProgress']
   ): Promise<{ success: boolean; error?: string }> {
     const url = URL.createObjectURL(blob);
     try {
@@ -236,6 +237,24 @@ export class DownloadOrchestrator {
           onload: () => resolve(),
           onerror: (err: unknown) => reject(err),
           ontimeout: () => reject(new Error('Timeout')),
+          ...(onprogress
+            ? {
+                onprogress: (progress: { loaded: number; total: number }) => {
+                  if (progress.total <= 0) return;
+                  const pct = Math.min(
+                    100,
+                    Math.max(0, Math.round((progress.loaded / progress.total) * 100))
+                  );
+                  onprogress({
+                    phase: 'saving',
+                    current: progress.loaded,
+                    total: progress.total,
+                    percentage: pct,
+                    filename,
+                  });
+                },
+              }
+            : {}),
         });
       });
       return { success: true };

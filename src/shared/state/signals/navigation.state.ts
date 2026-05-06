@@ -8,8 +8,6 @@
 import { createSignalSafe } from '@shared/state/signals/signal-factory';
 import type { NavigationSource } from '@shared/types/navigation.types';
 
-export type NavigationTrigger = 'button' | 'click' | 'keyboard' | 'programmatic' | 'scroll';
-
 interface NavigationStateData {
   readonly lastSource: NavigationSource;
   readonly lastTimestamp: number;
@@ -28,18 +26,12 @@ const INITIAL_NAVIGATION_STATE: NavigationStateData = {
 
 const VALID_NAVIGATION_SOURCES = [
   'button',
-  'keyboard',
-  'scroll',
-  'auto-focus',
-] as const satisfies readonly NavigationSource[];
-
-const VALID_NAVIGATION_TRIGGERS = [
-  'button',
   'click',
   'keyboard',
   'programmatic',
   'scroll',
-] as const satisfies readonly NavigationTrigger[];
+  'auto-focus',
+] as const satisfies readonly NavigationSource[];
 
 const [_lastSource, setLastSource] = createSignalSafe<NavigationSource>(
   INITIAL_NAVIGATION_STATE.lastSource
@@ -77,9 +69,6 @@ const resolveNowMs = (nowMs?: number): number => nowMs ?? Date.now();
 const isValidNavigationSource = (value: unknown): value is NavigationSource =>
   typeof value === 'string' && VALID_NAVIGATION_SOURCES.includes(value as NavigationSource);
 
-const isValidNavigationTrigger = (value: unknown): value is NavigationTrigger =>
-  typeof value === 'string' && VALID_NAVIGATION_TRIGGERS.includes(value as NavigationTrigger);
-
 const isManualSource = (source: NavigationSource): boolean =>
   source === 'button' || source === 'keyboard';
 
@@ -89,7 +78,7 @@ const createNavigationActionError = (context: string, reason: string): Error =>
 export function validateNavigationParams(
   targetIndex: number,
   source: NavigationSource,
-  trigger: NavigationTrigger,
+  trigger: NavigationSource,
   context: string
 ): void {
   if (typeof targetIndex !== 'number' || Number.isNaN(targetIndex)) {
@@ -103,7 +92,7 @@ export function validateNavigationParams(
     );
   }
 
-  if (!isValidNavigationTrigger(trigger)) {
+  if (!isValidNavigationSource(trigger)) {
     throw createNavigationActionError(
       context,
       `Navigate payload trigger invalid: ${String(trigger)}`
@@ -164,7 +153,7 @@ export function resetNavigation(nowMs?: number): void {
   navigationSignals.lastNavigatedIndex = INITIAL_NAVIGATION_STATE.lastNavigatedIndex;
 }
 
-export function resolveNavigationSource(trigger: NavigationTrigger): NavigationSource {
+export function resolveNavigationSource(trigger: NavigationSource): NavigationSource {
   if (trigger === 'scroll') {
     return 'scroll';
   }

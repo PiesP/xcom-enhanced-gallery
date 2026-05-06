@@ -10,7 +10,5 @@
   "tags": [
     "-@internal"
   ],
-  "ignoreDependencies": [
-    "@biomejs/cli-linux-x64"
-  ]
+  "ignoreDependencies": []
 }

@@ -20,9 +20,6 @@ importers:
       '@biomejs/biome':
         specifier: ^2.4.14
         version: 2.4.14
-      '@biomejs/cli-linux-x64':
-        specifier: ^2.4.14
-        version: 2.4.14
       '@microsoft/tsdoc':
         specifier: ^0.16.0
         version: 0.16.0
@@ -1248,7 +1245,8 @@ snapshots:
   '@biomejs/cli-linux-x64-musl@2.4.14':
     optional: true
 
-  '@biomejs/cli-linux-x64@2.4.14': {}
+  '@biomejs/cli-linux-x64@2.4.14':
+    optional: true
 
   '@biomejs/cli-win32-arm64@2.4.14':
     optional: true

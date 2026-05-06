@@ -7,7 +7,7 @@
 import { useGalleryFocusTracker } from '@features/gallery/hooks/use-gallery-focus-tracker';
 import { useGalleryItemScroll } from '@features/gallery/hooks/use-gallery-item-scroll';
 import { useGalleryScroll } from '@features/gallery/hooks/use-gallery-scroll';
-import type { NavigationTrigger } from '@shared/state/signals/navigation.state';
+import type { NavigationSource } from '@shared/types/navigation.types';
 import type { Accessor } from 'solid-js';
 import { createEffect } from 'solid-js';
 import { useGalleryLifecycle } from './use-gallery-lifecycle';
@@ -57,9 +57,9 @@ interface ScrollState {
  */
 interface NavigationState {
   /** Last navigation trigger type (keyboard, scroll, etc.) */
-  readonly lastNavigationTrigger: Accessor<NavigationTrigger | null>;
+  readonly lastNavigationTrigger: Accessor<NavigationSource | null>;
   /** Set the navigation trigger type */
-  readonly setLastNavigationTrigger: (trigger: NavigationTrigger | null) => void;
+  readonly setLastNavigationTrigger: (trigger: NavigationSource | null) => void;
   /** Timestamp of the last programmatic scroll */
   readonly programmaticScrollTimestamp: Accessor<number>;
   /** Set the programmatic scroll timestamp */
@@ -122,18 +122,18 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
     itemsContainerEl,
   } = options;
 
-  // Forward declaration for focus sync callback to break circular dependency
-  // This pattern allows useGalleryScroll to call focus sync without direct coupling
+  // Forward reference for focus sync to break circular dependency:
+  // useGalleryScroll→useGalleryFocusTracker→useGalleryScroll
   let focusSyncCallback: (() => void) | null = null;
 
-  // 1. Toolbar auto-hide - Manages initial visibility and auto-hide timer
+  // Toolbar auto-hide - Manages initial visibility and auto-hide timer
   const { isInitialToolbarVisible, setIsInitialToolbarVisible } = useToolbarAutoHide({
     isVisible,
     hasItems: () => mediaItemsCount() > 0,
   });
 
-  // 2. Navigation state - Forward reference pattern to handle circular dependency
-  //    Navigation needs scrollToItem, but scrollToItem needs navigation state
+  // Navigation state - scrollToItem forward ref breaks circular dependency:
+  // useGalleryNavigation→useGalleryItemScroll→useGalleryNavigation
   let scrollToItemRef: ((index: number) => void) | null = null;
 
   const navigationState = useGalleryNavigation({
@@ -179,7 +179,7 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
     lastNavigationTrigger: navigationState.lastNavigationTrigger,
   });
 
-  // Register focus sync callback (stable function reference)
+  // Connect focus sync forward ref (useGalleryScroll→useGalleryFocusTracker)
   focusSyncCallback = focusTrackerForceSync;
 
   // 6. Gallery lifecycle - Manages animations, video cleanup, and CSS viewport variables

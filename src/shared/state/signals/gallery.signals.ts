@@ -14,7 +14,6 @@
 
 import { logger } from '@shared/logging/logger';
 import {
-  type NavigationTrigger,
   recordFocusChange,
   recordNavigation,
   resetNavigation,
@@ -32,7 +31,7 @@ import { batch as solidBatch } from 'solid-js';
 type BatchExecutor = (fn: () => void) => void;
 const batch: BatchExecutor = (fn: () => void): void => solidBatch(fn);
 
-type GalleryNavigationTrigger = NavigationTrigger;
+export type GalleryNavigationTrigger = NavigationSource;
 
 export type ViewMode = 'vertical';
 
