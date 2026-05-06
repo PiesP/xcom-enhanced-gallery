@@ -33,13 +33,10 @@
 
     // Path Aliases (synchronized with package.json imports)
     "paths": {
-      "@/*": ["./src/*"],
       "@bootstrap/*": ["./src/bootstrap/*"],
       "@constants/*": ["./src/constants/*"],
       "@features/*": ["./src/features/*"],
-      "@shared/*": ["./src/shared/*"],
-      "@styles/*": ["./src/styles/*"],
-      "@types/*": ["./src/types/*"]
+      "@shared/*": ["./src/shared/*"]
     },
 
     // Build Performance

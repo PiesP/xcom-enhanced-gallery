@@ -6,6 +6,7 @@ import { DownloadOrchestrator } from '@shared/services/download/download-orchest
 import { LanguageService } from '@shared/services/language-service';
 import { MediaService } from '@shared/services/media-service';
 import { ThemeService } from '@shared/services/theme-service';
+import type { MediaInfo } from '@shared/types/media.types';
 
 export type {
   SettingPath,
@@ -27,10 +28,7 @@ export {
  * from the Shared layer (DIP violation).
  */
 export interface GalleryRendererLike {
-  render(
-    mediaItems: readonly import('@shared/types/media.types').MediaInfo[],
-    options?: Record<string, unknown>
-  ): Promise<void>;
+  render(mediaItems: readonly MediaInfo[], options?: Record<string, unknown>): Promise<void>;
   close(): void;
   isRendering(): boolean;
 }

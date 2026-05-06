@@ -3,7 +3,7 @@
  * @module constants/settings
  */
 
-import type { AppSettings } from '@features/settings/types/settings.types';
+import type { AppSettings } from '@shared/types/settings.types';
 
 // ============================================================================
 // Storage Key

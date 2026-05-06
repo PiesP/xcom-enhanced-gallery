@@ -7,7 +7,7 @@
  * @module constants/app-config
  */
 
-import type { AppConfig as BootstrapAppConfig } from '@shared/types/app.types';
+import type { AppConfig } from '@shared/types/app-config.types';
 
 type BooleanFlagValue = string | boolean | undefined;
 type EnvSource = Partial<{
@@ -172,7 +172,7 @@ const APP_CONFIG: typeof resolvedAppConfig = resolvedAppConfig;
  * }
  * ```
  */
-export function createAppConfig(): BootstrapAppConfig {
+export function createAppConfig(): AppConfig {
   const config = APP_CONFIG;
 
   return {

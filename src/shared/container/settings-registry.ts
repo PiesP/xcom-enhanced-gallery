@@ -4,7 +4,7 @@
  * container.ts → theme-service.ts → container.ts
  */
 
-import type { AppSettings } from '@features/settings/types/settings.types';
+import type { AppSettings } from '@shared/types/settings.types';
 
 /**
  * Minimal settings service interface used internally for type-safe access.
