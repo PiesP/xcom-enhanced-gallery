@@ -78,12 +78,6 @@
   border-radius: var(--xeg-radius-md);
   /* Icon-only visual style: no per-button border; blend with toolbar surface */
   background: transparent;
-  --toolbar-button-accent: var(--toolbar-surface-border, var(--xeg-toolbar-border));
-  --toolbar-button-accent-hover: var(--xeg-color-border-hover);
-  --toolbar-button-focus-border: var(
-    --xeg-focus-indicator-color,
-    var(--toolbar-button-accent-hover)
-  );
 
   /* Explicitly remove Button.module.css focus/border behavior for toolbar buttons. */
   border: none;
@@ -238,23 +232,17 @@
   transform: translateY(0);
 }
 
-/* Semantic button variants */
+/* Semantic button variants (inherit base toolbar styles) */
 .downloadCurrent {
-  --toolbar-button-accent: var(--xeg-color-primary);
-  --toolbar-button-accent-hover: var(--xeg-color-primary-hover);
-  --toolbar-button-focus-border: var(--xeg-color-primary-hover);
+  /* inherits from .toolbarButton */
 }
 
 .downloadAll {
-  --toolbar-button-accent: var(--xeg-color-success);
-  --toolbar-button-accent-hover: var(--xeg-color-success-hover);
-  --toolbar-button-focus-border: var(--xeg-color-success-hover);
+  /* inherits from .toolbarButton */
 }
 
 .closeButton {
-  --toolbar-button-accent: var(--xeg-color-error);
-  --toolbar-button-accent-hover: var(--xeg-color-error-hover);
-  --toolbar-button-focus-border: var(--xeg-color-error-hover);
+  /* inherits from .toolbarButton */
 }
 
 /* Download button (inherits base styles) */
