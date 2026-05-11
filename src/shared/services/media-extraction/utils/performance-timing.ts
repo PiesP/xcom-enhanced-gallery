@@ -10,7 +10,7 @@
  *
  * @remarks
  * Uses `performance.now()` when available for sub-millisecond precision,
- * falls back to `Date.now()` in environments without Performance API.
+ * falls back to `performance.now()` in environments without Performance API.
  *
  * @example
  * ```typescript
@@ -22,7 +22,7 @@
 export function getTimestamp(): number {
   return typeof performance !== 'undefined' && typeof performance.now === 'function'
     ? performance.now()
-    : Date.now();
+    : performance.now();
 }
 
 /**

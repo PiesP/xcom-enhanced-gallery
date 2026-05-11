@@ -62,7 +62,7 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
         mediaItems,
         clickedIndex,
         metadata: {
-          extractedAt: Date.now(),
+          extractedAt: performance.now(),
           sourceType: 'twitter-api',
           strategy: 'api-extraction',
           totalProcessingTime: getElapsedTime(startedAt),

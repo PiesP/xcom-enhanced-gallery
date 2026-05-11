@@ -75,14 +75,14 @@ export class SettingsService {
     if (!assignNestedPath(this.settings, key, value)) {
       throw new Error(`Failed to assign setting value for ${key}`);
     }
-    this.settings.lastModified = Date.now();
+    this.settings.lastModified = performance.now();
 
     this.refreshFeatureMap();
     this.notifyListeners({
       key,
       oldValue,
       newValue: value,
-      timestamp: Date.now(),
+      timestamp: performance.now(),
       status: 'success',
     });
     await this.persist();
@@ -99,7 +99,7 @@ export class SettingsService {
     // This also prevents intra-batch updates from affecting subsequent `oldValue` reads.
     const previous = globalThis.structuredClone(this.settings);
 
-    const timestamp = Date.now();
+    const timestamp = performance.now();
     for (const [key, value] of entries) {
       if (!assignNestedPath(this.settings, key, value)) {
         throw new Error(`Failed to assign setting value for ${key}`);
@@ -137,13 +137,13 @@ export class SettingsService {
         Object.assign(this.settings, { [category]: globalThis.structuredClone(defaultValue) });
       }
     }
-    this.settings.lastModified = Date.now();
+    this.settings.lastModified = performance.now();
     this.refreshFeatureMap();
     this.notifyListeners({
       key: (category ?? 'all') as NestedSettingKey,
       oldValue: previous,
       newValue: this.getAllSettings(),
-      timestamp: Date.now(),
+      timestamp: performance.now(),
       status: 'success',
     });
     await this.persist();
@@ -168,7 +168,7 @@ export class SettingsService {
       if (!imported || typeof imported !== 'object') throw new Error('Invalid settings');
 
       const previous = this.getAllSettings();
-      const nowMs = Date.now();
+      const nowMs = performance.now();
       this.settings = migrateSettings(imported, nowMs);
       this.settings.lastModified = nowMs;
       this.refreshFeatureMap();

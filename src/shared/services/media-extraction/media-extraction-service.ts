@@ -27,7 +27,7 @@ const createErrorResult = (error: unknown): MediaExtractionResult => {
     mediaItems: [],
     clickedIndex: 0,
     metadata: {
-      extractedAt: Date.now(),
+      extractedAt: performance.now(),
       sourceType: 'extraction-failed',
       strategy: 'media-extraction',
       error: errorMessage,

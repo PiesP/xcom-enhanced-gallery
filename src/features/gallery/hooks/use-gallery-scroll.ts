@@ -70,7 +70,7 @@ export function useGalleryScroll({
 
   const markScrolling = (): void => {
     setIsScrolling(true);
-    setLastScrollTime(Date.now());
+    setLastScrollTime(performance.now());
   };
 
   const scheduleScrollEnd = (): void => {
@@ -85,7 +85,7 @@ export function useGalleryScroll({
   };
 
   const shouldIgnoreScroll = (): boolean =>
-    Date.now() - programmaticTimestampAccessor() < PROGRAMMATIC_SCROLL_WINDOW;
+    performance.now() - programmaticTimestampAccessor() < PROGRAMMATIC_SCROLL_WINDOW;
 
   /**
    * Check if wheel event originated from toolbar or its panels

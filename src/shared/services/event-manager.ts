@@ -128,7 +128,7 @@ export class EventManager {
       element.addEventListener(type, listener, listenerOptions);
 
       const id = context
-        ? `${context}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
+        ? `${context}:${performance.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
         : crypto.randomUUID().replaceAll('-', '');
 
       const ctx: ListenerContext = {

@@ -64,7 +64,7 @@ const navigationSignals = {
   },
 };
 
-const resolveNowMs = (nowMs?: number): number => nowMs ?? Date.now();
+const resolveNowMs = (nowMs?: number): number => nowMs ?? performance.now();
 
 const isValidNavigationSource = (value: unknown): value is NavigationSource =>
   typeof value === 'string' && VALID_NAVIGATION_SOURCES.includes(value as NavigationSource);

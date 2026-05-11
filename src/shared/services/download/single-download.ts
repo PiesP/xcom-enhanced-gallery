@@ -100,7 +100,7 @@ export async function downloadSingleFile(
   const abortSignal = options.signal;
   if (abortSignal?.aborted) return createAbortResult();
 
-  const filename = generateMediaFilename(media, { nowMs: Date.now() });
+  const filename = generateMediaFilename(media, { nowMs: performance.now() });
   const cap = capability ?? detectDownloadCapability();
   const gmDownload = cap.gmDownload;
   if (!gmDownload) {

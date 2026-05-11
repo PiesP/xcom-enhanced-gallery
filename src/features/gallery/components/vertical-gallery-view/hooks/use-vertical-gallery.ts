@@ -159,7 +159,7 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
       enabled: () => !isScrolling() && navigationState.lastNavigationTrigger() !== 'scroll',
       block: 'start',
       isScrolling,
-      onScrollStart: (): void => navigationState.setProgrammaticScrollTimestamp(Date.now()),
+      onScrollStart: (): void => navigationState.setProgrammaticScrollTimestamp(performance.now()),
     }
   );
 

@@ -79,7 +79,7 @@ export class PersistentSettingsRepository implements SettingsRepository {
         return globalThis.structuredClone(defaults);
       }
 
-      const nowMs = Date.now();
+      const nowMs = performance.now();
       const migrated = migrateSettings(stored, nowMs);
       if (stored.__schemaHash !== this.schemaHash) {
         await this.persist(migrated).catch(() => {

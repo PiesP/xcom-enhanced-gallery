@@ -35,12 +35,12 @@ function areVolumesEquivalent(a: number, b: number): boolean {
   return Math.abs(a - b) <= DEFAULT_VOLUME_EPSILON;
 }
 
-/** Monotonic timestamp in milliseconds (performance.now() with Date.now() fallback) */
+/** Monotonic timestamp in milliseconds (performance.now() with performance.now() fallback) */
 function nowMs(): number {
-  // `performance.now()` is monotonic; fall back to Date.now() where unavailable.
+  // `performance.now()` is monotonic; fall back to performance.now() where unavailable.
   return typeof performance !== 'undefined' && typeof performance.now === 'function'
     ? performance.now()
-    : Date.now();
+    : performance.now();
 }
 
 export function createVideoVolumeChangeGuard(

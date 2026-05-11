@@ -30,7 +30,7 @@ let keyboardDebounceState: KeyboardDebounceState = {
 };
 
 function shouldExecuteKeyboardAction(key: string, minIntervalMs: number): boolean {
-  const now = Date.now();
+  const now = performance.now();
   const timeSinceLastExecution = now - keyboardDebounceState.lastExecutionTime;
 
   if (key === keyboardDebounceState.lastKey && timeSinceLastExecution < minIntervalMs) {

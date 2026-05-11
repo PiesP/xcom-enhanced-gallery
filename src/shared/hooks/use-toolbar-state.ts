@@ -47,7 +47,7 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
    * @param downloading - New downloading state
    */
   const setDownloading = (downloading: boolean): void => {
-    const now = Date.now();
+    const now = performance.now();
 
     if (downloading) {
       lastDownloadToggle = now;

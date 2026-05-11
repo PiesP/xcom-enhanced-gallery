@@ -26,7 +26,7 @@ export function createFailureResult(
     mediaItems: [],
     clickedIndex: 0,
     metadata: {
-      extractedAt: Date.now(),
+      extractedAt: performance.now(),
       sourceType,
       strategy,
       error,
@@ -62,7 +62,7 @@ export function createSuccessResult(
     mediaItems,
     clickedIndex,
     metadata: {
-      extractedAt: Date.now(),
+      extractedAt: performance.now(),
       sourceType,
       strategy,
       totalProcessingTime: getElapsedTime(startTime),

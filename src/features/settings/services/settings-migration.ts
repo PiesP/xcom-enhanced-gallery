@@ -8,7 +8,7 @@
  *
  * @example
  * ```typescript
- * const migrated = migrateSettings(userSettings, Date.now());
+ * const migrated = migrateSettings(userSettings, performance.now());
  * ```
  */
 
@@ -148,7 +148,7 @@ function fillWithDefaults(settings: AppSettings, nowMs: number): AppSettings {
  * @example
  * ```typescript
  * const userSettings = loadSettings();
- * const migrated = migrateSettings(userSettings, Date.now());
+ * const migrated = migrateSettings(userSettings, performance.now());
  * // Settings now conform to current schema with all required fields
  * ```
  */

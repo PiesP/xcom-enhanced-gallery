@@ -219,7 +219,7 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
         mediaItems,
         clickedIndex,
         metadata: {
-          extractedAt: Date.now(),
+          extractedAt: performance.now(),
           sourceType: 'dom-fallback',
           strategy: 'dom-extraction',
           totalProcessingTime: getElapsedTime(startedAt),
