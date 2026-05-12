@@ -1,2 +1,17 @@
-minimumReleaseAge: 1440
+minimumReleaseAge: 10080
+
+# Security-critical packages that should bypass the minimum release age.
+# These packages receive immediate updates even within the 7-day cooling period:
+#   - minimatch/semver/minimist: known supply-chain attack targets
 minimumReleaseAgeExclude:
+  - minimatch
+  - semver
+  - minimist
+
+allowBuilds:
+  - esbuild
+  - core-js
+
+strictDepBuilds: true
+
+blockExoticSubdeps: true

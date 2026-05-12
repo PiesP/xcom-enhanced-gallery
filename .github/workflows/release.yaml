@@ -1,5 +1,14 @@
 name: 🚀 Release
 
+# Responsibility: Publish tagged userscript releases
+# - Build release assets from the tagged commit
+# - Generate checksums and metadata
+# - Deploy to release branch and GitHub Releases
+#
+# Trigger: Tag push (v*)
+
+# Security: All third-party actions pinned to full commit SHAs.
+
 on:
   push:
     tags:
@@ -22,15 +31,15 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
       - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -78,7 +87,7 @@ jobs:
             CHANGELOG_CONTENT=$(awk -v ver="${{ steps.version.outputs.version }}" '
               /^## \[/ {
                 if (found) exit;
-                if ($0 ~ "\\[" ver "\\]") {
+                if ($0 ~ "\[" ver "\]") {
                   found=1;
                   next;
                 }
@@ -115,7 +124,7 @@ jobs:
 
           ## 📝 What's Changed
 
-          ${CHANGELOG_CONTENT:-No changelog entry found for this version.}
+          ${CHANGELOG_CONTENT:-No changelog entry for this version.}
 
           **[📋 Full Changelog](${COMPARE_URL})**
 
@@ -184,7 +193,7 @@ jobs:
           echo "✅ jsDelivr cache purge completed"
 
       - name: 🏷️ Create GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3
         with:
           tag_name: v${{ steps.version.outputs.version }}
           body_path: release/RELEASE_NOTES.md
@@ -199,7 +208,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📊 Upload release artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-v${{ steps.version.outputs.version }}
           path: release/
