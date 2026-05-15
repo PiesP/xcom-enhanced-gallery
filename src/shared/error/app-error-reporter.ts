@@ -73,9 +73,9 @@ export function reportError(error: unknown, options: ErrorReportOptions): ErrorR
   const severity = options.severity ?? DEFAULT_SEVERITY;
   const message = normalizeErrorMessage(error);
 
-  const payload: Record<string, unknown> = { c: options.context, s: severity };
-  if (options.code) payload.cd = options.code;
-  if (options.metadata) payload.m = options.metadata;
+  const payload: Record<string, unknown> = { context: options.context, severity };
+  if (options.code) payload.code = options.code;
+  if (options.metadata) payload.metadata = options.metadata;
 
   if (__DEV__) {
     if (severity === 'info') logger.info(message, payload);

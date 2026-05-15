@@ -8,7 +8,7 @@ import { tryGetSettings } from '@shared/container/settings-registry';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
-import { getPersistentStorage } from '@shared/services/persistent-storage';
+import { PersistentStorage } from '@shared/services/persistent-storage';
 
 const MAX_RECURSION_DEPTH = 5;
 
@@ -46,7 +46,7 @@ let _themeInstance: ThemeService | null = null;
 
 export class ThemeService implements ThemeServiceContract {
   private _initialized = false;
-  private readonly storage = getPersistentStorage();
+  private readonly storage = PersistentStorage.getInstance();
   private mediaQueryList: MediaQueryList | null = null;
   private mediaQueryListener: ((event: MediaQueryListEvent) => void) | null = null;
   private domEventsController: AbortController | null = null;

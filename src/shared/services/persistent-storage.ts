@@ -100,7 +100,3 @@ export class PersistentStorage {
     await this.userscript.deleteValue(key);
   }
 }
-
-export function getPersistentStorage(): PersistentStorage {
-  return PersistentStorage.getInstance();
-}

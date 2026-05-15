@@ -13,7 +13,7 @@ export function normalizeErrorMessage(error: unknown): string {
   }
 
   if (error == null) {
-    return String(error);
+    return 'Unknown error';
   }
 
   if (typeof error === 'object') {
