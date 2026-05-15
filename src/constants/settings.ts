@@ -56,7 +56,7 @@ const STATIC_DEFAULT_SETTINGS = {
 export const DEFAULT_SETTINGS = STATIC_DEFAULT_SETTINGS;
 
 export function createDefaultSettings(timestamp: number = performance.now()): AppSettings {
-  const settings = globalThis.structuredClone(DEFAULT_SETTINGS) as AppSettings;
+  const settings = { ...DEFAULT_SETTINGS } as AppSettings;
   settings.lastModified = timestamp;
   return settings;
 }
