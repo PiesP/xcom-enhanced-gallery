@@ -8,30 +8,28 @@ export interface OrchestratorItem {
   readonly blob?: Blob | Promise<Blob> | undefined;
 }
 
+export interface DownloadProgress {
+  phase: string;
+  current: number;
+  total: number;
+  percentage: number;
+  filename?: string;
+}
+
+export type DownloadProgressCallback = (progress: DownloadProgress) => void;
+
 export interface OrchestratorOptions {
   concurrency?: number;
   retries?: number;
   signal?: AbortSignal;
-  onProgress?: (progress: {
-    phase: string;
-    current: number;
-    total: number;
-    percentage: number;
-    filename?: string;
-  }) => void;
+  onProgress?: DownloadProgressCallback;
 }
 
 export interface DownloadOptions {
   concurrency?: number;
   retries?: number;
   signal?: AbortSignal;
-  onProgress?: (progress: {
-    phase: string;
-    current: number;
-    total: number;
-    percentage: number;
-    filename?: string;
-  }) => void;
+  onProgress?: DownloadProgressCallback;
   zipFilename?: string;
   blob?: Blob;
   prefetchedBlobs?: Map<string, Blob | Promise<Blob>>;

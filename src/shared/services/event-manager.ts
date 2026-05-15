@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { createId, createPrefixedId } from '@shared/utils/id/create-id';
 
 // ============================================================================
 // Shared Types (moved from dom-listener-context.ts)
@@ -127,9 +128,7 @@ export class EventManager {
     try {
       element.addEventListener(type, listener, listenerOptions);
 
-      const id = context
-        ? `${context}:${performance.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
-        : crypto.randomUUID().replaceAll('-', '');
+      const id = context ? createPrefixedId(context) : createId();
 
       const ctx: ListenerContext = {
         id,
