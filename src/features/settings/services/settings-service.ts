@@ -169,10 +169,17 @@ export class SettingsService {
     this.assertInitialized();
     try {
       const imported = JSON.parse(jsonString);
-      if (!imported || typeof imported !== 'object') throw new Error('Invalid settings');
+      if (
+        !imported ||
+        typeof imported !== 'object' ||
+        Array.isArray(imported) ||
+        Object.getPrototypeOf(imported) !== Object.prototype
+      ) {
+        throw new Error('Invalid settings: expected a plain object');
+      }
 
       const previous = this.getAllSettings();
-      const nowMs = performance.now();
+      const nowMs = Date.now();
       this.settings = migrateSettings(imported, nowMs);
       this.settings.lastModified = nowMs;
       this.refreshFeatureMap();
