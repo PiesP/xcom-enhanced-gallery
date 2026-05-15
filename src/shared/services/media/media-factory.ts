@@ -8,23 +8,6 @@ import type { MediaInfo, TweetInfo } from '@shared/types/media.types';
 import { normalizeDimension } from '@shared/utils/media/media-dimensions';
 
 /**
- * Resolve Dimensions from API Media
- */
-const resolveDimensionsFromApiMedia = (
-  apiMedia: TweetMediaEntry
-): { width: number; height: number } | null => {
-  const widthFromOriginal = normalizeDimension(apiMedia.original_width);
-  const heightFromOriginal = normalizeDimension(apiMedia.original_height);
-
-  return widthFromOriginal && heightFromOriginal
-    ? {
-        width: widthFromOriginal,
-        height: heightFromOriginal,
-      }
-    : null;
-};
-
-/**
  * Create MediaInfo from API Response
  */
 const createMediaInfoFromAPI = (
@@ -35,7 +18,9 @@ const createMediaInfoFromAPI = (
 ): MediaInfo | null => {
   try {
     const mediaType = apiMedia.type === 'photo' ? 'image' : 'video';
-    const dimensions = resolveDimensionsFromApiMedia(apiMedia);
+    const width = normalizeDimension(apiMedia.original_width);
+    const height = normalizeDimension(apiMedia.original_height);
+    const dimensions = width && height ? { width, height } : null;
     const metadata: Record<string, unknown> = {
       apiIndex: index,
       apiData: apiMedia,
