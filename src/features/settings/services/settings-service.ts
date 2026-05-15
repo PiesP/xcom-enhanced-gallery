@@ -11,7 +11,12 @@ import type {
   NestedSettingKey,
   SettingChangeEvent,
 } from '@shared/types/settings.types';
-import { assignNestedPath, normalizeFeatureFlags, resolveNestedPath } from './settings-helpers';
+import {
+  assignNestedPath,
+  isValidSettingValue,
+  normalizeFeatureFlags,
+  resolveNestedPath,
+} from './settings-helpers';
 
 let _settingsInstance: SettingsService | null = null;
 
@@ -68,7 +73,9 @@ export class SettingsService {
 
   public async set<T = unknown>(key: NestedSettingKey, value: T): Promise<void> {
     this.assertInitialized();
-    if (!this.isValid(key, value)) throw new Error(`Invalid setting value for ${key}`);
+    if (!isValidSettingValue(this.getDefaultValue(key), value)) {
+      throw new Error(`Invalid setting value for ${key}`);
+    }
 
     const oldValue = this.get(key);
 
@@ -92,11 +99,11 @@ export class SettingsService {
     this.assertInitialized();
     const entries = Object.entries(updates) as [NestedSettingKey, unknown][];
     for (const [key, value] of entries) {
-      if (!this.isValid(key, value)) throw new Error(`Invalid setting value for ${key}`);
+      if (!isValidSettingValue(this.getDefaultValue(key), value)) {
+        throw new Error(`Invalid setting value for ${key}`);
+      }
     }
 
-    // Capture a stable snapshot so per-key `oldValue` reflects the pre-batch state.
-    // This also prevents intra-batch updates from affecting subsequent `oldValue` reads.
     const previous = globalThis.structuredClone(this.settings);
 
     const timestamp = performance.now();
@@ -106,7 +113,6 @@ export class SettingsService {
       }
     }
 
-    // Align ordering with `set()`: derived state is refreshed before notifying listeners.
     this.settings.lastModified = timestamp;
     this.refreshFeatureMap();
 
@@ -130,8 +136,6 @@ export class SettingsService {
     if (!category) {
       this.settings = createDefaultSettings();
     } else if (category in DEFAULT_SETTINGS) {
-      // Type-safe category reset with explicit assignment
-      // Using intermediate object to avoid direct index signature issues
       const defaultValue = DEFAULT_SETTINGS[category as keyof typeof DEFAULT_SETTINGS];
       if (defaultValue !== undefined) {
         Object.assign(this.settings, { [category]: globalThis.structuredClone(defaultValue) });
@@ -200,15 +204,6 @@ export class SettingsService {
 
   private async persist(): Promise<void> {
     await this.repository.save(this.settings);
-  }
-
-  private isValid(key: NestedSettingKey, value: unknown): boolean {
-    const def = this.getDefaultValue(key);
-    if (def === undefined) return true;
-    const type = Array.isArray(def) ? 'array' : typeof def;
-    if (type === 'array') return Array.isArray(value);
-    if (type === 'object') return typeof value === 'object' && value !== null;
-    return typeof value === type;
   }
 
   private getDefaultValue(key: string): unknown {
