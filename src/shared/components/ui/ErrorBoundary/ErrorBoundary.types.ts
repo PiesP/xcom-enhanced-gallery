@@ -1,4 +1,4 @@
-import type { ComponentChildren } from '@shared/external/vendors';
+import type { ComponentChildren } from '@shared/types/component.types';
 
 /**
  * Props for ErrorBoundary component

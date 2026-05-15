@@ -3,7 +3,6 @@ import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-node
 import { LucideIcon } from '@shared/components/ui/Icon/lucide/lucide-icons';
 import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
 import type { FitMode, MaybeAccessor } from '@shared/components/ui/Toolbar/Toolbar.types';
-import type { JSXElement } from '@shared/external/vendors';
 import type { ToolbarSettingsControllerResult } from '@shared/hooks/toolbar/use-toolbar-settings-controller';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { EventManager } from '@shared/services/event-manager';
@@ -11,6 +10,7 @@ import type { ToolbarState } from '@shared/types/toolbar.types';
 import { shouldAllowWheelDefault as shouldAllowWheelDefaultBase } from '@shared/utils/events/wheel-scroll-guard';
 import { resolve, resolveOptional } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
+import type { JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, onCleanup, Show } from 'solid-js';
 import styles from './Toolbar.module.css';
 import { TweetTextPanel } from './TweetTextPanel';

@@ -5,7 +5,7 @@
 
 import { getLanguageService } from '@shared/container/container';
 import { getUserscript } from '@shared/external/userscript/adapter';
-import type { JSXElement } from '@shared/external/vendors';
+import type { JSXElement } from 'solid-js';
 import { createSignal, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
 import type { ErrorBoundaryProps } from './ErrorBoundary.types';
 

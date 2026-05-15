@@ -1,4 +1,4 @@
-import type { LanguageStrings } from '@shared/constants/i18n/i18n.types';
+import type { LanguageStrings } from '@shared/constants/i18n/language-types';
 import { buildLanguageStringsFromValues } from '@shared/constants/i18n/translation-values';
 
 const JA_VALUES = [

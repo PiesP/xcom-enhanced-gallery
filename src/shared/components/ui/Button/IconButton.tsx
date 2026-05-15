@@ -7,8 +7,9 @@
  * - Keep this component tiny to reduce shipped JS/CSS.
  */
 
-import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
+import type { ComponentChildren } from '@shared/types/component.types';
 import { cx } from '@shared/utils/text/formatting';
+import type { JSXElement } from 'solid-js';
 
 /**
  * Visual sizing hint for the IconButton component.

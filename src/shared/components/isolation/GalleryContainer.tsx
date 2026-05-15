@@ -1,7 +1,6 @@
-import type { JSXElement } from '@shared/external/vendors';
-
 import { EventManager } from '@shared/services/event-manager';
 import { cx } from '@shared/utils/text/formatting';
+import type { JSXElement } from 'solid-js';
 import { onCleanup, onMount, splitProps } from 'solid-js';
 import { render } from 'solid-js/web';
 

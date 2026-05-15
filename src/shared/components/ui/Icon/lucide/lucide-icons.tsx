@@ -1,7 +1,7 @@
 /** Renders Lucide icons from data-driven SVG node definitions. */
 
 import { Icon } from '@shared/components/ui/Icon/Icon';
-import type { JSXElement } from '@shared/external/vendors';
+import type { JSXElement } from 'solid-js';
 import { LUCIDE_ICON_NODES, type LucideIconNode } from './icon-nodes';
 import type { LucideIconProps } from './LucideIcons.types';
 

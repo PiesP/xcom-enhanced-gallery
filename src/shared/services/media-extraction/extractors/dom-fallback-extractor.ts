@@ -4,7 +4,7 @@
  * Primary use case: card images and other media not available via API.
  */
 
-import { closestWithFallback, TWEET_CONTAINER_SELECTORS } from '@shared/dom/selectors';
+import { TWEET_CONTAINER_SELECTORS } from '@constants/selectors';
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
 import { createFailureResult } from '@shared/services/media-extraction/utils/extraction-result-factory';
@@ -19,6 +19,7 @@ import type {
   MediaInfo,
   TweetInfo,
 } from '@shared/types/media.types';
+import { closestWithFallback } from '@shared/utils/dom/query-helpers';
 import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,

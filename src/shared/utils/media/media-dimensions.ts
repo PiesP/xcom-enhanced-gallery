@@ -1,11 +1,11 @@
 /** Media utilities: dimensions, URL normalization, sorting */
 
-import type { JSX } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { clampIndex } from '@shared/utils/types/safety';
 import { tryParseUrl } from '@shared/utils/url/host';
+import type { JSX } from 'solid-js';
 
 /** Immutable width and height pair */
 interface DimensionPair {

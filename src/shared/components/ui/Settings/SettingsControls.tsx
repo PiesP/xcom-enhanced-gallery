@@ -20,9 +20,9 @@
  */
 
 import { getLanguageService } from '@shared/container/container';
-import type { JSXElement } from '@shared/external/vendors';
 import { resolve } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
+import type { JSXElement } from 'solid-js';
 import { createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 import styles from './SettingsControls.module.css';
 import type { LanguageOption, SettingsControlsProps, ThemeOption } from './SettingsControls.types';

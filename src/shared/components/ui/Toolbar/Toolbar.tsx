@@ -7,7 +7,6 @@ import type {
   ToolbarProps,
 } from '@shared/components/ui/Toolbar/Toolbar.types';
 import { ToolbarView } from '@shared/components/ui/Toolbar/ToolbarView';
-import type { JSXElement } from '@shared/external/vendors';
 import type { ToolbarSettingsControllerResult } from '@shared/hooks/toolbar/use-toolbar-settings-controller';
 import { useToolbarSettingsController } from '@shared/hooks/toolbar/use-toolbar-settings-controller';
 import { useToolbarState } from '@shared/hooks/use-toolbar-state';
@@ -16,6 +15,7 @@ import type { ToolbarDataState, ToolbarState } from '@shared/types/toolbar.types
 import { toOptionalAccessor, toRequiredAccessor } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import { clampIndex } from '@shared/utils/types/safety';
+import type { JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, mergeProps, on, splitProps } from 'solid-js';
 
 // Styles

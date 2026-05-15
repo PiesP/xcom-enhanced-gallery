@@ -16,7 +16,6 @@ import {
 } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.types';
-import type { JSX, JSXElement } from '@shared/external/vendors';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals, setCurrentVideoElement } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types/ui.types';
@@ -25,6 +24,7 @@ import {
   resolveMediaDimensionsWithIntrinsicFlag,
 } from '@shared/utils/media/media-dimensions';
 import { cx } from '@shared/utils/text/formatting';
+import type { JSX, JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, splitProps, untrack } from 'solid-js';
 
 /** Fit mode CSS class mapping */

@@ -3,8 +3,8 @@
  * All language bundles are pre-loaded in the single-file userscript.
  */
 
-import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/i18n.types';
-import { LANGUAGE_CODES } from '@shared/constants/i18n/i18n.types';
+import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/language-types';
+import { LANGUAGE_CODES } from '@shared/constants/i18n/language-types';
 import {
   DEFAULT_LANGUAGE,
   TRANSLATION_REGISTRY,

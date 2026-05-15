@@ -3,7 +3,7 @@
  * @description Type definitions for environment detection
  */
 
-import type { BaseLanguageCode } from '@shared/constants/i18n/i18n.types';
+import type { BaseLanguageCode } from '@shared/constants/i18n/language-types';
 import type { ResolvedGMAPIs } from '@shared/external/userscript/adapter';
 
 /**

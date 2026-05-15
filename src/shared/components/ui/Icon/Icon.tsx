@@ -3,7 +3,8 @@
  * Applies the design-token defaults while keeping semantics explicit.
  */
 
-import type { ComponentChildren, JSXElement } from '@shared/external/vendors';
+import type { ComponentChildren } from '@shared/types/component.types';
+import type { JSXElement } from 'solid-js';
 
 export interface IconProps {
   /**

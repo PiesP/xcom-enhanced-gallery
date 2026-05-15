@@ -11,7 +11,7 @@ import {
 } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
 import { createDebounced } from '@shared/async/debounce';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/container';
-import type { JSX } from '@shared/external/vendors';
+import type { JSX } from 'solid-js';
 import { createEffect, createSignal, onCleanup, untrack } from 'solid-js';
 
 export interface UseVideoVolumePersistenceOptions {

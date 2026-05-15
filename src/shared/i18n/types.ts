@@ -1,4 +1,4 @@
-import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/i18n.types';
+import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/language-types';
 
 /**
  * Produces dot-notation union of every leaf string in LanguageStrings

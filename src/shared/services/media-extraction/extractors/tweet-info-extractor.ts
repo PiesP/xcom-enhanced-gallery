@@ -3,13 +3,10 @@
  * @description Extracts tweet metadata using a concise strategy pipeline.
  */
 
-import {
-  closestWithFallback,
-  STATUS_LINK_SELECTOR,
-  TWEET_CONTAINER_SELECTORS,
-} from '@shared/dom/selectors';
+import { STATUS_LINK_SELECTOR, TWEET_CONTAINER_SELECTORS } from '@constants/selectors';
 import { logger } from '@shared/logging/logger';
 import type { TweetInfo } from '@shared/types/media.types';
+import { closestWithFallback } from '@shared/utils/dom/query-helpers';
 import { extractUsernameFromUrl } from '@shared/utils/url/host';
 
 type ExtractionStrategy = (element: HTMLElement) => TweetInfo | null;

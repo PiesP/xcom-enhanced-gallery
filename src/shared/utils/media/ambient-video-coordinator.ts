@@ -2,7 +2,7 @@ import {
   IMAGE_CONTAINER_SELECTORS,
   TWEET_CONTAINER_SELECTORS,
   VIDEO_CONTAINER_SELECTORS,
-} from '@shared/dom/selectors';
+} from '@constants/selectors';
 import { logger } from '@shared/logging/logger';
 import { closestWithFallback } from '@shared/utils/dom/query-helpers';
 import type {

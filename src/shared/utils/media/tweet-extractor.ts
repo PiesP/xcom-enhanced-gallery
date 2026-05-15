@@ -2,12 +2,9 @@
  * Extracts tweet text content from DOM elements
  */
 
-import {
-  closestWithFallback,
-  TWEET_CONTAINER_SELECTORS,
-  TWEET_TEXT_SELECTOR,
-} from '@shared/dom/selectors';
+import { TWEET_CONTAINER_SELECTORS, TWEET_TEXT_SELECTOR } from '@constants/selectors';
 import { logger } from '@shared/logging/logger';
+import { closestWithFallback } from '@shared/utils/dom/query-helpers';
 
 /**
  * Extracts tweet text from tweet article element

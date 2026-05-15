@@ -7,10 +7,10 @@
 
 import { CSS } from '@constants/css';
 import {
-  STABLE_MEDIA_CONTAINERS_SELECTORS,
-  STABLE_MEDIA_VIEWERS_SELECTORS,
+  MEDIA_CONTAINER_SELECTORS,
+  MEDIA_VIEWER_SELECTORS,
   STATUS_LINK_SELECTOR,
-} from '@shared/dom/selectors';
+} from '@constants/selectors';
 import { isVideoControlElement } from '@shared/dom/utils';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import {
@@ -35,7 +35,7 @@ const MEDIA_LINK_SELECTORS = [
 const MEDIA_LINK_SELECTOR: string = MEDIA_LINK_SELECTORS.join(', ');
 
 /** Combined selector string for media containers */
-const MEDIA_CONTAINER_SELECTOR: string = STABLE_MEDIA_CONTAINERS_SELECTORS.join(', ');
+const MEDIA_CONTAINER_SELECTOR: string = MEDIA_CONTAINER_SELECTORS.join(', ');
 
 /** Interactive element selectors */
 const INTERACTIVE_SELECTOR: string = [
@@ -148,7 +148,7 @@ function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
     '[data-testid="longformRichTextComponent"]',
     '[data-testid="twitterArticleRichTextView"]',
     '[data-testid="article-cover-image"]',
-    ...STABLE_MEDIA_VIEWERS_SELECTORS,
+    ...MEDIA_VIEWER_SELECTORS,
     '[data-testid="swipe-to-dismiss"]',
     '[data-testid="mask"]',
   ].join(', ');

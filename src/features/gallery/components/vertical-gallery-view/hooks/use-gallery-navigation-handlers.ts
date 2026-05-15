@@ -4,9 +4,9 @@
  * and media item click navigation.
  */
 
-import type { JSX } from '@shared/external/vendors';
 import { navigateToItem } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
+import type { JSX } from 'solid-js';
 
 /**
  * Parameters for useGalleryNavigationHandlers hook

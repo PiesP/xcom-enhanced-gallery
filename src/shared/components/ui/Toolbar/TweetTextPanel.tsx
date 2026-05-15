@@ -1,7 +1,7 @@
 import { LucideIcon } from '@shared/components/ui/Icon/lucide/lucide-icons';
-import type { JSXElement } from '@shared/external/vendors';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { isUrlAllowed } from '@shared/utils/url/safety';
+import type { JSXElement } from 'solid-js';
 import styles from './Toolbar.module.css';
 
 /**

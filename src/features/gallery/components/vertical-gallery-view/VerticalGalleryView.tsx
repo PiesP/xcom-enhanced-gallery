@@ -18,13 +18,13 @@ import styles from '@features/gallery/components/vertical-gallery-view/VerticalG
 import { VerticalImageItem } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { getTypedSettingOr } from '@shared/container/container';
-import type { JSXElement } from '@shared/external/vendors';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { logger } from '@shared/logging/logger';
 import { downloadState } from '@shared/state/signals/download.signals';
 import { gallerySignals, navigateToItem } from '@shared/state/signals/gallery.signals';
 import { computePreloadIndices } from '@shared/utils/performance/preload';
 import { cx } from '@shared/utils/text/formatting';
+import type { JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, For, splitProps } from 'solid-js';
 
 export interface VerticalGalleryViewProps {

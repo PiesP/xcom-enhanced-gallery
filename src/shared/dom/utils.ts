@@ -4,12 +4,12 @@
  */
 
 import { CSS as CSS_CONST } from '@constants/css';
+import { VIDEO_PLAYER_CONTEXT_SELECTOR } from '@constants/selectors';
 import {
   VIDEO_CONTROL_ARIA_TOKENS,
   VIDEO_CONTROL_DATASET_PREFIXES,
   VIDEO_CONTROL_ROLES,
 } from '@constants/video-controls';
-import { VIDEO_PLAYER_CONTEXT_SELECTOR } from '@shared/dom/selectors';
 import { logger } from '@shared/logging/logger';
 import { isHTMLElement } from '@shared/utils/types/guards';
 

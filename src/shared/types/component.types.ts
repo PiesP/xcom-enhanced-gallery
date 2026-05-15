@@ -2,7 +2,7 @@
  * @fileoverview Component Props and related type definitions
  */
 
-import type { JSXElement } from '@shared/external/vendors';
+import type { JSXElement } from 'solid-js';
 
 /** JSX element type alias */
 export type VNode = JSXElement;

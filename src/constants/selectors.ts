@@ -27,15 +27,6 @@ const GALLERY_SELECTORS = CSS.SELECTORS;
 export const TWEET_SELECTOR = 'article[data-testid="tweet"]' as const;
 
 /**
- * Primary tweet article selector
- *
- * Use `TWEET_CONTAINER_SELECTORS` when a fallback chain is required.
- */
-export const TWEET_ARTICLE_SELECTOR = TWEET_SELECTOR;
-
-/**
- * Tweet photo container selector
- *
  * Matches photo containers within tweets.
  */
 export const TWEET_PHOTO_SELECTOR = '[data-testid="tweetPhoto"]' as const;
@@ -151,78 +142,3 @@ export const MEDIA_VIEWER_SELECTORS = [
   '[aria-modal="true"][data-testid="Drawer"]',
   '[aria-roledescription="carousel"]',
 ] as const;
-
-// ============================================================================
-// Stable Selectors with Fallbacks
-// ============================================================================
-
-/**
- * Stable tweet container selectors with fallback chain
- *
- * @remarks
- * Ordered by reliability:
- * 1. `data-testid="tweet"` - Most stable, Twitter's official test identifier
- * 2. `role="article"` - Semantic fallback for article elements
- *
- * @example
- * ```typescript
- * function findTweetContainer(element: Element): Element | null {
- *   for (const selector of STABLE_TWEET_CONTAINERS_SELECTORS) {
- *     const container = element.closest(selector);
- *     if (container) return container;
- *   }
- *   return null;
- * }
- * ```
- */
-export const STABLE_TWEET_CONTAINERS_SELECTORS = TWEET_CONTAINER_SELECTORS;
-
-/**
- * Stable media container selectors with fallback chain
- *
- * @remarks
- * Covers both image and video containers:
- * 1. `tweetPhoto` - Image containers
- * 2. `videoPlayer` - Video containers
- *
- * @example
- * ```typescript
- * const mediaContainers = STABLE_MEDIA_CONTAINERS_SELECTORS
- *   .flatMap(sel => Array.from(document.querySelectorAll(sel)));
- * ```
- */
-export const STABLE_MEDIA_CONTAINERS_SELECTORS = MEDIA_CONTAINER_SELECTORS;
-
-/**
- * Stable video container selectors with fallback chain
- *
- * @remarks
- * Video-specific selectors:
- * 1. `videoPlayer` testid - Most reliable
- * 2. Generic `video` element - Broad fallback
- *
- * @example
- * ```typescript
- * const videoElement = STABLE_VIDEO_CONTAINERS_SELECTORS
- *   .map(sel => element.querySelector(sel))
- *   .find(Boolean);
- * ```
- */
-export const STABLE_VIDEO_CONTAINERS_SELECTORS = VIDEO_CONTAINER_SELECTORS;
-
-/**
- * Stable media viewer overlay selectors with fallback chain
- *
- * @remarks
- * Selectors for Twitter's native media viewer/lightbox:
- * 1. `photoViewer` - Official photo viewer testid
- * 2. Modal drawer - Generic modal pattern with testid
- * 3. Carousel role - ARIA-based carousel detection
- *
- * @example
- * ```typescript
- * const isViewerOpen = STABLE_MEDIA_VIEWERS_SELECTORS
- *   .some(sel => document.querySelector(sel) !== null);
- * ```
- */
-export const STABLE_MEDIA_VIEWERS_SELECTORS = MEDIA_VIEWER_SELECTORS;

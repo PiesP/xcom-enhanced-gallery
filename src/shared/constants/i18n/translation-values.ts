@@ -1,4 +1,4 @@
-import type { LanguageStrings } from './i18n.types';
+import type { LanguageStrings } from './language-types';
 
 export const TRANSLATION_VALUE_COUNT = 39 as const;
 

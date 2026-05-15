@@ -1,4 +1,4 @@
-import { TWITTER_MEDIA_SELECTOR } from '@shared/dom/selectors';
+import { TWITTER_MEDIA_SELECTOR } from '@constants/selectors';
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';

@@ -3,11 +3,15 @@
  * @description Types for useToolbarSettingsController hook
  */
 
+import type {
+  LanguageOption,
+  ThemeOption,
+} from '@shared/components/ui/Settings/SettingsControls.types';
+
+export type { LanguageOption, ThemeOption };
+
 import type { LanguageService } from '@shared/services/language-service';
 import type { ThemeServiceContract } from '@shared/services/theme-service';
-
-export type ThemeOption = 'auto' | 'light' | 'dark';
-export type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
 
 /**
  * Configuration options for useToolbarSettingsController hook

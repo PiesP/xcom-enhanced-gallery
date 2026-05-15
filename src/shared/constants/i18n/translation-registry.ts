@@ -1,4 +1,4 @@
-import type { BaseLanguageCode, LanguageStrings } from './i18n.types';
+import type { BaseLanguageCode, LanguageStrings } from './language-types';
 import { en } from './languages/en';
 import { ja } from './languages/ja';
 import { ko } from './languages/ko';

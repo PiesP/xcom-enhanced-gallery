@@ -7,7 +7,7 @@
  */
 
 import type { BaseComponentProps } from '@shared/types/component.types';
-import type { Accessor } from 'solid-js';
+import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 
 /**
  * Union type for theme setting options
@@ -18,13 +18,6 @@ export type ThemeOption = 'auto' | 'light' | 'dark';
  * Union type for language setting options
  */
 export type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
-
-/**
- * Utility type for values that can be static or reactive accessors
- *
- * @template T - The value type
- */
-export type MaybeAccessor<T> = T | Accessor<T>;
 
 /**
  * Props for SettingsControls component
