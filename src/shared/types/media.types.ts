@@ -138,9 +138,9 @@ export const ExtractionSource = {
 export type ExtractionSource = (typeof ExtractionSource)[keyof typeof ExtractionSource];
 
 /**
- * Extraction metadata (merged from Core)
+ * Extraction metadata
  */
-interface ExtractionMetadata {
+export interface ExtractionMetadata {
   readonly extractionTime?: number;
   readonly extractedAt?: number;
   readonly strategiesUsed?: readonly string[];
@@ -150,6 +150,10 @@ interface ExtractionMetadata {
   readonly sourceType?: string;
   readonly strategy?: string;
   readonly error?: string;
+  readonly extractionMethod?: string;
+  readonly extractionId?: string;
+  readonly source?: string;
+  readonly [key: string]: unknown;
 }
 
 /**
@@ -164,19 +168,7 @@ export interface MediaExtractionResult {
   /** Backward compatibility with core version */
   readonly source?: ExtractionSource | undefined;
   readonly sourceType?: string | undefined;
-  readonly metadata?:
-    | ExtractionMetadata
-    | {
-        readonly extractionMethod?: string | undefined;
-        readonly extractionTime?: number | undefined;
-        readonly source?: string | undefined;
-        readonly extractionId?: string | undefined;
-        readonly extractedAt?: number | undefined;
-        readonly sourceType?: string | undefined;
-        readonly error?: string | undefined;
-        readonly [key: string]: unknown;
-      }
-    | undefined;
+  readonly metadata?: ExtractionMetadata | undefined;
 }
 
 // Use ErrorCode directly: import { ErrorCode } from '@shared/types'
