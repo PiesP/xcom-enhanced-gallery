@@ -1,58 +1,22 @@
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/normalize';
-import type { MediaInfo } from '@shared/types/media.types';
-
-// Inlined from types.ts
-export interface DownloadOptions {
-  concurrency?: number;
-  retries?: number;
-  signal?: AbortSignal;
-  onProgress?: (progress: {
-    phase: string;
-    current: number;
-    total: number;
-    percentage: number;
-    filename?: string;
-  }) => void;
-  zipFilename?: string;
-  blob?: Blob;
-  prefetchedBlobs?: Map<string, Blob | Promise<Blob>>;
-}
-
-export interface SingleDownloadResult {
-  success: boolean;
-  filename?: string;
-  error?: string;
-}
-
 import { resolveGMDownload } from '@shared/external/userscript/adapter';
 import { isGMAPIAvailable } from '@shared/external/userscript/environment-detector';
+import type {
+  DownloadCapability,
+  DownloadOptions,
+  GMDownloadFunction,
+  SingleDownloadResult,
+} from '@shared/services/download/types';
+import type { MediaInfo } from '@shared/types/media.types';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
-// ============================================================================
-// Download capability detection (inlined from fallback-download.ts)
-// ============================================================================
-
-interface GMDownloadOptions {
-  url: string;
-  name: string;
-  headers?: Record<string, string>;
-  timeout?: number;
-  saveAs?: boolean;
-  onload: () => void;
-  onerror: (error: unknown) => void;
-  ontimeout: () => void;
-  onprogress?: (progress: { loaded: number; total: number }) => void;
-  [key: string]: unknown;
-}
-
-export type GMDownloadFunction = (options: GMDownloadOptions) => void;
-
-export interface DownloadCapability {
-  hasGMDownload: boolean;
-  method: 'gm_download' | 'none';
-  gmDownload?: GMDownloadFunction | undefined;
-}
+export type {
+  DownloadCapability,
+  DownloadOptions,
+  GMDownloadFunction,
+  SingleDownloadResult,
+} from './types';
 
 function asGMDownloadFunction(value: unknown): GMDownloadFunction | undefined {
   return typeof value === 'function' ? (value as GMDownloadFunction) : undefined;
@@ -67,10 +31,6 @@ export function detectDownloadCapability(): DownloadCapability {
     gmDownload: hasGMDownload ? gmDownload : undefined,
   };
 }
-
-// ============================================================================
-// Single file download
-// ============================================================================
 
 const DOWNLOAD_TIMEOUT_MS = 30_000;
 const DOWNLOAD_TIMEOUT_MESSAGE = 'Download timeout';
@@ -109,7 +69,6 @@ export async function downloadSingleFile(
 
   reportProgress(options.onProgress, 'preparing', 0, filename);
 
-  // Use blob URL when a pre-fetched blob is available.
   let url = media.url;
   let isBlobUrl = false;
   const blob = options.blob;

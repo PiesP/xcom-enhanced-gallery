@@ -11,8 +11,8 @@ import {
   type GMDownloadFunction,
   type SingleDownloadResult,
 } from '@shared/services/download/single-download';
-import type { OrchestratorItem } from '@shared/services/download/types';
-import { type BulkDownloadResult, downloadAsZip } from '@shared/services/download/zip-download';
+import type { BulkDownloadResult, OrchestratorItem } from '@shared/services/download/types';
+import { downloadAsZip } from '@shared/services/download/zip-download';
 import type { MediaInfo } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/result.types';
 

@@ -2,25 +2,7 @@ import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { StreamingZipWriter } from '@shared/external/zip/streaming-zip-writer';
 import { DEFAULT_BACKOFF_BASE_MS, fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
-import type { OrchestratorItem, OrchestratorOptions } from './types';
-
-// Inlined from types.ts (moved from download-orchestrator to avoid circular dep)
-export interface ZipResult {
-  filesSuccessful: number;
-  failures: Array<{ url: string; error: string }>;
-  zipData: Uint8Array;
-}
-
-export interface BulkDownloadResult {
-  success: boolean;
-  status: 'success' | 'partial' | 'error';
-  filesProcessed: number;
-  filesSuccessful: number;
-  filename?: string;
-  error?: string;
-  failures?: Array<{ url: string; error: string }>;
-  code: string;
-}
+import type { BulkDownloadResult, OrchestratorItem, OrchestratorOptions, ZipResult } from './types';
 
 // Inlined from download-utils.ts
 type UniqueFilenameFactory = (desired: string) => string;
