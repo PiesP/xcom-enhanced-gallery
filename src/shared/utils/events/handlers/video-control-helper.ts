@@ -139,7 +139,7 @@ function pauseVideo(video: HTMLVideoElement): void {
  * @internal
  */
 function togglePlayPause(video: HTMLVideoElement, context?: string): void {
-  const isPlaying = playbackStateMap.get(video)?.playing ?? !video.paused;
+  const isPlaying = !video.paused;
   if (isPlaying) {
     pauseVideo(video);
   } else {
@@ -152,7 +152,7 @@ function togglePlayPause(video: HTMLVideoElement, context?: string): void {
  * @internal
  */
 function adjustVolume(video: HTMLVideoElement, delta: number): void {
-  const newVolume = Math.max(0, Math.min(1, Math.round((video.volume + delta) * 100) / 100));
+  const newVolume = Math.round(Math.max(0, Math.min(1, video.volume + delta)) * 100) / 100;
   video.volume = newVolume;
 
   // Auto-unmute when increasing volume from zero

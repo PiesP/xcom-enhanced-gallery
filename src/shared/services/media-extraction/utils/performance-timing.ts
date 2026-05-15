@@ -10,19 +10,12 @@
  *
  * @remarks
  * Uses `performance.now()` when available for sub-millisecond precision,
- * falls back to `performance.now()` in environments without Performance API.
- *
- * @example
- * ```typescript
- * const startTime = getTimestamp();
- * await someOperation();
- * const duration = getTimestamp() - startTime;
- * ```
+ * falls back to `Date.now()` in environments without Performance API.
  */
 export function getTimestamp(): number {
   return typeof performance !== 'undefined' && typeof performance.now === 'function'
     ? performance.now()
-    : performance.now();
+    : Date.now();
 }
 
 /**

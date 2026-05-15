@@ -104,8 +104,10 @@ export function createEventEmitter<T extends Record<string, unknown>>(): EventEm
       for (const callback of eventListeners) {
         try {
           callback(data);
-        } catch {
-          // Intentionally ignore listener errors to prevent cascade failures.
+        } catch (error) {
+          if (__DEV__) {
+            console.warn('[EventEmitter] listener error for', String(event), error);
+          }
         }
       }
     },
