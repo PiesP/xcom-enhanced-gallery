@@ -9,7 +9,6 @@ import { getSafeHostname, getSafeLocationHeaders } from '@shared/dom/safe-locati
 import { logger } from '@shared/logging/logger';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import {
-  getCsrfToken,
   getCsrfTokenAsync,
   resolveBearerToken,
 } from '@shared/services/media/twitter-auth/twitter-auth';
@@ -35,24 +34,12 @@ const resolveTwitterApiHost = (
   supportedHosts: readonly string[],
   defaultHost: string
 ): string => {
-  if (!hostname) {
-    return defaultHost;
-  }
+  if (!hostname) return defaultHost;
 
   const normalized = hostname.toLowerCase();
 
-  // Extract the base domain (last two DNS labels) from the hostname.
-  // e.g., 'www.x.com' -> 'x.com', 'x.com' -> 'x.com'
-  // Splitting and taking the trailing two labels avoids any substring-based
-  // URL check and allows strict equality comparison against the supported list.
-  const parts = normalized.split('.');
-  if (parts.length < 2) {
-    return defaultHost;
-  }
-  const baseDomain = `${parts[parts.length - 2]}.${parts[parts.length - 1]}`;
-
   for (const host of supportedHosts) {
-    if (baseDomain === host) {
+    if (normalized === host || normalized.endsWith(`.${host}`)) {
       return host;
     }
   }
@@ -130,8 +117,8 @@ export class TwitterAPI {
    * Execute GraphQL API request to Twitter.
    */
   private static async apiRequest(url: string): Promise<TwitterAPIResponse> {
-    // Get CSRF token (try async for better reliability)
-    const csrfToken = (await getCsrfTokenAsync()) ?? getCsrfToken() ?? '';
+    // Get CSRF token
+    const csrfToken = (await getCsrfTokenAsync()) ?? '';
 
     // Resolve Bearer token dynamically, fall back to hardcoded constant
     const authorization = resolveBearerToken() ?? TWITTER_API_CONFIG.GUEST_AUTHORIZATION;

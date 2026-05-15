@@ -38,7 +38,7 @@ export class DownloadOrchestrator {
   }
 
   /** Initialize service (idempotent) */
-  public async initialize(): Promise<void> {
+  public initialize(): void {
     this._initialized = true;
   }
 
