@@ -142,14 +142,15 @@ function applyGallerySessionUpdate(state: GallerySessionState): void {
   });
 }
 
+/** @deprecated Use applyGallerySessionUpdate instead */
 export function applyGalleryStateUpdate(state: GalleryState): void {
-  batch(() => {
-    setMediaItems(state.mediaItems);
-    setCurrentIndex(state.currentIndex);
-    _setIsLoading(state.isLoading);
-    _setErrorSig(state.error);
-    _setViewMode(state.viewMode);
-    setIsOpen(state.isOpen);
+  applyGallerySessionUpdate({
+    isOpen: state.isOpen,
+    mediaItems: state.mediaItems,
+    currentIndex: state.currentIndex,
+    focusedIndex: state.currentIndex,
+    currentVideoElement: null,
+    error: state.error,
   });
 }
 
