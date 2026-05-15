@@ -170,8 +170,6 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
         local.className
       )}
       onClick={handleBackgroundClick}
-      data-xeg-gallery="true"
-      data-xeg-role="gallery"
     >
       <div class={styles.toolbarHoverZone} data-role="toolbar-hover-zone" />
 
@@ -220,7 +218,6 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
       <div
         class={styles.itemsContainer}
         data-xeg-role="items-container"
-        data-xeg-role-compat="items-list"
         ref={(el) => setItemsContainerEl(el ?? null)}
       >
         <For each={mediaItems()}>

@@ -294,11 +294,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       data-fit-mode={resolvedFitMode()}
       data-media-loaded={isLoaded() ? 'true' : 'false'}
       data-has-intrinsic-size={hasIntrinsicSize() ? 'true' : undefined}
-      data-xeg-gallery="true"
-      data-xeg-gallery-type="item"
-      data-xeg-gallery-version="2.0"
-      data-xeg-component="vertical-image-item"
-      data-xeg-block-twitter="true"
       style={mergedStyle()}
       onClick={handleContainerClick}
       onFocus={local.onFocus}

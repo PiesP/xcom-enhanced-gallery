@@ -49,7 +49,7 @@ const STATIC_DEFAULT_SETTINGS = {
     mediaExtraction: true,
     accessibility: true,
   },
-  version: '1.9.2',
+  version: '1.9.3',
   lastModified: 0,
 } as const satisfies AppSettings;
 
