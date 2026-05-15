@@ -76,6 +76,5 @@ export function buildLanguageStringsFromValues(values: ReadonlyArray<string>): L
     },
   };
 
-  // Shallow-freeze to prevent accidental mutation of the translation registry objects.
-  return Object.freeze(built) as LanguageStrings;
+  return built;
 }

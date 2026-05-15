@@ -50,7 +50,6 @@ export function useGalleryDownload() {
       const languageService = getLanguageService();
       const mediaItems = gallerySignals.mediaItems;
       const mediaService = getMediaService();
-      // Lazy load download service on first use
       const downloadService = getDownloadOrchestrator();
 
       if (type === 'current') {
