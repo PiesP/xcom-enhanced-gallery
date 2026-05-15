@@ -74,3 +74,27 @@ export interface AppSettings {
   version: string;
   lastModified: number;
 }
+
+export type SettingKey = keyof AppSettings;
+
+export type NestedSettingKey =
+  | `gallery.${keyof GallerySettings}`
+  | `toolbar.${keyof ToolbarSettings}`
+  | `download.${keyof DownloadSettings}`
+  | `accessibility.${keyof AccessibilitySettings}`
+  | `features.${keyof FeatureFlags}`
+  | SettingKey;
+
+export interface SettingChangeEvent<T = unknown> {
+  readonly key: NestedSettingKey;
+  readonly oldValue: T;
+  readonly newValue: T;
+  readonly timestamp: number;
+  readonly status?: 'success' | 'error';
+}
+
+export interface SettingValidationResult {
+  readonly valid: boolean;
+  readonly error?: string;
+  readonly suggestion?: string;
+}

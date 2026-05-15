@@ -4,13 +4,13 @@ import {
   PersistentSettingsRepository,
   type SettingsRepository,
 } from '@features/settings/services/settings-repository';
+import { logger } from '@shared/logging/logger';
 import type {
   AppSettings,
   FeatureFlags,
   NestedSettingKey,
   SettingChangeEvent,
-} from '@features/settings/types/settings.types';
-import { logger } from '@shared/logging/logger';
+} from '@shared/types/settings.types';
 import { assignNestedPath, normalizeFeatureFlags, resolveNestedPath } from './settings-helpers';
 
 let _settingsInstance: SettingsService | null = null;

@@ -4,7 +4,7 @@
  */
 
 import { DEFAULT_SETTINGS } from '@constants/settings';
-import type { FeatureFlags } from '@features/settings/types/settings.types';
+import type { FeatureFlags } from '@shared/types/settings.types';
 
 const FORBIDDEN_PATH_KEYS = ['__proto__', 'constructor', 'prototype'] as const;
 

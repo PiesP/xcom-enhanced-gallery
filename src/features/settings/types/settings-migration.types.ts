@@ -1,4 +1,4 @@
-import type { AppSettings } from '@features/settings/types/settings.types';
+import type { AppSettings } from '@shared/types/settings.types';
 
 export type Migration = (input: AppSettings) => AppSettings;
 
