@@ -7,6 +7,7 @@ import type {
 import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/media/media-dimensions';
 import { escapeRegExp } from '@shared/utils/text/formatting';
 import { tryParseUrl } from '@shared/utils/url/host';
+import { logger } from '@shared/logging/logger';
 
 /** Utility type to make properties writable for normalization functions */
 type Writable<T> = { -readonly [P in keyof T]: T[P] };
@@ -291,8 +292,9 @@ export function extractMediaFromTweet(
       mediaItems.push(entry);
     } catch (error) {
       // Ignore individual item failures.
-      // Intentionally no diagnostics in production builds.
-      void error;
+      if (__DEV__) {
+        logger.debug('[TwitterParser] Skipping media entry due to error', { error });
+      }
     }
   }
 
