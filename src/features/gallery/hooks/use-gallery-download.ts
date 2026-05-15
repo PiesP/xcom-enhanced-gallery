@@ -51,7 +51,7 @@ export function useGalleryDownload() {
       const mediaItems = gallerySignals.mediaItems;
       const mediaService = getMediaService();
       // Lazy load download service on first use
-      const downloadService = await getLazyDownloadService();
+      const downloadService = getDownloadOrchestrator();
 
       if (type === 'current') {
         const currentMedia = mediaItems[gallerySignals.currentIndex];
@@ -127,12 +127,4 @@ export function useGalleryDownload() {
   };
 
   return { handleDownload };
-}
-
-/**
- * Lazy load download service on first use.
- * This enables code splitting - download code is only loaded when user initiates a download.
- */
-async function getLazyDownloadService(): Promise<DownloadOrchestrator> {
-  return getDownloadOrchestrator();
 }
