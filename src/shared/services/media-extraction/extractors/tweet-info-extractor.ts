@@ -141,7 +141,7 @@ export class TweetInfoExtractor {
     extractFromMediaGridItem,
   ];
 
-  async extract(element: HTMLElement): Promise<TweetInfo | null> {
+  extract(element: HTMLElement): TweetInfo | null {
     for (const strategy of this.strategies) {
       try {
         const result = strategy(element);

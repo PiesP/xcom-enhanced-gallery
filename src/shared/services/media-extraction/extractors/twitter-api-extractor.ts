@@ -52,7 +52,7 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
       const tweetTextHTML = extractTweetTextHTMLFromClickedElement(clickedElement);
 
       // Step 3: Transform API response to MediaInfo[]
-      const mediaItems = await convertAPIMediaToMediaInfo(apiMedias, tweetInfo, tweetTextHTML);
+      const mediaItems = convertAPIMediaToMediaInfo(apiMedias, tweetInfo, tweetTextHTML);
 
       // Step 4: Calculate which media user clicked
       const clickedIndex = determineClickedIndex(clickedElement, mediaItems);

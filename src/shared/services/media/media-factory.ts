@@ -62,11 +62,11 @@ const createMediaInfoFromAPI = (
 /**
  * Transform API Media to MediaInfo Array
  */
-export async function convertAPIMediaToMediaInfo(
+export function convertAPIMediaToMediaInfo(
   apiMedias: TweetMediaEntry[],
   tweetInfo: TweetInfo,
   tweetTextHTML?: string | undefined
-): Promise<MediaInfo[]> {
+): MediaInfo[] {
   const mediaItems: MediaInfo[] = [];
 
   for (let i = 0; i < apiMedias.length; i++) {

@@ -117,7 +117,7 @@ export class MediaExtractionService implements MediaExtractor {
     }
 
     try {
-      const tweetInfo = await this.tweetInfoExtractor.extract(element);
+      const tweetInfo = this.tweetInfoExtractor.extract(element);
 
       if (!tweetInfo?.tweetId) {
         if (__DEV__) {
