@@ -16,6 +16,7 @@ import {
 } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.types';
+import { CSS } from '@constants/css';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals, setCurrentVideoElement } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types/ui.types';
@@ -258,7 +259,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const containerClasses = createMemo(() =>
     cx(
       'xeg-gallery',
-      'xeg-gallery-item',
+      CSS.CLASSES.ITEM,
       'vertical-item',
       styles.container,
       local.isActive ? styles.active : undefined,
