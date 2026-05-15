@@ -13,7 +13,7 @@ import { SettingsService } from '@features/settings/services/settings-service';
 import {
   hasRenderer,
   registerGalleryRenderer,
-  registerSettingsManager,
+  registerSettings,
   tryGetSettingsManager,
 } from '@shared/container/container';
 import { galleryErrorReporter, settingsErrorReporter } from '@shared/error/app-error-reporter';
@@ -44,7 +44,7 @@ async function initializeSettingsService(): Promise<void> {
 
   const service = new SettingsService();
   await service.initialize();
-  registerSettingsManager(service);
+  registerSettings(service);
 }
 
 /**

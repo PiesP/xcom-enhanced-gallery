@@ -17,7 +17,6 @@ export {
   getSettings,
   getTypedSettingOr,
   registerSettings,
-  registerSettingsManager,
   setTypedSetting,
   tryGetSettings,
   tryGetSettingsManager,
