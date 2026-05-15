@@ -15,7 +15,7 @@ export const APP_SETTINGS_STORAGE_KEY = 'xeg-app-settings' as const;
 // Default Settings
 // ============================================================================
 
-const STATIC_DEFAULT_SETTINGS = {
+export const DEFAULT_SETTINGS = {
   gallery: {
     autoScrollSpeed: 5,
     infiniteScroll: true,
@@ -53,10 +53,14 @@ const STATIC_DEFAULT_SETTINGS = {
   lastModified: 0,
 } as const satisfies AppSettings;
 
-export const DEFAULT_SETTINGS = STATIC_DEFAULT_SETTINGS;
-
 export function createDefaultSettings(timestamp: number = Date.now()): AppSettings {
-  const settings = { ...DEFAULT_SETTINGS } as AppSettings;
-  settings.lastModified = timestamp;
-  return settings;
+  return {
+    ...DEFAULT_SETTINGS,
+    gallery: { ...DEFAULT_SETTINGS.gallery },
+    toolbar: { ...DEFAULT_SETTINGS.toolbar },
+    download: { ...DEFAULT_SETTINGS.download },
+    accessibility: { ...DEFAULT_SETTINGS.accessibility },
+    features: { ...DEFAULT_SETTINGS.features },
+    lastModified: timestamp,
+  };
 }
