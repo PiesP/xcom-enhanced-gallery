@@ -1,3 +1,4 @@
+import { logger } from '@shared/logging/logger';
 import type {
   TweetMediaEntry,
   TwitterMedia,
@@ -7,7 +8,6 @@ import type {
 import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/media/media-dimensions';
 import { escapeRegExp } from '@shared/utils/text/formatting';
 import { tryParseUrl } from '@shared/utils/url/host';
-import { logger } from '@shared/logging/logger';
 
 /** Utility type to make properties writable for normalization functions */
 type Writable<T> = { -readonly [P in keyof T]: T[P] };
