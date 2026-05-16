@@ -73,23 +73,20 @@ export class GlobalErrorHandler {
     const eventManager = EventManager.getInstance();
     this.controller = new AbortController();
 
-    const onError: EventListener = (evt): void => {
-      this.errorListener(evt as ErrorEvent);
-    };
-
-    const onUnhandledRejection: EventListener = (evt): void => {
-      this.rejectionListener(evt as PromiseRejectionEvent);
-    };
-
-    eventManager.addEventListener(window, 'error', onError, {
+    eventManager.addEventListener(window, 'error', this.errorListener as EventListener, {
       signal: this.controller.signal,
       context: 'global-error-handler',
     });
 
-    eventManager.addEventListener(window, 'unhandledrejection', onUnhandledRejection, {
-      signal: this.controller.signal,
-      context: 'global-error-handler',
-    });
+    eventManager.addEventListener(
+      window,
+      'unhandledrejection',
+      this.rejectionListener as EventListener,
+      {
+        signal: this.controller.signal,
+        context: 'global-error-handler',
+      }
+    );
 
     this.isInitialized = true;
   }
