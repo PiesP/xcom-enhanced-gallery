@@ -5,7 +5,7 @@
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
 import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
-import { TwitterAPI } from '@shared/services/media/twitter-api-client';
+import { getTweetMedias } from '@shared/services/media/twitter-api-client';
 import { determineClickedIndex } from '@shared/services/media-extraction/determine-clicked-index';
 import { createFailureResult } from '@shared/services/media-extraction/utils/extraction-result-factory';
 import {
@@ -37,7 +37,7 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
       }
 
       // Step 1: Fetch media from API
-      const apiMedias = await TwitterAPI.getTweetMedias(tweetInfo.tweetId);
+      const apiMedias = await getTweetMedias(tweetInfo.tweetId);
 
       if (!apiMedias || apiMedias.length === 0) {
         return createFailureResult(
