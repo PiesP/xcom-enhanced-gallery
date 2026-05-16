@@ -85,8 +85,6 @@ export class ThemeService implements ThemeServiceContract {
       const settingsService = tryGetSettings();
       if (settingsService) {
         this.bindSettingsService(settingsService);
-      } else {
-        await this.restoreThemeSettingFromStorage();
       }
     }
     this.initializeThemeScopeObservation();
@@ -182,14 +180,6 @@ export class ThemeService implements ThemeServiceContract {
     }
 
     return window.matchMedia('(prefers-color-scheme: dark)');
-  }
-
-  private async restoreThemeSettingFromStorage(): Promise<void> {
-    const saved = this.boundSettingsService?.get?.('gallery.theme');
-    if (isThemeSetting(saved) && saved !== this.themeSetting) {
-      this.themeSetting = saved;
-      this.applyCurrentTheme(true);
-    }
   }
 
   private initializeThemeScopeObservation(): void {
