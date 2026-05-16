@@ -12,7 +12,7 @@ import { globalTimerManager } from '@shared/utils/time/timer-management';
  * @property signal - AbortSignal that will abort after timeout
  * @property cancel - Function to cancel the timeout and prevent signal abortion
  */
-interface TimeoutSignalController {
+export interface TimeoutSignalController {
   /** AbortSignal that will abort after timeout */
   readonly signal: AbortSignal;
   /** Function to cancel the timeout and prevent signal abortion */

@@ -3,7 +3,7 @@ import { logger } from '@shared/logging/logger';
 import { PersistentStorage } from '@shared/services/persistent-storage';
 import type { AppSettings } from '@shared/types/settings.types';
 import { migrateSettings } from './settings-migration';
-import { computeCurrentSettingsSchemaHash } from './settings-schema';
+import { SETTINGS_SCHEMA_HASH } from './settings-schema';
 
 /**
  * Internal stored settings with schema hash metadata
@@ -66,7 +66,7 @@ export interface SettingsRepository {
  */
 export class PersistentSettingsRepository implements SettingsRepository {
   private readonly storage = PersistentStorage.getInstance();
-  private readonly schemaHash = computeCurrentSettingsSchemaHash();
+  private readonly schemaHash = SETTINGS_SCHEMA_HASH;
 
   public async load(): Promise<AppSettings> {
     try {

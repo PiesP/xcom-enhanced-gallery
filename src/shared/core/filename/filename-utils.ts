@@ -8,7 +8,7 @@ import type { MediaInfo } from '@shared/types/media.types';
 import { safeParseInt } from '@shared/utils/types/safety';
 import { extractUsernameFromUrl } from '@shared/utils/url/host';
 
-interface FilenameOptions {
+export interface FilenameOptions {
   readonly index?: string | number;
   readonly extension?: string;
   readonly fallbackPrefix?: string;
@@ -16,7 +16,7 @@ interface FilenameOptions {
   readonly nowMs?: number;
 }
 
-interface ZipFilenameOptions {
+export interface ZipFilenameOptions {
   readonly fallbackPrefix?: string;
   readonly nowMs?: number;
 }
@@ -37,7 +37,7 @@ function sanitize(name: string): string {
 }
 
 function resolveNowMs(nowMs?: number): number {
-  return Number.isFinite(nowMs as number) ? (nowMs as number) : 0;
+  return Number.isFinite(nowMs as number) ? (nowMs as number) : Date.now();
 }
 
 function getExtension(url: string): string {

@@ -7,7 +7,7 @@
 import { generateMediaFilename, generateZipFilename } from '@shared/core/filename/filename-utils';
 import type { MediaInfo } from '@shared/types/media.types';
 
-interface PlannedZipItem {
+export interface PlannedZipItem {
   readonly url: string;
   readonly desiredName: string;
   readonly blob?: Blob | Promise<Blob> | undefined;

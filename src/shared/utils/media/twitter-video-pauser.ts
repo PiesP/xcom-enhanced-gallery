@@ -98,7 +98,7 @@ export function pauseActiveTwitterVideos(
   const result: PauseAmbientVideosResult = {
     pausedCount,
     totalCandidates,
-    skippedCount: inspectedCount - pausedCount,
+    skippedCount: totalCandidates - pausedCount,
   };
 
   if (result.pausedCount > 0) {
