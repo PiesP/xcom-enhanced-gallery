@@ -13,7 +13,6 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { resolve } from 'node:path';
 
 import type { Plugin } from 'vite';
 
@@ -62,7 +61,7 @@ export function distCleanupPlugin(): Plugin {
     enforce: 'pre',
 
     buildStart(): void {
-      const distDir = resolve(REPO_ROOT, 'dist');
+      const distDir = path.resolve(REPO_ROOT, 'dist');
 
       if (!fs.existsSync(distDir)) {
         fs.mkdirSync(distDir, { recursive: true });

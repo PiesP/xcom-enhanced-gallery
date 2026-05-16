@@ -6,7 +6,6 @@
  */
 
 import * as path from 'node:path';
-import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
@@ -24,7 +23,7 @@ const BUILD_DIR = path.dirname(fileURLToPath(import.meta.url));
  * Points to the project root where package.json, src/, and other top-level files are located.
  * Resolved relative to BUILD_DIR (../../).
  */
-export const REPO_ROOT = resolve(BUILD_DIR, '../..');
+export const REPO_ROOT = path.resolve(BUILD_DIR, '../..');
 
 /**
  * Third-party licenses directory (absolute path).
@@ -32,4 +31,4 @@ export const REPO_ROOT = resolve(BUILD_DIR, '../..');
  * Contains .txt and .md license files for third-party dependencies.
  * Located at LICENSES/ in the repository root.
  */
-export const LICENSES_DIR = resolve(REPO_ROOT, 'LICENSES');
+export const LICENSES_DIR = path.resolve(REPO_ROOT, 'LICENSES');

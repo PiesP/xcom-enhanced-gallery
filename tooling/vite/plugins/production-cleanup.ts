@@ -15,6 +15,8 @@
 import { Script } from 'node:vm';
 import type { Plugin } from 'vite';
 
+import { escapeRegExp } from '../../node/tsconfig-aliases-core';
+
 const DEBUG_VALIDATE_STEPS = process.env.XEG_DEBUG_VALIDATE_PROD_CLEANUP === '1';
 
 /**
@@ -57,17 +59,6 @@ function assertParsableJsFinal(code: string): void {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`[production-cleanup] Final bundle is unparsable: ${message}`);
   }
-}
-
-/**
- * Escapes special characters in a string for use in RegExp patterns.
- *
- * @param source - String to escape
- * @returns Escaped string safe for RegExp literal
- * @internal
- */
-function escapeRegExp(source: string): string {
-  return source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 type JsStripMode = 'code' | 'single' | 'double' | 'template' | 'regex';

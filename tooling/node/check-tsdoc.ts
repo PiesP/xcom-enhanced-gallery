@@ -12,7 +12,6 @@ import path from 'node:path';
 import * as tsdoc from '@microsoft/tsdoc';
 
 const { TSDocConfiguration, TSDocParser } = tsdoc;
-type ParserMessageLog = tsdoc.ParserMessageLog;
 
 const SOURCE_ROOT = path.resolve(process.cwd(), 'src');
 const ALLOWED_EXTENSIONS = new Set(['.ts', '.tsx']);
@@ -30,9 +29,7 @@ function collectSourceFiles(root: string): string[] {
   function walk(current: string): void {
     const entries = fs.readdirSync(current, { withFileTypes: true });
     for (const entry of entries) {
-      if (entry.name.startsWith('.')) {
-        continue;
-      }
+      if (entry.name.startsWith('.')) continue;
 
       const fullPath = path.join(current, entry.name);
       if (entry.isDirectory()) {
@@ -40,47 +37,20 @@ function collectSourceFiles(root: string): string[] {
         continue;
       }
 
-      const ext = path.extname(entry.name);
-      if (ALLOWED_EXTENSIONS.has(ext)) {
+      if (ALLOWED_EXTENSIONS.has(path.extname(entry.name))) {
         files.push(fullPath);
       }
     }
   }
 
-  if (fs.existsSync(root)) {
-    walk(root);
-  }
-
+  if (fs.existsSync(root)) walk(root);
   return files;
-}
-
-function formatLocation(filePath: string, line: number, column: number): string {
-  const rel = path.relative(process.cwd(), filePath);
-  return `${rel}:${line + 1}:${column + 1}`;
-}
-
-function logMessage(entry: LogEntry): void {
-  const location = formatLocation(entry.filePath, entry.line, entry.column);
-  process.stderr.write(`[tsdoc:error] ${location} ${entry.message}\n`);
-}
-
-function collectMessages(log: ParserMessageLog, filePath: string, results: LogEntry[]): void {
-  for (const message of log.messages) {
-    results.push({
-      filePath,
-      line: 0,
-      column: 0,
-      message: message.unformattedText,
-    });
-  }
 }
 
 function buildLineStarts(buffer: string): number[] {
   const starts = [0];
-  for (let i = 0; i < buffer.length; i += 1) {
-    if (buffer[i] === '\n') {
-      starts.push(i + 1);
-    }
+  for (let i = 0; i < buffer.length; i++) {
+    if (buffer[i] === '\n') starts.push(i + 1);
   }
   return starts;
 }
@@ -91,7 +61,7 @@ function findLineAndColumn(lineStarts: readonly number[], index: number): [numbe
   let high = lineStarts.length - 1;
 
   while (low <= high) {
-    const mid = Math.floor((low + high) / 2);
+    const mid = (low + high) >>> 1;
     const start = lineStarts[mid] ?? 0;
     const next = lineStarts[mid + 1];
 
@@ -105,32 +75,23 @@ function findLineAndColumn(lineStarts: readonly number[], index: number): [numbe
     }
   }
 
-  const column = index - (lineStarts[line] ?? 0);
-  return [line, column];
+  return [line, index - (lineStarts[line] ?? 0)];
 }
 
 function validateFile(parser: tsdoc.TSDocParser, filePath: string, results: LogEntry[]): void {
   const source = fs.readFileSync(filePath, 'utf8');
   const blockRegex = /\/\*\*[\s\S]*?\*\//g;
   const lineStarts = buildLineStarts(source);
-  const matches = source.matchAll(blockRegex);
 
-  for (const match of matches) {
+  for (const match of source.matchAll(blockRegex)) {
     const block = match[0];
     const blockIndex = match.index ?? 0;
     const parsed = parser.parseString(block);
-    if (parsed.log.messages.length > 0) {
-      const beforeCount = results.length;
-      collectMessages(parsed.log, filePath, results);
-      for (let i = beforeCount; i < results.length; i += 1) {
-        const entry = results[i];
-        if (!entry) continue;
-        const message = parsed.log.messages[i - beforeCount];
-        if (!message) continue;
-        const absoluteIndex = blockIndex + message.textRange.pos;
-        const [line, column] = findLineAndColumn(lineStarts, absoluteIndex);
-        results[i] = { ...entry, line, column };
-      }
+
+    for (const msg of parsed.log.messages) {
+      const absoluteIndex = blockIndex + msg.textRange.pos;
+      const [line, column] = findLineAndColumn(lineStarts, absoluteIndex);
+      results.push({ filePath, line, column, message: msg.unformattedText });
     }
   }
 }
@@ -158,7 +119,10 @@ function main(): void {
   }
 
   for (const entry of results) {
-    logMessage(entry);
+    const rel = path.relative(process.cwd(), entry.filePath);
+    process.stderr.write(
+      `[tsdoc:error] ${rel}:${entry.line + 1}:${entry.column + 1} ${entry.message}\n`
+    );
   }
 
   process.stderr.write('TSDoc check failed.\n');

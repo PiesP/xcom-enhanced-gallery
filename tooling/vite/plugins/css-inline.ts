@@ -15,6 +15,10 @@ import { getBuildModeConfig } from '../build-mode';
 import { STYLE_ID } from '../constants';
 import type { BuildModeConfig } from '../types';
 
+function escapeRegExp(source: string): string {
+  return source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /**
  * Remove CSS block comments while preserving content in string literals.
  *
@@ -361,8 +365,7 @@ function shortenCssVariables(css: string): string {
   );
 
   for (const [longName, shortName] of sortedEntries) {
-    const escapedLong = longName.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
-    result = result.replace(new RegExp(escapedLong, 'g'), shortName);
+    result = result.replace(new RegExp(escapeRegExp(longName), 'g'), shortName);
   }
 
   return result;
@@ -464,8 +467,7 @@ function pruneUnusedCustomProperties(css: string): string {
     // Longest-first helps avoid partial overlaps (e.g. `--x` vs `--x1`).
     const deadNames = Array.from(dead).sort((a, b) => b.length - a.length);
     for (const name of deadNames) {
-      const escaped = name.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
-      next = next.replace(new RegExp(`--${escaped}\\s*:[^;{}]*;`, 'g'), '');
+      next = next.replace(new RegExp(`--${escapeRegExp(name)}\\s*:[^;{}]*;`, 'g'), '');
     }
 
     if (next === result) {

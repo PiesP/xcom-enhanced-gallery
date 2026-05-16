@@ -18,7 +18,7 @@ export type ViteAliasEntry = {
  * @param input - The string to escape
  * @returns The escaped string safe for regex use
  */
-function escapeRegExp(input: string): string {
+export function escapeRegExp(input: string): string {
   return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 

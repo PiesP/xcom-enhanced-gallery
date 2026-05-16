@@ -6,8 +6,7 @@
  * - Copies third-party license directory to dist
  * - Generates combined license document
  *
- * Runs in the post-build phase after bundle generation,
- * ensuring all licenses are properly included in the distribution.
+ * Runs in the post-build phase after bundle generation.
  */
 
 import * as fs from 'node:fs';
@@ -24,72 +23,7 @@ const DIST_DIR = path.resolve(REPO_ROOT, 'dist');
 const PROJECT_LICENSE_PATH = path.resolve(REPO_ROOT, 'LICENSE');
 
 /**
- * Read file contents with null-safe handling.
- *
- * Returns null if the file does not exist, preventing errors
- * when optional license files are missing.
- *
- * @param filePath Absolute path to the file to read
- * @returns File contents (trimmed) or null if file doesn't exist
- */
-function readTextIfExists(filePath: string): string | null {
-  if (!fs.existsSync(filePath)) return null;
-  return fs.readFileSync(filePath, 'utf8').trim();
-}
-
-/**
- * Ensure a directory exists, creating it recursively if needed.
- *
- * Safe to call on an existing directory (no-op).
- *
- * @param dirPath Absolute path to the directory to ensure
- */
-function ensureDir(dirPath: string): void {
-  fs.mkdirSync(dirPath, { recursive: true });
-}
-
-/**
- * Copy a file to a destination path if the source exists.
- *
- * Silently skips if the source file does not exist.
- * Overwrites destination if it exists.
- *
- * @param sourcePath Absolute path to the source file
- * @param destPath Absolute path to the destination
- */
-function copyFileIfExists(sourcePath: string, destPath: string): void {
-  if (!fs.existsSync(sourcePath)) return;
-  fs.copyFileSync(sourcePath, destPath);
-}
-
-/**
- * Copy a directory to a destination path if the source exists.
- *
- * Silently skips if the source directory does not exist.
- * Removes destination directory first if it already exists.
- *
- * @param sourcePath Absolute path to the source directory
- * @param destPath Absolute path to the destination
- */
-function copyDirIfExists(sourcePath: string, destPath: string): void {
-  if (!fs.existsSync(sourcePath)) return;
-  if (fs.existsSync(destPath)) {
-    fs.rmSync(destPath, { recursive: true, force: true });
-  }
-  fs.cpSync(sourcePath, destPath, { recursive: true });
-}
-
-/**
  * Build a combined license document from project and third-party licenses.
- *
- * Format:
- * 1. Project license (if present)
- * 2. Section separator
- * 3. Third-party licenses (each with name, file name, and full text)
- *
- * @param projectLicense Project license text (null if not present)
- * @param licenses Array of third-party license information
- * @returns Formatted license document as a single string
  */
 function buildCombinedLicenseText(
   projectLicense: string | null,
@@ -126,15 +60,6 @@ function buildCombinedLicenseText(
 
 /**
  * Create a Vite plugin that manages license assets.
- *
- * During the post-build phase:
- * 1. Ensures dist directory exists
- * 2. Reads project and third-party licenses
- * 3. Copies project LICENSE file to dist
- * 4. Copies third-party license directory to dist
- * 5. Generates a combined license document
- *
- * @returns Vite Plugin with closeBundle hook
  */
 export function licenseAssetsPlugin(): Plugin {
   return {
@@ -143,20 +68,28 @@ export function licenseAssetsPlugin(): Plugin {
     enforce: 'post',
 
     closeBundle(): void {
-      ensureDir(DIST_DIR);
+      fs.mkdirSync(DIST_DIR, { recursive: true });
 
-      const projectLicense = readTextIfExists(PROJECT_LICENSE_PATH);
+      const projectLicense = fs.existsSync(PROJECT_LICENSE_PATH)
+        ? fs.readFileSync(PROJECT_LICENSE_PATH, 'utf8').trim()
+        : null;
       const licenses = aggregateLicenses(LICENSES_DIR);
 
-      const outputProjectLicense = path.join(DIST_DIR, LICENSE_OUTPUT_FILES.project);
-      const outputThirdPartyDir = path.join(DIST_DIR, LICENSE_OUTPUT_FILES.thirdPartyDir);
-      const outputCombined = path.join(DIST_DIR, LICENSE_OUTPUT_FILES.combined);
+      // Copy project LICENSE
+      if (fs.existsSync(PROJECT_LICENSE_PATH)) {
+        fs.copyFileSync(PROJECT_LICENSE_PATH, path.join(DIST_DIR, LICENSE_OUTPUT_FILES.project));
+      }
 
-      copyFileIfExists(PROJECT_LICENSE_PATH, outputProjectLicense);
-      copyDirIfExists(LICENSES_DIR, outputThirdPartyDir);
+      // Copy third-party licenses directory
+      if (fs.existsSync(LICENSES_DIR)) {
+        const dest = path.join(DIST_DIR, LICENSE_OUTPUT_FILES.thirdPartyDir);
+        if (fs.existsSync(dest)) fs.rmSync(dest, { recursive: true, force: true });
+        fs.cpSync(LICENSES_DIR, dest, { recursive: true });
+      }
 
+      // Write combined license file
       const combinedText = buildCombinedLicenseText(projectLicense, licenses);
-      fs.writeFileSync(outputCombined, combinedText, 'utf8');
+      fs.writeFileSync(path.join(DIST_DIR, LICENSE_OUTPUT_FILES.combined), combinedText, 'utf8');
     },
   };
 }
