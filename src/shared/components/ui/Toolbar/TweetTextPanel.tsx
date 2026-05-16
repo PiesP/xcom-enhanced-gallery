@@ -153,17 +153,19 @@ const renderTweetTokens = (tokens: readonly TweetToken[]): JSXElement =>
 
 /**
  * Tweet URL link component
- * @param props - Component props
- * @returns JSX element
  */
-function TweetUrlLink(props: { readonly url: string; readonly label: string }): JSXElement {
-  const translate = useTranslation();
+function TweetUrlLink(props: {
+  readonly url: string;
+  readonly label: string;
+  readonly translate: ReturnType<typeof useTranslation>;
+}): JSXElement {
+  const t = props.translate;
 
   return (
     <div class={styles.tweetUrlSection}>
       <a href={props.url} target="_blank" rel="noopener noreferrer" class={styles.tweetUrlLink}>
         <LucideIcon name="external-link" size={14} class={styles.tweetUrlIcon} />
-        <span class={styles.tweetUrlLabel}>{translate('tb.twUrl')}</span>
+        <span class={styles.tweetUrlLabel}>{t('tb.twUrl')}</span>
         <span class={styles.tweetUrlValue}>{props.label}</span>
       </a>
     </div>
@@ -188,7 +190,9 @@ export function TweetTextPanel(props: TweetTextPanelProps): JSXElement {
         <span class={styles.tweetTextLabel}>{translate('tb.twTxt')}</span>
       </div>
       <div class={styles.tweetContent} data-gallery-scrollable="true">
-        {safeTweetUrl && <TweetUrlLink url={safeTweetUrl} label={tweetUrlLabel} />}
+        {safeTweetUrl && (
+          <TweetUrlLink url={safeTweetUrl} label={tweetUrlLabel} translate={translate} />
+        )}
         {safeTweetUrl && tokens.length > 0 && <div class={styles.tweetUrlDivider} />}
         <span>{renderTweetTokens(tokens)}</span>
       </div>

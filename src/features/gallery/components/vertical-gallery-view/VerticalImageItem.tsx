@@ -35,7 +35,7 @@ const FIT_MODE_CLASSES: Record<ImageFitMode, string | undefined> = {
  */
 export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | null {
   // NOTE: Do not destructure reactive props in Solid. Use splitProps to preserve reactivity.
-  const [local] = splitProps(props as VerticalImageItemProps & { readonly isVisible?: boolean }, [
+  const [local] = splitProps(props, [
     'media',
     'index',
     'isActive',

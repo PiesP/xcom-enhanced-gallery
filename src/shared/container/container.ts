@@ -23,7 +23,7 @@ export {
  * from the Shared layer (DIP violation).
  */
 export interface GalleryRendererLike {
-  render(mediaItems: readonly MediaInfo[], options?: Record<string, unknown>): Promise<void>;
+  render(mediaItems: readonly MediaInfo[], options?: Record<string, unknown>): void;
   close(): void;
   isRendering(): boolean;
 }
@@ -57,10 +57,6 @@ export function getLanguageService(): LanguageService {
 
 export function getMediaService(): MediaService {
   return MediaService.getInstance();
-}
-
-export function getGalleryRenderer() {
-  return getRenderer();
 }
 
 export function getDownloadOrchestrator(): DownloadOrchestrator {

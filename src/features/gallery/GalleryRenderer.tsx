@@ -174,10 +174,7 @@ export class GalleryRenderer {
     }
   }
 
-  async render(
-    mediaItems: readonly MediaInfo[],
-    renderOptions?: GalleryRenderOptions
-  ): Promise<void> {
+  render(mediaItems: readonly MediaInfo[], renderOptions?: GalleryRenderOptions): void {
     openGallery(mediaItems, renderOptions?.startIndex ?? 0);
   }
 
