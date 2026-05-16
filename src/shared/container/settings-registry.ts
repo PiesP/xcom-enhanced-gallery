@@ -29,11 +29,6 @@ export function tryGetSettings(): SettingsLike | null {
   return _settings;
 }
 
-/** @deprecated Use registerSettings instead */
-export function registerSettingsManager(settings: SettingsLike): void {
-  registerSettings(settings);
-}
-
 export function tryGetSettingsManager<T = unknown>(): T | null {
   return tryGetSettings() as T | null;
 }
