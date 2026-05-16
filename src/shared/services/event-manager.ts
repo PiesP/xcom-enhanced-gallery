@@ -82,7 +82,7 @@ export class EventManager {
   }
 
   /** Initialize service (idempotent) */
-  public async initialize(): Promise<void> {
+  public initialize(): void {
     if (this._initialized) return;
     this.isDestroyed = false;
     if (__DEV__) logger.debug('EventManager initialized');

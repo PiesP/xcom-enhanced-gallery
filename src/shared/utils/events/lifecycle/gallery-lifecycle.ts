@@ -80,10 +80,10 @@ function registerListeners(
   }
 }
 
-export async function initializeGalleryEvents(
+export function initializeGalleryEvents(
   handlers: EventHandlers,
   optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement
-): Promise<() => void> {
+): () => void {
   if (lifecycleState.initialized) {
     if (__DEV__) logger.warn('[GalleryLifecycle] Re-initializing, cleaning up previous listeners');
     cleanupGalleryEvents();

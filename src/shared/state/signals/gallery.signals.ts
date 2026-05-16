@@ -127,10 +127,6 @@ export function setError(error: string | null): void {
   }
 }
 
-export function subscribeIsOpen(cb: (v: boolean) => void): () => void {
-  return effectSafe(() => cb(isOpenSig()));
-}
-
 function applyGallerySessionUpdate(state: GallerySessionState): void {
   batch(() => {
     setMediaItems(state.mediaItems);

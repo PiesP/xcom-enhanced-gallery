@@ -1,6 +1,6 @@
 /** @fileoverview Unified download service: single + bulk (ZIP) via GM_download. */
 
-import { planBulkDownload, planZipSave } from '@shared/core/download/download-plan';
+import { planBulkDownload } from '@shared/core/download/download-plan';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import {
@@ -209,7 +209,8 @@ export class DownloadOrchestrator {
     options: DownloadOptions,
     capability: DownloadCapability
   ): Promise<{ success: boolean; error?: string }> {
-    const saveStrategy = planZipSave(capability.method);
+    const saveStrategy: 'gm_download' | 'none' =
+      capability.method === 'gm_download' ? 'gm_download' : 'none';
 
     if (saveStrategy === 'gm_download' && capability.gmDownload) {
       return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename, options.onProgress);

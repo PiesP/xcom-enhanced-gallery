@@ -46,7 +46,7 @@ function runCssAnimation(element: Element, className: string): Promise<void> {
  * @param element - Gallery container element to animate
  * @returns Promise resolving when fade-in completes
  */
-export async function animateGalleryEnter(element: Element): Promise<void> {
+export function animateGalleryEnter(element: Element): Promise<void> {
   return runCssAnimation(element, ANIMATION_CLASSES.FADE_IN);
 }
 
@@ -56,6 +56,6 @@ export async function animateGalleryEnter(element: Element): Promise<void> {
  * @param element - Gallery container element to animate
  * @returns Promise resolving when fade-out completes
  */
-export async function animateGalleryExit(element: Element): Promise<void> {
+export function animateGalleryExit(element: Element): Promise<void> {
   return runCssAnimation(element, ANIMATION_CLASSES.FADE_OUT);
 }

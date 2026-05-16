@@ -25,8 +25,6 @@ interface BulkDownloadPlan {
   readonly zipFilename: string;
 }
 
-type ZipSaveStrategy = 'gm_download' | 'none';
-
 /** Helper to generate filename with optional time source */
 function generateDesiredName(media: MediaInfo, nowMs?: number): string {
   return nowMs === undefined
@@ -61,6 +59,3 @@ export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownload
  * @param method - Available download method
  * @returns Strategy for saving the ZIP file
  */
-export function planZipSave(method: 'gm_download' | 'none'): ZipSaveStrategy {
-  return method === 'gm_download' ? 'gm_download' : 'none';
-}

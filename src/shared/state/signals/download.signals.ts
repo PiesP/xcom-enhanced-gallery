@@ -15,10 +15,6 @@ export function acquireDownloadLock(): (() => void) | null {
   };
 }
 
-export function isDownloadLocked(): boolean {
-  return _isProcessing();
-}
-
 export const downloadState = {
   get value(): { isProcessing: boolean } {
     return { isProcessing: _isProcessing() };

@@ -65,7 +65,7 @@ export class GalleryApp {
     const enableKeyboard =
       typeof enableKeyboardSetting === 'boolean' ? enableKeyboardSetting : true;
 
-    await initializeGalleryEvents(
+    initializeGalleryEvents(
       {
         onMediaClick: (element, event) => this.handleMediaClick(element, event),
         onGalleryClose: () => this.closeGallery(),

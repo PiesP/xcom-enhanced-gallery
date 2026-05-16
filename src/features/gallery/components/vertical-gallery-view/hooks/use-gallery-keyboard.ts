@@ -10,19 +10,15 @@ interface UseGalleryKeyboardOptions {
   readonly onClose: () => void;
 }
 
+function isEditableTarget(target: EventTarget | null | undefined): boolean {
+  const element = target as HTMLElement | null;
+  if (!element) return false;
+  const tag = element.tagName?.toUpperCase();
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!element.isContentEditable;
+}
+
 export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void {
   createEffect(() => {
-    if (typeof document === 'undefined') return;
-
-    const isEditableTarget = (target: EventTarget | null | undefined): boolean => {
-      const element = target as HTMLElement | null;
-      if (!element) return false;
-      const tag = element.tagName?.toUpperCase();
-      return (
-        tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!element.isContentEditable
-      );
-    };
-
     const handleKeyDown = (event: Event): void => {
       const keyboardEvent = event as KeyboardEvent;
       if (isEditableTarget(keyboardEvent.target)) return;

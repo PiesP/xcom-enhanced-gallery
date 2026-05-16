@@ -1,7 +1,6 @@
 import { getUserscript, type UserscriptAPI } from '@shared/external/userscript/adapter';
 
 export interface PersistentStorageGetOptions {
-  readonly warnOnParseErrorOnce?: boolean;
   readonly selfHealOnParseError?: boolean;
 }
 
