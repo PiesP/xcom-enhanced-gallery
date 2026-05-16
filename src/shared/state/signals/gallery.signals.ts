@@ -138,18 +138,6 @@ function applyGallerySessionUpdate(state: GallerySessionState): void {
   });
 }
 
-/** @deprecated Use applyGallerySessionUpdate instead */
-export function applyGalleryStateUpdate(state: GalleryState): void {
-  applyGallerySessionUpdate({
-    isOpen: state.isOpen,
-    mediaItems: state.mediaItems,
-    currentIndex: state.currentIndex,
-    focusedIndex: state.currentIndex,
-    currentVideoElement: null,
-    error: state.error,
-  });
-}
-
 export const galleryState = {
   get value(): GalleryState {
     return {
@@ -163,7 +151,14 @@ export const galleryState = {
   },
 
   set value(state: GalleryState) {
-    applyGalleryStateUpdate(state);
+    applyGallerySessionUpdate({
+      isOpen: state.isOpen,
+      mediaItems: state.mediaItems,
+      currentIndex: state.currentIndex,
+      focusedIndex: state.currentIndex,
+      currentVideoElement: null,
+      error: state.error,
+    });
   },
 
   subscribe(callback: (state: GalleryState) => void): () => void {
