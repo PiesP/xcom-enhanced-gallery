@@ -1,8 +1,3 @@
-/**
- * @fileoverview Userscript API adapter for Tampermonkey/Greasemonkey/Violentmonkey
- * @description Minimal surface for GM_* binding resolution and wrapping
- */
-
 import type { CookieAPI } from '@shared/types/core/cookie.types';
 import type {
   GMNotificationDetails,
@@ -23,54 +18,27 @@ export interface UserscriptAPI {
 }
 
 export interface ResolvedGMAPIs {
-  readonly download: unknown;
-  readonly setValue: unknown;
-  readonly getValue: unknown;
-  readonly deleteValue: unknown;
-  readonly listValues: unknown;
-  readonly xmlHttpRequest: unknown;
-  readonly notification: unknown;
-  readonly cookie: CookieAPI | undefined;
-}
-
-interface GlobalWithGM {
-  GM_download?: (url: string, filename: string) => void;
-  GM_setValue?: (key: string, value: unknown) => Promise<void> | void;
-  GM_getValue?: <T>(key: string, defaultValue?: T) => Promise<T> | T;
-  GM_deleteValue?: (key: string) => Promise<void> | void;
-  GM_listValues?: () => Promise<string[]> | string[];
-  GM_xmlhttpRequest?: (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl;
-  GM_notification?: (details: GMNotificationDetails, ondone?: () => void) => void;
-  GM_cookie?: CookieAPI;
+  download: unknown;
+  setValue: unknown;
+  getValue: unknown;
+  deleteValue: unknown;
+  listValues: unknown;
+  xmlHttpRequest: unknown;
+  notification: unknown;
+  cookie: CookieAPI | undefined;
 }
 
 function resolveGMAPIs(): ResolvedGMAPIs {
-  const global = globalThis as unknown as GlobalWithGM;
-
-  const download = typeof GM_download !== 'undefined' ? GM_download : global.GM_download;
-  const setValue = typeof GM_setValue !== 'undefined' ? GM_setValue : global.GM_setValue;
-  const getValue = typeof GM_getValue !== 'undefined' ? GM_getValue : global.GM_getValue;
-  const deleteValue =
-    typeof GM_deleteValue !== 'undefined' ? GM_deleteValue : global.GM_deleteValue;
-  const listValues = typeof GM_listValues !== 'undefined' ? GM_listValues : global.GM_listValues;
-  const xmlHttpRequest =
-    typeof GM_xmlhttpRequest !== 'undefined' ? GM_xmlhttpRequest : global.GM_xmlhttpRequest;
-  const notification =
-    typeof GM_notification !== 'undefined' ? GM_notification : global.GM_notification;
-
-  const cookieCandidate = typeof GM_cookie !== 'undefined' ? GM_cookie : global.GM_cookie;
-  const cookie =
-    cookieCandidate && typeof cookieCandidate.list === 'function' ? cookieCandidate : undefined;
-
+  const g = globalThis as unknown as Record<string, unknown>;
   return {
-    download,
-    setValue,
-    getValue,
-    deleteValue,
-    listValues,
-    xmlHttpRequest,
-    cookie,
-    notification,
+    download: g.GM_download,
+    setValue: g.GM_setValue,
+    getValue: g.GM_getValue,
+    deleteValue: g.GM_deleteValue,
+    listValues: g.GM_listValues,
+    xmlHttpRequest: g.GM_xmlhttpRequest,
+    notification: g.GM_notification,
+    cookie: g.GM_cookie as CookieAPI | undefined,
   };
 }
 
@@ -84,7 +52,7 @@ export function getResolvedGMAPIsCached(): ResolvedGMAPIs {
 }
 
 function asFunction<T>(value: unknown): T | undefined {
-  return typeof value === 'function' ? (value as unknown as T) : undefined;
+  return typeof value === 'function' ? (value as T) : undefined;
 }
 
 export function resolveGMDownload(): unknown {
@@ -92,20 +60,23 @@ export function resolveGMDownload(): unknown {
 }
 
 function createUserscriptAPI(): UserscriptAPI {
-  const resolved = getResolvedGMAPIsCached();
-  const gmDownload = asFunction<NonNullable<GlobalWithGM['GM_download']>>(resolved.download);
-  const gmSetValue = asFunction<NonNullable<GlobalWithGM['GM_setValue']>>(resolved.setValue);
-  const gmGetValue = asFunction<NonNullable<GlobalWithGM['GM_getValue']>>(resolved.getValue);
-  const gmDeleteValue = asFunction<NonNullable<GlobalWithGM['GM_deleteValue']>>(
-    resolved.deleteValue
+  const g = getResolvedGMAPIsCached();
+
+  const gmDownload = asFunction<(url: string, filename: string) => void>(g.download);
+  const gmSetValue = asFunction<(key: string, value: unknown) => Promise<void> | void>(g.setValue);
+  const gmGetValue = asFunction<<T>(key: string, defaultValue?: T) => Promise<T> | T>(g.getValue);
+  const gmDeleteValue = asFunction<(key: string) => Promise<void> | void>(g.deleteValue);
+  const gmListValues = asFunction<() => Promise<string[]> | string[]>(g.listValues);
+  const gmXmlHttpRequest = asFunction<
+    (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl
+  >(g.xmlHttpRequest);
+  const gmNotification = asFunction<(details: GMNotificationDetails, ondone?: () => void) => void>(
+    g.notification
   );
-  const gmListValues = asFunction<NonNullable<GlobalWithGM['GM_listValues']>>(resolved.listValues);
-  const gmXmlHttpRequest = asFunction<NonNullable<GlobalWithGM['GM_xmlhttpRequest']>>(
-    resolved.xmlHttpRequest
-  );
-  const gmNotification = asFunction<NonNullable<GlobalWithGM['GM_notification']>>(
-    resolved.notification
-  );
+
+  const cookieCandidate = g.cookie;
+  const cookie =
+    cookieCandidate && typeof cookieCandidate.list === 'function' ? cookieCandidate : undefined;
 
   return {
     async download(url: string, filename: string): Promise<void> {
@@ -147,7 +118,7 @@ function createUserscriptAPI(): UserscriptAPI {
         // Optional capability: notification failures should not affect callers.
       }
     },
-    cookie: resolved.cookie,
+    cookie,
   };
 }
 
