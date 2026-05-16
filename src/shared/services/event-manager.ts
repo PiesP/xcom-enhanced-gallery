@@ -210,7 +210,7 @@ export class EventManager {
     const entries = Array.from(this.listeners.entries());
     this.listeners.clear();
 
-    for (const [id, ctx] of entries) {
+    for (const [_id, ctx] of entries) {
       try {
         ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
       } catch {

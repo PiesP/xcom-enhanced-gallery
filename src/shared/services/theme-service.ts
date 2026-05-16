@@ -7,7 +7,6 @@ import { tryGetSettings } from '@shared/container/settings-registry';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
-import { PersistentStorage } from '@shared/services/persistent-storage';
 
 const MAX_RECURSION_DEPTH = 5;
 
@@ -45,7 +44,6 @@ let _themeInstance: ThemeService | null = null;
 
 export class ThemeService implements ThemeServiceContract {
   private _initialized = false;
-  private readonly storage = PersistentStorage.getInstance();
   private currentTheme: Theme = 'light';
   private themeSetting: ThemeSetting = 'auto';
   private readonly listeners: Set<ThemeChangeListener> = new Set();
