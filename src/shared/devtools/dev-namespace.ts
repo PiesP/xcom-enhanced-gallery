@@ -19,7 +19,7 @@ type DevNamespaceHost = typeof globalThis & {
  * @returns The development namespace, or `undefined` in production
  */
 function ensureDevNamespace(): DevNamespace | undefined {
-  if (!import.meta.env.DEV) {
+  if (!__DEV__) {
     return undefined;
   }
 

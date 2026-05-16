@@ -7,7 +7,7 @@ import { logger } from '@shared/logging/logger';
 import { createId, createPrefixedId } from '@shared/utils/id/create-id';
 
 // ============================================================================
-// Internal listener registry (previously in listener-manager.ts)
+// Internal listener registry
 // ============================================================================
 
 interface ListenerContext {
@@ -29,9 +29,6 @@ let _eventManagerInstance: EventManager | null = null;
  * Singleton EventManager with context-based listener grouping.
  */
 export class EventManager {
-  private _initialized = false;
-  private isDestroyed = false;
-
   private readonly listeners = new Map<string, ListenerContext>();
 
   private constructor() {}
@@ -48,26 +45,6 @@ export class EventManager {
     _eventManagerInstance = null;
   }
 
-  /** Initialize service (idempotent) */
-  public initialize(): void {
-    if (this._initialized) return;
-    this.isDestroyed = false;
-    if (__DEV__) logger.debug('EventManager initialized');
-    this._initialized = true;
-  }
-
-  /** Destroy service (idempotent) */
-  public destroy(): void {
-    if (!this._initialized) return;
-    this.cleanup();
-    this._initialized = false;
-  }
-
-  /** Check if service is initialized */
-  public isInitialized(): boolean {
-    return this._initialized;
-  }
-
   /**
    * Add event listener with tracking and optional context for grouping.
    */
@@ -77,11 +54,6 @@ export class EventManager {
     listener: EventListener,
     options?: AddEventListenerOptions & { context?: string }
   ): string | null {
-    if (this.isDestroyed) {
-      logger.warn('EventManager: addEventListener called on destroyed instance');
-      return null;
-    }
-
     const normalized = (options ?? {}) as AddEventListenerOptions & { context?: string };
     const { context, ...listenerOptions } = normalized;
 
@@ -148,11 +120,6 @@ export class EventManager {
     return count;
   }
 
-  /** Check if destroyed */
-  public getIsDestroyed(): boolean {
-    return this.isDestroyed;
-  }
-
   /** Get listener statistics (dev only) */
   public getListenerStatus() {
     if (!__DEV__) {
@@ -171,10 +138,8 @@ export class EventManager {
     return { total: this.listeners.size, byContext, byType };
   }
 
-  /** Clean up and mark as destroyed */
+  /** Clean up all listeners */
   public cleanup(): void {
-    if (this.isDestroyed) return;
-
     const entries = Array.from(this.listeners.entries());
     this.listeners.clear();
 
@@ -182,11 +147,10 @@ export class EventManager {
       try {
         ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
       } catch {
-        // Swallow errors during cleanup
+        /* ignored during cleanup */
       }
     }
 
-    this.isDestroyed = true;
     if (__DEV__) {
       logger.debug('EventManager cleanup completed');
     }

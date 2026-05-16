@@ -9,7 +9,6 @@
  *
  * @module gallery.signals
  */
-
 import { logger } from '@shared/logging/logger';
 import {
   recordFocusChange,
@@ -19,7 +18,6 @@ import {
   validateFocusParams,
   validateNavigationParams,
 } from '@shared/state/signals/navigation.state';
-import { effectSafe } from '@shared/state/signals/signal-factory';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { NavigationSource } from '@shared/types/navigation.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
@@ -134,12 +132,6 @@ export const galleryState = {
       focusedIndex: state.currentIndex,
       currentVideoElement: null,
       error: state.error,
-    });
-  },
-
-  subscribe(callback: (state: GalleryState) => void): () => void {
-    return effectSafe(() => {
-      callback(galleryState.value);
     });
   },
 };
