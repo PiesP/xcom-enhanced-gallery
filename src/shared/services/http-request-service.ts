@@ -73,6 +73,58 @@ export class HttpRequestService {
 
   private constructor() {}
 
+  private createDeferredWithSettledGuard<T>(signal?: AbortSignal): {
+    promise: Promise<HttpResponse<T>>;
+    safeResolve: (value: HttpResponse<T>) => void;
+    safeReject: (reason: unknown) => void;
+  } {
+    const deferred = createDeferred<HttpResponse<T>>();
+
+    let abortListener: (() => void) | null = null;
+    const cleanupAbortListener = (): void => {
+      if (abortListener && signal) {
+        signal.removeEventListener('abort', abortListener);
+        abortListener = null;
+      }
+    };
+
+    let settled = false;
+    const safeResolve = (value: HttpResponse<T>): void => {
+      if (settled) return;
+      settled = true;
+      try {
+        cleanupAbortListener();
+      } catch {
+        // ignore
+      }
+      deferred.resolve(value);
+    };
+    const safeReject = (reason: unknown): void => {
+      if (settled) return;
+      settled = true;
+      try {
+        cleanupAbortListener();
+      } catch {
+        // ignore
+      }
+      deferred.reject(reason);
+    };
+
+    return { promise: deferred.promise, safeResolve, safeReject };
+  }
+
+  private connectAbortSignal(signal: AbortSignal, control: GMXMLHttpRequestControl): void {
+    const abortListener = (): void => {
+      control.abort();
+    };
+
+    signal.addEventListener('abort', abortListener, { once: true });
+
+    if (signal.aborted) {
+      abortListener();
+    }
+  }
+
   /**
    * Perform HTTP request using GM_xmlhttpRequest
    * Re-introduced for cross-origin support
@@ -82,60 +134,7 @@ export class HttpRequestService {
     url: string,
     options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
-    function createDeferredWithSettledGuard<T>(signal?: AbortSignal): {
-      promise: Promise<HttpResponse<T>>;
-      safeResolve: (value: HttpResponse<T>) => void;
-      safeReject: (reason: unknown) => void;
-    } {
-      const deferred = createDeferred<HttpResponse<T>>();
-
-      let abortListener: (() => void) | null = null;
-      const cleanupAbortListener = (): void => {
-        if (abortListener && signal) {
-          signal.removeEventListener('abort', abortListener);
-          abortListener = null;
-        }
-      };
-
-      let settled = false;
-      const safeResolve = (value: HttpResponse<T>): void => {
-        if (settled) return;
-        settled = true;
-        try {
-          cleanupAbortListener();
-        } catch {
-          // ignore
-        }
-        deferred.resolve(value);
-      };
-      const safeReject = (reason: unknown): void => {
-        if (settled) return;
-        settled = true;
-        try {
-          cleanupAbortListener();
-        } catch {
-          // ignore
-        }
-        deferred.reject(reason);
-      };
-
-      return { promise: deferred.promise, safeResolve, safeReject };
-    }
-
-    function connectAbortSignal(signal: AbortSignal, control: GMXMLHttpRequestControl): void {
-      const abortListener = (): void => {
-        control.abort();
-      };
-
-      signal.addEventListener('abort', abortListener, { once: true });
-
-      // Handle races where the signal is aborted right after the request starts.
-      if (signal.aborted) {
-        abortListener();
-      }
-    }
-
-    const { promise, safeResolve, safeReject } = createDeferredWithSettledGuard<T>(options?.signal);
+    const { promise, safeResolve, safeReject } = this.createDeferredWithSettledGuard<T>(options?.signal);
 
     try {
       const userscript = getUserscript();
@@ -175,7 +174,6 @@ export class HttpRequestService {
         },
       };
 
-      // Avoid passing `responseType: undefined` to GM implementations.
       if (options?.responseType) {
         details.responseType = options.responseType as Exclude<
           GMXMLHttpRequestDetails['responseType'],
@@ -191,7 +189,7 @@ export class HttpRequestService {
       const control = userscript.xmlHttpRequest(details);
 
       if (options?.signal) {
-        connectAbortSignal(options.signal, control);
+        this.connectAbortSignal(options.signal, control);
       }
     } catch (error) {
       safeReject(error);
