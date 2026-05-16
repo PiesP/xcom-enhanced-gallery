@@ -3,7 +3,6 @@
  * System theme detection and application service
  */
 
-import { APP_SETTINGS_STORAGE_KEY } from '@constants/settings';
 import { tryGetSettings } from '@shared/container/settings-registry';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';
@@ -47,15 +46,21 @@ let _themeInstance: ThemeService | null = null;
 export class ThemeService implements ThemeServiceContract {
   private _initialized = false;
   private readonly storage = PersistentStorage.getInstance();
-  private mediaQueryList: MediaQueryList | null = null;
-  private mediaQueryListener: ((event: MediaQueryListEvent) => void) | null = null;
-  private domEventsController: AbortController | null = null;
   private currentTheme: Theme = 'light';
   private themeSetting: ThemeSetting = 'auto';
   private readonly listeners: Set<ThemeChangeListener> = new Set();
   private boundSettingsService: SettingsServiceLike | null = null;
-  private observer: MutationObserver | null = null;
   private observedThemeScopes: WeakSet<Element> = new WeakSet();
+
+  // Media query state
+  private mediaQueryList: MediaQueryList | null = null;
+  private mediaQueryListener: ((event: MediaQueryListEvent) => void) | null = null;
+  private domEventsController: AbortController | null = null;
+
+  // DOM observation state
+  private observer: MutationObserver | null = null;
+
+  // Recursion guard
   private recursionDepth = 0;
 
   public static getInstance(): ThemeService {
@@ -180,8 +185,8 @@ export class ThemeService implements ThemeServiceContract {
   }
 
   private async restoreThemeSettingFromStorage(): Promise<void> {
-    const saved = await this.loadThemeAsync();
-    if (saved && saved !== this.themeSetting) {
+    const saved = this.boundSettingsService?.get?.('gallery.theme');
+    if (isThemeSetting(saved) && saved !== this.themeSetting) {
       this.themeSetting = saved;
       this.applyCurrentTheme(true);
     }
@@ -307,14 +312,4 @@ export class ThemeService implements ThemeServiceContract {
     }
   }
 
-  private async loadThemeAsync(): Promise<ThemeSetting | null> {
-    try {
-      const snapshot = await this.storage.get<{
-        gallery?: { theme?: ThemeSetting };
-      }>(APP_SETTINGS_STORAGE_KEY);
-      return snapshot?.gallery?.theme ?? null;
-    } catch {
-      return null;
-    }
-  }
 }
