@@ -5,18 +5,6 @@
  */
 
 /**
- * Synchronously cleanupable resource interface
- */
-export interface Cleanupable {
-  /**
-   * Synchronously cleanup and release resources.
-   *
-   * Must be synchronous, idempotent, and not throw errors.
-   */
-  cleanup(): void;
-}
-
-/**
  * Bootstrap stage definition for sequential initialization pipeline.
  *
  * Each stage has a label, run function, optional shouldRun predicate,

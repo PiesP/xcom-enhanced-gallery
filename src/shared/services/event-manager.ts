@@ -5,7 +5,6 @@
 
 import { logger } from '@shared/logging/logger';
 import { createId, createPrefixedId } from '@shared/utils/id/create-id';
-import type { EventHandlers, EventHandlingResult, GalleryEventOptions } from './event-types';
 
 // ============================================================================
 // Internal listener registry (previously in listener-manager.ts)

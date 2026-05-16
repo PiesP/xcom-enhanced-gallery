@@ -39,11 +39,6 @@ export interface MediaInfo {
   /** Quoted tweet URL (quote tweet case) */
   readonly quotedTweetUrl?: string | undefined;
 }
-/** Media entity (with time information) */
-export interface MediaEntity extends MediaInfo {
-  readonly createdAt: Date;
-  readonly updatedAt: Date;
-}
 /** MediaInfoWithFilename - Media information with filename (for download) */
 export interface MediaInfoWithFilename extends MediaInfo {
   /** Media unique identifier (required) */

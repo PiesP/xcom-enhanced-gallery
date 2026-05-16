@@ -76,16 +76,3 @@ export function createScopedLogger(scope: string, config: Partial<LoggerConfig> 
 }
 
 export const logger: Logger = createLogger();
-
-export function logError(
-  error: unknown,
-  context: Readonly<Record<string, unknown>> = {},
-  source?: string
-): void {
-  const message = error instanceof Error ? error.message : String(error);
-  if (source) {
-    createScopedLogger(source).error(message, context);
-    return;
-  }
-  logger.error(message, context);
-}

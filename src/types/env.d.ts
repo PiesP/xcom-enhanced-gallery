@@ -9,9 +9,6 @@ declare const __FEATURE_MEDIA_EXTRACTION__: boolean;
 /** Application version string from package.json. */
 declare const __VERSION__: string;
 
-/** Build timestamp in ISO 8601 format. */
-declare const __BUILD_TIME__: string;
-
 /** Vite-injected environment variables and metadata. */
 interface ImportMetaEnv {
   readonly PROD: boolean;

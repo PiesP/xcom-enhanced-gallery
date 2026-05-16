@@ -102,7 +102,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const mergedStyle = createMemo<JSX.CSSProperties>(() => {
     const base = intrinsicSizingStyle();
-    const extra = (local.style ?? {}) as JSX.CSSProperties;
+    const extra = local.style ?? {};
     return { ...base, ...extra };
   });
 

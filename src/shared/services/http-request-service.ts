@@ -33,8 +33,6 @@ import type {
 } from '@shared/types/core/userscript';
 import { createDeferred } from '@shared/utils/async/promise-helpers';
 
-type HttpRequestData = Exclude<GMXMLHttpRequestDetails['data'], undefined>;
-
 /**
  * HTTP request options
  */
@@ -42,7 +40,7 @@ interface HttpRequestOptions {
   readonly headers?: Record<string, string>;
   readonly timeout?: number; // milliseconds, default: 10000
   readonly responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
-  readonly data?: HttpRequestData;
+  readonly data?: GMXMLHttpRequestDetails['data'];
   readonly signal?: AbortSignal; // for cancellation
 }
 
@@ -218,48 +216,5 @@ export class HttpRequestService {
    */
   async get<T = unknown>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
     return this.request<T>('GET', url, options);
-  }
-
-  /**
-   * Perform a POST request
-   */
-  async post<T = unknown>(
-    url: string,
-    data?: HttpRequestData,
-    options?: HttpRequestOptions
-  ): Promise<HttpResponse<T>> {
-    const nextOptions = data === undefined ? options : { ...options, data };
-    return this.request<T>('POST', url, nextOptions);
-  }
-
-  /**
-   * Perform a PUT request
-   */
-  async put<T = unknown>(
-    url: string,
-    data?: HttpRequestData,
-    options?: HttpRequestOptions
-  ): Promise<HttpResponse<T>> {
-    const nextOptions = data === undefined ? options : { ...options, data };
-    return this.request<T>('PUT', url, nextOptions);
-  }
-
-  /**
-   * Perform a DELETE request
-   */
-  async delete<T = unknown>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
-    return this.request<T>('DELETE', url, options);
-  }
-
-  /**
-   * Perform a PATCH request
-   */
-  async patch<T = unknown>(
-    url: string,
-    data?: HttpRequestData,
-    options?: HttpRequestOptions
-  ): Promise<HttpResponse<T>> {
-    const nextOptions = data === undefined ? options : { ...options, data };
-    return this.request<T>('PATCH', url, nextOptions);
   }
 }

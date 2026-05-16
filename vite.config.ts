@@ -78,7 +78,6 @@ export default defineConfig(({ mode }): UserConfig => {
   const isProd = mode === 'production';
   const config = getBuildModeConfig(mode);
   const version = resolveVersion(isDev);
-  const buildTime = new Date().toISOString();
   const root = REPO_ROOT;
   const entryFile = resolve(root, './src/main.ts');
 
@@ -179,7 +178,6 @@ export default defineConfig(({ mode }): UserConfig => {
       __DEV__: JSON.stringify(isDev),
       __FEATURE_MEDIA_EXTRACTION__: JSON.stringify(featureMediaExtraction),
       __VERSION__: JSON.stringify(version),
-      __BUILD_TIME__: JSON.stringify(buildTime),
     },
 
     logLevel: 'warn',
