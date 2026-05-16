@@ -22,12 +22,13 @@ export function useToolbarAutoHide(options: UseToolbarAutoHideOptions): UseToolb
   const [isInitialToolbarVisible, setIsInitialToolbarVisible] = createSignal<boolean>(
     computeInitialVisibility()
   );
-  let activeTimer: number | null = null;
+  const [activeTimer, setActiveTimer] = createSignal<number | null>(null);
 
   const clearActiveTimer = (): void => {
-    if (activeTimer === null) return;
-    globalTimerManager.clearTimeout(activeTimer);
-    activeTimer = null;
+    const timer = activeTimer();
+    if (timer === null) return;
+    globalTimerManager.clearTimeout(timer);
+    setActiveTimer(null);
   };
 
   createEffect(() => {
@@ -48,10 +49,12 @@ export function useToolbarAutoHide(options: UseToolbarAutoHideOptions): UseToolb
       return;
     }
 
-    activeTimer = globalTimerManager.setTimeout(() => {
-      setIsInitialToolbarVisible(false);
-      activeTimer = null;
-    }, autoHideDelay);
+    setActiveTimer(
+      globalTimerManager.setTimeout(() => {
+        setIsInitialToolbarVisible(false);
+        setActiveTimer(null);
+      }, autoHideDelay)
+    );
   });
 
   return { isInitialToolbarVisible, setIsInitialToolbarVisible };

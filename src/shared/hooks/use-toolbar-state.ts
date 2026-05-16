@@ -31,14 +31,14 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
   const [isDownloading, setIsDownloading] = createSignal(INITIAL_STATE.isDownloading);
   const [isLoading, setIsLoading] = createSignal(INITIAL_STATE.isLoading);
   const [hasError, setHasError] = createSignal(INITIAL_STATE.hasError);
-
-  let lastDownloadToggle = 0;
-  let downloadTimeoutRef: number | null = null;
+  const [lastDownloadToggle, setLastDownloadToggle] = createSignal(0);
+  const [downloadTimeoutRef, setDownloadTimeoutRef] = createSignal<number | null>(null);
 
   const clearDownloadTimeout = (): void => {
-    if (downloadTimeoutRef !== null) {
-      globalTimerManager.clearTimeout(downloadTimeoutRef);
-      downloadTimeoutRef = null;
+    const timer = downloadTimeoutRef();
+    if (timer !== null) {
+      globalTimerManager.clearTimeout(timer);
+      setDownloadTimeoutRef(null);
     }
   };
 
@@ -50,21 +50,23 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     const now = performance.now();
 
     if (downloading) {
-      lastDownloadToggle = now;
+      setLastDownloadToggle(now);
       clearDownloadTimeout();
       setIsDownloading(true);
       setHasError(false);
       return;
     }
 
-    const timeSinceStart = now - lastDownloadToggle;
+    const timeSinceStart = now - lastDownloadToggle();
 
     if (timeSinceStart < DOWNLOAD_MIN_DISPLAY_TIME) {
       clearDownloadTimeout();
-      downloadTimeoutRef = globalTimerManager.setTimeout(() => {
-        setIsDownloading(false);
-        downloadTimeoutRef = null;
-      }, DOWNLOAD_MIN_DISPLAY_TIME - timeSinceStart);
+      setDownloadTimeoutRef(
+        globalTimerManager.setTimeout(() => {
+          setIsDownloading(false);
+          setDownloadTimeoutRef(null);
+        }, DOWNLOAD_MIN_DISPLAY_TIME - timeSinceStart)
+      );
       return;
     }
 
@@ -99,7 +101,7 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
    */
   const resetState = (): void => {
     clearDownloadTimeout();
-    lastDownloadToggle = 0;
+    setLastDownloadToggle(0);
     setIsDownloading(INITIAL_STATE.isDownloading);
     setIsLoading(INITIAL_STATE.isLoading);
     setHasError(INITIAL_STATE.hasError);

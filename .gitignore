@@ -60,5 +60,6 @@ AGENTS.md
 .github/copilot-instructions.md
 .github/prompts/
 .claude/
+.hermes/
 memory/
 .editorconfig

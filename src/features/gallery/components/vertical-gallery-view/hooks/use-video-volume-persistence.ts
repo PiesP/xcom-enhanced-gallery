@@ -48,7 +48,7 @@ export function useVideoVolumePersistence(
   // Guard to prevent handling synthetic volumechange events triggered by us when
   // programmatically applying persisted settings. This avoids races where the event
   // handler reads stale values during the initial apply and overwrites the signal.
-  let isApplyingVideoSettings = false;
+  const [isApplyingVideoSettings, setIsApplyingVideoSettings] = createSignal(false);
 
   const volumeChangeGuard = createVideoVolumeChangeGuard();
 
@@ -69,7 +69,7 @@ export function useVideoVolumePersistence(
       // Apply persisted state while preventing the volumechange handler from
       // reacting to our programmatic assignment. We set both properties under
       // a guard so any intermediate events are ignored.
-      isApplyingVideoSettings = true;
+      setIsApplyingVideoSettings(true);
       try {
         // untrack: Prevent reactive dependencies inside from re-triggering this effect.
         // This ensures we only apply settings once when the video element becomes ready,
@@ -90,7 +90,7 @@ export function useVideoVolumePersistence(
           applyVolumeProgrammatically(video, nextVolume);
         });
       } finally {
-        isApplyingVideoSettings = false;
+        setIsApplyingVideoSettings(false);
       }
     }
   });
@@ -111,7 +111,7 @@ export function useVideoVolumePersistence(
     const video = event.currentTarget as HTMLVideoElement;
     const snapshot = { volume: video.volume, muted: video.muted };
 
-    if (isApplyingVideoSettings || volumeChangeGuard.shouldIgnoreChange(snapshot)) {
+    if (isApplyingVideoSettings() || volumeChangeGuard.shouldIgnoreChange(snapshot)) {
       return;
     }
     const newVolume = normalizeVideoVolumeSetting(snapshot.volume, 1.0);

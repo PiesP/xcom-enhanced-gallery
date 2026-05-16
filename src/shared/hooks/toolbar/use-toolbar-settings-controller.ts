@@ -21,6 +21,8 @@ import type {
   UseToolbarSettingsControllerOptions,
 } from './use-toolbar-settings-controller.types';
 
+// Module-level sequence counter for unique listener context IDs per hook instance.
+// Safe in browser single-threaded environment; no concurrency risk.
 let toolbarSettingsControllerListenerSeq = 0;
 
 const DEFAULTS = {

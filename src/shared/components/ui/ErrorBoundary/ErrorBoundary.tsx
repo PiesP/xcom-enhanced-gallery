@@ -40,19 +40,19 @@ function translateError(error: unknown): { body: string; title: string } {
  * Error Boundary component with localized notifications and retry support.
  */
 export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
-  let lastError: unknown;
+  const [lastError, setLastError] = createSignal<unknown>(undefined);
   const [caughtError, setCaughtError] = createSignal<unknown>(undefined);
   const [mounted, setMounted] = createSignal(true);
 
   const notifyError = (error: unknown): void => {
-    if (lastError === error) return;
-    lastError = error;
+    if (lastError() === error) return;
+    setLastError(error);
     const { title, body } = translateError(error);
     getUserscript().notification({ title, text: body });
   };
 
   const handleRetry = (): void => {
-    lastError = undefined;
+    setLastError(undefined);
     setCaughtError(undefined);
     setMounted(false);
     queueMicrotask(() => setMounted(true));
