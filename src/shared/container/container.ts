@@ -7,11 +7,6 @@ import { LanguageService } from '@shared/services/language-service';
 import { MediaService } from '@shared/services/media-service';
 import { ThemeService } from '@shared/services/theme-service';
 import type { MediaInfo } from '@shared/types/media.types';
-
-export type {
-  SettingPath,
-  SettingValue,
-} from '@shared/container/settings-registry';
 // Re-export settings registry
 export {
   getSettings,
