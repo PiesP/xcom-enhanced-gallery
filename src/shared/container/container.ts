@@ -34,7 +34,7 @@ export interface GalleryRendererLike {
 
 let _renderer: GalleryRendererLike | null = null;
 
-export function registerRenderer(r: GalleryRendererLike): void {
+export function registerGalleryRenderer(r: GalleryRendererLike): void {
   _renderer = r;
 }
 
@@ -46,12 +46,6 @@ export function getRenderer(): GalleryRendererLike {
 export function hasRenderer(): boolean {
   return _renderer !== null;
 }
-
-// ============================================================================
-// Singleton Service Accessors
-// ============================================================================
-
-export { registerRenderer as registerGalleryRenderer };
 
 export function getThemeService(): ThemeService {
   return ThemeService.getInstance();
