@@ -154,7 +154,6 @@ const resolvedAppConfig = Object.freeze({
  * Direct access is internal. External consumers should use {@link createAppConfig}
  * for bootstrap context or for general access.
  */
-const APP_CONFIG: typeof resolvedAppConfig = resolvedAppConfig;
 
 /**
  * Create bootstrap-facing application configuration.
@@ -163,23 +162,13 @@ const APP_CONFIG: typeof resolvedAppConfig = resolvedAppConfig;
  * environment flags, and auto-start setting.
  *
  * @returns Bootstrap configuration object (frozen, read-only)
- *
- * @example
- * ```typescript
- * const config = createAppConfig();
- * if (config.autoStart) {
- *   await bootstrap();
- * }
- * ```
  */
 export function createAppConfig(): AppConfig {
-  const config = APP_CONFIG;
-
   return {
-    version: config.meta.version,
-    isDevelopment: config.environment.isDev,
-    debug: config.features.debugTools,
-    autoStart: config.runtime.autoStart,
+    version: resolvedAppConfig.meta.version,
+    isDevelopment: resolvedAppConfig.environment.isDev,
+    debug: resolvedAppConfig.features.debugTools,
+    autoStart: resolvedAppConfig.runtime.autoStart,
   } as const;
 }
 
