@@ -28,7 +28,6 @@ export interface VideoControlOptions {
   readonly context?: string;
 }
 
-/** Tracks video playback state when Service is unavailable */
 /**
  * Executes video control action on gallery video element.
  *
@@ -76,6 +75,9 @@ export function executeVideoControl(
         break;
       case 'toggleMute':
         video.muted = !video.muted;
+        break;
+      case 'mute':
+        video.muted = true;
         break;
     }
 

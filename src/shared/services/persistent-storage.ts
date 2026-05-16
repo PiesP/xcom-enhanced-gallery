@@ -26,12 +26,6 @@ export class PersistentStorage {
     }
 
     const serialized = typeof value === 'string' ? value : JSON.stringify(value);
-
-    if (serialized === undefined) {
-      await this.userscript.deleteValue(key);
-      return;
-    }
-
     await this.userscript.setValue(key, serialized);
   }
 

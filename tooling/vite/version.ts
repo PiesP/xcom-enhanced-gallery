@@ -99,10 +99,13 @@ function getGitCommitShort(): string | null {
  *
  * Version resolution priority:
  * 1. BUILD_VERSION environment variable (if set)
- * 2. Exact git tag at HEAD (e.g., "1.0.0")
+ * 2. Exact git tag at HEAD (overrides package.json when on a release tag)
  * 3. package.json version field
  * 4. Nearest ancestor git tag
  * 5. Default: "0.0.0" (dev) or "1.0.0" (production)
+ *
+ * Note: package.json is checked first for performance (no git spawn), but
+ * exactTagVersion takes precedence when HEAD is on a release tag.
  *
  * In development mode, appends git commit hash: "{version}-dev.{commit}"
  *

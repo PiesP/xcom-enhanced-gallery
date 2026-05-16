@@ -44,7 +44,7 @@ const createVerboseLogger = (prefix: string): Logger => ({
     console.debug(prefix, ...args);
   },
   trace: (...args: LoggableData[]): void => {
-    console.debug(prefix, ...args);
+    console.trace(prefix, ...args);
   },
 });
 

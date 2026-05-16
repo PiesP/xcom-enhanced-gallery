@@ -1,3 +1,6 @@
+packages:
+  - '.'
+
 minimumReleaseAge: 10080
 
 # Security-critical packages that should bypass the minimum release age.

@@ -10,7 +10,6 @@ import type { MediaExtractionResult } from '@shared/types/media.types';
  */
 export function createFailureResult(
   error: string,
-  _startTime: number,
   sourceType: string,
   strategy: string
 ): MediaExtractionResult {

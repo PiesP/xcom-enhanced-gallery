@@ -24,18 +24,29 @@ const ANIMATION_CLASSES = {
  */
 function runCssAnimation(element: Element, className: string): Promise<void> {
   return new Promise<void>((resolve) => {
-    try {
-      const cleanup = (): void => {
-        element.removeEventListener('animationend', cleanup);
-        element.classList.remove(className);
-        resolve();
-      };
+    let settled = false;
+    const settle = (): void => {
+      if (settled) return;
+      settled = true;
+      element.removeEventListener('animationend', settle);
+      element.removeEventListener('animationcancel', settle);
+      element.classList.remove(className);
+      resolve();
+    };
 
-      element.addEventListener('animationend', cleanup, { once: true });
+    try {
+      element.addEventListener('animationend', settle, { once: true });
+      element.addEventListener('animationcancel', settle, { once: true });
+
+      // If element is already detached, resolve on next frame
+      if (!element.isConnected) {
+        requestAnimationFrame(settle);
+        return;
+      }
+
       element.classList.add(className);
     } catch {
-      // Graceful fallback: resolve even if animation setup fails
-      resolve();
+      settle();
     }
   });
 }

@@ -36,7 +36,6 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
       if (!apiMedias || apiMedias.length === 0) {
         return createFailureResult(
           'No media found in API response',
-          0,
           'twitter-api',
           'api-extraction-failed'
         );
@@ -69,7 +68,6 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
       }
       return createFailureResult(
         normalizeErrorMessage(error),
-        0,
         'twitter-api',
         'api-extraction-failed'
       );

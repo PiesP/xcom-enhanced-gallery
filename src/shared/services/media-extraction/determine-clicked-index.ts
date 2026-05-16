@@ -27,7 +27,7 @@ export const determineClickedIndex = (
     const normalizedElementUrl = normalizeMediaUrl(elementUrl);
     if (!normalizedElementUrl) return 0;
 
-    const index = mediaItems.findIndex((item) => {
+    const index = mediaItems.findIndex((item, idx) => {
       if (!item) return false;
 
       const normalizedCandidates = getNormalizedMediaCandidates(item);
@@ -35,7 +35,7 @@ export const determineClickedIndex = (
 
       if (matched && __DEV__) {
         logger.debug(
-          `[determineClickedIndex] Matched clicked media at index ${mediaItems.indexOf(item)}: ${normalizedElementUrl}`
+          `[determineClickedIndex] Matched clicked media at index ${idx}: ${normalizedElementUrl}`
         );
       }
 

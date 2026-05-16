@@ -142,7 +142,6 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       if (!tweetContainer || !(tweetContainer instanceof HTMLElement)) {
         return createFailureResult(
           'No tweet container found',
-          0,
           'dom-fallback',
           'dom-extraction-failed'
         );
@@ -157,7 +156,6 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       if (mediaElements.length === 0) {
         return createFailureResult(
           'No media elements found in DOM',
-          0,
           'dom-fallback',
           'dom-extraction-failed'
         );
@@ -182,7 +180,6 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       if (mediaItems.length === 0) {
         return createFailureResult(
           'No valid media items extracted from DOM',
-          0,
           'dom-fallback',
           'dom-extraction-failed'
         );
@@ -226,7 +223,6 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       }
       return createFailureResult(
         normalizeErrorMessage(error),
-        0,
         'dom-fallback',
         'dom-extraction-failed'
       );
