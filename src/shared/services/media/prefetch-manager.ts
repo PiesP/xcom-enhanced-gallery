@@ -73,34 +73,21 @@ export class PrefetchManager {
   }
 
   private async prefetchSingle(url: string): Promise<void> {
-    // Check if already cached or in-flight
+    // Fast path: already cached (completed or in-flight)
     const existing = this.cache.get(url);
     if (existing) {
-      // Race condition: if the existing promise already settled (error), abort the duplicate
-      // and let the original caller handle the result.
-      return;
-    }
-
-    // Check if there's an active request for this URL and abort the duplicate
-    const existingController = this.activeRequests.get(url);
-    if (existingController) {
-      // Another request is already in-flight; wait for it rather than starting a duplicate.
-      const pendingPromise = this.cache.get(url);
-      if (pendingPromise) {
-        try {
-          await pendingPromise;
-        } catch {
-          // Original failed; allow this call to retry.
-        }
-        // If the cache now has a result, return; otherwise fall through to retry.
-        if (this.cache.has(url)) return;
+      try {
+        await existing;
+      } catch {
+        // If the cached promise failed, remove it so we can retry
+        this.cache.delete(url);
       }
-      // Abort the stale in-flight request before starting a fresh one.
-      existingController.abort();
-      this.activeRequests.delete(url);
+      if (this.cache.has(url)) return;
     }
 
     const controller = new AbortController();
+
+    // Register the request atomically to prevent concurrent duplicates
     this.activeRequests.set(url, controller);
 
     // Evict oldest entry if cache is full
@@ -108,7 +95,6 @@ export class PrefetchManager {
       this.evictOldest();
     }
 
-    // Set placeholder promise immediately to prevent concurrent duplicate requests.
     const fetchPromise = HttpRequestService.getInstance()
       .get<Blob>(url, {
         signal: controller.signal,
