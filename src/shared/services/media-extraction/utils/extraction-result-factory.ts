@@ -3,15 +3,14 @@
  * @description Shared factory functions for creating extraction results
  */
 
-import { getElapsedTime } from '@shared/services/media-extraction/utils/performance-timing';
 import type { MediaExtractionResult } from '@shared/types/media.types';
 
 /**
- * Create a failure result with timing and source metadata
+ * Create a failure result with source metadata
  */
 export function createFailureResult(
   error: string,
-  startTime: number,
+  _startTime: number,
   sourceType: string,
   strategy: string
 ): MediaExtractionResult {
@@ -24,7 +23,6 @@ export function createFailureResult(
       sourceType,
       strategy,
       error,
-      totalProcessingTime: getElapsedTime(startTime),
     },
     tweetInfo: null,
   };

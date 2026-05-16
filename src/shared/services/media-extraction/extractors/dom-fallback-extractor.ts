@@ -9,10 +9,6 @@ import { TWEET_CONTAINER_SELECTORS } from '@constants/selectors';
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
 import { createFailureResult } from '@shared/services/media-extraction/utils/extraction-result-factory';
-import {
-  getElapsedTime,
-  getTimestamp,
-} from '@shared/services/media-extraction/utils/performance-timing';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
@@ -129,8 +125,6 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
     _options: MediaExtractionOptions,
     extractionId: string
   ): Promise<MediaExtractionResult> {
-    const startedAt = getTimestamp();
-
     try {
       if (__DEV__) {
         logger.debug(`[DOMFallbackExtractor] ${extractionId}: Starting DOM extraction`, {
@@ -148,7 +142,7 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       if (!tweetContainer || !(tweetContainer instanceof HTMLElement)) {
         return createFailureResult(
           'No tweet container found',
-          startedAt,
+          0,
           'dom-fallback',
           'dom-extraction-failed'
         );
@@ -163,7 +157,7 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       if (mediaElements.length === 0) {
         return createFailureResult(
           'No media elements found in DOM',
-          startedAt,
+          0,
           'dom-fallback',
           'dom-extraction-failed'
         );
@@ -188,7 +182,7 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       if (mediaItems.length === 0) {
         return createFailureResult(
           'No valid media items extracted from DOM',
-          startedAt,
+          0,
           'dom-fallback',
           'dom-extraction-failed'
         );
@@ -222,7 +216,6 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
           extractedAt: performance.now(),
           sourceType: 'dom-fallback',
           strategy: 'dom-extraction',
-          totalProcessingTime: getElapsedTime(startedAt),
           domMediaCount: mediaItems.length,
         },
         tweetInfo,
@@ -233,7 +226,7 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       }
       return createFailureResult(
         normalizeErrorMessage(error),
-        startedAt,
+        0,
         'dom-fallback',
         'dom-extraction-failed'
       );

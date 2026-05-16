@@ -8,10 +8,6 @@ import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory
 import { getTweetMedias } from '@shared/services/media/twitter-api-client';
 import { determineClickedIndex } from '@shared/services/media-extraction/determine-clicked-index';
 import { createFailureResult } from '@shared/services/media-extraction/utils/extraction-result-factory';
-import {
-  getElapsedTime,
-  getTimestamp,
-} from '@shared/services/media-extraction/utils/performance-timing';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
@@ -27,8 +23,6 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
     _options: MediaExtractionOptions,
     extractionId: string
   ): Promise<MediaExtractionResult> {
-    const startedAt = getTimestamp();
-
     try {
       if (__DEV__) {
         logger.debug(`[APIExtractor] ${extractionId}: Starting API extraction`, {
@@ -42,7 +36,7 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
       if (!apiMedias || apiMedias.length === 0) {
         return createFailureResult(
           'No media found in API response',
-          startedAt,
+          0,
           'twitter-api',
           'api-extraction-failed'
         );
@@ -65,7 +59,6 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
           extractedAt: performance.now(),
           sourceType: 'twitter-api',
           strategy: 'api-extraction',
-          totalProcessingTime: getElapsedTime(startedAt),
           apiMediaCount: apiMedias.length,
         },
         tweetInfo,
@@ -76,7 +69,7 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
       }
       return createFailureResult(
         normalizeErrorMessage(error),
-        startedAt,
+        0,
         'twitter-api',
         'api-extraction-failed'
       );
