@@ -9,16 +9,11 @@ type BooleanFlagValue = string | boolean | undefined;
 type EnvSource = Partial<{
   DEV: BooleanFlagValue;
   MODE: string;
-  VITE_VERSION: string;
   VITE_AUTO_START: string;
   VITE_ENABLE_DEBUG_TOOLS: string;
 }>;
 
 const APP_NAME = 'X.com Enhanced Gallery';
-const MAX_GALLERY_ITEMS = 100;
-const DEFAULT_ANIMATION_DURATION = 'var(--xeg-duration-normal)';
-const DEFAULT_BOOTSTRAP_RETRY_ATTEMPTS = 3;
-const DEFAULT_BOOTSTRAP_RETRY_DELAY_MS = 100;
 
 /**
  * Overridable import.meta.env for test mocking.
@@ -65,12 +60,6 @@ const resolvedAppConfig = Object.freeze({
   runtime: {
     autoStart: parseBooleanFlag(env.VITE_AUTO_START) ?? true,
   },
-  limits: {
-    maxGalleryItems: MAX_GALLERY_ITEMS,
-  },
-  ui: {
-    animationDuration: DEFAULT_ANIMATION_DURATION,
-  },
   features: {
     gallery: true,
     download: true,
@@ -81,10 +70,6 @@ const resolvedAppConfig = Object.freeze({
   diagnostics: {
     enableLogger: true,
     enableVerboseLogs: isDev,
-  },
-  bootstrap: {
-    retryAttempts: DEFAULT_BOOTSTRAP_RETRY_ATTEMPTS,
-    retryDelayMs: DEFAULT_BOOTSTRAP_RETRY_DELAY_MS,
   },
 } as const);
 

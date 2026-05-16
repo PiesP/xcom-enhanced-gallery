@@ -33,4 +33,3 @@ export const MEDIA = {
 
 export type MediaType = (typeof MEDIA.TYPES)[keyof typeof MEDIA.TYPES];
 export type MediaQuality = (typeof MEDIA.QUALITY)[keyof typeof MEDIA.QUALITY];
-export type MediaExtension = (typeof MEDIA.EXTENSIONS)[keyof typeof MEDIA.EXTENSIONS];

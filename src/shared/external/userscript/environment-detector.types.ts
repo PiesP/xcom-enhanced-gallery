@@ -1,5 +1,4 @@
 import type { BaseLanguageCode } from '@shared/constants/i18n/language-types';
-import type { ResolvedGMAPIs } from '@shared/external/userscript/adapter';
 
 export interface EnvironmentInfo {
   colorScheme: 'light' | 'dark';
@@ -14,5 +13,3 @@ export type GMAPIName =
   | 'deleteValue'
   | 'listValues'
   | 'cookie';
-
-export type GMAPIChecks = Record<GMAPIName, (gm: ResolvedGMAPIs) => boolean>;

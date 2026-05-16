@@ -12,4 +12,3 @@ export const TWITTER_API_CONFIG = {
 } as const;
 
 export type TwitterHost = (typeof TWITTER_API_CONFIG.SUPPORTED_HOSTS)[number];
-export type TwitterAPIConfigKey = keyof typeof TWITTER_API_CONFIG;

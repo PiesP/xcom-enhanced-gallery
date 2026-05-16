@@ -4,17 +4,6 @@ import { getCookieValue, getCookieValueSync } from '@shared/services/cookie/cook
 let _csrfToken: string | undefined;
 let _tokensInitialized = false;
 
-export function getCsrfToken(): string | undefined {
-  if (_tokensInitialized) return _csrfToken;
-
-  const syncToken = getCookieValueSync('ct0');
-  if (syncToken) {
-    _csrfToken = syncToken;
-  }
-  _tokensInitialized = true;
-  return _csrfToken;
-}
-
 export async function getCsrfTokenAsync(): Promise<string | undefined> {
   if (_tokensInitialized && _csrfToken) return _csrfToken;
 
