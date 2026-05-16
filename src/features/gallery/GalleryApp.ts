@@ -131,11 +131,9 @@ export class GalleryApp {
     try {
       const validIndex = clampIndex(startIndex, mediaItems.length);
 
-      const providedContext = options.pauseContext ?? null;
-      const pauseContext: AmbientVideoPauseRequest = {
-        ...providedContext,
-        reason: providedContext?.reason ?? (providedContext ? 'media-click' : 'programmatic'),
-      };
+      const pauseContext: AmbientVideoPauseRequest = options.pauseContext
+        ? { ...options.pauseContext, reason: options.pauseContext.reason ?? 'media-click' }
+        : { reason: 'programmatic' };
 
       pauseAmbientVideosForGallery(pauseContext);
       openGallery(mediaItems, validIndex);
