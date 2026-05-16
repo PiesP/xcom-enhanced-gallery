@@ -17,7 +17,6 @@ type EnvSource = Partial<{
   VITE_AUTO_START: string;
   VITE_ENABLE_DEBUG_TOOLS: string;
 }>;
-type NodeEnvSource = Partial<Record<string, string | undefined>>;
 
 const APP_NAME = 'X.com Enhanced Gallery';
 const MAX_GALLERY_ITEMS = 100;
@@ -33,11 +32,6 @@ declare global {
  * Resolved import.meta.env object from Vite or test mock.
  */
 const importMetaEnv = resolveImportMetaEnv();
-
-/**
- * Resolved process.env object from Node.js (fallback for tooling).
- */
-const nodeEnv = resolveNodeEnv();
 
 /**
  * Build-time version injected by Vite's define plugin.
@@ -56,15 +50,10 @@ const rawVersion = buildVersion ?? '0.0.0';
 const devFlag = parseBooleanFlag(importMetaEnv.DEV);
 
 /**
- * Development flag from process.env (Node.js string flag).
- */
-const nodeDevFlag = parseBooleanFlag(nodeEnv.DEV);
-
-/**
  * Resolved runtime mode: 'development', 'production', or 'test'.
- * Priority: import.meta.env.MODE → NODE_ENV → 'production'
+ * Priority: import.meta.env.MODE → 'production'
  */
-const mode = importMetaEnv.MODE ?? nodeEnv.NODE_ENV ?? 'production';
+const mode = importMetaEnv.MODE ?? 'production';
 
 /**
  * Test environment flag (true when MODE === 'test').
@@ -74,7 +63,7 @@ const isTest = mode === 'test';
 /**
  * Development environment flag (true when DEV flag set or MODE === 'development').
  */
-const isDev = devFlag ?? nodeDevFlag ?? (!isTest && mode !== 'production');
+const isDev = devFlag ?? (!isTest && mode !== 'production');
 
 /**
  * Production environment flag (true when not dev and not test).
@@ -85,15 +74,13 @@ const isProd = !isDev && !isTest;
  * Auto-start flag from environment variables (controls bootstrap initialization).
  * Defaults to true if not explicitly disabled.
  */
-const autoStartFlag = parseBooleanFlag(importMetaEnv.VITE_AUTO_START ?? nodeEnv.VITE_AUTO_START);
+const autoStartFlag = parseBooleanFlag(importMetaEnv.VITE_AUTO_START);
 
 /**
  * Debug tools feature flag from environment variables.
  * Defaults to development mode value if not explicitly set.
  */
-const debugToolsFlag = parseBooleanFlag(
-  importMetaEnv.VITE_ENABLE_DEBUG_TOOLS ?? nodeEnv.VITE_ENABLE_DEBUG_TOOLS
-);
+const debugToolsFlag = parseBooleanFlag(importMetaEnv.VITE_ENABLE_DEBUG_TOOLS);
 
 /**
  * Frozen application configuration object with all resolved values.
@@ -187,19 +174,6 @@ function resolveImportMetaEnv(): EnvSource {
   } catch {
     return {};
   }
-}
-
-/**
- * Resolve process.env from Node.js environment.
- * Returns empty object in browser environments.
- * @internal
- */
-function resolveNodeEnv(): NodeEnvSource {
-  if (typeof process !== 'undefined' && process?.env) {
-    return process.env;
-  }
-
-  return {};
 }
 
 /**
