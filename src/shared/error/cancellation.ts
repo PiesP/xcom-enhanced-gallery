@@ -42,41 +42,17 @@ function isTimeoutError(value: unknown): boolean {
   return false;
 }
 
-/**
- * Attach a cause property to an error if supported.
- * @param target - Error or DOMException to attach cause to
- * @param cause - Cause value to attach
- */
+/** Attach a cause property to an error. */
 function attachCause(target: Error | DOMException, cause: unknown): void {
-  if (cause === undefined) {
-    return;
-  }
-
-  try {
-    (target as Error & { cause?: unknown }).cause = cause;
-  } catch {
-    // Ignore: older runtimes may not allow assigning cause
-  }
+  if (cause === undefined) return;
+  (target as Error & { cause?: unknown }).cause = cause;
 }
 
-/**
- * Create an AbortError with the specified message.
- * Attempts to create a DOMException first (preferred), falling back to Error.
- * @param message - Error message
- * @param cause - Optional cause to attach
- * @returns DOMException or Error with name "AbortError"
- */
-function createAbortError(message: string, cause?: unknown): DOMException | Error {
-  try {
-    const error = new DOMException(message, 'AbortError');
-    attachCause(error, cause);
-    return error;
-  } catch {
-    const error = new Error(message);
-    error.name = 'AbortError';
-    attachCause(error, cause);
-    return error;
-  }
+/** Create an AbortError with the specified message. */
+export function createAbortError(message: string, cause?: unknown): DOMException {
+  const error = new DOMException(message, 'AbortError');
+  attachCause(error, cause);
+  return error;
 }
 
 /**
