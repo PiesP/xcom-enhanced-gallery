@@ -1,7 +1,4 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery
- * Licensed under the MIT License
- *
  * @fileoverview VerticalImageItem Helper Utilities
  * @description Helpers for filename cleaning, video detection, and media processing.
  */

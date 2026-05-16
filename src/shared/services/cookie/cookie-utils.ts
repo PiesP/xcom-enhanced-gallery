@@ -1,7 +1,4 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery Team
- * Licensed under the MIT License
- *
  * @fileoverview Cookie Service - Functional API
  * @description Provides cookie management with GM_cookie support and document.cookie fallback
  */

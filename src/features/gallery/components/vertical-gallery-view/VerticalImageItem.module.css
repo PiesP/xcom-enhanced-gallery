@@ -1,7 +1,4 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery
- * Licensed under the MIT License
- *
  * @fileoverview Vertical Image Item Component Styles
  * @description Individual media item styles with fit modes (original, fitWidth, fitHeight, fitContainer),
  * interactive states, performance optimizations (containment, GPU acceleration), and accessibility features.

@@ -1,7 +1,4 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery
- * Licensed under the MIT License
- *
  * @fileoverview Vertical Image/Video Item Component (Solid.js)
  * @description Renders individual media items with fit mode, visibility/loading states,
  * video auto-pause, and accessibility support via useVideoVisibility hook.

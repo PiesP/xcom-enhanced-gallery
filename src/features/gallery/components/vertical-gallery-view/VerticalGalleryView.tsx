@@ -1,7 +1,4 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery
- * Licensed under the MIT License
- *
  * @fileoverview Vertical Gallery View Component (Solid.js)
  * @description Main gallery component rendering media items with vertical scrolling, state management,
  * toolbar visibility, keyboard navigation, and fit mode support via useVerticalGallery hook.
