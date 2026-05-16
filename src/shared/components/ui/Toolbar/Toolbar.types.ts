@@ -1,5 +1,4 @@
 import type { ToolbarHandlers } from '@shared/components/ui/Toolbar/handler-types';
-import type { ViewMode } from '@shared/state/signals/gallery.signals';
 import type { FitMode } from '@shared/types/toolbar.types';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 
@@ -36,10 +35,6 @@ export interface ToolbarProps {
    */
   readonly handlers: ToolbarHandlers;
 
-  /** Current view mode (e.g., 'grid', 'single') */
-  readonly currentViewMode?: MaybeAccessor<ViewMode | undefined> | undefined;
-  /** Callback when view mode changes */
-  readonly onViewModeChange?: ((mode: ViewMode) => void) | undefined;
   /** Current fit mode for image display */
   readonly currentFitMode?: MaybeAccessor<FitMode | undefined> | undefined;
 

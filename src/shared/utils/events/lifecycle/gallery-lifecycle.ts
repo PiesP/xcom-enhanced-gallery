@@ -2,11 +2,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
-import type {
-  EventHandlers,
-  EventHandlingResult,
-  GalleryEventOptions,
-} from '@shared/services/event-types';
+import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-types';
 import {
   handleKeyboardEvent,
   resetKeyboardDebounceState,

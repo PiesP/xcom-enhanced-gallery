@@ -24,7 +24,7 @@ import type { MediaInfo } from '@shared/types/media.types';
 import type { NavigationSource } from '@shared/types/navigation.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
 import { clampIndex } from '@shared/utils/types/safety';
-import { createSignal, batch } from 'solid-js';
+import { batch, createSignal } from 'solid-js';
 
 export type GalleryNavigationTrigger = NavigationSource;
 
