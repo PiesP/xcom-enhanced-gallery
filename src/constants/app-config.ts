@@ -1,10 +1,6 @@
 /**
  * @fileoverview Application configuration and runtime metadata.
- *
  * Provides environment detection, version resolution, and feature flags.
- * Configuration is resolved from build-time globals, import.meta.env, and process.env.
- *
- * @module constants/app-config
  */
 
 import type { AppConfig } from '@shared/types/app-config.types';
@@ -24,81 +20,41 @@ const DEFAULT_ANIMATION_DURATION = 'var(--xeg-duration-normal)';
 const DEFAULT_BOOTSTRAP_RETRY_ATTEMPTS = 3;
 const DEFAULT_BOOTSTRAP_RETRY_DELAY_MS = 100;
 
+/**
+ * Overridable import.meta.env for test mocking.
+ * Tests set this before module import to control environment state.
+ */
 declare global {
   var __XEG_IMPORT_META_ENV__: EnvSource | undefined;
 }
 
-/**
- * Resolved import.meta.env object from Vite or test mock.
- */
-const importMetaEnv = resolveImportMetaEnv();
+function resolveEnv(): EnvSource {
+  if (globalThis.__XEG_IMPORT_META_ENV__) return globalThis.__XEG_IMPORT_META_ENV__;
+  return (import.meta as ImportMeta).env ?? {};
+}
 
-/**
- * Build-time version injected by Vite's define plugin.
- * Undefined if build didn't inject __VERSION__ global.
- */
-const buildVersion = typeof __VERSION__ !== 'undefined' ? __VERSION__ : undefined;
+function parseBooleanFlag(value: BooleanFlagValue): boolean | undefined {
+  if (typeof value === 'boolean') return value;
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return undefined;
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+  if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
+  return undefined;
+}
 
-/**
- * Resolved application version from build-time injection.
- */
-const rawVersion = buildVersion ?? '0.0.0';
-
-/**
- * Development flag from import.meta.env (Vite boolean flag).
- */
-const devFlag = parseBooleanFlag(importMetaEnv.DEV);
-
-/**
- * Resolved runtime mode: 'development', 'production', or 'test'.
- * Priority: import.meta.env.MODE → 'production'
- */
-const mode = importMetaEnv.MODE ?? 'production';
-
-/**
- * Test environment flag (true when MODE === 'test').
- */
+const env = resolveEnv();
+const version = typeof __VERSION__ !== 'undefined' ? __VERSION__ : '0.0.0';
+const devFlag = parseBooleanFlag(env.DEV);
+const mode = env.MODE ?? 'production';
 const isTest = mode === 'test';
-
-/**
- * Development environment flag (true when DEV flag set or MODE === 'development').
- */
 const isDev = devFlag ?? (!isTest && mode !== 'production');
-
-/**
- * Production environment flag (true when not dev and not test).
- */
 const isProd = !isDev && !isTest;
 
-/**
- * Auto-start flag from environment variables (controls bootstrap initialization).
- * Defaults to true if not explicitly disabled.
- */
-const autoStartFlag = parseBooleanFlag(importMetaEnv.VITE_AUTO_START);
-
-/**
- * Debug tools feature flag from environment variables.
- * Defaults to development mode value if not explicitly set.
- */
-const debugToolsFlag = parseBooleanFlag(importMetaEnv.VITE_ENABLE_DEBUG_TOOLS);
-
-/**
- * Frozen application configuration object with all resolved values.
- * Immutable at runtime to prevent accidental modifications.
- *
- * @property meta - Application metadata (name, version)
- * @property environment - Runtime environment flags (mode, isDev, isTest, isProduction)
- * @property runtime - Runtime behavior settings (autoStart)
- * @property limits - Application limits (maxGalleryItems)
- * @property ui - UI configuration (animationDuration)
- * @property features - Feature flags (gallery, download, settings, accessibility, debugTools)
- * @property diagnostics - Logging configuration (enableLogger, enableVerboseLogs)
- * @property bootstrap - Bootstrap initialization parameters (timeouts, retries)
- */
 const resolvedAppConfig = Object.freeze({
   meta: {
     name: APP_NAME,
-    version: rawVersion,
+    version,
   },
   environment: {
     mode,
@@ -107,7 +63,7 @@ const resolvedAppConfig = Object.freeze({
     isProduction: isProd,
   },
   runtime: {
-    autoStart: autoStartFlag ?? true,
+    autoStart: parseBooleanFlag(env.VITE_AUTO_START) ?? true,
   },
   limits: {
     maxGalleryItems: MAX_GALLERY_ITEMS,
@@ -120,7 +76,7 @@ const resolvedAppConfig = Object.freeze({
     download: true,
     settings: true,
     accessibility: true,
-    debugTools: debugToolsFlag ?? isDev,
+    debugTools: parseBooleanFlag(env.VITE_ENABLE_DEBUG_TOOLS) ?? isDev,
   },
   diagnostics: {
     enableLogger: true,
@@ -132,24 +88,6 @@ const resolvedAppConfig = Object.freeze({
   },
 } as const);
 
-/**
- * Application configuration singleton.
- * Immutable reference to the resolved configuration object.
- *
- * @internal
- * @remarks
- * Direct access is internal. External consumers should use {@link createAppConfig}
- * for bootstrap context or for general access.
- */
-
-/**
- * Create bootstrap-facing application configuration.
- *
- * Transforms full configuration into minimal bootstrap object with version,
- * environment flags, and auto-start setting.
- *
- * @returns Bootstrap configuration object (frozen, read-only)
- */
 export function createAppConfig(): AppConfig {
   return {
     version: resolvedAppConfig.meta.version,
@@ -157,45 +95,4 @@ export function createAppConfig(): AppConfig {
     debug: resolvedAppConfig.features.debugTools,
     autoStart: resolvedAppConfig.runtime.autoStart,
   } as const;
-}
-
-/**
- * Resolve import.meta.env from Vite or test mock.
- * Supports test mocking via globalThis.__XEG_IMPORT_META_ENV__.
- * @internal
- */
-function resolveImportMetaEnv(): EnvSource {
-  if (typeof globalThis !== 'undefined' && globalThis.__XEG_IMPORT_META_ENV__) {
-    return globalThis.__XEG_IMPORT_META_ENV__;
-  }
-  return (import.meta as ImportMeta).env ?? {};
-}
-
-/**
- * Parse boolean flag from string or boolean value.
- * Supports: '1'/'true'/'yes'/'on' → true, '0'/'false'/'no'/'off' → false
- * @internal
- */
-function parseBooleanFlag(value: BooleanFlagValue): boolean | undefined {
-  if (typeof value === 'boolean') {
-    return value;
-  }
-
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-
-    if (!normalized) {
-      return undefined;
-    }
-
-    if (['1', 'true', 'yes', 'on'].includes(normalized)) {
-      return true;
-    }
-
-    if (['0', 'false', 'no', 'off'].includes(normalized)) {
-      return false;
-    }
-  }
-
-  return undefined;
 }
