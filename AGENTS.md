@@ -24,7 +24,7 @@ Solid.js 1.9.x · TypeScript 6.0.x · Vite 8.x · Biome 2.x · Node.js 24.x (Vol
 
 ```bash
 pnpm install
-pnpm build        # prod bundle (runs quality via prebuild)
+pnpm build        # prod bundle (runs quality:fix inline, then vite build)
 pnpm build:dev    # dev bundle
 pnpm build:fast   # build without quality checks
 pnpm check        # tsc (src + tooling)
@@ -32,7 +32,7 @@ pnpm lint         # biome lint
 pnpm lint:fix     # biome lint --write
 pnpm fmt          # biome format check
 pnpm fmt:fix      # biome format --write
-pnpm quality      # tsc + biome + knip
+pnpm quality      # fmt + lint + check + circular + tsdoc + knip
 pnpm quality:fix  # quality with auto-fix
 pnpm verify       # build + test:all
 ```
@@ -100,7 +100,6 @@ pnpm run prepare -- --symlink false      # copy (required for Stryker)
 ### Services & DI
 - Prefer accessor functions from `@shared/container/container` (`getThemeService`, `getLanguageService`, `getMediaService`, `getDownloadOrchestrator`).
 - Prefer the canonical singleton/getInstance entry points for shared services.
-- **Do not** use `CoreServiceRegistry`.
 
 ### Styling
 - CSS Modules only; no global styles.
