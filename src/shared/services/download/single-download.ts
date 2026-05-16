@@ -11,13 +11,6 @@ import type {
 import type { MediaInfo } from '@shared/types/media.types';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
-export type {
-  DownloadCapability,
-  DownloadOptions,
-  GMDownloadFunction,
-  SingleDownloadResult,
-} from '@shared/services/download/types';
-
 function asGMDownloadFunction(value: unknown): GMDownloadFunction | undefined {
   return typeof value === 'function' ? (value as GMDownloadFunction) : undefined;
 }
@@ -35,10 +28,8 @@ export function detectDownloadCapability(): DownloadCapability {
 const DOWNLOAD_TIMEOUT_MS = 30_000;
 const DOWNLOAD_TIMEOUT_MESSAGE = 'Download timeout';
 
-type ProgressCallback = DownloadOptions['onProgress'];
-
 const reportProgress = (
-  onProgress: ProgressCallback | undefined,
+  onProgress: DownloadOptions['onProgress'] | undefined,
   phase: 'preparing' | 'downloading' | 'complete',
   percentage: number,
   filename: string

@@ -3,12 +3,12 @@ import { normalizeErrorMessage } from '@shared/error/normalize';
 import { StreamingZipWriter } from '@shared/external/zip/streaming-zip-writer';
 import { DEFAULT_BACKOFF_BASE_MS, fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
 import type {
+  DownloadOptions,
+  DownloadProgress,
   OrchestratorItem,
-  OrchestratorOptions,
   ZipResult,
 } from '@shared/services/download/types';
 
-// Inlined from download-utils.ts
 type UniqueFilenameFactory = (desired: string) => string;
 
 const ensureUniqueFilenameFactory = (): UniqueFilenameFactory => {
@@ -41,9 +41,6 @@ const MIN_CONCURRENCY = 1;
 const DEFAULT_CONCURRENCY = 4;
 const DEFAULT_RETRIES = 3;
 
-type ProgressCallback = OrchestratorOptions['onProgress'];
-type ProgressPayload = Parameters<NonNullable<ProgressCallback>>[0];
-
 const clampConcurrency = (value: number | undefined): number => {
   const resolved = value ?? DEFAULT_CONCURRENCY;
   return Math.min(MAX_CONCURRENCY, Math.max(MIN_CONCURRENCY, resolved));
@@ -57,8 +54,8 @@ const calculatePercentage = (current: number, total: number): number => {
 };
 
 const reportProgress = (
-  onProgress: ProgressCallback | undefined,
-  payload: Omit<ProgressPayload, 'percentage'> & { percentage?: number }
+  onProgress: DownloadOptions['onProgress'] | undefined,
+  payload: Omit<DownloadProgress, 'percentage'> & { percentage?: number }
 ): void => {
   if (!onProgress) return;
 
@@ -77,7 +74,7 @@ const throwIfAborted = (signal?: AbortSignal): void => {
 
 export async function downloadAsZip(
   items: readonly OrchestratorItem[],
-  options: OrchestratorOptions = {}
+  options: DownloadOptions = {}
 ): Promise<ZipResult> {
   const writer = new StreamingZipWriter();
 
@@ -96,7 +93,6 @@ export async function downloadAsZip(
   const ensureUniqueFilename = ensureUniqueFilenameFactory();
   const assignedFilenames = items.map((item) => ensureUniqueFilename(item.desiredName));
 
-  // Queue management
   let currentIndex = 0;
 
   const runNext = async (): Promise<void> => {

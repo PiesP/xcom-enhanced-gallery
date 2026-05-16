@@ -20,13 +20,6 @@ export interface DownloadProgress {
 
 export type DownloadProgressCallback = (progress: DownloadProgress) => void;
 
-export interface OrchestratorOptions {
-  concurrency?: number;
-  retries?: number;
-  signal?: AbortSignal;
-  onProgress?: DownloadProgressCallback;
-}
-
 export interface DownloadOptions {
   concurrency?: number;
   retries?: number;

@@ -4,14 +4,17 @@ import { planBulkDownload } from '@shared/core/download/download-plan';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import {
-  type DownloadCapability,
-  type DownloadOptions,
   detectDownloadCapability,
   downloadSingleFile,
-  type GMDownloadFunction,
-  type SingleDownloadResult,
 } from '@shared/services/download/single-download';
-import type { BulkDownloadResult, OrchestratorItem } from '@shared/services/download/types';
+import type {
+  BulkDownloadResult,
+  DownloadCapability,
+  DownloadOptions,
+  GMDownloadFunction,
+  OrchestratorItem,
+  SingleDownloadResult,
+} from '@shared/services/download/types';
 import { downloadAsZip } from '@shared/services/download/zip-download';
 import type { MediaInfo } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/result.types';
