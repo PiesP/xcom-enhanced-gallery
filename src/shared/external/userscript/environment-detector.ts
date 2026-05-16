@@ -30,9 +30,5 @@ const GM_API_CHECKS: Record<
  */
 export function isGMAPIAvailable(apiName: GMAPIName): boolean {
   const checker = GM_API_CHECKS[apiName];
-  try {
-    return checker(getResolvedGMAPIsCached());
-  } catch {
-    return false;
-  }
+  return checker(getResolvedGMAPIsCached());
 }

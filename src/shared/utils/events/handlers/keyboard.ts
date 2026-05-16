@@ -6,7 +6,7 @@
 import { getLanguageService } from '@shared/container/container';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
-import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
+import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-types';
 import {
   gallerySignals,
   navigateNext,

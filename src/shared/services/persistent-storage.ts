@@ -81,7 +81,6 @@ export class PersistentStorage {
     try {
       const value = this.userscript.getValueSync<string>(key);
       if (value === undefined || value === null) return defaultValue;
-
       try {
         return JSON.parse(value) as T;
       } catch {

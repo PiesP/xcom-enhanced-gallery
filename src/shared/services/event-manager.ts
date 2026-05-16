@@ -5,38 +5,11 @@
 
 import { logger } from '@shared/logging/logger';
 import { createId, createPrefixedId } from '@shared/utils/id/create-id';
-
-// ============================================================================
-// Shared Types (moved from dom-listener-context.ts)
-// ============================================================================
-
-/**
- * Gallery event handler callback signatures.
- */
-export interface EventHandlers {
-  readonly onMediaClick: (element: HTMLElement, event: MouseEvent) => Promise<void>;
-  readonly onGalleryClose: () => void;
-  readonly onKeyboardEvent?: (event: KeyboardEvent) => void;
-}
-
-/**
- * Gallery event configuration.
- */
-export interface GalleryEventOptions {
-  readonly enableKeyboard: boolean;
-  readonly enableMediaDetection: boolean;
-  readonly debugMode: boolean;
-  readonly preventBubbling: boolean;
-  readonly context: string;
-}
-
-/**
- * Media click handling result.
- */
-export interface EventHandlingResult {
-  readonly handled: boolean;
-  readonly reason?: string;
-}
+import type {
+  EventHandlers,
+  EventHandlingResult,
+  GalleryEventOptions,
+} from './event-types';
 
 // ============================================================================
 // Internal listener registry (previously in listener-manager.ts)

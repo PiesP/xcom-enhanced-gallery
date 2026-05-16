@@ -168,12 +168,7 @@ function resolveImportMetaEnv(): EnvSource {
   if (typeof globalThis !== 'undefined' && globalThis.__XEG_IMPORT_META_ENV__) {
     return globalThis.__XEG_IMPORT_META_ENV__;
   }
-
-  try {
-    return (import.meta as ImportMeta).env ?? {};
-  } catch {
-    return {};
-  }
+  return (import.meta as ImportMeta).env ?? {};
 }
 
 /**

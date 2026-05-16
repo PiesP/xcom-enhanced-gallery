@@ -2,9 +2,7 @@
  * Gallery state management with fine-grained signals
  *
  * Provides reactive gallery state management using Solid.js signals.
- * Delegates to specialized modules:
- * - navigation.state.ts for navigation tracking
- * - ui.state.ts for UI state (loading, error, viewMode)
+ * Delegates to navigation.state.ts for navigation tracking.
  *
  * Gallery open/close transitions are committed through a dedicated session
  * update helper so subscribers observe a complete snapshot.
@@ -26,22 +24,15 @@ import type { MediaInfo } from '@shared/types/media.types';
 import type { NavigationSource } from '@shared/types/navigation.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
 import { clampIndex } from '@shared/utils/types/safety';
-import { createSignal, batch as solidBatch } from 'solid-js';
-
-type BatchExecutor = (fn: () => void) => void;
-const batch: BatchExecutor = (fn: () => void): void => solidBatch(fn);
+import { createSignal, batch } from 'solid-js';
 
 export type GalleryNavigationTrigger = NavigationSource;
-
-export type ViewMode = 'vertical';
 
 export interface GalleryState {
   readonly isOpen: boolean;
   readonly mediaItems: readonly MediaInfo[];
   readonly currentIndex: number;
-  readonly isLoading: boolean;
   readonly error: string | null;
-  readonly viewMode: ViewMode;
 }
 
 export interface GalleryNavigateStartPayload {
@@ -68,9 +59,7 @@ const INITIAL_STATE: GalleryState = {
   isOpen: false,
   mediaItems: [],
   currentIndex: 0,
-  isLoading: false,
   error: null,
-  viewMode: 'vertical',
 };
 
 export const galleryIndexEvents = createEventEmitter<{
@@ -89,8 +78,6 @@ export const [currentVideoElementSig, setCurrentVideoElement] =
   createSignal<HTMLVideoElement | null>(null);
 
 // UI state signals (inlined from ui.state.ts)
-const [_viewModeSig, _setViewMode] = createSignal<ViewMode>(INITIAL_STATE.viewMode);
-const [_isLoadingSig, _setIsLoading] = createSignal<boolean>(INITIAL_STATE.isLoading);
 const [_errorSig, _setErrorSig] = createSignal<string | null>(INITIAL_STATE.error);
 
 export const gallerySignals = {
@@ -103,14 +90,8 @@ export const gallerySignals = {
   get currentIndex() {
     return currentIndexSig();
   },
-  get isLoading() {
-    return _isLoadingSig();
-  },
   get error() {
     return _errorSig();
-  },
-  get viewMode() {
-    return _viewModeSig();
   },
   get focusedIndex() {
     return focusedIndexSig();
@@ -122,9 +103,6 @@ export const gallerySignals = {
 
 export function setError(error: string | null): void {
   _setErrorSig(error);
-  if (error) {
-    _setIsLoading(false);
-  }
 }
 
 function applyGallerySessionUpdate(state: GallerySessionState): void {
@@ -144,9 +122,7 @@ export const galleryState = {
       isOpen: isOpenSig(),
       mediaItems: mediaItemsSig(),
       currentIndex: currentIndexSig(),
-      isLoading: gallerySignals.isLoading,
       error: gallerySignals.error,
-      viewMode: gallerySignals.viewMode,
     };
   },
 
