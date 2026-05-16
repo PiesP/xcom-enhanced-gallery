@@ -73,11 +73,6 @@ export function getGalleryRenderer() {
   return getRenderer();
 }
 
-let _downloadOrchestrator: DownloadOrchestrator | null = null;
-
 export function getDownloadOrchestrator(): DownloadOrchestrator {
-  if (!_downloadOrchestrator) {
-    _downloadOrchestrator = DownloadOrchestrator.getInstance();
-  }
-  return _downloadOrchestrator;
+  return DownloadOrchestrator.getInstance();
 }

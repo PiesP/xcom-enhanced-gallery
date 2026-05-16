@@ -11,11 +11,6 @@ let observerRegistry = new WeakMap<Element, Set<IntersectionObserver>>();
 export const SharedObserver = {
   /**
    * Observe element for visibility changes
-   *
-   * @param element - DOM element to observe
-   * @param callback - Called for each IntersectionObserverEntry
-   * @param options - Init options
-   * @returns Unsubscribe function
    */
   observe(
     element: Element,
@@ -27,8 +22,6 @@ export const SharedObserver = {
         try {
           callback(entry);
         } catch (error) {
-          // Swallow errors to avoid interrupting other callbacks.
-          // In DEV, log the first failure to improve observability without spamming.
           if (__DEV__ && !didLogCallbackErrorInDev) {
             didLogCallbackErrorInDev = true;
             logger.warn('[SharedObserver] IntersectionObserver callback threw', error);
@@ -55,7 +48,6 @@ export const SharedObserver = {
       isActive = false;
 
       observer.unobserve(element);
-
       observer.disconnect();
 
       const currentSet = observerRegistry.get(element);
@@ -72,8 +64,6 @@ export const SharedObserver = {
 
   /**
    * Stop observing element and disconnect all observers
-   *
-   * @param element - DOM element to stop observing
    */
   unobserve(element: Element): void {
     const set = observerRegistry.get(element);
