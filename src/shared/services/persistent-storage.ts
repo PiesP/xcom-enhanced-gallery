@@ -51,13 +51,10 @@ export class PersistentStorage {
       return JSON.parse(value) as T;
     } catch {
       if (options.selfHealOnParseError === true) {
-        try {
-          await this.userscript.deleteValue(key);
-        } catch {
+        await this.userscript.deleteValue(key).catch(() => {
           // Best-effort: do not throw from get().
-        }
+        });
       }
-
       return defaultValue;
     }
   }
