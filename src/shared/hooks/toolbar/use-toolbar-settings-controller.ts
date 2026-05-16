@@ -3,6 +3,10 @@
  * @description Manages settings panel toggling, outside click handling, and localized options
  */
 
+import type {
+  LanguageOption,
+  ThemeOption,
+} from '@shared/components/ui/Settings/SettingsControls.types';
 import {
   getLanguageService,
   getThemeService,
@@ -12,10 +16,7 @@ import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
-
 import type {
-  LanguageOption,
-  ThemeOption,
   ToolbarSettingsControllerResult,
   UseToolbarSettingsControllerOptions,
 } from './use-toolbar-settings-controller.types';
@@ -31,7 +32,6 @@ export type {
   ToolbarSettingsControllerResult,
   UseToolbarSettingsControllerOptions,
 } from './use-toolbar-settings-controller.types';
-export type { LanguageOption, ThemeOption };
 
 export function useToolbarSettingsController(
   options: UseToolbarSettingsControllerOptions

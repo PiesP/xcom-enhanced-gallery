@@ -4,7 +4,7 @@ import type { FitMode } from '@shared/types/toolbar.types';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 
 export type { FitModeHandlers } from '@shared/components/ui/Toolbar/handler-types';
-export type { FitMode, MaybeAccessor };
+export type { FitMode };
 
 /**
  * Toolbar component props with grouped handler pattern

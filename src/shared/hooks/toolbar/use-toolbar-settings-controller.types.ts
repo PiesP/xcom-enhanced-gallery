@@ -8,8 +8,6 @@ import type {
   ThemeOption,
 } from '@shared/components/ui/Settings/SettingsControls.types';
 
-export type { LanguageOption, ThemeOption };
-
 import type { LanguageService } from '@shared/services/language-service';
 import type { ThemeServiceContract } from '@shared/services/theme-service';
 
