@@ -1,7 +1,4 @@
 /**
- * Copyright (c) 2024 X.com Gallery
- * Licensed under the MIT License
- *
  * Media URL validation utilities.
  */
 
