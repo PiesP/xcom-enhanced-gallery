@@ -11,9 +11,7 @@
 import { CSS } from '@constants/css';
 import { useVideoVisibility } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-visibility';
 import { useVideoVolumePersistence } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-volume-persistence';
-import {
-  cleanFilename,
-} from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
+import { cleanFilename } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.types';
 import { useTranslation } from '@shared/hooks/use-translation';
