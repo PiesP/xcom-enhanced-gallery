@@ -13,7 +13,6 @@ import { useVideoVisibility } from '@features/gallery/components/vertical-galler
 import { useVideoVolumePersistence } from '@features/gallery/components/vertical-gallery-view/hooks/use-video-volume-persistence';
 import {
   cleanFilename,
-  isVideoMedia,
 } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.types';
@@ -76,16 +75,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const translate = useTranslation();
 
   const isVideo = createMemo(() => {
-    // Prefer the extractor-provided media.type (most accurate).
-    // Fall back to URL/extension heuristics only as a safety net.
     switch (local.media.type) {
       case 'video':
       case 'gif':
         return true;
       case 'image':
         return false;
-      default:
-        return isVideoMedia(local.media);
     }
   });
   const [isLoaded, setIsLoaded] = createSignal(false);
