@@ -6,11 +6,11 @@
 import { DEFAULT_SETTINGS } from '@constants/settings';
 import type { FeatureFlags } from '@shared/types/settings.types';
 
-const FORBIDDEN_PATH_KEYS = ['__proto__', 'constructor', 'prototype'] as const;
+const FORBIDDEN_PATH_KEYS = new Set<string>(['__proto__', 'constructor', 'prototype']);
 
 /** Check if a path segment is safe from prototype pollution */
 export function isSafePathKey(key: string): boolean {
-  return key !== '' && !FORBIDDEN_PATH_KEYS.includes(key as (typeof FORBIDDEN_PATH_KEYS)[number]);
+  return key !== '' && !FORBIDDEN_PATH_KEYS.has(key);
 }
 
 /** Resolve nested object property by dot-notation path */
@@ -94,17 +94,13 @@ export function normalizeFeatureFlags(
   );
 }
 
-/** Determine the type of a default value for validation */
-export function getDefaultValueType(defaultValue: unknown): string {
-  return Array.isArray(defaultValue) ? 'array' : typeof defaultValue;
-}
-
 /** Validate a setting value against its default type */
 export function isValidSettingValue(defaultValue: unknown, value: unknown): boolean {
   if (defaultValue === undefined) return true;
 
-  const type = getDefaultValueType(defaultValue);
-  if (type === 'array') return Array.isArray(value);
-  if (type === 'object') return typeof value === 'object' && value !== null;
-  return typeof value === type;
+  if (Array.isArray(defaultValue)) return Array.isArray(value);
+  if (typeof defaultValue === 'object' && defaultValue !== null) {
+    return typeof value === 'object' && value !== null;
+  }
+  return typeof value === typeof defaultValue;
 }
