@@ -3,7 +3,7 @@ import type {
   MediaElement,
   MediaTraversalOptions,
   QueueNode,
-} from './media-element-utils.types';
+} from '@shared/utils/media/media-element-utils.types';
 
 /** Default maximum descendant search depth */
 const DEFAULT_MAX_DESCENDANT_DEPTH = 6;

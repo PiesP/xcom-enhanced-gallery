@@ -2,7 +2,11 @@ import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { StreamingZipWriter } from '@shared/external/zip/streaming-zip-writer';
 import { DEFAULT_BACKOFF_BASE_MS, fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
-import type { OrchestratorItem, OrchestratorOptions, ZipResult } from './types';
+import type {
+  OrchestratorItem,
+  OrchestratorOptions,
+  ZipResult,
+} from '@shared/services/download/types';
 
 // Inlined from download-utils.ts
 type UniqueFilenameFactory = (desired: string) => string;

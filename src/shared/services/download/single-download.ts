@@ -16,7 +16,7 @@ export type {
   DownloadOptions,
   GMDownloadFunction,
   SingleDownloadResult,
-} from './types';
+} from '@shared/services/download/types';
 
 function asGMDownloadFunction(value: unknown): GMDownloadFunction | undefined {
   return typeof value === 'function' ? (value as GMDownloadFunction) : undefined;

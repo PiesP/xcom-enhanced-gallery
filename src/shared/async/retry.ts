@@ -1,4 +1,4 @@
-import { delay, isAbortError } from './delay';
+import { delay, isAbortError } from '@shared/async/delay';
 
 /**
  * Calculate exponential backoff delay

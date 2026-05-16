@@ -8,7 +8,7 @@ import type {
   PromisifyOptions,
   ResultCallback,
   VoidCallback,
-} from './promise-helpers.types';
+} from '@shared/utils/async/promise-helpers.types';
 
 /**
  * Converts a callback-based method to a Promise.

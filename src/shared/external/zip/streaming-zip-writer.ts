@@ -3,7 +3,12 @@
  * @description Pipelined file downloads and ZIP assembly with immediate Local File Headers
  */
 
-import { calculateCRC32, encodeUtf8, writeUint16LE, writeUint32LE } from './zip-utils';
+import {
+  calculateCRC32,
+  encodeUtf8,
+  writeUint16LE,
+  writeUint32LE,
+} from '@shared/external/zip/zip-utils';
 
 const ZIP_CONST = {
   MAX_UINT16: 0xffff,
