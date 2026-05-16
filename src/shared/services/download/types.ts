@@ -2,6 +2,8 @@
  * Shared download type definitions.
  */
 
+import type { ErrorCode } from '@shared/types/result.types';
+
 export interface OrchestratorItem {
   readonly url: string;
   readonly desiredName: string;
@@ -76,5 +78,5 @@ export interface BulkDownloadResult {
   filename?: string;
   error?: string;
   failures?: Array<{ url: string; error: string }>;
-  code: string;
+  code: ErrorCode;
 }
