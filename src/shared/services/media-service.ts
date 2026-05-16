@@ -18,6 +18,7 @@ export class MediaService {
   /** Initialize service (idempotent) */
   public async initialize(): Promise<void> {
     if (this._initialized) return;
+    this.didCleanup = false;
     if (__FEATURE_MEDIA_EXTRACTION__) {
       this.mediaExtraction = new MediaExtractionService();
     }

@@ -5,7 +5,7 @@
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import type { Accessor } from 'solid-js';
-import { createEffect, untrack } from 'solid-js';
+import { createEffect, onCleanup, untrack } from 'solid-js';
 
 /** Configuration for item scroll behavior. */
 interface UseGalleryItemScrollOptions {
@@ -41,6 +41,7 @@ export function useGalleryItemScroll(
 
   // DOM query cache using WeakRef to prevent memory leaks
   const itemsCache = new Map<number, WeakRef<HTMLElement>>();
+  onCleanup(() => itemsCache.clear());
 
   const getCachedItem = (index: number, itemsRoot: Element): HTMLElement | null => {
     // 1. Check cache
