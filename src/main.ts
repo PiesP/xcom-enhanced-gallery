@@ -108,7 +108,7 @@ async function runOptionalCleanup(label: string, task: () => Promise<void> | voi
   try {
     await task();
   } catch (error) {
-    if (__DEV__) logger.warn(`[cleanup] ${label}`, error);
+    if (__DEV__) logger.warn(`[cleanup] ${label} failed`, error);
   }
 }
 

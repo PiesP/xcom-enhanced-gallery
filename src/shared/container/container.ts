@@ -12,7 +12,7 @@ export type {
   SettingPath,
   SettingValue,
 } from '@shared/container/settings-registry';
-// Re-export settings registry for backward compatibility
+// Re-export settings registry
 export {
   getSettings,
   getTypedSettingOr,
