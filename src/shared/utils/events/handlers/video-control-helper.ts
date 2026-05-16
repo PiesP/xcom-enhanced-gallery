@@ -29,8 +29,6 @@ export interface VideoControlOptions {
 }
 
 /** Tracks video playback state when Service is unavailable */
-const playbackStateMap = new WeakMap<HTMLVideoElement, { playing: boolean }>();
-
 /**
  * Executes video control action on gallery video element.
  *
@@ -113,15 +111,16 @@ function playVideo(video: HTMLVideoElement, context?: string): void {
   const promise = video.play?.();
   if (promise && typeof (promise as Promise<unknown>).then === 'function') {
     (promise as Promise<unknown>)
-      .then(() => playbackStateMap.set(video, { playing: true }))
+      .then(() => {
+        /* playback started */
+      })
       .catch(() => {
-        playbackStateMap.set(video, { playing: false });
         if (__DEV__) {
           logger.debug('Play failed', { context });
         }
       });
   } else {
-    playbackStateMap.set(video, { playing: true });
+    /* synchronous play */
   }
 }
 
@@ -131,7 +130,6 @@ function playVideo(video: HTMLVideoElement, context?: string): void {
  */
 function pauseVideo(video: HTMLVideoElement): void {
   video.pause?.();
-  playbackStateMap.set(video, { playing: false });
 }
 
 /**

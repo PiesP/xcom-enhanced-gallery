@@ -158,5 +158,3 @@ export function combineSignals(signals: AbortSignal[]): AbortSignal {
   // Well-supported as of 2026; no fallback needed.
   return AbortSignal.any(validSignals);
 }
-
-// isAbortError is re-exported from @shared/error/cancellation.

@@ -35,12 +35,6 @@ interface AmbientVideoPauseResponse extends PauseAmbientVideosResult {
   readonly scope: AmbientVideoPauseScope;
 }
 
-/** Video trigger selectors (constant) */
-const VIDEO_TRIGGER_SELECTORS = VIDEO_CONTAINER_SELECTORS;
-
-/** Image trigger selectors (constant) */
-const IMAGE_TRIGGER_SELECTORS = IMAGE_CONTAINER_SELECTORS;
-
 /** Default pause result value */
 const PAUSE_RESULT_DEFAULT = {
   pausedCount: 0,
@@ -107,7 +101,7 @@ function isVideoTriggerElement(element?: HTMLElement | null): boolean {
   if (element.tagName === 'VIDEO') return true;
 
   return (
-    closestWithFallback(element, VIDEO_TRIGGER_SELECTORS, {
+    closestWithFallback(element, VIDEO_CONTAINER_SELECTORS, {
       debugLabel: 'video-container',
     }) !== null
   );
@@ -124,7 +118,7 @@ function isImageTriggerElement(element?: HTMLElement | null): boolean {
   if (element.tagName === 'IMG') return true;
 
   return (
-    closestWithFallback(element, IMAGE_TRIGGER_SELECTORS, {
+    closestWithFallback(element, IMAGE_CONTAINER_SELECTORS, {
       debugLabel: 'image-container',
     }) !== null
   );
