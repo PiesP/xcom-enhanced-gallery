@@ -1,3 +1,4 @@
+import { TWITTER_API_CONFIG } from '@constants/twitter-api';
 import { getCookieValue, getCookieValueSync } from '@shared/services/cookie/cookie-utils';
 
 let _csrfToken: string | undefined;
@@ -30,9 +31,6 @@ export async function getCsrfTokenAsync(): Promise<string | undefined> {
   return _csrfToken;
 }
 
-const FALLBACK_BEARER_TOKEN =
-  'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
-
 export function resolveBearerToken(): string {
   try {
     const nextDataScript = document.getElementById('__NEXT_DATA__');
@@ -47,5 +45,5 @@ export function resolveBearerToken(): string {
     // Fall through to fallback
   }
 
-  return FALLBACK_BEARER_TOKEN;
+  return TWITTER_API_CONFIG.GUEST_AUTHORIZATION;
 }
