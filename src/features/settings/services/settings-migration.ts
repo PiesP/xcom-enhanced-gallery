@@ -13,32 +13,17 @@
  */
 
 import { DEFAULT_SETTINGS } from '@constants/settings';
-import type { MigrationRegistry } from '@features/settings/types/settings-migration.types';
 import type { AppSettings } from '@shared/types/settings.types';
 import { isRecord } from '@shared/utils/types/guards';
 
 /**
  * Registry of versioned migrations for schema evolution.
- * Maps version strings to migration functions.
  *
- * NOTE: pruneWithTemplate + fillWithDefaults handles most schema evolution
- * automatically by discarding unknown keys and filling missing defaults.
- * Explicit migrations here are only needed for semantic transformations
- * (e.g., renaming a key or changing a value's meaning).
- *
- * @remarks
- * Additional migrations can be added for future schema versions.
+ * NOTE: fillWithDefaults handles most schema evolution automatically
+ * by filling missing fields from defaults. Explicit migrations here
+ * are only needed for semantic transformations (e.g., renaming a key
+ * or changing a value's meaning).
  */
-const migrations: MigrationRegistry = {
-  '1.0.0': (input): AppSettings => {
-    const next = { ...input } as AppSettings;
-    next.gallery = {
-      ...next.gallery,
-      enableKeyboardNav: true,
-    };
-    return next;
-  },
-};
 
 /**
  * Recursively prune unknown fields from input using template as allowed shape.
@@ -153,23 +138,5 @@ function fillWithDefaults(settings: AppSettings, nowMs: number): AppSettings {
  * ```
  */
 export function migrateSettings(input: AppSettings, nowMs: number): AppSettings {
-  let working: AppSettings = { ...input };
-
-  // Apply explicit migration if defined for detected version
-  const currentVersion = input.version;
-  const mig = migrations[currentVersion as keyof typeof migrations];
-  if (typeof mig === 'function') {
-    try {
-      working = mig(working);
-    } catch {
-      /**
-       * Intentionally ignored - migration errors should not prevent
-       * settings restoration. Fall back to default filling instead.
-       * This ensures user data preservation even with schema evolution issues.
-       */
-    }
-  }
-
-  // Always perform default fill/merge to ensure exactOptionalPropertyTypes safety
-  return fillWithDefaults(working, nowMs);
+  return fillWithDefaults(input, nowMs);
 }
