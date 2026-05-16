@@ -207,12 +207,12 @@ export class EventManager {
   public cleanup(): void {
     if (this.isDestroyed) return;
 
-    const ids = Array.from(this.listeners.keys());
+    const entries = Array.from(this.listeners.entries());
     this.listeners.clear();
 
-    for (const id of ids) {
+    for (const [id, ctx] of entries) {
       try {
-        this.removeListenerById(id);
+        ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
       } catch {
         // Swallow errors during cleanup
       }
