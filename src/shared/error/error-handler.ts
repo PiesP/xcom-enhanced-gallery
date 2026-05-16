@@ -66,7 +66,7 @@ export class GlobalErrorHandler {
    * Safe to call multiple times - subsequent calls are ignored.
    */
   public initialize(): void {
-    if (this.isInitialized || typeof window === 'undefined') {
+    if (this.isInitialized) {
       return;
     }
 
@@ -100,7 +100,7 @@ export class GlobalErrorHandler {
    * Safe to call multiple times - subsequent calls are ignored.
    */
   public destroy(): void {
-    if (!this.isInitialized || typeof window === 'undefined') {
+    if (!this.isInitialized) {
       return;
     }
 

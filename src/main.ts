@@ -30,14 +30,7 @@ const lifecycleState = {
 type Unregister = () => void;
 
 function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
-  const hasWindow = typeof window !== 'undefined' && !!window.addEventListener;
   const debugEnabled = __DEV__;
-  if (!hasWindow) {
-    if (debugEnabled) logger.debug('[events] Global events wiring skipped (no window context)');
-    return () => {
-      /* noop */
-    };
-  }
   let disposed = false;
   const eventManager = EventManager.getInstance();
   const controller = new AbortController();

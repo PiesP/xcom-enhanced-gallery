@@ -28,7 +28,6 @@ export interface ErrorReportOptions {
   readonly context: ErrorContext;
   readonly severity?: ErrorSeverity;
   readonly metadata?: Record<string, unknown>;
-  readonly notify?: boolean;
   readonly code?: string;
 }
 
@@ -63,11 +62,6 @@ export interface ContextBoundReporter {
 // ============================================================================
 
 const DEFAULT_SEVERITY: ErrorSeverity = 'error';
-let notificationCallback: ((message: string, context: ErrorContext) => void) | null = null;
-
-export function setNotificationCallback(cb: typeof notificationCallback): void {
-  notificationCallback = cb;
-}
 
 export function reportError(error: unknown, options: ErrorReportOptions): ErrorReportResult {
   const severity = options.severity ?? DEFAULT_SEVERITY;
@@ -81,10 +75,6 @@ export function reportError(error: unknown, options: ErrorReportOptions): ErrorR
     if (severity === 'info') logger.info(message, payload);
     else if (severity === 'warning') logger.warn(message, payload);
     else logger.error(message, payload);
-  }
-
-  if (options.notify && notificationCallback) {
-    notificationCallback(message, options.context);
   }
 
   if (severity === 'critical') {
