@@ -311,5 +311,4 @@ export class ThemeService implements ThemeServiceContract {
       this.recursionDepth--;
     }
   }
-
 }
