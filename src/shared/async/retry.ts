@@ -30,7 +30,7 @@ export function getExponentialBackoffDelayMs(attempt: number, baseDelayMs: numbe
  * @property onRetry - Optional callback for retry events, receives attempt number, error, and next delay
  * @property shouldRetry - Custom function to determine if error should trigger retry (default: all errors retry)
  */
-interface RetryOptions {
+export interface RetryOptions {
   /** Maximum number of retry attempts (default: 3) */
   readonly maxAttempts?: number;
   /** Base delay in milliseconds for exponential backoff (default: 200) */
@@ -51,7 +51,7 @@ interface RetryOptions {
  * @property success - Whether the operation succeeded
  * @property attempts - Number of attempts made (including initial attempt)
  */
-interface RetryResultBase {
+export interface RetryResultBase {
   /** Whether the operation succeeded */
   readonly success: boolean;
   /** Number of attempts made */
@@ -66,7 +66,7 @@ interface RetryResultBase {
  * @property data - The result value from successful operation
  * @property error - Always undefined for success case
  */
-type RetryResultSuccess<T> = RetryResultBase & {
+export type RetryResultSuccess<T> = RetryResultBase & {
   readonly success: true;
   /** The result value if successful */
   readonly data: T;
@@ -80,7 +80,7 @@ type RetryResultSuccess<T> = RetryResultBase & {
  * @property data - Always undefined for failure case
  * @property error - The error from the last failed attempt
  */
-type RetryResultFailure = RetryResultBase & {
+export type RetryResultFailure = RetryResultBase & {
   readonly success: false;
   readonly data?: undefined;
   /** The error if failed */

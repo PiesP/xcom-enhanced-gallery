@@ -134,7 +134,9 @@ export class HttpRequestService {
     url: string,
     options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
-    const { promise, safeResolve, safeReject } = this.createDeferredWithSettledGuard<T>(options?.signal);
+    const { promise, safeResolve, safeReject } = this.createDeferredWithSettledGuard<T>(
+      options?.signal
+    );
 
     try {
       const userscript = getUserscript();
