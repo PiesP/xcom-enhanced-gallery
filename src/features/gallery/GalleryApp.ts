@@ -53,12 +53,6 @@ export class GalleryApp {
     }
   }
 
-  /** Retry initialization after a prior failure. */
-  public async retryInitialize(): Promise<void> {
-    if (this.isInitialized) return;
-    return this.initialize();
-  }
-
   private async setupEventHandlers(): Promise<void> {
     const settingsService = tryGetSettingsManager<{ get?: (key: string) => unknown }>();
     const enableKeyboardSetting = settingsService?.get?.('gallery.enableKeyboardNav');
@@ -127,15 +121,7 @@ export class GalleryApp {
   ): Promise<void> {
     if (!this.isInitialized) {
       __DEV__ && logger.warn('[GalleryApp] Gallery not initialized, retrying...');
-      try {
-        await this.retryInitialize();
-      } catch {
-        this.userscript.notification({
-          title: 'Gallery unavailable',
-          text: 'Userscript manager required.',
-        });
-        return;
-      }
+      await this.initialize();
     }
 
     if (mediaItems.length === 0) {
