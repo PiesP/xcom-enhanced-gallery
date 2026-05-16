@@ -4,6 +4,7 @@
  * Primary use case: card images and other media not available via API.
  */
 
+import { MEDIA } from '@constants/media';
 import { TWEET_CONTAINER_SELECTORS } from '@constants/selectors';
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
@@ -37,10 +38,8 @@ import { isValidMediaUrl } from '@shared/utils/url/validator';
 function findAllMediaInContainer(container: HTMLElement): MediaElement[] {
   const mediaElements: MediaElement[] = [];
 
-  // Find all images (including card images)
-  const images = container.querySelectorAll<HTMLImageElement>(
-    'img[src*="pbs.twimg.com"], img[src*="video.twimg.com"]'
-  );
+  const cdnSelector = MEDIA.HOSTS.MEDIA_CDN.map((h) => `img[src*="${h}"]`).join(', ');
+  const images = container.querySelectorAll<HTMLImageElement>(cdnSelector);
   for (const img of images) {
     if (isMediaElement(img)) {
       mediaElements.push(img);

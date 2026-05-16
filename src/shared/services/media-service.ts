@@ -114,8 +114,6 @@ export class MediaService {
   }
 
   async cleanup(): Promise<void> {
-    this.cancelAllPrefetch();
-    this.clearPrefetchCache();
     this.cleanupOnce();
   }
 }
