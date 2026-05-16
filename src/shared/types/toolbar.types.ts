@@ -2,11 +2,13 @@
  * @fileoverview Toolbar Types - Shared UI State Types
  */
 
+import type { ImageFitMode } from '@shared/types/ui.types';
+
 /** Toolbar data state (business logic) */
 export type ToolbarDataState = 'idle' | 'loading' | 'downloading' | 'error';
 
-/** Image fit mode */
-export type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
+/** Image fit mode (re-exported from ui.types for toolbar context) */
+export type FitMode = ImageFitMode;
 
 /** Toolbar UI state object */
 export interface ToolbarState {
@@ -22,15 +24,6 @@ export interface ToolbarState {
  * Toolbar actions interface.
  *
  * @description Actions that modify ToolbarState
- *
- * @example
- * ```typescript
- * const actions: ToolbarActions = {
- *   setDownloading: (value) => setState('isDownloading', value),
- *   setLoading: (value) => setState('isLoading', value),
- *   // ...
- * };
- * ```
  */
 export interface ToolbarActions {
   /** Set download state */
