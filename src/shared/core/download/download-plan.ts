@@ -53,9 +53,3 @@ export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownload
 
   return { items, zipFilename };
 }
-
-/**
- * Plan how to persist a prepared ZIP blob.
- * @param method - Available download method
- * @returns Strategy for saving the ZIP file
- */
