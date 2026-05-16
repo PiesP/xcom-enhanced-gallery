@@ -168,14 +168,7 @@ export function isGalleryInternalElement(element: HTMLElement | null): boolean {
   }
 
   return GALLERY_SELECTORS.some((selector) => {
-    try {
-      return element.matches(selector) || element.closest(selector) !== null;
-    } catch (error) {
-      if (__DEV__) {
-        logger.warn('Invalid selector:', selector, error);
-      }
-      return false;
-    }
+    return safeMatches(element, selector) || safeClosest(element, selector) !== null;
   });
 }
 

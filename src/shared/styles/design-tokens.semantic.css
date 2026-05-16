@@ -169,7 +169,7 @@
     --xeg-easing-linear: linear;
 
     /* Line Height - semantic alias */
-    --xeg-line-height-normal: var(--line-height-normal, 1.5);
+    --xeg-line-height-normal: var(--line-height-normal);
 
     /* Interaction State Tokens */
     --xeg-button-lift: -0.0625rem;
@@ -195,12 +195,7 @@
   }
 
   /* Theme Support - dark/light mode */
-  :where(:root, .xeg-theme-scope)[data-theme="light"] {
-    --xeg-color-bg-primary: var(--color-base-white);
-    --xeg-color-text-primary: var(--color-base-black);
-    --xeg-color-text-secondary: var(--color-gray-600);
-    --xeg-gallery-bg: var(--xeg-gallery-bg-light);
-  }
+  /* Light mode: base tokens already define light theme values */
 
   /* Dark mode - explicit attribute */
   :where(:root, .xeg-theme-scope)[data-theme="dark"] {

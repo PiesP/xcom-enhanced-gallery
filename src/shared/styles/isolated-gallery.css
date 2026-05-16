@@ -6,11 +6,20 @@
 
 @layer xeg.base {
   .xeg-gallery-root {
-    /* Use unset to preserve inherited custom properties (tokens) */
-    all: unset;
+    /* Reset all properties without affecting custom properties */
+    all: initial;
+    /* Re-establish inheritance for custom properties */
+    --xeg-inherited: inherit;
     box-sizing: border-box;
     scroll-behavior: smooth;
-    font-family: var(--font-family-primary);
+    font-family: var(
+      --font-family-primary,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      sans-serif
+    );
     font-size: var(--font-size-base, 0.9375rem);
     line-height: var(--xeg-line-height-normal, 1.5);
     color: var(--xeg-color-text-primary, currentColor);
@@ -29,7 +38,6 @@
     transform: translateZ(0);
     will-change: opacity, transform;
     -webkit-text-size-adjust: 100%;
-    -moz-text-size-adjust: 100%;
     text-size-adjust: 100%;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

@@ -12,7 +12,7 @@ import { closestWithFallback } from '@shared/utils/dom/query-helpers';
  * @param tweetArticle - Tweet article element
  * @returns Text content or undefined if not found
  */
-function extractTweetTextHTML(tweetArticle: Element | null): string | undefined {
+function extractTweetText(tweetArticle: Element | null): string | undefined {
   if (!tweetArticle) return undefined;
 
   try {
@@ -44,7 +44,7 @@ export function extractTweetTextHTMLFromClickedElement(element: HTMLElement): st
     debugLabel: 'tweet-container',
   });
   if (tweetArticle) {
-    return extractTweetTextHTML(tweetArticle);
+    return extractTweetText(tweetArticle);
   }
 
   if (__DEV__) {

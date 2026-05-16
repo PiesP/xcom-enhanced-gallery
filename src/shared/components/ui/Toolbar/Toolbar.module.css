@@ -232,19 +232,6 @@
   transform: translateY(0);
 }
 
-/* Semantic button variants (inherit base toolbar styles) */
-.downloadCurrent {
-  /* inherits from .toolbarButton */
-}
-
-.downloadAll {
-  /* inherits from .toolbarButton */
-}
-
-.closeButton {
-  /* inherits from .toolbarButton */
-}
-
 /* Download button (inherits base styles) */
 .downloadButton {
   position: relative;
