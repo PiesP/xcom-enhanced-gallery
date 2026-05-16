@@ -1,9 +1,5 @@
 import { getUserscript, type UserscriptAPI } from '@shared/external/userscript/adapter';
 
-export interface PersistentStorageGetOptions {
-  readonly selfHealOnParseError?: boolean;
-}
-
 let _persistentStorageInstance: PersistentStorage | null = null;
 
 export class PersistentStorage {
@@ -39,22 +35,13 @@ export class PersistentStorage {
     await this.userscript.setValue(key, serialized);
   }
 
-  async get<T>(
-    key: string,
-    defaultValue?: T,
-    options: PersistentStorageGetOptions = {}
-  ): Promise<T | undefined> {
+  async get<T>(key: string, defaultValue?: T): Promise<T | undefined> {
     const value = await this.userscript.getValue<string | undefined>(key);
     if (value === undefined || value === null) return defaultValue;
 
     try {
       return JSON.parse(value) as T;
     } catch {
-      if (options.selfHealOnParseError === true) {
-        await this.userscript.deleteValue(key).catch(() => {
-          // Best-effort: do not throw from get().
-        });
-      }
       return defaultValue;
     }
   }
