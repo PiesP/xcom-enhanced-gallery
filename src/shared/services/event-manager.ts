@@ -65,7 +65,6 @@ export class EventManager {
   private isDestroyed = false;
 
   private readonly listeners = new Map<string, ListenerContext>();
-  private readonly ownedListenerContexts = new Map<string, string | undefined>();
 
   private constructor() {}
 
@@ -139,7 +138,6 @@ export class EventManager {
         context,
       };
       this.listeners.set(id, ctx);
-      this.ownedListenerContexts.set(id, context);
 
       return id;
     } catch (error) {
@@ -154,11 +152,10 @@ export class EventManager {
    * Remove event listener by ID.
    */
   public removeListener(id: string): boolean {
-    if (!this.ownedListenerContexts.has(id)) {
+    if (!this.listeners.has(id)) {
       return false;
     }
 
-    this.ownedListenerContexts.delete(id);
     return this.removeListenerById(id);
   }
 
@@ -167,15 +164,14 @@ export class EventManager {
    */
   public removeByContext(context: string): number {
     const toRemove: string[] = [];
-    for (const [id, ctx] of this.ownedListenerContexts) {
-      if (ctx === context) {
+    for (const [id, ctx] of this.listeners) {
+      if (ctx.context === context) {
         toRemove.push(id);
       }
     }
 
     let count = 0;
     for (const id of toRemove) {
-      this.ownedListenerContexts.delete(id);
       if (this.removeListenerById(id)) {
         count++;
       }
@@ -211,8 +207,8 @@ export class EventManager {
   public cleanup(): void {
     if (this.isDestroyed) return;
 
-    const ids = Array.from(this.ownedListenerContexts.keys());
-    this.ownedListenerContexts.clear();
+    const ids = Array.from(this.listeners.keys());
+    this.listeners.clear();
 
     for (const id of ids) {
       try {
