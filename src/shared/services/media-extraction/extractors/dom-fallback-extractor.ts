@@ -21,8 +21,8 @@ import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,
   isMediaElement,
+  type MediaElement,
 } from '@shared/utils/media/media-element-utils';
-import type { MediaElement } from '@shared/utils/media/media-element-utils.types';
 import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/media/tweet-extractor';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 

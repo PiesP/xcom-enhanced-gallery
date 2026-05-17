@@ -1,4 +1,11 @@
-import type { PromisifyOptions, ResultCallback } from '@shared/utils/async/promise-helpers.types';
+export type ResultCallback<TResult, TError = string | null | undefined> = (
+  result?: TResult,
+  error?: TError
+) => void;
+
+export interface PromisifyOptions<TFallback> {
+  readonly fallback?: () => TFallback | Promise<TFallback>;
+}
 
 export function promisifyCallback<TResult>(
   executor: (callback: ResultCallback<TResult>) => void,
