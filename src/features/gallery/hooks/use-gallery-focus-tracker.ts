@@ -3,11 +3,7 @@
  */
 
 import { FocusCoordinator } from '@features/gallery/logic/focus-coordinator';
-import {
-  gallerySignals,
-  galleryState,
-  navigateToItem,
-} from '@shared/state/signals/gallery.signals';
+import { gallerySignals, navigateToItem } from '@shared/state/signals/gallery.signals';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import type { Accessor } from 'solid-js';
@@ -56,7 +52,7 @@ export function useGalleryFocusTracker(
   const coordinator = new FocusCoordinator({
     isEnabled: shouldTrack,
     container,
-    activeIndex: () => galleryState.value.currentIndex,
+    activeIndex: () => gallerySignals.currentIndex,
     ...(options.threshold !== undefined && { threshold: options.threshold }),
     rootMargin: options.rootMargin ?? '0px',
     onFocusChange: (index, source) => {

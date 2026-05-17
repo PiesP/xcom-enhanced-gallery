@@ -29,14 +29,11 @@ export function tryGetSettings(): SettingsLike | null {
   return _settings;
 }
 
-export function tryGetSettingsManager<T = unknown>(): T | null {
-  return tryGetSettings() as T | null;
-}
-
 // ============================================================================
 // Type-Safe Settings Access
 // ============================================================================
 
+/** Recursively extract all dot-notation paths from a nested object type */
 type SettingPaths<T, Prefix extends string = ''> = T extends object
   ? {
       [K in keyof T & string]: T[K] extends object
@@ -45,6 +42,7 @@ type SettingPaths<T, Prefix extends string = ''> = T extends object
     }[keyof T & string]
   : never;
 
+/** Resolve the value type at a given dot-notation path */
 type SettingValueAt<T, Path extends string> = Path extends `${infer K}.${infer Rest}`
   ? K extends keyof T
     ? SettingValueAt<T[K], Rest>
@@ -53,8 +51,7 @@ type SettingValueAt<T, Path extends string> = Path extends `${infer K}.${infer R
     ? T[Path]
     : never;
 
-export type SettingPath = SettingPaths<AppSettings>;
-export type SettingValue<P extends SettingPath> = SettingValueAt<AppSettings, P>;
+type SettingPath = SettingPaths<AppSettings>;
 
 function requireSettingsService(): SettingsLike {
   const service = tryGetSettings();
@@ -64,17 +61,19 @@ function requireSettingsService(): SettingsLike {
   return service;
 }
 
+/** Get a typed setting value, falling back to default if unset */
 export function getTypedSettingOr<P extends SettingPath>(
   path: P,
-  fallback: SettingValue<P>
-): SettingValue<P> {
-  const value = requireSettingsService().get(path) as SettingValue<P> | undefined;
+  fallback: SettingValueAt<AppSettings, P>
+): SettingValueAt<AppSettings, P> {
+  const value = requireSettingsService().get(path) as SettingValueAt<AppSettings, P> | undefined;
   return value === undefined ? fallback : value;
 }
 
+/** Set a typed setting value */
 export function setTypedSetting<P extends SettingPath>(
   path: P,
-  value: SettingValue<P>
+  value: SettingValueAt<AppSettings, P>
 ): Promise<void> {
   return requireSettingsService().set(path, value);
 }

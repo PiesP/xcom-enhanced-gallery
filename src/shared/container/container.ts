@@ -14,7 +14,6 @@ export {
   registerSettings,
   setTypedSetting,
   tryGetSettings,
-  tryGetSettingsManager,
 } from '@shared/container/settings-registry';
 
 export function getThemeService(): ThemeService {

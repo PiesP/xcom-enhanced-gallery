@@ -10,8 +10,7 @@ import {
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
-import { setDownloading } from '@shared/state/signals/download.signals';
-import { gallerySignals, setError } from '@shared/state/signals/gallery.signals';
+import { gallerySignals, setDownloading, setError } from '@shared/state/signals/gallery.signals';
 
 export function useGalleryDownload() {
   const userscript = getUserscript();

@@ -92,9 +92,9 @@ export const galleryIndexEvents = createEventEmitter<{
   'navigate:complete': GalleryNavigateCompletePayload;
 }>();
 
-const [isOpenSig, _setIsOpenInternal] = createSignal<boolean>(INITIAL_STATE.isOpen);
+const [isOpenSig, setIsOpenSig] = createSignal<boolean>(INITIAL_STATE.isOpen);
 export function setIsOpen(value: boolean): void {
-  _setIsOpenInternal(value);
+  setIsOpenSig(value);
 }
 const [mediaItemsSig, setMediaItems] = createSignal<readonly MediaInfo[]>(INITIAL_STATE.mediaItems);
 const [currentIndexSig, setCurrentIndex] = createSignal<number>(INITIAL_STATE.currentIndex);
@@ -104,6 +104,19 @@ export const [currentVideoElementSig, setCurrentVideoElement] =
 
 // UI state signals (inlined from ui.state.ts)
 const [_errorSig, _setErrorSig] = createSignal<string | null>(INITIAL_STATE.error);
+
+// Download state (inlined from download.signals.ts)
+const [_isProcessing, setIsProcessing] = createSignal<boolean>(false);
+
+export const downloadState = {
+  get isProcessing(): boolean {
+    return _isProcessing();
+  },
+};
+
+export function setDownloading(value: boolean): void {
+  setIsProcessing(value);
+}
 
 export const gallerySignals = {
   get isOpen() {
@@ -140,28 +153,6 @@ function applyGallerySessionUpdate(state: GallerySessionState): void {
     setIsOpen(state.isOpen);
   });
 }
-
-export const galleryState = {
-  get value(): GalleryState {
-    return {
-      isOpen: isOpenSig(),
-      mediaItems: mediaItemsSig(),
-      currentIndex: currentIndexSig(),
-      error: gallerySignals.error,
-    };
-  },
-
-  set value(state: GalleryState) {
-    applyGallerySessionUpdate({
-      isOpen: state.isOpen,
-      mediaItems: state.mediaItems,
-      currentIndex: state.currentIndex,
-      focusedIndex: state.currentIndex,
-      currentVideoElement: null,
-      error: state.error,
-    });
-  },
-};
 
 export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   const validIndex = clampIndex(startIndex, items.length);

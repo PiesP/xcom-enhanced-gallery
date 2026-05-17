@@ -2,7 +2,7 @@
  * @fileoverview Gallery application orchestrator.
  */
 
-import { getMediaService, tryGetSettingsManager } from '@shared/container/container';
+import { getMediaService, tryGetSettings } from '@shared/container/container';
 import { galleryErrorReporter, mediaErrorReporter } from '@shared/error/app-error-reporter';
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { getUserscript } from '@shared/external/userscript/adapter';
@@ -36,7 +36,7 @@ export class GalleryApp {
   }
 
   private async setupEventHandlers(): Promise<void> {
-    const settingsService = tryGetSettingsManager<{ get?: (key: string) => unknown }>();
+    const settingsService = tryGetSettings() as { get?: (key: string) => unknown } | null;
     const enableKeyboardSetting = settingsService?.get?.('gallery.enableKeyboardNav');
     const enableKeyboard =
       typeof enableKeyboardSetting === 'boolean' ? enableKeyboardSetting : true;

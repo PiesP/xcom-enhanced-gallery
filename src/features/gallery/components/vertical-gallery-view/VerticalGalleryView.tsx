@@ -16,8 +16,11 @@ import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { getTypedSettingOr } from '@shared/container/container';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { logger } from '@shared/logging/logger';
-import { downloadState } from '@shared/state/signals/download.signals';
-import { gallerySignals, navigateToItem } from '@shared/state/signals/gallery.signals';
+import {
+  downloadState,
+  gallerySignals,
+  navigateToItem,
+} from '@shared/state/signals/gallery.signals';
 import { computePreloadIndices } from '@shared/utils/performance/preload';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';

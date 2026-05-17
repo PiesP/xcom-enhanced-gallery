@@ -7,11 +7,7 @@ import type {
   LanguageOption,
   ThemeOption,
 } from '@shared/components/ui/Settings/SettingsControls.types';
-import {
-  getLanguageService,
-  getThemeService,
-  tryGetSettingsManager,
-} from '@shared/container/container';
+import { getLanguageService, getThemeService, tryGetSettings } from '@shared/container/container';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
@@ -290,9 +286,9 @@ export function useToolbarSettingsController(
 
     // Sync theme to SettingsService if available (fixes auto theme override on restart)
     try {
-      const settingsService = tryGetSettingsManager<{
+      const settingsService = tryGetSettings() as {
         set: (key: string, value: unknown) => Promise<void>;
-      }>();
+      } | null;
       if (settingsService) {
         void settingsService.set('gallery.theme', theme).catch((error: unknown) => {
           logger.warn(

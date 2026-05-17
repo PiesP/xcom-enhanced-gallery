@@ -5,7 +5,7 @@
 import { isGalleryInternalEvent } from '@shared/dom/utils';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
-import { galleryState } from '@shared/state/signals/gallery.signals';
+import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { createPrefixedId } from '@shared/utils/id/create-id';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 import { toAccessor } from '@shared/utils/solid/accessor-utils';
@@ -53,8 +53,8 @@ export function useGalleryScroll({
   const enabledAccessor = toAccessor(enabled);
   const programmaticTimestampAccessor = toAccessor(programmaticScrollTimestamp ?? 0);
 
-  // Access gallery open state via galleryState
-  const isGalleryOpen = createMemo(() => galleryState.value.isOpen);
+  // Access gallery open state via gallerySignals
+  const isGalleryOpen = createMemo(() => gallerySignals.isOpen);
 
   const [isScrolling, setIsScrolling] = createSignal(false);
   const [lastScrollTime, setLastScrollTime] = createSignal(0);
