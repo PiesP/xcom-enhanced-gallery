@@ -8,7 +8,7 @@
 import { readFileSync, statSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import type { Plugin } from 'vite';
-import { OUTPUT_FILE_NAMES, getBuildModeConfig } from '../constants';
+import { getBuildModeConfig, OUTPUT_FILE_NAMES } from '../constants';
 import { generateUserscriptHeader } from '../userscript/metadata';
 import { resolveVersion } from '../version';
 

@@ -24,7 +24,7 @@ import { defineConfig, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 
 // Internal modules
-import { OUTPUT_FILE_NAMES, getBuildModeConfig } from './tooling/vite/constants';
+import { getBuildModeConfig, OUTPUT_FILE_NAMES } from './tooling/vite/constants';
 import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
 import { productionCleanupPlugin } from './tooling/vite/plugins/production-cleanup';
 import { singleFileBundleGuardPlugin } from './tooling/vite/plugins/single-file-guard';

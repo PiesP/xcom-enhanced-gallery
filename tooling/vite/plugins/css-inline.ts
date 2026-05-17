@@ -10,7 +10,7 @@
 import { transform } from 'lightningcss';
 import type { Plugin } from 'vite';
 
-import { STYLE_ID, escapeRegExp, getBuildModeConfig } from '../constants';
+import { escapeRegExp, getBuildModeConfig, STYLE_ID } from '../constants';
 import type { BuildModeConfig } from '../types';
 
 /**

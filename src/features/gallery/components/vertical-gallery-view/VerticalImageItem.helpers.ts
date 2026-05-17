@@ -1,16 +1,3 @@
-/**
- * @fileoverview VerticalImageItem Helper Utilities
- * @description Helpers for filename cleaning, video detection, and media processing.
- */
-
-import type { MediaInfo } from '@shared/types/media.types';
-
-/**
- * Video file extensions recognized by this application
- * @internal
- */
-const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi'] as const;
-
 const CLEAN_FILENAME_MAX_LENGTH = 40;
 const CLEAN_FILENAME_TRUNCATION_MARKER = '...';
 const CLEAN_FILENAME_EXTENSION_REGEX = /(?:\.[^./\\]{1,10})$/;
@@ -18,14 +5,6 @@ const CLEAN_FILENAME_TWITTER_PREFIX_REGEX = /^twitter_media_\d{8}T\d{6}_/;
 const CLEAN_FILENAME_MEDIA_PREFIX_REGEX = /^\/media\//;
 const CLEAN_FILENAME_RELATIVE_PREFIX_REGEX = /^\.\//;
 
-/**
- * Clean and normalize filename for display and file saving.
- * Removes Twitter prefixes, /media/ prefix, relative paths, and truncates long filenames (over 40 chars).
- * Falls back to "Untitled" when input is missing or empty.
- *
- * @param filename - Original filename (optional)
- * @returns Cleaned filename
- */
 export function cleanFilename(filename?: string): string {
   if (!filename) {
     return 'Untitled';
@@ -126,69 +105,4 @@ export function normalizeVideoMutedSetting(value: unknown, fallback = false): bo
   }
 
   return fallback;
-}
-
-/**
- * Detect if media is a video based on file extension and hostname
- *
- * **Detection Strategy**:
- * 1. Check if URL pathname ends with known video extensions (.mp4, .webm, .mov, .avi)
- * 2. Check if filename ends with video extension
- * 3. Validate URL hostname if video.twimg.com (Twitter video host)
- * 4. Fall back to false if URL parsing fails (relative paths, data: URLs)
- *
- * **Security**:
- * - Validates URL structure with URL constructor before accessing hostname
- * - Gracefully handles parsing errors (relative paths, invalid URLs)
- * - Checks extension before hostname to avoid unnecessary URL parsing
- *
- * @param media - MediaInfo object containing url and filename
- * @returns true if media is detected as video, false otherwise
- *
- * @example
- * `isVideoMedia({ url: 'https://video.twimg.com/video.mp4', filename: 'clip.mp4' })`
- * // Returns true
- *
- * `isVideoMedia({ url: 'https://pbs.twimg.com/image.jpg', filename: 'photo.jpg' })`
- * // Returns false
- *
- * `isVideoMedia({ url: 'relative/path/video.webm', filename: undefined })`
- * // Returns true (from extension check)
- */
-export function isVideoMedia(media: MediaInfo): boolean {
-  const urlLowerCase = media.url.toLowerCase();
-
-  // Prefer parsing so we can reliably inspect `pathname` only.
-  // This avoids false positives when query strings/fragments contain ".mp4".
-  let parsedUrl: URL | null = null;
-  try {
-    parsedUrl = new URL(media.url);
-  } catch {
-    parsedUrl = null;
-  }
-
-  const pathToCheck = parsedUrl
-    ? parsedUrl.pathname.toLowerCase()
-    : (urlLowerCase.split(/[?#]/)[0] ?? '');
-
-  if (VIDEO_EXTENSIONS.some((ext) => pathToCheck.endsWith(ext))) {
-    return true;
-  }
-
-  // Check filename for video extensions
-  if (media.filename) {
-    const filenameLowerCase = media.filename.toLowerCase();
-    if (VIDEO_EXTENSIONS.some((ext) => filenameLowerCase.endsWith(ext))) {
-      return true;
-    }
-  }
-
-  // Validate URL hostname (security check)
-  if (parsedUrl) {
-    return parsedUrl.hostname === 'video.twimg.com';
-  }
-
-  // URL parsing failed (relative path, data: URL, malformed URL, etc.)
-  // Already checked extensions above, so false is correct here.
-  return false;
 }

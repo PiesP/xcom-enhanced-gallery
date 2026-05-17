@@ -1,7 +1,3 @@
-/**
- * @fileoverview User cancellation helpers
- */
-
 const USER_CANCELLED_MESSAGE = 'Download cancelled by user' as const;
 
 export function isAbortError(value: unknown): boolean {
@@ -11,12 +7,6 @@ export function isAbortError(value: unknown): boolean {
   if (value instanceof Error) {
     return value.name === 'AbortError' || value.name === 'TimeoutError';
   }
-  return false;
-}
-
-function isTimeoutError(value: unknown): boolean {
-  if (value instanceof DOMException) return value.name === 'TimeoutError';
-  if (value instanceof Error) return value.name === 'TimeoutError';
   return false;
 }
 
@@ -45,8 +35,12 @@ export function createUserCancelledAbortError(cause?: unknown): DOMException {
 export function getUserCancelledAbortErrorFromSignal(signal?: AbortSignal): DOMException | Error {
   const reason = signal?.reason;
 
-  if (isTimeoutError(reason)) return reason as DOMException | Error;
-  if (isUserCancelledAbortError(reason)) return reason as DOMException | Error;
+  if (reason instanceof DOMException) {
+    if (reason.name === 'TimeoutError' || isUserCancelledAbortError(reason)) return reason;
+  }
+  if (reason instanceof Error) {
+    if (reason.name === 'TimeoutError' || isUserCancelledAbortError(reason)) return reason;
+  }
 
   return createUserCancelledAbortError(reason);
 }

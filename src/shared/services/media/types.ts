@@ -118,8 +118,4 @@ export interface TweetMediaEntry {
   readonly sourceLocation?: 'original' | 'quoted';
   /** Quoted tweet ID (if from quote) */
   readonly quotedTweetId?: string;
-  /** Quoted tweet author */
-  readonly quotedScreenName?: string;
-  /** Original tweet ID (for quote tweets) */
-  readonly originalTweetId?: string;
 }
