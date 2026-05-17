@@ -24,11 +24,3 @@ const BUILD_DIR = path.dirname(fileURLToPath(import.meta.url));
  * Resolved relative to BUILD_DIR (../../).
  */
 export const REPO_ROOT = path.resolve(BUILD_DIR, '../..');
-
-/**
- * Third-party licenses directory (absolute path).
- *
- * Contains .txt and .md license files for third-party dependencies.
- * Located at LICENSES/ in the repository root.
- */
-export const LICENSES_DIR = path.resolve(REPO_ROOT, 'LICENSES');

@@ -83,15 +83,3 @@ export const USERSCRIPT_CONFIG = {
   noframes: true,
   compatible: BROWSER_COMPATIBILITY,
 } as const satisfies UserscriptBaseConfig;
-
-/**
- * Mapping from package/directory names to display names for licenses.
- *
- * Used when aggregating third-party license information for documentation.
- * Maps package identifiers to human-readable names shown to users.
- */
-export const LICENSE_NAME_MAP: Record<string, string> = {
-  'solid-js': 'Solid.js',
-  lucide: 'Lucide',
-  'xcom-enhanced-gallery': 'X.com Enhanced Gallery',
-};

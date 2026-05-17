@@ -22,19 +22,6 @@ export interface BuildModeConfig {
 }
 
 /**
- * License file metadata extracted during build aggregation.
- *
- * @property fileName - Original filename in LICENSES directory (e.g., "MIT.txt")
- * @property name - Normalized license name for display (e.g., "MIT")
- * @property text - Full license text content
- */
-export interface LicenseInfo {
-  readonly fileName: string;
-  readonly name: string;
-  readonly text: string;
-}
-
-/**
  * Complete userscript metadata for header generation.
  *
  * Includes all directives required by userscript managers (GM_*, TM_*) and
