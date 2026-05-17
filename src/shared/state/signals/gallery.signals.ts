@@ -2,19 +2,12 @@
  * Gallery state management with fine-grained signals
  *
  * Provides reactive gallery state management using Solid.js signals.
- * Delegates to navigation.state.ts for navigation tracking.
- *
  * Gallery open/close transitions are committed through a dedicated session
  * update helper so subscribers observe a complete snapshot.
  *
  * @module gallery.signals
  */
 import { logger } from '@shared/logging/logger';
-import {
-  recordNavigation,
-  resetNavigation,
-  resolveNavigationSource,
-} from '@shared/state/signals/navigation.state';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { NavigationSource } from '@shared/types/navigation.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
@@ -22,6 +15,50 @@ import { clampIndex } from '@shared/utils/types/safety';
 import { batch, createSignal } from 'solid-js';
 
 export type GalleryNavigationTrigger = NavigationSource;
+
+// ========================
+// Navigation state (inlined from navigation.state.ts)
+// ========================
+const INITIAL_NAV_SOURCE: NavigationSource = 'auto-focus';
+
+const [_navSource, setNavSource] = createSignal<NavigationSource>(INITIAL_NAV_SOURCE);
+const [_navTimestamp, setNavTimestamp] = createSignal<number>(0);
+const [_navIndex, setNavIndex] = createSignal<number | null>(null);
+
+const isManualSource = (source: NavigationSource): boolean =>
+  source === 'button' || source === 'keyboard';
+
+export function recordNavigation(
+  targetIndex: number,
+  source: NavigationSource,
+  nowMs?: number
+): void {
+  const timestamp = nowMs ?? performance.now();
+  const currentIndex = _navIndex();
+  const currentSource = _navSource();
+
+  if (targetIndex === currentIndex && isManualSource(source) && isManualSource(currentSource)) {
+    setNavTimestamp(timestamp);
+    return;
+  }
+
+  setNavSource(source);
+  setNavTimestamp(timestamp);
+  setNavIndex(targetIndex);
+}
+
+export function resetNavigation(nowMs?: number): void {
+  setNavSource(INITIAL_NAV_SOURCE);
+  setNavTimestamp(nowMs ?? performance.now());
+  setNavIndex(null);
+}
+
+export function resolveNavigationSource(trigger: NavigationSource): NavigationSource {
+  if (trigger === 'scroll') return 'scroll';
+  if (trigger === 'keyboard') return 'keyboard';
+  return 'button';
+}
+// ========================
 
 export interface GalleryState {
   readonly isOpen: boolean;
