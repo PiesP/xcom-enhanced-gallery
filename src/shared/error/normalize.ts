@@ -4,27 +4,17 @@
  */
 
 export function normalizeErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message || error.name || 'Error';
-  }
-
-  if (typeof error === 'string') {
-    return error;
-  }
-
-  if (error == null) {
-    return 'Unknown error';
-  }
-
+  if (error instanceof Error) return error.message || error.name || 'Error';
+  if (typeof error === 'string') return error;
+  if (error == null) return 'Unknown error';
   if (typeof error === 'object') {
-    const record = error as Record<string, unknown>;
-    if (typeof record.message === 'string') return record.message;
+    const msg = (error as Record<string, unknown>).message;
+    if (typeof msg === 'string') return msg;
     try {
-      return JSON.stringify(record);
+      return JSON.stringify(error);
     } catch {
-      return String(record);
+      return String(error);
     }
   }
-
   return String(error);
 }
