@@ -4,7 +4,10 @@
 
 import { Script } from 'node:vm';
 import type { Plugin } from 'vite';
-import { escapeRegExp } from '../../node/tsconfig-aliases-core';
+
+function escapeRegExp(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 function assertParsableJsFinal(code: string): void {
   try {
@@ -199,10 +202,6 @@ export function productionCleanupPlugin(): Plugin {
         const header = split.header;
         let code = split.body;
 
-        code = code.replace(
-          /const\s+\w+\s*=\s*(?:\/\*#__PURE__\*\/\s*)?Object\.freeze\(\s*(?:\/\*#__PURE__\*\/\s*)?Object\.defineProperty\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*,\s*Symbol\.toStringTag\s*,\s*\{\s*value\s*:\s*['"]Module['"]\s*\}\s*\)\s*\)\s*;?\n?/g,
-          ''
-        );
         code = code.replace(/\/\*#__PURE__\*\/\s*/g, '');
         code = code.replace(/Object\.freeze\(\s*\{\s*__proto__\s*:\s*null\s*\}\s*\)/g, '({})');
         code = removeLogCalls(code, ['debug', 'info', 'warn', 'trace']);
@@ -216,8 +215,9 @@ export function productionCleanupPlugin(): Plugin {
         code = code.replace(/\s*\/\*\*(?:[^*]|\*(?!\/))*@internal(?:[^*]|\*(?!\/))*\*\/\s*/g, '\n');
         code = stripEmptyEsmMinInitWrappers(code);
 
-        // Remove data-testid attributes (test-only)
-        code = code.replace(/\s*data-testid="[^"]*"/g, '');
+        // Note: data-testid removal is not safe — it would also strip selector
+        // strings like 'article[data-testid="tweet"]' used at runtime.
+        // Production builds already omit data-testid via __DEV__ guards in source.
 
         // Comment stripping disabled: regex-based removal corrupts rolldown output
         // code = code.replace(/\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\/\s*/g, ' ');

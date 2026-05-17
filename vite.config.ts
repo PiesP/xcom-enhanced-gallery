@@ -23,7 +23,6 @@ import { defineConfig, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 
 // Internal modules
-import { resolveViteAliasesFromTsconfig } from './tooling/node/tsconfig-aliases';
 import { getBuildModeConfig } from './tooling/vite/build-mode';
 import { OUTPUT_FILE_NAMES } from './tooling/vite/constants';
 import { REPO_ROOT } from './tooling/vite/paths';
@@ -35,21 +34,6 @@ import { productionCleanupPlugin } from './tooling/vite/plugins/production-clean
 import { singleFileBundleGuardPlugin } from './tooling/vite/plugins/single-file-guard';
 import { userscriptHeaderPlugin } from './tooling/vite/plugins/userscript-header';
 import { resolveVersion } from './tooling/vite/version';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Path Aliases
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Build path aliases from tsconfig.json
- * Resolves path mappings for the import resolver
- */
-function buildPathAliases(root: string) {
-  return resolveViteAliasesFromTsconfig({
-    rootDir: root,
-    tsconfigPath: resolve(root, 'tsconfig.json'),
-  });
-}
 
 /**
  * Normalize module ID paths to use forward slashes
@@ -123,7 +107,8 @@ export default defineConfig(({ mode }): UserConfig => {
     root,
 
     resolve: {
-      alias: [...mediaExtractionAliases, ...buildPathAliases(root)],
+      tsconfigPaths: true,
+      alias: mediaExtractionAliases,
     },
 
     build: {
