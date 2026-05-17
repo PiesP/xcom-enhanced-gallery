@@ -16,7 +16,10 @@ export interface SyncThemeAttributesOptions {
  * @param theme - Target theme name ('light' or 'dark')
  * @param options - Optional configuration for scope and root element handling
  */
-export function syncThemeAttributes(theme: 'light' | 'dark', options: SyncThemeAttributesOptions = {}): void {
+export function syncThemeAttributes(
+  theme: 'light' | 'dark',
+  options: SyncThemeAttributesOptions = {}
+): void {
   // Early return for non-browser environments (SSR safety)
   if (typeof document === 'undefined') {
     return;

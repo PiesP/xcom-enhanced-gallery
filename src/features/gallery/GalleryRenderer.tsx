@@ -22,7 +22,7 @@ import {
 } from '@shared/state/signals/gallery.signals';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { createEffectRoot } from '@shared/utils/solid/accessor-utils';
-import { createSignal, onCleanup, type JSX } from 'solid-js';
+import { createSignal, type JSX, onCleanup } from 'solid-js';
 
 import './styles/gallery-global.css';
 

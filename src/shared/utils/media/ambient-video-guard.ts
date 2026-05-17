@@ -1,7 +1,7 @@
-import { createEffectRoot } from '@shared/utils/solid/accessor-utils';
 import { logger } from '@shared/logging/logger';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
+import { createEffectRoot } from '@shared/utils/solid/accessor-utils';
 
 let guardDispose: (() => void) | null = null;
 

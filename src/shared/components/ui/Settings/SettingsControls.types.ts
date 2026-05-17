@@ -6,9 +6,9 @@
  * @see {@link SettingsControls} - Component implementation
  */
 
+import type { ThemeSetting } from '@shared/services/theme-service';
 import type { BaseComponentProps } from '@shared/types/component.types';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
-import type { ThemeSetting } from '@shared/services/theme-service';
 
 /** Re-export for backwards compatibility */
 export type ThemeOption = ThemeSetting;

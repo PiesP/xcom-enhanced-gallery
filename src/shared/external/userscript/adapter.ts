@@ -130,10 +130,7 @@ export function getUserscript(): UserscriptAPI {
 // GM API Availability Checks
 // ============================================================================
 
-const GM_API_CHECKS: Record<
-  string,
-  (gm: ResolvedGMAPIs) => boolean
-> = {
+const GM_API_CHECKS: Record<string, (gm: ResolvedGMAPIs) => boolean> = {
   getValue: (gm) => typeof gm.getValue === 'function',
   setValue: (gm) => typeof gm.setValue === 'function',
   download: (gm) => typeof gm.download === 'function',
