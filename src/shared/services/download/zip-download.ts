@@ -2,12 +2,8 @@ import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { StreamingZipWriter } from '@shared/external/zip/streaming-zip-writer';
 import { DEFAULT_BACKOFF_BASE_MS, fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
-import type {
-  DownloadOptions,
-  DownloadProgress,
-  OrchestratorItem,
-  ZipResult,
-} from '@shared/services/download/types';
+import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
+import { reportProgress } from '@shared/utils/download/report-progress';
 
 type UniqueFilenameFactory = (desired: string) => string;
 
@@ -47,24 +43,6 @@ const clampConcurrency = (value: number | undefined): number => {
 };
 
 const clampRetries = (value: number | undefined): number => Math.max(0, value ?? DEFAULT_RETRIES);
-
-const calculatePercentage = (current: number, total: number): number => {
-  if (total <= 0) return 0;
-  return Math.min(100, Math.max(0, Math.round((current / total) * 100)));
-};
-
-const reportProgress = (
-  onProgress: DownloadOptions['onProgress'] | undefined,
-  payload: Omit<DownloadProgress, 'percentage'> & { percentage?: number }
-): void => {
-  if (!onProgress) return;
-
-  const percentage = payload.percentage ?? calculatePercentage(payload.current, payload.total);
-  onProgress({
-    ...payload,
-    percentage,
-  });
-};
 
 const throwIfAborted = (signal?: AbortSignal): void => {
   if (signal?.aborted) {

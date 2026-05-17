@@ -8,6 +8,7 @@ import type {
   SingleDownloadResult,
 } from '@shared/services/download/types';
 import type { MediaInfo } from '@shared/types/media.types';
+import { reportProgress } from '@shared/utils/download/report-progress';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 function asGMDownloadFunction(value: unknown): GMDownloadFunction | undefined {
@@ -26,16 +27,6 @@ export function detectDownloadCapability(): DownloadCapability {
 
 const DOWNLOAD_TIMEOUT_MS = 30_000;
 const DOWNLOAD_TIMEOUT_MESSAGE = 'Download timeout';
-
-const reportProgress = (
-  onProgress: DownloadOptions['onProgress'] | undefined,
-  phase: 'preparing' | 'downloading' | 'complete',
-  percentage: number,
-  filename: string
-): void => {
-  if (!onProgress) return;
-  onProgress({ phase, current: 1, total: 1, percentage, filename });
-};
 
 const createAbortResult = (): SingleDownloadResult => ({
   success: false,
@@ -57,7 +48,13 @@ export async function downloadSingleFile(
     return { success: false, error: 'No download method available' };
   }
 
-  reportProgress(options.onProgress, 'preparing', 0, filename);
+  reportProgress(options.onProgress, {
+    phase: 'preparing',
+    current: 0,
+    total: 1,
+    percentage: 0,
+    filename,
+  });
 
   let url = media.url;
   let isBlobUrl = false;
@@ -80,7 +77,13 @@ export async function downloadSingleFile(
       if (settled) return;
       settled = true;
       if (result.success) {
-        reportProgress(options.onProgress, 'complete', 100, filename);
+        reportProgress(options.onProgress, {
+          phase: 'complete',
+          current: 1,
+          total: 1,
+          percentage: 100,
+          filename,
+        });
       }
       cleanup();
       resolve(result);
@@ -105,7 +108,13 @@ export async function downloadSingleFile(
             100,
             Math.max(0, Math.round((progress.loaded / progress.total) * 100))
           );
-          reportProgress(options.onProgress, 'downloading', pct, filename);
+          reportProgress(options.onProgress, {
+            phase: 'downloading',
+            current: progress.loaded,
+            total: progress.total,
+            percentage: pct,
+            filename,
+          });
         },
       });
     } catch (error) {

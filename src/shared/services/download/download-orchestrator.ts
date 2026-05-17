@@ -212,13 +212,9 @@ export class DownloadOrchestrator {
     options: DownloadOptions,
     capability: DownloadCapability
   ): Promise<{ success: boolean; error?: string }> {
-    const saveStrategy: 'gm_download' | 'none' =
-      capability.method === 'gm_download' ? 'gm_download' : 'none';
-
-    if (saveStrategy === 'gm_download' && capability.gmDownload) {
+    if (capability.method === 'gm_download' && capability.gmDownload) {
       return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename, options.onProgress);
     }
-
     return { success: false, error: 'No download method' };
   }
 

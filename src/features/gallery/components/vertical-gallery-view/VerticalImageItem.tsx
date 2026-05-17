@@ -148,22 +148,15 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       if (video) {
         const target = event.target;
         const targetInVideo = target instanceof Node && video.contains(target);
-
         const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
         const pathIncludesVideo = Array.isArray(path) && path.includes(video);
 
         // If the click originated from the <video> element or its native controls,
-        // do not trigger item activation. This prevents nested interaction conflicts
-        // between the gallery item click handler and native video controls.
+        // do not trigger item activation to avoid nested interaction conflicts.
         if (targetInVideo || pathIncludesVideo) {
           return;
         }
       }
-
-      // Click outside the video element: treat as item activation.
-      containerRef()?.focus?.({ preventScroll: true });
-      local.onClick();
-      return;
     }
 
     containerRef()?.focus?.({ preventScroll: true });
@@ -310,8 +303,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             ref={setVideoRef}
             class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
             onLoadedMetadata={handleMediaLoad}
-            onLoadedData={handleMediaLoad}
-            onCanPlay={handleMediaLoad}
             onError={handleMediaError}
             onContextMenu={handleContextMenu}
             onDragStart={preventDragStart}

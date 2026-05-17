@@ -34,9 +34,6 @@ function registerNavigationEvents({
   onTriggerChange,
   onNavigateComplete,
 }: RegisterEventsOptions): CleanupFn {
-  const stopStart = galleryIndexEvents.on('navigate:start', () => {
-    // trigger is already handled by navigate:complete below
-  });
   const stopComplete = galleryIndexEvents.on(
     'navigate:complete',
     (payload: GalleryNavigateCompletePayload) => {
@@ -45,7 +42,6 @@ function registerNavigationEvents({
     }
   );
   return () => {
-    stopStart();
     stopComplete();
   };
 }
