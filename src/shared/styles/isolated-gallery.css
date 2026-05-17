@@ -12,14 +12,7 @@
     --xeg-inherited: inherit;
     box-sizing: border-box;
     scroll-behavior: smooth;
-    font-family: var(
-      --font-family-primary,
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      Roboto,
-      sans-serif
-    );
+    font-family: var(--font-family-primary);
     font-size: var(--font-size-base, 0.9375rem);
     line-height: var(--xeg-line-height-normal, 1.5);
     color: var(--xeg-color-text-primary, currentColor);
