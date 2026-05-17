@@ -80,31 +80,30 @@ const resolveAspectRatio = (
   return undefined;
 };
 
+function buildHighQualityUrl(pathPart: string, existingQuery: string): string {
+  const pathMatch = pathPart.match(/\.(jpe?g|png)$/i);
+  if (!pathMatch) return `${pathPart}?${existingQuery}`;
+
+  const ext = (pathMatch[1] ?? '').toLowerCase();
+  const params = new URLSearchParams(existingQuery);
+  if (!Array.from(params.keys()).some((k) => k.toLowerCase() === 'format')) {
+    params.set('format', ext);
+  }
+  params.set('name', 'orig');
+
+  const query = params.toString();
+  return query ? `${pathPart}?${query}` : pathPart;
+}
+
 const getPhotoHighQualityUrl = (mediaUrlHttps?: string): string | undefined => {
   if (!mediaUrlHttps) return mediaUrlHttps;
 
-  // A helper to determine whether the input is absolute (contains a scheme)
   const isAbsolute = /^(https?:)?\/\//i.test(mediaUrlHttps);
-
   const parsed = tryParseUrl(mediaUrlHttps, 'https://pbs.twimg.com');
+
   if (!parsed) {
-    // Conservative fallback that preserves the path and existing query params (if any)
-    // while enforcing `name=orig` for maximum quality.
     const [pathPart = '', existingQuery = ''] = mediaUrlHttps.split('?');
-    const pathMatch = pathPart.match(/\.(jpe?g|png)$/i);
-    if (!pathMatch) return mediaUrlHttps;
-
-    const ext = (pathMatch[1] ?? '').toLowerCase();
-    const params = new URLSearchParams(existingQuery);
-    const hasFormat = Array.from(params.keys()).some((k) => k.toLowerCase() === 'format');
-    if (!hasFormat) {
-      params.set('format', ext);
-    }
-    // Always enforce original size.
-    params.set('name', 'orig');
-
-    const query = params.toString();
-    return query ? `${pathPart}?${query}` : pathPart;
+    return buildHighQualityUrl(pathPart, existingQuery);
   }
 
   const hasParamCaseInsensitive = (key: string): boolean =>
@@ -126,13 +125,9 @@ const getPhotoHighQualityUrl = (mediaUrlHttps?: string): string | undefined => {
   if (!hasParamCaseInsensitive('format')) {
     setParamCaseInsensitive('format', ext);
   }
-  // Always enforce original size, even if `format` is already present.
   setParamCaseInsensitive('name', 'orig');
 
-  // Preserve original absolute/relative form: return full string for absolute
-  if (isAbsolute) return parsed.toString();
-  // For relative inputs, return pathname + search to avoid embedding the host
-  return `${parsed.pathname}${parsed.search}`;
+  return isAbsolute ? parsed.toString() : `${parsed.pathname}${parsed.search}`;
 };
 
 const getVideoHighQualityUrl = (media: TwitterMedia): string | null => {
@@ -191,6 +186,33 @@ const createMediaEntry = (
   };
 };
 
+function sortMediaByInlineOrder(
+  mediaList: TwitterMedia[],
+  inlineMedia: readonly { media_id: string; index: number }[] | undefined
+): TwitterMedia[] {
+  const orderMap = new Map<string, number>();
+  if (Array.isArray(inlineMedia)) {
+    for (const item of inlineMedia) {
+      if (item.media_id && typeof item.index === 'number') {
+        orderMap.set(item.media_id, item.index);
+      }
+    }
+  }
+  if (orderMap.size === 0) return mediaList;
+
+  return mediaList
+    .map((media, originalIndex) => ({ media, originalIndex }))
+    .sort((left, right) => {
+      const leftIdx = orderMap.get(left.media.id_str);
+      const rightIdx = orderMap.get(right.media.id_str);
+      if (leftIdx !== undefined && rightIdx !== undefined) return leftIdx - rightIdx;
+      if (leftIdx !== undefined) return -1;
+      if (rightIdx !== undefined) return 1;
+      return left.originalIndex - right.originalIndex;
+    })
+    .map((entry) => entry.media);
+}
+
 export function extractMediaFromTweet(
   tweetResult: TwitterTweet,
   tweetUser: TwitterUser,
@@ -215,41 +237,11 @@ export function extractMediaFromTweet(
   // When note_tweet is present, inline_media provides the intended presentation order
   // (by text position index). We keep a stable ordering for items not referenced.
   const inlineMedia = parseTarget.note_tweet?.note_tweet_results?.result?.media?.inline_media;
-  const inlineMediaOrder = new Map<string, number>();
-  if (Array.isArray(inlineMedia)) {
-    for (const item of inlineMedia) {
-      if (item.media_id && typeof item.index === 'number') {
-        inlineMediaOrder.set(item.media_id, item.index);
-      }
-    }
-  }
+  const orderedMedia = sortMediaByInlineOrder(
+    parseTarget.extended_entities?.media ?? [],
+    inlineMedia
+  );
 
-  const orderedMedia = (() => {
-    const mediaList = parseTarget.extended_entities?.media ?? [];
-    if (inlineMediaOrder.size === 0) return mediaList;
-
-    // Stable sort: referenced inline media first (ascending inline index), then the rest.
-    // Sorting algorithm:
-    // 1. If both items are in inline_media: sort by inline index (ascending)
-    // 2. If only left is in inline_media: left comes first (return -1)
-    // 3. If only right is in inline_media: right comes first (return 1)
-    // 4. If neither is in inline_media: preserve original order (stable sort)
-    return mediaList
-      .map((media, originalIndex) => ({ media, originalIndex }))
-      .sort((left, right) => {
-        const leftInline = inlineMediaOrder.get(left.media.id_str);
-        const rightInline = inlineMediaOrder.get(right.media.id_str);
-
-        if (leftInline !== undefined && rightInline !== undefined) return leftInline - rightInline;
-        if (leftInline !== undefined) return -1;
-        if (rightInline !== undefined) return 1;
-        return left.originalIndex - right.originalIndex;
-      })
-      .map((entry) => entry.media);
-  })();
-
-  // Normalize tweet text once per tweet: use the parse target (quoted vs original)
-  // and remove any short media URLs present in the text.
   const baseTweetText = (parseTarget.full_text ?? '').trim();
   const mediaShortUrls = orderedMedia
     .map((m) => m.url)
@@ -258,40 +250,25 @@ export function extractMediaFromTweet(
   const normalizedTweetText = removeUrlTokensFromText(baseTweetText, mediaShortUrls);
 
   for (let index = 0; index < orderedMedia.length; index++) {
-    const media: TwitterMedia | undefined = orderedMedia[index];
-
-    // Validate required fields
-    if (!media?.type) {
-      continue;
-    }
-    if (!media.id_str) {
-      continue;
-    }
-    if (!media.media_url_https) {
-      continue;
-    }
+    const media = orderedMedia[index];
+    if (!media?.type || !media.id_str || !media.media_url_https) continue;
 
     try {
       const mediaUrl = getHighQualityMediaUrl(media);
-      if (!mediaUrl) {
-        continue;
-      }
+      if (!mediaUrl) continue;
 
-      const tweetText = normalizedTweetText;
-
-      const entry = createMediaEntry(
-        media,
-        mediaUrl,
-        screenName,
-        tweetId,
-        tweetText,
-        index,
-        sourceLocation
+      mediaItems.push(
+        createMediaEntry(
+          media,
+          mediaUrl,
+          screenName,
+          tweetId,
+          normalizedTweetText,
+          index,
+          sourceLocation
+        )
       );
-
-      mediaItems.push(entry);
     } catch (error) {
-      // Ignore individual item failures.
       if (__DEV__) {
         logger.debug('[TwitterParser] Skipping media entry due to error', { error });
       }
