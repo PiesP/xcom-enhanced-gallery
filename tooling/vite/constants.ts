@@ -28,19 +28,6 @@ export const OUTPUT_FILE_NAMES = {
 } as const;
 
 /**
- * Output file names for license and attribution documentation.
- *
- * - `project`: Project root LICENSE file path
- * - `thirdPartyDir`: Directory for third-party license files
- * - `combined`: Combined license file for distribution
- */
-export const LICENSE_OUTPUT_FILES = {
-  project: 'LICENSE',
-  thirdPartyDir: 'LICENSES',
-  combined: 'LICENSES.txt',
-} as const;
-
-/**
  * Base URL for CDN-hosted userscript and update files.
  *
  * Points to the jsdelivr CDN distribution of the release branch.

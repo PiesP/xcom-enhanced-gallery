@@ -6,9 +6,8 @@
   "private": true,
   "scripts": {
     "build": "pnpm quality:fix && vite build",
-    "build:dev": "vite build --mode development && node ./tooling/node/copy-licenses.ts",
-    "build:fast": "vite build && node ./tooling/node/copy-licenses.ts",
-    "postbuild": "node ./tooling/node/copy-licenses.ts",
+    "build:dev": "vite build --mode development",
+    "build:fast": "vite build",
     "check:src": "tsc --noEmit --project tsconfig.build.json",
     "check:tools": "tsc --noEmit --project tsconfig.tools.json",
     "check": "pnpm check:src && pnpm check:tools",
