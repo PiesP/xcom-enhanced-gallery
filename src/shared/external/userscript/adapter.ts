@@ -95,7 +95,8 @@ function createUserscriptAPI(): UserscriptAPI {
     getValueSync<T>(key: string, defaultValue?: T): T | undefined {
       if (!gmGetValue) return defaultValue;
       const value = gmGetValue(key, defaultValue);
-      return value instanceof Promise ? defaultValue : (value as T | undefined);
+      if (value instanceof Promise) return defaultValue;
+      return value as T | undefined;
     },
     async deleteValue(key: string): Promise<void> {
       if (!gmDeleteValue) throw new Error('GM_deleteValue unavailable');
