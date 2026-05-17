@@ -5,36 +5,15 @@
 import { GalleryApp } from '@features/gallery/GalleryApp';
 import { GalleryRenderer } from '@features/gallery/GalleryRenderer.tsx';
 import { SettingsService } from '@features/settings/services/settings-service';
-import { registerSettings, tryGetSettingsManager } from '@shared/container/container';
+import { registerSettings } from '@shared/container/container';
 import { galleryErrorReporter, settingsErrorReporter } from '@shared/error/app-error-reporter';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 
-type InitializableSettingsService = {
-  initialize?: () => Promise<void>;
-  isInitialized?: () => boolean;
-};
-
-let rendererRegistered = false;
-
-function ensureRendererRegistered(): void {
-  if (rendererRegistered) return;
-  rendererRegistered = true;
-  new GalleryRenderer();
-}
-
 async function initializeSettingsService(): Promise<void> {
-  const existingSettings = tryGetSettingsManager<InitializableSettingsService>();
-  if (existingSettings) {
-    if (existingSettings.isInitialized?.() === false && existingSettings.initialize) {
-      await existingSettings.initialize();
-    }
-    return;
-  }
-
-  const service = new SettingsService();
-  await service.initialize();
-  registerSettings(service);
+  const settings = new SettingsService();
+  await settings.initialize();
+  registerSettings(settings);
 }
 
 export async function initializeGalleryServices(): Promise<void> {
@@ -60,7 +39,7 @@ export async function initializeGalleryApp(): Promise<GalleryApp> {
       logger.info('Gallery app lazy initialization starting');
     }
 
-    ensureRendererRegistered();
+    new GalleryRenderer();
 
     const galleryApp = new GalleryApp();
     await galleryApp.initialize();

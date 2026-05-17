@@ -30,23 +30,18 @@ const lifecycleState = {
 };
 
 function wireGlobalEvents(onBeforeUnload: () => void): () => void {
-  let disposed = false;
   const controller = new AbortController();
-  const invokeOnce = (): void => {
-    if (disposed) return;
-    disposed = true;
+  const handler: EventListener = () => {
     controller.abort();
     onBeforeUnload();
   };
-  EventManager.getInstance().addEventListener(window, 'pagehide', invokeOnce as EventListener, {
+  EventManager.getInstance().addEventListener(window, 'pagehide', handler, {
     once: true,
     passive: true,
     signal: controller.signal,
     context: 'bootstrap:pagehide',
   });
   return () => {
-    if (disposed) return;
-    disposed = true;
     controller.abort();
   };
 }
@@ -109,26 +104,12 @@ function buildStages(): readonly BootstrapStage[] {
     },
     {
       label: 'Gallery services',
-      run: async () => {
-        try {
-          await initializeGalleryServices();
-        } catch (error) {
-          bootstrapErrorReporter.warn(error, { code: 'GALLERY_SERVICES_INIT_FAILED' });
-          throw error;
-        }
-      },
+      run: initializeGalleryServices,
       optional: true,
     },
     {
       label: 'Base services',
-      run: async () => {
-        try {
-          await initializeCoreBaseServices();
-        } catch (error) {
-          bootstrapErrorReporter.warn(error, { code: 'BASE_SERVICES_INIT_FAILED' });
-          throw error;
-        }
-      },
+      run: initializeCoreBaseServices,
       optional: true,
     },
     { label: 'Global event wiring', run: setupGlobalEventHandlers },
