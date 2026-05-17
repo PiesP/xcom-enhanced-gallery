@@ -5,10 +5,6 @@
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
 
-// ============================================================================
-// Types
-// ============================================================================
-
 export type ErrorSeverity = 'critical' | 'error' | 'warning' | 'info';
 
 export type ErrorContext =
@@ -31,40 +27,15 @@ export interface ErrorReportOptions {
   readonly code?: string;
 }
 
-export interface ErrorReportResult {
-  readonly reported: boolean;
-  readonly message: string;
-  readonly context: ErrorContext;
-  readonly severity: ErrorSeverity;
-}
-
 export interface ContextBoundReporter {
-  critical: (
-    error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>
-  ) => ErrorReportResult;
-  error: (
-    error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>
-  ) => ErrorReportResult;
-  warn: (
-    error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>
-  ) => ErrorReportResult;
-  info: (
-    error: unknown,
-    options?: Partial<Omit<ErrorReportOptions, 'context'>>
-  ) => ErrorReportResult;
+  critical: (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) => void;
+  error: (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) => void;
+  warn: (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) => void;
+  info: (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) => void;
 }
 
-// ============================================================================
-// Reporter
-// ============================================================================
-
-const DEFAULT_SEVERITY: ErrorSeverity = 'error';
-
-export function reportError(error: unknown, options: ErrorReportOptions): ErrorReportResult {
-  const severity = options.severity ?? DEFAULT_SEVERITY;
+export function reportError(error: unknown, options: ErrorReportOptions): void {
+  const severity = options.severity ?? 'error';
   const message = normalizeErrorMessage(error);
 
   const payload: Record<string, unknown> = { context: options.context, severity };
@@ -80,14 +51,11 @@ export function reportError(error: unknown, options: ErrorReportOptions): ErrorR
   if (severity === 'critical') {
     console.error('[Critical Error]', message, payload);
   }
-
-  return { reported: true, message, context: options.context, severity };
 }
 
 function forContext(context: ErrorContext): ContextBoundReporter {
   const bind =
-    (severity: ErrorSeverity) =>
-    (error: unknown, options?: Partial<Omit<ErrorReportOptions, 'context'>>) =>
+    (severity: ErrorSeverity) => (error: unknown, options?: Omit<ErrorReportOptions, 'context'>) =>
       reportError(error, { ...options, context, severity });
   return {
     critical: bind('critical'),
