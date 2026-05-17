@@ -56,7 +56,7 @@ export function cleanFilename(filename?: string): string {
 
   cleaned = cleaned.trim();
   if (!cleaned) {
-    return 'Image';
+    return 'Untitled';
   }
 
   return truncateMiddlePreservingExtension(cleaned);

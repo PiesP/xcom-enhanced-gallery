@@ -20,7 +20,10 @@ import {
 
 const generateExtractionId = (): string => createPrefixedId('simp');
 
-const createErrorResult = (error: unknown): MediaExtractionResult => {
+const createErrorResult = (
+  error: unknown,
+  code: ErrorCode = ErrorCode.NO_MEDIA_FOUND
+): MediaExtractionResult => {
   const errorMessage = normalizeErrorMessage(error);
   return {
     success: false,
@@ -33,7 +36,7 @@ const createErrorResult = (error: unknown): MediaExtractionResult => {
       error: errorMessage,
     },
     tweetInfo: null,
-    errors: [new ExtractionError(ErrorCode.NO_MEDIA_FOUND, errorMessage)],
+    errors: [new ExtractionError(code, errorMessage)],
   };
 };
 
@@ -43,8 +46,7 @@ const createApiErrorResult = (
 ): MediaExtractionResult => {
   const apiErrorMessage =
     apiResult.metadata?.error ?? apiResult.errors?.[0]?.message ?? 'API extraction failed';
-  // Reuse base error result structure, override with API-specific metadata
-  const base = createErrorResult(apiErrorMessage);
+  const base = createErrorResult(apiErrorMessage, ErrorCode.ALL_FAILED);
   return {
     ...base,
     clickedIndex: apiResult.clickedIndex ?? 0,
