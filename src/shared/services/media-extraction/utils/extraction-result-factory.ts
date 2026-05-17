@@ -1,13 +1,5 @@
-/**
- * @fileoverview Extraction result factory utilities
- * @description Shared factory functions for creating extraction results
- */
-
 import type { MediaExtractionResult } from '@shared/types/media.types';
 
-/**
- * Create a failure result with source metadata
- */
 export function createFailureResult(
   error: string,
   sourceType: string,

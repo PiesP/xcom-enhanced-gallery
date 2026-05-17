@@ -1,4 +1,3 @@
-import { logger } from '@shared/logging/logger';
 import type { MediaInfo } from '@shared/types/media.types';
 import { normalizeMediaUrl } from '@shared/utils/media/media-dimensions';
 import {
@@ -6,16 +5,6 @@ import {
   findMediaElementInDOM,
 } from '@shared/utils/media/media-element-utils';
 
-/**
- * Determine Clicked Media Index
- *
- * Calculates which media item the user clicked on by matching the clicked element's URL
- * against the extracted media items.
- *
- * @param clickedElement - The HTML element the user clicked
- * @param mediaItems - The list of extracted media items
- * @returns The 0-based index of the clicked media item, or 0 if not found
- */
 export const determineClickedIndex = (
   clickedElement: HTMLElement,
   mediaItems: MediaInfo[]
@@ -27,33 +16,13 @@ export const determineClickedIndex = (
     const normalizedElementUrl = normalizeMediaUrl(elementUrl);
     if (!normalizedElementUrl) return 0;
 
-    const index = mediaItems.findIndex((item, idx) => {
+    const index = mediaItems.findIndex((item) => {
       if (!item) return false;
-
-      const normalizedCandidates = getNormalizedMediaCandidates(item);
-      const matched = normalizedCandidates.includes(normalizedElementUrl);
-
-      if (matched && __DEV__) {
-        logger.debug(
-          `[determineClickedIndex] Matched clicked media at index ${idx}: ${normalizedElementUrl}`
-        );
-      }
-
-      return matched;
+      return getNormalizedMediaCandidates(item).includes(normalizedElementUrl);
     });
 
-    if (index !== -1) return index;
-
-    if (__DEV__) {
-      logger.warn(
-        `[determineClickedIndex] No matching media found for URL: ${normalizedElementUrl}, defaulting to 0`
-      );
-    }
-    return 0;
-  } catch (error) {
-    if (__DEV__) {
-      logger.warn('[determineClickedIndex] Error calculating clicked index:', error);
-    }
+    return index >= 0 ? index : 0;
+  } catch {
     return 0;
   }
 };
@@ -74,12 +43,11 @@ const extractBackgroundImageUrl = (
   if (!element) return null;
 
   let current: HTMLElement | null = element;
-  for (let hops = 0; hops <= maxAncestorHops && current; hops += 1) {
+  for (let hops = 0; hops <= maxAncestorHops && current; hops++) {
     const style = globalThis.getComputedStyle?.(current);
     const backgroundImage = style?.backgroundImage ?? '';
     const url = extractUrlFromCssValue(backgroundImage);
     if (url) return url;
-
     current = current.parentElement;
   }
 
@@ -88,7 +56,7 @@ const extractBackgroundImageUrl = (
 
 const extractUrlFromCssValue = (value: string): string | null => {
   if (!value || value === 'none') return null;
-  const match = value.match(/url\((?:"|')?(.*?)(?:"|')?\)/i);
+  const match = value.match(/url\((?:'|")?(.*?)(?:'|")?\)/i);
   return match?.[1]?.trim() || null;
 };
 
@@ -104,10 +72,7 @@ const getNormalizedMediaCandidates = (item: MediaInfo): string[] => {
   if (apiData) {
     candidates.push(
       getStringValue(apiData, 'download_url'),
-      getStringValue(apiData, 'preview_url'),
-      getStringValue(apiData, 'expanded_url'),
-      getStringValue(apiData, 'short_expanded_url'),
-      getStringValue(apiData, 'short_tweet_url')
+      getStringValue(apiData, 'preview_url')
     );
   }
 
