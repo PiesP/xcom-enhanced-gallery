@@ -175,7 +175,6 @@ export class ThemeService {
   }
 
   private initializeSystemDetection(): void {
-    if (!this.mediaQueryList) this.mediaQueryList = this.createMediaQueryList();
     if (!this.mediaQueryList || this.mediaQueryListener) return;
 
     if (!this.domEventsController || this.domEventsController.signal.aborted) {

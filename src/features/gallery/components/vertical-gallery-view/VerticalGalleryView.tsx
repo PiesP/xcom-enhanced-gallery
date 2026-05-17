@@ -53,7 +53,7 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
   // State accessors - using gallerySignals with createMemo for fine-grained reactivity
   const mediaItems = createMemo(() => gallerySignals.mediaItems);
   const currentIndex = createMemo(() => gallerySignals.currentIndex);
-  const isDownloading = createMemo(() => downloadState.value.isProcessing);
+  const isDownloading = createMemo(() => downloadState.isProcessing);
 
   // Element refs
   const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);
