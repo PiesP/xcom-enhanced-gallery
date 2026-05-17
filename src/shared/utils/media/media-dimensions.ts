@@ -20,7 +20,7 @@ const STANDARD_GALLERY_HEIGHT = 720;
 const DEFAULT_DIMENSIONS: DimensionPair = { width: 540, height: STANDARD_GALLERY_HEIGHT };
 
 function hasValidUrlPrefix(str: string): boolean {
-  return /^(?:https?:\/\/|\/\/|\/|\.\/|\.\.\/)/u.test(str);
+  return /^(?:https?:\/\/|\/\/|\/)/u.test(str);
 }
 
 function extractFilenameFromUrl(url: string): string | null {
