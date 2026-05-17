@@ -1,4 +1,5 @@
 import type { Accessor } from 'solid-js';
+import { createComputed, createRoot } from 'solid-js';
 
 /**
  * Union type for a value or accessor function.
@@ -88,4 +89,19 @@ export function toOptionalAccessor<T>(
   resolver: () => MaybeAccessor<T> | undefined
 ): Accessor<T | undefined> {
   return () => resolveOptional(resolver());
+}
+
+/**
+ * Create a Solid.js reactive effect rooted in a createRoot.
+ * Returns a dispose function for cleanup.
+ *
+ * This is the canonical way to create an effect-safe reactive root
+ * outside of component trees. Use this instead of duplicating
+ * createRoot + createComputed patterns.
+ */
+export function createEffectRoot(fn: () => void): () => void {
+  return createRoot((dispose) => {
+    createComputed(fn);
+    return dispose;
+  });
 }

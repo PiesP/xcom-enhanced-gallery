@@ -1,13 +1,7 @@
+import { createEffectRoot } from '@shared/utils/solid/accessor-utils';
 import { logger } from '@shared/logging/logger';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
-import { createComputed, createRoot } from 'solid-js';
-
-const effectSafe = (fn: () => void): (() => void) =>
-  createRoot((dispose) => {
-    createComputed(fn);
-    return dispose;
-  });
 
 let guardDispose: (() => void) | null = null;
 
@@ -18,7 +12,7 @@ export function startAmbientVideoGuard(): () => void {
       guardDispose = null;
     };
 
-  guardDispose = effectSafe(() => {
+  guardDispose = createEffectRoot(() => {
     if (!gallerySignals.isOpen) return;
 
     const result = pauseAmbientVideosForGallery({ trigger: 'guard', reason: 'guard' });

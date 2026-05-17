@@ -21,14 +21,8 @@ import {
   setError,
 } from '@shared/state/signals/gallery.signals';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
-import { createComputed, createRoot, createSignal, type JSX, onCleanup } from 'solid-js';
-
-function effectSafe(fn: () => void): () => void {
-  return createRoot((dispose) => {
-    createComputed(fn);
-    return dispose;
-  });
-}
+import { createEffectRoot } from '@shared/utils/solid/accessor-utils';
+import { createSignal, onCleanup, type JSX } from 'solid-js';
 
 import './styles/gallery-global.css';
 
@@ -91,7 +85,7 @@ export class GalleryRenderer {
   }
 
   private setupStateSubscription(): void {
-    this.stateUnsubscribe = effectSafe(() => {
+    this.stateUnsubscribe = createEffectRoot(() => {
       if (gallerySignals.isOpen && !this.container) {
         this.renderGallery();
       } else if (!gallerySignals.isOpen && this.container) {
