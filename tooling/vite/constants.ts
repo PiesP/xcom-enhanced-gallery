@@ -5,7 +5,48 @@
  * browser compatibility requirements, and license mapping for distribution.
  */
 
-import type { UserscriptBaseConfig } from './types';
+import type { BuildModeConfig, UserscriptBaseConfig } from './types';
+
+/**
+ * Escape special regex characters in a string.
+ *
+ * Used for safely embedding dynamic strings in RegExp constructors.
+ */
+export function escapeRegExp(source: string): string {
+  return source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Build mode configuration map.
+ *
+ * Defines optimization settings for development and production builds.
+ * - development: Readable class names, no compression, source maps enabled
+ * - production: Hashed class names, full compression, no source maps
+ */
+export const BUILD_MODE_CONFIGS: Record<'development' | 'production', BuildModeConfig> = {
+  development: {
+    cssCompress: false,
+    cssVariableShortening: false,
+    cssClassNamePattern: '[name]__[local]__[hash:base64:5]',
+    sourceMap: true as const,
+  },
+  production: {
+    cssCompress: true,
+    cssVariableShortening: true,
+    cssClassNamePattern: 'xg-[hash:base64:4]',
+    sourceMap: false as const,
+  },
+};
+
+/**
+ * Resolve build mode configuration from Vite mode string.
+ *
+ * @param mode - Vite build mode (e.g., 'development', 'production')
+ * @returns BuildModeConfig for the given mode
+ */
+export function getBuildModeConfig(mode: string): BuildModeConfig {
+  return BUILD_MODE_CONFIGS[mode === 'development' ? 'development' : 'production'];
+}
 
 /**
  * ID for injected style element in DOM.

@@ -4,10 +4,7 @@
 
 import { Script } from 'node:vm';
 import type { Plugin } from 'vite';
-
-function escapeRegExp(input: string): string {
-  return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+import { escapeRegExp } from '../constants';
 
 function assertParsableJsFinal(code: string): void {
   try {

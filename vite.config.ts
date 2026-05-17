@@ -24,42 +24,17 @@ import { defineConfig, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 
 // Internal modules
-import { OUTPUT_FILE_NAMES } from './tooling/vite/constants';
+import { OUTPUT_FILE_NAMES, getBuildModeConfig } from './tooling/vite/constants';
 import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
 import { productionCleanupPlugin } from './tooling/vite/plugins/production-cleanup';
 import { singleFileBundleGuardPlugin } from './tooling/vite/plugins/single-file-guard';
 import { userscriptHeaderPlugin } from './tooling/vite/plugins/userscript-header';
-import type { BuildModeConfig } from './tooling/vite/types';
 import { generateMetaOnlyHeader } from './tooling/vite/userscript/metadata';
 import { resolveVersion } from './tooling/vite/version';
 
 // ── Inlined from tooling/vite/paths.ts ──────────────────────────────────────
 const REPO_ROOT = resolve(__dirname);
 
-// ── Inlined from tooling/vite/build-mode.ts ─────────────────────────────────
-const BUILD_MODE_CONFIGS: Record<'development' | 'production', BuildModeConfig> = {
-  development: {
-    cssCompress: false,
-    cssVariableShortening: false,
-    cssClassNamePattern: '[name]__[local]__[hash:base64:5]',
-    sourceMap: true as const,
-  },
-  production: {
-    cssCompress: true,
-    cssVariableShortening: true,
-    cssClassNamePattern: 'xg-[hash:base64:4]',
-    sourceMap: false as const,
-  },
-};
-
-function getBuildModeConfig(mode: string): BuildModeConfig {
-  return BUILD_MODE_CONFIGS[mode === 'development' ? 'development' : 'production'];
-}
-
-/**
- * Normalize module ID paths to use forward slashes
- * Windows compatibility: Convert backslashes to forward slashes
- */
 function normalizeModuleId(id: string): string {
   return id.replace(/\\/g, '/');
 }
