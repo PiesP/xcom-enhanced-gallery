@@ -8,10 +8,29 @@
 import { readFileSync, statSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import type { Plugin } from 'vite';
-import { getBuildModeConfig } from '../build-mode';
 import { OUTPUT_FILE_NAMES } from '../constants';
+import type { BuildModeConfig } from '../types';
 import { generateUserscriptHeader } from '../userscript/metadata';
 import { resolveVersion } from '../version';
+
+const BUILD_MODE_CONFIGS: Record<'development' | 'production', BuildModeConfig> = {
+  development: {
+    cssCompress: false,
+    cssVariableShortening: false,
+    cssClassNamePattern: '[name]__[local]__[hash:base64:5]',
+    sourceMap: true as const,
+  },
+  production: {
+    cssCompress: true,
+    cssVariableShortening: true,
+    cssClassNamePattern: 'xg-[hash:base64:4]',
+    sourceMap: false as const,
+  },
+};
+
+function getBuildModeConfig(mode: string): BuildModeConfig {
+  return BUILD_MODE_CONFIGS[mode === 'development' ? 'development' : 'production'];
+}
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;

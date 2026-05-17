@@ -9,7 +9,9 @@
 import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import { resolve } from 'node:path';
-import { REPO_ROOT } from './paths';
+import { fileURLToPath } from 'node:url';
+
+const REPO_ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 
 /**
  * Get version from exact git tag at HEAD.

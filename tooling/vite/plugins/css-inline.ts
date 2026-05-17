@@ -10,9 +10,27 @@
 import { transform } from 'lightningcss';
 import type { Plugin } from 'vite';
 
-import { getBuildModeConfig } from '../build-mode';
 import { STYLE_ID } from '../constants';
 import type { BuildModeConfig } from '../types';
+
+const BUILD_MODE_CONFIGS: Record<'development' | 'production', BuildModeConfig> = {
+  development: {
+    cssCompress: false,
+    cssVariableShortening: false,
+    cssClassNamePattern: '[name]__[local]__[hash:base64:5]',
+    sourceMap: true as const,
+  },
+  production: {
+    cssCompress: true,
+    cssVariableShortening: true,
+    cssClassNamePattern: 'xg-[hash:base64:4]',
+    sourceMap: false as const,
+  },
+};
+
+function getBuildModeConfig(mode: string): BuildModeConfig {
+  return BUILD_MODE_CONFIGS[mode === 'development' ? 'development' : 'production'];
+}
 
 function escapeRegExp(source: string): string {
   return source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
