@@ -6,7 +6,6 @@
  */
 
 import { useGalleryFitMode } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-fit-mode';
-import { useGalleryKeyboard } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-keyboard';
 import { useGalleryNavigationHandlers } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-navigation-handlers';
 import { useGalleryScrollCorrection } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-scroll-correction';
 import { useGalleryWheelRedirect } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-wheel-redirect';
@@ -84,9 +83,6 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     toolbarWrapperEl,
     itemsContainerEl,
   });
-
-  // Keyboard escape handler - integrated from useGalleryKeyboard hook
-  useGalleryKeyboard({ onClose: handleClose });
 
   const translate = useTranslation();
 

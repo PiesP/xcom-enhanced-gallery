@@ -95,6 +95,7 @@ function createMediaInfoFromDOM(
       tweetUsername: tweetInfo.username,
       tweetId: tweetInfo.tweetId,
       tweetUrl: tweetInfo.tweetUrl,
+      tweetText: undefined,
       tweetTextHTML,
       originalUrl: mediaUrl,
       thumbnailUrl: mediaUrl,

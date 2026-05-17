@@ -20,9 +20,15 @@ import {
   openGallery,
   setError,
 } from '@shared/state/signals/gallery.signals';
-import { effectSafe } from '@shared/state/signals/signal-factory';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
-import { createSignal, type JSX, onCleanup } from 'solid-js';
+import { createComputed, createRoot, createSignal, type JSX, onCleanup } from 'solid-js';
+
+function effectSafe(fn: () => void): () => void {
+  return createRoot((dispose) => {
+    createComputed(fn);
+    return dispose;
+  });
+}
 
 import './styles/gallery-global.css';
 

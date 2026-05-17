@@ -1,5 +1,4 @@
 import type {
-  Deferred,
   PromisifyOptions,
   ResultCallback,
 } from '@shared/utils/async/promise-helpers.types';
@@ -29,6 +28,12 @@ export function promisifyCallback<TResult>(
       }
     }
   });
+}
+
+interface Deferred<T> {
+  readonly promise: Promise<T>;
+  readonly resolve: (value: T | PromiseLike<T>) => void;
+  readonly reject: (reason?: unknown) => void;
 }
 
 export function createDeferred<T>(): Deferred<T> {

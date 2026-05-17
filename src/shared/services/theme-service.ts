@@ -45,7 +45,9 @@ export class ThemeService {
   }
 
   constructor() {
-    this.mediaQueryList = this.createMediaQueryList();
+    this.mediaQueryList = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-color-scheme: dark)')
+      : null;
   }
 
   async initialize(): Promise<void> {
@@ -132,11 +134,6 @@ export class ThemeService {
     if (newScopes.length > 0) {
       syncThemeAttributes(this.currentTheme, { scopes: newScopes });
     }
-  }
-
-  private createMediaQueryList(): MediaQueryList | null {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
-    return window.matchMedia('(prefers-color-scheme: dark)');
   }
 
   private initializeThemeScopeObservation(): void {

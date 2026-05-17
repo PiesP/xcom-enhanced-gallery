@@ -72,9 +72,8 @@ export class LanguageService {
     return this._initialized;
   }
   detectLanguage(): BaseLanguageCode {
-    // Safe navigator.language access
     const browserLang =
-      typeof navigator !== 'undefined' && navigator.language
+      typeof navigator !== 'undefined' && typeof navigator.language === 'string'
         ? navigator.language.slice(0, 2)
         : DEFAULT_LANGUAGE;
 

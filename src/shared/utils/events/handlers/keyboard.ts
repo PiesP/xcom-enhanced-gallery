@@ -66,6 +66,13 @@ const NAVIGATION_KEYS = new Set([
 /** Video control keys: ArrowUp/Down, M (mute) */
 const VIDEO_CONTROL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'm', 'M']);
 
+function isEditableTarget(target: EventTarget | null | undefined): boolean {
+  const element = target as HTMLElement | null;
+  if (!element) return false;
+  const tag = element.tagName?.toUpperCase();
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!element.isContentEditable;
+}
+
 /**
  * Handles keyboard events for gallery navigation and video control.
  * Routes keys to appropriate handlers based on gallery state.
@@ -85,8 +92,9 @@ export function handleKeyboardEvent(
     const key = event.key;
     const isGalleryOpen = gallerySignals.isOpen;
 
-    // ESC closes gallery regardless of other state
+    // ESC closes gallery regardless of other state, but not when editing form fields
     if (key === 'Escape' && isGalleryOpen) {
+      if (isEditableTarget(event.target)) return;
       handlers.onGalleryClose();
       event.preventDefault();
       event.stopPropagation();

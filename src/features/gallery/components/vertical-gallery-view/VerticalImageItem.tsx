@@ -96,7 +96,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const dimensions = () => resolvedDimensions().dimensions;
   const hasIntrinsicSize = () => resolvedDimensions().hasIntrinsicSize;
 
-  const intrinsicSizingStyle = createMemo<JSX.CSSProperties>(() => {
+  const intrinsicSizingStyle = createMemo(() => {
     return createIntrinsicSizingStyle(dimensions());
   });
 

@@ -62,7 +62,7 @@ export class SettingsService {
 
   public getAllSettings(): Readonly<AppSettings> {
     this.assertInitialized();
-    return globalThis.structuredClone(this.settings);
+    return this.settings;
   }
 
   public get(key: NestedSettingKey | string): unknown {

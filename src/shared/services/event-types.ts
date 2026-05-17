@@ -13,8 +13,3 @@ export interface GalleryEventOptions {
   readonly preventBubbling: boolean;
   readonly context: string;
 }
-
-export interface EventHandlingResult {
-  readonly handled: boolean;
-  readonly reason?: string;
-}

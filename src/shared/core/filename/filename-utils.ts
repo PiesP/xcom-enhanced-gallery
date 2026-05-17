@@ -202,22 +202,4 @@ export function generateZipFilename(
   }
 }
 
-/**
- * Validate a media filename for filesystem compatibility.
- * Checks for non-empty and no reserved characters (Windows/UNIX).
- * @param filename - Filename string to validate
- * @returns True if valid, false otherwise
- */
-export function isValidMediaFilename(filename: string): boolean {
-  return filename.length > 0 && !/[<>:"/\\|?*]/.test(filename);
-}
 
-/**
- * Validate a ZIP filename for filesystem compatibility.
- * Must end with '.zip' and contain no reserved characters (Windows/UNIX).
- * @param filename - ZIP filename string to validate
- * @returns True if valid, false otherwise
- */
-export function isValidZipFilename(filename: string): boolean {
-  return filename.endsWith('.zip') && !/[<>:"/\\|?*]/.test(filename);
-}

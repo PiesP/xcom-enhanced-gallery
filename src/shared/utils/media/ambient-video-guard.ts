@@ -1,7 +1,13 @@
 import { logger } from '@shared/logging/logger';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
-import { effectSafe } from '@shared/state/signals/signal-factory';
 import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
+import { createComputed, createRoot } from 'solid-js';
+
+const effectSafe = (fn: () => void): (() => void) =>
+  createRoot((dispose) => {
+    createComputed(fn);
+    return dispose;
+  });
 
 let guardDispose: (() => void) | null = null;
 

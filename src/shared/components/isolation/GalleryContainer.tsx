@@ -1,3 +1,4 @@
+import { CSS } from '@constants/css';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
 import { splitProps } from 'solid-js';
@@ -34,7 +35,7 @@ export function unmountGallery(container: Element): void {
 export function GalleryContainer(props: GalleryContainerProps): JSXElement {
   const [local] = splitProps(props, ['children', 'className']);
 
-  const classes = cx('xeg-gallery-overlay', 'xeg-gallery-container', local.className);
+  const classes = cx(CSS.CLASSES.OVERLAY, CSS.CLASSES.CONTAINER, local.className);
 
   return (
     <div class={classes} data-xeg-gallery-container="">

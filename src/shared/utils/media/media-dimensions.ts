@@ -2,7 +2,6 @@ import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { extractVisualIndexFromUrl, getMediaDedupKey } from '@shared/utils/media/media-url-utils';
 import { clampIndex } from '@shared/utils/types/safety';
-import type { JSX } from 'solid-js';
 
 interface DimensionPair {
   readonly width: number;
@@ -158,7 +157,7 @@ function toRem(pixels: number): string {
   return `${(pixels / 16).toFixed(4)}rem`;
 }
 
-export function createIntrinsicSizingStyle(dimensions: DimensionPair): JSX.CSSProperties {
+export function createIntrinsicSizingStyle(dimensions: DimensionPair): Record<string, string> {
   const ratio = dimensions.height > 0 ? dimensions.width / dimensions.height : 1;
   return {
     '--xeg-aspect-default': `${dimensions.width} / ${dimensions.height}`,

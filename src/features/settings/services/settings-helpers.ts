@@ -9,7 +9,7 @@ import type { FeatureFlags } from '@shared/types/settings.types';
 const FORBIDDEN_PATH_KEYS = new Set<string>(['__proto__', 'constructor', 'prototype']);
 
 /** Check if a path segment is safe from prototype pollution */
-export function isSafePathKey(key: string): boolean {
+function isSafePathKey(key: string): boolean {
   return key !== '' && !FORBIDDEN_PATH_KEYS.has(key);
 }
 

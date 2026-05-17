@@ -1,45 +1,9 @@
 /**
- * @fileoverview Escape key handler for gallery overlay close.
- * Respects editable form fields (INPUT, TEXTAREA, contenteditable).
+ * @fileoverview Keyboard event handler for gallery overlay close.
+ * @deprecated Escape handling is now centralized in keyboard.ts (handleKeyboardEvent).
+ * This module is kept for backward compatibility but is a no-op.
+ * TODO: Remove in next major version after confirming no consumers remain.
  */
-
-import { EventManager } from '@shared/services/event-manager';
-import { createEffect, onCleanup } from 'solid-js';
-
-interface UseGalleryKeyboardOptions {
-  readonly onClose: () => void;
-}
-
-function isEditableTarget(target: EventTarget | null | undefined): boolean {
-  const element = target as HTMLElement | null;
-  if (!element) return false;
-  const tag = element.tagName?.toUpperCase();
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!element.isContentEditable;
-}
-
-export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void {
-  createEffect(() => {
-    const handleKeyDown = (event: Event): void => {
-      const keyboardEvent = event as KeyboardEvent;
-      if (isEditableTarget(keyboardEvent.target)) return;
-
-      if (keyboardEvent.key === 'Escape') {
-        keyboardEvent.preventDefault();
-        keyboardEvent.stopPropagation();
-        onClose();
-      }
-    };
-
-    const eventManager = EventManager.getInstance();
-    const listenerId = eventManager.addEventListener(document, 'keydown', handleKeyDown, {
-      capture: true,
-      context: 'gallery-keyboard-navigation',
-    });
-
-    onCleanup(() => {
-      if (listenerId) {
-        eventManager.removeListener(listenerId);
-      }
-    });
-  });
+export function useGalleryKeyboard(): void {
+  // intentionally empty — Escape handling moved to keyboard.ts
 }
