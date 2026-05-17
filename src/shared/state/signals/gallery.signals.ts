@@ -208,3 +208,8 @@ export function navigateToItem(
   recordNavigation(clampedIndex, source);
   galleryIndexEvents.emit('navigate:complete', { index: clampedIndex, trigger });
 }
+
+/** @internal Export for test use only */
+export function setGalleryFocus(focusIndex: number | null, _source?: unknown): void {
+  setFocusedIndex(focusIndex);
+}
