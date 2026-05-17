@@ -6,7 +6,7 @@
  * the process if any issues are found.
  */
 
-import fs from 'node:fs';
+import { globSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import * as tsdoc from '@microsoft/tsdoc';
@@ -14,7 +14,6 @@ import * as tsdoc from '@microsoft/tsdoc';
 const { TSDocConfiguration, TSDocParser } = tsdoc;
 
 const SOURCE_ROOT = path.resolve(process.cwd(), 'src');
-const ALLOWED_EXTENSIONS = new Set(['.ts', '.tsx']);
 
 type LogEntry = {
   readonly filePath: string;
@@ -24,27 +23,7 @@ type LogEntry = {
 };
 
 function collectSourceFiles(root: string): string[] {
-  const files: string[] = [];
-
-  function walk(current: string): void {
-    const entries = fs.readdirSync(current, { withFileTypes: true });
-    for (const entry of entries) {
-      if (entry.name.startsWith('.')) continue;
-
-      const fullPath = path.join(current, entry.name);
-      if (entry.isDirectory()) {
-        walk(fullPath);
-        continue;
-      }
-
-      if (ALLOWED_EXTENSIONS.has(path.extname(entry.name))) {
-        files.push(fullPath);
-      }
-    }
-  }
-
-  if (fs.existsSync(root)) walk(root);
-  return files;
+  return globSync('**/*.{ts,tsx}', { cwd: root }).map((f) => path.join(root, f));
 }
 
 function buildLineStarts(buffer: string): number[] {
@@ -79,7 +58,7 @@ function findLineAndColumn(lineStarts: readonly number[], index: number): [numbe
 }
 
 function validateFile(parser: tsdoc.TSDocParser, filePath: string, results: LogEntry[]): void {
-  const source = fs.readFileSync(filePath, 'utf8');
+  const source = readFileSync(filePath, 'utf8');
   const blockRegex = /\/\*\*[\s\S]*?\*\//g;
   const lineStarts = buildLineStarts(source);
 

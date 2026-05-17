@@ -27,8 +27,6 @@ import { getBuildModeConfig } from './tooling/vite/build-mode';
 import { OUTPUT_FILE_NAMES } from './tooling/vite/constants';
 import { REPO_ROOT } from './tooling/vite/paths';
 import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
-import { distCleanupPlugin } from './tooling/vite/plugins/dist-cleanup';
-import { licenseAssetsPlugin } from './tooling/vite/plugins/license-assets';
 import { metaOnlyPlugin } from './tooling/vite/plugins/meta-only';
 import { productionCleanupPlugin } from './tooling/vite/plugins/production-cleanup';
 import { singleFileBundleGuardPlugin } from './tooling/vite/plugins/single-file-guard';
@@ -90,7 +88,6 @@ export default defineConfig(({ mode }): UserConfig => {
 
   return {
     plugins: [
-      distCleanupPlugin(),
       solidPlugin({
         solid: {
           // Userscript bundles are not SSR-hydrated. Enable smaller template output in production.
@@ -101,7 +98,6 @@ export default defineConfig(({ mode }): UserConfig => {
       metaOnlyPlugin(mode),
       ...(!isDev ? [productionCleanupPlugin()] : []),
       userscriptHeaderPlugin(mode),
-      licenseAssetsPlugin(),
       singleFileBundleGuardPlugin(mode),
     ],
     root,
@@ -117,7 +113,7 @@ export default defineConfig(({ mode }): UserConfig => {
       minify: false,
       sourcemap: config.sourceMap,
       outDir: 'dist',
-      emptyOutDir: false,
+      emptyOutDir: true,
       write: true,
       cssCodeSplit: false,
       // Keep CSS non-minified at the bundler level (the CSS inline plugin applies its own

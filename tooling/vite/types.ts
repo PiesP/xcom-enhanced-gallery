@@ -10,19 +10,13 @@
  * Configuration options for build mode optimization (development vs production).
  *
  * @property cssCompress - Enable CSS minification and compression
- * @property cssRemoveComments - Remove CSS comments during build
  * @property cssVariableShortening - Apply CSS custom property abbreviation
- * @property cssPruneUnusedCustomProperties - Remove unused CSS variables
- * @property cssValueMinify - Minify individual CSS property values
  * @property cssClassNamePattern - Regex pattern for renaming CSS class names
  * @property sourceMap - Include source maps (inline or file-based)
  */
 export interface BuildModeConfig {
   readonly cssCompress: boolean;
-  readonly cssRemoveComments: boolean;
   readonly cssVariableShortening: boolean;
-  readonly cssPruneUnusedCustomProperties: boolean;
-  readonly cssValueMinify: boolean;
   readonly cssClassNamePattern: string;
   readonly sourceMap: boolean | 'inline';
 }

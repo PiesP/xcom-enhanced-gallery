@@ -73,67 +73,6 @@ function resolveLicenseSourceUrl(version: string, isDev: boolean): string {
 }
 
 /**
- * Detects which userscript at-grant directives are used in the bundle code.
- *
- * Uses a conservative heuristic: scans for any GM_* identifier or grant string
- * appearing anywhere in the code (including strings/comments). False positives
- * are acceptable; false negatives would break runtime functionality.
- *
- * @param code - JavaScript bundle code to analyze
- * @param candidates - Array of available grant strings to check for
- * @returns Array of grants found to be used in the code
- */
-export function collectUsedUserscriptGrants(code: string, candidates: readonly string[]): string[] {
-  // Heuristic, intentionally conservative:
-  // - Scan the final JS bundle for GM_* identifiers.
-  // - If a grant string appears anywhere (even in strings), keep it.
-  //   False positives are acceptable; false negatives would break runtime.
-  const used: string[] = [];
-
-  for (const grant of candidates) {
-    const escaped = grant.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
-    const regex = new RegExp(`\\b${escaped}\\b`);
-    if (regex.test(code)) {
-      used.push(grant);
-    }
-  }
-
-  return used;
-}
-
-/**
- * Detects which userscript at-connect directives are used in the bundle code.
- *
- * Uses a conservative heuristic: if the host string appears anywhere in the bundle
- * (including strings, URLs, or inline literals), keep it. False positives are
- * acceptable; false negatives would be problematic, so errs on the side of including
- * the default list when nothing matches.
- *
- * @param code - JavaScript bundle code to analyze
- * @param candidates - Array of available hostnames to check for
- * @returns Array of connect hosts found to be used in the code
- */
-export function collectUsedUserscriptConnects(
-  code: string,
-  candidates: readonly string[]
-): string[] {
-  const used: string[] = [];
-
-  if (!code) return used;
-
-  for (const host of candidates) {
-    if (!host) continue;
-    // Simple substring-based check is intentionally conservative and
-    // robust against minification/hashing that keeps literal hostnames.
-    if (code.includes(host)) {
-      used.push(host);
-    }
-  }
-
-  return used;
-}
-
-/**
  * Builds the userscript metadata block with all directives.
  *
  * Generates the standard userscript header including at-name, at-version, at-grant,
@@ -256,21 +195,13 @@ function buildLicenseBlock(
  * Generates the complete userscript header for the main bundle.
  *
  * Combines metadata directives and full license documentation.
- * Supports overriding auto-detected grants and connects for testing.
  *
  * @param args - Header generation options
  * @param args.version - Semantic version string
  * @param args.isDev - True if development build (affects name suffix and URL paths)
- * @param args.grantOverride - Custom grant list to use instead of defaults
- * @param args.connectOverride - Custom connect list to use instead of defaults
  * @returns Complete userscript header ready for injection into bundle
  */
-export function generateUserscriptHeader(args: {
-  version: string;
-  isDev: boolean;
-  grantOverride?: readonly string[];
-  connectOverride?: readonly string[];
-}): string {
+export function generateUserscriptHeader(args: { version: string; isDev: boolean }): string {
   const fileName = args.isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
   const metaFileName = OUTPUT_FILE_NAMES.meta;
 
@@ -280,12 +211,10 @@ export function generateUserscriptHeader(args: {
     ...USERSCRIPT_CONFIG,
     name: `${USERSCRIPT_CONFIG.name}${nameSuffix}`,
     version: args.version,
-    homepageURL: USERSCRIPT_CONFIG.homepageURL,
-    grant: args.grantOverride ?? USERSCRIPT_CONFIG.grant,
-    connect: args.connectOverride ?? USERSCRIPT_CONFIG.connect,
+    grant: USERSCRIPT_CONFIG.grant,
+    connect: USERSCRIPT_CONFIG.connect,
     downloadURL: `${CDN_BASE_URL}/${fileName}`,
     updateURL: `${CDN_BASE_URL}/${metaFileName}`,
-    compatible: USERSCRIPT_CONFIG.compatible,
   };
 
   const licenses = aggregateLicenses(LICENSES_DIR);

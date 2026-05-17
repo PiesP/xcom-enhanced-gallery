@@ -2,13 +2,12 @@
  * @fileoverview CSS inlining plugin for Vite
  *
  * Processes and optimizes CSS during the build phase:
- * - Removes comments
+ * - Minifies CSS via lightningcss (comment removal, value compression, unused property pruning)
  * - Shortens CSS variable names (--xeg-* -> --x*)
- * - Prunes unused custom properties
- * - Compresses values and whitespace
  * - Injects final CSS into entry chunk as IIFE
  */
 
+import { transform } from 'lightningcss';
 import type { Plugin } from 'vite';
 
 import { getBuildModeConfig } from '../build-mode';
@@ -20,80 +19,10 @@ function escapeRegExp(source: string): string {
 }
 
 /**
- * Remove CSS block comments while preserving content in string literals.
- *
- * Handles:
- * - Single and double quoted strings
- * - Escaped quotes within strings
- * - Block comments (&#47;* ... *&#47;)
- * - Whitespace normalization after comment removal
- *
- * @param css CSS source code with potential comments
- * @returns CSS with all comments removed and normalized whitespace
- */
-function removeCssComments(css: string): string {
-  let result = '';
-  let i = 0;
-  let inString = false;
-  let stringChar = '';
-
-  while (i < css.length) {
-    if (!inString && (css[i] === '"' || css[i] === "'")) {
-      inString = true;
-      stringChar = css[i] as string;
-      result += css[i];
-      i++;
-      continue;
-    }
-
-    if (inString && css[i] === stringChar && css[i - 1] !== '\\') {
-      inString = false;
-      result += css[i];
-      i++;
-      continue;
-    }
-
-    if (inString) {
-      result += css[i];
-      i++;
-      continue;
-    }
-
-    if (css[i] === '/' && css[i + 1] === '*') {
-      const commentEnd = css.indexOf('*/', i + 2);
-      if (commentEnd === -1) break;
-      i = commentEnd + 2;
-      if (
-        result.length > 0 &&
-        result[result.length - 1] !== ' ' &&
-        result[result.length - 1] !== '\n'
-      ) {
-        result += ' ';
-      }
-      continue;
-    }
-
-    result += css[i];
-    i++;
-  }
-
-  return result
-    .replace(/ {2,}/g, ' ')
-    .replace(/\n\s*\n/g, '\n')
-    .replace(/^\s+/gm, '')
-    .replace(/\s+$/gm, '')
-    .trim();
-}
-
-/**
  * Map of long CSS variable names to shortened equivalents.
  *
  * Production builds use this map to reduce CSS file size by replacing
  * verbose variable names (--xeg-color-primary) with short codes (--xc-p).
- * This reduction is safe because the final CSS is injected inline into
- * the JavaScript bundle (not exposed as a separate stylesheet).
- *
- * Variables are sorted by length in processing to avoid partial overlaps.
  */
 const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   '--xeg-ease-standard': '--xe-s',
@@ -258,8 +187,7 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   '--xeg-gallery-item-intrinsic-ratio': '--xgi-r',
   '--xeg-gallery-fit-height-target': '--xgf-ht',
 
-  // Unprefixed design tokens (internal-only). Shortening these reduces CSS size and
-  // also avoids leaking generic token names onto :root in production output.
+  // Unprefixed design tokens (internal-only)
   '--color-base-white': '--cbw',
   '--color-base-black': '--cbb',
   '--color-gray-50': '--cg0',
@@ -272,7 +200,6 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   '--color-gray-700': '--cg7',
   '--color-gray-800': '--cg8',
   '--color-gray-900': '--cg9',
-
   '--color-bg-primary': '--cbp',
   '--color-bg-secondary': '--cbs',
   '--color-bg-surface': '--cbu',
@@ -303,14 +230,12 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   '--color-primary-active': '--cpa',
   '--color-overlay-medium': '--com',
   '--color-overlay-backdrop': '--cob',
-
   '--space-xs': '--spx',
   '--space-sm': '--sps',
   '--space-md': '--spm',
   '--space-lg': '--spl',
   '--space-xl': '--spxl',
   '--space-2xl': '--sp2',
-
   '--radius-xs': '--rx',
   '--radius-sm': '--rs',
   '--radius-md': '--rm',
@@ -319,7 +244,6 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
   '--radius-2xl': '--r2',
   '--radius-pill': '--rp',
   '--radius-full': '--rf',
-
   '--font-family-primary': '--ffp',
   '--font-size-2xs': '--fs2x',
   '--font-size-xs': '--fsx',
@@ -351,174 +275,49 @@ const CSS_VAR_SHORTENING_MAP: Record<string, string> = {
 /**
  * Replace long CSS variable names with shortened versions.
  *
- * Sorted by name length (longest first) to avoid partial overlaps
- * (e.g., --x vs --x1). Escapes regex special characters in variable names
- * before performing global replacements.
- *
- * @param css CSS source with long variable names
- * @returns CSS with variable names replaced by shorter equivalents
+ * Sorted by name length (longest first) to avoid partial overlaps.
  */
 function shortenCssVariables(css: string): string {
   let result = css;
   const sortedEntries = Object.entries(CSS_VAR_SHORTENING_MAP).sort(
     (a, b) => b[0].length - a[0].length
   );
-
   for (const [longName, shortName] of sortedEntries) {
     result = result.replace(new RegExp(escapeRegExp(longName), 'g'), shortName);
   }
-
-  return result;
-}
-
-/**
- * Compress CSS values and whitespace while preserving functionality.
- *
- * Handles:
- * - Decimal normalization (0.5 -> .5)
- * - Unit compression (0px -> 0)
- * - Property-value separator compression (: -> :, ; -> ;)
- * - Bracket whitespace removal
- * - Multiple spaces -> single space
- * - Newline removal
- *
- * @param css CSS source code
- * @returns Minified CSS with compressed values and whitespace
- */
-function compressCssValues(css: string): string {
-  return css
-    .replace(/\b0+\.(\d)/g, '.$1')
-    .replace(/\b0(px|rem|em|vh|vw|vmin|vmax|ch|ex)\b/g, '0')
-    .replace(/\s*:\s*/g, ':')
-    .replace(/\s*;\s*/g, ';')
-    .replace(/;}/g, '}')
-    .replace(/\s*\{/g, '{')
-    .replace(/\{\s*/g, '{')
-    .replace(/\s*\}/g, '}')
-    .replace(/\s+/g, ' ')
-    .replace(/\n/g, '')
-    .trim();
-}
-
-/**
- * Remove unused CSS custom property definitions (best-effort).
- *
- * Conservative approach: only removes declarations `--name: ...;` when the
- * variable does not appear elsewhere (e.g., in `var(--name)` calls).
- *
- * Runs iteratively to catch dependency cascades:
- * - If --b: var(--a) is unused, first pass removes --b
- * - Second pass can then remove --a (which becomes unused)
- *
- * Max 10 iterations to prevent infinite loops (actual chains are shallow).
- *
- * @param css CSS source code with custom property definitions
- * @returns CSS with unused custom properties removed
- */
-function pruneUnusedCustomProperties(css: string): string {
-  // Best-effort pruning of custom properties that are defined but never referenced.
-  // This is intentionally conservative: we only remove declarations of the form
-  // `--name: ...;` when `--name` does not appear elsewhere (e.g. in `var(--name)`).
-  //
-  // Important: Run pruning iteratively.
-  // A variable can appear "used" only because it is referenced by another variable
-  // that is itself unused. Example:
-  //   --a: 1; --b: var(--a);
-  // If --b is unused, the first pruning pass should remove --b, and a subsequent
-  // pass can then remove --a. A single pass cannot catch this cascade.
-  const defRe = /--([a-zA-Z0-9_-]+)\s*:/g;
-  const useRe = /--([a-zA-Z0-9_-]+)\b/g;
-
-  let result = css;
-  // Safeguard against infinite loops. Dependency chains in our token set are shallow.
-  for (let pass = 0; pass < 10; pass++) {
-    const definedCounts = new Map<string, number>();
-    for (const match of result.matchAll(defRe)) {
-      const name = match[1] as string;
-      definedCounts.set(name, (definedCounts.get(name) ?? 0) + 1);
-    }
-
-    if (definedCounts.size === 0) {
-      return result;
-    }
-
-    const usedCounts = new Map<string, number>();
-    for (const match of result.matchAll(useRe)) {
-      const name = match[1] as string;
-      usedCounts.set(name, (usedCounts.get(name) ?? 0) + 1);
-    }
-
-    const dead = new Set<string>();
-    for (const [name, defCount] of definedCounts.entries()) {
-      const total = usedCounts.get(name) ?? 0;
-      // If the only occurrences are the definitions themselves, the variable is never referenced.
-      if (total === defCount) {
-        dead.add(name);
-      }
-    }
-
-    if (dead.size === 0) {
-      return result;
-    }
-
-    // Remove `--name: ...;` for each dead property. Values are assumed to not contain ';'.
-    // This is a safe assumption for our current token set (colors, sizes, var(), color-mix()).
-    let next = result;
-    // Longest-first helps avoid partial overlaps (e.g. `--x` vs `--x1`).
-    const deadNames = Array.from(dead).sort((a, b) => b.length - a.length);
-    for (const name of deadNames) {
-      next = next.replace(new RegExp(`--${escapeRegExp(name)}\\s*:[^;{}]*;`, 'g'), '');
-    }
-
-    if (next === result) {
-      return result;
-    }
-
-    result = next;
-  }
-
-  return result;
-}
-
-/**
- * Apply configured CSS optimizations in sequence.
- *
- * Optimizations are applied conditionally based on `BuildModeConfig`:
- * 1. Remove comments (if cssRemoveComments enabled)
- * 2. Shorten variable names (if cssVariableShortening enabled)
- * 3. Prune unused properties (if cssPruneUnusedCustomProperties enabled)
- * 4. Compress values (if cssValueMinify enabled)
- *
- * @param css Raw CSS source code
- * @param config Build mode configuration controlling which optimizations to apply
- * @returns Processed CSS with applied optimizations
- */
-function processCss(css: string, config: BuildModeConfig): string {
-  let result = css;
-  if (config.cssRemoveComments) result = removeCssComments(result);
-  if (config.cssVariableShortening) result = shortenCssVariables(result);
-  if (config.cssPruneUnusedCustomProperties) result = pruneUnusedCustomProperties(result);
-  if (config.cssValueMinify) result = compressCssValues(result);
   return result;
 }
 
 /**
  * Safely serialize a string for embedding inside JavaScript code.
- *
- * JSON.stringify alone does not escape '<', '>', or '/' characters.
- * If the generated JavaScript is ever embedded inside an HTML <script> tag,
- * an unescaped '</script>' sequence in the CSS could break out of that tag
- * and allow code injection.  Encoding these characters as Unicode escapes
- * produces valid JSON/JS while eliminating that risk.
- *
- * @param str - Arbitrary string to embed in JS source
- * @returns JSON-encoded string literal with '<', '>', '/' encoded as Unicode
  */
 function safeJsStringify(str: string): string {
   return JSON.stringify(str)
     .replace(/</g, '\\u003C')
     .replace(/>/g, '\\u003E')
     .replace(/\//g, '\\u002F');
+}
+
+/**
+ * Apply configured CSS optimizations in sequence.
+ *
+ * 1. Minify via lightningcss (comment removal, value compression, unused property pruning)
+ * 2. Shorten variable names (if cssVariableShortening enabled)
+ */
+function processCss(css: string, config: BuildModeConfig): string {
+  let result = css;
+  if (config.cssCompress) {
+    const { code } = transform({
+      code: Buffer.from(result),
+      filename: 'bundle.css',
+      minify: true,
+    });
+    result = code.toString();
+  }
+  if (config.cssVariableShortening) {
+    result = shortenCssVariables(result);
+  }
+  return result;
 }
 
 /**
@@ -529,9 +328,6 @@ function safeJsStringify(str: string): string {
  * 2. Processes CSS according to build mode config
  * 3. Injects processed CSS as IIFE into the entry chunk
  * 4. Removes original .css files from bundle
- *
- * The IIFE creates or updates a <style> element with id STYLE_ID in the document.
- * This ensures the userscript has only a single .user.js output file.
  *
  * @param mode Build mode identifier (e.g., 'production', 'development')
  * @returns Vite Plugin object
@@ -569,9 +365,6 @@ export function cssInlinePlugin(mode: string): Plugin {
       const css = cssChunks.join(config.cssCompress ? '' : '\n');
       if (!css.trim()) return;
 
-      // Use safeJsStringify to embed strings in generated code.
-      // This encodes '<', '>', '/' as Unicode escapes to prevent '</script>'
-      // from breaking out of an HTML script tag if the bundle is ever inlined.
       const safeStyleId = safeJsStringify(STYLE_ID);
       const injectionCode = `(function(){if(typeof document==='undefined')return;var css=${safeJsStringify(
         css
