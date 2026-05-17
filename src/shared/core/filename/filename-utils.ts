@@ -201,3 +201,13 @@ export function generateZipFilename(
     return `download_${nowMs}.zip`;
   }
 }
+
+const INVALID_FILENAME_CHARS = /[<>:"/\\|?*\u0000-\u001f]/;
+
+export function isValidMediaFilename(name: string): boolean {
+  return typeof name === 'string' && name.length > 0 && !INVALID_FILENAME_CHARS.test(name);
+}
+
+export function isValidZipFilename(name: string): boolean {
+  return typeof name === 'string' && name.length > 0 && !INVALID_FILENAME_CHARS.test(name);
+}
