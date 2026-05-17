@@ -1,9 +1,9 @@
 import type { MediaInfo } from '@shared/types/media.types';
-import { normalizeMediaUrl } from '@shared/utils/media/media-dimensions';
 import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,
 } from '@shared/utils/media/media-element-utils';
+import { normalizeMediaUrl } from '@shared/utils/media/media-url-utils';
 
 export const determineClickedIndex = (
   clickedElement: HTMLElement,
