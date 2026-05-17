@@ -3,7 +3,9 @@ import { logger } from '@shared/logging/logger';
 import { PersistentStorage } from '@shared/services/persistent-storage';
 import type { AppSettings } from '@shared/types/settings.types';
 import { migrateSettings } from './settings-migration';
-import { SETTINGS_SCHEMA_HASH } from './settings-schema';
+
+/** Schema version hash - bump when persisted settings shape changes */
+const SETTINGS_SCHEMA_HASH = '1';
 
 interface StoredSettings extends AppSettings {
   /** @internal Schema version hash for migration detection */

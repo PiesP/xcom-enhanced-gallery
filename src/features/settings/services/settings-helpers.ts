@@ -1,10 +1,7 @@
 /**
  * @fileoverview Settings service helper utilities
- * @description Shared utilities for path resolution, feature normalization, and validation.
+ * @description Shared utilities for path resolution and validation.
  */
-
-import { DEFAULT_SETTINGS } from '@constants/settings';
-import type { FeatureFlags } from '@shared/types/settings.types';
 
 const FORBIDDEN_PATH_KEYS = new Set<string>(['__proto__', 'constructor', 'prototype']);
 
@@ -73,25 +70,6 @@ export function assignNestedPath(target: unknown, path: string, value: unknown):
 
   current[last] = value;
   return true;
-}
-
-/** Normalize feature flags with safe defaults */
-export function normalizeFeatureFlags(
-  features?: Partial<Record<keyof FeatureFlags, unknown>>
-): Readonly<Record<keyof FeatureFlags, boolean>> {
-  const featureKeys = Object.keys(DEFAULT_SETTINGS.features) as Array<keyof FeatureFlags>;
-  const featureDefaults = DEFAULT_SETTINGS.features as Record<keyof FeatureFlags, boolean>;
-
-  return Object.freeze(
-    featureKeys.reduce<Record<keyof FeatureFlags, boolean>>(
-      (acc, key) => {
-        const candidate = features?.[key];
-        acc[key] = typeof candidate === 'boolean' ? candidate : featureDefaults[key];
-        return acc;
-      },
-      {} as Record<keyof FeatureFlags, boolean>
-    )
-  );
 }
 
 /** Validate a setting value against its default type */

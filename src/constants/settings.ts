@@ -54,13 +54,5 @@ export const DEFAULT_SETTINGS = {
 } as const satisfies AppSettings;
 
 export function createDefaultSettings(timestamp: number = Date.now()): AppSettings {
-  return {
-    ...DEFAULT_SETTINGS,
-    gallery: { ...DEFAULT_SETTINGS.gallery },
-    toolbar: { ...DEFAULT_SETTINGS.toolbar },
-    download: { ...DEFAULT_SETTINGS.download },
-    accessibility: { ...DEFAULT_SETTINGS.accessibility },
-    features: { ...DEFAULT_SETTINGS.features },
-    lastModified: timestamp,
-  };
+  return globalThis.structuredClone({ ...DEFAULT_SETTINGS, lastModified: timestamp });
 }

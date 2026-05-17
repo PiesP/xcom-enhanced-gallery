@@ -49,11 +49,6 @@ export class SettingsService {
     return this._initialized;
   }
 
-  public getAllSettings(): Readonly<AppSettings> {
-    this.assertInitialized();
-    return this.settings;
-  }
-
   public get(key: NestedSettingKey | string): unknown {
     this.assertInitialized();
     const value = resolveNestedPath(this.settings, key);
@@ -77,62 +72,6 @@ export class SettingsService {
       key,
       oldValue,
       newValue: value,
-      timestamp: performance.now(),
-      status: 'success',
-    });
-    await this.persist();
-  }
-
-  public async updateBatch(updates: Partial<Record<NestedSettingKey, unknown>>): Promise<void> {
-    this.assertInitialized();
-    const entries = Object.entries(updates) as [NestedSettingKey, unknown][];
-    for (const [key, value] of entries) {
-      if (!isValidSettingValue(this.getDefaultValue(key), value)) {
-        throw new Error(`Invalid setting value for ${key}`);
-      }
-    }
-
-    const previous = globalThis.structuredClone(this.settings);
-
-    const timestamp = performance.now();
-    for (const [key, value] of entries) {
-      if (!assignNestedPath(this.settings, key, value)) {
-        throw new Error(`Failed to assign setting value for ${key}`);
-      }
-    }
-
-    this.settings.lastModified = timestamp;
-
-    for (const [key, value] of entries) {
-      const oldValue = resolveNestedPath(previous, key);
-      this.notifyListeners({
-        key,
-        oldValue,
-        newValue: value,
-        timestamp,
-        status: 'success',
-      });
-    }
-
-    await this.persist();
-  }
-
-  public async resetToDefaults(category?: keyof AppSettings): Promise<void> {
-    this.assertInitialized();
-    const previous = this.getAllSettings();
-    if (!category) {
-      this.settings = createDefaultSettings();
-    } else if (category in DEFAULT_SETTINGS) {
-      const defaultValue = DEFAULT_SETTINGS[category as keyof typeof DEFAULT_SETTINGS];
-      if (defaultValue !== undefined) {
-        Object.assign(this.settings, { [category]: globalThis.structuredClone(defaultValue) });
-      }
-    }
-    this.settings.lastModified = performance.now();
-    this.notifyListeners({
-      key: (category ?? 'all') as NestedSettingKey,
-      oldValue: previous,
-      newValue: this.getAllSettings(),
       timestamp: performance.now(),
       status: 'success',
     });
