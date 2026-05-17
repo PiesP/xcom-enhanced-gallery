@@ -11,12 +11,9 @@
  */
 import { logger } from '@shared/logging/logger';
 import {
-  recordFocusChange,
   recordNavigation,
   resetNavigation,
   resolveNavigationSource,
-  validateFocusParams,
-  validateNavigationParams,
 } from '@shared/state/signals/navigation.state';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { NavigationSource } from '@shared/types/navigation.types';
@@ -204,8 +201,6 @@ export function navigateToItem(
   trigger: GalleryNavigationTrigger,
   source: NavigationSource
 ): void {
-  validateNavigationParams(targetIndex, source, trigger, 'navigateToItem');
-
   const items = mediaItemsSig();
   const clampedIndex = clampIndex(targetIndex, items.length);
   const current = currentIndexSig();
@@ -221,8 +216,6 @@ export function navigateToItem(
   galleryIndexEvents.emit('navigate:complete', { index: clampedIndex, trigger });
 }
 
-export function setGalleryFocus(focusIndex: number | null, source: NavigationSource): void {
-  validateFocusParams(focusIndex, source, 'setGalleryFocus');
+export function setGalleryFocus(focusIndex: number | null, _source: NavigationSource): void {
   setFocusedIndex(focusIndex);
-  recordFocusChange(source);
 }

@@ -1,8 +1,5 @@
 /**
  * @fileoverview Gallery download hook - manages single and batch download.
- *
- * Extracted from GalleryRenderer to separate download concerns from
- * gallery lifecycle/render management (single responsibility principle).
  */
 
 import {
@@ -13,7 +10,7 @@ import {
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
-import { acquireDownloadLock } from '@shared/state/signals/download.signals';
+import { setDownloading } from '@shared/state/signals/download.signals';
 import { gallerySignals, setError } from '@shared/state/signals/gallery.signals';
 
 export function useGalleryDownload() {
@@ -37,9 +34,7 @@ export function useGalleryDownload() {
   };
 
   const handleDownload = async (type: 'current' | 'all'): Promise<void> => {
-    __DEV__ && logger.debug(`[useGalleryDownload] handleDownload called with type: ${type}`);
-    const releaseLock = acquireDownloadLock();
-    if (!releaseLock) return; // Already locked — prevent re-entry
+    setDownloading(true);
 
     const notifyError = (title: string, body: string): void => {
       userscript.notification({ title, text: body });
@@ -120,7 +115,7 @@ export function useGalleryDownload() {
       setError(body);
       notifyError(title, body);
     } finally {
-      releaseLock();
+      setDownloading(false);
     }
   };
 

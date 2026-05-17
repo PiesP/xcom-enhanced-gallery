@@ -1,47 +1,15 @@
 /**
  * @fileoverview Navigation State Management
- *
- * Navigation state extracted from gallery.signals.ts for modularity.
- * Uses fine-grained signals instead of state machine for simplicity.
  */
 
 import type { NavigationSource } from '@shared/types/navigation.types';
 import { createSignal } from 'solid-js';
 
-interface NavigationStateData {
-  readonly lastSource: NavigationSource;
-  readonly lastTimestamp: number;
-  readonly lastNavigatedIndex: number | null;
-}
+const INITIAL_SOURCE: NavigationSource = 'auto-focus';
 
-interface NavigationResult {
-  readonly isDuplicate: boolean;
-}
-
-const INITIAL_NAVIGATION_STATE: NavigationStateData = {
-  lastSource: 'auto-focus',
-  lastTimestamp: 0,
-  lastNavigatedIndex: null,
-};
-
-const VALID_NAVIGATION_SOURCES = [
-  'button',
-  'click',
-  'keyboard',
-  'programmatic',
-  'scroll',
-  'auto-focus',
-] as const satisfies readonly NavigationSource[];
-
-const [_lastSource, setLastSource] = createSignal<NavigationSource>(
-  INITIAL_NAVIGATION_STATE.lastSource
-);
-const [_lastTimestamp, setLastTimestamp] = createSignal<number>(
-  INITIAL_NAVIGATION_STATE.lastTimestamp
-);
-const [_lastNavigatedIndex, setLastNavigatedIndex] = createSignal<number | null>(
-  INITIAL_NAVIGATION_STATE.lastNavigatedIndex
-);
+const [_lastSource, setLastSource] = createSignal<NavigationSource>(INITIAL_SOURCE);
+const [_lastTimestamp, setLastTimestamp] = createSignal<number>(0);
+const [_lastNavigatedIndex, setLastNavigatedIndex] = createSignal<number | null>(null);
 
 const navigationSignals = {
   get lastSource() {
@@ -64,101 +32,36 @@ const navigationSignals = {
   },
 };
 
-const resolveNowMs = (nowMs?: number): number => nowMs ?? performance.now();
-
-const isValidNavigationSource = (value: unknown): value is NavigationSource =>
-  typeof value === 'string' && VALID_NAVIGATION_SOURCES.includes(value as NavigationSource);
-
 const isManualSource = (source: NavigationSource): boolean =>
   source === 'button' || source === 'keyboard';
-
-const createNavigationActionError = (context: string, reason: string): Error =>
-  new Error(`[Gallery] Invalid navigation action (${context}): ${reason}`);
-
-export function validateNavigationParams(
-  targetIndex: number,
-  source: NavigationSource,
-  trigger: NavigationSource,
-  context: string
-): void {
-  if (typeof targetIndex !== 'number' || Number.isNaN(targetIndex)) {
-    throw createNavigationActionError(context, 'Navigate payload targetIndex invalid');
-  }
-
-  if (!isValidNavigationSource(source)) {
-    throw createNavigationActionError(
-      context,
-      `Navigate payload source invalid: ${String(source)}`
-    );
-  }
-
-  if (!isValidNavigationSource(trigger)) {
-    throw createNavigationActionError(
-      context,
-      `Navigate payload trigger invalid: ${String(trigger)}`
-    );
-  }
-}
-
-export function validateFocusParams(
-  focusIndex: number | null,
-  source: NavigationSource,
-  context: string
-): void {
-  if (!(focusIndex === null || typeof focusIndex === 'number')) {
-    throw createNavigationActionError(context, 'Set focus payload focusIndex invalid');
-  }
-
-  if (!isValidNavigationSource(source)) {
-    throw createNavigationActionError(
-      context,
-      `Set focus payload source invalid: ${String(source)}`
-    );
-  }
-}
 
 export function recordNavigation(
   targetIndex: number,
   source: NavigationSource,
   nowMs?: number
-): NavigationResult {
-  const timestamp = resolveNowMs(nowMs);
+): void {
+  const timestamp = nowMs ?? performance.now();
   const currentIndex = navigationSignals.lastNavigatedIndex;
   const currentSource = navigationSignals.lastSource;
 
-  const isDuplicate =
-    targetIndex === currentIndex && isManualSource(source) && isManualSource(currentSource);
-
-  if (isDuplicate) {
+  if (targetIndex === currentIndex && isManualSource(source) && isManualSource(currentSource)) {
     navigationSignals.lastTimestamp = timestamp;
-    return { isDuplicate: true };
+    return;
   }
 
   navigationSignals.lastSource = source;
   navigationSignals.lastTimestamp = timestamp;
   navigationSignals.lastNavigatedIndex = targetIndex;
-
-  return { isDuplicate: false };
-}
-
-export function recordFocusChange(source: NavigationSource, nowMs?: number): void {
-  const timestamp = resolveNowMs(nowMs);
-  navigationSignals.lastSource = source;
-  navigationSignals.lastTimestamp = timestamp;
 }
 
 export function resetNavigation(nowMs?: number): void {
-  navigationSignals.lastSource = INITIAL_NAVIGATION_STATE.lastSource;
-  navigationSignals.lastTimestamp = resolveNowMs(nowMs);
-  navigationSignals.lastNavigatedIndex = INITIAL_NAVIGATION_STATE.lastNavigatedIndex;
+  navigationSignals.lastSource = INITIAL_SOURCE;
+  navigationSignals.lastTimestamp = nowMs ?? performance.now();
+  navigationSignals.lastNavigatedIndex = null;
 }
 
 export function resolveNavigationSource(trigger: NavigationSource): NavigationSource {
-  if (trigger === 'scroll') {
-    return 'scroll';
-  }
-  if (trigger === 'keyboard') {
-    return 'keyboard';
-  }
+  if (trigger === 'scroll') return 'scroll';
+  if (trigger === 'keyboard') return 'keyboard';
   return 'button';
 }

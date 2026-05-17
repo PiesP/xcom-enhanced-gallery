@@ -1,21 +1,11 @@
 /**
  * @fileoverview Gallery bootstrap helpers.
- *
- * Separates gallery-adjacent service preparation from gallery app creation so
- * startup ordering stays deterministic.
- *
- * @module bootstrap/gallery-init
  */
 
 import { GalleryApp } from '@features/gallery/GalleryApp';
 import { GalleryRenderer } from '@features/gallery/GalleryRenderer.tsx';
 import { SettingsService } from '@features/settings/services/settings-service';
-import {
-  hasRenderer,
-  registerGalleryRenderer,
-  registerSettings,
-  tryGetSettingsManager,
-} from '@shared/container/container';
+import { registerSettings, tryGetSettingsManager } from '@shared/container/container';
 import { galleryErrorReporter, settingsErrorReporter } from '@shared/error/app-error-reporter';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
@@ -25,12 +15,12 @@ type InitializableSettingsService = {
   isInitialized?: () => boolean;
 };
 
-function ensureRendererRegistered(): void {
-  if (hasRenderer()) {
-    return;
-  }
+let rendererRegistered = false;
 
-  registerGalleryRenderer(new GalleryRenderer());
+function ensureRendererRegistered(): void {
+  if (rendererRegistered) return;
+  rendererRegistered = true;
+  new GalleryRenderer();
 }
 
 async function initializeSettingsService(): Promise<void> {
@@ -47,16 +37,11 @@ async function initializeSettingsService(): Promise<void> {
   registerSettings(service);
 }
 
-/**
- * Initialize settings and other gallery-adjacent services before gallery startup.
- *
- * Settings remain non-fatal: startup continues with defaults if they cannot load.
- */
 export async function initializeGalleryServices(): Promise<void> {
   try {
     await initializeSettingsService();
     if (__DEV__) {
-      logger.debug('[Bootstrap] ✅ SettingsService initialized');
+      logger.debug('[Bootstrap] SettingsService initialized');
     }
   } catch (error) {
     settingsErrorReporter.warn(error, {
@@ -69,18 +54,10 @@ export async function initializeGalleryServices(): Promise<void> {
   }
 }
 
-/**
- * Initialize and return the gallery application instance.
- *
- * Ensures the renderer is registered, then creates and initializes the GalleryApp.
- *
- * @returns Initialized IGalleryApp instance
- * @throws If gallery app creation or initialization fails
- */
 export async function initializeGalleryApp(): Promise<GalleryApp> {
   try {
     if (__DEV__) {
-      logger.info('🎨 Gallery app lazy initialization starting');
+      logger.info('Gallery app lazy initialization starting');
     }
 
     ensureRendererRegistered();
@@ -89,7 +66,7 @@ export async function initializeGalleryApp(): Promise<GalleryApp> {
     await galleryApp.initialize();
 
     if (__DEV__) {
-      logger.info('✅ Gallery app initialization complete');
+      logger.info('Gallery app initialization complete');
     }
     return galleryApp;
   } catch (error) {
