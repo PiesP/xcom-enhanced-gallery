@@ -6,12 +6,13 @@ import { createEffectRoot } from '@shared/utils/solid/accessor-utils';
 let guardDispose: (() => void) | null = null;
 
 export function startAmbientVideoGuard(): () => void {
-  if (guardDispose)
+  if (guardDispose) {
     return () => {
       guardDispose?.();
-      guardDispose = null;
     };
+  }
 
+  let active = true;
   guardDispose = createEffectRoot(() => {
     if (!gallerySignals.isOpen) return;
 
@@ -22,6 +23,8 @@ export function startAmbientVideoGuard(): () => void {
   });
 
   return () => {
+    if (!active) return;
+    active = false;
     guardDispose?.();
     guardDispose = null;
   };

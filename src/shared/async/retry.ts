@@ -94,6 +94,8 @@ export type RetryResultFailure = RetryResultBase & {
  */
 type RetryResult<T> = RetryResultSuccess<T> | RetryResultFailure;
 
+export type { RetryResult };
+
 /**
  * Default retry options
  */

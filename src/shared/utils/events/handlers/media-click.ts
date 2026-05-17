@@ -59,7 +59,11 @@ export async function handleMediaClick(
   event.stopImmediatePropagation();
   event.preventDefault();
 
-  await handlers.onMediaClick(target, event);
+  try {
+    await handlers.onMediaClick(target, event);
+  } catch (error) {
+    __DEV__ && console.warn('[MediaClick] onMediaClick failed', error);
+  }
 
   return { handled: true, reason: 'Media click processed' };
 }
