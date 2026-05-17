@@ -283,12 +283,6 @@
   pointer-events: auto; /* Dedicated hover sensor */
 }
 
-/* Provide immediate feedback while the hover strip is active */
-.toolbarHoverZone:hover {
-  z-index: var(--xeg-z-toolbar-hover-zone);
-  background: transparent;
-}
-
 /* Disable the hover strip when the toolbar is already locked open (settings expanded) */
 .container.initialToolbarVisible:not([data-settings-expanded="true"]) .toolbarHoverZone,
 .container:has(.toolbarWrapper:hover):not([data-settings-expanded="true"]) .toolbarHoverZone {
@@ -368,12 +362,7 @@
     will-change: auto;
     transform: none;
   }
-}
 
-/* Light mode support deferred to design-tokens.semantic.css */
-
-/* Phase 254: Disable motion helpers when reduced-motion is requested */
-@media (prefers-reduced-motion: reduce) {
   /* Disable hover transforms for toolbar surfaces */
   .toolbarWrapper:hover,
   .toolbarWrapper:focus-within {
