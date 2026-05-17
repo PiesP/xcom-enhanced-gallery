@@ -1,10 +1,6 @@
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
-import {
-  extractFilenameFromUrl,
-  extractVisualIndexFromUrl,
-  getMediaDedupKey,
-} from '@shared/utils/media/media-url-utils';
+import { extractVisualIndexFromUrl, getMediaDedupKey } from '@shared/utils/media/media-url-utils';
 import { clampIndex } from '@shared/utils/types/safety';
 import type { JSX } from 'solid-js';
 
