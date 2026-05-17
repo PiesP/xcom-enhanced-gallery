@@ -1,12 +1,9 @@
 /**
- * Generates a unique ID using crypto.randomUUID, with fallback to time-based ID.
+ * Generates a unique ID using crypto.randomUUID.
  * @returns Compact unique identifier without dashes.
  */
 export function createId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID().replaceAll('-', '');
-  }
-  return `${performance.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+  return crypto.randomUUID().replaceAll('-', '');
 }
 
 /**

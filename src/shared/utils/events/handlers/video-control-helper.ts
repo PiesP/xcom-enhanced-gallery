@@ -110,20 +110,11 @@ function getGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoElement | nu
  * @internal
  */
 function playVideo(video: HTMLVideoElement, context?: string): void {
-  const promise = video.play?.();
-  if (promise && typeof (promise as Promise<unknown>).then === 'function') {
-    (promise as Promise<unknown>)
-      .then(() => {
-        /* playback started */
-      })
-      .catch(() => {
-        if (__DEV__) {
-          logger.debug('Play failed', { context });
-        }
-      });
-  } else {
-    /* synchronous play */
-  }
+  video.play?.().catch(() => {
+    if (__DEV__) {
+      logger.debug('Play failed', { context });
+    }
+  });
 }
 
 /**

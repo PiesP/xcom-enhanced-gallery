@@ -15,8 +15,6 @@ function runCssAnimation(element: Element, className: string): Promise<void> {
     const settle = (): void => {
       if (settled) return;
       settled = true;
-      element.removeEventListener('animationend', settle);
-      element.removeEventListener('animationcancel', settle);
       element.classList.remove(className);
       resolve();
     };
@@ -24,7 +22,6 @@ function runCssAnimation(element: Element, className: string): Promise<void> {
     element.addEventListener('animationend', settle, { once: true });
     element.addEventListener('animationcancel', settle, { once: true });
 
-    // Safety timeout in case animation events never fire
     setTimeout(settle, ANIMATION_TIMEOUT_MS);
 
     if (!element.isConnected) {

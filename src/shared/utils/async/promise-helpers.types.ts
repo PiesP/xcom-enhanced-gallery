@@ -5,5 +5,4 @@ export type ResultCallback<TResult, TError = string | null | undefined> = (
 
 export interface PromisifyOptions<TFallback> {
   readonly fallback?: () => TFallback | Promise<TFallback>;
-  readonly context?: string;
 }

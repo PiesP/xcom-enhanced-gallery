@@ -9,7 +9,7 @@ export function promisifyCallback<TResult>(
       executor((result, error) => {
         if (error) {
           if (options?.fallback) {
-            resolve(Promise.resolve(options.fallback()));
+            resolve(options.fallback());
           } else {
             reject(new Error(String(error)));
           }
@@ -19,7 +19,7 @@ export function promisifyCallback<TResult>(
       });
     } catch (error) {
       if (options?.fallback) {
-        resolve(Promise.resolve(options.fallback()));
+        resolve(options.fallback());
       } else {
         reject(error instanceof Error ? error : new Error(String(error)));
       }
