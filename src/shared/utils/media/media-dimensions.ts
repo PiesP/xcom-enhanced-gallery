@@ -1,61 +1,38 @@
-/** Media utilities: dimensions, URL normalization, sorting */
+/** Media utilities: dimensions, URL normalization, sorting, deduplication */
 
-import { logger } from '@shared/logging/logger';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { clampIndex } from '@shared/utils/types/safety';
 import { tryParseUrl } from '@shared/utils/url/host';
 import type { JSX } from 'solid-js';
 
-/** Immutable width and height pair */
 interface DimensionPair {
   readonly width: number;
   readonly height: number;
 }
 
-/** Media dimensions with intrinsic size flag */
 interface ResolvedMediaDimensions {
   readonly dimensions: DimensionPair;
   readonly hasIntrinsicSize: boolean;
 }
 
-/** Standard gallery height constant */
-const STANDARD_GALLERY_HEIGHT = 720 as const;
+const STANDARD_GALLERY_HEIGHT = 720;
+const DEFAULT_DIMENSIONS: DimensionPair = { width: 540, height: STANDARD_GALLERY_HEIGHT };
 
-/** Default media dimensions */
-const DEFAULT_DIMENSIONS = {
-  width: 540,
-  height: STANDARD_GALLERY_HEIGHT,
-} as const satisfies DimensionPair;
-
-/** Check if string has valid URL prefix */
 function hasValidUrlPrefix(str: string): boolean {
   return /^(?:https?:\/\/|\/\/|\/|\.\/|\.\.\/)/u.test(str);
 }
 
-/**
- * Extract filename from URL pathname
- * @param url - URL string to parse
- * @returns Filename or null if extraction fails
- */
 function extractFilenameFromUrl(url: string): string | null {
   if (!url) return null;
-
   const trimmed = url.trim();
   if (!trimmed || !hasValidUrlPrefix(trimmed)) return null;
-
   const parsed = tryParseUrl(trimmed, 'https://example.invalid');
   if (!parsed) return null;
-
   const filename = parsed.pathname.split('/').pop();
   return filename && filename.length > 0 ? filename : null;
 }
 
-/**
- * Generate deduplication key for media item
- * @param media - Media info to generate key for
- * @returns Unique key for deduplication or null
- */
 function getMediaDedupKey(media: MediaInfo): string | null {
   const urlCandidate =
     typeof media.originalUrl === 'string' && media.originalUrl.length > 0
@@ -64,9 +41,7 @@ function getMediaDedupKey(media: MediaInfo): string | null {
         ? media.url
         : null;
 
-  if (!urlCandidate) {
-    return null;
-  }
+  if (!urlCandidate) return null;
 
   const typePrefix =
     media.type === 'image' || media.type === 'video' || media.type === 'gif'
@@ -78,10 +53,8 @@ function getMediaDedupKey(media: MediaInfo): string | null {
     const host = parsed.hostname;
     const path = parsed.pathname;
     const format = parsed.searchParams.get('format');
-    const formatSuffix = format ? `?format=${format}` : '';
-
     if (host && path) {
-      return `${typePrefix}${host}${path}${formatSuffix}`;
+      return `${typePrefix}${host}${path}${format ? `?format=${format}` : ''}`;
     }
   }
 
@@ -89,56 +62,27 @@ function getMediaDedupKey(media: MediaInfo): string | null {
   return filename ? `${typePrefix}${filename}` : `${typePrefix}${urlCandidate}`;
 }
 
-/** Deduplicate media items by URL */
 export function removeDuplicateMediaItems(
   mediaItems: ReadonlyArray<MediaInfo | undefined>
 ): MediaInfo[] {
-  if (!mediaItems?.length) {
-    return [];
-  }
+  if (!mediaItems?.length) return [];
 
-  let warnedMissingKey = false;
   const seen = new Set<string>();
   const result: MediaInfo[] = [];
 
   for (const item of mediaItems) {
     if (item == null) continue;
-
     const key = getMediaDedupKey(item);
-    if (!key) {
-      if (__DEV__ && !warnedMissingKey) {
-        warnedMissingKey = true;
-        logger.warn('Skipping item without key');
-      }
-      continue;
-    }
-
+    if (!key) continue;
     if (!seen.has(key)) {
       seen.add(key);
       result.push(item);
     }
   }
 
-  if (__DEV__) {
-    const inputCount = mediaItems.filter(Boolean).length;
-    const removedCount = inputCount - result.length;
-    if (removedCount > 0) {
-      logger.debug('Removed duplicate media items:', {
-        original: inputCount,
-        unique: result.length,
-        removed: removedCount,
-      });
-    }
-  }
-
   return result;
 }
 
-/**
- * Extract visual index (1-based) from photo/video URL
- * @param url - URL to parse
- * @returns Zero-based index or 0 if not found
- */
 function extractVisualIndexFromUrl(url: string): number {
   if (!url) return 0;
   const match = url.match(/\/(photo|video)\/(\d+)(?:[?#].*)?$/);
@@ -146,24 +90,15 @@ function extractVisualIndexFromUrl(url: string): number {
   return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
 }
 
-/** Sort media by visual display order */
 export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMediaEntry[] {
   if (mediaItems.length <= 1) return mediaItems;
 
-  const withVisualIndex = mediaItems.map((media) => {
-    const visualIndex = extractVisualIndexFromUrl(media.expanded_url || '');
-    return { media, visualIndex };
-  });
-
-  withVisualIndex.sort((a, b) => a.visualIndex - b.visualIndex);
-
-  return withVisualIndex.map(({ media }, newIndex) => ({
-    ...media,
-    index: newIndex,
-  }));
+  return mediaItems
+    .map((media) => ({ media, visualIndex: extractVisualIndexFromUrl(media.expanded_url || '') }))
+    .sort((a, b) => a.visualIndex - b.visualIndex)
+    .map(({ media }, newIndex) => ({ ...media, index: newIndex }));
 }
 
-/** Extract dimensions from URL containing WxH pattern */
 export function extractDimensionsFromUrl(url: string): DimensionPair | null {
   if (!url) return null;
   const match = url.match(/\/(\d{2,6})x(\d{2,6})(?:\/|\.|$)/);
@@ -179,7 +114,6 @@ export function extractDimensionsFromUrl(url: string): DimensionPair | null {
   return { width, height };
 }
 
-/** Normalize dimension value to positive integer */
 export function normalizeDimension(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
     return Math.round(value);
@@ -193,10 +127,8 @@ export function normalizeDimension(value: unknown): number | null {
   return null;
 }
 
-/** Normalize media URL to comparable filename (extension removed) */
 export function normalizeMediaUrl(url: string): string | null {
   if (!url) return null;
-
   const trimmed = url.trim();
   if (!trimmed || !hasValidUrlPrefix(trimmed)) return null;
 
@@ -214,140 +146,85 @@ export function normalizeMediaUrl(url: string): string | null {
   return filename && filename.length > 0 ? filename : null;
 }
 
-type MetadataRecord = Record<string, unknown> | undefined;
-
-/** Scale aspect ratio to standard gallery height */
 function scaleAspectRatio(widthRatio: number, heightRatio: number): DimensionPair {
-  if (heightRatio <= 0 || widthRatio <= 0) {
-    return DEFAULT_DIMENSIONS;
-  }
-
-  const scaledHeight = STANDARD_GALLERY_HEIGHT;
-  const scaledWidth = Math.max(1, Math.round((widthRatio / heightRatio) * scaledHeight));
-
+  if (heightRatio <= 0 || widthRatio <= 0) return DEFAULT_DIMENSIONS;
   return {
-    width: scaledWidth,
-    height: scaledHeight,
+    width: Math.max(1, Math.round((widthRatio / heightRatio) * STANDARD_GALLERY_HEIGHT)),
+    height: STANDARD_GALLERY_HEIGHT,
   };
 }
 
-/** Extract dimensions from metadata object */
-function extractDimensionsFromMetadataObject(
-  dimensions?: Record<string, unknown>
+function deriveDimensionsFromMetadata(
+  metadata: Record<string, unknown> | undefined
 ): DimensionPair | null {
-  if (!dimensions) {
-    return null;
-  }
+  if (!metadata) return null;
 
-  const width = normalizeDimension(dimensions.width);
-  const height = normalizeDimension(dimensions.height);
-  if (width && height) {
-    return { width, height };
-  }
-
-  return null;
-}
-
-/** Derive dimensions from metadata using multiple strategies */
-function deriveDimensionsFromMetadata(metadata: MetadataRecord): DimensionPair | null {
-  if (!metadata) {
-    return null;
-  }
-
-  const dimensions = extractDimensionsFromMetadataObject(
-    metadata.dimensions as Record<string, unknown> | undefined
-  );
-  if (dimensions) {
-    return dimensions;
-  }
+  const dims = metadata.dimensions as Record<string, unknown> | undefined;
+  const w = normalizeDimension(dims?.width);
+  const h = normalizeDimension(dims?.height);
+  if (w && h) return { width: w, height: h };
 
   const apiData = metadata.apiData as Record<string, unknown> | undefined;
-  if (!apiData) {
-    return null;
-  }
+  if (!apiData) return null;
 
-  const originalWidth = normalizeDimension(apiData.original_width ?? apiData.originalWidth);
-  const originalHeight = normalizeDimension(apiData.original_height ?? apiData.originalHeight);
-  if (originalWidth && originalHeight) {
-    return { width: originalWidth, height: originalHeight };
-  }
+  const origW = normalizeDimension(apiData.original_width ?? apiData.originalWidth);
+  const origH = normalizeDimension(apiData.original_height ?? apiData.originalHeight);
+  if (origW && origH) return { width: origW, height: origH };
 
   const downloadUrl = apiData.download_url;
   if (typeof downloadUrl === 'string' && downloadUrl) {
-    const fromDownloadUrl = extractDimensionsFromUrl(downloadUrl);
-    if (fromDownloadUrl) {
-      return fromDownloadUrl;
-    }
+    const fromUrl = extractDimensionsFromUrl(downloadUrl);
+    if (fromUrl) return fromUrl;
   }
 
   const previewUrl = apiData.preview_url;
   if (typeof previewUrl === 'string' && previewUrl) {
-    const fromPreviewUrl = extractDimensionsFromUrl(previewUrl);
-    if (fromPreviewUrl) {
-      return fromPreviewUrl;
-    }
+    const fromUrl = extractDimensionsFromUrl(previewUrl);
+    if (fromUrl) return fromUrl;
   }
 
   const aspectRatio = apiData.aspect_ratio;
   if (Array.isArray(aspectRatio) && aspectRatio.length >= 2) {
-    const ratioWidth = normalizeDimension(aspectRatio[0]);
-    const ratioHeight = normalizeDimension(aspectRatio[1]);
-    if (ratioWidth && ratioHeight) {
-      return scaleAspectRatio(ratioWidth, ratioHeight);
-    }
+    const ratioW = normalizeDimension(aspectRatio[0]);
+    const ratioH = normalizeDimension(aspectRatio[1]);
+    if (ratioW && ratioH) return scaleAspectRatio(ratioW, ratioH);
   }
 
   return null;
 }
 
-/** Derive dimensions from media URL candidates */
 function deriveDimensionsFromMediaUrls(media: MediaInfo): DimensionPair | null {
-  const candidates: readonly (string | undefined)[] = [
-    media.url,
-    media.originalUrl,
-    media.thumbnailUrl,
-  ];
-  for (const candidate of candidates) {
+  for (const candidate of [media.url, media.originalUrl, media.thumbnailUrl]) {
     if (typeof candidate === 'string' && candidate) {
       const dimensions = extractDimensionsFromUrl(candidate);
-      if (dimensions) {
-        return dimensions;
-      }
+      if (dimensions) return dimensions;
     }
   }
   return null;
 }
 
-/** Resolve media dimensions with intrinsic size flag */
 export function resolveMediaDimensionsWithIntrinsicFlag(
   media: MediaInfo | undefined
 ): ResolvedMediaDimensions {
-  if (!media) {
-    return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
-  }
+  if (!media) return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
 
-  const directWidth = normalizeDimension(media.width);
-  const directHeight = normalizeDimension(media.height);
-  if (directWidth && directHeight) {
-    return { dimensions: { width: directWidth, height: directHeight }, hasIntrinsicSize: true };
+  const directW = normalizeDimension(media.width);
+  const directH = normalizeDimension(media.height);
+  if (directW && directH) {
+    return { dimensions: { width: directW, height: directH }, hasIntrinsicSize: true };
   }
 
   const fromMetadata = deriveDimensionsFromMetadata(
     media.metadata as Record<string, unknown> | undefined
   );
-  if (fromMetadata) {
-    return { dimensions: fromMetadata, hasIntrinsicSize: true };
-  }
+  if (fromMetadata) return { dimensions: fromMetadata, hasIntrinsicSize: true };
 
   const fromUrls = deriveDimensionsFromMediaUrls(media);
-  if (fromUrls) {
-    return { dimensions: fromUrls, hasIntrinsicSize: true };
-  }
+  if (fromUrls) return { dimensions: fromUrls, hasIntrinsicSize: true };
 
   return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
 }
 
-/** Convert pixel value to rem unit */
 function toRem(pixels: number): string {
   return `${(pixels / 16).toFixed(4)}rem`;
 }
@@ -362,7 +239,6 @@ export function createIntrinsicSizingStyle(dimensions: DimensionPair): JSX.CSSPr
   };
 }
 
-/** Adjust clicked index after deduplication */
 export function adjustClickedIndexAfterDeduplication(
   originalItems: MediaInfo[],
   uniqueItems: MediaInfo[],
@@ -372,14 +248,11 @@ export function adjustClickedIndexAfterDeduplication(
 
   const safeOriginalIndex = clampIndex(originalClickedIndex, originalItems.length);
   const clickedItem = originalItems[safeOriginalIndex];
-
   if (!clickedItem) return 0;
 
   const clickedKey = getMediaDedupKey(clickedItem);
   if (!clickedKey) return 0;
-  const newIndex = uniqueItems.findIndex((item) => {
-    return getMediaDedupKey(item) === clickedKey;
-  });
 
+  const newIndex = uniqueItems.findIndex((item) => getMediaDedupKey(item) === clickedKey);
   return newIndex >= 0 ? newIndex : 0;
 }
