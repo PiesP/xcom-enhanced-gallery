@@ -8,11 +8,10 @@
 
 import type { BaseComponentProps } from '@shared/types/component.types';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
+import type { ThemeSetting } from '@shared/services/theme-service';
 
-/**
- * Union type for theme setting options
- */
-export type ThemeOption = 'auto' | 'light' | 'dark';
+/** Re-export for backwards compatibility */
+export type ThemeOption = ThemeSetting;
 
 /**
  * Union type for language setting options
