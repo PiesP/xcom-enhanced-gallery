@@ -14,6 +14,7 @@ import {
 } from '@shared/container/container';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
+import type { Theme, ThemeSetting } from '@shared/services/theme-service';
 import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 import type {
@@ -112,13 +113,13 @@ export function useToolbarSettingsController(
     void themeManager
       .initialize()
       .then(syncThemeFromService)
-      .catch((error) => {
+      .catch((error: unknown) => {
         logger.warn('[ToolbarSettingsController] ThemeService initialization failed', error);
       });
   }
 
   createEffect(() => {
-    const unsubscribe = themeManager.onThemeChange((_, setting) => {
+    const unsubscribe = themeManager.onThemeChange((_theme: Theme, setting: ThemeSetting) => {
       setCurrentTheme(toThemeOption(setting));
     });
 

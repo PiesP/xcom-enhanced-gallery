@@ -1,6 +1,5 @@
 /**
- * Core Layer - Theme Service
- * System theme detection and application service
+ * @fileoverview Theme service: system theme detection and application
  */
 
 import { tryGetSettings } from '@shared/container/settings-registry';
@@ -8,31 +7,9 @@ import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 
-const MAX_RECURSION_DEPTH = 5;
-
-// Theme types (inlined from theme-service.contract.ts)
 export type Theme = 'light' | 'dark';
 export type ThemeSetting = 'auto' | Theme;
-export interface ThemeSetOptions {
-  readonly force?: boolean;
-  readonly persist?: boolean;
-}
 export type ThemeChangeListener = (theme: Theme, setting: ThemeSetting) => void;
-export interface SettingsServiceLike {
-  get?: (key: string) => unknown;
-  set?: (key: string, value: unknown) => Promise<void> | void;
-}
-export interface ThemeServiceContract {
-  initialize(): Promise<void>;
-  destroy(): void;
-  isInitialized(): boolean;
-  getCurrentTheme(): ThemeSetting;
-  getEffectiveTheme(): Theme;
-  setTheme(setting: ThemeSetting | string, options?: ThemeSetOptions): void;
-  isDarkMode(): boolean;
-  onThemeChange(listener: ThemeChangeListener): () => void;
-  bindSettingsService(settingsService: SettingsServiceLike): void;
-}
 
 const VALID_THEME_SETTINGS: readonly ThemeSetting[] = ['light', 'dark', 'auto'];
 
@@ -42,32 +19,27 @@ function isThemeSetting(value: unknown): value is ThemeSetting {
 
 let _themeInstance: ThemeService | null = null;
 
-export class ThemeService implements ThemeServiceContract {
+export class ThemeService {
   private _initialized = false;
   private currentTheme: Theme = 'light';
   private themeSetting: ThemeSetting = 'auto';
   private readonly listeners: Set<ThemeChangeListener> = new Set();
-  private boundSettingsService: SettingsServiceLike | null = null;
+  private boundSettingsService: {
+    get?: (key: string) => unknown;
+    set?: (key: string, value: unknown) => Promise<void> | void;
+  } | null = null;
   private observedThemeScopes: WeakSet<Element> = new WeakSet();
-
-  // Media query state
   private mediaQueryList: MediaQueryList | null = null;
   private mediaQueryListener: ((event: MediaQueryListEvent) => void) | null = null;
   private domEventsController: AbortController | null = null;
-
-  // DOM observation state
   private observer: MutationObserver | null = null;
 
-  // Recursion guard
-  private recursionDepth = 0;
-
-  public static getInstance(): ThemeService {
+  static getInstance(): ThemeService {
     if (!_themeInstance) _themeInstance = new ThemeService();
     return _themeInstance;
   }
 
-  /** @internal Test helper */
-  public static resetForTests(): void {
+  static resetForTests(): void {
     _themeInstance?.destroy();
     _themeInstance = null;
   }
@@ -76,14 +48,11 @@ export class ThemeService implements ThemeServiceContract {
     this.mediaQueryList = this.createMediaQueryList();
   }
 
-  /** Initialize service (idempotent) */
-  public async initialize(): Promise<void> {
+  async initialize(): Promise<void> {
     if (this._initialized) return;
     if (!this.boundSettingsService) {
       const settingsService = tryGetSettings();
-      if (settingsService) {
-        this.bindSettingsService(settingsService);
-      }
+      if (settingsService) this.boundSettingsService = settingsService;
     }
     this.initializeThemeScopeObservation();
     this.initializeSystemDetection();
@@ -91,22 +60,20 @@ export class ThemeService implements ThemeServiceContract {
     this._initialized = true;
   }
 
-  /** Destroy service (idempotent) */
-  public destroy(): void {
+  destroy(): void {
     this.cleanup();
     this._initialized = false;
   }
 
-  /** Check if service is initialized */
-  public isInitialized(): boolean {
+  isInitialized(): boolean {
     return this._initialized;
   }
 
-  public bindSettingsService(settingsService: SettingsServiceLike): void {
-    if (!settingsService || this.boundSettingsService === settingsService) {
-      return;
-    }
-
+  bindSettingsService(settingsService: {
+    get?: (key: string) => unknown;
+    set?: (key: string, value: unknown) => Promise<void> | void;
+  }): void {
+    if (!settingsService || this.boundSettingsService === settingsService) return;
     this.boundSettingsService = settingsService;
 
     const settingsTheme = settingsService.get?.('gallery.theme');
@@ -116,7 +83,7 @@ export class ThemeService implements ThemeServiceContract {
     }
   }
 
-  public setTheme(setting: ThemeSetting | string, options?: ThemeSetOptions): void {
+  setTheme(setting: ThemeSetting | string, options?: { force?: boolean; persist?: boolean }): void {
     const normalized = isThemeSetting(setting) ? setting : 'light';
     this.themeSetting = normalized;
 
@@ -124,36 +91,32 @@ export class ThemeService implements ThemeServiceContract {
       const result = this.boundSettingsService.set('gallery.theme', this.themeSetting);
       if (result instanceof Promise) {
         result.catch((error: unknown) => {
-          if (__DEV__) {
-            logger.warn('[ThemeService] Failed to persist theme setting', error);
-          }
+          __DEV__ && logger.warn('[ThemeService] Failed to persist theme', error);
         });
       }
     }
 
-    const notified = this.applyCurrentTheme(options?.force);
-    if (!notified) {
+    if (!this.applyCurrentTheme(options?.force)) {
       this.notifyListeners();
     }
   }
 
-  public getEffectiveTheme(): Theme {
+  getEffectiveTheme(): Theme {
     if (this.themeSetting === 'auto') {
       return this.mediaQueryList?.matches ? 'dark' : 'light';
     }
-
     return this.themeSetting;
   }
 
-  public getCurrentTheme(): ThemeSetting {
+  getCurrentTheme(): ThemeSetting {
     return this.themeSetting;
   }
 
-  public isDarkMode(): boolean {
+  isDarkMode(): boolean {
     return this.getEffectiveTheme() === 'dark';
   }
 
-  public onThemeChange(listener: ThemeChangeListener): () => void {
+  onThemeChange(listener: ThemeChangeListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
@@ -166,24 +129,18 @@ export class ThemeService implements ThemeServiceContract {
         newScopes.push(scope);
       }
     }
-
     if (newScopes.length > 0) {
       syncThemeAttributes(this.currentTheme, { scopes: newScopes });
     }
   }
 
   private createMediaQueryList(): MediaQueryList | null {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return null;
-    }
-
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
     return window.matchMedia('(prefers-color-scheme: dark)');
   }
 
   private initializeThemeScopeObservation(): void {
-    if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') {
-      return;
-    }
+    if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
 
     this.applyThemeToScopes(Array.from(document.querySelectorAll('.xeg-theme-scope')));
 
@@ -191,35 +148,19 @@ export class ThemeService implements ThemeServiceContract {
     this.observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         mutation.addedNodes.forEach((node) => {
-          if (!(node instanceof Element)) {
-            return;
-          }
-
+          if (!(node instanceof Element)) return;
           const scopes: Element[] = [];
-          if (node.classList.contains('xeg-theme-scope')) {
-            scopes.push(node);
-          }
-          node.querySelectorAll('.xeg-theme-scope').forEach((scope) => {
-            scopes.push(scope);
-          });
-
-          if (scopes.length > 0) {
-            this.applyThemeToScopes(scopes);
-          }
+          if (node.classList.contains('xeg-theme-scope')) scopes.push(node);
+          node.querySelectorAll('.xeg-theme-scope').forEach((scope) => scopes.push(scope));
+          if (scopes.length > 0) this.applyThemeToScopes(scopes);
         });
       }
     });
 
     if (document.body) {
-      this.observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-      });
-      return;
-    }
-
-    if (__DEV__) {
-      logger.warn('[ThemeService] document.body not available for observation');
+      this.observer.observe(document.body, { childList: true, subtree: true });
+    } else {
+      __DEV__ && logger.warn('[ThemeService] document.body not available');
     }
   }
 
@@ -227,48 +168,32 @@ export class ThemeService implements ThemeServiceContract {
     this.boundSettingsService = null;
     this.listeners.clear();
     this.observedThemeScopes = new WeakSet();
-
-    if (this.observer) {
-      this.observer.disconnect();
-      this.observer = null;
-    }
-
-    if (this.domEventsController) {
-      this.domEventsController.abort();
-      this.domEventsController = null;
-    }
-
+    this.observer?.disconnect();
+    this.observer = null;
+    this.domEventsController?.abort();
+    this.domEventsController = null;
     this.mediaQueryListener = null;
     this.mediaQueryList = null;
   }
 
   private initializeSystemDetection(): void {
-    if (!this.mediaQueryList) {
-      this.mediaQueryList = this.createMediaQueryList();
-    }
-    if (!this.mediaQueryList || this.mediaQueryListener) {
-      return;
-    }
+    if (!this.mediaQueryList) this.mediaQueryList = this.createMediaQueryList();
+    if (!this.mediaQueryList || this.mediaQueryListener) return;
 
     if (!this.domEventsController || this.domEventsController.signal.aborted) {
       this.domEventsController = new AbortController();
     }
 
     this.mediaQueryListener = () => {
-      if (this.themeSetting === 'auto') {
-        this.applyCurrentTheme();
-      }
+      if (this.themeSetting === 'auto') this.applyCurrentTheme();
     };
 
-    const listener = this.mediaQueryListener;
-    const eventListener: EventListener = (event) => {
-      listener(event as MediaQueryListEvent);
-    };
-
-    EventManager.getInstance().addEventListener(this.mediaQueryList, 'change', eventListener, {
-      signal: this.domEventsController.signal,
-      context: 'theme-service',
-    });
+    EventManager.getInstance().addEventListener(
+      this.mediaQueryList,
+      'change',
+      (event) => this.mediaQueryListener!(event as MediaQueryListEvent),
+      { signal: this.domEventsController.signal, context: 'theme-service' }
+    );
   }
 
   private applyCurrentTheme(force = false): boolean {
@@ -283,20 +208,12 @@ export class ThemeService implements ThemeServiceContract {
   }
 
   private notifyListeners(): void {
-    if (this.recursionDepth >= MAX_RECURSION_DEPTH) {
-      if (__DEV__) {
-        logger.warn(
-          `[ThemeService] Max recursion depth (${MAX_RECURSION_DEPTH}) reached; bailing out`
-        );
+    for (const listener of this.listeners) {
+      try {
+        listener(this.currentTheme, this.themeSetting);
+      } catch (error) {
+        __DEV__ && logger.warn('[ThemeService] Listener error', error);
       }
-      this.recursionDepth = 0;
-      return;
-    }
-    this.recursionDepth++;
-    try {
-      this.listeners.forEach((listener) => listener(this.currentTheme, this.themeSetting));
-    } finally {
-      this.recursionDepth--;
     }
   }
 }

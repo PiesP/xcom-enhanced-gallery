@@ -9,7 +9,7 @@ import type {
 } from '@shared/components/ui/Settings/SettingsControls.types';
 
 import type { LanguageService } from '@shared/services/language-service';
-import type { ThemeServiceContract } from '@shared/services/theme-service';
+import type { ThemeService } from '@shared/services/theme-service';
 
 /**
  * Configuration options for useToolbarSettingsController hook
@@ -19,7 +19,7 @@ export interface UseToolbarSettingsControllerOptions {
   readonly setSettingsExpanded: (expanded: boolean) => void;
   readonly toggleSettingsExpanded: () => void;
   readonly documentRef?: Document;
-  readonly themeService?: ThemeServiceContract;
+  readonly themeService?: ThemeService;
   readonly languageService?: LanguageService;
   readonly focusDelayMs?: number;
   readonly selectChangeGuardMs?: number;

@@ -1,4 +1,6 @@
-/** Gallery application orchestrator. */
+/**
+ * @fileoverview Gallery application orchestrator.
+ */
 
 import { getMediaService, tryGetSettingsManager } from '@shared/container/container';
 import { galleryErrorReporter, mediaErrorReporter } from '@shared/error/app-error-reporter';
@@ -16,39 +18,19 @@ import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-
 import { startAmbientVideoGuard } from '@shared/utils/media/ambient-video-guard';
 import { clampIndex } from '@shared/utils/types/safety';
 
-interface GalleryOpenOptions {
-  readonly pauseContext?: AmbientVideoPauseRequest;
-}
-
 export class GalleryApp {
-  private isInitialized = false;
-  private get userscript() {
-    return getUserscript();
-  }
+  private initialized = false;
   private ambientVideoGuardDispose: (() => void) | null = null;
 
-  constructor() {
-    __DEV__ && logger.info('[GalleryApp] Constructor called');
-  }
-
-  public async initialize(): Promise<void> {
-    if (this.isInitialized) {
-      __DEV__ && logger.info('[GalleryApp] Initialization skipped (already initialized)');
-      return;
-    }
+  async initialize(): Promise<void> {
+    if (this.initialized) return;
 
     try {
-      __DEV__ && logger.info('[GalleryApp] Initialization started');
-
       await this.setupEventHandlers();
-      this.ambientVideoGuardDispose = this.ambientVideoGuardDispose ?? startAmbientVideoGuard();
-
-      this.isInitialized = true;
-      __DEV__ && logger.info('[GalleryApp] ✅ Initialization complete');
+      this.ambientVideoGuardDispose ??= startAmbientVideoGuard();
+      this.initialized = true;
     } catch (error) {
-      galleryErrorReporter.critical(error, {
-        code: 'GALLERY_APP_INIT_FAILED',
-      });
+      galleryErrorReporter.critical(error, { code: 'GALLERY_APP_INIT_FAILED' });
       throw error;
     }
   }
@@ -77,8 +59,6 @@ export class GalleryApp {
         context: 'gallery',
       }
     );
-
-    __DEV__ && logger.info('[GalleryApp] ✅ Event handlers setup complete');
   }
 
   private async handleMediaClick(element: HTMLElement, _event: MouseEvent): Promise<void> {
@@ -87,62 +67,50 @@ export class GalleryApp {
       const result = await mediaService.extractFromClickedElement(element);
 
       if (result.success && result.mediaItems.length > 0) {
-        await this.openGallery(result.mediaItems, result.clickedIndex, {
-          pauseContext: {
-            sourceElement: element,
-            reason: 'media-click',
-          },
+        this.openGallery(result.mediaItems, result.clickedIndex, {
+          sourceElement: element,
+          reason: 'media-click',
         });
       } else {
         mediaErrorReporter.warn(new Error('Media extraction returned no items'), {
           code: 'MEDIA_EXTRACTION_EMPTY',
           metadata: { success: result.success },
         });
-        this.userscript.notification({
+        getUserscript().notification({
           title: 'Failed to load media',
           text: 'Could not find images or videos.',
         });
       }
     } catch (error) {
-      mediaErrorReporter.error(error, {
-        code: 'MEDIA_EXTRACTION_ERROR',
-      });
-      this.userscript.notification({
+      mediaErrorReporter.error(error, { code: 'MEDIA_EXTRACTION_ERROR' });
+      getUserscript().notification({
         title: 'Error occurred',
         text: normalizeErrorMessage(error),
       });
     }
   }
 
-  public async openGallery(
+  openGallery(
     mediaItems: MediaInfo[],
-    startIndex: number = 0,
-    options: GalleryOpenOptions = {}
-  ): Promise<void> {
-    if (!this.isInitialized) {
-      __DEV__ && logger.warn('[GalleryApp] Gallery not initialized, retrying...');
-      await this.initialize();
-    }
-
-    if (mediaItems.length === 0) {
-      return;
-    }
+    startIndex = 0,
+    pauseContext?: AmbientVideoPauseRequest
+  ): void {
+    if (mediaItems.length === 0) return;
 
     try {
       const validIndex = clampIndex(startIndex, mediaItems.length);
-
-      const pauseContext: AmbientVideoPauseRequest = options.pauseContext
-        ? { ...options.pauseContext, reason: options.pauseContext.reason ?? 'media-click' }
-        : { reason: 'programmatic' };
-
-      pauseAmbientVideosForGallery(pauseContext);
+      pauseAmbientVideosForGallery(
+        pauseContext
+          ? { ...pauseContext, reason: pauseContext.reason ?? 'media-click' }
+          : { reason: 'programmatic' }
+      );
       openGallery(mediaItems, validIndex);
     } catch (error) {
       galleryErrorReporter.error(error, {
         code: 'GALLERY_OPEN_FAILED',
         metadata: { itemCount: mediaItems.length, startIndex },
       });
-      this.userscript.notification({
+      getUserscript().notification({
         title: 'Failed to load gallery',
         text: normalizeErrorMessage(error),
       });
@@ -150,43 +118,27 @@ export class GalleryApp {
     }
   }
 
-  public closeGallery(): void {
-    try {
-      if (gallerySignals.isOpen) {
-        closeGallery();
-      }
-    } catch (error) {
-      galleryErrorReporter.error(error, {
-        code: 'GALLERY_CLOSE_FAILED',
-      });
+  closeGallery(): void {
+    if (gallerySignals.isOpen) {
+      closeGallery();
     }
   }
 
-  public async cleanup(): Promise<void> {
-    try {
-      __DEV__ && logger.info('[GalleryApp] Cleanup started');
-
-      if (gallerySignals.isOpen) {
-        this.closeGallery();
-      }
-
-      this.ambientVideoGuardDispose?.();
-      this.ambientVideoGuardDispose = null;
-
-      try {
-        cleanupGalleryEvents();
-      } catch (error) {
-        __DEV__ && logger.warn('[GalleryApp] Event cleanup failed:', error);
-      }
-
-      this.isInitialized = false;
-
-      delete (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug;
-      __DEV__ && logger.info('[GalleryApp] ✅ Cleanup complete');
-    } catch (error) {
-      galleryErrorReporter.error(error, {
-        code: 'GALLERY_CLEANUP_FAILED',
-      });
+  async cleanup(): Promise<void> {
+    if (gallerySignals.isOpen) {
+      this.closeGallery();
     }
+
+    this.ambientVideoGuardDispose?.();
+    this.ambientVideoGuardDispose = null;
+
+    try {
+      cleanupGalleryEvents();
+    } catch (error) {
+      __DEV__ && logger.warn('[GalleryApp] Event cleanup failed:', error);
+    }
+
+    this.initialized = false;
+    delete (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug;
   }
 }
