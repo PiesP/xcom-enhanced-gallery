@@ -30,9 +30,7 @@ export interface PauseAmbientVideosResult {
 /** Resolves queryable root, defaults to document */
 function resolveRoot(root?: QueryableRoot | null): QueryableRoot | null {
   if (root && typeof root.querySelectorAll === 'function') return root;
-  return typeof document !== 'undefined' && typeof document.querySelectorAll === 'function'
-    ? document
-    : null;
+  return typeof document.querySelectorAll === 'function' ? document : null;
 }
 
 /** Checks if video is actively playing */

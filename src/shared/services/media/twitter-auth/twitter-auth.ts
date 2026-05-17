@@ -2,21 +2,18 @@ import { TWITTER_API_CONFIG } from '@constants/twitter-api';
 import { getCookieValue, getCookieValueSync } from '@shared/services/cookie/cookie-utils';
 
 let _csrfToken: string | undefined;
-let _tokensInitialized = false;
 
 export async function getCsrfTokenAsync(): Promise<string | undefined> {
-  if (_tokensInitialized && _csrfToken) return _csrfToken;
+  if (_csrfToken) return _csrfToken;
 
   const syncToken = getCookieValueSync('ct0');
   if (syncToken) {
     _csrfToken = syncToken;
-    _tokensInitialized = true;
     return syncToken;
   }
 
   const asyncToken = await getCookieValue('ct0');
   _csrfToken = asyncToken ?? undefined;
-  _tokensInitialized = true;
   return _csrfToken;
 }
 

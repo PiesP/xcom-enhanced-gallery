@@ -50,7 +50,7 @@ function resolveInitializationInput(
 }
 
 function resolveEventTarget(explicitRoot: HTMLElement | null): EventTarget {
-  return explicitRoot || document.body || document.documentElement || document;
+  return explicitRoot ?? document.body;
 }
 
 function registerListeners(

@@ -217,6 +217,6 @@ async function startApplication(): Promise<void> {
   return lifecycleState.startPromise;
 }
 
-void startApplication().catch(() => {
-  /* noop */
+void startApplication().catch((error) => {
+  __DEV__ && logger.error('Application failed to start', error);
 });

@@ -30,7 +30,7 @@ const createMediaInfoFromAPI = (
       metadata.dimensions = dimensions;
     }
 
-    const username = apiMedia.screen_name || tweetInfo.username;
+    const username = apiMedia.screen_name ?? tweetInfo.username;
 
     return {
       id: `${tweetInfo.tweetId}_api_${index}`,
