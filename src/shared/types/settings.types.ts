@@ -92,9 +92,3 @@ export interface SettingChangeEvent<T = unknown> {
   readonly timestamp: number;
   readonly status?: 'success' | 'error';
 }
-
-export interface SettingValidationResult {
-  readonly valid: boolean;
-  readonly error?: string;
-  readonly suggestion?: string;
-}

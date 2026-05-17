@@ -3,8 +3,6 @@
  * Provides environment detection, version resolution, and feature flags.
  */
 
-import type { AppConfig } from '@shared/types/app-config.types';
-
 type BooleanFlagValue = string | boolean | undefined;
 type EnvSource = Partial<{
   DEV: BooleanFlagValue;
@@ -36,6 +34,13 @@ function parseBooleanFlag(value: BooleanFlagValue): boolean | undefined {
   if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
   if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
   return undefined;
+}
+
+export interface AppConfig {
+  readonly version: string;
+  readonly isDevelopment: boolean;
+  readonly debug: boolean;
+  readonly autoStart: boolean;
 }
 
 const env = resolveEnv();

@@ -40,13 +40,6 @@ export interface MediaInfo {
   readonly quotedTweetUrl?: string | undefined;
 }
 
-/** MediaInfoWithFilename - Media information with filename (for download) */
-export interface MediaInfoWithFilename extends MediaInfo {
-  readonly id: string;
-  readonly originalUrl: string;
-  readonly filename: string;
-}
-
 /** Tweet information interface */
 export interface TweetInfo {
   readonly tweetId: string;

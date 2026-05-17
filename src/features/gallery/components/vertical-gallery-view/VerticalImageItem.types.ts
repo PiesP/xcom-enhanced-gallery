@@ -1,6 +1,5 @@
 /** Type definitions for vertical gallery image item component. */
 
-import type { BaseComponentProps } from '@shared/types/component.types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { ImageFitMode } from '@shared/types/ui.types';
 
@@ -8,7 +7,7 @@ import type { ImageFitMode } from '@shared/types/ui.types';
 export type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
 
 /** Props for VerticalImageItem component. */
-export interface VerticalImageItemProps extends Omit<BaseComponentProps, 'onClick'> {
+export interface VerticalImageItemProps {
   /**
    * Media item data to render
    */
@@ -69,6 +68,11 @@ export interface VerticalImageItemProps extends Omit<BaseComponentProps, 'onClic
    * @optional
    */
   readonly className?: string;
+
+  /** Inline style
+   * @optional
+   */
+  readonly style?: import('solid-js').JSX.CSSProperties;
 
   /**
    * Callback to register container DOM reference
