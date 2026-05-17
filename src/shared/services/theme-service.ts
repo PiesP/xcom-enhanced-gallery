@@ -11,10 +11,15 @@ export type Theme = 'light' | 'dark';
 export type ThemeSetting = 'auto' | Theme;
 export type ThemeChangeListener = (theme: Theme, setting: ThemeSetting) => void;
 
-const VALID_THEME_SETTINGS: readonly ThemeSetting[] = ['light', 'dark', 'auto'];
+const VALID_THEME_SETTINGS: readonly string[] = ['light', 'dark', 'auto'];
 
 function isThemeSetting(value: unknown): value is ThemeSetting {
-  return typeof value === 'string' && VALID_THEME_SETTINGS.includes(value as ThemeSetting);
+  return typeof value === 'string' && VALID_THEME_SETTINGS.includes(value);
+}
+
+interface SettingsBinding {
+  get(key: string): unknown;
+  set(key: string, value: unknown): Promise<void> | void;
 }
 
 let _themeInstance: ThemeService | null = null;
@@ -24,10 +29,7 @@ export class ThemeService {
   private currentTheme: Theme = 'light';
   private themeSetting: ThemeSetting = 'auto';
   private readonly listeners: Set<ThemeChangeListener> = new Set();
-  private boundSettingsService: {
-    get?: (key: string) => unknown;
-    set?: (key: string, value: unknown) => Promise<void> | void;
-  } | null = null;
+  private settings: SettingsBinding | null = null;
   private observedThemeScopes: WeakSet<Element> = new WeakSet();
   private mediaQueryList: MediaQueryList | null = null;
   private mediaQueryListener: ((event: MediaQueryListEvent) => void) | null = null;
@@ -53,10 +55,15 @@ export class ThemeService {
 
   async initialize(): Promise<void> {
     if (this._initialized) return;
-    if (!this.boundSettingsService) {
-      const settingsService = tryGetSettings();
-      if (settingsService) this.boundSettingsService = settingsService;
+
+    const svc = tryGetSettings();
+    if (svc) {
+      this.settings = {
+        get: (key: string) => svc.get(key),
+        set: (key: string, value: unknown) => svc.set(key, value),
+      };
     }
+
     this.initializeThemeScopeObservation();
     this.initializeSystemDetection();
     this.applyCurrentTheme(true);
@@ -72,14 +79,11 @@ export class ThemeService {
     return this._initialized;
   }
 
-  bindSettingsService(settingsService: {
-    get?: (key: string) => unknown;
-    set?: (key: string, value: unknown) => Promise<void> | void;
-  }): void {
-    if (!settingsService || this.boundSettingsService === settingsService) return;
-    this.boundSettingsService = settingsService;
+  bindSettingsService(svc: SettingsBinding): void {
+    if (!svc || this.settings === svc) return;
+    this.settings = svc;
 
-    const settingsTheme = settingsService.get?.('gallery.theme');
+    const settingsTheme = svc.get('gallery.theme');
     if (isThemeSetting(settingsTheme) && settingsTheme !== this.themeSetting) {
       this.themeSetting = settingsTheme;
       this.applyCurrentTheme(true);
@@ -90,8 +94,8 @@ export class ThemeService {
     const normalized = isThemeSetting(setting) ? setting : 'light';
     this.themeSetting = normalized;
 
-    if (options?.persist !== false && this.boundSettingsService?.set) {
-      const result = this.boundSettingsService.set('gallery.theme', this.themeSetting);
+    if (options?.persist !== false && this.settings) {
+      const result = this.settings.set('gallery.theme', this.themeSetting);
       if (result instanceof Promise) {
         result.catch((error: unknown) => {
           __DEV__ && logger.warn('[ThemeService] Failed to persist theme', error);
@@ -99,9 +103,8 @@ export class ThemeService {
       }
     }
 
-    if (!this.applyCurrentTheme(options?.force)) {
-      this.notifyListeners();
-    }
+    this.applyCurrentTheme(options?.force);
+    this.notifyListeners();
   }
 
   getEffectiveTheme(): Theme {
@@ -163,7 +166,7 @@ export class ThemeService {
   }
 
   private cleanup(): void {
-    this.boundSettingsService = null;
+    this.settings = null;
     this.listeners.clear();
     this.observedThemeScopes = new WeakSet();
     this.observer?.disconnect();
@@ -182,7 +185,7 @@ export class ThemeService {
     }
 
     this.mediaQueryListener = () => {
-      if (this.themeSetting === 'auto') this.applyCurrentTheme();
+      if (this.themeSetting === 'auto') this.applyCurrentTheme(true);
     };
 
     EventManager.getInstance().addEventListener(
@@ -193,15 +196,12 @@ export class ThemeService {
     );
   }
 
-  private applyCurrentTheme(force = false): boolean {
+  private applyCurrentTheme(force = false): void {
     const effective = this.getEffectiveTheme();
     if (force || this.currentTheme !== effective) {
       this.currentTheme = effective;
       syncThemeAttributes(this.currentTheme);
-      this.notifyListeners();
-      return true;
     }
-    return false;
   }
 
   private notifyListeners(): void {
