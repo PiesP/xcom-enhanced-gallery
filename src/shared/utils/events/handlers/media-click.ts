@@ -1,61 +1,29 @@
 /**
- * @fileoverview Media click event handler with multi-stage validation
- * @description Single delegated handler for detecting and processing external media clicks.
+ * @fileoverview Media click event handler with multi-stage validation.
+ * Single delegated handler for detecting and processing external media clicks.
  * Prevents Twitter's native gallery and triggers custom gallery behavior.
  */
 
 import { isGalleryInternalElement, isVideoControlElement } from '@shared/dom/utils';
-import type {
-  EventHandlers,
-  EventHandlingResult,
-  GalleryEventOptions,
-} from '@shared/services/event-types';
+import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-types';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
 import { isHTMLElement } from '@shared/utils/types/guards';
 
-/**
- * Handles media click events with multi-stage validation.
- * Routes processable media clicks to custom handler while blocking native gallery.
- *
- * @param event - Mouse event from media element
- * @param handlers - Event handler callbacks
- * @param options - Configuration for media detection
- * @returns Promise resolving to handling result with status and reason
- */
 export async function handleMediaClick(
   event: MouseEvent,
   handlers: EventHandlers,
   options: GalleryEventOptions
-): Promise<EventHandlingResult> {
-  // Guard: Media detection disabled
-  if (!options.enableMediaDetection) {
-    return { handled: false, reason: 'Media detection disabled' };
-  }
+): Promise<void> {
+  if (!options.enableMediaDetection) return;
 
   const target = event.target;
+  if (!isHTMLElement(target)) return;
 
-  // Guard: Invalid target type
-  if (!isHTMLElement(target)) {
-    return { handled: false, reason: 'Invalid target (not HTMLElement)' };
-  }
+  if (gallerySignals.isOpen && isGalleryInternalElement(target)) return;
+  if (isVideoControlElement(target)) return;
+  if (!isProcessableMedia(target)) return;
 
-  // Guard: Gallery-internal event (gallery open)
-  if (gallerySignals.isOpen && isGalleryInternalElement(target)) {
-    return { handled: false, reason: 'Gallery internal event' };
-  }
-
-  // Guard: Video control element (skip interactive elements)
-  if (isVideoControlElement(target)) {
-    return { handled: false, reason: 'Video control element' };
-  }
-
-  // Guard: Non-processable media
-  if (!isProcessableMedia(target)) {
-    return { handled: false, reason: 'Non-processable media' };
-  }
-
-  // Process media click
   event.stopImmediatePropagation();
   event.preventDefault();
 
@@ -64,6 +32,4 @@ export async function handleMediaClick(
   } catch (error) {
     __DEV__ && console.warn('[MediaClick] onMediaClick failed', error);
   }
-
-  return { handled: true, reason: 'Media click processed' };
 }

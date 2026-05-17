@@ -150,9 +150,9 @@ async function cleanup(): Promise<void> {
     await runOptionalCleanup('error-handler', () => GlobalErrorHandler.getInstance().destroy());
 
     if (__DEV__) {
-      const status = EventManager.getInstance().getListenerStatus();
-      if (status.total > 0) {
-        logger.warn('[cleanup] uncleared listeners remain:', status);
+      const remaining = EventManager.getInstance().getListenerStatus();
+      if (remaining > 0) {
+        logger.warn('[cleanup] uncleared listeners remain:', remaining);
       }
     }
 

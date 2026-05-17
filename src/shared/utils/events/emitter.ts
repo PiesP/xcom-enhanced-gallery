@@ -3,71 +3,16 @@
  * Listener exceptions are isolated and do not cascade.
  */
 
-/**
- * Type-safe event emitter interface.
- *
- * @template T - Record mapping event names to their respective payload types.
- */
-export interface EventEmitterInterface<T extends Record<string, unknown>> {
-  /**
-   * Register a listener for a specific event.
-   *
-   * @template K - The event key.
-   * @param event - Event name from the T type.
-   * @param callback - Function called when the event is emitted.
-   * @returns Function to unsubscribe the listener.
-   */
+export interface EventEmitter<T extends Record<string, unknown>> {
   on<K extends keyof T>(event: K, callback: (data: T[K]) => void): () => void;
-
-  /**
-   * Emit an event to all registered listeners.
-   *
-   * @template K - The event key.
-   * @param event - Event name from the T type.
-   * @param data - Payload for the event.
-   */
   emit<K extends keyof T>(event: K, data: T[K]): void;
-
-  /**
-   * Clear all listeners and dispose of the emitter.
-   */
   dispose(): void;
 }
 
-/**
- * Create a type-safe event emitter with minimal overhead.
- *
- * @template T - Record mapping event names to their data payloads.
- *   Keys are event names (strings), values are payload types.
- * @returns Type-safe emitter with `on`, `emit`, and `dispose` methods.
- *
- * @example
- * ```ts
- * const emitter = createEventEmitter<{
- *   'user:login': { userId: string };
- *   'user:logout': { userId: string };
- * }>();
- *
- * const unsubscribe = emitter.on('user:login', ({ userId }) => {
- *   console.log(`User ${userId} logged in`);
- * });
- *
- * emitter.emit('user:login', { userId: '123' });
- * unsubscribe(); // Stop listening
- * ```
- */
-export function createEventEmitter<T extends Record<string, unknown>>(): EventEmitterInterface<T> {
+export function createEventEmitter<T extends Record<string, unknown>>(): EventEmitter<T> {
   const listeners = new Map<keyof T, Set<(data: unknown) => void>>();
 
   return {
-    /**
-     * Register an event listener.
-     *
-     * @template K - The specific event key.
-     * @param event - Event name from the T type.
-     * @param callback - Handler called with the event payload.
-     * @returns Unsubscribe function; calling it removes the listener.
-     */
     on<K extends keyof T>(event: K, callback: (data: T[K]) => void): () => void {
       const eventListeners = listeners.get(event);
 
@@ -85,16 +30,6 @@ export function createEventEmitter<T extends Record<string, unknown>>(): EventEm
       };
     },
 
-    /**
-     * Emit an event to all registered listeners (synchronous execution).
-     *
-     * Listener errors are isolated: one listener's exception does not prevent
-     * other listeners from being called.
-     *
-     * @template K - The specific event key.
-     * @param event - Event name from the T type.
-     * @param data - Payload matching the event's data type.
-     */
     emit<K extends keyof T>(event: K, data: T[K]): void {
       const eventListeners = listeners.get(event);
       if (!eventListeners) {
@@ -112,9 +47,6 @@ export function createEventEmitter<T extends Record<string, unknown>>(): EventEm
       }
     },
 
-    /**
-     * Remove all listeners and clear internal state (optional cleanup).
-     */
     dispose(): void {
       listeners.clear();
     },

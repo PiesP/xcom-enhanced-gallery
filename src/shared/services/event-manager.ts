@@ -77,17 +77,8 @@ export class EventManager {
     return count;
   }
 
-  public getListenerStatus() {
-    if (!__DEV__) return { total: 0, byContext: {}, byType: {} } as const;
-
-    const byContext: Record<string, number> = {};
-    const byType: Record<string, number> = {};
-    for (const ctx of this.listeners.values()) {
-      const c = ctx.context || 'default';
-      byContext[c] = (byContext[c] || 0) + 1;
-      byType[ctx.type] = (byType[ctx.type] || 0) + 1;
-    }
-    return { total: this.listeners.size, byContext, byType };
+  public getListenerStatus(): number {
+    return this.listeners.size;
   }
 
   public cleanup(): void {

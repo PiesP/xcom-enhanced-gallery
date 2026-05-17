@@ -9,45 +9,12 @@ import {
 } from '@shared/utils/events/handlers/keyboard';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
 
-const DEFAULT_GALLERY_EVENT_OPTIONS = {
-  enableKeyboard: true,
-  enableMediaDetection: true,
-  debugMode: false,
-  preventBubbling: true,
-  context: 'gallery',
-} as const satisfies GalleryEventOptions;
-
 interface LifecycleState {
   readonly initialized: boolean;
   readonly context: string | null;
 }
 
 let lifecycleState: LifecycleState = { initialized: false, context: null };
-
-function sanitizeContext(context: string | undefined): string {
-  const trimmed = context?.trim();
-  return trimmed && trimmed.length > 0 ? trimmed : DEFAULT_GALLERY_EVENT_OPTIONS.context;
-}
-
-function resolveInitializationInput(
-  optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement
-): Readonly<{
-  options: GalleryEventOptions;
-  root: HTMLElement | null;
-}> {
-  if (optionsOrRoot instanceof HTMLElement) {
-    return { options: { ...DEFAULT_GALLERY_EVENT_OPTIONS }, root: optionsOrRoot };
-  }
-  const partial = optionsOrRoot ?? {};
-  return {
-    options: {
-      ...DEFAULT_GALLERY_EVENT_OPTIONS,
-      ...partial,
-      context: sanitizeContext(partial.context),
-    },
-    root: null,
-  };
-}
 
 function resolveEventTarget(explicitRoot: HTMLElement | null): EventTarget {
   return explicitRoot ?? document.body;
@@ -79,7 +46,7 @@ function registerListeners(
 
 export function initializeGalleryEvents(
   handlers: EventHandlers,
-  optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement
+  options?: Partial<GalleryEventOptions>
 ): () => void {
   if (lifecycleState.initialized) {
     if (__DEV__) logger.warn('[GalleryLifecycle] Re-initializing, cleaning up previous listeners');
@@ -91,18 +58,25 @@ export function initializeGalleryEvents(
     return cleanupGalleryEvents;
   }
 
-  const { options: finalOptions, root: explicitGalleryRoot } =
-    resolveInitializationInput(optionsOrRoot);
-  const context = sanitizeContext(finalOptions.context);
-  const target = resolveEventTarget(explicitGalleryRoot);
+  const context = options?.context?.trim() || 'gallery';
+  const mergedOptions: GalleryEventOptions = {
+    enableKeyboard: true,
+    enableMediaDetection: true,
+    debugMode: false,
+    preventBubbling: true,
+    ...options,
+    context,
+  };
+
+  const target = resolveEventTarget(null);
 
   const eventManager = EventManager.getInstance();
-  registerListeners(eventManager, target, handlers, finalOptions, context);
+  registerListeners(eventManager, target, handlers, mergedOptions, context);
   resetKeyboardDebounceState();
 
   lifecycleState = { initialized: true, context };
 
-  if (__DEV__ && finalOptions.debugMode) {
+  if (__DEV__ && mergedOptions.debugMode) {
     logger.debug('[GalleryEvents] Listeners registered', { context });
   }
 
