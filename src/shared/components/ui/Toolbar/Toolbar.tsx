@@ -10,8 +10,9 @@ import { useToolbarSettingsController } from '@shared/hooks/toolbar/use-toolbar-
 import { useToolbarState } from '@shared/hooks/use-toolbar-state';
 import { useTranslation } from '@shared/hooks/use-translation';
 import type { ToolbarDataState, ToolbarState } from '@shared/types/toolbar.types';
+import { resolveOptional } from '@shared/utils/solid/accessor-utils';
 import { clampIndex } from '@shared/utils/types/safety';
-import type { Accessor, JSXElement } from 'solid-js';
+import type { JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, on, splitProps } from 'solid-js';
 
 import styles from './Toolbar.module.css';
@@ -26,20 +27,14 @@ const FIT_MODE_ORDER: ReadonlyArray<{ mode: ImageFitMode; iconName: LucideIconNa
 type InternalFitModeHandlers = Record<ImageFitMode, FitModeHandlers['onFitOriginal'] | undefined>;
 
 function getToolbarDataState(state: ToolbarState): ToolbarDataState {
-  if (state.hasError) return 'error';
-  if (state.isDownloading) return 'downloading';
-  if (state.isLoading) return 'loading';
+  if (state.hasError()) return 'error';
+  if (state.isDownloading()) return 'downloading';
+  if (state.isLoading()) return 'loading';
   return 'idle';
 }
 
-/** Helper to read a split prop that may be a plain value or accessor */
-function val<T>(v: T | Accessor<T> | undefined | null): T | undefined {
-  if (v == null) return undefined;
-  return typeof v === 'function' ? (v as Accessor<T>)() : v;
-}
-
 export function Toolbar(rawProps: ToolbarProps): JSXElement {
-  const [local, domProps] = splitProps(rawProps, [
+  const [local] = splitProps(rawProps, [
     'currentIndex',
     'totalCount',
     'focusedIndex',
@@ -58,15 +53,15 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
   const [settingsExpandedSignal, setSettingsExpandedSignal] = createSignal(false);
   const [tweetExpanded, setTweetExpanded] = createSignal(false);
 
-  const totalItems = createMemo(() => Math.max(0, val(local.totalCount) ?? 0));
+  const totalItems = createMemo(() => Math.max(0, resolveOptional(local.totalCount) ?? 0));
   const currentIndexForNav = createMemo(() =>
-    clampIndex(val(local.currentIndex) ?? 0, totalItems())
+    clampIndex(resolveOptional(local.currentIndex) ?? 0, totalItems())
   );
 
   const displayedIndex = createMemo(() => {
     const total = totalItems();
     const currentIdx = currentIndexForNav();
-    const focusIdx = val(local.focusedIndex);
+    const focusIdx = resolveOptional(local.focusedIndex);
     if (total <= 0) return 0;
     if (typeof focusIdx === 'number' && focusIdx >= 0 && focusIdx < total) return focusIdx;
     return currentIdx;
@@ -84,8 +79,9 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
     const total = totalItems();
     const hasItems = total > 0;
     const canNavigate = hasItems && total > 1;
-    const toolbarDisabled = !!(val(local.disabled) ?? false);
-    const downloadBusy = !!(val(local.isDownloading) ?? false) || toolbarState.isDownloading;
+    const toolbarDisabled = !!(resolveOptional(local.disabled) ?? false);
+    const downloadBusy =
+      !!(resolveOptional(local.isDownloading) ?? false) || toolbarState.isDownloading();
     return {
       prevDisabled: toolbarDisabled || !canNavigate,
       nextDisabled: toolbarDisabled || !canNavigate,
@@ -110,12 +106,12 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
   }));
 
   const activeFitMode = createMemo<ImageFitMode>(
-    () => val(local.currentFitMode) ?? FIT_MODE_ORDER[0]?.mode ?? 'original'
+    () => resolveOptional(local.currentFitMode) ?? FIT_MODE_ORDER[0]?.mode ?? 'original'
   );
 
   createEffect(
     on(
-      () => val(local.isDownloading) ?? false,
+      () => resolveOptional(local.isDownloading) ?? false,
       (value) => toolbarActions.setDownloading(!!value)
     )
   );
@@ -134,7 +130,7 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
     });
   };
 
-  const isToolbarDisabled = () => !!(val(local.disabled) ?? false);
+  const isToolbarDisabled = () => !!(resolveOptional(local.disabled) ?? false);
 
   const isFitDisabled = (mode: ImageFitMode): boolean => {
     if (isToolbarDisabled()) return true;
@@ -190,21 +186,14 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
 
   return (
     <ToolbarView
-      currentIndex={val(local.currentIndex) ?? 0}
-      focusedIndex={(val(local.focusedIndex) ?? null) as number | null}
-      totalCount={val(local.totalCount) ?? 0}
-      isDownloading={val(local.isDownloading) ?? false}
-      disabled={val(local.disabled) ?? false}
-      aria-label={domProps['aria-label']}
-      aria-describedby={domProps['aria-describedby']}
-      role={domProps.role}
-      tabIndex={domProps.tabIndex}
-      data-testid={domProps['data-testid']}
-      onFocus={local.handlers.focus?.onFocus}
-      onBlur={local.handlers.focus?.onBlur}
-      tweetText={val(local.tweetText) ?? null}
-      tweetTextHTML={val(local.tweetTextHTML) ?? null}
-      tweetUrl={val(local.tweetUrl) ?? null}
+      currentIndex={resolveOptional(local.currentIndex) ?? 0}
+      focusedIndex={(resolveOptional(local.focusedIndex) ?? null) as number | null}
+      totalCount={resolveOptional(local.totalCount) ?? 0}
+      isDownloading={resolveOptional(local.isDownloading) ?? false}
+      disabled={resolveOptional(local.disabled) ?? false}
+      tweetText={resolveOptional(local.tweetText) ?? null}
+      tweetTextHTML={resolveOptional(local.tweetTextHTML) ?? null}
+      tweetUrl={resolveOptional(local.tweetUrl) ?? null}
       toolbarClass={toolbarClass}
       toolbarState={toolbarState}
       toolbarDataState={toolbarDataState}

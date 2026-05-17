@@ -71,16 +71,11 @@ export class GalleryRenderer {
   private container: HTMLDivElement | null = null;
   private isMounting = false;
   private stateUnsubscribe: (() => void) | null = null;
-  private onCloseCallback: (() => void) | null = null;
   private readonly downloadHandler: ReturnType<typeof useGalleryDownload>['handleDownload'];
 
   constructor() {
     this.downloadHandler = useGalleryDownload().handleDownload;
     this.setupStateSubscription();
-  }
-
-  setOnCloseCallback(onClose: (() => void) | null): void {
-    this.onCloseCallback = onClose;
   }
 
   private setupStateSubscription(): void {
@@ -130,7 +125,6 @@ export class GalleryRenderer {
 
     const handleClose = () => {
       closeGallery();
-      this.onCloseCallback?.();
     };
 
     mountGallery(this.container, () => (
@@ -183,7 +177,6 @@ export class GalleryRenderer {
     }
 
     closeGallery();
-    this.onCloseCallback?.();
   }
 
   isRendering(): boolean {

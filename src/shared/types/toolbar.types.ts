@@ -5,14 +5,16 @@
 /** Toolbar data state (business logic) */
 export type ToolbarDataState = 'idle' | 'loading' | 'downloading' | 'error';
 
-/** Toolbar UI state object */
+import type { Accessor } from 'solid-js';
+
+/** Toolbar UI state object (signals for reactivity) */
 export interface ToolbarState {
-  /** Download in progress state */
-  readonly isDownloading: boolean;
-  /** Loading state */
-  readonly isLoading: boolean;
-  /** Error occurred state */
-  readonly hasError: boolean;
+  /** Download in progress signal */
+  readonly isDownloading: Accessor<boolean>;
+  /** Loading signal */
+  readonly isLoading: Accessor<boolean>;
+  /** Error occurred signal */
+  readonly hasError: Accessor<boolean>;
 }
 
 /**
