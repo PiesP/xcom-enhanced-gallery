@@ -64,9 +64,7 @@ export function useGalleryItemScroll(
     const container = containerAccessor();
     if (!enabled() || !container || index < 0 || index >= totalItemsAccessor()) return;
 
-    const itemsRoot = container.querySelector(
-      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
-    );
+    const itemsRoot = container.querySelector('[data-xeg-role="items-container"]');
     if (!itemsRoot) return;
 
     const target = getCachedItem(index, itemsRoot);

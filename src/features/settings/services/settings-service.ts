@@ -1,5 +1,4 @@
 import { createDefaultSettings, DEFAULT_SETTINGS } from '@constants/settings';
-import { migrateSettings } from '@features/settings/services/settings-migration';
 import {
   PersistentSettingsRepository,
   type SettingsRepository,
@@ -7,20 +6,12 @@ import {
 import { logger } from '@shared/logging/logger';
 import type {
   AppSettings,
-  FeatureFlags,
   NestedSettingKey,
   SettingChangeEvent,
 } from '@shared/types/settings.types';
-import {
-  assignNestedPath,
-  isValidSettingValue,
-  normalizeFeatureFlags,
-  resolveNestedPath,
-} from './settings-helpers';
+import { assignNestedPath, isValidSettingValue, resolveNestedPath } from './settings-helpers';
 
 let _settingsInstance: SettingsService | null = null;
-
-type FeatureFlagMap = Readonly<Record<keyof FeatureFlags, boolean>>;
 
 export class SettingsService {
   private _initialized = false;
@@ -36,7 +27,6 @@ export class SettingsService {
   }
 
   private settings: AppSettings = createDefaultSettings();
-  private featureMap: FeatureFlagMap = normalizeFeatureFlags(this.settings.features);
   private readonly listeners = new Set<(event: SettingChangeEvent) => void>();
 
   constructor(
@@ -46,7 +36,6 @@ export class SettingsService {
   public async initialize(): Promise<void> {
     if (this._initialized) return;
     this.settings = await this.repository.load();
-    this.refreshFeatureMap();
     this._initialized = true;
   }
 
@@ -84,7 +73,6 @@ export class SettingsService {
     }
     this.settings.lastModified = performance.now();
 
-    this.refreshFeatureMap();
     this.notifyListeners({
       key,
       oldValue,
@@ -114,7 +102,6 @@ export class SettingsService {
     }
 
     this.settings.lastModified = timestamp;
-    this.refreshFeatureMap();
 
     for (const [key, value] of entries) {
       const oldValue = resolveNestedPath(previous, key);
@@ -142,7 +129,6 @@ export class SettingsService {
       }
     }
     this.settings.lastModified = performance.now();
-    this.refreshFeatureMap();
     this.notifyListeners({
       key: (category ?? 'all') as NestedSettingKey,
       oldValue: previous,
@@ -158,55 +144,6 @@ export class SettingsService {
     return () => {
       this.listeners.delete(listener);
     };
-  }
-
-  public exportSettings(): string {
-    this.assertInitialized();
-    return JSON.stringify(this.settings, null, 2);
-  }
-
-  public async importSettings(jsonString: string): Promise<void> {
-    this.assertInitialized();
-    try {
-      const imported = JSON.parse(jsonString);
-      if (
-        !imported ||
-        typeof imported !== 'object' ||
-        Array.isArray(imported) ||
-        Object.getPrototypeOf(imported) !== Object.prototype
-      ) {
-        throw new Error('Invalid settings: expected a plain object');
-      }
-
-      const previous = this.getAllSettings();
-      const nowMs = Date.now();
-      this.settings = migrateSettings(imported, nowMs);
-      this.settings.lastModified = nowMs;
-      this.refreshFeatureMap();
-
-      this.notifyListeners({
-        key: 'all' as NestedSettingKey,
-        oldValue: previous,
-        newValue: this.getAllSettings(),
-        timestamp: nowMs,
-        status: 'success',
-      });
-      await this.persist();
-    } catch (error) {
-      if (__DEV__) {
-        logger.error('Settings import failed:', error);
-      }
-      throw error;
-    }
-  }
-
-  public getFeatureMap(): FeatureFlagMap {
-    this.assertInitialized();
-    return Object.freeze({ ...this.featureMap });
-  }
-
-  private refreshFeatureMap(): void {
-    this.featureMap = normalizeFeatureFlags(this.settings.features);
   }
 
   private async persist(): Promise<void> {

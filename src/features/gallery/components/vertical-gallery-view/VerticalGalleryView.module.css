@@ -220,7 +220,7 @@
   transition: opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
-.container.uiHidden [data-xeg-role="items-list"],
+.container.uiHidden [data-xeg-role="items-container"],
 .container.uiHidden .itemsContainer {
   /* Keep the scroll surface interactive even when chrome is hidden */
   pointer-events: auto;

@@ -49,7 +49,6 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
 
   return (
     <GalleryContainer
-      onClose={props.onClose}
       className={`${CSS.CLASSES.RENDERER} ${CSS.CLASSES.ROOT} xeg-theme-scope`}
       data-theme={currentTheme()}
       data-language={currentLanguage()}

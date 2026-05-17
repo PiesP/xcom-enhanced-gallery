@@ -5,7 +5,7 @@ let didLogCallbackErrorInDev = false;
 /**
  * IntersectionObserver pool using WeakMap for automatic cleanup
  */
-let observerRegistry = new WeakMap<Element, Set<IntersectionObserver>>();
+const observerRegistry = new WeakMap<Element, Set<IntersectionObserver>>();
 
 /** Shared IntersectionObserver utility for visibility changes */
 export const SharedObserver = {
@@ -78,12 +78,3 @@ export const SharedObserver = {
     observerRegistry.delete(element);
   },
 };
-
-/**
- * Reset registry for test isolation (test-only helper)
- * @internal
- */
-export function _resetSharedObserverForTests(): void {
-  observerRegistry = new WeakMap();
-  didLogCallbackErrorInDev = false;
-}

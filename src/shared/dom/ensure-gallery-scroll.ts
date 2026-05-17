@@ -16,7 +16,7 @@ export function ensureGalleryScrollAvailable(element: HTMLElement | null): void 
 
   // Find scrollable elements and enable default scroll.
   const scrollableElements = element.querySelectorAll(
-    '[data-xeg-role="items-list"], .itemsList, .content'
+    '[data-xeg-role="items-container"], .itemsList, .content'
   ) as NodeListOf<HTMLElement>;
 
   scrollableElements.forEach((el) => {

@@ -39,116 +39,31 @@ export interface MediaInfo {
   /** Quoted tweet URL (quote tweet case) */
   readonly quotedTweetUrl?: string | undefined;
 }
+
 /** MediaInfoWithFilename - Media information with filename (for download) */
 export interface MediaInfoWithFilename extends MediaInfo {
-  /** Media unique identifier (required) */
   readonly id: string;
-  /** Original page URL (required) */
   readonly originalUrl: string;
-  /** Filename to save (required) */
   readonly filename: string;
 }
+
 /** Tweet information interface */
 export interface TweetInfo {
-  /** Tweet ID */
   readonly tweetId: string;
-  /** Username */
   readonly username: string;
-  /** Tweet URL */
   readonly tweetUrl: string;
-  /** Extraction method */
   readonly extractionMethod: string;
-  /** Extraction confidence (0-1) */
   readonly confidence: number;
-  /** Additional metadata */
   readonly metadata?: Record<string, unknown> | undefined;
 }
 
-/**
- *
- * Represents the structure of a quote tweet (Quote Tweet):
- * - isQuoteTweet: Whether it is a quote tweet
- * - clickedLocation: Where it was clicked (quoted vs original)
- * - quotedTweetId: Original quoted tweet ID
- * - quotedUsername: Quoted tweet author
- * - sourceLocation: Media source from API response (quoted vs original)
- */
-export interface QuoteTweetInfo {
-  /** Whether it is a quote tweet */
-  readonly isQuoteTweet: boolean;
-  /** Location where clicked */
-  readonly clickedLocation: 'quoted' | 'original' | 'unknown';
-  /** Original tweet ID (quote tweet only) */
-  readonly quotedTweetId?: string | undefined;
-  /** Original tweet author (quote tweet only) */
-  readonly quotedUsername?: string | undefined;
-  /** Media source indicator */
-  readonly sourceLocation?: 'original' | 'quoted' | undefined;
-}
-
-/**
- * Media extraction options
- */
+/** Media extraction options */
 export interface MediaExtractionOptions {
-  /** Include videos */
   readonly includeVideos?: boolean | undefined;
-  /** Timeout (milliseconds) */
   readonly timeoutMs?: number | undefined;
-  /** Use API fallback */
   readonly useApiFallback?: boolean | undefined;
-  /** Enable background loading */
   readonly enableBackgroundLoading?: boolean | undefined;
-  /** Enable validation */
   readonly enableValidation?: boolean | undefined;
-}
-
-/**
- * Page type definition (merged from Core)
- * Using const object for tree-shaking optimization.
- */
-export const PageType = {
-  TIMELINE: 'timeline',
-  SINGLE_TWEET: 'single_tweet',
-  MEDIA_TAB: 'media_tab',
-  SINGLE_MEDIA: 'single_media',
-  PROFILE: 'profile',
-  UNKNOWN: 'unknown',
-} as const;
-
-/** Type for PageType values */
-export type PageType = (typeof PageType)[keyof typeof PageType];
-
-/**
- * Extraction source type (merged from Core)
- * Using const object for tree-shaking optimization.
- */
-export const ExtractionSource = {
-  CURRENT_PAGE: 'current_page',
-  BACKGROUND_LOAD: 'background_load',
-  CACHE: 'cache',
-  API: 'api',
-} as const;
-
-/** Type for ExtractionSource values */
-export type ExtractionSource = (typeof ExtractionSource)[keyof typeof ExtractionSource];
-
-/**
- * Extraction metadata
- */
-export interface ExtractionMetadata {
-  readonly extractionTime?: number;
-  readonly extractedAt?: number;
-  readonly strategiesUsed?: readonly string[];
-  readonly sourceCount?: number;
-  readonly cacheHits?: number;
-  readonly retryCount?: number;
-  readonly sourceType?: string;
-  readonly strategy?: string;
-  readonly error?: string;
-  readonly extractionMethod?: string;
-  readonly extractionId?: string;
-  readonly source?: string;
-  readonly [key: string]: unknown;
 }
 
 /**
@@ -161,16 +76,12 @@ export interface MediaExtractionResult {
   readonly clickedIndex?: number | undefined;
   readonly tweetInfo?: TweetInfo | null | undefined;
   /** Backward compatibility with core version */
-  readonly source?: ExtractionSource | undefined;
+  readonly source?: string | undefined;
   readonly sourceType?: string | undefined;
-  readonly metadata?: ExtractionMetadata | undefined;
+  readonly metadata?: Record<string, unknown> | undefined;
 }
 
-// Use ErrorCode directly: import { ErrorCode } from '@shared/types'
-
-/**
- * Extraction error class
- */
+/** Extraction error class */
 export class ExtractionError extends Error {
   constructor(
     public readonly code: ErrorCode,
@@ -182,13 +93,8 @@ export class ExtractionError extends Error {
   }
 }
 
-/**
- * Media extractor strategy interface
- */
+/** Media extractor strategy interface */
 export interface MediaExtractorStrategy {
-  /**
-   * Media extraction via strategy
-   */
   extract(
     tweetInfo: TweetInfo,
     clickedElement: HTMLElement,
@@ -197,21 +103,13 @@ export interface MediaExtractorStrategy {
   ): Promise<MediaExtractionResult>;
 }
 
-/**
- * Media extractor interface
- */
+/** Media extractor interface */
 export interface MediaExtractor {
-  /**
-   * Extract media from clicked element
-   */
   extractFromClickedElement(
     element: HTMLElement,
     options?: MediaExtractionOptions
   ): Promise<MediaExtractionResult>;
 
-  /**
-   * Extract all media from container
-   */
   extractAllFromContainer(
     container: HTMLElement,
     options?: MediaExtractionOptions
@@ -222,34 +120,13 @@ export interface MediaExtractor {
 // Gallery-related types
 // ================================
 
-/**
- * Gallery rendering options
- *
- * Options passed to GalleryRenderer in Features layer
- */
+/** Gallery rendering options */
 export interface GalleryRenderOptions {
-  /** Start index */
   readonly startIndex?: number | undefined;
-  /** Class name */
   readonly className?: string | undefined;
-  /** Tweet ID */
   readonly tweetId?: string | undefined;
-  /** Show download button */
   readonly showDownloadButton?: boolean | undefined;
-  /** Show filenames */
   readonly showFilenames?: boolean | undefined;
-  /** Auto play */
   readonly autoPlay?: boolean | undefined;
-  /** Optional ambient video pause context */
   readonly pauseContext?: AmbientVideoPauseRequest | undefined;
 }
-
-/**
- * Media extraction strategy
- */
-export type ExtractionStrategy =
-  | 'api-first'
-  | 'dom-only'
-  | 'hybrid'
-  | 'multi-strategy'
-  | 'conservative';

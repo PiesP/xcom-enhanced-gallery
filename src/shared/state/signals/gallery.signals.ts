@@ -30,12 +30,6 @@ export interface GalleryState {
   readonly error: string | null;
 }
 
-export interface GalleryNavigateStartPayload {
-  readonly from: number;
-  readonly to: number;
-  readonly trigger: GalleryNavigationTrigger;
-}
-
 interface GallerySessionState {
   readonly isOpen: boolean;
   readonly mediaItems: readonly MediaInfo[];
@@ -58,7 +52,6 @@ const INITIAL_STATE: GalleryState = {
 };
 
 export const galleryIndexEvents = createEventEmitter<{
-  'navigate:start': GalleryNavigateStartPayload;
   'navigate:complete': GalleryNavigateCompletePayload;
 }>();
 
@@ -214,8 +207,4 @@ export function navigateToItem(
 
   recordNavigation(clampedIndex, source);
   galleryIndexEvents.emit('navigate:complete', { index: clampedIndex, trigger });
-}
-
-export function setGalleryFocus(focusIndex: number | null, _source: NavigationSource): void {
-  setFocusedIndex(focusIndex);
 }

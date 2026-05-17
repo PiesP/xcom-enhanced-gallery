@@ -67,8 +67,6 @@ export interface FocusHandlers {
   readonly onFocus?: ((event: FocusEvent) => void) | undefined;
   /** Handle blur event */
   readonly onBlur?: ((event: FocusEvent) => void) | undefined;
-  /** Handle keydown event */
-  readonly onKeyDown?: ((event: KeyboardEvent) => void) | undefined;
 }
 
 /**
