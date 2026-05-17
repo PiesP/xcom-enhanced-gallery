@@ -1,7 +1,7 @@
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
 import type {
-  FitMode,
   FitModeHandlers,
+  ImageFitMode,
   ToolbarProps,
 } from '@shared/components/ui/Toolbar/Toolbar.types';
 import { ToolbarView } from '@shared/components/ui/Toolbar/ToolbarView';
@@ -16,14 +16,14 @@ import { createEffect, createMemo, createSignal, on, splitProps } from 'solid-js
 
 import styles from './Toolbar.module.css';
 
-const FIT_MODE_ORDER: ReadonlyArray<{ mode: FitMode; iconName: LucideIconName }> = [
+const FIT_MODE_ORDER: ReadonlyArray<{ mode: ImageFitMode; iconName: LucideIconName }> = [
   { mode: 'original', iconName: 'maximize-2' },
   { mode: 'fitWidth', iconName: 'move-horizontal' },
   { mode: 'fitHeight', iconName: 'move-vertical' },
   { mode: 'fitContainer', iconName: 'minimize-2' },
 ];
 
-type InternalFitModeHandlers = Record<FitMode, FitModeHandlers['onFitOriginal'] | undefined>;
+type InternalFitModeHandlers = Record<ImageFitMode, FitModeHandlers['onFitOriginal'] | undefined>;
 
 function getToolbarDataState(state: ToolbarState): ToolbarDataState {
   if (state.hasError) return 'error';
@@ -102,14 +102,14 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
     fitContainer: local.handlers.fitMode?.onFitContainer,
   }));
 
-  const fitModeLabels = createMemo<Record<FitMode, { label: string; title: string }>>(() => ({
+  const fitModeLabels = createMemo<Record<ImageFitMode, { label: string; title: string }>>(() => ({
     original: { label: translate('tb.fitOri'), title: translate('tb.fitOri') },
     fitWidth: { label: translate('tb.fitW'), title: translate('tb.fitW') },
     fitHeight: { label: translate('tb.fitH'), title: translate('tb.fitH') },
     fitContainer: { label: translate('tb.fitC'), title: translate('tb.fitC') },
   }));
 
-  const activeFitMode = createMemo<FitMode>(
+  const activeFitMode = createMemo<ImageFitMode>(
     () => val(local.currentFitMode) ?? FIT_MODE_ORDER[0]?.mode ?? 'original'
   );
 
@@ -136,14 +136,14 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
 
   const isToolbarDisabled = () => !!(val(local.disabled) ?? false);
 
-  const isFitDisabled = (mode: FitMode): boolean => {
+  const isFitDisabled = (mode: ImageFitMode): boolean => {
     if (isToolbarDisabled()) return true;
     const handler = fitModeHandlers()[mode];
     if (!handler) return true;
     return activeFitMode() === mode;
   };
 
-  const handleFitModeClick = (mode: FitMode) => (event: MouseEvent) => {
+  const handleFitModeClick = (mode: ImageFitMode) => (event: MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();

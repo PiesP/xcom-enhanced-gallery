@@ -7,13 +7,14 @@ import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 
-export type Theme = 'light' | 'dark';
-export type ThemeSetting = 'auto' | Theme;
-export type ThemeChangeListener = (theme: Theme, setting: ThemeSetting) => void;
+export type ThemeChangeListener = (
+  theme: 'light' | 'dark',
+  setting: 'auto' | 'light' | 'dark'
+) => void;
 
 const VALID_THEME_SETTINGS: readonly string[] = ['light', 'dark', 'auto'];
 
-function isThemeSetting(value: unknown): value is ThemeSetting {
+function isThemeSetting(value: unknown): value is 'auto' | 'light' | 'dark' {
   return typeof value === 'string' && VALID_THEME_SETTINGS.includes(value);
 }
 
@@ -26,8 +27,8 @@ let _themeInstance: ThemeService | null = null;
 
 export class ThemeService {
   private _initialized = false;
-  private currentTheme: Theme = 'light';
-  private themeSetting: ThemeSetting = 'auto';
+  private currentTheme: 'light' | 'dark' = 'light';
+  private themeSetting: 'auto' | 'light' | 'dark' = 'auto';
   private readonly listeners: Set<ThemeChangeListener> = new Set();
   private settings: SettingsBinding | null = null;
   private observedThemeScopes: WeakSet<Element> = new WeakSet();
@@ -90,7 +91,10 @@ export class ThemeService {
     }
   }
 
-  setTheme(setting: ThemeSetting | string, options?: { force?: boolean; persist?: boolean }): void {
+  setTheme(
+    setting: 'auto' | 'light' | 'dark' | string,
+    options?: { force?: boolean; persist?: boolean }
+  ): void {
     const normalized = isThemeSetting(setting) ? setting : 'light';
     this.themeSetting = normalized;
 
@@ -107,14 +111,14 @@ export class ThemeService {
     this.notifyListeners();
   }
 
-  getEffectiveTheme(): Theme {
+  getEffectiveTheme(): 'light' | 'dark' {
     if (this.themeSetting === 'auto') {
       return this.mediaQueryList?.matches ? 'dark' : 'light';
     }
     return this.themeSetting;
   }
 
-  getCurrentTheme(): ThemeSetting {
+  getCurrentTheme(): 'auto' | 'light' | 'dark' {
     return this.themeSetting;
   }
 

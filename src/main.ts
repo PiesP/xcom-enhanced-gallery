@@ -12,8 +12,6 @@ import { GlobalErrorHandler } from '@shared/error/error-handler';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import type { BootstrapStage } from '@shared/types/lifecycle.types';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
-
 import './styles/globals';
 
 interface GalleryLifecycleApp {
@@ -149,7 +147,6 @@ async function cleanup(): Promise<void> {
       if (app) await app.cleanup();
     });
     tearDownGlobalEventHandlers();
-    await runOptionalCleanup('timers', () => globalTimerManager.cleanup());
     await runOptionalCleanup('error-handler', () => GlobalErrorHandler.getInstance().destroy());
 
     if (__DEV__) {

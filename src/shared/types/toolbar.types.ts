@@ -2,13 +2,8 @@
  * @fileoverview Toolbar Types - Shared UI State Types
  */
 
-import type { ImageFitMode } from '@shared/types/ui.types';
-
 /** Toolbar data state (business logic) */
 export type ToolbarDataState = 'idle' | 'loading' | 'downloading' | 'error';
-
-/** Image fit mode (re-exported from ui.types for toolbar context) */
-export type FitMode = ImageFitMode;
 
 /** Toolbar UI state object */
 export interface ToolbarState {

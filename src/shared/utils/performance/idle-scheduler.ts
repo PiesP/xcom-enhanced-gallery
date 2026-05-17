@@ -1,5 +1,4 @@
 import { logger } from '@shared/logging/logger';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 /**
  * Handle to cancel a scheduled idle task.
@@ -59,7 +58,7 @@ export function scheduleIdle(task: IdleRequestCallback): IdleHandle {
   }
 
   // Fallback to setTimeout for browsers without requestIdleCallback
-  const timerId = globalTimerManager.setTimeout(() => {
+  const timerId = setTimeout(() => {
     try {
       task();
     } catch (error) {
@@ -69,7 +68,7 @@ export function scheduleIdle(task: IdleRequestCallback): IdleHandle {
 
   return {
     cancel: () => {
-      globalTimerManager.clearTimeout(timerId);
+      clearTimeout(timerId);
     },
   };
 }

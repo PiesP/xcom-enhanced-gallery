@@ -9,7 +9,6 @@ import { galleryState } from '@shared/state/signals/gallery.signals';
 import { createPrefixedId } from '@shared/utils/id/create-id';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 import { toAccessor } from '@shared/utils/solid/accessor-utils';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
 import type { Accessor } from 'solid-js';
 import { createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
 
@@ -63,7 +62,7 @@ export function useGalleryScroll({
 
   const clearScrollIdleTimer = (): void => {
     if (scrollIdleTimerId !== null) {
-      globalTimerManager.clearTimeout(scrollIdleTimerId);
+      clearTimeout(scrollIdleTimerId);
       scrollIdleTimerId = null;
     }
   };
@@ -75,7 +74,7 @@ export function useGalleryScroll({
 
   const scheduleScrollEnd = (): void => {
     clearScrollIdleTimer();
-    scrollIdleTimerId = globalTimerManager.setTimeout(() => {
+    scrollIdleTimerId = setTimeout(() => {
       setIsScrolling(false);
       if (__DEV__) {
         logger.debug('useGalleryScroll: Scroll ended');

@@ -9,7 +9,7 @@ import type {
   EventHandlers,
   EventHandlingResult,
   GalleryEventOptions,
-} from '@shared/utils/events/lifecycle/gallery-lifecycle';
+} from '@shared/services/event-types';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
 import { isHTMLElement } from '@shared/utils/types/guards';

@@ -14,8 +14,6 @@ import {
 } from '@shared/container/container';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
-import type { Theme, ThemeSetting } from '@shared/services/theme-service';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 import type {
   ToolbarSettingsControllerResult,
@@ -58,14 +56,14 @@ export function useToolbarSettingsController(
   const languageService = providedLanguageService ?? getLanguageService();
 
   const scheduleTimeout = (callback: () => void, delay: number): number => {
-    return globalTimerManager.setTimeout(callback, delay);
+    return setTimeout(callback, delay);
   };
 
   const clearScheduledTimeout = (handle: number | null | undefined): void => {
     if (handle == null) {
       return;
     }
-    globalTimerManager.clearTimeout(handle);
+    clearTimeout(handle);
   };
 
   const [toolbarRef, setToolbarRef] = createSignal<HTMLDivElement | undefined>(undefined);
@@ -119,9 +117,11 @@ export function useToolbarSettingsController(
   }
 
   createEffect(() => {
-    const unsubscribe = themeManager.onThemeChange((_theme: Theme, setting: ThemeSetting) => {
-      setCurrentTheme(toThemeOption(setting));
-    });
+    const unsubscribe = themeManager.onThemeChange(
+      (_theme: 'light' | 'dark', setting: 'auto' | 'light' | 'dark') => {
+        setCurrentTheme(toThemeOption(setting));
+      }
+    );
 
     onCleanup(() => {
       unsubscribe?.();

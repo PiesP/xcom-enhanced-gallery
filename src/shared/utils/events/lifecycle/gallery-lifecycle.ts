@@ -2,31 +2,12 @@
 
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
+import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-types';
 import {
   handleKeyboardEvent,
   resetKeyboardDebounceState,
 } from '@shared/utils/events/handlers/keyboard';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
-
-/* Inlined from event-types.ts */
-export interface EventHandlers {
-  readonly onMediaClick: (element: HTMLElement, event: MouseEvent) => Promise<void>;
-  readonly onGalleryClose: () => void;
-  readonly onKeyboardEvent?: (event: KeyboardEvent) => void;
-}
-
-export interface GalleryEventOptions {
-  readonly enableKeyboard: boolean;
-  readonly enableMediaDetection: boolean;
-  readonly debugMode: boolean;
-  readonly preventBubbling: boolean;
-  readonly context: string;
-}
-
-export interface EventHandlingResult {
-  readonly handled: boolean;
-  readonly reason: string;
-}
 
 const DEFAULT_GALLERY_EVENT_OPTIONS = {
   enableKeyboard: true,

@@ -13,8 +13,6 @@
  * ```
  */
 
-import { globalTimerManager } from '@shared/utils/time/timer-management';
-
 /**
  * Debounced function interface with cancel and flush capabilities
  *
@@ -46,7 +44,7 @@ export function createDebounced<Args extends unknown[]>(
 
   const cancel = (): void => {
     if (timeoutId !== null) {
-      globalTimerManager.clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
       timeoutId = null;
     }
     pendingArgs = null;
@@ -54,7 +52,7 @@ export function createDebounced<Args extends unknown[]>(
 
   const flush = (): void => {
     if (timeoutId !== null && pendingArgs !== null) {
-      globalTimerManager.clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
       const args = pendingArgs;
       timeoutId = null;
       pendingArgs = null;
@@ -65,7 +63,7 @@ export function createDebounced<Args extends unknown[]>(
   const debounced = ((...args: Args): void => {
     cancel();
     pendingArgs = args;
-    timeoutId = globalTimerManager.setTimeout(() => {
+    timeoutId = setTimeout(() => {
       const savedArgs = pendingArgs;
       timeoutId = null;
       pendingArgs = null;

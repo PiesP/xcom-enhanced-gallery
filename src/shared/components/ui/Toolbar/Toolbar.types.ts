@@ -1,9 +1,9 @@
 import type { ToolbarHandlers } from '@shared/components/ui/Toolbar/handler-types';
-import type { FitMode } from '@shared/types/toolbar.types';
+import type { ImageFitMode } from '@shared/types/ui.types';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 
 export type { FitModeHandlers } from '@shared/components/ui/Toolbar/handler-types';
-export type { FitMode };
+export type { ImageFitMode };
 
 /**
  * Toolbar component props with grouped handler pattern
@@ -36,7 +36,7 @@ export interface ToolbarProps {
   readonly handlers: ToolbarHandlers;
 
   /** Current fit mode for image display */
-  readonly currentFitMode?: MaybeAccessor<FitMode | undefined> | undefined;
+  readonly currentFitMode?: MaybeAccessor<ImageFitMode | undefined> | undefined;
 
   /** Whether a download is in progress */
   readonly isDownloading?: MaybeAccessor<boolean | undefined> | undefined;

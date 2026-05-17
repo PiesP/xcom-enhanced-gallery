@@ -9,7 +9,6 @@ import type {
 } from '@shared/services/download/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { reportProgress } from '@shared/utils/download/report-progress';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 function asGMDownloadFunction(value: unknown): GMDownloadFunction | undefined {
   return typeof value === 'function' ? (value as GMDownloadFunction) : undefined;
@@ -65,12 +64,12 @@ export async function downloadSingleFile(
   }
 
   return new Promise<SingleDownloadResult>((resolve) => {
-    let timer: ReturnType<typeof globalTimerManager.setTimeout> | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     let settled = false;
 
     const cleanup = (): void => {
       if (isBlobUrl) URL.revokeObjectURL(url);
-      if (timer) globalTimerManager.clearTimeout(timer);
+      if (timer) clearTimeout(timer);
     };
 
     const settle = (result: SingleDownloadResult): void => {
@@ -89,7 +88,7 @@ export async function downloadSingleFile(
       resolve(result);
     };
 
-    timer = globalTimerManager.setTimeout(() => {
+    timer = setTimeout(() => {
       settle({ success: false, error: DOWNLOAD_TIMEOUT_MESSAGE });
     }, DOWNLOAD_TIMEOUT_MS);
 

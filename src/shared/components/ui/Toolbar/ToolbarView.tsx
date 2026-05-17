@@ -2,7 +2,7 @@ import { IconButton } from '@shared/components/ui/Button/IconButton';
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
 import { LucideIcon } from '@shared/components/ui/Icon/lucide/lucide-icons';
 import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
-import type { FitMode } from '@shared/components/ui/Toolbar/Toolbar.types';
+import type { ImageFitMode } from '@shared/components/ui/Toolbar/Toolbar.types';
 import type { ToolbarSettingsControllerResult } from '@shared/hooks/toolbar/use-toolbar-settings-controller';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { EventManager } from '@shared/services/event-manager';
@@ -25,7 +25,7 @@ type ToolbarViewNavState = {
 };
 
 type FitModeDefinition = {
-  readonly mode: FitMode;
+  readonly mode: ImageFitMode;
   readonly iconName: LucideIconName;
 };
 
@@ -41,7 +41,7 @@ interface ToolbarViewProps {
   /** Whether toolbar is disabled */
   readonly disabled?: MaybeAccessor<boolean | undefined>;
   /** Current fit mode */
-  readonly currentFitMode?: MaybeAccessor<FitMode | undefined>;
+  readonly currentFitMode?: MaybeAccessor<ImageFitMode | undefined>;
   /** Tweet text content */
   readonly tweetText?: MaybeAccessor<string | null | undefined>;
   /** Tweet HTML content */
@@ -73,13 +73,13 @@ interface ToolbarViewProps {
   /** Fit mode order */
   readonly fitModeOrder: ReadonlyArray<FitModeDefinition>;
   /** Fit mode labels */
-  readonly fitModeLabels: MaybeAccessor<Record<FitMode, { label: string; title: string }>>;
+  readonly fitModeLabels: MaybeAccessor<Record<ImageFitMode, { label: string; title: string }>>;
   /** Active fit mode generator */
-  readonly activeFitMode: () => FitMode;
+  readonly activeFitMode: () => ImageFitMode;
   /** Fit mode click handler factory */
-  readonly handleFitModeClick: (mode: FitMode) => (event: MouseEvent) => void;
+  readonly handleFitModeClick: (mode: ImageFitMode) => (event: MouseEvent) => void;
   /** Fit mode disabled checker */
-  readonly isFitDisabled: (mode: FitMode) => boolean;
+  readonly isFitDisabled: (mode: ImageFitMode) => boolean;
   /** Previous click handler */
   readonly onPreviousClick: (event: MouseEvent) => void;
   /** Next click handler */

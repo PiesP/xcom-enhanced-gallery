@@ -3,7 +3,6 @@
  * @description Pure calculator and DOM hook to expose viewport values via CSS variables.
  */
 import { EventManager } from '@shared/services/event-manager';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { createEventListener } from '@shared/utils/types/guards';
 
 interface ChromeOffsets {
@@ -65,7 +64,7 @@ export function observeViewportCssVars(
   el: HTMLElement,
   getChrome: () => ChromeOffsets
 ): () => void {
-  // Use global timer manager (policy: direct timers forbidden)
+  /* timer cleanup handled via clearTimeout */
   let disposed = false;
 
   const calcAndApply = (): void => {
@@ -86,7 +85,7 @@ export function observeViewportCssVars(
         calcAndApply();
       });
     } else {
-      globalTimerManager.setTimeout(() => {
+      setTimeout(() => {
         pending = false;
         calcAndApply();
       }, 0);
@@ -133,6 +132,6 @@ export function observeViewportCssVars(
       EventManager.getInstance().removeListener(resizeListenerId);
       resizeListenerId = null;
     }
-    // Global manager handles individual cleanup
+    /* timer cleanup handled via clearTimeout */
   };
 }

@@ -4,7 +4,6 @@
  */
 
 import type { ToolbarActions, ToolbarState } from '@shared/types/toolbar.types';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
 import { createSignal, onCleanup } from 'solid-js';
 
 /**
@@ -37,7 +36,7 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
   const clearDownloadTimeout = (): void => {
     const timer = downloadTimeoutRef();
     if (timer !== null) {
-      globalTimerManager.clearTimeout(timer);
+      clearTimeout(timer);
       setDownloadTimeoutRef(null);
     }
   };
@@ -62,7 +61,7 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     if (timeSinceStart < DOWNLOAD_MIN_DISPLAY_TIME) {
       clearDownloadTimeout();
       setDownloadTimeoutRef(
-        globalTimerManager.setTimeout(() => {
+        setTimeout(() => {
           setIsDownloading(false);
           setDownloadTimeoutRef(null);
         }, DOWNLOAD_MIN_DISPLAY_TIME - timeSinceStart)

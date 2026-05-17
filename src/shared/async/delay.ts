@@ -4,7 +4,6 @@
  */
 
 import { getAbortReasonOrAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
-import { globalTimerManager } from '@shared/utils/time/timer-management';
 
 /**
  * Create a promise that resolves after a delay
@@ -45,7 +44,7 @@ export async function delay(ms: number, signal?: AbortSignal): Promise<void> {
   }
 
   return new Promise<void>((resolve, reject) => {
-    const timerId = globalTimerManager.setTimeout(() => {
+    const timerId = setTimeout(() => {
       cleanup();
       resolve();
     }, ms);
@@ -56,7 +55,7 @@ export async function delay(ms: number, signal?: AbortSignal): Promise<void> {
     };
 
     const cleanup = (): void => {
-      globalTimerManager.clearTimeout(timerId);
+      clearTimeout(timerId);
       signal?.removeEventListener('abort', onAbort);
     };
 

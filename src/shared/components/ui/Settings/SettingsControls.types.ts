@@ -6,12 +6,11 @@
  * @see {@link SettingsControls} - Component implementation
  */
 
-import type { ThemeSetting } from '@shared/services/theme-service';
+/** Theme setting option */
+export type ThemeOption = 'auto' | 'light' | 'dark';
+
 import type { BaseComponentProps } from '@shared/types/component.types';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
-
-/** Re-export for backwards compatibility */
-export type ThemeOption = ThemeSetting;
 
 /**
  * Union type for language setting options
