@@ -201,5 +201,3 @@ export function generateZipFilename(
     return `download_${nowMs}.zip`;
   }
 }
-
-

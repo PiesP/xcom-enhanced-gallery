@@ -45,9 +45,10 @@ export class ThemeService {
   }
 
   constructor() {
-    this.mediaQueryList = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-      ? window.matchMedia('(prefers-color-scheme: dark)')
-      : null;
+    this.mediaQueryList =
+      typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-color-scheme: dark)')
+        : null;
   }
 
   async initialize(): Promise<void> {

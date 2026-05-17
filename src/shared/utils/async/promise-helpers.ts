@@ -1,7 +1,4 @@
-import type {
-  PromisifyOptions,
-  ResultCallback,
-} from '@shared/utils/async/promise-helpers.types';
+import type { PromisifyOptions, ResultCallback } from '@shared/utils/async/promise-helpers.types';
 
 export function promisifyCallback<TResult>(
   executor: (callback: ResultCallback<TResult>) => void,
