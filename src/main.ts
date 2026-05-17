@@ -1,4 +1,6 @@
-/** @fileoverview Main entry. Orchestrates bootstrap stages, startup, and cleanup. */
+/**
+ * @fileoverview Main entry. Orchestrates bootstrap stages, startup, and cleanup.
+ */
 
 import { initializeCoreBaseServices } from '@bootstrap/base-services';
 import { initializeGalleryApp, initializeGalleryServices } from '@bootstrap/gallery-init';
@@ -27,12 +29,8 @@ const lifecycleState = {
   galleryApp: null as GalleryLifecycleApp | null,
 };
 
-type Unregister = () => void;
-
-function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
-  const debugEnabled = __DEV__;
+function wireGlobalEvents(onBeforeUnload: () => void): () => void {
   let disposed = false;
-  const eventManager = EventManager.getInstance();
   const controller = new AbortController();
   const invokeOnce = (): void => {
     if (disposed) return;
@@ -40,23 +38,21 @@ function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
     controller.abort();
     onBeforeUnload();
   };
-  eventManager.addEventListener(window, 'pagehide', invokeOnce as EventListener, {
+  EventManager.getInstance().addEventListener(window, 'pagehide', invokeOnce as EventListener, {
     once: true,
     passive: true,
     signal: controller.signal,
     context: 'bootstrap:pagehide',
   });
-  if (debugEnabled) logger.debug('[events] Global events wired (pagehide only)');
   return () => {
     if (disposed) return;
     disposed = true;
     controller.abort();
-    if (debugEnabled) logger.debug('[events] Global events unwired');
   };
 }
 
 function setupDevNamespace(
-  galleryAppInstance: { initialize(): Promise<void>; cleanup(): Promise<void> } | null | undefined,
+  galleryAppInstance: GalleryLifecycleApp | null | undefined,
   actions: {
     start: () => Promise<void>;
     createConfig: typeof createAppConfig;
@@ -75,7 +71,7 @@ function setupDevNamespace(
   });
 }
 
-let globalEventTeardown: Unregister | null = null;
+let globalEventTeardown: (() => void) | null = null;
 
 function tearDownGlobalEventHandlers(): void {
   if (!globalEventTeardown) return;
@@ -84,7 +80,7 @@ function tearDownGlobalEventHandlers(): void {
   try {
     teardown();
   } catch (error) {
-    if (__DEV__) logger.debug('[events] teardown error', error);
+    __DEV__ && logger.debug('[events] teardown error', error);
   }
 }
 
@@ -92,7 +88,7 @@ function setupGlobalEventHandlers(): void {
   tearDownGlobalEventHandlers();
   globalEventTeardown = wireGlobalEvents(() => {
     cleanup().catch((error) => {
-      if (__DEV__) logger.error('Cleanup failed', error);
+      __DEV__ && logger.error('Cleanup failed', error);
     });
   });
 }
@@ -101,7 +97,7 @@ async function runOptionalCleanup(label: string, task: () => Promise<void> | voi
   try {
     await task();
   } catch (error) {
-    if (__DEV__) logger.warn(`[cleanup] ${label} failed`, error);
+    __DEV__ && logger.warn(`[cleanup] ${label} failed`, error);
   }
 }
 
@@ -109,9 +105,7 @@ function buildStages(): readonly BootstrapStage[] {
   return [
     {
       label: 'Error handler',
-      run: () => {
-        GlobalErrorHandler.getInstance().initialize();
-      },
+      run: () => GlobalErrorHandler.getInstance().initialize(),
     },
     {
       label: 'Gallery services',
@@ -164,11 +158,9 @@ async function initializeGallery(): Promise<void> {
   }
 }
 
-// Errors in individual cleanup tasks are swallowed intentionally
-// to prevent one failed cleanup from blocking the rest of the teardown
 async function cleanup(): Promise<void> {
   try {
-    if (__DEV__) logger.info('🧹 Starting application cleanup');
+    __DEV__ && logger.info('Starting application cleanup');
 
     await runOptionalCleanup('gallery', async () => {
       const app = lifecycleState.galleryApp;
@@ -182,12 +174,12 @@ async function cleanup(): Promise<void> {
     if (__DEV__) {
       const status = EventManager.getInstance().getListenerStatus();
       if (status.total > 0) {
-        logger.warn('[cleanup] ⚠️ uncleared listeners remain:', status);
+        logger.warn('[cleanup] uncleared listeners remain:', status);
       }
     }
 
     lifecycleState.started = false;
-    if (__DEV__) logger.info('✅ Application cleanup complete');
+    __DEV__ && logger.info('Application cleanup complete');
   } catch (error) {
     bootstrapErrorReporter.error(error, { code: 'CLEANUP_FAILED' });
     throw error;
@@ -195,18 +187,17 @@ async function cleanup(): Promise<void> {
 }
 
 async function startApplication(): Promise<void> {
-  // Check startPromise first to prevent race between started/startPromise checks
   if (lifecycleState.startPromise) return lifecycleState.startPromise;
   if (lifecycleState.started) return;
 
   lifecycleState.startPromise = (async () => {
-    if (__DEV__) logger.info('🚀 Starting X.com Enhanced Gallery...');
+    __DEV__ && logger.info('Starting X.com Enhanced Gallery...');
 
     await runBootstrapStages();
     lifecycleState.started = true;
 
     if (__DEV__) {
-      logger.info('✅ Application initialization complete');
+      logger.info('Application initialization complete');
       setupDevNamespace(lifecycleState.galleryApp, {
         start: startApplication,
         createConfig: createAppConfig,

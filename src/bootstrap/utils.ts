@@ -1,33 +1,16 @@
 /**
- * @fileoverview Bootstrap stage execution utilities with timing and error handling.
- *
- * Provides infrastructure for sequential stage execution with performance tracking,
- * error boundaries, and conditional execution support. Handles optional vs critical
- * stage failures appropriately.
- *
- * @module bootstrap/utils
+ * @fileoverview Bootstrap stage execution utilities
  */
 
 import { bootstrapErrorReporter } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import type { BootstrapStage, BootstrapStageResult } from '@shared/types/lifecycle.types';
 
-/**
- * @internal Execute a single bootstrap stage with timing and error handling.
- *
- * Evaluates `shouldRun` if present; if false, stage is skipped.
- * Captures errors in result object; never throws.
- * Optional stages log failures as warnings; critical stages log as errors.
- */
 async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult> {
   const startTime = performance.now();
 
-  // Check shouldRun predicate
   if (stage.shouldRun && !stage.shouldRun()) {
-    if (__DEV__) {
-      logger.debug(`[bootstrap] ⏭️ ${stage.label} (skipped)`);
-    }
-
+    __DEV__ && logger.debug(`[bootstrap] ${stage.label} (skipped)`);
     return {
       label: stage.label,
       success: true,
@@ -39,18 +22,9 @@ async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult
   }
 
   try {
-    if (__DEV__) {
-      logger.debug(`[bootstrap] ➡️ ${stage.label}`);
-    }
-
     await Promise.resolve(stage.run());
-
     const durationMs = performance.now() - startTime;
-
-    if (__DEV__) {
-      logger.debug(`[bootstrap] ✅ ${stage.label} (${durationMs.toFixed(1)}ms)`);
-    }
-
+    __DEV__ && logger.debug(`[bootstrap] ${stage.label} (${durationMs.toFixed(1)}ms)`);
     return {
       label: stage.label,
       success: true,
@@ -61,7 +35,6 @@ async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult
     };
   } catch (error) {
     const durationMs = performance.now() - startTime;
-
     if (stage.optional) {
       bootstrapErrorReporter.warn(error, {
         code: 'STAGE_OPTIONAL_FAILED',
@@ -73,7 +46,6 @@ async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult
         metadata: { stage: stage.label, durationMs },
       });
     }
-
     return {
       label: stage.label,
       success: false,
@@ -85,32 +57,9 @@ async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult
   }
 }
 
-/**
- * Execute multiple bootstrap stages in sequence with failure handling.
- *
- * Stages execute sequentially in array order. Optional stage failures are logged as warnings
- * and don't halt execution. Critical failures halt pipeline if `stopOnFailure: true` (default).
- *
- * @param stages - Bootstrap stage configurations
- * @param options - Execution options
- * Options: stopOnFailure - Halt on critical failure (default: true)
- * @returns Array of stage results in execution order; never throws
- *
- * @example
- * ```ts
- * const stages = [
- *   { label: 'Services', run: () => initializeServices() },
- *   { label: 'Gallery', run: () => initializeGallery() },
- * ];
- * const results = await executeStages(stages);
- * ```
- */
 export async function executeStages(
   stages: readonly BootstrapStage[],
-  options?: {
-    /** Stop on first non-optional failure */
-    stopOnFailure?: boolean;
-  }
+  options?: { stopOnFailure?: boolean }
 ): Promise<BootstrapStageResult[]> {
   const results: BootstrapStageResult[] = [];
   const stopOnFailure = options?.stopOnFailure ?? true;
@@ -120,7 +69,7 @@ export async function executeStages(
     results.push(result);
 
     if (!result.success && !result.optional && stopOnFailure) {
-      logger.error(`[bootstrap] ❌ Critical stage failed: ${stage.label}`);
+      logger.error(`[bootstrap] Critical stage failed: ${stage.label}`);
       break;
     }
   }
