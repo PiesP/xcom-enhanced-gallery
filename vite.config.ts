@@ -18,7 +18,6 @@
  */
 
 // External dependencies
-import * as fs from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
@@ -29,7 +28,7 @@ import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
 import { productionCleanupPlugin } from './tooling/vite/plugins/production-cleanup';
 import { singleFileBundleGuardPlugin } from './tooling/vite/plugins/single-file-guard';
 import { userscriptHeaderPlugin } from './tooling/vite/plugins/userscript-header';
-import { generateMetaOnlyHeader } from './tooling/vite/userscript/metadata';
+import { metaOnlyPlugin } from './vite-plugin-meta-only';
 import { resolveVersion } from './tooling/vite/version';
 
 // ── Inlined from tooling/vite/paths.ts ──────────────────────────────────────
@@ -93,20 +92,7 @@ export default defineConfig(({ mode }): UserConfig => {
         },
       }),
       cssInlinePlugin(mode),
-      // Inlined from tooling/vite/plugins/meta-only.ts
-      {
-        name: 'meta-only-file',
-        apply: 'build',
-        enforce: 'post',
-        writeBundle(options): void {
-          if (isDev) return;
-          const outDir = (options as { dir?: string }).dir ?? 'dist';
-          const metaContent = generateMetaOnlyHeader(version);
-          const metaPath = resolve(outDir, OUTPUT_FILE_NAMES.meta);
-          fs.writeFileSync(metaPath, metaContent, 'utf8');
-          console.log(`📄 Meta-only file generated: ${OUTPUT_FILE_NAMES.meta}`);
-        },
-      },
+      metaOnlyPlugin(version),
       ...(!isDev ? [productionCleanupPlugin()] : []),
       userscriptHeaderPlugin(mode),
       singleFileBundleGuardPlugin(mode),
