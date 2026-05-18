@@ -17,86 +17,32 @@ const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;
 const VIDEO_CONTROL_SELECTORS = ['.video-controls', '.video-progress button'] as const;
 
 /**
- * Safely call element.closest with error handling.
- * @param element - Element to query from
- * @param selector - CSS selector to match
- * @returns Closest matching ancestor or null
- */
-function safeClosest(element: Element, selector: string): Element | null {
-  try {
-    return element.closest(selector);
-  } catch (error) {
-    if (__DEV__) {
-      logger.debug('[dom/utils] element.closest failed (ignored)', { selector, error });
-    }
-    return null;
-  }
-}
-
-/**
- * Safely call element.matches with error handling.
- * @param element - Element to test
- * @param selector - CSS selector to match
- * @returns True if element matches, false otherwise
- */
-function safeMatches(element: Element, selector: string): boolean {
-  try {
-    return element.matches(selector);
-  } catch (error) {
-    if (__DEV__) {
-      logger.debug('[dom/utils] element.matches failed (ignored)', { selector, error });
-    }
-    return false;
-  }
-}
-
-/**
  * Check if string value contains any control tokens (case-insensitive).
- * @param value - String value to check (nullable)
- * @param tokens - Array of tokens to search for
- * @returns True if value contains any token
  */
 function containsControlToken(value: string | null, tokens: readonly string[]): boolean {
-  if (!value) {
-    return false;
-  }
-
+  if (!value) return false;
   const normalized = value.toLowerCase();
   return tokens.some((token) => normalized.includes(token.toLowerCase()));
 }
 
 /**
  * Get attribute value from element or nearest ancestor.
- * @param element - Element to query from
- * @param attribute - Attribute name to retrieve
- * @returns Attribute value or null if not found
  */
 function getNearestAttributeValue(
   element: HTMLElement,
   attribute: 'data-testid' | 'aria-label'
 ): string | null {
-  const host = safeClosest(element, `[${attribute}]`) as HTMLElement | null;
-  const value = host?.getAttribute(attribute) ?? null;
-  return value;
+  const host = element.closest(`[${attribute}]`) as HTMLElement | null;
+  return host?.getAttribute(attribute) ?? null;
 }
 
-/**
- * Check if element is within a video player context.
- * @param element - Element to test
- * @returns True if element is within video player
- */
 function isWithinVideoPlayer(element: HTMLElement): boolean {
-  return safeClosest(element, VIDEO_PLAYER_CONTEXT_SELECTOR) !== null;
+  return element.closest(VIDEO_PLAYER_CONTEXT_SELECTOR) !== null;
 }
 
-/**
- * Check if element matches any video control selector.
- * @param element - Element to test
- * @returns True if element matches any selector
- */
 function matchesVideoControlSelectors(element: HTMLElement): boolean {
   return VIDEO_CONTROL_SELECTORS.some(
-    (selector) => safeMatches(element, selector) || safeClosest(element, selector) !== null
+    (selector) => element.matches(selector) || element.closest(selector) !== null
   );
 }
 
@@ -106,9 +52,6 @@ function matchesVideoControlSelectors(element: HTMLElement): boolean {
 
 /**
  * Determine if element is a video control.
- * Checks tag name, selectors, data attributes, ARIA labels, roles, and input types.
- * @param element - Element to test (nullable)
- * @returns True if element is a video control
  */
 export function isVideoControlElement(element: HTMLElement | null): boolean {
   if (!isHTMLElement(element)) return false;
@@ -116,30 +59,17 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
   const tagName = element.tagName.toLowerCase();
   if (tagName === 'video') return true;
 
-  // Keep legacy safety behavior: if the element's selector engine is not
-  // available (e.g., a mocked/invalid element), treat it as non-control.
-  if (typeof element.matches !== 'function') {
-    return false;
-  }
+  if (typeof element.matches !== 'function') return false;
 
-  if (matchesVideoControlSelectors(element)) {
-    return true;
-  }
+  if (matchesVideoControlSelectors(element)) return true;
 
   const dataTestId = getNearestAttributeValue(element, 'data-testid');
-  const dataTestIdMatch = containsControlToken(dataTestId, VIDEO_CONTROL_DATASET_PREFIXES);
-  if (dataTestIdMatch) {
-    return true;
-  }
+  if (containsControlToken(dataTestId, VIDEO_CONTROL_DATASET_PREFIXES)) return true;
 
   const ariaLabel = getNearestAttributeValue(element, 'aria-label');
-  if (containsControlToken(ariaLabel, VIDEO_CONTROL_ARIA_TOKENS)) {
-    return true;
-  }
+  if (containsControlToken(ariaLabel, VIDEO_CONTROL_ARIA_TOKENS)) return true;
 
-  if (!isWithinVideoPlayer(element)) {
-    return false;
-  }
+  if (!isWithinVideoPlayer(element)) return false;
 
   const role = element.getAttribute('role');
   if (
@@ -149,14 +79,11 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
     return true;
   }
 
-  return safeMatches(element, 'input[type="range"]');
+  return element.matches('input[type="range"]');
 }
 
 /**
  * Check if element is inside the gallery UI.
- * Tests if element or ancestors match gallery internal selectors.
- * @param element - Element to test (nullable)
- * @returns True if element is within gallery
  */
 export function isGalleryInternalElement(element: HTMLElement | null): boolean {
   if (!isHTMLElement(element)) return false;
@@ -168,15 +95,12 @@ export function isGalleryInternalElement(element: HTMLElement | null): boolean {
   }
 
   return GALLERY_SELECTORS.some((selector) => {
-    return safeMatches(element, selector) || safeClosest(element, selector) !== null;
+    return element.matches(selector) || element.closest(selector) !== null;
   });
 }
 
 /**
  * Check if event originated from gallery UI.
- * Tests if event target is a gallery internal element.
- * @param event - DOM event to test
- * @returns True if event originated from gallery
  */
 export function isGalleryInternalEvent(event: Event): boolean {
   const target = event.target;

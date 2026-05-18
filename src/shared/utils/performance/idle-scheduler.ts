@@ -1,84 +1,25 @@
 import { logger } from '@shared/logging/logger';
 
-/**
- * Handle to cancel a scheduled idle task.
- */
 type IdleHandle = {
   readonly cancel: () => void;
 };
 
-/**
- * Idle callback function type.
- */
 type IdleRequestCallback = () => void;
 
 /**
- * Safely detects and returns available idle APIs.
- * @internal
- */
-function getIdleAPIs(): {
-  readonly ric: ((cb: IdleRequestCallback, opts?: { readonly timeout?: number }) => number) | null;
-  readonly cic: ((handle: number) => void) | null;
-} {
-  const hasRIC = typeof requestIdleCallback !== 'undefined';
-
-  return {
-    ric: hasRIC ? requestIdleCallback.bind(globalThis) : null,
-    cic: hasRIC ? cancelIdleCallback.bind(globalThis) : null,
-  };
-}
-
-let didLogIdleTaskErrorInDev = false;
-
-/**
- * Schedules a task to run during browser idle time, with fallback to setTimeout.
- * Errors in tasks are caught and logged (in DEV only) without crashing the scheduler.
- *
- * @param task - The callback to execute when idle
- * @returns A handle to cancel the scheduled task
+ * Schedules a task to run during browser idle time.
+ * Errors in tasks are caught and logged (in DEV only) without crashing.
  */
 export function scheduleIdle(task: IdleRequestCallback): IdleHandle {
-  const { ric, cic } = getIdleAPIs();
-
-  // Prefer requestIdleCallback if available
-  if (ric) {
-    const id = ric(() => {
-      try {
-        task();
-      } catch (error) {
-        logIdleTaskError(error);
-      }
-    });
-
-    return {
-      cancel: () => {
-        cic?.(id);
-      },
-    };
-  }
-
-  // Fallback to setTimeout for browsers without requestIdleCallback
-  const timerId = setTimeout(() => {
+  const id = requestIdleCallback(() => {
     try {
       task();
     } catch (error) {
-      logIdleTaskError(error);
+      __DEV__ && logger.warn('[scheduleIdle] task error', error);
     }
-  }, 0);
+  });
 
   return {
-    cancel: () => {
-      clearTimeout(timerId);
-    },
+    cancel: () => cancelIdleCallback(id),
   };
 }
-
-/**
- * Logs idle task errors in development, only once per session.
- * @param error - The error to log
- */
-const logIdleTaskError = (error: unknown): void => {
-  if (!__DEV__ || didLogIdleTaskErrorInDev) return;
-  didLogIdleTaskErrorInDev = true;
-  logger.warn('[scheduleIdle] Idle task error', error);
-};

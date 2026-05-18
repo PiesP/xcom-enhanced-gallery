@@ -17,7 +17,6 @@ export interface LoggerConfig {
 }
 
 const BASE_PREFIX = '[XEG]';
-const hasConsole = typeof console !== 'undefined';
 const noop = (): void => {};
 
 const createErrorOnlyLogger = (prefix: string): Logger => ({
@@ -48,13 +47,9 @@ const createVerboseLogger = (prefix: string): Logger => ({
   },
 });
 
-const noopLogger: Logger = { info: noop, warn: noop, error: noop, debug: noop, trace: noop };
-
-// Capture __DEV__ once at module load to avoid repeated checks per log call
 const isDevMode = __DEV__;
 
 function buildLogger(prefix: string): Logger {
-  if (!hasConsole) return noopLogger;
   return isDevMode ? createVerboseLogger(prefix) : createErrorOnlyLogger(prefix);
 }
 

@@ -1,23 +1,17 @@
 const USER_CANCELLED_MESSAGE = 'Download cancelled by user' as const;
 
 export function isAbortError(value: unknown): boolean {
-  if (value instanceof DOMException) {
-    return value.name === 'AbortError' || value.name === 'TimeoutError';
-  }
-  if (value instanceof Error) {
-    return value.name === 'AbortError' || value.name === 'TimeoutError';
-  }
-  return false;
+  return (
+    value instanceof DOMException && (value.name === 'AbortError' || value.name === 'TimeoutError')
+  );
 }
 
 function isUserCancelledAbortError(error: unknown): boolean {
-  if (error instanceof DOMException) {
-    return error.name === 'AbortError' && error.message === USER_CANCELLED_MESSAGE;
-  }
-  if (error instanceof Error) {
-    return error.name === 'AbortError' && error.message === USER_CANCELLED_MESSAGE;
-  }
-  return false;
+  return (
+    error instanceof DOMException &&
+    error.name === 'AbortError' &&
+    error.message === USER_CANCELLED_MESSAGE
+  );
 }
 
 function createAbortError(message: string, cause?: unknown): DOMException {

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Safe location helpers for test/SSR environments
+ * @fileoverview Safe location helpers
  */
 
 interface SafeLocationHeaders {
@@ -7,33 +7,17 @@ interface SafeLocationHeaders {
   readonly origin?: string;
 }
 
-function getLocation(): Location | undefined {
-  try {
-    return globalThis.location;
-  } catch {
-    return undefined;
-  }
-}
-
 export function getSafeHref(): string | undefined {
-  try {
-    return getLocation()?.href;
-  } catch {
-    return undefined;
-  }
+  return globalThis.location?.href;
 }
 
 export function getSafeHostname(): string | undefined {
-  try {
-    return getLocation()?.hostname;
-  } catch {
-    return undefined;
-  }
+  return globalThis.location?.hostname;
 }
 
 export function getSafeLocationHeaders(): SafeLocationHeaders {
   const referer = getSafeHref();
-  const origin = getLocation()?.origin;
+  const origin = globalThis.location?.origin;
 
   if (!referer && !origin) return {};
 

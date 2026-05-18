@@ -1,17 +1,11 @@
 import { logger } from '@shared/logging/logger';
 
-let didLogCallbackErrorInDev = false;
-
 /**
- * IntersectionObserver pool using WeakMap for automatic cleanup
+ * IntersectionObserver helper with automatic cleanup
  */
 const observerRegistry = new WeakMap<Element, Set<IntersectionObserver>>();
 
-/** Shared IntersectionObserver utility for visibility changes */
 export const SharedObserver = {
-  /**
-   * Observe element for visibility changes
-   */
   observe(
     element: Element,
     callback: (entry: IntersectionObserverEntry) => void,
@@ -22,10 +16,7 @@ export const SharedObserver = {
         try {
           callback(entry);
         } catch (error) {
-          if (__DEV__ && !didLogCallbackErrorInDev) {
-            didLogCallbackErrorInDev = true;
-            logger.warn('[SharedObserver] IntersectionObserver callback threw', error);
-          }
+          __DEV__ && logger.warn('[SharedObserver] callback threw', error);
         }
       }
     }, options);
@@ -41,10 +32,8 @@ export const SharedObserver = {
 
     let isActive = true;
 
-    const unsubscribe = (): void => {
-      if (!isActive) {
-        return;
-      }
+    return (): void => {
+      if (!isActive) return;
       isActive = false;
 
       observer.unobserve(element);
@@ -58,23 +47,15 @@ export const SharedObserver = {
         }
       }
     };
-
-    return unsubscribe;
   },
 
-  /**
-   * Stop observing element and disconnect all observers
-   */
   unobserve(element: Element): void {
     const set = observerRegistry.get(element);
-    if (!set || set.size === 0) {
-      return;
-    }
+    if (!set || set.size === 0) return;
 
     for (const observer of set) {
       observer.disconnect();
     }
-
     observerRegistry.delete(element);
   },
 };
