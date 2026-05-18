@@ -32,6 +32,11 @@ function getToolbarDataState(state: ToolbarState): ToolbarDataState {
   return 'idle';
 }
 
+function stopEvent(event: Event): void {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 export function Toolbar(rawProps: ToolbarProps): JSXElement {
   const [local] = splitProps(rawProps, [
     'currentIndex',
@@ -136,24 +141,17 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
   };
 
   const handleFitModeClick = (mode: ImageFitMode) => (event: MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-    if (!isToolbarDisabled()) {
-      fitModeHandlers()[mode]?.(event);
-    }
+    stopEvent(event);
+    if (!isToolbarDisabled()) fitModeHandlers()[mode]?.(event);
   };
 
   const guardedClick = (disabled: () => boolean, action?: () => void) => (event: MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (disabled()) return;
-    action?.();
+    stopEvent(event);
+    if (!disabled()) action?.();
   };
 
   const handleClose = (event: MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
+    stopEvent(event);
     local.handlers.lifecycle.onClose();
   };
 

@@ -2,7 +2,6 @@
  * @fileoverview Vertical Image/Video Item Component (Solid.js)
  * @description Renders individual media items with fit mode, visibility/loading states,
  * video auto-pause, and accessibility support via useVideoVisibility hook.
- * @version 7.0.0
  */
 
 import { CSS } from '@constants/css';
@@ -22,7 +21,6 @@ import { cx } from '@shared/utils/text/formatting';
 import type { JSX, JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, splitProps, untrack } from 'solid-js';
 
-/** Fit mode CSS class mapping */
 const FIT_MODE_CLASSES: Record<ImageFitMode, string | undefined> = {
   original: styles.fitOriginal,
   fitHeight: styles.fitHeight,
@@ -30,12 +28,8 @@ const FIT_MODE_CLASSES: Record<ImageFitMode, string | undefined> = {
   fitContainer: styles.fitContainer,
 };
 
-/**
- * Core vertical image item component
- */
 export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | null {
-  // NOTE: Do not destructure reactive props in Solid. Use splitProps to preserve reactivity.
-  const [local] = splitProps(props, [
+  const [local, rest] = splitProps(props, [
     'media',
     'index',
     'isActive',
@@ -47,41 +41,23 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     'onMediaLoad',
     'fitMode',
     'style',
-    'data-testid',
+    'registerContainer',
+    'onFocus',
     'aria-label',
     'aria-describedby',
-    'registerContainer',
     'role',
     'tabIndex',
-    'onFocus',
-    'onBlur',
-    'onKeyDown',
   ]);
 
   const isFocused = createMemo(() => local.isFocused ?? false);
   const className = createMemo(() => local.className ?? '');
-
-  const shouldEagerLoad = createMemo(() => {
-    const isPreloaded = local.forceVisible ?? false;
-    const isCurrent = local.isActive ?? false;
-    return isPreloaded || isCurrent;
-  });
-
+  const shouldEagerLoad = createMemo(() => (local.forceVisible ?? false) || (local.isActive ?? false));
   const translate = useTranslation();
 
-  const isVideo = createMemo(() => {
-    switch (local.media.type) {
-      case 'video':
-      case 'gif':
-        return true;
-      case 'image':
-        return false;
-    }
-  });
+  const isVideo = createMemo(() => local.media.type === 'video' || local.media.type === 'gif');
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
 
-  // Track media.id changes to reset load/error state when media item changes
   createEffect(() => {
     void local.media.id;
     setIsLoaded(false);
@@ -96,17 +72,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const dimensions = () => resolvedDimensions().dimensions;
   const hasIntrinsicSize = () => resolvedDimensions().hasIntrinsicSize;
 
-  const intrinsicSizingStyle = createMemo(() => {
-    return createIntrinsicSizingStyle(dimensions());
-  });
+  const intrinsicSizingStyle = createMemo(() => createIntrinsicSizingStyle(dimensions()));
+  const mergedStyle = createMemo(() => ({ ...intrinsicSizingStyle(), ...(local.style ?? {}) }));
 
-  const mergedStyle = createMemo<JSX.CSSProperties>(() => {
-    const base = intrinsicSizingStyle();
-    const extra = local.style ?? {};
-    return { ...base, ...extra };
-  });
-
-  // Video volume persistence hook — manages volume/muted state, settings sync, and change guarding
   const { applyMutedProgrammatically, handleVolumeChange } = useVideoVolumePersistence({
     videoRef,
     isVideo,
@@ -123,22 +91,14 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     const video = videoRef();
     if (local.isActive && video) {
       const alreadySignaled = untrack(() => gallerySignals.currentVideoElement === video);
-      if (!alreadySignaled) {
-        setCurrentVideoElement(video);
-      }
+      if (!alreadySignaled) setCurrentVideoElement(video);
       return;
     }
-
     const shouldClear = untrack(() => gallerySignals.currentVideoElement === video);
-    if (shouldClear) {
-      setCurrentVideoElement(null);
-    }
+    if (shouldClear) setCurrentVideoElement(null);
   });
 
-  // Event handlers
-  const preventDragStart = (event: DragEvent) => {
-    event.preventDefault();
-  };
+  const preventDragStart = (event: DragEvent) => event.preventDefault();
 
   const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
     event.stopPropagation();
@@ -150,12 +110,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
         const targetInVideo = target instanceof Node && video.contains(target);
         const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
         const pathIncludesVideo = Array.isArray(path) && path.includes(video);
-
-        // If the click originated from the <video> element or its native controls,
-        // do not trigger item activation to avoid nested interaction conflicts.
-        if (targetInVideo || pathIncludesVideo) {
-          return;
-        }
+        if (targetInVideo || pathIncludesVideo) return;
       }
     }
 
@@ -164,23 +119,14 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   };
 
   const handleContainerKeyDown: JSX.EventHandlerUnion<HTMLDivElement, KeyboardEvent> = (event) => {
-    if (typeof local.onKeyDown === 'function') {
-      local.onKeyDown(event);
+    if (rest.onKeyDown) {
+      rest.onKeyDown(event);
       return;
     }
+    if (local.role !== undefined && local.role !== 'button') return;
 
-    // Only provide default activation semantics when no explicit role is set,
-    // or when the container is explicitly a button.
-    // Video items use role='group' by default but should still support Enter/Space.
-    if (local.role !== undefined && local.role !== 'button') {
-      return;
-    }
-
-    // Default keyboard activation for role=button containers.
-    // - Enter: activate
-    // - Space: activate + prevent page scroll
     const key = event.key;
-    if (key === 'Enter' || key === 'Space') {
+    if (key === 'Enter' || key === ' ') {
       event.preventDefault();
       event.stopPropagation();
       local.onClick();
@@ -204,36 +150,24 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     local.onImageContextMenu?.(event, local.media);
   };
 
-  // Check if media is already loaded
   createEffect(() => {
-    if (isLoaded()) {
-      return;
-    }
+    if (isLoaded()) return;
 
     if (isVideo()) {
       const video = videoRef();
-      if (video && video.readyState >= 1) {
-        handleMediaLoad();
-      }
+      if (video && video.readyState >= 1) handleMediaLoad();
     } else {
       const image = imageRef();
       if (image?.complete) {
-        // `HTMLImageElement.complete` can be true even on failed loads (naturalWidth === 0).
-        if (image.naturalWidth > 0) {
-          handleMediaLoad();
-        } else {
-          handleMediaError();
-        }
+        if (image.naturalWidth > 0) handleMediaLoad();
+        else handleMediaError();
       }
     }
   });
 
-  // Fit mode handling
   const resolvedFitMode = createMemo<ImageFitMode>(() => {
     const value = local.fitMode;
-    if (typeof value === 'function') {
-      return value() ?? 'fitWidth';
-    }
+    if (typeof value === 'function') return value() ?? 'fitWidth';
     return value ?? 'fitWidth';
   });
 
@@ -251,7 +185,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     )
   );
 
-  // Accessibility props
   const assignContainerRef = (element: HTMLDivElement | null) => {
     setContainerRef(element);
     local.registerContainer?.(element);
@@ -281,13 +214,13 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       style={mergedStyle()}
       onClick={handleContainerClick}
       onFocus={local.onFocus}
-      onBlur={local.onBlur}
+      onBlur={rest.onBlur}
       onKeyDown={handleContainerKeyDown}
       aria-label={local['aria-label'] || defaultAriaLabel()}
       aria-describedby={local['aria-describedby']}
       role={resolvedContainerRole()}
       tabIndex={local.tabIndex ?? 0}
-      data-testid={__DEV__ ? local['data-testid'] : undefined}
+      data-testid={__DEV__ ? rest['data-testid'] : undefined}
     >
       <div class={styles.imageWrapper} data-xeg-role="media-wrapper">
         {!isLoaded() && !isError() && (
@@ -327,9 +260,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
           <div class={styles.error}>
             <span class={styles.errorIcon}>⚠️</span>
             <span class={styles.errorText}>
-              {translate('msg.gal.loadFail', {
-                type: isVideo() ? 'video' : 'image',
-              })}
+              {translate('msg.gal.loadFail', { type: isVideo() ? 'video' : 'image' })}
             </span>
           </div>
         )}
