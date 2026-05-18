@@ -50,7 +50,7 @@ export function useGalleryNavigationHandlers(
   const handlePrevious = () => {
     const current = currentIndex();
     if (current > 0) {
-      navigateToItem(current - 1, 'click', 'button');
+      navigateToItem(current - 1, 'button');
     }
   };
 
@@ -58,7 +58,7 @@ export function useGalleryNavigationHandlers(
     const current = currentIndex();
     const items = mediaItems();
     if (current < items.length - 1) {
-      navigateToItem(current + 1, 'click', 'button');
+      navigateToItem(current + 1, 'button');
     }
   };
 
@@ -86,7 +86,7 @@ export function useGalleryNavigationHandlers(
     const current = currentIndex();
 
     if (index >= 0 && index < items.length && index !== current) {
-      navigateToItem(index, 'click', 'scroll');
+      navigateToItem(index, 'scroll');
     }
   };
 

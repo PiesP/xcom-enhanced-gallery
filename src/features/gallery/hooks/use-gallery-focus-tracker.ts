@@ -58,7 +58,7 @@ export function useGalleryFocusTracker(
     onFocusChange: (index, source) => {
       if (source === 'auto' && index !== null) {
         // 'auto-focus' source prevents auto-scroll in navigation handler
-        navigateToItem(index, 'scroll', 'auto-focus');
+        navigateToItem(index, 'auto-focus');
       }
     },
   });
@@ -67,7 +67,7 @@ export function useGalleryFocusTracker(
 
   const handleItemFocus = (index: number): void => {
     // Treat focus event (e.g. Tab) as keyboard navigation
-    navigateToItem(index, 'keyboard', 'keyboard');
+    navigateToItem(index, 'keyboard');
   };
 
   return {

@@ -65,7 +65,7 @@ export function useGalleryFitMode(options: UseGalleryFitModeOptions): UseGallery
     setImageFitMode(mode);
     void persistFitMode(mode);
     scrollToCurrentItem();
-    navigateToItem(currentIndex(), 'programmatic', 'auto-focus');
+    navigateToItem(currentIndex(), 'auto-focus');
   };
 
   const handleFitOriginal = (event?: Event) => applyFitMode('original', event);

@@ -14,7 +14,7 @@ import { createEventEmitter } from '@shared/utils/events/emitter';
 import { clampIndex } from '@shared/utils/types/safety';
 import { batch, createSignal } from 'solid-js';
 
-export type GalleryNavigationTrigger = NavigationSource;
+export type { NavigationSource };
 
 // ========================
 // Navigation state (inlined from navigation.state.ts)
@@ -78,7 +78,7 @@ interface GallerySessionState {
 
 export interface GalleryNavigateCompletePayload {
   readonly index: number;
-  readonly trigger: GalleryNavigationTrigger;
+  readonly trigger: NavigationSource;
 }
 
 const INITIAL_STATE: GalleryState = {
@@ -171,7 +171,7 @@ export function closeGallery(): void {
   }
 }
 
-export function navigateNext(trigger: GalleryNavigationTrigger = 'click'): void {
+export function navigateNext(trigger: NavigationSource = 'click'): void {
   const items = mediaItemsSig();
   const current = currentIndexSig();
   if (items.length <= 1) return;
@@ -187,7 +187,7 @@ export function navigateNext(trigger: GalleryNavigationTrigger = 'click'): void 
   galleryIndexEvents.emit('navigate:complete', { index: next, trigger });
 }
 
-export function navigatePrevious(trigger: GalleryNavigationTrigger = 'click'): void {
+export function navigatePrevious(trigger: NavigationSource = 'click'): void {
   const items = mediaItemsSig();
   const current = currentIndexSig();
   if (items.length <= 1) return;
@@ -205,7 +205,6 @@ export function navigatePrevious(trigger: GalleryNavigationTrigger = 'click'): v
 
 export function navigateToItem(
   targetIndex: number,
-  trigger: GalleryNavigationTrigger,
   source: NavigationSource
 ): void {
   const items = mediaItemsSig();
@@ -220,7 +219,7 @@ export function navigateToItem(
   });
 
   recordNavigation(clampedIndex, source);
-  galleryIndexEvents.emit('navigate:complete', { index: clampedIndex, trigger });
+  galleryIndexEvents.emit('navigate:complete', { index: clampedIndex, trigger: source });
 }
 
 /** @internal Export for test use only */

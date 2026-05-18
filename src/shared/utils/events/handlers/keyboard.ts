@@ -156,16 +156,16 @@ function handleNavigation(key: string): void {
       navigateNext('keyboard');
       break;
     case 'Home':
-      navigateToItem(0, 'keyboard', 'keyboard');
+      navigateToItem(0, 'keyboard');
       break;
     case 'End':
-      navigateToItem(Math.max(0, total - 1), 'keyboard', 'keyboard');
+      navigateToItem(Math.max(0, total - 1), 'keyboard');
       break;
     case 'PageUp':
-      navigateToItem(Math.max(0, current - 5), 'keyboard', 'keyboard');
+      navigateToItem(Math.max(0, current - 5), 'keyboard');
       break;
     case 'PageDown':
-      navigateToItem(Math.min(total - 1, current + 5), 'keyboard', 'keyboard');
+      navigateToItem(Math.min(total - 1, current + 5), 'keyboard');
       break;
   }
 }

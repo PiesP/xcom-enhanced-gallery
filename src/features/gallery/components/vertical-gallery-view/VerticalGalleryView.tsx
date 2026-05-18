@@ -105,7 +105,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
     }
 
     // Initial focus is treated as keyboard/manual navigation
-    navigateToItem(currentIndex(), 'click', 'auto-focus');
+    navigateToItem(currentIndex(), 'auto-focus');
   });
 
   // Fit mode state — managed via useGalleryFitMode hook with persistence
