@@ -1,20 +1,20 @@
+import type { Accessor } from 'solid-js';
 import type { ToolbarHandlers } from '@shared/components/ui/Toolbar/handler-types';
 import type { ImageFitMode } from '@shared/types/settings.types';
-import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 
 export type { FitModeHandlers } from '@shared/components/ui/Toolbar/handler-types';
 export type { ImageFitMode };
 
 export interface ToolbarProps {
-  readonly currentIndex: MaybeAccessor<number>;
-  readonly focusedIndex?: MaybeAccessor<number | null> | undefined;
-  readonly totalCount: MaybeAccessor<number>;
+  readonly currentIndex: Accessor<number>;
+  readonly focusedIndex?: Accessor<number | null>;
+  readonly totalCount: Accessor<number>;
   readonly handlers: ToolbarHandlers;
-  readonly currentFitMode?: MaybeAccessor<ImageFitMode | undefined> | undefined;
-  readonly isDownloading?: MaybeAccessor<boolean | undefined> | undefined;
-  readonly disabled?: MaybeAccessor<boolean | undefined> | undefined;
+  readonly currentFitMode?: Accessor<ImageFitMode | undefined>;
+  readonly isDownloading?: Accessor<boolean>;
+  readonly disabled?: Accessor<boolean>;
   readonly className?: string | undefined;
-  readonly tweetText?: MaybeAccessor<string | null | undefined> | undefined;
-  readonly tweetTextHTML?: MaybeAccessor<string | null | undefined> | undefined;
-  readonly tweetUrl?: MaybeAccessor<string | null | undefined> | undefined;
+  readonly tweetText?: Accessor<string | null>;
+  readonly tweetTextHTML?: Accessor<string | null>;
+  readonly tweetUrl?: Accessor<string | null>;
 }

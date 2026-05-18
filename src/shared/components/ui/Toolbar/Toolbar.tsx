@@ -10,7 +10,6 @@ import { useToolbarSettingsController } from '@shared/hooks/toolbar/use-toolbar-
 import { useToolbarState } from '@shared/hooks/use-toolbar-state';
 import { useTranslation } from '@shared/hooks/use-translation';
 import type { ToolbarDataState, ToolbarState } from '@shared/types/toolbar.types';
-import { resolveOptional } from '@shared/utils/solid/accessor-utils';
 import { clampIndex } from '@shared/utils/types/safety';
 import type { JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, on, splitProps } from 'solid-js';
@@ -53,15 +52,15 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
   const [settingsExpandedSignal, setSettingsExpandedSignal] = createSignal(false);
   const [tweetExpanded, setTweetExpanded] = createSignal(false);
 
-  const totalItems = createMemo(() => Math.max(0, resolveOptional(local.totalCount) ?? 0));
+  const totalItems = createMemo(() => Math.max(0, local.totalCount() ?? 0));
   const currentIndexForNav = createMemo(() =>
-    clampIndex(resolveOptional(local.currentIndex) ?? 0, totalItems())
+    clampIndex(local.currentIndex() ?? 0, totalItems())
   );
 
   const displayedIndex = createMemo(() => {
     const total = totalItems();
     const currentIdx = currentIndexForNav();
-    const focusIdx = resolveOptional(local.focusedIndex);
+    const focusIdx = local.focusedIndex?.() ?? null;
     if (total <= 0) return 0;
     if (typeof focusIdx === 'number' && focusIdx >= 0 && focusIdx < total) return focusIdx;
     return currentIdx;
@@ -79,9 +78,9 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
     const total = totalItems();
     const hasItems = total > 0;
     const canNavigate = hasItems && total > 1;
-    const toolbarDisabled = !!(resolveOptional(local.disabled) ?? false);
+    const toolbarDisabled = !!(local.disabled?.() ?? false);
     const downloadBusy =
-      !!(resolveOptional(local.isDownloading) ?? false) || toolbarState.isDownloading();
+      !!(local.isDownloading?.() ?? false) || toolbarState.isDownloading();
     return {
       prevDisabled: toolbarDisabled || !canNavigate,
       nextDisabled: toolbarDisabled || !canNavigate,
@@ -106,12 +105,12 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
   }));
 
   const activeFitMode = createMemo<ImageFitMode>(
-    () => resolveOptional(local.currentFitMode) ?? FIT_MODE_ORDER[0]?.mode ?? 'original'
+    () => local.currentFitMode?.() ?? FIT_MODE_ORDER[0]?.mode ?? 'original'
   );
 
   createEffect(
     on(
-      () => resolveOptional(local.isDownloading) ?? false,
+      () => local.isDownloading?.() ?? false,
       (value) => toolbarActions.setDownloading(!!value)
     )
   );
@@ -130,7 +129,7 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
     });
   };
 
-  const isToolbarDisabled = () => !!(resolveOptional(local.disabled) ?? false);
+  const isToolbarDisabled = () => !!(local.disabled?.() ?? false);
 
   const isFitDisabled = (mode: ImageFitMode): boolean => {
     if (isToolbarDisabled()) return true;
@@ -186,14 +185,14 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
 
   return (
     <ToolbarView
-      currentIndex={resolveOptional(local.currentIndex) ?? 0}
-      focusedIndex={(resolveOptional(local.focusedIndex) ?? null) as number | null}
-      totalCount={resolveOptional(local.totalCount) ?? 0}
-      isDownloading={resolveOptional(local.isDownloading) ?? false}
-      disabled={resolveOptional(local.disabled) ?? false}
-      tweetText={resolveOptional(local.tweetText) ?? null}
-      tweetTextHTML={resolveOptional(local.tweetTextHTML) ?? null}
-      tweetUrl={resolveOptional(local.tweetUrl) ?? null}
+      currentIndex={local.currentIndex() ?? 0}
+      focusedIndex={(local.focusedIndex?.() ?? null) as number | null}
+      totalCount={local.totalCount() ?? 0}
+      isDownloading={local.isDownloading?.() ?? false}
+      disabled={local.disabled?.() ?? false}
+      tweetText={local.tweetText?.() ?? null}
+      tweetTextHTML={local.tweetTextHTML?.() ?? null}
+      tweetUrl={local.tweetUrl?.() ?? null}
       toolbarClass={toolbarClass}
       toolbarState={toolbarState}
       toolbarDataState={toolbarDataState}

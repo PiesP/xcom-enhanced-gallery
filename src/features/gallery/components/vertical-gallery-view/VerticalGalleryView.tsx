@@ -72,6 +72,10 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
     return items[index] ?? null;
   });
 
+  const tweetText = createMemo(() => activeMedia()?.tweetText ?? null);
+  const tweetTextHTML = createMemo(() => activeMedia()?.tweetTextHTML ?? null);
+  const tweetUrl = createMemo(() => activeMedia()?.tweetUrl ?? null);
+
   const preloadIndices = createMemo(() => {
     const count = getTypedSettingOr('gallery.preloadCount', 3);
     return computePreloadIndices(currentIndex(), mediaItems().length, count);
@@ -179,10 +183,10 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
           focusedIndex={focus.focusedIndex}
           totalCount={() => mediaItems().length}
           isDownloading={isDownloading}
-          currentFitMode={imageFitMode()}
-          tweetText={() => activeMedia()?.tweetText}
-          tweetTextHTML={() => activeMedia()?.tweetTextHTML}
-          tweetUrl={() => activeMedia()?.tweetUrl}
+          currentFitMode={imageFitMode}
+          tweetText={tweetText}
+          tweetTextHTML={tweetTextHTML}
+          tweetUrl={tweetUrl}
           className={styles.toolbar}
           handlers={{
             navigation: {
