@@ -102,21 +102,7 @@ const [focusedIndexSig, setFocusedIndex] = createSignal<number | null>(null);
 export const [currentVideoElementSig, setCurrentVideoElement] =
   createSignal<HTMLVideoElement | null>(null);
 
-// UI state signals (inlined from ui.state.ts)
 const [_errorSig, _setErrorSig] = createSignal<string | null>(INITIAL_STATE.error);
-
-// Download state (inlined from download.signals.ts)
-const [_isProcessing, setIsProcessing] = createSignal<boolean>(false);
-
-export const downloadState = {
-  get isProcessing(): boolean {
-    return _isProcessing();
-  },
-};
-
-export function setDownloading(value: boolean): void {
-  setIsProcessing(value);
-}
 
 export const gallerySignals = {
   get isOpen() {
