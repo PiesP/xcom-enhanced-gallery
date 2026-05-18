@@ -1,6 +1,6 @@
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/normalize';
-import { isGMAPIAvailable, resolveGMDownload } from '@shared/external/userscript/adapter';
+import { resolveGMDownload } from '@shared/external/userscript/adapter';
 import type {
   DownloadCapability,
   DownloadOptions,
@@ -16,7 +16,7 @@ function asGMDownloadFunction(value: unknown): GMDownloadFunction | undefined {
 
 export function detectDownloadCapability(): DownloadCapability {
   const gmDownload = asGMDownloadFunction(resolveGMDownload());
-  const hasGMDownload = !!gmDownload && isGMAPIAvailable('download');
+  const hasGMDownload = !!gmDownload;
   return {
     hasGMDownload,
     method: hasGMDownload ? 'gm_download' : 'none',

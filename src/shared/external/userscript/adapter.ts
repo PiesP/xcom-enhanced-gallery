@@ -126,21 +126,3 @@ function createUserscriptAPI(): UserscriptAPI {
 export function getUserscript(): UserscriptAPI {
   return createUserscriptAPI();
 }
-
-// ============================================================================
-// GM API Availability Checks
-// ============================================================================
-
-const GM_API_CHECKS: Record<string, (gm: ResolvedGMAPIs) => boolean> = {
-  getValue: (gm) => typeof gm.getValue === 'function',
-  setValue: (gm) => typeof gm.setValue === 'function',
-  download: (gm) => typeof gm.download === 'function',
-  notification: (gm) => typeof gm.notification === 'function',
-  deleteValue: (gm) => typeof gm.deleteValue === 'function',
-  listValues: (gm) => typeof gm.listValues === 'function',
-  cookie: (gm) => typeof gm.cookie?.list === 'function',
-};
-
-export function isGMAPIAvailable(apiName: string): boolean {
-  return GM_API_CHECKS[apiName]?.(getResolvedGMAPIsCached()) ?? false;
-}
