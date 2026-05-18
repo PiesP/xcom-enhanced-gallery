@@ -6,6 +6,23 @@ The format follows the principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and the project
 roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-07-19
+
+### Fixed
+
+- **Persistent storage**: Fixed `get()` returning `defaultValue` instead of the actual stored string value when `JSON.parse` fails on plain string entries.
+- **HTTP request service**: Fixed potential null reference in abort handlers by using non-null assertion on signal parameter.
+- **Theme service**: Fixed event listener leak on re-initialization by returning early when `mediaQueryListener` already exists.
+- **Settings timestamps**: Replaced `performance.now()` with `Date.now()` in `SettingsService` and `SettingsRepository` for persistent timestamps that survive across sessions.
+- **Error boundary**: Added retry count limit (3) to prevent infinite retry loops when child component throws on every render.
+- **Twitter response parser**: Replaced `Object.assign` mutation of readonly-typed objects with explicit property assignment via `Record` cast.
+
+### Changed
+
+- **Code cleanup**: Removed ~370 lines of unnecessary code across 29 files — eliminated redundant try-catch wrappers, dead code, over-engineered patterns, and outdated browser fallbacks.
+- **CSS**: Removed outdated GPU acceleration hacks (`translateZ(0)`, `backface-visibility: hidden`); replaced absurd z-index values (2147483600+) with reasonable scale (9999-10004).
+- **Security audit**: Confirmed no `innerHTML`, `eval`, or `new Function` usage; URL safety validation is properly implemented.
+
 ## [2.1.0] - 2026-07-18
 
 ### Changed
