@@ -64,13 +64,13 @@ export class SettingsService {
     if (!assignNestedPath(this.settings, key, value)) {
       throw new Error(`Failed to assign setting value for ${key}`);
     }
-    this.settings.lastModified = performance.now();
+    this.settings.lastModified = Date.now();
 
     this.notifyListeners({
       key,
       oldValue,
       newValue: value,
-      timestamp: performance.now(),
+      timestamp: Date.now(),
       status: 'success',
     });
     await this.persist();

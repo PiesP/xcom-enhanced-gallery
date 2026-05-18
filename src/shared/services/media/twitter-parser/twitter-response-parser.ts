@@ -221,28 +221,28 @@ export function extractMediaFromTweet(
 export function normalizeLegacyTweet(tweet: TwitterTweet): void {
   if (tweet.legacy) {
     if (!tweet.extended_entities) {
-      Object.assign(tweet, { extended_entities: tweet.legacy.extended_entities });
+      (tweet as Record<string, unknown>).extended_entities = tweet.legacy.extended_entities;
     }
     if (!tweet.full_text) {
-      Object.assign(tweet, { full_text: tweet.legacy.full_text });
+      (tweet as Record<string, unknown>).full_text = tweet.legacy.full_text;
     }
     if (!tweet.id_str) {
-      Object.assign(tweet, { id_str: tweet.legacy.id_str });
+      (tweet as Record<string, unknown>).id_str = tweet.legacy.id_str;
     }
   }
   const noteText = tweet.note_tweet?.note_tweet_results?.result?.text;
   if (noteText) {
-    Object.assign(tweet, { full_text: noteText });
+    (tweet as Record<string, unknown>).full_text = noteText;
   }
 }
 
 export function normalizeLegacyUser(user: TwitterUser): void {
   if (user.legacy) {
     if (!user.screen_name) {
-      Object.assign(user, { screen_name: user.legacy.screen_name });
+      (user as Record<string, unknown>).screen_name = user.legacy.screen_name;
     }
     if (!user.name) {
-      Object.assign(user, { name: user.legacy.name });
+      (user as Record<string, unknown>).name = user.legacy.name;
     }
   }
 }

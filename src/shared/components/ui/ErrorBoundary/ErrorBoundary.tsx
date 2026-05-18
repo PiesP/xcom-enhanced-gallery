@@ -43,6 +43,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
   const [lastError, setLastError] = createSignal<unknown>(undefined);
   const [caughtError, setCaughtError] = createSignal<unknown>(undefined);
   const [mounted, setMounted] = createSignal(true);
+  const [retryCount, setRetryCount] = createSignal(0);
 
   const notifyError = (error: unknown): void => {
     if (lastError() === error) return;
@@ -52,8 +53,10 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
   };
 
   const handleRetry = (): void => {
+    if (retryCount() >= 3) return;
     setLastError(undefined);
     setCaughtError(undefined);
+    setRetryCount((c) => c + 1);
     setMounted(false);
     queueMicrotask(() => setMounted(true));
   };

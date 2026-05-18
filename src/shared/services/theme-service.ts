@@ -182,7 +182,9 @@ export class ThemeService {
   }
 
   private initializeSystemDetection(): void {
-    if (!this.mediaQueryList || this.mediaQueryListener) return;
+    if (!this.mediaQueryList) return;
+
+    if (this.mediaQueryListener) return;
 
     if (!this.domEventsController || this.domEventsController.signal.aborted) {
       this.domEventsController = new AbortController();
