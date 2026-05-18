@@ -6,6 +6,65 @@ The format follows the principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and the project
 roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-07-18
+
+### Added
+
+- **Security hardening**: Strengthened input validation across core services; fixed timestamp semantics to prevent edge-case parsing errors.
+- **Security (CI/CD)**: Pinned all GitHub Actions to full commit SHAs; added `onlyBuiltDependencies` to prevent phantom deps; hardened pnpm-workspace configuration.
+- **Performance**: Replaced `structuredClone` with manual shallow copy in `getAllSettings` for faster settings retrieval.
+
+### Changed
+
+- **Architecture overhaul (Phase 1–5)**: Completed 5-phase refactoring across 163 commits — consolidated service layer, eliminated barrel imports, removed contract/interface files, unified type system, and simplified DI container.
+- **Service layer**: Merged `CoreService` + `SERVICE_KEYS` Service Locator pattern into module-level `service-registry.ts`; all 9 singletons now use consistent `_initialized` flag + module-level `let _instance` pattern.
+- **Type system**: Removed duplicate types (`FitMode`/`ImageFitMode`, `ThemeOption`/`ThemeSetting`, `ViewMode`); consolidated `DEFAULT_SETTINGS` into single SSOT; unified `MediaExtractionResult.metadata` into single `ExtractionMetadata` type.
+- **Event system**: Replaced `ownedListenerContexts` Map with unified `listeners` Map in `EventManager`; removed deprecated `listener-manager.ts`.
+- **Download system**: Consolidated download pipeline from 8 files to 5; removed unused Command pattern; inlined `download-ui-state.ts` into `VerticalGalleryView`.
+- **Settings**: Unified `registerSettingsManager` into `registerSettings`; consolidated `applyGalleryStateUpdate` into `applyGallerySessionUpdate`; removed deprecated 1.0.0 migration.
+- **CSS pipeline**: Replaced custom CSS parser with `lightningcss` (588→340 lines); replaced custom `tsconfig-aliases` with Vite 8 built-in `tsconfigPaths`.
+- **Tooling cleanup**: Removed 4 tools (`check-tsdoc`, `dist-cleanup`, `license-assets`, `css-inline` custom parser); simplified 2 others; `tooling/` reduced ~44% (~2,500→~1,400 lines).
+- **Build config**: Removed duplicate build scripts (`build:fast` kept, `verify:fast`/`quality:ci` removed); removed `prebuild` hook (build runs quality inline); removed duplicate `import.meta.env.*` define.
+- **Code modernization**: Converted module-level `let` variables to Solid.js signals; replaced `AbortSignal.any()` for signal combining; removed unnecessary async from sync methods; modernized component code style across 20+ files.
+- **Import structure**: Replaced all relative imports with `@shared/...` path aliases; removed unused path aliases (`@/*`, `@styles/*`, `@types/*`); removed barrel re-export files for SSOT compliance.
+- **Dependency updates**: Updated `@types/node` to 25.6.2; updated quality group dependencies.
+
+### Fixed
+
+- **Critical bugs**: Fixed `performance.now` fallback; fixed video toggle and volume comparison logic; fixed emitter error logging.
+- **EventManager**: Fixed `cleanup()` failing to remove listeners (memory leak).
+- **PrefetchManager**: Fixed race condition in `prefetchSingle()`.
+- **MediaService**: Fixed `cleanupOnce` flag not resetting on `initialize()`; added `onCleanup` to `itemsCache`.
+- **TypeScript strict mode**: Resolved all strict mode errors including `exactOptionalPropertyTypes` violations.
+- **Type safety**: Improved type safety in `getValueSync`, `PersistentStorage`, `HttpRequestService`, and core services; removed `Object.assign` for exact optional property types.
+- **Navigation**: Unified `navigateToItem` signature; removed duplicate `GalleryNavigationTrigger`.
+- **Regex**: Fixed `hasValidUrlPrefix` regex in `media-dimensions`.
+- **CSS**: Restored missing `font-family` token reference in `isolated-gallery.css`.
+- **Build**: Resolved build errors and bundle test failures from circular dependencies and missing modules.
+
+### Removed
+
+- Deleted `src/shared/types/app.types.ts` (barrel re-export, replaced by `app-config.types.ts`).
+- Deleted `src/constants/service-keys.ts` (DI key constants).
+- Deleted `src/shared/services/service-manager.ts` (CoreService).
+- Deleted `src/shared/services/lifecycle.ts` (createLifecycle).
+- Deleted `src/shared/utils/types/singleton.ts` (createSingleton).
+- Deleted `src/shared/container/app-container.ts` (IGalleryApp).
+- Deleted `src/shared/interfaces/` (gallery.interfaces, handler.interfaces).
+- Deleted `src/shared/services/*.contract.ts` (3 files).
+- Deleted `src/shared/types/core/` (base-service, core-types).
+- Deleted `src/bootstrap/types.ts`.
+- Deleted `src/constants/types.ts` (dead code).
+- Deleted `src/shared/i18n/translation-catalog.ts`, `src/shared/i18n/translation-utils.ts` (dead code).
+- Deleted `src/shared/utils/events/core/listener-manager.ts` (deprecated).
+- Deleted `src/shared/services/signal-utils.ts` (dead code).
+- Removed `BulkDownloadResult` unused import; removed `createSuccessResult` dead export.
+- Removed `FALLBACK_BEARER_TOKEN` duplicate (now uses `TWITTER_API_CONFIG.GUEST_AUTHORIZATION` SSOT).
+- Removed incomplete `planZipPersistStrategy` stub from `download-plan.ts`.
+- Removed `async-without-await` from 3 methods; removed SSR guard; removed 6 dead exports.
+- Removed `ViewMode` type and all references.
+- Removed `settings-migration` 1.0.0 migration (no longer needed).
+
 ## [1.9.3] - 2026-05-06
 
 ### Fixed

@@ -49,7 +49,7 @@ export const DEFAULT_SETTINGS = {
     mediaExtraction: true,
     accessibility: true,
   },
-  version: '1.9.3',
+  version: '2.0.0',
   lastModified: 0,
 } as const satisfies AppSettings;
 
