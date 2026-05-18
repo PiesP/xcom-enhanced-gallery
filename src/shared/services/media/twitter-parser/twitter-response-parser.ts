@@ -9,8 +9,6 @@ import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/medi
 import { escapeRegExp } from '@shared/utils/text/formatting';
 import { tryParseUrl } from '@shared/utils/url/host';
 
-type Writable<T> = { -readonly [P in keyof T]: T[P] };
-
 interface MediaDimensions {
   readonly width?: number;
   readonly height?: number;
@@ -221,20 +219,30 @@ export function extractMediaFromTweet(
 }
 
 export function normalizeLegacyTweet(tweet: TwitterTweet): void {
-  const t = tweet as any;
-  if (t.legacy) {
-    t.extended_entities ??= t.legacy.extended_entities;
-    t.full_text ??= t.legacy.full_text;
-    t.id_str ??= t.legacy.id_str;
+  if (tweet.legacy) {
+    if (!tweet.extended_entities) {
+      Object.assign(tweet, { extended_entities: tweet.legacy.extended_entities });
+    }
+    if (!tweet.full_text) {
+      Object.assign(tweet, { full_text: tweet.legacy.full_text });
+    }
+    if (!tweet.id_str) {
+      Object.assign(tweet, { id_str: tweet.legacy.id_str });
+    }
   }
   const noteText = tweet.note_tweet?.note_tweet_results?.result?.text;
-  if (noteText) t.full_text = noteText;
+  if (noteText) {
+    Object.assign(tweet, { full_text: noteText });
+  }
 }
 
 export function normalizeLegacyUser(user: TwitterUser): void {
-  const u = user as any;
-  if (u.legacy) {
-    u.screen_name ??= u.legacy.screen_name;
-    u.name ??= u.legacy.name;
+  if (user.legacy) {
+    if (!user.screen_name) {
+      Object.assign(user, { screen_name: user.legacy.screen_name });
+    }
+    if (!user.name) {
+      Object.assign(user, { name: user.legacy.name });
+    }
   }
 }

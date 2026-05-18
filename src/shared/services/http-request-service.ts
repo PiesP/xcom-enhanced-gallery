@@ -4,10 +4,7 @@
 
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
 import { getUserscript } from '@shared/external/userscript/adapter';
-import type {
-  GMXMLHttpRequestControl,
-  GMXMLHttpRequestDetails,
-} from '@shared/types/core/userscript';
+import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { createDeferred } from '@shared/utils/async/promise-helpers';
 
 interface HttpRequestOptions {
@@ -111,7 +108,7 @@ export class HttpRequestService {
       },
     };
 
-    const control = getUserscript().xmlHttpRequest(details);
+    getUserscript().xmlHttpRequest(details);
 
     return deferred.promise;
   }

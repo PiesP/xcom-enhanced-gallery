@@ -2,7 +2,6 @@
  * @fileoverview Integrated media type definitions
  */
 
-import type { AmbientVideoPauseRequest } from '@shared/utils/media/ambient-video-coordinator';
 import type { ErrorCode } from './result.types';
 
 /** Brand type base structure */
