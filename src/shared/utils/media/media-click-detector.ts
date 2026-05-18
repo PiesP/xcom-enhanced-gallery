@@ -1,8 +1,7 @@
 /**
- * @fileoverview Media Click Detector - Handles media click detection and validation
- * @description Detects clicks on image, video thumbnail, and video elements to trigger
- * the XEG gallery. Prevents triggering in contexts where native navigation should be preserved
- * (link cards, X Articles, media viewers). Validates media sources and element types.
+ * @fileoverview Media click detector: validates clicks for gallery trigger.
+ * Blocks triggers in contexts where native navigation should be preserved
+ * (link cards, X Articles, media viewers, interactive elements).
  */
 
 import { CSS } from '@constants/css';
@@ -20,130 +19,49 @@ import {
 import { tryParseUrl } from '@shared/utils/url/host';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
-// ============================================================================
-// Constants
-// ============================================================================
-
-/** Media link selectors - Profile grid and timeline media links */
-const MEDIA_LINK_SELECTORS = [
-  STATUS_LINK_SELECTOR,
-  'a[href*="/photo/"]',
-  'a[href*="/video/"]',
-] as const;
-
-/** Combined selector string for media links */
-const MEDIA_LINK_SELECTOR: string = MEDIA_LINK_SELECTORS.join(', ');
-
-/** Combined selector string for media containers */
-const MEDIA_CONTAINER_SELECTOR: string = MEDIA_CONTAINER_SELECTORS.join(', ');
-
-/** Interactive element selectors */
-const INTERACTIVE_SELECTOR: string = [
-  'button',
-  'a',
-  '[role="button"]',
-  '[data-testid="like"]',
-  '[data-testid="retweet"]',
-  '[data-testid="reply"]',
-  '[data-testid="share"]',
-  '[data-testid="bookmark"]',
+const MEDIA_LINK_SELECTOR = [STATUS_LINK_SELECTOR, 'a[href*="/photo/"]', 'a[href*="/video/"]'].join(', ');
+const MEDIA_CONTAINER_SELECTOR = MEDIA_CONTAINER_SELECTORS.join(', ');
+const INTERACTIVE_SELECTOR = [
+  'button', 'a', '[role="button"]',
+  '[data-testid="like"]', '[data-testid="retweet"]', '[data-testid="reply"]',
+  '[data-testid="share"]', '[data-testid="bookmark"]',
 ].join(', ');
 
-// ============================================================================
-// Media Validation
-// ============================================================================
+const TWITTER_HOST_RE = /(^|\.)(?:x|twitter)\.com$/iu;
+const STATUS_MEDIA_RE = /\/status\/\d+|\/photo\/\d+|\/video\/\d+/iu;
 
-/** Check if URL is valid media source (Twitter URL or blob) */
 function isValidMediaSource(url: string | null | undefined): boolean {
   if (!url) return false;
   if (url.startsWith('blob:')) return true;
   return isValidMediaUrl(url);
 }
 
-/** Twitter/X host matcher for status/media routes */
-const TWITTER_HOSTNAME_PATTERN = /(^|\.)(?:x|twitter)\.com$/iu;
-
-/** Check if pathname points to tweet status media routes that XEG should handle */
-function isSupportedStatusMediaPath(pathname: string): boolean {
-  return (
-    /\/status\/\d+/iu.test(pathname) ||
-    /\/photo\/\d+/iu.test(pathname) ||
-    /\/video\/\d+/iu.test(pathname)
-  );
-}
-
-/**
- * Determine if anchor href is an internal tweet/status media link.
- * Accepts relative links and absolute links on x.com/twitter.com hosts.
- */
 function isNativeStatusMediaLink(href: string | null | undefined): boolean {
   if (!href) return false;
-
   const parsed = tryParseUrl(href);
-  if (!parsed) return false;
-
-  if (!TWITTER_HOSTNAME_PATTERN.test(parsed.hostname)) {
-    return false;
-  }
-
-  return isSupportedStatusMediaPath(parsed.pathname);
+  if (!parsed || !TWITTER_HOST_RE.test(parsed.hostname)) return false;
+  return STATUS_MEDIA_RE.test(parsed.pathname);
 }
 
-// ============================================================================
-// Block Detection
-// ============================================================================
-
-/**
- * Check if card wrapper contains media card (not link preview card)
- * @param cardWrapper - Card wrapper element
- * @returns true if card contains media that should open in gallery
- */
 function isMediaCard(cardWrapper: HTMLElement): boolean {
-  // Check if card has external navigation link
-  const cardLinks = cardWrapper.querySelectorAll('a[href]');
-  for (const link of cardLinks) {
-    const href = (link as HTMLAnchorElement).getAttribute('href');
-    // If card has non-status/media link, preserve native navigation.
-    if (!isNativeStatusMediaLink(href)) {
-      return false;
-    }
+  for (const link of cardWrapper.querySelectorAll('a[href]')) {
+    if (!isNativeStatusMediaLink((link as HTMLAnchorElement).getAttribute('href'))) return false;
   }
-
-  // Check for card_img pattern (media cards use pbs.twimg.com/card_img)
-  const cardImages = cardWrapper.querySelectorAll('img[src*="pbs.twimg.com/card_img"]');
-  if (cardImages.length > 0) return true;
-
-  // If no external links and has images, likely a media card
+  if (cardWrapper.querySelector('img[src*="pbs.twimg.com/card_img"]')) return true;
   return cardWrapper.querySelector('img, video') !== null;
 }
 
-/**
- * Check if click target should block gallery trigger
- * @param target - Clicked element
- * @returns true if click should be blocked
- */
 function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   if (!target) return false;
-
-  // Video controls should be blocked
   if (isVideoControlElement(target)) return true;
-
-  // Gallery internal elements
   if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
 
-  // Check if inside card wrapper
   const cardWrapper = target.closest('[data-testid="card.wrapper"]');
   if (cardWrapper instanceof HTMLElement) {
-    // Allow media cards, block link preview cards
-    if (isMediaCard(cardWrapper)) {
-      return false;
-    }
-    return true;
+    return !isMediaCard(cardWrapper);
   }
 
-  // Block media triggers inside other contexts that should preserve native navigation
-  // (e.g., X Articles where media clicks open the article)
-  const blockedContextSelector = [
+  const blockedContext = [
     '[data-testid="twitterArticleReadView"]',
     '[data-testid="longformRichTextComponent"]',
     '[data-testid="twitterArticleRichTextView"]',
@@ -153,54 +71,33 @@ function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
     '[data-testid="mask"]',
   ].join(', ');
 
-  if (target.closest(blockedContextSelector)) return true;
+  if (target.closest(blockedContext)) return true;
 
-  // Interactive elements (buttons, links, etc.)
   const interactive = target.closest(INTERACTIVE_SELECTOR);
   if (interactive) {
-    const matchesMediaLinkSelector =
-      interactive instanceof HTMLAnchorElement
-        ? isNativeStatusMediaLink(interactive.getAttribute('href'))
-        : interactive.matches(MEDIA_LINK_SELECTOR);
-
-    // If the user clicked inside an anchor that is not a tweet/status/media link,
-    // do not trigger the gallery. This preserves native navigation for articles,
-    // external link cards, profiles, etc. even when they contain images.
-    if (interactive.tagName === 'A' && !matchesMediaLinkSelector) {
+    if (interactive instanceof HTMLAnchorElement && !isNativeStatusMediaLink(interactive.getAttribute('href'))) {
       return true;
     }
-
-    // Keep existing behavior for non-anchor interactive elements (buttons, role=button, etc.).
-    const matchesMediaContainerSelector = interactive.matches(MEDIA_CONTAINER_SELECTOR);
-    const hasMediaContainerDescendant =
-      interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null;
-
     const isMediaLink =
-      matchesMediaLinkSelector || matchesMediaContainerSelector || hasMediaContainerDescendant;
+      interactive instanceof HTMLAnchorElement
+        ? isNativeStatusMediaLink(interactive.getAttribute('href'))
+        : interactive.matches(MEDIA_LINK_SELECTOR) ||
+          interactive.matches(MEDIA_CONTAINER_SELECTOR) ||
+          interactive.querySelector(MEDIA_CONTAINER_SELECTOR) !== null;
     return !isMediaLink;
   }
 
   return false;
 }
 
-/**
- * Check if element is processable media for gallery trigger
- * @param target - Clicked element
- * @returns true if valid media that should open gallery
- */
 export function isProcessableMedia(target: HTMLElement | null): boolean {
-  if (!target) return false;
-  if (gallerySignals.isOpen) return false;
-  if (shouldBlockMediaTrigger(target)) return false;
+  if (!target || gallerySignals.isOpen || shouldBlockMediaTrigger(target)) return false;
 
   const mediaElement = findMediaElementInDOM(target);
   if (mediaElement) {
-    const mediaUrl = extractMediaUrlFromElement(mediaElement);
-    if (isValidMediaSource(mediaUrl)) {
-      return true;
-    }
+    const url = extractMediaUrlFromElement(mediaElement);
+    if (isValidMediaSource(url)) return true;
   }
 
-  // Inside media containers (images/videos that have not fully loaded yet)
   return !!target.closest(MEDIA_CONTAINER_SELECTOR);
 }
