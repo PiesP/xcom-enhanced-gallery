@@ -104,11 +104,7 @@ export class LanguageService {
 
     this.currentLanguage = normalized;
     this.notifyListeners(normalized);
-    this.persistLanguage(normalized).catch((error) => {
-      if (__DEV__) {
-        logger.warn('Failed to persist language setting on change:', error);
-      }
-    });
+    void this.persistLanguage(normalized);
 
     if (__DEV__) {
       logger.debug(`Language changed to: ${normalized}`);

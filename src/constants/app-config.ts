@@ -1,30 +1,10 @@
 /**
  * @fileoverview Application configuration and runtime metadata.
- * Provides environment detection, version resolution, and feature flags.
  */
 
 type BooleanFlagValue = string | boolean | undefined;
-type EnvSource = Partial<{
-  DEV: BooleanFlagValue;
-  MODE: string;
-  VITE_AUTO_START: string;
-  VITE_ENABLE_DEBUG_TOOLS: string;
-}>;
 
 const APP_NAME = 'X.com Enhanced Gallery';
-
-/**
- * Overridable import.meta.env for test mocking.
- * Tests set this before module import to control environment state.
- */
-declare global {
-  var __XEG_IMPORT_META_ENV__: EnvSource | undefined;
-}
-
-function resolveEnv(): EnvSource {
-  if (globalThis.__XEG_IMPORT_META_ENV__) return globalThis.__XEG_IMPORT_META_ENV__;
-  return (import.meta as ImportMeta).env ?? {};
-}
 
 function parseBooleanFlag(value: BooleanFlagValue): boolean | undefined {
   if (typeof value === 'boolean') return value;
@@ -43,7 +23,7 @@ export interface AppConfig {
   readonly autoStart: boolean;
 }
 
-const env = resolveEnv();
+const env = (import.meta as ImportMeta).env ?? {};
 const version = typeof __VERSION__ !== 'undefined' ? __VERSION__ : '0.0.0';
 const devFlag = parseBooleanFlag(env.DEV);
 const mode = env.MODE ?? 'production';

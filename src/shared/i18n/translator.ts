@@ -46,8 +46,8 @@ export class Translator {
     }
   }
 
-  get languages(): BaseLanguageCode[] {
-    return [...LANGUAGE_CODES];
+  get languages(): readonly BaseLanguageCode[] {
+    return LANGUAGE_CODES;
   }
 
   public translate(
