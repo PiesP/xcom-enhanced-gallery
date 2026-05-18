@@ -13,7 +13,6 @@ import {
   cleanupGalleryEvents,
   initializeGalleryEvents,
 } from '@shared/utils/events/lifecycle/gallery-lifecycle';
-import type { AmbientVideoPauseRequest } from '@shared/utils/media/ambient-video-coordinator';
 import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
 import { startAmbientVideoGuard } from '@shared/utils/media/ambient-video-guard';
 import { clampIndex } from '@shared/utils/types/safety';
@@ -45,7 +44,7 @@ export class GalleryApp {
     initializeGalleryEvents(
       {
         onMediaClick: (element, event) => this.handleMediaClick(element, event),
-        onGalleryClose: () => this.closeGallery(),
+        onGalleryClose: () => this.close(),
       },
       {
         enableKeyboard,
@@ -64,7 +63,6 @@ export class GalleryApp {
 
       if (result.success && result.mediaItems.length > 0) {
         this.openGallery(result.mediaItems, result.clickedIndex, {
-          sourceElement: element,
           reason: 'media-click',
         });
       } else {
@@ -89,17 +87,15 @@ export class GalleryApp {
   openGallery(
     mediaItems: MediaInfo[],
     startIndex = 0,
-    pauseContext?: AmbientVideoPauseRequest
+    pauseContext?: { reason?: string }
   ): void {
     if (mediaItems.length === 0) return;
 
     try {
       const validIndex = clampIndex(startIndex, mediaItems.length);
-      pauseAmbientVideosForGallery(
-        pauseContext
-          ? { ...pauseContext, reason: pauseContext.reason ?? 'media-click' }
-          : { reason: 'programmatic' }
-      );
+      pauseAmbientVideosForGallery({
+        reason: pauseContext?.reason ?? 'media-click',
+      });
       openGallery(mediaItems, validIndex);
     } catch (error) {
       galleryErrorReporter.error(error, {
@@ -114,7 +110,7 @@ export class GalleryApp {
     }
   }
 
-  closeGallery(): void {
+  close(): void {
     if (gallerySignals.isOpen) {
       closeGallery();
     }
@@ -122,7 +118,7 @@ export class GalleryApp {
 
   async cleanup(): Promise<void> {
     if (gallerySignals.isOpen) {
-      this.closeGallery();
+      this.close();
     }
 
     this.ambientVideoGuardDispose?.();
