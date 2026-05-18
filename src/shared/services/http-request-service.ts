@@ -72,12 +72,12 @@ export class HttpRequestService {
       method: method as Exclude<GMXMLHttpRequestDetails['method'], undefined>,
       url,
       timeout: options?.timeout ?? this.defaultTimeout,
-      headers: options?.headers,
+      ...(options?.headers ? { headers: options.headers } : {}),
       responseType: options?.responseType as Exclude<
         GMXMLHttpRequestDetails['responseType'],
         undefined
       >,
-      data: options?.data,
+      ...(options?.data !== undefined ? { data: options.data } : {}),
       onload: (response) => {
         settle(() => {
           deferred.resolve({

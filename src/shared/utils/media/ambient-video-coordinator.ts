@@ -15,6 +15,8 @@ import type {
 } from '@shared/utils/media/twitter-video-pauser';
 import { pauseActiveTwitterVideos } from '@shared/utils/media/twitter-video-pauser';
 
+type QueryableRoot = Document | DocumentFragment | HTMLElement;
+
 type PauseScope = 'document' | 'tweet' | 'custom';
 type Trigger = 'video-click' | 'image-click' | 'programmatic' | 'guard' | 'unknown';
 
@@ -43,9 +45,10 @@ function findTweetContainer(element?: HTMLElement | null): HTMLElement | null {
   });
 }
 
-function resolveContext(
-  request: AmbientVideoPauseRequest
-): { root: PauseAmbientVideosOptions['root']; scope: PauseScope } {
+function resolveContext(request: AmbientVideoPauseRequest): {
+  root: QueryableRoot | null;
+  scope: PauseScope;
+} {
   if (request.root !== undefined) return { root: request.root ?? null, scope: 'custom' };
 
   const tweet = findTweetContainer(request.sourceElement);
@@ -57,13 +60,17 @@ function resolveContext(
 function isVideoTrigger(el?: HTMLElement | null): boolean {
   if (!el) return false;
   if (el.tagName === 'VIDEO') return true;
-  return closestWithFallback(el, VIDEO_CONTAINER_SELECTORS, { debugLabel: 'video-container' }) !== null;
+  return (
+    closestWithFallback(el, VIDEO_CONTAINER_SELECTORS, { debugLabel: 'video-container' }) !== null
+  );
 }
 
 function isImageTrigger(el?: HTMLElement | null): boolean {
   if (!el) return false;
   if (el.tagName === 'IMG') return true;
-  return closestWithFallback(el, IMAGE_CONTAINER_SELECTORS, { debugLabel: 'image-container' }) !== null;
+  return (
+    closestWithFallback(el, IMAGE_CONTAINER_SELECTORS, { debugLabel: 'image-container' }) !== null
+  );
 }
 
 function inferTrigger(el?: HTMLElement | null): Trigger {
@@ -83,7 +90,7 @@ export function pauseAmbientVideosForGallery(
   let result: PauseAmbientVideosResult;
 
   try {
-    result = pauseActiveTwitterVideos({ root, force });
+    result = pauseActiveTwitterVideos({ root: root, force });
   } catch (error) {
     if (__DEV__) {
       logger.warn('[AmbientVideoCoordinator] Failed to pause ambient videos', { error, trigger });
@@ -92,7 +99,13 @@ export function pauseAmbientVideosForGallery(
   }
 
   if ((result.totalCandidates > 0 || result.pausedCount > 0) && __DEV__) {
-    logger.debug('[AmbientVideoCoordinator] Ambient videos paused', { ...result, reason, trigger, forced: force, scope });
+    logger.debug('[AmbientVideoCoordinator] Ambient videos paused', {
+      ...result,
+      reason,
+      trigger,
+      forced: force,
+      scope,
+    });
   }
 
   return { ...result, failed: false, trigger, forced: force, reason, scope };

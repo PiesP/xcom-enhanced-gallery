@@ -51,7 +51,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const isFocused = createMemo(() => local.isFocused ?? false);
   const className = createMemo(() => local.className ?? '');
-  const shouldEagerLoad = createMemo(() => (local.forceVisible ?? false) || (local.isActive ?? false));
+  const shouldEagerLoad = createMemo(
+    () => (local.forceVisible ?? false) || (local.isActive ?? false)
+  );
   const translate = useTranslation();
 
   const isVideo = createMemo(() => local.media.type === 'video' || local.media.type === 'gif');

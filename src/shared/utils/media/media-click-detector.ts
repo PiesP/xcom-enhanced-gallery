@@ -19,12 +19,19 @@ import {
 import { tryParseUrl } from '@shared/utils/url/host';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
-const MEDIA_LINK_SELECTOR = [STATUS_LINK_SELECTOR, 'a[href*="/photo/"]', 'a[href*="/video/"]'].join(', ');
+const MEDIA_LINK_SELECTOR = [STATUS_LINK_SELECTOR, 'a[href*="/photo/"]', 'a[href*="/video/"]'].join(
+  ', '
+);
 const MEDIA_CONTAINER_SELECTOR = MEDIA_CONTAINER_SELECTORS.join(', ');
 const INTERACTIVE_SELECTOR = [
-  'button', 'a', '[role="button"]',
-  '[data-testid="like"]', '[data-testid="retweet"]', '[data-testid="reply"]',
-  '[data-testid="share"]', '[data-testid="bookmark"]',
+  'button',
+  'a',
+  '[role="button"]',
+  '[data-testid="like"]',
+  '[data-testid="retweet"]',
+  '[data-testid="reply"]',
+  '[data-testid="share"]',
+  '[data-testid="bookmark"]',
 ].join(', ');
 
 const TWITTER_HOST_RE = /(^|\.)(?:x|twitter)\.com$/iu;
@@ -75,7 +82,10 @@ function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
 
   const interactive = target.closest(INTERACTIVE_SELECTOR);
   if (interactive) {
-    if (interactive instanceof HTMLAnchorElement && !isNativeStatusMediaLink(interactive.getAttribute('href'))) {
+    if (
+      interactive instanceof HTMLAnchorElement &&
+      !isNativeStatusMediaLink(interactive.getAttribute('href'))
+    ) {
       return true;
     }
     const isMediaLink =

@@ -43,7 +43,11 @@ function createErrorResult(
 function mergeTweetInfo(base?: TweetInfo | null, override?: TweetInfo | null): TweetInfo | null {
   if (!base) return override ?? null;
   if (!override) return base;
-  return { ...base, ...override, metadata: { ...(base.metadata ?? {}), ...(override.metadata ?? {}) } };
+  return {
+    ...base,
+    ...override,
+    metadata: { ...(base.metadata ?? {}), ...(override.metadata ?? {}) },
+  };
 }
 
 function finalizeResult(result: MediaExtractionResult): MediaExtractionResult {

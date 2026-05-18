@@ -57,7 +57,7 @@ function resolveAspectRatio(
 function buildHighQualityUrl(path: string, query: string): string {
   const extMatch = path.match(/\.(jpe?g|png)$/i);
   if (!extMatch) return `${path}?${query}`;
-  const ext = extMatch[1].toLowerCase();
+  const ext = extMatch[1]!.toLowerCase();
   const params = new URLSearchParams(query);
   if (!Array.from(params.keys()).some((k) => k.toLowerCase() === 'format')) {
     params.set('format', ext);
@@ -87,7 +87,7 @@ function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
 
   const pathMatch = parsed.pathname.match(/\.(jpe?g|png)$/i);
   if (!pathMatch) return mediaUrlHttps;
-  const ext = pathMatch[1].toLowerCase();
+  const ext = pathMatch[1]!.toLowerCase();
 
   if (!Array.from(parsed.searchParams.keys()).some((k) => k.toLowerCase() === 'format')) {
     setParamCI('format', ext);
@@ -100,9 +100,7 @@ function getPhotoHighQualityUrl(mediaUrlHttps?: string): string | undefined {
 function getVideoHighQualityUrl(media: TwitterMedia): string | null {
   const mp4s = (media.video_info?.variants ?? []).filter((v) => v.content_type === 'video/mp4');
   if (mp4s.length === 0) return null;
-  return mp4s.reduce((best, cur) =>
-    (cur.bitrate ?? 0) > (best.bitrate ?? 0) ? cur : best
-  ).url;
+  return mp4s.reduce((best, cur) => ((cur.bitrate ?? 0) > (best.bitrate ?? 0) ? cur : best)).url;
 }
 
 export function getHighQualityMediaUrl(media: TwitterMedia): string | null {
@@ -204,7 +202,15 @@ export function extractMediaFromTweet(
       const mediaUrl = getHighQualityMediaUrl(media);
       if (!mediaUrl) continue;
       mediaItems.push(
-        createMediaEntry(media, mediaUrl, screenName, tweetId, normalizedTweetText, i, sourceLocation)
+        createMediaEntry(
+          media,
+          mediaUrl,
+          screenName,
+          tweetId,
+          normalizedTweetText,
+          i,
+          sourceLocation
+        )
       );
     } catch (error) {
       if (__DEV__) logger.debug('[TwitterParser] Skipping media entry', { error });
@@ -215,18 +221,18 @@ export function extractMediaFromTweet(
 }
 
 export function normalizeLegacyTweet(tweet: TwitterTweet): void {
-  const t = tweet as Writable<TwitterTweet>;
+  const t = tweet as any;
   if (t.legacy) {
     t.extended_entities ??= t.legacy.extended_entities;
     t.full_text ??= t.legacy.full_text;
     t.id_str ??= t.legacy.id_str;
   }
-  const noteText = t.note_tweet?.note_tweet_results?.result?.text;
+  const noteText = tweet.note_tweet?.note_tweet_results?.result?.text;
   if (noteText) t.full_text = noteText;
 }
 
 export function normalizeLegacyUser(user: TwitterUser): void {
-  const u = user as Writable<TwitterUser>;
+  const u = user as any;
   if (u.legacy) {
     u.screen_name ??= u.legacy.screen_name;
     u.name ??= u.legacy.name;

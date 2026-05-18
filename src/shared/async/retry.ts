@@ -13,12 +13,9 @@ export interface RetryOptions {
   readonly shouldRetry?: (error: unknown) => boolean;
 }
 
-export interface RetryResult<T> {
-  readonly success: boolean;
-  readonly data?: T;
-  readonly error?: unknown;
-  readonly attempts: number;
-}
+export type RetryResult<T> =
+  | { readonly success: true; readonly data: T; readonly attempts: number }
+  | { readonly success: false; readonly error: unknown; readonly attempts: number };
 
 const DEFAULTS = {
   maxAttempts: 3,
@@ -27,7 +24,7 @@ const DEFAULTS = {
 } as const;
 
 function calcBackoff(attempt: number, base: number, max: number): number {
-  const exp = base * (2 ** attempt);
+  const exp = base * 2 ** attempt;
   const jitter = Math.random() * 0.25 * exp;
   return Math.min(Math.floor(exp + jitter), max);
 }

@@ -203,10 +203,7 @@ export function navigatePrevious(trigger: NavigationSource = 'click'): void {
   galleryIndexEvents.emit('navigate:complete', { index: prev, trigger });
 }
 
-export function navigateToItem(
-  targetIndex: number,
-  source: NavigationSource
-): void {
+export function navigateToItem(targetIndex: number, source: NavigationSource): void {
   const items = mediaItemsSig();
   const clampedIndex = clampIndex(targetIndex, items.length);
   const current = currentIndexSig();
