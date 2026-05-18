@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name X.com Enhanced Gallery
 // @namespace https://github.com/PiesP/xcom-enhanced-gallery
-// @version 2.0.0
+// @version 2.1.1
 // @description Media viewer and download functionality for X.com
 // @author PiesP
 // @license MIT
@@ -31,7 +31,7 @@
 // @compatible safari 17+
 // @noframes
 // ==/UserScript==
-(function(){if(typeof document==='undefined')return;var css="@layer xeg.components{:root{--xtt:opacity var(--xdt) var(--xe-s), transform var(--xdt) var(--xe-s), visibility 0s;--xeg-spacing-gallery:clamp(var(--xs-s), 2.5vw, var(--xs-l));--xeg-spacing-mobile:clamp(var(--xs-xs), 2vw, var(--xs-m));--xeg-spacing-compact:clamp(.25rem, 1.5vw, var(--xs-s));--xth-o:0;--xth-v:hidden;--xth-pe:none}.xeg-surface{background:var(--xsu-b);border:.0625rem solid var(--xsu-br);border-radius:var(--xr-l)}.xeg-spinner{width:var(--xsp-s,var(--xsp-sd));height:var(--xsp-s,var(--xsp-sd));border-radius:var(--xr-f);border:var(--xsp-bw) solid var(--xsp-tc);border-top-color:var(--xsp-ic);animation:xeg-spin var(--xsp-d) var(--xsp-e) infinite;box-sizing:border-box;display:inline-block}@media (prefers-reduced-motion:reduce){.xeg-spinner{animation:none}}@keyframes xeg-fade-in{0%{opacity:0}to{opacity:1}}@keyframes xeg-fade-out{0%{opacity:1}to{opacity:0}}@keyframes xeg-spin{0%{transform:rotate(0)}to{transform:rotate(360deg)}}}@media (prefers-reduced-motion:reduce){@layer xeg.components{:root{--xtt:none}.xg-X9gZ{scroll-behavior:auto;transition:none}.xg-meO3{transition:none}}}.xg-X9gZ{width:100vw;height:100vh;z-index:var(--xz-g,10000);background:var(--xg-b);transform:var(--xgh);will-change:opacity, transform;contain:layout style paint;opacity:1;visibility:visible;transition:var(--xten);cursor:default;pointer-events:auto;scroll-behavior:smooth;overscroll-behavior:none;flex-direction:column;display:flex;position:fixed;top:0;left:0;container:gallery-container\u002Fsize}.xg-meO3{height:auto;z-index:var(--xz-t,2147480000);opacity:var(--toolbar-opacity,0);visibility:var(--toolbar-visibility,hidden);transition:var(--xtt);will-change:transform, opacity, visibility;contain:layout style;transform:var(--xgh);backface-visibility:var(--xbv);pointer-events:var(--toolbar-pointer-events,none);background:0 0;border:none;border-radius:0;margin:0;padding-block-end:var(--xeg-spacing-gallery);display:block;position:fixed;top:0;left:0;right:0}.xg-meO3:is(:hover,:focus-within){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto;--toolbar-transform-y:0}.xg-meO3:focus-within{transition:var(--xtef)}.xg-meO3 *{pointer-events:inherit}.xg-meO3 [data-gallery-element=settings-panel][data-expanded=true]{pointer-events:auto}.xg-meO3:has([data-gallery-element=settings-panel][data-expanded=true]){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto}.xg-X9gZ.xg-9abg{cursor:none}.xg-X9gZ.xg-sOsS[data-xeg-gallery=true][data-xeg-role=gallery] .xg-meO3{--toolbar-opacity:var(--xth-o,0);--toolbar-visibility:var(--xth-v,hidden);--toolbar-pointer-events:var(--xth-pe,none)}.xg-X9gZ *{pointer-events:auto}.xg-gmRW{z-index:0;contain:layout style;transform:var(--xgh);overscroll-behavior:contain;scrollbar-gutter:stable;pointer-events:auto;flex-direction:column;flex:1;display:flex;position:relative;overflow:auto;container:items-list\u002Fsize}.xg-gmRW::-webkit-scrollbar{width:var(--xsw)}.xg-gmRW::-webkit-scrollbar-track{background:0 0}.xg-gmRW::-webkit-scrollbar-thumb{background:var(--xeg-scrollbar-thumb-color,var(--xcn3));border-radius:var(--xsbr);transition:background-color var(--xdn) var(--xe-s)}.xg-gmRW::-webkit-scrollbar-thumb:hover{background:var(--xeg-scrollbar-thumb-hover-color,var(--xcn4))}.xg-X9gZ.xg-9abg .xg-meO3{pointer-events:none;opacity:0;transition:opacity var(--xdf) var(--xe-s)}.xg-X9gZ.xg-9abg [data-xeg-role=items-container],.xg-X9gZ.xg-9abg .xg-gmRW{pointer-events:auto}.xg-X9gZ.xg-yhK-{justify-content:center;align-items:center}.xg-EfVa{margin-bottom:var(--xs-m,1rem);border-radius:var(--xr-l,.5rem);transition:var(--xten);contain:layout style;transform:var(--xgh);position:relative}.xg-LxHL{z-index:1;position:relative}.xg-sfF0{height:calc(100vh - var(--xeg-toolbar-height,3.75rem));pointer-events:none;user-select:none;opacity:0;contain:strict;content-visibility:auto;background:0 0;flex-shrink:0;min-height:50vh}.xg-gC-m{height:var(--xhzh);z-index:var(--xz-th,2147480000);pointer-events:auto;background:0 0;position:fixed;top:0;left:0;right:0}.xg-X9gZ.xg-Canm:not([data-settings-expanded=true]) .xg-gC-m,.xg-X9gZ:has(.xg-meO3:hover):not([data-settings-expanded=true]) .xg-gC-m{pointer-events:none}.xg-X9gZ.xg-Canm .xg-meO3,.xg-X9gZ:has(.xg-gC-m:hover) .xg-meO3{--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto;--toolbar-transform-y:0}.xg-meO3 [class*=galleryToolbar]{opacity:var(--toolbar-opacity,0);visibility:var(--toolbar-visibility,hidden);pointer-events:var(--toolbar-pointer-events,none);display:flex}.xg-meO3 button,.xg-meO3 [role=button],.xg-meO3 .xg-e06X{pointer-events:auto;z-index:10;position:relative}.xg-fwsr{text-align:center;color:var(--xct-s);max-inline-size:min(25rem,90vw);padding:clamp(1.875rem,5vw,2.5rem)}.xg-fwsr h3{font-size:clamp(1.25rem,4vw,1.5rem);font-weight:var(--xfw-s);color:var(--xct-p);line-height:var(--xeg-line-height-tight);margin:0 0 clamp(.75rem,2vw,1rem)}.xg-fwsr p{font-size:clamp(.875rem,2.5vw,1rem);line-height:var(--xlh);color:var(--xct-t);margin:0}@container gallery-container (width\u003C=48rem){.xg-gmRW{padding:var(--xeg-spacing-mobile);gap:var(--xeg-spacing-mobile)}.xg-meO3{padding-block-end:var(--xeg-spacing-mobile)}}@container gallery-container (width\u003C=30rem){.xg-gmRW{padding:var(--xeg-spacing-compact);gap:var(--xeg-spacing-compact)}}@media (prefers-reduced-motion:reduce){.xg-gmRW{scroll-behavior:auto;will-change:auto;transform:none}.xg-meO3:hover,.xg-meO3:focus-within{transform:none}}.xg-X9gZ [class*=galleryToolbar]:hover{--toolbar-opacity:1;--toolbar-pointer-events:auto}.xg-huYo{margin-bottom:var(--xs-m);border-radius:var(--xr-l);transition:var(--xti);cursor:pointer;border:.0625rem solid var(--xcb-p);background:var(--xcbg-s);padding:var(--xs-s);text-align:center;pointer-events:auto;width:fit-content;max-width:100%;transform:var(--xgh);will-change:transform;contain:layout style;flex-direction:column;align-items:center;margin-inline:auto;display:flex;position:relative;overflow:visible}.xg-huYo[data-fit-mode=original]{flex-shrink:0;align-self:center;width:max-content;max-width:none}.xg-huYo:hover{transform:var(--xhl);background:var(--xc-se);border-color:var(--xbe)}.xg-huYo:focus-visible{border-color:var(--xfic,var(--xcb-p))}.xg-huYo.xg-xm-1{border-color:var(--xbe,var(--xcb-s));transition:var(--xti)}.xg-huYo.xg-xm-1:focus-visible{border-color:var(--xfic,var(--xcb-s))}.xg-huYo.xg-luqi{border-color:var(--xfic,var(--xcb-p));transition:var(--xti)}.xg-8-c8{background:var(--xcbg-s);contain:layout paint;justify-content:center;align-items:center;width:fit-content;max-width:100%;margin:0 auto;display:flex;position:relative}.xg-huYo[data-fit-mode=original] .xg-8-c8{width:auto;max-width:none}.xg-huYo[data-media-loaded=false] .xg-8-c8{min-height:var(--xs-3);aspect-ratio:var(--xgi-r,var(--xad))}.xg-lhkE{background:var(--xsk-b);min-height:var(--xs-3);justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.xg-6YYD{--xsp-s:var(--xs-l);--xsp-bw:.125rem;--xsp-tc:var(--xcb-p);--xsp-ic:var(--xc-p)}.xg-FWlk,.xg-GUev{border-radius:var(--xr-m);object-fit:contain;pointer-events:auto;user-select:none;-webkit-user-drag:none;transform:var(--xgh);will-change:opacity;transition:opacity var(--xdn) var(--xe-s);display:block}:is(.xg-FWlk,.xg-GUev).xg-8Z3S{opacity:0}:is(.xg-FWlk,.xg-GUev).xg-y9iP{opacity:1}.xg-GUev{inline-size:100%;overflow:clip}:is(.xg-FWlk,.xg-GUev).xg-yYtG{object-fit:none;block-size:auto;max-block-size:none;inline-size:auto;max-inline-size:none}:is(.xg-FWlk,.xg-GUev).xg-Uc0o{object-fit:scale-down;block-size:auto;max-block-size:none;inline-size:auto;max-inline-size:100%}:is(.xg-FWlk,.xg-GUev).xg-M9Z6{block-size:auto;inline-size:auto;max-inline-size:calc(100vw - var(--xs-l) * 2);max-block-size:var(--xvhc);object-fit:scale-down}:is(.xg-FWlk,.xg-GUev).xg--Mlr{block-size:auto;inline-size:auto;max-inline-size:100%;max-block-size:var(--xvhc);object-fit:contain}.xg-Wno7{font-size:var(--xfs-2);margin-bottom:var(--xs-s)}.xg-8-wi{font-size:var(--xfs-s);text-align:center}.xg-Gswe{background:var(--xc-e-bg);color:var(--xc-e);min-height:var(--xs-3);flex-direction:column;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.xg-huYo[data-media-loaded=false][data-fit-mode=original],.xg-huYo[data-media-loaded=false][data-fit-mode=original] .xg-FWlk,.xg-huYo[data-media-loaded=false][data-fit-mode=original] .xg-GUev{inline-size:min(var(--xgi-w,100%), 100%);max-inline-size:min(var(--xgi-w,100%), 100%);max-block-size:min(var(--xgi-h,var(--xs-5)), var(--xvhc))}.xg-huYo[data-media-loaded=false][data-has-intrinsic-size=true][data-fit-mode=fitHeight],.xg-huYo[data-media-loaded=false][data-has-intrinsic-size=true][data-fit-mode=fitContainer]{--xgf-ht:min(var(--xgi-h,var(--xs-5)), var(--xvhc));max-block-size:var(--xgf-ht);inline-size:min(100%, calc(var(--xgf-ht) * var(--xgi-r,1)));max-inline-size:min(100%, calc(var(--xgf-ht) * var(--xgi-r,1)))}.xg-huYo[data-media-loaded=false][data-has-intrinsic-size=true]:is([data-fit-mode=fitHeight],[data-fit-mode=fitContainer]) :is(.xg-FWlk,.xg-GUev){max-block-size:var(--xgf-ht);max-inline-size:min(100%, calc(var(--xgf-ht) * var(--xgi-r,1)))}@media (prefers-reduced-motion:reduce){.xg-huYo{will-change:auto;transition:none}.xg-huYo:hover{transform:none}:where(.xg-FWlk,.xg-GUev){will-change:auto;transition:none}}.xg-EeSh{gap:var(--xse-g);padding:var(--xse-p);flex-direction:column;display:flex}.xg-nm9B{gap:var(--sps)}.xg-PI5C{gap:var(--xse-cg);flex-direction:column;display:flex}.xg-VUTt{gap:var(--spx)}.xg-vhT3{font-size:var(--xse-lf);font-weight:var(--xse-lw);color:var(--xct-p)}.xg-Y62M{font-size:var(--fsx);color:var(--xct-s);letter-spacing:var(--xeg-letter-spacing-wide);text-transform:uppercase}.xg-jpiS{width:100%;padding:var(--xse-sp);font-size:var(--xse-sf);color:var(--xct-p);background-color:var(--xte-b);border:var(--bwt) solid var(--xt-b);border-radius:var(--xr-m);cursor:pointer;line-height:var(--xeg-line-height-snug);min-height:2.75em;transition:border-color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s), box-shadow var(--xdf) var(--xe-s);overflow:visible;transform:none}.xg-jpiS:hover{border-color:var(--xcb-h);background-color:var(--xte-bs);box-shadow:0 0 0 2px color-mix(in oklch, var(--xt-b) 20%, transparent 80%)}.xg-jpiS:focus,.xg-jpiS:focus-visible{border-color:var(--xfic);box-shadow:0 0 0 3px color-mix(in oklch, var(--xfic) 25%, transparent 75%)}.xg-jpiS option{line-height:var(--xlh);padding:.5em .75em}.xg-4eoj{color:var(--xtt-c,var(--xct-p));cursor:pointer;font-size:.875em;font-weight:var(--xfw-m);width:var(--xsb-m);height:var(--xsb-m);min-width:var(--xsb-m);min-height:var(--xsb-m);aspect-ratio:1;border-radius:var(--xr-m);transition:var(--xts), transform var(--xdf) var(--xe-s);background:0 0;border:none;padding:.5em;position:relative;overflow:clip}.xg-4eoj:focus,.xg-4eoj:focus-visible{background:var(--xte-b,var(--xcn1))}.xg-fLg7{--toolbar-surface-base:var(--xtp-s,var(--xt-s,var(--xcbg-p,Canvas)));--toolbar-surface-border:var(--xt-b);--xb-do:1;background:var(--toolbar-surface-base);border-radius:var(--xr-l);z-index:var(--xz-t,2147480000);display:var(--toolbar-display,inline-flex);height:3em;color:var(--xtt-c,var(--xct-p));visibility:var(--toolbar-visibility,visible);opacity:var(--toolbar-opacity,1);pointer-events:var(--toolbar-pointer-events,auto);transition:var(--xten);user-select:none;overscroll-behavior:contain;border:none;justify-content:space-between;align-items:center;gap:0;padding:.5em 1em;position:fixed;top:1.25em;left:50%;transform:translate(-50%)}.xg-fLg7.xg-ZpP8,.xg-fLg7.xg-t4eq{border-radius:var(--xr-l) var(--xr-l) 0 0}.xg-fLg7.xg-ojCW,.xg-fLg7.xg-Y6KF,.xg-fLg7.xg-n-ab,.xg-fLg7.xg-bEzl{--toolbar-opacity:1;--toolbar-pointer-events:auto;--toolbar-visibility:visible;--toolbar-display:inline-flex}.xg-f8g4{justify-content:center;align-items:center;width:100%;max-width:100%;display:flex;overflow:hidden}.xg-Ix3j{justify-content:center;align-items:center;gap:var(--xs-xs);flex-wrap:wrap;width:100%;display:flex}.xg-Ix3j\u003E*{flex:none}.xg-0EHq{padding-inline:var(--xs-s);justify-content:center;align-items:center;min-width:5em;display:flex}.xg-FKnO{color:var(--xtt-m,var(--xct-p));margin:0 .125em}:where(.xg-4eoj[aria-pressed=true]){background:var(--xte-bs,var(--xcn2))}.xg-4eoj:disabled{--button-opacity:.5;color:var(--xtt-m,var(--xcn4));cursor:not-allowed}@media (hover:hover){.xg-4eoj:hover:not(:disabled){background:var(--xte-b,var(--xcn1));transform:translateY(var(--xb-l))}}.xg-4eoj:active:not(:disabled){background:var(--xte-bs,var(--xcn2));transform:translateY(0)}.xg-atmJ{position:relative}.xg-GG86{box-sizing:border-box;gap:0;min-width:5em;min-height:2.5em;padding-bottom:.5em;position:relative}.xg-2cjm{color:var(--xtt-c,var(--xct-p));font-size:var(--xfs-m);font-weight:var(--xfw-s);text-align:center;white-space:nowrap;border-radius:var(--xr-m);background:0 0;border:none;padding:.25em .5em;line-height:1}.xg-JEXm{color:var(--xtt-c,var(--xct-p));font-weight:var(--xeg-font-weight-bold)}.xg-d1et{color:var(--xtt-c,var(--xct-p))}.xg-vB6N{background:var(--xtp-pt,var(--xcn2));border-radius:var(--xr-s);width:3.75em;height:.125em;position:absolute;bottom:.125em;left:50%;overflow:clip;transform:translate(-50%)}.xg-LWQw{background:var(--xtt-c,var(--xct-p));border-radius:var(--xr-s);width:100%;height:100%;transition:var(--xtwn);transform-origin:0}.xg-Q7dU,button.xg-Q7dU{transition:var(--xti);z-index:10;pointer-events:auto;position:relative}.xg-Q7dU[data-selected=true]{--toolbar-button-accent-hover:var(--xc-p);--toolbar-button-focus-border:var(--xc-ph)}.xg-Q7dU:focus,.xg-Q7dU:focus-visible{border:none}@media (prefers-reduced-transparency:reduce){.xg-fLg7,[data-theme=dark] .xg-fLg7{background:var(--xtp-s,var(--xt-s))}}@media (prefers-reduced-motion:reduce){.xg-4eoj:hover:not(:disabled),.xg-atmJ:hover:not(:disabled),.xg-Vn14:hover:not(:disabled),.xg-Q7dU:hover{transform:none}}:where(.xg-JcF-,.xg-yRtv){gap:var(--xs-m);width:100%;padding:var(--xs-l);max-height:var(--xtp-mh);opacity:0;visibility:hidden;pointer-events:none;transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s var(--xdn);background:var(--toolbar-surface-base,var(--xtp-s,var(--xt-s)));border-top:var(--bwt) solid var(--toolbar-surface-border,var(--xt-b));border-radius:0 0 var(--xr-l) var(--xr-l);z-index:var(--xz-tp);will-change:transform, opacity;overscroll-behavior:contain;flex-direction:column;display:flex;position:absolute;top:100%;left:0;right:0;overflow:hidden;transform:translateY(-.5em)}.xg-JcF-{height:var(--xtp-h)}.xg-yRtv{min-height:var(--xtp-h)}:where(.xg-JcF-,.xg-yRtv).xg-4a2L{opacity:1;visibility:visible;pointer-events:auto;border-top-color:var(--toolbar-surface-border,var(--xt-b));height:auto;transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s 0s;z-index:var(--xz-ta);transform:translateY(0)}.xg-w56C{gap:var(--xs-s);flex-direction:column;display:flex}.xg-rSWg{padding-bottom:var(--xs-xs);border-bottom:var(--bwt) solid var(--toolbar-surface-border);margin-bottom:var(--xs-s);align-items:center;display:flex}.xg-jd-V{font-size:var(--xfs-s);font-weight:var(--xfw-s);color:var(--xtt-c);text-transform:uppercase;letter-spacing:var(--xeg-letter-spacing-wide)}.xg-jmjG{padding:var(--xs-s) var(--xs-m);font-size:var(--xfs-b);line-height:var(--xeg-line-height-snug);color:var(--xtt-c,var(--xct-p));background:var(--toolbar-surface-base,var(--xtp-s,var(--xt-s)));border:var(--bwt) solid var(--toolbar-surface-border,var(--xt-b));border-radius:var(--xr-m);white-space:pre-wrap;word-wrap:break-word;overscroll-behavior:contain;max-height:18em;transition:var(--xts);-webkit-user-select:text;user-select:text;cursor:text;overflow-y:auto}.xg-jmjG::-webkit-scrollbar{width:.5em}.xg-jmjG::-webkit-scrollbar-track{background:var(--xts-t,var(--xcn2));border-radius:var(--xr-s)}.xg-jmjG::-webkit-scrollbar-thumb{background:var(--xts-th,var(--xcn4));border-radius:var(--xr-s)}.xg-jmjG::-webkit-scrollbar-thumb:hover{background:var(--xte-bs,var(--xcn5))}.xg-jmjG a{color:var(--xc-p);font-weight:var(--xfw-m);border-radius:var(--xr-xs);overflow-wrap:break-word;transition:color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s);cursor:pointer;margin:-.125em -.25em;padding:.125em .25em;text-decoration:none}.xg-jmjG a:hover{color:var(--xc-ph);background:var(--xte-b);text-underline-offset:.125em;text-decoration:underline .0625rem}.xg-jmjG a:focus,.xg-jmjG a:focus-visible{background:var(--xte-bs,var(--xcn2));color:var(--xc-ph);border-radius:var(--xr-xs)}.xg-jmjG a:active{color:var(--xc-p-active)}.xg-0Eeq{align-items:center;gap:var(--xs-xs);padding:var(--xs-s);margin-bottom:var(--xs-s);background:var(--xte-bs);border:var(--bwt) solid var(--toolbar-surface-border,var(--xt-b));border-radius:var(--xr-s);transition:var(--xts);display:flex}.xg-0Eeq:hover{background:color-mix(in oklch, var(--xte-bs) 85%, var(--xc-p) 15%);border-color:var(--xcb-h)}.xg-AVKe{width:100%;color:var(--xc-p);font-size:var(--xfs-s);font-weight:var(--xfw-m);transition:color var(--xdf) var(--xe-s);align-items:center;gap:.375em;text-decoration:none;display:flex}.xg-AVKe:hover{color:var(--xc-ph)}.xg-AVKe:focus,.xg-AVKe:focus-visible{outline:.125rem solid var(--xfic);outline-offset:.125rem;border-radius:var(--xr-xs)}.xg-5RjR{stroke:currentColor;flex-shrink:0;width:.875em;height:.875em}.xg-8Stf{color:var(--xtt-m,var(--xct-s));font-weight:var(--xfw-s);flex-shrink:0}.xg-3pwZ{color:var(--xc-p);text-overflow:ellipsis;white-space:nowrap;flex:1;overflow:hidden}.xg-sltl{width:100%;height:var(--bwt);background:color-mix(in oklch, var(--toolbar-surface-border) 60%, transparent 40%);margin:var(--xs-m) 0;border-radius:var(--xr-s)}@layer xeg.features{.xeg-gallery-renderer[data-renderer=gallery]{width:0;height:0;display:block;overflow:visible}.xeg-gallery-overlay{z-index:var(--xz-g,10000);background:var(--xg-b);opacity:1;transition:opacity var(--xdn) var(--xe-s);pointer-events:auto;justify-content:center;align-items:center;display:flex;position:fixed;inset:0}.xeg-gallery-container{overscroll-behavior:contain;scrollbar-gutter:stable both-edges;flex-direction:column;width:100%;max-width:100vw;height:100%;max-height:100vh;display:flex;position:relative;overflow:hidden auto}}@layer xeg.tokens{:where(:root,.xeg-theme-scope){--cbw:oklch(100% 0 0);--cbb:oklch(0% 0 0);--cg0:oklch(97% .002 206.2);--cg1:oklch(94.3% .006 206.2);--cg2:oklch(89.6% .006 206.2);--cg3:oklch(79.6% .006 206.2);--cg4:oklch(69.6% .006 286.3);--cg5:oklch(59.8% .006 286.3);--cg6:oklch(48.8% .006 286.3);--cg7:oklch(37.8% .005 286.3);--cg8:oklch(30.6% .005 282);--cg9:oklch(23.4% .006 277.8);--space-none:0;--spx:.25rem;--sps:.5rem;--spm:1rem;--spl:1.5rem;--spxl:2rem;--sp2:3rem;--space-3xl:4rem;--space-4xl:5rem;--rx:.125em;--rs:.25em;--rm:.375em;--rl:.5em;--r2:1em;--rf:50%;--ffp:\"TwitterChirp\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;--fsx:.75rem;--fss:.875rem;--fsb:.9375rem;--fsm:1rem;--fsl:1.125rem;--fsxl:1.25rem;--fs2:1.5rem;--fwn:400;--fwm:500;--fws:600;--fwb:700;--duration-instant:.1s;--df:.15s;--dn:.25s;--ds:.3s;--dser:.4s;--bwt:.0625rem;--line-height-tight:1.25;--line-height-snug:1.375;--lhn:1.5;--line-height-relaxed:1.75;--xcbg-p:var(--cbw);--xcbg-s:var(--cg0);--xeg-color-bg-surface:var(--cbw);--xeg-color-bg-elevated:var(--cbw);--xbgt:var(--xeg-color-bg-surface);--xt-b:var(--xcb-p);--xt-s:var(--xbgt);--xtp-s:var(--xt-s);--xg-bl:var(--xcbg-p);--xg-bd:var(--cg9);--xg-b:var(--xg-bl);--xc-bg:var(--cg0);--xad:4 \u002F 3;--xct-p:var(--cbb);--xct-s:var(--cg6);--xeg-color-border-default:var(--cg2);--xeg-color-border-emphasis:var(--cg5);--xcb-p:var(--xeg-color-border-default);--xcb-h:var(--cg3);--xcb-s:var(--xeg-color-border-emphasis);--xtt-c:var(--xct-p);--xtt-m:var(--xct-s);--xte-b:color-mix(in oklch, var(--xbgt) 80%, var(--cbw) 20%);--xte-bs:color-mix(in oklch, var(--xbgt) 65%, var(--cbw) 35%);--xte-br:color-mix(in oklch, var(--xt-b) 85%, var(--cbw) 15%);--xtp-pt:color-mix(in oklch, var(--xte-b) 60%, var(--xte-br) 40%);--xts-t:color-mix(in oklch, var(--xte-b) 50%, var(--cbw) 50%);--xts-th:color-mix(in oklch, var(--xte-br) 80%, var(--cbw) 20%);--xc-s:oklch(55% .18 145);--xc-sh:oklch(48% .18 145);--xc-s-bg:oklch(90% .08 145);--xc-e:oklch(50% .22 25);--xc-eh:oklch(43% .22 25);--xc-e-bg:oklch(90% .08 25);--xeg-color-info-bg:var(--cg0);--xc-p:var(--cg9);--xc-ph:var(--cg7);--xc-p-active:var(--cg8);--xcn1:var(--cg1);--xcn2:var(--cg2);--xcn3:var(--cg3);--xcn4:var(--cg4);--xcn5:var(--cg5);--xct-t:var(--cg5);--xct-i:var(--cbw);--xsb-s:2rem;--xsb-m:2.5em;--xsb-l:3rem;--xfic:var(--xcb-p);--xfs-s:var(--fss);--xfs-b:var(--fsb);--xfs-m:var(--fsm);--xfs-l:var(--fsl);--xeg-font-size-xl:var(--fsxl);--xfs-2:var(--fs2);--xff-u:-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;--xeg-font-weight-normal:var(--fwn);--xfw-m:var(--fwm);--xfw-s:var(--fws);--xeg-font-weight-bold:var(--fwb);--xeg-line-height-tight:var(--line-height-tight);--xeg-line-height-snug:var(--line-height-snug);--xeg-line-height-relaxed:var(--line-height-relaxed);--xeg-letter-spacing-wide:.04em;--xdf:var(--df);--xdn:var(--dn);--xdt:var(--dn);--xsu-b:var(--xeg-color-bg-surface);--xsu-br:var(--xeg-color-border-default);--xsu-bh:var(--xcbg-s);--xc-se:var(--xeg-color-bg-elevated);--xsk-b:var(--xcbg-s);--xbe:var(--xeg-color-border-emphasis);--xz-g:2147480000;--xz-th:2147480000;--xz-t:2147480000;--xz-tp:2147480000;--xz-ta:2147480000;--xe-s:cubic-bezier(.4, 0, .2, 1);--xe-d:cubic-bezier(0, 0, .2, 1);--xe-a:cubic-bezier(.4, 0, 1, 1);--xel:linear;--xlh:var(--lhn);--xb-l:-.0625rem;--xo-d:.5;--xhl:translateY(-.125rem);--xeg-spacing-none:var(--space-none);--xs-xl:var(--spxl);--xs-5:var(--sp2);--xr-s:var(--rs);--xr-m:var(--rm);--xr-l:var(--rl);--xr-2:var(--r2);--xr-f:var(--rf);--xeg-scrollbar-thumb-color:var(--cg4);--xeg-scrollbar-thumb-hover-color:var(--cg5);--xeg-scrollbar-track-color:var(--cg2)}:where(:root,.xeg-theme-scope)[data-theme=dark]{--xcbg-p:var(--cg9);--xeg-color-bg-surface:var(--cg9);--xeg-color-bg-elevated:var(--cg7);--xct-p:var(--cbw);--xct-s:var(--cg4);--xbgt:var(--cg8);--xcb-p:var(--cg6);--xt-b:var(--cg6);--xcbg-s:var(--cg8);--xg-b:var(--xg-bd);--xtt-c:var(--xct-p);--xtt-m:var(--cg3);--xte-b:color-mix(in oklch, var(--xbgt) 85%, var(--cbb) 15%);--xte-bs:color-mix(in oklch, var(--xbgt) 70%, var(--cbb) 30%);--xte-br:color-mix(in oklch, var(--xt-b) 75%, var(--cbb) 25%);--xtp-pt:color-mix(in oklch, var(--xt-b) 65%, var(--xbgt) 35%);--xts-t:color-mix(in oklch, var(--xte-b) 80%, var(--cbb) 20%);--xts-th:color-mix(in oklch, var(--xte-br) 85%, var(--cbb) 15%);--xc-bg:var(--cg9);--xc-p:var(--cg1);--xc-ph:var(--cg2);--xc-p-active:var(--cg3);--xsu-b:var(--cg9);--xsu-br:var(--cg6);--xsu-bh:var(--cg8)}@media (prefers-reduced-motion:reduce){:where(:root,.xeg-theme-scope){--xdf:0s;--xts:none;--xten:none;--xtef:none;--xti:none;--xtwn:none}}:where(:root,.xeg-theme-scope){--xse-g:var(--spm);--xse-p:var(--spm);--xse-cg:var(--sps);--xse-lf:var(--fss);--xse-lw:var(--fwb);--xse-sf:var(--fss);--xse-sp:var(--sps) var(--spm);--xtp-t:height var(--xdn) var(--xe-s), opacity var(--xdf) var(--xe-s);--xtp-h:0;--xtp-mh:17.5rem;--xsw:.5rem;--xsbr:0;--xhzh:7.5rem;--xsp-sd:1rem;--xsp-bw:.125rem;--xsp-tc:color-mix(in oklch, var(--xcn4) 60%, transparent);--xsp-ic:var(--xc-p,currentColor);--xsp-d:var(--xdn);--xsp-e:var(--xel);--xts:background-color var(--xdf) var(--xe-s), border-color var(--xdf) var(--xe-s), color var(--xdf) var(--xe-s);--xten:transform var(--xdn) var(--xe-s), opacity var(--xdn) var(--xe-s);--xtef:transform var(--xdf) var(--xe-s), opacity var(--xdf) var(--xe-s);--xti:background-color var(--xdf) var(--xe-s), border-color var(--xdf) var(--xe-s), color var(--xdf) var(--xe-s), transform var(--xdf) var(--xe-s);--xtwn:width var(--xdn) var(--xe-s);--xisw:.125rem;--xis:1.25em;--xs-xs:var(--spx);--xs-s:var(--sps);--xs-m:var(--spm);--xs-l:var(--spl);--xgh:translateZ(0);--xbv:hidden;--xvhc:90vh}@media (prefers-reduced-transparency:reduce){:where(:root,.xeg-theme-scope){--xsu-b:var(--xcbg-p)}}}@layer xeg.base{:where(.xeg-gallery-root,.xeg-gallery-root *),:where(){box-sizing:border-box;margin:0;padding:0}.xeg-gallery-root button{cursor:pointer;font:inherit;color:inherit;background:0 0;border:none}.xeg-gallery-root a{color:inherit;text-decoration:none}.xeg-gallery-root img{max-width:100%;height:auto;display:block}.xeg-gallery-root ul,.xeg-gallery-root ol{list-style:none}.xeg-gallery-root input,.xeg-gallery-root textarea,.xeg-gallery-root select{font:inherit;color:inherit;background:0 0}.xeg-gallery-root ::-webkit-scrollbar{width:var(--xsw,.5rem);height:var(--xsw,.5rem)}.xeg-gallery-root ::-webkit-scrollbar-track{background:0 0}.xeg-gallery-root ::-webkit-scrollbar-thumb{background:var(--xeg-scrollbar-thumb-color);border-radius:var(--xr-s,.25rem)}.xeg-gallery-root ::-webkit-scrollbar-thumb:hover{background:var(--xeg-scrollbar-thumb-hover-color)}.xeg-gallery-root{all:initial;--xeg-inherited:inherit;box-sizing:border-box;scroll-behavior:smooth;font-family:var(--ffp);font-size:var(--fsb,.9375rem);line-height:var(--xlh,1.5);color:var(--xct-p,currentColor);width:100vw;height:100vh;z-index:var(--xz-g,10000);isolation:isolate;contain:style paint;overscroll-behavior:contain;background:var(--xg-b,var(--xcbg-p,Canvas));pointer-events:auto;user-select:none;will-change:opacity, transform;-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;display:block;position:fixed;inset:0;transform:translateZ(0)}}@layer xeg.utilities{.xeg-row-center{align-items:center;display:flex}.xeg-inline-center{justify-content:center;align-items:center;display:inline-flex}.xeg-gap-sm{gap:var(--xs-s)}.xeg-fade-in{animation:xeg-fade-in var(--xdn) var(--xe-d);animation-fill-mode:both}.xeg-fade-out{animation:xeg-fade-out var(--xdf) var(--xe-a);animation-fill-mode:both}@media (prefers-reduced-motion:reduce){.xeg-fade-in,.xeg-fade-out{animation:none}}}@layer xeg.overrides;";var s=document.getElementById("xeg-injected-styles");if(!s){s=document.createElement('style');s.id="xeg-injected-styles";(document.head||document.documentElement).appendChild(s);}s.textContent=css;})();
+(function(){if(typeof document==='undefined')return;var css="@layer xeg.components{:root{--xtt:opacity var(--xdt) var(--xe-s), transform var(--xdt) var(--xe-s), visibility 0s;--xeg-spacing-gallery:clamp(var(--xs-s), 2.5vw, var(--xs-l));--xeg-spacing-mobile:clamp(var(--xs-xs), 2vw, var(--xs-m));--xeg-spacing-compact:clamp(.25rem, 1.5vw, var(--xs-s));--xth-o:0;--xth-v:hidden;--xth-pe:none}.xeg-surface{background:var(--xsu-b);border:.0625rem solid var(--xsu-br);border-radius:var(--xr-l)}.xeg-spinner{width:var(--xsp-s,var(--xsp-sd));height:var(--xsp-s,var(--xsp-sd));border-radius:var(--xr-f);border:var(--xsp-bw) solid var(--xsp-tc);border-top-color:var(--xsp-ic);animation:xeg-spin var(--xsp-d) var(--xsp-e) infinite;box-sizing:border-box;display:inline-block}@media (prefers-reduced-motion:reduce){.xeg-spinner{animation:none}}@keyframes xeg-fade-in{0%{opacity:0}to{opacity:1}}@keyframes xeg-fade-out{0%{opacity:1}to{opacity:0}}@keyframes xeg-spin{0%{transform:rotate(0)}to{transform:rotate(360deg)}}}@media (prefers-reduced-motion:reduce){@layer xeg.components{:root{--xtt:none}.xg-X9gZ{scroll-behavior:auto;transition:none}.xg-meO3{transition:none}}}.xg-X9gZ{width:100vw;height:100vh;z-index:var(--xz-g,10000);background:var(--xg-b);will-change:opacity, transform;contain:layout style paint;opacity:1;visibility:visible;transition:var(--xten);cursor:default;pointer-events:auto;scroll-behavior:smooth;overscroll-behavior:none;flex-direction:column;display:flex;position:fixed;top:0;left:0;container:gallery-container\u002Fsize}.xg-meO3{height:auto;z-index:var(--xz-t,2147480000);opacity:var(--toolbar-opacity,0);visibility:var(--toolbar-visibility,hidden);transition:var(--xtt);will-change:transform, opacity, visibility;contain:layout style;pointer-events:var(--toolbar-pointer-events,none);background:0 0;border:none;border-radius:0;margin:0;padding-block-end:var(--xeg-spacing-gallery);display:block;position:fixed;top:0;left:0;right:0}.xg-meO3:is(:hover,:focus-within){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto;--toolbar-transform-y:0}.xg-meO3:focus-within{transition:var(--xtef)}.xg-meO3 *{pointer-events:inherit}.xg-meO3 [data-gallery-element=settings-panel][data-expanded=true]{pointer-events:auto}.xg-meO3:has([data-gallery-element=settings-panel][data-expanded=true]){--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto}.xg-X9gZ.xg-9abg{cursor:none}.xg-X9gZ.xg-sOsS[data-xeg-gallery=true][data-xeg-role=gallery] .xg-meO3{--toolbar-opacity:var(--xth-o,0);--toolbar-visibility:var(--xth-v,hidden);--toolbar-pointer-events:var(--xth-pe,none)}.xg-X9gZ *{pointer-events:auto}.xg-gmRW{z-index:0;contain:layout style;overscroll-behavior:contain;scrollbar-gutter:stable;pointer-events:auto;flex-direction:column;flex:1;display:flex;position:relative;overflow:auto;container:items-list\u002Fsize}.xg-gmRW::-webkit-scrollbar{width:var(--xsw)}.xg-gmRW::-webkit-scrollbar-track{background:0 0}.xg-gmRW::-webkit-scrollbar-thumb{background:var(--xeg-scrollbar-thumb-color,var(--xcn3));border-radius:var(--xsbr);transition:background-color var(--xdn) var(--xe-s)}.xg-gmRW::-webkit-scrollbar-thumb:hover{background:var(--xeg-scrollbar-thumb-hover-color,var(--xcn4))}.xg-X9gZ.xg-9abg .xg-meO3{pointer-events:none;opacity:0;transition:opacity var(--xdf) var(--xe-s)}.xg-X9gZ.xg-9abg [data-xeg-role=items-container],.xg-X9gZ.xg-9abg .xg-gmRW{pointer-events:auto}.xg-X9gZ.xg-yhK-{justify-content:center;align-items:center}.xg-EfVa{margin-bottom:var(--xs-m,1rem);border-radius:var(--xr-l,.5rem);transition:var(--xten);contain:layout style;position:relative}.xg-LxHL{z-index:1;position:relative}.xg-sfF0{height:calc(100vh - var(--xeg-toolbar-height,3.75rem));pointer-events:none;user-select:none;opacity:0;contain:strict;content-visibility:auto;background:0 0;flex-shrink:0;min-height:50vh}.xg-gC-m{height:var(--xhzh);z-index:var(--xz-th,2147480000);pointer-events:auto;background:0 0;position:fixed;top:0;left:0;right:0}.xg-X9gZ.xg-Canm:not([data-settings-expanded=true]) .xg-gC-m,.xg-X9gZ:has(.xg-meO3:hover):not([data-settings-expanded=true]) .xg-gC-m{pointer-events:none}.xg-X9gZ.xg-Canm .xg-meO3,.xg-X9gZ:has(.xg-gC-m:hover) .xg-meO3{--toolbar-opacity:1;--toolbar-visibility:visible;--toolbar-pointer-events:auto;--toolbar-transform-y:0}.xg-meO3 [class*=galleryToolbar]{opacity:var(--toolbar-opacity,0);visibility:var(--toolbar-visibility,hidden);pointer-events:var(--toolbar-pointer-events,none);display:flex}.xg-meO3 button,.xg-meO3 [role=button],.xg-meO3 .xg-e06X{pointer-events:auto;z-index:10;position:relative}.xg-fwsr{text-align:center;color:var(--xct-s);max-inline-size:min(25rem,90vw);padding:clamp(1.875rem,5vw,2.5rem)}.xg-fwsr h3{font-size:clamp(1.25rem,4vw,1.5rem);font-weight:var(--xfw-s);color:var(--xct-p);line-height:var(--xeg-line-height-tight);margin:0 0 clamp(.75rem,2vw,1rem)}.xg-fwsr p{font-size:clamp(.875rem,2.5vw,1rem);line-height:var(--xlh);color:var(--xct-t);margin:0}@container gallery-container (width\u003C=48rem){.xg-gmRW{padding:var(--xeg-spacing-mobile);gap:var(--xeg-spacing-mobile)}.xg-meO3{padding-block-end:var(--xeg-spacing-mobile)}}@container gallery-container (width\u003C=30rem){.xg-gmRW{padding:var(--xeg-spacing-compact);gap:var(--xeg-spacing-compact)}}@media (prefers-reduced-motion:reduce){.xg-gmRW{scroll-behavior:auto;will-change:auto;transform:none}.xg-meO3:hover,.xg-meO3:focus-within{transform:none}}.xg-X9gZ [class*=galleryToolbar]:hover{--toolbar-opacity:1;--toolbar-pointer-events:auto}.xg-huYo{margin-bottom:var(--xs-m);border-radius:var(--xr-l);transition:var(--xti);cursor:pointer;border:.0625rem solid var(--xcb-p);background:var(--xcbg-s);padding:var(--xs-s);text-align:center;pointer-events:auto;will-change:transform;contain:layout style;flex-direction:column;align-items:center;width:fit-content;max-width:100%;margin-inline:auto;display:flex;position:relative;overflow:visible}.xg-huYo[data-fit-mode=original]{flex-shrink:0;align-self:center;width:max-content;max-width:none}.xg-huYo:hover{transform:var(--xhl);background:var(--xc-se);border-color:var(--xbe)}.xg-huYo:focus-visible{border-color:var(--xfic,var(--xcb-p))}.xg-huYo.xg-xm-1{border-color:var(--xbe,var(--xcb-s));transition:var(--xti)}.xg-huYo.xg-xm-1:focus-visible{border-color:var(--xfic,var(--xcb-s))}.xg-huYo.xg-luqi{border-color:var(--xfic,var(--xcb-p));transition:var(--xti)}.xg-8-c8{background:var(--xcbg-s);contain:layout paint;justify-content:center;align-items:center;width:fit-content;max-width:100%;margin:0 auto;display:flex;position:relative}.xg-huYo[data-fit-mode=original] .xg-8-c8{width:auto;max-width:none}.xg-huYo[data-media-loaded=false] .xg-8-c8{min-height:var(--xs-3);aspect-ratio:var(--xgi-r,var(--xad))}.xg-lhkE{background:var(--xsk-b);min-height:var(--xs-3);justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.xg-6YYD{--xsp-s:var(--xs-l);--xsp-bw:.125rem;--xsp-tc:var(--xcb-p);--xsp-ic:var(--xc-p)}.xg-FWlk,.xg-GUev{border-radius:var(--xr-m);object-fit:contain;pointer-events:auto;user-select:none;-webkit-user-drag:none;will-change:opacity;transition:opacity var(--xdn) var(--xe-s);display:block}:is(.xg-FWlk,.xg-GUev).xg-8Z3S{opacity:0}:is(.xg-FWlk,.xg-GUev).xg-y9iP{opacity:1}.xg-GUev{inline-size:100%;overflow:clip}:is(.xg-FWlk,.xg-GUev).xg-yYtG{object-fit:none;block-size:auto;max-block-size:none;inline-size:auto;max-inline-size:none}:is(.xg-FWlk,.xg-GUev).xg-Uc0o{object-fit:scale-down;block-size:auto;max-block-size:none;inline-size:auto;max-inline-size:100%}:is(.xg-FWlk,.xg-GUev).xg-M9Z6{block-size:auto;inline-size:auto;max-inline-size:calc(100vw - var(--xs-l) * 2);max-block-size:var(--xvhc);object-fit:scale-down}:is(.xg-FWlk,.xg-GUev).xg--Mlr{block-size:auto;inline-size:auto;max-inline-size:100%;max-block-size:var(--xvhc);object-fit:contain}.xg-Wno7{font-size:var(--xfs-2);margin-bottom:var(--xs-s)}.xg-8-wi{font-size:var(--xfs-s);text-align:center}.xg-Gswe{background:var(--xc-e-bg);color:var(--xc-e);min-height:var(--xs-3);flex-direction:column;justify-content:center;align-items:center;display:flex;position:absolute;inset:0}.xg-huYo[data-media-loaded=false][data-fit-mode=original],.xg-huYo[data-media-loaded=false][data-fit-mode=original] .xg-FWlk,.xg-huYo[data-media-loaded=false][data-fit-mode=original] .xg-GUev{inline-size:min(var(--xgi-w,100%), 100%);max-inline-size:min(var(--xgi-w,100%), 100%);max-block-size:min(var(--xgi-h,var(--xs-5)), var(--xvhc))}.xg-huYo[data-media-loaded=false][data-has-intrinsic-size=true][data-fit-mode=fitHeight],.xg-huYo[data-media-loaded=false][data-has-intrinsic-size=true][data-fit-mode=fitContainer]{--xgf-ht:min(var(--xgi-h,var(--xs-5)), var(--xvhc));max-block-size:var(--xgf-ht);inline-size:min(100%, calc(var(--xgf-ht) * var(--xgi-r,1)));max-inline-size:min(100%, calc(var(--xgf-ht) * var(--xgi-r,1)))}.xg-huYo[data-media-loaded=false][data-has-intrinsic-size=true]:is([data-fit-mode=fitHeight],[data-fit-mode=fitContainer]) :is(.xg-FWlk,.xg-GUev){max-block-size:var(--xgf-ht);max-inline-size:min(100%, calc(var(--xgf-ht) * var(--xgi-r,1)))}@media (prefers-reduced-motion:reduce){.xg-huYo{will-change:auto;transition:none}.xg-huYo:hover{transform:none}:where(.xg-FWlk,.xg-GUev){will-change:auto;transition:none}}.xg-EeSh{gap:var(--xse-g);padding:var(--xse-p);flex-direction:column;display:flex}.xg-nm9B{gap:var(--sps)}.xg-PI5C{gap:var(--xse-cg);flex-direction:column;display:flex}.xg-VUTt{gap:var(--spx)}.xg-vhT3{font-size:var(--xse-lf);font-weight:var(--xse-lw);color:var(--xct-p)}.xg-Y62M{font-size:var(--fsx);color:var(--xct-s);letter-spacing:var(--xeg-letter-spacing-wide);text-transform:uppercase}.xg-jpiS{width:100%;padding:var(--xse-sp);font-size:var(--xse-sf);color:var(--xct-p);background-color:var(--xte-b);border:var(--bwt) solid var(--xt-b);border-radius:var(--xr-m);cursor:pointer;line-height:var(--xeg-line-height-snug);min-height:2.75em;transition:border-color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s), box-shadow var(--xdf) var(--xe-s);overflow:visible;transform:none}.xg-jpiS:hover{border-color:var(--xcb-h);background-color:var(--xte-bs);box-shadow:0 0 0 2px color-mix(in oklch, var(--xt-b) 20%, transparent 80%)}.xg-jpiS:focus,.xg-jpiS:focus-visible{border-color:var(--xfic);box-shadow:0 0 0 3px color-mix(in oklch, var(--xfic) 25%, transparent 75%)}.xg-jpiS option{line-height:var(--xlh);padding:.5em .75em}.xg-4eoj{color:var(--xtt-c,var(--xct-p));cursor:pointer;font-size:.875em;font-weight:var(--xfw-m);width:var(--xsb-m);height:var(--xsb-m);min-width:var(--xsb-m);min-height:var(--xsb-m);aspect-ratio:1;border-radius:var(--xr-m);transition:var(--xts), transform var(--xdf) var(--xe-s);background:0 0;border:none;padding:.5em;position:relative;overflow:clip}.xg-4eoj:focus,.xg-4eoj:focus-visible{background:var(--xte-b,var(--xcn1))}.xg-fLg7{--toolbar-surface-base:var(--xtp-s,var(--xt-s,var(--xcbg-p,Canvas)));--toolbar-surface-border:var(--xt-b);--xb-do:1;background:var(--toolbar-surface-base);border-radius:var(--xr-l);z-index:var(--xz-t,2147480000);display:var(--toolbar-display,inline-flex);height:3em;color:var(--xtt-c,var(--xct-p));visibility:var(--toolbar-visibility,visible);opacity:var(--toolbar-opacity,1);pointer-events:var(--toolbar-pointer-events,auto);transition:var(--xten);user-select:none;overscroll-behavior:contain;border:none;justify-content:space-between;align-items:center;gap:0;padding:.5em 1em;position:fixed;top:1.25em;left:50%;transform:translate(-50%)}.xg-fLg7.xg-ZpP8,.xg-fLg7.xg-t4eq{border-radius:var(--xr-l) var(--xr-l) 0 0}.xg-fLg7.xg-ojCW,.xg-fLg7.xg-Y6KF,.xg-fLg7.xg-n-ab,.xg-fLg7.xg-bEzl{--toolbar-opacity:1;--toolbar-pointer-events:auto;--toolbar-visibility:visible;--toolbar-display:inline-flex}.xg-f8g4{justify-content:center;align-items:center;width:100%;max-width:100%;display:flex;overflow:hidden}.xg-Ix3j{justify-content:center;align-items:center;gap:var(--xs-xs);flex-wrap:wrap;width:100%;display:flex}.xg-Ix3j\u003E*{flex:none}.xg-0EHq{padding-inline:var(--xs-s);justify-content:center;align-items:center;min-width:5em;display:flex}.xg-FKnO{color:var(--xtt-m,var(--xct-p));margin:0 .125em}:where(.xg-4eoj[aria-pressed=true]){background:var(--xte-bs,var(--xcn2))}.xg-4eoj:disabled{--button-opacity:.5;color:var(--xtt-m,var(--xcn4));cursor:not-allowed}@media (hover:hover){.xg-4eoj:hover:not(:disabled){background:var(--xte-b,var(--xcn1));transform:translateY(var(--xb-l))}}.xg-4eoj:active:not(:disabled){background:var(--xte-bs,var(--xcn2));transform:translateY(0)}.xg-atmJ{position:relative}.xg-GG86{box-sizing:border-box;gap:0;min-width:5em;min-height:2.5em;padding-bottom:.5em;position:relative}.xg-2cjm{color:var(--xtt-c,var(--xct-p));font-size:var(--xfs-m);font-weight:var(--xfw-s);text-align:center;white-space:nowrap;border-radius:var(--xr-m);background:0 0;border:none;padding:.25em .5em;line-height:1}.xg-JEXm{color:var(--xtt-c,var(--xct-p));font-weight:var(--xeg-font-weight-bold)}.xg-d1et{color:var(--xtt-c,var(--xct-p))}.xg-vB6N{background:var(--xtp-pt,var(--xcn2));border-radius:var(--xr-s);width:3.75em;height:.125em;position:absolute;bottom:.125em;left:50%;overflow:clip;transform:translate(-50%)}.xg-LWQw{background:var(--xtt-c,var(--xct-p));border-radius:var(--xr-s);width:100%;height:100%;transition:var(--xtwn);transform-origin:0}.xg-Q7dU,button.xg-Q7dU{transition:var(--xti);z-index:10;pointer-events:auto;position:relative}.xg-Q7dU[data-selected=true]{--toolbar-button-accent-hover:var(--xc-p);--toolbar-button-focus-border:var(--xc-ph)}.xg-Q7dU:focus,.xg-Q7dU:focus-visible{border:none}@media (prefers-reduced-transparency:reduce){.xg-fLg7,[data-theme=dark] .xg-fLg7{background:var(--xtp-s,var(--xt-s))}}@media (prefers-reduced-motion:reduce){.xg-4eoj:hover:not(:disabled),.xg-atmJ:hover:not(:disabled),.xg-Vn14:hover:not(:disabled),.xg-Q7dU:hover{transform:none}}:where(.xg-JcF-,.xg-yRtv){gap:var(--xs-m);width:100%;padding:var(--xs-l);max-height:var(--xtp-mh);opacity:0;visibility:hidden;pointer-events:none;transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s var(--xdn);background:var(--toolbar-surface-base,var(--xtp-s,var(--xt-s)));border-top:var(--bwt) solid var(--toolbar-surface-border,var(--xt-b));border-radius:0 0 var(--xr-l) var(--xr-l);z-index:var(--xz-tp);will-change:transform, opacity;overscroll-behavior:contain;flex-direction:column;display:flex;position:absolute;top:100%;left:0;right:0;overflow:hidden;transform:translateY(-.5em)}.xg-JcF-{height:var(--xtp-h)}.xg-yRtv{min-height:var(--xtp-h)}:where(.xg-JcF-,.xg-yRtv).xg-4a2L{opacity:1;visibility:visible;pointer-events:auto;border-top-color:var(--toolbar-surface-border,var(--xt-b));height:auto;transition:var(--xtp-t), transform var(--xdn) var(--xe-s), visibility 0s 0s;z-index:var(--xz-ta);transform:translateY(0)}.xg-w56C{gap:var(--xs-s);flex-direction:column;display:flex}.xg-rSWg{padding-bottom:var(--xs-xs);border-bottom:var(--bwt) solid var(--toolbar-surface-border);margin-bottom:var(--xs-s);align-items:center;display:flex}.xg-jd-V{font-size:var(--xfs-s);font-weight:var(--xfw-s);color:var(--xtt-c);text-transform:uppercase;letter-spacing:var(--xeg-letter-spacing-wide)}.xg-jmjG{padding:var(--xs-s) var(--xs-m);font-size:var(--xfs-b);line-height:var(--xeg-line-height-snug);color:var(--xtt-c,var(--xct-p));background:var(--toolbar-surface-base,var(--xtp-s,var(--xt-s)));border:var(--bwt) solid var(--toolbar-surface-border,var(--xt-b));border-radius:var(--xr-m);white-space:pre-wrap;word-wrap:break-word;overscroll-behavior:contain;max-height:18em;transition:var(--xts);-webkit-user-select:text;user-select:text;cursor:text;overflow-y:auto}.xg-jmjG::-webkit-scrollbar{width:.5em}.xg-jmjG::-webkit-scrollbar-track{background:var(--xts-t,var(--xcn2));border-radius:var(--xr-s)}.xg-jmjG::-webkit-scrollbar-thumb{background:var(--xts-th,var(--xcn4));border-radius:var(--xr-s)}.xg-jmjG::-webkit-scrollbar-thumb:hover{background:var(--xte-bs,var(--xcn5))}.xg-jmjG a{color:var(--xc-p);font-weight:var(--xfw-m);border-radius:var(--xr-xs);overflow-wrap:break-word;transition:color var(--xdf) var(--xe-s), background-color var(--xdf) var(--xe-s);cursor:pointer;margin:-.125em -.25em;padding:.125em .25em;text-decoration:none}.xg-jmjG a:hover{color:var(--xc-ph);background:var(--xte-b);text-underline-offset:.125em;text-decoration:underline .0625rem}.xg-jmjG a:focus,.xg-jmjG a:focus-visible{background:var(--xte-bs,var(--xcn2));color:var(--xc-ph);border-radius:var(--xr-xs)}.xg-jmjG a:active{color:var(--xc-p-active)}.xg-0Eeq{align-items:center;gap:var(--xs-xs);padding:var(--xs-s);margin-bottom:var(--xs-s);background:var(--xte-bs);border:var(--bwt) solid var(--toolbar-surface-border,var(--xt-b));border-radius:var(--xr-s);transition:var(--xts);display:flex}.xg-0Eeq:hover{background:color-mix(in oklch, var(--xte-bs) 85%, var(--xc-p) 15%);border-color:var(--xcb-h)}.xg-AVKe{width:100%;color:var(--xc-p);font-size:var(--xfs-s);font-weight:var(--xfw-m);transition:color var(--xdf) var(--xe-s);align-items:center;gap:.375em;text-decoration:none;display:flex}.xg-AVKe:hover{color:var(--xc-ph)}.xg-AVKe:focus,.xg-AVKe:focus-visible{outline:.125rem solid var(--xfic);outline-offset:.125rem;border-radius:var(--xr-xs)}.xg-5RjR{stroke:currentColor;flex-shrink:0;width:.875em;height:.875em}.xg-8Stf{color:var(--xtt-m,var(--xct-s));font-weight:var(--xfw-s);flex-shrink:0}.xg-3pwZ{color:var(--xc-p);text-overflow:ellipsis;white-space:nowrap;flex:1;overflow:hidden}.xg-sltl{width:100%;height:var(--bwt);background:color-mix(in oklch, var(--toolbar-surface-border) 60%, transparent 40%);margin:var(--xs-m) 0;border-radius:var(--xr-s)}@layer xeg.features{.xeg-gallery-renderer[data-renderer=gallery]{width:0;height:0;display:block;overflow:visible}.xeg-gallery-overlay{z-index:var(--xz-g,10000);background:var(--xg-b);opacity:1;transition:opacity var(--xdn) var(--xe-s);pointer-events:auto;justify-content:center;align-items:center;display:flex;position:fixed;inset:0}.xeg-gallery-container{overscroll-behavior:contain;scrollbar-gutter:stable both-edges;flex-direction:column;width:100%;max-width:100vw;height:100%;max-height:100vh;display:flex;position:relative;overflow:hidden auto}}@layer xeg.tokens{:where(:root,.xeg-theme-scope){--cbw:oklch(100% 0 0);--cbb:oklch(0% 0 0);--cg0:oklch(97% .002 206.2);--cg1:oklch(94.3% .006 206.2);--cg2:oklch(89.6% .006 206.2);--cg3:oklch(79.6% .006 206.2);--cg4:oklch(69.6% .006 286.3);--cg5:oklch(59.8% .006 286.3);--cg6:oklch(48.8% .006 286.3);--cg7:oklch(37.8% .005 286.3);--cg8:oklch(30.6% .005 282);--cg9:oklch(23.4% .006 277.8);--space-none:0;--spx:.25rem;--sps:.5rem;--spm:1rem;--spl:1.5rem;--spxl:2rem;--sp2:3rem;--space-3xl:4rem;--space-4xl:5rem;--rx:.125em;--rs:.25em;--rm:.375em;--rl:.5em;--r2:1em;--rf:50%;--ffp:\"TwitterChirp\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;--fsx:.75rem;--fss:.875rem;--fsb:.9375rem;--fsm:1rem;--fsl:1.125rem;--fsxl:1.25rem;--fs2:1.5rem;--fwn:400;--fwm:500;--fws:600;--fwb:700;--duration-instant:.1s;--df:.15s;--dn:.25s;--ds:.3s;--dser:.4s;--bwt:.0625rem;--line-height-tight:1.25;--line-height-snug:1.375;--lhn:1.5;--line-height-relaxed:1.75;--xcbg-p:var(--cbw);--xcbg-s:var(--cg0);--xeg-color-bg-surface:var(--cbw);--xeg-color-bg-elevated:var(--cbw);--xbgt:var(--xeg-color-bg-surface);--xt-b:var(--xcb-p);--xt-s:var(--xbgt);--xtp-s:var(--xt-s);--xg-bl:var(--xcbg-p);--xg-bd:var(--cg9);--xg-b:var(--xg-bl);--xc-bg:var(--cg0);--xad:4 \u002F 3;--xct-p:var(--cbb);--xct-s:var(--cg6);--xeg-color-border-default:var(--cg2);--xeg-color-border-emphasis:var(--cg5);--xcb-p:var(--xeg-color-border-default);--xcb-h:var(--cg3);--xcb-s:var(--xeg-color-border-emphasis);--xtt-c:var(--xct-p);--xtt-m:var(--xct-s);--xte-b:color-mix(in oklch, var(--xbgt) 80%, var(--cbw) 20%);--xte-bs:color-mix(in oklch, var(--xbgt) 65%, var(--cbw) 35%);--xte-br:color-mix(in oklch, var(--xt-b) 85%, var(--cbw) 15%);--xtp-pt:color-mix(in oklch, var(--xte-b) 60%, var(--xte-br) 40%);--xts-t:color-mix(in oklch, var(--xte-b) 50%, var(--cbw) 50%);--xts-th:color-mix(in oklch, var(--xte-br) 80%, var(--cbw) 20%);--xc-s:oklch(55% .18 145);--xc-sh:oklch(48% .18 145);--xc-s-bg:oklch(90% .08 145);--xc-e:oklch(50% .22 25);--xc-eh:oklch(43% .22 25);--xc-e-bg:oklch(90% .08 25);--xeg-color-info-bg:var(--cg0);--xc-p:var(--cg9);--xc-ph:var(--cg7);--xc-p-active:var(--cg8);--xcn1:var(--cg1);--xcn2:var(--cg2);--xcn3:var(--cg3);--xcn4:var(--cg4);--xcn5:var(--cg5);--xct-t:var(--cg5);--xct-i:var(--cbw);--xsb-s:2rem;--xsb-m:2.5em;--xsb-l:3rem;--xfic:var(--xcb-p);--xfs-s:var(--fss);--xfs-b:var(--fsb);--xfs-m:var(--fsm);--xfs-l:var(--fsl);--xeg-font-size-xl:var(--fsxl);--xfs-2:var(--fs2);--xff-u:-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;--xeg-font-weight-normal:var(--fwn);--xfw-m:var(--fwm);--xfw-s:var(--fws);--xeg-font-weight-bold:var(--fwb);--xeg-line-height-tight:var(--line-height-tight);--xeg-line-height-snug:var(--line-height-snug);--xeg-line-height-relaxed:var(--line-height-relaxed);--xeg-letter-spacing-wide:.04em;--xdf:var(--df);--xdn:var(--dn);--xdt:var(--dn);--xsu-b:var(--xeg-color-bg-surface);--xsu-br:var(--xeg-color-border-default);--xsu-bh:var(--xcbg-s);--xc-se:var(--xeg-color-bg-elevated);--xsk-b:var(--xcbg-s);--xbe:var(--xeg-color-border-emphasis);--xz-g:9999;--xz-th:10001;--xz-t:10002;--xz-tp:10003;--xz-ta:10004;--xe-s:cubic-bezier(.4, 0, .2, 1);--xe-d:cubic-bezier(0, 0, .2, 1);--xe-a:cubic-bezier(.4, 0, 1, 1);--xel:linear;--xlh:var(--lhn);--xb-l:-.0625rem;--xo-d:.5;--xhl:translateY(-.125rem);--xeg-spacing-none:var(--space-none);--xs-xl:var(--spxl);--xs-5:var(--sp2);--xr-s:var(--rs);--xr-m:var(--rm);--xr-l:var(--rl);--xr-2:var(--r2);--xr-f:var(--rf);--xeg-scrollbar-thumb-color:var(--cg4);--xeg-scrollbar-thumb-hover-color:var(--cg5);--xeg-scrollbar-track-color:var(--cg2)}:where(:root,.xeg-theme-scope)[data-theme=dark]{--xcbg-p:var(--cg9);--xeg-color-bg-surface:var(--cg9);--xeg-color-bg-elevated:var(--cg7);--xct-p:var(--cbw);--xct-s:var(--cg4);--xbgt:var(--cg8);--xcb-p:var(--cg6);--xt-b:var(--cg6);--xcbg-s:var(--cg8);--xg-b:var(--xg-bd);--xtt-c:var(--xct-p);--xtt-m:var(--cg3);--xte-b:color-mix(in oklch, var(--xbgt) 85%, var(--cbb) 15%);--xte-bs:color-mix(in oklch, var(--xbgt) 70%, var(--cbb) 30%);--xte-br:color-mix(in oklch, var(--xt-b) 75%, var(--cbb) 25%);--xtp-pt:color-mix(in oklch, var(--xt-b) 65%, var(--xbgt) 35%);--xts-t:color-mix(in oklch, var(--xte-b) 80%, var(--cbb) 20%);--xts-th:color-mix(in oklch, var(--xte-br) 85%, var(--cbb) 15%);--xc-bg:var(--cg9);--xc-p:var(--cg1);--xc-ph:var(--cg2);--xc-p-active:var(--cg3);--xsu-b:var(--cg9);--xsu-br:var(--cg6);--xsu-bh:var(--cg8)}@media (prefers-reduced-motion:reduce){:where(:root,.xeg-theme-scope){--xdf:0s;--xts:none;--xten:none;--xtef:none;--xti:none;--xtwn:none}}:where(:root,.xeg-theme-scope){--xse-g:var(--spm);--xse-p:var(--spm);--xse-cg:var(--sps);--xse-lf:var(--fss);--xse-lw:var(--fwb);--xse-sf:var(--fss);--xse-sp:var(--sps) var(--spm);--xtp-t:height var(--xdn) var(--xe-s), opacity var(--xdf) var(--xe-s);--xtp-h:0;--xtp-mh:17.5rem;--xsw:.5rem;--xsbr:0;--xhzh:7.5rem;--xsp-sd:1rem;--xsp-bw:.125rem;--xsp-tc:color-mix(in oklch, var(--xcn4) 60%, transparent);--xsp-ic:var(--xc-p,currentColor);--xsp-d:var(--xdn);--xsp-e:var(--xel);--xts:background-color var(--xdf) var(--xe-s), border-color var(--xdf) var(--xe-s), color var(--xdf) var(--xe-s);--xten:transform var(--xdn) var(--xe-s), opacity var(--xdn) var(--xe-s);--xtef:transform var(--xdf) var(--xe-s), opacity var(--xdf) var(--xe-s);--xti:background-color var(--xdf) var(--xe-s), border-color var(--xdf) var(--xe-s), color var(--xdf) var(--xe-s), transform var(--xdf) var(--xe-s);--xtwn:width var(--xdn) var(--xe-s);--xisw:.125rem;--xis:1.25em;--xs-xs:var(--spx);--xs-s:var(--sps);--xs-m:var(--spm);--xs-l:var(--spl);--xvhc:90vh}@media (prefers-reduced-transparency:reduce){:where(:root,.xeg-theme-scope){--xsu-b:var(--xcbg-p)}}}@layer xeg.base{:where(.xeg-gallery-root,.xeg-gallery-root *),:where(){box-sizing:border-box;margin:0;padding:0}.xeg-gallery-root button{cursor:pointer;font:inherit;color:inherit;background:0 0;border:none}.xeg-gallery-root a{color:inherit;text-decoration:none}.xeg-gallery-root img{max-width:100%;height:auto;display:block}.xeg-gallery-root ul,.xeg-gallery-root ol{list-style:none}.xeg-gallery-root input,.xeg-gallery-root textarea,.xeg-gallery-root select{font:inherit;color:inherit;background:0 0}.xeg-gallery-root ::-webkit-scrollbar{width:var(--xsw,.5rem);height:var(--xsw,.5rem)}.xeg-gallery-root ::-webkit-scrollbar-track{background:0 0}.xeg-gallery-root ::-webkit-scrollbar-thumb{background:var(--xeg-scrollbar-thumb-color);border-radius:var(--xr-s,.25rem)}.xeg-gallery-root ::-webkit-scrollbar-thumb:hover{background:var(--xeg-scrollbar-thumb-hover-color)}.xeg-gallery-root{all:initial;--xeg-inherited:inherit;box-sizing:border-box;scroll-behavior:smooth;font-family:var(--ffp);font-size:var(--fsb,.9375rem);line-height:var(--xlh,1.5);color:var(--xct-p,currentColor);width:100vw;height:100vh;z-index:var(--xz-g,10000);isolation:isolate;contain:style paint;overscroll-behavior:contain;background:var(--xg-b,var(--xcbg-p,Canvas));pointer-events:auto;user-select:none;will-change:opacity, transform;-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;display:block;position:fixed;inset:0}}@layer xeg.utilities{.xeg-row-center{align-items:center;display:flex}.xeg-inline-center{justify-content:center;align-items:center;display:inline-flex}.xeg-gap-sm{gap:var(--xs-s)}.xeg-fade-in{animation:xeg-fade-in var(--xdn) var(--xe-d);animation-fill-mode:both}.xeg-fade-out{animation:xeg-fade-out var(--xdf) var(--xe-a);animation-fill-mode:both}@media (prefers-reduced-motion:reduce){.xeg-fade-in,.xeg-fade-out{animation:none}}}@layer xeg.overrides;";var s=document.getElementById("xeg-injected-styles");if(!s){s=document.createElement('style');s.id="xeg-injected-styles";(document.head||document.documentElement).appendChild(s);}s.textContent=css;})();
 (function() {
 //#region src/shared/constants/i18n/language-types.ts
 /**
@@ -274,7 +274,7 @@ for (const [lang, strings] of Object.entries(bundles)) if (strings) this.bundles
 if (!this.bundles[this.fallbackLanguage]) throw new Error(`Missing fallback language bundle: ${this.fallbackLanguage}`);
 }
 get languages() {
-return [...LANGUAGE_CODES];
+return LANGUAGE_CODES;
 }
 translate(language, key, params) {
 const template = resolveTranslationValue(this.bundles[language] ?? this.bundles[this.fallbackLanguage], key);
@@ -286,7 +286,6 @@ return template.replace(/\{(\w+)\}/g, (match, placeholder) => Object.hasOwn(para
 //#endregion
 //#region src/shared/logging/logger.ts
 var BASE_PREFIX = "[XEG]";
-var hasConsole = typeof console !== "undefined";
 var noop = () => {};
 var createErrorOnlyLogger = (prefix) => ({
 info: noop,
@@ -297,15 +296,7 @@ error: (...args) => {
 console.error(prefix, ...args);
 }
 });
-var noopLogger = {
-info: noop,
-warn: noop,
-error: noop,
-debug: noop,
-trace: noop
-};
 function buildLogger(prefix) {
-if (!hasConsole) return noopLogger;
 return createErrorOnlyLogger(prefix);
 }
 function createLogger(config = {}) {
@@ -393,18 +384,6 @@ cookie: cookieCandidate && typeof cookieCandidate.list === "function" ? cookieCa
 function getUserscript() {
 return createUserscriptAPI();
 }
-var GM_API_CHECKS = {
-getValue: (gm) => typeof gm.getValue === "function",
-setValue: (gm) => typeof gm.setValue === "function",
-download: (gm) => typeof gm.download === "function",
-notification: (gm) => typeof gm.notification === "function",
-deleteValue: (gm) => typeof gm.deleteValue === "function",
-listValues: (gm) => typeof gm.listValues === "function",
-cookie: (gm) => typeof gm.cookie?.list === "function"
-};
-function isGMAPIAvailable(apiName) {
-return GM_API_CHECKS[apiName]?.(getResolvedGMAPIsCached()) ?? false;
-}
 //#endregion
 //#region src/shared/services/persistent-storage.ts
 var _persistentStorageInstance = null;
@@ -431,7 +410,7 @@ if (value === void 0 || value === null) return defaultValue;
 try {
 return JSON.parse(value);
 } catch {
-return defaultValue;
+return value;
 }
 }
 async getString(key, defaultValue) {
@@ -531,7 +510,7 @@ if (language !== normalized && language !== "auto") {}
 if (this.currentLanguage === normalized) return;
 this.currentLanguage = normalized;
 this.notifyListeners(normalized);
-this.persistLanguage(normalized).catch((error) => {});
+this.persistLanguage(normalized);
 }
 translate(key, params) {
 const language = this.getEffectiveLanguage();
@@ -588,14 +567,10 @@ return String(error);
 //#region src/shared/error/cancellation.ts
 var USER_CANCELLED_MESSAGE = "Download cancelled by user";
 function isAbortError(value) {
-if (value instanceof DOMException) return value.name === "AbortError" || value.name === "TimeoutError";
-if (value instanceof Error) return value.name === "AbortError" || value.name === "TimeoutError";
-return false;
+return value instanceof DOMException && (value.name === "AbortError" || value.name === "TimeoutError");
 }
 function isUserCancelledAbortError(error) {
-if (error instanceof DOMException) return error.name === "AbortError" && error.message === USER_CANCELLED_MESSAGE;
-if (error instanceof Error) return error.name === "AbortError" && error.message === USER_CANCELLED_MESSAGE;
-return false;
+return error instanceof DOMException && error.name === "AbortError" && error.message === USER_CANCELLED_MESSAGE;
 }
 function createAbortError(message, cause) {
 const error = new DOMException(message, "AbortError");
@@ -726,40 +701,17 @@ return deferred.promise;
 };
 //#endregion
 //#region src/shared/utils/performance/idle-scheduler.ts
-function getIdleAPIs() {
-const hasRIC = typeof requestIdleCallback !== "undefined";
-return {
-ric: hasRIC ? requestIdleCallback.bind(globalThis) : null,
-cic: hasRIC ? cancelIdleCallback.bind(globalThis) : null
-};
-}
 /**
-* Schedules a task to run during browser idle time, with fallback to setTimeout.
-* Errors in tasks are caught and logged (in DEV only) without crashing the scheduler.
-*
-* @param task - The callback to execute when idle
-* @returns A handle to cancel the scheduled task
+* Schedules a task to run during browser idle time.
+* Errors in tasks are caught and logged (in DEV only) without crashing.
 */
 function scheduleIdle(task) {
-const { ric, cic } = getIdleAPIs();
-if (ric) {
-const id = ric(() => {
+const id = requestIdleCallback(() => {
 try {
 task();
 } catch (error) {}
 });
-return { cancel: () => {
-cic?.(id);
-} };
-}
-const timerId = setTimeout(() => {
-try {
-task();
-} catch (error) {}
-}, 0);
-return { cancel: () => {
-clearTimeout(timerId);
-} };
+return { cancel: () => cancelIdleCallback(id) };
 }
 //#endregion
 //#region src/shared/services/media/prefetch-manager.ts
@@ -966,24 +918,8 @@ tweetInfo: null
 }
 //#endregion
 //#region src/shared/utils/dom/query-helpers.ts
-/**
-* Find closest ancestor matching any of the fallback selectors.
-* Tries each selector in order until one succeeds.
-*
-* @param element - Starting element
-* @param selectors - Array of selectors to try in order (first = highest priority)
-* @returns Closest matching ancestor or null
-*
-* @example
-* ```ts
-* const container = closestWithFallback(
-*   clickedElement,
-*   ['article[data-testid="tweet"]', 'article[role="article"]']
-* );
-* ```
-*/
-function closestWithFallback(element, selectors, options = {}) {
-for (const [index, selector] of selectors.entries()) try {
+function closestWithFallback(element, selectors) {
+for (const selector of selectors) try {
 const match = element.closest(selector);
 if (match) return match;
 } catch (error) {}
@@ -1094,7 +1030,7 @@ return;
 * @returns Tweet text or undefined
 */
 function extractTweetTextHTMLFromClickedElement(element) {
-const tweetArticle = closestWithFallback(element, TWEET_CONTAINER_SELECTORS, { debugLabel: "tweet-container" });
+const tweetArticle = closestWithFallback(element, TWEET_CONTAINER_SELECTORS);
 if (tweetArticle) return extractTweetText(tweetArticle);
 }
 //#endregion
@@ -1417,7 +1353,7 @@ return null;
 var DOMFallbackExtractor = class {
 async extract(tweetInfo, clickedElement, _options, extractionId) {
 try {
-const tweetContainer = closestWithFallback(clickedElement, TWEET_CONTAINER_SELECTORS, { debugLabel: "tweet-container" });
+const tweetContainer = closestWithFallback(clickedElement, TWEET_CONTAINER_SELECTORS);
 if (!tweetContainer || !(tweetContainer instanceof HTMLElement)) return createFailureResult("No tweet container found", "dom-fallback", "dom-extraction-failed");
 const tweetTextHTML = extractTweetTextHTMLFromClickedElement(clickedElement);
 const mediaElements = findAllMediaInContainer(tweetContainer);
@@ -1506,7 +1442,7 @@ return null;
 };
 /** Strategy 2: DOM Structure (Most Reliable) */
 var extractFromDOM = (element) => {
-const container = closestWithFallback(element, TWEET_CONTAINER_SELECTORS, { debugLabel: "tweet-container" });
+const container = closestWithFallback(element, TWEET_CONTAINER_SELECTORS);
 if (!container) return null;
 const statusLink = container.querySelector(STATUS_LINK_SELECTOR);
 if (!statusLink) return null;
@@ -1885,30 +1821,15 @@ return urlObj.toString();
 }
 //#endregion
 //#region src/shared/dom/safe-location.ts
-function getLocation() {
-try {
-return globalThis.location;
-} catch {
-return;
-}
-}
 function getSafeHref() {
-try {
-return getLocation()?.href;
-} catch {
-return;
-}
+return globalThis.location?.href;
 }
 function getSafeHostname() {
-try {
-return getLocation()?.hostname;
-} catch {
-return;
-}
+return globalThis.location?.hostname;
 }
 function getSafeLocationHeaders() {
 const referer = getSafeHref();
-const origin = getLocation()?.origin;
+const origin = globalThis.location?.origin;
 if (!referer && !origin) return {};
 return {
 ...referer ? { referer } : {},
@@ -2151,17 +2072,17 @@ return mediaItems;
 }
 function normalizeLegacyTweet(tweet) {
 if (tweet.legacy) {
-if (!tweet.extended_entities) Object.assign(tweet, { extended_entities: tweet.legacy.extended_entities });
-if (!tweet.full_text) Object.assign(tweet, { full_text: tweet.legacy.full_text });
-if (!tweet.id_str) Object.assign(tweet, { id_str: tweet.legacy.id_str });
+if (!tweet.extended_entities) tweet.extended_entities = tweet.legacy.extended_entities;
+if (!tweet.full_text) tweet.full_text = tweet.legacy.full_text;
+if (!tweet.id_str) tweet.id_str = tweet.legacy.id_str;
 }
 const noteText = tweet.note_tweet?.note_tweet_results?.result?.text;
-if (noteText) Object.assign(tweet, { full_text: noteText });
+if (noteText) tweet.full_text = noteText;
 }
 function normalizeLegacyUser(user) {
 if (user.legacy) {
-if (!user.screen_name) Object.assign(user, { screen_name: user.legacy.screen_name });
-if (!user.name) Object.assign(user, { name: user.legacy.name });
+if (!user.screen_name) user.screen_name = user.legacy.screen_name;
+if (!user.name) user.name = user.legacy.name;
 }
 }
 //#endregion
@@ -2369,6 +2290,8 @@ return createFailureResult(normalizeErrorMessage(error), "twitter-api", "api-ext
 //#region src/shared/types/media.types.ts
 /** Extraction error class */
 var ExtractionError = class extends Error {
+code;
+originalError;
 constructor(code, message, originalError) {
 super(message);
 this.code = code;
@@ -2811,7 +2734,8 @@ this.mediaQueryListener = null;
 this.mediaQueryList = null;
 }
 initializeSystemDetection() {
-if (!this.mediaQueryList || this.mediaQueryListener) return;
+if (!this.mediaQueryList) return;
+if (this.mediaQueryListener) return;
 if (!this.domEventsController || this.domEventsController.signal.aborted) this.domEventsController = new AbortController();
 this.mediaQueryListener = () => {
 if (this.themeSetting === "auto") this.applyCurrentTheme(true);
@@ -3006,7 +2930,7 @@ return typeof value === "function" ? value : void 0;
 }
 function detectDownloadCapability() {
 const gmDownload = asGMDownloadFunction(resolveGMDownload());
-const hasGMDownload = !!gmDownload && isGMAPIAvailable("download");
+const hasGMDownload = !!gmDownload;
 return {
 hasGMDownload,
 method: hasGMDownload ? "gm_download" : "none",
@@ -3432,6 +3356,7 @@ attempts: maxAttempts
 };
 }
 var HttpStatusError = class extends Error {
+status;
 name = "HttpStatusError";
 constructor(status) {
 super(`HTTP error: ${status}`);
@@ -5031,36 +4956,7 @@ return typeof value === "object" && value !== null && !Array.isArray(value);
 var GALLERY_SELECTORS = CSS.INTERNAL_SELECTORS;
 var VIDEO_CONTROL_SELECTORS = [".video-controls", ".video-progress button"];
 /**
-* Safely call element.closest with error handling.
-* @param element - Element to query from
-* @param selector - CSS selector to match
-* @returns Closest matching ancestor or null
-*/
-function safeClosest(element, selector) {
-try {
-return element.closest(selector);
-} catch (error) {
-return null;
-}
-}
-/**
-* Safely call element.matches with error handling.
-* @param element - Element to test
-* @param selector - CSS selector to match
-* @returns True if element matches, false otherwise
-*/
-function safeMatches(element, selector) {
-try {
-return element.matches(selector);
-} catch (error) {
-return false;
-}
-}
-/**
 * Check if string value contains any control tokens (case-insensitive).
-* @param value - String value to check (nullable)
-* @param tokens - Array of tokens to search for
-* @returns True if value contains any token
 */
 function containsControlToken(value, tokens) {
 if (!value) return false;
@@ -5069,34 +4965,18 @@ return tokens.some((token) => normalized.includes(token.toLowerCase()));
 }
 /**
 * Get attribute value from element or nearest ancestor.
-* @param element - Element to query from
-* @param attribute - Attribute name to retrieve
-* @returns Attribute value or null if not found
 */
 function getNearestAttributeValue(element, attribute) {
-return safeClosest(element, `[${attribute}]`)?.getAttribute(attribute) ?? null;
+return element.closest(`[${attribute}]`)?.getAttribute(attribute) ?? null;
 }
-/**
-* Check if element is within a video player context.
-* @param element - Element to test
-* @returns True if element is within video player
-*/
 function isWithinVideoPlayer(element) {
-return safeClosest(element, VIDEO_PLAYER_CONTEXT_SELECTOR) !== null;
+return element.closest(VIDEO_PLAYER_CONTEXT_SELECTOR) !== null;
 }
-/**
-* Check if element matches any video control selector.
-* @param element - Element to test
-* @returns True if element matches any selector
-*/
 function matchesVideoControlSelectors(element) {
-return VIDEO_CONTROL_SELECTORS.some((selector) => safeMatches(element, selector) || safeClosest(element, selector) !== null);
+return VIDEO_CONTROL_SELECTORS.some((selector) => element.matches(selector) || element.closest(selector) !== null);
 }
 /**
 * Determine if element is a video control.
-* Checks tag name, selectors, data attributes, ARIA labels, roles, and input types.
-* @param element - Element to test (nullable)
-* @returns True if element is a video control
 */
 function isVideoControlElement(element) {
 if (!isHTMLElement(element)) return false;
@@ -5108,26 +4988,20 @@ if (containsControlToken(getNearestAttributeValue(element, "aria-label"), VIDEO_
 if (!isWithinVideoPlayer(element)) return false;
 const role = element.getAttribute("role");
 if (role && VIDEO_CONTROL_ROLES.includes(role.toLowerCase())) return true;
-return safeMatches(element, "input[type=\"range\"]");
+return element.matches("input[type=\"range\"]");
 }
 /**
 * Check if element is inside the gallery UI.
-* Tests if element or ancestors match gallery internal selectors.
-* @param element - Element to test (nullable)
-* @returns True if element is within gallery
 */
 function isGalleryInternalElement(element) {
 if (!isHTMLElement(element)) return false;
 if (typeof element.matches !== "function") return false;
 return GALLERY_SELECTORS.some((selector) => {
-return safeMatches(element, selector) || safeClosest(element, selector) !== null;
+return element.matches(selector) || element.closest(selector) !== null;
 });
 }
 /**
 * Check if event originated from gallery UI.
-* Tests if event target is a gallery internal element.
-* @param event - DOM event to test
-* @returns True if event originated from gallery
 */
 function isGalleryInternalEvent(event) {
 const target = event.target;
@@ -5351,7 +5225,7 @@ skippedCount: 0
 }
 function findTweetContainer(element) {
 if (!element) return null;
-return closestWithFallback(element, TWEET_CONTAINER_SELECTORS, { debugLabel: "tweet-container" });
+return closestWithFallback(element, TWEET_CONTAINER_SELECTORS);
 }
 function resolveContext(request) {
 if (request.root !== void 0) return {
@@ -5371,12 +5245,12 @@ scope: "document"
 function isVideoTrigger(el) {
 if (!el) return false;
 if (el.tagName === "VIDEO") return true;
-return closestWithFallback(el, VIDEO_CONTAINER_SELECTORS, { debugLabel: "video-container" }) !== null;
+return closestWithFallback(el, VIDEO_CONTAINER_SELECTORS) !== null;
 }
 function isImageTrigger(el) {
 if (!el) return false;
 if (el.tagName === "IMG") return true;
-return closestWithFallback(el, IMAGE_CONTAINER_SELECTORS, { debugLabel: "image-container" }) !== null;
+return closestWithFallback(el, IMAGE_CONTAINER_SELECTORS) !== null;
 }
 function inferTrigger(el) {
 if (isVideoTrigger(el)) return "video-click";
@@ -5427,19 +5301,6 @@ scope
 */
 function resolve(value) {
 return typeof value === "function" ? value() : value;
-}
-/**
-* Resolve MaybeAccessor with optional value support.
-* @param value - A MaybeAccessor value (or undefined)
-* @returns The resolved value, or undefined if input was undefined
-* @example
-* ```ts
-* resolveOptional(undefined); // undefined
-* resolveOptional(() => 'text'); // 'text'
-* ```
-*/
-function resolveOptional(value) {
-return value === void 0 ? void 0 : resolve(value);
 }
 /**
 * Convert a MaybeAccessor to an Accessor function.
@@ -5514,7 +5375,7 @@ async setupEventHandlers() {
 const settings = tryGetSettings();
 initializeGalleryEvents({
 onMediaClick: (element, event) => this.handleMediaClick(element, event),
-onGalleryClose: () => this.closeGallery()
+onGalleryClose: () => this.close()
 }, {
 enableKeyboard: typeof settings?.get("gallery.enableKeyboardNav") === "boolean" ? settings.get("gallery.enableKeyboardNav") : true,
 enableMediaDetection: true,
@@ -5526,10 +5387,7 @@ context: "gallery"
 async handleMediaClick(element, _event) {
 try {
 const result = await getMediaService().extractFromClickedElement(element);
-if (result.success && result.mediaItems.length > 0) this.openGallery(result.mediaItems, result.clickedIndex, {
-sourceElement: element,
-reason: "media-click"
-});
+if (result.success && result.mediaItems.length > 0) this.openGallery(result.mediaItems, result.clickedIndex, { reason: "media-click" });
 else {
 mediaErrorReporter.warn(/* @__PURE__ */ new Error("Media extraction returned no items"), {
 code: "MEDIA_EXTRACTION_EMPTY",
@@ -5552,10 +5410,7 @@ openGallery(mediaItems, startIndex = 0, pauseContext) {
 if (mediaItems.length === 0) return;
 try {
 const validIndex = clampIndex(startIndex, mediaItems.length);
-pauseAmbientVideosForGallery(pauseContext ? {
-...pauseContext,
-reason: pauseContext.reason ?? "media-click"
-} : { reason: "programmatic" });
+pauseAmbientVideosForGallery({ reason: pauseContext?.reason ?? "media-click" });
 openGallery(mediaItems, validIndex);
 } catch (error) {
 galleryErrorReporter.error(error, {
@@ -5572,11 +5427,11 @@ text: normalizeErrorMessage(error)
 throw error;
 }
 }
-closeGallery() {
+close() {
 if (gallerySignals.isOpen) closeGallery();
 }
 async cleanup() {
-if (gallerySignals.isOpen) this.closeGallery();
+if (gallerySignals.isOpen) this.close();
 this.ambientVideoGuardDispose?.();
 this.ambientVideoGuardDispose = null;
 try {
@@ -6092,14 +5947,10 @@ onCleanup(() => controller.abort());
 //#endregion
 //#region src/shared/utils/performance/observer-pool.ts
 /**
-* IntersectionObserver pool using WeakMap for automatic cleanup
+* IntersectionObserver helper with automatic cleanup
 */
 var observerRegistry = /* @__PURE__ */ new WeakMap();
-/** Shared IntersectionObserver utility for visibility changes */
 var SharedObserver = {
-/**
-* Observe element for visibility changes
-*/
 observe(element, callback, options = {}) {
 const observer = new IntersectionObserver((entries) => {
 for (const entry of entries) try {
@@ -6114,7 +5965,7 @@ observerRegistry.set(element, set);
 }
 set.add(observer);
 let isActive = true;
-const unsubscribe = () => {
+return () => {
 if (!isActive) return;
 isActive = false;
 observer.unobserve(element);
@@ -6125,11 +5976,7 @@ currentSet.delete(observer);
 if (currentSet.size === 0) observerRegistry.delete(element);
 }
 };
-return unsubscribe;
 },
-/**
-* Stop observing element and disconnect all observers
-*/
 unobserve(element) {
 const set = observerRegistry.get(element);
 if (!set || set.size === 0) return;
@@ -6149,6 +5996,7 @@ THRESHOLD: [
 ROOT_MARGIN: "0px"
 };
 var FocusCoordinator = class {
+options;
 items = /* @__PURE__ */ new Map();
 observerOptions;
 _rafId = null;
@@ -7210,10 +7058,10 @@ else handleMediaError();
 });
 const resolvedFitMode = createMemo(() => {
 const value = local.fitMode;
-if (typeof value === "function") return value() ?? "fitWidth";
+if (typeof value === "function") return value();
 return value ?? "fitWidth";
 });
-const fitModeClass = createMemo(() => FIT_MODE_CLASSES[resolvedFitMode()] ?? "");
+const fitModeClass = createMemo(() => FIT_MODE_CLASSES[resolvedFitMode()]);
 const containerClasses = createMemo(() => cx("xeg-gallery", CSS.CLASSES.ITEM, "vertical-item", VerticalImageItem_module_default.container, local.isActive ? VerticalImageItem_module_default.active : void 0, isFocused() ? VerticalImageItem_module_default.focused : void 0, className$1()));
 const assignContainerRef = (element) => {
 setContainerRef(element);
@@ -7984,20 +7832,20 @@ tolerance: SCROLL_LOCK_TOLERANCE
 });
 };
 function ToolbarView(props) {
-const totalCount = () => resolve(props.totalCount);
-const currentIndex = () => resolve(props.currentIndex);
-const isToolbarDisabled = () => !!resolveOptional(props.disabled);
-const activeFitMode = () => props.activeFitMode();
-const tweetText = () => resolveOptional(props.tweetText) ?? null;
-const tweetTextHTML = () => resolveOptional(props.tweetTextHTML) ?? null;
-const tweetUrl = () => resolveOptional(props.tweetUrl) ?? null;
+const totalCount = () => props.totalCount;
+const currentIndex = () => props.currentIndex;
+const isToolbarDisabled = () => props.disabled;
+const activeFitMode = () => props.currentFitMode;
+const tweetText = () => props.tweetText;
+const tweetTextHTML = () => props.tweetTextHTML;
+const tweetUrl = () => props.tweetUrl;
 const [toolbarElement, setToolbarElement] = createSignal(null);
 const [counterElement, setCounterElement] = createSignal(null);
 const [settingsPanelEl, setSettingsPanelEl] = createSignal(null);
 const [tweetPanelEl, setTweetPanelEl] = createSignal(null);
 const translate = useTranslation();
 const nav = createMemo(() => props.navState());
-const fitModeLabels = createMemo(() => resolve(props.fitModeLabels));
+const fitModeLabels = () => props.fitModeLabels;
 const assignToolbarRef = (element) => {
 setToolbarElement(element);
 props.settingsController.assignToolbarRef(element);
@@ -8836,6 +8684,9 @@ return local.isDownloading?.() ?? false;
 get disabled() {
 return local.disabled?.() ?? false;
 },
+get currentFitMode() {
+return activeFitMode();
+},
 get tweetText() {
 return local.tweetText?.() ?? null;
 },
@@ -8856,7 +8707,9 @@ navState,
 displayedIndex,
 progressWidth,
 fitModeOrder: FIT_MODE_ORDER,
-fitModeLabels,
+get fitModeLabels() {
+return fitModeLabels();
+},
 activeFitMode,
 handleFitModeClick,
 isFitDisabled,
@@ -9272,6 +9125,7 @@ function ErrorBoundary(props) {
 const [lastError, setLastError] = createSignal(void 0);
 const [caughtError, setCaughtError] = createSignal(void 0);
 const [mounted, setMounted] = createSignal(true);
+const [retryCount, setRetryCount] = createSignal(0);
 const notifyError = (error) => {
 if (lastError() === error) return;
 setLastError(error);
@@ -9282,8 +9136,10 @@ text: body
 });
 };
 const handleRetry = () => {
+if (retryCount() >= 3) return;
 setLastError(void 0);
 setCaughtError(void 0);
+setRetryCount((c) => c + 1);
 setMounted(false);
 queueMicrotask(() => setMounted(true));
 };
@@ -9482,7 +9338,7 @@ download: true,
 mediaExtraction: true,
 accessibility: true
 },
-version: "2.0.0",
+version: "2.1.1",
 lastModified: 0
 };
 function createDefaultSettings(timestamp = Date.now()) {
@@ -9537,7 +9393,7 @@ schemaHash = SETTINGS_SCHEMA_HASH;
 async load() {
 const stored = await this.storage.get(APP_SETTINGS_STORAGE_KEY);
 if (!stored) return globalThis.structuredClone(createDefaultSettings());
-const migrated = migrateSettings(stored, performance.now());
+const migrated = migrateSettings(stored, Date.now());
 if (stored.__schemaHash !== this.schemaHash) await this.persist(migrated).catch(() => {});
 return globalThis.structuredClone(migrated);
 }
@@ -9555,25 +9411,13 @@ __schemaHash: this.schemaHash
 //#region src/features/settings/services/settings-helpers.ts
 /**
 * @fileoverview Settings service helper utilities
-* @description Shared utilities for path resolution and validation.
 */
-var FORBIDDEN_PATH_KEYS = new Set([
-"__proto__",
-"constructor",
-"prototype"
-]);
-/** Check if a path segment is safe from prototype pollution */
-function isSafePathKey(key) {
-return key !== "" && !FORBIDDEN_PATH_KEYS.has(key);
-}
 /** Resolve nested object property by dot-notation path */
 function resolveNestedPath(source, path) {
-if (typeof path !== "string" || path === "") return;
+if (typeof path !== "string" || path === "") return void 0;
 let current = source;
-const segments = path.split(".");
-for (const segment of segments) {
-if (!isSafePathKey(segment)) return;
-if (current === null || typeof current !== "object") return;
+for (const segment of path.split(".")) {
+if (!segment || current === null || typeof current !== "object") return void 0;
 current = current[segment];
 }
 return current;
@@ -9584,11 +9428,11 @@ if (target === null || typeof target !== "object") return false;
 if (typeof path !== "string" || path === "") return false;
 const segments = path.split(".");
 const last = segments[segments.length - 1];
-if (!last || !isSafePathKey(last)) return false;
+if (!last) return false;
 let current = target;
 for (let i = 0; i < segments.length - 1; i++) {
 const segment = segments[i];
-if (!segment || !isSafePathKey(segment)) return false;
+if (!segment) return false;
 const existing = Object.hasOwn(current, segment) ? current[segment] : void 0;
 if (existing === null || typeof existing !== "object") {
 const next = Object.create(null);
@@ -9612,6 +9456,7 @@ return typeof value === typeof defaultValue;
 //#region src/features/settings/services/settings-service.ts
 var _settingsInstance = null;
 var SettingsService = class SettingsService {
+repository;
 _initialized = false;
 static getInstance() {
 if (!_settingsInstance) _settingsInstance = new SettingsService();
@@ -9643,12 +9488,12 @@ async set(key, value) {
 if (!isValidSettingValue(this.getDefaultValue(key), value)) throw new Error(`Invalid setting value for ${key}`);
 const oldValue = this.get(key);
 if (!assignNestedPath(this.settings, key, value)) throw new Error(`Failed to assign setting value for ${key}`);
-this.settings.lastModified = performance.now();
+this.settings.lastModified = Date.now();
 this.notifyListeners({
 key,
 oldValue,
 newValue: value,
-timestamp: performance.now(),
+timestamp: Date.now(),
 status: "success"
 });
 await this.persist();
