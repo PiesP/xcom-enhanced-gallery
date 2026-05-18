@@ -8,9 +8,6 @@ import { useTranslation } from '@shared/hooks/use-translation';
 import { EventManager } from '@shared/services/event-manager';
 import type { ToolbarState } from '@shared/types/toolbar.types';
 import { shouldAllowWheelDefault as shouldAllowWheelDefaultBase } from '@shared/utils/events/wheel-scroll-guard';
-import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
-import { resolve, resolveOptional } from '@shared/utils/solid/accessor-utils';
-import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, onCleanup, Show } from 'solid-js';
 import styles from './Toolbar.module.css';
@@ -31,23 +28,23 @@ type FitModeDefinition = {
 
 interface ToolbarViewProps {
   /** Current media index */
-  readonly currentIndex: MaybeAccessor<number>;
+  readonly currentIndex: number;
   /** Focused media index for keyboard navigation */
-  readonly focusedIndex?: MaybeAccessor<number | null>;
+  readonly focusedIndex: number | null;
   /** Total number of media items */
-  readonly totalCount: MaybeAccessor<number>;
+  readonly totalCount: number;
   /** Whether a download is in progress */
-  readonly isDownloading?: MaybeAccessor<boolean | undefined>;
+  readonly isDownloading: boolean;
   /** Whether toolbar is disabled */
-  readonly disabled?: MaybeAccessor<boolean | undefined>;
+  readonly disabled: boolean;
   /** Current fit mode */
-  readonly currentFitMode?: MaybeAccessor<ImageFitMode | undefined>;
+  readonly currentFitMode: ImageFitMode;
   /** Tweet text content */
-  readonly tweetText?: MaybeAccessor<string | null | undefined>;
+  readonly tweetText: string | null;
   /** Tweet HTML content */
-  readonly tweetTextHTML?: MaybeAccessor<string | null | undefined>;
+  readonly tweetTextHTML: string | null;
   /** Tweet URL */
-  readonly tweetUrl?: MaybeAccessor<string | null | undefined>;
+  readonly tweetUrl: string | null;
   /** ARIA label */
   readonly 'aria-label'?: string | undefined;
   /** ARIA describedby */
@@ -73,7 +70,7 @@ interface ToolbarViewProps {
   /** Fit mode order */
   readonly fitModeOrder: ReadonlyArray<FitModeDefinition>;
   /** Fit mode labels */
-  readonly fitModeLabels: MaybeAccessor<Record<ImageFitMode, { label: string; title: string }>>;
+  readonly fitModeLabels: Record<ImageFitMode, { label: string; title: string }>;
   /** Active fit mode generator */
   readonly activeFitMode: () => ImageFitMode;
   /** Fit mode click handler factory */
@@ -115,14 +112,13 @@ const shouldAllowWheelDefault = (event: WheelEvent): boolean => {
 };
 
 export function ToolbarView(props: ToolbarViewProps): JSXElement {
-  // Resolved values (via createMemo for reactivity)
-  const totalCount = () => resolve(props.totalCount);
-  const currentIndex = () => resolve(props.currentIndex);
-  const isToolbarDisabled = () => !!resolveOptional(props.disabled);
-  const activeFitMode = () => props.activeFitMode();
-  const tweetText = () => resolveOptional(props.tweetText) ?? null;
-  const tweetTextHTML = () => resolveOptional(props.tweetTextHTML) ?? null;
-  const tweetUrl = () => resolveOptional(props.tweetUrl) ?? null;
+  const totalCount = () => props.totalCount;
+  const currentIndex = () => props.currentIndex;
+  const isToolbarDisabled = () => props.disabled;
+  const activeFitMode = () => props.currentFitMode;
+  const tweetText = () => props.tweetText;
+  const tweetTextHTML = () => props.tweetTextHTML;
+  const tweetUrl = () => props.tweetUrl;
 
   // Element refs
   const [toolbarElement, setToolbarElement] = createSignal<HTMLDivElement | null>(null);
@@ -133,7 +129,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
 
   // Memos for derived state
   const nav = createMemo(() => props.navState());
-  const fitModeLabels = createMemo(() => resolve(props.fitModeLabels));
+  const fitModeLabels = () => props.fitModeLabels;
 
   const assignToolbarRef = (element: HTMLDivElement | null) => {
     setToolbarElement(element);

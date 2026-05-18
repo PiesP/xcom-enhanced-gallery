@@ -21,7 +21,7 @@ import { cx } from '@shared/utils/text/formatting';
 import type { JSX, JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, splitProps, untrack } from 'solid-js';
 
-const FIT_MODE_CLASSES: Record<ImageFitMode, string | undefined> = {
+const FIT_MODE_CLASSES: Record<ImageFitMode, string> = {
   original: styles.fitOriginal,
   fitHeight: styles.fitHeight,
   fitWidth: styles.fitWidth,
@@ -169,7 +169,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const resolvedFitMode = createMemo<ImageFitMode>(() => {
     const value = local.fitMode;
-    if (typeof value === 'function') return value() ?? 'fitWidth';
+    if (typeof value === 'function') return value();
     return value ?? 'fitWidth';
   });
 

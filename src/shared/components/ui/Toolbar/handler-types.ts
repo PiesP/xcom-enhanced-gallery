@@ -60,20 +60,9 @@ export interface LifecycleHandlers {
 }
 
 /**
- * Focus event handlers for keyboard navigation support
- */
-export interface FocusHandlers {
-  /** Handle focus event */
-  readonly onFocus?: ((event: FocusEvent) => void) | undefined;
-  /** Handle blur event */
-  readonly onBlur?: ((event: FocusEvent) => void) | undefined;
-}
-
-/**
  * Combined toolbar handlers interface
  *
  * Groups all handler types into a single organized structure.
- * Each handler group is optional to allow incremental adoption.
  */
 export interface ToolbarHandlers {
   /** Navigation controls (previous/next) */
@@ -84,6 +73,4 @@ export interface ToolbarHandlers {
   readonly fitMode?: FitModeHandlers | undefined;
   /** Lifecycle controls (close, settings) */
   readonly lifecycle: LifecycleHandlers;
-  /** Focus event handlers (optional) */
-  readonly focus?: FocusHandlers | undefined;
 }

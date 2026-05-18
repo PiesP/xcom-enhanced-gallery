@@ -2,9 +2,10 @@
 
 import type { MediaInfo } from '@shared/types/media.types';
 import type { ImageFitMode } from '@shared/types/settings.types';
+import type { Accessor } from 'solid-js';
 
-/** Fit mode prop: ImageFitMode value or function returning it. */
-export type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
+/** Fit mode prop: ImageFitMode value or accessor returning it. */
+export type FitModeProp = ImageFitMode | Accessor<ImageFitMode>;
 
 /** Props for VerticalImageItem component. */
 export interface VerticalImageItemProps {

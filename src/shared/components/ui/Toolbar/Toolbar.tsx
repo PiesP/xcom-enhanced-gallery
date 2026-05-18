@@ -181,10 +181,11 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
   return (
     <ToolbarView
       currentIndex={local.currentIndex() ?? 0}
-      focusedIndex={(local.focusedIndex?.() ?? null) as number | null}
+      focusedIndex={local.focusedIndex?.() ?? null}
       totalCount={local.totalCount() ?? 0}
       isDownloading={local.isDownloading?.() ?? false}
       disabled={local.disabled?.() ?? false}
+      currentFitMode={activeFitMode()}
       tweetText={local.tweetText?.() ?? null}
       tweetTextHTML={local.tweetTextHTML?.() ?? null}
       tweetUrl={local.tweetUrl?.() ?? null}
@@ -195,7 +196,7 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
       displayedIndex={displayedIndex}
       progressWidth={progressWidth}
       fitModeOrder={FIT_MODE_ORDER}
-      fitModeLabels={fitModeLabels}
+      fitModeLabels={fitModeLabels()}
       activeFitMode={activeFitMode}
       handleFitModeClick={handleFitModeClick}
       isFitDisabled={isFitDisabled}
