@@ -36,11 +36,9 @@ interface AmbientVideoPauseResponse extends PauseAmbientVideosResult {
 }
 
 /** Default pause result value */
-const PAUSE_RESULT_DEFAULT = {
-  pausedCount: 0,
-  totalCandidates: 0,
-  skippedCount: 0,
-} as const satisfies PauseAmbientVideosResult;
+function emptyPauseResult(): PauseAmbientVideosResult {
+  return { pausedCount: 0, totalCandidates: 0, skippedCount: 0 };
+}
 
 /** Resolved pause context with root and scope */
 interface PauseResolution {
@@ -169,7 +167,7 @@ export function pauseAmbientVideosForGallery(
       });
     }
     return {
-      ...PAUSE_RESULT_DEFAULT,
+      ...emptyPauseResult(),
       failed: true,
       trigger,
       forced: force,

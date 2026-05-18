@@ -65,7 +65,7 @@ export class PersistentStorage {
       try {
         return JSON.parse(value) as T;
       } catch {
-        return defaultValue;
+        return value as unknown as T;
       }
     } catch {
       return defaultValue;

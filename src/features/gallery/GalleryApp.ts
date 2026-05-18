@@ -36,18 +36,16 @@ export class GalleryApp {
   }
 
   private async setupEventHandlers(): Promise<void> {
-    const settingsService = tryGetSettings() as { get?: (key: string) => unknown } | null;
-    const enableKeyboardSetting = settingsService?.get?.('gallery.enableKeyboardNav');
+    const settings = tryGetSettings();
     const enableKeyboard =
-      typeof enableKeyboardSetting === 'boolean' ? enableKeyboardSetting : true;
+      typeof settings?.get('gallery.enableKeyboardNav') === 'boolean'
+        ? (settings.get('gallery.enableKeyboardNav') as boolean)
+        : true;
 
     initializeGalleryEvents(
       {
         onMediaClick: (element, event) => this.handleMediaClick(element, event),
         onGalleryClose: () => this.closeGallery(),
-        onKeyboardEvent: (_event) => {
-          // Intentionally empty — all keyboard handling is centralized in keyboard.ts
-        },
       },
       {
         enableKeyboard,

@@ -49,5 +49,3 @@ export const bootstrapErrorReporter = createReporter('bootstrap');
 export const galleryErrorReporter = createReporter('gallery');
 export const mediaErrorReporter = createReporter('media');
 export const settingsErrorReporter = createReporter('settings');
-
-export { normalizeErrorMessage };

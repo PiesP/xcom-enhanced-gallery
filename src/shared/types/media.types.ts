@@ -68,9 +68,6 @@ export interface MediaExtractionResult {
   readonly errors?: readonly ExtractionError[] | undefined;
   readonly clickedIndex?: number | undefined;
   readonly tweetInfo?: TweetInfo | null | undefined;
-  /** Backward compatibility with core version */
-  readonly source?: string | undefined;
-  readonly sourceType?: string | undefined;
   readonly metadata?: Record<string, unknown> | undefined;
 }
 
@@ -116,10 +113,4 @@ export interface MediaExtractor {
 /** Gallery rendering options */
 export interface GalleryRenderOptions {
   readonly startIndex?: number | undefined;
-  readonly className?: string | undefined;
-  readonly tweetId?: string | undefined;
-  readonly showDownloadButton?: boolean | undefined;
-  readonly showFilenames?: boolean | undefined;
-  readonly autoPlay?: boolean | undefined;
-  readonly pauseContext?: AmbientVideoPauseRequest | undefined;
 }
