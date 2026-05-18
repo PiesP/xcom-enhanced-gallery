@@ -9,42 +9,14 @@ import {
 } from '@shared/utils/events/handlers/keyboard';
 import { handleMediaClick } from '@shared/utils/events/handlers/media-click';
 
-interface LifecycleState {
-  readonly initialized: boolean;
-  readonly context: string | null;
-}
-
-let lifecycleState: LifecycleState = { initialized: false, context: null };
-
-function registerListeners(
-  eventManager: EventManager,
-  target: EventTarget,
-  handlers: EventHandlers,
-  options: GalleryEventOptions,
-  context: string
-): void {
-  const listenerOptions: AddEventListenerOptions = { capture: true, passive: false };
-
-  if (options.enableKeyboard) {
-    const keyHandler: EventListener = (evt: Event) => {
-      handleKeyboardEvent(evt as KeyboardEvent, handlers, options);
-    };
-    eventManager.addEventListener(target, 'keydown', keyHandler, { ...listenerOptions, context });
-  }
-
-  if (options.enableMediaDetection) {
-    const clickHandler: EventListener = async (evt: Event) => {
-      await handleMediaClick(evt as MouseEvent, handlers, options);
-    };
-    eventManager.addEventListener(target, 'click', clickHandler, { ...listenerOptions, context });
-  }
-}
+let initialized = false;
+let currentContext: string | null = null;
 
 export function initializeGalleryEvents(
   handlers: EventHandlers,
   options?: Partial<GalleryEventOptions>
 ): () => void {
-  if (lifecycleState.initialized) {
+  if (initialized) {
     if (__DEV__) logger.warn('[GalleryLifecycle] Re-initializing, cleaning up previous listeners');
     cleanupGalleryEvents();
   }
@@ -65,12 +37,26 @@ export function initializeGalleryEvents(
   };
 
   const target = document.body;
-
   const eventManager = EventManager.getInstance();
-  registerListeners(eventManager, target, handlers, mergedOptions, context);
-  resetKeyboardDebounceState();
+  const listenerOptions: AddEventListenerOptions = { capture: true, passive: false };
 
-  lifecycleState = { initialized: true, context };
+  if (mergedOptions.enableKeyboard) {
+    const keyHandler: EventListener = (evt: Event) => {
+      handleKeyboardEvent(evt as KeyboardEvent, handlers, mergedOptions);
+    };
+    eventManager.addEventListener(target, 'keydown', keyHandler, { ...listenerOptions, context });
+  }
+
+  if (mergedOptions.enableMediaDetection) {
+    const clickHandler: EventListener = async (evt: Event) => {
+      await handleMediaClick(evt as MouseEvent, handlers, mergedOptions);
+    };
+    eventManager.addEventListener(target, 'click', clickHandler, { ...listenerOptions, context });
+  }
+
+  resetKeyboardDebounceState();
+  initialized = true;
+  currentContext = context;
 
   if (__DEV__ && mergedOptions.debugMode) {
     logger.debug('[GalleryEvents] Listeners registered', { context });
@@ -80,12 +66,13 @@ export function initializeGalleryEvents(
 }
 
 export function cleanupGalleryEvents(): void {
-  if (!lifecycleState.initialized) return;
+  if (!initialized) return;
 
-  if (lifecycleState.context) {
-    EventManager.getInstance().removeByContext(lifecycleState.context);
+  if (currentContext) {
+    EventManager.getInstance().removeByContext(currentContext);
   }
 
   resetKeyboardDebounceState();
-  lifecycleState = { initialized: false, context: null };
+  initialized = false;
+  currentContext = null;
 }

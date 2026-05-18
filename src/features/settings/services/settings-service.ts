@@ -50,13 +50,11 @@ export class SettingsService {
   }
 
   public get(key: NestedSettingKey | string): unknown {
-    this.assertInitialized();
     const value = resolveNestedPath(this.settings, key);
     return value === undefined ? this.getDefaultValue(key) : value;
   }
 
   public async set<T = unknown>(key: NestedSettingKey, value: T): Promise<void> {
-    this.assertInitialized();
     if (!isValidSettingValue(this.getDefaultValue(key), value)) {
       throw new Error(`Invalid setting value for ${key}`);
     }
@@ -94,20 +92,12 @@ export class SettingsService {
   }
 
   private notifyListeners(event: SettingChangeEvent): void {
-    this.listeners.forEach((listener) => {
+    for (const listener of this.listeners) {
       try {
         listener(event);
       } catch (error) {
-        if (__DEV__) {
-          logger.error('Settings listener error:', error);
-        }
+        if (__DEV__) logger.error('Settings listener error:', error);
       }
-    });
-  }
-
-  private assertInitialized(): void {
-    if (!this.isInitialized()) {
-      throw new Error('SettingsService must be initialized before use');
     }
   }
 }

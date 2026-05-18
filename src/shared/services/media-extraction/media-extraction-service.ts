@@ -20,10 +20,10 @@ import {
 
 const generateExtractionId = (): string => createPrefixedId('simp');
 
-const createErrorResult = (
+function createErrorResult(
   error: unknown,
   code: ErrorCode = ErrorCode.NO_MEDIA_FOUND
-): MediaExtractionResult => {
+): MediaExtractionResult {
   const errorMessage = normalizeErrorMessage(error);
   return {
     success: false,
@@ -38,45 +38,15 @@ const createErrorResult = (
     tweetInfo: null,
     errors: [new ExtractionError(code, errorMessage)],
   };
-};
+}
 
-const createApiErrorResult = (
-  apiResult: MediaExtractionResult,
-  tweetInfo: TweetInfo
-): MediaExtractionResult => {
-  const apiErrorMessage =
-    apiResult.metadata?.error ?? apiResult.errors?.[0]?.message ?? 'API extraction failed';
-  const base = createErrorResult(apiErrorMessage, ErrorCode.ALL_FAILED);
-  return {
-    ...base,
-    clickedIndex: apiResult.clickedIndex ?? 0,
-    metadata: {
-      ...base.metadata,
-      ...(apiResult.metadata ?? {}),
-      strategy: 'api-extraction',
-      sourceType: 'extraction-failed',
-    },
-    tweetInfo: mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo),
-  };
-};
-
-const mergeTweetInfoMetadata = (
-  base: TweetInfo | null | undefined,
-  override: TweetInfo | null | undefined
-): TweetInfo | null => {
+function mergeTweetInfo(base?: TweetInfo | null, override?: TweetInfo | null): TweetInfo | null {
   if (!base) return override ?? null;
   if (!override) return base;
-  return {
-    ...base,
-    ...override,
-    metadata: {
-      ...(base.metadata ?? {}),
-      ...(override.metadata ?? {}),
-    },
-  };
-};
+  return { ...base, ...override, metadata: { ...(base.metadata ?? {}), ...(override.metadata ?? {}) } };
+}
 
-const finalizeResult = (result: MediaExtractionResult): MediaExtractionResult => {
+function finalizeResult(result: MediaExtractionResult): MediaExtractionResult {
   if (!result.success) return result;
   const uniqueItems = removeDuplicateMediaItems(result.mediaItems);
   if (uniqueItems.length === 0) {
@@ -87,17 +57,9 @@ const finalizeResult = (result: MediaExtractionResult): MediaExtractionResult =>
     uniqueItems,
     result.clickedIndex ?? 0
   );
-  return {
-    ...result,
-    mediaItems: uniqueItems,
-    clickedIndex: adjustedIndex,
-  };
-};
+  return { ...result, mediaItems: uniqueItems, clickedIndex: adjustedIndex };
+}
 
-/**
- * Media Extraction Service
- * Orchestrates tweet metadata extraction, API-based media retrieval, and DOM fallback.
- */
 export class MediaExtractionService implements MediaExtractor {
   private readonly tweetInfoExtractor: TweetInfoExtractor;
   private readonly apiExtractor: TwitterAPIExtractor;
@@ -114,34 +76,26 @@ export class MediaExtractionService implements MediaExtractor {
     options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     const extractionId = generateExtractionId();
-    if (__DEV__) {
-      logger.info(`[MediaExtractor] ${extractionId}: Extraction started`);
-    }
+    if (__DEV__) logger.info(`[MediaExtractor] ${extractionId}: Extraction started`);
 
     try {
       const tweetInfo = this.tweetInfoExtractor.extract(element);
 
       if (!tweetInfo?.tweetId) {
-        if (__DEV__) {
-          logger.warn(`[MediaExtractor] ${extractionId}: No tweet info found`);
-        }
+        if (__DEV__) logger.warn(`[MediaExtractor] ${extractionId}: No tweet info found`);
         return createErrorResult('No tweet information found');
       }
 
-      // Try API extraction first
       const apiResult = await this.apiExtractor.extract(tweetInfo, element, options, extractionId);
 
       if (apiResult.success && apiResult.mediaItems.length > 0) {
         return finalizeResult({
           ...apiResult,
-          tweetInfo: mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo),
+          tweetInfo: mergeTweetInfo(tweetInfo, apiResult.tweetInfo),
         });
       }
 
-      // API failed or returned no media - try DOM fallback
-      if (__DEV__) {
-        logger.info(`[MediaExtractor] ${extractionId}: API failed, trying DOM fallback`);
-      }
+      if (__DEV__) logger.info(`[MediaExtractor] ${extractionId}: API failed, trying DOM fallback`);
 
       const domResult = await this.domFallbackExtractor.extract(
         tweetInfo,
@@ -153,19 +107,28 @@ export class MediaExtractionService implements MediaExtractor {
       if (domResult.success && domResult.mediaItems.length > 0) {
         return finalizeResult({
           ...domResult,
-          tweetInfo: mergeTweetInfoMetadata(tweetInfo, domResult.tweetInfo),
+          tweetInfo: mergeTweetInfo(tweetInfo, domResult.tweetInfo),
         });
       }
 
-      // Both API and DOM extraction failed
-      if (__DEV__) {
-        logger.error('Both API and DOM extraction failed', extractionId);
-      }
-      return createApiErrorResult(apiResult, tweetInfo);
+      if (__DEV__) logger.error('Both API and DOM extraction failed', extractionId);
+
+      const apiErrorMessage =
+        apiResult.metadata?.error ?? apiResult.errors?.[0]?.message ?? 'API extraction failed';
+      const base = createErrorResult(apiErrorMessage, ErrorCode.ALL_FAILED);
+      return {
+        ...base,
+        clickedIndex: apiResult.clickedIndex ?? 0,
+        metadata: {
+          ...base.metadata,
+          ...(apiResult.metadata ?? {}),
+          strategy: 'api-extraction',
+          sourceType: 'extraction-failed',
+        },
+        tweetInfo: mergeTweetInfo(tweetInfo, apiResult.tweetInfo),
+      };
     } catch (error) {
-      if (__DEV__) {
-        logger.error('Extract failed', extractionId, error);
-      }
+      if (__DEV__) logger.error('Extract failed', extractionId, error);
       return createErrorResult(error);
     }
   }
@@ -176,11 +139,9 @@ export class MediaExtractionService implements MediaExtractor {
   ): Promise<MediaExtractionResult> {
     try {
       const firstMedia = container.querySelector(TWITTER_MEDIA_SELECTOR);
-
       if (!firstMedia || !(firstMedia instanceof HTMLElement)) {
         return createErrorResult('No media found in container');
       }
-
       return this.extractFromClickedElement(firstMedia, options);
     } catch (error) {
       return createErrorResult(error);
