@@ -40,9 +40,7 @@ function emptyResult(): PauseAmbientVideosResult {
 
 function findTweetContainer(element?: HTMLElement | null): HTMLElement | null {
   if (!element) return null;
-  return closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS, {
-    debugLabel: 'tweet-container',
-  });
+  return closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS);
 }
 
 function resolveContext(request: AmbientVideoPauseRequest): {
@@ -60,17 +58,13 @@ function resolveContext(request: AmbientVideoPauseRequest): {
 function isVideoTrigger(el?: HTMLElement | null): boolean {
   if (!el) return false;
   if (el.tagName === 'VIDEO') return true;
-  return (
-    closestWithFallback(el, VIDEO_CONTAINER_SELECTORS, { debugLabel: 'video-container' }) !== null
-  );
+  return closestWithFallback(el, VIDEO_CONTAINER_SELECTORS) !== null;
 }
 
 function isImageTrigger(el?: HTMLElement | null): boolean {
   if (!el) return false;
   if (el.tagName === 'IMG') return true;
-  return (
-    closestWithFallback(el, IMAGE_CONTAINER_SELECTORS, { debugLabel: 'image-container' }) !== null
-  );
+  return closestWithFallback(el, IMAGE_CONTAINER_SELECTORS) !== null;
 }
 
 function inferTrigger(el?: HTMLElement | null): Trigger {

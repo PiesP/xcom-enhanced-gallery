@@ -1,31 +1,14 @@
 /**
  * @fileoverview Settings service helper utilities
- * @description Shared utilities for path resolution and validation.
  */
-
-const FORBIDDEN_PATH_KEYS = new Set<string>(['__proto__', 'constructor', 'prototype']);
-
-/** Check if a path segment is safe from prototype pollution */
-function isSafePathKey(key: string): boolean {
-  return key !== '' && !FORBIDDEN_PATH_KEYS.has(key);
-}
 
 /** Resolve nested object property by dot-notation path */
 export function resolveNestedPath<T = unknown>(source: unknown, path: string): T | undefined {
-  if (typeof path !== 'string' || path === '') {
-    return undefined;
-  }
+  if (typeof path !== 'string' || path === '') return undefined;
 
   let current: unknown = source;
-  const segments = path.split('.');
-
-  for (const segment of segments) {
-    if (!isSafePathKey(segment)) {
-      return undefined;
-    }
-    if (current === null || typeof current !== 'object') {
-      return undefined;
-    }
+  for (const segment of path.split('.')) {
+    if (!segment || current === null || typeof current !== 'object') return undefined;
     current = (current as Record<string, unknown>)[segment];
   }
 
@@ -34,29 +17,18 @@ export function resolveNestedPath<T = unknown>(source: unknown, path: string): T
 
 /** Assign value to nested object property by dot-notation path */
 export function assignNestedPath(target: unknown, path: string, value: unknown): boolean {
-  if (target === null || typeof target !== 'object') {
-    return false;
-  }
-  if (typeof path !== 'string' || path === '') {
-    return false;
-  }
+  if (target === null || typeof target !== 'object') return false;
+  if (typeof path !== 'string' || path === '') return false;
 
   const segments = path.split('.');
-
   const last = segments[segments.length - 1];
-  if (!last || !isSafePathKey(last)) {
-    return false;
-  }
+  if (!last) return false;
 
   let current = target as Record<string, unknown>;
 
   for (let i = 0; i < segments.length - 1; i++) {
     const segment = segments[i];
-    if (!segment || !isSafePathKey(segment)) {
-      return false;
-    }
-
-    // Use Object.hasOwn to prevent traversing inherited prototype properties
+    if (!segment) return false;
     const existing = Object.hasOwn(current, segment) ? current[segment] : undefined;
     if (existing === null || typeof existing !== 'object') {
       const next = Object.create(null) as Record<string, unknown>;
@@ -64,7 +36,6 @@ export function assignNestedPath(target: unknown, path: string, value: unknown):
       current = next;
       continue;
     }
-
     current = existing as Record<string, unknown>;
   }
 
@@ -75,7 +46,6 @@ export function assignNestedPath(target: unknown, path: string, value: unknown):
 /** Validate a setting value against its default type */
 export function isValidSettingValue(defaultValue: unknown, value: unknown): boolean {
   if (defaultValue === undefined) return true;
-
   if (Array.isArray(defaultValue)) return Array.isArray(value);
   if (typeof defaultValue === 'object' && defaultValue !== null) {
     return typeof value === 'object' && value !== null;

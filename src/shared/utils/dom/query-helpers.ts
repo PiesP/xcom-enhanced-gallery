@@ -1,119 +1,43 @@
 /**
  * @fileoverview DOM query helpers with fallback selector support.
- * Provides type-safe query functions that try multiple selectors in order.
- * Consolidates duplicate selector fallback patterns across the codebase.
  */
 
 import { logger } from '@shared/logging/logger';
 
-/**
- * Cache for invalid selectors to avoid repeated warnings.
- */
 const warnedInvalidSelectors: Record<string, true> = Object.create(null);
-const loggedFallbackMatches: Record<string, true> = Object.create(null);
 
-interface FallbackQueryOptions {
-  readonly debugLabel?: string;
-}
-
-/**
- * Warn about invalid selector once (development mode only).
- */
 const warnInvalidSelectorOnce = (selector: string, error: unknown): void => {
   if (!__DEV__) return;
   if (warnedInvalidSelectors[selector]) return;
-
   warnedInvalidSelectors[selector] = true;
   logger.warn(`[query-helpers] Invalid selector skipped: ${selector}`, { error });
 };
 
-const logFallbackSelectorMatchOnce = (
-  selector: string,
-  index: number,
-  options: FallbackQueryOptions
-): void => {
-  if (!__DEV__ || index === 0 || !options.debugLabel) {
-    return;
-  }
-
-  const key = `${options.debugLabel}:${selector}`;
-  if (loggedFallbackMatches[key]) {
-    return;
-  }
-
-  loggedFallbackMatches[key] = true;
-  logger.debug(`[query-helpers] Fallback selector matched for ${options.debugLabel}`, {
-    selector,
-  });
-};
-
-/**
- * Query a single element with fallback selectors.
- * Tries each selector in order until one succeeds.
- *
- * @param container - Parent element to search within
- * @param selectors - Array of selectors to try in order (first = highest priority)
- * @returns First matching element or null
- *
- * @example
- * ```ts
- * const tweet = querySelectorWithFallback(
- *   document,
- *   ['article[data-testid="tweet"]', 'article[role="article"]']
- * );
- * ```
- */
 export function querySelectorWithFallback<T extends Element = Element>(
   container: Element | Document,
-  selectors: readonly string[],
-  options: FallbackQueryOptions = {}
+  selectors: readonly string[]
 ): T | null {
-  for (const [index, selector] of selectors.entries()) {
+  for (const selector of selectors) {
     try {
       const element = container.querySelector<T>(selector);
-      if (element) {
-        logFallbackSelectorMatchOnce(selector, index, options);
-        return element;
-      }
+      if (element) return element;
     } catch (error) {
       warnInvalidSelectorOnce(selector, error);
     }
   }
-
   return null;
 }
 
-/**
- * Query all elements with fallback selectors.
- * Combines results from all matching selectors (deduplicated).
- *
- * @param container - Parent element to search within
- * @param selectors - Array of selectors to try
- * @returns Array of unique matching elements
- *
- * @example
- * ```ts
- * const mediaElements = queryAllWithFallback(
- *   tweetArticle,
- *   ['[data-testid="tweetPhoto"]', 'img[src*="pbs.twimg.com"]']
- * );
- * ```
- */
 export function queryAllWithFallback<T extends Element = Element>(
   container: Element | Document,
-  selectors: readonly string[],
-  options: FallbackQueryOptions = {}
+  selectors: readonly string[]
 ): T[] {
   const seen = new WeakSet<Element>();
   const results: T[] = [];
 
-  for (const [index, selector] of selectors.entries()) {
+  for (const selector of selectors) {
     try {
-      const elements = container.querySelectorAll<T>(selector);
-      if (elements.length > 0) {
-        logFallbackSelectorMatchOnce(selector, index, options);
-      }
-      for (const element of elements) {
+      for (const element of container.querySelectorAll<T>(selector)) {
         if (!seen.has(element)) {
           seen.add(element);
           results.push(element);
@@ -127,38 +51,17 @@ export function queryAllWithFallback<T extends Element = Element>(
   return results;
 }
 
-/**
- * Find closest ancestor matching any of the fallback selectors.
- * Tries each selector in order until one succeeds.
- *
- * @param element - Starting element
- * @param selectors - Array of selectors to try in order (first = highest priority)
- * @returns Closest matching ancestor or null
- *
- * @example
- * ```ts
- * const container = closestWithFallback(
- *   clickedElement,
- *   ['article[data-testid="tweet"]', 'article[role="article"]']
- * );
- * ```
- */
 export function closestWithFallback<T extends Element = Element>(
   element: Element,
-  selectors: readonly string[],
-  options: FallbackQueryOptions = {}
+  selectors: readonly string[]
 ): T | null {
-  for (const [index, selector] of selectors.entries()) {
+  for (const selector of selectors) {
     try {
       const match = element.closest<T>(selector);
-      if (match) {
-        logFallbackSelectorMatchOnce(selector, index, options);
-        return match;
-      }
+      if (match) return match;
     } catch (error) {
       warnInvalidSelectorOnce(selector, error);
     }
   }
-
   return null;
 }

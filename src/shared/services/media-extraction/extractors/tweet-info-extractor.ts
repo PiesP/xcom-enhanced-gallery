@@ -77,9 +77,7 @@ const extractFromElement: ExtractionStrategy = (element) => {
 
 /** Strategy 2: DOM Structure (Most Reliable) */
 const extractFromDOM: ExtractionStrategy = (element) => {
-  const container = closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS, {
-    debugLabel: 'tweet-container',
-  });
+  const container = closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS);
   if (!container) return null;
 
   // Find status link

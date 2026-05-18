@@ -136,8 +136,7 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       // Step 1: Find the tweet container
       const tweetContainer = closestWithFallback<HTMLElement>(
         clickedElement,
-        TWEET_CONTAINER_SELECTORS,
-        { debugLabel: 'tweet-container' }
+        TWEET_CONTAINER_SELECTORS
       );
 
       if (!tweetContainer || !(tweetContainer instanceof HTMLElement)) {
