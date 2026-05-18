@@ -156,11 +156,11 @@
     --xeg-border-emphasis: var(--xeg-color-border-emphasis);
 
     /* Z-Index Management */
-    --xeg-z-gallery: 2147483600;
-    --xeg-z-toolbar-hover-zone: 2147483618;
-    --xeg-z-toolbar: 2147483620;
-    --xeg-z-toolbar-panel: 2147483622;
-    --xeg-z-toolbar-panel-active: 2147483624;
+    --xeg-z-gallery: 9999;
+    --xeg-z-toolbar-hover-zone: 10001;
+    --xeg-z-toolbar: 10002;
+    --xeg-z-toolbar-panel: 10003;
+    --xeg-z-toolbar-panel-active: 10004;
 
     /* Animation Easing - Material Design */
     --xeg-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);

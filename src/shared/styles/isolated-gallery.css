@@ -28,7 +28,6 @@
     background: var(--xeg-gallery-bg, var(--xeg-color-bg-primary, Canvas));
     pointer-events: auto;
     user-select: none;
-    transform: translateZ(0);
     will-change: opacity, transform;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;

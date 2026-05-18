@@ -60,7 +60,6 @@
   flex-direction: column;
 
   /* Performance */
-  transform: var(--xeg-gpu-hack);
   will-change: opacity, transform;
   contain: layout style paint;
 
@@ -101,12 +100,10 @@
   visibility: var(--toolbar-visibility, hidden);
   display: block;
   transition: var(--xeg-transition-toolbar);
-  will-change: transform, opacity, visibility;
-  contain: layout style;
 
   /* Performance */
-  transform: var(--xeg-gpu-hack);
-  backface-visibility: var(--xeg-backface-visibility);
+  will-change: transform, opacity, visibility;
+  contain: layout style;
 
   pointer-events: var(--toolbar-pointer-events, none);
   background: transparent;
@@ -182,7 +179,6 @@
 
   /* Performance */
   contain: layout style;
-  transform: var(--xeg-gpu-hack);
   overscroll-behavior: contain;
 
   scrollbar-gutter: stable;
@@ -240,7 +236,6 @@
 
   /* Performance */
   contain: layout style;
-  transform: var(--xeg-gpu-hack);
 }
 
 /* Active gallery item highlight (animation removed in Phase 328 to avoid double emphasis) */

@@ -25,7 +25,6 @@
   pointer-events: auto;
 
   /* Performance */
-  transform: var(--xeg-gpu-hack);
   will-change: transform;
   contain: layout style;
 }
@@ -126,7 +125,6 @@
   pointer-events: auto;
   user-select: none;
   -webkit-user-drag: none;
-  transform: var(--xeg-gpu-hack);
   will-change: opacity;
   transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
 }

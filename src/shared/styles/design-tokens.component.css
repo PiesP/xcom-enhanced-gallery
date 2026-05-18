@@ -56,10 +56,6 @@
     --xeg-spacing-md: var(--space-md);
     --xeg-spacing-lg: var(--space-lg);
 
-    /* GPU Acceleration Hacks */
-    --xeg-gpu-hack: translateZ(0);
-    --xeg-backface-visibility: hidden;
-
     /* Layout Constraints */
     --xeg-viewport-height-constrained: 90vh;
   }
