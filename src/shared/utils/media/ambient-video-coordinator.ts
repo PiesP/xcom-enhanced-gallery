@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Ambient video pauser: silences background videos when gallery opens.
+ */
+
 import {
   IMAGE_CONTAINER_SELECTORS,
   TWEET_CONTAINER_SELECTORS,
@@ -11,189 +15,85 @@ import type {
 } from '@shared/utils/media/twitter-video-pauser';
 import { pauseActiveTwitterVideos } from '@shared/utils/media/twitter-video-pauser';
 
-type PauseRoot = Exclude<PauseAmbientVideosOptions['root'], undefined>;
+type PauseScope = 'document' | 'tweet' | 'custom';
+type Trigger = 'video-click' | 'image-click' | 'programmatic' | 'guard' | 'unknown';
 
-/** Pause context scope type */
-type AmbientVideoPauseScope = 'document' | 'tweet' | 'custom';
-
-/** Audio/video trigger type */
-type AmbientVideoTrigger = 'video-click' | 'image-click' | 'programmatic' | 'guard' | 'unknown';
-
-/** Request to pause ambient videos with context and metadata */
 export interface AmbientVideoPauseRequest extends PauseAmbientVideosOptions {
   readonly sourceElement?: HTMLElement | null;
-  readonly trigger?: AmbientVideoTrigger;
+  readonly trigger?: Trigger;
   readonly reason?: string;
 }
 
-/** Response from pause operation with detailed metadata */
-interface AmbientVideoPauseResponse extends PauseAmbientVideosResult {
+interface PauseResponse extends PauseAmbientVideosResult {
   readonly failed: boolean;
-  readonly trigger: AmbientVideoTrigger;
+  readonly trigger: Trigger;
   readonly forced: boolean;
   readonly reason: string;
-  readonly scope: AmbientVideoPauseScope;
+  readonly scope: PauseScope;
 }
 
-/** Default pause result value */
-function emptyPauseResult(): PauseAmbientVideosResult {
+function emptyResult(): PauseAmbientVideosResult {
   return { pausedCount: 0, totalCandidates: 0, skippedCount: 0 };
 }
 
-/** Resolved pause context with root and scope */
-interface PauseResolution {
-  readonly root: PauseRoot;
-  readonly scope: AmbientVideoPauseScope;
-}
-
-/**
- * Find tweet container for given element
- * @param element - Element to search from
- * @returns Parent tweet container element or null
- */
 function findTweetContainer(element?: HTMLElement | null): HTMLElement | null {
-  if (!element) {
-    return null;
-  }
-
+  if (!element) return null;
   return closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS, {
     debugLabel: 'tweet-container',
   });
 }
 
-/**
- * Resolve pause context from request or element
- * @param request - Pause request with optional source element
- * @returns Resolved pause context with root and scope
- */
-function resolvePauseContext(request: AmbientVideoPauseRequest): PauseResolution {
-  if (request.root !== undefined) {
-    return {
-      root: request.root ?? null,
-      scope: 'custom',
-    };
-  }
+function resolveContext(
+  request: AmbientVideoPauseRequest
+): { root: PauseAmbientVideosOptions['root']; scope: PauseScope } {
+  if (request.root !== undefined) return { root: request.root ?? null, scope: 'custom' };
 
-  const tweetContainer = findTweetContainer(request.sourceElement);
-  if (tweetContainer) {
-    return {
-      root: tweetContainer,
-      scope: 'tweet',
-    };
-  }
+  const tweet = findTweetContainer(request.sourceElement);
+  if (tweet) return { root: tweet, scope: 'tweet' };
 
-  return {
-    root: null,
-    scope: 'document',
-  };
+  return { root: null, scope: 'document' };
 }
 
-/**
- * Check if element is a video trigger (video tag or video container)
- * Uses fast tag check first, then selector matching as fallback
- * @param element - Element to check
- * @returns true if element is a video trigger
- */
-function isVideoTriggerElement(element?: HTMLElement | null): boolean {
-  if (!element) return false;
-  if (element.tagName === 'VIDEO') return true;
-
-  return (
-    closestWithFallback(element, VIDEO_CONTAINER_SELECTORS, {
-      debugLabel: 'video-container',
-    }) !== null
-  );
+function isVideoTrigger(el?: HTMLElement | null): boolean {
+  if (!el) return false;
+  if (el.tagName === 'VIDEO') return true;
+  return closestWithFallback(el, VIDEO_CONTAINER_SELECTORS, { debugLabel: 'video-container' }) !== null;
 }
 
-/**
- * Check if element is an image trigger (img tag or image container)
- * Uses fast tag check first, then selector matching as fallback
- * @param element - Element to check
- * @returns true if element is an image trigger
- */
-function isImageTriggerElement(element?: HTMLElement | null): boolean {
-  if (!element) return false;
-  if (element.tagName === 'IMG') return true;
-
-  return (
-    closestWithFallback(element, IMAGE_CONTAINER_SELECTORS, {
-      debugLabel: 'image-container',
-    }) !== null
-  );
+function isImageTrigger(el?: HTMLElement | null): boolean {
+  if (!el) return false;
+  if (el.tagName === 'IMG') return true;
+  return closestWithFallback(el, IMAGE_CONTAINER_SELECTORS, { debugLabel: 'image-container' }) !== null;
 }
 
-/**
- * Infer ambient video trigger type from clicked element
- * @param element - Clicked element
- * @returns Trigger type based on element type
- */
-function inferAmbientVideoTrigger(element?: HTMLElement | null): AmbientVideoTrigger {
-  if (isVideoTriggerElement(element)) {
-    return 'video-click';
-  }
-
-  if (isImageTriggerElement(element)) {
-    return 'image-click';
-  }
-
+function inferTrigger(el?: HTMLElement | null): Trigger {
+  if (isVideoTrigger(el)) return 'video-click';
+  if (isImageTrigger(el)) return 'image-click';
   return 'unknown';
 }
 
-/**
- * Pause ambient videos for gallery context
- * @param request - Pause request with optional context
- * @returns Response with pause result and metadata
- */
 export function pauseAmbientVideosForGallery(
   request: AmbientVideoPauseRequest = {}
-): AmbientVideoPauseResponse {
-  const trigger = request.trigger ?? inferAmbientVideoTrigger(request.sourceElement);
+): PauseResponse {
+  const trigger = request.trigger ?? inferTrigger(request.sourceElement);
   const force = request.force ?? true;
   const reason = request.reason ?? trigger;
-  const { root, scope } = resolvePauseContext(request);
+  const { root, scope } = resolveContext(request);
 
   let result: PauseAmbientVideosResult;
 
   try {
-    result = pauseActiveTwitterVideos({
-      root,
-      force,
-    });
+    result = pauseActiveTwitterVideos({ root, force });
   } catch (error) {
     if (__DEV__) {
-      logger.warn('[AmbientVideoCoordinator] Failed to pause ambient videos', {
-        error,
-        trigger,
-      });
+      logger.warn('[AmbientVideoCoordinator] Failed to pause ambient videos', { error, trigger });
     }
-    return {
-      ...emptyPauseResult(),
-      failed: true,
-      trigger,
-      forced: force,
-      reason,
-      scope,
-    };
+    return { ...emptyResult(), failed: true, trigger, forced: force, reason, scope };
   }
 
-  if (result.totalCandidates > 0 || result.pausedCount > 0) {
-    if (__DEV__) {
-      logger.debug('[AmbientVideoCoordinator] Ambient videos paused', {
-        ...result,
-        reason,
-        trigger,
-        forced: force,
-        scope,
-      });
-    }
+  if ((result.totalCandidates > 0 || result.pausedCount > 0) && __DEV__) {
+    logger.debug('[AmbientVideoCoordinator] Ambient videos paused', { ...result, reason, trigger, forced: force, scope });
   }
 
-  return {
-    ...result,
-    failed: false,
-    trigger,
-    forced: force,
-    reason,
-    scope,
-  };
+  return { ...result, failed: false, trigger, forced: force, reason, scope };
 }

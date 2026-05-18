@@ -1,28 +1,5 @@
 /**
- * HTTP Request Service
- *
- * Provides a type-safe, Promise-based HTTP client using GM_xmlhttpRequest.
- *
- * Features:
- * - GM_xmlhttpRequest as primary HTTP method (Cross-Origin support)
- * - Support for GET, POST, PUT, DELETE, PATCH methods
- * - Timeout handling and abort signal support
- * - Multiple response types: json, text, blob, arraybuffer
- * - Requires @connect directives for cross-origin requests
- *
- * Usage:
- * ```typescript
- * const httpService = HttpRequestService.getInstance();
- * const response = await httpService.get<ApiData>(url, { timeout: 5000 });
- * if (response.ok) {
- *   console.log(response.data);
- * }
- * ```
- *
- * @connect Requirements:
- * Add target domains to UserScript header for CORS:
- * // @connect api.twitter.com
- * // @connect pbs.twimg.com
+ * @fileoverview HTTP client using GM_xmlhttpRequest for cross-origin support.
  */
 
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
@@ -33,37 +10,20 @@ import type {
 } from '@shared/types/core/userscript';
 import { createDeferred } from '@shared/utils/async/promise-helpers';
 
-/**
- * HTTP request options
- */
 interface HttpRequestOptions {
   readonly headers?: Record<string, string>;
-  readonly timeout?: number; // milliseconds, default: 10000
+  readonly timeout?: number;
   readonly responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
   readonly data?: GMXMLHttpRequestDetails['data'];
-  readonly signal?: AbortSignal; // for cancellation
+  readonly signal?: AbortSignal;
 }
 
-/**
- * HTTP response wrapper
- */
 interface HttpResponse<T = unknown> {
   readonly ok: boolean;
   readonly status: number;
   readonly data: T;
 }
 
-/**
- * Singleton HTTP Request Service
- *
- * Provides HTTP client for Tampermonkey environment.
- * Uses GM_xmlhttpRequest as primary method for cross-origin support.
- *
- * Features:
- * - GM_xmlhttpRequest as primary HTTP method
- * - Detects Tampermonkey, test, extension, and console environments
- * - Requires @connect directives for cross-origin requests
- */
 let _httpInstance: HttpRequestService | null = null;
 
 export class HttpRequestService {
@@ -71,136 +31,6 @@ export class HttpRequestService {
 
   private constructor() {}
 
-  private createDeferredWithSettledGuard<T>(signal?: AbortSignal): {
-    promise: Promise<HttpResponse<T>>;
-    safeResolve: (value: HttpResponse<T>) => void;
-    safeReject: (reason: unknown) => void;
-  } {
-    const deferred = createDeferred<HttpResponse<T>>();
-
-    let abortListener: (() => void) | null = null;
-    const cleanupAbortListener = (): void => {
-      if (abortListener && signal) {
-        signal.removeEventListener('abort', abortListener);
-        abortListener = null;
-      }
-    };
-
-    let settled = false;
-    const safeResolve = (value: HttpResponse<T>): void => {
-      if (settled) return;
-      settled = true;
-      try {
-        cleanupAbortListener();
-      } catch {
-        // ignore
-      }
-      deferred.resolve(value);
-    };
-    const safeReject = (reason: unknown): void => {
-      if (settled) return;
-      settled = true;
-      try {
-        cleanupAbortListener();
-      } catch {
-        // ignore
-      }
-      deferred.reject(reason);
-    };
-
-    return { promise: deferred.promise, safeResolve, safeReject };
-  }
-
-  private connectAbortSignal(signal: AbortSignal, control: GMXMLHttpRequestControl): void {
-    const abortListener = (): void => {
-      control.abort();
-    };
-
-    signal.addEventListener('abort', abortListener, { once: true });
-
-    if (signal.aborted) {
-      abortListener();
-    }
-  }
-
-  /**
-   * Perform HTTP request using GM_xmlhttpRequest
-   * Re-introduced for cross-origin support
-   */
-  private async request<T>(
-    method: string,
-    url: string,
-    options?: HttpRequestOptions
-  ): Promise<HttpResponse<T>> {
-    const { promise, safeResolve, safeReject } = this.createDeferredWithSettledGuard<T>(
-      options?.signal
-    );
-
-    try {
-      const userscript = getUserscript();
-
-      if (options?.signal?.aborted) {
-        safeReject(getAbortReasonOrAbortErrorFromSignal(options.signal));
-        return promise;
-      }
-
-      const details: GMXMLHttpRequestDetails = {
-        method: method as Exclude<GMXMLHttpRequestDetails['method'], undefined>,
-        url,
-        ...(options?.headers ? { headers: options.headers } : {}),
-        timeout: options?.timeout ?? this.defaultTimeout,
-        onload: (response) => {
-          safeResolve({
-            ok: response.status >= 200 && response.status < 300,
-            status: response.status,
-            data: response.response as T,
-          });
-        },
-        onerror: (response) => {
-          const status = response.status ?? 0;
-          const errorMessage = status === 0 ? 'NET' : `HTTP:${status}`;
-
-          const error = new Error(errorMessage) as Error & { status?: number };
-          error.status = status;
-          safeReject(error);
-        },
-        ontimeout: () => {
-          const error = new Error('TIMEOUT') as Error & { status?: number };
-          error.status = 0;
-          safeReject(error);
-        },
-        onabort: () => {
-          safeReject(getAbortReasonOrAbortErrorFromSignal(options?.signal));
-        },
-      };
-
-      if (options?.responseType) {
-        details.responseType = options.responseType as Exclude<
-          GMXMLHttpRequestDetails['responseType'],
-          undefined
-        >;
-      }
-
-      const data = options?.data;
-      if (data !== undefined) {
-        details.data = data;
-      }
-
-      const control = userscript.xmlHttpRequest(details);
-
-      if (options?.signal) {
-        this.connectAbortSignal(options.signal, control);
-      }
-    } catch (error) {
-      safeReject(error);
-    }
-
-    return promise;
-  }
-
-  /**
-   * Get or create the singleton instance
-   */
   static getInstance(): HttpRequestService {
     if (!_httpInstance) _httpInstance = new HttpRequestService();
     return _httpInstance;
@@ -211,10 +41,78 @@ export class HttpRequestService {
     _httpInstance = null;
   }
 
-  /**
-   * Perform a GET request
-   */
   async get<T = unknown>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
     return this.request<T>('GET', url, options);
+  }
+
+  private async request<T>(
+    method: string,
+    url: string,
+    options?: HttpRequestOptions
+  ): Promise<HttpResponse<T>> {
+    const deferred = createDeferred<HttpResponse<T>>();
+    const signal = options?.signal;
+
+    if (signal?.aborted) {
+      deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal));
+      return deferred.promise;
+    }
+
+    const onAbort = (): void => {
+      deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal));
+    };
+    signal?.addEventListener('abort', onAbort, { once: true });
+
+    const settle = (fn: () => void): void => {
+      signal?.removeEventListener('abort', onAbort);
+      fn();
+    };
+
+    const details: GMXMLHttpRequestDetails = {
+      method: method as Exclude<GMXMLHttpRequestDetails['method'], undefined>,
+      url,
+      timeout: options?.timeout ?? this.defaultTimeout,
+      headers: options?.headers,
+      responseType: options?.responseType as Exclude<
+        GMXMLHttpRequestDetails['responseType'],
+        undefined
+      >,
+      data: options?.data,
+      onload: (response) => {
+        settle(() => {
+          deferred.resolve({
+            ok: response.status >= 200 && response.status < 300,
+            status: response.status,
+            data: response.response as T,
+          });
+        });
+      },
+      onerror: (response) => {
+        settle(() => {
+          const status = response.status ?? 0;
+          const error = new Error(status === 0 ? 'NET' : `HTTP:${status}`) as Error & {
+            status?: number;
+          };
+          error.status = status;
+          deferred.reject(error);
+        });
+      },
+      ontimeout: () => {
+        settle(() => {
+          const error = new Error('TIMEOUT') as Error & { status?: number };
+          error.status = 0;
+          deferred.reject(error);
+        });
+      },
+      onabort: () => {
+        settle(() => {
+          deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal));
+        });
+      },
+    };
+
+    const control = getUserscript().xmlHttpRequest(details);
+
+    return deferred.promise;
   }
 }

@@ -1,10 +1,8 @@
 /**
- * @fileoverview Cookie Service - Functional API
- * @description Provides cookie management with GM_cookie support and document.cookie fallback
+ * @fileoverview Cookie utilities: GM_cookie adapter with document.cookie fallback.
  */
 
 import { getUserscript } from '@shared/external/userscript/adapter';
-import { logger } from '@shared/logging/logger';
 import type {
   CookieAPI,
   CookieDeleteOptions,
@@ -15,224 +13,121 @@ import type {
 import { promisifyCallback } from '@shared/utils/async/promise-helpers';
 import { escapeRegExp } from '@shared/utils/text/formatting';
 
-// ============================================================================
-// Module State
-// ============================================================================
-
 let cachedCookieAPI: CookieAPI | null | undefined;
 
-// ============================================================================
-// Internal Utilities
-// ============================================================================
-
-const decode = (value: string | undefined): string | undefined => {
-  if (!value) return undefined;
+function resolveCookieAPI(): CookieAPI | null {
   try {
-    return decodeURIComponent(value);
+    return getUserscript().cookie ?? null;
   } catch {
-    return value;
-  }
-};
-
-const encode = (value: string): string => {
-  try {
-    return encodeURIComponent(value);
-  } catch {
-    return value;
-  }
-};
-
-const resolveCookieAPI = (): CookieAPI | null => {
-  try {
-    const userscript = getUserscript();
-    return userscript.cookie ?? null;
-  } catch (error) {
-    // Ignore: fall back to document.cookie-only mode
-    if (__DEV__) {
-      logger.debug('[cookie-utils] Userscript cookie API resolution failed (ignored)', error);
-    }
     return null;
   }
-};
+}
 
-const getCookieAPI = (): CookieAPI | null => {
+function getCookieAPI(): CookieAPI | null {
   if (cachedCookieAPI === undefined) {
     cachedCookieAPI = resolveCookieAPI();
   }
   return cachedCookieAPI;
-};
+}
 
-/**
- * Reset the cached cookie API reference.
- * @internal For testing purposes only.
- */
+/** @internal For testing only */
 export function resetCookieAPICache(): void {
   cachedCookieAPI = undefined;
 }
 
-const listFromDocument = (options?: CookieListOptions): CookieRecord[] => {
-  if (typeof document === 'undefined' || typeof document.cookie !== 'string') {
-    return [];
-  }
+function parseDocumentCookies(filterName?: string): CookieRecord[] {
+  const cookieStr = document.cookie;
+  if (!cookieStr) return [];
 
-  const domain =
-    typeof document.location?.hostname === 'string' ? document.location.hostname : undefined;
-
-  const records = document.cookie
+  const records = cookieStr
     .split(';')
     .map((entry) => entry.trim())
     .filter(Boolean)
     .map((entry) => {
-      const [rawName, ...rest] = entry.split('=');
-      const nameDecoded = decode(rawName);
-      if (!nameDecoded) return null;
+      const eqIdx = entry.indexOf('=');
+      const name = eqIdx >= 0 ? entry.slice(0, eqIdx) : entry;
+      const value = eqIdx >= 0 ? entry.slice(eqIdx + 1) : '';
+      return { name, value, path: '/', session: true };
+    });
 
-      const record: CookieRecord = {
-        name: nameDecoded,
-        value: decode(rest.join('=')) ?? '',
-        path: '/',
-        session: true,
-        ...(domain ? { domain } : {}),
-      };
-      return record;
-    })
-    .filter((record): record is CookieRecord => !!record);
+  return filterName ? records.filter((r) => r.name === filterName) : records;
+}
 
-  return options?.name ? records.filter((r) => r.name === options.name) : records;
-};
-
-const buildExpires = (expirationDate?: number): string | undefined => {
-  if (typeof expirationDate !== 'number') return undefined;
-  const epochMs = expirationDate > 1_000_000_000_000 ? expirationDate : expirationDate * 1000;
-  return new Date(epochMs).toUTCString();
-};
-
-const setDocumentCookie = (details: CookieSetOptions & { name: string }): void => {
-  if (typeof document === 'undefined') return;
-
-  const { name, value, path = '/', domain, expirationDate, secure } = details;
-  const parts = [`${encode(name)}=${encode(value ?? '')}`];
-
-  if (path) parts.push(`path=${path}`);
-  if (domain) parts.push(`domain=${domain}`);
-
-  const expires = buildExpires(expirationDate);
+function setDocumentCookie(name: string, value: string, expires?: string): void {
+  const parts = [`${encodeURIComponent(name)}=${encodeURIComponent(value)}`, 'path=/'];
   if (expires) parts.push(`expires=${expires}`);
-  if (secure) parts.push('secure');
-
   document.cookie = parts.join('; ');
-};
+}
 
-const deleteDocumentCookie = (details: CookieDeleteOptions): void => {
-  if (typeof document === 'undefined') return;
-  const { name, partitionKey: _partitionKey, ...rest } = details;
-  setDocumentCookie({ ...rest, name, value: '', expirationDate: 0 });
-};
+function deleteDocumentCookie(name: string): void {
+  setDocumentCookie(name, '', 'Thu, 01 Jan 1970 00:00:00 GMT');
+}
 
-// ============================================================================
-// Public API
-// ============================================================================
-
-/**
- * List cookies matching the given options.
- * Falls back to document.cookie when GM_cookie is not available.
- */
 export async function listCookies(options?: CookieListOptions): Promise<CookieRecord[]> {
-  const gmCookie = getCookieAPI();
-
-  if (!gmCookie?.list) {
-    return listFromDocument(options);
-  }
+  const gm = getCookieAPI();
+  if (!gm?.list) return parseDocumentCookies(options?.name);
 
   return promisifyCallback<CookieRecord[]>(
-    (callback) =>
-      gmCookie?.list(options, (cookies, error) => {
-        if (error) {
-          logger.warn('GM_cookie.list failed; falling back to document.cookie', error);
-        }
-        callback(error ? undefined : (cookies ?? []).map((c) => ({ ...c })), error);
-      }),
-    { fallback: () => listFromDocument(options) }
+    (cb) => gm.list(options, (cookies, error) => {
+      if (error) return cb(undefined, error);
+      cb((cookies ?? []).map((c) => ({ ...c })), undefined);
+    }),
+    { fallback: () => parseDocumentCookies(options?.name) }
   );
 }
 
-/**
- * Set a cookie. Uses GM_cookie when available, falls back to document.cookie.
- */
 export async function setCookie(details: CookieSetOptions): Promise<void> {
-  if (!details?.name) {
-    throw new Error('Cookie name is required');
-  }
+  if (!details?.name) throw new Error('Cookie name is required');
 
-  const gmCookie = getCookieAPI();
-  const normalizedDetails = details as CookieSetOptions & { name: string };
-
-  if (!gmCookie?.set) {
-    setDocumentCookie(normalizedDetails);
+  const gm = getCookieAPI();
+  if (!gm?.set) {
+    setDocumentCookie(details.name, details.value ?? '');
     return;
   }
 
   await promisifyCallback<void>(
-    (callback) => gmCookie.set?.(normalizedDetails, (error) => callback(undefined, error)),
-    { fallback: () => setDocumentCookie(normalizedDetails) }
+    (cb) => gm.set(details, (error) => cb(undefined, error)),
+    { fallback: () => { setDocumentCookie(details.name, details.value ?? ''); } }
   );
 }
 
-/**
- * Delete a cookie by name. Uses GM_cookie when available, falls back to document.cookie.
- */
 export async function deleteCookie(details: CookieDeleteOptions): Promise<void> {
-  if (!details?.name) {
-    throw new Error('Cookie name is required');
-  }
+  if (!details?.name) throw new Error('Cookie name is required');
 
-  const gmCookie = getCookieAPI();
-
-  if (!gmCookie?.delete) {
-    deleteDocumentCookie(details);
+  const gm = getCookieAPI();
+  if (!gm?.delete) {
+    deleteDocumentCookie(details.name);
     return;
   }
 
   await promisifyCallback<void>(
-    (callback) => gmCookie.delete?.(details, (error) => callback(undefined, error)),
-    { fallback: () => deleteDocumentCookie(details) }
+    (cb) => gm.delete(details, (error) => cb(undefined, error)),
+    { fallback: () => { deleteDocumentCookie(details.name); } }
   );
 }
 
-/**
- * Get a cookie value by name asynchronously.
- * Uses GM_cookie.list when available, falls back to document.cookie.
- */
-export async function getCookieValue(
-  name: string,
-  options?: CookieListOptions
-): Promise<string | undefined> {
+export async function getCookieValue(name: string): Promise<string | undefined> {
   if (!name) return undefined;
 
-  const gmCookie = getCookieAPI();
-
-  if (gmCookie?.list) {
-    const cookies = await listCookies({ ...options, name });
+  const gm = getCookieAPI();
+  if (gm?.list) {
+    const cookies = await listCookies({ name });
     const value = cookies[0]?.value;
-    if (value) {
-      return value;
-    }
+    if (value) return value;
   }
 
   return getCookieValueSync(name);
 }
 
-/**
- * Get a cookie value by name synchronously from document.cookie.
- */
 export function getCookieValueSync(name: string): string | undefined {
   if (!name) return undefined;
-
-  if (typeof document === 'undefined' || typeof document.cookie !== 'string') {
-    return undefined;
+  const match = document.cookie.match(
+    new RegExp(`(?:^|;\\s*)${escapeRegExp(name)}=([^;]*)`)
+  );
+  if (!match?.[1]) return undefined;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
   }
-
-  const pattern = new RegExp(`(?:^|;\\s*)${escapeRegExp(name)}=([^;]*)`);
-  const match = document.cookie.match(pattern);
-  return decode(match?.[1]);
 }
