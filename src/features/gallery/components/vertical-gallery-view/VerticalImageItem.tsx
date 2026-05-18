@@ -22,10 +22,10 @@ import type { JSX, JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, splitProps, untrack } from 'solid-js';
 
 const FIT_MODE_CLASSES: Record<ImageFitMode, string> = {
-  original: styles.fitOriginal,
-  fitHeight: styles.fitHeight,
-  fitWidth: styles.fitWidth,
-  fitContainer: styles.fitContainer,
+  original: styles.fitOriginal as string,
+  fitHeight: styles.fitHeight as string,
+  fitWidth: styles.fitWidth as string,
+  fitContainer: styles.fitContainer as string,
 };
 
 export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | null {
@@ -173,7 +173,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     return value ?? 'fitWidth';
   });
 
-  const fitModeClass = createMemo(() => FIT_MODE_CLASSES[resolvedFitMode()] ?? '');
+  const fitModeClass = createMemo(() => FIT_MODE_CLASSES[resolvedFitMode()]);
 
   const containerClasses = createMemo(() =>
     cx(

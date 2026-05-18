@@ -8,6 +8,7 @@ import { useTranslation } from '@shared/hooks/use-translation';
 import { EventManager } from '@shared/services/event-manager';
 import type { ToolbarState } from '@shared/types/toolbar.types';
 import { shouldAllowWheelDefault as shouldAllowWheelDefaultBase } from '@shared/utils/events/wheel-scroll-guard';
+import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, onCleanup, Show } from 'solid-js';
 import styles from './Toolbar.module.css';

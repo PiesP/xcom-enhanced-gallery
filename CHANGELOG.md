@@ -6,6 +6,20 @@ The format follows the principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and the project
 roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-07-18
+
+### Changed
+
+- **Dependency cleanup**: Removed unnecessary pnpm overrides (`rollup`, `minimatch`, `semver`) — Vite 8 manages these internally.
+- **GalleryApp**: Renamed `closeGallery()` method to `close()` to avoid collision with `gallery.signals.closeGallery()` function; simplified `openGallery()` pauseContext handling.
+- **ToolbarView**: Removed `MaybeAccessor` wrapping from props — all values are now passed directly as primitives, eliminating unnecessary `resolve()`/`resolveOptional()` indirection.
+- **Type cleanup**: Removed unused `FocusHandlers` interface and `ToolbarHandlers.focus` field; tightened `FIT_MODE_CLASSES` type from `Record<ImageFitMode, string | undefined>` to `Record<ImageFitMode, string>`; simplified `FitModeProp` to `ImageFitMode | Accessor<ImageFitMode>`.
+
+### Removed
+
+- Deleted `pnpm.overrides` for `rollup`, `minimatch`, and `semver` (no longer needed with Vite 8).
+- Removed `AmbientVideoPauseRequest` type import from `GalleryApp` (replaced with inline `{ reason?: string }`).
+
 ## [2.0.0] - 2026-07-18
 
 ### Added

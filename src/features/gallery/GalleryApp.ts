@@ -84,11 +84,7 @@ export class GalleryApp {
     }
   }
 
-  openGallery(
-    mediaItems: MediaInfo[],
-    startIndex = 0,
-    pauseContext?: { reason?: string }
-  ): void {
+  openGallery(mediaItems: MediaInfo[], startIndex = 0, pauseContext?: { reason?: string }): void {
     if (mediaItems.length === 0) return;
 
     try {
