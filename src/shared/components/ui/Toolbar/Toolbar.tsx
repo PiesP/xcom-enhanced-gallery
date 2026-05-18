@@ -53,9 +53,7 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
   const [tweetExpanded, setTweetExpanded] = createSignal(false);
 
   const totalItems = createMemo(() => Math.max(0, local.totalCount() ?? 0));
-  const currentIndexForNav = createMemo(() =>
-    clampIndex(local.currentIndex() ?? 0, totalItems())
-  );
+  const currentIndexForNav = createMemo(() => clampIndex(local.currentIndex() ?? 0, totalItems()));
 
   const displayedIndex = createMemo(() => {
     const total = totalItems();
@@ -79,8 +77,7 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
     const hasItems = total > 0;
     const canNavigate = hasItems && total > 1;
     const toolbarDisabled = !!(local.disabled?.() ?? false);
-    const downloadBusy =
-      !!(local.isDownloading?.() ?? false) || toolbarState.isDownloading();
+    const downloadBusy = !!(local.isDownloading?.() ?? false) || toolbarState.isDownloading();
     return {
       prevDisabled: toolbarDisabled || !canNavigate,
       nextDisabled: toolbarDisabled || !canNavigate,

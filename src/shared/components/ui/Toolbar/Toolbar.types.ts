@@ -1,6 +1,6 @@
-import type { Accessor } from 'solid-js';
 import type { ToolbarHandlers } from '@shared/components/ui/Toolbar/handler-types';
 import type { ImageFitMode } from '@shared/types/settings.types';
+import type { Accessor } from 'solid-js';
 
 export type { FitModeHandlers } from '@shared/components/ui/Toolbar/handler-types';
 export type { ImageFitMode };
