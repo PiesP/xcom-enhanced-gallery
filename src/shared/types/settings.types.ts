@@ -75,6 +75,9 @@ export interface AppSettings {
   lastModified: number;
 }
 
+/** Image fit mode — extracted from GallerySettings for direct use */
+export type ImageFitMode = GallerySettings['imageFitMode'];
+
 export type SettingKey = keyof AppSettings;
 
 export type NestedSettingKey =

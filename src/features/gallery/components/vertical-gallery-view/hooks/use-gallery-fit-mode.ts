@@ -6,7 +6,7 @@
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/container';
 import { logger } from '@shared/logging/logger';
 import { navigateToItem } from '@shared/state/signals/gallery.signals';
-import type { ImageFitMode } from '@shared/types/ui.types';
+import type { ImageFitMode } from '@shared/types/settings.types';
 import { createSignal } from 'solid-js';
 
 /**

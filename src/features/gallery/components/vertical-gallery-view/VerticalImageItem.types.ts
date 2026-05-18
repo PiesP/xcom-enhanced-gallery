@@ -1,7 +1,7 @@
 /** Type definitions for vertical gallery image item component. */
 
 import type { MediaInfo } from '@shared/types/media.types';
-import type { ImageFitMode } from '@shared/types/ui.types';
+import type { ImageFitMode } from '@shared/types/settings.types';
 
 /** Fit mode prop: ImageFitMode value or function returning it. */
 export type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);

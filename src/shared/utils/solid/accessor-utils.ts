@@ -55,43 +55,6 @@ export function toAccessor<T>(value: MaybeAccessor<T>): Accessor<T> {
 }
 
 /**
- * Convert a resolver to an Accessor that returns a required value with fallback.
- * @param resolver - A function that returns a MaybeAccessor or undefined
- * @param fallback - The value to return if resolver returns undefined
- * @returns An accessor function that resolves the value or returns the fallback
- * @example
- * ```ts
- * const getValue = toRequiredAccessor(() => props.value, 'default');
- * getValue(); // Returns 'default' or resolved value
- * ```
- */
-export function toRequiredAccessor<T>(
-  resolver: () => MaybeAccessor<T> | undefined,
-  fallback: T
-): Accessor<T> {
-  return () => {
-    const resolved = resolveOptional(resolver());
-    return (resolved ?? fallback) as T;
-  };
-}
-
-/**
- * Convert a resolver to an Accessor that optionally returns a value.
- * @param resolver - A function that returns a MaybeAccessor or undefined
- * @returns An accessor function that resolves the value or returns undefined
- * @example
- * ```ts
- * const getValue = toOptionalAccessor(() => props.optionalValue);
- * getValue(); // Returns undefined or resolved value
- * ```
- */
-export function toOptionalAccessor<T>(
-  resolver: () => MaybeAccessor<T> | undefined
-): Accessor<T | undefined> {
-  return () => resolveOptional(resolver());
-}
-
-/**
  * Create a Solid.js reactive effect rooted in a createRoot.
  * Returns a dispose function for cleanup.
  *

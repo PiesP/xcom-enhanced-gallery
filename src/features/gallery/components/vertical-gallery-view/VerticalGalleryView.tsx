@@ -41,7 +41,7 @@ export interface VerticalGalleryViewProps {
   readonly onDownloadAll?: () => void;
 }
 
-function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
+export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement {
   const [local] = splitProps(props, [
     'onClose',
     'className',
@@ -246,5 +246,3 @@ function VerticalGalleryViewCore(props: VerticalGalleryViewProps): JSXElement {
     </div>
   );
 }
-
-export const VerticalGalleryView = VerticalGalleryViewCore;

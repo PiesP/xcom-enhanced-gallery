@@ -13,7 +13,7 @@ import styles from '@features/gallery/components/vertical-gallery-view/VerticalI
 import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.types';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals, setCurrentVideoElement } from '@shared/state/signals/gallery.signals';
-import type { ImageFitMode } from '@shared/types/ui.types';
+import type { ImageFitMode } from '@shared/types/settings.types';
 import {
   createIntrinsicSizingStyle,
   resolveMediaDimensionsWithIntrinsicFlag,

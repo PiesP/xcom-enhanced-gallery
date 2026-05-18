@@ -16,10 +16,6 @@ interface LifecycleState {
 
 let lifecycleState: LifecycleState = { initialized: false, context: null };
 
-function resolveEventTarget(explicitRoot: HTMLElement | null): EventTarget {
-  return explicitRoot ?? document.body;
-}
-
 function registerListeners(
   eventManager: EventManager,
   target: EventTarget,
@@ -68,7 +64,7 @@ export function initializeGalleryEvents(
     context,
   };
 
-  const target = resolveEventTarget(null);
+  const target = document.body;
 
   const eventManager = EventManager.getInstance();
   registerListeners(eventManager, target, handlers, mergedOptions, context);

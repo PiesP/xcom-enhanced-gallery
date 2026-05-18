@@ -25,7 +25,6 @@ export interface BootstrapStage {
 export interface BootstrapStageResult {
   readonly label: string;
   readonly success: boolean;
-  readonly skipped: boolean;
   readonly optional: boolean;
   readonly error: unknown;
   readonly durationMs: number;

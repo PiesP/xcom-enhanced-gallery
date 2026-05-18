@@ -14,7 +14,6 @@ async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult
     return {
       label: stage.label,
       success: true,
-      skipped: true,
       optional: stage.optional ?? false,
       error: undefined,
       durationMs: 0,
@@ -28,7 +27,6 @@ async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult
     return {
       label: stage.label,
       success: true,
-      skipped: false,
       optional: stage.optional ?? false,
       error: undefined,
       durationMs,
@@ -49,7 +47,6 @@ async function executeStage(stage: BootstrapStage): Promise<BootstrapStageResult
     return {
       label: stage.label,
       success: false,
-      skipped: false,
       optional: stage.optional ?? false,
       error,
       durationMs,

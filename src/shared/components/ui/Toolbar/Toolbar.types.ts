@@ -1,5 +1,5 @@
 import type { ToolbarHandlers } from '@shared/components/ui/Toolbar/handler-types';
-import type { ImageFitMode } from '@shared/types/ui.types';
+import type { ImageFitMode } from '@shared/types/settings.types';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 
 export type { FitModeHandlers } from '@shared/components/ui/Toolbar/handler-types';
