@@ -6,11 +6,11 @@ name: 🤖 Dependabot Auto-Merge
 # - Requires CI to pass first (via GitHub branch protection)
 # Note: test/ directory is managed in a separate repository
 #
-# Security: Uses pull_request_target for auto-merge capability.
+# Security: Uses pull_request for auto-merge capability.
 # Only reads dependency metadata and queues squash merges — no untrusted code execution.
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize, reopened]
 
 permissions:
