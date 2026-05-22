@@ -58,12 +58,12 @@
     "pnpm": "10.29.2"
   },
   "dependencies": {
-    "solid-js": "^1.9.12"
+    "solid-js": "^1.9.13"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
     "@types/node": "^25.8.0",
-    "knip": "^6.13.1",
+    "knip": "^6.14.0",
     "lightningcss": "^1.32.0",
     "only-allow": "^1.2.2",
     "typescript": "^6.0.3",
