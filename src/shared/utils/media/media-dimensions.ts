@@ -3,8 +3,6 @@ import type { MediaInfo } from '@shared/types/media.types';
 import { extractVisualIndexFromUrl, getMediaDedupKey } from '@shared/utils/media/media-url-utils';
 import { clampIndex } from '@shared/utils/types/safety';
 
-export { normalizeMediaUrl } from '@shared/utils/media/media-url-utils';
-
 interface DimensionPair {
   readonly width: number;
   readonly height: number;

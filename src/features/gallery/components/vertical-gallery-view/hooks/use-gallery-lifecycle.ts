@@ -3,11 +3,27 @@
  * Three coordinated effects: scroll setup, animation timing, viewport observer.
  */
 
-import { ensureGalleryScrollAvailable } from '@shared/dom/ensure-gallery-scroll';
 import { observeViewportCssVars } from '@shared/dom/viewport';
 import { logger } from '@shared/logging/logger';
 import { animateGalleryEnter, animateGalleryExit } from '@shared/utils/css/css-animations';
 import { createEffect, on, onCleanup } from 'solid-js';
+
+/**
+ * Ensure gallery and content containers have scrollable overflow enabled.
+ */
+function ensureGalleryScrollAvailable(element: HTMLElement | null): void {
+  if (!element) return;
+
+  const scrollableElements = element.querySelectorAll(
+    '[data-xeg-role="items-container"], .itemsList, .content'
+  ) as NodeListOf<HTMLElement>;
+
+  scrollableElements.forEach((el) => {
+    if (el.style.overflowY !== 'auto' && el.style.overflowY !== 'scroll') {
+      el.style.overflowY = 'auto';
+    }
+  });
+}
 
 interface UseGalleryLifecycleOptions {
   readonly containerEl: () => HTMLDivElement | null;

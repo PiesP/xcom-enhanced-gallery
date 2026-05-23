@@ -5,7 +5,6 @@
 
 import { TWITTER_API_CONFIG } from '@constants/twitter-api';
 import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
-import { getSafeHostname, getSafeLocationHeaders } from '@shared/dom/safe-location';
 import { logger } from '@shared/logging/logger';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import {
@@ -19,6 +18,31 @@ import {
 } from '@shared/services/media/twitter-parser/twitter-response-parser';
 import type { TweetMediaEntry, TwitterAPIResponse } from '@shared/services/media/types';
 import { sortMediaByVisualOrder } from '@shared/utils/media/media-dimensions';
+
+// ============================================================================
+// Safe Location Helpers (inlined from safe-location.ts)
+// ============================================================================
+
+function getSafeHostname(): string | undefined {
+  return globalThis.location?.hostname;
+}
+
+interface SafeLocationHeaders {
+  readonly referer?: string;
+  readonly origin?: string;
+}
+
+function getSafeLocationHeaders(): SafeLocationHeaders {
+  const referer = globalThis.location?.href;
+  const origin = globalThis.location?.origin;
+
+  if (!referer && !origin) return {};
+
+  return {
+    ...(referer ? { referer } : {}),
+    ...(origin ? { origin } : {}),
+  };
+}
 
 // ============================================================================
 // Helper Functions

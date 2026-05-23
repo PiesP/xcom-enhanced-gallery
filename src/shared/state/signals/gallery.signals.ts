@@ -14,8 +14,6 @@ import { createEventEmitter } from '@shared/utils/events/emitter';
 import { clampIndex } from '@shared/utils/types/safety';
 import { batch, createSignal } from 'solid-js';
 
-export type { NavigationSource };
-
 // ========================
 // Navigation state (inlined from navigation.state.ts)
 // ========================
@@ -222,4 +220,20 @@ export function navigateToItem(targetIndex: number, source: NavigationSource): v
 /** @internal Export for test use only */
 export function setGalleryFocus(focusIndex: number | null, _source?: unknown): void {
   setFocusedIndex(focusIndex);
+}
+
+// ========================
+// Download state (inlined from download.signals.ts)
+// ========================
+
+const [_isProcessing, _setIsProcessing] = createSignal<boolean>(false);
+
+export const downloadState = {
+  get isProcessing(): boolean {
+    return _isProcessing();
+  },
+};
+
+export function setDownloading(value: boolean): void {
+  _setIsProcessing(value);
 }
