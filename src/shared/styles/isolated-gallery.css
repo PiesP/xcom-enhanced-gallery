@@ -1,7 +1,6 @@
 /**
  * @fileoverview Gallery root element isolation layer
- * @description Ensures light-DOM gallery stays sandboxed from twitter.com
- * @version 2.0.0
+ * @description Gallery modal isolation styles — scope, stacking, and backdrop setup.
  */
 
 @layer xeg.base {

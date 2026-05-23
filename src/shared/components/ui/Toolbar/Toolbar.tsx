@@ -81,8 +81,8 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
     const total = totalItems();
     const hasItems = total > 0;
     const canNavigate = hasItems && total > 1;
-    const toolbarDisabled = !!(local.disabled?.() ?? false);
-    const downloadBusy = !!(local.isDownloading?.() ?? false) || toolbarState.isDownloading();
+    const toolbarDisabled = local.disabled?.() ?? false;
+    const downloadBusy = (local.isDownloading?.() ?? false) || toolbarState.isDownloading();
     return {
       prevDisabled: toolbarDisabled || !canNavigate,
       nextDisabled: toolbarDisabled || !canNavigate,

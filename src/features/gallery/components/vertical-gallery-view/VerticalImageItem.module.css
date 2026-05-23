@@ -1,8 +1,7 @@
 /**
  * @fileoverview Vertical Image Item Component Styles
  * @description Individual media item styles with fit modes (original, fitWidth, fitHeight, fitContainer),
- * interactive states, performance optimizations (containment, GPU acceleration), and accessibility features.
- * @version 3.1.0
+ * @description Styles for individual media items in the vertical gallery view.
  */
 
 .container {

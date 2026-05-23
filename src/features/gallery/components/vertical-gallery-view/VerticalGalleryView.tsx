@@ -2,7 +2,6 @@
  * @fileoverview Vertical Gallery View Component (Solid.js)
  * @description Main gallery component rendering media items with vertical scrolling, state management,
  * toolbar visibility, keyboard navigation, and fit mode support via useVerticalGallery hook.
- * @version 8.0
  */
 
 import { useGalleryFitMode } from '@features/gallery/components/vertical-gallery-view/hooks/use-gallery-fit-mode';
