@@ -28,8 +28,8 @@ import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
 import { productionCleanupPlugin } from './tooling/vite/plugins/production-cleanup';
 import { singleFileBundleGuardPlugin } from './tooling/vite/plugins/single-file-guard';
 import { userscriptHeaderPlugin } from './tooling/vite/plugins/userscript-header';
+import { metaOnlyPlugin } from './tooling/vite/userscript/vite-plugin-meta-only';
 import { resolveVersion } from './tooling/vite/version';
-import { metaOnlyPlugin } from './vite-plugin-meta-only';
 
 // ── Inlined from tooling/vite/paths.ts ──────────────────────────────────────
 const REPO_ROOT = resolve(__dirname);

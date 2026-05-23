@@ -1,9 +1,8 @@
 import * as fs from 'node:fs';
 import { resolve } from 'node:path';
 import type { Plugin } from 'vite';
-
-import { generateMetaOnlyHeader } from './tooling/vite/userscript/metadata';
-import { OUTPUT_FILE_NAMES } from './tooling/vite/constants';
+import { OUTPUT_FILE_NAMES } from '../../vite/constants';
+import { generateMetaOnlyHeader } from './metadata';
 
 export function metaOnlyPlugin(version: string): Plugin {
   return {
