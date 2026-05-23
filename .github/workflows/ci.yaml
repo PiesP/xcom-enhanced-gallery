@@ -47,8 +47,9 @@ jobs:
           cache: "pnpm"
 
       - name: 📦 Install dependencies
-        run: pnpm approve-builds esbuild
-        run: pnpm install --frozen-lockfile
+        run: |
+        pnpm approve-builds esbuild
+        pnpm install --frozen-lockfile
 
       - name: ✅ Run quality gate and build
         run: pnpm build
