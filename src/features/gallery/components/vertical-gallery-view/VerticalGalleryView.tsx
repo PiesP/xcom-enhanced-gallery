@@ -148,6 +148,32 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
     itemsContainerEl,
   });
 
+  // Memoized handlers object to prevent unnecessary Toolbar re-renders
+  const toolbarHandlers = createMemo(() => ({
+    navigation: {
+      onPrevious: local.onPrevious ?? handlePrevious,
+      onNext: local.onNext ?? handleNext,
+    },
+    download: {
+      onDownloadCurrent: handleDownloadCurrent,
+      onDownloadAll: handleDownloadAll,
+    },
+    fitMode: {
+      onFitOriginal: handleFitOriginal,
+      onFitWidth: handleFitWidth,
+      onFitHeight: handleFitHeight,
+      onFitContainer: handleFitContainer,
+    },
+    lifecycle: {
+      onClose: handleClose,
+      onOpenSettings: () => {
+        if (__DEV__) {
+          logger.debug('[VerticalGalleryView] Settings opened');
+        }
+      },
+    },
+  }));
+
   // Empty state
   if (!isVisible()) {
     return (
@@ -188,30 +214,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
           tweetTextHTML={tweetTextHTML}
           tweetUrl={tweetUrl}
           className={styles.toolbar}
-          handlers={{
-            navigation: {
-              onPrevious: local.onPrevious ?? handlePrevious,
-              onNext: local.onNext ?? handleNext,
-            },
-            download: {
-              onDownloadCurrent: handleDownloadCurrent,
-              onDownloadAll: handleDownloadAll,
-            },
-            fitMode: {
-              onFitOriginal: handleFitOriginal,
-              onFitWidth: handleFitWidth,
-              onFitHeight: handleFitHeight,
-              onFitContainer: handleFitContainer,
-            },
-            lifecycle: {
-              onClose: handleClose,
-              onOpenSettings: () => {
-                if (__DEV__) {
-                  logger.debug('[VerticalGalleryView] Settings opened');
-                }
-              },
-            },
-          }}
+          handlers={toolbarHandlers()}
         />
       </div>
 

@@ -5,6 +5,7 @@
 
 import type { ComponentChildren } from '@shared/types/component.types';
 import type { JSXElement } from 'solid-js';
+import { splitProps } from 'solid-js';
 
 export interface IconProps {
   /**
@@ -34,12 +35,11 @@ export interface IconProps {
   readonly 'aria-label'?: string | undefined;
 }
 
-export function Icon({
-  size = 'var(--xeg-icon-size)',
-  class: className = '',
-  children,
-  'aria-label': ariaLabel,
-}: IconProps): JSXElement {
+export function Icon(props: IconProps): JSXElement {
+  const [local] = splitProps(props, ['size', 'class', 'children', 'aria-label']);
+  const size = local.size ?? 'var(--xeg-icon-size)';
+  const className = local.class ?? '';
+  const ariaLabel = local['aria-label'];
   const sizeValue = typeof size === 'number' ? `${size}px` : size;
 
   return (
@@ -58,7 +58,7 @@ export function Icon({
       aria-label={ariaLabel}
       aria-hidden={!ariaLabel}
     >
-      {children}
+      {local.children}
     </svg>
   );
 }
