@@ -12,8 +12,7 @@ minimumReleaseAgeExclude:
   - minimist
 
 allowBuilds:
-  - esbuild
-  - core-js
+  esbuild: true
 
 strictDepBuilds: true
 

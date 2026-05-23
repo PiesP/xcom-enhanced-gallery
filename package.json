@@ -50,12 +50,12 @@
   "homepage": "https://github.com/PiesP/xcom-enhanced-gallery#readme",
   "engines": {
     "node": ">=24.0.0",
-    "pnpm": ">=10.29.2"
+    "pnpm": ">=11.2.2"
   },
-  "packageManager": "pnpm@10.29.2",
+  "packageManager": "pnpm@11.2.2",
   "volta": {
     "node": "24.16.0",
-    "pnpm": "10.29.2"
+    "pnpm": "11.2.2"
   },
   "dependencies": {
     "solid-js": "^1.9.13"
