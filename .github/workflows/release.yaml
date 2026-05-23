@@ -46,8 +46,8 @@ jobs:
 
       - name: 📦 Install dependencies
         run: |
-        pnpm approve-builds esbuild
-        pnpm install --frozen-lockfile
+          pnpm approve-builds esbuild
+          pnpm install --frozen-lockfile
 
       - name: 📝 Determine version
         id: version
