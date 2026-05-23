@@ -123,6 +123,10 @@ function createUserscriptAPI(): UserscriptAPI {
   };
 }
 
+let cachedUserscriptAPI: UserscriptAPI | null = null;
+
 export function getUserscript(): UserscriptAPI {
-  return createUserscriptAPI();
+  if (cachedUserscriptAPI) return cachedUserscriptAPI;
+  cachedUserscriptAPI = createUserscriptAPI();
+  return cachedUserscriptAPI;
 }

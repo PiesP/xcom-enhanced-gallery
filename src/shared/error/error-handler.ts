@@ -103,6 +103,7 @@ export class GlobalErrorHandler {
 
     this.controller?.abort();
     this.controller = null;
+    EventManager.getInstance().removeByContext('global-error-handler');
     this.isInitialized = false;
   }
 }

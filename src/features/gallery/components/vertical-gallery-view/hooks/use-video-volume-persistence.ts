@@ -11,6 +11,7 @@ import {
 } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
 import { createDebounced } from '@shared/async/debounce';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/container';
+import { logger } from '@shared/logging/logger';
 import type { JSX } from 'solid-js';
 import { createEffect, createSignal, onCleanup, untrack } from 'solid-js';
 
@@ -97,8 +98,12 @@ export function useVideoVolumePersistence(
 
   // Debounced settings persistence to reduce GM_setValue calls during slider drag
   const debouncedSaveVolume = createDebounced((volume: number, muted: boolean) => {
-    void setTypedSetting('gallery.videoVolume', volume);
-    void setTypedSetting('gallery.videoMuted', muted);
+    setTypedSetting('gallery.videoVolume', volume).catch((error) => {
+      if (__DEV__) logger.warn('Failed to persist video volume', { error });
+    });
+    setTypedSetting('gallery.videoMuted', muted).catch((error) => {
+      if (__DEV__) logger.warn('Failed to persist video muted', { error });
+    });
   }, 300);
 
   // Cleanup debounced function on unmount

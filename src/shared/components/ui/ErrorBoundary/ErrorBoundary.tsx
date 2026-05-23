@@ -61,6 +61,11 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
     queueMicrotask(() => setMounted(true));
   };
 
+  const getRetryLabel = (): string => {
+    if (retryCount() >= 3) return 'No more retries';
+    return 'Retry';
+  };
+
   return (
     <>
       <Show when={mounted()}>
@@ -81,8 +86,13 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
             <div aria-live="polite" data-xeg-error-boundary="" role="alert">
               <p class="xeg-error-boundary__title">{title}</p>
               <p class="xeg-error-boundary__body">{body}</p>
-              <button class="xeg-error-boundary__action" onClick={handleRetry} type="button">
-                Retry
+              <button
+                class="xeg-error-boundary__action"
+                disabled={retryCount() >= 3}
+                onClick={handleRetry}
+                type="button"
+              >
+                {getRetryLabel()}
               </button>
             </div>
           );
