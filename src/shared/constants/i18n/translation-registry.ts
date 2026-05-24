@@ -11,7 +11,7 @@ export const TRANSLATION_REGISTRY: Partial<Record<BaseLanguageCode, LanguageStri
 
 export const DEFAULT_LANGUAGE: BaseLanguageCode = 'en';
 
-export function getLanguageStrings(language: BaseLanguageCode): LanguageStrings {
+function getLanguageStrings(language: BaseLanguageCode): LanguageStrings {
   const strings = TRANSLATION_REGISTRY[language];
   if (strings) {
     return strings;

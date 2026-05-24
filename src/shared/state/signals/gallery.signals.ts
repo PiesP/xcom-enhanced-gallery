@@ -51,7 +51,7 @@ export function resetNavigation(nowMs?: number): void {
   setNavIndex(null);
 }
 
-export function resolveNavigationSource(trigger: NavigationSource): NavigationSource {
+function resolveNavigationSource(trigger: NavigationSource): NavigationSource {
   if (trigger === 'scroll') return 'scroll';
   if (trigger === 'keyboard') return 'keyboard';
   return 'button';
@@ -91,7 +91,7 @@ export const galleryIndexEvents = createEventEmitter<{
 }>();
 
 const [isOpenSig, setIsOpenSig] = createSignal<boolean>(INITIAL_STATE.isOpen);
-export function setIsOpen(value: boolean): void {
+function setIsOpen(value: boolean): void {
   setIsOpenSig(value);
 }
 const [mediaItemsSig, setMediaItems] = createSignal<readonly MediaInfo[]>(INITIAL_STATE.mediaItems);
@@ -217,7 +217,7 @@ export function navigateToItem(targetIndex: number, source: NavigationSource): v
   galleryIndexEvents.emit('navigate:complete', { index: clampedIndex, trigger: source });
 }
 
-/** @internal Export for test use only */
+/** @internal */
 export function setGalleryFocus(focusIndex: number | null, _source?: unknown): void {
   setFocusedIndex(focusIndex);
 }

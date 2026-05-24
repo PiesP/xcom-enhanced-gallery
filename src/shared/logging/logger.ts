@@ -2,7 +2,7 @@
  * @fileoverview Centralized logging infrastructure (production: errors only, dev: all levels)
  */
 
-export type LoggableData = unknown;
+type LoggableData = unknown;
 
 export interface Logger {
   info: (...args: LoggableData[]) => void;

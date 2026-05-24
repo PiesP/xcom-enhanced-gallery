@@ -1,10 +1,9 @@
-import { isAbortError } from '@shared/async/delay';
 import { withRetry } from '@shared/async/retry';
-import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
+import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
 import { HttpRequestService } from '@shared/services/http-request-service';
 
 export const DEFAULT_BACKOFF_BASE_MS = 200;
-export const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
+const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
 
 class HttpStatusError extends Error {
   override readonly name = 'HttpStatusError';

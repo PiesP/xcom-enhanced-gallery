@@ -24,6 +24,6 @@ export const VIDEO_CONTROL_ARIA_TOKENS = [
   'progress',
 ] as const;
 
-export type VideoControlDatasetPrefix = (typeof VIDEO_CONTROL_DATASET_PREFIXES)[number];
-export type VideoControlRole = (typeof VIDEO_CONTROL_ROLES)[number];
-export type VideoControlAriaToken = (typeof VIDEO_CONTROL_ARIA_TOKENS)[number];
+type VideoControlDatasetPrefix = (typeof VIDEO_CONTROL_DATASET_PREFIXES)[number];
+type VideoControlRole = (typeof VIDEO_CONTROL_ROLES)[number];
+type VideoControlAriaToken = (typeof VIDEO_CONTROL_ARIA_TOKENS)[number];

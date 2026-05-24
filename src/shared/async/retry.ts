@@ -2,7 +2,8 @@
  * @fileoverview Retry utility with exponential backoff.
  */
 
-import { delay, isAbortError } from '@shared/async/delay';
+import { delay } from '@shared/async/delay';
+import { isAbortError } from '@shared/error/cancellation';
 
 export interface RetryOptions {
   readonly maxAttempts?: number;

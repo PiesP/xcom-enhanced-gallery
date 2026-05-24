@@ -3,7 +3,7 @@
  * @description Modern async delay primitive replacing setTimeout-based patterns
  */
 
-import { getAbortReasonOrAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
+import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
 
 /**
  * Create a promise that resolves after a delay
@@ -17,6 +17,8 @@ import { getAbortReasonOrAbortErrorFromSignal, isAbortError } from '@shared/erro
  *
  * @example
  * ```typescript
+ * import { isAbortError } from '@shared/error/cancellation';
+ *
  * // Simple delay
  * await delay(1000);
  *
@@ -62,8 +64,3 @@ export async function delay(ms: number, signal?: AbortSignal): Promise<void> {
     signal?.addEventListener('abort', onAbort, { once: true });
   });
 }
-
-/**
- * Re-export isAbortError for convenience
- */
-export { isAbortError };

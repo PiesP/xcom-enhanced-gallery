@@ -35,7 +35,7 @@ export function resolve<T>(value: MaybeAccessor<T>): T {
  * resolveOptional(() => 'text'); // 'text'
  * ```
  */
-export function resolveOptional<T>(value: MaybeAccessor<T> | undefined): T | undefined {
+function resolveOptional<T>(value: MaybeAccessor<T> | undefined): T | undefined {
   return value === undefined ? undefined : resolve(value);
 }
 

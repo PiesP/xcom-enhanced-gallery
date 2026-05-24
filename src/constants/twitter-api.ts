@@ -11,4 +11,4 @@ export const TWITTER_API_CONFIG = {
   DEFAULT_HOST: 'x.com',
 } as const;
 
-export type TwitterHost = (typeof TWITTER_API_CONFIG.SUPPORTED_HOSTS)[number];
+// Internal type — not exported. X.com guest token is a widely-known public token.
