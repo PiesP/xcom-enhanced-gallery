@@ -7,14 +7,14 @@ import { logger } from '@shared/logging/logger';
 import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
 import { getTweetMedias } from '@shared/services/media/twitter-api-client';
 import { determineClickedIndex } from '@shared/services/media-extraction/determine-clicked-index';
-import { createFailureResult } from '@shared/services/media-extraction/utils/extraction-result-factory';
+import { createFailureResult } from '@shared/services/media-extraction/extraction-result-factory';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
   MediaExtractorStrategy,
   TweetInfo,
 } from '@shared/types/media.types';
-import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/media/tweet-extractor';
+import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/dom/tweet-extractor';
 
 export class TwitterAPIExtractor implements MediaExtractorStrategy {
   async extract(

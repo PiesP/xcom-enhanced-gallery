@@ -8,7 +8,7 @@ import { MEDIA } from '@constants/media';
 import { TWEET_CONTAINER_SELECTORS } from '@constants/selectors';
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
-import { createFailureResult } from '@shared/services/media-extraction/utils/extraction-result-factory';
+import { createFailureResult } from '@shared/services/media-extraction/extraction-result-factory';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
@@ -17,13 +17,13 @@ import type {
   TweetInfo,
 } from '@shared/types/media.types';
 import { closestWithFallback } from '@shared/utils/dom/query-helpers';
+import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/dom/tweet-extractor';
 import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,
   isMediaElement,
   type MediaElement,
 } from '@shared/utils/media/media-element-utils';
-import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/media/tweet-extractor';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 /**
