@@ -53,13 +53,6 @@ function buildLogger(prefix: string): Logger {
   return isDevMode ? createVerboseLogger(prefix) : createErrorOnlyLogger(prefix);
 }
 
-function formatPrefix(prefix: string, scope?: string): string {
-  if (!scope) {
-    return prefix;
-  }
-  return `${prefix} [${scope}]`;
-}
-
 export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
   const prefix = config.prefix ?? BASE_PREFIX;
   return buildLogger(prefix);

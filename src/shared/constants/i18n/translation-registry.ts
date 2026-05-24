@@ -10,20 +10,3 @@ export const TRANSLATION_REGISTRY: Partial<Record<BaseLanguageCode, LanguageStri
 } as const;
 
 export const DEFAULT_LANGUAGE: BaseLanguageCode = 'en';
-
-function getLanguageStrings(language: BaseLanguageCode): LanguageStrings {
-  const strings = TRANSLATION_REGISTRY[language];
-  if (strings) {
-    return strings;
-  }
-
-  const defaultStrings = TRANSLATION_REGISTRY[DEFAULT_LANGUAGE];
-
-  if (!defaultStrings) {
-    throw new Error(
-      `Fatal: Default language '${DEFAULT_LANGUAGE}' not found in TRANSLATION_REGISTRY.`
-    );
-  }
-
-  return defaultStrings;
-}

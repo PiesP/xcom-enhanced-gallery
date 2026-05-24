@@ -31,11 +31,11 @@ export function resolve<T>(value: MaybeAccessor<T>): T {
  * @returns The resolved value, or undefined if input was undefined
  * @example
  * ```ts
- * resolveOptional(undefined); // undefined
- * resolveOptional(() => 'text'); // 'text'
+ * _resolveOptional(undefined); // undefined
+ * _resolveOptional(() => 'text'); // 'text'
  * ```
  */
-function resolveOptional<T>(value: MaybeAccessor<T> | undefined): T | undefined {
+function _resolveOptional<T>(value: MaybeAccessor<T> | undefined): T | undefined {
   return value === undefined ? undefined : resolve(value);
 }
 
