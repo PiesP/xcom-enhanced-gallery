@@ -19,6 +19,7 @@ export class PrefetchManager {
   private readonly cache = new Map<string, Promise<Blob>>();
   private readonly activeRequests = new Map<string, AbortController>();
   private readonly maxEntries: number;
+  private disposed = false;
 
   constructor(maxEntries = 20) {
     this.maxEntries = maxEntries;
@@ -34,6 +35,7 @@ export class PrefetchManager {
     }
 
     scheduleIdle(() => {
+      if (this.disposed) return;
       void this.prefetchSingle(media.url).catch(() => {
         // Ignore individual failures — cache cleanup is handled in prefetchSingle.
       });
@@ -68,6 +70,7 @@ export class PrefetchManager {
    * Cleanup resources
    */
   destroy(): void {
+    this.disposed = true;
     this.cancelAll();
     this.clear();
   }

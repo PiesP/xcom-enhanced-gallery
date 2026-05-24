@@ -169,9 +169,9 @@ export function useGalleryScroll({
       clearScrollIdleTimer();
       setIsScrolling(false);
     });
-  });
 
-  onCleanup(clearScrollIdleTimer);
+    // clearScrollIdleTimer already registered above; no need to duplicate.
+  });
 
   return { isScrolling, lastScrollTime };
 }

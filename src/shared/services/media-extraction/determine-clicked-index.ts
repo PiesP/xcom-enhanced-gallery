@@ -1,3 +1,4 @@
+import { logger } from '@shared/logging/logger';
 import type { MediaInfo } from '@shared/types/media.types';
 import {
   extractMediaUrlFromElement,
@@ -22,7 +23,10 @@ export function determineClickedIndex(
     });
 
     return index >= 0 ? index : 0;
-  } catch {
+  } catch (error) {
+    if (__DEV__) {
+      logger.warn('[determineClickedIndex] failed', error);
+    }
     return 0;
   }
 }

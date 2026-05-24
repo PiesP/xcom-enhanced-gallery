@@ -49,9 +49,9 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
         if (!container) return;
 
         if (visible) {
-          animateGalleryEnter(container);
+          animateGalleryEnter(container).catch(() => {});
         } else {
-          animateGalleryExit(container);
+          animateGalleryExit(container).catch(() => {});
 
           const logCleanupFailure = (error: unknown) => {
             if (__DEV__) logger.warn('video cleanup failed', { error });
