@@ -13,6 +13,9 @@ import {
   navigatePrevious,
   navigateToItem,
 } from '@shared/state/signals/gallery.signals';
+
+const KEYBOARD_HELP_TIMEOUT_MS = 6000;
+
 import { executeVideoControl } from '@shared/utils/events/handlers/video-control-helper';
 
 // ============================================================================
@@ -217,7 +220,7 @@ function showKeyboardHelp(): void {
         lang.translate('msg.kb.cls'),
         lang.translate('msg.kb.toggle'),
       ].join('\n'),
-      timeout: 6000,
+      timeout: KEYBOARD_HELP_TIMEOUT_MS,
     });
   } catch {
     // Notification failure must not break keyboard navigation

@@ -22,7 +22,8 @@ import {
 } from '@shared/state/signals/gallery.signals';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { createEffectRoot } from '@shared/utils/solid/accessor-utils';
-import { createSignal, type JSX, onCleanup } from 'solid-js';
+import type { JSX } from 'solid-js';
+import { createSignal, onCleanup } from 'solid-js';
 
 import './styles/gallery-global.css';
 

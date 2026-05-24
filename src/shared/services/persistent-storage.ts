@@ -1,4 +1,5 @@
-import { getUserscript, type UserscriptAPI } from '@shared/external/userscript/adapter';
+import type { UserscriptAPI } from '@shared/external/userscript/adapter';
+import { getUserscript } from '@shared/external/userscript/adapter';
 
 let _persistentStorageInstance: PersistentStorage | null = null;
 

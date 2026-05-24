@@ -52,3 +52,6 @@ export const CSS = {
   SELECTORS,
   INTERNAL_SELECTORS,
 } as const;
+
+/** Standard toolbar icon size in pixels. */
+export const TOOLBAR_ICON_SIZE = 18;

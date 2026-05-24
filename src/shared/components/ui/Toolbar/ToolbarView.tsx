@@ -1,3 +1,4 @@
+import { TOOLBAR_ICON_SIZE } from '@constants/css';
 import { IconButton } from '@shared/components/ui/Button/IconButton';
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
 import { LucideIcon } from '@shared/components/ui/Icon/lucide/lucide-icons';
@@ -269,7 +270,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             disabled={nav().prevDisabled}
             onClick={props.onPreviousClick}
           >
-            <LucideIcon name="chevron-left" size={18} />
+            <LucideIcon name="chevron-left" size={TOOLBAR_ICON_SIZE} />
           </IconButton>
 
           <IconButton
@@ -280,7 +281,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             disabled={nav().nextDisabled}
             onClick={props.onNextClick}
           >
-            <LucideIcon name="chevron-right" size={18} />
+            <LucideIcon name="chevron-right" size={TOOLBAR_ICON_SIZE} />
           </IconButton>
 
           <div class={styles.counterBlock}>
@@ -314,7 +315,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 title={label.title}
                 aria-pressed={activeFitMode() === mode}
               >
-                <LucideIcon name={iconName} size={18} />
+                <LucideIcon name={iconName} size={TOOLBAR_ICON_SIZE} />
               </IconButton>
             );
           })}
@@ -327,7 +328,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             aria-label={translate('tb.dl')}
             title={translate('tb.dl')}
           >
-            <LucideIcon name="download" size={18} />
+            <LucideIcon name="download" size={TOOLBAR_ICON_SIZE} />
           </IconButton>
 
           {nav().canDownloadAll && (
@@ -339,7 +340,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               aria-label={translate('tb.dlAllCt', { count: totalCount() })}
               title={translate('tb.dlAllCt', { count: totalCount() })}
             >
-              <LucideIcon name="folder-down" size={18} />
+              <LucideIcon name="folder-down" size={TOOLBAR_ICON_SIZE} />
             </IconButton>
           )}
 
@@ -357,7 +358,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               onMouseDown={props.settingsController.handleSettingsMouseDown}
               onClick={props.settingsController.handleSettingsClick}
             >
-              <LucideIcon name="settings-2" size={18} />
+              <LucideIcon name="settings-2" size={TOOLBAR_ICON_SIZE} />
             </IconButton>
           )}
 
@@ -373,7 +374,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               disabled={isToolbarDisabled()}
               onClick={props.toggleTweetPanelExpanded}
             >
-              <LucideIcon name="messages-square" size={18} />
+              <LucideIcon name="messages-square" size={TOOLBAR_ICON_SIZE} />
             </IconButton>
           )}
 
@@ -385,7 +386,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             disabled={isToolbarDisabled()}
             onClick={props.onCloseClick}
           >
-            <LucideIcon name="x" size={18} />
+            <LucideIcon name="x" size={TOOLBAR_ICON_SIZE} />
           </IconButton>
         </div>
       </div>

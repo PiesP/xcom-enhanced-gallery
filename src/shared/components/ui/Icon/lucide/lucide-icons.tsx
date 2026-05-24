@@ -2,7 +2,8 @@
 
 import { Icon } from '@shared/components/ui/Icon/Icon';
 import type { JSXElement } from 'solid-js';
-import { LUCIDE_ICON_NODES, type LucideIconNode } from './icon-nodes';
+import type { LucideIconNode } from './icon-nodes';
+import { LUCIDE_ICON_NODES } from './icon-nodes';
 import type { LucideIconProps } from './LucideIcons.types';
 
 /** Renders a Lucide icon node (path or circle) as SVG element. */

@@ -4,6 +4,7 @@ import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation
 import { HttpRequestService } from '@shared/services/http-request-service';
 
 export const DEFAULT_BACKOFF_BASE_MS = 200;
+export const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
 
 class HttpStatusError extends Error {
   override readonly name = 'HttpStatusError';
@@ -47,7 +48,7 @@ export async function fetchArrayBufferWithRetry(
 
       const response = await httpService.get<ArrayBuffer>(url, {
         responseType: 'arraybuffer' as const,
-        timeout: 30000,
+        timeout: DEFAULT_REQUEST_TIMEOUT_MS,
         ...(signal ? { signal } : {}),
       });
 

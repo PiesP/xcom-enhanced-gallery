@@ -5,10 +5,10 @@ import {
 } from '@shared/utils/media/media-element-utils';
 import { normalizeMediaUrl } from '@shared/utils/media/media-url-utils';
 
-export const determineClickedIndex = (
+export function determineClickedIndex(
   clickedElement: HTMLElement,
   mediaItems: MediaInfo[]
-): number => {
+): number {
   try {
     const elementUrl = resolveClickedElementUrl(clickedElement);
     if (!elementUrl) return 0;
@@ -25,7 +25,7 @@ export const determineClickedIndex = (
   } catch {
     return 0;
   }
-};
+}
 
 const resolveClickedElementUrl = (clickedElement: HTMLElement): string | null => {
   const mediaElement = findMediaElementInDOM(clickedElement);
