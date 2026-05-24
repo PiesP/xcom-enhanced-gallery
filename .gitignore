@@ -47,19 +47,33 @@ temp/
 .env.local
 .env.*.local
 
+# ──────────────────────────────────────────────
+# Local-only (AI instructions, testing, docs)
+# ──────────────────────────────────────────────
+
+# Documentation (keep essential files tracked)
+docs/
+*.md
+!README.md
 !CHANGELOG.md
+!LICENSE
 !CODE_OF_CONDUCT.md
 !CONTRIBUTING.md
-!README.md
 !.github/pull_request_template.md
 !.github/SECURITY.md
-*.md
 
-# AI Instructions (separate repository)
+# AI Instructions (not shared to remote)
 AGENTS.md
+CLAUDE.md
+GEMINI.md
+CODE_STANDARDS.md
+CODING_STANDARDS.md
+TESTING.md
+.claude/
 .github/copilot-instructions.md
 .github/prompts/
-.claude/
+.editorconfig
+
+# Local agent workspace
 .hermes/
 memory/
-.editorconfig
