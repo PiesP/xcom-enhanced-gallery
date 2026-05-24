@@ -22,6 +22,14 @@ interface IconButtonProps {
   readonly onMouseDown?: (event: MouseEvent) => void;
 }
 
+/**
+ * Accessible icon button with optional loading and disabled states.
+ *
+ * Renders a `<button>` element with an icon, tooltip, and ARIA attributes.
+ *
+ * @param props - Button configuration (icon, label, click handler, etc.)
+ * @returns Button JSX element
+ */
 export function IconButton(props: IconButtonProps): JSXElement {
   return (
     <button

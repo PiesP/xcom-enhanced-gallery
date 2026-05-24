@@ -26,6 +26,16 @@ const getStatusFromError = (error: unknown): number | null => {
   return typeof statusValue === 'number' ? statusValue : null;
 };
 
+/**
+ * Fetches a URL as an ArrayBuffer with configurable retries and exponential backoff.
+ *
+ * @param url - The URL to fetch
+ * @param retries - Maximum number of retry attempts
+ * @param signal - Optional AbortSignal for cancellation
+ * @param backoffBaseMs - Base delay for exponential backoff (default: 200ms)
+ * @returns Response body as Uint8Array
+ * @throws On non-retryable HTTP errors or abort signal rejection
+ */
 export async function fetchArrayBufferWithRetry(
   url: string,
   retries: number,

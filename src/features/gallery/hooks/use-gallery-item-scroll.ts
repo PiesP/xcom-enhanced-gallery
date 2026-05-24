@@ -23,6 +23,19 @@ interface UseGalleryItemScrollReturn {
   readonly scrollToCurrentItem: () => void;
 }
 
+/**
+ * Hook for programmatic scrolling to a specific gallery item.
+ *
+ * Smooth-scrolls the container to bring the target item into view, with
+ * configurable duration and easing. Tracks programmatic scrolls to
+ * distinguish them from user-initiated scrolling.
+ *
+ * @param containerRef - Container element ref or accessor
+ * @param currentIndex - Reactive current index
+ * @param totalItems - Reactive total item count
+ * @param options - Scroll behavior configuration
+ * @returns Scroll control functions
+ */
 export function useGalleryItemScroll(
   containerRef: { current: HTMLElement | null } | Accessor<HTMLElement | null>,
   currentIndex: MaybeAccessor<number>,

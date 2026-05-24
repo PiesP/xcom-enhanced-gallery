@@ -41,6 +41,16 @@ const PROGRAMMATIC_SCROLL_WINDOW = 100;
 /** Listener context prefix used for managed EventManager entries */
 const LISTENER_CONTEXT_PREFIX = 'useGalleryScroll';
 
+/**
+ * Hook for tracking user scroll activity on the gallery container.
+ *
+ * Monitors scroll events with idle detection — after scrolling stops for
+ * a configurable timeout, the `isScrolling` signal flips to false and
+ * the `onScrollEnd` callback fires.
+ *
+ * @param options - Container, scroll target, and end-of-scroll callback
+ * @returns Reactive isScrolling signal and lastScrollTime timestamp
+ */
 export function useGalleryScroll({
   container,
   scrollTarget,

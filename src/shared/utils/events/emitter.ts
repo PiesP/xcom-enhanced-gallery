@@ -11,6 +11,12 @@ export interface EventEmitter<T extends Record<string, unknown>> {
   dispose(): void;
 }
 
+/**
+ * Creates a type-safe event emitter for feature-local coordination.
+ * Listener exceptions are isolated — one failing callback does not affect others.
+ *
+ * @returns An EventEmitter with on(), emit(), and dispose() methods
+ */
 export function createEventEmitter<T extends Record<string, unknown>>(): EventEmitter<T> {
   const listeners = new Map<keyof T, Set<(data: unknown) => void>>();
 

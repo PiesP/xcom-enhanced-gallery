@@ -42,6 +42,15 @@ function nowMs(): number {
     : Date.now();
 }
 
+/**
+ * Creates a guard that distinguishes user-initiated volume changes from programmatic ones.
+ *
+ * Uses a grace period after programmatic `video.volume = x` assignments to prevent
+ * the native `volumechange` event from being misattributed to user interaction.
+ *
+ * @param options - Guard configuration (debounce window, grace period)
+ * @returns Guard with isVolumeChangeEventFromUser() method
+ */
 export function createVideoVolumeChangeGuard(
   options: CreateVideoVolumeChangeGuardOptions = {}
 ): VideoVolumeChangeGuard {

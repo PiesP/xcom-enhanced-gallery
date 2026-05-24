@@ -12,6 +12,13 @@ import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import { gallerySignals, setDownloading, setError } from '@shared/state/signals/gallery.signals';
 
+/**
+ * Hook providing gallery download functionality.
+ * Handles single and bulk downloads with progress tracking, error handling,
+ * and GM_notification integration for userscript environments.
+ *
+ * @returns Download handler functions and reactive state
+ */
 export function useGalleryDownload() {
   const userscript = getUserscript();
 
