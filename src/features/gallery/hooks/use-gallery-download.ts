@@ -68,6 +68,11 @@ export function useGalleryDownload() {
             setError(body);
             notifyError(title, body);
           }
+        } else {
+          notifyError(
+            languageService.translate('msg.dl.one.err.t'),
+            'No media item selected. Please re-open the gallery and try again.'
+          );
         }
       } else {
         const prefetchedBlobs = new Map<string, Blob | Promise<Blob>>();
