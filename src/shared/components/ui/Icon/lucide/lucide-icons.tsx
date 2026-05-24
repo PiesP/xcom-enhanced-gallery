@@ -1,10 +1,15 @@
 /** Renders Lucide icons from data-driven SVG node definitions. */
 
+import type { IconProps } from '@shared/components/ui/Icon/Icon';
 import { Icon } from '@shared/components/ui/Icon/Icon';
 import type { JSXElement } from 'solid-js';
-import type { LucideIconNode } from './icon-nodes';
+import type { LucideIconName, LucideIconNode } from './icon-nodes';
 import { LUCIDE_ICON_NODES } from './icon-nodes';
-import type { LucideIconProps } from './LucideIcons.types';
+
+/** Props for LucideIcon component with type-safe icon name. */
+export interface LucideIconProps extends IconProps {
+  readonly name: LucideIconName;
+}
 
 /** Renders a Lucide icon node (path or circle) as SVG element. */
 const renderNode = (node: LucideIconNode): JSXElement => {

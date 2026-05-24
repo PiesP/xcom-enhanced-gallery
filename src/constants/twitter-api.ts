@@ -1,4 +1,5 @@
-/** @fileoverview X.com API configuration for GraphQL queries and authentication. */
+/** @fileoverview X.com API configuration for GraphQL queries and authentication.
+ * GUEST_AUTHORIZATION is X.com's widely-known public guest token — not a secret. */
 
 export const TWITTER_API_CONFIG = {
   GUEST_AUTHORIZATION:
@@ -10,5 +11,3 @@ export const TWITTER_API_CONFIG = {
   SUPPORTED_HOSTS: ['x.com', 'twitter.com'] as const,
   DEFAULT_HOST: 'x.com',
 } as const;
-
-// Internal type — not exported. X.com guest token is a widely-known public token.
