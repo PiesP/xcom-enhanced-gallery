@@ -65,9 +65,4 @@ export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
   return buildLogger(prefix);
 }
 
-export function createScopedLogger(scope: string, config: Partial<LoggerConfig> = {}): Logger {
-  const basePrefix = config.prefix ?? BASE_PREFIX;
-  return buildLogger(formatPrefix(basePrefix, scope));
-}
-
 export const logger: Logger = createLogger();

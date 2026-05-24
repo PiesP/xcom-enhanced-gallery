@@ -4,8 +4,6 @@
 
 type BooleanFlagValue = string | boolean | undefined;
 
-const APP_NAME = 'X.com Enhanced Gallery';
-
 function parseBooleanFlag(value: BooleanFlagValue): boolean | undefined {
   if (typeof value === 'boolean') return value;
   if (typeof value !== 'string') return undefined;
@@ -27,35 +25,13 @@ const env = (import.meta as ImportMeta).env ?? {};
 const version = typeof __VERSION__ !== 'undefined' ? __VERSION__ : '0.0.0';
 const devFlag = parseBooleanFlag(env.DEV);
 const mode = env.MODE ?? 'production';
-const isTest = mode === 'test';
-const isDev = devFlag ?? (!isTest && mode !== 'production');
-const isProd = !isDev && !isTest;
+const isDev = devFlag ?? (mode !== 'production' && mode !== 'test');
 
 const resolvedAppConfig = Object.freeze({
-  meta: {
-    name: APP_NAME,
-    version,
-  },
-  environment: {
-    mode,
-    isDev,
-    isTest,
-    isProduction: isProd,
-  },
-  runtime: {
-    autoStart: parseBooleanFlag(env.VITE_AUTO_START) ?? true,
-  },
-  features: {
-    gallery: true,
-    download: true,
-    settings: true,
-    accessibility: true,
-    debugTools: parseBooleanFlag(env.VITE_ENABLE_DEBUG_TOOLS) ?? isDev,
-  },
-  diagnostics: {
-    enableLogger: true,
-    enableVerboseLogs: isDev,
-  },
+  meta: { version },
+  environment: { isDev },
+  features: { debugTools: parseBooleanFlag(env.VITE_ENABLE_DEBUG_TOOLS) ?? isDev },
+  runtime: { autoStart: parseBooleanFlag(env.VITE_AUTO_START) ?? true },
 } as const);
 
 export function createAppConfig(): AppConfig {

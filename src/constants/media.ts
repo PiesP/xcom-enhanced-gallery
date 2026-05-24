@@ -22,14 +22,6 @@ export const MEDIA = {
     MP4: 'mp4',
     ZIP: 'zip',
   },
-
-  QUALITY: {
-    ORIGINAL: 'orig',
-    LARGE: 'large',
-    MEDIUM: 'medium',
-    SMALL: 'small',
-  },
 } as const;
 
 export type MediaType = (typeof MEDIA.TYPES)[keyof typeof MEDIA.TYPES];
-export type MediaQuality = (typeof MEDIA.QUALITY)[keyof typeof MEDIA.QUALITY];

@@ -3,7 +3,7 @@
  */
 
 import { GalleryApp } from '@features/gallery/GalleryApp';
-import { GalleryRenderer } from '@features/gallery/GalleryRenderer.tsx';
+import { GalleryRenderer } from '@features/gallery/GalleryRenderer';
 import { SettingsService } from '@features/settings/services/settings-service';
 import { registerSettings } from '@shared/container/container';
 import { galleryErrorReporter, settingsErrorReporter } from '@shared/error/app-error-reporter';
