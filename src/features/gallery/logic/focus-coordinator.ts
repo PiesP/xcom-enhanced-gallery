@@ -32,6 +32,7 @@ interface ObserverOptions {
 const DEFAULTS = {
   THRESHOLD: [0, 0.5, 1.0],
   ROOT_MARGIN: '0px',
+  TOP_PROXIMITY: 50,
 } as const;
 
 export class FocusCoordinator {
@@ -107,7 +108,7 @@ export class FocusCoordinator {
     const viewportTop = containerRect.top;
     const viewportBottom = viewportTop + viewportHeight;
     const viewportCenter = viewportTop + viewportHeight / 2;
-    const topProximityThreshold = 50;
+    const topProximityThreshold = DEFAULTS.TOP_PROXIMITY;
 
     // Batch-read all rects first to avoid layout thrashing from individual
     // getBoundingClientRect() calls interleaved with computation.

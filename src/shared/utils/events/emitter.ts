@@ -3,6 +3,8 @@
  * Listener exceptions are isolated and do not cascade.
  */
 
+import { logger } from '@shared/logging/logger';
+
 export interface EventEmitter<T extends Record<string, unknown>> {
   on<K extends keyof T>(event: K, callback: (data: T[K]) => void): () => void;
   emit<K extends keyof T>(event: K, data: T[K]): void;
@@ -41,7 +43,7 @@ export function createEventEmitter<T extends Record<string, unknown>>(): EventEm
           callback(data);
         } catch (error) {
           if (__DEV__) {
-            console.warn('[EventEmitter] listener error for', String(event), error);
+            logger.warn('[EventEmitter] listener error for', String(event), error);
           }
         }
       }

@@ -297,7 +297,14 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 <span class={styles.separator}>/</span>
                 <span class={styles.totalCount}>{totalCount()}</span>
               </span>
-              <div class={styles.progressBar}>
+              <div
+                class={styles.progressBar}
+                role="progressbar"
+                aria-valuenow={props.displayedIndex() + 1}
+                aria-valuemin={1}
+                aria-valuemax={totalCount()}
+                aria-label={`${props.displayedIndex() + 1} / ${totalCount()}`}
+              >
                 <div class={styles.progressFill} style={{ width: props.progressWidth() }} />
               </div>
             </div>

@@ -15,6 +15,8 @@ import { logger } from '@shared/logging/logger';
 import type { JSX } from 'solid-js';
 import { createEffect, createSignal, onCleanup, untrack } from 'solid-js';
 
+const VOLUME_PERSISTENCE_DEBOUNCE_MS = 300;
+
 export interface UseVideoVolumePersistenceOptions {
   readonly videoRef: () => HTMLVideoElement | null;
   readonly isVideo: () => boolean;
@@ -104,7 +106,7 @@ export function useVideoVolumePersistence(
     setTypedSetting('gallery.videoMuted', muted).catch((error) => {
       if (__DEV__) logger.warn('Failed to persist video muted', { error });
     });
-  }, 300);
+  }, VOLUME_PERSISTENCE_DEBOUNCE_MS);
 
   // Cleanup debounced function on unmount
   onCleanup(() => {
