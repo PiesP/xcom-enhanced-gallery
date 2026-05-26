@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * Isolated gallery global style system.
  * Loads only isolated styles in CSS cascade priority order.

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import type { DownloadOptions, DownloadProgress } from '@shared/services/download/types';
 
 export function reportProgress(

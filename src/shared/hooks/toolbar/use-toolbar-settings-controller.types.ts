@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Toolbar settings controller hook type definitions
  * @description Types for useToolbarSettingsController hook

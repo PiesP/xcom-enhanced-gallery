@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview HTTP client using GM_xmlhttpRequest for cross-origin support.
  */

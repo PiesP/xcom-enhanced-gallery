@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview ZIP utility helpers for CRC32 and byte encoding
  * @description Shared ZIP encoding and checksum functions

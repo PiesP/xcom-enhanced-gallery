@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Toolbar settings controller hook for settings panel management
  * @description Manages settings panel toggling, outside click handling, and localized options

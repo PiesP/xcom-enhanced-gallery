@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Lightweight type-safe event emitter for feature-local coordination.
  * Listener exceptions are isolated and do not cascade.

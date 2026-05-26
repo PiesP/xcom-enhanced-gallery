@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /** @fileoverview Scroll-based focus selection via IntersectionObserver. Selects most visible gallery item. */
 
 import { SharedObserver } from '@shared/utils/performance/observer-pool';

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Cookie utilities: GM_cookie adapter with document.cookie fallback.
  */

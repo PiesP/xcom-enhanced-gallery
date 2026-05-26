@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /** @fileoverview Unified download service: single + bulk (ZIP) via GM_download. */
 
 import { planBulkDownload } from '@shared/core/download/download-plan';

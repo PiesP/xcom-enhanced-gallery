@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Global error handler for uncaught errors and unhandled rejections
  * @description Singleton service that captures and logs runtime errors (dev mode).

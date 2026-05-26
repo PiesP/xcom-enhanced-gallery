@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Expose development namespace (`__XEG__`) for diagnostics.
  * @description Centralized namespace creation to prevent duplicate logic.

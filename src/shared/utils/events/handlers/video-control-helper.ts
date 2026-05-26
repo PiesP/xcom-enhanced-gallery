@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Unified video control helper with Service/Video fallback pattern
  * @description Integration point for video control logic.

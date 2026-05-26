@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Wheel scroll guard utilities.
  * @description Helpers for controlling wheel event propagation in nested scroll containers.

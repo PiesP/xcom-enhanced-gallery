@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Vertical Gallery View Component (Solid.js)
  * @description Main gallery component rendering media items with vertical scrolling, state management,

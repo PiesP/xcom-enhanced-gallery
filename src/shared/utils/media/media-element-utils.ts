@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 export type MediaElement = HTMLImageElement | HTMLVideoElement;
 
 export type MediaTraversalOptions = {

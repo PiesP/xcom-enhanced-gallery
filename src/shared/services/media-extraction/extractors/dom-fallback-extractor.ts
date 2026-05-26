@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview DOM Fallback Media Extractor
  * @description Extracts media directly from DOM when API extraction fails.

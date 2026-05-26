@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import type { LanguageStrings } from '@shared/constants/i18n/language-types';
 import { buildLanguageStringsFromValues } from '@shared/constants/i18n/translation-values';
 

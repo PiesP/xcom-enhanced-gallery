@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { resolveGMDownload } from '@shared/external/userscript/adapter';

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Pure functional filename utilities
  * @description Stateless filename generation and validation for media downloads.

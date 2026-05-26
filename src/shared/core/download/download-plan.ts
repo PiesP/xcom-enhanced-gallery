@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Download planning utilities (functional core)
  * @description Pure functions that convert inputs (media, options, capabilities)

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 const USER_CANCELLED_MESSAGE = 'Download cancelled by user' as const;
 
 export function isAbortError(value: unknown): boolean {

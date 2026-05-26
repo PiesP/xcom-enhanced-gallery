@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /** @fileoverview X.com API configuration for GraphQL queries and authentication.
  * GUEST_AUTHORIZATION is X.com's widely-known public guest token — not a secret. */
 

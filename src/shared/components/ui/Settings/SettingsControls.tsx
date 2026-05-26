@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Settings Controls Component
  * @module shared/components/ui/Settings/SettingsControls

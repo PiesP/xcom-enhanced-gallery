@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Wheel redirect hook — intercepts wheel events on the gallery
  * container and redirects them to the items container when the event

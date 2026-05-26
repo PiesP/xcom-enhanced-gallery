@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /** Renders Lucide icons from data-driven SVG node definitions. */
 
 import type { IconProps } from '@shared/components/ui/Icon/Icon';

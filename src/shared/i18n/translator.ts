@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Translator — merged from TranslationCatalog, Translator, and translation-utils.
  * All language bundles are pre-loaded in the single-file userscript.

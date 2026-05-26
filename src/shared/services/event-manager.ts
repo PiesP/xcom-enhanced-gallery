@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import { logger } from '@shared/logging/logger';
 import { createId, createPrefixedId } from '@shared/utils/id/create-id';
 

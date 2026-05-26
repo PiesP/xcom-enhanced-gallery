@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import { DEFAULT_SETTINGS } from '@constants/settings';
 import type { AppSettings } from '@shared/types/settings.types';
 import { isRecord } from '@shared/utils/types/guards';

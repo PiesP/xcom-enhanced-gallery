@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Wraps SolidJS `<ErrorBoundary>` with localized error notifications.
  * Provides a retry-friendly fallback UI and deduplicates error notifications.

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /** @fileoverview Toolbar auto-hide with configurable delay. */
 
 import { getTypedSettingOr } from '@shared/container/container';

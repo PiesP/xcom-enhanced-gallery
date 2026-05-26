@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import { withRetry } from '@shared/async/retry';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
 import { HttpRequestService } from '@shared/services/http-request-service';

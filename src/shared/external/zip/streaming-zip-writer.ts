@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Streaming ZIP writer for progressive ZIP generation
  * @description Pipelined file downloads and ZIP assembly with immediate Local File Headers

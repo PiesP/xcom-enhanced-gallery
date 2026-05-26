@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Keyboard event handler for gallery navigation and video control
  * PC-only policy: Handles keyboard events only

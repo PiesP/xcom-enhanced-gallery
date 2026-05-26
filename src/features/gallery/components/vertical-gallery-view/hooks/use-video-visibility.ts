@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /** @fileoverview Auto-play/pause video based on viewport visibility via IntersectionObserver. */
 
 import { logger } from '@shared/logging/logger';

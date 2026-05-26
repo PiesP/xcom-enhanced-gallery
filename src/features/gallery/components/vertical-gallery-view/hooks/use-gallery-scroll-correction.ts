@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Scroll correction hook — debounces scroll position adjustment
  * after media items load, ensuring smooth visual corrections without

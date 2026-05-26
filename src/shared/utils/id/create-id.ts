@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * Generates a unique ID using crypto.randomUUID.
  * @returns Compact unique identifier without dashes.

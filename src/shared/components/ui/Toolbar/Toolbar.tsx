@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
 import type {
   FitModeHandlers,

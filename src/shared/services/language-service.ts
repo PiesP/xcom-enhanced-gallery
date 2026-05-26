@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Multilingual Support Service
  * @description TDD-based simple i18n system with lazy language loading

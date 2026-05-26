@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Tweet Info Extractor - Simplified Functional Pipeline
  * @description Extracts tweet metadata using a concise strategy pipeline.

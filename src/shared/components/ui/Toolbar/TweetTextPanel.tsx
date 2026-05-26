@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import { LucideIcon } from '@shared/components/ui/Icon/lucide/lucide-icons';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { isUrlAllowed } from '@shared/utils/url/safety';

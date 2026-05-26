@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Settings registry for type-safe settings access.
  * Extracted from container.ts to break the circular dependency

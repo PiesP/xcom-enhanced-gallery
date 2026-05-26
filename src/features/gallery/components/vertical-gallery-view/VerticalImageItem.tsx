@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Vertical Image/Video Item Component (Solid.js)
  * @description Renders individual media items with fit mode, visibility/loading states,

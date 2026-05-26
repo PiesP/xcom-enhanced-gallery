@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /** @fileoverview Shared event types for gallery event handling. */
 
 export interface EventHandlers {

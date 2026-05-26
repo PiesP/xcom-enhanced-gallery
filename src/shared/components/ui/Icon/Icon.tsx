@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * Lightweight SVG wrapper shared by every icon in the gallery.
  * Applies the design-token defaults while keeping semantics explicit.

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import { TOOLBAR_ICON_SIZE } from '@constants/css';
 import { IconButton } from '@shared/components/ui/Button/IconButton';
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';

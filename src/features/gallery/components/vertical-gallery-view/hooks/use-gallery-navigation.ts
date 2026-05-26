@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Navigation hook: tracks trigger source, coordinates scroll
  * on keyboard/click (not scroll) events. Subscribes only when visible.

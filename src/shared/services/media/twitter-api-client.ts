@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Twitter Video Extractor - GraphQL API Integration
  * @description Facade for Twitter API interactions, delegating to specialized services.

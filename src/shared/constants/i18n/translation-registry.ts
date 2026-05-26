@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import type { BaseLanguageCode, LanguageStrings } from './language-types';
 import { en } from './languages/en';
 import { ja } from './languages/ja';

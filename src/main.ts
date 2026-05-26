@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Main entry. Orchestrates bootstrap stages, startup, and cleanup.
  */

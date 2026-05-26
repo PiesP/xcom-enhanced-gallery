@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /** Type definitions for vertical gallery image item component. */
 
 import type { MediaInfo } from '@shared/types/media.types';

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Gallery DOM utilities
  * @description DOM inspection and element detection for gallery feature.

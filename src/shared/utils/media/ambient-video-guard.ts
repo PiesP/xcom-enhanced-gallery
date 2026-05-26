@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import { logger } from '@shared/logging/logger';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';

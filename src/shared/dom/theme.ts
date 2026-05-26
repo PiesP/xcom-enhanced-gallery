@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Theme DOM helpers
  * @description Keep theme-related data attributes in sync across document root and XEG scopes.

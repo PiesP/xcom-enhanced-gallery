@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { StreamingZipWriter } from '@shared/external/zip/streaming-zip-writer';

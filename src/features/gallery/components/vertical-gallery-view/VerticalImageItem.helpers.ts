@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 const CLEAN_FILENAME_MAX_LENGTH = 40;
 const CLEAN_FILENAME_TRUNCATION_MARKER = '...';
 const CLEAN_FILENAME_EXTENSION_REGEX = /(?:\.[^./\\]{1,10})$/;

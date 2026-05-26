@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Lifecycle management: animations, video cleanup, viewport tracking.
  * Three coordinated effects: scroll setup, animation timing, viewport observer.

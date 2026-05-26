@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import type { MediaInfo } from '@shared/types/media.types';
 import { tryParseUrl } from '@shared/utils/url/host';
 

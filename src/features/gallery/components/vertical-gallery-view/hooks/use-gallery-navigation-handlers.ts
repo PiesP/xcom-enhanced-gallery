@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Navigation handlers hook — provides click/event handlers
  * for gallery navigation (previous/next), background click to close,

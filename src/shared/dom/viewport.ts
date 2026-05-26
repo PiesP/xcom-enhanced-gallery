@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Viewport/Container constraint helpers (PC-only)
  * @description Pure calculator and DOM hook to expose viewport values via CSS variables.

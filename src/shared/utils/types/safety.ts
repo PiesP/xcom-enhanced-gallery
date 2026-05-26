@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * Safely parse a string to integer with fallback to 0.
  * Handles null/undefined and invalid inputs.

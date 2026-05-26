@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import { APP_SETTINGS_STORAGE_KEY, createDefaultSettings } from '@constants/settings';
 import { logger } from '@shared/logging/logger';
 import { PersistentStorage } from '@shared/services/persistent-storage';

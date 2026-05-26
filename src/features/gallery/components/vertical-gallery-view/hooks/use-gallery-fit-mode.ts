@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Fit mode state hook — manages image fit mode signal,
  * persistence to settings, and fit mode toggle handlers.

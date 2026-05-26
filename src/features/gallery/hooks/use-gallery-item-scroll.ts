@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * Scrolls gallery item into view using Solid.js reactivity and scrollIntoView.
  */

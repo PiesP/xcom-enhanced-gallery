@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /** @fileoverview Gallery event lifecycle: init/teardown keyboard + click listeners. */
 
 import { logger } from '@shared/logging/logger';

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Minimal type guards used by the runtime.
  * Keep this module small; prefer inlining simple instanceof checks.

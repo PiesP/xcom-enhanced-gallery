@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Media click event handler with multi-stage validation.
  * Single delegated handler for detecting and processing external media clicks.

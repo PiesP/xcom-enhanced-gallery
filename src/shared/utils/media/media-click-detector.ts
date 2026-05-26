@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Media click detector: validates clicks for gallery trigger.
  * Blocks triggers in contexts where native navigation should be preserved

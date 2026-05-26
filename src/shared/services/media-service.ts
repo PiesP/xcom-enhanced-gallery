@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import { PrefetchManager } from '@shared/services/media/prefetch-manager';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import type {

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { extractVisualIndexFromUrl, getMediaDedupKey } from '@shared/utils/media/media-url-utils';

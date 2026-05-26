@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /** @fileoverview DOM selector constants for X.com elements. */
 
 import { CSS } from '@constants/css';
