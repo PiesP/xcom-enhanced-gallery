@@ -51,6 +51,9 @@ temp/
 # Local-only (AI instructions, testing, docs)
 # ──────────────────────────────────────────────
 
+# Plans (managed under .hermes/plans/)
+plans/
+
 # Documentation (keep essential files tracked)
 docs/
 *.md

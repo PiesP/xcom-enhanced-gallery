@@ -23,15 +23,7 @@
     "preinstall": "npx only-allow pnpm",
     "quality": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s circular && pnpm -s knip",
     "quality:ci": "pnpm -s quality",
-    "quality:fix": "pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s check && pnpm -s circular && pnpm -s knip",
-    "test:deps:check": "pnpm -C test run deps:check",
-    "test:deps:sync": "pnpm -C test run deps:sync",
-    "test:install": "pnpm -C test install",
-    "test:unit": "pnpm -C test run test",
-    "test:e2e": "pnpm -C test run e2e",
-    "test:mut:priority": "pnpm -C test run mut:priority",
-    "test:all": "pnpm -C test run test:all",
-    "verify": "pnpm build && pnpm run test:all"
+    "quality:fix": "pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s check && pnpm -s circular && pnpm -s knip"
   },
   "keywords": [
     "userscript",
