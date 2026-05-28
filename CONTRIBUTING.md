@@ -28,7 +28,7 @@ Security-sensitive issues should follow the dedicated process described in:
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) **24.x** or later (recommended via [Volta](https://volta.sh/))
+- [Node.js](https://nodejs.org/) **26.x** or later (recommended via [Volta](https://volta.sh/))
 - [pnpm](https://pnpm.io/) **10.x** or later
 
 ### Local setup
