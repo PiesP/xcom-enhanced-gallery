@@ -11,8 +11,7 @@ import {
   isBaseLanguageCode,
   type SupportedLanguage,
 } from '@shared/constants/i18n/language-types';
-import { DEFAULT_LANGUAGE } from '@shared/constants/i18n/translation-registry';
-import { Translator } from '@shared/i18n/translator';
+import { DEFAULT_LANGUAGE, Translator } from '@shared/i18n/translator';
 import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
 import { logger } from '@shared/logging/logger';
 import { PersistentStorage } from '@shared/services/persistent-storage';

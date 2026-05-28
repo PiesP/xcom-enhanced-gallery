@@ -8,11 +8,18 @@
 
 import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/language-types';
 import { LANGUAGE_CODES } from '@shared/constants/i18n/language-types';
-import {
-  DEFAULT_LANGUAGE,
-  TRANSLATION_REGISTRY,
-} from '@shared/constants/i18n/translation-registry';
+import { en } from '@shared/constants/i18n/languages/en';
+import { ja } from '@shared/constants/i18n/languages/ja';
+import { ko } from '@shared/constants/i18n/languages/ko';
 import type { TranslationBundleInput, TranslationKey, TranslationParams } from './types';
+
+export const TRANSLATION_REGISTRY: Partial<Record<BaseLanguageCode, LanguageStrings>> = {
+  en,
+  ko,
+  ja,
+} as const;
+
+export const DEFAULT_LANGUAGE: BaseLanguageCode = 'en';
 
 export function resolveTranslationValue(
   dictionary: LanguageStrings,
