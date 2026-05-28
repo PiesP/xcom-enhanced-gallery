@@ -22,7 +22,7 @@ import { gallerySignals, setDownloading, setError } from '@shared/state/signals/
  *
  * @returns Download handler functions and reactive state
  */
-export function useGalleryDownload() {
+export function createDownloadHandler() {
   const userscript = getUserscript();
 
   const getDownloadErrorNotification = (error: unknown): { body: string; title: string } => {

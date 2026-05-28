@@ -5,7 +5,7 @@
 
 import { CSS } from '@constants/css';
 import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';
-import { useGalleryDownload } from '@features/gallery/hooks/use-gallery-download';
+import { createDownloadHandler } from '@features/gallery/hooks/use-gallery-download';
 import {
   GalleryContainer,
   mountGallery,
@@ -75,10 +75,10 @@ export class GalleryRenderer {
   private container: HTMLDivElement | null = null;
   private isMounting = false;
   private stateUnsubscribe: (() => void) | null = null;
-  private readonly downloadHandler: ReturnType<typeof useGalleryDownload>['handleDownload'];
+  private readonly downloadHandler: ReturnType<typeof createDownloadHandler>['handleDownload'];
 
   constructor() {
-    this.downloadHandler = useGalleryDownload().handleDownload;
+    this.downloadHandler = createDownloadHandler().handleDownload;
     this.setupStateSubscription();
   }
 
