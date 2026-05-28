@@ -3,10 +3,6 @@
   "entry": [
     "src/main.ts"
   ],
-  "project": [
-    "tsconfig.build.json",
-    "tsconfig.tools.json"
-  ],
   "tags": [
     "-@internal"
   ],
