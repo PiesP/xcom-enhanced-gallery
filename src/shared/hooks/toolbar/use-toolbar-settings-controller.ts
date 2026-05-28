@@ -100,7 +100,9 @@ export function useToolbarSettingsController(
       const setting = themeManager.getCurrentTheme();
       setCurrentTheme(toThemeOption(setting));
     } catch (error) {
-      logger.warn('[ToolbarSettingsController] Failed to read theme from service', error);
+      if (__DEV__) {
+        logger.warn('[ToolbarSettingsController] Failed to read theme from service', error);
+      }
     }
   };
 
@@ -111,7 +113,9 @@ export function useToolbarSettingsController(
       .initialize()
       .then(syncThemeFromService)
       .catch((error: unknown) => {
-        logger.warn('[ToolbarSettingsController] ThemeService initialization failed', error);
+        if (__DEV__) {
+          logger.warn('[ToolbarSettingsController] ThemeService initialization failed', error);
+        }
       });
   }
 
@@ -294,17 +298,21 @@ export function useToolbarSettingsController(
       } | null;
       if (settingsService) {
         void settingsService.set('gallery.theme', theme).catch((error: unknown) => {
-          logger.warn(
-            '[ToolbarSettingsController] Failed to sync theme to SettingsService:',
-            error
-          );
+          if (__DEV__) {
+            logger.warn(
+              '[ToolbarSettingsController] Failed to sync theme to SettingsService:',
+              error
+            );
+          }
         });
       }
     } catch (error) {
-      logger.debug(
-        '[ToolbarSettingsController] SettingsService not available for theme sync:',
-        error
-      );
+      if (__DEV__) {
+        logger.debug(
+          '[ToolbarSettingsController] SettingsService not available for theme sync:',
+          error
+        );
+      }
     }
   };
 

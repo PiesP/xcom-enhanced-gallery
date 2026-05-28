@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * Vite Configuration for X.com Enhanced Gallery Userscript
  *
@@ -5,7 +8,6 @@
  * - Vite bundling with Solid.js
  * - CSS processing and inlining
  * - Userscript metadata generation
- * - Third-party license aggregation
  * - Quality checks (type checking, linting, TSDoc validation, unused-code checks)
  *
  * Build modes:
@@ -18,29 +20,37 @@
  */
 
 // External dependencies
+import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { defineConfig, type UserConfig } from 'vite';
+import { gzipSync } from 'node:zlib';
+import { defineConfig, type Plugin, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 
 // Internal modules
 import { getBuildModeConfig, OUTPUT_FILE_NAMES } from './tooling/vite/constants';
 import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
-import { productionCleanupPlugin } from './tooling/vite/plugins/production-cleanup';
 import { singleFileBundleGuardPlugin } from './tooling/vite/plugins/single-file-guard';
-import { userscriptHeaderPlugin } from './tooling/vite/plugins/userscript-header';
+import { generateUserscriptHeader } from './tooling/vite/userscript/metadata';
 import { metaOnlyPlugin } from './tooling/vite/userscript/vite-plugin-meta-only';
 import { resolveVersion } from './tooling/vite/version';
 
-// ── Inlined from tooling/vite/paths.ts ──────────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
 const REPO_ROOT = resolve(__dirname);
 
 function normalizeModuleId(id: string): string {
   return id.replace(/\\/g, '/');
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
 /**
- * Determine if a module has required side effects for tree-shaking
- * CSS files and globals always have side effects and should be preserved
+ * Determine if a module has required side effects for tree-shaking.
+ * CSS files and globals always have side effects and should be preserved.
  */
 function hasRequiredSideEffects(id: string): boolean {
   const normalized = normalizeModuleId(id);
@@ -93,8 +103,7 @@ export default defineConfig(({ mode }): UserConfig => {
       }),
       cssInlinePlugin(mode),
       metaOnlyPlugin(version),
-      ...(!isDev ? [productionCleanupPlugin()] : []),
-      userscriptHeaderPlugin(mode),
+      buildSummaryPlugin({ isDev, version, config }),
       singleFileBundleGuardPlugin(mode),
     ],
     root,
@@ -161,3 +170,81 @@ export default defineConfig(({ mode }): UserConfig => {
     logLevel: 'warn',
   };
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Build Summary Plugin (inlined from tooling/vite/plugins/userscript-header.ts)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Creates a Vite plugin that prints a build summary after bundling.
+ *
+ * Shows build mode, optimization settings, version, and gzipped bundle size.
+ *
+ * @param opts - Build context values
+ * @returns Vite plugin instance for build summary output
+ */
+function buildSummaryPlugin(opts: {
+  isDev: boolean;
+  version: string;
+  config: ReturnType<typeof getBuildModeConfig>;
+}): Plugin {
+  const { isDev, version, config } = opts;
+  const header = generateUserscriptHeader({ version, isDev });
+
+  return {
+    name: 'post-build',
+    apply: 'build',
+    enforce: 'post',
+
+    generateBundle(_options, bundle): void {
+      for (const chunk of Object.values(bundle)) {
+        if (chunk.type === 'chunk' && chunk.isEntry) {
+          chunk.code = `${header}\n${chunk.code}`;
+          break;
+        }
+      }
+    },
+
+    closeBundle(): void {
+      const modeLabel = isDev ? 'Development' : 'Production';
+      const sourceMapLabel =
+        config.sourceMap === 'inline' ? 'Inline' : config.sourceMap ? 'External' : 'Disabled';
+      const info = isDev
+        ? [
+            '📖 Optimized for: Debugging & Analysis',
+            '├─ CSS class names: Readable (Component__class__hash)',
+            '├─ CSS formatting: Preserved',
+            '├─ CSS variables: Full names (--xeg-*)',
+            '├─ CSS comments: Preserved',
+            `└─ Source maps: ${sourceMapLabel}`,
+          ]
+        : [
+            '📦 Optimized for: Distribution Size',
+            '├─ CSS class names: Hashed (xg-*)',
+            '├─ CSS formatting: Compressed',
+            '├─ CSS variables: Shortened',
+            '├─ CSS custom properties: Pruned',
+            '├─ CSS comments: Removed',
+            `└─ Source maps: ${sourceMapLabel}`,
+          ];
+
+      console.log(`\n📋 Build Mode: ${modeLabel}`);
+      console.log('─'.repeat(50));
+      info.forEach((line) => console.log(`   ${line}`));
+      console.log('─'.repeat(50));
+      console.log(`📌 Version: ${version}`);
+
+      const bundleName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
+      const bundlePath = `dist/${bundleName}`;
+      try {
+        const stats = statSync(bundlePath);
+        const gzipped = gzipSync(readFileSync(bundlePath)).length;
+        console.log(
+          `📦 Bundle: ${bundleName} — ${formatBytes(stats.size)} (gzip ${formatBytes(gzipped)})`
+        );
+      } catch {
+        // Bundle size reporting is best-effort; ignore read errors.
+      }
+    },
+  };
+}

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Userscript metadata generation and analysis utilities.
  *
@@ -58,7 +61,7 @@ function buildMetadataBlock(config: UserscriptMeta): string {
     formatMetaLine('license', config.license),
     // MIT requires that the copyright notice is included in all copies.
     // Keep it as a plain comment line to avoid relying on non-standard metadata keys.
-    `// Copyright (c) ${PROJECT_COPYRIGHT_RANGE} X.com Enhanced Gallery Contributors`,
+    `// Copyright (c) ${PROJECT_COPYRIGHT_RANGE} PiesP`,
     ...(config.homepageURL ? [formatMetaLine('homepageURL', config.homepageURL)] : []),
     ...formatMetaLines('match', config.match),
     ...formatMetaLines('grant', config.grant),

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 import * as fs from 'node:fs';
 import { resolve } from 'node:path';
 import type { Plugin } from 'vite';

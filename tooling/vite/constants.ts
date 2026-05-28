@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * @fileoverview Build configuration constants for Vite userscript bundler.
  *
@@ -23,7 +26,7 @@ export function escapeRegExp(source: string): string {
  * - development: Readable class names, no compression, source maps enabled
  * - production: Hashed class names, full compression, no source maps
  */
-export const BUILD_MODE_CONFIGS: Record<'development' | 'production', BuildModeConfig> = {
+const BUILD_MODE_CONFIGS: Record<'development' | 'production', BuildModeConfig> = {
   development: {
     cssCompress: false,
     cssVariableShortening: false,
