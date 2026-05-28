@@ -4,8 +4,8 @@
 /** @fileoverview Unified download service: single + bulk (ZIP) via GM_download. */
 
 import { planBulkDownload } from '@shared/core/download/download-plan';
+import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
-import { normalizeErrorMessage } from '@shared/error/normalize';
 import {
   detectDownloadCapability,
   downloadSingleFile,

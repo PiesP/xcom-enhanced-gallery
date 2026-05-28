@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
-import { normalizeErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { resolveGMDownload } from '@shared/external/userscript/adapter';
 import type {
   DownloadCapability,

@@ -6,11 +6,31 @@
  * @description Handles prefetching and caching of media files
  */
 
-import { normalizeErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import type { MediaInfo } from '@shared/types/media.types';
-import { scheduleIdle } from '@shared/utils/performance/idle-scheduler';
+
+type IdleHandle = {
+  readonly cancel: () => void;
+};
+
+type IdleRequestCallback = () => void;
+
+/** Schedules a task to run during browser idle time. */
+function scheduleIdle(task: IdleRequestCallback): IdleHandle {
+  const id = requestIdleCallback(() => {
+    try {
+      task();
+    } catch (error) {
+      __DEV__ && logger.warn('[scheduleIdle] task error', error);
+    }
+  });
+
+  return {
+    cancel: () => cancelIdleCallback(id),
+  };
+}
 
 type PrefetchSchedule = 'immediate' | 'idle';
 

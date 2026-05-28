@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { TWITTER_MEDIA_SELECTOR } from '@constants/selectors';
-import { normalizeErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import { createPrefixedId } from '@shared/services/event-manager';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';

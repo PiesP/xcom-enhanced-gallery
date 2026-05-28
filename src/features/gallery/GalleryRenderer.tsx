@@ -13,7 +13,7 @@ import {
 } from '@shared/components/isolation/GalleryContainer';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import { getLanguageService, getThemeService } from '@shared/container/container';
-import { normalizeErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import {
   closeGallery,

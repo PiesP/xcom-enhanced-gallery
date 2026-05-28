@@ -10,7 +10,7 @@ import {
   getLanguageService,
   getMediaService,
 } from '@shared/container/container';
-import { normalizeErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import { gallerySignals, setDownloading, setError } from '@shared/state/signals/gallery.signals';

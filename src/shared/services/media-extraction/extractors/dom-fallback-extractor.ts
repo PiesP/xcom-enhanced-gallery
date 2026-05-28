@@ -9,7 +9,7 @@
 
 import { MEDIA } from '@constants/media';
 import { TWEET_CONTAINER_SELECTORS } from '@constants/selectors';
-import { normalizeErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import type {
   MediaExtractionOptions,

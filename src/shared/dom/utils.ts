@@ -8,13 +8,32 @@
 
 import { CSS as CSS_CONST } from '@constants/css';
 import { VIDEO_PLAYER_CONTEXT_SELECTOR } from '@constants/selectors';
-import {
-  VIDEO_CONTROL_ARIA_TOKENS,
-  VIDEO_CONTROL_DATASET_PREFIXES,
-  VIDEO_CONTROL_ROLES,
-} from '@constants/video-controls';
 import { logger } from '@shared/logging/logger';
 import { isHTMLElement } from '@shared/utils/types/guards';
+
+const VIDEO_CONTROL_DATASET_PREFIXES = [
+  'play',
+  'pause',
+  'mute',
+  'unmute',
+  'volume',
+  'slider',
+  'seek',
+  'scrub',
+  'progress',
+] as const;
+
+const VIDEO_CONTROL_ROLES = ['slider', 'progressbar'] as const;
+
+const VIDEO_CONTROL_ARIA_TOKENS = [
+  'volume',
+  'mute',
+  'unmute',
+  'seek',
+  'scrub',
+  'timeline',
+  'progress',
+] as const;
 
 const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;
 const VIDEO_CONTROL_SELECTORS = ['.video-controls', '.video-progress button'] as const;

@@ -6,8 +6,11 @@
  */
 
 import { getMediaService, tryGetSettings } from '@shared/container/container';
-import { galleryErrorReporter, mediaErrorReporter } from '@shared/error/app-error-reporter';
-import { normalizeErrorMessage } from '@shared/error/normalize';
+import {
+  galleryErrorReporter,
+  mediaErrorReporter,
+  normalizeErrorMessage,
+} from '@shared/error/app-error-reporter';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';

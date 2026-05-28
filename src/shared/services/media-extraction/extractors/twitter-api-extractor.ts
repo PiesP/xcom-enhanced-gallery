@@ -5,7 +5,7 @@
  * @fileoverview Twitter API-Based Media Extractor (Primary Strategy)
  */
 
-import { normalizeErrorMessage } from '@shared/error/normalize';
+import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
 import { getTweetMedias } from '@shared/services/media/twitter-api-client';

@@ -18,7 +18,16 @@ import { GlobalErrorHandler } from '@shared/error/error-handler';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/event-manager';
 import type { BootstrapStage } from '@shared/types/lifecycle.types';
-import './styles/globals';
+// Import isolated gallery styles in CSS cascade priority order:
+// layers → tokens → reset → utilities → component styles
+import '@shared/styles/layers.css';
+import '@shared/styles/design-tokens.primitive.css';
+import '@shared/styles/design-tokens.semantic.css';
+import '@shared/styles/design-tokens.component.css';
+import '@shared/styles/base/reset.css';
+import '@shared/styles/utilities/layout.css';
+import '@shared/styles/utilities/animations.css';
+import '@shared/styles/isolated-gallery.css';
 
 interface GalleryLifecycleApp {
   initialize(): Promise<void>;
