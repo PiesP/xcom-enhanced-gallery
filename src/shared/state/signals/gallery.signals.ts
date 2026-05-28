@@ -29,6 +29,14 @@ const [_navIndex, setNavIndex] = createSignal<number | null>(null);
 const isManualSource = (source: NavigationSource): boolean =>
   source === 'button' || source === 'keyboard';
 
+/**
+ * Records a navigation event with target index, source, and timestamp.
+ * Skips duplicate manual-source navigations to the same index (only updates timestamp).
+ *
+ * @param targetIndex - The navigation target item index
+ * @param source - How the navigation was triggered (button, keyboard, scroll, etc.)
+ * @param nowMs - Optional timestamp in milliseconds (defaults to `performance.now()`)
+ */
 export function recordNavigation(
   targetIndex: number,
   source: NavigationSource,
@@ -48,6 +56,12 @@ export function recordNavigation(
   setNavIndex(targetIndex);
 }
 
+/**
+ * Resets navigation state to initial values.
+ * Typically called on gallery open/close to clear the previous session's navigation history.
+ *
+ * @param nowMs - Optional timestamp in milliseconds (defaults to `performance.now()`)
+ */
 export function resetNavigation(nowMs?: number): void {
   setNavSource(INITIAL_NAV_SOURCE);
   setNavTimestamp(nowMs ?? performance.now());
@@ -126,6 +140,12 @@ export const gallerySignals = {
   },
 };
 
+/**
+ * Sets or clears the gallery error message.
+ * Pass `null` to clear a previously set error.
+ *
+ * @param error - Error message string, or `null` to clear
+ */
 export function setError(error: string | null): void {
   _setErrorSig(error);
 }
@@ -141,6 +161,14 @@ function applyGallerySessionUpdate(state: GallerySessionState): void {
   });
 }
 
+/**
+ * Opens the gallery with the given media items.
+ * Resets navigation state and clears any previous error.
+ * All state updates are batched so subscribers receive a single snapshot.
+ *
+ * @param items - Media items to display in the gallery
+ * @param startIndex - Initial focused item index (default: 0, clamped to valid range)
+ */
 export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   const validIndex = clampIndex(startIndex, items.length);
   applyGallerySessionUpdate({
@@ -157,6 +185,10 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   }
 }
 
+/**
+ * Closes the gallery and resets all session state.
+ * Media items are cleared, indices reset, and navigation state is re-initialized.
+ */
 export function closeGallery(): void {
   applyGallerySessionUpdate({
     isOpen: false,
@@ -172,6 +204,13 @@ export function closeGallery(): void {
   }
 }
 
+/**
+ * Navigates to the next item in the gallery.
+ * No-op when at the last item or when there are ≤1 items.
+ * Emits `navigate:complete` event on success.
+ *
+ * @param trigger - How the navigation was triggered (default: `'click'`)
+ */
 export function navigateNext(trigger: NavigationSource = 'click'): void {
   const items = mediaItemsSig();
   const current = currentIndexSig();
@@ -188,6 +227,13 @@ export function navigateNext(trigger: NavigationSource = 'click'): void {
   galleryIndexEvents.emit('navigate:complete', { index: next, trigger });
 }
 
+/**
+ * Navigates to the previous item in the gallery.
+ * No-op when at the first item or when there are ≤1 items.
+ * Emits `navigate:complete` event on success.
+ *
+ * @param trigger - How the navigation was triggered (default: `'click'`)
+ */
 export function navigatePrevious(trigger: NavigationSource = 'click'): void {
   const items = mediaItemsSig();
   const current = currentIndexSig();
@@ -204,6 +250,14 @@ export function navigatePrevious(trigger: NavigationSource = 'click'): void {
   galleryIndexEvents.emit('navigate:complete', { index: prev, trigger });
 }
 
+/**
+ * Navigates directly to a specific item index.
+ * The target index is clamped to the valid range. No-op when already at the target.
+ * Emits `navigate:complete` event on success.
+ *
+ * @param targetIndex - Desired item index (clamped to `[0, items.length)`)
+ * @param source - How the navigation was triggered
+ */
 export function navigateToItem(targetIndex: number, source: NavigationSource): void {
   const items = mediaItemsSig();
   const clampedIndex = clampIndex(targetIndex, items.length);
@@ -237,6 +291,13 @@ export const downloadState = {
   },
 };
 
+/**
+ * Sets the download processing state.
+ * Used by download hooks to signal that a download operation is in progress,
+ * which disables UI controls to prevent concurrent downloads.
+ *
+ * @param value - `true` when a download starts, `false` when it completes
+ */
 export function setDownloading(value: boolean): void {
   _setIsProcessing(value);
 }
