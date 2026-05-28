@@ -26,5 +26,3 @@ export const MEDIA = {
     ZIP: 'zip',
   },
 } as const;
-
-export type MediaType = (typeof MEDIA.TYPES)[keyof typeof MEDIA.TYPES];

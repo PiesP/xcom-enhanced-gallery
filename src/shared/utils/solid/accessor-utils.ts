@@ -29,29 +29,9 @@ export function resolve<T>(value: MaybeAccessor<T>): T {
 }
 
 /**
- * Resolve MaybeAccessor with optional value support.
- * @param value - A MaybeAccessor value (or undefined)
- * @returns The resolved value, or undefined if input was undefined
- * @example
- * ```ts
- * _resolveOptional(undefined); // undefined
- * _resolveOptional(() => 'text'); // 'text'
- * ```
- */
-function _resolveOptional<T>(value: MaybeAccessor<T> | undefined): T | undefined {
-  return value === undefined ? undefined : resolve(value);
-}
-
-/**
  * Convert a MaybeAccessor to an Accessor function.
  * @param value - A value or accessor function
  * @returns An accessor function that returns the value
- * @example
- * ```ts
- * toAccessor(42); // () => 42
- * const getValue = toAccessor(props.value);
- * createMemo(() => getValue() * 2);
- * ```
  */
 export function toAccessor<T>(value: MaybeAccessor<T>): Accessor<T> {
   return typeof value === 'function' ? (value as Accessor<T>) : () => value;

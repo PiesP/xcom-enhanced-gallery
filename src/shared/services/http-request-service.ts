@@ -58,12 +58,18 @@ export class HttpRequestService {
       return deferred.promise;
     }
 
+    let settled = false;
+
     const onAbort = (): void => {
+      if (settled) return;
+      settled = true;
       deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal!));
     };
     signal?.addEventListener('abort', onAbort, { once: true });
 
     const settle = (fn: () => void): void => {
+      if (settled) return;
+      settled = true;
       signal?.removeEventListener('abort', onAbort);
       fn();
     };

@@ -13,8 +13,8 @@ import { logger } from '@shared/logging/logger';
 import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import {
-  cleanupGalleryEvents,
-  initializeGalleryEvents,
+  createGalleryLifecycle,
+  type GalleryLifecycle,
 } from '@shared/utils/events/lifecycle/gallery-lifecycle';
 import {
   pauseAmbientVideosForGallery,
@@ -25,6 +25,7 @@ import { clampIndex } from '@shared/utils/types/safety';
 export class GalleryApp {
   private initialized = false;
   private ambientVideoGuardDispose: (() => void) | null = null;
+  private readonly lifecycle: GalleryLifecycle = createGalleryLifecycle();
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
@@ -46,7 +47,7 @@ export class GalleryApp {
         ? (settings.get('gallery.enableKeyboardNav') as boolean)
         : true;
 
-    initializeGalleryEvents(
+    this.lifecycle.initialize(
       {
         onMediaClick: (element, event) => this.handleMediaClick(element, event),
         onGalleryClose: () => this.close(),
@@ -126,7 +127,7 @@ export class GalleryApp {
     this.ambientVideoGuardDispose = null;
 
     try {
-      cleanupGalleryEvents();
+      this.lifecycle.cleanup();
     } catch (error) {
       __DEV__ && logger.warn('[GalleryApp] Event cleanup failed:', error);
     }
