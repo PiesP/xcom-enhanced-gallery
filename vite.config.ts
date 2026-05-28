@@ -142,14 +142,9 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-/**
- * Determine if a module has required side effects for tree-shaking.
- * CSS files and globals always have side effects and should be preserved.
- */
+/** Returns true for modules that must be preserved during tree-shaking. */
 function hasRequiredSideEffects(id: string): boolean {
-  const normalized = normalizeModuleId(id);
-  if (normalized.endsWith('.css')) return true;
-  return normalized.endsWith('/src/styles/globals.ts');
+  return normalizeModuleId(id).endsWith('.css');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

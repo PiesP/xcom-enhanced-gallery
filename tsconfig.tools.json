@@ -9,7 +9,7 @@
     // Tooling must never emit JS.
     "noEmit": true,
 
-    // Avoid generating build-info for tooling checks.
+    // Avoid generating build-info for Vite config check.
     "incremental": false
   },
   "include": ["vite.config.ts"],
