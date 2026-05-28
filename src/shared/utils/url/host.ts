@@ -55,6 +55,14 @@ export function tryParseUrl(
 
 /**
  * Determine whether a URL belongs to a trusted host list without relying on substring checks.
+ *
+ * Performs exact hostname comparison, with optional subdomain matching.
+ * Both the input hostname and the allow-list entries are lowercased before comparison.
+ *
+ * @param value - URL string, URL object, or null/undefined
+ * @param allowedHosts - List of trusted hostnames
+ * @param options - Matching options (e.g., allowSubdomains)
+ * @returns True if the hostname matches an allowed host
  */
 export function isHostMatching(
   value: string | URL | null | undefined,
@@ -97,6 +105,9 @@ const RESERVED_TWITTER_PATHS = new Set(RESERVED_TWITTER_PATHS_ARRAY);
 
 /** Valid Twitter username pattern: 1-15 alphanumeric or underscore characters */
 const TWITTER_USERNAME_PATTERN = /^[a-zA-Z0-9_]{1,15}$/u;
+
+/** Minimum number of path segments required for username extraction (/username/status/id). */
+const MIN_USERNAME_PATH_SEGMENTS = 3;
 
 /** Trusted Twitter/X.com hosts */
 const TWITTER_HOSTS = Object.freeze(['twitter.com', 'x.com'] as const);
@@ -159,7 +170,7 @@ export function extractUsernameFromUrl(
 
     // Pattern: /username/status/id (strict pattern matching)
     // Only extract username when 'status' is the second segment
-    if (segments.length >= 3 && segments[1] === 'status') {
+    if (segments.length >= MIN_USERNAME_PATH_SEGMENTS && segments[1] === 'status') {
       const username = segments[0];
       if (!username) {
         return null;

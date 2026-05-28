@@ -7,6 +7,9 @@
 
 import { clamp, clampIndex } from '@shared/utils/types/safety';
 
+/** Maximum items to preload per direction (forward/backward). */
+const MAX_PRELOAD_PER_DIRECTION = 20;
+
 /**
  * Computes preload indices around current index
  *
@@ -24,7 +27,7 @@ export function computePreloadIndices(
   if (safeTotal === 0) return [];
 
   const safeIndex = clampIndex(Math.floor(currentIndex), safeTotal);
-  const safeCount = clamp(Math.floor(count), 0, 20);
+  const safeCount = clamp(Math.floor(count), 0, MAX_PRELOAD_PER_DIRECTION);
   if (safeCount === 0) return [];
 
   const indices: number[] = [];

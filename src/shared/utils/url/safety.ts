@@ -66,6 +66,16 @@ export const MEDIA_URL_POLICY = {
   allowedDataMimePrefixes: DATA_IMAGE_MIME_PREFIXES,
 } as const;
 
+/**
+ * Check whether a raw URL value is allowed under the given safety policy.
+ *
+ * Performs control-character stripping, blocked-protocol-hint detection,
+ * data URL MIME filtering, and protocol allow-listing.
+ *
+ * @param rawUrl - The URL string to check (null/undefined returns false)
+ * @param policy - The safety policy to enforce
+ * @returns True if the URL is allowed, false otherwise
+ */
 export function isUrlAllowed(rawUrl: string | null | undefined, policy: UrlSafetyPolicy): boolean {
   if (!rawUrl || typeof rawUrl !== 'string') return false;
 
@@ -96,6 +106,16 @@ export function isUrlAllowed(rawUrl: string | null | undefined, policy: UrlSafet
   }
 }
 
+/**
+ * Check whether a value begins with a blocked protocol hint.
+ *
+ * Decodes URL-encoded characters up to MAX_DECODE_ITERATIONS times
+ * to catch obfuscated protocol identifiers (e.g., "jav%61script:").
+ *
+ * @param value - The string to probe
+ * @param hints - Protocol hint prefixes to check against
+ * @returns True if a blocked protocol hint is detected
+ */
 export function startsWithBlockedProtocolHint(value: string, hints: readonly string[]): boolean {
   const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
 

@@ -12,12 +12,14 @@ import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import type { JSXElement } from 'solid-js';
 import { createSignal, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
 
+/** Maximum number of retry attempts before disabling the retry button. */
+const MAX_RETRIES = 3;
+
 /**
  * Props for ErrorBoundary component
  *
  * The ErrorBoundary wraps SolidJS `<ErrorBoundary>` to provide localized error notifications
  * and a retry-friendly fallback UI. It deduplicates error notifications to prevent spam.
- *
  * @property children - Content to wrap with error boundary protection
  */
 export interface ErrorBoundaryProps {
@@ -68,7 +70,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
   };
 
   const handleRetry = (): void => {
-    if (retryCount() >= 3) return;
+    if (retryCount() >= MAX_RETRIES) return;
     setLastError(undefined);
     setCaughtError(undefined);
     setRetryCount((c) => c + 1);
@@ -77,7 +79,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
   };
 
   const getRetryLabel = (): string => {
-    if (retryCount() >= 3) return 'No more retries';
+    if (retryCount() >= MAX_RETRIES) return 'No more retries';
     return 'Retry';
   };
 
@@ -103,7 +105,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
               <p class="xeg-error-boundary__body">{body}</p>
               <button
                 class="xeg-error-boundary__action"
-                disabled={retryCount() >= 3}
+                disabled={retryCount() >= MAX_RETRIES}
                 onClick={handleRetry}
                 type="button"
               >

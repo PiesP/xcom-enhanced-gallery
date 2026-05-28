@@ -34,6 +34,9 @@ function scheduleIdle(task: IdleRequestCallback): IdleHandle {
 
 type PrefetchSchedule = 'immediate' | 'idle';
 
+/** Default maximum number of entries in the prefetch cache. */
+const DEFAULT_CACHE_MAX_ENTRIES = 20;
+
 /**
  * Manages media prefetching and caching.
  * Extracted from MediaService for better separation of concerns.
@@ -44,7 +47,7 @@ export class PrefetchManager {
   private readonly maxEntries: number;
   private disposed = false;
 
-  constructor(maxEntries = 20) {
+  constructor(maxEntries = DEFAULT_CACHE_MAX_ENTRIES) {
     this.maxEntries = maxEntries;
   }
 

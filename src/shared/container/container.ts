@@ -19,18 +19,38 @@ export {
   tryGetSettings,
 } from '@shared/container/settings-registry';
 
+/**
+ * Get the singleton ThemeService instance.
+ *
+ * @returns The ThemeService singleton
+ */
 export function getThemeService(): ThemeService {
   return ThemeService.getInstance();
 }
 
+/**
+ * Get the singleton LanguageService instance.
+ *
+ * @returns The LanguageService singleton
+ */
 export function getLanguageService(): LanguageService {
   return LanguageService.getInstance();
 }
 
+/**
+ * Get the singleton MediaService instance.
+ *
+ * @returns The MediaService singleton
+ */
 export function getMediaService(): MediaService {
   return MediaService.getInstance();
 }
 
+/**
+ * Get the singleton DownloadOrchestrator instance.
+ *
+ * @returns The DownloadOrchestrator singleton
+ */
 export function getDownloadOrchestrator(): DownloadOrchestrator {
   return DownloadOrchestrator.getInstance();
 }
