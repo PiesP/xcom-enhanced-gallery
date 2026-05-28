@@ -4,6 +4,7 @@
 import { TWITTER_MEDIA_SELECTOR } from '@constants/selectors';
 import { normalizeErrorMessage } from '@shared/error/normalize';
 import { logger } from '@shared/logging/logger';
+import { createPrefixedId } from '@shared/services/event-manager';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
@@ -14,7 +15,6 @@ import type {
   TweetInfo,
 } from '@shared/types/media.types';
 import { ErrorCode, ExtractionError } from '@shared/types/media.types';
-import { createPrefixedId } from '@shared/utils/id/create-id';
 import {
   adjustClickedIndexAfterDeduplication,
   removeDuplicateMediaItems,

@@ -7,9 +7,8 @@
 
 import { isGalleryInternalEvent } from '@shared/dom/utils';
 import { logger } from '@shared/logging/logger';
-import { EventManager } from '@shared/services/event-manager';
+import { createPrefixedId, EventManager } from '@shared/services/event-manager';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
-import { createPrefixedId } from '@shared/utils/id/create-id';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import type { Accessor } from 'solid-js';
