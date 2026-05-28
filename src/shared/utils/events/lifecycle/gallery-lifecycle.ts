@@ -4,8 +4,8 @@
 /** @fileoverview Gallery event lifecycle: init/teardown keyboard + click listeners. */
 
 import { logger } from '@shared/logging/logger';
+import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import { EventManager } from '@shared/services/event-manager';
-import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-types';
 import {
   handleKeyboardEvent,
   resetKeyboardDebounceState,

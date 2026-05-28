@@ -4,6 +4,22 @@
 import { logger } from '@shared/logging/logger';
 import { createId, createPrefixedId } from '@shared/utils/id/create-id';
 
+/** @fileoverview Event types for gallery event handling. */
+
+export interface EventHandlers {
+  readonly onMediaClick: (element: HTMLElement, event: MouseEvent) => Promise<void>;
+  readonly onGalleryClose: () => void;
+  readonly onKeyboardEvent?: (event: KeyboardEvent) => void;
+}
+
+export interface GalleryEventOptions {
+  readonly enableKeyboard: boolean;
+  readonly enableMediaDetection: boolean;
+  readonly debugMode: boolean;
+  readonly preventBubbling: boolean;
+  readonly context: string;
+}
+
 interface ListenerContext {
   readonly id: string;
   readonly element: EventTarget;
