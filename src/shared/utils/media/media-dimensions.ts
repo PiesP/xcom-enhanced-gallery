@@ -156,8 +156,10 @@ export function resolveMediaDimensionsWithIntrinsicFlag(
   return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
 }
 
+const CSS_REM_BASE = 16;
+
 function toRem(pixels: number): string {
-  return `${(pixels / 16).toFixed(4)}rem`;
+  return `${(pixels / CSS_REM_BASE).toFixed(4)}rem`;
 }
 
 export function createIntrinsicSizingStyle(dimensions: DimensionPair): Record<string, string> {
