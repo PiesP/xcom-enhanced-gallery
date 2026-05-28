@@ -8,9 +8,21 @@
 
 import { getLanguageService } from '@shared/container/container';
 import { getUserscript } from '@shared/external/userscript/adapter';
+import type { ComponentChildren } from '@shared/types/component.types';
 import type { JSXElement } from 'solid-js';
 import { createSignal, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
-import type { ErrorBoundaryProps } from './ErrorBoundary.types';
+
+/**
+ * Props for ErrorBoundary component
+ *
+ * The ErrorBoundary wraps SolidJS `<ErrorBoundary>` to provide localized error notifications
+ * and a retry-friendly fallback UI. It deduplicates error notifications to prevent spam.
+ *
+ * @property children - Content to wrap with error boundary protection
+ */
+export interface ErrorBoundaryProps {
+  readonly children?: ComponentChildren;
+}
 
 /**
  * Converts an error to string, handling Error objects and fallbacks safely.
