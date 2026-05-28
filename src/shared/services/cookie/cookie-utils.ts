@@ -66,54 +66,66 @@ function deleteDocumentCookie(name: string): void {
 }
 
 export async function listCookies(options?: CookieListOptions): Promise<CookieRecord[]> {
-  const gm = getCookieAPI();
-  if (!gm?.list) return parseDocumentCookies(options?.name);
+  try {
+    const gm = getCookieAPI();
+    if (!gm?.list) return parseDocumentCookies(options?.name);
 
-  return promisifyCallback<CookieRecord[]>(
-    (cb) =>
-      gm.list!(options, (cookies, error) => {
-        if (error) return cb(undefined, error);
-        cb(
-          (cookies ?? []).map((c) => ({ ...c })),
-          undefined
-        );
-      }),
-    { fallback: () => parseDocumentCookies(options?.name) }
-  );
+    return promisifyCallback<CookieRecord[]>(
+      (cb) =>
+        gm.list!(options, (cookies, error) => {
+          if (error) return cb(undefined, error);
+          cb(
+            (cookies ?? []).map((c) => ({ ...c })),
+            undefined
+          );
+        }),
+      { fallback: () => parseDocumentCookies(options?.name) }
+    );
+  } catch {
+    return parseDocumentCookies(options?.name);
+  }
 }
 
 export async function setCookie(details: CookieSetOptions): Promise<void> {
   if (!details?.name) throw new Error('Cookie name is required');
   const name = details.name;
 
-  const gm = getCookieAPI();
-  if (!gm?.set) {
-    setDocumentCookie(name, details.value ?? '');
-    return;
-  }
-
-  await promisifyCallback<void>((cb) => gm.set!(details, (error) => cb(undefined, error)), {
-    fallback: () => {
+  try {
+    const gm = getCookieAPI();
+    if (!gm?.set) {
       setDocumentCookie(name, details.value ?? '');
-    },
-  });
+      return;
+    }
+
+    await promisifyCallback<void>((cb) => gm.set!(details, (error) => cb(undefined, error)), {
+      fallback: () => {
+        setDocumentCookie(name, details.value ?? '');
+      },
+    });
+  } catch {
+    setDocumentCookie(name, details.value ?? '');
+  }
 }
 
 export async function deleteCookie(details: CookieDeleteOptions): Promise<void> {
   if (!details?.name) throw new Error('Cookie name is required');
   const name = details.name;
 
-  const gm = getCookieAPI();
-  if (!gm?.delete) {
-    deleteDocumentCookie(name);
-    return;
-  }
-
-  await promisifyCallback<void>((cb) => gm.delete!(details, (error) => cb(undefined, error)), {
-    fallback: () => {
+  try {
+    const gm = getCookieAPI();
+    if (!gm?.delete) {
       deleteDocumentCookie(name);
-    },
-  });
+      return;
+    }
+
+    await promisifyCallback<void>((cb) => gm.delete!(details, (error) => cb(undefined, error)), {
+      fallback: () => {
+        deleteDocumentCookie(name);
+      },
+    });
+  } catch {
+    deleteDocumentCookie(name);
+  }
 }
 
 export async function getCookieValue(name: string): Promise<string | undefined> {

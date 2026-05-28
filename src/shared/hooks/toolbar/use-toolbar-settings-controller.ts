@@ -49,11 +49,13 @@ export function useToolbarSettingsController(
   const themeManager = providedThemeService ?? getThemeService();
   const languageService = providedLanguageService ?? getLanguageService();
 
-  const scheduleTimeout = (callback: () => void, delay: number): number => {
+  const scheduleTimeout = (callback: () => void, delay: number): ReturnType<typeof setTimeout> => {
     return setTimeout(callback, delay);
   };
 
-  const clearScheduledTimeout = (handle: number | null | undefined): void => {
+  const clearScheduledTimeout = (
+    handle: ReturnType<typeof setTimeout> | null | undefined
+  ): void => {
     if (handle == null) {
       return;
     }
@@ -149,10 +151,14 @@ export function useToolbarSettingsController(
     }
 
     const eventManager = EventManager.getInstance();
+    // NOTE: listenerContext uses a monotonic sequence which causes EventManager's
+    // internal map to grow unboundedly. This is acceptable because each entry is
+    // cleaned up in onCleanup via removeByContext. The sequence number is used for
+    // debugging/uniqueness, not for iteration or memory leak detection.
     const listenerContext = `toolbar-settings-controller:${toolbarSettingsControllerListenerSeq++}`;
 
     let isSelectActive = false;
-    let selectGuardTimeout: number | null = null;
+    let selectGuardTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const handleSelectFocus = () => {
       isSelectActive = true;

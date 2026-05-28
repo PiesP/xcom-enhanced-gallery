@@ -21,6 +21,7 @@ import {
   resolveMediaDimensionsWithIntrinsicFlag,
 } from '@shared/utils/media/media-dimensions';
 import { cx } from '@shared/utils/text/formatting';
+import { isUrlAllowed, MEDIA_URL_POLICY } from '@shared/utils/url/safety';
 import type { JSX, JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, splitProps, untrack } from 'solid-js';
 
@@ -62,6 +63,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const isVideo = createMemo(() => local.media.type === 'video' || local.media.type === 'gif');
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
+
+  // Defense-in-depth: validate URL before rendering media element
+  const isUrlValid = createMemo(() => isUrlAllowed(local.media.url, MEDIA_URL_POLICY));
 
   createEffect(() => {
     void local.media.id;
@@ -234,7 +238,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
           </div>
         )}
 
-        {isVideo() ? (
+        {isVideo() && isUrlValid() ? (
           <video
             src={local.media.url}
             controls
@@ -246,7 +250,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             onDragStart={preventDragStart}
             onVolumeChange={handleVolumeChange}
           />
-        ) : (
+        ) : !isVideo() && isUrlValid() ? (
           <img
             ref={setImageRef}
             src={local.media.url}
@@ -259,7 +263,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             onContextMenu={handleContextMenu}
             onDragStart={preventDragStart}
           />
-        )}
+        ) : null}
 
         {isError() && (
           <div class={styles.error}>

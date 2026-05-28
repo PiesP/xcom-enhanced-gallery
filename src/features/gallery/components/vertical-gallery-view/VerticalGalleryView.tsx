@@ -124,9 +124,13 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   const handleDownloadCurrent = () => local.onDownloadCurrent?.();
   const handleDownloadAll = () => local.onDownloadAll?.();
 
-  // Stable callback for media load — does not depend on item index
-  const handleMediaLoad = (mediaId: string, indexValue: number): void =>
+  // Stable callback for media load — verifies mediaId to guard against stale indices
+  const handleMediaLoad = (mediaId: string, indexValue: number): void => {
+    const items = mediaItems();
+    const item = items[indexValue];
+    if (item?.id !== mediaId) return;
     debouncedScrollCorrection(indexValue, mediaId);
+  };
 
   // Memoized callback factories for per-item refs
   // Avoids recreating closures on every parent render

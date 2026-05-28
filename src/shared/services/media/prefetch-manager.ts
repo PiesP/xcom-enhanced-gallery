@@ -69,7 +69,12 @@ export class PrefetchManager {
    * Get cached media blob
    */
   get(url: string): Promise<Blob> | null {
-    return this.cache.get(url) ?? null;
+    const entry = this.cache.get(url);
+    if (!entry) return null;
+    // Move to end (most recently used) for LRU eviction
+    this.cache.delete(url);
+    this.cache.set(url, entry);
+    return entry;
   }
 
   /**

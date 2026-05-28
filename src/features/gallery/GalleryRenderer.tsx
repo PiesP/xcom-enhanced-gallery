@@ -52,12 +52,12 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
   });
 
   return (
-    <GalleryContainer
-      className={`${CSS.CLASSES.RENDERER} ${CSS.CLASSES.ROOT} xeg-theme-scope`}
-      data-theme={currentTheme()}
-      data-language={currentLanguage()}
-    >
-      <ErrorBoundary>
+    <ErrorBoundary>
+      <GalleryContainer
+        className={`${CSS.CLASSES.RENDERER} ${CSS.CLASSES.ROOT} xeg-theme-scope`}
+        data-theme={currentTheme()}
+        data-language={currentLanguage()}
+      >
         <VerticalGalleryView
           onClose={props.onClose}
           onPrevious={() => navigatePrevious('button')}
@@ -66,8 +66,8 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
           onDownloadAll={() => props.onDownloadAll()}
           className={CSS.CLASSES.VERTICAL_VIEW}
         />
-      </ErrorBoundary>
-    </GalleryContainer>
+      </GalleryContainer>
+    </ErrorBoundary>
   );
 }
 
