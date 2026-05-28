@@ -214,7 +214,7 @@ function buildSummaryPlugin(opts: {
             '📖 Optimized for: Debugging & Analysis',
             '├─ CSS class names: Readable (Component__class__hash)',
             '├─ CSS formatting: Preserved',
-            '├─ CSS variables: Full names (--xeg-*)',
+            '├─ CSS variables: Full names',
             '├─ CSS comments: Preserved',
             `└─ Source maps: ${sourceMapLabel}`,
           ]
@@ -222,7 +222,7 @@ function buildSummaryPlugin(opts: {
             '📦 Optimized for: Distribution Size',
             '├─ CSS class names: Hashed (xg-*)',
             '├─ CSS formatting: Compressed',
-            '├─ CSS variables: Shortened',
+            '├─ CSS variables: Full names',
             '├─ CSS custom properties: Pruned',
             '├─ CSS comments: Removed',
             `└─ Source maps: ${sourceMapLabel}`,

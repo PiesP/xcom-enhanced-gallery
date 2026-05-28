@@ -11,15 +11,6 @@
 import type { BuildModeConfig, UserscriptBaseConfig } from './types';
 
 /**
- * Escape special regex characters in a string.
- *
- * Used for safely embedding dynamic strings in RegExp constructors.
- */
-export function escapeRegExp(source: string): string {
-  return source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
  * Build mode configuration map.
  *
  * Defines optimization settings for development and production builds.
@@ -29,13 +20,11 @@ export function escapeRegExp(source: string): string {
 const BUILD_MODE_CONFIGS: Record<'development' | 'production', BuildModeConfig> = {
   development: {
     cssCompress: false,
-    cssVariableShortening: false,
     cssClassNamePattern: '[name]__[local]__[hash:base64:5]',
     sourceMap: true as const,
   },
   production: {
     cssCompress: true,
-    cssVariableShortening: true,
     cssClassNamePattern: 'xg-[hash:base64:4]',
     sourceMap: false as const,
   },
