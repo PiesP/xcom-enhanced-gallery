@@ -5,7 +5,7 @@
  * Shared download type definitions.
  */
 
-import type { ErrorCode } from '@shared/types/result.types';
+import type { ErrorCode } from '@shared/types/media.types';
 
 export interface OrchestratorItem {
   readonly url: string;

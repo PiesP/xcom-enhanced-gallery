@@ -20,7 +20,7 @@ import type {
 } from '@shared/services/download/types';
 import { downloadAsZip } from '@shared/services/download/zip-download';
 import type { MediaInfo } from '@shared/types/media.types';
-import { ErrorCode } from '@shared/types/result.types';
+import { ErrorCode } from '@shared/types/media.types';
 
 let _downloadInstance: DownloadOrchestrator | null = null;
 

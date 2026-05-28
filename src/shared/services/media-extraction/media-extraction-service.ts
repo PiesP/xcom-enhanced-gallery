@@ -13,8 +13,7 @@ import type {
   MediaExtractor,
   TweetInfo,
 } from '@shared/types/media.types';
-import { ExtractionError } from '@shared/types/media.types';
-import { ErrorCode } from '@shared/types/result.types';
+import { ErrorCode, ExtractionError } from '@shared/types/media.types';
 import { createPrefixedId } from '@shared/utils/id/create-id';
 import {
   adjustClickedIndexAfterDeduplication,
