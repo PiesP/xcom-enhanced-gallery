@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { CSS } from '@constants/css';
-import type { ComponentChildren } from '@shared/types/component.types';
+import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
 import { splitProps } from 'solid-js';

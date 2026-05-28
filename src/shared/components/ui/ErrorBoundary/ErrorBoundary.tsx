@@ -8,7 +8,7 @@
 
 import { getLanguageService } from '@shared/container/container';
 import { getUserscript } from '@shared/external/userscript/adapter';
-import type { ComponentChildren } from '@shared/types/component.types';
+import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import type { JSXElement } from 'solid-js';
 import { createSignal, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
 

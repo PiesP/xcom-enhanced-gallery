@@ -6,7 +6,7 @@
  * Applies the design-token defaults while keeping semantics explicit.
  */
 
-import type { ComponentChildren } from '@shared/types/component.types';
+import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import type { JSXElement } from 'solid-js';
 import { splitProps } from 'solid-js';
 

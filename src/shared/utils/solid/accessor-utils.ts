@@ -1,8 +1,18 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import type { Accessor } from 'solid-js';
+import type { Accessor, JSXElement } from 'solid-js';
 import { createComputed, createRoot } from 'solid-js';
+
+/** Component child element type */
+export type ComponentChildren =
+  | JSXElement
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | ComponentChildren[];
 
 /**
  * Union type for a value or accessor function.
