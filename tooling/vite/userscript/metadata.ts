@@ -9,8 +9,8 @@
  * Handles license block generation with MIT license formatting.
  */
 
+import type { UserscriptMeta } from '../constants';
 import { CDN_BASE_URL, OUTPUT_FILE_NAMES, USERSCRIPT_CONFIG } from '../constants';
-import type { UserscriptMeta } from '../types';
 
 const CURRENT_PROJECT_YEAR = new Date().getUTCFullYear();
 const PROJECT_COPYRIGHT_RANGE =

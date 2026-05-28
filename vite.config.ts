@@ -20,7 +20,7 @@
  */
 
 // External dependencies
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { defineConfig, type Plugin, type UserConfig } from 'vite';
@@ -30,8 +30,11 @@ import solidPlugin from 'vite-plugin-solid';
 import { getBuildModeConfig, OUTPUT_FILE_NAMES } from './tooling/vite/constants';
 import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
 import { singleFileBundleGuardPlugin } from './tooling/vite/plugins/single-file-guard';
-import { generateUserscriptHeader } from './tooling/vite/userscript/metadata';
-import { metaOnlyPlugin } from './tooling/vite/userscript/vite-plugin-meta-only';
+import {
+  generateMetaOnlyHeader,
+  generateUserscriptHeader,
+} from './tooling/vite/userscript/metadata';
+
 import { resolveVersion } from './tooling/vite/version';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -245,6 +248,32 @@ function buildSummaryPlugin(opts: {
       } catch {
         // Bundle size reporting is best-effort; ignore read errors.
       }
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Meta-Only Plugin (inlined from tooling/vite/userscript/vite-plugin-meta-only.ts)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Creates a Vite plugin that generates a meta-only file after bundling.
+ * The file contains only the userscript metadata header.
+ *
+ * @param version - The current version string
+ * @returns Vite plugin instance for meta-only file generation
+ */
+function metaOnlyPlugin(version: string): Plugin {
+  return {
+    name: 'meta-only-file',
+    apply: 'build',
+    enforce: 'post',
+    writeBundle(options): void {
+      const outDir = (options as { dir?: string }).dir ?? 'dist';
+      const metaContent = generateMetaOnlyHeader(version);
+      const metaPath = resolve(outDir, OUTPUT_FILE_NAMES.meta);
+      writeFileSync(metaPath, metaContent, 'utf8');
+      console.log(`\ud83d\udcc4 Meta-only file generated: ${OUTPUT_FILE_NAMES.meta}`);
     },
   };
 }
