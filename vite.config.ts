@@ -21,14 +21,11 @@
 
 // External dependencies
 import { execSync } from 'node:child_process';
-import { readFileSync, statSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { defineConfig, type Plugin, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
-
-// Internal modules
-import { singleFileBundleGuardPlugin } from './tooling/vite/plugins/single-file-guard';
 
 // ── Build constants ─────────────────────────────────────────────────────────
 
@@ -342,7 +339,6 @@ export default defineConfig(({ mode }): UserConfig => {
       cssInlinePlugin(),
       metaOnlyPlugin(version),
       buildSummaryPlugin({ isDev, version, config }),
-      singleFileBundleGuardPlugin(mode),
     ],
     root,
 
@@ -509,6 +505,22 @@ function buildSummaryPlugin(opts: {
         );
       } catch {
         // Bundle size reporting is best-effort; ignore read errors.
+      }
+
+      // Single-file bundle guard: fail if unexpected files appear in dist/
+      const expectedFiles = new Set([
+        bundleName,
+        ...(config.sourceMap && config.sourceMap !== 'inline' ? [`${bundleName}.map`] : []),
+        OUTPUT_FILE_NAMES.meta,
+      ]);
+      const actualDist = readdirSync('dist');
+      const unexpected = actualDist.filter((f) => !expectedFiles.has(f));
+      if (unexpected.length > 0) {
+        throw new Error(
+          `Unexpected files in dist/: ${unexpected.join(', ')}. ` +
+            `Expected only: ${[...expectedFiles].join(', ')}. ` +
+            `Check for url() references, ?url imports, or new URL() patterns.`
+        );
       }
     },
   };

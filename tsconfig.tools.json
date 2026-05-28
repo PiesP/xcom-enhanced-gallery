@@ -12,6 +12,6 @@
     // Avoid generating build-info for tooling checks.
     "incremental": false
   },
-  "include": ["tooling/**/*", "vite.config.ts"],
+  "include": ["vite.config.ts"],
   "exclude": ["node_modules", "dist", "test", ".stryker-tmp", "stryker-report", "tmp"]
 }
