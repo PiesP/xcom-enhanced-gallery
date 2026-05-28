@@ -6,8 +6,7 @@
  * @description Facade for Twitter API interactions, delegating to specialized services.
  */
 
-import { TWITTER_API_CONFIG } from '@constants/twitter-api';
-import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
+import { buildTweetResultByRestIdUrl, TWITTER_API_CONFIG } from '@shared/core/twitter-api/endpoint';
 import { logger } from '@shared/logging/logger';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import {
