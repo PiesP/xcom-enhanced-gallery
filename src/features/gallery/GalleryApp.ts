@@ -16,8 +16,10 @@ import {
   cleanupGalleryEvents,
   initializeGalleryEvents,
 } from '@shared/utils/events/lifecycle/gallery-lifecycle';
-import { pauseAmbientVideosForGallery } from '@shared/utils/media/ambient-video-coordinator';
-import { startAmbientVideoGuard } from '@shared/utils/media/ambient-video-guard';
+import {
+  pauseAmbientVideosForGallery,
+  startAmbientVideoGuard,
+} from '@shared/utils/media/ambient-video-coordinator';
 import { clampIndex } from '@shared/utils/types/safety';
 
 export class GalleryApp {

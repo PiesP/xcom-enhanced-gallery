@@ -11,12 +11,14 @@ import {
   VIDEO_CONTAINER_SELECTORS,
 } from '@constants/selectors';
 import { logger } from '@shared/logging/logger';
+import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { closestWithFallback } from '@shared/utils/dom/query-helpers';
 import type {
   PauseAmbientVideosOptions,
   PauseAmbientVideosResult,
 } from '@shared/utils/media/twitter-video-pauser';
 import { pauseActiveTwitterVideos } from '@shared/utils/media/twitter-video-pauser';
+import { createEffectRoot } from '@shared/utils/solid/accessor-utils';
 
 type QueryableRoot = Document | DocumentFragment | HTMLElement;
 
@@ -106,4 +108,35 @@ export function pauseAmbientVideosForGallery(
   }
 
   return { ...result, failed: false, trigger, forced: force, reason, scope };
+}
+
+// ---------------------------------------------------------------------------
+// Ambient video guard (reactive watcher that pauses videos when gallery opens)
+// ---------------------------------------------------------------------------
+
+let guardDispose: (() => void) | null = null;
+
+export function startAmbientVideoGuard(): () => void {
+  if (guardDispose) {
+    return () => {
+      guardDispose?.();
+    };
+  }
+
+  let active = true;
+  guardDispose = createEffectRoot(() => {
+    if (!gallerySignals.isOpen) return;
+
+    const result = pauseAmbientVideosForGallery({ trigger: 'guard', reason: 'guard' });
+    if (result.pausedCount > 0) {
+      __DEV__ && logger.debug('[AmbientVideoCoordinator] Ambient pause triggered', result);
+    }
+  });
+
+  return () => {
+    if (!active) return;
+    active = false;
+    guardDispose?.();
+    guardDispose = null;
+  };
 }

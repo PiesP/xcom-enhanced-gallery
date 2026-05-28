@@ -99,6 +99,29 @@ export class ExtractionError extends Error {
   }
 }
 
+/**
+ * Creates a standardized failure result for media extraction.
+ * Used by extractors when extraction fails at any stage.
+ */
+export function createFailureResult(
+  error: string,
+  sourceType: string,
+  strategy: string
+): MediaExtractionResult {
+  return {
+    success: false,
+    mediaItems: [],
+    clickedIndex: 0,
+    metadata: {
+      extractedAt: performance.now(),
+      sourceType,
+      strategy,
+      error,
+    },
+    tweetInfo: null,
+  };
+}
+
 /** Media extractor strategy interface */
 export interface MediaExtractorStrategy {
   extract(
