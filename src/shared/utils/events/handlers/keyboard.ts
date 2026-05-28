@@ -22,7 +22,7 @@ const KEYBOARD_HELP_TIMEOUT_MS = 6000;
 import { executeVideoControl } from '@shared/utils/events/handlers/video-control-helper';
 
 // ============================================================================
-// Keyboard Debounce State
+// Keyboard Debounce State (closure-encapsulated to avoid module-level mutable state)
 // ============================================================================
 
 interface KeyboardDebounceState {
@@ -30,32 +30,40 @@ interface KeyboardDebounceState {
   readonly lastKey: string;
 }
 
-let keyboardDebounceState: KeyboardDebounceState = {
-  lastExecutionTime: 0,
-  lastKey: '',
-};
-
-function shouldExecuteKeyboardAction(key: string, minIntervalMs: number): boolean {
-  const now = performance.now();
-  const timeSinceLastExecution = now - keyboardDebounceState.lastExecutionTime;
-
-  if (key === keyboardDebounceState.lastKey && timeSinceLastExecution < minIntervalMs) {
-    return false;
-  }
-
-  keyboardDebounceState = {
-    lastExecutionTime: now,
-    lastKey: key,
-  };
-  return true;
-}
-
-export function resetKeyboardDebounceState(): void {
-  keyboardDebounceState = {
+function createKeyboardDebouncer() {
+  let state: KeyboardDebounceState = {
     lastExecutionTime: 0,
     lastKey: '',
   };
+
+  function shouldExecute(key: string, minIntervalMs: number): boolean {
+    const now = performance.now();
+    const timeSinceLastExecution = now - state.lastExecutionTime;
+
+    if (key === state.lastKey && timeSinceLastExecution < minIntervalMs) {
+      return false;
+    }
+
+    state = {
+      lastExecutionTime: now,
+      lastKey: key,
+    };
+    return true;
+  }
+
+  function reset(): void {
+    state = {
+      lastExecutionTime: 0,
+      lastKey: '',
+    };
+  }
+
+  return { shouldExecute, reset };
 }
+
+const keyboardDebouncer = createKeyboardDebouncer();
+
+export const resetKeyboardDebounceState = keyboardDebouncer.reset;
 
 /** Navigation and help keys: Home, End, PageUp/Down, Arrows, ? */
 const NAVIGATION_KEYS = new Set([
@@ -183,23 +191,23 @@ function handleNavigation(key: string): void {
 function handleVideoControl(key: string): void {
   switch (key) {
     case 'Space':
-      if (shouldExecuteKeyboardAction('Space', 150)) {
+      if (keyboardDebouncer.shouldExecute('Space', 150)) {
         executeVideoControl('togglePlayPause');
       }
       break;
     case 'ArrowUp':
-      if (shouldExecuteKeyboardAction('ArrowUp', 100)) {
+      if (keyboardDebouncer.shouldExecute('ArrowUp', 100)) {
         executeVideoControl('volumeUp');
       }
       break;
     case 'ArrowDown':
-      if (shouldExecuteKeyboardAction('ArrowDown', 100)) {
+      if (keyboardDebouncer.shouldExecute('ArrowDown', 100)) {
         executeVideoControl('volumeDown');
       }
       break;
     case 'm':
     case 'M':
-      if (shouldExecuteKeyboardAction('M', 100)) {
+      if (keyboardDebouncer.shouldExecute('M', 100)) {
         executeVideoControl('toggleMute');
       }
       break;
@@ -211,7 +219,7 @@ function handleVideoControl(key: string): void {
  * @internal
  */
 function showKeyboardHelp(): void {
-  if (!shouldExecuteKeyboardAction('?', 500)) return;
+  if (!keyboardDebouncer.shouldExecute('?', 500)) return;
 
   try {
     const lang = getLanguageService();

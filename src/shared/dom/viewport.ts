@@ -67,7 +67,6 @@ export function observeViewportCssVars(
   el: HTMLElement,
   getChrome: () => ChromeOffsets
 ): () => void {
-  /* timer cleanup handled via clearTimeout */
   let disposed = false;
 
   const calcAndApply = (): void => {
@@ -79,16 +78,20 @@ export function observeViewportCssVars(
 
   // RAF-throttle update scheduling
   let pending = false;
+  let rafId: number | null = null;
+  let timerId: ReturnType<typeof setTimeout> | null = null;
   const schedule = (): void => {
     if (pending) return;
     pending = true;
     if (typeof requestAnimationFrame === 'function') {
-      requestAnimationFrame(() => {
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
         pending = false;
         calcAndApply();
       });
     } else {
-      setTimeout(() => {
+      timerId = setTimeout(() => {
+        timerId = null;
         pending = false;
         calcAndApply();
       }, 0);
@@ -124,6 +127,14 @@ export function observeViewportCssVars(
 
   return (): void => {
     disposed = true;
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+    if (timerId !== null) {
+      clearTimeout(timerId);
+      timerId = null;
+    }
     if (ro) {
       try {
         ro.disconnect();
@@ -135,6 +146,5 @@ export function observeViewportCssVars(
       EventManager.getInstance().removeListener(resizeListenerId);
       resizeListenerId = null;
     }
-    /* timer cleanup handled via clearTimeout */
   };
 }
