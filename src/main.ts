@@ -5,8 +5,11 @@
  * @fileoverview Main entry. Orchestrates bootstrap stages, startup, and cleanup.
  */
 
-import { initializeCoreBaseServices } from '@bootstrap/base-services';
-import { initializeGalleryApp, initializeGalleryServices } from '@bootstrap/gallery-init';
+import {
+  initializeCoreBaseServices,
+  initializeGalleryApp,
+  initializeGalleryServices,
+} from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
 import { createAppConfig } from '@constants/app-config';
 import { mutateDevNamespace } from '@shared/devtools/dev-namespace';

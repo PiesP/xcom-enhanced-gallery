@@ -12,6 +12,20 @@ import { registerSettings } from '@shared/container/container';
 import { galleryErrorReporter, settingsErrorReporter } from '@shared/error/app-error-reporter';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
+import { LanguageService } from '@shared/services/language-service';
+import { MediaService } from '@shared/services/media-service';
+import { ThemeService } from '@shared/services/theme-service';
+
+export async function initializeCoreBaseServices(): Promise<void> {
+  const services = [
+    ThemeService.getInstance(),
+    LanguageService.getInstance(),
+    MediaService.getInstance(),
+  ] as const;
+  for (const service of services) {
+    await service.initialize();
+  }
+}
 
 async function initializeSettingsService(): Promise<void> {
   const settings = new SettingsService();
