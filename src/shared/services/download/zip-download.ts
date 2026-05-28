@@ -6,7 +6,7 @@ import { normalizeErrorMessage } from '@shared/error/normalize';
 import { StreamingZipWriter } from '@shared/external/zip/streaming-zip-writer';
 import { DEFAULT_BACKOFF_BASE_MS, fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
 import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
-import { reportProgress } from '@shared/utils/download/report-progress';
+import { reportProgress } from '@shared/services/download/types';
 
 type UniqueFilenameFactory = (desired: string) => string;
 

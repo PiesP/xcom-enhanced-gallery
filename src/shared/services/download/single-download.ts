@@ -10,8 +10,8 @@ import type {
   GMDownloadFunction,
   SingleDownloadResult,
 } from '@shared/services/download/types';
+import { reportProgress } from '@shared/services/download/types';
 import type { MediaInfo } from '@shared/types/media.types';
-import { reportProgress } from '@shared/utils/download/report-progress';
 
 function asGMDownloadFunction(value: unknown): GMDownloadFunction | undefined {
   return typeof value === 'function' ? (value as GMDownloadFunction) : undefined;
