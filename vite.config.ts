@@ -101,7 +101,7 @@ export default defineConfig(({ mode }): UserConfig => {
           omitNestedClosingTags: isProd,
         },
       }),
-      cssInlinePlugin(mode),
+      cssInlinePlugin(),
       metaOnlyPlugin(version),
       buildSummaryPlugin({ isDev, version, config }),
       singleFileBundleGuardPlugin(mode),
@@ -122,9 +122,9 @@ export default defineConfig(({ mode }): UserConfig => {
       emptyOutDir: true,
       write: true,
       cssCodeSplit: false,
-      // Keep CSS non-minified at the bundler level (the CSS inline plugin applies its own
-      // mode-dependent size optimizations).
-      cssMinify: false,
+      // CSS minification by Rolldown's native lightningcss in production;
+      // preserved as-is in dev for readability.
+      cssMinify: isProd ? 'lightningcss' : false,
 
       lib: {
         entry: entryFile,

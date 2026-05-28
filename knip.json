@@ -10,7 +10,5 @@
   "tags": [
     "-@internal"
   ],
-  "ignoreDependencies": [
-    "lightningcss"
-  ]
+  "ignoreDependencies": []
 }
