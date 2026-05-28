@@ -6,11 +6,11 @@
  * on keyboard/click (not scroll) events. Subscribes only when visible.
  */
 
+import type { NavigationSource } from '@shared/state/signals/gallery.signals';
 import {
   type GalleryNavigateCompletePayload,
   galleryIndexEvents,
 } from '@shared/state/signals/gallery.signals';
-import type { NavigationSource } from '@shared/types/navigation.types';
 import type { Accessor } from 'solid-js';
 import { createEffect, createSignal, on, onCleanup } from 'solid-js';
 

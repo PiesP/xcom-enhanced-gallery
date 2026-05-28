@@ -10,9 +10,18 @@
  *
  * @module gallery.signals
  */
+
+/** Navigation source type - tracks what triggered the navigation */
+export type NavigationSource =
+  | 'button'
+  | 'click'
+  | 'keyboard'
+  | 'programmatic'
+  | 'scroll'
+  | 'auto-focus';
+
 import { logger } from '@shared/logging/logger';
 import type { MediaInfo } from '@shared/types/media.types';
-import type { NavigationSource } from '@shared/types/navigation.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
 import { clampIndex } from '@shared/utils/types/safety';
 import { batch, createSignal } from 'solid-js';

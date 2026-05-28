@@ -10,7 +10,7 @@
 import { useGalleryFocusTracker } from '@features/gallery/hooks/use-gallery-focus-tracker';
 import { useGalleryItemScroll } from '@features/gallery/hooks/use-gallery-item-scroll';
 import { useGalleryScroll } from '@features/gallery/hooks/use-gallery-scroll';
-import type { NavigationSource } from '@shared/types/navigation.types';
+import type { NavigationSource } from '@shared/state/signals/gallery.signals';
 import type { Accessor } from 'solid-js';
 import { createEffect } from 'solid-js';
 import { useGalleryLifecycle } from './use-gallery-lifecycle';
