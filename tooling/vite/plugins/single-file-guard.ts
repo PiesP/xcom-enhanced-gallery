@@ -21,7 +21,13 @@
  */
 
 import type { Plugin } from 'vite';
-import { OUTPUT_FILE_NAMES } from '../constants';
+
+/** Output file names for production and development builds. */
+const OUTPUT_FILE_NAMES = {
+  dev: 'xcom-enhanced-gallery.dev.user.js',
+  prod: 'xcom-enhanced-gallery.user.js',
+  meta: 'xcom-enhanced-gallery.meta.js',
+} as const;
 
 /**
  * Creates a Vite plugin that validates single-file bundle constraints.
