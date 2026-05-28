@@ -2,12 +2,16 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { CSS } from '@constants/css';
+import type { ComponentChildren } from '@shared/types/component.types';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
 import { splitProps } from 'solid-js';
 import { render } from 'solid-js/web';
 
-import type { GalleryContainerProps } from './GalleryContainer.types';
+export interface GalleryContainerProps {
+  readonly children: ComponentChildren;
+  readonly className?: string;
+}
 
 const DISPOSE_SYMBOL = Symbol();
 
