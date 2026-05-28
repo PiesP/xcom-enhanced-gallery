@@ -34,19 +34,19 @@ export function determineClickedIndex(
   }
 }
 
-const resolveClickedElementUrl = (clickedElement: HTMLElement): string | null => {
+function resolveClickedElementUrl(clickedElement: HTMLElement): string | null {
   const mediaElement = findMediaElementInDOM(clickedElement);
   const elementUrl = mediaElement ? extractMediaUrlFromElement(mediaElement) : null;
   if (elementUrl) return elementUrl;
 
   const fallbackTarget = mediaElement ?? clickedElement;
   return extractBackgroundImageUrl(fallbackTarget, 3);
-};
+}
 
-const extractBackgroundImageUrl = (
+function extractBackgroundImageUrl(
   element: HTMLElement | null,
   maxAncestorHops: number
-): string | null => {
+): string | null {
   if (!element) return null;
 
   let current: HTMLElement | null = element;
@@ -59,15 +59,15 @@ const extractBackgroundImageUrl = (
   }
 
   return null;
-};
+}
 
-const extractUrlFromCssValue = (value: string): string | null => {
+function extractUrlFromCssValue(value: string): string | null {
   if (!value || value === 'none') return null;
   const match = value.match(/url\((?:'|")?(.*?)(?:'|")?\)/i);
   return match?.[1]?.trim() || null;
-};
+}
 
-const getNormalizedMediaCandidates = (item: MediaInfo): string[] => {
+function getNormalizedMediaCandidates(item: MediaInfo): string[] {
   const candidates: Array<string | null | undefined> = [
     item.url,
     item.originalUrl,
@@ -88,9 +88,9 @@ const getNormalizedMediaCandidates = (item: MediaInfo): string[] => {
     .filter((candidate): candidate is string => !!candidate);
 
   return Array.from(new Set(normalized));
-};
+}
 
-const getStringValue = (record: Record<string, unknown>, key: string): string | null => {
+function getStringValue(record: Record<string, unknown>, key: string): string | null {
   const value = record[key];
   return typeof value === 'string' && value.trim() ? value : null;
-};
+}

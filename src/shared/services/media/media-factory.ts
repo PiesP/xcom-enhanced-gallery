@@ -13,12 +13,12 @@ import { normalizeDimension } from '@shared/utils/media/media-dimensions';
 /**
  * Create MediaInfo from API Response
  */
-const createMediaInfoFromAPI = (
+function createMediaInfoFromAPI(
   apiMedia: TweetMediaEntry,
   tweetInfo: TweetInfo,
   index: number,
   tweetTextHTML?: string | undefined
-): MediaInfo | null => {
+): MediaInfo | null {
   try {
     const mediaType = apiMedia.type === 'photo' ? 'image' : 'video';
     const width = normalizeDimension(apiMedia.original_width);
@@ -60,7 +60,7 @@ const createMediaInfoFromAPI = (
     }
     return null;
   }
-};
+}
 
 /**
  * Transform API Media to MediaInfo Array
