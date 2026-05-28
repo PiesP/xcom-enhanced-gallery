@@ -5,10 +5,7 @@
 
 import type { MediaInfo } from '@shared/types/media.types';
 import type { ImageFitMode } from '@shared/types/settings.types';
-import type { Accessor } from 'solid-js';
-
-/** Fit mode prop: ImageFitMode value or accessor returning it. */
-export type FitModeProp = ImageFitMode | Accessor<ImageFitMode>;
+import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 
 /** Props for VerticalImageItem component. */
 export interface VerticalImageItemProps {
@@ -49,7 +46,7 @@ export interface VerticalImageItemProps {
    * @optional
    * @default undefined (use component default)
    */
-  readonly fitMode?: FitModeProp;
+  readonly fitMode?: MaybeAccessor<ImageFitMode>;
 
   /**
    * Callback invoked when media finishes loading
