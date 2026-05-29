@@ -119,17 +119,9 @@ export function pauseAmbientVideosForGallery(
 // Ambient video guard (reactive watcher that pauses videos when gallery opens)
 // ---------------------------------------------------------------------------
 
-let guardDispose: (() => void) | null = null;
-
 export function startAmbientVideoGuard(): () => void {
-  if (guardDispose) {
-    return () => {
-      guardDispose?.();
-    };
-  }
-
   let active = true;
-  guardDispose = createEffectRoot(() => {
+  const dispose = createEffectRoot(() => {
     if (!gallerySignals.isOpen) return;
 
     const result = pauseAmbientVideosForGallery({ trigger: 'guard', reason: 'guard' });
@@ -141,7 +133,6 @@ export function startAmbientVideoGuard(): () => void {
   return () => {
     if (!active) return;
     active = false;
-    guardDispose?.();
-    guardDispose = null;
+    dispose();
   };
 }
