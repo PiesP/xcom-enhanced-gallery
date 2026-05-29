@@ -58,8 +58,8 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
   const [settingsExpandedSignal, setSettingsExpandedSignal] = createSignal(false);
   const [tweetExpanded, setTweetExpanded] = createSignal(false);
 
-  const totalItems = createMemo(() => Math.max(0, local.totalCount() ?? 0));
-  const currentIndexForNav = createMemo(() => clampIndex(local.currentIndex() ?? 0, totalItems()));
+  const totalItems = () => Math.max(0, local.totalCount() ?? 0);
+  const currentIndexForNav = () => clampIndex(local.currentIndex() ?? 0, totalItems());
 
   const displayedIndex = createMemo(() => {
     const total = totalItems();
@@ -93,12 +93,12 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
     };
   });
 
-  const fitModeHandlers = createMemo<InternalFitModeHandlers>(() => ({
+  const fitModeHandlers = (): InternalFitModeHandlers => ({
     original: local.handlers.fitMode?.onFitOriginal,
     fitWidth: local.handlers.fitMode?.onFitWidth,
     fitHeight: local.handlers.fitMode?.onFitHeight,
     fitContainer: local.handlers.fitMode?.onFitContainer,
-  }));
+  });
 
   const fitModeLabels = createMemo<Record<ImageFitMode, { label: string; title: string }>>(() => ({
     original: { label: translate('tb.fitOri'), title: translate('tb.fitOri') },
@@ -107,9 +107,8 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
     fitContainer: { label: translate('tb.fitC'), title: translate('tb.fitC') },
   }));
 
-  const activeFitMode = createMemo<ImageFitMode>(
-    () => local.currentFitMode?.() ?? FIT_MODE_ORDER[0]?.mode ?? 'original'
-  );
+  const activeFitMode = (): ImageFitMode =>
+    local.currentFitMode?.() ?? FIT_MODE_ORDER[0]?.mode ?? 'original';
 
   createEffect(
     on(
@@ -173,11 +172,10 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
     },
   };
 
-  const toolbarClass = createMemo(() => {
-    const cls = [styles.toolbar, styles.galleryToolbar];
-    if (local.className) cls.push(local.className);
-    return cls.join(' ');
-  });
+  const toolbarClass = () => {
+    const extra = local.className ? ` ${local.className}` : '';
+    return `${styles.toolbar} ${styles.galleryToolbar}${extra}`;
+  };
 
   return (
     <ToolbarView
