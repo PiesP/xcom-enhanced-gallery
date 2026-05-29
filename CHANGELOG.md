@@ -6,13 +6,37 @@ The format follows the principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and the project
 roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.1.2] - 2026-05-29
+
+### Fixed
+
+- **guardDispose**: Removed singleton pattern to ensure proper instance isolation — each consumer now owns an independent guard instance.
+- **Stale references**: Resolved stale `globals.ts` import reference that caused runtime errors after module restructuring.
+- **CSS variable resolution**: Removed CSS variable shorthand map that triggered cross-boundary runtime bugs in shadow DOM contexts.
+- **Error boundary**: Fixed retry logic to prevent infinite retry loops in edge case scenarios.
+- **LRU cache**: Fixed stale closure issue where evicted entries could be incorrectly referenced.
+- **Timer types**: Resolved timer type inconsistencies in service cleanup routines.
+- **URL validation**: Fixed validation edge case for certain Twitter CDN URL patterns.
+- **Cookie handling**: Fixed cookie read/write type mismatches in authentication flow.
+
+### Performance
+
+- **IntersectionObserver**: Introduced a shared IntersectionObserver pool to reduce redundant observer instances across gallery views.
+- **Batch updates**: Wrapped reactive state updates with `batch()` to minimize unnecessary re-renders.
+- **Memo optimization**: Converted `createMemo` wrappers to direct getter calls in 16 locations, eliminating unnecessary signal indirection.
+- **Service initialization**: Parallelized service initialization to reduce application startup time.
+- **Prefetch cache**: Reduced prefetch cache size and improved the eviction strategy for memory efficiency.
 
 ### Changed
 
 - **Build config**: Merged `tsconfig.build.json` into `tsconfig.json`, removed redundant `isolatedModules` option (implied by `verbatimModuleSyntax`), and updated `check:src` script to use `tsc --noEmit`.
 - **Vite config**: Inlined single-consumer helpers, reduced redundancy in grant/connect reassignment, simplified feature flag parsing and return types, and added consistent JSDoc to build functions.
-- **Dependencies**: Removed `only-allow` dependency from `package.json`.
+- **Tooling**: Removed the `tooling/` directory entirely; all tooling configuration is now consolidated into `vite.config.ts`.
+- **File consolidation**: Merged duplicate type and service files to reduce module complexity and improve maintainability.
+- **Button unification**: Centralized `unifiedButton` component to eliminate duplicate implementations.
+- **Path resolution**: Extracted `resolveNestedPath` utility for consistent nested path resolution.
+- **Code style**: Applied dot notation consistently, introduced `CSS_REM_BASE` constant, and added JSDoc where missing.
+- **Dependencies**: Removed `only-allow`; updated Node.js requirement from v24 to v26, pnpm to 11.2.2; updated `vite` to 8.0.14, `solid-js` to 1.9.13, `@types/node` to 25.9.1, and `knip` to 6.14.1.
 
 ## [2.1.1] - 2026-07-19
 
