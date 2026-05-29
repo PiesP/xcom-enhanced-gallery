@@ -6,6 +6,14 @@ The format follows the principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and the project
 roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Build config**: Merged `tsconfig.build.json` into `tsconfig.json`, removed redundant `isolatedModules` option (implied by `verbatimModuleSyntax`), and updated `check:src` script to use `tsc --noEmit`.
+- **Vite config**: Inlined single-consumer helpers, reduced redundancy in grant/connect reassignment, simplified feature flag parsing and return types, and added consistent JSDoc to build functions.
+- **Dependencies**: Removed `only-allow` dependency from `package.json`.
+
 ## [2.1.1] - 2026-07-19
 
 ### Fixed
