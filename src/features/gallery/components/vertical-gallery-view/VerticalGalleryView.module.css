@@ -44,6 +44,18 @@
     .toolbarWrapper {
       transition: none;
     }
+
+    .itemsContainer {
+      scroll-behavior: auto;
+      will-change: auto;
+      transform: none;
+    }
+
+    /* Disable hover transforms for toolbar surfaces */
+    .toolbarWrapper:hover,
+    .toolbarWrapper:focus-within {
+      transform: none;
+    }
   }
 }
 
@@ -350,20 +362,6 @@
   .itemsContainer {
     padding: var(--xeg-spacing-compact);
     gap: var(--xeg-spacing-compact);
-  }
-}
-/* Phase 254: Reduced motion support (scroll-behavior + will-change overrides) */
-@media (prefers-reduced-motion: reduce) {
-  .itemsContainer {
-    scroll-behavior: auto;
-    will-change: auto;
-    transform: none;
-  }
-
-  /* Disable hover transforms for toolbar surfaces */
-  .toolbarWrapper:hover,
-  .toolbarWrapper:focus-within {
-    transform: none;
   }
 }
 

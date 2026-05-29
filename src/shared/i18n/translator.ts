@@ -11,6 +11,7 @@ import { LANGUAGE_CODES } from '@shared/constants/i18n/language-types';
 import { en } from '@shared/constants/i18n/languages/en';
 import { ja } from '@shared/constants/i18n/languages/ja';
 import { ko } from '@shared/constants/i18n/languages/ko';
+import { resolveNestedPath } from '@shared/utils/object/path';
 import type { TranslationBundleInput, TranslationKey, TranslationParams } from './types';
 
 export const TRANSLATION_REGISTRY: Partial<Record<BaseLanguageCode, LanguageStrings>> = {
@@ -20,19 +21,6 @@ export const TRANSLATION_REGISTRY: Partial<Record<BaseLanguageCode, LanguageStri
 } as const;
 
 export const DEFAULT_LANGUAGE: BaseLanguageCode = 'en';
-
-export function resolveTranslationValue(
-  dictionary: LanguageStrings,
-  key: TranslationKey
-): string | undefined {
-  const segments = key.split('.');
-  let current: unknown = dictionary;
-  for (const segment of segments) {
-    if (current == null || typeof current !== 'object') return undefined;
-    current = (current as Record<string, unknown>)[segment];
-  }
-  return typeof current === 'string' ? current : undefined;
-}
 
 interface TranslatorOptions {
   readonly bundles?: TranslationBundleInput;
@@ -66,7 +54,7 @@ export class Translator {
     params?: TranslationParams
   ): string {
     const strings = this.bundles[language] ?? this.bundles[this.fallbackLanguage]!;
-    const template = resolveTranslationValue(strings, key);
+    const template = resolveNestedPath<string>(strings, key);
     if (!template) return key;
     if (!params) return template;
     return template.replace(/\{(\w+)\}/g, (match, placeholder) =>

@@ -39,10 +39,6 @@ interface PauseResponse extends PauseAmbientVideosResult {
   readonly scope: PauseScope;
 }
 
-function emptyResult(): PauseAmbientVideosResult {
-  return { pausedCount: 0, totalCandidates: 0, skippedCount: 0 };
-}
-
 function findTweetContainer(element?: HTMLElement | null): HTMLElement | null {
   if (!element) return null;
   return closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS);
@@ -94,7 +90,16 @@ export function pauseAmbientVideosForGallery(
     if (__DEV__) {
       logger.warn('[AmbientVideoCoordinator] Failed to pause ambient videos', { error, trigger });
     }
-    return { ...emptyResult(), failed: true, trigger, forced: force, reason, scope };
+    return {
+      pausedCount: 0,
+      totalCandidates: 0,
+      skippedCount: 0,
+      failed: true,
+      trigger,
+      forced: force,
+      reason,
+      scope,
+    };
   }
 
   if ((result.totalCandidates > 0 || result.pausedCount > 0) && __DEV__) {

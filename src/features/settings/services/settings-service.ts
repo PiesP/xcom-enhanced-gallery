@@ -12,7 +12,7 @@ import type {
   NestedSettingKey,
   SettingChangeEvent,
 } from '@shared/types/settings.types';
-import { assignNestedPath, isValidSettingValue, resolveNestedPath } from './settings-helpers';
+import { resolveNestedPath } from '@shared/utils/object/path';
 
 let _settingsInstance: SettingsService | null = null;
 
@@ -58,13 +58,13 @@ export class SettingsService {
   }
 
   public async set<T = unknown>(key: NestedSettingKey, value: T): Promise<void> {
-    if (!isValidSettingValue(this.getDefaultValue(key), value)) {
+    if (!this.isValidSettingValue(this.getDefaultValue(key), value)) {
       throw new Error(`Invalid setting value for ${key}`);
     }
 
     const oldValue = this.get(key);
 
-    if (!assignNestedPath(this.settings, key, value)) {
+    if (!this.assignNestedPath(this.settings, key, value)) {
       throw new Error(`Failed to assign setting value for ${key}`);
     }
     this.settings.lastModified = Date.now();
@@ -92,6 +92,44 @@ export class SettingsService {
 
   private getDefaultValue(key: string): unknown {
     return resolveNestedPath(DEFAULT_SETTINGS, key);
+  }
+
+  /** Assign value to nested object property by dot-notation path */
+  private assignNestedPath(target: unknown, path: string, value: unknown): boolean {
+    if (target === null || typeof target !== 'object') return false;
+    if (typeof path !== 'string' || path === '') return false;
+
+    const segments = path.split('.');
+    const last = segments[segments.length - 1];
+    if (!last) return false;
+
+    let current = target as Record<string, unknown>;
+
+    for (let i = 0; i < segments.length - 1; i++) {
+      const segment = segments[i];
+      if (!segment) return false;
+      const existing = Object.hasOwn(current, segment) ? current[segment] : undefined;
+      if (existing === null || typeof existing !== 'object') {
+        const next = Object.create(null) as Record<string, unknown>;
+        current[segment] = next;
+        current = next;
+        continue;
+      }
+      current = existing as Record<string, unknown>;
+    }
+
+    current[last] = value;
+    return true;
+  }
+
+  /** Validate a setting value against its default type */
+  private isValidSettingValue(defaultValue: unknown, value: unknown): boolean {
+    if (defaultValue === undefined) return true;
+    if (Array.isArray(defaultValue)) return Array.isArray(value);
+    if (typeof defaultValue === 'object' && defaultValue !== null) {
+      return typeof value === 'object' && value !== null;
+    }
+    return typeof value === typeof defaultValue;
   }
 
   private notifyListeners(event: SettingChangeEvent): void {

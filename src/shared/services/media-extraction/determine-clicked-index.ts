@@ -78,8 +78,12 @@ function getNormalizedMediaCandidates(item: MediaInfo): string[] {
   const apiData = metadata?.apiData as Record<string, unknown> | undefined;
   if (apiData) {
     candidates.push(
-      getStringValue(apiData, 'download_url'),
-      getStringValue(apiData, 'preview_url')
+      typeof apiData['download_url'] === 'string' && (apiData['download_url'] as string).trim()
+        ? (apiData['download_url'] as string)
+        : null,
+      typeof apiData['preview_url'] === 'string' && (apiData['preview_url'] as string).trim()
+        ? (apiData['preview_url'] as string)
+        : null
     );
   }
 
@@ -88,9 +92,4 @@ function getNormalizedMediaCandidates(item: MediaInfo): string[] {
     .filter((candidate): candidate is string => !!candidate);
 
   return Array.from(new Set(normalized));
-}
-
-function getStringValue(record: Record<string, unknown>, key: string): string | null {
-  const value = record[key];
-  return typeof value === 'string' && value.trim() ? value : null;
 }
