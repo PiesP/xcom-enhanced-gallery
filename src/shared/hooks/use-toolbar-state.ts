@@ -6,7 +6,7 @@
  */
 
 import type { ToolbarActions, ToolbarState } from '@shared/types/toolbar.types';
-import { createSignal, onCleanup } from 'solid-js';
+import { batch, createSignal, onCleanup } from 'solid-js';
 
 const DOWNLOAD_MIN_DISPLAY_TIME = 300;
 
@@ -29,10 +29,12 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     const now = performance.now();
 
     if (downloading) {
-      setLastDownloadToggle(now);
-      clearDownloadTimeout();
-      setIsDownloading(true);
-      setHasError(false);
+      batch(() => {
+        setLastDownloadToggle(now);
+        clearDownloadTimeout();
+        setIsDownloading(true);
+        setHasError(false);
+      });
       return;
     }
 
@@ -56,19 +58,23 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
   };
 
   const setError = (errorState: boolean): void => {
-    setHasError(errorState);
-    if (errorState) {
-      setIsLoading(false);
-      setIsDownloading(false);
-    }
+    batch(() => {
+      setHasError(errorState);
+      if (errorState) {
+        setIsLoading(false);
+        setIsDownloading(false);
+      }
+    });
   };
 
   const resetState = (): void => {
     clearDownloadTimeout();
-    setLastDownloadToggle(0);
-    setIsDownloading(false);
-    setIsLoading(false);
-    setHasError(false);
+    batch(() => {
+      setLastDownloadToggle(0);
+      setIsDownloading(false);
+      setIsLoading(false);
+      setHasError(false);
+    });
   };
 
   onCleanup(() => {
