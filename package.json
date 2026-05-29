@@ -9,7 +9,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "build:fast": "vite build",
-    "check:src": "tsc --noEmit --project tsconfig.build.json",
+    "check:src": "tsc --noEmit",
     "check": "pnpm check:src",
     "typecheck": "pnpm -s check",
     "knip": "knip --dependencies",
