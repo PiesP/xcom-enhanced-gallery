@@ -90,22 +90,3 @@ export function createGalleryLifecycle(): GalleryLifecycle {
 
   return { initialize, cleanup };
 }
-
-/**
- * Legacy module-level singleton for backward compatibility.
- * Prefer `createGalleryLifecycle()` for new code — each instance is isolated.
- */
-const _legacyLifecycle = createGalleryLifecycle();
-
-/** @deprecated Use `createGalleryLifecycle().initialize()` instead */
-export function initializeGalleryEvents(
-  handlers: EventHandlers,
-  options?: Partial<GalleryEventOptions>
-): () => void {
-  return _legacyLifecycle.initialize(handlers, options);
-}
-
-/** @deprecated Use `createGalleryLifecycle().cleanup()` instead */
-export function cleanupGalleryEvents(): void {
-  _legacyLifecycle.cleanup();
-}

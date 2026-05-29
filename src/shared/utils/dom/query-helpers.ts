@@ -16,44 +16,6 @@ const warnInvalidSelectorOnce = (selector: string, error: unknown): void => {
   logger.warn(`[query-helpers] Invalid selector skipped: ${selector}`, { error });
 };
 
-export function querySelectorWithFallback<T extends Element = Element>(
-  container: Element | Document,
-  selectors: readonly string[]
-): T | null {
-  for (const selector of selectors) {
-    try {
-      const element = container.querySelector<T>(selector);
-      if (element) return element;
-    } catch (error) {
-      warnInvalidSelectorOnce(selector, error);
-    }
-  }
-  return null;
-}
-
-export function queryAllWithFallback<T extends Element = Element>(
-  container: Element | Document,
-  selectors: readonly string[]
-): T[] {
-  const seen = new WeakSet<Element>();
-  const results: T[] = [];
-
-  for (const selector of selectors) {
-    try {
-      for (const element of container.querySelectorAll<T>(selector)) {
-        if (!seen.has(element)) {
-          seen.add(element);
-          results.push(element);
-        }
-      }
-    } catch (error) {
-      warnInvalidSelectorOnce(selector, error);
-    }
-  }
-
-  return results;
-}
-
 export function closestWithFallback<T extends Element = Element>(
   element: Element,
   selectors: readonly string[]

@@ -33,11 +33,6 @@ function getCookieAPI(): CookieAPI | null {
   return cachedCookieAPI;
 }
 
-/** @internal For testing only */
-export function resetCookieAPICache(): void {
-  cachedCookieAPI = undefined;
-}
-
 function parseDocumentCookies(filterName?: string): CookieRecord[] {
   const cookieStr = document.cookie;
   if (!cookieStr) return [];
