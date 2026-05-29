@@ -35,7 +35,7 @@ function scheduleIdle(task: IdleRequestCallback): IdleHandle {
 type PrefetchSchedule = 'immediate' | 'idle';
 
 /** Default maximum number of entries in the prefetch cache. */
-const DEFAULT_CACHE_MAX_ENTRIES = 20;
+const DEFAULT_CACHE_MAX_ENTRIES = 5; // 트윗당 최대 4장 기준, 여유분 +1
 
 /**
  * Manages media prefetching and caching.

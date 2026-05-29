@@ -115,8 +115,8 @@
   display: block;
   transition: var(--xeg-transition-toolbar);
 
-  /* Performance */
-  will-change: transform, opacity, visibility;
+  /* Performance: 스크롤 시 transform만 변경, opacity/visibility는 툴바 상태 변수로 처리 */
+  will-change: transform;
   contain: layout style;
 
   pointer-events: var(--toolbar-pointer-events, none);

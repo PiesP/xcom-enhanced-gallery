@@ -22,9 +22,7 @@ export async function initializeCoreBaseServices(): Promise<void> {
     LanguageService.getInstance(),
     MediaService.getInstance(),
   ] as const;
-  for (const service of services) {
-    await service.initialize();
-  }
+  await Promise.all(services.map((s) => s.initialize()));
 }
 
 async function initializeSettingsService(): Promise<void> {
