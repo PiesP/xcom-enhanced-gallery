@@ -132,10 +132,6 @@ const USERSCRIPT_CONFIG = {
 
 const REPO_ROOT = resolve(__dirname);
 
-function normalizeModuleId(id: string): string {
-  return id.replace(/\\/g, '/');
-}
-
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -144,7 +140,7 @@ function formatBytes(bytes: number): string {
 
 /** Returns true for modules that must be preserved during tree-shaking. */
 function hasRequiredSideEffects(id: string): boolean {
-  return normalizeModuleId(id).endsWith('.css');
+  return id.replace(/\\/g, '/').endsWith('.css');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -211,10 +207,6 @@ function resolveVersion(isDev: boolean): string {
 // Userscript metadata generation (inlined from tooling/vite/userscript/metadata.ts)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CURRENT_PROJECT_YEAR = new Date().getUTCFullYear();
-const PROJECT_COPYRIGHT_RANGE =
-  CURRENT_PROJECT_YEAR <= 2024 ? '2024' : `2024-${CURRENT_PROJECT_YEAR}`;
-
 function formatMetaLine(key: string, value: string): string {
   return `// @${key} ${value}`;
 }
@@ -223,7 +215,14 @@ function formatMetaLines(key: string, values: readonly string[]): string[] {
   return values.map((v) => formatMetaLine(key, v));
 }
 
+/**
+ * Build the complete `==UserScript==` metadata block as a string.
+ * @param config - Complete userscript metadata
+ * @returns Formatted userscript header block
+ */
 function buildMetadataBlock(config: UserscriptMeta): string {
+  const currentYear = new Date().getUTCFullYear();
+  const copyrightRange = currentYear <= 2024 ? '2024' : `2024-${currentYear}`;
   const lines = [
     '// ==UserScript==',
     formatMetaLine('name', config.name),
@@ -232,7 +231,7 @@ function buildMetadataBlock(config: UserscriptMeta): string {
     formatMetaLine('description', config.description),
     formatMetaLine('author', config.author),
     formatMetaLine('license', config.license),
-    `// Copyright (c) ${PROJECT_COPYRIGHT_RANGE} PiesP`,
+    `// Copyright (c) ${copyrightRange} PiesP`,
     ...(config.homepageURL ? [formatMetaLine('homepageURL', config.homepageURL)] : []),
     ...formatMetaLines('match', config.match),
     ...formatMetaLines('grant', config.grant),
@@ -254,6 +253,12 @@ function buildMetadataBlock(config: UserscriptMeta): string {
   return lines.join('\n');
 }
 
+/**
+ * Generate the full userscript header including metadata block.
+ * @param args.version - Resolved version string
+ * @param args.isDev - Whether this is a development build
+ * @returns Formatted userscript header with `==UserScript==` block
+ */
 function generateUserscriptHeader(args: { version: string; isDev: boolean }): string {
   const fileName = args.isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
   const metaFileName = OUTPUT_FILE_NAMES.meta;
@@ -263,8 +268,6 @@ function generateUserscriptHeader(args: { version: string; isDev: boolean }): st
     ...USERSCRIPT_CONFIG,
     name: `${USERSCRIPT_CONFIG.name}${nameSuffix}`,
     version: args.version,
-    grant: USERSCRIPT_CONFIG.grant,
-    connect: USERSCRIPT_CONFIG.connect,
     downloadURL: `${CDN_BASE_URL}/${fileName}`,
     updateURL: `${CDN_BASE_URL}/${metaFileName}`,
   };
@@ -272,6 +275,11 @@ function generateUserscriptHeader(args: { version: string; isDev: boolean }): st
   return buildMetadataBlock(config);
 }
 
+/**
+ * Generate a minimal metadata-only header (no full bundle code) for update checking.
+ * @param version - Resolved version string
+ * @returns Minimal `==UserScript==` block with download/update URLs
+ */
 function generateMetaOnlyHeader(version: string): string {
   const fileName = OUTPUT_FILE_NAMES.prod;
   const metaFileName = OUTPUT_FILE_NAMES.meta;
@@ -306,7 +314,7 @@ export default defineConfig(({ mode }): UserConfig => {
   const featureMediaExtraction =
     featureMediaExtractionRaw === undefined
       ? true
-      : !(featureMediaExtractionRaw === '0' || featureMediaExtractionRaw.toLowerCase() === 'false');
+      : !['0', 'false'].includes(featureMediaExtractionRaw.toLowerCase());
 
   // Build output configuration
   const outputFileName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
@@ -442,7 +450,7 @@ function cssInlinePlugin(): Plugin {
 function buildSummaryPlugin(opts: {
   isDev: boolean;
   version: string;
-  config: ReturnType<typeof getBuildModeConfig>;
+  config: BuildModeConfig;
 }): Plugin {
   const { isDev, version, config } = opts;
   const header = generateUserscriptHeader({ version, isDev });
