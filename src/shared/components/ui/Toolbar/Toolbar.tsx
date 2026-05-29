@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
-import type { FitModeHandlers } from '@shared/components/ui/Toolbar/handler-types';
+import type { FitModeHandlers } from '@shared/components/ui/Toolbar/handler-types.types';
 import type { ToolbarProps } from '@shared/components/ui/Toolbar/Toolbar.types';
 import { ToolbarView } from '@shared/components/ui/Toolbar/ToolbarView';
 import { useToolbarSettingsController } from '@shared/hooks/toolbar/use-toolbar-settings-controller';

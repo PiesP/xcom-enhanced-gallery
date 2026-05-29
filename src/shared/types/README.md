@@ -2,7 +2,7 @@
 
 ## 📚 Overview
 
-`src/shared/types/` directory contains shared type definitions.
+`src/shared/types/` directory contains shared type definitions used across the project.
 
 - **Domain separation**: Import directly from specific type files as needed
 - **No barrel exports**: Follows CODE_STANDARDS.md no-barrel-imports rule
@@ -14,17 +14,11 @@
 
 ```
 src/shared/types/
-├── app.types.ts              # App-level types (AppConfig, Brand types)
-├── ui.types.ts               # UI/theme types (Theme, Button variants)
-├── component.types.ts        # Component Props (BaseComponentProps)
-├── media.types.ts            # Media domain types
-├── result.types.ts           # Result pattern & ErrorCode
-├── navigation.types.ts       # Navigation types
-├── toolbar.types.ts          # Toolbar UI state types
 ├── lifecycle.types.ts        # Lifecycle/cleanup types
-└── core/                     # Core infrastructure types
-    ├── base-service.types.ts # BaseService definition
-    ├── core-types.ts         # Gallery domain types
+├── media.types.ts            # Media domain types
+├── settings.types.ts         # Settings-related types
+├── toolbar.types.ts          # Toolbar UI state types
+└── core/
     ├── cookie.types.ts       # Cookie API types
     └── userscript.d.ts       # UserScript API definitions
 ```
@@ -38,9 +32,9 @@ src/shared/types/
 ```typescript
 // Import from specific domain files
 import type { MediaInfo } from "@shared/types/media.types";
-import type { Theme } from "@shared/types/ui.types";
-import type { Result } from "@shared/types/result.types";
-import type { GalleryState } from "@shared/types/core/core-types";
+import type { ImageFitMode } from "@shared/types/settings.types";
+import type { ToolbarState } from "@shared/types/toolbar.types";
+import type { CookieOptions } from "@shared/types/core/cookie.types";
 ```
 
 ### ❌ Not Allowed - Barrel exports
@@ -48,152 +42,79 @@ import type { GalleryState } from "@shared/types/core/core-types";
 ```typescript
 // Do NOT use barrel imports - violates CODE_STANDARDS.md 3.2
 import type { MediaInfo } from "@shared/types";
-import type { Theme } from "@shared/types";
+import type { ImageFitMode } from "@shared/types";
 ```
 
 ---
 
 ## 📖 File Descriptions
 
-### `app.types.ts`
+### Root-level files
 
-- **Purpose**: App-level type definitions
-- **Includes**: AppConfig, Brand types (UserId, TweetId, etc.), DeepPartial, Option, Optional
+#### `lifecycle.types.ts`
 
-- **Purpose**: Unified management of multiple domain types
-- **Sections**:
-  - SERVICE TYPES: Service base interfaces
-  - GALLERY TYPES: Gallery state, actions, events
-  - MEDIA MAPPING TYPES: Media mapping strategies
-  - LIFECYCLE TYPES: Lifecycle interfaces
-  - RESULT TYPES: Result pattern utility functions
+- **Purpose**: Lifecycle and cleanup type definitions
+- **Size**: 34 lines
+- **Includes**: Interfaces for component lifecycle management
 
-#### `core/base-service.types.ts` - BaseService definition
+#### `media.types.ts`
 
-- **Purpose**: Base service interface
-- **Size**: 12 lines (very small)
-- **Reason**: Separated to prevent circular dependency
+- **Purpose**: Media domain type definitions
+- **Size**: 155 lines
+- **Includes**: Media extraction options, media info types, and related domain types
 
-#### `core/extraction.types.ts` - Backward compatibility bridge
+#### `settings.types.ts`
 
-- **Status**: Removed; extraction types now imported from `media.types.ts`
-- **Reason**: Consolidation to reduce file duplication
-- **Note**: Legacy guides should reference `@shared/types/media.types`
+- **Purpose**: Settings-related type definitions
+- **Size**: 100 lines
+- **Includes**: `ImageFitMode` enum, settings configuration types
 
-#### `core/userscript.d.ts` - UserScript API (205 lines)
+#### `toolbar.types.ts`
 
-- **Purpose**: Type definitions for UserScript API
-- **Includes**: GM\_\* function declarations (download, getValue, setValue, etc.)
-- **Characteristic**: Infrastructure/definition file only
+- **Purpose**: Toolbar UI state type definitions
+- **Size**: 37 lines
+- **Includes**: `ToolbarState`, `ToolbarDataState`, and related UI state types
 
----
+### `core/` directory
 
-## 💡 Usage Guide
+#### `core/cookie.types.ts`
 
-### Basic Usage
+- **Purpose**: Cookie API type definitions
+- **Size**: 68 lines
+- **Includes**: Cookie options, cookie storage types
 
-```typescript
-// Recommended: Import from barrel export
-import type { BaseService, MediaInfo, Result } from "@shared/types";
+#### `core/userscript.d.ts`
 
-// When detailed types needed
-import type { MediaExtractionOptions } from "@shared/types/media.types";
-import type { ToolbarState } from "@shared/types/toolbar.types";
-
-// Using Result pattern
-import { failure, isSuccess, success } from "@shared/types";
-```
-
-### Import Principles
-
-| Situation       | Recommended Import              |
-| --------------- | ------------------------------- |
-| General types   | `@shared/types`                 |
-| Detailed types  | `@shared/types/{domain}`        |
-| UI types only   | `@shared/types/ui.types`        |
-| Component Props | `@shared/types/component.types` |
-
-### ❌ Patterns to Avoid
-
-```typescript
-// Legacy path (removed during gallery cleanup)
-import type { GalleryConfig } from "@features/gallery/types";
-
-// Use shared types directly instead
-import type { ToolbarState } from "@shared/types/toolbar.types";
-```
-
----
-
-## 🔄 Major Migrations
-
-### Phase 195: media.types.ts Integration
-
-- core/media.types.ts → @shared/types/media.types.ts (moved to root)
-- Reason: Media is a shared domain
-
-### Phase 196: Type File Separation
-
-- ui.types.ts, component.types.ts newly created
-- app.types.ts structured
-
-### Phase 197: Structure Clarification
-
-- app.types.ts simplified (350 lines → 205 lines)
-- BaseService duplication removed
-- JSDoc enhanced
-
-### Phase 197.1: Circular Dependency Resolution
-
-- toolbar.types @features → @shared/types moved
-- Reason: @shared code depends on it
-- Backward compat maintained via re-export from @features
+- **Purpose**: TypeScript declaration file for UserScript API (GM_* functions)
+- **Size**: 134 lines
+- **Characteristic**: Declaration file only — no runtime code
+- **Includes**: `GM_download`, `GM_getValue`, `GM_setValue`, etc.
 
 ---
 
 ## 📋 File Size Reference
 
-| File               | Size | Description       |
-| ------------------ | ---- | ----------------- |
-| media.types.ts     | 558  | Media domain      |
-| core-types.ts      | 613  | Integrated domain |
-| userscript.d.ts    | 205  | UserScript API    |
-| component.types.ts | 356  | Component Props   |
-| app.types.ts       | 205  | App level + hub   |
+| File                          | Size | Description               |
+| ----------------------------- | ---- | ------------------------- |
+| media.types.ts                | 155  | Media domain types        |
+| userscript.d.ts               | 134  | UserScript API            |
+| settings.types.ts             | 100  | Settings types            |
+| core/cookie.types.ts          |  68  | Cookie API types          |
+| toolbar.types.ts              |  37  | Toolbar UI state types    |
+| lifecycle.types.ts            |  34  | Lifecycle/cleanup types   |
 
 ---
 
 ## ⚠️ Known Considerations
 
-### 1. core-types.ts Size
+### File Size
 
-- Currently 613 lines, somewhat large
-- Unified management of multiple domain types
-- Advantage: Single file → simple import path
-- Disadvantage: Diverse responsibilities
+- `media.types.ts` (155 lines) is the largest root-level type file
+- `userscript.d.ts` (134 lines) is a declaration-only file, not runtime code
+- All other type files are under 100 lines, keeping concerns well-separated
 
-### 2. Re-export Chain
+### Naming Convention
 
-- app.types.ts re-exports from multiple files
-- Complex but provides single import point
-
-### 3. Backward Compatibility
-
-- extraction.types.ts: Maintains backward compat
-- Gallery toolbar types now live solely under `@shared/types/toolbar.types.ts`
-- Previous `@features/gallery/types` barrel was removed (Phase 360 cleanup)
-
----
-
-## 🚀 Planned Improvements
-
-### Phase 197.2
-
-- Review core-types.ts domain-specific optimization
-- Optimize media.types.ts size
-
-### Phase 198+
-
-- Continuous Types README updates
-- Unused type cleanup
-- Review structure when adding new domain types
+- Root-level type files use `kebab-case.types.ts` naming (e.g., `media.types.ts`)
+- The `core/` subdirectory follows the same convention with `kebab-case.types.ts`
+- Exception: `userscript.d.ts` is a `.d.ts` declaration file, not a `.types.ts` module
