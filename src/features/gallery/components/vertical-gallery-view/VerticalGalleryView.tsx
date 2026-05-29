@@ -65,8 +65,8 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   const [toolbarWrapperEl, setToolbarWrapperEl] = createSignal<HTMLDivElement | null>(null);
   const [itemsContainerEl, setItemsContainerEl] = createSignal<HTMLDivElement | null>(null);
 
-  // Derived state
-  const isVisible = createMemo(() => mediaItems().length > 0);
+  // Derived state — trivially computed from already-memoized values; plain getters suffice
+  const isVisible = () => mediaItems().length > 0;
 
   const activeMedia = createMemo(() => {
     const items = mediaItems();
@@ -74,9 +74,9 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
     return items[index] ?? null;
   });
 
-  const tweetText = createMemo(() => activeMedia()?.tweetText ?? null);
-  const tweetTextHTML = createMemo(() => activeMedia()?.tweetTextHTML ?? null);
-  const tweetUrl = createMemo(() => activeMedia()?.tweetUrl ?? null);
+  const tweetText = () => activeMedia()?.tweetText ?? null;
+  const tweetTextHTML = () => activeMedia()?.tweetTextHTML ?? null;
+  const tweetUrl = () => activeMedia()?.tweetUrl ?? null;
 
   const preloadIndices = createMemo(() => {
     const count = getTypedSettingOr('gallery.preloadCount', 3);
