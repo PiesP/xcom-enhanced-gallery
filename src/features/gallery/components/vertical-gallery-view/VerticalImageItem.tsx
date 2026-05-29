@@ -53,14 +53,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     'tabIndex',
   ]);
 
-  const isFocused = createMemo(() => local.isFocused ?? false);
-  const className = createMemo(() => local.className ?? '');
-  const shouldEagerLoad = createMemo(
-    () => (local.forceVisible ?? false) || (local.isActive ?? false)
-  );
+  const isFocused = () => local.isFocused ?? false;
+  const className = () => local.className ?? '';
+  const shouldEagerLoad = () => (local.forceVisible ?? false) || (local.isActive ?? false);
   const translate = useTranslation();
 
-  const isVideo = createMemo(() => local.media.type === 'video' || local.media.type === 'gif');
+  const isVideo = () => local.media.type === 'video' || local.media.type === 'gif';
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
 
@@ -180,7 +178,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     return value ?? 'fitWidth';
   });
 
-  const fitModeClass = createMemo(() => FIT_MODE_CLASSES[resolvedFitMode()]);
+  const fitModeClass = () => FIT_MODE_CLASSES[resolvedFitMode()];
 
   const containerClasses = createMemo(() =>
     cx(
@@ -199,10 +197,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     local.registerContainer?.(element);
   };
 
-  const defaultContainerRole = createMemo(() => (isVideo() ? 'group' : 'button'));
-  const resolvedContainerRole = createMemo(
-    () => (local.role ?? defaultContainerRole()) as JSX.HTMLAttributes<HTMLDivElement>['role']
-  );
+  const defaultContainerRole = () => (isVideo() ? 'group' : 'button');
+  const resolvedContainerRole = () =>
+    (local.role ?? defaultContainerRole()) as JSX.HTMLAttributes<HTMLDivElement>['role'];
 
   const defaultAriaLabel = createMemo(() =>
     translate('msg.gal.itemLbl', {
