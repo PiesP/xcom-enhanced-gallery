@@ -78,11 +78,11 @@ function getNormalizedMediaCandidates(item: MediaInfo): string[] {
   const apiData = metadata?.apiData as Record<string, unknown> | undefined;
   if (apiData) {
     candidates.push(
-      typeof apiData['download_url'] === 'string' && (apiData['download_url'] as string).trim()
-        ? (apiData['download_url'] as string)
+      typeof apiData.download_url === 'string' && (apiData.download_url as string).trim()
+        ? (apiData.download_url as string)
         : null,
-      typeof apiData['preview_url'] === 'string' && (apiData['preview_url'] as string).trim()
-        ? (apiData['preview_url'] as string)
+      typeof apiData.preview_url === 'string' && (apiData.preview_url as string).trim()
+        ? (apiData.preview_url as string)
         : null
     );
   }
