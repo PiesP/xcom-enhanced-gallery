@@ -5,7 +5,7 @@
  * Tracks user scroll activity and reports scroll state for focus tracking.
  */
 
-import { isGalleryInternalEvent } from '@shared/dom/utils';
+import { isGalleryInternalElement } from '@shared/dom/utils';
 import { logger } from '@shared/logging/logger';
 import { createPrefixedId, EventManager } from '@shared/services/event-manager';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
@@ -116,7 +116,15 @@ export function useGalleryScroll({
   };
 
   const handleWheel = (event: WheelEvent): void => {
-    if (!isGalleryOpen() || !isGalleryInternalEvent(event)) return;
+    if (!isGalleryOpen()) return;
+
+    // Check if the event originated from a gallery-internal element.
+    // Uses composedPath() for robustness with Shadow DOM and nested components.
+    const path = typeof event.composedPath === 'function' ? event.composedPath() : [event.target];
+    const isInternal =
+      Array.isArray(path) &&
+      path.some((el) => el instanceof HTMLElement && isGalleryInternalElement(el));
+    if (!isInternal) return;
 
     // Ignore wheel events from toolbar and its panels
     if (isToolbarScroll(event)) return;
