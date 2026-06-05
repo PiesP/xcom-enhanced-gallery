@@ -21,6 +21,12 @@ const VIDEO_CONTROL_DATASET_PREFIXES = [
   'seek',
   'scrub',
   'progress',
+  'fullscreen',
+  'pip',
+  'settings',
+  'captions',
+  'subtitles',
+  'cc',
 ] as const;
 
 const VIDEO_CONTROL_ROLES = ['slider', 'progressbar'] as const;
@@ -33,6 +39,8 @@ const VIDEO_CONTROL_ARIA_TOKENS = [
   'scrub',
   'timeline',
   'progress',
+  'fullscreen',
+  'caption',
 ] as const;
 
 const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;
@@ -74,6 +82,15 @@ function matchesVideoControlSelectors(element: HTMLElement): boolean {
 
 /**
  * Determine if element is a video control.
+ *
+ * Detection strategy (in order):
+ * 1. <video> element itself
+ * 2. Known CSS control selectors (.video-controls, .video-progress button)
+ * 3. data-testid attribute containing control tokens (on element or nearest ancestor)
+ * 4. aria-label containing control tokens (on element or nearest ancestor)
+ * 5. Inside video player context: role="slider"/"progressbar" or <input[type="range"]>
+ * 6. Inside video player context: ALL elements are treated as video controls
+ *    (any interactive element inside a video player is assumed to be a control)
  */
 export function isVideoControlElement(element: HTMLElement | null): boolean {
   if (!isHTMLElement(element)) return false;
@@ -101,7 +118,52 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
     return true;
   }
 
-  return element.matches('input[type="range"]');
+  if (element.matches('input[type="range"]')) return true;
+
+  // Inside video player context, any element is considered a video control.
+  // This covers custom controls that don't use standard ARIA roles or
+  // data-testid tokens (e.g., X.com's custom volume slider, seek bar, etc.).
+  return true;
+}
+
+/**
+ * Determine if any element in the event's composed path is a video control.
+ *
+ * This is more robust than isVideoControlElement alone because it checks the
+ * entire event path (from target up through ancestors), catching cases where
+ * the immediate target is a generic element inside a video control container.
+ *
+ * @param element - The event target element
+ * @param getComposedPath - Optional function returning the event's composed path
+ *                          (pass event.composedPath() when available)
+ * @returns true if any element in the path is a video control
+ */
+export function isVideoControlEvent(
+  element: HTMLElement | null,
+  getComposedPath?: () => EventTarget[]
+): boolean {
+  if (!isHTMLElement(element)) return false;
+
+  // Fast path: check the element itself first
+  if (isVideoControlElement(element)) return true;
+
+  // Check composed path if provided (covers Shadow DOM and nested components)
+  if (typeof getComposedPath === 'function') {
+    try {
+      const path = getComposedPath();
+      if (Array.isArray(path)) {
+        for (const pathTarget of path) {
+          if (pathTarget instanceof HTMLElement && isVideoControlElement(pathTarget)) {
+            return true;
+          }
+        }
+      }
+    } catch {
+      // composedPath() may throw in rare cases; fall through to element-only check
+    }
+  }
+
+  return false;
 }
 
 /**
