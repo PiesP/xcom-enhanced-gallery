@@ -81,22 +81,29 @@ function matchesVideoControlSelectors(element: HTMLElement): boolean {
 // ============================================================================
 
 /**
- * Determine if element is a video control.
+ * Determine if element is a video control UI element.
+ *
+ * Detects interactive video player controls (play, pause, volume, seek,
+ * fullscreen, etc.) while allowing clicks on the video media area itself
+ * to trigger the gallery viewer.
  *
  * Detection strategy (in order):
- * 1. <video> element itself
- * 2. Known CSS control selectors (.video-controls, .video-progress button)
- * 3. data-testid attribute containing control tokens (on element or nearest ancestor)
- * 4. aria-label containing control tokens (on element or nearest ancestor)
- * 5. Inside video player context: role="slider"/"progressbar" or <input[type="range"]>
- * 6. Inside video player context: ALL elements are treated as video controls
- *    (any interactive element inside a video player is assumed to be a control)
+ * 1. Known CSS control selectors (.video-controls, .video-progress button)
+ * 2. data-testid attribute containing control tokens (on element or nearest ancestor)
+ * 3. aria-label containing control tokens (on element or nearest ancestor)
+ * 4. Inside video player context: role="slider"/"progressbar" or <input[type="range"]>
+ *
+ * Elements NOT considered controls:
+ * - <video> tag itself (this is the media area, gallery launch is allowed)
+ * - Generic elements inside the video player context without control tokens
+ *   (these are typically overlay areas, poster images, or dead space)
  */
 export function isVideoControlElement(element: HTMLElement | null): boolean {
   if (!isHTMLElement(element)) return false;
 
+  // <video> itself is the media area, not a control — allow gallery launch.
   const tagName = element.tagName.toLowerCase();
-  if (tagName === 'video') return true;
+  if (tagName === 'video') return false;
 
   if (typeof element.matches !== 'function') return false;
 
@@ -120,14 +127,18 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
 
   if (element.matches('input[type="range"]')) return true;
 
-  // Inside video player context, any element is considered a video control.
-  // This covers custom controls that don't use standard ARIA roles or
-  // data-testid tokens (e.g., X.com's custom volume slider, seek bar, etc.).
-  return true;
+  // Inside video player context but no explicit control tokens detected.
+  // This is the video media area, poster, or overlay — allow gallery launch.
+  return false;
 }
 
 /**
- * Determine if any element in the event's composed path is a video control.
+ * Determine if any element in the event's composed path is a video control UI.
+ *
+ * Traverses the event's composed path (event.target → ancestors) to detect
+ * video player control elements (volume slider, play button, seek bar, etc.).
+ * Elements that are inside a video player context but do NOT match any
+ * control token (e.g., video media area, poster, overlay) are NOT flagged.
  *
  * This is more robust than isVideoControlElement alone because it checks the
  * entire event path (from target up through ancestors), catching cases where
@@ -136,7 +147,7 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
  * @param element - The event target element
  * @param getComposedPath - Optional function returning the event's composed path
  *                          (pass event.composedPath() when available)
- * @returns true if any element in the path is a video control
+ * @returns true if any element in the path is a video control UI element
  */
 export function isVideoControlEvent(
   element: HTMLElement | null,
@@ -153,9 +164,11 @@ export function isVideoControlEvent(
       const path = getComposedPath();
       if (Array.isArray(path)) {
         for (const pathTarget of path) {
-          if (pathTarget instanceof HTMLElement && isVideoControlElement(pathTarget)) {
-            return true;
-          }
+          if (!(pathTarget instanceof HTMLElement)) continue;
+          // Stop if we leave the video player context — no need to check further
+          if (!isWithinVideoPlayer(pathTarget)) break;
+          // Check if this path element is a recognized video control UI
+          if (isVideoControlElement(pathTarget)) return true;
         }
       }
     } catch {
