@@ -47,6 +47,9 @@ const VIDEO_CONTROL_ARIA_TOKENS = [
 const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;
 const VIDEO_CONTROL_SELECTORS = ['.video-controls', '.video-progress button'] as const;
 
+/** Characters treated as word boundaries for token matching */
+const WORD_SEPARATORS: readonly string[] = ['-', '_', ' '];
+
 /**
  * Check if string value contains any control tokens (case-insensitive).
  * Uses word-boundary matching to avoid false positives
@@ -70,10 +73,10 @@ function containsControlToken(value: string | null, tokens: readonly string[]): 
       if (foundIndex === -1) break;
 
       const beforeOk =
-        foundIndex === 0 || ['-', '_', ' '].includes(normalized[foundIndex - 1] ?? '');
+        foundIndex === 0 || WORD_SEPARATORS.includes(normalized[foundIndex - 1] ?? '');
       const afterEnd = foundIndex + tokenLower.length;
       const afterOk =
-        afterEnd >= normalized.length || ['-', '_', ' '].includes(normalized[afterEnd] ?? '');
+        afterEnd >= normalized.length || WORD_SEPARATORS.includes(normalized[afterEnd] ?? '');
 
       if (beforeOk && afterOk) return true;
 
@@ -292,4 +295,36 @@ export function isGalleryInternalElement(element: HTMLElement | null): boolean {
   return GALLERY_SELECTORS.some((selector) => {
     return element.matches(selector) || element.closest(selector) !== null;
   });
+}
+
+/**
+ * Check if a click event targets a video element or any of its descendants.
+ *
+ * Uses both `Element.contains()` and `Event.composedPath()` for robustness
+ * with Shadow DOM and nested components. Returns true when the click
+ * is on the video element itself or any of its children (including native
+ * controls rendered by the browser).
+ *
+ * @param event - The click event
+ * @param video - The video element to check against
+ * @returns true if the click target is inside the video element
+ */
+export function isClickOnVideoElement(event: MouseEvent, video: HTMLVideoElement): boolean {
+  if (event.target instanceof Node && video.contains(event.target)) return true;
+
+  if (typeof event.composedPath === 'function') {
+    try {
+      const path = event.composedPath();
+      if (Array.isArray(path)) {
+        for (const pathTarget of path) {
+          if (pathTarget === video) return true;
+          if (pathTarget instanceof Node && video.contains(pathTarget)) return true;
+        }
+      }
+    } catch {
+      // composedPath() may throw; fall through
+    }
+  }
+
+  return false;
 }

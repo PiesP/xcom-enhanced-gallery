@@ -13,6 +13,7 @@ import { useVideoVolumePersistence } from '@features/gallery/components/vertical
 import { cleanFilename } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.types';
+import { isClickOnVideoElement } from '@shared/dom/utils';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals, setCurrentVideoElement } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types/settings.types';
@@ -107,30 +108,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const preventDragStart = (event: DragEvent) => event.preventDefault();
 
-  const isVideoClick = (event: MouseEvent, video: HTMLVideoElement): boolean => {
-    if (event.target instanceof Node && video.contains(event.target)) return true;
-    if (typeof event.composedPath === 'function') {
-      try {
-        const path = event.composedPath();
-        if (Array.isArray(path)) {
-          for (const pathTarget of path) {
-            if (pathTarget === video) return true;
-            if (pathTarget instanceof Node && video.contains(pathTarget)) return true;
-          }
-        }
-      } catch {
-        // composedPath() may throw; fall through
-      }
-    }
-    return false;
-  };
-
   const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
     event.stopPropagation();
 
     if (isVideo()) {
       const video = videoRef();
-      if (video && isVideoClick(event, video)) return;
+      if (video && isClickOnVideoElement(event, video)) return;
     }
 
     containerRef()?.focus?.({ preventScroll: true });
