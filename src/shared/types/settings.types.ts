@@ -28,6 +28,13 @@ export interface GallerySettings {
   videoMuted: boolean;
   /** Block gallery launch when clicking video player controls (volume, seek, etc.) */
   blockVideoControlClick: boolean;
+  /** When true: only block clicks on recognizable control UI elements inside the
+   *  video player (play, volume, seek, fullscreen buttons/sliders). Clicks on the
+   *  video media area itself (poster, overlay, <video> tag) are allowed to launch
+   *  the gallery.
+   *  When false: block all clicks anywhere inside the video player context
+   *  (legacy behaviour). */
+  preciseVideoControlDetection: boolean;
 }
 
 export interface ToolbarSettings {

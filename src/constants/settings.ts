@@ -30,6 +30,7 @@ export const DEFAULT_SETTINGS = {
     videoVolume: 1.0,
     videoMuted: false,
     blockVideoControlClick: true,
+    preciseVideoControlDetection: true,
   },
   toolbar: {
     autoHideDelay: 3000,
