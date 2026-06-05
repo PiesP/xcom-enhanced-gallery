@@ -193,6 +193,11 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
 
   /**
    * Prevent scroll chaining from toolbar buttons/controls.
+   * - If the scroll can be consumed by a nested scrollable: stop propagation only
+   *   (the gallery's own wheel handler will still see the event).
+   * - Otherwise: prevent default browser scroll + stop propagation.
+   * Note: stopImmediatePropagation is intentionally NOT used here — the gallery's
+   * wheel redirect handler on the container may still need to see this event.
    */
   const preventScrollChaining = (event: WheelEvent) => {
     if (shouldAllowWheelDefault(event)) {
@@ -201,7 +206,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     }
     event.preventDefault();
     event.stopPropagation();
-    event.stopImmediatePropagation();
   };
 
   const registerWheelListener = (
