@@ -13,7 +13,7 @@ import {
   MEDIA_VIEWER_SELECTORS,
   STATUS_LINK_SELECTOR,
 } from '@constants/selectors';
-import { getTypedSettingOr } from '@shared/container/container';
+import { getTypedSettingOr, tryGetSettings } from '@shared/container/container';
 import { isVideoClickAllowed } from '@shared/dom/utils';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import {
@@ -68,7 +68,10 @@ function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent)
   // Use isVideoClickAllowed with user-configured video click mode.
   // This is the secondary defense; the primary defense in handleMediaClick
   // already uses the same function with the full composedPath-based check.
-  const videoMode = getTypedSettingOr('gallery.videoClickMode', 'block-controls-only');
+  const settings = tryGetSettings();
+  const videoMode = settings
+    ? getTypedSettingOr('gallery.videoClickMode', 'block-controls-only')
+    : 'block-controls-only';
   const getPath = event ? () => event.composedPath() : undefined;
   if (!isVideoClickAllowed(target, getPath, videoMode)) return true;
   if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;

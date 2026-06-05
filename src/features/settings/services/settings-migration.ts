@@ -26,6 +26,13 @@ function pruneWithTemplate<T extends Record<string, unknown>>(
   return out as Partial<T>;
 }
 
+/** Valid video click mode values for runtime validation */
+const VALID_VIDEO_CLICK_MODES: readonly string[] = [
+  'block-all',
+  'block-controls-only',
+  'allow-all',
+];
+
 /**
  * Migrate legacy `blockVideoControlClick` + `preciseVideoControlDetection`
  * booleans to the unified `videoClickMode` enum.
@@ -40,9 +47,12 @@ function migrateVideoClickMode(
   delete gallery.blockVideoControlClick;
   delete gallery.preciseVideoControlDetection;
 
-  // If the new field already exists, keep it
+  // If the new field already exists with a valid value, keep it
   if (typeof gallery.videoClickMode === 'string') {
-    return {};
+    if (VALID_VIDEO_CLICK_MODES.includes(gallery.videoClickMode)) {
+      return {};
+    }
+    // Invalid string — treat as unmigrated, fall through to legacy conversion
   }
 
   // Convert legacy booleans to enum

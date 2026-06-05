@@ -227,7 +227,10 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         context: options.context,
       });
 
-      onCleanup(() => controller.abort());
+      onCleanup(() => {
+        controller.abort();
+        eventManager.removeByContext(options.context);
+      });
     });
   };
 

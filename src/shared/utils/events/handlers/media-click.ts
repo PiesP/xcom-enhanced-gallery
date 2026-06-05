@@ -7,12 +7,20 @@
  * Prevents Twitter's native gallery and triggers custom gallery behavior.
  */
 
-import { getTypedSettingOr } from '@shared/container/container';
+import { getTypedSettingOr, tryGetSettings } from '@shared/container/container';
 import { isGalleryInternalElement, isVideoClickAllowed } from '@shared/dom/utils';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
+import type { VideoClickMode } from '@shared/types/settings.types';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
 import { isHTMLElement } from '@shared/utils/types/guards';
+
+/** Resolve video click mode safely, falling back when settings unavailable */
+function resolveVideoClickMode(): VideoClickMode {
+  const settings = tryGetSettings();
+  if (!settings) return 'block-controls-only';
+  return getTypedSettingOr('gallery.videoClickMode', 'block-controls-only');
+}
 
 export async function handleMediaClick(
   event: MouseEvent,
@@ -28,7 +36,7 @@ export async function handleMediaClick(
 
   // Check video click mode from user settings — single decision point
   // for all video-click behavior (block-all / block-controls-only / allow-all).
-  const videoMode = getTypedSettingOr('gallery.videoClickMode', 'block-controls-only');
+  const videoMode = resolveVideoClickMode();
   if (!isVideoClickAllowed(target, () => event.composedPath(), videoMode)) return;
 
   if (!isProcessableMedia(target, event)) return;

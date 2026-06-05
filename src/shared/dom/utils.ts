@@ -127,7 +127,7 @@ function matchesVideoControlSelectors(element: HTMLElement): boolean {
  * - Generic elements inside the video player context without control tokens
  *   (these are typically overlay areas, poster images, or dead space)
  */
-export function isVideoControlElement(element: HTMLElement | null): boolean {
+function isVideoControlElement(element: HTMLElement | null): boolean {
   if (!isHTMLElement(element)) return false;
 
   // <video> itself is the media area, not a control — allow gallery launch.
@@ -178,7 +178,7 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
  *                          (pass event.composedPath() when available)
  * @returns true if any element in the path is a video control UI element
  */
-export function isVideoControlEvent(
+function isVideoControlEvent(
   element: HTMLElement | null,
   getComposedPath?: () => EventTarget[]
 ): boolean {
@@ -237,6 +237,18 @@ export function isVideoClickAllowed(
 
     case 'block-controls-only':
       return !isVideoControlEvent(element, getComposedPath);
+
+    default:
+      // Corrupted/missing setting — log in dev and fall back to
+      // block-controls-only (safe default that blocks control UI
+      // but allows video area clicks).
+      if (__DEV__) {
+        logger.warn(
+          '[isVideoClickAllowed] Unknown videoClickMode, falling back to block-controls-only',
+          { mode }
+        );
+      }
+      return !isVideoControlEvent(element, getComposedPath);
   }
 }
 
@@ -280,13 +292,4 @@ export function isGalleryInternalElement(element: HTMLElement | null): boolean {
   return GALLERY_SELECTORS.some((selector) => {
     return element.matches(selector) || element.closest(selector) !== null;
   });
-}
-
-/**
- * Check if event originated from gallery UI.
- */
-export function isGalleryInternalEvent(event: Event): boolean {
-  const target = event.target;
-  if (!isHTMLElement(target)) return false;
-  return isGalleryInternalElement(target);
 }
