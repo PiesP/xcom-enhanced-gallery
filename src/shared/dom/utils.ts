@@ -9,6 +9,7 @@
 import { CSS as CSS_CONST } from '@constants/css';
 import { VIDEO_PLAYER_CONTEXT_SELECTOR } from '@constants/selectors';
 import { logger } from '@shared/logging/logger';
+import type { VideoClickMode } from '@shared/types/settings.types';
 import { isHTMLElement } from '@shared/utils/types/guards';
 
 const VIDEO_CONTROL_DATASET_PREFIXES = [
@@ -48,11 +49,39 @@ const VIDEO_CONTROL_SELECTORS = ['.video-controls', '.video-progress button'] as
 
 /**
  * Check if string value contains any control tokens (case-insensitive).
+ * Uses word-boundary matching to avoid false positives
+ * (e.g., "display" will NOT match token "play").
  */
 function containsControlToken(value: string | null, tokens: readonly string[]): boolean {
   if (!value) return false;
   const normalized = value.toLowerCase();
-  return tokens.some((token) => normalized.includes(token.toLowerCase()));
+
+  return tokens.some((token) => {
+    const tokenLower = token.toLowerCase();
+    // Fast exact match
+    if (normalized === tokenLower) return true;
+
+    // Search for token surrounded by word boundaries or separators.
+    // Matches: "seek-button", "scrub_bar", "volume"
+    // Does NOT match: "display" (token "play"), "fullscreenwrapper"
+    let searchIndex = 0;
+    while (searchIndex < normalized.length) {
+      const foundIndex = normalized.indexOf(tokenLower, searchIndex);
+      if (foundIndex === -1) break;
+
+      const beforeOk =
+        foundIndex === 0 || ['-', '_', ' '].includes(normalized[foundIndex - 1] ?? '');
+      const afterEnd = foundIndex + tokenLower.length;
+      const afterOk =
+        afterEnd >= normalized.length || ['-', '_', ' '].includes(normalized[afterEnd] ?? '');
+
+      if (beforeOk && afterOk) return true;
+
+      searchIndex = foundIndex + 1;
+    }
+
+    return false;
+  });
 }
 
 /**
@@ -173,6 +202,63 @@ export function isVideoControlEvent(
       }
     } catch {
       // composedPath() may throw in rare cases; fall through to element-only check
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Check if a click on a video player element should be allowed to trigger
+ * gallery launch, based on the configured VideoClickMode.
+ *
+ * This is the single entry point for video-click decision logic — all
+ * callers (L1 capture handler, L2b secondary check) should use this function
+ * instead of calling isVideoControlElement/isVideoControlEvent directly.
+ *
+ * @param element - The click target element
+ * @param getComposedPath - Event.composedPath() accessor (for composedPath traversal)
+ * @param mode - Video click handling mode from user settings
+ * @returns true if the click should be allowed (gallery launch), false if blocked
+ */
+export function isVideoClickAllowed(
+  element: HTMLElement | null,
+  getComposedPath: (() => EventTarget[]) | undefined,
+  mode: VideoClickMode
+): boolean {
+  if (!isHTMLElement(element)) return true;
+
+  switch (mode) {
+    case 'allow-all':
+      return true;
+
+    case 'block-all':
+      return !isAnyInVideoPlayerPath(element, getComposedPath);
+
+    case 'block-controls-only':
+      return !isVideoControlEvent(element, getComposedPath);
+  }
+}
+
+/** Check if any element in element + composedPath is inside a video player context */
+function isAnyInVideoPlayerPath(
+  element: HTMLElement,
+  getComposedPath: (() => EventTarget[]) | undefined
+): boolean {
+  if (isWithinVideoPlayer(element)) return true;
+
+  if (typeof getComposedPath === 'function') {
+    try {
+      const path = getComposedPath();
+      if (Array.isArray(path)) {
+        for (const pathTarget of path) {
+          if (pathTarget instanceof HTMLElement && isWithinVideoPlayer(pathTarget)) {
+            return true;
+          }
+        }
+      }
+    } catch {
+      // composedPath() may throw; fall through
     }
   }
 
