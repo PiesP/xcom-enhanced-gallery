@@ -19,10 +19,6 @@ import type {
   UseToolbarSettingsControllerOptions,
 } from './use-toolbar-settings-controller.types';
 
-// Module-level sequence counter for unique listener context IDs per hook instance.
-// Safe in browser single-threaded environment; no concurrency risk.
-let toolbarSettingsControllerListenerSeq = 0;
-
 const DEFAULTS = {
   FOCUS_DELAY_MS: 50,
   SELECT_GUARD_MS: 300,
@@ -151,11 +147,9 @@ export function useToolbarSettingsController(
     }
 
     const eventManager = EventManager.getInstance();
-    // NOTE: listenerContext uses a monotonic sequence which causes EventManager's
-    // internal map to grow unboundedly. This is acceptable because each entry is
-    // cleaned up in onCleanup via removeByContext. The sequence number is used for
-    // debugging/uniqueness, not for iteration or memory leak detection.
-    const listenerContext = `toolbar-settings-controller:${toolbarSettingsControllerListenerSeq++}`;
+    // NOTE: listenerContext uses a unique ID per effect instance.
+    // Each entry is cleaned up in onCleanup via removeByContext.
+    const listenerContext = `toolbar-settings-controller:${crypto.randomUUID()}`;
 
     let isSelectActive = false;
     let selectGuardTimeout: ReturnType<typeof setTimeout> | null = null;
