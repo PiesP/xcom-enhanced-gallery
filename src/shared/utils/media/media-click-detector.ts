@@ -13,7 +13,7 @@ import {
   MEDIA_VIEWER_SELECTORS,
   STATUS_LINK_SELECTOR,
 } from '@constants/selectors';
-import { isVideoControlElement } from '@shared/dom/utils';
+import { isVideoControlEvent } from '@shared/dom/utils';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import {
   extractMediaUrlFromElement,
@@ -63,7 +63,10 @@ function isMediaCard(cardWrapper: HTMLElement): boolean {
 
 function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   if (!target) return false;
-  if (isVideoControlElement(target)) return true;
+  // Use isVideoControlEvent without composedPath — falls back to element-only check.
+  // This is the secondary defense; the primary defense in handleMediaClick already
+  // uses the full composedPath-based check.
+  if (isVideoControlEvent(target)) return true;
   if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
 
   const cardWrapper = target.closest('[data-testid="card.wrapper"]');

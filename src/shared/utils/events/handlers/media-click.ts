@@ -7,7 +7,7 @@
  * Prevents Twitter's native gallery and triggers custom gallery behavior.
  */
 
-import { isGalleryInternalElement, isVideoControlElement } from '@shared/dom/utils';
+import { isGalleryInternalElement, isVideoControlEvent } from '@shared/dom/utils';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { isProcessableMedia } from '@shared/utils/media/media-click-detector';
@@ -24,7 +24,12 @@ export async function handleMediaClick(
   if (!isHTMLElement(target)) return;
 
   if (gallerySignals.isOpen && isGalleryInternalElement(target)) return;
-  if (isVideoControlElement(target)) return;
+
+  // Use composedPath-based video control detection for robustness.
+  // This catches cases where the click target is a generic element inside
+  // a video control container (e.g., volume slider handle inside a div).
+  if (isVideoControlEvent(target, () => event.composedPath())) return;
+
   if (!isProcessableMedia(target)) return;
 
   event.stopImmediatePropagation();
