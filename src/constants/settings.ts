@@ -29,8 +29,7 @@ export const DEFAULT_SETTINGS = {
     enableKeyboardNav: true,
     videoVolume: 1.0,
     videoMuted: false,
-    blockVideoControlClick: true,
-    preciseVideoControlDetection: true,
+    videoClickMode: 'block-controls-only' as const,
   },
   toolbar: {
     autoHideDelay: 3000,

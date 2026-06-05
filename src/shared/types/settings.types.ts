@@ -7,6 +7,9 @@
  * These are separated from features-specific types to prevent reverse dependencies.
  */
 
+/** Video player click handling mode */
+export type VideoClickMode = 'block-all' | 'block-controls-only' | 'allow-all';
+
 export interface GallerySettings {
   /** Auto-scroll speed (1-10) */
   autoScrollSpeed: number;
@@ -26,15 +29,12 @@ export interface GallerySettings {
   videoVolume: number;
   /** Video muted state */
   videoMuted: boolean;
-  /** Block gallery launch when clicking video player controls (volume, seek, etc.) */
-  blockVideoControlClick: boolean;
-  /** When true: only block clicks on recognizable control UI elements inside the
-   *  video player (play, volume, seek, fullscreen buttons/sliders). Clicks on the
-   *  video media area itself (poster, overlay, <video> tag) are allowed to launch
-   *  the gallery.
-   *  When false: block all clicks anywhere inside the video player context
-   *  (legacy behaviour). */
-  preciseVideoControlDetection: boolean;
+  /** How clicks on video player elements are handled:
+   *  - 'block-all': block all clicks inside the video player context (legacy)
+   *  - 'block-controls-only': block only recognizable control UI (volume, seek, etc.),
+   *    allow clicks on the video media area to launch the gallery
+   *  - 'allow-all': never block clicks inside the video player context */
+  videoClickMode: VideoClickMode;
 }
 
 export interface ToolbarSettings {
