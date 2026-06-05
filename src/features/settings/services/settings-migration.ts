@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { DEFAULT_SETTINGS } from '@constants/settings';
-import type { AppSettings } from '@shared/types/settings.types';
+import type { AppSettings, VideoClickMode } from '@shared/types/settings.types';
 import { isRecord } from '@shared/utils/types/guards';
 
 function pruneWithTemplate<T extends Record<string, unknown>>(
@@ -26,7 +26,49 @@ function pruneWithTemplate<T extends Record<string, unknown>>(
   return out as Partial<T>;
 }
 
+/**
+ * Migrate legacy `blockVideoControlClick` + `preciseVideoControlDetection`
+ * booleans to the unified `videoClickMode` enum.
+ */
+function migrateVideoClickMode(
+  gallery: Record<string, unknown>
+): Partial<{ videoClickMode: VideoClickMode }> {
+  const blockAll = gallery.blockVideoControlClick as boolean | undefined;
+  const precise = gallery.preciseVideoControlDetection as boolean | undefined;
+
+  // Remove legacy fields so they don't pollute the merged result
+  delete gallery.blockVideoControlClick;
+  delete gallery.preciseVideoControlDetection;
+
+  // If the new field already exists, keep it
+  if (typeof gallery.videoClickMode === 'string') {
+    return {};
+  }
+
+  // Convert legacy booleans to enum
+  if (blockAll === false) {
+    return { videoClickMode: 'allow-all' };
+  }
+  if (blockAll === true && precise === false) {
+    return { videoClickMode: 'block-all' };
+  }
+  // Default: blockControlsOnly (block=true, precise=true or undefined)
+  if (blockAll !== undefined) {
+    return { videoClickMode: 'block-controls-only' };
+  }
+
+  return {};
+}
+
 export function migrateSettings(input: AppSettings, nowMs: number): AppSettings {
+  // Migrate legacy video click mode before pruning (pruning strips old fields)
+  if (isRecord(input.gallery)) {
+    const migration = migrateVideoClickMode(input.gallery as Record<string, unknown>);
+    if (migration.videoClickMode) {
+      (input.gallery as Record<string, unknown>).videoClickMode = migration.videoClickMode;
+    }
+  }
+
   const pruned = pruneWithTemplate(input, DEFAULT_SETTINGS) as Partial<AppSettings>;
 
   const merged: Record<string, unknown> = { ...DEFAULT_SETTINGS, ...pruned };
