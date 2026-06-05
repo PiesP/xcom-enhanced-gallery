@@ -49,11 +49,23 @@ const INTERNAL_SELECTORS = [
   SELECTORS.ROLE_GALLERY,
 ] as const;
 
+/** Selectors for interactive gallery elements that should not trigger background actions
+ *  (e.g., closing the gallery when clicking inside an item or toolbar). */
+const GALLERY_ELEMENT_SELECTORS = [
+  ...INTERNAL_SELECTORS,
+  '[data-gallery-element]',
+  '[data-xeg-role="gallery-item"]',
+  '[data-xeg-role="scroll-spacer"]',
+  '[data-role="toolbar"]',
+  '[data-role="toolbar-hover-zone"]',
+] as const;
+
 export const CSS = {
   CLASSES,
   DATA_ATTRIBUTES,
   SELECTORS,
   INTERNAL_SELECTORS,
+  GALLERY_ELEMENT_SELECTORS,
 } as const;
 
 /** Standard toolbar icon size in pixels. */

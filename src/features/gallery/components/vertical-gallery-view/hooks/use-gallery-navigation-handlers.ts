@@ -7,6 +7,7 @@
  * and media item click navigation.
  */
 
+import { CSS } from '@constants/css';
 import { navigateToItem } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { JSX } from 'solid-js';
@@ -71,12 +72,9 @@ export function useGalleryNavigationHandlers(
       return;
     }
 
-    // Ignore clicks on interactive zones and gallery content (production-safe selectors).
-    // Keeping this as a single selector avoids repeated closest() traversals.
-    const ignoreSelector =
-      '[data-role="toolbar"], [data-role="toolbar-hover-zone"], [data-gallery-element], [data-xeg-role="gallery-item"], [data-xeg-role="scroll-spacer"]';
-
-    if (target.closest(ignoreSelector)) {
+    // Ignore clicks on any gallery-internal element (toolbar, items, panels, etc.).
+    // Uses the centralized selector list from CSS.GALLERY_ELEMENT_SELECTORS.
+    if (CSS.GALLERY_ELEMENT_SELECTORS.some((sel) => target.closest(sel))) {
       return;
     }
 
