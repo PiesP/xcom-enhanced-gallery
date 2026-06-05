@@ -26,6 +26,8 @@ export interface GallerySettings {
   videoVolume: number;
   /** Video muted state */
   videoMuted: boolean;
+  /** Block gallery launch when clicking video player controls (volume, seek, etc.) */
+  blockVideoControlClick: boolean;
 }
 
 export interface ToolbarSettings {

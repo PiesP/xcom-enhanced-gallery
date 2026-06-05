@@ -29,6 +29,7 @@ export const DEFAULT_SETTINGS = {
     enableKeyboardNav: true,
     videoVolume: 1.0,
     videoMuted: false,
+    blockVideoControlClick: true,
   },
   toolbar: {
     autoHideDelay: 3000,
@@ -54,7 +55,7 @@ export const DEFAULT_SETTINGS = {
   },
   version: '2.1.2',
   lastModified: 0,
-} as const satisfies AppSettings;
+} satisfies AppSettings;
 
 export function createDefaultSettings(timestamp: number = Date.now()): AppSettings {
   return globalThis.structuredClone({ ...DEFAULT_SETTINGS, lastModified: timestamp });
