@@ -107,18 +107,30 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const preventDragStart = (event: DragEvent) => event.preventDefault();
 
+  const isVideoClick = (event: MouseEvent, video: HTMLVideoElement): boolean => {
+    if (event.target instanceof Node && video.contains(event.target)) return true;
+    if (typeof event.composedPath === 'function') {
+      try {
+        const path = event.composedPath();
+        if (Array.isArray(path)) {
+          for (const pathTarget of path) {
+            if (pathTarget === video) return true;
+            if (pathTarget instanceof Node && video.contains(pathTarget)) return true;
+          }
+        }
+      } catch {
+        // composedPath() may throw; fall through
+      }
+    }
+    return false;
+  };
+
   const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
     event.stopPropagation();
 
     if (isVideo()) {
       const video = videoRef();
-      if (video) {
-        const target = event.target;
-        const targetInVideo = target instanceof Node && video.contains(target);
-        const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
-        const pathIncludesVideo = Array.isArray(path) && path.includes(video);
-        if (targetInVideo || pathIncludesVideo) return;
-      }
+      if (video && isVideoClick(event, video)) return;
     }
 
     containerRef()?.focus?.({ preventScroll: true });
