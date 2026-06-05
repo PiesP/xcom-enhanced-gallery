@@ -61,12 +61,13 @@ function isMediaCard(cardWrapper: HTMLElement): boolean {
   return cardWrapper.querySelector('img, video') !== null;
 }
 
-function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
+function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent): boolean {
   if (!target) return false;
-  // Use isVideoControlEvent without composedPath — falls back to element-only check.
-  // This is the secondary defense; the primary defense in handleMediaClick already
-  // uses the full composedPath-based check.
-  if (isVideoControlEvent(target)) return true;
+
+  // Use isVideoControlEvent with composedPath when event is available.
+  // This is the secondary defense; the primary defense in handleMediaClick
+  // already uses the full composedPath-based check.
+  if (isVideoControlEvent(target, event ? () => event.composedPath() : undefined)) return true;
   if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
 
   const cardWrapper = target.closest('[data-testid="card.wrapper"]');
@@ -106,8 +107,8 @@ function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   return false;
 }
 
-export function isProcessableMedia(target: HTMLElement | null): boolean {
-  if (!target || gallerySignals.isOpen || shouldBlockMediaTrigger(target)) return false;
+export function isProcessableMedia(target: HTMLElement | null, event?: MouseEvent): boolean {
+  if (!target || gallerySignals.isOpen || shouldBlockMediaTrigger(target, event)) return false;
 
   const mediaElement = findMediaElementInDOM(target);
   if (mediaElement) {

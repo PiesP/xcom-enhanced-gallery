@@ -30,7 +30,7 @@ export async function handleMediaClick(
   // a video control container (e.g., volume slider handle inside a div).
   if (isVideoControlEvent(target, () => event.composedPath())) return;
 
-  if (!isProcessableMedia(target)) return;
+  if (!isProcessableMedia(target, event)) return;
 
   event.stopImmediatePropagation();
   event.preventDefault();
