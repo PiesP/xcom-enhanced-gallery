@@ -48,7 +48,6 @@ export class GlobalErrorHandler {
         location,
         error: event.error,
       });
-      event.preventDefault();
     }
   };
 
@@ -59,7 +58,6 @@ export class GlobalErrorHandler {
         type: 'unhandled-rejection',
         reason: event.reason,
       });
-      event.preventDefault();
     }
   };
 
