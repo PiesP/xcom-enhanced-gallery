@@ -9,6 +9,7 @@
 
 import { getTypedSettingOr, tryGetSettings } from '@shared/container/container';
 import { isGalleryInternalElement, isVideoClickAllowed } from '@shared/dom/utils';
+import { logger } from '@shared/logging/logger';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import type { VideoClickMode } from '@shared/types/settings.types';
@@ -61,6 +62,6 @@ export async function handleMediaClick(
   try {
     await handlers.onMediaClick(target, event);
   } catch (error) {
-    __DEV__ && console.warn('[MediaClick] onMediaClick failed', error);
+    logger.warn('onMediaClick failed', error);
   }
 }

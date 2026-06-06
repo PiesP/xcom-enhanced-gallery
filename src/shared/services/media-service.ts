@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { PREFETCH_CACHE_SIZE } from '@constants/performance';
 import { PrefetchManager } from '@shared/services/media/prefetch-manager';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import type {
@@ -14,7 +15,7 @@ let _instance: MediaService | null = null;
 
 export class MediaService {
   private mediaExtraction: MediaExtractionService | null = null;
-  private readonly prefetchManager = new PrefetchManager(20);
+  private readonly prefetchManager = new PrefetchManager(PREFETCH_CACHE_SIZE);
   private didCleanup = false;
   private _initialized = false;
 

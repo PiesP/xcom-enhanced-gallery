@@ -163,9 +163,10 @@ export function useToolbarSettingsController(
     };
 
     const handleSelectBlur = () => {
+      const blurGuardMs = 100;
       scheduleTimeout(() => {
         isSelectActive = false;
-      }, 100);
+      }, blurGuardMs);
     };
 
     const handleSelectChange = () => {

@@ -29,3 +29,6 @@ export const MAX_DESCENDANT_DEPTH = 6;
 
 /** Max ancestor hops for extracting background-image URLs */
 export const MAX_ANCESTOR_HOPS = 3;
+
+/** Default prefetch cache size (number of entries) */
+export const PREFETCH_CACHE_SIZE = 20;
