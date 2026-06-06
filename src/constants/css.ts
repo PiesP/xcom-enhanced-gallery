@@ -37,8 +37,8 @@ const SELECTORS = {
 } as const;
 
 /** All gallery selectors for batch queries/cleanup and internal-element detection.
- *  This is the SSOT for "is this element inside the gallery UI?" checks.
- *  Used by both isGalleryInternalElement() and handleBackgroundClick(). */
+ *  Used by isGalleryInternalElement() — BROAD: matches any element inside the gallery DOM tree,
+ *  including the overlay/container divs themselves. */
 const INTERNAL_SELECTORS = [
   SELECTORS.OVERLAY,
   SELECTORS.CONTAINER,
@@ -56,8 +56,17 @@ const INTERNAL_SELECTORS = [
   '[data-role="toolbar-hover-zone"]',
 ] as const;
 
-/** @deprecated Use INTERNAL_SELECTORS instead — kept for backward compatibility */
-const GALLERY_ELEMENT_SELECTORS = INTERNAL_SELECTORS;
+/** Selectors for interactive gallery elements that should NOT trigger background actions.
+ *  Used by handleBackgroundClick() — NARROW: only toolbar, items, and interactive controls.
+ *  Excludes overlay/container/root/renderer — clicking the gallery background SHOULD close. */
+const GALLERY_ELEMENT_SELECTORS = [
+  SELECTORS.ITEM,
+  '[data-gallery-element]',
+  '[data-xeg-role="gallery-item"]',
+  '[data-xeg-role="scroll-spacer"]',
+  '[data-role="toolbar"]',
+  '[data-role="toolbar-hover-zone"]',
+] as const;
 
 export const CSS = {
   CLASSES,

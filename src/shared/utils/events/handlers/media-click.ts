@@ -32,7 +32,10 @@ export async function handleMediaClick(
   const target = event.target;
   if (!(target instanceof Element)) return;
 
-  // Gallery is open — capture-phase close logic: clicks outside close, inside are ignored.
+  // Gallery is open — close on outside click (defensive: the fixed overlay covers
+  // the viewport, so this fires only if an element behind the overlay receives a
+  // click via higher z-index or click-through. The primary close mechanism for
+  // gallery background clicks is handleBackgroundClick in the bubble phase.)
   if (gallerySignals.isOpen) {
     if (isGalleryInternalElement(target)) return;
     handlers.onGalleryClose();

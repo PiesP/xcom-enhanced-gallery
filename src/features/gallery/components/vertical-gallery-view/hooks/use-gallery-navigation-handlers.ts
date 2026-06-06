@@ -72,8 +72,9 @@ export function useGalleryNavigationHandlers(
       return;
     }
 
-    // Ignore clicks on any gallery-internal element (toolbar, items, panels, etc.).
-    // Uses the centralized selector list from CSS.GALLERY_ELEMENT_SELECTORS.
+    // Ignore clicks on interactive gallery elements (toolbar, items, panels).
+    // Uses GALLERY_ELEMENT_SELECTORS — intentionally excludes overlay/container
+    // so that clicks on the gallery background ARE treated as close triggers.
     if (CSS.GALLERY_ELEMENT_SELECTORS.some((sel) => target.closest(sel))) {
       return;
     }
