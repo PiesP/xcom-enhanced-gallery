@@ -55,6 +55,14 @@ const throwIfAborted = (signal?: AbortSignal): void => {
   }
 };
 
+/**
+ * Download multiple media items as a ZIP archive using parallel fetch workers.
+ * Results are collected by index to preserve original ordering in the archive.
+ *
+ * @param items - Media items to download
+ * @param options - Download options (concurrency, retries, signal, progress)
+ * @returns ZIP result with file success/failure counts and binary data
+ */
 export async function downloadAsZip(
   items: readonly OrchestratorItem[],
   options: DownloadOptions = {}

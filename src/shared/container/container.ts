@@ -19,9 +19,13 @@ export {
   tryGetSettings,
 } from '@shared/container/settings-registry';
 
+/** Get the singleton ThemeService instance (cached) */
 export const getThemeService = (): ThemeService => ThemeService.getInstance();
+/** Get the singleton LanguageService instance (cached) */
 export const getLanguageService = (): LanguageService => LanguageService.getInstance();
+/** Get the singleton MediaService instance (cached) */
 export const getMediaService = (): MediaService => MediaService.getInstance();
+/** Get the singleton DownloadOrchestrator instance (cached) */
 export const getDownloadOrchestrator = (): DownloadOrchestrator =>
   DownloadOrchestrator.getInstance();
 
