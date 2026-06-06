@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { MAX_ANCESTOR_HOPS, MAX_DESCENDANT_DEPTH } from '@constants/performance';
+
 export type MediaElement = HTMLImageElement | HTMLVideoElement;
 
 export type MediaTraversalOptions = {
@@ -18,12 +20,9 @@ type QueueNode = {
   readonly depth: number;
 };
 
-const DEFAULT_MAX_DESCENDANT_DEPTH = 6;
-const DEFAULT_MAX_ANCESTOR_HOPS = 3;
-
 const DEFAULT_TRAVERSAL_OPTIONS: Required<MediaTraversalOptions> = {
-  maxDescendantDepth: DEFAULT_MAX_DESCENDANT_DEPTH,
-  maxAncestorHops: DEFAULT_MAX_ANCESTOR_HOPS,
+  maxDescendantDepth: MAX_DESCENDANT_DEPTH,
+  maxAncestorHops: MAX_ANCESTOR_HOPS,
 };
 
 export function isMediaElement(element: HTMLElement | null): element is MediaElement {

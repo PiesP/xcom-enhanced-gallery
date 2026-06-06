@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { MAX_ANCESTOR_HOPS } from '@constants/performance';
 import { logger } from '@shared/logging/logger';
 import type { MediaInfo } from '@shared/types/media.types';
 import {
@@ -40,7 +41,7 @@ function resolveClickedElementUrl(clickedElement: HTMLElement): string | null {
   if (elementUrl) return elementUrl;
 
   const fallbackTarget = mediaElement ?? clickedElement;
-  return extractBackgroundImageUrl(fallbackTarget, 3);
+  return extractBackgroundImageUrl(fallbackTarget, MAX_ANCESTOR_HOPS);
 }
 
 function extractBackgroundImageUrl(

@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import {
+  DEFAULT_BACKOFF_BASE_MS,
+  DEFAULT_CONCURRENCY,
+  DEFAULT_RETRIES,
+  MAX_CONCURRENCY,
+  MIN_CONCURRENCY,
+} from '@constants/performance';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
 import { StreamingZipWriter } from '@shared/external/zip/streaming-zip-writer';
-import { DEFAULT_BACKOFF_BASE_MS, fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
+import { fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
 import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
 import { reportProgress } from '@shared/services/download/types';
 
@@ -34,11 +41,6 @@ const ensureUniqueFilenameFactory = (): UniqueFilenameFactory => {
     return candidate;
   };
 };
-
-const MAX_CONCURRENCY = 8;
-const MIN_CONCURRENCY = 1;
-const DEFAULT_CONCURRENCY = 4;
-const DEFAULT_RETRIES = 3;
 
 const clampConcurrency = (value: number | undefined): number => {
   const resolved = value ?? DEFAULT_CONCURRENCY;
