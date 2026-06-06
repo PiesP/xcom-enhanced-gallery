@@ -6,11 +6,9 @@
 import { planBulkDownload } from '@shared/core/download/download-plan';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
-import type { DownloadProvider } from '@shared/services/download/download-provider.contract';
 import {
   detectDownloadCapability,
   downloadSingleFile,
-  GMDownloadProvider,
 } from '@shared/services/download/single-download';
 import type {
   BulkDownloadResult,
@@ -29,7 +27,6 @@ let _downloadInstance: DownloadOrchestrator | null = null;
 export class DownloadOrchestrator {
   private capability: DownloadCapability | null = null;
   private _initialized = false;
-  private providers: DownloadProvider[] = [new GMDownloadProvider()];
 
   private constructor() {}
 
@@ -60,28 +57,6 @@ export class DownloadOrchestrator {
   /** Check if service is initialized */
   public isInitialized(): boolean {
     return this._initialized;
-  }
-
-  /**
-   * Register a new download provider. Later providers take priority
-   * (last registered is tried first).
-   */
-  public registerProvider(provider: DownloadProvider): void {
-    this.providers.push(provider);
-  }
-
-  /**
-   * Find the first available provider (tries last-registered first).
-   * @internal - Will be used in Phase 3 when orchestrator adopts provider pattern.
-   */
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: scaffolding for Phase 3
-  // @ts-expect-error TS6133 - scaffolding for Phase 3 when orchestrator adopts provider pattern
-  private resolveProvider(): DownloadProvider | null {
-    for (let i = this.providers.length - 1; i >= 0; i--) {
-      const provider: DownloadProvider | undefined = this.providers[i];
-      if (provider?.detect()) return provider;
-    }
-    return null;
   }
 
   /**
