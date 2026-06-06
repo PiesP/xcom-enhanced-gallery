@@ -116,12 +116,12 @@ function buildStages(): readonly BootstrapStage[] {
       run: () => GlobalErrorHandler.getInstance().initialize(),
     },
     {
-      label: 'Gallery services',
+      label: 'Settings',
       run: initializeGalleryServices,
       optional: true,
     },
     {
-      label: 'Base services',
+      label: 'Core services (Theme / Language / Media)',
       run: initializeCoreBaseServices,
       optional: true,
     },
