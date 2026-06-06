@@ -32,7 +32,14 @@ export async function handleMediaClick(
   const target = event.target;
   if (!isHTMLElement(target)) return;
 
-  if (gallerySignals.isOpen && isGalleryInternalElement(target)) return;
+  if (gallerySignals.isOpen) {
+    if (isGalleryInternalElement(target)) return; // Click inside gallery — let bubble handlers process
+    // Click outside gallery overlay — close the gallery
+    handlers.onGalleryClose();
+    event.stopImmediatePropagation();
+    event.preventDefault();
+    return;
+  }
 
   // Check video click mode from user settings — single decision point
   // for all video-click behavior (block-all / block-controls-only / allow-all).
