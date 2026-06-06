@@ -19,13 +19,16 @@ type IdleRequestCallback = () => void;
 
 /** Schedules a task to run during browser idle time. */
 function scheduleIdle(task: IdleRequestCallback): IdleHandle {
-  const id = requestIdleCallback(() => {
-    try {
-      task();
-    } catch (error) {
-      __DEV__ && logger.warn('[scheduleIdle] task error', error);
-    }
-  });
+  const id = requestIdleCallback(
+    () => {
+      try {
+        task();
+      } catch (error) {
+        __DEV__ && logger.warn('[scheduleIdle] task error', error);
+      }
+    },
+    { timeout: 2000 }
+  );
 
   return {
     cancel: () => cancelIdleCallback(id),
@@ -46,6 +49,7 @@ export class PrefetchManager {
   private readonly activeRequests = new Map<string, AbortController>();
   private readonly maxEntries: number;
   private disposed = false;
+  private readonly idleHandles = new Set<IdleHandle>();
 
   constructor(maxEntries = DEFAULT_CACHE_MAX_ENTRIES) {
     this.maxEntries = maxEntries;
@@ -60,12 +64,14 @@ export class PrefetchManager {
       return;
     }
 
-    scheduleIdle(() => {
+    const handle = scheduleIdle(() => {
+      this.idleHandles.delete(handle);
       if (this.disposed) return;
       void this.prefetchSingle(media.url).catch(() => {
         // Ignore individual failures — cache cleanup is handled in prefetchSingle.
       });
     });
+    this.idleHandles.add(handle);
   }
 
   /**
@@ -102,6 +108,10 @@ export class PrefetchManager {
    */
   destroy(): void {
     this.disposed = true;
+    for (const handle of this.idleHandles) {
+      handle.cancel();
+    }
+    this.idleHandles.clear();
     this.cancelAll();
     this.clear();
   }

@@ -85,9 +85,10 @@ function findMediaDescendant(
   { includeRoot, maxDepth }: DescendantSearchConfig
 ): MediaElement | null {
   const queue: QueueNode[] = [{ node: root, depth: 0 }];
+  let head = 0;
 
-  while (queue.length) {
-    const current = queue.shift();
+  while (head < queue.length) {
+    const current = queue[head++];
     if (!current) break;
 
     const { node, depth } = current;

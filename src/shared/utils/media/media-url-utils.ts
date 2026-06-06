@@ -4,6 +4,8 @@
 import type { MediaInfo } from '@shared/types/media.types';
 import { tryParseUrl } from '@shared/utils/url/host';
 
+const dedupKeyCache = new WeakMap<object, string | null>();
+
 function hasValidUrlPrefix(str: string): boolean {
   return /^(?:https?:\/\/|\/\/|\/)/u.test(str);
 }
@@ -19,6 +21,9 @@ export function extractFilenameFromUrl(url: string): string | null {
 }
 
 export function getMediaDedupKey(media: MediaInfo): string | null {
+  const cached = dedupKeyCache.get(media as unknown as object);
+  if (cached !== undefined) return cached;
+
   const urlCandidate =
     typeof media.originalUrl === 'string' && media.originalUrl.length > 0
       ? media.originalUrl
@@ -26,7 +31,10 @@ export function getMediaDedupKey(media: MediaInfo): string | null {
         ? media.url
         : null;
 
-  if (!urlCandidate) return null;
+  if (!urlCandidate) {
+    dedupKeyCache.set(media as unknown as object, null);
+    return null;
+  }
 
   const typePrefix =
     media.type === 'image' || media.type === 'video' || media.type === 'gif'
@@ -39,12 +47,16 @@ export function getMediaDedupKey(media: MediaInfo): string | null {
     const path = parsed.pathname;
     const format = parsed.searchParams.get('format');
     if (host && path) {
-      return `${typePrefix}${host}${path}${format ? `?format=${format}` : ''}`;
+      const key = `${typePrefix}${host}${path}${format ? `?format=${format}` : ''}`;
+      dedupKeyCache.set(media as unknown as object, key);
+      return key;
     }
   }
 
   const filename = extractFilenameFromUrl(urlCandidate);
-  return filename ? `${typePrefix}${filename}` : `${typePrefix}${urlCandidate}`;
+  const key = filename ? `${typePrefix}${filename}` : `${typePrefix}${urlCandidate}`;
+  dedupKeyCache.set(media as unknown as object, key);
+  return key;
 }
 
 export function extractVisualIndexFromUrl(url: string): number {

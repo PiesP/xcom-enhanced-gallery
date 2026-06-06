@@ -43,9 +43,7 @@ function migrateVideoClickMode(
   const blockAll = gallery.blockVideoControlClick as boolean | undefined;
   const precise = gallery.preciseVideoControlDetection as boolean | undefined;
 
-  // Remove legacy fields so they don't pollute the merged result
-  delete gallery.blockVideoControlClick;
-  delete gallery.preciseVideoControlDetection;
+  // Legacy fields are stripped by pruneWithTemplate in the caller
 
   // If the new field already exists with a valid value, keep it
   if (typeof gallery.videoClickMode === 'string') {
