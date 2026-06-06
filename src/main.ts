@@ -12,11 +12,11 @@ import {
 } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
 import { createAppConfig } from '@constants/app-config';
+import { getEventManager } from '@shared/container/container';
 import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
 import { GlobalErrorHandler } from '@shared/error/error-handler';
 import { logger } from '@shared/logging/logger';
-import { EventManager } from '@shared/services/event-manager';
 import type { BootstrapStage } from '@shared/types/lifecycle.types';
 // Import isolated gallery styles in CSS cascade priority order:
 // layers → tokens → reset → utilities → component styles
@@ -48,7 +48,7 @@ function wireGlobalEvents(onBeforeUnload: () => void): () => void {
     controller.abort();
     onBeforeUnload();
   };
-  EventManager.getInstance().addEventListener(window, 'pagehide', handler, {
+  getEventManager().addEventListener(window, 'pagehide', handler, {
     once: true,
     passive: true,
     signal: controller.signal,
@@ -165,7 +165,7 @@ async function cleanup(): Promise<void> {
     await runOptionalCleanup('error-handler', () => GlobalErrorHandler.getInstance().destroy());
 
     if (__DEV__) {
-      const remaining = EventManager.getInstance().getListenerStatus();
+      const remaining = getEventManager().getListenerStatus();
       if (remaining > 0) {
         logger.warn('[cleanup] uncleared listeners remain:', remaining);
       }

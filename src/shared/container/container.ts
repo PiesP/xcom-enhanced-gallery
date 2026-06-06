@@ -24,3 +24,5 @@ export const getLanguageService = (): LanguageService => LanguageService.getInst
 export const getMediaService = (): MediaService => MediaService.getInstance();
 export const getDownloadOrchestrator = (): DownloadOrchestrator =>
   DownloadOrchestrator.getInstance();
+
+export { getEventManager } from '@shared/container/event-manager-accessor';

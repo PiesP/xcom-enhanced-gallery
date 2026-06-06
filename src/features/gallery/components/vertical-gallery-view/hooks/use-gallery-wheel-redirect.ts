@@ -8,7 +8,7 @@
  * scrolling while the gallery is open.
  */
 
-import { EventManager } from '@shared/services/event-manager';
+import { getEventManager } from '@shared/container/container';
 import { createEffect, onCleanup } from 'solid-js';
 
 /**
@@ -64,7 +64,7 @@ export function useGalleryWheelRedirect(options: UseGalleryWheelRedirectOptions)
     const container = containerEl();
     if (!container) return;
 
-    const eventManager = EventManager.getInstance();
+    const eventManager = getEventManager();
     const listener: EventListener = (event) => {
       handleContainerWheel(event as WheelEvent, itemsContainerEl);
     };

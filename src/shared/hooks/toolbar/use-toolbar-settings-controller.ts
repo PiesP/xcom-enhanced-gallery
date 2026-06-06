@@ -10,9 +10,13 @@ import type {
   LanguageOption,
   ThemeOption,
 } from '@shared/components/ui/Settings/SettingsControls.types';
-import { getLanguageService, getThemeService, tryGetSettings } from '@shared/container/container';
+import {
+  getEventManager,
+  getLanguageService,
+  getThemeService,
+  tryGetSettings,
+} from '@shared/container/container';
 import { logger } from '@shared/logging/logger';
-import { EventManager } from '@shared/services/event-manager';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 import type {
   ToolbarSettingsControllerResult,
@@ -146,7 +150,7 @@ export function useToolbarSettingsController(
       return;
     }
 
-    const eventManager = EventManager.getInstance();
+    const eventManager = getEventManager();
     // NOTE: listenerContext uses a unique ID per effect instance.
     // Each entry is cleaned up in onCleanup via removeByContext.
     const listenerContext = `toolbar-settings-controller:${crypto.randomUUID()}`;

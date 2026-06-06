@@ -6,8 +6,8 @@
  * @description Singleton service that captures and logs runtime errors (dev mode).
  */
 
+import { getEventManager } from '@shared/container/container';
 import { logger } from '@shared/logging/logger';
-import { EventManager } from '@shared/services/event-manager';
 
 const formatErrorLocation = (
   filename: string | undefined,
@@ -71,7 +71,7 @@ export class GlobalErrorHandler {
       return;
     }
 
-    const eventManager = EventManager.getInstance();
+    const eventManager = getEventManager();
     this.controller = new AbortController();
 
     eventManager.addEventListener(window, 'error', this.errorListener as EventListener, {
@@ -104,7 +104,7 @@ export class GlobalErrorHandler {
 
     this.controller?.abort();
     this.controller = null;
-    EventManager.getInstance().removeByContext('global-error-handler');
+    getEventManager().removeByContext('global-error-handler');
     this.isInitialized = false;
   }
 }

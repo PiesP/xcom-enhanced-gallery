@@ -6,9 +6,9 @@ import { IconButton } from '@shared/components/ui/Button/IconButton';
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
 import { LucideIcon } from '@shared/components/ui/Icon/lucide/lucide-icons';
 import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
+import { getEventManager } from '@shared/container/container';
 import type { ToolbarSettingsControllerResult } from '@shared/hooks/toolbar/use-toolbar-settings-controller.types';
 import { useTranslation } from '@shared/hooks/use-translation';
-import { EventManager } from '@shared/services/event-manager';
 import type { ImageFitMode } from '@shared/types/settings.types';
 import type { ToolbarState } from '@shared/types/toolbar.types';
 import { shouldAllowWheelDefault as shouldAllowWheelDefaultBase } from '@shared/utils/events/wheel-scroll-guard';
@@ -218,7 +218,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       if (!element) return;
 
       const controller = new AbortController();
-      const eventManager = EventManager.getInstance();
+      const eventManager = getEventManager();
       const listener: EventListener = (event) => handler(event as WheelEvent);
 
       eventManager.addEventListener(element, 'wheel', listener, {

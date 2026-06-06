@@ -3,9 +3,9 @@
 
 /** @fileoverview Gallery event lifecycle: init/teardown keyboard + click listeners. */
 
+import { getEventManager } from '@shared/container/container';
 import { logger } from '@shared/logging/logger';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
-import { EventManager } from '@shared/services/event-manager';
 import {
   handleKeyboardEvent,
   resetKeyboardDebounceState,
@@ -48,7 +48,7 @@ export function createGalleryLifecycle(): GalleryLifecycle {
     };
 
     const target = document.body;
-    const eventManager = EventManager.getInstance();
+    const eventManager = getEventManager();
     const listenerOptions: AddEventListenerOptions = { capture: true, passive: false };
 
     if (mergedOptions.enableKeyboard) {
@@ -80,7 +80,7 @@ export function createGalleryLifecycle(): GalleryLifecycle {
     if (!initialized) return;
 
     if (currentContext) {
-      EventManager.getInstance().removeByContext(currentContext);
+      getEventManager().removeByContext(currentContext);
     }
 
     resetKeyboardDebounceState();

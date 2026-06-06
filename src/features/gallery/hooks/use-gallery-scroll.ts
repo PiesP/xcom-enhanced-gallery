@@ -5,9 +5,10 @@
  * Tracks user scroll activity and reports scroll state for focus tracking.
  */
 
+import { getEventManager } from '@shared/container/container';
 import { isGalleryInternalElement } from '@shared/dom/utils';
 import { logger } from '@shared/logging/logger';
-import { createPrefixedId, EventManager } from '@shared/services/event-manager';
+import { createPrefixedId } from '@shared/services/event-manager';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 import { toAccessor } from '@shared/utils/solid/accessor-utils';
@@ -151,7 +152,7 @@ export function useGalleryScroll({
       return;
     }
 
-    const eventManager = EventManager.getInstance();
+    const eventManager = getEventManager();
     const listenerContext = createPrefixedId(LISTENER_CONTEXT_PREFIX, ':');
     const listenerIds: string[] = [];
 

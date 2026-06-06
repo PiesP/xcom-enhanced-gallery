@@ -5,11 +5,10 @@
  * @fileoverview Theme service: system theme detection and application
  */
 
+import { getEventManager } from '@shared/container/event-manager-accessor';
 import { tryGetSettings } from '@shared/container/settings-registry';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';
-import { EventManager } from '@shared/services/event-manager';
-
 export type ThemeChangeListener = (
   theme: 'light' | 'dark',
   setting: 'auto' | 'light' | 'dark'
@@ -197,7 +196,7 @@ export class ThemeService {
       if (this.themeSetting === 'auto') this.applyCurrentTheme(true);
     };
 
-    EventManager.getInstance().addEventListener(
+    getEventManager().addEventListener(
       this.mediaQueryList,
       'change',
       (event) => this.mediaQueryListener!(event as MediaQueryListEvent),

@@ -5,7 +5,7 @@
  * @fileoverview Viewport/Container constraint helpers (PC-only)
  * @description Pure calculator and DOM hook to expose viewport values via CSS variables.
  */
-import { EventManager } from '@shared/services/event-manager';
+import { getEventManager } from '@shared/container/container';
 import { createEventListener } from '@shared/utils/types/guards';
 
 interface ChromeOffsets {
@@ -117,7 +117,7 @@ export function observeViewportCssVars(
   let resizeListenerId: string | null = null;
   if (typeof window !== 'undefined') {
     // Register with EventManager for unified event tracking/cleanup
-    resizeListenerId = EventManager.getInstance().addEventListener(
+    resizeListenerId = getEventManager().addEventListener(
       window,
       'resize',
       createEventListener(onResize),
@@ -143,7 +143,7 @@ export function observeViewportCssVars(
       }
     }
     if (resizeListenerId) {
-      EventManager.getInstance().removeListener(resizeListenerId);
+      getEventManager().removeListener(resizeListenerId);
       resizeListenerId = null;
     }
   };
