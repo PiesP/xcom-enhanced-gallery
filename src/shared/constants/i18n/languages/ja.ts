@@ -2,51 +2,70 @@
 // Copyright (c) 2024-2026 PiesP
 
 import type { LanguageStrings } from '@shared/constants/i18n/language-types';
-import { buildLanguageStringsFromValues } from '@shared/constants/i18n/translation-values';
-
-const JA_VALUES = [
-  '前へ',
-  '次へ',
-  'ダウンロード',
-  'すべての{count}件をZIPでダウンロード',
-  '設定を開く',
-  '閉じる',
-  'ツイートを見る',
-  'ツイートテキストパネル',
-  '元のツイートを見る',
-  '原寸',
-  '幅に合わせる',
-  '高さに合わせる',
-  'ウィンドウに合わせる',
-  'テーマ',
-  'Language / 언어 / 言語',
-  '自動',
-  'ライト',
-  'ダーク',
-  'Auto / 자동 / 自動',
-  '韓国語',
-  '英語',
-  '日本語',
-  'エラーが発生しました',
-  '予期しないエラーが発生しました: {error}',
-  'キーボードショートカット',
-  'ArrowLeft: 前のメディア',
-  'ArrowRight: 次のメディア',
-  'Escape: ギャラリーを閉じる',
-  '?: このヘルプを表示',
-  'ダウンロード失敗',
-  'ファイルを取得できません: {error}',
-  'ダウンロード失敗',
-  'すべての項目をダウンロードできませんでした。',
-  '一部失敗',
-  '{count}個の項目を取得できませんでした。',
-  'メディアがありません',
-  '表示する画像や動画がありません。',
-  'メディア {index}: {filename}',
-  '{type} の読み込みに失敗しました',
-] as const;
 
 /**
  * Japanese language strings for the application
  */
-export const ja: LanguageStrings = buildLanguageStringsFromValues(JA_VALUES);
+export const ja: LanguageStrings = {
+  tb: {
+    prev: '前へ',
+    next: '次へ',
+    dl: 'ダウンロード',
+    dlAllCt: 'すべての{count}件をZIPでダウンロード',
+    setOpen: '設定を開く',
+    cls: '閉じる',
+    twTxt: 'ツイートを見る',
+    twPanel: 'ツイートテキストパネル',
+    twUrl: '元のツイートを見る',
+    fitOri: '原寸',
+    fitW: '幅に合わせる',
+    fitH: '高さに合わせる',
+    fitC: 'ウィンドウに合わせる',
+  },
+  st: {
+    th: 'テーマ',
+    lang: 'Language / 언어 / 言語',
+    thAuto: '自動',
+    thLt: 'ライト',
+    thDk: 'ダーク',
+    langAuto: 'Auto / 자동 / 自動',
+    langKo: '韓国語',
+    langEn: '英語',
+    langJa: '日本語',
+  },
+  msg: {
+    err: {
+      t: 'エラーが発生しました',
+      b: '予期しないエラーが発生しました: {error}',
+    },
+    kb: {
+      t: 'キーボードショートカット',
+      prev: 'ArrowLeft: 前のメディア',
+      next: 'ArrowRight: 次のメディア',
+      cls: 'Escape: ギャラリーを閉じる',
+      toggle: '?: このヘルプを表示',
+    },
+    dl: {
+      one: {
+        err: {
+          t: 'ダウンロード失敗',
+          b: 'ファイルを取得できません: {error}',
+        },
+      },
+      allFail: {
+        t: 'ダウンロード失敗',
+        b: 'すべての項目をダウンロードできませんでした。',
+      },
+      part: {
+        t: '一部失敗',
+        b: '{count}個の項目を取得できませんでした。',
+      },
+    },
+    gal: {
+      emptyT: 'メディアがありません',
+      emptyD: '表示する画像や動画がありません。',
+      itemLbl: 'メディア {index}: {filename}',
+      loadFail: '{type} の読み込みに失敗しました',
+    },
+  },
+};
