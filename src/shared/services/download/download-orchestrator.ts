@@ -259,16 +259,27 @@ export class DownloadOrchestrator {
     const url = URL.createObjectURL(blob);
     try {
       await new Promise<void>((resolve, reject) => {
+        let settled = false;
+        const settle = (action: 'resolve' | 'reject', err?: unknown): void => {
+          if (settled) return;
+          settled = true;
+          if (action === 'resolve') resolve();
+          else reject(err);
+        };
+
         gmDownload({
           url,
           name: filename,
-          onload: () => resolve(),
-          onerror: (err: unknown) => reject(err),
-          ontimeout: () => reject(new Error('Timeout')),
+          // NOTE: GM_download onload fires when the browser download dialog appears,
+          // NOT when the file is actually saved. User cancellation after this point
+          // cannot be detected (Tampermonkey/Violentmonkey API limitation).
+          onload: () => settle('resolve'),
+          onerror: (err: unknown) => settle('reject', err),
+          ontimeout: () => settle('reject', new Error('Timeout')),
           ...(onprogress
             ? {
                 onprogress: (progress: { loaded: number; total: number }) => {
-                  if (progress.total <= 0) return;
+                  if (settled || progress.total <= 0) return;
                   const pct = Math.min(
                     100,
                     Math.max(0, Math.round((progress.loaded / progress.total) * 100))
