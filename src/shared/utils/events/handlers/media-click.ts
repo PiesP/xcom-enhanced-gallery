@@ -30,16 +30,20 @@ export async function handleMediaClick(
   if (!options.enableMediaDetection) return;
 
   const target = event.target;
-  if (!isHTMLElement(target)) return;
+  if (!(target instanceof Element)) return;
 
+  // Gallery is open — capture-phase close logic: clicks outside close, inside are ignored.
   if (gallerySignals.isOpen) {
-    if (isGalleryInternalElement(target)) return; // Click inside gallery — let bubble handlers process
-    // Click outside gallery overlay — close the gallery
+    if (isGalleryInternalElement(target)) return;
     handlers.onGalleryClose();
     event.stopImmediatePropagation();
     event.preventDefault();
     return;
   }
+
+  // Gallery is closed — check if this is a media click that should open it.
+  // Narrow to HTMLElement: video click detection needs HTMLElement-specific APIs.
+  if (!isHTMLElement(target)) return;
 
   // Check video click mode from user settings — single decision point
   // for all video-click behavior (block-all / block-controls-only / allow-all).

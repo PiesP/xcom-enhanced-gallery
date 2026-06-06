@@ -283,8 +283,8 @@ function isAnyInVideoPlayerPath(
 /**
  * Check if element is inside the gallery UI.
  */
-export function isGalleryInternalElement(element: HTMLElement | null): boolean {
-  if (!isHTMLElement(element)) return false;
+export function isGalleryInternalElement(element: Element | null): boolean {
+  if (!(element instanceof Element)) return false;
   if (typeof element.matches !== 'function') {
     if (__DEV__) {
       logger.warn('Invalid element: matches is not a function', element);
