@@ -108,7 +108,7 @@ function assertZip32(condition: boolean, message: string): asserts condition {
 /** @internal */
 interface FileEntry {
   readonly filename: string;
-  readonly data: Uint8Array;
+  readonly size: number;
   readonly offset: number;
   readonly crc32: number;
 }
@@ -180,7 +180,7 @@ export class StreamingZipWriter {
     );
 
     this.chunks.push(localHeader, data);
-    this.entries.push({ filename, data, offset: this.currentOffset, crc32 });
+    this.entries.push({ filename, size: data.length, offset: this.currentOffset, crc32 });
     this.currentOffset += localHeader.length + data.length;
   }
 
@@ -207,10 +207,7 @@ export class StreamingZipWriter {
     for (const entry of this.entries) {
       const filenameBytes = encodeUtf8(entry.filename);
       assertZip32(entry.offset < ZIP_CONST.MAX_UINT32, `entry offset overflow (${entry.offset})`);
-      assertZip32(
-        entry.data.length < ZIP_CONST.MAX_UINT32,
-        `entry too large (size=${entry.data.length})`
-      );
+      assertZip32(entry.size < ZIP_CONST.MAX_UINT32, `entry too large (size=${entry.size})`);
       centralDirChunks.push(
         concat([
           ZIP_CONST.SIG_CENTRAL_DIR,
@@ -221,8 +218,8 @@ export class StreamingZipWriter {
           writeUint16LE(0), // Time
           writeUint16LE(0), // Date
           writeUint32LE(entry.crc32),
-          writeUint32LE(entry.data.length),
-          writeUint32LE(entry.data.length),
+          writeUint32LE(entry.size),
+          writeUint32LE(entry.size),
           writeUint16LE(filenameBytes.length),
           writeUint16LE(0), // Extra
           writeUint16LE(0), // Comment

@@ -77,6 +77,7 @@ export async function downloadAsZip(
   const assignedFilenames = items.map((item) => ensureUniqueFilename(item.desiredName));
 
   let currentIndex = 0;
+  const results: { index: number; filename: string; data: Uint8Array }[] = new Array(total);
 
   const runNext = async (): Promise<void> => {
     while (currentIndex < total) {
@@ -105,7 +106,7 @@ export async function downloadAsZip(
 
         throwIfAborted(abortSignal);
 
-        writer.addFile(filename, data);
+        results[index] = { index, filename, data };
 
         successful++;
       } catch (error) {
@@ -126,6 +127,13 @@ export async function downloadAsZip(
   const workerCount = Math.min(concurrency, total);
   const workers = Array.from({ length: workerCount }, () => runNext());
   await Promise.all(workers);
+
+  for (let i = 0; i < total; i++) {
+    const result = results[i];
+    if (result) {
+      writer.addFile(result.filename, result.data);
+    }
+  }
 
   reportProgress(onProgress, {
     phase: 'complete',
