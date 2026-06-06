@@ -151,33 +151,26 @@ async function apiRequest(url: string): Promise<TwitterAPIResponse> {
     headers.append('origin', locationHeaders.origin);
   }
 
-  try {
-    const httpService = HttpRequestService.getInstance();
-    const response = await httpService.get<TwitterAPIResponse>(url, {
-      headers: Object.fromEntries(headers.entries()),
-      responseType: 'json',
-    });
+  const httpService = HttpRequestService.getInstance();
+  const response = await httpService.get<TwitterAPIResponse>(url, {
+    headers: Object.fromEntries(headers.entries()),
+    responseType: 'json',
+  });
 
-    if (!response.ok) {
-      if (__DEV__) {
-        logger.warn(`Twitter API request failed: ${response.status}`, response.data);
-      }
-      throw new Error(`TW:${response.status}`);
-    }
-
-    const json = response.data;
-
-    if (__DEV__ && json.errors && json.errors.length > 0) {
-      logger.warn('Twitter API returned errors:', json.errors);
-    }
-
-    return json;
-  } catch (error) {
+  if (!response.ok) {
     if (__DEV__) {
-      logger.error('API request failed', error);
+      logger.warn(`Twitter API request failed: ${response.status}`, response.data);
     }
-    throw error;
+    throw new Error(`TW:${response.status}`);
   }
+
+  const json = response.data;
+
+  if (__DEV__ && json.errors && json.errors.length > 0) {
+    logger.warn('Twitter API returned errors:', json.errors);
+  }
+
+  return json;
 }
 
 // ============================================================================
