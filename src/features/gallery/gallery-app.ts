@@ -5,7 +5,7 @@
  * @fileoverview Gallery application orchestrator.
  */
 
-import type { GalleryRenderer } from '@features/gallery/GalleryRenderer';
+import type { GalleryRenderer } from '@features/gallery/gallery-renderer';
 import { getMediaService, tryGetSettings } from '@shared/container/container';
 import {
   galleryErrorReporter,

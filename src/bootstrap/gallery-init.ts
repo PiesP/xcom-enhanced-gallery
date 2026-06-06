@@ -5,8 +5,8 @@
  * @fileoverview Gallery bootstrap helpers.
  */
 
-import { GalleryApp } from '@features/gallery/GalleryApp';
-import { GalleryRenderer } from '@features/gallery/GalleryRenderer';
+import { GalleryApp } from '@features/gallery/gallery-app';
+import { GalleryRenderer } from '@features/gallery/gallery-renderer';
 import { SettingsService } from '@features/settings/services/settings-service';
 import { registerSettings } from '@shared/container/container';
 import { galleryErrorReporter, settingsErrorReporter } from '@shared/error/app-error-reporter';
