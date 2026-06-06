@@ -45,7 +45,14 @@ function resolveNowMs(nowMs?: number): number {
 
 function getExtension(url: string): string {
   try {
-    const path = url.split('?')[0];
+    // X CDN URL: ?format=jpg&name=orig 등 format= 쿼리 파라미터가 실제 확장자
+    const parsed = new URL(url);
+    const formatParam = parsed.searchParams.get('format');
+    if (formatParam && /^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i.test(formatParam)) {
+      return formatParam.toLowerCase();
+    }
+    // Fallback: 경로 기반 확장자
+    const path = parsed.pathname;
     if (!path) return 'jpg';
     const ext = path.split('.').pop();
     if (ext && /^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i.test(ext)) {

@@ -29,7 +29,8 @@ export function detectDownloadCapability(): DownloadCapability {
   };
 }
 
-const DOWNLOAD_TIMEOUT_MESSAGE = 'Download timeout';
+const DOWNLOAD_TIMEOUT_MESSAGE =
+  'Download timed out after 30s. The file may still be saving — check your browser downloads.';
 
 const createAbortResult = (): SingleDownloadResult => ({
   success: false,
@@ -100,6 +101,9 @@ export async function downloadSingleFile(
       gmDownload({
         url,
         name: filename,
+        // NOTE: GM_download onload fires when the browser download dialog appears,
+        // NOT when the file is actually saved. User cancellation after this point
+        // cannot be detected (Tampermonkey/Violentmonkey API limitation).
         onload: () => settle({ success: true, filename }),
         onerror: (error: unknown) => {
           settle({ success: false, error: normalizeErrorMessage(error) });
@@ -176,6 +180,9 @@ export class GMDownloadProvider implements DownloadProvider {
         gmDownload({
           url,
           name: filename,
+          // NOTE: GM_download onload fires when the browser download dialog appears,
+          // NOT when the file is actually saved. User cancellation after this point
+          // cannot be detected (Tampermonkey/Violentmonkey API limitation).
           onload: () => settle({ success: true, filename }),
           onerror: (error: unknown) => {
             settle({ success: false, error: normalizeErrorMessage(error) });
