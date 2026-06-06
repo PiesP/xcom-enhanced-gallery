@@ -26,7 +26,7 @@ export async function initializeCoreBaseServices(): Promise<void> {
 }
 
 async function initializeSettingsService(): Promise<void> {
-  const settings = new SettingsService();
+  const settings = SettingsService.getInstance();
   await settings.initialize();
   registerSettings(settings);
 }

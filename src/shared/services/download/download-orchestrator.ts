@@ -132,7 +132,7 @@ export class DownloadOrchestrator {
       mediaItems,
       prefetchedBlobs: options.prefetchedBlobs,
       zipFilename: options.zipFilename,
-      nowMs: performance.now(),
+      nowMs: Date.now(),
     });
 
     const items: readonly OrchestratorItem[] = plan.items;

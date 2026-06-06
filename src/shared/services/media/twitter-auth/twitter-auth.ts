@@ -4,20 +4,13 @@
 import { TWITTER_API_CONFIG } from '@shared/core/twitter-api/endpoint';
 import { getCookieValue, getCookieValueSync } from '@shared/services/cookie/cookie-utils';
 
-let _csrfToken: string | undefined;
-
 export async function getCsrfTokenAsync(): Promise<string | undefined> {
-  if (_csrfToken) return _csrfToken;
-
+  // ct0 cookie is readable synchronously (not HttpOnly)
   const syncToken = getCookieValueSync('ct0');
-  if (syncToken) {
-    _csrfToken = syncToken;
-    return syncToken;
-  }
+  if (syncToken) return syncToken;
 
   const asyncToken = await getCookieValue('ct0');
-  _csrfToken = asyncToken ?? undefined;
-  return _csrfToken;
+  return asyncToken ?? undefined;
 }
 
 export function resolveBearerToken(): string {
