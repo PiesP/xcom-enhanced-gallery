@@ -5,6 +5,7 @@
  * @fileoverview Gallery application orchestrator.
  */
 
+import type { GalleryRenderer } from '@features/gallery/GalleryRenderer';
 import { getMediaService, tryGetSettings } from '@shared/container/container';
 import {
   galleryErrorReporter,
@@ -29,6 +30,11 @@ export class GalleryApp {
   private initialized = false;
   private ambientVideoGuardDispose: (() => void) | null = null;
   private readonly lifecycle: GalleryLifecycle = createGalleryLifecycle();
+  private readonly renderer: GalleryRenderer;
+
+  constructor(renderer: GalleryRenderer) {
+    this.renderer = renderer;
+  }
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
@@ -134,6 +140,8 @@ export class GalleryApp {
     } catch (error) {
       __DEV__ && logger.warn('[GalleryApp] Event cleanup failed:', error);
     }
+
+    this.renderer.destroy();
 
     this.initialized = false;
     delete (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug;

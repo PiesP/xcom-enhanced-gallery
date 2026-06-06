@@ -54,9 +54,9 @@ export async function initializeGalleryApp(): Promise<GalleryApp> {
       logger.info('Gallery app lazy initialization starting');
     }
 
-    new GalleryRenderer();
+    const renderer = new GalleryRenderer();
 
-    const galleryApp = new GalleryApp();
+    const galleryApp = new GalleryApp(renderer);
     await galleryApp.initialize();
 
     if (__DEV__) {
