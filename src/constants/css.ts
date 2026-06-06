@@ -36,7 +36,9 @@ const SELECTORS = {
   ROLE_GALLERY: `[${DATA_ATTRIBUTES.ROLE}="gallery"]`,
 } as const;
 
-/** All gallery selectors for batch queries/cleanup. */
+/** All gallery selectors for batch queries/cleanup and internal-element detection.
+ *  This is the SSOT for "is this element inside the gallery UI?" checks.
+ *  Used by both isGalleryInternalElement() and handleBackgroundClick(). */
 const INTERNAL_SELECTORS = [
   SELECTORS.OVERLAY,
   SELECTORS.CONTAINER,
@@ -47,18 +49,15 @@ const INTERNAL_SELECTORS = [
   SELECTORS.DATA_GALLERY,
   SELECTORS.DATA_ROLE,
   SELECTORS.ROLE_GALLERY,
-] as const;
-
-/** Selectors for interactive gallery elements that should not trigger background actions
- *  (e.g., closing the gallery when clicking inside an item or toolbar). */
-const GALLERY_ELEMENT_SELECTORS = [
-  ...INTERNAL_SELECTORS,
   '[data-gallery-element]',
   '[data-xeg-role="gallery-item"]',
   '[data-xeg-role="scroll-spacer"]',
   '[data-role="toolbar"]',
   '[data-role="toolbar-hover-zone"]',
 ] as const;
+
+/** @deprecated Use INTERNAL_SELECTORS instead — kept for backward compatibility */
+const GALLERY_ELEMENT_SELECTORS = INTERNAL_SELECTORS;
 
 export const CSS = {
   CLASSES,
