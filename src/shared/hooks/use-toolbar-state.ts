@@ -15,7 +15,9 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
   const [isLoading, setIsLoading] = createSignal(false);
   const [hasError, setHasError] = createSignal(false);
   const [lastDownloadToggle, setLastDownloadToggle] = createSignal(0);
-  const [downloadTimeoutRef, setDownloadTimeoutRef] = createSignal<ReturnType<typeof setTimeout> | null>(null);
+  const [downloadTimeoutRef, setDownloadTimeoutRef] = createSignal<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
   const clearDownloadTimeout = (): void => {
     const timer = downloadTimeoutRef();
