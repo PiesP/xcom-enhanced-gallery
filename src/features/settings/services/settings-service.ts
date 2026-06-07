@@ -67,7 +67,6 @@ export class SettingsService {
     if (!this.assignNestedPath(this.settings, key, value)) {
       throw new Error(`Failed to assign setting value for ${key}`);
     }
-    this.settings.lastModified = Date.now();
 
     this.notifyListeners({
       key,
@@ -77,6 +76,7 @@ export class SettingsService {
       status: 'success',
     });
     await this.persist();
+    this.settings.lastModified = Date.now();
   }
 
   public subscribe(listener: (event: SettingChangeEvent) => void): () => void {

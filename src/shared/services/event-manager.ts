@@ -78,6 +78,14 @@ export class EventManager {
       return null;
     }
 
+    // Prevent duplicate registration: same element + type + listener
+    for (const [, ctx] of this.listeners) {
+      if (ctx.element === element && ctx.type === type && ctx.listener === listener) {
+        __DEV__ && logger.warn('[EventManager] Duplicate listener skipped', { type, context });
+        return null;
+      }
+    }
+
     try {
       element.addEventListener(type, listener, listenerOptions);
       const id = context ? createPrefixedId(context) : createId();

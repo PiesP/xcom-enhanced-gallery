@@ -7,9 +7,11 @@ import { isRecord } from '@shared/utils/types/guards';
 
 function pruneWithTemplate<T extends Record<string, unknown>>(
   input: unknown,
-  template: T
+  template: T,
+  depth = 0
 ): Partial<T> {
   if (!isRecord(input)) return {} as Partial<T>;
+  if (depth > 10) return {} as Partial<T>; // Guard against deeply nested/corrupt data
 
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(template) as Array<keyof T>) {
@@ -18,7 +20,7 @@ function pruneWithTemplate<T extends Record<string, unknown>>(
     if (inVal === undefined) continue;
 
     if (isRecord(tplVal) && !Array.isArray(tplVal)) {
-      out[key as string] = pruneWithTemplate(inVal, tplVal);
+      out[key as string] = pruneWithTemplate(inVal, tplVal, depth + 1);
     } else {
       out[key as string] = inVal;
     }

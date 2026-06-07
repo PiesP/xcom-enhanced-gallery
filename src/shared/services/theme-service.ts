@@ -67,6 +67,14 @@ export class ThemeService {
       };
     }
 
+    // Re-create mediaQueryList if destroyed (supports destroy → reinitialize cycles)
+    if (!this.mediaQueryList) {
+      this.mediaQueryList =
+        typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+          ? window.matchMedia('(prefers-color-scheme: dark)')
+          : null;
+    }
+
     this.initializeThemeScopeObservation();
     this.initializeSystemDetection();
     this.applyCurrentTheme(true);
@@ -180,7 +188,6 @@ export class ThemeService {
     this.domEventsController?.abort();
     this.domEventsController = null;
     this.mediaQueryListener = null;
-    this.mediaQueryList = null;
   }
 
   private initializeSystemDetection(): void {

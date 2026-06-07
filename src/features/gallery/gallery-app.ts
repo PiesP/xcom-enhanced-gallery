@@ -41,7 +41,9 @@ export class GalleryApp {
 
     try {
       await this.setupEventHandlers();
-      this.ambientVideoGuardDispose ??= startAmbientVideoGuard();
+      if (!this.ambientVideoGuardDispose) {
+        this.ambientVideoGuardDispose = startAmbientVideoGuard();
+      }
       this.initialized = true;
     } catch (error) {
       galleryErrorReporter.critical(error, { code: 'GALLERY_APP_INIT_FAILED' });

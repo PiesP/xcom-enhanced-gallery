@@ -60,9 +60,11 @@ export function recordNavigation(
     return;
   }
 
-  setNavSource(source);
-  setNavTimestamp(timestamp);
-  setNavIndex(targetIndex);
+  batch(() => {
+    setNavSource(source);
+    setNavTimestamp(timestamp);
+    setNavIndex(targetIndex);
+  });
 }
 
 /**

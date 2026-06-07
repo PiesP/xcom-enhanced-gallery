@@ -10,7 +10,7 @@ const ANIMATION_CLASSES = {
   FADE_OUT: 'xeg-fade-out',
 } as const;
 
-const ANIMATION_TIMEOUT_MS = 5000;
+const ANIMATION_TIMEOUT_MS = 500;
 
 function runCssAnimation(element: Element, className: string): Promise<void> {
   return new Promise<void>((resolve) => {

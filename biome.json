@@ -34,7 +34,7 @@
         "noParameterAssign": "warn"
       },
       "suspicious": {
-        "noExplicitAny": "on",
+        "noExplicitAny": "error",
         "noConfusingVoidType": "off",
         "noControlCharactersInRegex": "off",
         "noAssignInExpressions": "off",

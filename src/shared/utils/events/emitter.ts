@@ -22,6 +22,7 @@ export interface EventEmitter<T extends Record<string, unknown>> {
  */
 export function createEventEmitter<T extends Record<string, unknown>>(): EventEmitter<T> {
   const listeners = new Map<keyof T, Set<(data: unknown) => void>>();
+  let disposed = false;
 
   return {
     on<K extends keyof T>(event: K, callback: (data: T[K]) => void): () => void {
@@ -42,6 +43,10 @@ export function createEventEmitter<T extends Record<string, unknown>>(): EventEm
     },
 
     emit<K extends keyof T>(event: K, data: T[K]): void {
+      if (disposed) {
+        __DEV__ && logger.warn('[EventEmitter] emit after dispose', String(event));
+        return;
+      }
       const eventListeners = listeners.get(event);
       if (!eventListeners) {
         return;
@@ -60,6 +65,7 @@ export function createEventEmitter<T extends Record<string, unknown>>(): EventEm
 
     dispose(): void {
       listeners.clear();
+      disposed = true;
     },
   };
 }

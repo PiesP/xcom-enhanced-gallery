@@ -147,6 +147,7 @@ export async function downloadAsZip(
     phase: 'complete',
     current: processed,
     total,
+    percentage: 100,
   });
 
   const zipBytes = writer.finalize();

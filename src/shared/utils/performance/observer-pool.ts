@@ -104,19 +104,21 @@ export const SharedObserver = {
   },
 
   unobserve(element: Element): void {
-    for (const [, poolEntry] of observerPool) {
+    const keysToRemove: string[] = [];
+    for (const [key, poolEntry] of observerPool) {
+      if (!poolEntry.refCount.has(element)) continue;
+
       poolEntry.callbacks.delete(element);
       poolEntry.refCount.delete(element);
       poolEntry.observer.unobserve(element);
+
       if (poolEntry.refCount.size === 0) {
         poolEntry.observer.disconnect();
+        keysToRemove.push(key);
       }
     }
-    // Remove emptied pools
-    for (const [key, poolEntry] of observerPool) {
-      if (poolEntry.refCount.size === 0) {
-        observerPool.delete(key);
-      }
+    for (const key of keysToRemove) {
+      observerPool.delete(key);
     }
   },
 };

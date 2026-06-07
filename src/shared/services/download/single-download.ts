@@ -133,7 +133,7 @@ export async function downloadSingleFile(
 export class GMDownloadProvider implements DownloadProvider {
   readonly name = 'GM_download';
 
-  private gmDownload: GMDownloadFunction | null = null;
+  private gmDownload: GMDownloadFunction | null | undefined = undefined;
 
   detect(): boolean {
     if (this.gmDownload !== undefined) return this.gmDownload !== null;

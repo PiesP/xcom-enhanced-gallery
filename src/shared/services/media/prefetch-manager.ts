@@ -38,7 +38,7 @@ function scheduleIdle(task: IdleRequestCallback): IdleHandle {
 type PrefetchSchedule = 'immediate' | 'idle';
 
 /** Default maximum number of entries in the prefetch cache. */
-const DEFAULT_CACHE_MAX_ENTRIES = 5; // 트윗당 최대 4장 기준, 여유분 +1
+const DEFAULT_CACHE_MAX_ENTRIES = 5; // Allow +1 buffer beyond the max 4 images per tweet
 
 /**
  * Manages media prefetching and caching.
@@ -59,6 +59,11 @@ export class PrefetchManager {
    * Prefetch media with specified scheduling strategy
    */
   async prefetch(media: MediaInfo, schedule: PrefetchSchedule = 'idle'): Promise<void> {
+    // Skip if already cached or in-flight (prevents duplicate idle handles)
+    if (this.cache.has(media.url) || this.activeRequests.has(media.url)) {
+      return;
+    }
+
     if (schedule === 'immediate') {
       await this.prefetchSingle(media.url);
       return;
