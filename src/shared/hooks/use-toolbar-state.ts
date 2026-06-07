@@ -15,13 +15,13 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
   const [isLoading, setIsLoading] = createSignal(false);
   const [hasError, setHasError] = createSignal(false);
   const [lastDownloadToggle, setLastDownloadToggle] = createSignal(0);
-  let downloadTimeoutRef: ReturnType<typeof setTimeout> | null = null;
+  const [downloadTimeoutRef, setDownloadTimeoutRef] = createSignal<ReturnType<typeof setTimeout> | null>(null);
 
   const clearDownloadTimeout = (): void => {
-    const timer = downloadTimeoutRef;
+    const timer = downloadTimeoutRef();
     if (timer !== null) {
       clearTimeout(timer);
-      downloadTimeoutRef = null;
+      setDownloadTimeoutRef(null);
     }
   };
 
@@ -42,10 +42,12 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
 
     if (timeSinceStart < DOWNLOAD_MIN_DISPLAY_TIME) {
       clearDownloadTimeout();
-      downloadTimeoutRef = setTimeout(() => {
-        setIsDownloading(false);
-        downloadTimeoutRef = null;
-      }, DOWNLOAD_MIN_DISPLAY_TIME - timeSinceStart);
+      setDownloadTimeoutRef(
+        setTimeout(() => {
+          setIsDownloading(false);
+          setDownloadTimeoutRef(null);
+        }, DOWNLOAD_MIN_DISPLAY_TIME - timeSinceStart)
+      );
       return;
     }
 
