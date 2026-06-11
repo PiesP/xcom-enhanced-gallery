@@ -60,7 +60,7 @@ jobs:
             for dep in "${DEPS[@]}"; do
               dep=$(echo "$dep" | xargs)
               case "$dep" in
-                typescript|knip|vite|@types/*|@biomejs/*)
+                typescript|knip|vite|vite-plugin-solid|@types/*|@biomejs/*|solid-js)
                   ;;
                 *)
                   SAFE="false"
