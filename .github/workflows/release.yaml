@@ -138,44 +138,12 @@ jobs:
           EOF
 
       - name: 📤 Deploy dist/ to release branch
-        run: |
-          set -euo pipefail
-
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-          if git ls-remote --heads origin release | grep -q release; then
-            echo "📦 Fetching existing release branch..."
-            git fetch origin release:release
-            git checkout release
-          else
-            echo "📦 Creating new orphan release branch..."
-            git checkout --orphan release
-            git rm -rf . || true
-            echo "# Release Branch" > README.md
-            echo "" >> README.md
-            echo "This branch contains only the built userscript files for jsDelivr CDN." >> README.md
-            echo "" >> README.md
-            echo "**Do not commit to this branch manually.**" >> README.md
-            echo "" >> README.md
-            echo "Files are automatically updated by GitHub Actions on each release." >> README.md
-            git add README.md
-            git commit -m "chore: initialize release branch"
-          fi
-
-          mkdir -p dist
-          cp /tmp/dist-backup/xcom-enhanced-gallery.user.js dist/
-          cp /tmp/dist-backup/xcom-enhanced-gallery.meta.js dist/
-
-          git add dist/xcom-enhanced-gallery.user.js dist/xcom-enhanced-gallery.meta.js
-
-          if git diff --staged --quiet; then
-            echo "📦 No changes to dist/ files"
-          else
-            git commit -m "chore: update dist/ for v${{ steps.version.outputs.version }}"
-            git push origin release
-            echo "✅ dist/ deployed to release branch"
-          fi
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee7c4ff27748b70285e453 # v4.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: release
+          publish_dir: /tmp/dist-backup
+          force_orphan: true
 
       - name: 🔄 Purge jsDelivr CDN cache
         run: |

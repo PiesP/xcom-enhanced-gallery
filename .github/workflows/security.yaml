@@ -67,6 +67,8 @@ jobs:
     permissions:
       contents: read
       security-events: write
+    # semgrep/semgrep:1.163.0 — last checked: 2026-06-11
+    # Check for updates: https://github.com/semgrep/semgrep/releases
     container:
       image: semgrep/semgrep:1.163.0
     steps:

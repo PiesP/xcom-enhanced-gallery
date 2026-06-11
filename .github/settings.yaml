@@ -14,7 +14,7 @@ branches:
         required_approving_review_count: 0 # Allow Dependabot auto-merge without approval
         dismiss_stale_reviews: false
         require_code_owner_reviews: false
-        require_last_push_approval: false
+        require_last_push_approval: true
 
       # Status checks
       required_status_checks:
