@@ -33,7 +33,7 @@
   "author": "PiesP",
   "license": "MIT",
   "engines": {
-    "node": ">=26.0.0",
+    "node": ">=22.0.0",
     "pnpm": ">=11.2.2"
   },
   "packageManager": "pnpm@11.2.2",
@@ -50,7 +50,7 @@
   },
   "homepage": "https://github.com/PiesP/xcom-enhanced-gallery#readme",
   "engines": {
-    "node": ">=26.0.0",
+    "node": ">=22.0.0",
     "pnpm": ">=11.2.2"
   },
   "packageManager": "pnpm@11.2.2",
