@@ -12,7 +12,7 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Asia/Seoul"
-    open-pull-requests-limit: 5  # Reduced to minimize lockfile conflicts
+    open-pull-requests-limit: 8  # 4 groups; allow parallel group PRs
     commit-message:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
