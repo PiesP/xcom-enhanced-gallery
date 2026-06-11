@@ -59,17 +59,17 @@ jobs:
         run: |
           set -euo pipefail
           BUILD_VERSION=${{ steps.version.outputs.version }} pnpm build
-          mkdir -p /tmp/dist-backup
-          cp -r dist/* /tmp/dist-backup/
+          mkdir -p /tmp/dist-backup/dist
+          cp -r dist/* /tmp/dist-backup/dist/
           echo "📦 Built files:"
-          ls -la /tmp/dist-backup/
+          ls -la /tmp/dist-backup/dist/
 
       - name: 📦 Prepare release package
         run: |
           set -euo pipefail
           mkdir -p release
-          cp /tmp/dist-backup/xcom-enhanced-gallery.user.js release/
-          cp /tmp/dist-backup/xcom-enhanced-gallery.meta.js release/
+          cp /tmp/dist-backup/dist/xcom-enhanced-gallery.user.js release/
+          cp /tmp/dist-backup/dist/xcom-enhanced-gallery.meta.js release/
 
           cd release && sha256sum xcom-enhanced-gallery.user.js xcom-enhanced-gallery.meta.js > checksums.txt && cd ..
 
