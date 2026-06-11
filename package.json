@@ -32,6 +32,15 @@
   ],
   "author": "PiesP",
   "license": "MIT",
+  "engines": {
+    "node": ">=26.0.0",
+    "pnpm": ">=11.2.2"
+  },
+  "packageManager": "pnpm@11.2.2",
+  "volta": {
+    "node": "26.3.0",
+    "pnpm": "11.2.2"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/PiesP/xcom-enhanced-gallery"

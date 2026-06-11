@@ -22,7 +22,7 @@
     "rules": {
       "recommended": true,
       "correctness": {
-        "noUnusedImports": "warn",
+        "noUnusedImports": "error",
         "noUnusedVariables": "warn",
         "useExhaustiveDependencies": "warn",
         "noUnknownMediaFeatureName": "off",
