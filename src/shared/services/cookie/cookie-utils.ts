@@ -65,9 +65,15 @@ export async function listCookies(options?: CookieListOptions): Promise<CookieRe
     const gm = getCookieAPI();
     if (!gm?.list) return parseDocumentCookies(options?.name);
 
+    // Scope cookie queries to the current domain to prevent cross-domain access
+    const scopedOptions: CookieListOptions = {
+      ...options,
+      domain: options?.domain ?? document.location?.hostname ?? undefined,
+    };
+
     return promisifyCallback<CookieRecord[]>(
       (cb) =>
-        gm.list!(options, (cookies, error) => {
+        gm.list!(scopedOptions, (cookies, error) => {
           if (error) return cb(undefined, error);
           cb(
             (cookies ?? []).map((c) => ({ ...c })),

@@ -28,7 +28,6 @@ declare global {
     onclick?: () => void
   ): void;
   const GM_cookie: CookieAPI;
-  const GM_info: UserScriptInfo;
 
   interface Window {
     GM_getValue?: typeof GM_getValue;
@@ -37,43 +36,6 @@ declare global {
     GM_download?: typeof GM_download;
     GM_notification?: typeof GM_notification;
   }
-}
-
-export interface UserScriptInfo {
-  readonly script: {
-    readonly author: string;
-    readonly copyright: string;
-    readonly description: string;
-    readonly excludes: readonly string[];
-    readonly homepage: string;
-    readonly icon: string;
-    readonly icon64: string;
-    readonly includes: readonly string[];
-    readonly lastModified: number;
-    readonly matches: readonly string[];
-    readonly name: string;
-    readonly namespace: string;
-    readonly position: number;
-    readonly resources: readonly Array<{
-      readonly name: string;
-      readonly url: string;
-      readonly error?: string;
-      readonly content?: string;
-    }>;
-    readonly 'run-at': string;
-    readonly supportURL: string;
-    readonly system?: boolean;
-    readonly unwrap: boolean;
-    readonly version: string;
-  };
-  readonly scriptMetaStr: string;
-  readonly scriptSource: string;
-  readonly scriptUpdateURL: string;
-  readonly scriptWillUpdate: boolean;
-  readonly scriptHandler: string;
-  readonly isIncognito: boolean;
-  readonly downloadMode: string;
-  readonly version: string;
 }
 
 export interface GMNotificationDetails {

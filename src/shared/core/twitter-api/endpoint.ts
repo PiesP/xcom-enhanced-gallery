@@ -7,6 +7,7 @@
  */
 
 export const TWITTER_API_CONFIG = {
+  /** @deprecated Use resolveBearerToken() from twitter-auth instead. Kept for fallback only. */
   GUEST_AUTHORIZATION:
     'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
 

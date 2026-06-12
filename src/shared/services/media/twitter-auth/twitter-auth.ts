@@ -19,7 +19,7 @@ export function resolveBearerToken(): string {
     if (nextDataScript?.textContent) {
       const nextData = JSON.parse(nextDataScript.textContent);
       const token = nextData?.props?.pageProps?.token?.Bearer ?? nextData?.props?.token?.Bearer;
-      if (token && typeof token === 'string') {
+      if (token && typeof token === 'string' && token.length > 10) {
         return `Bearer ${token}`;
       }
     }

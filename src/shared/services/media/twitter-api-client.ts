@@ -132,7 +132,7 @@ function createTweetEndpointUrl(tweetId: string): string {
 
 async function apiRequest(url: string): Promise<TwitterAPIResponse> {
   const csrfToken = (await getCsrfTokenAsync()) ?? '';
-  const authorization = resolveBearerToken() ?? TWITTER_API_CONFIG.GUEST_AUTHORIZATION;
+  const authorization = resolveBearerToken();
 
   const headers = new Headers({
     authorization,
