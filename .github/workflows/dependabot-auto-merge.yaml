@@ -48,9 +48,9 @@ jobs:
           SHOULD_MERGE="false"
           REASON="manual review required"
 
-          if [[ -n "$ALERT_STATE" ]]; then
+          if [[ "$ALERT_STATE" == "open" ]]; then
             SHOULD_MERGE="true"
-            REASON="security advisory update"
+            REASON="security advisory update (open alert)"
           elif [[ "$ECOSYSTEM" == "github-actions" && ("$UPDATE_TYPE" == "version-update:semver-patch" || "$UPDATE_TYPE" == "version-update:semver-minor") ]]; then
             SHOULD_MERGE="true"
             REASON="safe github-actions patch/minor"
