@@ -26,3 +26,12 @@ export const MEDIA = {
     ZIP: 'zip',
   },
 } as const;
+
+/** Standard gallery display height in pixels. */
+export const STANDARD_GALLERY_HEIGHT = 720;
+
+/** Default fallback dimensions when media size cannot be determined. */
+export const DEFAULT_MEDIA_DIMENSIONS = { width: 540, height: STANDARD_GALLERY_HEIGHT } as const;
+
+/** CSS rem base for px-to-rem conversion. */
+export const CSS_REM_BASE = 16;

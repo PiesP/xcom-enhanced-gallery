@@ -14,11 +14,9 @@ export function normalizeErrorMessage(error: unknown): string {
   if (typeof error === 'object') {
     const msg = (error as Record<string, unknown>).message;
     if (typeof msg === 'string') return msg;
-    try {
-      return JSON.stringify(error);
-    } catch {
-      return String(error);
-    }
+    // JSON.stringify on Error objects always returns '{}';
+    // fall through to String() for a meaningful representation.
+    return String(error);
   }
   return String(error);
 }

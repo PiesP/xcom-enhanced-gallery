@@ -57,7 +57,14 @@ export function useGalleryItemScroll(
 
   // DOM query cache using WeakRef to prevent memory leaks
   const itemsCache = new Map<number, WeakRef<HTMLElement>>();
-  onCleanup(() => itemsCache.clear());
+  // Track pending rAF IDs for cancellation on cleanup
+  const pendingRafIds = new Set<number>();
+
+  onCleanup(() => {
+    itemsCache.clear();
+    for (const id of pendingRafIds) cancelAnimationFrame(id);
+    pendingRafIds.clear();
+  });
 
   const getCachedItem = (index: number, itemsRoot: Element): HTMLElement | null => {
     // 1. Check cache
@@ -94,7 +101,9 @@ export function useGalleryItemScroll(
       });
     } else {
       // Retry once if not found (e.g. virtual scrolling or render delay)
-      requestAnimationFrame(() => {
+      const rafId = requestAnimationFrame(() => {
+        pendingRafIds.delete(rafId);
+        if (!itemsRoot.isConnected) return;
         const retryTarget = getCachedItem(index, itemsRoot);
         if (retryTarget) {
           options.onScrollStart?.();
@@ -105,6 +114,7 @@ export function useGalleryItemScroll(
           });
         }
       });
+      pendingRafIds.add(rafId);
     }
   };
 

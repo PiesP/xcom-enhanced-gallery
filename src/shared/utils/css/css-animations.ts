@@ -5,12 +5,12 @@
  * @fileoverview CSS animation helpers for gallery entrance/exit effects.
  */
 
+import { ANIMATION_TIMEOUT_MS } from '@constants/performance';
+
 const ANIMATION_CLASSES = {
   FADE_IN: 'xeg-fade-in',
   FADE_OUT: 'xeg-fade-out',
 } as const;
-
-const ANIMATION_TIMEOUT_MS = 500;
 
 function runCssAnimation(element: Element, className: string): Promise<void> {
   return new Promise<void>((resolve) => {

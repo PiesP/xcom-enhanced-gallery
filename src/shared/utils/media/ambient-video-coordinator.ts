@@ -87,9 +87,7 @@ export function pauseAmbientVideosForGallery(
   try {
     result = pauseActiveTwitterVideos({ root: root, force });
   } catch (error) {
-    if (__DEV__) {
-      logger.warn('[AmbientVideoCoordinator] Failed to pause ambient videos', { error, trigger });
-    }
+    logger.warn('[AmbientVideoCoordinator] Failed to pause ambient videos', { error, trigger });
     return {
       pausedCount: 0,
       totalCandidates: 0,

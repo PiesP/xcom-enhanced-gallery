@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { CSS_REM_BASE, DEFAULT_MEDIA_DIMENSIONS, STANDARD_GALLERY_HEIGHT } from '@constants/media';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { extractVisualIndexFromUrl, getMediaDedupKey } from '@shared/utils/media/media-url-utils';
@@ -15,9 +16,6 @@ interface ResolvedMediaDimensions {
   readonly dimensions: DimensionPair;
   readonly hasIntrinsicSize: boolean;
 }
-
-const STANDARD_GALLERY_HEIGHT = 720;
-const DEFAULT_DIMENSIONS: DimensionPair = { width: 540, height: STANDARD_GALLERY_HEIGHT };
 
 export function removeDuplicateMediaItems(
   mediaItems: ReadonlyArray<MediaInfo | undefined>
@@ -78,7 +76,7 @@ export function normalizeDimension(value: unknown): number | null {
 }
 
 function scaleAspectRatio(widthRatio: number, heightRatio: number): DimensionPair {
-  if (heightRatio <= 0 || widthRatio <= 0) return DEFAULT_DIMENSIONS;
+  if (heightRatio <= 0 || widthRatio <= 0) return DEFAULT_MEDIA_DIMENSIONS;
   return {
     width: Math.max(1, Math.round((widthRatio / heightRatio) * STANDARD_GALLERY_HEIGHT)),
     height: STANDARD_GALLERY_HEIGHT,
@@ -137,7 +135,7 @@ function deriveDimensionsFromMediaUrls(media: MediaInfo): DimensionPair | null {
 export function resolveMediaDimensionsWithIntrinsicFlag(
   media: MediaInfo | undefined
 ): ResolvedMediaDimensions {
-  if (!media) return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
+  if (!media) return { dimensions: DEFAULT_MEDIA_DIMENSIONS, hasIntrinsicSize: false };
 
   const directW = normalizeDimension(media.width);
   const directH = normalizeDimension(media.height);
@@ -153,10 +151,8 @@ export function resolveMediaDimensionsWithIntrinsicFlag(
   const fromUrls = deriveDimensionsFromMediaUrls(media);
   if (fromUrls) return { dimensions: fromUrls, hasIntrinsicSize: true };
 
-  return { dimensions: DEFAULT_DIMENSIONS, hasIntrinsicSize: false };
+  return { dimensions: DEFAULT_MEDIA_DIMENSIONS, hasIntrinsicSize: false };
 }
-
-const CSS_REM_BASE = 16;
 
 function toRem(pixels: number): string {
   return `${(pixels / CSS_REM_BASE).toFixed(4)}rem`;
