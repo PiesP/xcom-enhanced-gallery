@@ -31,7 +31,7 @@ function extractTweetText(tweetArticle: Element | null): string | undefined {
 
     return text;
   } catch (error) {
-    logger.error('[tweet] extract failed', error);
+    logger.debug('[tweet] extract failed', error);
     return undefined;
   }
 }

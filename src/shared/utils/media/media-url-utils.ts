@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+/**
+ * @fileoverview Media URL utilities: filename extraction, dedup key generation, URL normalization.
+ */
+
 import type { MediaInfo } from '@shared/types/media.types';
 import { tryParseUrl } from '@shared/utils/url/host';
 

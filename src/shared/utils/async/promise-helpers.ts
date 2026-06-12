@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+/**
+ * @fileoverview Promise utilities: callback-to-promise conversion and deferred promise creation.
+ */
+
 type ResultCallback<TResult, TError = string | null | undefined> = (
   result?: TResult,
   error?: TError

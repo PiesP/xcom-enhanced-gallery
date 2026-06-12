@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+/**
+ * @fileoverview Media element utilities: DOM traversal for finding media descendants and ancestors.
+ */
+
 import { MAX_ANCESTOR_HOPS, MAX_DESCENDANT_DEPTH } from '@constants/performance';
 
 export type MediaElement = HTMLImageElement | HTMLVideoElement;

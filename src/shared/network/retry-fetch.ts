@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+/**
+ * @fileoverview Retry-fetch utility: HTTP status error handling with configurable backoff.
+ */
+
 import { DEFAULT_BACKOFF_BASE_MS, DEFAULT_REQUEST_TIMEOUT_MS } from '@constants/performance';
 import { withRetry } from '@shared/async/retry';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';

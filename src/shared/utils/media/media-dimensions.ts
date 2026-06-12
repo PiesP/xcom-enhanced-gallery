@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+/**
+ * @fileoverview Media dimension resolution: extracting dimensions from URLs, metadata, and aspect ratios.
+ */
+
 import { CSS_REM_BASE, DEFAULT_MEDIA_DIMENSIONS, STANDARD_GALLERY_HEIGHT } from '@constants/media';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
