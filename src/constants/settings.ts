@@ -53,7 +53,7 @@ export const DEFAULT_SETTINGS = {
     mediaExtraction: true,
     accessibility: true,
   },
-  version: '2.1.2',
+  version: '1',
   lastModified: 0,
 } satisfies AppSettings;
 
