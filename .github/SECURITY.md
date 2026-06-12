@@ -58,7 +58,7 @@ We use several mechanisms to keep the codebase secure:
 
 - **GitHub Security Suite** (`.github/workflows/security.yaml`)
   - OSV Scanner for pull-request diff scans and scheduled full scans
-  - Static analysis (Semgrep)
+  - Static analysis (Semgrep) on PR, scheduled, and manual runs
 - **Dependabot** (`.github/dependabot.yaml`)
   - Automated updates for npm packages and GitHub Actions
 - **Quality & Testing**
