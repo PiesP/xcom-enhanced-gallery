@@ -1,10 +1,6 @@
-packages:
-  - '.'
-
 minimumReleaseAge: 10080
 
-# Security-critical packages that should bypass the minimum release age.
-# These packages receive immediate updates even within the 7-day cooling period:
+# Security-critical packages that bypass the 7-day cooling period:
 #   - minimatch/semver/minimist: known supply-chain attack targets
 minimumReleaseAgeExclude:
   - minimatch
@@ -17,3 +13,6 @@ allowBuilds:
 strictDepBuilds: true
 
 blockExoticSubdeps: true
+
+# Fail if the current Node.js / pnpm version doesn't match engines field.
+engineStrict: true
