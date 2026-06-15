@@ -11,9 +11,15 @@ import { EventManager } from '@shared/services/event-manager';
 
 let eventManagerInstance: EventManager | null = null;
 
+/** Get the singleton EventManager instance */
 export function getEventManager(): EventManager {
   if (!eventManagerInstance) {
     eventManagerInstance = EventManager.getInstance();
   }
   return eventManagerInstance;
+}
+
+/** Reset cached reference (called during cleanup to prevent stale references) */
+export function resetEventManager(): void {
+  eventManagerInstance = null;
 }

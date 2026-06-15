@@ -13,7 +13,7 @@ import {
   normalizeVideoVolumeSetting,
 } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
 import { createDebounced } from '@shared/async/debounce';
-import { getTypedSettingOr, setTypedSetting } from '@shared/container/container';
+import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-registry';
 import { logger } from '@shared/logging/logger';
 import type { JSX } from 'solid-js';
 import { createEffect, createSignal, onCleanup, untrack } from 'solid-js';

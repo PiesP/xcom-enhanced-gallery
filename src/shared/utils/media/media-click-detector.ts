@@ -13,7 +13,7 @@ import {
   MEDIA_VIEWER_SELECTORS,
   STATUS_LINK_SELECTOR,
 } from '@constants/selectors';
-import { getTypedSettingOr, tryGetSettings } from '@shared/container/container';
+import { getTypedSettingOr, tryGetSettings } from '@shared/container/settings-registry';
 import { isVideoClickAllowed } from '@shared/dom/utils';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import {

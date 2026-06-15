@@ -6,7 +6,8 @@
  */
 
 import type { GalleryRenderer } from '@features/gallery/gallery-renderer';
-import { getMediaService, tryGetSettings } from '@shared/container/container';
+import { getMediaService } from '@shared/container/container';
+import { tryGetSettings } from '@shared/container/settings-registry';
 import {
   galleryErrorReporter,
   mediaErrorReporter,
@@ -14,7 +15,12 @@ import {
 } from '@shared/error/app-error-reporter';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
-import { closeGallery, gallerySignals, openGallery } from '@shared/state/signals/gallery.signals';
+import {
+  closeGallery,
+  disposeGallerySignals,
+  gallerySignals,
+  openGallery,
+} from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import {
   createGalleryLifecycle,
@@ -144,6 +150,7 @@ export class GalleryApp {
     }
 
     this.renderer.destroy();
+    disposeGallerySignals();
 
     this.initialized = false;
     delete (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug;

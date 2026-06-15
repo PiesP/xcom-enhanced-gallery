@@ -20,6 +20,12 @@ export class PersistentStorage {
 
   /** @internal Test helper */
   static resetForTests(): void {
+    _persistentStorageInstance?.destroy();
+    _persistentStorageInstance = null;
+  }
+
+  /** Destroy service */
+  destroy(): void {
     _persistentStorageInstance = null;
   }
 

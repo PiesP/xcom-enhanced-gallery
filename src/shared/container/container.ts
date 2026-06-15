@@ -10,23 +10,14 @@ import { LanguageService } from '@shared/services/language-service';
 import { MediaService } from '@shared/services/media-service';
 import { ThemeService } from '@shared/services/theme-service';
 
-// Re-export settings registry
-export {
-  getSettings,
-  getTypedSettingOr,
-  registerSettings,
-  setTypedSetting,
-  tryGetSettings,
-} from '@shared/container/settings-registry';
+export { getEventManager, resetEventManager } from '@shared/container/event-manager-accessor';
 
-/** Get the singleton ThemeService instance (cached) */
+/** Get the singleton ThemeService instance */
 export const getThemeService = (): ThemeService => ThemeService.getInstance();
-/** Get the singleton LanguageService instance (cached) */
+/** Get the singleton LanguageService instance */
 export const getLanguageService = (): LanguageService => LanguageService.getInstance();
-/** Get the singleton MediaService instance (cached) */
+/** Get the singleton MediaService instance */
 export const getMediaService = (): MediaService => MediaService.getInstance();
-/** Get the singleton DownloadOrchestrator instance (cached) */
+/** Get the singleton DownloadOrchestrator instance */
 export const getDownloadOrchestrator = (): DownloadOrchestrator =>
   DownloadOrchestrator.getInstance();
-
-export { getEventManager } from '@shared/container/event-manager-accessor';

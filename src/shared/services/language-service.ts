@@ -67,6 +67,7 @@ export class LanguageService {
   public destroy(): void {
     this.listeners.clear();
     this._initialized = false;
+    _instance = null;
   }
 
   /** Check if service is initialized */

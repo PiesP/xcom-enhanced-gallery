@@ -351,7 +351,7 @@ export default defineConfig(({ mode }): UserConfig => {
     },
 
     build: {
-      target: 'esnext',
+      target: ['chrome117', 'firefox119', 'safari17'],
       minify: false,
       sourcemap: config.sourceMap,
       outDir: 'dist',
@@ -494,7 +494,9 @@ function buildSummaryPlugin(opts: {
 
       console.log(`\n📋 Build Mode: ${modeLabel}`);
       console.log('─'.repeat(50));
-      info.forEach((line) => console.log(`   ${line}`));
+      info.forEach((line) => {
+        console.log(`   ${line}`);
+      });
       console.log('─'.repeat(50));
       console.log(`📌 Version: ${version}`);
 

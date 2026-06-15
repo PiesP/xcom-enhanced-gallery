@@ -15,7 +15,7 @@ import { useVerticalGallery } from '@features/gallery/components/vertical-galler
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css';
 import { VerticalImageItem } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
-import { getTypedSettingOr } from '@shared/container/container';
+import { getTypedSettingOr } from '@shared/container/settings-registry';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { logger } from '@shared/logging/logger';
 import {

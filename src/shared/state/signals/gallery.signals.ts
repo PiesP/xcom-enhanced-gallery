@@ -130,6 +130,15 @@ export const [currentVideoElementSig, setCurrentVideoElement] =
 
 const [_errorSig, _setErrorSig] = createSignal<string | null>(INITIAL_STATE.error);
 
+/**
+ * Gallery state proxy object.
+ *
+ * ⚠️ IMPORTANT: This object's getters read signals and are ONLY reactive
+ * inside Solid.js tracking scopes (createEffect, createMemo, JSX).
+ * Reading these properties outside a tracking scope returns stale values.
+ *
+ * For direct signal access, use the exported signal accessors instead.
+ */
 export const gallerySignals = {
   get isOpen() {
     return isOpenSig();
@@ -311,4 +320,23 @@ export const downloadState = {
  */
 export function setDownloading(value: boolean): void {
   _setIsProcessing(value);
+}
+
+/**
+ * Resets all gallery signals to their initial state.
+ * Called during cleanup to prevent stale state across sessions.
+ */
+export function disposeGallerySignals(): void {
+  batch(() => {
+    setIsOpenSig(INITIAL_STATE.isOpen);
+    setMediaItems(INITIAL_STATE.mediaItems);
+    setCurrentIndex(INITIAL_STATE.currentIndex);
+    setFocusedIndex(null);
+    setCurrentVideoElement(null);
+    _setErrorSig(INITIAL_STATE.error);
+    setNavSource(INITIAL_NAV_SOURCE);
+    setNavTimestamp(0);
+    setNavIndex(null);
+    _setIsProcessing(false);
+  });
 }

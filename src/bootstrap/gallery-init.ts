@@ -8,7 +8,7 @@
 import { GalleryApp } from '@features/gallery/gallery-app';
 import { GalleryRenderer } from '@features/gallery/gallery-renderer';
 import { SettingsService } from '@features/settings/services/settings-service';
-import { registerSettings } from '@shared/container/container';
+import { registerSettings } from '@shared/container/settings-registry';
 import { galleryErrorReporter, settingsErrorReporter } from '@shared/error/app-error-reporter';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';

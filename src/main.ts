@@ -12,7 +12,8 @@ import {
 } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
 import { createAppConfig } from '@constants/app-config';
-import { getEventManager } from '@shared/container/container';
+import { getEventManager, resetEventManager } from '@shared/container/event-manager-accessor';
+import { clearSettings } from '@shared/container/settings-registry';
 import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
 import { GlobalErrorHandler } from '@shared/error/error-handler';
@@ -163,6 +164,8 @@ async function cleanup(): Promise<void> {
     });
     tearDownGlobalEventHandlers();
     await runOptionalCleanup('error-handler', () => GlobalErrorHandler.getInstance().destroy());
+    clearSettings();
+    resetEventManager();
 
     if (__DEV__) {
       const remaining = getEventManager().getListenerStatus();

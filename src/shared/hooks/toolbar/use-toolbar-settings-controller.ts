@@ -10,12 +10,8 @@ import type {
   LanguageOption,
   ThemeOption,
 } from '@shared/components/ui/Settings/SettingsControls.types';
-import {
-  getEventManager,
-  getLanguageService,
-  getThemeService,
-  tryGetSettings,
-} from '@shared/container/container';
+import { getEventManager, getLanguageService, getThemeService } from '@shared/container/container';
+import { tryGetSettings } from '@shared/container/settings-registry';
 import { logger } from '@shared/logging/logger';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 import type {

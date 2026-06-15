@@ -7,7 +7,7 @@
  * Prevents Twitter's native gallery and triggers custom gallery behavior.
  */
 
-import { getTypedSettingOr, tryGetSettings } from '@shared/container/container';
+import { getTypedSettingOr, tryGetSettings } from '@shared/container/settings-registry';
 import { isGalleryInternalElement, isVideoClickAllowed } from '@shared/dom/utils';
 import { logger } from '@shared/logging/logger';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';

@@ -9,11 +9,7 @@ const config: KnipConfig = {
     '@shared/*': ['src/shared/*'],
   },
   tags: ['-@internal'],
-  ignoreDependencies: [
-    'vite',
-    '@types/node',
-    'knip',
-  ],
+  ignoreDependencies: [],
 };
 
 export default config;

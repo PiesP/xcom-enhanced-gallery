@@ -3,7 +3,7 @@
 
 /** @fileoverview Toolbar auto-hide with configurable delay. */
 
-import { getTypedSettingOr } from '@shared/container/container';
+import { getTypedSettingOr } from '@shared/container/settings-registry';
 import type { Accessor, Setter } from 'solid-js';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 

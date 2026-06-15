@@ -166,7 +166,9 @@ export class ThemeService {
           if (!(node instanceof Element)) return;
           const scopes: Element[] = [];
           if (node.classList.contains('xeg-theme-scope')) scopes.push(node);
-          node.querySelectorAll('.xeg-theme-scope').forEach((scope) => scopes.push(scope));
+          node.querySelectorAll('.xeg-theme-scope').forEach((scope) => {
+            scopes.push(scope);
+          });
           if (scopes.length > 0) this.applyThemeToScopes(scopes);
         });
       }
@@ -185,6 +187,7 @@ export class ThemeService {
     this.observedThemeScopes = new WeakSet();
     this.observer?.disconnect();
     this.observer = null;
+    getEventManager().removeByContext('theme-service');
     this.domEventsController?.abort();
     this.domEventsController = null;
     this.mediaQueryListener = null;

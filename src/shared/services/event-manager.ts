@@ -64,6 +64,12 @@ export class EventManager {
     _eventManagerInstance = null;
   }
 
+  /** Destroy service */
+  public destroy(): void {
+    this.cleanup();
+    _eventManagerInstance = null;
+  }
+
   public addEventListener(
     element: EventTarget,
     type: string,

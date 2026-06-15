@@ -32,6 +32,11 @@ export function tryGetSettings(): SettingsLike | null {
   return _settings;
 }
 
+/** Clear settings reference (called during cleanup) */
+export function clearSettings(): void {
+  _settings = null;
+}
+
 // ============================================================================
 // Type-Safe Settings Access
 // ============================================================================

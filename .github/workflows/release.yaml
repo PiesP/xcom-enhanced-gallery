@@ -58,6 +58,7 @@ jobs:
       - name: 🏗️ Build userscript
         run: |
           set -euo pipefail
+          cd test && pnpm install --frozen-lockfile && pnpm test -- --run && cd ..
           BUILD_VERSION=${{ steps.version.outputs.version }} pnpm build
           mkdir -p /tmp/dist-backup/dist
           cp -r dist/* /tmp/dist-backup/dist/

@@ -189,12 +189,12 @@ export async function getTweetMedias(tweetId: string): Promise<TweetMediaEntry[]
   let tweetResult = json.data.tweetResult.result;
   if (tweetResult.tweet) tweetResult = tweetResult.tweet;
 
-  const tweetUser = tweetResult.core?.user_results?.result;
+  let tweetUser = tweetResult.core?.user_results?.result;
 
-  normalizeLegacyTweet(tweetResult);
+  tweetResult = normalizeLegacyTweet(tweetResult);
 
   if (!tweetUser) return [];
-  normalizeLegacyUser(tweetUser);
+  tweetUser = normalizeLegacyUser(tweetUser);
 
   let result = extractMediaFromTweet(tweetResult, tweetUser, 'original');
 
@@ -206,10 +206,10 @@ export async function getTweetMedias(tweetId: string): Promise<TweetMediaEntry[]
       quotedTweet = quotedTweet.tweet;
     }
 
-    const quotedUser = quotedTweet.core?.user_results?.result;
+    let quotedUser = quotedTweet.core?.user_results?.result;
     if (quotedTweet && quotedUser) {
-      normalizeLegacyTweet(quotedTweet);
-      normalizeLegacyUser(quotedUser);
+      quotedTweet = normalizeLegacyTweet(quotedTweet);
+      quotedUser = normalizeLegacyUser(quotedUser);
 
       const quotedMedia = extractMediaFromTweet(quotedTweet, quotedUser, 'quoted');
 

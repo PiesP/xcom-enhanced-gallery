@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024-2026 PiesP
+
 /**
  * Performance-tuning constants, centralized for easy adjustment.
  * All values have been extracted from their original modules.

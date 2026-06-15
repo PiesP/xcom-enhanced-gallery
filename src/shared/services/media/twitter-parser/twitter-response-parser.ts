@@ -221,31 +221,43 @@ export function extractMediaFromTweet(
   return mediaItems;
 }
 
-export function normalizeLegacyTweet(tweet: TwitterTweet): void {
+export function normalizeLegacyTweet(tweet: TwitterTweet): TwitterTweet {
+  if (!tweet.legacy && !tweet.note_tweet?.note_tweet_results?.result?.text) {
+    return tweet;
+  }
+
+  // Create a mutable copy to avoid violating readonly interfaces.
+  // ponytail: cast through Record<string, unknown> to strip readonly modifiers.
+  const result = { ...(tweet as unknown as Record<string, unknown>) };
   if (tweet.legacy) {
-    if (!tweet.extended_entities) {
-      (tweet as Record<string, unknown>).extended_entities = tweet.legacy.extended_entities;
+    if (!result.extended_entities && tweet.legacy.extended_entities) {
+      result.extended_entities = tweet.legacy.extended_entities;
     }
-    if (!tweet.full_text) {
-      (tweet as Record<string, unknown>).full_text = tweet.legacy.full_text;
+    if (!result.full_text && tweet.legacy.full_text) {
+      result.full_text = tweet.legacy.full_text;
     }
-    if (!tweet.id_str) {
-      (tweet as Record<string, unknown>).id_str = tweet.legacy.id_str;
+    if (!result.id_str && tweet.legacy.id_str) {
+      result.id_str = tweet.legacy.id_str;
     }
   }
   const noteText = tweet.note_tweet?.note_tweet_results?.result?.text;
   if (noteText) {
-    (tweet as Record<string, unknown>).full_text = noteText;
+    result.full_text = noteText;
   }
+
+  return result as unknown as TwitterTweet;
 }
 
-export function normalizeLegacyUser(user: TwitterUser): void {
-  if (user.legacy) {
-    if (!user.screen_name) {
-      (user as Record<string, unknown>).screen_name = user.legacy.screen_name;
-    }
-    if (!user.name) {
-      (user as Record<string, unknown>).name = user.legacy.name;
-    }
+export function normalizeLegacyUser(user: TwitterUser): TwitterUser {
+  if (!user.legacy) return user;
+
+  const result = { ...(user as unknown as Record<string, unknown>) };
+  if (!result.screen_name && user.legacy.screen_name) {
+    result.screen_name = user.legacy.screen_name;
   }
+  if (!result.name && user.legacy.name) {
+    result.name = user.legacy.name;
+  }
+
+  return result as unknown as TwitterUser;
 }

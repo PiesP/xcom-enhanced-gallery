@@ -40,7 +40,7 @@
         "noAssignInExpressions": "off",
         "noDocumentCookie": "off",
         "noImplicitAnyLet": "error",
-        "useIterableCallbackReturn": "off"
+        "useIterableCallbackReturn": "error"
       },
       "complexity": {
         "noForEach": "off",

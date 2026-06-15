@@ -6,7 +6,7 @@
  * persistence to settings, and fit mode toggle handlers.
  */
 
-import { getTypedSettingOr, setTypedSetting } from '@shared/container/container';
+import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-registry';
 import { logger } from '@shared/logging/logger';
 import { navigateToItem } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types/settings.types';

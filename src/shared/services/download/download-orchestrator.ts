@@ -52,6 +52,7 @@ export class DownloadOrchestrator {
   public destroy(): void {
     this.capability = null;
     this._initialized = false;
+    _downloadInstance = null;
   }
 
   /** Check if service is initialized */

@@ -31,6 +31,7 @@ export class MediaService {
   public destroy(): void {
     this.cleanupOnce();
     this._initialized = false;
+    _instance = null;
   }
 
   /** Check if service is initialized */
