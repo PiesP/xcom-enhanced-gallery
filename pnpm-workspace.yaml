@@ -1,11 +1,5 @@
-minimumReleaseAge: 10080
-
-# Security-critical packages that bypass the 7-day cooling period:
-#   - minimatch/semver/minimist: known supply-chain attack targets
-minimumReleaseAgeExclude:
-  - minimatch
-  - semver
-  - minimist
+# Dependabot cooldown (7 days) handles supply-chain cooling;
+# minimumReleaseAge removed to avoid pnpm --no-save conflicts with Dependabot.
 
 allowBuilds:
   esbuild: true
