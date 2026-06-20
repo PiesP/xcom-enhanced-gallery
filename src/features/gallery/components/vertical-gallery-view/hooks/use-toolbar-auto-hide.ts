@@ -34,7 +34,8 @@ export function useToolbarAutoHide(options: UseToolbarAutoHideOptions): UseToolb
   };
 
   createEffect(() => {
-    onCleanup(clearActiveTimer);
+    // Always clear previous timer before setting a new one
+    clearActiveTimer();
 
     if (!computeInitialVisibility()) {
       setIsInitialToolbarVisible(false);
@@ -51,12 +52,14 @@ export function useToolbarAutoHide(options: UseToolbarAutoHideOptions): UseToolb
       return;
     }
 
-    setActiveTimer(
-      setTimeout(() => {
-        setIsInitialToolbarVisible(false);
-        setActiveTimer(null);
-      }, autoHideDelay)
-    );
+    const timerId = window.setTimeout(() => {
+      setIsInitialToolbarVisible(false);
+      setActiveTimer(null);
+    }, autoHideDelay);
+
+    setActiveTimer(timerId);
+
+    onCleanup(clearActiveTimer);
   });
 
   return { isInitialToolbarVisible, setIsInitialToolbarVisible };

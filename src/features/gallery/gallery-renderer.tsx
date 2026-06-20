@@ -5,7 +5,7 @@
 
 import { CSS } from '@constants/css';
 import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';
-import { createDownloadHandler } from '@features/gallery/hooks/use-gallery-download';
+import { useGalleryDownload } from '@features/gallery/hooks/use-gallery-download';
 import {
   GalleryContainer,
   mountGallery,
@@ -74,11 +74,19 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
 export class GalleryRenderer {
   private container: HTMLDivElement | null = null;
   private isMounting = false;
+  /**
+   * Disposable for the Solid.js reactive root that watches `gallerySignals.isOpen`.
+   *
+   * ⚠️ LIFETIME: This subscription is created in the constructor and must only
+   * be disposed in `destroy()` (permanent teardown). Do NOT dispose it in
+   * `cleanupGallery()` — that would destroy the reactive effect that re-opens
+   * the gallery on subsequent `openGallery()` calls.
+   */
   private stateUnsubscribe: (() => void) | null = null;
-  private readonly downloadHandler: ReturnType<typeof createDownloadHandler>['handleDownload'];
+  private readonly downloadHandler: ReturnType<typeof useGalleryDownload>['handleDownload'];
 
   constructor() {
-    this.downloadHandler = createDownloadHandler().handleDownload;
+    this.downloadHandler = useGalleryDownload().handleDownload;
     this.setupStateSubscription();
   }
 

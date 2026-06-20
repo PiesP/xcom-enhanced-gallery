@@ -12,7 +12,7 @@ import { useGalleryItemScroll } from '@features/gallery/hooks/use-gallery-item-s
 import { useGalleryScroll } from '@features/gallery/hooks/use-gallery-scroll';
 import type { NavigationSource } from '@shared/state/signals/gallery.signals';
 import type { Accessor } from 'solid-js';
-import { createEffect } from 'solid-js';
+import { createEffect, createSignal } from 'solid-js';
 import { useGalleryLifecycle } from './use-gallery-lifecycle';
 import { useGalleryNavigation } from './use-gallery-navigation';
 import { useToolbarAutoHide } from './use-toolbar-auto-hide';
@@ -125,32 +125,35 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
     itemsContainerEl,
   } = options;
 
-  // Forward reference for focus sync to break circular dependency:
-  // useGalleryScroll→useGalleryFocusTracker→useGalleryScroll
-  let focusSyncCallback: (() => void) | null = null;
-
   // Toolbar auto-hide - Manages initial visibility and auto-hide timer
   const { isInitialToolbarVisible, setIsInitialToolbarVisible } = useToolbarAutoHide({
     isVisible,
     hasItems: () => mediaItemsCount() > 0,
   });
 
-  // Navigation state - scrollToItem forward ref breaks circular dependency:
-  // useGalleryNavigation→useGalleryItemScroll→useGalleryNavigation
-  let scrollToItemRef: ((index: number) => void) | null = null;
+  // Navigation state — useGalleryNavigation needs scrollToItem, which is
+  // created by useGalleryItemScroll below. We use a deferred pattern:
+  // 1. Create a signal holding the scrollToItem callback
+  // 2. Pass its getter to useGalleryNavigation
+  // 3. Set the signal value after useGalleryItemScroll creates the callback
+  const [scrollToItemSignal, setScrollToItemSignal] = createSignal<(index: number) => void>(
+    () => {}
+  );
 
   const navigationState = useGalleryNavigation({
     isVisible,
-    scrollToItem: (index: number): void => scrollToItemRef?.(index),
+    scrollToItem: (index: number): void => scrollToItemSignal()(index),
   });
 
   // 3. Scroll tracking - Detects user scrolling and programmatic scroll timing
+  const [focusSyncTrigger, setFocusSyncTrigger] = createSignal<(() => void) | null>(null);
+
   const { isScrolling } = useGalleryScroll({
     container: containerEl,
     scrollTarget: itemsContainerEl,
     enabled: isVisible,
     programmaticScrollTimestamp: () => navigationState.programmaticScrollTimestamp(),
-    onScrollEnd: (): void => focusSyncCallback?.(),
+    onScrollEnd: (): void => focusSyncTrigger()?.(),
   });
 
   // 4. Item scroll handling - Provides scroll-to-item functionality
@@ -166,8 +169,8 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
     }
   );
 
-  // Connect forward reference now that scrollToItem is available
-  scrollToItemRef = scrollToItem;
+  // Connect the scrollToItem callback to the signal (breaks circular dependency)
+  setScrollToItemSignal(() => scrollToItem);
 
   // 5. Focus tracking - Tracks focused item for keyboard navigation
   const {
@@ -182,8 +185,8 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
     lastNavigationTrigger: navigationState.lastNavigationTrigger,
   });
 
-  // Connect focus sync forward ref (useGalleryScroll→useGalleryFocusTracker)
-  focusSyncCallback = focusTrackerForceSync;
+  // Connect focus sync trigger
+  setFocusSyncTrigger(() => focusTrackerForceSync);
 
   // 6. Gallery lifecycle - Manages animations, video cleanup, and CSS viewport variables
   useGalleryLifecycle({

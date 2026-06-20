@@ -84,7 +84,13 @@ export class FocusCoordinator {
 
   updateFocus(force: boolean = false): void {
     if (!force && !this.options.isEnabled()) return;
-    if (this._rafId !== null) return; // already throttled
+
+    // Cancel any pending RAF to avoid stale updates
+    if (this._rafId !== null) {
+      cancelAnimationFrame(this._rafId);
+      this._rafId = null;
+    }
+
     this._rafId = requestAnimationFrame(() => {
       this._rafId = null;
       const container = this.options.container();

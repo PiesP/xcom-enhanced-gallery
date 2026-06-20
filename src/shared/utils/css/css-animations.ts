@@ -19,6 +19,8 @@ function runCssAnimation(element: Element, className: string): Promise<void> {
       if (settled) return;
       settled = true;
       element.classList.remove(className);
+      element.removeEventListener('animationend', settle);
+      element.removeEventListener('animationcancel', settle);
       resolve();
     };
 
