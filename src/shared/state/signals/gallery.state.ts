@@ -14,7 +14,7 @@
 import type { MediaInfo } from '@shared/types/media.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
 import { clampIndex } from '@shared/utils/types/safety';
-import { batch, createSignal } from 'solid-js';
+import { createSignal } from 'solid-js';
 import { setDownloading } from './download.state';
 import {
   type NavigationSource,
@@ -112,14 +112,12 @@ export function setError(error: string | null): void {
 }
 
 function applyGallerySessionUpdate(state: GallerySessionState): void {
-  batch(() => {
-    setMediaItems(state.mediaItems);
-    setCurrentIndex(state.currentIndex);
-    setFocusedIndex(state.focusedIndex);
-    setCurrentVideoElement(state.currentVideoElement);
-    _setErrorSig(state.error);
-    setIsOpen(state.isOpen);
-  });
+  setMediaItems(state.mediaItems);
+  setCurrentIndex(state.currentIndex);
+  setFocusedIndex(state.focusedIndex);
+  setCurrentVideoElement(state.currentVideoElement);
+  _setErrorSig(state.error);
+  setIsOpen(state.isOpen);
 }
 
 /**
@@ -164,10 +162,8 @@ export function navigateNext(trigger: NavigationSource = 'click'): void {
   const next = current + 1;
   if (next >= items.length) return;
 
-  batch(() => {
-    setCurrentIndex(next);
-    setFocusedIndex(next);
-  });
+  setCurrentIndex(next);
+  setFocusedIndex(next);
   recordNavigation(next, resolveNavigationSource(trigger));
   galleryIndexEvents.emit('navigate:complete', { index: next, trigger });
 }
@@ -183,10 +179,8 @@ export function navigatePrevious(trigger: NavigationSource = 'click'): void {
   const prev = current - 1;
   if (prev < 0) return;
 
-  batch(() => {
-    setCurrentIndex(prev);
-    setFocusedIndex(prev);
-  });
+  setCurrentIndex(prev);
+  setFocusedIndex(prev);
   recordNavigation(prev, resolveNavigationSource(trigger));
   galleryIndexEvents.emit('navigate:complete', { index: prev, trigger });
 }
@@ -201,10 +195,8 @@ export function navigateToItem(targetIndex: number, source: NavigationSource): v
 
   if (clampedIndex === current) return;
 
-  batch(() => {
-    setCurrentIndex(clampedIndex);
-    setFocusedIndex(clampedIndex);
-  });
+  setCurrentIndex(clampedIndex);
+  setFocusedIndex(clampedIndex);
 
   recordNavigation(clampedIndex, source);
   galleryIndexEvents.emit('navigate:complete', { index: clampedIndex, trigger: source });
@@ -220,14 +212,12 @@ export function setGalleryFocus(focusIndex: number | null, _source?: unknown): v
  * Called during cleanup to prevent stale state across sessions.
  */
 export function disposeGallerySignals(): void {
-  batch(() => {
-    setIsOpenSig(INITIAL_STATE.isOpen);
-    setMediaItems(INITIAL_STATE.mediaItems);
-    setCurrentIndex(INITIAL_STATE.currentIndex);
-    setFocusedIndex(null);
-    setCurrentVideoElement(null);
-    _setErrorSig(INITIAL_STATE.error);
-    setDownloading(false);
-  });
+  setIsOpenSig(INITIAL_STATE.isOpen);
+  setMediaItems(INITIAL_STATE.mediaItems);
+  setCurrentIndex(INITIAL_STATE.currentIndex);
+  setFocusedIndex(null);
+  setCurrentVideoElement(null);
+  _setErrorSig(INITIAL_STATE.error);
+  setDownloading(false);
   resetNavigation();
 }

@@ -5,7 +5,7 @@
  * Navigation state — tracks what triggered the last navigation event.
  */
 
-import { batch, createSignal } from 'solid-js';
+import { createSignal } from 'solid-js';
 
 export type NavigationSource =
   | 'button'
@@ -41,11 +41,9 @@ export function recordNavigation(
     return;
   }
 
-  batch(() => {
-    setNavSource(source);
-    setNavTimestamp(timestamp);
-    setNavIndex(targetIndex);
-  });
+  setNavSource(source);
+  setNavTimestamp(timestamp);
+  setNavIndex(targetIndex);
 }
 
 /**
