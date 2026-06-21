@@ -137,8 +137,10 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const handleMediaLoad = () => {
     if (!isLoaded()) {
-      setIsLoaded(true);
-      setIsError(false);
+      untrack(() => {
+        setIsLoaded(true);
+        setIsError(false);
+      });
       local.onMediaLoad?.(local.media.id, local.index);
     }
   };

@@ -26,7 +26,7 @@ import {
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { createEffectRoot } from '@shared/utils/solid/accessor-utils';
 import type { JSX } from 'solid-js';
-import { createSignal, onCleanup } from 'solid-js';
+import { createSignal, onCleanup, untrack } from 'solid-js';
 
 import './styles/gallery-global.css';
 
@@ -92,9 +92,12 @@ export class GalleryRenderer {
 
   private setupStateSubscription(): void {
     this.stateUnsubscribe = createEffectRoot(() => {
-      if (gallerySignals.isOpen && !this.container) {
+      // untrack: prevent re-triggering when renderGallery/cleanupGallery
+      // read gallerySignals.isOpen or mediaItems internally.
+      const isOpen = untrack(() => gallerySignals.isOpen);
+      if (isOpen && !this.container) {
         this.renderGallery();
-      } else if (!gallerySignals.isOpen && this.container) {
+      } else if (!isOpen && this.container) {
         this.cleanupGallery();
       }
     });

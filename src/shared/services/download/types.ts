@@ -31,6 +31,7 @@ export interface DownloadOptions {
   zipFilename?: string;
   blob?: Blob;
   prefetchedBlobs?: Map<string, Blob | Promise<Blob>>;
+  onCleanup?: (cancel: () => void) => void;
 }
 
 export interface SingleDownloadResult {

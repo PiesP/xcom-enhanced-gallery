@@ -97,6 +97,14 @@ export async function downloadSingleFile(
       settle({ success: false, error: DOWNLOAD_TIMEOUT_MESSAGE });
     }, DOWNLOAD_TIMEOUT_MS);
 
+    // Expose cancel handle so external code can clear the in-flight timer
+    options.onCleanup?.(() => {
+      if (!settled) {
+        cleanup();
+        settle(createAbortResult());
+      }
+    });
+
     try {
       gmDownload({
         url,

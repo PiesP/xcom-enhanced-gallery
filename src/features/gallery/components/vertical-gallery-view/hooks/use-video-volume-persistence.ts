@@ -71,33 +71,35 @@ export function useVideoVolumePersistence(
   // Apply saved volume/muted state when video element is ready
   createEffect(() => {
     const video = videoRef();
-    if (video && isVideo()) {
-      // Apply persisted state while preventing the volumechange handler from
-      // reacting to our programmatic assignment. We set both properties under
-      // a guard so any intermediate events are ignored.
-      setIsApplyingVideoSettings(true);
-      try {
-        // untrack: Prevent reactive dependencies inside from re-triggering this effect.
-        // This ensures we only apply settings once when the video element becomes ready,
-        // not on every subsequent signal change.
-        untrack(() => {
-          const nextMuted = normalizeVideoMutedSetting(videoMuted(), false);
-          const nextVolume = normalizeVideoVolumeSetting(videoVolume(), 1.0);
+    if (!video || !isVideo()) return;
 
-          // Keep the signals normalized as well.
-          if (nextMuted !== videoMuted()) {
-            setVideoMuted(nextMuted);
-          }
-          if (nextVolume !== videoVolume()) {
-            setVideoVolume(nextVolume);
-          }
+    // Read persisted settings without tracking to prevent re-triggering
+    // when signals are updated inside this effect.
+    const nextMuted = normalizeVideoMutedSetting(
+      untrack(() => videoMuted()),
+      false
+    );
+    const nextVolume = normalizeVideoVolumeSetting(
+      untrack(() => videoVolume()),
+      1.0
+    );
 
-          applyMutedProgrammatically(video, nextMuted);
-          applyVolumeProgrammatically(video, nextVolume);
-        });
-      } finally {
-        setIsApplyingVideoSettings(false);
+    // Apply persisted state while preventing the volumechange handler from
+    // reacting to our programmatic assignment.
+    setIsApplyingVideoSettings(true);
+    try {
+      // Keep the signals normalized as well.
+      if (nextMuted !== untrack(() => videoMuted())) {
+        setVideoMuted(nextMuted);
       }
+      if (nextVolume !== untrack(() => videoVolume())) {
+        setVideoVolume(nextVolume);
+      }
+
+      applyMutedProgrammatically(video, nextMuted);
+      applyVolumeProgrammatically(video, nextVolume);
+    } finally {
+      setIsApplyingVideoSettings(false);
     }
   });
 
