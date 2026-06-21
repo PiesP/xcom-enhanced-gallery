@@ -10,8 +10,6 @@
  * @module shared/types/core/userscript
  */
 
-import type { CookieAPI } from './cookie.types';
-
 declare global {
   function GM_download(url: string, filename: string): void;
   function GM_getValue<T = unknown>(name: string, defaultValue?: T): T;
@@ -27,7 +25,6 @@ declare global {
     image?: string,
     onclick?: () => void
   ): void;
-  const GM_cookie: CookieAPI;
 
   interface Window {
     GM_getValue?: typeof GM_getValue;

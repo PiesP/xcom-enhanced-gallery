@@ -39,5 +39,10 @@
       "32": "icons/icon-32x32.png"
     },
     "default_title": "X.com Enhanced Gallery"
-  }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "externally_connectable": {},
+  "web_accessible_resources": []
 }

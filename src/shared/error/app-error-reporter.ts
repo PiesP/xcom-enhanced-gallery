@@ -49,7 +49,11 @@ function createReporter(context: string): ErrorReporter {
     }
 
     if (severity === 'critical') {
-      console.error('[Critical Error]', message, payload);
+      // In production, avoid logging potentially sensitive metadata to the console.
+      const safePayload = __DEV__
+        ? payload
+        : { context: payload.context, severity: payload.severity, code: payload.code };
+      console.error('[Critical Error]', message, safePayload);
     }
   };
 

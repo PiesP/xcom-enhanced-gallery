@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import type { CookieAPI } from '@shared/types/core/cookie.types';
 import type {
   GMNotificationDetails,
   GMXMLHttpRequestControl,
@@ -17,7 +16,6 @@ export interface UserscriptAPI {
   readonly listValues: () => Promise<string[]>;
   readonly xmlHttpRequest: (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl;
   readonly notification: (details: GMNotificationDetails) => void;
-  readonly cookie: CookieAPI | undefined;
 }
 
 export interface ResolvedGMAPIs {
@@ -28,7 +26,6 @@ export interface ResolvedGMAPIs {
   listValues: unknown;
   xmlHttpRequest: unknown;
   notification: unknown;
-  cookie: CookieAPI | undefined;
 }
 
 function resolveGMAPIs(): ResolvedGMAPIs {
@@ -41,7 +38,6 @@ function resolveGMAPIs(): ResolvedGMAPIs {
     listValues: g.GM_listValues,
     xmlHttpRequest: g.GM_xmlhttpRequest,
     notification: g.GM_notification,
-    cookie: g.GM_cookie as CookieAPI | undefined,
   };
 }
 
@@ -76,10 +72,6 @@ function createUserscriptAPI(): UserscriptAPI {
   const gmNotification = asFunction<(details: GMNotificationDetails, ondone?: () => void) => void>(
     g.notification
   );
-
-  const cookieCandidate = g.cookie;
-  const cookie =
-    cookieCandidate && typeof cookieCandidate.list === 'function' ? cookieCandidate : undefined;
 
   return {
     async download(url: string, filename: string): Promise<void> {
@@ -122,7 +114,6 @@ function createUserscriptAPI(): UserscriptAPI {
         // Optional capability: notification failures should not affect callers.
       }
     },
-    cookie,
   };
 }
 

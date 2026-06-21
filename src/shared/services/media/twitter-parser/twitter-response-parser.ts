@@ -219,7 +219,10 @@ export function extractMediaFromTweet(
         )
       );
     } catch (error) {
-      if (__DEV__) logger.debug('[TwitterParser] Skipping media entry', { error });
+      if (__DEV__) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        logger.debug('[TwitterParser] Skipping media entry', { error: errorMsg });
+      }
     }
   }
 

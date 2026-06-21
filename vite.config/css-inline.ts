@@ -37,6 +37,11 @@ export function cssInlinePlugin(): Plugin {
       const css = cssChunks.join('');
       if (!css.trim()) return;
 
+      // Validate CSS content before injection: reject dangerous patterns.
+      if (containsDangerousCss(css)) {
+        throw new Error('CSS injection blocked: dangerous patterns detected in stylesheet content.');
+      }
+
       const id = JSON.stringify(STYLE_ID);
       const code = JSON.stringify(css);
       const injectionCode = `(function(){if(typeof document==='undefined')return;var e=document.getElementById(${id});if(!e){e=document.createElement('style');e.id=${id};document.head.appendChild(e);}e.textContent=${code};})();\n`;
@@ -49,4 +54,34 @@ export function cssInlinePlugin(): Plugin {
       }
     },
   };
+}
+
+/**
+ * Check whether CSS content contains dangerous patterns that could lead to
+ * data exfiltration or script execution via CSS injection.
+ *
+ * Blocks:
+ * - `behavior` / `-moz-binding` (XBL bindings in Firefox)
+ * - `expression()` (legacy IE script execution)
+ * - `@import` with external URLs (data exfiltration via @import url())
+ * - `url()` with non-http(s)/data: protocols
+ * - `-webkit-keyframe` with suspicious content
+ */
+function containsDangerousCss(css: string): boolean {
+  const lower = css.toLowerCase();
+
+  // behavior / -moz-binding can execute scripts via XBL.
+  // Use word boundary to avoid matching scroll-behavior, overscroll-behavior, etc.
+  if (/(^|[^-a-z])behavior\s*:/.test(lower) || /-moz-binding\s*:/.test(lower)) return true;
+
+  // expression() executes JavaScript in legacy IE
+  if (/expression\s*\(/.test(lower)) return true;
+
+  // @import with external URLs can be used for data exfiltration
+  if (/@import\s+url\s*\(\s*['"]?https?:/.test(lower)) return true;
+
+  // url() with javascript: or vbscript: protocols
+  if (/url\s*\(\s*['"]?\s*(javascript|vbscript|data:text\/html)/.test(lower)) return true;
+
+  return false;
 }

@@ -41,10 +41,28 @@ function getSafeLocationHeaders(): SafeLocationHeaders {
 
   if (!referer && !origin) return {};
 
+  // Validate that the current origin is an expected Twitter/X domain
+  // to prevent credential leakage via CSRF to unexpected origins.
+  const currentHost = globalThis.location?.hostname;
+  if (!currentHost || !isTwitterHost(currentHost)) {
+    return {};
+  }
+
   return {
     ...(referer ? { referer } : {}),
     ...(origin ? { origin } : {}),
   };
+}
+
+/** Check whether a hostname is a known Twitter/X domain. */
+function isTwitterHost(hostname: string): boolean {
+  const normalized = hostname.toLowerCase();
+  return (
+    normalized === 'x.com' ||
+    normalized === 'twitter.com' ||
+    normalized.endsWith('.x.com') ||
+    normalized.endsWith('.twitter.com')
+  );
 }
 
 // ============================================================================

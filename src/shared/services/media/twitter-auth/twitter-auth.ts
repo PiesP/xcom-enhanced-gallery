@@ -13,15 +13,35 @@ export async function getCsrfTokenAsync(): Promise<string | undefined> {
   return asyncToken ?? undefined;
 }
 
+/** Shape of the __NEXT_DATA__ JSON for type-safe parsing. */
+interface NextDataShape {
+  props?: {
+    pageProps?: {
+      token?: {
+        Bearer?: unknown;
+      };
+    };
+    token?: {
+      Bearer?: unknown;
+    };
+  };
+}
+
+function extractBearerFromNextData(nextData: unknown): string | null {
+  if (typeof nextData !== 'object' || nextData === null) return null;
+  const data = nextData as NextDataShape;
+  const token = data?.props?.pageProps?.token?.Bearer ?? data?.props?.token?.Bearer;
+  if (typeof token === 'string' && token.length > 10) return token;
+  return null;
+}
+
 export function resolveBearerToken(): string {
   try {
     const nextDataScript = document.getElementById('__NEXT_DATA__');
     if (nextDataScript?.textContent) {
       const nextData = JSON.parse(nextDataScript.textContent);
-      const token = nextData?.props?.pageProps?.token?.Bearer ?? nextData?.props?.token?.Bearer;
-      if (token && typeof token === 'string' && token.length > 10) {
-        return `Bearer ${token}`;
-      }
+      const token = extractBearerFromNextData(nextData);
+      if (token) return `Bearer ${token}`;
     }
   } catch {
     // Fall through to fallback

@@ -4,6 +4,33 @@
 import type { UserscriptAPI } from '@shared/external/userscript/adapter';
 import { getUserscript } from '@shared/external/userscript/adapter';
 
+// Simple XOR-based obfuscation for sensitive storage values.
+// Not cryptographically secure — intended to prevent casual inspection of stored data.
+const OBFUSCATION_KEY = 'xeg-storage-key';
+
+function obfuscate(value: string): string {
+  const encoded = Array.from(value).map((char, i) =>
+    String.fromCharCode(char.charCodeAt(0) ^ OBFUSCATION_KEY.charCodeAt(i % OBFUSCATION_KEY.length))
+  );
+  return `obf:${btoa(encoded.join(''))}`;
+}
+
+function deobfuscate(value: string): string {
+  if (!value.startsWith('obf:')) return value;
+  try {
+    const decoded = atob(value.slice(4));
+    return Array.from(decoded)
+      .map((char, i) =>
+        String.fromCharCode(
+          char.charCodeAt(0) ^ OBFUSCATION_KEY.charCodeAt(i % OBFUSCATION_KEY.length)
+        )
+      )
+      .join('');
+  } catch {
+    return value;
+  }
+}
+
 let _persistentStorageInstance: PersistentStorage | null = null;
 
 export class PersistentStorage {
@@ -36,7 +63,10 @@ export class PersistentStorage {
     }
 
     const serialized = typeof value === 'string' ? value : JSON.stringify(value);
-    await this.userscript.setValue(key, serialized);
+    // Obfuscate sensitive keys to avoid plaintext storage of critical values.
+    const isSensitive = this.isSensitiveKey(key);
+    const storedValue = isSensitive ? obfuscate(serialized) : serialized;
+    await this.userscript.setValue(key, storedValue);
   }
 
   async get<T>(key: string, defaultValue?: T): Promise<T | undefined> {
@@ -44,10 +74,21 @@ export class PersistentStorage {
     if (value === undefined || value === null) return defaultValue;
 
     try {
-      return JSON.parse(value) as T;
+      const raw = this.isSensitiveKey(key) ? deobfuscate(value) : value;
+      return JSON.parse(raw) as T;
     } catch {
       return defaultValue;
     }
+  }
+
+  /** Determine whether a storage key holds sensitive data that should be obfuscated. */
+  private isSensitiveKey(key: string): boolean {
+    return (
+      key.includes('token') ||
+      key.includes('auth') ||
+      key.includes('secret') ||
+      key.includes('password')
+    );
   }
 
   async getString(key: string, defaultValue?: string): Promise<string | undefined> {

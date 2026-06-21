@@ -14,6 +14,15 @@ import type {
 } from '@shared/services/download/types';
 import { reportProgress } from '@shared/services/download/types';
 import type { MediaInfo } from '@shared/types/media.types';
+import { isUrlAllowed, MEDIA_URL_POLICY } from '@shared/utils/url/safety';
+
+/** URL policy for download URLs — stricter than MEDIA_URL_POLICY, only http/https. */
+const DOWNLOAD_URL_POLICY = {
+  ...MEDIA_URL_POLICY,
+  allowRelative: false,
+  allowProtocolRelative: false,
+  allowDataUrls: false,
+} as const;
 
 function asGMDownloadFunction(value: unknown): GMDownloadFunction | undefined {
   return typeof value === 'function' ? (value as GMDownloadFunction) : undefined;
@@ -161,7 +170,7 @@ export class GMDownloadProvider implements DownloadProvider {
       return { success: false, error: 'No download method available' };
     }
 
-    if (typeof url !== 'string' || !url.startsWith('http')) {
+    if (typeof url !== 'string' || !isUrlAllowed(url, DOWNLOAD_URL_POLICY)) {
       return { success: false, error: `Invalid URL for download: ${url}` };
     }
 

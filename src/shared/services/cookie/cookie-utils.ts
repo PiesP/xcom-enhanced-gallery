@@ -2,36 +2,16 @@
 // Copyright (c) 2024-2026 PiesP
 
 /**
- * @fileoverview Cookie utilities: GM_cookie adapter with document.cookie fallback.
+ * @fileoverview Cookie utilities: document.cookie-based cookie access.
  */
 
-import { getUserscript } from '@shared/external/userscript/adapter';
 import type {
-  CookieAPI,
   CookieDeleteOptions,
   CookieListOptions,
   CookieRecord,
   CookieSetOptions,
 } from '@shared/types/core/cookie.types';
-import { promisifyCallback } from '@shared/utils/async/promise-helpers';
 import { escapeRegExp } from '@shared/utils/text/formatting';
-
-let cachedCookieAPI: CookieAPI | null | undefined;
-
-function resolveCookieAPI(): CookieAPI | null {
-  try {
-    return getUserscript().cookie ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function getCookieAPI(): CookieAPI | null {
-  if (cachedCookieAPI === undefined) {
-    cachedCookieAPI = resolveCookieAPI();
-  }
-  return cachedCookieAPI;
-}
 
 function parseDocumentCookies(filterName?: string): CookieRecord[] {
   const cookieStr = document.cookie;
@@ -61,84 +41,25 @@ function deleteDocumentCookie(name: string): void {
 }
 
 export async function listCookies(options?: CookieListOptions): Promise<CookieRecord[]> {
-  try {
-    const gm = getCookieAPI();
-    if (!gm?.list) return parseDocumentCookies(options?.name);
-
-    // Scope cookie queries to the current domain to prevent cross-domain access
-    const scopedOptions: CookieListOptions = {
-      ...options,
-      domain: options?.domain ?? document.location?.hostname ?? undefined,
-    };
-
-    return promisifyCallback<CookieRecord[]>(
-      (cb) =>
-        gm.list!(scopedOptions, (cookies, error) => {
-          if (error) return cb(undefined, error);
-          cb(
-            (cookies ?? []).map((c) => ({ ...c })),
-            undefined
-          );
-        }),
-      { fallback: () => parseDocumentCookies(options?.name) }
-    );
-  } catch {
-    return parseDocumentCookies(options?.name);
-  }
+  // Prefer document.cookie (no GM_cookie needed for non-HttpOnly cookies).
+  // Only use GM_cookie when explicitly needed for HttpOnly cookies.
+  return parseDocumentCookies(options?.name);
 }
 
 export async function setCookie(details: CookieSetOptions): Promise<void> {
   if (!details?.name) throw new Error('Cookie name is required');
-  const name = details.name;
-
-  try {
-    const gm = getCookieAPI();
-    if (!gm?.set) {
-      setDocumentCookie(name, details.value ?? '');
-      return;
-    }
-
-    await promisifyCallback<void>((cb) => gm.set!(details, (error) => cb(undefined, error)), {
-      fallback: () => {
-        setDocumentCookie(name, details.value ?? '');
-      },
-    });
-  } catch {
-    setDocumentCookie(name, details.value ?? '');
-  }
+  setDocumentCookie(details.name, details.value ?? '');
 }
 
 export async function deleteCookie(details: CookieDeleteOptions): Promise<void> {
   if (!details?.name) throw new Error('Cookie name is required');
-  const name = details.name;
-
-  try {
-    const gm = getCookieAPI();
-    if (!gm?.delete) {
-      deleteDocumentCookie(name);
-      return;
-    }
-
-    await promisifyCallback<void>((cb) => gm.delete!(details, (error) => cb(undefined, error)), {
-      fallback: () => {
-        deleteDocumentCookie(name);
-      },
-    });
-  } catch {
-    deleteDocumentCookie(name);
-  }
+  deleteDocumentCookie(details.name);
 }
 
 export async function getCookieValue(name: string): Promise<string | undefined> {
   if (!name) return undefined;
 
-  const gm = getCookieAPI();
-  if (gm?.list) {
-    const cookies = await listCookies({ name });
-    const value = cookies[0]?.value;
-    if (value) return value;
-  }
-
+  // GM_cookie is no longer granted — use document.cookie directly.
   return getCookieValueSync(name);
 }
 

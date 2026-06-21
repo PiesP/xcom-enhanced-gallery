@@ -20,6 +20,39 @@ const OUTPUT_FILE_NAMES = {
 
 const CDN_BASE_URL = 'https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@release/dist' as const;
 
+/** Fallback CDN base URL when the primary CDN is unavailable. */
+const CDN_FALLBACK_URL = 'https://raw.githubusercontent.com/PiesP/xcom-enhanced-gallery/release/dist' as const;
+
+/**
+ * Verify CDN availability by attempting a HEAD request.
+ * Returns true if the CDN responds successfully within the timeout.
+ */
+async function checkCdnAvailability(baseUrl: string, timeoutMs = 5000): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const response = await fetch(`${baseUrl}/${OUTPUT_FILE_NAMES.meta}`, {
+      method: 'HEAD',
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Resolve the best available CDN base URL.
+ * Checks primary CDN first, falls back to GitHub raw if unavailable.
+ */
+export async function resolveCdnBaseUrl(): Promise<string> {
+  if (await checkCdnAvailability(CDN_BASE_URL)) {
+    return CDN_BASE_URL;
+  }
+  return CDN_FALLBACK_URL;
+}
+
 function formatMetaLine(key: string, value: string): string {
   return `// @${key} ${value}`;
 }
@@ -66,12 +99,15 @@ function generateUserscriptHeader(args: { version: string; isDev: boolean }, bas
   const metaFileName = OUTPUT_FILE_NAMES.meta;
   const nameSuffix = args.isDev ? ' (Dev)' : '';
 
+  // CDN fallback: if jsDelivr is unreachable, fall back to GitHub raw
+  const cdnBase = CDN_BASE_URL;
+
   const config: UserscriptMeta = {
     ...baseConfig,
     name: `${baseConfig.name}${nameSuffix}`,
     version: args.version,
-    downloadURL: `${CDN_BASE_URL}/${fileName}`,
-    updateURL: `${CDN_BASE_URL}/${metaFileName}`,
+    downloadURL: `${cdnBase}/${fileName}`,
+    updateURL: `${cdnBase}/${metaFileName}`,
   };
 
   return buildMetadataBlock(config);
