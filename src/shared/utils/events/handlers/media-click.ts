@@ -72,7 +72,7 @@ export async function handleMediaClick(
   const videoMode = resolveVideoClickMode();
   if (!isVideoClickAllowed(target, () => event.composedPath(), videoMode)) return;
 
-  if (!isProcessableMedia(target, event)) return;
+  if (!isProcessableMedia(target)) return;
 
   event.stopImmediatePropagation();
   event.preventDefault();

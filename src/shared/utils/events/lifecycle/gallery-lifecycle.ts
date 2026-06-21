@@ -61,7 +61,7 @@ export function createGalleryLifecycle(): GalleryLifecycle {
     if (mergedOptions.enableMediaDetection) {
       const clickHandler: EventListener = (evt: Event) => {
         handleMediaClick(evt as MouseEvent, handlers, mergedOptions).catch((error) => {
-          __DEV__ && logger.warn('[GalleryLifecycle] Media click handler failed', error);
+          logger.warn('[GalleryLifecycle] Media click handler failed', error);
         });
       };
       eventManager.addEventListener(target, 'click', clickHandler, { ...listenerOptions, context });

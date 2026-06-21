@@ -13,8 +13,6 @@ import {
   MEDIA_VIEWER_SELECTORS,
   STATUS_LINK_SELECTOR,
 } from '@constants/selectors';
-import { getTypedSettingOr, tryGetSettings } from '@shared/container/settings-registry';
-import { isVideoClickAllowed } from '@shared/dom/utils';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import {
   extractMediaUrlFromElement,
@@ -62,18 +60,9 @@ function isMediaCard(cardWrapper: HTMLElement): boolean {
   return cardWrapper.querySelector('img, video') !== null;
 }
 
-function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent): boolean {
+function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   if (!target) return false;
 
-  // Use isVideoClickAllowed with user-configured video click mode.
-  // This is the secondary defense; the primary defense in handleMediaClick
-  // already uses the same function with the full composedPath-based check.
-  const settings = tryGetSettings();
-  const videoMode = settings
-    ? getTypedSettingOr('gallery.videoClickMode', 'block-controls-only')
-    : 'block-controls-only';
-  const getPath = event ? () => event.composedPath() : undefined;
-  if (!isVideoClickAllowed(target, getPath, videoMode)) return true;
   if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
 
   const cardWrapper = target.closest('[data-testid="card.wrapper"]');
@@ -113,8 +102,8 @@ function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent)
   return false;
 }
 
-export function isProcessableMedia(target: HTMLElement | null, event?: MouseEvent): boolean {
-  if (!target || gallerySignals.isOpen || shouldBlockMediaTrigger(target, event)) return false;
+export function isProcessableMedia(target: HTMLElement | null): boolean {
+  if (!target || gallerySignals.isOpen || shouldBlockMediaTrigger(target)) return false;
 
   const mediaElement = findMediaElementInDOM(target);
   if (mediaElement) {
