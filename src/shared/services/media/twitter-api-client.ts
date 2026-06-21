@@ -7,6 +7,7 @@
  */
 
 import { buildTweetResultByRestIdUrl, TWITTER_API_CONFIG } from '@shared/core/twitter-api/endpoint';
+import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import {
@@ -173,6 +174,14 @@ async function apiRequest(url: string): Promise<TwitterAPIResponse> {
   return json;
 }
 
+function formatApiError(json: TwitterAPIResponse): string {
+  const errors = json.errors;
+  if (Array.isArray(errors) && errors.length > 0) {
+    return errors.map((e) => e.message ?? 'Unknown error').join('; ');
+  }
+  return 'Twitter API request failed. Please check your connection and try again.';
+}
+
 // ============================================================================
 // Public API
 // ============================================================================
@@ -182,9 +191,27 @@ async function apiRequest(url: string): Promise<TwitterAPIResponse> {
  */
 export async function getTweetMedias(tweetId: string): Promise<TweetMediaEntry[]> {
   const url = createTweetEndpointUrl(tweetId);
-  const json = await apiRequest(url);
+  let json: TwitterAPIResponse | undefined;
+  try {
+    json = await apiRequest(url);
+  } catch (error) {
+    if (__DEV__) logger.warn('[TwitterAPI] getTweetMedias failed', error);
+    try {
+      getUserscript().notification({
+        title: 'Twitter API Error',
+        text: json
+          ? formatApiError(json)
+          : error instanceof Error
+            ? error.message
+            : 'Failed to fetch tweet data.',
+      });
+    } catch {
+      // Notification failure must not mask the original error
+    }
+    throw error;
+  }
 
-  if (!json.data?.tweetResult?.result) return [];
+  if (!json!.data?.tweetResult?.result) return [];
 
   let tweetResult = json.data.tweetResult.result;
   if (tweetResult.tweet) tweetResult = tweetResult.tweet;

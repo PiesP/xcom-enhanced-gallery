@@ -153,13 +153,27 @@ export class DownloadOrchestrator {
         };
       }
 
-      // Uint8Array is a valid BlobPart; explicit cast required for TypeScript strict mode
-      const zipBlob = new Blob([result.zipData as BlobPart], {
+      // Guard against undefined zipData (e.g. writer.finalize() failure or empty archive)
+      const zipBytes = result.zipData ?? new Uint8Array(0);
+      const zipBlob = new Blob([zipBytes as BlobPart], {
         type: 'application/zip',
       });
       const filename = plan.zipFilename;
 
       // Save ZIP using appropriate download method
+      // Check abort before initiating save (the save itself cannot be aborted mid-stream)
+      if (options.signal?.aborted) {
+        const abortError = getUserCancelledAbortErrorFromSignal(options.signal);
+        return {
+          success: false,
+          status: 'error',
+          filesProcessed: items.length,
+          filesSuccessful: result.filesSuccessful,
+          error: normalizeErrorMessage(abortError),
+          failures: result.failures,
+          code: ErrorCode.CANCELLED,
+        };
+      }
       const saveResult = await this.saveZipBlob(zipBlob, filename, options, capability);
 
       if (!saveResult.success) {

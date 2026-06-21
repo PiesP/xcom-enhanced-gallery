@@ -93,10 +93,14 @@ export class GalleryApp {
           code: 'MEDIA_EXTRACTION_EMPTY',
           metadata: { success: result.success },
         });
-        getUserscript().notification({
-          title: 'Failed to load media',
-          text: 'Could not find images or videos.',
-        });
+        try {
+          getUserscript().notification({
+            title: 'Failed to load media',
+            text: 'Could not find images or videos.',
+          });
+        } catch (notifError) {
+          __DEV__ && logger.warn('[GalleryApp] Notification failed:', notifError);
+        }
       }
     } catch (error) {
       mediaErrorReporter.error(error, { code: 'MEDIA_EXTRACTION_ERROR' });

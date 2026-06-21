@@ -128,6 +128,15 @@ export class GalleryRenderer {
   }
 
   private createContainer(): void {
+    // Remove any existing container first to prevent duplicates
+    const existing = document.querySelector(`.${CSS.CLASSES.RENDERER}[data-renderer="gallery"]`);
+    if (existing) {
+      try {
+        existing.remove();
+      } catch (error) {
+        __DEV__ && logger.warn('[GalleryRenderer] Failed to remove existing container:', error);
+      }
+    }
     this.cleanupContainer();
     this.container = document.createElement('div');
     this.container.className = CSS.CLASSES.RENDERER;

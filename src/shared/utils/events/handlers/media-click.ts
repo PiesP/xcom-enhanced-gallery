@@ -9,6 +9,7 @@
 
 import { getTypedSettingOr, tryGetSettings } from '@shared/container/settings-registry';
 import { isGalleryInternalElement, isVideoClickAllowed } from '@shared/dom/utils';
+import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
@@ -80,6 +81,14 @@ export async function handleMediaClick(
     await handlers.onMediaClick(target, event);
   } catch (error) {
     logger.warn('onMediaClick failed', error);
+    try {
+      getUserscript().notification({
+        title: 'Error occurred',
+        text: 'Failed to load media. See console for details.',
+      });
+    } catch {
+      // Notification failure must not mask the original error
+    }
   }
 }
 

@@ -12,6 +12,11 @@ import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/medi
 import { escapeRegExp } from '@shared/utils/text/formatting';
 import { tryParseUrl } from '@shared/utils/url/host';
 
+// Helper to create a mutable copy for normalization without double-cast.
+function toMutableRecord<T extends object>(value: T): Record<string, unknown> {
+  return { ...value } as Record<string, unknown>;
+}
+
 interface MediaDimensions {
   readonly width?: number;
   readonly height?: number;
@@ -228,7 +233,7 @@ export function normalizeLegacyTweet(tweet: TwitterTweet): TwitterTweet {
 
   // Create a mutable copy to avoid violating readonly interfaces.
   // ponytail: cast through Record<string, unknown> to strip readonly modifiers.
-  const result = { ...(tweet as unknown as Record<string, unknown>) };
+  const result = toMutableRecord(tweet);
   if (tweet.legacy) {
     if (!result.extended_entities && tweet.legacy.extended_entities) {
       result.extended_entities = tweet.legacy.extended_entities;
@@ -245,13 +250,13 @@ export function normalizeLegacyTweet(tweet: TwitterTweet): TwitterTweet {
     result.full_text = noteText;
   }
 
-  return result as unknown as TwitterTweet;
+  return result as TwitterTweet;
 }
 
 export function normalizeLegacyUser(user: TwitterUser): TwitterUser {
   if (!user.legacy) return user;
 
-  const result = { ...(user as unknown as Record<string, unknown>) };
+  const result = toMutableRecord(user);
   if (!result.screen_name && user.legacy.screen_name) {
     result.screen_name = user.legacy.screen_name;
   }
@@ -259,5 +264,5 @@ export function normalizeLegacyUser(user: TwitterUser): TwitterUser {
     result.name = user.legacy.name;
   }
 
-  return result as unknown as TwitterUser;
+  return result as TwitterUser;
 }

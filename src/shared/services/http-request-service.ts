@@ -63,7 +63,9 @@ export class HttpRequestService {
     const onAbort = (): void => {
       if (settled) return;
       settled = true;
-      deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal!));
+      if (signal) {
+        deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal));
+      }
     };
     signal?.addEventListener('abort', onAbort, { once: true });
 
@@ -112,7 +114,9 @@ export class HttpRequestService {
       },
       onabort: () => {
         settle(() => {
-          deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal!));
+          if (signal) {
+            deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal));
+          }
         });
       },
     };

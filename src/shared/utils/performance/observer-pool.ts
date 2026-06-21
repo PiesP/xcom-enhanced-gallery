@@ -69,8 +69,11 @@ export const SharedObserver = {
     }
 
     entry.callbacks.set(element, callback);
-    entry.refCount.set(element, (entry.refCount.get(element) ?? 0) + 1);
-    entry.observer.observe(element);
+    const currentCount = entry.refCount.get(element) ?? 0;
+    entry.refCount.set(element, currentCount + 1);
+    if (currentCount === 0) {
+      entry.observer.observe(element);
+    }
 
     let disposed = false;
 

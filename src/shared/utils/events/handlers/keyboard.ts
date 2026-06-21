@@ -16,6 +16,7 @@ import {
   navigatePrevious,
   navigateToItem,
 } from '@shared/state/signals/gallery.signals';
+import { isHTMLElement } from '@shared/utils/types/guards';
 
 const KEYBOARD_HELP_TIMEOUT_MS = 6000;
 
@@ -81,10 +82,9 @@ const NAVIGATION_KEYS = new Set([
 const VIDEO_CONTROL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'm', 'M']);
 
 function isEditableTarget(target: EventTarget | null | undefined): boolean {
-  const element = target as HTMLElement | null;
-  if (!element) return false;
-  const tag = element.tagName?.toUpperCase();
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!element.isContentEditable;
+  if (!isHTMLElement(target)) return false;
+  const tag = target.tagName?.toUpperCase();
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!target.isContentEditable;
 }
 
 /**

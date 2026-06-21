@@ -112,6 +112,8 @@ export function setError(error: string | null): void {
 }
 
 function applyGallerySessionUpdate(state: GallerySessionState): void {
+  // Update all signals synchronously so subscribers never observe a partial state.
+  setIsOpenSig(state.isOpen);
   setMediaItems(state.mediaItems);
   setCurrentIndex(state.currentIndex);
   setFocusedIndex(state.focusedIndex);
