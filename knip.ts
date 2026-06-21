@@ -10,7 +10,6 @@ const config: KnipConfig = {
   },
   tags: ['-@internal'],
   ignoreDependencies: [],
-  ignoreBinaries: ['python3'],
 };
 
 export default config;
