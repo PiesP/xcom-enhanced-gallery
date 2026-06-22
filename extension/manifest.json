@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "X.com Enhanced Gallery",
+  "version": "2.1.2",
+  "description": "Media viewer and download functionality for X.com",
+  "permissions": [
+    "storage",
+    "downloads",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://*.x.com/*"
+  ],
+  "icons": {
+    "16": "icons/icon-16x16.png",
+    "32": "icons/icon-32x32.png",
+    "48": "icons/icon-48x48.png",
+    "128": "icons/icon-128x128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://*.x.com/*"
+      ],
+      "js": [
+        "content-script.js"
+      ],
+      "run_at": "document-idle"
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "16": "icons/icon-16x16.png",
+      "32": "icons/icon-32x32.png"
+    },
+    "default_title": "X.com Enhanced Gallery"
+  }
+}
