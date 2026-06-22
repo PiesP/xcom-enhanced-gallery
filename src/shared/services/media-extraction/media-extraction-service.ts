@@ -22,6 +22,32 @@ import {
 
 const generateExtractionId = (): string => createPrefixedId('simp');
 
+// Circuit breaker state for Twitter API — module-level to survive service re-initialization
+let apiFailureCount = 0;
+let apiCircuitOpen = false;
+let lastApiFailureTime = 0;
+const CIRCUIT_THRESHOLD = 3;
+const CIRCUIT_RESET_MS = 60_000; // 1 minute
+
+function isApiCircuitOpen(): boolean {
+  if (!apiCircuitOpen) return false;
+  if (Date.now() - lastApiFailureTime > CIRCUIT_RESET_MS) {
+    apiCircuitOpen = false;
+    apiFailureCount = 0;
+    return false;
+  }
+  return true;
+}
+
+function recordApiFailure(): void {
+  apiFailureCount++;
+  lastApiFailureTime = Date.now();
+  if (apiFailureCount >= CIRCUIT_THRESHOLD) {
+    apiCircuitOpen = true;
+    __DEV__ && logger.warn('[MediaExtractor] API circuit opened after repeated failures');
+  }
+}
+
 function createErrorResult(
   error: unknown,
   code: ErrorCode = ErrorCode.NO_MEDIA_FOUND
@@ -71,36 +97,10 @@ export class MediaExtractionService implements MediaExtractor {
   private readonly apiExtractor: TwitterAPIExtractor;
   private readonly domFallbackExtractor: DOMFallbackExtractor;
 
-  // Circuit breaker for Twitter API to avoid repeated rate-limit failures
-  private apiFailureCount = 0;
-  private apiCircuitOpen = false;
-  private lastApiFailureTime = 0;
-  private static readonly CIRCUIT_THRESHOLD = 3;
-  private static readonly CIRCUIT_RESET_MS = 60_000; // 1 minute
-
   constructor() {
     this.tweetInfoExtractor = new TweetInfoExtractor();
     this.apiExtractor = new TwitterAPIExtractor();
     this.domFallbackExtractor = new DOMFallbackExtractor();
-  }
-
-  private isApiCircuitOpen(): boolean {
-    if (!this.apiCircuitOpen) return false;
-    if (Date.now() - this.lastApiFailureTime > MediaExtractionService.CIRCUIT_RESET_MS) {
-      this.apiCircuitOpen = false;
-      this.apiFailureCount = 0;
-      return false;
-    }
-    return true;
-  }
-
-  private recordApiFailure(): void {
-    this.apiFailureCount++;
-    this.lastApiFailureTime = Date.now();
-    if (this.apiFailureCount >= MediaExtractionService.CIRCUIT_THRESHOLD) {
-      this.apiCircuitOpen = true;
-      __DEV__ && logger.warn('[MediaExtractor] API circuit opened after repeated failures');
-    }
   }
 
   async extractFromClickedElement(
@@ -118,7 +118,7 @@ export class MediaExtractionService implements MediaExtractor {
         return createErrorResult('No tweet information found');
       }
 
-      const apiResult = this.isApiCircuitOpen()
+      const apiResult = isApiCircuitOpen()
         ? {
             success: false,
             mediaItems: [],
@@ -131,8 +131,8 @@ export class MediaExtractionService implements MediaExtractor {
 
       if (apiResult.success && apiResult.mediaItems.length > 0) {
         // Reset circuit on success
-        this.apiFailureCount = 0;
-        this.apiCircuitOpen = false;
+        apiFailureCount = 0;
+        apiCircuitOpen = false;
         return finalizeResult({
           ...apiResult,
           tweetInfo: mergeTweetInfo(tweetInfo, apiResult.tweetInfo),
@@ -140,7 +140,7 @@ export class MediaExtractionService implements MediaExtractor {
       }
 
       if (!apiResult.success) {
-        this.recordApiFailure();
+        recordApiFailure();
       }
 
       if (__DEV__) logger.info(`[MediaExtractor] ${extractionId}: API failed, trying DOM fallback`);

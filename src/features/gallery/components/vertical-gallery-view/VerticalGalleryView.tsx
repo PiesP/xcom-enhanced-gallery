@@ -66,7 +66,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   const [itemsContainerEl, setItemsContainerEl] = createSignal<HTMLDivElement | null>(null);
 
   // Derived state — trivially computed from already-memoized values; plain getters suffice
-  const isVisible = () => mediaItems().length > 0;
+  const isVisible = createMemo(() => mediaItems().length > 0);
 
   const activeMedia = createMemo(() => {
     const items = mediaItems();
@@ -185,7 +185,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
     return (
       <div class={cx(styles.container, styles.empty, local.className)}>
         <div class={styles.emptyMessage}>
-          <h3>{translate('msg.gal.emptyT')}</h3>
+          <h2>{translate('msg.gal.emptyT')}</h2>
           <p>{translate('msg.gal.emptyD')}</p>
         </div>
       </div>

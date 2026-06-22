@@ -73,6 +73,8 @@ export async function downloadSingleFile(
     let settled = false;
 
     const cleanup = (): void => {
+      // Revoke blob URL before clearing the timer to ensure the browser can
+      // release the underlying blob data as early as possible.
       if (isBlobUrl) URL.revokeObjectURL(url);
       if (timer) clearTimeout(timer);
     };

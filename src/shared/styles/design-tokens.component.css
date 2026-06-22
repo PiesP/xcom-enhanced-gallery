@@ -52,6 +52,7 @@
     /* Icon Component */
     --xeg-icon-stroke-width: 0.125rem;
     --xeg-icon-size: 1.25em;
+    --xeg-toolbar-icon-size: 1.125rem; /* 18px → 1.125rem, matches TOOLBAR_ICON_SIZE */
 
     /* Spacing Aliases */
     --xeg-spacing-xs: var(--space-xs);

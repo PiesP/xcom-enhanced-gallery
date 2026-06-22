@@ -60,11 +60,9 @@ export function recordNavigation(
     return;
   }
 
-  batch(() => {
-    setNavSource(source);
-    setNavTimestamp(timestamp);
-    setNavIndex(targetIndex);
-  });
+  setNavSource(source);
+  setNavTimestamp(timestamp);
+  setNavIndex(targetIndex);
 }
 
 /**
@@ -167,7 +165,9 @@ export const gallerySignals = {
  * @param error - Error message string, or `null` to clear
  */
 export function setError(error: string | null): void {
-  _setErrorSig(error);
+  batch(() => {
+    _setErrorSig(error);
+  });
 }
 
 function applyGallerySessionUpdate(state: GallerySessionState): void {

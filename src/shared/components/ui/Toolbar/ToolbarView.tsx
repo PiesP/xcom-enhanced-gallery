@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { TOOLBAR_ICON_SIZE } from '@constants/css';
+import { TOOLBAR_ICON_SIZE_VAR } from '@constants/css';
 import { IconButton } from '@shared/components/ui/Button/IconButton';
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
 import { LucideIcon } from '@shared/components/ui/Icon/lucide/lucide-icons';
@@ -280,7 +280,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             disabled={nav().prevDisabled}
             onClick={props.onPreviousClick}
           >
-            <LucideIcon name="chevron-left" size={TOOLBAR_ICON_SIZE} />
+            <LucideIcon name="chevron-left" size={TOOLBAR_ICON_SIZE_VAR} />
           </IconButton>
 
           <IconButton
@@ -291,7 +291,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             disabled={nav().nextDisabled}
             onClick={props.onNextClick}
           >
-            <LucideIcon name="chevron-right" size={TOOLBAR_ICON_SIZE} />
+            <LucideIcon name="chevron-right" size={TOOLBAR_ICON_SIZE_VAR} />
           </IconButton>
 
           <div class={styles.counterBlock}>
@@ -300,6 +300,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 ref={(element) => {
                   setCounterElement(element);
                 }}
+                id="xeg-toolbar-counter"
                 class={cx(styles.mediaCounter, 'xeg-inline-center')}
                 aria-live="polite"
               >
@@ -313,7 +314,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 aria-valuenow={props.displayedIndex() + 1}
                 aria-valuemin={1}
                 aria-valuemax={totalCount()}
-                aria-label={`${props.displayedIndex() + 1} / ${totalCount()}`}
+                aria-labelledby="xeg-toolbar-counter"
               >
                 <div class={styles.progressFill} style={{ width: props.progressWidth() }} />
               </div>
@@ -332,7 +333,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 title={label.title}
                 aria-pressed={activeFitMode() === mode}
               >
-                <LucideIcon name={iconName} size={TOOLBAR_ICON_SIZE} />
+                <LucideIcon name={iconName} size={TOOLBAR_ICON_SIZE_VAR} />
               </IconButton>
             );
           })}
@@ -345,7 +346,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             aria-label={translate('tb.dl')}
             title={translate('tb.dl')}
           >
-            <LucideIcon name="download" size={TOOLBAR_ICON_SIZE} />
+            <LucideIcon name="download" size={TOOLBAR_ICON_SIZE_VAR} />
           </IconButton>
 
           {nav().canDownloadAll && (
@@ -357,7 +358,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               aria-label={translate('tb.dlAllCt', { count: totalCount() })}
               title={translate('tb.dlAllCt', { count: totalCount() })}
             >
-              <LucideIcon name="folder-down" size={TOOLBAR_ICON_SIZE} />
+              <LucideIcon name="folder-down" size={TOOLBAR_ICON_SIZE_VAR} />
             </IconButton>
           )}
 
@@ -375,7 +376,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               onMouseDown={props.settingsController.handleSettingsMouseDown}
               onClick={props.settingsController.handleSettingsClick}
             >
-              <LucideIcon name="settings-2" size={TOOLBAR_ICON_SIZE} />
+              <LucideIcon name="settings-2" size={TOOLBAR_ICON_SIZE_VAR} />
             </IconButton>
           )}
 
@@ -391,7 +392,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               disabled={isToolbarDisabled()}
               onClick={props.toggleTweetPanelExpanded}
             >
-              <LucideIcon name="messages-square" size={TOOLBAR_ICON_SIZE} />
+              <LucideIcon name="messages-square" size={TOOLBAR_ICON_SIZE_VAR} />
             </IconButton>
           )}
 
@@ -403,7 +404,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             disabled={isToolbarDisabled()}
             onClick={props.onCloseClick}
           >
-            <LucideIcon name="x" size={TOOLBAR_ICON_SIZE} />
+            <LucideIcon name="x" size={TOOLBAR_ICON_SIZE_VAR} />
           </IconButton>
         </div>
       </div>

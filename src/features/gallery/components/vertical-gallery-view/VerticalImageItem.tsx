@@ -236,6 +236,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             controls
             ref={setVideoRef}
             class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
+            aria-label={local['aria-label'] || defaultAriaLabel()}
             onLoadedMetadata={handleMediaLoad}
             onError={handleMediaError}
             onContextMenu={handleContextMenu}

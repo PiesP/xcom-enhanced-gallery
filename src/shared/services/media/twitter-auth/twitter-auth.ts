@@ -19,7 +19,7 @@ export function resolveBearerToken(): string {
     if (nextDataScript?.textContent) {
       const nextData = JSON.parse(nextDataScript.textContent);
       const token = nextData?.props?.pageProps?.token?.Bearer ?? nextData?.props?.token?.Bearer;
-      if (token && typeof token === 'string' && token.length > 10) {
+      if (token && typeof token === 'string' && isValidJwt(token)) {
         return `Bearer ${token}`;
       }
     }
@@ -28,4 +28,20 @@ export function resolveBearerToken(): string {
   }
 
   return TWITTER_API_CONFIG.GUEST_AUTHORIZATION;
+}
+
+/**
+ * Basic JWT structure validation.
+ * Checks for 3 dot-separated parts and verifies the exp claim is present and not expired.
+ */
+function isValidJwt(token: string): boolean {
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+  try {
+    const payload = JSON.parse(atob(parts[1]!));
+    if (typeof payload.exp !== 'number') return false;
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
 }
