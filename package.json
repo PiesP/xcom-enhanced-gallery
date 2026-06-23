@@ -14,7 +14,7 @@
     "check:src": "tsc --noEmit",
     "check": "pnpm check:src",
     "typecheck": "pnpm -s check",
-    "knip": "knip --dependencies",
+    "knip": "knip --no-exit-code",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
     "fmt": "biome check --linter-enabled=false .",

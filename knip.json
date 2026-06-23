@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/knip/schema.json",
+  "entry": ["src/main.ts"],
+  "project": ["src/**/*.ts"],
+  "paths": {
+    "@shared/*": ["src/shared/*"],
+    "@features/*": ["src/features/*"],
+    "@platform/*": ["src/platform/*"]
+  },
+  "ignore": [],
+  "ignoreExportsUsedInFile": true,
+  "ignoreBinaries": ["stryker"]
+}
