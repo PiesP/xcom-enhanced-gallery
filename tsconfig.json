@@ -47,6 +47,6 @@
     "forceConsistentCasingInFileNames": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "tooling/**/*"],
   "exclude": ["node_modules", "dist", ".stryker-tmp", ".stryker-tmp-debug", ".vscode"]
 }
