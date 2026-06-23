@@ -9,6 +9,7 @@ import { getEventManager } from '@shared/container/event-manager-accessor';
 import { tryGetSettings } from '@shared/container/settings-registry';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';
+import { SingletonBase } from '@shared/services/singleton-base';
 export type ThemeChangeListener = (
   theme: 'light' | 'dark',
   setting: 'auto' | 'light' | 'dark'
@@ -40,13 +41,16 @@ export class ThemeService {
   private observer: MutationObserver | null = null;
 
   static getInstance(): ThemeService {
-    if (!_themeInstance) _themeInstance = new ThemeService();
-    return _themeInstance;
+    return SingletonBase.get(_themeInstance, () => {
+      _themeInstance = new ThemeService();
+      return _themeInstance;
+    });
   }
 
   static resetForTests(): void {
-    _themeInstance?.destroy();
-    _themeInstance = null;
+    SingletonBase.reset(_themeInstance, () => {
+      _themeInstance = null;
+    });
   }
 
   constructor() {

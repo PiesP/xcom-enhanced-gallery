@@ -4,6 +4,7 @@
 import { PREFETCH_CACHE_SIZE } from '@constants/performance';
 import { PrefetchManager } from '@shared/services/media/prefetch-manager';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
+import { SingletonBase } from '@shared/services/singleton-base';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
@@ -40,14 +41,17 @@ export class MediaService {
   }
 
   public static getInstance(): MediaService {
-    if (!_instance) _instance = new MediaService();
-    return _instance;
+    return SingletonBase.get(_instance, () => {
+      _instance = new MediaService();
+      return _instance;
+    });
   }
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    _instance?.destroy();
-    _instance = null;
+    SingletonBase.reset(_instance, () => {
+      _instance = null;
+    });
   }
 
   private cleanupOnce(): void {

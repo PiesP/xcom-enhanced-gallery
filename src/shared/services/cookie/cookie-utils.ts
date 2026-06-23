@@ -13,8 +13,43 @@ import type {
   CookieRecord,
   CookieSetOptions,
 } from '@shared/types/core/cookie.types';
-import { promisifyCallback } from '@shared/utils/async/promise-helpers';
 import { escapeRegExp } from '@shared/utils/text/formatting';
+
+type ResultCallback<TResult, TError = string | null | undefined> = (
+  result?: TResult,
+  error?: TError
+) => void;
+
+interface PromisifyOptions<TFallback> {
+  readonly fallback?: () => TFallback | Promise<TFallback>;
+}
+
+function promisifyCallback<TResult>(
+  executor: (callback: ResultCallback<TResult>) => void,
+  options?: PromisifyOptions<TResult>
+): Promise<TResult> {
+  return new Promise((resolve, reject) => {
+    try {
+      executor((result, error) => {
+        if (error) {
+          if (options?.fallback) {
+            resolve(options.fallback());
+          } else {
+            reject(new Error(String(error)));
+          }
+          return;
+        }
+        resolve(result as TResult);
+      });
+    } catch (error) {
+      if (options?.fallback) {
+        resolve(options.fallback());
+      } else {
+        reject(error instanceof Error ? error : new Error(String(error)));
+      }
+    }
+  });
+}
 
 let cachedCookieAPI: CookieAPI | null | undefined;
 

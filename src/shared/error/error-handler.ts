@@ -7,6 +7,7 @@
  */
 
 import { getEventManager } from '@shared/container/container';
+import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 
 const formatErrorLocation = (
@@ -16,9 +17,10 @@ const formatErrorLocation = (
 ): string | undefined => filename && `${filename}:${lineno ?? 0}:${colno ?? 0}`;
 
 const formatRejectionMessage = (reason: unknown): string => {
-  if (reason instanceof Error) return reason.message;
-  if (typeof reason === 'string') return reason;
-  return `Unhandled rejection: ${String(reason)}`;
+  const message = normalizeErrorMessage(reason);
+  if (reason instanceof Error) return message;
+  if (typeof reason === 'string') return message;
+  return `Unhandled rejection: ${message}`;
 };
 
 let _errorHandlerInstance: GlobalErrorHandler | null = null;

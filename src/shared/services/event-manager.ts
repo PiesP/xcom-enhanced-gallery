@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { logger } from '@shared/logging/logger';
+import { SingletonBase } from '@shared/services/singleton-base';
 
 /**
  * Generates a unique ID using crypto.randomUUID.
@@ -41,7 +42,7 @@ interface ListenerContext {
   readonly id: string;
   readonly element: EventTarget;
   readonly type: string;
-  readonly listener: EventListenerOrEventListenerObject;
+  readonly listener: EventListener;
   readonly options?: boolean | AddEventListenerOptions;
   readonly context: string | undefined;
 }
@@ -54,14 +55,17 @@ export class EventManager {
   private constructor() {}
 
   public static getInstance(): EventManager {
-    if (!_eventManagerInstance) _eventManagerInstance = new EventManager();
-    return _eventManagerInstance;
+    return SingletonBase.get(_eventManagerInstance, () => {
+      _eventManagerInstance = new EventManager();
+      return _eventManagerInstance;
+    });
   }
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    _eventManagerInstance?.cleanup();
-    _eventManagerInstance = null;
+    SingletonBase.reset(_eventManagerInstance, () => {
+      _eventManagerInstance = null;
+    });
   }
 
   /** Destroy service */
@@ -81,6 +85,11 @@ export class EventManager {
 
     if (!element || typeof element.addEventListener !== 'function') {
       __DEV__ && logger.warn('[EventManager] Invalid element', { type, context });
+      return null;
+    }
+
+    if (typeof listener !== 'function') {
+      __DEV__ && logger.warn('[EventManager] Listener must be a function', { type, context });
       return null;
     }
 
