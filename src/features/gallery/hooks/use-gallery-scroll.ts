@@ -71,7 +71,7 @@ export function useGalleryScroll({
 
   const [isScrolling, setIsScrolling] = createSignal(false);
   const [lastScrollTime, setLastScrollTime] = createSignal(0);
-  let scrollIdleTimerId: number | null = null;
+  let scrollIdleTimerId: ReturnType<typeof setTimeout> | null = null;
 
   const clearScrollIdleTimer = (): void => {
     if (scrollIdleTimerId !== null) {

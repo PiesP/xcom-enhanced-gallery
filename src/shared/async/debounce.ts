@@ -42,7 +42,7 @@ export function createDebounced<Args extends unknown[]>(
   fn: (...args: Args) => void,
   delayMs: number = 300
 ): DebouncedFunction<Args> {
-  let timeoutId: number | null = null;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
   let pendingArgs: Args | null = null;
 
   const cancel = (): void => {

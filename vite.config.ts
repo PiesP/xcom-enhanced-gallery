@@ -64,6 +64,13 @@ export default defineConfig(({ mode }): UserConfig => {
   const isProd = mode === 'production';
   const config = getBuildModeConfig(mode);
   const version = resolveVersion(isDev);
+
+  if (version === '0.0.0' || version === '1.0.0') {
+    throw new Error(
+      `[vite.config] Version resolved to fallback "${version}". ` +
+        'Check tooling/vite/utils/version.ts REPO_ROOT path and package.json presence.'
+    );
+  }
   const root = resolve(__dirname);
   const entryFile = resolve(root, './src/main.ts');
 
