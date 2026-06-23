@@ -5,7 +5,6 @@ import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { resolveGMDownload } from '@shared/external/userscript/adapter';
-import type { DownloadProvider } from '@shared/services/download/download-provider.contract';
 import type {
   DownloadCapability,
   DownloadOptions,
@@ -130,70 +129,4 @@ export async function downloadSingleFile(
       settle({ success: false, error: normalizeErrorMessage(error) });
     }
   });
-}
-
-export class GMDownloadProvider implements DownloadProvider {
-  readonly name = 'GM_download';
-
-  private gmDownload: GMDownloadFunction | null | undefined = undefined;
-
-  detect(): boolean {
-    if (this.gmDownload !== undefined) return this.gmDownload !== null;
-    try {
-      const resolved = asGMDownloadFunction(resolveGMDownload());
-      this.gmDownload = resolved ?? null;
-      return resolved !== null;
-    } catch {
-      this.gmDownload = null;
-      return false;
-    }
-  }
-
-  async download(url: string, filename: string): Promise<SingleDownloadResult> {
-    const gmDownload = this.gmDownload;
-    if (!gmDownload) {
-      return { success: false, error: 'No download method available' };
-    }
-
-    if (typeof url !== 'string' || !url.startsWith('http')) {
-      return { success: false, error: `Invalid URL for download: ${url}` };
-    }
-
-    return new Promise<SingleDownloadResult>((resolve) => {
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      let settled = false;
-
-      const cleanup = (): void => {
-        if (timer) clearTimeout(timer);
-      };
-
-      const settle = (result: SingleDownloadResult): void => {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        resolve(result);
-      };
-
-      timer = setTimeout(() => {
-        settle({ success: false, error: DOWNLOAD_TIMEOUT_MESSAGE });
-      }, DOWNLOAD_TIMEOUT_MS);
-
-      try {
-        gmDownload({
-          url,
-          name: filename,
-          // NOTE: GM_download onload fires when the browser download dialog appears,
-          // NOT when the file is actually saved. User cancellation after this point
-          // cannot be detected (Tampermonkey/Violentmonkey API limitation).
-          onload: () => settle({ success: true, filename }),
-          onerror: (error: unknown) => {
-            settle({ success: false, error: normalizeErrorMessage(error) });
-          },
-          ontimeout: () => settle({ success: false, error: DOWNLOAD_TIMEOUT_MESSAGE }),
-        });
-      } catch (error) {
-        settle({ success: false, error: normalizeErrorMessage(error) });
-      }
-    });
-  }
 }

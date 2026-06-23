@@ -7,6 +7,7 @@
  */
 
 import { getLanguageService } from '@shared/container/container';
+import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import type { JSXElement } from 'solid-js';
@@ -27,18 +28,6 @@ export interface ErrorBoundaryProps {
 }
 
 /**
- * Converts an error to string, handling Error objects and fallbacks safely.
- */
-function stringifyError(error: unknown): string {
-  if (error instanceof Error && error.message) return error.message;
-  try {
-    return String(error);
-  } catch {
-    return 'Unknown error';
-  }
-}
-
-/**
  * Returns localized error title and body using language service.
  */
 function translateError(error: unknown): { body: string; title: string } {
@@ -46,10 +35,10 @@ function translateError(error: unknown): { body: string; title: string } {
     const lang = getLanguageService();
     return {
       title: lang.translate('msg.err.t'),
-      body: lang.translate('msg.err.b', { error: stringifyError(error) }),
+      body: lang.translate('msg.err.b', { error: normalizeErrorMessage(error) }),
     };
   } catch {
-    return { body: stringifyError(error), title: 'Unexpected error' };
+    return { body: normalizeErrorMessage(error), title: 'Unexpected error' };
   }
 }
 
