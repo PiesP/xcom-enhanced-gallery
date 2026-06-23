@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker/master/packages/core/schema/stryker-schema.json",
+  "mutate": [
+    "src/**/*.ts",
+    "!src/**/*.d.ts",
+    "!src/types/**",
+    "!src/platform/**",
+    "!src/main.ts",
+    "!src/services/encoder-*.ts",
+    "!src/services/decoder-*.ts",
+    "!src/services/demuxer-*.ts",
+    "!src/services/streaming-*.ts",
+    "!src/services/conversion-pipeline.ts",
+    "!src/services/conversion-profiler.ts",
+    "!src/services/buffer-pool.ts",
+    "!src/services/gif-encoder-service.ts",
+    "!src/services/streaming-webp-encoder.ts"
+  ],
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "test/vitest.config.ts",
+    "related": false
+  },
+  "reporters": [
+    "progress",
+    "clear-text"
+  ],
+  "coverageAnalysis": "all",
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": 50
+  },
+  "concurrency": 1,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ]
+}
