@@ -31,7 +31,7 @@ export interface ResolvedGMAPIs {
   cookie: CookieAPI | undefined;
 }
 
-function resolveGMAPIs(): ResolvedGMAPIs {
+function getGMAPIs(): ResolvedGMAPIs {
   const g = globalThis as unknown as Record<string, unknown>;
   return {
     download: g.GM_download,
@@ -45,25 +45,20 @@ function resolveGMAPIs(): ResolvedGMAPIs {
   };
 }
 
-let cachedGMAPIs: ResolvedGMAPIs | null = null;
-
-export function getResolvedGMAPIsCached(): ResolvedGMAPIs {
-  if (__DEV__) return resolveGMAPIs();
-  if (cachedGMAPIs) return cachedGMAPIs;
-  cachedGMAPIs = resolveGMAPIs();
-  return cachedGMAPIs;
-}
-
 function asFunction<T>(value: unknown): T | undefined {
   return typeof value === 'function' ? (value as T) : undefined;
 }
 
 export function resolveGMDownload(): unknown {
-  return getResolvedGMAPIsCached().download;
+  return getGMAPIs().download;
 }
 
-function createUserscriptAPI(): UserscriptAPI {
-  const g = getResolvedGMAPIsCached();
+let cachedUserscriptAPI: UserscriptAPI | null = null;
+
+export function getUserscript(): UserscriptAPI {
+  if (cachedUserscriptAPI) return cachedUserscriptAPI;
+
+  const g = getGMAPIs();
 
   const gmDownload = asFunction<(url: string, filename: string) => void>(g.download);
   const gmSetValue = asFunction<(key: string, value: unknown) => Promise<void> | void>(g.setValue);
@@ -81,7 +76,7 @@ function createUserscriptAPI(): UserscriptAPI {
   const cookie =
     cookieCandidate && typeof cookieCandidate.list === 'function' ? cookieCandidate : undefined;
 
-  return {
+  cachedUserscriptAPI = {
     async download(url: string, filename: string): Promise<void> {
       if (!gmDownload) throw new Error('GM_download unavailable');
       gmDownload(url, filename);
@@ -124,12 +119,6 @@ function createUserscriptAPI(): UserscriptAPI {
     },
     cookie,
   };
-}
 
-let cachedUserscriptAPI: UserscriptAPI | null = null;
-
-export function getUserscript(): UserscriptAPI {
-  if (cachedUserscriptAPI) return cachedUserscriptAPI;
-  cachedUserscriptAPI = createUserscriptAPI();
   return cachedUserscriptAPI;
 }

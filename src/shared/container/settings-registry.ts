@@ -7,7 +7,7 @@
  * container.ts → theme-service.ts → container.ts
  */
 
-import type { AppSettings } from '@shared/types/settings.types';
+import type { AppSettings, NestedSettingKey } from '@shared/types/settings.types';
 
 /**
  * Minimal settings service interface used internally for type-safe access.
@@ -41,25 +41,15 @@ export function clearSettings(): void {
 // Type-Safe Settings Access
 // ============================================================================
 
-/** Recursively extract all dot-notation paths from a nested object type */
-type SettingPaths<T, Prefix extends string = ''> = T extends object
-  ? {
-      [K in keyof T & string]: T[K] extends object
-        ? `${Prefix}${K}` | SettingPaths<T[K], `${Prefix}${K}.`>
-        : `${Prefix}${K}`;
-    }[keyof T & string]
-  : never;
-
-/** Resolve the value type at a given dot-notation path */
-type SettingValueAt<T, Path extends string> = Path extends `${infer K}.${infer Rest}`
-  ? K extends keyof T
-    ? SettingValueAt<T[K], Rest>
-    : never
-  : Path extends keyof T
-    ? T[Path]
-    : never;
-
-type SettingPath = SettingPaths<AppSettings>;
+/** Resolve the value type for a known nested setting key */
+type SettingValueAt<Path extends NestedSettingKey> =
+  Path extends `${infer K extends keyof AppSettings & string}.${infer Rest extends string}`
+    ? AppSettings[K] extends Record<Rest, infer V>
+      ? V
+      : never
+    : Path extends keyof AppSettings
+      ? AppSettings[Path]
+      : never;
 
 function requireSettingsService(): SettingsLike {
   const service = tryGetSettings();
@@ -70,18 +60,18 @@ function requireSettingsService(): SettingsLike {
 }
 
 /** Get a typed setting value, falling back to default if unset */
-export function getTypedSettingOr<P extends SettingPath>(
+export function getTypedSettingOr<P extends NestedSettingKey>(
   path: P,
-  fallback: SettingValueAt<AppSettings, P>
-): SettingValueAt<AppSettings, P> {
-  const value = requireSettingsService().get(path) as SettingValueAt<AppSettings, P> | undefined;
+  fallback: SettingValueAt<P>
+): SettingValueAt<P> {
+  const value = requireSettingsService().get(path) as SettingValueAt<P> | undefined;
   return value === undefined ? fallback : value;
 }
 
 /** Set a typed setting value */
-export function setTypedSetting<P extends SettingPath>(
+export function setTypedSetting<P extends NestedSettingKey>(
   path: P,
-  value: SettingValueAt<AppSettings, P>
+  value: SettingValueAt<P>
 ): Promise<void> {
   return requireSettingsService().set(path, value);
 }
