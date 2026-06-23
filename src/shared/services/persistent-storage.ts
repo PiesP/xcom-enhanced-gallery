@@ -3,6 +3,7 @@
 
 import type { UserscriptAPI } from '@shared/external/userscript/adapter';
 import { getUserscript } from '@shared/external/userscript/adapter';
+import { SingletonBase } from '@shared/services/singleton-base';
 
 let _persistentStorageInstance: PersistentStorage | null = null;
 
@@ -14,14 +15,17 @@ export class PersistentStorage {
   private constructor() {}
 
   static getInstance(): PersistentStorage {
-    if (!_persistentStorageInstance) _persistentStorageInstance = new PersistentStorage();
-    return _persistentStorageInstance;
+    return SingletonBase.get(_persistentStorageInstance, () => {
+      _persistentStorageInstance = new PersistentStorage();
+      return _persistentStorageInstance;
+    });
   }
 
   /** @internal Test helper */
   static resetForTests(): void {
-    _persistentStorageInstance?.destroy();
-    _persistentStorageInstance = null;
+    SingletonBase.reset(_persistentStorageInstance, () => {
+      _persistentStorageInstance = null;
+    });
   }
 
   /** Destroy service */

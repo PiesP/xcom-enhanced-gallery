@@ -15,6 +15,7 @@ import { DEFAULT_LANGUAGE, Translator } from '@shared/i18n/translator';
 import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
 import { logger } from '@shared/logging/logger';
 import { PersistentStorage } from '@shared/services/persistent-storage';
+import { SingletonBase } from '@shared/services/singleton-base';
 
 let _instance: LanguageService | null = null;
 
@@ -38,13 +39,17 @@ export class LanguageService {
   }
 
   public static getInstance(): LanguageService {
-    if (!_instance) _instance = new LanguageService();
-    return _instance;
+    return SingletonBase.get(_instance, () => {
+      _instance = new LanguageService();
+      return _instance;
+    });
   }
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    _instance = null;
+    SingletonBase.reset(_instance, () => {
+      _instance = null;
+    });
   }
 
   /** Initialize service (idempotent) */

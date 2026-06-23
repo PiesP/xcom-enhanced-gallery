@@ -7,6 +7,7 @@
 
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
 import { getUserscript } from '@shared/external/userscript/adapter';
+import { SingletonBase } from '@shared/services/singleton-base';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { createDeferred } from '@shared/utils/async/promise-helpers';
 
@@ -32,12 +33,21 @@ export class HttpRequestService {
   private constructor() {}
 
   static getInstance(): HttpRequestService {
-    if (!_httpInstance) _httpInstance = new HttpRequestService();
-    return _httpInstance;
+    return SingletonBase.get(_httpInstance, () => {
+      _httpInstance = new HttpRequestService();
+      return _httpInstance;
+    });
   }
 
   /** @internal Test helper */
   static resetForTests(): void {
+    SingletonBase.reset(_httpInstance, () => {
+      _httpInstance = null;
+    });
+  }
+
+  /** Destroy service */
+  destroy(): void {
     _httpInstance = null;
   }
 
