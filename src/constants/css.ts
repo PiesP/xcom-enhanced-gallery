@@ -76,8 +76,5 @@ export const CSS = {
   GALLERY_ELEMENT_SELECTORS,
 } as const;
 
-/** Standard toolbar icon size in pixels. */
-export const TOOLBAR_ICON_SIZE = 18;
-
 /** CSS custom property for toolbar icon size. Use in CSS as `var(--xeg-toolbar-icon-size)`. */
 export const TOOLBAR_ICON_SIZE_VAR = 'var(--xeg-toolbar-icon-size)';

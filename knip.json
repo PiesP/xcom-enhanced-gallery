@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/knip/schema.json",
   "entry": ["src/main.ts"],
-  "project": ["src/**/*.ts"],
+  "project": ["src/**/*.ts", "src/**/*.tsx"],
   "paths": {
     "@shared/*": ["src/shared/*"],
     "@features/*": ["src/features/*"],

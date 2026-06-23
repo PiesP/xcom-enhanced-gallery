@@ -21,12 +21,6 @@ export const ErrorCode = {
 /** Type for ErrorCode values */
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 
-/** Brand type base structure */
-type Brand<T, B> = T & { readonly __brand: B };
-
-/** Media ID brand type */
-export type MediaId = Brand<string, 'MediaId'>;
-
 /** Basic media information */
 export interface MediaInfo {
   readonly id: string;

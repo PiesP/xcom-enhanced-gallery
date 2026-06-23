@@ -65,15 +65,6 @@ function getExtension(url: string): string {
 }
 
 /**
- * Extract file extension from URL.
- * @param url - Media URL to extract extension from
- * @returns Lowercase extension string, default 'jpg'
- */
-export function getFileExtension(url: string): string {
-  return getExtension(url);
-}
-
-/**
  * Extract index from media ID.
  * Parses patterns like '_media_0' → '1' (1-indexed) or '_1' → '1'.
  * @param mediaId - Media identifier string to parse
@@ -132,19 +123,6 @@ function resolveMetadata(media: MediaInfo, fallbackUsername?: string | null): Me
   }
 
   return { username, tweetId };
-}
-
-/**
- * Resolve username and tweetId from media metadata (exported for advanced use).
- * @param media - Media item to extract metadata from
- * @param fallbackUsername - Optional fallback username when extraction fails
- * @returns Object with username and tweetId (both nullable)
- */
-export function resolveMediaMetadata(
-  media: MediaInfo,
-  fallbackUsername?: string | null
-): MediaMetadata {
-  return resolveMetadata(media, fallbackUsername);
 }
 
 // Public API - Pure Functions
@@ -210,14 +188,4 @@ export function generateZipFilename(
     const nowMs = resolveNowMs(options.nowMs);
     return `download_${nowMs}.zip`;
   }
-}
-
-const INVALID_FILENAME_CHARS = /[<>:"/\\|?*\u0000-\u001f]/;
-
-export function isValidMediaFilename(name: string): boolean {
-  return typeof name === 'string' && name.length > 0 && !INVALID_FILENAME_CHARS.test(name);
-}
-
-export function isValidZipFilename(name: string): boolean {
-  return typeof name === 'string' && name.length > 0 && !INVALID_FILENAME_CHARS.test(name);
 }

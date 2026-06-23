@@ -23,11 +23,6 @@ export function registerSettings(s: SettingsLike): void {
   _settings = s;
 }
 
-export function getSettings(): SettingsLike {
-  if (!_settings) throw new Error('SettingsService not registered');
-  return _settings;
-}
-
 export function tryGetSettings(): SettingsLike | null {
   return _settings;
 }

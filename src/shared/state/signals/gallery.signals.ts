@@ -294,11 +294,6 @@ export function navigateToItem(targetIndex: number, source: NavigationSource): v
   galleryIndexEvents.emit('navigate:complete', { index: clampedIndex, trigger: source });
 }
 
-/** @internal */
-export function setGalleryFocus(focusIndex: number | null, _source?: unknown): void {
-  setFocusedIndex(focusIndex);
-}
-
 // ========================
 // Download state (inlined from download.signals.ts)
 // ========================

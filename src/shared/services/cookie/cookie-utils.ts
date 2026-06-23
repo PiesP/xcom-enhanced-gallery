@@ -6,13 +6,7 @@
  */
 
 import { getUserscript } from '@shared/external/userscript/adapter';
-import type {
-  CookieAPI,
-  CookieDeleteOptions,
-  CookieListOptions,
-  CookieRecord,
-  CookieSetOptions,
-} from '@shared/types/core/cookie.types';
+import type { CookieAPI, CookieListOptions, CookieRecord } from '@shared/types/core/cookie.types';
 import { escapeRegExp } from '@shared/utils/text/formatting';
 
 type ResultCallback<TResult, TError = string | null | undefined> = (
@@ -85,16 +79,6 @@ function parseDocumentCookies(filterName?: string): CookieRecord[] {
     .filter((r) => !filterName || r.name === filterName);
 }
 
-function setDocumentCookie(name: string, value: string, expires?: string): void {
-  const parts = [`${encodeURIComponent(name)}=${encodeURIComponent(value)}`, 'path=/'];
-  if (expires) parts.push(`expires=${expires}`);
-  document.cookie = parts.join('; ');
-}
-
-function deleteDocumentCookie(name: string): void {
-  setDocumentCookie(name, '', 'Thu, 01 Jan 1970 00:00:00 GMT');
-}
-
 export async function listCookies(options?: CookieListOptions): Promise<CookieRecord[]> {
   try {
     const gm = getCookieAPI();
@@ -119,48 +103,6 @@ export async function listCookies(options?: CookieListOptions): Promise<CookieRe
     );
   } catch {
     return parseDocumentCookies(options?.name);
-  }
-}
-
-export async function setCookie(details: CookieSetOptions): Promise<void> {
-  if (!details?.name) throw new Error('Cookie name is required');
-  const name = details.name;
-
-  try {
-    const gm = getCookieAPI();
-    if (!gm?.set) {
-      setDocumentCookie(name, details.value ?? '');
-      return;
-    }
-
-    await promisifyCallback<void>((cb) => gm.set!(details, (error) => cb(undefined, error)), {
-      fallback: () => {
-        setDocumentCookie(name, details.value ?? '');
-      },
-    });
-  } catch {
-    setDocumentCookie(name, details.value ?? '');
-  }
-}
-
-export async function deleteCookie(details: CookieDeleteOptions): Promise<void> {
-  if (!details?.name) throw new Error('Cookie name is required');
-  const name = details.name;
-
-  try {
-    const gm = getCookieAPI();
-    if (!gm?.delete) {
-      deleteDocumentCookie(name);
-      return;
-    }
-
-    await promisifyCallback<void>((cb) => gm.delete!(details, (error) => cb(undefined, error)), {
-      fallback: () => {
-        deleteDocumentCookie(name);
-      },
-    });
-  } catch {
-    deleteDocumentCookie(name);
   }
 }
 
