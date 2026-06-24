@@ -122,7 +122,11 @@ export class HttpRequestService {
       },
       onabort: () => {
         settle(() => {
-          deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal!));
+          if (signal) {
+            deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal));
+          } else {
+            deferred.reject(new DOMException('Aborted', 'AbortError'));
+          }
         });
       },
     };
