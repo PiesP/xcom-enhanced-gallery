@@ -110,6 +110,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
     >
       <div class={cx(styles.setting, props.compact && styles.settingCompact)}>
         <label
+          id={props['data-testid'] ? `${props['data-testid']}-theme-label` : 'settings-theme-label'}
           for={
             props['data-testid'] ? `${props['data-testid']}-theme-select` : 'settings-theme-select'
           }
@@ -125,6 +126,9 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           onChange={props.onThemeChange}
           value={themeValue()}
           aria-label={strings().theme.title}
+          aria-labelledby={
+            props['data-testid'] ? `${props['data-testid']}-theme-label` : 'settings-theme-label'
+          }
           title={strings().theme.title}
           data-testid={
             __DEV__ && props['data-testid'] ? `${props['data-testid']}-theme` : undefined
@@ -138,6 +142,11 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
 
       <div class={cx(styles.setting, props.compact && styles.settingCompact)}>
         <label
+          id={
+            props['data-testid']
+              ? `${props['data-testid']}-language-label`
+              : 'settings-language-label'
+          }
           for={
             props['data-testid']
               ? `${props['data-testid']}-language-select`
@@ -157,6 +166,11 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           onChange={props.onLanguageChange}
           value={languageValue()}
           aria-label={strings().language.title}
+          aria-labelledby={
+            props['data-testid']
+              ? `${props['data-testid']}-language-label`
+              : 'settings-language-label'
+          }
           title={strings().language.title}
           data-testid={
             __DEV__ && props['data-testid'] ? `${props['data-testid']}-language` : undefined

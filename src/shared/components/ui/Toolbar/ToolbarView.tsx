@@ -311,6 +311,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               <div
                 class={styles.progressBar}
                 role="progressbar"
+                aria-label="Progress"
                 aria-valuenow={props.displayedIndex() + 1}
                 aria-valuemin={1}
                 aria-valuemax={totalCount()}

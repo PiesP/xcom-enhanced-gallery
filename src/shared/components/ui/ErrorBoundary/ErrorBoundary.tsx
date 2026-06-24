@@ -89,7 +89,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
         {(error) => {
           const { title, body } = translateError(error());
           return (
-            <div aria-live="polite" data-xeg-error-boundary="" role="alert">
+            <div aria-live="polite" data-xeg-error-boundary="">
               <p class="xeg-error-boundary__title">{title}</p>
               <p class="xeg-error-boundary__body">{body}</p>
               <button

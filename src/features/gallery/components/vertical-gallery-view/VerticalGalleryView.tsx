@@ -203,11 +203,11 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
       )}
       onClick={handleBackgroundClick}
     >
-      <div class={styles.toolbarHoverZone} data-role="toolbar-hover-zone" />
+      <div class={styles.toolbarHoverZone} role="presentation" />
 
       <div
         class={styles.toolbarWrapper}
-        data-role="toolbar"
+        role="toolbar"
         ref={(el) => setToolbarWrapperEl(el ?? null)}
       >
         <Toolbar
@@ -224,11 +224,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
         />
       </div>
 
-      <div
-        class={styles.itemsContainer}
-        data-xeg-role="items-container"
-        ref={(el) => setItemsContainerEl(el ?? null)}
-      >
+      <div class={styles.itemsContainer} role="list" ref={(el) => setItemsContainerEl(el ?? null)}>
         <For each={mediaItems()}>
           {(item, index) => {
             const actualIndex = index();

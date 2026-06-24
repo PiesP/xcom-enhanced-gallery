@@ -24,7 +24,7 @@ import {
 import { cx } from '@shared/utils/text/formatting';
 import { isUrlAllowed, MEDIA_URL_POLICY } from '@shared/utils/url/safety';
 import type { JSX, JSXElement } from 'solid-js';
-import { createEffect, createMemo, createSignal, splitProps, untrack } from 'solid-js';
+import { createEffect, createMemo, createSignal, onCleanup, splitProps, untrack } from 'solid-js';
 
 const FIT_MODE_CLASSES: Record<ImageFitMode, string> = {
   original: styles.fitOriginal as string,
@@ -192,16 +192,65 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     local.registerContainer?.(element);
   };
 
-  const defaultContainerRole = () => (isVideo() ? 'group' : 'button');
+  const defaultContainerRole = () => 'listitem';
   const resolvedContainerRole = () =>
     (local.role ?? defaultContainerRole()) as JSX.HTMLAttributes<HTMLDivElement>['role'];
 
-  const defaultAriaLabel = createMemo(() =>
-    translate('msg.gal.itemLbl', {
-      index: local.index + 1,
-      filename: cleanFilename(local.media.filename),
-    })
+  const totalItems = () => gallerySignals.mediaItems.length;
+
+  const imageAltText = createMemo(() =>
+    isVideo()
+      ? `Video ${local.index + 1} of ${totalItems()}`
+      : `Image ${local.index + 1} of ${totalItems()}: ${local.media.alt || cleanFilename(local.media.filename)}`
   );
+
+  // Focus trap: when gallery is open, trap Tab/Shift+Tab within gallery container
+  createEffect(() => {
+    const container = containerRef();
+    if (!container) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+
+      const focusableSelectors = [
+        'a[href]',
+        'button:not([disabled])',
+        'iframe',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(', ');
+
+      const focusableElements = Array.from(
+        container.querySelectorAll<HTMLElement>(focusableSelectors)
+      ).filter((el) => !el.hasAttribute('aria-hidden'));
+
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (!firstElement || !lastElement) return;
+
+      if (event.shiftKey) {
+        if (document.activeElement === firstElement) {
+          event.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          event.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    container.addEventListener('keydown', handleKeyDown);
+    onCleanup(() => {
+      container.removeEventListener('keydown', handleKeyDown);
+    });
+  });
 
   return (
     <div
@@ -217,10 +266,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       onFocus={local.onFocus}
       onBlur={rest.onBlur}
       onKeyDown={handleContainerKeyDown}
-      aria-label={local['aria-label'] || defaultAriaLabel()}
+      aria-label={local['aria-label'] || imageAltText()}
       aria-describedby={local['aria-describedby']}
+      aria-posinset={local.index + 1}
+      aria-setsize={totalItems()}
       role={resolvedContainerRole()}
-      tabIndex={local.tabIndex ?? 0}
+      tabIndex={-1}
       data-testid={__DEV__ ? rest['data-testid'] : undefined}
     >
       <div class={styles.imageWrapper} data-xeg-role="media-wrapper">
@@ -236,7 +287,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             controls
             ref={setVideoRef}
             class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
-            aria-label={local['aria-label'] || defaultAriaLabel()}
+            aria-label={`Video ${local.index + 1} of ${totalItems()}`}
             onLoadedMetadata={handleMediaLoad}
             onError={handleMediaError}
             onContextMenu={handleContextMenu}
@@ -247,7 +298,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
           <img
             ref={setImageRef}
             src={local.media.url}
-            alt={cleanFilename(local.media.filename)}
+            alt={imageAltText()}
             loading={shouldEagerLoad() ? 'eager' : 'lazy'}
             decoding="async"
             class={cx(styles.image, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}

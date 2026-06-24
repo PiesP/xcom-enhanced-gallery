@@ -5,12 +5,13 @@ import { CSS } from '@constants/css';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
-import { splitProps } from 'solid-js';
+import { createEffect, onCleanup, splitProps } from 'solid-js';
 import { render } from 'solid-js/web';
 
 export interface GalleryContainerProps {
   readonly children: ComponentChildren;
   readonly className?: string;
+  readonly lang?: string;
 }
 
 const DISPOSE_SYMBOL = Symbol();
@@ -40,12 +41,27 @@ export function unmountGallery(container: Element): void {
 }
 
 export function GalleryContainer(props: GalleryContainerProps): JSXElement {
-  const [local] = splitProps(props, ['children', 'className']);
+  const [local] = splitProps(props, ['children', 'className', 'lang']);
 
   const classes = cx(CSS.CLASSES.OVERLAY, CSS.CLASSES.CONTAINER, local.className);
 
+  createEffect(() => {
+    document.body.inert = true;
+  });
+
+  onCleanup(() => {
+    document.body.inert = false;
+  });
+
   return (
-    <div class={classes} data-xeg-gallery-container="">
+    <div
+      class={classes}
+      data-xeg-gallery-container=""
+      role="dialog"
+      aria-modal="true"
+      aria-label="Image gallery"
+      lang={local.lang ?? 'en'}
+    >
       {local.children}
     </div>
   );

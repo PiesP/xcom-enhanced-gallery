@@ -24,6 +24,7 @@ export interface GalleryLifecycle {
 export function createGalleryLifecycle(): GalleryLifecycle {
   let initialized = false;
   let currentContext: string | null = null;
+  let openerElement: HTMLElement | null = null;
 
   function initialize(handlers: EventHandlers, options?: Partial<GalleryEventOptions>): () => void {
     if (initialized) {
@@ -36,6 +37,9 @@ export function createGalleryLifecycle(): GalleryLifecycle {
       if (__DEV__) logger.error('[GalleryLifecycle] Missing handlers');
       return cleanup;
     }
+
+    // Store the element that opened the gallery (for focus restoration on close)
+    openerElement = document.activeElement as HTMLElement | null;
 
     const context = options?.context?.trim() || 'gallery';
     const mergedOptions: GalleryEventOptions = {
@@ -82,6 +86,16 @@ export function createGalleryLifecycle(): GalleryLifecycle {
     if (currentContext) {
       getEventManager().removeByContext(currentContext);
     }
+
+    // Restore focus to the element that opened the gallery
+    if (openerElement && typeof openerElement.focus === 'function') {
+      try {
+        openerElement.focus({ preventScroll: true });
+      } catch {
+        // Silently ignore if element is no longer focusable (e.g., removed from DOM)
+      }
+    }
+    openerElement = null;
 
     resetKeyboardDebounceState();
     initialized = false;
