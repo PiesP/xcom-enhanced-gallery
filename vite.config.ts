@@ -141,7 +141,7 @@ export default defineConfig(({ mode }): UserConfig => {
         cssFileName: 'style',
       },
 
-      rollupOptions: {
+      rolldownOptions: {
         output: {
           entryFileNames: outputFileName,
           exports: 'none',

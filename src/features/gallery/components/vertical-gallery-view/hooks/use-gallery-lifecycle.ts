@@ -51,6 +51,11 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
       ([container, visible]) => {
         if (!container) return;
 
+        // Respect prefers-reduced-motion: skip JS-driven animation
+        const prefersReducedMotion =
+          window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+        if (prefersReducedMotion) return;
+
         if (visible) {
           animateGalleryEnter(container).catch(() => {});
         } else {

@@ -256,7 +256,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     <div
       ref={assignContainerRef}
       class={containerClasses()}
-      role="listitem"
       data-index={local.index}
       data-fit-mode={resolvedFitMode()}
       data-media-loaded={isLoaded() ? 'true' : 'false'}
