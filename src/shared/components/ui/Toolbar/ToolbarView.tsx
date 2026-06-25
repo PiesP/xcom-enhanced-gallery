@@ -46,8 +46,8 @@ interface ToolbarViewProps {
   readonly currentFitMode: ImageFitMode;
   /** Tweet text content */
   readonly tweetText: string | null;
-  /** Tweet HTML content */
-  readonly tweetTextHTML: string | null;
+  /** Tweet text content */
+  readonly tweetTextContent: string | null;
   /** Tweet URL */
   readonly tweetUrl: string | null;
   /** ARIA label */
@@ -122,7 +122,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const isToolbarDisabled = () => props.disabled;
   const activeFitMode = () => props.currentFitMode;
   const tweetText = () => props.tweetText;
-  const tweetTextHTML = () => props.tweetTextHTML;
+  const tweetTextContent = () => props.tweetTextContent;
   const tweetUrl = () => props.tweetUrl;
 
   // Element refs
@@ -163,7 +163,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       counter.dataset.focusedIndex = focused;
     }
   });
-  const hasTweetContent = () => !!(tweetTextHTML() ?? tweetText() ?? tweetUrl());
+  const hasTweetContent = () => !!(tweetTextContent() ?? tweetText() ?? tweetUrl());
 
   const toolbarButtonClass = (...extra: (string | undefined)[]) =>
     cx(styles.toolbarButton, 'xeg-inline-center', ...extra);
@@ -452,7 +452,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         <Show when={props.isTweetPanelExpanded() && hasTweetContent()}>
           <TweetTextPanel
             tweetText={tweetText() ?? undefined}
-            tweetTextHTML={tweetTextHTML() ?? undefined}
+            tweetTextContent={tweetTextContent() ?? undefined}
             tweetUrl={tweetUrl() ?? undefined}
           />
         </Show>

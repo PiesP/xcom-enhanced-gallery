@@ -12,7 +12,7 @@ import styles from './Toolbar.module.css';
  */
 interface TweetTextPanelProps {
   readonly tweetText: string | undefined;
-  readonly tweetTextHTML: string | undefined;
+  readonly tweetTextContent: string | undefined;
   readonly tweetUrl: string | undefined;
 }
 
@@ -182,7 +182,7 @@ function TweetUrlLink(props: {
  */
 export function TweetTextPanel(props: TweetTextPanelProps): JSXElement {
   const translate = useTranslation();
-  const tweetText = props.tweetTextHTML ?? props.tweetText ?? '';
+  const tweetText = props.tweetTextContent ?? props.tweetText ?? '';
   const tokens = tweetText ? tokenizeTweetText(tweetText) : [];
   const safeTweetUrl = normalizeTweetUrl(props.tweetUrl);
   const tweetUrlLabel = safeTweetUrl ? formatTweetUrlLabel(safeTweetUrl) : '';

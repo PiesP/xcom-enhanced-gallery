@@ -151,6 +151,7 @@ export class GalleryApp {
 
     this.renderer.destroy();
     disposeGallerySignals();
+    getMediaService().destroy();
 
     this.initialized = false;
     delete (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug;

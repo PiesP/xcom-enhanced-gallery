@@ -75,7 +75,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   });
 
   const tweetText = () => activeMedia()?.tweetText ?? null;
-  const tweetTextHTML = () => activeMedia()?.tweetTextHTML ?? null;
+  const tweetTextContent = () => activeMedia()?.tweetTextContent ?? null;
   const tweetUrl = () => activeMedia()?.tweetUrl ?? null;
 
   const preloadIndices = createMemo(() => {
@@ -217,7 +217,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
           isDownloading={isDownloading}
           currentFitMode={imageFitMode}
           tweetText={tweetText}
-          tweetTextHTML={tweetTextHTML}
+          tweetTextContent={tweetTextContent}
           tweetUrl={tweetUrl}
           className={styles.toolbar}
           handlers={toolbarHandlers()}

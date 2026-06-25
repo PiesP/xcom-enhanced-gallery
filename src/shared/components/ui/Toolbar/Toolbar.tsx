@@ -49,7 +49,7 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
     'currentFitMode',
     'handlers',
     'tweetText',
-    'tweetTextHTML',
+    'tweetTextContent',
     'tweetUrl',
   ]);
 
@@ -186,7 +186,7 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
       disabled={local.disabled?.() ?? false}
       currentFitMode={activeFitMode()}
       tweetText={local.tweetText?.() ?? null}
-      tweetTextHTML={local.tweetTextHTML?.() ?? null}
+      tweetTextContent={local.tweetTextContent?.() ?? null}
       tweetUrl={local.tweetUrl?.() ?? null}
       toolbarClass={toolbarClass}
       toolbarState={toolbarState}

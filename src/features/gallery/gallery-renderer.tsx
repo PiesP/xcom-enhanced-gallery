@@ -122,6 +122,7 @@ export class GalleryRenderer {
     this.container = document.createElement('div');
     this.container.className = CSS.CLASSES.RENDERER;
     this.container.setAttribute('data-renderer', 'gallery');
+    document.body.inert = true;
     document.body.appendChild(this.container);
   }
 
@@ -167,6 +168,7 @@ export class GalleryRenderer {
       } catch (error) {
         __DEV__ && logger.warn('[GalleryRenderer] Container removal failed:', error);
       } finally {
+        document.body.inert = false;
         this.container = null;
       }
     }

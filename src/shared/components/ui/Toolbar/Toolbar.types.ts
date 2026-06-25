@@ -15,6 +15,6 @@ export interface ToolbarProps {
   readonly disabled?: Accessor<boolean>;
   readonly className?: string | undefined;
   readonly tweetText?: Accessor<string | null>;
-  readonly tweetTextHTML?: Accessor<string | null>;
+  readonly tweetTextContent?: Accessor<string | null>;
   readonly tweetUrl?: Accessor<string | null>;
 }

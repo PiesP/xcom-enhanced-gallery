@@ -17,7 +17,7 @@ function createMediaInfoFromAPI(
   apiMedia: TweetMediaEntry,
   tweetInfo: TweetInfo,
   index: number,
-  tweetTextHTML?: string | undefined
+  tweetTextContent?: string | undefined
 ): MediaInfo | null {
   try {
     const mediaType = apiMedia.type === 'photo' ? 'image' : 'video';
@@ -44,7 +44,7 @@ function createMediaInfoFromAPI(
       tweetId: tweetInfo.tweetId,
       tweetUrl: tweetInfo.tweetUrl,
       tweetText: apiMedia.tweet_text,
-      tweetTextHTML,
+      tweetTextContent,
       originalUrl: apiMedia.download_url,
       thumbnailUrl: apiMedia.preview_url,
       alt: `${mediaType} ${index + 1}`,
@@ -68,7 +68,7 @@ function createMediaInfoFromAPI(
 export function convertAPIMediaToMediaInfo(
   apiMedias: TweetMediaEntry[],
   tweetInfo: TweetInfo,
-  tweetTextHTML?: string | undefined
+  tweetTextContent?: string | undefined
 ): MediaInfo[] {
   const mediaItems: MediaInfo[] = [];
 
@@ -76,7 +76,7 @@ export function convertAPIMediaToMediaInfo(
     const apiMedia = apiMedias[i];
     if (!apiMedia) continue;
 
-    const mediaInfo = createMediaInfoFromAPI(apiMedia, tweetInfo, i, tweetTextHTML);
+    const mediaInfo = createMediaInfoFromAPI(apiMedia, tweetInfo, i, tweetTextContent);
     if (mediaInfo) {
       mediaItems.push(mediaInfo);
     }

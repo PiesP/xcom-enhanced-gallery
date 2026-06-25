@@ -61,14 +61,13 @@ function findAllMediaInContainer(container: HTMLElement): MediaElement[] {
  * @param element - Media element (img or video)
  * @param tweetInfo - Tweet metadata
  * @param index - Media index in array
- * @param tweetTextHTML - Tweet text HTML
- * @returns MediaInfo object or null
+ * @param tweetTextContent - Tweet text content
  */
 function createMediaInfoFromDOM(
   element: MediaElement,
   tweetInfo: TweetInfo,
   index: number,
-  tweetTextHTML?: string
+  tweetTextContent?: string
 ): MediaInfo | null {
   try {
     const mediaUrl = extractMediaUrlFromElement(element);
@@ -99,7 +98,7 @@ function createMediaInfoFromDOM(
       tweetId: tweetInfo.tweetId,
       tweetUrl: tweetInfo.tweetUrl,
       tweetText: undefined,
-      tweetTextHTML,
+      tweetTextContent,
       originalUrl: mediaUrl,
       thumbnailUrl: mediaUrl,
       alt: `${mediaType} ${index + 1}`,
@@ -150,8 +149,8 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
         );
       }
 
-      // Step 2: Extract tweet text HTML
-      const tweetTextHTML = extractTweetTextHTMLFromClickedElement(clickedElement);
+      // Step 2: Extract tweet text content
+      const tweetTextContent = extractTweetTextHTMLFromClickedElement(clickedElement);
 
       // Step 3: Find all media elements in the container
       const mediaElements = findAllMediaInContainer(tweetContainer);
@@ -173,7 +172,7 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
         const element = mediaElements[i];
         if (!element) continue;
 
-        const mediaInfo = createMediaInfoFromDOM(element, tweetInfo, i, tweetTextHTML);
+        const mediaInfo = createMediaInfoFromDOM(element, tweetInfo, i, tweetTextContent);
         if (mediaInfo) {
           elementToIndexMap.set(element, mediaItems.length);
           mediaItems.push(mediaInfo);

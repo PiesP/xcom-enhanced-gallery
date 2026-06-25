@@ -37,8 +37,8 @@ export interface MediaInfo {
   readonly tweetId?: string | undefined;
   readonly tweetUrl?: string | undefined;
   readonly tweetText?: string | undefined;
-  /** Sanitized HTML from DOM */
-  readonly tweetTextHTML?: string | undefined;
+  /** Sanitized text content from DOM */
+  readonly tweetTextContent?: string | undefined;
   readonly metadata?: Record<string, unknown> | undefined;
   /** Media source location (quote tweet case) */
   readonly sourceLocation?: 'original' | 'quoted' | undefined;
