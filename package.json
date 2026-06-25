@@ -23,7 +23,8 @@
     "circular": "pnpm dlx madge --circular --ts-config tsconfig.json --extensions ts,tsx src",
     "quality": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s circular && pnpm -s knip",
     "quality:ci": "pnpm -s quality",
-    "quality:fix": "pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s check && pnpm -s circular && pnpm -s knip"
+    "quality:fix": "pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s check && pnpm -s circular && pnpm -s knip",
+  "verify": "pnpm -s quality && pnpm -s build"
   },
   "keywords": [
     "userscript",
