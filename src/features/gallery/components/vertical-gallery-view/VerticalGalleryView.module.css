@@ -169,7 +169,7 @@
 
 /* Scrolling state: hide toolbar while scrolling manually */
 /* High specificity to override hover states without forced overrides */
-.container.isScrolling[data-xeg-gallery="true"][data-xeg-role="gallery"] .toolbarWrapper {
+.container.isScrolling[data-xeg-gallery="true"] .toolbarWrapper {
   --toolbar-opacity: var(--xeg-toolbar-hidden-opacity, 0);
   --toolbar-visibility: var(--xeg-toolbar-hidden-visibility, hidden);
   --toolbar-pointer-events: var(--xeg-toolbar-hidden-pointer-events, none);
@@ -230,7 +230,6 @@
   transition: opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
-.container.uiHidden [data-xeg-role="items-container"],
 .container.uiHidden .itemsContainer {
   /* Keep the scroll surface interactive even when chrome is hidden */
   pointer-events: auto;

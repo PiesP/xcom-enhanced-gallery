@@ -41,3 +41,9 @@
     scrollbar-gutter: stable both-edges;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .xeg-gallery-overlay {
+    transition: none;
+  }
+}

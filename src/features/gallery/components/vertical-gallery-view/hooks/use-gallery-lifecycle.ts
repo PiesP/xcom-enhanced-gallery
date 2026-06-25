@@ -18,7 +18,7 @@ function ensureGalleryScrollAvailable(element: HTMLElement | null): void {
   if (!element) return;
 
   const scrollableElements = element.querySelectorAll(
-    '[data-xeg-role="items-container"], .itemsList, .content'
+    '[role="list"], .itemsList, .content'
   ) as NodeListOf<HTMLElement>;
 
   scrollableElements.forEach((el) => {

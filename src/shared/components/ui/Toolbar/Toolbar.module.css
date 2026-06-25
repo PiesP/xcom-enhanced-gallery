@@ -335,7 +335,7 @@ button.fitButton {
 /* PC-only: Mobile styles removed (Phase 242) */
 
 /* Phase 254: reduced motion is handled via semantic --xeg-duration-* tokens */
-/* Explicitly disable elements that use animation */
+/* Disable transitions and transforms for users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   /* Remove transform effects from all buttons */
   .toolbarButton:hover:not(:disabled),
@@ -343,6 +343,28 @@ button.fitButton {
   .closeButton:hover:not(:disabled),
   .fitButton:hover {
     transform: none;
+  }
+
+  /* Disable toolbar wrapper and panel transitions */
+  .galleryToolbar {
+    transition: none;
+  }
+
+  :where(.settingsPanel, .tweetPanel) {
+    transition: none;
+  }
+
+  :where(.settingsPanel, .tweetPanel).panelExpanded {
+    transition: none;
+  }
+
+  .progressFill {
+    transition: none;
+  }
+
+  .tweetUrlLink,
+  .tweetContent {
+    transition: none;
   }
 }
 

@@ -186,3 +186,9 @@
   padding: 0.5em 0.75em;
   line-height: var(--xeg-line-height-normal);
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .select {
+    transition: none;
+  }
+}

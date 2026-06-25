@@ -72,7 +72,7 @@ export function useGalleryItemScroll(
     if (cached?.isConnected) return cached;
 
     // 2. Cache miss: query DOM
-    const items = itemsRoot.querySelectorAll('[data-xeg-role="gallery-item"]');
+    const items = itemsRoot.querySelectorAll('[role="listitem"]');
     const element = items[index] as HTMLElement | undefined;
 
     // 3. Store in cache using WeakRef
@@ -87,7 +87,7 @@ export function useGalleryItemScroll(
     const container = containerAccessor();
     if (!enabled() || !container || index < 0 || index >= totalItemsAccessor()) return;
 
-    const itemsRoot = container.querySelector('[data-xeg-role="items-container"]');
+    const itemsRoot = container.querySelector('[role="list"]');
     if (!itemsRoot) return;
 
     const target = getCachedItem(index, itemsRoot);

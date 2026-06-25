@@ -256,7 +256,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     <div
       ref={assignContainerRef}
       class={containerClasses()}
-      data-xeg-role="gallery-item"
+      role="listitem"
       data-index={local.index}
       data-fit-mode={resolvedFitMode()}
       data-media-loaded={isLoaded() ? 'true' : 'false'}
@@ -274,7 +274,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       tabIndex={-1}
       data-testid={__DEV__ ? rest['data-testid'] : undefined}
     >
-      <div class={styles.imageWrapper} data-xeg-role="media-wrapper">
+      <div class={styles.imageWrapper}>
         {!isLoaded() && !isError() && (
           <div class={styles.placeholder}>
             <div class={cx('xeg-spinner', styles.loadingSpinner)} />

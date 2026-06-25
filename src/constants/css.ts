@@ -21,7 +21,12 @@ const CLASSES = {
 
 const DATA_ATTRIBUTES = {
   GALLERY: 'data-xeg-gallery',
-  ROLE: 'data-xeg-role',
+} as const;
+
+const ARIA_ROLES = {
+  GALLERY: '[role="dialog"]',
+  LIST: '[role="list"]',
+  LIST_ITEM: '[role="listitem"]',
 } as const;
 
 const SELECTORS = {
@@ -32,8 +37,9 @@ const SELECTORS = {
   VERTICAL_VIEW: `.${CLASSES.VERTICAL_VIEW}`,
   ITEM: `.${CLASSES.ITEM}`,
   DATA_GALLERY: `[${DATA_ATTRIBUTES.GALLERY}]`,
-  DATA_ROLE: `[${DATA_ATTRIBUTES.ROLE}]`,
-  ROLE_GALLERY: `[${DATA_ATTRIBUTES.ROLE}="gallery"]`,
+  ROLE_GALLERY: ARIA_ROLES.GALLERY,
+  ROLE_LIST: ARIA_ROLES.LIST,
+  ROLE_LIST_ITEM: ARIA_ROLES.LIST_ITEM,
 } as const;
 
 /** All gallery selectors for batch queries/cleanup and internal-element detection.
@@ -47,11 +53,8 @@ const INTERNAL_SELECTORS = [
   SELECTORS.VERTICAL_VIEW,
   SELECTORS.ITEM,
   SELECTORS.DATA_GALLERY,
-  SELECTORS.DATA_ROLE,
-  SELECTORS.ROLE_GALLERY,
   '[data-gallery-element]',
-  '[data-xeg-role="gallery-item"]',
-  '[data-xeg-role="scroll-spacer"]',
+  SELECTORS.ROLE_LIST_ITEM,
   '[data-role="toolbar"]',
   '[data-role="toolbar-hover-zone"]',
 ] as const;
@@ -62,8 +65,7 @@ const INTERNAL_SELECTORS = [
 const GALLERY_ELEMENT_SELECTORS = [
   SELECTORS.ITEM,
   '[data-gallery-element]',
-  '[data-xeg-role="gallery-item"]',
-  '[data-xeg-role="scroll-spacer"]',
+  SELECTORS.ROLE_LIST_ITEM,
   '[data-role="toolbar"]',
   '[data-role="toolbar-hover-zone"]',
 ] as const;
