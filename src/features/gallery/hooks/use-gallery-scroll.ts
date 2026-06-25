@@ -7,9 +7,10 @@
 
 import { getEventManager } from '@shared/container/container';
 import { isGalleryInternalElement } from '@shared/dom/utils';
+import { createTimeout } from '@shared/hooks/use-timer';
 import { logger } from '@shared/logging/logger';
-import { createPrefixedId } from '@shared/services/event-manager';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
+import { createPrefixedId } from '@shared/utils/id';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import type { Accessor } from 'solid-js';
@@ -71,14 +72,7 @@ export function useGalleryScroll({
 
   const [isScrolling, setIsScrolling] = createSignal(false);
   const [lastScrollTime, setLastScrollTime] = createSignal(0);
-  let scrollIdleTimerId: ReturnType<typeof setTimeout> | null = null;
-
-  const clearScrollIdleTimer = (): void => {
-    if (scrollIdleTimerId !== null) {
-      clearTimeout(scrollIdleTimerId);
-      scrollIdleTimerId = null;
-    }
-  };
+  const scrollIdleTimer = createTimeout();
 
   const markScrolling = (): void => {
     setIsScrolling(true);
@@ -86,8 +80,7 @@ export function useGalleryScroll({
   };
 
   const scheduleScrollEnd = (): void => {
-    clearScrollIdleTimer();
-    scrollIdleTimerId = setTimeout(() => {
+    scrollIdleTimer.set(() => {
       setIsScrolling(false);
       if (__DEV__) {
         logger.debug('useGalleryScroll: Scroll ended');
@@ -148,50 +141,34 @@ export function useGalleryScroll({
 
     if (!isEnabled || !eventTarget) {
       setIsScrolling(false);
-      clearScrollIdleTimer();
+      scrollIdleTimer.clear();
       return;
     }
 
     const eventManager = getEventManager();
     const listenerContext = createPrefixedId(LISTENER_CONTEXT_PREFIX, ':');
-    const listenerIds: string[] = [];
 
     const registerListener = (type: string, handler: EventListener): void => {
-      const id = eventManager.addEventListener(eventTarget, type, handler, {
+      eventManager.addEventListener(eventTarget, type, handler, {
         passive: true,
         context: listenerContext,
       });
-      if (id) {
-        listenerIds.push(id);
-        if (__DEV__) {
-          logger.debug('useGalleryScroll: listener registered', {
-            type,
-            id,
-            context: listenerContext,
-          });
-        }
-      }
     };
 
     registerListener('wheel', handleWheel as EventListener);
     registerListener('scroll', handleScroll as EventListener);
 
     if (__DEV__) {
-      logger.debug('useGalleryScroll: Listeners registered');
+      logger.debug('useGalleryScroll: Listeners registered', { context: listenerContext });
     }
 
     onCleanup(() => {
-      for (const id of listenerIds) {
-        eventManager.removeListener(id);
-        if (__DEV__) {
-          logger.debug('useGalleryScroll: listener removed', { id, context: listenerContext });
-        }
-      }
-      clearScrollIdleTimer();
+      eventManager.removeByContext(listenerContext);
+      scrollIdleTimer.clear();
       setIsScrolling(false);
     });
 
-    // clearScrollIdleTimer already registered above; no need to duplicate.
+    // scrollIdleTimer auto-cleans up via createTimeout's onCleanup.
   });
 
   return { isScrolling, lastScrollTime };

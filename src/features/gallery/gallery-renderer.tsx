@@ -75,6 +75,7 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
 export class GalleryRenderer {
   private container: HTMLDivElement | null = null;
   private isMounting = false;
+  private destroyed = false;
   private stateUnsubscribe: (() => void) | null = null;
   private readonly downloadHandler: ReturnType<typeof createDownloadHandler>['handleDownload'];
 
@@ -85,6 +86,7 @@ export class GalleryRenderer {
 
   private setupStateSubscription(): void {
     this.stateUnsubscribe = createEffectRoot(() => {
+      if (this.destroyed) return;
       if (gallerySignals.isOpen && !this.container) {
         this.renderGallery();
       } else if (!gallerySignals.isOpen && this.container) {
@@ -192,6 +194,7 @@ export class GalleryRenderer {
 
   destroy(): void {
     __DEV__ && logger.info('[GalleryRenderer] Full cleanup started');
+    this.destroyed = true;
     this.stateUnsubscribe?.();
     this.stateUnsubscribe = null;
     this.cleanupGallery();

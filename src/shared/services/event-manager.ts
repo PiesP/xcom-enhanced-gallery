@@ -3,24 +3,10 @@
 
 import { logger } from '@shared/logging/logger';
 import { SingletonBase } from '@shared/services/singleton-base';
+import { createId, createPrefixedId } from '@shared/utils/id';
 
-/**
- * Generates a unique ID using crypto.randomUUID.
- * @returns Compact unique identifier without dashes.
- */
-export function createId(): string {
-  return crypto.randomUUID().replaceAll('-', '');
-}
-
-/**
- * Generates a prefixed unique ID.
- * @param prefix - The prefix for the ID
- * @param separator - Separator between prefix and ID (default: '_')
- * @returns Prefixed ID in format: `{prefix}{separator}{id}`
- */
-export function createPrefixedId(prefix: string, separator = '_'): string {
-  return `${prefix}${separator}${createId()}`;
-}
+// Re-export for backwards compatibility
+export { createId, createPrefixedId } from '@shared/utils/id';
 
 /** @fileoverview Event types for gallery event handling. */
 

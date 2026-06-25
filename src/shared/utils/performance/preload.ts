@@ -5,7 +5,7 @@
  * Computes indices to preload around current item with bounds safety
  */
 
-import { clamp, clampIndex } from '@shared/utils/types/safety';
+import { clamp, clampIndex } from '@shared/utils/types/number-utils';
 
 /** Maximum items to preload per direction (forward/backward). */
 const MAX_PRELOAD_PER_DIRECTION = 20;

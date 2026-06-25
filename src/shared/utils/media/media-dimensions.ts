@@ -9,7 +9,7 @@ import { CSS_REM_BASE, DEFAULT_MEDIA_DIMENSIONS, STANDARD_GALLERY_HEIGHT } from 
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { extractVisualIndexFromUrl, getMediaDedupKey } from '@shared/utils/media/media-url-utils';
-import { clampIndex } from '@shared/utils/types/safety';
+import { clampIndex } from '@shared/utils/types/number-utils';
 
 interface DimensionPair {
   readonly width: number;

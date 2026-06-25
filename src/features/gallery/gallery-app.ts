@@ -30,7 +30,7 @@ import {
   pauseAmbientVideosForGallery,
   startAmbientVideoGuard,
 } from '@shared/utils/media/ambient-video-coordinator';
-import { clampIndex } from '@shared/utils/types/safety';
+import { clampIndex } from '@shared/utils/types/number-utils';
 
 export class GalleryApp {
   private initialized = false;

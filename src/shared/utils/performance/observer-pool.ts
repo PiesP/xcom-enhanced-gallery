@@ -103,6 +103,7 @@ export const SharedObserver = {
     };
   },
 
+  /** @internal Used by the disposal return value of observe() — not for external use. */
   unobserve(element: Element): void {
     const keysToRemove: string[] = [];
     for (const [key, poolEntry] of observerPool) {

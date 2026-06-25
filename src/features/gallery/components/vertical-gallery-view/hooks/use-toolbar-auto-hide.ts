@@ -4,8 +4,9 @@
 /** @fileoverview Toolbar auto-hide with configurable delay. */
 
 import { getTypedSettingOr } from '@shared/container/settings-registry';
+import { createTimeout } from '@shared/hooks/use-timer';
 import type { Accessor, Setter } from 'solid-js';
-import { createEffect, createSignal, onCleanup } from 'solid-js';
+import { createEffect, createSignal } from 'solid-js';
 
 interface UseToolbarAutoHideOptions {
   readonly isVisible: () => boolean;
@@ -24,18 +25,9 @@ export function useToolbarAutoHide(options: UseToolbarAutoHideOptions): UseToolb
   const [isInitialToolbarVisible, setIsInitialToolbarVisible] = createSignal<boolean>(
     computeInitialVisibility()
   );
-  const [activeTimer, setActiveTimer] = createSignal<ReturnType<typeof setTimeout> | null>(null);
-
-  const clearActiveTimer = (): void => {
-    const timer = activeTimer();
-    if (timer === null) return;
-    clearTimeout(timer);
-    setActiveTimer(null);
-  };
+  const timer = createTimeout();
 
   createEffect(() => {
-    onCleanup(clearActiveTimer);
-
     if (!computeInitialVisibility()) {
       setIsInitialToolbarVisible(false);
       return;
@@ -51,12 +43,9 @@ export function useToolbarAutoHide(options: UseToolbarAutoHideOptions): UseToolb
       return;
     }
 
-    setActiveTimer(
-      setTimeout(() => {
-        setIsInitialToolbarVisible(false);
-        setActiveTimer(null);
-      }, autoHideDelay)
-    );
+    timer.set(() => {
+      setIsInitialToolbarVisible(false);
+    }, autoHideDelay);
   });
 
   return { isInitialToolbarVisible, setIsInitialToolbarVisible };

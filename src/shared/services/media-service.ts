@@ -10,7 +10,7 @@ import type {
   MediaExtractionResult,
   MediaInfo,
 } from '@shared/types/media.types';
-import { clampIndex } from '@shared/utils/types/safety';
+import { clampIndex } from '@shared/utils/types/number-utils';
 
 let _instance: MediaService | null = null;
 

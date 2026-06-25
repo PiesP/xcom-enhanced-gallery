@@ -23,7 +23,7 @@ export type NavigationSource =
 import { logger } from '@shared/logging/logger';
 import type { MediaInfo } from '@shared/types/media.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
-import { clampIndex } from '@shared/utils/types/safety';
+import { clampIndex } from '@shared/utils/types/number-utils';
 import { batch, createSignal } from 'solid-js';
 
 // ========================
@@ -77,9 +77,26 @@ export function resetNavigation(nowMs?: number): void {
   setNavIndex(null);
 }
 
+/**
+ * Resolves the navigation source for recording purposes.
+ *
+ * Mapping:
+ * - 'scroll' → 'scroll' (user-initiated scroll)
+ * - 'keyboard' → 'keyboard' (keyboard navigation)
+ * - 'button' → 'button' (explicit button click)
+ * - 'click' → 'button' (treated same as button for recording)
+ * - 'programmatic' → 'button' (auto-navigations recorded as button)
+ * - 'auto-focus' → 'button' (auto-focus on open recorded as button)
+ *
+ * The latter four are consolidated into 'button' because they all represent
+ * non-scroll, non-keyboard navigation that isn't user-initiated scrolling.
+ * This simplifies downstream logic that only distinguishes manual (button/keyboard)
+ * from automatic (scroll) sources.
+ */
 function resolveNavigationSource(trigger: NavigationSource): NavigationSource {
   if (trigger === 'scroll') return 'scroll';
   if (trigger === 'keyboard') return 'keyboard';
+  // 'button' | 'click' | 'programmatic' | 'auto-focus' → 'button'
   return 'button';
 }
 // ========================

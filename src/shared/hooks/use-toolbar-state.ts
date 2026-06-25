@@ -5,8 +5,9 @@
  * @fileoverview Toolbar state management hook with download debouncing
  */
 
+import { createTimeout } from '@shared/hooks/use-timer';
 import type { ToolbarActions, ToolbarState } from '@shared/types/toolbar.types';
-import { batch, createSignal, onCleanup } from 'solid-js';
+import { batch, createSignal } from 'solid-js';
 
 const DOWNLOAD_MIN_DISPLAY_TIME = 300;
 
@@ -15,17 +16,7 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
   const [isLoading, setIsLoading] = createSignal(false);
   const [hasError, setHasError] = createSignal(false);
   const [lastDownloadToggle, setLastDownloadToggle] = createSignal(0);
-  const [downloadTimeoutRef, setDownloadTimeoutRef] = createSignal<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-
-  const clearDownloadTimeout = (): void => {
-    const timer = downloadTimeoutRef();
-    if (timer !== null) {
-      clearTimeout(timer);
-      setDownloadTimeoutRef(null);
-    }
-  };
+  const timer = createTimeout();
 
   const setDownloading = (downloading: boolean): void => {
     const now = performance.now();
@@ -33,7 +24,7 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     if (downloading) {
       batch(() => {
         setLastDownloadToggle(now);
-        clearDownloadTimeout();
+        timer.clear();
         setIsDownloading(true);
         setHasError(false);
       });
@@ -43,13 +34,9 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     const timeSinceStart = now - lastDownloadToggle();
 
     if (timeSinceStart < DOWNLOAD_MIN_DISPLAY_TIME) {
-      clearDownloadTimeout();
-      setDownloadTimeoutRef(
-        setTimeout(() => {
-          setIsDownloading(false);
-          setDownloadTimeoutRef(null);
-        }, DOWNLOAD_MIN_DISPLAY_TIME - timeSinceStart)
-      );
+      timer.set(() => {
+        setIsDownloading(false);
+      }, DOWNLOAD_MIN_DISPLAY_TIME - timeSinceStart);
       return;
     }
 
@@ -72,7 +59,7 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
   };
 
   const resetState = (): void => {
-    clearDownloadTimeout();
+    timer.clear();
     batch(() => {
       setLastDownloadToggle(0);
       setIsDownloading(false);
@@ -80,10 +67,6 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
       setHasError(false);
     });
   };
-
-  onCleanup(() => {
-    clearDownloadTimeout();
-  });
 
   const actions: ToolbarActions = {
     setDownloading,

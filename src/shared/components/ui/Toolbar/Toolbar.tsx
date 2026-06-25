@@ -11,7 +11,7 @@ import { useToolbarState } from '@shared/hooks/use-toolbar-state';
 import { useTranslation } from '@shared/hooks/use-translation';
 import type { ImageFitMode } from '@shared/types/settings.types';
 import type { ToolbarDataState, ToolbarState } from '@shared/types/toolbar.types';
-import { clampIndex } from '@shared/utils/types/safety';
+import { clampIndex } from '@shared/utils/types/number-utils';
 import type { JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, on, splitProps } from 'solid-js';
 
