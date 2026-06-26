@@ -48,12 +48,20 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
 
   const classes = cx(CSS.CLASSES.OVERLAY, CSS.CLASSES.CONTAINER, local.className);
 
+  let isInert = false;
+
   createEffect(() => {
-    document.body.inert = true;
+    if (!isInert) {
+      document.body.inert = true;
+      isInert = true;
+    }
   });
 
   onCleanup(() => {
-    document.body.inert = false;
+    if (isInert) {
+      document.body.inert = false;
+      isInert = false;
+    }
   });
 
   return (
