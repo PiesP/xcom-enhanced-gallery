@@ -124,7 +124,8 @@ export class GalleryRenderer {
     this.container = document.createElement('div');
     this.container.className = CSS.CLASSES.RENDERER;
     this.container.setAttribute('data-renderer', 'gallery');
-    document.body.inert = true;
+    // NOTE: document.body.inert is managed solely by GalleryContainer.tsx
+    // to avoid race conditions from double-setting (BUG-05).
     document.body.appendChild(this.container);
   }
 
@@ -172,7 +173,7 @@ export class GalleryRenderer {
       } catch (error) {
         __DEV__ && logger.warn('[GalleryRenderer] Container removal failed:', error);
       } finally {
-        document.body.inert = false;
+        // NOTE: document.body.inert is restored by GalleryContainer.tsx onCleanup.
         this.container = null;
       }
     }

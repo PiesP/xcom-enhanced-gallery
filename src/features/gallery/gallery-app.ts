@@ -22,6 +22,7 @@ import {
   openGallery,
 } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
+import { disposeKeyboardDebouncer } from '@shared/utils/events/handlers/keyboard';
 import {
   createGalleryLifecycle,
   type GalleryLifecycle,
@@ -151,6 +152,7 @@ export class GalleryApp {
 
     this.renderer.destroy();
     disposeGallerySignals();
+    disposeKeyboardDebouncer();
     getMediaService().destroy();
 
     this.initialized = false;

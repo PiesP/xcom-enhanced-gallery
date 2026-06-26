@@ -35,8 +35,10 @@ function createKeyboardDebouncer() {
     lastExecutionTime: 0,
     lastKey: '',
   };
+  let disposed = false;
 
   function shouldExecute(key: string, minIntervalMs: number): boolean {
+    if (disposed) return false;
     const now = performance.now();
     const timeSinceLastExecution = now - state.lastExecutionTime;
 
@@ -58,12 +60,24 @@ function createKeyboardDebouncer() {
     };
   }
 
-  return { shouldExecute, reset };
+  function dispose(): void {
+    reset();
+    disposed = true;
+  }
+
+  return { shouldExecute, reset, dispose };
 }
 
 const keyboardDebouncer = createKeyboardDebouncer();
 
 export const resetKeyboardDebounceState = keyboardDebouncer.reset;
+
+/**
+ * Disposes the keyboard debouncer, clearing internal state and rejecting
+ * subsequent calls to shouldExecute(). Called during permanent teardown
+ * (BUG-01: module-level debouncer now has a destroy/dispose path).
+ */
+export const disposeKeyboardDebouncer = keyboardDebouncer.dispose;
 
 /** Navigation and help keys: Home, End, PageUp/Down, Arrows, ? */
 const NAVIGATION_KEYS = new Set([

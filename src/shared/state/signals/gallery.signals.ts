@@ -339,6 +339,7 @@ export function setDownloading(value: boolean): void {
  * Called during cleanup to prevent stale state across sessions.
  */
 export function disposeGallerySignals(): void {
+  galleryIndexEvents.dispose();
   batch(() => {
     setIsOpenSig(INITIAL_STATE.isOpen);
     setMediaItems(INITIAL_STATE.mediaItems);
