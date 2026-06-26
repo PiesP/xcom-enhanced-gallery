@@ -11,10 +11,13 @@ import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import type { JSXElement } from 'solid-js';
-import { createSignal, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
+import { createSignal, onCleanup, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
 
 /** Maximum number of retry attempts before disabling the retry button. */
 const MAX_RETRIES = 3;
+
+/** Auto-reset timeout in milliseconds after retries are exhausted. */
+const AUTO_RESET_MS = 30_000;
 
 /**
  * Props for ErrorBoundary component
@@ -51,6 +54,19 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
   const [mounted, setMounted] = createSignal(true);
   const [retryCount, setRetryCount] = createSignal(0);
 
+  let autoResetTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const scheduleAutoReset = (): void => {
+    if (autoResetTimer) clearTimeout(autoResetTimer);
+    autoResetTimer = setTimeout(() => {
+      handleReset();
+    }, AUTO_RESET_MS);
+  };
+
+  onCleanup(() => {
+    if (autoResetTimer) clearTimeout(autoResetTimer);
+  });
+
   const notifyError = (error: unknown): void => {
     if (lastError() === error) return;
     setLastError(error);
@@ -62,7 +78,23 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
     if (retryCount() >= MAX_RETRIES) return;
     setLastError(undefined);
     setCaughtError(undefined);
-    setRetryCount((c) => c + 1);
+    const nextCount = retryCount() + 1;
+    setRetryCount(nextCount);
+    setMounted(false);
+    queueMicrotask(() => setMounted(true));
+    if (nextCount >= MAX_RETRIES) {
+      scheduleAutoReset();
+    }
+  };
+
+  const handleReset = (): void => {
+    if (autoResetTimer) {
+      clearTimeout(autoResetTimer);
+      autoResetTimer = undefined;
+    }
+    setLastError(undefined);
+    setCaughtError(undefined);
+    setRetryCount(0);
     setMounted(false);
     queueMicrotask(() => setMounted(true));
   };
@@ -88,18 +120,28 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
       <Show when={caughtError()}>
         {(error) => {
           const { title, body } = translateError(error());
+          const exhausted = retryCount() >= MAX_RETRIES;
           return (
             <div aria-live="polite" data-xeg-error-boundary="">
               <p class="xeg-error-boundary__title">{title}</p>
               <p class="xeg-error-boundary__body">{body}</p>
               <button
                 class="xeg-error-boundary__action"
-                disabled={retryCount() >= MAX_RETRIES}
+                disabled={exhausted}
                 onClick={handleRetry}
                 type="button"
               >
                 {getRetryLabel()}
               </button>
+              <Show when={exhausted}>
+                <button
+                  class="xeg-error-boundary__action xeg-error-boundary__reset"
+                  onClick={handleReset}
+                  type="button"
+                >
+                  Reset
+                </button>
+              </Show>
             </div>
           );
         }}
