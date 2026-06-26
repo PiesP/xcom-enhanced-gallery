@@ -24,7 +24,11 @@ import { gallerySignals, setDownloading, setError } from '@shared/state/signals/
  */
 export function createDownloadHandler() {
   const userscript = getUserscript();
-  const abortController = new AbortController();
+  let abortController = new AbortController();
+
+  const resetAbortController = (): void => {
+    abortController = new AbortController();
+  };
 
   const getDownloadErrorNotification = (error: unknown): { body: string; title: string } => {
     const message = normalizeErrorMessage(error);
@@ -138,6 +142,7 @@ export function createDownloadHandler() {
 
   const cancelDownloads = (): void => {
     abortController.abort();
+    resetAbortController();
   };
 
   return { handleDownload, cancelDownloads };
