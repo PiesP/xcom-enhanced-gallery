@@ -6,6 +6,7 @@
 import { planBulkDownload } from '@shared/core/download/download-plan';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
+import { SingletonBase } from '@shared/services/singleton-base';
 import {
   detectDownloadCapability,
   downloadSingleFile,
@@ -32,8 +33,13 @@ export class DownloadOrchestrator {
   private constructor() {}
 
   public static getInstance(): DownloadOrchestrator {
-    if (!_downloadInstance) _downloadInstance = new DownloadOrchestrator();
-    return _downloadInstance;
+    return SingletonBase.get(
+      () => _downloadInstance,
+      (inst) => {
+        _downloadInstance = inst;
+      },
+      () => new DownloadOrchestrator()
+    );
   }
 
   /**
@@ -41,7 +47,12 @@ export class DownloadOrchestrator {
    * @internal
    */
   public static resetForTests(): void {
-    _downloadInstance = null;
+    SingletonBase.reset(
+      () => _downloadInstance,
+      (inst) => {
+        _downloadInstance = inst;
+      }
+    );
   }
 
   /** Initialize service (idempotent) */

@@ -7,6 +7,7 @@ import {
   type SettingsRepository,
 } from '@features/settings/services/settings-repository';
 import { logger } from '@shared/logging/logger';
+import { SingletonBase } from '@shared/services/singleton-base';
 import type {
   AppSettings,
   NestedSettingKey,
@@ -20,13 +21,23 @@ export class SettingsService {
   private _initialized = false;
 
   public static getInstance(): SettingsService {
-    if (!_settingsInstance) _settingsInstance = new SettingsService();
-    return _settingsInstance;
+    return SingletonBase.get(
+      () => _settingsInstance,
+      (inst) => {
+        _settingsInstance = inst;
+      },
+      () => new SettingsService()
+    );
   }
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    _settingsInstance = null;
+    SingletonBase.reset(
+      () => _settingsInstance,
+      (inst) => {
+        _settingsInstance = inst;
+      }
+    );
   }
 
   private settings: AppSettings = createDefaultSettings();
