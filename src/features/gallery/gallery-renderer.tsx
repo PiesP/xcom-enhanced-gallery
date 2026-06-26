@@ -77,10 +77,10 @@ export class GalleryRenderer {
   private isMounting = false;
   private destroyed = false;
   private stateUnsubscribe: (() => void) | null = null;
-  private readonly downloadHandler: ReturnType<typeof createDownloadHandler>['handleDownload'];
+  private readonly downloadHandler: ReturnType<typeof createDownloadHandler>;
 
   constructor() {
-    this.downloadHandler = createDownloadHandler().handleDownload;
+    this.downloadHandler = createDownloadHandler();
     this.setupStateSubscription();
   }
 
@@ -138,8 +138,8 @@ export class GalleryRenderer {
     mountGallery(this.container, () => (
       <GalleryRoot
         onClose={handleClose}
-        onDownloadCurrent={() => this.downloadHandler('current')}
-        onDownloadAll={() => this.downloadHandler('all')}
+        onDownloadCurrent={() => this.downloadHandler.handleDownload('current')}
+        onDownloadAll={() => this.downloadHandler.handleDownload('all')}
       />
     ));
     __DEV__ && logger.info('[GalleryRenderer] Gallery mounted');
@@ -148,6 +148,8 @@ export class GalleryRenderer {
   private cleanupGallery(): void {
     __DEV__ && logger.debug('[GalleryRenderer] Cleanup started');
     this.isMounting = false;
+    // Cancel any in-progress downloads when the gallery is closed.
+    this.downloadHandler.cancelDownloads();
     // NOTE: Do NOT dispose stateUnsubscribe here — it is the Solid.js reactive root
     // created by effectSafe (createRoot). Disposing it would destroy the reactive
     // effect that watches gallerySignals.isOpen, making re-opening impossible.

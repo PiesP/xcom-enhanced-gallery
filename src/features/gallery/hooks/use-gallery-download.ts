@@ -24,6 +24,7 @@ import { gallerySignals, setDownloading, setError } from '@shared/state/signals/
  */
 export function createDownloadHandler() {
   const userscript = getUserscript();
+  const abortController = new AbortController();
 
   const getDownloadErrorNotification = (error: unknown): { body: string; title: string } => {
     const message = normalizeErrorMessage(error);
@@ -70,6 +71,7 @@ export function createDownloadHandler() {
 
           const result = await downloadService.downloadSingle(currentMedia, {
             ...(blob ? { blob } : {}),
+            signal: abortController.signal,
           });
           if (!result.success) {
             const error = result.error || 'Unknown error';
@@ -95,6 +97,7 @@ export function createDownloadHandler() {
 
         const result = await downloadService.downloadBulk([...mediaItems], {
           ...(prefetchedBlobs.size > 0 ? { prefetchedBlobs } : {}),
+          signal: abortController.signal,
         });
 
         if (!result.success) {
@@ -133,5 +136,9 @@ export function createDownloadHandler() {
     }
   };
 
-  return { handleDownload };
+  const cancelDownloads = (): void => {
+    abortController.abort();
+  };
+
+  return { handleDownload, cancelDownloads };
 }
