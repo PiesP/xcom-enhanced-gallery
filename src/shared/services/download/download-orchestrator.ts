@@ -226,11 +226,14 @@ export class DownloadOrchestrator {
 
   /**
    * Returns the effective AbortSignal for downloads.
-   * Always returns the orchestrator's own signal so that destroy() aborts
-   * all in-progress downloads, regardless of whether the caller passed one.
+   * Combines the orchestrator's signal with the caller's signal (if any)
+   * so that either aborting the orchestrator or the caller's signal cancels
+   * the download. Falls back to just the orchestrator's signal when no
+   * caller signal is provided.
    */
-  private mergeSignal(_callerSignal?: AbortSignal): AbortSignal {
-    return this.abortController.signal;
+  private mergeSignal(callerSignal?: AbortSignal | null): AbortSignal {
+    if (!callerSignal) return this.abortController.signal;
+    return AbortSignal.any([this.abortController.signal, callerSignal]);
   }
 
   /**
