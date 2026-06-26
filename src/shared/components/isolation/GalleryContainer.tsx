@@ -48,19 +48,33 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
 
   const classes = cx(CSS.CLASSES.OVERLAY, CSS.CLASSES.CONTAINER, local.className);
 
-  let isInert = false;
+  let scrollRestoration: { scrollY: number; overflow: string; position: string } | null = null;
 
   createEffect(() => {
-    if (!isInert) {
-      document.body.inert = true;
-      isInert = true;
+    if (!scrollRestoration) {
+      // Lock background scroll without inert (inert blocks ALL mouse events on descendants)
+      scrollRestoration = {
+        scrollY: window.scrollY,
+        overflow: document.body.style.overflow,
+        position: document.body.style.position,
+      };
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollRestoration.scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
     }
   });
 
   onCleanup(() => {
-    if (isInert) {
-      document.body.inert = false;
-      isInert = false;
+    if (scrollRestoration) {
+      document.body.style.overflow = scrollRestoration.overflow;
+      document.body.style.position = scrollRestoration.position;
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      window.scrollTo(0, scrollRestoration.scrollY);
+      scrollRestoration = null;
     }
   });
 
