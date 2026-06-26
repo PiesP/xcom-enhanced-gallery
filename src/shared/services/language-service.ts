@@ -39,17 +39,23 @@ export class LanguageService {
   }
 
   public static getInstance(): LanguageService {
-    return SingletonBase.get(_instance, () => {
-      _instance = new LanguageService();
-      return _instance;
-    });
+    return SingletonBase.get(
+      () => _instance,
+      (inst) => {
+        _instance = inst;
+      },
+      () => new LanguageService()
+    );
   }
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    SingletonBase.reset(_instance, () => {
-      _instance = null;
-    });
+    SingletonBase.reset(
+      () => _instance,
+      (inst) => {
+        _instance = inst;
+      }
+    );
   }
 
   /** Initialize service (idempotent) */

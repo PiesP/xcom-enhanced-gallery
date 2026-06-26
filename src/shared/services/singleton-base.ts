@@ -15,11 +15,15 @@
  *   private constructor() {}
  *
  *   static getInstance(): MyService {
- *     return SingletonBase.get(_instance, () => { _instance = new MyService(); return _instance; });
+ *     return SingletonBase.get(
+ *       () => _instance,
+ *       (inst) => { _instance = inst; },
+ *       () => new MyService(),
+ *     );
  *   }
  *
  *   static resetForTests(): void {
- *     SingletonBase.reset(_instance, () => { _instance = null; });
+ *     SingletonBase.reset(() => _instance, (inst) => { _instance = inst; });
  *   }
  *
  *   destroy(): void { ... }
@@ -28,16 +32,24 @@
  */
 
 export class SingletonBase {
-  static get<T extends { destroy(): void }>(instanceRef: T | null, create: () => T): T {
-    if (!instanceRef) {
-      const instance = create();
-      return instance;
-    }
-    return instanceRef;
+  static get<T extends { destroy(): void }>(
+    getInstance: () => T | null,
+    setInstance: (instance: T) => void,
+    create: () => T
+  ): T {
+    const existing = getInstance();
+    if (existing) return existing;
+    const instance = create();
+    setInstance(instance);
+    return instance;
   }
 
-  static reset<T extends { destroy(): void }>(instance: T | null, setNull: () => void): void {
-    instance?.destroy();
-    setNull();
+  static reset<T extends { destroy(): void }>(
+    getInstance: () => T | null,
+    setInstance: (instance: T | null) => void
+  ): void {
+    const existing = getInstance();
+    existing?.destroy();
+    setInstance(null);
   }
 }

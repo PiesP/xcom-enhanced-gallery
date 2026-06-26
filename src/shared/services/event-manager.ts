@@ -41,17 +41,23 @@ export class EventManager {
   private constructor() {}
 
   public static getInstance(): EventManager {
-    return SingletonBase.get(_eventManagerInstance, () => {
-      _eventManagerInstance = new EventManager();
-      return _eventManagerInstance;
-    });
+    return SingletonBase.get(
+      () => _eventManagerInstance,
+      (inst) => {
+        _eventManagerInstance = inst;
+      },
+      () => new EventManager()
+    );
   }
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    SingletonBase.reset(_eventManagerInstance, () => {
-      _eventManagerInstance = null;
-    });
+    SingletonBase.reset(
+      () => _eventManagerInstance,
+      (inst) => {
+        _eventManagerInstance = inst;
+      }
+    );
   }
 
   /** Destroy service */

@@ -15,17 +15,23 @@ export class PersistentStorage {
   private constructor() {}
 
   static getInstance(): PersistentStorage {
-    return SingletonBase.get(_persistentStorageInstance, () => {
-      _persistentStorageInstance = new PersistentStorage();
-      return _persistentStorageInstance;
-    });
+    return SingletonBase.get(
+      () => _persistentStorageInstance,
+      (inst) => {
+        _persistentStorageInstance = inst;
+      },
+      () => new PersistentStorage()
+    );
   }
 
   /** @internal Test helper */
   static resetForTests(): void {
-    SingletonBase.reset(_persistentStorageInstance, () => {
-      _persistentStorageInstance = null;
-    });
+    SingletonBase.reset(
+      () => _persistentStorageInstance,
+      (inst) => {
+        _persistentStorageInstance = inst;
+      }
+    );
   }
 
   /** Destroy service */

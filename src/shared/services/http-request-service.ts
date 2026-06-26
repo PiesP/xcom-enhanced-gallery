@@ -33,17 +33,23 @@ export class HttpRequestService {
   private constructor() {}
 
   static getInstance(): HttpRequestService {
-    return SingletonBase.get(_httpInstance, () => {
-      _httpInstance = new HttpRequestService();
-      return _httpInstance;
-    });
+    return SingletonBase.get(
+      () => _httpInstance,
+      (inst) => {
+        _httpInstance = inst;
+      },
+      () => new HttpRequestService()
+    );
   }
 
   /** @internal Test helper */
   static resetForTests(): void {
-    SingletonBase.reset(_httpInstance, () => {
-      _httpInstance = null;
-    });
+    SingletonBase.reset(
+      () => _httpInstance,
+      (inst) => {
+        _httpInstance = inst;
+      }
+    );
   }
 
   /** Destroy service */

@@ -41,16 +41,22 @@ export class ThemeService {
   private observer: MutationObserver | null = null;
 
   static getInstance(): ThemeService {
-    return SingletonBase.get(_themeInstance, () => {
-      _themeInstance = new ThemeService();
-      return _themeInstance;
-    });
+    return SingletonBase.get(
+      () => _themeInstance,
+      (inst) => {
+        _themeInstance = inst;
+      },
+      () => new ThemeService()
+    );
   }
 
   static resetForTests(): void {
-    SingletonBase.reset(_themeInstance, () => {
-      _themeInstance = null;
-    });
+    SingletonBase.reset(
+      () => _themeInstance,
+      (inst) => {
+        _themeInstance = inst;
+      }
+    );
   }
 
   constructor() {

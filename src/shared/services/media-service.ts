@@ -41,17 +41,23 @@ export class MediaService {
   }
 
   public static getInstance(): MediaService {
-    return SingletonBase.get(_instance, () => {
-      _instance = new MediaService();
-      return _instance;
-    });
+    return SingletonBase.get(
+      () => _instance,
+      (inst) => {
+        _instance = inst;
+      },
+      () => new MediaService()
+    );
   }
 
   /** @internal Test helper */
   public static resetForTests(): void {
-    SingletonBase.reset(_instance, () => {
-      _instance = null;
-    });
+    SingletonBase.reset(
+      () => _instance,
+      (inst) => {
+        _instance = inst;
+      }
+    );
   }
 
   private cleanupOnce(): void {
