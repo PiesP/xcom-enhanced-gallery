@@ -45,7 +45,7 @@ export class PersistentStorage {
       return;
     }
 
-    const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+    const serialized = JSON.stringify(value);
     await this.userscript.setValue(key, serialized);
   }
 
