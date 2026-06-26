@@ -38,7 +38,15 @@ const THEME_OPTIONS: readonly ThemeOption[] = ['auto', 'light', 'dark'] as const
 /**
  * Available language options
  */
-const LANGUAGE_OPTIONS: readonly LanguageOption[] = ['auto', 'ko', 'en', 'ja'] as const;
+const LANGUAGE_OPTIONS: readonly LanguageOption[] = [
+  'auto',
+  'en',
+  'ko',
+  'ja',
+  'zh-cn',
+  'es',
+  'ar',
+] as const;
 
 /**
  * Settings Controls Component
@@ -93,6 +101,9 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           ko: languageService.translate('st.langKo'),
           en: languageService.translate('st.langEn'),
           ja: languageService.translate('st.langJa'),
+          'zh-cn': languageService.translate('st.langZhCn'),
+          es: languageService.translate('st.langEs'),
+          ar: languageService.translate('st.langAr'),
         } as Record<LanguageOption, string>,
       },
     };

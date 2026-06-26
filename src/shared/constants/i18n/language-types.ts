@@ -5,7 +5,7 @@
  * Supported language codes for the application
  * These must match the available language files in the languages directory
  */
-export const LANGUAGE_CODES = ['en', 'ko', 'ja'] as const;
+export const LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh-cn', 'es', 'ar'] as const;
 
 /**
  * Base language code type derived from LANGUAGE_CODES
@@ -71,6 +71,12 @@ export interface LanguageStrings {
     readonly langEn: string;
     /** Japanese language option */
     readonly langJa: string;
+    /** Simplified Chinese language option */
+    readonly langZhCn: string;
+    /** Spanish language option */
+    readonly langEs: string;
+    /** Arabic language option */
+    readonly langAr: string;
   };
   /** Message strings */
   readonly msg: {
@@ -141,5 +147,12 @@ export interface LanguageStrings {
  * @returns True if value is a valid BaseLanguageCode
  */
 export function isBaseLanguageCode(value: string | null | undefined): value is BaseLanguageCode {
-  return value === 'en' || value === 'ko' || value === 'ja';
+  return (
+    value === 'en' ||
+    value === 'ko' ||
+    value === 'ja' ||
+    value === 'zh-cn' ||
+    value === 'es' ||
+    value === 'ar'
+  );
 }

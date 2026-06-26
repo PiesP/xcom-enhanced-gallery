@@ -8,9 +8,12 @@
 
 import type { BaseLanguageCode, LanguageStrings } from '@shared/constants/i18n/language-types';
 import { LANGUAGE_CODES } from '@shared/constants/i18n/language-types';
+import { ar } from '@shared/constants/i18n/languages/ar';
 import { en } from '@shared/constants/i18n/languages/en';
+import { es } from '@shared/constants/i18n/languages/es';
 import { ja } from '@shared/constants/i18n/languages/ja';
 import { ko } from '@shared/constants/i18n/languages/ko';
+import { zhCn } from '@shared/constants/i18n/languages/zh-cn';
 import { resolveNestedPath } from '@shared/utils/object/path';
 import type { TranslationBundleInput, TranslationKey, TranslationParams } from './types';
 
@@ -18,6 +21,9 @@ export const TRANSLATION_REGISTRY: Partial<Record<BaseLanguageCode, LanguageStri
   en,
   ko,
   ja,
+  'zh-cn': zhCn,
+  es,
+  ar,
 } as const;
 
 export const DEFAULT_LANGUAGE: BaseLanguageCode = 'en';

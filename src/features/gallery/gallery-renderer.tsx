@@ -12,6 +12,7 @@ import {
   unmountGallery,
 } from '@shared/components/isolation/GalleryContainer';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
+import type { BaseLanguageCode, SupportedLanguage } from '@shared/constants/i18n/language-types';
 import { getLanguageService, getThemeService } from '@shared/container/container';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
@@ -41,7 +42,9 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
   const languageService = getLanguageService();
 
   const [currentTheme, setCurrentTheme] = createSignal(themeService.getCurrentTheme());
-  const [currentLanguage, setCurrentLanguage] = createSignal(languageService.getCurrentLanguage());
+  const [currentLanguage, setCurrentLanguage] = createSignal<SupportedLanguage>(
+    languageService.getCurrentLanguage()
+  );
 
   const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));
   const unbindLanguage = languageService.onLanguageChange((lang) => setCurrentLanguage(lang));
@@ -51,14 +54,28 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
     unbindLanguage();
   });
 
+  /** Resolve 'auto' to actual language code for the lang attribute */
+  const resolvedLanguage = (): BaseLanguageCode => {
+    const lang = currentLanguage();
+    if (lang === 'auto') {
+      return languageService.detectLanguage();
+    }
+    return lang;
+  };
+
+  /** Determine text direction for RTL languages like Arabic */
+  const dir = (): 'ltr' | 'rtl' => (resolvedLanguage() === 'ar' ? 'rtl' : 'ltr');
+
   return (
     <ErrorBoundary>
       <GalleryContainer
         className={`${CSS.CLASSES.RENDERER} ${CSS.CLASSES.ROOT} xeg-theme-scope`}
         data-theme={currentTheme()}
         data-language={currentLanguage()}
-        lang={currentLanguage()}
+        lang={resolvedLanguage()}
+        dir={dir()}
       >
+        <div aria-live="polite" class="xeg-sr-only" />
         <VerticalGalleryView
           onClose={props.onClose}
           onPrevious={() => navigatePrevious('button')}

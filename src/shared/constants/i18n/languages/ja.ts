@@ -24,14 +24,17 @@ export const ja: LanguageStrings = {
   },
   st: {
     th: 'テーマ',
-    lang: 'Language / 언어 / 言語',
+    lang: 'Language / 언어 / 言語 / Idioma / اللغة',
     thAuto: '自動',
     thLt: 'ライト',
     thDk: 'ダーク',
-    langAuto: 'Auto / 자동 / 自動',
+    langAuto: 'Auto / 자동 / 自動 / Auto / تلقائي',
     langKo: '韓国語',
     langEn: '英語',
     langJa: '日本語',
+    langZhCn: '簡体字中国語',
+    langEs: 'スペイン語',
+    langAr: 'アラビア語',
   },
   msg: {
     err: {

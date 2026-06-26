@@ -28,10 +28,13 @@ export const en: LanguageStrings = {
     thAuto: 'Auto',
     thLt: 'Light',
     thDk: 'Dark',
-    langAuto: 'Auto / 자동 / 自動',
+    langAuto: 'Auto / 자동 / 自動 / Auto / تلقائي',
     langKo: 'Korean',
     langEn: 'English',
     langJa: 'Japanese',
+    langZhCn: 'Simplified Chinese',
+    langEs: 'Spanish',
+    langAr: 'Arabic',
   },
   msg: {
     err: {

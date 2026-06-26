@@ -88,11 +88,25 @@ export class LanguageService {
   detectLanguage(): BaseLanguageCode {
     const browserLang =
       typeof navigator !== 'undefined' && typeof navigator.language === 'string'
-        ? navigator.language.slice(0, 2)
+        ? navigator.language.toLowerCase()
         : DEFAULT_LANGUAGE;
 
     if (isBaseLanguageCode(browserLang)) {
       return browserLang;
+    }
+
+    // Handle language-region codes (e.g., zh-CN → zh-cn)
+    if (browserLang.includes('-')) {
+      const baseRegion = browserLang.slice(0, 5); // e.g., "zh-cn"
+      if (isBaseLanguageCode(baseRegion)) {
+        return baseRegion;
+      }
+    }
+
+    // Fall back to base 2-letter code
+    const baseLang = browserLang.slice(0, 2);
+    if (isBaseLanguageCode(baseLang)) {
+      return baseLang;
     }
 
     return DEFAULT_LANGUAGE;

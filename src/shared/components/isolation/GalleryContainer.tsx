@@ -12,6 +12,7 @@ export interface GalleryContainerProps {
   readonly children: ComponentChildren;
   readonly className?: string;
   readonly lang?: string;
+  readonly dir?: 'ltr' | 'rtl';
 }
 
 const DISPOSE_SYMBOL = Symbol();
@@ -41,7 +42,7 @@ export function unmountGallery(container: Element): void {
 }
 
 export function GalleryContainer(props: GalleryContainerProps): JSXElement {
-  const [local] = splitProps(props, ['children', 'className', 'lang']);
+  const [local] = splitProps(props, ['children', 'className', 'lang', 'dir']);
 
   const classes = cx(CSS.CLASSES.OVERLAY, CSS.CLASSES.CONTAINER, local.className);
 
@@ -61,6 +62,7 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       aria-modal="true"
       aria-label="Image gallery"
       lang={local.lang ?? 'en'}
+      dir={local.dir ?? 'ltr'}
     >
       {local.children}
     </div>
