@@ -177,11 +177,17 @@ export class PrefetchManager {
   }
 
   private evictOldest(): void {
+    // Skip entries with active (in-flight) requests to avoid aborting
+    // data the user may currently be viewing.
+    for (const url of this.cache.keys()) {
+      if (this.activeRequests.has(url)) continue;
+      this.cache.delete(url);
+      return;
+    }
+    // Fallback: if all entries are in-flight, evict the oldest anyway
     const first = this.cache.keys().next();
     if (!first.done) {
       const url = first.value;
-      // If the evicted entry is still in-flight, abort it to avoid wasting
-      // bandwidth/memory and to reduce the chance of duplicated requests.
       const controller = this.activeRequests.get(url);
       if (controller) {
         controller.abort();
