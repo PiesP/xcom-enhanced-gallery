@@ -260,7 +260,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         props.isTweetPanelExpanded() ? styles.tweetPanelExpanded : undefined
       )}
       role={props.role ?? 'toolbar'}
-      aria-label={props['aria-label'] ?? 'Gallery Toolbar'}
+      aria-label={props['aria-label'] ?? translate('tb.galleryToolbar')}
       aria-describedby={props['aria-describedby']}
       aria-disabled={isToolbarDisabled()}
       data-testid={__DEV__ ? props['data-testid'] : undefined}
@@ -311,7 +311,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               <div
                 class={styles.progressBar}
                 role="progressbar"
-                aria-label="Progress"
+                aria-label={translate('tb.progress')}
                 aria-valuenow={props.displayedIndex() + 1}
                 aria-valuemin={1}
                 aria-valuemax={totalCount()}
@@ -420,7 +420,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         data-gallery-scrollable="true"
         onMouseDown={props.settingsController.handlePanelMouseDown}
         role="region"
-        aria-label="Settings Panel"
+        aria-label={translate('tb.settingsPanel')}
         aria-labelledby="settings-button"
         data-gallery-element="settings-panel"
         onClick={props.settingsController.handlePanelClick}

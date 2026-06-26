@@ -21,6 +21,9 @@ export const ar: LanguageStrings = {
     fitW: 'ملاءمة العرض',
     fitH: 'ملاءمة الارتفاع',
     fitC: 'ملاءمة النافذة',
+    galleryToolbar: 'شريط أدوات المعرض',
+    progress: 'التقدم',
+    settingsPanel: 'لوحة الإعدادات',
   },
   st: {
     th: 'المظهر',
@@ -69,6 +72,7 @@ export const ar: LanguageStrings = {
       emptyD: 'لا توجد صور أو مقاطع فيديو لعرضها.',
       itemLbl: 'وسائط {index}: {filename}',
       loadFail: 'فشل تحميل {type}',
+      imageGallery: 'معرض الصور',
     },
   },
 };

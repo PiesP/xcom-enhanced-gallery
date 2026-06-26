@@ -21,6 +21,9 @@ export const ja: LanguageStrings = {
     fitW: '幅に合わせる',
     fitH: '高さに合わせる',
     fitC: 'ウィンドウに合わせる',
+    galleryToolbar: 'ギャラリーツールバー',
+    progress: '進捗',
+    settingsPanel: '設定パネル',
   },
   st: {
     th: 'テーマ',
@@ -69,6 +72,7 @@ export const ja: LanguageStrings = {
       emptyD: '表示する画像や動画がありません。',
       itemLbl: 'メディア {index}: {filename}',
       loadFail: '{type} の読み込みに失敗しました',
+      imageGallery: '画像ギャラリー',
     },
   },
 };

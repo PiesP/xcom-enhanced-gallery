@@ -21,6 +21,9 @@ export const ko: LanguageStrings = {
     fitW: '너비 맞춤',
     fitH: '높이 맞춤',
     fitC: '창 맞춤',
+    galleryToolbar: '갤러리 도구 모음',
+    progress: '진행',
+    settingsPanel: '설정 패널',
   },
   st: {
     th: '테마',
@@ -69,6 +72,7 @@ export const ko: LanguageStrings = {
       emptyD: '표시할 이미지 또는 동영상이 없습니다.',
       itemLbl: '미디어 {index}: {filename}',
       loadFail: '{type} 로드 실패',
+      imageGallery: '이미지 갤러리',
     },
   },
 };

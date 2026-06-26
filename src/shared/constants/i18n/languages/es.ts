@@ -21,6 +21,9 @@ export const es: LanguageStrings = {
     fitW: 'Ajustar ancho',
     fitH: 'Ajustar alto',
     fitC: 'Ajustar ventana',
+    galleryToolbar: 'Barra de herramientas de la galería',
+    progress: 'Progreso',
+    settingsPanel: 'Panel de configuración',
   },
   st: {
     th: 'Tema',
@@ -69,6 +72,7 @@ export const es: LanguageStrings = {
       emptyD: 'No hay imágenes ni videos para mostrar.',
       itemLbl: 'Medio {index}: {filename}',
       loadFail: 'Error al cargar {type}',
+      imageGallery: 'Galería de imágenes',
     },
   },
 };

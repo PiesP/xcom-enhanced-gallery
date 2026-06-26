@@ -21,6 +21,9 @@ export const en: LanguageStrings = {
     fitW: 'Fit Width',
     fitH: 'Fit Height',
     fitC: 'Fit Window',
+    galleryToolbar: 'Gallery Toolbar',
+    progress: 'Progress',
+    settingsPanel: 'Settings Panel',
   },
   st: {
     th: 'Theme',
@@ -69,6 +72,7 @@ export const en: LanguageStrings = {
       emptyD: 'There are no images or videos to display.',
       itemLbl: 'Media {index}: {filename}',
       loadFail: 'Failed to load {type}',
+      imageGallery: 'Image gallery',
     },
   },
 };

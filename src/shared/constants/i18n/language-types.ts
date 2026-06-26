@@ -50,6 +50,12 @@ export interface LanguageStrings {
     readonly fitH: string;
     /** Fit container label */
     readonly fitC: string;
+    /** Gallery toolbar label */
+    readonly galleryToolbar: string;
+    /** Progress bar label */
+    readonly progress: string;
+    /** Settings panel label */
+    readonly settingsPanel: string;
   };
   /** Settings strings */
   readonly st: {
@@ -137,6 +143,8 @@ export interface LanguageStrings {
       readonly itemLbl: string;
       /** Load failure message */
       readonly loadFail: string;
+      /** Image gallery label */
+      readonly imageGallery: string;
     };
   };
 }

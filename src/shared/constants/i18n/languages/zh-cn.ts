@@ -21,6 +21,9 @@ export const zhCn: LanguageStrings = {
     fitW: '适应宽度',
     fitH: '适应高度',
     fitC: '适应窗口',
+    galleryToolbar: '图库工具栏',
+    progress: '进度',
+    settingsPanel: '设置面板',
   },
   st: {
     th: '主题',
@@ -69,6 +72,7 @@ export const zhCn: LanguageStrings = {
       emptyD: '没有可显示的图片或视频。',
       itemLbl: '媒体 {index}：{filename}',
       loadFail: '{type} 加载失败',
+      imageGallery: '图片库',
     },
   },
 };

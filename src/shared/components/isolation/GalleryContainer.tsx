@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { CSS } from '@constants/css';
+import { useTranslation } from '@shared/hooks/use-translation';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
@@ -43,6 +44,7 @@ export function unmountGallery(container: Element): void {
 
 export function GalleryContainer(props: GalleryContainerProps): JSXElement {
   const [local] = splitProps(props, ['children', 'className', 'lang', 'dir']);
+  const translate = useTranslation();
 
   const classes = cx(CSS.CLASSES.OVERLAY, CSS.CLASSES.CONTAINER, local.className);
 
@@ -60,7 +62,7 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       data-xeg-gallery-container=""
       role="dialog"
       aria-modal="true"
-      aria-label="Image gallery"
+      aria-label={translate('msg.gal.imageGallery')}
       lang={local.lang ?? 'en'}
       dir={local.dir ?? 'ltr'}
     >
