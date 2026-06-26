@@ -27,6 +27,7 @@ let _downloadInstance: DownloadOrchestrator | null = null;
 export class DownloadOrchestrator {
   private capability: DownloadCapability | null = null;
   private _initialized = false;
+  private readonly abortController = new AbortController();
 
   private constructor() {}
 
@@ -48,8 +49,9 @@ export class DownloadOrchestrator {
     this._initialized = true;
   }
 
-  /** Destroy service (idempotent) */
+  /** Destroy service (idempotent) — aborts all in-progress downloads */
   public destroy(): void {
+    this.abortController.abort();
     this.capability = null;
     this._initialized = false;
     _downloadInstance = null;
@@ -68,6 +70,14 @@ export class DownloadOrchestrator {
   }
 
   /**
+   * The AbortSignal for all downloads managed by this orchestrator.
+   * Destroyed via abort() when destroy() is called.
+   */
+  public get signal(): AbortSignal {
+    return this.abortController.signal;
+  }
+
+  /**
    * Download a single media file
    *
    * @param media - Media info containing URL and metadata
@@ -79,7 +89,8 @@ export class DownloadOrchestrator {
     options: DownloadOptions = {}
   ): Promise<SingleDownloadResult> {
     const capability = this.getCapability();
-    return downloadSingleFile(media, options, capability);
+    const mergedSignal = this.mergeSignal(options.signal);
+    return downloadSingleFile(media, { ...options, signal: mergedSignal }, capability);
   }
 
   /**
@@ -93,8 +104,10 @@ export class DownloadOrchestrator {
     mediaItems: MediaInfo[],
     options: DownloadOptions = {}
   ): Promise<BulkDownloadResult> {
-    if (options.signal?.aborted) {
-      const abortError = getUserCancelledAbortErrorFromSignal(options.signal);
+    const mergedSignal = this.mergeSignal(options.signal);
+
+    if (mergedSignal.aborted) {
+      const abortError = getUserCancelledAbortErrorFromSignal(mergedSignal);
       return {
         success: false,
         status: 'error',
@@ -139,7 +152,7 @@ export class DownloadOrchestrator {
     const items: readonly OrchestratorItem[] = plan.items;
 
     try {
-      const result = await downloadAsZip(items, options);
+      const result = await downloadAsZip(items, { ...options, signal: mergedSignal });
 
       if (result.filesSuccessful === 0) {
         return {
@@ -160,7 +173,12 @@ export class DownloadOrchestrator {
       const filename = plan.zipFilename;
 
       // Save ZIP using appropriate download method
-      const saveResult = await this.saveZipBlob(zipBlob, filename, options, capability);
+      const saveResult = await this.saveZipBlob(
+        zipBlob,
+        filename,
+        { ...options, signal: mergedSignal },
+        capability
+      );
 
       if (!saveResult.success) {
         return {
@@ -204,6 +222,15 @@ export class DownloadOrchestrator {
         code: ErrorCode.ALL_FAILED,
       };
     }
+  }
+
+  /**
+   * Returns the effective AbortSignal for downloads.
+   * Always returns the orchestrator's own signal so that destroy() aborts
+   * all in-progress downloads, regardless of whether the caller passed one.
+   */
+  private mergeSignal(_callerSignal?: AbortSignal): AbortSignal {
+    return this.abortController.signal;
   }
 
   /**
