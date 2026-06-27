@@ -153,10 +153,26 @@ async function handleDownloadBlobRequest(message: DownloadBlobRequestMessage): P
   const objectUrl = URL.createObjectURL(blob);
 
   try {
-    await chrome.downloads.download({
+    const downloadId = await chrome.downloads.download({
       url: objectUrl,
       filename,
       saveAs: false,
+    });
+
+    // Wait for download to complete before revoking the object URL.
+    await new Promise<void>((resolve, reject) => {
+      const listener = (delta: ChromeDownloadDelta) => {
+        if (delta.id !== downloadId) return;
+        const stateCurrent = typeof delta.state === 'string' ? delta.state : delta.state?.current;
+        if (stateCurrent === 'complete') {
+          chrome.downloads.onChanged.removeListener(listener);
+          resolve();
+        } else if (stateCurrent === 'interrupted') {
+          chrome.downloads.onChanged.removeListener(listener);
+          reject(new Error('Download interrupted'));
+        }
+      };
+      chrome.downloads.onChanged.addListener(listener);
     });
   } finally {
     URL.revokeObjectURL(objectUrl);

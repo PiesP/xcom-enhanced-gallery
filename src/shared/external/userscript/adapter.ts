@@ -3,13 +3,17 @@
 
 import type { CookieAPI } from '@shared/types/core/cookie.types';
 import type {
+  GMDownloadDetails,
   GMNotificationDetails,
   GMXMLHttpRequestControl,
   GMXMLHttpRequestDetails,
 } from '@shared/types/core/userscript';
 
+const GM_DOWNLOAD_TIMEOUT_MS = 60_000;
+
 export interface UserscriptAPI {
   readonly download: (url: string, filename: string) => Promise<void>;
+  readonly downloadBlobWithCallbacks: (url: string, filename: string) => Promise<void>;
   readonly setValue: (key: string, value: unknown) => Promise<void>;
   readonly getValue: <T>(key: string, defaultValue?: T) => Promise<T | undefined>;
   readonly getValueSync: <T>(key: string, defaultValue?: T) => T | undefined;
@@ -68,14 +72,53 @@ export function getUserscript(): UserscriptAPI {
     g.notification
   );
 
+  const gmDownloadRaw = asFunction<typeof GM_download>(g.download);
+  if (!gmDownload || !gmDownloadRaw) throw new Error('GM_download unavailable');
+
   const cookieCandidate = g.cookie;
   const cookie =
     cookieCandidate && typeof cookieCandidate.list === 'function' ? cookieCandidate : undefined;
 
   cachedUserscriptAPI = {
-    async download(url: string, filename: string): Promise<void> {
+    async download(urlOrDetails: string | GMDownloadDetails, filename?: string): Promise<void> {
       if (!gmDownload) throw new Error('GM_download unavailable');
-      gmDownload(url, filename);
+      if (typeof urlOrDetails === 'object') {
+        return new Promise<void>((resolve, reject) => {
+          const details = urlOrDetails;
+          const wrappedDetails: GMDownloadDetails = {
+            ...details,
+            onload: () => {
+              details.onload?.();
+              resolve();
+            },
+            onerror: (error: Error) => {
+              details.onerror?.(error);
+              reject(error);
+            },
+            ontimeout: () => {
+              details.ontimeout?.();
+              reject(new Error('GM_download timed out'));
+            },
+          };
+          gmDownloadRaw(wrappedDetails);
+        });
+      }
+      if (filename === undefined) throw new Error('filename required for URL-only download');
+      gmDownload(urlOrDetails, filename);
+    },
+    async downloadBlobWithCallbacks(url: string, filename: string): Promise<void> {
+      if (!gmDownload) throw new Error('GM_download unavailable');
+      return new Promise<void>((resolve, reject) => {
+        gmDownloadRaw({
+          url,
+          filename,
+          saveAs: false,
+          timeout: GM_DOWNLOAD_TIMEOUT_MS,
+          onload: () => resolve(),
+          onerror: (error: Error) => reject(error),
+          ontimeout: () => reject(new Error('GM_download timed out')),
+        });
+      });
     },
     async setValue(key: string, value: unknown): Promise<void> {
       if (!gmSetValue) throw new Error('GM_setValue unavailable');

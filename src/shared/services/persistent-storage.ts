@@ -95,7 +95,7 @@ export class PersistentStorage {
     let value: unknown;
     try {
       value = await this.adapter.get<unknown>(key);
-    } catch (error) {
+    } catch (_error) {
       // B9: Fallback to localStorage
       const raw = lsReadRaw(key);
       if (raw !== null) {
