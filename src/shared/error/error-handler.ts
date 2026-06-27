@@ -9,6 +9,7 @@
 import { getEventManager } from '@shared/container/container';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
+import { SingletonBase } from '@shared/services/singleton-base';
 
 const formatErrorLocation = (
   filename: string | undefined,
@@ -32,13 +33,29 @@ export class GlobalErrorHandler {
   private constructor() {}
 
   public static getInstance(): GlobalErrorHandler {
-    if (!_errorHandlerInstance) _errorHandlerInstance = new GlobalErrorHandler();
-    return _errorHandlerInstance;
+    return SingletonBase.get(
+      () => _errorHandlerInstance,
+      (inst) => {
+        _errorHandlerInstance = inst;
+      },
+      () => new GlobalErrorHandler()
+    );
   }
 
   public static resetForTests(): void {
-    _errorHandlerInstance?.destroy();
-    _errorHandlerInstance = null;
+    SingletonBase.reset(
+      () => _errorHandlerInstance,
+      (inst) => {
+        _errorHandlerInstance = inst;
+      }
+    );
+  }
+
+  public destroy(): void {
+    this.controller?.abort();
+    this.controller = null;
+    getEventManager().removeByContext('global-error-handler');
+    this.isInitialized = false;
   }
 
   private readonly errorListener = (event: ErrorEvent): void => {
@@ -92,21 +109,5 @@ export class GlobalErrorHandler {
     );
 
     this.isInitialized = true;
-  }
-
-  /**
-   * Destroy the global error handler and clean up all resources.
-   * Removes all event listeners and aborts any pending operations.
-   * Safe to call multiple times - subsequent calls are ignored.
-   */
-  public destroy(): void {
-    if (!this.isInitialized) {
-      return;
-    }
-
-    this.controller?.abort();
-    this.controller = null;
-    getEventManager().removeByContext('global-error-handler');
-    this.isInitialized = false;
   }
 }

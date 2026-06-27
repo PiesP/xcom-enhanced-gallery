@@ -68,9 +68,14 @@ export const SharedObserver = {
       observerPool.set(key, entry);
     }
 
+    const alreadyTracked = entry.callbacks.has(element);
+
     entry.callbacks.set(element, callback);
     entry.refCount.set(element, (entry.refCount.get(element) ?? 0) + 1);
-    entry.observer.observe(element);
+
+    if (!alreadyTracked) {
+      entry.observer.observe(element);
+    }
 
     let disposed = false;
 
@@ -81,18 +86,17 @@ export const SharedObserver = {
       const poolEntry = observerPool.get(key);
       if (!poolEntry) return;
 
-      // Remove callback
-      poolEntry.callbacks.delete(element);
-      poolEntry.observer.unobserve(element);
-
-      // Decrement ref count; if this element is still observed by another caller, keep observing
+      // Decrement ref count; if this element is still observed by another caller, keep it
       const count = (poolEntry.refCount.get(element) ?? 1) - 1;
       if (count <= 0) {
+        // Last disposer for this element — actually unobserve
+        poolEntry.callbacks.delete(element);
         poolEntry.refCount.delete(element);
+        poolEntry.observer.unobserve(element);
       } else {
         poolEntry.refCount.set(element, count);
-        // Re-observe with the remaining callback (which may be from a different caller)
-        poolEntry.observer.observe(element);
+        // Remaining callers still track this element — do NOT re-observe
+        // (the observer is already tracking it).
       }
 
       // If no more elements tracked by this observer, clean it up

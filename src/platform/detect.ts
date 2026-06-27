@@ -4,15 +4,23 @@
 import type { PlatformType } from './types';
 
 export function detectPlatform(): PlatformType {
-  if (
-    typeof chrome !== 'undefined' &&
-    chrome.runtime?.id &&
-    typeof chrome.storage?.local !== 'undefined'
-  ) {
-    return 'mv3-extension';
+  try {
+    if (
+      typeof chrome !== 'undefined' &&
+      chrome.runtime?.id &&
+      typeof chrome.storage?.local !== 'undefined'
+    ) {
+      return 'mv3-extension';
+    }
+  } catch {
+    // chrome API unavailable or context invalidated — fall through
   }
   return 'userscript';
 }
 
+// Platform detection at module load time.
+// NOTE: In MV3 context, once the service worker is terminated and restarted,
+// the module is re-evaluated, so these values stay correct within a single
+// extension context lifecycle. For runtime re-detection, use detectPlatform() directly.
 export const IS_MV3: boolean = detectPlatform() === 'mv3-extension';
 export const IS_USERSCRIPT: boolean = detectPlatform() === 'userscript';

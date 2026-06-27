@@ -15,17 +15,22 @@ const ANIMATION_CLASSES = {
 function runCssAnimation(element: Element, className: string): Promise<void> {
   return new Promise<void>((resolve) => {
     let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
     const settle = (): void => {
       if (settled) return;
       settled = true;
+      if (timer) clearTimeout(timer);
       element.classList.remove(className);
+      element.removeEventListener('animationend', settle);
+      element.removeEventListener('animationcancel', settle);
       resolve();
     };
 
+    timer = setTimeout(settle, ANIMATION_TIMEOUT_MS);
+
     element.addEventListener('animationend', settle, { once: true });
     element.addEventListener('animationcancel', settle, { once: true });
-
-    setTimeout(settle, ANIMATION_TIMEOUT_MS);
 
     if (!element.isConnected) {
       settle();

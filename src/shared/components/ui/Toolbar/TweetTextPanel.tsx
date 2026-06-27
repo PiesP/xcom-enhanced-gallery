@@ -145,8 +145,9 @@ const formatTweetUrlLabel = (url: string): string => url.replace(PROTOCOL_PREFIX
 const renderTweetTokens = (tokens: readonly TweetToken[]): JSXElement =>
   tokens.map((token) => {
     if ((token.type === 'url' || token.type === 'hashtag') && token.href) {
+      const label = token.type === 'hashtag' ? `Hashtag ${token.value}` : token.value;
       return (
-        <a href={token.href} target="_blank" rel="noopener noreferrer">
+        <a href={token.href} target="_blank" rel="noopener noreferrer" aria-label={label}>
           {token.value}
         </a>
       );
@@ -166,7 +167,13 @@ function TweetUrlLink(props: {
 
   return (
     <div class={styles.tweetUrlSection}>
-      <a href={props.url} target="_blank" rel="noopener noreferrer" class={styles.tweetUrlLink}>
+      <a
+        href={props.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        class={styles.tweetUrlLink}
+        aria-label={props.label}
+      >
         <LucideIcon name="external-link" size={14} class={styles.tweetUrlIcon} />
         <span class={styles.tweetUrlLabel}>{t('tb.twUrl')}</span>
         <span class={styles.tweetUrlValue}>{props.label}</span>

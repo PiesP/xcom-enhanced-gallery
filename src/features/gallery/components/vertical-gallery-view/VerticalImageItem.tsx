@@ -276,7 +276,11 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       <div class={styles.imageWrapper}>
         {!isLoaded() && !isError() && (
           <div class={styles.placeholder}>
-            <div class={cx('xeg-spinner', styles.loadingSpinner)} />
+            <div
+              class={cx('xeg-spinner', styles.loadingSpinner)}
+              role="status"
+              aria-label="Loading"
+            />
           </div>
         )}
 
@@ -287,6 +291,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             ref={setVideoRef}
             class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
             aria-label={`Video ${local.index + 1} of ${totalItems()}`}
+            tabIndex={0}
             onLoadedMetadata={handleMediaLoad}
             onError={handleMediaError}
             onContextMenu={handleContextMenu}
@@ -309,7 +314,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
         ) : null}
 
         {isError() && (
-          <div class={styles.error}>
+          <div class={styles.error} role="alert">
             <span class={styles.errorIcon}>⚠️</span>
             <span class={styles.errorText}>
               {translate('msg.gal.loadFail', { type: isVideo() ? 'video' : 'image' })}

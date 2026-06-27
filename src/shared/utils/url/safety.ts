@@ -34,9 +34,7 @@ const DEFAULT_BLOCKED_PROTOCOL_HINTS = [
   'data:audio',
 ] as const;
 
-const MEDIA_SAFE_PROTOCOLS = Object.freeze(
-  new Set(['http:', 'https:', 'blob:'])
-) as ReadonlySet<string>;
+const MEDIA_SAFE_PROTOCOLS = Object.freeze(new Set(['http:', 'https:'])) as ReadonlySet<string>;
 
 const DATA_IMAGE_MIME_PREFIXES = [
   'image/png',

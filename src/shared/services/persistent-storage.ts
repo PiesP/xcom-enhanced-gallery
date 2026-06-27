@@ -49,8 +49,14 @@ export class PersistentStorage {
   }
 
   async get<T>(key: string, defaultValue?: T): Promise<T | undefined> {
-    const value = await this.adapter.get<string | undefined>(key);
+    const value = await this.adapter.get<unknown>(key);
     if (value === undefined || value === null) return defaultValue;
+
+    // MV3 stores raw objects; GM stores JSON strings via PersistentStorage.set().
+    // If value is already a non-string (object/array), return it directly.
+    if (typeof value !== 'string') {
+      return value as T;
+    }
 
     try {
       return JSON.parse(value) as T;

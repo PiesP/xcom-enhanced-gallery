@@ -37,6 +37,8 @@ let _eventManagerInstance: EventManager | null = null;
 
 export class EventManager {
   private readonly listeners = new Map<string, ListenerContext>();
+  // Composite key for O(1) duplicate detection: `${type}::${listenerRef}`
+  private readonly listenerKeys = new Map<string, Set<string>>();
 
   private constructor() {}
 
@@ -85,12 +87,11 @@ export class EventManager {
       return null;
     }
 
-    // Prevent duplicate registration: same element + type + listener
-    for (const [, ctx] of this.listeners) {
-      if (ctx.element === element && ctx.type === type && ctx.listener === listener) {
-        __DEV__ && logger.warn('[EventManager] Duplicate listener skipped', { type, context });
-        return null;
-      }
+    // Prevent duplicate registration: O(1) lookup via composite key
+    const typeKeys = this.listenerKeys.get(type);
+    if (typeKeys?.has(listener as unknown as string)) {
+      __DEV__ && logger.warn('[EventManager] Duplicate listener skipped', { type, context });
+      return null;
     }
 
     try {
@@ -104,6 +105,11 @@ export class EventManager {
         options: listenerOptions,
         context,
       });
+      // Track listener reference for O(1) duplicate detection
+      if (!this.listenerKeys.has(type)) {
+        this.listenerKeys.set(type, new Set());
+      }
+      this.listenerKeys.get(type)!.add(listener as unknown as string);
       return id;
     } catch (error) {
       __DEV__ && logger.error('[EventManager] Failed to add listener', { type, context, error });
@@ -135,6 +141,7 @@ export class EventManager {
   public cleanup(): void {
     const entries = Array.from(this.listeners.entries());
     this.listeners.clear();
+    this.listenerKeys.clear();
     for (const [, ctx] of entries) {
       try {
         ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
@@ -154,6 +161,12 @@ export class EventManager {
     try {
       ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
       this.listeners.delete(id);
+      // Clean up duplicate-detection index
+      const typeKeys = this.listenerKeys.get(ctx.type);
+      if (typeKeys) {
+        typeKeys.delete(ctx.listener as unknown as string);
+        if (typeKeys.size === 0) this.listenerKeys.delete(ctx.type);
+      }
       return true;
     } catch (error) {
       __DEV__ &&

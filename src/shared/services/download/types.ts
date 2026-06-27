@@ -49,7 +49,7 @@ export interface GMDownloadOptions {
   onerror: (error: unknown) => void;
   ontimeout: () => void;
   onprogress?: (progress: { loaded: number; total: number }) => void;
-  [key: string]: unknown;
+  onabort?: () => void;
 }
 
 export type GMDownloadFunction = (options: GMDownloadOptions) => void;

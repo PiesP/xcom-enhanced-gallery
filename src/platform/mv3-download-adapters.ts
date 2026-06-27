@@ -77,6 +77,16 @@ export class MV3DownloadAdapter implements DownloadAdapter {
   }
 
   private blobToDataUrl(blob: Blob): Promise<string> {
+    // Guard against OOM on very large blobs (>10MB).
+    // FileReader.readAsDataURL loads the entire blob into memory as base64.
+    const MAX_BLOB_SIZE = 10 * 1024 * 1024; // 10 MB
+    if (blob.size > MAX_BLOB_SIZE) {
+      return Promise.reject(
+        new Error(
+          `Blob too large for data URL conversion: ${blob.size} bytes (max ${MAX_BLOB_SIZE})`
+        )
+      );
+    }
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);

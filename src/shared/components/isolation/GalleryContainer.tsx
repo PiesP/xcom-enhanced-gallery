@@ -49,9 +49,12 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
   const classes = cx(CSS.CLASSES.OVERLAY, CSS.CLASSES.CONTAINER, local.className);
 
   let scrollRestoration: { scrollY: number; overflow: string; position: string } | null = null;
+  let previouslyFocusedElement: HTMLElement | null = null;
 
   createEffect(() => {
     if (!scrollRestoration) {
+      // Save currently focused element for restoration on close
+      previouslyFocusedElement = document.activeElement as HTMLElement | null;
       // Lock background scroll without inert (inert blocks ALL mouse events on descendants)
       scrollRestoration = {
         scrollY: window.scrollY,
@@ -75,6 +78,15 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       document.body.style.right = '';
       window.scrollTo(0, scrollRestoration.scrollY);
       scrollRestoration = null;
+    }
+    // Return focus to the element that was focused before the gallery opened
+    if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
+      try {
+        previouslyFocusedElement.focus();
+      } catch {
+        // Element may have been removed from DOM — safe to ignore
+      }
+      previouslyFocusedElement = null;
     }
   });
 
