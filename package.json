@@ -59,7 +59,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.1",
     "@types/node": "^26.0.1",
-    "knip": "^6.20.0",
+    "knip": "^6.21.0",
     "typescript": "^6.0.3",
     "vite": "^8.1.0",
     "vite-plugin-solid": "^2.11.12"
