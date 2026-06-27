@@ -17,6 +17,7 @@ function injectThemeScript(): void {
     (function() {
       try {
         let theme = localStorage.getItem('xeg-theme') || 'auto';
+        if (!['light','dark','auto'].includes(theme)) theme = 'auto';
         if (theme === 'auto') {
           theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }

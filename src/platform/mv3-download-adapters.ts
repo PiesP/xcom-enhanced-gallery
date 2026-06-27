@@ -33,6 +33,10 @@ export class MV3DownloadAdapter implements DownloadAdapter {
         },
         (response: MV3DownloadResponse) => {
           clearTimeout(timer);
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
           if (response?.success) {
             resolve();
           } else {
@@ -58,6 +62,10 @@ export class MV3DownloadAdapter implements DownloadAdapter {
         },
         (response: MV3DownloadResponse) => {
           clearTimeout(timer);
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
           if (response?.success) {
             resolve();
           } else {

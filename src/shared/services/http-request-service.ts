@@ -137,6 +137,8 @@ export class HttpRequestService {
       },
     };
 
+    // NOTE: In MV3 environment, consider using getHttpRequestAdapter() instead.
+    // For now, GM_xmlhttpRequest is used directly as it works in both environments.
     getUserscript().xmlHttpRequest(details);
 
     return deferred.promise;

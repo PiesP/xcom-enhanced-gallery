@@ -49,10 +49,6 @@ function asFunction<T>(value: unknown): T | undefined {
   return typeof value === 'function' ? (value as T) : undefined;
 }
 
-export function resolveGMDownload(): unknown {
-  return getGMAPIs().download;
-}
-
 let cachedUserscriptAPI: UserscriptAPI | null = null;
 
 export function getUserscript(): UserscriptAPI {

@@ -14,6 +14,25 @@
 
 import type { ChromeDownloadDelta, ChromeDownloadOptions } from '@platform/chrome.d.ts';
 
+// ── Allowed hosts whitelist (SSRF prevention) ────────────────────────────────
+
+const ALLOWED_HOSTS = [
+  'x.com',
+  'twitter.com',
+  'pbs.twimg.com',
+  'video.twimg.com',
+  'api.x.com',
+] as const;
+
+function isAllowedUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return ALLOWED_HOSTS.includes(parsed.hostname as (typeof ALLOWED_HOSTS)[number]);
+  } catch {
+    return false;
+  }
+}
+
 // ── Message types ────────────────────────────────────────────────────────────
 
 interface DownloadRequestMessage {
@@ -49,37 +68,50 @@ type IncomingMessage = DownloadRequestMessage | DownloadBlobRequestMessage | Fet
 
 // ── Message handler ──────────────────────────────────────────────────────────
 
-chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
-  const msg = message as IncomingMessage;
-  switch (msg.type) {
-    case 'DOWNLOAD_REQUEST':
-      handleDownloadRequest(msg)
-        .then(() => sendResponse({ success: true }))
-        .catch((error: Error) => sendResponse({ success: false, error: error.message }));
-      return true;
-
-    case 'DOWNLOAD_BLOB_REQUEST':
-      handleDownloadBlobRequest(msg)
-        .then(() => sendResponse({ success: true }))
-        .catch((error: Error) => sendResponse({ success: false, error: error.message }));
-      return true;
-
-    case 'FETCH_REQUEST':
-      handleFetchRequest(msg)
-        .then((result) => sendResponse({ success: true, data: result }))
-        .catch((error: Error) => sendResponse({ success: false, error: error.message }));
-      return true;
-
-    default:
-      sendResponse({ success: false, error: 'Unknown message type' });
+chrome.runtime.onMessage.addListener(
+  (message: unknown, _sender: unknown, sendResponse: (response?: unknown) => void) => {
+    // Reject messages from untrusted senders
+    const sender = _sender as { id?: string };
+    if (sender.id !== chrome.runtime.id) {
+      sendResponse({ success: false, error: 'Unauthorized sender' });
       return false;
+    }
+
+    const msg = message as IncomingMessage;
+    switch (msg.type) {
+      case 'DOWNLOAD_REQUEST':
+        handleDownloadRequest(msg)
+          .then(() => sendResponse({ success: true }))
+          .catch((error: Error) => sendResponse({ success: false, error: error.message }));
+        return true;
+
+      case 'DOWNLOAD_BLOB_REQUEST':
+        handleDownloadBlobRequest(msg)
+          .then(() => sendResponse({ success: true }))
+          .catch((error: Error) => sendResponse({ success: false, error: error.message }));
+        return true;
+
+      case 'FETCH_REQUEST':
+        handleFetchRequest(msg)
+          .then((result) => sendResponse({ success: true, data: result }))
+          .catch((error: Error) => sendResponse({ success: false, error: error.message }));
+        return true;
+
+      default:
+        sendResponse({ success: false, error: 'Unknown message type' });
+        return false;
+    }
   }
-});
+);
 
 // ── Download handlers ────────────────────────────────────────────────────────
 
 async function handleDownloadRequest(message: DownloadRequestMessage): Promise<void> {
   const { url, filename, headers } = message.payload;
+
+  if (!isAllowedUrl(url)) {
+    throw new Error(`URL not in allowed whitelist: ${url}`);
+  }
 
   const downloadOptions: ChromeDownloadOptions = {
     url,
@@ -135,6 +167,10 @@ async function handleDownloadBlobRequest(message: DownloadBlobRequestMessage): P
 
 async function handleFetchRequest(message: FetchRequestMessage): Promise<unknown> {
   const { url, options } = message.payload;
+
+  if (!isAllowedUrl(url)) {
+    throw new Error(`URL not in allowed whitelist: ${url}`);
+  }
 
   const fetchOptions: RequestInit = {
     method: options?.method ?? 'GET',

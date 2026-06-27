@@ -7,15 +7,10 @@ import { getDownloadAdapter } from '@platform/index';
 import { planBulkDownload } from '@shared/core/download/download-plan';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
-import {
-  detectDownloadCapability,
-  downloadSingleFile,
-} from '@shared/services/download/single-download';
+import { downloadSingleFile } from '@shared/services/download/single-download';
 import type {
   BulkDownloadResult,
-  DownloadCapability,
   DownloadOptions,
-  GMDownloadFunction,
   OrchestratorItem,
   SingleDownloadResult,
 } from '@shared/services/download/types';
@@ -27,7 +22,6 @@ import { ErrorCode } from '@shared/types/media.types';
 let _downloadInstance: DownloadOrchestrator | null = null;
 
 export class DownloadOrchestrator {
-  private capability: DownloadCapability | null = null;
   private _initialized = false;
   private readonly abortController = new AbortController();
 
@@ -64,21 +58,18 @@ export class DownloadOrchestrator {
   /** Destroy service (idempotent) — aborts all in-progress downloads */
   public destroy(): void {
     this.abortController.abort();
-    this.capability = null;
     this._initialized = false;
-    _downloadInstance = null;
+    SingletonBase.reset(
+      () => _downloadInstance,
+      (inst) => {
+        _downloadInstance = inst;
+      }
+    );
   }
 
   /** Check if service is initialized */
   public isInitialized(): boolean {
     return this._initialized;
-  }
-
-  /**
-   * Get download capability (cached)
-   */
-  private getCapability(): DownloadCapability {
-    return (this.capability ??= detectDownloadCapability());
   }
 
   /**
@@ -100,9 +91,8 @@ export class DownloadOrchestrator {
     media: MediaInfo,
     options: DownloadOptions = {}
   ): Promise<SingleDownloadResult> {
-    const capability = this.getCapability();
     const mergedSignal = this.mergeSignal(options.signal);
-    return downloadSingleFile(media, { ...options, signal: mergedSignal }, capability);
+    return downloadSingleFile(media, { ...options, signal: mergedSignal });
   }
 
   /**
@@ -141,9 +131,8 @@ export class DownloadOrchestrator {
       };
     }
 
-    const capability = this.getCapability();
-
-    if (capability.method === 'none') {
+    const adapter = getDownloadAdapter();
+    if (!adapter) {
       return {
         success: false,
         status: 'error',
@@ -184,13 +173,11 @@ export class DownloadOrchestrator {
       });
       const filename = plan.zipFilename;
 
-      // Save ZIP using appropriate download method
-      const saveResult = await this.saveZipBlob(
-        zipBlob,
-        filename,
-        { ...options, signal: mergedSignal },
-        capability
-      );
+      // Save ZIP using the download adapter
+      const saveResult = await this.saveZipBlob(zipBlob, filename, {
+        ...options,
+        signal: mergedSignal,
+      });
 
       if (!saveResult.success) {
         return {
@@ -249,31 +236,25 @@ export class DownloadOrchestrator {
   }
 
   /**
-   * Save ZIP blob using the detected download method
+   * Save ZIP blob using the download adapter
    * @internal
    */
   private async saveZipBlob(
     zipBlob: Blob,
     filename: string,
-    options: DownloadOptions,
-    capability: DownloadCapability
+    options: DownloadOptions
   ): Promise<{ success: boolean; error?: string }> {
-    if (capability.method === 'chrome_downloads') {
-      return this.saveWithDownloadAdapter(zipBlob, filename);
-    }
-    if (capability.method === 'gm_download' && capability.gmDownload) {
-      return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename, options.onProgress);
-    }
-    return { success: false, error: 'No download method' };
+    return this.saveWithDownloadAdapter(zipBlob, filename, options.onProgress);
   }
 
   /**
-   * Save blob using MV3 DownloadAdapter (relays to background SW)
+   * Save blob using DownloadAdapter (relays to background SW or GM_download)
    * @internal
    */
   private async saveWithDownloadAdapter(
     blob: Blob,
-    filename: string
+    filename: string,
+    _onprogress?: DownloadOptions['onProgress']
   ): Promise<{ success: boolean; error?: string }> {
     const adapter = getDownloadAdapter();
     try {
@@ -284,67 +265,6 @@ export class DownloadOrchestrator {
         success: false,
         error: normalizeErrorMessage(error),
       };
-    }
-  }
-
-  /**
-   * Save blob using GM_download
-   * @internal
-   */
-  private async saveWithGMDownload(
-    gmDownload: GMDownloadFunction,
-    blob: Blob,
-    filename: string,
-    onprogress?: DownloadOptions['onProgress']
-  ): Promise<{ success: boolean; error?: string }> {
-    const url = URL.createObjectURL(blob);
-    try {
-      await new Promise<void>((resolve, reject) => {
-        let settled = false;
-        const settle = (action: 'resolve' | 'reject', err?: unknown): void => {
-          if (settled) return;
-          settled = true;
-          if (action === 'resolve') resolve();
-          else reject(err);
-        };
-
-        gmDownload({
-          url,
-          name: filename,
-          // NOTE: GM_download onload fires when the browser download dialog appears,
-          // NOT when the file is actually saved. User cancellation after this point
-          // cannot be detected (Tampermonkey/Violentmonkey API limitation).
-          onload: () => settle('resolve'),
-          onerror: (err: unknown) => settle('reject', err),
-          ontimeout: () => settle('reject', new Error('Timeout')),
-          ...(onprogress
-            ? {
-                onprogress: (progress: { loaded: number; total: number }) => {
-                  if (settled || progress.total <= 0) return;
-                  const pct = Math.min(
-                    100,
-                    Math.max(0, Math.round((progress.loaded / progress.total) * 100))
-                  );
-                  onprogress({
-                    phase: 'saving',
-                    current: progress.loaded,
-                    total: progress.total,
-                    percentage: pct,
-                    filename,
-                  });
-                },
-              }
-            : {}),
-        });
-      });
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: normalizeErrorMessage(error),
-      };
-    } finally {
-      URL.revokeObjectURL(url);
     }
   }
 }

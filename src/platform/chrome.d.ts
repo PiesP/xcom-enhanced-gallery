@@ -27,6 +27,7 @@ export interface ChromeRuntime {
 
 export interface ChromeRuntimeCore {
   id?: string;
+  lastError?: { message: string };
   onMessage: ChromeEvent<
     (message: unknown, sender: unknown, sendResponse: ChromeSendResponse) => void
   >;
