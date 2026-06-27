@@ -16,6 +16,11 @@ const createAbortResult = (): SingleDownloadResult => ({
   error: 'Download cancelled by user',
 });
 
+const createErrorDownloadResult = (error: unknown): SingleDownloadResult => ({
+  success: false,
+  error: normalizeErrorMessage(error),
+});
+
 export async function downloadSingleFile(
   media: MediaInfo,
   options: DownloadOptions = {}
@@ -63,7 +68,7 @@ async function downloadWithAdapter(
         });
         return { success: true, filename } satisfies SingleDownloadResult;
       },
-      (error: unknown) => ({ success: false, error: normalizeErrorMessage(error) })
+      (error: unknown) => createErrorDownloadResult(error)
     );
     return Promise.race([resultPromise, abortPromise]);
   }
@@ -87,7 +92,7 @@ async function downloadWithAdapter(
     });
     return { success: true, filename };
   } catch (error) {
-    return { success: false, error: normalizeErrorMessage(error) };
+    return createErrorDownloadResult(error);
   }
 }
 
@@ -104,6 +109,6 @@ async function downloadBlobWithAdapter(
     await adapter.downloadBlob(blob, filename);
     return { success: true, filename };
   } catch (error) {
-    return { success: false, error: normalizeErrorMessage(error) };
+    return createErrorDownloadResult(error);
   }
 }

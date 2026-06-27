@@ -5,9 +5,6 @@ import { logger } from '@shared/logging/logger';
 import { SingletonBase } from '@shared/services/singleton-base';
 import { createId, createPrefixedId } from '@shared/utils/id';
 
-// Re-export for backwards compatibility
-export { createId, createPrefixedId } from '@shared/utils/id';
-
 /** @fileoverview Event types for gallery event handling. */
 
 export interface EventHandlers {

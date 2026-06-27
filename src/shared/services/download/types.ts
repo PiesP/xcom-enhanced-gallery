@@ -6,6 +6,7 @@
  */
 
 import type { ErrorCode } from '@shared/types/media.types';
+import { computePercentage } from '@shared/utils/math/percentage';
 
 export interface OrchestratorItem {
   readonly url: string;
@@ -83,10 +84,6 @@ export function reportProgress(
   payload: Omit<DownloadProgress, 'percentage'> & { percentage?: number }
 ): void {
   if (!onProgress) return;
-  const percentage =
-    payload.percentage ??
-    (payload.total <= 0
-      ? 0
-      : Math.min(100, Math.max(0, Math.round((payload.current / payload.total) * 100))));
+  const percentage = payload.percentage ?? computePercentage(payload.current, payload.total);
   onProgress({ ...payload, percentage });
 }

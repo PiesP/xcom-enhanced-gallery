@@ -9,7 +9,6 @@
  */
 
 import { getUserscript } from '@shared/external/userscript/adapter';
-import type { GMNotificationDetails } from '@shared/types/core/userscript';
 import type { StorageAdapter } from './types';
 
 export class GMStorageAdapter implements StorageAdapter {
@@ -37,6 +36,3 @@ export class GMStorageAdapter implements StorageAdapter {
     return this.gm.getValueSync<T>(key, defaultValue);
   }
 }
-
-// Re-export for use in gallery-app.ts
-export type { GMNotificationDetails };
