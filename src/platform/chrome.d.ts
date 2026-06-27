@@ -89,7 +89,7 @@ export interface ChromeDownloadDelta {
 }
 
 export interface ChromeNotificationsModule {
-  create(id: string, options: ChromeNotificationOptions): Promise<string>;
+  create(id: string, options: ChromeNotificationOptions, callback?: () => void): Promise<string>;
 }
 
 export interface ChromeNotificationOptions {

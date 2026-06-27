@@ -66,6 +66,8 @@ export const es: LanguageStrings = {
         t: 'Fallo parcial',
         b: 'No se pudieron descargar {count} elementos.',
       },
+      noMedia: 'Ningún elemento multimedia seleccionado. Reabra la galería e intente de nuevo.',
+      zipFail: 'Error al guardar el archivo ZIP',
     },
     gal: {
       emptyT: 'Sin medios disponibles',

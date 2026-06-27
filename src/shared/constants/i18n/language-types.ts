@@ -132,6 +132,10 @@ export interface LanguageStrings {
         /** Partial fail body */
         readonly b: string;
       };
+      /** No media item selected message */
+      readonly noMedia: string;
+      /** ZIP save failure fallback */
+      readonly zipFail: string;
     };
     /** Gallery messages */
     readonly gal: {

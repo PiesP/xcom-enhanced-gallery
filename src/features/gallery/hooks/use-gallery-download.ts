@@ -48,6 +48,8 @@ export function createDownloadHandler() {
   };
 
   const handleDownload = async (type: 'current' | 'all'): Promise<void> => {
+    // A7: Clear stale error from a previous download before starting a new one.
+    setError(null);
     setDownloading(true);
 
     const notifyError = (title: string, body: string): void => {
@@ -87,7 +89,7 @@ export function createDownloadHandler() {
         } else {
           notifyError(
             languageService.translate('msg.dl.one.err.t'),
-            'No media item selected. Please re-open the gallery and try again.'
+            languageService.translate('msg.dl.noMedia')
           );
         }
       } else {
@@ -111,7 +113,7 @@ export function createDownloadHandler() {
             setError(body);
             notifyError(title, body);
           } else {
-            const error = result.error || 'Failed to save ZIP file';
+            const error = result.error || languageService.translate('msg.dl.zipFail');
             const title = languageService.translate('msg.dl.one.err.t');
             const body = languageService.translate('msg.dl.one.err.b', { error });
             setError(body);

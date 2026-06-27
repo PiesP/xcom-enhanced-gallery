@@ -66,6 +66,8 @@ export const zhCn: LanguageStrings = {
         t: '部分失败',
         b: '{count} 个项目下载失败。',
       },
+      noMedia: '未选择媒体项。请重新打开图库后重试。',
+      zipFail: 'ZIP 文件保存失败',
     },
     gal: {
       emptyT: '无可用媒体',

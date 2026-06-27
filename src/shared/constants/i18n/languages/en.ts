@@ -66,6 +66,8 @@ export const en: LanguageStrings = {
         t: 'Partial Failure',
         b: 'Failed to download {count} items.',
       },
+      noMedia: 'No media item selected. Please re-open the gallery and try again.',
+      zipFail: 'Failed to save ZIP file',
     },
     gal: {
       emptyT: 'No media available',

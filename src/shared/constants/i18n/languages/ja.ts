@@ -66,6 +66,8 @@ export const ja: LanguageStrings = {
         t: '一部失敗',
         b: '{count}個の項目を取得できませんでした。',
       },
+      noMedia: 'メディアが選択されていません。ギャラリーを開き直してお試しください。',
+      zipFail: 'ZIPファイルの保存に失敗しました',
     },
     gal: {
       emptyT: 'メディアがありません',

@@ -66,6 +66,8 @@ export const ko: LanguageStrings = {
         t: '일부 실패',
         b: '{count}개 항목을 가져올 수 없었습니다.',
       },
+      noMedia: '선택된 미디어가 없습니다. 갤러리를 다시 열고 시도해 주세요.',
+      zipFail: 'ZIP 파일 저장에 실패했습니다',
     },
     gal: {
       emptyT: '미디어 없음',
