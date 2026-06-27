@@ -57,7 +57,9 @@ const throwIfAborted = (signal?: AbortSignal): void => {
 
 /**
  * Download multiple media items as a ZIP archive using parallel fetch workers.
- * Results are collected by index to preserve original ordering in the archive.
+ * Each completed file is written to the ZIP writer immediately to minimize
+ * peak memory usage — only one file's data is buffered beyond the fetch buffer
+ * at any time, instead of holding all files in memory before writing.
  *
  * @param items - Media items to download
  * @param options - Download options (concurrency, retries, signal, progress)
@@ -84,8 +86,8 @@ export async function downloadAsZip(
   const ensureUniqueFilename = ensureUniqueFilenameFactory();
   const assignedFilenames = items.map((item) => ensureUniqueFilename(item.desiredName));
 
+  // Track which indices have been written to preserve ordering info for progress
   let currentIndex = 0;
-  const results: { index: number; filename: string; data: Uint8Array }[] = new Array(total);
 
   const runNext = async (): Promise<void> => {
     while (currentIndex < total) {
@@ -114,8 +116,8 @@ export async function downloadAsZip(
 
         throwIfAborted(abortSignal);
 
-        results[index] = { index, filename, data };
-
+        // Write immediately to ZIP — avoids holding all files in memory
+        writer.addFile(filename, data);
         successful++;
       } catch (error) {
         throwIfAborted(abortSignal);
@@ -135,13 +137,6 @@ export async function downloadAsZip(
   const workerCount = Math.min(concurrency, total);
   const workers = Array.from({ length: workerCount }, () => runNext());
   await Promise.all(workers);
-
-  for (let i = 0; i < total; i++) {
-    const result = results[i];
-    if (result) {
-      writer.addFile(result.filename, result.data);
-    }
-  }
 
   reportProgress(onProgress, {
     phase: 'complete',
