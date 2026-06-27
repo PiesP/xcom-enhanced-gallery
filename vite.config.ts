@@ -144,7 +144,7 @@ export default defineConfig(({ mode }): UserConfig => {
       rolldownOptions: {
         output: {
           entryFileNames: outputFileName,
-          exports: 'none',
+          exports: 'auto',
         },
         treeshake: isDev
           ? false
