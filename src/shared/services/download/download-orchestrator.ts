@@ -3,6 +3,7 @@
 
 /** @fileoverview Unified download service: single + bulk (ZIP) via GM_download. */
 
+import { getDownloadAdapter } from '@platform/index';
 import { planBulkDownload } from '@shared/core/download/download-plan';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
@@ -257,10 +258,33 @@ export class DownloadOrchestrator {
     options: DownloadOptions,
     capability: DownloadCapability
   ): Promise<{ success: boolean; error?: string }> {
+    if (capability.method === 'chrome_downloads') {
+      return this.saveWithDownloadAdapter(zipBlob, filename);
+    }
     if (capability.method === 'gm_download' && capability.gmDownload) {
       return this.saveWithGMDownload(capability.gmDownload, zipBlob, filename, options.onProgress);
     }
     return { success: false, error: 'No download method' };
+  }
+
+  /**
+   * Save blob using MV3 DownloadAdapter (relays to background SW)
+   * @internal
+   */
+  private async saveWithDownloadAdapter(
+    blob: Blob,
+    filename: string
+  ): Promise<{ success: boolean; error?: string }> {
+    const adapter = getDownloadAdapter();
+    try {
+      await adapter.downloadBlob(blob, filename);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: normalizeErrorMessage(error),
+      };
+    }
   }
 
   /**

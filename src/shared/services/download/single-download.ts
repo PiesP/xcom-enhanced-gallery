@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
+import { getDownloadAdapter } from '@platform/index';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { resolveGMDownload } from '@shared/external/userscript/adapter';
@@ -21,9 +22,22 @@ function asGMDownloadFunction(value: unknown): GMDownloadFunction | undefined {
 export function detectDownloadCapability(): DownloadCapability {
   const gmDownload = asGMDownloadFunction(resolveGMDownload());
   const hasGMDownload = !!gmDownload;
+  const hasChromeDownloads =
+    typeof chrome !== 'undefined' &&
+    typeof chrome.downloads !== 'undefined' &&
+    typeof chrome.downloads.download === 'function';
+
+  let method: DownloadCapability['method'] = 'none';
+  if (hasGMDownload) {
+    method = 'gm_download';
+  } else if (hasChromeDownloads) {
+    method = 'chrome_downloads';
+  }
+
   return {
     hasGMDownload,
-    method: hasGMDownload ? 'gm_download' : 'none',
+    hasChromeDownloads,
+    method,
     gmDownload: hasGMDownload ? gmDownload : undefined,
   };
 }
@@ -46,19 +60,27 @@ export async function downloadSingleFile(
 
   const filename = generateMediaFilename(media, { nowMs: Date.now() });
   const cap = capability ?? detectDownloadCapability();
-  const gmDownload = cap.gmDownload;
-  if (!gmDownload) {
-    return { success: false, error: 'No download method available' };
+
+  // For MV3 or GM download, use GM_download if available
+  if (cap.method === 'gm_download' && cap.gmDownload) {
+    return downloadWithGM(cap.gmDownload, media, options, abortSignal, filename);
   }
 
-  reportProgress(options.onProgress, {
-    phase: 'preparing',
-    current: 0,
-    total: 1,
-    percentage: 0,
-    filename,
-  });
+  // For MV3 chrome.downloads, delegate to the download adapter
+  if (cap.method === 'chrome_downloads') {
+    return downloadWithChrome(media, options, abortSignal, filename);
+  }
 
+  return { success: false, error: 'No download method available' };
+}
+
+async function downloadWithGM(
+  gmDownload: GMDownloadFunction,
+  media: MediaInfo,
+  options: DownloadOptions,
+  _abortSignal: AbortSignal | undefined,
+  filename: string
+): Promise<SingleDownloadResult> {
   let url = media.url;
   let isBlobUrl = false;
   const blob = options.blob;
@@ -72,8 +94,6 @@ export async function downloadSingleFile(
     let settled = false;
 
     const cleanup = (): void => {
-      // Revoke blob URL before clearing the timer to ensure the browser can
-      // release the underlying blob data as early as possible.
       if (isBlobUrl) URL.revokeObjectURL(url);
       if (timer) clearTimeout(timer);
     };
@@ -102,9 +122,6 @@ export async function downloadSingleFile(
       gmDownload({
         url,
         name: filename,
-        // NOTE: GM_download onload fires when the browser download dialog appears,
-        // NOT when the file is actually saved. User cancellation after this point
-        // cannot be detected (Tampermonkey/Violentmonkey API limitation).
         onload: () => settle({ success: true, filename }),
         onerror: (error: unknown) => {
           settle({ success: false, error: normalizeErrorMessage(error) });
@@ -129,4 +146,45 @@ export async function downloadSingleFile(
       settle({ success: false, error: normalizeErrorMessage(error) });
     }
   });
+}
+
+async function downloadWithChrome(
+  media: MediaInfo,
+  options: DownloadOptions,
+  _abortSignal: AbortSignal | undefined,
+  filename: string
+): Promise<SingleDownloadResult> {
+  // For MV3, we use the download adapter which relays to background SW
+  const adapter = getDownloadAdapter();
+
+  reportProgress(options.onProgress, {
+    phase: 'preparing',
+    current: 0,
+    total: 1,
+    percentage: 0,
+    filename,
+  });
+
+  try {
+    let url = media.url;
+    if (options.blob) {
+      // For blob downloads, use the adapter's downloadBlob
+      await adapter.downloadBlob(options.blob, filename);
+    } else {
+      url = media.url;
+      await adapter.download(url, filename);
+    }
+
+    reportProgress(options.onProgress, {
+      phase: 'complete',
+      current: 1,
+      total: 1,
+      percentage: 100,
+      filename,
+    });
+
+    return { success: true, filename };
+  } catch (error) {
+    return { success: false, error: normalizeErrorMessage(error) };
+  }
 }

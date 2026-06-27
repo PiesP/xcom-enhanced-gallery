@@ -56,7 +56,8 @@ export type GMDownloadFunction = (options: GMDownloadOptions) => void;
 
 export interface DownloadCapability {
   hasGMDownload: boolean;
-  method: 'gm_download' | 'none';
+  hasChromeDownloads: boolean;
+  method: 'gm_download' | 'chrome_downloads' | 'none';
   gmDownload?: GMDownloadFunction | undefined;
 }
 

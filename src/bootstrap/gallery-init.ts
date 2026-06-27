@@ -8,9 +8,9 @@
 import { GalleryApp } from '@features/gallery/gallery-app';
 import { GalleryRenderer } from '@features/gallery/gallery-renderer';
 import { SettingsService } from '@features/settings/services/settings-service';
+import { getNotificationAdapter } from '@platform/index';
 import { registerSettings } from '@shared/container/settings-registry';
 import { galleryErrorReporter, settingsErrorReporter } from '@shared/error/app-error-reporter';
-import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import { LanguageService } from '@shared/services/language-service';
 import { MediaService } from '@shared/services/media-service';
@@ -41,10 +41,10 @@ export async function initializeGalleryServices(): Promise<void> {
     settingsErrorReporter.warn(error, {
       code: 'SETTINGS_SERVICE_INIT_FAILED',
     });
-    getUserscript().notification({
-      title: 'Settings unavailable',
-      text: 'Defaults will be used until settings load.',
-    });
+    getNotificationAdapter().notify(
+      'Settings unavailable',
+      'Defaults will be used until settings load.'
+    );
   }
 }
 

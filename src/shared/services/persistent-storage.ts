@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import type { UserscriptAPI } from '@shared/external/userscript/adapter';
-import { getUserscript } from '@shared/external/userscript/adapter';
+import { getStorageAdapter } from '@platform/index';
 import { SingletonBase } from '@shared/services/singleton-base';
 
 let _persistentStorageInstance: PersistentStorage | null = null;
 
 export class PersistentStorage {
-  private get userscript(): UserscriptAPI {
-    return getUserscript();
+  private get adapter() {
+    return getStorageAdapter();
   }
 
   private constructor() {}
@@ -41,16 +40,16 @@ export class PersistentStorage {
 
   async set(key: string, value: unknown): Promise<void> {
     if (value === undefined) {
-      await this.userscript.deleteValue(key);
+      await this.adapter.remove(key);
       return;
     }
 
     const serialized = JSON.stringify(value);
-    await this.userscript.setValue(key, serialized);
+    await this.adapter.set(key, serialized);
   }
 
   async get<T>(key: string, defaultValue?: T): Promise<T | undefined> {
-    const value = await this.userscript.getValue<string | undefined>(key);
+    const value = await this.adapter.get<string | undefined>(key);
     if (value === undefined || value === null) return defaultValue;
 
     try {
@@ -61,13 +60,13 @@ export class PersistentStorage {
   }
 
   async getString(key: string, defaultValue?: string): Promise<string | undefined> {
-    const value = await this.userscript.getValue<string | undefined>(key);
+    const value = await this.adapter.get<string | undefined>(key);
     if (value === undefined || value === null) return defaultValue;
     return value;
   }
 
   async has(key: string): Promise<boolean> {
-    const value = await this.userscript.getValue<unknown>(key);
+    const value = await this.adapter.get<unknown>(key);
     return value !== undefined && value !== null;
   }
 
@@ -75,12 +74,13 @@ export class PersistentStorage {
    * Synchronous storage access via UserscriptAPI adapter.
    *
    * [WARNING] Only reliable in Tampermonkey and Violentmonkey.
-   * Greasemonkey 4+ uses async-only storage - returns defaultValue.
+   * MV3 extensions do NOT support this — returns defaultValue.
    * Use ONLY for critical initialization paths (e.g., theme to prevent FOUC).
    */
   getSync<T>(key: string, defaultValue?: T): T | undefined {
+    if (!this.adapter.getSync) return defaultValue;
     try {
-      const value = this.userscript.getValueSync<string>(key);
+      const value = this.adapter.getSync<string>(key);
       if (value == null) return defaultValue;
       try {
         return JSON.parse(value) as T;
@@ -93,6 +93,6 @@ export class PersistentStorage {
   }
 
   async remove(key: string): Promise<void> {
-    await this.userscript.deleteValue(key);
+    await this.adapter.remove(key);
   }
 }

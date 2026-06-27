@@ -182,7 +182,7 @@ async function cleanup(): Promise<void> {
   }
 }
 
-async function startApplication(): Promise<void> {
+export async function startApplication(): Promise<void> {
   if (lifecycleState.startPromise) return lifecycleState.startPromise;
   if (lifecycleState.started) return;
 

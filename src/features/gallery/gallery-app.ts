@@ -6,6 +6,7 @@
  */
 
 import type { GalleryRenderer } from '@features/gallery/gallery-renderer';
+import { getNotificationAdapter } from '@platform/index';
 import { getMediaService } from '@shared/container/container';
 import { tryGetSettings } from '@shared/container/settings-registry';
 import {
@@ -13,7 +14,6 @@ import {
   mediaErrorReporter,
   normalizeErrorMessage,
 } from '@shared/error/app-error-reporter';
-import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import {
   closeGallery,
@@ -94,17 +94,11 @@ export class GalleryApp {
           code: 'MEDIA_EXTRACTION_EMPTY',
           metadata: { success: result.success },
         });
-        getUserscript().notification({
-          title: 'Failed to load media',
-          text: 'Could not find images or videos.',
-        });
+        getNotificationAdapter().notify('Failed to load media', 'Could not find images or videos.');
       }
     } catch (error) {
       mediaErrorReporter.error(error, { code: 'MEDIA_EXTRACTION_ERROR' });
-      getUserscript().notification({
-        title: 'Error occurred',
-        text: normalizeErrorMessage(error),
-      });
+      getNotificationAdapter().notify('Error occurred', normalizeErrorMessage(error));
     }
   }
 
@@ -122,10 +116,7 @@ export class GalleryApp {
         code: 'GALLERY_OPEN_FAILED',
         metadata: { itemCount: mediaItems.length, startIndex },
       });
-      getUserscript().notification({
-        title: 'Failed to load gallery',
-        text: normalizeErrorMessage(error),
-      });
+      getNotificationAdapter().notify('Failed to load gallery', normalizeErrorMessage(error));
       throw error;
     }
   }
