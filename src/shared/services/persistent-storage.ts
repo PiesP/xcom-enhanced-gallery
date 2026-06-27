@@ -6,6 +6,37 @@ import { SingletonBase } from '@shared/services/singleton-base';
 
 let _persistentStorageInstance: PersistentStorage | null = null;
 
+/**
+ * localStorage fallback prefix — used when the primary storage adapter
+ * (GM_setValue / chrome.storage.local) fails, providing a last-resort
+ * persistence layer that works across reloads.
+ */
+const LS_FALLBACK_PREFIX = 'xeg-fallback:';
+
+function lsReadRaw(key: string): string | null {
+  try {
+    return localStorage.getItem(LS_FALLBACK_PREFIX + key);
+  } catch {
+    return null;
+  }
+}
+
+function lsWriteRaw(key: string, value: string): void {
+  try {
+    localStorage.setItem(LS_FALLBACK_PREFIX + key, value);
+  } catch {
+    // localStorage may be unavailable (private browsing, quota exceeded)
+  }
+}
+
+function lsRemove(key: string): void {
+  try {
+    localStorage.removeItem(LS_FALLBACK_PREFIX + key);
+  } catch {
+    // ignore
+  }
+}
+
 export class PersistentStorage {
   private get adapter() {
     return getStorageAdapter();
@@ -40,17 +71,54 @@ export class PersistentStorage {
 
   async set(key: string, value: unknown): Promise<void> {
     if (value === undefined) {
-      await this.adapter.remove(key);
+      await this.remove(key);
       return;
     }
 
     const serialized = JSON.stringify(value);
-    await this.adapter.set(key, serialized);
+    try {
+      await this.adapter.set(key, serialized);
+    } catch (error) {
+      // B9: Fallback to localStorage when primary storage fails
+      lsWriteRaw(key, serialized);
+      if (__DEV__)
+        console.warn(
+          '[PersistentStorage] Primary storage failed, using localStorage fallback:',
+          error
+        );
+    }
+    // Always mirror to localStorage as backup (best-effort)
+    lsWriteRaw(key, serialized);
   }
 
   async get<T>(key: string, defaultValue?: T): Promise<T | undefined> {
-    const value = await this.adapter.get<unknown>(key);
-    if (value === undefined || value === null) return defaultValue;
+    let value: unknown;
+    try {
+      value = await this.adapter.get<unknown>(key);
+    } catch (error) {
+      // B9: Fallback to localStorage
+      const raw = lsReadRaw(key);
+      if (raw !== null) {
+        try {
+          return JSON.parse(raw) as T;
+        } catch {
+          return defaultValue;
+        }
+      }
+      return defaultValue;
+    }
+    if (value === undefined || value === null) {
+      // Primary returned nothing — check localStorage backup
+      const raw = lsReadRaw(key);
+      if (raw !== null) {
+        try {
+          return JSON.parse(raw) as T;
+        } catch {
+          return defaultValue;
+        }
+      }
+      return defaultValue;
+    }
 
     // MV3 stores raw objects; GM stores JSON strings via PersistentStorage.set().
     // If value is already a non-string (object/array), return it directly.
@@ -99,6 +167,11 @@ export class PersistentStorage {
   }
 
   async remove(key: string): Promise<void> {
-    await this.adapter.remove(key);
+    try {
+      await this.adapter.remove(key);
+    } catch {
+      // ignore — localStorage cleanup below
+    }
+    lsRemove(key);
   }
 }

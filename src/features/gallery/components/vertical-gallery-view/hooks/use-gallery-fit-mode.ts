@@ -6,11 +6,15 @@
  * persistence to settings, and fit mode toggle handlers.
  */
 
-import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-registry';
+import {
+  getTypedSettingOr,
+  setTypedSetting,
+  tryGetSettings,
+} from '@shared/container/settings-registry';
 import { logger } from '@shared/logging/logger';
 import { navigateToItem } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types/settings.types';
-import { createSignal } from 'solid-js';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
 
 /**
  * Parameters for useGalleryFitMode hook
@@ -54,6 +58,19 @@ export function useGalleryFitMode(options: UseGalleryFitModeOptions): UseGallery
   };
 
   const [imageFitMode, setImageFitMode] = createSignal<ImageFitMode>(getInitialFitMode());
+
+  // B6: Subscribe to settings changes so fit mode updates reactively
+  // when modified from outside this hook (e.g., settings panel, other tabs).
+  createEffect(() => {
+    const settings = tryGetSettings();
+    if (!settings || !settings.subscribe) return;
+    const unsubscribe = settings.subscribe((event: { key: string; newValue?: unknown }) => {
+      if (event.key === 'gallery.imageFitMode' && typeof event.newValue === 'string') {
+        setImageFitMode(event.newValue as ImageFitMode);
+      }
+    });
+    onCleanup(unsubscribe);
+  });
 
   const persistFitMode = (mode: ImageFitMode): Promise<void> =>
     setTypedSetting('gallery.imageFitMode', mode).catch((error) => {

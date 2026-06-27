@@ -60,6 +60,25 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const translate = useTranslation();
 
   const isVideo = () => local.media.type === 'video' || local.media.type === 'gif';
+
+  /**
+   * Resolve the image source URL for display.
+   *
+   * Performance optimization (B5): Use the thumbnail URL for non-active
+   * images to avoid loading full-resolution blobs for off-screen items.
+   * Only the active/focused item loads the full-resolution URL.
+   *
+   * Video/gif items always use the full URL since thumbnail URLs are
+   * typically static JPEG frames, not video sources.
+   */
+  const displaySrc = createMemo(() => {
+    if (isVideo()) return local.media.url;
+    const isActive = local.isActive ?? false;
+    // For the active item: load full resolution for best quality
+    if (isActive) return local.media.url;
+    // For inactive items: use thumbnail to reduce bandwidth and memory
+    return local.media.thumbnailUrl ?? local.media.url;
+  });
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
 
@@ -286,7 +305,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
         {isVideo() && isUrlValid() ? (
           <video
-            src={local.media.url}
+            src={displaySrc()}
             controls
             ref={setVideoRef}
             class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
@@ -301,7 +320,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
         ) : !isVideo() && isUrlValid() ? (
           <img
             ref={setImageRef}
-            src={local.media.url}
+            src={displaySrc()}
             alt={imageAltText()}
             loading={shouldEagerLoad() ? 'eager' : 'lazy'}
             decoding="async"

@@ -7,7 +7,11 @@
  * container.ts → theme-service.ts → container.ts
  */
 
-import type { AppSettings, NestedSettingKey } from '@shared/types/settings.types';
+import type {
+  AppSettings,
+  NestedSettingKey,
+  SettingChangeEvent,
+} from '@shared/types/settings.types';
 
 /**
  * Minimal settings service interface used internally for type-safe access.
@@ -15,6 +19,7 @@ import type { AppSettings, NestedSettingKey } from '@shared/types/settings.types
 interface SettingsLike {
   get(key: string): unknown;
   set(key: string, value: unknown): Promise<void>;
+  subscribe?(listener: (event: SettingChangeEvent) => void): () => void;
 }
 
 let _settings: SettingsLike | null = null;
