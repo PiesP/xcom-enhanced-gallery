@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "X.com Enhanced Gallery",
+  "version": "2.1.2",
+  "description": "Enhanced media gallery and download for X.com",
+  "permissions": ["downloads", "storage", "notifications", "activeTab"],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://pbs.twimg.com/*",
+    "https://video.twimg.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [{
+    "matches": ["https://x.com/*", "https://twitter.com/*"],
+    "js": ["content.js"],
+    "run_at": "document_start"
+  }],
+  "icons": { "128": "icon128.png" }
+}
