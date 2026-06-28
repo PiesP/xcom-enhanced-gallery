@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { IS_MV3 } from '@platform/detect';
 import { getDownloadAdapter } from '@platform/index';
+import type { DownloadAdapter } from '@platform/types';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import type { DownloadOptions, SingleDownloadResult } from '@shared/services/download/types';
@@ -44,6 +46,13 @@ async function downloadWithAdapter(
   abortSignal: AbortSignal | undefined
 ): Promise<SingleDownloadResult> {
   const adapter = getDownloadAdapter();
+
+  // MV3: Background SW cannot download directly from twimg.com URLs
+  // (CORS/auth restrictions). Fetch in content script context (has cookies),
+  // then pass blob to adapter for download.
+  if (IS_MV3) {
+    return downloadWithFetchFallback(url, filename, options, abortSignal, adapter);
+  }
 
   // Set up abort listener to race against the adapter download
   if (abortSignal) {
@@ -112,6 +121,59 @@ async function downloadWithAdapter(
 
   try {
     await adapter.download(url, filename);
+    reportProgress(options.onProgress, {
+      phase: 'complete',
+      current: 1,
+      total: 1,
+      percentage: 100,
+      filename,
+    });
+    return { success: true, filename };
+  } catch (error) {
+    return createErrorDownloadResult(error);
+  }
+}
+
+async function downloadWithFetchFallback(
+  url: string,
+  filename: string,
+  options: DownloadOptions,
+  abortSignal: AbortSignal | undefined,
+  adapter: DownloadAdapter
+): Promise<SingleDownloadResult> {
+  reportProgress(options.onProgress, {
+    phase: 'preparing',
+    current: 0,
+    total: 1,
+    percentage: 0,
+    filename,
+  });
+
+  try {
+    // Fetch in content script context (has cookies/auth for twimg.com)
+    const fetchInit: RequestInit = { credentials: 'include' };
+    if (abortSignal) {
+      (fetchInit as { signal?: AbortSignal }).signal = abortSignal;
+    }
+    const response = await fetch(url, fetchInit);
+    if (!response.ok) {
+      return createErrorDownloadResult(
+        new Error(`HTTP ${response.status}: ${response.statusText}`)
+      );
+    }
+    const blob = await response.blob();
+
+    reportProgress(options.onProgress, {
+      phase: 'downloading',
+      current: 50,
+      total: 100,
+      percentage: 50,
+      filename,
+    });
+
+    // Pass blob to adapter (which relays to background SW for download)
+    await adapter.downloadBlob(blob, filename);
+
     reportProgress(options.onProgress, {
       phase: 'complete',
       current: 1,
