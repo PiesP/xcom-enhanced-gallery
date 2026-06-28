@@ -13,9 +13,9 @@ import { isHostMatching, tryParseUrl } from '@shared/utils/url/host';
  *
  * @remarks
  * Prevents excessively long URLs that may indicate malformed or malicious input.
- * Standard HTTP URL length limit is 2048 characters.
+ * Set to 8192 to accommodate Twitter/X media URLs with query parameters.
  */
-const MAX_URL_LENGTH = 2048 as const;
+const MAX_URL_LENGTH = 8192 as const;
 
 /**
  * Allowed media CDN hosts for Twitter/X media.

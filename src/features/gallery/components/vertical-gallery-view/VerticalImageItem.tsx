@@ -253,6 +253,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             <div
               class={cx('xeg-spinner', styles.loadingSpinner)}
               role="status"
+              aria-live="polite"
               aria-label="Loading"
             />
           </div>

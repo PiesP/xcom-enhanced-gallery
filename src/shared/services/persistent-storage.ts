@@ -78,8 +78,8 @@ export class PersistentStorage {
     const serialized = JSON.stringify(value);
     try {
       await this.adapter.set(key, serialized);
-      // Clean up any stale fallback value from a previous failure
-      lsRemove(key);
+      // Fallback mirror persists — primary is now authoritative but
+      // the mirror backup remains available if future reads return null.
     } catch (error) {
       // Fallback to localStorage when primary storage fails
       lsWriteRaw(key, serialized);

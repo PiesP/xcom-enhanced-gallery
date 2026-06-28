@@ -104,7 +104,7 @@ const RESERVED_TWITTER_PATHS_ARRAY = Object.freeze([
 const RESERVED_TWITTER_PATHS = new Set(RESERVED_TWITTER_PATHS_ARRAY);
 
 /** Valid Twitter username pattern: 1-15 alphanumeric or underscore characters */
-const TWITTER_USERNAME_PATTERN = /^[a-zA-Z0-9_]{1,15}$/u;
+const TWITTER_USERNAME_PATTERN = /^[a-zA-Z0-9_]{1,15}$/;
 
 /** Minimum number of path segments required for username extraction (/username/status/id). */
 const MIN_USERNAME_PATH_SEGMENTS = 3;
