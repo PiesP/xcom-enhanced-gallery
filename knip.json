@@ -7,7 +7,9 @@
     "@features/*": ["src/features/*"],
     "@platform/*": ["src/platform/*"]
   },
-  "ignore": ["src/shared/services/download/types.ts"],
+  "ignore": [
+    "src/platform/types.ts"
+  ],
   "ignoreExportsUsedInFile": true,
-  "ignoreBinaries": ["stryker"]
+  "ignoreBinaries": ["stryker", "e2e"]
 }

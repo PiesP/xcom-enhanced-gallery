@@ -2,19 +2,6 @@
 // Copyright (c) 2024-2026 PiesP
 
 /**
- * Safely parse an integer from any input.
- * Returns 0 for null, undefined, empty string, or non-numeric values.
- * @param value - Value to parse (string, number, null, undefined)
- * @param radix - Number base (default: 10)
- * @returns Parsed integer or 0 on invalid input
- */
-export function safeParseInt(value: unknown, radix = 10): number {
-  if (value === null || value === undefined || value === '') return 0;
-  const parsed = parseInt(String(value), radix);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-/**
  * Constrain a number to a specified range.
  * @param value - Number to clamp
  * @param min - Minimum value (default: 0)

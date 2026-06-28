@@ -24,4 +24,3 @@ export function detectPlatform(): PlatformType {
 // extension context lifecycle. For runtime re-detection, use detectPlatform() directly.
 const _platform = detectPlatform();
 export const IS_MV3: boolean = _platform === 'mv3-extension';
-export const IS_USERSCRIPT: boolean = _platform === 'userscript';
