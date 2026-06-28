@@ -25,7 +25,6 @@ export class MV3DownloadAdapter implements DownloadAdapter {
       }, DOWNLOAD_TIMEOUT_MS);
 
       chrome.runtime.sendMessage(
-        undefined,
         {
           type: 'DOWNLOAD_REQUEST',
           payload: { url, filename, headers },
@@ -70,7 +69,6 @@ export class MV3DownloadAdapter implements DownloadAdapter {
       }, DOWNLOAD_TIMEOUT_MS);
 
       chrome.runtime.sendMessage(
-        undefined,
         {
           type: 'DOWNLOAD_BLOB_REQUEST',
           payload: { dataUrl, filename },
@@ -102,7 +100,6 @@ export class MV3DownloadAdapter implements DownloadAdapter {
       }, DOWNLOAD_TIMEOUT_MS);
 
       chrome.runtime.sendMessage(
-        undefined,
         {
           type: 'DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST',
           payload: { buffer, filename, mimeType },

@@ -74,11 +74,22 @@ interface DownloadBlobArrayBufferRequestMessage {
   };
 }
 
+interface ShowNotificationMessage {
+  type: 'SHOW_NOTIFICATION';
+  payload: {
+    id: string;
+    title: string;
+    message: string;
+    imageUrl?: string;
+  };
+}
+
 type IncomingMessage =
   | DownloadRequestMessage
   | DownloadBlobRequestMessage
   | DownloadBlobArrayBufferRequestMessage
-  | FetchRequestMessage;
+  | FetchRequestMessage
+  | ShowNotificationMessage;
 
 // ── Message handler ──────────────────────────────────────────────────────────
 
@@ -110,6 +121,11 @@ chrome.runtime.onMessage.addListener(
           .then(() => sendResponse({ success: true }))
           .catch((error: Error) => sendResponse({ success: false, error: error.message }));
         return true;
+
+      case 'SHOW_NOTIFICATION':
+        handleShowNotification(msg.payload);
+        sendResponse({ success: true });
+        return false;
 
       case 'FETCH_REQUEST':
         handleFetchRequest(msg)
@@ -245,6 +261,20 @@ chrome.runtime.onInstalled.addListener((details) => {
     );
   }
 });
+
+// ── Notification handler ─────────────────────────────────────────────────────
+
+function handleShowNotification(payload: ShowNotificationMessage['payload']): void {
+  const { id, title, message, imageUrl } = payload;
+  chrome.notifications.create(id, {
+    type: 'basic',
+    title,
+    message,
+    iconUrl: imageUrl ?? 'icons/icon-128x128.png',
+  });
+}
+
+// ── Cross-origin fetch proxy ─────────────────────────────────────────────────
 
 async function handleFetchRequest(message: FetchRequestMessage): Promise<unknown> {
   const { url, options } = message.payload;
