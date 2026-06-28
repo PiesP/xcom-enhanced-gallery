@@ -5,13 +5,15 @@
  * MV3 extension download adapter.
  *
  * Relays download requests to the background service worker via
- * chrome.runtime.sendMessage (Promise-based, not callback-based).
+ * chrome.runtime.sendMessage (Promise-based).
  * The SW handles chrome.downloads.download() which requires permissions
  * unavailable in content scripts directly.
  *
- * Note: MV3 requires Promise-based sendMessage. The callback pattern
- * (3rd argument) does not work reliably when the receiver responds
- * asynchronously (sendResponse called inside a .then()).
+ * Architecture notes:
+ * - URL.createObjectURL is NOT available in Service Workers, so blob
+ *   downloads create the object URL in the content script context.
+ * - Promise-based sendMessage is required; the callback pattern (3rd arg)
+ *   does not work when the receiver responds asynchronously.
  */
 
 import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
@@ -24,46 +26,27 @@ interface MV3DownloadResponse {
 
 export class MV3DownloadAdapter implements DownloadAdapter {
   async download(url: string, filename: string, headers?: Record<string, string>): Promise<void> {
-    console.log('[XEG:Download] DOWNLOAD_REQUEST -> SW', { url: url.slice(0, 80), filename });
-    try {
-      const response = (await this.sendMessageWithTimeout({
-        type: 'DOWNLOAD_REQUEST',
-        payload: { url, filename, headers },
-      })) as MV3DownloadResponse;
-      if (!response?.success) {
-        console.error('[XEG:Download] DOWNLOAD_REQUEST failed:', response?.error);
-        throw new Error(response?.error ?? 'Download failed');
-      }
-      console.log('[XEG:Download] DOWNLOAD_REQUEST success');
-    } catch (error) {
-      console.error('[XEG:Download] DOWNLOAD_REQUEST error:', (error as Error).message);
-      throw error;
+    const response = (await this.sendMessageWithTimeout({
+      type: 'DOWNLOAD_REQUEST',
+      payload: { url, filename, headers },
+    })) as MV3DownloadResponse;
+    if (!response?.success) {
+      throw new Error(response?.error ?? 'Download failed');
     }
   }
 
   async downloadBlob(blob: Blob, filename: string): Promise<void> {
-    // Service Worker has no URL.createObjectURL, so create object URL
-    // in content script context and pass it to SW for download.
-    console.log('[XEG:Download] downloadBlob:', { size: blob.size, filename });
-
+    // URL.createObjectURL is unavailable in Service Workers — create in content script.
     const objectUrl = URL.createObjectURL(blob);
-    console.log('[XEG:Download] objectUrl created:', objectUrl);
-
     try {
       const response = (await this.sendMessageWithTimeout({
         type: 'DOWNLOAD_BLOB_URL_REQUEST',
         payload: { objectUrl, filename },
       })) as MV3DownloadResponse;
       if (!response?.success) {
-        console.error('[XEG:Download] DOWNLOAD_BLOB_URL_REQUEST failed:', response?.error);
         throw new Error(response?.error ?? 'Blob download failed');
       }
-      console.log('[XEG:Download] DOWNLOAD_BLOB_URL_REQUEST success');
-    } catch (error) {
-      console.error('[XEG:Download] DOWNLOAD_BLOB_URL_REQUEST error:', (error as Error).message);
-      throw error;
     } finally {
-      // Revoke the object URL after download completes (or fails).
       URL.revokeObjectURL(objectUrl);
     }
   }
@@ -74,27 +57,14 @@ export class MV3DownloadAdapter implements DownloadAdapter {
         reject(new Error('MV3 message request timed out'));
       }, DOWNLOAD_TIMEOUT_MS);
 
-      console.log('[XEG:Download] sendMessage:', (message as { type: string }).type);
       chrome.runtime
         .sendMessage(message)
         .then((response: unknown) => {
           clearTimeout(timer);
-          console.log(
-            '[XEG:Download] sendMessage response:',
-            (message as { type: string }).type,
-            '->',
-            JSON.stringify(response)
-          );
           resolve(response);
         })
         .catch((error: unknown) => {
           clearTimeout(timer);
-          console.error(
-            '[XEG:Download] sendMessage error:',
-            (message as { type: string }).type,
-            '->',
-            (error as Error).message
-          );
           reject(error instanceof Error ? error : new Error(String(error)));
         });
     });

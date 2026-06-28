@@ -141,7 +141,6 @@ async function downloadWithFetchFallback(
   abortSignal: AbortSignal | undefined,
   adapter: DownloadAdapter
 ): Promise<SingleDownloadResult> {
-  console.log('[XEG:Fetch] downloadWithFetchFallback start:', { url: url.slice(0, 100), filename });
   reportProgress(options.onProgress, {
     phase: 'preparing',
     current: 0,
@@ -151,25 +150,19 @@ async function downloadWithFetchFallback(
   });
 
   try {
-    // Fetch in content script context (has cookies/auth for twimg.com)
+    // Fetch in content script context (has host_permissions to bypass CORS).
+    // Service Workers cannot bypass CORS for twimg.com without specific headers.
     const fetchInit: RequestInit = { credentials: 'include' };
     if (abortSignal) {
       (fetchInit as { signal?: AbortSignal }).signal = abortSignal;
     }
-    console.log('[XEG:Fetch] fetching URL...');
     const response = await fetch(url, fetchInit);
-    console.log('[XEG:Fetch] fetch response:', {
-      status: response.status,
-      statusText: response.statusText,
-      type: response.type,
-    });
     if (!response.ok) {
       return createErrorDownloadResult(
         new Error(`HTTP ${response.status}: ${response.statusText}`)
       );
     }
     const blob = await response.blob();
-    console.log('[XEG:Fetch] blob obtained:', { size: blob.size, type: blob.type });
 
     reportProgress(options.onProgress, {
       phase: 'downloading',
@@ -179,10 +172,8 @@ async function downloadWithFetchFallback(
       filename,
     });
 
-    // Pass blob to adapter (which relays to background SW for download)
-    console.log('[XEG:Fetch] calling adapter.downloadBlob...');
+    // Pass blob to adapter (which creates object URL and relays to background SW)
     await adapter.downloadBlob(blob, filename);
-    console.log('[XEG:Fetch] adapter.downloadBlob done');
 
     reportProgress(options.onProgress, {
       phase: 'complete',
@@ -193,7 +184,6 @@ async function downloadWithFetchFallback(
     });
     return { success: true, filename };
   } catch (error) {
-    console.error('[XEG:Fetch] downloadWithFetchFallback error:', (error as Error).message);
     return createErrorDownloadResult(error);
   }
 }
