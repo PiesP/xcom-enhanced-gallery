@@ -6,8 +6,8 @@
  * PC-only policy: Handles keyboard events only
  */
 
+import { getNotificationAdapter } from '@platform/index';
 import { getLanguageService } from '@shared/container/container';
-import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import {
@@ -16,8 +16,6 @@ import {
   navigatePrevious,
   navigateToItem,
 } from '@shared/state/signals/gallery.signals';
-
-const KEYBOARD_HELP_TIMEOUT_MS = 6000;
 
 import { executeVideoControl } from '@shared/utils/events/handlers/video-control-helper';
 
@@ -250,16 +248,15 @@ function showKeyboardHelp(): void {
 
   try {
     const lang = getLanguageService();
-    getUserscript().notification({
-      title: lang.translate('msg.kb.t'),
-      text: [
+    getNotificationAdapter().notify(
+      lang.translate('msg.kb.t'),
+      [
         lang.translate('msg.kb.prev'),
         lang.translate('msg.kb.next'),
         lang.translate('msg.kb.cls'),
         lang.translate('msg.kb.toggle'),
-      ].join('\n'),
-      timeout: KEYBOARD_HELP_TIMEOUT_MS,
-    });
+      ].join('\n')
+    );
   } catch {
     // Notification failure must not break keyboard navigation
   }

@@ -2,11 +2,16 @@
 // Copyright (c) 2024-2026 PiesP
 
 /**
- * @fileoverview HTTP client using GM_xmlhttpRequest for cross-origin support.
+ * @fileoverview HTTP client using platform adapter for cross-origin support.
+ *
+ * SSOT: All HTTP requests go through getHttpRequestAdapter() which selects
+ * the correct implementation (GM_xmlhttpRequest for userscripts, fetch/MV3
+ * for extensions).
  */
 
+import { getHttpRequestAdapter } from '@platform/index';
+import type { HttpRequestDetails } from '@platform/types';
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
-import { getUserscript } from '@shared/external/userscript/adapter';
 import { SingletonBase } from '@shared/services/singleton-base';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { createDeferred } from '@shared/utils/async/promise-helpers';
@@ -27,9 +32,14 @@ interface HttpResponse<T = unknown> {
 
 let _httpInstance: HttpRequestService | null = null;
 
-export class HttpRequestService {
-  private readonly defaultTimeout = 10000;
+/** Map internal response type to adapter response type */
+function mapResponseType(
+  type: HttpRequestOptions['responseType']
+): NonNullable<HttpRequestDetails['responseType']> {
+  return (type ?? 'text') as NonNullable<HttpRequestDetails['responseType']>;
+}
 
+export class HttpRequestService {
   private constructor() {}
 
   static getInstance(): HttpRequestService {
@@ -91,16 +101,14 @@ export class HttpRequestService {
       fn();
     };
 
-    const details: GMXMLHttpRequestDetails = {
-      method: method as Exclude<GMXMLHttpRequestDetails['method'], undefined>,
+    // SS1: Use platform adapter (GM_xmlhttpRequest or MV3 fetch) instead of
+    // calling GM API directly. This ensures proper SSOT — all HTTP requests
+    // go through the adapter layer.
+    const requestDetails: HttpRequestDetails = {
+      method: (method || 'GET') as NonNullable<HttpRequestDetails['method']>,
       url,
-      timeout: options?.timeout ?? this.defaultTimeout,
-      ...(options?.headers ? { headers: options.headers } : {}),
-      responseType: options?.responseType as Exclude<
-        GMXMLHttpRequestDetails['responseType'],
-        undefined
-      >,
-      ...(options?.data !== undefined ? { data: options.data } : {}),
+      timeout: options?.timeout ?? 10000,
+      responseType: mapResponseType(options?.responseType),
       onload: (response) => {
         settle(() => {
           deferred.resolve({
@@ -138,14 +146,26 @@ export class HttpRequestService {
       },
     };
 
-    // NOTE: In MV3 environment, consider using getHttpRequestAdapter() instead.
-    // For now, GM_xmlhttpRequest is used directly as it works in both environments.
-    getUserscript().xmlHttpRequest(details);
+    // Add optional fields only when present (exactOptionalPropertyTypes compliance)
+    if (options?.headers) {
+      requestDetails.headers = options.headers;
+    }
+    if (options?.data !== undefined) {
+      requestDetails.data = options.data as NonNullable<HttpRequestDetails['data']>;
+    }
 
-    // Ensure abort listener is always cleaned up, even if the request
-    // completes via an unexpected path (race condition guard).
+    const control = getHttpRequestAdapter().request(requestDetails);
+
+    // Wire up AbortSignal to adapter's abort control
+    const signalAbortHandler = (): void => {
+      control.abort();
+    };
+    signal?.addEventListener('abort', signalAbortHandler, { once: true });
+
+    // Ensure all listeners are cleaned up
     return deferred.promise.finally(() => {
       signal?.removeEventListener('abort', onAbort);
+      signal?.removeEventListener('abort', signalAbortHandler);
     });
   }
 }
