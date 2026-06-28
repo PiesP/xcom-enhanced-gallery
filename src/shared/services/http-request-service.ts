@@ -79,6 +79,7 @@ export class HttpRequestService {
     const onAbort = (): void => {
       if (settled) return;
       settled = true;
+      signal?.removeEventListener('abort', onAbort);
       deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal!));
     };
     signal?.addEventListener('abort', onAbort, { once: true });
@@ -141,6 +142,10 @@ export class HttpRequestService {
     // For now, GM_xmlhttpRequest is used directly as it works in both environments.
     getUserscript().xmlHttpRequest(details);
 
-    return deferred.promise;
+    // Ensure abort listener is always cleaned up, even if the request
+    // completes via an unexpected path (race condition guard).
+    return deferred.promise.finally(() => {
+      signal?.removeEventListener('abort', onAbort);
+    });
   }
 }
