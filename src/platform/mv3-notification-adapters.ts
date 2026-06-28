@@ -10,6 +10,7 @@
  * extension pages (background SW, popup, options).
  */
 
+import { browserApi } from './chrome-runtime';
 import type { NotificationAdapter } from './types';
 
 export class MV3NotificationAdapter implements NotificationAdapter {
@@ -18,7 +19,7 @@ export class MV3NotificationAdapter implements NotificationAdapter {
   notify(title: string, message: string, imageUrl?: string): void {
     // Fire-and-forget: notifications are non-critical, no need to await response.
     const id = `xeg-${Date.now()}-${++this.idCounter}`;
-    chrome.runtime
+    browserApi.runtime
       .sendMessage({
         type: 'SHOW_NOTIFICATION',
         payload: { id, title, message, imageUrl },

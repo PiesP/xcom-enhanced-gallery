@@ -17,6 +17,7 @@
  */
 
 import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
+import { browserApi } from './chrome-runtime';
 import type { DownloadAdapter } from './types';
 
 interface MV3DownloadResponse {
@@ -57,7 +58,7 @@ export class MV3DownloadAdapter implements DownloadAdapter {
         reject(new Error('MV3 message request timed out'));
       }, DOWNLOAD_TIMEOUT_MS);
 
-      chrome.runtime
+      browserApi.runtime
         .sendMessage(message)
         .then((response: unknown) => {
           clearTimeout(timer);

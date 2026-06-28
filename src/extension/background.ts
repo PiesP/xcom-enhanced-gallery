@@ -13,7 +13,12 @@
  * Content scripts send messages here and receive progress/completion updates.
  */
 
-import type { ChromeDownloadDelta, ChromeDownloadOptions } from '@platform/chrome.d.ts';
+import type {
+  ChromeDownloadDelta,
+  ChromeDownloadOptions,
+  ChromeInstalledDetails,
+} from '@platform/chrome.d.ts';
+import { browserApi } from '@platform/chrome-runtime';
 
 // ── Allowed hosts whitelist (SSRF prevention) ────────────────────────────────
 
@@ -84,11 +89,11 @@ type IncomingMessage =
 
 // ── Message handler ──────────────────────────────────────────────────────────
 
-chrome.runtime.onMessage.addListener(
+browserApi.runtime.onMessage.addListener(
   (message: unknown, _sender: unknown, sendResponse: (response?: unknown) => void) => {
     // Reject messages from untrusted senders
     const sender = _sender as { id?: string };
-    if (sender.id !== chrome.runtime.id) {
+    if (sender.id !== browserApi.runtime.id) {
       sendResponse({ success: false, error: 'Unauthorized sender' });
       return false;
     }
@@ -150,13 +155,13 @@ async function handleDownloadRequest(message: DownloadRequestMessage): Promise<v
     }));
   }
 
-  const downloadId = await chrome.downloads.download(downloadOptions);
+  const downloadId = await browserApi.downloads.download(downloadOptions);
   await waitForDownloadComplete(downloadId);
 }
 
 async function handleDownloadBlobUrlRequest(message: DownloadBlobUrlRequestMessage): Promise<void> {
   const { objectUrl, filename } = message.payload;
-  const downloadId = await chrome.downloads.download({
+  const downloadId = await browserApi.downloads.download({
     url: objectUrl,
     filename,
     saveAs: false,
@@ -173,7 +178,7 @@ function waitForDownloadComplete(downloadId: number): Promise<void> {
     let timerId: ReturnType<typeof setTimeout> | null = null;
 
     const cleanup = (): void => {
-      chrome.downloads.onChanged.removeListener(listener);
+      browserApi.downloads.onChanged.removeListener(listener);
       if (timerId) clearTimeout(timerId);
     };
 
@@ -192,13 +197,13 @@ function waitForDownloadComplete(downloadId: number): Promise<void> {
         reject(new Error(`Download interrupted: ${errorCurrent ?? 'unknown'}`));
       }
     };
-    chrome.downloads.onChanged.addListener(listener);
+    browserApi.downloads.onChanged.addListener(listener);
 
     // 5-minute timeout: prevent permanent listener leak
     timerId = setTimeout(
       () => {
         if (!settled) {
-          chrome.downloads.onChanged.removeListener(listener);
+          browserApi.downloads.onChanged.removeListener(listener);
           timerId = null;
           settled = true;
           reject(new Error(`Download timed out after 5 minutes (id: ${downloadId})`));
@@ -211,7 +216,7 @@ function waitForDownloadComplete(downloadId: number): Promise<void> {
 
 // ── Extension lifecycle ───────────────────────────────────────────────────────
 
-chrome.runtime.onInstalled.addListener((details) => {
+browserApi.runtime.onInstalled.addListener((details: ChromeInstalledDetails) => {
   if (__DEV__) {
     console.log(
       `[XEG] Extension ${details.reason}`,
@@ -224,7 +229,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 function handleShowNotification(payload: ShowNotificationMessage['payload']): void {
   const { id, title, message, imageUrl } = payload;
-  chrome.notifications.create(id, {
+  browserApi.notifications.create(id, {
     type: 'basic',
     title,
     message,

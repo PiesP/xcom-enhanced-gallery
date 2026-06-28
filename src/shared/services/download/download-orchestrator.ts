@@ -19,6 +19,24 @@ import { SingletonBase } from '@shared/services/singleton-base';
 import type { MediaInfo } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/media.types';
 
+/**
+ * Polyfill for AbortSignal.any() — unavailable in Safari 17.0–17.3.
+ * Combines multiple AbortSignals into one; if any input signal aborts,
+ * the returned signal aborts too.
+ */
+function mergeAbortSignals(...signals: AbortSignal[]): AbortSignal {
+  const controller = new AbortController();
+  const onAbort = () => controller.abort();
+  for (const signal of signals) {
+    if (signal.aborted) {
+      controller.abort();
+      break;
+    }
+    signal.addEventListener('abort', onAbort, { once: true });
+  }
+  return controller.signal;
+}
+
 let _downloadInstance: DownloadOrchestrator | null = null;
 
 export class DownloadOrchestrator {
@@ -235,7 +253,7 @@ export class DownloadOrchestrator {
    */
   private mergeSignal(callerSignal?: AbortSignal | null): AbortSignal {
     if (!callerSignal) return this.abortController.signal;
-    return AbortSignal.any([this.abortController.signal, callerSignal]);
+    return mergeAbortSignals(this.abortController.signal, callerSignal);
   }
 
   /**

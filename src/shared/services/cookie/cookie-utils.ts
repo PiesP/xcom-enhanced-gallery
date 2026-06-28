@@ -5,6 +5,7 @@
  * @fileoverview Cookie utilities: GM_cookie adapter with document.cookie fallback.
  */
 
+import { getUserscript } from '@shared/external/userscript/adapter';
 import type { CookieAPI, CookieListOptions, CookieRecord } from '@shared/types/core/cookie.types';
 import { escapeRegExp } from '@shared/utils/text/formatting';
 
@@ -45,21 +46,18 @@ function promisifyCallback<TResult>(
 }
 
 /**
- * Resolve GM_cookie API (userscript only).
- * In MV3 extension context, GM_cookie is unavailable — returns null.
+ * Resolve the GM_cookie API through the canonical UserscriptAPI adapter.
+ * In MV3 extension context, the userscript GM_* APIs are unavailable —
+ * getUserscript() throws, so we catch and return null.
  * The cookie functionality falls back to document.cookie.
  */
 function resolveGMCookieAPI(): CookieAPI | null {
   try {
-    const g = globalThis as unknown as Record<string, unknown>;
-    const cookie = g.GM_cookie as CookieAPI | undefined;
-    if (cookie && typeof cookie.list === 'function') {
-      return cookie;
-    }
+    return getUserscript().cookie ?? null;
   } catch {
-    // GM_cookie unavailable (extension context)
+    // Userscript runtime unavailable (extension context or missing prerequisites)
+    return null;
   }
-  return null;
 }
 
 let cachedCookieAPI: CookieAPI | null | undefined;

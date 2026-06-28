@@ -177,17 +177,48 @@ async function downloadWithFetchFallback(
 
     // R6: Race adapter.downloadBlob against abort signal so cancellation
     // propagates when the user cancels after the fetch phase completes.
+    // Uses the same cleanupController pattern as downloadWithAdapter() to
+    // auto-remove the listener from the caller's signal once the race settles,
+    // preventing listener leaks on long-lived orchestrator signals.
     if (abortSignal) {
+      const cleanupController = new AbortController();
+      const onAbort = (): void => {
+        cleanupController.abort();
+      };
+      abortSignal.addEventListener('abort', onAbort, {
+        once: true,
+        signal: cleanupController.signal,
+      });
+
       const abortPromise = new Promise<SingleDownloadResult>((resolve) => {
-        abortSignal.addEventListener('abort', () => resolve(createAbortResult()), { once: true });
+        cleanupController.signal.addEventListener(
+          'abort',
+          () => {
+            if (abortSignal.aborted) {
+              resolve(createAbortResult());
+            }
+          },
+          { once: true }
+        );
       });
 
       const result = await Promise.race([
         downloadBlobPromise.then(
-          () => ({ success: true, filename }) satisfies SingleDownloadResult
+          () => {
+            cleanupController.abort();
+            return { success: true, filename } satisfies SingleDownloadResult;
+          },
+          (error: unknown) => {
+            cleanupController.abort();
+            return createErrorDownloadResult(error);
+          }
         ),
         abortPromise,
       ]);
+
+      // Ensure listener is removed if neither branch above fired cleanup
+      // (e.g., both promises settle simultaneously).
+      cleanupController.abort();
 
       if (!result.success) return result;
     } else {
