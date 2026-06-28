@@ -75,9 +75,12 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
         lang={resolvedLanguage()}
         dir={dir()}
       >
-        <div aria-live="polite" class="xeg-sr-only">
-          {gallerySignals.error ? gallerySignals.error : ''}
-        </div>
+        {/* A1: Only render aria-live region when there's an actual error to announce */}
+        {gallerySignals.error && (
+          <div aria-live="polite" class="xeg-sr-only">
+            {gallerySignals.error}
+          </div>
+        )}
         <VerticalGalleryView
           onClose={props.onClose}
           onPrevious={() => navigatePrevious('button')}

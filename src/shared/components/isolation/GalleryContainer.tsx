@@ -48,6 +48,57 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
 
   const classes = cx(CSS.CLASSES.OVERLAY, CSS.CLASSES.CONTAINER, local.className);
 
+  let containerEl: HTMLDivElement | undefined;
+
+  // W2: Standardized focus trap — traps Tab/Shift+Tab within the gallery dialog.
+  // Uses a single keydown listener on the container root that wraps focus
+  // from last → first and first → last focusable element.
+  createEffect(() => {
+    if (!containerEl) return;
+
+    const focusableSelectors = [
+      'a[href]',
+      'button:not([disabled])',
+      'iframe',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(', ');
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+
+      const focusableElements = Array.from(
+        containerEl!.querySelectorAll<HTMLElement>(focusableSelectors)
+      ).filter((el) => !el.hasAttribute('aria-hidden') && el.offsetParent !== null);
+
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (!firstElement || !lastElement) return;
+
+      if (event.shiftKey) {
+        if (document.activeElement === firstElement) {
+          event.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          event.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    containerEl.addEventListener('keydown', handleKeyDown);
+    onCleanup(() => {
+      containerEl?.removeEventListener('keydown', handleKeyDown);
+    });
+  });
+
   let scrollRestoration: { scrollY: number; overflow: string; position: string } | null = null;
   let previouslyFocusedElement: HTMLElement | null = null;
 
@@ -92,6 +143,9 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
 
   return (
     <div
+      ref={(el) => {
+        containerEl = el;
+      }}
       class={classes}
       data-xeg-gallery-container=""
       role="dialog"
