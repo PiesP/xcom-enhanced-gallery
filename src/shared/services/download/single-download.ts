@@ -48,17 +48,41 @@ async function downloadWithAdapter(
   // Set up abort listener to race against the adapter download
   if (abortSignal) {
     if (abortSignal.aborted) return createAbortResult();
+
+    // R5: Use a short-lived AbortController to auto-cleanup the listener on
+    // the original signal once the race settles. This prevents listener leaks
+    // when the caller's AbortSignal outlives the download (e.g., a long-lived
+    // orchestrator signal that is reused across multiple downloads).
+    const cleanupController = new AbortController();
+    const onAbort = (): void => {
+      cleanupController.abort();
+    };
+    abortSignal.addEventListener('abort', onAbort, {
+      once: true,
+      signal: cleanupController.signal,
+    });
+
     const abortPromise = new Promise<SingleDownloadResult>((resolve) => {
-      abortSignal.addEventListener(
+      // Listen on the cleanup controller so the promise resolves when either
+      // the original abort fires OR the download completes (cleanup).
+      cleanupController.signal.addEventListener(
         'abort',
         () => {
-          resolve(createAbortResult());
+          // Only resolve with abort result if the ORIGINAL signal was aborted
+          // (not our own cleanup). If we aborted ourselves, the resultPromise
+          // already settled the race.
+          if (abortSignal.aborted) {
+            resolve(createAbortResult());
+          }
         },
         { once: true }
       );
     });
+
     const resultPromise = adapter.download(url, filename).then(
       () => {
+        // R5: Abort cleanup controller to remove listener from original signal
+        cleanupController.abort();
         reportProgress(options.onProgress, {
           phase: 'complete',
           current: 1,
@@ -68,8 +92,13 @@ async function downloadWithAdapter(
         });
         return { success: true, filename } satisfies SingleDownloadResult;
       },
-      (error: unknown) => createErrorDownloadResult(error)
+      (error: unknown) => {
+        // R5: Also clean up on error path
+        cleanupController.abort();
+        return createErrorDownloadResult(error);
+      }
     );
+
     return Promise.race([resultPromise, abortPromise]);
   }
 
