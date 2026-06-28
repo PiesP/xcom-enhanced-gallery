@@ -207,9 +207,11 @@ export function getUserscript(): UserscriptAPI {
      * Anchor-based download for blob: URLs.
      * Bypasses GM.download which ignores filename for blob URLs.
      *
-     * Dispatches the click on the anchor element directly without bubbling
-     * to parent listeners (e.g., gallery close-on-outside-click handlers
-     * that listen on document.body in capture phase).
+     * The anchor is appended to the gallery root element (if present) so
+     * that document.body capture-phase listeners (gallery close-on-outside-click)
+     * do not detect the synthetic click as an "outside" click.
+     *
+     * Falls back to document.body when gallery is not open.
      */
     downloadBlobWithAnchor(url: string, filename: string): Promise<void> {
       return new Promise<void>((resolve, reject) => {
@@ -218,10 +220,11 @@ export function getUserscript(): UserscriptAPI {
           a.href = url;
           a.download = filename;
           a.style.display = 'none';
-          document.body.appendChild(a);
-          // Dispatch click without bubbling to avoid triggering
-          // document.body capture-phase listeners (gallery close).
-          a.dispatchEvent(new MouseEvent('click', { bubbles: false, cancelable: false }));
+          // Append to gallery root so isGalleryInternalElement(a) returns true,
+          // preventing gallery close-on-outside-click.
+          const container = document.querySelector('.xeg-gallery-root') ?? document.body;
+          container.appendChild(a);
+          a.click();
           queueMicrotask(() => {
             a.remove();
             resolve();
@@ -242,10 +245,11 @@ export function getUserscript(): UserscriptAPI {
         a.href = url;
         a.download = filename;
         a.style.display = 'none';
-        document.body.appendChild(a);
-        // Dispatch click without bubbling to avoid triggering
-        // document.body capture-phase listeners (gallery close).
-        a.dispatchEvent(new MouseEvent('click', { bubbles: false, cancelable: false }));
+        // Append to gallery root so isGalleryInternalElement(a) returns true,
+        // preventing gallery close-on-outside-click.
+        const container = document.querySelector('.xeg-gallery-root') ?? document.body;
+        container.appendChild(a);
+        a.click();
         await new Promise<void>((resolve) => {
           queueMicrotask(() => {
             a.remove();
