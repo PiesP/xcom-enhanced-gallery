@@ -5,13 +5,13 @@
  * @fileoverview Gallery download hook - manages single and batch download.
  */
 
+import { getNotificationAdapter } from '@platform/index';
 import {
   getDownloadOrchestrator,
   getLanguageService,
   getMediaService,
 } from '@shared/container/container';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
-import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging/logger';
 import { gallerySignals, setDownloading, setError } from '@shared/state/signals/gallery.signals';
 
@@ -23,7 +23,7 @@ import { gallerySignals, setDownloading, setError } from '@shared/state/signals/
  * @returns Download handler functions and reactive state
  */
 export function createDownloadHandler() {
-  const userscript = getUserscript();
+  const notify = getNotificationAdapter();
   let abortController = new AbortController();
 
   const resetAbortController = (): void => {
@@ -53,7 +53,7 @@ export function createDownloadHandler() {
     setDownloading(true);
 
     const notifyError = (title: string, body: string): void => {
-      userscript.notification({ title, text: body });
+      notify.notify(title, body);
     };
 
     try {

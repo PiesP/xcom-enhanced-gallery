@@ -5,17 +5,17 @@
  * @fileoverview HTTP client using GM_xmlhttpRequest for cross-origin support.
  */
 
+import { getHttpRequestAdapter } from '@platform/index';
+import type { HttpRequestDetails } from '@platform/types';
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
-import { getUserscript } from '@shared/external/userscript/adapter';
 import { SingletonBase } from '@shared/services/singleton-base';
-import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { createDeferred } from '@shared/utils/async/promise-helpers';
 
 interface HttpRequestOptions {
   readonly headers?: Record<string, string>;
   readonly timeout?: number;
   readonly responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
-  readonly data?: GMXMLHttpRequestDetails['data'];
+  readonly data?: HttpRequestDetails['data'];
   readonly signal?: AbortSignal;
 }
 
@@ -91,15 +91,12 @@ export class HttpRequestService {
       fn();
     };
 
-    const details: GMXMLHttpRequestDetails = {
-      method: method as Exclude<GMXMLHttpRequestDetails['method'], undefined>,
+    const details: HttpRequestDetails = {
+      method: method as Exclude<HttpRequestDetails['method'], undefined>,
       url,
       timeout: options?.timeout ?? this.defaultTimeout,
       ...(options?.headers ? { headers: options.headers } : {}),
-      responseType: options?.responseType as Exclude<
-        GMXMLHttpRequestDetails['responseType'],
-        undefined
-      >,
+      responseType: options?.responseType as Exclude<HttpRequestDetails['responseType'], undefined>,
       ...(options?.data !== undefined ? { data: options.data } : {}),
       onload: (response) => {
         settle(() => {
@@ -138,9 +135,7 @@ export class HttpRequestService {
       },
     };
 
-    // NOTE: In MV3 environment, consider using getHttpRequestAdapter() instead.
-    // For now, GM_xmlhttpRequest is used directly as it works in both environments.
-    getUserscript().xmlHttpRequest(details);
+    getHttpRequestAdapter().request(details);
 
     // Ensure abort listener is always cleaned up, even if the request
     // completes via an unexpected path (race condition guard).

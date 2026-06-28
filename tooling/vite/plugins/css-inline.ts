@@ -41,10 +41,22 @@ export function cssInlinePlugin(): Plugin {
       const code = JSON.stringify(css);
       const injectionCode = `(function(){if(typeof document==='undefined')return;var e=document.getElementById(${id});if(!e){e=document.createElement('style');e.id=${id};document.head.appendChild(e);}e.textContent=${code};})();\n`;
 
+      // Inject into ALL entry chunks (ES module lib mode may have multiple entries)
+      let injected = false;
       for (const chunk of Object.values(bundle)) {
-        if (chunk.type === 'chunk' && chunk.isEntry) {
+        if (chunk.type === 'chunk' && (chunk.isEntry || chunk.name === 'content' || chunk.name === 'background')) {
           chunk.code = injectionCode + chunk.code;
-          break;
+          injected = true;
+        }
+      }
+
+      // Fallback: if no entry chunk found, inject into the first chunk
+      if (!injected) {
+        for (const chunk of Object.values(bundle)) {
+          if (chunk.type === 'chunk') {
+            chunk.code = injectionCode + chunk.code;
+            break;
+          }
         }
       }
     },

@@ -15,13 +15,14 @@ import { resolve } from 'node:path';
 import { defineConfig, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 import { copyFileSync, readFileSync } from 'node:fs';
+import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
 
 const root = resolve(__dirname);
 const extensionDir = resolve(root, 'extension');
 const outDir = resolve(root, 'dist-extension');
 
 /**
- * Vite plugin to copy manifest.json to the output directory.
+ * Vite plugin to copy manifest.json and icons to the output directory.
  */
 function copyManifestPlugin() {
   return {
@@ -30,6 +31,17 @@ function copyManifestPlugin() {
       const manifestSrc = resolve(extensionDir, 'manifest.json');
       const manifestDest = resolve(outDir, 'manifest.json');
       copyFileSync(manifestSrc, manifestDest);
+
+      // Copy extension icons from assets/icons/ to dist root
+      const { readdirSync, existsSync, mkdirSync, cpSync } = require('node:fs');
+      const iconsSrc = resolve(root, 'assets/icons');
+      const iconsDest = resolve(outDir, 'icons');
+      if (existsSync(iconsSrc)) {
+        if (!existsSync(iconsDest)) {
+          mkdirSync(iconsDest, { recursive: true });
+        }
+        cpSync(iconsSrc, iconsDest, { recursive: true });
+      }
     },
   };
 }
@@ -47,6 +59,7 @@ export default defineConfig((): UserConfig => {
         },
       }),
       copyManifestPlugin(),
+      cssInlinePlugin(),
     ],
     build: {
       outDir,
