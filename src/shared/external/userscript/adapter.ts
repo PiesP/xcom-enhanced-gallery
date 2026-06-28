@@ -1,6 +1,20 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+/**
+ * @fileoverview Userscript API adapter with robust download strategy.
+ *
+ * Download strategy (in priority order):
+ * 1. GM.download (GM4+/Tampermonkey Promise-based) — if available
+ * 2. GM_download options-object form — works in TM/VM/GM
+ * 3. Blob-based fallback via GM_xmlhttpRequest + anchor download — universal
+ *
+ * The URL-only form GM_download(url, filename) is NEVER used because:
+ * - Greasemonkey 4.x doesn't support it
+ * - Tampermonkey may ignore filename (uses CDN Content-Disposition)
+ * - Violentmonkey only supports options-object form
+ */
+
 import type { CookieAPI } from '@shared/types/core/cookie.types';
 import type {
   GMDownloadDetails,
@@ -13,6 +27,7 @@ const GM_DOWNLOAD_TIMEOUT_MS = 60_000;
 
 export interface UserscriptAPI {
   readonly download: (url: string, filename: string) => Promise<void>;
+  readonly downloadBlob: (blob: Blob, filename: string) => Promise<void>;
   readonly downloadBlobWithCallbacks: (url: string, filename: string) => Promise<void>;
   readonly setValue: (key: string, value: unknown) => Promise<void>;
   readonly getValue: <T>(key: string, defaultValue?: T) => Promise<T | undefined>;
@@ -26,6 +41,7 @@ export interface UserscriptAPI {
 
 export interface ResolvedGMAPIs {
   download: unknown;
+  downloadLegacy: unknown;
   setValue: unknown;
   getValue: unknown;
   deleteValue: unknown;
@@ -38,7 +54,12 @@ export interface ResolvedGMAPIs {
 function getGMAPIs(): ResolvedGMAPIs {
   const g = globalThis as unknown as Record<string, unknown>;
   return {
-    download: g.GM_download,
+    // GM.download (GM4+/Tampermonkey Promise-based API)
+    download: typeof g.GM !== 'undefined' && g.GM !== null
+      ? (g.GM as Record<string, unknown>).download
+      : undefined,
+    // GM_download (legacy function)
+    downloadLegacy: g.GM_download,
     setValue: g.GM_setValue,
     getValue: g.GM_getValue,
     deleteValue: g.GM_deleteValue,
@@ -53,6 +74,52 @@ function asFunction<T>(value: unknown): T | undefined {
   return typeof value === 'function' ? (value as T) : undefined;
 }
 
+/**
+ * Blob-based download fallback using GM_xmlhttpRequest + anchor element.
+ * Works in all userscript environments regardless of GM_download support.
+ */
+async function downloadViaBlob(
+  url: string,
+  filename: string,
+  xmlHttpRequest: (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl,
+): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    let objectUrl: string | null = null;
+    const control = xmlHttpRequest({
+      method: 'GET',
+      url,
+      responseType: 'blob',
+      timeout: GM_DOWNLOAD_TIMEOUT_MS,
+      onload: (response) => {
+        try {
+          const blob = response.response as Blob;
+          objectUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = objectUrl;
+          a.download = filename;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          // Cleanup after a short delay to ensure download starts
+          setTimeout(() => {
+            a.remove();
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+            resolve();
+          }, 100);
+        } catch (error) {
+          if (objectUrl) URL.revokeObjectURL(objectUrl);
+          reject(error);
+        }
+      },
+      onerror: () => reject(new Error('GM_xmlhttpRequest failed')),
+      ontimeout: () => reject(new Error('GM_xmlhttpRequest timed out')),
+      onabort: () => reject(new DOMException('Aborted', 'AbortError')),
+    });
+    // Note: control.abort() can be called by caller if needed
+    void control;
+  });
+}
+
 let cachedUserscriptAPI: UserscriptAPI | null = null;
 
 export function getUserscript(): UserscriptAPI {
@@ -60,7 +127,13 @@ export function getUserscript(): UserscriptAPI {
 
   const g = getGMAPIs();
 
-  const gmDownload = asFunction<(url: string, filename: string) => void>(g.download);
+  // GM.download (GM4+/Tampermonkey Promise-based) — preferred
+  const gmDownloadModern = asFunction<(details: GMDownloadDetails) => { abort: () => void }>(
+    g.download
+  );
+  // GM_download (legacy) — fallback
+  const gmDownloadLegacy = asFunction<typeof GM_download>(g.downloadLegacy);
+
   const gmSetValue = asFunction<(key: string, value: unknown) => Promise<void> | void>(g.setValue);
   const gmGetValue = asFunction<<T>(key: string, defaultValue?: T) => Promise<T> | T>(g.getValue);
   const gmDeleteValue = asFunction<(key: string) => Promise<void> | void>(g.deleteValue);
@@ -72,68 +145,66 @@ export function getUserscript(): UserscriptAPI {
     g.notification
   );
 
-  const gmDownloadRaw = asFunction<typeof GM_download>(g.download);
-  if (!gmDownload || !gmDownloadRaw) throw new Error('GM_download unavailable');
+  if (!gmDownloadModern && !gmDownloadLegacy) throw new Error('GM_download unavailable');
+  if (!gmXmlHttpRequest) throw new Error('GM_xmlhttpRequest unavailable');
 
   const cookieCandidate = g.cookie;
   const cookie =
     cookieCandidate && typeof cookieCandidate.list === 'function' ? cookieCandidate : undefined;
 
   cachedUserscriptAPI = {
-    async download(urlOrDetails: string | GMDownloadDetails, filename?: string): Promise<void> {
-      if (!gmDownload) throw new Error('GM_download unavailable');
-
-      // Always use options-object form. URL-only form GM_download(url, filename)
-      // is deprecated/ignored in GM4+ (Tampermonkey, Violentmonkey, Greasemonkey)
-      // — filename is silently dropped, causing the browser to use a random
-      // UUID from the CDN's Content-Disposition header.
-      if (typeof urlOrDetails === 'object') {
+    async download(url: string, filename: string): Promise<void> {
+      // Strategy 1: GM.download (GM4+/Tampermonkey Promise-based)
+      if (gmDownloadModern) {
         return new Promise<void>((resolve, reject) => {
-          const details = urlOrDetails;
-          const wrappedDetails: GMDownloadDetails = {
-            ...details,
-            onload: () => {
-              details.onload?.();
-              resolve();
-            },
-            onerror: (error: Error) => {
-              details.onerror?.(error);
-              reject(error);
-            },
-            ontimeout: () => {
-              details.ontimeout?.();
-              reject(new Error('GM_download timed out'));
-            },
-          };
-          gmDownloadRaw(wrappedDetails);
+          try {
+            const handle = gmDownloadModern({
+              url,
+              filename,
+              saveAs: false,
+              timeout: GM_DOWNLOAD_TIMEOUT_MS,
+              onload: () => resolve(),
+              onerror: (error: Error) => reject(error),
+              ontimeout: () => reject(new Error('GM_download timed out')),
+            });
+            // Modern API returns abort handle — store for potential cleanup
+            void handle;
+          } catch (error) {
+            reject(error);
+          }
         });
       }
-      if (filename === undefined) throw new Error('filename required for URL-only download');
-      return new Promise<void>((resolve, reject) => {
-        gmDownloadRaw({
-          url: urlOrDetails,
-          filename,
-          saveAs: false,
-          timeout: GM_DOWNLOAD_TIMEOUT_MS,
-          onload: () => resolve(),
-          onerror: (error: Error) => reject(error),
-          ontimeout: () => reject(new Error('GM_download timed out')),
+
+      // Strategy 2: GM_download legacy options-object form
+      if (gmDownloadLegacy) {
+        return new Promise<void>((resolve, reject) => {
+          gmDownloadLegacy({
+            url,
+            filename,
+            saveAs: false,
+            timeout: GM_DOWNLOAD_TIMEOUT_MS,
+            onload: () => resolve(),
+            onerror: (error: Error) => reject(error),
+            ontimeout: () => reject(new Error('GM_download timed out')),
+          });
         });
-      });
+      }
+
+      // Strategy 3: Blob-based fallback via GM_xmlhttpRequest
+      return downloadViaBlob(url, filename, gmXmlHttpRequest);
     },
+
+    async downloadBlob(blob: Blob, filename: string): Promise<void> {
+      const url = URL.createObjectURL(blob);
+      try {
+        await this.download(url, filename);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    },
+
     async downloadBlobWithCallbacks(url: string, filename: string): Promise<void> {
-      if (!gmDownload) throw new Error('GM_download unavailable');
-      return new Promise<void>((resolve, reject) => {
-        gmDownloadRaw({
-          url,
-          filename,
-          saveAs: false,
-          timeout: GM_DOWNLOAD_TIMEOUT_MS,
-          onload: () => resolve(),
-          onerror: (error: Error) => reject(error),
-          ontimeout: () => reject(new Error('GM_download timed out')),
-        });
-      });
+      return this.download(url, filename);
     },
     async setValue(key: string, value: unknown): Promise<void> {
       if (!gmSetValue) throw new Error('GM_setValue unavailable');

@@ -22,15 +22,8 @@ export class GMDownloadAdapter implements DownloadAdapter {
   }
 
   async downloadBlob(blob: Blob, filename: string): Promise<void> {
-    const url = URL.createObjectURL(blob);
-    try {
-      // downloadBlobWithCallbacks resolves only after GM_download onload fires,
-      // so the browser has finished reading the blob URL by this point.
-      await this.gm.downloadBlobWithCallbacks(url, filename);
-    } finally {
-      // Always revoke — covers both success and failure (onerror/ontimeout)
-      // paths to prevent object URL leaks.
-      URL.revokeObjectURL(url);
-    }
+    // Use the unified download method which handles all GM API variants
+    // and falls back to blob-based download if needed.
+    await this.gm.downloadBlob(blob, filename);
   }
 }
