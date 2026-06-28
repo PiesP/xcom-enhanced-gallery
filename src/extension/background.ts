@@ -16,18 +16,19 @@ import type { ChromeDownloadDelta, ChromeDownloadOptions } from '@platform/chrom
 
 // ── Allowed hosts whitelist (SSRF prevention) ────────────────────────────────
 
-const ALLOWED_HOSTS = [
-  'x.com',
-  'twitter.com',
-  'pbs.twimg.com',
-  'video.twimg.com',
-  'api.x.com',
-] as const;
+const ALLOWED_HOSTS = ['x.com', 'twitter.com', 'pbs.twimg.com', 'video.twimg.com'] as const;
 
 function isAllowedUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return ALLOWED_HOSTS.includes(parsed.hostname as (typeof ALLOWED_HOSTS)[number]);
+    if (!ALLOWED_HOSTS.includes(parsed.hostname as (typeof ALLOWED_HOSTS)[number])) {
+      return false;
+    }
+    // S4: Restrict x.com/twitter.com to GraphQL API paths only
+    if (parsed.hostname === 'x.com' || parsed.hostname === 'twitter.com') {
+      return parsed.pathname.startsWith('/i/api/');
+    }
+    return true;
   } catch {
     return false;
   }

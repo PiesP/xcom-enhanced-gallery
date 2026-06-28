@@ -6,10 +6,19 @@
  * @description Side-effect free utilities for constructing Twitter GraphQL API URLs and API config.
  */
 
+/**
+ * S2: Guest authorization token moved to environment config with fallback.
+ * Override via VITE_TWITTER_GUEST_TOKEN at build time to avoid hardcoding
+ * sensitive credentials in source.
+ */
+const FALLBACK_GUEST_TOKEN =
+  'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
+const resolvedToken =
+  (import.meta as ImportMeta).env?.VITE_TWITTER_GUEST_TOKEN || FALLBACK_GUEST_TOKEN;
+
 export const TWITTER_API_CONFIG = {
   /** @deprecated Use resolveBearerToken() from twitter-auth instead. Kept for fallback only. */
-  GUEST_AUTHORIZATION:
-    'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
+  GUEST_AUTHORIZATION: `Bearer ${resolvedToken}`,
 
   TWEET_RESULT_BY_REST_ID_QUERY_ID: 'zAz9764BcLZOJ0JU2wrd1A',
   USER_BY_SCREEN_NAME_QUERY_ID: '1VOOyvKkiI3FMmkeDNxM9A',

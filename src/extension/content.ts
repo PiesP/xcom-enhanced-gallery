@@ -11,28 +11,33 @@
 import { startApplication } from '../main';
 
 // Theme injection at document_start to prevent FOUC
+// S1: Apply theme directly from content script context instead of injecting
+// an inline script. This avoids CSP script-src restrictions entirely.
 function injectThemeScript(): void {
-  const script = document.createElement('script');
-  script.textContent = `
-    (function() {
-      try {
-        let theme = localStorage.getItem('xeg-theme') || 'auto';
-        if (!['light','dark','auto'].includes(theme)) theme = 'auto';
-        if (theme === 'auto') {
-          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        }
-        document.documentElement.setAttribute('data-xeg-theme', theme);
-      } catch (e) {}
-    })();
-  `;
+  const applyTheme = () => {
+    try {
+      let theme = localStorage.getItem('xeg-theme') || 'auto';
+      if (!['light', 'dark', 'auto'].includes(theme)) theme = 'auto';
+      if (theme === 'auto') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-xeg-theme', theme);
+    } catch {
+      // localStorage or matchMedia may be unavailable
+    }
+  };
+
   if (document.documentElement) {
-    document.documentElement.appendChild(script);
+    applyTheme();
   } else {
-    document.addEventListener('readystatechange', () => {
+    // document_start may fire before documentElement exists
+    const observer = new MutationObserver(() => {
       if (document.documentElement) {
-        document.documentElement.appendChild(script);
+        observer.disconnect();
+        applyTheme();
       }
     });
+    observer.observe(document, { childList: true, subtree: true });
   }
 }
 
