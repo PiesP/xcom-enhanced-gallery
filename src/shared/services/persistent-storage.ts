@@ -78,8 +78,10 @@ export class PersistentStorage {
     const serialized = JSON.stringify(value);
     try {
       await this.adapter.set(key, serialized);
+      // Clean up any stale fallback value from a previous failure
+      lsRemove(key);
     } catch (error) {
-      // B9: Fallback to localStorage when primary storage fails
+      // Fallback to localStorage when primary storage fails
       lsWriteRaw(key, serialized);
       if (__DEV__)
         console.warn(
@@ -94,28 +96,13 @@ export class PersistentStorage {
     try {
       value = await this.adapter.get<unknown>(key);
     } catch (_error) {
-      // B9: Fallback to localStorage
-      const raw = lsReadRaw(key);
-      if (raw !== null) {
-        try {
-          return JSON.parse(raw) as T;
-        } catch {
-          return defaultValue;
-        }
-      }
-      return defaultValue;
+      // Adapter failed — try localStorage fallback from a previous failure
+      return this.readFallbackOrDefault<T>(key, defaultValue);
     }
     if (value === undefined || value === null) {
-      // Primary returned nothing — check localStorage backup
-      const raw = lsReadRaw(key);
-      if (raw !== null) {
-        try {
-          return JSON.parse(raw) as T;
-        } catch {
-          return defaultValue;
-        }
-      }
-      return defaultValue;
+      // Primary returned nothing — check localStorage fallback (written during
+      // a previous adapter failure; acts as a persistent backup mirror)
+      return this.readFallbackOrDefault<T>(key, defaultValue);
     }
 
     // MV3 stores raw objects; GM stores JSON strings via PersistentStorage.set().
@@ -129,6 +116,18 @@ export class PersistentStorage {
     } catch {
       return defaultValue;
     }
+  }
+
+  private readFallbackOrDefault<T>(key: string, defaultValue?: T): T | undefined {
+    const raw = lsReadRaw(key);
+    if (raw !== null) {
+      try {
+        return JSON.parse(raw) as T;
+      } catch {
+        return defaultValue;
+      }
+    }
+    return defaultValue;
   }
 
   async getString(key: string, defaultValue?: string): Promise<string | undefined> {
