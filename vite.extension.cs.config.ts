@@ -19,6 +19,27 @@ import solidPlugin from 'vite-plugin-solid';
 import { readFileSync } from 'node:fs';
 import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
 
+/**
+ * ⚠️ CRITICAL: This config MUST always use formats: ['iife'].
+ * Chrome content scripts are classic scripts and CANNOT use ES module format.
+ * Changing to 'es' will silently break the extension with SyntaxError.
+ */
+function enforceIIFEFormat() {
+  return {
+    name: 'enforce-iife-format',
+    enforce: 'post' as const,
+    generateBundle(options: { format: string }) {
+      if (options.format !== 'iife') {
+        throw new Error(
+          `FATAL: content script build must use IIFE format, got "${options.format}". ` +
+          `Chrome content scripts cannot use ES module import/export. ` +
+          `Do NOT change formats to 'es' in vite.extension.cs.config.ts.`
+        );
+      }
+    },
+  };
+}
+
 const root = resolve(__dirname);
 const outDir = resolve(root, 'dist-extension');
 
@@ -35,6 +56,7 @@ export default defineConfig((): UserConfig => {
         },
       }),
       cssInlinePlugin(),
+      enforceIIFEFormat(),
     ],
     build: {
       outDir,
