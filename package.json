@@ -30,7 +30,13 @@
     "quality": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s circular && pnpm -s knip",
     "quality:ci": "pnpm -s quality",
     "quality:fix": "pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s check && pnpm -s circular && pnpm -s knip",
-    "verify": "pnpm -s quality && pnpm -s build"
+    "verify": "pnpm -s quality && pnpm -s build",
+    "test": "cd test && pnpm test",
+    "test:watch": "cd test && pnpm test:watch",
+    "test:cov": "cd test && pnpm test:cov",
+    "test:e2e": "cd test && pnpm e2e",
+    "test:e2e:headed": "cd test && pnpm e2e:headed",
+    "test:setup": "cd test && pnpm install"
   },
   "keywords": [
     "userscript",
