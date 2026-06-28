@@ -13,9 +13,10 @@ import { isHostMatching, tryParseUrl } from '@shared/utils/url/host';
  *
  * @remarks
  * Prevents excessively long URLs that may indicate malformed or malicious input.
- * Set to 8192 to accommodate Twitter/X media URLs with query parameters.
+ * Set to 2048 — Twitter/X media URLs rarely exceed 200 characters; this provides
+ * ample headroom for query parameters while blocking abuse.
  */
-const MAX_URL_LENGTH = 8192 as const;
+const MAX_URL_LENGTH = 2048 as const;
 
 /**
  * Allowed media CDN hosts for Twitter/X media.
