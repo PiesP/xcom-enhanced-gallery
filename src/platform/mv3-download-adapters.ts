@@ -4,9 +4,14 @@
 /**
  * MV3 extension download adapter.
  *
- * Relays download requests to the background service worker via chrome.runtime.sendMessage.
- * The SW handles chrome.downloads.download() which requires permissions unavailable
- * in content scripts directly.
+ * Relays download requests to the background service worker via
+ * chrome.runtime.sendMessage (Promise-based, not callback-based).
+ * The SW handles chrome.downloads.download() which requires permissions
+ * unavailable in content scripts directly.
+ *
+ * Note: MV3 requires Promise-based sendMessage. The callback pattern
+ * (3rd argument) does not work reliably when the receiver responds
+ * asynchronously (sendResponse called inside a .then()).
  */
 
 import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
@@ -19,30 +24,13 @@ interface MV3DownloadResponse {
 
 export class MV3DownloadAdapter implements DownloadAdapter {
   async download(url: string, filename: string, headers?: Record<string, string>): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error('MV3 download request timed out'));
-      }, DOWNLOAD_TIMEOUT_MS);
-
-      chrome.runtime.sendMessage(
-        {
-          type: 'DOWNLOAD_REQUEST',
-          payload: { url, filename, headers },
-        },
-        (response: MV3DownloadResponse) => {
-          clearTimeout(timer);
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-            return;
-          }
-          if (response?.success) {
-            resolve();
-          } else {
-            reject(new Error(response?.error ?? 'Download failed'));
-          }
-        }
-      );
-    });
+    const response = (await this.sendMessageWithTimeout({
+      type: 'DOWNLOAD_REQUEST',
+      payload: { url, filename, headers },
+    })) as MV3DownloadResponse;
+    if (!response?.success) {
+      throw new Error(response?.error ?? 'Download failed');
+    }
   }
 
   async downloadBlob(blob: Blob, filename: string): Promise<void> {
@@ -54,69 +42,43 @@ export class MV3DownloadAdapter implements DownloadAdapter {
     if (blob.size <= MAX_DATA_URL_SIZE) {
       // Small blob: use data URL (simpler, works with all Chrome versions)
       const dataUrl = await this.blobToDataUrl(blob);
-      return this.sendBlobDownload(dataUrl, filename);
+      const response = (await this.sendMessageWithTimeout({
+        type: 'DOWNLOAD_BLOB_REQUEST',
+        payload: { dataUrl, filename },
+      })) as MV3DownloadResponse;
+      if (!response?.success) {
+        throw new Error(response?.error ?? 'Blob download failed');
+      }
+      return;
     }
 
     // Large blob: convert to ArrayBuffer and send as structured clone
     const arrayBuffer = await blob.arrayBuffer();
-    return this.sendBlobDownloadArrayBuffer(arrayBuffer, filename, blob.type);
+    const response = (await this.sendMessageWithTimeout({
+      type: 'DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST',
+      payload: { buffer: arrayBuffer, filename, mimeType: blob.type },
+    })) as MV3DownloadResponse;
+    if (!response?.success) {
+      throw new Error(response?.error ?? 'Large blob download failed');
+    }
   }
 
-  private sendBlobDownload(dataUrl: string, filename: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+  private sendMessageWithTimeout(message: unknown): Promise<unknown> {
+    return new Promise<unknown>((resolve, reject) => {
       const timer = setTimeout(() => {
-        reject(new Error('MV3 blob download request timed out'));
+        reject(new Error('MV3 message request timed out'));
       }, DOWNLOAD_TIMEOUT_MS);
 
-      chrome.runtime.sendMessage(
-        {
-          type: 'DOWNLOAD_BLOB_REQUEST',
-          payload: { dataUrl, filename },
-        },
-        (response: MV3DownloadResponse) => {
+      chrome.runtime
+        .sendMessage(message)
+        .then((response: unknown) => {
           clearTimeout(timer);
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-            return;
-          }
-          if (response?.success) {
-            resolve();
-          } else {
-            reject(new Error(response?.error ?? 'Blob download failed'));
-          }
-        }
-      );
-    });
-  }
-
-  private sendBlobDownloadArrayBuffer(
-    buffer: ArrayBuffer,
-    filename: string,
-    mimeType: string
-  ): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error('MV3 large blob download request timed out'));
-      }, DOWNLOAD_TIMEOUT_MS);
-
-      chrome.runtime.sendMessage(
-        {
-          type: 'DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST',
-          payload: { buffer, filename, mimeType },
-        },
-        (response: MV3DownloadResponse) => {
+          resolve(response);
+        })
+        .catch((error: unknown) => {
           clearTimeout(timer);
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-            return;
-          }
-          if (response?.success) {
-            resolve();
-          } else {
-            reject(new Error(response?.error ?? 'Large blob download failed'));
-          }
-        }
-      );
+          reject(error instanceof Error ? error : new Error(String(error)));
+        });
     });
   }
 

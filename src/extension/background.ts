@@ -124,6 +124,7 @@ chrome.runtime.onMessage.addListener(
 
       case 'SHOW_NOTIFICATION':
         handleShowNotification(msg.payload);
+        // Sync response — no async work needed
         sendResponse({ success: true });
         return false;
 
