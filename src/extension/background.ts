@@ -65,7 +65,20 @@ interface FetchRequestMessage {
   };
 }
 
-type IncomingMessage = DownloadRequestMessage | DownloadBlobRequestMessage | FetchRequestMessage;
+interface DownloadBlobArrayBufferRequestMessage {
+  type: 'DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST';
+  payload: {
+    buffer: ArrayBuffer;
+    filename: string;
+    mimeType: string;
+  };
+}
+
+type IncomingMessage =
+  | DownloadRequestMessage
+  | DownloadBlobRequestMessage
+  | DownloadBlobArrayBufferRequestMessage
+  | FetchRequestMessage;
 
 // ── Message handler ──────────────────────────────────────────────────────────
 
@@ -88,6 +101,12 @@ chrome.runtime.onMessage.addListener(
 
       case 'DOWNLOAD_BLOB_REQUEST':
         handleDownloadBlobRequest(msg)
+          .then(() => sendResponse({ success: true }))
+          .catch((error: Error) => sendResponse({ success: false, error: error.message }));
+        return true;
+
+      case 'DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST':
+        handleDownloadBlobArrayBufferRequest(msg)
           .then(() => sendResponse({ success: true }))
           .catch((error: Error) => sendResponse({ success: false, error: error.message }));
         return true;
@@ -180,7 +199,52 @@ async function handleDownloadBlobRequest(message: DownloadBlobRequestMessage): P
   }
 }
 
-// ── Cross-origin fetch proxy ────────────────────────────────────────────────
+// ── Cross-origin fetch proxy ─────────────────────────────────────────────────
+
+async function handleDownloadBlobArrayBufferRequest(
+  message: DownloadBlobArrayBufferRequestMessage
+): Promise<void> {
+  const { buffer, filename, mimeType } = message.payload;
+
+  const blob = new Blob([buffer], { type: mimeType || 'application/octet-stream' });
+  const objectUrl = URL.createObjectURL(blob);
+
+  try {
+    const downloadId = await chrome.downloads.download({
+      url: objectUrl,
+      filename,
+      saveAs: false,
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      const listener = (delta: ChromeDownloadDelta) => {
+        if (delta.id !== downloadId) return;
+        const stateCurrent = typeof delta.state === 'string' ? delta.state : delta.state?.current;
+        if (stateCurrent === 'complete') {
+          chrome.downloads.onChanged.removeListener(listener);
+          resolve();
+        } else if (stateCurrent === 'interrupted') {
+          chrome.downloads.onChanged.removeListener(listener);
+          reject(new Error('Download interrupted'));
+        }
+      };
+      chrome.downloads.onChanged.addListener(listener);
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+// ── Extension lifecycle ───────────────────────────────────────────────────────
+
+chrome.runtime.onInstalled.addListener((details) => {
+  if (__DEV__) {
+    console.log(
+      `[XEG] Extension ${details.reason}`,
+      details.previousVersion ? `(was ${details.previousVersion})` : ''
+    );
+  }
+});
 
 async function handleFetchRequest(message: FetchRequestMessage): Promise<unknown> {
   const { url, options } = message.payload;

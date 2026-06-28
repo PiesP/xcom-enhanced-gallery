@@ -31,12 +31,19 @@ export interface ChromeRuntimeCore {
   onMessage: ChromeEvent<
     (message: unknown, sender: unknown, sendResponse: ChromeSendResponse) => void
   >;
+  onInstalled: ChromeEvent<(details: ChromeInstalledDetails) => void>;
   sendMessage(
     extensionId: string | undefined,
     message: unknown,
     ...rest: unknown[]
   ): Promise<unknown>;
   sendMessage(message: unknown, ...rest: unknown[]): Promise<unknown>;
+}
+
+export interface ChromeInstalledDetails {
+  reason: 'install' | 'update' | 'chrome_update' | 'shared_module_update';
+  previousVersion?: string;
+  id?: string;
 }
 
 export type ChromeSendResponse = (response?: unknown) => void;

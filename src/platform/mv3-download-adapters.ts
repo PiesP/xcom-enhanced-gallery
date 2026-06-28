@@ -47,7 +47,23 @@ export class MV3DownloadAdapter implements DownloadAdapter {
   }
 
   async downloadBlob(blob: Blob, filename: string): Promise<void> {
-    const dataUrl = await this.blobToDataUrl(blob);
+    // For large blobs (>10MB), convert to ArrayBuffer and send as structured clone.
+    // chrome.runtime.sendMessage supports structured clone (copy), though not transfer (zero-copy).
+    // For very large files (>100MB), consider chunked messaging or offscreen document.
+    const MAX_DATA_URL_SIZE = 10 * 1024 * 1024; // 10 MB
+
+    if (blob.size <= MAX_DATA_URL_SIZE) {
+      // Small blob: use data URL (simpler, works with all Chrome versions)
+      const dataUrl = await this.blobToDataUrl(blob);
+      return this.sendBlobDownload(dataUrl, filename);
+    }
+
+    // Large blob: convert to ArrayBuffer and send as structured clone
+    const arrayBuffer = await blob.arrayBuffer();
+    return this.sendBlobDownloadArrayBuffer(arrayBuffer, filename, blob.type);
+  }
+
+  private sendBlobDownload(dataUrl: string, filename: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
         reject(new Error('MV3 blob download request timed out'));
@@ -69,6 +85,38 @@ export class MV3DownloadAdapter implements DownloadAdapter {
             resolve();
           } else {
             reject(new Error(response?.error ?? 'Blob download failed'));
+          }
+        }
+      );
+    });
+  }
+
+  private sendBlobDownloadArrayBuffer(
+    buffer: ArrayBuffer,
+    filename: string,
+    mimeType: string
+  ): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error('MV3 large blob download request timed out'));
+      }, DOWNLOAD_TIMEOUT_MS);
+
+      chrome.runtime.sendMessage(
+        undefined,
+        {
+          type: 'DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST',
+          payload: { buffer, filename, mimeType },
+        },
+        (response: MV3DownloadResponse) => {
+          clearTimeout(timer);
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+          if (response?.success) {
+            resolve();
+          } else {
+            reject(new Error(response?.error ?? 'Large blob download failed'));
           }
         }
       );
