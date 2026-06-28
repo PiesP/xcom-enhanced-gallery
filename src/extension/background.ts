@@ -103,38 +103,67 @@ chrome.runtime.onMessage.addListener(
     }
 
     const msg = message as IncomingMessage;
+    console.log('[XEG:SW] onMessage:', msg.type);
     switch (msg.type) {
       case 'DOWNLOAD_REQUEST':
         handleDownloadRequest(msg)
-          .then(() => sendResponse({ success: true }))
-          .catch((error: Error) => sendResponse({ success: false, error: error.message }));
+          .then(() => {
+            console.log('[XEG:SW] DOWNLOAD_REQUEST done');
+            sendResponse({ success: true });
+          })
+          .catch((error: Error) => {
+            console.error('[XEG:SW] DOWNLOAD_REQUEST error:', error.message);
+            sendResponse({ success: false, error: error.message });
+          });
         return true;
 
       case 'DOWNLOAD_BLOB_REQUEST':
         handleDownloadBlobRequest(msg)
-          .then(() => sendResponse({ success: true }))
-          .catch((error: Error) => sendResponse({ success: false, error: error.message }));
+          .then(() => {
+            console.log('[XEG:SW] DOWNLOAD_BLOB_REQUEST done');
+            sendResponse({ success: true });
+          })
+          .catch((error: Error) => {
+            console.error('[XEG:SW] DOWNLOAD_BLOB_REQUEST error:', error.message);
+            sendResponse({ success: false, error: error.message });
+          });
         return true;
 
       case 'DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST':
         handleDownloadBlobArrayBufferRequest(msg)
-          .then(() => sendResponse({ success: true }))
-          .catch((error: Error) => sendResponse({ success: false, error: error.message }));
+          .then(() => {
+            console.log('[XEG:SW] DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST done');
+            sendResponse({ success: true });
+          })
+          .catch((error: Error) => {
+            console.error('[XEG:SW] DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST error:', error.message);
+            sendResponse({ success: false, error: error.message });
+          });
         return true;
 
       case 'SHOW_NOTIFICATION':
         handleShowNotification(msg.payload);
-        // Sync response — no async work needed
+        console.log('[XEG:SW] SHOW_NOTIFICATION done');
         sendResponse({ success: true });
         return false;
 
       case 'FETCH_REQUEST':
         handleFetchRequest(msg)
-          .then((result) => sendResponse({ success: true, data: result }))
-          .catch((error: Error) => sendResponse({ success: false, error: error.message }));
+          .then((result) => {
+            console.log('[XEG:SW] FETCH_REQUEST done');
+            sendResponse({ success: true, data: result });
+          })
+          .catch((error: Error) => {
+            console.error('[XEG:SW] FETCH_REQUEST error:', error.message);
+            sendResponse({ success: false, error: error.message });
+          });
         return true;
 
       default:
+        console.warn(
+          '[XEG:SW] Unknown message type:',
+          (message as unknown as { type: string }).type
+        );
         sendResponse({ success: false, error: 'Unknown message type' });
         return false;
     }
@@ -145,8 +174,14 @@ chrome.runtime.onMessage.addListener(
 
 async function handleDownloadRequest(message: DownloadRequestMessage): Promise<void> {
   const { url, filename, headers } = message.payload;
+  console.log('[XEG:SW] handleDownloadRequest:', {
+    url: url.slice(0, 100),
+    filename,
+    hasHeaders: !!headers,
+  });
 
   if (!isAllowedUrl(url)) {
+    console.error('[XEG:SW] URL blocked by whitelist:', url);
     throw new Error(`URL not in allowed whitelist: ${url}`);
   }
 
@@ -163,19 +198,28 @@ async function handleDownloadRequest(message: DownloadRequestMessage): Promise<v
     }));
   }
 
+  console.log('[XEG:SW] calling chrome.downloads.download...');
   const downloadId = await chrome.downloads.download(downloadOptions);
+  console.log('[XEG:SW] download started, id:', downloadId);
 
   return new Promise<void>((resolve, reject) => {
     const listener = (delta: ChromeDownloadDelta) => {
       if (delta.id !== downloadId) return;
 
       const stateCurrent = typeof delta.state === 'string' ? delta.state : delta.state?.current;
+      const errorCurrent = typeof delta.error === 'string' ? delta.error : delta.error?.current;
+      console.log('[XEG:SW] download delta:', {
+        id: downloadId,
+        state: stateCurrent,
+        error: errorCurrent,
+      });
+
       if (stateCurrent === 'complete') {
         chrome.downloads.onChanged.removeListener(listener);
         resolve();
       } else if (stateCurrent === 'interrupted') {
         chrome.downloads.onChanged.removeListener(listener);
-        reject(new Error('Download interrupted'));
+        reject(new Error(`Download interrupted: ${errorCurrent ?? 'unknown'}`));
       }
     };
     chrome.downloads.onChanged.addListener(listener);
@@ -184,10 +228,12 @@ async function handleDownloadRequest(message: DownloadRequestMessage): Promise<v
 
 async function handleDownloadBlobRequest(message: DownloadBlobRequestMessage): Promise<void> {
   const { dataUrl, filename } = message.payload;
+  console.log('[XEG:SW] handleDownloadBlobRequest:', { dataUrlLen: dataUrl.length, filename });
 
   const response = await fetch(dataUrl);
   const blob = await response.blob();
   const objectUrl = URL.createObjectURL(blob);
+  console.log('[XEG:SW] blob created from dataUrl:', { size: blob.size, objectUrl });
 
   try {
     const downloadId = await chrome.downloads.download({
@@ -195,18 +241,25 @@ async function handleDownloadBlobRequest(message: DownloadBlobRequestMessage): P
       filename,
       saveAs: false,
     });
+    console.log('[XEG:SW] blob download started, id:', downloadId);
 
     // Wait for download to complete before revoking the object URL.
     await new Promise<void>((resolve, reject) => {
       const listener = (delta: ChromeDownloadDelta) => {
         if (delta.id !== downloadId) return;
         const stateCurrent = typeof delta.state === 'string' ? delta.state : delta.state?.current;
+        const errorCurrent = typeof delta.error === 'string' ? delta.error : delta.error?.current;
+        console.log('[XEG:SW] blob download delta:', {
+          id: downloadId,
+          state: stateCurrent,
+          error: errorCurrent,
+        });
         if (stateCurrent === 'complete') {
           chrome.downloads.onChanged.removeListener(listener);
           resolve();
         } else if (stateCurrent === 'interrupted') {
           chrome.downloads.onChanged.removeListener(listener);
-          reject(new Error('Download interrupted'));
+          reject(new Error(`Blob download interrupted: ${errorCurrent ?? 'unknown'}`));
         }
       };
       chrome.downloads.onChanged.addListener(listener);
@@ -222,9 +275,15 @@ async function handleDownloadBlobArrayBufferRequest(
   message: DownloadBlobArrayBufferRequestMessage
 ): Promise<void> {
   const { buffer, filename, mimeType } = message.payload;
+  console.log('[XEG:SW] handleDownloadBlobArrayBufferRequest:', {
+    bufferLen: buffer.byteLength,
+    filename,
+    mimeType,
+  });
 
   const blob = new Blob([buffer], { type: mimeType || 'application/octet-stream' });
   const objectUrl = URL.createObjectURL(blob);
+  console.log('[XEG:SW] blob created from ArrayBuffer:', { size: blob.size, objectUrl });
 
   try {
     const downloadId = await chrome.downloads.download({
@@ -232,17 +291,24 @@ async function handleDownloadBlobArrayBufferRequest(
       filename,
       saveAs: false,
     });
+    console.log('[XEG:SW] large blob download started, id:', downloadId);
 
     await new Promise<void>((resolve, reject) => {
       const listener = (delta: ChromeDownloadDelta) => {
         if (delta.id !== downloadId) return;
         const stateCurrent = typeof delta.state === 'string' ? delta.state : delta.state?.current;
+        const errorCurrent = typeof delta.error === 'string' ? delta.error : delta.error?.current;
+        console.log('[XEG:SW] large blob download delta:', {
+          id: downloadId,
+          state: stateCurrent,
+          error: errorCurrent,
+        });
         if (stateCurrent === 'complete') {
           chrome.downloads.onChanged.removeListener(listener);
           resolve();
         } else if (stateCurrent === 'interrupted') {
           chrome.downloads.onChanged.removeListener(listener);
-          reject(new Error('Download interrupted'));
+          reject(new Error(`Large blob download interrupted: ${errorCurrent ?? 'unknown'}`));
         }
       };
       chrome.downloads.onChanged.addListener(listener);

@@ -93,6 +93,12 @@ export interface ChromeDownloadDelta {
         previous: string;
         current: string;
       };
+  error?:
+    | string
+    | {
+        previous: string;
+        current: string;
+      };
 }
 
 export interface ChromeNotificationsModule {
