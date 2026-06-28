@@ -9,9 +9,8 @@
  * in content scripts directly.
  */
 
+import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
 import type { DownloadAdapter } from './types';
-
-const MV3_DOWNLOAD_TIMEOUT_MS = 30000;
 
 interface MV3DownloadResponse {
   success: boolean;
@@ -23,7 +22,7 @@ export class MV3DownloadAdapter implements DownloadAdapter {
     return new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
         reject(new Error('MV3 download request timed out'));
-      }, MV3_DOWNLOAD_TIMEOUT_MS);
+      }, DOWNLOAD_TIMEOUT_MS);
 
       chrome.runtime.sendMessage(
         undefined,
@@ -52,7 +51,7 @@ export class MV3DownloadAdapter implements DownloadAdapter {
     return new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
         reject(new Error('MV3 blob download request timed out'));
-      }, MV3_DOWNLOAD_TIMEOUT_MS);
+      }, DOWNLOAD_TIMEOUT_MS);
 
       chrome.runtime.sendMessage(
         undefined,

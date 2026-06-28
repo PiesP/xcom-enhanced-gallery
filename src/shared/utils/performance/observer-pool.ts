@@ -106,24 +106,4 @@ export const SharedObserver = {
       }
     };
   },
-
-  /** @internal Used by the disposal return value of observe() — not for external use. */
-  unobserve(element: Element): void {
-    const keysToRemove: string[] = [];
-    for (const [key, poolEntry] of observerPool) {
-      if (!poolEntry.refCount.has(element)) continue;
-
-      poolEntry.callbacks.delete(element);
-      poolEntry.refCount.delete(element);
-      poolEntry.observer.unobserve(element);
-
-      if (poolEntry.refCount.size === 0) {
-        poolEntry.observer.disconnect();
-        keysToRemove.push(key);
-      }
-    }
-    for (const key of keysToRemove) {
-      observerPool.delete(key);
-    }
-  },
 };
