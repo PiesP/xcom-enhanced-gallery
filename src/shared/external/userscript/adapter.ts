@@ -82,6 +82,11 @@ export function getUserscript(): UserscriptAPI {
   cachedUserscriptAPI = {
     async download(urlOrDetails: string | GMDownloadDetails, filename?: string): Promise<void> {
       if (!gmDownload) throw new Error('GM_download unavailable');
+
+      // Always use options-object form. URL-only form GM_download(url, filename)
+      // is deprecated/ignored in GM4+ (Tampermonkey, Violentmonkey, Greasemonkey)
+      // — filename is silently dropped, causing the browser to use a random
+      // UUID from the CDN's Content-Disposition header.
       if (typeof urlOrDetails === 'object') {
         return new Promise<void>((resolve, reject) => {
           const details = urlOrDetails;
@@ -104,7 +109,17 @@ export function getUserscript(): UserscriptAPI {
         });
       }
       if (filename === undefined) throw new Error('filename required for URL-only download');
-      gmDownload(urlOrDetails, filename);
+      return new Promise<void>((resolve, reject) => {
+        gmDownloadRaw({
+          url: urlOrDetails,
+          filename,
+          saveAs: false,
+          timeout: GM_DOWNLOAD_TIMEOUT_MS,
+          onload: () => resolve(),
+          onerror: (error: Error) => reject(error),
+          ontimeout: () => reject(new Error('GM_download timed out')),
+        });
+      });
     },
     async downloadBlobWithCallbacks(url: string, filename: string): Promise<void> {
       if (!gmDownload) throw new Error('GM_download unavailable');
