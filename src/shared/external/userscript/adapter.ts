@@ -29,6 +29,7 @@ export interface UserscriptAPI {
   readonly download: (url: string, filename: string) => Promise<void>;
   readonly downloadBlob: (blob: Blob, filename: string) => Promise<void>;
   readonly downloadBlobWithCallbacks: (url: string, filename: string) => Promise<void>;
+  readonly downloadBlobWithAnchor: (url: string, filename: string) => Promise<void>;
   readonly setValue: (key: string, value: unknown) => Promise<void>;
   readonly getValue: <T>(key: string, defaultValue?: T) => Promise<T | undefined>;
   readonly getValueSync: <T>(key: string, defaultValue?: T) => T | undefined;
@@ -55,9 +56,10 @@ function getGMAPIs(): ResolvedGMAPIs {
   const g = globalThis as unknown as Record<string, unknown>;
   return {
     // GM.download (GM4+/Tampermonkey Promise-based API)
-    download: typeof g.GM !== 'undefined' && g.GM !== null
-      ? (g.GM as Record<string, unknown>).download
-      : undefined,
+    download:
+      typeof g.GM !== 'undefined' && g.GM !== null
+        ? (g.GM as Record<string, unknown>).download
+        : undefined,
     // GM_download (legacy function)
     downloadLegacy: g.GM_download,
     setValue: g.GM_setValue,
@@ -81,7 +83,7 @@ function asFunction<T>(value: unknown): T | undefined {
 async function downloadViaBlob(
   url: string,
   filename: string,
-  xmlHttpRequest: (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl,
+  xmlHttpRequest: (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl
 ): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     let objectUrl: string | null = null;
@@ -154,6 +156,13 @@ export function getUserscript(): UserscriptAPI {
 
   cachedUserscriptAPI = {
     async download(url: string, filename: string): Promise<void> {
+      // For blob: URLs, GM.download may ignore the filename and use the
+      // URL's UUID instead. Use anchor download directly to guarantee
+      // the correct filename is used.
+      if (url.startsWith('blob:')) {
+        return this.downloadBlobWithAnchor(url, filename);
+      }
+
       // Strategy 1: GM.download (GM4+/Tampermonkey Promise-based)
       if (gmDownloadModern) {
         return new Promise<void>((resolve, reject) => {
@@ -194,10 +203,48 @@ export function getUserscript(): UserscriptAPI {
       return downloadViaBlob(url, filename, gmXmlHttpRequest);
     },
 
+    /**
+     * Anchor-based download for blob: URLs.
+     * Bypasses GM.download which ignores filename for blob URLs.
+     */
+    downloadBlobWithAnchor(url: string, filename: string): Promise<void> {
+      return new Promise<void>((resolve, reject) => {
+        try {
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            a.remove();
+            resolve();
+          }, 100);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    },
+
     async downloadBlob(blob: Blob, filename: string): Promise<void> {
       const url = URL.createObjectURL(blob);
       try {
-        await this.download(url, filename);
+        // Use anchor download instead of GM.download because GM.download
+        // extracts the blob URL's UUID as the filename instead of honoring
+        // the filename parameter (Tampermonkey/Violentmonkey behavior).
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        // Cleanup after a short delay to ensure the download starts
+        await new Promise<void>((resolve) => {
+          setTimeout(() => {
+            a.remove();
+            resolve();
+          }, 100);
+        });
       } finally {
         URL.revokeObjectURL(url);
       }
