@@ -35,7 +35,7 @@ export type MaybeAccessor<T> = T | Accessor<T>;
  * ```
  */
 export function resolve<T>(value: MaybeAccessor<T>): T {
-  return typeof value === 'function' ? (value as Accessor<T>)() : value;
+  return toAccessor(value)();
 }
 
 /**

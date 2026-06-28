@@ -100,10 +100,7 @@ export function executeVideoControl(
  * @internal
  */
 function getGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoElement | null {
-  if (video instanceof HTMLVideoElement) {
-    return video;
-  }
-
+  if (video instanceof HTMLVideoElement) return video;
   const signaled = gallerySignals.currentVideoElement;
   return signaled instanceof HTMLVideoElement ? signaled : null;
 }

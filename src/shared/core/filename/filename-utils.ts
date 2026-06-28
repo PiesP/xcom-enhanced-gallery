@@ -8,7 +8,6 @@
  */
 
 import type { MediaInfo } from '@shared/types/media.types';
-import { safeParseInt } from '@shared/utils/types/number-utils';
 import { extractUsernameFromUrl } from '@shared/utils/url/host';
 
 export interface FilenameOptions {
@@ -74,7 +73,7 @@ export function getIndexFromMediaId(mediaId?: string): string | null {
   if (!mediaId) return null;
   const match = mediaId.match(/_media_(\d+)$/) || mediaId.match(/_(\d+)$/);
   if (match) {
-    const idx = safeParseInt(match[1], 10);
+    const idx = Number.parseInt(match[1]!, 10);
     return mediaId.includes('_media_') ? (idx + 1).toString() : (match[1] ?? null);
   }
   return null;
@@ -88,7 +87,7 @@ export function getIndexFromMediaId(mediaId?: string): string | null {
  */
 export function normalizeIndex(index?: string | number): string {
   if (index === undefined || index === null) return '1';
-  const num = typeof index === 'string' ? safeParseInt(index, 10) : index;
+  const num = typeof index === 'string' ? Number.parseInt(index, 10) : index;
   return Number.isNaN(num) || num < 1 ? '1' : num.toString();
 }
 

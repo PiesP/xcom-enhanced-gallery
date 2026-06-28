@@ -132,36 +132,45 @@ const extractFromMediaGridItem: ExtractionStrategy = (element) => {
 };
 
 // ============================================================================
-// Main Class
+// Main export — functional pipeline
 // ============================================================================
 
-export class TweetInfoExtractor {
-  private readonly strategies: ExtractionStrategy[] = [
-    extractFromElement,
-    extractFromDOM,
-    extractFromMediaGridItem,
-  ];
+const strategies: readonly ExtractionStrategy[] = [
+  extractFromElement,
+  extractFromDOM,
+  extractFromMediaGridItem,
+];
 
-  extract(element: HTMLElement): TweetInfo | null {
-    for (const strategy of this.strategies) {
-      try {
-        const result = strategy(element);
-        if (result && this.isValid(result)) {
-          if (__DEV__) {
-            logger.debug(`[TweetInfoExtractor] Success: ${result.extractionMethod}`, {
-              tweetId: result.tweetId,
-            });
-          }
-          return result;
+function isValidTweetInfo(info: TweetInfo): boolean {
+  return !!info.tweetId && /^\d+$/.test(info.tweetId) && info.tweetId !== 'unknown';
+}
+
+/**
+ * Extract tweet info from a DOM element using a strategy pipeline.
+ * Tries strategies in order: element attributes → DOM structure → media grid.
+ */
+export function extractTweetInfo(element: HTMLElement): TweetInfo | null {
+  for (const strategy of strategies) {
+    try {
+      const result = strategy(element);
+      if (result && isValidTweetInfo(result)) {
+        if (__DEV__) {
+          logger.debug(`[TweetInfoExtractor] Success: ${result.extractionMethod}`, {
+            tweetId: result.tweetId,
+          });
         }
-      } catch {
-        // Continue to next strategy
+        return result;
       }
+    } catch {
+      // Continue to next strategy
     }
-    return null;
   }
+  return null;
+}
 
-  private isValid(info: TweetInfo): boolean {
-    return !!info.tweetId && /^\d+$/.test(info.tweetId) && info.tweetId !== 'unknown';
+// Backward-compatible class wrapper (for existing callers)
+export class TweetInfoExtractor {
+  extract(element: HTMLElement): TweetInfo | null {
+    return extractTweetInfo(element);
   }
 }

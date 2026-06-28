@@ -180,10 +180,7 @@ export class DownloadOrchestrator {
       const filename = plan.zipFilename;
 
       // Save ZIP using the download adapter
-      const saveResult = await this.saveZipBlob(zipBlob, filename, {
-        ...options,
-        signal: mergedSignal,
-      });
+      const saveResult = await this.saveWithDownloadAdapter(zipBlob, filename, options.onProgress);
 
       if (!saveResult.success) {
         return {
@@ -242,19 +239,7 @@ export class DownloadOrchestrator {
   }
 
   /**
-   * Save ZIP blob using the download adapter
-   * @internal
-   */
-  private async saveZipBlob(
-    zipBlob: Blob,
-    filename: string,
-    options: DownloadOptions
-  ): Promise<{ success: boolean; error?: string }> {
-    return this.saveWithDownloadAdapter(zipBlob, filename, options.onProgress);
-  }
-
-  /**
-   * Save blob using DownloadAdapter (relays to background SW or GM_download)
+   * Save blob using DownloadAdapter (relies to background SW or GM_download)
    * @internal
    */
   private async saveWithDownloadAdapter(

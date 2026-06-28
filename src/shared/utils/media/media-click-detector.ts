@@ -41,12 +41,6 @@ const INTERACTIVE_SELECTOR = [
 const TWITTER_HOST_RE = /(^|\.)(?:x|twitter)\.com$/iu;
 const STATUS_MEDIA_RE = /\/status\/\d+|\/photo\/\d+|\/video\/\d+/iu;
 
-function isValidMediaSource(url: string | null | undefined): boolean {
-  if (!url) return false;
-  if (url.startsWith('blob:')) return true;
-  return isValidMediaUrl(url);
-}
-
 function isNativeStatusMediaLink(href: string | null | undefined): boolean {
   if (!href) return false;
   const parsed = tryParseUrl(href);
@@ -119,7 +113,7 @@ export function isProcessableMedia(target: HTMLElement | null, event?: MouseEven
   const mediaElement = findMediaElementInDOM(target);
   if (mediaElement) {
     const url = extractMediaUrlFromElement(mediaElement);
-    if (isValidMediaSource(url)) return true;
+    if (url && (url.startsWith('blob:') || isValidMediaUrl(url))) return true;
   }
 
   return !!target.closest(MEDIA_CONTAINER_SELECTOR);

@@ -2,21 +2,6 @@
 // Copyright (c) 2024-2026 PiesP
 
 /**
- * Safely parse a string to integer with fallback to 0.
- * Handles null/undefined and invalid inputs.
- * @param value - String to parse or null/undefined
- * @param radix - Base for parsing (default: 10)
- * @returns Parsed integer or 0
- */
-export function safeParseInt(value: string | undefined | null, radix: number = 10): number {
-  if (value == null) {
-    return 0;
-  }
-  const result = Number.parseInt(value, radix);
-  return Number.isNaN(result) ? 0 : result;
-}
-
-/**
  * Constrain a number to a specified range.
  * @param value - Number to clamp
  * @param min - Minimum value (default: 0)
