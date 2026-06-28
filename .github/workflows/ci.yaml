@@ -4,11 +4,11 @@ name: 🏗️ CI
 # - Install dependencies with pnpm
 # - Run the repository quality gate
 # - Build the production userscript
+# - Build Chrome and Firefox extension packages
 #
 # Triggered on: Push/PR to master + merge queue
 
 # Security: All third-party actions pinned to full commit SHAs.
-
 on:
   push:
     branches: [master]
@@ -49,15 +49,38 @@ jobs:
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: ✅ Run quality gate and build
-        run: pnpm verify
+      - name: ✅ Run quality gate and build all targets
+        run: |
+          pnpm build
+          pnpm build:extension
+          pnpm build:extension:firefox
 
-      - name: 📊 Upload build artifacts
+      - name: 📊 Upload userscript artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:
-          name: build-${{ github.sha }}
+          name: userscript-${{ github.sha }}
           path: dist/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
+
+      - name: 📊 Upload Chrome extension artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        with:
+          name: extension-chrome-${{ github.sha }}
+          path: dist-extension/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
+
+      - name: 📊 Upload Firefox extension artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        with:
+          name: extension-firefox-${{ github.sha }}
+          path: dist-extension-firefox/
           if-no-files-found: error
           retention-days: 7
           compression-level: 9

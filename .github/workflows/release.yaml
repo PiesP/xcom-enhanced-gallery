@@ -1,14 +1,13 @@
 name: 🚀 Release
 
-# Responsibility: Publish tagged userscript releases
-# - Build release assets from the tagged commit
-# - Generate checksums and metadata
-# - Deploy to release branch and GitHub Releases
+# Responsibility: Publish tagged releases for userscript and browser extensions
+# - Build release assets from the tagged commit (userscript + Chrome + Firefox)
+# - Package extension ZIPs
+# - Attach all assets to GitHub Releases
 #
 # Trigger: Tag push (v*)
 
 # Security: All third-party actions pinned to full commit SHAs.
-
 on:
   push:
     tags:
@@ -55,130 +54,45 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Release version: $VERSION"
 
-      - name: 🏗️ Build userscript
+      - name: 🏗️ Build all targets
+        run: |
+          pnpm build
+          pnpm build:extension
+          pnpm build:extension:firefox
+
+      - name: 📦 Package extensions
+        run: pnpm package:extension
+
+      - name: 🏷️ Prepare release assets
         run: |
           set -euo pipefail
-          BUILD_VERSION=${{ steps.version.outputs.version }} pnpm build
-          mkdir -p /tmp/dist-backup/dist
-          cp -r dist/* /tmp/dist-backup/dist/
-          echo "📦 Built files:"
-          ls -la /tmp/dist-backup/dist/
+          cd dist
+          sha256sum * > SHA256SUMS.txt
+          cd ..
+          echo "Checksums:"
+          cat dist/SHA256SUMS.txt
 
-      - name: 📦 Prepare release package
-        run: |
-          set -euo pipefail
-          mkdir -p release
-          cp /tmp/dist-backup/dist/xcom-enhanced-gallery.user.js release/
-          cp /tmp/dist-backup/dist/xcom-enhanced-gallery.meta.js release/
-
-          cd release && sha256sum xcom-enhanced-gallery.user.js xcom-enhanced-gallery.meta.js > checksums.txt && cd ..
-
-          cat > release/metadata.json << EOF
-          {
-            "version": "${{ steps.version.outputs.version }}",
-            "build_date": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
-            "commit": "${{ github.sha }}",
-            "node_version": "${{ env.NODE_VERSION }}"
-          }
-          EOF
-
-          CHANGELOG_CONTENT=""
-          if [ -f "CHANGELOG.md" ]; then
-            CHANGELOG_CONTENT=$(awk -v ver="${{ steps.version.outputs.version }}" '
-              /^## \[/ {
-                if (found) exit;
-                if ($0 ~ "\[" ver "\]") {
-                  found=1;
-                  next;
-                }
-              }
-              found { print }
-            ' CHANGELOG.md)
-          fi
-
-          PREV_VERSION=$(
-            {
-              printf '%s\n' "${{ steps.version.outputs.version }}"
-              git tag --list 'v*' | sed 's/^v//'
-            } | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -u -V | awk -v ver="${{ steps.version.outputs.version }}" '
-              $0 == ver { print prev; exit }
-              { prev = $0 }
-            '
-          )
-
-          if [ -n "$PREV_VERSION" ]; then
-            PREV_TAG="v${PREV_VERSION}"
-            COMPARE_URL="https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${{ steps.version.outputs.version }}"
-          else
-            COMPARE_URL="https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.version }}"
-          fi
-
-          cat > release/RELEASE_NOTES.md << EOF
-          # 🚀 Release v${{ steps.version.outputs.version }}
-
-          ## 📥 Installation
-
-          **[📥 Click here to install](https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/xcom-enhanced-gallery.user.js)**
-
-          ---
-
-          ## 📝 What's Changed
-
-          ${CHANGELOG_CONTENT:-No changelog entry for this version.}
-
-          **[📋 Full Changelog](${COMPARE_URL})**
-
-          ---
-
-          ## 📋 Build Details
-
-          - **Commit**: \`${{ github.sha }}\`
-          - **Built**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          - **Node.js**: \`${{ env.NODE_VERSION }}\`
-          EOF
-
-      - name: 📤 Deploy dist/ to release branch
-        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee7c4ff27748b70285e453 # v4.1.0
+      - name: 🚀 Create GitHub Release
+        uses: softprops/action-gh-release@7b453056312cef401da2a2a4e06e4b5b5f1ac85e # v2.3.3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: release
-          publish_dir: /tmp/dist-backup
-          force_orphan: true
+          body: |
+            ## Release ${{ steps.version.outputs.version }}
 
-      - name: 🔄 Purge jsDelivr CDN cache
-        run: |
-          set -euo pipefail
-          echo "🔄 Purging jsDelivr CDN cache..."
+            ### Assets
+            - **Userscript**: `xcom-enhanced-gallery.user.js`
+            - **Chrome Extension**: `extension-chrome-v${{ steps.version.outputs.version }}.zip`
+            - **Firefox Extension**: `extension-firefox-v${{ steps.version.outputs.version }}.zip`
+            - **Checksums**: `SHA256SUMS.txt`
 
-          PURGE_URL_USER="https://purge.jsdelivr.net/gh/${{ github.repository }}@release/dist/xcom-enhanced-gallery.user.js"
-          echo "Purging: $PURGE_URL_USER"
-          curl -s "$PURGE_URL_USER" | jq '.' || echo "Purge request sent"
-
-          PURGE_URL_META="https://purge.jsdelivr.net/gh/${{ github.repository }}@release/dist/xcom-enhanced-gallery.meta.js"
-          echo "Purging: $PURGE_URL_META"
-          curl -s "$PURGE_URL_META" | jq '.' || echo "Purge request sent"
-
-          echo "✅ jsDelivr cache purge completed"
-
-      - name: 🏷️ Create GitHub Release
-        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3
-        with:
-          tag_name: v${{ steps.version.outputs.version }}
-          body_path: release/RELEASE_NOTES.md
+            ### Installation
+            - **Userscript**: Install via Tampermonkey/Greasemonkey/Violentmonkey
+            - **Chrome**: Load unpacked from `dist-extension/` or install from Chrome Web Store
+            - **Firefox**: Install from `dist-extension-firefox/` or Firefox Add-ons
           files: |
-            release/xcom-enhanced-gallery.user.js
-            release/xcom-enhanced-gallery.meta.js
-            release/checksums.txt
-            release/metadata.json
+            dist/*.user.js
+            dist/*.zip
+            dist/SHA256SUMS.txt
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 📊 Upload release artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: release-v${{ steps.version.outputs.version }}
-          path: release/
-          if-no-files-found: error
-          retention-days: 30
