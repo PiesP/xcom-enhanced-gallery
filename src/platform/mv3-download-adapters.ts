@@ -42,49 +42,29 @@ export class MV3DownloadAdapter implements DownloadAdapter {
   }
 
   async downloadBlob(blob: Blob, filename: string): Promise<void> {
-    const MAX_DATA_URL_SIZE = 10 * 1024 * 1024; // 10 MB
+    // Service Worker has no URL.createObjectURL, so create object URL
+    // in content script context and pass it to SW for download.
+    console.log('[XEG:Download] downloadBlob:', { size: blob.size, filename });
 
-    if (blob.size <= MAX_DATA_URL_SIZE) {
-      console.log('[XEG:Download] DOWNLOAD_BLOB_REQUEST -> SW', { size: blob.size, filename });
-      try {
-        const dataUrl = await this.blobToDataUrl(blob);
-        const response = (await this.sendMessageWithTimeout({
-          type: 'DOWNLOAD_BLOB_REQUEST',
-          payload: { dataUrl, filename },
-        })) as MV3DownloadResponse;
-        if (!response?.success) {
-          console.error('[XEG:Download] DOWNLOAD_BLOB_REQUEST failed:', response?.error);
-          throw new Error(response?.error ?? 'Blob download failed');
-        }
-        console.log('[XEG:Download] DOWNLOAD_BLOB_REQUEST success');
-      } catch (error) {
-        console.error('[XEG:Download] DOWNLOAD_BLOB_REQUEST error:', (error as Error).message);
-        throw error;
-      }
-      return;
-    }
+    const objectUrl = URL.createObjectURL(blob);
+    console.log('[XEG:Download] objectUrl created:', objectUrl);
 
-    console.log('[XEG:Download] DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST -> SW', {
-      size: blob.size,
-      filename,
-    });
     try {
-      const arrayBuffer = await blob.arrayBuffer();
       const response = (await this.sendMessageWithTimeout({
-        type: 'DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST',
-        payload: { buffer: arrayBuffer, filename, mimeType: blob.type },
+        type: 'DOWNLOAD_BLOB_URL_REQUEST',
+        payload: { objectUrl, filename },
       })) as MV3DownloadResponse;
       if (!response?.success) {
-        console.error('[XEG:Download] DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST failed:', response?.error);
-        throw new Error(response?.error ?? 'Large blob download failed');
+        console.error('[XEG:Download] DOWNLOAD_BLOB_URL_REQUEST failed:', response?.error);
+        throw new Error(response?.error ?? 'Blob download failed');
       }
-      console.log('[XEG:Download] DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST success');
+      console.log('[XEG:Download] DOWNLOAD_BLOB_URL_REQUEST success');
     } catch (error) {
-      console.error(
-        '[XEG:Download] DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST error:',
-        (error as Error).message
-      );
+      console.error('[XEG:Download] DOWNLOAD_BLOB_URL_REQUEST error:', (error as Error).message);
       throw error;
+    } finally {
+      // Revoke the object URL after download completes (or fails).
+      URL.revokeObjectURL(objectUrl);
     }
   }
 
@@ -117,25 +97,6 @@ export class MV3DownloadAdapter implements DownloadAdapter {
           );
           reject(error instanceof Error ? error : new Error(String(error)));
         });
-    });
-  }
-
-  private blobToDataUrl(blob: Blob): Promise<string> {
-    // Guard against OOM on very large blobs (>10MB).
-    // FileReader.readAsDataURL loads the entire blob into memory as base64.
-    const MAX_BLOB_SIZE = 10 * 1024 * 1024; // 10 MB
-    if (blob.size > MAX_BLOB_SIZE) {
-      return Promise.reject(
-        new Error(
-          `Blob too large for data URL conversion: ${blob.size} bytes (max ${MAX_BLOB_SIZE})`
-        )
-      );
-    }
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(new Error('Failed to read blob'));
-      reader.readAsDataURL(blob);
     });
   }
 }
