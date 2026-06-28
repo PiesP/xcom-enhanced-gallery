@@ -31,7 +31,9 @@
       "style": {
         "noNonNullAssertion": "off",
         "useConst": "error",
-        "noParameterAssign": "warn"
+        "noParameterAssign": "warn",
+        "noUnusedTemplateLiteral": "error",
+        "useExponentiationOperator": "error"
       },
       "suspicious": {
         "noExplicitAny": "error",
@@ -40,11 +42,17 @@
         "noAssignInExpressions": "off",
         "noDocumentCookie": "off",
         "noImplicitAnyLet": "error",
-        "useIterableCallbackReturn": "error"
+        "useIterableCallbackReturn": "error",
+        "noSelfCompare": "warn",
+        "noArrayIndexKey": "off"
       },
       "complexity": {
         "noForEach": "off",
-        "noStaticOnlyClass": "off"
+        "noStaticOnlyClass": "off",
+        "noUselessTernary": "error",
+        "noUselessSwitchCase": "error",
+        "noUselessEmptyExport": "error",
+        "noUselessLoneBlockStatements": "error"
       },
       "performance": {
         "noAccumulatingSpread": "warn"
