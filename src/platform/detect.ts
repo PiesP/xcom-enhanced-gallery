@@ -22,5 +22,6 @@ export function detectPlatform(): PlatformType {
 // NOTE: In MV3 context, once the service worker is terminated and restarted,
 // the module is re-evaluated, so these values stay correct within a single
 // extension context lifecycle. For runtime re-detection, use detectPlatform() directly.
-export const IS_MV3: boolean = detectPlatform() === 'mv3-extension';
-export const IS_USERSCRIPT: boolean = detectPlatform() === 'userscript';
+const _platform = detectPlatform();
+export const IS_MV3: boolean = _platform === 'mv3-extension';
+export const IS_USERSCRIPT: boolean = _platform === 'userscript';

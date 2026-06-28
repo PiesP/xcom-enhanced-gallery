@@ -7,7 +7,6 @@ function detectPlatform() {
 	return "userscript";
 }
 var IS_MV3 = detectPlatform() === "mv3-extension";
-detectPlatform();
 //#endregion
 //#region src/shared/external/userscript/adapter.ts
 var GM_DOWNLOAD_TIMEOUT_MS = 6e4;
@@ -213,13 +212,15 @@ var DEFAULT_REQUEST_TIMEOUT_MS = 3e4;
 * MV3 extension download adapter.
 *
 * Relays download requests to the background service worker via
-* chrome.runtime.sendMessage (Promise-based, not callback-based).
+* chrome.runtime.sendMessage (Promise-based).
 * The SW handles chrome.downloads.download() which requires permissions
 * unavailable in content scripts directly.
 *
-* Note: MV3 requires Promise-based sendMessage. The callback pattern
-* (3rd argument) does not work reliably when the receiver responds
-* asynchronously (sendResponse called inside a .then()).
+* Architecture notes:
+* - URL.createObjectURL is NOT available in Service Workers, so blob
+*   downloads create the object URL in the content script context.
+* - Promise-based sendMessage is required; the callback pattern (3rd arg)
+*   does not work when the receiver responds asynchronously.
 */
 var MV3DownloadAdapter = class {
 	async download(url, filename, headers) {
@@ -234,28 +235,19 @@ var MV3DownloadAdapter = class {
 		if (!response?.success) throw new Error(response?.error ?? "Download failed");
 	}
 	async downloadBlob(blob, filename) {
-		if (blob.size <= 10 * 1024 * 1024) {
-			const dataUrl = await this.blobToDataUrl(blob);
+		const objectUrl = URL.createObjectURL(blob);
+		try {
 			const response = await this.sendMessageWithTimeout({
-				type: "DOWNLOAD_BLOB_REQUEST",
+				type: "DOWNLOAD_BLOB_URL_REQUEST",
 				payload: {
-					dataUrl,
+					objectUrl,
 					filename
 				}
 			});
 			if (!response?.success) throw new Error(response?.error ?? "Blob download failed");
-			return;
+		} finally {
+			URL.revokeObjectURL(objectUrl);
 		}
-		const arrayBuffer = await blob.arrayBuffer();
-		const response = await this.sendMessageWithTimeout({
-			type: "DOWNLOAD_BLOB_ARRAYBUFFER_REQUEST",
-			payload: {
-				buffer: arrayBuffer,
-				filename,
-				mimeType: blob.type
-			}
-		});
-		if (!response?.success) throw new Error(response?.error ?? "Large blob download failed");
 	}
 	sendMessageWithTimeout(message) {
 		return new Promise((resolve, reject) => {
@@ -269,16 +261,6 @@ var MV3DownloadAdapter = class {
 				clearTimeout(timer);
 				reject(error instanceof Error ? error : new Error(String(error)));
 			});
-		});
-	}
-	blobToDataUrl(blob) {
-		const MAX_BLOB_SIZE = 10 * 1024 * 1024;
-		if (blob.size > MAX_BLOB_SIZE) return Promise.reject(/* @__PURE__ */ new Error(`Blob too large for data URL conversion: ${blob.size} bytes (max ${MAX_BLOB_SIZE})`));
-		return new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onload = () => resolve(reader.result);
-			reader.onerror = () => reject(/* @__PURE__ */ new Error("Failed to read blob"));
-			reader.readAsDataURL(blob);
 		});
 	}
 };
@@ -941,7 +923,17 @@ async function downloadWithFetchFallback(url, filename, options, abortSignal, ad
 			percentage: 50,
 			filename
 		});
-		await adapter.downloadBlob(blob, filename);
+		const downloadBlobPromise = adapter.downloadBlob(blob, filename);
+		if (abortSignal) {
+			const abortPromise = new Promise((resolve) => {
+				abortSignal.addEventListener("abort", () => resolve(createAbortResult()), { once: true });
+			});
+			const result = await Promise.race([downloadBlobPromise.then(() => ({
+				success: true,
+				filename
+			})), abortPromise]);
+			if (!result.success) return result;
+		} else await downloadBlobPromise;
 		reportProgress(options.onProgress, {
 			phase: "complete",
 			current: 1,

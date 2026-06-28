@@ -79,7 +79,7 @@ export default defineConfig((): UserConfig => {
           return `${entryName}.js`;
         },
       },
-      rollupOptions: {
+      rolldownOptions: {
         output: {
           entryFileNames: (chunkInfo) => {
             if (chunkInfo.name === 'background') return 'background.js';

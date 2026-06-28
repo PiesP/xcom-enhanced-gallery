@@ -169,20 +169,43 @@ async function handleDownloadBlobUrlRequest(message: DownloadBlobUrlRequestMessa
  */
 function waitForDownloadComplete(downloadId: number): Promise<void> {
   return new Promise<void>((resolve, reject) => {
+    let settled = false;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+
+    const cleanup = (): void => {
+      chrome.downloads.onChanged.removeListener(listener);
+      if (timerId) clearTimeout(timerId);
+    };
+
     const listener = (delta: ChromeDownloadDelta) => {
       if (delta.id !== downloadId) return;
 
       const stateCurrent = typeof delta.state === 'string' ? delta.state : delta.state?.current;
       if (stateCurrent === 'complete') {
-        chrome.downloads.onChanged.removeListener(listener);
+        cleanup();
+        settled = true;
         resolve();
       } else if (stateCurrent === 'interrupted') {
-        chrome.downloads.onChanged.removeListener(listener);
+        cleanup();
+        settled = true;
         const errorCurrent = typeof delta.error === 'string' ? delta.error : delta.error?.current;
         reject(new Error(`Download interrupted: ${errorCurrent ?? 'unknown'}`));
       }
     };
     chrome.downloads.onChanged.addListener(listener);
+
+    // 5-minute timeout: prevent permanent listener leak
+    timerId = setTimeout(
+      () => {
+        if (!settled) {
+          chrome.downloads.onChanged.removeListener(listener);
+          timerId = null;
+          settled = true;
+          reject(new Error(`Download timed out after 5 minutes (id: ${downloadId})`));
+        }
+      },
+      5 * 60 * 1000
+    );
   });
 }
 
@@ -218,16 +241,16 @@ async function handleFetchRequest(message: FetchRequestMessage): Promise<unknown
     throw new Error(`URL not in allowed whitelist: ${url}`);
   }
 
-  const fetchOptions: RequestInit = {
-    method: options?.method ?? 'GET',
-  };
+  // Security: only allow safe read-only methods to prevent SSRF abuse
+  const method = options?.method ?? 'GET';
+  if (method !== 'GET' && method !== 'HEAD') {
+    throw new Error(`FETCH_REQUEST only supports GET/HEAD, got: ${method}`);
+  }
+
+  const fetchOptions: RequestInit = { method };
 
   if (options?.headers) {
     fetchOptions.headers = options.headers;
-  }
-
-  if (options?.body) {
-    fetchOptions.body = options.body;
   }
 
   const response = await fetch(url, fetchOptions);

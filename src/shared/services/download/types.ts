@@ -40,28 +40,6 @@ export interface SingleDownloadResult {
   error?: string;
 }
 
-export interface GMDownloadOptions {
-  url: string;
-  name: string;
-  headers?: Record<string, string>;
-  timeout?: number;
-  saveAs?: boolean;
-  onload: () => void;
-  onerror: (error: unknown) => void;
-  ontimeout: () => void;
-  onprogress?: (progress: { loaded: number; total: number }) => void;
-  onabort?: () => void;
-}
-
-export type GMDownloadFunction = (options: GMDownloadOptions) => void;
-
-export interface DownloadCapability {
-  hasGMDownload: boolean;
-  hasChromeDownloads: boolean;
-  method: 'gm_download' | 'chrome_downloads' | 'none';
-  gmDownload?: GMDownloadFunction | undefined;
-}
-
 export interface ZipResult {
   filesSuccessful: number;
   failures: Array<{ url: string; error: string }>;

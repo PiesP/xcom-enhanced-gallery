@@ -44,7 +44,7 @@ export function cssInlinePlugin(): Plugin {
       // Inject into ALL entry chunks (ES module lib mode may have multiple entries)
       let injected = false;
       for (const chunk of Object.values(bundle)) {
-        if (chunk.type === 'chunk' && (chunk.isEntry || chunk.name === 'content' || chunk.name === 'background')) {
+        if (chunk.type === 'chunk' && chunk.isEntry && chunk.name !== 'background') {
           chunk.code = injectionCode + chunk.code;
           injected = true;
         }

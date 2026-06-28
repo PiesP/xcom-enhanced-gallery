@@ -14,7 +14,7 @@
 import { resolve } from 'node:path';
 import { defineConfig, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
-import { copyFileSync, readFileSync } from 'node:fs';
+import { copyFileSync, readFileSync, existsSync, mkdirSync, cpSync } from 'node:fs';
 import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
 
 const root = resolve(__dirname);
@@ -33,7 +33,6 @@ function copyManifestPlugin() {
       copyFileSync(manifestSrc, manifestDest);
 
       // Copy extension icons from assets/icons/ to dist root
-      const { readdirSync, existsSync, mkdirSync, cpSync } = require('node:fs');
       const iconsSrc = resolve(root, 'assets/icons');
       const iconsDest = resolve(outDir, 'icons');
       if (existsSync(iconsSrc)) {
@@ -74,7 +73,7 @@ export default defineConfig((): UserConfig => {
           return `${entryName}.js`;
         },
       },
-      rollupOptions: {
+      rolldownOptions: {
         output: {
           entryFileNames: (chunkInfo) => {
             if (chunkInfo.name === 'background') return 'background.js';

@@ -173,7 +173,26 @@ async function downloadWithFetchFallback(
     });
 
     // Pass blob to adapter (which creates object URL and relays to background SW)
-    await adapter.downloadBlob(blob, filename);
+    const downloadBlobPromise = adapter.downloadBlob(blob, filename);
+
+    // R6: Race adapter.downloadBlob against abort signal so cancellation
+    // propagates when the user cancels after the fetch phase completes.
+    if (abortSignal) {
+      const abortPromise = new Promise<SingleDownloadResult>((resolve) => {
+        abortSignal.addEventListener('abort', () => resolve(createAbortResult()), { once: true });
+      });
+
+      const result = await Promise.race([
+        downloadBlobPromise.then(
+          () => ({ success: true, filename }) satisfies SingleDownloadResult
+        ),
+        abortPromise,
+      ]);
+
+      if (!result.success) return result;
+    } else {
+      await downloadBlobPromise;
+    }
 
     reportProgress(options.onProgress, {
       phase: 'complete',
