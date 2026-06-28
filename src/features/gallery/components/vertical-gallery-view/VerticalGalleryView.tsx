@@ -203,7 +203,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
       )}
       onClick={handleBackgroundClick}
     >
-      <div class={styles.toolbarHoverZone} role="presentation" />
+      <div class={styles.toolbarHoverZone} aria-hidden="true" />
 
       <div
         class={styles.toolbarWrapper}

@@ -101,6 +101,7 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
 
   let scrollRestoration: { scrollY: number; overflow: string; position: string } | null = null;
   let previouslyFocusedElement: HTMLElement | null = null;
+  let hiddenBackgroundElements: HTMLElement[] = [];
 
   createEffect(() => {
     if (!scrollRestoration) {
@@ -122,6 +123,17 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       document.body.style.top = `-${scrollRestoration.scrollY}px`;
       document.body.style.left = '0';
       document.body.style.right = '0';
+
+      // A3: Hide background content from assistive technology.
+      // aria-modal="true" has uneven screen-reader support; explicitly
+      // setting aria-hidden on sibling elements ensures AT cannot reach
+      // background content regardless of aria-modal implementation.
+      hiddenBackgroundElements = Array.from(document.body.children).filter(
+        (el) => el !== containerEl && el instanceof HTMLElement
+      ) as HTMLElement[];
+      for (const el of hiddenBackgroundElements) {
+        el.setAttribute('aria-hidden', 'true');
+      }
     }
   });
 
@@ -139,6 +151,11 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       }
       scrollRestoration = null;
     }
+    // A3: Restore background elements' accessibility state
+    for (const el of hiddenBackgroundElements) {
+      el.removeAttribute('aria-hidden');
+    }
+    hiddenBackgroundElements = [];
     // Return focus to the element that was focused before the gallery opened
     if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
       try {
