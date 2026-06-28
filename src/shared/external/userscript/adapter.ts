@@ -13,6 +13,16 @@
  * - Greasemonkey 4.x doesn't support it
  * - Tampermonkey may ignore filename (uses CDN Content-Disposition)
  * - Violentmonkey only supports options-object form
+ *
+ * Blob URL handling:
+ * GM.download ignores the `filename` parameter for blob: URLs, instead
+ * extracting the UUID from the URL path. All blob downloads use anchor
+ * element download (`<a download>`) to guarantee correct filenames.
+ *
+ * Anchor placement:
+ * Anchors are appended to `.xeg-gallery-root` (when present) instead of
+ * `document.body` to prevent gallery close-on-outside-click handlers
+ * from detecting the synthetic click as an "outside" click.
  */
 
 import type { CookieAPI } from '@shared/types/core/cookie.types';
@@ -29,7 +39,6 @@ export interface UserscriptAPI {
   readonly download: (url: string, filename: string) => Promise<void>;
   readonly downloadBlob: (blob: Blob, filename: string) => Promise<void>;
   readonly downloadBlobWithCallbacks: (url: string, filename: string) => Promise<void>;
-  readonly downloadBlobWithAnchor: (url: string, filename: string) => Promise<void>;
   readonly setValue: (key: string, value: unknown) => Promise<void>;
   readonly getValue: <T>(key: string, defaultValue?: T) => Promise<T | undefined>;
   readonly getValueSync: <T>(key: string, defaultValue?: T) => T | undefined;
@@ -77,6 +86,33 @@ function asFunction<T>(value: unknown): T | undefined {
 }
 
 /**
+ * Anchor-based download using `<a download>` element.
+ *
+ * Appends to gallery root when present to avoid triggering
+ * document.body capture-phase listeners (gallery close-on-outside-click).
+ * Falls back to document.body when gallery is not open.
+ */
+function anchorDownload(url: string, filename: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      const container = document.querySelector('.xeg-gallery-root') ?? document.body;
+      container.appendChild(a);
+      a.click();
+      queueMicrotask(() => {
+        a.remove();
+        resolve();
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+/**
  * Blob-based download fallback using GM_xmlhttpRequest + anchor element.
  * Works in all userscript environments regardless of GM_download support.
  */
@@ -96,18 +132,12 @@ async function downloadViaBlob(
         try {
           const blob = response.response as Blob;
           objectUrl = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = objectUrl;
-          a.download = filename;
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          a.click();
-          // Cleanup after a short delay to ensure download starts
-          setTimeout(() => {
-            a.remove();
-            if (objectUrl) URL.revokeObjectURL(objectUrl);
-            resolve();
-          }, 100);
+          anchorDownload(objectUrl, filename)
+            .then(resolve)
+            .catch(reject)
+            .finally(() => {
+              if (objectUrl) URL.revokeObjectURL(objectUrl);
+            });
         } catch (error) {
           if (objectUrl) URL.revokeObjectURL(objectUrl);
           reject(error);
@@ -156,11 +186,11 @@ export function getUserscript(): UserscriptAPI {
 
   cachedUserscriptAPI = {
     async download(url: string, filename: string): Promise<void> {
-      // For blob: URLs, GM.download may ignore the filename and use the
+      // For blob: URLs, GM.download ignores the filename and uses the
       // URL's UUID instead. Use anchor download directly to guarantee
-      // the correct filename is used.
+      // the correct filename and prevent gallery close-on-outside-click.
       if (url.startsWith('blob:')) {
-        return this.downloadBlobWithAnchor(url, filename);
+        return anchorDownload(url, filename);
       }
 
       // Strategy 1: GM.download (GM4+/Tampermonkey Promise-based)
@@ -203,59 +233,13 @@ export function getUserscript(): UserscriptAPI {
       return downloadViaBlob(url, filename, gmXmlHttpRequest);
     },
 
-    /**
-     * Anchor-based download for blob: URLs.
-     * Bypasses GM.download which ignores filename for blob URLs.
-     *
-     * The anchor is appended to the gallery root element (if present) so
-     * that document.body capture-phase listeners (gallery close-on-outside-click)
-     * do not detect the synthetic click as an "outside" click.
-     *
-     * Falls back to document.body when gallery is not open.
-     */
-    downloadBlobWithAnchor(url: string, filename: string): Promise<void> {
-      return new Promise<void>((resolve, reject) => {
-        try {
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = filename;
-          a.style.display = 'none';
-          // Append to gallery root so isGalleryInternalElement(a) returns true,
-          // preventing gallery close-on-outside-click.
-          const container = document.querySelector('.xeg-gallery-root') ?? document.body;
-          container.appendChild(a);
-          a.click();
-          queueMicrotask(() => {
-            a.remove();
-            resolve();
-          });
-        } catch (error) {
-          reject(error);
-        }
-      });
-    },
-
     async downloadBlob(blob: Blob, filename: string): Promise<void> {
       const url = URL.createObjectURL(blob);
       try {
         // Use anchor download instead of GM.download because GM.download
         // extracts the blob URL's UUID as the filename instead of honoring
         // the filename parameter (Tampermonkey/Violentmonkey behavior).
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.style.display = 'none';
-        // Append to gallery root so isGalleryInternalElement(a) returns true,
-        // preventing gallery close-on-outside-click.
-        const container = document.querySelector('.xeg-gallery-root') ?? document.body;
-        container.appendChild(a);
-        a.click();
-        await new Promise<void>((resolve) => {
-          queueMicrotask(() => {
-            a.remove();
-            resolve();
-          });
-        });
+        await anchorDownload(url, filename);
       } finally {
         URL.revokeObjectURL(url);
       }
