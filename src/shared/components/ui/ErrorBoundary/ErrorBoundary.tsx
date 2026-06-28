@@ -6,9 +6,9 @@
  * Provides a retry-friendly fallback UI and deduplicates error notifications.
  */
 
-import { getNotificationAdapter } from '@platform/index';
 import { getLanguageService } from '@shared/container/container';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
+import { getUserscript } from '@shared/external/userscript/adapter';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import type { JSXElement } from 'solid-js';
 import { createSignal, onCleanup, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
@@ -71,7 +71,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
     if (lastError() === error) return;
     setLastError(error);
     const { title, body } = translateError(error);
-    getNotificationAdapter().notify(title, body);
+    getUserscript().notification({ title, text: body });
   };
 
   const handleRetry = (): void => {
