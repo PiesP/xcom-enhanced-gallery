@@ -24,13 +24,13 @@ export class GMDownloadAdapter implements DownloadAdapter {
   async downloadBlob(blob: Blob, filename: string): Promise<void> {
     const url = URL.createObjectURL(blob);
     try {
+      // downloadBlobWithCallbacks resolves only after GM_download onload fires,
+      // so the browser has finished reading the blob URL by this point.
       await this.gm.downloadBlobWithCallbacks(url, filename);
-    } catch (error) {
-      // Revoke on error — download never started or failed.
+    } finally {
+      // Always revoke — covers both success and failure (onerror/ontimeout)
+      // paths to prevent object URL leaks.
       URL.revokeObjectURL(url);
-      throw error;
     }
-    // Success: revoke after download completes (onload fired).
-    URL.revokeObjectURL(url);
   }
 }
