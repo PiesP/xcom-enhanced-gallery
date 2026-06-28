@@ -7,7 +7,7 @@
   "scripts": {
     "prebuild": "pnpm -s quality",
     "build": "vite build",
-    "build:extension": "vite build --config vite.extension.config.ts",
+    "build:extension": "vite build --config vite.extension.config.ts && vite build --config vite.extension.cs.config.ts",
     "build:extension:firefox": "vite build --config vite.extension.firefox.config.ts",
     "build:all": "pnpm build && pnpm build:extension && pnpm build:extension:firefox",
     "build:dev": "vite build --mode development",

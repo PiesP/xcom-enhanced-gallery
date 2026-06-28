@@ -2,20 +2,19 @@
 // Copyright (c) 2024-2026 PiesP
 
 /**
- * Vite Configuration for MV3 Extension Build
+ * Vite Configuration for MV3 Extension Build (Background Service Worker)
  *
- * Builds the extension service worker and content script as ES modules.
- * Output goes to dist-extension/ for loading in Chrome as an unpacked extension.
+ * Builds the background service worker as an ES module.
+ * The content script is built separately via vite.extension.cs.config.ts as IIFE.
  *
  * Usage:
- *   pnpm build:extension — Build extension files
+ *   pnpm build:extension:sw — Build service worker only
  */
 
 import { resolve } from 'node:path';
 import { defineConfig, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 import { copyFileSync, readFileSync, existsSync, mkdirSync, cpSync } from 'node:fs';
-import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
 
 const root = resolve(__dirname);
 const extensionDir = resolve(root, 'extension');
@@ -58,16 +57,15 @@ export default defineConfig((): UserConfig => {
         },
       }),
       copyManifestPlugin(),
-      cssInlinePlugin(),
     ],
     build: {
       outDir,
-      emptyOutDir: true,
+      emptyOutDir: false,
       sourcemap: false,
       minify: false,
       target: ['chrome117'],
       lib: {
-        entry: [resolve(root, 'src/extension/background.ts'), resolve(root, 'src/extension/content.ts')],
+        entry: [resolve(root, 'src/extension/background.ts')],
         formats: ['es'],
         fileName: (_format, entryName) => {
           return `${entryName}.js`;
@@ -75,11 +73,7 @@ export default defineConfig((): UserConfig => {
       },
       rolldownOptions: {
         output: {
-          entryFileNames: (chunkInfo) => {
-            if (chunkInfo.name === 'background') return 'background.js';
-            if (chunkInfo.name === 'content') return 'content.js';
-            return `${chunkInfo.name}.js`;
-          },
+          entryFileNames: 'background.js',
           chunkFileNames: 'chunks/[name]-[hash].js',
           assetFileNames: 'assets/[name]-[hash].[ext]',
         },
