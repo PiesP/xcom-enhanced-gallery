@@ -206,6 +206,10 @@ export function getUserscript(): UserscriptAPI {
     /**
      * Anchor-based download for blob: URLs.
      * Bypasses GM.download which ignores filename for blob URLs.
+     *
+     * Dispatches the click on the anchor element directly without bubbling
+     * to parent listeners (e.g., gallery close-on-outside-click handlers
+     * that listen on document.body in capture phase).
      */
     downloadBlobWithAnchor(url: string, filename: string): Promise<void> {
       return new Promise<void>((resolve, reject) => {
@@ -215,11 +219,13 @@ export function getUserscript(): UserscriptAPI {
           a.download = filename;
           a.style.display = 'none';
           document.body.appendChild(a);
-          a.click();
-          setTimeout(() => {
+          // Dispatch click without bubbling to avoid triggering
+          // document.body capture-phase listeners (gallery close).
+          a.dispatchEvent(new MouseEvent('click', { bubbles: false, cancelable: false }));
+          queueMicrotask(() => {
             a.remove();
             resolve();
-          }, 100);
+          });
         } catch (error) {
           reject(error);
         }
@@ -237,13 +243,14 @@ export function getUserscript(): UserscriptAPI {
         a.download = filename;
         a.style.display = 'none';
         document.body.appendChild(a);
-        a.click();
-        // Cleanup after a short delay to ensure the download starts
+        // Dispatch click without bubbling to avoid triggering
+        // document.body capture-phase listeners (gallery close).
+        a.dispatchEvent(new MouseEvent('click', { bubbles: false, cancelable: false }));
         await new Promise<void>((resolve) => {
-          setTimeout(() => {
+          queueMicrotask(() => {
             a.remove();
             resolve();
-          }, 100);
+          });
         });
       } finally {
         URL.revokeObjectURL(url);
