@@ -23,7 +23,7 @@ let _downloadInstance: DownloadOrchestrator | null = null;
 
 export class DownloadOrchestrator {
   private _initialized = false;
-  private readonly abortController = new AbortController();
+  private abortController = new AbortController();
 
   private constructor() {}
 
@@ -52,6 +52,12 @@ export class DownloadOrchestrator {
 
   /** Initialize service (idempotent) */
   public initialize(): void {
+    // Recreate AbortController on re-initialization so that a previous
+    // destroy() (which aborts the controller) does not leave a permanently
+    // aborted signal that would cancel all downloads immediately.
+    if (this.abortController.signal.aborted) {
+      this.abortController = new AbortController();
+    }
     this._initialized = true;
   }
 
