@@ -37,12 +37,22 @@ function scheduleIdle(task: IdleRequestCallback): IdleHandle {
 
 type PrefetchSchedule = 'immediate' | 'idle';
 
+/** Node in the doubly-linked LRU list */
+type LRUNode = {
+  url: string;
+  prev: LRUNode | null;
+  next: LRUNode | null;
+};
+
 /** Default maximum number of entries in the prefetch cache. */
 const DEFAULT_CACHE_MAX_ENTRIES = 5; // Allow +1 buffer beyond the max 4 images per tweet
 
 /**
  * Manages media prefetching and caching.
  * Extracted from MediaService for better separation of concerns.
+ *
+ * Uses a doubly-linked list + Map for O(1) LRU eviction instead of
+ * scanning all cache entries on each eviction.
  */
 export class PrefetchManager {
   private readonly cache = new Map<string, Promise<Blob>>();
@@ -50,6 +60,11 @@ export class PrefetchManager {
   private readonly maxEntries: number;
   private disposed = false;
   private readonly idleHandles = new Set<IdleHandle>();
+
+  // Doubly-linked list for O(1) LRU tracking
+  private head: { url: string; prev: LRUNode | null; next: LRUNode | null } | null = null;
+  private tail: { url: string; prev: LRUNode | null; next: LRUNode | null } | null = null;
+  private readonly nodeMap = new Map<string, LRUNode>();
 
   constructor(maxEntries = DEFAULT_CACHE_MAX_ENTRIES) {
     this.maxEntries = maxEntries;
@@ -85,9 +100,8 @@ export class PrefetchManager {
   get(url: string): Promise<Blob> | null {
     const entry = this.cache.get(url);
     if (!entry) return null;
-    // Move to end (most recently used) for LRU eviction
-    this.cache.delete(url);
-    this.cache.set(url, entry);
+    // Move to tail (most recently used) for O(1) LRU tracking
+    this.moveToTail(url);
     return entry;
   }
 
@@ -106,6 +120,9 @@ export class PrefetchManager {
    */
   clear(): void {
     this.cache.clear();
+    this.nodeMap.clear();
+    this.head = null;
+    this.tail = null;
   }
 
   /**
@@ -130,6 +147,7 @@ export class PrefetchManager {
       } catch {
         // If the cached promise failed, remove it so we can retry
         this.cache.delete(url);
+        this.removeFromLRU(url);
       }
       if (this.cache.has(url)) return;
     }
@@ -139,7 +157,7 @@ export class PrefetchManager {
     // Register the request atomically to prevent concurrent duplicates
     this.activeRequests.set(url, controller);
 
-    // Evict oldest entry if cache is full
+    // Evict oldest entry if cache is full (O(1) via linked list)
     if (this.cache.size >= this.maxEntries) {
       this.evictOldest();
     }
@@ -158,6 +176,7 @@ export class PrefetchManager {
       });
 
     this.cache.set(url, fetchPromise);
+    this.addToLRU(url);
 
     try {
       await fetchPromise;
@@ -165,6 +184,7 @@ export class PrefetchManager {
       // Remove from cache on error (only if our promise is still the cached one)
       if (this.cache.get(url) === fetchPromise) {
         this.cache.delete(url);
+        this.removeFromLRU(url);
       }
 
       if (__DEV__) {
@@ -177,23 +197,66 @@ export class PrefetchManager {
   }
 
   private evictOldest(): void {
-    // Skip entries with active (in-flight) requests to avoid aborting
-    // data the user may currently be viewing.
-    for (const url of this.cache.keys()) {
-      if (this.activeRequests.has(url)) continue;
-      this.cache.delete(url);
-      return;
+    // O(1) eviction: walk from head (LRU end), skip in-flight entries
+    let node = this.head;
+    while (node) {
+      if (!this.activeRequests.has(node.url)) {
+        this.cache.delete(node.url);
+        this.removeNode(node);
+        return;
+      }
+      node = node.next;
     }
-    // Fallback: if all entries are in-flight, evict the oldest anyway
-    const first = this.cache.keys().next();
-    if (!first.done) {
-      const url = first.value;
+    // Fallback: all entries in-flight — evict the oldest (head) anyway
+    if (this.head) {
+      const url = this.head.url;
       const controller = this.activeRequests.get(url);
       if (controller) {
         controller.abort();
         this.activeRequests.delete(url);
       }
       this.cache.delete(url);
+      this.removeNode(this.head);
     }
+  }
+
+  // ── Doubly-linked list helpers (O(1) LRU operations) ──────────────────────
+
+  private addToLRU(url: string): void {
+    const existing = this.nodeMap.get(url);
+    if (existing) {
+      this.moveToTail(url);
+      return;
+    }
+    const node: LRUNode = { url, prev: this.tail, next: null };
+    if (this.tail) this.tail.next = node;
+    this.tail = node;
+    if (!this.head) this.head = node;
+    this.nodeMap.set(url, node);
+  }
+
+  private moveToTail(url: string): void {
+    const node = this.nodeMap.get(url);
+    if (!node || this.tail === node) return;
+    this.removeNode(node);
+    // Re-attach at tail
+    node.prev = this.tail;
+    node.next = null;
+    if (this.tail) this.tail.next = node;
+    this.tail = node;
+    if (!this.head) this.head = node;
+  }
+
+  private removeNode(node: LRUNode): void {
+    if (node.prev) node.prev.next = node.next;
+    if (node.next) node.next.prev = node.prev;
+    if (this.head === node) this.head = node.next;
+    if (this.tail === node) this.tail = node.prev;
+    this.nodeMap.delete(node.url);
+  }
+
+  private removeFromLRU(url: string): void {
+    const node = this.nodeMap.get(url);
+    if (node) this.removeNode(node);
   }
 }

@@ -78,10 +78,10 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   const tweetTextContent = () => activeMedia()?.tweetTextContent ?? null;
   const tweetUrl = () => activeMedia()?.tweetUrl ?? null;
 
-  const preloadIndices = createMemo(() => {
-    const count = getTypedSettingOr('gallery.preloadCount', 3);
-    return computePreloadIndices(currentIndex(), mediaItems().length, count);
-  });
+  const preloadCount = createMemo(() => getTypedSettingOr('gallery.preloadCount', 3));
+  const preloadIndices = createMemo(() =>
+    computePreloadIndices(currentIndex(), mediaItems().length, preloadCount())
+  );
 
   // Composed hook - consolidates all gallery behavior hooks
   const { scroll, navigation, focus, toolbar } = useVerticalGallery({

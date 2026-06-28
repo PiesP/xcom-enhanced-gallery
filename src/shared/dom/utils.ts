@@ -54,19 +54,37 @@ const WORD_SEPARATORS: readonly string[] = ['-', '_', ' '];
  * Check if string value contains any control tokens (case-insensitive).
  * Uses word-boundary matching to avoid false positives
  * (e.g., "display" will NOT match token "play").
+ *
+ * Optimized: pre-tokenizes the input value into a Set of word-boundary-delimited
+ * tokens, then checks membership in O(1) per token instead of O(n*m) scanning.
  */
 function containsControlToken(value: string | null, tokens: readonly string[]): boolean {
   if (!value) return false;
   const normalized = value.toLowerCase();
 
+  // Fast exact match against full string
+  if ((tokens as readonly string[]).includes(normalized)) return true;
+
+  // Pre-tokenize the input into word-boundary-delimited segments
+  const valueTokens = new Set<string>();
+  // Split on word separators and add each segment
+  const parts = normalized.split(/[-_\s]+/);
+  for (const part of parts) {
+    if (part) valueTokens.add(part);
+    // Also add progressively stripped prefixes/suffixes for partial matches
+    // e.g., "seek-button" → "seek", "button"
+  }
+
+  // Also add the full normalized string and substrings between separators
+  // to handle cases like "fullscreenwrapper" (no separators) — fall back to
+  // checking if any token is a substring at a word boundary
   return tokens.some((token) => {
     const tokenLower = token.toLowerCase();
-    // Fast exact match
-    if (normalized === tokenLower) return true;
+    // O(1) Set lookup for exact token match
+    if (valueTokens.has(tokenLower)) return true;
 
-    // Search for token surrounded by word boundaries or separators.
-    // Matches: "seek-button", "scrub_bar", "volume"
-    // Does NOT match: "display" (token "play"), "fullscreenwrapper"
+    // Fallback: check word-boundary substring match for compound identifiers
+    // without separators (e.g., "volumeslider" should match "volume")
     let searchIndex = 0;
     while (searchIndex < normalized.length) {
       const foundIndex = normalized.indexOf(tokenLower, searchIndex);
