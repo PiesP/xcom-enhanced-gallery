@@ -16,11 +16,13 @@ function runCssAnimation(element: Element, className: string): Promise<void> {
   return new Promise<void>((resolve) => {
     let settled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let observer: MutationObserver | undefined;
 
     const settle = (): void => {
       if (settled) return;
       settled = true;
       if (timer) clearTimeout(timer);
+      if (observer) observer.disconnect();
       element.classList.remove(className);
       element.removeEventListener('animationend', settle);
       element.removeEventListener('animationcancel', settle);
@@ -31,6 +33,20 @@ function runCssAnimation(element: Element, className: string): Promise<void> {
 
     element.addEventListener('animationend', settle, { once: true });
     element.addEventListener('animationcancel', settle, { once: true });
+
+    // W3: MutationObserver fallback — if the element is removed from DOM
+    // before animationend fires, settle immediately to avoid hanging promise
+    if (element.isConnected && typeof MutationObserver !== 'undefined') {
+      observer = new MutationObserver(() => {
+        if (!element.isConnected) {
+          settle();
+        }
+      });
+      // Observe the parent for childList changes (element removal)
+      if (element.parentElement) {
+        observer.observe(element.parentElement, { childList: true, subtree: false });
+      }
+    }
 
     if (!element.isConnected) {
       settle();

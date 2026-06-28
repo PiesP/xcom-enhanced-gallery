@@ -152,11 +152,18 @@ export function handleKeyboardEvent(
       showKeyboardHelp();
     } else if (key === 'Space') {
       handleVideoControl(key);
-    } else if ((key === 'ArrowUp' || key === 'ArrowDown') && gallerySignals.currentVideoElement) {
+    } else if (
+      // B3: ArrowUp/Down should control video volume when a video is active,
+      // otherwise fall through to navigation (scroll between gallery items)
+      (key === 'ArrowUp' || key === 'ArrowDown') &&
+      gallerySignals.currentVideoElement
+    ) {
       handleVideoControl(key);
     } else if (NAVIGATION_KEYS.has(key)) {
+      // Covers: Home, End, PageDown, PageUp, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Space
       handleNavigation(key);
-    } else {
+    } else if (isVideoKey) {
+      // m/M mute key (video control without active video — harmless no-op)
       handleVideoControl(key);
     }
 
@@ -181,6 +188,12 @@ function handleNavigation(key: string): void {
       navigatePrevious('keyboard');
       break;
     case 'ArrowRight':
+      navigateNext('keyboard');
+      break;
+    case 'ArrowUp':
+      navigatePrevious('keyboard');
+      break;
+    case 'ArrowDown':
       navigateNext('keyboard');
       break;
     case 'Home':

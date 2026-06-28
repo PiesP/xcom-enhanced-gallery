@@ -112,10 +112,12 @@ export function observeViewportCssVars(
     }
   }
 
-  // Window resize fallback (broader scope, still necessary for viewport changes)
+  // W4: Window resize fallback ONLY when ResizeObserver is unavailable.
+  // ResizeObserver already detects element size changes on window resize,
+  // so registering both causes redundant double-calculation.
   const onResize = (): void => schedule();
   let resizeListenerId: string | null = null;
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && !ro) {
     // Register with EventManager for unified event tracking/cleanup
     resizeListenerId = getEventManager().addEventListener(
       window,

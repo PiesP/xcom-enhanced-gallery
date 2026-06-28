@@ -87,8 +87,6 @@ export class PersistentStorage {
           error
         );
     }
-    // Always mirror to localStorage as backup (best-effort)
-    lsWriteRaw(key, serialized);
   }
 
   async get<T>(key: string, defaultValue?: T): Promise<T | undefined> {

@@ -106,6 +106,11 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     if (!scrollRestoration) {
       // Save currently focused element for restoration on close
       previouslyFocusedElement = document.activeElement as HTMLElement | null;
+      // W1: Disable browser's automatic scroll restoration to prevent
+      // conflicts with our manual position:fixed scroll lock
+      if ('scrollRestoration' in window.history) {
+        window.history.scrollRestoration = 'manual';
+      }
       // Lock background scroll without inert (inert blocks ALL mouse events on descendants)
       scrollRestoration = {
         scrollY: window.scrollY,
@@ -128,6 +133,10 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       document.body.style.left = '';
       document.body.style.right = '';
       window.scrollTo(0, scrollRestoration.scrollY);
+      // W1: Restore browser's scroll restoration behavior
+      if ('scrollRestoration' in window.history) {
+        window.history.scrollRestoration = 'auto';
+      }
       scrollRestoration = null;
     }
     // Return focus to the element that was focused before the gallery opened
