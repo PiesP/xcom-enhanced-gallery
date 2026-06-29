@@ -66,8 +66,30 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
   /** Determine text direction for RTL languages like Arabic */
   const dir = (): 'ltr' | 'rtl' => (resolvedLanguage() === 'ar' ? 'rtl' : 'ltr');
 
+  // Emergency cleanup for when ErrorBoundary catches a render error.
+  // GalleryContainer's onCleanup will NOT fire when its render throws,
+  // so we must restore body scroll lock and background accessibility here.
+  const handleRenderError = (): void => {
+    // Restore body scroll lock styles (mirrors GalleryContainer onCleanup)
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    // Restore browser scroll restoration
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'auto';
+    }
+    // Remove aria-hidden from background elements that GalleryContainer set
+    for (const el of Array.from(document.body.children)) {
+      if (el instanceof HTMLElement) {
+        el.removeAttribute('aria-hidden');
+      }
+    }
+  };
+
   return (
-    <ErrorBoundary>
+    <ErrorBoundary onError={handleRenderError}>
       <GalleryContainer
         className={`${CSS.CLASSES.RENDERER} ${CSS.CLASSES.ROOT} xeg-theme-scope`}
         data-theme={currentTheme()}

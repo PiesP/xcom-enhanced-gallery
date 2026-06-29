@@ -28,6 +28,12 @@ const AUTO_RESET_MS = 30_000;
  */
 export interface ErrorBoundaryProps {
   readonly children?: ComponentChildren;
+  /**
+   * Called when the error boundary catches a render error.
+   * Use this to perform emergency cleanup (e.g., restoring body styles)
+   * that would normally happen in onCleanup hooks of child components.
+   */
+  readonly onError?: (error: unknown) => void;
 }
 
 /**
@@ -111,6 +117,10 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
           fallback={(error) => {
             notifyError(error);
             setCaughtError(error);
+            // Invoke emergency cleanup callback so parent can restore global
+            // state (e.g., body scroll lock) that child onCleanup hooks
+            // will never fire for because the render errored.
+            props.onError?.(error);
             return null;
           }}
         >
