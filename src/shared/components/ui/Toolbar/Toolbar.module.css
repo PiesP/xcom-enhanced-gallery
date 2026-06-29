@@ -190,7 +190,7 @@
   width: 100%;
 }
 
-.toolbarControls > * {
+.toolbarControls > .toolbarButton {
   flex: 0 0 auto;
 }
 
