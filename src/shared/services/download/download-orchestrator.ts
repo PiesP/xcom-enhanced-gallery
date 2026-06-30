@@ -95,7 +95,6 @@ export class DownloadOrchestrator {
     );
   }
 
-  /** Check if service is initialized */
   public isInitialized(): boolean {
     return this._initialized;
   }

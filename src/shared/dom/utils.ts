@@ -71,8 +71,6 @@ function containsControlToken(value: string | null, tokens: readonly string[]): 
   const parts = normalized.split(/[-_\s]+/);
   for (const part of parts) {
     if (part) valueTokens.add(part);
-    // Also add progressively stripped prefixes/suffixes for partial matches
-    // e.g., "seek-button" → "seek", "button"
   }
 
   // Also add the full normalized string and substrings between separators
