@@ -213,6 +213,33 @@ export async function startApplication(): Promise<void> {
   return lifecycleState.startPromise;
 }
 
-void startApplication().catch((error) => {
-  __DEV__ && logger.error('Application failed to start', error);
-});
+// ── URL guard: only activate on X.com / Twitter.com ──────────────────────────
+
+const ALLOWED_START_HOSTS = ['x.com', 'twitter.com'] as const;
+
+/** Paths where gallery initialization is unnecessary (login, settings, etc.). */
+const EXCLUDED_PATH_PREFIXES = [
+  '/login',
+  '/logout',
+  '/signup',
+  '/settings',
+  '/i/flow/',
+  '/i/settings',
+  '/intent/',
+  '/share',
+] as const;
+
+function isAllowedStartPage(): boolean {
+  const hostname = location.hostname.toLowerCase();
+  const allowed = ALLOWED_START_HOSTS.some((h) => hostname === h || hostname.endsWith(`.${h}`));
+  if (!allowed) return false;
+
+  const path = location.pathname;
+  return !EXCLUDED_PATH_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
+
+if (isAllowedStartPage()) {
+  void startApplication().catch((error) => {
+    __DEV__ && logger.error('Application failed to start', error);
+  });
+}

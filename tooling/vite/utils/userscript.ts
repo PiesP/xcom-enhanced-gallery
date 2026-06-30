@@ -65,7 +65,7 @@ export const USERSCRIPT_CONFIG = {
   description: 'Media viewer and download functionality for X.com',
   author: 'PiesP',
   license: 'MIT',
-  match: ['https://x.com/*', 'https://*.x.com/*'],
+  match: ['https://x.com/*', 'https://twitter.com/*', 'https://*.x.com/*'],
   grant: [
     'GM_setValue',
     'GM_getValue',
