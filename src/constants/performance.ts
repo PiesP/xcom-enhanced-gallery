@@ -6,8 +6,8 @@
  * All values have been extracted from their original modules.
  */
 
-/** Download timeout in milliseconds */
-export const DOWNLOAD_TIMEOUT_MS = 30_000;
+/** Download timeout in milliseconds — aligned with the background SW 5-minute timeout */
+export const DOWNLOAD_TIMEOUT_MS = 300_000;
 
 /** Default request timeout for fetch-based downloads */
 export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;

@@ -24,7 +24,6 @@ export interface GalleryLifecycle {
 export function createGalleryLifecycle(): GalleryLifecycle {
   let initialized = false;
   let currentContext: string | null = null;
-  let openerElement: HTMLElement | null = null;
 
   function initialize(handlers: EventHandlers, options?: Partial<GalleryEventOptions>): () => void {
     if (initialized) {
@@ -38,9 +37,8 @@ export function createGalleryLifecycle(): GalleryLifecycle {
       return cleanup;
     }
 
-    // Store the element that opened the gallery (for focus restoration on close)
-    openerElement = document.activeElement as HTMLElement | null;
-
+    // Focus restoration is handled by GalleryContainer.tsx on mount/cleanup.
+    // No need to capture openerElement here.
     const context = options?.context?.trim() || 'gallery';
     const mergedOptions: GalleryEventOptions = {
       enableKeyboard: true,
@@ -87,15 +85,9 @@ export function createGalleryLifecycle(): GalleryLifecycle {
       getEventManager().removeByContext(currentContext);
     }
 
-    // Restore focus to the element that opened the gallery
-    if (openerElement && typeof openerElement.focus === 'function') {
-      try {
-        openerElement.focus({ preventScroll: true });
-      } catch {
-        // Silently ignore if element is no longer focusable (e.g., removed from DOM)
-      }
-    }
-    openerElement = null;
+    // Focus restoration is handled by GalleryContainer.tsx onCleanup.
+    // This lifecycle module only manages listeners — removing the duplicate
+    // focus() call prevents a race condition where the wrong element receives focus.
 
     resetKeyboardDebounceState();
     initialized = false;

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { DEFAULT_REQUEST_TIMEOUT_MS } from '@constants/performance';
 import { IS_MV3 } from '@platform/detect';
 import { getDownloadAdapter } from '@platform/index';
 import type { DownloadAdapter } from '@platform/types';
@@ -152,10 +153,22 @@ async function downloadWithFetchFallback(
   try {
     // Fetch in content script context (has host_permissions to bypass CORS).
     // Service Workers cannot bypass CORS for twimg.com without specific headers.
+    // Apply a timeout race via AbortSignal.timeout so the fetch doesn't hang
+    // indefinitely if the network stalls or the server doesn't respond.
+    const timeoutSignal = AbortSignal.timeout(DEFAULT_REQUEST_TIMEOUT_MS);
     const fetchInit: RequestInit = { credentials: 'include' };
+
     if (abortSignal) {
-      (fetchInit as { signal?: AbortSignal }).signal = abortSignal;
+      // Combine caller's abort signal with the timeout signal
+      const combinedController = new AbortController();
+      const onCombinedAbort = () => combinedController.abort();
+      abortSignal.addEventListener('abort', onCombinedAbort, { once: true });
+      timeoutSignal.addEventListener('abort', onCombinedAbort, { once: true });
+      fetchInit.signal = combinedController.signal;
+    } else {
+      fetchInit.signal = timeoutSignal;
     }
+
     const response = await fetch(url, fetchInit);
     if (!response.ok) {
       return createErrorDownloadResult(

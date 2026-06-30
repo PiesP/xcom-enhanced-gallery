@@ -23,18 +23,38 @@ import { ErrorCode } from '@shared/types/media.types';
  * Polyfill for AbortSignal.any() — unavailable in Safari 17.0–17.3.
  * Combines multiple AbortSignals into one; if any input signal aborts,
  * the returned signal aborts too.
+ *
+ * Returns both the merged signal and a cleanup function. Call cleanup()
+ * after the operation using the merged signal finishes (success or error)
+ * to remove the abort listeners from the input signals. This prevents
+ * listener accumulation on long-lived signals (e.g., orchestrator signal
+ * reused across many downloads).
  */
-function mergeAbortSignals(...signals: AbortSignal[]): AbortSignal {
+function mergeAbortSignals(...signals: AbortSignal[]): {
+  signal: AbortSignal;
+  cleanup: () => void;
+} {
   const controller = new AbortController();
-  const onAbort = () => controller.abort();
+  const listeners: Array<{ signal: AbortSignal; handler: () => void }> = [];
+
   for (const signal of signals) {
     if (signal.aborted) {
       controller.abort();
       break;
     }
-    signal.addEventListener('abort', onAbort, { once: true });
+    const handler = () => controller.abort();
+    signal.addEventListener('abort', handler, { once: true });
+    listeners.push({ signal, handler });
   }
-  return controller.signal;
+
+  const cleanup = () => {
+    for (const { signal, handler } of listeners) {
+      signal.removeEventListener('abort', handler);
+    }
+    listeners.length = 0;
+  };
+
+  return { signal: controller.signal, cleanup };
 }
 
 let _downloadInstance: DownloadOrchestrator | null = null;
@@ -115,8 +135,12 @@ export class DownloadOrchestrator {
     media: MediaInfo,
     options: DownloadOptions = {}
   ): Promise<SingleDownloadResult> {
-    const mergedSignal = this.mergeSignal(options.signal);
-    return downloadSingleFile(media, { ...options, signal: mergedSignal });
+    const { signal: mergedSignal, cleanup } = this.mergeSignal(options.signal);
+    try {
+      return await downloadSingleFile(media, { ...options, signal: mergedSignal });
+    } finally {
+      cleanup();
+    }
   }
 
   /**
@@ -130,117 +154,125 @@ export class DownloadOrchestrator {
     mediaItems: MediaInfo[],
     options: DownloadOptions = {}
   ): Promise<BulkDownloadResult> {
-    const mergedSignal = this.mergeSignal(options.signal);
-
-    if (mergedSignal.aborted) {
-      const abortError = getUserCancelledAbortErrorFromSignal(mergedSignal);
-      return {
-        success: false,
-        status: 'error',
-        filesProcessed: 0,
-        filesSuccessful: 0,
-        error: normalizeErrorMessage(abortError),
-        code: ErrorCode.CANCELLED,
-      };
-    }
-
-    if (mediaItems.length === 0) {
-      return {
-        success: false,
-        status: 'error',
-        filesProcessed: 0,
-        filesSuccessful: 0,
-        error: 'No media to download',
-        code: ErrorCode.EMPTY_INPUT,
-      };
-    }
-
-    const adapter = getDownloadAdapter();
-    if (!adapter) {
-      return {
-        success: false,
-        status: 'error',
-        filesProcessed: mediaItems.length,
-        filesSuccessful: 0,
-        error: 'No download method',
-        code: ErrorCode.ALL_FAILED,
-      };
-    }
-
-    const plan = planBulkDownload({
-      mediaItems,
-      prefetchedBlobs: options.prefetchedBlobs,
-      zipFilename: options.zipFilename,
-      nowMs: Date.now(),
-    });
-
-    const items: readonly OrchestratorItem[] = plan.items;
+    const { signal: mergedSignal, cleanup } = this.mergeSignal(options.signal);
 
     try {
-      const result = await downloadAsZip(items, { ...options, signal: mergedSignal });
-
-      if (result.filesSuccessful === 0) {
+      if (mergedSignal.aborted) {
+        const abortError = getUserCancelledAbortErrorFromSignal(mergedSignal);
         return {
           success: false,
           status: 'error',
-          filesProcessed: items.length,
+          filesProcessed: 0,
           filesSuccessful: 0,
-          error: 'No files downloaded',
-          failures: result.failures,
+          error: normalizeErrorMessage(abortError),
+          code: ErrorCode.CANCELLED,
+        };
+      }
+
+      if (mediaItems.length === 0) {
+        return {
+          success: false,
+          status: 'error',
+          filesProcessed: 0,
+          filesSuccessful: 0,
+          error: 'No media to download',
+          code: ErrorCode.EMPTY_INPUT,
+        };
+      }
+
+      const adapter = getDownloadAdapter();
+      if (!adapter) {
+        return {
+          success: false,
+          status: 'error',
+          filesProcessed: mediaItems.length,
+          filesSuccessful: 0,
+          error: 'No download method',
           code: ErrorCode.ALL_FAILED,
         };
       }
 
-      // Uint8Array is a valid BlobPart; explicit cast required for TypeScript strict mode
-      const zipBlob = new Blob([result.zipData as BlobPart], {
-        type: 'application/zip',
+      const plan = planBulkDownload({
+        mediaItems,
+        prefetchedBlobs: options.prefetchedBlobs,
+        zipFilename: options.zipFilename,
+        nowMs: Date.now(),
       });
-      const filename = plan.zipFilename;
 
-      // Save ZIP using the download adapter
-      const saveResult = await this.saveWithDownloadAdapter(zipBlob, filename, options.onProgress);
+      const items: readonly OrchestratorItem[] = plan.items;
 
-      if (!saveResult.success) {
+      try {
+        const result = await downloadAsZip(items, { ...options, signal: mergedSignal });
+
+        if (result.filesSuccessful === 0) {
+          return {
+            success: false,
+            status: 'error',
+            filesProcessed: items.length,
+            filesSuccessful: 0,
+            error: 'No files downloaded',
+            failures: result.failures,
+            code: ErrorCode.ALL_FAILED,
+          };
+        }
+
+        // Uint8Array is a valid BlobPart; explicit cast required for TypeScript strict mode
+        const zipBlob = new Blob([result.zipData as BlobPart], {
+          type: 'application/zip',
+        });
+        const filename = plan.zipFilename;
+
+        // Save ZIP using the download adapter
+        const saveResult = await this.saveWithDownloadAdapter(
+          zipBlob,
+          filename,
+          options.onProgress
+        );
+
+        if (!saveResult.success) {
+          return {
+            success: false,
+            status: 'error',
+            filesProcessed: items.length,
+            filesSuccessful: result.filesSuccessful,
+            error: saveResult.error || 'Failed to save ZIP file',
+            failures: result.failures,
+            code: ErrorCode.ALL_FAILED,
+          };
+        }
+
         return {
-          success: false,
-          status: 'error',
+          success: true,
+          status: result.filesSuccessful === items.length ? 'success' : 'partial',
           filesProcessed: items.length,
           filesSuccessful: result.filesSuccessful,
-          error: saveResult.error || 'Failed to save ZIP file',
+          filename,
           failures: result.failures,
-          code: ErrorCode.ALL_FAILED,
+          code: ErrorCode.NONE,
         };
-      }
+      } catch (error) {
+        if (isAbortError(error)) {
+          return {
+            success: false,
+            status: 'error',
+            filesProcessed: items.length,
+            filesSuccessful: 0,
+            error: normalizeErrorMessage(error),
+            code: ErrorCode.CANCELLED,
+          };
+        }
 
-      return {
-        success: true,
-        status: result.filesSuccessful === items.length ? 'success' : 'partial',
-        filesProcessed: items.length,
-        filesSuccessful: result.filesSuccessful,
-        filename,
-        failures: result.failures,
-        code: ErrorCode.NONE,
-      };
-    } catch (error) {
-      if (isAbortError(error)) {
         return {
           success: false,
           status: 'error',
           filesProcessed: items.length,
           filesSuccessful: 0,
           error: normalizeErrorMessage(error),
-          code: ErrorCode.CANCELLED,
+          code: ErrorCode.ALL_FAILED,
         };
       }
-
-      return {
-        success: false,
-        status: 'error',
-        filesProcessed: items.length,
-        filesSuccessful: 0,
-        error: normalizeErrorMessage(error),
-        code: ErrorCode.ALL_FAILED,
-      };
+    } finally {
+      cleanup();
     }
   }
 
@@ -250,9 +282,16 @@ export class DownloadOrchestrator {
    * so that either aborting the orchestrator or the caller's signal cancels
    * the download. Falls back to just the orchestrator's signal when no
    * caller signal is provided.
+   *
+   * @returns An object with the merged signal and a cleanup function to
+   * remove abort listeners from the input signals. Call cleanup() after
+   * the download settles to prevent listener accumulation.
    */
-  private mergeSignal(callerSignal?: AbortSignal | null): AbortSignal {
-    if (!callerSignal) return this.abortController.signal;
+  private mergeSignal(callerSignal?: AbortSignal | null): {
+    signal: AbortSignal;
+    cleanup: () => void;
+  } {
+    if (!callerSignal) return { signal: this.abortController.signal, cleanup: () => {} };
     return mergeAbortSignals(this.abortController.signal, callerSignal);
   }
 
