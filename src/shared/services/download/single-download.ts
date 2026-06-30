@@ -24,6 +24,50 @@ const createErrorDownloadResult = (error: unknown): SingleDownloadResult => ({
   error: normalizeErrorMessage(error),
 });
 
+/**
+ * Race a work promise against an AbortSignal, automatically cleaning up
+ * abort listeners when either the work or the abort wins the race.
+ * Prevents listener leaks when the caller's AbortSignal outlives the
+ * operation (e.g., a long-lived orchestrator signal reused across downloads).
+ *
+ * @param work - Promise representing the actual work (with handlers attached)
+ * @param signal - AbortSignal to race against
+ * @param onAborted - Factory for the result when the abort wins
+ * @returns The work result or the abort result
+ */
+async function raceWithAbort<T>(
+  work: Promise<T>,
+  signal: AbortSignal,
+  onAborted: () => T
+): Promise<T> {
+  if (signal.aborted) return onAborted();
+
+  const cleanupController = new AbortController();
+  signal.addEventListener('abort', () => cleanupController.abort(), {
+    once: true,
+    signal: cleanupController.signal,
+  });
+
+  const abortPromise = new Promise<T>((resolve) => {
+    cleanupController.signal.addEventListener(
+      'abort',
+      () => {
+        if (signal.aborted) resolve(onAborted());
+      },
+      { once: true }
+    );
+  });
+
+  const result = await Promise.race([
+    work.finally(() => cleanupController.abort()),
+    abortPromise,
+  ]);
+
+  // Extra safety: ensure listener removal even on simultaneous settlement
+  cleanupController.abort();
+  return result;
+}
+
 export async function downloadSingleFile(
   media: MediaInfo,
   options: DownloadOptions = {}
@@ -57,59 +101,23 @@ async function downloadWithAdapter(
 
   // Set up abort listener to race against the adapter download
   if (abortSignal) {
-    if (abortSignal.aborted) return createAbortResult();
-
-    // R5: Use a short-lived AbortController to auto-cleanup the listener on
-    // the original signal once the race settles. This prevents listener leaks
-    // when the caller's AbortSignal outlives the download (e.g., a long-lived
-    // orchestrator signal that is reused across multiple downloads).
-    const cleanupController = new AbortController();
-    const onAbort = (): void => {
-      cleanupController.abort();
-    };
-    abortSignal.addEventListener('abort', onAbort, {
-      once: true,
-      signal: cleanupController.signal,
-    });
-
-    const abortPromise = new Promise<SingleDownloadResult>((resolve) => {
-      // Listen on the cleanup controller so the promise resolves when either
-      // the original abort fires OR the download completes (cleanup).
-      cleanupController.signal.addEventListener(
-        'abort',
+    return raceWithAbort(
+      adapter.download(url, filename).then(
         () => {
-          // Only resolve with abort result if the ORIGINAL signal was aborted
-          // (not our own cleanup). If we aborted ourselves, the resultPromise
-          // already settled the race.
-          if (abortSignal.aborted) {
-            resolve(createAbortResult());
-          }
+          reportProgress(options.onProgress, {
+            phase: 'complete',
+            current: 1,
+            total: 1,
+            percentage: 100,
+            filename,
+          });
+          return { success: true, filename } satisfies SingleDownloadResult;
         },
-        { once: true }
-      );
-    });
-
-    const resultPromise = adapter.download(url, filename).then(
-      () => {
-        // R5: Abort cleanup controller to remove listener from original signal
-        cleanupController.abort();
-        reportProgress(options.onProgress, {
-          phase: 'complete',
-          current: 1,
-          total: 1,
-          percentage: 100,
-          filename,
-        });
-        return { success: true, filename } satisfies SingleDownloadResult;
-      },
-      (error: unknown) => {
-        // R5: Also clean up on error path
-        cleanupController.abort();
-        return createErrorDownloadResult(error);
-      }
+        (error: unknown) => createErrorDownloadResult(error)
+      ),
+      abortSignal,
+      createAbortResult
     );
-
-    return Promise.race([resultPromise, abortPromise]);
   }
 
   reportProgress(options.onProgress, {
@@ -190,48 +198,15 @@ async function downloadWithFetchFallback(
 
     // R6: Race adapter.downloadBlob against abort signal so cancellation
     // propagates when the user cancels after the fetch phase completes.
-    // Uses the same cleanupController pattern as downloadWithAdapter() to
-    // auto-remove the listener from the caller's signal once the race settles,
-    // preventing listener leaks on long-lived orchestrator signals.
     if (abortSignal) {
-      const cleanupController = new AbortController();
-      const onAbort = (): void => {
-        cleanupController.abort();
-      };
-      abortSignal.addEventListener('abort', onAbort, {
-        once: true,
-        signal: cleanupController.signal,
-      });
-
-      const abortPromise = new Promise<SingleDownloadResult>((resolve) => {
-        cleanupController.signal.addEventListener(
-          'abort',
-          () => {
-            if (abortSignal.aborted) {
-              resolve(createAbortResult());
-            }
-          },
-          { once: true }
-        );
-      });
-
-      const result = await Promise.race([
+      const result = await raceWithAbort(
         downloadBlobPromise.then(
-          () => {
-            cleanupController.abort();
-            return { success: true, filename } satisfies SingleDownloadResult;
-          },
-          (error: unknown) => {
-            cleanupController.abort();
-            return createErrorDownloadResult(error);
-          }
+          () => ({ success: true, filename }) satisfies SingleDownloadResult,
+          (error: unknown) => createErrorDownloadResult(error)
         ),
-        abortPromise,
-      ]);
-
-      // Ensure listener is removed if neither branch above fired cleanup
-      // (e.g., both promises settle simultaneously).
-      cleanupController.abort();
+        abortSignal,
+        createAbortResult
+      );
 
       if (!result.success) return result;
     } else {

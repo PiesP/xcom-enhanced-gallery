@@ -11,73 +11,27 @@
  * @module gallery.signals
  */
 
-/** Navigation source type - tracks what triggered the navigation */
-export type NavigationSource =
-  | 'button'
-  | 'click'
-  | 'keyboard'
-  | 'programmatic'
-  | 'scroll'
-  | 'auto-focus';
-
 import { logger } from '@shared/logging/logger';
 import type { MediaInfo } from '@shared/types/media.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
 import { clampIndex } from '@shared/utils/types/number-utils';
 import { batch, createSignal } from 'solid-js';
 
-// ========================
-// Navigation state (inlined from navigation.state.ts)
-// ========================
-const INITIAL_NAV_SOURCE: NavigationSource = 'auto-focus';
-
-const [_navSource, setNavSource] = createSignal<NavigationSource>(INITIAL_NAV_SOURCE);
-const [_navTimestamp, setNavTimestamp] = createSignal<number>(0);
-const [_navIndex, setNavIndex] = createSignal<number | null>(null);
-
-const isManualSource = (source: NavigationSource): boolean =>
-  source === 'button' || source === 'keyboard';
-
-/**
- * Records a navigation event with target index, source, and timestamp.
- * Skips duplicate manual-source navigations to the same index (only updates timestamp).
- *
- * @param targetIndex - The navigation target item index
- * @param source - How the navigation was triggered (button, keyboard, scroll, etc.)
- * @param nowMs - Optional timestamp in milliseconds (defaults to `performance.now()`)
- */
-export function recordNavigation(
-  targetIndex: number,
-  source: NavigationSource,
-  nowMs?: number
-): void {
-  const timestamp = nowMs ?? performance.now();
-  const currentIndex = _navIndex();
-  const currentSource = _navSource();
-
-  if (targetIndex === currentIndex && isManualSource(source) && isManualSource(currentSource)) {
-    setNavTimestamp(timestamp);
-    return;
-  }
-
-  setNavSource(source);
-  setNavTimestamp(timestamp);
-  setNavIndex(targetIndex);
-}
-
-/**
- * Resets navigation state to initial values.
- * Typically called on gallery open/close to clear the previous session's navigation history.
- *
- * @param nowMs - Optional timestamp in milliseconds (defaults to `performance.now()`)
- */
-export function resetNavigation(nowMs?: number): void {
-  setNavSource(INITIAL_NAV_SOURCE);
-  setNavTimestamp(nowMs ?? performance.now());
-  setNavIndex(null);
-}
-
-// ========================
+import {
+  type NavigationSource,
+  _navSource,
+  _navTimestamp,
+  _navIndex,
+  setNavSource,
+  setNavTimestamp,
+  setNavIndex,
+  recordNavigation,
+  resetNavigation,
+  INITIAL_NAV_SOURCE,
+} from './gallery-navigation-signals';
+import { _setIsProcessing } from './gallery-download-signals';
+export type { NavigationSource };
+export { recordNavigation, resetNavigation };
 
 export interface GalleryState {
   readonly isOpen: boolean;
@@ -112,9 +66,6 @@ export const galleryIndexEvents = createEventEmitter<{
 }>();
 
 const [isOpenSig, setIsOpenSig] = createSignal<boolean>(INITIAL_STATE.isOpen);
-function setIsOpen(value: boolean): void {
-  setIsOpenSig(value);
-}
 const [mediaItemsSig, setMediaItems] = createSignal<readonly MediaInfo[]>(INITIAL_STATE.mediaItems);
 const [currentIndexSig, setCurrentIndex] = createSignal<number>(INITIAL_STATE.currentIndex);
 const [focusedIndexSig, setFocusedIndex] = createSignal<number | null>(null);
@@ -172,7 +123,7 @@ function applyGallerySessionUpdate(state: GallerySessionState): void {
     setFocusedIndex(state.focusedIndex);
     setCurrentVideoElement(state.currentVideoElement);
     _setErrorSig(state.error);
-    setIsOpen(state.isOpen);
+    setIsOpenSig(state.isOpen);
   });
 }
 
@@ -287,29 +238,6 @@ export function navigateToItem(targetIndex: number, source: NavigationSource): v
 
   recordNavigation(clampedIndex, source);
   galleryIndexEvents.emit('navigate:complete', { index: clampedIndex, trigger: source });
-}
-
-// ========================
-// Download state (inlined from download.signals.ts)
-// ========================
-
-const [_isProcessing, _setIsProcessing] = createSignal<boolean>(false);
-
-export const downloadState = {
-  get isProcessing(): boolean {
-    return _isProcessing();
-  },
-};
-
-/**
- * Sets the download processing state.
- * Used by download hooks to signal that a download operation is in progress,
- * which disables UI controls to prevent concurrent downloads.
- *
- * @param value - `true` when a download starts, `false` when it completes
- */
-export function setDownloading(value: boolean): void {
-  _setIsProcessing(value);
 }
 
 /**

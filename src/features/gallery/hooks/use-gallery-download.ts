@@ -13,7 +13,8 @@ import {
 } from '@shared/container/container';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
-import { gallerySignals, setDownloading, setError } from '@shared/state/signals/gallery.signals';
+import { gallerySignals, setError } from '@shared/state/signals/gallery.signals';
+import { setDownloading } from '@shared/state/signals/gallery-download-signals';
 
 /**
  * Hook providing gallery download functionality.

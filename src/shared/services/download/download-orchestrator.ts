@@ -22,6 +22,27 @@ import { ErrorCode } from '@shared/types/media.types';
 
 let _downloadInstance: DownloadOrchestrator | null = null;
 
+/**
+ * Create a standardized error response for bulk download operations.
+ * Provides a consistent error shape across all failure paths.
+ */
+function createErrorResponse(
+  error: string,
+  code: ErrorCode,
+  filesProcessed: number,
+  options?: { filesSuccessful?: number; failures?: BulkDownloadResult['failures'] }
+): BulkDownloadResult {
+  return {
+    success: false,
+    status: 'error',
+    filesProcessed,
+    filesSuccessful: options?.filesSuccessful ?? 0,
+    error,
+    ...(options?.failures ? { failures: options.failures } : {}),
+    code,
+  };
+}
+
 export class DownloadOrchestrator {
   private _initialized = false;
   private abortController = new AbortController();
@@ -122,37 +143,16 @@ export class DownloadOrchestrator {
     try {
       if (mergedSignal.aborted) {
         const abortError = getUserCancelledAbortErrorFromSignal(mergedSignal);
-        return {
-          success: false,
-          status: 'error',
-          filesProcessed: 0,
-          filesSuccessful: 0,
-          error: normalizeErrorMessage(abortError),
-          code: ErrorCode.CANCELLED,
-        };
+        return createErrorResponse(normalizeErrorMessage(abortError), ErrorCode.CANCELLED, 0);
       }
 
       if (mediaItems.length === 0) {
-        return {
-          success: false,
-          status: 'error',
-          filesProcessed: 0,
-          filesSuccessful: 0,
-          error: 'No media to download',
-          code: ErrorCode.EMPTY_INPUT,
-        };
+        return createErrorResponse('No media to download', ErrorCode.EMPTY_INPUT, 0);
       }
 
       const adapter = getDownloadAdapter();
       if (!adapter) {
-        return {
-          success: false,
-          status: 'error',
-          filesProcessed: mediaItems.length,
-          filesSuccessful: 0,
-          error: 'No download method',
-          code: ErrorCode.ALL_FAILED,
-        };
+        return createErrorResponse('No download method', ErrorCode.ALL_FAILED, mediaItems.length);
       }
 
       const plan = planBulkDownload({
@@ -168,15 +168,9 @@ export class DownloadOrchestrator {
         const result = await downloadAsZip(items, { ...options, signal: mergedSignal });
 
         if (result.filesSuccessful === 0) {
-          return {
-            success: false,
-            status: 'error',
-            filesProcessed: items.length,
-            filesSuccessful: 0,
-            error: 'No files downloaded',
+          return createErrorResponse('No files downloaded', ErrorCode.ALL_FAILED, items.length, {
             failures: result.failures,
-            code: ErrorCode.ALL_FAILED,
-          };
+          });
         }
 
         // Uint8Array is a valid BlobPart; explicit cast required for TypeScript strict mode
@@ -193,15 +187,12 @@ export class DownloadOrchestrator {
         );
 
         if (!saveResult.success) {
-          return {
-            success: false,
-            status: 'error',
-            filesProcessed: items.length,
-            filesSuccessful: result.filesSuccessful,
-            error: saveResult.error || 'Failed to save ZIP file',
-            failures: result.failures,
-            code: ErrorCode.ALL_FAILED,
-          };
+          return createErrorResponse(
+            saveResult.error || 'Failed to save ZIP file',
+            ErrorCode.ALL_FAILED,
+            items.length,
+            { filesSuccessful: result.filesSuccessful, failures: result.failures }
+          );
         }
 
         return {
@@ -215,24 +206,10 @@ export class DownloadOrchestrator {
         };
       } catch (error) {
         if (isAbortError(error)) {
-          return {
-            success: false,
-            status: 'error',
-            filesProcessed: items.length,
-            filesSuccessful: 0,
-            error: normalizeErrorMessage(error),
-            code: ErrorCode.CANCELLED,
-          };
+          return createErrorResponse(normalizeErrorMessage(error), ErrorCode.CANCELLED, items.length);
         }
 
-        return {
-          success: false,
-          status: 'error',
-          filesProcessed: items.length,
-          filesSuccessful: 0,
-          error: normalizeErrorMessage(error),
-          code: ErrorCode.ALL_FAILED,
-        };
+        return createErrorResponse(normalizeErrorMessage(error), ErrorCode.ALL_FAILED, items.length);
       }
     } finally {
       cleanup();
