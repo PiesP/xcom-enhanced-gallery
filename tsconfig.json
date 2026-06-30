@@ -36,6 +36,7 @@
       "@bootstrap/*": ["./src/bootstrap/*"],
       "@constants/*": ["./src/constants/*"],
       "@features/*": ["./src/features/*"],
+      "@main": ["./src/main.ts"],
       "@platform/*": ["./src/platform/*"],
       "@shared/*": ["./src/shared/*"]
     },

@@ -8,7 +8,7 @@
  * (data-theme attribute on .xeg-theme-scope elements).
  */
 
-import { startApplication } from '../main';
+import { startApplication } from '@main';
 
 // Boot the application
 startApplication().catch((error: unknown) => {
