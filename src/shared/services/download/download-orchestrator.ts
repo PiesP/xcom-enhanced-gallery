@@ -4,6 +4,7 @@
 /** @fileoverview Unified download service: single + bulk (ZIP) via GM_download. */
 
 import { getDownloadAdapter } from '@platform/index';
+import { mergeAbortSignals } from '@shared/async/abort-signal';
 import { planBulkDownload } from '@shared/core/download/download-plan';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
@@ -18,44 +19,6 @@ import { downloadAsZip } from '@shared/services/download/zip-download';
 import { SingletonBase } from '@shared/services/singleton-base';
 import type { MediaInfo } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/media.types';
-
-/**
- * Polyfill for AbortSignal.any() — unavailable in Safari 17.0–17.3.
- * Combines multiple AbortSignals into one; if any input signal aborts,
- * the returned signal aborts too.
- *
- * Returns both the merged signal and a cleanup function. Call cleanup()
- * after the operation using the merged signal finishes (success or error)
- * to remove the abort listeners from the input signals. This prevents
- * listener accumulation on long-lived signals (e.g., orchestrator signal
- * reused across many downloads).
- */
-function mergeAbortSignals(...signals: AbortSignal[]): {
-  signal: AbortSignal;
-  cleanup: () => void;
-} {
-  const controller = new AbortController();
-  const listeners: Array<{ signal: AbortSignal; handler: () => void }> = [];
-
-  for (const signal of signals) {
-    if (signal.aborted) {
-      controller.abort();
-      break;
-    }
-    const handler = () => controller.abort();
-    signal.addEventListener('abort', handler, { once: true });
-    listeners.push({ signal, handler });
-  }
-
-  const cleanup = () => {
-    for (const { signal, handler } of listeners) {
-      signal.removeEventListener('abort', handler);
-    }
-    listeners.length = 0;
-  };
-
-  return { signal: controller.signal, cleanup };
-}
 
 let _downloadInstance: DownloadOrchestrator | null = null;
 
