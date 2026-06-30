@@ -16,20 +16,17 @@ import type { MediaInfo } from '@shared/types/media.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
 import { clampIndex } from '@shared/utils/types/number-utils';
 import { batch, createSignal } from 'solid-js';
-
+import { _setIsProcessing } from './gallery-download-signals';
 import {
+  INITIAL_NAV_SOURCE,
   type NavigationSource,
-  _navSource,
-  _navTimestamp,
-  _navIndex,
-  setNavSource,
-  setNavTimestamp,
-  setNavIndex,
   recordNavigation,
   resetNavigation,
-  INITIAL_NAV_SOURCE,
+  setNavIndex,
+  setNavSource,
+  setNavTimestamp,
 } from './gallery-navigation-signals';
-import { _setIsProcessing } from './gallery-download-signals';
+
 export type { NavigationSource };
 export { recordNavigation, resetNavigation };
 

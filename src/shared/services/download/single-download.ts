@@ -58,10 +58,7 @@ async function raceWithAbort<T>(
     );
   });
 
-  const result = await Promise.race([
-    work.finally(() => cleanupController.abort()),
-    abortPromise,
-  ]);
+  const result = await Promise.race([work.finally(() => cleanupController.abort()), abortPromise]);
 
   // Extra safety: ensure listener removal even on simultaneous settlement
   cleanupController.abort();

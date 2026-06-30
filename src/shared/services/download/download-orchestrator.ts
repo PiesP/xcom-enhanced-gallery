@@ -206,10 +206,18 @@ export class DownloadOrchestrator {
         };
       } catch (error) {
         if (isAbortError(error)) {
-          return createErrorResponse(normalizeErrorMessage(error), ErrorCode.CANCELLED, items.length);
+          return createErrorResponse(
+            normalizeErrorMessage(error),
+            ErrorCode.CANCELLED,
+            items.length
+          );
         }
 
-        return createErrorResponse(normalizeErrorMessage(error), ErrorCode.ALL_FAILED, items.length);
+        return createErrorResponse(
+          normalizeErrorMessage(error),
+          ErrorCode.ALL_FAILED,
+          items.length
+        );
       }
     } finally {
       cleanup();
