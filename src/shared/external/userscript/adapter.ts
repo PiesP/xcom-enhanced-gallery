@@ -38,7 +38,6 @@ const GM_DOWNLOAD_TIMEOUT_MS = 60_000;
 export interface UserscriptAPI {
   readonly download: (url: string, filename: string) => Promise<void>;
   readonly downloadBlob: (blob: Blob, filename: string) => Promise<void>;
-  readonly downloadBlobWithCallbacks: (url: string, filename: string) => Promise<void>;
   readonly setValue: (key: string, value: unknown) => Promise<void>;
   readonly getValue: <T>(key: string, defaultValue?: T) => Promise<T | undefined>;
   readonly getValueSync: <T>(key: string, defaultValue?: T) => T | undefined;
@@ -245,9 +244,6 @@ export function getUserscript(): UserscriptAPI {
       }
     },
 
-    async downloadBlobWithCallbacks(url: string, filename: string): Promise<void> {
-      return this.download(url, filename);
-    },
     async setValue(key: string, value: unknown): Promise<void> {
       if (!gmSetValue) throw new Error('GM_setValue unavailable');
       await Promise.resolve(gmSetValue(key, value));

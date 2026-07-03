@@ -226,6 +226,14 @@ export function navigateToItem(targetIndex: number, source: NavigationSource): v
   const clampedIndex = clampIndex(targetIndex, items.length);
   const current = currentIndexSig();
 
+  if (__DEV__ && clampedIndex !== targetIndex) {
+    console.debug('[gallery] navigateToItem clamped index', {
+      targetIndex,
+      clampedIndex,
+      itemCount: items.length,
+    });
+  }
+
   if (clampedIndex === current) return;
 
   batch(() => {
