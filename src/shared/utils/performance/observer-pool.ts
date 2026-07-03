@@ -21,6 +21,7 @@ const observerPool = new Map<
     readonly observer: IntersectionObserver;
     readonly callbacks: WeakMap<Element, (entry: IntersectionObserverEntry) => void>;
     readonly refCount: Map<Element, number>; // one element can be observed multiple times
+    disconnectChecker?: WeakMap<Element, boolean>; // MED-8: tracks isConnected at observe time
   }
 >();
 
@@ -53,6 +54,15 @@ export const SharedObserver = {
 
       const observer = new IntersectionObserver((entries) => {
         for (const e of entries) {
+          // MED-3: Auto-cleanup disconnected elements in observer callback.
+          // If element was removed from DOM without dispose(), remove it here.
+          const isConnected = e.target.isConnected;
+          if (!isConnected) {
+            callbacks.delete(e.target);
+            refCount.delete(e.target);
+            // Don't call unobserve — the observer itself will stop tracking it.
+            continue;
+          }
           const cb = callbacks.get(e.target);
           if (cb) {
             try {
@@ -77,6 +87,11 @@ export const SharedObserver = {
       entry.observer.observe(element);
     }
 
+    // MED-8: Track the observer entry for this element so observer
+    // callbacks can detect disconnected elements (MED-3 GC path).
+    entry.disconnectChecker ??= new WeakMap<Element, boolean>();
+    entry.disconnectChecker.set(element, element.isConnected);
+
     let disposed = false;
 
     return (): void => {
@@ -99,11 +114,55 @@ export const SharedObserver = {
         // (the observer is already tracking it).
       }
 
+      // MED-3/8: Check if element is still connected; if not, clean up to prevent leaks.
+      // This handles the case where an element is removed from DOM without dispose().
+      if (poolEntry.disconnectChecker?.get(element) === false) {
+        poolEntry.callbacks.delete(element);
+        poolEntry.refCount.delete(element);
+        poolEntry.observer.unobserve(element);
+      }
+
       // If no more elements tracked by this observer, clean it up
       if (poolEntry.refCount.size === 0) {
         poolEntry.observer.disconnect();
         observerPool.delete(key);
       }
     };
+  },
+
+  /**
+   * MED-3: Garbage collect stale observer pool entries.
+   *
+   * Iterates all pool entries and removes elements that have been
+   * disconnected from the DOM. If an observer ends up with zero
+   * tracked elements, it is fully disconnected and removed from the pool.
+   *
+   * Call this when closing a gallery session (e.g. on overlay close)
+   * to prevent accumulation of stale entries across sessions.
+   */
+  gc(): number {
+    let cleaned = 0;
+    for (const [key, poolEntry] of observerPool) {
+      // Collect elements that are no longer connected
+      const stale: Element[] = [];
+      for (const element of poolEntry.refCount.keys()) {
+        if (!element.isConnected) {
+          stale.push(element);
+        }
+      }
+      // Remove stale elements
+      for (const element of stale) {
+        poolEntry.callbacks.delete(element);
+        poolEntry.refCount.delete(element);
+        poolEntry.observer.unobserve(element);
+        cleaned++;
+      }
+      // Remove empty observers from the pool
+      if (poolEntry.refCount.size === 0) {
+        poolEntry.observer.disconnect();
+        observerPool.delete(key);
+      }
+    }
+    return cleaned;
   },
 };
