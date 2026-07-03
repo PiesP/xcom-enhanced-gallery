@@ -43,7 +43,14 @@ function handleContainerWheel(
   // For events outside the items container, redirect scroll to items container
   event.preventDefault();
   event.stopPropagation();
-  itemsContainer.scrollTop += event.deltaY;
+
+  // MED-5: Guard with scrollable overflow check + normalize deltaY.
+  // Skip when container has no overflow (not scrollable) and cap deltaY
+  // to avoid excessive jumps on high-resolution scroll devices.
+  const overflow = itemsContainer.scrollHeight - itemsContainer.clientHeight;
+  if (overflow <= 1) return; // not scrollable
+  const clampedDelta = Math.max(-150, Math.min(150, event.deltaY));
+  itemsContainer.scrollTop += clampedDelta;
 }
 
 /**
