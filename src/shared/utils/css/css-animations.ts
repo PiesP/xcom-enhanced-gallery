@@ -31,8 +31,11 @@ function runCssAnimation(element: Element, className: string): Promise<void> {
 
     timer = setTimeout(settle, ANIMATION_TIMEOUT_MS);
 
-    element.addEventListener('animationend', settle, { once: true });
-    element.addEventListener('animationcancel', settle, { once: true });
+    // MED-4: No { once: true } — settle() cleans up listeners explicitly.
+    // Using { once: true } would leave the listener registered when the
+    // timeout fires first (removeEventListener can't match the once-wrapper).
+    element.addEventListener('animationend', settle);
+    element.addEventListener('animationcancel', settle);
 
     // W3: MutationObserver fallback — if the element is removed from DOM
     // before animationend fires, settle immediately to avoid hanging promise
