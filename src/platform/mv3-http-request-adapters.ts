@@ -8,6 +8,7 @@
  * For cross-origin requests, relays to the background service worker.
  */
 
+import { DEFAULT_REQUEST_TIMEOUT_MS } from '@constants/performance';
 import type {
   HttpRequestAdapter,
   HttpRequestControl,
@@ -15,12 +16,13 @@ import type {
   HttpRequestResponse,
 } from './types';
 
-const HTTP_TIMEOUT_MS = 30000;
-
 export class MV3HttpRequestAdapter implements HttpRequestAdapter {
   request(details: HttpRequestDetails): HttpRequestControl {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), details.timeout ?? HTTP_TIMEOUT_MS);
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      details.timeout ?? DEFAULT_REQUEST_TIMEOUT_MS
+    );
 
     this.fetchWithController(details, controller)
       .then((response) => {

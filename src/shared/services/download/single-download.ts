@@ -14,9 +14,11 @@ import type { MediaInfo } from '@shared/types/media.types';
 // Removed: detectDownloadCapability (duplicated platform detection logic).
 // Use getDownloadAdapter() from platform layer instead.
 
+import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
+
 const createAbortResult = (): SingleDownloadResult => ({
   success: false,
-  error: 'Download cancelled by user',
+  error: USER_CANCELLED_MESSAGE,
 });
 
 const createErrorDownloadResult = (error: unknown): SingleDownloadResult => ({

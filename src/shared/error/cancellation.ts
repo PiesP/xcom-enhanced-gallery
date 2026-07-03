@@ -5,7 +5,7 @@
  * @fileoverview Cancellation helpers: user-cancelled AbortError detection and creation.
  */
 
-const USER_CANCELLED_MESSAGE = 'Download cancelled by user' as const;
+export const USER_CANCELLED_MESSAGE = 'Download cancelled by user' as const;
 
 export function isAbortError(value: unknown): boolean {
   return (

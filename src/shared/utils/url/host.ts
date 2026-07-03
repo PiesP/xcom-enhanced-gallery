@@ -110,7 +110,7 @@ const TWITTER_USERNAME_PATTERN = /^[a-zA-Z0-9_]{1,15}$/;
 const MIN_USERNAME_PATH_SEGMENTS = 3;
 
 /** Trusted Twitter/X.com hosts */
-const TWITTER_HOSTS = Object.freeze(['twitter.com', 'x.com'] as const);
+export const TWITTER_HOSTS = Object.freeze(['twitter.com', 'x.com'] as const);
 
 interface ExtractUsernameOptions {
   /**

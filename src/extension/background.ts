@@ -13,21 +13,26 @@
  * Content scripts send messages here and receive progress/completion updates.
  */
 
+import { MEDIA } from '@constants/media';
+import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
 import type {
   ChromeDownloadDelta,
   ChromeDownloadOptions,
   ChromeInstalledDetails,
 } from '@platform/chrome.d.ts';
 import { browserApi } from '@platform/chrome-runtime';
+import { TWITTER_HOSTS } from '@shared/utils/url/host';
 
 // ── Allowed hosts whitelist (SSRF prevention) ────────────────────────────────
+// Computed from canonical constants to prevent policy drift — background.ts
+// should never independently maintain a list of allowed hosts.
 
-const ALLOWED_HOSTS = ['x.com', 'twitter.com', 'pbs.twimg.com', 'video.twimg.com'] as const;
+const ALLOWED_HOSTS: Set<string> = new Set([...TWITTER_HOSTS, ...MEDIA.DOMAINS]);
 
 function isAllowedUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    if (!ALLOWED_HOSTS.includes(parsed.hostname as (typeof ALLOWED_HOSTS)[number])) {
+    if (!ALLOWED_HOSTS.has(parsed.hostname)) {
       return false;
     }
     // S4: Restrict x.com/twitter.com to GraphQL API paths only
@@ -200,17 +205,14 @@ function waitForDownloadComplete(downloadId: number): Promise<void> {
     browserApi.downloads.onChanged.addListener(listener);
 
     // 5-minute timeout: prevent permanent listener leak
-    timerId = setTimeout(
-      () => {
-        if (!settled) {
-          browserApi.downloads.onChanged.removeListener(listener);
-          timerId = null;
-          settled = true;
-          reject(new Error(`Download timed out after 5 minutes (id: ${downloadId})`));
-        }
-      },
-      5 * 60 * 1000
-    );
+    timerId = setTimeout(() => {
+      if (!settled) {
+        browserApi.downloads.onChanged.removeListener(listener);
+        timerId = null;
+        settled = true;
+        reject(new Error(`Download timed out after 5 minutes (id: ${downloadId})`));
+      }
+    }, DOWNLOAD_TIMEOUT_MS);
   });
 }
 
