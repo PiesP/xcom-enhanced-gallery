@@ -16,7 +16,6 @@
 import { MEDIA } from '@constants/media';
 import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
 import type {
-  ChromeAlarm,
   ChromeDownloadDelta,
   ChromeDownloadOptions,
   ChromeInstalledDetails,
@@ -95,6 +94,30 @@ type IncomingMessage =
 
 // ── Message handler ──────────────────────────────────────────────────────────
 
+/**
+ * Safely execute an async message handler, ensuring sendResponse is always
+ * called — even if the handler throws synchronously before returning a promise.
+ * Without this guard, a synchronous throw would prevent .then() from executing,
+ * leaving the message channel open indefinitely and causing the content script
+ * to hang.
+ */
+function respondAsync(
+  handler: () => Promise<unknown>,
+  sendResponse: (response?: unknown) => void
+): void {
+  try {
+    handler().then(
+      (result) => sendResponse(result),
+      (error: Error) => sendResponse({ success: false, error: error.message })
+    );
+  } catch (error: unknown) {
+    sendResponse({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 browserApi.runtime.onMessage.addListener(
   (message: unknown, _sender: unknown, sendResponse: (response?: unknown) => void) => {
     // Reject messages from untrusted senders
@@ -107,16 +130,16 @@ browserApi.runtime.onMessage.addListener(
     const msg = message as IncomingMessage;
     switch (msg.type) {
       case 'DOWNLOAD_REQUEST':
-        handleDownloadRequest(msg).then(
-          () => sendResponse({ success: true }),
-          (error: Error) => sendResponse({ success: false, error: error.message })
+        respondAsync(
+          () => handleDownloadRequest(msg).then(() => ({ success: true })),
+          sendResponse
         );
         return true;
 
       case 'DOWNLOAD_BLOB_URL_REQUEST':
-        handleDownloadBlobUrlRequest(msg).then(
-          () => sendResponse({ success: true }),
-          (error: Error) => sendResponse({ success: false, error: error.message })
+        respondAsync(
+          () => handleDownloadBlobUrlRequest(msg).then(() => ({ success: true })),
+          sendResponse
         );
         return true;
 
@@ -126,9 +149,13 @@ browserApi.runtime.onMessage.addListener(
         return false;
 
       case 'FETCH_REQUEST':
-        handleFetchRequest(msg).then(
-          (result) => sendResponse({ success: true, data: result }),
-          (error: Error) => sendResponse({ success: false, error: error.message })
+        respondAsync(
+          () =>
+            handleFetchRequest(msg).then((data) => ({
+              success: true,
+              data,
+            })),
+          sendResponse
         );
         return true;
 
@@ -219,30 +246,12 @@ function waitForDownloadComplete(downloadId: number): Promise<void> {
 
 // ── Extension lifecycle ───────────────────────────────────────────────────────
 
-const KEEPALIVE_ALARM_NAME = 'xeg-keepalive';
-
 browserApi.runtime.onInstalled.addListener((details: ChromeInstalledDetails) => {
   if (__DEV__) {
     console.log(
       `[XEG] Extension ${details.reason}`,
       details.previousVersion ? `(was ${details.previousVersion})` : ''
     );
-  }
-
-  // Create keepalive alarm to prevent SW termination during idle periods.
-  // Alarms persist across SW restarts, ensuring the SW is woken every ~1 min.
-  chrome.alarms.create(KEEPALIVE_ALARM_NAME, { periodInMinutes: 1 });
-});
-
-/**
- * Keepalive alarm handler — prevents MV3 service worker from being terminated
- * during prolonged idle periods. This is a no-op handler that just needs to
- * execute to keep the SW alive. The alarm fires every 1 minute and does NOT
- * interfere with download operations (separate event path).
- */
-chrome.alarms.onAlarm.addListener((alarm: ChromeAlarm) => {
-  if (alarm.name === KEEPALIVE_ALARM_NAME) {
-    // Trivial operation to acknowledge the alarm — keeps the SW alive
   }
 });
 
