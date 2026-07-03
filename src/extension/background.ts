@@ -14,8 +14,9 @@
  */
 
 import { MEDIA } from '@constants/media';
-import { DEFAULT_REQUEST_TIMEOUT_MS, DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
+import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
 import type {
+  ChromeAlarm,
   ChromeDownloadDelta,
   ChromeDownloadOptions,
   ChromeInstalledDetails,
@@ -218,12 +219,30 @@ function waitForDownloadComplete(downloadId: number): Promise<void> {
 
 // ── Extension lifecycle ───────────────────────────────────────────────────────
 
+const KEEPALIVE_ALARM_NAME = 'xeg-keepalive';
+
 browserApi.runtime.onInstalled.addListener((details: ChromeInstalledDetails) => {
   if (__DEV__) {
     console.log(
       `[XEG] Extension ${details.reason}`,
       details.previousVersion ? `(was ${details.previousVersion})` : ''
     );
+  }
+
+  // Create keepalive alarm to prevent SW termination during idle periods.
+  // Alarms persist across SW restarts, ensuring the SW is woken every ~1 min.
+  chrome.alarms.create(KEEPALIVE_ALARM_NAME, { periodInMinutes: 1 });
+});
+
+/**
+ * Keepalive alarm handler — prevents MV3 service worker from being terminated
+ * during prolonged idle periods. This is a no-op handler that just needs to
+ * execute to keep the SW alive. The alarm fires every 1 minute and does NOT
+ * interfere with download operations (separate event path).
+ */
+chrome.alarms.onAlarm.addListener((alarm: ChromeAlarm) => {
+  if (alarm.name === KEEPALIVE_ALARM_NAME) {
+    // Trivial operation to acknowledge the alarm — keeps the SW alive
   }
 });
 
@@ -254,10 +273,7 @@ async function handleFetchRequest(message: FetchRequestMessage): Promise<unknown
     throw new Error(`FETCH_REQUEST only supports GET/HEAD, got: ${method}`);
   }
 
-  const fetchOptions: RequestInit = {
-    method,
-    signal: AbortSignal.timeout(DEFAULT_REQUEST_TIMEOUT_MS),
-  };
+  const fetchOptions: RequestInit = { method };
 
   if (options?.headers) {
     fetchOptions.headers = options.headers;
