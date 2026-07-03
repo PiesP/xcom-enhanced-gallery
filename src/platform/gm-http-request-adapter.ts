@@ -35,6 +35,21 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     if (details.timeout !== undefined) {
       gmDetails.timeout = details.timeout;
     }
+    if (details.onload !== undefined) {
+      gmDetails.onload = details.onload;
+    }
+    if (details.onerror !== undefined) {
+      gmDetails.onerror = details.onerror;
+    }
+    if (details.ontimeout !== undefined) {
+      gmDetails.ontimeout = details.ontimeout;
+    }
+    if (details.onabort !== undefined) {
+      gmDetails.onabort = details.onabort;
+    }
+    if (details.onprogress !== undefined) {
+      gmDetails.onprogress = details.onprogress;
+    }
 
     const gmControl = gm.xmlHttpRequest(gmDetails);
 
