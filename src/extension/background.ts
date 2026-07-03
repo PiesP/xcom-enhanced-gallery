@@ -14,7 +14,7 @@
  */
 
 import { MEDIA } from '@constants/media';
-import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
+import { DEFAULT_REQUEST_TIMEOUT_MS, DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
 import type {
   ChromeDownloadDelta,
   ChromeDownloadOptions,
@@ -254,7 +254,10 @@ async function handleFetchRequest(message: FetchRequestMessage): Promise<unknown
     throw new Error(`FETCH_REQUEST only supports GET/HEAD, got: ${method}`);
   }
 
-  const fetchOptions: RequestInit = { method };
+  const fetchOptions: RequestInit = {
+    method,
+    signal: AbortSignal.timeout(DEFAULT_REQUEST_TIMEOUT_MS),
+  };
 
   if (options?.headers) {
     fetchOptions.headers = options.headers;
