@@ -74,12 +74,12 @@ export class DownloadOrchestrator {
 
   /** Initialize service (idempotent) */
   public initialize(): void {
-    // Recreate AbortController on re-initialization so that a previous
-    // destroy() (which aborts the controller) does not leave a permanently
-    // aborted signal that would cancel all downloads immediately.
-    if (this.abortController.signal.aborted) {
-      this.abortController = new AbortController();
-    }
+    // Always recreate AbortController on initialize() so that a stale
+    // reference that was previously destroyed (which aborts the controller)
+    // gets a fresh, non-aborted signal. This also handles the case where
+    // getInstance() creates a new instance after destroy() while old
+    // references still hold the aborted version.
+    this.abortController = new AbortController();
     this._initialized = true;
   }
 
