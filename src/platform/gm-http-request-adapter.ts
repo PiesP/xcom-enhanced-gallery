@@ -7,12 +7,40 @@
  * Wraps GM_xmlhttpRequest for cross-origin HTTP requests in userscript environments.
  */
 
+import { MEDIA } from '@constants/media';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
+import { TWITTER_HOSTS } from '@shared/utils/url/host';
 import type { HttpRequestAdapter, HttpRequestControl, HttpRequestDetails } from './types';
+
+/**
+ * Allowed hosts for SSRF prevention in the GM environment.
+ * GM_xmlhttpRequest bypasses CORS, so we must validate the target URL
+ * to prevent abuse (same whitelist as MV3 background SW).
+ */
+const ALLOWED_HOSTS: ReadonlySet<string> = new Set([...TWITTER_HOSTS, ...MEDIA.DOMAINS]);
+
+/**
+ * Validate that a URL target is an allowed host (SSRF prevention).
+ * Throws synchronously if the URL is invalid or not in the allowed set.
+ */
+function validateUrl(url: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`Invalid URL: ${url}`);
+  }
+  if (!ALLOWED_HOSTS.has(parsed.hostname)) {
+    throw new Error(`URL host not in allowed whitelist: ${parsed.hostname}`);
+  }
+}
 
 export class GMHttpRequestAdapter implements HttpRequestAdapter {
   request(details: HttpRequestDetails): HttpRequestControl {
+    // SSRF prevention: validate URL before making the request
+    validateUrl(details.url);
+
     const gm = getUserscript();
 
     // Build GM-compatible details object respecting exactOptionalPropertyTypes
