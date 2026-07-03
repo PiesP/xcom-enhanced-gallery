@@ -21,6 +21,7 @@ export interface ChromeRuntime {
   readonly id?: string;
   runtime: ChromeRuntimeCore;
   storage: ChromeStorageModule;
+  alarms: ChromeAlarmsModule;
   downloads: ChromeDownloadsModule;
   notifications: ChromeNotificationsModule;
 }
@@ -111,6 +112,23 @@ export interface ChromeNotificationOptions {
   title: string;
   message: string;
   priority?: number;
+}
+
+export interface ChromeAlarmsModule {
+  create(name: string, alarmInfo: ChromeAlarmCreateInfo): void;
+  clear(name: string): Promise<boolean>;
+  onAlarm: ChromeEvent<(alarm: ChromeAlarm) => void>;
+}
+
+export interface ChromeAlarmCreateInfo {
+  delayInMinutes?: number;
+  periodInMinutes?: number;
+}
+
+export interface ChromeAlarm {
+  name: string;
+  scheduledTime: number;
+  periodInMinutes?: number;
 }
 
 export interface ChromeEvent<T> {
