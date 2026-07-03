@@ -85,8 +85,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   // Defense-in-depth: validate URL before rendering media element
   const isUrlValid = createMemo(() => isUrlAllowed(local.media.url, MEDIA_URL_POLICY));
 
+  // MED-2: Track both media.id and index to handle item reorder.
+  // <For> keys by index, so when items reorder the component instance
+  // persists but receives new props — track index to ensure reset.
   createEffect(() => {
     void local.media.id;
+    void local.index;
     setIsLoaded(false);
     setIsError(false);
   });
@@ -198,7 +202,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     cx(
       'xeg-gallery',
       CSS.CLASSES.ITEM,
-      'vertical-item',
       styles.container,
       local.isActive ? styles.active : undefined,
       isFocused() ? styles.focused : undefined,
