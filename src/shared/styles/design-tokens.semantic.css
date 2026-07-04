@@ -3,21 +3,27 @@
 
 /**
  * @fileoverview Semantic Design Tokens - role-based mappings
- * @description References primitive values with semantic roles
+ * @description References primitive values with semantic roles.
+ *              Uses light-dark() for automatic color scheme adaptation.
  * @layer xeg.tokens
  */
 
 @layer xeg.tokens {
   :where(:root, .xeg-theme-scope) {
+    /* Color scheme: declare support for both light and dark.
+     * light-dark() reads the computed color-scheme to pick the correct value.
+     * data-theme overrides set color-scheme per mode (dark/light). */
+    color-scheme: light dark;
+
     /* Background Colors */
-    --xeg-color-bg-primary: var(--color-base-white);
-    --xeg-color-bg-secondary: var(--color-gray-50);
-    --xeg-color-bg-surface: var(--color-base-white);
-    --xeg-color-bg-elevated: var(--color-base-white);
+    --xeg-color-bg-primary: light-dark(var(--color-base-white), var(--color-gray-900));
+    --xeg-color-bg-secondary: light-dark(var(--color-gray-50), var(--color-gray-800));
+    --xeg-color-bg-surface: light-dark(var(--color-base-white), var(--color-gray-900));
+    --xeg-color-bg-elevated: light-dark(var(--color-base-white), var(--color-gray-700));
 
     /* Toolbar backgrounds */
-    --xeg-bg-toolbar: var(--xeg-color-bg-surface);
-    --xeg-toolbar-border: var(--xeg-color-border-primary);
+    --xeg-bg-toolbar: light-dark(var(--color-base-white), var(--color-gray-800));
+    --xeg-toolbar-border: light-dark(var(--color-gray-200), var(--color-gray-600));
     --xeg-toolbar-surface: var(--xeg-bg-toolbar);
     --xeg-toolbar-panel-surface: var(--xeg-toolbar-surface);
 
@@ -27,29 +33,29 @@
     --xeg-gallery-bg: var(--xeg-gallery-bg-light);
 
     /* Root background fallback for gallery shell */
-    --xeg-color-background: var(--color-gray-50);
+    --xeg-color-background: light-dark(var(--color-gray-50), var(--color-gray-900));
 
     /* Layout stability tokens */
     --xeg-aspect-default: 4 / 3;
 
     /* Text Colors */
-    --xeg-color-text-primary: var(--color-base-black);
-    --xeg-color-text-secondary: var(--color-gray-600);
+    --xeg-color-text-primary: light-dark(var(--color-base-black), var(--color-base-white));
+    --xeg-color-text-secondary: light-dark(var(--color-gray-600), var(--color-gray-400));
 
     /* Border Colors */
-    --xeg-color-border-default: var(--color-gray-200);
-    --xeg-color-border-emphasis: var(--color-gray-500);
+    --xeg-color-border-default: light-dark(var(--color-gray-200), var(--color-gray-600));
+    --xeg-color-border-emphasis: light-dark(var(--color-gray-500), var(--color-gray-400));
 
     /* Border Color Tokens - xeg prefix for consistency */
     --xeg-color-border-primary: var(--xeg-color-border-default);
-    --xeg-color-border-hover: var(--color-gray-300);
+    --xeg-color-border-hover: light-dark(var(--color-gray-300), var(--color-gray-500));
     --xeg-color-border-strong: var(--xeg-color-border-emphasis);
 
     /* ─────────────────────────────────────────────────────────────────────────
      * Toolbar Color Harmony Tokens
      * ───────────────────────────────────────────────────────────────────────── */
     --xeg-toolbar-text-color: var(--xeg-color-text-primary);
-    --xeg-toolbar-text-muted: var(--xeg-color-text-secondary);
+    --xeg-toolbar-text-muted: light-dark(var(--color-gray-500), var(--color-gray-300));
     --xeg-toolbar-element-bg: color-mix(
       in oklch,
       var(--xeg-bg-toolbar) 80%,
@@ -90,14 +96,14 @@
     --xeg-color-error: oklch(50% 0.22 25);
     --xeg-color-error-hover: oklch(43% 0.22 25);
     --xeg-color-error-bg: oklch(90% 0.08 25);
-    --xeg-color-info-bg: var(--color-gray-50);
+    --xeg-color-info-bg: light-dark(var(--color-gray-50), var(--color-gray-800));
 
     /* ─────────────────────────────────────────────────────────────────────────
      * Interactive Colors - Semantic Roles (monochrome accent)
      * ───────────────────────────────────────────────────────────────────────── */
-    --xeg-color-primary: var(--color-gray-900);
-    --xeg-color-primary-hover: var(--color-gray-700);
-    --xeg-color-primary-active: var(--color-gray-800);
+    --xeg-color-primary: light-dark(var(--color-gray-900), var(--color-gray-100));
+    --xeg-color-primary-hover: light-dark(var(--color-gray-700), var(--color-gray-200));
+    --xeg-color-primary-active: light-dark(var(--color-gray-800), var(--color-gray-300));
 
     /* ─────────────────────────────────────────────────────────────────────────
      * Neutral Colors for Button States
@@ -109,7 +115,7 @@
     --xeg-color-neutral-500: var(--color-gray-500);
 
     /* Text color aliases for components */
-    --xeg-color-text-tertiary: var(--color-gray-500);
+    --xeg-color-text-tertiary: light-dark(var(--color-gray-500), var(--color-gray-400));
     --xeg-color-text-inverse: var(--color-base-white);
 
     /* Component Sizing (em: relative to font-size) */
@@ -147,9 +153,9 @@
     --xeg-duration-toolbar: var(--duration-normal);
 
     /* Surface Tokens - flat panel style */
-    --xeg-surface-bg: var(--xeg-color-bg-surface);
-    --xeg-surface-border: var(--xeg-color-border-default);
-    --xeg-surface-bg-hover: var(--xeg-color-bg-secondary);
+    --xeg-surface-bg: light-dark(var(--color-gray-50), var(--color-gray-900));
+    --xeg-surface-border: light-dark(var(--color-gray-200), var(--color-gray-600));
+    --xeg-surface-bg-hover: light-dark(var(--color-gray-50), var(--color-gray-800));
 
     /* Elevated surfaces & skeletons */
     --xeg-color-surface-elevated: var(--xeg-color-bg-elevated);
@@ -191,29 +197,23 @@
     --xeg-radius-2xl: var(--radius-2xl);
     --xeg-radius-full: var(--radius-full);
 
-    /* Scrollbar Tokens */
-    --xeg-scrollbar-thumb-color: var(--color-gray-400);
-    --xeg-scrollbar-thumb-hover-color: var(--color-gray-500);
-    --xeg-scrollbar-track-color: var(--color-gray-200);
+    /* Scrollbar Tokens — adapt to active color scheme */
+    --xeg-scrollbar-thumb-color: light-dark(var(--color-gray-400), var(--color-gray-500));
+    --xeg-scrollbar-thumb-hover-color: light-dark(var(--color-gray-500), var(--color-gray-400));
+    --xeg-scrollbar-track-color: light-dark(var(--color-gray-200), var(--color-gray-700));
   }
 
   /* Theme Support - dark/light mode */
-  /* Light mode: base tokens already define light theme values */
+  /* Light mode: base tokens (with light-dark) already handle light values.
+     Setting color-scheme via data-theme overrides makes light-dark() pick the correct value. */
 
-  /* Dark mode - explicit attribute */
+  /* Dark mode — explicit attribute: override color-scheme so light-dark() picks the dark value.
+     Also overrides toolbar element color-mix tokens that differ by mode composition. */
   :where(:root, .xeg-theme-scope)[data-theme="dark"] {
-    --xeg-color-bg-primary: var(--color-gray-900);
-    --xeg-color-bg-surface: var(--color-gray-900);
-    --xeg-color-bg-elevated: var(--color-gray-700);
-    --xeg-color-text-primary: var(--color-base-white);
-    --xeg-color-text-secondary: var(--color-gray-400);
-    --xeg-bg-toolbar: var(--color-gray-800);
-    --xeg-color-border-primary: var(--color-gray-600);
-    --xeg-toolbar-border: var(--color-gray-600);
-    --xeg-color-bg-secondary: var(--color-gray-800);
+    color-scheme: dark;
+
     --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
     --xeg-toolbar-text-color: var(--xeg-color-text-primary);
-    --xeg-toolbar-text-muted: var(--color-gray-300);
     --xeg-toolbar-element-bg: color-mix(
       in oklch,
       var(--xeg-bg-toolbar) 85%,
@@ -244,13 +244,13 @@
       var(--xeg-toolbar-element-border) 85%,
       var(--color-base-black) 15%
     );
-    --xeg-color-background: var(--color-gray-900);
-    --xeg-color-primary: var(--color-gray-100);
-    --xeg-color-primary-hover: var(--color-gray-200);
-    --xeg-color-primary-active: var(--color-gray-300);
-    --xeg-surface-bg: var(--color-gray-900);
-    --xeg-surface-border: var(--color-gray-600);
-    --xeg-surface-bg-hover: var(--color-gray-800);
+  }
+
+  /* Light mode — explicit attribute override */
+  :where(:root, .xeg-theme-scope)[data-theme="light"] {
+    color-scheme: light;
+
+    --xeg-gallery-bg: var(--xeg-gallery-bg-light);
   }
 
   /* Reduced motion preferences */
