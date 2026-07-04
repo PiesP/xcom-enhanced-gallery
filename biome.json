@@ -55,7 +55,7 @@
         "noUselessLoneBlockStatements": "error"
       },
       "performance": {
-        "noAccumulatingSpread": "warn"
+        "noAccumulatingSpread": "error"
       },
       "a11y": {
         "noStaticElementInteractions": "off",

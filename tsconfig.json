@@ -43,6 +43,7 @@
 
     // Build Performance
     "incremental": true,
+    "stableTypeOrdering": true,
     "tsBuildInfoFile": ".vscode/.tsbuildinfo",
 
     // Compatibility
