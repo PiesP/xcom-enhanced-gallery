@@ -12,6 +12,7 @@
  * - Compact mode for toolbar integration
  * - Reactive translations via language service
  * - Fully accessible with proper ARIA labels
+ * - Custom tooltip on hover/focus via Tooltip component
  *
  * **Design Pattern**:
  * - Reactive: Uses createMemo for derived state
@@ -22,6 +23,7 @@
  * Component styles: `SettingsControls.module.css`
  */
 
+import { Tooltip } from '@shared/components/ui/Tooltip/Tooltip';
 import { getLanguageService } from '@shared/container/container';
 import { resolve } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
@@ -129,31 +131,34 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
         >
           {strings().theme.title}
         </label>
-        <select
-          id={
-            props['data-testid'] ? `${props['data-testid']}-theme-select` : 'settings-theme-select'
-          }
-          class={cx('xeg-inline-center', styles.select)}
-          onChange={props.onThemeChange}
-          value={themeValue()}
-          aria-label={strings().theme.title}
-          aria-labelledby={
-            props['data-testid'] ? `${props['data-testid']}-theme-label` : 'settings-theme-label'
-          }
-          aria-invalid="false"
-          aria-errormessage={
-            props['data-testid'] ? `${props['data-testid']}-theme-error` : 'settings-theme-error'
-          }
-          required
-          title={strings().theme.title}
-          data-testid={
-            __DEV__ && props['data-testid'] ? `${props['data-testid']}-theme` : undefined
-          }
-        >
-          {THEME_OPTIONS.map((option) => (
-            <option value={option}>{strings().theme.labels[option]}</option>
-          ))}
-        </select>
+        <Tooltip content={strings().theme.title}>
+          <select
+            id={
+              props['data-testid']
+                ? `${props['data-testid']}-theme-select`
+                : 'settings-theme-select'
+            }
+            class={cx('xeg-inline-center', styles.select)}
+            onChange={props.onThemeChange}
+            value={themeValue()}
+            aria-label={strings().theme.title}
+            aria-labelledby={
+              props['data-testid'] ? `${props['data-testid']}-theme-label` : 'settings-theme-label'
+            }
+            aria-invalid="false"
+            aria-errormessage={
+              props['data-testid'] ? `${props['data-testid']}-theme-error` : 'settings-theme-error'
+            }
+            required
+            data-testid={
+              __DEV__ && props['data-testid'] ? `${props['data-testid']}-theme` : undefined
+            }
+          >
+            {THEME_OPTIONS.map((option) => (
+              <option value={option}>{strings().theme.labels[option]}</option>
+            ))}
+          </select>
+        </Tooltip>
       </div>
 
       <div class={cx(styles.setting, props.compact && styles.settingCompact)}>
@@ -172,37 +177,38 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
         >
           {strings().language.title}
         </label>
-        <select
-          id={
-            props['data-testid']
-              ? `${props['data-testid']}-language-select`
-              : 'settings-language-select'
-          }
-          class={cx('xeg-inline-center', styles.select)}
-          onChange={props.onLanguageChange}
-          value={languageValue()}
-          aria-label={strings().language.title}
-          aria-labelledby={
-            props['data-testid']
-              ? `${props['data-testid']}-language-label`
-              : 'settings-language-label'
-          }
-          aria-invalid="false"
-          aria-errormessage={
-            props['data-testid']
-              ? `${props['data-testid']}-language-error`
-              : 'settings-language-error'
-          }
-          required
-          title={strings().language.title}
-          data-testid={
-            __DEV__ && props['data-testid'] ? `${props['data-testid']}-language` : undefined
-          }
-        >
-          {LANGUAGE_OPTIONS.map((option) => (
-            <option value={option}>{strings().language.labels[option]}</option>
-          ))}
-        </select>
+        <Tooltip content={strings().language.title}>
+          <select
+            id={
+              props['data-testid']
+                ? `${props['data-testid']}-language-select`
+                : 'settings-language-select'
+            }
+            class={cx('xeg-inline-center', styles.select)}
+            onChange={props.onLanguageChange}
+            value={languageValue()}
+            aria-label={strings().language.title}
+            aria-labelledby={
+              props['data-testid']
+                ? `${props['data-testid']}-language-label`
+                : 'settings-language-label'
+            }
+            aria-invalid="false"
+            aria-errormessage={
+              props['data-testid']
+                ? `${props['data-testid']}-language-error`
+                : 'settings-language-error'
+            }
+            required
+            data-testid={
+              __DEV__ && props['data-testid'] ? `${props['data-testid']}-language` : undefined
+            }
+          >
+            {LANGUAGE_OPTIONS.map((option) => (
+              <option value={option}>{strings().language.labels[option]}</option>
+            ))}
+          </select>
+        </Tooltip>
       </div>
     </div>
   );

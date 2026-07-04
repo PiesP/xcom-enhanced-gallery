@@ -276,7 +276,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             class={toolbarButtonClass()}
             size="toolbar"
             aria-label={translate('tb.prev')}
-            title={translate('tb.prev')}
+            tooltip={translate('tb.prev')}
             disabled={nav().prevDisabled}
             onClick={props.onPreviousClick}
           >
@@ -287,7 +287,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             class={toolbarButtonClass()}
             size="toolbar"
             aria-label={translate('tb.next')}
-            title={translate('tb.next')}
+            tooltip={translate('tb.next')}
             disabled={nav().nextDisabled}
             onClick={props.onNextClick}
           >
@@ -331,7 +331,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 onClick={props.handleFitModeClick(mode)}
                 disabled={props.isFitDisabled(mode)}
                 aria-label={label.label}
-                title={label.title}
+                tooltip={label.title}
                 aria-pressed={activeFitMode() === mode}
               >
                 <LucideIcon name={iconName} size={TOOLBAR_ICON_SIZE_VAR} />
@@ -345,7 +345,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             onClick={props.onDownloadCurrent}
             disabled={nav().downloadDisabled}
             aria-label={translate('tb.dl')}
-            title={translate('tb.dl')}
+            tooltip={translate('tb.dl')}
           >
             <LucideIcon name="download" size={TOOLBAR_ICON_SIZE_VAR} />
           </IconButton>
@@ -357,7 +357,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               onClick={props.onDownloadAll}
               disabled={nav().downloadDisabled}
               aria-label={translate('tb.dlAllCt', { count: totalCount() })}
-              title={translate('tb.dlAllCt', { count: totalCount() })}
+              tooltip={translate('tb.dlAllCt', { count: totalCount() })}
             >
               <LucideIcon name="folder-down" size={TOOLBAR_ICON_SIZE_VAR} />
             </IconButton>
@@ -372,7 +372,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               aria-label={translate('tb.setOpen')}
               aria-expanded={props.settingsController.isSettingsExpanded() ? 'true' : 'false'}
               aria-controls="toolbar-settings-panel"
-              title={translate('tb.setOpen')}
+              tooltip={translate('tb.setOpen')}
               disabled={isToolbarDisabled()}
               onMouseDown={props.settingsController.handleSettingsMouseDown}
               onClick={props.settingsController.handleSettingsClick}
@@ -389,7 +389,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               aria-label={translate('tb.twTxt')}
               aria-expanded={props.isTweetPanelExpanded() ? 'true' : 'false'}
               aria-controls="toolbar-tweet-panel"
-              title={translate('tb.twTxt')}
+              tooltip={translate('tb.twTxt')}
               disabled={isToolbarDisabled()}
               onClick={props.toggleTweetPanelExpanded}
             >
@@ -401,7 +401,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             class={toolbarButtonClass(styles.closeButton)}
             size="toolbar"
             aria-label={translate('tb.cls')}
-            title={translate('tb.cls')}
+            tooltip={translate('tb.cls')}
             disabled={isToolbarDisabled()}
             onClick={props.onCloseClick}
           >

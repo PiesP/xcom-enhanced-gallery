@@ -1,0 +1,123 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2024-2026 PiesP */
+
+/**
+ * Tooltip Component Styles (CSS Modules)
+ *
+ * Portal-rendered tooltip with intelligent positioning.
+ * Uses --xeg-* design tokens for consistency with the gallery design system.
+ *
+ * Architecture:
+ * - .trigger: inline wrapper (display:contents) that binds hover/focus events
+ * - .content: fixed-position tooltip with arrow, portal-rendered to document.body
+ * - .arrow: CSS triangle pointing toward the trigger element
+ */
+
+/* ── Trigger wrapper ── */
+.trigger {
+  /* display:contents makes the wrapper invisible to layout while keeping
+     the DOM node for event binding. Children flow as if they were direct. */
+  display: contents;
+}
+
+/* ── Tooltip content (Portal to body) ── */
+.content {
+  position: fixed;
+  z-index: var(--xeg-z-tooltip, 10005);
+  max-width: 16em;
+  padding: 0.35em 0.65em;
+  font-size: var(--xeg-tooltip-font-size, 0.75em);
+  font-family: var(--xeg-font-family-ui);
+  font-weight: var(--xeg-font-weight-normal);
+  line-height: var(--xeg-line-height-snug);
+  color: var(--xeg-tooltip-text, var(--xeg-toolbar-text-color, var(--xeg-color-text-primary)));
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+
+  /* Surface styling */
+  background: var(--xeg-tooltip-bg, var(--xeg-toolbar-surface, var(--xeg-color-bg-elevated)));
+  border: 1px solid var(--xeg-tooltip-border, var(--xeg-toolbar-border));
+  border-radius: var(--xeg-tooltip-radius, var(--xeg-radius-sm));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+  /* Animation */
+  opacity: 0;
+  transform: translate(-50%, 0.25em);
+  transition:
+    opacity var(--xeg-duration-fast, 150ms) var(--xeg-ease-standard),
+    transform var(--xeg-duration-fast, 150ms) var(--xeg-ease-standard);
+}
+
+.content.placementBottom {
+  transform: translate(-50%, 0.25em);
+}
+
+.content.placementTop {
+  transform: translate(-50%, -0.25em);
+}
+
+/* Visible state */
+.content.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ── Arrow ── */
+.arrow {
+  position: absolute;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+.placementBottomArrow {
+  top: -5px;
+  transform: translateX(-50%);
+  border-width: 0 4px 5px 4px;
+  border-color: transparent transparent var(--xeg-tooltip-border, var(--xeg-toolbar-border))
+    transparent;
+}
+
+.placementTopArrow {
+  bottom: -5px;
+  transform: translateX(-50%);
+  border-width: 5px 4px 0 4px;
+  border-color: var(--xeg-tooltip-border, var(--xeg-toolbar-border)) transparent transparent
+    transparent;
+}
+
+/* Arrow inner fill (renders on top of border arrow for 1px gap illusion) */
+.arrowInner {
+  position: absolute;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+.placementBottomArrowInner {
+  top: -4px;
+  transform: translateX(-50%);
+  border-width: 0 3px 4px 3px;
+  border-color: transparent transparent
+    var(--xeg-tooltip-bg, var(--xeg-toolbar-surface, var(--xeg-color-bg-elevated))) transparent;
+}
+
+.placementTopArrowInner {
+  bottom: -4px;
+  transform: translateX(-50%);
+  border-width: 4px 3px 0 3px;
+  border-color: var(--xeg-tooltip-bg, var(--xeg-toolbar-surface, var(--xeg-color-bg-elevated)))
+    transparent transparent transparent;
+}
+
+/* ── Accessibility ── */
+/* Reduced motion: instant transitions */
+@media (prefers-reduced-motion: reduce) {
+  .content {
+    transition: none;
+  }
+}

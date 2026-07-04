@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { Tooltip } from '@shared/components/ui/Tooltip/Tooltip';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
@@ -11,7 +12,10 @@ interface IconButtonProps {
   readonly type?: 'button' | 'submit' | 'reset';
   readonly disabled?: boolean;
   readonly id?: string;
+  /** Native HTML title attribute (fallback when tooltip is not set) */
   readonly title?: string;
+  /** Custom tooltip content (renders a positioned Portal tooltip instead of native title) */
+  readonly tooltip?: string;
   readonly size?: string;
   readonly 'data-testid'?: string;
   readonly 'aria-label'?: string;
@@ -26,21 +30,23 @@ interface IconButtonProps {
 }
 
 /**
- * Accessible icon button with optional loading and disabled states.
+ * Accessible icon button with optional tooltip.
  *
- * Renders a `<button>` element with an icon, tooltip, and ARIA attributes.
+ * Renders a `<button>` element with an icon.
+ * When `tooltip` is provided, a Portal-based custom tooltip is shown on hover/focus
+ * instead of the native `title` attribute. Falls back to `title` for backward compatibility.
  *
- * @param props - Button configuration (icon, label, click handler, etc.)
- * @returns Button JSX element
+ * @param props - Button configuration (icon, label, click handler, tooltip, etc.)
+ * @returns Button JSX element (optionally wrapped in Tooltip)
  */
 export function IconButton(props: IconButtonProps): JSXElement {
-  return (
+  const buttonElement = (
     <button
       ref={props.ref}
       id={props.id}
       type={props.type ?? 'button'}
       class={cx(props.class)}
-      title={props.title}
+      title={props.tooltip ? undefined : props.title}
       disabled={props.disabled}
       tabIndex={props.tabIndex}
       data-size={props.size}
@@ -56,4 +62,11 @@ export function IconButton(props: IconButtonProps): JSXElement {
       {props.children}
     </button>
   );
+
+  // Use custom tooltip when provided, otherwise render button directly
+  if (props.tooltip) {
+    return <Tooltip content={props.tooltip}>{buttonElement}</Tooltip>;
+  }
+
+  return buttonElement;
 }

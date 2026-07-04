@@ -170,6 +170,7 @@
     --xeg-z-toolbar: 10002;
     --xeg-z-toolbar-panel: 10003;
     --xeg-z-toolbar-panel-active: 10004;
+    --xeg-z-tooltip: 10005;
 
     /* Animation Easing - Material Design */
     --xeg-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
