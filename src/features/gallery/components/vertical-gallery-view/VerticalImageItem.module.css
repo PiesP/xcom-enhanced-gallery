@@ -29,6 +29,12 @@
   /* Performance */
   will-change: transform;
   contain: layout style;
+
+  /* Defer off-screen rendering for gallery items below the fold.
+     The browser automatically lays out and paints items as they scroll
+     close to the viewport, avoiding work on far-off-screen items. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 300px;
 }
 
 /* Original fit mode: Remove max-width constraint to allow full size */
@@ -52,10 +58,11 @@
   border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-primary));
 }
 
-/* Active state */
+/* Active state — always render in full */
 .container.active {
   border-color: var(--xeg-border-emphasis, var(--xeg-color-border-strong));
   transition: var(--xeg-transition-interaction-fast);
+  content-visibility: visible;
 }
 
 /* Active + Focus state - Remove duplication */
@@ -63,10 +70,11 @@
   border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-strong));
 }
 
-/* Focused state (Scroll target) */
+/* Focused state (Scroll target) — render in full for keyboard nav */
 .container.focused {
   border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-primary));
   transition: var(--xeg-transition-interaction-fast);
+  content-visibility: visible;
 }
 
 .imageWrapper {
