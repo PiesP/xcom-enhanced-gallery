@@ -140,6 +140,11 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           aria-labelledby={
             props['data-testid'] ? `${props['data-testid']}-theme-label` : 'settings-theme-label'
           }
+          aria-invalid="false"
+          aria-errormessage={
+            props['data-testid'] ? `${props['data-testid']}-theme-error` : 'settings-theme-error'
+          }
+          required
           title={strings().theme.title}
           data-testid={
             __DEV__ && props['data-testid'] ? `${props['data-testid']}-theme` : undefined
@@ -182,6 +187,13 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
               ? `${props['data-testid']}-language-label`
               : 'settings-language-label'
           }
+          aria-invalid="false"
+          aria-errormessage={
+            props['data-testid']
+              ? `${props['data-testid']}-language-error`
+              : 'settings-language-error'
+          }
+          required
           title={strings().language.title}
           data-testid={
             __DEV__ && props['data-testid'] ? `${props['data-testid']}-language` : undefined

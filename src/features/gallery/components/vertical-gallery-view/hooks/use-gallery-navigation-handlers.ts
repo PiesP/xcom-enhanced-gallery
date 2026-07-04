@@ -13,6 +13,20 @@ import type { MediaInfo } from '@shared/types/media.types';
 import type { JSX } from 'solid-js';
 
 /**
+ * Wraps a DOM state change in startViewTransition if supported.
+ * Progressive enhancement — falls through to direct call when unavailable.
+ */
+function withViewTransition(update: () => void): void {
+  if (typeof document !== 'undefined' && typeof document.startViewTransition === 'function') {
+    void document.startViewTransition(() => {
+      update();
+    });
+  } else {
+    update();
+  }
+}
+
+/**
  * Parameters for useGalleryNavigationHandlers hook
  */
 interface UseGalleryNavigationHandlersOptions {
@@ -54,7 +68,7 @@ export function useGalleryNavigationHandlers(
   const handlePrevious = () => {
     const current = currentIndex();
     if (current > 0) {
-      navigateToItem(current - 1, 'button');
+      withViewTransition(() => navigateToItem(current - 1, 'button'));
     }
   };
 
@@ -62,7 +76,7 @@ export function useGalleryNavigationHandlers(
     const current = currentIndex();
     const items = mediaItems();
     if (current < items.length - 1) {
-      navigateToItem(current + 1, 'button');
+      withViewTransition(() => navigateToItem(current + 1, 'button'));
     }
   };
 
@@ -88,7 +102,7 @@ export function useGalleryNavigationHandlers(
     const current = currentIndex();
 
     if (index >= 0 && index < items.length && index !== current) {
-      navigateToItem(index, 'scroll');
+      withViewTransition(() => navigateToItem(index, 'scroll'));
     }
   };
 

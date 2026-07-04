@@ -165,6 +165,16 @@
 }
 
 /**
+ * User-invalid state — fires after the user has interacted with the select
+ * and the value doesn't satisfy validation constraints.
+ * Namespace-isolated via .xeg- prefix to avoid host page style conflicts.
+ */
+.select:user-invalid {
+  border-color: var(--xeg-color-error);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--xeg-color-error) 25%, transparent 75%);
+}
+
+/**
  * Focus States - Select Input
  *
  * Clear keyboard navigation indicators for accessibility (WCAG 2.1 AA).
