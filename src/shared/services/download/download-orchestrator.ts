@@ -19,6 +19,7 @@ import { downloadAsZip } from '@shared/services/download/zip-download';
 import { SingletonBase } from '@shared/services/singleton-base';
 import type { MediaInfo } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/media.types';
+import { schedulerYield } from '@shared/utils/performance/scheduler-yield';
 
 let _downloadInstance: DownloadOrchestrator | null = null;
 
@@ -148,6 +149,9 @@ export class DownloadOrchestrator {
       if (mediaItems.length === 0) {
         return createErrorResponse('No media to download', ErrorCode.EMPTY_INPUT, 0);
       }
+
+      // Yield before CPU-intensive plan computation
+      await schedulerYield(50);
 
       const adapter = getDownloadAdapter();
       if (!adapter) {

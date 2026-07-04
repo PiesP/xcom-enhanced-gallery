@@ -19,6 +19,7 @@ import {
   adjustClickedIndexAfterDeduplication,
   removeDuplicateMediaItems,
 } from '@shared/utils/media/media-dimensions';
+import { schedulerYield } from '@shared/utils/performance/scheduler-yield';
 
 const generateExtractionId = (): string => createPrefixedId('simp');
 
@@ -146,6 +147,9 @@ export class MediaExtractionService implements MediaExtractor {
       }
 
       if (__DEV__) logger.info(`[MediaExtractor] ${extractionId}: API failed, trying DOM fallback`);
+
+      // Yield before CPU-intensive DOM fallback extraction
+      await schedulerYield(50);
 
       const domResult = await this.domFallbackExtractor.extract(
         tweetInfo,

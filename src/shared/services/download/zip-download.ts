@@ -14,6 +14,7 @@ import { StreamingZipWriter } from '@shared/external/zip/streaming-zip-writer';
 import { fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
 import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
 import { reportProgress } from '@shared/services/download/types';
+import { schedulerYield } from '@shared/utils/performance/scheduler-yield';
 
 type UniqueFilenameFactory = (desired: string) => string;
 
@@ -115,6 +116,11 @@ export async function downloadAsZip(
         }
 
         throwIfAborted(abortSignal);
+
+        // Yield to main thread between items to keep UI responsive
+        if (index > 0) {
+          await schedulerYield(50);
+        }
 
         // Write immediately to ZIP — avoids holding all files in memory
         writer.addFile(filename, data);

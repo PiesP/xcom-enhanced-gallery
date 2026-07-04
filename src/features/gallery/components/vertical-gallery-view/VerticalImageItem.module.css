@@ -140,6 +140,11 @@
 }
 
 /* Loading/Loaded state transitions */
+@starting-style {
+  :is(.image, .video) {
+    opacity: 0;
+  }
+}
 :is(.image, .video).loading {
   opacity: 0;
 }
@@ -223,6 +228,11 @@
 .contextMenu {
   /* Popover attribute is set programmatically via createEffect */
   position: fixed;
+  /* CSS Anchor Positioning: progressive enhancement for edge-case resilience.
+     When supported, the browser can flip the menu to keep it in viewport
+     without manual JS clamping. */
+  position-try-fallbacks: flip-block, flip-inline;
+  position-area: center;
   z-index: 2147483647; /* Above everything including gallery */
   background: var(--xeg-color-bg-surface);
   border: 0.0625rem solid var(--xeg-color-border-primary);

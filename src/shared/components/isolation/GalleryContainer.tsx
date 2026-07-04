@@ -50,6 +50,36 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
 
   let containerEl: HTMLDivElement | undefined;
 
+  // H2: Safari iframe color-scheme workaround — set inline style because
+  // Safari does not inherit color-scheme from CSS inside iframes.
+  // Read from data-theme attribute and apply via style.setProperty.
+  createEffect(() => {
+    if (!containerEl) return;
+
+    const applyColorScheme = (el: HTMLDivElement) => {
+      const theme = el.getAttribute('data-theme');
+      if (theme === 'dark') {
+        el.style.setProperty('color-scheme', 'dark');
+      } else if (theme === 'light') {
+        el.style.setProperty('color-scheme', 'light');
+      } else {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        el.style.setProperty('color-scheme', prefersDark ? 'dark' : 'light');
+      }
+    };
+
+    applyColorScheme(containerEl);
+
+    const observer = new MutationObserver(() => {
+      if (containerEl) applyColorScheme(containerEl);
+    });
+    observer.observe(containerEl, { attributes: true, attributeFilter: ['data-theme'] });
+
+    onCleanup(() => {
+      observer.disconnect();
+    });
+  });
+
   // W2: Standardized focus trap — traps Tab/Shift+Tab within the gallery dialog.
   // Uses a single keydown listener on the container root that wraps focus
   // from last → first and first → last focusable element.

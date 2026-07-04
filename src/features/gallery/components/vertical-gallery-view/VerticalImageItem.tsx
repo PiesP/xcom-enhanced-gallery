@@ -105,6 +105,10 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const [contextMenuEl, setContextMenuEl] = createSignal<HTMLDivElement | null>(null);
   const [contextMenuPos, setContextMenuPos] = createSignal({ x: 0, y: 0 });
 
+  /** Feature detection for Popover API — supported in Chromium 114+ and Safari 17+ */
+  const supportsPopover = (): boolean =>
+    typeof HTMLElement !== 'undefined' && 'popover' in HTMLElement.prototype;
+
   const resolvedDimensions = createMemo(() => resolveMediaDimensionsWithIntrinsicFlag(local.media));
   const dimensions = () => resolvedDimensions().dimensions;
   const hasIntrinsicSize = () => resolvedDimensions().hasIntrinsicSize;
@@ -150,8 +154,10 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   });
 
   // Initialize Popover API: set the popover attribute after mount
-  // (SolidJS JSX types may not include 'popover' for HTMLDivElement)
+  // (SolidJS JSX types may not include 'popover' for HTMLDivElement).
+  // Feature detection guards against unsupported browsers (Safari <17).
   createEffect(() => {
+    if (!supportsPopover()) return;
     const el = contextMenuEl();
     if (el && !el.hasAttribute('popover')) {
       el.setAttribute('popover', 'auto');
@@ -180,7 +186,15 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     if (local.role !== undefined && local.role !== 'button') return;
 
     const key = event.key;
-    if (key === 'Enter' || key === ' ') {
+    if (key === 'Enter') {
+      event.preventDefault();
+      event.stopPropagation();
+      local.onClick();
+    }
+  };
+
+  const handleContainerKeyUp: JSX.EventHandlerUnion<HTMLDivElement, KeyboardEvent> = (event) => {
+    if (event.key === ' ') {
       event.preventDefault();
       event.stopPropagation();
       local.onClick();
@@ -213,8 +227,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     const posY = Math.min(event.clientY, window.innerHeight - 140);
     setContextMenuPos({ x: Math.max(0, posX), y: Math.max(0, posY) });
 
+    // Feature-detect Popover API — showPopover is only available with popover support
     const popover = contextMenuEl();
-    if (popover && typeof popover.showPopover === 'function') {
+    if (popover && supportsPopover() && typeof popover.showPopover === 'function') {
       // Hide first if already shown to reset position
       if (popover.matches(':popover-open')) {
         popover.hidePopover();
@@ -292,6 +307,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       onFocus={local.onFocus}
       onBlur={rest.onBlur}
       onKeyDown={handleContainerKeyDown}
+      onKeyUp={handleContainerKeyUp}
       aria-label={local['aria-label'] || imageAltText()}
       aria-describedby={local['aria-describedby']}
       aria-posinset={local.index + 1}
@@ -372,7 +388,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
           role="menuitem"
           class={styles.contextMenuItem}
           onClick={() => {
-            void navigator.clipboard.writeText(local.media.url);
+            navigator.clipboard.writeText(local.media.url).catch(() => {
+              // Clipboard write may fail in non-HTTPS contexts or on permission denial
+            });
             contextMenuEl()?.hidePopover();
           }}
         >
@@ -383,7 +401,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
           role="menuitem"
           class={styles.contextMenuItem}
           onClick={() => {
-            window.open(local.media.url, '_blank', 'noopener');
+            window.open(local.media.url, '_blank', 'noopener,noreferrer');
             contextMenuEl()?.hidePopover();
           }}
         >

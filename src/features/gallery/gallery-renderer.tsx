@@ -97,12 +97,12 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
         lang={resolvedLanguage()}
         dir={dir()}
       >
-        {/* A1: Only render aria-live region when there's an actual error to announce */}
-        {gallerySignals.error && (
-          <div aria-live="polite" class="xeg-sr-only">
-            {gallerySignals.error}
-          </div>
-        )}
+        {/* M8: aria-live region is always rendered in the DOM so screen readers
+            can register it and detect content changes. Only the text content
+            updates conditionally — the element itself is never unmounted. */}
+        <div aria-live="polite" class="xeg-sr-only" aria-atomic="true">
+          {gallerySignals.error ?? ''}
+        </div>
         <VerticalGalleryView
           onClose={props.onClose}
           onPrevious={() => navigatePrevious('button')}
