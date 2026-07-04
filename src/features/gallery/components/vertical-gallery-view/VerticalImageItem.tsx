@@ -59,6 +59,10 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const shouldEagerLoad = () => (local.forceVisible ?? false) || (local.isActive ?? false);
   const translate = useTranslation();
 
+  /** Priority hint for media fetch — high for above-the-fold (active, focused, preloaded),
+   *  low for below-the-fold items yet to be scrolled into view. */
+  const fetchPriority = () => (shouldEagerLoad() ? 'high' : 'low') as 'high' | 'low';
+
   const isVideo = () => local.media.type === 'video' || local.media.type === 'gif';
 
   /**
@@ -269,6 +273,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             ref={setVideoRef}
             class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
             aria-label={`Video ${local.index + 1} of ${totalItems()}`}
+            fetchpriority={fetchPriority()}
             // A4: Remove tabIndex — video with native controls is already focusable.
             // tabIndex=0 made the video compete with the container for focus,
             // causing erratic focus behavior when interacting with controls.
@@ -284,6 +289,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             src={displaySrc()}
             alt={imageAltText()}
             loading={shouldEagerLoad() ? 'eager' : 'lazy'}
+            fetchpriority={fetchPriority()}
             decoding="async"
             class={cx(styles.image, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
             onLoad={handleMediaLoad}
