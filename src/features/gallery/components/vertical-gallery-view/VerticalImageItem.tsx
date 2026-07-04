@@ -102,6 +102,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const [containerRef, setContainerRef] = createSignal<HTMLDivElement | null>(null);
   const [imageRef, setImageRef] = createSignal<HTMLImageElement | null>(null);
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
+  const [contextMenuEl, setContextMenuEl] = createSignal<HTMLDivElement | null>(null);
+  const [contextMenuPos, setContextMenuPos] = createSignal({ x: 0, y: 0 });
 
   const resolvedDimensions = createMemo(() => resolveMediaDimensionsWithIntrinsicFlag(local.media));
   const dimensions = () => resolvedDimensions().dimensions;
@@ -144,6 +146,15 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     }
     if (image && !isVideo()) {
       image.setAttribute('fetchpriority', priority);
+    }
+  });
+
+  // Initialize Popover API: set the popover attribute after mount
+  // (SolidJS JSX types may not include 'popover' for HTMLDivElement)
+  createEffect(() => {
+    const el = contextMenuEl();
+    if (el && !el.hasAttribute('popover')) {
+      el.setAttribute('popover', 'auto');
     }
   });
 
@@ -190,7 +201,28 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   };
 
   const handleContextMenu = (event: MouseEvent) => {
+    // First, call the parent handler for external listeners
     local.onImageContextMenu?.(event, local.media);
+
+    // Use the Popover API for the in-gallery context menu
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Clamp position so menu stays within viewport
+    const posX = Math.min(event.clientX, window.innerWidth - 220);
+    const posY = Math.min(event.clientY, window.innerHeight - 140);
+    setContextMenuPos({ x: Math.max(0, posX), y: Math.max(0, posY) });
+
+    const popover = contextMenuEl();
+    if (popover && typeof popover.showPopover === 'function') {
+      // Hide first if already shown to reset position
+      if (popover.matches(':popover-open')) {
+        popover.hidePopover();
+      }
+      queueMicrotask(() => {
+        popover?.showPopover();
+      });
+    }
   };
 
   createEffect(() => {
@@ -319,6 +351,44 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             </span>
           </div>
         )}
+      </div>
+
+      {/* Context menu using the Popover API for resilient, accessible right-click menus.
+          popover="auto" provides light-dismiss (click outside, Escape) and top-layer
+          placement without JavaScript coordination. */}
+      <div
+        ref={setContextMenuEl}
+        class={styles.contextMenu}
+        style={{
+          left: `${contextMenuPos().x}px`,
+          top: `${contextMenuPos().y}px`,
+        }}
+        role="menu"
+        aria-label="Media actions"
+        data-gallery-element="context-menu"
+      >
+        <button
+          type="button"
+          role="menuitem"
+          class={styles.contextMenuItem}
+          onClick={() => {
+            void navigator.clipboard.writeText(local.media.url);
+            contextMenuEl()?.hidePopover();
+          }}
+        >
+          Copy URL
+        </button>
+        <button
+          type="button"
+          role="menuitem"
+          class={styles.contextMenuItem}
+          onClick={() => {
+            window.open(local.media.url, '_blank', 'noopener');
+            contextMenuEl()?.hidePopover();
+          }}
+        >
+          Open in new tab
+        </button>
       </div>
     </div>
   );
