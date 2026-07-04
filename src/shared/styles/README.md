@@ -77,7 +77,11 @@ src/shared/components/Button/Button.module.css
 src/features/gallery/components/VerticalImageItem.module.css
 ```
 
-### 3. Do Not Use `!important`
+### 3. Avoid `!important` in Injected Styles
+
+Avoid `!important` in injected styles (userscript/extension content scripts). Prefer namespace isolation (`.xeg-*`) over specificity wars — namespace prefixes provide clean separation without escalating specificity. SolidJS components with CSS Modules should not need `!important`.
+
+The SPA context (the page itself) has more flexibility, but injected styles into third-party pages should avoid `!important` to prevent brittle overriding.
 
 `!important` makes overrides brittle and prevents proper style composition.
 
