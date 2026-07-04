@@ -200,6 +200,14 @@
 
   container-type: size;
   container-name: items-list;
+
+  /* L2: Soft-edge fade at the bottom to hint at scrollable content.
+     Uses mask-image with a linear gradient — transparent at the bottom edge
+     fading to opaque. The mask is applied only when content overflows:
+     -webkit-mask-composite and mask-composite ensure the fade doesn't clip
+     the top of the list. */
+  -webkit-mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
 }
 /* Custom scrollbar styling (WebKit browsers only) */
 .itemsContainer::-webkit-scrollbar {
