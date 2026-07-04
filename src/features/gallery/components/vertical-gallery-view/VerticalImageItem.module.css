@@ -221,57 +221,6 @@
 /* Phase 326: fitOriginal now follows the same container constraints as other modes */
 /* Remove overflow/scrollbar styling (consistency) */
 
-/* Context menu — Popover API-based right-click menu
-   Uses the Popover API (popover="auto") for automatic top-layer placement,
-   light-dismiss on click outside, and Escape key handling.
-   Follows resilient-context-menus guide from modern-web-guidance. */
-.contextMenu {
-  /* Popover attribute is set programmatically via createEffect */
-  position: fixed;
-  /* CSS Anchor Positioning: progressive enhancement for edge-case resilience.
-     When supported, the browser can flip the menu to keep it in viewport
-     without manual JS clamping. */
-  position-try-fallbacks: flip-block, flip-inline;
-  position-area: center;
-  z-index: 2147483647; /* Above everything including gallery */
-  background: var(--xeg-color-bg-surface);
-  border: 0.0625rem solid var(--xeg-color-border-primary);
-  border-radius: var(--xeg-radius-md);
-  padding: var(--xeg-spacing-xs);
-  min-width: 10rem;
-  box-shadow: 0 0.25rem 0.75rem color-mix(in oklch, var(--color-base-black) 30%, transparent);
-  overflow: hidden;
-}
-
-/* Context menu action items */
-.contextMenuItem {
-  display: block;
-  width: 100%;
-  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
-  border: none;
-  border-radius: var(--xeg-radius-sm);
-  background: transparent;
-  color: var(--xeg-color-text-primary);
-  font-size: var(--xeg-font-size-sm);
-  font-family: var(--xeg-font-family-ui);
-  cursor: pointer;
-  text-align: left;
-  white-space: nowrap;
-  transition: var(--xeg-transition-surface-fast);
-}
-
-.contextMenuItem:hover,
-.contextMenuItem:focus-visible {
-  background: var(--xeg-color-bg-secondary);
-  color: var(--xeg-color-text-primary);
-  outline: none;
-}
-
-.contextMenuItem:focus-visible {
-  outline: 0.0625rem solid var(--xeg-focus-indicator-color);
-  outline-offset: -0.0625rem;
-}
-
 /* Cursor is defined on the container and inherited by media elements. */
 
 /* Loading state - higher specificity */

@@ -57,14 +57,6 @@ export interface VerticalImageItemProps {
   readonly onMediaLoad?: (mediaId: string, index: number) => void;
 
   /**
-   * Callback invoked on right-click (context menu)
-   * @param event - Mouse event
-   * @param media - Media info object
-   * @optional
-   */
-  readonly onImageContextMenu?: (event: MouseEvent, media: MediaInfo) => void;
-
-  /**
    * Additional CSS class names to apply
    * @optional
    */
