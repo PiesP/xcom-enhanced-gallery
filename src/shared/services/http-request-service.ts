@@ -69,20 +69,27 @@ export class HttpRequestService {
     const deferred = createDeferred<HttpResponse<T>>();
     const signal = options?.signal;
 
-    if (signal?.aborted) {
-      deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal));
-      return deferred.promise;
-    }
-
     let settled = false;
 
     const onAbort = (): void => {
       if (settled) return;
       settled = true;
-      signal?.removeEventListener('abort', onAbort);
       deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal!));
     };
+
+    // Register the abort listener BEFORE checking signal.aborted to
+    // eliminate the timing window where the signal becomes aborted
+    // between the check and listener registration. The settled guard
+    // prevents double-resolution in all cases.
     signal?.addEventListener('abort', onAbort, { once: true });
+
+    if (signal?.aborted) {
+      // Signal was already aborted — the { once: true } listener may
+      // have fired synchronously during registration (implementation-
+      // dependent). The settled guard prevents double reject.
+      onAbort();
+      return deferred.promise;
+    }
 
     const settle = (fn: () => void): void => {
       if (settled) return;

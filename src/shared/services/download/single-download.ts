@@ -26,10 +26,11 @@ const createErrorDownloadResult = (error: unknown): SingleDownloadResult => ({
 });
 
 /**
- * Race a work promise against an AbortSignal, automatically cleaning up
- * abort listeners when either the work or the abort wins the race.
- * Prevents listener leaks when the caller's AbortSignal outlives the
- * operation (e.g., a long-lived orchestrator signal reused across downloads).
+ * Race a work promise against an AbortSignal, returning `onAborted()` if
+ * the signal fires before the work completes.
+ *
+ * Uses a flat `Promise.race` with `{ once: true }` listener — no nested
+ * controller chain. The listener self-removes when the abort fires.
  *
  * @param work - Promise representing the actual work (with handlers attached)
  * @param signal - AbortSignal to race against
@@ -43,27 +44,11 @@ async function raceWithAbort<T>(
 ): Promise<T> {
   if (signal.aborted) return onAborted();
 
-  const cleanupController = new AbortController();
-  signal.addEventListener('abort', () => cleanupController.abort(), {
-    once: true,
-    signal: cleanupController.signal,
-  });
-
   const abortPromise = new Promise<T>((resolve) => {
-    cleanupController.signal.addEventListener(
-      'abort',
-      () => {
-        if (signal.aborted) resolve(onAborted());
-      },
-      { once: true }
-    );
+    signal.addEventListener('abort', () => resolve(onAborted()), { once: true });
   });
 
-  const result = await Promise.race([work.finally(() => cleanupController.abort()), abortPromise]);
-
-  // Extra safety: ensure listener removal even on simultaneous settlement
-  cleanupController.abort();
-  return result;
+  return Promise.race([work, abortPromise]);
 }
 
 export async function downloadSingleFile(

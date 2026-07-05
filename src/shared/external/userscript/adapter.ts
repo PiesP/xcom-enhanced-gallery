@@ -155,12 +155,18 @@ async function downloadViaBlob(
           reject(error);
         }
       },
-      onerror: () => reject(new Error('GM_xmlhttpRequest failed')),
-      ontimeout: () => reject(new Error('GM_xmlhttpRequest timed out')),
+      onerror: () => {
+        control.abort();
+        reject(new Error('GM_xmlhttpRequest failed'));
+      },
+      ontimeout: () => {
+        control.abort();
+        reject(new Error('GM_xmlhttpRequest timed out'));
+      },
       onabort: () => reject(new DOMException('Aborted', 'AbortError')),
     });
-    // Note: control.abort() can be called by caller if needed
-    void control;
+    // control.abort() is called on error/timeout to cleanly cancel
+    // in-flight requests when the promise rejects.
   });
 }
 
