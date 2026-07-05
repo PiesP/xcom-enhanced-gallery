@@ -37,6 +37,16 @@ const resolvedAppConfig = Object.freeze({
   runtime: { autoStart: parseBooleanFlag(env.VITE_AUTO_START) ?? true },
 } as const);
 
+/**
+ * Twitter guest token loaded from build-time environment.
+ * Override via VITE_TWITTER_GUEST_TOKEN to avoid hardcoding
+ * sensitive credentials in source.
+ */
+export const TWITTER_GUEST_TOKEN: string | undefined =
+  typeof env.VITE_TWITTER_GUEST_TOKEN === 'string' && env.VITE_TWITTER_GUEST_TOKEN.length > 0
+    ? env.VITE_TWITTER_GUEST_TOKEN
+    : undefined;
+
 export function createAppConfig(): AppConfig {
   return {
     version: resolvedAppConfig.meta.version,
