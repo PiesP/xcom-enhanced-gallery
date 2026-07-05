@@ -40,7 +40,7 @@ export class SettingsService {
     );
   }
 
-  private settings: AppSettings = createDefaultSettings();
+  private settings: AppSettings = createDefaultSettings(Date.now());
   private readonly listeners = new Set<(event: SettingChangeEvent) => void>();
 
   constructor(

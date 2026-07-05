@@ -57,6 +57,6 @@ export const DEFAULT_SETTINGS = {
   lastModified: 0,
 } satisfies AppSettings;
 
-export function createDefaultSettings(timestamp: number = Date.now()): AppSettings {
+export function createDefaultSettings(timestamp: number): AppSettings {
   return globalThis.structuredClone({ ...DEFAULT_SETTINGS, lastModified: timestamp });
 }

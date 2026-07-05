@@ -27,7 +27,7 @@ export class PersistentSettingsRepository implements SettingsRepository {
   public async load(): Promise<AppSettings> {
     const stored = await this.storage.get<StoredSettings>(APP_SETTINGS_STORAGE_KEY);
     if (!stored) {
-      return globalThis.structuredClone(createDefaultSettings());
+      return globalThis.structuredClone(createDefaultSettings(Date.now()));
     }
 
     const nowMs = Date.now();
