@@ -40,7 +40,7 @@
   background: var(--xeg-tooltip-bg, var(--xeg-toolbar-surface, var(--xeg-color-bg-elevated)));
   border: 1px solid var(--xeg-tooltip-border, var(--xeg-toolbar-border));
   border-radius: var(--xeg-tooltip-radius, var(--xeg-radius-sm));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--xeg-shadow-tooltip, 0 2px 8px rgba(0, 0, 0, 0.15));
 
   /* Animation */
   opacity: 0;

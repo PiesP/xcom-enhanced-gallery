@@ -1,0 +1,48 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2024-2026 PiesP */
+
+/**
+ * ErrorBoundary Component Styles (CSS Modules)
+ *
+ * Fallback UI shown when a render error is caught by SolidJS `<ErrorBoundary>`.
+ * Uses --xeg-* design tokens for consistency with the gallery design system.
+ *
+ * Class Structure:
+ * - .xeg-error-boundary__title: Error title heading
+ * - .xeg-error-boundary__body: Error description body
+ * - .xeg-error-boundary__action: Primary retry action button
+ * - .xeg-error-boundary__reset: Reset button (shown after retries exhausted)
+ */
+
+.xeg-error-boundary__title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.xeg-error-boundary__body {
+  color: var(--xeg-color-text-secondary);
+  margin-bottom: 1rem;
+  max-width: 32ch;
+}
+
+.xeg-error-boundary__action,
+.xeg-error-boundary__reset {
+  cursor: pointer;
+  background: var(--xeg-color-bg-surface);
+  border: 1px solid var(--xeg-color-border-default);
+  border-radius: var(--xeg-radius-md);
+  padding: 0.5rem 1rem;
+}
+
+.xeg-error-boundary__action:focus-visible,
+.xeg-error-boundary__reset:focus-visible {
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+}
+
+.xeg-error-boundary__reset {
+  /* Slightly muted treatment for the reset button */
+  color: var(--xeg-color-text-secondary);
+  border-color: var(--xeg-color-border-emphasis);
+}

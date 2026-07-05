@@ -181,9 +181,13 @@
     /* Line Height - semantic alias */
     --xeg-line-height-normal: var(--line-height-normal);
 
+    /* Elevation / Shadow Tokens */
+    --xeg-shadow-tooltip: 0 2px 8px rgba(0, 0, 0, 0.15);
+
     /* Interaction State Tokens */
     --xeg-button-lift: -0.0625rem;
     --xeg-opacity-disabled: 0.5;
+    --xeg-opacity-loading: 0.8;
     --xeg-hover-lift: translateY(-0.125rem);
 
     /* Spacing Tokens - component usage */

@@ -12,6 +12,7 @@ import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import type { JSXElement } from 'solid-js';
 import { createSignal, onCleanup, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
+import styles from './ErrorBoundary.module.css';
 
 /** Maximum number of retry attempts before disabling the retry button. */
 const MAX_RETRIES = 3;
@@ -133,10 +134,10 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
           const exhausted = retryCount() >= MAX_RETRIES;
           return (
             <div aria-live="polite" data-xeg-error-boundary="">
-              <p class="xeg-error-boundary__title">{title}</p>
-              <p class="xeg-error-boundary__body">{body}</p>
+              <p class={styles['xeg-error-boundary__title']}>{title}</p>
+              <p class={styles['xeg-error-boundary__body']}>{body}</p>
               <button
-                class="xeg-error-boundary__action"
+                class={styles['xeg-error-boundary__action']}
                 disabled={exhausted}
                 onClick={handleRetry}
                 type="button"
@@ -145,7 +146,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
               </button>
               <Show when={exhausted}>
                 <button
-                  class="xeg-error-boundary__action xeg-error-boundary__reset"
+                  class={`${styles['xeg-error-boundary__action']} ${styles['xeg-error-boundary__reset']}`}
                   onClick={handleReset}
                   type="button"
                 >
