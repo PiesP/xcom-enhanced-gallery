@@ -33,6 +33,19 @@ import type {
   GMXMLHttpRequestDetails,
 } from '@shared/types/core/userscript';
 
+/**
+ * GM_xmlhttpRequest timeout for userscript blob-based download fallback.
+ *
+ * NOTE: This is intentionally 60s vs DOWNLOAD_TIMEOUT_MS (300s) in
+ * @constants/performance:
+ * - 300s (DOWNLOAD_TIMEOUT_MS): Extension background SW timeout for
+ *   chrome.downloads.download() — the SW must wait for the full file
+ *   download over the network, which can be slow for large files.
+ * - 60s (this constant): Timeout for GM_xmlhttpRequest in the blob-based
+ *   fallback path. This covers just the HTTP fetch to get the blob;
+ *   once the blob is obtained, the actual file save is near-instant via
+ *   the anchor download (no network wait). 60s is generous for a fetch.
+ */
 const GM_DOWNLOAD_TIMEOUT_MS = 60_000;
 
 export interface UserscriptAPI {
