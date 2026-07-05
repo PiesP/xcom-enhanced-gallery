@@ -81,6 +81,14 @@ function setupDevNamespace(
   });
 }
 
+/**
+ * Module-level teardown handle for global event handlers.
+ *
+ * SAFETY: setupGlobalEventHandlers() always calls tearDownGlobalEventHandlers()
+ * BEFORE overwriting this variable, so re-initialization (e.g., if the
+ * bootstrap stage runs twice) never silently drops the first teardown.
+ * The teardown is also called during cleanup() to ensure orderly shutdown.
+ */
 let globalEventTeardown: (() => void) | null = null;
 
 function tearDownGlobalEventHandlers(): void {
