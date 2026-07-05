@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 /**
- * @fileoverview Centralized logging infrastructure (production: errors only, dev: all levels)
+ * @fileoverview Centralized logging infrastructure (production: warn + error, dev: all levels)
  */
 
 type LoggableData = unknown;
@@ -24,9 +24,11 @@ const noop = (): void => {};
 
 const createErrorOnlyLogger = (prefix: string): Logger => ({
   info: noop,
-  warn: noop,
   debug: noop,
   trace: noop,
+  warn: (...args: LoggableData[]): void => {
+    console.warn(prefix, ...args);
+  },
   error: (...args: LoggableData[]): void => {
     console.error(prefix, ...args);
   },
@@ -56,8 +58,12 @@ function buildLogger(prefix: string): Logger {
   return isDevMode ? createVerboseLogger(prefix) : createErrorOnlyLogger(prefix);
 }
 
-export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
-  const prefix = config.prefix ?? BASE_PREFIX;
+export function createLogger(): Logger;
+export function createLogger(moduleName: string): Logger;
+export function createLogger(config: Partial<LoggerConfig>): Logger;
+export function createLogger(arg: string | Partial<LoggerConfig> = {}): Logger {
+  const cfg = typeof arg === 'string' ? { prefix: `[${arg}]` } : arg;
+  const prefix = cfg.prefix ?? BASE_PREFIX;
   return buildLogger(prefix);
 }
 
