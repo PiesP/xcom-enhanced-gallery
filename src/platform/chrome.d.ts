@@ -33,6 +33,8 @@ export interface ChromeRuntimeCore {
     (message: unknown, sender: unknown, sendResponse: ChromeSendResponse) => void
   >;
   onInstalled: ChromeEvent<(details: ChromeInstalledDetails) => void>;
+  onStartup?: ChromeEvent<() => void>;
+  onSuspend?: ChromeEvent<() => void>;
   sendMessage(
     extensionId: string | undefined,
     message: unknown,

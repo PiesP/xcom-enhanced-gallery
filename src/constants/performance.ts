@@ -57,3 +57,15 @@ export const SCHEDULER_YIELD_DEADLINE_MS = 50;
  * for query parameters while blocking abuse / malformed input.
  */
 export const MAX_MEDIA_URL_LENGTH = 2048;
+
+/**
+ * Delay (ms) before revoking a blob object URL after the background SW
+ * confirms it has started the download. This prevents a race condition
+ * where Chrome's download manager hasn't begun reading the blob data
+ * before the URL is revoked, resulting in 0-byte or corrupted files.
+ *
+ * 2000ms is conservative — Chrome typically starts reading blobs within
+ * a few hundred ms, but the delay only affects cleanup (JS heap) not
+ * user-facing latency, so a generous margin is safe.
+ */
+export const BLOB_URL_REVOKE_DELAY_MS = 2_000;

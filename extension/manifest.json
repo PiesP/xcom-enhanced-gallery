@@ -3,7 +3,7 @@
   "name": "X.com Enhanced Gallery",
   "version": "2.1.2",
   "description": "Enhanced media gallery and download for X.com",
-  "permissions": ["downloads", "storage", "notifications", "activeTab"],
+  "permissions": ["downloads", "storage", "notifications"],
   "host_permissions": [
     "https://x.com/*",
     "https://twitter.com/*",

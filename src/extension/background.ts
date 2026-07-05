@@ -10,6 +10,14 @@
  * - chrome.notifications.create() for desktop notifications
  * - Cross-origin fetch proxying
  *
+ * Architecture notes — FEATURE AWARENESS:
+ * The background SW is intentionally STATELESS and features-limited.
+ * It knows only about downloads, notifications, and fetch proxying.
+ * All gallery state, media extraction, settings, theme, language/i18n,
+ * and DOM access live exclusively in the content script. If a new feature
+ * needs SW privileges (clipboard, printing, native messaging), extend the
+ * message protocol in extension-message-types.ts.
+ *
  * Content scripts send messages here and receive progress/completion updates.
  */
 
@@ -21,53 +29,14 @@ import type {
 } from '@platform/chrome.d.ts';
 import { browserApi } from '@platform/chrome-runtime';
 import { isAllowedUrl } from '@shared/utils/url/url-safety';
-
-// ── Message types ────────────────────────────────────────────────────────────
-
-interface DownloadRequestMessage {
-  type: 'DOWNLOAD_REQUEST';
-  payload: {
-    url: string;
-    filename: string;
-    headers?: Record<string, string>;
-  };
-}
-
-interface DownloadBlobUrlRequestMessage {
-  type: 'DOWNLOAD_BLOB_URL_REQUEST';
-  payload: {
-    objectUrl: string;
-    filename: string;
-  };
-}
-
-interface FetchRequestMessage {
-  type: 'FETCH_REQUEST';
-  payload: {
-    url: string;
-    options?: {
-      method?: string;
-      headers?: Record<string, string>;
-      body?: string;
-    };
-  };
-}
-
-interface ShowNotificationMessage {
-  type: 'SHOW_NOTIFICATION';
-  payload: {
-    id: string;
-    title: string;
-    message: string;
-    imageUrl?: string;
-  };
-}
-
-type IncomingMessage =
-  | DownloadRequestMessage
-  | DownloadBlobUrlRequestMessage
-  | FetchRequestMessage
-  | ShowNotificationMessage;
+import type {
+  DownloadBlobUrlRequestMessage,
+  DownloadRequestMessage,
+  ExtensionMessageResponse,
+  FetchRequestMessage,
+  IncomingMessage,
+  ShowNotificationMessage,
+} from './extension-message-types';
 
 // ── Message handler ──────────────────────────────────────────────────────────
 
@@ -77,6 +46,10 @@ type IncomingMessage =
  * Without this guard, a synchronous throw would prevent .then() from executing,
  * leaving the message channel open indefinitely and causing the content script
  * to hang.
+ *
+ * Errors are always returned in the standard ExtensionMessageResponse shape
+ * so the content script always receives a structured error, never a thrown
+ * exception or unexpected type.
  */
 function respondAsync(
   handler: () => Promise<unknown>,
@@ -85,14 +58,42 @@ function respondAsync(
   try {
     handler().then(
       (result) => sendResponse(result),
-      (error: Error) => sendResponse({ success: false, error: error.message })
+      (error: unknown) => sendResponse(toErrorResponse(error))
     );
   } catch (error: unknown) {
-    sendResponse({
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    });
+    sendResponse(toErrorResponse(error));
   }
+}
+
+/**
+ * Convert an unknown error to a structured ExtensionMessageResponse,
+ * preserving the error message regardless of the error's type.
+ */
+function toErrorResponse(error: unknown): ExtensionMessageResponse {
+  return {
+    success: false,
+    error: error instanceof Error ? error.message : String(error),
+  };
+}
+
+/**
+ * Runtime type guard for incoming extension messages.
+ * Validates that the message has a known type field before dispatching.
+ * Without this, a malformed payload would surface as an opaque runtime error
+ * (e.g., "Cannot read properties of undefined") rather than a graceful
+ * error response via sendResponse.
+ */
+function isValidIncomingMessage(message: unknown): message is IncomingMessage {
+  if (!message || typeof message !== 'object') return false;
+  const msg = message as Record<string, unknown>;
+  if (typeof msg.type !== 'string') return false;
+  const VALID_TYPES = new Set([
+    'DOWNLOAD_REQUEST',
+    'DOWNLOAD_BLOB_URL_REQUEST',
+    'SHOW_NOTIFICATION',
+    'FETCH_REQUEST',
+  ]);
+  return VALID_TYPES.has(msg.type);
 }
 
 browserApi.runtime.onMessage.addListener(
@@ -100,7 +101,13 @@ browserApi.runtime.onMessage.addListener(
     // Reject messages from untrusted senders
     const sender = _sender as { id?: string };
     if (sender.id !== browserApi.runtime.id) {
-      sendResponse({ success: false, error: 'Unauthorized sender' });
+      sendResponse(toErrorResponse(new Error('Unauthorized sender')));
+      return false;
+    }
+
+    // Runtime validation: reject malformed messages gracefully
+    if (!isValidIncomingMessage(message)) {
+      sendResponse(toErrorResponse(new Error('Unknown message type')));
       return false;
     }
 
@@ -137,7 +144,9 @@ browserApi.runtime.onMessage.addListener(
         return true;
 
       default:
-        sendResponse({ success: false, error: 'Unknown message type' });
+        // This should never be reached given isValidIncomingMessage above,
+        // but serves as a defensive fallback.
+        sendResponse(toErrorResponse(new Error('Unknown message type')));
         return false;
     }
   }
@@ -181,10 +190,10 @@ async function handleDownloadBlobUrlRequest(message: DownloadBlobUrlRequestMessa
   // object URL, and this response is its signal that Chrome's download
   // manager has begun processing the blob. The completion promise runs
   // in the background for error tracking only.
+  // Errors are always logged (production and dev) so blob download
+  // failures are not silently swallowed.
   waitForDownloadComplete(downloadId).catch((error: Error) => {
-    if (__DEV__) {
-      console.error(`[XEG] Blob download error: ${error.message}`);
-    }
+    console.error(`[XEG] Blob download failed (id: ${downloadId}): ${error.message}`);
   });
 }
 
@@ -232,13 +241,53 @@ function waitForDownloadComplete(downloadId: number): Promise<void> {
 
 // ── Extension lifecycle ───────────────────────────────────────────────────────
 
+/**
+ * Handle extension install/update events.
+ * Always logs in production (warn level) so operational issues are visible;
+ * dev mode uses finer detail via console.log.
+ *
+ * This is intentionally minimal — the SW is stateless, so no migration or
+ * state recovery is needed on update. If stateful features are added later,
+ * migrations belong here.
+ */
 browserApi.runtime.onInstalled.addListener((details: ChromeInstalledDetails) => {
   if (__DEV__) {
     console.log(
       `[XEG] Extension ${details.reason}`,
       details.previousVersion ? `(was ${details.previousVersion})` : ''
     );
+  } else {
+    console.warn(
+      `[XEG] Extension ${details.reason}`,
+      details.previousVersion ? `(was ${details.previousVersion})` : ''
+    );
   }
+});
+
+/**
+ * Service worker startup handler.
+ * Logs SW wake-up for debugging extension lifecycle issues.
+ * MV3 service workers can be terminated after ~30s of inactivity,
+ * and this gives visibility into restart patterns.
+ *
+ * Currently a no-op in terms of state — the SW is stateless.
+ * If state persistence is added later (e.g., download queue recovery),
+ * the initialization logic belongs here.
+ */
+browserApi.runtime.onStartup?.addListener(() => {
+  console.warn('[XEG] Service worker started');
+});
+
+/**
+ * Service worker suspend handler.
+ * Logs SW shutdown for debugging extension lifecycle issues.
+ *
+ * Currently a no-op — the SW is stateless so there's nothing to persist.
+ * If stateful features are added, this is where in-flight state should
+ * be snapshot before termination.
+ */
+browserApi.runtime.onSuspend?.addListener(() => {
+  console.warn('[XEG] Service worker suspending');
 });
 
 // ── Notification handler ─────────────────────────────────────────────────────
@@ -255,6 +304,18 @@ function handleShowNotification(payload: ShowNotificationMessage['payload']): vo
 
 // ── Cross-origin fetch proxy ─────────────────────────────────────────────────
 
+/**
+ * Handle FETCH_REQUEST messages from content scripts.
+ *
+ * NOTE: This handler is currently dead code — no content-script code
+ * sends FETCH_REQUEST messages. The MV3HttpRequestAdapter uses fetch()
+ * directly in the content script context. This handler is preserved for
+ * future use if cross-origin fetch proxying via the SW becomes necessary
+ * (e.g., for CORS-restricted endpoints that the SW's extension privileges
+ * can bypass).
+ *
+ * Security: Only GET/HEAD methods are allowed (SSRF prevention).
+ */
 async function handleFetchRequest(message: FetchRequestMessage): Promise<unknown> {
   const { url, options } = message.payload;
 

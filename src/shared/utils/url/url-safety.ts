@@ -23,6 +23,14 @@ export const ALLOWED_HOSTS: ReadonlySet<string> = new Set([...TWITTER_HOSTS, ...
  * Validate that a URL targets an allowed host, with additional path-level
  * restriction for Twitter hosts (only /i/api/ paths are permitted).
  *
+ * DESIGN NOTE: Twitter/X hosts are restricted to /i/api/ paths because
+ * the download relay only handles media downloads (which use the API).
+ * Non-API URLs (e.g., https://twitter.com/some-tweet) are intentionally
+ * blocked. Media downloads from pbs.twimg.com and video.twimg.com always
+ * pass since those domains are in MEDIA.DOMAINS and bypass the path check.
+ * If non-API downloads from twitter.com/x.com are needed in the future,
+ * this path restriction must be relaxed or extended.
+ *
  * @param url - The URL to validate
  * @returns true if the URL is valid and its host is in the allowed whitelist
  *          (with Twitter path restrictions applied)
