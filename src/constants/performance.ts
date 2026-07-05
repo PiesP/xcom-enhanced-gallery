@@ -38,3 +38,22 @@ export const PREFETCH_CACHE_SIZE = 20;
 
 /** CSS animation timeout fallback in milliseconds (safety net if animationend doesn't fire) */
 export const ANIMATION_TIMEOUT_MS = 500;
+
+/**
+ * Minimum time (ms) the download-indicator state remains visible.
+ * Prevents visual flicker for very fast downloads.
+ */
+export const DOWNLOAD_MIN_DISPLAY_TIME_MS = 300;
+
+/**
+ * Default deadline (ms) for `scheduler.yield()` fallback (`setTimeout`).
+ * 50ms ≈ 20fps — keeps the UI responsive during long-running tasks.
+ */
+export const SCHEDULER_YIELD_DEADLINE_MS = 50;
+
+/**
+ * Maximum allowed URL length for media validation.
+ * Twitter/X media URLs rarely exceed 200 chars; 2048 provides headroom
+ * for query parameters while blocking abuse / malformed input.
+ */
+export const MAX_MEDIA_URL_LENGTH = 2048;

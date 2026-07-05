@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { SCHEDULER_YIELD_DEADLINE_MS } from '@constants/performance';
 import { TWITTER_MEDIA_SELECTOR } from '@constants/selectors';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
@@ -149,7 +150,7 @@ export class MediaExtractionService implements MediaExtractor {
       if (__DEV__) logger.info(`[MediaExtractor] ${extractionId}: API failed, trying DOM fallback`);
 
       // Yield before CPU-intensive DOM fallback extraction
-      await schedulerYield(50);
+      await schedulerYield(SCHEDULER_YIELD_DEADLINE_MS);
 
       const domResult = await this.domFallbackExtractor.extract(
         tweetInfo,

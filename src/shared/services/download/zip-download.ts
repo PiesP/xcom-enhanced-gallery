@@ -7,6 +7,7 @@ import {
   DEFAULT_RETRIES,
   MAX_CONCURRENCY,
   MIN_CONCURRENCY,
+  SCHEDULER_YIELD_DEADLINE_MS,
 } from '@constants/performance';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
@@ -119,7 +120,7 @@ export async function downloadAsZip(
 
         // Yield to main thread between items to keep UI responsive
         if (index > 0) {
-          await schedulerYield(50);
+          await schedulerYield(SCHEDULER_YIELD_DEADLINE_MS);
         }
 
         // Write immediately to ZIP — avoids holding all files in memory

@@ -3,6 +3,7 @@
 
 /** @fileoverview Unified download service: single + bulk (ZIP) via GM_download. */
 
+import { SCHEDULER_YIELD_DEADLINE_MS } from '@constants/performance';
 import { getDownloadAdapter } from '@platform/index';
 import { mergeAbortSignals } from '@shared/async/abort-signal';
 import { planBulkDownload } from '@shared/core/download/download-plan';
@@ -151,7 +152,7 @@ export class DownloadOrchestrator {
       }
 
       // Yield before CPU-intensive plan computation
-      await schedulerYield(50);
+      await schedulerYield(SCHEDULER_YIELD_DEADLINE_MS);
 
       const adapter = getDownloadAdapter();
       if (!adapter) {

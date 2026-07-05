@@ -5,11 +5,10 @@
  * @fileoverview Toolbar state management hook with download debouncing
  */
 
+import { DOWNLOAD_MIN_DISPLAY_TIME_MS } from '@constants/performance';
 import { createTimeout } from '@shared/hooks/use-timer';
 import type { ToolbarActions, ToolbarState } from '@shared/types/toolbar.types';
 import { batch, createSignal } from 'solid-js';
-
-const DOWNLOAD_MIN_DISPLAY_TIME = 300;
 
 export function useToolbarState(): [ToolbarState, ToolbarActions] {
   const [isDownloading, setIsDownloading] = createSignal(false);
@@ -33,10 +32,10 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
 
     const timeSinceStart = now - lastDownloadToggle();
 
-    if (timeSinceStart < DOWNLOAD_MIN_DISPLAY_TIME) {
+    if (timeSinceStart < DOWNLOAD_MIN_DISPLAY_TIME_MS) {
       timer.set(() => {
         setIsDownloading(false);
-      }, DOWNLOAD_MIN_DISPLAY_TIME - timeSinceStart);
+      }, DOWNLOAD_MIN_DISPLAY_TIME_MS - timeSinceStart);
       return;
     }
 

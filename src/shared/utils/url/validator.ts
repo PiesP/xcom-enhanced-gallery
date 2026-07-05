@@ -6,6 +6,7 @@
  */
 
 import { MEDIA } from '@constants/media';
+import { MAX_MEDIA_URL_LENGTH } from '@constants/performance';
 import { isHostMatching, tryParseUrl } from '@shared/utils/url/host';
 
 /**
@@ -15,8 +16,9 @@ import { isHostMatching, tryParseUrl } from '@shared/utils/url/host';
  * Prevents excessively long URLs that may indicate malformed or malicious input.
  * Set to 2048 — Twitter/X media URLs rarely exceed 200 characters; this provides
  * ample headroom for query parameters while blocking abuse.
+ *
+ * @see MAX_MEDIA_URL_LENGTH
  */
-const MAX_URL_LENGTH = 2048 as const;
 
 /**
  * Allowed media CDN hosts for Twitter/X media.
@@ -47,7 +49,7 @@ const ALLOWED_MEDIA_HOSTS = Object.freeze(MEDIA.HOSTS.MEDIA_CDN) as ReadonlyArra
  * ```
  */
 export function isValidMediaUrl(url: string): boolean {
-  if (typeof url !== 'string' || url.length > MAX_URL_LENGTH) {
+  if (typeof url !== 'string' || url.length > MAX_MEDIA_URL_LENGTH) {
     return false;
   }
 
