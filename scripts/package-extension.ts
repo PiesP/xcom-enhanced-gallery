@@ -5,7 +5,7 @@
  * Extension packaging script — creates ZIP files for Chrome and Firefox.
  *
  * Usage:
- *   node scripts/package-extension.js
+ *   npx tsx scripts/package-extension.ts
  *
  * Output:
  *   dist/extension-chrome-v{version}.zip

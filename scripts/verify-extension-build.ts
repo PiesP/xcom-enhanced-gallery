@@ -22,12 +22,12 @@ const contentJs = resolve(root, 'dist-extension', 'content.js');
 
 let failed = false;
 
-function fail(msg) {
+function fail(msg: string) {
   console.error(`❌ ${msg}`);
   failed = true;
 }
 
-function pass(msg) {
+function pass(msg: string) {
   console.log(`✅ ${msg}`);
 }
 
