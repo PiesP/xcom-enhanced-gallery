@@ -19,6 +19,7 @@ import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-
 import { GlobalErrorHandler } from '@shared/error/error-handler';
 import { logger } from '@shared/logging/logger';
 import type { BootstrapStage } from '@shared/types/lifecycle.types';
+import { TWITTER_HOSTS } from '@shared/utils/url/host';
 // Import isolated gallery styles in CSS cascade priority order:
 // layers → tokens → reset → utilities → component styles
 import '@shared/styles/layers.css';
@@ -215,8 +216,6 @@ export async function startApplication(): Promise<void> {
 
 // ── URL guard: only activate on X.com / Twitter.com ──────────────────────────
 
-const ALLOWED_START_HOSTS = ['x.com', 'twitter.com'] as const;
-
 /** Paths where gallery initialization is unnecessary (login, settings, etc.). */
 const EXCLUDED_PATH_PREFIXES = [
   '/login',
@@ -231,7 +230,9 @@ const EXCLUDED_PATH_PREFIXES = [
 
 function isAllowedStartPage(): boolean {
   const hostname = location.hostname.toLowerCase();
-  const allowed = ALLOWED_START_HOSTS.some((h) => hostname === h || hostname.endsWith(`.${h}`));
+  const allowed = (TWITTER_HOSTS as unknown as readonly string[]).some(
+    (h) => hostname === h || hostname.endsWith(`.${h}`)
+  );
   if (!allowed) return false;
 
   const path = location.pathname;

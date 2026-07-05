@@ -36,7 +36,7 @@ function isAllowedUrl(url: string): boolean {
       return false;
     }
     // S4: Restrict x.com/twitter.com to GraphQL API paths only
-    if (parsed.hostname === 'x.com' || parsed.hostname === 'twitter.com') {
+    if ((TWITTER_HOSTS as unknown as readonly string[]).includes(parsed.hostname)) {
       return parsed.pathname.startsWith('/i/api/');
     }
     return true;

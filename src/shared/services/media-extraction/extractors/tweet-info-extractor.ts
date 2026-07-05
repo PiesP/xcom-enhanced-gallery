@@ -10,7 +10,7 @@ import { STATUS_LINK_SELECTOR, TWEET_CONTAINER_SELECTORS } from '@constants/sele
 import { logger } from '@shared/logging/logger';
 import type { TweetInfo } from '@shared/types/media.types';
 import { closestWithFallback } from '@shared/utils/dom/query-helpers';
-import { extractUsernameFromUrl } from '@shared/utils/url/host';
+import { extractUsernameFromUrl, isHostMatching, TWITTER_HOSTS } from '@shared/utils/url/host';
 
 type ExtractionStrategy = (element: HTMLElement) => TweetInfo | null;
 
@@ -21,16 +21,8 @@ const normalizeTweetUrl = (inputUrl: string): string => {
     const url = new URL(inputUrl, DEFAULT_TWEET_ORIGIN);
     const hostname = url.hostname.toLowerCase();
 
-    if (
-      hostname === 'twitter.com' ||
-      hostname === 'www.twitter.com' ||
-      hostname === 'mobile.twitter.com'
-    ) {
-      url.hostname = 'x.com';
-      url.protocol = 'https:';
-    }
-
-    if (hostname === 'www.x.com') {
+    // Normalize all Twitter/X hostnames to x.com using SSOT
+    if (isHostMatching(hostname, TWITTER_HOSTS, { allowSubdomains: true })) {
       url.hostname = 'x.com';
       url.protocol = 'https:';
     }

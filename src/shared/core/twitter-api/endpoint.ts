@@ -11,6 +11,8 @@
  * Override via VITE_TWITTER_GUEST_TOKEN at build time to avoid hardcoding
  * sensitive credentials in source.
  */
+import { TWITTER_HOSTS } from '@shared/utils/url/host';
+
 const FALLBACK_GUEST_TOKEN =
   'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
 const resolvedToken =
@@ -23,7 +25,7 @@ export const TWITTER_API_CONFIG = {
   TWEET_RESULT_BY_REST_ID_QUERY_ID: 'zAz9764BcLZOJ0JU2wrd1A',
   USER_BY_SCREEN_NAME_QUERY_ID: '1VOOyvKkiI3FMmkeDNxM9A',
 
-  SUPPORTED_HOSTS: ['x.com', 'twitter.com'] as const,
+  SUPPORTED_HOSTS: TWITTER_HOSTS,
   DEFAULT_HOST: 'x.com',
 } as const;
 
