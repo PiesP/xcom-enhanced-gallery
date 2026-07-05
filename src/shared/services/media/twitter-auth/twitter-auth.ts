@@ -13,9 +13,21 @@ export async function getCsrfTokenAsync(): Promise<string | undefined> {
   return asyncToken ?? undefined;
 }
 
-export function resolveBearerToken(): string {
+/**
+ * Resolve a Bearer token from __NEXT_DATA__ DOM element.
+ *
+ * @param document_ - Document instance (injectable for testability).
+ *                     Defaults to `globalThis.document`. Pass a mock or
+ *                     null in non-browser environments.
+ * @returns Bearer token string (e.g. `Bearer AAAA...`) or the static
+ *          guest authorization fallback.
+ */
+export function resolveBearerToken(document_?: Document | null | undefined): string {
   try {
-    const nextDataScript = document.getElementById('__NEXT_DATA__');
+    const doc = document_ ?? globalThis.document;
+    if (!doc) return TWITTER_API_CONFIG.GUEST_AUTHORIZATION;
+
+    const nextDataScript = doc.getElementById('__NEXT_DATA__');
     if (nextDataScript?.textContent) {
       const nextData = JSON.parse(nextDataScript.textContent);
       const token = nextData?.props?.pageProps?.token?.Bearer ?? nextData?.props?.token?.Bearer;
