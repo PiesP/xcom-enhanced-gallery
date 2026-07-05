@@ -138,6 +138,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
                 ? `${props['data-testid']}-theme-select`
                 : 'settings-theme-select'
             }
+            autocomplete="off"
             class={cx('xeg-inline-center', styles.select)}
             onChange={props.onThemeChange}
             value={themeValue()}
@@ -184,6 +185,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
                 ? `${props['data-testid']}-language-select`
                 : 'settings-language-select'
             }
+            autocomplete="off"
             class={cx('xeg-inline-center', styles.select)}
             onChange={props.onLanguageChange}
             value={languageValue()}
