@@ -28,6 +28,17 @@ interface HttpResponse<T = unknown> {
 let _httpInstance: HttpRequestService | null = null;
 
 export class HttpRequestService {
+  /**
+   * Default timeout for GM_xmlhttpRequest-based API calls (Twitter GraphQL etc.).
+   *
+   * NOTE: 10s vs DEFAULT_REQUEST_TIMEOUT_MS (30s) in @constants/performance:
+   * - 10s (this): Short timeout for light JSON API requests (Twitter GraphQL calls
+   *   via GM_xmlhttpRequest). These should complete in <3s; 10s is generous.
+   * - 30s (DEFAULT_REQUEST_TIMEOUT_MS): Longer timeout used for media-download
+   *   fetch operations (single-download, retry-fetch) and as the MV3 adapter's
+   *   fallback default. Media files are larger and take longer to transfer.
+   * Both values are intentionally different — not a drift bug.
+   */
   private readonly defaultTimeout = 10000;
 
   private constructor() {}
