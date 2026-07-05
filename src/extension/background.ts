@@ -13,7 +13,6 @@
  * Content scripts send messages here and receive progress/completion updates.
  */
 
-import { MEDIA } from '@constants/media';
 import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
 import type {
   ChromeDownloadDelta,
@@ -21,29 +20,7 @@ import type {
   ChromeInstalledDetails,
 } from '@platform/chrome.d.ts';
 import { browserApi } from '@platform/chrome-runtime';
-import { TWITTER_HOSTS } from '@shared/utils/url/host';
-
-// ── Allowed hosts whitelist (SSRF prevention) ────────────────────────────────
-// Computed from canonical constants to prevent policy drift — background.ts
-// should never independently maintain a list of allowed hosts.
-
-const ALLOWED_HOSTS: Set<string> = new Set([...TWITTER_HOSTS, ...MEDIA.DOMAINS]);
-
-function isAllowedUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    if (!ALLOWED_HOSTS.has(parsed.hostname)) {
-      return false;
-    }
-    // S4: Restrict x.com/twitter.com to GraphQL API paths only
-    if ((TWITTER_HOSTS as unknown as readonly string[]).includes(parsed.hostname)) {
-      return parsed.pathname.startsWith('/i/api/');
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { isAllowedUrl } from '@shared/utils/url/url-safety';
 
 // ── Message types ────────────────────────────────────────────────────────────
 
@@ -199,7 +176,16 @@ async function handleDownloadBlobUrlRequest(message: DownloadBlobUrlRequestMessa
     filename,
     saveAs: false,
   });
-  await waitForDownloadComplete(downloadId);
+  // Respond immediately after the download starts — do NOT await
+  // waitForDownloadComplete here. The content script needs to revoke the
+  // object URL, and this response is its signal that Chrome's download
+  // manager has begun processing the blob. The completion promise runs
+  // in the background for error tracking only.
+  waitForDownloadComplete(downloadId).catch((error: Error) => {
+    if (__DEV__) {
+      console.error(`[XEG] Blob download error: ${error.message}`);
+    }
+  });
 }
 
 /**

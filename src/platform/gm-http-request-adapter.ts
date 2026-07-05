@@ -7,32 +7,19 @@
  * Wraps GM_xmlhttpRequest for cross-origin HTTP requests in userscript environments.
  */
 
-import { MEDIA } from '@constants/media';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
-import { TWITTER_HOSTS } from '@shared/utils/url/host';
+import { isAllowedUrl } from '@shared/utils/url/url-safety';
 import type { HttpRequestAdapter, HttpRequestControl, HttpRequestDetails } from './types';
 
 /**
- * Allowed hosts for SSRF prevention in the GM environment.
- * GM_xmlhttpRequest bypasses CORS, so we must validate the target URL
- * to prevent abuse (same whitelist as MV3 background SW).
- */
-const ALLOWED_HOSTS: ReadonlySet<string> = new Set([...TWITTER_HOSTS, ...MEDIA.DOMAINS]);
-
-/**
- * Validate that a URL target is an allowed host (SSRF prevention).
- * Throws synchronously if the URL is invalid or not in the allowed set.
+ * Validate that a URL target is allowed by the shared SSRF prevention policy.
+ * Throws synchronously if the URL is invalid, not in the allowed host set,
+ * or violates path-level restrictions for Twitter hosts.
  */
 function validateUrl(url: string): void {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    throw new Error(`Invalid URL: ${url}`);
-  }
-  if (!ALLOWED_HOSTS.has(parsed.hostname)) {
-    throw new Error(`URL host not in allowed whitelist: ${parsed.hostname}`);
+  if (!isAllowedUrl(url)) {
+    throw new Error(`URL not in allowed whitelist: ${url}`);
   }
 }
 
