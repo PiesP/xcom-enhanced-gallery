@@ -17,6 +17,11 @@ export const getDownloadAdapter = createAdapter<DownloadAdapter>(
   () => new MV3DownloadAdapter(),
   () => {
     const api = getUserscript();
-    return { download: api.download, downloadBlob: api.downloadBlob };
+    return {
+      download: api.download,
+      downloadBlob: api.downloadBlob,
+      /** Userscript GM_download can download URLs directly — no blob fallback needed */
+      needsBlobFallback: () => false,
+    };
   }
 );

@@ -20,6 +20,15 @@ export interface StorageAdapter {
 export interface DownloadAdapter {
   download(url: string, filename: string, headers?: Record<string, string>): Promise<void>;
   downloadBlob(blob: Blob, filename: string): Promise<void>;
+  /**
+   * Whether the adapter requires a blob-based fallback for downloads.
+   *
+   * MV3 background service workers cannot directly download from twimg.com
+   * (CORS/auth restrictions), so the content script must fetch the resource
+   * (which has cookies and host permissions) and pass the resulting blob to
+   * the adapter. Userscript adapters can download URLs directly via GM_download.
+   */
+  needsBlobFallback(): boolean;
 }
 
 export interface NotificationAdapter {

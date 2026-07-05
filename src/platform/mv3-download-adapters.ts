@@ -26,6 +26,11 @@ interface MV3DownloadResponse {
 }
 
 export class MV3DownloadAdapter implements DownloadAdapter {
+  /** MV3 background SW cannot download twimg.com URLs directly — needs content-script fetch */
+  needsBlobFallback(): boolean {
+    return true;
+  }
+
   async download(url: string, filename: string, headers?: Record<string, string>): Promise<void> {
     const response = (await this.sendMessageWithTimeout({
       type: 'DOWNLOAD_REQUEST',

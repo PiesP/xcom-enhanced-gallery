@@ -2,7 +2,6 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { DEFAULT_REQUEST_TIMEOUT_MS } from '@constants/performance';
-import { IS_MV3 } from '@platform/detect';
 import { getDownloadAdapter } from '@platform/index';
 import type { DownloadAdapter } from '@platform/types';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
@@ -91,10 +90,8 @@ async function downloadWithAdapter(
 ): Promise<SingleDownloadResult> {
   const adapter = getDownloadAdapter();
 
-  // MV3: Background SW cannot download directly from twimg.com URLs
-  // (CORS/auth restrictions). Fetch in content script context (has cookies),
-  // then pass blob to adapter for download.
-  if (IS_MV3) {
+  // Adapter needs blob-based fallback (MV3: content script fetch required)
+  if (adapter.needsBlobFallback()) {
     return downloadWithFetchFallback(url, filename, options, abortSignal, adapter);
   }
 
