@@ -3,6 +3,7 @@
 
 /** @fileoverview Toolbar auto-hide with configurable delay. */
 
+import { DEFAULT_SETTINGS } from '@constants/settings';
 import { getTypedSettingOr } from '@shared/container/settings-registry';
 import { createTimeout } from '@shared/hooks/use-timer';
 import type { Accessor, Setter } from 'solid-js';
@@ -35,7 +36,10 @@ export function useToolbarAutoHide(options: UseToolbarAutoHideOptions): UseToolb
 
     setIsInitialToolbarVisible(true);
 
-    const rawAutoHideDelay = getTypedSettingOr('toolbar.autoHideDelay', 3000);
+    const rawAutoHideDelay = getTypedSettingOr(
+      'toolbar.autoHideDelay',
+      DEFAULT_SETTINGS.toolbar.autoHideDelay
+    );
     const autoHideDelay = Math.max(0, typeof rawAutoHideDelay === 'number' ? rawAutoHideDelay : 0);
 
     if (autoHideDelay === 0) {
