@@ -1,0 +1,33 @@
+{
+  "schema_version": 2,
+  "tool": "nose",
+  "baseline_kind": "accepted-duplication",
+  "families": [
+    {
+      "id": "0a9db3cae92ef0c2",
+      "note": "local duplication — extract a method from the repeated block — high-parameter (6 varying spots): divergence readability; a smaller helper for the invariant core may fit better",
+      "members": [
+        {
+          "id": "edde58f471f3e551",
+          "source_digest": "fnv1a64:7f47ffa08231229b",
+          "file": "/home/piesp/projects/xcom-enhanced-gallery/src/shared/components/ui/Icon/lucide/lucide-icons.tsx",
+          "lang": "typescript",
+          "start_line": 10,
+          "end_line": 104,
+          "kind": "Block",
+          "is_fragment": false
+        },
+        {
+          "id": "8395131109c9ad3c",
+          "source_digest": "fnv1a64:9bf89b307f8f1c7f",
+          "file": "/home/piesp/projects/xcom-enhanced-gallery/src/shared/components/ui/Icon/lucide/icon-nodes.ts",
+          "lang": "typescript",
+          "start_line": 22,
+          "end_line": 107,
+          "kind": "Block",
+          "is_fragment": false
+        }
+      ]
+    }
+  ]
+}

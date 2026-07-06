@@ -1,0 +1,6 @@
+# nose configuration — duplication detection for CI and local use
+# See: https://github.com/corca-ai/nose
+
+[query]
+mode = ["syntax"]
+min-size = 80
