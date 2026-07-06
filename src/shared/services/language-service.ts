@@ -11,7 +11,7 @@ import {
   isBaseLanguageCode,
   type SupportedLanguage,
 } from '@shared/constants/i18n/language-types';
-import { DEFAULT_LANGUAGE, Translator } from '@shared/i18n/translator';
+import { createTranslator, DEFAULT_LANGUAGE } from '@shared/i18n/translator';
 import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
 import { logger } from '@shared/logging/logger';
 import { PersistentStorage } from '@shared/services/persistent-storage';
@@ -32,10 +32,10 @@ export class LanguageService {
   private currentLanguage: SupportedLanguage = 'auto';
   private readonly listeners: Set<(language: SupportedLanguage) => void> = new Set();
   private readonly storage = PersistentStorage.getInstance();
-  private readonly translator: Translator;
+  private readonly translator: ReturnType<typeof createTranslator>;
 
   public constructor() {
-    this.translator = new Translator();
+    this.translator = createTranslator();
   }
 
   public static getInstance(): LanguageService {

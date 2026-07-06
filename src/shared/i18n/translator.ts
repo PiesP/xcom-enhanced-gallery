@@ -28,43 +28,44 @@ export const TRANSLATION_REGISTRY: Partial<Record<BaseLanguageCode, LanguageStri
 
 export const DEFAULT_LANGUAGE: BaseLanguageCode = 'en';
 
-interface TranslatorOptions {
+interface TranslatorBundleOptions {
   readonly bundles?: TranslationBundleInput;
   readonly fallbackLanguage?: BaseLanguageCode;
 }
 
-export class Translator {
-  private readonly bundles: Partial<Record<BaseLanguageCode, LanguageStrings>> = {};
-  private readonly fallbackLanguage: BaseLanguageCode;
+interface Translator {
+  readonly languages: readonly BaseLanguageCode[];
+  translate(language: BaseLanguageCode, key: TranslationKey, params?: TranslationParams): string;
+}
 
-  constructor(options: TranslatorOptions = {}) {
-    const { bundles = TRANSLATION_REGISTRY, fallbackLanguage = DEFAULT_LANGUAGE } = options;
-    this.fallbackLanguage = fallbackLanguage;
-    for (const [lang, strings] of Object.entries(bundles) as Array<
-      [BaseLanguageCode, LanguageStrings | undefined]
-    >) {
-      if (strings) this.bundles[lang] = strings;
-    }
-    if (!this.bundles[this.fallbackLanguage]) {
-      throw new Error(`Missing fallback language bundle: ${this.fallbackLanguage}`);
-    }
+/** Create a translator instance with the given language bundles. */
+export function createTranslator(options: TranslatorBundleOptions = {}): Translator {
+  const { bundles = TRANSLATION_REGISTRY, fallbackLanguage = DEFAULT_LANGUAGE } = options;
+
+  const bundleMap: Partial<Record<BaseLanguageCode, LanguageStrings>> = {};
+  for (const [lang, strings] of Object.entries(bundles) as Array<
+    [BaseLanguageCode, LanguageStrings | undefined]
+  >) {
+    if (strings) bundleMap[lang] = strings;
   }
 
-  get languages(): readonly BaseLanguageCode[] {
-    return LANGUAGE_CODES;
+  if (!bundleMap[fallbackLanguage]) {
+    throw new Error(`Missing fallback language bundle: ${fallbackLanguage}`);
   }
 
-  public translate(
-    language: BaseLanguageCode,
-    key: TranslationKey,
-    params?: TranslationParams
-  ): string {
-    const strings = this.bundles[language] ?? this.bundles[this.fallbackLanguage]!;
-    const template = resolveNestedPath<string>(strings, key);
-    if (!template) return key;
-    if (!params) return template;
-    return template.replace(/\{(\w+)\}/g, (match, placeholder) =>
-      Object.hasOwn(params, placeholder) ? String(params[placeholder]) : match
-    );
-  }
+  return {
+    get languages(): readonly BaseLanguageCode[] {
+      return LANGUAGE_CODES;
+    },
+
+    translate(language: BaseLanguageCode, key: TranslationKey, params?: TranslationParams): string {
+      const strings = bundleMap[language] ?? bundleMap[fallbackLanguage]!;
+      const template = resolveNestedPath<string>(strings, key);
+      if (!template) return key;
+      if (!params) return template;
+      return template.replace(/\{(\w+)\}/g, (match, placeholder) =>
+        Object.hasOwn(params, placeholder) ? String(params[placeholder]) : match
+      );
+    },
+  };
 }
