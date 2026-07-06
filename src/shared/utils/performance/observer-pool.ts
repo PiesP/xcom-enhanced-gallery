@@ -39,6 +39,14 @@ function optionsKey(options: IntersectionObserverInit): string {
   return `t:${t}|m:${rootMargin}`;
 }
 
+/** Reset the shared observer pool — clears all observers for test isolation. */
+export function resetSharedObserverPool(): void {
+  for (const poolEntry of observerPool.values()) {
+    poolEntry.observer.disconnect();
+  }
+  observerPool.clear();
+}
+
 export const SharedObserver = {
   observe(
     element: Element,
