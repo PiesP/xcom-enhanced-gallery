@@ -20,7 +20,7 @@ import {
   extractMediaUrlFromElement,
   findMediaElementInDOM,
 } from '@shared/utils/media/media-element-utils';
-import { tryParseUrl } from '@shared/utils/url/host';
+import { isHostMatching, TWITTER_HOSTS, tryParseUrl } from '@shared/utils/url/host';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 const MEDIA_LINK_SELECTOR = [STATUS_LINK_SELECTOR, 'a[href*="/photo/"]', 'a[href*="/video/"]'].join(
@@ -38,13 +38,12 @@ const INTERACTIVE_SELECTOR = [
   '[data-testid="bookmark"]',
 ].join(', ');
 
-const TWITTER_HOST_RE = /(^|\.)(?:x|twitter)\.com$/iu;
 const STATUS_MEDIA_RE = /\/status\/\d+|\/photo\/\d+|\/video\/\d+/iu;
 
 function isNativeStatusMediaLink(href: string | null | undefined): boolean {
   if (!href) return false;
   const parsed = tryParseUrl(href);
-  if (!parsed || !TWITTER_HOST_RE.test(parsed.hostname)) return false;
+  if (!parsed || !isHostMatching(parsed, TWITTER_HOSTS)) return false;
   return STATUS_MEDIA_RE.test(parsed.pathname);
 }
 
