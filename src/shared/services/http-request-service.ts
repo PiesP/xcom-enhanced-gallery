@@ -8,7 +8,7 @@
 import { getHttpRequestAdapter } from '@platform/index';
 import type { HttpRequestDetails } from '@platform/types';
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
-import { SingletonBase } from '@shared/services/singleton-base';
+import { createSingleton } from '@shared/services/singleton-base';
 import { createDeferred } from '@shared/utils/async/promise-helpers';
 
 interface HttpRequestOptions {
@@ -25,8 +25,6 @@ interface HttpResponse<T = unknown> {
   readonly data: T;
 }
 
-let _httpInstance: HttpRequestService | null = null;
-
 export class HttpRequestService {
   /**
    * Default timeout for GM_xmlhttpRequest-based API calls (Twitter GraphQL etc.).
@@ -41,32 +39,10 @@ export class HttpRequestService {
    */
   private readonly defaultTimeout = 10000;
 
-  private constructor() {}
-
-  static getInstance(): HttpRequestService {
-    return SingletonBase.get(
-      () => _httpInstance,
-      (inst) => {
-        _httpInstance = inst;
-      },
-      () => new HttpRequestService()
-    );
-  }
-
-  /** @internal Test helper */
-  static resetForTests(): void {
-    SingletonBase.reset(
-      () => _httpInstance,
-      (inst) => {
-        _httpInstance = inst;
-      }
-    );
-  }
+  constructor() {}
 
   /** Destroy service */
-  destroy(): void {
-    _httpInstance = null;
-  }
+  destroy(): void {}
 
   async get<T = unknown>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
     return this.request<T>('GET', url, options);
@@ -162,3 +138,8 @@ export class HttpRequestService {
     });
   }
 }
+
+const { getInstance: getHttpRequestService, resetForTests: resetHttpRequestServiceForTests } =
+  createSingleton(() => new HttpRequestService());
+
+export { getHttpRequestService, resetHttpRequestServiceForTests };

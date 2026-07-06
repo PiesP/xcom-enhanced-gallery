@@ -16,7 +16,7 @@ import { getEventManager, resetEventManager } from '@shared/container/event-mana
 import { clearSettings } from '@shared/container/settings-registry';
 import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
-import { GlobalErrorHandler } from '@shared/error/error-handler';
+import { getGlobalErrorHandler } from '@shared/error/error-handler';
 import { logger } from '@shared/logging/logger';
 import type { BootstrapStage } from '@shared/types/lifecycle.types';
 import { TWITTER_HOSTS } from '@shared/utils/url/host';
@@ -123,7 +123,7 @@ function buildStages(): readonly BootstrapStage[] {
   return [
     {
       label: 'Error handler',
-      run: () => GlobalErrorHandler.getInstance().initialize(),
+      run: () => getGlobalErrorHandler().initialize(),
     },
     {
       label: 'Settings',
@@ -172,7 +172,7 @@ async function cleanup(): Promise<void> {
       if (app) await app.cleanup();
     });
     tearDownGlobalEventHandlers();
-    await runOptionalCleanup('error-handler', () => GlobalErrorHandler.getInstance().destroy());
+    await runOptionalCleanup('error-handler', () => getGlobalErrorHandler().destroy());
     clearSettings();
     resetEventManager();
 

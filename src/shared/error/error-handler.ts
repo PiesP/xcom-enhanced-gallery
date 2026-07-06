@@ -9,7 +9,7 @@
 import { getEventManager } from '@shared/container/container';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
-import { SingletonBase } from '@shared/services/singleton-base';
+import { createSingleton } from '@shared/services/singleton-base';
 
 const formatErrorLocation = (
   filename: string | undefined,
@@ -24,32 +24,11 @@ const formatRejectionMessage = (reason: unknown): string => {
   return `Unhandled rejection: ${message}`;
 };
 
-let _errorHandlerInstance: GlobalErrorHandler | null = null;
-
 export class GlobalErrorHandler {
   private isInitialized = false;
   private controller: AbortController | null = null;
 
-  private constructor() {}
-
-  public static getInstance(): GlobalErrorHandler {
-    return SingletonBase.get(
-      () => _errorHandlerInstance,
-      (inst) => {
-        _errorHandlerInstance = inst;
-      },
-      () => new GlobalErrorHandler()
-    );
-  }
-
-  public static resetForTests(): void {
-    SingletonBase.reset(
-      () => _errorHandlerInstance,
-      (inst) => {
-        _errorHandlerInstance = inst;
-      }
-    );
-  }
+  constructor() {}
 
   public destroy(): void {
     this.controller?.abort();
@@ -111,3 +90,8 @@ export class GlobalErrorHandler {
     this.isInitialized = true;
   }
 }
+
+const { getInstance: getGlobalErrorHandler, resetForTests: resetGlobalErrorHandlerForTests } =
+  createSingleton(() => new GlobalErrorHandler());
+
+export { getGlobalErrorHandler, resetGlobalErrorHandlerForTests };

@@ -8,7 +8,7 @@
 
 import { buildTweetResultByRestIdUrl, TWITTER_API_CONFIG } from '@shared/core/twitter-api/endpoint';
 import { logger } from '@shared/logging/logger';
-import { HttpRequestService } from '@shared/services/http-request-service';
+import { getHttpRequestService } from '@shared/services/http-request-service';
 import {
   getCsrfTokenAsync,
   resolveBearerToken,
@@ -151,7 +151,7 @@ async function apiRequest(url: string): Promise<TwitterAPIResponse> {
     headers.append('origin', locationHeaders.origin);
   }
 
-  const httpService = HttpRequestService.getInstance();
+  const httpService = getHttpRequestService();
   const response = await httpService.get<TwitterAPIResponse>(url, {
     headers: Object.fromEntries(headers.entries()),
     responseType: 'json',

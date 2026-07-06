@@ -17,12 +17,10 @@ import type {
   SingleDownloadResult,
 } from '@shared/services/download/types';
 import { downloadAsZip } from '@shared/services/download/zip-download';
-import { SingletonBase } from '@shared/services/singleton-base';
+import { createSingleton } from '@shared/services/singleton-base';
 import type { MediaInfo } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/media.types';
 import { schedulerYield } from '@shared/utils/performance/scheduler-yield';
-
-let _downloadInstance: DownloadOrchestrator | null = null;
 
 /**
  * Create a standardized error response for bulk download operations.
@@ -49,30 +47,7 @@ export class DownloadOrchestrator {
   private _initialized = false;
   private abortController = new AbortController();
 
-  private constructor() {}
-
-  public static getInstance(): DownloadOrchestrator {
-    return SingletonBase.get(
-      () => _downloadInstance,
-      (inst) => {
-        _downloadInstance = inst;
-      },
-      () => new DownloadOrchestrator()
-    );
-  }
-
-  /**
-   * Reset singleton instance (for testing only)
-   * @internal
-   */
-  public static resetForTests(): void {
-    SingletonBase.reset(
-      () => _downloadInstance,
-      (inst) => {
-        _downloadInstance = inst;
-      }
-    );
-  }
+  constructor() {}
 
   /** Initialize service (idempotent) */
   public initialize(): void {
@@ -89,12 +64,6 @@ export class DownloadOrchestrator {
   public destroy(): void {
     this.abortController.abort();
     this._initialized = false;
-    SingletonBase.reset(
-      () => _downloadInstance,
-      (inst) => {
-        _downloadInstance = inst;
-      }
-    );
   }
 
   public isInitialized(): boolean {
@@ -263,3 +232,8 @@ export class DownloadOrchestrator {
     }
   }
 }
+
+const { getInstance: getDownloadOrchestrator, resetForTests: resetDownloadOrchestratorForTests } =
+  createSingleton(() => new DownloadOrchestrator());
+
+export { getDownloadOrchestrator, resetDownloadOrchestratorForTests };

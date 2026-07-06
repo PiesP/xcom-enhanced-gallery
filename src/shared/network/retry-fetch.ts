@@ -8,7 +8,7 @@
 import { DEFAULT_BACKOFF_BASE_MS, DEFAULT_REQUEST_TIMEOUT_MS } from '@constants/performance';
 import { withRetry } from '@shared/async/retry';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
-import { HttpRequestService } from '@shared/services/http-request-service';
+import { getHttpRequestService } from '@shared/services/http-request-service';
 
 class HttpStatusError extends Error {
   override readonly name = 'HttpStatusError';
@@ -51,7 +51,7 @@ export async function fetchArrayBufferWithRetry(
     throw getUserCancelledAbortErrorFromSignal(signal);
   }
 
-  const httpService = HttpRequestService.getInstance();
+  const httpService = getHttpRequestService();
   const maxAttempts = Math.max(1, retries + 1);
 
   const result = await withRetry(

@@ -9,7 +9,7 @@ import { getEventManager } from '@shared/container/event-manager-accessor';
 import { tryGetSettings } from '@shared/container/settings-registry';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';
-import { SingletonBase } from '@shared/services/singleton-base';
+import { createSingleton } from '@shared/services/singleton-base';
 export type ThemeChangeListener = (
   theme: 'light' | 'dark',
   setting: 'auto' | 'light' | 'dark'
@@ -26,8 +26,6 @@ interface SettingsBinding {
   set(key: string, value: unknown): Promise<void> | void;
 }
 
-let _themeInstance: ThemeService | null = null;
-
 export class ThemeService {
   private _initialized = false;
   private currentTheme: 'light' | 'dark' = 'light';
@@ -39,25 +37,6 @@ export class ThemeService {
   private mediaQueryListener: ((event: MediaQueryListEvent) => void) | null = null;
   private domEventsController: AbortController | null = null;
   private observer: MutationObserver | null = null;
-
-  static getInstance(): ThemeService {
-    return SingletonBase.get(
-      () => _themeInstance,
-      (inst) => {
-        _themeInstance = inst;
-      },
-      () => new ThemeService()
-    );
-  }
-
-  static resetForTests(): void {
-    SingletonBase.reset(
-      () => _themeInstance,
-      (inst) => {
-        _themeInstance = inst;
-      }
-    );
-  }
 
   constructor() {
     this.mediaQueryList =
@@ -242,3 +221,9 @@ export class ThemeService {
     }
   }
 }
+
+const { getInstance: getThemeService, resetForTests: resetThemeServiceForTests } = createSingleton(
+  () => new ThemeService()
+);
+
+export { getThemeService, resetThemeServiceForTests };

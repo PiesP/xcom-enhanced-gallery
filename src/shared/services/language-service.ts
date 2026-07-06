@@ -14,48 +14,19 @@ import {
 import { createTranslator, DEFAULT_LANGUAGE } from '@shared/i18n/translator';
 import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
 import { logger } from '@shared/logging/logger';
-import { PersistentStorage } from '@shared/services/persistent-storage';
-import { SingletonBase } from '@shared/services/singleton-base';
+import { getPersistentStorage } from '@shared/services/persistent-storage';
+import { createSingleton } from '@shared/services/singleton-base';
 
-let _instance: LanguageService | null = null;
-
-/**
- * Multilingual Service
- * - onInitialize(): Restore language setting from storage
- * - onDestroy(): Clean up listeners
- *
- * Note: Global singleton export requires initialize() call from main.ts
- */
 export class LanguageService {
   private static readonly STORAGE_KEY = 'xeg-language';
   private _initialized = false;
   private currentLanguage: SupportedLanguage = 'auto';
   private readonly listeners: Set<(language: SupportedLanguage) => void> = new Set();
-  private readonly storage = PersistentStorage.getInstance();
+  private readonly storage = getPersistentStorage();
   private readonly translator: ReturnType<typeof createTranslator>;
 
   public constructor() {
     this.translator = createTranslator();
-  }
-
-  public static getInstance(): LanguageService {
-    return SingletonBase.get(
-      () => _instance,
-      (inst) => {
-        _instance = inst;
-      },
-      () => new LanguageService()
-    );
-  }
-
-  /** @internal Test helper */
-  public static resetForTests(): void {
-    SingletonBase.reset(
-      () => _instance,
-      (inst) => {
-        _instance = inst;
-      }
-    );
   }
 
   /** Initialize service (idempotent) */
@@ -78,7 +49,6 @@ export class LanguageService {
   public destroy(): void {
     this.listeners.clear();
     this._initialized = false;
-    _instance = null;
   }
 
   /** Check if service is initialized */
@@ -193,3 +163,8 @@ export class LanguageService {
     return this.currentLanguage === 'auto' ? this.detectLanguage() : this.currentLanguage;
   }
 }
+
+const { getInstance: getLanguageService, resetForTests: resetLanguageServiceForTests } =
+  createSingleton(() => new LanguageService());
+
+export { getLanguageService, resetLanguageServiceForTests };

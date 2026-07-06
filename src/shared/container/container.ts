@@ -5,19 +5,14 @@
  * @fileoverview Service registry, type-safe settings access, and singleton accessors.
  */
 
-import { DownloadOrchestrator } from '@shared/services/download/download-orchestrator';
-import { LanguageService } from '@shared/services/language-service';
-import { MediaService } from '@shared/services/media-service';
-import { ThemeService } from '@shared/services/theme-service';
-
 export { getEventManager, resetEventManager } from '@shared/container/event-manager-accessor';
-
-/** Get the singleton ThemeService instance */
-export const getThemeService = (): ThemeService => ThemeService.getInstance();
-/** Get the singleton LanguageService instance */
-export const getLanguageService = (): LanguageService => LanguageService.getInstance();
-/** Get the singleton MediaService instance */
-export const getMediaService = (): MediaService => MediaService.getInstance();
-/** Get the singleton DownloadOrchestrator instance */
-export const getDownloadOrchestrator = (): DownloadOrchestrator =>
-  DownloadOrchestrator.getInstance();
+export {
+  getDownloadOrchestrator,
+  resetDownloadOrchestratorForTests,
+} from '@shared/services/download/download-orchestrator';
+export {
+  getLanguageService,
+  resetLanguageServiceForTests,
+} from '@shared/services/language-service';
+export { getMediaService, resetMediaServiceForTests } from '@shared/services/media-service';
+export { getThemeService, resetThemeServiceForTests } from '@shared/services/theme-service';

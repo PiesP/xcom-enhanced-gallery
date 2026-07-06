@@ -53,3 +53,43 @@ export class SingletonBase {
     setInstance(null);
   }
 }
+
+export interface SingletonAccessors<T extends { destroy(): void }> {
+  getInstance: () => T;
+  resetForTests: () => void;
+}
+
+/**
+ * Create a singleton service with automatic instance management.
+ * Eliminates the boilerplate of module-level `_instance` variables
+ * and static `getInstance()`/`resetForTests()` methods.
+ *
+ * Usage:
+ * ```
+ * export class MyService {
+ *   constructor() {}  // public constructor
+ *   destroy(): void { ... }
+ * }
+ *
+ * const { getInstance, resetForTests } = createSingleton(() => new MyService());
+ * export { getInstance as getMyService, resetForTests as resetMyServiceForTests };
+ * ```
+ */
+export function createSingleton<T extends { destroy(): void }>(
+  factory: () => T
+): SingletonAccessors<T> {
+  let instance: T | null = null;
+  return {
+    getInstance() {
+      const inst = instance;
+      if (inst) return inst;
+      const newInst = factory();
+      instance = newInst;
+      return newInst;
+    },
+    resetForTests() {
+      instance?.destroy();
+      instance = null;
+    },
+  };
+}

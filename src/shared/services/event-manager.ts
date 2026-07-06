@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { logger } from '@shared/logging/logger';
-import { SingletonBase } from '@shared/services/singleton-base';
+import { createSingleton } from '@shared/services/singleton-base';
 import { createId, createPrefixedId } from '@shared/utils/id';
 
 /** @fileoverview Event types for gallery event handling. */
@@ -30,39 +30,16 @@ interface ListenerContext {
   readonly context: string | undefined;
 }
 
-let _eventManagerInstance: EventManager | null = null;
-
 export class EventManager {
   private readonly listeners = new Map<string, ListenerContext>();
   // Composite key for O(1) duplicate detection: `${type}::${listenerRef}`
   private readonly listenerKeys = new Map<string, Set<string>>();
 
-  private constructor() {}
-
-  public static getInstance(): EventManager {
-    return SingletonBase.get(
-      () => _eventManagerInstance,
-      (inst) => {
-        _eventManagerInstance = inst;
-      },
-      () => new EventManager()
-    );
-  }
-
-  /** @internal Test helper */
-  public static resetForTests(): void {
-    SingletonBase.reset(
-      () => _eventManagerInstance,
-      (inst) => {
-        _eventManagerInstance = inst;
-      }
-    );
-  }
+  constructor() {}
 
   /** Destroy service */
   public destroy(): void {
     this.cleanup();
-    _eventManagerInstance = null;
   }
 
   public addEventListener(
@@ -172,3 +149,9 @@ export class EventManager {
     }
   }
 }
+
+const { getInstance: getEventManager, resetForTests: resetEventManagerForTests } = createSingleton(
+  () => new EventManager()
+);
+
+export { getEventManager, resetEventManagerForTests };

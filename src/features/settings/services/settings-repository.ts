@@ -3,7 +3,7 @@
 
 import { APP_SETTINGS_STORAGE_KEY, createDefaultSettings } from '@constants/settings';
 import { logger } from '@shared/logging/logger';
-import { PersistentStorage } from '@shared/services/persistent-storage';
+import { getPersistentStorage } from '@shared/services/persistent-storage';
 import type { AppSettings } from '@shared/types/settings.types';
 import { migrateSettings } from './settings-migration';
 
@@ -21,7 +21,7 @@ export interface SettingsRepository {
 }
 
 export class PersistentSettingsRepository implements SettingsRepository {
-  private readonly storage = PersistentStorage.getInstance();
+  private readonly storage = getPersistentStorage();
   private readonly schemaHash = SETTINGS_SCHEMA_HASH;
 
   public async load(): Promise<AppSettings> {

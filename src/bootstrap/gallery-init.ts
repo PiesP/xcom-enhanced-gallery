@@ -7,26 +7,22 @@
 
 import { GalleryApp } from '@features/gallery/gallery-app';
 import { GalleryRenderer } from '@features/gallery/gallery-renderer';
-import { SettingsService } from '@features/settings/services/settings-service';
+import { getSettingsService } from '@features/settings/services/settings-service';
 import { getNotificationAdapter } from '@platform/index';
 import { registerSettings } from '@shared/container/settings-registry';
 import { galleryErrorReporter, settingsErrorReporter } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
-import { LanguageService } from '@shared/services/language-service';
-import { MediaService } from '@shared/services/media-service';
-import { ThemeService } from '@shared/services/theme-service';
+import { getLanguageService } from '@shared/services/language-service';
+import { getMediaService } from '@shared/services/media-service';
+import { getThemeService } from '@shared/services/theme-service';
 
 export async function initializeCoreBaseServices(): Promise<void> {
-  const services = [
-    ThemeService.getInstance(),
-    LanguageService.getInstance(),
-    MediaService.getInstance(),
-  ] as const;
+  const services = [getThemeService(), getLanguageService(), getMediaService()] as const;
   await Promise.all(services.map((s) => s.initialize()));
 }
 
 async function initializeSettingsService(): Promise<void> {
-  const settings = SettingsService.getInstance();
+  const settings = getSettingsService();
   await settings.initialize();
   registerSettings(settings);
 }

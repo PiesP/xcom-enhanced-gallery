@@ -7,7 +7,7 @@ import {
   type SettingsRepository,
 } from '@features/settings/services/settings-repository';
 import { logger } from '@shared/logging/logger';
-import { SingletonBase } from '@shared/services/singleton-base';
+import { createSingleton } from '@shared/services/singleton-base';
 import type {
   AppSettings,
   NestedSettingKey,
@@ -15,30 +15,8 @@ import type {
 } from '@shared/types/settings.types';
 import { resolveNestedPath } from '@shared/utils/object/path';
 
-let _settingsInstance: SettingsService | null = null;
-
 export class SettingsService {
   private _initialized = false;
-
-  public static getInstance(): SettingsService {
-    return SingletonBase.get(
-      () => _settingsInstance,
-      (inst) => {
-        _settingsInstance = inst;
-      },
-      () => new SettingsService()
-    );
-  }
-
-  /** @internal Test helper */
-  public static resetForTests(): void {
-    SingletonBase.reset(
-      () => _settingsInstance,
-      (inst) => {
-        _settingsInstance = inst;
-      }
-    );
-  }
 
   private settings: AppSettings = createDefaultSettings(Date.now());
   private readonly listeners = new Set<(event: SettingChangeEvent) => void>();
@@ -153,3 +131,8 @@ export class SettingsService {
     }
   }
 }
+
+const { getInstance: getSettingsService, resetForTests: resetSettingsServiceForTests } =
+  createSingleton(() => new SettingsService());
+
+export { getSettingsService, resetSettingsServiceForTests };

@@ -7,14 +7,15 @@
  * theme-service.ts cannot import getEventManager from container.ts directly).
  */
 
-import { EventManager } from '@shared/services/event-manager';
+import type { EventManager } from '@shared/services/event-manager';
+import { getEventManager as getEventManagerAccessor } from '@shared/services/event-manager';
 
 let eventManagerInstance: EventManager | null = null;
 
 /** Get the singleton EventManager instance */
 export function getEventManager(): EventManager {
   if (!eventManagerInstance) {
-    eventManagerInstance = EventManager.getInstance();
+    eventManagerInstance = getEventManagerAccessor();
   }
   return eventManagerInstance;
 }

@@ -4,7 +4,7 @@
 import { PREFETCH_CACHE_SIZE } from '@constants/performance';
 import { PrefetchManager } from '@shared/services/media/prefetch-manager';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
-import { SingletonBase } from '@shared/services/singleton-base';
+import { createSingleton } from '@shared/services/singleton-base';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
@@ -12,13 +12,13 @@ import type {
 } from '@shared/types/media.types';
 import { clampIndex } from '@shared/utils/types/number-utils';
 
-let _instance: MediaService | null = null;
-
 export class MediaService {
   private mediaExtraction: MediaExtractionService | null = null;
   private readonly prefetchManager = new PrefetchManager(PREFETCH_CACHE_SIZE);
   private didCleanup = false;
   private _initialized = false;
+
+  constructor() {}
 
   /** Initialize service (idempotent) */
   public async initialize(): Promise<void> {
@@ -32,32 +32,11 @@ export class MediaService {
   public destroy(): void {
     this.cleanupOnce();
     this._initialized = false;
-    _instance = null;
   }
 
   /** Check if service is initialized */
   public isInitialized(): boolean {
     return this._initialized;
-  }
-
-  public static getInstance(): MediaService {
-    return SingletonBase.get(
-      () => _instance,
-      (inst) => {
-        _instance = inst;
-      },
-      () => new MediaService()
-    );
-  }
-
-  /** @internal Test helper */
-  public static resetForTests(): void {
-    SingletonBase.reset(
-      () => _instance,
-      (inst) => {
-        _instance = inst;
-      }
-    );
   }
 
   private cleanupOnce(): void {
@@ -126,3 +105,9 @@ export class MediaService {
     this.prefetchManager.clear();
   }
 }
+
+const { getInstance: getMediaService, resetForTests: resetMediaServiceForTests } = createSingleton(
+  () => new MediaService()
+);
+
+export { getMediaService, resetMediaServiceForTests };

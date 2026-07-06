@@ -8,7 +8,7 @@
 
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
-import { HttpRequestService } from '@shared/services/http-request-service';
+import { getHttpRequestService } from '@shared/services/http-request-service';
 import type { MediaInfo } from '@shared/types/media.types';
 
 type IdleHandle = {
@@ -162,7 +162,7 @@ export class PrefetchManager {
       this.evictOldest();
     }
 
-    const fetchPromise = HttpRequestService.getInstance()
+    const fetchPromise = getHttpRequestService()
       .get<Blob>(url, {
         signal: controller.signal,
         responseType: 'blob',
