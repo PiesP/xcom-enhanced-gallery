@@ -21,11 +21,13 @@
 
 // External dependencies
 import { resolve } from 'node:path';
-import { defineConfig, type UserConfig } from 'vite';
-import solidPlugin from 'vite-plugin-solid';
+import { defineConfig, mergeConfig, type UserConfig } from 'vite';
 import { buildSummaryPlugin } from './tooling/vite/plugins/build-summary';
 import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
 import { metaOnlyPlugin } from './tooling/vite/plugins/meta-only';
+import { basePreset } from './tooling/vite/presets/base';
+import { solidPreset } from './tooling/vite/presets/solid';
+import { userscriptPreset } from './tooling/vite/presets/userscript';
 import { OUTPUT_FILE_NAMES, USERSCRIPT_CONFIG } from './tooling/vite/utils/userscript';
 // Tooling utilities
 import { resolveVersion } from './tooling/vite/utils/version';
@@ -61,7 +63,6 @@ function getBuildModeConfig(mode: string): BuildModeConfig {
 
 export default defineConfig(({ mode }): UserConfig => {
   const isDev = mode === 'development';
-  const isProd = mode === 'production';
   const config = getBuildModeConfig(mode);
   const version = resolveVersion(isDev);
 
@@ -97,87 +98,39 @@ export default defineConfig(({ mode }): UserConfig => {
         },
       ];
 
-  return {
-    plugins: [
-      solidPlugin({
-        solid: {
-          omitNestedClosingTags: isProd,
-        },
-      }),
-      cssInlinePlugin(),
-      metaOnlyPlugin(version, {
-        name: USERSCRIPT_CONFIG.name,
-        namespace: USERSCRIPT_CONFIG.namespace,
-      }),
-      buildSummaryPlugin({
+  // Compose config from presets using deep merge
+  return mergeConfig(
+    mergeConfig(
+      mergeConfig(
+        basePreset({ root, isDev, version, featureMediaExtraction }),
+        solidPreset({ isDev, cssClassNamePattern: config.cssClassNamePattern })
+      ),
+      userscriptPreset({
+        entryFile,
+        outputFileName,
         isDev,
-        version,
-        config,
-        baseConfig: USERSCRIPT_CONFIG,
-      }),
-    ],
-    root,
-
-    resolve: {
-      tsconfigPaths: true,
-      alias: mediaExtractionAliases,
-    },
-
-    build: {
-      target: ['chrome117', 'firefox119', 'safari17'],
-      minify: false,
-      sourcemap: config.sourceMap,
-      outDir: 'dist',
-      emptyOutDir: true,
-      write: true,
-      cssCodeSplit: false,
-      cssMinify: isProd ? 'lightningcss' : false,
-
-      lib: {
-        entry: entryFile,
-        name: 'XcomEnhancedGallery',
-        formats: ['iife'],
-        fileName: () => outputFileName.replace('.user.js', ''),
-        cssFileName: 'style',
+        cssCompress: config.cssCompress,
+        sourceMap: config.sourceMap,
+      })
+    ),
+    {
+      resolve: {
+        alias: mediaExtractionAliases,
       },
 
-      rolldownOptions: {
-        output: {
-          entryFileNames: outputFileName,
-          exports: 'auto',
-        },
-        treeshake: isDev
-          ? false
-          : {
-              moduleSideEffects: (id) => hasRequiredSideEffects(id),
-              propertyReadSideEffects: false,
-              unknownGlobalSideEffects: false,
-            },
-      },
-    },
-
-    css: {
-      modules: {
-        generateScopedName: config.cssClassNamePattern,
-        localsConvention: 'camelCaseOnly',
-        scopeBehaviour: 'local',
-      },
-      devSourcemap: isDev,
-    },
-
-    define: {
-      __DEV__: JSON.stringify(isDev),
-      __FEATURE_MEDIA_EXTRACTION__: JSON.stringify(featureMediaExtraction),
-      __VERSION__: JSON.stringify(version),
-    },
-
-    logLevel: 'warn',
-  };
+      plugins: [
+        cssInlinePlugin(),
+        metaOnlyPlugin(version, {
+          name: USERSCRIPT_CONFIG.name,
+          namespace: USERSCRIPT_CONFIG.namespace,
+        }),
+        buildSummaryPlugin({
+          isDev,
+          version,
+          config,
+          baseConfig: USERSCRIPT_CONFIG,
+        }),
+      ],
+    }
+  );
 });
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Returns true for modules that must be preserved during tree-shaking. */
-function hasRequiredSideEffects(id: string): boolean {
-  return id.replace(/\\/g, '/').endsWith('.css');
-}
