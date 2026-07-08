@@ -82,3 +82,6 @@ TESTING.md
 # Local agent workspace
 .hermes/
 memory/
+
+# Test config (lives in test/)
+stryker.conf.json
