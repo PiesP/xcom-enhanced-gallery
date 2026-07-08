@@ -69,7 +69,7 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     let gmControl: { abort: () => void };
     try {
       gmControl = gm.xmlHttpRequest(gmDetails);
-    } catch (error) {
+    } catch (_error) {
       // L2: GM_xmlhttpRequest can throw synchronously outside of validateUrl
       details.onerror?.({
         finalUrl: details.url,

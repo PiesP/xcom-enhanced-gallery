@@ -18,8 +18,6 @@ export class MediaService {
   private didCleanup = false;
   private _initialized = false;
 
-  constructor() {}
-
   /** Initialize service (idempotent) */
   public async initialize(): Promise<void> {
     if (this._initialized) return;

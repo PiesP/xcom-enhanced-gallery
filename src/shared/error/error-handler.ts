@@ -28,8 +28,6 @@ export class GlobalErrorHandler {
   private isInitialized = false;
   private controller: AbortController | null = null;
 
-  constructor() {}
-
   public destroy(): void {
     this.controller?.abort();
     this.controller = null;

@@ -40,8 +40,6 @@ export class EventManager {
   // Composite key for O(1) duplicate detection: `${type}::${element}::${listenerRef}`
   private readonly listenerKeys = new Map<string, Set<string>>();
 
-  constructor() {}
-
   /** Destroy service */
   public destroy(): void {
     this.cleanup();

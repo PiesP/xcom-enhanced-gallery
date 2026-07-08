@@ -40,8 +40,6 @@ export class PersistentStorage {
     return getStorageAdapter();
   }
 
-  constructor() {}
-
   /** Destroy service */
   destroy(): void {}
 

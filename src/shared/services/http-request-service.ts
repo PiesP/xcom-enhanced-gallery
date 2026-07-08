@@ -39,8 +39,6 @@ export class HttpRequestService {
    */
   private readonly defaultTimeout = 10000;
 
-  constructor() {}
-
   /** Destroy service */
   destroy(): void {}
 

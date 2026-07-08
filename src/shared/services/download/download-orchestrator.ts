@@ -47,8 +47,6 @@ export class DownloadOrchestrator {
   private _initialized = false;
   private abortController = new AbortController();
 
-  constructor() {}
-
   /** Initialize service (idempotent) */
   public initialize(): void {
     // Always recreate AbortController on initialize() so that a stale
