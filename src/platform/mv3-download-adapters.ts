@@ -12,6 +12,11 @@
  * Architecture notes:
  * - URL.createObjectURL is NOT available in Service Workers, so blob
  *   downloads create the object URL in the content script context.
+ *   The object URL (string) is sent to the SW, which passes it to
+ *   chrome.downloads.download(). This is critical: content-script blob
+ *   URLs persist with the PAGE lifetime, whereas SW-created blob URLs
+ *   become invalid when the ephemeral SW is terminated by Chrome's MV3
+ *   idle timeout, causing silent download failures.
  * - Promise-based sendMessage is required; the callback pattern (3rd arg)
  *   does not work when the receiver responds asynchronously.
  * - URL revocation for blob downloads is delayed to avoid a race condition
@@ -22,6 +27,7 @@
  *   is the single point of timeout responsibility.
  */
 
+import { BLOB_URL_REVOKE_DELAY_MS } from '@constants/performance';
 import type { ExtensionMessageResponse } from '../extension/extension-message-types';
 import { browserApi } from './chrome-runtime';
 import type { DownloadAdapter } from './types';
@@ -59,21 +65,27 @@ export class MV3DownloadAdapter implements DownloadAdapter {
   }
 
   async downloadBlob(blob: Blob, filename: string): Promise<void> {
-    // URL.createObjectURL is unavailable in Service Workers — read blob as
-    // ArrayBuffer in the content script context and pass the bytes to the SW,
-    // which creates its own blob+object URL for chrome.downloads.download().
-    const data = await blob.arrayBuffer();
+    // URL.createObjectURL is unavailable in Service Workers — create in content script.
+    // The object URL persists with the page lifetime, avoiding the SW termination
+    // race condition that causes silent download failures with SW-created blob URLs.
+    const objectUrl = URL.createObjectURL(blob);
     try {
       const response = (await browserApi.runtime.sendMessage({
         type: 'DOWNLOAD_BLOB_URL_REQUEST',
-        payload: { data, filename },
+        payload: { objectUrl, filename, mimeType: blob.type },
       })) as ExtensionMessageResponse;
       const error = unwrapResponse(response);
       if (error) {
         throw new Error(error);
       }
     } finally {
-      // Nothing to revoke — blob URL is created and revoked inside the SW.
+      // Delay revocation to avoid a race condition where Chrome's download
+      // manager hasn't started reading the blob before the URL is revoked.
+      // A short delay after the SW confirms receipt gives Chrome time to
+      // begin reading the blob data, preventing 0-byte or corrupted downloads.
+      setTimeout(() => {
+        URL.revokeObjectURL(objectUrl);
+      }, BLOB_URL_REVOKE_DELAY_MS);
     }
   }
 }
