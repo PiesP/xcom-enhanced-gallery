@@ -179,35 +179,20 @@ async function handleDownloadRequest(message: DownloadRequestMessage): Promise<v
 }
 
 async function handleDownloadBlobUrlRequest(message: DownloadBlobUrlRequestMessage): Promise<void> {
-  const { data, filename } = message.payload;
-  // Create blob + object URL in the SW context where chrome.downloads.download()
-  // can resolve it. Blob URLs from the content script context are not resolvable
-  // in the Service Worker (MV3 architecture constraint).
-  const blob = new Blob([data]);
-  const objectUrl = URL.createObjectURL(blob);
-  try {
-    const downloadId = await browserApi.downloads.download({
-      url: objectUrl,
-      filename,
-      saveAs: false,
-    });
-    // Respond immediately after the download starts — do NOT await
-    // waitForDownloadComplete here. The SW needs to revoke the object URL,
-    // but the download manager hasn't started reading the blob data yet.
-    // Errors are always logged (production and dev) so blob download
-    // failures are not silently swallowed.
-    waitForDownloadComplete(downloadId).catch((error: Error) => {
-      console.error(`[XEG] Blob download failed (id: ${downloadId}): ${error.message}`);
-    });
-  } finally {
-    // Delay revocation to avoid a race condition where Chrome's download
-    // manager hasn't started reading the blob before the URL is revoked.
-    // A short delay gives Chrome time to begin reading the blob data,
-    // preventing 0-byte or corrupted downloads.
-    setTimeout(() => {
-      URL.revokeObjectURL(objectUrl);
-    }, 5000);
-  }
+  const { objectUrl, filename } = message.payload;
+  // The blob URL was created in the content script context via
+  // URL.createObjectURL(). It persists with the page lifetime, so
+  // we can safely await the download without worrying about the SW
+  // being terminated and invalidating the URL.
+  const downloadId = await browserApi.downloads.download({
+    url: objectUrl,
+    filename,
+    saveAs: false,
+  });
+  // Wait for download completion so errors propagate to the content script.
+  // Unlike SW-created blob URLs which become invalid on SW termination,
+  // content-script blob URLs remain valid as long as the page is open.
+  await waitForDownloadComplete(downloadId);
 }
 
 /**

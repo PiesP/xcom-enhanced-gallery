@@ -22,6 +22,11 @@
  * - URL downloads via twimg.com are restricted to the blob fallback
  *   path because the background SW lacks the auth cookies present in
  *   the content script context. `needsBlobFallback()` returns true.
+ * - Blob URLs are created in the CONTENT SCRIPT context (not the SW)
+ *   because content-script blob URLs persist with the page lifetime.
+ *   SW-created blob URLs become invalid when the ephemeral SW is
+ *   terminated by Chrome's MV3 idle timeout, causing silent download
+ *   failures.
  */
 
 // ── Message types ────────────────────────────────────────────────────────────
@@ -38,8 +43,11 @@ export interface DownloadRequestMessage {
 export interface DownloadBlobUrlRequestMessage {
   readonly type: 'DOWNLOAD_BLOB_URL_REQUEST';
   readonly payload: {
-    readonly data: ArrayBuffer;
+    /** Blob URL created in the CONTENT SCRIPT context via URL.createObjectURL() */
+    readonly objectUrl: string;
     readonly filename: string;
+    /** MIME type of the blob (e.g., 'image/jpeg', 'image/png'). */
+    readonly mimeType?: string;
   };
 }
 
