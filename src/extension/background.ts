@@ -179,22 +179,35 @@ async function handleDownloadRequest(message: DownloadRequestMessage): Promise<v
 }
 
 async function handleDownloadBlobUrlRequest(message: DownloadBlobUrlRequestMessage): Promise<void> {
-  const { objectUrl, filename } = message.payload;
-  const downloadId = await browserApi.downloads.download({
-    url: objectUrl,
-    filename,
-    saveAs: false,
-  });
-  // Respond immediately after the download starts — do NOT await
-  // waitForDownloadComplete here. The content script needs to revoke the
-  // object URL, and this response is its signal that Chrome's download
-  // manager has begun processing the blob. The completion promise runs
-  // in the background for error tracking only.
-  // Errors are always logged (production and dev) so blob download
-  // failures are not silently swallowed.
-  waitForDownloadComplete(downloadId).catch((error: Error) => {
-    console.error(`[XEG] Blob download failed (id: ${downloadId}): ${error.message}`);
-  });
+  const { data, filename } = message.payload;
+  // Create blob + object URL in the SW context where chrome.downloads.download()
+  // can resolve it. Blob URLs from the content script context are not resolvable
+  // in the Service Worker (MV3 architecture constraint).
+  const blob = new Blob([data]);
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const downloadId = await browserApi.downloads.download({
+      url: objectUrl,
+      filename,
+      saveAs: false,
+    });
+    // Respond immediately after the download starts — do NOT await
+    // waitForDownloadComplete here. The SW needs to revoke the object URL,
+    // but the download manager hasn't started reading the blob data yet.
+    // Errors are always logged (production and dev) so blob download
+    // failures are not silently swallowed.
+    waitForDownloadComplete(downloadId).catch((error: Error) => {
+      console.error(`[XEG] Blob download failed (id: ${downloadId}): ${error.message}`);
+    });
+  } finally {
+    // Delay revocation to avoid a race condition where Chrome's download
+    // manager hasn't started reading the blob before the URL is revoked.
+    // A short delay gives Chrome time to begin reading the blob data,
+    // preventing 0-byte or corrupted downloads.
+    setTimeout(() => {
+      URL.revokeObjectURL(objectUrl);
+    }, 5000);
+  }
 }
 
 /**

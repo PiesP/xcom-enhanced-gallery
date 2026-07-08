@@ -44,11 +44,34 @@ async function raceWithAbort<T>(
 ): Promise<T> {
   if (signal.aborted) return onAborted();
 
+  let settled = false;
+
+  const onAbort = () => {
+    settled = true;
+  };
+
+  signal.addEventListener('abort', onAbort, { once: true });
+
   const abortPromise = new Promise<T>((resolve) => {
-    signal.addEventListener('abort', () => resolve(onAborted()), { once: true });
+    // Replace the simple onAbort with one that also resolves the promise
+    // This avoids the race between the listener and the finally block
+    const handler = () => {
+      if (settled) return;
+      settled = true;
+      resolve(onAborted());
+    };
+    signal.addEventListener('abort', handler, { once: true });
   });
 
-  return Promise.race([work, abortPromise]);
+  try {
+    const result = await Promise.race([work, abortPromise]);
+    settled = true;
+    return result;
+  } finally {
+    if (!settled) {
+      signal.removeEventListener('abort', onAbort);
+    }
+  }
 }
 
 export async function downloadSingleFile(
@@ -154,54 +177,85 @@ async function downloadWithFetchFallback(
       abortSignal.addEventListener('abort', onCombinedAbort, { once: true });
       timeoutSignal.addEventListener('abort', onCombinedAbort, { once: true });
       fetchInit.signal = combinedController.signal;
+      const cleanupCombined = () => {
+        abortSignal.removeEventListener('abort', onCombinedAbort);
+        timeoutSignal.removeEventListener('abort', onCombinedAbort);
+      };
+
+      try {
+        const response = await fetch(url, fetchInit);
+        if (!response.ok) {
+          return createErrorDownloadResult(
+            new Error(`HTTP ${response.status}: ${response.statusText}`)
+          );
+        }
+        const blob = await response.blob();
+
+        reportProgress(options.onProgress, {
+          phase: 'downloading',
+          current: 50,
+          total: 100,
+          percentage: 50,
+          filename,
+        });
+
+        // Pass blob to adapter (which creates object URL and relays to background SW)
+        const downloadBlobPromise = adapter.downloadBlob(blob, filename);
+
+        // R6: Race adapter.downloadBlob against abort signal so cancellation
+        // propagates when the user cancels after the fetch phase completes.
+        const result = await raceWithAbort(
+          downloadBlobPromise.then(
+            () => ({ success: true, filename }) satisfies SingleDownloadResult,
+            (error: unknown) => createErrorDownloadResult(error)
+          ),
+          abortSignal,
+          createAbortResult
+        );
+
+        if (!result.success) return result;
+
+        reportProgress(options.onProgress, {
+          phase: 'complete',
+          current: 1,
+          total: 1,
+          percentage: 100,
+          filename,
+        });
+        return { success: true, filename };
+      } finally {
+        cleanupCombined();
+      }
     } else {
       fetchInit.signal = timeoutSignal;
+
+      const response = await fetch(url, fetchInit);
+      if (!response.ok) {
+        return createErrorDownloadResult(
+          new Error(`HTTP ${response.status}: ${response.statusText}`)
+        );
+      }
+      const blob = await response.blob();
+
+      reportProgress(options.onProgress, {
+        phase: 'downloading',
+        current: 50,
+        total: 100,
+        percentage: 50,
+        filename,
+      });
+
+      await adapter.downloadBlob(blob, filename);
+
+      reportProgress(options.onProgress, {
+        phase: 'complete',
+        current: 1,
+        total: 1,
+        percentage: 100,
+        filename,
+      });
+      return { success: true, filename };
     }
-
-    const response = await fetch(url, fetchInit);
-    if (!response.ok) {
-      return createErrorDownloadResult(
-        new Error(`HTTP ${response.status}: ${response.statusText}`)
-      );
-    }
-    const blob = await response.blob();
-
-    reportProgress(options.onProgress, {
-      phase: 'downloading',
-      current: 50,
-      total: 100,
-      percentage: 50,
-      filename,
-    });
-
-    // Pass blob to adapter (which creates object URL and relays to background SW)
-    const downloadBlobPromise = adapter.downloadBlob(blob, filename);
-
-    // R6: Race adapter.downloadBlob against abort signal so cancellation
-    // propagates when the user cancels after the fetch phase completes.
-    if (abortSignal) {
-      const result = await raceWithAbort(
-        downloadBlobPromise.then(
-          () => ({ success: true, filename }) satisfies SingleDownloadResult,
-          (error: unknown) => createErrorDownloadResult(error)
-        ),
-        abortSignal,
-        createAbortResult
-      );
-
-      if (!result.success) return result;
-    } else {
-      await downloadBlobPromise;
-    }
-
-    reportProgress(options.onProgress, {
-      phase: 'complete',
-      current: 1,
-      total: 1,
-      percentage: 100,
-      filename,
-    });
-    return { success: true, filename };
   } catch (error) {
     return createErrorDownloadResult(error);
   }

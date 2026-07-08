@@ -38,7 +38,7 @@ export interface DownloadRequestMessage {
 export interface DownloadBlobUrlRequestMessage {
   readonly type: 'DOWNLOAD_BLOB_URL_REQUEST';
   readonly payload: {
-    readonly objectUrl: string;
+    readonly data: ArrayBuffer;
     readonly filename: string;
   };
 }
