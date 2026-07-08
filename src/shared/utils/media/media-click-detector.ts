@@ -56,6 +56,14 @@ function isMediaCard(cardWrapper: HTMLElement): boolean {
   return cardWrapper.querySelector('img, video') !== null;
 }
 
+function closestSafe(element: HTMLElement | null, selector: string): Element | null {
+  try {
+    return element?.closest(selector) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent): boolean {
   if (!target) return false;
 
@@ -68,7 +76,10 @@ function shouldBlockMediaTrigger(target: HTMLElement | null, event?: MouseEvent)
     : DEFAULT_SETTINGS.gallery.videoClickMode;
   const getPath = event ? () => event.composedPath() : undefined;
   if (!isVideoClickAllowed(target, getPath, videoMode)) return true;
-  if (target.closest(CSS.SELECTORS.ROOT) || target.closest(CSS.SELECTORS.OVERLAY)) return true;
+  // M10: Wrap closest() in try/catch via closestSafe to prevent invalid
+  // selectors from breaking media click detection.
+  if (closestSafe(target, CSS.SELECTORS.ROOT) || closestSafe(target, CSS.SELECTORS.OVERLAY))
+    return true;
 
   const cardWrapper = target.closest('[data-testid="card.wrapper"]');
   if (cardWrapper instanceof HTMLElement) {

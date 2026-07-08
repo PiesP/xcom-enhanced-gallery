@@ -12,7 +12,6 @@ import {
   tryGetSettings,
 } from '@shared/container/settings-registry';
 import { logger } from '@shared/logging/logger';
-import { navigateToItem } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types/settings.types';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 
@@ -22,8 +21,6 @@ import { createEffect, createSignal, onCleanup } from 'solid-js';
 interface UseGalleryFitModeOptions {
   /** Scroll the container to the current active item */
   readonly scrollToCurrentItem: () => void;
-  /** Current active media index (used for auto-focus after fit mode change) */
-  readonly currentIndex: () => number;
 }
 
 /**
@@ -51,7 +48,7 @@ interface UseGalleryFitModeResult {
  * @returns Fit mode signal and toggle handler functions
  */
 export function useGalleryFitMode(options: UseGalleryFitModeOptions): UseGalleryFitModeResult {
-  const { scrollToCurrentItem, currentIndex } = options;
+  const { scrollToCurrentItem } = options;
 
   const getInitialFitMode = (): ImageFitMode => {
     return getTypedSettingOr('gallery.imageFitMode', 'fitWidth');
@@ -85,7 +82,6 @@ export function useGalleryFitMode(options: UseGalleryFitModeOptions): UseGallery
     setImageFitMode(mode);
     void persistFitMode(mode);
     scrollToCurrentItem();
-    navigateToItem(currentIndex(), 'auto-focus');
   };
 
   const handleFitOriginal = (event?: Event) => applyFitMode('original', event);

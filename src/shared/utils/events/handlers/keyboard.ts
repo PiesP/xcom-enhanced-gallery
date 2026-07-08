@@ -56,6 +56,7 @@ function createKeyboardDebouncer() {
       lastExecutionTime: 0,
       lastKey: '',
     };
+    disposed = false;
   }
 
   function dispose(): void {

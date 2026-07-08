@@ -30,9 +30,14 @@ interface ListenerContext {
   readonly context: string | undefined;
 }
 
+/** Composite key for duplicate detection: `${type}::${element}::${listenerRef}` */
+function makeCompositeKey(element: EventTarget, type: string, listener: EventListener): string {
+  return `${type}::${String(Object(element))}::${String(listener)}`;
+}
+
 export class EventManager {
   private readonly listeners = new Map<string, ListenerContext>();
-  // Composite key for O(1) duplicate detection: `${type}::${listenerRef}`
+  // Composite key for O(1) duplicate detection: `${type}::${element}::${listenerRef}`
   private readonly listenerKeys = new Map<string, Set<string>>();
 
   constructor() {}
@@ -61,10 +66,25 @@ export class EventManager {
       return null;
     }
 
-    // Prevent duplicate registration: O(1) lookup via composite key
+    // M7: Use composite key (element, type, listener) to correctly detect
+    // duplicates across different elements.
+    const compositeKey = makeCompositeKey(element, type, listener);
     const typeKeys = this.listenerKeys.get(type);
-    if (typeKeys?.has(listener as unknown as string)) {
+    if (typeKeys?.has(compositeKey)) {
       __DEV__ && logger.warn('[EventManager] Duplicate listener skipped', { type, context });
+      return null;
+    }
+
+    // L12: Check for already-aborted signal before adding tracking entry.
+    // If the signal is already aborted, native addEventListener won't register
+    // the listener, so we should not track it either.
+    const signal = (listenerOptions as { signal?: AbortSignal }).signal;
+    if (signal?.aborted) {
+      __DEV__ &&
+        logger.warn('[EventManager] Signal already aborted, skipping listener', {
+          type,
+          context,
+        });
       return null;
     }
 
@@ -79,11 +99,27 @@ export class EventManager {
         options: listenerOptions,
         context,
       });
-      // Track listener reference for O(1) duplicate detection
+      // Track composite key for O(1) duplicate detection
       if (!this.listenerKeys.has(type)) {
         this.listenerKeys.set(type, new Set());
       }
-      this.listenerKeys.get(type)!.add(listener as unknown as string);
+      this.listenerKeys.get(type)!.add(compositeKey);
+
+      // M6: Listen for abort on the signal to clean up tracking entries
+      // when the signal fires and the DOM auto-removes the listener.
+      if (signal) {
+        const onSignalAbort = (): void => {
+          signal.removeEventListener('abort', onSignalAbort);
+          this.listeners.delete(id);
+          const keys = this.listenerKeys.get(type);
+          if (keys) {
+            keys.delete(compositeKey);
+            if (keys.size === 0) this.listenerKeys.delete(type);
+          }
+        };
+        signal.addEventListener('abort', onSignalAbort);
+      }
+
       return id;
     } catch (error) {
       __DEV__ && logger.error('[EventManager] Failed to add listener', { type, context, error });
@@ -136,9 +172,10 @@ export class EventManager {
       ctx.element.removeEventListener(ctx.type, ctx.listener, ctx.options);
       this.listeners.delete(id);
       // Clean up duplicate-detection index
+      const compositeKey = makeCompositeKey(ctx.element, ctx.type, ctx.listener);
       const typeKeys = this.listenerKeys.get(ctx.type);
       if (typeKeys) {
-        typeKeys.delete(ctx.listener as unknown as string);
+        typeKeys.delete(compositeKey);
         if (typeKeys.size === 0) this.listenerKeys.delete(ctx.type);
       }
       return true;

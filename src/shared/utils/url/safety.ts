@@ -67,6 +67,14 @@ export const MEDIA_URL_POLICY = {
 } as const;
 
 /**
+ * ⚠️ MEDIA_URL_POLICY is for media rendering sinks ONLY (<img>, <video>).
+ * Do NOT reuse for <iframe>, <a href>, or any script-injectable context.
+ * The allowDataUrls flag is safe for media elements but dangerous if applied
+ * to other sinks. For non-media URL validation, create a separate policy
+ * with allowDataUrls: false.
+ */
+
+/**
  * Check whether a raw URL value is allowed under the given safety policy.
  *
  * Performs control-character stripping, blocked-protocol-hint detection,
@@ -119,7 +127,12 @@ export function isUrlAllowed(rawUrl: string | null | undefined, policy: UrlSafet
 export function startsWithBlockedProtocolHint(value: string, hints: readonly string[]): boolean {
   const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
 
-  if (/%(?![0-9A-Fa-f]{2})/.test(probe)) return true;
+  // M9: Scope malformed-% check to the scheme region (before first ':')
+  // to avoid false positives like '?q=100%off' in query strings.
+  // If no scheme separator exists, check the whole probe.
+  const schemeEnd = probe.indexOf(':');
+  const schemeRegion = schemeEnd >= 0 ? probe.slice(0, schemeEnd) : probe;
+  if (/%(?![0-9A-Fa-f]{2})/.test(schemeRegion)) return true;
 
   const variants = buildProbeVariants(probe);
   return variants.some((candidate) => hints.some((hint) => candidate.startsWith(hint)));

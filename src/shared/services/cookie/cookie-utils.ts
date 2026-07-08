@@ -125,7 +125,7 @@ export async function getCookieValue(name: string): Promise<string | undefined> 
   if (gm?.list) {
     const cookies = await listCookies({ name });
     const value = cookies[0]?.value;
-    if (value) return value;
+    if (value !== undefined) return value;
   }
 
   return getCookieValueSync(name);

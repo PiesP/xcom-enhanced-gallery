@@ -101,7 +101,12 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
 
       const focusableElements = Array.from(
         containerEl!.querySelectorAll<HTMLElement>(focusableSelectors)
-      ).filter((el) => !el.hasAttribute('aria-hidden') && el.offsetParent !== null);
+      ).filter(
+        (el) =>
+          !el.hasAttribute('aria-hidden') &&
+          (el.getClientRects().length > 0 ||
+            (!el.hasAttribute('disabled') && getComputedStyle(el).visibility !== 'hidden'))
+      );
 
       if (focusableElements.length === 0) return;
 
@@ -158,9 +163,21 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       // aria-modal="true" has uneven screen-reader support; explicitly
       // setting aria-hidden on sibling elements ensures AT cannot reach
       // background content regardless of aria-modal implementation.
-      hiddenBackgroundElements = Array.from(document.body.children).filter(
-        (el) => el !== containerEl && el instanceof HTMLElement
-      ) as HTMLElement[];
+      // L3: Use document.body.querySelectorAll(':scope > :not([data-xeg-gallery-container])')
+      // to avoid assuming the container is a direct body child.
+      const children = Array.from(document.body.children);
+      const containerElement = containerEl; // local copy for type narrowing
+      if (!containerElement || containerElement.parentElement === document.body) {
+        // Container is a direct body child or doesn't exist
+        hiddenBackgroundElements = children.filter(
+          (el) => el !== containerElement && el instanceof HTMLElement
+        ) as HTMLElement[];
+      } else {
+        // Container is nested — hide body-level siblings that don't contain it
+        hiddenBackgroundElements = children.filter(
+          (el) => el instanceof HTMLElement && !el.contains(containerElement)
+        ) as HTMLElement[];
+      }
       for (const el of hiddenBackgroundElements) {
         el.setAttribute('aria-hidden', 'true');
       }

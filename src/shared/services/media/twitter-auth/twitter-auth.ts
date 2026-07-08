@@ -30,7 +30,7 @@ export function resolveBearerToken(document_?: Document | null | undefined): str
     const nextDataScript = doc.getElementById('__NEXT_DATA__');
     if (nextDataScript?.textContent) {
       const nextData = JSON.parse(nextDataScript.textContent);
-      const token = nextData?.props?.pageProps?.token?.Bearer ?? nextData?.props?.token?.Bearer;
+      const token = nextData?.props?.pageProps?.token?.Bearer;
       if (token && typeof token === 'string' && isValidJwt(token)) {
         return `Bearer ${token}`;
       }

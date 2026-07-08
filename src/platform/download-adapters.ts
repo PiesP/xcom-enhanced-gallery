@@ -18,8 +18,8 @@ export const getDownloadAdapter = createAdapter<DownloadAdapter>(
   () => {
     const api = getUserscript();
     return {
-      download: api.download,
-      downloadBlob: api.downloadBlob,
+      download: (url: string, filename: string) => api.download(url, filename),
+      downloadBlob: (blob: Blob, filename: string) => api.downloadBlob(blob, filename),
       /** Userscript GM_download can download URLs directly — no blob fallback needed */
       needsBlobFallback: () => false,
     };

@@ -66,7 +66,22 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
       gmDetails.onprogress = details.onprogress;
     }
 
-    const gmControl = gm.xmlHttpRequest(gmDetails);
+    let gmControl: { abort: () => void };
+    try {
+      gmControl = gm.xmlHttpRequest(gmDetails);
+    } catch (error) {
+      // L2: GM_xmlhttpRequest can throw synchronously outside of validateUrl
+      details.onerror?.({
+        finalUrl: details.url,
+        readyState: 0,
+        status: 0,
+        statusText: 'NETWORK_ERROR',
+        responseHeaders: '',
+        response: null,
+        responseText: '',
+      });
+      return { abort: () => {} };
+    }
 
     return {
       abort: () => gmControl.abort(),

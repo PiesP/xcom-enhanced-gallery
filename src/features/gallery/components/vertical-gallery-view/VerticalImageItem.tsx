@@ -85,8 +85,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
 
-  // Defense-in-depth: validate URL before rendering media element
-  const isUrlValid = createMemo(() => isUrlAllowed(local.media.url, MEDIA_URL_POLICY));
+  // Defense-in-depth: validate the rendered URL (url for active, thumbnailUrl for inactive)
+  const isDisplaySrcValid = createMemo(() => isUrlAllowed(displaySrc(), MEDIA_URL_POLICY));
 
   // MED-2: Track both media.id and index to handle item reorder.
   // <For> keys by index, so when items reorder the component instance
@@ -196,15 +196,16 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     setIsLoaded(false);
   };
 
+  // M8: No dependency on isLoaded() — this effect is a one-shot cached-image
+  // check for images that load before the native onLoad fires (e.g. browser
+  // cache). The native onLoad/onLoadedMetadata handlers are the primary paths.
   createEffect(() => {
-    if (isLoaded()) return;
-
     if (isVideo()) {
       const video = videoRef();
-      if (video && video.readyState >= 1) handleMediaLoad();
+      if (video && video.readyState >= 1 && !isLoaded()) handleMediaLoad();
     } else {
       const image = imageRef();
-      if (image?.complete) {
+      if (image?.complete && !isLoaded()) {
         if (image.naturalWidth > 0) handleMediaLoad();
         else handleMediaError();
       }
@@ -284,7 +285,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
           </div>
         )}
 
-        {isVideo() && isUrlValid() ? (
+        {isVideo() && isDisplaySrcValid() ? (
           <video
             src={displaySrc()}
             controls
@@ -296,7 +297,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             onDragStart={preventDragStart}
             onVolumeChange={handleVolumeChange}
           />
-        ) : !isVideo() && isUrlValid() ? (
+        ) : !isVideo() && isDisplaySrcValid() ? (
           <img
             ref={setImageRef}
             src={displaySrc()}

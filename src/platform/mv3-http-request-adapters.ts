@@ -5,10 +5,15 @@
  * MV3 extension HTTP request adapter.
  *
  * Uses fetch() directly for same-origin requests.
- * For cross-origin requests, relays to the background service worker.
+ * For cross-origin requests, docstring previously claimed SW relay but
+ * cross-origin requests go through fetch() directly in the content script
+ * context (which has host_permissions to bypass CORS for allowed hosts).
+ * If Twitter's CSP or CORS headers ever block content-script fetch(),
+ * a SW relay can be implemented by extending the message protocol.
  */
 
 import { DEFAULT_REQUEST_TIMEOUT_MS } from '@constants/performance';
+import { isAllowedUrl } from '@shared/utils/url/url-safety';
 import type {
   HttpRequestAdapter,
   HttpRequestControl,
@@ -18,11 +23,18 @@ import type {
 
 export class MV3HttpRequestAdapter implements HttpRequestAdapter {
   request(details: HttpRequestDetails): HttpRequestControl {
+    // SSRF prevention: validate URL before making the request (M1)
+    if (!isAllowedUrl(details.url)) {
+      details.onerror?.(this.createErrorResponse(details.url, 0));
+      return { abort: () => {} };
+    }
+
     const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      details.timeout ?? DEFAULT_REQUEST_TIMEOUT_MS
-    );
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, details.timeout ?? DEFAULT_REQUEST_TIMEOUT_MS);
 
     this.fetchWithController(details, controller)
       .then((response) => {
@@ -31,7 +43,10 @@ export class MV3HttpRequestAdapter implements HttpRequestAdapter {
       })
       .catch((error: unknown) => {
         clearTimeout(timeoutId);
-        if (error instanceof DOMException && error.name === 'AbortError') {
+        if (timedOut) {
+          // M3: Distinguish timeout from abort — set timedOut flag before abort
+          details.ontimeout?.(this.createErrorResponse(details.url, 0));
+        } else if (error instanceof DOMException && error.name === 'AbortError') {
           details.onabort?.(this.createErrorResponse(details.url, 0));
         } else {
           details.onerror?.(this.createErrorResponse(details.url, 0));
@@ -103,7 +118,13 @@ export class MV3HttpRequestAdapter implements HttpRequestAdapter {
       statusText: response.statusText,
       responseHeaders: headersArray.join('\r\n'),
       response: responseBody,
-      responseText: typeof responseBody === 'string' ? responseBody : JSON.stringify(responseBody),
+      // L1: Only stringify for text responses; return empty string for binary types
+      responseText:
+        responseType === 'text' || responseType === 'json' || responseType === undefined
+          ? typeof responseBody === 'string'
+            ? responseBody
+            : JSON.stringify(responseBody)
+          : '',
     } satisfies HttpRequestResponse;
   }
 

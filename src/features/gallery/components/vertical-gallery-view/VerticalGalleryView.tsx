@@ -114,7 +114,6 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   const { imageFitMode, handleFitOriginal, handleFitWidth, handleFitHeight, handleFitContainer } =
     useGalleryFitMode({
       scrollToCurrentItem: scroll.scrollToCurrentItem,
-      currentIndex,
     });
 
   // Event handlers

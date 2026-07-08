@@ -8,11 +8,16 @@
 import { logger } from '@shared/logging/logger';
 
 const warnedInvalidSelectors: Record<string, true> = Object.create(null);
+const MAX_WARNED_SELECTORS = 100;
+let warnedSelectorCount = 0;
 
 const warnInvalidSelectorOnce = (selector: string, error: unknown): void => {
   if (!__DEV__) return;
   if (warnedInvalidSelectors[selector]) return;
+  // L7: Cap the cache to prevent unbounded growth
+  if (warnedSelectorCount >= MAX_WARNED_SELECTORS) return;
   warnedInvalidSelectors[selector] = true;
+  warnedSelectorCount++;
   logger.warn(`[query-helpers] Invalid selector skipped: ${selector}`, { error });
 };
 

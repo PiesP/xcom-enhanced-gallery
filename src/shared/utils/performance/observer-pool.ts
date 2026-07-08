@@ -21,7 +21,6 @@ const observerPool = new Map<
     readonly observer: IntersectionObserver;
     readonly callbacks: WeakMap<Element, (entry: IntersectionObserverEntry) => void>;
     readonly refCount: Map<Element, number>; // one element can be observed multiple times
-    disconnectChecker?: WeakMap<Element, boolean>; // MED-8: tracks isConnected at observe time
   }
 >();
 
@@ -95,11 +94,6 @@ export const SharedObserver = {
       entry.observer.observe(element);
     }
 
-    // MED-8: Track the observer entry for this element so observer
-    // callbacks can detect disconnected elements (MED-3 GC path).
-    entry.disconnectChecker ??= new WeakMap<Element, boolean>();
-    entry.disconnectChecker.set(element, element.isConnected);
-
     let disposed = false;
 
     return (): void => {
@@ -120,14 +114,6 @@ export const SharedObserver = {
         poolEntry.refCount.set(element, count);
         // Remaining callers still track this element — do NOT re-observe
         // (the observer is already tracking it).
-      }
-
-      // MED-3/8: Check if element is still connected; if not, clean up to prevent leaks.
-      // This handles the case where an element is removed from DOM without dispose().
-      if (poolEntry.disconnectChecker?.get(element) === false) {
-        poolEntry.callbacks.delete(element);
-        poolEntry.refCount.delete(element);
-        poolEntry.observer.unobserve(element);
       }
 
       // If no more elements tracked by this observer, clean it up

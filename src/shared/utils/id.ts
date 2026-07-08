@@ -9,11 +9,17 @@
  */
 
 /**
- * Generates a unique ID using crypto.randomUUID.
+ * Generates a unique ID using crypto.randomUUID with fallback for
+ * non-secure contexts where crypto.randomUUID() may throw.
  * @returns Compact unique identifier without dashes.
  */
 export function createId(): string {
-  return crypto.randomUUID().replaceAll('-', '');
+  try {
+    return crypto.randomUUID().replaceAll('-', '');
+  } catch {
+    // L8: Fallback for non-secure contexts where crypto.randomUUID() throws
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}-${performance.now()}`;
+  }
 }
 
 /**

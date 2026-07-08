@@ -107,9 +107,19 @@ export class PersistentStorage {
   }
 
   async getString(key: string, defaultValue?: string): Promise<string | undefined> {
-    const value = await this.adapter.get<string | undefined>(key);
+    const value = await this.adapter.get<unknown>(key);
     if (value === undefined || value === null) return defaultValue;
-    return value;
+    // L11: MV3 adapter may store raw objects; cast through String() for safety
+    if (typeof value === 'string') return value;
+    // If value is an object (MV3 stores raw), try toString to preserve compatibility
+    if (typeof value === 'object') {
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return String(value);
+      }
+    }
+    return String(value);
   }
 
   async has(key: string): Promise<boolean> {
