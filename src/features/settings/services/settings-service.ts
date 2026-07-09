@@ -53,6 +53,9 @@ export class SettingsService {
 
     const oldValue = this.get(key);
 
+    // Skip if value is unchanged (idempotent — avoid unnecessary saves)
+    if (oldValue === value) return;
+
     if (!this.assignNestedPath(this.settings, key, value)) {
       throw new Error(`Failed to assign setting value for ${key}`);
     }
