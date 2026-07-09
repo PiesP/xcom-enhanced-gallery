@@ -208,7 +208,10 @@ export function computeContainIntrinsicSizeOverride(
 
   const ratio = intrinsicHeight > 0 ? intrinsicWidth / intrinsicHeight : 16 / 9;
   const ratioStr = ratio.toFixed(6);
-  const aw = 'var(--xeg-viewport-w, 100vw)';
+  // Use 100% instead of var(--xeg-viewport-w) so contain-intrinsic-size
+  // resolves against the itemsContainer content-box. This automatically
+  // accounts for scrollbar gutter and container padding.
+  const aw = '100%';
 
   switch (fitMode) {
     case 'fitWidth': {
