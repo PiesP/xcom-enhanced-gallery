@@ -11,9 +11,15 @@
 /**
  * Generates a unique ID using crypto.randomUUID with fallback for
  * non-secure contexts where crypto.randomUUID() may throw.
+ *
+ * Accepts an optional `seed` parameter for determinism in tests.
+ * When `seed` is provided, it is returned directly (no randomness).
+ *
+ * @param seed - Optional deterministic seed (returned as-is for testability)
  * @returns Compact unique identifier without dashes.
  */
-export function createId(): string {
+export function generateUniqueId(seed?: string): string {
+  if (seed) return seed;
   try {
     return crypto.randomUUID().replaceAll('-', '');
   } catch {
@@ -22,6 +28,9 @@ export function createId(): string {
   }
 }
 
+/** @deprecated Use `generateUniqueId(seed?)` instead — kept for backward compat */
+export const createId = generateUniqueId;
+
 /**
  * Generates a prefixed unique ID.
  * @param prefix - The prefix for the ID
@@ -29,5 +38,5 @@ export function createId(): string {
  * @returns Prefixed ID in format: `{prefix}{separator}{id}`
  */
 export function createPrefixedId(prefix: string, separator = '_'): string {
-  return `${prefix}${separator}${createId()}`;
+  return `${prefix}${separator}${generateUniqueId()}`;
 }
