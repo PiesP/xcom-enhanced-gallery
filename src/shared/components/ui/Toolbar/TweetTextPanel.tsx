@@ -143,10 +143,16 @@ const formatTweetUrlLabel = (url: string): string => url.replace(PROTOCOL_PREFIX
  * @param translate - Translation function
  * @returns JSX element array
  */
-const renderTweetTokens = (tokens: readonly TweetToken[], translate: ReturnType<typeof useTranslation>): JSXElement =>
+const renderTweetTokens = (
+  tokens: readonly TweetToken[],
+  translate: ReturnType<typeof useTranslation>
+): JSXElement =>
   tokens.map((token) => {
     if ((token.type === 'url' || token.type === 'hashtag') && token.href) {
-      const label = token.type === 'hashtag' ? translate('msg.gal.hashtagLabel', { value: token.value }) : token.value;
+      const label =
+        token.type === 'hashtag'
+          ? translate('msg.gal.hashtagLabel', { value: token.value })
+          : token.value;
       return (
         <a href={token.href} target="_blank" rel="noopener noreferrer" aria-label={label}>
           {token.value}

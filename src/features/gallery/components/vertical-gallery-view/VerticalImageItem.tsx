@@ -309,7 +309,10 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             controls
             ref={setVideoRef}
             class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
-            aria-label={translate('msg.gal.videoCount', { index: local.index + 1, total: totalItems() })}
+            aria-label={translate('msg.gal.videoCount', {
+              index: local.index + 1,
+              total: totalItems(),
+            })}
             onLoadedMetadata={handleMediaLoad}
             onError={handleMediaError}
             onDragStart={preventDragStart}
