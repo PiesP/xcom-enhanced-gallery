@@ -5,6 +5,7 @@ import { LucideIcon } from '@shared/components/ui/Icon/lucide/lucide-icons';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { isUrlAllowed } from '@shared/utils/url/safety';
 import type { JSXElement } from 'solid-js';
+import { splitProps } from 'solid-js';
 import styles from './Toolbar.module.css';
 
 /**
@@ -195,10 +196,11 @@ function TweetUrlLink(props: {
  * @returns JSX element
  */
 export function TweetTextPanel(props: TweetTextPanelProps): JSXElement {
+  const [local] = splitProps(props, ['tweetText', 'tweetTextContent', 'tweetUrl']);
   const translate = useTranslation();
-  const tweetText = props.tweetTextContent ?? props.tweetText ?? '';
+  const tweetText = local.tweetTextContent ?? local.tweetText ?? '';
   const tokens = tweetText ? tokenizeTweetText(tweetText) : [];
-  const safeTweetUrl = normalizeTweetUrl(props.tweetUrl);
+  const safeTweetUrl = normalizeTweetUrl(local.tweetUrl);
   const tweetUrlLabel = safeTweetUrl ? formatTweetUrlLabel(safeTweetUrl) : '';
 
   return (

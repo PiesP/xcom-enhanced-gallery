@@ -10,11 +10,11 @@ import type {
   LanguageOption,
   ThemeOption,
 } from '@shared/components/ui/Settings/SettingsControls.types';
+import { tryGetSettings } from '@shared/container/settings-registry';
+import { logger } from '@shared/logging/logger';
 import { getEventManager } from '@shared/services/event-manager';
 import { getLanguageService } from '@shared/services/language-service';
 import { getThemeService } from '@shared/services/theme-service';
-import { tryGetSettings } from '@shared/container/settings-registry';
-import { logger } from '@shared/logging/logger';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 import type {
   ToolbarSettingsControllerResult,

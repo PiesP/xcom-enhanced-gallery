@@ -12,12 +12,15 @@ import {
 } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
 import { createAppConfig } from '@constants/app-config';
-import { getEventManager, resetEventManagerForTests as resetEventManager } from '@shared/services/event-manager';
 import { clearSettings } from '@shared/container/settings-registry';
 import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
 import { getGlobalErrorHandler } from '@shared/error/error-handler';
 import { logger } from '@shared/logging/logger';
+import {
+  getEventManager,
+  resetEventManagerForTests as resetEventManager,
+} from '@shared/services/event-manager';
 import type { BootstrapStage } from '@shared/types/lifecycle.types';
 import { TWITTER_HOSTS } from '@shared/utils/url/host';
 // Import isolated gallery styles in CSS cascade priority order:

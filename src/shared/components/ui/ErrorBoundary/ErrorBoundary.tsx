@@ -7,11 +7,11 @@
  */
 
 import { getNotificationAdapter } from '@platform/index';
-import { getLanguageService } from '@shared/services/language-service';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
+import { getLanguageService } from '@shared/services/language-service';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import type { JSXElement } from 'solid-js';
-import { createSignal, onCleanup, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
+import { createSignal, onCleanup, Show, ErrorBoundary as SolidErrorBoundary, splitProps } from 'solid-js';
 import styles from './ErrorBoundary.module.css';
 
 /** Maximum number of retry attempts before disabling the retry button. */
@@ -56,6 +56,7 @@ function translateError(error: unknown): { body: string; title: string } {
  * Error Boundary component with localized notifications and retry support.
  */
 export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
+  const [local] = splitProps(props, ['children', 'onError']);
   const [lastError, setLastError] = createSignal<unknown>(undefined);
   const [caughtError, setCaughtError] = createSignal<unknown>(undefined);
   const [mounted, setMounted] = createSignal(true);
@@ -127,11 +128,11 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
             // Invoke emergency cleanup callback so parent can restore global
             // state (e.g., body scroll lock) that child onCleanup hooks
             // will never fire for because the render errored.
-            props.onError?.(error);
+            local.onError?.(error);
             return null;
           }}
         >
-          {props.children}
+          {local.children}
         </SolidErrorBoundary>
       </Show>
       <Show when={caughtError()}>

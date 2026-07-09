@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { getLanguageService } from '@shared/services/language-service';
 import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
+import { getLanguageService } from '@shared/services/language-service';
 import { createSignal, onCleanup } from 'solid-js';
 
 /**

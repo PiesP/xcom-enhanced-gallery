@@ -13,10 +13,10 @@ import {
 } from '@shared/components/isolation/GalleryContainer';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import type { BaseLanguageCode, SupportedLanguage } from '@shared/constants/i18n/language-types';
-import { getLanguageService } from '@shared/services/language-service';
-import { getThemeService } from '@shared/services/theme-service';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
+import { getLanguageService } from '@shared/services/language-service';
+import { getThemeService } from '@shared/services/theme-service';
 import {
   closeGallery,
   gallerySignals,
@@ -28,7 +28,7 @@ import {
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { createEffectRoot } from '@shared/utils/solid/accessor-utils';
 import type { JSX } from 'solid-js';
-import { createSignal, onCleanup } from 'solid-js';
+import { createSignal, onCleanup, splitProps } from 'solid-js';
 
 import './styles/gallery-global.css';
 
@@ -39,6 +39,7 @@ interface GalleryRootProps {
 }
 
 function GalleryRoot(props: GalleryRootProps): JSX.Element {
+  const [local] = splitProps(props, ['onClose', 'onDownloadCurrent', 'onDownloadAll']);
   const themeService = getThemeService();
   const languageService = getLanguageService();
 
@@ -105,11 +106,11 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
           {gallerySignals.error ?? ''}
         </div>
         <VerticalGalleryView
-          onClose={props.onClose}
+          onClose={local.onClose}
           onPrevious={() => navigatePrevious('button')}
           onNext={() => navigateNext('button')}
-          onDownloadCurrent={() => props.onDownloadCurrent()}
-          onDownloadAll={() => props.onDownloadAll()}
+          onDownloadCurrent={() => local.onDownloadCurrent()}
+          onDownloadAll={() => local.onDownloadAll()}
           className={CSS.CLASSES.VERTICAL_VIEW}
         />
       </GalleryContainer>

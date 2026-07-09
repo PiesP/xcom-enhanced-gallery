@@ -6,9 +6,9 @@
  * @description Singleton service that captures and logs runtime errors (dev mode).
  */
 
-import { getEventManager } from '@shared/services/event-manager';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
+import { getEventManager } from '@shared/services/event-manager';
 import { createSingleton } from '@shared/services/singleton-base';
 
 const formatErrorLocation = (

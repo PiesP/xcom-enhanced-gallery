@@ -6,15 +6,15 @@ import { IconButton } from '@shared/components/ui/Button/IconButton';
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
 import { LucideIcon } from '@shared/components/ui/Icon/lucide/lucide-icons';
 import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
-import { getEventManager } from '@shared/services/event-manager';
 import type { ToolbarSettingsControllerResult } from '@shared/hooks/toolbar/use-toolbar-settings-controller.types';
 import { useTranslation } from '@shared/hooks/use-translation';
+import { getEventManager } from '@shared/services/event-manager';
 import type { ImageFitMode } from '@shared/types/settings.types';
 import type { ToolbarState } from '@shared/types/toolbar.types';
 import { shouldAllowWheelDefault as shouldAllowWheelDefaultBase } from '@shared/utils/events/wheel-scroll-guard';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
-import { createEffect, createMemo, createSignal, onCleanup, Show } from 'solid-js';
+import { createEffect, createMemo, createSignal, onCleanup, Show, splitProps } from 'solid-js';
 import styles from './Toolbar.module.css';
 import { TweetTextPanel } from './TweetTextPanel';
 
@@ -117,13 +117,25 @@ const shouldAllowWheelDefault = (event: WheelEvent): boolean => {
 };
 
 export function ToolbarView(props: ToolbarViewProps): JSXElement {
-  const totalCount = () => props.totalCount;
-  const currentIndex = () => props.currentIndex;
-  const isToolbarDisabled = () => props.disabled;
-  const activeFitMode = () => props.currentFitMode;
-  const tweetText = () => props.tweetText;
-  const tweetTextContent = () => props.tweetTextContent;
-  const tweetUrl = () => props.tweetUrl;
+  const [local] = splitProps(props, [
+    'totalCount', 'currentIndex', 'disabled', 'currentFitMode',
+    'tweetText', 'tweetTextContent', 'tweetUrl',
+    'fitModeLabels', 'fitModeOrder',
+    'role', 'tabIndex', 'onFocus', 'onBlur',
+    'navState', 'displayedIndex', 'progressWidth', 'toolbarClass', 'toolbarDataState',
+    'activeFitMode', 'handleFitModeClick', 'isFitDisabled',
+    'onPreviousClick', 'onNextClick', 'onDownloadCurrent', 'onDownloadAll', 'onCloseClick',
+    'settingsController', 'showSettingsButton',
+    'isTweetPanelExpanded', 'toggleTweetPanelExpanded',
+    'aria-label', 'aria-describedby', 'data-testid',
+  ]);
+  const totalCount = createMemo(() => local.totalCount);
+  const currentIndex = createMemo(() => local.currentIndex);
+  const isToolbarDisabled = createMemo(() => local.disabled);
+  const activeFitMode = createMemo(() => local.currentFitMode);
+  const tweetText = createMemo(() => local.tweetText);
+  const tweetTextContent = createMemo(() => local.tweetTextContent);
+  const tweetUrl = createMemo(() => local.tweetUrl);
 
   // Element refs
   const [toolbarElement, setToolbarElement] = createSignal<HTMLDivElement | null>(null);
@@ -133,17 +145,17 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const translate = useTranslation();
 
   // Memos for derived state
-  const nav = createMemo(() => props.navState());
-  const fitModeLabels = () => props.fitModeLabels;
+  const nav = createMemo(() => local.navState());
+  const fitModeLabels = () => local.fitModeLabels;
 
   const assignToolbarRef = (element: HTMLDivElement | null) => {
     setToolbarElement(element);
-    props.settingsController.assignToolbarRef(element);
+    local.settingsController.assignToolbarRef(element);
   };
 
   const assignSettingsPanelRef = (element: HTMLDivElement | null) => {
     setSettingsPanelEl(element);
-    props.settingsController.assignSettingsPanelRef(element);
+    local.settingsController.assignSettingsPanelRef(element);
   };
 
   createEffect(() => {
@@ -152,7 +164,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     if (!toolbar && !counter) return;
 
     const current = String(currentIndex());
-    const focused = String(props.displayedIndex());
+    const focused = String(local.displayedIndex());
 
     if (toolbar) {
       toolbar.dataset.currentIndex = current;
@@ -169,7 +181,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     cx(styles.toolbarButton, 'xeg-inline-center', ...extra);
 
   const toolbarStateClass = () => {
-    switch (props.toolbarDataState()) {
+    switch (local.toolbarDataState()) {
       case 'loading':
         return styles.stateLoading;
       case 'downloading':
@@ -254,21 +266,21 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     <div
       ref={assignToolbarRef}
       class={cx(
-        props.toolbarClass(),
+        local.toolbarClass(),
         toolbarStateClass(),
-        props.settingsController.isSettingsExpanded() ? styles.settingsExpanded : undefined,
-        props.isTweetPanelExpanded() ? styles.tweetPanelExpanded : undefined
+        local.settingsController.isSettingsExpanded() ? styles.settingsExpanded : undefined,
+        local.isTweetPanelExpanded() ? styles.tweetPanelExpanded : undefined
       )}
-      role={props.role ?? 'toolbar'}
-      aria-label={props['aria-label'] ?? translate('tb.galleryToolbar')}
-      aria-describedby={props['aria-describedby']}
+      role={local.role ?? 'toolbar'}
+      aria-label={local['aria-label'] ?? translate('tb.galleryToolbar')}
+      aria-describedby={local['aria-describedby']}
       aria-disabled={isToolbarDisabled()}
-      data-testid={__DEV__ ? props['data-testid'] : undefined}
+      data-testid={__DEV__ ? local['data-testid'] : undefined}
       data-gallery-element="toolbar"
-      tabIndex={props.tabIndex}
-      onFocus={props.onFocus as ((event: FocusEvent) => void) | undefined}
-      onBlur={props.onBlur as ((event: FocusEvent) => void) | undefined}
-      onKeyDown={(event) => props.settingsController.handleToolbarKeyDown(event)}
+      tabIndex={local.tabIndex}
+      onFocus={local.onFocus as ((event: FocusEvent) => void) | undefined}
+      onBlur={local.onBlur as ((event: FocusEvent) => void) | undefined}
+      onKeyDown={(event) => local.settingsController.handleToolbarKeyDown(event)}
     >
       <div class={cx(styles.toolbarContent, 'xeg-row-center')}>
         <div class={styles.toolbarControls}>
@@ -278,7 +290,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             aria-label={translate('tb.prev')}
             tooltip={translate('tb.prev')}
             disabled={nav().prevDisabled}
-            onClick={props.onPreviousClick}
+            onClick={local.onPreviousClick}
           >
             <LucideIcon name="chevron-left" size={TOOLBAR_ICON_SIZE_VAR} />
           </IconButton>
@@ -289,7 +301,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             aria-label={translate('tb.next')}
             tooltip={translate('tb.next')}
             disabled={nav().nextDisabled}
-            onClick={props.onNextClick}
+            onClick={local.onNextClick}
           >
             <LucideIcon name="chevron-right" size={TOOLBAR_ICON_SIZE_VAR} />
           </IconButton>
@@ -304,7 +316,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 class={cx(styles.mediaCounter, 'xeg-inline-center')}
                 aria-live="polite"
               >
-                <span class={styles.currentIndex}>{props.displayedIndex() + 1}</span>
+                <span class={styles.currentIndex}>{local.displayedIndex() + 1}</span>
                 <span class={styles.separator}>/</span>
                 <span class={styles.totalCount}>{totalCount()}</span>
               </span>
@@ -312,24 +324,24 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 class={styles.progressBar}
                 role="progressbar"
                 aria-label={translate('tb.progress')}
-                aria-valuenow={props.displayedIndex() + 1}
+                aria-valuenow={local.displayedIndex() + 1}
                 aria-valuemin={1}
                 aria-valuemax={totalCount()}
                 aria-labelledby="xeg-toolbar-counter"
               >
-                <div class={styles.progressFill} style={{ width: props.progressWidth() }} />
+                <div class={styles.progressFill} style={{ width: local.progressWidth() }} />
               </div>
             </div>
           </div>
 
-          {props.fitModeOrder.map(({ mode, iconName }) => {
+          {local.fitModeOrder.map(({ mode, iconName }) => {
             const label = fitModeLabels()[mode];
             return (
               <IconButton
                 class={toolbarButtonClass(styles.fitButton)}
                 size="toolbar"
-                onClick={props.handleFitModeClick(mode)}
-                disabled={props.isFitDisabled(mode)}
+                onClick={local.handleFitModeClick(mode)}
+                disabled={local.isFitDisabled(mode)}
                 aria-label={label.label}
                 tooltip={label.title}
                 aria-pressed={activeFitMode() === mode}
@@ -342,7 +354,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           <IconButton
             class={toolbarButtonClass(styles.downloadButton, styles.downloadCurrent)}
             size="toolbar"
-            onClick={props.onDownloadCurrent}
+            onClick={local.onDownloadCurrent}
             disabled={nav().downloadDisabled}
             aria-label={translate('tb.dl')}
             tooltip={translate('tb.dl')}
@@ -354,7 +366,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             <IconButton
               class={toolbarButtonClass(styles.downloadButton, styles.downloadAll)}
               size="toolbar"
-              onClick={props.onDownloadAll}
+              onClick={local.onDownloadAll}
               disabled={nav().downloadDisabled}
               aria-label={translate('tb.dlAllCt', { count: totalCount() })}
               tooltip={translate('tb.dlAllCt', { count: totalCount() })}
@@ -363,19 +375,19 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             </IconButton>
           )}
 
-          {props.showSettingsButton && (
+          {local.showSettingsButton && (
             <IconButton
-              ref={props.settingsController.assignSettingsButtonRef}
+              ref={local.settingsController.assignSettingsButtonRef}
               id="settings-button"
               class={toolbarButtonClass()}
               size="toolbar"
               aria-label={translate('tb.setOpen')}
-              aria-expanded={props.settingsController.isSettingsExpanded() ? 'true' : 'false'}
+              aria-expanded={local.settingsController.isSettingsExpanded() ? 'true' : 'false'}
               aria-controls="toolbar-settings-panel"
               tooltip={translate('tb.setOpen')}
               disabled={isToolbarDisabled()}
-              onMouseDown={props.settingsController.handleSettingsMouseDown}
-              onClick={props.settingsController.handleSettingsClick}
+              onMouseDown={local.settingsController.handleSettingsMouseDown}
+              onClick={local.settingsController.handleSettingsClick}
             >
               <LucideIcon name="settings-2" size={TOOLBAR_ICON_SIZE_VAR} />
             </IconButton>
@@ -387,11 +399,11 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               class={toolbarButtonClass()}
               size="toolbar"
               aria-label={translate('tb.twTxt')}
-              aria-expanded={props.isTweetPanelExpanded() ? 'true' : 'false'}
+              aria-expanded={local.isTweetPanelExpanded() ? 'true' : 'false'}
               aria-controls="toolbar-tweet-panel"
               tooltip={translate('tb.twTxt')}
               disabled={isToolbarDisabled()}
-              onClick={props.toggleTweetPanelExpanded}
+              onClick={local.toggleTweetPanelExpanded}
             >
               <LucideIcon name="messages-square" size={TOOLBAR_ICON_SIZE_VAR} />
             </IconButton>
@@ -403,7 +415,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             aria-label={translate('tb.cls')}
             tooltip={translate('tb.cls')}
             disabled={isToolbarDisabled()}
-            onClick={props.onCloseClick}
+            onClick={local.onCloseClick}
           >
             <LucideIcon name="x" size={TOOLBAR_ICON_SIZE_VAR} />
           </IconButton>
@@ -415,22 +427,22 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         id="toolbar-settings-panel"
         class={cx(
           styles.settingsPanel,
-          props.settingsController.isSettingsExpanded() ? styles.panelExpanded : undefined
+          local.settingsController.isSettingsExpanded() ? styles.panelExpanded : undefined
         )}
         data-gallery-scrollable="true"
-        onMouseDown={props.settingsController.handlePanelMouseDown}
+        onMouseDown={local.settingsController.handlePanelMouseDown}
         role="region"
         aria-label={translate('tb.settingsPanel')}
         aria-labelledby="settings-button"
         data-gallery-element="settings-panel"
-        onClick={props.settingsController.handlePanelClick}
+        onClick={local.settingsController.handlePanelClick}
       >
-        <Show when={props.settingsController.isSettingsExpanded()}>
+        <Show when={local.settingsController.isSettingsExpanded()}>
           <SettingsControls
-            currentTheme={props.settingsController.currentTheme}
-            currentLanguage={props.settingsController.currentLanguage}
-            onThemeChange={props.settingsController.handleThemeChange}
-            onLanguageChange={props.settingsController.handleLanguageChange}
+            currentTheme={local.settingsController.currentTheme}
+            currentLanguage={local.settingsController.currentLanguage}
+            onThemeChange={local.settingsController.handleThemeChange}
+            onLanguageChange={local.settingsController.handleLanguageChange}
             compact
             data-testid={__DEV__ ? 'settings-controls' : undefined}
           />
@@ -442,14 +454,14 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         id="toolbar-tweet-panel"
         class={cx(
           styles.tweetPanel,
-          props.isTweetPanelExpanded() ? styles.panelExpanded : undefined
+          local.isTweetPanelExpanded() ? styles.panelExpanded : undefined
         )}
         role="region"
         aria-label={translate('tb.twPanel')}
         aria-labelledby="tweet-text-button"
         data-gallery-element="tweet-panel"
       >
-        <Show when={props.isTweetPanelExpanded() && hasTweetContent()}>
+        <Show when={local.isTweetPanelExpanded() && hasTweetContent()}>
           <TweetTextPanel
             tweetText={tweetText() ?? undefined}
             tweetTextContent={tweetTextContent() ?? undefined}

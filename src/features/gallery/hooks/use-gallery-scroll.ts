@@ -5,10 +5,10 @@
  * Tracks user scroll activity and reports scroll state for focus tracking.
  */
 
-import { getEventManager } from '@shared/services/event-manager';
 import { isGalleryInternalElement } from '@shared/dom/utils';
 import { createTimeout } from '@shared/hooks/use-timer';
 import { logger } from '@shared/logging/logger';
+import { getEventManager } from '@shared/services/event-manager';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { createPrefixedId } from '@shared/utils/id';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';

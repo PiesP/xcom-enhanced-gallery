@@ -2,7 +2,6 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { getStorageAdapter } from '@platform/index';
-import { createSingleton } from '@shared/services/singleton-base';
 
 /**
  * localStorage fallback prefix — used when the primary storage adapter
@@ -39,9 +38,6 @@ export class PersistentStorage {
   private get adapter() {
     return getStorageAdapter();
   }
-
-  /** Destroy service */
-  destroy(): void {}
 
   async set(key: string, value: unknown): Promise<void> {
     if (value === undefined) {
@@ -157,7 +153,16 @@ export class PersistentStorage {
   }
 }
 
-const { getInstance: getPersistentStorage, resetForTests: resetPersistentStorageForTests } =
-  createSingleton(() => new PersistentStorage());
+let storageInstance: PersistentStorage | null = null;
 
-export { getPersistentStorage, resetPersistentStorageForTests };
+export function getPersistentStorage(): PersistentStorage {
+  if (!storageInstance) {
+    storageInstance = new PersistentStorage();
+  }
+  return storageInstance;
+}
+
+/** Reset singleton instance (for testing only) */
+export function resetPersistentStorageForTests(): void {
+  storageInstance = null;
+}

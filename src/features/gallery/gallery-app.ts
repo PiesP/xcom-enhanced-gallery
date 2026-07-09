@@ -7,8 +7,6 @@
 
 import type { GalleryRenderer } from '@features/gallery/gallery-renderer';
 import { getNotificationAdapter } from '@platform/index';
-import { getLanguageService } from '@shared/services/language-service';
-import { getMediaService } from '@shared/services/media-service';
 import { tryGetSettings } from '@shared/container/settings-registry';
 import {
   galleryErrorReporter,
@@ -16,6 +14,8 @@ import {
   normalizeErrorMessage,
 } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
+import { getLanguageService } from '@shared/services/language-service';
+import { getMediaService } from '@shared/services/media-service';
 import {
   closeGallery,
   disposeGallerySignals,

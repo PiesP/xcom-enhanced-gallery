@@ -28,7 +28,7 @@ import { getLanguageService } from '@shared/services/language-service';
 import { resolve } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
-import { createMemo, createSignal, onCleanup, onMount } from 'solid-js';
+import { createMemo, createSignal, onCleanup, onMount, splitProps } from 'solid-js';
 import styles from './SettingsControls.module.css';
 import type { LanguageOption, SettingsControlsProps, ThemeOption } from './SettingsControls.types';
 
@@ -72,6 +72,7 @@ const LANGUAGE_OPTIONS: readonly LanguageOption[] = [
  * ```
  */
 export function SettingsControls(props: SettingsControlsProps): JSXElement {
+  const [local] = splitProps(props, ['currentTheme', 'currentLanguage', 'onThemeChange', 'onLanguageChange', 'compact', 'data-testid']);
   // Service instance
   const languageService = getLanguageService();
 
@@ -112,47 +113,47 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
   });
 
   // Reactive prop values
-  const themeValue = () => resolve(props.currentTheme);
-  const languageValue = () => resolve(props.currentLanguage);
+  const themeValue = () => resolve(local.currentTheme);
+  const languageValue = () => resolve(local.currentLanguage);
 
   // JSX return
   return (
     <div
-      class={cx(styles.body, props.compact && styles.bodyCompact)}
-      data-testid={__DEV__ ? props['data-testid'] : undefined}
+      class={cx(styles.body, local.compact && styles.bodyCompact)}
+      data-testid={__DEV__ ? local['data-testid'] : undefined}
     >
-      <div class={cx(styles.setting, props.compact && styles.settingCompact)}>
+      <div class={cx(styles.setting, local.compact && styles.settingCompact)}>
         <label
-          id={props['data-testid'] ? `${props['data-testid']}-theme-label` : 'settings-theme-label'}
+          id={local['data-testid'] ? `${local['data-testid']}-theme-label` : 'settings-theme-label'}
           for={
-            props['data-testid'] ? `${props['data-testid']}-theme-select` : 'settings-theme-select'
+            local['data-testid'] ? `${local['data-testid']}-theme-select` : 'settings-theme-select'
           }
-          class={cx(styles.label, props.compact && styles.compactLabel)}
+          class={cx(styles.label, local.compact && styles.compactLabel)}
         >
           {strings().theme.title}
         </label>
         <Tooltip content={strings().theme.title}>
           <select
             id={
-              props['data-testid']
-                ? `${props['data-testid']}-theme-select`
+              local['data-testid']
+                ? `${local['data-testid']}-theme-select`
                 : 'settings-theme-select'
             }
             autocomplete="off"
             class={cx('xeg-inline-center', styles.select)}
-            onChange={props.onThemeChange}
+            onChange={local.onThemeChange}
             value={themeValue()}
             aria-label={strings().theme.title}
             aria-labelledby={
-              props['data-testid'] ? `${props['data-testid']}-theme-label` : 'settings-theme-label'
+              local['data-testid'] ? `${local['data-testid']}-theme-label` : 'settings-theme-label'
             }
             aria-invalid="false"
             aria-errormessage={
-              props['data-testid'] ? `${props['data-testid']}-theme-error` : 'settings-theme-error'
+              local['data-testid'] ? `${local['data-testid']}-theme-error` : 'settings-theme-error'
             }
             required
             data-testid={
-              __DEV__ && props['data-testid'] ? `${props['data-testid']}-theme` : undefined
+              __DEV__ && local['data-testid'] ? `${local['data-testid']}-theme` : undefined
             }
           >
             {THEME_OPTIONS.map((option) => (
@@ -162,48 +163,48 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
         </Tooltip>
       </div>
 
-      <div class={cx(styles.setting, props.compact && styles.settingCompact)}>
+      <div class={cx(styles.setting, local.compact && styles.settingCompact)}>
         <label
           id={
-            props['data-testid']
-              ? `${props['data-testid']}-language-label`
+            local['data-testid']
+              ? `${local['data-testid']}-language-label`
               : 'settings-language-label'
           }
           for={
-            props['data-testid']
-              ? `${props['data-testid']}-language-select`
+            local['data-testid']
+              ? `${local['data-testid']}-language-select`
               : 'settings-language-select'
           }
-          class={cx(styles.label, props.compact && styles.compactLabel)}
+          class={cx(styles.label, local.compact && styles.compactLabel)}
         >
           {strings().language.title}
         </label>
         <Tooltip content={strings().language.title}>
           <select
             id={
-              props['data-testid']
-                ? `${props['data-testid']}-language-select`
+              local['data-testid']
+                ? `${local['data-testid']}-language-select`
                 : 'settings-language-select'
             }
             autocomplete="off"
             class={cx('xeg-inline-center', styles.select)}
-            onChange={props.onLanguageChange}
+            onChange={local.onLanguageChange}
             value={languageValue()}
             aria-label={strings().language.title}
             aria-labelledby={
-              props['data-testid']
-                ? `${props['data-testid']}-language-label`
+              local['data-testid']
+                ? `${local['data-testid']}-language-label`
                 : 'settings-language-label'
             }
             aria-invalid="false"
             aria-errormessage={
-              props['data-testid']
-                ? `${props['data-testid']}-language-error`
+              local['data-testid']
+                ? `${local['data-testid']}-language-error`
                 : 'settings-language-error'
             }
             required
             data-testid={
-              __DEV__ && props['data-testid'] ? `${props['data-testid']}-language` : undefined
+              __DEV__ && local['data-testid'] ? `${local['data-testid']}-language` : undefined
             }
           >
             {LANGUAGE_OPTIONS.map((option) => (

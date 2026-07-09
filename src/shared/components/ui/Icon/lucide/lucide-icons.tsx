@@ -6,6 +6,7 @@
 import type { IconProps } from '@shared/components/ui/Icon/Icon';
 import { Icon } from '@shared/components/ui/Icon/Icon';
 import type { JSXElement } from 'solid-js';
+import { splitProps } from 'solid-js';
 import type { LucideIconName, LucideIconNode } from './icon-nodes';
 import { LUCIDE_ICON_NODES } from './icon-nodes';
 
@@ -45,10 +46,11 @@ const renderNode = (node: LucideIconNode): JSXElement => {
  * ```
  */
 export function LucideIcon(props: LucideIconProps): JSXElement {
-  const nodes = LUCIDE_ICON_NODES[props.name];
+  const [local] = splitProps(props, ['name', 'size', 'class', 'aria-label']);
+  const nodes = LUCIDE_ICON_NODES[local.name];
 
   return (
-    <Icon size={props.size} class={props.class} aria-label={props['aria-label']}>
+    <Icon size={local.size} class={local.class} aria-label={local['aria-label']}>
       {nodes.map(renderNode)}
     </Icon>
   );

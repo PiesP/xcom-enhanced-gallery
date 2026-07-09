@@ -8,7 +8,6 @@
 import { getHttpRequestAdapter } from '@platform/index';
 import type { HttpRequestDetails } from '@platform/types';
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
-import { createSingleton } from '@shared/services/singleton-base';
 import { createDeferred } from '@shared/utils/async/promise-helpers';
 
 interface HttpRequestOptions {
@@ -38,9 +37,6 @@ export class HttpRequestService {
    * Both values are intentionally different — not a drift bug.
    */
   private readonly defaultTimeout = 10000;
-
-  /** Destroy service */
-  destroy(): void {}
 
   async get<T = unknown>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
     return this.request<T>('GET', url, options);
@@ -137,7 +133,16 @@ export class HttpRequestService {
   }
 }
 
-const { getInstance: getHttpRequestService, resetForTests: resetHttpRequestServiceForTests } =
-  createSingleton(() => new HttpRequestService());
+let httpServiceInstance: HttpRequestService | null = null;
 
-export { getHttpRequestService, resetHttpRequestServiceForTests };
+export function getHttpRequestService(): HttpRequestService {
+  if (!httpServiceInstance) {
+    httpServiceInstance = new HttpRequestService();
+  }
+  return httpServiceInstance;
+}
+
+/** Reset singleton instance (for testing only) */
+export function resetHttpRequestServiceForTests(): void {
+  httpServiceInstance = null;
+}

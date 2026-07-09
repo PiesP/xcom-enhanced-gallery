@@ -4,7 +4,7 @@
 import { Tooltip } from '@shared/components/ui/Tooltip/Tooltip';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
-import type { JSXElement } from 'solid-js';
+import { splitProps, type JSXElement } from 'solid-js';
 
 interface IconButtonProps {
   readonly children?: ComponentChildren;
@@ -40,32 +40,37 @@ interface IconButtonProps {
  * @returns Button JSX element (optionally wrapped in Tooltip)
  */
 export function IconButton(props: IconButtonProps): JSXElement {
+  const [local] = splitProps(props, [
+    'ref', 'id', 'type', 'class', 'title', 'tooltip', 'size', 'disabled', 'tabIndex',
+    'data-testid', 'aria-label', 'aria-controls', 'aria-expanded', 'aria-pressed', 'aria-busy',
+    'onClick', 'onMouseDown', 'children',
+  ]);
   const buttonElement = (
     <button
-      ref={props.ref}
-      id={props.id}
-      type={props.type ?? 'button'}
-      class={cx(props.class)}
-      title={props.tooltip ? undefined : props.title}
-      disabled={props.disabled}
-      tabIndex={props.tabIndex}
-      data-size={props.size}
-      data-testid={props['data-testid']}
-      aria-label={props['aria-label']}
-      aria-controls={props['aria-controls']}
-      aria-expanded={props['aria-expanded']}
-      aria-pressed={props['aria-pressed']}
-      aria-busy={props['aria-busy']}
-      onClick={props.onClick}
-      onMouseDown={props.onMouseDown}
+      ref={local.ref}
+      id={local.id}
+      type={local.type ?? 'button'}
+      class={cx(local.class)}
+      title={local.tooltip ? undefined : local.title}
+      disabled={local.disabled}
+      tabIndex={local.tabIndex}
+      data-size={local.size}
+      data-testid={local['data-testid']}
+      aria-label={local['aria-label']}
+      aria-controls={local['aria-controls']}
+      aria-expanded={local['aria-expanded']}
+      aria-pressed={local['aria-pressed']}
+      aria-busy={local['aria-busy']}
+      onClick={local.onClick}
+      onMouseDown={local.onMouseDown}
     >
-      {props.children}
+      {local.children}
     </button>
   );
 
   // Use custom tooltip when provided, otherwise render button directly
-  if (props.tooltip) {
-    return <Tooltip content={props.tooltip}>{buttonElement}</Tooltip>;
+  if (local.tooltip) {
+    return <Tooltip content={local.tooltip}>{buttonElement}</Tooltip>;
   }
 
   return buttonElement;

@@ -13,7 +13,7 @@
 
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
-import { createMemo, createSignal, createUniqueId, onCleanup } from 'solid-js';
+import { createMemo, createSignal, createUniqueId, onCleanup, splitProps } from 'solid-js';
 import { Portal } from 'solid-js/web';
 
 import styles from './Tooltip.module.css';
@@ -78,14 +78,15 @@ function computePosition(
  * ```
  */
 export function Tooltip(props: TooltipProps): JSXElement {
+  const [local] = splitProps(props, ['offset', 'showDelay', 'hideDelay', 'placement', 'children', 'content']);
   const tooltipId = createUniqueId();
   const [visible, setVisible] = createSignal(false);
   const [position, setPosition] = createSignal<TooltipPosition | null>(null);
 
-  const offset = props.offset ?? DEFAULT_OFFSET;
-  const showDelay = props.showDelay ?? DEFAULT_SHOW_DELAY;
-  const hideDelay = props.hideDelay ?? DEFAULT_HIDE_DELAY;
-  const preferredPlacement = props.placement ?? 'bottom';
+  const offset = local.offset ?? DEFAULT_OFFSET;
+  const showDelay = local.showDelay ?? DEFAULT_SHOW_DELAY;
+  const hideDelay = local.hideDelay ?? DEFAULT_HIDE_DELAY;
+  const preferredPlacement = local.placement ?? 'bottom';
 
   let triggerRef!: HTMLSpanElement;
   let showTimer: ReturnType<typeof setTimeout> | undefined;
@@ -205,7 +206,7 @@ export function Tooltip(props: TooltipProps): JSXElement {
       }}
       aria-describedby={describeById()}
     >
-      {props.children}
+      {local.children}
 
       {activePosition() !== null && (
         <Portal mount={document.body}>
@@ -214,7 +215,7 @@ export function Tooltip(props: TooltipProps): JSXElement {
             <span class={arrowClass()} aria-hidden="true" />
             {/* Arrow inner fill */}
             <span class={arrowInnerClass()} aria-hidden="true" />
-            {props.content}
+            {local.content}
           </div>
         </Portal>
       )}
