@@ -22,27 +22,23 @@ import type { TweetMediaEntry, TwitterAPIResponse } from '@shared/services/media
 import { sortMediaByVisualOrder } from '@shared/utils/media/media-dimensions';
 
 // ============================================================================
-// Safe Location Helpers (inlined from safe-location.ts)
+// Location Config (injected for referential transparency / testability)
 // ============================================================================
 
-function getSafeHostname(): string | undefined {
-  return globalThis.location?.hostname;
+/** Location properties used by the Twitter API client. */
+export interface LocationConfig {
+  readonly hostname: string | undefined;
+  readonly href: string | undefined;
+  readonly origin: string | undefined;
 }
 
-interface SafeLocationHeaders {
-  readonly referer?: string;
-  readonly origin?: string;
-}
-
-function getSafeLocationHeaders(): SafeLocationHeaders {
-  const referer = globalThis.location?.href;
-  const origin = globalThis.location?.origin;
-
-  if (!referer && !origin) return {};
-
+/** Resolve location info from globalThis.location (browser default). */
+function resolveLocationConfig(): LocationConfig {
+  const loc = typeof globalThis !== 'undefined' ? globalThis.location : undefined;
   return {
-    ...(referer ? { referer } : {}),
-    ...(origin ? { origin } : {}),
+    hostname: loc?.hostname,
+    href: loc?.href,
+    origin: loc?.origin,
   };
 }
 
@@ -67,16 +63,17 @@ function resolveTwitterApiHost(
   return defaultHost;
 }
 
-function getSafeHost(): string {
+function getSafeHost(location?: LocationConfig): string {
+  const loc = location ?? resolveLocationConfig();
   return resolveTwitterApiHost(
-    getSafeHostname(),
+    loc.hostname,
     TWITTER_API_CONFIG.SUPPORTED_HOSTS,
     TWITTER_API_CONFIG.DEFAULT_HOST
   );
 }
 
-function createTweetEndpointUrl(tweetId: string): string {
-  const host = getSafeHost();
+function createTweetEndpointUrl(tweetId: string, location?: LocationConfig): string {
+  const host = getSafeHost(location);
 
   const variables = {
     tweetId,
@@ -130,7 +127,7 @@ function createTweetEndpointUrl(tweetId: string): string {
   });
 }
 
-async function apiRequest(url: string): Promise<TwitterAPIResponse> {
+async function apiRequest(url: string, location?: LocationConfig): Promise<TwitterAPIResponse> {
   const csrfToken = (await getCsrfTokenAsync()) ?? '';
   const authorization = resolveBearerToken();
 
@@ -143,12 +140,12 @@ async function apiRequest(url: string): Promise<TwitterAPIResponse> {
     'x-twitter-auth-type': 'OAuth2Session',
   });
 
-  const locationHeaders = getSafeLocationHeaders();
-  if (locationHeaders.referer) {
-    headers.append('referer', locationHeaders.referer);
+  const loc = location ?? resolveLocationConfig();
+  if (loc.href) {
+    headers.append('referer', loc.href);
   }
-  if (locationHeaders.origin) {
-    headers.append('origin', locationHeaders.origin);
+  if (loc.origin) {
+    headers.append('origin', loc.origin);
   }
 
   const httpService = getHttpRequestService();
@@ -180,9 +177,12 @@ async function apiRequest(url: string): Promise<TwitterAPIResponse> {
 /**
  * Get Tweet Medias - Main API Entry Point
  */
-export async function getTweetMedias(tweetId: string): Promise<TweetMediaEntry[]> {
-  const url = createTweetEndpointUrl(tweetId);
-  const json = await apiRequest(url);
+export async function getTweetMedias(
+  tweetId: string,
+  location?: LocationConfig
+): Promise<TweetMediaEntry[]> {
+  const url = createTweetEndpointUrl(tweetId, location);
+  const json = await apiRequest(url, location);
 
   if (!json.data?.tweetResult?.result) return [];
 
