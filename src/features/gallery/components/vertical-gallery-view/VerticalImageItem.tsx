@@ -325,6 +325,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             ref={setImageRef}
             src={displaySrc()}
             alt={imageAltText()}
+            width={dimensions().width}
+            height={dimensions().height}
             loading={shouldEagerLoad() ? 'eager' : 'lazy'}
             decoding="async"
             class={cx(styles.image, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
