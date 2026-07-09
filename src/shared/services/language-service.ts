@@ -24,9 +24,11 @@ export class LanguageService {
   private readonly listeners: Set<(language: SupportedLanguage) => void> = new Set();
   private readonly storage = getPersistentStorage();
   private readonly translator: ReturnType<typeof createTranslator>;
+  private readonly _nav: Pick<Navigator, 'language'> | undefined;
 
-  public constructor() {
+  public constructor(nav?: Pick<Navigator, 'language'>) {
     this.translator = createTranslator();
+    this._nav = nav ?? (typeof navigator !== 'undefined' ? navigator : undefined);
   }
 
   /** Initialize service (idempotent) */
@@ -57,8 +59,8 @@ export class LanguageService {
   }
   detectLanguage(): BaseLanguageCode {
     const browserLang =
-      typeof navigator !== 'undefined' && typeof navigator.language === 'string'
-        ? navigator.language.toLowerCase()
+      this._nav && typeof this._nav.language === 'string'
+        ? this._nav.language.toLowerCase()
         : DEFAULT_LANGUAGE;
 
     if (isBaseLanguageCode(browserLang)) {
