@@ -29,7 +29,7 @@ function createAbortError(message: string, cause?: unknown): DOMException {
   return error;
 }
 
-export function createUserCancelledAbortError(cause?: unknown): DOMException {
+function createUserCancelledAbortError(cause?: unknown): DOMException {
   return createAbortError(USER_CANCELLED_MESSAGE, cause);
 }
 

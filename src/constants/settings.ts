@@ -20,8 +20,6 @@ export const APP_SETTINGS_STORAGE_KEY = 'xeg-app-settings' as const;
 
 export const DEFAULT_SETTINGS = {
   gallery: {
-    autoScrollSpeed: 5,
-    infiniteScroll: true,
     preloadCount: 3,
     imageFitMode: 'fitWidth' as const,
     theme: 'auto' as const,
@@ -35,16 +33,8 @@ export const DEFAULT_SETTINGS = {
     autoHideDelay: 3000,
   },
   download: {
-    filenamePattern: 'original' as const,
-    imageQuality: 'original' as const,
-    maxConcurrentDownloads: 3,
-    autoZip: false,
-    folderStructure: 'flat' as const,
   },
   accessibility: {
-    reduceMotion: false,
-    screenReaderSupport: true,
-    focusIndicators: true,
   },
   features: {
     gallery: true,

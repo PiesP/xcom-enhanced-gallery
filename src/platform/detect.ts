@@ -3,7 +3,7 @@
 
 import type { PlatformType } from './types';
 
-export function detectPlatform(): PlatformType {
+function detectPlatform(): PlatformType {
   try {
     if (
       typeof chrome !== 'undefined' &&

@@ -37,14 +37,6 @@ export function clearSettings(): void {
   _settings = null;
 }
 
-/**
- * Reset settings registry for test isolation.
- * Alias for clearSettings() — used in test teardown via SingletonBase pattern.
- */
-export function resetSettingsRegistryForTests(): void {
-  clearSettings();
-}
-
 // ============================================================================
 // Type-Safe Settings Access
 // ============================================================================

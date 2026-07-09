@@ -17,7 +17,7 @@ import { TWITTER_HOSTS } from './host';
  * Shared by the MV3 background SW and the GM HTTP request adapter.
  * Do NOT duplicate this set elsewhere — import it.
  */
-export const ALLOWED_HOSTS: ReadonlySet<string> = new Set([...TWITTER_HOSTS, ...MEDIA.DOMAINS]);
+const ALLOWED_HOSTS: ReadonlySet<string> = new Set([...TWITTER_HOSTS, ...MEDIA.DOMAINS]);
 
 /**
  * Validate that a URL targets an allowed host, with additional path-level
