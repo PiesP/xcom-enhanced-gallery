@@ -258,8 +258,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const imageAltText = createMemo(() =>
     isVideo()
-      ? `Video ${local.index + 1} of ${totalItems()}`
-      : `Image ${local.index + 1} of ${totalItems()}: ${local.media.alt || cleanFilename(local.media.filename)}`
+      ? translate('msg.gal.videoCount', { index: local.index + 1, total: totalItems() })
+      : translate('msg.gal.imageCount', {
+          index: local.index + 1,
+          total: totalItems(),
+          alt: local.media.alt || cleanFilename(local.media.filename),
+        })
   );
 
   // W2: Focus trap implemented at GalleryContainer level, not per-item.
@@ -294,7 +298,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
               class={cx('xeg-spinner', styles.loadingSpinner)}
               role="status"
               aria-live="polite"
-              aria-label="Loading"
+              aria-label={translate('msg.gal.loading')}
             />
           </div>
         )}
@@ -305,7 +309,10 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             controls
             ref={setVideoRef}
             class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
-            aria-label={`Video ${local.index + 1} of ${totalItems()}`}
+            aria-label={translate('msg.gal.videoCount', {
+              index: local.index + 1,
+              total: totalItems(),
+            })}
             onLoadedMetadata={handleMediaLoad}
             onError={handleMediaError}
             onDragStart={preventDragStart}

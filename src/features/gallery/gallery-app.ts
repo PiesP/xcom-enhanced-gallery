@@ -7,7 +7,7 @@
 
 import type { GalleryRenderer } from '@features/gallery/gallery-renderer';
 import { getNotificationAdapter } from '@platform/index';
-import { getMediaService } from '@shared/container/container';
+import { getLanguageService, getMediaService } from '@shared/container/container';
 import { tryGetSettings } from '@shared/container/settings-registry';
 import {
   galleryErrorReporter,
@@ -94,11 +94,19 @@ export class GalleryApp {
           code: 'MEDIA_EXTRACTION_EMPTY',
           metadata: { success: result.success },
         });
-        getNotificationAdapter().notify('Failed to load media', 'Could not find images or videos.');
+        const lang = getLanguageService();
+        getNotificationAdapter().notify(
+          lang.translate('msg.err.loadMedia.title'),
+          lang.translate('msg.err.loadMedia.body')
+        );
       }
     } catch (error) {
       mediaErrorReporter.error(error, { code: 'MEDIA_EXTRACTION_ERROR' });
-      getNotificationAdapter().notify('Error occurred', normalizeErrorMessage(error));
+      const lang = getLanguageService();
+      getNotificationAdapter().notify(
+        lang.translate('msg.err.generic'),
+        normalizeErrorMessage(error)
+      );
     }
   }
 
@@ -116,7 +124,11 @@ export class GalleryApp {
         code: 'GALLERY_OPEN_FAILED',
         metadata: { itemCount: mediaItems.length, startIndex },
       });
-      getNotificationAdapter().notify('Failed to load gallery', normalizeErrorMessage(error));
+      const lang = getLanguageService();
+      getNotificationAdapter().notify(
+        lang.translate('msg.err.loadGallery'),
+        normalizeErrorMessage(error)
+      );
       throw error;
     }
   }

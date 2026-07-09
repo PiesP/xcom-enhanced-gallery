@@ -107,8 +107,14 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
   };
 
   const getRetryLabel = (): string => {
-    if (retryCount() >= MAX_RETRIES) return 'No more retries';
-    return 'Retry';
+    try {
+      const lang = getLanguageService();
+      if (retryCount() >= MAX_RETRIES) return lang.translate('msg.err.noMoreRetries');
+      return lang.translate('msg.err.retry');
+    } catch {
+      if (retryCount() >= MAX_RETRIES) return 'No more retries';
+      return 'Retry';
+    }
   };
 
   return (
@@ -150,7 +156,14 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
                   onClick={handleReset}
                   type="button"
                 >
-                  Reset
+                  {(() => {
+                    try {
+                      const lang = getLanguageService();
+                      return lang.translate('msg.err.reset');
+                    } catch {
+                      return 'Reset';
+                    }
+                  })()}
                 </button>
               </Show>
             </div>

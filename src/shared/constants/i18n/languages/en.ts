@@ -43,6 +43,19 @@ export const en: LanguageStrings = {
     err: {
       t: 'An error occurred',
       b: 'An unexpected error occurred: {error}',
+      loadMedia: {
+        title: 'Failed to load media',
+        body: 'Could not find images or videos.',
+      },
+      generic: 'Error occurred',
+      loadGallery: 'Failed to load gallery',
+      settingsUnavailable: {
+        title: 'Settings unavailable',
+        body: 'Defaults will be used until settings load.',
+      },
+      retry: 'Retry',
+      noMoreRetries: 'No more retries',
+      reset: 'Reset',
     },
     kb: {
       t: 'Keyboard shortcuts',
@@ -75,6 +88,10 @@ export const en: LanguageStrings = {
       itemLbl: 'Media {index}: {filename}',
       loadFail: 'Failed to load {type}',
       imageGallery: 'Image gallery',
+      loading: 'Loading',
+      videoCount: 'Video {index} of {total}',
+      imageCount: 'Image {index} of {total}: {alt}',
+      hashtagLabel: 'Hashtag {value}',
     },
   },
 };

@@ -92,6 +92,30 @@ export interface LanguageStrings {
       readonly t: string;
       /** Error body */
       readonly b: string;
+      /** Load media error title */
+      readonly loadMedia: {
+        /** Load media error title */
+        readonly title: string;
+        /** Load media error body */
+        readonly body: string;
+      };
+      /** Generic error title */
+      readonly generic: string;
+      /** Load gallery error title */
+      readonly loadGallery: string;
+      /** Settings unavailable error */
+      readonly settingsUnavailable: {
+        /** Settings unavailable title */
+        readonly title: string;
+        /** Settings unavailable body */
+        readonly body: string;
+      };
+      /** Retry button label */
+      readonly retry: string;
+      /** No more retries button label */
+      readonly noMoreRetries: string;
+      /** Reset button label */
+      readonly reset: string;
     };
     /** Keyboard shortcut messages */
     readonly kb: {
@@ -149,6 +173,14 @@ export interface LanguageStrings {
       readonly loadFail: string;
       /** Image gallery label */
       readonly imageGallery: string;
+      /** Loading indicator label */
+      readonly loading: string;
+      /** Video count label */
+      readonly videoCount: string;
+      /** Image count label */
+      readonly imageCount: string;
+      /** Hashtag label */
+      readonly hashtagLabel: string;
     };
   };
 }

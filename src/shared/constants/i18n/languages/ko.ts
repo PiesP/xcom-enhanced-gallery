@@ -43,6 +43,19 @@ export const ko: LanguageStrings = {
     err: {
       t: '오류가 발생했습니다',
       b: '예상치 못한 오류가 발생했습니다: {error}',
+      loadMedia: {
+        title: '미디어를 불러오지 못했습니다',
+        body: '이미지나 동영상을 찾을 수 없습니다.',
+      },
+      generic: '오류가 발생했습니다',
+      loadGallery: '갤러리를 불러오지 못했습니다',
+      settingsUnavailable: {
+        title: '설정을 사용할 수 없음',
+        body: '설정이 로드될 때까지 기본값이 사용됩니다.',
+      },
+      retry: '다시 시도',
+      noMoreRetries: '더 이상 재시도할 수 없음',
+      reset: '초기화',
     },
     kb: {
       t: '키보드 단축키',
@@ -75,6 +88,10 @@ export const ko: LanguageStrings = {
       itemLbl: '미디어 {index}: {filename}',
       loadFail: '{type} 로드 실패',
       imageGallery: '이미지 갤러리',
+      loading: '로딩 중',
+      videoCount: '동영상 {index}/{total}',
+      imageCount: '이미지 {index}/{total}: {alt}',
+      hashtagLabel: '해시태그 {value}',
     },
   },
 };
