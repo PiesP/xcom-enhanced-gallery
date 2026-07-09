@@ -20,7 +20,12 @@ import { MV3DownloadAdapter } from './mv3-download-adapters';
 import { MV3HttpRequestAdapter } from './mv3-http-request-adapters';
 import { MV3NotificationAdapter } from './mv3-notification-adapters';
 import { MV3StorageAdapter } from './mv3-storage-adapters';
-import type { DownloadAdapter, HttpRequestAdapter, NotificationAdapter, StorageAdapter } from './types';
+import type {
+  DownloadAdapter,
+  HttpRequestAdapter,
+  NotificationAdapter,
+  StorageAdapter,
+} from './types';
 
 /**
  * Create a lazy singleton adapter that dispatches between MV3 and userscript.

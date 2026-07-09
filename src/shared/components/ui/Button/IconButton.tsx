@@ -4,7 +4,7 @@
 import { Tooltip } from '@shared/components/ui/Tooltip/Tooltip';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
-import { splitProps, type JSXElement } from 'solid-js';
+import { type JSXElement, splitProps } from 'solid-js';
 
 interface IconButtonProps {
   readonly children?: ComponentChildren;
@@ -41,9 +41,24 @@ interface IconButtonProps {
  */
 export function IconButton(props: IconButtonProps): JSXElement {
   const [local] = splitProps(props, [
-    'ref', 'id', 'type', 'class', 'title', 'tooltip', 'size', 'disabled', 'tabIndex',
-    'data-testid', 'aria-label', 'aria-controls', 'aria-expanded', 'aria-pressed', 'aria-busy',
-    'onClick', 'onMouseDown', 'children',
+    'ref',
+    'id',
+    'type',
+    'class',
+    'title',
+    'tooltip',
+    'size',
+    'disabled',
+    'tabIndex',
+    'data-testid',
+    'aria-label',
+    'aria-controls',
+    'aria-expanded',
+    'aria-pressed',
+    'aria-busy',
+    'onClick',
+    'onMouseDown',
+    'children',
   ]);
   const buttonElement = (
     <button

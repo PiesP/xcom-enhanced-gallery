@@ -72,7 +72,14 @@ const LANGUAGE_OPTIONS: readonly LanguageOption[] = [
  * ```
  */
 export function SettingsControls(props: SettingsControlsProps): JSXElement {
-  const [local] = splitProps(props, ['currentTheme', 'currentLanguage', 'onThemeChange', 'onLanguageChange', 'compact', 'data-testid']);
+  const [local] = splitProps(props, [
+    'currentTheme',
+    'currentLanguage',
+    'onThemeChange',
+    'onLanguageChange',
+    'compact',
+    'data-testid',
+  ]);
   // Service instance
   const languageService = getLanguageService();
 

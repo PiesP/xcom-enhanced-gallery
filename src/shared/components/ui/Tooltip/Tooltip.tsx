@@ -78,7 +78,14 @@ function computePosition(
  * ```
  */
 export function Tooltip(props: TooltipProps): JSXElement {
-  const [local] = splitProps(props, ['offset', 'showDelay', 'hideDelay', 'placement', 'children', 'content']);
+  const [local] = splitProps(props, [
+    'offset',
+    'showDelay',
+    'hideDelay',
+    'placement',
+    'children',
+    'content',
+  ]);
   const tooltipId = createUniqueId();
   const [visible, setVisible] = createSignal(false);
   const [position, setPosition] = createSignal<TooltipPosition | null>(null);

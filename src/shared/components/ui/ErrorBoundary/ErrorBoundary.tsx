@@ -11,7 +11,13 @@ import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getLanguageService } from '@shared/services/language-service';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import type { JSXElement } from 'solid-js';
-import { createSignal, onCleanup, Show, ErrorBoundary as SolidErrorBoundary, splitProps } from 'solid-js';
+import {
+  createSignal,
+  onCleanup,
+  Show,
+  ErrorBoundary as SolidErrorBoundary,
+  splitProps,
+} from 'solid-js';
 import styles from './ErrorBoundary.module.css';
 
 /** Maximum number of retry attempts before disabling the retry button. */
