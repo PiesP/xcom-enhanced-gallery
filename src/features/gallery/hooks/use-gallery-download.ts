@@ -8,9 +8,9 @@
 import { getNotificationAdapter } from '@platform/index';
 import {
   getDownloadOrchestrator,
-  getLanguageService,
-  getMediaService,
-} from '@shared/container/container';
+} from '@shared/services/download/download-orchestrator';
+import { getLanguageService } from '@shared/services/language-service';
+import { getMediaService } from '@shared/services/media-service';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import { gallerySignals, setError } from '@shared/state/signals/gallery.signals';

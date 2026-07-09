@@ -1,19 +1,12 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    // Target & Libraries
     "target": "ESNext",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-
-    // Module System (bundler mode for Vite compatibility)
     "module": "ESNext",
     "moduleResolution": "bundler",
-
-    // JSX for Solid.js
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-
-    // Strict Type Checking
     "strict": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
@@ -22,31 +15,22 @@
     "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-
-    // Module handling
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
-
-    // Emit
     "noEmit": true,
     "skipLibCheck": true,
-
-    // Path Aliases (synchronized with package.json imports)
     "paths": {
       "@bootstrap/*": ["./src/bootstrap/*"],
       "@constants/*": ["./src/constants/*"],
+      "@extension/*": ["./src/extension/*"],
       "@features/*": ["./src/features/*"],
       "@main": ["./src/main.ts"],
       "@platform/*": ["./src/platform/*"],
       "@shared/*": ["./src/shared/*"]
     },
-
-    // Build Performance
     "incremental": true,
     "stableTypeOrdering": true,
     "tsBuildInfoFile": ".vscode/.tsbuildinfo",
-
-    // Compatibility
     "useDefineForClassFields": true,
     "forceConsistentCasingInFileNames": true,
     "allowImportingTsExtensions": true

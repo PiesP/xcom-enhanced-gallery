@@ -12,7 +12,7 @@ import {
 } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
 import { createAppConfig } from '@constants/app-config';
-import { getEventManager, resetEventManager } from '@shared/container/event-manager-accessor';
+import { getEventManager, resetEventManagerForTests as resetEventManager } from '@shared/services/event-manager';
 import { clearSettings } from '@shared/container/settings-registry';
 import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';

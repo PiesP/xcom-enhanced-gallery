@@ -5,7 +5,7 @@
  * @fileoverview Viewport/Container constraint helpers (PC-only)
  * @description Pure calculator and DOM hook to expose viewport values via CSS variables.
  */
-import { getEventManager } from '@shared/container/container';
+import { getEventManager } from '@shared/services/event-manager';
 import { createEventListener } from '@shared/utils/types/guards';
 
 interface ChromeOffsets {

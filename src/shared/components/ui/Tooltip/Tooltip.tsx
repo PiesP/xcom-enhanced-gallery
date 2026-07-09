@@ -19,8 +19,6 @@ import { Portal } from 'solid-js/web';
 import styles from './Tooltip.module.css';
 import type { TooltipPlacement, TooltipPosition, TooltipProps } from './Tooltip.types';
 
-export type { TooltipPlacement, TooltipPosition, TooltipProps } from './Tooltip.types';
-
 /** Default show delay (ms) — short enough to feel responsive, long enough to not flicker */
 const DEFAULT_SHOW_DELAY = 300;
 /** Default hide delay (ms) — prevents flicker when moving between adjacent tooltip targets */

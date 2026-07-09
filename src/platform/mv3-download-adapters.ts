@@ -28,7 +28,7 @@
  */
 
 import { BLOB_URL_REVOKE_DELAY_MS } from '@constants/performance';
-import type { ExtensionMessageResponse } from '../extension/extension-message-types';
+import type { ExtensionMessageResponse } from '@extension/extension-message-types';
 import { browserApi } from './chrome-runtime';
 import type { DownloadAdapter } from './types';
 

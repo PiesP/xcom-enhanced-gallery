@@ -7,7 +7,8 @@
 
 import type { GalleryRenderer } from '@features/gallery/gallery-renderer';
 import { getNotificationAdapter } from '@platform/index';
-import { getLanguageService, getMediaService } from '@shared/container/container';
+import { getLanguageService } from '@shared/services/language-service';
+import { getMediaService } from '@shared/services/media-service';
 import { tryGetSettings } from '@shared/container/settings-registry';
 import {
   galleryErrorReporter,

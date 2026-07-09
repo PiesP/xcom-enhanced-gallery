@@ -7,7 +7,7 @@
  */
 
 import { getNotificationAdapter } from '@platform/index';
-import { getLanguageService } from '@shared/container/container';
+import { getLanguageService } from '@shared/services/language-service';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import type { JSXElement } from 'solid-js';

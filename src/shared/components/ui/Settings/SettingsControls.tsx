@@ -24,7 +24,7 @@
  */
 
 import { Tooltip } from '@shared/components/ui/Tooltip/Tooltip';
-import { getLanguageService } from '@shared/container/container';
+import { getLanguageService } from '@shared/services/language-service';
 import { resolve } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';

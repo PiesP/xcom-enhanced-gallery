@@ -8,7 +8,7 @@
  * scrolling while the gallery is open.
  */
 
-import { getEventManager } from '@shared/container/container';
+import { getEventManager } from '@shared/services/event-manager';
 import { createEffect, onCleanup } from 'solid-js';
 
 /**

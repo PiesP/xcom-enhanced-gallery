@@ -5,7 +5,7 @@
  * @fileoverview Theme service: system theme detection and application
  */
 
-import { getEventManager } from '@shared/container/event-manager-accessor';
+import { getEventManager } from '@shared/services/event-manager';
 import { tryGetSettings } from '@shared/container/settings-registry';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';

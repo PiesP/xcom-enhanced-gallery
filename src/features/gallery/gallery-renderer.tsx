@@ -13,7 +13,8 @@ import {
 } from '@shared/components/isolation/GalleryContainer';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import type { BaseLanguageCode, SupportedLanguage } from '@shared/constants/i18n/language-types';
-import { getLanguageService, getThemeService } from '@shared/container/container';
+import { getLanguageService } from '@shared/services/language-service';
+import { getThemeService } from '@shared/services/theme-service';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import {

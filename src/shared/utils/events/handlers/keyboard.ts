@@ -7,7 +7,7 @@
  */
 
 import { getNotificationAdapter } from '@platform/index';
-import { getLanguageService } from '@shared/container/container';
+import { getLanguageService } from '@shared/services/language-service';
 import { logger } from '@shared/logging/logger';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import {
