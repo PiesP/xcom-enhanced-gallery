@@ -43,6 +43,19 @@ export const es: LanguageStrings = {
     err: {
       t: 'Ocurrió un error',
       b: 'Ocurrió un error inesperado: {error}',
+      loadMedia: {
+        title: 'Error al cargar contenido multimedia',
+        body: 'No se encontraron imágenes ni videos.',
+      },
+      generic: 'Ocurrió un error',
+      loadGallery: 'Error al cargar la galería',
+      settingsUnavailable: {
+        title: 'Configuración no disponible',
+        body: 'Se usarán valores predeterminados hasta que se cargue la configuración.',
+      },
+      retry: 'Reintentar',
+      noMoreRetries: 'No hay más reintentos',
+      reset: 'Restablecer',
     },
     kb: {
       t: 'Atajos de teclado',
@@ -75,6 +88,10 @@ export const es: LanguageStrings = {
       itemLbl: 'Medio {index}: {filename}',
       loadFail: 'Error al cargar {type}',
       imageGallery: 'Galería de imágenes',
+      loading: 'Cargando',
+      videoCount: 'Video {index} de {total}',
+      imageCount: 'Imagen {index} de {total}: {alt}',
+      hashtagLabel: 'Hashtag {value}',
     },
   },
 };

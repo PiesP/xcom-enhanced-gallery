@@ -43,6 +43,19 @@ export const ar: LanguageStrings = {
     err: {
       t: 'حدث خطأ',
       b: 'حدث خطأ غير متوقع: {error}',
+      loadMedia: {
+        title: 'فشل تحميل الوسائط',
+        body: 'تعذر العثور على صور أو مقاطع فيديو.',
+      },
+      generic: 'حدث خطأ',
+      loadGallery: 'فشل تحميل المعرض',
+      settingsUnavailable: {
+        title: 'الإعدادات غير متاحة',
+        body: 'سيتم استخدام القيم الافتراضية حتى يتم تحميل الإعدادات.',
+      },
+      retry: 'إعادة المحاولة',
+      noMoreRetries: 'لا توجد محاولات إضافية',
+      reset: 'إعادة تعيين',
     },
     kb: {
       t: 'اختصارات لوحة المفاتيح',
@@ -75,6 +88,10 @@ export const ar: LanguageStrings = {
       itemLbl: 'وسائط {index}: {filename}',
       loadFail: 'فشل تحميل {type}',
       imageGallery: 'معرض الصور',
+      loading: 'جارٍ التحميل',
+      videoCount: 'فيديو {index} من {total}',
+      imageCount: 'صورة {index} من {total}: {alt}',
+      hashtagLabel: 'وسم {value}',
     },
   },
 };

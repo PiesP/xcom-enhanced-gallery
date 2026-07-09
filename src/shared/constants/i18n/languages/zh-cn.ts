@@ -43,6 +43,19 @@ export const zhCn: LanguageStrings = {
     err: {
       t: '发生错误',
       b: '发生了意外错误：{error}',
+      loadMedia: {
+        title: '加载媒体失败',
+        body: '找不到图片或视频。',
+      },
+      generic: '发生错误',
+      loadGallery: '加载图库失败',
+      settingsUnavailable: {
+        title: '设置不可用',
+        body: '设置加载完成前将使用默认值。',
+      },
+      retry: '重试',
+      noMoreRetries: '无法继续重试',
+      reset: '重置',
     },
     kb: {
       t: '键盘快捷键',
@@ -75,6 +88,10 @@ export const zhCn: LanguageStrings = {
       itemLbl: '媒体 {index}：{filename}',
       loadFail: '{type} 加载失败',
       imageGallery: '图片库',
+      loading: '加载中',
+      videoCount: '视频 {index}/{total}',
+      imageCount: '图片 {index}/{total}：{alt}',
+      hashtagLabel: '话题标签 {value}',
     },
   },
 };

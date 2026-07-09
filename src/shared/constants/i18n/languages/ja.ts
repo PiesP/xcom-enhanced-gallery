@@ -43,6 +43,19 @@ export const ja: LanguageStrings = {
     err: {
       t: 'エラーが発生しました',
       b: '予期しないエラーが発生しました: {error}',
+      loadMedia: {
+        title: 'メディアの読み込みに失敗しました',
+        body: '画像や動画が見つかりませんでした。',
+      },
+      generic: 'エラーが発生しました',
+      loadGallery: 'ギャラリーの読み込みに失敗しました',
+      settingsUnavailable: {
+        title: '設定を利用できません',
+        body: '設定が読み込まれるまでデフォルト値が使用されます。',
+      },
+      retry: '再試行',
+      noMoreRetries: '再試行できません',
+      reset: 'リセット',
     },
     kb: {
       t: 'キーボードショートカット',
@@ -75,6 +88,10 @@ export const ja: LanguageStrings = {
       itemLbl: 'メディア {index}: {filename}',
       loadFail: '{type} の読み込みに失敗しました',
       imageGallery: '画像ギャラリー',
+      loading: '読み込み中',
+      videoCount: '動画 {index}/{total}',
+      imageCount: '画像 {index}/{total}: {alt}',
+      hashtagLabel: 'ハッシュタグ {value}',
     },
   },
 };
