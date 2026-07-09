@@ -34,7 +34,7 @@
      The browser automatically lays out and paints items as they scroll
      close to the viewport, avoiding work on far-off-screen items. */
   content-visibility: auto;
-  contain-intrinsic-size: auto none auto 300px;
+  contain-intrinsic-size: var(--xeg-cis-override, auto none auto 300px);
 }
 
 /* Original fit mode: Remove max-width constraint to allow full size */

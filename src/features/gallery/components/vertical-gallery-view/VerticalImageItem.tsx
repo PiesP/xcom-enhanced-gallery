@@ -18,6 +18,7 @@ import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals, setCurrentVideoElement } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types/settings.types';
 import {
+  computeContainIntrinsicSizeOverride,
   createIntrinsicSizingStyle,
   resolveMediaDimensionsWithIntrinsicFlag,
 } from '@shared/utils/media/media-dimensions';
@@ -107,7 +108,28 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const hasIntrinsicSize = () => resolvedDimensions().hasIntrinsicSize;
 
   const intrinsicSizingStyle = createMemo(() => createIntrinsicSizingStyle(dimensions()));
-  const mergedStyle = createMemo(() => ({ ...intrinsicSizingStyle(), ...(local.style ?? {}) }));
+
+  // Compute contain-intrinsic-size override for content-visibility: auto off-screen items.
+  // The old hardcoded `auto none auto 300px` ignored fit mode and actual image dimensions,
+  // causing off-screen items to all render at 300px height. This override uses CSS calc()
+  // expressions referencing viewport custom properties so sizing auto-updates on resize.
+  const cisOverrideStyle = createMemo(() => {
+    const dims = dimensions();
+    const value = computeContainIntrinsicSizeOverride({
+      intrinsicWidth: dims.width,
+      intrinsicHeight: dims.height,
+      hasIntrinsicSize: hasIntrinsicSize(),
+      fitMode: resolvedFitMode(),
+    });
+    if (!value) return {};
+    return { '--xeg-cis-override': value };
+  });
+
+  const mergedStyle = createMemo(() => ({
+    ...intrinsicSizingStyle(),
+    ...cisOverrideStyle(),
+    ...(local.style ?? {}),
+  }));
 
   const { applyMutedProgrammatically, handleVolumeChange } = useVideoVolumePersistence({
     videoRef,
