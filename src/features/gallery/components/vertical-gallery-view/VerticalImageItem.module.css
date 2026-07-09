@@ -273,6 +273,25 @@
   );
 }
 
+/* Loading state — fitWidth: force full width so container doesn't shrink
+   to thumbnail dimensions. The intrinsic ratio on .imageWrapper ensures
+   correct height. */
+.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitWidth"] {
+  inline-size: 100%;
+  max-inline-size: 100%;
+}
+
+.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitWidth"]
+  .imageWrapper {
+  inline-size: 100%;
+}
+
+.container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitWidth"]
+  :is(.image, .video) {
+  inline-size: 100%;
+  max-inline-size: 100%;
+}
+
 /* Container width now fits content by default - no forced 100% width needed */
 /* Removed: .container:not([data-fit-mode="original"]) forced full width */
 
