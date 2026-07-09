@@ -3,6 +3,8 @@
 
 /** @fileoverview Scroll-based focus selection via IntersectionObserver. Selects most visible gallery item. */
 
+import { FOCUS_VISIBILITY_RATIO_THRESHOLD } from '@constants/media';
+import { FOCUS_TOP_PROXIMITY_PX } from '@constants/performance';
 import { SharedObserver } from '@shared/utils/performance/observer-pool';
 import type { Accessor } from 'solid-js';
 
@@ -35,7 +37,7 @@ interface ObserverOptions {
 const DEFAULTS = {
   THRESHOLD: [0, 0.5, 1.0],
   ROOT_MARGIN: '0px',
-  TOP_PROXIMITY: 50,
+  TOP_PROXIMITY: FOCUS_TOP_PROXIMITY_PX,
 } as const;
 
 export class FocusCoordinator {
@@ -148,13 +150,16 @@ export class FocusCoordinator {
       const centerDistance = Math.abs(itemCenter - viewportCenter);
 
       const topDistance = Math.abs(itemTop - viewportTop);
-      if (topDistance <= topProximityThreshold && visibilityRatio > 0.1) {
+      if (
+        topDistance <= topProximityThreshold &&
+        visibilityRatio > FOCUS_VISIBILITY_RATIO_THRESHOLD
+      ) {
         if (!topAlignedCandidate || topDistance < topAlignedCandidate.distance) {
           topAlignedCandidate = { index, distance: topDistance };
         }
       }
 
-      if (visibilityRatio > 0.1) {
+      if (visibilityRatio > FOCUS_VISIBILITY_RATIO_THRESHOLD) {
         const isBetter =
           !highestVisibilityCandidate ||
           visibilityRatio > highestVisibilityCandidate.ratio ||

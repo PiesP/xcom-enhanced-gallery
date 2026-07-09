@@ -23,12 +23,15 @@ export interface VideoVolumeChangeGuard {
   shouldIgnoreChange(current: VideoVolumeSnapshot): boolean;
 }
 
-/** Configuration for volume change guard (windowMs: max age in milliseconds, default 500) */
+/** Configuration for volume change guard (windowMs: max age in milliseconds, default VIDEO_VOLUME_CHANGE_GUARD_WINDOW_MS) */
 export interface CreateVideoVolumeChangeGuardOptions {
   readonly windowMs?: number;
 }
 
-const DEFAULT_VOLUME_EPSILON = 1e-3;
+import { VOLUME_EPSILON } from '@constants/media';
+import { VIDEO_VOLUME_CHANGE_GUARD_WINDOW_MS } from '@constants/performance';
+
+const DEFAULT_VOLUME_EPSILON = VOLUME_EPSILON;
 
 /** Compare volume values with epsilon for rounding tolerance */
 function areVolumesEquivalent(a: number, b: number): boolean {
@@ -61,7 +64,7 @@ export function createVideoVolumeChangeGuard(
   const windowMs =
     typeof windowMsInput === 'number' && Number.isFinite(windowMsInput)
       ? Math.max(0, windowMsInput)
-      : 500;
+      : VIDEO_VOLUME_CHANGE_GUARD_WINDOW_MS;
 
   type ExpectedMark = {
     readonly snapshot: VideoVolumeSnapshot;

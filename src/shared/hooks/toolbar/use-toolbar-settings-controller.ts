@@ -6,6 +6,7 @@
  * @description Manages settings panel toggling, outside click handling, and localized options
  */
 
+import { TOOLBAR_BLUR_GUARD_MS } from '@constants/performance';
 import type {
   LanguageOption,
   ThemeOption,
@@ -161,7 +162,7 @@ export function useToolbarSettingsController(
     };
 
     const handleSelectBlur = () => {
-      const blurGuardMs = 100;
+      const blurGuardMs = TOOLBAR_BLUR_GUARD_MS;
       scheduleTimeout(() => {
         isSelectActive = false;
       }, blurGuardMs);

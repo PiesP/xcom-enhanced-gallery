@@ -5,6 +5,7 @@
  * Tracks user scroll activity and reports scroll state for focus tracking.
  */
 
+import { PROGRAMMATIC_SCROLL_WINDOW_MS, SCROLL_IDLE_TIMEOUT_MS } from '@constants/performance';
 import { isGalleryInternalElement } from '@shared/dom/utils';
 import { createTimeout } from '@shared/hooks/use-timer';
 import { logger } from '@shared/logging/logger';
@@ -37,10 +38,10 @@ interface UseGalleryScrollReturn {
 }
 
 /** Idle timeout after scroll ends (ms) */
-const SCROLL_IDLE_TIMEOUT = 250;
+const SCROLL_IDLE_TIMEOUT = SCROLL_IDLE_TIMEOUT_MS;
 
 /** Window to ignore programmatic scroll events (ms) */
-const PROGRAMMATIC_SCROLL_WINDOW = 100;
+const PROGRAMMATIC_SCROLL_WINDOW = PROGRAMMATIC_SCROLL_WINDOW_MS;
 
 /** Listener context prefix used for managed EventManager entries */
 const LISTENER_CONTEXT_PREFIX = 'useGalleryScroll';

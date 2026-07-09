@@ -69,3 +69,43 @@ export const MAX_MEDIA_URL_LENGTH = 2048;
  * user-facing latency, so a generous margin is safe.
  */
 export const BLOB_URL_REVOKE_DELAY_MS = 2_000;
+
+// ====================================================================
+// Magic Number Constants (extracted from source files for SSOT)
+// ====================================================================
+
+/** Max number of invalid selector warnings to cache (query-helpers) */
+export const MAX_WARNED_SELECTORS = 100;
+
+/** Default debounce delay in milliseconds (debounce.ts) */
+export const DEFAULT_DEBOUNCE_MS = 300;
+
+/** Tooltip show delay in milliseconds (Tooltip.tsx) */
+export const TOOLTIP_SHOW_DELAY_MS = 300;
+
+/** Tooltip hide delay in milliseconds (Tooltip.tsx) */
+export const TOOLTIP_HIDE_DELAY_MS = 100;
+
+/** Gallery scroll idle timeout before marking as idle (use-gallery-scroll) */
+export const SCROLL_IDLE_TIMEOUT_MS = 250;
+
+/** Window to ignore programmatic scroll events (use-gallery-scroll) */
+export const PROGRAMMATIC_SCROLL_WINDOW_MS = 100;
+
+/** Scroll correction debounce delay in milliseconds */
+export const SCROLL_CORRECTION_DEBOUNCE_MS = 120;
+
+/** Volume persistence debounce delay in milliseconds */
+export const VOLUME_PERSISTENCE_DEBOUNCE_MS = 300;
+
+/** Toolbar blur guard delay in milliseconds */
+export const TOOLBAR_BLUR_GUARD_MS = 100;
+
+/** Video volume change guard window in milliseconds */
+export const VIDEO_VOLUME_CHANGE_GUARD_WINDOW_MS = 500;
+
+/** GM download timeout in milliseconds (userscript adapter) */
+export const GM_DOWNLOAD_TIMEOUT_MS = 60_000;
+
+/** Focus coordinator top proximity threshold in pixels */
+export const FOCUS_TOP_PROXIMITY_PX = 50;

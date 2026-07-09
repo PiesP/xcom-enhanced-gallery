@@ -5,10 +5,10 @@
  * @fileoverview DOM query helpers with fallback selector support.
  */
 
+import { MAX_WARNED_SELECTORS } from '@constants/performance';
 import { logger } from '@shared/logging/logger';
 
 const warnedInvalidSelectors: Record<string, true> = Object.create(null);
-const MAX_WARNED_SELECTORS = 100;
 let warnedSelectorCount = 0;
 
 const warnInvalidSelectorOnce = (selector: string, error: unknown): void => {

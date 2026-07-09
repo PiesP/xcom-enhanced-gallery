@@ -11,18 +11,18 @@
  * @module shared/components/ui/Tooltip/Tooltip
  */
 
+import { TOOLTIP_HIDE_DELAY_MS, TOOLTIP_SHOW_DELAY_MS } from '@constants/performance';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
 import { createMemo, createSignal, createUniqueId, onCleanup, splitProps } from 'solid-js';
 import { Portal } from 'solid-js/web';
-
 import styles from './Tooltip.module.css';
 import type { TooltipPlacement, TooltipPosition, TooltipProps } from './Tooltip.types';
 
 /** Default show delay (ms) — short enough to feel responsive, long enough to not flicker */
-const DEFAULT_SHOW_DELAY = 300;
+const DEFAULT_SHOW_DELAY = TOOLTIP_SHOW_DELAY_MS;
 /** Default hide delay (ms) — prevents flicker when moving between adjacent tooltip targets */
-const DEFAULT_HIDE_DELAY = 100;
+const DEFAULT_HIDE_DELAY = TOOLTIP_HIDE_DELAY_MS;
 /** Gap between tooltip and trigger element (px) */
 const DEFAULT_OFFSET = 6;
 /** Minimum distance from viewport edge (px) */

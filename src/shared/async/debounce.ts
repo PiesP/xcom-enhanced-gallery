@@ -16,6 +16,8 @@
  * ```
  */
 
+import { DEFAULT_DEBOUNCE_MS } from '@constants/performance';
+
 /**
  * Debounced function interface with cancel and flush capabilities
  *
@@ -35,12 +37,12 @@ export interface DebouncedFunction<Args extends unknown[]> {
  *
  * @template Args - Tuple type representing function arguments
  * @param fn - Function to debounce
- * @param delayMs - Delay in milliseconds (default: 300ms)
+ * @param delayMs - Delay in milliseconds (default: DEFAULT_DEBOUNCE_MS)
  * @returns Debounced function with cancel/flush methods
  */
 export function createDebounced<Args extends unknown[]>(
   fn: (...args: Args) => void,
-  delayMs: number = 300
+  delayMs: number = DEFAULT_DEBOUNCE_MS
 ): DebouncedFunction<Args> {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   let pendingArgs: Args | null = null;

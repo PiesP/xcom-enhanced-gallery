@@ -7,6 +7,7 @@
  * and guards against programmatic vs user-driven volume changes.
  */
 
+import { VOLUME_PERSISTENCE_DEBOUNCE_MS } from '@constants/performance';
 import { createVideoVolumeChangeGuard } from '@features/gallery/components/vertical-gallery-view/utils/video-volume-change-guard';
 import {
   normalizeVideoMutedSetting,
@@ -17,8 +18,6 @@ import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-r
 import { logger } from '@shared/logging/logger';
 import type { JSX } from 'solid-js';
 import { createEffect, createSignal, onCleanup, untrack } from 'solid-js';
-
-const VOLUME_PERSISTENCE_DEBOUNCE_MS = 300;
 
 export interface UseVideoVolumePersistenceOptions {
   readonly videoRef: () => HTMLVideoElement | null;

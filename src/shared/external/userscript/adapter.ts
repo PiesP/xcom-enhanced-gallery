@@ -25,6 +25,7 @@
  * from detecting the synthetic click as an "outside" click.
  */
 
+import { GM_DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
 import type { CookieAPI } from '@shared/types/core/cookie.types';
 import type {
   GMDownloadDetails,
@@ -41,12 +42,12 @@ import type {
  * - 300s (DOWNLOAD_TIMEOUT_MS): Extension background SW timeout for
  *   chrome.downloads.download() — the SW must wait for the full file
  *   download over the network, which can be slow for large files.
- * - 60s (this constant): Timeout for GM_xmlhttpRequest in the blob-based
+ * - 60s (GM_DOWNLOAD_TIMEOUT_MS): Timeout for GM_xmlhttpRequest in the blob-based
  *   fallback path. This covers just the HTTP fetch to get the blob;
  *   once the blob is obtained, the actual file save is near-instant via
  *   the anchor download (no network wait). 60s is generous for a fetch.
+ *   (Value sourced from @constants/performance)
  */
-const GM_DOWNLOAD_TIMEOUT_MS = 60_000;
 
 export interface UserscriptAPI {
   readonly download: (url: string, filename: string) => Promise<void>;

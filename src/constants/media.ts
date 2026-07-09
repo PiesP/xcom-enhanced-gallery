@@ -35,3 +35,9 @@ export const DEFAULT_MEDIA_DIMENSIONS = { width: 540, height: STANDARD_GALLERY_H
 
 /** CSS rem base for px-to-rem conversion. */
 export const CSS_REM_BASE = 16;
+
+/** Epsilon for volume comparison with floating-point tolerance. */
+export const VOLUME_EPSILON = 0.001;
+
+/** Threshold ratio for element visibility in focus selection. */
+export const FOCUS_VISIBILITY_RATIO_THRESHOLD = 0.1;

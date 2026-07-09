@@ -7,10 +7,9 @@
  * disrupting the user's current view.
  */
 
+import { SCROLL_CORRECTION_DEBOUNCE_MS } from '@constants/performance';
 import { createDebounced } from '@shared/async/debounce';
 import { onCleanup } from 'solid-js';
-
-const SCROLL_CORRECTION_DEBOUNCE_MS = 120;
 
 /**
  * Parameters for useGalleryScrollCorrection hook
