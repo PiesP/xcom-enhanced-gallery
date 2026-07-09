@@ -69,11 +69,15 @@ function getCookieAPI(): CookieAPI | null {
   return cachedCookieAPI;
 }
 
-function parseDocumentCookies(filterName?: string): CookieRecord[] {
-  const cookieStr = document.cookie;
-  if (!cookieStr) return [];
+/**
+ * Parse cookies from a cookie string (defaults to document.cookie).
+ * Accepts an explicit cookie string for testability/referentially transparent usage.
+ */
+function parseDocumentCookies(filterName?: string, cookieString?: string): CookieRecord[] {
+  const raw = cookieString ?? (typeof document !== 'undefined' ? document.cookie : '');
+  if (!raw) return [];
 
-  return cookieStr
+  return raw
     .split(';')
     .map((entry) => entry.trim())
     .filter(Boolean)
@@ -86,7 +90,10 @@ function parseDocumentCookies(filterName?: string): CookieRecord[] {
     .filter((r) => !filterName || r.name === filterName);
 }
 
-export async function listCookies(options?: CookieListOptions): Promise<CookieRecord[]> {
+export async function listCookies(
+  options?: CookieListOptions,
+  hostname?: string
+): Promise<CookieRecord[]> {
   try {
     const gm = getCookieAPI();
     if (!gm?.list) return parseDocumentCookies(options?.name);
@@ -94,7 +101,7 @@ export async function listCookies(options?: CookieListOptions): Promise<CookieRe
     // Scope cookie queries to the current domain to prevent cross-domain access
     const scopedOptions: CookieListOptions = {
       ...options,
-      domain: options?.domain ?? document.location?.hostname ?? undefined,
+      domain: options?.domain ?? hostname ?? document.location?.hostname ?? undefined,
     };
 
     return promisifyCallback<CookieRecord[]>(
@@ -126,9 +133,10 @@ export async function getCookieValue(name: string): Promise<string | undefined> 
   return getCookieValueSync(name);
 }
 
-export function getCookieValueSync(name: string): string | undefined {
+export function getCookieValueSync(name: string, cookieString?: string): string | undefined {
   if (!name) return undefined;
-  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${escapeRegExp(name)}=([^;]*)`));
+  const raw = cookieString ?? (typeof document !== 'undefined' ? document.cookie : '');
+  const match = raw.match(new RegExp(`(?:^|;\\s*)${escapeRegExp(name)}=([^;]*)`));
   if (!match?.[1]) return undefined;
   try {
     return decodeURIComponent(match[1]);
