@@ -8,6 +8,7 @@
 import { CSS_REM_BASE, DEFAULT_MEDIA_DIMENSIONS, STANDARD_GALLERY_HEIGHT } from '@constants/media';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
+import type { ImageFitMode } from '@shared/types/settings.types';
 import { extractVisualIndexFromUrl, getMediaDedupKey } from '@shared/utils/media/media-url-utils';
 import { clampIndex } from '@shared/utils/types/number-utils';
 
@@ -170,6 +171,70 @@ export function createIntrinsicSizingStyle(dimensions: DimensionPair): Record<st
     '--xeg-gallery-item-intrinsic-height': toRem(dimensions.height),
     '--xeg-gallery-item-intrinsic-ratio': ratio.toFixed(6),
   };
+}
+
+export interface ContainIntrinsicSizeOverrideInput {
+  /** Image intrinsic width in CSS pixels */
+  readonly intrinsicWidth: number;
+  /** Image intrinsic height in CSS pixels */
+  readonly intrinsicHeight: number;
+  /** Whether intrinsic dimensions are available */
+  readonly hasIntrinsicSize: boolean;
+  /** Current image fit mode */
+  readonly fitMode: ImageFitMode;
+}
+
+/**
+ * Compute `--xeg-cis-override` CSS custom property value for `contain-intrinsic-size`.
+ *
+ * When `content-visibility: auto` defers layout for off-screen gallery items,
+ * `contain-intrinsic-size` provides the fallback sizing. The old hardcoded
+ * `auto none auto 300px` ignored the fit mode and actual image dimensions,
+ * causing off-screen items to all render at 300px height.
+ *
+ * This function returns a CSS value using `calc()` expressions that reference
+ * viewport custom properties (`--xeg-viewport-w`, `--xeg-viewport-height-constrained`)
+ * so the sizing updates on viewport resize without JS recomputation.
+ *
+ * Returns `null` when intrinsic size is unavailable — the CSS falls back to the
+ * default `auto none auto 300px`.
+ */
+export function computeContainIntrinsicSizeOverride(
+  input: ContainIntrinsicSizeOverrideInput
+): string | null {
+  const { intrinsicWidth, intrinsicHeight, hasIntrinsicSize, fitMode } = input;
+
+  if (!hasIntrinsicSize) return null;
+
+  const ratio = intrinsicHeight > 0 ? intrinsicWidth / intrinsicHeight : 16 / 9;
+  const ratioStr = ratio.toFixed(6);
+  const aw = 'var(--xeg-viewport-w, 100vw)';
+
+  switch (fitMode) {
+    case 'fitWidth': {
+      const hCalc = `calc(${aw} / ${ratioStr})`;
+      return `auto ${aw} auto ${hCalc}`;
+    }
+    case 'fitHeight': {
+      const vh = 'var(--xeg-viewport-height-constrained, 720px)';
+      const wCalc = `min(${aw}, calc(${vh} * ${ratioStr}))`;
+      return `auto ${wCalc} auto ${vh}`;
+    }
+    case 'fitContainer': {
+      const vh = 'var(--xeg-viewport-height-constrained, 720px)';
+      const wFromH = `calc(${vh} * ${ratioStr})`;
+      const wCalc = `min(${aw}, ${wFromH})`;
+      const hCalc = `min(${intrinsicHeight}px, ${vh})`;
+      return `auto ${wCalc} auto ${hCalc}`;
+    }
+    case 'original': {
+      const cw = `min(${intrinsicWidth}px, ${aw})`;
+      const hCalc = `calc(${cw} / ${ratioStr})`;
+      return `auto ${cw} auto ${hCalc}`;
+    }
+    default:
+      return null;
+  }
 }
 
 export function adjustClickedIndexAfterDeduplication(
