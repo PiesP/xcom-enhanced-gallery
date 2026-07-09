@@ -273,8 +273,8 @@
   );
 }
 
-/* Loading state — fitWidth: force full width so container doesn't shrink
-   to thumbnail dimensions. The intrinsic ratio on .imageWrapper ensures
+/* Loading state — fitWidth: force full width so container fills
+   available space. The intrinsic ratio on .imageWrapper ensures
    correct height. */
 .container[data-media-loaded="false"][data-has-intrinsic-size="true"][data-fit-mode="fitWidth"] {
   inline-size: 100%;

@@ -68,36 +68,24 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   /**
    * Resolve the image source URL for display.
    *
-   * Performance optimization (B5): Use the thumbnail URL for non-active
-   * images to avoid loading full-resolution blobs for off-screen items.
-   * Only the active/focused item loads the full-resolution URL.
-   *
-   * Video/gif items always use the full URL since thumbnail URLs are
-   * typically static JPEG frames, not video sources.
+   * Uses media.url for all types. Non-active images previously used
+   * thumbnailUrl (perf optimization B5), but this caused dimension
+   * mismatches requiring complex workarounds. loading=\"lazy\" already
+   * defers off-screen network requests, making thumbnail URLs redundant.
    */
-  const displaySrc = createMemo(() => {
-    if (isVideo()) return local.media.url;
-    const isActive = local.isActive ?? false;
-    // For the active item: load full resolution for best quality
-    if (isActive) return local.media.url;
-    // For inactive items: use thumbnail to reduce bandwidth and memory
-    return local.media.thumbnailUrl ?? local.media.url;
-  });
+  const displaySrc = createMemo(() => local.media.url);
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
 
-  // Defense-in-depth: validate the rendered URL (url for active, thumbnailUrl for inactive)
+  // Defense-in-depth: validate the rendered URL
   const isDisplaySrcValid = createMemo(() => isUrlAllowed(displaySrc(), MEDIA_URL_POLICY));
 
   // MED-2: Track both media.id and index to handle item reorder.
   // <For> keys by index, so when items reorder the component instance
   // persists but receives new props — track index to ensure reset.
-  // Also track displaySrc so isLoaded resets when the displayed URL
-  // changes (e.g., thumbnail→full URL when item becomes active).
   createEffect(() => {
     void local.media.id;
     void local.index;
-    void displaySrc();
     setIsLoaded(false);
     setIsError(false);
   });
