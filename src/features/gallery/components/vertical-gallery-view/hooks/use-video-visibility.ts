@@ -43,11 +43,11 @@ function createVideoVisibilityController(
       const result = video.play();
       if (result && typeof (result as Promise<void>).catch === 'function') {
         void (result as Promise<void>).catch((err) => {
-          if (__DEV__) logger.debug('Video play() was prevented', { error: err });
+          __DEV__ && logger.debug('Video play() was prevented', { error: err });
         });
       }
     } catch (err) {
-      if (__DEV__) logger.debug('Video play() threw synchronously', { error: err });
+      __DEV__ && logger.debug('Video play() threw synchronously', { error: err });
     }
   };
 
@@ -76,7 +76,7 @@ function createVideoVisibilityController(
             pauseVideo();
           }
         } catch (err) {
-          if (__DEV__) logger.warn('Failed to pause video on scroll out', { error: err });
+          __DEV__ && logger.warn('Failed to pause video on scroll out', { error: err });
         }
       } else {
         try {
@@ -89,7 +89,7 @@ function createVideoVisibilityController(
             playVideo();
           }
         } catch (err) {
-          if (__DEV__) logger.warn('Failed to resume video on scroll in', { error: err });
+          __DEV__ && logger.warn('Failed to resume video on scroll in', { error: err });
         } finally {
           wasPlayingBeforeHidden = false;
           wasMutedBeforeHidden = null;

@@ -112,13 +112,13 @@ export class MediaExtractionService implements MediaExtractor {
     options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     const extractionId = generateExtractionId();
-    if (__DEV__) logger.info(`[MediaExtractor] ${extractionId}: Extraction started`);
+    __DEV__ && logger.info(`[MediaExtractor] ${extractionId}: Extraction started`);
 
     try {
       const tweetInfo = this.tweetInfoExtractor.extract(element);
 
       if (!tweetInfo?.tweetId) {
-        if (__DEV__) logger.warn(`[MediaExtractor] ${extractionId}: No tweet info found`);
+        __DEV__ && logger.warn(`[MediaExtractor] ${extractionId}: No tweet info found`);
         return createErrorResult('No tweet information found');
       }
 
@@ -147,7 +147,7 @@ export class MediaExtractionService implements MediaExtractor {
         this.recordApiFailure();
       }
 
-      if (__DEV__) logger.info(`[MediaExtractor] ${extractionId}: API failed, trying DOM fallback`);
+      __DEV__ && logger.info(`[MediaExtractor] ${extractionId}: API failed, trying DOM fallback`);
 
       // Yield before CPU-intensive DOM fallback extraction
       await schedulerYield(SCHEDULER_YIELD_DEADLINE_MS);
@@ -166,7 +166,7 @@ export class MediaExtractionService implements MediaExtractor {
         });
       }
 
-      if (__DEV__) logger.error('Both API and DOM extraction failed', extractionId);
+      __DEV__ && logger.error('Both API and DOM extraction failed', extractionId);
 
       const apiErrorMessage =
         apiResult.metadata?.error ?? apiResult.errors?.[0]?.message ?? 'API extraction failed';
@@ -183,7 +183,7 @@ export class MediaExtractionService implements MediaExtractor {
         tweetInfo: mergeTweetInfo(tweetInfo, apiResult.tweetInfo),
       };
     } catch (error) {
-      if (__DEV__) logger.error('Extract failed', extractionId, error);
+      __DEV__ && logger.error('Extract failed', extractionId, error);
       return createErrorResult(error);
     }
   }

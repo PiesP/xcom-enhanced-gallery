@@ -104,10 +104,10 @@ export function useVideoVolumePersistence(
   // Debounced settings persistence to reduce GM_setValue calls during slider drag
   const debouncedSaveVolume = createDebounced((volume: number, muted: boolean) => {
     setTypedSetting('gallery.videoVolume', volume).catch((error) => {
-      if (__DEV__) logger.warn('Failed to persist video volume', { error });
+      __DEV__ && logger.warn('Failed to persist video volume', { error });
     });
     setTypedSetting('gallery.videoMuted', muted).catch((error) => {
-      if (__DEV__) logger.warn('Failed to persist video muted', { error });
+      __DEV__ && logger.warn('Failed to persist video muted', { error });
     });
   }, VOLUME_PERSISTENCE_DEBOUNCE_MS);
 

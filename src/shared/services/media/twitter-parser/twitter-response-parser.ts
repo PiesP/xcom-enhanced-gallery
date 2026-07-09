@@ -214,7 +214,7 @@ export function extractMediaFromTweet(
         )
       );
     } catch (error) {
-      if (__DEV__) logger.debug('[TwitterParser] Skipping media entry', { error });
+      __DEV__ && logger.debug('[TwitterParser] Skipping media entry', { error });
     }
   }
 

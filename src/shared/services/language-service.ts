@@ -40,7 +40,7 @@ export class LanguageService {
         this.notifyListeners(normalized);
       }
     } catch (error) {
-      if (__DEV__) logger.warn('Failed to restore language setting from storage:', error);
+      __DEV__ && logger.warn('Failed to restore language setting from storage:', error);
     }
     this._initialized = true;
   }

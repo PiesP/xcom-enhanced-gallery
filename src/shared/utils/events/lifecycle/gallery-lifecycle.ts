@@ -27,13 +27,12 @@ export function createGalleryLifecycle(): GalleryLifecycle {
 
   function initialize(handlers: EventHandlers, options?: Partial<GalleryEventOptions>): () => void {
     if (initialized) {
-      if (__DEV__)
-        logger.warn('[GalleryLifecycle] Re-initializing, cleaning up previous listeners');
+      __DEV__ && logger.warn('[GalleryLifecycle] Re-initializing, cleaning up previous listeners');
       cleanup();
     }
 
     if (!handlers) {
-      if (__DEV__) logger.error('[GalleryLifecycle] Missing handlers');
+      __DEV__ && logger.error('[GalleryLifecycle] Missing handlers');
       return cleanup;
     }
 

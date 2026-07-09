@@ -126,7 +126,7 @@ export class SettingsService {
       try {
         listener(event);
       } catch (error) {
-        if (__DEV__) logger.error('Settings listener error:', error);
+        __DEV__ && logger.error('Settings listener error:', error);
       }
     }
   }
