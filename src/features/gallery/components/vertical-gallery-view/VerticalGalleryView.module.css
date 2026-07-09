@@ -282,7 +282,6 @@
   opacity: 0;
 
   /* Performance optimization */
-  contain: strict;
   content-visibility: auto;
 }
 

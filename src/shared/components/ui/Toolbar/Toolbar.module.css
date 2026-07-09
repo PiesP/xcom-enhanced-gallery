@@ -156,13 +156,7 @@
 /* Phase 254: reduced motion is handled via semantic --xeg-duration-* tokens */
 
 /* State-driven custom properties (defaults chosen to preserve visibility) */
-.galleryToolbar.stateIdle {
-  --toolbar-opacity: 1;
-  --toolbar-pointer-events: auto;
-  --toolbar-visibility: visible;
-  --toolbar-display: inline-flex;
-}
-
+.galleryToolbar.stateIdle,
 .galleryToolbar.stateLoading,
 .galleryToolbar.stateDownloading,
 .galleryToolbar.stateError {

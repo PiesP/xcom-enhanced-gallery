@@ -28,7 +28,6 @@
 
   /* Performance */
   will-change: transform;
-  contain: layout style;
 
   /* Defer off-screen rendering for gallery items below the fold.
      The browser automatically lays out and paints items as they scroll
