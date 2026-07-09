@@ -37,9 +37,10 @@ export async function initializeGalleryServices(): Promise<void> {
     settingsErrorReporter.warn(error, {
       code: 'SETTINGS_SERVICE_INIT_FAILED',
     });
+    const lang = getLanguageService();
     getNotificationAdapter().notify(
-      'Settings unavailable',
-      'Defaults will be used until settings load.'
+      lang.translate('msg.err.settingsUnavailable.title'),
+      lang.translate('msg.err.settingsUnavailable.body')
     );
   }
 }
