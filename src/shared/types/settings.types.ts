@@ -11,10 +11,6 @@
 export type VideoClickMode = 'block-all' | 'block-controls-only' | 'allow-all';
 
 export interface GallerySettings {
-  /** Auto-scroll speed (1-10) */
-  autoScrollSpeed: number;
-  /** Enable infinite scroll */
-  infiniteScroll: boolean;
   /** Number of images to preload */
   preloadCount: number;
   /** Image fit mode */
@@ -42,27 +38,9 @@ export interface ToolbarSettings {
   autoHideDelay: number;
 }
 
-export interface DownloadSettings {
-  /** Filename pattern */
-  filenamePattern: 'original' | 'tweet-id' | 'timestamp' | 'custom';
-  /** Image quality */
-  imageQuality: 'original' | 'large' | 'medium' | 'small';
-  /** Maximum concurrent downloads */
-  maxConcurrentDownloads: number;
-  /** Auto-compress to ZIP */
-  autoZip: boolean;
-  /** Download folder structure */
-  folderStructure: 'flat';
-}
+export type DownloadSettings = Record<string, never>;
 
-export interface AccessibilitySettings {
-  /** Reduce animations and transitions */
-  reduceMotion: boolean;
-  /** Enable screen reader support */
-  screenReaderSupport: boolean;
-  /** Show prominent focus indicators for keyboard navigation */
-  focusIndicators: boolean;
-}
+export type AccessibilitySettings = Record<string, never>;
 
 export interface FeatureFlags {
   /** Enable gallery feature */

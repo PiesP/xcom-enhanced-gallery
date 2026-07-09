@@ -62,11 +62,6 @@ function resolveGMCookieAPI(): CookieAPI | null {
 
 let cachedCookieAPI: CookieAPI | null | undefined;
 
-/** Reset the cached CookieAPI reference — forces re-resolution on next access. */
-export function resetCookieCache(): void {
-  cachedCookieAPI = undefined;
-}
-
 function getCookieAPI(): CookieAPI | null {
   if (cachedCookieAPI === undefined) {
     cachedCookieAPI = resolveGMCookieAPI();

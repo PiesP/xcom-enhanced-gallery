@@ -17,7 +17,7 @@ function parseBooleanFlag(value: BooleanFlagValue): boolean | undefined {
   return undefined;
 }
 
-export interface AppConfig {
+interface AppConfig {
   readonly version: string;
   readonly isDevelopment: boolean;
   readonly debug: boolean;

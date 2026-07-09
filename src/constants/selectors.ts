@@ -3,10 +3,10 @@
 
 /** @fileoverview DOM selector constants for X.com elements. */
 
-export const TWEET_SELECTOR = 'article[data-testid="tweet"]' as const;
-export const TWEET_PHOTO_SELECTOR = '[data-testid="tweetPhoto"]' as const;
+const TWEET_SELECTOR = 'article[data-testid="tweet"]' as const;
+const TWEET_PHOTO_SELECTOR = '[data-testid="tweetPhoto"]' as const;
 export const TWEET_TEXT_SELECTOR = '[data-testid="tweetText"]' as const;
-export const VIDEO_PLAYER_SELECTOR = '[data-testid="videoPlayer"]' as const;
+const VIDEO_PLAYER_SELECTOR = '[data-testid="videoPlayer"]' as const;
 export const VIDEO_PLAYER_CONTEXT_SELECTOR =
   `${VIDEO_PLAYER_SELECTOR},[data-testid="videoComponent"],[data-testid="videoPlayerControls"],[data-testid="videoPlayerOverlay"],[role="application"],[aria-label*="Video"]` as const;
 export const STATUS_LINK_SELECTOR = 'a[href*="/status/"]' as const;

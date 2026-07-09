@@ -59,27 +59,14 @@
     --xeg-spacing-sm: var(--space-sm);
     --xeg-spacing-md: var(--space-md);
     --xeg-spacing-lg: var(--space-lg);
+    --xeg-spacing-3xl: var(--space-3xl);
 
     /* Layout Constraints */
     --xeg-viewport-height-constrained: 90vh;
   }
-
-  /* Accessibility: Reduced Transparency Support */
-  @media (prefers-reduced-transparency: reduce) {
-    :where(:root, .xeg-theme-scope) {
-      --xeg-surface-bg: var(--xeg-color-bg-primary);
-    }
-  }
 }
 
 @layer xeg.components {
-  /* Utility Classes: Surface Panel */
-  .xeg-surface {
-    background: var(--xeg-surface-bg);
-    border: 0.0625rem solid var(--xeg-surface-border);
-    border-radius: var(--xeg-radius-lg);
-  }
-
   /* Utility Classes: Spinner */
   .xeg-spinner {
     display: inline-block;

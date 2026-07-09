@@ -10,11 +10,6 @@ const textEncoder = new TextEncoder();
 
 let crc32Table: Uint32Array | null = null;
 
-/** Reset the lazily-initialized CRC32 lookup table — forces re-computation on next use. */
-export function resetCrc32Table(): void {
-  crc32Table = null;
-}
-
 /**
  * Lazily initialize and cache CRC32 lookup table (polynomial 0xEDB88320)
  * @returns Cached 256-element Uint32Array

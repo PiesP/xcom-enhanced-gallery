@@ -58,10 +58,10 @@ function buildLogger(prefix: string): Logger {
   return isDevMode ? createVerboseLogger(prefix) : createErrorOnlyLogger(prefix);
 }
 
-export function createLogger(): Logger;
-export function createLogger(moduleName: string): Logger;
-export function createLogger(config: Partial<LoggerConfig>): Logger;
-export function createLogger(arg: string | Partial<LoggerConfig> = {}): Logger {
+function createLogger(): Logger;
+function createLogger(moduleName: string): Logger;
+function createLogger(config: Partial<LoggerConfig>): Logger;
+function createLogger(arg: string | Partial<LoggerConfig> = {}): Logger {
   const cfg = typeof arg === 'string' ? { prefix: `[${arg}]` } : arg;
   const prefix = cfg.prefix ?? BASE_PREFIX;
   return buildLogger(prefix);
