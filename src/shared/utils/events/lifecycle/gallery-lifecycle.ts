@@ -25,6 +25,10 @@ export function createGalleryLifecycle(): GalleryLifecycle {
   let initialized = false;
   let currentContext: string | null = null;
 
+  /**
+   * Initialize gallery lifecycle. Not idempotent — each call removes old
+   * listeners and registers new ones. Call cleanup() before re-initializing.
+   */
   function initialize(handlers: EventHandlers, options?: Partial<GalleryEventOptions>): () => void {
     if (initialized) {
       __DEV__ && logger.warn('[GalleryLifecycle] Re-initializing, cleaning up previous listeners');

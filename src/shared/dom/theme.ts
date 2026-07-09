@@ -16,6 +16,7 @@ export interface SyncThemeAttributesOptions {
 /**
  * Synchronize data-theme attribute for gallery theme scopes.
  * Updates XEG theme scope elements and optionally document root.
+ * Mutates DOM — by-design side effect for a DOM utility function.
  * @param theme - Target theme name ('light' or 'dark')
  * @param options - Optional configuration for scope and root element handling
  */

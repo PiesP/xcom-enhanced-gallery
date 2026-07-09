@@ -22,6 +22,12 @@ interface SettingsLike {
   subscribe?(listener: (event: SettingChangeEvent) => void): () => void;
 }
 
+/**
+ * Singleton settings registry.
+ * Set via registerSettings() before any consumer calls.
+ * Reset via clearSettings() in test cleanup.
+ * @internal Module-level mutable state — intentional singleton pattern.
+ */
 let _settings: SettingsLike | null = null;
 
 export function registerSettings(s: SettingsLike): void {
