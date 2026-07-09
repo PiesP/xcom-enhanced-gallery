@@ -92,9 +92,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   // MED-2: Track both media.id and index to handle item reorder.
   // <For> keys by index, so when items reorder the component instance
   // persists but receives new props — track index to ensure reset.
+  // Also track displaySrc so isLoaded resets when the displayed URL
+  // changes (e.g., thumbnail→full URL when item becomes active).
   createEffect(() => {
     void local.media.id;
     void local.index;
+    void displaySrc();
     setIsLoaded(false);
     setIsError(false);
   });
