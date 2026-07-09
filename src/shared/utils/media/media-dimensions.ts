@@ -12,6 +12,8 @@ import type { ImageFitMode } from '@shared/types/settings.types';
 import { extractVisualIndexFromUrl, getMediaDedupKey } from '@shared/utils/media/media-url-utils';
 import { clampIndex } from '@shared/utils/types/number-utils';
 
+const FALLBACK_VIEWPORT_HEIGHT = `${STANDARD_GALLERY_HEIGHT}px`;
+
 interface DimensionPair {
   readonly width: number;
   readonly height: number;
@@ -219,12 +221,12 @@ export function computeContainIntrinsicSizeOverride(
       return `auto ${aw} auto ${hCalc}`;
     }
     case 'fitHeight': {
-      const vh = 'var(--xeg-viewport-height-constrained, 720px)';
+      const vh = `var(--xeg-viewport-height-constrained, ${FALLBACK_VIEWPORT_HEIGHT})`;
       const wCalc = `min(${aw}, calc(${vh} * ${ratioStr}))`;
       return `auto ${wCalc} auto ${vh}`;
     }
     case 'fitContainer': {
-      const vh = 'var(--xeg-viewport-height-constrained, 720px)';
+      const vh = `var(--xeg-viewport-height-constrained, ${FALLBACK_VIEWPORT_HEIGHT})`;
       const wFromH = `calc(${vh} * ${ratioStr})`;
       const wCalc = `min(${aw}, ${wFromH})`;
       const hCalc = `min(${intrinsicHeight}px, ${vh})`;
