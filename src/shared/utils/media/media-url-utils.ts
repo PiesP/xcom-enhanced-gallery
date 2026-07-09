@@ -14,7 +14,7 @@ function hasValidUrlPrefix(str: string): boolean {
   return /^(?:https?:\/\/|\/\/|\/)/u.test(str);
 }
 
-function extractFilenameFromUrl(url: string): string | null {
+export function extractFilenameFromUrl(url: string): string | null {
   if (!url) return null;
   const trimmed = url.trim();
   if (!trimmed || !hasValidUrlPrefix(trimmed)) return null;

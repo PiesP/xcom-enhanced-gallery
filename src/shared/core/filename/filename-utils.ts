@@ -69,7 +69,7 @@ function getExtension(url: string): string {
  * @param mediaId - Media identifier string to parse
  * @returns 1-indexed position string, or null if no match
  */
-function getIndexFromMediaId(mediaId?: string): string | null {
+export function getIndexFromMediaId(mediaId?: string): string | null {
   if (!mediaId) return null;
   const match = mediaId.match(/_media_(\d+)$/) || mediaId.match(/_(\d+)$/);
   if (match) {
@@ -85,7 +85,7 @@ function getIndexFromMediaId(mediaId?: string): string | null {
  * @param index - Index value to normalize
  * @returns Positive integer string, minimum '1'
  */
-function normalizeIndex(index?: string | number): string {
+export function normalizeIndex(index?: string | number): string {
   if (index === undefined || index === null) return '1';
   const num = typeof index === 'string' ? Number.parseInt(index, 10) : index;
   return Number.isNaN(num) || num < 1 ? '1' : num.toString();

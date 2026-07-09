@@ -104,7 +104,7 @@ function getVideoHighQualityUrl(media: TwitterMedia): string | null {
   return mp4s.reduce((best, cur) => ((cur.bitrate ?? 0) > (best.bitrate ?? 0) ? cur : best)).url;
 }
 
-function getHighQualityMediaUrl(media: TwitterMedia): string | null {
+export function getHighQualityMediaUrl(media: TwitterMedia): string | null {
   if (media.type === 'photo') return getPhotoHighQualityUrl(media.media_url_https) ?? null;
   if (media.type === 'video' || media.type === 'animated_gif') return getVideoHighQualityUrl(media);
   return null;

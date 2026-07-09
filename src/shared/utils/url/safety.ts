@@ -124,7 +124,7 @@ export function isUrlAllowed(rawUrl: string | null | undefined, policy: UrlSafet
  * @param hints - Protocol hint prefixes to check against
  * @returns True if a blocked protocol hint is detected
  */
-function startsWithBlockedProtocolHint(value: string, hints: readonly string[]): boolean {
+export function startsWithBlockedProtocolHint(value: string, hints: readonly string[]): boolean {
   const probe = value.slice(0, MAX_SCHEME_PROBE_LENGTH);
 
   // M9: Scope malformed-% check to the scheme region (before first ':')
