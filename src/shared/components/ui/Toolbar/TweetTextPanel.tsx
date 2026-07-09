@@ -140,12 +140,13 @@ const formatTweetUrlLabel = (url: string): string => url.replace(PROTOCOL_PREFIX
 /**
  * Renders tweet tokens as JSX elements with proper links
  * @param tokens - Array of tweet tokens
+ * @param translate - Translation function
  * @returns JSX element array
  */
-const renderTweetTokens = (tokens: readonly TweetToken[]): JSXElement =>
+const renderTweetTokens = (tokens: readonly TweetToken[], translate: ReturnType<typeof useTranslation>): JSXElement =>
   tokens.map((token) => {
     if ((token.type === 'url' || token.type === 'hashtag') && token.href) {
-      const label = token.type === 'hashtag' ? `Hashtag ${token.value}` : token.value;
+      const label = token.type === 'hashtag' ? translate('msg.gal.hashtagLabel', { value: token.value }) : token.value;
       return (
         <a href={token.href} target="_blank" rel="noopener noreferrer" aria-label={label}>
           {token.value}
@@ -204,7 +205,7 @@ export function TweetTextPanel(props: TweetTextPanelProps): JSXElement {
           <TweetUrlLink url={safeTweetUrl} label={tweetUrlLabel} translate={translate} />
         )}
         {safeTweetUrl && tokens.length > 0 && <div class={styles.tweetUrlDivider} />}
-        <span>{renderTweetTokens(tokens)}</span>
+        <span>{renderTweetTokens(tokens, translate)}</span>
       </div>
     </div>
   );
