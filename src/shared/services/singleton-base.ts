@@ -2,57 +2,22 @@
 // Copyright (c) 2024-2026 PiesP
 
 /**
- * @fileoverview Singleton base class for services.
+ * @fileoverview Singleton accessor interface and factory.
  *
  * Provides a consistent singleton pattern with `getInstance()` and `resetForTests()`.
- * Subclasses use a module-level `_instance` variable and delegate to the base helpers.
+ * Uses a module-level closure variable and delegates to the accessor helpers.
  *
  * Usage:
  * ```
- * let _instance: MyService | null = null;
- *
  * export class MyService {
- *   private constructor() {}
- *
- *   static getInstance(): MyService {
- *     return SingletonBase.get(
- *       () => _instance,
- *       (inst) => { _instance = inst; },
- *       () => new MyService(),
- *     );
- *   }
- *
- *   static resetForTests(): void {
- *     SingletonBase.reset(() => _instance, (inst) => { _instance = inst; });
- *   }
- *
+ *   constructor() {}
  *   destroy(): void { ... }
  * }
+ *
+ * const { getInstance, resetForTests } = createSingleton(() => new MyService());
+ * export { getInstance as getMyService, resetForTests as resetMyServiceForTests };
  * ```
  */
-
-export class SingletonBase {
-  static get<T extends { destroy(): void }>(
-    getInstance: () => T | null,
-    setInstance: (instance: T) => void,
-    create: () => T
-  ): T {
-    const existing = getInstance();
-    if (existing) return existing;
-    const instance = create();
-    setInstance(instance);
-    return instance;
-  }
-
-  static reset<T extends { destroy(): void }>(
-    getInstance: () => T | null,
-    setInstance: (instance: T | null) => void
-  ): void {
-    const existing = getInstance();
-    existing?.destroy();
-    setInstance(null);
-  }
-}
 
 export interface SingletonAccessors<T extends { destroy(): void }> {
   getInstance: () => T;
@@ -63,17 +28,6 @@ export interface SingletonAccessors<T extends { destroy(): void }> {
  * Create a singleton service with automatic instance management.
  * Eliminates the boilerplate of module-level `_instance` variables
  * and static `getInstance()`/`resetForTests()` methods.
- *
- * Usage:
- * ```
- * export class MyService {
- *   constructor() {}  // public constructor
- *   destroy(): void { ... }
- * }
- *
- * const { getInstance, resetForTests } = createSingleton(() => new MyService());
- * export { getInstance as getMyService, resetForTests as resetMyServiceForTests };
- * ```
  */
 export function createSingleton<T extends { destroy(): void }>(
   factory: () => T

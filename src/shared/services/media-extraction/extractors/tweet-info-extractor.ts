@@ -141,7 +141,7 @@ function isValidTweetInfo(info: TweetInfo): boolean {
  * Extract tweet info from a DOM element using a strategy pipeline.
  * Tries strategies in order: element attributes → DOM structure → media grid.
  */
-export function extractTweetInfo(element: HTMLElement): TweetInfo | null {
+function extractTweetInfo(element: HTMLElement): TweetInfo | null {
   for (const strategy of strategies) {
     try {
       const result = strategy(element);

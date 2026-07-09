@@ -38,11 +38,9 @@ export interface ToolbarSettings {
   autoHideDelay: number;
 }
 
-export interface DownloadSettings {
-}
+export type DownloadSettings = {};
 
-export interface AccessibilitySettings {
-}
+export type AccessibilitySettings = {};
 
 export interface FeatureFlags {
   /** Enable gallery feature */

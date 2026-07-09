@@ -32,10 +32,8 @@ export const DEFAULT_SETTINGS = {
   toolbar: {
     autoHideDelay: 3000,
   },
-  download: {
-  },
-  accessibility: {
-  },
+  download: {},
+  accessibility: {},
   features: {
     gallery: true,
     settings: true,
