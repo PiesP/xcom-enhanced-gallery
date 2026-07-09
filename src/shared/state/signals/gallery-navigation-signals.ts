@@ -36,7 +36,8 @@ const isManualSource = (source: NavigationSource): boolean =>
  *
  * @param targetIndex - The navigation target item index
  * @param source - How the navigation was triggered (button, keyboard, scroll, etc.)
- * @param nowMs - Optional timestamp in milliseconds (defaults to `performance.now()`)
+ * @param nowMs - Optional timestamp in milliseconds for determinism.
+ *   Pass for test reproducibility. Defaults to performance.now() (non-RT).
  */
 export function recordNavigation(
   targetIndex: number,
@@ -61,7 +62,8 @@ export function recordNavigation(
  * Resets navigation state to initial values.
  * Typically called on gallery open/close to clear the previous session's navigation history.
  *
- * @param nowMs - Optional timestamp in milliseconds (defaults to `performance.now()`)
+ * @param nowMs - Optional timestamp in milliseconds for determinism.
+ *   Pass for test reproducibility. Defaults to performance.now() (non-RT).
  */
 export function resetNavigation(nowMs?: number): void {
   setNavSource(INITIAL_NAV_SOURCE);

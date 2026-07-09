@@ -84,6 +84,11 @@ export class FocusCoordinator {
     this.items.set(index, trackedItem);
   }
 
+  /**
+   * Request a focus update. Throttled via requestAnimationFrame —
+   * multiple calls within the same frame are coalesced into one.
+   * NOT idempotent across frames (by design).
+   */
   updateFocus(force: boolean = false): void {
     if (!force && !this.options.isEnabled()) return;
     if (this._rafId !== null) return; // already throttled
