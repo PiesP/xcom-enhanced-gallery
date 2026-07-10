@@ -8,11 +8,10 @@
  * in content scripts:
  * - chrome.downloads.download() for file downloads
  * - chrome.notifications.create() for desktop notifications
- * - Cross-origin fetch proxying
  *
  * Architecture notes — FEATURE AWARENESS:
  * The background SW is intentionally STATELESS and features-limited.
- * It knows only about downloads, notifications, and fetch proxying.
+ * It knows only about downloads and notifications.
  * All gallery state, media extraction, settings, theme, language/i18n,
  * and DOM access live exclusively in the content script. If a new feature
  * needs SW privileges (clipboard, printing, native messaging), extend the
@@ -33,7 +32,6 @@ import type {
   DownloadBlobUrlRequestMessage,
   DownloadRequestMessage,
   ExtensionMessageResponse,
-  FetchRequestMessage,
   IncomingMessage,
   ShowNotificationMessage,
 } from './extension-message-types';
@@ -91,7 +89,6 @@ function isValidIncomingMessage(message: unknown): message is IncomingMessage {
     'DOWNLOAD_REQUEST',
     'DOWNLOAD_BLOB_URL_REQUEST',
     'SHOW_NOTIFICATION',
-    'FETCH_REQUEST',
   ]);
   return VALID_TYPES.has(msg.type);
 }
@@ -131,17 +128,6 @@ browserApi.runtime.onMessage.addListener(
         handleShowNotification(msg.payload);
         sendResponse({ success: true });
         return false;
-
-      case 'FETCH_REQUEST':
-        respondAsync(
-          () =>
-            handleFetchRequest(msg).then((data) => ({
-              success: true,
-              data,
-            })),
-          sendResponse
-        );
-        return true;
 
       default:
         // This should never be reached given isValidIncomingMessage above,
@@ -298,46 +284,4 @@ function handleShowNotification(payload: ShowNotificationMessage['payload']): vo
     message,
     iconUrl: imageUrl ?? 'icons/icon-128x128.png',
   });
-}
-
-// ── Cross-origin fetch proxy ─────────────────────────────────────────────────
-
-/**
- * Handle FETCH_REQUEST messages from content scripts.
- *
- * NOTE: This handler is currently dead code — no content-script code
- * sends FETCH_REQUEST messages. The MV3HttpRequestAdapter uses fetch()
- * directly in the content script context. This handler is preserved for
- * future use if cross-origin fetch proxying via the SW becomes necessary
- * (e.g., for CORS-restricted endpoints that the SW's extension privileges
- * can bypass).
- *
- * Security: Only GET/HEAD methods are allowed (SSRF prevention).
- */
-async function handleFetchRequest(message: FetchRequestMessage): Promise<unknown> {
-  const { url, options } = message.payload;
-
-  if (!isAllowedUrl(url)) {
-    throw new Error(`URL not in allowed whitelist: ${url}`);
-  }
-
-  // Security: only allow safe read-only methods to prevent SSRF abuse
-  const method = options?.method ?? 'GET';
-  if (method !== 'GET' && method !== 'HEAD') {
-    throw new Error(`FETCH_REQUEST only supports GET/HEAD, got: ${method}`);
-  }
-
-  const fetchOptions: RequestInit = { method };
-
-  if (options?.headers) {
-    fetchOptions.headers = options.headers;
-  }
-
-  const response = await fetch(url, fetchOptions);
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-
-  return response.json().catch(() => response.text());
 }

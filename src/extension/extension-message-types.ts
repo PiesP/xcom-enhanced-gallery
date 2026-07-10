@@ -11,14 +11,11 @@
  *
  * Architecture notes:
  * - The background SW is intentionally STATELESS and features-limited.
- *   It handles only: downloads (URL + blob URL), notifications, and
- *   cross-origin fetch proxying. All gallery state, media extraction,
- *   settings, theme, language/i18n, and DOM access live in the content
- *   script. If a new feature needs SW privileges (clipboard, printing,
- *   native messaging), the message protocol must be extended here.
- * - The FETCH_REQUEST message is defined but currently unused by any
- *   content-script code. The MV3HttpRequestAdapter uses fetch() directly
- *   in the content script. This handler is available if needed.
+ *   It handles only: downloads (URL + blob URL) and notifications.
+ *   All gallery state, media extraction, settings, theme, language/i18n,
+ *   and DOM access live in the content script. If a new feature needs SW
+ *   privileges (clipboard, printing, native messaging, cross-origin fetch
+ *   proxying), the message protocol must be extended here.
  * - URL downloads via twimg.com are restricted to the blob fallback
  *   path because the background SW lacks the auth cookies present in
  *   the content script context. `needsBlobFallback()` returns true.
@@ -51,18 +48,6 @@ export interface DownloadBlobUrlRequestMessage {
   };
 }
 
-export interface FetchRequestMessage {
-  readonly type: 'FETCH_REQUEST';
-  readonly payload: {
-    readonly url: string;
-    readonly options?: {
-      readonly method?: string;
-      readonly headers?: Record<string, string>;
-      readonly body?: string;
-    };
-  };
-}
-
 export interface ShowNotificationMessage {
   readonly type: 'SHOW_NOTIFICATION';
   readonly payload: {
@@ -78,7 +63,6 @@ export interface ShowNotificationMessage {
 export type IncomingMessage =
   | DownloadRequestMessage
   | DownloadBlobUrlRequestMessage
-  | FetchRequestMessage
   | ShowNotificationMessage;
 
 // ── Response ──────────────────────────────────────────────────────────────────
