@@ -134,7 +134,15 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     });
   });
 
-  let scrollRestoration: { scrollY: number; overflow: string; position: string } | null = null;
+  let scrollRestoration: {
+    scrollY: number;
+    overflow: string;
+    position: string;
+    top: string;
+    left: string;
+    right: string;
+  } | null = null;
+  let previousScrollRestoration: ScrollRestoration | null = null;
   let previouslyFocusedElement: HTMLElement | null = null;
   let hiddenBackgroundElements: HTMLElement[] = [];
 
@@ -142,9 +150,9 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     if (!scrollRestoration) {
       // Save currently focused element for restoration on close
       previouslyFocusedElement = document.activeElement as HTMLElement | null;
-      // W1: Disable browser's automatic scroll restoration to prevent
-      // conflicts with our manual position:fixed scroll lock
+      // W1: Save and override browser's scroll restoration behavior
       if ('scrollRestoration' in window.history) {
+        previousScrollRestoration = window.history.scrollRestoration;
         window.history.scrollRestoration = 'manual';
       }
       // Lock background scroll without inert (inert blocks ALL mouse events on descendants)
@@ -152,6 +160,9 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
         scrollY: window.scrollY,
         overflow: document.body.style.overflow,
         position: document.body.style.position,
+        top: document.body.style.top,
+        left: document.body.style.left,
+        right: document.body.style.right,
       };
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
@@ -188,13 +199,13 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     if (scrollRestoration) {
       document.body.style.overflow = scrollRestoration.overflow;
       document.body.style.position = scrollRestoration.position;
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
+      document.body.style.top = scrollRestoration.top;
+      document.body.style.left = scrollRestoration.left;
+      document.body.style.right = scrollRestoration.right;
       window.scrollTo(0, scrollRestoration.scrollY);
-      // W1: Restore browser's scroll restoration behavior
+      // W1: Restore browser's scroll restoration to its previous value
       if ('scrollRestoration' in window.history) {
-        window.history.scrollRestoration = 'auto';
+        window.history.scrollRestoration = previousScrollRestoration ?? 'auto';
       }
       scrollRestoration = null;
     }

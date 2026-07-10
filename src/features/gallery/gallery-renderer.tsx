@@ -78,13 +78,20 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
     document.body.style.top = '';
     document.body.style.left = '';
     document.body.style.right = '';
-    // Restore browser scroll restoration
+    // Restore browser scroll restoration to default
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'auto';
     }
-    // Remove aria-hidden from background elements that GalleryContainer set
+    // Remove aria-hidden only from elements that GalleryContainer would have
+    // targeted — body children that are NOT the gallery container itself.
+    // Using a targeted filter avoids stripping X.com's own aria-hidden from
+    // unrelated elements.
     for (const el of Array.from(document.body.children)) {
-      if (el instanceof HTMLElement) {
+      if (
+        el instanceof HTMLElement &&
+        !el.hasAttribute('data-xeg-gallery-container') &&
+        !el.hasAttribute('data-renderer')
+      ) {
         el.removeAttribute('aria-hidden');
       }
     }
