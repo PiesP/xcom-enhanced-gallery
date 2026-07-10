@@ -11,5 +11,5 @@
     "src/platform/types.ts"
   ],
   "ignoreExportsUsedInFile": true,
-  "ignoreBinaries": ["stryker", "e2e"]
+  "ignoreBinaries": ["e2e"]
 }
