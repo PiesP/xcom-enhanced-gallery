@@ -3,11 +3,14 @@ name: 🚀 Release
 # Responsibility: Publish tagged releases for userscript and browser extensions
 # - Build release assets from the tagged commit (userscript + Chrome + Firefox)
 # - Package extension ZIPs
-# - Attach all assets to GitHub Releases
+# - Generate checksums and metadata
+# - Deploy userscript to release branch and GitHub Releases
+# - Attach extension ZIPs to GitHub Releases
 #
 # Trigger: Tag push (v*)
 
 # Security: All third-party actions pinned to full commit SHAs.
+
 on:
   push:
     tags:
@@ -56,43 +59,196 @@ jobs:
 
       - name: 🏗️ Build all targets
         run: |
-          pnpm build
-          pnpm build:extension
-          pnpm build:extension:firefox
+          set -euo pipefail
+          VERSION=${{ steps.version.outputs.version }}
 
-      - name: 📦 Package extensions
-        run: pnpm package:extension
+          # Sync manifest versions before build
+          for manifest in extension/manifest.json extension/manifest.firefox.json; do
+            if [ -f "$manifest" ]; then
+              jq ".version = \"$VERSION\"" "$manifest" > "$manifest.tmp" && mv "$manifest.tmp" "$manifest"
+              echo "Synced $manifest → $VERSION"
+            fi
+          done
 
-      - name: 🏷️ Prepare release assets
+          BUILD_VERSION=$VERSION pnpm build
+          BUILD_VERSION=$VERSION pnpm build:extension
+          BUILD_VERSION=$VERSION pnpm build:extension:firefox
+
+          # Backup all dists for later steps
+          mkdir -p /tmp/dist-backup/dist
+          mkdir -p /tmp/dist-backup/extension-chrome
+          mkdir -p /tmp/dist-backup/extension-firefox
+          cp -r dist/* /tmp/dist-backup/dist/
+          cp -r dist-extension/* /tmp/dist-backup/extension-chrome/
+          cp -r dist-extension-firefox/* /tmp/dist-backup/extension-firefox/
+
+          # Generate meta.js from userscript header
+          awk 'BEGIN{p=0} /^\/\/ ==UserScript==/{p=1} {if(p) print} /^\/\/ ==\/UserScript==/{exit}' \
+            /tmp/dist-backup/dist/xcom-enhanced-gallery.user.js \
+            > /tmp/dist-backup/dist/xcom-enhanced-gallery.meta.js
+
+          # Create extension ZIPs
+          cd /tmp/dist-backup/extension-chrome && zip -r /tmp/dist-backup/extension-chrome.zip . && cd -
+          cd /tmp/dist-backup/extension-firefox && zip -r /tmp/dist-backup/extension-firefox.zip . && cd -
+
+          # List backed up files for verification
+          echo "📦 Built files:"
+          ls -la /tmp/dist-backup/dist/
+          echo ""
+          echo "📦 Extension ZIPs:"
+          ls -la /tmp/dist-backup/extension-chrome.zip /tmp/dist-backup/extension-firefox.zip
+
+      - name: 📦 Prepare release package
         run: |
           set -euo pipefail
-          cd dist
-          sha256sum * > SHA256SUMS.txt
-          cd ..
-          echo "Checksums:"
-          cat dist/SHA256SUMS.txt
+          mkdir -p release
+          cp /tmp/dist-backup/dist/xcom-enhanced-gallery.user.js release/
+          cp /tmp/dist-backup/dist/xcom-enhanced-gallery.meta.js release/
+          cp /tmp/dist-backup/extension-chrome.zip release/xcom-enhanced-gallery-chrome.zip
+          cp /tmp/dist-backup/extension-firefox.zip release/xcom-enhanced-gallery-firefox.zip
 
-      - name: 🚀 Create GitHub Release
-        uses: softprops/action-gh-release@7b453056312cef401da2a2a4e06e4b5b5f1ac85e # v2.3.3
+          # Generate checksums for all release assets
+          cd release && sha256sum \
+            xcom-enhanced-gallery.user.js \
+            xcom-enhanced-gallery.meta.js \
+            xcom-enhanced-gallery-chrome.zip \
+            xcom-enhanced-gallery-firefox.zip \
+            > checksums.txt && cd ..
+
+          # Create metadata
+          cat > release/metadata.json << EOF
+          {
+            "version": "${{ steps.version.outputs.version }}",
+            "build_date": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
+            "commit": "${{ github.sha }}",
+            "node_version": "${{ env.NODE_VERSION }}"
+          }
+          EOF
+
+          # Extract changelog for current version
+          CHANGELOG_CONTENT=""
+          if [ -f "CHANGELOG.md" ]; then
+            CHANGELOG_CONTENT=$(awk -v ver="${{ steps.version.outputs.version }}" '
+              /^## \[/ {
+                if (found) exit;
+                if ($0 ~ "\\[" ver "\\]") {
+                  found=1;
+                  next;
+                }
+              }
+              found { print }
+            ' CHANGELOG.md)
+          fi
+
+          # Compute previous version for compare URL
+          PREV_VERSION=$(
+            {
+              printf '%s\n' "${{ steps.version.outputs.version }}"
+              git tag --list 'v*' | sed 's/^v//'
+            } | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -u -V | awk -v ver="${{ steps.version.outputs.version }}" '
+              $0 == ver { print prev; exit }
+              { prev = $0 }
+            '
+          )
+
+          if [ -n "$PREV_VERSION" ]; then
+            PREV_TAG="v${PREV_VERSION}"
+            COMPARE_URL="https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${{ steps.version.outputs.version }}"
+          else
+            COMPARE_URL="https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.version }}"
+          fi
+
+          cat > release/RELEASE_NOTES.md << EOF
+          # 🚀 Release v${{ steps.version.outputs.version }}
+
+          ## 📥 Installation
+
+          ### Userscript
+
+          **[📥 Click here to install](https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/xcom-enhanced-gallery.user.js)**
+
+          Requires [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/).
+
+          ### Chrome / Edge / Brave Extension
+
+          1. Download \`xcom-enhanced-gallery-chrome.zip\` from the assets below
+          2. Navigate to \`chrome://extensions\`
+          3. Enable "Developer mode"
+          4. Drag and drop the ZIP file onto the page
+
+          ### Firefox Extension
+
+          1. Download \`xcom-enhanced-gallery-firefox.zip\` from the assets below
+          2. Navigate to \`about:debugging#/runtime/this-firefox\`
+          3. Click "Load Temporary Add-on" → select the ZIP file
+
+          ---
+
+          ## 📝 What's Changed
+
+          ${CHANGELOG_CONTENT:-No changelog entry for this version.}
+
+          **[📋 Full Changelog](${COMPARE_URL})**
+
+          ---
+
+          ## 📋 Build Details
+
+          - **Commit**: \`${{ github.sha }}\`
+          - **Built**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          - **Node.js**: \`${{ env.NODE_VERSION }}\`
+          EOF
+
+      - name: 📤 Deploy dist/ to release branch
+        run: |
+          set -euo pipefail
+          cd /tmp/dist-backup/dist
+          git init -b release
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Release v${{ steps.version.outputs.version }} — dist snapshot"
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git push --force origin release
+
+      - name: 🔄 Purge jsDelivr CDN cache
+        run: |
+          set -euo pipefail
+          echo "🔄 Purging jsDelivr CDN cache..."
+
+          # Purge main userscript file
+          PURGE_URL_USER="https://purge.jsdelivr.net/gh/${{ github.repository }}@release/dist/xcom-enhanced-gallery.user.js"
+          echo "Purging: $PURGE_URL_USER"
+          curl -s "$PURGE_URL_USER" | jq '.' || echo "Purge request sent"
+
+          # Purge meta.js file
+          PURGE_URL_META="https://purge.jsdelivr.net/gh/${{ github.repository }}@release/dist/xcom-enhanced-gallery.meta.js"
+          echo "Purging: $PURGE_URL_META"
+          curl -s "$PURGE_URL_META" | jq '.' || echo "Purge request sent"
+
+          echo "✅ jsDelivr cache purge completed"
+
+      - name: 🏷️ Create GitHub Release
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3
         with:
-          body: |
-            ## Release ${{ steps.version.outputs.version }}
-
-            ### Assets
-            - **Userscript**: `xcom-enhanced-gallery.user.js`
-            - **Chrome Extension**: `extension-chrome-v${{ steps.version.outputs.version }}.zip`
-            - **Firefox Extension**: `extension-firefox-v${{ steps.version.outputs.version }}.zip`
-            - **Checksums**: `SHA256SUMS.txt`
-
-            ### Installation
-            - **Userscript**: Install via Tampermonkey/Greasemonkey/Violentmonkey
-            - **Chrome**: Load unpacked from `dist-extension/` or install from Chrome Web Store
-            - **Firefox**: Install from `dist-extension-firefox/` or Firefox Add-ons
+          tag_name: v${{ steps.version.outputs.version }}
+          body_path: release/RELEASE_NOTES.md
           files: |
-            dist/*.user.js
-            dist/*.zip
-            dist/SHA256SUMS.txt
+            release/xcom-enhanced-gallery.user.js
+            release/xcom-enhanced-gallery.meta.js
+            release/xcom-enhanced-gallery-chrome.zip
+            release/xcom-enhanced-gallery-firefox.zip
+            release/checksums.txt
+            release/metadata.json
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📊 Upload release artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-v${{ steps.version.outputs.version }}
+          path: release/
+          if-no-files-found: error
+          retention-days: 30
