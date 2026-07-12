@@ -2,6 +2,9 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { getStorageAdapter } from '@platform/index';
+import { createLogger } from '@shared/logging/logger';
+
+const log = createLogger('PersistentStorage');
 
 /**
  * localStorage fallback prefix — used when the primary storage adapter
@@ -53,11 +56,7 @@ export class PersistentStorage {
     } catch (error) {
       // Fallback to localStorage when primary storage fails
       lsWriteRaw(key, serialized);
-      __DEV__ &&
-        console.warn(
-          '[PersistentStorage] Primary storage failed, using localStorage fallback:',
-          error
-        );
+      __DEV__ && log.warn('Primary storage failed, using localStorage fallback:', error);
     }
   }
 

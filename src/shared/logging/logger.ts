@@ -67,4 +67,5 @@ function createLogger(arg: string | Partial<LoggerConfig> = {}): Logger {
   return buildLogger(prefix);
 }
 
+export { createLogger };
 export const logger: Logger = createLogger();
