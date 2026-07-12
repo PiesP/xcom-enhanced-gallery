@@ -18,12 +18,6 @@ build/
 # Testing (test/ is a separate repository)
 test/
 coverage/
-.stryker-tmp/
-.stryker-tmp-debug/
-stryker-report/
-stryker.log
-playwright-report/
-test-results/
 
 # IDE
 .vscode/
@@ -82,6 +76,3 @@ TESTING.md
 # Local agent workspace
 .hermes/
 memory/
-
-# Test config (lives in test/)
-stryker.conf.json
