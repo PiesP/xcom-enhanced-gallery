@@ -30,8 +30,15 @@ function withViewTransition(update: () => void): void {
  * Parameters for useGalleryNavigationHandlers hook
  */
 interface UseGalleryNavigationHandlersOptions {
-  /** Current active media index */
+  /** Current active media index (last explicitly navigated to) */
   readonly currentIndex: () => number;
+  /**
+   * Focus-tracked index from IntersectionObserver.
+   * When non-null and in-bounds, prev/next buttons navigate relative
+   * to this index (what the user is actually looking at) instead of
+   * currentIndex. Falls back to currentIndex when null.
+   */
+  readonly focusedIndex?: (() => number | null) | undefined;
   /** Gallery media items array (used for bounds checking) */
   readonly mediaItems: () => readonly MediaInfo[];
   /** Callback invoked when background is clicked (gallery close) */
@@ -63,20 +70,35 @@ interface UseGalleryNavigationHandlersResult {
 export function useGalleryNavigationHandlers(
   options: UseGalleryNavigationHandlersOptions
 ): UseGalleryNavigationHandlersResult {
-  const { currentIndex, mediaItems, onClose } = options;
+  const { currentIndex, focusedIndex, mediaItems, onClose } = options;
+
+  /**
+   * Returns the index to use as the navigation anchor for prev/next buttons.
+   * Prefers focusedIndex (what the user is actually looking at via
+   * IntersectionObserver) over currentIndex (last explicitly navigated to).
+   * Falls back to currentIndex when focusedIndex is null or out of bounds.
+   */
+  const resolveNavAnchor = (): number => {
+    const focus = focusedIndex?.() ?? null;
+    const items = mediaItems();
+    if (typeof focus === 'number' && focus >= 0 && focus < items.length) {
+      return focus;
+    }
+    return currentIndex();
+  };
 
   const handlePrevious = () => {
-    const current = currentIndex();
-    if (current > 0) {
-      withViewTransition(() => navigateToItem(current - 1, 'button'));
+    const anchor = resolveNavAnchor();
+    if (anchor > 0) {
+      withViewTransition(() => navigateToItem(anchor - 1, 'button'));
     }
   };
 
   const handleNext = () => {
-    const current = currentIndex();
+    const anchor = resolveNavAnchor();
     const items = mediaItems();
-    if (current < items.length - 1) {
-      withViewTransition(() => navigateToItem(current + 1, 'button'));
+    if (anchor < items.length - 1) {
+      withViewTransition(() => navigateToItem(anchor + 1, 'button'));
     }
   };
 

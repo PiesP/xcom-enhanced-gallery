@@ -140,6 +140,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   const { handlePrevious, handleNext, handleBackgroundClick, handleMediaItemClick } =
     useGalleryNavigationHandlers({
       currentIndex,
+      focusedIndex: focus.focusedIndex,
       mediaItems,
       onClose: handleClose,
     });
