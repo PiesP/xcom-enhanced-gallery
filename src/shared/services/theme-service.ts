@@ -64,6 +64,14 @@ export class ThemeService {
           : null;
     }
 
+    // Read stored theme setting before applying defaults
+    if (this.settings) {
+      const stored = this.settings.get('gallery.theme');
+      if (isThemeSetting(stored) && stored !== this.themeSetting) {
+        this.themeSetting = stored;
+      }
+    }
+
     this.initializeThemeScopeObservation();
     this.initializeSystemDetection();
     this.applyCurrentTheme(true);

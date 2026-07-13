@@ -6,7 +6,7 @@
  */
 
 import { getHttpRequestAdapter } from '@platform/index';
-import type { HttpRequestDetails } from '@platform/types';
+import type { HttpRequestControl, HttpRequestDetails } from '@platform/types';
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
 import { createDeferred } from '@shared/utils/async/promise-helpers';
 
@@ -52,9 +52,12 @@ export class HttpRequestService {
 
     let settled = false;
 
+    let control: HttpRequestControl | null = null;
+
     const onAbort = (): void => {
       if (settled) return;
       settled = true;
+      control?.abort();
       deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal!));
     };
 
@@ -123,7 +126,7 @@ export class HttpRequestService {
       },
     };
 
-    getHttpRequestAdapter().request(details);
+    control = getHttpRequestAdapter().request(details);
 
     // Ensure abort listener is always cleaned up, even if the request
     // completes via an unexpected path (race condition guard).

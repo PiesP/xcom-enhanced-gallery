@@ -145,6 +145,7 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
   let previousScrollRestoration: ScrollRestoration | null = null;
   let previouslyFocusedElement: HTMLElement | null = null;
   let hiddenBackgroundElements: HTMLElement[] = [];
+  const ariaHiddenRestore = new Map<HTMLElement, string | null>();
 
   createEffect(() => {
     if (!scrollRestoration) {
@@ -190,7 +191,23 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
         ) as HTMLElement[];
       }
       for (const el of hiddenBackgroundElements) {
+        // Save pre-existing value before overriding
+        ariaHiddenRestore.set(el, el.getAttribute('aria-hidden'));
         el.setAttribute('aria-hidden', 'true');
+      }
+
+      // A11y: Move focus into the dialog so keyboard trap receives events.
+      // Focus must move AFTER aria-hidden is set on background elements
+      // so that the dialog is the only focusable landmark.
+      if (containerElement) {
+        containerElement.focus();
+        // If dialog itself didn't receive focus, try first focusable child
+        if (document.activeElement !== containerElement) {
+          const firstFocusable = containerElement.querySelector<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          firstFocusable?.focus();
+        }
       }
     }
   });
@@ -211,8 +228,14 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     }
     // A3: Restore background elements' accessibility state
     for (const el of hiddenBackgroundElements) {
-      el.removeAttribute('aria-hidden');
+      const previous = ariaHiddenRestore.get(el);
+      if (previous === null || previous === undefined) {
+        el.removeAttribute('aria-hidden');
+      } else {
+        el.setAttribute('aria-hidden', previous);
+      }
     }
+    ariaHiddenRestore.clear();
     hiddenBackgroundElements = [];
     // Return focus to the element that was focused before the gallery opened
     if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
@@ -234,6 +257,7 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       data-xeg-gallery-container=""
       role="dialog"
       aria-modal="true"
+      tabindex="-1"
       aria-label={translate('msg.gal.imageGallery')}
       lang={local.lang ?? 'en'}
       dir={local.dir ?? 'ltr'}

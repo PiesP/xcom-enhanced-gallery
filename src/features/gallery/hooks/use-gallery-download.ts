@@ -47,6 +47,18 @@ export function createDownloadHandler() {
   };
 
   const handleDownload = async (type: 'current' | 'all'): Promise<void> => {
+    // Capture the current abort controller before any async gap.
+    // If cancelDownloads() replaces the controller while we're awaiting
+    // a cached blob, the captured signal ensures we don't restart with
+    // the new session's non-aborted signal.
+    const controller = abortController;
+    const signal = controller.signal;
+
+    if (signal.aborted) {
+      setDownloading(false);
+      return;
+    }
+
     // A7: Clear stale error from a previous download before starting a new one.
     setError(null);
     setDownloading(true);
@@ -76,7 +88,7 @@ export function createDownloadHandler() {
 
           const result = await downloadService.downloadSingle(currentMedia, {
             ...(blob ? { blob } : {}),
-            signal: abortController.signal,
+            signal,
           });
           if (!result.success) {
             const error = result.error || 'Unknown error';
@@ -102,7 +114,7 @@ export function createDownloadHandler() {
 
         const result = await downloadService.downloadBulk([...mediaItems], {
           ...(prefetchedBlobs.size > 0 ? { prefetchedBlobs } : {}),
-          signal: abortController.signal,
+          signal,
         });
 
         if (!result.success) {

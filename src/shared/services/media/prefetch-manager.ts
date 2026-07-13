@@ -17,21 +17,34 @@ type IdleHandle = {
 
 type IdleRequestCallback = () => void;
 
-/** Schedules a task to run during browser idle time. */
+/** Schedules a task to run during browser idle time. Falls back to setTimeout for Safari. */
 function scheduleIdle(task: IdleRequestCallback): IdleHandle {
-  const id = requestIdleCallback(
-    () => {
-      try {
-        task();
-      } catch (error) {
-        __DEV__ && logger.warn('[scheduleIdle] task error', error);
-      }
-    },
-    { timeout: 2000 }
-  );
+  if (typeof requestIdleCallback === 'function') {
+    const id = requestIdleCallback(
+      () => {
+        try {
+          task();
+        } catch (error) {
+          __DEV__ && logger.warn('[scheduleIdle] task error', error);
+        }
+      },
+      { timeout: 2000 }
+    );
+    return {
+      cancel: () => cancelIdleCallback(id),
+    };
+  }
 
+  // Safari 17 and older: requestIdleCallback not available
+  const id = setTimeout(() => {
+    try {
+      task();
+    } catch (error) {
+      __DEV__ && logger.warn('[scheduleIdle] task error', error);
+    }
+  }, 1);
   return {
-    cancel: () => cancelIdleCallback(id),
+    cancel: () => clearTimeout(id),
   };
 }
 
@@ -71,9 +84,16 @@ export class PrefetchManager {
   }
 
   /**
-   * Prefetch media with specified scheduling strategy
+   * Prefetch media with specified scheduling strategy.
+   * Videos are skipped — they can be hundreds of MB and are not suitable
+   * for blob-level caching.
    */
   async prefetch(media: MediaInfo, schedule: PrefetchSchedule = 'idle'): Promise<void> {
+    // Skip videos — too large for blob cache
+    if (media.type === 'video' || media.type === 'gif') {
+      return;
+    }
+
     // Skip if already cached or in-flight (prevents duplicate idle handles)
     if (this.cache.has(media.url) || this.activeRequests.has(media.url)) {
       return;

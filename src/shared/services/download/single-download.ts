@@ -45,22 +45,15 @@ async function raceWithAbort<T>(
   if (signal.aborted) return onAborted();
 
   let settled = false;
-
-  const onAbort = () => {
-    settled = true;
-  };
-
-  signal.addEventListener('abort', onAbort, { once: true });
+  let abortHandler: (() => void) | null = null;
 
   const abortPromise = new Promise<T>((resolve) => {
-    // Replace the simple onAbort with one that also resolves the promise
-    // This avoids the race between the listener and the finally block
-    const handler = () => {
+    abortHandler = () => {
       if (settled) return;
       settled = true;
       resolve(onAborted());
     };
-    signal.addEventListener('abort', handler, { once: true });
+    signal.addEventListener('abort', abortHandler, { once: true });
   });
 
   try {
@@ -68,8 +61,8 @@ async function raceWithAbort<T>(
     settled = true;
     return result;
   } finally {
-    if (!settled) {
-      signal.removeEventListener('abort', onAbort);
+    if (!settled && abortHandler) {
+      signal.removeEventListener('abort', abortHandler);
     }
   }
 }
@@ -257,6 +250,25 @@ async function downloadWithFetchFallback(
       return { success: true, filename };
     }
   } catch (error) {
+    // If fetch failed (CORS/network), fall back to direct URL download via background SW.
+    // Content-script fetch with host_permissions follows CORS rules — CDN hosts
+    // (pbs.twimg.com, video.twimg.com) typically serve permissive CORS headers,
+    // but this fallback ensures downloads work even when they don't.
+    if (adapter.needsBlobFallback()) {
+      try {
+        await adapter.download(url, filename);
+        reportProgress(options.onProgress, {
+          phase: 'complete',
+          current: 1,
+          total: 1,
+          percentage: 100,
+          filename,
+        });
+        return { success: true, filename };
+      } catch {
+        return createErrorDownloadResult(error);
+      }
+    }
     return createErrorDownloadResult(error);
   }
 }

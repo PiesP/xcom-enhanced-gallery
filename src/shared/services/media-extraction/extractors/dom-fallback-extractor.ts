@@ -89,6 +89,10 @@ function createMediaInfoFromDOM(
       height = element.videoHeight || element.height || undefined;
     }
 
+    // Extract alt text — prefer actual DOM alt attribute over synthetic label
+    const domAlt =
+      element instanceof HTMLImageElement && element.alt?.trim() ? element.alt.trim() : undefined;
+
     return {
       id: `${tweetInfo.tweetId}_dom_${index}`,
       url: mediaUrl,
@@ -101,7 +105,7 @@ function createMediaInfoFromDOM(
       tweetTextContent,
       originalUrl: mediaUrl,
       thumbnailUrl: mediaUrl,
-      alt: `${mediaType} ${index + 1}`,
+      alt: domAlt || `${mediaType} ${index + 1}`,
       ...(width && height && { width, height }),
       metadata: {
         domIndex: index,

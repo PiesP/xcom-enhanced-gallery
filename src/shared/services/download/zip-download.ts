@@ -104,9 +104,25 @@ export async function downloadAsZip(
       try {
         let data: Uint8Array;
         if (item.blob) {
-          const blob = item.blob instanceof Promise ? await item.blob : item.blob;
-          throwIfAborted(abortSignal);
-          data = new Uint8Array(await blob.arrayBuffer());
+          // Try prefetched blob first; fall back to network on failure
+          let blob: Blob | undefined;
+          try {
+            blob = item.blob instanceof Promise ? await item.blob : item.blob;
+          } catch {
+            // Prefetch cache miss or expired blob — fall through to network
+          }
+
+          if (blob) {
+            throwIfAborted(abortSignal);
+            data = new Uint8Array(await blob.arrayBuffer());
+          } else {
+            data = await fetchArrayBufferWithRetry(
+              item.url,
+              retries,
+              abortSignal,
+              DEFAULT_BACKOFF_BASE_MS
+            );
+          }
         } else {
           data = await fetchArrayBufferWithRetry(
             item.url,

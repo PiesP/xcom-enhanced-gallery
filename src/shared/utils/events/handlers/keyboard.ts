@@ -134,10 +134,11 @@ export function handleKeyboardEvent(
       return;
     }
 
-    // isNavKey/isVideoKey: Space included in both to pass the reject guard
+    // isNavKey/isVideoKey: space bar included in both to pass the reject guard
     // below, then routed to video control (play/pause) before navigation check.
-    const isNavKey = NAVIGATION_KEYS.has(key) || key === 'Space';
-    const isVideoKey = VIDEO_CONTROL_KEYS.has(key) || key === 'Space';
+    // KeyboardEvent.key for space is ' ' (single space), not 'Space'.
+    const isNavKey = NAVIGATION_KEYS.has(key) || key === ' ';
+    const isVideoKey = VIDEO_CONTROL_KEYS.has(key) || key === ' ';
 
     if (!isNavKey && !isVideoKey) {
       handlers.onKeyboardEvent?.(event);
@@ -149,7 +150,7 @@ export function handleKeyboardEvent(
 
     if (key === '?') {
       showKeyboardHelp();
-    } else if (key === 'Space') {
+    } else if (key === ' ') {
       handleVideoControl(key);
     } else if (
       // B3: ArrowUp/Down should control video volume when a video is active,
