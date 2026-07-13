@@ -39,6 +39,7 @@ export class GalleryApp {
   private ambientVideoGuardDispose: (() => void) | null = null;
   private readonly lifecycle: GalleryLifecycle = createGalleryLifecycle();
   private readonly renderer: GalleryRenderer;
+  private mediaClickCounter = 0;
 
   constructor(renderer: GalleryRenderer) {
     this.renderer = renderer;
@@ -82,9 +83,14 @@ export class GalleryApp {
   }
 
   private async handleMediaClick(element: HTMLElement, _event: MouseEvent): Promise<void> {
+    const opId = ++this.mediaClickCounter;
+
     try {
       const mediaService = getMediaService();
       const result = await mediaService.extractFromClickedElement(element);
+
+      // Discard stale results — a newer click is already in progress
+      if (opId !== this.mediaClickCounter) return;
 
       if (result.success && result.mediaItems.length > 0) {
         this.openGallery(result.mediaItems, result.clickedIndex, {
