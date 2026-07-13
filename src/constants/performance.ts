@@ -36,6 +36,9 @@ export const MAX_ANCESTOR_HOPS = 3;
 /** Default prefetch cache size (number of entries) */
 export const PREFETCH_CACHE_SIZE = 20;
 
+/** Maximum total bytes in prefetch cache (100 MB). Evict LRU entries when exceeded. */
+export const PREFETCH_CACHE_MAX_BYTES = 100 * 1024 * 1024;
+
 /** CSS animation timeout fallback in milliseconds (safety net if animationend doesn't fire) */
 export const ANIMATION_TIMEOUT_MS = 500;
 
