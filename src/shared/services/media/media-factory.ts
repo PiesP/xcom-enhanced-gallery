@@ -47,7 +47,7 @@ function createMediaInfoFromAPI(
       tweetTextContent,
       originalUrl: apiMedia.download_url,
       thumbnailUrl: apiMedia.preview_url,
-      alt: `${mediaType} ${index + 1}`,
+      alt: apiMedia.alt_text?.trim() || `${mediaType} ${index + 1}`,
       ...(dimensions && {
         width: dimensions.width,
         height: dimensions.height,

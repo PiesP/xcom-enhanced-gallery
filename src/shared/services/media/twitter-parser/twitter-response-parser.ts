@@ -138,6 +138,7 @@ function createMediaEntry(
     short_tweet_url: media.url ?? '',
     tweet_text: tweetText,
     sourceLocation,
+    ...(media.ext_alt_text?.trim() ? { alt_text: media.ext_alt_text.trim() } : {}),
     ...(dims.width && { original_width: dims.width }),
     ...(dims.height && { original_height: dims.height }),
     ...(aspectRatio && { aspect_ratio: aspectRatio }),

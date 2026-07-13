@@ -85,6 +85,8 @@ export interface TwitterMedia {
   readonly expanded_url?: string;
   readonly display_url?: string;
   readonly url?: string;
+  /** Author-written alt text (Twitter API field: ext_alt_text) */
+  readonly ext_alt_text?: string;
   readonly video_info?: {
     readonly aspect_ratio?: [number, number];
     readonly variants: Array<{
@@ -121,4 +123,6 @@ export interface TweetMediaEntry {
   readonly sourceLocation?: 'original' | 'quoted';
   /** Quoted tweet ID (if from quote) */
   readonly quotedTweetId?: string;
+  /** Author-written alt text from Twitter API or DOM */
+  readonly alt_text?: string;
 }
