@@ -75,28 +75,11 @@ export default defineConfig(({ mode }): UserConfig => {
   const root = resolve(__dirname);
   const entryFile = resolve(root, './src/main.ts');
 
-  // Feature flags: parse environment variable for media extraction feature
-  const featureMediaExtractionRaw = process.env.XEG_FEATURE_MEDIA_EXTRACTION;
-  const featureMediaExtraction =
-    featureMediaExtractionRaw === undefined
-      ? true
-      : !['0', 'false'].includes(featureMediaExtractionRaw.toLowerCase());
+  // Feature flags: media extraction is always enabled (the disabled variant was deleted)
+  const featureMediaExtraction = true;
 
   // Build output configuration
   const outputFileName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
-
-  // Aliases for disabled features in build
-  const mediaExtractionAliases = featureMediaExtraction
-    ? []
-    : [
-        {
-          find: '@shared/services/media-extraction/media-extraction-service',
-          replacement: resolve(
-            root,
-            'src/shared/services/media-extraction/media-extraction-service.disabled.ts'
-          ),
-        },
-      ];
 
   // Compose config from presets using deep merge
   return mergeConfig(
@@ -115,7 +98,7 @@ export default defineConfig(({ mode }): UserConfig => {
     ),
     {
       resolve: {
-        alias: mediaExtractionAliases,
+        alias: [],
       },
 
       plugins: [

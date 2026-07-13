@@ -93,16 +93,44 @@ function setupDevNamespace(
  * The teardown is also called during cleanup() to ensure orderly shutdown.
  */
 let globalEventTeardown: (() => void) | null = null;
+let bfcacheRecoveryTeardown: (() => void) | null = null;
 
 function tearDownGlobalEventHandlers(): void {
-  if (!globalEventTeardown) return;
-  const teardown = globalEventTeardown;
-  globalEventTeardown = null;
-  try {
-    teardown();
-  } catch (error) {
-    __DEV__ && logger.debug('[events] teardown error', error);
+  if (globalEventTeardown) {
+    const teardown = globalEventTeardown;
+    globalEventTeardown = null;
+    try {
+      teardown();
+    } catch (error) {
+      __DEV__ && logger.debug('[events] teardown error', error);
+    }
   }
+  if (bfcacheRecoveryTeardown) {
+    const teardown = bfcacheRecoveryTeardown;
+    bfcacheRecoveryTeardown = null;
+    try {
+      teardown();
+    } catch (error) {
+      __DEV__ && logger.debug('[bfcache] teardown error', error);
+    }
+  }
+}
+
+function wireBFCacheRecovery(restart: () => Promise<void>): () => void {
+  const controller = new AbortController();
+  const handler: EventListener = (event: Event) => {
+    if ((event as PageTransitionEvent).persisted) {
+      __DEV__ && logger.info('[bfcache] Page restored from BFCache, restarting app');
+      restart().catch((error) => {
+        __DEV__ && logger.error('[bfcache] Restart failed', error);
+      });
+    }
+  };
+  getEventManager().addEventListener(window, 'pageshow', handler, {
+    signal: controller.signal,
+    context: 'bootstrap:pageshow',
+  });
+  return () => controller.abort();
 }
 
 function setupGlobalEventHandlers(): void {
@@ -112,6 +140,7 @@ function setupGlobalEventHandlers(): void {
       __DEV__ && logger.error('Cleanup failed', error);
     });
   });
+  bfcacheRecoveryTeardown = wireBFCacheRecovery(startApplication);
 }
 
 async function runOptionalCleanup(label: string, task: () => Promise<void> | void): Promise<void> {
@@ -253,5 +282,28 @@ function isAllowedStartPage(): boolean {
 if (isAllowedStartPage()) {
   void startApplication().catch((error) => {
     __DEV__ && logger.error('Application failed to start', error);
+  });
+}
+
+// SPA navigation listener: X.com uses client-side routing.
+// The module-level isAllowedStartPage() check only runs once at load time;
+// if the user navigates from /settings to timeline via SPA, the gallery
+// would never start. This listener catches SPA route changes.
+if (typeof navigation !== 'undefined') {
+  navigation.addEventListener('navigate', () => {
+    if (isAllowedStartPage() && !lifecycleState.started) {
+      void startApplication().catch((error) => {
+        __DEV__ && logger.error('Application failed to start (SPA nav)', error);
+      });
+    }
+  });
+} else {
+  // Fallback for browsers without Navigation API
+  window.addEventListener('popstate', () => {
+    if (isAllowedStartPage() && !lifecycleState.started) {
+      void startApplication().catch((error) => {
+        __DEV__ && logger.error('Application failed to start (popstate)', error);
+      });
+    }
   });
 }

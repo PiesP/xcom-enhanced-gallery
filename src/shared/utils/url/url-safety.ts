@@ -38,6 +38,17 @@ const ALLOWED_HOSTS: ReadonlySet<string> = new Set([...TWITTER_HOSTS, ...MEDIA.D
 export function isAllowedUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
+
+    // Require HTTPS protocol (reject http:, ftp:, etc.)
+    if (parsed.protocol !== 'https:') {
+      return false;
+    }
+
+    // Only default ports (443 or no explicit port)
+    if (parsed.port !== '' && parsed.port !== '443') {
+      return false;
+    }
+
     if (!ALLOWED_HOSTS.has(parsed.hostname)) {
       return false;
     }

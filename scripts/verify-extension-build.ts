@@ -18,7 +18,8 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
-const contentJs = resolve(root, 'dist-extension', 'content.js');
+const distDir = process.argv[2] || 'dist-extension';
+const contentJs = resolve(root, distDir, 'content.js');
 
 let failed = false;
 

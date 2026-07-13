@@ -30,9 +30,27 @@ interface ListenerContext {
   readonly context: string | undefined;
 }
 
-/** Composite key for duplicate detection: `${type}::${element}::${listenerRef}` */
+// Use WeakMap-based IDs for unique identification — String(Object(el))
+// produces non-unique strings like "[object HTMLSelectElement]" which
+// causes different elements to be treated as duplicates.
+const elementIds = new WeakMap<object, number>();
+let nextElementId = 0;
+const listenerIds = new WeakMap<object, number>();
+let nextListenerId = 0;
+
+/** Composite key for duplicate detection: `${type}::${elementId}::${listenerId}` */
 function makeCompositeKey(element: EventTarget, type: string, listener: EventListener): string {
-  return `${type}::${String(Object(element))}::${String(listener)}`;
+  let eid = elementIds.get(element as object);
+  if (eid === undefined) {
+    eid = nextElementId++;
+    elementIds.set(element as object, eid);
+  }
+  let lid = listenerIds.get(listener);
+  if (lid === undefined) {
+    lid = nextListenerId++;
+    listenerIds.set(listener, lid);
+  }
+  return `${type}::${eid}::${lid}`;
 }
 
 export class EventManager {

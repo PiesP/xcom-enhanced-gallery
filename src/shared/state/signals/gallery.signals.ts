@@ -58,9 +58,31 @@ const INITIAL_STATE: GalleryState = {
   error: null,
 };
 
-export const galleryIndexEvents = createEventEmitter<{
-  'navigate:complete': GalleryNavigateCompletePayload;
-}>();
+let _galleryIndexEvents: ReturnType<
+  typeof createEventEmitter<{
+    'navigate:complete': GalleryNavigateCompletePayload;
+  }>
+> | null = null;
+
+function getGalleryIndexEvents() {
+  if (!_galleryIndexEvents) {
+    _galleryIndexEvents = createEventEmitter();
+  }
+  return _galleryIndexEvents;
+}
+
+export const galleryIndexEvents = {
+  get on() {
+    return getGalleryIndexEvents().on.bind(getGalleryIndexEvents());
+  },
+  get emit() {
+    return getGalleryIndexEvents().emit.bind(getGalleryIndexEvents());
+  },
+  dispose() {
+    _galleryIndexEvents?.dispose();
+    _galleryIndexEvents = null;
+  },
+};
 
 const [isOpenSig, setIsOpenSig] = createSignal<boolean>(INITIAL_STATE.isOpen);
 const [mediaItemsSig, setMediaItems] = createSignal<readonly MediaInfo[]>(INITIAL_STATE.mediaItems);
@@ -283,10 +305,10 @@ export function disposeGallerySignals(): void {
     setCurrentIndex(INITIAL_STATE.currentIndex);
     _setFocusedIndex(null);
     setCurrentVideoElement(null);
-    _setErrorSig(INITIAL_STATE.error);
+    setNavIndex(null);
     setNavSource(INITIAL_NAV_SOURCE);
     setNavTimestamp(0);
-    setNavIndex(null);
-    _setIsProcessing(false);
   });
+
+  _setIsProcessing(false);
 }
