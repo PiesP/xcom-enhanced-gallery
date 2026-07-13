@@ -152,10 +152,17 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   });
 
   // Memoized handlers object to prevent unnecessary Toolbar re-renders
+  const isAtStart = createMemo(() => currentIndex() <= 0);
+  const isAtEnd = createMemo(
+    () => mediaItems().length <= 1 || currentIndex() >= mediaItems().length - 1
+  );
+
   const toolbarHandlers = createMemo(() => ({
     navigation: {
       onPrevious: local.onPrevious ?? handlePrevious,
       onNext: local.onNext ?? handleNext,
+      canNavigatePrevious: !isAtStart(),
+      canNavigateNext: !isAtEnd(),
     },
     download: {
       onDownloadCurrent: handleDownloadCurrent,
