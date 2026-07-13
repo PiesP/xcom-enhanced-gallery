@@ -27,6 +27,7 @@ import type {
   ChromeInstalledDetails,
 } from '@platform/chrome.d.ts';
 import { browserApi } from '@platform/chrome-runtime';
+import { createLogger } from '@shared/logging/logger';
 import { isAllowedUrl } from '@shared/utils/url/url-safety';
 import type {
   DownloadBlobUrlRequestMessage,
@@ -35,6 +36,8 @@ import type {
   IncomingMessage,
   ShowNotificationMessage,
 } from './extension-message-types';
+
+const log = createLogger('SW');
 
 // ── Message handler ──────────────────────────────────────────────────────────
 
@@ -236,15 +239,15 @@ function waitForDownloadComplete(downloadId: number): Promise<void> {
  */
 browserApi.runtime.onInstalled.addListener((details: ChromeInstalledDetails) => {
   if (__DEV__) {
-    console.log(
-      `[XEG] Extension ${details.reason}`,
-      details.previousVersion ? `(was ${details.previousVersion})` : ''
-    );
+    log.info('sw.extension-event', {
+      reason: details.reason,
+      previousVersion: details.previousVersion ?? null,
+    });
   } else {
-    console.warn(
-      `[XEG] Extension ${details.reason}`,
-      details.previousVersion ? `(was ${details.previousVersion})` : ''
-    );
+    log.warn('sw.extension-event', {
+      reason: details.reason,
+      previousVersion: details.previousVersion ?? null,
+    });
   }
 });
 
@@ -259,7 +262,7 @@ browserApi.runtime.onInstalled.addListener((details: ChromeInstalledDetails) => 
  * the initialization logic belongs here.
  */
 browserApi.runtime.onStartup?.addListener(() => {
-  console.warn('[XEG] Service worker started');
+  log.warn('sw.started');
 });
 
 /**
@@ -271,7 +274,7 @@ browserApi.runtime.onStartup?.addListener(() => {
  * be snapshot before termination.
  */
 browserApi.runtime.onSuspend?.addListener(() => {
-  console.warn('[XEG] Service worker suspending');
+  log.warn('sw.suspending');
 });
 
 // ── Notification handler ─────────────────────────────────────────────────────

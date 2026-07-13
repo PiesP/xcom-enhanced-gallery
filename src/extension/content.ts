@@ -9,8 +9,11 @@
  */
 
 import { startApplication } from '@main';
+import { createLogger } from '@shared/logging/logger';
+
+const log = createLogger('ContentScript');
 
 // Boot the application
 startApplication().catch((error: unknown) => {
-  console.error('[XEG MV3] Failed to start application:', error);
+  log.error('content.start-failed', { error: String(error) });
 });

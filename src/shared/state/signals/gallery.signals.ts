@@ -253,7 +253,7 @@ export function navigateToItem(targetIndex: number, source: NavigationSource): v
   const current = currentIndexSig();
 
   if (__DEV__ && clampedIndex !== targetIndex) {
-    console.debug('[gallery] navigateToItem clamped index', {
+    logger.debug('gallery.navigate-clamped', {
       targetIndex,
       clampedIndex,
       itemCount: items.length,

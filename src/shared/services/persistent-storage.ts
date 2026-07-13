@@ -56,7 +56,7 @@ export class PersistentStorage {
     } catch (error) {
       // Fallback to localStorage when primary storage fails
       lsWriteRaw(key, serialized);
-      __DEV__ && log.warn('Primary storage failed, using localStorage fallback:', error);
+      __DEV__ && log.warn('storage.fallback', { error: String(error) });
     }
   }
 
