@@ -24,7 +24,10 @@ export const INITIAL_NAV_SOURCE: NavigationSource = 'auto-focus';
 
 // Internal signal state — exported for use by disposeGallerySignals
 export const [_navSource, setNavSource] = createSignal<NavigationSource>(INITIAL_NAV_SOURCE);
-export const [_navTimestamp, setNavTimestamp] = createSignal<number>(0);
+const [_navTimestamp, setNavTimestamp] = createSignal<number>(0);
+
+// Only the setter is exported — the accessor is only used internally
+export { setNavTimestamp };
 export const [_navIndex, setNavIndex] = createSignal<number | null>(null);
 
 const isManualSource = (source: NavigationSource): boolean =>
