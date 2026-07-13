@@ -20,6 +20,7 @@ export class SettingsService {
 
   private settings: AppSettings = createDefaultSettings(Date.now());
   private readonly listeners = new Set<(event: SettingChangeEvent) => void>();
+  private persistQueue: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly repository: SettingsRepository = new PersistentSettingsRepository()
@@ -79,7 +80,18 @@ export class SettingsService {
   }
 
   private async persist(): Promise<void> {
-    await this.repository.save(this.settings);
+    // Serialize persistence to prevent concurrent saves from racing.
+    // Multiple rapid set() calls (e.g., theme + language change) queue
+    // their saves sequentially so the last write always has the latest
+    // in-memory state.
+    const prev = this.persistQueue;
+    // Attach to the previous promise chain; capture errors so a failed
+    // save doesn't block subsequent writes.
+    this.persistQueue = prev.then(
+      () => this.repository.save(this.settings),
+      () => this.repository.save(this.settings)
+    );
+    await this.persistQueue;
   }
 
   private getDefaultValue(key: string): unknown {

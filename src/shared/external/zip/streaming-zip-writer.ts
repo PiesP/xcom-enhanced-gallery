@@ -202,53 +202,87 @@ export class StreamingZipWriter {
       `central directory offset overflow (${centralDirStart})`
     );
 
-    const centralDirChunks: Uint8Array[] = [];
+    // Pre-calculate central directory size
+    let centralDirSize = 0;
+    for (const entry of this.entries) {
+      centralDirSize += 46 + encodeUtf8(entry.filename).length;
+    }
 
+    // Single allocation: file data + central directory + EOCD
+    const eocdSize = 22;
+    const totalSize = this.currentOffset + centralDirSize + eocdSize;
+    assertZip32(totalSize < ZIP_CONST.MAX_UINT32, `archive too large (size=${totalSize})`);
+
+    const result = new Uint8Array(totalSize);
+
+    // Copy file data chunks
+    let pos = 0;
+    for (const chunk of this.chunks) {
+      result.set(chunk, pos);
+      pos += chunk.length;
+    }
+
+    // Write central directory entries directly into result
     for (const entry of this.entries) {
       const filenameBytes = encodeUtf8(entry.filename);
       assertZip32(entry.offset < ZIP_CONST.MAX_UINT32, `entry offset overflow (${entry.offset})`);
       assertZip32(entry.size < ZIP_CONST.MAX_UINT32, `entry too large (size=${entry.size})`);
-      centralDirChunks.push(
-        concat([
-          ZIP_CONST.SIG_CENTRAL_DIR,
-          writeUint16LE(ZIP_CONST.VERSION),
-          writeUint16LE(ZIP_CONST.VERSION),
-          writeUint16LE(ZIP_CONST.UTF8_FLAG),
-          writeUint16LE(0), // No compression
-          writeUint16LE(0), // Time
-          writeUint16LE(0), // Date
-          writeUint32LE(entry.crc32),
-          writeUint32LE(entry.size),
-          writeUint32LE(entry.size),
-          writeUint16LE(filenameBytes.length),
-          writeUint16LE(0), // Extra
-          writeUint16LE(0), // Comment
-          writeUint16LE(0), // Disk
-          writeUint16LE(0), // Internal attrs
-          writeUint32LE(0), // External attrs
-          writeUint32LE(entry.offset),
-          filenameBytes,
-        ])
-      );
+
+      result.set(ZIP_CONST.SIG_CENTRAL_DIR, pos);
+      pos += 4;
+      result.set(writeUint16LE(ZIP_CONST.VERSION), pos);
+      pos += 2;
+      result.set(writeUint16LE(ZIP_CONST.VERSION), pos);
+      pos += 2;
+      result.set(writeUint16LE(ZIP_CONST.UTF8_FLAG), pos);
+      pos += 2;
+      result.set(writeUint16LE(0), pos);
+      pos += 2; // No compression
+      result.set(writeUint16LE(0), pos);
+      pos += 2; // Time
+      result.set(writeUint16LE(0), pos);
+      pos += 2; // Date
+      result.set(writeUint32LE(entry.crc32), pos);
+      pos += 4;
+      result.set(writeUint32LE(entry.size), pos);
+      pos += 4;
+      result.set(writeUint32LE(entry.size), pos);
+      pos += 4;
+      result.set(writeUint16LE(filenameBytes.length), pos);
+      pos += 2;
+      result.set(writeUint16LE(0), pos);
+      pos += 2; // Extra
+      result.set(writeUint16LE(0), pos);
+      pos += 2; // Comment
+      result.set(writeUint16LE(0), pos);
+      pos += 2; // Disk
+      result.set(writeUint16LE(0), pos);
+      pos += 2; // Internal attrs
+      result.set(writeUint32LE(0), pos);
+      pos += 4; // External attrs
+      result.set(writeUint32LE(entry.offset), pos);
+      pos += 4;
+      result.set(filenameBytes, pos);
+      pos += filenameBytes.length;
     }
 
-    const centralDir = concat(centralDirChunks);
-    assertZip32(
-      centralDir.length < ZIP_CONST.MAX_UINT32,
-      `central directory too large (size=${centralDir.length})`
-    );
+    // Write End of Central Directory
+    result.set(ZIP_CONST.SIG_END_CENTRAL_DIR, pos);
+    pos += 4;
+    result.set(writeUint16LE(0), pos);
+    pos += 2; // Disk number
+    result.set(writeUint16LE(0), pos);
+    pos += 2; // Central dir disk
+    result.set(writeUint16LE(this.entries.length), pos);
+    pos += 2;
+    result.set(writeUint16LE(this.entries.length), pos);
+    pos += 2;
+    result.set(writeUint32LE(centralDirSize), pos);
+    pos += 4;
+    result.set(writeUint32LE(centralDirStart), pos);
+    pos += 4;
+    result.set(writeUint16LE(0), pos); // Comment length
 
-    const endOfCentralDir = concat([
-      ZIP_CONST.SIG_END_CENTRAL_DIR,
-      writeUint16LE(0), // Disk number
-      writeUint16LE(0), // Central dir disk
-      writeUint16LE(this.entries.length),
-      writeUint16LE(this.entries.length),
-      writeUint32LE(centralDir.length),
-      writeUint32LE(centralDirStart),
-      writeUint16LE(0), // Comment length
-    ]);
-
-    return concat([...this.chunks, centralDir, endOfCentralDir]);
+    return result;
   }
 }

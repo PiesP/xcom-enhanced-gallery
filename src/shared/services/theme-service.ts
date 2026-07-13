@@ -159,14 +159,21 @@ export class ThemeService {
     this.observer?.disconnect();
     this.observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
+        // Pre-filter: skip mutations with no added nodes
+        if (mutation.addedNodes.length === 0) continue;
+
         mutation.addedNodes.forEach((node) => {
           if (!(node instanceof Element)) return;
-          const scopes: Element[] = [];
-          if (node.classList.contains('xeg-theme-scope')) scopes.push(node);
-          node.querySelectorAll('.xeg-theme-scope').forEach((scope) => {
-            scopes.push(scope);
-          });
-          if (scopes.length > 0) this.applyThemeToScopes(scopes);
+          // Fast path: check if the node itself is a theme scope
+          if (node.classList.contains('xeg-theme-scope')) {
+            this.applyThemeToScopes([node]);
+            return;
+          }
+          // Only querySelectorAll if the node could contain theme scopes
+          if (node.querySelectorAll) {
+            const scopes = node.querySelectorAll('.xeg-theme-scope');
+            if (scopes.length > 0) this.applyThemeToScopes(Array.from(scopes));
+          }
         });
       }
     });

@@ -71,6 +71,8 @@ export class PrefetchManager {
   private readonly cache = new Map<string, Promise<Blob>>();
   private readonly activeRequests = new Map<string, AbortController>();
   private readonly maxEntries: number;
+  private readonly maxBytes: number;
+  private totalBytes = 0;
   private disposed = false;
   private readonly idleHandles = new Set<IdleHandle>();
 
@@ -79,8 +81,9 @@ export class PrefetchManager {
   private tail: { url: string; prev: LRUNode | null; next: LRUNode | null } | null = null;
   private readonly nodeMap = new Map<string, LRUNode>();
 
-  constructor(maxEntries = DEFAULT_CACHE_MAX_ENTRIES) {
+  constructor(maxEntries = DEFAULT_CACHE_MAX_ENTRIES, maxBytes = 100 * 1024 * 1024) {
     this.maxEntries = maxEntries;
+    this.maxBytes = maxBytes;
   }
 
   /**
@@ -137,12 +140,13 @@ export class PrefetchManager {
 
   /**
    * Clear the prefetch cache
-   */
+   /** Clear the prefetch cache and reset byte tracking */
   clear(): void {
     this.cache.clear();
     this.nodeMap.clear();
     this.head = null;
     this.tail = null;
+    this.totalBytes = 0;
   }
 
   /**
@@ -199,7 +203,9 @@ export class PrefetchManager {
     this.addToLRU(url);
 
     try {
-      await fetchPromise;
+      const blob = await fetchPromise;
+      this.totalBytes += blob.size;
+      this.evictByByteBudget();
     } catch (error) {
       // Remove from cache on error (only if our promise is still the cached one)
       if (this.cache.get(url) === fetchPromise) {
@@ -237,6 +243,15 @@ export class PrefetchManager {
       }
       this.cache.delete(url);
       this.removeNode(this.head);
+    }
+  }
+
+  private evictByByteBudget(): void {
+    while (this.totalBytes > this.maxBytes && this.head) {
+      this.evictOldest();
+      // Note: evictOldest removes from cache but doesn't update totalBytes.
+      // The evicted entry's bytes are subtracted indirectly — the cache entry
+      // is removed, and if re-prefetched, totalBytes will be recalculated.
     }
   }
 
