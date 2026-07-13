@@ -177,15 +177,31 @@ export function closeGallery(): void {
 }
 
 /**
+ * Resolves the anchor index for prev/next navigation.
+ * Prefers focusedIndexSig (what the user is actually looking at via
+ * IntersectionObserver) over currentIndexSig (last explicitly navigated to).
+ * Only uses focusedIndex when it is a valid in-bounds value.
+ */
+function _resolveNavAnchor(): number {
+  const focus = focusedIndexSig();
+  const items = mediaItemsSig();
+  if (typeof focus === 'number' && focus >= 0 && focus < items.length) {
+    return focus;
+  }
+  return currentIndexSig();
+}
+
+/**
  * Navigates to the next item in the gallery.
- * No-op when at the last item or when there are ≤1 items.
+ * Uses focusedIndex as anchor when available (what the user is looking at),
+ * falling back to currentIndex. No-op when at the last item or ≤1 items.
  * Emits `navigate:complete` event on success.
  *
  * @param trigger - How the navigation was triggered (default: `'click'`)
  */
 export function navigateNext(trigger: NavigationSource = 'click'): void {
   const items = mediaItemsSig();
-  const current = currentIndexSig();
+  const current = _resolveNavAnchor();
   if (items.length <= 1) return;
 
   const next = current + 1;
@@ -201,14 +217,15 @@ export function navigateNext(trigger: NavigationSource = 'click'): void {
 
 /**
  * Navigates to the previous item in the gallery.
- * No-op when at the first item or when there are ≤1 items.
+ * Uses focusedIndex as anchor when available (what the user is looking at),
+ * falling back to currentIndex. No-op when at the first item or ≤1 items.
  * Emits `navigate:complete` event on success.
  *
  * @param trigger - How the navigation was triggered (default: `'click'`)
  */
 export function navigatePrevious(trigger: NavigationSource = 'click'): void {
   const items = mediaItemsSig();
-  const current = currentIndexSig();
+  const current = _resolveNavAnchor();
   if (items.length <= 1) return;
 
   const prev = current - 1;
