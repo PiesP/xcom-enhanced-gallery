@@ -6,11 +6,15 @@
  */
 
 import { FocusCoordinator } from '@features/gallery/logic/focus-coordinator';
-import { gallerySignals, navigateToItem } from '@shared/state/signals/gallery.signals';
+import {
+  gallerySignals,
+  navigateToItem,
+  setFocusedIndexOnly,
+} from '@shared/state/signals/gallery.signals';
 import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import type { Accessor } from 'solid-js';
-import { onCleanup } from 'solid-js';
+import { batch, onCleanup } from 'solid-js';
 
 /** Configuration for focus tracking. */
 interface UseGalleryFocusTrackerOptions {
@@ -60,8 +64,12 @@ export function useGalleryFocusTracker(
     rootMargin: options.rootMargin ?? '0px',
     onFocusChange: (index, source) => {
       if (source === 'auto' && index !== null) {
-        // 'auto-focus' source prevents auto-scroll in navigation handler
-        navigateToItem(index, 'auto-focus');
+        // Update focused index for UI tracking only — do NOT trigger
+        // scroll-to-item via navigateToItem. Auto-scroll-snap on wheel
+        // scroll has been removed per user requirement.
+        batch(() => {
+          setFocusedIndexOnly(index);
+        });
       }
     },
   });

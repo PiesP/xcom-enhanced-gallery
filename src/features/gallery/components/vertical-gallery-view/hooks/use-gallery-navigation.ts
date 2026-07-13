@@ -66,7 +66,7 @@ export function useGalleryNavigation(
       const dispose = registerNavigationEvents({
         onTriggerChange: setLastNavigationTrigger,
         onNavigateComplete: ({ index, trigger }) => {
-          if (trigger === 'scroll') return;
+          if (trigger === 'scroll' || trigger === 'auto-focus') return;
           scrollToItem(index);
         },
       });

@@ -65,7 +65,16 @@ export const galleryIndexEvents = createEventEmitter<{
 const [isOpenSig, setIsOpenSig] = createSignal<boolean>(INITIAL_STATE.isOpen);
 const [mediaItemsSig, setMediaItems] = createSignal<readonly MediaInfo[]>(INITIAL_STATE.mediaItems);
 const [currentIndexSig, setCurrentIndex] = createSignal<number>(INITIAL_STATE.currentIndex);
-const [focusedIndexSig, setFocusedIndex] = createSignal<number | null>(null);
+const [focusedIndexSig, _setFocusedIndex] = createSignal<number | null>(null);
+
+/**
+ * Set the focused index directly without triggering navigation events.
+ * Used for UI-only focus tracking updates (e.g., IntersectionObserver-based
+ * auto-focus) where scroll-to-item behavior is undesirable.
+ */
+export function setFocusedIndexOnly(index: number | null): void {
+  _setFocusedIndex(index);
+}
 export const [currentVideoElementSig, setCurrentVideoElement] =
   createSignal<HTMLVideoElement | null>(null);
 
@@ -117,7 +126,7 @@ function applyGallerySessionUpdate(state: GallerySessionState): void {
   batch(() => {
     setMediaItems(state.mediaItems);
     setCurrentIndex(state.currentIndex);
-    setFocusedIndex(state.focusedIndex);
+    _setFocusedIndex(state.focusedIndex);
     setCurrentVideoElement(state.currentVideoElement);
     _setErrorSig(state.error);
     setIsOpenSig(state.isOpen);
@@ -184,7 +193,7 @@ export function navigateNext(trigger: NavigationSource = 'click'): void {
 
   batch(() => {
     setCurrentIndex(next);
-    setFocusedIndex(next);
+    _setFocusedIndex(next);
   });
   recordNavigation(next, trigger);
   galleryIndexEvents.emit('navigate:complete', { index: next, trigger });
@@ -207,7 +216,7 @@ export function navigatePrevious(trigger: NavigationSource = 'click'): void {
 
   batch(() => {
     setCurrentIndex(prev);
-    setFocusedIndex(prev);
+    _setFocusedIndex(prev);
   });
   recordNavigation(prev, trigger);
   galleryIndexEvents.emit('navigate:complete', { index: prev, trigger });
@@ -238,7 +247,7 @@ export function navigateToItem(targetIndex: number, source: NavigationSource): v
 
   batch(() => {
     setCurrentIndex(clampedIndex);
-    setFocusedIndex(clampedIndex);
+    _setFocusedIndex(clampedIndex);
   });
 
   recordNavigation(clampedIndex, source);
@@ -255,7 +264,7 @@ export function disposeGallerySignals(): void {
     setIsOpenSig(INITIAL_STATE.isOpen);
     setMediaItems(INITIAL_STATE.mediaItems);
     setCurrentIndex(INITIAL_STATE.currentIndex);
-    setFocusedIndex(null);
+    _setFocusedIndex(null);
     setCurrentVideoElement(null);
     _setErrorSig(INITIAL_STATE.error);
     setNavSource(INITIAL_NAV_SOURCE);
