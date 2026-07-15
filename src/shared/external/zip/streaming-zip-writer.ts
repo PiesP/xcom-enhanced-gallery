@@ -185,11 +185,17 @@ export class StreamingZipWriter {
   }
 
   /**
-   * Finalize ZIP file (add Central Directory)
-   * @returns Complete ZIP archive as Uint8Array
+   * Finalize ZIP file (add Central Directory).
+   *
+   * Returns an array of parts suitable for `new Blob(parts, {type:'application/zip'})`.
+   * Unlike the previous implementation, this does NOT allocate a monolithic
+   * Uint8Array — the Blob constructor natively concatenates the parts without
+   * duplicating data in JS heap, halving peak memory (~4× → ~2× archive size).
+   *
+   * @returns BlobPart[] — file data chunks followed by central directory + EOCD
    * @throws Error if archive exceeds Zip32 limits
    */
-  finalize(): Uint8Array {
+  finalize(): BlobPart[] {
     // Zip32-only: entry count must fit in 16-bit EOCD fields
     assertZip32(
       this.entries.length < ZIP_CONST.MAX_UINT16,
@@ -202,87 +208,81 @@ export class StreamingZipWriter {
       `central directory offset overflow (${centralDirStart})`
     );
 
-    // Pre-calculate central directory size
+    // Build central directory as a separate buffer
     let centralDirSize = 0;
     for (const entry of this.entries) {
       centralDirSize += 46 + encodeUtf8(entry.filename).length;
     }
 
-    // Single allocation: file data + central directory + EOCD
-    const eocdSize = 22;
-    const totalSize = this.currentOffset + centralDirSize + eocdSize;
-    assertZip32(totalSize < ZIP_CONST.MAX_UINT32, `archive too large (size=${totalSize})`);
-
-    const result = new Uint8Array(totalSize);
-
-    // Copy file data chunks
+    const centralDir = new Uint8Array(centralDirSize);
     let pos = 0;
-    for (const chunk of this.chunks) {
-      result.set(chunk, pos);
-      pos += chunk.length;
-    }
 
-    // Write central directory entries directly into result
     for (const entry of this.entries) {
       const filenameBytes = encodeUtf8(entry.filename);
       assertZip32(entry.offset < ZIP_CONST.MAX_UINT32, `entry offset overflow (${entry.offset})`);
       assertZip32(entry.size < ZIP_CONST.MAX_UINT32, `entry too large (size=${entry.size})`);
 
-      result.set(ZIP_CONST.SIG_CENTRAL_DIR, pos);
+      centralDir.set(ZIP_CONST.SIG_CENTRAL_DIR, pos);
       pos += 4;
-      result.set(writeUint16LE(ZIP_CONST.VERSION), pos);
+      centralDir.set(writeUint16LE(ZIP_CONST.VERSION), pos);
       pos += 2;
-      result.set(writeUint16LE(ZIP_CONST.VERSION), pos);
+      centralDir.set(writeUint16LE(ZIP_CONST.VERSION), pos);
       pos += 2;
-      result.set(writeUint16LE(ZIP_CONST.UTF8_FLAG), pos);
+      centralDir.set(writeUint16LE(ZIP_CONST.UTF8_FLAG), pos);
       pos += 2;
-      result.set(writeUint16LE(0), pos);
+      centralDir.set(writeUint16LE(0), pos);
       pos += 2; // No compression
-      result.set(writeUint16LE(0), pos);
+      centralDir.set(writeUint16LE(0), pos);
       pos += 2; // Time
-      result.set(writeUint16LE(0), pos);
+      centralDir.set(writeUint16LE(0), pos);
       pos += 2; // Date
-      result.set(writeUint32LE(entry.crc32), pos);
+      centralDir.set(writeUint32LE(entry.crc32), pos);
       pos += 4;
-      result.set(writeUint32LE(entry.size), pos);
+      centralDir.set(writeUint32LE(entry.size), pos);
       pos += 4;
-      result.set(writeUint32LE(entry.size), pos);
+      centralDir.set(writeUint32LE(entry.size), pos);
       pos += 4;
-      result.set(writeUint16LE(filenameBytes.length), pos);
+      centralDir.set(writeUint16LE(filenameBytes.length), pos);
       pos += 2;
-      result.set(writeUint16LE(0), pos);
+      centralDir.set(writeUint16LE(0), pos);
       pos += 2; // Extra
-      result.set(writeUint16LE(0), pos);
+      centralDir.set(writeUint16LE(0), pos);
       pos += 2; // Comment
-      result.set(writeUint16LE(0), pos);
+      centralDir.set(writeUint16LE(0), pos);
       pos += 2; // Disk
-      result.set(writeUint16LE(0), pos);
+      centralDir.set(writeUint16LE(0), pos);
       pos += 2; // Internal attrs
-      result.set(writeUint32LE(0), pos);
+      centralDir.set(writeUint32LE(0), pos);
       pos += 4; // External attrs
-      result.set(writeUint32LE(entry.offset), pos);
+      centralDir.set(writeUint32LE(entry.offset), pos);
       pos += 4;
-      result.set(filenameBytes, pos);
+      centralDir.set(filenameBytes, pos);
       pos += filenameBytes.length;
     }
 
-    // Write End of Central Directory
-    result.set(ZIP_CONST.SIG_END_CENTRAL_DIR, pos);
-    pos += 4;
-    result.set(writeUint16LE(0), pos);
-    pos += 2; // Disk number
-    result.set(writeUint16LE(0), pos);
-    pos += 2; // Central dir disk
-    result.set(writeUint16LE(this.entries.length), pos);
-    pos += 2;
-    result.set(writeUint16LE(this.entries.length), pos);
-    pos += 2;
-    result.set(writeUint32LE(centralDirSize), pos);
-    pos += 4;
-    result.set(writeUint32LE(centralDirStart), pos);
-    pos += 4;
-    result.set(writeUint16LE(0), pos); // Comment length
+    // Build End of Central Directory (22 bytes)
+    const eocd = new Uint8Array(22);
+    let epos = 0;
+    eocd.set(ZIP_CONST.SIG_END_CENTRAL_DIR, epos);
+    epos += 4;
+    eocd.set(writeUint16LE(0), epos);
+    epos += 2; // Disk number
+    eocd.set(writeUint16LE(0), epos);
+    epos += 2; // Central dir disk
+    eocd.set(writeUint16LE(this.entries.length), epos);
+    epos += 2;
+    eocd.set(writeUint16LE(this.entries.length), epos);
+    epos += 2;
+    eocd.set(writeUint32LE(centralDirSize), epos);
+    epos += 4;
+    eocd.set(writeUint32LE(centralDirStart), epos);
+    epos += 4;
+    eocd.set(writeUint16LE(0), epos); // Comment length
 
-    return result;
+    // Return parts: file data chunks + central directory + EOCD.
+    // Blob constructor natively concatenates without duplicating in JS heap.
+    // Cast required: Uint8Array<ArrayBufferLike> is not assignable to BlobPart
+    // because SharedArrayBuffer lacks resizable/resize/transfer/etc.
+    return [...this.chunks, centralDir, eocd] as unknown as BlobPart[];
   }
 }

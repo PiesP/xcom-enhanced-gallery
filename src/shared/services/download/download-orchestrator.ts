@@ -144,8 +144,8 @@ export class DownloadOrchestrator {
           });
         }
 
-        // Uint8Array is a valid BlobPart; explicit cast required for TypeScript strict mode
-        const zipBlob = new Blob([result.zipData as BlobPart], {
+        // Build Blob directly from parts — no monolithic Uint8Array allocation
+        const zipBlob = new Blob(result.zipData, {
           type: 'application/zip',
         });
         const filename = plan.zipFilename;
