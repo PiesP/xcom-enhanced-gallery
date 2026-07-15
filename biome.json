@@ -6,7 +6,21 @@
     "defaultBranch": "master"
   },
   "files": {
-    "includes": ["src/**", "scripts/**", "vite.config.ts", "vite.extension.config.ts", "vite.extension.cs.config.ts", "vite.extension.firefox.config.ts", "vite.extension.firefox.cs.config.ts", "package.json", "tsconfig.json", "knip.json", "biome.json", "!!**/.stryker-tmp/", "!!**/.stryker-tmp-debug/"],
+    "includes": [
+      "src/**",
+      "scripts/**",
+      "vite.config.ts",
+      "vite.extension.config.ts",
+      "vite.extension.cs.config.ts",
+      "vite.extension.firefox.config.ts",
+      "vite.extension.firefox.cs.config.ts",
+      "package.json",
+      "tsconfig.json",
+      "knip.json",
+      "biome.json",
+      "!!**/.stryker-tmp/",
+      "!!**/.stryker-tmp-debug/"
+    ],
     "ignoreUnknown": true
   },
   "formatter": {

@@ -12,8 +12,8 @@
  * This script MUST be called as the final step of `pnpm build:extension`.
  */
 
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -49,14 +49,14 @@ for (let i = 0; i < Math.min(lines.length, 50); i++) {
   if (/^import\s/.test(line) && !line.startsWith('//')) {
     fail(
       `content.js line ${i + 1} contains import statement:\n    ${line}\n` +
-      `Content script MUST be IIFE format. Check vite.extension.cs.config.ts formats.`
+        'Content script MUST be IIFE format. Check vite.extension.cs.config.ts formats.'
     );
     break;
   }
   if (/^export\s/.test(line) && !line.startsWith('//')) {
     fail(
       `content.js line ${i + 1} contains export statement:\n    ${line}\n` +
-      `Content script MUST be IIFE format. Check vite.extension.cs.config.ts formats.`
+        'Content script MUST be IIFE format. Check vite.extension.cs.config.ts formats.'
     );
     break;
   }
@@ -64,11 +64,15 @@ for (let i = 0; i < Math.min(lines.length, 50); i++) {
 
 // 3. Check that content.js starts with an IIFE wrapper
 const firstLine = lines[0] || '';
-if (!firstLine.startsWith('(function(') && !firstLine.startsWith('!function(') && firstLine !== '"use strict";') {
+if (
+  !firstLine.startsWith('(function(') &&
+  !firstLine.startsWith('!function(') &&
+  firstLine !== '"use strict";'
+) {
   fail(
-    `content.js does not start with an IIFE wrapper.\n` +
-    `First line: "${firstLine.slice(0, 80)}"\n` +
-    `Content script MUST be IIFE format for Chrome compatibility.`
+    'content.js does not start with an IIFE wrapper.\n' +
+      `First line: "${firstLine.slice(0, 80)}"\n` +
+      'Content script MUST be IIFE format for Chrome compatibility.'
   );
 }
 
@@ -79,7 +83,7 @@ if (!existsSync(backgroundJs)) {
 } else {
   const bg = readFileSync(backgroundJs, 'utf-8');
   const bgLines = bg.split('\n').slice(0, 10);
-  const hasImport = bgLines.some(l => /^\s*import\s/.test(l) || /\bimport\s*\{/.test(l));
+  const hasImport = bgLines.some((l) => /^\s*import\s/.test(l) || /\bimport\s*\{/.test(l));
   if (hasImport) {
     pass('background.js is ES module (correct for Service Worker)');
   } else {

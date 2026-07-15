@@ -13,10 +13,10 @@
  *   pnpm build:extension:cs — Build content script only
  */
 
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
-import { readFileSync } from 'node:fs';
 import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
 
 /**
@@ -32,8 +32,8 @@ function enforceIIFEFormat() {
       if (options.format !== 'iife') {
         throw new Error(
           `FATAL: content script build must use IIFE format, got "${options.format}". ` +
-          `Chrome content scripts cannot use ES module import/export. ` +
-          `Do NOT change formats to 'es' in vite.extension.cs.config.ts.`
+            'Chrome content scripts cannot use ES module import/export. ' +
+            `Do NOT change formats to 'es' in vite.extension.cs.config.ts.`
         );
       }
     },
@@ -83,7 +83,9 @@ export default defineConfig((): UserConfig => {
     define: {
       __DEV__: JSON.stringify(false),
       __FEATURE_MEDIA_EXTRACTION__: JSON.stringify(true),
-      __VERSION__: JSON.stringify(JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')).version),
+      __VERSION__: JSON.stringify(
+        JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')).version
+      ),
     },
     logLevel: 'warn',
   };

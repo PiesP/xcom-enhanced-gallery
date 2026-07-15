@@ -1,20 +1,24 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const pkg = JSON.parse(readFileSync(resolve(process.cwd(), "package.json"), "utf-8"));
+const pkg = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf-8'));
 const expected = pkg.version;
 let failed = false;
 
 const checks: { file: string; pattern: RegExp; label: string }[] = [
-  { file: "extension/manifest.json", pattern: /"version":\s*"([^"]+)"/, label: "Chrome manifest" },
-  { file: "extension/manifest.firefox.json", pattern: /"version":\s*"([^"]+)"/, label: "Firefox manifest" },
+  { file: 'extension/manifest.json', pattern: /"version":\s*"([^"]+)"/, label: 'Chrome manifest' },
+  {
+    file: 'extension/manifest.firefox.json',
+    pattern: /"version":\s*"([^"]+)"/,
+    label: 'Firefox manifest',
+  },
 ];
 
 for (const { file, pattern, label } of checks) {
-  const content = readFileSync(resolve(process.cwd(), file), "utf-8");
+  const content = readFileSync(resolve(process.cwd(), file), 'utf-8');
   const match = content.match(pattern);
   if (!match) {
     console.error(`✗ ${label}: version not found in ${file}`);
@@ -30,7 +34,7 @@ for (const { file, pattern, label } of checks) {
 }
 
 if (failed) {
-  console.error("\nVersion mismatch detected. Run: pnpm run sync-versions");
+  console.error('\nVersion mismatch detected. Run: pnpm run sync-versions');
   process.exit(1);
 }
-console.log("\n✓ All versions match:", expected);
+console.log('\n✓ All versions match:', expected);

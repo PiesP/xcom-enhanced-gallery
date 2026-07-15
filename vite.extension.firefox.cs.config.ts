@@ -12,10 +12,10 @@
  *   pnpm build:extension:firefox:cs — Build Firefox content script only
  */
 
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
-import { readFileSync } from 'node:fs';
 import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
 
 /**
@@ -33,8 +33,8 @@ function enforceIIFEFormat() {
       if (options.format !== 'iife') {
         throw new Error(
           `FATAL: Firefox content script build must use IIFE format, got "${options.format}". ` +
-          `Firefox content scripts as ES module require manifest changes. ` +
-          `Do NOT change formats to 'es' in vite.extension.firefox.cs.config.ts.`
+            'Firefox content scripts as ES module require manifest changes. ' +
+            `Do NOT change formats to 'es' in vite.extension.firefox.cs.config.ts.`
         );
       }
     },
@@ -84,7 +84,9 @@ export default defineConfig((): UserConfig => {
     define: {
       __DEV__: JSON.stringify(false),
       __FEATURE_MEDIA_EXTRACTION__: JSON.stringify(true),
-      __VERSION__: JSON.stringify(JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')).version),
+      __VERSION__: JSON.stringify(
+        JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')).version
+      ),
     },
     logLevel: 'warn',
   };
