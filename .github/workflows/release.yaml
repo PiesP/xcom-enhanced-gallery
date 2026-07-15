@@ -199,17 +199,13 @@ jobs:
           - **Node.js**: \`${{ env.NODE_VERSION }}\`
           EOF
 
-      - name: 📤 Deploy dist/ to release branch
-        run: |
-          set -euo pipefail
-          cd /tmp/dist-backup/dist
-          git init -b release
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Release v${{ steps.version.outputs.version }} — dist snapshot"
-          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-          git push --force origin release
+      - name: 📤 Publish to release branch
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: release
+          publish_dir: /tmp/dist-backup/dist
+          force_orphan: true
 
       - name: 🔄 Purge jsDelivr CDN cache
         run: |
