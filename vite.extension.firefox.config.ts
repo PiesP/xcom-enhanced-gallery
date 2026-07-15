@@ -73,7 +73,7 @@ export default defineConfig((): UserConfig => {
       minify: false,
       target: ['firefox128'],
       lib: {
-        entry: [resolve(root, 'src/extension/background.ts'), resolve(root, 'src/extension/content.ts')],
+        entry: [resolve(root, 'src/extension/background.ts')],
         formats: ['es'],
         fileName: (_format, entryName) => {
           return `${entryName}.js`;
