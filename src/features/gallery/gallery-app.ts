@@ -40,6 +40,8 @@ export class GalleryApp {
   private readonly lifecycle: GalleryLifecycle = createGalleryLifecycle();
   private readonly renderer: GalleryRenderer;
   private mediaClickCounter = 0;
+  private sessionEpoch = 0;
+  private sessionAbortController: AbortController | null = null;
 
   constructor(renderer: GalleryRenderer) {
     this.renderer = renderer;
@@ -47,6 +49,9 @@ export class GalleryApp {
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
+
+    this.sessionEpoch++;
+    this.sessionAbortController = new AbortController();
 
     try {
       await this.setupEventHandlers();
@@ -84,13 +89,18 @@ export class GalleryApp {
 
   private async handleMediaClick(element: HTMLElement, _event: MouseEvent): Promise<void> {
     const opId = ++this.mediaClickCounter;
+    const epoch = this.sessionEpoch;
 
     try {
       const mediaService = getMediaService();
-      const result = await mediaService.extractFromClickedElement(element);
+      const result = await mediaService.extractFromClickedElement(element, {
+        signal: this.sessionAbortController?.signal,
+      });
 
       // Discard stale results — a newer click is already in progress
       if (opId !== this.mediaClickCounter) return;
+      // Discard results from a previous session (after cleanup/reinitialize)
+      if (epoch !== this.sessionEpoch || !this.initialized) return;
 
       if (result.success && result.mediaItems.length > 0) {
         this.openGallery(result.mediaItems, result.clickedIndex, {
@@ -150,6 +160,10 @@ export class GalleryApp {
     if (gallerySignals.isOpen) {
       this.close();
     }
+
+    // Abort all in-flight extraction requests for this session
+    this.sessionAbortController?.abort();
+    this.sessionAbortController = null;
 
     this.ambientVideoGuardDispose?.();
     this.ambientVideoGuardDispose = null;

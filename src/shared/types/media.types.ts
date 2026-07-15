@@ -67,6 +67,7 @@ export interface MediaExtractionOptions {
   readonly useApiFallback?: boolean | undefined;
   readonly enableBackgroundLoading?: boolean | undefined;
   readonly enableValidation?: boolean | undefined;
+  readonly signal?: AbortSignal | undefined;
 }
 
 /**

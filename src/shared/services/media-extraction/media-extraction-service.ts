@@ -114,6 +114,11 @@ export class MediaExtractionService implements MediaExtractor {
     const extractionId = generateExtractionId();
     __DEV__ && logger.info(`[MediaExtractor] ${extractionId}: Extraction started`);
 
+    // Check for cancellation before starting extraction
+    if (options.signal?.aborted) {
+      return createErrorResult('Extraction cancelled');
+    }
+
     try {
       const tweetInfo = this.tweetInfoExtractor.extract(element);
 
