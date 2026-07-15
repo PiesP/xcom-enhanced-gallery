@@ -7,9 +7,7 @@
     "@features/*": ["src/features/*"],
     "@platform/*": ["src/platform/*"]
   },
-  "ignore": [
-    "src/platform/types.ts"
-  ],
+  "ignore": ["src/platform/types.ts"],
   "ignoreExportsUsedInFile": true,
   "ignoreBinaries": ["e2e"]
 }

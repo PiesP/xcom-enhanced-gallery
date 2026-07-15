@@ -11,10 +11,10 @@
  *   pnpm build:extension:sw — Build service worker only
  */
 
+import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig, type UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
-import { copyFileSync, readFileSync, existsSync, mkdirSync, cpSync } from 'node:fs';
 
 const root = resolve(__dirname);
 const extensionDir = resolve(root, 'extension');
@@ -82,7 +82,9 @@ export default defineConfig((): UserConfig => {
     define: {
       __DEV__: JSON.stringify(false),
       __FEATURE_MEDIA_EXTRACTION__: JSON.stringify(true),
-      __VERSION__: JSON.stringify(JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')).version),
+      __VERSION__: JSON.stringify(
+        JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')).version
+      ),
     },
     logLevel: 'warn',
   };

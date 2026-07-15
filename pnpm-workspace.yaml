@@ -11,6 +11,11 @@ blockExoticSubdeps: true
 # Fail if the current Node.js / pnpm version doesn't match engines field.
 engineStrict: true
 
+preferFrozenLockfile: true
+autoInstallPeers: true
+strictPeerDependencies: false
+preferOffline: true
+
 minimumReleaseAgeExclude:
   - '@typescript/typescript-aix-ppc64@7.0.2'
   - '@typescript/typescript-darwin-arm64@7.0.2'
