@@ -38,7 +38,7 @@ export function userscriptPreset(options: UserscriptPresetOptions): UserConfig {
 
   return {
     build: {
-      target: ['chrome117', 'firefox119', 'safari17'],
+      target: ['chrome117', 'firefox128', 'safari17'],
       minify: false,
       sourcemap: sourceMap,
       outDir: 'dist',

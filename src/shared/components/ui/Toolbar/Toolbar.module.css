@@ -94,10 +94,15 @@
  * WCAG 2.1 AA compliance: Border color swap with tokenized contrast
  * Visible on keyboard navigation (Phase 87: Keyboard navigation focus management)
  */
-.toolbarButton:focus,
+.toolbarButton:focus {
+  background: var(--xeg-toolbar-element-bg, var(--xeg-color-neutral-100));
+}
+
 .toolbarButton:focus-visible {
   /* Borderless focus indicator: use background emphasis instead of border. */
   background: var(--xeg-toolbar-element-bg, var(--xeg-color-neutral-100));
+  outline: 2px solid var(--xeg-focus-indicator-color, currentColor);
+  outline-offset: 2px;
 }
 
 .galleryToolbar {

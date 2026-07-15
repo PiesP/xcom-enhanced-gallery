@@ -9,6 +9,7 @@ import { logger } from '@shared/logging/logger';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo, TweetInfo } from '@shared/types/media.types';
 import { normalizeDimension } from '@shared/utils/media/media-dimensions';
+import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 /**
  * Create MediaInfo from API Response
@@ -34,6 +35,17 @@ function createMediaInfoFromAPI(
     }
 
     const username = apiMedia.screen_name ?? tweetInfo.username;
+
+    // Validate download URL before storing — prevents malformed or
+    // non-HTTPS URLs from being used for downloads and fetch calls.
+    if (!isValidMediaUrl(apiMedia.download_url)) {
+      if (__DEV__) {
+        logger.warn('[MediaFactory] Invalid download URL, skipping', {
+          url: apiMedia.download_url,
+        });
+      }
+      return null;
+    }
 
     return {
       id: `${tweetInfo.tweetId}_api_${index}`,
