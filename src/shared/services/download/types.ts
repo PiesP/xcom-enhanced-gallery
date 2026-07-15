@@ -43,7 +43,8 @@ export interface SingleDownloadResult {
 export interface ZipResult {
   filesSuccessful: number;
   failures: Array<{ url: string; error: string }>;
-  zipData: Uint8Array;
+  /** Parts ready for `new Blob(parts, {type:'application/zip'})` — no monolithic copy */
+  zipData: BlobPart[];
 }
 
 export interface BulkDownloadResult {
