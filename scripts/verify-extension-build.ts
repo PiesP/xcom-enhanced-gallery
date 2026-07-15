@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
-const distDir = process.argv[2] || 'dist-extension';
+const distDir = process.env.FIREFOX_DIST_DIR || process.argv[2] || 'dist-extension';
 const contentJs = resolve(root, distDir, 'content.js');
 
 let failed = false;
@@ -73,9 +73,9 @@ if (!firstLine.startsWith('(function(') && !firstLine.startsWith('!function(') &
 }
 
 // 4. Verify background.js is ES module (can have import)
-const backgroundJs = resolve(root, 'dist-extension', 'background.js');
+const backgroundJs = resolve(root, distDir, 'background.js');
 if (!existsSync(backgroundJs)) {
-  fail('dist-extension/background.js was not produced — build failed');
+  fail(`${distDir}/background.js was not produced — build failed`);
 } else {
   const bg = readFileSync(backgroundJs, 'utf-8');
   const bgLines = bg.split('\n').slice(0, 10);
@@ -89,9 +89,9 @@ if (!existsSync(backgroundJs)) {
 }
 
 // 5. Verify manifest.json exists
-const manifest = resolve(root, 'dist-extension', 'manifest.json');
+const manifest = resolve(root, distDir, 'manifest.json');
 if (!existsSync(manifest)) {
-  fail('dist-extension/manifest.json was not produced');
+  fail(`${distDir}/manifest.json was not produced`);
 } else {
   pass('manifest.json copied to output');
 }

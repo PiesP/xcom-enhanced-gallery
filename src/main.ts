@@ -21,6 +21,7 @@ import {
   getEventManager,
   resetEventManagerForTests as resetEventManager,
 } from '@shared/services/event-manager';
+import { getThemeService } from '@shared/services/theme-service';
 import type { BootstrapStage } from '@shared/types/lifecycle.types';
 import { TWITTER_HOSTS } from '@shared/utils/url/host';
 // Import isolated gallery styles in CSS cascade priority order:
@@ -44,6 +45,7 @@ const isTestMode = import.meta.env.MODE === 'test';
 const lifecycleState = {
   started: false,
   startPromise: null as Promise<void> | null,
+  cleanupPromise: null as Promise<void> | null,
   galleryApp: null as GalleryLifecycleApp | null,
 };
 
@@ -121,7 +123,13 @@ function wireBFCacheRecovery(restart: () => Promise<void>): () => void {
   const handler: EventListener = (event: Event) => {
     if ((event as PageTransitionEvent).persisted) {
       __DEV__ && logger.info('[bfcache] Page restored from BFCache, restarting app');
-      restart().catch((error) => {
+      (async () => {
+        // Wait for any in-progress cleanup from pagehide to complete
+        if (lifecycleState.cleanupPromise) {
+          await lifecycleState.cleanupPromise;
+        }
+        await restart();
+      })().catch((error) => {
         __DEV__ && logger.error('[bfcache] Restart failed', error);
       });
     }
@@ -136,7 +144,7 @@ function wireBFCacheRecovery(restart: () => Promise<void>): () => void {
 function setupGlobalEventHandlers(): void {
   tearDownGlobalEventHandlers();
   globalEventTeardown = wireGlobalEvents(() => {
-    cleanup().catch((error) => {
+    lifecycleState.cleanupPromise = cleanup().catch((error) => {
       __DEV__ && logger.error('Cleanup failed', error);
     });
   });
@@ -194,7 +202,7 @@ async function initializeGallery(): Promise<void> {
   }
 }
 
-async function cleanup(): Promise<void> {
+export async function cleanup(): Promise<void> {
   try {
     __DEV__ && logger.info('Starting application cleanup');
 
@@ -202,6 +210,10 @@ async function cleanup(): Promise<void> {
       const app = lifecycleState.galleryApp;
       lifecycleState.galleryApp = null;
       if (app) await app.cleanup();
+    });
+    await runOptionalCleanup('theme-service', () => {
+      const ts = getThemeService();
+      if (ts.isInitialized()) ts.destroy();
     });
     tearDownGlobalEventHandlers();
     await runOptionalCleanup('error-handler', () => getGlobalErrorHandler().destroy());
@@ -268,7 +280,7 @@ const EXCLUDED_PATH_PREFIXES = [
   '/share',
 ] as const;
 
-function isAllowedStartPage(): boolean {
+export function isAllowedStartPage(): boolean {
   const hostname = location.hostname.toLowerCase();
   const allowed = (TWITTER_HOSTS as unknown as readonly string[]).some(
     (h) => hostname === h || hostname.endsWith(`.${h}`)
@@ -295,6 +307,10 @@ if (typeof navigation !== 'undefined') {
       void startApplication().catch((error) => {
         __DEV__ && logger.error('Application failed to start (SPA nav)', error);
       });
+    } else if (!isAllowedStartPage() && lifecycleState.started) {
+      void cleanup().catch((error) => {
+        __DEV__ && logger.error('Application cleanup failed (SPA nav away)', error);
+      });
     }
   });
 } else {
@@ -303,6 +319,10 @@ if (typeof navigation !== 'undefined') {
     if (isAllowedStartPage() && !lifecycleState.started) {
       void startApplication().catch((error) => {
         __DEV__ && logger.error('Application failed to start (popstate)', error);
+      });
+    } else if (!isAllowedStartPage() && lifecycleState.started) {
+      void cleanup().catch((error) => {
+        __DEV__ && logger.error('Application cleanup failed (popstate away)', error);
       });
     }
   });

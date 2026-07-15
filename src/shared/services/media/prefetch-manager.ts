@@ -75,6 +75,7 @@ export class PrefetchManager {
   private totalBytes = 0;
   private disposed = false;
   private readonly idleHandles = new Set<IdleHandle>();
+  private readonly resolvedSizes = new Map<string, number>();
 
   // Doubly-linked list for O(1) LRU tracking
   private head: { url: string; prev: LRUNode | null; next: LRUNode | null } | null = null;
@@ -136,6 +137,10 @@ export class PrefetchManager {
       controller.abort();
     }
     this.activeRequests.clear();
+    for (const handle of this.idleHandles) {
+      handle.cancel();
+    }
+    this.idleHandles.clear();
   }
 
   /**
@@ -144,6 +149,7 @@ export class PrefetchManager {
   clear(): void {
     this.cache.clear();
     this.nodeMap.clear();
+    this.resolvedSizes.clear();
     this.head = null;
     this.tail = null;
     this.totalBytes = 0;
@@ -205,6 +211,7 @@ export class PrefetchManager {
     try {
       const blob = await fetchPromise;
       this.totalBytes += blob.size;
+      this.resolvedSizes.set(url, blob.size);
       this.evictByByteBudget();
     } catch (error) {
       // Remove from cache on error (only if our promise is still the cached one)
@@ -227,6 +234,12 @@ export class PrefetchManager {
     let node = this.head;
     while (node) {
       if (!this.activeRequests.has(node.url)) {
+        // Subtract resolved byte size before removing from cache
+        const size = this.resolvedSizes.get(node.url);
+        if (size !== undefined) {
+          this.totalBytes -= size;
+          this.resolvedSizes.delete(node.url);
+        }
         this.cache.delete(node.url);
         this.removeNode(node);
         return;
@@ -241,6 +254,8 @@ export class PrefetchManager {
         controller.abort();
         this.activeRequests.delete(url);
       }
+      // In-flight entries haven't been added to totalBytes yet, so no subtraction needed
+      this.resolvedSizes.delete(url);
       this.cache.delete(url);
       this.removeNode(this.head);
     }

@@ -250,7 +250,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     local.registerContainer?.(element);
   };
 
-  const defaultContainerRole = () => 'listitem';
+  const defaultContainerRole = () => 'option';
   const resolvedContainerRole = () =>
     (local.role ?? defaultContainerRole()) as JSX.HTMLAttributes<HTMLDivElement>['role'];
 

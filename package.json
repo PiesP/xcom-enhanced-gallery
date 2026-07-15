@@ -10,7 +10,7 @@
     "prebuild:extension:firefox": "pnpm -s check-versions && pnpm -s quality",
     "build": "vite build",
     "build:extension": "pnpm -s prebuild:extension && vite build --config vite.extension.config.ts && vite build --config vite.extension.cs.config.ts && npx tsx scripts/verify-extension-build.ts dist-extension",
-    "build:extension:firefox": "pnpm -s prebuild:extension:firefox && vite build --config vite.extension.firefox.config.ts && npx tsx scripts/verify-extension-build.ts dist-extension-firefox",
+    "build:extension:firefox": "pnpm -s prebuild:extension:firefox && vite build --config vite.extension.firefox.config.ts && vite build --config vite.extension.firefox.cs.config.ts && npx tsx scripts/verify-extension-build.ts dist-extension-firefox",
     "build:all": "pnpm build && pnpm build:extension && pnpm build:extension:firefox",
     "build:dev": "vite build --mode development",
     "build:fast": "vite build",

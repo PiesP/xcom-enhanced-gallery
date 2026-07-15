@@ -13,7 +13,7 @@ import type { MediaInfo } from '@shared/types/media.types';
 // Removed: detectDownloadCapability (duplicated platform detection logic).
 // Use getDownloadAdapter() from platform layer instead.
 
-import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
+import { isAbortError, USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 
 const createAbortResult = (): SingleDownloadResult => ({
   success: false,
@@ -250,6 +250,12 @@ async function downloadWithFetchFallback(
       return { success: true, filename };
     }
   } catch (error) {
+    // If the user cancelled, return abort result immediately — do NOT
+    // fall through to the direct URL download fallback below.
+    if (isAbortError(error)) {
+      return createAbortResult();
+    }
+
     // If fetch failed (CORS/network), fall back to direct URL download via background SW.
     // Content-script fetch with host_permissions follows CORS rules — CDN hosts
     // (pbs.twimg.com, video.twimg.com) typically serve permissive CORS headers,
