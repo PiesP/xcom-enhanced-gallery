@@ -95,9 +95,9 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: 🔧 Install nose
-        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/corca-ai/nose/releases/latest/download/nose-cli-installer.sh | sh
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/corca-ai/nose/releases/latest/download/nose-cli-installer.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: 🔎 Check for new duplication
-        run: |
-          export PATH="$HOME/.cargo/bin:$PATH"
-          nose query src --baseline .nose-baseline.json --fail-on new
+        run: nose query src --baseline .nose-baseline.json --fail-on new
