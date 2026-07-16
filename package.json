@@ -5,6 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "preinstall": "test -f packages/core/package.json || (echo '⚠️  Submodule not initialized. Run: git submodule update --init' && exit 1)",
     "prebuild": "pnpm -s check-versions && pnpm -s quality",
     "prebuild:extension": "pnpm -s check-versions && pnpm -s quality",
     "prebuild:extension:firefox": "pnpm -s check-versions && pnpm -s quality",
@@ -71,7 +72,7 @@
   "homepage": "https://github.com/PiesP/xcom-enhanced-gallery#readme",
   "dependencies": {
     "solid-js": "^1.9.14",
-    "@piesp/browser-core": "file:../packages/core"
+    "@piesp/browser-core": "file:./packages/core"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.4",
