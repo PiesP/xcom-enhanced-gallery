@@ -5,7 +5,7 @@
  * Supported language codes for the application
  * These must match the available language files in the languages directory
  */
-export const LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh-cn', 'es', 'ar'] as const;
+export const LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh-CN', 'es', 'ar'] as const;
 
 /**
  * Base language code type derived from LANGUAGE_CODES
@@ -199,6 +199,7 @@ export function isBaseLanguageCode(value: string | null | undefined): value is B
     lower === 'ko' ||
     lower === 'ja' ||
     lower === 'zh-cn' ||
+    lower === 'zh-CN' ||
     lower === 'es' ||
     lower === 'ar'
   );

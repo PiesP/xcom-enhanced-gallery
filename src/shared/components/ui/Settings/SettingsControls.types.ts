@@ -17,7 +17,7 @@ import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 /**
  * Union type for language setting options
  */
-export type LanguageOption = 'auto' | 'ko' | 'en' | 'ja' | 'zh-cn' | 'es' | 'ar';
+export type LanguageOption = 'auto' | 'ko' | 'en' | 'ja' | 'zh-CN' | 'es' | 'ar';
 
 /**
  * Props for SettingsControls component

@@ -45,7 +45,7 @@ const LANGUAGE_OPTIONS: readonly LanguageOption[] = [
   'en',
   'ko',
   'ja',
-  'zh-cn',
+  'zh-CN',
   'es',
   'ar',
 ] as const;
@@ -111,7 +111,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           ko: languageService.translate('st.langKo'),
           en: languageService.translate('st.langEn'),
           ja: languageService.translate('st.langJa'),
-          'zh-cn': languageService.translate('st.langZhCn'),
+          'zh-CN': languageService.translate('st.langZhCn'),
           es: languageService.translate('st.langEs'),
           ar: languageService.translate('st.langAr'),
         } as Record<LanguageOption, string>,
