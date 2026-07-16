@@ -70,7 +70,8 @@
   },
   "homepage": "https://github.com/PiesP/xcom-enhanced-gallery#readme",
   "dependencies": {
-    "solid-js": "^1.9.14"
+    "solid-js": "^1.9.14",
+    "@piesp/browser-core": "file:../packages/core"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.4",
