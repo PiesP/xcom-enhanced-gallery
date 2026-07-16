@@ -13,7 +13,7 @@ import { en } from '@shared/constants/i18n/languages/en';
 import { es } from '@shared/constants/i18n/languages/es';
 import { ja } from '@shared/constants/i18n/languages/ja';
 import { ko } from '@shared/constants/i18n/languages/ko';
-import { zhCn } from '@shared/constants/i18n/languages/zh-cn';
+import { zhCn } from '@shared/constants/i18n/languages/zh-CN';
 import { resolveNestedPath } from '@shared/utils/object/path';
 import type { TranslationBundleInput, TranslationKey, TranslationParams } from './types';
 
@@ -21,7 +21,7 @@ export const TRANSLATION_REGISTRY: Partial<Record<BaseLanguageCode, LanguageStri
   en,
   ko,
   ja,
-  'zh-cn': zhCn,
+  'zh-CN': zhCn,
   es,
   ar,
 } as const;

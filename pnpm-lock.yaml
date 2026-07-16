@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@piesp/browser-core':
+        specifier: file:../packages/core
+        version: file:../packages/core
       solid-js:
         specifier: ^1.9.14
         version: 1.9.14
@@ -446,6 +449,9 @@ packages:
     resolution: {integrity: sha512-H7BCt/VnS9hnmMp42eGhZ99izSCRvlnWwy/N71K1/J8QoExwY4262Z8QiEkMDtduRJrztayDxETTckmUuAVL9Q==}
     cpu: [x64]
     os: [win32]
+
+  '@piesp/browser-core@file:../packages/core':
+    resolution: {directory: ../packages/core, type: directory}
 
   '@rolldown/binding-android-arm64@1.1.5':
     resolution: {integrity: sha512-lZg8fqIv2v7FF237bwMgzGZEJvGL79/s5knJ/i6FmsGF4XXlzccZ4jb+TrFIxtSSxFtIpdsgrPZeMk1I9AFcyQ==}
@@ -1427,6 +1433,8 @@ snapshots:
 
   '@oxc-resolver/binding-win32-x64-msvc@11.21.3':
     optional: true
+
+  '@piesp/browser-core@file:../packages/core': {}
 
   '@rolldown/binding-android-arm64@1.1.5':
     optional: true

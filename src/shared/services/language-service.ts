@@ -74,9 +74,9 @@ export class LanguageService {
         return normalized;
       }
 
-      // Handle language-region codes (e.g., zh-CN → zh-cn)
+      // Handle language-region codes (e.g., zh-CN)
       if (normalized.includes('-')) {
-        const baseRegion = normalized.slice(0, 5); // e.g., "zh-cn"
+        const baseRegion = normalized.slice(0, 5); // e.g., "zh-CN"
         if (isBaseLanguageCode(baseRegion)) {
           return baseRegion;
         }
