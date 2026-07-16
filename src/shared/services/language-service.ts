@@ -58,27 +58,35 @@ export class LanguageService {
     return this._initialized;
   }
   detectLanguage(): BaseLanguageCode {
-    const browserLang =
-      this._nav && typeof this._nav.language === 'string'
-        ? this._nav.language.toLowerCase()
-        : DEFAULT_LANGUAGE;
+    // Priority: navigator.languages[] (ordered user preference) → navigator.language (fallback)
+    const browserLangs =
+      this._nav && 'languages' in this._nav && Array.isArray(this._nav.languages)
+        ? (this._nav.languages as readonly string[])
+        : this._nav && typeof this._nav.language === 'string'
+          ? [this._nav.language.toLowerCase()]
+          : [DEFAULT_LANGUAGE];
 
-    if (isBaseLanguageCode(browserLang)) {
-      return browserLang;
-    }
+    for (const lang of browserLangs) {
+      if (!lang) continue;
+      const normalized = lang.toLowerCase();
 
-    // Handle language-region codes (e.g., zh-CN → zh-cn)
-    if (browserLang.includes('-')) {
-      const baseRegion = browserLang.slice(0, 5); // e.g., "zh-cn"
-      if (isBaseLanguageCode(baseRegion)) {
-        return baseRegion;
+      if (isBaseLanguageCode(normalized)) {
+        return normalized;
       }
-    }
 
-    // Fall back to base 2-letter code
-    const baseLang = browserLang.slice(0, 2);
-    if (isBaseLanguageCode(baseLang)) {
-      return baseLang;
+      // Handle language-region codes (e.g., zh-CN → zh-cn)
+      if (normalized.includes('-')) {
+        const baseRegion = normalized.slice(0, 5); // e.g., "zh-cn"
+        if (isBaseLanguageCode(baseRegion)) {
+          return baseRegion;
+        }
+      }
+
+      // Fall back to base 2-letter code
+      const baseLang = normalized.slice(0, 2);
+      if (isBaseLanguageCode(baseLang)) {
+        return baseLang;
+      }
     }
 
     return DEFAULT_LANGUAGE;
