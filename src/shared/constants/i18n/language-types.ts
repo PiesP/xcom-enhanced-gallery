@@ -186,17 +186,20 @@ export interface LanguageStrings {
 }
 
 /**
- * Type guard to check if a value is a valid base language code
+ * Type guard to check if a value is a valid base language code.
+ * Normalizes case before comparison so BCP 47 variants (e.g., `zh-CN`) are accepted.
  * @param value - Value to check
  * @returns True if value is a valid BaseLanguageCode
  */
 export function isBaseLanguageCode(value: string | null | undefined): value is BaseLanguageCode {
+  if (!value) return false;
+  const lower = value.toLowerCase();
   return (
-    value === 'en' ||
-    value === 'ko' ||
-    value === 'ja' ||
-    value === 'zh-cn' ||
-    value === 'es' ||
-    value === 'ar'
+    lower === 'en' ||
+    lower === 'ko' ||
+    lower === 'ja' ||
+    lower === 'zh-cn' ||
+    lower === 'es' ||
+    lower === 'ar'
   );
 }
