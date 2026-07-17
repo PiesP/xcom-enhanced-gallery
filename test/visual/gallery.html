@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1200">
+  <title>X.com Enhanced Gallery — Visual Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; color: #e7e9ea; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; }
+    .test-bar { background: #191; color: #000; padding: 8px 16px; font-size: 14px; font-weight: 600; border-radius: 4px; margin-bottom: 24px; }
+    .tweet-container { max-width: 598px; width: 100%; border: 1px solid #2f3336; border-radius: 12px; padding: 16px; background: #000; }
+    .tweet-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; background: #1d9bf0; }
+    .name-row { font-size: 15px; }
+    .name-row .name { font-weight: 700; color: #e7e9ea; }
+    .name-row .handle { color: #71767b; }
+    .tweet-text { font-size: 15px; line-height: 1.4; margin-bottom: 12px; color: #e7e9ea; }
+    .tweet-photo { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; cursor: pointer; border: 1px solid #2f3336; }
+    .tweet-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .tweet-actions { display: flex; justify-content: space-between; margin-top: 12px; max-width: 425px; color: #71767b; }
+    .action-btn { display: flex; align-items: center; gap: 4px; font-size: 13px; }
+    .instructions { margin-top: 24px; font-size: 13px; color: #555; text-align: center; max-width: 600px; line-height: 1.6; }
+    .auto-open-btn { margin-top: 16px; padding: 8px 20px; background: #1d9bf0; color: #fff; border: none; border-radius: 999px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .auto-open-btn:hover { background: #1a8cd8; }
+  </style>
+</head>
+<body>
+  <div class="test-bar">X.com Enhanced Gallery — Visual Test Page</div>
+  <div class="tweet-container">
+    <div class="tweet-header">
+      <div class="avatar"></div>
+      <div class="name-row">
+        <span class="name">Test User</span>
+        <span class="handle">@testuser</span>
+      </div>
+    </div>
+    <div class="tweet-text">Sample tweet with media. Click the image below to open the gallery.</div>
+    <div data-testid="tweet" style="margin-top: 8px;">
+      <div data-testid="tweetPhoto">
+        <img src="https://picsum.photos/seed/xeg-test/640/400.jpg" alt="test media" />
+      </div>
+    </div>
+    <div class="tweet-actions">
+      <span class="action-btn">💬 12</span>
+      <span class="action-btn">🔁 34</span>
+      <span class="action-btn">❤️ 567</span>
+      <span class="action-btn">📤</span>
+    </div>
+  </div>
+  <button class="auto-open-btn" id="autoOpenBtn">Auto-Open Gallery (via __XEG__)</button>
+  <p class="instructions">
+    Manual test: Click the image above to open the gallery overlay.<br>
+    Auto test: Click the button above to use the dev namespace.<br><br>
+    Within the gallery, click the gear icon (⚙) in the toolbar to open settings.
+  </p>
+
+<script>
+  // Override location for app detection
+  Object.defineProperty(window, 'location', {
+    value: {
+      hostname: 'x.com',
+      pathname: '/testuser/status/123',
+      origin: location.origin,
+      href: location.origin + '/testuser/status/123',
+    },
+    writable: true,
+    configurable: true,
+  });
+
+  // GM_* API mocks
+  const _storage = new Map();
+
+  window.GM_setValue = async (key, value) => { _storage.set(key, value); };
+  window.GM_getValue = (key, defaultValue) => _storage.has(key) ? _storage.get(key) : defaultValue;
+  window.GM_deleteValue = (key) => { _storage.delete(key); };
+  window.GM_listValues = () => Array.from(_storage.keys());
+  window.GM_download = (options) => {
+    console.log('[GM] download:', options.name, options.url ? options.url.substring(0, 50) + '...' : '(blob)');
+    if (options.onload) options.onload();
+  };
+  window.GM_notification = (text, title, image, onclick) => {
+    console.log('[GM] notification:', title, '-', typeof text === 'string' ? text : text.textContent);
+  };
+  window.GM_xmlhttpRequest = (details) => {
+    console.log('[GM] xhr:', details.method || 'GET', details.url);
+    return { abort: () => {} };
+  };
+  window.GM_cookie = (details, callback) => {
+    console.log('[GM] cookie:', details.action, details.name);
+    if (callback) callback({ name: details.name, value: 'mock' }, null);
+  };
+
+  // Auto-open gallery handler
+  document.getElementById('autoOpenBtn').addEventListener('click', () => {
+    if (window.__XEG__?.main?.galleryApp) {
+      const mockItems = [{
+        type: 'image',
+        thumbnailUrl: 'https://picsum.photos/seed/xeg-auto/640/400.jpg',
+        fullUrl: 'https://picsum.photos/seed/xeg-auto/1920/1080.jpg',
+        width: 1920,
+        height: 1080,
+      }];
+      window.__XEG__.main.galleryApp.openGallery(mockItems);
+    } else {
+      console.warn('[Test] __XEG__ namespace not found — make sure dev bundle is loaded.');
+      document.getElementById('autoOpenBtn').textContent = '__XEG__ not ready (use dev build)';
+    }
+  });
+
+  console.log('[XEG Test] GM_* mocks installed. Location: x.com');
+</script>
+<script src="../../dist/xcom-enhanced-gallery.user.js"></script>
+</body>
+</html>

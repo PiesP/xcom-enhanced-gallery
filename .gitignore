@@ -15,8 +15,6 @@ build/
 # TypeScript
 *.tsbuildinfo
 
-# Testing (test/ is a separate repository)
-test/
 coverage/
 
 # IDE

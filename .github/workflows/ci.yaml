@@ -54,6 +54,9 @@ jobs:
       - name: ✅ Run quality gate and build all targets
         run: pnpm verify
 
+      - name: 🧪 Run unit tests
+        run: pnpm test
+
       - name: 📊 Upload userscript artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'

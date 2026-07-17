@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "preinstall": "test -f packages/core/package.json || { echo '⚠️  Submodule not initialized. Run: git submodule update --init'; exit 1; }",
+    "preinstall": "test -f packages/core/package.json || { echo '\u26a0\ufe0f  Submodule not initialized. Run: git submodule update --init'; exit 1; }",
     "prebuild": "pnpm -s check-versions && pnpm -s quality",
     "prebuild:extension": "pnpm -s check-versions && pnpm -s quality",
     "prebuild:extension:firefox": "pnpm -s check-versions && pnpm -s quality",
@@ -18,8 +18,8 @@
     "package:extension": "npx tsx scripts/package-extension.ts",
     "package:all": "pnpm build:all && pnpm package:extension",
     "clean": "rimraf dist dist-extension dist-extension-firefox",
-    "mut": "cd test && npx stryker run stryker.conf.json --reporters=progress",
-    "mut:fast": "cd test && npx stryker run stryker.conf.json --reporters=progress --mutators=boolean,arithmetic,conditional-boundary,equality-operator,negate-conditional,string",
+    "mut": "npx stryker run --reporters=progress",
+    "mut:fast": "npx stryker run --reporters=progress --mutators=boolean,arithmetic,conditional-boundary,equality-operator,negate-conditional,string",
     "check:src": "tsc --noEmit",
     "check": "pnpm check:src",
     "check-versions": "node --experimental-strip-types scripts/check-versions.ts",
@@ -35,14 +35,13 @@
     "quality": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s circular && pnpm -s knip && pnpm -s quality:nose",
     "quality:ci": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s circular && pnpm -s knip && pnpm -s quality:nose",
     "quality:fix": "pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s check && pnpm -s circular && pnpm -s knip",
-    "quality:nose": "bash -c 'if command -v nose &>/dev/null; then nose query src --baseline .nose-baseline.json --fail-on new; else echo \"[nose] not installed — skipping\"; fi'",
+    "quality:nose": "bash -c 'if command -v nose &>/dev/null; then nose query src --baseline .nose-baseline.json --fail-on new; else echo \"[nose] not installed \u2014 skipping\"; fi'",
     "verify": "pnpm -s quality && pnpm build && pnpm build:extension && pnpm build:extension:firefox",
-    "test": "cd test && pnpm test",
-    "test:watch": "cd test && pnpm test:watch",
-    "test:cov": "cd test && pnpm test:cov",
-    "test:e2e": "cd test && pnpm e2e",
-    "test:e2e:headed": "cd test && pnpm e2e:headed",
-    "test:setup": "cd test && pnpm install"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
   },
   "keywords": [
     "userscript",
@@ -81,6 +80,12 @@
     "rimraf": "^6.1.3",
     "typescript": "7.0.2",
     "vite": "^8.1.4",
-    "vite-plugin-solid": "^2.11.12"
+    "vite-plugin-solid": "^2.11.12",
+    "@playwright/test": "^1.61.0",
+    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/vitest-runner": "^9.6.1",
+    "@vitest/coverage-v8": "^4.1.7",
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.7"
   }
 }
