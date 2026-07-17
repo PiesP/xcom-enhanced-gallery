@@ -27,15 +27,26 @@ import { LanguageService } from '@shared/services/language-service';
 let originalNavigatorLanguage: PropertyDescriptor | undefined;
 
 function setNavigatorLanguage(lang: string): void {
+  // Stub both navigator.language AND navigator.languages
+  // detectLanguage() checks navigator.languages[] first;
+  // jsdom provides navigator.languages as empty array by default
   Object.defineProperty(navigator, 'language', {
-    get: () => lang,
+    value: lang,
+    configurable: true,
+  });
+  Object.defineProperty(navigator, 'languages', {
+    value: [lang],
     configurable: true,
   });
 }
 
 function restoreNavigatorLanguage(): void {
   Object.defineProperty(navigator, 'language', {
-    get: () => 'en-US',
+    value: 'en-US',
+    configurable: true,
+  });
+  Object.defineProperty(navigator, 'languages', {
+    value: ['en-US'],
     configurable: true,
   });
 }
@@ -74,7 +85,7 @@ describe('LanguageService', () => {
     it('should detect "zh-cn" from region code "zh-CN"', () => {
       setNavigatorLanguage('zh-CN');
       service = new LanguageService();
-      expect(service.detectLanguage()).toBe('zh-cn');
+      expect(service.detectLanguage()).toBe('zh-CN');
     });
 
     it('should detect "es" from region code "es-ES"', () => {

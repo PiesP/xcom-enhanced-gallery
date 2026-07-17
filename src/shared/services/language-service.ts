@@ -9,6 +9,7 @@
 import {
   type BaseLanguageCode,
   isBaseLanguageCode,
+  LANGUAGE_CODES,
   type SupportedLanguage,
 } from '@shared/constants/i18n/language-types';
 import { createTranslator, DEFAULT_LANGUAGE } from '@shared/i18n/translator';
@@ -16,6 +17,12 @@ import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
 import { logger } from '@shared/logging/logger';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 import { createSingleton } from '@shared/services/singleton-base';
+
+/** Convert a lowercased locale to its canonical form from LANGUAGE_CODES. */
+function canonicalize(lower: string): BaseLanguageCode {
+  const match = LANGUAGE_CODES.find((code) => code.toLowerCase() === lower);
+  return match ?? DEFAULT_LANGUAGE;
+}
 
 export class LanguageService {
   private static readonly STORAGE_KEY = 'xeg-language';
@@ -71,21 +78,21 @@ export class LanguageService {
       const normalized = lang.toLowerCase();
 
       if (isBaseLanguageCode(normalized)) {
-        return normalized;
+        return canonicalize(normalized);
       }
 
       // Handle language-region codes (e.g., zh-CN)
       if (normalized.includes('-')) {
         const baseRegion = normalized.slice(0, 5); // e.g., "zh-CN"
         if (isBaseLanguageCode(baseRegion)) {
-          return baseRegion;
+          return canonicalize(baseRegion);
         }
       }
 
       // Fall back to base 2-letter code
       const baseLang = normalized.slice(0, 2);
       if (isBaseLanguageCode(baseLang)) {
-        return baseLang;
+        return canonicalize(baseLang);
       }
     }
 
