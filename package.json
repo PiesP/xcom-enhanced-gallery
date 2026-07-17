@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "preinstall": "test -f packages/core/package.json || (echo '⚠️  Submodule not initialized. Run: git submodule update --init' && exit 1)",
+    "preinstall": "test -f packages/core/package.json || { echo '⚠️  Submodule not initialized. Run: git submodule update --init'; exit 1; }",
     "prebuild": "pnpm -s check-versions && pnpm -s quality",
     "prebuild:extension": "pnpm -s check-versions && pnpm -s quality",
     "prebuild:extension:firefox": "pnpm -s check-versions && pnpm -s quality",
