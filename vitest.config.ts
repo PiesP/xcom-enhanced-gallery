@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const testDir = resolve(__dirname, ".");
-const srcDir = resolve(__dirname, "../src");
+const srcDir = resolve(__dirname, "src");
 
 export default defineConfig({
   define: { __DEV__: true },
