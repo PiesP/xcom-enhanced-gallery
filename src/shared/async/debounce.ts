@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { debounce } from '@piesp/browser-core/async';
 import { DEFAULT_DEBOUNCE_MS } from '@constants/performance';
+import { debounce } from '@piesp/browser-core/async';
 
 export type { DebouncedFunction } from '@piesp/browser-core/async';
 
