@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "preinstall": "test -f packages/core/package.json || { echo '\u26a0\ufe0f  Submodule not initialized. Run: git submodule update --init'; exit 1; }",
+    "preinstall": "test -f packages/core/package.json || { echo '⚠️  Submodule not initialized. Run: git submodule update --init'; exit 1; }",
     "prebuild": "pnpm -s check-versions && pnpm -s quality",
     "prebuild:extension": "pnpm -s check-versions && pnpm -s quality",
     "prebuild:extension:firefox": "pnpm -s check-versions && pnpm -s quality",
@@ -35,7 +35,7 @@
     "quality": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s circular && pnpm -s knip && pnpm -s quality:nose",
     "quality:ci": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s circular && pnpm -s knip && pnpm -s quality:nose",
     "quality:fix": "pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s check && pnpm -s circular && pnpm -s knip",
-    "quality:nose": "bash -c 'if command -v nose &>/dev/null; then nose query src --baseline .nose-baseline.json --fail-on new; else echo \"[nose] not installed \u2014 skipping\"; fi'",
+    "quality:nose": "bash -c 'if command -v nose &>/dev/null; then nose query src --baseline .nose-baseline.json --fail-on new; else echo \"[nose] not installed — skipping\"; fi'",
     "verify": "pnpm -s quality && pnpm build && pnpm build:extension && pnpm build:extension:firefox",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -70,22 +70,22 @@
   },
   "homepage": "https://github.com/PiesP/xcom-enhanced-gallery#readme",
   "dependencies": {
-    "solid-js": "^1.9.14",
-    "@piesp/browser-core": "file:./packages/core"
+    "@piesp/browser-core": "file:packages/core",
+    "solid-js": "^1.9.14"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.4",
-    "@types/node": "^26.1.1",
-    "knip": "^6.26.0",
-    "rimraf": "^6.1.3",
-    "typescript": "7.0.2",
-    "vite": "^8.1.4",
-    "vite-plugin-solid": "^2.11.12",
-    "@playwright/test": "^1.61.0",
+    "@playwright/test": "^1.61.1",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
-    "@vitest/coverage-v8": "^4.1.7",
+    "@types/node": "^26.1.1",
+    "@vitest/coverage-v8": "^4.1.9",
     "jsdom": "^29.1.1",
-    "vitest": "^4.1.7"
+    "knip": "^6.27.0",
+    "rimraf": "^6.1.3",
+    "typescript": "7.0.2",
+    "vite": "^8.1.5",
+    "vite-plugin-solid": "^2.11.12",
+    "vitest": "^4.1.10"
   }
 }
