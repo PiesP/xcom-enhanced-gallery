@@ -1,11 +1,7 @@
-name: 🚀 Release
++name: 🚀 Release
 
-# Responsibility: Publish tagged releases for userscript and browser extensions
-# - Build release assets from the tagged commit (userscript + Chrome + Firefox)
-# - Package extension ZIPs
-# - Generate checksums and metadata
-# - Deploy userscript to release branch and GitHub Releases
-# - Attach extension ZIPs to GitHub Releases
+# Responsibility: validate and publish tagged userscript and browser extension
+# releases. Validation runs independently; only publish can write repository state.
 #
 # Trigger: Tag push (v*)
 
@@ -20,17 +16,146 @@ env:
   NODE_VERSION: "26"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release:
-    name: 🚀 Publish Release
+  quality:
+    name: ✅ Release quality
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          submodules: true
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: ✅ Run quality gate
+        run: pnpm quality:ci
+
+  unit:
+    name: 🧪 Release unit + coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          submodules: true
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🧪 Run unit tests and coverage thresholds
+        run: pnpm test:cov
+
+  e2e:
+    name: 🎭 Release E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          submodules: true
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 🎭 Cache Playwright browsers
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🎭 Run E2E tests
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          pnpm test:e2e
+
+  duplication:
+    name: 🔍 Release duplication
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          submodules: true
+
+      - name: 🔧 Install nose
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/install-nose.sh
+
+      - name: 🔎 Check for new duplication
+        run: nose query src --baseline .nose-baseline.json --fail-on new
+
+  mutation:
+    name: 🧬 Release mutation
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          submodules: true
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🧬 Run mutation gate
+        run: pnpm mut:fast
+
+  build:
+    name: 🏗️ Build release package
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -52,200 +177,206 @@ jobs:
 
       - name: 📝 Determine version
         id: version
+        shell: bash
         run: |
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version from tag: $VERSION (expected X.Y.Z)"
+            exit 1
+          fi
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          if [[ "$PACKAGE_VERSION" != "$VERSION" ]]; then
+            echo "❌ Tag version $VERSION does not match package.json $PACKAGE_VERSION"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "📦 Release version: $VERSION"
 
       - name: 🏗️ Build all targets
         run: |
           set -euo pipefail
-          VERSION=${{ steps.version.outputs.version }}
+          VERSION="${{ steps.version.outputs.version }}"
 
-          # Sync manifest versions before build
           for manifest in extension/manifest.json extension/manifest.firefox.json; do
             if [ -f "$manifest" ]; then
-              jq ".version = \"$VERSION\"" "$manifest" > "$manifest.tmp" && mv "$manifest.tmp" "$manifest"
-              echo "Synced $manifest → $VERSION"
+              jq ".version = \"$VERSION\"" "$manifest" > "$manifest.tmp"
+              mv "$manifest.tmp" "$manifest"
             fi
           done
 
-          BUILD_VERSION=$VERSION pnpm build
-          BUILD_VERSION=$VERSION pnpm build:extension
-          BUILD_VERSION=$VERSION pnpm build:extension:firefox
+          BUILD_VERSION="$VERSION" pnpm build:all:ci
 
-          # Backup all dists for later steps
-          mkdir -p /tmp/dist-backup/dist
-          mkdir -p /tmp/dist-backup/extension-chrome
-          mkdir -p /tmp/dist-backup/extension-firefox
-          cp -r dist/* /tmp/dist-backup/dist/
-          cp -r dist-extension/* /tmp/dist-backup/extension-chrome/
-          cp -r dist-extension-firefox/* /tmp/dist-backup/extension-firefox/
+          mkdir -p release-bundle/deploy/dist release-bundle/release
+          cp -r dist/* release-bundle/deploy/dist/
+          cp -r dist/* release-bundle/release/
 
-          # Generate meta.js from userscript header
           awk 'BEGIN{p=0} /^\/\/ ==UserScript==/{p=1} {if(p) print} /^\/\/ ==\/UserScript==/{exit}' \
-            /tmp/dist-backup/dist/xcom-enhanced-gallery.user.js \
-            > /tmp/dist-backup/dist/xcom-enhanced-gallery.meta.js
+            dist/xcom-enhanced-gallery.user.js \
+            > release-bundle/release/xcom-enhanced-gallery.meta.js
 
-          # Create extension ZIPs
-          cd /tmp/dist-backup/extension-chrome && zip -r /tmp/dist-backup/extension-chrome.zip . && cd -
-          cd /tmp/dist-backup/extension-firefox && zip -r /tmp/dist-backup/extension-firefox.zip . && cd -
+          (
+            cd dist-extension
+            zip -qr "$GITHUB_WORKSPACE/release-bundle/release/xcom-enhanced-gallery-chrome.zip" .
+          )
+          (
+            cd dist-extension-firefox
+            zip -qr "$GITHUB_WORKSPACE/release-bundle/release/xcom-enhanced-gallery-firefox.zip" .
+          )
 
-          # List backed up files for verification
-          echo "📦 Built files:"
-          ls -la /tmp/dist-backup/dist/
-          echo ""
-          echo "📦 Extension ZIPs:"
-          ls -la /tmp/dist-backup/extension-chrome.zip /tmp/dist-backup/extension-firefox.zip
+          (
+            cd release-bundle/release
+            sha256sum \
+              xcom-enhanced-gallery.user.js \
+              xcom-enhanced-gallery.meta.js \
+              xcom-enhanced-gallery-chrome.zip \
+              xcom-enhanced-gallery-firefox.zip \
+              > checksums.txt
+          )
 
-      - name: 📦 Prepare release package
-        run: |
-          set -euo pipefail
-          mkdir -p release
-          cp /tmp/dist-backup/dist/xcom-enhanced-gallery.user.js release/
-          cp /tmp/dist-backup/dist/xcom-enhanced-gallery.meta.js release/
-          cp /tmp/dist-backup/extension-chrome.zip release/xcom-enhanced-gallery-chrome.zip
-          cp /tmp/dist-backup/extension-firefox.zip release/xcom-enhanced-gallery-firefox.zip
-
-          # Generate checksums for all release assets
-          cd release && sha256sum \
-            xcom-enhanced-gallery.user.js \
-            xcom-enhanced-gallery.meta.js \
-            xcom-enhanced-gallery-chrome.zip \
-            xcom-enhanced-gallery-firefox.zip \
-            > checksums.txt && cd ..
-
-          # Create metadata
-          cat > release/metadata.json << EOF
+          cat > release-bundle/release/metadata.json << EOF
           {
-            "version": "${{ steps.version.outputs.version }}",
+            "version": "$VERSION",
             "build_date": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
-            "commit": "${{ github.sha }}",
-            "node_version": "${{ env.NODE_VERSION }}"
+            "commit": "${GITHUB_SHA}",
+            "node_version": "${NODE_VERSION}"
           }
           EOF
 
-          # Extract changelog for current version
-          CHANGELOG_CONTENT=""
-          if [ -f "CHANGELOG.md" ]; then
-            CHANGELOG_CONTENT=$(awk -v ver="${{ steps.version.outputs.version }}" '
-              /^## \[/ {
-                if (found) exit;
-                if ($0 ~ "\\[" ver "\\]") {
-                  found=1;
-                  next;
-                }
+          CHANGELOG_CONTENT="$(awk -v ver="$VERSION" '
+            /^## \[/ {
+              if (found) exit;
+              if ($0 ~ "\\[" ver "\\]") {
+                found=1;
+                next;
               }
-              found { print }
-            ' CHANGELOG.md)
+            }
+            found { print }
+          ' CHANGELOG.md)"
+          if [[ -z "${CHANGELOG_CONTENT//[[:space:]]/}" ]]; then
+            echo "❌ CHANGELOG.md has no entry for version $VERSION"
+            exit 1
           fi
 
-          # Compute previous version for compare URL
           PREV_VERSION=$(
             {
-              printf '%s\n' "${{ steps.version.outputs.version }}"
+              printf '%s\n' "$VERSION"
               git tag --list 'v*' | sed 's/^v//'
-            } | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -u -V | awk -v ver="${{ steps.version.outputs.version }}" '
+            } | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -u -V | awk -v ver="$VERSION" '
               $0 == ver { print prev; exit }
               { prev = $0 }
             '
           )
-
           if [ -n "$PREV_VERSION" ]; then
-            PREV_TAG="v${PREV_VERSION}"
-            COMPARE_URL="https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${{ steps.version.outputs.version }}"
+            COMPARE_URL="https://github.com/${{ github.repository }}/compare/v${PREV_VERSION}...v${VERSION}"
           else
-            COMPARE_URL="https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.version }}"
+            COMPARE_URL="https://github.com/${{ github.repository }}/releases/tag/v${VERSION}"
           fi
 
-          cat > release/RELEASE_NOTES.md << EOF
-          # 🚀 Release v${{ steps.version.outputs.version }}
+          cat > release-bundle/RELEASE_NOTES.md << EOF
+          # 🚀 Release v${VERSION}
 
           ## 📥 Installation
 
           ### Userscript
 
-          **[📥 Click here to install](https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/xcom-enhanced-gallery.user.js)**
+          **[📥 Click here to install](https://github.com/${{ github.repository }}/releases/download/v${VERSION}/xcom-enhanced-gallery.user.js)**
 
           Requires [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/).
 
           ### Chrome / Edge / Brave Extension
 
-          1. Download \`xcom-enhanced-gallery-chrome.zip\` from the assets below
-          2. Navigate to \`chrome://extensions\`
-          3. Enable "Developer mode"
-          4. Drag and drop the ZIP file onto the page
+          1. Download `xcom-enhanced-gallery-chrome.zip`.
+          2. Navigate to `chrome://extensions`.
+          3. Enable Developer mode and load the ZIP.
 
           ### Firefox Extension
 
-          1. Download \`xcom-enhanced-gallery-firefox.zip\` from the assets below
-          2. Navigate to \`about:debugging#/runtime/this-firefox\`
-          3. Click "Load Temporary Add-on" → select the ZIP file
+          1. Download `xcom-enhanced-gallery-firefox.zip`.
+          2. Navigate to `about:debugging#/runtime/this-firefox`.
+          3. Select the ZIP with Load Temporary Add-on.
 
           ---
 
           ## 📝 What's Changed
 
-          ${CHANGELOG_CONTENT:-No changelog entry for this version.}
+          ${CHANGELOG_CONTENT}
 
           **[📋 Full Changelog](${COMPARE_URL})**
 
-          ---
-
           ## 📋 Build Details
 
-          - **Commit**: \`${{ github.sha }}\`
+          - **Commit**: \`${GITHUB_SHA}\`
           - **Built**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          - **Node.js**: \`${{ env.NODE_VERSION }}\`
+          - **Node.js**: \`${NODE_VERSION}\`
           EOF
 
+      - name: 📊 Upload release bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-bundle-${{ github.sha }}
+          path: release-bundle/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
+
+  publish:
+    name: 🏷️ Publish GitHub Release
+    needs: [quality, unit, e2e, duplication, mutation, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: 📥 Download release bundle
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-bundle-${{ github.sha }}
+          path: release-bundle
+
+      # Keep the existing /dist release-branch layout; the userscript URLs
+      # in this project intentionally point at /release/dist/.
       - name: 📤 Publish to release branch
         uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: release
-          publish_dir: /tmp/dist-backup/dist
+          publish_dir: release-bundle/deploy
           force_orphan: true
-
-      - name: 🔄 Purge jsDelivr CDN cache
-        run: |
-          set -euo pipefail
-          echo "🔄 Purging jsDelivr CDN cache..."
-
-          # Purge main userscript file
-          PURGE_URL_USER="https://purge.jsdelivr.net/gh/${{ github.repository }}@release/dist/xcom-enhanced-gallery.user.js"
-          echo "Purging: $PURGE_URL_USER"
-          curl -s "$PURGE_URL_USER" | jq '.' || echo "Purge request sent"
-
-          # Purge meta.js file
-          PURGE_URL_META="https://purge.jsdelivr.net/gh/${{ github.repository }}@release/dist/xcom-enhanced-gallery.meta.js"
-          echo "Purging: $PURGE_URL_META"
-          curl -s "$PURGE_URL_META" | jq '.' || echo "Purge request sent"
-
-          echo "✅ jsDelivr cache purge completed"
 
       - name: 🏷️ Create GitHub Release
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          body_path: release/RELEASE_NOTES.md
+          tag_name: ${{ github.ref_name }}
+          body_path: release-bundle/RELEASE_NOTES.md
           files: |
-            release/xcom-enhanced-gallery.user.js
-            release/xcom-enhanced-gallery.meta.js
-            release/xcom-enhanced-gallery-chrome.zip
-            release/xcom-enhanced-gallery-firefox.zip
-            release/checksums.txt
-            release/metadata.json
+            release-bundle/release/xcom-enhanced-gallery.user.js
+            release-bundle/release/xcom-enhanced-gallery.meta.js
+            release-bundle/release/xcom-enhanced-gallery-chrome.zip
+            release-bundle/release/xcom-enhanced-gallery-firefox.zip
+            release-bundle/release/checksums.txt
+            release-bundle/release/metadata.json
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📊 Upload release artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: release-v${{ steps.version.outputs.version }}
-          path: release/
-          if-no-files-found: error
-          retention-days: 30
+  purge-cdn:
+    name: 🔄 Purge jsDelivr CDN cache
+    needs: publish
+    if: ${{ needs.publish.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: 🔄 Purge userscript and metadata cache
+        run: |
+          set -euo pipefail
+          for asset in xcom-enhanced-gallery.user.js xcom-enhanced-gallery.meta.js; do
+            purge_url="https://purge.jsdelivr.net/gh/${{ github.repository }}@release/dist/${asset}"
+            purge_response="$(curl --fail --silent --show-error --location \
+              --proto '=https' --tlsv1.2 "$purge_url")"
+            echo "$purge_response" | jq -e '.success == true' >/dev/null
+          done

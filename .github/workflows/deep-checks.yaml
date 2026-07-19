@@ -1,0 +1,84 @@
++name: 🔬 Deep Verification
+
+# Responsibility: expensive checks that should not block quick PR feedback
+# - Mutation testing
+# - Duplication checking on integrated master, scheduled, or on demand
+#
+# Manual runs can select one check to conserve Actions minutes and runner
+# concurrency when investigating a single gate.
+
+# Security: All third-party actions pinned to full commit SHAs.
+
+on:
+  push:
+    branches: [master]
+  schedule:
+    - cron: "17 2 * * 0"
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: "Run all deep checks or one selected gate"
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - mutation
+          - duplication
+
+env:
+  NODE_VERSION: "26"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deep-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  duplication:
+    name: 🔍 Duplication
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.scope == 'all' || inputs.scope == 'duplication' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          submodules: true
+
+      - name: 🔧 Install nose
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/install-nose.sh
+
+      - name: 🔎 Check for new duplication
+        run: nose query src --baseline .nose-baseline.json --fail-on new
+
+  mutation:
+    name: 🧬 Mutation
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.scope == 'all' || inputs.scope == 'mutation' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          submodules: true
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🧬 Run mutation gate
+        run: pnpm mut:fast
+
