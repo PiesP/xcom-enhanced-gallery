@@ -51,6 +51,20 @@ const LANGUAGE_OPTIONS: readonly LanguageOption[] = [
 ] as const;
 
 /**
+ * Native-language display labels for each language option.
+ * Each language is shown in its own script, regardless of the current UI language.
+ */
+const LANGUAGE_NATIVE_LABELS: Record<LanguageOption, string> = {
+  auto: 'Auto',
+  en: 'English',
+  ko: '한국어',
+  ja: '日本語',
+  'zh-CN': '简体中文',
+  es: 'Español',
+  ar: 'العربية',
+};
+
+/**
  * Settings Controls Component
  *
  * Renders theme and language selection controls with reactive translations.
@@ -215,7 +229,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
             }
           >
             {LANGUAGE_OPTIONS.map((option) => (
-              <option value={option}>{strings().language.labels[option]}</option>
+              <option value={option}>{LANGUAGE_NATIVE_LABELS[option] ?? option}</option>
             ))}
           </select>
         </Tooltip>
