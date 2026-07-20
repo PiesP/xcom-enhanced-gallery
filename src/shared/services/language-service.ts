@@ -6,10 +6,10 @@
  * @description TDD-based simple i18n system with lazy language loading
  */
 
+import { detectLocale } from '@piesp/browser-core/locale';
 import {
   type BaseLanguageCode,
   isBaseLanguageCode,
-  LANGUAGE_CODES,
   type SupportedLanguage,
 } from '@shared/constants/i18n/language-types';
 import { createTranslator, DEFAULT_LANGUAGE } from '@shared/i18n/translator';
@@ -17,12 +17,6 @@ import type { TranslationKey, TranslationParams } from '@shared/i18n/types';
 import { logger } from '@shared/logging/logger';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 import { createSingleton } from '@shared/services/singleton-base';
-
-/** Convert a lowercased locale to its canonical form from LANGUAGE_CODES. */
-function canonicalize(lower: string): BaseLanguageCode {
-  const match = LANGUAGE_CODES.find((code) => code.toLowerCase() === lower);
-  return match ?? DEFAULT_LANGUAGE;
-}
 
 export class LanguageService {
   private static readonly STORAGE_KEY = 'xeg-language';
@@ -65,38 +59,15 @@ export class LanguageService {
     return this._initialized;
   }
   detectLanguage(): BaseLanguageCode {
-    // Priority: navigator.languages[] (ordered user preference) → navigator.language (fallback)
+    // Delegate to shared @piesp/browser-core/locale for unified browser detection
     const browserLangs =
       this._nav && 'languages' in this._nav && Array.isArray(this._nav.languages)
         ? (this._nav.languages as readonly string[])
         : this._nav && typeof this._nav.language === 'string'
-          ? [this._nav.language.toLowerCase()]
-          : [DEFAULT_LANGUAGE];
-
-    for (const lang of browserLangs) {
-      if (!lang) continue;
-      const normalized = lang.toLowerCase();
-
-      if (isBaseLanguageCode(normalized)) {
-        return canonicalize(normalized);
-      }
-
-      // Handle language-region codes (e.g., zh-CN)
-      if (normalized.includes('-')) {
-        const baseRegion = normalized.slice(0, 5); // e.g., "zh-CN"
-        if (isBaseLanguageCode(baseRegion)) {
-          return canonicalize(baseRegion);
-        }
-      }
-
-      // Fall back to base 2-letter code
-      const baseLang = normalized.slice(0, 2);
-      if (isBaseLanguageCode(baseLang)) {
-        return canonicalize(baseLang);
-      }
-    }
-
-    return DEFAULT_LANGUAGE;
+          ? [this._nav.language]
+          : undefined;
+    const result = detectLocale(browserLangs ? { languages: browserLangs } : {});
+    return result;
   }
 
   getCurrentLanguage(): SupportedLanguage {
