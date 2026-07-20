@@ -31,6 +31,7 @@ const __filename = fileURLToPath(import.meta.url);
 const DIST_DIR = resolve(__filename, '../../../../dist');
 const USERSCRIPT_PATH = resolve(DIST_DIR, 'xcom-enhanced-gallery.dev.user.js');
 const MOCK_PAGE_PATH = resolve(__filename, '../../fixtures/mock-gallery-page.html');
+const MOCK_HTML = readFileSync(MOCK_PAGE_PATH, 'utf8');
 
 /**
  * Install GM_* mock APIs on the page before userscript injection.
@@ -92,8 +93,13 @@ async function installGMMocks(page: Page): Promise<void> {
  * Setup: Navigate to mock page + install GM mocks + inject userscript.
  */
 async function setupGalleryPage(page: Page): Promise<void> {
-  const fileUrl = `file://${MOCK_PAGE_PATH}`;
-  await page.goto(fileUrl, { waitUntil: 'domcontentloaded', timeout: 15_000 });
+  await page.route('https://x.com/**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_HTML });
+  });
+  await page.route('https://x.com', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_HTML });
+  });
+  await page.goto('https://x.com', { waitUntil: 'domcontentloaded', timeout: 15_000 });
 
   // Install GM_* API mocks BEFORE userscript injection
   await installGMMocks(page);
@@ -233,7 +239,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await setupGalleryPage(page);
     await openGallery(page);
 
-    const items = page.locator('[data-xeg-role="gallery-item"]');
+    const items = page.locator('[role="listitem"]');
     const count = await items.count();
     expect(count).toBeGreaterThan(0);
 
@@ -251,7 +257,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await setupGalleryPage(page);
     await openGallery(page);
 
-    const images = page.locator('[data-xeg-role="gallery-item"] img');
+    const images = page.locator('[role="listitem"] img');
     const imgCount = await images.count();
     expect(imgCount).toBeGreaterThan(0);
 
@@ -269,7 +275,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await setupGalleryPage(page);
     await openGallery(page);
 
-    const videos = page.locator('[data-xeg-role="gallery-item"] video');
+    const videos = page.locator('[role="listitem"] video');
     const videoCount = await videos.count();
     expect(videoCount).toBeGreaterThan(0);
 
@@ -310,21 +316,19 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
-  test('document.body.inert=true when gallery is open', async ({ page }) => {
+  test('background content is hidden from assistive technology when gallery is open', async ({ page }) => {
     await setupGalleryPage(page);
 
-    const inertBefore = await page.evaluate(() => document.body.inert);
-    expect(inertBefore).toBe(false);
+    const outside = page.locator('main');
+    await expect(outside).not.toHaveAttribute('aria-hidden', 'true');
 
     await openGallery(page);
 
-    const inertAfterOpen = await page.evaluate(() => document.body.inert);
-    expect(inertAfterOpen).toBe(true);
+    await expect(outside).toHaveAttribute('aria-hidden', 'true');
 
     await closeGallery(page);
 
-    const inertAfterClose = await page.evaluate(() => document.body.inert);
-    expect(inertAfterClose).toBe(false);
+    await expect(outside).not.toHaveAttribute('aria-hidden', 'true');
   });
 
   test('Focus returns to page when gallery closes', async ({ page }) => {

@@ -42,7 +42,10 @@ export function userscriptPreset(options: UserscriptPresetOptions): UserConfig {
       minify: false,
       sourcemap: sourceMap,
       outDir: 'dist',
-      emptyOutDir: true,
+      // Development and production bundles use different filenames and are
+      // consumed together by the E2E suite. Keep both outputs when the two
+      // build modes run back-to-back; `pnpm clean` remains the explicit reset.
+      emptyOutDir: false,
       write: true,
       cssCodeSplit: false,
       cssMinify: cssCompress ? 'lightningcss' : false,

@@ -6,7 +6,7 @@
  *
  * Prepends the userscript header (metadata block) to the entry chunk,
  * prints build mode information, version, bundle size, and performs
- * a single-file bundle guard to ensure no unexpected files appear in dist/.
+ * a bundle guard to ensure no unexpected files appear in dist/.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -88,10 +88,11 @@ export function buildSummaryPlugin(opts: {
         // Bundle size reporting is best-effort; ignore read errors.
       }
 
-      // Single-file bundle guard: fail if unexpected files appear in dist/
+      // Production and development outputs may coexist for the E2E suite.
       const expectedFiles = new Set([
-        bundleName,
-        ...(config.sourceMap && config.sourceMap !== 'inline' ? [`${bundleName}.map`] : []),
+        OUTPUT_FILE_NAMES.prod,
+        OUTPUT_FILE_NAMES.dev,
+        `${OUTPUT_FILE_NAMES.dev}.map`,
         OUTPUT_FILE_NAMES.meta,
       ]);
       const actualDist = readdirSync('dist');

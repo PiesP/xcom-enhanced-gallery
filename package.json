@@ -23,7 +23,7 @@
     "build:all:ci": "pnpm -s check-versions && pnpm -s build:ci && pnpm -s build:extension:ci && pnpm -s build:extension:firefox:ci",
     "clean": "rimraf dist dist-extension dist-extension-firefox",
     "mut": "npx stryker run --reporters=progress",
-    "mut:fast": "npx stryker run --reporters=progress --mutators=boolean,arithmetic,conditional-boundary,equality-operator,negate-conditional,string",
+    "mut:fast": "npx stryker run stryker.conf.fast.json --reporters=progress",
     "check:src": "tsc --noEmit",
     "check": "pnpm check:src",
     "check-versions": "node --experimental-strip-types scripts/check-versions.ts",
@@ -44,8 +44,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e": "playwright test --config test/e2e/playwright.config.ts",
+    "test:e2e:headed": "playwright test --config test/e2e/playwright.config.ts --headed"
   },
   "keywords": [
     "userscript",

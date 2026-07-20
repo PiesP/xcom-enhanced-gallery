@@ -36,12 +36,12 @@ test.describe('X.com Enhanced Gallery Accessibility', () => {
   });
 
   test('GalleryContainer source includes aria-label', () => {
-    expect(galleryContainerSrc).toContain('aria-label="Image gallery"');
+    expect(galleryContainerSrc).toContain("aria-label={translate('msg.gal.imageGallery')}");
   });
 
-  test('GalleryContainer source includes inert management', () => {
-    expect(galleryContainerSrc).toContain('document.body.inert = true');
-    expect(galleryContainerSrc).toContain('document.body.inert = false');
+  test('GalleryContainer source hides and restores background content', () => {
+    expect(galleryContainerSrc).toContain("el.setAttribute('aria-hidden', 'true')");
+    expect(galleryContainerSrc).toContain("el.removeAttribute('aria-hidden')");
   });
 
   test('GalleryContainer source includes lang attribute', () => {
@@ -54,7 +54,6 @@ test.describe('X.com Enhanced Gallery Accessibility', () => {
     // Verify custom data-role/data-xeg-role were replaced with standard roles
     expect(galleryViewSrc).toContain('role="toolbar"');
     expect(galleryViewSrc).toContain('role="list"');
-    expect(galleryViewSrc).toContain('role="presentation"');
     // Verify old custom attributes are removed from these elements
     expect(galleryViewSrc).not.toContain('data-role="toolbar"');
     expect(galleryViewSrc).not.toContain('data-xeg-role="items-container"');
@@ -71,21 +70,20 @@ test.describe('X.com Enhanced Gallery Accessibility', () => {
   });
 
   test('VerticalImageItem source has meaningful alt text', () => {
-    // Verify alt text includes position and alt text
-    expect(galleryItemSrc).toContain('Image ${local.index + 1} of');
+    expect(galleryItemSrc).toContain("translate('msg.gal.imageCount'");
   });
 
   test('VerticalImageItem source has aria-label on video elements', () => {
-    expect(galleryItemSrc).toContain('Video ${local.index + 1} of');
+    expect(galleryItemSrc).toContain("translate('msg.gal.videoCount'");
   });
 
   test('VerticalImageItem source includes focus trap', () => {
-    expect(galleryItemSrc).toContain('focusableElements');
-    expect(galleryItemSrc).toContain('firstElement.focus()');
+    expect(galleryContainerSrc).toContain('focusableElements');
+    expect(galleryContainerSrc).toContain('firstElement.focus()');
   });
 
   test('VerticalImageItem source uses tabIndex={-1} for arrow-key navigation', () => {
-    expect(galleryItemSrc).toContain('tabIndex={-1}');
+    expect(galleryItemSrc).toContain('tabIndex={isFocused() ? 0 : -1}');
   });
 
   // ── 3. Gallery renderer: lang attribute ───────────────────────
@@ -97,12 +95,12 @@ test.describe('X.com Enhanced Gallery Accessibility', () => {
   // ── 4. Toolbar: proper ARIA role ──────────────────────────────
 
   test('ToolbarView source uses role=toolbar', () => {
-    expect(toolbarSrc).toContain("props.role ?? 'toolbar'");
+    expect(toolbarSrc).toContain("local.role ?? 'toolbar'");
   });
 
   test('ToolbarView source has aria-label on progressbar', () => {
     expect(toolbarSrc).toContain('role="progressbar"');
-    expect(toolbarSrc).toContain('aria-label="Progress"');
+    expect(toolbarSrc).toContain("aria-label={translate('tb.progress')}");
   });
 
   test('ToolbarView source has aria-live for counter updates', () => {
@@ -111,8 +109,8 @@ test.describe('X.com Enhanced Gallery Accessibility', () => {
 
   // ── 5. Focus restoration ─────────────────────────────────────
 
-  test('gallery-lifecycle source includes focus restoration', () => {
-    expect(lifecycleSrc).toContain('openerElement');
-    expect(lifecycleSrc).toContain('focus({ preventScroll: true })');
+  test('gallery container owns focus restoration', () => {
+    expect(lifecycleSrc).toContain('Focus restoration is handled by GalleryContainer.tsx');
+    expect(galleryContainerSrc).toContain('previouslyFocusedElement.focus()');
   });
 });

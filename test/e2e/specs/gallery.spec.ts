@@ -22,6 +22,8 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const DIST_DIR = resolve(__filename, '../../../../dist');
 const USERSCRIPT_PATH = resolve(DIST_DIR, 'xcom-enhanced-gallery.user.js');
+const MOCK_PAGE_PATH = resolve(__filename, '../../fixtures/mock-gallery-page.html');
+const MOCK_HTML = readFileSync(MOCK_PAGE_PATH, 'utf8');
 
 /**
  * Inject userscript bundle into the page via page.evaluate().
@@ -40,6 +42,13 @@ async function injectUserscript(page: Page): Promise<void> {
  * Setup: Install GM_* mocks + navigate to x.com + inject userscript.
  */
 async function setupGalleryPage(page: Page, url: string): Promise<void> {
+  await page.route('https://x.com/**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_HTML });
+  });
+  await page.route('https://x.com', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_HTML });
+  });
+
   // Navigate first so we can install mocks on the correct origin
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 });
 
