@@ -6,11 +6,13 @@ name: 🤖 Dependabot Auto-Merge
 # - Requires CI to pass first (via GitHub branch protection)
 # Note: test/ directory is managed in a separate repository
 #
-# Security: Uses pull_request for auto-merge capability.
-# Only reads dependency metadata and queues squash merges — no untrusted code execution.
+# Security: Uses pull_request_target for the write-scoped merge operation.
+# No pull-request code is checked out or executed.
 
 on:
-  pull_request:
+  # Target events are safe here because this workflow never checks out or runs
+  # pull-request code; it only reads Dependabot metadata and queues a merge.
+  pull_request_target:
     types: [opened, synchronize, reopened]
 
 permissions:
@@ -38,13 +40,14 @@ jobs:
 
       - name: 🔍 Decide merge eligibility
         id: decide
+        env:
+          ECOSYSTEM: ${{ steps.dependabot-metadata.outputs.package-ecosystem }}
+          UPDATE_TYPE: ${{ steps.dependabot-metadata.outputs.update-type }}
+          DEPENDENCIES: ${{ steps.dependabot-metadata.outputs.dependency-names }}
+          ALERT_STATE: ${{ steps.dependabot-metadata.outputs.alert-state }}
         run: |
           set -euo pipefail
 
-          ECOSYSTEM="${{ steps.dependabot-metadata.outputs.package-ecosystem }}"
-          UPDATE_TYPE="${{ steps.dependabot-metadata.outputs.update-type }}"
-          DEPENDENCIES="${{ steps.dependabot-metadata.outputs.dependency-names }}"
-          ALERT_STATE="${{ steps.dependabot-metadata.outputs.alert-state }}"
           SHOULD_MERGE="false"
           REASON="manual review required"
 

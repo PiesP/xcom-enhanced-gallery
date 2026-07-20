@@ -2,7 +2,7 @@ name: 🔒 Security Scanning
 
 # Responsibility: Security analysis for Node.js + pnpm project
 # - PR/merge queue gate: OSV diff scan
-# - Scheduled/manual depth: OSV full scan + Semgrep SARIF upload
+# - Scheduled/manual depth: OSV full scan + full-repository Semgrep SARIF upload
 #
 # Note: test/ directory is managed in a separate repository
 # Trigger: PR to master + merge queue + weekly schedule + manual
@@ -38,7 +38,7 @@ jobs:
       scan-args: |-
         -r
         --lockfile=pnpm-lock.yaml
-        ./
+        .
       # PR diff scans fail when a change introduces new vulnerabilities, replacing
       # the broken pnpm audit gate with a workflow-native regression check.
       fail-on-vuln: true
@@ -55,7 +55,7 @@ jobs:
       scan-args: |-
         -r
         --lockfile=pnpm-lock.yaml
-        ./
+        .
       # A scheduled/manual full scan is a release/security gate as well as a
       # reporting job. Keep newly disclosed advisories from being silently
       # accepted until a dependency update is prepared.
@@ -65,7 +65,7 @@ jobs:
     name: 🔍 Static Analysis (Semgrep)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' }}
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
     permissions:
       contents: read
       security-events: write
@@ -76,30 +76,22 @@ jobs:
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          submodules: true
+          persist-credentials: false
 
       - name: 🔍 Run Semgrep scan
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            # PR: diff scan on changed files only
-            semgrep scan \
-              --config=p/typescript \
-              --config=p/javascript \
-              --config=p/security-audit \
-              --config=p/secrets \
-              --error \
-              --sarif \
-              --output=semgrep.sarif
-          else
-            # Scheduled/manual: full repo scan
-            semgrep scan \
-              --config=p/typescript \
-              --config=p/javascript \
-              --config=p/security-audit \
-              --config=p/secrets \
-              --error \
-              --sarif \
-              --output=semgrep.sarif
-          fi
+          set -euo pipefail
+          semgrep scan \
+            --config=p/typescript \
+            --config=p/javascript \
+            --config=p/security-audit \
+            --config=p/secrets \
+            --error \
+            --sarif \
+            --output=semgrep.sarif \
+            .
 
       - name: 📊 Upload SARIF to GitHub Security
         uses: github/codeql-action/upload-sarif@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4

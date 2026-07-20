@@ -1,4 +1,4 @@
-+name: 🏗️ CI
+name: 🏗️ CI
 
 # Responsibility: fast, independent verification for pull requests and merge queue
 # - Run static quality checks

@@ -31,6 +31,11 @@ updates:
     # Auto-rebase to reduce merge conflicts
     rebase-strategy: "auto"
 
+    # Keep normal updates to direct dependencies; security updates remain
+    # governed by the OSV and Dependabot security-update paths.
+    allow:
+      - dependency-type: "direct"
+
     # Group updates by category to reduce PR noise
     groups:
       # Production dependency (only solid-js)

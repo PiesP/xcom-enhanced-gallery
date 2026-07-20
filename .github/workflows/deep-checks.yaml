@@ -1,4 +1,4 @@
-+name: 🔬 Deep Verification
+name: 🔬 Deep Verification
 
 # Responsibility: expensive checks that should not block quick PR feedback
 # - Mutation testing
@@ -81,4 +81,3 @@ jobs:
 
       - name: 🧬 Run mutation gate
         run: pnpm mut:fast
-
