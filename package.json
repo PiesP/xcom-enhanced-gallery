@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "preinstall": "test -f packages/core/package.json || { echo '\u26a0\ufe0f  Submodule not initialized. Run: git submodule update --init'; exit 1; }",
+    "preinstall": "test -f packages/core/package.json || { echo '⚠️  Submodule not initialized. Run: git submodule update --init'; exit 1; }",
     "prebuild": "pnpm -s check-versions && pnpm -s quality",
     "prebuild:extension": "pnpm -s check-versions && pnpm -s quality",
     "prebuild:extension:firefox": "pnpm -s check-versions && pnpm -s quality",
@@ -39,7 +39,7 @@
     "quality": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s check:i18n && pnpm -s circular && pnpm -s knip && pnpm -s quality:nose",
     "quality:ci": "pnpm -s fmt && pnpm -s lint && pnpm -s check && pnpm -s circular && pnpm -s knip && pnpm -s quality:nose",
     "quality:fix": "pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s check && pnpm -s circular && pnpm -s knip",
-    "quality:nose": "bash -c 'if command -v nose &>/dev/null; then nose query src --baseline .nose-baseline.json --fail-on new; else echo \"[nose] not installed \u2014 skipping\"; fi'",
+    "quality:nose": "bash -c 'if command -v nose &>/dev/null; then nose query src --baseline .nose-baseline.json --fail-on new; else echo \"[nose] not installed — skipping\"; fi'",
     "verify": "pnpm -s quality && pnpm -s build:all:ci",
     "test": "vitest run",
     "test:watch": "vitest",
