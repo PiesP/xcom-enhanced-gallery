@@ -26,9 +26,6 @@
   align-items: center;
   pointer-events: auto;
 
-  /* Performance */
-  will-change: transform;
-
   /* Defer off-screen rendering for gallery items below the fold.
      The browser automatically lays out and paints items as they scroll
      close to the viewport, avoiding work on far-off-screen items. */
@@ -62,6 +59,7 @@
   border-color: var(--xeg-border-emphasis, var(--xeg-color-border-strong));
   transition: var(--xeg-transition-interaction-fast);
   content-visibility: visible;
+  will-change: transform;
 }
 
 /* Active + Focus state - Remove duplication */
@@ -294,12 +292,14 @@
 /* Container width now fits content by default - no forced 100% width needed */
 /* Removed: .container:not([data-fit-mode="original"]) forced full width */
 
-/* Phase 254: Reduced motion is handled via semantic --xeg-transition-* tokens */
-/* Keep will-change set to auto as a performance default */
+/* Reduced motion: disable transforms and will-change for all states */
 @media (prefers-reduced-motion: reduce) {
   .container {
-    will-change: auto;
     transition: none;
+  }
+
+  .container.active {
+    will-change: auto;
   }
 
   .container:hover {
