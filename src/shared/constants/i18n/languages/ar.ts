@@ -27,11 +27,11 @@ export const ar: LanguageStrings = {
   },
   st: {
     th: 'المظهر',
-    lang: 'Language / 언어 / 言語 / Idioma / اللغة',
+    lang: 'اللغة',
     thAuto: 'تلقائي',
     thLt: 'فاتح',
     thDk: 'داكن',
-    langAuto: 'Auto / 자동 / 自動 / Auto / تلقائي',
+    langAuto: 'تلقائي',
     langKo: 'الكورية',
     langEn: 'الإنجليزية',
     langJa: 'اليابانية',

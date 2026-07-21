@@ -27,11 +27,11 @@ export const ko: LanguageStrings = {
   },
   st: {
     th: '테마',
-    lang: 'Language / 언어 / 言語 / Idioma / اللغة',
+    lang: '언어',
     thAuto: '자동',
     thLt: '라이트',
     thDk: '다크',
-    langAuto: 'Auto / 자동 / 自動 / Auto / تلقائي',
+    langAuto: '자동',
     langKo: '한국어',
     langEn: '영어',
     langJa: '일본어',

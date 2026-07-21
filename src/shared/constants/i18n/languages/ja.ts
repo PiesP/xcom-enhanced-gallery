@@ -27,11 +27,11 @@ export const ja: LanguageStrings = {
   },
   st: {
     th: 'テーマ',
-    lang: 'Language / 언어 / 言語 / Idioma / اللغة',
+    lang: '言語',
     thAuto: '自動',
     thLt: 'ライト',
     thDk: 'ダーク',
-    langAuto: 'Auto / 자동 / 自動 / Auto / تلقائي',
+    langAuto: '自動',
     langKo: '韓国語',
     langEn: '英語',
     langJa: '日本語',
