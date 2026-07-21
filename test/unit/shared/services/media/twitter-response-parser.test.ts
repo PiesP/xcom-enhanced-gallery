@@ -12,10 +12,7 @@ describe('twitter-response-parser (pure functions)', () => {
         media_url_https: 'https://pbs.twimg.com/media/ABC?format=jpg&name=large',
       } as any;
       const result = getHighQualityMediaUrl(media);
-      // getPhotoHighQualityUrl adds/replaces format and name params
       expect(result).toContain('format=jpg');
-      // Note: in jsdom environment, URLSearchParams.set may not replace existing values
-      // The important thing is the URL is returned with format param
       expect(result).not.toBeNull();
     });
 
@@ -94,6 +91,112 @@ describe('twitter-response-parser (pure functions)', () => {
       const result = getHighQualityMediaUrl(media);
       expect(result).toContain('format=jpeg');
       expect(result).toContain('name=orig');
+    });
+
+    // ── Additional edge cases ──
+
+    it('should handle photo with jpg extension', () => {
+      const media = {
+        type: 'photo',
+        media_url_https: 'https://pbs.twimg.com/media/ABC.jpg?name=large',
+      } as any;
+      const result = getHighQualityMediaUrl(media);
+      expect(result).toContain('format=jpg');
+      expect(result).toContain('name=orig');
+    });
+
+    it('should return null when media_url_https is undefined for photo', () => {
+      const media = { type: 'photo' } as any;
+      const result = getHighQualityMediaUrl(media);
+      expect(result).toBeNull();
+    });
+
+    it('should handle photo with empty media_url_https', () => {
+      const media = { type: 'photo', media_url_https: '' } as any;
+      const result = getHighQualityMediaUrl(media);
+      expect(result).toBe('');
+    });
+
+    it('should return null for video with empty variants array', () => {
+      const media = {
+        type: 'video',
+        video_info: { variants: [] },
+      } as any;
+      const result = getHighQualityMediaUrl(media);
+      expect(result).toBeNull();
+    });
+
+    it('should return null for video with missing video_info', () => {
+      const media = { type: 'video' } as any;
+      const result = getHighQualityMediaUrl(media);
+      expect(result).toBeNull();
+    });
+
+    it('should return null for animated_gif with empty variants', () => {
+      const media = {
+        type: 'animated_gif',
+        video_info: { variants: [] },
+      } as any;
+      const result = getHighQualityMediaUrl(media);
+      expect(result).toBeNull();
+    });
+
+    it('should handle photo with already-present format param', () => {
+      const media = {
+        type: 'photo',
+        media_url_https: 'https://pbs.twimg.com/media/ABC.jpg?format=jpg&name=orig',
+      } as any;
+      const result = getHighQualityMediaUrl(media);
+      expect(result).toContain('format=jpg');
+      expect(result).toContain('name=orig');
+    });
+
+    it('should handle photo with case-insensitive extension', () => {
+      const media = {
+        type: 'photo',
+        media_url_https: 'https://pbs.twimg.com/media/ABC.JPG?name=large',
+      } as any;
+      const result = getHighQualityMediaUrl(media);
+      expect(result).toContain('format=jpg');
+      expect(result).toContain('name=orig');
+    });
+
+    it('should handle video where all variants have undefined bitrate', () => {
+      const media = {
+        type: 'video',
+        video_info: {
+          variants: [
+            { content_type: 'video/mp4', url: 'https://video.twimg.com/vid.mp4' },
+            { content_type: 'video/mp4', url: 'https://video.twimg.com/vid2.mp4' },
+          ],
+        },
+      } as any;
+      const result = getHighQualityMediaUrl(media);
+      expect(result).toBe('https://video.twimg.com/vid.mp4');
+    });
+
+    it('should prefer higher bitrate over later position', () => {
+      const media = {
+        type: 'video',
+        video_info: {
+          variants: [
+            { content_type: 'video/mp4', bitrate: 100000, url: 'https://video.twimg.com/low.mp4' },
+            { content_type: 'video/mp4', bitrate: 500000, url: 'https://video.twimg.com/high.mp4' },
+            { content_type: 'video/mp4', bitrate: 256000, url: 'https://video.twimg.com/mid.mp4' },
+          ],
+        },
+      } as any;
+      const result = getHighQualityMediaUrl(media);
+      expect(result).toBe('https://video.twimg.com/high.mp4');
+    });
+
+    it('should handle malformed photo URL gracefully', () => {
+      const media = {
+        type: 'photo',
+        media_url_https: 'not-a-valid-url',
+      } as any;
+      const result = getHighQualityMediaUrl(media);
+      expect(result).not.toBeNull();
     });
   });
 });
