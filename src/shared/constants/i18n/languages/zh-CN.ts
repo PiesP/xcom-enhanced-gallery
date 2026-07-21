@@ -27,11 +27,11 @@ export const zhCn: LanguageStrings = {
   },
   st: {
     th: '主题',
-    lang: 'Language / 언어 / 言語 / Idioma / اللغة',
+    lang: '语言',
     thAuto: '自动',
     thLt: '浅色',
     thDk: '深色',
-    langAuto: 'Auto / 자동 / 自動 / Auto / تلقائي',
+    langAuto: '自动',
     langKo: '韩语',
     langEn: '英语',
     langJa: '日语',

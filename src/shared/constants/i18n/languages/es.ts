@@ -27,11 +27,11 @@ export const es: LanguageStrings = {
   },
   st: {
     th: 'Tema',
-    lang: 'Language / 언어 / 言語 / Idioma / اللغة',
+    lang: 'Idioma',
     thAuto: 'Automático',
     thLt: 'Claro',
     thDk: 'Oscuro',
-    langAuto: 'Auto / 자동 / 自動 / Auto / تلقائي',
+    langAuto: 'Automático',
     langKo: 'Coreano',
     langEn: 'Inglés',
     langJa: 'Japonés',
