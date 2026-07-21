@@ -62,9 +62,9 @@ describe('types/safety', () => {
     });
 
     it('should use default range [0, 1]', () => {
-      expect(clamp(0.5)).toBe(0.5);
-      expect(clamp(-1)).toBe(0);
-      expect(clamp(2)).toBe(1);
+      expect(clamp(0.5, 0, 1)).toBe(0.5);
+      expect(clamp(-1, 0, 1)).toBe(0);
+      expect(clamp(2, 0, 1)).toBe(1);
     });
 
     it('should handle NaN', () => {

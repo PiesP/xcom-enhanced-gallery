@@ -16,7 +16,7 @@ for (const file of ['extension/manifest.json', 'extension/manifest.firefox.json'
   const manifest = JSON.parse(content);
   if (manifest.version !== expected) {
     manifest.version = expected;
-    writeFileSync(full, JSON.stringify(manifest, null, 2) + '\n');
+    writeFileSync(full, `${JSON.stringify(manifest, null, 2)}\n`);
     console.log(`✓ Synced ${file} → v${expected}`);
     synced++;
   } else {
