@@ -115,19 +115,3 @@ updates:
     ignore:
       - dependency-name: "pnpm/action-setup"
         update-types: ["version-update:semver-major"]
-
-  - package-ecosystem: "gitsubmodule"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Asia/Seoul"
-    open-pull-requests-limit: 3
-    commit-message:
-      prefix: "chore(deps)"
-    labels:
-      - "dependencies"
-      - "automated"
-    reviewers:
-      - "PiesP"
