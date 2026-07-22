@@ -13,6 +13,7 @@ on:
         type: string
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -87,13 +88,21 @@ jobs:
           git -C packages/core checkout --detach "$CORE_SHA"
 
           UPDATED=false
+          BRANCH_CHANGED=false
           if ! git diff --quiet -- packages/core; then
             git add packages/core
             git commit -m "chore(deps): update browser-core to $SHORT_SHA"
             git push --set-upstream origin "$BRANCH"
             UPDATED=true
+            BRANCH_CHANGED=true
           elif [[ "$BRANCH_SYNCED" == true ]]; then
             git push --set-upstream origin "$BRANCH"
+            BRANCH_CHANGED=true
+          fi
+
+          if [[ "$BRANCH_CHANGED" == true ]]; then
+            gh workflow run "🏗️ CI" --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
+            gh workflow run "🔒 Security Scanning" --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
           fi
 
           OPEN_PR="$(gh pr list --state open --head "$BRANCH" --json number --jq '.[0].number // empty')"
