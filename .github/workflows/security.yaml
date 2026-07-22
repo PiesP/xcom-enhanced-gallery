@@ -43,9 +43,24 @@ jobs:
       # the broken pnpm audit gate with a workflow-native regression check.
       fail-on-vuln: true
 
+  osv-scan-dispatch:
+    name: 🛡️ OSV Vulnerability Scan (PR Diff)
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@9a498708959aeaef5ef730655706c5a1df1edbc2" # v2.3.8
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    with:
+      scan-args: |-
+        -r
+        --lockfile=pnpm-lock.yaml
+        .
+      fail-on-vuln: true
+
   osv-scan-full:
     name: 🛡️ OSV Vulnerability Scan (Full)
-    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'schedule' }}
     uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@9a498708959aeaef5ef730655706c5a1df1edbc2" # v2.3.8
     permissions:
       actions: read
