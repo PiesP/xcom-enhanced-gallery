@@ -28,6 +28,7 @@ env:
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: verify-${{ github.ref }}
@@ -195,3 +196,43 @@ jobs:
 
       - name: 🔎 Check for new duplication
         run: nose query src --baseline .nose-baseline.json --fail-on new
+
+  report-pr-gate-statuses:
+    name: Report PR gate statuses
+    if: ${{ always() && github.event_name == 'workflow_dispatch' }}
+    needs: [quality, unit, e2e, build, duplication]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish required commit statuses
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          UNIT_RESULT: ${{ needs.unit.result }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          DUPLICATION_RESULT: ${{ needs.duplication.result }}
+        run: |
+          set -euo pipefail
+
+          publish_status() {
+            local context="$1"
+            local result="$2"
+            local state=success
+            if [[ "$result" != "success" ]]; then
+              state=failure
+            fi
+
+            gh api --method POST \
+              "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+              -f "state=$state" \
+              -f "context=$context" \
+              -f "description=workflow_dispatch result: $result" \
+              -f "target_url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+              >/dev/null
+          }
+
+          publish_status "✅ Quality" "$QUALITY_RESULT"
+          publish_status "🧪 Unit + coverage" "$UNIT_RESULT"
+          publish_status "🎭 E2E" "$E2E_RESULT"
+          publish_status "🏗️ Build all targets" "$BUILD_RESULT"
+          publish_status "🔍 Duplication" "$DUPLICATION_RESULT"

@@ -20,6 +20,7 @@ permissions:
   actions: read
   contents: read
   security-events: write
+  statuses: write
 
 concurrency:
   group: security-${{ github.ref }}
@@ -147,3 +148,37 @@ jobs:
         if: always()
         with:
           sarif_file: semgrep.sarif
+
+  report-pr-gate-statuses:
+    name: Report PR gate statuses
+    if: ${{ always() && github.event_name == 'workflow_dispatch' }}
+    needs: [osv-scan-dispatch, semgrep]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish required commit statuses
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OSV_RESULT: ${{ needs.osv-scan-dispatch.result }}
+          SEMGREP_RESULT: ${{ needs.semgrep.result }}
+        run: |
+          set -euo pipefail
+
+          publish_status() {
+            local context="$1"
+            local result="$2"
+            local state=success
+            if [[ "$result" != "success" ]]; then
+              state=failure
+            fi
+
+            gh api --method POST \
+              "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+              -f "state=$state" \
+              -f "context=$context" \
+              -f "description=workflow_dispatch result: $result" \
+              -f "target_url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+              >/dev/null
+          }
+
+          publish_status "🛡️ OSV Vulnerability Scan (PR Diff) / osv-scan" "$OSV_RESULT"
+          publish_status "🔍 Static Analysis (Semgrep)" "$SEMGREP_RESULT"
