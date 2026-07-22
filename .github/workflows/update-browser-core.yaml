@@ -76,7 +76,12 @@ jobs:
           # protection does not leave a passing update PR behind master.
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          BRANCH_HEAD_BEFORE_SYNC="$(git rev-parse HEAD)"
           git merge --no-edit origin/master
+          BRANCH_SYNCED=false
+          if [[ "$(git rev-parse HEAD)" != "$BRANCH_HEAD_BEFORE_SYNC" ]]; then
+            BRANCH_SYNCED=true
+          fi
 
           git -C packages/core fetch --no-tags origin "$CORE_SHA"
           git -C packages/core checkout --detach "$CORE_SHA"
@@ -87,15 +92,21 @@ jobs:
             git commit -m "chore(deps): update browser-core to $SHORT_SHA"
             git push --set-upstream origin "$BRANCH"
             UPDATED=true
+          elif [[ "$BRANCH_SYNCED" == true ]]; then
+            git push --set-upstream origin "$BRANCH"
           fi
 
           OPEN_PR="$(gh pr list --state open --head "$BRANCH" --json number --jq '.[0].number // empty')"
           if [[ -n "$OPEN_PR" ]]; then
             if [[ "$UPDATED" == true ]]; then
               echo "Updated the existing browser-core PR to $SHORT_SHA."
-            elif git diff --quiet "origin/master...HEAD" -- .; then
-              gh pr close "$OPEN_PR" --comment "Closing this stale update PR because master already contains browser-core $SHORT_SHA."
-              echo "Closed stale browser-core update PR #$OPEN_PR."
+            elif git diff --quiet "origin/master...HEAD" -- . ':(exclude)packages/core'; then
+              if git diff --quiet "origin/master...HEAD" -- .; then
+                gh pr close "$OPEN_PR" --comment "Closing this stale update PR because master already contains browser-core $SHORT_SHA."
+                echo "Closed stale browser-core update PR #$OPEN_PR."
+              else
+                echo "Synchronized existing browser-core PR #$OPEN_PR with master."
+              fi
             else
               echo "::error::Open browser-core PR #$OPEN_PR has unrelated changes; leaving it open for manual review."
               exit 1
