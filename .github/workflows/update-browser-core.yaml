@@ -62,10 +62,12 @@ jobs:
 
           SHORT_SHA="${CORE_SHA:0:12}"
           BRANCH="automation/update-browser-core"
+          BRANCH_EXISTS=false
 
           if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
             git fetch origin "$BRANCH"
             git switch -C "$BRANCH" "origin/$BRANCH"
+            BRANCH_EXISTS=true
           else
             git switch -c "$BRANCH"
           fi
@@ -88,7 +90,7 @@ jobs:
             exit 0
           fi
 
-          if [[ "$UPDATED" != true ]]; then
+          if [[ "$UPDATED" != true && "$BRANCH_EXISTS" != true ]]; then
             echo "browser-core is already at $SHORT_SHA and no update PR is open."
             exit 0
           fi
