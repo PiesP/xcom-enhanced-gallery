@@ -9,7 +9,7 @@
  * a bundle guard to ensure no unexpected files appear in dist/.
  */
 
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import type { Plugin } from 'vite';
 import { generateUserscriptHeader, OUTPUT_FILE_NAMES } from '../utils/userscript';
@@ -79,10 +79,10 @@ export function buildSummaryPlugin(opts: {
       const bundleName = isDev ? OUTPUT_FILE_NAMES.dev : OUTPUT_FILE_NAMES.prod;
       const bundlePath = `dist/${bundleName}`;
       try {
-        const stats = statSync(bundlePath);
-        const gzipped = gzipSync(readFileSync(bundlePath)).length;
+        const bundle = readFileSync(bundlePath);
+        const gzipped = gzipSync(bundle).length;
         console.log(
-          `📦 Bundle: ${bundleName} — ${formatBytes(stats.size)} (gzip ${formatBytes(gzipped)})`
+          `📦 Bundle: ${bundleName} — ${formatBytes(bundle.length)} (gzip ${formatBytes(gzipped)})`
         );
       } catch {
         // Bundle size reporting is best-effort; ignore read errors.

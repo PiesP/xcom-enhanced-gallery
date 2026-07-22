@@ -37,8 +37,8 @@ export function cssInlinePlugin(): Plugin {
       const css = cssChunks.join('');
       if (!css.trim()) return;
 
-      const id = JSON.stringify(STYLE_ID);
-      const code = JSON.stringify(css);
+      const id = stringifyForScript(STYLE_ID);
+      const code = stringifyForScript(css);
       const injectionCode = `(function(){if(typeof document==='undefined')return;var e=document.getElementById(${id});if(!e){e=document.createElement('style');e.id=${id};document.head.appendChild(e);}e.textContent=${code};})();\n`;
 
       // Inject into ALL entry chunks (ES module lib mode may have multiple entries)
@@ -61,4 +61,15 @@ export function cssInlinePlugin(): Plugin {
       }
     },
   };
+}
+
+/** Serialize a string safely for JavaScript that may be embedded in HTML. */
+function stringifyForScript(value: string): string {
+  return JSON.stringify(value)
+    .replaceAll('<', '\\u003C')
+    .replaceAll('>', '\\u003E')
+    .replaceAll('&', '\\u0026')
+    .replaceAll('/', '\\u002F')
+    .replaceAll('\u2028', '\\u2028')
+    .replaceAll('\u2029', '\\u2029');
 }
