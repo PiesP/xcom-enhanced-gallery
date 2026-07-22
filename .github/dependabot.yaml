@@ -24,7 +24,6 @@ updates:
       prefix-development: "chore(deps-dev)"
     labels:
       - "dependencies"
-      - "automated"
     reviewers:
       - "PiesP"
 
@@ -100,9 +99,7 @@ updates:
     commit-message:
       prefix: "ci(deps)"
     labels:
-      - "ci"
       - "dependencies"
-      - "automated"
     reviewers:
       - "PiesP"
     groups:
