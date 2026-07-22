@@ -19,15 +19,15 @@ branches:
       # Status checks
       required_status_checks:
         strict: true # Require branches to be up to date before merging (prevents conflicts)
-        # Required status check names (must match exactly with workflow job names)
+        # Required ASCII commit-status contexts published by manual validation.
         contexts:
-          - "✅ Quality"
-          - "🏗️ Build all targets"
-          - "🧪 Unit + coverage"
-          - "🎭 E2E"
-          - "🔍 Duplication"
-          - "🛡️ OSV Vulnerability Scan (PR Diff) / osv-scan"
-          - "🔍 Static Analysis (Semgrep)"
+          - "pr-gate/quality"
+          - "pr-gate/build"
+          - "pr-gate/unit"
+          - "pr-gate/e2e"
+          - "pr-gate/duplication"
+          - "pr-gate/osv"
+          - "pr-gate/semgrep"
 
           # Scheduled-only checks are intentionally excluded from branch protection.
 
@@ -53,13 +53,13 @@ branches:
 #    ✅ Require status checks to pass before merging
 #       ✅ Require branches to be up to date before merging
 #       Add status checks (type each name exactly):
-#         - ✅ Quality
-#         - 🏗️ Build all targets
-#         - 🧪 Unit + coverage
-#         - 🎭 E2E
-#         - 🔍 Duplication
-#         - 🛡️ OSV Vulnerability Scan (PR Diff) / osv-scan
-#         - 🔍 Static Analysis (Semgrep)
+#         - pr-gate/quality
+#         - pr-gate/build
+#         - pr-gate/unit
+#         - pr-gate/e2e
+#         - pr-gate/duplication
+#         - pr-gate/osv
+#         - pr-gate/semgrep
 #
 #    ❌ Do not require reviews from Code Owners
 #    ❌ Do not require deployments to succeed

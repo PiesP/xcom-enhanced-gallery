@@ -180,5 +180,5 @@ jobs:
               >/dev/null
           }
 
-          publish_status "🛡️ OSV Vulnerability Scan (PR Diff) / osv-scan" "$OSV_RESULT"
-          publish_status "🔍 Static Analysis (Semgrep)" "$SEMGREP_RESULT"
+          publish_status "pr-gate/osv" "$OSV_RESULT"
+          publish_status "pr-gate/semgrep" "$SEMGREP_RESULT"
