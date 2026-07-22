@@ -26,7 +26,7 @@ branches:
           - "pr-gate/unit"
           - "pr-gate/e2e"
           - "pr-gate/duplication"
-          - "pr-gate/osv"
+          - "pr-gate/osv / osv-scan"
           - "pr-gate/semgrep"
 
           # Scheduled-only checks are intentionally excluded from branch protection.
@@ -58,7 +58,7 @@ branches:
 #         - pr-gate/unit
 #         - pr-gate/e2e
 #         - pr-gate/duplication
-#         - pr-gate/osv
+#         - pr-gate/osv / osv-scan
 #         - pr-gate/semgrep
 #
 #    ❌ Do not require reviews from Code Owners
