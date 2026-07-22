@@ -259,4 +259,35 @@ test.describe('X.com Enhanced Gallery Download Flow', () => {
       expect(isDisabled).toBe(false);
     }
   });
+
+  test('renders video media with native playback controls', async ({ page }) => {
+    await setupGalleryPage(page);
+
+    await page.evaluate(() => {
+      const galleryApp = (globalThis as any).__XEG__.main.galleryApp;
+      galleryApp.openGallery([
+        {
+          id: 'test_video_1',
+          url: 'https://video.twimg.com/ext_tw_video/example.mp4',
+          type: 'video',
+          filename: 'example.mp4',
+          tweetUsername: 'testuser',
+          tweetId: '1234567890',
+          tweetUrl: 'https://x.com/testuser/status/1234567890',
+          originalUrl: 'https://video.twimg.com/ext_tw_video/example.mp4',
+          thumbnailUrl: 'https://pbs.twimg.com/media/example.jpg?format=jpg&name=thumb',
+          alt: 'Example video',
+          width: 1280,
+          height: 720,
+          metadata: {},
+        },
+      ], 0);
+    });
+
+    const video = page.locator('[data-xeg-gallery-container] video');
+    await expect(video).toBeAttached();
+    await expect(video).toHaveAttribute('controls', '');
+    await expect(video).toHaveAttribute('aria-label', /Video 1 of 1/i);
+    await expect(video).toHaveAttribute('src', /example\.mp4/);
+  });
 });
