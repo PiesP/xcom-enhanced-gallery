@@ -74,6 +74,8 @@ jobs:
 
           # Keep the long-lived automation branch current so strict branch
           # protection does not leave a passing update PR behind master.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git merge --no-edit origin/master
 
           git -C packages/core fetch --no-tags origin "$CORE_SHA"
@@ -82,8 +84,6 @@ jobs:
           UPDATED=false
           if ! git diff --quiet -- packages/core; then
             git add packages/core
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git commit -m "chore(deps): update browser-core to $SHORT_SHA"
             git push --set-upstream origin "$BRANCH"
             UPDATED=true
