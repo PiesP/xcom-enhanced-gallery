@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   osv-scan-pr:
-    name: 🛡️ OSV Vulnerability Scan (PR Diff)
+    name: pr-gate/osv
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
     uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@9a498708959aeaef5ef730655706c5a1df1edbc2" # v2.3.8
     permissions:
@@ -45,7 +45,7 @@ jobs:
       fail-on-vuln: true
 
   osv-scan-dispatch:
-    name: 🛡️ OSV Vulnerability Scan (PR Diff) / osv-scan
+    name: pr-gate/osv / osv-scan
     if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -112,7 +112,7 @@ jobs:
           category: "/language:${{ matrix.language }}"
 
   semgrep:
-    name: 🔍 Static Analysis (Semgrep)
+    name: pr-gate/semgrep
     runs-on: ubuntu-latest
     timeout-minutes: 15
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
@@ -180,5 +180,5 @@ jobs:
               >/dev/null
           }
 
-          publish_status "pr-gate/osv" "$OSV_RESULT"
+          publish_status "pr-gate/osv / osv-scan" "$OSV_RESULT"
           publish_status "pr-gate/semgrep" "$SEMGREP_RESULT"
