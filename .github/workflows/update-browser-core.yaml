@@ -72,6 +72,10 @@ jobs:
             git switch -c "$BRANCH"
           fi
 
+          # Keep the long-lived automation branch current so strict branch
+          # protection does not leave a passing update PR behind master.
+          git merge --no-edit origin/master
+
           git -C packages/core fetch --no-tags origin "$CORE_SHA"
           git -C packages/core checkout --detach "$CORE_SHA"
 
@@ -99,7 +103,7 @@ jobs:
             exit 0
           fi
 
-          if [[ "$UPDATED" != true && "$BRANCH_EXISTS" != true ]]; then
+          if [[ "$UPDATED" != true ]] && git diff --quiet "origin/master...HEAD" -- .; then
             echo "browser-core is already at $SHORT_SHA and no update PR is open."
             exit 0
           fi
