@@ -111,6 +111,14 @@ async function getIndex(page: Page): Promise<number> {
   return v ? parseInt(v, 10) - 1 : -1;
 }
 
+function getPreviousButton(page: Page) {
+  return page.getByRole('button', { name: 'Previous' });
+}
+
+function getNextButton(page: Page) {
+  return page.getByRole('button', { name: 'Next' });
+}
+
 test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
   test.beforeAll(() => {
     if (!existsSync(USERSCRIPT_PATH)) throw new Error(`Build dev bundle first: ${USERSCRIPT_PATH}`);
@@ -190,6 +198,48 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     await page.keyboard.press('ArrowRight');
     await page.waitForTimeout(500);
     expect(await getIndex(page)).toBe(2);
+  });
+
+  test('toolbar previous/next buttons navigate and expose correct boundary state', async ({ page }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const previousButton = getPreviousButton(page);
+    const nextButton = getNextButton(page);
+
+    await expect(previousButton).toBeDisabled();
+    await expect(nextButton).toBeEnabled();
+    expect(await getIndex(page)).toBe(0);
+
+    await nextButton.click();
+    await expect.poll(() => getIndex(page)).toBe(1);
+    await expect(previousButton).toBeEnabled();
+    await expect(nextButton).toBeEnabled();
+
+    await nextButton.click();
+    await expect.poll(() => getIndex(page)).toBe(2);
+    await expect(previousButton).toBeEnabled();
+    await expect(nextButton).toBeDisabled();
+
+    await previousButton.click();
+    await expect.poll(() => getIndex(page)).toBe(1);
+  });
+
+  test('toolbar boundaries follow the item currently focused by scrolling', async ({ page }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const itemsContainer = page.locator('[role="list"]');
+    await itemsContainer.hover();
+    await page.mouse.wheel(0, 1600);
+
+    const toolbar = page.locator('[data-gallery-element="toolbar"]');
+    await expect(toolbar).toHaveAttribute('data-focused-index', '2');
+    await expect(getPreviousButton(page)).toBeEnabled();
+    await expect(getNextButton(page)).toBeDisabled();
+
+    await getPreviousButton(page).click();
+    await expect.poll(() => getIndex(page)).toBe(1);
   });
 
   test('Escape does not close gallery when editing form fields', async ({ page }) => {

@@ -81,12 +81,12 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
   const navState = createMemo(() => {
     const total = totalItems();
     const hasItems = total > 0;
-    const canNavigate = hasItems && total > 1;
+    const displayed = displayedIndex();
     const toolbarDisabled = local.disabled?.() ?? false;
     const downloadBusy = (local.isDownloading?.() ?? false) || toolbarState.isDownloading();
     return {
-      prevDisabled: toolbarDisabled || !canNavigate,
-      nextDisabled: toolbarDisabled || !canNavigate,
+      prevDisabled: toolbarDisabled || !hasItems || displayed <= 0,
+      nextDisabled: toolbarDisabled || !hasItems || displayed >= total - 1,
       canDownloadAll: total > 1,
       downloadDisabled: toolbarDisabled || downloadBusy || !hasItems,
       anyActionDisabled: toolbarDisabled,
