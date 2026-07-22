@@ -36,6 +36,7 @@ import type {
   IncomingMessage,
   ShowNotificationMessage,
 } from './extension-message-types';
+import { isValidIncomingMessage } from './message-validation';
 
 const log = createLogger('SW');
 
@@ -75,25 +76,6 @@ function toErrorResponse(error: unknown): ExtensionMessageResponse {
     success: false,
     error: error instanceof Error ? error.message : String(error),
   };
-}
-
-/**
- * Runtime type guard for incoming extension messages.
- * Validates that the message has a known type field before dispatching.
- * Without this, a malformed payload would surface as an opaque runtime error
- * (e.g., "Cannot read properties of undefined") rather than a graceful
- * error response via sendResponse.
- */
-function isValidIncomingMessage(message: unknown): message is IncomingMessage {
-  if (!message || typeof message !== 'object') return false;
-  const msg = message as Record<string, unknown>;
-  if (typeof msg.type !== 'string') return false;
-  const VALID_TYPES = new Set([
-    'DOWNLOAD_REQUEST',
-    'DOWNLOAD_BLOB_URL_REQUEST',
-    'SHOW_NOTIFICATION',
-  ]);
-  return VALID_TYPES.has(msg.type);
 }
 
 browserApi.runtime.onMessage.addListener(
