@@ -12,12 +12,12 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Asia/Seoul"
-      # Cooldown: wait 7 days after a package is released before creating a PR.
-      # This mitigates supply-chain attacks where malicious packages are typically
-      # detected and removed within days of publication.
-      cooldown:
-        default: 7
-        semver-patch: 3
+    # Cooldown: wait 7 days after a package is released before creating a PR.
+    # This mitigates supply-chain attacks where malicious packages are typically
+    # detected and removed within days of publication.
+    cooldown:
+      default-days: 7
+      semver-patch-days: 3
     open-pull-requests-limit: 5  # 4 groups; allow parallel group PRs
     commit-message:
       prefix: "chore(deps)"
@@ -89,12 +89,12 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Asia/Seoul"
-      # Cooldown: wait 7 days after a package is released before creating a PR.
-      # This mitigates supply-chain attacks where malicious packages are typically
-      # detected and removed within days of publication.
-      cooldown:
-        default: 7
-        semver-patch: 3
+    # Cooldown: wait 7 days after a package is released before creating a PR.
+    # This mitigates supply-chain attacks where malicious packages are typically
+    # detected and removed within days of publication.
+    cooldown:
+      default-days: 7
+      semver-patch-days: 3
     open-pull-requests-limit: 3  # Limit concurrent PRs
     commit-message:
       prefix: "ci(deps)"
