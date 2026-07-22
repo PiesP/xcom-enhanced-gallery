@@ -3,11 +3,14 @@
   "entry": ["src/main.ts", "src/extension/background.ts", "src/extension/content.ts"],
   "project": ["src/**/*.ts", "src/**/*.tsx"],
   "paths": {
+    "@bootstrap/*": ["src/bootstrap/*"],
+    "@constants/*": ["src/constants/*"],
+    "@extension/*": ["src/extension/*"],
     "@shared/*": ["src/shared/*"],
     "@features/*": ["src/features/*"],
-    "@platform/*": ["src/platform/*"]
+    "@platform/*": ["src/platform/*"],
+    "@main": ["src/main.ts"]
   },
   "ignore": ["src/platform/types.ts"],
-  "ignoreExportsUsedInFile": true,
-  "ignoreBinaries": ["e2e"]
+  "ignoreExportsUsedInFile": true
 }

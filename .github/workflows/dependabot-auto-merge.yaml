@@ -57,7 +57,7 @@ jobs:
           elif [[ "$ECOSYSTEM" == "github-actions" && ("$UPDATE_TYPE" == "version-update:semver-patch" || "$UPDATE_TYPE" == "version-update:semver-minor") ]]; then
             SHOULD_MERGE="true"
             REASON="safe github-actions patch/minor"
-          elif [[ "$ECOSYSTEM" == "npm" && ("$UPDATE_TYPE" == "version-update:semver-patch" || "$UPDATE_TYPE" == "version-update:semver-minor") ]]; then
+          elif [[ ("$ECOSYSTEM" == "npm" || "$ECOSYSTEM" == "npm_and_yarn") && ("$UPDATE_TYPE" == "version-update:semver-patch" || "$UPDATE_TYPE" == "version-update:semver-minor") ]]; then
             SAFE="true"
             IFS=',' read -ra DEPS <<< "$DEPENDENCIES"
             for dep in "${DEPS[@]}"; do

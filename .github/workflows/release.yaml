@@ -46,7 +46,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: ✅ Run quality gate
-        run: pnpm quality:ci
+        run: pnpm quality
 
   unit:
     name: 🧪 Release unit + coverage
