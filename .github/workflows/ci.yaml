@@ -231,8 +231,8 @@ jobs:
               >/dev/null
           }
 
-          publish_status "✅ Quality" "$QUALITY_RESULT"
-          publish_status "🧪 Unit + coverage" "$UNIT_RESULT"
-          publish_status "🎭 E2E" "$E2E_RESULT"
-          publish_status "🏗️ Build all targets" "$BUILD_RESULT"
-          publish_status "🔍 Duplication" "$DUPLICATION_RESULT"
+          publish_status "pr-gate/quality" "$QUALITY_RESULT"
+          publish_status "pr-gate/unit" "$UNIT_RESULT"
+          publish_status "pr-gate/e2e" "$E2E_RESULT"
+          publish_status "pr-gate/build" "$BUILD_RESULT"
+          publish_status "pr-gate/duplication" "$DUPLICATION_RESULT"
