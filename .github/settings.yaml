@@ -11,8 +11,8 @@ branches:
     protection:
       # Pull request reviews
       required_pull_request_reviews:
-        required_approving_review_count: 0 # Allow Dependabot auto-merge without approval
-        dismiss_stale_reviews: false
+        required_approving_review_count: 1
+        dismiss_stale_reviews: true
         require_code_owner_reviews: false
         require_last_push_approval: true
 
@@ -21,11 +21,13 @@ branches:
         strict: true # Require branches to be up to date before merging (prevents conflicts)
         # Required status check names (must match exactly with workflow job names)
         contexts:
-          # CI check (ci.yaml)
-          - "✅ Verify"
-
-          # Security gate (security.yaml)
-          - "🛡️ OSV Vulnerability Scan (PR Diff)"
+          - "✅ Quality"
+          - "🏗️ Build all targets"
+          - "🧪 Unit + coverage"
+          - "🎭 E2E"
+          - "🔍 Duplication"
+          - "🛡️ OSV Vulnerability Scan (PR Diff) / osv-scan"
+          - "🔍 Static Analysis (Semgrep)"
 
           # Scheduled-only checks are intentionally excluded from branch protection.
 
@@ -34,7 +36,7 @@ branches:
       required_linear_history: false # Allow merge commits
       allow_force_pushes: false # Prevent force pushes
       allow_deletions: false # Prevent branch deletion
-      required_conversation_resolution: false # Don't block on unresolved comments
+      required_conversation_resolution: true
       lock_branch: false # Allow pushes
       restrictions: null # No push restrictions (all collaborators can push)
 
@@ -46,13 +48,18 @@ branches:
 #
 # 3. Configure the following:
 #    ✅ Require a pull request before merging
-#       - Required approvals: 0 (for Dependabot auto-merge)
+#       - Required approvals: 1
 #
 #    ✅ Require status checks to pass before merging
 #       ✅ Require branches to be up to date before merging
 #       Add status checks (type each name exactly):
-#         - ✅ Verify
-#         - 🛡️ OSV Vulnerability Scan (PR Diff)
+#         - ✅ Quality
+#         - 🏗️ Build all targets
+#         - 🧪 Unit + coverage
+#         - 🎭 E2E
+#         - 🔍 Duplication
+#         - 🛡️ OSV Vulnerability Scan (PR Diff) / osv-scan
+#         - 🔍 Static Analysis (Semgrep)
 #
 #    ❌ Do not require reviews from Code Owners
 #    ❌ Do not require deployments to succeed
@@ -65,7 +72,7 @@ branches:
 # Verification:
 # - Create a test PR and ensure all required checks appear
 # - Verify that PR cannot be merged until all checks pass
-# - Confirm that Dependabot PRs can auto-merge without manual approval
+# - Confirm that PRs cannot auto-merge without one approval
 
 # Settings app note:
 # - If https://github.com/apps/settings is installed, this file can be applied directly.

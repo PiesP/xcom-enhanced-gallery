@@ -85,8 +85,17 @@ jobs:
             UPDATED=true
           fi
 
-          if [[ -n "$(gh pr list --state open --head "$BRANCH" --json number --jq '.[0].number')" ]]; then
-            echo "Updated the existing browser-core PR to $SHORT_SHA."
+          OPEN_PR="$(gh pr list --state open --head "$BRANCH" --json number --jq '.[0].number // empty')"
+          if [[ -n "$OPEN_PR" ]]; then
+            if [[ "$UPDATED" == true ]]; then
+              echo "Updated the existing browser-core PR to $SHORT_SHA."
+            elif git diff --quiet "origin/master...HEAD" -- .; then
+              gh pr close "$OPEN_PR" --comment "Closing this stale update PR because master already contains browser-core $SHORT_SHA."
+              echo "Closed stale browser-core update PR #$OPEN_PR."
+            else
+              echo "::error::Open browser-core PR #$OPEN_PR has unrelated changes; leaving it open for manual review."
+              exit 1
+            fi
             exit 0
           fi
 
