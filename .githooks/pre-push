@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+zero="0000000000000000000000000000000000000000"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/master|refs/heads/main) ;;
+    *) continue ;;
+  esac
+
+  if [[ "$local_sha" == "$zero" ]]; then
+    echo "Deleting the default branch is blocked." >&2
+    exit 1
+  fi
+
+  parents="$(git rev-list --parents -n 1 "$local_sha")"
+  parent_count=$(wc -w <<< "$parents")
+  if (( parent_count < 3 )); then
+    echo "Default-branch pushes must use a --no-ff merge commit." >&2
+    exit 1
+  fi
+
+  if [[ "$remote_sha" != "$zero" ]]; then
+    first_parent=$(awk '{print $2}' <<< "$parents")
+    if [[ "$first_parent" != "$remote_sha" ]]; then
+      echo "The --no-ff merge must be based on the current remote default branch." >&2
+      exit 1
+    fi
+  fi
+done
+

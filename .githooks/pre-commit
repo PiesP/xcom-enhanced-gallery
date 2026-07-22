@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+branch="$(git symbolic-ref --quiet --short HEAD || true)"
+git_dir="$(git rev-parse --git-dir)"
+
+# A no-ff merge commit is the only commit allowed while the default branch is checked out.
+if [[ -f "$git_dir/MERGE_HEAD" ]]; then
+  exit 0
+fi
+
+case "$branch" in
+  master|main)
+    echo "Direct commits on '$branch' are blocked. Create a codex/* work branch first." >&2
+    exit 1
+    ;;
+  "")
+    echo "Commits from a detached HEAD are blocked. Create a work branch first." >&2
+    exit 1
+    ;;
+esac
+
