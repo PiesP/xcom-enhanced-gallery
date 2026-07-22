@@ -36,7 +36,7 @@ concurrency:
 
 jobs:
   quality:
-    name: ✅ Quality
+    name: pr-gate/quality
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -61,7 +61,7 @@ jobs:
         run: pnpm quality
 
   unit:
-    name: 🧪 Unit + coverage
+    name: pr-gate/unit
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -86,7 +86,7 @@ jobs:
         run: pnpm test:cov
 
   e2e:
-    name: 🎭 E2E
+    name: pr-gate/e2e
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -124,7 +124,7 @@ jobs:
           pnpm test:e2e
 
   build:
-    name: 🏗️ Build all targets
+    name: pr-gate/build
     needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -180,7 +180,7 @@ jobs:
           compression-level: 9
 
   duplication:
-    name: 🔍 Duplication
+    name: pr-gate/duplication
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
