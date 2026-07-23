@@ -29,15 +29,143 @@ Security-sensitive issues should follow the dedicated process described in:
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) **26.x** or later (recommended via [Volta](https://volta.sh/))
-- [pnpm](https://pnpm.io/) **10.x** or later
+- [pnpm](https://pnpm.io/) **11.2.2** or later
 
 ### Local setup
 
 ```bash
-git clone https://github.com/PiesP/xcom-enhanced-gallery.git
+git clone --recurse-submodules https://github.com/PiesP/xcom-enhanced-gallery.git
 cd xcom-enhanced-gallery
+git submodule sync --recursive
+git submodule update --init --recursive
 pnpm install
 ```
+
+### Git workflow and the `browser-core` submodule
+
+This repository is the superproject for the shared `browser-core` package.
+`packages/core` is a Git submodule, so the root repository records an exact
+`browser-core` commit rather than a moving branch. The detached HEAD that is
+normal for a pinned submodule must not be treated as a broken checkout.
+
+For an existing clone, restore all submodules to the commits recorded by the
+current root commit with:
+
+```bash
+git submodule sync --recursive
+git submodule update --init --recursive
+git submodule status --recursive
+```
+
+Before changing a submodule, check both repositories independently:
+
+```bash
+git status --short
+git -C packages/core status --short --branch
+git diff --submodule=log -- packages/core
+```
+
+The leading character in `git submodule status` is useful when diagnosing a
+checkout: `-` means the submodule is not initialized, `+` means its checked-out
+commit differs from the root pointer, and `U` means the gitlink has a merge
+conflict.
+
+#### Updating the pinned dependency
+
+Do not run `git pull` inside `packages/core`; the submodule is intentionally
+checked out detached. To test the latest upstream `master` locally, first make
+sure the submodule has no uncommitted changes, then run:
+
+```bash
+git submodule update --remote --checkout packages/core
+git -C packages/core rev-parse HEAD
+```
+
+This changes the root worktree's gitlink. Stage it only when the dependency
+bump is intentional:
+
+```bash
+git add packages/core
+git diff --cached --submodule=log -- packages/core
+git commit -m "chore(deps): update browser-core to <short-sha>"
+```
+
+To pin a reviewed commit explicitly, fetch and detach at its full 40-character
+SHA instead of following a branch:
+
+```bash
+CORE_SHA=<full-browser-core-commit-sha>
+git -C packages/core fetch --no-tags origin "$CORE_SHA"
+git -C packages/core switch --detach "$CORE_SHA"
+git -C packages/core rev-parse --verify HEAD
+git add packages/core
+```
+
+The `Update browser-core` workflow uses this exact-SHA approach, opens a root
+repository pull request, and runs the normal root CI before the pointer is
+merged. Avoid creating a second manual bump while that automation pull request
+is open.
+
+#### Working on `browser-core` itself
+
+Changes to shared utilities belong in the `PiesP/browser-core` repository, not
+as ordinary files in this superproject. From the root repository, create a
+work branch in the submodule before editing it:
+
+```bash
+git -C packages/core fetch --no-tags origin master
+git -C packages/core switch --create codex/<topic> --track origin/master
+git -C packages/core config core.hooksPath .githooks
+```
+
+Run the core project's checks and submit its pull request there. After that
+pull request is merged into `browser-core` `master`, update this repository to
+the resulting full SHA and submit a separate root pull request containing only
+the gitlink change. Do not commit or push `browser-core` changes from the root
+repository.
+
+Local experiments may leave `packages/core` on a topic branch or a different
+detached commit. Keep those changes separate from the root dependency bump and
+do not run a submodule update while the submodule has uncommitted work. To
+return to the root commit's pinned version after the experiment, first preserve
+or discard the local work deliberately, then run:
+
+```bash
+git submodule update --init --checkout packages/core
+```
+
+When a root merge or rebase produces a submodule conflict, choose the intended
+`browser-core` commit, check that commit out detached in `packages/core`, and
+run `git add packages/core` to resolve the gitlink. Never edit the internal
+`.git/modules/packages/core` metadata to resolve a conflict.
+
+#### Git hooks
+
+The root repository and `browser-core` both version local Git hooks, but Git
+does not enable a repository's hook path automatically after cloning. Enable
+the guards separately when working in each repository:
+
+```bash
+git config core.hooksPath .githooks
+git -C packages/core config core.hooksPath .githooks
+```
+
+The hooks are local safeguards; hosted branch protection and pull requests are
+the authoritative policy. In particular, do not commit directly to either
+project's default branch or push a default-branch update that bypasses its
+required merge policy.
+
+When enabled, the hooks enforce these local checks:
+
+- `pre-commit` rejects commits from detached HEAD and direct commits on
+  `master`/`main`. It only permits completing an in-progress merge on a default
+  branch.
+- `pre-push` rejects deletion of a default branch and requires a pushed
+  default-branch update to be a two-parent `--no-ff` merge whose first parent is
+  the current remote tip.
+
+These hooks can be bypassed with Git options, so they complement rather than
+replace the hosted branch protection rules.
 
 #### Supply chain security controls
 
