@@ -6,6 +6,48 @@ The format follows the principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and the project
 roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [2.2.0] - 2026-07-23
+
+### Added
+
+- **VideoClickMode** — Unified video click handling with configurable modes (open gallery, play/pause, both) and precise control detection via composedPath.
+- **MV3 Firefox extension** — Firefox-compatible extension build with manifest v3 support.
+- **Platform abstraction hardening** — New download, notification, and HTTP request adapters with proper lifecycle management.
+- **Tooltip system** — Contextual tooltips for toolbar and gallery controls.
+
+### Fixed
+
+- **Gallery close-on-outside-click** — Restored close behavior when clicking outside the gallery overlay.
+- **Effect root leak** — Wired GalleryRenderer lifecycle to GalleryApp cleanup to prevent Solid.js effect root leaks.
+- **MV3 downloads** — Hardened download relay between content script and background service worker; fixed blob URL lifetime issues.
+- **Persistent storage** — Fixed `get()` returning `defaultValue` instead of actual stored string values for plain entries.
+- **Theme service leak** — Fixed event listener leak on re-initialization.
+- **Error boundary** — Added retry count limit to prevent infinite loops.
+- **SPA cleanup** — Proper lifecycle cleanup on client-side navigation.
+- **CSS z-index scaling** — Replaced absurd z-index values (2.1B+) with reasonable scale.
+- **i18n completeness** — Added missing translation keys across all locales; switched from position-based arrays to keyed object literals.
+- **Security** — Confirmed no innerHTML, eval, or new Function usage; URL safety validation is properly implemented.
+
+### Changed
+
+- **Media click detection** — Overhauled with composedPath-based video control detection, preciseVideoControlDetection option, and blockVideoControlClick setting.
+- **Selector SSOT** — Unified INTERNAL_SELECTORS and GALLERY_ELEMENT_SELECTORS as single source of truth.
+- **i18n structure** — Switched from position-based arrays to keyed object literals for safer translations.
+- **Deprecated GPU hacks** — Removed outdated translateZ(0) and backface-visibility CSS hacks.
+- **Code cleanup** — Removed ~370 lines of unnecessary code across 29 files; centralized gallery element selectors.
+- **CI structure** — Pinned all GitHub Actions to commit SHAs; split fast and deep verification workflows.
+- **Dependencies** — Updated @biomejs/biome to ^2.5.5; bumped Volta Node engine to 26.3.0; updated knip, vite, solid-js.
+
+### Performance
+
+- **requestIdleCallback** — Used rIC with timeout for non-critical operations; dedup key memoization; optimized queue index access.
+- **Shared IntersectionObserver pool** — Reduced redundant observer instances across gallery views.
+- **Batch updates** — Wrapped reactive state updates with batch() to minimize re-renders.
+- **Memo optimization** — Converted createMemo wrappers to direct getter calls.
+- **Service initialization** — Parallelized service startup to reduce application boot time.
+
 ## [2.1.2] - 2026-05-29
 
 ### Fixed

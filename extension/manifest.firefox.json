@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X.com Enhanced Gallery",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "Enhanced media gallery and download for X.com",
   "browser_specific_settings": {
     "gecko": {
@@ -9,7 +9,12 @@
       "strict_min_version": "128.0"
     }
   },
-  "permissions": ["downloads", "storage", "notifications", "activeTab"],
+  "permissions": [
+    "downloads",
+    "storage",
+    "notifications",
+    "activeTab"
+  ],
   "host_permissions": [
     "https://x.com/*",
     "https://twitter.com/*",
@@ -20,11 +25,18 @@
     "service_worker": "background.js",
     "type": "module"
   },
-  "content_scripts": [{
-    "matches": ["https://x.com/*", "https://twitter.com/*"],
-    "js": ["content.js"],
-    "run_at": "document_end"
-  }],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none';"
   },
