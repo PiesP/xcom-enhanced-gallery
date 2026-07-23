@@ -99,7 +99,7 @@ async function downloadWithAdapter(
   // Set up abort listener to race against the adapter download
   if (abortSignal) {
     return raceWithAbort(
-      adapter.download(url, filename).then(
+      adapter.download(url, filename, undefined, abortSignal).then(
         () => {
           reportProgress(options.onProgress, {
             phase: 'complete',
@@ -126,7 +126,7 @@ async function downloadWithAdapter(
   });
 
   try {
-    await adapter.download(url, filename);
+    await adapter.download(url, filename, undefined, abortSignal);
     reportProgress(options.onProgress, {
       phase: 'complete',
       current: 1,
@@ -193,7 +193,7 @@ async function downloadWithFetchFallback(
         });
 
         // Pass blob to adapter (which creates object URL and relays to background SW)
-        const downloadBlobPromise = adapter.downloadBlob(blob, filename);
+        const downloadBlobPromise = adapter.downloadBlob(blob, filename, abortSignal);
 
         // R6: Race adapter.downloadBlob against abort signal so cancellation
         // propagates when the user cancels after the fetch phase completes.
@@ -238,7 +238,7 @@ async function downloadWithFetchFallback(
         filename,
       });
 
-      await adapter.downloadBlob(blob, filename);
+      await adapter.downloadBlob(blob, filename, abortSignal);
 
       reportProgress(options.onProgress, {
         phase: 'complete',
@@ -262,7 +262,7 @@ async function downloadWithFetchFallback(
     // but this fallback ensures downloads work even when they don't.
     if (adapter.needsBlobFallback()) {
       try {
-        await adapter.download(url, filename);
+        await adapter.download(url, filename, undefined, abortSignal);
         reportProgress(options.onProgress, {
           phase: 'complete',
           current: 1,
@@ -289,8 +289,12 @@ async function downloadBlobWithAdapter(
   if (abortSignal?.aborted) return createAbortResult();
 
   try {
-    await adapter.downloadBlob(blob, filename);
-    return { success: true, filename };
+    const download = adapter.downloadBlob(blob, filename, abortSignal).then(
+      () => ({ success: true, filename }) satisfies SingleDownloadResult,
+      (error: unknown) => createErrorDownloadResult(error)
+    );
+    if (!abortSignal) return await download;
+    return await raceWithAbort(download, abortSignal, createAbortResult);
   } catch (error) {
     return createErrorDownloadResult(error);
   }

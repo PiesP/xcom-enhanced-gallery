@@ -61,15 +61,16 @@ export class SettingsService {
       throw new Error(`Failed to assign setting value for ${key}`);
     }
 
+    const timestamp = Date.now();
+    this.settings.lastModified = timestamp;
     this.notifyListeners({
       key,
       oldValue,
       newValue: value,
-      timestamp: Date.now(),
+      timestamp,
       status: 'success',
     });
     await this.persist();
-    this.settings.lastModified = Date.now();
   }
 
   public subscribe(listener: (event: SettingChangeEvent) => void): () => void {

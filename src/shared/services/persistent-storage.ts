@@ -12,6 +12,18 @@ const log = createLogger('PersistentStorage');
  * persistence layer that works across reloads.
  */
 const LS_FALLBACK_PREFIX = 'xeg-fallback:';
+const STORAGE_ENVELOPE_VERSION = 1;
+
+interface StoredValueEnvelope {
+  readonly __xegStorageEnvelope: typeof STORAGE_ENVELOPE_VERSION;
+  readonly updatedAt: number;
+  readonly value: unknown;
+}
+
+interface DecodedStoredValue {
+  readonly value: unknown;
+  readonly updatedAt: number | undefined;
+}
 
 function lsReadRaw(key: string): string | null {
   try {
@@ -37,6 +49,42 @@ function lsRemove(key: string): void {
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function encodeValue(value: unknown): string {
+  const envelope: StoredValueEnvelope = {
+    __xegStorageEnvelope: STORAGE_ENVELOPE_VERSION,
+    updatedAt: Date.now(),
+    value,
+  };
+  return JSON.stringify(envelope);
+}
+
+function decodeValue(raw: unknown): DecodedStoredValue | null {
+  let parsed: unknown = raw;
+  if (typeof raw === 'string') {
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  if (
+    isRecord(parsed) &&
+    parsed.__xegStorageEnvelope === STORAGE_ENVELOPE_VERSION &&
+    typeof parsed.updatedAt === 'number' &&
+    Object.hasOwn(parsed, 'value')
+  ) {
+    return { value: parsed.value, updatedAt: parsed.updatedAt };
+  }
+
+  // Accept values written before the envelope was introduced.
+  return { value: parsed, updatedAt: undefined };
+}
+
 export class PersistentStorage {
   private get adapter() {
     return getStorageAdapter();
@@ -48,7 +96,7 @@ export class PersistentStorage {
       return;
     }
 
-    const serialized = JSON.stringify(value);
+    const serialized = encodeValue(value);
     try {
       await this.adapter.set(key, serialized);
       // Primary write succeeded — clean up any stale fallback entry
@@ -68,39 +116,38 @@ export class PersistentStorage {
       // Adapter failed — try localStorage fallback from a previous failure
       return this.readFallbackOrDefault<T>(key, defaultValue);
     }
-    if (value === undefined || value === null) {
-      // Primary returned nothing — check localStorage fallback (written during
-      // a previous adapter failure; acts as a persistent backup mirror)
-      return this.readFallbackOrDefault<T>(key, defaultValue);
+
+    const primary = value === undefined || value === null ? null : decodeValue(value);
+    const fallback = this.readFallbackValue(key);
+
+    if (!primary) {
+      return (fallback?.value as T | undefined) ?? defaultValue;
     }
 
-    // MV3 stores raw objects; GM stores JSON strings via PersistentStorage.set().
-    // If value is already a non-string (object/array), return it directly.
-    if (typeof value !== 'string') {
-      return value as T;
+    // A primary write can fail while the adapter still returns its previous
+    // value on the next load. Prefer the newer fallback record in that case.
+    if (
+      fallback &&
+      fallback.updatedAt !== undefined &&
+      (primary.updatedAt === undefined || fallback.updatedAt > primary.updatedAt)
+    ) {
+      return fallback.value as T;
     }
 
-    try {
-      return JSON.parse(value) as T;
-    } catch {
-      return defaultValue;
-    }
+    return primary.value as T;
   }
 
   private readFallbackOrDefault<T>(key: string, defaultValue?: T): T | undefined {
+    return (this.readFallbackValue(key)?.value as T | undefined) ?? defaultValue;
+  }
+
+  private readFallbackValue(key: string): DecodedStoredValue | null {
     const raw = lsReadRaw(key);
-    if (raw !== null) {
-      try {
-        return JSON.parse(raw) as T;
-      } catch {
-        return defaultValue;
-      }
-    }
-    return defaultValue;
+    return raw === null ? null : decodeValue(raw);
   }
 
   async getString(key: string, defaultValue?: string): Promise<string | undefined> {
-    const value = await this.adapter.get<unknown>(key);
+    const value = await this.get<unknown>(key);
     if (value === undefined || value === null) return defaultValue;
     // L11: MV3 adapter may store raw objects; cast through String() for safety
     if (typeof value === 'string') return value;
@@ -132,11 +179,7 @@ export class PersistentStorage {
     try {
       const value = this.adapter.getSync<string>(key);
       if (value == null) return defaultValue;
-      try {
-        return JSON.parse(value) as T;
-      } catch {
-        return defaultValue;
-      }
+      return (decodeValue(value)?.value as T | undefined) ?? defaultValue;
     } catch {
       return defaultValue;
     }

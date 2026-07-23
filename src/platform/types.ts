@@ -18,8 +18,13 @@ export interface StorageAdapter {
 }
 
 export interface DownloadAdapter {
-  download(url: string, filename: string, headers?: Record<string, string>): Promise<void>;
-  downloadBlob(blob: Blob, filename: string): Promise<void>;
+  download(
+    url: string,
+    filename: string,
+    headers?: Record<string, string>,
+    signal?: AbortSignal
+  ): Promise<void>;
+  downloadBlob(blob: Blob, filename: string, signal?: AbortSignal): Promise<void>;
   /**
    * Whether the adapter requires a blob-based fallback for downloads.
    *

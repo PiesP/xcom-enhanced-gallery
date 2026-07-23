@@ -25,6 +25,8 @@ export default defineConfig({
     alias: {
       "@bootstrap": resolve(srcDir, "bootstrap"),
       "@constants": resolve(srcDir, "constants"),
+      "@extension": resolve(srcDir, "extension"),
+      "@extension/*": resolve(srcDir, "extension/*"),
       "@features": resolve(srcDir, "features"),
       "@platform": resolve(srcDir, "platform"),
       "@shared": resolve(srcDir, "shared"),

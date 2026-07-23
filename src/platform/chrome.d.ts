@@ -64,7 +64,19 @@ export interface ChromeStorageArea {
 
 export interface ChromeDownloadsModule {
   download(options: ChromeDownloadOptions): Promise<number>;
+  cancel(id: number): Promise<void>;
+  search(query: ChromeDownloadQuery, ...rest: unknown[]): Promise<ChromeDownloadItem[]>;
   onChanged: ChromeEvent<(delta: ChromeDownloadDelta) => void>;
+}
+
+export interface ChromeDownloadQuery {
+  readonly id?: number;
+}
+
+export interface ChromeDownloadItem {
+  readonly id: number;
+  readonly state?: string;
+  readonly error?: string;
 }
 
 export interface ChromeDownloadOptions {

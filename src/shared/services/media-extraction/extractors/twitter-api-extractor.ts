@@ -23,7 +23,7 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
   async extract(
     tweetInfo: TweetInfo,
     clickedElement: HTMLElement,
-    _options: MediaExtractionOptions,
+    options: MediaExtractionOptions,
     extractionId: string
   ): Promise<MediaExtractionResult> {
     try {
@@ -34,7 +34,7 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
       }
 
       // Step 1: Fetch media from API
-      const apiMedias = await getTweetMedias(tweetInfo.tweetId);
+      const apiMedias = await getTweetMedias(tweetInfo.tweetId, undefined, options.signal);
 
       if (!apiMedias || apiMedias.length === 0) {
         return createFailureResult(

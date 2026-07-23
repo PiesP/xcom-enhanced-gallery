@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { CSS } from '@constants/css';
+import { hideBackgroundElement, restoreBackgroundElement } from '@shared/dom/background-visibility';
 import { useTranslation } from '@shared/hooks/use-translation';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
@@ -145,7 +146,6 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
   let previousScrollRestoration: ScrollRestoration | null = null;
   let previouslyFocusedElement: HTMLElement | null = null;
   let hiddenBackgroundElements: HTMLElement[] = [];
-  const ariaHiddenRestore = new Map<HTMLElement, string | null>();
 
   createEffect(() => {
     if (!scrollRestoration) {
@@ -191,9 +191,7 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
         ) as HTMLElement[];
       }
       for (const el of hiddenBackgroundElements) {
-        // Save pre-existing value before overriding
-        ariaHiddenRestore.set(el, el.getAttribute('aria-hidden'));
-        el.setAttribute('aria-hidden', 'true');
+        hideBackgroundElement(el);
       }
 
       // A11y: Move focus into the dialog so keyboard trap receives events.
@@ -228,14 +226,8 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     }
     // A3: Restore background elements' accessibility state
     for (const el of hiddenBackgroundElements) {
-      const previous = ariaHiddenRestore.get(el);
-      if (previous === null || previous === undefined) {
-        el.removeAttribute('aria-hidden');
-      } else {
-        el.setAttribute('aria-hidden', previous);
-      }
+      restoreBackgroundElement(el);
     }
-    ariaHiddenRestore.clear();
     hiddenBackgroundElements = [];
     // Return focus to the element that was focused before the gallery opened
     if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {

@@ -70,7 +70,8 @@ export function isValidIncomingMessage(message: unknown): message is IncomingMes
         typeof payload.url === 'string' &&
         isAllowedUrl(payload.url) &&
         isSafeFilename(payload.filename) &&
-        isSafeHeaders(payload.headers)
+        isSafeHeaders(payload.headers) &&
+        (payload.requestId === undefined || isSafeText(payload.requestId, 128))
       );
     }
     case 'DOWNLOAD_BLOB_URL_REQUEST': {
@@ -81,9 +82,12 @@ export function isValidIncomingMessage(message: unknown): message is IncomingMes
         (payload.mimeType === undefined ||
           (typeof payload.mimeType === 'string' &&
             /^[A-Za-z0-9.+-]+\/[A-Za-z0-9.+-]+$/.test(payload.mimeType) &&
-            payload.mimeType.length <= 128))
+            payload.mimeType.length <= 128)) &&
+        (payload.requestId === undefined || isSafeText(payload.requestId, 128))
       );
     }
+    case 'DOWNLOAD_CANCEL_REQUEST':
+      return isSafeText(message.payload.requestId, 128);
     case 'SHOW_NOTIFICATION': {
       const payload = message.payload;
       return (

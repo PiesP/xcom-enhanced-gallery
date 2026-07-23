@@ -34,6 +34,7 @@ export interface DownloadRequestMessage {
     readonly url: string;
     readonly filename: string;
     readonly headers?: Record<string, string>;
+    readonly requestId?: string;
   };
 }
 
@@ -45,6 +46,14 @@ export interface DownloadBlobUrlRequestMessage {
     readonly filename: string;
     /** MIME type of the blob (e.g., 'image/jpeg', 'image/png'). */
     readonly mimeType?: string;
+    readonly requestId?: string;
+  };
+}
+
+export interface DownloadCancelRequestMessage {
+  readonly type: 'DOWNLOAD_CANCEL_REQUEST';
+  readonly payload: {
+    readonly requestId: string;
   };
 }
 
@@ -63,6 +72,7 @@ export interface ShowNotificationMessage {
 export type IncomingMessage =
   | DownloadRequestMessage
   | DownloadBlobUrlRequestMessage
+  | DownloadCancelRequestMessage
   | ShowNotificationMessage;
 
 // ── Response ──────────────────────────────────────────────────────────────────
