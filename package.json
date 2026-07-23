@@ -78,7 +78,7 @@
     "solid-js": "^1.9.14"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.4",
+    "@biomejs/biome": "^2.5.5",
     "@playwright/test": "^1.61.1",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
