@@ -27,6 +27,7 @@ import { isAllowedUrl } from '@shared/utils/url/url-safety';
 import { waitForDownloadComplete } from './download-completion';
 import type {
   DownloadBlobUrlRequestMessage,
+  DownloadCancelRequestMessage,
   DownloadRequestMessage,
   ExtensionMessageResponse,
   IncomingMessage,
@@ -35,6 +36,8 @@ import type {
 import { isValidIncomingMessage } from './message-validation';
 
 const log = createLogger('SW');
+const activeDownloadIds = new Map<string, number>();
+const cancelledRequestIds = new Set<string>();
 
 // ── Message handler ──────────────────────────────────────────────────────────
 
@@ -105,6 +108,13 @@ browserApi.runtime.onMessage.addListener(
         );
         return true;
 
+      case 'DOWNLOAD_CANCEL_REQUEST':
+        respondAsync(
+          () => handleDownloadCancelRequest(msg).then(() => ({ success: true })),
+          sendResponse
+        );
+        return true;
+
       case 'SHOW_NOTIFICATION':
         handleShowNotification(msg.payload);
         sendResponse({ success: true });
@@ -122,7 +132,7 @@ browserApi.runtime.onMessage.addListener(
 // ── Download handlers ────────────────────────────────────────────────────────
 
 async function handleDownloadRequest(message: DownloadRequestMessage): Promise<void> {
-  const { url, filename, headers } = message.payload;
+  const { url, filename, headers, requestId } = message.payload;
 
   if (!isAllowedUrl(url)) {
     throw new Error(`URL not in allowed whitelist: ${url}`);
@@ -142,11 +152,23 @@ async function handleDownloadRequest(message: DownloadRequestMessage): Promise<v
   }
 
   const downloadId = await browserApi.downloads.download(downloadOptions);
-  await waitForDownloadComplete(browserApi.downloads, downloadId);
+  if (requestId) {
+    activeDownloadIds.set(requestId, downloadId);
+    if (cancelledRequestIds.delete(requestId)) {
+      await browserApi.downloads.cancel(downloadId).catch(() => undefined);
+    }
+  }
+  try {
+    await waitForDownloadComplete(browserApi.downloads, downloadId);
+  } finally {
+    if (requestId && activeDownloadIds.get(requestId) === downloadId) {
+      activeDownloadIds.delete(requestId);
+    }
+  }
 }
 
 async function handleDownloadBlobUrlRequest(message: DownloadBlobUrlRequestMessage): Promise<void> {
-  const { objectUrl, filename } = message.payload;
+  const { objectUrl, filename, requestId } = message.payload;
   // The blob URL was created in the content script context via
   // URL.createObjectURL(). It persists with the page lifetime, so
   // we can safely await the download without worrying about the SW
@@ -156,10 +178,35 @@ async function handleDownloadBlobUrlRequest(message: DownloadBlobUrlRequestMessa
     filename,
     saveAs: false,
   });
+  if (requestId) {
+    activeDownloadIds.set(requestId, downloadId);
+    if (cancelledRequestIds.delete(requestId)) {
+      await browserApi.downloads.cancel(downloadId).catch(() => undefined);
+    }
+  }
   // Wait for download completion so errors propagate to the content script.
   // Unlike SW-created blob URLs which become invalid on SW termination,
   // content-script blob URLs remain valid as long as the page is open.
-  await waitForDownloadComplete(browserApi.downloads, downloadId);
+  try {
+    await waitForDownloadComplete(browserApi.downloads, downloadId);
+  } finally {
+    if (requestId && activeDownloadIds.get(requestId) === downloadId) {
+      activeDownloadIds.delete(requestId);
+    }
+  }
+}
+
+async function handleDownloadCancelRequest(message: DownloadCancelRequestMessage): Promise<void> {
+  const { requestId } = message.payload;
+  const downloadId = activeDownloadIds.get(requestId);
+  if (downloadId === undefined) {
+    // The cancel message can arrive before downloads.download() resolves.
+    // Remember it so the request is cancelled as soon as an ID is available.
+    cancelledRequestIds.add(requestId);
+    return;
+  }
+
+  await browserApi.downloads.cancel(downloadId).catch(() => undefined);
 }
 
 // ── Extension lifecycle ───────────────────────────────────────────────────────

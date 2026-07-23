@@ -148,6 +148,10 @@ export class MediaExtractionService implements MediaExtractor {
         });
       }
 
+      if (options.signal?.aborted) {
+        return createErrorResult('Extraction cancelled');
+      }
+
       if (!apiResult.success) {
         this.recordApiFailure();
       }
@@ -163,6 +167,10 @@ export class MediaExtractionService implements MediaExtractor {
         options,
         extractionId
       );
+
+      if (options.signal?.aborted) {
+        return createErrorResult('Extraction cancelled');
+      }
 
       if (domResult.success && domResult.mediaItems.length > 0) {
         return finalizeResult({

@@ -127,7 +127,11 @@ function createTweetEndpointUrl(tweetId: string, location?: LocationConfig): str
   });
 }
 
-async function apiRequest(url: string, location?: LocationConfig): Promise<TwitterAPIResponse> {
+async function apiRequest(
+  url: string,
+  location?: LocationConfig,
+  signal?: AbortSignal
+): Promise<TwitterAPIResponse> {
   const csrfToken = (await getCsrfTokenAsync()) ?? '';
   const authorization = resolveBearerToken();
 
@@ -152,6 +156,7 @@ async function apiRequest(url: string, location?: LocationConfig): Promise<Twitt
   const response = await httpService.get<TwitterAPIResponse>(url, {
     headers: Object.fromEntries(headers.entries()),
     responseType: 'json',
+    ...(signal ? { signal } : {}),
   });
 
   if (!response.ok) {
@@ -179,10 +184,11 @@ async function apiRequest(url: string, location?: LocationConfig): Promise<Twitt
  */
 export async function getTweetMedias(
   tweetId: string,
-  location?: LocationConfig
+  location?: LocationConfig,
+  signal?: AbortSignal
 ): Promise<TweetMediaEntry[]> {
   const url = createTweetEndpointUrl(tweetId, location);
-  const json = await apiRequest(url, location);
+  const json = await apiRequest(url, location, signal);
 
   if (!json.data?.tweetResult?.result) return [];
 

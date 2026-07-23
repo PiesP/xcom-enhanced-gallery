@@ -28,7 +28,12 @@
  */
 
 import { BLOB_URL_REVOKE_DELAY_MS } from '@constants/performance';
-import type { ExtensionMessageResponse } from '@extension/extension-message-types';
+import type {
+  DownloadBlobUrlRequestMessage,
+  DownloadRequestMessage,
+  ExtensionMessageResponse,
+} from '@extension/extension-message-types';
+import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
 import { browserApi } from './chrome-runtime';
 import type { DownloadAdapter } from './types';
 
@@ -47,37 +52,51 @@ function unwrapResponse(response: unknown): string | undefined {
   return typeof r.error === 'string' && r.error.length > 0 ? r.error : 'Download failed';
 }
 
+type DownloadMessage = DownloadRequestMessage | DownloadBlobUrlRequestMessage;
+
+function sendCancelRequest(requestId: string): void {
+  void browserApi.runtime
+    .sendMessage({
+      type: 'DOWNLOAD_CANCEL_REQUEST',
+      payload: { requestId },
+    })
+    .catch(() => undefined);
+}
+
 export class MV3DownloadAdapter implements DownloadAdapter {
   /** MV3 background SW cannot download twimg.com URLs directly — needs content-script fetch */
   needsBlobFallback(): boolean {
     return true;
   }
 
-  async download(url: string, filename: string, headers?: Record<string, string>): Promise<void> {
-    const response = (await browserApi.runtime.sendMessage({
-      type: 'DOWNLOAD_REQUEST',
-      payload: { url, filename, headers },
-    })) as ExtensionMessageResponse;
-    const error = unwrapResponse(response);
-    if (error) {
-      throw new Error(error);
-    }
+  async download(
+    url: string,
+    filename: string,
+    headers?: Record<string, string>,
+    signal?: AbortSignal
+  ): Promise<void> {
+    await this.sendDownloadRequest(
+      {
+        type: 'DOWNLOAD_REQUEST',
+        payload: { url, filename, ...(headers ? { headers } : {}) },
+      },
+      signal
+    );
   }
 
-  async downloadBlob(blob: Blob, filename: string): Promise<void> {
+  async downloadBlob(blob: Blob, filename: string, signal?: AbortSignal): Promise<void> {
     // URL.createObjectURL is unavailable in Service Workers — create in content script.
     // The object URL persists with the page lifetime, avoiding the SW termination
     // race condition that causes silent download failures with SW-created blob URLs.
     const objectUrl = URL.createObjectURL(blob);
     try {
-      const response = (await browserApi.runtime.sendMessage({
-        type: 'DOWNLOAD_BLOB_URL_REQUEST',
-        payload: { objectUrl, filename, mimeType: blob.type },
-      })) as ExtensionMessageResponse;
-      const error = unwrapResponse(response);
-      if (error) {
-        throw new Error(error);
-      }
+      await this.sendDownloadRequest(
+        {
+          type: 'DOWNLOAD_BLOB_URL_REQUEST',
+          payload: { objectUrl, filename, mimeType: blob.type },
+        },
+        signal
+      );
     } finally {
       // Delay revocation to avoid a race condition where Chrome's download
       // manager hasn't started reading the blob before the URL is revoked.
@@ -86,6 +105,45 @@ export class MV3DownloadAdapter implements DownloadAdapter {
       setTimeout(() => {
         URL.revokeObjectURL(objectUrl);
       }, BLOB_URL_REVOKE_DELAY_MS);
+    }
+  }
+
+  private async sendDownloadRequest(message: DownloadMessage, signal?: AbortSignal): Promise<void> {
+    const requestId = crypto.randomUUID();
+    const request = {
+      ...message,
+      payload: { ...message.payload, requestId },
+    } as DownloadMessage;
+
+    let rejectAbort: ((reason: unknown) => void) | null = null;
+    const abortPromise = signal
+      ? new Promise<never>((_, reject) => {
+          rejectAbort = reject;
+        })
+      : null;
+    const onAbort = (): void => {
+      sendCancelRequest(requestId);
+      rejectAbort?.(getUserCancelledAbortErrorFromSignal(signal));
+    };
+
+    signal?.addEventListener('abort', onAbort, { once: true });
+    try {
+      if (signal?.aborted) {
+        onAbort();
+        await abortPromise;
+        return;
+      }
+
+      const responsePromise = browserApi.runtime
+        .sendMessage(request)
+        .then((response) => response as ExtensionMessageResponse);
+      const response = await (abortPromise
+        ? Promise.race([responsePromise, abortPromise])
+        : responsePromise);
+      const error = unwrapResponse(response);
+      if (error) throw new Error(error);
+    } finally {
+      signal?.removeEventListener('abort', onAbort);
     }
   }
 }

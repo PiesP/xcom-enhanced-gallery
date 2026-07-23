@@ -13,6 +13,7 @@ import {
 } from '@shared/components/isolation/GalleryContainer';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import type { BaseLanguageCode, SupportedLanguage } from '@shared/constants/i18n/language-types';
+import { isHiddenByGallery, restoreBackgroundElement } from '@shared/dom/background-visibility';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import { getLanguageService } from '@shared/services/language-service';
@@ -82,17 +83,11 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'auto';
     }
-    // Remove aria-hidden only from elements that GalleryContainer would have
-    // targeted — body children that are NOT the gallery container itself.
-    // Using a targeted filter avoids stripping X.com's own aria-hidden from
-    // unrelated elements.
+    // Restore only markers written by GalleryContainer. This preserves any
+    // aria-hidden value that existed on the host page before the gallery.
     for (const el of Array.from(document.body.children)) {
-      if (
-        el instanceof HTMLElement &&
-        !el.hasAttribute('data-xeg-gallery-container') &&
-        !el.hasAttribute('data-renderer')
-      ) {
-        el.removeAttribute('aria-hidden');
+      if (el instanceof HTMLElement && isHiddenByGallery(el)) {
+        restoreBackgroundElement(el);
       }
     }
   };

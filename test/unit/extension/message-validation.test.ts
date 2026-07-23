@@ -61,4 +61,19 @@ describe('extension message validation', () => {
       })
     ).toBe(false);
   });
+
+  it('accepts cancellation messages with a bounded request id', () => {
+    expect(
+      isValidIncomingMessage({
+        type: 'DOWNLOAD_CANCEL_REQUEST',
+        payload: { requestId: 'download-request-1' },
+      })
+    ).toBe(true);
+    expect(
+      isValidIncomingMessage({
+        type: 'DOWNLOAD_CANCEL_REQUEST',
+        payload: { requestId: '' },
+      })
+    ).toBe(false);
+  });
 });

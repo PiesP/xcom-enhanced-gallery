@@ -7,6 +7,7 @@
 
 import { getNotificationAdapter } from '@platform/index';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
+import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 import { logger } from '@shared/logging/logger';
 import { getDownloadOrchestrator } from '@shared/services/download/download-orchestrator';
 import { getLanguageService } from '@shared/services/language-service';
@@ -90,7 +91,7 @@ export function createDownloadHandler() {
             ...(blob ? { blob } : {}),
             signal,
           });
-          if (!result.success) {
+          if (!result.success && result.error !== USER_CANCELLED_MESSAGE) {
             const error = result.error || 'Unknown error';
             const title = languageService.translate('msg.dl.one.err.t');
             const body = languageService.translate('msg.dl.one.err.b', { error });
@@ -118,6 +119,7 @@ export function createDownloadHandler() {
         });
 
         if (!result.success) {
+          if (result.code === 'CANCELLED') return;
           if (result.filesSuccessful === 0) {
             const title = languageService.translate('msg.dl.allFail.t');
             const body = languageService.translate('msg.dl.allFail.b');

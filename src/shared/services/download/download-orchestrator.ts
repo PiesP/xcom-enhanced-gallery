@@ -151,9 +151,17 @@ export class DownloadOrchestrator {
         const filename = plan.zipFilename;
 
         // Save ZIP using the download adapter
-        const saveResult = await this.saveWithDownloadAdapter(zipBlob, filename);
+        const saveResult = await this.saveWithDownloadAdapter(zipBlob, filename, mergedSignal);
 
         if (!saveResult.success) {
+          if (mergedSignal.aborted) {
+            return createErrorResponse(
+              normalizeErrorMessage(getUserCancelledAbortErrorFromSignal(mergedSignal)),
+              ErrorCode.CANCELLED,
+              items.length,
+              { filesSuccessful: result.filesSuccessful, failures: result.failures }
+            );
+          }
           return createErrorResponse(
             saveResult.error || 'Failed to save ZIP file',
             ErrorCode.ALL_FAILED,
@@ -216,11 +224,12 @@ export class DownloadOrchestrator {
    */
   private async saveWithDownloadAdapter(
     blob: Blob,
-    filename: string
+    filename: string,
+    signal?: AbortSignal
   ): Promise<{ success: boolean; error?: string }> {
     const adapter = getDownloadAdapter();
     try {
-      await adapter.downloadBlob(blob, filename);
+      await adapter.downloadBlob(blob, filename, signal);
       return { success: true };
     } catch (error) {
       return {
