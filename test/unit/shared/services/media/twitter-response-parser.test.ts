@@ -2,7 +2,12 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { describe, it, expect } from 'vitest';
-import { getHighQualityMediaUrl } from '@shared/services/media/twitter-parser/twitter-response-parser';
+import {
+  extractMediaFromTweet,
+  getHighQualityMediaUrl,
+  normalizeLegacyTweet,
+  normalizeLegacyUser,
+} from '@shared/services/media/twitter-parser/twitter-response-parser';
 
 describe('twitter-response-parser (pure functions)', () => {
   describe('getHighQualityMediaUrl', () => {
@@ -197,6 +202,124 @@ describe('twitter-response-parser (pure functions)', () => {
       } as any;
       const result = getHighQualityMediaUrl(media);
       expect(result).not.toBeNull();
+    });
+  });
+
+  describe('extractMediaFromTweet', () => {
+    it('extracts downloadable media in note-tweet inline order and removes short URLs', () => {
+      const photo = {
+        type: 'photo',
+        id_str: 'photo-1',
+        media_key: '3_1',
+        media_url_https: 'https://pbs.twimg.com/media/photo-1.jpg?name=large',
+        url: 'https://t.co/photo',
+        display_url: 'pic.x.com/photo',
+        ext_alt_text: '  sunset  ',
+        original_info: { width: 1920, height: 1080 },
+      };
+      const video = {
+        type: 'video',
+        id_str: 'video-1',
+        media_url_https: 'https://pbs.twimg.com/media/video-1.jpg',
+        url: 'https://t.co/video',
+        video_info: {
+          aspect_ratio: [16, 9],
+          variants: [
+            { content_type: 'video/mp4', bitrate: 256_000, url: 'https://video.twimg.com/low.mp4' },
+            { content_type: 'video/mp4', bitrate: 1_024_000, url: 'https://video.twimg.com/high.mp4' },
+          ],
+        },
+      };
+      const tweet = {
+        rest_id: 'tweet-1',
+        full_text: 'Look https://t.co/photo https://t.co/video',
+        extended_entities: { media: [video, photo] },
+        note_tweet: {
+          note_tweet_results: {
+            result: {
+              media: {
+                inline_media: [
+                  { media_id: 'photo-1', index: 0 },
+                  { media_id: 'video-1', index: 1 },
+                ],
+              },
+            },
+          },
+        },
+      } as any;
+
+      const entries = extractMediaFromTweet(tweet, { screen_name: 'alice' });
+
+      expect(entries).toHaveLength(2);
+      expect(entries.map((entry) => entry.media_id)).toEqual(['photo-1', 'video-1']);
+      expect(entries[0]).toMatchObject({
+        tweet_id: 'tweet-1',
+        screen_name: 'alice',
+        type: 'photo',
+        original_width: 1920,
+        original_height: 1080,
+        alt_text: 'sunset',
+        tweet_text: 'Look',
+        sourceLocation: 'original',
+      });
+      expect(entries[1]).toMatchObject({
+        type: 'video',
+        download_url: 'https://video.twimg.com/high.mp4',
+        aspect_ratio: [16, 9],
+      });
+    });
+
+    it('extracts media from a quoted tweet and marks its source location', () => {
+      const quoted = {
+        rest_id: 'quoted-1',
+        full_text: 'Quoted post',
+        extended_entities: {
+          media: [
+            {
+              type: 'photo',
+              id_str: 'quoted-photo',
+              media_url_https: 'https://pbs.twimg.com/media/quoted-photo.png',
+            },
+          ],
+        },
+      };
+      const tweet = { quoted_status_result: { result: quoted } } as any;
+
+      const entries = extractMediaFromTweet(tweet, { screen_name: 'bob' }, 'quoted');
+
+      expect(entries).toHaveLength(1);
+      expect(entries[0]).toMatchObject({
+        tweet_id: 'quoted-1',
+        media_id: 'quoted-photo',
+        sourceLocation: 'quoted',
+      });
+    });
+  });
+
+  describe('legacy normalization', () => {
+    it('promotes legacy tweet and user fields without mutating the input', () => {
+      const tweet = {
+        legacy: {
+          id_str: 'legacy-1',
+          full_text: 'Legacy text',
+          extended_entities: { media: [] },
+        },
+      } as any;
+      const user = {
+        legacy: { screen_name: 'legacy-user', name: 'Legacy User' },
+      } as any;
+
+      const normalizedTweet = normalizeLegacyTweet(tweet);
+      const normalizedUser = normalizeLegacyUser(user);
+
+      expect(normalizedTweet).toMatchObject({
+        id_str: 'legacy-1',
+        full_text: 'Legacy text',
+        extended_entities: { media: [] },
+      });
+      expect(normalizedUser).toMatchObject({ screen_name: 'legacy-user', name: 'Legacy User' });
+      expect(tweet.id_str).toBeUndefined();
+      expect(user.screen_name).toBeUndefined();
     });
   });
 });
