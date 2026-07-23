@@ -40,8 +40,8 @@ test.describe('X.com Enhanced Gallery Accessibility', () => {
   });
 
   test('GalleryContainer source hides and restores background content', () => {
-    expect(galleryContainerSrc).toContain("el.setAttribute('aria-hidden', 'true')");
-    expect(galleryContainerSrc).toContain("el.removeAttribute('aria-hidden')");
+    expect(galleryContainerSrc).toContain('hideBackgroundElement(el)');
+    expect(galleryContainerSrc).toContain('restoreBackgroundElement(el)');
   });
 
   test('GalleryContainer source includes lang attribute', () => {
