@@ -17,10 +17,7 @@ import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
 import { getGlobalErrorHandler } from '@shared/error/error-handler';
 import { logger } from '@shared/logging/logger';
-import {
-  getEventManager,
-  resetEventManagerForTests as resetEventManager,
-} from '@shared/services/event-manager';
+import { getEventManager } from '@shared/services/event-manager';
 import { getThemeService } from '@shared/services/theme-service';
 import type { BootstrapStage } from '@shared/types/lifecycle.types';
 import { TWITTER_HOSTS } from '@shared/utils/url/host';
@@ -48,6 +45,8 @@ const lifecycleState = {
   cleanupPromise: null as Promise<void> | null,
   galleryApp: null as GalleryLifecycleApp | null,
 };
+
+let navigationIntent = 0;
 
 function wireGlobalEvents(onBeforeUnload: () => void): () => void {
   const controller = new AbortController();
@@ -97,7 +96,7 @@ function setupDevNamespace(
 let globalEventTeardown: (() => void) | null = null;
 let bfcacheRecoveryTeardown: (() => void) | null = null;
 
-function tearDownGlobalEventHandlers(): void {
+function tearDownGlobalEventHandlers(options?: { preserveBFCacheRecovery?: boolean }): void {
   if (globalEventTeardown) {
     const teardown = globalEventTeardown;
     globalEventTeardown = null;
@@ -107,7 +106,7 @@ function tearDownGlobalEventHandlers(): void {
       __DEV__ && logger.debug('[events] teardown error', error);
     }
   }
-  if (bfcacheRecoveryTeardown) {
+  if (!options?.preserveBFCacheRecovery && bfcacheRecoveryTeardown) {
     const teardown = bfcacheRecoveryTeardown;
     bfcacheRecoveryTeardown = null;
     try {
@@ -122,6 +121,7 @@ function wireBFCacheRecovery(restart: () => Promise<void>): () => void {
   const controller = new AbortController();
   const handler: EventListener = (event: Event) => {
     if ((event as PageTransitionEvent).persisted) {
+      if (!isAllowedStartPage()) return;
       __DEV__ && logger.info('[bfcache] Page restored from BFCache, restarting app');
       (async () => {
         // Wait for any in-progress cleanup from pagehide to complete
@@ -144,7 +144,7 @@ function wireBFCacheRecovery(restart: () => Promise<void>): () => void {
 function setupGlobalEventHandlers(): void {
   tearDownGlobalEventHandlers();
   globalEventTeardown = wireGlobalEvents(() => {
-    lifecycleState.cleanupPromise = cleanup().catch((error) => {
+    void cleanup().catch((error) => {
       __DEV__ && logger.error('Cleanup failed', error);
     });
   });
@@ -202,8 +202,14 @@ async function initializeGallery(): Promise<void> {
   }
 }
 
-export async function cleanup(): Promise<void> {
+async function performCleanup(): Promise<void> {
   try {
+    const pendingStart = lifecycleState.startPromise;
+    if (pendingStart) {
+      await pendingStart.catch(() => undefined);
+    }
+
+    lifecycleState.started = false;
     __DEV__ && logger.info('Starting application cleanup');
 
     await runOptionalCleanup('gallery', async () => {
@@ -215,19 +221,20 @@ export async function cleanup(): Promise<void> {
       const ts = getThemeService();
       if (ts.isInitialized()) ts.destroy();
     });
-    tearDownGlobalEventHandlers();
+    // Keep the pageshow listener alive across pagehide so BFCache restoration
+    // can restart the application. setupGlobalEventHandlers replaces it only
+    // after the next successful bootstrap.
+    tearDownGlobalEventHandlers({ preserveBFCacheRecovery: true });
     await runOptionalCleanup('error-handler', () => getGlobalErrorHandler().destroy());
     clearSettings();
-    resetEventManager();
 
     if (__DEV__) {
       const remaining = getEventManager().getListenerStatus();
-      if (remaining > 0) {
+      if (remaining > 0 && !bfcacheRecoveryTeardown) {
         logger.warn('[cleanup] uncleared listeners remain:', remaining);
       }
     }
 
-    lifecycleState.started = false;
     __DEV__ && logger.info('Application cleanup complete');
   } catch (error) {
     bootstrapErrorReporter.error(error, { code: 'CLEANUP_FAILED' });
@@ -235,9 +242,30 @@ export async function cleanup(): Promise<void> {
   }
 }
 
+export function cleanup(): Promise<void> {
+  if (lifecycleState.cleanupPromise) return lifecycleState.cleanupPromise;
+
+  let cleanupRun: Promise<void>;
+  cleanupRun = performCleanup().then(
+    () => {
+      if (lifecycleState.cleanupPromise === cleanupRun) lifecycleState.cleanupPromise = null;
+    },
+    (error: unknown) => {
+      if (lifecycleState.cleanupPromise === cleanupRun) lifecycleState.cleanupPromise = null;
+      throw error;
+    }
+  );
+  lifecycleState.cleanupPromise = cleanupRun;
+  return cleanupRun;
+}
+
 export async function startApplication(): Promise<void> {
   if (lifecycleState.startPromise) return lifecycleState.startPromise;
   if (lifecycleState.started) return;
+  if (lifecycleState.cleanupPromise) {
+    await lifecycleState.cleanupPromise;
+    return startApplication();
+  }
 
   lifecycleState.startPromise = (async () => {
     __DEV__ && logger.info('Starting X.com Enhanced Gallery...');
@@ -281,14 +309,47 @@ const EXCLUDED_PATH_PREFIXES = [
 ] as const;
 
 export function isAllowedStartPage(): boolean {
-  const hostname = location.hostname.toLowerCase();
+  return isAllowedStartUrl(location.href);
+}
+
+export function isAllowedStartUrl(value: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(value, location.href);
+  } catch {
+    return false;
+  }
+
+  const hostname = url.hostname.toLowerCase();
   const allowed = (TWITTER_HOSTS as unknown as readonly string[]).some(
     (h) => hostname === h || hostname.endsWith(`.${h}`)
   );
   if (!allowed) return false;
 
-  const path = location.pathname;
+  const path = url.pathname;
   return !EXCLUDED_PATH_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
+
+function reconcileApplication(allowed: boolean): void {
+  const intent = ++navigationIntent;
+
+  if (allowed) {
+    if (lifecycleState.started && !lifecycleState.cleanupPromise) return;
+    void (async () => {
+      if (lifecycleState.cleanupPromise) await lifecycleState.cleanupPromise;
+      if (intent !== navigationIntent) return;
+      await startApplication();
+    })().catch((error) => {
+      __DEV__ && logger.error('Application failed to start after navigation', error);
+    });
+    return;
+  }
+
+  if (lifecycleState.started || lifecycleState.startPromise) {
+    void cleanup().catch((error) => {
+      __DEV__ && logger.error('Application cleanup failed after navigation', error);
+    });
+  }
 }
 
 if (isAllowedStartPage()) {
@@ -302,28 +363,14 @@ if (isAllowedStartPage()) {
 // if the user navigates from /settings to timeline via SPA, the gallery
 // would never start. This listener catches SPA route changes.
 if (typeof navigation !== 'undefined') {
-  navigation.addEventListener('navigate', () => {
-    if (isAllowedStartPage() && !lifecycleState.started) {
-      void startApplication().catch((error) => {
-        __DEV__ && logger.error('Application failed to start (SPA nav)', error);
-      });
-    } else if (!isAllowedStartPage() && lifecycleState.started) {
-      void cleanup().catch((error) => {
-        __DEV__ && logger.error('Application cleanup failed (SPA nav away)', error);
-      });
-    }
+  navigation.addEventListener('navigate', (event: Event) => {
+    const destination = (event as Event & { destination?: { url?: string } }).destination?.url;
+    if (!destination) return;
+    reconcileApplication(isAllowedStartUrl(destination));
   });
 } else {
   // Fallback for browsers without Navigation API
   window.addEventListener('popstate', () => {
-    if (isAllowedStartPage() && !lifecycleState.started) {
-      void startApplication().catch((error) => {
-        __DEV__ && logger.error('Application failed to start (popstate)', error);
-      });
-    } else if (!isAllowedStartPage() && lifecycleState.started) {
-      void cleanup().catch((error) => {
-        __DEV__ && logger.error('Application cleanup failed (popstate away)', error);
-      });
-    }
+    reconcileApplication(isAllowedStartPage());
   });
 }

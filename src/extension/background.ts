@@ -20,15 +20,11 @@
  * Content scripts send messages here and receive progress/completion updates.
  */
 
-import { DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
-import type {
-  ChromeDownloadDelta,
-  ChromeDownloadOptions,
-  ChromeInstalledDetails,
-} from '@platform/chrome.d.ts';
+import type { ChromeDownloadOptions, ChromeInstalledDetails } from '@platform/chrome.d.ts';
 import { browserApi } from '@platform/chrome-runtime';
 import { createLogger } from '@shared/logging/logger';
 import { isAllowedUrl } from '@shared/utils/url/url-safety';
+import { waitForDownloadComplete } from './download-completion';
 import type {
   DownloadBlobUrlRequestMessage,
   DownloadRequestMessage,
@@ -146,7 +142,7 @@ async function handleDownloadRequest(message: DownloadRequestMessage): Promise<v
   }
 
   const downloadId = await browserApi.downloads.download(downloadOptions);
-  await waitForDownloadComplete(downloadId);
+  await waitForDownloadComplete(browserApi.downloads, downloadId);
 }
 
 async function handleDownloadBlobUrlRequest(message: DownloadBlobUrlRequestMessage): Promise<void> {
@@ -163,49 +159,7 @@ async function handleDownloadBlobUrlRequest(message: DownloadBlobUrlRequestMessa
   // Wait for download completion so errors propagate to the content script.
   // Unlike SW-created blob URLs which become invalid on SW termination,
   // content-script blob URLs remain valid as long as the page is open.
-  await waitForDownloadComplete(downloadId);
-}
-
-/**
- * Wait for a Chrome download to complete or be interrupted.
- */
-function waitForDownloadComplete(downloadId: number): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    let settled = false;
-    let timerId: ReturnType<typeof setTimeout> | null = null;
-
-    const cleanup = (): void => {
-      browserApi.downloads.onChanged.removeListener(listener);
-      if (timerId) clearTimeout(timerId);
-    };
-
-    const listener = (delta: ChromeDownloadDelta) => {
-      if (delta.id !== downloadId) return;
-
-      const stateCurrent = typeof delta.state === 'string' ? delta.state : delta.state?.current;
-      if (stateCurrent === 'complete') {
-        cleanup();
-        settled = true;
-        resolve();
-      } else if (stateCurrent === 'interrupted') {
-        cleanup();
-        settled = true;
-        const errorCurrent = typeof delta.error === 'string' ? delta.error : delta.error?.current;
-        reject(new Error(`Download interrupted: ${errorCurrent ?? 'unknown'}`));
-      }
-    };
-    browserApi.downloads.onChanged.addListener(listener);
-
-    // 5-minute timeout: prevent permanent listener leak
-    timerId = setTimeout(() => {
-      if (!settled) {
-        browserApi.downloads.onChanged.removeListener(listener);
-        timerId = null;
-        settled = true;
-        reject(new Error(`Download timed out after 5 minutes (id: ${downloadId})`));
-      }
-    }, DOWNLOAD_TIMEOUT_MS);
-  });
+  await waitForDownloadComplete(browserApi.downloads, downloadId);
 }
 
 // ── Extension lifecycle ───────────────────────────────────────────────────────
