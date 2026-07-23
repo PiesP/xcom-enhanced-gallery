@@ -201,6 +201,22 @@ describe('SettingsService', () => {
       expect(lastModified).toBeLessThanOrEqual(after);
     });
 
+    it('should persist the current lastModified with the changed setting', async () => {
+      const saved: AppSettings[] = [];
+      const repository: SettingsRepository = {
+        load: vi.fn(async () => createDefaultSettings(Date.now())),
+        save: vi.fn(async (settings) => {
+          saved.push(globalThis.structuredClone(settings));
+        }),
+      };
+      service = new SettingsService(repository);
+      await service.initialize();
+
+      await service.set('gallery.theme', 'dark');
+
+      expect(saved[0]?.lastModified).toBe(service.get('lastModified'));
+    });
+
     it('should reject boolean when number is expected', async () => {
       await expect(
         service.set('toolbar.autoHideDelay', false as any)
