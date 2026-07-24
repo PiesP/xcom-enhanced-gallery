@@ -32,7 +32,7 @@
   line-height: var(--xeg-line-height-snug);
   color: var(--xeg-tooltip-text, var(--xeg-toolbar-text-color, var(--xeg-color-text-primary)));
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;
   pointer-events: none;
   user-select: none;
 

@@ -41,6 +41,10 @@ function computePosition(
   const viewportHeight = window.innerHeight;
   const centerX = triggerRect.left + triggerRect.width / 2;
 
+  // Derive tooltip half-width from max-width CSS (16em ≈ 192px at 12px font)
+  // Use a conservative estimate to prevent edge clipping
+  const estimatedHalfWidth = 96;
+
   // Determine actual placement based on available space
   const spaceBelow = viewportHeight - triggerRect.bottom - offset - VIEWPORT_PADDING;
   const spaceAbove = triggerRect.top - offset - VIEWPORT_PADDING;
@@ -57,8 +61,11 @@ function computePosition(
     y = triggerRect.bottom + offset;
   }
 
-  // Clamp X to viewport bounds
-  const x = Math.max(VIEWPORT_PADDING, Math.min(centerX, viewportWidth - VIEWPORT_PADDING));
+  // Clamp X to keep tooltip within viewport bounds (accounting for translate -50%)
+  const x = Math.max(
+    VIEWPORT_PADDING + estimatedHalfWidth,
+    Math.min(centerX, viewportWidth - VIEWPORT_PADDING - estimatedHalfWidth)
+  );
 
   return { x, y, actualPlacement };
 }
