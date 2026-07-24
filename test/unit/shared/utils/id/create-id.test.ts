@@ -2,32 +2,32 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { describe, it, expect } from "vitest";
-import { createId, createPrefixedId } from '@shared/utils/id';
+import { generateUniqueId, createPrefixedId } from '@shared/utils/id';
 
-describe("createId", () => {
+describe("generateUniqueId", () => {
   it("returns a non-empty string", () => {
-    const id = createId();
+    const id = generateUniqueId();
     expect(id).toBeTruthy();
     expect(typeof id).toBe("string");
   });
 
   it("returns a string without dashes", () => {
-    const id = createId();
+    const id = generateUniqueId();
     expect(id).not.toContain("-");
   });
 
   it("returns a string with only hex characters (lowercase)", () => {
-    const id = createId();
+    const id = generateUniqueId();
     expect(id).toMatch(/^[0-9a-f]+$/);
   });
 
   it("generates unique IDs on successive calls", () => {
-    const ids = new Set(Array.from({ length: 100 }, () => createId()));
+    const ids = new Set(Array.from({ length: 100 }, () => generateUniqueId()));
     expect(ids.size).toBe(100);
   });
 
   it("returns exactly 32 characters (UUID without dashes)", () => {
-    const id = createId();
+    const id = generateUniqueId();
     expect(id.length).toBe(32);
   });
 });
