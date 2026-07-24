@@ -3,7 +3,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { createSingleton } from '@shared/services/singleton-base';
-import { createId, createPrefixedId } from '@shared/utils/id';
+import { createPrefixedId, generateUniqueId } from '@shared/utils/id';
 
 /** @fileoverview Event types for gallery event handling. */
 
@@ -106,7 +106,7 @@ export class EventManager {
 
     try {
       element.addEventListener(type, listener, listenerOptions);
-      const id = context ? createPrefixedId(context) : createId();
+      const id = context ? createPrefixedId(context) : generateUniqueId();
       this.listeners.set(id, {
         id,
         element,

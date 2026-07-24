@@ -23,13 +23,9 @@ export function generateUniqueId(seed?: string): string {
   try {
     return crypto.randomUUID().replaceAll('-', '');
   } catch {
-    // L8: Fallback for non-secure contexts where crypto.randomUUID() throws
     return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}-${performance.now()}`;
   }
 }
-
-/** @deprecated Use `generateUniqueId(seed?)` instead — kept for backward compat */
-export const createId = generateUniqueId;
 
 /**
  * Generates a prefixed unique ID.
