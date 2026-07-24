@@ -72,8 +72,8 @@
   font-weight: var(--xeg-font-weight-medium);
   width: var(--xeg-size-button-md);
   height: var(--xeg-size-button-md);
-  min-width: var(--xeg-size-button-md);
-  min-height: var(--xeg-size-button-md);
+  min-width: max(var(--xeg-size-button-md), 44px);
+  min-height: max(var(--xeg-size-button-md), 44px);
   padding: 0.5em;
   aspect-ratio: 1;
   position: relative;
@@ -209,8 +209,9 @@
 
 /* State management via data attributes */
 :where(.toolbarButton[aria-pressed="true"]) {
-  /* Selected/pressed state (e.g., active fit mode): no border, stronger background. */
+  /* Selected/pressed state: stronger background + border for non-color indication. */
   background: var(--xeg-toolbar-element-bg-strong, var(--xeg-color-neutral-200));
+  border: 2px solid var(--xeg-color-primary);
 }
 
 .toolbarButton:disabled {
@@ -449,8 +450,6 @@ button.fitButton {
   font-size: var(--xeg-font-size-sm);
   font-weight: var(--xeg-font-weight-semibold);
   color: var(--xeg-toolbar-text-color);
-  text-transform: uppercase;
-  letter-spacing: var(--xeg-letter-spacing-wide);
 }
 
 /* Tweet content (improved typography) */
@@ -458,7 +457,7 @@ button.fitButton {
 .tweetContent {
   padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
   font-size: var(--xeg-font-size-base);
-  line-height: var(--xeg-line-height-snug);
+  line-height: 1.5;
   color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
   background: var(
     --toolbar-surface-base,
@@ -499,7 +498,8 @@ button.fitButton {
 /* Tweet Link Styles - Improved accessibility */
 .tweetContent a {
   color: var(--xeg-color-primary);
-  text-decoration: none;
+  text-decoration: underline;
+  text-underline-offset: 0.125em;
   font-weight: var(--xeg-font-weight-medium);
   padding: 0.125em 0.25em;
   margin: -0.125em -0.25em;
