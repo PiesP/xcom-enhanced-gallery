@@ -44,24 +44,17 @@ async function raceWithAbort<T>(
 ): Promise<T> {
   if (signal.aborted) return onAborted();
 
-  let settled = false;
   let abortHandler: (() => void) | null = null;
 
   const abortPromise = new Promise<T>((resolve) => {
-    abortHandler = () => {
-      if (settled) return;
-      settled = true;
-      resolve(onAborted());
-    };
+    abortHandler = () => resolve(onAborted());
     signal.addEventListener('abort', abortHandler, { once: true });
   });
 
   try {
-    const result = await Promise.race([work, abortPromise]);
-    settled = true;
-    return result;
+    return await Promise.race([work, abortPromise]);
   } finally {
-    if (!settled && abortHandler) {
+    if (abortHandler) {
       signal.removeEventListener('abort', abortHandler);
     }
   }
