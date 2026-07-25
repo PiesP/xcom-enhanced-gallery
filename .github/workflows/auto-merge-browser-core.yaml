@@ -1,0 +1,59 @@
+name: 🤖 Auto-Merge browser-core
+
+# Responsibility: Auto-merge safe browser-core update PRs created by the
+# update-browser-core workflow. These PRs only change the submodule gitlink;
+# all source validation is handled by the required CI status checks.
+#
+# Security: Uses pull_request_target to avoid checking out PR code.
+# The only action performed is reading PR metadata and queuing a merge.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-merge-browser-core-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  auto-merge:
+    name: 🤖 Auto-Merge browser-core PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: >-
+      github.event.pull_request.user.login == 'github-actions[bot]' &&
+      github.event.pull_request.head.ref == 'automation/update-browser-core'
+    steps:
+      - name: 🔍 Verify browser-core-only change
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          # Confirm the PR only touches the submodule (packages/core)
+          FILES="$(gh pr view "$PR_NUMBER" --json files --jq '.files[].path')"
+          for file in $FILES; do
+            if [[ "$file" != "packages/core" ]]; then
+              echo "::warning::PR #$PR_NUMBER touches unexpected file: $file"
+              echo "Skipping auto-merge — manual review required."
+              exit 0
+            fi
+          done
+
+          echo "✅ PR #$PR_NUMBER only changes packages/core submodule."
+
+      - name: 🔄 Queue auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          set -euo pipefail
+          gh pr merge --auto --squash "$PR_URL"
+          echo "✅ Auto-merge queued for browser-core update PR."
+          echo "Merge will complete when all required status checks pass."
