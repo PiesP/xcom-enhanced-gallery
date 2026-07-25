@@ -4,8 +4,11 @@ name: 🤖 Auto-Merge browser-core
 # update-browser-core workflow. These PRs only change the submodule gitlink;
 # all source validation is handled by the required CI status checks.
 #
+# The AUTO_MERGE_TOKEN secret (a PAT with repo scope from the repo owner)
+# is needed to approve the PR, since github-actions[bot] cannot self-approve.
+# Without it, the PR will need a manual approving review.
+#
 # Security: Uses pull_request_target to avoid checking out PR code.
-# The only action performed is reading PR metadata and queuing a merge.
 
 on:
   pull_request_target:
@@ -31,12 +34,10 @@ jobs:
       - name: 🔍 Verify browser-core-only change
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
 
-          # Confirm the PR only touches the submodule (packages/core)
           FILES="$(gh pr view "$PR_NUMBER" --json files --jq '.files[].path')"
           for file in $FILES; do
             if [[ "$file" != "packages/core" ]]; then
@@ -48,12 +49,29 @@ jobs:
 
           echo "✅ PR #$PR_NUMBER only changes packages/core submodule."
 
+      - name: ✅ Approve PR
+        if: ${{ secrets.AUTO_MERGE_TOKEN != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_MERGE_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh pr review --approve "$PR_NUMBER"
+          echo "✅ PR #$PR_NUMBER approved."
+
+      - name: ⚠️ Approval fallback
+        if: ${{ secrets.AUTO_MERGE_TOKEN == '' }}
+        run: |
+          echo "::warning::AUTO_MERGE_TOKEN secret is not configured."
+          echo "The PR will need a manual approving review before auto-merge can complete."
+          echo "Create a PAT with repo scope and add it as AUTO_MERGE_TOKEN in repository secrets."
+
       - name: 🔄 Queue auto-merge
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
-          gh pr merge --auto --squash "$PR_URL"
-          echo "✅ Auto-merge queued for browser-core update PR."
+          gh pr merge --auto --squash "$PR_NUMBER"
+          echo "✅ Auto-merge queued for browser-core update PR #$PR_NUMBER."
           echo "Merge will complete when all required status checks pass."
