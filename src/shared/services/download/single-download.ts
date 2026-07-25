@@ -37,7 +37,7 @@ const createErrorDownloadResult = (error: unknown): SingleDownloadResult => ({
  * @param onAborted - Factory for the result when the abort wins
  * @returns The work result or the abort result
  */
-async function raceWithAbort<T>(
+export async function raceWithAbort<T>(
   work: Promise<T>,
   signal: AbortSignal,
   onAborted: () => T
