@@ -5,14 +5,16 @@ import { APP_SETTINGS_STORAGE_KEY, createDefaultSettings } from '@constants/sett
 import { logger } from '@shared/logging/logger';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 import type { AppSettings } from '@shared/types/settings.types';
+import { isRecord } from '@shared/utils/types/guards';
 import { migrateSettings } from './settings-migration';
 
 /** Schema version hash - bump when persisted settings shape changes */
 const SETTINGS_SCHEMA_HASH = '1';
 
-interface StoredSettings extends AppSettings {
+interface StoredSettings {
   /** @internal Schema version hash for migration detection */
   __schemaHash?: string;
+  [key: string]: unknown;
 }
 
 export interface SettingsRepository {
@@ -25,11 +27,13 @@ export class PersistentSettingsRepository implements SettingsRepository {
   private readonly schemaHash = SETTINGS_SCHEMA_HASH;
 
   public async load(): Promise<AppSettings> {
-    const stored = await this.storage.get<StoredSettings>(APP_SETTINGS_STORAGE_KEY);
-    if (!stored) {
+    // Retrieve as unknown first — never cast storage values blindly
+    const raw: unknown = await this.storage.get(APP_SETTINGS_STORAGE_KEY);
+    if (!isRecord(raw)) {
       return globalThis.structuredClone(createDefaultSettings(Date.now()));
     }
 
+    const stored = raw as unknown as StoredSettings;
     const nowMs = Date.now();
     const migrated = migrateSettings(stored, nowMs);
     if (stored.__schemaHash !== this.schemaHash) {

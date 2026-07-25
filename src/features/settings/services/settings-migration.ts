@@ -70,16 +70,26 @@ function migrateVideoClickMode(
   return {};
 }
 
-export function migrateSettings(input: AppSettings, nowMs: number): AppSettings {
+export function migrateSettings(input: unknown, nowMs: number): AppSettings {
+  if (!isRecord(input)) {
+    return {
+      ...DEFAULT_SETTINGS,
+      version: DEFAULT_SETTINGS.version,
+      lastModified: nowMs,
+    } as AppSettings;
+  }
+
+  const typed = input as Record<string, unknown>;
+
   // Migrate legacy video click mode before pruning (pruning strips old fields)
-  if (isRecord(input.gallery)) {
-    const migration = migrateVideoClickMode(input.gallery as Record<string, unknown>);
+  if (isRecord(typed.gallery)) {
+    const migration = migrateVideoClickMode(typed.gallery as Record<string, unknown>);
     if (migration.videoClickMode) {
-      (input.gallery as Record<string, unknown>).videoClickMode = migration.videoClickMode;
+      (typed.gallery as Record<string, unknown>).videoClickMode = migration.videoClickMode;
     }
   }
 
-  const pruned = pruneWithTemplate(input, DEFAULT_SETTINGS) as Partial<AppSettings>;
+  const pruned = pruneWithTemplate(typed, DEFAULT_SETTINGS) as Partial<AppSettings>;
 
   const merged: Record<string, unknown> = { ...DEFAULT_SETTINGS, ...pruned };
   for (const key of ['gallery', 'toolbar', 'download', 'accessibility', 'features'] as const) {
