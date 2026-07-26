@@ -108,10 +108,13 @@ export class PrefetchManager {
       return;
     }
 
+    const url = media.url;
     const handle = scheduleIdle(() => {
       this.idleHandles.delete(handle);
       if (this.disposed) return;
-      void this.prefetchSingle(media.url).catch(() => {
+      // Re-check: may have been prefetched during idle delay
+      if (this.cache.has(url) || this.activeRequests.has(url)) return;
+      void this.prefetchSingle(url).catch(() => {
         // Ignore individual failures — cache cleanup is handled in prefetchSingle.
       });
     });

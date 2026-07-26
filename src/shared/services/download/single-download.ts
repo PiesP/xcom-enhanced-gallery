@@ -37,31 +37,24 @@ const createErrorDownloadResult = (error: unknown): SingleDownloadResult => ({
  * @param onAborted - Factory for the result when the abort wins
  * @returns The work result or the abort result
  */
-async function raceWithAbort<T>(
+export async function raceWithAbort<T>(
   work: Promise<T>,
   signal: AbortSignal,
   onAborted: () => T
 ): Promise<T> {
   if (signal.aborted) return onAborted();
 
-  let settled = false;
   let abortHandler: (() => void) | null = null;
 
   const abortPromise = new Promise<T>((resolve) => {
-    abortHandler = () => {
-      if (settled) return;
-      settled = true;
-      resolve(onAborted());
-    };
+    abortHandler = () => resolve(onAborted());
     signal.addEventListener('abort', abortHandler, { once: true });
   });
 
   try {
-    const result = await Promise.race([work, abortPromise]);
-    settled = true;
-    return result;
+    return await Promise.race([work, abortPromise]);
   } finally {
-    if (!settled && abortHandler) {
+    if (abortHandler) {
       signal.removeEventListener('abort', abortHandler);
     }
   }

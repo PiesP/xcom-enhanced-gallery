@@ -14,6 +14,7 @@ import type {
   SettingChangeEvent,
 } from '@shared/types/settings.types';
 import { resolveNestedPath } from '@shared/utils/object/path';
+import { validateSettingValue } from './settings-validation';
 
 export class SettingsService {
   private _initialized = false;
@@ -48,7 +49,7 @@ export class SettingsService {
   }
 
   public async set<T = unknown>(key: NestedSettingKey, value: T): Promise<void> {
-    if (!this.isValidSettingValue(this.getDefaultValue(key), value)) {
+    if (!validateSettingValue(key, value)) {
       throw new Error(`Invalid setting value for ${key}`);
     }
 
@@ -128,14 +129,6 @@ export class SettingsService {
   }
 
   /** Validate a setting value against its default type */
-  private isValidSettingValue(defaultValue: unknown, value: unknown): boolean {
-    if (defaultValue === undefined) return true;
-    if (Array.isArray(defaultValue)) return Array.isArray(value);
-    if (typeof defaultValue === 'object' && defaultValue !== null) {
-      return typeof value === 'object' && value !== null;
-    }
-    return typeof value === typeof defaultValue;
-  }
 
   private notifyListeners(event: SettingChangeEvent): void {
     for (const listener of this.listeners) {
