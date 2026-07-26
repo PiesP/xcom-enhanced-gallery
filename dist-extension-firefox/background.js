@@ -1,11 +1,3 @@
-//#region src/constants/performance.ts
-/**
-* Performance-tuning constants, centralized for easy adjustment.
-* All values have been extracted from their original modules.
-*/
-/** Download timeout in milliseconds — aligned with the background SW 5-minute timeout */
-var DOWNLOAD_TIMEOUT_MS = 3e5;
-//#endregion
 //#region src/platform/chrome-runtime.ts
 var browserApi = globalThis.browser ?? globalThis.chrome;
 //#endregion
@@ -113,6 +105,74 @@ function isAllowedUrl(url) {
 	}
 }
 //#endregion
+//#region src/constants/performance.ts
+/**
+* Performance-tuning constants, centralized for easy adjustment.
+* All values have been extracted from their original modules.
+*/
+/** Download timeout in milliseconds — aligned with the background SW 5-minute timeout */
+var DOWNLOAD_TIMEOUT_MS = 3e5;
+//#endregion
+//#region src/extension/download-completion.ts
+function readState(value) {
+	return typeof value === "string" ? value : value?.current;
+}
+function readError(value) {
+	return typeof value === "string" ? value : value?.current;
+}
+/**
+* Wait for a download to complete, including downloads that finished before
+* the onChanged listener was attached.
+*/
+function waitForDownloadComplete(downloads, downloadId) {
+	return new Promise((resolve, reject) => {
+		let settled = false;
+		let timerId = null;
+		const cleanup = () => {
+			downloads.onChanged.removeListener(listener);
+			if (timerId !== null) clearTimeout(timerId);
+		};
+		const complete = () => {
+			if (settled) return;
+			settled = true;
+			cleanup();
+			resolve();
+		};
+		const interrupt = (error) => {
+			if (settled) return;
+			settled = true;
+			cleanup();
+			reject(/* @__PURE__ */ new Error(`Download interrupted: ${error ?? "unknown"}`));
+		};
+		const inspectState = (state, error) => {
+			if (state === "complete") complete();
+			else if (state === "interrupted") interrupt(error);
+		};
+		const listener = (delta) => {
+			if (delta.id !== downloadId) return;
+			inspectState(readState(delta.state), readError(delta.error));
+		};
+		downloads.onChanged.addListener(listener);
+		downloads.search({ id: downloadId }).then((items) => {
+			const item = items[0];
+			if (!item || settled) return;
+			inspectState(item.state, item.error);
+		}, (error) => {
+			if (settled) return;
+			settled = true;
+			cleanup();
+			const message = error instanceof Error ? error.message : String(error);
+			reject(/* @__PURE__ */ new Error(`Failed to inspect download ${downloadId}: ${message}`));
+		});
+		timerId = setTimeout(() => {
+			if (settled) return;
+			settled = true;
+			cleanup();
+			reject(/* @__PURE__ */ new Error(`Download timed out after 5 minutes (id: ${downloadId})`));
+		}, DOWNLOAD_TIMEOUT_MS);
+	});
+}
+//#endregion
 //#region src/extension/message-validation.ts
 var MAX_FILENAME_LENGTH = 255;
 var MAX_TEXT_LENGTH = 4096;
@@ -153,12 +213,13 @@ function isValidIncomingMessage(message) {
 	switch (message.type) {
 		case "DOWNLOAD_REQUEST": {
 			const payload = message.payload;
-			return typeof payload.url === "string" && isAllowedUrl(payload.url) && isSafeFilename(payload.filename) && isSafeHeaders(payload.headers);
+			return typeof payload.url === "string" && isAllowedUrl(payload.url) && isSafeFilename(payload.filename) && isSafeHeaders(payload.headers) && (payload.requestId === void 0 || isSafeText(payload.requestId, 128));
 		}
 		case "DOWNLOAD_BLOB_URL_REQUEST": {
 			const payload = message.payload;
-			return isPageBlobUrl(payload.objectUrl) && isSafeFilename(payload.filename) && (payload.mimeType === void 0 || typeof payload.mimeType === "string" && /^[A-Za-z0-9.+-]+\/[A-Za-z0-9.+-]+$/.test(payload.mimeType) && payload.mimeType.length <= 128);
+			return isPageBlobUrl(payload.objectUrl) && isSafeFilename(payload.filename) && (payload.mimeType === void 0 || typeof payload.mimeType === "string" && /^[A-Za-z0-9.+-]+\/[A-Za-z0-9.+-]+$/.test(payload.mimeType) && payload.mimeType.length <= 128) && (payload.requestId === void 0 || isSafeText(payload.requestId, 128));
 		}
+		case "DOWNLOAD_CANCEL_REQUEST": return isSafeText(message.payload.requestId, 128);
 		case "SHOW_NOTIFICATION": {
 			const payload = message.payload;
 			return isSafeText(payload.id, 128) && isSafeText(payload.title) && isSafeText(payload.message, MAX_TEXT_LENGTH, true) && (payload.imageUrl === void 0 || isSafeNotificationImage(payload.imageUrl));
@@ -168,25 +229,9 @@ function isValidIncomingMessage(message) {
 }
 //#endregion
 //#region src/extension/background.ts
-/**
-* MV3 Extension — Background Service Worker
-*
-* Handles operations that require extension permissions unavailable
-* in content scripts:
-* - chrome.downloads.download() for file downloads
-* - chrome.notifications.create() for desktop notifications
-*
-* Architecture notes — FEATURE AWARENESS:
-* The background SW is intentionally STATELESS and features-limited.
-* It knows only about downloads and notifications.
-* All gallery state, media extraction, settings, theme, language/i18n,
-* and DOM access live exclusively in the content script. If a new feature
-* needs SW privileges (clipboard, printing, native messaging), extend the
-* message protocol in extension-message-types.ts.
-*
-* Content scripts send messages here and receive progress/completion updates.
-*/
 var log = createLogger("SW");
+var activeDownloadIds = /* @__PURE__ */ new Map();
+var cancelledRequestIds = /* @__PURE__ */ new Set();
 /**
 * Safely execute an async message handler, ensuring sendResponse is always
 * called — even if the handler throws synchronously before returning a promise.
@@ -232,17 +277,19 @@ browserApi.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 		case "DOWNLOAD_BLOB_URL_REQUEST":
 			respondAsync(() => handleDownloadBlobUrlRequest(msg).then(() => ({ success: true })), sendResponse);
 			return true;
+		case "DOWNLOAD_CANCEL_REQUEST":
+			respondAsync(() => handleDownloadCancelRequest(msg).then(() => ({ success: true })), sendResponse);
+			return true;
 		case "SHOW_NOTIFICATION":
-			handleShowNotification(msg.payload);
-			sendResponse({ success: true });
-			return false;
+			respondAsync(() => handleShowNotification(msg.payload).then(() => ({ success: true })), sendResponse);
+			return true;
 		default:
 			sendResponse(toErrorResponse(/* @__PURE__ */ new Error("Unknown message type")));
 			return false;
 	}
 });
 async function handleDownloadRequest(message) {
-	const { url, filename, headers } = message.payload;
+	const { url, filename, headers, requestId } = message.payload;
 	if (!isAllowedUrl(url)) throw new Error(`URL not in allowed whitelist: ${url}`);
 	const downloadOptions = {
 		url,
@@ -253,51 +300,42 @@ async function handleDownloadRequest(message) {
 		name,
 		value
 	}));
-	await waitForDownloadComplete(await browserApi.downloads.download(downloadOptions));
+	const downloadId = await browserApi.downloads.download(downloadOptions);
+	if (requestId) {
+		activeDownloadIds.set(requestId, downloadId);
+		if (cancelledRequestIds.delete(requestId)) await browserApi.downloads.cancel(downloadId).catch(() => void 0);
+	}
+	try {
+		await waitForDownloadComplete(browserApi.downloads, downloadId);
+	} finally {
+		if (requestId && activeDownloadIds.get(requestId) === downloadId) activeDownloadIds.delete(requestId);
+	}
 }
 async function handleDownloadBlobUrlRequest(message) {
-	const { objectUrl, filename } = message.payload;
-	await waitForDownloadComplete(await browserApi.downloads.download({
+	const { objectUrl, filename, requestId } = message.payload;
+	const downloadId = await browserApi.downloads.download({
 		url: objectUrl,
 		filename,
 		saveAs: false
-	}));
-}
-/**
-* Wait for a Chrome download to complete or be interrupted.
-*/
-function waitForDownloadComplete(downloadId) {
-	return new Promise((resolve, reject) => {
-		let settled = false;
-		let timerId = null;
-		const cleanup = () => {
-			browserApi.downloads.onChanged.removeListener(listener);
-			if (timerId) clearTimeout(timerId);
-		};
-		const listener = (delta) => {
-			if (delta.id !== downloadId) return;
-			const stateCurrent = typeof delta.state === "string" ? delta.state : delta.state?.current;
-			if (stateCurrent === "complete") {
-				cleanup();
-				settled = true;
-				resolve();
-			} else if (stateCurrent === "interrupted") {
-				cleanup();
-				settled = true;
-				const errorCurrent = typeof delta.error === "string" ? delta.error : delta.error?.current;
-				reject(/* @__PURE__ */ new Error(`Download interrupted: ${errorCurrent ?? "unknown"}`));
-			}
-		};
-		browserApi.downloads.onChanged.addListener(listener);
-		timerId = setTimeout(() => {
-			if (!settled) {
-				browserApi.downloads.onChanged.removeListener(listener);
-				timerId = null;
-				settled = true;
-				reject(/* @__PURE__ */ new Error(`Download timed out after 5 minutes (id: ${downloadId})`));
-			}
-		}, DOWNLOAD_TIMEOUT_MS);
 	});
+	if (requestId) {
+		activeDownloadIds.set(requestId, downloadId);
+		if (cancelledRequestIds.delete(requestId)) await browserApi.downloads.cancel(downloadId).catch(() => void 0);
+	}
+	try {
+		await waitForDownloadComplete(browserApi.downloads, downloadId);
+	} finally {
+		if (requestId && activeDownloadIds.get(requestId) === downloadId) activeDownloadIds.delete(requestId);
+	}
+}
+async function handleDownloadCancelRequest(message) {
+	const { requestId } = message.payload;
+	const downloadId = activeDownloadIds.get(requestId);
+	if (downloadId === void 0) {
+		cancelledRequestIds.add(requestId);
+		return;
+	}
+	await browserApi.downloads.cancel(downloadId).catch(() => void 0);
 }
 /**
 * Handle extension install/update events.
@@ -338,9 +376,9 @@ browserApi.runtime.onStartup?.addListener(() => {
 browserApi.runtime.onSuspend?.addListener(() => {
 	log.warn("sw.suspending");
 });
-function handleShowNotification(payload) {
+async function handleShowNotification(payload) {
 	const { id, title, message, imageUrl } = payload;
-	browserApi.notifications.create(id, {
+	await browserApi.notifications.create(id, {
 		type: "basic",
 		title,
 		message,
