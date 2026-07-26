@@ -18,6 +18,17 @@ interface StoredSettings {
   [key: string]: unknown;
 }
 
+function settingsMatch(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true;
+  if (!isRecord(left) || !isRecord(right)) return false;
+
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  if (leftKeys.length !== rightKeys.length) return false;
+
+  return leftKeys.every((key) => Object.hasOwn(right, key) && settingsMatch(left[key], right[key]));
+}
+
 export interface SettingsRepository {
   load(): Promise<AppSettings>;
   save(settings: AppSettings): Promise<void>;
@@ -38,9 +49,10 @@ export class PersistentSettingsRepository implements SettingsRepository {
     const nowMs = Date.now();
     const migrated = migrateSettings(stored, nowMs);
     const normalized = normalizeStoredSettings(migrated, nowMs);
-    if (stored.__schemaHash !== this.schemaHash) {
+    const normalizationChanged = !settingsMatch(migrated, normalized);
+    if (stored.__schemaHash !== this.schemaHash || normalizationChanged) {
       await this.persist(normalized).catch(() => {
-        __DEV__ && logger.warn('[SettingsRepository] Failed to persist migrated settings');
+        __DEV__ && logger.warn('[SettingsRepository] Failed to persist normalized settings');
       });
     }
     return globalThis.structuredClone(normalized);

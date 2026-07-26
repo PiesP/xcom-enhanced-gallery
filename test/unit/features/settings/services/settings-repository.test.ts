@@ -57,6 +57,24 @@ describe('PersistentSettingsRepository', () => {
     expect(result.lastModified).toBe(12_345);
   });
 
+  it('self-heals malformed values stored with the current schema', async () => {
+    mockStorageGet.mockResolvedValue({
+      __schemaHash: '1',
+      ...DEFAULT_SETTINGS,
+      gallery: {
+        ...DEFAULT_SETTINGS.gallery,
+        preloadCount: 'many',
+      },
+    });
+
+    const result = await new PersistentSettingsRepository().load();
+
+    expect(mockStorageSet).toHaveBeenCalledWith('xeg-app-settings', {
+      ...result,
+      __schemaHash: '1',
+    });
+  });
+
   it('normalizes out-of-range values and preserves a migrated legacy enum', async () => {
     const stored = {
       ...DEFAULT_SETTINGS,
