@@ -244,12 +244,12 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
 
   test('Escape does not close gallery when editing form fields', async ({ page }) => {
     await setupGalleryPage(page);
+    await openGallery(page);
     await page.evaluate(() => {
       const ta = document.createElement('textarea');
       ta.id = 'test-textarea';
-      document.body.appendChild(ta);
+      document.querySelector('[data-xeg-gallery-container]')?.appendChild(ta);
     });
-    await openGallery(page);
     await page.locator('#test-textarea').focus();
     expect(await page.evaluate(() => document.activeElement === document.getElementById('test-textarea'))).toBe(true);
     await page.keyboard.press('Escape');

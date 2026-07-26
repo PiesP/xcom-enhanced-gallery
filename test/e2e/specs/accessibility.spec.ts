@@ -40,7 +40,7 @@ test.describe('X.com Enhanced Gallery Accessibility', () => {
   });
 
   test('GalleryContainer source hides and restores background content', () => {
-    expect(galleryContainerSrc).toContain('hideBackgroundElement(el)');
+    expect(galleryContainerSrc).toContain('hideBackgroundElement(element)');
     expect(galleryContainerSrc).toContain('restoreBackgroundElement(el)');
   });
 
