@@ -13,7 +13,7 @@
  * 5. Video elements have aria-label
  * 6. Toolbar element has role='toolbar'
  * 7. Focus trap: Tab key cycles within gallery (doesn't escape to page)
- * 8. document.body.inert=true when gallery is open
+ * 8. Body siblings are inert and hidden from assistive technology while the gallery is open
  * 9. Focus returns to trigger element when gallery closes
  *
  * Environment: Playwright + Chromium (headless)
@@ -286,6 +286,23 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
       expect(ariaLabel).toMatch(/Video \d+ of/);
     }
 
+    await closeGallery(page);
+  });
+
+  test('video control keyboard events do not activate the parent gallery item', async ({ page }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const progress = page.locator('[role="progressbar"]');
+    await expect(progress).toHaveAttribute('aria-valuenow', '1');
+
+    await page.locator('[role="listitem"] video').dispatchEvent('keyup', {
+      key: ' ',
+      bubbles: true,
+      cancelable: true,
+    });
+
+    await expect(progress).toHaveAttribute('aria-valuenow', '1');
     await closeGallery(page);
   });
 
