@@ -217,8 +217,8 @@ function handleNavigation(key: string): void {
  */
 function handleVideoControl(key: string): void {
   switch (key) {
-    case 'Space':
-      if (keyboardDebouncer.shouldExecute('Space', 150)) {
+    case ' ':
+      if (keyboardDebouncer.shouldExecute(' ', 150)) {
         executeVideoControl('togglePlayPause');
       }
       break;

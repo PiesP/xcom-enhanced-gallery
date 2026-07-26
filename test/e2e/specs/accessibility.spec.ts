@@ -86,6 +86,13 @@ test.describe('X.com Enhanced Gallery Accessibility', () => {
     expect(galleryItemSrc).toContain('tabIndex={isFocused() ? 0 : -1}');
   });
 
+  test('VerticalImageItem ignores activation keys from interactive descendants', () => {
+    const descendantGuards = galleryItemSrc.match(
+      /if \(event\.target !== event\.currentTarget\) return;/g
+    );
+    expect(descendantGuards ?? []).toHaveLength(2);
+  });
+
   // ── 3. Gallery renderer: lang attribute ───────────────────────
 
   test('GalleryRenderer passes lang attribute to container', () => {

@@ -152,6 +152,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   };
 
   const handleContainerKeyDown: JSX.EventHandlerUnion<HTMLDivElement, KeyboardEvent> = (event) => {
+    if (event.target !== event.currentTarget) return;
     if (rest.onKeyDown) {
       rest.onKeyDown(event);
       return;
@@ -167,6 +168,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   };
 
   const handleContainerKeyUp: JSX.EventHandlerUnion<HTMLDivElement, KeyboardEvent> = (event) => {
+    if (event.target !== event.currentTarget) return;
     if (event.key === ' ') {
       event.preventDefault();
       event.stopPropagation();
