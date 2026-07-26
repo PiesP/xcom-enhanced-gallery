@@ -18,7 +18,10 @@ test.beforeAll(() => {
   }
 });
 
-test('loads the Chrome extension background and exposes its runtime metadata', async () => {
+test('loads the Chrome extension background and exposes its runtime metadata', async ({
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'Chrome extension loading requires Chromium');
   const userDataDir = mkdtempSync(join(tmpdir(), 'xeg-extension-'));
   const context = await chromium.launchPersistentContext(userDataDir, {
     channel: 'chromium',
@@ -49,7 +52,8 @@ test('loads the Chrome extension background and exposes its runtime metadata', a
   }
 });
 
-test('Firefox build artifact contains its declared runtime scripts', () => {
+test('Firefox build artifact contains its declared runtime scripts', ({ browserName }) => {
+  test.skip(browserName !== 'firefox', 'Firefox artifact validation runs in the Firefox project');
   const manifest = JSON.parse(
     readFileSync(resolve(firefoxExtensionDir, 'manifest.json'), 'utf8')
   ) as {
@@ -66,4 +70,71 @@ test('Firefox build artifact contains its declared runtime scripts', () => {
   for (const script of runtimeScripts) {
     expect(existsSync(resolve(firefoxExtensionDir, script))).toBe(true);
   }
+});
+
+/**
+ * Playwright does not support temporary WebExtension installation in Firefox.
+ * Execute the exact built background module in the Firefox engine with the
+ * WebExtension namespace mocked, which verifies Firefox parsing, startup, and
+ * listener registration without claiming a full installation test.
+ */
+test('executes the Firefox background module and registers its runtime listeners', async ({
+  browserName,
+  page,
+}) => {
+  test.skip(browserName !== 'firefox', 'Firefox runtime validation requires Firefox');
+
+  await page.goto('about:blank');
+  await page.evaluate(() => {
+    const registrations = {
+      installed: 0,
+      message: 0,
+      startup: 0,
+      suspend: 0,
+    };
+    const createEvent = (key: keyof typeof registrations) => ({
+      addListener: () => {
+        registrations[key] += 1;
+      },
+      removeListener: () => undefined,
+    });
+    const downloadChanged = {
+      addListener: () => undefined,
+      removeListener: () => undefined,
+    };
+
+    Object.assign(globalThis, {
+      __xegFirefoxRegistrations: registrations,
+      browser: {
+        runtime: {
+          id: 'xcom-enhanced-gallery@piesp.dev',
+          onMessage: createEvent('message'),
+          onInstalled: createEvent('installed'),
+          onStartup: createEvent('startup'),
+          onSuspend: createEvent('suspend'),
+        },
+        downloads: {
+          download: async () => 1,
+          cancel: async () => undefined,
+          search: async () => [],
+          onChanged: downloadChanged,
+        },
+        notifications: {
+          create: async () => 'notification-id',
+        },
+      },
+    });
+  });
+
+  await page.addScriptTag({ path: resolve(firefoxExtensionDir, 'background.js'), type: 'module' });
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        return (globalThis as typeof globalThis & {
+          __xegFirefoxRegistrations?: Record<string, number>;
+        }).__xegFirefoxRegistrations;
+      })
+    )
+    .toEqual({ installed: 1, message: 1, startup: 1, suspend: 1 });
 });
