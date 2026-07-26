@@ -8,9 +8,7 @@
  * which emits popstate. The returned teardown restores the methods only while
  * this installation still owns them, so it does not overwrite later patches.
  */
-export function installHistoryNavigationFallback(
-  onNavigate: (url: string) => void
-): () => void {
+export function installHistoryNavigationFallback(onNavigate: (url: string) => void): () => void {
   const originalPushState = window.history.pushState;
   const originalReplaceState = window.history.replaceState;
 

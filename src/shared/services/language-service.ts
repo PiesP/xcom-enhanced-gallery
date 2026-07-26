@@ -120,6 +120,9 @@ export class LanguageService {
 
     // Normalize case before validation (e.g., zh-CN → zh-cn)
     const lower = language.toLowerCase();
+    if (lower === 'zh-cn') {
+      return 'zh-CN';
+    }
     if (isBaseLanguageCode(lower)) {
       return lower;
     }

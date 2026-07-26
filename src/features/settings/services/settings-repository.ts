@@ -7,6 +7,7 @@ import { getPersistentStorage } from '@shared/services/persistent-storage';
 import type { AppSettings } from '@shared/types/settings.types';
 import { isRecord } from '@shared/utils/types/guards';
 import { migrateSettings } from './settings-migration';
+import { normalizeStoredSettings } from './settings-validation';
 
 /** Schema version hash - bump when persisted settings shape changes */
 const SETTINGS_SCHEMA_HASH = '1';
@@ -36,12 +37,13 @@ export class PersistentSettingsRepository implements SettingsRepository {
     const stored = raw as unknown as StoredSettings;
     const nowMs = Date.now();
     const migrated = migrateSettings(stored, nowMs);
+    const normalized = normalizeStoredSettings(migrated, nowMs);
     if (stored.__schemaHash !== this.schemaHash) {
-      await this.persist(migrated).catch(() => {
+      await this.persist(normalized).catch(() => {
         __DEV__ && logger.warn('[SettingsRepository] Failed to persist migrated settings');
       });
     }
-    return globalThis.structuredClone(migrated);
+    return globalThis.structuredClone(normalized);
   }
 
   public async save(settings: AppSettings): Promise<void> {

@@ -147,6 +147,14 @@ describe('LanguageService', () => {
       expect(service.getCurrentLanguage()).toBe('auto');
     });
 
+    it('should canonicalize case-insensitive Chinese input before persisting', () => {
+      service = new LanguageService();
+      service.setLanguage('ZH-cn' as 'zh-CN');
+
+      expect(service.getCurrentLanguage()).toBe('zh-CN');
+      expect(mockStorageSet).toHaveBeenCalledWith('xeg-language', 'zh-CN');
+    });
+
     it('should fall back to default language for unsupported values', () => {
       service = new LanguageService();
       service.setLanguage('fr' as any);
@@ -231,6 +239,15 @@ describe('LanguageService', () => {
       service = new LanguageService();
       await service.initialize();
       expect(service.getCurrentLanguage()).toBe('ko');
+    });
+
+    it('should restore Chinese storage values with canonical casing', async () => {
+      mockStorageGet.mockResolvedValue('zh-cn');
+      service = new LanguageService();
+
+      await service.initialize();
+
+      expect(service.getCurrentLanguage()).toBe('zh-CN');
     });
 
     it('should keep "auto" when storage has no value', async () => {
@@ -327,6 +344,13 @@ describe('LanguageService', () => {
       const result = service.translate('tb.prev');
       expect(typeof result).toBe('string');
       expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('should translate with the Chinese registry after case-insensitive selection', () => {
+      service = new LanguageService();
+      service.setLanguage('zh-cn' as 'zh-CN');
+
+      expect(service.translate('tb.prev')).toBe('上一个');
     });
   });
 });
