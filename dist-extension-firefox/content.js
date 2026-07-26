@@ -492,7 +492,7 @@
 	* Wraps GM_notification for userscript environments.
 	*/
 	var GMNotificationAdapter = class {
-		notify(title, message, imageUrl) {
+		async notify(title, message, imageUrl) {
 			getUserscript().notification({
 				title,
 				text: message,
@@ -770,9 +770,9 @@
 	*/
 	var MV3NotificationAdapter = class {
 		idCounter = 0;
-		notify(title, message, imageUrl) {
+		async notify(title, message, imageUrl) {
 			const id = `xeg-${Date.now()}-${++this.idCounter}`;
-			browserApi.runtime.sendMessage({
+			const response = await browserApi.runtime.sendMessage({
 				type: "SHOW_NOTIFICATION",
 				payload: {
 					id,
@@ -780,7 +780,10 @@
 					message,
 					imageUrl
 				}
-			}).catch(() => {});
+			});
+			if (!response || typeof response !== "object") throw new Error("Empty or invalid response from background SW");
+			const result = response;
+			if (result.success !== true) throw new Error(typeof result.error === "string" && result.error.length > 0 ? result.error : "Notification failed");
 		}
 	};
 	//#endregion
@@ -11172,6 +11175,7 @@
 					filename
 				};
 			} catch {
+				if (abortSignal?.aborted) return createAbortResult();
 				return createErrorDownloadResult(fetchError);
 			}
 			return createErrorDownloadResult(fetchError);
@@ -12683,6 +12687,14 @@
 	//#region src/features/settings/services/settings-repository.ts
 	/** Schema version hash - bump when persisted settings shape changes */
 	var SETTINGS_SCHEMA_HASH = "1";
+	function settingsMatch(left, right) {
+		if (Object.is(left, right)) return true;
+		if (!isRecord(left) || !isRecord(right)) return false;
+		const leftKeys = Object.keys(left);
+		const rightKeys = Object.keys(right);
+		if (leftKeys.length !== rightKeys.length) return false;
+		return leftKeys.every((key) => Object.hasOwn(right, key) && settingsMatch(left[key], right[key]));
+	}
 	var PersistentSettingsRepository = class {
 		storage = getPersistentStorage();
 		schemaHash = SETTINGS_SCHEMA_HASH;
@@ -12691,8 +12703,10 @@
 			if (!isRecord(raw)) return globalThis.structuredClone(createDefaultSettings(Date.now()));
 			const stored = raw;
 			const nowMs = Date.now();
-			const normalized = normalizeStoredSettings(migrateSettings(stored, nowMs), nowMs);
-			if (stored.__schemaHash !== this.schemaHash) await this.persist(normalized).catch(() => {});
+			const migrated = migrateSettings(stored, nowMs);
+			const normalized = normalizeStoredSettings(migrated, nowMs);
+			const normalizationChanged = !settingsMatch(migrated, normalized);
+			if (stored.__schemaHash !== this.schemaHash || normalizationChanged) await this.persist(normalized).catch(() => {});
 			return globalThis.structuredClone(normalized);
 		}
 		async save(settings) {
