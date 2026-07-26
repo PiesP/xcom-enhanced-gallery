@@ -63,11 +63,20 @@ export function waitForDownloadComplete(
     // The event listener closes the normal race window. The state lookup
     // covers downloads that completed between downloads.download() resolving
     // and the listener registration above.
-    void downloads.search({ id: downloadId }).then((items) => {
-      const item = items[0];
-      if (!item || settled) return;
-      inspectState(item.state, item.error);
-    });
+    void downloads.search({ id: downloadId }).then(
+      (items) => {
+        const item = items[0];
+        if (!item || settled) return;
+        inspectState(item.state, item.error);
+      },
+      (error: unknown) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        const message = error instanceof Error ? error.message : String(error);
+        reject(new Error(`Failed to inspect download ${downloadId}: ${message}`));
+      }
+    );
 
     timerId = setTimeout(() => {
       if (settled) return;
