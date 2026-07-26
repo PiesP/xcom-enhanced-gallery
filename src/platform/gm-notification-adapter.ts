@@ -11,7 +11,7 @@ import { getUserscript } from '@shared/external/userscript/adapter';
 import type { NotificationAdapter } from './types';
 
 export class GMNotificationAdapter implements NotificationAdapter {
-  notify(title: string, message: string, imageUrl?: string): void {
+  async notify(title: string, message: string, imageUrl?: string): Promise<void> {
     getUserscript().notification({
       title,
       text: message,

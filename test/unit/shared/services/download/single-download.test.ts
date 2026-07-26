@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 
 const { adapter, getDownloadAdapter } = vi.hoisted(() => {
   const download = vi.fn(async () => undefined);
@@ -43,5 +44,39 @@ describe('downloadSingleFile fetch fallback', () => {
 
     await expect(pending).resolves.toMatchObject({ success: true });
     expect(adapter.download).toHaveBeenCalledOnce();
+  });
+
+  it('reports caller cancellation while the direct-download fallback is running', async () => {
+    const timeoutController = new AbortController();
+    const callerController = new AbortController();
+    vi.spyOn(AbortSignal, 'timeout').mockReturnValue(timeoutController.signal);
+    vi.spyOn(globalThis, 'fetch').mockImplementation((_url, init) => {
+      return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true });
+      });
+    });
+    adapter.download.mockImplementationOnce((_url, _filename, _headers, signal) => {
+      return new Promise<void>((_resolve, reject) => {
+        signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
+      });
+    });
+
+    const pending = downloadSingleFile(
+      {
+        id: 'video-1',
+        type: 'video',
+        url: 'https://video.twimg.com/media/video.mp4',
+      },
+      { signal: callerController.signal }
+    );
+    timeoutController.abort(new DOMException('Fetch timeout', 'TimeoutError'));
+    await vi.waitFor(() => expect(adapter.download).toHaveBeenCalledOnce());
+
+    callerController.abort();
+
+    await expect(pending).resolves.toEqual({
+      success: false,
+      error: USER_CANCELLED_MESSAGE,
+    });
   });
 });

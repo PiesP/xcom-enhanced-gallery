@@ -271,6 +271,9 @@ async function downloadWithFetchFallback(
         });
         return { success: true, filename };
       } catch {
+        if (abortSignal?.aborted) {
+          return createAbortResult();
+        }
         return createErrorDownloadResult(fetchError);
       }
     }
