@@ -50,8 +50,8 @@ import type {
  */
 
 export interface UserscriptAPI {
-  readonly download: (url: string, filename: string) => Promise<void>;
-  readonly downloadBlob: (blob: Blob, filename: string) => Promise<void>;
+  readonly download: (url: string, filename: string, signal?: AbortSignal) => Promise<void>;
+  readonly downloadBlob: (blob: Blob, filename: string, signal?: AbortSignal) => Promise<void>;
   readonly setValue: (key: string, value: unknown) => Promise<void>;
   readonly getValue: <T>(key: string, defaultValue?: T) => Promise<T | undefined>;
   readonly getValueSync: <T>(key: string, defaultValue?: T) => T | undefined;
@@ -96,6 +96,12 @@ function getGMAPIs(): ResolvedGMAPIs {
 
 function asFunction<T>(value: unknown): T | undefined {
   return typeof value === 'function' ? (value as T) : undefined;
+}
+
+function abortReason(signal: AbortSignal): Error {
+  return signal.reason instanceof Error
+    ? signal.reason
+    : new DOMException('This operation was aborted', 'AbortError');
 }
 
 /**
@@ -204,7 +210,9 @@ export function getUserscript(): UserscriptAPI {
     cookieCandidate && typeof cookieCandidate.list === 'function' ? cookieCandidate : undefined;
 
   cachedUserscriptAPI = {
-    async download(url: string, filename: string): Promise<void> {
+    async download(url: string, filename: string, signal?: AbortSignal): Promise<void> {
+      if (signal?.aborted) throw abortReason(signal);
+
       // For blob: URLs, GM.download ignores the filename and uses the
       // URL's UUID instead. Use anchor download directly to guarantee
       // the correct filename and prevent gallery close-on-outside-click.
@@ -215,26 +223,65 @@ export function getUserscript(): UserscriptAPI {
       // Strategy 1: GM.download (GM4+/Tampermonkey Promise-based)
       if (gmDownloadModern) {
         return new Promise<void>((resolve, reject) => {
+          let settled = false;
+          let abortHandler: (() => void) | null = null;
+
+          const cleanup = (): void => {
+            if (signal && abortHandler) signal.removeEventListener('abort', abortHandler);
+            abortHandler = null;
+          };
+          const complete = (): void => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            resolve();
+          };
+          const fail = (error: unknown): void => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            reject(error);
+          };
+
           try {
             const handle = gmDownloadModern({
               url,
               filename,
               saveAs: false,
               timeout: GM_DOWNLOAD_TIMEOUT_MS,
-              onload: () => resolve(),
-              onerror: (error: Error) => reject(error),
-              ontimeout: () => reject(new Error('GM_download timed out')),
+              onload: complete,
+              onerror: fail,
+              ontimeout: () => fail(new Error('GM_download timed out')),
             });
-            // Modern API returns abort handle — store for potential cleanup
-            void handle;
+
+            if (settled) return;
+            if (signal?.aborted) {
+              handle.abort();
+              fail(abortReason(signal));
+              return;
+            }
+            if (signal) {
+              abortHandler = () => {
+                try {
+                  handle.abort();
+                } finally {
+                  fail(abortReason(signal));
+                }
+              };
+              signal.addEventListener('abort', abortHandler, { once: true });
+            }
           } catch (error) {
-            reject(error);
+            fail(error);
           }
         });
       }
 
       // Strategy 2: GM_download legacy options-object form
       if (gmDownloadLegacy) {
+        // The legacy API returns void, so there is no portable handle for
+        // cancelling an in-flight download. Its AbortSignal semantics are
+        // intentionally pre-flight only (checked above); once invoked, the
+        // promise settles from GM_download's own completion callbacks.
         return new Promise<void>((resolve, reject) => {
           gmDownloadLegacy({
             url,
@@ -252,7 +299,10 @@ export function getUserscript(): UserscriptAPI {
       return downloadViaBlob(url, filename, gmXmlHttpRequest);
     },
 
-    async downloadBlob(blob: Blob, filename: string): Promise<void> {
+    async downloadBlob(blob: Blob, filename: string, signal?: AbortSignal): Promise<void> {
+      // Anchor downloads cannot be cancelled after the synthetic click. Honor
+      // cancellation before creating the object URL and starting the save.
+      if (signal?.aborted) throw abortReason(signal);
       const url = URL.createObjectURL(blob);
       try {
         // Use anchor download instead of GM.download because GM.download

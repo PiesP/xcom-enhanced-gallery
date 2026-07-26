@@ -61,8 +61,10 @@ export const getDownloadAdapter = createAdapter<DownloadAdapter>(
   () => {
     const api = getUserscript();
     return {
-      download: (url: string, filename: string, _headers, _signal) => api.download(url, filename),
-      downloadBlob: (blob: Blob, filename: string, _signal) => api.downloadBlob(blob, filename),
+      download: (url: string, filename: string, _headers, signal) =>
+        api.download(url, filename, signal),
+      downloadBlob: (blob: Blob, filename: string, signal) =>
+        api.downloadBlob(blob, filename, signal),
       needsBlobFallback: () => false,
     };
   }
