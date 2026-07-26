@@ -13,7 +13,7 @@ import type { MediaInfo } from '@shared/types/media.types';
 // Removed: detectDownloadCapability (duplicated platform detection logic).
 // Use getDownloadAdapter() from platform layer instead.
 
-import { isAbortError, USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
+import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 
 const createAbortResult = (): SingleDownloadResult => ({
   success: false,
@@ -148,24 +148,26 @@ async function downloadWithFetchFallback(
     filename,
   });
 
+  const timeoutSignal = AbortSignal.timeout(DEFAULT_REQUEST_TIMEOUT_MS);
+
   try {
     // Fetch in content script context (has host_permissions to bypass CORS).
     // Service Workers cannot bypass CORS for twimg.com without specific headers.
     // Apply a timeout race via AbortSignal.timeout so the fetch doesn't hang
     // indefinitely if the network stalls or the server doesn't respond.
-    const timeoutSignal = AbortSignal.timeout(DEFAULT_REQUEST_TIMEOUT_MS);
     const fetchInit: RequestInit = { credentials: 'include' };
 
     if (abortSignal) {
       // Combine caller's abort signal with the timeout signal
       const combinedController = new AbortController();
-      const onCombinedAbort = () => combinedController.abort();
-      abortSignal.addEventListener('abort', onCombinedAbort, { once: true });
-      timeoutSignal.addEventListener('abort', onCombinedAbort, { once: true });
+      const onCallerAbort = () => combinedController.abort(abortSignal.reason);
+      const onTimeout = () => combinedController.abort(timeoutSignal.reason);
+      abortSignal.addEventListener('abort', onCallerAbort, { once: true });
+      timeoutSignal.addEventListener('abort', onTimeout, { once: true });
       fetchInit.signal = combinedController.signal;
       const cleanupCombined = () => {
-        abortSignal.removeEventListener('abort', onCombinedAbort);
-        timeoutSignal.removeEventListener('abort', onCombinedAbort);
+        abortSignal.removeEventListener('abort', onCallerAbort);
+        timeoutSignal.removeEventListener('abort', onTimeout);
       };
 
       try {
@@ -243,11 +245,15 @@ async function downloadWithFetchFallback(
       return { success: true, filename };
     }
   } catch (error) {
-    // If the user cancelled, return abort result immediately — do NOT
-    // fall through to the direct URL download fallback below.
-    if (isAbortError(error)) {
+    // Only the caller-owned signal represents user cancellation. The internal
+    // timeout is a fetch failure and should use the direct URL fallback.
+    if (abortSignal?.aborted) {
       return createAbortResult();
     }
+
+    const fetchError = timeoutSignal.aborted
+      ? new Error(`Download fetch timed out after ${DEFAULT_REQUEST_TIMEOUT_MS}ms`)
+      : error;
 
     // If fetch failed (CORS/network), fall back to direct URL download via background SW.
     // Content-script fetch with host_permissions follows CORS rules — CDN hosts
@@ -265,10 +271,10 @@ async function downloadWithFetchFallback(
         });
         return { success: true, filename };
       } catch {
-        return createErrorDownloadResult(error);
+        return createErrorDownloadResult(fetchError);
       }
     }
-    return createErrorDownloadResult(error);
+    return createErrorDownloadResult(fetchError);
   }
 }
 
