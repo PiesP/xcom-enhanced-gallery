@@ -109,6 +109,10 @@ export class MV3DownloadAdapter implements DownloadAdapter {
   }
 
   private async sendDownloadRequest(message: DownloadMessage, signal?: AbortSignal): Promise<void> {
+    if (signal?.aborted) {
+      throw getUserCancelledAbortErrorFromSignal(signal);
+    }
+
     const requestId = crypto.randomUUID();
     const request = {
       ...message,
@@ -128,12 +132,6 @@ export class MV3DownloadAdapter implements DownloadAdapter {
 
     signal?.addEventListener('abort', onAbort, { once: true });
     try {
-      if (signal?.aborted) {
-        onAbort();
-        await abortPromise;
-        return;
-      }
-
       const responsePromise = browserApi.runtime
         .sendMessage(request)
         .then((response) => response as ExtensionMessageResponse);
