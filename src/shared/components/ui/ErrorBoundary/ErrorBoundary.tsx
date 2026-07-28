@@ -6,7 +6,7 @@
  * Provides a retry-friendly fallback UI and deduplicates error notifications.
  */
 
-import { getNotificationAdapter } from '@platform/index';
+import { getNotificationAdapter, notifySafely } from '@platform/index';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getLanguageService } from '@shared/services/language-service';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
@@ -85,7 +85,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
     if (lastError() === error) return;
     setLastError(error);
     const { title, body } = translateError(error);
-    getNotificationAdapter().notify(title, body);
+    notifySafely(getNotificationAdapter(), title, body);
   };
 
   const handleRetry = (): void => {
@@ -147,10 +147,10 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
           const exhausted = retryCount() >= MAX_RETRIES;
           return (
             <div aria-live="polite" data-xeg-error-boundary="">
-              <p class={styles['xeg-error-boundary__title']}>{title}</p>
-              <p class={styles['xeg-error-boundary__body']}>{body}</p>
+              <p class={styles.xegErrorBoundaryTitle}>{title}</p>
+              <p class={styles.xegErrorBoundaryBody}>{body}</p>
               <button
-                class={styles['xeg-error-boundary__action']}
+                class={styles.xegErrorBoundaryAction}
                 disabled={exhausted}
                 onClick={handleRetry}
                 type="button"
@@ -159,7 +159,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps): JSXElement {
               </button>
               <Show when={exhausted}>
                 <button
-                  class={`${styles['xeg-error-boundary__action']} ${styles['xeg-error-boundary__reset']}`}
+                  class={`${styles.xegErrorBoundaryAction} ${styles.xegErrorBoundaryReset}`}
                   onClick={handleReset}
                   type="button"
                 >

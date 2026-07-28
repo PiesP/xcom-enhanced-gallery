@@ -28,7 +28,6 @@ env:
 
 permissions:
   contents: read
-  statuses: write
 
 concurrency:
   group: verify-${{ github.ref }}
@@ -204,6 +203,9 @@ jobs:
     needs: [quality, unit, e2e, build, duplication]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    permissions:
+      contents: read
+      statuses: write
     steps:
       - name: Publish required commit statuses
         env:

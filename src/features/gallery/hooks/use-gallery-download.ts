@@ -5,7 +5,7 @@
  * @fileoverview Gallery download hook - manages single and batch download.
  */
 
-import { getNotificationAdapter } from '@platform/index';
+import { getNotificationAdapter, notifySafely } from '@platform/index';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 import { logger } from '@shared/logging/logger';
@@ -65,7 +65,7 @@ export function createDownloadHandler() {
     setDownloading(true);
 
     const notifyError = (title: string, body: string): void => {
-      notify.notify(title, body);
+      notifySafely(notify, title, body);
     };
 
     try {

@@ -213,6 +213,11 @@ export class StreamingZipWriter {
     for (const entry of this.entries) {
       centralDirSize += 46 + encodeUtf8(entry.filename).length;
     }
+    const eocdSize = 22;
+    assertZip32(
+      centralDirStart + centralDirSize + eocdSize <= ZIP_CONST.MAX_UINT32,
+      `final archive size overflow (${centralDirStart + centralDirSize + eocdSize})`
+    );
 
     const centralDir = new Uint8Array(centralDirSize);
     let pos = 0;

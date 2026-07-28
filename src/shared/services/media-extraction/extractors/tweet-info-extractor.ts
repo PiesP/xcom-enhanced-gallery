@@ -19,10 +19,8 @@ const DEFAULT_TWEET_ORIGIN = 'https://x.com';
 const normalizeTweetUrl = (inputUrl: string): string => {
   try {
     const url = new URL(inputUrl, DEFAULT_TWEET_ORIGIN);
-    const hostname = url.hostname.toLowerCase();
-
     // Normalize all Twitter/X hostnames to x.com using SSOT
-    if (isHostMatching(hostname, TWITTER_HOSTS, { allowSubdomains: true })) {
+    if (isHostMatching(url, TWITTER_HOSTS, { allowSubdomains: true })) {
       url.hostname = 'x.com';
       url.protocol = 'https:';
     }
