@@ -65,8 +65,9 @@ export class MV3HttpRequestAdapter implements HttpRequestAdapter {
     details: HttpRequestDetails,
     controller: AbortController
   ): Promise<HttpRequestResponse> {
+    const method = details.method ?? 'GET';
     const fetchInit: RequestInit = {
-      method: details.method ?? 'GET',
+      method,
       signal: controller.signal,
     };
 
@@ -74,12 +75,14 @@ export class MV3HttpRequestAdapter implements HttpRequestAdapter {
       fetchInit.headers = details.headers;
     }
 
-    if (details.data !== undefined && details.method !== 'GET' && details.method !== 'HEAD') {
+    if (details.data !== undefined && method !== 'GET' && method !== 'HEAD') {
       fetchInit.body =
         typeof details.data === 'string' ||
+        details.data instanceof FormData ||
         details.data instanceof Blob ||
         details.data instanceof ArrayBuffer ||
-        details.data instanceof URLSearchParams
+        details.data instanceof URLSearchParams ||
+        details.data instanceof ReadableStream
           ? details.data
           : typeof details.data === 'object'
             ? JSON.stringify(details.data)
@@ -100,6 +103,9 @@ export class MV3HttpRequestAdapter implements HttpRequestAdapter {
         break;
       case 'arraybuffer':
         responseBody = await response.arrayBuffer();
+        break;
+      case 'stream':
+        responseBody = response.body;
         break;
       default:
         responseBody = await response.text();
