@@ -738,12 +738,13 @@
 			} };
 		}
 		async fetchWithController(details, controller) {
+			const method = details.method ?? "GET";
 			const fetchInit = {
-				method: details.method ?? "GET",
+				method,
 				signal: controller.signal
 			};
 			if (details.headers !== void 0) fetchInit.headers = details.headers;
-			if (details.data !== void 0 && details.method !== "GET" && details.method !== "HEAD") fetchInit.body = typeof details.data === "string" || details.data instanceof Blob || details.data instanceof ArrayBuffer || details.data instanceof URLSearchParams ? details.data : typeof details.data === "object" ? JSON.stringify(details.data) : details.data;
+			if (details.data !== void 0 && method !== "GET" && method !== "HEAD") fetchInit.body = typeof details.data === "string" || details.data instanceof FormData || details.data instanceof Blob || details.data instanceof ArrayBuffer || details.data instanceof URLSearchParams || details.data instanceof ReadableStream ? details.data : typeof details.data === "object" ? JSON.stringify(details.data) : details.data;
 			const response = await fetch(details.url, fetchInit);
 			let responseBody;
 			const responseType = details.responseType ?? "text";
@@ -756,6 +757,9 @@
 					break;
 				case "arraybuffer":
 					responseBody = await response.arrayBuffer();
+					break;
+				case "stream":
+					responseBody = response.body;
 					break;
 				default: responseBody = await response.text();
 			}
