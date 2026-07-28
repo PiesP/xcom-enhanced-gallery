@@ -93,6 +93,8 @@ export class PrefetchManager {
    * for blob-level caching.
    */
   async prefetch(media: MediaInfo, schedule: PrefetchSchedule = 'idle'): Promise<void> {
+    if (this.disposed) return;
+
     // Skip videos — too large for blob cache
     if (media.type === 'video' || media.type === 'gif') {
       return;
@@ -146,9 +148,7 @@ export class PrefetchManager {
     this.idleHandles.clear();
   }
 
-  /**
-   * Clear the prefetch cache
-   /** Clear the prefetch cache and reset byte tracking */
+  /** Clear the prefetch cache and reset byte tracking. */
   clear(): void {
     this.cache.clear();
     this.nodeMap.clear();
@@ -172,6 +172,8 @@ export class PrefetchManager {
   }
 
   private async prefetchSingle(url: string): Promise<void> {
+    if (this.disposed) return;
+
     // Fast path: already cached (completed or in-flight)
     const existing = this.cache.get(url);
     if (existing) {
@@ -182,6 +184,7 @@ export class PrefetchManager {
         this.cache.delete(url);
         this.removeFromLRU(url);
       }
+      if (this.disposed) return;
       if (this.cache.has(url)) return;
     }
 
@@ -205,7 +208,11 @@ export class PrefetchManager {
         return response.data;
       })
       .finally(() => {
-        this.activeRequests.delete(url);
+        // An evicted URL can be requested again before its old adapter settles.
+        // Do not let the stale request remove the replacement controller.
+        if (this.activeRequests.get(url) === controller) {
+          this.activeRequests.delete(url);
+        }
       });
 
     this.cache.set(url, fetchPromise);
@@ -213,6 +220,10 @@ export class PrefetchManager {
 
     try {
       const blob = await fetchPromise;
+      // Some request adapters can still resolve after abort. Ignore a response
+      // that no longer owns the cache slot so stale accounting cannot evict the
+      // current request or repopulate state after destroy().
+      if (this.disposed || this.cache.get(url) !== fetchPromise) return;
       this.totalBytes += blob.size;
       this.resolvedSizes.set(url, blob.size);
       this.evictByByteBudget();
@@ -267,9 +278,6 @@ export class PrefetchManager {
   private evictByByteBudget(): void {
     while (this.totalBytes > this.maxBytes && this.head) {
       this.evictOldest();
-      // Note: evictOldest removes from cache but doesn't update totalBytes.
-      // The evicted entry's bytes are subtracted indirectly — the cache entry
-      // is removed, and if re-prefetched, totalBytes will be recalculated.
     }
   }
 

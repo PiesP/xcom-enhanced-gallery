@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 interface FirefoxManifest {
   readonly background?: Record<string, unknown>;
+  readonly permissions?: readonly string[];
 }
 
 describe('Firefox extension manifest', () => {
@@ -20,5 +21,13 @@ describe('Firefox extension manifest', () => {
       type: 'module',
     });
     expect(manifest.background).not.toHaveProperty('service_worker');
+  });
+
+  it('requests only the permissions used by the extension runtime', () => {
+    const manifest = JSON.parse(
+      readFileSync(resolve(process.cwd(), 'extension/manifest.firefox.json'), 'utf8')
+    ) as FirefoxManifest;
+
+    expect(manifest.permissions).toEqual(['downloads', 'storage', 'notifications']);
   });
 });
