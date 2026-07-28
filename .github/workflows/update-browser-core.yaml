@@ -27,7 +27,7 @@ concurrency:
 jobs:
   update:
     name: Create browser-core update PR
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout repository
