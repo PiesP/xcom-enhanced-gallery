@@ -16,6 +16,10 @@ build/
 *.tsbuildinfo
 
 coverage/
+test-results/
+playwright-report/
+.stryker-tmp*/
+.cache/
 
 # IDE
 .vscode/
@@ -38,8 +42,8 @@ temp/
 
 # Environment
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # ──────────────────────────────────────────────
 # Local-only (AI instructions, testing, docs)
