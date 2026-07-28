@@ -2849,7 +2849,7 @@
 	* @returns Valid index in [0, length-1] or 0 on invalid input
 	*/
 	function clampIndex(index, length) {
-		if (!Number.isFinite(index) || length <= 0) return 0;
+		if (!Number.isFinite(index) || !Number.isSafeInteger(length) || length <= 0) return 0;
 		return clamp(Math.floor(index), 0, length - 1);
 	}
 	//#endregion
