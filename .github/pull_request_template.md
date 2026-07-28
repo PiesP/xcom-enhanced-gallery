@@ -16,8 +16,7 @@ Describe how reviewers can verify the change, including relevant `pnpm` commands
 
 ```bash
 pnpm quality
-pnpm build
-pnpm test:unit
+pnpm verify:full
 ```
 
 If tests are not required, briefly explain why.
