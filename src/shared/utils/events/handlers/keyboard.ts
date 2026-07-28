@@ -6,7 +6,7 @@
  * PC-only policy: Handles keyboard events only
  */
 
-import { getNotificationAdapter } from '@platform/index';
+import { getNotificationAdapter, notifySafely } from '@platform/index';
 import { logger } from '@shared/logging/logger';
 import type { EventHandlers, GalleryEventOptions } from '@shared/services/event-manager';
 import { getLanguageService } from '@shared/services/language-service';
@@ -250,7 +250,8 @@ function showKeyboardHelp(): void {
 
   try {
     const lang = getLanguageService();
-    getNotificationAdapter().notify(
+    notifySafely(
+      getNotificationAdapter(),
       lang.translate('msg.kb.t'),
       [
         lang.translate('msg.kb.prev'),

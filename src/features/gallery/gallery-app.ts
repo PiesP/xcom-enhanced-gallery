@@ -6,7 +6,7 @@
  */
 
 import type { GalleryRenderer } from '@features/gallery/gallery-renderer';
-import { getNotificationAdapter } from '@platform/index';
+import { getNotificationAdapter, notifySafely } from '@platform/index';
 import { tryGetSettings } from '@shared/container/settings-registry';
 import {
   galleryErrorReporter,
@@ -112,7 +112,8 @@ export class GalleryApp {
           metadata: { success: result.success },
         });
         const lang = getLanguageService();
-        getNotificationAdapter().notify(
+        notifySafely(
+          getNotificationAdapter(),
           lang.translate('msg.err.loadMedia.title'),
           lang.translate('msg.err.loadMedia.body')
         );
@@ -120,7 +121,8 @@ export class GalleryApp {
     } catch (error) {
       mediaErrorReporter.error(error, { code: 'MEDIA_EXTRACTION_ERROR' });
       const lang = getLanguageService();
-      getNotificationAdapter().notify(
+      notifySafely(
+        getNotificationAdapter(),
         lang.translate('msg.err.generic'),
         normalizeErrorMessage(error)
       );
@@ -142,7 +144,8 @@ export class GalleryApp {
         metadata: { itemCount: mediaItems.length, startIndex },
       });
       const lang = getLanguageService();
-      getNotificationAdapter().notify(
+      notifySafely(
+        getNotificationAdapter(),
         lang.translate('msg.err.loadGallery'),
         normalizeErrorMessage(error)
       );

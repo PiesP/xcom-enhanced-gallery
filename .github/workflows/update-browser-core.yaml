@@ -93,7 +93,7 @@ jobs:
           fi
           git -C packages/core checkout --detach "$CORE_SHA"
 
-          OPEN_PR="$(gh pr list --state open --head "$BRANCH" --json number --jq '.[0].number // empty')"
+          OPEN_PR="$(gh pr list --state open --head "$GITHUB_REPOSITORY_OWNER:$BRANCH" --json number --jq '.[0].number // empty')"
           if git diff --quiet -- packages/core; then
             if [[ -n "$OPEN_PR" ]]; then
               gh pr close "$OPEN_PR" --comment "Closing this stale update PR because master already contains browser-core $SHORT_SHA."

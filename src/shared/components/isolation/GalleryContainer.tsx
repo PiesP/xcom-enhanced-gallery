@@ -149,15 +149,12 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
   let previousScrollRestoration: ScrollRestoration | null = null;
   let previouslyFocusedElement: HTMLElement | null = null;
   let hiddenBackgroundElements: HTMLElement[] = [];
-  const previousInertAttributes = new Map<HTMLElement, string | null>();
   let backgroundObserver: MutationObserver | null = null;
 
   const hideBackground = (element: HTMLElement): void => {
     if (hiddenBackgroundElements.includes(element)) return;
     hiddenBackgroundElements.push(element);
-    previousInertAttributes.set(element, element.getAttribute('inert'));
     hideBackgroundElement(element);
-    element.setAttribute('inert', '');
   };
 
   createEffect(() => {
@@ -258,15 +255,8 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     // A3: Restore background elements' accessibility state
     for (const el of hiddenBackgroundElements) {
       restoreBackgroundElement(el);
-      const previousInert = previousInertAttributes.get(el);
-      if (previousInert === null || previousInert === undefined) {
-        el.removeAttribute('inert');
-      } else {
-        el.setAttribute('inert', previousInert);
-      }
     }
     hiddenBackgroundElements = [];
-    previousInertAttributes.clear();
     // Return focus to the element that was focused before the gallery opened
     if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
       try {

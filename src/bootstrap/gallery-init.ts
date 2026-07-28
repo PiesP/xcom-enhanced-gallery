@@ -8,7 +8,7 @@
 import { GalleryApp } from '@features/gallery/gallery-app';
 import { GalleryRenderer } from '@features/gallery/gallery-renderer';
 import { getSettingsService } from '@features/settings/services/settings-service';
-import { getNotificationAdapter } from '@platform/index';
+import { getNotificationAdapter, notifySafely } from '@platform/index';
 import { registerSettings } from '@shared/container/settings-registry';
 import { galleryErrorReporter, settingsErrorReporter } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
@@ -38,7 +38,8 @@ export async function initializeGalleryServices(): Promise<void> {
       code: 'SETTINGS_SERVICE_INIT_FAILED',
     });
     const lang = getLanguageService();
-    getNotificationAdapter().notify(
+    notifySafely(
+      getNotificationAdapter(),
       lang.translate('msg.err.settingsUnavailable.title'),
       lang.translate('msg.err.settingsUnavailable.body')
     );
