@@ -28,8 +28,8 @@ Security-sensitive issues should follow the dedicated process described in:
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) **26.x** or later (recommended via [Volta](https://volta.sh/))
-- [pnpm](https://pnpm.io/) **11.2.2** or later
+- Use the Volta versions in `package.json` (currently Node.js `26.5.0` and pnpm
+  `11.17.0`), or engines-compatible Node.js `>=22.13.0` and pnpm `>=11.17.0`.
 
 ### Local setup
 
@@ -169,8 +169,9 @@ replace the hosted branch protection rules.
 
 #### Supply chain security controls
 
-This repository enables pnpm client-side supply chain protections to reduce the risk
-of npm ecosystem attacks that execute code during installation.
+This personal project intentionally adopts current stable libraries and tools
+quickly. pnpm and Dependabot retain a 24-hour observation window so routine
+updates remain fast without installing brand-new releases immediately.
 
 Key policies (configured in `pnpm-workspace.yaml`):
 
@@ -181,9 +182,18 @@ Key policies (configured in `pnpm-workspace.yaml`):
 - **Current reviewed install scripts**: `esbuild` is the only dependency install
   script explicitly allowed in the root workspace today.
 - **Trust downgrade protection**: `trustPolicy: no-downgrade` blocks versions whose
-  publish trust evidence is weaker than prior releases.
+  recent publish trust evidence is weaker than prior releases. Legacy transitive
+  releases are age-bounded because they predate widespread provenance.
+- **Release cooling**: `minimumReleaseAge` and strict mode reject npm versions
+  published less than 24 hours ago, including transitive dependencies.
 - **No exotic transitive sources**: `blockExoticSubdeps` prevents transitive
   dependencies from using git/tarball URLs.
+
+Dependabot checks npm packages and GitHub Actions daily. Reviewed patch/minor
+tooling updates may auto-merge after CI; major updates and runtime behavior
+changes stay visible for manual review. The scheduled security workflow also
+checks pinned Nose, OSV Scanner, and Semgrep versions after the same cooling
+window.
 
 If installation fails due to these controls, do not disable them globally.
 Instead, update `allowBuilds` (and, if needed, the `*Exclude` settings) with a
@@ -216,30 +226,24 @@ pnpm knip
 # Run all quality checks
 pnpm quality
 
-# Full local verification (build + test workspace)
-pnpm verify
+# Full local verification (builds + unit coverage + browser E2E)
+pnpm verify:full
 ```
 
 These tasks are defined in `package.json` and use the project configuration
-(`tsconfig*.json`, `biome.jsonc`, build scripts).
+(`tsconfig*.json`, `biome.json`, build scripts).
 
-### Test workspace
+### Tests
 
-The browser and mutation suites live in the separate `test/` workspace. You can
-either use the root wrappers or work in `test/` directly:
+Tests are tracked under `test/`, use the root `package.json`, and run in CI:
 
 ```bash
-# From the repository root
-pnpm test:unit
-pnpm test:e2e
-pnpm test:mut:priority
-pnpm test:all
-
-# Or inside the isolated test workspace
-cd test
 pnpm test
-pnpm e2e
-pnpm mut:priority
+pnpm test:cov
+pnpm test:e2e
+pnpm test:e2e:extension
+pnpm mut:fast
+pnpm verify:full
 ```
 
 ---
@@ -279,7 +283,7 @@ Add these settings to your `.vscode/settings.json`:
 This ensures:
 
 - **Format on save** uses Biome (same as `pnpm fmt`)
-- **Lint rules** match the CLI (`biome.jsonc` configuration)
+- **Lint rules** match the CLI (`biome.json` configuration)
 - **Auto-fix** applies safe fixes on save
 
 ---
@@ -329,8 +333,7 @@ Before you submit a PR, please:
 
 ```bash
 pnpm quality
-pnpm build
-pnpm test:all
+pnpm verify:full
 ```
 
 If your change is docs-only or otherwise isolated, explain why a smaller check
