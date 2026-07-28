@@ -5,7 +5,7 @@ set -euo pipefail
 : "${GH_TOKEN:?GH_TOKEN is required}"
 : "${GITHUB_PATH:?GITHUB_PATH is required}"
 
-nose_version="0.17.0"
+nose_version="0.20.0"
 installer="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/nose-cli-installer.sh"
 
 curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \

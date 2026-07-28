@@ -57,14 +57,17 @@ We aim to respond within **7 business days** and coordinate disclosure once a fi
 We use several mechanisms to keep the codebase secure:
 
 - **GitHub Security Suite** (`.github/workflows/security.yaml`)
-  - OSV Scanner for pull-request diff scans and scheduled full scans
-  - Static analysis (Semgrep) on PR, scheduled, and manual runs
+  - CodeQL for JavaScript/TypeScript and GitHub Actions
+  - OSV Scanner for pull-request diff scans and daily full scans
+  - Static analysis (Semgrep) on PR, daily, and manual runs
+  - Daily freshness checks for pinned Nose, OSV Scanner, and Semgrep releases
 - **Dependabot** (`.github/dependabot.yaml`)
-  - Automated updates for npm packages and GitHub Actions
+  - Daily npm and GitHub Actions updates after a 24-hour cooling window
 - **Quality & Testing**
-  - TypeScript strict mode, Biome linter/formatter, TSDoc validation, and Knip
-  - Automated unit, Playwright E2E, and mutation tests in the separate `test/`
-    workspace
+  - pnpm enforces the same cooling window, recent trust-level non-downgrade,
+    reviewed install scripts, and registry-only transitive dependencies
+  - TypeScript strict mode, Biome, Knip, circular-dependency checks, duplication
+    analysis, tracked unit tests, Playwright userscript/extension E2E, and mutation tests
 
 These checks run through GitHub Actions and the same local `pnpm` workflows used
 for development.

@@ -2,9 +2,6 @@
 overrides:
   qs@>=6.11.1: ">=6.15.2"
 
-# Dependabot cooldown (7 days) handles supply-chain cooling;
-# minimumReleaseAge removed to avoid pnpm --no-save conflicts with Dependabot.
-
 allowBuilds:
   esbuild: true
 
@@ -15,7 +12,13 @@ blockExoticSubdeps: true
 # Fail if the current Node.js / pnpm version doesn't match engines field.
 engineStrict: true
 
+# Prefer current releases while retaining a short supply-chain observation window.
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+trustPolicy: no-downgrade
+# Old transitive releases predate widespread provenance; scrutinize recent ones.
+trustPolicyIgnoreAfter: 525600
+
 preferFrozenLockfile: true
 autoInstallPeers: true
 strictPeerDependencies: false
-preferOffline: true

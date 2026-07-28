@@ -4,9 +4,9 @@ name: 🔒 Security Scanning
 # - Default branch/PR/merge queue: CodeQL for Actions and JavaScript/TypeScript
 # - PR gate: OSV diff scan
 # - Merge queue/manual gate: OSV full scan
-# - Scheduled/manual depth: OSV full scan + full-repository Semgrep SARIF upload
+# - Scheduled/manual depth: pinned-tool freshness + OSV full scan + Semgrep SARIF
 #
-# Trigger: Push/PR to master + merge queue + weekly schedule + manual
+# Trigger: Push/PR to master + merge queue + daily schedule + manual
 
 on:
   push:
@@ -16,7 +16,7 @@ on:
   merge_group:
     types: [checks_requested]
   schedule:
-    - cron: "0 1 * * 0" # Weekly on Sundays at 1 AM UTC
+    - cron: "0 1 * * *" # Daily at 1 AM UTC
   workflow_dispatch:
 
 permissions:
@@ -29,12 +29,30 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # google/osv-scanner-action image v2.3.8 (linux/amd64), resolved 2026-07-28.
+  # google/osv-scanner-action image v2.4.0 (linux/amd64), resolved 2026-07-29.
   # Pin the runtime image itself: the upstream action metadata references a
   # mutable version tag even when the action is pinned to a commit SHA.
-  OSV_SCANNER_IMAGE: "ghcr.io/google/osv-scanner-action@sha256:48406c58197201fe55e56615ad9d414f85063da320e204d0b0ed460fb3908dba"
+  OSV_SCANNER_IMAGE: "ghcr.io/google/osv-scanner-action@sha256:2b2b9fbe57b14097fb6953577f2fbecf49941e2346c4eceb9f0852a9682ae868"
 
 jobs:
+  pinned-tools:
+    name: 🔄 Pinned tool freshness
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 🔎 Check pinned tools after the cooling window
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/check-pinned-tools.sh
+
   osv-scan-pr:
     name: pr-gate/osv / osv-scan
     if: ${{ github.event_name == 'pull_request' }}
