@@ -124,12 +124,8 @@ jobs:
           gh workflow run "🏗️ CI" --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
           gh workflow run "🔒 Security Scanning" --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
 
-          if [[ -n "$OPEN_PR" ]]; then
-            PR_NUMBER="$OPEN_PR"
-            echo "Updated browser-core PR #$PR_NUMBER to $SHORT_SHA on top of current master."
-          else
-
-            PR_BODY="$(cat <<EOF
+          PR_TITLE="chore(deps): update browser-core to $SHORT_SHA"
+          PR_BODY="$(cat <<EOF
           This PR updates the packages/core git submodule to browser-core commit $CORE_SHA.
 
           The existing repository CI will validate the updated shared package against this project.
@@ -138,10 +134,15 @@ jobs:
           EOF
             )"
 
+          if [[ -n "$OPEN_PR" ]]; then
+            PR_NUMBER="$OPEN_PR"
+            gh pr edit "$PR_NUMBER" --title "$PR_TITLE" --body "$PR_BODY"
+            echo "Updated browser-core PR #$PR_NUMBER to $SHORT_SHA on top of current master."
+          else
             PR_URL="$(gh pr create \
               --base master \
               --head "$BRANCH" \
-              --title "chore(deps): update browser-core to $SHORT_SHA" \
+              --title "$PR_TITLE" \
               --body "$PR_BODY")"
             PR_NUMBER="${PR_URL##*/}"
             echo "Created browser-core update PR #$PR_NUMBER."
