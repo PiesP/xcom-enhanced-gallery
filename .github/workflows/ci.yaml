@@ -203,6 +203,7 @@ jobs:
     if: ${{ always() && github.event_name == 'workflow_dispatch' }}
     needs: [quality, unit, e2e, build, duplication]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Publish required commit statuses
         env:

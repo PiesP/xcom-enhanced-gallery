@@ -4,7 +4,6 @@ name: 🤖 Dependabot Auto-Merge
 # - GitHub Actions: patch/minor updates
 # - npm: patch/minor updates for specific safe packages
 # - Requires CI to pass first (via GitHub branch protection)
-# Note: test/ directory is managed in a separate repository
 #
 # Security: Uses pull_request_target for the write-scoped merge operation.
 # No pull-request code is checked out or executed.
