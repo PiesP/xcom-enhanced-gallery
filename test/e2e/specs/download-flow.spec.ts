@@ -212,9 +212,9 @@ test.describe('X.com Enhanced Gallery Download Flow', () => {
     await expect(marker).toHaveCount(1);
     await expect(marker).toHaveAttribute(
       'data-gm-download-url',
-      /^https:\/\/pbs\.twimg\.com\/media\/Example1\.jpg/
+      /^https:\/\/pbs\.twimg\.com\/media\/Example1\.jpg(?:\?.*)?$/
     );
-    await expect(marker).toHaveAttribute('data-gm-download-name', /\.jpg$/i);
+    await expect(marker).toHaveAttribute('data-gm-download-name', 'Example1.jpg');
     await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
   });
 
