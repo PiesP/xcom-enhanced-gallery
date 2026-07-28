@@ -1,7 +1,8 @@
 name: 🔒 Security Scanning
 
 # Responsibility: Security analysis for Node.js + pnpm project
-# - PR/merge queue gate: OSV diff scan
+# - PR gate: OSV diff scan
+# - Merge queue/manual gate: OSV full scan
 # - Scheduled/manual depth: OSV full scan + full-repository Semgrep SARIF upload
 #
 # Trigger: PR to master + merge queue + weekly schedule + manual
@@ -24,60 +25,133 @@ concurrency:
   group: security-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # google/osv-scanner-action image v2.3.8 (linux/amd64), resolved 2026-07-28.
+  # Pin the runtime image itself: the upstream action metadata references a
+  # mutable version tag even when the action is pinned to a commit SHA.
+  OSV_SCANNER_IMAGE: "ghcr.io/google/osv-scanner-action@sha256:48406c58197201fe55e56615ad9d414f85063da320e204d0b0ed460fb3908dba"
+
 jobs:
   osv-scan-pr:
-    name: pr-gate/osv
-    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@9a498708959aeaef5ef730655706c5a1df1edbc2" # v2.3.8
+    name: pr-gate/osv / osv-scan
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       actions: read
       contents: read
       security-events: write
-    with:
-      scan-args: |-
-        -r
-        --lockfile=pnpm-lock.yaml
-        .
-      # PR diff scans fail when a change introduces new vulnerabilities, replacing
-      # the broken pnpm audit gate with a workflow-native regression check.
-      fail-on-vuln: true
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          submodules: true
+          persist-credentials: false
+
+      - name: ⏪ Checkout the PR base
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git switch --force --detach "$BASE_SHA"
+          git submodule update --init --recursive
+
+      - name: 🛡️ Scan dependencies before the PR
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            --env GOTOOLCHAIN=auto \
+            --volume "$GITHUB_WORKSPACE:/src" \
+            --workdir /src \
+            "$OSV_SCANNER_IMAGE" \
+            --format=json \
+            --output-file=old-results.json \
+            -r \
+            --lockfile=pnpm-lock.yaml \
+            .
+
+      - name: ⏩ Checkout the PR result
+        run: |
+          set -euo pipefail
+          git switch --force --detach "$GITHUB_SHA"
+          git submodule update --init --recursive
+
+      - name: 🛡️ Scan dependencies after the PR
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            --env GOTOOLCHAIN=auto \
+            --volume "$GITHUB_WORKSPACE:/src" \
+            --workdir /src \
+            "$OSV_SCANNER_IMAGE" \
+            --format=json \
+            --output-file=new-results.json \
+            -r \
+            --lockfile=pnpm-lock.yaml \
+            .
+
+      - name: 📋 Report newly introduced vulnerabilities
+        run: |
+          docker run --rm \
+            --entrypoint /root/osv-reporter \
+            --volume "$GITHUB_WORKSPACE:/src" \
+            --workdir /src \
+            "$OSV_SCANNER_IMAGE" \
+            --old=old-results.json \
+            --new=new-results.json \
+            --output-files=sarif:osv-results.sarif \
+            '--output-files=gh-annotations:#stderr' \
+            --fail-on-vuln=true
+
+      - name: 📊 Upload OSV SARIF to GitHub Security
+        if: ${{ !cancelled() && hashFiles('osv-results.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        with:
+          sarif_file: osv-results.sarif
 
   osv-scan-dispatch:
     name: pr-gate/osv / osv-scan
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || github.event_name == 'schedule' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          submodules: true
           persist-credentials: false
 
       - name: 🛡️ Run OSV scan
-        uses: google/osv-scanner-action/osv-scanner-action@9fd1bcce27f67e3bd819a0a7620e332803dc43bc # v2.3.8
-        with:
-          scan-args: |-
-            -r
-            --lockfile=pnpm-lock.yaml
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            --env GOTOOLCHAIN=auto \
+            --volume "$GITHUB_WORKSPACE:/src" \
+            --workdir /src \
+            "$OSV_SCANNER_IMAGE" \
+            --format=json \
+            --output-file=osv-results.json \
+            -r \
+            --lockfile=pnpm-lock.yaml \
             .
 
-  osv-scan-full:
-    name: 🛡️ OSV Vulnerability Scan (Full)
-    if: ${{ github.event_name == 'schedule' }}
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@9a498708959aeaef5ef730655706c5a1df1edbc2" # v2.3.8
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    with:
-      scan-args: |-
-        -r
-        --lockfile=pnpm-lock.yaml
-        .
-      # A scheduled/manual full scan is a release/security gate as well as a
-      # reporting job. Keep newly disclosed advisories from being silently
-      # accepted until a dependency update is prepared.
-      fail-on-vuln: true
+      - name: 📋 Convert OSV results to SARIF and enforce the vulnerability gate
+        run: |
+          docker run --rm \
+            --entrypoint /root/osv-reporter \
+            --volume "$GITHUB_WORKSPACE:/src" \
+            --workdir /src \
+            "$OSV_SCANNER_IMAGE" \
+            --output-files=sarif:osv-results.sarif \
+            --new=osv-results.json \
+            --fail-on-vuln=true
+
+      - name: 📊 Upload OSV SARIF to GitHub Security
+        if: ${{ !cancelled() && hashFiles('osv-results.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        with:
+          sarif_file: osv-results.sarif
 
   codeql:
     name: 🔎 CodeQL Analysis
@@ -99,13 +173,13 @@ jobs:
           persist-credentials: false
 
       - name: 🔧 Initialize CodeQL
-        uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
         with:
           languages: ${{ matrix.language }}
           queries: security-extended
 
       - name: 🔎 Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
         with:
           category: "/language:${{ matrix.language }}"
 
@@ -117,10 +191,10 @@ jobs:
     permissions:
       contents: read
       security-events: write
-    # semgrep/semgrep:1.163.0 — last checked: 2026-06-11
+    # semgrep/semgrep:1.171.0 — last checked: 2026-07-28
     # Check for updates: https://github.com/semgrep/semgrep/releases
     container:
-      image: semgrep/semgrep:1.163.0@sha256:bc8b15e245d7bd392bcadce7ef4db36601b375fab35bfd8070ed8ae3d7824c74
+      image: semgrep/semgrep:1.171.0@sha256:296fc4912420833abfcf5090ec49a81bf1330bb61fc193cd09255f88b8267ba9
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -142,8 +216,8 @@ jobs:
             .
 
       - name: 📊 Upload SARIF to GitHub Security
-        uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
-        if: always()
+        if: ${{ !cancelled() && hashFiles('semgrep.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
         with:
           sarif_file: semgrep.sarif
 
