@@ -25,11 +25,24 @@ const USERSCRIPT_PATH = resolve(DIST_DIR, 'xcom-enhanced-gallery.dev.user.js');
 const MOCK_PAGE_PATH = resolve(__filename, '../../fixtures/mock-gallery-page.html');
 
 const MOCK_HTML = readFileSync(MOCK_PAGE_PATH, 'utf8');
+const MOCK_IMAGE = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  'base64'
+);
 
 /**
  * Setup: Route x.com requests to mock HTML, install GM mocks, inject userscript.
  */
 async function setupGalleryPage(page: Page): Promise<void> {
+  await page.route('https://pbs.twimg.com/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      headers: { 'access-control-allow-origin': '*' },
+      body: MOCK_IMAGE,
+    });
+  });
+
   // Intercept all x.com requests
   await page.route('**/*.x.com/**', async (route) => {
     const url = route.request().url();
@@ -68,16 +81,22 @@ async function setupGalleryPage(page: Page): Promise<void> {
     window.GM_listValues = (): string[] => {
       return Array.from((w.__gmStorage as Map<string, unknown>).keys());
     };
-    window.GM_download = (urlOrDetails: string | { url: string; name?: string }, name?: string) => {
+    window.GM_download = (
+      urlOrDetails:
+        | string
+        | { url: string; name?: string; filename?: string; onload?: () => void },
+      name?: string
+    ) => {
       const details = typeof urlOrDetails === 'string'
         ? { url: urlOrDetails, name: name ?? 'download' }
         : urlOrDetails;
       const marker = document.createElement('span');
       marker.setAttribute('data-gm-download', 'true');
       marker.setAttribute('data-gm-download-url', details.url);
-      marker.setAttribute('data-gm-download-name', details.name ?? 'download');
+      marker.setAttribute('data-gm-download-name', details.filename ?? details.name ?? 'download');
       marker.style.display = 'none';
       document.body.appendChild(marker);
+      queueMicrotask(() => details.onload?.());
     };
     window.GM_notification = (details: { title: string; text: string }) => {
       const el = document.createElement('div');
@@ -87,7 +106,7 @@ async function setupGalleryPage(page: Page): Promise<void> {
       document.body.appendChild(el);
       setTimeout(() => el.remove(), 5000);
     };
-    window.GM_xmlhttpRequest = undefined;
+    w.GM_xmlhttpRequest = () => ({ abort: () => undefined });
     window.GM_cookie = {
       list: () => document.cookie.split(';').filter(Boolean).map((c) => {
         const [name, ...rest] = c.trim().split('=');
@@ -185,44 +204,18 @@ test.describe('X.com Enhanced Gallery Download Flow', () => {
     await setupGalleryPage(page);
     await openGallery(page);
 
-    // The download goes through DownloadOrchestrator.downloadSingle() which
-    // tries to fetch the image blob first. Since the image URL may be blocked,
-    // we verify the flow by directly triggering GM_download (proving the mock works).
-    // The download button click triggers the full async chain which may require
-    // network access for the actual image fetch.
-
-    // Verify GM_download is available and callable
-    const gmDownloadWorks = await page.evaluate(() => {
-      return typeof window.GM_download === 'function';
-    });
-    expect(gmDownloadWorks).toBe(true);
-
-    // The download button exists and is clickable
     const downloadButton = page.locator('[data-gallery-element="toolbar"] button[aria-label*="Download" i]');
     await expect(downloadButton).toBeVisible();
-
-    // Click it - the async download orchestrator will handle the rest
-    // (may or may not reach GM_download depending on network conditions)
     await downloadButton.click();
-    await page.waitForTimeout(500);
 
-    // Check if a notification about download was shown
-    // (the notification adapter is also mocked)
-    const hasNotification = await page.evaluate(() => {
-      return !!document.querySelector('[data-gm-notification="true"]');
-    });
-
-    // Either we got a download marker or a notification - both prove the flow activated
-    const hasDownloadMarker = await page.evaluate(() => {
-      return !!document.querySelector('[data-gm-download="true"]');
-    });
-
-    // At minimum, the button click didn't crash the page
-    const pageErrors = await page.evaluate(() => {
-      // Check the gallery is still open
-      return !!document.querySelector('[data-xeg-gallery-container]');
-    });
-    expect(pageErrors).toBe(true);
+    const marker = page.locator('[data-gm-download="true"]');
+    await expect(marker).toHaveCount(1);
+    await expect(marker).toHaveAttribute(
+      'data-gm-download-url',
+      /^https:\/\/pbs\.twimg\.com\/media\/Example1\.jpg/
+    );
+    await expect(marker).toHaveAttribute('data-gm-download-name', /\.jpg$/i);
+    await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
   });
 
   test('GM_download can be directly invoked and verified', async ({ page }) => {
