@@ -116,9 +116,11 @@ browserApi.runtime.onMessage.addListener(
         return true;
 
       case 'SHOW_NOTIFICATION':
-        handleShowNotification(msg.payload);
-        sendResponse({ success: true });
-        return false;
+        respondAsync(
+          () => handleShowNotification(msg.payload).then(() => ({ success: true })),
+          sendResponse
+        );
+        return true;
 
       default:
         // This should never be reached given isValidIncomingMessage above,
@@ -262,9 +264,9 @@ browserApi.runtime.onSuspend?.addListener(() => {
 
 // ── Notification handler ─────────────────────────────────────────────────────
 
-function handleShowNotification(payload: ShowNotificationMessage['payload']): void {
+async function handleShowNotification(payload: ShowNotificationMessage['payload']): Promise<void> {
   const { id, title, message, imageUrl } = payload;
-  browserApi.notifications.create(id, {
+  await browserApi.notifications.create(id, {
     type: 'basic',
     title,
     message,

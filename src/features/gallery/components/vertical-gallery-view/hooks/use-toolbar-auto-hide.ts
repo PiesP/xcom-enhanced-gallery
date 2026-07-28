@@ -43,7 +43,6 @@ export function useToolbarAutoHide(options: UseToolbarAutoHideOptions): UseToolb
     const autoHideDelay = Math.max(0, typeof rawAutoHideDelay === 'number' ? rawAutoHideDelay : 0);
 
     if (autoHideDelay === 0) {
-      setIsInitialToolbarVisible(false);
       return;
     }
 

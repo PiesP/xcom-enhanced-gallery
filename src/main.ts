@@ -20,6 +20,7 @@ import { logger } from '@shared/logging/logger';
 import { getEventManager } from '@shared/services/event-manager';
 import { getThemeService } from '@shared/services/theme-service';
 import type { BootstrapStage } from '@shared/types/lifecycle.types';
+import { installHistoryNavigationFallback } from '@shared/utils/url/history-navigation';
 import { TWITTER_HOSTS } from '@shared/utils/url/host';
 // Import isolated gallery styles in CSS cascade priority order:
 // layers → tokens → reset → utilities → component styles
@@ -369,8 +370,7 @@ if (typeof navigation !== 'undefined') {
     reconcileApplication(isAllowedStartUrl(destination));
   });
 } else {
-  // Fallback for browsers without Navigation API
-  window.addEventListener('popstate', () => {
-    reconcileApplication(isAllowedStartPage());
+  installHistoryNavigationFallback((url) => {
+    reconcileApplication(isAllowedStartUrl(url));
   });
 }

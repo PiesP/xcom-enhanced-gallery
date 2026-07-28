@@ -52,15 +52,15 @@ export function useGalleryLifecycle(options: UseGalleryLifecycleOptions): void {
       ([container, visible]) => {
         if (!container) return;
 
-        // Respect prefers-reduced-motion: skip JS-driven animation
+        // Respect prefers-reduced-motion for animation only. Media cleanup is
+        // independent of motion preferences and must always run on close.
         const prefersReducedMotion =
           window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-        if (prefersReducedMotion) return;
 
         if (visible) {
-          animateGalleryEnter(container).catch(() => {});
+          if (!prefersReducedMotion) animateGalleryEnter(container).catch(() => {});
         } else {
-          animateGalleryExit(container).catch(() => {});
+          if (!prefersReducedMotion) animateGalleryExit(container).catch(() => {});
 
           const logCleanupFailure = (error: unknown) => {
             __DEV__ && logger.warn('video cleanup failed', { error });

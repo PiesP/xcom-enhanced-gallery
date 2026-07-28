@@ -102,12 +102,15 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
 
       const focusableElements = Array.from(
         containerEl!.querySelectorAll<HTMLElement>(focusableSelectors)
-      ).filter(
-        (el) =>
-          !el.hasAttribute('aria-hidden') &&
-          (el.getClientRects().length > 0 ||
-            (!el.hasAttribute('disabled') && getComputedStyle(el).visibility !== 'hidden'))
-      );
+      ).filter((el) => {
+        const style = getComputedStyle(el);
+        return (
+          el.getClientRects().length > 0 &&
+          style.visibility === 'visible' &&
+          style.display !== 'none' &&
+          !el.closest('[hidden], [inert], [aria-hidden="true"]')
+        );
+      });
 
       if (focusableElements.length === 0) return;
 
@@ -146,6 +149,16 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
   let previousScrollRestoration: ScrollRestoration | null = null;
   let previouslyFocusedElement: HTMLElement | null = null;
   let hiddenBackgroundElements: HTMLElement[] = [];
+  const previousInertAttributes = new Map<HTMLElement, string | null>();
+  let backgroundObserver: MutationObserver | null = null;
+
+  const hideBackground = (element: HTMLElement): void => {
+    if (hiddenBackgroundElements.includes(element)) return;
+    hiddenBackgroundElements.push(element);
+    previousInertAttributes.set(element, element.getAttribute('inert'));
+    hideBackgroundElement(element);
+    element.setAttribute('inert', '');
+  };
 
   createEffect(() => {
     if (!scrollRestoration) {
@@ -190,9 +203,25 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
           (el) => el instanceof HTMLElement && !el.contains(containerElement)
         ) as HTMLElement[];
       }
-      for (const el of hiddenBackgroundElements) {
-        hideBackgroundElement(el);
-      }
+      const initialBackgroundElements = hiddenBackgroundElements;
+      hiddenBackgroundElements = [];
+      for (const el of initialBackgroundElements) hideBackground(el);
+
+      backgroundObserver = new MutationObserver((records) => {
+        for (const record of records) {
+          for (const node of record.addedNodes) {
+            if (!(node instanceof HTMLElement)) continue;
+            if (
+              node === containerElement ||
+              (containerElement !== undefined && node.contains(containerElement))
+            ) {
+              continue;
+            }
+            hideBackground(node);
+          }
+        }
+      });
+      backgroundObserver.observe(document.body, { childList: true });
 
       // A11y: Move focus into the dialog so keyboard trap receives events.
       // Focus must move AFTER aria-hidden is set on background elements
@@ -211,6 +240,8 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
   });
 
   onCleanup(() => {
+    backgroundObserver?.disconnect();
+    backgroundObserver = null;
     if (scrollRestoration) {
       document.body.style.overflow = scrollRestoration.overflow;
       document.body.style.position = scrollRestoration.position;
@@ -227,8 +258,15 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     // A3: Restore background elements' accessibility state
     for (const el of hiddenBackgroundElements) {
       restoreBackgroundElement(el);
+      const previousInert = previousInertAttributes.get(el);
+      if (previousInert === null || previousInert === undefined) {
+        el.removeAttribute('inert');
+      } else {
+        el.setAttribute('inert', previousInert);
+      }
     }
     hiddenBackgroundElements = [];
+    previousInertAttributes.clear();
     // Return focus to the element that was focused before the gallery opened
     if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
       try {

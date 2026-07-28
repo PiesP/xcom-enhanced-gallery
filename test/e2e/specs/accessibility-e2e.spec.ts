@@ -13,7 +13,7 @@
  * 5. Video elements have aria-label
  * 6. Toolbar element has role='toolbar'
  * 7. Focus trap: Tab key cycles within gallery (doesn't escape to page)
- * 8. document.body.inert=true when gallery is open
+ * 8. Body siblings are inert and hidden from assistive technology while the gallery is open
  * 9. Focus returns to trigger element when gallery closes
  *
  * Environment: Playwright + Chromium (headless)
@@ -289,6 +289,23 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
+  test('video control keyboard events do not activate the parent gallery item', async ({ page }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const progress = page.locator('[role="progressbar"]');
+    await expect(progress).toHaveAttribute('aria-valuenow', '1');
+
+    await page.locator('[role="listitem"] video').dispatchEvent('keyup', {
+      key: ' ',
+      bubbles: true,
+      cancelable: true,
+    });
+
+    await expect(progress).toHaveAttribute('aria-valuenow', '1');
+    await closeGallery(page);
+  });
+
   test('Toolbar element has role=toolbar', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
@@ -329,6 +346,61 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
 
     await expect(outside).not.toHaveAttribute('aria-hidden', 'true');
+  });
+
+  test('body siblings added while open are hidden and restored with their prior state', async ({ page }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const lateSibling = page.locator('#late-background-sibling');
+    await page.evaluate(() => {
+      const element = document.createElement('aside');
+      element.id = 'late-background-sibling';
+      element.setAttribute('aria-hidden', 'false');
+      document.body.append(element);
+    });
+
+    await expect(lateSibling).toHaveAttribute('aria-hidden', 'true');
+    await expect(lateSibling).toHaveAttribute('inert', '');
+
+    await closeGallery(page);
+
+    await expect(lateSibling).toHaveAttribute('aria-hidden', 'false');
+    await expect(lateSibling).not.toHaveAttribute('inert', '');
+  });
+
+  test('focus trap excludes hidden descendants from the last focus candidate', async ({ page }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const result = await page.evaluate(() => {
+      const container = document.querySelector<HTMLElement>('[data-xeg-gallery-container]');
+      if (!container) throw new Error('Gallery container missing');
+
+      const visibleButton = document.createElement('button');
+      visibleButton.textContent = 'Visible last button';
+      container.append(visibleButton);
+
+      const hiddenButton = document.createElement('button');
+      hiddenButton.hidden = true;
+      container.append(hiddenButton);
+
+      visibleButton.focus();
+      const event = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        bubbles: true,
+        cancelable: true,
+      });
+      visibleButton.dispatchEvent(event);
+
+      return {
+        defaultPrevented: event.defaultPrevented,
+        focusStayedInGallery: container.contains(document.activeElement),
+      };
+    });
+
+    expect(result).toEqual({ defaultPrevented: true, focusStayedInGallery: true });
+    await closeGallery(page);
   });
 
   test('Focus returns to page when gallery closes', async ({ page }) => {

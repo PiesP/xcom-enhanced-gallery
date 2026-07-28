@@ -1,11 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker/master/packages/core/schema/stryker-schema.json",
   "mutate": [
-    "src/utils/**/*.ts",
+    "src/shared/utils/**/*.ts",
     "src/shared/async/**/*.ts",
     "src/shared/core/**/*.ts",
     "src/features/gallery/hooks/use-gallery-download.ts",
-    "src/services/download/**/*.ts",
+    "src/shared/services/download/**/*.ts",
     "!src/**/*.d.ts",
     "!src/types/**",
     "!src/platform/**",

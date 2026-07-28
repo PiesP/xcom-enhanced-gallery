@@ -217,6 +217,42 @@ describe('SettingsService', () => {
       expect(saved[0]?.lastModified).toBe(service.get('lastModified'));
     });
 
+    it('should not commit state or a success event when persistence fails', async () => {
+      const failure = new Error('Storage unavailable');
+      let rejectSave: (reason?: unknown) => void = () => undefined;
+      let markSaveStarted: () => void = () => undefined;
+      const saveStarted = new Promise<void>((resolve) => {
+        markSaveStarted = resolve;
+      });
+      const repository: SettingsRepository = {
+        load: vi.fn(async () => createDefaultSettings(1_000)),
+        save: vi.fn(
+          () =>
+            new Promise<void>((_resolve, reject) => {
+              markSaveStarted();
+              rejectSave = reject;
+            })
+        ),
+      };
+      service = new SettingsService(repository);
+      await service.initialize();
+      const listener = vi.fn();
+      service.subscribe(listener);
+
+      const pendingSet = service.set('gallery.theme', 'dark');
+      await saveStarted;
+
+      expect(service.get('gallery.theme')).toBe('auto');
+      expect(service.get('lastModified')).toBe(1_000);
+      expect(listener).not.toHaveBeenCalled();
+
+      rejectSave(failure);
+      await expect(pendingSet).rejects.toBe(failure);
+      expect(service.get('gallery.theme')).toBe('auto');
+      expect(service.get('lastModified')).toBe(1_000);
+      expect(listener).not.toHaveBeenCalled();
+    });
+
     it('should reject boolean when number is expected', async () => {
       await expect(
         service.set('toolbar.autoHideDelay', false as any)

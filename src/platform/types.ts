@@ -37,7 +37,7 @@ export interface DownloadAdapter {
 }
 
 export interface NotificationAdapter {
-  notify(title: string, message: string, imageUrl?: string): void;
+  notify(title: string, message: string, imageUrl?: string): Promise<void>;
 }
 
 export interface HttpRequestAdapter {

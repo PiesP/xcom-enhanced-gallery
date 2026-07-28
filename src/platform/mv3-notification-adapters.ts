@@ -16,16 +16,23 @@ import type { NotificationAdapter } from './types';
 export class MV3NotificationAdapter implements NotificationAdapter {
   private idCounter = 0;
 
-  notify(title: string, message: string, imageUrl?: string): void {
-    // Fire-and-forget: notifications are non-critical, no need to await response.
+  async notify(title: string, message: string, imageUrl?: string): Promise<void> {
     const id = `xeg-${Date.now()}-${++this.idCounter}`;
-    browserApi.runtime
-      .sendMessage({
-        type: 'SHOW_NOTIFICATION',
-        payload: { id, title, message, imageUrl },
-      })
-      .catch(() => {
-        // Notification relay failed — silently ignore (non-critical).
-      });
+    const response: unknown = await browserApi.runtime.sendMessage({
+      type: 'SHOW_NOTIFICATION',
+      payload: { id, title, message, imageUrl },
+    });
+
+    if (!response || typeof response !== 'object') {
+      throw new Error('Empty or invalid response from background SW');
+    }
+    const result = response as Record<string, unknown>;
+    if (result.success !== true) {
+      throw new Error(
+        typeof result.error === 'string' && result.error.length > 0
+          ? result.error
+          : 'Notification failed'
+      );
+    }
   }
 }

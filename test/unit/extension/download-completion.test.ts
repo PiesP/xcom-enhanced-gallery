@@ -45,4 +45,24 @@ describe('waitForDownloadComplete', () => {
 
     await expect(pending).rejects.toThrow('NETWORK_FAILED');
   });
+
+  it('rejects and cleans up when downloads.search fails', async () => {
+    const downloads = createDownloads();
+    const rejection = Promise.reject(new Error('search unavailable'));
+    void rejection.catch(() => undefined);
+    downloads.search.mockReturnValueOnce(rejection);
+
+    const outcome = waitForDownloadComplete(downloads, 7).then(
+      () => 'resolved',
+      (error: unknown) => (error instanceof Error ? error.message : String(error))
+    );
+
+    await expect(
+      Promise.race([
+        outcome,
+        new Promise<string>((resolve) => setTimeout(() => resolve('still-pending'), 0)),
+      ])
+    ).resolves.toBe('Failed to inspect download 7: search unavailable');
+    expect(downloads.onChanged.removeListener).toHaveBeenCalledOnce();
+  });
 });
