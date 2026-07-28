@@ -9,6 +9,37 @@
 	}
 	var IS_MV3 = detectPlatform() === "mv3-extension";
 	//#endregion
+	//#region src/shared/logging/logger.ts
+	var BASE_PREFIX = "[XEG]";
+	var noop = () => {};
+	var createErrorOnlyLogger = (prefix) => ({
+		info: noop,
+		debug: noop,
+		trace: noop,
+		warn: (...args) => {
+			console.warn(prefix, ...args);
+		},
+		error: (...args) => {
+			console.error(prefix, ...args);
+		}
+	});
+	function buildLogger(prefix) {
+		return createErrorOnlyLogger(prefix);
+	}
+	function createLogger(arg = {}) {
+		return buildLogger((typeof arg === "string" ? { prefix: `[${arg}]` } : arg).prefix ?? BASE_PREFIX);
+	}
+	var logger = createLogger();
+	//#endregion
+	//#region src/platform/notifications.ts
+	var log$1 = createLogger("Notification");
+	/** Deliver a best-effort notification without leaking a rejected Promise. */
+	function notifySafely(adapter, title, message, imageUrl) {
+		adapter.notify(title, message, imageUrl).catch((error) => {
+			log$1.warn("Notification delivery failed", error);
+		});
+	}
+	//#endregion
 	//#region src/constants/performance.ts
 	/** Default request timeout for fetch-based downloads */
 	var DEFAULT_REQUEST_TIMEOUT_MS = 3e4;
@@ -641,6 +672,7 @@
 			}
 		}
 		async sendDownloadRequest(message, signal) {
+			if (signal?.aborted) throw getUserCancelledAbortErrorFromSignal(signal);
 			const requestId = crypto.randomUUID();
 			const request = {
 				...message,
@@ -659,11 +691,6 @@
 			};
 			signal?.addEventListener("abort", onAbort, { once: true });
 			try {
-				if (signal?.aborted) {
-					onAbort();
-					await abortPromise;
-					return;
-				}
 				const responsePromise = browserApi.runtime.sendMessage(request).then((response) => response);
 				const error = unwrapResponse(await (abortPromise ? Promise.race([responsePromise, abortPromise]) : responsePromise));
 				if (error) throw new Error(error);
@@ -898,28 +925,6 @@
 	function setTypedSetting(path, value) {
 		return requireSettingsService().set(path, value);
 	}
-	//#endregion
-	//#region src/shared/logging/logger.ts
-	var BASE_PREFIX = "[XEG]";
-	var noop = () => {};
-	var createErrorOnlyLogger = (prefix) => ({
-		info: noop,
-		debug: noop,
-		trace: noop,
-		warn: (...args) => {
-			console.warn(prefix, ...args);
-		},
-		error: (...args) => {
-			console.error(prefix, ...args);
-		}
-	});
-	function buildLogger(prefix) {
-		return createErrorOnlyLogger(prefix);
-	}
-	function createLogger(arg = {}) {
-		return buildLogger((typeof arg === "string" ? { prefix: `[${arg}]` } : arg).prefix ?? BASE_PREFIX);
-	}
-	var logger = createLogger();
 	//#endregion
 	//#region src/shared/error/app-error-reporter.ts
 	function normalizeErrorMessage(error) {
@@ -2667,7 +2672,7 @@
 	var normalizeTweetUrl$1 = (inputUrl) => {
 		try {
 			const url = new URL(inputUrl, DEFAULT_TWEET_ORIGIN);
-			if (isHostMatching(url.hostname.toLowerCase(), TWITTER_HOSTS, { allowSubdomains: true })) {
+			if (isHostMatching(url, TWITTER_HOSTS, { allowSubdomains: true })) {
 				url.hostname = "x.com";
 				url.protocol = "https:";
 			}
@@ -5341,7 +5346,7 @@
 		if (!keyboardDebouncer.shouldExecute("?", 500)) return;
 		try {
 			const lang = getLanguageService();
-			getNotificationAdapter().notify(lang.translate("msg.kb.t"), [
+			notifySafely(getNotificationAdapter(), lang.translate("msg.kb.t"), [
 				lang.translate("msg.kb.prev"),
 				lang.translate("msg.kb.next"),
 				lang.translate("msg.kb.cls"),
@@ -6213,12 +6218,12 @@
 						metadata: { success: result.success }
 					});
 					const lang = getLanguageService();
-					getNotificationAdapter().notify(lang.translate("msg.err.loadMedia.title"), lang.translate("msg.err.loadMedia.body"));
+					notifySafely(getNotificationAdapter(), lang.translate("msg.err.loadMedia.title"), lang.translate("msg.err.loadMedia.body"));
 				}
 			} catch (error) {
 				mediaErrorReporter.error(error, { code: "MEDIA_EXTRACTION_ERROR" });
 				const lang = getLanguageService();
-				getNotificationAdapter().notify(lang.translate("msg.err.generic"), normalizeErrorMessage(error));
+				notifySafely(getNotificationAdapter(), lang.translate("msg.err.generic"), normalizeErrorMessage(error));
 			}
 		}
 		openGallery(mediaItems, startIndex = 0, pauseContext) {
@@ -6236,7 +6241,7 @@
 					}
 				});
 				const lang = getLanguageService();
-				getNotificationAdapter().notify(lang.translate("msg.err.loadGallery"), normalizeErrorMessage(error));
+				notifySafely(getNotificationAdapter(), lang.translate("msg.err.loadGallery"), normalizeErrorMessage(error));
 				throw error;
 			}
 		}
@@ -11366,6 +11371,8 @@
 			assertZip32(centralDirStart < ZIP_CONST.MAX_UINT32, `central directory offset overflow (${centralDirStart})`);
 			let centralDirSize = 0;
 			for (const entry of this.entries) centralDirSize += 46 + encodeUtf8(entry.filename).length;
+			const eocdSize = 22;
+			assertZip32(centralDirStart + centralDirSize + eocdSize <= ZIP_CONST.MAX_UINT32, `final archive size overflow (${centralDirStart + centralDirSize + eocdSize})`);
 			const centralDir = new Uint8Array(centralDirSize);
 			let pos = 0;
 			for (const entry of this.entries) {
@@ -11868,7 +11875,7 @@
 			setError(null);
 			setDownloading(true);
 			const notifyError = (title, body) => {
-				notify.notify(title, body);
+				notifySafely(notify, title, body);
 			};
 			try {
 				const languageService = getLanguageService();
@@ -11955,10 +11962,15 @@
 	//#region src/shared/dom/background-visibility.ts
 	var GALLERY_HIDDEN_MARKER = "data-xeg-gallery-hidden";
 	var previousAriaHidden = /* @__PURE__ */ new WeakMap();
+	var previousInert = /* @__PURE__ */ new WeakMap();
 	function hideBackgroundElement(element) {
-		if (!previousAriaHidden.has(element)) previousAriaHidden.set(element, element.getAttribute("aria-hidden"));
+		if (!previousAriaHidden.has(element)) {
+			previousAriaHidden.set(element, element.getAttribute("aria-hidden"));
+			previousInert.set(element, element.getAttribute("inert"));
+		}
 		element.setAttribute(GALLERY_HIDDEN_MARKER, "");
 		element.setAttribute("aria-hidden", "true");
+		element.setAttribute("inert", "");
 	}
 	function restoreBackgroundElement(element) {
 		if (!previousAriaHidden.has(element) && !element.hasAttribute(GALLERY_HIDDEN_MARKER)) return;
@@ -11966,6 +11978,10 @@
 		if (previous === null || previous === void 0) element.removeAttribute("aria-hidden");
 		else element.setAttribute("aria-hidden", previous);
 		previousAriaHidden.delete(element);
+		const inert = previousInert.get(element);
+		if (inert === null || inert === void 0) element.removeAttribute("inert");
+		else element.setAttribute("inert", inert);
+		previousInert.delete(element);
 		element.removeAttribute(GALLERY_HIDDEN_MARKER);
 	}
 	function isHiddenByGallery(element) {
@@ -12060,14 +12076,11 @@
 		let previousScrollRestoration = null;
 		let previouslyFocusedElement = null;
 		let hiddenBackgroundElements = [];
-		const previousInertAttributes = /* @__PURE__ */ new Map();
 		let backgroundObserver = null;
 		const hideBackground = (element) => {
 			if (hiddenBackgroundElements.includes(element)) return;
 			hiddenBackgroundElements.push(element);
-			previousInertAttributes.set(element, element.getAttribute("inert"));
 			hideBackgroundElement(element);
-			element.setAttribute("inert", "");
 		};
 		createEffect(() => {
 			if (!scrollRestoration) {
@@ -12123,14 +12136,8 @@
 				if ("scrollRestoration" in window.history) window.history.scrollRestoration = previousScrollRestoration ?? "auto";
 				scrollRestoration = null;
 			}
-			for (const el of hiddenBackgroundElements) {
-				restoreBackgroundElement(el);
-				const previousInert = previousInertAttributes.get(el);
-				if (previousInert === null || previousInert === void 0) el.removeAttribute("inert");
-				else el.setAttribute("inert", previousInert);
-			}
+			for (const el of hiddenBackgroundElements) restoreBackgroundElement(el);
 			hiddenBackgroundElements = [];
-			previousInertAttributes.clear();
 			if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === "function") {
 				try {
 					previouslyFocusedElement.focus();
@@ -12219,7 +12226,7 @@
 			if (lastError() === error) return;
 			setLastError(error);
 			const { title, body } = translateError(error);
-			getNotificationAdapter().notify(title, body);
+			notifySafely(getNotificationAdapter(), title, body);
 		};
 		const handleRetry = () => {
 			if (retryCount() >= MAX_RETRIES) return;
@@ -12295,12 +12302,12 @@
 									return "Reset";
 								}
 							});
-							createRenderEffect(() => className(_el$5, `${ErrorBoundary_module_default["xeg-error-boundary__action"]} ${ErrorBoundary_module_default["xeg-error-boundary__reset"]}`));
+							createRenderEffect(() => className(_el$5, `${ErrorBoundary_module_default.xegErrorBoundaryAction} ${ErrorBoundary_module_default.xegErrorBoundaryReset}`));
 							return _el$5;
 						}
 					}), null);
 					createRenderEffect((_p$) => {
-						var _v$ = ErrorBoundary_module_default["xeg-error-boundary__title"], _v$2 = ErrorBoundary_module_default["xeg-error-boundary__body"], _v$3 = ErrorBoundary_module_default["xeg-error-boundary__action"];
+						var _v$ = ErrorBoundary_module_default.xegErrorBoundaryTitle, _v$2 = ErrorBoundary_module_default.xegErrorBoundaryBody, _v$3 = ErrorBoundary_module_default.xegErrorBoundaryAction;
 						_v$ !== _p$.e && className(_el$2, _p$.e = _v$);
 						_v$2 !== _p$.t && className(_el$3, _p$.t = _v$2);
 						_v$3 !== _p$.a && className(_el$4, _p$.a = _v$3);
@@ -12834,7 +12841,7 @@
 		} catch (error) {
 			settingsErrorReporter.warn(error, { code: "SETTINGS_SERVICE_INIT_FAILED" });
 			const lang = getLanguageService();
-			getNotificationAdapter().notify(lang.translate("msg.err.settingsUnavailable.title"), lang.translate("msg.err.settingsUnavailable.body"));
+			notifySafely(getNotificationAdapter(), lang.translate("msg.err.settingsUnavailable.title"), lang.translate("msg.err.settingsUnavailable.body"));
 		}
 	}
 	async function initializeGalleryApp() {
