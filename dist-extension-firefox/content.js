@@ -2097,6 +2097,7 @@
 		* for blob-level caching.
 		*/
 		async prefetch(media, schedule = "idle") {
+			if (this.disposed) return;
 			if (media.type === "video" || media.type === "gif") return;
 			if (this.cache.has(media.url) || this.activeRequests.has(media.url)) return;
 			if (schedule === "immediate") {
@@ -2130,9 +2131,7 @@
 			for (const handle of this.idleHandles) handle.cancel();
 			this.idleHandles.clear();
 		}
-		/**
-		* Clear the prefetch cache
-		/** Clear the prefetch cache and reset byte tracking */
+		/** Clear the prefetch cache and reset byte tracking. */
 		clear() {
 			this.cache.clear();
 			this.nodeMap.clear();
@@ -2152,6 +2151,7 @@
 			this.clear();
 		}
 		async prefetchSingle(url) {
+			if (this.disposed) return;
 			const existing = this.cache.get(url);
 			if (existing) {
 				try {
@@ -2160,6 +2160,7 @@
 					this.cache.delete(url);
 					this.removeFromLRU(url);
 				}
+				if (this.disposed) return;
 				if (this.cache.has(url)) return;
 			}
 			const controller = new AbortController();
@@ -2172,12 +2173,13 @@
 				if (!response.ok) throw new Error(`HTTP ${response.status}`);
 				return response.data;
 			}).finally(() => {
-				this.activeRequests.delete(url);
+				if (this.activeRequests.get(url) === controller) this.activeRequests.delete(url);
 			});
 			this.cache.set(url, fetchPromise);
 			this.addToLRU(url);
 			try {
 				const blob = await fetchPromise;
+				if (this.disposed || this.cache.get(url) !== fetchPromise) return;
 				this.totalBytes += blob.size;
 				this.resolvedSizes.set(url, blob.size);
 				this.evictByByteBudget();

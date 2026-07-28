@@ -10,7 +10,6 @@
  * Firefox MV3 differences:
  * - browser_specific_settings.gecko.id required
  * - background.scripts (not service_worker)
- * - "menus" permission (not "contextMenus")
  *
  * Usage:
  *   pnpm build:extension:firefox — Build Firefox extension files
