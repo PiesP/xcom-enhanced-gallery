@@ -46,7 +46,7 @@ jobs:
   osv-scan-dispatch:
     name: pr-gate/osv / osv-scan
     if: ${{ github.event_name == 'workflow_dispatch' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: 📥 Checkout code
@@ -82,7 +82,7 @@ jobs:
 
   codeql:
     name: 🔎 CodeQL Analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       actions: read
@@ -112,7 +112,7 @@ jobs:
 
   semgrep:
     name: pr-gate/semgrep
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
     permissions:
@@ -143,7 +143,7 @@ jobs:
             .
 
       - name: 📊 Upload SARIF to GitHub Security
-        uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4
+        uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         if: always()
         with:
           sarif_file: semgrep.sarif
@@ -152,7 +152,7 @@ jobs:
     name: Report PR gate statuses
     if: ${{ always() && github.event_name == 'workflow_dispatch' }}
     needs: [osv-scan-dispatch, semgrep]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Publish required commit statuses

@@ -25,7 +25,7 @@ concurrency:
 jobs:
   quality:
     name: ✅ Release quality
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: 📥 Checkout code
@@ -37,7 +37,7 @@ jobs:
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
       - name: 🟢 Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -50,7 +50,7 @@ jobs:
 
   unit:
     name: 🧪 Release unit + coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: 📥 Checkout code
@@ -62,7 +62,7 @@ jobs:
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
       - name: 🟢 Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -75,7 +75,7 @@ jobs:
 
   e2e:
     name: 🎭 Release E2E
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: 📥 Checkout code
@@ -87,7 +87,7 @@ jobs:
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
       - name: 🟢 Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -115,7 +115,7 @@ jobs:
 
   duplication:
     name: 🔍 Release duplication
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: 📥 Checkout code
@@ -133,7 +133,7 @@ jobs:
 
   mutation:
     name: 🧬 Release mutation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - name: 📥 Checkout code
@@ -145,7 +145,7 @@ jobs:
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
       - name: 🟢 Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -159,7 +159,7 @@ jobs:
   build:
     name: 🏗️ Build release package
     needs: quality
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: 📥 Checkout code
@@ -173,7 +173,7 @@ jobs:
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
       - name: 🟢 Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -245,7 +245,11 @@ jobs:
             "version": "$VERSION",
             "build_date": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
             "commit": "${GITHUB_SHA}",
-            "node_version": "${NODE_VERSION}"
+            "node_version": "${NODE_VERSION}",
+            "runner_os": "${RUNNER_OS}",
+            "runner_arch": "${RUNNER_ARCH}",
+            "runner_image": "${ImageOS:-unknown}",
+            "runner_image_version": "${ImageVersion:-unknown}"
           }
           EOF
 
@@ -315,10 +319,11 @@ jobs:
           - **Commit**: \`${GITHUB_SHA}\`
           - **Built**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
           - **Node.js**: \`${NODE_VERSION}\`
+          - **Runner**: \`${RUNNER_OS}/${RUNNER_ARCH}\` (\`${ImageOS:-unknown} ${ImageVersion:-unknown}\`)
           EOF
 
       - name: 📊 Upload release bundle
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-bundle-${{ github.sha }}
           path: release-bundle/
@@ -329,7 +334,7 @@ jobs:
   publish:
     name: 🏷️ Publish GitHub Release
     needs: [quality, unit, e2e, duplication, mutation, build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write
@@ -351,7 +356,7 @@ jobs:
           force_orphan: true
 
       - name: 🏷️ Create GitHub Release
-        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           tag_name: ${{ github.ref_name }}
           body_path: release-bundle/RELEASE_NOTES.md
@@ -371,7 +376,7 @@ jobs:
     name: 🔄 Purge jsDelivr CDN cache
     needs: publish
     if: ${{ needs.publish.result == 'success' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     continue-on-error: true
     permissions:
