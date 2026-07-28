@@ -1,13 +1,16 @@
 name: 🔒 Security Scanning
 
 # Responsibility: Security analysis for Node.js + pnpm project
+# - Default branch/PR/merge queue: CodeQL for Actions and JavaScript/TypeScript
 # - PR gate: OSV diff scan
 # - Merge queue/manual gate: OSV full scan
 # - Scheduled/manual depth: OSV full scan + full-repository Semgrep SARIF upload
 #
-# Trigger: PR to master + merge queue + weekly schedule + manual
+# Trigger: Push/PR to master + merge queue + weekly schedule + manual
 
 on:
+  push:
+    branches: [master]
   pull_request:
     branches: [master]
   merge_group:
@@ -154,7 +157,7 @@ jobs:
           sarif_file: osv-results.sarif
 
   codeql:
-    name: 🔎 CodeQL Analysis
+    name: 🔎 CodeQL Analysis (${{ matrix.language }})
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -164,7 +167,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [javascript-typescript]
+        language: [actions, javascript-typescript]
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
