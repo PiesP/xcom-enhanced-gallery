@@ -9,6 +9,14 @@ import { join, resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '../../..');
 const chromeExtensionDir = resolve(root, 'dist-extension');
 const firefoxExtensionDir = resolve(root, 'dist-extension-firefox');
+const mockGalleryPage = readFileSync(
+  resolve(root, 'test/e2e/fixtures/mock-gallery-page.html'),
+  'utf8'
+);
+const mockImage = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  'base64'
+);
 
 test.beforeAll(() => {
   for (const directory of [chromeExtensionDir, firefoxExtensionDir]) {
@@ -18,7 +26,7 @@ test.beforeAll(() => {
   }
 });
 
-test('loads the Chrome extension background and exposes its runtime metadata', async ({
+test('loads the Chrome extension and opens the gallery from a content-script click', async ({
   browserName,
 }) => {
   test.skip(browserName !== 'chromium', 'Chrome extension loading requires Chromium');
@@ -33,6 +41,13 @@ test('loads the Chrome extension background and exposes its runtime metadata', a
   });
 
   try {
+    await context.route('https://x.com/**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'text/html', body: mockGalleryPage });
+    });
+    await context.route('https://pbs.twimg.com/**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'image/png', body: mockImage });
+    });
+
     const background =
       context.serviceWorkers()[0] ??
       (await context.waitForEvent('serviceworker', { timeout: 10_000 }));
@@ -46,6 +61,26 @@ test('loads the Chrome extension background and exposes its runtime metadata', a
     });
     expect(runtime.id).toBeTruthy();
     expect(runtime.name).toBe('X.com Enhanced Gallery');
+
+    const extensionPage = await context.newPage();
+    await extensionPage.goto(`chrome-extension://${runtime.id}/manifest.json`);
+    const malformedResponse = await extensionPage.evaluate(() =>
+      chrome.runtime.sendMessage({ type: 'NOT_A_REAL_MESSAGE' })
+    );
+    expect(malformedResponse).toEqual({ success: false, error: 'Unknown message type' });
+    await extensionPage.close();
+
+    const pageErrors: string[] = [];
+    const page = await context.newPage();
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    await page.goto('https://x.com/testuser/status/1234567890123456789');
+
+    const firstPhoto = page.locator('[data-testid="tweetPhoto"] img').first();
+    await expect(firstPhoto).toBeVisible();
+    await firstPhoto.click();
+    await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
+    await expect(page.locator('[data-xeg-gallery-container] img').first()).toBeVisible();
+    expect(pageErrors).toEqual([]);
   } finally {
     await context.close();
     rmSync(userDataDir, { recursive: true, force: true });
