@@ -28,12 +28,16 @@ jobs:
   update:
     name: Create browser-core update PR
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          submodules: true
+          # Do not initialize the recorded gitlink here. If browser-core history
+          # was rewritten and the old SHA disappeared, this workflow must still
+          # be able to repair the consumer repository.
+          submodules: false
 
       - name: Update submodule, create PR, and queue auto-merge
         env:
@@ -64,70 +68,66 @@ jobs:
 
           SHORT_SHA="${CORE_SHA:0:12}"
           BRANCH="automation/update-browser-core"
-          BRANCH_EXISTS=false
+          REMOTE_BRANCH_SHA="$(git ls-remote --heads origin "$BRANCH" | cut -f1)"
 
-          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
-            git fetch origin "$BRANCH"
-            git switch -C "$BRANCH" "origin/$BRANCH"
-            BRANCH_EXISTS=true
-          else
-            git switch -c "$BRANCH"
-          fi
-
-          # Keep the long-lived automation branch current so strict branch
-          # protection does not leave a passing update PR behind master.
+          # Rebuild the automation branch from the current default branch on
+          # every run. This prevents merge accumulation and guarantees that the
+          # PR satisfies strict up-to-date branch protection.
+          git fetch origin master
+          git switch -C "$BRANCH" origin/master
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          BRANCH_HEAD_BEFORE_SYNC="$(git rev-parse HEAD)"
-          git merge --no-edit origin/master
-          BRANCH_SYNCED=false
-          if [[ "$(git rev-parse HEAD)" != "$BRANCH_HEAD_BEFORE_SYNC" ]]; then
-            BRANCH_SYNCED=true
-          fi
 
-          git -C packages/core fetch --no-tags origin "$CORE_SHA"
+          # Clone independently of the recorded gitlink so an unreachable old
+          # submodule SHA cannot prevent this repair workflow from starting.
+          git clone --filter=blob:none --no-checkout \
+            "https://github.com/$CORE_REPOSITORY.git" packages/core
+          git -C packages/core fetch --no-tags origin master
+          if ! git -C packages/core cat-file -e "$CORE_SHA^{commit}"; then
+            echo "::error::browser-core commit does not exist: $CORE_SHA"
+            exit 1
+          fi
+          if ! git -C packages/core merge-base --is-ancestor "$CORE_SHA" origin/master; then
+            echo "::error::browser-core commit is not reachable from origin/master: $CORE_SHA"
+            exit 1
+          fi
           git -C packages/core checkout --detach "$CORE_SHA"
 
-          UPDATED=false
-          BRANCH_CHANGED=false
-          if ! git diff --quiet -- packages/core; then
-            git add packages/core
-            git commit -m "chore(deps): update browser-core to $SHORT_SHA"
-            git push --set-upstream origin "$BRANCH"
-            UPDATED=true
-            BRANCH_CHANGED=true
-          elif [[ "$BRANCH_SYNCED" == true ]]; then
-            git push --set-upstream origin "$BRANCH"
-            BRANCH_CHANGED=true
-          fi
-
-          if [[ "$BRANCH_CHANGED" == true ]]; then
-            gh workflow run "🏗️ CI" --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
-            gh workflow run "🔒 Security Scanning" --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
-          fi
-
           OPEN_PR="$(gh pr list --state open --head "$BRANCH" --json number --jq '.[0].number // empty')"
-          if [[ -n "$OPEN_PR" ]]; then
-            if [[ "$UPDATED" == true ]]; then
-              echo "Updated the existing browser-core PR #$OPEN_PR to $SHORT_SHA."
-            elif git diff --quiet "origin/master...HEAD" -- . ':(exclude)packages/core'; then
-              if git diff --quiet "origin/master...HEAD" -- .; then
-                gh pr close "$OPEN_PR" --comment "Closing this stale update PR because master already contains browser-core $SHORT_SHA."
-                echo "Closed stale browser-core update PR #$OPEN_PR."
-                exit 0
-              else
-                echo "Synchronized existing browser-core PR #$OPEN_PR with master."
-              fi
-            else
-              echo "::error::Open browser-core PR #$OPEN_PR has unrelated changes; leaving it open for manual review."
-              exit 1
+          if git diff --quiet -- packages/core; then
+            if [[ -n "$OPEN_PR" ]]; then
+              gh pr close "$OPEN_PR" --comment "Closing this stale update PR because master already contains browser-core $SHORT_SHA."
             fi
-            PR_NUMBER="$OPEN_PR"
+            echo "browser-core is already at $SHORT_SHA."
+            exit 0
+          fi
+
+          git add packages/core
+          git commit -m "chore(deps): update browser-core to $SHORT_SHA"
+
+          mapfile -t CHANGED_FILES < <(git diff --name-only origin/master...HEAD)
+          if [[ "${#CHANGED_FILES[@]}" -ne 1 || "${CHANGED_FILES[0]}" != "packages/core" ]]; then
+            echo "::error::Refusing to publish an update that changes files other than packages/core"
+            printf 'Changed: %s\n' "${CHANGED_FILES[@]}"
+            exit 1
+          fi
+
+          if [[ -n "$REMOTE_BRANCH_SHA" ]]; then
+            git push --set-upstream origin "$BRANCH" \
+              --force-with-lease="refs/heads/$BRANCH:$REMOTE_BRANCH_SHA"
           else
-            if [[ "$UPDATED" != true ]] && git diff --quiet "origin/master...HEAD" -- .; then
-              echo "browser-core is already at $SHORT_SHA and no update PR is open."
-              exit 0
-            fi
+            git push --set-upstream origin "$BRANCH"
+          fi
+
+          # GITHUB_TOKEN pushes do not trigger push workflows, so explicitly
+          # dispatch both required validation workflows for the new branch head.
+          gh workflow run "🏗️ CI" --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
+          gh workflow run "🔒 Security Scanning" --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
+
+          if [[ -n "$OPEN_PR" ]]; then
+            PR_NUMBER="$OPEN_PR"
+            echo "Updated browser-core PR #$PR_NUMBER to $SHORT_SHA on top of current master."
+          else
 
             PR_BODY="$(cat <<EOF
           This PR updates the packages/core git submodule to browser-core commit $CORE_SHA.
