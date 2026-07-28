@@ -4,7 +4,6 @@ name: 🔒 Security Scanning
 # - PR/merge queue gate: OSV diff scan
 # - Scheduled/manual depth: OSV full scan + full-repository Semgrep SARIF upload
 #
-# Note: test/ directory is managed in a separate repository
 # Trigger: PR to master + merge queue + weekly schedule + manual
 
 on:
@@ -154,6 +153,7 @@ jobs:
     if: ${{ always() && github.event_name == 'workflow_dispatch' }}
     needs: [osv-scan-dispatch, semgrep]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Publish required commit statuses
         env:
