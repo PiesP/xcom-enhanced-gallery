@@ -20,6 +20,15 @@ export default defineConfig({
     passWithNoTests: false,
     slowTestThreshold: 500,
     testTimeout: 10000,
+    coverage: {
+      provider: "v8",
+      thresholds: {
+        statements: 60,
+        branches: 50,
+        functions: 55,
+        lines: 60,
+      },
+    },
   },
   resolve: {
     alias: {
