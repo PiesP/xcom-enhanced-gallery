@@ -228,15 +228,20 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     const container = page.locator('[data-xeg-gallery-container]');
     const items = page.locator('[data-gallery-element="items"]');
     const backgroundPoint = await items.evaluate((element) => {
-      const rect = element.getBoundingClientRect();
-      for (let y = 8; y < rect.height; y += 16) {
-        for (let x = 8; x < rect.width; x += 16) {
-          if (document.elementFromPoint(rect.left + x, rect.top + y) === element) {
-            return { x, y };
-          }
-        }
+      const item = element.querySelector<HTMLElement>('[data-gallery-element="item"]');
+      if (!item) throw new Error('Gallery item missing');
+
+      const listRect = element.getBoundingClientRect();
+      const itemRect = item.getBoundingClientRect();
+      const leftGap = itemRect.left - listRect.left;
+      const rightGap = listRect.right - itemRect.right;
+      const x = leftGap >= rightGap ? leftGap / 2 : itemRect.right - listRect.left + rightGap / 2;
+      const y = itemRect.top - listRect.top + itemRect.height / 2;
+
+      if (document.elementFromPoint(listRect.left + x, listRect.top + y) !== element) {
+        throw new Error('Calculated point is not on the empty gallery background');
       }
-      throw new Error('No clickable gallery background point found');
+      return { x, y };
     });
 
     await items.click({ position: backgroundPoint });
