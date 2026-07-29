@@ -1,21 +1,28 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import type { Locale, SettingLocale } from '@piesp/browser-core/locale';
+import { LOCALE_CODES } from '@piesp/browser-core/locale';
+
 /**
  * Supported language codes for the application
  * These must match the available language files in the languages directory
  */
-export const LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh-CN', 'es', 'ar'] as const;
+export const LANGUAGE_CODES = LOCALE_CODES;
 
 /**
  * Base language code type derived from LANGUAGE_CODES
  */
-export type BaseLanguageCode = (typeof LANGUAGE_CODES)[number];
+export type BaseLanguageCode = Locale;
 
 /**
  * Supported language options including auto-detection
  */
-export type SupportedLanguage = 'auto' | BaseLanguageCode;
+export type SupportedLanguage = SettingLocale;
+
+const NORMALIZED_LANGUAGE_CODES: ReadonlySet<string> = new Set(
+  LANGUAGE_CODES.map((code) => code.toLowerCase())
+);
 
 /**
  * Translation schema contract shared across all languages
@@ -192,15 +199,5 @@ export interface LanguageStrings {
  * @returns True if value is a valid BaseLanguageCode
  */
 export function isBaseLanguageCode(value: string | null | undefined): value is BaseLanguageCode {
-  if (!value) return false;
-  const lower = value.toLowerCase();
-  return (
-    lower === 'en' ||
-    lower === 'ko' ||
-    lower === 'ja' ||
-    lower === 'zh-cn' ||
-    lower === 'zh-CN' ||
-    lower === 'es' ||
-    lower === 'ar'
-  );
+  return value ? NORMALIZED_LANGUAGE_CODES.has(value.toLowerCase()) : false;
 }
