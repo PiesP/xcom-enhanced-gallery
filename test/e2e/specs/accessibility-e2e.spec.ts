@@ -434,7 +434,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
       container.append(visibleButton);
 
       const untabbableButton = document.createElement('button');
-      untabbableButton.tabIndex = -1;
+      untabbableButton.tabIndex = -2;
       container.append(untabbableButton);
 
       const hiddenButton = document.createElement('button');
