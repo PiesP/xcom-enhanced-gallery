@@ -3131,7 +3131,7 @@
 		"PROD": true,
 		"SSR": false
 	};
-	var version = "2.2.0";
+	var version = "2.2.1";
 	var devFlag = parseBooleanFlag(env.DEV);
 	var mode = env.MODE ?? "production";
 	var isDev = devFlag ?? (mode !== "production" && mode !== "test");
