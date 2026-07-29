@@ -97,6 +97,8 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
     isVisible,
     currentIndex,
     activeMedia,
+    lastUserScrollTime: scroll.lastUserScrollTime,
+    lastProgrammaticScrollTime: navigation.programmaticScrollTimestamp,
     scrollToItem: scroll.scrollToItem,
   });
 

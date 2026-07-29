@@ -6801,10 +6801,11 @@
 	* @returns Object containing the debounced scroll correction function
 	*/
 	function useGalleryScrollCorrection(options) {
-		const { isVisible, currentIndex, activeMedia, scrollToItem } = options;
+		const { isVisible, currentIndex, activeMedia, lastUserScrollTime, lastProgrammaticScrollTime, scrollToItem } = options;
 		const debouncedScrollCorrection = createDebounced((index, mediaId) => {
 			if (!isVisible()) return;
 			if (index !== currentIndex() || activeMedia()?.id !== mediaId) return;
+			if (lastUserScrollTime() > lastProgrammaticScrollTime()) return;
 			scrollToItem(index);
 		}, 120);
 		onCleanup(() => {
@@ -7635,7 +7636,7 @@
 			isVisible,
 			scrollToItem: (index) => scrollToItemRef?.(index)
 		});
-		const { isScrolling } = useGalleryScroll({
+		const { isScrolling, lastScrollTime } = useGalleryScroll({
 			container: containerEl,
 			scrollTarget: itemsContainerEl,
 			enabled: isVisible,
@@ -7667,6 +7668,7 @@
 		return {
 			scroll: {
 				isScrolling,
+				lastUserScrollTime: lastScrollTime,
 				scrollToItem,
 				scrollToCurrentItem
 			},
@@ -10651,6 +10653,8 @@
 			isVisible,
 			currentIndex,
 			activeMedia,
+			lastUserScrollTime: scroll.lastUserScrollTime,
+			lastProgrammaticScrollTime: navigation.programmaticScrollTimestamp,
 			scrollToItem: scroll.scrollToItem
 		});
 		createEffect(() => {

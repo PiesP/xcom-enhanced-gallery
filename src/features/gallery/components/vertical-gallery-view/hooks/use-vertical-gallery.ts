@@ -49,6 +49,8 @@ interface UseVerticalGalleryOptions {
 interface ScrollState {
   /** Whether user is currently scrolling */
   readonly isScrolling: Accessor<boolean>;
+  /** Timestamp of the most recent user-controlled scroll */
+  readonly lastUserScrollTime: Accessor<number>;
   /** Scroll to specific item by zero-based index */
   readonly scrollToItem: (index: number) => void;
   /** Scroll to the current active item */
@@ -145,7 +147,7 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
   });
 
   // 3. Scroll tracking - Detects user scrolling and programmatic scroll timing
-  const { isScrolling } = useGalleryScroll({
+  const { isScrolling, lastScrollTime } = useGalleryScroll({
     container: containerEl,
     scrollTarget: itemsContainerEl,
     enabled: isVisible,
@@ -202,6 +204,7 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
   return {
     scroll: {
       isScrolling,
+      lastUserScrollTime: lastScrollTime,
       scrollToItem,
       scrollToCurrentItem,
     },
