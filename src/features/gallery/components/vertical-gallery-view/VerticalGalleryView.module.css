@@ -115,7 +115,7 @@
   display: block;
   transition: var(--xeg-transition-toolbar);
 
-  /* Performance: 스크롤 시 transform만 변경, opacity/visibility는 툴바 상태 변수로 처리 */
+  /* During scrolling, update only transform; toolbar state variables control opacity/visibility. */
   will-change: transform;
   contain: layout style;
 
@@ -268,8 +268,11 @@
 
 /* focusGlow animation removed (Phase 328) */
 
-/* Phase 328: Transparent spacer for last item top-align scrolling */
-.scrollSpacer {
+/* Generated spacer lets the last item top-align without adding a non-list child to the <ul>. */
+.itemsContainer::after {
+  content: "";
+  display: block;
+
   /* Dynamic height via CSS custom property (set by viewport observer) */
   height: calc(100vh - var(--xeg-toolbar-height, 3.75rem));
   min-height: 50vh; /* Fallback minimum height */
@@ -280,9 +283,6 @@
   /* Invisible spacer */
   background: transparent;
   opacity: 0;
-
-  /* Performance optimization */
-  content-visibility: auto;
 }
 
 /* Invisible hover strip that keeps the toolbar awake without covering content */

@@ -248,7 +248,6 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
             );
           }}
         </For>
-        <div class={styles.scrollSpacer} aria-hidden="true" />
       </ul>
     </div>
   );

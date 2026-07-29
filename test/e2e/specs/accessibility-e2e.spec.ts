@@ -221,6 +221,34 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
+  test('clicking the empty gallery background closes the dialog', async ({ page }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const container = page.locator('[data-xeg-gallery-container]');
+    const items = page.locator('[data-gallery-element="items"]');
+    const backgroundPoint = await items.evaluate((element) => {
+      const item = element.querySelector<HTMLElement>('[data-gallery-element="item"]');
+      if (!item) throw new Error('Gallery item missing');
+
+      const listRect = element.getBoundingClientRect();
+      const itemRect = item.getBoundingClientRect();
+      const leftGap = itemRect.left - listRect.left;
+      const rightGap = listRect.right - itemRect.right;
+      const x = leftGap >= rightGap ? leftGap / 2 : itemRect.right - listRect.left + rightGap / 2;
+      const y = itemRect.top - listRect.top + itemRect.height / 2;
+
+      if (document.elementFromPoint(listRect.left + x, listRect.top + y) !== element) {
+        throw new Error('Calculated point is not on the empty gallery background');
+      }
+      return { x, y };
+    });
+
+    await items.click({ position: backgroundPoint });
+
+    await expect(container).toHaveCount(0);
+  });
+
   test('open gallery has no automated WCAG A/AA violations', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
@@ -251,13 +279,16 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
-  test('Gallery items have role=listitem with aria-posinset and aria-setsize', async ({ page }) => {
+  test('Gallery uses valid native list semantics for media items', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
+    const list = page.locator('[data-gallery-element="items"]');
     const items = page.locator('[data-gallery-element="item"]');
     const count = await items.count();
     expect(count).toBeGreaterThan(0);
+    await expect(list).toHaveJSProperty('tagName', 'UL');
+    await expect(list.locator(':scope > :not(li)')).toHaveCount(0);
 
     for (let i = 0; i < count; i++) {
       const item = items.nth(i);
