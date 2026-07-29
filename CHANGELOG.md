@@ -8,6 +8,22 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-07-29
+
+### Fixed
+
+- **Download lifecycle** — Propagated cancellation and notification failures, connected userscript abort signals, distinguished timeouts from cancellation, and prevented orphaned downloads.
+- **SPA and prefetch lifecycle** — Observed History API navigation, removed abort-listener leaks, and closed idle-prefetch race conditions.
+- **Settings integrity** — Normalized untrusted persisted values and hardened settings commits against invalid or stale data.
+- **Extension reliability** — Registered the Firefox background worker and surfaced background, notification, and MV3 HTTP request failures consistently.
+- **Security boundaries** — Hardened extension request handling, download validation, and runtime data boundaries found during security review.
+- **Accessibility** — Improved keyboard and modal behavior, toolbar touch targets and contrast, link identification, tooltip positioning, and automated WCAG coverage.
+
+### Changed
+
+- **Release and build tooling** — Consolidated project scripts and shared extension build configuration, and migrated release artifact preparation to TypeScript.
+- **Verification** — Expanded unit coverage, cross-browser extension smoke tests, and end-to-end download and accessibility checks.
+
 ## [2.2.0] - 2026-07-23
 
 ### Added
