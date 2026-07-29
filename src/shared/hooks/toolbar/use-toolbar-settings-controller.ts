@@ -61,10 +61,8 @@ export function useToolbarSettingsController(
     clearTimeout(handle);
   };
 
-  const [toolbarRef, setToolbarRef] = createSignal<HTMLDivElement | undefined>(undefined);
-  const [settingsPanelRef, setSettingsPanelRef] = createSignal<HTMLDivElement | undefined>(
-    undefined
-  );
+  const [toolbarRef, setToolbarRef] = createSignal<HTMLElement | undefined>(undefined);
+  const [settingsPanelRef, setSettingsPanelRef] = createSignal<HTMLElement | undefined>(undefined);
   const [settingsButtonRef, setSettingsButtonRef] = createSignal<HTMLButtonElement | undefined>(
     undefined
   );

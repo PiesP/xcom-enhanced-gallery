@@ -13,7 +13,6 @@ import { useVideoVolumePersistence } from '@features/gallery/components/vertical
 import { cleanFilename } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
 import styles from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css';
 import type { VerticalImageItemProps } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.types';
-import { isClickOnVideoElement } from '@shared/dom/utils';
 import { useTranslation } from '@shared/hooks/use-translation';
 import { gallerySignals, setCurrentVideoElement } from '@shared/state/signals/gallery.signals';
 import type { ImageFitMode } from '@shared/types/settings.types';
@@ -35,7 +34,7 @@ const FIT_MODE_CLASSES: Record<ImageFitMode, string> = {
 };
 
 export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | null {
-  const [local, rest] = splitProps(props, [
+  const [local] = splitProps(props, [
     'media',
     'index',
     'isActive',
@@ -50,8 +49,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     'onFocus',
     'aria-label',
     'aria-describedby',
-    'role',
-    'tabIndex',
+    'data-testid',
   ]);
 
   const isFocused = () => local.isFocused ?? false;
@@ -90,7 +88,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     setIsError(false);
   });
 
-  const [containerRef, setContainerRef] = createSignal<HTMLDivElement | null>(null);
+  const [containerRef, setContainerRef] = createSignal<HTMLElement | null>(null);
   const [imageRef, setImageRef] = createSignal<HTMLImageElement | null>(null);
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
 
@@ -139,41 +137,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const preventDragStart = (event: DragEvent) => event.preventDefault();
 
-  const handleContainerClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (event) => {
+  const handleImageClick: JSX.EventHandlerUnion<HTMLButtonElement, MouseEvent> = (event) => {
     event.stopPropagation();
-
-    if (isVideo()) {
-      const video = videoRef();
-      if (video && isClickOnVideoElement(event, video)) return;
-    }
-
-    containerRef()?.focus?.({ preventScroll: true });
     local.onClick();
-  };
-
-  const handleContainerKeyDown: JSX.EventHandlerUnion<HTMLDivElement, KeyboardEvent> = (event) => {
-    if (event.target !== event.currentTarget) return;
-    if (rest.onKeyDown) {
-      rest.onKeyDown(event);
-      return;
-    }
-    if (local.role !== undefined && local.role !== 'button') return;
-
-    const key = event.key;
-    if (key === 'Enter') {
-      event.preventDefault();
-      event.stopPropagation();
-      local.onClick();
-    }
-  };
-
-  const handleContainerKeyUp: JSX.EventHandlerUnion<HTMLDivElement, KeyboardEvent> = (event) => {
-    if (event.target !== event.currentTarget) return;
-    if (event.key === ' ') {
-      event.preventDefault();
-      event.stopPropagation();
-      local.onClick();
-    }
   };
 
   const handleMediaLoad = () => {
@@ -247,14 +213,10 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     )
   );
 
-  const assignContainerRef = (element: HTMLDivElement | null) => {
+  const assignContainerRef = (element: HTMLLIElement | null) => {
     setContainerRef(element);
     local.registerContainer?.(element);
   };
-
-  const defaultContainerRole = () => 'listitem';
-  const resolvedContainerRole = () =>
-    (local.role ?? defaultContainerRole()) as JSX.HTMLAttributes<HTMLDivElement>['role'];
 
   const totalItems = () => gallerySignals.mediaItems.length;
 
@@ -272,7 +234,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   // See GalleryContainer.tsx for the standardized focus trap.
 
   return (
-    <div
+    <li
       ref={assignContainerRef}
       class={containerClasses()}
       data-index={local.index}
@@ -280,18 +242,10 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       data-media-loaded={isLoaded() ? 'true' : 'false'}
       data-has-intrinsic-size={hasIntrinsicSize() ? 'true' : undefined}
       style={mergedStyle()}
-      onClick={handleContainerClick}
-      onFocus={local.onFocus}
-      onBlur={rest.onBlur}
-      onKeyDown={handleContainerKeyDown}
-      onKeyUp={handleContainerKeyUp}
-      aria-label={local['aria-label'] || imageAltText()}
-      aria-describedby={local['aria-describedby']}
       aria-posinset={local.index + 1}
       aria-setsize={totalItems()}
-      role={resolvedContainerRole()}
-      tabIndex={isFocused() ? 0 : -1}
-      data-testid={__DEV__ ? rest['data-testid'] : undefined}
+      data-gallery-element="item"
+      data-testid={__DEV__ ? local['data-testid'] : undefined}
     >
       <div class={styles.imageWrapper}>
         {!isLoaded() && !isError() && (
@@ -311,29 +265,39 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
             controls
             ref={setVideoRef}
             class={cx(styles.video, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
-            aria-label={translate('msg.gal.videoCount', {
-              index: local.index + 1,
-              total: totalItems(),
-            })}
+            aria-label={local['aria-label'] || imageAltText()}
+            aria-describedby={local['aria-describedby']}
+            tabIndex={isFocused() ? 0 : -1}
+            onFocus={local.onFocus}
             onLoadedMetadata={handleMediaLoad}
             onError={handleMediaError}
             onDragStart={preventDragStart}
             onVolumeChange={handleVolumeChange}
           />
         ) : !isVideo() && isDisplaySrcValid() ? (
-          <img
-            ref={setImageRef}
-            src={displaySrc()}
-            alt={imageAltText()}
-            width={dimensions().width}
-            height={dimensions().height}
-            loading={shouldEagerLoad() ? 'eager' : 'lazy'}
-            decoding="async"
-            class={cx(styles.image, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
-            onLoad={handleMediaLoad}
-            onError={handleMediaError}
-            onDragStart={preventDragStart}
-          />
+          <button
+            type="button"
+            class={styles.mediaAction}
+            aria-label={local['aria-label'] || imageAltText()}
+            aria-describedby={local['aria-describedby']}
+            tabIndex={isFocused() ? 0 : -1}
+            onFocus={local.onFocus}
+            onClick={handleImageClick}
+          >
+            <img
+              ref={setImageRef}
+              src={displaySrc()}
+              alt={imageAltText()}
+              width={dimensions().width}
+              height={dimensions().height}
+              loading={shouldEagerLoad() ? 'eager' : 'lazy'}
+              decoding="async"
+              class={cx(styles.image, fitModeClass(), isLoaded() ? styles.loaded : styles.loading)}
+              onLoad={handleMediaLoad}
+              onError={handleMediaError}
+              onDragStart={preventDragStart}
+            />
+          </button>
         ) : null}
 
         {isError() && (
@@ -345,6 +309,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
           </div>
         )}
       </div>
-    </div>
+    </li>
   );
 }

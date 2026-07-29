@@ -71,12 +71,12 @@
         "noAccumulatingSpread": "error"
       },
       "a11y": {
-        "noStaticElementInteractions": "off",
-        "useKeyWithClickEvents": "off",
+        "noStaticElementInteractions": "error",
+        "useKeyWithClickEvents": "error",
         "useMediaCaption": "off",
-        "noSvgWithoutTitle": "off",
-        "useAriaPropsSupportedByRole": "off",
-        "useSemanticElements": "off"
+        "noSvgWithoutTitle": "error",
+        "useAriaPropsSupportedByRole": "error",
+        "useSemanticElements": "error"
       }
     }
   },

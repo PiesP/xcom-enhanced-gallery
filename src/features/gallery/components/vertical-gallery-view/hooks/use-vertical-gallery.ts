@@ -40,7 +40,7 @@ interface UseVerticalGalleryOptions {
   /** Toolbar wrapper element for toolbar positioning */
   readonly toolbarWrapperEl: Accessor<HTMLDivElement | null>;
   /** Scrollable items container element */
-  readonly itemsContainerEl: Accessor<HTMLDivElement | null>;
+  readonly itemsContainerEl: Accessor<HTMLElement | null>;
 }
 
 /**

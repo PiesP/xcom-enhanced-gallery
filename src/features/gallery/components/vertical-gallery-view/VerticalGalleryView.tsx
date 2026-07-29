@@ -60,7 +60,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   // Element refs
   const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);
   const [toolbarWrapperEl, setToolbarWrapperEl] = createSignal<HTMLDivElement | null>(null);
-  const [itemsContainerEl, setItemsContainerEl] = createSignal<HTMLDivElement | null>(null);
+  const [itemsContainerEl, setItemsContainerEl] = createSignal<HTMLUListElement | null>(null);
 
   // Derived state — trivially computed from already-memoized values; plain getters suffice
   const isVisible = createMemo(() => mediaItems().length > 0);
@@ -190,6 +190,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   }
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: Pointer backdrop dismissal has the Escape-key and close-button equivalents managed by the gallery dialog.
     <div
       ref={(el) => setContainerEl(el ?? null)}
       class={cx(
@@ -202,11 +203,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
     >
       <div class={styles.toolbarHoverZone} aria-hidden="true" />
 
-      <div
-        class={styles.toolbarWrapper}
-        role="toolbar"
-        ref={(el) => setToolbarWrapperEl(el ?? null)}
-      >
+      <div class={styles.toolbarWrapper} ref={(el) => setToolbarWrapperEl(el ?? null)}>
         <Toolbar
           currentIndex={currentIndex}
           focusedIndex={focus.focusedIndex}
@@ -221,7 +218,11 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
         />
       </div>
 
-      <div class={styles.itemsContainer} role="list" ref={(el) => setItemsContainerEl(el ?? null)}>
+      <ul
+        class={styles.itemsContainer}
+        data-gallery-element="items"
+        ref={(el) => setItemsContainerEl(el ?? null)}
+      >
         <For each={mediaItems()}>
           {(item, index) => {
             const actualIndex = index();
@@ -248,7 +249,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
           }}
         </For>
         <div class={styles.scrollSpacer} aria-hidden="true" />
-      </div>
+      </ul>
     </div>
   );
 }

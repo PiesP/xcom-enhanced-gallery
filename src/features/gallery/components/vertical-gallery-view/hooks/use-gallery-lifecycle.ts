@@ -17,10 +17,9 @@ import { createEffect, on, onCleanup } from 'solid-js';
 function ensureGalleryScrollAvailable(element: HTMLElement | null): void {
   if (!element) return;
 
-  // Only [role="list"] matches — the items container in VerticalGalleryView
-  // uses <div role="list">. The other selectors were vestigial from an
-  // earlier iteration that used plain class names (.itemsList, .content).
-  const scrollableElements = element.querySelectorAll('[role="list"]') as NodeListOf<HTMLElement>;
+  const scrollableElements = element.querySelectorAll(
+    '[data-gallery-element="items"]'
+  ) as NodeListOf<HTMLElement>;
 
   scrollableElements.forEach((el) => {
     if (el.style.overflowY !== 'auto' && el.style.overflowY !== 'scroll') {

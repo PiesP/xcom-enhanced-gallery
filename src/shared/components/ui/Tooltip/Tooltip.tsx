@@ -106,6 +106,37 @@ export function Tooltip(props: TooltipProps): JSXElement {
   let showTimer: ReturnType<typeof setTimeout> | undefined;
   let hideTimer: ReturnType<typeof setTimeout> | undefined;
   let positionRafId: ReturnType<typeof requestAnimationFrame> | undefined;
+  let describedElement: HTMLElement | undefined;
+  let previousDescribedBy: string | null = null;
+
+  const resolveTriggerElement = (event?: Event): HTMLElement | null => {
+    if (event?.target instanceof HTMLElement && event.target !== triggerRef) {
+      return event.target.closest('button, select, input, textarea, a[href], [tabindex]');
+    }
+    const firstChild = triggerRef.firstElementChild;
+    return firstChild instanceof HTMLElement ? firstChild : null;
+  };
+
+  const attachDescription = (element: HTMLElement) => {
+    if (describedElement === element) return;
+    if (describedElement) {
+      if (previousDescribedBy === null) describedElement.removeAttribute('aria-describedby');
+      else describedElement.setAttribute('aria-describedby', previousDescribedBy);
+    }
+    describedElement = element;
+    previousDescribedBy = element.getAttribute('aria-describedby');
+    const ids = new Set(previousDescribedBy?.split(/\s+/).filter(Boolean) ?? []);
+    ids.add(tooltipId);
+    element.setAttribute('aria-describedby', [...ids].join(' '));
+  };
+
+  const detachDescription = () => {
+    if (!describedElement) return;
+    if (previousDescribedBy === null) describedElement.removeAttribute('aria-describedby');
+    else describedElement.setAttribute('aria-describedby', previousDescribedBy);
+    describedElement = undefined;
+    previousDescribedBy = null;
+  };
 
   const clearTimers = () => {
     if (showTimer !== undefined) {
@@ -135,12 +166,14 @@ export function Tooltip(props: TooltipProps): JSXElement {
     });
   };
 
-  const show = () => {
+  const show = (event?: Event) => {
     clearTimers();
+    const triggerElement = resolveTriggerElement(event);
     updatePosition();
     showTimer = setTimeout(() => {
       // Re-check position before showing (element may have moved)
       updatePosition();
+      if (triggerElement) attachDescription(triggerElement);
       setVisible(true);
     }, showDelay);
   };
@@ -150,7 +183,23 @@ export function Tooltip(props: TooltipProps): JSXElement {
     hideTimer = setTimeout(() => {
       setVisible(false);
       setPosition(null);
+      detachDescription();
     }, hideDelay);
+  };
+
+  const keepVisible = () => {
+    if (hideTimer !== undefined) {
+      clearTimeout(hideTimer);
+      hideTimer = undefined;
+    }
+  };
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== 'Escape' || !visible()) return;
+    clearTimers();
+    setVisible(false);
+    setPosition(null);
+    detachDescription();
   };
 
   // Derived: only non-null when tooltip should render
@@ -198,33 +247,39 @@ export function Tooltip(props: TooltipProps): JSXElement {
     return cx(styles.arrowInner, placementClass);
   });
 
-  // Derived: visibility for aria-describedby
-  const describeById = createMemo(() => (activePosition() !== null ? tooltipId : undefined));
-
   onCleanup(() => {
     clearTimers();
+    detachDescription();
   });
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: This display:contents wrapper delegates hover, focus, and Escape behavior to its native focusable child.
     <span
       ref={triggerRef!}
       class={styles.trigger}
-      onMouseEnter={show}
+      onMouseEnter={(event) => show(event)}
       onMouseLeave={hide}
-      onFocusIn={show}
+      onFocusIn={(event) => show(event)}
       onFocusOut={(event) => {
         // Only hide if focus left the trigger entirely (not moved to a child)
         if (!triggerRef.contains(event.relatedTarget as Node | null)) {
           hide();
         }
       }}
-      aria-describedby={describeById()}
+      onKeyDown={handleKeyDown}
     >
       {local.children}
 
       {activePosition() !== null && (
         <Portal mount={document.body}>
-          <div id={tooltipId} role="tooltip" class={tooltipClass()} style={tooltipStyle()}>
+          <div
+            id={tooltipId}
+            role="tooltip"
+            class={tooltipClass()}
+            style={tooltipStyle()}
+            onMouseEnter={keepVisible}
+            onMouseLeave={hide}
+          >
             {/* Arrow (border) */}
             <span class={arrowClass()} aria-hidden="true" />
             {/* Arrow inner fill */}

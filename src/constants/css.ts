@@ -25,8 +25,8 @@ const DATA_ATTRIBUTES = {
 
 const ARIA_ROLES = {
   GALLERY: '[role="dialog"]',
-  LIST: '[role="list"]',
-  LIST_ITEM: '[role="listitem"]',
+  LIST: '[data-gallery-element="items"]',
+  LIST_ITEM: '[data-gallery-element="item"]',
 } as const;
 
 const SELECTORS = {

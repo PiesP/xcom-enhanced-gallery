@@ -18,7 +18,7 @@ interface UseGalleryWheelRedirectOptions {
   /** Gallery container element ref */
   readonly containerEl: () => HTMLDivElement | null;
   /** Scrollable items container element ref */
-  readonly itemsContainerEl: () => HTMLDivElement | null;
+  readonly itemsContainerEl: () => HTMLElement | null;
 }
 
 /**
@@ -27,10 +27,7 @@ interface UseGalleryWheelRedirectOptions {
  * empty space), the scroll is redirected to prevent the underlying Twitter
  * page from scrolling.
  */
-function handleContainerWheel(
-  event: WheelEvent,
-  itemsContainerEl: () => HTMLDivElement | null
-): void {
+function handleContainerWheel(event: WheelEvent, itemsContainerEl: () => HTMLElement | null): void {
   const itemsContainer = itemsContainerEl();
   if (!itemsContainer) return;
 

@@ -21,6 +21,7 @@
  * Gallery trigger: Direct API call via dev build's __XEG__ namespace
  */
 
+import AxeBuilder from '@axe-core/playwright';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -220,6 +221,21 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
+  test('open gallery has no automated WCAG A/AA violations', async ({ page }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const results = await new AxeBuilder({ page })
+      .include('[data-xeg-gallery-container]')
+      // X-hosted video media does not expose a caption track to the gallery.
+      .disableRules(['video-caption'])
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+      .analyze();
+    expect(results.violations).toEqual([]);
+
+    await closeGallery(page);
+  });
+
   test('Gallery container has non-empty lang attribute', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
@@ -239,16 +255,21 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await setupGalleryPage(page);
     await openGallery(page);
 
-    const items = page.locator('[role="listitem"]');
+    const items = page.locator('[data-gallery-element="item"]');
     const count = await items.count();
     expect(count).toBeGreaterThan(0);
 
     for (let i = 0; i < count; i++) {
       const item = items.nth(i);
-      await expect(item).toHaveAttribute('role', 'listitem');
+      await expect(item).toHaveJSProperty('tagName', 'LI');
       await expect(item).toHaveAttribute('aria-posinset', String(i + 1));
       await expect(item).toHaveAttribute('aria-setsize', String(count));
+      await expect(item).not.toHaveAttribute('tabindex', /.+/);
     }
+
+    const imageAction = items.filter({ has: page.locator('img') }).first().locator('button');
+    await expect(imageAction).toHaveAttribute('type', 'button');
+    await expect(imageAction).toHaveAttribute('aria-label', /Image \d+ of/);
 
     await closeGallery(page);
   });
@@ -257,7 +278,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await setupGalleryPage(page);
     await openGallery(page);
 
-    const images = page.locator('[role="listitem"] img');
+    const images = page.locator('[data-gallery-element="item"] img');
     const imgCount = await images.count();
     expect(imgCount).toBeGreaterThan(0);
 
@@ -275,7 +296,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await setupGalleryPage(page);
     await openGallery(page);
 
-    const videos = page.locator('[role="listitem"] video');
+    const videos = page.locator('[data-gallery-element="item"] video');
     const videoCount = await videos.count();
     expect(videoCount).toBeGreaterThan(0);
 
@@ -296,7 +317,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     const progress = page.locator('[role="progressbar"]');
     await expect(progress).toHaveAttribute('aria-valuenow', '1');
 
-    await page.locator('[role="listitem"] video').dispatchEvent('keyup', {
+    await page.locator('[data-gallery-element="item"] video').dispatchEvent('keyup', {
       key: ' ',
       bubbles: true,
       cancelable: true,
@@ -306,13 +327,13 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
-  test('Toolbar element has role=toolbar', async ({ page }) => {
+  test('Toolbar controls use group semantics and native Tab navigation', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
     const toolbar = page.locator('[data-gallery-element="toolbar"]');
     await expect(toolbar).toBeVisible();
-    await expect(toolbar).toHaveAttribute('role', 'toolbar');
+    await expect(toolbar).toHaveJSProperty('tagName', 'FIELDSET');
 
     await closeGallery(page);
   });

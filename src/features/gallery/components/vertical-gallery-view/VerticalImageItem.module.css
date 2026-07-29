@@ -89,6 +89,21 @@
   contain: layout paint;
 }
 
+.mediaAction {
+  display: block;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.mediaAction:focus-visible {
+  outline: var(--xeg-focus-indicator-width, 0.125rem) solid
+    var(--xeg-focus-indicator-color, var(--xeg-color-primary));
+  outline-offset: var(--xeg-focus-indicator-offset, 0.125rem);
+}
+
 /* fitOriginal mode: Expand container to fit original media size without constraints */
 .container[data-fit-mode="original"] .imageWrapper {
   width: auto;

@@ -83,6 +83,7 @@
     "solid-js": "^1.9.14"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@biomejs/biome": "^2.5.5",
     "@playwright/test": "^1.62.0",
     "@stryker-mutator/core": "^9.6.1",

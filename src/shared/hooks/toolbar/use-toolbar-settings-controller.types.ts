@@ -33,8 +33,8 @@ export interface UseToolbarSettingsControllerOptions {
  * Contains ref assigners and event handlers for UI interactions
  */
 export interface ToolbarSettingsControllerResult {
-  readonly assignToolbarRef: (element: HTMLDivElement | null | undefined) => void;
-  readonly assignSettingsPanelRef: (element: HTMLDivElement | null | undefined) => void;
+  readonly assignToolbarRef: (element: HTMLElement | null | undefined) => void;
+  readonly assignSettingsPanelRef: (element: HTMLElement | null | undefined) => void;
   readonly assignSettingsButtonRef: (element: HTMLButtonElement | null | undefined) => void;
   readonly isSettingsExpanded: () => boolean;
   readonly currentTheme: () => ThemeOption;

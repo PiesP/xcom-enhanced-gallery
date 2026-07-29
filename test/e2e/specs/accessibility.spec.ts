@@ -52,16 +52,16 @@ test.describe('X.com Enhanced Gallery Accessibility', () => {
 
   test('VerticalGalleryView source uses standard ARIA roles', () => {
     // Verify custom data-role/data-xeg-role were replaced with standard roles
-    expect(galleryViewSrc).toContain('role="toolbar"');
-    expect(galleryViewSrc).toContain('role="list"');
+    expect(galleryViewSrc).toContain('<ul');
     // Verify old custom attributes are removed from these elements
     expect(galleryViewSrc).not.toContain('data-role="toolbar"');
     expect(galleryViewSrc).not.toContain('data-xeg-role="items-container"');
   });
 
-  test('VerticalImageItem source includes resolved container role', () => {
-    // The component uses dynamic role resolution
-    expect(galleryItemSrc).toContain('resolvedContainerRole()');
+  test('VerticalImageItem keeps list structure and uses native interactive controls', () => {
+    expect(galleryItemSrc).toContain('<li');
+    expect(galleryItemSrc).toContain('<button');
+    expect(galleryItemSrc).not.toContain('onClick={handleContainerClick}');
   });
 
   test('VerticalImageItem source includes aria-posinset and aria-setsize', () => {
@@ -94,8 +94,8 @@ test.describe('X.com Enhanced Gallery Accessibility', () => {
 
   // ── 4. Toolbar: proper ARIA role ──────────────────────────────
 
-  test('ToolbarView source uses role=toolbar', () => {
-    expect(toolbarSrc).toContain("local.role ?? 'toolbar'");
+  test('ToolbarView uses group semantics with native Tab navigation', () => {
+    expect(toolbarSrc).toContain('<fieldset');
   });
 
   test('ToolbarView source has aria-label on progressbar', () => {
