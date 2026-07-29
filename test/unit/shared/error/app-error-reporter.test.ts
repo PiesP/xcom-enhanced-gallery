@@ -47,7 +47,17 @@ describe('app error reporter', () => {
   it('normalizes empty user-facing errors to a non-empty fallback', () => {
     expect(normalizeErrorMessage('')).toBe('Unknown error');
     expect(normalizeErrorMessage('   ')).toBe('Unknown error');
-    expect(normalizeErrorMessage({ message: '' })).toBe('[object Object]');
+    expect(normalizeErrorMessage({ message: '' })).toBe('Unknown error');
     expect(normalizeErrorMessage({ toString: () => '' })).toBe('Unknown error');
+    expect(normalizeErrorMessage('  failed  ')).toBe('failed');
+    expect(normalizeErrorMessage({ message: '  failed  ' })).toBe('failed');
+    expect(normalizeErrorMessage(Object.create(null))).toBe('Unknown error');
+    expect(
+      normalizeErrorMessage({
+        toString: () => {
+          throw new Error('conversion failed');
+        },
+      })
+    ).toBe('Unknown error');
   });
 });
