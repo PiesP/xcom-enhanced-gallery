@@ -221,6 +221,29 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
+  test('clicking the empty gallery background closes the dialog', async ({ page }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const container = page.locator('[data-xeg-gallery-container]');
+    const items = page.locator('[data-gallery-element="items"]');
+    const backgroundPoint = await items.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      for (let y = 8; y < rect.height; y += 16) {
+        for (let x = 8; x < rect.width; x += 16) {
+          if (document.elementFromPoint(rect.left + x, rect.top + y) === element) {
+            return { x, y };
+          }
+        }
+      }
+      throw new Error('No clickable gallery background point found');
+    });
+
+    await items.click({ position: backgroundPoint });
+
+    await expect(container).toHaveCount(0);
+  });
+
   test('open gallery has no automated WCAG A/AA violations', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);

@@ -64,8 +64,10 @@ const INTERNAL_SELECTORS = [
  *  Excludes overlay/container/root/renderer — clicking the gallery background SHOULD close. */
 const GALLERY_ELEMENT_SELECTORS = [
   SELECTORS.ITEM,
-  '[data-gallery-element]',
   SELECTORS.ROLE_LIST_ITEM,
+  '[data-gallery-element="toolbar"]',
+  '[data-gallery-element="settings-panel"]',
+  '[data-gallery-element="tweet-panel"]',
   '[data-role="toolbar"]',
   '[data-role="toolbar-hover-zone"]',
 ] as const;
