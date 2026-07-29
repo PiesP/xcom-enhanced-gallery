@@ -11,6 +11,7 @@ dist/
 dist-extension/
 dist-extension-firefox/
 /build/
+/release-bundle/
 
 # TypeScript
 *.tsbuildinfo

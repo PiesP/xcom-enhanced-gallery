@@ -5,7 +5,6 @@
     "src/extension/background.ts",
     "src/extension/content.ts",
     "scripts/**/*.ts",
-    "vite.config.ts",
     "vite.*.config.ts"
   ],
   "project": ["src/**/*.ts", "src/**/*.tsx", "scripts/**/*.ts", "tooling/**/*.ts", "vite*.ts"],

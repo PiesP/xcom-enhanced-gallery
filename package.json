@@ -19,6 +19,7 @@
     "build:fast": "vite build",
     "package:extension": "node --experimental-strip-types scripts/release/package-extension.ts",
     "package:all": "pnpm build:all && pnpm package:extension",
+    "release:prepare": "node --experimental-strip-types scripts/release/prepare.ts",
     "build:ci": "vite build",
     "build:extension:ci": "vite build --config vite.extension.config.ts && vite build --config vite.extension.cs.config.ts && node --experimental-strip-types scripts/check/extension-build.ts dist-extension",
     "build:extension:firefox:ci": "vite build --config vite.extension.firefox.config.ts && vite build --config vite.extension.firefox.cs.config.ts && node --experimental-strip-types scripts/check/extension-build.ts dist-extension-firefox",
