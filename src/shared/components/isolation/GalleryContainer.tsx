@@ -105,6 +105,7 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       ).filter((el) => {
         const style = getComputedStyle(el);
         return (
+          el.tabIndex >= 0 &&
           el.getClientRects().length > 0 &&
           style.visibility === 'visible' &&
           style.display !== 'none' &&

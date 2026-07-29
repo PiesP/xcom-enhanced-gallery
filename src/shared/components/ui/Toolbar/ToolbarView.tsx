@@ -161,7 +161,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const [toolbarElement, setToolbarElement] = createSignal<HTMLFieldSetElement | null>(null);
   const [counterElement, setCounterElement] = createSignal<HTMLSpanElement | null>(null);
   const [settingsPanelEl, setSettingsPanelEl] = createSignal<HTMLElement | null>(null);
-  const [tweetPanelEl, setTweetPanelEl] = createSignal<HTMLDivElement | null>(null);
+  const [tweetPanelEl, setTweetPanelEl] = createSignal<HTMLElement | null>(null);
   const translate = useTranslation();
 
   // Memos for derived state

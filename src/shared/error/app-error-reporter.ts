@@ -7,18 +7,28 @@
 
 import { logger } from '@shared/logging/logger';
 
+const UNKNOWN_ERROR_MESSAGE = 'Unknown error';
+
+function ensureErrorMessage(message: string, fallback: string = UNKNOWN_ERROR_MESSAGE): string {
+  const trimmed = message.trim();
+  return trimmed.length > 0 ? trimmed : fallback;
+}
+
 export function normalizeErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message || error.name || 'Error';
-  if (typeof error === 'string') return error;
-  if (error == null) return 'Unknown error';
-  if (typeof error === 'object') {
-    const msg = (error as Record<string, unknown>).message;
-    if (typeof msg === 'string') return msg;
-    // JSON.stringify on Error objects always returns '{}';
-    // fall through to String() for a meaningful representation.
-    return String(error);
+  try {
+    if (error instanceof Error) {
+      return ensureErrorMessage(error.message, ensureErrorMessage(error.name, 'Error'));
+    }
+    if (typeof error === 'string') return ensureErrorMessage(error);
+    if (error == null) return UNKNOWN_ERROR_MESSAGE;
+    if (typeof error === 'object') {
+      const msg = (error as Record<string, unknown>).message;
+      if (typeof msg === 'string') return ensureErrorMessage(msg);
+    }
+    return ensureErrorMessage(String(error));
+  } catch {
+    return UNKNOWN_ERROR_MESSAGE;
   }
-  return String(error);
 }
 
 export type ErrorSeverity = 'critical' | 'error' | 'warning' | 'info';
