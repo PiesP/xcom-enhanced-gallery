@@ -51,7 +51,7 @@ jobs:
       - name: 🔎 Check pinned tools after the cooling window
         env:
           GH_TOKEN: ${{ github.token }}
-        run: scripts/check-pinned-tools.sh
+        run: scripts/ci/check-pinned-tools.sh
 
   osv-scan-pr:
     name: pr-gate/osv / osv-scan

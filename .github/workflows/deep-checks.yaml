@@ -51,7 +51,7 @@ jobs:
       - name: 🔧 Install nose
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash scripts/install-nose.sh
+        run: bash scripts/ci/install-nose.sh
 
       - name: 🔎 Check for new duplication
         run: nose query src --baseline .nose-baseline.json --fail-on new

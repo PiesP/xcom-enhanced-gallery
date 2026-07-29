@@ -35,6 +35,6 @@
     "forceConsistentCasingInFileNames": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*", "tooling/**/*"],
+  "include": ["src/**/*", "scripts/**/*.ts", "tooling/**/*", "vite.config.ts", "vite.*.config.ts"],
   "exclude": ["node_modules", "dist", ".stryker-tmp", ".stryker-tmp-debug", ".vscode"]
 }

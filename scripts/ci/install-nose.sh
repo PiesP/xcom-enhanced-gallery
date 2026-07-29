@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# Keep this bootstrap in shell: CI must install Nose before project dependencies are available.
 set -euo pipefail
 
 : "${GH_TOKEN:?GH_TOKEN is required}"

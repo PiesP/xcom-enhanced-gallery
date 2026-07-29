@@ -10,7 +10,7 @@ node_modules/
 dist/
 dist-extension/
 dist-extension-firefox/
-build/
+/build/
 
 # TypeScript
 *.tsbuildinfo
