@@ -18,7 +18,7 @@
  * Test page: Mock HTML served under https://x.com via page.route()
  */
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Route } from '@playwright/test';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,6 +29,43 @@ const USERSCRIPT_PATH = resolve(DIST_DIR, 'xcom-enhanced-gallery.dev.user.js');
 const MOCK_PAGE_PATH = resolve(__filename, '../../fixtures/mock-gallery-page.html');
 
 const MOCK_HTML = readFileSync(MOCK_PAGE_PATH, 'utf8');
+
+interface DeferredActiveImage {
+  readonly requested: Promise<void>;
+  readonly fulfill: () => Promise<void>;
+}
+
+async function deferGalleryImages(page: Page): Promise<DeferredActiveImage> {
+  let activeImageRoute: Route | null = null;
+  let resolveRequest = (): void => {};
+  const requested = new Promise<void>((resolvePromise) => {
+    resolveRequest = resolvePromise;
+  });
+
+  await page.route('https://pbs.twimg.com/**', async (route) => {
+    if (!activeImageRoute && route.request().url().includes('/E1.jpg')) {
+      activeImageRoute = route;
+      resolveRequest();
+      return;
+    }
+
+    await route.abort();
+  });
+
+  return {
+    requested,
+    fulfill: async (): Promise<void> => {
+      await requested;
+      const route = activeImageRoute;
+      if (!route) throw new Error('Active gallery image request was not intercepted');
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" />',
+      });
+    },
+  };
+}
 
 async function setupGalleryPage(page: Page): Promise<void> {
   await page.route('**/*.x.com/**', async (route) => {
@@ -240,6 +277,34 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
 
     await getPreviousButton(page).click();
     await expect.poll(() => getIndex(page)).toBe(1);
+  });
+
+  test('delayed media load does not override the user scroll position', async ({ page }) => {
+    const activeImage = await deferGalleryImages(page);
+    await setupGalleryPage(page);
+    await openGallery(page);
+    await activeImage.requested;
+
+    const itemsContainer = page.locator('[data-gallery-element="items"]');
+    await itemsContainer.hover();
+    await page.mouse.wheel(0, 500);
+    await expect.poll(() => itemsContainer.evaluate((element) => element.scrollTop)).toBe(500);
+
+    // Let the gallery's scroll-idle timer expire before the active media loads.
+    await page.waitForTimeout(350);
+    const settledScrollTop = await itemsContainer.evaluate((element) => element.scrollTop);
+    const toolbar = page.locator('[data-gallery-element="toolbar"]');
+    const settledFocusedIndex = await toolbar.getAttribute('data-focused-index');
+
+    await activeImage.fulfill();
+    await expect(page.locator('[data-gallery-element="item"][data-index="0"]')).toHaveAttribute(
+      'data-media-loaded',
+      'true'
+    );
+    await page.waitForTimeout(300);
+
+    expect(await itemsContainer.evaluate((element) => element.scrollTop)).toBe(settledScrollTop);
+    await expect(toolbar).toHaveAttribute('data-focused-index', settledFocusedIndex ?? '');
   });
 
   test('Escape does not close gallery when editing form fields', async ({ page }) => {

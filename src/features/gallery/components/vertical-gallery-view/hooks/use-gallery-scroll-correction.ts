@@ -21,6 +21,10 @@ interface UseGalleryScrollCorrectionOptions {
   readonly currentIndex: () => number;
   /** Currently active media item (with id) */
   readonly activeMedia: () => { readonly id: string } | null;
+  /** Timestamp of the most recent user-controlled scroll */
+  readonly lastUserScrollTime: () => number;
+  /** Timestamp of the most recent viewer-controlled scroll */
+  readonly lastProgrammaticScrollTime: () => number;
   /** Scroll the container to the given item index */
   readonly scrollToItem: (index: number) => void;
 }
@@ -47,7 +51,14 @@ interface UseGalleryScrollCorrectionResult {
 export function useGalleryScrollCorrection(
   options: UseGalleryScrollCorrectionOptions
 ): UseGalleryScrollCorrectionResult {
-  const { isVisible, currentIndex, activeMedia, scrollToItem } = options;
+  const {
+    isVisible,
+    currentIndex,
+    activeMedia,
+    lastUserScrollTime,
+    lastProgrammaticScrollTime,
+    scrollToItem,
+  } = options;
 
   const debouncedScrollCorrection = createDebounced((index: number, mediaId: string) => {
     if (!isVisible()) {
@@ -55,6 +66,14 @@ export function useGalleryScrollCorrection(
     }
 
     if (index !== currentIndex() || activeMedia()?.id !== mediaId) {
+      return;
+    }
+
+    // Once the user has moved away from the viewer-controlled position, a
+    // delayed media load must not reclaim scroll ownership. Explicit
+    // navigation updates the programmatic timestamp and enables correction
+    // for the newly selected item again.
+    if (lastUserScrollTime() > lastProgrammaticScrollTime()) {
       return;
     }
 
