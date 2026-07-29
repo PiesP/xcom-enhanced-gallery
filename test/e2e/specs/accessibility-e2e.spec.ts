@@ -421,7 +421,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await expect(lateSibling).not.toHaveAttribute('inert', '');
   });
 
-  test('focus trap excludes hidden descendants from the last focus candidate', async ({ page }) => {
+  test('focus trap excludes hidden and negative-tabindex descendants', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
@@ -432,6 +432,10 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
       const visibleButton = document.createElement('button');
       visibleButton.textContent = 'Visible last button';
       container.append(visibleButton);
+
+      const untabbableButton = document.createElement('button');
+      untabbableButton.tabIndex = -1;
+      container.append(untabbableButton);
 
       const hiddenButton = document.createElement('button');
       hiddenButton.hidden = true;
