@@ -14,7 +14,10 @@ const { logger } = vi.hoisted(() => ({
 
 vi.mock('@shared/logging/logger', () => ({ logger }));
 
-import { galleryErrorReporter } from '@shared/error/app-error-reporter';
+import {
+  galleryErrorReporter,
+  normalizeErrorMessage,
+} from '@shared/error/app-error-reporter';
 
 describe('app error reporter', () => {
   afterEach(() => {
@@ -39,5 +42,12 @@ describe('app error reporter', () => {
       'fatal',
       expect.objectContaining({ context: 'gallery', severity: 'critical', code: 'FATAL' })
     );
+  });
+
+  it('normalizes empty user-facing errors to a non-empty fallback', () => {
+    expect(normalizeErrorMessage('')).toBe('Unknown error');
+    expect(normalizeErrorMessage('   ')).toBe('Unknown error');
+    expect(normalizeErrorMessage({ message: '' })).toBe('[object Object]');
+    expect(normalizeErrorMessage({ toString: () => '' })).toBe('Unknown error');
   });
 });
