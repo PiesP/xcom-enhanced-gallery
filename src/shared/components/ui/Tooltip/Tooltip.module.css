@@ -33,7 +33,7 @@
   color: var(--xeg-tooltip-text, var(--xeg-toolbar-text-color, var(--xeg-color-text-primary)));
   text-align: center;
   white-space: normal;
-  pointer-events: none;
+  pointer-events: auto;
   user-select: none;
 
   /* Surface styling */

@@ -168,10 +168,6 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
             aria-labelledby={
               local['data-testid'] ? `${local['data-testid']}-theme-label` : 'settings-theme-label'
             }
-            aria-invalid="false"
-            aria-errormessage={
-              local['data-testid'] ? `${local['data-testid']}-theme-error` : 'settings-theme-error'
-            }
             required
             data-testid={
               __DEV__ && local['data-testid'] ? `${local['data-testid']}-theme` : undefined
@@ -216,12 +212,6 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
               local['data-testid']
                 ? `${local['data-testid']}-language-label`
                 : 'settings-language-label'
-            }
-            aria-invalid="false"
-            aria-errormessage={
-              local['data-testid']
-                ? `${local['data-testid']}-language-error`
-                : 'settings-language-error'
             }
             required
             data-testid={

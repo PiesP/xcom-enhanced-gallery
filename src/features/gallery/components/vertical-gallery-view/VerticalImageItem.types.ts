@@ -93,32 +93,8 @@ export interface VerticalImageItemProps {
   readonly 'aria-describedby'?: string;
 
   /**
-   * ARIA role attribute
-   * @optional
-   */
-  readonly role?: string;
-
-  /**
-   * Tab index for keyboard navigation (-1, 0, or positive)
-   * @optional
-   */
-  readonly tabIndex?: number;
-
-  /**
    * Callback when item receives focus
    * @optional
    */
   readonly onFocus?: (event: FocusEvent) => void;
-
-  /**
-   * Callback when item loses focus
-   * @optional
-   */
-  readonly onBlur?: (event: FocusEvent) => void;
-
-  /**
-   * Callback for keyboard events
-   * @optional
-   */
-  readonly onKeyDown?: (event: KeyboardEvent) => void;
 }

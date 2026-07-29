@@ -55,7 +55,7 @@ interface ToolbarViewProps {
   /** ARIA describedby */
   readonly 'aria-describedby'?: string | undefined;
   /** ARIA role */
-  readonly role?: 'toolbar' | undefined;
+  readonly role?: 'group' | undefined;
   /** Tab index */
   readonly tabIndex?: number | undefined;
   /** Test ID */
@@ -294,7 +294,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         local.settingsController.isSettingsExpanded() ? styles.settingsExpanded : undefined,
         local.isTweetPanelExpanded() ? styles.tweetPanelExpanded : undefined
       )}
-      role={local.role ?? 'toolbar'}
+      role={local.role ?? 'group'}
       aria-label={local['aria-label'] ?? translate('tb.galleryToolbar')}
       aria-describedby={local['aria-describedby']}
       aria-disabled={isToolbarDisabled()}

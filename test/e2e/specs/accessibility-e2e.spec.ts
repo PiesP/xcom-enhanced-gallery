@@ -248,7 +248,12 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
       await expect(item).toHaveAttribute('role', 'listitem');
       await expect(item).toHaveAttribute('aria-posinset', String(i + 1));
       await expect(item).toHaveAttribute('aria-setsize', String(count));
+      await expect(item).not.toHaveAttribute('tabindex', /.+/);
     }
+
+    const imageAction = items.filter({ has: page.locator('img') }).first().locator('button');
+    await expect(imageAction).toHaveAttribute('type', 'button');
+    await expect(imageAction).toHaveAttribute('aria-label', /Image \d+ of/);
 
     await closeGallery(page);
   });
@@ -306,13 +311,13 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
-  test('Toolbar element has role=toolbar', async ({ page }) => {
+  test('Toolbar controls use group semantics and native Tab navigation', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
     const toolbar = page.locator('[data-gallery-element="toolbar"]');
     await expect(toolbar).toBeVisible();
-    await expect(toolbar).toHaveAttribute('role', 'toolbar');
+    await expect(toolbar).toHaveAttribute('role', 'group');
 
     await closeGallery(page);
   });

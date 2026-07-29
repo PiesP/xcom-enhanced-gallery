@@ -202,11 +202,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
     >
       <div class={styles.toolbarHoverZone} aria-hidden="true" />
 
-      <div
-        class={styles.toolbarWrapper}
-        role="toolbar"
-        ref={(el) => setToolbarWrapperEl(el ?? null)}
-      >
+      <div class={styles.toolbarWrapper} ref={(el) => setToolbarWrapperEl(el ?? null)}>
         <Toolbar
           currentIndex={currentIndex}
           focusedIndex={focus.focusedIndex}

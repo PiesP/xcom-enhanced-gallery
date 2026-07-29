@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { defineConfig } from "vitest/config";
+import solid from "vite-plugin-solid";
 import { resolve } from "path";
 import { fileURLToPath } from "url";
 
@@ -11,6 +12,7 @@ const srcDir = resolve(__dirname, "src");
 
 export default defineConfig({
   define: { __DEV__: true },
+  plugins: [solid()],
   test: {
     globals: true,
     environment: "jsdom",

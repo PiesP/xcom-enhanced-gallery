@@ -42,14 +42,12 @@ function createReporter(context: string): ErrorReporter {
     if (options?.code) payload.code = options.code;
     if (options?.metadata) payload.metadata = options.metadata;
 
-    if (__DEV__) {
-      if (severity === 'info') logger.info(message, payload);
-      else if (severity === 'warning') logger.warn(message, payload);
-      else logger.error(message, payload);
-    }
-
-    if (severity === 'critical') {
-      console.error('[Critical Error]', message, payload);
+    if (severity === 'info') {
+      if (__DEV__) logger.info(message, payload);
+    } else if (severity === 'warning') {
+      logger.warn(message, payload);
+    } else {
+      logger.error(message, payload);
     }
   };
 
