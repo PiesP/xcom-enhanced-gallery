@@ -133,21 +133,24 @@ const compareUrl = previous
   ? `https://github.com/${repository}/compare/v${previous}...v${version}`
   : `https://github.com/${repository}/releases/tag/v${version}`;
 const changes = changelogEntry(readFileSync(join(root, 'CHANGELOG.md'), 'utf8'), version);
-const releaseNotes = `# 🚀 Release v${version}
+const releaseNotes = `# Release v${version}
 
-## 📥 Installation
+## Installation
 
 ### Userscript
 
-**[📥 Click here to install](https://github.com/${repository}/releases/download/v${version}/${userscriptFile})**
+**[Install the userscript](https://github.com/${repository}/releases/download/v${version}/${userscriptFile})**
 
 Requires [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/).
 
 ### Chrome / Edge / Brave Extension
 
 1. Download \`xcom-enhanced-gallery-chrome.zip\`.
-2. Navigate to \`chrome://extensions\`.
-3. Enable Developer mode and load the ZIP.
+2. Extract the archive to a permanent directory.
+3. Navigate to \`chrome://extensions\` and enable Developer mode.
+4. Select Load unpacked and choose the extracted directory.
+
+This developer installation does not update automatically.
 
 ### Firefox Extension
 
@@ -155,15 +158,15 @@ Requires [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https:
 2. Navigate to \`about:debugging#/runtime/this-firefox\`.
 3. Select the ZIP with Load Temporary Add-on.
 
----
+This development installation is removed when Firefox restarts.
 
-## 📝 What's Changed
+## What's changed
 
 ${changes}
 
-**[📋 Full Changelog](${compareUrl})**
+**[Full changelog](${compareUrl})**
 
-## 📋 Build Details
+## Build details
 
 - **Commit**: \`${commit}\`
 - **Built**: ${buildDate.replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC')}

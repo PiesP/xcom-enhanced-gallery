@@ -1,104 +1,25 @@
-# External API Layer (Shared)
+# External adapters
 
-This directory provides a **stable public interface** for external APIs and vendor adapters.
-It maintains runtime code consistency and ensures predictable test/mock behavior.
+This directory contains low-level integrations that isolate external APIs from
+the gallery feature code.
 
-## Rules
+## Contents
 
-- ✅ Import from `@shared/external/vendors`, `@shared/external/userscript`, or `@shared/external/zip`
-- ✅ Prefer service-layer abstractions in production code (storage, downloads, HTTP, notifications)
-- ❌ Do not import internal implementation files directly
-- ❌ Do not call `GM_*` APIs directly in runtime code
-- ❌ Do not use barrel imports (no `index.*` re-exports)
+- `userscript/adapter.ts`: typed access to userscript manager APIs, including
+  storage, requests, notifications, cookies, and download fallbacks
+- `zip/streaming-zip-writer.ts`: uncompressed Zip32 assembly used by bulk
+  downloads
 
-## Directory Structure
+## Boundaries
 
-```text
-src/shared/external/
-├── README.md        # This document
-├── vendors/         # Compatibility types and vendor helpers
-├── userscript/      # Userscript adapter + environment detection
-├── zip/             # Zip utilities
-└── test/            # Internal test helpers (test-only)
-```
+- Feature code should use the platform adapters in `src/platform/` and the
+  established download, storage, and notification services.
+- Do not call `GM_*` APIs outside the userscript adapter.
+- Import the implementation file directly; this directory has no barrel API.
+- Keep extension-specific behavior in the extension/platform layer rather than
+  adding browser branching here.
+- The ZIP writer is Zip32-only. Preserve its size and entry-count guards when
+  changing archive behavior.
 
-## Usage
-
-### Solid.js
-
-Prefer direct imports from Solid.js.
-
-```ts
-import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
-import { render } from "solid-js/web";
-import type { JSX } from "solid-js";
-```
-
-Optional compatibility type aliases:
-
-```ts
-import type { ComponentChildren, JSXElement } from "@shared/external/vendors";
-```
-
-### Userscript APIs
-
-Prefer service-layer abstractions:
-
-```ts
-import { NotificationService, PersistentStorage } from "@shared/services";
-
-const storage = PersistentStorage.getInstance();
-await storage.set("user-theme", "dark");
-
-const notif = NotificationService.getInstance();
-notif.success("Settings saved");
-```
-
-Advanced/debug/test-only use:
-
-```ts
-import { detectEnvironment, getUserscript } from "@shared/external/userscript";
-
-const env = detectEnvironment();
-if (env.isGMAvailable) {
-  const us = getUserscript();
-  await us.setValue("key", "value");
-}
-```
-
-**Forbidden** in application code:
-
-```ts
-// ❌ Do not call GM_* APIs directly
-GM_setValue("key", "value");
-```
-
-### Zip Utilities
-
-```ts
-import { createZipBytesFromFileMap } from "@shared/external/zip";
-import { DownloadService } from "@shared/services";
-
-const zipBytes = await createZipBytesFromFileMap(
-  {
-    "photo1.jpg": buffer1,
-    "photo2.jpg": buffer2,
-  },
-  { compressionLevel: 0 }
-);
-
-const downloadService = DownloadService.getInstance();
-await downloadService.downloadBlob({
-  blob: new Blob([zipBytes], { type: "application/zip" }),
-  name: "media.zip",
-});
-```
-
-## Related Documentation
-
-- [AGENTS.md](../../../AGENTS.md) - AI coding guidance including service patterns
-- [CONTRIBUTING.md](../../../CONTRIBUTING.md) - Contributing guidelines and coding rules
-
----
-
-Last updated: 2025-12-24
+See the root [contributing guide](../../../CONTRIBUTING.md) for validation and
+cross-platform requirements.

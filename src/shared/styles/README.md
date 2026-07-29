@@ -1,210 +1,33 @@
-# Shared Styles
-
-> Design-token CSS and shared style utilities for the X.com Enhanced Gallery userscript
-> **Target Audience**: UI developers and AI coding agents
-
-This directory implements a **token-first** architecture optimized for predictable theming and maintainability.
-
----
-
-## Table of Contents
-
-1. [Directory Structure](#directory-structure)
-2. [Token Layers](#token-layers)
-3. [Styling Rules](#styling-rules)
-4. [How Tokens Are Loaded](#how-tokens-are-loaded)
-5. [Adding a Token](#adding-a-token)
-6. [Best Practices](#best-practices)
-
----
-
-## Directory Structure
-
-```
-src/shared/styles/
-├─ design-tokens.primitive.css   # Layer 1: base tokens (color, spacing, size)
-├─ design-tokens.semantic.css    # Layer 2: semantic tokens (role-based)
-├─ design-tokens.component.css   # Layer 3: component tokens (UI-specific)
-├─ isolated-gallery.css          # Base isolation styles for the gallery root
-├─ tokens/                       # Token-related CSS (e.g., animation)
-└─ utilities/                    # Shared utility CSS (layout, helpers)
-```
-
----
-
-## Token Layers
-
-1. **Primitive** (`design-tokens.primitive.css`): Raw values (colors, spacing, radii)
-2. **Semantic** (`design-tokens.semantic.css`): Role-based mappings (foreground, surface, error)
-3. **Component** (`design-tokens.component.css`): Component-level specializations
-
----
-
-## Styling Rules
-
-### 1. Token-First
-
-Always use design tokens for colors, spacing, and sizing.
-
-**✅ GOOD:**
-
-```css
-.button {
-  color: var(--xeg-fg);
-  background: var(--xeg-bg);
-  padding: var(--xeg-space-2);
-}
-```
-
-**❌ BAD:**
-
-```css
-.button {
-  color: #fff;
-  background: #000;
-  padding: 8px;
-}
-```
-
-**Rationale**: Hardcoded values break theming consistency and make maintenance harder.
-
-### 2. Prefer CSS Modules
-
-**✅ GOOD:**
-
-```
-src/shared/components/Button/Button.module.css
-src/features/gallery/components/VerticalImageItem.module.css
-```
-
-### 3. Avoid `!important` in Injected Styles
-
-Avoid `!important` in injected styles (userscript/extension content scripts). Prefer namespace isolation (`.xeg-*`) over specificity wars — namespace prefixes provide clean separation without escalating specificity. SolidJS components with CSS Modules should not need `!important`.
-
-The SPA context (the page itself) has more flexibility, but injected styles into third-party pages should avoid `!important` to prevent brittle overriding.
-
-`!important` makes overrides brittle and prevents proper style composition.
-
-**✅ GOOD:** Use proper CSS specificity or CSS Modules
-**❌ BAD:**
-
-```css
-.button {
-  color: #fff !important; /* Avoid */
-}
-```
-
-### 4. Units and Color Space
-
-- **Sizing and spacing**: Use `rem` or `em` (never hardcoded `px`)
-- **Colors**: Use `oklch()` color space (via tokens only)
-
-**✅ GOOD:**
-
-```css
-padding: var(--xeg-space-2); /* rem via token */
-color: var(--xeg-fg); /* oklch() via token */
-```
-
----
-
-## How Tokens Are Loaded
-
-These CSS files should be imported from [src/styles/globals.ts](../../styles/globals.ts):
-
-```typescript
-import "@shared/styles/design-tokens.primitive.css";
-import "@shared/styles/design-tokens.semantic.css";
-import "@shared/styles/design-tokens.component.css";
-```
-
----
-
-## Adding a Token
-
-Follow this three-step process:
-
-1. **Add a primitive token** to `design-tokens.primitive.css` with a raw value
-2. **Map it** (if needed) in `design-tokens.semantic.css` with semantic naming
-3. **Optionally expose** component-specific variables in `design-tokens.component.css`
-
-### Example
-
-**Step 1: Primitive token**
-
-```css
-:root {
-  --color-info: oklch(60% 0.15 200deg);
-}
-```
-
-**Step 2: Semantic token**
-
-```css
-:root {
-  --xeg-color-info: var(--color-info);
-}
-```
-
-**Step 3 (optional): Component-level token**
-
-```css
-:root {
-  --xeg-info-bg: var(--xeg-color-info);
-}
-```
-
----
-
-## Best Practices
-
-### Avoid Reading Computed Styles at Runtime
-
-Prefer composing `var(--xeg-*)` values in CSS. Reading computed styles requires DOM queries and is slower.
-
-**✅ GOOD:**
-
-```css
-.button {
-  color: var(--xeg-fg);
-}
-```
-
-**❌ BAD:**
-
-```typescript
-const color = window.getComputedStyle(element).color; // Avoid at runtime
-```
-
-### Local TypeScript Maps for Autocomplete
-
-If you need TypeScript autocomplete for tokens in a component, create a local map in that component/module:
-
-**Example:**
-
-```typescript
-// src/features/gallery/components/MyComponent.tsx
-const TOKEN_MAP = {
-  fg: "--xeg-fg",
-  bg: "--xeg-bg",
-  space2: "--xeg-space-2",
-} as const;
-```
-
-### Feature-Level Styles
-
-Gallery utility classes like `.xeg-glass-surface` are defined in feature-level CSS. See [src/features/gallery/styles/gallery-global.css](../../features/gallery/styles/gallery-global.css).
-
----
-
-## Related Files
-
-- [design-tokens.primitive.css](./design-tokens.primitive.css) – Base token values
-- [design-tokens.semantic.css](./design-tokens.semantic.css) – Role-based token mappings
-- [design-tokens.component.css](./design-tokens.component.css) – Component-specific tokens
-- [src/styles/globals.ts](../../styles/globals.ts) – Token import entry point
-- [src/features/gallery/styles/gallery-global.css](../../features/gallery/styles/gallery-global.css) – Feature-level utilities
-
----
-
-**Last updated**: 2025-12-16
+# Shared styles
+
+The gallery uses explicit cascade layers, CSS Modules, and `--xeg-*` custom
+properties to isolate its UI from X.com.
+
+## Load order
+
+`src/main.ts` imports shared styles in this order:
+
+1. `layers.css` declares the cascade order.
+2. `design-tokens.primitive.css` defines raw color, spacing, type, and timing values.
+3. `design-tokens.semantic.css` maps primitives to UI roles.
+4. `design-tokens.component.css` defines component-specific values and shared classes.
+5. `base/reset.css` normalizes the isolated gallery root.
+6. `utilities/*.css` provides shared layout and animation helpers.
+7. `isolated-gallery.css` establishes the gallery boundary.
+
+Feature and component CSS Modules load after this shared foundation.
+
+## Rules
+
+- Reuse an existing semantic or component token before adding a new primitive.
+- Use `--xeg-*` tokens for themed, repeated, or cross-component values.
+- Keep one-off geometry close to the component that owns it; pixels are allowed
+  when they express a real browser or asset boundary.
+- Prefer CSS Modules and `.xeg-*` namespace isolation over specificity escalation.
+- Avoid `!important` unless overriding third-party page behavior is unavoidable
+  and documented next to the rule.
+- Preserve the layer order and the import order in `src/main.ts`.
+
+When adding a token, define the raw value in the primitive layer, map its role
+in the semantic layer, and add a component token only when multiple component
+rules share that specialization.

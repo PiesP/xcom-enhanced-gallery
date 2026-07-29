@@ -1,37 +1,24 @@
-# Contributing to X.com Enhanced Gallery
+# Contributing
 
-Thank you for your interest in contributing to **X.com Enhanced Gallery**. This
-document describes a minimal, practical workflow for reporting issues and
-submitting pull requests.
+Thanks for improving **X.com Enhanced Gallery**. Source, comments,
+documentation, commit messages, and issue content should be written in English.
 
-> **Language policy**: All source code, comments, commit messages and
-> documentation in this repository must be written in **English**.
+## Report an issue
 
----
+Use the repository issue templates and include:
 
-## How to report issues
+- Distribution: userscript, Chromium extension, or Firefox extension
+- Release version, browser, OS, and userscript manager when applicable
+- Exact reproduction steps and expected versus actual behavior
+- Relevant console errors with private data removed
 
-- Use the **Bug report** or **Feature request** issue templates if available.
-- Include:
-  - A clear description of the problem or idea
-  - Steps to reproduce (for bugs)
-  - Your browser, OS, and userscript manager
-  - The script version (from the userscript header or GitHub release tag)
+Do not report vulnerability details publicly. Follow the
+[security policy](./.github/SECURITY.md).
 
-Security-sensitive issues should follow the dedicated process described in:
+## Development setup
 
-- [Security Policy](.github/SECURITY.md)
-
----
-
-## Development basics
-
-### Prerequisites
-
-- Use the Volta versions in `package.json` (currently Node.js `26.5.0` and pnpm
-  `11.17.0`), or engines-compatible Node.js `>=22.13.0` and pnpm `>=11.17.0`.
-
-### Local setup
+Use the toolchain pinned in `package.json`, or versions that satisfy its
+`engines` fields.
 
 ```bash
 git clone --recurse-submodules https://github.com/PiesP/xcom-enhanced-gallery.git
@@ -41,319 +28,70 @@ git submodule update --init --recursive
 pnpm install
 ```
 
-### Git workflow and the `browser-core` submodule
-
-This repository is the superproject for the shared `browser-core` package.
-`packages/core` is a Git submodule, so the root repository records an exact
-`browser-core` commit rather than a moving branch. The detached HEAD that is
-normal for a pinned submodule must not be treated as a broken checkout.
-
-For an existing clone, restore all submodules to the commits recorded by the
-current root commit with:
-
-```bash
-git submodule sync --recursive
-git submodule update --init --recursive
-git submodule status --recursive
-```
-
-Before changing a submodule, check both repositories independently:
-
-```bash
-git status --short
-git -C packages/core status --short --branch
-git diff --submodule=log -- packages/core
-```
-
-The leading character in `git submodule status` is useful when diagnosing a
-checkout: `-` means the submodule is not initialized, `+` means its checked-out
-commit differs from the root pointer, and `U` means the gitlink has a merge
-conflict.
-
-#### Updating the pinned dependency
-
-Do not run `git pull` inside `packages/core`; the submodule is intentionally
-checked out detached. To test the latest upstream `master` locally, first make
-sure the submodule has no uncommitted changes, then run:
-
-```bash
-git submodule update --remote --checkout packages/core
-git -C packages/core rev-parse HEAD
-```
-
-This changes the root worktree's gitlink. Stage it only when the dependency
-bump is intentional:
-
-```bash
-git add packages/core
-git diff --cached --submodule=log -- packages/core
-git commit -m "chore(deps): update browser-core to <short-sha>"
-```
-
-To pin a reviewed commit explicitly, fetch and detach at its full 40-character
-SHA instead of following a branch:
-
-```bash
-CORE_SHA=<full-browser-core-commit-sha>
-git -C packages/core fetch --no-tags origin "$CORE_SHA"
-git -C packages/core switch --detach "$CORE_SHA"
-git -C packages/core rev-parse --verify HEAD
-git add packages/core
-```
-
-The `Update browser-core` workflow uses this exact-SHA approach, opens a root
-repository pull request, and runs the normal root CI before the pointer is
-merged. Avoid creating a second manual bump while that automation pull request
-is open.
-
-#### Working on `browser-core` itself
-
-Changes to shared utilities belong in the `PiesP/browser-core` repository, not
-as ordinary files in this superproject. From the root repository, create a
-work branch in the submodule before editing it:
-
-```bash
-git -C packages/core fetch --no-tags origin master
-git -C packages/core switch --create codex/<topic> --track origin/master
-git -C packages/core config core.hooksPath .githooks
-```
-
-Run the core project's checks and submit its pull request there. After that
-pull request is merged into `browser-core` `master`, update this repository to
-the resulting full SHA and submit a separate root pull request containing only
-the gitlink change. Do not commit or push `browser-core` changes from the root
-repository.
-
-Local experiments may leave `packages/core` on a topic branch or a different
-detached commit. Keep those changes separate from the root dependency bump and
-do not run a submodule update while the submodule has uncommitted work. To
-return to the root commit's pinned version after the experiment, first preserve
-or discard the local work deliberately, then run:
-
-```bash
-git submodule update --init --checkout packages/core
-```
-
-When a root merge or rebase produces a submodule conflict, choose the intended
-`browser-core` commit, check that commit out detached in `packages/core`, and
-run `git add packages/core` to resolve the gitlink. Never edit the internal
-`.git/modules/packages/core` metadata to resolve a conflict.
-
-#### Git hooks
-
-The root repository and `browser-core` both version local Git hooks, but Git
-does not enable a repository's hook path automatically after cloning. Enable
-the guards separately when working in each repository:
-
-```bash
-git config core.hooksPath .githooks
-git -C packages/core config core.hooksPath .githooks
-```
-
-The hooks are local safeguards; hosted branch protection and pull requests are
-the authoritative policy. In particular, do not commit directly to either
-project's default branch or push a default-branch update that bypasses its
-required merge policy.
-
-When enabled, the hooks enforce these local checks:
-
-- `pre-commit` rejects commits from detached HEAD and direct commits on
-  `master`/`main`. It only permits completing an in-progress merge on a default
-  branch.
-- `pre-push` rejects deletion of a default branch and requires a pushed
-  default-branch update to be a two-parent `--no-ff` merge whose first parent is
-  the current remote tip.
-
-These hooks can be bypassed with Git options, so they complement rather than
-replace the hosted branch protection rules.
-
-#### Supply chain security controls
-
-This personal project intentionally adopts current stable libraries and tools
-quickly. pnpm and Dependabot retain a 24-hour observation window so routine
-updates remain fast without installing brand-new releases immediately.
-
-Key policies (configured in `pnpm-workspace.yaml`):
-
-- **Reviewed install scripts**: `strictDepBuilds` + `allowBuilds` require explicit review
-  of dependency install scripts. Entries in `allowBuilds` are either:
-  - `true` (allowed to run), or
-  - `false` (explicitly disallowed, but considered reviewed).
-- **Current reviewed install scripts**: `esbuild` is the only dependency install
-  script explicitly allowed in the root workspace today.
-- **Trust downgrade protection**: `trustPolicy: no-downgrade` blocks versions whose
-  recent publish trust evidence is weaker than prior releases. Legacy transitive
-  releases are age-bounded because they predate widespread provenance.
-- **Release cooling**: `minimumReleaseAge` and strict mode reject npm versions
-  published less than 24 hours ago, including transitive dependencies.
-- **No exotic transitive sources**: `blockExoticSubdeps` prevents transitive
-  dependencies from using git/tarball URLs.
-
-Dependabot checks npm packages and GitHub Actions daily. Reviewed patch/minor
-tooling updates may auto-merge after CI; major updates and runtime behavior
-changes stay visible for manual review. The scheduled security workflow also
-checks pinned Nose, OSV Scanner, and Semgrep versions after the same cooling
-window.
-
-If installation fails due to these controls, do not disable them globally.
-Instead, update `allowBuilds` (and, if needed, the `*Exclude` settings) with a
-documented exception after reviewing the package and the specific version.
-
-### Common commands
-
-```bash
-# Production build (userscript bundle with quality checks)
-pnpm build
-
-# Development build
-pnpm build:dev
-
-# Quick build (skip quality checks)
-pnpm build:fast
-
-# TypeScript typecheck
-pnpm check
-
-# Lint source code
-pnpm lint
-
-# Format check
-pnpm fmt
-
-# Unused code/dependency checks
-pnpm knip
-
-# Run all quality checks
-pnpm quality
-
-# Full local verification (builds + unit coverage + browser E2E)
-pnpm verify:full
-```
-
-These tasks are defined in `package.json` and use the project configuration
-(`tsconfig*.json`, `biome.json`, build scripts).
-
-### Tests
-
-Tests are tracked under `test/`, use the root `package.json`, and run in CI:
-
-```bash
-pnpm test
-pnpm test:cov
-pnpm test:e2e
-pnpm test:e2e:extension
-pnpm mut:fast
-pnpm verify:full
-```
-
----
-
-## Editor setup (VSCode)
-
-For the best development experience, configure VSCode to use the same
-lint/format rules as the CLI (`pnpm lint`, `pnpm fmt`).
-
-### Recommended extensions
-
-- **biomejs.biome** - Biome linter and formatter
-- **esbenp.prettier-vscode** - Prettier for Markdown/YAML
-
-### Recommended settings
-
-Add these settings to your `.vscode/settings.json`:
-
-```json
-{
-  "biome.enabled": true,
-  "editor.defaultFormatter": "biomejs.biome",
-  "editor.formatOnSave": true,
-  "editor.codeActionsOnSave": {
-    "quickfix.biome": "always",
-    "source.organizeImports.biome": "always"
-  },
-  "[typescript]": { "editor.defaultFormatter": "biomejs.biome" },
-  "[typescriptreact]": { "editor.defaultFormatter": "biomejs.biome" },
-  "[javascript]": { "editor.defaultFormatter": "biomejs.biome" },
-  "[json]": { "editor.defaultFormatter": "biomejs.biome" },
-  "[jsonc]": { "editor.defaultFormatter": "biomejs.biome" },
-  "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" }
-}
-```
-
-This ensures:
-
-- **Format on save** uses Biome (same as `pnpm fmt`)
-- **Lint rules** match the CLI (`biome.json` configuration)
-- **Auto-fix** applies safe fixes on save
-
----
-
-## Coding guidelines
-
-Please keep changes small, focused, and consistent with the existing codebase.
-
-- **TypeScript & Solid.js**
-
-  - Use modern TypeScript and Solid.js patterns already present in `src/`.
-  - Prefer functional components and hooks/utilities consistent with existing
-    files.
-
-- **Path imports**
-
-  - Use configured **path aliases** (e.g. `@shared/...`, `@features/...`) for
-    internal imports instead of long relative paths.
-
-- **GM / userscript APIs**
-
-  - Do **not** call Greasemonkey/Tampermonkey APIs (e.g. `GM_*`) directly from
-    feature code.
-  - Use the existing service singletons (e.g. storage, notification, download,
-    HTTP services) where applicable.
-
-- **Security & safety**
-
-  - Do not introduce dynamic code execution (`eval`, `new Function`,
-    `setTimeout`/`setInterval` with string arguments, etc.).
-  - Avoid unsafe DOM patterns such as unsanitized `innerHTML`.
-  - Follow the practices described in the
-    [Security Policy](.github/SECURITY.md).
-
-- **Style & formatting**
-  - Follow the linting rules enforced by Biome (`pnpm lint`).
-  - Use the existing design tokens and CSS Modules patterns from `src/`.
-
----
-
-## Before opening a pull request
-
-Before you submit a PR, please:
-
-1. **Sync with `master`** and rebase your branch if necessary.
-2. Run the relevant local checks for your change. A typical full pass is:
-
-```bash
-pnpm quality
-pnpm verify:full
-```
-
-If your change is docs-only or otherwise isolated, explain why a smaller check
-set was sufficient.
-
-3. Ensure the gallery still behaves correctly on X.com in a desktop browser
-   (Chrome, Firefox, Safari, or Edge) when runtime behavior changed.
-4. Update documentation if behavior visible to end users has changed:
-    - `README.md` for user-facing changes
-    - `CHANGELOG.md` for notable changes between releases
-
----
-
-## Pull request expectations
-
-A good pull request usually includes:
-
-- A clear title and short description of **what** is changing and **why**
-- Small, focused commits with descriptive messages
-- Tests where it makes sense (unit, browser, or E2E) and/or a short note
-  explaining why tests are not required
-
-Thank you for helping improve **X.com Enhanced Gallery**!
+`packages/core` is a pinned Git submodule. Restore the recorded revision with
+`git submodule update --init --recursive`; do not pull inside the detached
+submodule. Shared changes belong in the `PiesP/browser-core` repository and must
+be integrated here as a reviewed gitlink update.
+
+## Commands
+
+| Command | Purpose |
+| --- | --- |
+| `pnpm build` | Build the production userscript |
+| `pnpm build:all:ci` | Build userscript, Chrome, and Firefox outputs |
+| `pnpm test` | Run the Vitest suite |
+| `pnpm test:cov` | Run tests with coverage thresholds |
+| `pnpm test:e2e` | Run the userscript browser flow |
+| `pnpm test:e2e:extension` | Run the Chrome extension browser flow |
+| `pnpm quality` | Run formatting, lint, type, dependency, and source checks |
+| `pnpm verify` | Run the quality gate and all production builds |
+| `pnpm verify:full` | Add coverage and browser tests to `verify` |
+
+Run the narrowest relevant check while working. Use `pnpm verify` before a
+pull request and `pnpm verify:full` for publication-level or browser behavior
+changes.
+
+## Project constraints
+
+- Keep the userscript as a single-file IIFE without runtime code splitting.
+- Preserve behavior across the userscript and extension platform adapters.
+- Access browser and userscript capabilities through established adapters; do
+  not call `GM_*` directly from feature code.
+- Use strict TypeScript, type-only imports, and alias-based leaf imports across
+  folders. Same-folder relative imports are allowed.
+- Avoid barrels, runtime dynamic imports, `eval`, unsafe `innerHTML`, string
+  timers, and silently swallowed errors.
+- Use CSS Modules and the existing `--xeg-*` tokens for themed or repeated
+  values. Avoid unnecessary `!important` rules.
+- Keep settings migrations, platform cleanup, and download cancellation
+  behavior explicit.
+
+## Browser validation
+
+For user-visible changes, verify the affected distribution on X.com and check:
+
+1. Gallery open and close behavior
+2. Image and video navigation
+3. Single and bulk downloads
+4. Settings persistence
+5. Console errors and cleanup after X.com navigation
+
+Extension changes should also validate content-script injection and the
+generated Chrome and Firefox artifacts. Explain any browser lane that could not
+be run.
+
+## Dependency updates
+
+The repository intentionally follows current stable tools after a 24-hour
+cooling window. Keep pnpm trust, build-script, and transitive-source controls
+enabled. `package.json`, `pnpm-workspace.yaml`, the lockfile, and pinned workflow
+references are authoritative.
+
+## Pull requests
+
+Keep changes focused and describe what changed, why it changed, and how it was
+validated. Update README or CHANGELOG content when user-visible behavior or
+release notes change.
+
+By contributing, you agree that your changes are licensed under the
+[project license](./LICENSE).

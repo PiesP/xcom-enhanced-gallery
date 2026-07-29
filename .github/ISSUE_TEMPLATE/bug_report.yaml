@@ -48,9 +48,20 @@ body:
   - type: input
     id: version
     attributes:
-      label: "Script version"
-      description: "From the userscript header or GitHub release tag"
-      placeholder: "v0.4.15"
+      label: "Release version"
+      description: "From the userscript header, extension manifest, or GitHub release tag"
+      placeholder: "For example, v2.2.0"
+
+  - type: dropdown
+    id: distribution
+    attributes:
+      label: "Distribution"
+      options:
+        - "Userscript"
+        - "Chrome / Edge / Brave extension"
+        - "Firefox extension"
+    validations:
+      required: true
 
   - type: dropdown
     id: browser
@@ -68,7 +79,7 @@ body:
   - type: input
     id: userscript_manager
     attributes:
-      label: "Userscript manager"
+      label: "Userscript manager (userscript only)"
       placeholder: "Tampermonkey, Violentmonkey, ..."
 
   - type: checkboxes
@@ -76,7 +87,7 @@ body:
     attributes:
       label: "Checklist"
       options:
-        - label: "I am using a desktop browser (PC-only script)"
+        - label: "I am using a supported desktop browser"
           required: true
         - label: "I have tested with the latest release from GitHub"
           required: true
