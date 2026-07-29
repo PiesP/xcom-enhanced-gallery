@@ -5,6 +5,8 @@
  * @fileoverview Cancellation helpers: user-cancelled AbortError detection and creation.
  */
 
+import { createAbortError } from '@piesp/browser-core/error';
+
 export { getErrorMessage, isCancellationError, mergeAbortSignals } from '@piesp/browser-core/error';
 
 export const USER_CANCELLED_MESSAGE = 'Download cancelled by user' as const;
@@ -21,14 +23,6 @@ function isUserCancelledAbortError(error: unknown): boolean {
     error.name === 'AbortError' &&
     error.message === USER_CANCELLED_MESSAGE
   );
-}
-
-function createAbortError(message: string, cause?: unknown): DOMException {
-  const error = new DOMException(message, 'AbortError');
-  if (cause !== undefined) {
-    (error as Error & { cause?: unknown }).cause = cause;
-  }
-  return error;
 }
 
 function createUserCancelledAbortError(cause?: unknown): DOMException {
