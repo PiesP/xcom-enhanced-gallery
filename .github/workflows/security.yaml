@@ -78,16 +78,22 @@ jobs:
           git switch --force --detach "$BASE_SHA"
           git submodule update --init --recursive
 
+      - name: 📁 Prepare isolated OSV result directory
+        run: |
+          set -euo pipefail
+          install -d -m 0700 "$RUNNER_TEMP/osv-results"
+
       - name: 🛡️ Scan dependencies before the PR
         continue-on-error: true
         run: |
           docker run --rm \
             --env GOTOOLCHAIN=auto \
             --volume "$GITHUB_WORKSPACE:/src" \
+            --volume "$RUNNER_TEMP/osv-results:/results" \
             --workdir /src \
             "$OSV_SCANNER_IMAGE" \
             --format=json \
-            --output-file=old-results.json \
+            --output-file=/results/old-results.json \
             -r \
             --lockfile=pnpm-lock.yaml \
             .
@@ -104,10 +110,11 @@ jobs:
           docker run --rm \
             --env GOTOOLCHAIN=auto \
             --volume "$GITHUB_WORKSPACE:/src" \
+            --volume "$RUNNER_TEMP/osv-results:/results" \
             --workdir /src \
             "$OSV_SCANNER_IMAGE" \
             --format=json \
-            --output-file=new-results.json \
+            --output-file=/results/new-results.json \
             -r \
             --lockfile=pnpm-lock.yaml \
             .
@@ -116,8 +123,8 @@ jobs:
         run: |
           docker run --rm \
             --entrypoint /root/osv-reporter \
-            --volume "$GITHUB_WORKSPACE:/src" \
-            --workdir /src \
+            --volume "$RUNNER_TEMP/osv-results:/results" \
+            --workdir /results \
             "$OSV_SCANNER_IMAGE" \
             --old=old-results.json \
             --new=new-results.json \
@@ -126,10 +133,10 @@ jobs:
             --fail-on-vuln=true
 
       - name: 📊 Upload OSV SARIF to GitHub Security
-        if: ${{ !cancelled() && hashFiles('osv-results.sarif') != '' }}
+        if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
         with:
-          sarif_file: osv-results.sarif
+          sarif_file: ${{ runner.temp }}/osv-results/osv-results.sarif
 
   osv-scan-dispatch:
     name: pr-gate/osv / osv-scan
@@ -146,13 +153,16 @@ jobs:
       - name: 🛡️ Run OSV scan
         continue-on-error: true
         run: |
+          set -euo pipefail
+          install -d -m 0700 "$RUNNER_TEMP/osv-results"
           docker run --rm \
             --env GOTOOLCHAIN=auto \
             --volume "$GITHUB_WORKSPACE:/src" \
+            --volume "$RUNNER_TEMP/osv-results:/results" \
             --workdir /src \
             "$OSV_SCANNER_IMAGE" \
             --format=json \
-            --output-file=osv-results.json \
+            --output-file=/results/osv-results.json \
             -r \
             --lockfile=pnpm-lock.yaml \
             .
@@ -161,18 +171,18 @@ jobs:
         run: |
           docker run --rm \
             --entrypoint /root/osv-reporter \
-            --volume "$GITHUB_WORKSPACE:/src" \
-            --workdir /src \
+            --volume "$RUNNER_TEMP/osv-results:/results" \
+            --workdir /results \
             "$OSV_SCANNER_IMAGE" \
             --output-files=sarif:osv-results.sarif \
             --new=osv-results.json \
             --fail-on-vuln=true
 
       - name: 📊 Upload OSV SARIF to GitHub Security
-        if: ${{ !cancelled() && hashFiles('osv-results.sarif') != '' }}
+        if: ${{ !cancelled() }}
         uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
         with:
-          sarif_file: osv-results.sarif
+          sarif_file: ${{ runner.temp }}/osv-results/osv-results.sarif
 
   codeql:
     name: 🔎 CodeQL Analysis (${{ matrix.language }})
