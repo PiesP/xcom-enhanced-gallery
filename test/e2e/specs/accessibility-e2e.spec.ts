@@ -274,13 +274,16 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
-  test('Gallery items have role=listitem with aria-posinset and aria-setsize', async ({ page }) => {
+  test('Gallery uses valid native list semantics for media items', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
+    const list = page.locator('[data-gallery-element="items"]');
     const items = page.locator('[data-gallery-element="item"]');
     const count = await items.count();
     expect(count).toBeGreaterThan(0);
+    await expect(list).toHaveJSProperty('tagName', 'UL');
+    await expect(list.locator(':scope > :not(li)')).toHaveCount(0);
 
     for (let i = 0; i < count; i++) {
       const item = items.nth(i);
