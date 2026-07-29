@@ -54,8 +54,6 @@ interface ToolbarViewProps {
   readonly 'aria-label'?: string | undefined;
   /** ARIA describedby */
   readonly 'aria-describedby'?: string | undefined;
-  /** ARIA role */
-  readonly role?: 'group' | undefined;
   /** Tab index */
   readonly tabIndex?: number | undefined;
   /** Test ID */
@@ -127,7 +125,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     'tweetUrl',
     'fitModeLabels',
     'fitModeOrder',
-    'role',
     'tabIndex',
     'onFocus',
     'onBlur',
@@ -161,9 +158,9 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const tweetUrl = createMemo(() => local.tweetUrl);
 
   // Element refs
-  const [toolbarElement, setToolbarElement] = createSignal<HTMLDivElement | null>(null);
+  const [toolbarElement, setToolbarElement] = createSignal<HTMLFieldSetElement | null>(null);
   const [counterElement, setCounterElement] = createSignal<HTMLSpanElement | null>(null);
-  const [settingsPanelEl, setSettingsPanelEl] = createSignal<HTMLDivElement | null>(null);
+  const [settingsPanelEl, setSettingsPanelEl] = createSignal<HTMLElement | null>(null);
   const [tweetPanelEl, setTweetPanelEl] = createSignal<HTMLDivElement | null>(null);
   const translate = useTranslation();
 
@@ -171,12 +168,12 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const nav = createMemo(() => local.navState());
   const fitModeLabels = () => local.fitModeLabels;
 
-  const assignToolbarRef = (element: HTMLDivElement | null) => {
+  const assignToolbarRef = (element: HTMLFieldSetElement | null) => {
     setToolbarElement(element);
     local.settingsController.assignToolbarRef(element);
   };
 
-  const assignSettingsPanelRef = (element: HTMLDivElement | null) => {
+  const assignSettingsPanelRef = (element: HTMLElement | null) => {
     setSettingsPanelEl(element);
     local.settingsController.assignSettingsPanelRef(element);
   };
@@ -286,7 +283,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   });
 
   return (
-    <div
+    <fieldset
       ref={assignToolbarRef}
       class={cx(
         local.toolbarClass(),
@@ -294,10 +291,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         local.settingsController.isSettingsExpanded() ? styles.settingsExpanded : undefined,
         local.isTweetPanelExpanded() ? styles.tweetPanelExpanded : undefined
       )}
-      role={local.role ?? 'group'}
-      aria-label={local['aria-label'] ?? translate('tb.galleryToolbar')}
       aria-describedby={local['aria-describedby']}
-      aria-disabled={isToolbarDisabled()}
+      disabled={isToolbarDisabled()}
       data-testid={__DEV__ ? local['data-testid'] : undefined}
       data-gallery-element="toolbar"
       tabIndex={local.tabIndex}
@@ -305,6 +300,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       onBlur={local.onBlur as ((event: FocusEvent) => void) | undefined}
       onKeyDown={(event) => local.settingsController.handleToolbarKeyDown(event)}
     >
+      <legend class="xeg-sr-only">{local['aria-label'] ?? translate('tb.galleryToolbar')}</legend>
       <div class={cx(styles.toolbarContent, 'xeg-row-center')}>
         <div class={styles.toolbarControls}>
           <IconButton
@@ -445,7 +441,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         </div>
       </div>
 
-      <div
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: Click handling only stops backdrop propagation; keyboard interaction stays on the native controls inside the panel. */}
+      <section
         ref={assignSettingsPanelRef}
         id="toolbar-settings-panel"
         class={cx(
@@ -454,7 +451,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         )}
         data-gallery-scrollable="true"
         onMouseDown={local.settingsController.handlePanelMouseDown}
-        role="region"
         aria-label={translate('tb.settingsPanel')}
         aria-labelledby="settings-button"
         data-gallery-element="settings-panel"
@@ -470,16 +466,15 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             data-testid={__DEV__ ? 'settings-controls' : undefined}
           />
         </Show>
-      </div>
+      </section>
 
-      <div
+      <section
         ref={setTweetPanelEl}
         id="toolbar-tweet-panel"
         class={cx(
           styles.tweetPanel,
           local.isTweetPanelExpanded() ? styles.panelExpanded : undefined
         )}
-        role="region"
         aria-label={translate('tb.twPanel')}
         aria-labelledby="tweet-text-button"
         data-gallery-element="tweet-panel"
@@ -491,7 +486,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             tweetUrl={tweetUrl() ?? undefined}
           />
         </Show>
-      </div>
-    </div>
+      </section>
+    </fieldset>
   );
 }

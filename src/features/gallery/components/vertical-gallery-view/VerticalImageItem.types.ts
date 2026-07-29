@@ -72,7 +72,7 @@ export interface VerticalImageItemProps {
    * @param element - Container div element or null on unmount
    * @optional
    */
-  readonly registerContainer?: (element: HTMLDivElement | null) => void;
+  readonly registerContainer?: (element: HTMLElement | null) => void;
 
   /**
    * Test identifier for automated testing

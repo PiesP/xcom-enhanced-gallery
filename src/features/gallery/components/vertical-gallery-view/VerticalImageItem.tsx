@@ -88,7 +88,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     setIsError(false);
   });
 
-  const [containerRef, setContainerRef] = createSignal<HTMLDivElement | null>(null);
+  const [containerRef, setContainerRef] = createSignal<HTMLElement | null>(null);
   const [imageRef, setImageRef] = createSignal<HTMLImageElement | null>(null);
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
 
@@ -213,7 +213,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
     )
   );
 
-  const assignContainerRef = (element: HTMLDivElement | null) => {
+  const assignContainerRef = (element: HTMLLIElement | null) => {
     setContainerRef(element);
     local.registerContainer?.(element);
   };
@@ -234,7 +234,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   // See GalleryContainer.tsx for the standardized focus trap.
 
   return (
-    <div
+    <li
       ref={assignContainerRef}
       class={containerClasses()}
       data-index={local.index}
@@ -244,7 +244,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       style={mergedStyle()}
       aria-posinset={local.index + 1}
       aria-setsize={totalItems()}
-      role="listitem"
+      data-gallery-element="item"
       data-testid={__DEV__ ? local['data-testid'] : undefined}
     >
       <div class={styles.imageWrapper}>
@@ -309,6 +309,6 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
           </div>
         )}
       </div>
-    </div>
+    </li>
   );
 }

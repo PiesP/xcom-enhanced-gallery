@@ -229,7 +229,7 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     await setupGalleryPage(page);
     await openGallery(page);
 
-    const itemsContainer = page.locator('[role="list"]');
+    const itemsContainer = page.locator('[data-gallery-element="items"]');
     await itemsContainer.hover();
     await page.mouse.wheel(0, 1600);
 
