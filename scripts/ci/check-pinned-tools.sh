@@ -44,7 +44,7 @@ check_release() {
     "$name" "$current" "$cooling_hours"
 }
 
-nose_version="$(sed -nE 's/^nose_version="([^"]+)"/\1/p' scripts/install-nose.sh)"
+nose_version="$(sed -nE 's/^nose_version="([^"]+)"/\1/p' scripts/ci/install-nose.sh)"
 osv_version="$(sed -nE 's/.*osv-scanner-action image v([^ ]+).*/\1/p' .github/workflows/security.yaml)"
 semgrep_version="$(sed -nE 's/.*semgrep\/semgrep:([^ @]+).*/\1/p' .github/workflows/security.yaml | head -n 1)"
 

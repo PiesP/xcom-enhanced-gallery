@@ -126,7 +126,7 @@ jobs:
       - name: 🔧 Install nose
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash scripts/install-nose.sh
+        run: bash scripts/ci/install-nose.sh
 
       - name: 🔎 Check for new duplication
         run: nose query src --baseline .nose-baseline.json --fail-on new
@@ -200,127 +200,14 @@ jobs:
           echo "📦 Release version: $VERSION"
 
       - name: 🏗️ Build all targets
-        run: |
-          set -euo pipefail
-          VERSION="${{ steps.version.outputs.version }}"
+        env:
+          BUILD_VERSION: ${{ steps.version.outputs.version }}
+        run: pnpm build:all:ci
 
-          for manifest in extension/manifest.json extension/manifest.firefox.json; do
-            if [ -f "$manifest" ]; then
-              jq ".version = \"$VERSION\"" "$manifest" > "$manifest.tmp"
-              mv "$manifest.tmp" "$manifest"
-            fi
-          done
-
-          BUILD_VERSION="$VERSION" pnpm build:all:ci
-
-          mkdir -p release-bundle/deploy/dist release-bundle/release
-          cp -r dist/* release-bundle/deploy/dist/
-          cp -r dist/* release-bundle/release/
-
-          awk 'BEGIN{p=0} /^\/\/ ==UserScript==/{p=1} {if(p) print} /^\/\/ ==\/UserScript==/{exit}' \
-            dist/xcom-enhanced-gallery.user.js \
-            > release-bundle/release/xcom-enhanced-gallery.meta.js
-
-          (
-            cd dist-extension
-            zip -qr "$GITHUB_WORKSPACE/release-bundle/release/xcom-enhanced-gallery-chrome.zip" .
-          )
-          (
-            cd dist-extension-firefox
-            zip -qr "$GITHUB_WORKSPACE/release-bundle/release/xcom-enhanced-gallery-firefox.zip" .
-          )
-
-          (
-            cd release-bundle/release
-            sha256sum \
-              xcom-enhanced-gallery.user.js \
-              xcom-enhanced-gallery.meta.js \
-              xcom-enhanced-gallery-chrome.zip \
-              xcom-enhanced-gallery-firefox.zip \
-              > checksums.txt
-          )
-
-          cat > release-bundle/release/metadata.json << EOF
-          {
-            "version": "$VERSION",
-            "build_date": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
-            "commit": "${GITHUB_SHA}",
-            "node_version": "${NODE_VERSION}",
-            "runner_os": "${RUNNER_OS}",
-            "runner_arch": "${RUNNER_ARCH}",
-            "runner_image": "${ImageOS:-unknown}",
-            "runner_image_version": "${ImageVersion:-unknown}"
-          }
-          EOF
-
-          CHANGELOG_CONTENT="$(awk -v ver="$VERSION" '
-            /^## \[/ {
-              if (found) exit;
-              if ($0 ~ "\\[" ver "\\]") {
-                found=1;
-                next;
-              }
-            }
-            found { print }
-          ' CHANGELOG.md)"
-          if [[ -z "${CHANGELOG_CONTENT//[[:space:]]/}" ]]; then
-            echo "❌ CHANGELOG.md has no entry for version $VERSION"
-            exit 1
-          fi
-
-          PREV_VERSION=$(
-            {
-              printf '%s\n' "$VERSION"
-              git tag --list 'v*' | sed 's/^v//'
-            } | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -u -V | awk -v ver="$VERSION" '
-              $0 == ver { print prev; exit }
-              { prev = $0 }
-            '
-          )
-          if [ -n "$PREV_VERSION" ]; then
-            COMPARE_URL="https://github.com/${{ github.repository }}/compare/v${PREV_VERSION}...v${VERSION}"
-          else
-            COMPARE_URL="https://github.com/${{ github.repository }}/releases/tag/v${VERSION}"
-          fi
-
-          cat > release-bundle/RELEASE_NOTES.md << EOF
-          # 🚀 Release v${VERSION}
-
-          ## 📥 Installation
-
-          ### Userscript
-
-          **[📥 Click here to install](https://github.com/${{ github.repository }}/releases/download/v${VERSION}/xcom-enhanced-gallery.user.js)**
-
-          Requires [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/).
-
-          ### Chrome / Edge / Brave Extension
-
-          1. Download `xcom-enhanced-gallery-chrome.zip`.
-          2. Navigate to `chrome://extensions`.
-          3. Enable Developer mode and load the ZIP.
-
-          ### Firefox Extension
-
-          1. Download `xcom-enhanced-gallery-firefox.zip`.
-          2. Navigate to `about:debugging#/runtime/this-firefox`.
-          3. Select the ZIP with Load Temporary Add-on.
-
-          ---
-
-          ## 📝 What's Changed
-
-          ${CHANGELOG_CONTENT}
-
-          **[📋 Full Changelog](${COMPARE_URL})**
-
-          ## 📋 Build Details
-
-          - **Commit**: \`${GITHUB_SHA}\`
-          - **Built**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          - **Node.js**: \`${NODE_VERSION}\`
-          - **Runner**: \`${RUNNER_OS}/${RUNNER_ARCH}\` (\`${ImageOS:-unknown} ${ImageVersion:-unknown}\`)
-          EOF
+      - name: 📦 Prepare release bundle
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: pnpm release:prepare
 
       - name: 📊 Upload release bundle
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

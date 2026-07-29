@@ -40,17 +40,22 @@ describe('tooling configuration', () => {
     }
   );
 
-  it('runs the pinned tsx dependency through pnpm', () => {
-    expect(packageJson.devDependencies.tsx).toMatch(/^\d+\.\d+\.\d+$/);
+  it('uses native TypeScript execution without redundant runner dependencies', () => {
+    expect(packageJson.devDependencies.tsx).toBeUndefined();
+    expect(packageJson.devDependencies.rimraf).toBeUndefined();
 
-    const tsxScripts = Object.values(packageJson.scripts).filter((script) =>
-      /(?:npx|pnpm exec) tsx\b/.test(script)
-    );
-    expect(tsxScripts.length).toBeGreaterThan(0);
-    for (const script of tsxScripts) {
-      expect(script).toContain('pnpm exec tsx');
-      expect(script).not.toContain('npx tsx');
+    for (const script of Object.values(packageJson.scripts)) {
+      expect(script).not.toMatch(/\bnpx\b|pnpm exec tsx\b|\brimraf\b/);
     }
+    expect(packageJson.scripts['check:versions']).toContain('node --experimental-strip-types');
+  });
+
+  it('lets pnpm run extension prebuild hooks exactly once', () => {
+    expect(packageJson.scripts['build:extension']).not.toContain('prebuild:extension');
+    expect(packageJson.scripts['build:extension:firefox']).not.toContain(
+      'prebuild:extension:firefox'
+    );
+    expect(packageJson.scripts['build:all']).toContain('build:extension:ci');
   });
 
   it('builds and smoke-tests both extension targets in CI', () => {

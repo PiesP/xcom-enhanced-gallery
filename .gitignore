@@ -10,7 +10,8 @@ node_modules/
 dist/
 dist-extension/
 dist-extension-firefox/
-build/
+/build/
+/release-bundle/
 
 # TypeScript
 *.tsbuildinfo
