@@ -32,5 +32,5 @@ If tests are not required, briefly explain why.
 - [ ] I ran the relevant local checks and tests (or explained why a narrower set
       was sufficient)
 - [ ] I updated `README.md` / `CHANGELOG.md` if user-visible behavior changed
-- [ ] I reviewed the [Security Policy](.github/SECURITY.md) for any
+- [ ] I reviewed the [Security Policy](SECURITY.md) for any
       security-impacting changes

@@ -14,7 +14,7 @@
  * 5. xeg.features - Feature-specific styles (gallery, settings)
  * 6. xeg.overrides - Theme and state overrides (highest priority)
  *
- * @note CRITICAL: This file MUST be imported first in globals.ts to ensure
+ * @note CRITICAL: This file MUST be imported first in src/main.ts to ensure
  *       correct cascade layer ordering across all CSS Modules.
  * @see https://developer.mozilla.org/en-US/docs/Web/CSS/@layer
  */

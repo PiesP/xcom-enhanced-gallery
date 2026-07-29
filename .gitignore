@@ -53,16 +53,8 @@ temp/
 # Plans (managed under .hermes/plans/)
 plans/
 
-# Documentation (keep essential files tracked)
-docs/
-*.md
-!README.md
-!CHANGELOG.md
-!LICENSE
-!CODE_OF_CONDUCT.md
-!CONTRIBUTING.md
-!.github/pull_request_template.md
-!.github/SECURITY.md
+# Historical local audit snapshot
+audit-report.md
 
 # AI Instructions (not shared to remote)
 AGENTS.md

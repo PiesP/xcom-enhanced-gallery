@@ -1,25 +1,14 @@
-# Branch Protection Settings Reference
-
-# This file is already in the path expected by the GitHub Settings app.
-# It also serves as the living reference for manual branch protection setup.
-#
-# Location in the GitHub UI:
-# Repository → Settings → Branches → Branch protection rules → master
-
+# Declarative branch protection for the GitHub Settings app.
 branches:
   - name: master
     protection:
-      # Pull request reviews
       required_pull_request_reviews:
         required_approving_review_count: 1
         dismiss_stale_reviews: true
         require_code_owner_reviews: false
         require_last_push_approval: true
-
-      # Status checks
       required_status_checks:
-        strict: true # Require branches to be up to date before merging (prevents conflicts)
-        # Required ASCII commit-status contexts published by manual validation.
+        strict: true
         contexts:
           - "pr-gate/quality"
           - "pr-gate/build"
@@ -28,52 +17,10 @@ branches:
           - "pr-gate/duplication"
           - "pr-gate/osv / osv-scan"
           - "pr-gate/semgrep"
-
-          # Scheduled-only checks are intentionally excluded from branch protection.
-
-      # Additional protection
-      enforce_admins: false # Allow admins to bypass (for emergency fixes)
-      required_linear_history: false # Allow merge commits
-      allow_force_pushes: false # Prevent force pushes
-      allow_deletions: false # Prevent branch deletion
+      enforce_admins: false
+      required_linear_history: false
+      allow_force_pushes: false
+      allow_deletions: false
       required_conversation_resolution: true
-      lock_branch: false # Allow pushes
-      restrictions: null # No push restrictions (all collaborators can push)
-
-# Manual Configuration Steps:
-#
-# 1. Go to: https://github.com/PiesP/xcom-enhanced-gallery/settings/branches
-#
-# 2. Click "Add branch protection rule" or edit existing rule for "master"
-#
-# 3. Configure the following:
-#    ✅ Require a pull request before merging
-#       - Required approvals: 1
-#
-#    ✅ Require status checks to pass before merging
-#       ✅ Require branches to be up to date before merging
-#       Add status checks (type each name exactly):
-#         - pr-gate/quality
-#         - pr-gate/build
-#         - pr-gate/unit
-#         - pr-gate/e2e
-#         - pr-gate/duplication
-#         - pr-gate/osv / osv-scan
-#         - pr-gate/semgrep
-#
-#    ❌ Do not require reviews from Code Owners
-#    ❌ Do not require deployments to succeed
-#    ❌ Do not lock branch
-#    ❌ Do not allow force pushes
-#    ❌ Do not allow deletions
-#
-# 4. Click "Save changes"
-#
-# Verification:
-# - Create a test PR and ensure all required checks appear
-# - Verify that PR cannot be merged until all checks pass
-# - Confirm that PRs cannot auto-merge without one approval
-
-# Settings app note:
-# - If https://github.com/apps/settings is installed, this file can be applied directly.
-# - Otherwise, keep using the manual steps above with this file as the source of truth.
+      lock_branch: false
+      restrictions: null

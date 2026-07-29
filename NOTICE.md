@@ -1,13 +1,9 @@
 # Third-Party Notices
 
-This project includes the following third-party software:
+This project includes or derives source from the following third-party software:
 
-## solid-js
-- License: MIT
-- Copyright (c) 2018-2025 Ryan Carniato
-- Repository: https://github.com/solidjs/solid
+- **SolidJS** — MIT; Copyright (c) 2016-2025 Ryan Carniato
+- **Lucide icons** — ISC, with Feather-derived portions under MIT; Copyright
+  (c) 2013-2023 Cole Bemis and Copyright (c) 2025 Lucide Contributors
 
-## Lucide Icons
-- License: ISC
-- Copyright (c) 2025 Lucide Contributors
-- Repository: https://github.com/lucide-icons/lucide
+Full license texts are provided in the [LICENSES](./LICENSES/) directory.

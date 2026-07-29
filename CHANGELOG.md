@@ -80,7 +80,7 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Code style**: Applied dot notation consistently, introduced `CSS_REM_BASE` constant, and added JSDoc where missing.
 - **Dependencies**: Removed `only-allow`; updated Node.js requirement from v24 to v26, pnpm to 11.2.2; updated `vite` to 8.0.14, `solid-js` to 1.9.13, `@types/node` to 25.9.1, and `knip` to 6.14.1.
 
-## [2.1.1] - 2026-07-19
+## [2.1.1] - 2026-05-18
 
 ### Fixed
 
@@ -97,7 +97,10 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **CSS**: Removed outdated GPU acceleration hacks (`translateZ(0)`, `backface-visibility: hidden`); replaced absurd z-index values (2147483600+) with reasonable scale (9999-10004).
 - **Security audit**: Confirmed no `innerHTML`, `eval`, or `new Function` usage; URL safety validation is properly implemented.
 
-## [2.1.0] - 2026-07-18
+## [2.1.0] - 2026-05-18
+
+This version was prepared internally but was superseded before a public GitHub
+release was published.
 
 ### Changed
 
@@ -111,7 +114,7 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Deleted `pnpm.overrides` for `rollup`, `minimatch`, and `semver` (no longer needed with Vite 8).
 - Removed `AmbientVideoPauseRequest` type import from `GalleryApp` (replaced with inline `{ reason?: string }`).
 
-## [2.0.0] - 2026-07-18
+## [2.0.0] - 2026-05-18
 
 ### Added
 

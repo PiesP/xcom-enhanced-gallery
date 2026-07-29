@@ -1,92 +1,63 @@
-# Security Policy
+# Security policy
 
-This document describes how security is handled for **X.com Enhanced Gallery** and how to responsibly report vulnerabilities.
+This policy covers the userscript and the Chrome and Firefox extension builds
+of **X.com Enhanced Gallery**.
 
----
+## Supported versions
 
-## Supported Versions
+Security support is provided for the latest release on
+[GitHub Releases](https://github.com/PiesP/xcom-enhanced-gallery/releases).
+Older releases and unpacked extension builds copied from older releases are not
+maintained.
 
-We only provide security support for the **latest released version** of the userscript on [GitHub Releases](https://github.com/PiesP/xcom-enhanced-gallery/releases).
+Userscript managers can update the userscript automatically. Unpacked Chromium
+and temporary Firefox installations must be replaced manually when a new
+release is published.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| Latest  | :white_check_mark: |
-| Older   | :x:                |
+## Report a vulnerability
 
-Userscript managers (Tampermonkey, Violentmonkey, etc.) can auto-update the script; we recommend keeping auto-update enabled.
+Do not disclose vulnerabilities in a public issue.
 
----
+1. Prefer a [private GitHub Security Advisory](https://github.com/PiesP/xcom-enhanced-gallery/security/advisories/new).
+2. If advisories are unavailable, open a minimal issue requesting a private
+   contact channel without including technical details.
 
-## Reporting a Vulnerability
+Include the impact, reproduction steps, distribution, release version, browser,
+and OS when available. We aim to respond within seven business days and
+coordinate disclosure after a fix is available.
 
-If you discover a security vulnerability, **do not** disclose it publicly.
+## Security and privacy model
 
-1. **Preferred**: Use [GitHub Security Advisories](https://github.com/PiesP/xcom-enhanced-gallery/security/advisories/new).
-2. If that is not available, open a minimal GitHub issue asking for a private channel **without** sharing technical details.
+- Application logic runs in the browser on X.com pages.
+- The project does not operate an analytics, telemetry, or media-processing
+  server.
+- Runtime requests use X/Twitter page, API, and media hosts required to discover
+  and download media.
+- Userscript installation and update metadata is distributed through GitHub
+  Releases and the jsDelivr-hosted `release` branch artifacts.
+- Extension permissions are declared in the versioned manifests.
+- The application does not use `eval()` or equivalent dynamic code execution.
 
-Please include, where possible:
+See [PRIVACY.md](../PRIVACY.md) for data, storage, and network details.
 
-- A short description and impact
-- Steps to reproduce
-- Browser, OS, and userscript manager versions
-- Script version (from the userscript header)
+## Development security
 
-We aim to respond within **7 business days** and coordinate disclosure once a fix is available.
+CI combines strict TypeScript, Biome, dependency and circular-import checks,
+unit coverage, userscript and extension Playwright tests, production builds,
+duplication analysis, mutation testing, CodeQL, OSV Scanner, and Semgrep. The
+workflow files and package scripts are authoritative for the exact checks.
 
----
-
-## Security Model & Privacy
-
-**X.com Enhanced Gallery** is a **PC-only, client-side userscript** that runs entirely in your browser on X.com.
-
-- All logic executes locally in the browser.
-- We do **not** collect, store, or transmit personal data or authentication tokens.
-- Runtime network requests are limited to:
-  - `api.twitter.com`
-  - `pbs.twimg.com`
-  - `video.twimg.com`
-- Installation and update metadata are distributed through GitHub Releases and
-  the jsDelivr-hosted `release` branch artifacts referenced by the userscript
-  header.
-- The script does not use `eval()` or similar dynamic code execution.
-
----
-
-## Development Security
-
-We use several mechanisms to keep the codebase secure:
-
-- **GitHub Security Suite** (`.github/workflows/security.yaml`)
-  - CodeQL for JavaScript/TypeScript and GitHub Actions
-  - OSV Scanner for pull-request diff scans and daily full scans
-  - Static analysis (Semgrep) on PR, daily, and manual runs
-  - Daily freshness checks for pinned Nose, OSV Scanner, and Semgrep releases
-- **Dependabot** (`.github/dependabot.yaml`)
-  - Daily npm and GitHub Actions updates after a 24-hour cooling window
-- **Quality & Testing**
-  - pnpm enforces the same cooling window, recent trust-level non-downgrade,
-    reviewed install scripts, and registry-only transitive dependencies
-  - TypeScript strict mode, Biome, Knip, circular-dependency checks, duplication
-    analysis, tracked unit tests, Playwright userscript/extension E2E, and mutation tests
-
-These checks run through GitHub Actions and the same local `pnpm` workflows used
-for development.
-
----
+Dependencies retain the repository's cooling window, trust policy, approved
+build-script list, and registry-source restrictions. Do not weaken those
+controls to accept an update.
 
 ## Scope
 
-In scope for this policy:
-
-- Vulnerabilities in this userscript (XSS, injection, logic flaws, privacy leaks)
-- Vulnerabilities introduced by this repository’s dependencies
-
-Out of scope:
-
-- Issues in X.com itself (report via https://hackerone.com/x)
-- Bugs in userscript managers (Tampermonkey, Violentmonkey, etc.)
-
----
+In scope are vulnerabilities introduced by this repository, including
+injection, unsafe URL or media handling, permission misuse, privacy leaks, and
+supply-chain issues. Vulnerabilities in X.com, browsers, and userscript managers
+should be reported to their respective vendors unless this project's
+integration causes the issue.
 
 ## License
 

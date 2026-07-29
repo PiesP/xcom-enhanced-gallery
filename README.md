@@ -1,128 +1,108 @@
-# 🚀 X.com Enhanced Gallery
+# X.com Enhanced Gallery
 
-> PC-only userscript to browse and download media from X.com in original quality.
+Browse images and videos from an X.com post in a focused, keyboard-friendly
+gallery and download the original media. The project is available as a
+userscript and as unpacked Chrome and temporary Firefox extension builds.
 
-[![Install](https://img.shields.io/badge/Install-Click-brightgreen?style=for-the-badge)](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)
-[![Version](https://img.shields.io/github/v/release/PiesP/xcom-enhanced-gallery?label=Version&color=blue)](https://github.com/PiesP/xcom-enhanced-gallery/releases)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+## Features
 
-**X.com Enhanced Gallery** is a lightweight, PC-only userscript that turns X.com (formerly Twitter) media into a fast, keyboard-friendly gallery with one-click original-quality downloads.
+- Vertical gallery for images, videos, GIFs, and supported card media
+- Original-quality single downloads and bulk ZIP downloads
+- Keyboard, pointer, and wheel navigation for desktop browsers
+- Original, width, height, and container image-fit modes
+- Persistent theme, language, playback, and gallery settings
+- No project analytics, telemetry, or developer-operated server
 
----
+## Install
 
-## ✨ Features
+### Userscript
 
-- **Vertical gallery** for images, videos, and supported card media in a tweet
-- **Original quality downloads** (single file or bulk ZIP)
-- **Keyboard and mouse navigation** optimized for desktop
-- **Privacy-focused** - runs entirely in your browser, no data collection
-- **Non-intrusive** - keeps the original X.com UI intact
+Install a userscript manager such as
+[Tampermonkey](https://www.tampermonkey.net/) or
+[Violentmonkey](https://violentmonkey.github.io/), then install the
+[latest userscript](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js).
 
-## 📥 Installation
+The userscript checks for updates through the metadata URLs embedded in its
+header.
 
-### 1️⃣ Install Userscript Manager
+### Chrome, Edge, or Brave extension
 
-First, install a userscript manager extension in your browser.
+The release archive is an unpacked developer build; it is not installed from a
+browser store and does not update automatically.
 
-| Browser         | Recommended Extension                                                                                   |
-| --------------- | ------------------------------------------------------------------------------------------------------- |
-| **Chrome/Edge** | [Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) |
-| **Firefox**     | [Tampermonkey](https://addons.mozilla.org/firefox/addon/tampermonkey/)                                  |
-| **Safari**      | [Userscripts](https://apps.apple.com/app/userscripts/id1463298887)                                      |
+1. Download `xcom-enhanced-gallery-chrome.zip` from the
+   [latest release](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest).
+2. Extract the archive to a permanent directory.
+3. Open `chrome://extensions` and enable **Developer mode**.
+4. Select **Load unpacked** and choose the extracted directory.
 
-### 2️⃣ Install Script
+### Firefox extension
 
-<div align="center">
+1. Download `xcom-enhanced-gallery-firefox.zip` from the
+   [latest release](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest).
+2. Open `about:debugging#/runtime/this-firefox`.
+3. Select **Load Temporary Add-on** and choose the ZIP.
 
-### 🔗 **[Click here to install](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)**
+This development installation is removed when Firefox restarts. Use the
+userscript for a persistent installation.
 
-_Clicking will automatically open the installation screen in your userscript
-manager_
+## Use
 
-**📦
-[View latest release](https://github.com/PiesP/xcom-enhanced-gallery/releases)**
+1. Open an X.com post containing media.
+2. Select an image or video to open the enhanced gallery.
+3. Use the arrow keys, navigation buttons, or wheel to move between items.
+4. Use the toolbar to change fit mode, download the current item, or download
+   all media as a ZIP.
 
-</div>
+The gallery targets desktop browsers and does not provide a mobile/touch flow.
 
-Automatic updates are delivered through the userscript header metadata that
-points to the published release artifacts.
+## Browser support
 
-### 3️⃣ Verify Installation
+| Distribution | Support |
+| --- | --- |
+| Userscript | Chrome/Edge 117+, Firefox 119+, Safari 17+ |
+| Chromium extension | Current desktop Chrome, Edge, and Brave developer mode |
+| Firefox extension | Firefox 128+ temporary developer installation |
 
-1. **Visit X.com**: Go to [https://x.com](https://x.com)
-2. **Click Image**: Click an image or video in any tweet
-3. **Check Gallery**: Verify the enhanced vertical-scroll gallery appears
+The userscript values come from its generated metadata and the Firefox minimum
+comes from `extension/manifest.firefox.json`.
 
-> **💡 Tip**: Refresh the page after installation to use immediately.
+## Privacy and security
 
-## 🎮 Usage Guide
+The project processes page content and downloads in the browser. Runtime
+requests are limited to the X/Twitter pages, APIs, and media hosts required for
+gallery extraction and downloads. See [Privacy](./PRIVACY.md) for platform and
+storage details and [Security](./.github/SECURITY.md) for vulnerability reports.
 
-### Basic Usage
+## Development
 
-1. **Open Gallery**: Click an image or video in a tweet
-2. **Navigate Media**:
-   - 🖱️ **Mouse Wheel**: Scroll up/down to navigate images in order
-   - 🖱️ **Arrow Buttons**: Click navigation buttons on the left/right sides
-   - ⌨️ **Keyboard**: Use arrow keys or keyboard shortcuts
-3. **Play Video**: Press spacebar or click play button on a video
+Use the toolchain pinned in `package.json`, initialize the shared browser-core
+submodule, and install dependencies:
 
-### Download Feature
+```bash
+git submodule update --init --recursive
+pnpm install
+```
 
-| Download Type | Button          | Description                                  |
-| ------------- | --------------- | -------------------------------------------- |
-| **Single**    | 📥 Download     | Save current image/video in original quality |
-| **Bulk**      | 📦 Download All | Download all media from tweet as ZIP file    |
+| Command | Purpose |
+| --- | --- |
+| `pnpm test` | Run the Vitest suite |
+| `pnpm test:e2e` | Run userscript Playwright tests |
+| `pnpm test:e2e:extension` | Run Chrome extension Playwright tests |
+| `pnpm quality` | Run static quality checks |
+| `pnpm verify` | Run quality and all production builds |
+| `pnpm verify:full` | Add coverage and browser tests to `verify` |
 
-### Advanced Features
+See [Contributing](./CONTRIBUTING.md) for project constraints and pull request
+expectations.
 
-- **Image Zoom**: Use mouse wheel to inspect image details
-- **Auto Scroll**: Long images automatically scroll to bottom
-- **Optimized Loading**: Current image loads first for faster navigation
-- **Memory Management**: Unused images auto-released for performance
+## Support
 
-## 🌐 Browser Support
+- Bugs, feature requests, and questions: [GitHub Issues](https://github.com/PiesP/xcom-enhanced-gallery/issues)
+- Release history: [Changelog](./CHANGELOG.md)
+- Vulnerabilities: [Security policy](./.github/SECURITY.md)
 
-Desktop browsers only (no mobile/touch support):
+## License
 
-| Browser | Minimum Version |
-| ------- | --------------- |
-| Chrome  | 117+            |
-| Edge    | 117+            |
-| Firefox | 119+            |
-| Safari  | 17+             |
-
-## 🔒 Security & Privacy
-
-- Runs entirely in your browser - no external data collection
-- No analytics, telemetry, or third-party tracking
-- Runtime network requests stay within X/Twitter APIs and media CDNs needed for
-  gallery extraction and downloads
-- Installation and update metadata are served from GitHub Releases and the
-  jsDelivr-hosted `release` branch artifacts referenced by the userscript header
-
-For security reports, see the [Security Policy](.github/SECURITY.md).
-
-## 📄 License
-
-This project is distributed under the [MIT License](LICENSE).
-
-## 🤝 Contributing
-
-Contributions are welcome! Please check the repository for development guidelines and contribution instructions.
-
-## 📞 Support and Feedback
-
-- **🐛 Report bugs**: [GitHub Issues](https://github.com/PiesP/xcom-enhanced-gallery/issues)
-- **💡 Feature requests & questions**: [GitHub Discussions](https://github.com/PiesP/xcom-enhanced-gallery/discussions)
-- **📝 Changelog**: [CHANGELOG.md](CHANGELOG.md)
-- **🔒 Security reports**: Please follow the [Security Policy](.github/SECURITY.md).
-
----
-
-<div align="center">
-
-**🌟 If you find this project useful, please give it a Star! 🌟**
-
-**Made with ❤️ and GitHub Copilot by [PiesP](https://github.com/PiesP)**
-
-</div>
+MIT. See [LICENSE](./LICENSE), [NOTICE](./NOTICE.md), and the bundled
+[third-party licenses](./LICENSES/).
