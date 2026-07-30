@@ -20,20 +20,4 @@ export function createEventListener<T extends Event = Event>(
   };
 }
 
-/**
- * HTML element type guard.
- * @param element - Value to check
- * @returns True if value is HTMLElement
- */
-export function isHTMLElement(element: unknown): element is HTMLElement {
-  return element instanceof HTMLElement;
-}
-
-/**
- * Record object type guard.
- * @param value - Value to check
- * @returns True if value is a plain object (excludes arrays and null)
- */
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+export { isHTMLElement, isRecord } from '@piesp/browser-core/util';
