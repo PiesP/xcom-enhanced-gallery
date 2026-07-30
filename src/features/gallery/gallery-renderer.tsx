@@ -96,7 +96,7 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
     <ErrorBoundary onError={handleRenderError}>
       <GalleryContainer
         className={`${CSS.CLASSES.RENDERER} ${CSS.CLASSES.ROOT} xeg-theme-scope`}
-        data-theme={currentTheme()}
+        theme={currentTheme()}
         data-language={currentLanguage()}
         lang={resolvedLanguage()}
         dir={dir()}

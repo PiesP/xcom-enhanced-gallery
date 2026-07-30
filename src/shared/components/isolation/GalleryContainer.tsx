@@ -15,6 +15,7 @@ export interface GalleryContainerProps {
   readonly className?: string;
   readonly lang?: string;
   readonly dir?: 'ltr' | 'rtl';
+  readonly theme?: 'auto' | 'light' | 'dark';
 }
 
 const DISPOSE_SYMBOL = Symbol();
@@ -44,10 +45,10 @@ export function unmountGallery(container: Element): void {
 }
 
 export function GalleryContainer(props: GalleryContainerProps): JSXElement {
-  const [local] = splitProps(props, ['children', 'className', 'lang', 'dir']);
+  const [local] = splitProps(props, ['children', 'className', 'lang', 'dir', 'theme']);
   const translate = useTranslation();
 
-  const classes = cx(CSS.CLASSES.OVERLAY, CSS.CLASSES.CONTAINER, local.className);
+  const classes = cx(CSS.CLASSES.OVERLAY, CSS.CLASSES.CONTAINER, 'pp-design', local.className);
 
   let containerEl: HTMLDivElement | undefined;
 
@@ -276,6 +277,8 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       }}
       class={classes}
       data-xeg-gallery-container=""
+      data-pp-product="xeg"
+      data-pp-theme={local.theme ?? 'auto'}
       role="dialog"
       aria-modal="true"
       tabindex="-1"

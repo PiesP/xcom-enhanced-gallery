@@ -292,6 +292,61 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     expect(['auto', 'light', 'dark']).toContain(theme);
   });
 
+  test('Gallery design tokens stay scoped to the XEG product container', async ({ page }) => {
+    const pageErrors: string[] = [];
+    const consoleErrors: string[] = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    page.on('console', (message) => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const container = page.locator('[data-xeg-gallery-container]');
+    const contract = await container.evaluate((container) => {
+      const styles = getComputedStyle(container);
+      const rootStyles = getComputedStyle(document.documentElement);
+
+      return {
+        isDesignScope: container.classList.contains('pp-design'),
+        product: container.getAttribute('data-pp-product'),
+        theme: container.getAttribute('data-pp-theme'),
+        sharedAccent: styles.getPropertyValue('--pp-color-accent').trim(),
+        xegAccent: styles.getPropertyValue('--xeg-color-primary').trim(),
+        hostSharedAccent: rootStyles.getPropertyValue('--pp-color-accent').trim(),
+      };
+    });
+
+    expect(contract).toMatchObject({
+      isDesignScope: true,
+      product: 'xeg',
+      theme: 'auto',
+      hostSharedAccent: '',
+    });
+    expect(contract.sharedAccent).not.toBe('');
+    expect(contract.xegAccent).toBe(contract.sharedAccent);
+
+    await page
+      .locator('[data-gallery-element="toolbar"] button[aria-label*="Settings" i]')
+      .click();
+    await page.locator('[data-gallery-element="settings-panel"] select').first().selectOption('dark');
+    await expect(container).toHaveAttribute('data-theme', 'dark');
+    await expect(container).toHaveAttribute('data-pp-theme', 'dark');
+
+    const darkAccent = await container.evaluate((element) => {
+      const styles = getComputedStyle(element);
+      return {
+        shared: styles.getPropertyValue('--pp-color-accent').trim(),
+        xeg: styles.getPropertyValue('--xeg-color-primary').trim(),
+      };
+    });
+    expect(darkAccent.shared).not.toBe(contract.sharedAccent);
+    expect(darkAccent.xeg).toBe(darkAccent.shared);
+    expect(pageErrors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  });
+
   test('Gallery container has lang attribute after opening', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
