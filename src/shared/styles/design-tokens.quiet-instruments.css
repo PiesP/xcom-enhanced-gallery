@@ -1,0 +1,133 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2024-2026 PiesP */
+
+/**
+ * @fileoverview Quiet Instruments adapter for the XEG design-token API
+ * @description Maps shared, product-aware roles to the existing --xeg-* contract.
+ *              The combined selector keeps the shared variables inside the gallery.
+ * @layer xeg.tokens
+ */
+
+@layer xeg.tokens {
+  .xeg-theme-scope.pp-design[data-pp-product="xeg"] {
+    /* Surfaces */
+    --xeg-color-bg-primary: var(--pp-color-canvas);
+    --xeg-color-bg-secondary: var(--pp-color-raised);
+    --xeg-color-bg-surface: var(--pp-color-surface);
+    --xeg-color-bg-elevated: var(--pp-color-raised);
+    --xeg-color-background: var(--pp-color-canvas);
+    --xeg-color-surface-elevated: var(--pp-color-raised);
+    --xeg-surface-bg: var(--pp-color-surface);
+    --xeg-surface-bg-hover: var(--pp-color-raised);
+    --xeg-gallery-bg-light: var(--pp-color-canvas);
+    --xeg-gallery-bg-dark: var(--pp-color-canvas);
+    --xeg-gallery-bg: var(--pp-color-canvas);
+    --xeg-bg-toolbar: var(--pp-color-surface);
+    --xeg-toolbar-surface: var(--pp-color-surface);
+    --xeg-toolbar-panel-surface: var(--pp-color-raised);
+    --xeg-toolbar-element-bg: var(--pp-color-raised);
+    --xeg-toolbar-element-bg-strong: color-mix(
+      in oklch,
+      var(--pp-color-raised) 88%,
+      var(--pp-color-accent) 12%
+    );
+
+    /* Text and neutral roles */
+    --xeg-color-text-primary: var(--pp-color-text);
+    --xeg-color-text-secondary: var(--pp-color-muted);
+    --xeg-color-text-tertiary: var(--pp-color-muted);
+    --xeg-color-text-inverse: var(--pp-color-on-accent);
+    --xeg-toolbar-text-color: var(--pp-color-text);
+    --xeg-toolbar-text-muted: var(--pp-color-muted);
+    --xeg-color-neutral-100: var(--pp-color-surface);
+    --xeg-color-neutral-200: var(--pp-color-raised);
+    --xeg-color-neutral-300: var(--pp-color-border);
+    --xeg-color-neutral-400: var(--pp-color-muted);
+    --xeg-color-neutral-500: var(--pp-color-text);
+
+    /* Borders */
+    --xeg-color-border-default: var(--pp-color-border);
+    --xeg-color-border-primary: var(--pp-color-border);
+    --xeg-color-border-emphasis: color-mix(
+      in oklch,
+      var(--pp-color-border) 65%,
+      var(--pp-color-text) 35%
+    );
+    --xeg-color-border-hover: color-mix(
+      in oklch,
+      var(--pp-color-border) 70%,
+      var(--pp-color-accent) 30%
+    );
+    --xeg-color-border-strong: var(--xeg-color-border-emphasis);
+    --xeg-border-emphasis: var(--xeg-color-border-emphasis);
+    --xeg-surface-border: var(--pp-color-border);
+    --xeg-toolbar-border: var(--pp-color-border);
+    --xeg-toolbar-element-border: var(--pp-color-border);
+    --xeg-toolbar-progress-track: var(--pp-color-border);
+    --xeg-toolbar-scrollbar-track: var(--pp-color-raised);
+    --xeg-toolbar-scrollbar-thumb: var(--pp-color-muted);
+
+    /* Product accent */
+    --xeg-color-primary: var(--pp-color-accent);
+    --xeg-color-primary-hover: color-mix(
+      in oklch,
+      var(--pp-color-accent) 84%,
+      var(--pp-color-text) 16%
+    );
+    --xeg-color-primary-active: color-mix(
+      in oklch,
+      var(--pp-color-accent) 72%,
+      var(--pp-color-text) 28%
+    );
+
+    /* Status */
+    --xeg-color-success: var(--pp-color-success);
+    --xeg-color-success-hover: color-mix(
+      in oklch,
+      var(--pp-color-success) 84%,
+      var(--pp-color-text) 16%
+    );
+    --xeg-color-success-bg: color-mix(
+      in oklch,
+      var(--pp-color-success) 14%,
+      var(--pp-color-surface) 86%
+    );
+    --xeg-color-error: var(--pp-color-danger);
+    --xeg-color-error-hover: color-mix(
+      in oklch,
+      var(--pp-color-danger) 84%,
+      var(--pp-color-text) 16%
+    );
+    --xeg-color-error-bg: color-mix(
+      in oklch,
+      var(--pp-color-danger) 14%,
+      var(--pp-color-surface) 86%
+    );
+    --xeg-color-info-bg: color-mix(in oklch, var(--pp-color-info) 14%, var(--pp-color-surface) 86%);
+
+    /* Focus and target size */
+    --xeg-focus-indicator-color: var(--pp-color-focus);
+    --xeg-focus-ring-width: var(--pp-component-focus-ring-width);
+    --xeg-focus-ring-offset: var(--pp-component-focus-ring-offset);
+    --xeg-target-minimum: var(--pp-component-target-minimum);
+
+    /* Radius and elevation */
+    --xeg-radius-sm: var(--pp-reference-radius-sm);
+    --xeg-radius-md: var(--pp-component-control-radius);
+    --xeg-radius-lg: var(--pp-component-panel-radius);
+    --xeg-radius-2xl: var(--pp-component-panel-radius);
+    --xeg-radius-full: var(--pp-reference-radius-full);
+    --xeg-shadow-tooltip: var(--pp-component-panel-shadow);
+
+    /* Motion */
+    --xeg-duration-fast: var(--pp-component-motion-duration-fast);
+    --xeg-duration-normal: var(--pp-component-motion-duration-standard);
+    --xeg-duration-toolbar: var(--pp-component-motion-duration-standard);
+    --xeg-ease-standard: var(--pp-component-motion-easing-standard);
+
+    /* Icon metrics */
+    --xeg-icon-stroke-width: var(--pp-component-icon-stroke-width);
+    --xeg-icon-size: var(--pp-component-icon-size-md);
+    --xeg-toolbar-icon-size: var(--pp-component-icon-size-md);
+  }
+}

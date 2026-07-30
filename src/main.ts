@@ -23,11 +23,13 @@ import type { BootstrapStage } from '@shared/types/lifecycle.types';
 import { installHistoryNavigationFallback } from '@shared/utils/url/history-navigation';
 import { TWITTER_HOSTS } from '@shared/utils/url/host';
 // Import isolated gallery styles in CSS cascade priority order:
-// layers → tokens → reset → utilities → component styles
+// layers → scoped shared tokens → XEG tokens/adapter → reset → utilities → component styles
 import '@shared/styles/layers.css';
+import '@piesp/browser-core/design/tokens.css';
 import '@shared/styles/design-tokens.primitive.css';
 import '@shared/styles/design-tokens.semantic.css';
 import '@shared/styles/design-tokens.component.css';
+import '@shared/styles/design-tokens.quiet-instruments.css';
 import '@shared/styles/base/reset.css';
 import '@shared/styles/utilities/layout.css';
 import '@shared/styles/utilities/animations.css';
