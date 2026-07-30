@@ -105,6 +105,11 @@ jobs:
             exit 0
           fi
 
+          if [[ -z "${AUTO_MERGE_TOKEN:-}" ]]; then
+            echo "::error::AUTO_MERGE_TOKEN is required to approve automated PRs."
+            exit 1
+          fi
+
           git add packages/core
           git commit -m "chore(deps): update browser-core to $SHORT_SHA"
 
@@ -153,10 +158,6 @@ jobs:
 
           # Approve only after the validated branch has been rebuilt on the
           # latest master commit so stale-review protection remains effective.
-          if [[ -z "${AUTO_MERGE_TOKEN:-}" ]]; then
-            echo "::error::AUTO_MERGE_TOKEN is required to approve automated PRs."
-            exit 1
-          fi
           GH_TOKEN="$AUTO_MERGE_TOKEN" gh pr review --approve "$PR_NUMBER"
           echo "✅ PR #$PR_NUMBER approved."
 

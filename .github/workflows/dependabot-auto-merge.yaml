@@ -107,7 +107,7 @@ jobs:
             "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/update-branch" \
             --raw-field expected_head_sha="$HEAD_SHA"
 
-          for _ in {1..15}; do
+          for _ in {1..60}; do
             CURRENT_HEAD="$(gh api \
               "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" \
               --jq '.head.sha')"
@@ -115,7 +115,7 @@ jobs:
               echo "✅ Dependabot branch updated to $CURRENT_HEAD."
               exit 0
             fi
-            sleep 2
+            sleep 5
           done
 
           echo "::error::Timed out waiting for the Dependabot branch update."
