@@ -1,6 +1,9 @@
 name: Update browser-core
 
 on:
+  # Rebuild an open automation branch immediately whenever its base advances.
+  push:
+    branches: [master]
   repository_dispatch:
     types: [browser-core-updated]
   schedule:
@@ -102,6 +105,11 @@ jobs:
             exit 0
           fi
 
+          if [[ -z "${AUTO_MERGE_TOKEN:-}" ]]; then
+            echo "::error::AUTO_MERGE_TOKEN is required to approve automated PRs."
+            exit 1
+          fi
+
           git add packages/core
           git commit -m "chore(deps): update browser-core to $SHORT_SHA"
 
@@ -148,15 +156,10 @@ jobs:
             echo "Created browser-core update PR #$PR_NUMBER."
           fi
 
-          # ── Auto-approve and queue auto-merge ──
-          if [[ -n "${AUTO_MERGE_TOKEN:-}" ]]; then
-            GH_TOKEN="$AUTO_MERGE_TOKEN" gh pr review --approve "$PR_NUMBER" \
-              && echo "✅ PR #$PR_NUMBER approved." \
-              || echo "::warning::Approval failed for PR #$PR_NUMBER."
-          else
-            echo "::warning::AUTO_MERGE_TOKEN not configured. PR #$PR_NUMBER requires manual approval."
-          fi
+          # Approve only after the validated branch has been rebuilt on the
+          # latest master commit so stale-review protection remains effective.
+          GH_TOKEN="$AUTO_MERGE_TOKEN" gh pr review --approve "$PR_NUMBER"
+          echo "✅ PR #$PR_NUMBER approved."
 
-          gh pr merge --auto --squash "$PR_NUMBER" \
-            && echo "✅ Auto-merge queued for PR #$PR_NUMBER." \
-            || echo "::warning::Failed to queue auto-merge for PR #$PR_NUMBER."
+          gh pr merge --auto --squash "$PR_NUMBER"
+          echo "✅ Auto-merge queued for PR #$PR_NUMBER."

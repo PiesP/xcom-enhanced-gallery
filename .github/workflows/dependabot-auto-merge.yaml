@@ -1,8 +1,9 @@
 name: 🤖 Dependabot Auto-Merge
 
-# Responsibility: Auto-merge safe dependabot PRs
+# Responsibility: Maintain and auto-merge safe Dependabot PRs
 # - GitHub Actions: patch/minor updates
 # - npm: patch/minor updates for specific safe packages
+# - Keeps eligible branches current and approves the resulting head commit
 # - Requires CI to pass first (via GitHub branch protection)
 #
 # Security: Uses pull_request_target for the write-scoped merge operation.
@@ -29,7 +30,9 @@ jobs:
     timeout-minutes: 10
     if: >-
       github.event.pull_request.user.login == 'dependabot[bot]' &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.base.ref == github.event.repository.default_branch &&
+      github.event.pull_request.draft == false
     steps:
       - name: 📥 Fetch Dependabot metadata
         id: dependabot-metadata
@@ -78,6 +81,61 @@ jobs:
 
           echo "should_merge=$SHOULD_MERGE" >> "$GITHUB_OUTPUT"
           echo "reason=$REASON" >> "$GITHUB_OUTPUT"
+
+      - name: 🔄 Update branch from the default branch
+        if: steps.decide.outputs.should_merge == 'true'
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          BASE_SHA="$(gh api \
+            "repos/$GITHUB_REPOSITORY/branches/$BASE_REF" \
+            --jq '.commit.sha')"
+          BEHIND_BY="$(gh api \
+            "repos/$GITHUB_REPOSITORY/compare/$BASE_SHA...$HEAD_SHA" \
+            --jq '.behind_by')"
+          if (( BEHIND_BY == 0 )); then
+            echo "✅ Dependabot branch is already current."
+            exit 0
+          fi
+
+          gh api --method PUT \
+            "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/update-branch" \
+            --raw-field expected_head_sha="$HEAD_SHA"
+
+          for _ in {1..60}; do
+            CURRENT_HEAD="$(gh api \
+              "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" \
+              --jq '.head.sha')"
+            if [[ "$CURRENT_HEAD" != "$HEAD_SHA" ]]; then
+              echo "✅ Dependabot branch updated to $CURRENT_HEAD."
+              exit 0
+            fi
+            sleep 5
+          done
+
+          echo "::error::Timed out waiting for the Dependabot branch update."
+          exit 1
+
+      - name: ✅ Approve eligible update
+        if: steps.decide.outputs.should_merge == 'true'
+        env:
+          APPROVAL_TOKEN: ${{ secrets.AUTO_MERGE_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$APPROVAL_TOKEN" ]]; then
+            echo "::error::AUTO_MERGE_TOKEN is required to approve automated PRs."
+            exit 1
+          fi
+
+          GH_TOKEN="$APPROVAL_TOKEN" gh pr review --approve "$PR_URL"
+          echo "✅ Approved eligible Dependabot update."
 
       - name: 🔄 Queue auto-merge
         if: steps.decide.outputs.should_merge == 'true'
