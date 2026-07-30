@@ -27,12 +27,25 @@ const USERSCRIPT_PATH = resolve(DIST_DIR, 'xcom-enhanced-gallery.dev.user.js');
 const MOCK_PAGE_PATH = resolve(__filename, '../../fixtures/mock-gallery-page.html');
 
 const MOCK_HTML = readFileSync(MOCK_PAGE_PATH, 'utf8');
+const MOCK_IMAGE = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  'base64'
+);
 
 /**
  * Setup: Route x.com requests to mock HTML, install GM mocks, inject userscript.
  * @param usePersistence - Use localStorage-backed GM mocks for persistence tests
  */
 async function setupGalleryPage(page: Page, usePersistence = false): Promise<void> {
+  await page.route('https://pbs.twimg.com/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      headers: { 'access-control-allow-origin': '*' },
+      body: MOCK_IMAGE,
+    });
+  });
+
   await page.route('**/*.x.com/**', async (route) => {
     const url = route.request().url();
     if (url.includes('.css') || url.includes('.js') || url.includes('.jpg') || url.includes('.png') || url.includes('.svg') || url.includes('.webp') || url.includes('.gif')) {
