@@ -1,0 +1,228 @@
+name: 🤖 Dependabot Auto-Merge Apply
+
+# Responsibility: Approve only an immutable, revalidated Dependabot gate result
+# - Downloads and validates the gate artifact with read-only permissions
+# - Starts a separate write-capable job only for the validated exact head SHA
+# - Leaves required CI and branch-protection rules in control of the merge
+
+on:
+  workflow_run:
+    workflows: ["🤖 Dependabot Auto-Merge Gate"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: dependabot-auto-merge-apply-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: 🔎 Validate Dependabot decision
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request_target' &&
+      github.event.workflow_run.actor.login == 'dependabot[bot]'
+    outputs:
+      eligible: ${{ steps.gate.outputs.eligible }}
+      pull_request_number: ${{ steps.gate.outputs.pull_request_number }}
+      head_sha: ${{ steps.gate.outputs.head_sha }}
+      base_ref: ${{ steps.gate.outputs.base_ref }}
+      reason_base64: ${{ steps.gate.outputs.reason_base64 }}
+    steps:
+      - name: 📥 Download exact gate result
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dependabot-auto-merge-gate
+          path: ${{ runner.temp }}/dependabot-auto-merge-gate
+          github-token: "${{ github.token }}"
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          digest-mismatch: error
+
+      - name: 🔎 Read gate result
+        id: gate
+        env:
+          GATE_PATH: ${{ runner.temp }}/dependabot-auto-merge-gate/gate.json
+        run: |
+          set -euo pipefail
+
+          if [[ ! -f "$GATE_PATH" ]]; then
+            echo "::error::The triggering workflow did not publish a gate result."
+            exit 1
+          fi
+
+          SCHEMA_VERSION="$(jq -er '.schema_version | tostring' "$GATE_PATH")"
+          REPOSITORY="$(jq -er '.repository' "$GATE_PATH")"
+          PR_NUMBER="$(jq -er '.pull_request_number | tostring' "$GATE_PATH")"
+          HEAD_SHA="$(jq -er '.head_sha' "$GATE_PATH")"
+          BASE_REF="$(jq -er '.base_ref' "$GATE_PATH")"
+          ELIGIBLE="$(jq -er '.eligible | tostring' "$GATE_PATH")"
+          REASON="$(jq -er '.reason' "$GATE_PATH")"
+
+          if [[ "$SCHEMA_VERSION" != "1" || "$REPOSITORY" != "$GITHUB_REPOSITORY" ]]; then
+            echo "::error::Gate result does not belong to this workflow."
+            exit 1
+          fi
+          if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ || ! "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Gate result contains an invalid pull request identity."
+            exit 1
+          fi
+          if [[ "$ELIGIBLE" != "true" && "$ELIGIBLE" != "false" ]]; then
+            echo "::error::Gate result contains an invalid eligibility decision."
+            exit 1
+          fi
+          case "$REASON" in
+            "manual review required" | \
+              "maintainer changes require manual review" | \
+              "security advisory update (open alert)" | \
+              "safe github-actions patch/minor" | \
+              "safe npm patch/minor set")
+              ;;
+            *)
+              echo "::error::Gate result contains an invalid decision reason."
+              exit 1
+              ;;
+          esac
+
+          REASON_BASE64="$(printf '%s' "$REASON" | base64 -w0)"
+          {
+            echo "eligible=$ELIGIBLE"
+            echo "pull_request_number=$PR_NUMBER"
+            echo "head_sha=$HEAD_SHA"
+            echo "base_ref=$BASE_REF"
+            echo "reason_base64=$REASON_BASE64"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: 🔒 Revalidate pull request and commits
+        if: steps.gate.outputs.eligible == 'true'
+        env:
+          BASE_REF: ${{ steps.gate.outputs.base_ref }}
+          HEAD_SHA: ${{ steps.gate.outputs.head_sha }}
+          PR_NUMBER: ${{ steps.gate.outputs.pull_request_number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          DEFAULT_BRANCH="$(gh api "repos/$GITHUB_REPOSITORY" --jq '.default_branch')"
+          read -r PR_AUTHOR HEAD_REPOSITORY CURRENT_HEAD CURRENT_BASE DRAFT STATE < <(
+            gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" \
+              --jq '[.user.login, .head.repo.full_name, .head.sha, .base.ref, (.draft | tostring), .state] | @tsv'
+          )
+
+          if [[ "$PR_AUTHOR" != "dependabot[bot]" || "$HEAD_REPOSITORY" != "$GITHUB_REPOSITORY" || "$CURRENT_BASE" != "$DEFAULT_BRANCH" || "$BASE_REF" != "$DEFAULT_BRANCH" || "$DRAFT" != "false" || "$STATE" != "open" ]]; then
+            echo "::error::Pull request no longer satisfies the Dependabot gate."
+            exit 1
+          fi
+          if [[ "$CURRENT_HEAD" != "$HEAD_SHA" ]]; then
+            echo "::error::Pull request head changed after the read-only gate."
+            exit 1
+          fi
+
+          SEEN_HEAD="false"
+          while IFS=$'\t' read -r SHA AUTHOR COMMITTER VERIFIED; do
+            if [[ "$AUTHOR" != "dependabot[bot]" || "$COMMITTER" != "web-flow" || "$VERIFIED" != "true" ]]; then
+              echo "::error::Commit $SHA was not created and verified by Dependabot."
+              exit 1
+            fi
+            if [[ "$SHA" == "$HEAD_SHA" ]]; then
+              SEEN_HEAD="true"
+            fi
+          done < <(
+            gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/commits" \
+              --jq '.[] | [.sha, (.author.login // "-"), (.committer.login // "-"), (.commit.verification.verified | tostring)] | @tsv'
+          )
+
+          if [[ "$SEEN_HEAD" != "true" ]]; then
+            echo "::error::Validated head is not present in the pull request."
+            exit 1
+          fi
+
+          CURRENT_HEAD="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.head.sha')"
+          if [[ "$CURRENT_HEAD" != "$HEAD_SHA" ]]; then
+            echo "::error::Pull request head changed during provenance validation."
+            exit 1
+          fi
+
+          echo "✅ Revalidated Dependabot head $HEAD_SHA."
+
+      - name: ⏭️ Keep for manual review
+        if: steps.gate.outputs.eligible != 'true'
+        env:
+          REASON_BASE64: ${{ steps.gate.outputs.reason_base64 }}
+        run: |
+          set -euo pipefail
+          REASON="$(printf '%s' "$REASON_BASE64" | base64 --decode)"
+          printf '⏭️ Manual review required\nReason: %s\n' "$REASON"
+
+  approve:
+    name: 🔐 Approve validated Dependabot head
+    needs: validate
+    if: needs.validate.outputs.eligible == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: 🔒 Recheck exact live head
+        env:
+          BASE_REF: ${{ needs.validate.outputs.base_ref }}
+          HEAD_SHA: ${{ needs.validate.outputs.head_sha }}
+          PR_NUMBER: ${{ needs.validate.outputs.pull_request_number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          read -r PR_AUTHOR HEAD_REPOSITORY CURRENT_HEAD CURRENT_BASE DRAFT STATE < <(
+            gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" \
+              --jq '[.user.login, .head.repo.full_name, .head.sha, .base.ref, (.draft | tostring), .state] | @tsv'
+          )
+          if [[ "$PR_AUTHOR" != "dependabot[bot]" || "$HEAD_REPOSITORY" != "$GITHUB_REPOSITORY" || "$CURRENT_HEAD" != "$HEAD_SHA" || "$CURRENT_BASE" != "$BASE_REF" || "$DRAFT" != "false" || "$STATE" != "open" ]]; then
+            echo "::error::Pull request changed after read-only validation."
+            exit 1
+          fi
+
+      - name: ✅ Approve exact validated head
+        env:
+          HEAD_SHA: ${{ needs.validate.outputs.head_sha }}
+          PR_NUMBER: ${{ needs.validate.outputs.pull_request_number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and .state == "APPROVED") | .commit_id' \
+            | grep -Fxq "$HEAD_SHA"; then
+            echo "✅ Dependabot head $HEAD_SHA is already approved."
+            exit 0
+          fi
+
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews" \
+            --raw-field commit_id="$HEAD_SHA" \
+            --raw-field event="APPROVE" \
+            --raw-field body="Approved by the validated Dependabot automation workflow." \
+            >/dev/null
+          echo "✅ Approved eligible Dependabot update at $HEAD_SHA."
+
+      - name: 🔄 Queue auto-merge
+        env:
+          HEAD_SHA: ${{ needs.validate.outputs.head_sha }}
+          PR_NUMBER: ${{ needs.validate.outputs.pull_request_number }}
+          REASON_BASE64: ${{ needs.validate.outputs.reason_base64 }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh pr merge "$PR_NUMBER" \
+            --repo "$GITHUB_REPOSITORY" \
+            --match-head-commit "$HEAD_SHA" \
+            --auto \
+            --squash
+          REASON="$(printf '%s' "$REASON_BASE64" | base64 --decode)"
+          printf '✅ Auto-merge queued: %s\n' "$REASON"
