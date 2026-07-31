@@ -134,7 +134,7 @@ jobs:
 
       - name: 📊 Upload OSV SARIF to GitHub Security
         if: ${{ !cancelled() }}
-        uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        uses: github/codeql-action/upload-sarif@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4.37.4
         with:
           sarif_file: ${{ runner.temp }}/osv-results/osv-results.sarif
 
@@ -180,7 +180,7 @@ jobs:
 
       - name: 📊 Upload OSV SARIF to GitHub Security
         if: ${{ !cancelled() }}
-        uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        uses: github/codeql-action/upload-sarif@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4.37.4
         with:
           sarif_file: ${{ runner.temp }}/osv-results/osv-results.sarif
 
@@ -204,13 +204,13 @@ jobs:
           persist-credentials: false
 
       - name: 🔧 Initialize CodeQL
-        uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        uses: github/codeql-action/init@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4.37.4
         with:
           languages: ${{ matrix.language }}
           queries: security-extended
 
       - name: 🔎 Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        uses: github/codeql-action/analyze@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4.37.4
         with:
           category: "/language:${{ matrix.language }}"
 
@@ -248,7 +248,7 @@ jobs:
 
       - name: 📊 Upload SARIF to GitHub Security
         if: ${{ !cancelled() && hashFiles('semgrep.sarif') != '' }}
-        uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        uses: github/codeql-action/upload-sarif@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4.37.4
         with:
           sarif_file: semgrep.sarif
 
