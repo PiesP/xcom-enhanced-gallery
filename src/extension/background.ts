@@ -153,20 +153,7 @@ async function handleDownloadRequest(message: DownloadRequestMessage): Promise<v
     }));
   }
 
-  const downloadId = await browserApi.downloads.download(downloadOptions);
-  if (requestId) {
-    activeDownloadIds.set(requestId, downloadId);
-    if (cancelledRequestIds.delete(requestId)) {
-      await browserApi.downloads.cancel(downloadId).catch(() => undefined);
-    }
-  }
-  try {
-    await waitForDownloadComplete(browserApi.downloads, downloadId);
-  } finally {
-    if (requestId && activeDownloadIds.get(requestId) === downloadId) {
-      activeDownloadIds.delete(requestId);
-    }
-  }
+  await runTrackedDownload(downloadOptions, requestId);
 }
 
 async function handleDownloadBlobUrlRequest(message: DownloadBlobUrlRequestMessage): Promise<void> {
@@ -175,25 +162,42 @@ async function handleDownloadBlobUrlRequest(message: DownloadBlobUrlRequestMessa
   // URL.createObjectURL(). It persists with the page lifetime, so
   // we can safely await the download without worrying about the SW
   // being terminated and invalidating the URL.
-  const downloadId = await browserApi.downloads.download({
-    url: objectUrl,
-    filename,
-    saveAs: false,
-  });
-  if (requestId) {
-    activeDownloadIds.set(requestId, downloadId);
-    if (cancelledRequestIds.delete(requestId)) {
-      await browserApi.downloads.cancel(downloadId).catch(() => undefined);
-    }
-  }
   // Wait for download completion so errors propagate to the content script.
   // Unlike SW-created blob URLs which become invalid on SW termination,
   // content-script blob URLs remain valid as long as the page is open.
+  await runTrackedDownload(
+    {
+      url: objectUrl,
+      filename,
+      saveAs: false,
+    },
+    requestId
+  );
+}
+
+async function runTrackedDownload(
+  downloadOptions: ChromeDownloadOptions,
+  requestId?: string
+): Promise<void> {
+  let downloadId: number | undefined;
   try {
+    downloadId = await browserApi.downloads.download(downloadOptions);
+    if (requestId) {
+      activeDownloadIds.set(requestId, downloadId);
+      if (cancelledRequestIds.delete(requestId)) {
+        await browserApi.downloads.cancel(downloadId).catch(() => undefined);
+      }
+    }
     await waitForDownloadComplete(browserApi.downloads, downloadId);
   } finally {
-    if (requestId && activeDownloadIds.get(requestId) === downloadId) {
-      activeDownloadIds.delete(requestId);
+    if (requestId) {
+      // A cancellation may arrive before downloads.download() resolves. Clear
+      // that pending marker even when ID allocation rejects so a later request
+      // cannot inherit stale cancellation state.
+      cancelledRequestIds.delete(requestId);
+      if (downloadId !== undefined && activeDownloadIds.get(requestId) === downloadId) {
+        activeDownloadIds.delete(requestId);
+      }
     }
   }
 }
