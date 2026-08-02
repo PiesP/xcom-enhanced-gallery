@@ -12,7 +12,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import type { Plugin } from 'vite';
-import { generateUserscriptHeader, OUTPUT_FILE_NAMES } from '../utils/userscript';
+import { generateUserscriptHeader, OUTPUT_FILE_NAMES } from '../utils/userscript.ts';
 
 /** Configuration options for build mode optimization (development vs production). */
 interface BuildModeConfig {

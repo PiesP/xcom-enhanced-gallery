@@ -22,15 +22,15 @@
 // External dependencies
 import { resolve } from 'node:path';
 import { defineConfig, mergeConfig, type UserConfig } from 'vite';
-import { buildSummaryPlugin } from './tooling/vite/plugins/build-summary';
-import { cssInlinePlugin } from './tooling/vite/plugins/css-inline';
-import { metaOnlyPlugin } from './tooling/vite/plugins/meta-only';
-import { basePreset } from './tooling/vite/presets/base';
-import { solidPreset } from './tooling/vite/presets/solid';
-import { userscriptPreset } from './tooling/vite/presets/userscript';
-import { OUTPUT_FILE_NAMES, USERSCRIPT_CONFIG } from './tooling/vite/utils/userscript';
+import { buildSummaryPlugin } from './tooling/vite/plugins/build-summary.ts';
+import { cssInlinePlugin } from './tooling/vite/plugins/css-inline.ts';
+import { metaOnlyPlugin } from './tooling/vite/plugins/meta-only.ts';
+import { basePreset } from './tooling/vite/presets/base.ts';
+import { solidPreset } from './tooling/vite/presets/solid.ts';
+import { userscriptPreset } from './tooling/vite/presets/userscript.ts';
+import { OUTPUT_FILE_NAMES, USERSCRIPT_CONFIG } from './tooling/vite/utils/userscript.ts';
 // Tooling utilities
-import { resolveVersion } from './tooling/vite/utils/version';
+import { resolveVersion } from './tooling/vite/utils/version.ts';
 
 // ── Build constants ─────────────────────────────────────────────────────────
 
@@ -72,7 +72,7 @@ export default defineConfig(({ mode }): UserConfig => {
         'Check tooling/vite/utils/version.ts REPO_ROOT path and package.json presence.'
     );
   }
-  const root = resolve(__dirname);
+  const root = resolve(import.meta.dirname);
   const entryFile = resolve(root, './src/main.ts');
 
   // Feature flags: media extraction is always enabled (the disabled variant was deleted)
