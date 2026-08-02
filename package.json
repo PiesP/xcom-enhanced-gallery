@@ -85,16 +85,16 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
     "@biomejs/biome": "^2.5.6",
-    "@playwright/test": "^1.62.0",
+    "@playwright/test": "^1.62.1",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
     "@types/node": "^26.1.2",
     "@vitest/coverage-v8": "^4.1.10",
     "dpdm": "4.3.0",
     "jsdom": "^30.0.1",
-    "knip": "^6.29.0",
+    "knip": "^6.31.0",
     "typescript": "7.0.2",
-    "vite": "^8.1.5",
+    "vite": "^8.2.0",
     "vite-plugin-solid": "^2.11.14",
     "vitest": "^4.1.10"
   }
