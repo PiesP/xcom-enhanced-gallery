@@ -4,8 +4,8 @@
 /** @fileoverview Unified download service: single + bulk (ZIP) via GM_download. */
 
 import { SCHEDULER_YIELD_DEADLINE_MS } from '@constants/performance';
+import { mergeAbortSignalsWithCleanup } from '@piesp/browser-core/error';
 import { getDownloadAdapter } from '@platform/index';
-import { mergeAbortSignals } from '@shared/async/abort-signal';
 import { planBulkDownload } from '@shared/core/download/download-plan';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
@@ -215,7 +215,7 @@ export class DownloadOrchestrator {
     cleanup: () => void;
   } {
     if (!callerSignal) return { signal: this.abortController.signal, cleanup: () => {} };
-    return mergeAbortSignals(this.abortController.signal, callerSignal);
+    return mergeAbortSignalsWithCleanup([this.abortController.signal, callerSignal]);
   }
 
   /**

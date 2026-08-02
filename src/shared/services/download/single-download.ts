@@ -2,9 +2,9 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { DEFAULT_REQUEST_TIMEOUT_MS } from '@constants/performance';
+import { mergeAbortSignalsWithCleanup } from '@piesp/browser-core/error';
 import { getDownloadAdapter } from '@platform/index';
 import type { DownloadAdapter } from '@platform/types';
-import { mergeAbortSignals } from '@shared/async/abort-signal';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
@@ -147,7 +147,7 @@ async function downloadWithFetchFallback(
 
   const timeoutSignal = AbortSignal.timeout(DEFAULT_REQUEST_TIMEOUT_MS);
   const fetchSignalScope = abortSignal
-    ? mergeAbortSignals(abortSignal, timeoutSignal)
+    ? mergeAbortSignalsWithCleanup([abortSignal, timeoutSignal])
     : { signal: timeoutSignal, cleanup: () => undefined };
 
   try {
