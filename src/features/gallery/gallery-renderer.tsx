@@ -23,10 +23,8 @@ import {
   gallerySignals,
   navigateNext,
   navigatePrevious,
-  openGallery,
   setError,
 } from '@shared/state/signals/gallery.signals';
-import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { createEffectRoot } from '@shared/utils/solid/accessor-utils';
 import type { JSX } from 'solid-js';
 import { createSignal, onCleanup, splitProps } from 'solid-js';
@@ -226,22 +224,6 @@ export class GalleryRenderer {
         this.container = null;
       }
     }
-  }
-
-  render(mediaItems: readonly MediaInfo[], renderOptions?: GalleryRenderOptions): void {
-    openGallery(mediaItems, renderOptions?.startIndex ?? 0);
-  }
-
-  close(): void {
-    if (!gallerySignals.isOpen) {
-      return;
-    }
-
-    closeGallery();
-  }
-
-  isRendering(): boolean {
-    return !!(this.container && gallerySignals.isOpen);
   }
 
   destroy(): void {

@@ -2,7 +2,6 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { SCHEDULER_YIELD_DEADLINE_MS } from '@constants/performance';
-import { TWITTER_MEDIA_SELECTOR } from '@constants/selectors';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
@@ -197,21 +196,6 @@ export class MediaExtractionService implements MediaExtractor {
       };
     } catch (error) {
       __DEV__ && logger.error('Extract failed', extractionId, error);
-      return createErrorResult(error);
-    }
-  }
-
-  async extractAllFromContainer(
-    container: HTMLElement,
-    options: MediaExtractionOptions = {}
-  ): Promise<MediaExtractionResult> {
-    try {
-      const firstMedia = container.querySelector(TWITTER_MEDIA_SELECTOR);
-      if (!firstMedia || !(firstMedia instanceof HTMLElement)) {
-        return createErrorResult('No media found in container');
-      }
-      return this.extractFromClickedElement(firstMedia, options);
-    } catch (error) {
       return createErrorResult(error);
     }
   }

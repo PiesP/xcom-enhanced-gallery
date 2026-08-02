@@ -10,7 +10,6 @@ import type { ToolbarSettingsControllerResult } from '@shared/hooks/toolbar/use-
 import { useTranslation } from '@shared/hooks/use-translation';
 import { getEventManager } from '@shared/services/event-manager';
 import type { ImageFitMode } from '@shared/types/settings.types';
-import type { ToolbarState } from '@shared/types/toolbar.types';
 import { shouldAllowWheelDefault as shouldAllowWheelDefaultBase } from '@shared/utils/events/wheel-scroll-guard';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
@@ -34,12 +33,8 @@ type FitModeDefinition = {
 interface ToolbarViewProps {
   /** Current media index */
   readonly currentIndex: number;
-  /** Focused media index for keyboard navigation */
-  readonly focusedIndex: number | null;
   /** Total number of media items */
   readonly totalCount: number;
-  /** Whether a download is in progress */
-  readonly isDownloading: boolean;
   /** Whether toolbar is disabled */
   readonly disabled: boolean;
   /** Current fit mode */
@@ -60,8 +55,6 @@ interface ToolbarViewProps {
   readonly 'data-testid'?: string | undefined;
   /** Toolbar class name generator */
   readonly toolbarClass: () => string;
-  /** Toolbar state */
-  readonly toolbarState: ToolbarState;
   /** Toolbar data state generator */
   readonly toolbarDataState: () => string;
   /** Navigation state generator */
@@ -74,8 +67,6 @@ interface ToolbarViewProps {
   readonly fitModeOrder: ReadonlyArray<FitModeDefinition>;
   /** Fit mode labels */
   readonly fitModeLabels: Record<ImageFitMode, { label: string; title: string }>;
-  /** Active fit mode generator */
-  readonly activeFitMode: () => ImageFitMode;
   /** Fit mode click handler factory */
   readonly handleFitModeClick: (mode: ImageFitMode) => (event: MouseEvent) => void;
   /** Fit mode disabled checker */
@@ -133,7 +124,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     'progressWidth',
     'toolbarClass',
     'toolbarDataState',
-    'activeFitMode',
     'handleFitModeClick',
     'isFitDisabled',
     'onPreviousClick',

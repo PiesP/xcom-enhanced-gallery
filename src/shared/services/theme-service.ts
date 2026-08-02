@@ -91,10 +91,7 @@ export class ThemeService {
     }
   }
 
-  setTheme(
-    setting: string,
-    options?: { force?: boolean; persist?: boolean }
-  ): void {
+  setTheme(setting: string, options?: { force?: boolean; persist?: boolean }): void {
     const normalized = isThemeSetting(setting) ? setting : 'light';
     this.themeSetting = normalized;
 

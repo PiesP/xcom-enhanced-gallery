@@ -6,11 +6,11 @@
  */
 
 import { CSS_REM_BASE, DEFAULT_MEDIA_DIMENSIONS, STANDARD_GALLERY_HEIGHT } from '@constants/media';
+import { clampIndex } from '@piesp/browser-core/util';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { ImageFitMode } from '@shared/types/settings.types';
 import { extractVisualIndexFromUrl, getMediaDedupKey } from '@shared/utils/media/media-url-utils';
-import { clampIndex } from '@shared/utils/types/number-utils';
 
 const FALLBACK_VIEWPORT_HEIGHT = `${STANDARD_GALLERY_HEIGHT}px`;
 

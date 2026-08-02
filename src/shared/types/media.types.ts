@@ -133,18 +133,4 @@ export interface MediaExtractor {
     element: HTMLElement,
     options?: MediaExtractionOptions
   ): Promise<MediaExtractionResult>;
-
-  extractAllFromContainer(
-    container: HTMLElement,
-    options?: MediaExtractionOptions
-  ): Promise<MediaExtractionResult>;
-}
-
-// ================================
-// Gallery-related types
-// ================================
-
-/** Gallery rendering options */
-export interface GalleryRenderOptions {
-  readonly startIndex?: number | undefined;
 }

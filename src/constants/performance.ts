@@ -80,9 +80,6 @@ export const BLOB_URL_REVOKE_DELAY_MS = 2_000;
 /** Max number of invalid selector warnings to cache (query-helpers) */
 export const MAX_WARNED_SELECTORS = 100;
 
-/** Default debounce delay in milliseconds (debounce.ts) */
-export const DEFAULT_DEBOUNCE_MS = 300;
-
 /** Tooltip show delay in milliseconds (Tooltip.tsx) */
 export const TOOLTIP_SHOW_DELAY_MS = 300;
 

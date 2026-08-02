@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { IMAGE_FIT_MODES } from '@constants/setting-options';
+import { clampIndex } from '@piesp/browser-core/util';
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
 import type { FitModeHandlers } from '@shared/components/ui/Toolbar/handler-types.types';
 import type { ToolbarProps } from '@shared/components/ui/Toolbar/Toolbar.types';
@@ -12,7 +13,6 @@ import { useToolbarState } from '@shared/hooks/use-toolbar-state';
 import { useTranslation } from '@shared/hooks/use-translation';
 import type { ImageFitMode } from '@shared/types/settings.types';
 import type { ToolbarDataState, ToolbarState } from '@shared/types/toolbar.types';
-import { clampIndex } from '@shared/utils/types/number-utils';
 import type { JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, on, splitProps } from 'solid-js';
 
@@ -184,23 +184,19 @@ export function Toolbar(rawProps: ToolbarProps): JSXElement {
   return (
     <ToolbarView
       currentIndex={local.currentIndex() ?? 0}
-      focusedIndex={local.focusedIndex?.() ?? null}
       totalCount={local.totalCount() ?? 0}
-      isDownloading={local.isDownloading?.() ?? false}
       disabled={local.disabled?.() ?? false}
       currentFitMode={activeFitMode()}
       tweetText={local.tweetText?.() ?? null}
       tweetTextContent={local.tweetTextContent?.() ?? null}
       tweetUrl={local.tweetUrl?.() ?? null}
       toolbarClass={toolbarClass}
-      toolbarState={toolbarState}
       toolbarDataState={toolbarDataState}
       navState={navState}
       displayedIndex={displayedIndex}
       progressWidth={progressWidth}
       fitModeOrder={FIT_MODE_ORDER}
       fitModeLabels={fitModeLabels()}
-      activeFitMode={activeFitMode}
       handleFitModeClick={handleFitModeClick}
       isFitDisabled={isFitDisabled}
       onPreviousClick={guardedClick(

@@ -5,7 +5,7 @@
  * @fileoverview Retry utility with exponential backoff.
  */
 
-import { delay } from '@shared/async/delay';
+import { sleep } from '@piesp/browser-core/async';
 import { isAbortError } from '@shared/error/cancellation';
 
 export interface RetryOptions {
@@ -94,7 +94,7 @@ export async function withRetry<T>(
       onRetry?.(attempt + 1, error, delayMs);
 
       try {
-        await delay(delayMs, signal);
+        await sleep(delayMs, signal);
       } catch (delayError) {
         if (isAbortError(delayError)) {
           return { success: false, error: delayError, attempts: attempt + 1 };
