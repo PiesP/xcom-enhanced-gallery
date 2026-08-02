@@ -11,7 +11,7 @@
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Plugin } from 'vite';
-import { generateMetaOnlyHeader, OUTPUT_FILE_NAMES } from '../utils/userscript';
+import { generateMetaOnlyHeader, OUTPUT_FILE_NAMES } from '../utils/userscript.ts';
 
 export function metaOnlyPlugin(
   version: string,

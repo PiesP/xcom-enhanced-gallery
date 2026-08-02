@@ -1,10 +1,10 @@
 import { resolve } from 'node:path';
 import type { Plugin, UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
-import { copyExtensionAssetsPlugin } from '../plugins/copy-extension-assets';
-import { cssInlinePlugin } from '../plugins/css-inline';
-import { enforceIifePlugin } from '../plugins/enforce-iife';
-import { getVersionFromPackageJson } from '../utils/version';
+import { copyExtensionAssetsPlugin } from '../plugins/copy-extension-assets.ts';
+import { cssInlinePlugin } from '../plugins/css-inline.ts';
+import { enforceIifePlugin } from '../plugins/enforce-iife.ts';
+import { getVersionFromPackageJson } from '../utils/version.ts';
 
 export type ExtensionBrowser = 'chrome' | 'firefox';
 
