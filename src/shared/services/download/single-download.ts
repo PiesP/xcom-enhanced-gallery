@@ -4,16 +4,13 @@
 import { DEFAULT_REQUEST_TIMEOUT_MS } from '@constants/performance';
 import { getDownloadAdapter } from '@platform/index';
 import type { DownloadAdapter } from '@platform/types';
+import { mergeAbortSignals } from '@shared/async/abort-signal';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
+import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 import type { DownloadOptions, SingleDownloadResult } from '@shared/services/download/types';
 import { reportProgress } from '@shared/services/download/types';
 import type { MediaInfo } from '@shared/types/media.types';
-
-// Removed: detectDownloadCapability (duplicated platform detection logic).
-// Use getDownloadAdapter() from platform layer instead.
-
-import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 
 const createAbortResult = (): SingleDownloadResult => ({
   success: false,
@@ -149,101 +146,63 @@ async function downloadWithFetchFallback(
   });
 
   const timeoutSignal = AbortSignal.timeout(DEFAULT_REQUEST_TIMEOUT_MS);
+  const fetchSignalScope = abortSignal
+    ? mergeAbortSignals(abortSignal, timeoutSignal)
+    : { signal: timeoutSignal, cleanup: () => undefined };
 
   try {
     // Fetch in content script context (has host_permissions to bypass CORS).
     // Service Workers cannot bypass CORS for twimg.com without specific headers.
     // Apply a timeout race via AbortSignal.timeout so the fetch doesn't hang
     // indefinitely if the network stalls or the server doesn't respond.
-    const fetchInit: RequestInit = { credentials: 'include' };
-
-    if (abortSignal) {
-      // Combine caller's abort signal with the timeout signal
-      const combinedController = new AbortController();
-      const onCallerAbort = () => combinedController.abort(abortSignal.reason);
-      const onTimeout = () => combinedController.abort(timeoutSignal.reason);
-      abortSignal.addEventListener('abort', onCallerAbort, { once: true });
-      timeoutSignal.addEventListener('abort', onTimeout, { once: true });
-      fetchInit.signal = combinedController.signal;
-      const cleanupCombined = () => {
-        abortSignal.removeEventListener('abort', onCallerAbort);
-        timeoutSignal.removeEventListener('abort', onTimeout);
-      };
-
-      try {
-        const response = await fetch(url, fetchInit);
-        if (!response.ok) {
-          return createErrorDownloadResult(
-            new Error(`HTTP ${response.status}: ${response.statusText}`)
-          );
-        }
-        const blob = await response.blob();
-
-        reportProgress(options.onProgress, {
-          phase: 'downloading',
-          current: 50,
-          total: 100,
-          percentage: 50,
-          filename,
-        });
-
-        // Pass blob to adapter (which creates object URL and relays to background SW)
-        const downloadBlobPromise = adapter.downloadBlob(blob, filename, abortSignal);
-
-        // R6: Race adapter.downloadBlob against abort signal so cancellation
-        // propagates when the user cancels after the fetch phase completes.
-        const result = await raceWithAbort(
-          downloadBlobPromise.then(
-            () => ({ success: true, filename }) satisfies SingleDownloadResult,
-            (error: unknown) => createErrorDownloadResult(error)
-          ),
-          abortSignal,
-          createAbortResult
-        );
-
-        if (!result.success) return result;
-
-        reportProgress(options.onProgress, {
-          phase: 'complete',
-          current: 1,
-          total: 1,
-          percentage: 100,
-          filename,
-        });
-        return { success: true, filename };
-      } finally {
-        cleanupCombined();
-      }
-    } else {
-      fetchInit.signal = timeoutSignal;
-
-      const response = await fetch(url, fetchInit);
+    let blob: Blob;
+    try {
+      const response = await fetch(url, {
+        credentials: 'include',
+        signal: fetchSignalScope.signal,
+      });
       if (!response.ok) {
         return createErrorDownloadResult(
           new Error(`HTTP ${response.status}: ${response.statusText}`)
         );
       }
-      const blob = await response.blob();
-
-      reportProgress(options.onProgress, {
-        phase: 'downloading',
-        current: 50,
-        total: 100,
-        percentage: 50,
-        filename,
-      });
-
-      await adapter.downloadBlob(blob, filename, abortSignal);
-
-      reportProgress(options.onProgress, {
-        phase: 'complete',
-        current: 1,
-        total: 1,
-        percentage: 100,
-        filename,
-      });
-      return { success: true, filename };
+      blob = await response.blob();
+    } finally {
+      fetchSignalScope.cleanup();
     }
+
+    reportProgress(options.onProgress, {
+      phase: 'downloading',
+      current: 50,
+      total: 100,
+      percentage: 50,
+      filename,
+    });
+
+    // Preserve the existing no-signal behavior: adapter failures reach the
+    // outer catch and attempt the direct URL fallback. With a caller signal,
+    // failures are returned directly while cancellation wins the race.
+    const downloadBlobPromise = adapter.downloadBlob(blob, filename, abortSignal).then(
+      () => ({ success: true, filename }) satisfies SingleDownloadResult,
+      (error: unknown) => {
+        if (!abortSignal) throw error;
+        return createErrorDownloadResult(error);
+      }
+    );
+    const result = abortSignal
+      ? await raceWithAbort(downloadBlobPromise, abortSignal, createAbortResult)
+      : await downloadBlobPromise;
+
+    if (!result.success) return result;
+
+    reportProgress(options.onProgress, {
+      phase: 'complete',
+      current: 1,
+      total: 1,
+      percentage: 100,
+      filename,
+    });
+    return result;
   } catch (error) {
     // Only the caller-owned signal represents user cancellation. The internal
     // timeout is a fetch failure and should use the direct URL fallback.
