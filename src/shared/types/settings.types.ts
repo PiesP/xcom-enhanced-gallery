@@ -7,16 +7,17 @@
  * These are separated from features-specific types to prevent reverse dependencies.
  */
 
-/** Video player click handling mode */
-export type VideoClickMode = 'block-all' | 'block-controls-only' | 'allow-all';
+import type { ImageFitMode, ThemeSetting, VideoClickMode } from '@constants/setting-options';
+
+export type { ImageFitMode, ThemeSetting, VideoClickMode } from '@constants/setting-options';
 
 export interface GallerySettings {
   /** Number of images to preload */
   preloadCount: number;
   /** Image fit mode */
-  imageFitMode: 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
+  imageFitMode: ImageFitMode;
   /** Theme mode */
-  theme: 'auto' | 'light' | 'dark';
+  theme: ThemeSetting;
   /** Enable animations */
   animations: boolean;
   /** Enable keyboard navigation */
@@ -64,9 +65,6 @@ export interface AppSettings {
   version: string;
   lastModified: number;
 }
-
-/** Image fit mode — extracted from GallerySettings for direct use */
-export type ImageFitMode = GallerySettings['imageFitMode'];
 
 export type SettingKey = keyof AppSettings;
 

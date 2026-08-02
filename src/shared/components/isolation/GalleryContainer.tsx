@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { CSS } from '@constants/css';
+import type { ThemeSetting } from '@constants/setting-options';
 import { hideBackgroundElement, restoreBackgroundElement } from '@shared/dom/background-visibility';
 import { useTranslation } from '@shared/hooks/use-translation';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
@@ -15,7 +16,7 @@ export interface GalleryContainerProps {
   readonly className?: string;
   readonly lang?: string;
   readonly dir?: 'ltr' | 'rtl';
-  readonly theme?: 'auto' | 'light' | 'dark';
+  readonly theme?: ThemeSetting;
 }
 
 const DISPOSE_SYMBOL = Symbol();

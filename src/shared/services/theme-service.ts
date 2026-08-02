@@ -5,21 +5,14 @@
  * @fileoverview Theme service: system theme detection and application
  */
 
+import type { ThemeSetting } from '@constants/setting-options';
+import { isThemeSetting } from '@constants/setting-options';
 import { tryGetSettings } from '@shared/container/settings-registry';
 import { syncThemeAttributes } from '@shared/dom/theme';
 import { logger } from '@shared/logging/logger';
 import { getEventManager } from '@shared/services/event-manager';
 import { createSingleton } from '@shared/services/singleton-base';
-export type ThemeChangeListener = (
-  theme: 'light' | 'dark',
-  setting: 'auto' | 'light' | 'dark'
-) => void;
-
-const VALID_THEME_SETTINGS: readonly string[] = ['light', 'dark', 'auto'];
-
-function isThemeSetting(value: unknown): value is 'auto' | 'light' | 'dark' {
-  return typeof value === 'string' && VALID_THEME_SETTINGS.includes(value);
-}
+export type ThemeChangeListener = (theme: 'light' | 'dark', setting: ThemeSetting) => void;
 
 interface SettingsBinding {
   get(key: string): unknown;
@@ -29,7 +22,7 @@ interface SettingsBinding {
 export class ThemeService {
   private _initialized = false;
   private currentTheme: 'light' | 'dark' = 'light';
-  private themeSetting: 'auto' | 'light' | 'dark' = 'auto';
+  private themeSetting: ThemeSetting = 'auto';
   private readonly listeners: Set<ThemeChangeListener> = new Set();
   private settings: SettingsBinding | null = null;
   private observedThemeScopes: WeakSet<Element> = new WeakSet();
@@ -99,7 +92,7 @@ export class ThemeService {
   }
 
   setTheme(
-    setting: 'auto' | 'light' | 'dark' | string,
+    setting: string,
     options?: { force?: boolean; persist?: boolean }
   ): void {
     const normalized = isThemeSetting(setting) ? setting : 'light';
@@ -125,7 +118,7 @@ export class ThemeService {
     return this.themeSetting;
   }
 
-  getCurrentTheme(): 'auto' | 'light' | 'dark' {
+  getCurrentTheme(): ThemeSetting {
     return this.themeSetting;
   }
 

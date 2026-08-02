@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { IMAGE_FIT_MODES } from '@constants/setting-options';
 import type { LucideIconName } from '@shared/components/ui/Icon/lucide/icon-nodes';
 import type { FitModeHandlers } from '@shared/components/ui/Toolbar/handler-types.types';
 import type { ToolbarProps } from '@shared/components/ui/Toolbar/Toolbar.types';
@@ -17,12 +18,15 @@ import { createEffect, createMemo, createSignal, on, splitProps } from 'solid-js
 
 import styles from './Toolbar.module.css';
 
-const FIT_MODE_ORDER: ReadonlyArray<{ mode: ImageFitMode; iconName: LucideIconName }> = [
-  { mode: 'original', iconName: 'maximize-2' },
-  { mode: 'fitWidth', iconName: 'move-horizontal' },
-  { mode: 'fitHeight', iconName: 'move-vertical' },
-  { mode: 'fitContainer', iconName: 'minimize-2' },
-];
+const FIT_MODE_ICONS = {
+  original: 'maximize-2',
+  fitWidth: 'move-horizontal',
+  fitHeight: 'move-vertical',
+  fitContainer: 'minimize-2',
+} as const satisfies Record<ImageFitMode, LucideIconName>;
+
+const FIT_MODE_ORDER: ReadonlyArray<{ mode: ImageFitMode; iconName: LucideIconName }> =
+  IMAGE_FIT_MODES.map((mode) => ({ mode, iconName: FIT_MODE_ICONS[mode] }));
 
 type InternalFitModeHandlers = Record<ImageFitMode, FitModeHandlers['onFitOriginal'] | undefined>;
 

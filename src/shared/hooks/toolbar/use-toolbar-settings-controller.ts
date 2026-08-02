@@ -7,6 +7,8 @@
  */
 
 import { TOOLBAR_BLUR_GUARD_MS } from '@constants/performance';
+import type { ThemeSetting } from '@constants/setting-options';
+import { isThemeSetting } from '@constants/setting-options';
 import type {
   LanguageOption,
   ThemeOption,
@@ -68,7 +70,7 @@ export function useToolbarSettingsController(
   );
 
   const toThemeOption = (value: unknown): ThemeOption => {
-    return value === 'light' || value === 'dark' ? value : 'auto';
+    return isThemeSetting(value) ? value : 'auto';
   };
 
   // Read initial theme from ThemeService (with fallback)
@@ -115,7 +117,7 @@ export function useToolbarSettingsController(
 
   createEffect(() => {
     const unsubscribe = themeManager.onThemeChange(
-      (_theme: 'light' | 'dark', setting: 'auto' | 'light' | 'dark') => {
+      (_theme: 'light' | 'dark', setting: ThemeSetting) => {
         setCurrentTheme(toThemeOption(setting));
       }
     );

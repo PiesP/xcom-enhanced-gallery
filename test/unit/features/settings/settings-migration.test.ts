@@ -37,6 +37,20 @@ describe('settings-migration', () => {
       expect(result.gallery.videoClickMode).toBe('block-controls-only');
     });
 
+    it('should migrate a frozen legacy input without mutating it', () => {
+      const input = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as AppSettings;
+      (input.gallery as any).blockVideoControlClick = true;
+      delete (input.gallery as any).videoClickMode;
+      const original = JSON.stringify(input);
+      Object.freeze(input.gallery);
+      Object.freeze(input);
+
+      const result = migrateSettings(input, 1000);
+
+      expect(result.gallery.videoClickMode).toBe('block-controls-only');
+      expect(JSON.stringify(input)).toBe(original);
+    });
+
     it('should migrate legacy blockVideoControlClick=false to allow-all', () => {
       const input = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as AppSettings;
       (input.gallery as any).blockVideoControlClick = false;
