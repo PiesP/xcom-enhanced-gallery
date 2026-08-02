@@ -9,15 +9,12 @@
  * the source of truth for valid keys and types.
  */
 
+import { isImageFitMode, isThemeSetting, isVideoClickMode } from '@constants/setting-options';
 import { DEFAULT_SETTINGS } from '@constants/settings';
 import type { AppSettings, GallerySettings } from '@shared/types/settings.types';
 import { isRecord } from '@shared/utils/types/guards';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-
-const VALID_THEMES = new Set(['auto', 'light', 'dark']);
-const VALID_IMAGE_FIT_MODES = new Set(['original', 'fitWidth', 'fitHeight', 'fitContainer']);
-const VALID_VIDEO_CLICK_MODES = new Set(['block-all', 'block-controls-only', 'allow-all']);
 
 /** Keys that must never be copied via spread to prevent prototype pollution. */
 const FORBIDDEN_KEYS = new Set<string>(['__proto__', 'constructor', 'prototype']);
@@ -87,24 +84,15 @@ function normalizeGallery(raw: Record<string, unknown> | undefined): GallerySett
     preloadCount: isFiniteNonNegativeNumber(raw.preloadCount)
       ? Math.min(raw.preloadCount, 100)
       : d.preloadCount,
-    imageFitMode:
-      typeof raw.imageFitMode === 'string' && VALID_IMAGE_FIT_MODES.has(raw.imageFitMode)
-        ? (raw.imageFitMode as GallerySettings['imageFitMode'])
-        : d.imageFitMode,
-    theme:
-      typeof raw.theme === 'string' && VALID_THEMES.has(raw.theme)
-        ? (raw.theme as GallerySettings['theme'])
-        : d.theme,
+    imageFitMode: isImageFitMode(raw.imageFitMode) ? raw.imageFitMode : d.imageFitMode,
+    theme: isThemeSetting(raw.theme) ? raw.theme : d.theme,
     animations: isBoolean(raw.animations) ? raw.animations : d.animations,
     enableKeyboardNav: isBoolean(raw.enableKeyboardNav)
       ? raw.enableKeyboardNav
       : d.enableKeyboardNav,
     videoVolume: isFiniteRange(raw.videoVolume, 0, 1) ? raw.videoVolume : d.videoVolume,
     videoMuted: isBoolean(raw.videoMuted) ? raw.videoMuted : d.videoMuted,
-    videoClickMode:
-      typeof raw.videoClickMode === 'string' && VALID_VIDEO_CLICK_MODES.has(raw.videoClickMode)
-        ? (raw.videoClickMode as GallerySettings['videoClickMode'])
-        : d.videoClickMode,
+    videoClickMode: isVideoClickMode(raw.videoClickMode) ? raw.videoClickMode : d.videoClickMode,
   };
 }
 
@@ -155,9 +143,9 @@ export function validateSettingValue(key: string, value: unknown): boolean {
     case 'gallery.preloadCount':
       return isFiniteNonNegativeNumber(value) && value <= 100;
     case 'gallery.imageFitMode':
-      return typeof value === 'string' && VALID_IMAGE_FIT_MODES.has(value);
+      return isImageFitMode(value);
     case 'gallery.theme':
-      return typeof value === 'string' && VALID_THEMES.has(value);
+      return isThemeSetting(value);
     case 'gallery.animations':
     case 'gallery.enableKeyboardNav':
     case 'gallery.videoMuted':
@@ -165,7 +153,7 @@ export function validateSettingValue(key: string, value: unknown): boolean {
     case 'gallery.videoVolume':
       return isFiniteRange(value, 0, 1);
     case 'gallery.videoClickMode':
-      return typeof value === 'string' && VALID_VIDEO_CLICK_MODES.has(value);
+      return isVideoClickMode(value);
     // toolbar
     case 'toolbar.autoHideDelay':
       return isFiniteNonNegativeNumber(value) && value <= 60000;

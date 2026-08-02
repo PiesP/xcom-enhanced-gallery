@@ -11,12 +11,13 @@
  * @module gallery.signals
  */
 
+import { clampIndex } from '@piesp/browser-core/util';
 import { logger } from '@shared/logging/logger';
 import type { MediaInfo } from '@shared/types/media.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
-import { clampIndex } from '@shared/utils/types/number-utils';
 import { batch, createSignal } from 'solid-js';
 import { _setIsProcessing } from './gallery-download-signals';
+import { resolveAdjacentNavigationTarget } from './gallery-navigation';
 import {
   INITIAL_NAV_SOURCE,
   type NavigationSource,
@@ -213,6 +214,15 @@ function _resolveNavAnchor(): number {
   return currentIndexSig();
 }
 
+function commitNavigation(targetIndex: number, source: NavigationSource): void {
+  batch(() => {
+    setCurrentIndex(targetIndex);
+    _setFocusedIndex(targetIndex);
+  });
+  recordNavigation(targetIndex, source);
+  galleryIndexEvents.emit('navigate:complete', { index: targetIndex, trigger: source });
+}
+
 /**
  * Navigates to the next item in the gallery.
  * Uses focusedIndex as anchor when available (what the user is looking at),
@@ -223,18 +233,10 @@ function _resolveNavAnchor(): number {
  */
 export function navigateNext(trigger: NavigationSource = 'click'): void {
   const items = mediaItemsSig();
-  const current = _resolveNavAnchor();
-  if (items.length <= 1) return;
+  const targetIndex = resolveAdjacentNavigationTarget(_resolveNavAnchor(), 1, items.length);
+  if (targetIndex === null) return;
 
-  const next = current + 1;
-  if (next >= items.length) return;
-
-  batch(() => {
-    setCurrentIndex(next);
-    _setFocusedIndex(next);
-  });
-  recordNavigation(next, trigger);
-  galleryIndexEvents.emit('navigate:complete', { index: next, trigger });
+  commitNavigation(targetIndex, trigger);
 }
 
 /**
@@ -247,18 +249,10 @@ export function navigateNext(trigger: NavigationSource = 'click'): void {
  */
 export function navigatePrevious(trigger: NavigationSource = 'click'): void {
   const items = mediaItemsSig();
-  const current = _resolveNavAnchor();
-  if (items.length <= 1) return;
+  const targetIndex = resolveAdjacentNavigationTarget(_resolveNavAnchor(), -1, items.length);
+  if (targetIndex === null) return;
 
-  const prev = current - 1;
-  if (prev < 0) return;
-
-  batch(() => {
-    setCurrentIndex(prev);
-    _setFocusedIndex(prev);
-  });
-  recordNavigation(prev, trigger);
-  galleryIndexEvents.emit('navigate:complete', { index: prev, trigger });
+  commitNavigation(targetIndex, trigger);
 }
 
 /**
@@ -284,13 +278,7 @@ export function navigateToItem(targetIndex: number, source: NavigationSource): v
 
   if (clampedIndex === current) return;
 
-  batch(() => {
-    setCurrentIndex(clampedIndex);
-    _setFocusedIndex(clampedIndex);
-  });
-
-  recordNavigation(clampedIndex, source);
-  galleryIndexEvents.emit('navigate:complete', { index: clampedIndex, trigger: source });
+  commitNavigation(clampedIndex, source);
 }
 
 /**

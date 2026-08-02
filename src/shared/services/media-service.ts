@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { PREFETCH_CACHE_SIZE } from '@constants/performance';
+import { clampIndex } from '@piesp/browser-core/util';
 import { PrefetchManager } from '@shared/services/media/prefetch-manager';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import { createSingleton } from '@shared/services/singleton-base';
@@ -10,7 +11,6 @@ import type {
   MediaExtractionResult,
   MediaInfo,
 } from '@shared/types/media.types';
-import { clampIndex } from '@shared/utils/types/number-utils';
 
 export class MediaService {
   private mediaExtraction: MediaExtractionService | null = null;
@@ -79,14 +79,6 @@ export class MediaService {
     return result;
   }
 
-  async extractAllFromContainer(
-    container: HTMLElement,
-    options: MediaExtractionOptions = {}
-  ): Promise<MediaExtractionResult> {
-    if (!this.mediaExtraction) throw new Error('Media Extraction not initialized');
-    return this.mediaExtraction.extractAllFromContainer(container, options);
-  }
-
   async prefetchMedia(media: MediaInfo, schedule: 'immediate' | 'idle' = 'idle'): Promise<void> {
     return this.prefetchManager.prefetch(media, schedule);
   }
@@ -97,10 +89,6 @@ export class MediaService {
 
   cancelAllPrefetch(): void {
     this.prefetchManager.cancelAll();
-  }
-
-  clearPrefetchCache(): void {
-    this.prefetchManager.clear();
   }
 }
 

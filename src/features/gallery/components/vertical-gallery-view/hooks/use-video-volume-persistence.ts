@@ -13,7 +13,7 @@ import {
   normalizeVideoMutedSetting,
   normalizeVideoVolumeSetting,
 } from '@features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers';
-import { createDebounced } from '@shared/async/debounce';
+import { debounce } from '@piesp/browser-core/async';
 import { getTypedSettingOr, setTypedSetting } from '@shared/container/settings-registry';
 import { logger } from '@shared/logging/logger';
 import type { JSX } from 'solid-js';
@@ -101,7 +101,7 @@ export function useVideoVolumePersistence(
   });
 
   // Debounced settings persistence to reduce GM_setValue calls during slider drag
-  const debouncedSaveVolume = createDebounced((volume: number, muted: boolean) => {
+  const debouncedSaveVolume = debounce((volume: number, muted: boolean) => {
     setTypedSetting('gallery.videoVolume', volume).catch((error) => {
       __DEV__ && logger.warn('Failed to persist video volume', { error });
     });

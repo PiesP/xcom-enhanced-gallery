@@ -23,6 +23,7 @@
  * Component styles: `SettingsControls.module.css`
  */
 
+import { THEME_OPTIONS } from '@constants/setting-options';
 import { Tooltip } from '@shared/components/ui/Tooltip/Tooltip';
 import { getLanguageService } from '@shared/services/language-service';
 import { resolve } from '@shared/utils/solid/accessor-utils';
@@ -31,11 +32,6 @@ import type { JSXElement } from 'solid-js';
 import { createMemo, createSignal, onCleanup, onMount, splitProps } from 'solid-js';
 import styles from './SettingsControls.module.css';
 import type { LanguageOption, SettingsControlsProps, ThemeOption } from './SettingsControls.types';
-
-/**
- * Available theme options
- */
-const THEME_OPTIONS: readonly ThemeOption[] = ['auto', 'light', 'dark'] as const;
 
 /**
  * Available language options

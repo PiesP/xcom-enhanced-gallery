@@ -5,10 +5,10 @@
  * @fileoverview HTTP client using GM_xmlhttpRequest for cross-origin support.
  */
 
+import { createDeferred } from '@piesp/browser-core/async';
 import { getHttpRequestAdapter } from '@platform/index';
 import type { HttpRequestControl, HttpRequestDetails } from '@platform/types';
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
-import { createDeferred } from '@shared/utils/async/promise-helpers';
 
 interface HttpRequestOptions {
   readonly headers?: Record<string, string>;

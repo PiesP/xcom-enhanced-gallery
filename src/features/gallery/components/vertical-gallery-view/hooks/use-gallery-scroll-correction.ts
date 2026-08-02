@@ -8,7 +8,7 @@
  */
 
 import { SCROLL_CORRECTION_DEBOUNCE_MS } from '@constants/performance';
-import { createDebounced } from '@shared/async/debounce';
+import { debounce } from '@piesp/browser-core/async';
 import { onCleanup } from 'solid-js';
 
 /**
@@ -60,7 +60,7 @@ export function useGalleryScrollCorrection(
     scrollToItem,
   } = options;
 
-  const debouncedScrollCorrection = createDebounced((index: number, mediaId: string) => {
+  const debouncedScrollCorrection = debounce((index: number, mediaId: string) => {
     if (!isVisible()) {
       return;
     }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { isVideoClickMode } from '@constants/setting-options';
 import { DEFAULT_SETTINGS } from '@constants/settings';
 import type { AppSettings, VideoClickMode } from '@shared/types/settings.types';
 import { isRecord } from '@shared/utils/types/guards';
@@ -28,13 +29,6 @@ function pruneWithTemplate<T extends Record<string, unknown>>(
   return out as Partial<T>;
 }
 
-/** Valid video click mode values for runtime validation */
-const VALID_VIDEO_CLICK_MODES: readonly string[] = [
-  'block-all',
-  'block-controls-only',
-  'allow-all',
-];
-
 /**
  * Migrate legacy `blockVideoControlClick` + `preciseVideoControlDetection`
  * booleans to the unified `videoClickMode` enum.
@@ -48,12 +42,10 @@ function migrateVideoClickMode(
   // Legacy fields are stripped by pruneWithTemplate in the caller
 
   // If the new field already exists with a valid value, keep it
-  if (typeof gallery.videoClickMode === 'string') {
-    if (VALID_VIDEO_CLICK_MODES.includes(gallery.videoClickMode)) {
-      return {};
-    }
-    // Invalid string — treat as unmigrated, fall through to legacy conversion
+  if (isVideoClickMode(gallery.videoClickMode)) {
+    return {};
   }
+  // Invalid values are treated as unmigrated and fall through to legacy conversion.
 
   // Convert legacy booleans to enum
   if (blockAll === false) {
@@ -79,17 +71,20 @@ export function migrateSettings(input: unknown, nowMs: number): AppSettings {
     } as AppSettings;
   }
 
-  const typed = input as Record<string, unknown>;
+  let migratedInput: Record<string, unknown> = input;
 
   // Migrate legacy video click mode before pruning (pruning strips old fields)
-  if (isRecord(typed.gallery)) {
-    const migration = migrateVideoClickMode(typed.gallery as Record<string, unknown>);
-    if (migration.videoClickMode) {
-      (typed.gallery as Record<string, unknown>).videoClickMode = migration.videoClickMode;
-    }
+  if (isRecord(input.gallery)) {
+    migratedInput = {
+      ...input,
+      gallery: {
+        ...input.gallery,
+        ...migrateVideoClickMode(input.gallery),
+      },
+    };
   }
 
-  const pruned = pruneWithTemplate(typed, DEFAULT_SETTINGS) as Partial<AppSettings>;
+  const pruned = pruneWithTemplate(migratedInput, DEFAULT_SETTINGS) as Partial<AppSettings>;
 
   const merged: Record<string, unknown> = { ...DEFAULT_SETTINGS, ...pruned };
   for (const key of ['gallery', 'toolbar', 'download', 'accessibility', 'features'] as const) {

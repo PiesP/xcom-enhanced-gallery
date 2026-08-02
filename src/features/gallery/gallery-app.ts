@@ -6,6 +6,7 @@
  */
 
 import type { GalleryRenderer } from '@features/gallery/gallery-renderer';
+import { clampIndex } from '@piesp/browser-core/util';
 import { getNotificationAdapter, notifySafely } from '@platform/index';
 import { tryGetSettings } from '@shared/container/settings-registry';
 import {
@@ -32,7 +33,6 @@ import {
   pauseAmbientVideosForGallery,
   startAmbientVideoGuard,
 } from '@shared/utils/media/ambient-video-coordinator';
-import { clampIndex } from '@shared/utils/types/number-utils';
 
 export class GalleryApp {
   private initialized = false;
