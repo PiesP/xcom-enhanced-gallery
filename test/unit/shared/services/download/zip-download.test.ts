@@ -64,4 +64,26 @@ describe('user-facing bulk ZIP download', () => {
       { url: 'https://pbs.twimg.com/media/missing.jpg', error: 'NET' },
     ]);
   });
+
+  it('propagates cancellation from a cooperative CRC32 yield', async () => {
+    const controller = new AbortController();
+    vi.stubGlobal('scheduler', {
+      yield: vi.fn(async () => {
+        controller.abort();
+      }),
+    });
+
+    await expect(
+      downloadAsZip(
+        [
+          {
+            url: 'https://pbs.twimg.com/media/large.jpg',
+            desiredName: 'large.jpg',
+            blob: new Blob([new Uint8Array(2 * 1024 * 1024)]),
+          },
+        ],
+        { signal: controller.signal }
+      )
+    ).rejects.toMatchObject({ name: 'AbortError' });
+  });
 });

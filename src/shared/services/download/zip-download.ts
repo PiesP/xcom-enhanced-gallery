@@ -139,7 +139,7 @@ export async function downloadAsZip(
         }
 
         // Write immediately to ZIP — avoids holding all files in memory
-        writer.addFile(filename, data);
+        await writer.addFile(filename, data, abortSignal ? { signal: abortSignal } : {});
         successful++;
       } catch (error) {
         throwIfAborted(abortSignal);

@@ -6,7 +6,10 @@
  * @description Pipelined file downloads and ZIP assembly with immediate Local File Headers
  */
 
+import { schedulerYield } from '@shared/utils/performance/scheduler-yield';
+
 const textEncoder = new TextEncoder();
+const CRC32_CHUNK_SIZE = 1024 * 1024;
 
 let crc32Table: Uint32Array | null = null;
 
@@ -45,16 +48,27 @@ function encodeUtf8(value: string): Uint8Array {
 }
 
 /**
- * Calculate CRC32 checksum using polynomial 0xEDB88320
+ * Calculate CRC32 checksum using polynomial 0xEDB88320 without monopolizing
+ * the main thread for a large single file.
  * @param data - Byte array to checksum
+ * @param signal - Optional cancellation signal
  * @returns 32-bit unsigned CRC32 value
  */
-function calculateCRC32(data: Uint8Array): number {
+async function calculateCRC32(data: Uint8Array, signal?: AbortSignal): Promise<number> {
   const table = ensureCRC32Table();
   let crc = 0xffffffff;
 
-  for (let i = 0; i < data.length; i++) {
-    crc = (crc >>> 8) ^ (table[(crc ^ data[i]!) & 0xff] as number);
+  for (let chunkStart = 0; chunkStart < data.length; chunkStart += CRC32_CHUNK_SIZE) {
+    signal?.throwIfAborted();
+    const chunkEnd = Math.min(chunkStart + CRC32_CHUNK_SIZE, data.length);
+    for (let i = chunkStart; i < chunkEnd; i++) {
+      crc = (crc >>> 8) ^ (table[(crc ^ data[i]!) & 0xff] as number);
+    }
+
+    if (chunkEnd < data.length) {
+      await schedulerYield(0);
+      signal?.throwIfAborted();
+    }
   }
 
   return (crc ^ 0xffffffff) >>> 0;
@@ -133,6 +147,7 @@ const concat = (arrays: readonly Uint8Array[]): Uint8Array => {
 export class StreamingZipWriter {
   private readonly chunks: Uint8Array[] = [];
   private readonly entries: FileEntry[] = [];
+  private pendingAdd: Promise<void> = Promise.resolve();
   private currentOffset = 0;
 
   /**
@@ -140,9 +155,27 @@ export class StreamingZipWriter {
    * Writes Local File Header + File Data immediately
    * @param filename - Name of file in archive
    * @param data - File content bytes
+   * @param options - Optional cancellation signal checked between CRC32 chunks
    * @throws Error if archive/entry would exceed Zip32 limits
    */
-  addFile(filename: string, data: Uint8Array): void {
+  addFile(
+    filename: string,
+    data: Uint8Array,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<void> {
+    const operation = this.pendingAdd.then(() =>
+      this.addFileInOrder(filename, data, options.signal)
+    );
+    this.pendingAdd = operation.catch(() => undefined);
+    return operation;
+  }
+
+  private async addFileInOrder(
+    filename: string,
+    data: Uint8Array,
+    signal?: AbortSignal
+  ): Promise<void> {
+    signal?.throwIfAborted();
     // Zip32-only: entry count fits in 16-bit EOCD fields, sizes in 32-bit fields
     assertZip32(
       this.entries.length < ZIP_CONST.MAX_UINT16 - 1,
@@ -156,7 +189,8 @@ export class StreamingZipWriter {
     );
 
     const filenameBytes = encodeUtf8(filename);
-    const crc32 = calculateCRC32(data);
+    const crc32 = await calculateCRC32(data, signal);
+    signal?.throwIfAborted();
 
     // Local File Header (30 bytes + filename length)
     const localHeader = concat([
