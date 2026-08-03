@@ -22,7 +22,7 @@ import { gallerySignals, navigateToItem } from '@shared/state/signals/gallery.si
 import { downloadState } from '@shared/state/signals/gallery-download-signals';
 import { computePreloadIndices } from '@shared/utils/performance/preload';
 import { cx } from '@shared/utils/text/formatting';
-import type { JSXElement } from 'solid-js';
+import type { Accessor, JSXElement } from 'solid-js';
 import { createEffect, createMemo, createSignal, For, splitProps } from 'solid-js';
 
 export interface VerticalGalleryViewProps {
@@ -133,10 +133,10 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   // Memoized callback factories for per-item refs
   // Avoids recreating closures on every parent render
   const createRegisterContainer =
-    (index: number) =>
+    (index: Accessor<number>) =>
     (element: HTMLElement | null): void =>
-      focus.registerItem(index, element);
-  const createHandleFocus = (index: number) => (): void => focus.handleItemFocus(index);
+      focus.registerItem(index(), element);
+  const createHandleFocus = (index: Accessor<number>) => (): void => focus.handleItemFocus(index());
 
   // Navigation handlers — previous/next, background click, media item click
   const { handlePrevious, handleNext, handleBackgroundClick, handleMediaItemClick } =
@@ -226,29 +226,21 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
         ref={(el) => setItemsContainerEl(el ?? null)}
       >
         <For each={mediaItems()}>
-          {(item, index) => {
-            const actualIndex = index();
-            const forcePreload = preloadIndices().includes(actualIndex);
-
-            return (
-              <VerticalImageItem
-                media={item}
-                index={actualIndex}
-                isActive={actualIndex === currentIndex()}
-                isFocused={actualIndex === focus.focusedIndex()}
-                forceVisible={forcePreload}
-                fitMode={imageFitMode}
-                onClick={() => handleMediaItemClick(actualIndex)}
-                onMediaLoad={handleMediaLoad}
-                className={cx(
-                  styles.galleryItem,
-                  actualIndex === currentIndex() && styles.itemActive
-                )}
-                registerContainer={createRegisterContainer(actualIndex)}
-                onFocus={createHandleFocus(actualIndex)}
-              />
-            );
-          }}
+          {(item, index) => (
+            <VerticalImageItem
+              media={item}
+              index={index()}
+              isActive={index() === currentIndex()}
+              isFocused={index() === focus.focusedIndex()}
+              forceVisible={preloadIndices().includes(index())}
+              fitMode={imageFitMode}
+              onClick={() => handleMediaItemClick(index())}
+              onMediaLoad={handleMediaLoad}
+              className={cx(styles.galleryItem, index() === currentIndex() && styles.itemActive)}
+              registerContainer={createRegisterContainer(index)}
+              onFocus={createHandleFocus(index)}
+            />
+          )}
         </For>
       </ul>
     </div>
