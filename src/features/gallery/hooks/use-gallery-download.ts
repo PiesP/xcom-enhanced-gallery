@@ -77,20 +77,9 @@ export function createDownloadHandler() {
       if (type === 'current') {
         const currentMedia = mediaItems[gallerySignals.currentIndex];
         if (currentMedia) {
-          let blob: Blob | undefined;
-          try {
-            const pending = mediaService.getDownloadMedia(currentMedia, signal);
-            if (pending) {
-              blob = await pending;
-            }
-          } catch {
-            // Ignore cache request failures; fall back to the direct download path.
-          }
-
-          const result = await downloadService.downloadSingle(currentMedia, {
-            ...(blob ? { blob } : {}),
-            signal,
-          });
+          // Single downloads are already demand-driven through the platform
+          // adapter. Avoid a duplicate Blob fetch that would delay GM_download.
+          const result = await downloadService.downloadSingle(currentMedia, { signal });
           if (!result.success && result.error !== USER_CANCELLED_MESSAGE) {
             const error = result.error || 'Unknown error';
             const title = languageService.translate('msg.dl.one.err.t');
