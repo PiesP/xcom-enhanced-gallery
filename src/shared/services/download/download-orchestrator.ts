@@ -128,7 +128,7 @@ export class DownloadOrchestrator {
 
       const plan = planBulkDownload({
         mediaItems,
-        prefetchedBlobs: options.prefetchedBlobs,
+        cachedBlobs: options.cachedBlobs,
         zipFilename: options.zipFilename,
         nowMs: Date.now(),
       });

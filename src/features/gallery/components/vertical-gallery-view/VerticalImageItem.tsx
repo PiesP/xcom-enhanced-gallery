@@ -79,8 +79,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   const isDisplaySrcValid = createMemo(() => isUrlAllowed(displaySrc(), MEDIA_URL_POLICY));
 
   // MED-2: Track both media.id and index to handle item reorder.
-  // <For> keys by index, so when items reorder the component instance
-  // persists but receives new props — track index to ensure reset.
+  // <For> keys by item identity, so a component persists across reorders
+  // while its reactive index prop changes — track both values to reset state.
   createEffect(() => {
     void local.media.id;
     void local.index;

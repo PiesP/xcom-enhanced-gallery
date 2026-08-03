@@ -18,7 +18,7 @@ export interface PlannedZipItem {
 
 interface BulkDownloadPlanningInput {
   readonly mediaItems: readonly MediaInfo[];
-  readonly prefetchedBlobs?: Map<string, Blob | Promise<Blob>> | undefined;
+  readonly cachedBlobs?: Map<string, Blob | Promise<Blob>> | undefined;
   readonly zipFilename?: string | undefined;
   readonly nowMs?: number | undefined;
 }
@@ -41,7 +41,7 @@ function generateZipName(items: readonly MediaInfo[], nowMs?: number): string {
 }
 
 /**
- * Plan the ZIP download: resolve desired names and associate optional prefetched blobs.
+ * Plan the ZIP download: resolve desired names and associate optional cached blobs.
  * @param input - Configuration for bulk download planning
  * @returns Plan containing items with URLs, filenames, and optional blobs, plus ZIP filename
  */
@@ -49,7 +49,7 @@ export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownload
   const items: PlannedZipItem[] = input.mediaItems.map((media) => ({
     url: media.url,
     desiredName: generateDesiredName(media, input.nowMs),
-    blob: input.prefetchedBlobs?.get(media.url),
+    blob: input.cachedBlobs?.get(media.url),
   }));
 
   const zipFilename = input.zipFilename ?? generateZipName(input.mediaItems, input.nowMs);

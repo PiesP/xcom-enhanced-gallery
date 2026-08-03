@@ -77,20 +77,9 @@ export function createDownloadHandler() {
       if (type === 'current') {
         const currentMedia = mediaItems[gallerySignals.currentIndex];
         if (currentMedia) {
-          let blob: Blob | undefined;
-          try {
-            const pending = mediaService.getCachedMedia(currentMedia.url);
-            if (pending) {
-              blob = await pending;
-            }
-          } catch {
-            // Ignore prefetch failures; fallback to network download.
-          }
-
-          const result = await downloadService.downloadSingle(currentMedia, {
-            ...(blob ? { blob } : {}),
-            signal,
-          });
+          // Single downloads are already demand-driven through the platform
+          // adapter. Avoid a duplicate Blob fetch that would delay GM_download.
+          const result = await downloadService.downloadSingle(currentMedia, { signal });
           if (!result.success && result.error !== USER_CANCELLED_MESSAGE) {
             const error = result.error || 'Unknown error';
             const title = languageService.translate('msg.dl.one.err.t');
@@ -105,16 +94,16 @@ export function createDownloadHandler() {
           );
         }
       } else {
-        const prefetchedBlobs = new Map<string, Blob | Promise<Blob>>();
+        const cachedBlobs = new Map<string, Blob | Promise<Blob>>();
         for (const item of mediaItems) {
           if (!item) continue;
-          const pending = mediaService.getCachedMedia(item.url);
+          const pending = mediaService.getDownloadMedia(item, signal);
           if (!pending) continue;
-          prefetchedBlobs.set(item.url, pending);
+          cachedBlobs.set(item.url, pending);
         }
 
         const result = await downloadService.downloadBulk([...mediaItems], {
-          ...(prefetchedBlobs.size > 0 ? { prefetchedBlobs } : {}),
+          ...(cachedBlobs.size > 0 ? { cachedBlobs } : {}),
           signal,
         });
 
