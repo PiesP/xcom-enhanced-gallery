@@ -31,7 +31,7 @@ export interface DownloadOptions {
   onProgress?: DownloadProgressCallback;
   zipFilename?: string;
   blob?: Blob;
-  prefetchedBlobs?: Map<string, Blob | Promise<Blob>>;
+  cachedBlobs?: Map<string, Blob | Promise<Blob>>;
 }
 
 export interface SingleDownloadResult {

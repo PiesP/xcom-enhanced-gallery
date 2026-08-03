@@ -103,12 +103,12 @@ export async function downloadAsZip(
       try {
         let data: Uint8Array;
         if (item.blob) {
-          // Try prefetched blob first; fall back to network on failure
+          // Try the demand-driven cache first; fall back to network on failure
           let blob: Blob | undefined;
           try {
             blob = item.blob instanceof Promise ? await item.blob : item.blob;
           } catch {
-            // Prefetch cache miss or expired blob — fall through to network
+            // Cache request failed or expired — fall through to network
           }
 
           if (blob) {

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { PREFETCH_CACHE_SIZE } from '@constants/performance';
-import { clampIndex } from '@piesp/browser-core/util';
-import { PrefetchManager } from '@shared/services/media/prefetch-manager';
+import { DOWNLOAD_CACHE_MAX_BYTES, DOWNLOAD_CACHE_MAX_ENTRIES } from '@constants/performance';
+import { DownloadMediaCache } from '@shared/services/media/download-media-cache';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import { createSingleton } from '@shared/services/singleton-base';
 import type {
@@ -14,7 +13,10 @@ import type {
 
 export class MediaService {
   private mediaExtraction: MediaExtractionService | null = null;
-  private readonly prefetchManager = new PrefetchManager(PREFETCH_CACHE_SIZE);
+  private downloadCache: DownloadMediaCache | null = new DownloadMediaCache(
+    DOWNLOAD_CACHE_MAX_ENTRIES,
+    DOWNLOAD_CACHE_MAX_BYTES
+  );
   private didCleanup = false;
   private _initialized = false;
 
@@ -22,6 +24,10 @@ export class MediaService {
   public async initialize(): Promise<void> {
     if (this._initialized) return;
     this.didCleanup = false;
+    this.downloadCache ??= new DownloadMediaCache(
+      DOWNLOAD_CACHE_MAX_ENTRIES,
+      DOWNLOAD_CACHE_MAX_BYTES
+    );
     this.mediaExtraction = new MediaExtractionService();
     this._initialized = true;
   }
@@ -43,7 +49,8 @@ export class MediaService {
     }
     this.didCleanup = true;
 
-    this.prefetchManager.destroy();
+    this.downloadCache?.destroy();
+    this.downloadCache = null;
   }
 
   async extractFromClickedElement(
@@ -51,44 +58,15 @@ export class MediaService {
     options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     if (!this.mediaExtraction) throw new Error('Media Extraction not initialized');
-    const result = await this.mediaExtraction.extractFromClickedElement(element, options);
-
-    if (result.success && result.mediaItems.length > 0) {
-      const items = result.mediaItems;
-      const clickedIndex = clampIndex(result.clickedIndex ?? 0, items.length);
-      const scheduled = new Set<string>();
-
-      // Immediate prefetch for the clicked item (current view)
-      const clickedItem = items[clickedIndex];
-      if (clickedItem) {
-        scheduled.add(clickedItem.url);
-        this.prefetchMedia(clickedItem, 'immediate');
-      }
-
-      // Idle prefetch for others (exclude clicked item; avoid duplicates)
-      items.forEach((item, index) => {
-        if (!item) return;
-        if (index === clickedIndex) return;
-        if (scheduled.has(item.url)) return;
-
-        scheduled.add(item.url);
-        this.prefetchMedia(item, 'idle');
-      });
-    }
-
-    return result;
+    return this.mediaExtraction.extractFromClickedElement(element, options);
   }
 
-  async prefetchMedia(media: MediaInfo, schedule: 'immediate' | 'idle' = 'idle'): Promise<void> {
-    return this.prefetchManager.prefetch(media, schedule);
+  getDownloadMedia(media: MediaInfo, signal?: AbortSignal): Promise<Blob> | null {
+    return this.downloadCache?.getOrFetch(media, signal) ?? null;
   }
 
-  getCachedMedia(url: string): Promise<Blob> | null {
-    return this.prefetchManager.get(url);
-  }
-
-  cancelAllPrefetch(): void {
-    this.prefetchManager.cancelAll();
+  cancelPendingMediaRequests(): void {
+    this.downloadCache?.cancelPending();
   }
 }
 

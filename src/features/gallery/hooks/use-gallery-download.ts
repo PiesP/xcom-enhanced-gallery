@@ -79,12 +79,12 @@ export function createDownloadHandler() {
         if (currentMedia) {
           let blob: Blob | undefined;
           try {
-            const pending = mediaService.getCachedMedia(currentMedia.url);
+            const pending = mediaService.getDownloadMedia(currentMedia, signal);
             if (pending) {
               blob = await pending;
             }
           } catch {
-            // Ignore prefetch failures; fallback to network download.
+            // Ignore cache request failures; fall back to the direct download path.
           }
 
           const result = await downloadService.downloadSingle(currentMedia, {
@@ -105,16 +105,16 @@ export function createDownloadHandler() {
           );
         }
       } else {
-        const prefetchedBlobs = new Map<string, Blob | Promise<Blob>>();
+        const cachedBlobs = new Map<string, Blob | Promise<Blob>>();
         for (const item of mediaItems) {
           if (!item) continue;
-          const pending = mediaService.getCachedMedia(item.url);
+          const pending = mediaService.getDownloadMedia(item, signal);
           if (!pending) continue;
-          prefetchedBlobs.set(item.url, pending);
+          cachedBlobs.set(item.url, pending);
         }
 
         const result = await downloadService.downloadBulk([...mediaItems], {
-          ...(prefetchedBlobs.size > 0 ? { prefetchedBlobs } : {}),
+          ...(cachedBlobs.size > 0 ? { cachedBlobs } : {}),
           signal,
         });
 

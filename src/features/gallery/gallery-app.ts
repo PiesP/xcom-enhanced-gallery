@@ -182,9 +182,9 @@ export class GalleryApp {
     disposeKeyboardDebouncer();
     // R3: Do NOT call getMediaService().destroy() — MediaService is a global
     // singleton shared across the application. Destroying it here would break
-    // other consumers and prevent gallery re-open. Instead, just cancel
-    // in-flight prefetch requests scoped to this gallery session.
-    getMediaService().cancelAllPrefetch();
+    // other consumers and prevent gallery re-open. Instead, cancel only
+    // demand-driven media requests scoped to this gallery session.
+    getMediaService().cancelPendingMediaRequests();
 
     this.initialized = false;
     delete (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug;
