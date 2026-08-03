@@ -80,6 +80,20 @@ describe('DownloadMediaCache', () => {
     cache.destroy();
   });
 
+  it('removes a failed request so the download path can retry', async () => {
+    http.get
+      .mockRejectedValueOnce(new Error('cache request failed'))
+      .mockResolvedValueOnce({ ok: true, status: 200, data: new Blob(['retry']) });
+    const cache = new DownloadMediaCache();
+    const item = media('retry');
+
+    await expect(cache.getOrFetch(item)).rejects.toThrow('cache request failed');
+    await expect(cache.getOrFetch(item)).resolves.toBeInstanceOf(Blob);
+
+    expect(http.get).toHaveBeenCalledTimes(2);
+    cache.destroy();
+  });
+
   it('propagates caller cancellation and does not revive the cache after teardown', async () => {
     const response = deferredResponse();
     let requestSignal: AbortSignal | undefined;

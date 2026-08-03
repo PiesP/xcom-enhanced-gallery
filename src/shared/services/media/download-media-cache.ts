@@ -140,6 +140,10 @@ export class DownloadMediaCache {
         }
       });
 
+    // Bulk downloads collect several promises before workers await them. Observe
+    // early failures now so they cannot surface as unhandled rejections; callers
+    // still receive the original rejecting promise and use the network fallback.
+    void cachePromise.catch(() => undefined);
     this.cache.set(url, cachePromise);
     this.addToLRU(url);
     return cachePromise;
