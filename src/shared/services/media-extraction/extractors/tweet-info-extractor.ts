@@ -15,20 +15,42 @@ import { extractUsernameFromUrl, isHostMatching, TWITTER_HOSTS } from '@shared/u
 type ExtractionStrategy = (element: HTMLElement) => TweetInfo | null;
 
 const DEFAULT_TWEET_ORIGIN = 'https://x.com';
+const STATUS_PATH_PATTERN = /\/status\/(\d+)(?:\/|$)/u;
 
-const normalizeTweetUrl = (inputUrl: string): string => {
+interface TrustedStatusLink {
+  readonly tweetId: string;
+  readonly username: string;
+  readonly tweetUrl: string;
+}
+
+const parseTrustedStatusLink = (inputUrl: string): TrustedStatusLink | null => {
   try {
     const url = new URL(inputUrl, DEFAULT_TWEET_ORIGIN);
-    // Normalize all Twitter/X hostnames to x.com using SSOT
-    if (isHostMatching(url, TWITTER_HOSTS, { allowSubdomains: true })) {
-      url.hostname = 'x.com';
-      url.protocol = 'https:';
+    if (
+      !isHostMatching(url, TWITTER_HOSTS, { allowSubdomains: true }) ||
+      (url.protocol !== 'https:' && url.protocol !== 'http:')
+    ) {
+      return null;
     }
 
-    return url.toString();
+    const match = url.pathname.match(STATUS_PATH_PATTERN);
+    const tweetId = match?.[1];
+    if (!tweetId) return null;
+
+    // Normalize all trusted Twitter/X links to a credential-free x.com URL.
+    url.protocol = 'https:';
+    url.hostname = 'x.com';
+    url.port = '';
+    url.username = '';
+    url.password = '';
+
+    return {
+      tweetId,
+      username: extractUsernameFromUrl(url.toString(), { strictHost: true }) ?? 'unknown',
+      tweetUrl: url.toString(),
+    };
   } catch {
-    // Fall back to a safe absolute URL for relative paths.
-    return inputUrl.startsWith('/') ? `${DEFAULT_TWEET_ORIGIN}${inputUrl}` : inputUrl;
+    return null;
   }
 };
 
@@ -53,12 +75,10 @@ const extractFromElement: ExtractionStrategy = (element) => {
   // 2. href attribute (e.g. timestamp link)
   const href = element.getAttribute('href');
   if (href) {
-    const match = href.match(/\/status\/(\d+)/);
-    if (match?.[1]) {
+    const link = parseTrustedStatusLink(href);
+    if (link) {
       return {
-        tweetId: match[1],
-        username: extractUsernameFromUrl(href) ?? 'unknown',
-        tweetUrl: normalizeTweetUrl(href),
+        ...link,
         extractionMethod: 'element-href',
         confidence: 0.8,
       };
@@ -80,16 +100,11 @@ const extractFromDOM: ExtractionStrategy = (element) => {
   const href = statusLink.getAttribute('href');
   if (!href) return null;
 
-  const match = href.match(/\/status\/(\d+)/);
-  if (!match?.[1]) return null;
-
-  const tweetId = match[1];
-  const username = extractUsernameFromUrl(href) ?? 'unknown';
+  const link = parseTrustedStatusLink(href);
+  if (!link) return null;
 
   return {
-    tweetId,
-    username,
-    tweetUrl: normalizeTweetUrl(href),
+    ...link,
     extractionMethod: 'dom-structure',
     confidence: 0.85,
     metadata: { containerTag: container.tagName.toLowerCase() },
@@ -105,17 +120,11 @@ const extractFromMediaGridItem: ExtractionStrategy = (element) => {
   const href = link.getAttribute('href');
   if (!href) return null;
 
-  // Match /status/ID
-  const match = href.match(/\/status\/(\d+)/);
-  if (!match?.[1]) return null;
-
-  const tweetId = match[1];
-  const username = extractUsernameFromUrl(href) ?? 'unknown';
+  const trustedLink = parseTrustedStatusLink(href);
+  if (!trustedLink) return null;
 
   return {
-    tweetId,
-    username,
-    tweetUrl: normalizeTweetUrl(href),
+    ...trustedLink,
     extractionMethod: 'media-grid-item',
     confidence: 0.8,
   };
