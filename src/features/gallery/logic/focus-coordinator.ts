@@ -3,8 +3,10 @@
 
 /** @fileoverview Scroll-based focus selection via IntersectionObserver. Selects most visible gallery item. */
 
-import { FOCUS_VISIBILITY_RATIO_THRESHOLD } from '@constants/media';
-import { FOCUS_TOP_PROXIMITY_PX } from '@constants/performance';
+import {
+  type FocusItemRect,
+  selectBestFocusCandidate,
+} from '@features/gallery/logic/focus-candidate-selection';
 import { SharedObserver } from '@shared/utils/performance/observer-pool';
 import type { Accessor } from 'solid-js';
 
@@ -24,11 +26,6 @@ interface TrackedItem {
   unsubscribe?: () => void;
 }
 
-interface FocusCandidate {
-  readonly index: number;
-  readonly distance: number;
-}
-
 interface ObserverOptions {
   readonly threshold: number | number[];
   readonly rootMargin: string;
@@ -37,7 +34,6 @@ interface ObserverOptions {
 const DEFAULTS = {
   THRESHOLD: [0, 0.5, 1.0],
   ROOT_MARGIN: '0px',
-  TOP_PROXIMITY: FOCUS_TOP_PROXIMITY_PX,
 } as const;
 
 export class FocusCoordinator {
@@ -96,7 +92,11 @@ export class FocusCoordinator {
       this._rafId = null;
       const container = this.options.container();
       if (!container) return;
-      const selection = this.selectBestCandidate(container.getBoundingClientRect());
+      const containerRect = container.getBoundingClientRect();
+      const selection = selectBestFocusCandidate(
+        { top: containerRect.top, height: containerRect.height },
+        this.collectVisibleItemRects()
+      );
       if (!selection) return;
       if (this.options.activeIndex() !== selection.index) {
         this.options.onFocusChange(selection.index, 'auto');
@@ -113,75 +113,14 @@ export class FocusCoordinator {
     this.items.clear();
   }
 
-  private selectBestCandidate(containerRect: DOMRect): FocusCandidate | null {
-    const viewportHeight = Math.max(containerRect.height, 1);
-    const viewportTop = containerRect.top;
-    const viewportBottom = viewportTop + viewportHeight;
-    const viewportCenter = viewportTop + viewportHeight / 2;
-    const topProximityThreshold = DEFAULTS.TOP_PROXIMITY;
-
-    // Batch-read all rects first to avoid layout thrashing from individual
-    // getBoundingClientRect() calls interleaved with computation.
-    const itemRects = new Map<
-      number,
-      { top: number; height: number; bottom: number; center: number }
-    >();
+  /** Batch DOM reads before passing immutable measurements to the pure ranker. */
+  private collectVisibleItemRects(): FocusItemRect[] {
+    const itemRects: FocusItemRect[] = [];
     for (const [index, item] of this.items) {
       if (!item.isVisible || !item.element.isConnected) continue;
       const rect = item.element.getBoundingClientRect();
-      const top = rect.top;
-      const height = rect.height;
-      itemRects.set(index, { top, height, bottom: top + height, center: top + height / 2 });
+      itemRects.push({ index, top: rect.top, height: rect.height });
     }
-
-    let bestCandidate: FocusCandidate | null = null;
-    let topAlignedCandidate: FocusCandidate | null = null;
-    let highestVisibilityCandidate: {
-      index: number;
-      ratio: number;
-      centerDistance: number;
-    } | null = null;
-
-    for (const [index, itemRect] of itemRects) {
-      const itemTop = itemRect.top;
-      const itemHeight = itemRect.height;
-      const itemBottom = itemRect.bottom;
-      const itemCenter = itemRect.center;
-
-      const visibleTop = Math.max(itemTop, viewportTop);
-      const visibleBottom = Math.min(itemBottom, viewportBottom);
-      const visibleHeight = Math.max(0, visibleBottom - visibleTop);
-      const visibilityRatio = itemHeight > 0 ? visibleHeight / itemHeight : 0;
-      const centerDistance = Math.abs(itemCenter - viewportCenter);
-
-      const topDistance = Math.abs(itemTop - viewportTop);
-      if (
-        topDistance <= topProximityThreshold &&
-        visibilityRatio > FOCUS_VISIBILITY_RATIO_THRESHOLD
-      ) {
-        if (!topAlignedCandidate || topDistance < topAlignedCandidate.distance) {
-          topAlignedCandidate = { index, distance: topDistance };
-        }
-      }
-
-      if (visibilityRatio > FOCUS_VISIBILITY_RATIO_THRESHOLD) {
-        const isBetter =
-          !highestVisibilityCandidate ||
-          visibilityRatio > highestVisibilityCandidate.ratio ||
-          (visibilityRatio === highestVisibilityCandidate.ratio &&
-            centerDistance < highestVisibilityCandidate.centerDistance);
-        if (isBetter) {
-          highestVisibilityCandidate = { index, ratio: visibilityRatio, centerDistance };
-        }
-      }
-
-      if (!bestCandidate || centerDistance < bestCandidate.distance) {
-        bestCandidate = { index, distance: centerDistance };
-      }
-    }
-
-    if (topAlignedCandidate) return topAlignedCandidate;
-    if (highestVisibilityCandidate) return { index: highestVisibilityCandidate.index, distance: 0 };
-    return bestCandidate;
+    return itemRects;
   }
 }

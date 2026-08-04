@@ -14,15 +14,16 @@ import { logger } from '@shared/logging/logger';
  * For this project: 2 unique configs → exactly 2 observers (not N+V).
  */
 
-/** Map from serialized options → shared observer + per-element callbacks. */
-const observerPool = new Map<
-  string,
-  {
-    readonly observer: IntersectionObserver;
-    readonly callbacks: WeakMap<Element, (entry: IntersectionObserverEntry) => void>;
-    readonly refCount: Map<Element, number>; // one element can be observed multiple times
-  }
->();
+type ObserverCallback = (entry: IntersectionObserverEntry) => void;
+
+interface ObserverPoolEntry {
+  readonly observer: IntersectionObserver;
+  readonly callbacks: Map<Element, Map<number, ObserverCallback>>;
+  nextSubscriptionId: number;
+}
+
+/** Map from serialized options → shared observer + per-element subscriptions. */
+const observerPool = new Map<string, ObserverPoolEntry>();
 
 /** Serialize options into a stable key (sorted keys for determinism). */
 function optionsKey(options: IntersectionObserverInit): string {
@@ -38,14 +39,6 @@ function optionsKey(options: IntersectionObserverInit): string {
   return `t:${t}|m:${rootMargin}`;
 }
 
-/** Reset the shared observer pool — clears all observers for test isolation. */
-export function resetSharedObserverPool(): void {
-  for (const poolEntry of observerPool.values()) {
-    poolEntry.observer.disconnect();
-  }
-  observerPool.clear();
-}
-
 export const SharedObserver = {
   observe(
     element: Element,
@@ -56,8 +49,7 @@ export const SharedObserver = {
 
     let entry = observerPool.get(key);
     if (!entry) {
-      const callbacks = new WeakMap<Element, (entry: IntersectionObserverEntry) => void>();
-      const refCount = new Map<Element, number>();
+      const callbacks = new Map<Element, Map<number, ObserverCallback>>();
 
       const observer = new IntersectionObserver((entries) => {
         for (const e of entries) {
@@ -66,12 +58,17 @@ export const SharedObserver = {
           const isConnected = e.target.isConnected;
           if (!isConnected) {
             callbacks.delete(e.target);
-            refCount.delete(e.target);
-            // Don't call unobserve — the observer itself will stop tracking it.
+            observer.unobserve(e.target);
+            if (callbacks.size === 0) {
+              observer.disconnect();
+              const currentEntry = observerPool.get(key);
+              if (currentEntry?.observer === observer) observerPool.delete(key);
+            }
             continue;
           }
-          const cb = callbacks.get(e.target);
-          if (cb) {
+          const targetCallbacks = callbacks.get(e.target);
+          if (!targetCallbacks) continue;
+          for (const cb of [...targetCallbacks.values()]) {
             try {
               cb(e);
             } catch (error) {
@@ -81,18 +78,19 @@ export const SharedObserver = {
         }
       }, options);
 
-      entry = { observer, callbacks, refCount };
+      entry = { observer, callbacks, nextSubscriptionId: 0 };
       observerPool.set(key, entry);
     }
 
-    const alreadyTracked = entry.callbacks.has(element);
-
-    entry.callbacks.set(element, callback);
-    entry.refCount.set(element, (entry.refCount.get(element) ?? 0) + 1);
-
-    if (!alreadyTracked) {
-      entry.observer.observe(element);
+    const observedEntry = entry;
+    let targetCallbacks = observedEntry.callbacks.get(element);
+    if (!targetCallbacks) {
+      targetCallbacks = new Map<number, ObserverCallback>();
+      observedEntry.callbacks.set(element, targetCallbacks);
+      observedEntry.observer.observe(element);
     }
+    const subscriptionId = observedEntry.nextSubscriptionId++;
+    targetCallbacks.set(subscriptionId, callback);
 
     let disposed = false;
 
@@ -101,23 +99,19 @@ export const SharedObserver = {
       disposed = true;
 
       const poolEntry = observerPool.get(key);
-      if (!poolEntry) return;
+      if (poolEntry !== observedEntry) return;
 
-      // Decrement ref count; if this element is still observed by another caller, keep it
-      const count = (poolEntry.refCount.get(element) ?? 1) - 1;
-      if (count <= 0) {
+      const currentCallbacks = poolEntry.callbacks.get(element);
+      if (!currentCallbacks) return;
+      currentCallbacks.delete(subscriptionId);
+      if (currentCallbacks.size === 0) {
         // Last disposer for this element — actually unobserve
         poolEntry.callbacks.delete(element);
-        poolEntry.refCount.delete(element);
         poolEntry.observer.unobserve(element);
-      } else {
-        poolEntry.refCount.set(element, count);
-        // Remaining callers still track this element — do NOT re-observe
-        // (the observer is already tracking it).
       }
 
       // If no more elements tracked by this observer, clean it up
-      if (poolEntry.refCount.size === 0) {
+      if (poolEntry.callbacks.size === 0) {
         poolEntry.observer.disconnect();
         observerPool.delete(key);
       }
@@ -139,7 +133,7 @@ export const SharedObserver = {
     for (const [key, poolEntry] of observerPool) {
       // Collect elements that are no longer connected
       const stale: Element[] = [];
-      for (const element of poolEntry.refCount.keys()) {
+      for (const element of poolEntry.callbacks.keys()) {
         if (!element.isConnected) {
           stale.push(element);
         }
@@ -147,12 +141,11 @@ export const SharedObserver = {
       // Remove stale elements
       for (const element of stale) {
         poolEntry.callbacks.delete(element);
-        poolEntry.refCount.delete(element);
         poolEntry.observer.unobserve(element);
         cleaned++;
       }
       // Remove empty observers from the pool
-      if (poolEntry.refCount.size === 0) {
+      if (poolEntry.callbacks.size === 0) {
         poolEntry.observer.disconnect();
         observerPool.delete(key);
       }
