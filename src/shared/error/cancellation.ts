@@ -7,8 +7,6 @@
 
 import { createAbortError } from '@piesp/browser-core/error';
 
-export { getErrorMessage, isCancellationError, mergeAbortSignals } from '@piesp/browser-core/error';
-
 export const USER_CANCELLED_MESSAGE = 'Download cancelled by user' as const;
 
 export function isAbortError(value: unknown): boolean {

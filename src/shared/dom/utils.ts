@@ -312,35 +312,3 @@ export function isGalleryInternalElement(element: Element | null): boolean {
     return element.matches(selector) || element.closest(selector) !== null;
   });
 }
-
-/**
- * Check if a click event targets a video element or any of its descendants.
- *
- * Uses both `Element.contains()` and `Event.composedPath()` for robustness
- * with Shadow DOM and nested components. Returns true when the click
- * is on the video element itself or any of its children (including native
- * controls rendered by the browser).
- *
- * @param event - The click event
- * @param video - The video element to check against
- * @returns true if the click target is inside the video element
- */
-export function isClickOnVideoElement(event: MouseEvent, video: HTMLVideoElement): boolean {
-  if (event.target instanceof Node && video.contains(event.target)) return true;
-
-  if (typeof event.composedPath === 'function') {
-    try {
-      const path = event.composedPath();
-      if (Array.isArray(path)) {
-        for (const pathTarget of path) {
-          if (pathTarget === video) return true;
-          if (pathTarget instanceof Node && video.contains(pathTarget)) return true;
-        }
-      }
-    } catch {
-      // composedPath() may throw; fall through
-    }
-  }
-
-  return false;
-}
