@@ -8,6 +8,8 @@ const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8
   devDependencies: Record<string, string>;
 };
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yaml'), 'utf8');
+const deepWorkflow = readFileSync(resolve(root, '.github/workflows/deep-checks.yaml'), 'utf8');
+const securityWorkflow = readFileSync(resolve(root, '.github/workflows/security.yaml'), 'utf8');
 
 describe('tooling configuration', () => {
   it.each(['stryker.conf.json', 'stryker.conf.fast.json'])(
@@ -48,6 +50,48 @@ describe('tooling configuration', () => {
       expect(script).not.toMatch(/\bnpx\b|pnpm exec tsx\b|\brimraf\b/);
     }
     expect(packageJson.scripts['check:versions']).toContain('node --experimental-strip-types');
+  });
+
+  it('enforces and preserves actionable reports for the fast mutation gate', () => {
+    const config = JSON.parse(
+      readFileSync(resolve(root, 'stryker.conf.fast.json'), 'utf8')
+    ) as {
+      mutate: string[];
+      reporters: string[];
+      thresholds: { high: number; low: number; break: number | null };
+      mutator: { excludedMutations: string[] };
+    };
+
+    expect(config.mutate).toEqual(
+      expect.arrayContaining([
+        'src/shared/services/media/twitter-api-client.ts',
+        'src/shared/services/media/media-factory.ts',
+        'src/shared/services/media-extraction/determine-clicked-index.ts',
+        'src/shared/services/media-extraction/media-extraction-service.ts',
+        'src/shared/services/media-extraction/extractors/twitter-api-extractor.ts',
+      ])
+    );
+    expect(config.reporters).toEqual(
+      expect.arrayContaining(['progress', 'clear-text', 'json', 'html'])
+    );
+    expect(config.thresholds.break).toBeGreaterThanOrEqual(30);
+    expect(config.thresholds.low).toBeGreaterThan(config.thresholds.break ?? 0);
+    expect(config.thresholds.high).toBeGreaterThan(config.thresholds.low);
+    expect(config.mutator.excludedMutations).not.toEqual(
+      expect.arrayContaining(['ConditionalExpression', 'EqualityOperator', 'BooleanLiteral'])
+    );
+    expect(packageJson.scripts['mut:fast']).not.toContain('--reporters');
+    expect(deepWorkflow).toContain('path: reports/mutation/');
+    expect(deepWorkflow).toContain('if-no-files-found: error');
+  });
+
+  it('scans the exact default-branch push with OSV and Semgrep', () => {
+    const osvJob = securityWorkflow.match(/osv-scan-dispatch:[\s\S]*?codeql:/)?.[0] ?? '';
+    const semgrepJob = securityWorkflow.match(/semgrep:[\s\S]*?report-pr-gate-statuses:/)?.[0] ?? '';
+
+    expect(osvJob).toContain("github.event_name == 'push'");
+    expect(semgrepJob).toContain("github.event_name == 'push'");
+    expect(semgrepJob).toContain('semgrep/semgrep:1.172.0@sha256:');
   });
 
   it('lets pnpm run extension prebuild hooks exactly once', () => {

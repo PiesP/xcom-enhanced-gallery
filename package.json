@@ -26,7 +26,7 @@
     "build:all:ci": "pnpm -s check:versions && pnpm -s build:ci && pnpm -s build:extension:ci && pnpm -s build:extension:firefox:ci",
     "clean": "node --experimental-strip-types scripts/build/clean.ts",
     "mut": "stryker run --reporters=progress",
-    "mut:fast": "stryker run stryker.conf.fast.json --reporters=progress",
+    "mut:fast": "stryker run stryker.conf.fast.json",
     "check:src": "tsc --noEmit",
     "check": "pnpm check:src",
     "check:versions": "node --experimental-strip-types scripts/release/version.ts check",

@@ -1,7 +1,7 @@
 name: 🔒 Security Scanning
 
 # Responsibility: Security analysis for Node.js + pnpm project
-# - Default branch/PR/merge queue: CodeQL for Actions and JavaScript/TypeScript
+# - Default branch/PR/merge queue: CodeQL, OSV, and Semgrep
 # - PR gate: OSV diff scan
 # - Merge queue/manual gate: OSV full scan
 # - Scheduled/manual depth: pinned-tool freshness + OSV full scan + Semgrep SARIF
@@ -140,7 +140,7 @@ jobs:
 
   osv-scan-dispatch:
     name: pr-gate/osv / osv-scan
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || github.event_name == 'schedule' }}
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || github.event_name == 'schedule' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -218,14 +218,14 @@ jobs:
     name: pr-gate/semgrep
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
     permissions:
       contents: read
       security-events: write
-    # semgrep/semgrep:1.171.0 — last checked: 2026-07-28
+    # semgrep/semgrep:1.172.0 (linux/amd64) — last checked: 2026-08-04
     # Check for updates: https://github.com/semgrep/semgrep/releases
     container:
-      image: semgrep/semgrep:1.171.0@sha256:296fc4912420833abfcf5090ec49a81bf1330bb61fc193cd09255f88b8267ba9
+      image: semgrep/semgrep:1.172.0@sha256:a8298d1c09c84b9a0bbc75ec915e37023fc4657360b6dbfa645261d2353a366c
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
