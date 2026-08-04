@@ -5,7 +5,7 @@ import { MAX_ANCESTOR_HOPS } from '@constants/performance';
 import { logger } from '@shared/logging/logger';
 import type { MediaInfo } from '@shared/types/media.types';
 import {
-  extractMediaUrlFromElement,
+  extractMediaUrlCandidatesFromElement,
   findMediaElementInDOM,
 } from '@shared/utils/media/media-element-utils';
 import { normalizeMediaUrl } from '@shared/utils/media/media-url-utils';
@@ -15,15 +15,18 @@ export function determineClickedIndex(
   mediaItems: MediaInfo[]
 ): number {
   try {
-    const elementUrl = resolveClickedElementUrl(clickedElement);
-    if (!elementUrl) return 0;
+    const normalizedElementUrls = resolveClickedElementUrls(clickedElement)
+      .map((url) => normalizeMediaUrl(url))
+      .filter((url): url is string => !!url);
+    if (normalizedElementUrls.length === 0) return 0;
 
-    const normalizedElementUrl = normalizeMediaUrl(elementUrl);
-    if (!normalizedElementUrl) return 0;
+    const clickedCandidates = new Set(normalizedElementUrls);
 
     const index = mediaItems.findIndex((item) => {
       if (!item) return false;
-      return getNormalizedMediaCandidates(item).includes(normalizedElementUrl);
+      return getNormalizedMediaCandidates(item).some((candidate) =>
+        clickedCandidates.has(candidate)
+      );
     });
 
     return index >= 0 ? index : 0;
@@ -35,13 +38,13 @@ export function determineClickedIndex(
   }
 }
 
-function resolveClickedElementUrl(clickedElement: HTMLElement): string | null {
+function resolveClickedElementUrls(clickedElement: HTMLElement): string[] {
   const mediaElement = findMediaElementInDOM(clickedElement);
-  const elementUrl = mediaElement ? extractMediaUrlFromElement(mediaElement) : null;
-  if (elementUrl) return elementUrl;
+  const urls = mediaElement ? extractMediaUrlCandidatesFromElement(mediaElement) : [];
 
   const fallbackTarget = mediaElement ?? clickedElement;
-  return extractBackgroundImageUrl(fallbackTarget, MAX_ANCESTOR_HOPS);
+  const backgroundUrl = extractBackgroundImageUrl(fallbackTarget, MAX_ANCESTOR_HOPS);
+  return backgroundUrl ? [...urls, backgroundUrl] : urls;
 }
 
 function extractBackgroundImageUrl(

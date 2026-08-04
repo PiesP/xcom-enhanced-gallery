@@ -88,7 +88,7 @@ const extractFromElement: ExtractionStrategy = (element) => {
   return null;
 };
 
-/** Strategy 2: DOM Structure (Most Reliable) */
+/** Strategy 3: Tweet container fallback */
 const extractFromDOM: ExtractionStrategy = (element) => {
   const container = closestWithFallback<HTMLElement>(element, TWEET_CONTAINER_SELECTORS);
   if (!container) return null;
@@ -111,10 +111,10 @@ const extractFromDOM: ExtractionStrategy = (element) => {
   };
 };
 
-/** Strategy 3: Media Grid Item (For Media Tab) */
+/** Strategy 2: Status link enclosing the clicked media */
 const extractFromMediaGridItem: ExtractionStrategy = (element) => {
-  // On media tabs, images are wrapped in links like /User/status/ID/photo/1
-  const link = element.closest('a');
+  // Media links use paths such as /User/status/ID/photo/1 or /video/1.
+  const link = element.closest(STATUS_LINK_SELECTOR);
   if (!link) return null;
 
   const href = link.getAttribute('href');
@@ -136,8 +136,8 @@ const extractFromMediaGridItem: ExtractionStrategy = (element) => {
 
 const strategies: readonly ExtractionStrategy[] = [
   extractFromElement,
-  extractFromDOM,
   extractFromMediaGridItem,
+  extractFromDOM,
 ];
 
 function isValidTweetInfo(info: TweetInfo): boolean {
@@ -146,7 +146,7 @@ function isValidTweetInfo(info: TweetInfo): boolean {
 
 /**
  * Extract tweet info from a DOM element using a strategy pipeline.
- * Tries strategies in order: element attributes → DOM structure → media grid.
+ * Tries strategies in order: element attributes → enclosing status link → tweet container.
  */
 function extractTweetInfo(element: HTMLElement): TweetInfo | null {
   for (const strategy of strategies) {
