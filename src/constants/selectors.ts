@@ -10,8 +10,6 @@ const VIDEO_PLAYER_SELECTOR = '[data-testid="videoPlayer"]' as const;
 export const VIDEO_PLAYER_CONTEXT_SELECTOR =
   `${VIDEO_PLAYER_SELECTOR},[data-testid="videoComponent"],[data-testid="videoPlayerControls"],[data-testid="videoPlayerOverlay"],[role="application"],[aria-label*="Video"]` as const;
 export const STATUS_LINK_SELECTOR = 'a[href*="/status/"]' as const;
-export const TWITTER_MEDIA_SELECTOR =
-  'img[src*="pbs.twimg.com"], video[src*="video.twimg.com"]' as const;
 export const TWEET_CONTAINER_SELECTORS = [TWEET_SELECTOR, 'article[role="article"]'] as const;
 export const MEDIA_CONTAINER_SELECTORS = [TWEET_PHOTO_SELECTOR, VIDEO_PLAYER_SELECTOR] as const;
 export const VIDEO_CONTAINER_SELECTORS = [VIDEO_PLAYER_SELECTOR, 'video'] as const;
