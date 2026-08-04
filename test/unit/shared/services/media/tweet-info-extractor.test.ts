@@ -65,4 +65,29 @@ describe('TweetInfoExtractor hostile DOM boundaries', () => {
       tweetUrl: expected,
     });
   });
+
+  it('prefers the status link containing the clicked quote-tweet video', () => {
+    const target = renderTarget(
+      [
+        '<article data-testid="tweet">',
+        '  <a href="/original/status/111/photo/1">',
+        '    <img src="https://pbs.twimg.com/media/original.jpg" alt="quoted original image">',
+        '  </a>',
+        '  <a href="/author/status/222/video/1">',
+        '    <div data-testid="videoPlayer">',
+        '      <video id="target" poster="https://pbs.twimg.com/ext_tw_video_thumb/video.jpg"></video>',
+        '    </div>',
+        '  </a>',
+        '</article>',
+      ].join(''),
+      '#target'
+    );
+
+    expect(extractor.extract(target)).toMatchObject({
+      tweetId: '222',
+      username: 'author',
+      tweetUrl: 'https://x.com/author/status/222/video/1',
+      extractionMethod: 'media-grid-item',
+    });
+  });
 });

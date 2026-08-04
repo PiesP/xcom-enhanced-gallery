@@ -66,13 +66,17 @@ export function findMediaElementInDOM(
 }
 
 export function extractMediaUrlFromElement(element: MediaElement): string | null {
+  return extractMediaUrlCandidatesFromElement(element)[0] ?? null;
+}
+
+export function extractMediaUrlCandidatesFromElement(element: MediaElement): string[] {
   const isImage = element instanceof HTMLImageElement;
 
   if (isImage) {
     const attr = element.getAttribute('src');
     const current = element.currentSrc || null;
     const resolved = attr ? element.src : null;
-    return pickFirstTruthy([current, resolved, attr]);
+    return collectUniqueTruthy([current, resolved, attr]);
   }
 
   const attr = element.getAttribute('src');
@@ -80,7 +84,7 @@ export function extractMediaUrlFromElement(element: MediaElement): string | null
   const current = element.currentSrc || null;
   const resolved = attr ? element.src : null;
   const posterResolved = posterAttr ? element.poster : null;
-  return pickFirstTruthy([current, resolved, attr, posterResolved, posterAttr]);
+  return collectUniqueTruthy([current, resolved, attr, posterResolved, posterAttr]);
 }
 
 function findMediaDescendant(
@@ -112,9 +116,10 @@ function findMediaDescendant(
   return null;
 }
 
-function pickFirstTruthy(values: Array<string | null | undefined>): string | null {
+function collectUniqueTruthy(values: Array<string | null | undefined>): string[] {
+  const result: string[] = [];
   for (const value of values) {
-    if (value) return value;
+    if (value && !result.includes(value)) result.push(value);
   }
-  return null;
+  return result;
 }
