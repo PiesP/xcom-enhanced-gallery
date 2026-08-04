@@ -5,21 +5,15 @@ import { chromium, expect, test } from '@playwright/test';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-
-const root = resolve(import.meta.dirname, '../../..');
-const chromeExtensionDir = resolve(root, 'dist-extension');
-const firefoxExtensionDir = resolve(root, 'dist-extension-firefox');
-const mockGalleryPage = readFileSync(
-  resolve(root, 'test/e2e/fixtures/mock-gallery-page.html'),
-  'utf8'
-);
-const mockImage = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
-  'base64'
-);
+import {
+  CHROME_EXTENSION_DIR,
+  FIREFOX_EXTENSION_DIR,
+  MOCK_GALLERY_HTML,
+  MOCK_IMAGE,
+} from '../fixtures/artifacts';
 
 test.beforeAll(() => {
-  for (const directory of [chromeExtensionDir, firefoxExtensionDir]) {
+  for (const directory of [CHROME_EXTENSION_DIR, FIREFOX_EXTENSION_DIR]) {
     if (!existsSync(resolve(directory, 'manifest.json'))) {
       throw new Error(`Extension build missing at ${directory}`);
     }
@@ -35,17 +29,17 @@ test('loads the Chrome extension and opens the gallery from a content-script cli
     channel: 'chromium',
     headless: true,
     args: [
-      `--disable-extensions-except=${chromeExtensionDir}`,
-      `--load-extension=${chromeExtensionDir}`,
+      `--disable-extensions-except=${CHROME_EXTENSION_DIR}`,
+      `--load-extension=${CHROME_EXTENSION_DIR}`,
     ],
   });
 
   try {
     await context.route('https://x.com/**', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'text/html', body: mockGalleryPage });
+      await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
     });
     await context.route('https://pbs.twimg.com/**', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'image/png', body: mockImage });
+      await route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE });
     });
 
     const background =
@@ -90,7 +84,7 @@ test('loads the Chrome extension and opens the gallery from a content-script cli
 test('Firefox build artifact contains its declared runtime scripts', ({ browserName }) => {
   test.skip(browserName !== 'firefox', 'Firefox artifact validation runs in the Firefox project');
   const manifest = JSON.parse(
-    readFileSync(resolve(firefoxExtensionDir, 'manifest.json'), 'utf8')
+    readFileSync(resolve(FIREFOX_EXTENSION_DIR, 'manifest.json'), 'utf8')
   ) as {
     background?: { scripts?: string[] };
     content_scripts?: Array<{ js?: string[] }>;
@@ -103,7 +97,7 @@ test('Firefox build artifact contains its declared runtime scripts', ({ browserN
   expect(runtimeScripts).toContain('background.js');
   expect(runtimeScripts).toContain('content.js');
   for (const script of runtimeScripts) {
-    expect(existsSync(resolve(firefoxExtensionDir, script))).toBe(true);
+    expect(existsSync(resolve(FIREFOX_EXTENSION_DIR, script))).toBe(true);
   }
 });
 
@@ -161,7 +155,7 @@ test('executes the Firefox background module and registers its runtime listeners
     });
   });
 
-  await page.addScriptTag({ path: resolve(firefoxExtensionDir, 'background.js'), type: 'module' });
+  await page.addScriptTag({ path: resolve(FIREFOX_EXTENSION_DIR, 'background.js'), type: 'module' });
 
   await expect
     .poll(() =>

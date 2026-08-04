@@ -1,4 +1,4 @@
-import { globSync, readFileSync } from 'node:fs';
+import { existsSync, globSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -10,6 +10,14 @@ const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yaml'), 'utf8');
 const deepWorkflow = readFileSync(resolve(root, '.github/workflows/deep-checks.yaml'), 'utf8');
 const securityWorkflow = readFileSync(resolve(root, '.github/workflows/security.yaml'), 'utf8');
+const userscriptPlaywrightConfig = readFileSync(
+  resolve(root, 'test/e2e/playwright.config.ts'),
+  'utf8'
+);
+const extensionPlaywrightConfig = readFileSync(
+  resolve(root, 'test/e2e/playwright.extension.config.ts'),
+  'utf8'
+);
 
 describe('tooling configuration', () => {
   it.each(['stryker.conf.json', 'stryker.conf.fast.json'])(
@@ -107,5 +115,30 @@ describe('tooling configuration', () => {
     expect(ciWorkflow).toContain('pnpm build:extension:firefox:ci');
     expect(ciWorkflow).toContain('pnpm test:e2e:extension');
     expect(ciWorkflow).toMatch(/playwright install --with-deps (?:chromium firefox|firefox chromium)/);
+  });
+
+  it('retains actionable browser diagnostics and labels Firefox coverage honestly', () => {
+    for (const config of [userscriptPlaywrightConfig, extensionPlaywrightConfig]) {
+      expect(config).toContain("trace: 'retain-on-failure'");
+      expect(config).toContain("video: 'retain-on-failure'");
+      expect(config).toContain("screenshot: 'only-on-failure'");
+      expect(config).toContain("'html'");
+    }
+
+    expect(extensionPlaywrightConfig).toContain("name: 'firefox-artifact-runtime'");
+    expect(extensionPlaywrightConfig).not.toContain("name: 'firefox-runtime'");
+    expect(extensionPlaywrightConfig).toContain('grep: /loads the Chrome extension/');
+    expect(extensionPlaywrightConfig).toContain('grep: /Firefox/');
+    expect(userscriptPlaywrightConfig).toContain("testIgnore: 'extension-runtime.spec.ts'");
+    expect(ciWorkflow).toContain('Upload Playwright diagnostics');
+    expect(ciWorkflow).toContain('playwright-report/');
+    expect(ciWorkflow).toContain('test-results/');
+  });
+
+  it('keeps source contracts in Vitest rather than browser E2E', () => {
+    expect(existsSync(resolve(root, 'test/e2e/specs/accessibility.spec.ts'))).toBe(false);
+    expect(existsSync(resolve(root, 'test/unit/accessibility/source-contract.test.ts'))).toBe(
+      true
+    );
   });
 });
