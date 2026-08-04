@@ -9,18 +9,27 @@ const distDir = resolve(__dirname, '../../dist');
 
 export default defineConfig({
   testDir: resolve(__dirname, 'specs'),
+  testIgnore: 'extension-runtime.spec.ts',
   timeout: 60_000,
   expect: { timeout: 10_000 },
   retries: 0,
   workers: 1,
-  reporter: [['list']],
+  outputDir: resolve(__dirname, '../../test-results/userscript'),
+  reporter: [
+    ['list'],
+    [
+      'html',
+      { outputFolder: resolve(__dirname, '../../playwright-report/userscript'), open: 'never' },
+    ],
+  ],
   use: {
     baseURL: 'https://x.com',
     headless: true,
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
     screenshot: 'only-on-failure',
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
+    video: 'retain-on-failure',
     viewport: { width: 1280, height: 800 },
     launchOptions: {
       slowMo: 200,

@@ -23,110 +23,26 @@
 
 import AxeBuilder from '@axe-core/playwright';
 import { test, expect, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
-
-const __filename = fileURLToPath(import.meta.url);
-const DIST_DIR = resolve(__filename, '../../../../dist');
-const USERSCRIPT_PATH = resolve(DIST_DIR, 'xcom-enhanced-gallery.dev.user.js');
-const MOCK_PAGE_PATH = resolve(__filename, '../../fixtures/mock-gallery-page.html');
-const MOCK_HTML = readFileSync(MOCK_PAGE_PATH, 'utf8');
-
-/**
- * Install GM_* mock APIs on the page before userscript injection.
- */
-async function installGMMocks(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    const w = window as unknown as Record<string, unknown>;
-    w.__gmStorage = new Map<string, unknown>();
-
-    window.GM_setValue = (key: string, value: unknown) => {
-      (w.__gmStorage as Map<string, unknown>).set(key, value);
-    };
-    window.GM_getValue = <T = unknown>(key: string, defaultValue?: T): T => {
-      const storage = w.__gmStorage as Map<string, unknown>;
-      return storage.has(key) ? (storage.get(key) as T) : (defaultValue as T);
-    };
-    window.GM_deleteValue = (key: string) => {
-      (w.__gmStorage as Map<string, unknown>).delete(key);
-    };
-    window.GM_listValues = (): string[] => {
-      return Array.from((w.__gmStorage as Map<string, unknown>).keys());
-    };
-    window.GM_download = (urlOrDetails: string | { url: string; name?: string }, name?: string) => {
-      const details = typeof urlOrDetails === 'string'
-        ? { url: urlOrDetails, name: name ?? 'download' }
-        : urlOrDetails;
-      const marker = document.createElement('span');
-      marker.setAttribute('data-gm-download', 'true');
-      marker.setAttribute('data-gm-download-url', details.url);
-      marker.setAttribute('data-gm-download-name', details.name ?? 'download');
-      marker.style.display = 'none';
-      document.body.appendChild(marker);
-    };
-    window.GM_notification = (details: { title: string; text: string }) => {
-      const el = document.createElement('div');
-      el.setAttribute('data-gm-notification', 'true');
-      el.textContent = `${details.title}: ${details.text}`;
-      el.style.cssText = 'position:fixed;top:10px;right:10px;background:#1d9bf0;color:#fff;padding:8px 16px;border-radius:8px;z-index:2147483647;';
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 5000);
-    };
-    window.GM_xmlhttpRequest = undefined;
-    window.GM_cookie = {
-      list: () => document.cookie.split(';').filter(Boolean).map((c) => {
-        const [name, ...rest] = c.trim().split('=');
-        return { name: name!.trim(), value: rest.join('=').trim() };
-      }),
-      set: (cookie: { name: string; value: string }) => {
-        document.cookie = `${cookie.name}=${cookie.value}`;
-      },
-      delete: (name: string) => {
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-      },
-    };
-  });
-}
+import { DEV_USERSCRIPT_PATH, MOCK_GALLERY_HTML } from '../fixtures/artifacts';
+import { installGMMock } from '../fixtures/gm-mock';
+import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
 
 /**
  * Setup: Navigate to mock page + install GM mocks + inject userscript.
  */
 async function setupGalleryPage(page: Page): Promise<void> {
   await page.route('https://x.com/**', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_HTML });
+    await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
   });
   await page.route('https://x.com', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_HTML });
+    await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
   });
   await page.goto('https://x.com', { waitUntil: 'domcontentloaded', timeout: 15_000 });
 
-  // Install GM_* API mocks BEFORE userscript injection
-  await installGMMocks(page);
-
-  // Inject dev userscript
-  const bundle = readFileSync(USERSCRIPT_PATH, 'utf8');
-  const injectResult = await page.evaluate((code: string) => {
-    try {
-      const script = document.createElement('script');
-      script.textContent = code;
-      (document.head || document.documentElement).appendChild(script);
-      return { success: true };
-    } catch (e: unknown) {
-      return { success: false, error: (e as Error).message };
-    }
-  }, bundle);
-  if (!injectResult.success) {
-    throw new Error(`Failed to inject userscript: ${injectResult.error}`);
-  }
-
-  // Wait for userscript initialization and __XEG__ namespace
-  await page.waitForFunction(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const g = globalThis as any;
-    return g.__XEG__?.main?.galleryApp != null;
-  }, { timeout: 15_000 });
+  await installGMMock(page);
+  await injectDevUserscript(page);
+  await waitForGalleryApp(page);
 }
 
 /**
@@ -202,9 +118,9 @@ async function closeGallery(page: Page): Promise<void> {
 
 test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
   test.beforeAll(() => {
-    if (!existsSync(USERSCRIPT_PATH)) {
+    if (!existsSync(DEV_USERSCRIPT_PATH)) {
       throw new Error(
-        `Dev userscript bundle not found at ${USERSCRIPT_PATH}. Run 'pnpm build:dev' first.`
+        `Dev userscript bundle not found at ${DEV_USERSCRIPT_PATH}. Run 'pnpm build:dev' first.`
       );
     }
   });

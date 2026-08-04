@@ -7,7 +7,7 @@
  * Tests verify:
  * 1. Clicking the download button triggers GM_download with correct data
  * 2. Download button is accessible via toolbar
- * 3. GM_download mock works correctly
+ * 3. Video media keeps its native playback controls
  *
  * Environment: Playwright + Chromium (headless)
  * Test page: Mock HTML served under https://x.com via page.route()
@@ -15,20 +15,10 @@
  */
 
 import { test, expect, type Page } from '@playwright/test';
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const DIST_DIR = resolve(__filename, '../../../../dist');
-const USERSCRIPT_PATH = resolve(DIST_DIR, 'xcom-enhanced-gallery.dev.user.js');
-const MOCK_PAGE_PATH = resolve(__filename, '../../fixtures/mock-gallery-page.html');
-
-const MOCK_HTML = readFileSync(MOCK_PAGE_PATH, 'utf8');
-const MOCK_IMAGE = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
-  'base64'
-);
+import { existsSync } from 'node:fs';
+import { DEV_USERSCRIPT_PATH, MOCK_GALLERY_HTML, MOCK_IMAGE } from '../fixtures/artifacts';
+import { installGMMock } from '../fixtures/gm-mock';
+import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
 
 /**
  * Setup: Route x.com requests to mock HTML, install GM mocks, inject userscript.
@@ -49,99 +39,23 @@ async function setupGalleryPage(page: Page): Promise<void> {
     if (url.includes('.css') || url.includes('.js') || url.includes('.jpg') || url.includes('.png') || url.includes('.svg') || url.includes('.webp') || url.includes('.gif')) {
       await route.abort();
     } else {
-      await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_HTML });
+      await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
     }
   });
 
   await page.route('https://x.com/', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_HTML });
+    await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
   });
 
   await page.route('https://x.com', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_HTML });
+    await route.fulfill({ status: 200, contentType: 'text/html', body: MOCK_GALLERY_HTML });
   });
 
   await page.goto('https://x.com', { waitUntil: 'domcontentloaded', timeout: 15_000 });
 
-  // Install GM_* API mocks
-  await page.evaluate(() => {
-    const w = window as unknown as Record<string, unknown>;
-    w.__gmStorage = new Map<string, unknown>();
-
-    window.GM_setValue = (key: string, value: unknown) => {
-      (w.__gmStorage as Map<string, unknown>).set(key, value);
-    };
-    window.GM_getValue = <T = unknown>(key: string, defaultValue?: T): T => {
-      const storage = w.__gmStorage as Map<string, unknown>;
-      return storage.has(key) ? (storage.get(key) as T) : (defaultValue as T);
-    };
-    window.GM_deleteValue = (key: string) => {
-      (w.__gmStorage as Map<string, unknown>).delete(key);
-    };
-    window.GM_listValues = (): string[] => {
-      return Array.from((w.__gmStorage as Map<string, unknown>).keys());
-    };
-    window.GM_download = (
-      urlOrDetails:
-        | string
-        | { url: string; name?: string; filename?: string; onload?: () => void },
-      name?: string
-    ) => {
-      const details = typeof urlOrDetails === 'string'
-        ? { url: urlOrDetails, name: name ?? 'download' }
-        : urlOrDetails;
-      const marker = document.createElement('span');
-      marker.setAttribute('data-gm-download', 'true');
-      marker.setAttribute('data-gm-download-url', details.url);
-      marker.setAttribute('data-gm-download-name', details.filename ?? details.name ?? 'download');
-      marker.style.display = 'none';
-      document.body.appendChild(marker);
-      queueMicrotask(() => details.onload?.());
-    };
-    window.GM_notification = (details: { title: string; text: string }) => {
-      const el = document.createElement('div');
-      el.setAttribute('data-gm-notification', 'true');
-      el.textContent = `${details.title}: ${details.text}`;
-      el.style.cssText = 'position:fixed;top:10px;right:10px;background:#1d9bf0;color:#fff;padding:8px 16px;border-radius:8px;z-index:2147483647;font-size:14px;';
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 5000);
-    };
-    w.GM_xmlhttpRequest = () => ({ abort: () => undefined });
-    window.GM_cookie = {
-      list: () => document.cookie.split(';').filter(Boolean).map((c) => {
-        const [name, ...rest] = c.trim().split('=');
-        return { name: name!.trim(), value: rest.join('=').trim() };
-      }),
-      set: (cookie: { name: string; value: string }) => {
-        document.cookie = `${cookie.name}=${cookie.value}`;
-      },
-      delete: (name: string) => {
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-      },
-    };
-  });
-
-  // Inject dev userscript
-  const bundle = readFileSync(USERSCRIPT_PATH, 'utf8');
-  const injectResult = await page.evaluate((code: string) => {
-    try {
-      const script = document.createElement('script');
-      script.textContent = code;
-      (document.head || document.documentElement).appendChild(script);
-      return { success: true };
-    } catch (e: unknown) {
-      return { success: false, error: (e as Error).message };
-    }
-  }, bundle);
-  if (!injectResult.success) {
-    throw new Error(`Failed to inject userscript: ${injectResult.error}`);
-  }
-
-  // Wait for userscript initialization and __XEG__ namespace
-  await page.waitForFunction(() => {
-    const g = globalThis as any;
-    return g.__XEG__?.main?.galleryApp != null;
-  }, { timeout: 15_000 });
+  await installGMMock(page);
+  await injectDevUserscript(page);
+  await waitForGalleryApp(page);
 }
 
 /**
@@ -179,9 +93,9 @@ async function openGallery(page: Page): Promise<void> {
 
 test.describe('X.com Enhanced Gallery Download Flow', () => {
   test.beforeAll(() => {
-    if (!existsSync(USERSCRIPT_PATH)) {
+    if (!existsSync(DEV_USERSCRIPT_PATH)) {
       throw new Error(
-        `Dev userscript bundle not found at ${USERSCRIPT_PATH}. Run 'pnpm build:dev' first.`
+        `Dev userscript bundle not found at ${DEV_USERSCRIPT_PATH}. Run 'pnpm build:dev' first.`
       );
     }
   });
@@ -216,24 +130,6 @@ test.describe('X.com Enhanced Gallery Download Flow', () => {
     );
     await expect(marker).toHaveAttribute('data-gm-download-name', 'Example1.jpg');
     await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
-  });
-
-  test('GM_download can be directly invoked and verified', async ({ page }) => {
-    await setupGalleryPage(page);
-    await openGallery(page);
-
-    const result = await page.evaluate(() => {
-      window.GM_download!('https://example.com/test-image.jpg', 'test-download.jpg');
-      const marker = document.querySelector('[data-gm-download="true"]');
-      if (!marker) return { success: false, reason: 'no marker' };
-      const url = marker.getAttribute('data-gm-download-url');
-      const name = marker.getAttribute('data-gm-download-name');
-      return { success: true, url, name };
-    });
-
-    expect(result.success).toBe(true);
-    expect(result.url).toBe('https://example.com/test-image.jpg');
-    expect(result.name).toBe('test-download.jpg');
   });
 
   test('Download button is not disabled when gallery has items', async ({ page }) => {

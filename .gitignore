@@ -19,6 +19,7 @@ dist-extension-firefox/
 coverage/
 test-results/
 playwright-report/
+reports/
 .stryker-tmp*/
 .cache/
 
