@@ -51,14 +51,25 @@ export class HttpRequestService {
     const signal = options?.signal;
 
     let settled = false;
-
     let control: HttpRequestControl | null = null;
+    let abortRequested = false;
+
+    const cleanup = (): void => {
+      signal?.removeEventListener('abort', onAbort);
+    };
+
+    const settle = (fn: () => void): boolean => {
+      if (settled) return false;
+      settled = true;
+      cleanup();
+      fn();
+      return true;
+    };
 
     const onAbort = (): void => {
-      if (settled) return;
-      settled = true;
+      abortRequested = true;
+      if (!settle(() => deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal)))) return;
       control?.abort();
-      deferred.reject(getAbortReasonOrAbortErrorFromSignal(signal!));
     };
 
     // Register the abort listener BEFORE checking signal.aborted to
@@ -68,19 +79,9 @@ export class HttpRequestService {
     signal?.addEventListener('abort', onAbort, { once: true });
 
     if (signal?.aborted) {
-      // Signal was already aborted — the { once: true } listener may
-      // have fired synchronously during registration (implementation-
-      // dependent). The settled guard prevents double reject.
       onAbort();
       return deferred.promise;
     }
-
-    const settle = (fn: () => void): void => {
-      if (settled) return;
-      settled = true;
-      signal?.removeEventListener('abort', onAbort);
-      fn();
-    };
 
     const details: HttpRequestDetails = {
       method: method as Exclude<HttpRequestDetails['method'], undefined>,
@@ -126,13 +127,16 @@ export class HttpRequestService {
       },
     };
 
-    control = getHttpRequestAdapter().request(details);
+    try {
+      control = getHttpRequestAdapter().request(details);
+      // An adapter can synchronously abort the caller's signal before it
+      // returns its control object. Honor that abort after assignment.
+      if (abortRequested) control.abort();
+    } catch (error) {
+      settle(() => deferred.reject(error));
+    }
 
-    // Ensure abort listener is always cleaned up, even if the request
-    // completes via an unexpected path (race condition guard).
-    return deferred.promise.finally(() => {
-      signal?.removeEventListener('abort', onAbort);
-    });
+    return deferred.promise;
   }
 }
 
@@ -143,9 +147,4 @@ export function getHttpRequestService(): HttpRequestService {
     httpServiceInstance = new HttpRequestService();
   }
   return httpServiceInstance;
-}
-
-/** Reset singleton instance (for testing only) */
-export function resetHttpRequestServiceForTests(): void {
-  httpServiceInstance = null;
 }
