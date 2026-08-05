@@ -72,6 +72,50 @@ beforeEach(() => {
   state.waitForDownloadComplete.mockReset().mockResolvedValue(undefined);
 });
 
+describe.each([
+  { label: 'a missing extension id', sender: {} },
+  { label: 'a different extension id', sender: { id: 'attacker-extension' } },
+])('background sender authorization with $label', ({ sender }) => {
+  it.each([
+    {
+      label: 'URL download',
+      message: {
+        type: 'DOWNLOAD_REQUEST',
+        payload: { url: 'https://pbs.twimg.com/media/test.jpg', filename: 'test.jpg' },
+      },
+    },
+    {
+      label: 'Blob download',
+      message: {
+        type: 'DOWNLOAD_BLOB_URL_REQUEST',
+        payload: { objectUrl: 'blob:https://x.com/test-resource', filename: 'test.jpg' },
+      },
+    },
+    {
+      label: 'download cancellation',
+      message: { type: 'DOWNLOAD_CANCEL_REQUEST', payload: { requestId: 'request-1' } },
+    },
+    {
+      label: 'notification',
+      message: {
+        type: 'SHOW_NOTIFICATION',
+        payload: { id: 'notice-1', title: 'Title', message: 'Message' },
+      },
+    },
+  ])('rejects $label before invoking privileged APIs', ({ message }) => {
+    const sendResponse = vi.fn();
+
+    const keepChannelOpen = state.listener?.(message, sender, sendResponse);
+
+    expect(keepChannelOpen).toBe(false);
+    expect(sendResponse).toHaveBeenCalledWith({ success: false, error: 'Unauthorized sender' });
+    expect(state.download).not.toHaveBeenCalled();
+    expect(state.cancelDownload).not.toHaveBeenCalled();
+    expect(state.createNotification).not.toHaveBeenCalled();
+    expect(state.waitForDownloadComplete).not.toHaveBeenCalled();
+  });
+});
+
 describe('background notification messages', () => {
   it('returns an error response when notifications.create rejects', async () => {
     const rejection = Promise.reject(new Error('notifications unavailable'));
