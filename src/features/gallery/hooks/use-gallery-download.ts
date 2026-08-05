@@ -94,16 +94,9 @@ export function createDownloadHandler() {
           );
         }
       } else {
-        const cachedBlobs = new Map<string, Blob | Promise<Blob>>();
-        for (const item of mediaItems) {
-          if (!item) continue;
-          const pending = mediaService.getDownloadMedia(item, signal);
-          if (!pending) continue;
-          cachedBlobs.set(item.url, pending);
-        }
-
         const result = await downloadService.downloadBulk([...mediaItems], {
-          ...(cachedBlobs.size > 0 ? { cachedBlobs } : {}),
+          mediaBlobProvider: (item, requestSignal) =>
+            mediaService.getDownloadMedia(item, requestSignal),
           signal,
         });
 

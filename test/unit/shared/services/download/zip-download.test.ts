@@ -1,6 +1,22 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { downloadAsZip } from '@shared/services/download/zip-download';
 
+interface DeferredBlob {
+  readonly promise: Promise<Blob>;
+  readonly reject: (reason: unknown) => void;
+  readonly resolve: (blob: Blob) => void;
+}
+
+function deferredBlob(): DeferredBlob {
+  let resolve!: DeferredBlob['resolve'];
+  let reject!: DeferredBlob['reject'];
+  const promise = new Promise<Blob>((accept, fail) => {
+    resolve = accept;
+    reject = fail;
+  });
+  return { promise, reject, resolve };
+}
+
 describe('user-facing bulk ZIP download', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -85,5 +101,64 @@ describe('user-facing bulk ZIP download', () => {
         { signal: controller.signal }
       )
     ).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
+  it('starts lazy Blob providers only within the configured worker concurrency', async () => {
+    const deferred = Array.from({ length: 8 }, () => deferredBlob());
+    let active = 0;
+    let maxActive = 0;
+    let started = 0;
+    const items = deferred.map((entry, index) => ({
+      url: `https://pbs.twimg.com/media/lazy-${index}.jpg`,
+      desiredName: `lazy-${index}.jpg`,
+      getBlob: async () => {
+        started++;
+        active++;
+        maxActive = Math.max(maxActive, active);
+        try {
+          return await entry.promise;
+        } finally {
+          active--;
+        }
+      },
+    }));
+
+    const resultPromise = downloadAsZip(items, { concurrency: 3 });
+    await vi.waitFor(() => expect(started).toBe(3));
+
+    for (let index = 0; index < deferred.length; index++) {
+      deferred[index]?.resolve(new Blob([`image-${index}`]));
+      if (index < deferred.length - 3) {
+        await vi.waitFor(() => expect(started).toBe(index + 4));
+      }
+    }
+
+    await expect(resultPromise).resolves.toMatchObject({ filesSuccessful: 8, failures: [] });
+    expect(maxActive).toBe(3);
+  });
+
+  it('aborts active lazy Blob providers without starting queued items', async () => {
+    const controller = new AbortController();
+    const started: number[] = [];
+    const items = Array.from({ length: 8 }, (_, index) => ({
+      url: `https://pbs.twimg.com/media/cancel-${index}.jpg`,
+      desiredName: `cancel-${index}.jpg`,
+      getBlob: (signal?: AbortSignal) =>
+        new Promise<Blob>((_resolve, reject) => {
+          started.push(index);
+          signal?.addEventListener(
+            'abort',
+            () => reject(signal.reason ?? new DOMException('Aborted', 'AbortError')),
+            { once: true }
+          );
+        }),
+    }));
+
+    const resultPromise = downloadAsZip(items, { concurrency: 3, signal: controller.signal });
+    await vi.waitFor(() => expect(started).toHaveLength(3));
+    controller.abort();
+
+    await expect(resultPromise).rejects.toMatchObject({ name: 'AbortError' });
+    expect(started).toEqual([0, 1, 2]);
   });
 });
