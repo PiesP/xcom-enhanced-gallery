@@ -47,4 +47,21 @@ describe('MediaService', () => {
 
     service.destroy();
   });
+
+  it('clears completed download Blobs on global teardown and recreates the cache on restart', async () => {
+    mocks.httpGet.mockResolvedValue({ ok: true, status: 200, data: new Blob(['cached-image']) });
+    const service = new MediaService();
+    const item = { id: 'cached', type: 'image' as const, url: 'https://pbs.twimg.com/media/cached.jpg' };
+
+    await service.initialize();
+    await service.getDownloadMedia(item);
+    service.destroy();
+
+    expect(service.getDownloadMedia(item)).toBeNull();
+
+    await service.initialize();
+    await service.getDownloadMedia(item);
+    expect(mocks.httpGet).toHaveBeenCalledTimes(2);
+    service.destroy();
+  });
 });

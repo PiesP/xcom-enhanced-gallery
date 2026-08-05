@@ -18,6 +18,7 @@ import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-
 import { getGlobalErrorHandler } from '@shared/error/error-handler';
 import { logger } from '@shared/logging/logger';
 import { getEventManager } from '@shared/services/event-manager';
+import { getMediaService } from '@shared/services/media-service';
 import { getThemeService } from '@shared/services/theme-service';
 import type { BootstrapStage } from '@shared/types/lifecycle.types';
 import { installHistoryNavigationFallback } from '@shared/utils/url/history-navigation';
@@ -219,6 +220,10 @@ async function performCleanup(): Promise<void> {
       const app = lifecycleState.galleryApp;
       lifecycleState.galleryApp = null;
       if (app) await app.cleanup();
+    });
+    await runOptionalCleanup('media-service', () => {
+      const mediaService = getMediaService();
+      if (mediaService.isInitialized()) mediaService.destroy();
     });
     await runOptionalCleanup('theme-service', () => {
       const ts = getThemeService();

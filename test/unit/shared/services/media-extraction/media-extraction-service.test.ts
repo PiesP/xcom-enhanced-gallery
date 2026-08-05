@@ -73,4 +73,36 @@ describe('MediaExtractionService quoted media selection', () => {
     };
     expect(variables.tweetId).toBe('222');
   });
+
+  it('does not let an aborted API response mutate or return success after a newer click', async () => {
+    let resolveResponse!: (value: {
+      ok: boolean;
+      status: number;
+      data: ReturnType<typeof createQuotedVideoTweetResponse>;
+    }) => void;
+    httpGet.mockReturnValue(
+      new Promise((resolve) => {
+        resolveResponse = resolve;
+      })
+    );
+    document.body.innerHTML = `
+      <article data-testid="tweet">
+        <a href="/quote_author/status/222/video/1">
+          <div data-testid="videoPlayer"><video></video></div>
+        </a>
+      </article>
+    `;
+    const clickedVideo = document.querySelector('video') as HTMLVideoElement;
+    const controller = new AbortController();
+    const service = new MediaExtractionService();
+
+    const pending = service.extractFromClickedElement(clickedVideo, { signal: controller.signal });
+    await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+    controller.abort();
+    resolveResponse({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
+
+    const result = await pending;
+    expect(result.success).toBe(false);
+    expect(result.metadata?.error).toBe('Extraction cancelled');
+  });
 });
