@@ -5,14 +5,17 @@
  * Shared download type definitions.
  */
 
-import type { ErrorCode } from '@shared/types/media.types';
+import type { ErrorCode, MediaInfo } from '@shared/types/media.types';
 import { computePercentage } from '@shared/utils/math/percentage';
 
 export interface OrchestratorItem {
   readonly url: string;
   readonly desiredName: string;
   readonly blob?: Blob | Promise<Blob> | undefined;
+  readonly getBlob?: ((signal?: AbortSignal) => Promise<Blob> | null) | undefined;
 }
+
+export type MediaBlobProvider = (media: MediaInfo, signal?: AbortSignal) => Promise<Blob> | null;
 
 export interface DownloadProgress {
   phase: string;
@@ -32,6 +35,7 @@ export interface DownloadOptions {
   zipFilename?: string;
   blob?: Blob;
   cachedBlobs?: Map<string, Blob | Promise<Blob>>;
+  mediaBlobProvider?: MediaBlobProvider;
 }
 
 export interface SingleDownloadResult {

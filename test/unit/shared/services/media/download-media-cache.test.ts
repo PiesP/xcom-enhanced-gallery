@@ -13,6 +13,7 @@ vi.mock('@shared/services/http-request-service', () => ({
 }));
 
 import { DownloadMediaCache } from '@shared/services/media/download-media-cache';
+import { downloadAsZip } from '@shared/services/download/zip-download';
 
 interface DeferredResponse {
   readonly promise: Promise<{ ok: boolean; status: number; data: Blob }>;
@@ -65,6 +66,32 @@ describe('DownloadMediaCache', () => {
 
     response.resolve({ ok: true, status: 200, data: new Blob(['image']) });
     await expect(first).resolves.toBeInstanceOf(Blob);
+    cache.destroy();
+  });
+
+  it('reuses one cached request for duplicate URLs in a lazy bulk download', async () => {
+    http.get.mockResolvedValue({ ok: true, status: 200, data: new Blob(['shared-image']) });
+    const cache = new DownloadMediaCache();
+    const item = media('shared');
+
+    const result = await downloadAsZip(
+      [
+        {
+          url: item.url,
+          desiredName: 'shared.jpg',
+          getBlob: (signal) => cache.getOrFetch(item, signal),
+        },
+        {
+          url: item.url,
+          desiredName: 'shared-copy.jpg',
+          getBlob: (signal) => cache.getOrFetch(item, signal),
+        },
+      ],
+      { concurrency: 2 }
+    );
+
+    expect(result.filesSuccessful).toBe(2);
+    expect(http.get).toHaveBeenCalledTimes(1);
     cache.destroy();
   });
 

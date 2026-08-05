@@ -5,7 +5,9 @@
  * @fileoverview Gallery application orchestrator.
  */
 
+import { GALLERY_READY_ATTRIBUTE } from '@constants/readiness';
 import type { GalleryRenderer } from '@features/gallery/gallery-renderer';
+import { mergeAbortSignalsWithCleanup } from '@piesp/browser-core/error';
 import { clampIndex } from '@piesp/browser-core/util';
 import { getNotificationAdapter, notifySafely } from '@platform/index';
 import { tryGetSettings } from '@shared/container/settings-registry';
@@ -40,6 +42,7 @@ export class GalleryApp {
   private readonly lifecycle: GalleryLifecycle = createGalleryLifecycle();
   private readonly renderer: GalleryRenderer;
   private mediaClickCounter = 0;
+  private mediaClickAbortController: AbortController | null = null;
   private sessionEpoch = 0;
   private sessionAbortController: AbortController | null = null;
 
@@ -59,6 +62,7 @@ export class GalleryApp {
         this.ambientVideoGuardDispose = startAmbientVideoGuard();
       }
       this.initialized = true;
+      document.documentElement.setAttribute(GALLERY_READY_ATTRIBUTE, 'true');
     } catch (error) {
       galleryErrorReporter.critical(error, { code: 'GALLERY_APP_INIT_FAILED' });
       throw error;
@@ -88,19 +92,23 @@ export class GalleryApp {
   }
 
   private async handleMediaClick(element: HTMLElement, _event: MouseEvent): Promise<void> {
+    this.mediaClickAbortController?.abort();
+    const clickController = new AbortController();
+    this.mediaClickAbortController = clickController;
     const opId = ++this.mediaClickCounter;
     const epoch = this.sessionEpoch;
+    const sessionSignal = this.sessionAbortController?.signal;
+    const signalScope = sessionSignal
+      ? mergeAbortSignalsWithCleanup([sessionSignal, clickController.signal])
+      : { signal: clickController.signal, cleanup: () => undefined };
 
     try {
       const mediaService = getMediaService();
       const result = await mediaService.extractFromClickedElement(element, {
-        signal: this.sessionAbortController?.signal,
+        signal: signalScope.signal,
       });
 
-      // Discard stale results — a newer click is already in progress
-      if (opId !== this.mediaClickCounter) return;
-      // Discard results from a previous session (after cleanup/reinitialize)
-      if (epoch !== this.sessionEpoch || !this.initialized) return;
+      if (!this.isCurrentMediaClick(opId, epoch, clickController)) return;
 
       if (result.success && result.mediaItems.length > 0) {
         this.openGallery(result.mediaItems, result.clickedIndex, {
@@ -119,6 +127,7 @@ export class GalleryApp {
         );
       }
     } catch (error) {
+      if (!this.isCurrentMediaClick(opId, epoch, clickController)) return;
       mediaErrorReporter.error(error, { code: 'MEDIA_EXTRACTION_ERROR' });
       const lang = getLanguageService();
       notifySafely(
@@ -126,7 +135,22 @@ export class GalleryApp {
         lang.translate('msg.err.generic'),
         normalizeErrorMessage(error)
       );
+    } finally {
+      signalScope.cleanup();
+      if (this.mediaClickAbortController === clickController) {
+        this.mediaClickAbortController = null;
+      }
     }
+  }
+
+  private isCurrentMediaClick(opId: number, epoch: number, controller: AbortController): boolean {
+    return (
+      opId === this.mediaClickCounter &&
+      epoch === this.sessionEpoch &&
+      this.initialized &&
+      this.mediaClickAbortController === controller &&
+      !controller.signal.aborted
+    );
   }
 
   openGallery(mediaItems: MediaInfo[], startIndex = 0, pauseContext?: { reason?: string }): void {
@@ -160,11 +184,14 @@ export class GalleryApp {
   }
 
   async cleanup(): Promise<void> {
+    document.documentElement.removeAttribute(GALLERY_READY_ATTRIBUTE);
     if (gallerySignals.isOpen) {
       this.close();
     }
 
     // Abort all in-flight extraction requests for this session
+    this.mediaClickAbortController?.abort();
+    this.mediaClickAbortController = null;
     this.sessionAbortController?.abort();
     this.sessionAbortController = null;
 

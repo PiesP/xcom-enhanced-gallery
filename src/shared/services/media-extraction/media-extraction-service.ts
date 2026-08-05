@@ -137,6 +137,12 @@ export class MediaExtractionService implements MediaExtractor {
           }
         : await this.apiExtractor.extract(tweetInfo, element, options, extractionId);
 
+      // Some request adapters can resolve after abort. Currentness must be
+      // checked before API success resets the circuit breaker or returns data.
+      if (options.signal?.aborted) {
+        return createErrorResult('Extraction cancelled');
+      }
+
       if (apiResult.success && apiResult.mediaItems.length > 0) {
         // Reset circuit on success
         this.apiFailureCount = 0;
@@ -145,10 +151,6 @@ export class MediaExtractionService implements MediaExtractor {
           ...apiResult,
           tweetInfo: mergeTweetInfo(tweetInfo, apiResult.tweetInfo),
         });
-      }
-
-      if (options.signal?.aborted) {
-        return createErrorResult('Extraction cancelled');
       }
 
       if (!apiResult.success) {

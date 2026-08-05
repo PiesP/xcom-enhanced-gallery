@@ -8,17 +8,20 @@
  */
 
 import { generateMediaFilename, generateZipFilename } from '@shared/core/filename/filename-utils';
+import type { MediaBlobProvider } from '@shared/services/download/types';
 import type { MediaInfo } from '@shared/types/media.types';
 
 export interface PlannedZipItem {
   readonly url: string;
   readonly desiredName: string;
   readonly blob?: Blob | Promise<Blob> | undefined;
+  readonly getBlob?: ((signal?: AbortSignal) => Promise<Blob> | null) | undefined;
 }
 
 interface BulkDownloadPlanningInput {
   readonly mediaItems: readonly MediaInfo[];
   readonly cachedBlobs?: Map<string, Blob | Promise<Blob>> | undefined;
+  readonly mediaBlobProvider?: MediaBlobProvider | undefined;
   readonly zipFilename?: string | undefined;
   readonly nowMs?: number | undefined;
 }
@@ -50,6 +53,9 @@ export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownload
     url: media.url,
     desiredName: generateDesiredName(media, input.nowMs),
     blob: input.cachedBlobs?.get(media.url),
+    getBlob: input.mediaBlobProvider
+      ? (signal?: AbortSignal) => input.mediaBlobProvider?.(media, signal) ?? null
+      : undefined,
   }));
 
   const zipFilename = input.zipFilename ?? generateZipName(input.mediaItems, input.nowMs);
