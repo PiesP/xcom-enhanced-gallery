@@ -71,6 +71,7 @@ test('loads the Chrome extension and opens the gallery from a content-script cli
 
     const firstPhoto = page.locator('[data-testid="tweetPhoto"] img').first();
     await expect(firstPhoto).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-xeg-gallery-ready', 'true');
     await firstPhoto.click();
     await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
     await expect(page.locator('[data-xeg-gallery-container] img').first()).toBeVisible();

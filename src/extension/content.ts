@@ -8,6 +8,7 @@
  * (data-theme attribute on .xeg-theme-scope elements).
  */
 
+import { installEarlyMediaClickReplay } from '@extension/content-readiness';
 import { isAllowedStartPage, startApplication } from '@main';
 import { createLogger } from '@shared/logging/logger';
 
@@ -15,7 +16,12 @@ const log = createLogger('ContentScript');
 
 // Boot the application only on allowed pages (skip /settings, /login, etc.)
 if (isAllowedStartPage()) {
-  startApplication().catch((error: unknown) => {
-    log.error('content.start-failed', { error: String(error) });
-  });
+  const earlyClickReplay = installEarlyMediaClickReplay();
+  startApplication().then(
+    () => earlyClickReplay.complete(),
+    (error: unknown) => {
+      earlyClickReplay.dispose();
+      log.error('content.start-failed', { error: String(error) });
+    }
+  );
 }

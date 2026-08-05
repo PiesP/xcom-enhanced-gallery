@@ -96,6 +96,7 @@ describe('GalleryApp media-click currentness', () => {
     state.notify.mockClear();
     state.openGallery.mockClear();
     state.warn.mockClear();
+    document.documentElement.removeAttribute('data-xeg-gallery-ready');
   });
 
   it('aborts the previous click and ignores its late success', async () => {
@@ -110,6 +111,7 @@ describe('GalleryApp media-click currentness', () => {
     );
     const app = new GalleryApp({ destroy: vi.fn() } as never);
     await app.initialize();
+    expect(document.documentElement.getAttribute('data-xeg-gallery-ready')).toBe('true');
 
     const firstClick = state.handlers?.onMediaClick(
       document.createElement('img'),
@@ -130,6 +132,7 @@ describe('GalleryApp media-click currentness', () => {
     expect(state.openGallery).toHaveBeenCalledTimes(1);
     expect(state.openGallery).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ id: 'current' })]), 0);
     await app.cleanup();
+    expect(document.documentElement.hasAttribute('data-xeg-gallery-ready')).toBe(false);
   });
 
   it('ignores stale errors without reporting or notifying', async () => {

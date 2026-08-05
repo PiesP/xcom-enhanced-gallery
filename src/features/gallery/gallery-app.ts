@@ -5,6 +5,7 @@
  * @fileoverview Gallery application orchestrator.
  */
 
+import { GALLERY_READY_ATTRIBUTE } from '@constants/readiness';
 import type { GalleryRenderer } from '@features/gallery/gallery-renderer';
 import { mergeAbortSignalsWithCleanup } from '@piesp/browser-core/error';
 import { clampIndex } from '@piesp/browser-core/util';
@@ -61,6 +62,7 @@ export class GalleryApp {
         this.ambientVideoGuardDispose = startAmbientVideoGuard();
       }
       this.initialized = true;
+      document.documentElement.setAttribute(GALLERY_READY_ATTRIBUTE, 'true');
     } catch (error) {
       galleryErrorReporter.critical(error, { code: 'GALLERY_APP_INIT_FAILED' });
       throw error;
@@ -182,6 +184,7 @@ export class GalleryApp {
   }
 
   async cleanup(): Promise<void> {
+    document.documentElement.removeAttribute(GALLERY_READY_ATTRIBUTE);
     if (gallerySignals.isOpen) {
       this.close();
     }
