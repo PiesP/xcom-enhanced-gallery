@@ -69,14 +69,24 @@ describe('tooling configuration', () => {
       mutator: { excludedMutations: string[] };
     };
 
-    expect(config.mutate).toEqual(
-      expect.arrayContaining([
+    expect([...config.mutate].sort()).toEqual(
+      [
+        'src/shared/services/download/single-download.ts',
+        'src/shared/services/download/zip-download.ts',
         'src/shared/services/media/twitter-api-client.ts',
         'src/shared/utils/media/media-dimensions.ts',
         'src/shared/utils/media/media-url-utils.ts',
+        'src/shared/utils/object/path.ts',
+        'src/shared/utils/performance/observer-pool.ts',
+        'src/shared/utils/performance/preload.ts',
+        'src/shared/utils/performance/scheduler-yield.ts',
+        'src/shared/utils/text/formatting.ts',
+        'src/shared/utils/url/history-navigation.ts',
+        'src/shared/utils/url/host.ts',
         'src/shared/utils/url/safety.ts',
+        'src/shared/utils/url/url-safety.ts',
         'src/shared/utils/url/validator.ts',
-      ])
+      ].sort()
     );
     expect(config.mutate.some((pattern) => pattern.includes('**'))).toBe(false);
     expect(config.coverageAnalysis).toBe('perTest');
