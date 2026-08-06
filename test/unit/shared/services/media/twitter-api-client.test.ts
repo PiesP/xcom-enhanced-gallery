@@ -1,9 +1,26 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
 import type { BuildTweetResultByRestIdUrlArgs } from '@shared/core/twitter-api/endpoint';
+
+const { getCsrfTokenAsync, httpGet, resolveBearerToken } = vi.hoisted(() => ({
+  getCsrfTokenAsync: vi.fn(async (): Promise<string | undefined> => 'csrf-token'),
+  httpGet: vi.fn(),
+  resolveBearerToken: vi.fn(() => 'Bearer test-token'),
+}));
+
+vi.mock('@shared/services/http-request-service', () => ({
+  getHttpRequestService: () => ({ get: httpGet }),
+}));
+
+vi.mock('@shared/services/media/twitter-auth/twitter-auth', () => ({
+  getCsrfTokenAsync,
+  resolveBearerToken,
+}));
+
+import { getTweetMedias } from '@shared/services/media/twitter-api-client';
 
 const BASE_ARGS: BuildTweetResultByRestIdUrlArgs = {
   host: 'x.com',
@@ -92,5 +109,131 @@ describe('twitter-api-client (URL building — pure functions)', () => {
       expect(parsed.searchParams.has('features')).toBe(true);
       expect(parsed.searchParams.has('fieldToggles')).toBe(true);
     });
+  });
+});
+
+describe('twitter-api-client request boundary', () => {
+  beforeEach(() => {
+    httpGet.mockReset();
+    httpGet.mockResolvedValue({ ok: true, status: 200, data: {} });
+    getCsrfTokenAsync.mockReset();
+    getCsrfTokenAsync.mockResolvedValue('csrf-token');
+    resolveBearerToken.mockReset();
+    resolveBearerToken.mockReturnValue('Bearer test-token');
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it.each([
+    ['x.com', 'x.com'],
+    ['mobile.x.com', 'x.com'],
+    ['TWITTER.COM', 'twitter.com'],
+    ['mobile.twitter.com', 'twitter.com'],
+  ])('uses the supported API host for %s', async (hostname, expectedHost) => {
+    await getTweetMedias('123', { hostname, href: undefined, origin: undefined });
+
+    expect(new URL(httpGet.mock.calls[0]?.[0] as string).hostname).toBe(expectedHost);
+  });
+
+  it.each([
+    'x.com.attacker.example',
+    'twitter.com.attacker.example',
+    'attacker-x.com',
+    'x.com@attacker.example',
+    '',
+  ])('falls back to x.com for an untrusted hostname: %s', async (hostname) => {
+    await getTweetMedias('123', { hostname, href: undefined, origin: undefined });
+
+    expect(new URL(httpGet.mock.calls[0]?.[0] as string).hostname).toBe('x.com');
+  });
+
+  it('forwards authenticated browser context and cancellation explicitly', async () => {
+    const controller = new AbortController();
+
+    await getTweetMedias(
+      '123',
+      {
+        hostname: 'x.com',
+        href: 'https://x.com/example/status/123',
+        origin: 'https://x.com',
+      },
+      controller.signal
+    );
+
+    expect(httpGet).toHaveBeenCalledWith(
+      expect.stringMatching(/^https:\/\/x\.com\/i\/api\/graphql\//),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          authorization: 'Bearer test-token',
+          origin: 'https://x.com',
+          referer: 'https://x.com/example/status/123',
+          'x-csrf-token': 'csrf-token',
+        }),
+        responseType: 'json',
+        signal: controller.signal,
+      })
+    );
+    const requestedUrl = new URL(httpGet.mock.calls[0]?.[0] as string);
+    expect(JSON.parse(requestedUrl.searchParams.get('variables') ?? '{}')).toMatchObject({
+      tweetId: '123',
+      withCommunity: false,
+      includePromotedContent: false,
+      withVoice: false,
+    });
+  });
+
+  it('uses the current browser location when no location override is provided', async () => {
+    vi.stubGlobal('location', {
+      hostname: 'mobile.twitter.com',
+      href: 'https://mobile.twitter.com/example/status/123',
+      origin: 'https://mobile.twitter.com',
+    });
+
+    await getTweetMedias('123');
+
+    expect(new URL(httpGet.mock.calls[0]?.[0] as string).hostname).toBe('twitter.com');
+    expect(httpGet.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          origin: 'https://mobile.twitter.com',
+          referer: 'https://mobile.twitter.com/example/status/123',
+        }),
+      })
+    );
+  });
+
+  it('uses an empty CSRF header without inventing browser origin headers', async () => {
+    getCsrfTokenAsync.mockResolvedValue(undefined);
+
+    await getTweetMedias('123', {
+      hostname: undefined,
+      href: undefined,
+      origin: undefined,
+    });
+
+    expect(httpGet).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: expect.objectContaining({ 'x-csrf-token': '' }),
+        responseType: 'json',
+      })
+    );
+    const options = httpGet.mock.calls[0]?.[1] as {
+      headers: Record<string, string>;
+      signal?: AbortSignal;
+    };
+    expect(options.headers).not.toHaveProperty('origin');
+    expect(options.headers).not.toHaveProperty('referer');
+    expect(options).not.toHaveProperty('signal');
+  });
+
+  it('rejects non-success API responses without exposing response contents', async () => {
+    httpGet.mockResolvedValue({ ok: false, status: 403, data: { secret: 'not-for-logs' } });
+
+    await expect(
+      getTweetMedias('123', { hostname: 'x.com', href: undefined, origin: undefined })
+    ).rejects.toThrow('TW:403');
   });
 });

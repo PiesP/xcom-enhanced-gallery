@@ -8,6 +8,29 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-08-06
+
+### Added
+
+- **Demand-driven media cache** — Added a bounded download cache that starts image requests only when a download needs them, deduplicates repeated URLs, and cancels active work during teardown.
+- **Deterministic gallery focus** — Added explicit focus-candidate selection and scroll coordination for stable keyboard and pointer navigation as media loads or reorders.
+- **Extension readiness handshake** — Buffered the first eligible interaction until the MV3 content runtime is ready without intercepting unrelated clicks.
+
+### Changed
+
+- **Gallery resource lifecycle** — Replaced eager prefetch management with demand-driven loading and tightened observer, media service, ZIP writer, and gallery cleanup ownership.
+- **Interface foundation** — Adopted the shared Quiet Instruments design tokens and expanded responsive, touch, focus, and accessibility contracts.
+- **Verification** — Expanded browser harnesses, extension smoke tests, lifecycle tests, hostile-input regressions, and security-sensitive Twitter API mutation coverage.
+- **Shared runtime** — Updated browser-core and consolidated shared async, URL, error, settings, and event behavior.
+
+### Fixed
+
+- **Quoted media selection** — Matched clicked quoted videos by poster and visual order so the correct media opens and downloads when blob playback URLs hide the source URL.
+- **Scroll and dismissal behavior** — Preserved the user's scroll position after media load, restored backdrop dismissal, and stabilized focus after gallery updates.
+- **Download cancellation** — Released listeners, workers, Blob providers, and pending downloads consistently across success, cancellation, timeout, and partial ZIP failures.
+- **Trusted API context** — Kept Twitter API requests on supported hosts and verified authorization, CSRF, browser-context, cancellation, and error-response boundaries.
+- **Extension and settings reliability** — Hardened background authorization, content startup ordering, settings migration, and stale interaction handling.
+
 ## [2.2.1] - 2026-07-29
 
 ### Fixed
