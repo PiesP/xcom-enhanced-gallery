@@ -32,7 +32,7 @@ export default defineConfig({
     video: 'retain-on-failure',
     viewport: { width: 1280, height: 800 },
     launchOptions: {
-      slowMo: 200,
+      slowMo: process.env.CI ? 0 : 200,
       args: ['--disable-blink-features=AutomationControlled'],
     },
   },
