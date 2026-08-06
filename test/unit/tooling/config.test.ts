@@ -142,6 +142,7 @@ describe('tooling configuration', () => {
     expect(extensionPlaywrightConfig).toContain('grep: /loads the Chrome extension/');
     expect(extensionPlaywrightConfig).toContain('grep: /Firefox/');
     expect(userscriptPlaywrightConfig).toContain("testIgnore: 'extension-runtime.spec.ts'");
+    expect(userscriptPlaywrightConfig).toContain('slowMo: process.env.CI ? 0 : 200');
     expect(ciWorkflow).toContain('Upload Playwright diagnostics');
     expect(ciWorkflow).toContain('playwright-report/');
     expect(ciWorkflow).toContain('test-results/');
