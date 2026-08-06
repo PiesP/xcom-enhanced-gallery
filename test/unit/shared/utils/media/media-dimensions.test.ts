@@ -3,12 +3,20 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  adjustClickedIndexAfterDeduplication,
+  computeContainIntrinsicSizeOverride,
+  createIntrinsicSizingStyle,
   extractDimensionsFromUrl,
   normalizeDimension,
+  removeDuplicateMediaItems,
   resolveMediaDimensionsWithIntrinsicFlag,
-  createIntrinsicSizingStyle,
   sortMediaByVisualOrder,
 } from '@shared/utils/media/media-dimensions';
+import type { MediaInfo } from '@shared/types/media.types';
+
+function makeMedia(id: string, url: string, overrides: Partial<MediaInfo> = {}): MediaInfo {
+  return { id, url, type: 'image', ...overrides };
+}
 
 describe('media-dimensions (pure functions)', () => {
   // ── extractDimensionsFromUrl ──────────────────────────────────────
@@ -120,6 +128,63 @@ describe('media-dimensions (pure functions)', () => {
       const result = resolveMediaDimensionsWithIntrinsicFlag(media);
       expect(result.dimensions).toEqual({ width: 1920, height: 1080 });
     });
+
+    it('uses camel-case API dimensions before URL fallbacks', () => {
+      const media = makeMedia('camel-case', 'https://example.com/320x180/image.jpg', {
+        metadata: { apiData: { originalWidth: '1280', originalHeight: '720' } },
+      });
+
+      expect(resolveMediaDimensionsWithIntrinsicFlag(media)).toEqual({
+        dimensions: { width: 1280, height: 720 },
+        hasIntrinsicSize: true,
+      });
+    });
+
+    it('resolves download, preview, and aspect-ratio metadata fallbacks', () => {
+      const fromDownload = makeMedia('download', '', {
+        metadata: { apiData: { download_url: 'https://example.com/1024x768/file.jpg' } },
+      });
+      const fromPreview = makeMedia('preview', '', {
+        metadata: {
+          apiData: {
+            download_url: 'invalid',
+            preview_url: 'https://example.com/640x360/preview.jpg',
+          },
+        },
+      });
+      const fromRatio = makeMedia('ratio', '', {
+        metadata: { apiData: { aspect_ratio: [16, 9] } },
+      });
+
+      expect(resolveMediaDimensionsWithIntrinsicFlag(fromDownload).dimensions).toEqual({
+        width: 1024,
+        height: 768,
+      });
+      expect(resolveMediaDimensionsWithIntrinsicFlag(fromPreview).dimensions).toEqual({
+        width: 640,
+        height: 360,
+      });
+      expect(resolveMediaDimensionsWithIntrinsicFlag(fromRatio).dimensions).toEqual({
+        width: 1280,
+        height: 720,
+      });
+    });
+
+    it('requires complete positive dimension pairs before accepting a source', () => {
+      const media = makeMedia('partial', 'https://example.com/300x200/file.jpg', {
+        width: 800,
+        height: 0,
+        metadata: {
+          dimensions: { width: 700 },
+          apiData: { original_width: 600, original_height: -1 },
+        },
+      });
+
+      expect(resolveMediaDimensionsWithIntrinsicFlag(media)).toEqual({
+        dimensions: { width: 300, height: 200 },
+        hasIntrinsicSize: true,
+      });
+    });
   });
 
   // ── createIntrinsicSizingStyle ────────────────────────────────────
@@ -190,6 +255,71 @@ describe('media-dimensions (pure functions)', () => {
       const result = sortMediaByVisualOrder(items);
       // URL without visual index gets 0, so it comes first
       expect(result[0].expanded_url).toBe('https://x.com/user/status/123');
+    });
+  });
+
+  describe('media deduplication', () => {
+    it('drops missing and duplicate entries while preserving type-specific media', () => {
+      const first = makeMedia('first', 'https://pbs.twimg.com/media/shared.jpg');
+      const duplicate = makeMedia('duplicate', 'https://pbs.twimg.com/media/shared.jpg');
+      const video = makeMedia('video', 'https://pbs.twimg.com/media/shared.jpg', {
+        type: 'video',
+      });
+
+      expect(removeDuplicateMediaItems([undefined, first, duplicate, makeMedia('empty', ''), video]))
+        .toEqual([first, video]);
+    });
+
+    it('maps a clicked duplicate to the surviving visual index', () => {
+      const first = makeMedia('first', 'https://pbs.twimg.com/media/a.jpg');
+      const duplicate = makeMedia('duplicate', 'https://pbs.twimg.com/media/a.jpg');
+      const second = makeMedia('second', 'https://pbs.twimg.com/media/b.jpg');
+      const original = [first, duplicate, second];
+      const unique = removeDuplicateMediaItems(original);
+
+      expect(adjustClickedIndexAfterDeduplication(original, unique, 1)).toBe(0);
+      expect(adjustClickedIndexAfterDeduplication(original, unique, 2)).toBe(1);
+      expect(adjustClickedIndexAfterDeduplication(original, [], 2)).toBe(0);
+    });
+  });
+
+  describe('computeContainIntrinsicSizeOverride', () => {
+    const base = {
+      intrinsicWidth: 1600,
+      intrinsicHeight: 900,
+      hasIntrinsicSize: true,
+    } as const;
+    const viewport = 'var(--xeg-viewport-height-constrained, 720px)';
+
+    it('returns null when intrinsic dimensions are unavailable', () => {
+      expect(
+        computeContainIntrinsicSizeOverride({ ...base, hasIntrinsicSize: false, fitMode: 'fitWidth' })
+      ).toBeNull();
+    });
+
+    it('derives exact fallback geometry for every fit mode', () => {
+      expect(computeContainIntrinsicSizeOverride({ ...base, fitMode: 'fitWidth' })).toBe(
+        'auto 100% auto calc(100% / 1.777778)'
+      );
+      expect(computeContainIntrinsicSizeOverride({ ...base, fitMode: 'fitHeight' })).toBe(
+        `auto min(100%, calc(${viewport} * 1.777778)) auto ${viewport}`
+      );
+      expect(computeContainIntrinsicSizeOverride({ ...base, fitMode: 'fitContainer' })).toBe(
+        `auto min(100%, calc(${viewport} * 1.777778)) auto min(900px, ${viewport})`
+      );
+      expect(computeContainIntrinsicSizeOverride({ ...base, fitMode: 'original' })).toBe(
+        'auto min(1600px, 100%) auto calc(min(1600px, 100%) / 1.777778)'
+      );
+    });
+
+    it('uses the 16:9 fallback ratio when height is non-positive', () => {
+      expect(
+        computeContainIntrinsicSizeOverride({
+          ...base,
+          intrinsicHeight: 0,
+          fitMode: 'fitWidth',
+        })
+      ).toBe('auto 100% auto calc(100% / 1.777778)');
     });
   });
 });

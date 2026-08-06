@@ -26,9 +26,9 @@
   "coverageAnalysis": "perTest",
   "ignoreStatic": true,
   "thresholds": {
-    "high": 75,
-    "low": 65,
-    "break": 60
+    "high": 80,
+    "low": 75,
+    "break": 70
   },
   "inPlace": true,
   "concurrency": 2,
