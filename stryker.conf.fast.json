@@ -26,7 +26,7 @@
   "thresholds": {
     "high": 50,
     "low": 40,
-    "break": 30
+    "break": 32
   },
   "inPlace": true,
   "concurrency": 2,
