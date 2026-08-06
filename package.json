@@ -67,7 +67,7 @@
   },
   "packageManager": "pnpm@11.17.0",
   "volta": {
-    "node": "26.6.0",
+    "node": "26.7.0",
     "pnpm": "11.17.0"
   },
   "repository": {
