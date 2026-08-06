@@ -5,8 +5,19 @@ import { describe, it, expect } from 'vitest';
 import {
   extractFilenameFromUrl,
   extractVisualIndexFromUrl,
+  getMediaDedupKey,
   normalizeMediaUrl,
 } from '@shared/utils/media/media-url-utils';
+import type { MediaInfo } from '@shared/types/media.types';
+
+function makeMedia(overrides: Partial<MediaInfo> = {}): MediaInfo {
+  return {
+    id: 'media',
+    url: 'https://pbs.twimg.com/media/fallback.jpg',
+    type: 'image',
+    ...overrides,
+  };
+}
 
 describe('media-url-utils (pure functions)', () => {
   // ── extractFilenameFromUrl ────────────────────────────────────────
@@ -58,6 +69,12 @@ describe('media-url-utils (pure functions)', () => {
     it('should handle query strings and fragments', () => {
       expect(extractVisualIndexFromUrl('https://x.com/user/status/123/photo/2?format=jpg')).toBe(1);
     });
+
+    it('rejects zero, missing, and non-terminal visual positions', () => {
+      expect(extractVisualIndexFromUrl('https://x.com/user/status/123/photo/0')).toBe(0);
+      expect(extractVisualIndexFromUrl('https://x.com/user/status/123/photo/')).toBe(0);
+      expect(extractVisualIndexFromUrl('https://x.com/user/status/123/photo/2/extra')).toBe(0);
+    });
   });
 
   // ── normalizeMediaUrl ─────────────────────────────────────────────
@@ -82,6 +99,40 @@ describe('media-url-utils (pure functions)', () => {
 
     it('should return null for empty filename', () => {
       expect(normalizeMediaUrl('https://pbs.twimg.com/')).toBeNull();
+    });
+  });
+
+  describe('getMediaDedupKey', () => {
+    it('prefers the original URL and preserves the normalized format discriminator', () => {
+      expect(
+        getMediaDedupKey(
+          makeMedia({
+            originalUrl: 'https://pbs.twimg.com/media/original?name=large&format=png',
+          })
+        )
+      ).toBe('image:pbs.twimg.com/media/original?format=png');
+    });
+
+    it.each(['image', 'video', 'gif'] as const)('keeps %s media in a distinct namespace', (type) => {
+      expect(getMediaDedupKey(makeMedia({ type }))).toBe(
+        `${type}:pbs.twimg.com/media/fallback.jpg`
+      );
+    });
+
+    it('falls back from an empty original URL to the primary URL', () => {
+      expect(getMediaDedupKey(makeMedia({ originalUrl: '' }))).toBe(
+        'image:pbs.twimg.com/media/fallback.jpg'
+      );
+    });
+
+    it('returns null when neither URL candidate is usable', () => {
+      expect(getMediaDedupKey(makeMedia({ url: '', originalUrl: '' }))).toBeNull();
+    });
+
+    it('normalizes relative URLs against the safe parsing base', () => {
+      expect(getMediaDedupKey(makeMedia({ url: '/media/relative.jpg' }))).toBe(
+        'image:example.invalid/media/relative.jpg'
+      );
     });
   });
 });
