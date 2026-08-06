@@ -20,19 +20,16 @@ const extensionPlaywrightConfig = readFileSync(
 );
 
 describe('tooling configuration', () => {
-  it.each(['stryker.conf.json', 'stryker.conf.fast.json'])(
-    '%s mutates source files from their real shared paths',
-    (filename) => {
-      const config = JSON.parse(readFileSync(resolve(root, filename), 'utf8')) as {
-        mutate: string[];
-      };
+  it('keeps the full mutation profile on the real shared source paths', () => {
+    const config = JSON.parse(
+      readFileSync(resolve(root, 'stryker.conf.json'), 'utf8')
+    ) as { mutate: string[] };
 
-      expect(config.mutate).toContain('src/shared/utils/**/*.ts');
-      expect(config.mutate).toContain('src/shared/services/download/**/*.ts');
-      expect(config.mutate).not.toContain('src/utils/**/*.ts');
-      expect(config.mutate).not.toContain('src/services/download/**/*.ts');
-    }
-  );
+    expect(config.mutate).toContain('src/shared/utils/**/*.ts');
+    expect(config.mutate).toContain('src/shared/services/download/**/*.ts');
+    expect(config.mutate).not.toContain('src/utils/**/*.ts');
+    expect(config.mutate).not.toContain('src/services/download/**/*.ts');
+  });
 
   it.each(['stryker.conf.json', 'stryker.conf.fast.json'])(
     '%s include patterns each match at least one source file',
@@ -65,6 +62,8 @@ describe('tooling configuration', () => {
       readFileSync(resolve(root, 'stryker.conf.fast.json'), 'utf8')
     ) as {
       mutate: string[];
+      coverageAnalysis: string;
+      ignoreStatic: boolean;
       reporters: string[];
       thresholds: { high: number; low: number; break: number | null };
       mutator: { excludedMutations: string[] };
@@ -73,16 +72,19 @@ describe('tooling configuration', () => {
     expect(config.mutate).toEqual(
       expect.arrayContaining([
         'src/shared/services/media/twitter-api-client.ts',
-        'src/shared/services/media/media-factory.ts',
-        'src/shared/services/media-extraction/determine-clicked-index.ts',
-        'src/shared/services/media-extraction/media-extraction-service.ts',
-        'src/shared/services/media-extraction/extractors/twitter-api-extractor.ts',
+        'src/shared/utils/media/media-dimensions.ts',
+        'src/shared/utils/media/media-url-utils.ts',
+        'src/shared/utils/url/safety.ts',
+        'src/shared/utils/url/validator.ts',
       ])
     );
+    expect(config.mutate.some((pattern) => pattern.includes('**'))).toBe(false);
+    expect(config.coverageAnalysis).toBe('perTest');
+    expect(config.ignoreStatic).toBe(true);
     expect(config.reporters).toEqual(
       expect.arrayContaining(['progress', 'clear-text', 'json', 'html'])
     );
-    expect(config.thresholds.break).toBe(32);
+    expect(config.thresholds.break).toBe(60);
     expect(config.thresholds.low).toBeGreaterThan(config.thresholds.break ?? 0);
     expect(config.thresholds.high).toBeGreaterThan(config.thresholds.low);
     expect(config.mutator.excludedMutations).not.toEqual(
