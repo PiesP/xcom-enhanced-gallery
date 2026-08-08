@@ -44,6 +44,34 @@ check_release() {
     "$name" "$current" "$cooling_hours"
 }
 
+check_osv_image_digest() {
+  local version="$1"
+  local image token expected_digest actual_digest
+
+  image="$(sed -nE 's/.*OSV_SCANNER_IMAGE: "([^"]+)".*/\1/p' .github/workflows/security.yaml)"
+  expected_digest="${image##*@}"
+  if [[ -z "$image" || "$expected_digest" == "$image" ]]; then
+    printf '::error title=osv-scanner digest missing::OSV_SCANNER_IMAGE must use an immutable digest.\n'
+    return 1
+  fi
+
+  token="$(curl --fail --silent --show-error \
+    "https://ghcr.io/token?scope=repository:google/osv-scanner-action:pull" | jq -er '.token')"
+  actual_digest="$(curl --fail --silent --show-error --dump-header - --output /dev/null \
+    --header "Authorization: Bearer $token" \
+    --header 'Accept: application/vnd.docker.distribution.manifest.v2+json' \
+    "https://ghcr.io/v2/google/osv-scanner-action/manifests/v$version" \
+    | awk 'tolower($1) == "docker-content-digest:" { gsub("\\r", "", $2); print $2 }')"
+
+  if [[ -z "$actual_digest" || "$expected_digest" != "$actual_digest" ]]; then
+    printf '::error title=osv-scanner digest mismatch::Pinned digest %s; v%s resolves to %s.\n' \
+      "$expected_digest" "$version" "${actual_digest:-unknown}"
+    return 1
+  fi
+
+  printf '✓ osv-scanner v%s runtime digest matches GHCR.\n' "$version"
+}
+
 nose_version="$(sed -nE 's/^nose_version="([^"]+)"/\1/p' scripts/ci/install-nose.sh)"
 osv_version="$(sed -nE 's/.*osv-scanner-action image v([^ ]+).*/\1/p' .github/workflows/security.yaml)"
 semgrep_version="$(sed -nE 's/.*semgrep\/semgrep:([^ @]+).*/\1/p' .github/workflows/security.yaml | head -n 1)"
@@ -51,5 +79,6 @@ semgrep_version="$(sed -nE 's/.*semgrep\/semgrep:([^ @]+).*/\1/p' .github/workfl
 status=0
 check_release nose "$nose_version" corca-ai/nose || status=1
 check_release osv-scanner "$osv_version" google/osv-scanner || status=1
+check_osv_image_digest "$osv_version" || status=1
 check_release semgrep "$semgrep_version" semgrep/semgrep || status=1
 exit "$status"
