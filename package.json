@@ -88,7 +88,7 @@
     "@playwright/test": "^1.62.1",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.2.0",
     "@vitest/coverage-v8": "^4.1.10",
     "dpdm": "4.3.0",
     "jsdom": "^30.0.1",
