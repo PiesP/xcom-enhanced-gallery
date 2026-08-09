@@ -126,7 +126,7 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       if (!firstElement || !lastElement) return;
 
       if (event.shiftKey) {
-        if (document.activeElement === firstElement) {
+        if (document.activeElement === containerEl || document.activeElement === firstElement) {
           event.preventDefault();
           lastElement.focus();
         }

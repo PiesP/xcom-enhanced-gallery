@@ -375,6 +375,28 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
+  test('Shift+Tab from the initially focused dialog wraps to its last control', async ({
+    page,
+  }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const container = page.locator('[data-xeg-gallery-container]');
+    const lastButton = page.locator('#focus-trap-last-button');
+    await container.evaluate((element) => {
+      const button = document.createElement('button');
+      button.id = 'focus-trap-last-button';
+      button.textContent = 'Last dialog control';
+      element.append(button);
+      (element as HTMLElement).focus();
+    });
+
+    await page.keyboard.press('Shift+Tab');
+
+    await expect(lastButton).toBeFocused();
+    await closeGallery(page);
+  });
+
   test('Focus returns to page when gallery closes', async ({ page }) => {
     await setupGalleryPage(page);
 
