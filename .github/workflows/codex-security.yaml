@@ -1,0 +1,131 @@
+name: Codex Security
+
+on:
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+env:
+  CODEX_SECURITY_VERSION: "0.1.8"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codex-security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Advisory security analysis
+    if: >-
+      vars.CODEX_SECURITY_ENABLED == 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.pull_request.head.repo.full_name == github.repository &&
+        github.actor != 'dependabot[bot]'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "26"
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Install pinned Codex Security
+        run: |
+          set -euo pipefail
+          install -d -m 0700 "$RUNNER_TEMP/codex-security"
+          npm install \
+            --prefix "$RUNNER_TEMP/codex-security" \
+            --ignore-scripts \
+            --no-audit \
+            --no-fund \
+            "@openai/codex-security@$CODEX_SECURITY_VERSION"
+          CODEX_SECURITY_BIN="$RUNNER_TEMP/codex-security/node_modules/.bin/codex-security"
+          test -x "$CODEX_SECURITY_BIN"
+          "$CODEX_SECURITY_BIN" --version
+
+      - name: Check out exact source revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: false
+
+      - name: Prepare private result directories
+        run: |
+          set -euo pipefail
+          install -d -m 0700 \
+            "$RUNNER_TEMP/codex-security-state" \
+            "$RUNNER_TEMP/codex-security-results"
+
+      - name: Run advisory Codex Security scan
+        env:
+          OPENAI_API_KEY: ${{ secrets.CODEX_SECURITY_API_KEY }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CODEX_SECURITY_STATE_DIR: ${{ runner.temp }}/codex-security-state
+        run: |
+          set -euo pipefail
+          cli="$RUNNER_TEMP/codex-security/node_modules/.bin/codex-security"
+          args=(
+            scan .
+            --auth api-key
+            --knowledge-base .github/codex-security/threat-model.md
+            --knowledge-base .github/SECURITY.md
+            --knowledge-base PRIVACY.md
+            --scan-prompt-file .github/codex-security/scan.md
+            --output-dir "$RUNNER_TEMP/codex-security-results"
+            --json
+          )
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            base_revision="$(git merge-base "$BASE_SHA" "$HEAD_SHA")"
+            args+=(--diff "$base_revision" --head "$HEAD_SHA" --max-cost 5)
+          else
+            args+=(--mode standard --max-cost 8)
+          fi
+          "$cli" "${args[@]}" > "$RUNNER_TEMP/codex-security.json"
+
+      - name: Export SARIF
+        id: export-sarif
+        if: always()
+        run: |
+          set -euo pipefail
+          if [[ -f "$RUNNER_TEMP/codex-security-results/scan-manifest.json" ]]; then
+            "$RUNNER_TEMP/codex-security/node_modules/.bin/codex-security" export \
+              "$RUNNER_TEMP/codex-security-results" \
+              --export-format sarif \
+              --source-root "$GITHUB_WORKSPACE" \
+              --output "$RUNNER_TEMP/codex-security.sarif"
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload SARIF
+        if: always() && steps.export-sarif.outputs.available == 'true'
+        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
+        with:
+          sarif_file: ${{ runner.temp }}/codex-security.sarif
+          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/head', github.event.pull_request.number) || github.ref }}
+          sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          category: codex-security
+
+      - name: Preserve scan metadata
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: codex-security-${{ github.event_name }}-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/codex-security-results/scan-manifest.json
+            ${{ runner.temp }}/codex-security-results/coverage.json
+          if-no-files-found: warn
+          retention-days: 7
