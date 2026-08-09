@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { By, until } from 'selenium-webdriver';
 import * as firefox from 'selenium-webdriver/firefox.js';
-import { FIREFOX_EXTENSION_DIR, MOCK_GALLERY_HTML } from './fixtures/artifacts.ts';
+import { FIREFOX_EXTENSION_DIR, MOCK_GALLERY_HTML, MOCK_IMAGE } from './fixtures/artifacts.ts';
 
 const TEST_TIMEOUT_MS = 120_000;
 const WAIT_TIMEOUT_MS = 20_000;
@@ -21,10 +21,28 @@ let certificateDirectory: string | undefined;
 let extensionDirectory: string | undefined;
 
 after(async () => {
-  if (driver) await driver.quit();
-  if (server) await new Promise<void>((resolve) => server?.close(() => resolve()));
-  if (certificateDirectory) rmSync(certificateDirectory, { recursive: true, force: true });
-  if (extensionDirectory) rmSync(extensionDirectory, { recursive: true, force: true });
+  let cleanupError: unknown;
+  try {
+    if (driver) await driver.quit();
+  } catch (error) {
+    cleanupError = error;
+  }
+  try {
+    if (server) {
+      await new Promise<void>((resolve, reject) =>
+        server?.close((error) => (error ? reject(error) : resolve()))
+      );
+    }
+  } catch (error) {
+    cleanupError ??= error;
+  }
+  try {
+    if (certificateDirectory) rmSync(certificateDirectory, { recursive: true, force: true });
+    if (extensionDirectory) rmSync(extensionDirectory, { recursive: true, force: true });
+  } catch (error) {
+    cleanupError ??= error;
+  }
+  if (cleanupError) throw cleanupError;
 });
 
 function createRuntimeTestExtension(): string {
@@ -68,7 +86,7 @@ function createCertificate(): { cert: Buffer; key: Buffer } {
       '-subj',
       '/CN=x.com',
       '-addext',
-      'subjectAltName=DNS:x.com',
+      'subjectAltName=DNS:x.com,DNS:pbs.twimg.com',
     ],
     { stdio: 'ignore' }
   );
@@ -77,12 +95,24 @@ function createCertificate(): { cert: Buffer; key: Buffer } {
 
 async function startFixtureServer(): Promise<number> {
   const credentials = createCertificate();
-  server = createServer(credentials, (_request, response) => {
+  server = createServer(credentials, (request, response) => {
+    if (request.headers.host?.startsWith('pbs.twimg.com')) {
+      response.writeHead(200, { 'content-type': 'image/png' });
+      response.end(MOCK_IMAGE);
+      return;
+    }
+    const address = server?.address();
+    if (!address || typeof address === 'string') {
+      response.writeHead(500);
+      response.end();
+      return;
+    }
+    const mediaOrigin = `https://pbs.twimg.com:${address.port}`;
     response.writeHead(200, {
       'content-type': 'text/html; charset=utf-8',
-      'content-security-policy': "default-src 'self' https://pbs.twimg.com; img-src 'self' https://pbs.twimg.com data:; style-src 'unsafe-inline'",
+      'content-security-policy': `default-src 'self'; img-src 'self' ${mediaOrigin} data:; style-src 'unsafe-inline'`,
     });
-    response.end(MOCK_GALLERY_HTML);
+    response.end(MOCK_GALLERY_HTML.replaceAll('https://pbs.twimg.com', mediaOrigin));
   });
   await new Promise<void>((resolve, reject) => {
     server?.once('error', reject);
@@ -100,7 +130,7 @@ test(
     const port = await startFixtureServer();
     const options = new firefox.Options()
       .addArguments('-headless')
-      .setPreference('network.dns.localDomains', 'x.com');
+      .setPreference('network.dns.localDomains', 'x.com,pbs.twimg.com');
     options.setAcceptInsecureCerts(true);
 
     const firefoxDriver = firefox.Driver.createSession(options);
