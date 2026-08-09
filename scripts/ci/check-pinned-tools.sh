@@ -53,7 +53,7 @@ check_npm_mature_release() {
   expected="$(npm view "$package_name" time --json | jq -er \
     --argjson cutoff "$cutoff_epoch" '
       to_entries
-      | map(select(.key != "created" and .key != "modified"))
+      | map(select(.key | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")))
       | map(. + {epoch: (.value | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601)})
       | map(select(.epoch <= $cutoff))
       | sort_by(.epoch)

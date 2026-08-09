@@ -64,12 +64,31 @@ ensure_private_directory() {
     printf 'Codex Security path must be a real directory, not a symlink: %s\n' "$path" >&2
     exit 2
   fi
-  owner="$(stat -c '%u' -- "$path")"
-  permissions="$(stat -c '%a' -- "$path")"
+  read -r owner permissions < <(node - "$path" <<'NODE'
+const fs = require('node:fs');
+const stats = fs.lstatSync(process.argv[2]);
+console.log(`${stats.uid} ${(stats.mode & 0o777).toString(8)}`);
+NODE
+  )
   if [[ "$owner" != "$(id -u)" ]] || (((8#$permissions & 077) != 0)); then
     printf 'Codex Security path must be owned by the current user with private permissions: %s\n' "$path" >&2
     exit 2
   fi
+}
+
+canonicalize_path() {
+  node - "$1" <<'NODE'
+const fs = require('node:fs');
+const path = require('node:path');
+
+let existing = path.resolve(process.argv[2]);
+const missing = [];
+while (!fs.existsSync(existing)) {
+  missing.unshift(path.basename(existing));
+  existing = path.dirname(existing);
+}
+console.log(path.join(fs.realpathSync(existing), ...missing));
+NODE
 }
 
 umask 077
@@ -89,9 +108,9 @@ for outside_path in "$cache_dir" "$output_root" "$state_dir"; do
   fi
 done
 
-cache_dir="$(realpath -m -- "$cache_dir")"
-output_root="$(realpath -m -- "$output_root")"
-state_dir="$(realpath -m -- "$state_dir")"
+cache_dir="$(canonicalize_path "$cache_dir")"
+output_root="$(canonicalize_path "$output_root")"
+state_dir="$(canonicalize_path "$state_dir")"
 for outside_path in "$cache_dir" "$output_root" "$state_dir"; do
   case "$outside_path/" in
     "$repo_root/"*)
