@@ -7,10 +7,15 @@ const cliPackagePath = resolve(root, '.github/codex-security/package.json');
 const cliLockPath = resolve(root, '.github/codex-security/package-lock.json');
 const workflow = readFileSync(resolve(root, '.github/workflows/codex-security.yaml'), 'utf8');
 const helper = readFileSync(resolve(root, 'scripts/security/codex-security.sh'), 'utf8');
+const patcher = readFileSync(
+  resolve(root, 'scripts/security/patch-codex-security.mjs'),
+  'utf8'
+);
 const pinnedToolsCheck = readFileSync(resolve(root, 'scripts/ci/check-pinned-tools.sh'), 'utf8');
 
 type CliPackage = {
   dependencies: Record<string, string>;
+  overrides?: Record<string, Record<string, string>>;
 };
 
 type LockPackage = {
@@ -48,6 +53,26 @@ describe('Codex Security CLI supply-chain controls', () => {
     }
   });
 
+  it('pins the PDF parser to the first release outside GHSA-hq66-cqwq-w95j', () => {
+    const cliPackage = JSON.parse(readFileSync(cliPackagePath, 'utf8')) as CliPackage;
+    const cliLock = JSON.parse(readFileSync(cliLockPath, 'utf8')) as CliLock;
+    const pdfjsOverride = cliPackage.overrides?.['@openai/codex-security']?.['pdfjs-dist'];
+
+    expect(pdfjsOverride).toBe('6.2.108');
+    expect(cliLock.packages['node_modules/pdfjs-dist']?.version).toBe(pdfjsOverride);
+  });
+
+  it('applies the digest-checked PDF.js 6 compatibility patch before execution', () => {
+    expect(workflow).toContain(
+      'node scripts/security/patch-codex-security.mjs "$RUNNER_TEMP/codex-security"'
+    );
+    expect(helper).toContain('node "$cli_patcher" "$cache_dir"');
+    expect(patcher).toContain("const EXPECTED_CODEX_VERSION = '0.1.8'");
+    expect(patcher).toContain("const EXPECTED_PDFJS_VERSION = '6.2.108'");
+    expect(patcher).toContain("const PATCHED_SOURCE_SHA256 = '00c4406c8f84");
+    expect(patcher).toContain('await loadingTask.destroy();');
+  });
+
   it('installs the trusted base lock before checking out pull-request source', () => {
     const trustedCheckout = workflow.indexOf('name: Check out trusted CLI lock');
     const lockedInstall = workflow.indexOf('name: Install locked Codex Security');
@@ -64,11 +89,12 @@ describe('Codex Security CLI supply-chain controls', () => {
     expect(workflow).not.toMatch(/\bnpm install\b/);
   });
 
-  it('keys the local cache by the lock and uses the same frozen install', () => {
+  it('keys the local cache by the complete install recipe and uses the frozen install', () => {
     expect(helper).toContain('.github/codex-security/package.json');
     expect(helper).toContain('.github/codex-security/package-lock.json');
-    expect(helper).toContain('lock_digest=');
-    expect(helper).toContain('cli-$cli_version-$lock_digest');
+    expect(helper).toContain('install_digest=');
+    expect(helper).toContain('cli-$cli_version-$install_digest');
+    expect(helper).toContain('.install-recipe.sha256');
     expect(helper).toContain('npm ci \\\n');
     expect(helper).not.toMatch(/\bnpm install\b/);
     expect(helper).not.toContain('--package-lock=false');
