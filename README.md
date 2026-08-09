@@ -60,7 +60,7 @@ The gallery targets desktop browsers and does not provide a mobile/touch flow.
 
 | Distribution | Support |
 | --- | --- |
-| Userscript | Chrome/Edge 117+, Firefox 119+, Safari 17+ |
+| Userscript | Chrome/Edge 123+, Firefox 128+, Safari 17.5+ |
 | Chromium extension | Current desktop Chrome, Edge, and Brave developer mode |
 | Firefox extension | Firefox 128+ temporary developer installation |
 
@@ -87,7 +87,7 @@ pnpm install
 | Command | Purpose |
 | --- | --- |
 | `pnpm test` | Run the Vitest suite |
-| `pnpm test:e2e` | Run userscript Playwright tests |
+| `pnpm test:e2e` | Run the full Chromium userscript suite plus Firefox/WebKit smoke tests |
 | `pnpm test:e2e:extension` | Run Chrome extension Playwright tests |
 | `pnpm quality` | Run static quality checks |
 | `pnpm verify` | Run quality and all production builds |

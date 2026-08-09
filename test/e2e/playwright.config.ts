@@ -33,7 +33,6 @@ export default defineConfig({
     viewport: { width: 1280, height: 800 },
     launchOptions: {
       slowMo: process.env.CI ? 0 : 200,
-      args: ['--disable-blink-features=AutomationControlled'],
     },
   },
   projects: [
@@ -41,6 +40,24 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
+        launchOptions: {
+          slowMo: process.env.CI ? 0 : 200,
+          args: ['--disable-blink-features=AutomationControlled'],
+        },
+      },
+    },
+    {
+      name: 'firefox-smoke',
+      grep: /cross-browser smoke/,
+      use: {
+        ...devices['Desktop Firefox'],
+      },
+    },
+    {
+      name: 'webkit-smoke',
+      grep: /cross-browser smoke/,
+      use: {
+        ...devices['Desktop Safari'],
       },
     },
   ],

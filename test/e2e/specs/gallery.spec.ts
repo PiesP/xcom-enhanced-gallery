@@ -10,7 +10,7 @@
  * 3. Injecting the built userscript
  * 4. Verifying gallery interactions
  *
- * Environment: Playwright + Chromium (headed)
+ * Environment: Playwright + Chromium, with a startup smoke test in Firefox and WebKit
  * Userscript injection: page.evaluate() with bundle content
  */
 
@@ -90,7 +90,7 @@ test.describe('X.com Enhanced Gallery E2E', () => {
     }
   });
 
-  test('userscript injects without errors on x.com', async ({ page }) => {
+  test('cross-browser smoke: userscript injects without errors on x.com', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (err) => errors.push(err.message));
     page.on('console', (msg) => {
