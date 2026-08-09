@@ -8,6 +8,8 @@
  * block for the X.com Enhanced Gallery userscript.
  */
 
+import { USERSCRIPT_BROWSER_SUPPORT } from '../browser-support.ts';
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 /**
@@ -50,14 +52,6 @@ export const OUTPUT_FILE_NAMES = {
 export const CDN_BASE_URL =
   'https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@release/dist' as const;
 
-/** Minimum browser version requirements for the userscript. */
-const BROWSER_COMPATIBILITY = {
-  chrome: '117',
-  firefox: '119',
-  edge: '117',
-  safari: '17',
-} as const;
-
 /** Complete userscript metadata configuration. */
 export const USERSCRIPT_CONFIG = {
   name: 'X.com Enhanced Gallery',
@@ -81,7 +75,7 @@ export const USERSCRIPT_CONFIG = {
   supportURL: 'https://github.com/PiesP/xcom-enhanced-gallery/issues',
   homepageURL: 'https://github.com/PiesP/xcom-enhanced-gallery',
   noframes: true,
-  compatible: BROWSER_COMPATIBILITY,
+  compatible: USERSCRIPT_BROWSER_SUPPORT,
 } as const satisfies UserscriptBaseConfig;
 
 // ── Formatting helpers ───────────────────────────────────────────────────────

@@ -60,7 +60,7 @@ The gallery targets desktop browsers and does not provide a mobile/touch flow.
 
 | Distribution | Support |
 | --- | --- |
-| Userscript | Chrome/Edge 117+, Firefox 119+, Safari 17+ |
+| Userscript | Chrome/Edge 123+, Firefox 128+, Safari 17.5+ |
 | Chromium extension | Current desktop Chrome, Edge, and Brave developer mode |
 | Firefox extension | Firefox 128+ temporary developer installation |
 

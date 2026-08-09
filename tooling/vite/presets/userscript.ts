@@ -12,6 +12,7 @@
  */
 
 import type { UserConfig } from 'vite';
+import { USERSCRIPT_BUILD_TARGETS } from '../browser-support.ts';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,7 +39,7 @@ export function userscriptPreset(options: UserscriptPresetOptions): UserConfig {
 
   return {
     build: {
-      target: ['chrome117', 'firefox128', 'safari17'],
+      target: [...USERSCRIPT_BUILD_TARGETS],
       minify: false,
       sourcemap: sourceMap,
       outDir: 'dist',
