@@ -51,6 +51,20 @@ Dependencies retain the repository's cooling window, trust policy, approved
 build-script list, and registry-source restrictions. Do not weaken those
 controls to accept an update.
 
+Codex Security is an advisory, AI-assisted complement to these deterministic
+gates. Local scans use `pnpm security:codex:dry-run`,
+`pnpm security:codex:working-tree`, `pnpm security:codex:branch`, or
+`pnpm security:codex:full`. CI scans same-repository pull request diffs and
+manual full-repository requests only after the `CODEX_SECURITY_ENABLED` Actions
+variable is set to `true` and the `CODEX_SECURITY_API_KEY` secret is configured.
+
+Scan findings require human source-to-sink validation and severity review before
+they are treated as vulnerabilities or made blocking. Reports, JSON, SARIF, and
+coverage artifacts can contain private source excerpts or vulnerability details;
+keep them access-controlled and retain them only as long as needed. The rollout
+remains non-blocking and does not replace CodeQL, OSV, Semgrep, tests, or release
+validation.
+
 ## Scope
 
 In scope are vulnerabilities introduced by this repository, including

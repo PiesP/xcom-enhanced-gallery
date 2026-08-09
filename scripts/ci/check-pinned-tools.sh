@@ -44,6 +44,31 @@ check_release() {
     "$name" "$current" "$cooling_hours"
 }
 
+check_npm_mature_release() {
+  local name="$1"
+  local package_name="$2"
+  local current="$3"
+  local expected
+
+  expected="$(npm view "$package_name" time --json | jq -er \
+    --argjson cutoff "$cutoff_epoch" '
+      to_entries
+      | map(select(.key != "created" and .key != "modified"))
+      | map(. + {epoch: (.value | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601)})
+      | map(select(.epoch <= $cutoff))
+      | sort_by(.epoch)
+      | last.key
+    ')"
+  if [[ "$current" != "$expected" ]]; then
+    printf '::error title=%s update available::Pinned %s; latest npm release older than %sh is %s.\n' \
+      "$name" "$current" "$cooling_hours" "$expected"
+    return 1
+  fi
+
+  printf '✓ %s %s is current after the %sh cooling window.\n' \
+    "$name" "$current" "$cooling_hours"
+}
+
 check_osv_image_digest() {
   local version="$1"
   local image token expected_digest actual_digest
@@ -75,10 +100,12 @@ check_osv_image_digest() {
 nose_version="$(sed -nE 's/^nose_version="([^"]+)"/\1/p' scripts/ci/install-nose.sh)"
 osv_version="$(sed -nE 's/.*osv-scanner-action image v([^ ]+).*/\1/p' .github/workflows/security.yaml)"
 semgrep_version="$(sed -nE 's/.*semgrep\/semgrep:([^ @]+).*/\1/p' .github/workflows/security.yaml | head -n 1)"
+codex_security_version="$(sed -nE 's/^  CODEX_SECURITY_VERSION: "([^"]+)"$/\1/p' .github/workflows/codex-security.yaml)"
 
 status=0
 check_release nose "$nose_version" corca-ai/nose || status=1
 check_release osv-scanner "$osv_version" google/osv-scanner || status=1
 check_osv_image_digest "$osv_version" || status=1
 check_release semgrep "$semgrep_version" semgrep/semgrep || status=1
+check_npm_mature_release codex-security @openai/codex-security "$codex_security_version" || status=1
 exit "$status"
