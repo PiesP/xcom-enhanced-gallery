@@ -4,6 +4,11 @@
   "dependencies": {
     "@openai/codex-security": "0.1.8"
   },
+  "overrides": {
+    "@openai/codex-security": {
+      "pdfjs-dist": "6.2.108"
+    }
+  },
   "engines": {
     "node": "^22.13.0 || ^24.0.0 || ^26.0.0"
   }
