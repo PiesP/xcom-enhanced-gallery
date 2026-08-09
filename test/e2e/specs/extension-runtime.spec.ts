@@ -106,7 +106,8 @@ test('Firefox build artifact contains its declared runtime scripts', ({ browserN
  * Playwright does not support temporary WebExtension installation in Firefox.
  * Execute the exact built background module in the Firefox engine with the
  * WebExtension namespace mocked, which verifies Firefox parsing, startup, and
- * listener registration without claiming a full installation test.
+ * listener registration. The separate Selenium runner performs the full
+ * temporary-install content/background runtime test.
  */
 test('executes the Firefox background module and registers its runtime listeners', async ({
   browserName,
