@@ -96,7 +96,7 @@ describe('tooling configuration', () => {
     expect(config.reporters).toEqual(
       expect.arrayContaining(['progress', 'clear-text', 'json', 'html'])
     );
-    expect(config.thresholds.break).toBe(70);
+    expect(config.thresholds.break).toBe(72);
     expect(config.thresholds.low).toBeGreaterThan(config.thresholds.break ?? 0);
     expect(config.thresholds.high).toBeGreaterThan(config.thresholds.low);
     expect(config.mutator.excludedMutations).not.toEqual(
