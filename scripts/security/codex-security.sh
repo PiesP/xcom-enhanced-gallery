@@ -53,6 +53,26 @@ if ((node_major < 22 || (node_major == 22 && node_minor < 13))); then
   exit 2
 fi
 
+ensure_private_directory() {
+  local path="$1"
+  local owner permissions
+
+  if [[ ! -e "$path" ]]; then
+    install -d -m 0700 "$path"
+  fi
+  if [[ -L "$path" || ! -d "$path" ]]; then
+    printf 'Codex Security path must be a real directory, not a symlink: %s\n' "$path" >&2
+    exit 2
+  fi
+  owner="$(stat -c '%u' -- "$path")"
+  permissions="$(stat -c '%a' -- "$path")"
+  if [[ "$owner" != "$(id -u)" ]] || (((8#$permissions & 077) != 0)); then
+    printf 'Codex Security path must be owned by the current user with private permissions: %s\n' "$path" >&2
+    exit 2
+  fi
+}
+
+umask 077
 tmp_root="${TMPDIR:-/tmp}"
 cache_dir="${CODEX_SECURITY_CACHE_DIR:-${XDG_CACHE_HOME:-$tmp_root}/codex-security/$repo_name/cli-$cli_version}"
 output_root="${CODEX_SECURITY_OUTPUT_ROOT:-$tmp_root/codex-security-results/$repo_name}"
@@ -63,6 +83,16 @@ for outside_path in "$cache_dir" "$output_root" "$state_dir"; do
     printf 'Codex Security paths must be absolute: %s\n' "$outside_path" >&2
     exit 2
   fi
+  if [[ -L "$outside_path" ]]; then
+    printf 'Codex Security paths must not be symlinks: %s\n' "$outside_path" >&2
+    exit 2
+  fi
+done
+
+cache_dir="$(realpath -m -- "$cache_dir")"
+output_root="$(realpath -m -- "$output_root")"
+state_dir="$(realpath -m -- "$state_dir")"
+for outside_path in "$cache_dir" "$output_root" "$state_dir"; do
   case "$outside_path/" in
     "$repo_root/"*)
       printf 'Codex Security paths must be outside the repository: %s\n' "$outside_path" >&2
@@ -71,7 +101,9 @@ for outside_path in "$cache_dir" "$output_root" "$state_dir"; do
   esac
 done
 
-install -d -m 0700 "$cache_dir" "$output_root" "$state_dir"
+ensure_private_directory "$cache_dir"
+ensure_private_directory "$output_root"
+ensure_private_directory "$state_dir"
 cli_bin="$cache_dir/node_modules/.bin/codex-security"
 if [[ ! -x "$cli_bin" ]]; then
   npm install \
@@ -89,9 +121,7 @@ if [[ "$installed_version" != "$cli_version" ]]; then
   exit 2
 fi
 
-run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
-scan_dir="$output_root/$mode-$run_id"
-install -d -m 0700 "$scan_dir"
+scan_dir="$(mktemp -d "$output_root/$mode.XXXXXX")"
 export CODEX_SECURITY_STATE_DIR="$state_dir"
 
 args=(
