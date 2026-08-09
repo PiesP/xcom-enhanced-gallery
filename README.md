@@ -87,7 +87,7 @@ pnpm install
 | Command | Purpose |
 | --- | --- |
 | `pnpm test` | Run the Vitest suite |
-| `pnpm test:e2e` | Run userscript Playwright tests |
+| `pnpm test:e2e` | Run the full Chromium userscript suite plus Firefox/WebKit smoke tests |
 | `pnpm test:e2e:extension` | Run Chrome extension Playwright tests |
 | `pnpm quality` | Run static quality checks |
 | `pnpm verify` | Run quality and all production builds |

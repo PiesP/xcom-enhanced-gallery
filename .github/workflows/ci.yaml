@@ -119,7 +119,7 @@ jobs:
 
       - name: 🎭 Run userscript and extension contract E2E tests
         run: |
-          pnpm exec playwright install --with-deps chromium firefox
+          pnpm exec playwright install --with-deps chromium firefox webkit
           pnpm test:e2e
           pnpm test:e2e:extension
 
