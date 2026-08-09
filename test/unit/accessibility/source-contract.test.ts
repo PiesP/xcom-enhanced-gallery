@@ -22,6 +22,10 @@ const galleryRendererSrc = readFileSync(
   resolve(srcDir, 'features/gallery/gallery-renderer.tsx'),
   'utf8'
 );
+const galleryHostStateSrc = readFileSync(
+  resolve(srcDir, 'shared/components/isolation/gallery-host-state.ts'),
+  'utf8'
+);
 const toolbarSrc = readFileSync(
   resolve(srcDir, 'shared/components/ui/Toolbar/ToolbarView.tsx'),
   'utf8'
@@ -37,8 +41,9 @@ describe('gallery accessibility source contract', () => {
     expect(galleryContainerSrc).toContain('aria-modal="true"');
     expect(galleryContainerSrc).toContain("aria-label={translate('msg.gal.imageGallery')}");
     expect(galleryContainerSrc).toContain('lang={');
-    expect(galleryContainerSrc).toContain('hideBackgroundElement(element)');
-    expect(galleryContainerSrc).toContain('restoreBackgroundElement(el)');
+    expect(galleryContainerSrc).toContain('activateGalleryHostState(containerEl)');
+    expect(galleryHostStateSrc).toContain('hideBackgroundElement(element)');
+    expect(galleryHostStateSrc).toContain('restoreBackgroundElement(element)');
   });
 
   it('keeps native list and media interaction semantics', () => {
@@ -64,6 +69,6 @@ describe('gallery accessibility source contract', () => {
     expect(galleryContainerSrc).toContain('focusableElements');
     expect(galleryContainerSrc).toContain('firstElement.focus()');
     expect(lifecycleSrc).toContain('Focus restoration is handled by GalleryContainer.tsx');
-    expect(galleryContainerSrc).toContain('previouslyFocusedElement.focus()');
+    expect(galleryHostStateSrc).toContain('this.previousFocus.focus()');
   });
 });
