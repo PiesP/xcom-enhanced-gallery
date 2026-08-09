@@ -11,9 +11,9 @@ import {
   mountGallery,
   unmountGallery,
 } from '@shared/components/isolation/GalleryContainer';
+import { restoreActiveGalleryHostState } from '@shared/components/isolation/gallery-host-state';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import type { BaseLanguageCode, SupportedLanguage } from '@shared/constants/i18n/language-types';
-import { isHiddenByGallery, restoreBackgroundElement } from '@shared/dom/background-visibility';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import { getLanguageService } from '@shared/services/language-service';
@@ -67,31 +67,8 @@ function GalleryRoot(props: GalleryRootProps): JSX.Element {
   /** Determine text direction for RTL languages like Arabic */
   const dir = (): 'ltr' | 'rtl' => (resolvedLanguage() === 'ar' ? 'rtl' : 'ltr');
 
-  // Emergency cleanup for when ErrorBoundary catches a render error.
-  // GalleryContainer's onCleanup will NOT fire when its render throws,
-  // so we must restore body scroll lock and background accessibility here.
-  const handleRenderError = (): void => {
-    // Restore body scroll lock styles (mirrors GalleryContainer onCleanup)
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.left = '';
-    document.body.style.right = '';
-    // Restore browser scroll restoration to default
-    if ('scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'auto';
-    }
-    // Restore only markers written by GalleryContainer. This preserves any
-    // aria-hidden value that existed on the host page before the gallery.
-    for (const el of Array.from(document.body.children)) {
-      if (el instanceof HTMLElement && isHiddenByGallery(el)) {
-        restoreBackgroundElement(el);
-      }
-    }
-  };
-
   return (
-    <ErrorBoundary onError={handleRenderError}>
+    <ErrorBoundary onError={restoreActiveGalleryHostState}>
       <GalleryContainer
         className={`${CSS.CLASSES.RENDERER} ${CSS.CLASSES.ROOT} xeg-theme-scope`}
         theme={currentTheme()}
