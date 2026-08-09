@@ -183,7 +183,7 @@ export class DownloadOrchestrator {
           filesSuccessful: result.filesSuccessful,
           filename,
           failures: result.failures,
-          code: ErrorCode.NONE,
+          code: result.resourceLimitExceeded ? ErrorCode.RESOURCE_LIMIT : ErrorCode.NONE,
         };
       } catch (error) {
         if (isAbortError(error)) {

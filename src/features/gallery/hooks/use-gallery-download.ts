@@ -100,15 +100,16 @@ export function createDownloadHandler() {
           signal,
         });
 
+        if (result.code === 'CANCELLED') return;
+        if (result.code === 'RESOURCE_LIMIT') {
+          const title = languageService.translate('msg.dl.one.err.t');
+          const body = languageService.translate('msg.dl.zipTooLarge');
+          setError(body);
+          notifyError(title, body);
+          return;
+        }
+
         if (!result.success) {
-          if (result.code === 'CANCELLED') return;
-          if (result.code === 'RESOURCE_LIMIT') {
-            const title = languageService.translate('msg.dl.one.err.t');
-            const body = languageService.translate('msg.dl.zipTooLarge');
-            setError(body);
-            notifyError(title, body);
-            return;
-          }
           if (result.filesSuccessful === 0) {
             const title = languageService.translate('msg.dl.allFail.t');
             const body = languageService.translate('msg.dl.allFail.b');
