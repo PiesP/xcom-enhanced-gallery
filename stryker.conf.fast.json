@@ -28,10 +28,10 @@
   "thresholds": {
     "high": 80,
     "low": 75,
-    "break": 70
+    "break": 72
   },
   "inPlace": true,
-  "concurrency": 2,
+  "concurrency": 4,
   "timeoutMS": 120000,
   "plugins": ["@stryker-mutator/vitest-runner"],
   "mutator": {

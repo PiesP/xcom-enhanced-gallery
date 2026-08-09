@@ -17,6 +17,10 @@ describe('url/safety', () => {
       expect(isUrlAllowed('', MEDIA_URL_POLICY)).toBe(false);
     });
 
+    it('should reject non-string runtime input', () => {
+      expect(isUrlAllowed(42 as unknown as string, MEDIA_URL_POLICY)).toBe(false);
+    });
+
     it('should strip control characters and validate the remaining URL', () => {
       // CONTROL_CHARS_REGEX strips control chars, then the remaining URL is validated
       // 'https://example.com/\u0000image.jpg' → 'https://example.com/image.jpg' → allowed (https)
@@ -46,6 +50,11 @@ describe('url/safety', () => {
       expect(isUrlAllowed('//pbs.twimg.com/media/ABC?format=jpg', MEDIA_URL_POLICY)).toBe(true);
     });
 
+    it('should reject protocol-relative URLs when policy forbids them', () => {
+      const strictPolicy = { ...MEDIA_URL_POLICY, allowProtocolRelative: false };
+      expect(isUrlAllowed('//pbs.twimg.com/media/ABC?format=jpg', strictPolicy)).toBe(false);
+    });
+
     it('should allow relative URLs when policy permits', () => {
       expect(isUrlAllowed('/media/ABC?format=jpg', MEDIA_URL_POLICY)).toBe(true);
     });
@@ -67,6 +76,22 @@ describe('url/safety', () => {
       expect(isUrlAllowed('data:video/mp4;base64,abc', MEDIA_URL_POLICY)).toBe(false);
     });
 
+    it('should reject data URLs when MIME prefixes are absent or empty', () => {
+      const missingPrefixes = { ...MEDIA_URL_POLICY, allowedDataMimePrefixes: undefined };
+      const emptyPrefixes = { ...MEDIA_URL_POLICY, allowedDataMimePrefixes: [] };
+
+      expect(isUrlAllowed('data:image/png;base64,abc', missingPrefixes)).toBe(false);
+      expect(isUrlAllowed('data:image/png;base64,abc', emptyPrefixes)).toBe(false);
+    });
+
+    it('should require an exact or explicitly suffixed image MIME', () => {
+      expect(isUrlAllowed('data:image/png;base64,abc', MEDIA_URL_POLICY)).toBe(true);
+      expect(isUrlAllowed('data:image/png+variant;base64,abc', MEDIA_URL_POLICY)).toBe(true);
+      expect(isUrlAllowed('data:image/png-variant;base64,abc', MEDIA_URL_POLICY)).toBe(true);
+      expect(isUrlAllowed('data:image/png123;base64,abc', MEDIA_URL_POLICY)).toBe(false);
+      expect(isUrlAllowed('data:;base64,abc', MEDIA_URL_POLICY)).toBe(false);
+    });
+
     it('should reject data URLs when allowDataUrls is false', () => {
       const noDataPolicy = { ...MEDIA_URL_POLICY, allowDataUrls: false };
       expect(isUrlAllowed('data:image/png;base64,abc', noDataPolicy)).toBe(false);
@@ -81,6 +106,11 @@ describe('url/safety', () => {
     it('should reject fragments when both allowFragments and allowRelative are false', () => {
       const strictPolicy = { ...MEDIA_URL_POLICY, allowFragments: false, allowRelative: false };
       expect(isUrlAllowed('#section', strictPolicy)).toBe(false);
+    });
+
+    it('should allow fragments explicitly when relative URLs are forbidden', () => {
+      const fragmentPolicy = { ...MEDIA_URL_POLICY, allowFragments: true, allowRelative: false };
+      expect(isUrlAllowed('#section', fragmentPolicy)).toBe(true);
     });
 
     it('should reject blocked protocol hints', () => {
@@ -109,6 +139,11 @@ describe('url/safety', () => {
 
     it('should reject incomplete percent-encoding', () => {
       expect(startsWithBlockedProtocolHint('test%GGvalue', hints)).toBe(true);
+    });
+
+    it('should scope malformed percent checks to the scheme region', () => {
+      expect(startsWithBlockedProtocolHint('https://example.com/?discount=100%off', hints)).toBe(false);
+      expect(startsWithBlockedProtocolHint('test%GG:value', hints)).toBe(true);
     });
 
     it('should allow safe protocols', () => {
