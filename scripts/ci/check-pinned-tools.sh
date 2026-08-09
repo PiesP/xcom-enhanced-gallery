@@ -44,6 +44,32 @@ check_release() {
     "$name" "$current" "$cooling_hours"
 }
 
+check_release_asset_digest() {
+  local name="$1"
+  local repository="$2"
+  local version="$3"
+  local asset_name="$4"
+  local expected_digest="$5"
+  local actual_digest
+
+  if [[ ! "$expected_digest" =~ ^[0-9a-fA-F]{64}$ ]]; then
+    printf '::error title=%s digest invalid::Pinned SHA-256 digest is missing or malformed.\n' \
+      "$name"
+    return 1
+  fi
+
+  actual_digest="$(gh api "repos/$repository/releases/tags/v$version" \
+    --jq ".assets[] | select(.name == \"$asset_name\") | .digest" \
+    | sed 's/^sha256://')"
+  if [[ "$actual_digest" != "$expected_digest" ]]; then
+    printf '::error title=%s digest mismatch::Pinned digest %s; v%s asset resolves to %s.\n' \
+      "$name" "$expected_digest" "$version" "$actual_digest"
+    return 1
+  fi
+
+  printf '✓ %s v%s installer digest matches the pinned SHA-256.\n' "$name" "$version"
+}
+
 check_npm_mature_release() {
   local name="$1"
   local package_name="$2"
@@ -128,6 +154,7 @@ check_osv_image_digest() {
 }
 
 nose_version="$(sed -nE 's/^nose_version="([^"]+)"/\1/p' scripts/ci/install-nose.sh)"
+nose_installer_sha256="$(sed -nE 's/^nose_installer_sha256="([0-9a-fA-F]{64})"/\1/p' scripts/ci/install-nose.sh)"
 osv_version="$(sed -nE 's/.*osv-scanner-action image v([^ ]+).*/\1/p' .github/workflows/security.yaml)"
 semgrep_version="$(sed -nE 's/.*semgrep\/semgrep:([^ @]+).*/\1/p' .github/workflows/security.yaml | head -n 1)"
 codex_security_package=.github/codex-security/package.json
@@ -136,6 +163,8 @@ codex_security_version="$(jq -er '.dependencies["@openai/codex-security"]' "$cod
 
 status=0
 check_release nose "$nose_version" corca-ai/nose || status=1
+check_release_asset_digest nose-installer corca-ai/nose \
+  "$nose_version" nose-cli-installer.sh "$nose_installer_sha256" || status=1
 check_release osv-scanner "$osv_version" google/osv-scanner || status=1
 check_osv_image_digest "$osv_version" || status=1
 check_release semgrep "$semgrep_version" semgrep/semgrep || status=1

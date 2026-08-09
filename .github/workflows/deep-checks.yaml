@@ -49,8 +49,6 @@ jobs:
           submodules: true
 
       - name: 🔧 Install nose
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: bash scripts/ci/install-nose.sh
 
       - name: 🔎 Check for new duplication
