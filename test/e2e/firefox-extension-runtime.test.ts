@@ -93,10 +93,19 @@ function createCertificate(): { cert: Buffer; key: Buffer } {
   return { cert: readFileSync(certPath), key: readFileSync(keyPath) };
 }
 
+function parseHostname(host: string | undefined): string | undefined {
+  if (!host) return undefined;
+  try {
+    return new URL(`https://${host}`).hostname;
+  } catch {
+    return undefined;
+  }
+}
+
 async function startFixtureServer(): Promise<number> {
   const credentials = createCertificate();
   server = createServer(credentials, (request, response) => {
-    if (request.headers.host?.startsWith('pbs.twimg.com')) {
+    if (parseHostname(request.headers.host) === 'pbs.twimg.com') {
       response.writeHead(200, { 'content-type': 'image/png' });
       response.end(MOCK_IMAGE);
       return;
