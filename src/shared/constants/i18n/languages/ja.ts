@@ -81,6 +81,8 @@ export const ja: LanguageStrings = {
       },
       noMedia: 'メディアが選択されていません。ギャラリーを開き直してお試しください。',
       zipFail: 'ZIPファイルの保存に失敗しました',
+      zipTooLarge:
+        'このZIPはブラウザーで安全に処理するには大きすぎます。大きなメディアは個別にダウンロードしてください。',
     },
     gal: {
       emptyT: 'メディアがありません',

@@ -12,6 +12,7 @@ import {
 } from '@bootstrap/gallery-init';
 import { executeStages } from '@bootstrap/utils';
 import { createAppConfig } from '@constants/app-config';
+import { getSettingsService } from '@features/settings/services/settings-service';
 import { clearSettings } from '@shared/container/settings-registry';
 import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
 import { bootstrapErrorReporter, galleryErrorReporter } from '@shared/error/app-error-reporter';
@@ -228,6 +229,9 @@ async function performCleanup(): Promise<void> {
     await runOptionalCleanup('theme-service', () => {
       const ts = getThemeService();
       if (ts.isInitialized()) ts.destroy();
+    });
+    await runOptionalCleanup('settings-service', async () => {
+      await getSettingsService().prepareForRestart();
     });
     // Keep the pageshow listener alive across pagehide so BFCache restoration
     // can restart the application. setupGlobalEventHandlers replaces it only

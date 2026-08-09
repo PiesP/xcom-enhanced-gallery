@@ -103,7 +103,7 @@ describe('user-facing bulk ZIP download', () => {
     ).rejects.toMatchObject({ name: 'AbortError' });
   });
 
-  it('starts lazy Blob providers only within the configured worker concurrency', async () => {
+  it('serializes unknown-size Blob providers so their whole responses cannot overlap', async () => {
     const deferred = Array.from({ length: 8 }, () => deferredBlob());
     let active = 0;
     let maxActive = 0;
@@ -124,17 +124,89 @@ describe('user-facing bulk ZIP download', () => {
     }));
 
     const resultPromise = downloadAsZip(items, { concurrency: 3 });
-    await vi.waitFor(() => expect(started).toBe(3));
+    await vi.waitFor(() => expect(started).toBe(1));
 
     for (let index = 0; index < deferred.length; index++) {
       deferred[index]?.resolve(new Blob([`image-${index}`]));
-      if (index < deferred.length - 3) {
-        await vi.waitFor(() => expect(started).toBe(index + 4));
+      if (index < deferred.length - 1) {
+        await vi.waitFor(() => expect(started).toBe(index + 2));
       }
     }
 
     await expect(resultPromise).resolves.toMatchObject({ filesSuccessful: 8, failures: [] });
-    expect(maxActive).toBe(3);
+    expect(maxActive).toBe(1);
+  });
+
+  it('keeps retained whole-file buffers within the configured byte budget', async () => {
+    const bufferedBytes: number[] = [];
+    const items = Array.from({ length: 4 }, (_, index) => ({
+      url: `https://pbs.twimg.com/media/bounded-${index}.jpg`,
+      desiredName: `bounded-${index}.jpg`,
+      blob: new Blob([new Uint8Array(2 * 1024 * 1024)]),
+    }));
+
+    const result = await downloadAsZip(items, {
+      concurrency: 4,
+      maxBufferedBytes: 3 * 1024 * 1024,
+      onBufferUsage: (bytes) => bufferedBytes.push(bytes),
+    });
+
+    expect(result.filesSuccessful).toBe(4);
+    expect(Math.max(...bufferedBytes)).toBe(2 * 1024 * 1024);
+    expect(bufferedBytes.at(-1)).toBe(0);
+  });
+
+  it('returns a structured resource-limit failure before buffering an oversized item', async () => {
+    const result = await downloadAsZip(
+      [
+        {
+          url: 'https://pbs.twimg.com/media/oversized.jpg',
+          desiredName: 'oversized.jpg',
+          blob: new Blob([new Uint8Array(6)]),
+        },
+      ],
+      { maxBufferedBytes: 5, maxEntryBytes: 5 }
+    );
+
+    expect(result).toMatchObject({
+      filesSuccessful: 0,
+      resourceLimitExceeded: true,
+      failures: [
+        {
+          url: 'https://pbs.twimg.com/media/oversized.jpg',
+          error: expect.stringContaining('Bulk ZIP limit'),
+        },
+      ],
+    });
+  });
+
+  it('stops adding entries when the retained archive reaches its byte limit', async () => {
+    const result = await downloadAsZip(
+      [
+        {
+          url: 'https://pbs.twimg.com/media/archive-one.jpg',
+          desiredName: 'archive-one.jpg',
+          blob: new Blob([new Uint8Array(3)]),
+        },
+        {
+          url: 'https://pbs.twimg.com/media/archive-two.jpg',
+          desiredName: 'archive-two.jpg',
+          blob: new Blob([new Uint8Array(3)]),
+        },
+      ],
+      { concurrency: 1, maxArchiveBytes: 5 }
+    );
+
+    expect(result).toMatchObject({
+      filesSuccessful: 1,
+      resourceLimitExceeded: true,
+      failures: [
+        {
+          url: 'https://pbs.twimg.com/media/archive-two.jpg',
+          error: expect.stringContaining('archive payload'),
+        },
+      ],
+    });
   });
 
   it('aborts active lazy Blob providers without starting queued items', async () => {
@@ -155,10 +227,10 @@ describe('user-facing bulk ZIP download', () => {
     }));
 
     const resultPromise = downloadAsZip(items, { concurrency: 3, signal: controller.signal });
-    await vi.waitFor(() => expect(started).toHaveLength(3));
+    await vi.waitFor(() => expect(started).toHaveLength(1));
     controller.abort();
 
     await expect(resultPromise).rejects.toMatchObject({ name: 'AbortError' });
-    expect(started).toEqual([0, 1, 2]);
+    expect(started).toEqual([0]);
   });
 });

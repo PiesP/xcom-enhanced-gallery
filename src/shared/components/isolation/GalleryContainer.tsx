@@ -3,7 +3,10 @@
 
 import { CSS } from '@constants/css';
 import type { ThemeSetting } from '@constants/setting-options';
-import { hideBackgroundElement, restoreBackgroundElement } from '@shared/dom/background-visibility';
+import {
+  activateGalleryHostState,
+  type GalleryHostStateHandle,
+} from '@shared/components/isolation/gallery-host-state';
 import { useTranslation } from '@shared/hooks/use-translation';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
@@ -141,134 +144,16 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     });
   });
 
-  let scrollRestoration: {
-    scrollY: number;
-    overflow: string;
-    position: string;
-    top: string;
-    left: string;
-    right: string;
-  } | null = null;
-  let previousScrollRestoration: ScrollRestoration | null = null;
-  let previouslyFocusedElement: HTMLElement | null = null;
-  let hiddenBackgroundElements: HTMLElement[] = [];
-  let backgroundObserver: MutationObserver | null = null;
-
-  const hideBackground = (element: HTMLElement): void => {
-    if (hiddenBackgroundElements.includes(element)) return;
-    hiddenBackgroundElements.push(element);
-    hideBackgroundElement(element);
-  };
+  let hostState: GalleryHostStateHandle | null = null;
 
   createEffect(() => {
-    if (!scrollRestoration) {
-      // Save currently focused element for restoration on close
-      previouslyFocusedElement = document.activeElement as HTMLElement | null;
-      // W1: Save and override browser's scroll restoration behavior
-      if ('scrollRestoration' in window.history) {
-        previousScrollRestoration = window.history.scrollRestoration;
-        window.history.scrollRestoration = 'manual';
-      }
-      // Lock background scroll without inert (inert blocks ALL mouse events on descendants)
-      scrollRestoration = {
-        scrollY: window.scrollY,
-        overflow: document.body.style.overflow,
-        position: document.body.style.position,
-        top: document.body.style.top,
-        left: document.body.style.left,
-        right: document.body.style.right,
-      };
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollRestoration.scrollY}px`;
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-
-      // A3: Hide background content from assistive technology.
-      // aria-modal="true" has uneven screen-reader support; explicitly
-      // setting aria-hidden on sibling elements ensures AT cannot reach
-      // background content regardless of aria-modal implementation.
-      // L3: Use document.body.querySelectorAll(':scope > :not([data-xeg-gallery-container])')
-      // to avoid assuming the container is a direct body child.
-      const children = Array.from(document.body.children);
-      const containerElement = containerEl; // local copy for type narrowing
-      if (!containerElement || containerElement.parentElement === document.body) {
-        // Container is a direct body child or doesn't exist
-        hiddenBackgroundElements = children.filter(
-          (el) => el !== containerElement && el instanceof HTMLElement
-        ) as HTMLElement[];
-      } else {
-        // Container is nested — hide body-level siblings that don't contain it
-        hiddenBackgroundElements = children.filter(
-          (el) => el instanceof HTMLElement && !el.contains(containerElement)
-        ) as HTMLElement[];
-      }
-      const initialBackgroundElements = hiddenBackgroundElements;
-      hiddenBackgroundElements = [];
-      for (const el of initialBackgroundElements) hideBackground(el);
-
-      backgroundObserver = new MutationObserver((records) => {
-        for (const record of records) {
-          for (const node of record.addedNodes) {
-            if (!(node instanceof HTMLElement)) continue;
-            if (
-              node === containerElement ||
-              (containerElement !== undefined && node.contains(containerElement))
-            ) {
-              continue;
-            }
-            hideBackground(node);
-          }
-        }
-      });
-      backgroundObserver.observe(document.body, { childList: true });
-
-      // A11y: Move focus into the dialog so keyboard trap receives events.
-      // Focus must move AFTER aria-hidden is set on background elements
-      // so that the dialog is the only focusable landmark.
-      if (containerElement) {
-        containerElement.focus();
-        // If dialog itself didn't receive focus, try first focusable child
-        if (document.activeElement !== containerElement) {
-          const firstFocusable = containerElement.querySelector<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-          );
-          firstFocusable?.focus();
-        }
-      }
-    }
+    if (!containerEl || hostState) return;
+    hostState = activateGalleryHostState(containerEl);
   });
 
   onCleanup(() => {
-    backgroundObserver?.disconnect();
-    backgroundObserver = null;
-    if (scrollRestoration) {
-      document.body.style.overflow = scrollRestoration.overflow;
-      document.body.style.position = scrollRestoration.position;
-      document.body.style.top = scrollRestoration.top;
-      document.body.style.left = scrollRestoration.left;
-      document.body.style.right = scrollRestoration.right;
-      window.scrollTo(0, scrollRestoration.scrollY);
-      // W1: Restore browser's scroll restoration to its previous value
-      if ('scrollRestoration' in window.history) {
-        window.history.scrollRestoration = previousScrollRestoration ?? 'auto';
-      }
-      scrollRestoration = null;
-    }
-    // A3: Restore background elements' accessibility state
-    for (const el of hiddenBackgroundElements) {
-      restoreBackgroundElement(el);
-    }
-    hiddenBackgroundElements = [];
-    // Return focus to the element that was focused before the gallery opened
-    if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
-      try {
-        previouslyFocusedElement.focus();
-      } catch {
-        // Element may have been removed from DOM — safe to ignore
-      }
-      previouslyFocusedElement = null;
-    }
+    hostState?.restore();
+    hostState = null;
   });
 
   return (

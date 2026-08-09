@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({
   initializeCoreBaseServices: vi.fn(),
   mediaDestroy: vi.fn(),
+  settingsPrepareForRestart: vi.fn(),
   themeDestroy: vi.fn(),
 }));
 
@@ -21,6 +22,10 @@ vi.mock('@shared/services/media-service', () => ({
 
 vi.mock('@shared/services/theme-service', () => ({
   getThemeService: () => ({ destroy: state.themeDestroy, isInitialized: () => true }),
+}));
+
+vi.mock('@features/settings/services/settings-service', () => ({
+  getSettingsService: () => ({ prepareForRestart: state.settingsPrepareForRestart }),
 }));
 
 vi.mock('@shared/services/event-manager', () => ({
@@ -50,6 +55,7 @@ describe('application media-service lifecycle', () => {
   beforeEach(() => {
     state.initializeCoreBaseServices.mockClear();
     state.mediaDestroy.mockClear();
+    state.settingsPrepareForRestart.mockClear();
     state.themeDestroy.mockClear();
   });
 
@@ -59,6 +65,7 @@ describe('application media-service lifecycle', () => {
 
     await cleanup();
     expect(state.mediaDestroy).toHaveBeenCalledTimes(1);
+    expect(state.settingsPrepareForRestart).toHaveBeenCalledTimes(1);
 
     await startApplication();
     expect(state.initializeCoreBaseServices).toHaveBeenCalledTimes(2);

@@ -18,6 +18,7 @@
     "@main": ["src/main.ts"]
   },
   "ignore": ["src/platform/types.ts"],
+  "ignoreBinaries": ["openssl"],
   "ignoreDependencies": ["@axe-core/playwright"],
   "ignoreExportsUsedInFile": true
 }

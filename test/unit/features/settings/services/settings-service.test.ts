@@ -98,6 +98,38 @@ describe('SettingsService', () => {
     });
   });
 
+  describe('SPA restart', () => {
+    it('reloads external storage changes before the next write without reviving old listeners', async () => {
+      let stored = createDefaultSettings(1_000);
+      const repository: SettingsRepository = {
+        load: vi.fn(async () => globalThis.structuredClone(stored)),
+        save: vi.fn(async (settings) => {
+          stored = globalThis.structuredClone(settings);
+        }),
+      };
+      service = new SettingsService(repository);
+      await service.initialize();
+      const oldListener = vi.fn();
+      service.subscribe(oldListener);
+
+      await service.prepareForRestart();
+      stored.gallery.videoVolume = 0.25;
+      stored.lastModified = 2_000;
+      await service.initialize();
+
+      expect(service.get('gallery.videoVolume')).toBe(0.25);
+      const newListener = vi.fn();
+      service.subscribe(newListener);
+      await service.set('gallery.theme', 'dark');
+
+      expect(stored.gallery.videoVolume).toBe(0.25);
+      expect(stored.gallery.theme).toBe('dark');
+      expect(oldListener).not.toHaveBeenCalled();
+      expect(newListener).toHaveBeenCalledTimes(1);
+      expect(repository.load).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('isInitialized', () => {
     it('should return false before initialize', () => {
       service = new SettingsService(mockRepo);

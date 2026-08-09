@@ -34,9 +34,14 @@ export class SettingsService {
   }
 
   public destroy(): void {
-    if (!this._initialized) return;
     this.listeners.clear();
     this._initialized = false;
+  }
+
+  /** Wait for queued writes, then reset lifecycle state for a fresh repository load. */
+  public async prepareForRestart(): Promise<void> {
+    await this.updateQueue;
+    this.destroy();
   }
 
   public isInitialized(): boolean {

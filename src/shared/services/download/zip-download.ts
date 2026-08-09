@@ -7,16 +7,92 @@ import {
   DEFAULT_RETRIES,
   MAX_CONCURRENCY,
   MIN_CONCURRENCY,
+  ZIP_BUFFER_BUDGET_BYTES,
+  ZIP_MAX_ARCHIVE_BYTES,
+  ZIP_MAX_ENTRY_BYTES,
 } from '@constants/performance';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
-import { StreamingZipWriter } from '@shared/external/zip/streaming-zip-writer';
+import {
+  StreamingZipWriter,
+  ZipResourceLimitError,
+} from '@shared/external/zip/streaming-zip-writer';
 import { fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
 import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
 import { reportProgress } from '@shared/services/download/types';
 import { schedulerYield } from '@shared/utils/performance/scheduler-yield';
 
 type UniqueFilenameFactory = (desired: string) => string;
+
+type ReleaseReservation = () => void;
+
+interface ByteBudgetWaiter {
+  readonly bytes: number;
+  readonly resolve: (release: ReleaseReservation) => void;
+  readonly reject: (reason: unknown) => void;
+  readonly signal?: AbortSignal | undefined;
+  onAbort?: (() => void) | undefined;
+}
+
+class RetainedByteBudget {
+  private usedBytes = 0;
+  private readonly waiters: ByteBudgetWaiter[] = [];
+
+  constructor(
+    private readonly limitBytes: number,
+    private readonly onUsage?: ((bufferedBytes: number) => void) | undefined
+  ) {}
+
+  reserve(bytes: number, signal?: AbortSignal): Promise<ReleaseReservation> {
+    if (bytes > this.limitBytes) {
+      return Promise.reject(
+        new ZipResourceLimitError(
+          `Bulk ZIP limit exceeded: media requires ${bytes} buffered bytes (limit ${this.limitBytes})`
+        )
+      );
+    }
+    if (signal?.aborted) return Promise.reject(getUserCancelledAbortErrorFromSignal(signal));
+
+    return new Promise<ReleaseReservation>((resolve, reject) => {
+      const waiter: ByteBudgetWaiter = { bytes, resolve, reject, signal };
+      const onAbort = (): void => {
+        const index = this.waiters.indexOf(waiter);
+        if (index >= 0) this.waiters.splice(index, 1);
+        reject(getUserCancelledAbortErrorFromSignal(signal));
+      };
+      this.waiters.push(waiter);
+      if (signal) {
+        waiter.onAbort = onAbort;
+        signal.addEventListener('abort', onAbort, { once: true });
+        if (signal.aborted) {
+          onAbort();
+          return;
+        }
+      }
+      this.drain();
+    });
+  }
+
+  private drain(): void {
+    const waiter = this.waiters[0];
+    if (!waiter || this.usedBytes + waiter.bytes > this.limitBytes) return;
+    this.waiters.shift();
+    if (waiter.signal && waiter.onAbort) {
+      waiter.signal.removeEventListener('abort', waiter.onAbort);
+    }
+    this.usedBytes += waiter.bytes;
+    this.onUsage?.(this.usedBytes);
+    let released = false;
+    waiter.resolve(() => {
+      if (released) return;
+      released = true;
+      this.usedBytes -= waiter.bytes;
+      this.onUsage?.(this.usedBytes);
+      this.drain();
+    });
+    this.drain();
+  }
+}
 
 const ensureUniqueFilenameFactory = (): UniqueFilenameFactory => {
   const usedNames = new Set<string>();
@@ -50,6 +126,11 @@ const clampConcurrency = (value: number | undefined): number => {
 
 const clampRetries = (value: number | undefined): number => Math.max(0, value ?? DEFAULT_RETRIES);
 
+const resolvePositiveByteLimit = (value: number | undefined, fallback: number): number => {
+  if (value === undefined || !Number.isFinite(value) || value <= 0) return fallback;
+  return Math.max(1, Math.floor(value));
+};
+
 const throwIfAborted = (signal?: AbortSignal): void => {
   if (signal?.aborted) {
     throw getUserCancelledAbortErrorFromSignal(signal);
@@ -70,18 +151,28 @@ export async function downloadAsZip(
   items: readonly OrchestratorItem[],
   options: DownloadOptions = {}
 ): Promise<ZipResult> {
-  const writer = new StreamingZipWriter();
-
   const concurrency = clampConcurrency(options.concurrency);
   const retries = clampRetries(options.retries);
   const abortSignal = options.signal;
   const onProgress = options.onProgress;
+  const maxBufferedBytes = resolvePositiveByteLimit(
+    options.maxBufferedBytes,
+    ZIP_BUFFER_BUDGET_BYTES
+  );
+  const maxEntryBytes = Math.min(
+    maxBufferedBytes,
+    resolvePositiveByteLimit(options.maxEntryBytes, ZIP_MAX_ENTRY_BYTES)
+  );
+  const maxArchiveBytes = resolvePositiveByteLimit(options.maxArchiveBytes, ZIP_MAX_ARCHIVE_BYTES);
+  const writer = new StreamingZipWriter(maxArchiveBytes);
+  const byteBudget = new RetainedByteBudget(maxBufferedBytes, options.onBufferUsage);
 
   throwIfAborted(abortSignal);
 
   const total = items.length;
   let processed = 0;
   let successful = 0;
+  let resourceLimitExceeded = false;
   const failures: { url: string; error: string }[] = [];
 
   const ensureUniqueFilename = ensureUniqueFilenameFactory();
@@ -99,8 +190,21 @@ export async function downloadAsZip(
       if (!item) continue;
 
       const filename = assignedFilenames[index] ?? item.desiredName;
+      let releaseReservation: ReleaseReservation | undefined;
 
       try {
+        const knownSize = item.blob instanceof Blob ? item.blob.size : item.expectedSizeBytes;
+        if (knownSize !== undefined && knownSize > maxEntryBytes) {
+          throw new ZipResourceLimitError(
+            `Bulk ZIP limit exceeded: ${filename} is ${knownSize} bytes (limit ${maxEntryBytes})`
+          );
+        }
+        // Unknown-size providers reserve the full budget before fetching, so they
+        // cannot leave multiple whole response buffers waiting for the writer.
+        const reservationBytes =
+          item.blob instanceof Blob ? Math.max(1, item.blob.size) : maxBufferedBytes;
+        releaseReservation = await byteBudget.reserve(reservationBytes, abortSignal);
+
         let data: Uint8Array;
         if (item.blob || item.getBlob) {
           // Try the demand-driven cache first; fall back to network on failure
@@ -134,6 +238,11 @@ export async function downloadAsZip(
         }
 
         throwIfAborted(abortSignal);
+        if (data.byteLength > maxEntryBytes) {
+          throw new ZipResourceLimitError(
+            `Bulk ZIP limit exceeded: ${filename} is ${data.byteLength} bytes (limit ${maxEntryBytes})`
+          );
+        }
 
         // Yield to main thread between items to keep UI responsive
         if (index > 0) {
@@ -145,8 +254,10 @@ export async function downloadAsZip(
         successful++;
       } catch (error) {
         throwIfAborted(abortSignal);
+        if (error instanceof ZipResourceLimitError) resourceLimitExceeded = true;
         failures.push({ url: item.url, error: normalizeErrorMessage(error) });
       } finally {
+        releaseReservation?.();
         processed++;
         reportProgress(onProgress, {
           phase: 'downloading',
@@ -175,5 +286,6 @@ export async function downloadAsZip(
     filesSuccessful: successful,
     failures,
     zipData: zipBytes,
+    resourceLimitExceeded,
   };
 }
