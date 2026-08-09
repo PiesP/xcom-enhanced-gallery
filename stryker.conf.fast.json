@@ -31,7 +31,7 @@
     "break": 70
   },
   "inPlace": true,
-  "concurrency": 2,
+  "concurrency": 4,
   "timeoutMS": 120000,
   "plugins": ["@stryker-mutator/vitest-runner"],
   "mutator": {

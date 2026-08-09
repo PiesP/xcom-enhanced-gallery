@@ -14,6 +14,10 @@ describe('url/validator', () => {
       expect(isValidMediaUrl('https://pbs.twimg.com/media/XYZ?format=png&name=large')).toBe(true);
     });
 
+    it('should accept HTTP media URLs', () => {
+      expect(isValidMediaUrl('http://pbs.twimg.com/media/ABC123')).toBe(true);
+    });
+
     it('should accept valid video.twimg.com URLs', () => {
       expect(isValidMediaUrl('https://video.twimg.com/ext_tw_video/1234567890/pu/vid/720x1280/abc.mp4')).toBe(true);
       expect(isValidMediaUrl('https://video.twimg.com/tweet_video/ABC123.mp4')).toBe(true);
@@ -45,6 +49,11 @@ describe('url/validator', () => {
       expect(isValidMediaUrl('https://cdn.example.com/media/ABC')).toBe(false);
     });
 
+    it('should reject allowed hosts with unknown paths', () => {
+      expect(isValidMediaUrl('https://pbs.twimg.com/unknown/ABC')).toBe(false);
+      expect(isValidMediaUrl('https://video.twimg.com/unknown/ABC.mp4')).toBe(false);
+    });
+
     it('should reject profile image paths', () => {
       expect(isValidMediaUrl('https://pbs.twimg.com/profile_images/123/abc.jpg')).toBe(false);
     });
@@ -52,6 +61,13 @@ describe('url/validator', () => {
     it('should reject URLs exceeding max length', () => {
       const longUrl = 'https://pbs.twimg.com/media/' + 'A'.repeat(2040);
       expect(isValidMediaUrl(longUrl)).toBe(false);
+    });
+
+    it('should accept a valid URL at the maximum length boundary', () => {
+      const prefix = 'https://pbs.twimg.com/media/';
+      const maxLengthUrl = prefix + 'A'.repeat(2048 - prefix.length);
+      expect(maxLengthUrl).toHaveLength(2048);
+      expect(isValidMediaUrl(maxLengthUrl)).toBe(true);
     });
 
     it('should reject null/empty/invalid', () => {

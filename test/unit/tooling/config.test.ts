@@ -63,6 +63,7 @@ describe('tooling configuration', () => {
     ) as {
       mutate: string[];
       coverageAnalysis: string;
+      concurrency: number;
       ignoreStatic: boolean;
       reporters: string[];
       thresholds: { high: number; low: number; break: number | null };
@@ -90,6 +91,7 @@ describe('tooling configuration', () => {
     );
     expect(config.mutate.some((pattern) => pattern.includes('**'))).toBe(false);
     expect(config.coverageAnalysis).toBe('perTest');
+    expect(config.concurrency).toBe(4);
     expect(config.ignoreStatic).toBe(true);
     expect(config.reporters).toEqual(
       expect.arrayContaining(['progress', 'clear-text', 'json', 'html'])
