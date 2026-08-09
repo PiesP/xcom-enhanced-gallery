@@ -69,6 +69,36 @@ check_npm_mature_release() {
     "$name" "$current" "$cooling_hours"
 }
 
+check_npm_lock() {
+  local name="$1"
+  local package_name="$2"
+  local manifest="$3"
+  local lockfile="$4"
+  local declared root_declared locked_version missing_integrity
+
+  declared="$(jq -er --arg package "$package_name" \
+    '.dependencies[$package] | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))' "$manifest")"
+  root_declared="$(jq -er --arg package "$package_name" \
+    '.packages[""].dependencies[$package]' "$lockfile")"
+  locked_version="$(jq -er --arg path "node_modules/$package_name" \
+    '.packages[$path].version' "$lockfile")"
+  missing_integrity="$(jq -r '
+    [.packages | to_entries[]
+      | select(.key != "" and .value.link != true)
+      | select((.value.integrity // "") | test("^sha512-") | not)]
+    | length
+  ' "$lockfile")"
+
+  if [[ "$declared" != "$root_declared" || "$declared" != "$locked_version" ||
+        "$missing_integrity" != 0 ]]; then
+    printf '::error title=%s lock invalid::Manifest=%s root-lock=%s installed=%s missing-integrity=%s.\n' \
+      "$name" "$declared" "$root_declared" "$locked_version" "$missing_integrity"
+    return 1
+  fi
+
+  printf '✓ %s %s has a complete integrity-locked npm closure.\n' "$name" "$declared"
+}
+
 check_osv_image_digest() {
   local version="$1"
   local image token expected_digest actual_digest
@@ -100,12 +130,16 @@ check_osv_image_digest() {
 nose_version="$(sed -nE 's/^nose_version="([^"]+)"/\1/p' scripts/ci/install-nose.sh)"
 osv_version="$(sed -nE 's/.*osv-scanner-action image v([^ ]+).*/\1/p' .github/workflows/security.yaml)"
 semgrep_version="$(sed -nE 's/.*semgrep\/semgrep:([^ @]+).*/\1/p' .github/workflows/security.yaml | head -n 1)"
-codex_security_version="$(sed -nE 's/^  CODEX_SECURITY_VERSION: "([^"]+)"$/\1/p' .github/workflows/codex-security.yaml)"
+codex_security_package=.github/codex-security/package.json
+codex_security_lock=.github/codex-security/package-lock.json
+codex_security_version="$(jq -er '.dependencies["@openai/codex-security"]' "$codex_security_package")"
 
 status=0
 check_release nose "$nose_version" corca-ai/nose || status=1
 check_release osv-scanner "$osv_version" google/osv-scanner || status=1
 check_osv_image_digest "$osv_version" || status=1
 check_release semgrep "$semgrep_version" semgrep/semgrep || status=1
+check_npm_lock codex-security @openai/codex-security \
+  "$codex_security_package" "$codex_security_lock" || status=1
 check_npm_mature_release codex-security @openai/codex-security "$codex_security_version" || status=1
 exit "$status"

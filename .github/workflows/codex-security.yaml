@@ -5,9 +5,6 @@ on:
     branches: [master]
   workflow_dispatch:
 
-env:
-  CODEX_SECURITY_VERSION: "0.1.8"
-
 permissions:
   contents: read
 
@@ -40,16 +37,27 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Install pinned Codex Security
+      - name: Check out trusted CLI lock
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          submodules: false
+
+      - name: Install locked Codex Security
         run: |
           set -euo pipefail
           install -d -m 0700 "$RUNNER_TEMP/codex-security"
-          npm install \
+          install -m 0600 \
+            .github/codex-security/package.json \
+            .github/codex-security/package-lock.json \
+            "$RUNNER_TEMP/codex-security/"
+          npm ci \
             --prefix "$RUNNER_TEMP/codex-security" \
             --ignore-scripts \
             --no-audit \
-            --no-fund \
-            "@openai/codex-security@$CODEX_SECURITY_VERSION"
+            --no-fund
           CODEX_SECURITY_BIN="$RUNNER_TEMP/codex-security/node_modules/.bin/codex-security"
           test -x "$CODEX_SECURITY_BIN"
           "$CODEX_SECURITY_BIN" --version
