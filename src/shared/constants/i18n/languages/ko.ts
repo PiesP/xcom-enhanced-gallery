@@ -81,6 +81,8 @@ export const ko: LanguageStrings = {
       },
       noMedia: '선택된 미디어가 없습니다. 갤러리를 다시 열고 시도해 주세요.',
       zipFail: 'ZIP 파일 저장에 실패했습니다',
+      zipTooLarge:
+        '이 ZIP은 브라우저에서 안전하게 처리하기에는 너무 큽니다. 큰 미디어는 개별적으로 다운로드하세요.',
     },
     gal: {
       emptyT: '미디어 없음',

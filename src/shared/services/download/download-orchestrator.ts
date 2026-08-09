@@ -140,9 +140,14 @@ export class DownloadOrchestrator {
         const result = await downloadAsZip(items, { ...options, signal: mergedSignal });
 
         if (result.filesSuccessful === 0) {
-          return createErrorResponse('No files downloaded', ErrorCode.ALL_FAILED, items.length, {
-            failures: result.failures,
-          });
+          return createErrorResponse(
+            result.resourceLimitExceeded
+              ? 'Bulk ZIP memory limit exceeded. Download large media individually.'
+              : 'No files downloaded',
+            result.resourceLimitExceeded ? ErrorCode.RESOURCE_LIMIT : ErrorCode.ALL_FAILED,
+            items.length,
+            { failures: result.failures }
+          );
         }
 
         // Build Blob directly from parts — no monolithic Uint8Array allocation

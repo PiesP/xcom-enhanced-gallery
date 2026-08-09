@@ -167,6 +167,8 @@ export interface LanguageStrings {
       readonly noMedia: string;
       /** ZIP save failure fallback */
       readonly zipFail: string;
+      /** Bulk ZIP memory-limit guidance */
+      readonly zipTooLarge: string;
     };
     /** Gallery messages */
     readonly gal: {

@@ -81,6 +81,7 @@ export const zhCn: LanguageStrings = {
       },
       noMedia: '未选择媒体项。请重新打开图库后重试。',
       zipFail: 'ZIP 文件保存失败',
+      zipTooLarge: '此 ZIP 过大，无法在浏览器中安全处理。请单独下载大型媒体文件。',
     },
     gal: {
       emptyT: '无可用媒体',

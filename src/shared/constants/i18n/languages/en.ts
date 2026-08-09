@@ -81,6 +81,8 @@ export const en: LanguageStrings = {
       },
       noMedia: 'No media item selected. Please re-open the gallery and try again.',
       zipFail: 'Failed to save ZIP file',
+      zipTooLarge:
+        'This bulk ZIP is too large for safe in-browser processing. Download large media individually.',
     },
     gal: {
       emptyT: 'No media available',

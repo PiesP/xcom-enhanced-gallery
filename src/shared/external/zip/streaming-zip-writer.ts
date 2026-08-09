@@ -127,6 +127,10 @@ interface FileEntry {
   readonly crc32: number;
 }
 
+export class ZipResourceLimitError extends Error {
+  override readonly name = 'ZipResourceLimitError';
+}
+
 /** Optimized buffer concatenation (no function call overhead) */
 const concat = (arrays: readonly Uint8Array[]): Uint8Array => {
   let len = 0;
@@ -149,6 +153,8 @@ export class StreamingZipWriter {
   private readonly entries: FileEntry[] = [];
   private pendingAdd: Promise<void> = Promise.resolve();
   private currentOffset = 0;
+
+  constructor(private readonly maxArchiveBytes = Number.MAX_SAFE_INTEGER) {}
 
   /**
    * Add file to archive (streaming mode)
@@ -189,6 +195,11 @@ export class StreamingZipWriter {
     );
 
     const filenameBytes = encodeUtf8(filename);
+    if (this.currentOffset + data.length > this.maxArchiveBytes) {
+      throw new ZipResourceLimitError(
+        `Bulk ZIP limit exceeded: archive payload would exceed ${this.maxArchiveBytes} bytes`
+      );
+    }
     const crc32 = await calculateCRC32(data, signal);
     signal?.throwIfAborted();
 

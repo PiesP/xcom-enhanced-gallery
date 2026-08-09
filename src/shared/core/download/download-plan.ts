@@ -14,6 +14,7 @@ import type { MediaInfo } from '@shared/types/media.types';
 export interface PlannedZipItem {
   readonly url: string;
   readonly desiredName: string;
+  readonly expectedSizeBytes?: number | undefined;
   readonly blob?: Blob | Promise<Blob> | undefined;
   readonly getBlob?: ((signal?: AbortSignal) => Promise<Blob> | null) | undefined;
 }
@@ -52,6 +53,7 @@ export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownload
   const items: PlannedZipItem[] = input.mediaItems.map((media) => ({
     url: media.url,
     desiredName: generateDesiredName(media, input.nowMs),
+    expectedSizeBytes: media.fileSize,
     blob: input.cachedBlobs?.get(media.url),
     getBlob: input.mediaBlobProvider
       ? (signal?: AbortSignal) => input.mediaBlobProvider?.(media, signal) ?? null

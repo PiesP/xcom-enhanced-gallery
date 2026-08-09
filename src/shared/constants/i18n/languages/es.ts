@@ -81,6 +81,8 @@ export const es: LanguageStrings = {
       },
       noMedia: 'Ningún elemento multimedia seleccionado. Reabra la galería e intente de nuevo.',
       zipFail: 'Error al guardar el archivo ZIP',
+      zipTooLarge:
+        'Este ZIP es demasiado grande para procesarlo de forma segura en el navegador. Descarga los archivos grandes por separado.',
     },
     gal: {
       emptyT: 'Sin medios disponibles',
