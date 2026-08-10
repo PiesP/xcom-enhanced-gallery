@@ -4,7 +4,7 @@
 /**
  * @fileoverview Tooltip component with intelligent positioning.
  *
- * Renders a custom tooltip on hover/focus via Portal to document.body.
+ * Renders a custom tooltip on hover/focus via a body-level, theme-scoped Portal host.
  * Supports auto-flip between top/bottom placement, configurable delay,
  * and full accessibility (aria-describedby, role="tooltip").
  *
@@ -108,6 +108,8 @@ export function Tooltip(props: TooltipProps): JSXElement {
   let positionRafId: ReturnType<typeof requestAnimationFrame> | undefined;
   let describedElement: HTMLElement | undefined;
   let previousDescribedBy: string | null = null;
+  let portalHost: HTMLDivElement | undefined;
+  let themeObserver: MutationObserver | undefined;
 
   const resolveTriggerElement = (event?: Event): HTMLElement | null => {
     if (event?.target instanceof HTMLElement && event.target !== triggerRef) {
@@ -166,7 +168,7 @@ export function Tooltip(props: TooltipProps): JSXElement {
     });
   };
 
-  const show = (event?: Event) => {
+  const show = (event?: Event, delay = showDelay) => {
     clearTimers();
     const triggerElement = resolveTriggerElement(event);
     updatePosition();
@@ -175,7 +177,38 @@ export function Tooltip(props: TooltipProps): JSXElement {
       updatePosition();
       if (triggerElement) attachDescription(triggerElement);
       setVisible(true);
-    }, showDelay);
+    }, delay);
+  };
+
+  const ensurePortalHost = (): HTMLDivElement => {
+    if (portalHost?.isConnected) return portalHost;
+
+    const themeScope = triggerRef.closest<HTMLElement>('.xeg-theme-scope');
+    portalHost = document.createElement('div');
+    portalHost.className = 'xeg-theme-scope pp-design';
+    portalHost.dataset.xegTooltipPortal = '';
+    portalHost.dataset.ppProduct = 'xeg';
+
+    const mirrorThemeAttributes = () => {
+      const ppTheme = themeScope?.getAttribute('data-pp-theme') ?? 'auto';
+      portalHost?.setAttribute('data-pp-theme', ppTheme);
+
+      const theme = themeScope?.getAttribute('data-theme');
+      if (theme === null || theme === undefined) portalHost?.removeAttribute('data-theme');
+      else portalHost?.setAttribute('data-theme', theme);
+    };
+
+    mirrorThemeAttributes();
+    if (themeScope) {
+      themeObserver = new MutationObserver(mirrorThemeAttributes);
+      themeObserver.observe(themeScope, {
+        attributes: true,
+        attributeFilter: ['data-pp-theme', 'data-theme'],
+      });
+    }
+
+    document.body.appendChild(portalHost);
+    return portalHost;
   };
 
   const hide = () => {
@@ -250,6 +283,10 @@ export function Tooltip(props: TooltipProps): JSXElement {
   onCleanup(() => {
     clearTimers();
     detachDescription();
+    themeObserver?.disconnect();
+    themeObserver = undefined;
+    portalHost?.remove();
+    portalHost = undefined;
   });
 
   return (
@@ -259,7 +296,7 @@ export function Tooltip(props: TooltipProps): JSXElement {
       class={styles.trigger}
       onMouseEnter={(event) => show(event)}
       onMouseLeave={hide}
-      onFocusIn={(event) => show(event)}
+      onFocusIn={(event) => show(event, 0)}
       onFocusOut={(event) => {
         // Only hide if focus left the trigger entirely (not moved to a child)
         if (!triggerRef.contains(event.relatedTarget as Node | null)) {
@@ -271,7 +308,7 @@ export function Tooltip(props: TooltipProps): JSXElement {
       {local.children}
 
       {activePosition() !== null && (
-        <Portal mount={document.body}>
+        <Portal mount={ensurePortalHost()}>
           <div
             id={tooltipId}
             role="tooltip"

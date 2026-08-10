@@ -148,8 +148,7 @@
   overflow: visible;
   transition:
     border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
 /**
