@@ -9,7 +9,7 @@
  *
  * Architecture:
  * - .trigger: inline wrapper (display:contents) that binds hover/focus events
- * - .content: fixed-position tooltip with arrow, portal-rendered to document.body
+ * - .content: fixed-position tooltip with arrow, rendered in a body-level scoped Portal host
  * - .arrow: CSS triangle pointing toward the trigger element
  */
 
@@ -20,7 +20,7 @@
   display: contents;
 }
 
-/* ── Tooltip content (Portal to body) ── */
+/* ── Tooltip content (body-level, theme-scoped Portal host) ── */
 .content {
   position: fixed;
   z-index: var(--xeg-z-tooltip, 10005);
@@ -40,7 +40,7 @@
   background: var(--xeg-tooltip-bg, var(--xeg-toolbar-surface, var(--xeg-color-bg-elevated)));
   border: 1px solid var(--xeg-tooltip-border, var(--xeg-toolbar-border));
   border-radius: var(--xeg-tooltip-radius, var(--xeg-radius-sm));
-  box-shadow: var(--xeg-shadow-tooltip, 0 2px 8px rgba(0, 0, 0, 0.15));
+  box-shadow: var(--xeg-shadow-tooltip);
 
   /* Animation */
   opacity: 0;
