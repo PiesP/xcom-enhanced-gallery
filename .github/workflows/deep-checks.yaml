@@ -65,13 +65,10 @@ jobs:
         with:
           submodules: true
 
-      - name: 📦 Setup pnpm and Node.js
-        uses: ./.github/actions/setup-toolchain
+      - name: 📦 Setup project
+        uses: PiesP/browser-core/automation/actions/setup-project@f630a8f0119dd6b4f1aa011f8510489936c7a7b9
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
 
       - name: 🧬 Run mutation gate
         run: pnpm mut:fast
