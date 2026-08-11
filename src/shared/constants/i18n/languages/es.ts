@@ -78,6 +78,8 @@ export const es: LanguageStrings = {
       part: {
         t: 'Fallo parcial',
         b: 'No se pudieron descargar {count} elementos.',
+        resourceLimit:
+          'Se guardaron {count} elementos en el ZIP; se omitieron {failed} elementos porque se alcanzó el límite de recursos del navegador. Descarga los archivos grandes por separado.',
       },
       noMedia: 'Ningún elemento multimedia seleccionado. Reabra la galería e intente de nuevo.',
       zipFail: 'Error al guardar el archivo ZIP',

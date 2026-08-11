@@ -162,6 +162,8 @@ export interface LanguageStrings {
         readonly t: string;
         /** Partial fail body */
         readonly b: string;
+        /** Partial ZIP saved after reaching the browser resource limit */
+        readonly resourceLimit: string;
       };
       /** No media item selected message */
       readonly noMedia: string;

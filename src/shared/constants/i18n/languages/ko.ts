@@ -78,6 +78,8 @@ export const ko: LanguageStrings = {
       part: {
         t: '일부 실패',
         b: '{count}개 항목을 가져올 수 없었습니다.',
+        resourceLimit:
+          'ZIP에 {count}개 항목을 저장했지만 브라우저 리소스 한도 때문에 {failed}개 항목을 제외했습니다. 큰 미디어는 개별적으로 다운로드하세요.',
       },
       noMedia: '선택된 미디어가 없습니다. 갤러리를 다시 열고 시도해 주세요.',
       zipFail: 'ZIP 파일 저장에 실패했습니다',

@@ -20,14 +20,17 @@ test.beforeAll(() => {
   }
 });
 
-test('loads the Chrome extension and opens the gallery from a content-script click', async ({
+test('loads the Chrome extension, opens the gallery, and completes a privileged download', async ({
   browserName,
 }) => {
   test.skip(browserName !== 'chromium', 'Chrome extension loading requires Chromium');
   const userDataDir = mkdtempSync(join(tmpdir(), 'xeg-extension-'));
+  const downloadDirectory = resolve(userDataDir, 'downloads');
   const context = await chromium.launchPersistentContext(userDataDir, {
     channel: 'chromium',
     headless: true,
+    acceptDownloads: true,
+    downloadsPath: downloadDirectory,
     args: [
       `--disable-extensions-except=${CHROME_EXTENSION_DIR}`,
       `--load-extension=${CHROME_EXTENSION_DIR}`,
@@ -75,6 +78,31 @@ test('loads the Chrome extension and opens the gallery from a content-script cli
     await firstPhoto.click();
     await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
     await expect(page.locator('[data-xeg-gallery-container] img').first()).toBeVisible();
+
+    const downloadButton = page.locator(
+      '[data-gallery-element="toolbar"] button[aria-label="Download"]'
+    );
+    await downloadButton.click();
+    await expect
+      .poll(
+        () =>
+          background.evaluate(async () => {
+            const [download] = await chrome.downloads.search({
+              orderBy: ['-startTime'],
+              limit: 1,
+            });
+            return download
+              ? { filename: download.filename, state: download.state }
+              : { filename: '', state: 'missing' };
+          }),
+        { timeout: 15_000 }
+      )
+      .toMatchObject({ state: 'complete' });
+    const [completedDownload] = await background.evaluate(() =>
+      chrome.downloads.search({ orderBy: ['-startTime'], limit: 1 })
+    );
+    expect(completedDownload?.filename.startsWith(downloadDirectory)).toBe(true);
+    expect(readFileSync(completedDownload?.filename ?? '')).toEqual(MOCK_IMAGE);
     expect(pageErrors).toEqual([]);
   } finally {
     await context.close();
@@ -133,21 +161,32 @@ test('executes the Firefox background module and registers its runtime listeners
       addListener: () => undefined,
       removeListener: () => undefined,
     };
+    const downloads: Array<{ filename?: string; saveAs?: boolean; url: string }> = [];
 
     Object.assign(globalThis, {
       __xegFirefoxRegistrations: registrations,
+      __xegFirefoxDownloads: downloads,
       browser: {
         runtime: {
           id: 'xcom-enhanced-gallery@piesp.dev',
-          onMessage: createEvent('message'),
+          onMessage: {
+            addListener: (listener: unknown) => {
+              registrations.message += 1;
+              Object.assign(globalThis, { __xegFirefoxMessageListener: listener });
+            },
+            removeListener: () => undefined,
+          },
           onInstalled: createEvent('installed'),
           onStartup: createEvent('startup'),
           onSuspend: createEvent('suspend'),
         },
         downloads: {
-          download: async () => 1,
+          download: async (options: { filename?: string; saveAs?: boolean; url: string }) => {
+            downloads.push(options);
+            return 41;
+          },
           cancel: async () => undefined,
-          search: async () => [],
+          search: async () => [{ id: 41, state: 'complete' }],
           onChanged: downloadChanged,
         },
         notifications: {
@@ -168,4 +207,50 @@ test('executes the Firefox background module and registers its runtime listeners
       })
     )
     .toEqual({ installed: 1, message: 1, startup: 1, suspend: 1 });
+
+  const downloadContract = await page.evaluate(
+    () =>
+      new Promise<unknown>((resolve, reject) => {
+        const globals = globalThis as typeof globalThis & {
+          __xegFirefoxDownloads?: Array<{ filename?: string; saveAs?: boolean; url: string }>;
+          __xegFirefoxMessageListener?: (
+            message: unknown,
+            sender: { id: string },
+            sendResponse: (response: unknown) => void
+          ) => boolean;
+        };
+        const listener = globals.__xegFirefoxMessageListener;
+        if (!listener) {
+          reject(new Error('Firefox message listener was not registered'));
+          return;
+        }
+        const keepsChannelOpen = listener(
+          {
+            type: 'DOWNLOAD_REQUEST',
+            payload: {
+              url: 'https://pbs.twimg.com/media/runtime-smoke.png',
+              filename: 'runtime-smoke.png',
+              requestId: 'firefox-runtime-smoke',
+            },
+          },
+          { id: 'xcom-enhanced-gallery@piesp.dev' },
+          (response) => resolve({
+            downloads: globals.__xegFirefoxDownloads,
+            keepsChannelOpen,
+            response,
+          })
+        );
+      })
+  );
+  expect(downloadContract).toEqual({
+    downloads: [
+      {
+        filename: 'runtime-smoke.png',
+        saveAs: false,
+        url: 'https://pbs.twimg.com/media/runtime-smoke.png',
+      },
+    ],
+    keepsChannelOpen: true,
+    response: { success: true },
+  });
 });
