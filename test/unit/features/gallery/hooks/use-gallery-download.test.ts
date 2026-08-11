@@ -53,12 +53,50 @@ describe('createDownloadHandler bulk resource limits', () => {
 
     await createDownloadHandler().handleDownload('all');
 
+    expect(state.setError).toHaveBeenLastCalledWith('msg.dl.part.resourceLimit');
+    expect(state.notifySafely).toHaveBeenCalledWith(
+      state.notify,
+      'msg.dl.part.t',
+      'msg.dl.part.resourceLimit'
+    );
+    expect(state.translate).toHaveBeenCalledWith('msg.dl.part.resourceLimit', {
+      count: 1,
+      failed: 1,
+    });
+  });
+
+  it('keeps a resource-limit result with no saved files as a download failure', async () => {
+    state.downloadBulk.mockResolvedValue({
+      success: false,
+      status: 'error',
+      filesProcessed: 1,
+      filesSuccessful: 0,
+      code: 'RESOURCE_LIMIT',
+    });
+
+    await createDownloadHandler().handleDownload('all');
+
     expect(state.setError).toHaveBeenLastCalledWith('msg.dl.zipTooLarge');
     expect(state.notifySafely).toHaveBeenCalledWith(
       state.notify,
       'msg.dl.one.err.t',
       'msg.dl.zipTooLarge'
     );
-    expect(state.translate).not.toHaveBeenCalledWith('msg.dl.part.b', expect.anything());
+  });
+
+  it('does not report a cancelled bulk download as an error', async () => {
+    state.downloadBulk.mockResolvedValue({
+      success: false,
+      status: 'error',
+      filesProcessed: 0,
+      filesSuccessful: 0,
+      code: 'CANCELLED',
+    });
+
+    await createDownloadHandler().handleDownload('all');
+
+    expect(state.setError).toHaveBeenCalledTimes(1);
+    expect(state.setError).toHaveBeenLastCalledWith(null);
+    expect(state.notifySafely).not.toHaveBeenCalled();
   });
 });

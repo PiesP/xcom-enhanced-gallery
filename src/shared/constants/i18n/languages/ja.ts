@@ -78,6 +78,8 @@ export const ja: LanguageStrings = {
       part: {
         t: '一部失敗',
         b: '{count}個の項目を取得できませんでした。',
+        resourceLimit:
+          'ZIPに{count}個の項目を保存しましたが、ブラウザーのリソース上限により{failed}個の項目を除外しました。大きなメディアは個別にダウンロードしてください。',
       },
       noMedia: 'メディアが選択されていません。ギャラリーを開き直してお試しください。',
       zipFail: 'ZIPファイルの保存に失敗しました',

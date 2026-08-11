@@ -101,6 +101,17 @@ export function createDownloadHandler() {
         });
 
         if (result.code === 'CANCELLED') return;
+        if (result.code === 'RESOURCE_LIMIT' && result.success && result.status === 'partial') {
+          const failures = Math.max(0, result.filesProcessed - result.filesSuccessful);
+          const title = languageService.translate('msg.dl.part.t');
+          const body = languageService.translate('msg.dl.part.resourceLimit', {
+            count: result.filesSuccessful,
+            failed: failures,
+          });
+          setError(body);
+          notifyError(title, body);
+          return;
+        }
         if (result.code === 'RESOURCE_LIMIT') {
           const title = languageService.translate('msg.dl.one.err.t');
           const body = languageService.translate('msg.dl.zipTooLarge');

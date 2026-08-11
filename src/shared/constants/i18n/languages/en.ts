@@ -78,6 +78,8 @@ export const en: LanguageStrings = {
       part: {
         t: 'Partial Failure',
         b: 'Failed to download {count} items.',
+        resourceLimit:
+          'Saved {count} items in the ZIP; {failed} items were omitted because the browser resource limit was reached. Download large media individually.',
       },
       noMedia: 'No media item selected. Please re-open the gallery and try again.',
       zipFail: 'Failed to save ZIP file',
