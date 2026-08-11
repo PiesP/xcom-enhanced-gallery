@@ -100,19 +100,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: 🏗️ Build bundles for E2E
-        run: |
-          pnpm clean
-          pnpm build:ci
-          pnpm build:dev
-          pnpm build:extension:ci
-          pnpm build:extension:firefox:ci
+        run: pnpm build:e2e
 
       - name: 🎭 Run E2E tests
         run: |
           pnpm exec playwright install --with-deps chromium firefox webkit
-          pnpm test:e2e
-          pnpm test:e2e:extension
-          pnpm test:e2e:extension:firefox
+          pnpm test:e2e:all
 
   duplication:
     name: 🔍 Release duplication

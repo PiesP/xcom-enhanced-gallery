@@ -128,16 +128,35 @@ describe('tooling configuration', () => {
     );
   });
 
+  it('centralizes the browser E2E build and test command contracts', () => {
+    expect(packageJson.scripts['build:e2e']).toBe(
+      'pnpm clean && pnpm build:ci && pnpm build:dev && pnpm build:extension:ci && pnpm build:extension:firefox:ci'
+    );
+    expect(packageJson.scripts['test:e2e:all']).toBe(
+      'pnpm -s test:e2e && pnpm -s test:e2e:extension && pnpm -s test:e2e:extension:firefox'
+    );
+    expect(packageJson.scripts['verify:full']).toContain('pnpm -s test:e2e:all');
+
+    for (const workflow of [ciWorkflow, releaseWorkflow]) {
+      expect(workflow).toContain('run: pnpm build:e2e');
+      expect(workflow).toContain('pnpm test:e2e:all');
+      expect(workflow).not.toContain('pnpm test:e2e:extension\n');
+    }
+  });
+
   it('builds and smoke-tests both extension targets in CI', () => {
-    expect(ciWorkflow).toContain('pnpm build:extension:ci');
-    expect(ciWorkflow).toContain('pnpm build:extension:firefox:ci');
-    expect(ciWorkflow).toContain('pnpm test:e2e:extension');
+    expect(packageJson.scripts['build:e2e']).toContain('pnpm build:extension:ci');
+    expect(packageJson.scripts['build:e2e']).toContain('pnpm build:extension:firefox:ci');
+    expect(packageJson.scripts['test:e2e:all']).toContain('pnpm -s test:e2e:extension');
+    expect(ciWorkflow).toContain('pnpm build:e2e');
+    expect(ciWorkflow).toContain('pnpm test:e2e:all');
     expect(ciWorkflow).toMatch(/playwright install --with-deps (?:chromium firefox|firefox chromium)/);
   });
 
   it('keeps tag-release browser coverage aligned with CI', () => {
     expect(releaseWorkflow).toContain('playwright install --with-deps chromium firefox webkit');
-    expect(releaseWorkflow).toContain('pnpm test:e2e:extension:firefox');
+    expect(releaseWorkflow).toContain('pnpm test:e2e:all');
+    expect(packageJson.scripts['test:e2e:all']).toContain('pnpm -s test:e2e:extension:firefox');
     expect(releaseWorkflow).toContain('path: ~/.cache/selenium');
   });
 
