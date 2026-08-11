@@ -39,7 +39,7 @@ concurrency:
 jobs:
   duplication:
     name: 🔍 Duplication
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.scope == 'all' || inputs.scope == 'duplication' }}
+    if: ${{ github.event_name != 'push' && (github.event_name != 'workflow_dispatch' || inputs.scope == 'all' || inputs.scope == 'duplication') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

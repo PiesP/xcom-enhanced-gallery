@@ -9,6 +9,7 @@ const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8
 };
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yaml'), 'utf8');
 const deepWorkflow = readFileSync(resolve(root, '.github/workflows/deep-checks.yaml'), 'utf8');
+const releaseWorkflow = readFileSync(resolve(root, '.github/workflows/release.yaml'), 'utf8');
 const securityWorkflow = readFileSync(resolve(root, '.github/workflows/security.yaml'), 'utf8');
 const userscriptPlaywrightConfig = readFileSync(
   resolve(root, 'test/e2e/playwright.config.ts'),
@@ -122,6 +123,9 @@ describe('tooling configuration', () => {
       'prebuild:extension:firefox'
     );
     expect(packageJson.scripts['build:all']).toContain('build:extension:ci');
+    expect(packageJson.scripts['quality:fix']).toBe(
+      'pnpm -s fmt:fix && pnpm -s lint:fix && pnpm -s quality'
+    );
   });
 
   it('builds and smoke-tests both extension targets in CI', () => {
@@ -129,6 +133,19 @@ describe('tooling configuration', () => {
     expect(ciWorkflow).toContain('pnpm build:extension:firefox:ci');
     expect(ciWorkflow).toContain('pnpm test:e2e:extension');
     expect(ciWorkflow).toMatch(/playwright install --with-deps (?:chromium firefox|firefox chromium)/);
+  });
+
+  it('keeps tag-release browser coverage aligned with CI', () => {
+    expect(releaseWorkflow).toContain('playwright install --with-deps chromium firefox webkit');
+    expect(releaseWorkflow).toContain('pnpm test:e2e:extension:firefox');
+    expect(releaseWorkflow).toContain('path: ~/.cache/selenium');
+  });
+
+  it('does not duplicate the default-branch duplication scan in Deep Verification', () => {
+    const duplicationJob = deepWorkflow.match(/\n  duplication:[\s\S]*?\n  mutation:/)?.[0] ?? '';
+
+    expect(duplicationJob).toContain("github.event_name != 'push'");
+    expect(ciWorkflow).toContain('name: pr-gate/duplication');
   });
 
   it('retains actionable browser diagnostics and labels Firefox coverage honestly', () => {

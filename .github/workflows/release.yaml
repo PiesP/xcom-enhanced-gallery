@@ -88,6 +88,14 @@ jobs:
           restore-keys: |
             playwright-${{ runner.os }}-
 
+      - name: 🦊 Cache Selenium Firefox and GeckoDriver
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/selenium
+          key: selenium-firefox-${{ runner.os }}-${{ hashFiles('package.json') }}
+          restore-keys: |
+            selenium-firefox-${{ runner.os }}-
+
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -101,9 +109,10 @@ jobs:
 
       - name: 🎭 Run E2E tests
         run: |
-          pnpm exec playwright install --with-deps chromium firefox
+          pnpm exec playwright install --with-deps chromium firefox webkit
           pnpm test:e2e
           pnpm test:e2e:extension
+          pnpm test:e2e:extension:firefox
 
   duplication:
     name: 🔍 Release duplication
