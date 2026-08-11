@@ -126,7 +126,7 @@
 
   /* Layout: provide a relative context for absolutely-positioned panels */
   position: fixed;
-  top: 1.25em; /* 20px → 1.25em */
+  top: max(1.25em, env(safe-area-inset-top)); /* 20px → 1.25em */
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--xeg-z-toolbar, 2147483620);
@@ -135,7 +135,15 @@
   /* Panels use absolute positioning and are taken out of the normal flow */
   align-items: center;
   justify-content: space-between;
-  height: 3em; /* switched from min-height to height for a fixed toolbar height */
+  box-sizing: border-box;
+  inline-size: max-content;
+  max-inline-size: calc(
+    100% -
+    max(var(--xeg-spacing-sm), env(safe-area-inset-left)) -
+    max(var(--xeg-spacing-sm), env(safe-area-inset-right))
+  );
+  min-inline-size: 0;
+  min-block-size: 3em;
   padding: 0.5em 1em; /* 8px 16px → 0.5em 1em */
   gap: 0; /* spacing to the panel is handled separately */
 
@@ -175,9 +183,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;
+  inline-size: max-content;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  overflow: visible;
 }
 
 .toolbarControls {
@@ -186,7 +195,9 @@
   justify-content: center;
   flex-wrap: wrap;
   gap: var(--xeg-spacing-xs);
-  width: 100%;
+  inline-size: max-content;
+  max-inline-size: 100%;
+  min-inline-size: 0;
 }
 
 .toolbarControls > .toolbarButton {
@@ -380,8 +391,17 @@ button.fitButton {
   flex-direction: column;
   gap: var(--xeg-spacing-md);
   padding: var(--xeg-spacing-lg);
-  max-height: var(--xeg-toolbar-panel-max-height);
-  overflow: hidden;
+  max-height: min(
+    var(--xeg-toolbar-panel-max-height),
+    calc(
+      100dvh -
+      100% -
+      max(1.25em, env(safe-area-inset-top)) -
+      max(var(--xeg-spacing-sm), env(safe-area-inset-bottom))
+    )
+  );
+  overflow-x: hidden;
+  overflow-y: auto;
   opacity: 0;
   transform: translateY(-0.5em);
   visibility: hidden;

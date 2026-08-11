@@ -109,6 +109,8 @@ function getNextButton(page: Page) {
   return page.getByRole('button', { name: 'Next' });
 }
 
+const RESPONSIVE_VIEWPORT_WIDTHS = [320, 375, 414, 768, 1024, 1280] as const;
+
 test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
   test.beforeAll(() => {
     if (!existsSync(DEV_USERSCRIPT_PATH)) {
@@ -205,6 +207,77 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
 
     await previousButton.click();
     await expect.poll(() => getIndex(page)).toBe(1);
+  });
+
+  test('toolbar controls remain fully operable across supported viewport widths', async ({
+    page,
+  }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const toolbar = page.locator('[data-gallery-element="toolbar"]');
+
+    for (const width of RESPONSIVE_VIEWPORT_WIDTHS) {
+      await test.step(`${width}px viewport`, async () => {
+        await page.setViewportSize({ width, height: 800 });
+
+        const clippedControls = await toolbar.evaluate((element) => {
+          const toolbarRect = element.getBoundingClientRect();
+          const controls = [
+            ...element.querySelectorAll<HTMLButtonElement>('button'),
+            element.querySelector<HTMLElement>('[role="progressbar"]'),
+          ].filter((control): control is HTMLElement => control !== null);
+
+          return controls.flatMap((control) => {
+            const rect = control.getBoundingClientRect();
+            const isContained =
+              rect.left >= toolbarRect.left &&
+              rect.right <= toolbarRect.right &&
+              rect.top >= toolbarRect.top &&
+              rect.bottom <= toolbarRect.bottom &&
+              rect.left >= 0 &&
+              rect.right <= window.innerWidth &&
+              rect.top >= 0 &&
+              rect.bottom <= window.innerHeight;
+
+            if (isContained) return [];
+
+            return [
+              control.getAttribute('aria-label') ?? control.textContent?.trim() ?? control.tagName,
+            ];
+          });
+        });
+
+        expect(clippedControls).toEqual([]);
+      });
+    }
+  });
+
+  test('settings panel stays reachable in a short narrow viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 240 });
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    await page.locator('#settings-button').click();
+    const panel = page.locator('[data-gallery-element="settings-panel"]');
+    await expect(panel).toBeVisible();
+
+    const layout = await panel.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        bottom: rect.bottom,
+        viewportHeight: window.innerHeight,
+        overflowY: getComputedStyle(element).overflowY,
+      };
+    });
+
+    expect(layout.bottom).toBeLessThanOrEqual(layout.viewportHeight);
+    expect(layout.overflowY).toBe('auto');
+
+    await panel.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+    await expect(panel.locator('select').last()).toBeInViewport();
   });
 
   test('toolbar boundaries follow the item currently focused by scrolling', async ({ page }) => {
