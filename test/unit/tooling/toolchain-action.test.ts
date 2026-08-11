@@ -18,6 +18,16 @@ function jobBlock(workflow: string, job: string): string {
   );
 }
 
+function topLevelBlock(workflow: string, key: string): string {
+  const marker = `${key}:\n`;
+  const start = workflow.indexOf(marker);
+  if (start === -1) throw new Error(`Workflow key not found: ${key}`);
+
+  const afterMarker = start + marker.length;
+  const nextKey = workflow.slice(afterMarker).search(/\n[A-Za-z][A-Za-z0-9_-]*:\n/);
+  return workflow.slice(start, nextKey === -1 ? undefined : afterMarker + nextKey).trimEnd();
+}
+
 describe('central setup-project action', () => {
   it('removes the local setup action', () => {
     expect(existsSync(resolve(root, '.github/actions/setup-toolchain/action.yaml'))).toBe(false);
@@ -31,6 +41,7 @@ describe('central setup-project action', () => {
       );
 
       expect(workflow).not.toContain('./.github/actions/setup-toolchain');
+      expect(workflow).not.toContain(releaseSetupAction);
       expect(workflow).not.toContain('pnpm install --frozen-lockfile');
       expect(workflow).not.toContain('uses: pnpm/setup@');
       expect(workflow).not.toContain('uses: actions/setup-node@');
@@ -48,7 +59,7 @@ describe('central setup-project action', () => {
     const workflow = readFileSync(resolve(root, '.github/workflows/release.yaml'), 'utf8');
     const action = readFileSync(resolve(root, '.github/actions/setup-release/action.yaml'), 'utf8');
 
-    expect(workflow).toMatch(/on:\n  push:\n    tags:\n      - "v\*"/);
+    expect(topLevelBlock(workflow, 'on')).toBe('on:\n  push:\n    tags:\n      - "v*"');
     expect(workflow).not.toContain(centralSetupAction);
     expect(workflow).not.toContain('pnpm install --frozen-lockfile');
 
@@ -59,6 +70,7 @@ describe('central setup-project action', () => {
       expect(block).toContain('node-version: ${{ env.NODE_VERSION }}');
     }
 
+    expect(workflow.split(releaseSetupAction)).toHaveLength(releaseWorkflowJobs.length + 1);
     expect(action).toContain(
       'uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2'
     );
