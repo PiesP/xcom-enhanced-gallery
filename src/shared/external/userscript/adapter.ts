@@ -138,43 +138,91 @@ function anchorDownload(url: string, filename: string): Promise<void> {
 async function downloadViaBlob(
   url: string,
   filename: string,
-  xmlHttpRequest: (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl
+  xmlHttpRequest: (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl,
+  signal?: AbortSignal
 ): Promise<void> {
+  if (signal?.aborted) throw abortReason(signal);
+
   return new Promise<void>((resolve, reject) => {
     let objectUrl: string | null = null;
-    const control = xmlHttpRequest({
-      method: 'GET',
-      url,
-      responseType: 'blob',
-      timeout: GM_DOWNLOAD_TIMEOUT_MS,
-      onload: (response) => {
-        try {
-          const blob = response.response as Blob;
-          objectUrl = URL.createObjectURL(blob);
-          anchorDownload(objectUrl, filename)
-            .then(resolve)
-            .catch(reject)
-            .finally(() => {
-              if (objectUrl) URL.revokeObjectURL(objectUrl);
-            });
-        } catch (error) {
-          if (objectUrl) URL.revokeObjectURL(objectUrl);
-          reject(error);
-        }
-      },
-      onerror: () => {
-        control.abort();
-        reject(new Error('GM_xmlhttpRequest failed'));
-      },
-      ontimeout: () => {
-        control.abort();
-        reject(new Error('GM_xmlhttpRequest timed out'));
-      },
-      onabort: () => reject(new DOMException('Aborted', 'AbortError')),
-    });
-    // control.abort() is called on error/timeout to cleanly cancel
-    // in-flight requests when the promise rejects.
+    let control: GMXMLHttpRequestControl | null = null;
+    let abortHandler: (() => void) | null = null;
+    let settled = false;
+
+    const cleanup = (): void => {
+      if (signal && abortHandler) signal.removeEventListener('abort', abortHandler);
+      abortHandler = null;
+    };
+    const revokeObjectUrl = (): void => {
+      if (!objectUrl) return;
+      URL.revokeObjectURL(objectUrl);
+      objectUrl = null;
+    };
+    const fail = (error: unknown): void => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      revokeObjectUrl();
+      reject(error);
+    };
+    const handleLoad: NonNullable<GMXMLHttpRequestDetails['onload']> = (response) => {
+      if (settled) return;
+      if (response.status < 200 || response.status >= 300) {
+        fail(new Error(`HTTP ${response.status}: ${response.statusText || 'Request failed'}`));
+        return;
+      }
+      if (!(response.response instanceof Blob)) {
+        fail(new Error('GM_xmlhttpRequest returned an invalid Blob response'));
+        return;
+      }
+
+      try {
+        objectUrl = URL.createObjectURL(response.response);
+      } catch (error) {
+        fail(error);
+        return;
+      }
+
+      // The network request is complete and the synthetic anchor click cannot
+      // be cancelled once it starts. Stop observing cancellation before it.
+      settled = true;
+      cleanup();
+      void anchorDownload(objectUrl, filename).then(resolve, reject).finally(revokeObjectUrl);
+    };
+
+    abortHandler = () => {
+      try {
+        control?.abort();
+      } finally {
+        fail(signal ? abortReason(signal) : new DOMException('Aborted', 'AbortError'));
+      }
+    };
+    signal?.addEventListener('abort', abortHandler, { once: true });
+
+    try {
+      control = xmlHttpRequest({
+        method: 'GET',
+        url,
+        responseType: 'blob',
+        timeout: GM_DOWNLOAD_TIMEOUT_MS,
+        onload: handleLoad,
+        onerror: () => fail(new Error('GM_xmlhttpRequest failed')),
+        ontimeout: () => fail(new Error('GM_xmlhttpRequest timed out')),
+        onabort: () => fail(new DOMException('Aborted', 'AbortError')),
+      });
+      if (signal?.aborted && !settled) abortHandler();
+    } catch (error) {
+      fail(error);
+    }
   });
+}
+
+interface GMDownloadHandle {
+  readonly abort: () => void;
+  readonly then?: (
+    onFulfilled: ((value: unknown) => unknown) | undefined,
+    onRejected: (reason: unknown) => unknown
+  ) => unknown;
 }
 
 let cachedUserscriptAPI: UserscriptAPI | null = null;
@@ -185,9 +233,7 @@ export function getUserscript(): UserscriptAPI {
   const g = getGMAPIs();
 
   // GM.download (GM4+/Tampermonkey Promise-based) — preferred
-  const gmDownloadModern = asFunction<(details: GMDownloadDetails) => { abort: () => void }>(
-    g.download
-  );
+  const gmDownloadModern = asFunction<(details: GMDownloadDetails) => GMDownloadHandle>(g.download);
   // GM_download (legacy) — fallback
   const gmDownloadLegacy = asFunction<typeof GM_download>(g.downloadLegacy);
 
@@ -202,7 +248,6 @@ export function getUserscript(): UserscriptAPI {
     g.notification
   );
 
-  if (!gmDownloadModern && !gmDownloadLegacy) throw new Error('GM_download unavailable');
   if (!gmXmlHttpRequest) throw new Error('GM_xmlhttpRequest unavailable');
 
   const cookieCandidate = g.cookie;
@@ -270,6 +315,13 @@ export function getUserscript(): UserscriptAPI {
               };
               signal.addEventListener('abort', abortHandler, { once: true });
             }
+            if (typeof handle.then === 'function') {
+              // Callbacks remain the completion source because userscript
+              // managers can resolve the returned thenable before onload.
+              // Observe rejection so permission/API failures cannot leave the
+              // wrapper pending forever or surface as unhandled rejections.
+              handle.then(undefined, fail);
+            }
           } catch (error) {
             fail(error);
           }
@@ -296,7 +348,7 @@ export function getUserscript(): UserscriptAPI {
       }
 
       // Strategy 3: Blob-based fallback via GM_xmlhttpRequest
-      return downloadViaBlob(url, filename, gmXmlHttpRequest);
+      return downloadViaBlob(url, filename, gmXmlHttpRequest, signal);
     },
 
     async downloadBlob(blob: Blob, filename: string, signal?: AbortSignal): Promise<void> {
