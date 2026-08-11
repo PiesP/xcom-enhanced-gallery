@@ -34,7 +34,7 @@ jobs:
           submodules: true
 
       - name: 📦 Setup project
-        uses: PiesP/browser-core/automation/actions/setup-project@f630a8f0119dd6b4f1aa011f8510489936c7a7b9
+        uses: ./.github/actions/setup-release
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -52,7 +52,7 @@ jobs:
           submodules: true
 
       - name: 📦 Setup project
-        uses: PiesP/browser-core/automation/actions/setup-project@f630a8f0119dd6b4f1aa011f8510489936c7a7b9
+        uses: ./.github/actions/setup-release
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -86,7 +86,7 @@ jobs:
             selenium-firefox-${{ runner.os }}-
 
       - name: 📦 Setup project
-        uses: PiesP/browser-core/automation/actions/setup-project@f630a8f0119dd6b4f1aa011f8510489936c7a7b9
+        uses: ./.github/actions/setup-release
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -125,7 +125,7 @@ jobs:
           submodules: true
 
       - name: 📦 Setup project
-        uses: PiesP/browser-core/automation/actions/setup-project@f630a8f0119dd6b4f1aa011f8510489936c7a7b9
+        uses: ./.github/actions/setup-release
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -146,7 +146,7 @@ jobs:
           fetch-tags: true
 
       - name: 📦 Setup project
-        uses: PiesP/browser-core/automation/actions/setup-project@f630a8f0119dd6b4f1aa011f8510489936c7a7b9
+        uses: ./.github/actions/setup-release
         with:
           node-version: ${{ env.NODE_VERSION }}
 
