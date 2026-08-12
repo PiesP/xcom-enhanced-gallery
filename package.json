@@ -91,8 +91,8 @@
     "solid-js": "^1.9.14"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.12.1",
-    "@biomejs/biome": "^2.5.7",
+    "@axe-core/playwright": "^4.13.0",
+    "@biomejs/biome": "^2.5.8",
     "@playwright/test": "^1.62.1",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
@@ -101,7 +101,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "dpdm": "4.3.0",
     "jsdom": "^30.0.1",
-    "knip": "^6.32.1",
+    "knip": "^6.32.2",
     "selenium-webdriver": "4.47.0",
     "typescript": "7.0.2",
     "vite": "^8.2.1",
