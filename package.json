@@ -102,7 +102,7 @@
     "dpdm": "4.3.0",
     "jsdom": "^30.0.1",
     "knip": "^6.32.1",
-    "selenium-webdriver": "4.46.0",
+    "selenium-webdriver": "4.47.0",
     "typescript": "7.0.2",
     "vite": "^8.2.1",
     "vite-plugin-solid": "^2.11.14",

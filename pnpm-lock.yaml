@@ -52,8 +52,8 @@ importers:
         specifier: ^6.32.1
         version: 6.32.1
       selenium-webdriver:
-        specifier: 4.46.0
-        version: 4.46.0
+        specifier: 4.47.0
+        version: 4.47.0
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -1939,9 +1939,9 @@ packages:
     resolution: {integrity: sha512-xAg7SOnEhrm5zI3puOOKyy1OMcMlIJZYNJY7xLBwSze0UjhPLnWfj2GF2EpT0jmzaJKIWKHLsaSSajf35bcYnA==}
     engines: {node: '>=v12.22.7'}
 
-  selenium-webdriver@4.46.0:
-    resolution: {integrity: sha512-UlTkgnx9y+bf3QxFsrgUyMqC2oy1Yf+qcOs7xIC/XfsUPv/ow7Sicx6SJ7AeOn2/Z+xF1M8SLqyn983wipI82w==}
-    engines: {node: '>= 20.0.0'}
+  selenium-webdriver@4.47.0:
+    resolution: {integrity: sha512-nxxJnH25tsJxz+pdMxtvH89tbrMnfff6W//uBIVlOWz1KZlADiQ7dyRPehknKdYiC3HwEypTy1l+tozxO0I2Qw==}
+    engines: {node: '>= 22.0.0'}
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
@@ -4046,7 +4046,7 @@ snapshots:
     dependencies:
       xmlchars: 2.2.0
 
-  selenium-webdriver@4.46.0:
+  selenium-webdriver@4.47.0:
     dependencies:
       '@bazel/runfiles': 6.5.0
       jszip: 3.10.1
