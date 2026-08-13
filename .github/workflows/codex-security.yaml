@@ -58,7 +58,6 @@ jobs:
             --ignore-scripts \
             --no-audit \
             --no-fund
-          node scripts/security/patch-codex-security.mjs "$RUNNER_TEMP/codex-security"
           CODEX_SECURITY_BIN="$RUNNER_TEMP/codex-security/node_modules/.bin/codex-security"
           test -x "$CODEX_SECURITY_BIN"
           "$CODEX_SECURITY_BIN" --version
