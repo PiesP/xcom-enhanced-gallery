@@ -1,0 +1,9 @@
+# This exception applies only to the integrity-locked Codex Security CLI.
+# The CLI rejects every symbolic-link ZIP entry in its onEntry callback before
+# extract-zip can create it, which closes the advisory's traversal path. There
+# is no patched extract-zip release yet, so reassess this narrow exception soon.
+
+[[IgnoredVulns]]
+id = "GHSA-jmr9-qjv8-65gv"
+ignoreUntil = 2026-09-13
+reason = "Codex Security rejects all symlink ZIP entries before extraction; no patched extract-zip release exists."

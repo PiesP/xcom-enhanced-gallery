@@ -34,7 +34,6 @@ repo_root="$(git -C "$script_dir" rev-parse --show-toplevel)"
 repo_name="$(basename -- "$repo_root")"
 cli_package="$repo_root/.github/codex-security/package.json"
 cli_lock="$repo_root/.github/codex-security/package-lock.json"
-cli_patcher="$repo_root/scripts/security/patch-codex-security.mjs"
 scan_prompt="$repo_root/.github/codex-security/scan.md"
 
 node_version="$(node --version 2>/dev/null || true)"
@@ -60,16 +59,15 @@ case "$node_major" in
     ;;
 esac
 
-cli_metadata="$(node - "$cli_package" "$cli_lock" "$cli_patcher" <<'NODE'
+cli_metadata="$(node - "$cli_package" "$cli_lock" <<'NODE'
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 
 const packagePath = process.argv[2];
 const lockPath = process.argv[3];
-const patcherPath = process.argv[4];
-const manifest = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+const packageText = fs.readFileSync(packagePath, 'utf8');
+const manifest = JSON.parse(packageText);
 const lockText = fs.readFileSync(lockPath, 'utf8');
-const patcherText = fs.readFileSync(patcherPath, 'utf8');
 const lock = JSON.parse(lockText);
 const version = manifest.dependencies?.['@openai/codex-security'];
 const rootVersion = lock.packages?.['']?.dependencies?.['@openai/codex-security'];
@@ -81,9 +79,9 @@ if (!/^\d+\.\d+\.\d+$/.test(version) || version !== rootVersion || version !== l
 
 const digest = crypto
   .createHash('sha256')
-  .update(lockText)
+  .update(packageText)
   .update('\0')
-  .update(patcherText)
+  .update(lockText)
   .digest('hex');
 console.log(`${version} ${digest}`);
 NODE
@@ -175,7 +173,6 @@ if [[ ! -x "$cli_bin" || "$installed_digest" != "$install_digest" ]]; then
     --ignore-scripts \
     --no-audit \
     --no-fund
-  node "$cli_patcher" "$cache_dir"
   printf '%s\n' "$install_digest" > "$install_marker"
 fi
 
