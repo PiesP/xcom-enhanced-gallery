@@ -192,6 +192,15 @@ describe('workflow change policy', () => {
     );
   });
 
+  it('executes the change classifier from the trusted base revision for PR-like events', () => {
+    for (const workflow of [ciWorkflow, securityWorkflow]) {
+      const changes = jobBlock(workflow, 'changes');
+      expect(changes).toContain('pull_request | merge_group');
+      expect(changes).toContain('git show "$BASE_SHA:scripts/ci/classify-changes.sh"');
+      expect(changes).toContain('bash "$classifier"');
+    }
+  });
+
   it('keeps required workflow triggers broad and scopes only non-required automation', () => {
     const ciTrigger = ciWorkflow.slice(0, ciWorkflow.indexOf('\nenv:'));
     const securityTrigger = securityWorkflow.slice(0, securityWorkflow.indexOf('\npermissions:'));

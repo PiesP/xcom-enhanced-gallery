@@ -55,9 +55,20 @@ jobs:
       - name: 🧭 Classify changed paths
         id: classify
         env:
+          EVENT_NAME: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
-        run: bash scripts/ci/classify-changes.sh
+        run: |
+          set -euo pipefail
+          classifier=scripts/ci/classify-changes.sh
+          case "$EVENT_NAME" in
+            pull_request | merge_group)
+              classifier="$RUNNER_TEMP/trusted-classify-changes.sh"
+              [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+              git show "$BASE_SHA:scripts/ci/classify-changes.sh" > "$classifier"
+              ;;
+          esac
+          bash "$classifier"
 
   pinned-tools:
     name: 🔄 Pinned tool freshness
