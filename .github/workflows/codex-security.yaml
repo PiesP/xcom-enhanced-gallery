@@ -3,6 +3,23 @@ name: Codex Security
 on:
   pull_request:
     branches: [master]
+    paths:
+      - ".github/SECURITY.md"
+      - ".github/actions/**"
+      - ".github/codex-security/**"
+      - ".github/workflows/**"
+      - "extension/**"
+      - "package.json"
+      - "packages/core"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "PRIVACY.md"
+      - "scripts/**"
+      - "src/**"
+      - "tooling/**"
+      - "tsconfig*.json"
+      - "vite*.ts"
+      - "vitest.config.ts"
   workflow_dispatch:
 
 permissions:

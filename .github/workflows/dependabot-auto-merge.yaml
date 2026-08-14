@@ -9,6 +9,12 @@ name: 🤖 Dependabot Auto-Merge Gate
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
+    paths:
+      - ".github/actions/**"
+      - ".github/workflows/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
 
 permissions:
   contents: read
