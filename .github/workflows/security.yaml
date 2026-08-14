@@ -25,7 +25,7 @@ permissions:
   security-events: write
 
 concurrency:
-  group: security-${{ github.ref }}
+  group: security-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -35,6 +35,30 @@ env:
   OSV_SCANNER_IMAGE: "ghcr.io/google/osv-scanner-action@sha256:4cc9d6b5a6bb3a81c38c8d1610f6855512ddd1ba5af77083a856f171dbd0d463"
 
 jobs:
+  changes:
+    name: Classify security-relevant paths
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      osv: ${{ steps.classify.outputs.osv }}
+      semgrep: ${{ steps.classify.outputs.semgrep }}
+      codeql_actions: ${{ steps.classify.outputs.codeql_actions }}
+      codeql_javascript: ${{ steps.classify.outputs.codeql_javascript }}
+    steps:
+      - name: 📥 Checkout change history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: false
+
+      - name: 🧭 Classify changed paths
+        id: classify
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
+        run: bash scripts/ci/classify-changes.sh
+
   pinned-tools:
     name: 🔄 Pinned tool freshness
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
@@ -55,7 +79,8 @@ jobs:
 
   osv-scan-pr:
     name: pr-gate/osv / osv-scan
-    if: ${{ github.event_name == 'pull_request' }}
+    needs: changes
+    if: ${{ !cancelled() && github.event_name == 'pull_request' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -63,7 +88,12 @@ jobs:
       contents: read
       security-events: write
     steps:
+      - name: ⏭️ No dependency-relevant changes
+        if: ${{ needs.changes.result == 'success' && needs.changes.outputs.osv == 'false' }}
+        run: echo "No dependency-relevant changes; required check satisfied."
+
       - name: 📥 Checkout code
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -71,6 +101,7 @@ jobs:
           persist-credentials: false
 
       - name: ⏪ Checkout the PR base
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
@@ -79,11 +110,13 @@ jobs:
           git submodule update --init --recursive
 
       - name: 📁 Prepare isolated OSV result directory
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         run: |
           set -euo pipefail
           install -d -m 0700 "$RUNNER_TEMP/osv-results"
 
       - name: 🛡️ Scan dependencies before the PR
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         continue-on-error: true
         run: |
           docker run --rm \
@@ -99,12 +132,14 @@ jobs:
             .
 
       - name: ⏩ Checkout the PR result
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         run: |
           set -euo pipefail
           git switch --force --detach "$GITHUB_SHA"
           git submodule update --init --recursive
 
       - name: 🛡️ Scan dependencies after the PR
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         continue-on-error: true
         run: |
           docker run --rm \
@@ -120,6 +155,7 @@ jobs:
             .
 
       - name: 📋 Report newly introduced vulnerabilities
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         run: |
           docker run --rm \
             --entrypoint /root/osv-reporter \
@@ -133,24 +169,31 @@ jobs:
             --fail-on-vuln=true
 
       - name: 📊 Upload OSV SARIF to GitHub Security
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.osv != 'false') }}
         uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         with:
           sarif_file: ${{ runner.temp }}/osv-results/osv-results.sarif
 
   osv-scan-dispatch:
     name: pr-gate/osv / osv-scan
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || github.event_name == 'schedule' }}
+    needs: changes
+    if: ${{ !cancelled() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || github.event_name == 'schedule') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
+      - name: ⏭️ No dependency-relevant changes
+        if: ${{ needs.changes.result == 'success' && needs.changes.outputs.osv == 'false' }}
+        run: echo "No dependency-relevant changes; required check satisfied."
+
       - name: 📥 Checkout code
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: true
           persist-credentials: false
 
       - name: 🛡️ Run OSV scan
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         continue-on-error: true
         run: |
           set -euo pipefail
@@ -168,6 +211,7 @@ jobs:
             .
 
       - name: 📋 Convert OSV results to SARIF and enforce the vulnerability gate
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         run: |
           docker run --rm \
             --entrypoint /root/osv-reporter \
@@ -179,13 +223,15 @@ jobs:
             --fail-on-vuln=true
 
       - name: 📊 Upload OSV SARIF to GitHub Security
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.osv != 'false') }}
         uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         with:
           sarif_file: ${{ runner.temp }}/osv-results/osv-results.sarif
 
   codeql:
     name: 🔎 CodeQL Analysis (${{ matrix.language }})
+    needs: changes
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -197,28 +243,54 @@ jobs:
       matrix:
         language: [actions, javascript-typescript]
     steps:
+      - name: 🧭 Select CodeQL language scope
+        id: scope
+        env:
+          ACTIONS_CHANGED: ${{ needs.changes.outputs.codeql_actions }}
+          JAVASCRIPT_CHANGED: ${{ needs.changes.outputs.codeql_javascript }}
+          LANGUAGE: ${{ matrix.language }}
+        run: |
+          set -euo pipefail
+          run=false
+          if [[ "${{ needs.changes.result }}" != "success" ]]; then
+            run=true
+          elif [[ "$LANGUAGE" == "actions" && "$ACTIONS_CHANGED" != "false" ]]; then
+            run=true
+          elif [[ "$LANGUAGE" == "javascript-typescript" && "$JAVASCRIPT_CHANGED" != "false" ]]; then
+            run=true
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
+      - name: ⏭️ No ${{ matrix.language }} CodeQL-relevant changes
+        if: ${{ steps.scope.outputs.run != 'true' }}
+        run: echo "No ${{ matrix.language }} CodeQL-relevant changes."
+
       - name: 📥 Checkout code
+        if: ${{ steps.scope.outputs.run == 'true' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: true
           persist-credentials: false
 
       - name: 🔧 Initialize CodeQL
+        if: ${{ steps.scope.outputs.run == 'true' }}
         uses: github/codeql-action/init@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         with:
           languages: ${{ matrix.language }}
           queries: security-extended
 
       - name: 🔎 Perform CodeQL Analysis
+        if: ${{ steps.scope.outputs.run == 'true' }}
         uses: github/codeql-action/analyze@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         with:
           category: "/language:${{ matrix.language }}"
 
   semgrep:
     name: pr-gate/semgrep
+    needs: changes
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+    if: ${{ !cancelled() && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || github.event_name == 'merge_group') }}
     permissions:
       contents: read
       security-events: write
@@ -227,13 +299,19 @@ jobs:
     container:
       image: semgrep/semgrep:1.172.0@sha256:a8298d1c09c84b9a0bbc75ec915e37023fc4657360b6dbfa645261d2353a366c
     steps:
+      - name: ⏭️ No Semgrep-relevant changes
+        if: ${{ needs.changes.result == 'success' && needs.changes.outputs.semgrep == 'false' }}
+        run: echo "No Semgrep-relevant changes; required check satisfied."
+
       - name: 📥 Checkout code
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.semgrep != 'false' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: true
           persist-credentials: false
 
       - name: 🔍 Run Semgrep scan
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.semgrep != 'false' }}
         run: |
           set -euo pipefail
           semgrep scan \
@@ -247,7 +325,7 @@ jobs:
             .
 
       - name: 📊 Upload SARIF to GitHub Security
-        if: ${{ !cancelled() && hashFiles('semgrep.sarif') != '' }}
+        if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.semgrep != 'false') && hashFiles('semgrep.sarif') != '' }}
         uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         with:
           sarif_file: semgrep.sarif

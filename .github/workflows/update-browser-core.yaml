@@ -4,6 +4,8 @@ on:
   # Rebuild an open automation branch immediately whenever its base advances.
   push:
     branches: [master]
+    paths-ignore:
+      - packages/core
   repository_dispatch:
     types: [browser-core-updated]
   schedule:

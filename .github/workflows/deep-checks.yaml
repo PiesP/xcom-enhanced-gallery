@@ -12,6 +12,21 @@ name: 🔬 Deep Verification
 on:
   push:
     branches: [master]
+    paths:
+      - ".github/workflows/deep-checks.yaml"
+      - "package.json"
+      - "packages/core"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "src/**"
+      - "stryker.conf.json"
+      - "stryker.conf.fast.json"
+      - "test/setup.ts"
+      - "test/unit/**"
+      - "tooling/**"
+      - "tsconfig.json"
+      - "tsconfig.test.json"
+      - "vitest.config.ts"
   schedule:
     - cron: "17 2 * * 0"
   workflow_dispatch:
@@ -33,7 +48,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: deep-${{ github.ref }}
+  group: deep-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
