@@ -96,7 +96,11 @@ jobs:
           fi
           git -C packages/core checkout --detach "$CORE_SHA"
 
-          OPEN_PR="$(gh pr list --state open --head "$GITHUB_REPOSITORY_OWNER:$BRANCH" --json number --jq '.[0].number // empty')"
+          # A branch-name filter can also match a fork PR. Only trust a PR whose
+          # head is in this repository before closing, editing, or approving it.
+          OPEN_PR="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base master --head "$BRANCH" \
+            --json number,headRepository,isCrossRepository \
+            --jq "[.[] | select(.isCrossRepository == false and .headRepository.nameWithOwner == \"$GITHUB_REPOSITORY\")][0].number // empty")"
           if git diff --quiet -- packages/core; then
             if [[ -n "$OPEN_PR" ]]; then
               gh pr close "$OPEN_PR" --comment "Closing this stale update PR because master already contains browser-core $SHORT_SHA."
