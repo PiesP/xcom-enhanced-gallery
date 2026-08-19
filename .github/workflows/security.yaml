@@ -29,10 +29,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # google/osv-scanner-action image v2.5.0 (linux/amd64), resolved 2026-08-08.
+  # google/osv-scanner-action image v2.5.1 (linux/amd64), resolved 2026-08-20.
   # Pin the runtime image itself: the upstream action metadata references a
   # mutable version tag even when the action is pinned to a commit SHA.
-  OSV_SCANNER_IMAGE: "ghcr.io/google/osv-scanner-action@sha256:4cc9d6b5a6bb3a81c38c8d1610f6855512ddd1ba5af77083a856f171dbd0d463"
+  OSV_SCANNER_IMAGE: "ghcr.io/google/osv-scanner-action@sha256:dcd947131d8d11b8d0964de6590661fb921a4ecbd7b90a7cb21083acfc3fd8cc"
 
 jobs:
   changes:
