@@ -97,6 +97,7 @@ export class DownloadMediaCache {
       .get<Blob>(url, {
         signal: signalScope.signal,
         responseType: 'blob',
+        maxResponseBytes: this.maxBytes,
       })
       .then((response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);

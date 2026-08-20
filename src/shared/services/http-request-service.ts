@@ -9,6 +9,7 @@ import { createDeferred } from '@piesp/browser-core/async';
 import { getHttpRequestAdapter } from '@platform/index';
 import type { HttpRequestControl, HttpRequestDetails } from '@platform/types';
 import { getAbortReasonOrAbortErrorFromSignal } from '@shared/error/cancellation';
+import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 
 interface HttpRequestOptions {
   readonly headers?: Record<string, string>;
@@ -16,6 +17,7 @@ interface HttpRequestOptions {
   readonly responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
   readonly data?: HttpRequestDetails['data'];
   readonly signal?: AbortSignal;
+  readonly maxResponseBytes?: number;
 }
 
 interface HttpResponse<T = unknown> {
@@ -90,6 +92,9 @@ export class HttpRequestService {
       ...(options?.headers ? { headers: options.headers } : {}),
       responseType: options?.responseType as Exclude<HttpRequestDetails['responseType'], undefined>,
       ...(options?.data !== undefined ? { data: options.data } : {}),
+      ...(options?.maxResponseBytes !== undefined
+        ? { maxResponseBytes: options.maxResponseBytes }
+        : {}),
       onload: (response) => {
         settle(() => {
           deferred.resolve({
@@ -101,6 +106,10 @@ export class HttpRequestService {
       },
       onerror: (response) => {
         settle(() => {
+          if (response.response instanceof HttpResponseSizeLimitError) {
+            deferred.reject(response.response);
+            return;
+          }
           const status = response.status ?? 0;
           const error = new Error(status === 0 ? 'NET' : `HTTP:${status}`) as Error & {
             status?: number;

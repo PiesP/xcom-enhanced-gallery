@@ -22,6 +22,122 @@ afterEach(() => {
 });
 
 describe('MV3HttpRequestAdapter', () => {
+  it('rejects an unknown-length streamed response before it exceeds the byte limit', async () => {
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([1, 2]));
+        controller.enqueue(new Uint8Array([3, 4]));
+        controller.close();
+      },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(stream, {
+          status: 200,
+          headers: { 'content-type': 'application/octet-stream' },
+        })
+      )
+    );
+    const onload = vi.fn();
+
+    const error = await new Promise<HttpRequestResponse>((resolve) => {
+      new MV3HttpRequestAdapter().request({
+        url: ALLOWED_URL,
+        responseType: 'arraybuffer',
+        maxResponseBytes: 3,
+        onload,
+        onerror: resolve,
+      });
+    });
+
+    expect(error.statusText).toBe('RESOURCE_LIMIT');
+    expect(onload).not.toHaveBeenCalled();
+  });
+
+  it('accepts an unknown-length streamed response within the byte limit', async () => {
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([1, 2]));
+        controller.enqueue(new Uint8Array([3, 4]));
+        controller.close();
+      },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(stream, {
+          status: 200,
+          headers: { 'content-type': 'application/octet-stream' },
+        })
+      )
+    );
+
+    const response = await new Promise<HttpRequestResponse<ArrayBuffer>>((resolve) => {
+      new MV3HttpRequestAdapter().request({
+        url: ALLOWED_URL,
+        responseType: 'arraybuffer',
+        maxResponseBytes: 4,
+        onload: (value) => resolve(value as HttpRequestResponse<ArrayBuffer>),
+      });
+    });
+
+    expect(new Uint8Array(response.response)).toEqual(new Uint8Array([1, 2, 3, 4]));
+  });
+
+  it('rejects an oversized Content-Length before consuming the response body', async () => {
+    const body = new ReadableStream<Uint8Array>({
+      pull: vi.fn(),
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(body, {
+          status: 200,
+          headers: { 'content-length': '5' },
+        })
+      )
+    );
+    const onload = vi.fn();
+
+    const error = await new Promise<HttpRequestResponse>((resolve) => {
+      new MV3HttpRequestAdapter().request({
+        url: ALLOWED_URL,
+        responseType: 'blob',
+        maxResponseBytes: 4,
+        onload,
+        onerror: resolve,
+      });
+    });
+
+    expect(error.statusText).toBe('RESOURCE_LIMIT');
+    expect(onload).not.toHaveBeenCalled();
+    expect(body.locked).toBe(false);
+  });
+
+  it('rejects a body that exceeds the limit when Content-Length understates it', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(new Uint8Array([1, 2, 3, 4]), {
+          status: 200,
+          headers: { 'content-length': '2' },
+        })
+      )
+    );
+
+    const error = await new Promise<HttpRequestResponse>((resolve) => {
+      new MV3HttpRequestAdapter().request({
+        url: ALLOWED_URL,
+        responseType: 'arraybuffer',
+        maxResponseBytes: 3,
+        onerror: resolve,
+      });
+    });
+
+    expect(error.statusText).toBe('RESOURCE_LIMIT');
+  });
+
   it('rejects disallowed URLs before fetch', () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);

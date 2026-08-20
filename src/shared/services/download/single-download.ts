@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { DEFAULT_REQUEST_TIMEOUT_MS } from '@constants/performance';
+import {
+  DEFAULT_REQUEST_TIMEOUT_MS,
+  SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES,
+} from '@constants/performance';
 import { mergeAbortSignalsWithCleanup } from '@piesp/browser-core/error';
 import { getDownloadAdapter } from '@platform/index';
 import type { DownloadAdapter } from '@platform/types';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
+import { readResponseBody } from '@shared/network/bounded-response';
 import type { DownloadOptions, SingleDownloadResult } from '@shared/services/download/types';
 import { reportProgress } from '@shared/services/download/types';
 import type { MediaInfo } from '@shared/types/media.types';
@@ -146,9 +150,12 @@ async function downloadWithFetchFallback(
   });
 
   const timeoutSignal = AbortSignal.timeout(DEFAULT_REQUEST_TIMEOUT_MS);
-  const fetchSignalScope = abortSignal
-    ? mergeAbortSignalsWithCleanup([abortSignal, timeoutSignal])
-    : { signal: timeoutSignal, cleanup: () => undefined };
+  const responseSizeController = new AbortController();
+  const fetchSignalScope = mergeAbortSignalsWithCleanup([
+    ...(abortSignal ? [abortSignal] : []),
+    timeoutSignal,
+    responseSizeController.signal,
+  ]);
 
   try {
     // Fetch in content script context (has host_permissions to bypass CORS).
@@ -166,7 +173,12 @@ async function downloadWithFetchFallback(
           new Error(`HTTP ${response.status}: ${response.statusText}`)
         );
       }
-      blob = await response.blob();
+      blob = (await readResponseBody(
+        response,
+        'blob',
+        SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES,
+        (reason) => responseSizeController.abort(reason)
+      )) as Blob;
     } finally {
       fetchSignalScope.cleanup();
     }

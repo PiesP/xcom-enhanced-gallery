@@ -13,6 +13,7 @@ import {
 } from '@constants/performance';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
+import { isHttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import {
   StreamingZipWriter,
   ZipResourceLimitError,
@@ -225,7 +226,8 @@ export async function downloadAsZip(
               item.url,
               retries,
               abortSignal,
-              DEFAULT_BACKOFF_BASE_MS
+              DEFAULT_BACKOFF_BASE_MS,
+              maxEntryBytes
             );
           }
         } else {
@@ -233,7 +235,8 @@ export async function downloadAsZip(
             item.url,
             retries,
             abortSignal,
-            DEFAULT_BACKOFF_BASE_MS
+            DEFAULT_BACKOFF_BASE_MS,
+            maxEntryBytes
           );
         }
 
@@ -254,7 +257,9 @@ export async function downloadAsZip(
         successful++;
       } catch (error) {
         throwIfAborted(abortSignal);
-        if (error instanceof ZipResourceLimitError) resourceLimitExceeded = true;
+        if (error instanceof ZipResourceLimitError || isHttpResponseSizeLimitError(error)) {
+          resourceLimitExceeded = true;
+        }
         failures.push({ url: item.url, error: normalizeErrorMessage(error) });
       } finally {
         releaseReservation?.();

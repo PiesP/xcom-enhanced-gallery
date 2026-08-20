@@ -104,6 +104,10 @@ describe('DownloadMediaCache', () => {
     await cache.getOrFetch(item);
 
     expect(http.get).toHaveBeenCalledTimes(2);
+    expect(http.get).toHaveBeenCalledWith(
+      item.url,
+      expect.objectContaining({ maxResponseBytes: 4 })
+    );
     cache.destroy();
   });
 

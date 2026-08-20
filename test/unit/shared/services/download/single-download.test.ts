@@ -2,7 +2,10 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
-import { DEFAULT_REQUEST_TIMEOUT_MS } from '@constants/performance';
+import {
+  DEFAULT_REQUEST_TIMEOUT_MS,
+  SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES,
+} from '@constants/performance';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { adapter, getDownloadAdapter } = vi.hoisted(() => {
@@ -28,12 +31,7 @@ const media = {
 };
 
 function successfulResponse(blob = new Blob(['video'])): Response {
-  return {
-    ok: true,
-    status: 200,
-    statusText: 'OK',
-    blob: vi.fn(async () => blob),
-  } as unknown as Response;
+  return new Response(blob, { status: 200, statusText: 'OK' });
 }
 
 describe('downloadSingleFile fetch fallback', () => {
@@ -61,6 +59,22 @@ describe('downloadSingleFile fetch fallback', () => {
       'downloading',
       'complete',
     ]);
+  });
+
+  it('uses the browser-managed direct fallback instead of buffering an oversized response', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(new Uint8Array([1]), {
+        status: 200,
+        headers: {
+          'content-length': String(SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES + 1),
+        },
+      })
+    );
+
+    await expect(downloadSingleFile(media)).resolves.toMatchObject({ success: true });
+
+    expect(adapter.downloadBlob).not.toHaveBeenCalled();
+    expect(adapter.download).toHaveBeenCalledOnce();
   });
 
   it('cleans caller, timeout, and adapter-race abort listeners after a successful download', async () => {
