@@ -14,8 +14,10 @@ describe('url/validator', () => {
       expect(isValidMediaUrl('https://pbs.twimg.com/media/XYZ?format=png&name=large')).toBe(true);
     });
 
-    it('should accept HTTP media URLs', () => {
-      expect(isValidMediaUrl('http://pbs.twimg.com/media/ABC123')).toBe(true);
+    it('should reject cleartext, credentialed, and non-default-port media URLs', () => {
+      expect(isValidMediaUrl('http://pbs.twimg.com/media/ABC123')).toBe(false);
+      expect(isValidMediaUrl('https://user@pbs.twimg.com/media/ABC123')).toBe(false);
+      expect(isValidMediaUrl('https://pbs.twimg.com:444/media/ABC123')).toBe(false);
     });
 
     it('should accept valid video.twimg.com URLs', () => {

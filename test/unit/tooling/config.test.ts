@@ -10,6 +10,7 @@ const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yaml'), 'utf8');
 const deepWorkflow = readFileSync(resolve(root, '.github/workflows/deep-checks.yaml'), 'utf8');
 const releaseWorkflow = readFileSync(resolve(root, '.github/workflows/release.yaml'), 'utf8');
+const releasePrepare = readFileSync(resolve(root, 'scripts/release/prepare.ts'), 'utf8');
 const securityWorkflow = readFileSync(resolve(root, '.github/workflows/security.yaml'), 'utf8');
 const userscriptPlaywrightConfig = readFileSync(
   resolve(root, 'test/e2e/playwright.config.ts'),
@@ -153,7 +154,26 @@ describe('tooling configuration', () => {
     expect(ciWorkflow).toMatch(/playwright install --with-deps (?:chromium firefox|firefox chromium)/);
   });
 
-  it('keeps tag-release browser coverage aligned with CI', () => {
+  it('binds manual releases to a tag contained in protected master', () => {
+    expect(releaseWorkflow).toContain("github.ref == 'refs/heads/master'");
+    expect(releaseWorkflow).toContain('git merge-base --is-ancestor "$release_sha" "$GITHUB_SHA"');
+    expect(releaseWorkflow).toContain('ref: ${{ needs.provenance.outputs.release-sha }}');
+    expect(releaseWorkflow).toContain(
+      'name: release-bundle-${{ needs.provenance.outputs.release-sha }}'
+    );
+    expect(releaseWorkflow).not.toContain('push:\n    tags:');
+    expect(releaseWorkflow).not.toContain('publish_branch: release');
+    expect(releaseWorkflow).not.toContain('purge.jsdelivr.net');
+    expect(releaseWorkflow).toContain(
+      'RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}'
+    );
+    expect(releasePrepare).toContain("execFileSync('git', ['rev-parse', 'HEAD']");
+    expect(releasePrepare).toContain('expectedCommit !== checkedOutCommit');
+    expect(releasePrepare).toContain('const commit = releaseCommit;');
+    expect(releasePrepare).not.toContain('process.env.GITHUB_SHA');
+  });
+
+  it('keeps protected-release browser coverage aligned with CI', () => {
     expect(releaseWorkflow).toContain('playwright install --with-deps chromium firefox webkit');
     expect(releaseWorkflow).toContain('pnpm test:e2e:all');
     expect(packageJson.scripts['test:e2e:all']).toContain('pnpm -s test:e2e:extension:firefox');

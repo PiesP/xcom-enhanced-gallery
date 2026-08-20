@@ -57,7 +57,7 @@ describe('userscript download adapter failure handling', () => {
     const api = await loadUserscriptAdapter();
 
     const pending = api.download(
-      'https://example.com/video.mp4',
+      'https://video.twimg.com/ext_tw_video/123/video.mp4',
       'video.mp4',
       controller.signal
     );
@@ -94,7 +94,9 @@ describe('userscript download adapter failure handling', () => {
     userscriptGlobals.GM_xmlhttpRequest = vi.fn(() => ({ abort: vi.fn() }));
     const api = await loadUserscriptAdapter();
 
-    await expect(api.download('https://example.com/video.mp4', 'video.mp4')).rejects.toThrow(
+    await expect(
+      api.download('https://video.twimg.com/ext_tw_video/123/video.mp4', 'video.mp4')
+    ).rejects.toThrow(
       'download permission denied'
     );
   });
@@ -115,7 +117,9 @@ describe('userscript download adapter failure handling', () => {
     });
     const api = await loadUserscriptAdapter();
 
-    await expect(api.download('https://example.com/image.jpg', 'image.jpg')).resolves.toBeUndefined();
+    await expect(
+      api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg')
+    ).resolves.toBeUndefined();
 
     expect(createObjectURL).toHaveBeenCalledOnce();
     expect(click).toHaveBeenCalledOnce();
@@ -137,7 +141,9 @@ describe('userscript download adapter failure handling', () => {
     });
     const api = await loadUserscriptAdapter();
 
-    await expect(api.download('https://example.com/image.jpg', 'image.jpg')).rejects.toThrow(
+    await expect(
+      api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg')
+    ).rejects.toThrow(
       'HTTP 403: Forbidden'
     );
     expect(createObjectURL).not.toHaveBeenCalled();
@@ -152,7 +158,7 @@ describe('userscript download adapter failure handling', () => {
     const api = await loadUserscriptAdapter();
 
     const pending = api.download(
-      'https://example.com/image.jpg',
+      'https://pbs.twimg.com/media/image.jpg',
       'image.jpg',
       controller.signal
     );
@@ -161,5 +167,17 @@ describe('userscript download adapter failure handling', () => {
     await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
     expect(abortRequest).toHaveBeenCalledOnce();
     expect(removeEventListener).toHaveBeenCalledWith('abort', expect.any(Function));
+  });
+
+  it('rejects cleartext media before invoking a privileged userscript API', async () => {
+    const gmDownload = vi.fn();
+    userscriptGlobals.GM = { download: gmDownload };
+    userscriptGlobals.GM_xmlhttpRequest = vi.fn(() => ({ abort: vi.fn() }));
+    const api = await loadUserscriptAdapter();
+
+    await expect(
+      api.download('http://pbs.twimg.com/media/image.jpg', 'image.jpg')
+    ).rejects.toThrow('Blocked unsafe media download URL');
+    expect(gmDownload).not.toHaveBeenCalled();
   });
 });
