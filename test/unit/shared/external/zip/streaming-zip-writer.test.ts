@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { StreamingZipWriter } from '@shared/external/zip/streaming-zip-writer';
+import {
+  StreamingZipWriter,
+  ZipResourceLimitError,
+} from '@shared/external/zip/streaming-zip-writer';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const BASELINE_ZIP_HEX =
@@ -75,5 +78,34 @@ describe('StreamingZipWriter cooperative CRC32', () => {
     const archiveText = new TextDecoder().decode(await archiveBytes(writer));
     expect(archiveText).not.toContain('cancelled.bin');
     expect(archiveText).toContain('after.txt');
+  });
+
+  it('accounts for stored local headers, central directory records, names, and EOCD', async () => {
+    const filename = 'a';
+    const exactArchiveBytes = 22 + 30 + filename.length + 4 + 46 + filename.length;
+    const exactWriter = new StreamingZipWriter(exactArchiveBytes);
+    await expect(exactWriter.addFile(filename, new Uint8Array(4))).resolves.toBeUndefined();
+    expect((await archiveBytes(exactWriter)).byteLength).toBe(exactArchiveBytes);
+
+    const shortWriter = new StreamingZipWriter(exactArchiveBytes - 1);
+    await expect(shortWriter.addFile(filename, new Uint8Array(4))).rejects.toBeInstanceOf(
+      ZipResourceLimitError
+    );
+  });
+
+  it('subtracts active reservations so parallel entries cannot overbook capacity', async () => {
+    const exactArchiveBytes = 22 + (78 + 4) + (78 + 2);
+    const writer = new StreamingZipWriter(exactArchiveBytes);
+
+    const first = writer.reserveEntry('a', 4);
+    const second = writer.reserveEntry('b', 4);
+
+    expect(first.maxDataBytes).toBe(4);
+    expect(second.maxDataBytes).toBe(2);
+    await Promise.all([
+      first.commit(new Uint8Array(4)),
+      second.commit(new Uint8Array(2)),
+    ]);
+    expect((await archiveBytes(writer)).byteLength).toBe(exactArchiveBytes);
   });
 });

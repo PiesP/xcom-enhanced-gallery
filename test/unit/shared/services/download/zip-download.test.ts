@@ -194,7 +194,11 @@ describe('user-facing bulk ZIP download', () => {
           blob: new Blob([new Uint8Array(3)]),
         },
       ],
-      { concurrency: 1, maxArchiveBytes: 5 }
+      {
+        concurrency: 1,
+        // EOCD 22 + stored-entry overhead for "archive-one.jpg" (106) + 3 data bytes.
+        maxArchiveBytes: 131,
+      }
     );
 
     expect(result).toMatchObject({
@@ -203,7 +207,7 @@ describe('user-facing bulk ZIP download', () => {
       failures: [
         {
           url: 'https://pbs.twimg.com/media/archive-two.jpg',
-          error: expect.stringContaining('archive payload'),
+          error: expect.stringContaining('archive capacity'),
         },
       ],
     });

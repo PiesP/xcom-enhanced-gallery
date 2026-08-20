@@ -8,6 +8,7 @@
 import { DEFAULT_BACKOFF_BASE_MS, DEFAULT_REQUEST_TIMEOUT_MS } from '@constants/performance';
 import { withRetry } from '@shared/async/retry';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
+import { isHttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import { getHttpRequestService } from '@shared/services/http-request-service';
 
 class HttpStatusError extends Error {
@@ -38,6 +39,7 @@ const getStatusFromError = (error: unknown): number | null => {
  * @param retries - Maximum number of retry attempts
  * @param signal - Optional AbortSignal for cancellation
  * @param backoffBaseMs - Base delay for exponential backoff (default: 200ms)
+ * @param maxResponseBytes - Optional hard limit applied before whole-body materialization
  * @returns Response body as Uint8Array
  * @throws On non-retryable HTTP errors or abort signal rejection
  */
@@ -45,7 +47,8 @@ export async function fetchArrayBufferWithRetry(
   url: string,
   retries: number,
   signal?: AbortSignal,
-  backoffBaseMs: number = DEFAULT_BACKOFF_BASE_MS
+  backoffBaseMs: number = DEFAULT_BACKOFF_BASE_MS,
+  maxResponseBytes?: number
 ): Promise<Uint8Array> {
   if (signal?.aborted) {
     throw getUserCancelledAbortErrorFromSignal(signal);
@@ -63,6 +66,7 @@ export async function fetchArrayBufferWithRetry(
       const response = await httpService.get<ArrayBuffer>(url, {
         responseType: 'arraybuffer' as const,
         timeout: DEFAULT_REQUEST_TIMEOUT_MS,
+        ...(maxResponseBytes !== undefined ? { maxResponseBytes } : {}),
         ...(signal ? { signal } : {}),
       });
 
@@ -78,6 +82,7 @@ export async function fetchArrayBufferWithRetry(
       ...(signal ? { signal } : {}),
       shouldRetry: (error) => {
         if (isAbortError(error)) return false;
+        if (isHttpResponseSizeLimitError(error)) return false;
         const status = getStatusFromError(error);
         if (status === null) return true;
         return isRetryableStatus(status);

@@ -66,6 +66,8 @@ export interface HttpRequestDetails {
   headers?: Record<string, string>;
   data?: string | FormData | Blob | ArrayBuffer | URLSearchParams | ReadableStream;
   responseType?: 'text' | 'json' | 'blob' | 'arraybuffer' | 'stream';
+  /** Maximum bytes that may be buffered from the response body. */
+  maxResponseBytes?: number;
   timeout?: number;
   onabort?: (response: HttpRequestResponse) => void;
   onerror?: (response: HttpRequestResponse) => void;

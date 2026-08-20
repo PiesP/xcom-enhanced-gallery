@@ -39,7 +39,11 @@ export class DownloadMediaCache {
     this.maxBytes = maxBytes;
   }
 
-  getOrFetch(media: MediaInfo, signal?: AbortSignal): Promise<Blob> | null {
+  getOrFetch(
+    media: MediaInfo,
+    signal?: AbortSignal,
+    maxResponseBytes?: number
+  ): Promise<Blob> | null {
     if (this.disposed || media.type === 'video' || media.type === 'gif') {
       return null;
     }
@@ -50,7 +54,7 @@ export class DownloadMediaCache {
       return existing;
     }
 
-    return this.fetchAndCache(media.url, signal);
+    return this.fetchAndCache(media.url, signal, maxResponseBytes);
   }
 
   /** Cancel only in-flight requests while retaining completed cache entries. */
@@ -81,7 +85,11 @@ export class DownloadMediaCache {
     this.clear();
   }
 
-  private fetchAndCache(url: string, callerSignal?: AbortSignal): Promise<Blob> {
+  private fetchAndCache(
+    url: string,
+    callerSignal?: AbortSignal,
+    maxResponseBytes?: number
+  ): Promise<Blob> {
     const controller = new AbortController();
     const signalScope = callerSignal
       ? mergeAbortSignalsWithCleanup([controller.signal, callerSignal])
@@ -97,6 +105,7 @@ export class DownloadMediaCache {
       .get<Blob>(url, {
         signal: signalScope.signal,
         responseType: 'blob',
+        maxResponseBytes: Math.min(this.maxBytes, maxResponseBytes ?? this.maxBytes),
       })
       .then((response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);

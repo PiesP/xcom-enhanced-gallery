@@ -41,6 +41,28 @@ describe('HttpRequestService', () => {
     expect(removeEventListener).toHaveBeenCalledWith('abort', expect.any(Function));
   });
 
+  it('passes the response byte limit to the platform adapter', async () => {
+    mocks.request.mockImplementation((details) => {
+      details.onload?.({
+        finalUrl: 'https://pbs.twimg.com/media/example.jpg',
+        readyState: 4,
+        status: 200,
+        statusText: 'OK',
+        responseHeaders: '',
+        response: new ArrayBuffer(4),
+        responseText: '',
+      });
+      return { abort: vi.fn() };
+    });
+
+    await new HttpRequestService().get('https://pbs.twimg.com/media/example.jpg', {
+      responseType: 'arraybuffer',
+      maxResponseBytes: 4,
+    });
+
+    expect(mocks.request).toHaveBeenCalledWith(expect.objectContaining({ maxResponseBytes: 4 }));
+  });
+
   it('preserves a pre-aborted signal reason and removes its listener', async () => {
     const controller = new AbortController();
     const reason = new Error('already cancelled');

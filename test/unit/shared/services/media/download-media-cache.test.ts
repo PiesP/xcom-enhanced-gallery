@@ -104,6 +104,24 @@ describe('DownloadMediaCache', () => {
     await cache.getOrFetch(item);
 
     expect(http.get).toHaveBeenCalledTimes(2);
+    expect(http.get).toHaveBeenCalledWith(
+      item.url,
+      expect.objectContaining({ maxResponseBytes: 4 })
+    );
+    cache.destroy();
+  });
+
+  it('uses a smaller caller response budget before materializing a cache entry', async () => {
+    http.get.mockResolvedValue({ ok: true, status: 200, data: new Blob(['ok']) });
+    const cache = new DownloadMediaCache(2, 10);
+    const item = media('caller-budget');
+
+    await cache.getOrFetch(item, undefined, 3);
+
+    expect(http.get).toHaveBeenCalledWith(
+      item.url,
+      expect.objectContaining({ maxResponseBytes: 3 })
+    );
     cache.destroy();
   });
 

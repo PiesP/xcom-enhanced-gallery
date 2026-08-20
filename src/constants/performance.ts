@@ -12,6 +12,9 @@ export const DOWNLOAD_TIMEOUT_MS = 300_000;
 /** Default request timeout for fetch-based downloads */
 export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 
+/** Maximum response buffered by the MV3 single-file content-script fallback (512 MiB). */
+export const SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES = 512 * 1024 * 1024;
+
 /** Maximum concurrent download workers */
 export const MAX_CONCURRENCY = 8;
 
@@ -27,7 +30,7 @@ export const ZIP_BUFFER_BUDGET_BYTES = 256 * 1024 * 1024;
 /** Maximum size of one media entry accepted by the in-memory bulk ZIP path (256 MiB). */
 export const ZIP_MAX_ENTRY_BYTES = 256 * 1024 * 1024;
 
-/** Maximum completed archive payload retained before the browser download begins (512 MiB). */
+/** Maximum serialized ZIP retained before the browser download begins (512 MiB). */
 export const ZIP_MAX_ARCHIVE_BYTES = 512 * 1024 * 1024;
 
 /** Default retry count for download operations */

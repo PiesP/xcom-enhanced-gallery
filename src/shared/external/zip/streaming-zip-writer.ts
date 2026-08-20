@@ -10,6 +10,9 @@ import { schedulerYield } from '@shared/utils/performance/scheduler-yield';
 
 const textEncoder = new TextEncoder();
 const CRC32_CHUNK_SIZE = 1024 * 1024;
+const LOCAL_FILE_HEADER_BYTES = 30;
+const CENTRAL_DIRECTORY_ENTRY_BYTES = 46;
+const END_OF_CENTRAL_DIRECTORY_BYTES = 22;
 
 let crc32Table: Uint32Array | null = null;
 
@@ -131,6 +134,12 @@ export class ZipResourceLimitError extends Error {
   override readonly name = 'ZipResourceLimitError';
 }
 
+export interface ZipEntryReservation {
+  readonly maxDataBytes: number;
+  commit(data: Uint8Array, options?: { signal?: AbortSignal }): Promise<void>;
+  release(): void;
+}
+
 /** Optimized buffer concatenation (no function call overhead) */
 const concat = (arrays: readonly Uint8Array[]): Uint8Array => {
   let len = 0;
@@ -153,6 +162,8 @@ export class StreamingZipWriter {
   private readonly entries: FileEntry[] = [];
   private pendingAdd: Promise<void> = Promise.resolve();
   private currentOffset = 0;
+  private centralDirectorySize = 0;
+  private reservedArchiveBytes = 0;
 
   constructor(private readonly maxArchiveBytes = Number.MAX_SAFE_INTEGER) {}
 
@@ -169,11 +180,94 @@ export class StreamingZipWriter {
     data: Uint8Array,
     options: { signal?: AbortSignal } = {}
   ): Promise<void> {
-    const operation = this.pendingAdd.then(() =>
-      this.addFileInOrder(filename, data, options.signal)
+    let reservation: ZipEntryReservation;
+    try {
+      reservation = this.reserveEntry(filename, data.length);
+    } catch (error) {
+      return Promise.reject(error);
+    }
+    if (reservation.maxDataBytes < data.length) {
+      reservation.release();
+      return Promise.reject(
+        new ZipResourceLimitError(
+          `Bulk ZIP limit exceeded: ${filename} requires ${data.length} bytes ` +
+            `(remaining ${reservation.maxDataBytes})`
+        )
+      );
+    }
+    return reservation.commit(data, options);
+  }
+
+  /**
+   * Reserve exact stored-entry capacity before a caller materializes its body.
+   * Active reservations include the local header, central-directory record,
+   * UTF-8 filename bytes, and final EOCD so concurrent callers cannot observe
+   * the same stale remaining capacity.
+   */
+  reserveEntry(filename: string, requestedMaxDataBytes: number): ZipEntryReservation {
+    if (!Number.isSafeInteger(requestedMaxDataBytes) || requestedMaxDataBytes < 0) {
+      throw new RangeError('requestedMaxDataBytes must be a non-negative safe integer');
+    }
+
+    const filenameBytes = encodeUtf8(filename);
+    assertZip32(
+      filenameBytes.length <= ZIP_CONST.MAX_UINT16,
+      `filename too large (size=${filenameBytes.length})`
     );
-    this.pendingAdd = operation.catch(() => undefined);
-    return operation;
+
+    const entryOverheadBytes =
+      LOCAL_FILE_HEADER_BYTES + CENTRAL_DIRECTORY_ENTRY_BYTES + filenameBytes.length * 2;
+    const committedArchiveBytes =
+      this.currentOffset + this.centralDirectorySize + END_OF_CENTRAL_DIRECTORY_BYTES;
+    const remainingArchiveBytes =
+      this.maxArchiveBytes - committedArchiveBytes - this.reservedArchiveBytes;
+
+    if (remainingArchiveBytes < entryOverheadBytes) {
+      throw new ZipResourceLimitError(
+        `Bulk ZIP limit exceeded: no archive capacity remains for ${filename}`
+      );
+    }
+
+    const maxDataBytes = Math.min(
+      requestedMaxDataBytes,
+      remainingArchiveBytes - entryOverheadBytes
+    );
+    const reservationBytes = entryOverheadBytes + maxDataBytes;
+    this.reservedArchiveBytes += reservationBytes;
+
+    let committed = false;
+    let released = false;
+    const release = (): void => {
+      if (released) return;
+      released = true;
+      this.reservedArchiveBytes -= reservationBytes;
+    };
+
+    return {
+      maxDataBytes,
+      commit: (data, options = {}) => {
+        if (committed || released) {
+          return Promise.reject(new Error('ZIP entry reservation is no longer active'));
+        }
+        committed = true;
+        if (data.length > maxDataBytes) {
+          release();
+          return Promise.reject(
+            new ZipResourceLimitError(
+              `Bulk ZIP limit exceeded: ${filename} is ${data.length} bytes ` +
+                `(remaining ${maxDataBytes})`
+            )
+          );
+        }
+
+        const operation = this.pendingAdd.then(() =>
+          this.addFileInOrder(filename, data, options.signal)
+        );
+        this.pendingAdd = operation.catch(() => undefined);
+        return operation.finally(release);
+      },
+      release,
+    };
   }
 
   private async addFileInOrder(
@@ -195,9 +289,18 @@ export class StreamingZipWriter {
     );
 
     const filenameBytes = encodeUtf8(filename);
-    if (this.currentOffset + data.length > this.maxArchiveBytes) {
+    const localHeaderSize = LOCAL_FILE_HEADER_BYTES + filenameBytes.length;
+    const centralDirectoryEntrySize = CENTRAL_DIRECTORY_ENTRY_BYTES + filenameBytes.length;
+    const finalArchiveSize =
+      this.currentOffset +
+      localHeaderSize +
+      data.length +
+      this.centralDirectorySize +
+      centralDirectoryEntrySize +
+      END_OF_CENTRAL_DIRECTORY_BYTES;
+    if (finalArchiveSize > this.maxArchiveBytes) {
       throw new ZipResourceLimitError(
-        `Bulk ZIP limit exceeded: archive payload would exceed ${this.maxArchiveBytes} bytes`
+        `Bulk ZIP limit exceeded: archive would exceed ${this.maxArchiveBytes} bytes`
       );
     }
     const crc32 = await calculateCRC32(data, signal);
@@ -227,6 +330,7 @@ export class StreamingZipWriter {
     this.chunks.push(localHeader, data);
     this.entries.push({ filename, size: data.length, offset: this.currentOffset, crc32 });
     this.currentOffset += localHeader.length + data.length;
+    this.centralDirectorySize += centralDirectoryEntrySize;
   }
 
   /**
@@ -254,11 +358,13 @@ export class StreamingZipWriter {
     );
 
     // Build central directory as a separate buffer
-    let centralDirSize = 0;
-    for (const entry of this.entries) {
-      centralDirSize += 46 + encodeUtf8(entry.filename).length;
+    const centralDirSize = this.centralDirectorySize;
+    const eocdSize = END_OF_CENTRAL_DIRECTORY_BYTES;
+    if (centralDirStart + centralDirSize + eocdSize > this.maxArchiveBytes) {
+      throw new ZipResourceLimitError(
+        `Bulk ZIP limit exceeded: archive would exceed ${this.maxArchiveBytes} bytes`
+      );
     }
-    const eocdSize = 22;
     assertZip32(
       centralDirStart + centralDirSize + eocdSize <= ZIP_CONST.MAX_UINT32,
       `final archive size overflow (${centralDirStart + centralDirSize + eocdSize})`
@@ -311,7 +417,7 @@ export class StreamingZipWriter {
     }
 
     // Build End of Central Directory (22 bytes)
-    const eocd = new Uint8Array(22);
+    const eocd = new Uint8Array(END_OF_CENTRAL_DIRECTORY_BYTES);
     let epos = 0;
     eocd.set(ZIP_CONST.SIG_END_CENTRAL_DIR, epos);
     epos += 4;

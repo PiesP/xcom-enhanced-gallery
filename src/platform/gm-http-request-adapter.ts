@@ -7,6 +7,7 @@
  * Wraps GM_xmlhttpRequest for cross-origin HTTP requests in userscript environments.
  */
 
+import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 import { isAllowedUrl } from '@shared/utils/url/url-safety';
@@ -29,6 +30,42 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     validateUrl(details.url);
 
     const gm = getUserscript();
+    const maxResponseBytes = details.maxResponseBytes;
+    if (
+      maxResponseBytes !== undefined &&
+      (!Number.isSafeInteger(maxResponseBytes) || maxResponseBytes < 0)
+    ) {
+      throw new RangeError('maxResponseBytes must be a non-negative safe integer');
+    }
+
+    let gmControl: { abort: () => void } | null = null;
+    let resourceLimitExceeded = false;
+    let abortAfterStart = false;
+
+    const reportResourceLimit = (receivedBytes?: number): void => {
+      if (maxResponseBytes === undefined || resourceLimitExceeded) return;
+      resourceLimitExceeded = true;
+      const error = new HttpResponseSizeLimitError(maxResponseBytes, receivedBytes);
+      if (gmControl) gmControl.abort();
+      else abortAfterStart = true;
+      details.onerror?.({
+        finalUrl: details.url,
+        readyState: 0,
+        status: 0,
+        statusText: 'RESOURCE_LIMIT',
+        responseHeaders: '',
+        response: error,
+        responseText: '',
+      });
+    };
+
+    const getResponseSize = (response: unknown): number | undefined => {
+      if (response instanceof Blob) return response.size;
+      if (response instanceof ArrayBuffer) return response.byteLength;
+      if (ArrayBuffer.isView(response)) return response.byteLength;
+      if (typeof response === 'string') return new TextEncoder().encode(response).byteLength;
+      return undefined;
+    };
 
     // Build GM-compatible details object respecting exactOptionalPropertyTypes
     const gmDetails: GMXMLHttpRequestDetails = {
@@ -50,26 +87,56 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     if (details.timeout !== undefined) {
       gmDetails.timeout = details.timeout;
     }
-    if (details.onload !== undefined) {
-      gmDetails.onload = details.onload;
+    if (details.onload !== undefined || maxResponseBytes !== undefined) {
+      gmDetails.onload = (response) => {
+        if (resourceLimitExceeded) return;
+        const responseSize = getResponseSize(response.response);
+        if (
+          maxResponseBytes !== undefined &&
+          responseSize !== undefined &&
+          responseSize > maxResponseBytes
+        ) {
+          reportResourceLimit(responseSize);
+          return;
+        }
+        details.onload?.(response);
+      };
     }
-    if (details.onerror !== undefined) {
-      gmDetails.onerror = details.onerror;
+    if (details.onerror !== undefined || maxResponseBytes !== undefined) {
+      gmDetails.onerror = (response) => {
+        if (!resourceLimitExceeded) details.onerror?.(response);
+      };
     }
     if (details.ontimeout !== undefined) {
-      gmDetails.ontimeout = details.ontimeout;
+      gmDetails.ontimeout = (response) => {
+        if (!resourceLimitExceeded) details.ontimeout?.(response);
+      };
     }
     if (details.onabort !== undefined) {
-      gmDetails.onabort = details.onabort;
+      gmDetails.onabort = (response) => {
+        if (!resourceLimitExceeded) details.onabort?.(response);
+      };
     }
-    if (details.onprogress !== undefined) {
-      gmDetails.onprogress = details.onprogress;
+    if (details.onprogress !== undefined || maxResponseBytes !== undefined) {
+      gmDetails.onprogress = (response) => {
+        if (resourceLimitExceeded) return;
+        if (
+          maxResponseBytes !== undefined &&
+          (response.loaded > maxResponseBytes ||
+            (response.lengthComputable && response.total > maxResponseBytes))
+        ) {
+          reportResourceLimit(Math.max(response.loaded, response.total));
+          return;
+        }
+        details.onprogress?.(response);
+      };
     }
 
-    let gmControl: { abort: () => void };
     try {
       gmControl = gm.xmlHttpRequest(gmDetails);
+      if (abortAfterStart) gmControl.abort();
     } catch (_error) {
+      if (resourceLimitExceeded) return { abort: () => {} };
       // L2: GM_xmlhttpRequest can throw synchronously outside of validateUrl
       details.onerror?.({
         finalUrl: details.url,
@@ -84,7 +151,7 @@ export class GMHttpRequestAdapter implements HttpRequestAdapter {
     }
 
     return {
-      abort: () => gmControl.abort(),
+      abort: () => gmControl?.abort(),
     };
   }
 }

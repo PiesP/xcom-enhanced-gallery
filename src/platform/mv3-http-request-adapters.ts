@@ -13,6 +13,8 @@
  */
 
 import { DEFAULT_REQUEST_TIMEOUT_MS } from '@constants/performance';
+import { isHttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
+import { readResponseBody } from '@shared/network/bounded-response';
 import { isAllowedUrl } from '@shared/utils/url/url-safety';
 import type {
   HttpRequestAdapter,
@@ -43,7 +45,9 @@ export class MV3HttpRequestAdapter implements HttpRequestAdapter {
       })
       .catch((error: unknown) => {
         clearTimeout(timeoutId);
-        if (timedOut) {
+        if (isHttpResponseSizeLimitError(error)) {
+          details.onerror?.(this.createErrorResponse(details.url, 0, 'RESOURCE_LIMIT', error));
+        } else if (timedOut) {
           // M3: Distinguish timeout from abort — set timedOut flag before abort
           details.ontimeout?.(this.createErrorResponse(details.url, 0));
         } else if (error instanceof DOMException && error.name === 'AbortError') {
@@ -91,25 +95,13 @@ export class MV3HttpRequestAdapter implements HttpRequestAdapter {
 
     const response = await fetch(details.url, fetchInit);
 
-    // Read response body based on responseType
-    let responseBody: unknown;
     const responseType = details.responseType ?? 'text';
-    switch (responseType) {
-      case 'json':
-        responseBody = await response.json();
-        break;
-      case 'blob':
-        responseBody = await response.blob();
-        break;
-      case 'arraybuffer':
-        responseBody = await response.arrayBuffer();
-        break;
-      case 'stream':
-        responseBody = response.body;
-        break;
-      default:
-        responseBody = await response.text();
-    }
+    const responseBody = await readResponseBody(
+      response,
+      responseType,
+      details.maxResponseBytes,
+      (reason) => controller.abort(reason)
+    );
 
     // Parse response headers into a single string
     const headersArray: string[] = [];
@@ -134,14 +126,19 @@ export class MV3HttpRequestAdapter implements HttpRequestAdapter {
     } satisfies HttpRequestResponse;
   }
 
-  private createErrorResponse(url: string, status: number): HttpRequestResponse {
+  private createErrorResponse(
+    url: string,
+    status: number,
+    statusText = status === 0 ? 'NETWORK_ERROR' : `HTTP_${status}`,
+    response: unknown = null
+  ): HttpRequestResponse {
     return {
       finalUrl: url,
       readyState: 0,
       status,
-      statusText: status === 0 ? 'NETWORK_ERROR' : `HTTP_${status}`,
+      statusText,
       responseHeaders: '',
-      response: null,
+      response,
       responseText: '',
     };
   }

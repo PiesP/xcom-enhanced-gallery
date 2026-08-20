@@ -13,10 +13,16 @@ export interface OrchestratorItem {
   readonly desiredName: string;
   readonly expectedSizeBytes?: number | undefined;
   readonly blob?: Blob | Promise<Blob> | undefined;
-  readonly getBlob?: ((signal?: AbortSignal) => Promise<Blob> | null) | undefined;
+  readonly getBlob?:
+    | ((signal?: AbortSignal, maxResponseBytes?: number) => Promise<Blob> | null)
+    | undefined;
 }
 
-export type MediaBlobProvider = (media: MediaInfo, signal?: AbortSignal) => Promise<Blob> | null;
+export type MediaBlobProvider = (
+  media: MediaInfo,
+  signal?: AbortSignal,
+  maxResponseBytes?: number
+) => Promise<Blob> | null;
 
 export interface DownloadProgress {
   phase: string;
@@ -41,7 +47,7 @@ export interface DownloadOptions {
   maxBufferedBytes?: number;
   /** Maximum accepted size for one ZIP entry. */
   maxEntryBytes?: number;
-  /** Maximum total uncompressed payload retained for one ZIP archive. */
+  /** Maximum serialized ZIP bytes, including stored-entry and directory overhead. */
   maxArchiveBytes?: number;
   /** Optional diagnostics hook used to expose retained whole-file bytes. */
   onBufferUsage?: (bufferedBytes: number) => void;

@@ -61,8 +61,12 @@ export class MediaService {
     return this.mediaExtraction.extractFromClickedElement(element, options);
   }
 
-  getDownloadMedia(media: MediaInfo, signal?: AbortSignal): Promise<Blob> | null {
-    return this.downloadCache?.getOrFetch(media, signal) ?? null;
+  getDownloadMedia(
+    media: MediaInfo,
+    signal?: AbortSignal,
+    maxResponseBytes?: number
+  ): Promise<Blob> | null {
+    return this.downloadCache?.getOrFetch(media, signal, maxResponseBytes) ?? null;
   }
 
   cancelPendingMediaRequests(): void {
