@@ -15,6 +15,7 @@ import { readResponseBody } from '@shared/network/bounded-response';
 import type { DownloadOptions, SingleDownloadResult } from '@shared/services/download/types';
 import { reportProgress } from '@shared/services/download/types';
 import type { MediaInfo } from '@shared/types/media.types';
+import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 const createAbortResult = (): SingleDownloadResult => ({
   success: false,
@@ -72,6 +73,10 @@ export async function downloadSingleFile(
 
   if (options.blob) {
     return downloadBlobWithAdapter(options.blob, filename, abortSignal);
+  }
+
+  if (!isValidMediaUrl(media.url)) {
+    return createErrorDownloadResult(new Error('Invalid media download URL'));
   }
 
   return downloadWithAdapter(media.url, filename, options, abortSignal);

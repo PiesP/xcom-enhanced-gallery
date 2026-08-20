@@ -27,7 +27,7 @@ import { downloadSingleFile } from '@shared/services/download/single-download';
 const media = {
   id: 'video-1',
   type: 'video' as const,
-  url: 'https://video.twimg.com/media/video.mp4',
+  url: 'https://video.twimg.com/ext_tw_video/123/pu/vid/720x720/video.mp4',
 };
 
 function successfulResponse(blob = new Blob(['video'])): Response {
@@ -42,6 +42,15 @@ describe('downloadSingleFile fetch fallback', () => {
     adapter.download.mockResolvedValue(undefined);
     adapter.downloadBlob.mockResolvedValue(undefined);
     adapter.needsBlobFallback.mockReturnValue(true);
+  });
+
+  it('rejects an HTTP media URL before any privileged adapter call', async () => {
+    await expect(
+      downloadSingleFile({ ...media, url: 'http://video.twimg.com/ext_tw_video/123/video.mp4' })
+    ).resolves.toEqual({ success: false, error: 'Invalid media download URL' });
+
+    expect(adapter.download).not.toHaveBeenCalled();
+    expect(adapter.downloadBlob).not.toHaveBeenCalled();
   });
 
   it('uses one fetch-to-blob path and preserves progress phase order without a caller signal', async () => {

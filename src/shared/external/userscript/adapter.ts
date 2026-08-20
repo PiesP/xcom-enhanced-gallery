@@ -33,6 +33,7 @@ import type {
   GMXMLHttpRequestControl,
   GMXMLHttpRequestDetails,
 } from '@shared/types/core/userscript';
+import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 /**
  * GM_xmlhttpRequest timeout for userscript blob-based download fallback.
@@ -263,6 +264,10 @@ export function getUserscript(): UserscriptAPI {
       // the correct filename and prevent gallery close-on-outside-click.
       if (url.startsWith('blob:')) {
         return anchorDownload(url, filename);
+      }
+
+      if (!isValidMediaUrl(url)) {
+        throw new Error('Blocked unsafe media download URL');
       }
 
       // Strategy 1: GM.download (GM4+/Tampermonkey Promise-based)

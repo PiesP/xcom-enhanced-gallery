@@ -58,7 +58,12 @@ export function isValidMediaUrl(url: string): boolean {
     return false;
   }
 
-  if (!isHttpProtocol(parsed.protocol)) {
+  if (
+    parsed.protocol !== 'https:' ||
+    (parsed.port !== '' && parsed.port !== '443') ||
+    parsed.username !== '' ||
+    parsed.password !== ''
+  ) {
     return false;
   }
 
@@ -68,19 +73,6 @@ export function isValidMediaUrl(url: string): boolean {
 
   return isAllowedMediaPath(parsed.hostname, parsed.pathname);
 }
-
-/**
- * Validate URL protocol.
- *
- * @param protocol - URL protocol (example: 'https:', 'http:')
- * @returns Whether protocol is https or http
- *
- * @remarks
- * `tryParseUrl()` supports protocol-relative URLs by coercing to `https:`.
- *
- * @internal
- */
-const isHttpProtocol = (protocol: string): boolean => protocol === 'https:' || protocol === 'http:';
 
 /**
  * Enforce host-specific path policy for media URLs.
