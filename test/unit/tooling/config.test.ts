@@ -10,6 +10,7 @@ const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yaml'), 'utf8');
 const deepWorkflow = readFileSync(resolve(root, '.github/workflows/deep-checks.yaml'), 'utf8');
 const releaseWorkflow = readFileSync(resolve(root, '.github/workflows/release.yaml'), 'utf8');
+const releasePrepare = readFileSync(resolve(root, 'scripts/release/prepare.ts'), 'utf8');
 const securityWorkflow = readFileSync(resolve(root, '.github/workflows/security.yaml'), 'utf8');
 const userscriptPlaywrightConfig = readFileSync(
   resolve(root, 'test/e2e/playwright.config.ts'),
@@ -163,6 +164,13 @@ describe('tooling configuration', () => {
     expect(releaseWorkflow).not.toContain('push:\n    tags:');
     expect(releaseWorkflow).not.toContain('publish_branch: release');
     expect(releaseWorkflow).not.toContain('purge.jsdelivr.net');
+    expect(releaseWorkflow).toContain(
+      'RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}'
+    );
+    expect(releasePrepare).toContain("execFileSync('git', ['rev-parse', 'HEAD']");
+    expect(releasePrepare).toContain('expectedCommit !== checkedOutCommit');
+    expect(releasePrepare).toContain('const commit = releaseCommit;');
+    expect(releasePrepare).not.toContain('process.env.GITHUB_SHA');
   });
 
   it('keeps protected-release browser coverage aligned with CI', () => {

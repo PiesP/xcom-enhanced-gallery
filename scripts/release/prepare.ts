@@ -32,6 +32,21 @@ if (packageJson.version !== version) {
   );
 }
 
+const checkedOutCommit = execFileSync('git', ['rev-parse', 'HEAD'], {
+  cwd: root,
+  encoding: 'utf8',
+}).trim();
+const expectedCommit = process.env.RELEASE_SHA;
+if (expectedCommit !== undefined && !/^[0-9a-f]{40}$/.test(expectedCommit)) {
+  throw new Error('RELEASE_SHA must be a lowercase 40-character commit ID.');
+}
+if (expectedCommit !== undefined && expectedCommit !== checkedOutCommit) {
+  throw new Error(
+    `Release source ${expectedCommit} does not match checked out commit ${checkedOutCommit}.`
+  );
+}
+const releaseCommit = expectedCommit ?? checkedOutCommit;
+
 const userscriptFile = 'xcom-enhanced-gallery.user.js';
 const metadataFile = 'xcom-enhanced-gallery.meta.js';
 for (const file of [userscriptFile, metadataFile]) {
@@ -103,7 +118,7 @@ const checksums = releaseFiles.map((path) => {
 writeFileSync(join(releaseDir, 'checksums.txt'), `${checksums.join('\n')}\n`);
 
 const buildDate = new Date().toISOString();
-const commit = process.env.GITHUB_SHA ?? 'unknown';
+const commit = releaseCommit;
 const nodeVersion = process.env.NODE_VERSION ?? 'unknown';
 const runnerOs = process.env.RUNNER_OS ?? platform();
 const runnerArch = process.env.RUNNER_ARCH ?? arch();
