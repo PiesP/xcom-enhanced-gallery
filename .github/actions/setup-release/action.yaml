@@ -14,7 +14,7 @@ runs:
       with:
         package-json-file: package.json
         runtime: "node@${{ inputs.node-version }}"
-        cache: true
+        cache: false
         install: false
 
     - name: Install release dependencies

@@ -71,8 +71,17 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.provenance.outputs.release-sha }}
+          ref: ${{ github.sha }}
+          fetch-depth: 0
           submodules: true
+          persist-credentials: false
+
+      - name: Checkout verified release commit
+        shell: bash
+        env:
+          RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
+        run: |
+          git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"
 
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
@@ -91,8 +100,17 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.provenance.outputs.release-sha }}
+          ref: ${{ github.sha }}
+          fetch-depth: 0
           submodules: true
+          persist-credentials: false
+
+      - name: Checkout verified release commit
+        shell: bash
+        env:
+          RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
+        run: |
+          git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"
 
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
@@ -111,24 +129,17 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.provenance.outputs.release-sha }}
+          ref: ${{ github.sha }}
+          fetch-depth: 0
           submodules: true
+          persist-credentials: false
 
-      - name: 🎭 Cache Playwright browsers
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-
-      - name: 🦊 Cache Selenium Firefox and GeckoDriver
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/selenium
-          key: selenium-firefox-${{ runner.os }}-${{ hashFiles('package.json') }}
-          restore-keys: |
-            selenium-firefox-${{ runner.os }}-
+      - name: Checkout verified release commit
+        shell: bash
+        env:
+          RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
+        run: |
+          git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"
 
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
@@ -152,8 +163,17 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.provenance.outputs.release-sha }}
+          ref: ${{ github.sha }}
+          fetch-depth: 0
           submodules: true
+          persist-credentials: false
+
+      - name: Checkout verified release commit
+        shell: bash
+        env:
+          RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
+        run: |
+          git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"
 
       - name: 🔧 Install nose
         run: bash scripts/ci/install-nose.sh
@@ -170,8 +190,17 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.provenance.outputs.release-sha }}
+          ref: ${{ github.sha }}
+          fetch-depth: 0
           submodules: true
+          persist-credentials: false
+
+      - name: Checkout verified release commit
+        shell: bash
+        env:
+          RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
+        run: |
+          git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"
 
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
@@ -190,10 +219,18 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.provenance.outputs.release-sha }}
-          submodules: true
+          ref: ${{ github.sha }}
           fetch-depth: 0
+          submodules: true
           fetch-tags: true
+          persist-credentials: false
+
+      - name: Checkout verified release commit
+        shell: bash
+        env:
+          RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
+        run: |
+          git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"
 
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
