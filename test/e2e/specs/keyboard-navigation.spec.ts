@@ -29,6 +29,11 @@ interface DeferredActiveImage {
   readonly fulfill: () => Promise<void>;
 }
 
+interface GalleryDimensions {
+  readonly width: number;
+  readonly height: number;
+}
+
 async function deferGalleryImages(page: Page): Promise<DeferredActiveImage> {
   let activeImageRoute: Route | null = null;
   let resolveRequest = (): void => {};
@@ -84,15 +89,34 @@ async function setupGalleryPage(page: Page): Promise<void> {
   await waitForGalleryApp(page);
 }
 
-async function openGallery(page: Page): Promise<void> {
-  await page.evaluate(() => {
+async function openGallery(
+  page: Page,
+  itemCount = 3,
+  dimensions: GalleryDimensions = { width: 800, height: 600 }
+): Promise<void> {
+  await page.evaluate(({ itemCount, dimensions }) => {
     const g = globalThis as any;
-    g.__XEG__.main.galleryApp.openGallery([
-      { id: 'img_1', url: 'https://pbs.twimg.com/media/E1.jpg?format=jpg&name=large', type: 'image', filename: 'E1.jpg', tweetUsername: 'u', tweetId: '1', tweetUrl: 'https://x.com/u/1', originalUrl: 'https://pbs.twimg.com/media/E1.jpg?format=jpg&name=large', thumbnailUrl: 'https://pbs.twimg.com/media/E1.jpg?format=jpg&name=thumb', alt: 'A', width: 800, height: 600, metadata: {} },
-      { id: 'img_2', url: 'https://pbs.twimg.com/media/E2.jpg?format=jpg&name=large', type: 'image', filename: 'E2.jpg', tweetUsername: 'u', tweetId: '1', tweetUrl: 'https://x.com/u/1', originalUrl: 'https://pbs.twimg.com/media/E2.jpg?format=jpg&name=large', thumbnailUrl: 'https://pbs.twimg.com/media/E2.jpg?format=jpg&name=thumb', alt: 'B', width: 800, height: 600, metadata: {} },
-      { id: 'img_3', url: 'https://pbs.twimg.com/media/E3.jpg?format=jpg&name=large', type: 'image', filename: 'E3.jpg', tweetUsername: 'u', tweetId: '1', tweetUrl: 'https://x.com/u/1', originalUrl: 'https://pbs.twimg.com/media/E3.jpg?format=jpg&name=large', thumbnailUrl: 'https://pbs.twimg.com/media/E3.jpg?format=jpg&name=thumb', alt: 'C', width: 800, height: 600, metadata: {} },
-    ], 0);
-  });
+    const items = Array.from({ length: itemCount }, (_, index) => {
+      const number = index + 1;
+      const url = `https://pbs.twimg.com/media/E${number}.jpg?format=jpg&name=large`;
+      return {
+        id: `img_${number}`,
+        url,
+        type: 'image',
+        filename: `E${number}.jpg`,
+        tweetUsername: 'u',
+        tweetId: '1',
+        tweetUrl: 'https://x.com/u/1',
+        originalUrl: url,
+        thumbnailUrl: `https://pbs.twimg.com/media/E${number}.jpg?format=jpg&name=thumb`,
+        alt: String.fromCharCode(65 + index),
+        width: dimensions.width,
+        height: dimensions.height,
+        metadata: {},
+      };
+    });
+    g.__XEG__.main.galleryApp.openGallery(items, 0);
+  }, { itemCount, dimensions });
   await page.waitForSelector('[data-xeg-gallery-container]', { timeout: 10_000 });
 }
 
@@ -323,6 +347,51 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
 
     expect(await itemsContainer.evaluate((element) => element.scrollTop)).toBe(settledScrollTop);
     await expect(toolbar).toHaveAttribute('data-focused-index', settledFocusedIndex ?? '');
+  });
+
+  test('continuous downward scrolling preserves item geometry near the final image', async ({
+    page,
+  }) => {
+    await page.route('https://pbs.twimg.com/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" />',
+      });
+    });
+    await setupGalleryPage(page);
+    await openGallery(page, 6, { width: 1200, height: 800 });
+
+    const itemsContainer = page.locator('[data-gallery-element="items"]');
+    await itemsContainer.hover();
+
+    let previousScrollTop = await itemsContainer.evaluate((element) => element.scrollTop);
+    for (let step = 0; step < 35; step += 1) {
+      await page.mouse.wheel(0, 120);
+      await page.waitForTimeout(100);
+      const currentScrollTop = await itemsContainer.evaluate((element) => element.scrollTop);
+      expect(
+        currentScrollTop,
+        `downward wheel scrolling moved backward at step ${step + 1}`
+      ).toBeGreaterThanOrEqual(previousScrollTop);
+      previousScrollTop = currentScrollTop;
+    }
+
+    const itemGeometry = await page
+      .locator('[data-gallery-element="item"]')
+      .evaluateAll((items) =>
+        items.map((item) => {
+          const intrinsicSize = getComputedStyle(item)
+            .getPropertyValue('--xeg-cis-override')
+            .trim();
+          return {
+            height: item.getBoundingClientRect().height,
+            intrinsicSizeSupported: CSS.supports('contain-intrinsic-size', intrinsicSize),
+          };
+        })
+      );
+    expect(Math.min(...itemGeometry.map(({ height }) => height))).toBeGreaterThan(100);
+    expect(itemGeometry.every(({ intrinsicSizeSupported }) => intrinsicSizeSupported)).toBe(true);
   });
 
   test('Escape does not close gallery when editing form fields', async ({ page }) => {

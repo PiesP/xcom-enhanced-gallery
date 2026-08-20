@@ -299,16 +299,16 @@ describe('media-dimensions (pure functions)', () => {
 
     it('derives exact fallback geometry for every fit mode', () => {
       expect(computeContainIntrinsicSizeOverride({ ...base, fitMode: 'fitWidth' })).toBe(
-        'auto 100% auto calc(100% / 1.777778)'
+        'auto 100cqi auto calc(100cqi / 1.777778)'
       );
       expect(computeContainIntrinsicSizeOverride({ ...base, fitMode: 'fitHeight' })).toBe(
-        `auto min(100%, calc(${viewport} * 1.777778)) auto ${viewport}`
+        `auto min(100cqi, calc(${viewport} * 1.777778)) auto ${viewport}`
       );
       expect(computeContainIntrinsicSizeOverride({ ...base, fitMode: 'fitContainer' })).toBe(
-        `auto min(100%, calc(${viewport} * 1.777778)) auto min(900px, ${viewport})`
+        `auto min(100cqi, calc(${viewport} * 1.777778)) auto min(900px, ${viewport})`
       );
       expect(computeContainIntrinsicSizeOverride({ ...base, fitMode: 'original' })).toBe(
-        'auto min(1600px, 100%) auto calc(min(1600px, 100%) / 1.777778)'
+        'auto min(1600px, 100cqi) auto calc(min(1600px, 100cqi) / 1.777778)'
       );
     });
 
@@ -319,7 +319,7 @@ describe('media-dimensions (pure functions)', () => {
           intrinsicHeight: 0,
           fitMode: 'fitWidth',
         })
-      ).toBe('auto 100% auto calc(100% / 1.777778)');
+      ).toBe('auto 100cqi auto calc(100cqi / 1.777778)');
     });
   });
 });
