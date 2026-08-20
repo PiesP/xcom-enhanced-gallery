@@ -161,6 +161,8 @@ describe('tooling configuration', () => {
       'name: release-bundle-${{ needs.provenance.outputs.release-sha }}'
     );
     expect(releaseWorkflow).not.toContain('push:\n    tags:');
+    expect(releaseWorkflow).not.toContain('publish_branch: release');
+    expect(releaseWorkflow).not.toContain('purge.jsdelivr.net');
   });
 
   it('keeps protected-release browser coverage aligned with CI', () => {

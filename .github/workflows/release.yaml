@@ -246,16 +246,6 @@ jobs:
           name: release-bundle-${{ needs.provenance.outputs.release-sha }}
           path: release-bundle
 
-      # Keep the existing /dist release-branch layout; the userscript URLs
-      # in this project intentionally point at /release/dist/.
-      - name: 📤 Publish to release branch
-        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: release
-          publish_dir: release-bundle/deploy
-          force_orphan: true
-
       - name: 🏷️ Create GitHub Release
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
@@ -272,26 +262,3 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  purge-cdn:
-    name: 🔄 Purge jsDelivr CDN cache
-    needs: publish
-    if: ${{ needs.publish.result == 'success' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    continue-on-error: true
-    permissions:
-      contents: read
-    steps:
-      - name: 🔄 Purge userscript and metadata cache
-        run: |
-          set -euo pipefail
-          for asset in xcom-enhanced-gallery.user.js xcom-enhanced-gallery.meta.js; do
-            purge_url="https://purge.jsdelivr.net/gh/${{ github.repository }}@release/dist/${asset}"
-            purge_response="$(curl --fail --silent --show-error --location \
-              --proto '=https' --tlsv1.2 "$purge_url")"
-            echo "$purge_response" | jq -e '
-              (.success == true) or
-              (.status == "finished" and ([.paths[].providers[]] | all))
-            ' >/dev/null
-          done

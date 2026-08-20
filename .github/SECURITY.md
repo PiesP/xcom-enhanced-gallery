@@ -33,8 +33,8 @@ coordinate disclosure after a fix is available.
   server.
 - Runtime requests use X/Twitter page, API, and media hosts required to discover
   and download media.
-- Userscript installation and update metadata is distributed through GitHub
-  Releases and the jsDelivr-hosted `release` branch artifacts.
+- Userscript installation and update metadata is distributed through
+  provenance-gated GitHub Release assets.
 - Extension permissions are declared in the versioned manifests.
 - The application does not use `eval()` or equivalent dynamic code execution.
 

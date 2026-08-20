@@ -48,9 +48,11 @@ export const OUTPUT_FILE_NAMES = {
   meta: 'xcom-enhanced-gallery.meta.js',
 } as const;
 
-/** Base URL for CDN-hosted userscript and update files. */
-export const CDN_BASE_URL =
-  'https://cdn.jsdelivr.net/gh/PiesP/xcom-enhanced-gallery@release/dist' as const;
+/** Immutable versioned artifacts and the latest metadata live on GitHub Releases. */
+export const RELEASE_DOWNLOAD_BASE_URL =
+  'https://github.com/PiesP/xcom-enhanced-gallery/releases/download' as const;
+export const LATEST_RELEASE_DOWNLOAD_BASE_URL =
+  'https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download' as const;
 
 /** Complete userscript metadata configuration. */
 export const USERSCRIPT_CONFIG = {
@@ -151,8 +153,8 @@ export function generateUserscriptHeader(args: {
     ...baseConfig,
     name: `${baseConfig.name}${nameSuffix}`,
     version,
-    downloadURL: `${CDN_BASE_URL}/${fileName}`,
-    updateURL: `${CDN_BASE_URL}/${metaFileName}`,
+    downloadURL: `${RELEASE_DOWNLOAD_BASE_URL}/v${version}/${fileName}`,
+    updateURL: `${LATEST_RELEASE_DOWNLOAD_BASE_URL}/${metaFileName}`,
   };
 
   return buildMetadataBlock(config);
@@ -176,8 +178,8 @@ export function generateMetaOnlyHeader(
     formatMetaLine('name', baseConfig.name),
     formatMetaLine('namespace', baseConfig.namespace),
     formatMetaLine('version', version),
-    formatMetaLine('downloadURL', `${CDN_BASE_URL}/${fileName}`),
-    formatMetaLine('updateURL', `${CDN_BASE_URL}/${metaFileName}`),
+    formatMetaLine('downloadURL', `${RELEASE_DOWNLOAD_BASE_URL}/v${version}/${fileName}`),
+    formatMetaLine('updateURL', `${LATEST_RELEASE_DOWNLOAD_BASE_URL}/${metaFileName}`),
     '// ==/UserScript==',
   ];
 
