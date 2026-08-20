@@ -153,7 +153,17 @@ describe('tooling configuration', () => {
     expect(ciWorkflow).toMatch(/playwright install --with-deps (?:chromium firefox|firefox chromium)/);
   });
 
-  it('keeps tag-release browser coverage aligned with CI', () => {
+  it('binds manual releases to a tag contained in protected master', () => {
+    expect(releaseWorkflow).toContain("github.ref == 'refs/heads/master'");
+    expect(releaseWorkflow).toContain('git merge-base --is-ancestor "$release_sha" "$GITHUB_SHA"');
+    expect(releaseWorkflow).toContain('ref: ${{ needs.provenance.outputs.release-sha }}');
+    expect(releaseWorkflow).toContain(
+      'name: release-bundle-${{ needs.provenance.outputs.release-sha }}'
+    );
+    expect(releaseWorkflow).not.toContain('push:\n    tags:');
+  });
+
+  it('keeps protected-release browser coverage aligned with CI', () => {
     expect(releaseWorkflow).toContain('playwright install --with-deps chromium firefox webkit');
     expect(releaseWorkflow).toContain('pnpm test:e2e:all');
     expect(packageJson.scripts['test:e2e:all']).toContain('pnpm -s test:e2e:extension:firefox');

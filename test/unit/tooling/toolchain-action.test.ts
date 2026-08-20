@@ -55,11 +55,12 @@ describe('central setup-project action', () => {
     }
   });
 
-  it('uses the release-only setup action for tag releases', () => {
+  it('uses the release-only setup action for protected manual releases', () => {
     const workflow = readFileSync(resolve(root, '.github/workflows/release.yaml'), 'utf8');
     const action = readFileSync(resolve(root, '.github/actions/setup-release/action.yaml'), 'utf8');
 
-    expect(topLevelBlock(workflow, 'on')).toBe('on:\n  push:\n    tags:\n      - "v*"');
+    expect(topLevelBlock(workflow, 'on')).toContain('workflow_dispatch:');
+    expect(topLevelBlock(workflow, 'on')).toContain('tag:');
     expect(workflow).not.toContain(centralSetupAction);
     expect(workflow).not.toContain('pnpm install --frozen-lockfile');
 
