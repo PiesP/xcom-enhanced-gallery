@@ -13,9 +13,13 @@ import {
 } from '@constants/performance';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
-import { isHttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
+import {
+  HttpResponseSizeLimitError,
+  isHttpResponseSizeLimitError,
+} from '@shared/error/http-response-size-limit-error';
 import {
   StreamingZipWriter,
+  type ZipEntryReservation,
   ZipResourceLimitError,
 } from '@shared/external/zip/streaming-zip-writer';
 import { fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
@@ -192,6 +196,7 @@ export async function downloadAsZip(
 
       const filename = assignedFilenames[index] ?? item.desiredName;
       let releaseReservation: ReleaseReservation | undefined;
+      let archiveReservation: ZipEntryReservation | undefined;
 
       try {
         const knownSize = item.blob instanceof Blob ? item.blob.size : item.expectedSizeBytes;
@@ -206,20 +211,50 @@ export async function downloadAsZip(
           item.blob instanceof Blob ? Math.max(1, item.blob.size) : maxBufferedBytes;
         releaseReservation = await byteBudget.reserve(reservationBytes, abortSignal);
 
+        archiveReservation = writer.reserveEntry(
+          filename,
+          item.blob instanceof Blob ? item.blob.size : maxEntryBytes
+        );
+        const remainingEntryBytes = Math.min(maxEntryBytes, archiveReservation.maxDataBytes);
+        if (knownSize !== undefined && knownSize > remainingEntryBytes) {
+          throw new ZipResourceLimitError(
+            `Bulk ZIP limit exceeded: ${filename} is ${knownSize} bytes ` +
+              `(remaining ${remainingEntryBytes})`
+          );
+        }
+        if (!(item.blob instanceof Blob) && remainingEntryBytes === 0) {
+          throw new ZipResourceLimitError(
+            `Bulk ZIP limit exceeded: no data capacity remains for ${filename}`
+          );
+        }
+
         let data: Uint8Array;
         if (item.blob || item.getBlob) {
           // Try the demand-driven cache first; fall back to network on failure
           let blob: Blob | undefined;
           try {
-            const provided = item.blob ?? item.getBlob?.(abortSignal) ?? undefined;
+            const provided =
+              item.blob ?? item.getBlob?.(abortSignal, remainingEntryBytes) ?? undefined;
             blob = provided instanceof Promise ? await provided : provided;
-          } catch {
+          } catch (error) {
             throwIfAborted(abortSignal);
+            if (
+              error instanceof HttpResponseSizeLimitError &&
+              error.maxBytes === remainingEntryBytes
+            ) {
+              throw error;
+            }
             // Cache request failed or expired — fall through to network
           }
 
           if (blob) {
             throwIfAborted(abortSignal);
+            if (blob.size > remainingEntryBytes) {
+              throw new ZipResourceLimitError(
+                `Bulk ZIP limit exceeded: ${filename} is ${blob.size} bytes ` +
+                  `(remaining ${remainingEntryBytes})`
+              );
+            }
             data = new Uint8Array(await blob.arrayBuffer());
           } else {
             data = await fetchArrayBufferWithRetry(
@@ -227,7 +262,7 @@ export async function downloadAsZip(
               retries,
               abortSignal,
               DEFAULT_BACKOFF_BASE_MS,
-              maxEntryBytes
+              remainingEntryBytes
             );
           }
         } else {
@@ -236,14 +271,15 @@ export async function downloadAsZip(
             retries,
             abortSignal,
             DEFAULT_BACKOFF_BASE_MS,
-            maxEntryBytes
+            remainingEntryBytes
           );
         }
 
         throwIfAborted(abortSignal);
-        if (data.byteLength > maxEntryBytes) {
+        if (data.byteLength > remainingEntryBytes) {
           throw new ZipResourceLimitError(
-            `Bulk ZIP limit exceeded: ${filename} is ${data.byteLength} bytes (limit ${maxEntryBytes})`
+            `Bulk ZIP limit exceeded: ${filename} is ${data.byteLength} bytes ` +
+              `(remaining ${remainingEntryBytes})`
           );
         }
 
@@ -253,7 +289,7 @@ export async function downloadAsZip(
         }
 
         // Write immediately to ZIP — avoids holding all files in memory
-        await writer.addFile(filename, data, abortSignal ? { signal: abortSignal } : {});
+        await archiveReservation.commit(data, abortSignal ? { signal: abortSignal } : {});
         successful++;
       } catch (error) {
         throwIfAborted(abortSignal);
@@ -262,6 +298,7 @@ export async function downloadAsZip(
         }
         failures.push({ url: item.url, error: normalizeErrorMessage(error) });
       } finally {
+        archiveReservation?.release();
         releaseReservation?.();
         processed++;
         reportProgress(onProgress, {

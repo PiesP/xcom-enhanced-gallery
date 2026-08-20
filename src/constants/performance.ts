@@ -30,7 +30,7 @@ export const ZIP_BUFFER_BUDGET_BYTES = 256 * 1024 * 1024;
 /** Maximum size of one media entry accepted by the in-memory bulk ZIP path (256 MiB). */
 export const ZIP_MAX_ENTRY_BYTES = 256 * 1024 * 1024;
 
-/** Maximum completed archive payload retained before the browser download begins (512 MiB). */
+/** Maximum serialized ZIP retained before the browser download begins (512 MiB). */
 export const ZIP_MAX_ARCHIVE_BYTES = 512 * 1024 * 1024;
 
 /** Default retry count for download operations */

@@ -16,7 +16,9 @@ export interface PlannedZipItem {
   readonly desiredName: string;
   readonly expectedSizeBytes?: number | undefined;
   readonly blob?: Blob | Promise<Blob> | undefined;
-  readonly getBlob?: ((signal?: AbortSignal) => Promise<Blob> | null) | undefined;
+  readonly getBlob?:
+    | ((signal?: AbortSignal, maxResponseBytes?: number) => Promise<Blob> | null)
+    | undefined;
 }
 
 interface BulkDownloadPlanningInput {
@@ -56,7 +58,10 @@ export function planBulkDownload(input: BulkDownloadPlanningInput): BulkDownload
     expectedSizeBytes: media.fileSize,
     blob: input.cachedBlobs?.get(media.url),
     getBlob: input.mediaBlobProvider
-      ? (signal?: AbortSignal) => input.mediaBlobProvider?.(media, signal) ?? null
+      ? (signal?: AbortSignal, maxResponseBytes?: number) =>
+          (maxResponseBytes === undefined
+            ? input.mediaBlobProvider?.(media, signal)
+            : input.mediaBlobProvider?.(media, signal, maxResponseBytes)) ?? null
       : undefined,
   }));
 

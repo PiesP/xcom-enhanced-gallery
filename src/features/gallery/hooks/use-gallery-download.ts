@@ -95,8 +95,8 @@ export function createDownloadHandler() {
         }
       } else {
         const result = await downloadService.downloadBulk([...mediaItems], {
-          mediaBlobProvider: (item, requestSignal) =>
-            mediaService.getDownloadMedia(item, requestSignal),
+          mediaBlobProvider: (item, requestSignal, maxResponseBytes) =>
+            mediaService.getDownloadMedia(item, requestSignal, maxResponseBytes),
           signal,
         });
 

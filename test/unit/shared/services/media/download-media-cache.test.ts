@@ -111,6 +111,20 @@ describe('DownloadMediaCache', () => {
     cache.destroy();
   });
 
+  it('uses a smaller caller response budget before materializing a cache entry', async () => {
+    http.get.mockResolvedValue({ ok: true, status: 200, data: new Blob(['ok']) });
+    const cache = new DownloadMediaCache(2, 10);
+    const item = media('caller-budget');
+
+    await cache.getOrFetch(item, undefined, 3);
+
+    expect(http.get).toHaveBeenCalledWith(
+      item.url,
+      expect.objectContaining({ maxResponseBytes: 3 })
+    );
+    cache.destroy();
+  });
+
   it('removes a failed request so the download path can retry', async () => {
     http.get
       .mockRejectedValueOnce(new Error('cache request failed'))
