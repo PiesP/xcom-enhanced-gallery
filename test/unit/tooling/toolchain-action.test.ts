@@ -77,7 +77,7 @@ describe('central setup-project action', () => {
     );
     expect(action).toContain('package-json-file: package.json');
     expect(action).toContain('runtime: "node@${{ inputs.node-version }}"');
-    expect(action).toContain('cache: true');
+    expect(action).toContain('cache: false');
     expect(action).toContain('install: false');
     expect(action).toContain('run: pnpm install --frozen-lockfile --no-runtime');
   });

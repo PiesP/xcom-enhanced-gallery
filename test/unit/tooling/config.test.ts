@@ -115,7 +115,7 @@ describe('tooling configuration', () => {
 
     expect(osvJob).toContain("github.event_name == 'push'");
     expect(semgrepJob).toContain("github.event_name == 'push'");
-    expect(semgrepJob).toContain('semgrep/semgrep:1.173.0@sha256:');
+    expect(semgrepJob).toContain('semgrep/semgrep:1.174.0@sha256:');
   });
 
   it('lets pnpm run extension prebuild hooks exactly once', () => {
@@ -157,7 +157,13 @@ describe('tooling configuration', () => {
   it('binds manual releases to a tag contained in protected master', () => {
     expect(releaseWorkflow).toContain("github.ref == 'refs/heads/master'");
     expect(releaseWorkflow).toContain('git merge-base --is-ancestor "$release_sha" "$GITHUB_SHA"');
-    expect(releaseWorkflow).toContain('ref: ${{ needs.provenance.outputs.release-sha }}');
+    expect(releaseWorkflow).toContain('ref: ${{ github.sha }}');
+    expect(releaseWorkflow).toContain(
+      'git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"'
+    );
+    expect(releaseWorkflow).not.toContain(
+      'ref: ${{ needs.provenance.outputs.release-sha }}'
+    );
     expect(releaseWorkflow).toContain(
       'name: release-bundle-${{ needs.provenance.outputs.release-sha }}'
     );
@@ -177,7 +183,7 @@ describe('tooling configuration', () => {
     expect(releaseWorkflow).toContain('playwright install --with-deps chromium firefox webkit');
     expect(releaseWorkflow).toContain('pnpm test:e2e:all');
     expect(packageJson.scripts['test:e2e:all']).toContain('pnpm -s test:e2e:extension:firefox');
-    expect(releaseWorkflow).toContain('path: ~/.cache/selenium');
+    expect(releaseWorkflow).not.toContain('path: ~/.cache/selenium');
   });
 
   it('does not duplicate the default-branch duplication scan in Deep Verification', () => {
