@@ -82,6 +82,8 @@ jobs:
           RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
         run: |
           git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"
+          git submodule sync --recursive
+          git submodule update --init --recursive
 
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
@@ -111,6 +113,8 @@ jobs:
           RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
         run: |
           git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"
+          git submodule sync --recursive
+          git submodule update --init --recursive
 
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
@@ -140,6 +144,8 @@ jobs:
           RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
         run: |
           git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"
+          git submodule sync --recursive
+          git submodule update --init --recursive
 
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
@@ -174,6 +180,8 @@ jobs:
           RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
         run: |
           git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"
+          git submodule sync --recursive
+          git submodule update --init --recursive
 
       - name: 🔧 Install nose
         run: bash scripts/ci/install-nose.sh
@@ -201,6 +209,8 @@ jobs:
           RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
         run: |
           git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"
+          git submodule sync --recursive
+          git submodule update --init --recursive
 
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
@@ -231,6 +241,8 @@ jobs:
           RELEASE_SHA: ${{ needs.provenance.outputs.release-sha }}
         run: |
           git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"
+          git submodule sync --recursive
+          git submodule update --init --recursive
 
       - name: 📦 Setup project
         uses: ./.github/actions/setup-release
