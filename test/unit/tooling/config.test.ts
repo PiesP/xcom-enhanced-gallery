@@ -21,6 +21,12 @@ const extensionPlaywrightConfig = readFileSync(
   'utf8'
 );
 
+function jobBlock(workflow: string, job: string): string {
+  return (
+    workflow.match(new RegExp(`^  ${job}:\\n(?:(?!^  [A-Za-z0-9_-]+:\\n)[\\s\\S])*`, 'm'))?.[0] ?? ''
+  );
+}
+
 describe('tooling configuration', () => {
   it('keeps the full mutation profile on the real shared source paths', () => {
     const config = JSON.parse(
@@ -177,6 +183,29 @@ describe('tooling configuration', () => {
     expect(releasePrepare).toContain('expectedCommit !== checkedOutCommit');
     expect(releasePrepare).toContain('const commit = releaseCommit;');
     expect(releasePrepare).not.toContain('process.env.GITHUB_SHA');
+
+    const localExecutionMarkers = {
+      quality: 'uses: ./.github/actions/setup-release',
+      unit: 'uses: ./.github/actions/setup-release',
+      e2e: 'uses: ./.github/actions/setup-release',
+      duplication: 'run: bash scripts/ci/install-nose.sh',
+      mutation: 'uses: ./.github/actions/setup-release',
+      build: 'uses: ./.github/actions/setup-release',
+    } as const;
+    for (const [job, marker] of Object.entries(localExecutionMarkers)) {
+      const block = jobBlock(releaseWorkflow, job);
+      const detach = block.indexOf(
+        'git -c advice.detachedHead=false checkout --detach "$RELEASE_SHA"'
+      );
+      const sync = block.indexOf('git submodule sync --recursive');
+      const update = block.indexOf('git submodule update --init --recursive');
+      const localExecution = block.indexOf(marker);
+
+      expect(detach, `${job} verified detach`).toBeGreaterThanOrEqual(0);
+      expect(sync, `${job} submodule sync`).toBeGreaterThan(detach);
+      expect(update, `${job} submodule update`).toBeGreaterThan(sync);
+      expect(localExecution, `${job} local execution`).toBeGreaterThan(update);
+    }
   });
 
   it('keeps protected-release browser coverage aligned with CI', () => {
