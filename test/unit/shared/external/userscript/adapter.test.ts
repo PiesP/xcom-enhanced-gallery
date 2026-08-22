@@ -4,6 +4,13 @@ import type {
 } from '@shared/types/core/userscript';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const TEST_MAX_RESPONSE_BYTES = 8;
+
+vi.mock('@constants/performance', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@constants/performance')>()),
+  SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES: TEST_MAX_RESPONSE_BYTES,
+}));
+
 type UserscriptGlobals = typeof globalThis & {
   GM?: { download?: (details: GMDownloadDetails) => unknown };
   GM_download?: typeof GM_download;
@@ -126,6 +133,87 @@ describe('userscript download adapter failure handling', () => {
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:test-download');
   });
 
+  it('aborts the Blob fallback when streamed bytes exceed the response limit', async () => {
+    const abortRequest = vi.fn();
+    let request: GMXMLHttpRequestDetails | undefined;
+    userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
+      request = details;
+      return { abort: abortRequest };
+    });
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL');
+    const api = await loadUserscriptAdapter();
+
+    const pending = api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg');
+    request?.onprogress?.({
+      lengthComputable: false,
+      loaded: TEST_MAX_RESPONSE_BYTES + 1,
+      total: 0,
+    } as never);
+
+    await expect(pending).rejects.toMatchObject({
+      name: 'HttpResponseSizeLimitError',
+      maxBytes: TEST_MAX_RESPONSE_BYTES,
+      receivedBytes: TEST_MAX_RESPONSE_BYTES + 1,
+    });
+    expect(abortRequest).toHaveBeenCalledOnce();
+    expect(createObjectURL).not.toHaveBeenCalled();
+  });
+
+  it('aborts the Blob fallback when the declared total exceeds the response limit', async () => {
+    const abortRequest = vi.fn();
+    let request: GMXMLHttpRequestDetails | undefined;
+    userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
+      request = details;
+      return { abort: abortRequest };
+    });
+    const api = await loadUserscriptAdapter();
+
+    const pending = api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg');
+    request?.onprogress?.({
+      lengthComputable: true,
+      loaded: 1,
+      total: TEST_MAX_RESPONSE_BYTES + 1,
+    } as never);
+    request?.onprogress?.({
+      lengthComputable: true,
+      loaded: TEST_MAX_RESPONSE_BYTES + 2,
+      total: TEST_MAX_RESPONSE_BYTES + 2,
+    } as never);
+
+    await expect(pending).rejects.toMatchObject({
+      name: 'HttpResponseSizeLimitError',
+      maxBytes: TEST_MAX_RESPONSE_BYTES,
+      receivedBytes: TEST_MAX_RESPONSE_BYTES + 1,
+    });
+    expect(abortRequest).toHaveBeenCalledOnce();
+  });
+
+  it('rejects an oversized final Blob when progress metadata is unavailable', async () => {
+    const abortRequest = vi.fn();
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL');
+    userscriptGlobals.GM_xmlhttpRequest = vi.fn((details) => {
+      queueMicrotask(() =>
+        details.onload?.({
+          status: 200,
+          statusText: 'OK',
+          response: new Blob(['123456789']),
+        } as never)
+      );
+      return { abort: abortRequest };
+    });
+    const api = await loadUserscriptAdapter();
+
+    await expect(
+      api.download('https://pbs.twimg.com/media/image.jpg', 'image.jpg')
+    ).rejects.toMatchObject({
+      name: 'HttpResponseSizeLimitError',
+      maxBytes: TEST_MAX_RESPONSE_BYTES,
+      receivedBytes: TEST_MAX_RESPONSE_BYTES + 1,
+    });
+    expect(abortRequest).toHaveBeenCalledOnce();
+    expect(createObjectURL).not.toHaveBeenCalled();
+  });
+
   it('rejects an HTTP error instead of saving its response body as media', async () => {
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
     const createObjectURL = vi.spyOn(URL, 'createObjectURL');
@@ -166,6 +254,7 @@ describe('userscript download adapter failure handling', () => {
 
     await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
     expect(abortRequest).toHaveBeenCalledOnce();
+    expect(removeEventListener).toHaveBeenCalledOnce();
     expect(removeEventListener).toHaveBeenCalledWith('abort', expect.any(Function));
   });
 

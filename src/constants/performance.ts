@@ -12,7 +12,7 @@ export const DOWNLOAD_TIMEOUT_MS = 300_000;
 /** Default request timeout for fetch-based downloads */
 export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 
-/** Maximum response buffered by the MV3 single-file content-script fallback (512 MiB). */
+/** Maximum response buffered by an in-memory single-file download fallback (512 MiB). */
 export const SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES = 512 * 1024 * 1024;
 
 /** Maximum concurrent download workers */

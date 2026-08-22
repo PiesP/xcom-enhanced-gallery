@@ -25,7 +25,8 @@
  * from detecting the synthetic click as an "outside" click.
  */
 
-import { GM_DOWNLOAD_TIMEOUT_MS } from '@constants/performance';
+import { GM_DOWNLOAD_TIMEOUT_MS, SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES } from '@constants/performance';
+import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import type { CookieAPI } from '@shared/types/core/cookie.types';
 import type {
   GMDownloadDetails,
@@ -148,6 +149,7 @@ async function downloadViaBlob(
     let objectUrl: string | null = null;
     let control: GMXMLHttpRequestControl | null = null;
     let abortHandler: (() => void) | null = null;
+    let abortAfterStart = false;
     let settled = false;
 
     const cleanup = (): void => {
@@ -166,6 +168,12 @@ async function downloadViaBlob(
       revokeObjectUrl();
       reject(error);
     };
+    const failForResourceLimit = (receivedBytes: number): void => {
+      if (settled) return;
+      fail(new HttpResponseSizeLimitError(SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES, receivedBytes));
+      if (control) control.abort();
+      else abortAfterStart = true;
+    };
     const handleLoad: NonNullable<GMXMLHttpRequestDetails['onload']> = (response) => {
       if (settled) return;
       if (response.status < 200 || response.status >= 300) {
@@ -174,6 +182,10 @@ async function downloadViaBlob(
       }
       if (!(response.response instanceof Blob)) {
         fail(new Error('GM_xmlhttpRequest returned an invalid Blob response'));
+        return;
+      }
+      if (response.response.size > SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES) {
+        failForResourceLimit(response.response.size);
         return;
       }
 
@@ -210,8 +222,19 @@ async function downloadViaBlob(
         onerror: () => fail(new Error('GM_xmlhttpRequest failed')),
         ontimeout: () => fail(new Error('GM_xmlhttpRequest timed out')),
         onabort: () => fail(new DOMException('Aborted', 'AbortError')),
+        onprogress: (response) => {
+          if (
+            settled ||
+            (response.loaded <= SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES &&
+              (!response.lengthComputable || response.total <= SINGLE_DOWNLOAD_MAX_RESPONSE_BYTES))
+          ) {
+            return;
+          }
+          failForResourceLimit(Math.max(response.loaded, response.total));
+        },
       });
-      if (signal?.aborted && !settled) abortHandler();
+      if (abortAfterStart) control.abort();
+      else if (signal?.aborted && !settled) abortHandler();
     } catch (error) {
       fail(error);
     }
