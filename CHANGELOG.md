@@ -8,6 +8,16 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-08-23
+
+### Changed
+
+- Brought browser runtime, validation, and release-infrastructure updates through the latest development cycle.
+
+### Fixed
+
+- Addressed post-2.3.0 regressions and reliability issues across userscript and extension execution paths.
+
 ## [2.3.0] - 2026-08-06
 
 ### Added
