@@ -36,5 +36,9 @@ describe('browser-core update automation', () => {
     expect(workflow).toContain('"$GITHUB_EVENT_NAME" == "push" && -z "$OPEN_PR"');
     expect(workflow).toContain('gh workflow run "🏗️ CI"');
     expect(workflow).toContain('gh workflow run "🔒 Security Scanning"');
+    expect(workflow).toContain(
+      'CONSUMER_PATHS=(src package.json pnpm-lock.yaml pnpm-workspace.yaml)'
+    );
+    expect(workflow).toContain('diff --quiet "$CURRENT_CORE_SHA..$CORE_SHA"');
   });
 });
