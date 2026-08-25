@@ -25,14 +25,17 @@ reset is required.
 
 ## Network access
 
-Runtime requests are limited to X/Twitter pages, APIs, and media hosts needed
-for gallery extraction and downloads, including `x.com`, `twitter.com`,
-`api.twitter.com`, `pbs.twimg.com`, and `video.twimg.com` according to the
-selected distribution's metadata or manifest.
+Runtime requests are limited to the X/Twitter page, API, and media hosts needed
+for gallery extraction and downloads. The authoritative permissions are
+`USERSCRIPT_CONFIG.match` and `USERSCRIPT_CONFIG.connect` in
+[`tooling/vite/utils/userscript.ts`](./tooling/vite/utils/userscript.ts), and
+`host_permissions` in the [Chrome](./extension/manifest.json) and
+[Firefox](./extension/manifest.firefox.json) manifests.
 
-The userscript manager may separately check GitHub Releases or jsDelivr URLs
-embedded in the userscript header for updates. Browser vendors and installed
-extensions have their own privacy policies.
+The userscript manager may separately check the GitHub Release URLs embedded in
+the userscript header for updates. Those URLs are emitted by
+`generateUserscriptHeader()` and `generateMetaOnlyHeader()` in the same source
+file. Browser vendors and installed extensions have their own privacy policies.
 
 ## Downloads
 

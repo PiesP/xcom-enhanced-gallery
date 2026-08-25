@@ -42,10 +42,16 @@ be integrated here as a reviewed gitlink update.
 | `pnpm test` | Run the Vitest suite |
 | `pnpm test:cov` | Run tests with coverage thresholds |
 | `pnpm test:e2e` | Run the userscript browser flow |
-| `pnpm test:e2e:extension` | Run the Chrome extension browser flow |
+| `pnpm test:e2e:extension` | Run Chrome installed-extension and Firefox artifact/runtime Playwright checks |
+| `pnpm test:e2e:extension:firefox` | Run the installed Firefox extension smoke test with Selenium |
+| `pnpm test:e2e:all` | Run every userscript and extension browser lane |
 | `pnpm quality` | Run formatting, lint, type, dependency, and source checks |
 | `pnpm verify` | Run the quality gate and all production builds |
 | `pnpm verify:full` | Add coverage and browser tests to `verify` |
+
+Run `pnpm build:e2e` before invoking the browser lanes directly so their
+generated userscript and extension inputs are current. `pnpm verify:full`
+prepares those artifacts as part of its full gate.
 
 Run the narrowest relevant check while working. Use `pnpm verify` before a
 pull request and `pnpm verify:full` for publication-level or browser behavior

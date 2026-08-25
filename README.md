@@ -64,8 +64,10 @@ The gallery targets desktop browsers and does not provide a mobile/touch flow.
 | Chromium extension | Current desktop Chrome, Edge, and Brave developer mode |
 | Firefox extension | Firefox 128+ temporary developer installation |
 
-The userscript values come from its generated metadata and the Firefox minimum
-comes from `extension/manifest.firefox.json`.
+The userscript compatibility floor is defined by `USERSCRIPT_BROWSER_SUPPORT`
+in [`tooling/vite/browser-support.ts`](./tooling/vite/browser-support.ts). The
+Firefox extension minimum comes from
+[`extension/manifest.firefox.json`](./extension/manifest.firefox.json).
 
 ## Privacy and security
 
@@ -88,10 +90,15 @@ pnpm install
 | --- | --- |
 | `pnpm test` | Run the Vitest suite |
 | `pnpm test:e2e` | Run the full Chromium userscript suite plus Firefox/WebKit smoke tests |
-| `pnpm test:e2e:extension` | Run Chrome extension Playwright tests |
+| `pnpm test:e2e:extension` | Run Chrome installed-extension and Firefox artifact/runtime Playwright checks |
+| `pnpm test:e2e:extension:firefox` | Install the Firefox build temporarily and run its Selenium smoke test |
+| `pnpm test:e2e:all` | Run every userscript and extension browser lane |
 | `pnpm quality` | Run static quality checks |
 | `pnpm verify` | Run quality and all production builds |
 | `pnpm verify:full` | Add coverage and browser tests to `verify` |
+
+Browser lanes consume generated userscript and extension artifacts. See the
+[contributing commands](./CONTRIBUTING.md#commands) for preparation details.
 
 See [Contributing](./CONTRIBUTING.md) for project constraints and pull request
 expectations.
