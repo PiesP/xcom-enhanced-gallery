@@ -60,8 +60,6 @@ variable is set to `true` and the `CODEX_SECURITY_API_KEY` secret is configured.
 The CLI dependency closure is integrity-locked in
 `.github/codex-security/package-lock.json`; pull request jobs install that lock
 from the trusted base revision before checking out the source revision to scan.
-The pinned CLI now carries its fixed PDF parser directly, without a local
-post-install source patch.
 
 Scan findings require human source-to-sink validation and severity review before
 they are treated as vulnerabilities or made blocking. CI sends findings to
