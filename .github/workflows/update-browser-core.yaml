@@ -92,6 +92,7 @@ jobs:
           git switch -C "$BRANCH" origin/master
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          CURRENT_CORE_SHA="$(git rev-parse origin/master:packages/core)"
 
           # Clone independently of the recorded gitlink so an unreachable old
           # submodule SHA cannot prevent this repair workflow from starting.
@@ -105,6 +106,15 @@ jobs:
           if ! git -C packages/core merge-base --is-ancestor "$CORE_SHA" origin/master; then
             echo "::error::browser-core commit is not reachable from origin/master: $CORE_SHA"
             exit 1
+          fi
+          CONSUMER_PATHS=(src package.json pnpm-lock.yaml pnpm-workspace.yaml)
+          if git -C packages/core cat-file -e "$CURRENT_CORE_SHA^{commit}" \
+            && git -C packages/core diff --quiet "$CURRENT_CORE_SHA..$CORE_SHA" -- "${CONSUMER_PATHS[@]}"; then
+            if [[ -n "$OPEN_PR" ]]; then
+              gh pr close "$OPEN_PR" --comment "Closing this stale update PR because browser-core $SHORT_SHA has no consumer-facing changes."
+            fi
+            echo "browser-core $SHORT_SHA has no changes in consumer package paths."
+            exit 0
           fi
           git -C packages/core checkout --detach "$CORE_SHA"
 
