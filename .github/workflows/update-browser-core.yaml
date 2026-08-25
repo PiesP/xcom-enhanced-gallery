@@ -75,6 +75,16 @@ jobs:
           BRANCH="automation/update-browser-core"
           REMOTE_BRANCH_SHA="$(git ls-remote --heads origin "$BRANCH" | cut -f1)"
 
+          # A branch-name filter can also match a fork PR. Only trust a PR whose
+          # head is in this repository before closing, editing, or approving it.
+          OPEN_PR="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base master --head "$BRANCH" \
+            --json number,headRepository,isCrossRepository \
+            --jq "[.[] | select(.isCrossRepository == false and .headRepository.nameWithOwner == \"$GITHUB_REPOSITORY\")][0].number // empty")"
+          if [[ "$GITHUB_EVENT_NAME" == "push" && -z "$OPEN_PR" ]]; then
+            echo "No open browser-core update PR requires rebasing after this master push."
+            exit 0
+          fi
+
           # Rebuild the automation branch from the current default branch on
           # every run. This prevents merge accumulation and guarantees that the
           # PR satisfies strict up-to-date branch protection.
@@ -98,11 +108,6 @@ jobs:
           fi
           git -C packages/core checkout --detach "$CORE_SHA"
 
-          # A branch-name filter can also match a fork PR. Only trust a PR whose
-          # head is in this repository before closing, editing, or approving it.
-          OPEN_PR="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base master --head "$BRANCH" \
-            --json number,headRepository,isCrossRepository \
-            --jq "[.[] | select(.isCrossRepository == false and .headRepository.nameWithOwner == \"$GITHUB_REPOSITORY\")][0].number // empty")"
           if git diff --quiet -- packages/core; then
             if [[ -n "$OPEN_PR" ]]; then
               gh pr close "$OPEN_PR" --comment "Closing this stale update PR because master already contains browser-core $SHORT_SHA."
@@ -118,6 +123,7 @@ jobs:
 
           git add packages/core
           git commit -m "chore(deps): update browser-core to $SHORT_SHA"
+          EXPECTED_HEAD_SHA="$(git rev-parse HEAD)"
 
           mapfile -t CHANGED_FILES < <(git diff --name-only origin/master...HEAD)
           if [[ "${#CHANGED_FILES[@]}" -ne 1 || "${CHANGED_FILES[0]}" != "packages/core" ]]; then
@@ -162,10 +168,19 @@ jobs:
             echo "Created browser-core update PR #$PR_NUMBER."
           fi
 
-          # Approve only after the validated branch has been rebuilt on the
-          # latest master commit so stale-review protection remains effective.
-          GH_TOKEN="$AUTO_MERGE_TOKEN" gh pr review --approve "$PR_NUMBER"
+          # Bind approval and auto-merge to the exact commit generated above.
+          # A later branch write must fail closed and wait for reconciliation.
+          PR_HEAD_SHA="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)"
+          if [[ "$PR_HEAD_SHA" != "$EXPECTED_HEAD_SHA" ]]; then
+            echo "::error::PR head changed before approval: expected $EXPECTED_HEAD_SHA, found $PR_HEAD_SHA"
+            exit 1
+          fi
+          GH_TOKEN="$AUTO_MERGE_TOKEN" gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews" \
+            -f event=APPROVE \
+            -f commit_id="$EXPECTED_HEAD_SHA" >/dev/null
           echo "✅ PR #$PR_NUMBER approved."
 
-          gh pr merge --auto --squash "$PR_NUMBER"
+          GH_TOKEN="$AUTO_MERGE_TOKEN" gh pr merge --auto --squash \
+            --match-head-commit "$EXPECTED_HEAD_SHA" "$PR_NUMBER"
           echo "✅ Auto-merge queued for PR #$PR_NUMBER."
