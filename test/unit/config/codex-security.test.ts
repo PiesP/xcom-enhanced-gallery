@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 const root = resolve(import.meta.dirname, '../../..');
 const cliPackagePath = resolve(root, '.github/codex-security/package.json');
 const cliLockPath = resolve(root, '.github/codex-security/package-lock.json');
+const dependabot = readFileSync(resolve(root, '.github/dependabot.yaml'), 'utf8');
 const workflow = readFileSync(resolve(root, '.github/workflows/codex-security.yaml'), 'utf8');
 const helper = readFileSync(resolve(root, 'scripts/security/codex-security.sh'), 'utf8');
 const patcherPath = resolve(root, 'scripts/security/patch-codex-security.mjs');
@@ -49,6 +50,13 @@ describe('Codex Security CLI supply-chain controls', () => {
         /^sha512-/
       );
     }
+  });
+
+  it('keeps the CLI closure under daily Dependabot monitoring', () => {
+    expect(dependabot).toMatch(
+      /package-ecosystem: "npm"\n\s+directory: "\/\.github\/codex-security"[\s\S]*?interval: "daily"/
+    );
+    expect(dependabot).toContain('prefix: "chore(deps-security)"');
   });
 
   it('uses the upstream PDF parser fix without a local compatibility patch', () => {
