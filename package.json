@@ -101,7 +101,7 @@
     "@vitest/coverage-v8": "^4.1.11",
     "dpdm": "4.3.0",
     "jsdom": "^30.0.1",
-    "knip": "^6.32.2",
+    "knip": "^6.32.3",
     "selenium-webdriver": "4.47.0",
     "typescript": "7.0.2",
     "vite": "^8.2.2",
