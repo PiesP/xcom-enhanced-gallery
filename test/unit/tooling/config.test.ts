@@ -121,7 +121,7 @@ describe('tooling configuration', () => {
 
     expect(osvJob).toContain("github.event_name == 'push'");
     expect(semgrepJob).toContain("github.event_name == 'push'");
-    expect(semgrepJob).toContain('semgrep/semgrep:1.174.0@sha256:');
+    expect(semgrepJob).toContain('semgrep/semgrep:1.175.0@sha256:');
   });
 
   it('lets pnpm run extension prebuild hooks exactly once', () => {

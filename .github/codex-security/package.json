@@ -2,7 +2,7 @@
   "name": "xcom-enhanced-gallery-codex-security",
   "private": true,
   "dependencies": {
-    "@openai/codex-security": "0.1.19"
+    "@openai/codex-security": "0.1.23"
   },
   "engines": {
     "node": "^22.13.0 || ^24.0.0 || ^26.0.0"
