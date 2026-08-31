@@ -32,8 +32,8 @@ fi
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 repo_root="$(git -C "$script_dir" rev-parse --show-toplevel)"
 repo_name="$(basename -- "$repo_root")"
-cli_package="$repo_root/.github/codex-security/package.json"
-cli_lock="$repo_root/.github/codex-security/package-lock.json"
+cli_package="$repo_root/scripts/security/codex-security/package.json"
+cli_lock="$repo_root/scripts/security/codex-security/package-lock.json"
 scan_prompt="$repo_root/.github/codex-security/scan.md"
 
 node_version="$(node --version 2>/dev/null || true)"

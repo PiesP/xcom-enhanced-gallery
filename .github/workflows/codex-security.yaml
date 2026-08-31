@@ -14,6 +14,7 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "PRIVACY.md"
+      - "scripts/security/codex-security/**"
       - "scripts/**"
       - "src/**"
       - "tooling/**"
@@ -67,8 +68,8 @@ jobs:
           set -euo pipefail
           install -d -m 0700 "$RUNNER_TEMP/codex-security"
           install -m 0600 \
-            .github/codex-security/package.json \
-            .github/codex-security/package-lock.json \
+            scripts/security/codex-security/package.json \
+            scripts/security/codex-security/package-lock.json \
             "$RUNNER_TEMP/codex-security/"
           npm ci \
             --prefix "$RUNNER_TEMP/codex-security" \

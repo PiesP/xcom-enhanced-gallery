@@ -159,10 +159,14 @@ classify_path() {
     .github/workflows/dependabot-auto-merge.yaml | \
       .github/workflows/dependabot-auto-merge-apply.yaml | \
       .github/workflows/codex-security.yaml | \
-      .github/actions/* | \
-      .github/codex-security/*)
+      .github/actions/*)
       known=true
       select_output unit
+      ;;
+    .github/codex-security/*)
+      known=true
+      select_output unit
+      select_output osv
       ;;
   esac
 
@@ -179,7 +183,7 @@ classify_path() {
       known=true
       select_output codeql_actions
       ;;
-    .github/codex-security/package.json | .github/codex-security/package-lock.json)
+    scripts/security/codex-security/package.json | scripts/security/codex-security/package-lock.json)
       known=true
       select_output osv
       ;;

@@ -136,6 +136,19 @@ describe('workflow change policy', () => {
 
     const sharedFixture = classify(['test/fixtures/quoted-video-tweet-response.ts']);
     expectAll(sharedFixture, ['unit', 'e2e', 'semgrep', 'codeql_javascript']);
+
+    for (const cliClosurePath of [
+      'scripts/security/codex-security/package.json',
+      'scripts/security/codex-security/package-lock.json',
+    ]) {
+      const codexSecurityClosure = classify([cliClosurePath]);
+      expect(codexSecurityClosure.unit).toBe('true');
+      expect(codexSecurityClosure.osv).toBe('true');
+    }
+
+    const codexSecurityPolicy = classify(['.github/codex-security/scan.md']);
+    expect(codexSecurityPolicy.unit).toBe('true');
+    expect(codexSecurityPolicy.osv).toBe('true');
   });
 
   it('preserves every required context while adding explicit no-op success paths', () => {

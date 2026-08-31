@@ -157,8 +157,8 @@ nose_version="$(sed -nE 's/^nose_version="([^"]+)"/\1/p' scripts/ci/install-nose
 nose_installer_sha256="$(sed -nE 's/^nose_installer_sha256="([0-9a-fA-F]{64})"/\1/p' scripts/ci/install-nose.sh)"
 osv_version="$(sed -nE 's/.*osv-scanner-action image v([^ ]+).*/\1/p' .github/workflows/security.yaml)"
 semgrep_version="$(sed -nE 's/.*semgrep\/semgrep:([^ @]+).*/\1/p' .github/workflows/security.yaml | head -n 1)"
-codex_security_package=.github/codex-security/package.json
-codex_security_lock=.github/codex-security/package-lock.json
+codex_security_package=scripts/security/codex-security/package.json
+codex_security_lock=scripts/security/codex-security/package-lock.json
 codex_security_version="$(jq -er '.dependencies["@openai/codex-security"]' "$codex_security_package")"
 
 status=0
