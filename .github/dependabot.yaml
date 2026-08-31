@@ -69,7 +69,7 @@ updates:
 
   # Codex Security CLI and its integrity-locked npm closure
   - package-ecosystem: "npm"
-    directory: "/.github/codex-security"
+    directory: "/scripts/security/codex-security"
     schedule:
       interval: "daily"
       time: "09:00"

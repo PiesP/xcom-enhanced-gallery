@@ -117,14 +117,16 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
+          [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
           git switch --force --detach "$BASE_SHA"
           git submodule update --init --recursive
 
-      - name: 📁 Prepare isolated OSV result directory
+      - name: 📁 Prepare base-pinned OSV policy and result directory
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         run: |
           set -euo pipefail
           install -d -m 0700 "$RUNNER_TEMP/osv-results"
+          install -m 0600 .github/codex-security/osv-scanner.toml "$RUNNER_TEMP/osv-results/osv-scanner.toml"
 
       - name: 🛡️ Scan dependencies before the PR
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
@@ -136,6 +138,7 @@ jobs:
             --volume "$RUNNER_TEMP/osv-results:/results" \
             --workdir /src \
             "$OSV_SCANNER_IMAGE" \
+            --config=/results/osv-scanner.toml \
             --format=json \
             --output-file=/results/old-results.json \
             -r \
@@ -159,6 +162,7 @@ jobs:
             --volume "$RUNNER_TEMP/osv-results:/results" \
             --workdir /src \
             "$OSV_SCANNER_IMAGE" \
+            --config=/results/osv-scanner.toml \
             --format=json \
             --output-file=/results/new-results.json \
             -r \
@@ -203,18 +207,41 @@ jobs:
           submodules: true
           persist-credentials: false
 
+      - name: 📁 Prepare trusted OSV policy and result directory
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
+        env:
+          POLICY_SHA: ${{ github.event.merge_group.base_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          install -d -m 0700 "$RUNNER_TEMP/osv-results"
+          if [[ "$GITHUB_EVENT_NAME" == "merge_group" ]]; then
+            [[ "$POLICY_SHA" =~ ^[0-9a-f]{40}$ ]]
+            if ! git cat-file -e "$POLICY_SHA^{commit}" 2>/dev/null; then
+              if [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then
+                git fetch --no-tags --prune --unshallow origin
+              else
+                git fetch --no-tags --prune origin '+refs/heads/*:refs/remotes/origin/*'
+              fi
+            fi
+            git cat-file -e "$POLICY_SHA^{commit}"
+            git show "$POLICY_SHA:.github/codex-security/osv-scanner.toml" > "$RUNNER_TEMP/osv-results/osv-scanner.toml"
+            chmod 0600 "$RUNNER_TEMP/osv-results/osv-scanner.toml"
+          else
+            install -m 0600 .github/codex-security/osv-scanner.toml "$RUNNER_TEMP/osv-results/osv-scanner.toml"
+          fi
+
       - name: 🛡️ Run OSV scan
         if: ${{ needs.changes.result != 'success' || needs.changes.outputs.osv != 'false' }}
         continue-on-error: true
         run: |
           set -euo pipefail
-          install -d -m 0700 "$RUNNER_TEMP/osv-results"
           docker run --rm \
             --env GOTOOLCHAIN=auto \
             --volume "$GITHUB_WORKSPACE:/src" \
             --volume "$RUNNER_TEMP/osv-results:/results" \
             --workdir /src \
             "$OSV_SCANNER_IMAGE" \
+            --config=/results/osv-scanner.toml \
             --format=json \
             --output-file=/results/osv-results.json \
             -r \
