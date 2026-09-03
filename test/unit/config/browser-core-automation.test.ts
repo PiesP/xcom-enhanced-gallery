@@ -12,6 +12,11 @@ describe('browser-core update automation', () => {
   it('keeps revision and pull-request provenance checks fail closed', () => {
     expect(workflow).toContain('^[0-9a-f]{40}$');
     expect(workflow).toContain('merge-base --is-ancestor "$CORE_SHA" origin/master');
+    expect(workflow).toContain(
+      'if git -C packages/core cat-file -e "$CURRENT_CORE_SHA^{commit}" \\\n' +
+        '            && ! git -C packages/core merge-base --is-ancestor "$CURRENT_CORE_SHA" "$CORE_SHA"; then'
+    );
+    expect(workflow).toContain('browser-core update would downgrade or diverge');
     expect(workflow).toContain('.isCrossRepository == false');
     expect(workflow).toContain('.headRepository.nameWithOwner');
     expect(workflow).toContain('--force-with-lease="refs/heads/$BRANCH:$REMOTE_BRANCH_SHA"');
