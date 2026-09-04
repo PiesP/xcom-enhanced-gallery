@@ -6,7 +6,7 @@
  * @description Pipelined file downloads and ZIP assembly with immediate Local File Headers
  */
 
-import { schedulerYield } from '@shared/utils/performance/scheduler-yield';
+import { schedulerYield } from '@piesp/browser-core/util';
 
 const textEncoder = new TextEncoder();
 const CRC32_CHUNK_SIZE = 1024 * 1024;
@@ -69,7 +69,7 @@ async function calculateCRC32(data: Uint8Array, signal?: AbortSignal): Promise<n
     }
 
     if (chunkEnd < data.length) {
-      await schedulerYield(0);
+      await schedulerYield();
       signal?.throwIfAborted();
     }
   }

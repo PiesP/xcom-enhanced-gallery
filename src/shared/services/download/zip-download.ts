@@ -11,6 +11,7 @@ import {
   ZIP_MAX_ARCHIVE_BYTES,
   ZIP_MAX_ENTRY_BYTES,
 } from '@constants/performance';
+import { schedulerYield } from '@piesp/browser-core/util';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
 import {
@@ -25,7 +26,6 @@ import {
 import { fetchArrayBufferWithRetry } from '@shared/network/retry-fetch';
 import type { DownloadOptions, OrchestratorItem, ZipResult } from '@shared/services/download/types';
 import { reportProgress } from '@shared/services/download/types';
-import { schedulerYield } from '@shared/utils/performance/scheduler-yield';
 
 type UniqueFilenameFactory = (desired: string) => string;
 
@@ -285,7 +285,7 @@ export async function downloadAsZip(
 
         // Yield to main thread between items to keep UI responsive
         if (index > 0) {
-          await schedulerYield(0);
+          await schedulerYield();
         }
 
         // Write immediately to ZIP — avoids holding all files in memory

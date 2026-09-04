@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { SCHEDULER_YIELD_DEADLINE_MS } from '@constants/performance';
+import { schedulerYield } from '@piesp/browser-core/util';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
 import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
@@ -19,7 +19,6 @@ import {
   adjustClickedIndexAfterDeduplication,
   removeDuplicateMediaItems,
 } from '@shared/utils/media/media-dimensions';
-import { schedulerYield } from '@shared/utils/performance/scheduler-yield';
 
 const generateExtractionId = (): string => createPrefixedId('simp');
 
@@ -160,7 +159,7 @@ export class MediaExtractionService implements MediaExtractor {
       __DEV__ && logger.info(`[MediaExtractor] ${extractionId}: API failed, trying DOM fallback`);
 
       // Yield before CPU-intensive DOM fallback extraction
-      await schedulerYield(SCHEDULER_YIELD_DEADLINE_MS);
+      await schedulerYield();
 
       const domResult = await this.domFallbackExtractor.extract(
         tweetInfo,

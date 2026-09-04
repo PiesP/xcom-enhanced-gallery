@@ -88,7 +88,6 @@ describe('tooling configuration', () => {
         'src/shared/utils/object/path.ts',
         'src/shared/utils/performance/observer-pool.ts',
         'src/shared/utils/performance/preload.ts',
-        'src/shared/utils/performance/scheduler-yield.ts',
         'src/shared/utils/text/formatting.ts',
         'src/shared/utils/url/history-navigation.ts',
         'src/shared/utils/url/host.ts',
