@@ -61,12 +61,6 @@ export const ANIMATION_TIMEOUT_MS = 500;
 export const DOWNLOAD_MIN_DISPLAY_TIME_MS = 300;
 
 /**
- * Default deadline (ms) for `scheduler.yield()` fallback (`setTimeout`).
- * 50ms ≈ 20fps — keeps the UI responsive during long-running tasks.
- */
-export const SCHEDULER_YIELD_DEADLINE_MS = 50;
-
-/**
  * Maximum allowed URL length for media validation.
  * Twitter/X media URLs rarely exceed 200 chars; 2048 provides headroom
  * for query parameters while blocking abuse / malformed input.

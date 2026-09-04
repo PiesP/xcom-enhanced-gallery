@@ -3,8 +3,8 @@
 
 /** @fileoverview Unified download service: single + bulk (ZIP) via GM_download. */
 
-import { SCHEDULER_YIELD_DEADLINE_MS } from '@constants/performance';
 import { mergeAbortSignalsWithCleanup } from '@piesp/browser-core/error';
+import { schedulerYield } from '@piesp/browser-core/util';
 import { getDownloadAdapter } from '@platform/index';
 import { planBulkDownload } from '@shared/core/download/download-plan';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
@@ -20,7 +20,6 @@ import { downloadAsZip } from '@shared/services/download/zip-download';
 import { createSingleton } from '@shared/services/singleton-base';
 import type { MediaInfo } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/media.types';
-import { schedulerYield } from '@shared/utils/performance/scheduler-yield';
 
 /**
  * Create a standardized error response for bulk download operations.
@@ -119,7 +118,7 @@ export class DownloadOrchestrator {
       }
 
       // Yield before CPU-intensive plan computation
-      await schedulerYield(SCHEDULER_YIELD_DEADLINE_MS);
+      await schedulerYield();
 
       const adapter = getDownloadAdapter();
       if (!adapter) {
