@@ -13,7 +13,7 @@ updates:
     # Keep only a short supply-chain cooling window for this fast-moving project.
     cooldown:
       default-days: 1
-    open-pull-requests-limit: 5  # 4 groups; allow parallel group PRs
+    open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
@@ -32,6 +32,21 @@ updates:
 
     # Group updates by category to reduce PR noise
     groups:
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+      stryker:
+        patterns:
+          - "@stryker-mutator/*"
+        update-types:
+          - "minor"
+          - "patch"
+
       # Production dependency (only solid-js)
       solid:
         patterns:
