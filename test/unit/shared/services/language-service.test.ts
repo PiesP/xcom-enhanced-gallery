@@ -64,7 +64,11 @@ describe('LanguageService', () => {
   });
 
   afterEach(() => {
-    service?.destroy();
+    try {
+      service?.destroy();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   // ── detectLanguage ───────────────────────────────────────────────────
@@ -108,11 +112,9 @@ describe('LanguageService', () => {
 
     it('should return default language when navigator is unavailable', () => {
       // Simulate no navigator
-      const origNav = (globalThis as any).navigator;
-      (globalThis as any).navigator = undefined;
+      vi.stubGlobal('navigator', undefined);
       service = new LanguageService();
       expect(service.detectLanguage()).toBe('en');
-      (globalThis as any).navigator = origNav;
     });
   });
 
