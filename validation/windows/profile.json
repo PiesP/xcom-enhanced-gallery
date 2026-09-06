@@ -1,0 +1,8 @@
+{
+  "id": "xeg-gallery",
+  "assets": [
+    "dist/xcom-enhanced-gallery.user.js",
+    "test/e2e/fixtures/mock-gallery-page.html",
+    "test/e2e/fixtures/gm-mock.ts"
+  ]
+}
