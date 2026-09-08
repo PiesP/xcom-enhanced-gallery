@@ -56,6 +56,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   const mediaItems = createMemo(() => gallerySignals.mediaItems);
   const currentIndex = createMemo(() => gallerySignals.currentIndex);
   const isDownloading = createMemo(() => downloadState.isProcessing);
+  const downloadStatus = createMemo(() => downloadState.status);
 
   // Element refs
   const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);
@@ -211,6 +212,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
           focusedIndex={focus.focusedIndex}
           totalCount={() => mediaItems().length}
           isDownloading={isDownloading}
+          downloadStatus={downloadStatus}
           currentFitMode={imageFitMode}
           tweetText={tweetText}
           tweetTextContent={tweetTextContent}

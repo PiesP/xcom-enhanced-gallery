@@ -16,7 +16,7 @@ import { logger } from '@shared/logging/logger';
 import type { MediaInfo } from '@shared/types/media.types';
 import { createEventEmitter } from '@shared/utils/events/emitter';
 import { batch, createSignal } from 'solid-js';
-import { _setIsProcessing } from './gallery-download-signals';
+import { _setDownloadStatus } from './gallery-download-signals';
 import { resolveAdjacentNavigationTarget } from './gallery-navigation';
 import {
   INITIAL_NAV_SOURCE,
@@ -298,5 +298,5 @@ export function disposeGallerySignals(): void {
     setNavTimestamp(0);
   });
 
-  _setIsProcessing(false);
+  _setDownloadStatus('idle');
 }

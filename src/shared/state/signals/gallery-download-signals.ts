@@ -12,22 +12,27 @@
 
 import { createSignal } from 'solid-js';
 
-// Internal signal — exported for use by disposeGallerySignals and core signals
-export const [_isProcessing, _setIsProcessing] = createSignal<boolean>(false);
+export type DownloadStatus = 'idle' | 'working' | 'handedOff' | 'error';
+
+// Internal signal — exported for use by disposeGallerySignals.
+export const [_downloadStatus, _setDownloadStatus] = createSignal<DownloadStatus>('idle');
 
 export const downloadState = {
+  get status(): DownloadStatus {
+    return _downloadStatus();
+  },
   get isProcessing(): boolean {
-    return _isProcessing();
+    return _downloadStatus() === 'working';
   },
 };
 
 /**
- * Sets the download processing state.
- * Used by download hooks to signal that a download operation is in progress,
- * which disables UI controls to prevent concurrent downloads.
+ * Records only lifecycle states observable at the gallery boundary. "handedOff"
+ * means that the download adapter accepted the request; it does not assert
+ * that the browser saved the file to disk.
  *
- * @param value - `true` when a download starts, `false` when it completes
+ * @param status - Current observable download lifecycle state
  */
-export function setDownloading(value: boolean): void {
-  _setIsProcessing(value);
+export function setDownloadStatus(status: DownloadStatus): void {
+  _setDownloadStatus(status);
 }

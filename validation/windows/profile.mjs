@@ -123,6 +123,133 @@ export async function run({ browser, root, output }) {
     const progress = gallery.locator('[role="progressbar"]');
     const initial = await progress.getAttribute('aria-valuenow');
     assert.equal(initial, '1', 'Gallery must open on the clicked first image');
+
+    const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+    await toolbar.locator('button[aria-label="Fit Window"]').click();
+    const selectedFit = toolbar.locator('button[aria-label="Fit Window"][aria-pressed="true"]');
+    const selectedStyle = () =>
+      selectedFit.evaluate(async (element) => {
+        await Promise.allSettled(element.getAnimations().map((animation) => animation.finished));
+        const style = getComputedStyle(element);
+        return {
+          backgroundColor: style.backgroundColor,
+          color: style.color,
+          borderStyle: style.borderStyle,
+          borderWidth: style.borderWidth,
+          boxShadow: style.boxShadow,
+          focusVisible: element.matches(':focus-visible'),
+          outlineStyle: style.outlineStyle,
+          outlineWidth: style.outlineWidth,
+        };
+      });
+    const forcedColorReference = () =>
+      page.evaluate(() => {
+        const reference = document.createElement('span');
+        reference.style.forcedColorAdjust = 'none';
+        reference.style.color = 'HighlightText';
+        reference.style.backgroundColor = 'Highlight';
+        document.body.append(reference);
+        const style = getComputedStyle(reference);
+        const colors = {
+          backgroundColor: style.backgroundColor,
+          color: style.color,
+        };
+        reference.remove();
+        return colors;
+      });
+    assert.equal(await selectedFit.isEnabled(), true, 'Selected fit mode must remain focusable');
+    const selectedResting = await selectedStyle();
+    assert.notEqual(
+      selectedResting.backgroundColor,
+      'rgba(0, 0, 0, 0)',
+      'Selected fit mode must retain a visible background'
+    );
+    assert.notEqual(selectedResting.boxShadow, 'none', 'Selected fit mode must retain an inset ring');
+    await selectedFit.hover();
+    const selectedHovered = await selectedStyle();
+    assert.equal(
+      selectedHovered.backgroundColor,
+      selectedResting.backgroundColor,
+      'Hover must not erase selected state'
+    );
+    assert.equal(
+      selectedHovered.boxShadow,
+      selectedResting.boxShadow,
+      'Hover must not erase the selected ring'
+    );
+    await page.keyboard.press('Tab');
+    await selectedFit.focus();
+    const selectedFocused = await selectedStyle();
+    assert.equal(
+      selectedFocused.backgroundColor,
+      selectedResting.backgroundColor,
+      'Focus must not erase selected state'
+    );
+    assert.notEqual(selectedFocused.outlineStyle, 'none', 'Selected focus must remain visible');
+    assert.equal(selectedFocused.focusVisible, true, 'Selected focus must use keyboard modality');
+    assert(
+      Number.parseFloat(selectedFocused.outlineWidth) >= 2,
+      'Selected focus outline must be at least 2px'
+    );
+    await page.emulateMedia({ forcedColors: 'active' });
+    await selectedFit.evaluate((element) => element.blur());
+    await selectedFit.hover();
+    const systemHighlight = await forcedColorReference();
+    const selectedForcedHovered = await selectedStyle();
+    assert.equal(
+      selectedForcedHovered.backgroundColor,
+      systemHighlight.backgroundColor,
+      'Forced-colors hover must retain the system highlight background'
+    );
+    assert.equal(
+      selectedForcedHovered.color,
+      systemHighlight.color,
+      'Forced-colors hover must retain the system highlight text'
+    );
+    await page.keyboard.press('Tab');
+    await selectedFit.focus();
+    const selectedForced = await selectedStyle();
+    assert.equal(
+      selectedForced.backgroundColor,
+      systemHighlight.backgroundColor,
+      'Forced-colors focus must retain the system highlight background'
+    );
+    assert.equal(
+      selectedForced.color,
+      systemHighlight.color,
+      'Forced-colors focus must retain the system highlight text'
+    );
+    assert.equal(
+      selectedForced.focusVisible,
+      true,
+      'Forced-colors focus must use keyboard modality'
+    );
+    assert.equal(selectedForced.borderStyle, 'solid', 'Forced colors must expose a selected border');
+    assert(
+      Number.parseFloat(selectedForced.borderWidth) >= 2,
+      'Forced-colors selected border must be at least 2px'
+    );
+    assert.notEqual(
+      selectedForced.outlineStyle,
+      'none',
+      'Forced-colors selected focus must remain visible'
+    );
+    await page.emulateMedia({ forcedColors: 'none' });
+    await toolbar.evaluate((element) => element.setAttribute('disabled', ''));
+    assert.equal(await selectedFit.isDisabled(), true, 'Disabled toolbar must disable selected fit mode');
+    const selectedDisabled = await selectedStyle();
+    assert.equal(
+      selectedDisabled.backgroundColor,
+      selectedResting.backgroundColor,
+      'Disabled state must retain selected background'
+    );
+    assert.equal(
+      selectedDisabled.boxShadow,
+      selectedResting.boxShadow,
+      'Disabled state must retain selected ring'
+    );
+    await toolbar.evaluate((element) => element.removeAttribute('disabled'));
+
     await page.keyboard.press('ArrowRight');
     await page.waitForFunction(
       (previous) =>
@@ -159,6 +286,9 @@ export async function run({ browser, root, output }) {
       checks: [
         'production-userscript-injection',
         'gallery-open',
+        'toolbar-selected-state',
+        'toolbar-selected-focus',
+        'toolbar-forced-colors',
         'keyboard-next',
         'mock-GM-browser-download',
         'escape-close',

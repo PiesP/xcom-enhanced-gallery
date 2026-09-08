@@ -5,7 +5,7 @@ const state = vi.hoisted(() => ({
   getDownloadMedia: vi.fn(),
   notify: vi.fn(),
   notifySafely: vi.fn(),
-  setDownloading: vi.fn(),
+  setDownloadStatus: vi.fn(),
   setError: vi.fn(),
   translate: vi.fn((key: string) => key),
 }));
@@ -31,7 +31,7 @@ vi.mock('@shared/state/signals/gallery.signals', () => ({
   setError: state.setError,
 }));
 vi.mock('@shared/state/signals/gallery-download-signals', () => ({
-  setDownloading: state.setDownloading,
+  setDownloadStatus: state.setDownloadStatus,
 }));
 
 import { createDownloadHandler } from '@features/gallery/hooks/use-gallery-download';
@@ -53,6 +53,10 @@ describe('createDownloadHandler bulk resource limits', () => {
 
     await createDownloadHandler().handleDownload('all');
 
+    expect(state.setDownloadStatus.mock.calls.map(([status]) => status)).toEqual([
+      'working',
+      'handedOff',
+    ]);
     expect(state.setError).toHaveBeenLastCalledWith('msg.dl.part.resourceLimit');
     expect(state.notifySafely).toHaveBeenCalledWith(
       state.notify,
@@ -76,6 +80,10 @@ describe('createDownloadHandler bulk resource limits', () => {
 
     await createDownloadHandler().handleDownload('all');
 
+    expect(state.setDownloadStatus.mock.calls.map(([status]) => status)).toEqual([
+      'working',
+      'error',
+    ]);
     expect(state.setError).toHaveBeenLastCalledWith('msg.dl.zipTooLarge');
     expect(state.notifySafely).toHaveBeenCalledWith(
       state.notify,
@@ -95,7 +103,71 @@ describe('createDownloadHandler bulk resource limits', () => {
 
     await createDownloadHandler().handleDownload('all');
 
+    expect(state.setDownloadStatus.mock.calls.map(([status]) => status)).toEqual([
+      'working',
+      'idle',
+    ]);
     expect(state.setError).toHaveBeenCalledTimes(1);
+    expect(state.setError).toHaveBeenLastCalledWith(null);
+    expect(state.notifySafely).not.toHaveBeenCalled();
+  });
+
+  it('reports a successful adapter return as handed off without claiming a saved file', async () => {
+    state.downloadBulk.mockResolvedValue({
+      success: true,
+      status: 'success',
+      filesProcessed: 2,
+      filesSuccessful: 2,
+      code: 'NONE',
+    });
+
+    await createDownloadHandler().handleDownload('all');
+
+    expect(state.setDownloadStatus.mock.calls.map(([status]) => status)).toEqual([
+      'working',
+      'handedOff',
+    ]);
+  });
+
+  it('ignores a cancelled gallery operation that settles after the next download', async () => {
+    let resolvePrevious: ((value: unknown) => void) | undefined;
+    const previousResult = new Promise((resolve) => {
+      resolvePrevious = resolve;
+    });
+    state.downloadBulk
+      .mockReturnValueOnce(previousResult)
+      .mockResolvedValueOnce({
+        success: true,
+        status: 'success',
+        filesProcessed: 1,
+        filesSuccessful: 1,
+        code: 'NONE',
+      });
+
+    const handler = createDownloadHandler();
+    const previousDownload = handler.handleDownload('all');
+    await vi.waitFor(() => expect(state.downloadBulk).toHaveBeenCalledOnce());
+
+    handler.cancelDownloads();
+    await handler.handleDownload('all');
+
+    resolvePrevious?.({
+      success: false,
+      status: 'error',
+      filesProcessed: 1,
+      filesSuccessful: 0,
+      error: 'late failure from previous gallery',
+      code: 'ALL_FAILED',
+    });
+    await previousDownload;
+
+    expect(state.setDownloadStatus.mock.calls.map(([status]) => status)).toEqual([
+      'working',
+      'idle',
+      'working',
+      'handedOff',
+    ]);
+    expect(state.setError).toHaveBeenCalledTimes(2);
     expect(state.setError).toHaveBeenLastCalledWith(null);
     expect(state.notifySafely).not.toHaveBeenCalled();
   });

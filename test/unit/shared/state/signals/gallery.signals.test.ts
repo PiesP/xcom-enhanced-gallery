@@ -12,6 +12,10 @@ import {
   openGallery,
   setFocusedIndexOnly,
 } from '@shared/state/signals/gallery.signals';
+import {
+  downloadState,
+  setDownloadStatus,
+} from '@shared/state/signals/gallery-download-signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -76,5 +80,24 @@ describe('gallery navigation transitions', () => {
     expect(gallerySignals.focusedIndex).toBe(2);
     expect(listener).toHaveBeenCalledTimes(1);
     expect(listener).toHaveBeenCalledWith({ index: 2, trigger: 'programmatic' });
+  });
+});
+
+describe('gallery download state', () => {
+  it('keeps terminal handoff and error states separate from active processing', () => {
+    setDownloadStatus('working');
+    expect(downloadState.status).toBe('working');
+    expect(downloadState.isProcessing).toBe(true);
+
+    setDownloadStatus('handedOff');
+    expect(downloadState.status).toBe('handedOff');
+    expect(downloadState.isProcessing).toBe(false);
+
+    setDownloadStatus('error');
+    expect(downloadState.status).toBe('error');
+    expect(downloadState.isProcessing).toBe(false);
+
+    disposeGallerySignals();
+    expect(downloadState.status).toBe('idle');
   });
 });

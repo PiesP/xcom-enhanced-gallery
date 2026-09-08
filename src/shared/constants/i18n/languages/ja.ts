@@ -22,6 +22,10 @@ export const ja: LanguageStrings = {
     fitH: '高さに合わせる',
     fitC: 'ウィンドウに合わせる',
     galleryToolbar: 'ギャラリーツールバー',
+    navigationGroup: '移動と現在位置',
+    fitGroup: '表示サイズ',
+    downloadGroup: 'ダウンロード',
+    auxGroup: 'その他の操作',
     progress: '進捗',
     settingsPanel: '設定パネル',
   },
@@ -65,6 +69,11 @@ export const ja: LanguageStrings = {
       toggle: '?: このヘルプを表示',
     },
     dl: {
+      status: {
+        working: 'ダウンロードを準備中…',
+        handedOff: 'ブラウザーに引き渡しました',
+        error: 'ダウンロードに失敗しました',
+      },
       one: {
         err: {
           t: 'ダウンロード失敗',

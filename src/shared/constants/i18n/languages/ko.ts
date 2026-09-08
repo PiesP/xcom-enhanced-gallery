@@ -22,6 +22,10 @@ export const ko: LanguageStrings = {
     fitH: '높이 맞춤',
     fitC: '창 맞춤',
     galleryToolbar: '갤러리 도구 모음',
+    navigationGroup: '이동 및 현재 위치',
+    fitGroup: '보기 맞춤',
+    downloadGroup: '다운로드',
+    auxGroup: '기타 작업',
     progress: '진행',
     settingsPanel: '설정 패널',
   },
@@ -65,6 +69,11 @@ export const ko: LanguageStrings = {
       toggle: '?: 이 도움말 표시',
     },
     dl: {
+      status: {
+        working: '다운로드 준비 중…',
+        handedOff: '브라우저로 전달됨',
+        error: '다운로드 실패',
+      },
       one: {
         err: {
           t: '다운로드 실패',

@@ -130,6 +130,9 @@ test.describe('X.com Enhanced Gallery Download Flow', () => {
     );
     await expect(marker).toHaveAttribute('data-gm-download-name', 'Example1.jpg');
     await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
+    await expect(
+      page.locator('[data-gallery-element="toolbar"]').getByRole('status')
+    ).toHaveText('Handed off to browser');
   });
 
   test('Download button is not disabled when gallery has items', async ({ page }) => {

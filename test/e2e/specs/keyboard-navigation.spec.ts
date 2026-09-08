@@ -273,8 +273,111 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
         });
 
         expect(clippedControls).toEqual([]);
+
+        const splitGroups = await toolbar.getByRole('group').evaluateAll((groups) =>
+          groups.flatMap((group) => {
+            const buttons = [...group.querySelectorAll('button')];
+            const rowTops = new Set(
+              buttons.map((button) => Math.round(button.getBoundingClientRect().top))
+            );
+            if (rowTops.size <= 1) return [];
+            return [group.querySelector('legend')?.textContent?.trim() ?? 'unnamed group'];
+          })
+        );
+        expect(splitGroups).toEqual([]);
       });
     }
+  });
+
+  test('selected fit state survives hover, focus, disabled, and forced colors', async ({ page }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    await page
+      .locator('[data-gallery-element="toolbar"] button[aria-label="Fit Window"]')
+      .click();
+    const selected = page.locator(
+      '[data-gallery-element="toolbar"] [aria-label="Fit Window"][aria-pressed="true"]'
+    );
+    await expect(selected).toBeEnabled();
+
+    const selectedStyle = async () =>
+      selected.evaluate(async (element) => {
+        await Promise.allSettled(element.getAnimations().map((animation) => animation.finished));
+        const style = getComputedStyle(element);
+        return {
+          backgroundColor: style.backgroundColor,
+          color: style.color,
+          borderStyle: style.borderStyle,
+          borderWidth: style.borderWidth,
+          boxShadow: style.boxShadow,
+          focusVisible: element.matches(':focus-visible'),
+          outlineStyle: style.outlineStyle,
+          outlineWidth: style.outlineWidth,
+        };
+      });
+
+    const forcedColorReference = async () =>
+      page.evaluate(() => {
+        const reference = document.createElement('span');
+        reference.style.forcedColorAdjust = 'none';
+        reference.style.color = 'HighlightText';
+        reference.style.backgroundColor = 'Highlight';
+        document.body.append(reference);
+        const style = getComputedStyle(reference);
+        const colors = {
+          backgroundColor: style.backgroundColor,
+          color: style.color,
+        };
+        reference.remove();
+        return colors;
+      });
+
+    const resting = await selectedStyle();
+    expect(resting.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+    expect(resting.boxShadow).not.toBe('none');
+
+    await selected.hover();
+    const hovered = await selectedStyle();
+    expect(hovered.backgroundColor).toBe(resting.backgroundColor);
+    expect(hovered.boxShadow).toBe(resting.boxShadow);
+
+    await page.keyboard.press('Tab');
+    await selected.focus();
+    const focused = await selectedStyle();
+    expect(focused.backgroundColor).toBe(resting.backgroundColor);
+    expect(focused.boxShadow).toBe(resting.boxShadow);
+    expect(focused.focusVisible).toBe(true);
+    expect(focused.outlineStyle).not.toBe('none');
+    expect(Number.parseFloat(focused.outlineWidth)).toBeGreaterThanOrEqual(2);
+
+    await page.emulateMedia({ forcedColors: 'active' });
+    await selected.evaluate((element) => element.blur());
+    await selected.hover();
+    const systemHighlight = await forcedColorReference();
+    const forcedHovered = await selectedStyle();
+    expect(forcedHovered.backgroundColor).toBe(systemHighlight.backgroundColor);
+    expect(forcedHovered.color).toBe(systemHighlight.color);
+
+    await page.keyboard.press('Tab');
+    await selected.focus();
+    const forced = await selectedStyle();
+    expect(forced.backgroundColor).toBe(systemHighlight.backgroundColor);
+    expect(forced.color).toBe(systemHighlight.color);
+    expect(forced.focusVisible).toBe(true);
+    expect(forced.borderStyle).toBe('solid');
+    expect(Number.parseFloat(forced.borderWidth)).toBeGreaterThanOrEqual(2);
+    expect(forced.outlineStyle).not.toBe('none');
+    expect(Number.parseFloat(forced.outlineWidth)).toBeGreaterThanOrEqual(2);
+
+    await page.emulateMedia({ forcedColors: 'none' });
+    await page
+      .locator('[data-gallery-element="toolbar"]')
+      .evaluate((element) => element.setAttribute('disabled', ''));
+    await expect(selected).toBeDisabled();
+    const disabled = await selectedStyle();
+    expect(disabled.backgroundColor).toBe(resting.backgroundColor);
+    expect(disabled.boxShadow).toBe(resting.boxShadow);
   });
 
   test('settings panel stays reachable in a short narrow viewport', async ({ page }) => {

@@ -22,6 +22,10 @@ export const zhCn: LanguageStrings = {
     fitH: '适应高度',
     fitC: '适应窗口',
     galleryToolbar: '图库工具栏',
+    navigationGroup: '导航和当前位置',
+    fitGroup: '视图适配',
+    downloadGroup: '下载',
+    auxGroup: '更多操作',
     progress: '进度',
     settingsPanel: '设置面板',
   },
@@ -65,6 +69,11 @@ export const zhCn: LanguageStrings = {
       toggle: '？：显示此帮助',
     },
     dl: {
+      status: {
+        working: '正在准备下载…',
+        handedOff: '已交由浏览器处理',
+        error: '下载失败',
+      },
       one: {
         err: {
           t: '下载失败',

@@ -59,6 +59,14 @@ export interface LanguageStrings {
     readonly fitC: string;
     /** Gallery toolbar label */
     readonly galleryToolbar: string;
+    /** Navigation and position control group */
+    readonly navigationGroup: string;
+    /** View fitting control group */
+    readonly fitGroup: string;
+    /** Download control group */
+    readonly downloadGroup: string;
+    /** Auxiliary control group */
+    readonly auxGroup: string;
     /** Progress bar label */
     readonly progress: string;
     /** Settings panel label */
@@ -139,6 +147,15 @@ export interface LanguageStrings {
     };
     /** Download messages */
     readonly dl: {
+      /** Observable download lifecycle labels */
+      readonly status: {
+        /** The app is preparing or handing off a download */
+        readonly working: string;
+        /** The browser accepted the download request */
+        readonly handedOff: string;
+        /** The download request failed before a successful handoff */
+        readonly error: string;
+      };
       /** Single file download messages */
       readonly one: {
         /** Single download error */
