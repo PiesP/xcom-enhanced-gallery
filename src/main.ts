@@ -333,9 +333,7 @@ export function isAllowedStartUrl(value: string): boolean {
   }
 
   const hostname = url.hostname.toLowerCase();
-  const allowed = (TWITTER_HOSTS as unknown as readonly string[]).some(
-    (h) => hostname === h || hostname.endsWith(`.${h}`)
-  );
+  const allowed = TWITTER_HOSTS.some((h) => hostname === h || hostname.endsWith(`.${h}`));
   if (!allowed) return false;
 
   const path = url.pathname;

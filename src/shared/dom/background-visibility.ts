@@ -35,7 +35,3 @@ export function restoreBackgroundElement(element: HTMLElement): void {
   previousInert.delete(element);
   element.removeAttribute(GALLERY_HIDDEN_MARKER);
 }
-
-export function isHiddenByGallery(element: HTMLElement): boolean {
-  return element.hasAttribute(GALLERY_HIDDEN_MARKER);
-}
