@@ -125,9 +125,11 @@ export async function run({ browser, root, output }) {
     assert.equal(initial, '1', 'Gallery must open on the clicked first image');
 
     const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+    await toolbar.locator('button[aria-label="Fit Window"]').click();
     const selectedFit = toolbar.locator('button[aria-label="Fit Window"][aria-pressed="true"]');
     const selectedStyle = () =>
-      selectedFit.evaluate((element) => {
+      selectedFit.evaluate(async (element) => {
+        await Promise.allSettled(element.getAnimations().map((animation) => animation.finished));
         const style = getComputedStyle(element);
         return {
           backgroundColor: style.backgroundColor,

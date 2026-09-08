@@ -293,13 +293,17 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     await setupGalleryPage(page);
     await openGallery(page);
 
+    await page
+      .locator('[data-gallery-element="toolbar"] button[aria-label="Fit Window"]')
+      .click();
     const selected = page.locator(
       '[data-gallery-element="toolbar"] [aria-label="Fit Window"][aria-pressed="true"]'
     );
     await expect(selected).toBeEnabled();
 
     const selectedStyle = async () =>
-      selected.evaluate((element) => {
+      selected.evaluate(async (element) => {
+        await Promise.allSettled(element.getAnimations().map((animation) => animation.finished));
         const style = getComputedStyle(element);
         return {
           backgroundColor: style.backgroundColor,
